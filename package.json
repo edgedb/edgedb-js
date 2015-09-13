@@ -1,0 +1,11 @@
+{
+  "name": "edgedb",
+  "version": "0.5.0-alpha",
+  "description": "A JavaScript binding for EdgeDB",
+  "author": "EdgeDB <info@edgedb.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgedb/edgedb-js.git"
+  },
+  "license": "MIT"
+}
