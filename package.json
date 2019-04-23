@@ -1,11 +1,28 @@
 {
   "name": "edgedb",
-  "version": "0.5.0-alpha",
   "description": "A JavaScript binding for EdgeDB",
   "author": "EdgeDB <info@edgedb.com>",
   "repository": {
     "type": "git",
     "url": "https://github.com/edgedb/edgedb-js.git"
   },
-  "license": "MIT"
+  "version": "0.5.0-alpha",
+  "main": "./dist/src/index.js",
+  "types": "./dist/index.d.ts",
+  "license": "Apache-2.0",
+  "files": [
+    "/dist",
+    "/src"
+  ],
+  "devDependencies": {
+    "@types/jest": "^24.0.11",
+    "@types/node": "^11.13.5",
+    "jest": "^24.7.1",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.4.3"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  }
 }
