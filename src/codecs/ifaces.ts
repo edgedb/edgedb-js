@@ -16,15 +16,13 @@
  * limitations under the License.
  */
 
-import connect from "../src/index";
+import {FastReadBuffer, WriteBuffer} from "../buffer";
 
-test("connect", async () => {
-  const con1 = await connect();
-  await con1.fetchOne("select 1;");
+export type uuid = string;
 
-  // let con2 = await connect({port: 7777});
+export interface ICodec {
+  readonly tid: uuid;
 
-  // let con3 = connect({}, function(err, con) {
-
-  // })
-});
+  encode(buf: WriteBuffer, object: any): void;
+  decode(buf: FastReadBuffer): any;
+}

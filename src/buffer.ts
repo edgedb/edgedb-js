@@ -1,5 +1,24 @@
+/*!
+ * This source file is part of the EdgeDB open source project.
+ *
+ * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import char, * as chars from "./chars";
 import {RingBuffer} from "./ring";
+import {Buffer} from "buffer";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE: number = 4096;
@@ -24,6 +43,15 @@ export class WriteBuffer {
     this.pos = 0;
     this.messagePos = -1;
     this.buffer = Buffer.allocUnsafe(this.size);
+  }
+
+  reset(): void {
+    if (this.messagePos >= 0) {
+      throw new BufferError(
+        "cannot reset: the previous message is not finished"
+      );
+    }
+    this.pos = 0;
   }
 
   private ensureAlloced(extraLength: number): void {
@@ -135,6 +163,41 @@ export class WriteBuffer {
     return this;
   }
 
+  private _writeBuffer(buf: Buffer): void {
+    const len = buf.length;
+    this.ensureAlloced(len);
+    buf.copy(this.buffer, this.pos, 0, len);
+    this.pos += len;
+  }
+
+  writeBuffer(buf: Buffer): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeBuffer: no current message");
+    }
+    this._writeBuffer(buf);
+    return this;
+  }
+
+  writeSync(): this {
+    if (this.messagePos >= 0) {
+      throw new BufferError(
+        "cannot writeSync: the previous message is not finished"
+      );
+    }
+    this._writeBuffer(SYNC_MESSAGE);
+    return this;
+  }
+
+  writeFlush(): this {
+    if (this.messagePos >= 0) {
+      throw new BufferError(
+        "cannot writeFlush: the previous message is not finished"
+      );
+    }
+    this._writeBuffer(FLUSH_MESSAGE);
+    return this;
+  }
+
   unwrap(): Buffer {
     if (this.messagePos >= 0) {
       throw new BufferError(
@@ -144,6 +207,16 @@ export class WriteBuffer {
     return this.buffer.slice(0, this.pos);
   }
 }
+
+const SYNC_MESSAGE = new WriteBuffer()
+  .beginMessage(chars.$S)
+  .endMessage()
+  .unwrap();
+
+const FLUSH_MESSAGE = new WriteBuffer()
+  .beginMessage(chars.$H)
+  .endMessage()
+  .unwrap();
 
 export class ReadBuffer {
   private bufs: RingBuffer<Buffer>;
@@ -298,12 +371,18 @@ export class ReadBuffer {
     return buf;
   }
 
+  readUUID(): string {
+    const buf = this.readBuffer(16);
+    return buf.toString("hex");
+  }
+
   readChar(): char {
     this.checkOverread(1);
     const buf0 = this.ensureFirstBuf();
     const ret = buf0.readUInt8(this.pos0);
     this.pos0++;
     this.curMessageLenUnread--;
+    this.len--;
     return ret;
   }
 
@@ -315,6 +394,7 @@ export class ReadBuffer {
       const ret = buf0.readInt16BE(this.pos0);
       this.pos0 += 2;
       this.curMessageLenUnread -= 2;
+      this.len -= 2;
       return ret;
     }
 
@@ -331,6 +411,7 @@ export class ReadBuffer {
       const ret = buf0.readInt32BE(this.pos0);
       this.pos0 += 4;
       this.curMessageLenUnread -= 4;
+      this.len -= 4;
       return ret;
     }
 
@@ -347,6 +428,7 @@ export class ReadBuffer {
       const ret = buf0.readUInt16BE(this.pos0);
       this.pos0 += 2;
       this.curMessageLenUnread -= 2;
+      this.len -= 2;
       return ret;
     }
 
@@ -363,6 +445,7 @@ export class ReadBuffer {
       const ret = buf0.readUInt32BE(this.pos0);
       this.pos0 += 4;
       this.curMessageLenUnread -= 4;
+      this.len -= 4;
       return ret;
     }
 
@@ -394,6 +477,7 @@ export class ReadBuffer {
       const buf0 = this.ensureFirstBuf();
       this.curMessageType = buf0.readUInt8(this.pos0);
       this.pos0++;
+      this.len--;
     }
 
     if (this.curMessageLen === 0) {
@@ -404,6 +488,7 @@ export class ReadBuffer {
       if (this.pos0 + 4 < this.len0) {
         this.curMessageLen = buf0.readInt32BE(this.pos0);
         this.pos0 += 4;
+        this.len -= 4;
       } else {
         const buf = this._readBuffer(4);
         this.curMessageLen = buf.readInt32BE(0);
@@ -487,5 +572,92 @@ export class ReadBuffer {
     }
 
     this._finishMessage();
+  }
+}
+
+export class FastReadBuffer {
+  private buffer: Buffer;
+  private pos: number;
+  private len: number;
+
+  constructor(buf: Buffer) {
+    this.buffer = buf;
+    this.len = buf.length;
+    this.pos = 0;
+  }
+
+  get length(): number {
+    return this.len - this.pos;
+  }
+
+  discard(size: number) {
+    if (this.pos + size > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    this.pos += size;
+  }
+
+  readUInt8(): number {
+    if (this.pos + 1 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    const num = this.buffer.readUInt8(this.pos);
+    this.pos++;
+    return num;
+  }
+
+  readUInt16(): number {
+    if (this.pos + 2 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    const num = this.buffer.readUInt16BE(this.pos);
+    this.pos += 2;
+    return num;
+  }
+
+  readInt8(): number {
+    if (this.pos + 1 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    const num = this.buffer.readInt8(this.pos);
+    this.pos++;
+    return num;
+  }
+
+  readInt16(): number {
+    if (this.pos + 2 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    const num = this.buffer.readInt16BE(this.pos);
+    this.pos += 2;
+    return num;
+  }
+
+  readInt32(): number {
+    if (this.pos + 4 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    const num = this.buffer.readInt32BE(this.pos);
+    this.pos += 4;
+    return num;
+  }
+
+  readUUID(): string {
+    if (this.pos + 16 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    const buf = this.buffer.slice(this.pos, this.pos + 16);
+    this.pos += 16;
+    return buf.toString("hex");
+  }
+
+  static init(frb: FastReadBuffer, buffer: Buffer): void {
+    frb.buffer = buffer;
+    frb.pos = 0;
+    frb.len = buffer.length;
+  }
+
+  static alloc(): FastReadBuffer {
+    return new this(EMPTY_BUFFER);
   }
 }

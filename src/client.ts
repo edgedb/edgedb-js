@@ -1,7 +1,27 @@
+/*!
+ * This source file is part of the EdgeDB open source project.
+ *
+ * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import {ReadBuffer, WriteBuffer} from "./buffer";
 import char, * as chars from "./chars";
 
 import * as net from "net";
+import {CodecsRegistry} from "./codecs/registry";
+import {ICodec} from "./codecs/ifaces";
 
 export interface ConnectConfig {
   port?: number;
@@ -53,6 +73,8 @@ class AwaitConnection {
   private sock: net.Socket;
   private paused: boolean;
 
+  private codecsRegistry: CodecsRegistry;
+
   private serverSecret: number;
   private serverSettings: Map<string, string>;
   private serverXactStatus: TransactionStatus;
@@ -68,6 +90,8 @@ class AwaitConnection {
 
   private constructor(sock: net.Socket) {
     this.buffer = new ReadBuffer();
+
+    this.codecsRegistry = new CodecsRegistry();
 
     this.serverSecret = -1;
     this.serverSettings = new Map<string, string>();
@@ -145,6 +169,13 @@ class AwaitConnection {
     }
   }
 
+  private rejectHeaders(): void {
+    const nheaders = this.buffer.readInt16();
+    if (nheaders) {
+      throw new Error("unexpected headers");
+    }
+  }
+
   private parseHeaders(): Map<number, Buffer> {
     const ret = new Map<number, Buffer>();
     let numFields = this.buffer.readInt16();
@@ -157,11 +188,36 @@ class AwaitConnection {
     return ret;
   }
 
+  private parseDescribeTypeMessage(): [number, ICodec, ICodec] {
+    this.rejectHeaders();
+
+    const cardinality = this.buffer.readChar();
+
+    const inTypeId = this.buffer.readUUID();
+    const inTypeData = this.buffer.readLenPrefixedBuffer();
+    let inCodec = this.codecsRegistry.getCodec(inTypeId);
+    if (inCodec == null) {
+      inCodec = this.codecsRegistry.buildCodec(inTypeData);
+    }
+
+    const outTypeId = this.buffer.readUUID();
+    const outTypeData = this.buffer.readLenPrefixedBuffer();
+    let outCodec = this.codecsRegistry.getCodec(outTypeId);
+    if (outCodec == null) {
+      outCodec = this.codecsRegistry.buildCodec(outTypeData);
+    }
+
+    this.buffer.finishMessage();
+
+    return [cardinality, inCodec, outCodec];
+  }
+
   private parseErrorMessage(): Error {
     const severity = this.buffer.readChar();
     const code = this.buffer.readUInt32();
     const message = this.buffer.readString();
     const attrs = this.parseHeaders();
+    this.buffer.finishMessage();
 
     const err = new Error(message);
     return err;
@@ -304,6 +360,138 @@ class AwaitConnection {
           this.fallthrough();
       }
     }
+  }
+
+  private async parse(
+    query: string,
+    asJson: boolean,
+    expectOne: boolean
+  ): Promise<[number, ICodec, ICodec]> {
+    const wb = new WriteBuffer();
+
+    wb.beginMessage(chars.$P)
+      .writeInt16(0) // no headers
+      .writeChar(asJson ? chars.$j : chars.$b)
+      .writeChar(expectOne ? chars.$o : chars.$m)
+      .writeString("") // statement name
+      .writeString(query)
+      .endMessage();
+
+    wb.writeSync();
+
+    this.sock.write(wb.unwrap());
+
+    let cardinality;
+    let inTypeId;
+    let outTypeId;
+    let inCodec: ICodec | null;
+    let outCodec: ICodec | null;
+    let parsing = true;
+    let error = null;
+
+    while (parsing) {
+      if (!this.buffer.takeMessage()) {
+        await this.waitForMessage();
+      }
+
+      const mtype = this.buffer.getMessageType();
+
+      switch (mtype) {
+        case chars.$1: {
+          this.rejectHeaders();
+          cardinality = this.buffer.readChar();
+          inTypeId = this.buffer.readUUID();
+          outTypeId = this.buffer.readUUID();
+          this.buffer.finishMessage();
+          break;
+        }
+
+        case chars.$E: {
+          error = this.parseErrorMessage();
+          break;
+        }
+
+        case chars.$Z: {
+          this.parseSyncMessage();
+          parsing = false;
+          break;
+        }
+
+        default:
+          this.fallthrough();
+      }
+    }
+
+    if (error != null) {
+      throw error;
+    }
+
+    if (inTypeId == null || outTypeId == null) {
+      throw new Error("did not receive in/out type ids in Parse response");
+    }
+
+    inCodec = this.codecsRegistry.getCodec(inTypeId);
+    outCodec = this.codecsRegistry.getCodec(outTypeId);
+
+    if (inCodec == null || outCodec == null) {
+      wb.reset();
+      wb.beginMessage(chars.$D)
+        .writeInt16(0) // no headers
+        .writeChar(chars.$T)
+        .writeString("") // statement name
+        .endMessage()
+        .writeSync();
+
+      this.sock.write(wb.unwrap());
+
+      parsing = true;
+      while (parsing) {
+        if (!this.buffer.takeMessage()) {
+          await this.waitForMessage();
+        }
+
+        const mtype = this.buffer.getMessageType();
+
+        switch (mtype) {
+          case chars.$T: {
+            [cardinality, inCodec, outCodec] = this.parseDescribeTypeMessage();
+            break;
+          }
+
+          case chars.$E: {
+            error = this.parseErrorMessage();
+            break;
+          }
+
+          case chars.$Z: {
+            this.parseSyncMessage();
+            parsing = false;
+            break;
+          }
+
+          default:
+            this.fallthrough();
+        }
+      }
+
+      if (error != null) {
+        throw error;
+      }
+    }
+
+    if (cardinality == null || outCodec == null || inCodec == null) {
+      throw new Error(
+        "failed to receive type information in response to a Parse message"
+      );
+    }
+
+    return [cardinality, inCodec, outCodec];
+  }
+
+  async fetchOne(query: string): Promise<any> {
+    const [card, inCodec, outCodec] = await this.parse(query, false, true);
+
+    console.log(card, inCodec, outCodec);
   }
 
   private static newSock({

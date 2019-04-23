@@ -17,10 +17,10 @@
  */
 
 class Node<K, V> {
-  key: K;
-  value: V;
-  next: Node<K, V> | null;
-  prev: Node<K, V> | null;
+  public key: K;
+  public value: V;
+  public next: Node<K, V> | null;
+  public prev: Node<K, V> | null;
 
   constructor(key: K, value: V) {
     this.key = key;
@@ -31,14 +31,14 @@ class Node<K, V> {
 }
 
 class Deque<K, V> {
-  head: Node<K, V> | null;
-  tail: Node<K, V> | null;
-  len: number;
+  public head: Node<K, V> | null;
+  public tail: Node<K, V> | null;
+  public len: number;
 
   /*
     Stack structure:
 
-      -~* top *~-
+    ---~* top *~---
 
           +------+
    null --< prev |
@@ -59,7 +59,7 @@ class Deque<K, V> {
           | next >-- null
           +------+
 
-      -~* bottom *~-
+    ---~* bottom *~---
   */
 
   constructor() {
@@ -161,7 +161,9 @@ export default class LRU<K, V> {
   get length(): number {
     const len = this.map.size;
     if (len !== this.deque.length) {
-      // This check will be handy in tests.
+      // This check will be handy in tests
+      // to ensure that our deque is in sync
+      // with the map.
       throw new Error("deque & map disagree on elements count");
     }
     return len;

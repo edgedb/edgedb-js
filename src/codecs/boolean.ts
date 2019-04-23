@@ -16,15 +16,22 @@
  * limitations under the License.
  */
 
-import connect from "../src/index";
+import {FastReadBuffer, WriteBuffer} from "../buffer";
+import {ICodec, uuid} from "./ifaces";
 
-test("connect", async () => {
-  const con1 = await connect();
-  await con1.fetchOne("select 1;");
+export class BoolCodec implements ICodec {
+  readonly tid: uuid;
 
-  // let con2 = await connect({port: 7777});
+  constructor(tid: uuid) {
+    this.tid = tid;
+  }
 
-  // let con3 = connect({}, function(err, con) {
+  encode(buf: WriteBuffer, object: any): void {
+    buf.writeInt32(1);
+    buf.writeChar(object ? 1 : 0);
+  }
 
-  // })
-});
+  decode(buf: FastReadBuffer): any {
+    return buf.readUInt8() !== 0;
+  }
+}
