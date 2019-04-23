@@ -4,6 +4,6 @@ root = true
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-[*.{js,ts}]
+[*.{js,ts,json}]
 indent_size = 2
 indent_style = space

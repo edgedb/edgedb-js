@@ -2,7 +2,7 @@ import {RingBuffer, RingBufferError} from '../src/ring';
 
 
 test('basic operations', () => {
-  let d = new RingBuffer<number>({capacity: 3});
+  const d = new RingBuffer<number>({capacity: 3});
   expect(d.length).toBe(0);
   expect(d.full).toBeFalsy();
 

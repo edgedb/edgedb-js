@@ -1,0 +1,32 @@
+{
+  "extends": "tslint:recommended",
+  "rules": {
+    "max-line-length": {
+      "options": [79]
+    },
+    "new-parens": true,
+    "no-arg": true,
+    "no-bitwise": true,
+    "no-conditional-assignment": true,
+    "no-consecutive-blank-lines": [true, 2],
+    "no-angle-bracket-type-assertion": false,
+    "interface-name": false,
+    "member-ordering": false,
+    "member-access": false,
+    "trailing-comma": false,
+    "quotemark": false,
+    "max-classes-per-file": false,
+    "one-line": false,
+    "whitespace": [
+      true,
+      "check-branch",
+      "check-operator",
+      "check-decl",
+      "check-type",
+      "check-type-operator"
+    ],
+    "no-console": {
+      "severity": "warning"
+    }
+  }
+}

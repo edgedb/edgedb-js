@@ -1,9 +1,9 @@
-import {WriteBuffer, BufferError} from '../src/buffer';
+import {BufferError, WriteBuffer} from '../src/buffer';
 import * as chars from '../src/chars';
 
 
 test('matches edgedb-python packing', () => {
-  let w: WriteBuffer = new WriteBuffer();
+  const w: WriteBuffer = new WriteBuffer();
 
   w.beginMessage(chars.$E)
    .writeUInt16(10)
@@ -14,35 +14,34 @@ test('matches edgedb-python packing', () => {
    .writeString('bbbbbbbbb')
    .endMessage();
 
-  let buf: Buffer = w.unwrap();
+  const buf: Buffer = w.unwrap();
   expect(buf.toString('base64')).toBe(
-    'RQAAABAACgAAAAZhYWFhYWFQAAAAFQAPQkEAAAAJYmJiYmJiYmJi'
-  )
+    'RQAAABAACgAAAAZhYWFhYWFQAAAAFQAPQkEAAAAJYmJiYmJiYmJi');
 });
 
 
 test('maintains internal messages integrity', () => {
-  let w: WriteBuffer = new WriteBuffer();
+  const w: WriteBuffer = new WriteBuffer();
 
   expect(() => {
-    w.writeInt16(10)
+    w.writeInt16(10);
   }).toThrowError(BufferError);
 
   expect(() => {
-    w.writeString('SELECT ...')
+    w.writeString('SELECT ...');
   }).toThrowError(BufferError);
 
   expect(() => {
-    w.endMessage()
+    w.endMessage();
   }).toThrowError(BufferError);
 
   w.beginMessage(chars.$E);
 
   expect(() => {
-    w.beginMessage(chars.$P)
+    w.beginMessage(chars.$P);
   }).toThrowError(BufferError);
 
   expect(() => {
-    w.unwrap()
+    w.unwrap();
   }).toThrowError(BufferError);
 });

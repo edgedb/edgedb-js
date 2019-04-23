@@ -1,6 +1,5 @@
-import char, * as chars from './chars';
-import {RingBuffer} from './ring';
-
+import char, * as chars from "./chars";
+import {RingBuffer} from "./ring";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE: number = 4096;
@@ -12,9 +11,7 @@ const BUFFER_RING_CAPACITY: number = 1024;
 
 const EMPTY_BUFFER = Buffer.allocUnsafe(0);
 
-
 export class BufferError extends Error {}
-
 
 export class WriteBuffer {
   private buffer: Buffer;
@@ -30,7 +27,7 @@ export class WriteBuffer {
   }
 
   private ensureAlloced(extraLength: number): void {
-    let newSize: number = this.pos + extraLength;
+    const newSize: number = this.pos + extraLength;
     if (newSize > this.size) {
       this.__realloc(newSize);
     }
@@ -38,7 +35,7 @@ export class WriteBuffer {
 
   private __realloc(newSize: number): void {
     newSize += BUFFER_INC_SIZE;
-    let newBuffer = Buffer.allocUnsafe(newSize);
+    const newBuffer = Buffer.allocUnsafe(newSize);
     this.buffer.copy(newBuffer, 0, 0, this.pos);
     this.buffer = newBuffer;
   }
@@ -46,7 +43,8 @@ export class WriteBuffer {
   beginMessage(mtype: char): this {
     if (this.messagePos >= 0) {
       throw new BufferError(
-        'cannot begin a new message: the previous message is not finished');
+        "cannot begin a new message: the previous message is not finished"
+      );
     }
     this.ensureAlloced(5);
     this.buffer.writeUInt8(mtype, this.pos);
@@ -58,19 +56,20 @@ export class WriteBuffer {
 
   endMessage(): this {
     if (this.messagePos < 0) {
-      throw new BufferError(
-        'cannot end the message: no current message');
+      throw new BufferError("cannot end the message: no current message");
     }
 
-    this.buffer.writeInt32BE(this.pos - this.messagePos - 1,
-                             this.messagePos + 1);
+    this.buffer.writeInt32BE(
+      this.pos - this.messagePos - 1,
+      this.messagePos + 1
+    );
     this.messagePos = -1;
     return this;
   }
 
   writeChar(ch: char): this {
     if (this.messagePos < 0) {
-      throw new BufferError('cannot writeChar: no current message');
+      throw new BufferError("cannot writeChar: no current message");
     }
     this.ensureAlloced(1);
     this.buffer.writeUInt8(ch, this.pos);
@@ -80,10 +79,10 @@ export class WriteBuffer {
 
   writeString(s: string): this {
     if (this.messagePos < 0) {
-      throw new BufferError('cannot writeString: no current message');
+      throw new BufferError("cannot writeString: no current message");
     }
 
-    let buf: Buffer = Buffer.from(s, 'utf-8');
+    const buf: Buffer = Buffer.from(s, "utf-8");
     this.ensureAlloced(buf.length + 4);
     this.buffer.writeInt32BE(buf.length, this.pos);
     this.pos += 4;
@@ -94,7 +93,7 @@ export class WriteBuffer {
 
   writeInt16(i: number): this {
     if (this.messagePos < 0) {
-      throw new BufferError('cannot writeInt16: no current message');
+      throw new BufferError("cannot writeInt16: no current message");
     }
 
     this.ensureAlloced(2);
@@ -105,7 +104,7 @@ export class WriteBuffer {
 
   writeInt32(i: number): this {
     if (this.messagePos < 0) {
-      throw new BufferError('cannot writeInt32: no current message');
+      throw new BufferError("cannot writeInt32: no current message");
     }
 
     this.ensureAlloced(4);
@@ -116,7 +115,7 @@ export class WriteBuffer {
 
   writeUInt16(i: number): this {
     if (this.messagePos < 0) {
-      throw new BufferError('cannot writeInt16: no current message');
+      throw new BufferError("cannot writeInt16: no current message");
     }
 
     this.ensureAlloced(2);
@@ -127,7 +126,7 @@ export class WriteBuffer {
 
   writeUInt32(i: number): this {
     if (this.messagePos < 0) {
-      throw new BufferError('cannot writeInt32: no current message');
+      throw new BufferError("cannot writeInt32: no current message");
     }
 
     this.ensureAlloced(4);
@@ -139,12 +138,12 @@ export class WriteBuffer {
   unwrap(): Buffer {
     if (this.messagePos >= 0) {
       throw new BufferError(
-        'cannot unwrap: an unfinished message is in the buffer');
+        "cannot unwrap: an unfinished message is in the buffer"
+      );
     }
     return this.buffer.slice(0, this.pos);
   }
 }
-
 
 export class ReadBuffer {
   private bufs: RingBuffer<Buffer>;
@@ -182,8 +181,7 @@ export class ReadBuffer {
       this.len0 = buf.length;
       this.pos0 = 0;
       this.len = this.len0;
-    }
-    else {
+    } else {
       this.bufs.enq(buf);
       this.len += buf.length;
     }
@@ -192,31 +190,28 @@ export class ReadBuffer {
   }
 
   private ensureFirstBuf(): Buffer {
-    if (this.pos0 == this.len0) {
+    if (this.pos0 === this.len0) {
       this.__nextBuf();
     }
-    let buf0 = this.buf0;
+    const buf0 = this.buf0;
     if (buf0 == null || buf0.length < 1) {
-      throw new BufferError('empty buffer')
+      throw new BufferError("empty buffer");
     }
     return buf0;
   }
 
   private checkOverread(size: number): void {
-    if (
-      (this.curMessageLenUnread < size) ||
-      (size > this.len)
-    ) {
-      throw new BufferError('buffer overread')
+    if (this.curMessageLenUnread < size || size > this.len) {
+      throw new BufferError("buffer overread");
     }
   }
 
   private __nextBuf(): void {
     // Only called from ensureFirstBuf().  This part
     // is factored out to let ensureFirstBuf() be inlined.
-    let nextBuf = this.bufs.deq();
+    const nextBuf = this.bufs.deq();
     if (nextBuf == null) {
-      throw new BufferError('buffer overread');
+      throw new BufferError("buffer overread");
     }
 
     this.buf0 = nextBuf;
@@ -228,15 +223,14 @@ export class ReadBuffer {
     this.ensureFirstBuf();
     while (true) {
       if (this.pos0 + size > this.len0) {
-        let nread = this.len0 - this.pos0;
+        const nread = this.len0 - this.pos0;
 
         this.pos0 = this.len0;
         this.len -= nread;
         size -= nread;
 
         this.ensureFirstBuf();
-      }
-      else {
+      } else {
         this.pos0 += size;
         this.len -= size;
         break;
@@ -252,12 +246,12 @@ export class ReadBuffer {
   }
 
   private __readBufferCopy(buf0: Buffer, size: number): Buffer {
-    let ret = Buffer.allocUnsafe(size);
+    const ret = Buffer.allocUnsafe(size);
     let retPos = 0;
 
     while (true) {
       if (this.pos0 + size > this.len0) {
-        let nread = this.len0 - this.pos0;
+        const nread = this.len0 - this.pos0;
 
         buf0.copy(ret, retPos, this.pos0, nread);
         retPos += nread;
@@ -267,8 +261,7 @@ export class ReadBuffer {
         size -= nread;
 
         buf0 = this.ensureFirstBuf();
-      }
-      else {
+      } else {
         buf0.copy(ret, retPos, this.pos0, size);
         this.pos0 += size;
         this.len -= size;
@@ -280,16 +273,16 @@ export class ReadBuffer {
   }
 
   private _readBuffer(size: number): Buffer {
-    let buf0 = this.ensureFirstBuf();
+    const buf0 = this.ensureFirstBuf();
 
-    if (size == 0) {
+    if (size === 0) {
       return EMPTY_BUFFER;
     }
 
     if (this.pos0 + size < this.len0) {
       // If the requested *size* fits in the first buffer
       // do a slice operation.
-      let ret = buf0.slice(this.pos0, this.pos0 + size);
+      const ret = buf0.slice(this.pos0, this.pos0 + size);
       this.pos0 += size;
       this.len -= size;
       return ret;
@@ -300,15 +293,15 @@ export class ReadBuffer {
 
   readBuffer(size: number): Buffer {
     this.checkOverread(size);
-    let buf = this._readBuffer(size);
+    const buf = this._readBuffer(size);
     this.curMessageLenUnread -= size;
     return buf;
   }
 
   readChar(): char {
     this.checkOverread(1);
-    let buf0 = this.ensureFirstBuf();
-    let ret = buf0.readUInt8(this.pos0);
+    const buf0 = this.ensureFirstBuf();
+    const ret = buf0.readUInt8(this.pos0);
     this.pos0++;
     this.curMessageLenUnread--;
     return ret;
@@ -316,76 +309,76 @@ export class ReadBuffer {
 
   readInt16(): number {
     this.checkOverread(2);
-    let buf0 = this.ensureFirstBuf();
+    const buf0 = this.ensureFirstBuf();
 
     if (this.pos0 + 2 < this.len0) {
-      let ret = buf0.readInt16BE(this.pos0);
+      const ret = buf0.readInt16BE(this.pos0);
       this.pos0 += 2;
       this.curMessageLenUnread -= 2;
       return ret;
     }
 
-    let buf = this._readBuffer(2);
+    const buf = this._readBuffer(2);
     this.curMessageLenUnread -= 2;
     return buf.readInt16BE(0);
   }
 
   readInt32(): number {
     this.checkOverread(4);
-    let buf0 = this.ensureFirstBuf();
+    const buf0 = this.ensureFirstBuf();
 
     if (this.pos0 + 4 < this.len0) {
-      let ret = buf0.readInt32BE(this.pos0);
+      const ret = buf0.readInt32BE(this.pos0);
       this.pos0 += 4;
       this.curMessageLenUnread -= 4;
       return ret;
     }
 
-    let buf = this._readBuffer(4);
+    const buf = this._readBuffer(4);
     this.curMessageLenUnread -= 4;
     return buf.readInt32BE(0);
   }
 
   readUInt16(): number {
     this.checkOverread(2);
-    let buf0 = this.ensureFirstBuf();
+    const buf0 = this.ensureFirstBuf();
 
     if (this.pos0 + 2 < this.len0) {
-      let ret = buf0.readUInt16BE(this.pos0);
+      const ret = buf0.readUInt16BE(this.pos0);
       this.pos0 += 2;
       this.curMessageLenUnread -= 2;
       return ret;
     }
 
-    let buf = this._readBuffer(2);
+    const buf = this._readBuffer(2);
     this.curMessageLenUnread -= 2;
     return buf.readUInt16BE(0);
   }
 
   readUInt32(): number {
     this.checkOverread(4);
-    let buf0 = this.ensureFirstBuf();
+    const buf0 = this.ensureFirstBuf();
 
     if (this.pos0 + 4 < this.len0) {
-      let ret = buf0.readUInt32BE(this.pos0);
+      const ret = buf0.readUInt32BE(this.pos0);
       this.pos0 += 4;
       this.curMessageLenUnread -= 4;
       return ret;
     }
 
-    let buf = this._readBuffer(4);
+    const buf = this._readBuffer(4);
     this.curMessageLenUnread -= 4;
     return buf.readUInt32BE(0);
   }
 
   readString(): string {
-    let len = this.readInt32();
-    let buf = this.readBuffer(len);
-    return buf.toString('utf-8');
+    const len = this.readInt32();
+    const buf = this.readBuffer(len);
+    return buf.toString("utf-8");
   }
 
   readLenPrefixedBuffer(): Buffer {
-    let len = this.readInt32();
+    const len = this.readInt32();
     return this.readBuffer(len);
   }
 
@@ -398,7 +391,7 @@ export class ReadBuffer {
       if (this.len < 1) {
         return false;
       }
-      let buf0 = this.ensureFirstBuf();
+      const buf0 = this.ensureFirstBuf();
       this.curMessageType = buf0.readUInt8(this.pos0);
       this.pos0++;
     }
@@ -407,13 +400,12 @@ export class ReadBuffer {
       if (this.len < 4) {
         return false;
       }
-      let buf0 = this.ensureFirstBuf();
+      const buf0 = this.ensureFirstBuf();
       if (this.pos0 + 4 < this.len0) {
         this.curMessageLen = buf0.readInt32BE(this.pos0);
         this.pos0 += 4;
-      }
-      else {
-        let buf = this._readBuffer(4);
+      } else {
+        const buf = this._readBuffer(4);
         this.curMessageLen = buf.readInt32BE(0);
       }
 
@@ -438,9 +430,9 @@ export class ReadBuffer {
     }
 
     if (this.len >= 1) {
-      let buf0 = this.ensureFirstBuf();
-      let unreadMessageType = buf0.readUInt8(this.pos0);
-      return (mtype === unreadMessageType) && this.takeMessage();
+      const buf0 = this.ensureFirstBuf();
+      const unreadMessageType = buf0.readUInt8(this.pos0);
+      return mtype === unreadMessageType && this.takeMessage();
     }
 
     return false;
@@ -448,17 +440,17 @@ export class ReadBuffer {
 
   putMessage(): void {
     if (!this.curMessageReady) {
-      throw new BufferError('cannot put message: no message taken');
+      throw new BufferError("cannot put message: no message taken");
     }
     if (this.curMessageLenUnread !== this.curMessageLen - 4) {
-      throw new BufferError('cannot put message: message is partially read');
+      throw new BufferError("cannot put message: message is partially read");
     }
     this.curMessageReady = false;
   }
 
   discardMessage(): void {
     if (!this.curMessageReady) {
-      throw new BufferError('no message to discard');
+      throw new BufferError("no message to discard");
     }
     if (this.curMessageLenUnread > 0) {
       this.discardBuffer(this.curMessageLenUnread);
@@ -468,7 +460,7 @@ export class ReadBuffer {
 
   consumeMessage(): Buffer {
     if (!this.curMessageReady) {
-      throw new BufferError('no message to consume');
+      throw new BufferError("no message to consume");
     }
 
     let buf: Buffer = EMPTY_BUFFER;
@@ -490,7 +482,8 @@ export class ReadBuffer {
     if (this.curMessageLenUnread) {
       throw new BufferError(
         `cannot finishMessage: unread data in message ` +
-        `"${chars.chr(this.curMessageType)}"`)
+          `"${chars.chr(this.curMessageType)}"`
+      );
     }
 
     this._finishMessage();
