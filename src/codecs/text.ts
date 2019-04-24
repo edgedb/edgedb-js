@@ -19,7 +19,7 @@
 import {FastReadBuffer, WriteBuffer} from "../buffer";
 import {ICodec, uuid} from "./ifaces";
 
-export class Int64Codec implements ICodec {
+export class StrCodec implements ICodec {
   readonly tid: uuid;
 
   constructor(tid: uuid) {
@@ -27,49 +27,13 @@ export class Int64Codec implements ICodec {
   }
 
   encode(buf: WriteBuffer, object: any): void {
-    const val = <number>object;
-    buf.writeInt32(8);
-    buf.writeInt32(val >> 32);
-    buf.writeInt32(val & 0xffffffff);
+    const val = <string>object;
+    const strbuf = Buffer.from(val, "utf8");
+    buf.writeInt32(strbuf.length);
+    buf.writeBuffer(strbuf);
   }
 
   decode(buf: FastReadBuffer): any {
-    const hi = buf.readInt32();
-    const lo = buf.readInt32();
-    return (hi << 32) | lo;
-  }
-}
-
-export class Int32Codec implements ICodec {
-  readonly tid: uuid;
-
-  constructor(tid: uuid) {
-    this.tid = tid;
-  }
-
-  encode(buf: WriteBuffer, object: any): void {
-    buf.writeInt32(4);
-    buf.writeInt32(<number>object);
-  }
-
-  decode(buf: FastReadBuffer): any {
-    return buf.readInt32();
-  }
-}
-
-export class Int16Codec implements ICodec {
-  readonly tid: uuid;
-
-  constructor(tid: uuid) {
-    this.tid = tid;
-  }
-
-  encode(buf: WriteBuffer, object: any): void {
-    buf.writeInt32(2);
-    buf.writeInt16(<number>object);
-  }
-
-  decode(buf: FastReadBuffer): any {
-    return buf.readInt16();
+    return buf.consumeAsString();
   }
 }

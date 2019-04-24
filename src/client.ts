@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "./buffer";
+import {ReadBuffer, WriteBuffer, FastReadBuffer} from "./buffer";
 import char, * as chars from "./chars";
 
 import * as net from "net";
 import {CodecsRegistry} from "./codecs/registry";
-import {ICodec} from "./codecs/ifaces";
+import {ICodec, uuid} from "./codecs/ifaces";
 
 export interface ConnectConfig {
   port?: number;
@@ -73,6 +73,8 @@ class AwaitConnection {
   private sock: net.Socket;
   private paused: boolean;
 
+  private lastStatus: string | null;
+
   private codecsRegistry: CodecsRegistry;
 
   private serverSecret: number;
@@ -93,6 +95,8 @@ class AwaitConnection {
 
     this.codecsRegistry = new CodecsRegistry();
 
+    this.lastStatus = null;
+
     this.serverSecret = -1;
     this.serverSettings = new Map<string, string>();
     this.serverXactStatus = TransactionStatus.TRANS_UNKNOWN;
@@ -109,6 +113,7 @@ class AwaitConnection {
 
     this.paused = false;
     this.sock = sock;
+    this.sock.setNoDelay();
     this.sock.on("error", this.onError.bind(this));
     this.sock.on("data", this.onData.bind(this));
     this.sock.on("connect", this.onConnect.bind(this));
@@ -212,6 +217,13 @@ class AwaitConnection {
     return [cardinality, inCodec, outCodec];
   }
 
+  private parseCommandCompleteMessage(): string {
+    this.rejectHeaders();
+    const status = this.buffer.readString();
+    this.buffer.finishMessage();
+    return status;
+  }
+
   private parseErrorMessage(): Error {
     const severity = this.buffer.readChar();
     const code = this.buffer.readUInt32();
@@ -241,6 +253,18 @@ class AwaitConnection {
     }
 
     this.buffer.finishMessage();
+  }
+
+  private parseDataMessages(codec: ICodec, result: any[]): void {
+    const frb = FastReadBuffer.alloc();
+    const $D = chars.$D;
+    const buffer = this.buffer;
+
+    while (buffer.takeMessageType($D)) {
+      FastReadBuffer.init(frb, buffer.consumeMessage());
+      frb.discard(6);
+      result.push(codec.decode(frb));
+    }
   }
 
   private fallthrough(): void {
@@ -381,13 +405,13 @@ class AwaitConnection {
 
     this.sock.write(wb.unwrap());
 
-    let cardinality;
-    let inTypeId;
-    let outTypeId;
+    let cardinality: number | void;
+    let inTypeId: uuid | void;
+    let outTypeId: uuid | void;
     let inCodec: ICodec | null;
     let outCodec: ICodec | null;
     let parsing = true;
-    let error = null;
+    let error: Error | null = null;
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -488,10 +512,90 @@ class AwaitConnection {
     return [cardinality, inCodec, outCodec];
   }
 
-  async fetchOne(query: string): Promise<any> {
-    const [card, inCodec, outCodec] = await this.parse(query, false, true);
+  private async execute(inCodec: ICodec, outCodec: ICodec): Promise<any[]> {
+    const wb = new WriteBuffer();
 
-    console.log(card, inCodec, outCodec);
+    wb.beginMessage(chars.$E)
+      .writeInt16(0) // no headers
+      .writeString(""); // statement name
+
+    inCodec.encode(wb, []);
+    wb.endMessage();
+    wb.writeSync();
+    this.sock.write(wb.unwrap());
+
+    const result: any[] = [];
+    let parsing = true;
+    let error: Error | null = null;
+
+    while (parsing) {
+      if (!this.buffer.takeMessage()) {
+        await this.waitForMessage();
+      }
+
+      const mtype = this.buffer.getMessageType();
+
+      switch (mtype) {
+        case chars.$D: {
+          this.parseDataMessages(outCodec, result);
+          break;
+        }
+
+        case chars.$C: {
+          this.lastStatus = this.parseCommandCompleteMessage();
+          break;
+        }
+
+        case chars.$E: {
+          error = this.parseErrorMessage();
+          break;
+        }
+
+        case chars.$Z: {
+          this.parseSyncMessage();
+          parsing = false;
+          break;
+        }
+
+        default:
+          this.fallthrough();
+      }
+    }
+
+    if (error != null) {
+      throw error;
+    }
+
+    return result;
+  }
+
+  async fetchAll(query: string): Promise<any[]> {
+    const [card, inCodec, outCodec] = await this.parse(query, false, false);
+    const result = await this.execute(inCodec, outCodec);
+    Object.freeze(result);
+    return result;
+  }
+
+  async fetchOne(query: string): Promise<any[]> {
+    const [card, inCodec, outCodec] = await this.parse(query, false, true);
+    const result = await this.execute(inCodec, outCodec);
+    return result[0];
+  }
+
+  async fetchAllJSON(query: string): Promise<string> {
+    const [card, inCodec, outCodec] = await this.parse(query, true, false);
+    const result = await this.execute(inCodec, outCodec);
+    return result[0] as string;
+  }
+
+  async fetchOneJSON(query: string): Promise<string> {
+    const [card, inCodec, outCodec] = await this.parse(query, true, true);
+    const result = await this.execute(inCodec, outCodec);
+    return result[0] as string;
+  }
+
+  async close(): Promise<void> {
+    this.sock.destroy();
   }
 
   private static newSock({

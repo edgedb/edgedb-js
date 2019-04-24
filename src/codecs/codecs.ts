@@ -19,9 +19,10 @@
 import {FastReadBuffer, WriteBuffer} from "../buffer";
 import {BoolCodec} from "./boolean";
 import {ICodec, uuid} from "./ifaces";
-import {Int16Codec, Int32Codec, Int64Codec} from "./number";
+import {Int16Codec, Int32Codec, Int64Codec} from "./numbers";
+import {StrCodec} from "./text";
 
-const TYPES = new Map<uuid, string>([
+export const KNOWN_TYPES = new Map<uuid, string>([
   ["00000000000000000000000000000001", "anytype"],
   ["00000000000000000000000000000002", "anytuple"],
   ["000000000000000000000000000000f0", "std"],
@@ -44,9 +45,9 @@ const TYPES = new Map<uuid, string>([
   ["0000000000000000000000000000010f", "std::json"],
 ]);
 
-const TYPENAMES = (() => {
+export const KNOWN_TYPENAMES = (() => {
   const res = new Map<string, uuid>();
-  for (const [id, name] of TYPES.entries()) {
+  for (const [id, name] of KNOWN_TYPES.entries()) {
     res.set(name, id);
   }
   return res;
@@ -112,7 +113,7 @@ export const SCALAR_CODECS = new Map<uuid, ICodec>();
 export const NULL_CODEC_ID = "00000000000000000000000000000000";
 export const NULL_CODEC = new NullCodec(NULL_CODEC_ID);
 
-export const EMPTY_TUPLE_CODEC_ID = TYPENAMES.get("empty-tuple")!;
+export const EMPTY_TUPLE_CODEC_ID = KNOWN_TYPENAMES.get("empty-tuple")!;
 export const EMPTY_TUPLE_CODEC = new EmptyTupleCodec(EMPTY_TUPLE_CODEC_ID);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -121,7 +122,7 @@ function registerScalarCodec(
   typename: string,
   type: new (tid: uuid) => ICodec
 ): void {
-  const id = TYPENAMES.get(typename);
+  const id = KNOWN_TYPENAMES.get(typename);
   if (id == null) {
     throw new Error("unknown type name");
   }
@@ -133,3 +134,4 @@ registerScalarCodec("std::int16", Int16Codec);
 registerScalarCodec("std::int32", Int32Codec);
 registerScalarCodec("std::int64", Int64Codec);
 registerScalarCodec("std::bool", BoolCodec);
+registerScalarCodec("std::str", StrCodec);

@@ -548,9 +548,11 @@ export class ReadBuffer {
       throw new BufferError("no message to consume");
     }
 
-    let buf: Buffer = EMPTY_BUFFER;
+    let buf: Buffer;
     if (this.curMessageLenUnread > 0) {
       buf = this.readBuffer(this.curMessageLenUnread);
+    } else {
+      buf = EMPTY_BUFFER;
     }
 
     this._finishMessage();
@@ -649,6 +651,12 @@ export class FastReadBuffer {
     const buf = this.buffer.slice(this.pos, this.pos + 16);
     this.pos += 16;
     return buf.toString("hex");
+  }
+
+  consumeAsString(): string {
+    const res = this.buffer.toString("utf8", this.pos, this.len);
+    this.pos = this.len;
+    return res;
   }
 
   static init(frb: FastReadBuffer, buffer: Buffer): void {

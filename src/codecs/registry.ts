@@ -25,6 +25,7 @@ import {
   EMPTY_TUPLE_CODEC_ID,
   EMPTY_TUPLE_CODEC,
   SCALAR_CODECS,
+  KNOWN_TYPES,
 } from "./codecs";
 
 const CODECS_CACHE_SIZE = 1000;
@@ -187,7 +188,13 @@ export class CodecsRegistry {
     }
 
     if (res == null) {
-      throw new Error(`could not build a codec for ${tid} type`);
+      if (KNOWN_TYPES.has(tid)) {
+        throw new Error(
+          `could not build a codec for ${KNOWN_TYPES.get(tid)} type`
+        );
+      } else {
+        throw new Error(`could not build a codec for ${tid} type`);
+      }
     }
 
     this.codecsBuildCache.set(tid, res);

@@ -18,13 +18,72 @@
 
 import connect from "../src/index";
 
-test("connect", async () => {
-  const con1 = await connect();
-  await con1.fetchOne("select 1;");
+test("fetchAll: basic scalars", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchAll("select {'a', 'bc'}");
+    expect(res).toEqual(["a", "bc"]);
 
-  // let con2 = await connect({port: 7777});
+    res = await con.fetchAll(
+      "select {-1, 0, 15, 281474976710656, 22, -11111};"
+    );
+    expect(res).toEqual([-1, 0, 15, 281474976710656, 22, -11111]);
 
-  // let con3 = connect({}, function(err, con) {
+    res = await con.fetchAll("select <int32>{-1, 0, 1, 10, 2147483647};");
+    expect(res).toEqual([-1, 0, 1, 10, 2147483647]);
 
-  // })
+    res = await con.fetchAll("select <int16>{-1, 0, 1, 10, 15, 22, -1111};");
+    expect(res).toEqual([-1, 0, 1, 10, 15, 22, -1111]);
+
+    res = await con.fetchAll("select {true, false, false, true, false};");
+    expect(res).toEqual([true, false, false, true, false]);
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetchOne: basic scalars", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne("select 'abc'");
+    expect(res).toBe("abc");
+
+    res = await con.fetchOne("select 281474976710656;");
+    expect(res).toBe(281474976710656);
+
+    res = await con.fetchOne("select <int32>2147483647;");
+    expect(res).toBe(2147483647);
+    res = await con.fetchOne("select <int32>-2147483648;");
+    expect(res).toBe(-2147483648);
+
+    res = await con.fetchOne("select <int16>-10;");
+    expect(res).toBe(-10);
+
+    res = await con.fetchOne("select false;");
+    expect(res).toBe(false);
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetchOneJSON", async () => {
+  const con = await connect();
+  try {
+    const res = await con.fetchOneJSON("select (a := 1)");
+    expect(JSON.parse(res)).toEqual({a: 1});
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetchAllJSON", async () => {
+  const con = await connect();
+  try {
+    const res = await con.fetchAllJSON("select {(a := 1), (a := 2)}");
+    expect(JSON.parse(res)).toEqual([{a: 1}, {a: 2}]);
+  } finally {
+    await con.close();
+  }
 });
