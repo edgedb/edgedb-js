@@ -17,19 +17,12 @@
  */
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
-import {ICodec, uuid} from "./ifaces";
+import {ICodec, Codec} from "./ifaces";
 
 const B32 = BigInt(32);
 
-export class Int64Codec implements ICodec {
-  readonly tid: uuid;
-  readonly tidBuffer: Buffer;
+export class Int64Codec extends Codec implements ICodec {
   readonly isScalar = true;
-
-  constructor(tid: uuid) {
-    this.tid = tid;
-    this.tidBuffer = Buffer.from(tid, "hex");
-  }
 
   encode(buf: WriteBuffer, object: any): void {
     const val = <number>object;
@@ -51,15 +44,8 @@ export class Int64Codec implements ICodec {
   }
 }
 
-export class Int32Codec implements ICodec {
-  readonly tid: uuid;
-  readonly tidBuffer: Buffer;
+export class Int32Codec extends Codec implements ICodec {
   readonly isScalar = true;
-
-  constructor(tid: uuid) {
-    this.tid = tid;
-    this.tidBuffer = Buffer.from(tid, "hex");
-  }
 
   encode(buf: WriteBuffer, object: any): void {
     buf.writeInt32(4);
@@ -71,15 +57,8 @@ export class Int32Codec implements ICodec {
   }
 }
 
-export class Int16Codec implements ICodec {
-  readonly tid: uuid;
-  readonly tidBuffer: Buffer;
+export class Int16Codec extends Codec implements ICodec {
   readonly isScalar = true;
-
-  constructor(tid: uuid) {
-    this.tid = tid;
-    this.tidBuffer = Buffer.from(tid, "hex");
-  }
 
   encode(buf: WriteBuffer, object: any): void {
     buf.writeInt32(2);

@@ -17,17 +17,10 @@
  */
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
-import {ICodec, uuid} from "./ifaces";
+import {ICodec, Codec} from "./ifaces";
 
-export class StrCodec implements ICodec {
-  readonly tid: uuid;
-  readonly tidBuffer: Buffer;
+export class StrCodec extends Codec implements ICodec {
   readonly isScalar = true;
-
-  constructor(tid: uuid) {
-    this.tid = tid;
-    this.tidBuffer = Buffer.from(tid, "hex");
-  }
 
   encode(buf: WriteBuffer, object: any): void {
     const val = <string>object;

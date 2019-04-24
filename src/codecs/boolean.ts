@@ -17,17 +17,10 @@
  */
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
-import {ICodec, uuid} from "./ifaces";
+import {ICodec, Codec} from "./ifaces";
 
-export class BoolCodec implements ICodec {
-  readonly tid: uuid;
-  readonly tidBuffer: Buffer;
-  readonly isScalar = true;
-
-  constructor(tid: uuid) {
-    this.tid = tid;
-    this.tidBuffer = Buffer.from(tid, "hex");
-  }
+export class BoolCodec extends Codec implements ICodec {
+  readonly isScalar: boolean = true;
 
   encode(buf: WriteBuffer, object: any): void {
     buf.writeInt32(1);

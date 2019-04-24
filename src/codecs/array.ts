@@ -16,22 +16,17 @@
  * limitations under the License.
  */
 
-import {ICodec, uuid} from "./ifaces";
+import {ICodec, Codec, uuid} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../buffer";
 
 const EMPTY_ARRAY = Object.freeze([]);
 
-export class ArrayCodec implements ICodec {
-  readonly tid: uuid;
-  readonly tidBuffer: Buffer;
-  readonly isScalar = false;
-
+export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;
   private len: number;
 
   constructor(tid: uuid, subCodec: ICodec, len: number) {
-    this.tid = tid;
-    this.tidBuffer = Buffer.from(tid, "hex");
+    super(tid);
     this.subCodec = subCodec;
     this.len = len;
   }

@@ -18,7 +18,7 @@
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
 import {BoolCodec} from "./boolean";
-import {ICodec, uuid} from "./ifaces";
+import {ICodec, uuid, Codec} from "./ifaces";
 import {Int16Codec, Int32Codec, Int64Codec} from "./numbers";
 import {StrCodec} from "./text";
 
@@ -55,16 +55,7 @@ export const KNOWN_TYPENAMES = (() => {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-export class NullCodec implements ICodec {
-  readonly tid: string;
-  readonly tidBuffer: Buffer;
-  readonly isScalar = false;
-
-  constructor(tid: uuid) {
-    this.tid = tid;
-    this.tidBuffer = Buffer.from(tid, "hex");
-  }
-
+export class NullCodec extends Codec implements ICodec {
   encode(_buf: WriteBuffer, _object: any): void {
     throw new Error("null codec cannot used to encode data");
   }
@@ -78,16 +69,7 @@ export class NullCodec implements ICodec {
 
 const EMPTY_TUPLE = Object.freeze([]);
 
-export class EmptyTupleCodec implements ICodec {
-  readonly tid: string;
-  readonly tidBuffer: Buffer;
-  readonly isScalar = false;
-
-  constructor(tid: uuid) {
-    this.tid = tid;
-    this.tidBuffer = Buffer.from(tid, "hex");
-  }
-
+export class EmptyTupleCodec extends Codec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!Array.isArray(object)) {
       throw new Error("cannot encode empty Tuple: expected an array");

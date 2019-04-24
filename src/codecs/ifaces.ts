@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteMessageBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteBuffer} from "../buffer";
 
 export type uuid = string;
 
@@ -27,4 +27,15 @@ export interface ICodec {
 
   encode(buf: WriteBuffer, object: any): void;
   decode(buf: ReadBuffer): any;
+}
+
+export abstract class Codec {
+  readonly tid: uuid;
+  readonly tidBuffer: Buffer;
+  readonly isScalar: boolean = false;
+
+  constructor(tid: uuid) {
+    this.tid = tid;
+    this.tidBuffer = Buffer.from(tid, "hex");
+  }
 }
