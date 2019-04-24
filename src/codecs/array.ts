@@ -84,6 +84,11 @@ export class ArrayCodec implements ICodec {
     buf.discard(4); // ignore flags
 
     const len = buf.readUInt32();
+    if (this.len !== -1 && len !== this.len) {
+      throw new Error(
+        `invalid array size: received ${len}, expected ${this.len}`
+      );
+    }
 
     buf.discard(4); // ignore the lower bound info
 
