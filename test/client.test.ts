@@ -21,6 +21,7 @@ import * as util from "util";
 import connect, {
   Tuple as EdgeDBTuple,
   NamedTuple as EdgeDBNamedTuple,
+  UUID as EdgeDBUUID,
 } from "../src/index";
 
 test("fetchAll: basic scalars", async () => {
@@ -71,6 +72,25 @@ test("fetch: tuple", async () => {
     expect(t0.length).toBe(2);
     expect(JSON.stringify(t0)).toBe('[1,"abc"]');
     expect(util.inspect(t0)).toBe("Tuple [ 1, 'abc' ]");
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: uuid", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne("SELECT schema::ObjectType.id LIMIT 1");
+    expect(res instanceof EdgeDBUUID).toBeTruthy();
+    expect(res.buffer.length).toBe(16);
+
+    res = await con.fetchOne(
+      "SELECT <uuid>'759637d8663511e9b9d4098002d459d5'"
+    );
+    expect(res instanceof EdgeDBUUID).toBeTruthy();
+    expect(res.buffer.length).toBe(16);
+    expect(res.toString()).toBe("759637d8663511e9b9d4098002d459d5");
   } finally {
     await con.close();
   }

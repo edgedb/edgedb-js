@@ -21,6 +21,7 @@ import {BoolCodec} from "./boolean";
 import {ICodec, uuid, Codec} from "./ifaces";
 import {Int16Codec, Int32Codec, Int64Codec} from "./numbers";
 import {StrCodec} from "./text";
+import {UUIDCodec} from "./uuid";
 
 export const KNOWN_TYPES = new Map<uuid, string>([
   ["00000000000000000000000000000001", "anytype"],
@@ -120,3 +121,4 @@ registerScalarCodec("std::int32", Int32Codec);
 registerScalarCodec("std::int64", Int64Codec);
 registerScalarCodec("std::bool", BoolCodec);
 registerScalarCodec("std::str", StrCodec);
+registerScalarCodec("std::uuid", UUIDCodec);

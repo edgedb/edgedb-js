@@ -18,6 +18,7 @@
 
 export {Tuple} from "./codecs/tuple";
 export {NamedTuple} from "./codecs/namedtuple";
+export {UUID} from "./codecs/uuid";
 
 import connect from "./client";
 export default connect;
