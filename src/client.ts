@@ -27,6 +27,7 @@ import char, * as chars from "./chars";
 import * as net from "net";
 import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
+import LRU from "./lru";
 
 export interface ConnectConfig {
   port?: number;
@@ -81,7 +82,7 @@ class AwaitConnection {
   private lastStatus: string | null;
 
   private codecsRegistry: CodecsRegistry;
-  private queryCodecCache: Map<string, [number, ICodec, ICodec]>;
+  private queryCodecCache: LRU<string, [number, ICodec, ICodec]>;
 
   private serverSecret: number;
   private serverSettings: Map<string, string>;
@@ -100,7 +101,7 @@ class AwaitConnection {
     this.buffer = new ReadMessageBuffer();
 
     this.codecsRegistry = new CodecsRegistry();
-    this.queryCodecCache = new Map();
+    this.queryCodecCache = new LRU({capacity: 1000});
 
     this.lastStatus = null;
 
