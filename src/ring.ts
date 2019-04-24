@@ -70,7 +70,7 @@ export class RingBuffer<T> {
     return ret;
   }
 
-  clear() {
+  clear(): void {
     this.reader = 0;
     this.writer = 0;
   }

@@ -353,7 +353,7 @@ export class ReadMessageBuffer {
     }
   }
 
-  private _finishMessage() {
+  private _finishMessage(): void {
     this.curMessageLen = 0;
     this.curMessageLenUnread = 0;
     this.curMessageReady = false;
@@ -602,7 +602,7 @@ export class ReadMessageBuffer {
     return buf;
   }
 
-  consumeMessageInto(frb: ReadBuffer) {
+  consumeMessageInto(frb: ReadBuffer): void {
     if (!this.curMessageReady) {
       throw new BufferError("no message to consume");
     }
@@ -658,7 +658,7 @@ export class ReadBuffer {
     return this.len - this.pos;
   }
 
-  discard(size: number) {
+  discard(size: number): void {
     if (this.pos + size > this.len) {
       throw new BufferError("buffer overread");
     }

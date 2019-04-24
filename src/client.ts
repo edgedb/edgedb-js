@@ -148,7 +148,7 @@ class AwaitConnection {
     });
   }
 
-  private onConnect() {
+  private onConnect(): void {
     if (this.connWaiterResolve) {
       this.connWaiterResolve(true);
       this.connWaiterReject = null;
@@ -314,7 +314,7 @@ class AwaitConnection {
     }
   }
 
-  private async connect() {
+  private async connect(): Promise<void> {
     await this.connWaiter;
 
     const wb = new WriteMessageBuffer();

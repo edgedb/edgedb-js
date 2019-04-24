@@ -1,21 +1,16 @@
 {
-    "compilerOptions": {
-      "target": "es2018",
-      "module":"commonjs",
-      "moduleResolution": "node",
-      "declaration": true,
-      "noImplicitAny": true,
-      "strictNullChecks": true,
-      "strict": true,
-      "removeComments": true,
-      "declarationDir": "./dist",
-      "outDir": "./dist",
-      "typeRoots": [
-        "./node_modules/@types"
-      ]
-    },
-    "include": [
-      "src",
-      "test"
-    ]
-  }
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "declaration": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strict": true,
+    "removeComments": true,
+    "declarationDir": "./dist",
+    "outDir": "./dist",
+    "typeRoots": ["./node_modules/@types"]
+  },
+  "include": ["src", "test"]
+}
