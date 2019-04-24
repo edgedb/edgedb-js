@@ -21,10 +21,12 @@ import {ICodec, uuid} from "./ifaces";
 
 export class StrCodec implements ICodec {
   readonly tid: uuid;
+  readonly tidBuffer: Buffer;
   readonly isScalar = true;
 
   constructor(tid: uuid) {
     this.tid = tid;
+    this.tidBuffer = Buffer.from(tid, "hex");
   }
 
   encode(buf: WriteBuffer, object: any): void {

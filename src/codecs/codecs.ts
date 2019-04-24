@@ -57,10 +57,12 @@ export const KNOWN_TYPENAMES = (() => {
 
 export class NullCodec implements ICodec {
   readonly tid: string;
+  readonly tidBuffer: Buffer;
   readonly isScalar = false;
 
   constructor(tid: uuid) {
     this.tid = tid;
+    this.tidBuffer = Buffer.from(tid, "hex");
   }
 
   encode(_buf: WriteBuffer, _object: any): void {
@@ -78,10 +80,12 @@ const EMPTY_TUPLE = Object.freeze([]);
 
 export class EmptyTupleCodec implements ICodec {
   readonly tid: string;
+  readonly tidBuffer: Buffer;
   readonly isScalar = false;
 
   constructor(tid: uuid) {
     this.tid = tid;
+    this.tidBuffer = Buffer.from(tid, "hex");
   }
 
   encode(buf: WriteBuffer, object: any): void {

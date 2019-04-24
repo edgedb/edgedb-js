@@ -23,6 +23,7 @@ const EMPTY_ARRAY = Object.freeze([]);
 
 export class ArrayCodec implements ICodec {
   readonly tid: uuid;
+  readonly tidBuffer: Buffer;
   readonly isScalar = false;
 
   private subCodec: ICodec;
@@ -30,6 +31,7 @@ export class ArrayCodec implements ICodec {
 
   constructor(tid: uuid, subCodec: ICodec, len: number) {
     this.tid = tid;
+    this.tidBuffer = Buffer.from(tid, "hex");
     this.subCodec = subCodec;
     this.len = len;
   }

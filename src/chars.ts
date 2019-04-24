@@ -54,7 +54,7 @@ export function ord(str: string): char {
   if (ch <= 0 || ch >= 255) {
     throw new TypeError(`char "${ch}" is outside ASCII`);
   }
-  return ch;
+  return ch & 0xff;
 }
 
 export function chr(ch: char): string {

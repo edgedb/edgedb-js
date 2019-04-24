@@ -22,6 +22,7 @@ export type uuid = string;
 
 export interface ICodec {
   readonly tid: uuid;
+  readonly tidBuffer: Buffer;
   readonly isScalar: boolean;
 
   encode(buf: WriteBuffer, object: any): void;

@@ -23,10 +23,12 @@ const B32 = BigInt(32);
 
 export class Int64Codec implements ICodec {
   readonly tid: uuid;
+  readonly tidBuffer: Buffer;
   readonly isScalar = true;
 
   constructor(tid: uuid) {
     this.tid = tid;
+    this.tidBuffer = Buffer.from(tid, "hex");
   }
 
   encode(buf: WriteBuffer, object: any): void {
@@ -51,10 +53,12 @@ export class Int64Codec implements ICodec {
 
 export class Int32Codec implements ICodec {
   readonly tid: uuid;
+  readonly tidBuffer: Buffer;
   readonly isScalar = true;
 
   constructor(tid: uuid) {
     this.tid = tid;
+    this.tidBuffer = Buffer.from(tid, "hex");
   }
 
   encode(buf: WriteBuffer, object: any): void {
@@ -69,10 +73,12 @@ export class Int32Codec implements ICodec {
 
 export class Int16Codec implements ICodec {
   readonly tid: uuid;
+  readonly tidBuffer: Buffer;
   readonly isScalar = true;
 
   constructor(tid: uuid) {
     this.tid = tid;
+    this.tidBuffer = Buffer.from(tid, "hex");
   }
 
   encode(buf: WriteBuffer, object: any): void {

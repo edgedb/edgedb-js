@@ -288,7 +288,10 @@ export class ReadMessageBuffer {
   }
 
   feed(buf: Buffer): boolean {
-    if (this.buf0 === null) {
+    if (
+      this.buf0 == null ||
+      (this.pos0 === this.len0 && this.bufs.length === 0)
+    ) {
       this.buf0 = buf;
       this.len0 = buf.length;
       this.pos0 = 0;

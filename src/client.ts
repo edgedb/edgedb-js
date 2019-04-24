@@ -81,6 +81,7 @@ class AwaitConnection {
   private lastStatus: string | null;
 
   private codecsRegistry: CodecsRegistry;
+  private queryCodecCache: Map<string, [number, ICodec, ICodec]>;
 
   private serverSecret: number;
   private serverSettings: Map<string, string>;
@@ -99,6 +100,7 @@ class AwaitConnection {
     this.buffer = new ReadMessageBuffer();
 
     this.codecsRegistry = new CodecsRegistry();
+    this.queryCodecCache = new Map();
 
     this.lastStatus = null;
 
@@ -576,29 +578,145 @@ class AwaitConnection {
     return result;
   }
 
-  async fetchAll(query: string): Promise<any[]> {
-    const [card, inCodec, outCodec] = await this.parse(query, false, false);
-    const result = await this.execute(inCodec, outCodec);
-    Object.freeze(result);
+  private async optimisticExecute(
+    asJson: boolean,
+    expectOne: boolean,
+    inCodec: ICodec,
+    outCodec: ICodec,
+    query: string
+  ): Promise<any> {
+    const argsWb = new WriteBuffer();
+    inCodec.encode(argsWb, []);
+
+    const wb = new WriteMessageBuffer();
+    wb.beginMessage(chars.$O);
+    wb.writeInt16(0); // no headers
+    wb.writeChar(asJson ? chars.$j : chars.$b);
+    wb.writeChar(expectOne ? chars.$o : chars.$m);
+    wb.writeString(query);
+    wb.writeBuffer(inCodec.tidBuffer);
+    wb.writeBuffer(outCodec.tidBuffer);
+    wb.writeBuffer(argsWb.unwrap());
+    wb.endMessage();
+    wb.writeSync();
+
+    this.sock.write(wb.unwrap());
+
+    const result: any[] = [];
+    // let reExec = false;
+    let error: Error | null = null;
+    let parsing = true;
+
+    while (parsing) {
+      if (!this.buffer.takeMessage()) {
+        await this.waitForMessage();
+      }
+
+      const mtype = this.buffer.getMessageType();
+
+      switch (mtype) {
+        case chars.$D: {
+          this.parseDataMessages(outCodec, result);
+          break;
+        }
+
+        case chars.$C: {
+          this.lastStatus = this.parseCommandCompleteMessage();
+          break;
+        }
+
+        case chars.$Z: {
+          this.parseSyncMessage();
+          parsing = false;
+          break;
+        }
+
+        case chars.$T: {
+          // XXX
+          throw new Error("outdated codecs info");
+        }
+
+        case chars.$E: {
+          error = this.parseErrorMessage();
+          break;
+        }
+
+        default:
+          this.fallthrough();
+      }
+    }
+
+    if (error != null) {
+      throw error;
+    }
+
     return result;
   }
 
+  private async fetch(
+    query: string,
+    asJson: boolean,
+    expectOne: boolean
+  ): Promise<any> {
+    const key = [query, query.length, asJson, expectOne].join(";");
+    let ret;
+
+    if (this.queryCodecCache.has(key)) {
+      const [card, inCodec, outCodec] = await this.queryCodecCache.get(key)!;
+      ret = await this.optimisticExecute(
+        asJson,
+        expectOne,
+        inCodec,
+        outCodec,
+        query
+      );
+    } else {
+      const [card, inCodec, outCodec] = await this.parse(
+        query,
+        asJson,
+        expectOne
+      );
+      this.queryCodecCache.set(key, [card, inCodec, outCodec]);
+      ret = await this.execute(inCodec, outCodec);
+    }
+
+    if (expectOne) {
+      if (ret && ret.length) {
+        return ret[0];
+      } else {
+        throw new Error("query returned no data");
+      }
+    } else {
+      if (ret && ret.length) {
+        if (asJson) {
+          return ret[0];
+        } else {
+          return ret;
+        }
+      } else {
+        if (asJson) {
+          return "[]";
+        } else {
+          return ret;
+        }
+      }
+    }
+  }
+
+  async fetchAll(query: string): Promise<any[]> {
+    return await this.fetch(query, false, false);
+  }
+
   async fetchOne(query: string): Promise<any[]> {
-    const [_card, inCodec, outCodec] = await this.parse(query, false, true);
-    const result = await this.execute(inCodec, outCodec);
-    return result[0];
+    return await this.fetch(query, false, true);
   }
 
   async fetchAllJSON(query: string): Promise<string> {
-    const [card, inCodec, outCodec] = await this.parse(query, true, false);
-    const result = await this.execute(inCodec, outCodec);
-    return result[0] as string;
+    return await this.fetch(query, true, false);
   }
 
   async fetchOneJSON(query: string): Promise<string> {
-    const [card, inCodec, outCodec] = await this.parse(query, true, true);
-    const result = await this.execute(inCodec, outCodec);
-    return result[0] as string;
+    return await this.fetch(query, true, true);
   }
 
   async close(): Promise<void> {
