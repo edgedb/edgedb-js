@@ -101,9 +101,6 @@ export const SCALAR_CODECS = new Map<uuid, ICodec>();
 export const NULL_CODEC_ID = "00000000000000000000000000000000";
 export const NULL_CODEC = new NullCodec(NULL_CODEC_ID);
 
-export const EMPTY_TUPLE_CODEC_ID = KNOWN_TYPENAMES.get("empty-tuple")!;
-export const EMPTY_TUPLE_CODEC = new EmptyTupleCodec(EMPTY_TUPLE_CODEC_ID);
-
 ///////////////////////////////////////////////////////////////////////////////
 
 function registerScalarCodec(

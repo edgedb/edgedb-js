@@ -16,5 +16,8 @@
  * limitations under the License.
  */
 
+export {Tuple} from "./codecs/tuple";
+export {NamedTuple} from "./codecs/namedtuple";
+
 import connect from "./client";
 export default connect;

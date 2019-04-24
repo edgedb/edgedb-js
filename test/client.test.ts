@@ -16,7 +16,12 @@
  * limitations under the License.
  */
 
-import connect from "../src/index";
+import * as util from "util";
+
+import connect, {
+  Tuple as EdgeDBTuple,
+  NamedTuple as EdgeDBNamedTuple,
+} from "../src/index";
 
 test("fetchAll: basic scalars", async () => {
   const con = await connect();
@@ -38,6 +43,64 @@ test("fetchAll: basic scalars", async () => {
 
     res = await con.fetchAll("select {true, false, false, true, false};");
     expect(res).toEqual([true, false, false, true, false]);
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: tuple", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchAll("select ()");
+    expect(res).toEqual([[]]);
+
+    res = await con.fetchOne("select (1,)");
+    expect(res).toEqual([1]);
+
+    res = await con.fetchAll("select (1, 'abc')");
+    expect(res).toEqual([[1, "abc"]]);
+
+    res = await con.fetchAll("select {(1, 'abc'), (2, 'bcd')}");
+    expect(res).toEqual([[1, "abc"], [2, "bcd"]]);
+    const t0: EdgeDBTuple = res[0];
+    expect(t0 instanceof EdgeDBTuple).toBeTruthy();
+    expect(t0 instanceof Array).toBeTruthy();
+    expect(t0[0]).toBe(1);
+    expect(t0[1]).toBe("abc");
+    expect(t0.length).toBe(2);
+    expect(JSON.stringify(t0)).toBe('[1,"abc"]');
+    expect(util.inspect(t0)).toBe("Tuple [ 1, 'abc' ]");
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: namedtuple", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne("select (a := 1)");
+    expect(Array.from(res)).toEqual([1]);
+
+    res = await con.fetchAll("select (a := 1, b:= 'abc')");
+    expect(Array.from(res[0])).toEqual([1, "abc"]);
+
+    res = await con.fetchOne("select (a := 'aaa', b := true, c := 123)");
+    expect(Array.from(res)).toEqual(["aaa", true, 123]);
+    const t0: EdgeDBNamedTuple = res;
+    expect(t0 instanceof EdgeDBTuple).toBeFalsy();
+    expect(t0 instanceof EdgeDBNamedTuple).toBeTruthy();
+    expect(t0 instanceof Array).toBeTruthy();
+    expect(t0[0]).toBe("aaa");
+    expect(t0[1]).toBe(true);
+    expect(t0[2]).toBe(123);
+    expect(t0.a).toBe("aaa");
+    expect(t0.b).toBe(true);
+    expect(t0.c).toBe(123);
+    expect(t0.length).toBe(3);
+    expect(JSON.stringify(t0)).toBe('{"a":"aaa","b":true,"c":123}');
+    expect(util.inspect(t0)).toBe("NamedTuple [ 'aaa', true, 123 ]");
   } finally {
     await con.close();
   }

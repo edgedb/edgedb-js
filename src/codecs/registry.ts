@@ -19,15 +19,10 @@
 import {ReadBuffer} from "../buffer";
 import LRU from "../lru";
 import {ICodec, uuid} from "./ifaces";
-import {
-  NULL_CODEC_ID,
-  NULL_CODEC,
-  EMPTY_TUPLE_CODEC_ID,
-  EMPTY_TUPLE_CODEC,
-  SCALAR_CODECS,
-  KNOWN_TYPES,
-} from "./codecs";
+import {NULL_CODEC_ID, NULL_CODEC, SCALAR_CODECS, KNOWN_TYPES} from "./codecs";
+import {EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec} from "./tuple";
 import {ArrayCodec} from "./array";
+import {NamedTupleCodec} from "./namedtuple";
 
 const CODECS_CACHE_SIZE = 1000;
 const CODECS_BUILD_CACHE_SIZE = 200;
@@ -199,6 +194,42 @@ export class CodecsRegistry {
           throw new Error("could not build array codec: missing subcodec");
         }
         res = new ArrayCodec(tid, subCodec, dimLen);
+        break;
+      }
+
+      case CTYPE_TUPLE: {
+        const els = frb.readUInt16();
+        const codecs = new Array(els);
+        for (let i = 0; i < els; i++) {
+          const pos = frb.readUInt16();
+          const subCodec = cl[pos];
+          if (subCodec == null) {
+            throw new Error("could not build tuple codec: missing subcodec");
+          }
+          codecs[i] = subCodec;
+        }
+        res = new TupleCodec(tid, codecs);
+        break;
+      }
+
+      case CTYPE_NAMEDTUPLE: {
+        const els = frb.readUInt16();
+        const codecs = new Array(els);
+        const names = new Array(els);
+        for (let i = 0; i < els; i++) {
+          const strLen = frb.readUInt16();
+          names[i] = frb.readBuffer(strLen).toString("utf8");
+
+          const pos = frb.readUInt16();
+          const subCodec = cl[pos];
+          if (subCodec == null) {
+            throw new Error(
+              "could not build namedtuple codec: missing subcodec"
+            );
+          }
+          codecs[i] = subCodec;
+        }
+        res = new NamedTupleCodec(tid, codecs, names);
         break;
       }
     }

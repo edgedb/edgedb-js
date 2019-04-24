@@ -368,7 +368,7 @@ export class ReadMessageBuffer {
       if (this.pos0 + size > this.len0) {
         const nread = this.len0 - this.pos0;
 
-        buf0.copy(ret, retPos, this.pos0, nread);
+        buf0.copy(ret, retPos, this.pos0, this.len0);
         retPos += nread;
 
         this.pos0 = this.len0;
@@ -377,7 +377,7 @@ export class ReadMessageBuffer {
 
         buf0 = this.ensureFirstBuf();
       } else {
-        buf0.copy(ret, retPos, this.pos0, size);
+        buf0.copy(ret, retPos, this.pos0, this.pos0 + size);
         this.pos0 += size;
         this.len -= size;
         break;
@@ -394,7 +394,7 @@ export class ReadMessageBuffer {
       return EMPTY_BUFFER;
     }
 
-    if (this.pos0 + size < this.len0) {
+    if (this.pos0 + size <= this.len0) {
       // If the requested *size* fits in the first buffer
       // do a slice operation.
       const ret = buf0.slice(this.pos0, this.pos0 + size);
@@ -432,7 +432,7 @@ export class ReadMessageBuffer {
     this.checkOverread(2);
     const buf0 = this.ensureFirstBuf();
 
-    if (this.pos0 + 2 < this.len0) {
+    if (this.pos0 + 2 <= this.len0) {
       const ret = buf0.readInt16BE(this.pos0);
       this.pos0 += 2;
       this.curMessageLenUnread -= 2;
@@ -449,7 +449,7 @@ export class ReadMessageBuffer {
     this.checkOverread(4);
     const buf0 = this.ensureFirstBuf();
 
-    if (this.pos0 + 4 < this.len0) {
+    if (this.pos0 + 4 <= this.len0) {
       const ret = buf0.readInt32BE(this.pos0);
       this.pos0 += 4;
       this.curMessageLenUnread -= 4;
@@ -466,7 +466,7 @@ export class ReadMessageBuffer {
     this.checkOverread(2);
     const buf0 = this.ensureFirstBuf();
 
-    if (this.pos0 + 2 < this.len0) {
+    if (this.pos0 + 2 <= this.len0) {
       const ret = buf0.readUInt16BE(this.pos0);
       this.pos0 += 2;
       this.curMessageLenUnread -= 2;
@@ -483,7 +483,7 @@ export class ReadMessageBuffer {
     this.checkOverread(4);
     const buf0 = this.ensureFirstBuf();
 
-    if (this.pos0 + 4 < this.len0) {
+    if (this.pos0 + 4 <= this.len0) {
       const ret = buf0.readUInt32BE(this.pos0);
       this.pos0 += 4;
       this.curMessageLenUnread -= 4;
@@ -527,7 +527,7 @@ export class ReadMessageBuffer {
         return false;
       }
       const buf0 = this.ensureFirstBuf();
-      if (this.pos0 + 4 < this.len0) {
+      if (this.pos0 + 4 <= this.len0) {
         this.curMessageLen = buf0.readInt32BE(this.pos0);
         this.pos0 += 4;
         this.len -= 4;
@@ -608,7 +608,7 @@ export class ReadMessageBuffer {
     }
 
     if (this.curMessageLenUnread > 0) {
-      if (this.pos0 + this.curMessageLenUnread < this.len0) {
+      if (this.pos0 + this.curMessageLenUnread <= this.len0) {
         const len = this.pos0 + this.curMessageLenUnread;
         ReadBuffer.slice(frb, this.buf0!, this.pos0, len);
         this.pos0 = len;
@@ -652,6 +652,10 @@ export class ReadBuffer {
     this.buffer = buf;
     this.len = buf.length;
     this.pos = 0;
+  }
+
+  get position(): number {
+    return this.pos;
   }
 
   get length(): number {
@@ -719,6 +723,15 @@ export class ReadBuffer {
     return num;
   }
 
+  readBuffer(size: number): Buffer {
+    if (this.pos + size > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    const buf = this.buffer.slice(this.pos, this.pos + size);
+    this.pos += size;
+    return buf;
+  }
+
   readUUID(): string {
     if (this.pos + 16 > this.len) {
       throw new BufferError("buffer overread");
@@ -734,7 +747,10 @@ export class ReadBuffer {
     return res;
   }
 
-  consumeInto(frb: ReadBuffer, size: number): void {
+  sliceInto(frb: ReadBuffer, size: number): void {
+    if (this.pos + size > this.len) {
+      throw new BufferError("buffer overread");
+    }
     frb.buffer = this.buffer;
     frb.pos = this.pos;
     frb.len = this.pos + size;
