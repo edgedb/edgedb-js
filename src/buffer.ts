@@ -592,13 +592,37 @@ export class ReadMessageBuffer {
 
     let buf: Buffer;
     if (this.curMessageLenUnread > 0) {
-      buf = this.readBuffer(this.curMessageLenUnread);
+      buf = this._readBuffer(this.curMessageLenUnread);
+      this.curMessageLenUnread = 0;
     } else {
       buf = EMPTY_BUFFER;
     }
 
     this._finishMessage();
     return buf;
+  }
+
+  consumeMessageInto(frb: ReadBuffer) {
+    if (!this.curMessageReady) {
+      throw new BufferError("no message to consume");
+    }
+
+    if (this.curMessageLenUnread > 0) {
+      if (this.pos0 + this.curMessageLenUnread < this.len0) {
+        const len = this.pos0 + this.curMessageLenUnread;
+        ReadBuffer.slice(frb, this.buf0!, this.pos0, len);
+        this.pos0 = len;
+        this.len -= this.curMessageLenUnread;
+      } else {
+        const buf = this._readBuffer(this.curMessageLenUnread);
+        ReadBuffer.init(frb, buf);
+      }
+      this.curMessageLenUnread = 0;
+    } else {
+      ReadBuffer.init(frb, EMPTY_BUFFER);
+    }
+
+    this._finishMessage();
   }
 
   finishMessage(): void {
@@ -721,6 +745,17 @@ export class ReadBuffer {
     frb.buffer = buffer;
     frb.pos = 0;
     frb.len = buffer.length;
+  }
+
+  static slice(
+    frb: ReadBuffer,
+    buffer: Buffer,
+    pos: number,
+    len: number
+  ): void {
+    frb.buffer = buffer;
+    frb.pos = pos;
+    frb.len = len;
   }
 
   static alloc(): ReadBuffer {

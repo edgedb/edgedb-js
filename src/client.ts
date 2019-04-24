@@ -32,6 +32,8 @@ import LRU from "./lru";
 export interface ConnectConfig {
   port?: number;
   host?: string;
+  user?: string;
+  database?: string;
 }
 
 enum AuthenticationStatuses {
@@ -77,6 +79,7 @@ export default function connect(
 
 class AwaitConnection {
   private sock: net.Socket;
+  private config: ConnectConfig;
   private paused: boolean;
 
   private lastStatus: string | null;
@@ -97,7 +100,7 @@ class AwaitConnection {
   private connWaiterResolve: ((value: any) => void) | null;
   private connWaiterReject: ((value: any) => void) | null;
 
-  private constructor(sock: net.Socket) {
+  private constructor(sock: net.Socket, config: ConnectConfig) {
     this.buffer = new ReadMessageBuffer();
 
     this.codecsRegistry = new CodecsRegistry();
@@ -125,6 +128,8 @@ class AwaitConnection {
     this.sock.on("error", this.onError.bind(this));
     this.sock.on("data", this.onData.bind(this));
     this.sock.on("connect", this.onConnect.bind(this));
+
+    this.config = config;
   }
 
   private async waitForMessage(): Promise<void> {
@@ -269,7 +274,7 @@ class AwaitConnection {
     const buffer = this.buffer;
 
     while (buffer.takeMessageType($D)) {
-      ReadBuffer.init(frb, buffer.consumeMessage());
+      buffer.consumeMessageInto(frb);
       frb.discard(6);
       result.push(codec.decode(frb));
     }
@@ -321,8 +326,8 @@ class AwaitConnection {
       .endMessage();
 
     wb.beginMessage(chars.$0)
-      .writeString("edgedb") // TODO
-      .writeString("edgedb")
+      .writeString(this.config.user || "edgedb") // TODO
+      .writeString(this.config.database || "edgedb")
       .endMessage();
 
     this.sock.write(wb.unwrap());
@@ -708,7 +713,7 @@ class AwaitConnection {
     return await this.fetch(query, false, false);
   }
 
-  async fetchOne(query: string): Promise<any[]> {
+  async fetchOne(query: string): Promise<any> {
     return await this.fetch(query, false, true);
   }
 
@@ -733,7 +738,7 @@ class AwaitConnection {
 
   static async connect(config: ConnectConfig = {}): Promise<AwaitConnection> {
     const sock = this.newSock(config);
-    const conn = new this(sock);
+    const conn = new this(sock, config);
     await conn.connect();
     return conn;
   }
