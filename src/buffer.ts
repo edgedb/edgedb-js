@@ -33,24 +33,21 @@ const EMPTY_BUFFER = Buffer.allocUnsafe(0);
 export class BufferError extends Error {}
 
 export class WriteBuffer {
-  private buffer: Buffer;
+  public buffer: Buffer;
   private size: number;
   private pos: number;
-  private messagePos: number;
 
   constructor() {
     this.size = BUFFER_INC_SIZE;
     this.pos = 0;
-    this.messagePos = -1;
     this.buffer = Buffer.allocUnsafe(this.size);
   }
 
+  get position(): number {
+    return this.pos;
+  }
+
   reset(): void {
-    if (this.messagePos >= 0) {
-      throw new BufferError(
-        "cannot reset: the previous message is not finished"
-      );
-    }
     this.pos = 0;
   }
 
@@ -68,37 +65,7 @@ export class WriteBuffer {
     this.buffer = newBuffer;
   }
 
-  beginMessage(mtype: char): this {
-    if (this.messagePos >= 0) {
-      throw new BufferError(
-        "cannot begin a new message: the previous message is not finished"
-      );
-    }
-    this.ensureAlloced(5);
-    this.buffer.writeUInt8(mtype, this.pos);
-    this.messagePos = this.pos;
-    this.pos += 5;
-
-    return this;
-  }
-
-  endMessage(): this {
-    if (this.messagePos < 0) {
-      throw new BufferError("cannot end the message: no current message");
-    }
-
-    this.buffer.writeInt32BE(
-      this.pos - this.messagePos - 1,
-      this.messagePos + 1
-    );
-    this.messagePos = -1;
-    return this;
-  }
-
   writeChar(ch: char): this {
-    if (this.messagePos < 0) {
-      throw new BufferError("cannot writeChar: no current message");
-    }
     this.ensureAlloced(1);
     this.buffer.writeUInt8(ch, this.pos);
     this.pos++;
@@ -106,10 +73,6 @@ export class WriteBuffer {
   }
 
   writeString(s: string): this {
-    if (this.messagePos < 0) {
-      throw new BufferError("cannot writeString: no current message");
-    }
-
     const buf: Buffer = Buffer.from(s, "utf-8");
     this.ensureAlloced(buf.length + 4);
     this.buffer.writeInt32BE(buf.length, this.pos);
@@ -120,10 +83,6 @@ export class WriteBuffer {
   }
 
   writeInt16(i: number): this {
-    if (this.messagePos < 0) {
-      throw new BufferError("cannot writeInt16: no current message");
-    }
-
     this.ensureAlloced(2);
     this.buffer.writeInt16BE(i, this.pos);
     this.pos += 2;
@@ -131,10 +90,6 @@ export class WriteBuffer {
   }
 
   writeInt32(i: number): this {
-    if (this.messagePos < 0) {
-      throw new BufferError("cannot writeInt32: no current message");
-    }
-
     this.ensureAlloced(4);
     this.buffer.writeInt32BE(i, this.pos);
     this.pos += 4;
@@ -142,10 +97,6 @@ export class WriteBuffer {
   }
 
   writeUInt16(i: number): this {
-    if (this.messagePos < 0) {
-      throw new BufferError("cannot writeInt16: no current message");
-    }
-
     this.ensureAlloced(2);
     this.buffer.writeUInt16BE(i, this.pos);
     this.pos += 2;
@@ -153,28 +104,116 @@ export class WriteBuffer {
   }
 
   writeUInt32(i: number): this {
-    if (this.messagePos < 0) {
-      throw new BufferError("cannot writeInt32: no current message");
-    }
-
     this.ensureAlloced(4);
     this.buffer.writeUInt32BE(i, this.pos);
     this.pos += 4;
     return this;
   }
 
-  private _writeBuffer(buf: Buffer): void {
+  writeBuffer(buf: Buffer): this {
     const len = buf.length;
     this.ensureAlloced(len);
     buf.copy(this.buffer, this.pos, 0, len);
     this.pos += len;
+    return this;
+  }
+
+  unwrap(): Buffer {
+    return this.buffer.slice(0, this.pos);
+  }
+}
+
+export class WriteMessageBuffer {
+  private buffer: WriteBuffer;
+  private messagePos: number;
+
+  constructor() {
+    this.messagePos = -1;
+    this.buffer = new WriteBuffer();
+  }
+
+  reset(): void {
+    this.buffer.reset();
+  }
+
+  beginMessage(mtype: char): this {
+    if (this.messagePos >= 0) {
+      throw new BufferError(
+        "cannot begin a new message: the previous message is not finished"
+      );
+    }
+    this.messagePos = this.buffer.position;
+    this.buffer.writeChar(mtype);
+    this.buffer.writeInt32(0);
+    return this;
+  }
+
+  endMessage(): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot end the message: no current message");
+    }
+
+    this.buffer.buffer.writeInt32BE(
+      this.buffer.position - this.messagePos - 1,
+      this.messagePos + 1
+    );
+    this.messagePos = -1;
+    return this;
+  }
+
+  writeChar(ch: char): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeChar: no current message");
+    }
+    this.buffer.writeChar(ch);
+    return this;
+  }
+
+  writeString(s: string): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeString: no current message");
+    }
+    this.buffer.writeString(s);
+    return this;
+  }
+
+  writeInt16(i: number): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeInt16: no current message");
+    }
+    this.buffer.writeInt16(i);
+    return this;
+  }
+
+  writeInt32(i: number): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeInt32: no current message");
+    }
+    this.buffer.writeInt32(i);
+    return this;
+  }
+
+  writeUInt16(i: number): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeInt16: no current message");
+    }
+    this.buffer.writeUInt16(i);
+    return this;
+  }
+
+  writeUInt32(i: number): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeInt32: no current message");
+    }
+    this.buffer.writeUInt32(i);
+    return this;
   }
 
   writeBuffer(buf: Buffer): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeBuffer: no current message");
     }
-    this._writeBuffer(buf);
+    this.buffer.writeBuffer(buf);
     return this;
   }
 
@@ -184,7 +223,7 @@ export class WriteBuffer {
         "cannot writeSync: the previous message is not finished"
       );
     }
-    this._writeBuffer(SYNC_MESSAGE);
+    this.buffer.writeBuffer(SYNC_MESSAGE);
     return this;
   }
 
@@ -194,7 +233,7 @@ export class WriteBuffer {
         "cannot writeFlush: the previous message is not finished"
       );
     }
-    this._writeBuffer(FLUSH_MESSAGE);
+    this.buffer.writeBuffer(FLUSH_MESSAGE);
     return this;
   }
 
@@ -204,21 +243,21 @@ export class WriteBuffer {
         "cannot unwrap: an unfinished message is in the buffer"
       );
     }
-    return this.buffer.slice(0, this.pos);
+    return this.buffer.unwrap();
   }
 }
 
-const SYNC_MESSAGE = new WriteBuffer()
+const SYNC_MESSAGE = new WriteMessageBuffer()
   .beginMessage(chars.$S)
   .endMessage()
   .unwrap();
 
-const FLUSH_MESSAGE = new WriteBuffer()
+const FLUSH_MESSAGE = new WriteMessageBuffer()
   .beginMessage(chars.$H)
   .endMessage()
   .unwrap();
 
-export class ReadBuffer {
+export class ReadMessageBuffer {
   private bufs: RingBuffer<Buffer>;
   private len: number;
 
@@ -577,7 +616,7 @@ export class ReadBuffer {
   }
 }
 
-export class FastReadBuffer {
+export class ReadBuffer {
   private buffer: Buffer;
   private pos: number;
   private len: number;
@@ -644,6 +683,15 @@ export class FastReadBuffer {
     return num;
   }
 
+  readUInt32(): number {
+    if (this.pos + 4 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    const num = this.buffer.readUInt32BE(this.pos);
+    this.pos += 4;
+    return num;
+  }
+
   readUUID(): string {
     if (this.pos + 16 > this.len) {
       throw new BufferError("buffer overread");
@@ -659,13 +707,20 @@ export class FastReadBuffer {
     return res;
   }
 
-  static init(frb: FastReadBuffer, buffer: Buffer): void {
+  consumeInto(frb: ReadBuffer, size: number): void {
+    frb.buffer = this.buffer;
+    frb.pos = this.pos;
+    frb.len = this.pos + size;
+    this.pos += size;
+  }
+
+  static init(frb: ReadBuffer, buffer: Buffer): void {
     frb.buffer = buffer;
     frb.pos = 0;
     frb.len = buffer.length;
   }
 
-  static alloc(): FastReadBuffer {
+  static alloc(): ReadBuffer {
     return new this(EMPTY_BUFFER);
   }
 }

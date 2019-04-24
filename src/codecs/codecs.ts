@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {FastReadBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteBuffer} from "../buffer";
 import {BoolCodec} from "./boolean";
 import {ICodec, uuid} from "./ifaces";
 import {Int16Codec, Int32Codec, Int64Codec} from "./numbers";
@@ -57,6 +57,7 @@ export const KNOWN_TYPENAMES = (() => {
 
 export class NullCodec implements ICodec {
   readonly tid: string;
+  readonly isScalar = false;
 
   constructor(tid: uuid) {
     this.tid = tid;
@@ -66,7 +67,7 @@ export class NullCodec implements ICodec {
     throw new Error("null codec cannot used to encode data");
   }
 
-  decode(_buf: FastReadBuffer): any {
+  decode(_buf: ReadBuffer): any {
     throw new Error("null codec cannot used to decode data");
   }
 }
@@ -77,6 +78,7 @@ const EMPTY_TUPLE = Object.freeze([]);
 
 export class EmptyTupleCodec implements ICodec {
   readonly tid: string;
+  readonly isScalar = false;
 
   constructor(tid: uuid) {
     this.tid = tid;
@@ -95,7 +97,7 @@ export class EmptyTupleCodec implements ICodec {
     buf.writeInt32(0);
   }
 
-  decode(buf: FastReadBuffer): any {
+  decode(buf: ReadBuffer): any {
     const els = buf.readInt32();
     if (els !== 0) {
       throw new Error(

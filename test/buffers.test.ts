@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-import {BufferError, WriteBuffer} from "../src/buffer";
+import {BufferError, WriteMessageBuffer} from "../src/buffer";
 import * as chars from "../src/chars";
 
 test("matches edgedb-python packing", () => {
-  const w: WriteBuffer = new WriteBuffer();
+  const w: WriteMessageBuffer = new WriteMessageBuffer();
 
   w.beginMessage(chars.$E)
     .writeUInt16(10)
@@ -38,7 +38,7 @@ test("matches edgedb-python packing", () => {
 });
 
 test("maintains internal messages integrity", () => {
-  const w: WriteBuffer = new WriteBuffer();
+  const w: WriteMessageBuffer = new WriteMessageBuffer();
 
   expect(() => {
     w.writeInt16(10);

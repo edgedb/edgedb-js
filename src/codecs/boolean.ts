@@ -16,11 +16,12 @@
  * limitations under the License.
  */
 
-import {FastReadBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteBuffer} from "../buffer";
 import {ICodec, uuid} from "./ifaces";
 
 export class BoolCodec implements ICodec {
   readonly tid: uuid;
+  readonly isScalar = true;
 
   constructor(tid: uuid) {
     this.tid = tid;
@@ -31,7 +32,7 @@ export class BoolCodec implements ICodec {
     buf.writeChar(object ? 1 : 0);
   }
 
-  decode(buf: FastReadBuffer): any {
+  decode(buf: ReadBuffer): any {
     return buf.readUInt8() !== 0;
   }
 }

@@ -16,13 +16,14 @@
  * limitations under the License.
  */
 
-import {FastReadBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteMessageBuffer, WriteBuffer} from "../buffer";
 
 export type uuid = string;
 
 export interface ICodec {
   readonly tid: uuid;
+  readonly isScalar: boolean;
 
   encode(buf: WriteBuffer, object: any): void;
-  decode(buf: FastReadBuffer): any;
+  decode(buf: ReadBuffer): any;
 }

@@ -16,13 +16,14 @@
  * limitations under the License.
  */
 
-import {FastReadBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteBuffer} from "../buffer";
 import {ICodec, uuid} from "./ifaces";
 
 const B32 = BigInt(32);
 
 export class Int64Codec implements ICodec {
   readonly tid: uuid;
+  readonly isScalar = true;
 
   constructor(tid: uuid) {
     this.tid = tid;
@@ -35,7 +36,7 @@ export class Int64Codec implements ICodec {
     buf.writeInt32(val & 0xffffffff);
   }
 
-  decode(buf: FastReadBuffer): any {
+  decode(buf: ReadBuffer): any {
     const hi = buf.readInt32();
     const lo = buf.readInt32();
     if (!hi) {
@@ -50,6 +51,7 @@ export class Int64Codec implements ICodec {
 
 export class Int32Codec implements ICodec {
   readonly tid: uuid;
+  readonly isScalar = true;
 
   constructor(tid: uuid) {
     this.tid = tid;
@@ -60,13 +62,14 @@ export class Int32Codec implements ICodec {
     buf.writeInt32(<number>object);
   }
 
-  decode(buf: FastReadBuffer): any {
+  decode(buf: ReadBuffer): any {
     return buf.readInt32();
   }
 }
 
 export class Int16Codec implements ICodec {
   readonly tid: uuid;
+  readonly isScalar = true;
 
   constructor(tid: uuid) {
     this.tid = tid;
@@ -77,7 +80,7 @@ export class Int16Codec implements ICodec {
     buf.writeInt16(<number>object);
   }
 
-  decode(buf: FastReadBuffer): any {
+  decode(buf: ReadBuffer): any {
     return buf.readInt16();
   }
 }

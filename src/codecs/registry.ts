@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {FastReadBuffer} from "../buffer";
+import {ReadBuffer} from "../buffer";
 import LRU from "../lru";
 import {ICodec, uuid} from "./ifaces";
 import {
@@ -27,6 +27,7 @@ import {
   SCALAR_CODECS,
   KNOWN_TYPES,
 } from "./codecs";
+import {ArrayCodec} from "./array";
 
 const CODECS_CACHE_SIZE = 1000;
 const CODECS_BUILD_CACHE_SIZE = 200;
@@ -75,7 +76,7 @@ export class CodecsRegistry {
   }
 
   buildCodec(spec: Buffer): ICodec {
-    const frb = new FastReadBuffer(spec);
+    const frb = new ReadBuffer(spec);
     const codecsList: ICodec[] = [];
     let codec: ICodec | null = null;
 
@@ -95,7 +96,7 @@ export class CodecsRegistry {
     return codec;
   }
 
-  private _buildCodec(frb: FastReadBuffer, cl: ICodec[]): ICodec | null {
+  private _buildCodec(frb: ReadBuffer, cl: ICodec[]): ICodec | null {
     const t = frb.readUInt8();
     const tid = frb.readUUID();
 
@@ -183,6 +184,21 @@ export class CodecsRegistry {
     switch (t) {
       case CTYPE_BASE_SCALAR: {
         res = SCALAR_CODECS.get(tid);
+        break;
+      }
+
+      case CTYPE_ARRAY: {
+        const pos = frb.readUInt16();
+        const els = frb.readUInt16();
+        if (els !== 1) {
+          throw new Error("cannot handle arrays with more than one dimension");
+        }
+        const dimLen = frb.readInt32();
+        const subCodec = cl[pos];
+        if (subCodec == null) {
+          throw new Error("could not build array codec: missing subcodec");
+        }
+        res = new ArrayCodec(tid, subCodec, dimLen);
         break;
       }
     }

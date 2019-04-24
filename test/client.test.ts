@@ -68,6 +68,29 @@ test("fetchOne: basic scalars", async () => {
   }
 });
 
+test("fetchOne: arrays", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne("select [12312312, -1, 123, 0, 1]");
+    expect(res).toEqual([12312312, -1, 123, 0, 1]);
+
+    res = await con.fetchOne("select ['aaa']");
+    expect(res).toEqual(["aaa"]);
+
+    res = await con.fetchOne("select <array<str>>[]");
+    expect(res).toEqual([]);
+
+    res = await con.fetchOne("select ['aaa', '', 'bbbb']");
+    expect(res).toEqual(["aaa", "", "bbbb"]);
+
+    res = await con.fetchOne("select ['aaa', '', 'bbbb', '', 'aaaaaa🚀a']");
+    expect(res).toEqual(["aaa", "", "bbbb", "", "aaaaaa🚀a"]);
+  } finally {
+    await con.close();
+  }
+});
+
 test("fetchOneJSON", async () => {
   const con = await connect();
   try {

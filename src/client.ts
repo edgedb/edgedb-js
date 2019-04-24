@@ -16,7 +16,12 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer, FastReadBuffer} from "./buffer";
+import {
+  ReadMessageBuffer,
+  WriteMessageBuffer,
+  ReadBuffer,
+  WriteBuffer,
+} from "./buffer";
 import char, * as chars from "./chars";
 
 import * as net from "net";
@@ -81,7 +86,7 @@ class AwaitConnection {
   private serverSettings: Map<string, string>;
   private serverXactStatus: TransactionStatus;
 
-  private buffer: ReadBuffer;
+  private buffer: ReadMessageBuffer;
 
   private messageWaiterResolve: ((value: any) => void) | null;
   private messageWaiterReject: ((error: Error) => void) | null;
@@ -91,7 +96,7 @@ class AwaitConnection {
   private connWaiterReject: ((value: any) => void) | null;
 
   private constructor(sock: net.Socket) {
-    this.buffer = new ReadBuffer();
+    this.buffer = new ReadMessageBuffer();
 
     this.codecsRegistry = new CodecsRegistry();
 
@@ -256,12 +261,12 @@ class AwaitConnection {
   }
 
   private parseDataMessages(codec: ICodec, result: any[]): void {
-    const frb = FastReadBuffer.alloc();
+    const frb = ReadBuffer.alloc();
     const $D = chars.$D;
     const buffer = this.buffer;
 
     while (buffer.takeMessageType($D)) {
-      FastReadBuffer.init(frb, buffer.consumeMessage());
+      ReadBuffer.init(frb, buffer.consumeMessage());
       frb.discard(6);
       result.push(codec.decode(frb));
     }
@@ -304,7 +309,7 @@ class AwaitConnection {
   private async connect() {
     await this.connWaiter;
 
-    const wb = new WriteBuffer();
+    const wb = new WriteMessageBuffer();
 
     wb.beginMessage(chars.$V)
       .writeInt16(1)
@@ -391,7 +396,7 @@ class AwaitConnection {
     asJson: boolean,
     expectOne: boolean
   ): Promise<[number, ICodec, ICodec]> {
-    const wb = new WriteBuffer();
+    const wb = new WriteMessageBuffer();
 
     wb.beginMessage(chars.$P)
       .writeInt16(0) // no headers
@@ -513,15 +518,17 @@ class AwaitConnection {
   }
 
   private async execute(inCodec: ICodec, outCodec: ICodec): Promise<any[]> {
-    const wb = new WriteBuffer();
+    const argsWb = new WriteBuffer();
+    inCodec.encode(argsWb, []);
 
+    const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
       .writeInt16(0) // no headers
-      .writeString(""); // statement name
+      .writeString("") // statement name
+      .writeBuffer(argsWb.unwrap())
+      .endMessage()
+      .writeSync();
 
-    inCodec.encode(wb, []);
-    wb.endMessage();
-    wb.writeSync();
     this.sock.write(wb.unwrap());
 
     const result: any[] = [];
@@ -577,7 +584,7 @@ class AwaitConnection {
   }
 
   async fetchOne(query: string): Promise<any[]> {
-    const [card, inCodec, outCodec] = await this.parse(query, false, true);
+    const [_card, inCodec, outCodec] = await this.parse(query, false, true);
     const result = await this.execute(inCodec, outCodec);
     return result[0];
   }
