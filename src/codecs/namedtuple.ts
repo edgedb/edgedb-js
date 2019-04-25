@@ -21,10 +21,6 @@ import {ReadBuffer, WriteBuffer} from "../buffer";
 
 type NamedTupleConstructor = new (len: number) => any[];
 
-export class NamedTuple extends Array {
-  [_: string]: any;
-}
-
 export class NamedTupleCodec extends Codec implements ICodec {
   private subCodecs: ICodec[];
   private tupleCls: NamedTupleConstructor;
@@ -145,7 +141,7 @@ function generateTupleClass(names: string[]): NamedTupleConstructor {
 
   const buf = [
     `'use strict';
-    class NamedTuple extends BaseNamedTuple {
+    class NamedTuple extends Array {
       toJSON() {
         return {
     `,
@@ -173,6 +169,6 @@ function generateTupleClass(names: string[]): NamedTupleConstructor {
   `);
 
   const code = buf.join("\n");
-  const func = new Function("BaseNamedTuple", code);
-  return func(NamedTuple);
+  const func = new Function(code);
+  return func();
 }

@@ -18,11 +18,7 @@
 
 import * as util from "util";
 
-import connect, {
-  Tuple as EdgeDBTuple,
-  NamedTuple as EdgeDBNamedTuple,
-  UUID as EdgeDBUUID,
-} from "../src/index";
+import connect, {Tuple, NamedTuple, UUID} from "../src/index";
 
 test("fetchAll: basic scalars", async () => {
   const con = await connect();
@@ -64,8 +60,16 @@ test("fetch: tuple", async () => {
 
     res = await con.fetchAll("select {(1, 'abc'), (2, 'bcd')}");
     expect(res).toEqual([[1, "abc"], [2, "bcd"]]);
-    const t0: EdgeDBTuple = res[0];
-    expect(t0 instanceof EdgeDBTuple).toBeTruthy();
+    const t0: Tuple = res[0];
+
+    // Test that the exported type informs TypeScript that
+    // it can be iterated over.
+    const t0vals = [];
+    for (const i of t0) {
+      t0vals.push(i);
+    }
+    expect(t0vals).toEqual([1, "abc"]);
+
     expect(t0 instanceof Array).toBeTruthy();
     expect(t0[0]).toBe(1);
     expect(t0[1]).toBe("abc");
@@ -82,13 +86,13 @@ test("fetch: uuid", async () => {
   let res;
   try {
     res = await con.fetchOne("SELECT schema::ObjectType.id LIMIT 1");
-    expect(res instanceof EdgeDBUUID).toBeTruthy();
+    expect(res instanceof UUID).toBeTruthy();
     expect(res.buffer.length).toBe(16);
 
     res = await con.fetchOne(
       "SELECT <uuid>'759637d8663511e9b9d4098002d459d5'"
     );
-    expect(res instanceof EdgeDBUUID).toBeTruthy();
+    expect(res instanceof UUID).toBeTruthy();
     expect(res.buffer.length).toBe(16);
     expect(res.toString()).toBe("759637d8663511e9b9d4098002d459d5");
   } finally {
@@ -108,9 +112,16 @@ test("fetch: namedtuple", async () => {
 
     res = await con.fetchOne("select (a := 'aaa', b := true, c := 123)");
     expect(Array.from(res)).toEqual(["aaa", true, 123]);
-    const t0: EdgeDBNamedTuple = res;
-    expect(t0 instanceof EdgeDBTuple).toBeFalsy();
-    expect(t0 instanceof EdgeDBNamedTuple).toBeTruthy();
+    const t0: NamedTuple = res;
+
+    // Test that the exported type informs TypeScript that
+    // it can be iterated over.
+    const t0vals = [];
+    for (const i of t0) {
+      t0vals.push(i);
+    }
+    expect(t0vals).toEqual(["aaa", true, 123]);
+
     expect(t0 instanceof Array).toBeTruthy();
     expect(t0[0]).toBe("aaa");
     expect(t0[1]).toBe(true);

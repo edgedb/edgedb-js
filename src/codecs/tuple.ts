@@ -21,7 +21,7 @@ import {KNOWN_TYPENAMES} from "./codecs";
 import {ICodec, Codec, uuid} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
 
-export class Tuple extends Array {}
+class Tuple extends Array {}
 
 export class TupleCodec extends Codec implements ICodec {
   private subCodecs: ICodec[];

@@ -16,8 +16,17 @@
  * limitations under the License.
  */
 
-export {Tuple} from "./codecs/tuple";
-export {NamedTuple} from "./codecs/namedtuple";
+export interface Tuple extends Iterable<any> {
+  [_: number]: any;
+  length: number;
+}
+
+export interface NamedTuple extends Iterable<any> {
+  [_: number]: any;
+  [_: string]: any;
+  length: number;
+}
+
 export {UUID} from "./codecs/uuid";
 
 import connect from "./client";
