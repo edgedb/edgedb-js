@@ -96,6 +96,20 @@ export class WriteBuffer {
     return this;
   }
 
+  writeFloat32(i: number): this {
+    this.ensureAlloced(4);
+    this.buffer.writeFloatBE(i, this.pos);
+    this.pos += 4;
+    return this;
+  }
+
+  writeFloat64(i: number): this {
+    this.ensureAlloced(8);
+    this.buffer.writeDoubleBE(i, this.pos);
+    this.pos += 8;
+    return this;
+  }
+
   writeUInt16(i: number): this {
     this.ensureAlloced(2);
     this.buffer.writeUInt16BE(i, this.pos);
@@ -719,6 +733,24 @@ export class ReadBuffer {
     }
     const num = this.buffer.readInt32BE(this.pos);
     this.pos += 4;
+    return num;
+  }
+
+  readFloat32(): number {
+    if (this.pos + 4 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    const num = this.buffer.readFloatBE(this.pos);
+    this.pos += 4;
+    return num;
+  }
+
+  readFloat64(): number {
+    if (this.pos + 8 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    const num = this.buffer.readDoubleBE(this.pos);
+    this.pos += 8;
     return num;
   }
 

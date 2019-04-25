@@ -32,7 +32,7 @@ export class TupleCodec extends Codec implements ICodec {
   }
 
   encode(buf: WriteBuffer, object: any): void {
-    throw new Error("not implemented yet");
+    throw new Error("Tuples cannot be passed in query arguments");
   }
 
   decode(buf: ReadBuffer): any {

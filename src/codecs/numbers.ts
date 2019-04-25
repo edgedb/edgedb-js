@@ -69,3 +69,29 @@ export class Int16Codec extends Codec implements ICodec {
     return buf.readInt16();
   }
 }
+
+export class Float32Codec extends Codec implements ICodec {
+  readonly isScalar = true;
+
+  encode(buf: WriteBuffer, object: any): void {
+    buf.writeInt32(4);
+    buf.writeFloat32(<number>object);
+  }
+
+  decode(buf: ReadBuffer): any {
+    return buf.readFloat32();
+  }
+}
+
+export class Float64Codec extends Codec implements ICodec {
+  readonly isScalar = true;
+
+  encode(buf: WriteBuffer, object: any): void {
+    buf.writeInt32(8);
+    buf.writeFloat64(<number>object);
+  }
+
+  decode(buf: ReadBuffer): any {
+    return buf.readFloat64();
+  }
+}

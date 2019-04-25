@@ -19,7 +19,13 @@
 import {ReadBuffer, WriteBuffer} from "../buffer";
 import {BoolCodec} from "./boolean";
 import {ICodec, uuid, Codec} from "./ifaces";
-import {Int16Codec, Int32Codec, Int64Codec} from "./numbers";
+import {
+  Int16Codec,
+  Int32Codec,
+  Int64Codec,
+  Float32Codec,
+  Float64Codec,
+} from "./numbers";
 import {StrCodec} from "./text";
 import {UUIDCodec} from "./uuid";
 
@@ -68,35 +74,6 @@ export class NullCodec extends Codec implements ICodec {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const EMPTY_TUPLE = Object.freeze([]);
-
-export class EmptyTupleCodec extends Codec implements ICodec {
-  encode(buf: WriteBuffer, object: any): void {
-    if (!Array.isArray(object)) {
-      throw new Error("cannot encode empty Tuple: expected an array");
-    }
-    if (object.length) {
-      throw new Error(
-        `cannot encode empty Tuple: expected 0 elements got ${object.length}`
-      );
-    }
-    buf.writeInt32(4);
-    buf.writeInt32(0);
-  }
-
-  decode(buf: ReadBuffer): any {
-    const els = buf.readInt32();
-    if (els !== 0) {
-      throw new Error(
-        `cannot decode empty Tuple: expected 0 elements, received ${els}`
-      );
-    }
-    return EMPTY_TUPLE;
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
 export const SCALAR_CODECS = new Map<uuid, ICodec>();
 
 export const NULL_CODEC_ID = "00000000000000000000000000000000";
@@ -119,6 +96,12 @@ function registerScalarCodec(
 registerScalarCodec("std::int16", Int16Codec);
 registerScalarCodec("std::int32", Int32Codec);
 registerScalarCodec("std::int64", Int64Codec);
+
+registerScalarCodec("std::float32", Float32Codec);
+registerScalarCodec("std::float64", Float64Codec);
+
 registerScalarCodec("std::bool", BoolCodec);
+
 registerScalarCodec("std::str", StrCodec);
+
 registerScalarCodec("std::uuid", UUIDCodec);

@@ -34,7 +34,7 @@ export class NamedTupleCodec extends Codec implements ICodec {
   }
 
   encode(buf: WriteBuffer, object: any): void {
-    throw new Error("not implemented yet");
+    throw new Error("Named tuples cannot be passed in query arguments");
   }
 
   decode(buf: ReadBuffer): any {
