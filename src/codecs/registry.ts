@@ -23,6 +23,7 @@ import {NULL_CODEC_ID, NULL_CODEC, SCALAR_CODECS, KNOWN_TYPES} from "./codecs";
 import {EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec} from "./tuple";
 import {ArrayCodec} from "./array";
 import {NamedTupleCodec} from "./namedtuple";
+import {EnumCodec} from "./enum";
 
 const CODECS_CACHE_SIZE = 1000;
 const CODECS_BUILD_CACHE_SIZE = 200;
@@ -230,6 +231,19 @@ export class CodecsRegistry {
           codecs[i] = subCodec;
         }
         res = new NamedTupleCodec(tid, codecs, names);
+        break;
+      }
+
+      case CTYPE_ENUM: {
+        /* There's no way to customize ordering in JS, so we
+           simply ignore that information and unpack enums into
+           simple strings.
+        */
+        const els = frb.readUInt16();
+        for (let i = 0; i < els; i++) {
+          frb.discard(frb.readUInt16());
+        }
+        res = new EnumCodec(tid);
         break;
       }
     }

@@ -100,6 +100,18 @@ test("fetch: uuid", async () => {
   }
 });
 
+test("fetch: enum", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne("SELECT sys::get_version()");
+    expect(typeof res.stage).toBe("string");
+    expect(res.stage).toMatch(/^(dev|alpha|beta|rc|final)$/);
+  } finally {
+    await con.close();
+  }
+});
+
 test("fetch: namedtuple", async () => {
   const con = await connect();
   let res;
