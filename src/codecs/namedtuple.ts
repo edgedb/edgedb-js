@@ -188,6 +188,10 @@ function generateTupleClass(names: string[]): NamedTupleConstructor {
   `);
 
   const code = buf.join("\n");
+  return exec(code) as NamedTupleConstructor;
+}
+
+function exec(code: string): any {
   const func = new Function(code);
   return func();
 }
