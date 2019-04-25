@@ -22,6 +22,7 @@ import {ICodec, Codec, uuid} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
 
 const NAMES_SYMBOL = Symbol.for("edgedb.namedtuple.fields");
+const PRIVATE = {};
 
 interface LooseObject {
   [key: string]: any;
@@ -29,6 +30,15 @@ interface LooseObject {
 
 export class NamedTuple extends Array {
   [_: string]: any;
+
+  constructor(marker: any, len: number) {
+    if (marker !== PRIVATE) {
+      throw new Error(
+        "NamedTuples are not supposed to be instantiated directly"
+      );
+    }
+    super(len);
+  }
 
   toJSON(): LooseObject {
     const names: string[] = this[<any>NAMES_SYMBOL];
@@ -74,7 +84,7 @@ export class NamedTupleCodec extends Codec implements ICodec {
     }
 
     const elemBuf = ReadBuffer.alloc();
-    const result = new NamedTuple(els);
+    const result = new NamedTuple(PRIVATE, els);
     for (let i = 0; i < els; i++) {
       const elemLen = buf.readInt32();
       let val = null;
