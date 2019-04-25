@@ -71,7 +71,15 @@ export class RingBuffer<T> {
   }
 
   clear(): void {
+    if (this.len) {
+      while (this.reader !== this.writer) {
+        this.buffer[this.reader] = undefined;
+        this.reader = (this.reader + 1) % this.capacity;
+      }
+    }
+
     this.reader = 0;
     this.writer = 0;
+    this.len = 0;
   }
 }
