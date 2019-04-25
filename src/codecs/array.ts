@@ -103,7 +103,7 @@ export class ArrayCodec extends Codec implements ICodec {
       }
     }
 
-    return Object.freeze(result) as any;
+    return result;
   }
 }
 
