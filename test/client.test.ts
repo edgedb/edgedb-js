@@ -131,7 +131,9 @@ test("fetch: namedtuple", async () => {
     expect(t0.c).toBe(123);
     expect(t0.length).toBe(3);
     expect(JSON.stringify(t0)).toBe('{"a":"aaa","b":true,"c":123}');
-    expect(util.inspect(t0)).toBe("NamedTuple [ 'aaa', true, 123 ]");
+    expect(util.inspect(t0)).toBe(
+      "NamedTuple [ a := 'aaa', b := true, c := 123 ]"
+    );
   } finally {
     await con.close();
   }

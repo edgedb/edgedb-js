@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+import * as util from "util";
+
 import {ICodec, Codec, uuid} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
 
@@ -160,7 +162,27 @@ function generateTupleClass(names: string[]): NamedTupleConstructor {
 
   const buf = [
     `'use strict';
+
     class NamedTuple extends Array {
+
+      [inspect.custom](depth, options) {
+        const buf = [options.stylize('NamedTuple', 'name'), ' [ '];
+        const fieldsBuf = [];
+        for (const name of names) {
+          const val = this[name];
+          const repr = inspect(
+            val,
+            options.showHidden,
+            depth + 1,
+            options.colors
+          );
+          fieldsBuf.push(options.stylize(name, 'name') + ' := ' + repr);
+        }
+        buf.push(fieldsBuf.join(', '));
+        buf.push(' ]');
+        return buf.join('');
+      }
+
       toJSON() {
         return {
     `,
@@ -188,10 +210,12 @@ function generateTupleClass(names: string[]): NamedTupleConstructor {
   `);
 
   const code = buf.join("\n");
-  return exec(code) as NamedTupleConstructor;
+  const params: string[] = ["names", "inspect"];
+  const args: any[] = [names, util.inspect];
+  return exec(params, args, code) as NamedTupleConstructor;
 }
 
-function exec(code: string): any {
-  const func = new Function(code);
-  return func();
+function exec(params: string[], args: any[], code: string): any {
+  const func = new Function(...params, code);
+  return func(...args);
 }
