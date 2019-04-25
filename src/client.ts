@@ -171,7 +171,16 @@ class AwaitConnection {
   }
 
   private onData(data: Buffer): void {
-    const pause = this.buffer.feed(data);
+    let pause = false;
+    try {
+      pause = this.buffer.feed(data);
+    } catch (e) {
+      if (this.messageWaiterReject) {
+        this.messageWaiterReject(e);
+      } else {
+        throw e;
+      }
+    }
 
     if (pause) {
       this.paused = true;

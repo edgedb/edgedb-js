@@ -185,6 +185,34 @@ test("fetchOne: arrays", async () => {
   }
 });
 
+test("fetch: long strings", async () => {
+  jest.setTimeout(60_000);
+
+  // This test is meant to stress test the ring buffer.
+
+  const con = await connect();
+  let res;
+  try {
+    // A 10mb string.
+    res = await con.fetchOne("select str_repeat('aa', <int64>(10^7));");
+    expect(res.length).toEqual(20_000_000);
+
+    // A 100mb string.
+    await con
+      .fetchOne("select str_repeat('aa', <int64>(10^8));")
+      .then(() => {
+        throw new Error("the query should have errored out");
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch(
+          /query result is too big: buffer overflow/
+        );
+      });
+  } finally {
+    await con.close();
+  }
+});
+
 test("fetchOneJSON", async () => {
   const con = await connect();
   try {

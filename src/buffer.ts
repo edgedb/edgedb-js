@@ -26,7 +26,7 @@ const BUFFER_INC_SIZE: number = 4096;
 /* Max number of recv buffers that can be queued for
  * reading.
  */
-const BUFFER_RING_CAPACITY: number = 1024;
+const BUFFER_RING_CAPACITY: number = 2048;
 
 const EMPTY_BUFFER = Buffer.allocUnsafe(0);
 
@@ -296,12 +296,20 @@ export class ReadMessageBuffer {
       this.len0 = buf.length;
       this.pos0 = 0;
       this.len = this.len0;
+      return false;
     } else {
-      this.bufs.enq(buf);
-      this.len += buf.length;
+      return this.feedEnqueue(buf);
     }
+  }
 
-    return this.bufs.full;
+  private feedEnqueue(buf: Buffer): boolean {
+    this.bufs.enq(buf);
+    this.len += buf.length;
+    const isFull = this.bufs.full;
+    if (isFull && this.curMessageType !== 0) {
+      throw new Error("query result is too big: buffer overflow");
+    }
+    return isFull;
   }
 
   private ensureFirstBuf(): Buffer {
