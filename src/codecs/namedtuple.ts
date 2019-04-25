@@ -73,7 +73,10 @@ function generateTupleClass(names: string[]): NamedTupleConstructor {
    * First, let's list the requirements: we want the named tuple
    * to be fast to create (a), fast to populate with data (b), fast to
    * access the fields' values (c), being able to refer to the tuple's
-   * fields by both *indexes* and *names*.
+   * fields by both *indexes* and *names*.  In addition to that, we
+   * also want to customize how named tuples are serialized into
+   * JSON, and we should ensure that they are printed correctly when
+   * introspected via console.log().
    *
    * We basically have two options: use an array (or a subclass of
    * an array) or use an object.  Using the latter is way slower
@@ -97,13 +100,27 @@ function generateTupleClass(names: string[]): NamedTupleConstructor {
    *
    *    Still, this is a viable option, albeit, not ideal.
    *
-   * 2. Create an array subclass dynamically via setting __proto__,
+   * 2. Create an Object and populate it with numeric and named fields,
+   *    e.g.:
+   *
+   *       tup = {}
+   *       tup[0] = val0;
+   *       tup[field0] = val0;
+   *       // etc.
+   *
+   *    It appears that as soon as a numeric property is assigned to
+   *    an object, V8 thinks that it should be converted to an Array
+   *    (or deoptimized, I'm not sure).  The performance of accessing
+   *    fields degrades drastically.  Not an option, at least in
+   *    NodeJS 10.
+   *
+   * 3. Create an array subclass dynamically via setting __proto__,
    *    regular prototype inheritance, or using Object.setPrototypeOf.
    *    Unfortunately, generated array subtypes are more than 10x
    *    slower than regular arrays (even created via (1)).  So this is
    *    a non-option.
    *
-   * 3. Create an array subclass with all extra methods/getters via
+   * 4. Create an array subclass with all extra methods/getters via
    *    "eval()" or "new Function()".  While using "eval()" can be a
    *    bad sign, I believe that in this case it's well justified.
    *    The performance of generated array subtype is the same as
@@ -135,8 +152,10 @@ function generateTupleClass(names: string[]): NamedTupleConstructor {
    *    field names we compile into the source code (see the above
    *    example.)
    *
-   *  Given all the alternatives we go with option (3).
-   *  Please observe the below code in all its glory!
+   *  Given all the alternatives we go with option (4).
+   *
+   *  With all that said, please observe the below code in all
+   *  its glory!
    */
 
   const buf = [
