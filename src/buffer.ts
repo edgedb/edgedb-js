@@ -787,6 +787,12 @@ export class ReadBuffer {
     return res;
   }
 
+  consumeAsBuffer(): Buffer {
+    const res = this.buffer.slice(this.pos, this.len);
+    this.pos = this.len;
+    return res;
+  }
+
   sliceInto(frb: ReadBuffer, size: number): void {
     if (this.pos + size > this.len) {
       throw new BufferError("buffer overread");

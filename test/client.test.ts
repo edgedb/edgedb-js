@@ -48,6 +48,13 @@ test("fetchAll: basic scalars", async () => {
     res = await con.fetchOne("select [<float32>123.2, <float32>-1.1]");
     expect(res[0]).toBeCloseTo(123.2, 2);
     expect(res[1]).toBeCloseTo(-1.1, 2);
+
+    res = await con.fetchOne("select b'abcdef'");
+    expect(res instanceof Buffer).toBeTruthy();
+    expect(res).toEqual(Buffer.from("abcdef", "utf8"));
+
+    res = await con.fetchOne("select <json>[1, 2, 3]");
+    expect(res).toBe("[1, 2, 3]");
   } finally {
     await con.close();
   }
