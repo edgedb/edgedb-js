@@ -28,6 +28,7 @@ export interface NamedTuple extends Iterable<any> {
 }
 
 export {UUID} from "./codecs/uuid";
+export {Set} from "./codecs/set";
 
 import connect from "./client";
 export default connect;

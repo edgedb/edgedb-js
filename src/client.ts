@@ -27,6 +27,7 @@ import char, * as chars from "./chars";
 import * as net from "net";
 import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
+import {Set} from "./codecs/set";
 import LRU from "./lru";
 
 export interface ConnectConfig {
@@ -277,7 +278,7 @@ class AwaitConnection {
     this.buffer.finishMessage();
   }
 
-  private parseDataMessages(codec: ICodec, result: any[]): void {
+  private parseDataMessages(codec: ICodec, result: Set): void {
     const frb = ReadBuffer.alloc();
     const $D = chars.$D;
     const buffer = this.buffer;
@@ -548,7 +549,7 @@ class AwaitConnection {
 
     this.sock.write(wb.unwrap());
 
-    const result: any[] = [];
+    const result = new Set();
     let parsing = true;
     let error: Error | null = null;
 
@@ -617,7 +618,7 @@ class AwaitConnection {
 
     this.sock.write(wb.unwrap());
 
-    const result: any[] = [];
+    const result = new Set();
     // let reExec = false;
     let error: Error | null = null;
     let parsing = true;

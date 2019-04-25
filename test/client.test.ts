@@ -18,7 +18,7 @@
 
 import * as util from "util";
 
-import connect, {Tuple, NamedTuple, UUID} from "../src/index";
+import connect, {Set, Tuple, NamedTuple, UUID} from "../src/index";
 
 test("fetchAll: basic scalars", async () => {
   const con = await connect();
@@ -76,6 +76,122 @@ test("fetch: tuple", async () => {
     expect(t0.length).toBe(2);
     expect(JSON.stringify(t0)).toBe('[1,"abc"]');
     expect(util.inspect(t0)).toBe("Tuple [ 1, 'abc' ]");
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: object", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne(`
+      select schema::Function {
+        name,
+        params: {
+          kind,
+          num,
+          @foo := 42
+        } order by .num asc
+      }
+      filter .name = 'std::str_repeat'
+      limit 1
+    `);
+
+    expect(JSON.stringify(res)).toEqual(
+      JSON.stringify({
+        name: "std::str_repeat",
+        params: [
+          {kind: "POSITIONAL", num: 0, "@foo": 42},
+          {kind: "POSITIONAL", num: 1, "@foo": 42},
+        ],
+      })
+    );
+
+    expect(res.params[0].num).toBe(0);
+    expect(res.params[1].num).toBe(1);
+
+    expect(util.inspect(res.params[0])).toBe(
+      "Object [ kind := 'POSITIONAL', num := 0, @foo := 42 ]"
+    );
+
+    expect(res.params.length).toBe(2);
+    expect(res.params[0].id instanceof UUID).toBeTruthy();
+    expect(res.params[0].__tid__ instanceof UUID).toBeTruthy();
+    expect(res.params[1].__tid__).toEqual(res.params[0].__tid__);
+    expect(res.id instanceof UUID).toBeTruthy();
+    expect(res.__tid__ instanceof UUID).toBeTruthy();
+    expect(res.params[1].__tid__).not.toEqual(res.__tid__);
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: set of arrays", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne(`
+      select schema::Function {
+        id,
+        sets := {[1, 2], [1]}
+      }
+      limit 1
+    `);
+
+    res = res.sets;
+    expect(res).toEqual([[1, 2], [1]]);
+    expect(res.length).toBe(2);
+    expect(res instanceof Set).toBeTruthy();
+    expect(res instanceof Array).toBeTruthy();
+    expect(res[1] instanceof Set).toBeFalsy();
+    expect(res[1] instanceof Array).toBeTruthy();
+
+    res = await con.fetchAll(`
+      select {[1, 2], [1]};
+    `);
+
+    expect(res).toEqual([[1, 2], [1]]);
+    expect(res.length).toBe(2);
+    expect(res instanceof Set).toBeTruthy();
+    expect(res instanceof Array).toBeTruthy();
+    expect(res[1] instanceof Set).toBeFalsy();
+    expect(res[1] instanceof Array).toBeTruthy();
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: object implicit fields", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne(`
+      select schema::Function {
+        id,
+      }
+      limit 1
+    `);
+
+    expect(JSON.stringify(res)).toMatch(/^\{"id":"([\w\d]{32})"\}$/);
+    expect(JSON.stringify(res)).not.toMatch(/"__tid__"/);
+
+    res = await con.fetchOne(`
+      select schema::Function
+      limit 1
+    `);
+
+    expect(JSON.stringify(res)).toMatch(/"id":"([\w\d]{32})"/);
+
+    res = await con.fetchOne(`
+      select schema::Function {
+        name
+      }
+      filter .name = 'std::str_repeat'
+      limit 1
+    `);
+
+    expect(JSON.stringify(res)).toBe('{"name":"std::str_repeat"}');
   } finally {
     await con.close();
   }

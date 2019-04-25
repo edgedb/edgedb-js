@@ -19,8 +19,6 @@
 import {ICodec, Codec, uuid} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../buffer";
 
-const EMPTY_ARRAY = Object.freeze([]);
-
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;
   private len: number;
@@ -72,7 +70,7 @@ export class ArrayCodec extends Codec implements ICodec {
   decode(buf: ReadBuffer): any {
     const ndims = buf.readInt32();
     if (ndims === 0) {
-      return EMPTY_ARRAY;
+      return [];
     }
     if (ndims !== 1) {
       throw new Error("only 1-dimensional arrays are supported");

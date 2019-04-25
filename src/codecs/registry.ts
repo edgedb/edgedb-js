@@ -24,6 +24,8 @@ import {EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec} from "./tuple";
 import {ArrayCodec} from "./array";
 import {NamedTupleCodec} from "./namedtuple";
 import {EnumCodec} from "./enum";
+import {ObjectCodec} from "./object";
+import {SetCodec} from "./set";
 
 const CODECS_CACHE_SIZE = 1000;
 const CODECS_BUILD_CACHE_SIZE = 200;
@@ -180,6 +182,54 @@ export class CodecsRegistry {
     switch (t) {
       case CTYPE_BASE_SCALAR: {
         res = SCALAR_CODECS.get(tid);
+        break;
+      }
+
+      case CTYPE_SHAPE: {
+        const els = frb.readUInt16();
+        const codecs: ICodec[] = new Array(els);
+        const names: string[] = new Array(els);
+        const flags: number[] = new Array(els);
+
+        for (let i = 0; i < els; i++) {
+          const flag = frb.readUInt8();
+
+          const strLen = frb.readUInt16();
+          const name = frb.readBuffer(strLen).toString("utf8");
+
+          const pos = frb.readUInt16();
+          const subCodec = cl[pos];
+          if (subCodec == null) {
+            throw new Error("could not build object codec: missing subcodec");
+          }
+
+          codecs[i] = subCodec;
+          names[i] = name;
+          flags[i] = flag;
+        }
+
+        res = new ObjectCodec(tid, codecs, names, flags);
+        break;
+      }
+
+      case CTYPE_SET: {
+        const pos = frb.readUInt16();
+        const subCodec = cl[pos];
+        if (subCodec == null) {
+          throw new Error("could not build set codec: missing subcodec");
+        }
+        res = new SetCodec(tid, subCodec);
+        break;
+      }
+
+      case CTYPE_SCALAR: {
+        const pos = frb.readUInt16();
+        res = cl[pos];
+        if (res == null) {
+          throw new Error(
+            "could not build scalar codec: missing a codec for base scalar"
+          );
+        }
         break;
       }
 

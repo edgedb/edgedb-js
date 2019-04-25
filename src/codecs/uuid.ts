@@ -25,6 +25,7 @@ const PRIVATE = {};
 
 export class UUID {
   private _buf: Buffer;
+  private _str: string | null = null;
 
   constructor(marker: any, buffer: Buffer) {
     if (marker !== PRIVATE) {
@@ -35,17 +36,33 @@ export class UUID {
     this._buf = buffer;
   }
 
+  private _toString(): string {
+    if (this._str != null) {
+      return this._str;
+    }
+    this._str = this._buf.toString("hex");
+    return this._str;
+  }
+
   get buffer(): Buffer {
     return this._buf;
   }
 
   toString(): string {
-    return this._buf.toString("hex");
+    return this._toString();
+  }
+
+  valueOf(): string {
+    return this._toString();
+  }
+
+  toJSON(): string {
+    return this._toString();
   }
 
   [util.inspect.custom](_depth: number, options: util.InspectOptions): string {
     return `UUID [ ${util.inspect(
-      this.toString(),
+      this._toString(),
       options.showHidden,
       0,
       options.colors
