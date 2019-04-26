@@ -16,10 +16,14 @@
  * limitations under the License.
  */
 
-export {UUID} from "./codecs/uuid";
-export {Set} from "./codecs/set";
+export type NamedTuple<T = any> = {readonly [K in keyof T]-?: T[K]} & {
+  readonly length: number;
+} & Iterable<any>;
 
-export {NamedTuple, Tuple, ObjectShape} from "./types";
+export type Tuple<T = any> = {readonly [K in keyof T]-?: T[K]} & {
+  readonly length: number;
+} & Iterable<any>;
 
-import connect from "./client";
-export default connect;
+export type ObjectShape<T = any> = {readonly [K in keyof T]-?: T[K]} & {
+  readonly id: string;
+};
