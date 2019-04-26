@@ -23,6 +23,10 @@ export class StrCodec extends Codec implements ICodec {
   readonly isScalar = true;
 
   encode(buf: WriteBuffer, object: any): void {
+    if (typeof object !== "string") {
+      throw new Error(`a string was expected, got "${object}"`);
+    }
+
     const val = <string>object;
     const strbuf = Buffer.from(val, "utf8");
     buf.writeInt32(strbuf.length);

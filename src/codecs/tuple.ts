@@ -18,12 +18,12 @@
 
 import {KNOWN_TYPENAMES} from "./codecs";
 
-import {ICodec, Codec, uuid} from "./ifaces";
+import {ICodec, Codec, uuid, IArgsCodec} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
 
 class Tuple extends Array {}
 
-export class TupleCodec extends Codec implements ICodec {
+export class TupleCodec extends Codec implements ICodec, IArgsCodec {
   private subCodecs: ICodec[];
 
   constructor(tid: uuid, codecs: ICodec[]) {
@@ -31,8 +31,47 @@ export class TupleCodec extends Codec implements ICodec {
     this.subCodecs = codecs;
   }
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(_buf: WriteBuffer, _object: any): void {
     throw new Error("Tuples cannot be passed in query arguments");
+  }
+
+  encodeArgs(args: any): Buffer {
+    if (!Array.isArray(args)) {
+      throw new Error("an array of arguments was expected");
+    }
+
+    const codecs = this.subCodecs;
+    const codecsLen = codecs.length;
+
+    if (args.length !== codecsLen) {
+      throw new Error(
+        `expected ${codecsLen} argument${codecsLen === 1 ? "" : "s"}, got ${
+          args.length
+        }`
+      );
+    }
+
+    if (!codecsLen) {
+      return EmptyTupleCodec.BUFFER;
+    }
+
+    const elemData = new WriteBuffer();
+    for (let i = 0; i < codecsLen; i++) {
+      const arg = args[i];
+      if (arg == null) {
+        elemData.writeInt32(-1);
+      } else {
+        const codec = codecs[i];
+        codec.encode(elemData, arg);
+      }
+    }
+
+    const elemBuf = elemData.unwrap();
+    const buf = new WriteBuffer();
+    buf.writeInt32(4 + elemBuf.length);
+    buf.writeInt32(codecsLen);
+    buf.writeBuffer(elemBuf);
+    return buf.unwrap();
   }
 
   decode(buf: ReadBuffer): any {
@@ -63,6 +102,11 @@ export class TupleCodec extends Codec implements ICodec {
 }
 
 export class EmptyTupleCodec extends Codec implements ICodec {
+  static BUFFER: Buffer = new WriteBuffer()
+    .writeInt32(4)
+    .writeInt32(0)
+    .unwrap();
+
   encode(buf: WriteBuffer, object: any): void {
     if (!Array.isArray(object)) {
       throw new Error("cannot encode empty Tuple: expected an array");

@@ -27,9 +27,11 @@ export class JSONCodec extends Codec implements ICodec {
       throw new Error(`a string was expected, got "${object}"`);
     }
 
-    buf.writeInt32(object.length);
+    const val = <string>object;
+    const strbuf = Buffer.from(val, "utf8");
+    buf.writeInt32(strbuf.length + 1);
     buf.writeChar(1); // JSON format version
-    buf.writeString(object);
+    buf.writeBuffer(strbuf);
   }
 
   decode(buf: ReadBuffer): any {

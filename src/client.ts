@@ -29,6 +29,12 @@ import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {Set} from "./codecs/set";
 import LRU from "./lru";
+import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
+import {NamedTupleCodec} from "./codecs/namedtuple";
+
+type QueryArgPrimitive = number | string | boolean | Date | Buffer;
+type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
+type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
 
 export interface ConnectConfig {
   port?: number;
@@ -535,15 +541,29 @@ class AwaitConnection {
     return [cardinality, inCodec, outCodec];
   }
 
-  private async execute(inCodec: ICodec, outCodec: ICodec): Promise<any[]> {
-    const argsWb = new WriteBuffer();
-    inCodec.encode(argsWb, []);
+  private encodeArgs(args: QueryArgs, inCodec: ICodec): Buffer {
+    if (inCodec === EMPTY_TUPLE_CODEC && !args) {
+      return EmptyTupleCodec.BUFFER;
+    }
 
+    if (inCodec instanceof NamedTupleCodec || inCodec instanceof TupleCodec) {
+      return inCodec.encodeArgs(args);
+    }
+
+    // Shouldn't ever happen.
+    throw new Error("invalid input codec");
+  }
+
+  private async execute(
+    args: QueryArgs,
+    inCodec: ICodec,
+    outCodec: ICodec
+  ): Promise<any[]> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
       .writeInt16(0) // no headers
       .writeString("") // statement name
-      .writeBuffer(argsWb.unwrap())
+      .writeBuffer(this.encodeArgs(args, inCodec))
       .endMessage()
       .writeSync();
 
@@ -604,15 +624,13 @@ class AwaitConnection {
   }
 
   private async optimisticExecute(
+    args: QueryArgs,
     asJson: boolean,
     expectOne: boolean,
     inCodec: ICodec,
     outCodec: ICodec,
     query: string
   ): Promise<any> {
-    const argsWb = new WriteBuffer();
-    inCodec.encode(argsWb, []);
-
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
     wb.writeInt16(0); // no headers
@@ -621,7 +639,7 @@ class AwaitConnection {
     wb.writeString(query);
     wb.writeBuffer(inCodec.tidBuffer);
     wb.writeBuffer(outCodec.tidBuffer);
-    wb.writeBuffer(argsWb.unwrap());
+    wb.writeBuffer(this.encodeArgs(args, inCodec));
     wb.endMessage();
     wb.writeSync();
 
@@ -689,6 +707,7 @@ class AwaitConnection {
 
   private async fetch(
     query: string,
+    args: QueryArgs,
     asJson: boolean,
     expectOne: boolean
   ): Promise<any> {
@@ -698,6 +717,7 @@ class AwaitConnection {
     if (this.queryCodecCache.has(key)) {
       const [card, inCodec, outCodec] = await this.queryCodecCache.get(key)!;
       ret = await this.optimisticExecute(
+        args,
         asJson,
         expectOne,
         inCodec,
@@ -711,7 +731,7 @@ class AwaitConnection {
         expectOne
       );
       this.queryCodecCache.set(key, [card, inCodec, outCodec]);
-      ret = await this.execute(inCodec, outCodec);
+      ret = await this.execute(args, inCodec, outCodec);
     }
 
     if (expectOne) {
@@ -737,20 +757,20 @@ class AwaitConnection {
     }
   }
 
-  async fetchAll(query: string): Promise<any[]> {
-    return await this.fetch(query, false, false);
+  async fetchAll(query: string, args: QueryArgs = null): Promise<any[]> {
+    return await this.fetch(query, args, false, false);
   }
 
-  async fetchOne(query: string): Promise<any> {
-    return await this.fetch(query, false, true);
+  async fetchOne(query: string, args: QueryArgs = null): Promise<any> {
+    return await this.fetch(query, args, false, true);
   }
 
-  async fetchAllJSON(query: string): Promise<string> {
-    return await this.fetch(query, true, false);
+  async fetchAllJSON(query: string, args: QueryArgs = null): Promise<string> {
+    return await this.fetch(query, args, true, false);
   }
 
-  async fetchOneJSON(query: string): Promise<string> {
-    return await this.fetch(query, true, true);
+  async fetchOneJSON(query: string, args: QueryArgs = null): Promise<string> {
+    return await this.fetch(query, args, true, true);
   }
 
   async close(): Promise<void> {

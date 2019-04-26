@@ -57,7 +57,7 @@ export class ArrayCodec extends Codec implements ICodec {
     }
     const elemBuf = elemData.unwrap();
 
-    buf.writeInt32(8 + 8 + 1 + elemBuf.length);
+    buf.writeInt32(8 + 8 + elemBuf.length);
     buf.writeInt32(1); // number of dimensions
     buf.writeInt32(0); // flags
 

@@ -19,6 +19,11 @@
 import {ReadBuffer, WriteBuffer} from "../buffer";
 import {ICodec, Codec} from "./ifaces";
 
+/*
+ * https://moment.github.io/luxon/index.html
+ * https://github.com/tc39/proposal-intl-relative-time
+ */
+
 /* PostgreSQL UTC epoch starts on "January 1, 2000", whereas
  * in JavaScript, the UTC epoch starts on "January 1, 1970" (the UNIX epoch).
  * To convert between the two we need to add or subtract 30 years,
@@ -35,6 +40,7 @@ export class DateTimeCodec extends Codec implements ICodec {
     }
     const ms = object.getTime() - TIMESHIFT;
     const us = ms * 1000.0;
+    buf.writeInt32(8);
     buf.writeInt64(us);
   }
 

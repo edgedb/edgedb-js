@@ -18,23 +18,75 @@
 
 import * as util from "util";
 
-import {ICodec, Codec, uuid} from "./ifaces";
+import {ICodec, Codec, uuid, IArgsCodec} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
+import {EmptyTupleCodec} from "./tuple";
 
 type NamedTupleConstructor = new (len: number) => any[];
 
-export class NamedTupleCodec extends Codec implements ICodec {
+export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
   private subCodecs: ICodec[];
   private tupleCls: NamedTupleConstructor;
+  private names: string[];
+  private namesSet: Set<string>;
 
   constructor(tid: uuid, codecs: ICodec[], names: string[]) {
     super(tid);
     this.subCodecs = codecs;
+    this.names = names;
+    this.namesSet = new Set(names);
     this.tupleCls = generateTupleClass(names);
   }
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(_buf: WriteBuffer, _object: any): void {
     throw new Error("Named tuples cannot be passed in query arguments");
+  }
+
+  encodeArgs(args: any): Buffer {
+    if (args == null) {
+      throw new Error(
+        "a named arguments was expected, got a null value instead"
+      );
+    }
+
+    const keys = Object.keys(args);
+    const names = this.namesSet;
+    const codecs = this.subCodecs;
+    const codecsLen = codecs.length;
+
+    if (keys.length !== codecsLen) {
+      throw new Error(
+        `expected ${codecsLen} argument${codecsLen === 1 ? "" : "s"}, got ${
+          keys.length
+        }`
+      );
+    }
+
+    if (!codecsLen) {
+      return EmptyTupleCodec.BUFFER;
+    }
+
+    const elemData = new WriteBuffer();
+    for (let i = 0; i < codecsLen; i++) {
+      const key = keys[i];
+      if (!names.has(key)) {
+        throw new Error('unexpeced named argument "${key}"');
+      }
+      const val = args[key];
+      if (val == null) {
+        elemData.writeInt32(-1);
+      } else {
+        const codec = codecs[i];
+        codec.encode(elemData, val);
+      }
+    }
+
+    const elemBuf = elemData.unwrap();
+    const buf = new WriteBuffer();
+    buf.writeInt32(4 + elemBuf.length);
+    buf.writeInt32(codecsLen);
+    buf.writeBuffer(elemBuf);
+    return buf.unwrap();
   }
 
   decode(buf: ReadBuffer): any {

@@ -23,10 +23,11 @@ export class Int64Codec extends Codec implements ICodec {
   readonly isScalar = true;
 
   encode(buf: WriteBuffer, object: any): void {
-    const val = <number>object;
+    if (typeof object !== "number") {
+      throw new Error(`a number was expected, got "${object}"`);
+    }
     buf.writeInt32(8);
-    buf.writeInt32(val >> 32);
-    buf.writeInt32(val & 0xffffffff);
+    buf.writeInt64(object);
   }
 
   decode(buf: ReadBuffer): any {
@@ -38,6 +39,9 @@ export class Int32Codec extends Codec implements ICodec {
   readonly isScalar = true;
 
   encode(buf: WriteBuffer, object: any): void {
+    if (typeof object !== "number") {
+      throw new Error(`a number was expected, got "${object}"`);
+    }
     buf.writeInt32(4);
     buf.writeInt32(<number>object);
   }
@@ -51,6 +55,9 @@ export class Int16Codec extends Codec implements ICodec {
   readonly isScalar = true;
 
   encode(buf: WriteBuffer, object: any): void {
+    if (typeof object !== "number") {
+      throw new Error(`a number was expected, got "${object}"`);
+    }
     buf.writeInt32(2);
     buf.writeInt16(<number>object);
   }
@@ -64,6 +71,9 @@ export class Float32Codec extends Codec implements ICodec {
   readonly isScalar = true;
 
   encode(buf: WriteBuffer, object: any): void {
+    if (typeof object !== "number") {
+      throw new Error(`a number was expected, got "${object}"`);
+    }
     buf.writeInt32(4);
     buf.writeFloat32(<number>object);
   }
@@ -77,6 +87,9 @@ export class Float64Codec extends Codec implements ICodec {
   readonly isScalar = true;
 
   encode(buf: WriteBuffer, object: any): void {
+    if (typeof object !== "number") {
+      throw new Error(`a number was expected, got "${object}"`);
+    }
     buf.writeInt32(8);
     buf.writeFloat64(<number>object);
   }

@@ -85,6 +85,76 @@ test("fetchAll: basic scalars", async () => {
   }
 });
 
+test("fetch: positional args", async () => {
+  const con = await connect();
+  let res;
+  try {
+    const intCases: Array<[string[], number[]]> = [
+      [["int16", "int32", "int64"], [1, 1111]],
+      [["int16", "int32", "int64"], [100, -101]],
+      [["int16", "int32", "int64"], [10011, 0]],
+      [["int64"], [17592186032104, -4398037227340]],
+      [["float32", "float64"], [10011, 12312]],
+    ];
+    for (const [types, values] of intCases) {
+      for (const type of types) {
+        res = await con.fetchOne(
+          `select (<${type}>$0 + <${type}>$1,);`,
+          values
+        );
+        expect(res[0]).toBe(values[0] + values[1]);
+      }
+    }
+
+    res = await con.fetchOne(`select <json>$0`, ["[1,2]"]);
+    expect(res).toBe("[1, 2]");
+
+    res = await con.fetchOne(`select <str>$0`, ["[1,2]"]);
+    expect(res).toBe("[1,2]");
+
+    res = await con.fetchOne(`select (<bool>$0, <bool>$1)`, [true, false]);
+    expect(res).toEqual([true, false]);
+
+    const bytes = Buffer.allocUnsafe(4);
+    bytes.writeInt32BE(-12312, 0);
+    res = await con.fetchOne(`select <bytes>$0`, [bytes]);
+    expect(res).toEqual(bytes);
+
+    const dt = new Date(Date.now());
+    res = await con.fetchOne(`select <datetime>$0`, [dt]);
+    expect(res).toEqual(dt);
+    res = await con.fetchOne(`select [<datetime>$0, <datetime>$0]`, [dt]);
+    expect(res).toEqual([dt, dt]);
+
+    res = await con.fetchOne(`select len(<array<int64>>$0)`, [
+      [1, 2, 3, 4, 5],
+    ]);
+    expect(res).toEqual(5);
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: named args", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne(`select <str>$a`, {a: "123"});
+    expect(res).toBe("123");
+
+    res = await con.fetchOne(`select <str>$a ++ <str>$b`, {
+      a: "123",
+      b: "abc",
+    });
+    expect(res).toBe("123abc");
+
+    res = await con.fetchOne(`select len(<str>$a ?? "aa")`, {a: null});
+    expect(res).toBe(2);
+  } finally {
+    await con.close();
+  }
+});
+
 test("fetch: int overflow", async () => {
   const con = await connect();
   let res;

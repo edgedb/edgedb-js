@@ -29,6 +29,10 @@ export interface ICodec {
   decode(buf: ReadBuffer): any;
 }
 
+export interface IArgsCodec {
+  encodeArgs(args: any): Buffer;
+}
+
 export abstract class Codec {
   readonly tid: uuid;
   readonly tidBuffer: Buffer;

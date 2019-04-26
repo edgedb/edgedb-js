@@ -250,16 +250,20 @@ export class CodecsRegistry {
 
       case CTYPE_TUPLE: {
         const els = frb.readUInt16();
-        const codecs = new Array(els);
-        for (let i = 0; i < els; i++) {
-          const pos = frb.readUInt16();
-          const subCodec = cl[pos];
-          if (subCodec == null) {
-            throw new Error("could not build tuple codec: missing subcodec");
+        if (els === 0) {
+          res = EMPTY_TUPLE_CODEC;
+        } else {
+          const codecs = new Array(els);
+          for (let i = 0; i < els; i++) {
+            const pos = frb.readUInt16();
+            const subCodec = cl[pos];
+            if (subCodec == null) {
+              throw new Error("could not build tuple codec: missing subcodec");
+            }
+            codecs[i] = subCodec;
           }
-          codecs[i] = subCodec;
+          res = new TupleCodec(tid, codecs);
         }
-        res = new TupleCodec(tid, codecs);
         break;
       }
 

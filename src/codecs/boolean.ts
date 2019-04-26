@@ -23,6 +23,10 @@ export class BoolCodec extends Codec implements ICodec {
   readonly isScalar: boolean = true;
 
   encode(buf: WriteBuffer, object: any): void {
+    const typeOf = typeof object;
+    if (typeOf !== "boolean" && typeOf !== "number") {
+      throw new Error(`a boolean or a number was expected, got "${object}"`);
+    }
     buf.writeInt32(1);
     buf.writeChar(object ? 1 : 0);
   }
