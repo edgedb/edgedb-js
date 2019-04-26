@@ -124,6 +124,14 @@ export class WriteBuffer {
     return this;
   }
 
+  writeInt64(i: number): this {
+    const hi = Math.floor(i / 0x100000000);
+    const lo = i - hi * 0x100000000;
+    this.writeInt32(hi);
+    this.writeUInt32(lo);
+    return this;
+  }
+
   writeBuffer(buf: Buffer): this {
     const len = buf.length;
     this.ensureAlloced(len);

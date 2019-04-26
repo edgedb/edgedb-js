@@ -121,6 +121,26 @@ test("fetch: int overflow", async () => {
   }
 });
 
+test("fetch: date", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne(`
+      with dt := <datetime>'January 10, 2016 17:11:01.123 UTC'
+      select (dt, datetime_get(dt, 'epoch') * 1000)
+    `);
+    expect(res[0].getTime()).toBe(res[1]);
+
+    res = await con.fetchOne(`
+      with dt := <datetime>'January 10, 1716 01:00:00.123123 UTC'
+      select (dt, datetime_get(dt, 'epoch') * 1000)
+    `);
+    expect(res[0].getTime()).toBe(Math.ceil(res[1]));
+  } finally {
+    await con.close();
+  }
+});
+
 test("fetch: tuple", async () => {
   const con = await connect();
   let res;
