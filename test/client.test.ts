@@ -28,9 +28,34 @@ test("fetchAll: basic scalars", async () => {
     expect(res).toEqual(["a", "bc"]);
 
     res = await con.fetchAll(
-      "select {-1, 0, 15, 281474976710656, 22, -11111};"
+      `select {
+        -1,
+        1,
+        0,
+        15,
+        281474976710656,
+        22,
+        -11111,
+        346456723423,
+        -346456723423,
+        2251799813685125,
+        -2251799813685125
+      };
+      `
     );
-    expect(res).toEqual([-1, 0, 15, 281474976710656, 22, -11111]);
+    expect(res).toEqual([
+      -1,
+      1,
+      0,
+      15,
+      281474976710656,
+      22,
+      -11111,
+      346456723423,
+      -346456723423,
+      2251799813685125,
+      -2251799813685125,
+    ]);
 
     res = await con.fetchAll("select <int32>{-1, 0, 1, 10, 2147483647};");
     expect(res).toEqual([-1, 0, 1, 10, 2147483647]);
@@ -55,6 +80,42 @@ test("fetchAll: basic scalars", async () => {
 
     res = await con.fetchOne("select <json>[1, 2, 3]");
     expect(res).toBe("[1, 2, 3]");
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: int overflow", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne(`
+      select <int64>(2^53) - 1;
+    `);
+    expect(res).toBe(9007199254740991);
+
+    await con
+      .fetchOne(`select <int64>(2^53);`)
+      .then(() => {
+        throw new Error("there should have been an overflow error");
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch(/cannot unpack.*9007199254740992.*/);
+      });
+
+    res = await con.fetchOne(`
+      select -<int64>(2^53);
+    `);
+    expect(res).toBe(-9007199254740992);
+
+    await con
+      .fetchOne(`select -<int64>(2^53) - 1;`)
+      .then(() => {
+        throw new Error("there should have been an overflow error");
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch(/cannot unpack.*-9007199254740993.*/);
+      });
   } finally {
     await con.close();
   }

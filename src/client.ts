@@ -562,7 +562,16 @@ class AwaitConnection {
 
       switch (mtype) {
         case chars.$D: {
-          this.parseDataMessages(outCodec, result);
+          if (error == null) {
+            try {
+              this.parseDataMessages(outCodec, result);
+            } catch (e) {
+              error = e;
+              this.buffer.finishMessage();
+            }
+          } else {
+            this.buffer.discardMessage();
+          }
           break;
         }
 
@@ -632,7 +641,16 @@ class AwaitConnection {
 
       switch (mtype) {
         case chars.$D: {
-          this.parseDataMessages(outCodec, result);
+          if (error == null) {
+            try {
+              this.parseDataMessages(outCodec, result);
+            } catch (e) {
+              error = e;
+              this.buffer.finishMessage();
+            }
+          } else {
+            this.buffer.discardMessage();
+          }
           break;
         }
 

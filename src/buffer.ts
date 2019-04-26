@@ -763,6 +763,35 @@ export class ReadBuffer {
     return num;
   }
 
+  private reportInt64Overflow(hi: number, lo: number): never {
+    const bhi = BigInt(hi);
+    const blo = BigInt(lo >>> 0);
+    const num = bhi * BigInt(0x100000000) + blo;
+
+    throw new Error(
+      `integer overflow: cannot unpack <std::int64>'${num}' into JavaScript ` +
+        `Number type without losing precision`
+    );
+  }
+
+  readInt64(): number {
+    if (this.pos + 8 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+
+    const hi = this.buffer.readInt32BE(this.pos);
+    const lo = this.buffer.readInt32BE(this.pos + 4);
+    this.pos += 8;
+
+    if (hi === 0) {
+      return lo;
+    } else if (hi >= -0x200000 && hi < 0x200000) {
+      return hi * 0x100000000 + (lo >>> 0);
+    }
+
+    return this.reportInt64Overflow(hi, lo);
+  }
+
   readBuffer(size: number): Buffer {
     if (this.pos + size > this.len) {
       throw new BufferError("buffer overread");

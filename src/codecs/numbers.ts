@@ -19,8 +19,6 @@
 import {ReadBuffer, WriteBuffer} from "../buffer";
 import {ICodec, Codec} from "./ifaces";
 
-const B32 = BigInt(32);
-
 export class Int64Codec extends Codec implements ICodec {
   readonly isScalar = true;
 
@@ -32,15 +30,7 @@ export class Int64Codec extends Codec implements ICodec {
   }
 
   decode(buf: ReadBuffer): any {
-    const hi = buf.readInt32();
-    const lo = buf.readInt32();
-    if (!hi) {
-      return lo;
-    }
-
-    const bhi = BigInt(hi);
-    const blo = BigInt(lo);
-    return Number((bhi << B32) | blo);
+    return buf.readInt64();
   }
 }
 
