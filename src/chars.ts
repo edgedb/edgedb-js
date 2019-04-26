@@ -16,10 +16,13 @@
  * limitations under the License.
  */
 
-// A "char" type polyfil. ¯\_(ツ)_/¯
+// A "char" type polyfill. ¯\_(ツ)_/¯
 
 type char = number;
 export default char;
+
+// Deliberately not using an "enum" as the current approach
+// results in simpler generated code.
 
 export const $0: char = ord("0");
 export const $1: char = ord("1");
