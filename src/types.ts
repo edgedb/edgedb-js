@@ -16,9 +16,12 @@
  * limitations under the License.
  */
 
-export type NamedTuple<T = any> = {readonly [K in keyof T]-?: T[K]} & {
+export type NamedTuple<T = any> = {
+  readonly [_: number]: any;
+} & {
   readonly length: number;
-} & Iterable<any>;
+} & {readonly [K in keyof T]-?: T[K]} &
+  Iterable<any>;
 
 export type Tuple<T = any> = {readonly [K in keyof T]-?: T[K]} & {
   readonly length: number;
