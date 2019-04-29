@@ -33,4 +33,9 @@ test("types: UUID", async () => {
   expect(util.inspect(uuid)).toBe(
     "UUID [ '1733d49c66ed11e9aa14784f439c9965' ]"
   );
+
+  expect(() => {
+    // @ts-ignore
+    return +uuid;
+  }).toThrowError(TypeError("cannot coerce UUID to a number"));
 });

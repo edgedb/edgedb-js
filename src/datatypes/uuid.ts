@@ -56,6 +56,13 @@ export class UUID {
     return this._toString();
   }
 
+  [Symbol.toPrimitive](hint: string): string {
+    if (hint === "number") {
+      throw new TypeError("cannot coerce UUID to a number");
+    }
+    return this._toString();
+  }
+
   [util.inspect.custom](_depth: number, options: util.InspectOptions): string {
     return `UUID [ ${util.inspect(
       this._toString(),
