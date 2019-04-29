@@ -19,6 +19,7 @@
 import * as util from "util";
 
 import {UUID} from "../src/index";
+import {LocalDate} from "../src/datatypes/datetime";
 
 test("types: UUID", async () => {
   expect(() => {
@@ -38,4 +39,41 @@ test("types: UUID", async () => {
     // @ts-ignore
     return +uuid;
   }).toThrowError(TypeError("cannot coerce UUID to a number"));
+});
+
+test("types: LocalDate", async () => {
+  const ld = new LocalDate(2008, 0, 30);
+  expect(ld.toString()).toBe("2008-01-30");
+  expect(ld.getFullYear()).toBe(2008);
+  expect(ld.getDate()).toBe(30);
+  expect(ld.getMonth()).toBe(0);
+
+  for (const [y, m, d, n] of [
+    [1, 1, 1, 1],
+    [1, 12, 31, 365],
+    [2, 1, 1, 366],
+    [1945, 11, 12, 710347],
+  ]) {
+    const ld2 = new LocalDate(y, m - 1, d);
+    expect(ld2.toOrdinal()).toBe(n);
+    const fromord = LocalDate.fromOrdinal(n);
+    expect(ld2.toString()).toBe(fromord.toString());
+    expect(ld2.toOrdinal()).toBe(fromord.toOrdinal());
+  }
+
+  expect(() => {
+    return new LocalDate(2008, 12, 11);
+  }).toThrow(/invalid monthIndex 12/);
+
+  expect(() => {
+    return new LocalDate(2008, 3, 31);
+  }).toThrow(/invalid number of days 31.*1\.\.30/);
+
+  expect(() => {
+    return new LocalDate(2008, 1, 31);
+  }).toThrow(/invalid number of days 31.*1\.\.29/);
+
+  expect(() => {
+    return new LocalDate(2009, 1, 31);
+  }).toThrow(/invalid number of days 31.*1\.\.28/);
 });

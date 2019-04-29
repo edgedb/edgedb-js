@@ -26,8 +26,25 @@ import {Set} from "./datatypes/set";
 import LRU from "./lru";
 import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
+import {UUID} from "./datatypes/uuid";
+import {
+  LocalDateTime,
+  LocalDate,
+  LocalTime,
+  Duration,
+} from "./datatypes/datetime";
 
-type QueryArgPrimitive = number | string | boolean | Date | Buffer;
+type QueryArgPrimitive =
+  | number
+  | string
+  | boolean
+  | Buffer
+  | Date
+  | LocalDateTime
+  | LocalDate
+  | LocalTime
+  | Duration
+  | UUID;
 type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
 type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
 

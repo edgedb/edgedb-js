@@ -18,7 +18,14 @@
 
 import * as util from "util";
 
-import connect, {Set, Tuple, NamedTuple, UUID} from "../src/index";
+import connect, {
+  Set,
+  Tuple,
+  NamedTuple,
+  UUID,
+  LocalDateTime,
+} from "../src/index";
+import {LocalDate, Duration} from "../src/datatypes/datetime";
 
 test("fetchAll: basic scalars", async () => {
   const con = await connect();
@@ -126,6 +133,14 @@ test("fetch: positional args", async () => {
     res = await con.fetchOne(`select [<datetime>$0, <datetime>$0]`, [dt]);
     expect(res).toEqual([dt, dt]);
 
+    const ldt = new LocalDateTime(2012, 5, 30, 14, 11, 33, 123);
+    res = await con.fetchOne(`select <local_datetime>$0`, [ldt]);
+    expect(res instanceof LocalDateTime).toBeTruthy();
+    expect((res as LocalDateTime).getHours()).toBe(14);
+    expect((res as LocalDateTime).toISOString()).toBe(
+      "2012-06-30T14:11:33.123"
+    );
+
     res = await con.fetchOne(`select len(<array<int64>>$0)`, [
       [1, 2, 3, 4, 5],
     ]);
@@ -206,6 +221,155 @@ test("fetch: date", async () => {
       select (dt, datetime_get(dt, 'epoch') * 1000)
     `);
     expect(res[0].getTime()).toBe(Math.ceil(res[1]));
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: local_date", async () => {
+  const con = await connect();
+  let res;
+  try {
+    res = await con.fetchOne(`
+      select <local_date>'January 10, 2016';
+      `);
+    expect(res instanceof LocalDate).toBeTruthy();
+    expect(res.toString()).toBe("2016-01-10");
+
+    res = await con.fetchOne(
+      `
+      select <local_date>$0;
+      `,
+      [res]
+    );
+    expect(res instanceof LocalDate).toBeTruthy();
+    expect(res.toString()).toBe("2016-01-10");
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: local_time", async () => {
+  const con = await connect();
+  let res;
+  try {
+    for (const time of [
+      "11:12:13",
+      "00:01:11.34",
+      "00:00:00",
+      "23:59:59.999",
+    ]) {
+      res = await con.fetchOne(
+        `
+        select (<local_time><str>$time, <str><local_time><str>$time);
+        `,
+        {time}
+      );
+      expect(res[0].toString()).toBe(res[1]);
+
+      const res2 = await con.fetchOne(
+        `
+        select <local_time>$time;
+        `,
+        {time: res[0]}
+      );
+      expect(res2.toString()).toBe(res[0].toString());
+    }
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: duration", async () => {
+  const con = await connect();
+  let res;
+  try {
+    for (const time of [
+      "12 days",
+      "2 years 1 month 33 days -93423 seconds 74 milliseconds 11 microseconds",
+    ]) {
+      res = await con.fetchOne(
+        `
+        select (<duration><str>$time, <str><duration><str>$time);
+        `,
+        {time}
+      );
+      expect(res[0].toString()).toBe(res[1]);
+
+      const res2 = await con.fetchOne(
+        `
+        select <duration>$time;
+        `,
+        {time: res[0]}
+      );
+      expect(res2.toString()).toBe(res[0].toString());
+    }
+  } finally {
+    await con.close();
+  }
+});
+
+test("fetch: duration fuzz", async () => {
+  const randint = (min: number, max: number) => {
+    const x = Math.round(Math.random() * (max - min) + min);
+    return x === -0 ? 0 : x;
+  };
+
+  const durs = [
+    new Duration(),
+    new Duration(0, 0, 1),
+    new Duration(0, 0, -1),
+    new Duration(0, 1),
+    new Duration(0, -1),
+    new Duration(1, 0),
+    new Duration(-1, 0),
+    new Duration(1, 0),
+    new Duration(1, 1, 1),
+    new Duration(-1, -1, -1),
+    new Duration(1, -1, 1),
+    new Duration(-1, 1, -1),
+  ];
+
+  // Fuzz it!
+  for (let _i = 0; _i < 5000; _i++) {
+    durs.push(
+      new Duration(
+        randint(-50, 50),
+        randint(-500, 500),
+        randint(-1000000, 1000000)
+      )
+    );
+  }
+
+  const con = await connect();
+  try {
+    // Test that Duration.__str__ formats the same as <str><duration>.
+    const dursAsText = await con.fetchAll(
+      `
+        WITH args := array_unpack(<array<duration>>$0)
+        SELECT <str>args;
+      `,
+      [durs]
+    );
+
+    // Test encode/decode round trip.
+    const dursFromDb = await con.fetchAll(
+      `
+        WITH args := array_unpack(<array<duration>>$0)
+        SELECT args;
+      `,
+      [durs]
+    );
+
+    for (let i = 0; i < durs.length; i++) {
+      expect(durs[i].toString()).toBe(dursAsText[i]);
+
+      expect(dursFromDb[i].getMonths()).toEqual(durs[i].getMonths());
+      expect(dursFromDb[i].getDays()).toEqual(durs[i].getDays());
+      expect(dursFromDb[i].getMilliseconds()).toEqual(
+        durs[i].getMilliseconds()
+      );
+    }
   } finally {
     await con.close();
   }

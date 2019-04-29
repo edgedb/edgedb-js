@@ -30,7 +30,13 @@ import {StrCodec} from "./text";
 import {UUIDCodec} from "./uuid";
 import {BytesCodec} from "./bytes";
 import {JSONCodec} from "./json";
-import {DateTimeCodec} from "./datetime";
+import {
+  DateTimeCodec,
+  LocalDateCodec,
+  LocalDateTimeCodec,
+  LocalTimeCodec,
+  DurationCodec,
+} from "./datetime";
 
 export const KNOWN_TYPES = new Map<uuid, string>([
   ["00000000000000000000000000000001", "anytype"],
@@ -111,4 +117,8 @@ registerScalarCodec("std::bytes", BytesCodec);
 
 registerScalarCodec("std::uuid", UUIDCodec);
 
+registerScalarCodec("std::local_date", LocalDateCodec);
+registerScalarCodec("std::local_time", LocalTimeCodec);
+registerScalarCodec("std::local_datetime", LocalDateTimeCodec);
 registerScalarCodec("std::datetime", DateTimeCodec);
+registerScalarCodec("std::duration", DurationCodec);

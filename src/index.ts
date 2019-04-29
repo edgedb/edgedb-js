@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+export {LocalDateTime} from "./datatypes/datetime";
 export {NamedTuple} from "./datatypes/namedtuple";
 export {ObjectShape} from "./datatypes/object";
 export {Set} from "./datatypes/set";
