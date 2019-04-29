@@ -16,73 +16,9 @@
  * limitations under the License.
  */
 
-import * as util from "util";
-
 import {ReadBuffer, WriteBuffer} from "../buffer";
 import {ICodec, Codec} from "./ifaces";
-
-const PRIVATE = {};
-
-export class UUID {
-  private _buf: Buffer;
-  private _str: string | null = null;
-
-  constructor(marker: any, buffer: Buffer) {
-    if (marker !== PRIVATE) {
-      throw new TypeError(
-        "UUID should not be created directly; use fromString() or fromBuffer()"
-      );
-    }
-    this._buf = buffer;
-  }
-
-  private _toString(): string {
-    if (this._str != null) {
-      return this._str;
-    }
-    this._str = this._buf.toString("hex");
-    return this._str;
-  }
-
-  get buffer(): Buffer {
-    return this._buf;
-  }
-
-  toString(): string {
-    return this._toString();
-  }
-
-  valueOf(): string {
-    return this._toString();
-  }
-
-  toJSON(): string {
-    return this._toString();
-  }
-
-  [util.inspect.custom](_depth: number, options: util.InspectOptions): string {
-    return `UUID [ ${util.inspect(
-      this._toString(),
-      options.showHidden,
-      0,
-      options.colors
-    )} ]`;
-  }
-
-  static fromString(uuid: string): UUID {
-    const buf = UUIDBufferFromString(uuid);
-    return new UUID(PRIVATE, buf);
-  }
-
-  static fromBuffer(uuid: Buffer): UUID {
-    if (uuid.length !== 16) {
-      throw new TypeError(
-        `cannot create UUID from ${uuid}; expected buffer to be 16 bytes long`
-      );
-    }
-    return new UUID(PRIVATE, uuid);
-  }
-}
+import {UUID, UUIDBufferFromString} from "../datatypes/uuid";
 
 export class UUIDCodec extends Codec implements ICodec {
   readonly isScalar = true;
@@ -103,21 +39,6 @@ export class UUIDCodec extends Codec implements ICodec {
   }
 
   decode(buf: ReadBuffer): any {
-    return new UUID(PRIVATE, buf.readBuffer(16));
+    return new UUID(buf.readBuffer(16));
   }
-}
-
-function UUIDBufferFromString(uuid: string): Buffer {
-  let uuidClean = uuid;
-  if (uuidClean.length !== 32) {
-    uuidClean = uuidClean.replace(/\-/g, "");
-    if (uuidClean.length !== 32) {
-      throw new TypeError(`invalid UUID "${uuid}"`);
-    }
-  }
-  const buf = Buffer.from(uuidClean, "hex");
-  if (buf.length !== 16) {
-    throw new TypeError(`invalid UUID "${uuid}"`);
-  }
-  return buf;
 }

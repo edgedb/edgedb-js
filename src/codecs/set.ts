@@ -19,8 +19,7 @@
 import {ICodec, Codec, uuid} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../buffer";
 import {ArrayCodec} from "./array";
-
-export class Set extends Array {}
+import {Set} from "../datatypes/set";
 
 export class SetCodec extends Codec implements ICodec {
   private subCodec: ICodec;

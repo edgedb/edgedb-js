@@ -16,11 +16,6 @@
  * limitations under the License.
  */
 
-export {NamedTuple} from "./datatypes/namedtuple";
-export {ObjectShape} from "./datatypes/object";
-export {Set} from "./datatypes/set";
-export {Tuple} from "./datatypes/tuple";
-export {UUID} from "./datatypes/uuid";
-
-import connect from "./client";
-export default connect;
+export type Tuple<T = any> = {readonly [K in keyof T]-?: T[K]} & {
+  readonly length: number;
+} & Iterable<any>;

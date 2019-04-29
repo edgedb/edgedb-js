@@ -22,11 +22,11 @@ import {UUID} from "../src/index";
 
 test("types: UUID", async () => {
   expect(() => {
-    UUID.fromString("aaa");
+    return UUID.fromString("aaa");
   }).toThrow("invalid UUID");
 
   expect(() => {
-    UUID.fromBuffer(Buffer.allocUnsafe(10));
+    return new UUID(Buffer.allocUnsafe(10));
   }).toThrow("expected buffer to be 16");
 
   const uuid = UUID.fromString("1733d49c-66ed-11e9-aa14-784f439c9965");

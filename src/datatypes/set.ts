@@ -16,17 +16,4 @@
  * limitations under the License.
  */
 
-export type NamedTuple<T = any> = {
-  readonly [_: number]: any;
-} & {
-  readonly length: number;
-} & {readonly [K in keyof T]-?: T[K]} &
-  Iterable<any>;
-
-export type Tuple<T = any> = {readonly [K in keyof T]-?: T[K]} & {
-  readonly length: number;
-} & Iterable<any>;
-
-export type ObjectShape<T = any> = {readonly [K in keyof T]-?: T[K]} & {
-  readonly id: string;
-};
+export class Set extends Array {}

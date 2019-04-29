@@ -16,18 +16,13 @@
  * limitations under the License.
  */
 
-import {
-  ReadMessageBuffer,
-  WriteMessageBuffer,
-  ReadBuffer,
-  WriteBuffer,
-} from "./buffer";
-import char, * as chars from "./chars";
-
 import * as net from "net";
+
+import * as chars from "./chars";
+import {ReadMessageBuffer, WriteMessageBuffer, ReadBuffer} from "./buffer";
 import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
-import {Set} from "./codecs/set";
+import {Set} from "./datatypes/set";
 import LRU from "./lru";
 import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
