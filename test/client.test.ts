@@ -756,3 +756,50 @@ test("callbacks", (done) => {
     }
   );
 });
+
+test("fetch/optimistic cache invalidation", async () => {
+  const typename = "CacheInv_01";
+  const query = `SELECT ${typename}.prop1 LIMIT 1`;
+  const con = await connect();
+  await con.execute("start transaction");
+  try {
+    await con.execute(`
+      CREATE TYPE ${typename} {
+        CREATE REQUIRED PROPERTY prop1 -> std::str;
+      };
+
+      INSERT ${typename} {
+        prop1 := 'aaa'
+      };
+    `);
+
+    for (let i = 0; i < 5; i++) {
+      const res = await con.fetchOne(query);
+      expect(res).toBe("aaa");
+    }
+
+    await con.execute(`
+      DELETE (SELECT ${typename});
+
+      ALTER TYPE ${typename} {
+        DROP PROPERTY prop1;
+      };
+
+      ALTER TYPE ${typename} {
+        CREATE REQUIRED PROPERTY prop1 -> std::int64;
+      };
+
+      INSERT ${typename} {
+        prop1 := 123
+      };
+    `);
+
+    for (let i = 0; i < 5; i++) {
+      const res = await con.fetchOne(query);
+      expect(res).toBe(123);
+    }
+  } finally {
+    await con.execute("rollback");
+    await con.close();
+  }
+});

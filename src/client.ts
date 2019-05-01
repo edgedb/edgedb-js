@@ -18,7 +18,7 @@
 
 import * as net from "net";
 
-import * as chars from "./chars";
+import char, * as chars from "./chars";
 import {ReadMessageBuffer, WriteMessageBuffer, ReadBuffer} from "./buffer";
 import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
@@ -240,7 +240,7 @@ class AwaitConnection {
   private _parseDescribeTypeMessage(): [number, ICodec, ICodec] {
     this._rejectHeaders();
 
-    const cardinality = this.buffer.readChar();
+    const cardinality: char = this.buffer.readChar();
 
     const inTypeId = this.buffer.readUUID();
     const inTypeData = this.buffer.readLenPrefixedBuffer();
@@ -665,9 +665,10 @@ class AwaitConnection {
     this.sock.write(wb.unwrap());
 
     const result = new Set();
-    // let reExec = false;
+    let reExec = false;
     let error: Error | null = null;
     let parsing = true;
+    let newCard: char | null = null;
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -703,8 +704,11 @@ class AwaitConnection {
         }
 
         case chars.$T: {
-          // XXX
-          throw new Error("outdated codecs info");
+          [newCard, inCodec, outCodec] = this._parseDescribeTypeMessage();
+          const key = this._getQueryCacheKey(query, asJson, expectOne);
+          this.queryCodecCache.set(key, [newCard, inCodec, outCodec]);
+          reExec = true;
+          break;
         }
 
         case chars.$E: {
@@ -721,7 +725,31 @@ class AwaitConnection {
       throw error;
     }
 
+    if (reExec) {
+      this._validateFetchCardinality(newCard!, asJson, expectOne);
+      return await this._execute(args, inCodec, outCodec);
+    }
+
     return result;
+  }
+
+  private _getQueryCacheKey(
+    query: string,
+    asJson: boolean,
+    expectOne: boolean
+  ): string {
+    return [asJson, expectOne, query.length, query].join(";");
+  }
+
+  private _validateFetchCardinality(
+    card: char,
+    asJson: boolean,
+    expectOne: boolean
+  ): void {
+    if (expectOne && card === chars.$n) {
+      const methname = asJson ? "fetchOneJSON" : "fetchOne";
+      throw new Error(`query executed via ${methname}() returned no data`);
+    }
   }
 
   private async _fetch(
@@ -730,11 +758,12 @@ class AwaitConnection {
     asJson: boolean,
     expectOne: boolean
   ): Promise<any> {
-    const key = [query, query.length, asJson, expectOne].join(";");
+    const key = this._getQueryCacheKey(query, asJson, expectOne);
     let ret;
 
     if (this.queryCodecCache.has(key)) {
-      const [card, inCodec, outCodec] = await this.queryCodecCache.get(key)!;
+      const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
+      this._validateFetchCardinality(card, asJson, expectOne);
       ret = await this._optimisticExecute(
         args,
         asJson,
@@ -749,6 +778,7 @@ class AwaitConnection {
         asJson,
         expectOne
       );
+      this._validateFetchCardinality(card, asJson, expectOne);
       this.queryCodecCache.set(key, [card, inCodec, outCodec]);
       ret = await this._execute(args, inCodec, outCodec);
     }
