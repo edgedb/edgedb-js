@@ -692,3 +692,29 @@ test("fetchAllJSON", async () => {
     await con.close();
   }
 });
+
+test("execute", async () => {
+  const con = await connect();
+  try {
+    await con
+      .execute(`select 1/0;`)
+      .then(() => {
+        throw new Error("zero division was not propagated");
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch("division by zero");
+      });
+
+    await con.execute("start transaction isolation serializable");
+    try {
+      let isolation = await con.fetchOne(
+        "select sys::get_transaction_isolation()"
+      );
+      expect(isolation).toBe("serializable");
+    } finally {
+      await con.execute("rollback");
+    }
+  } finally {
+    await con.close();
+  }
+});

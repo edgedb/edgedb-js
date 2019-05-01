@@ -144,14 +144,14 @@ class AwaitConnection {
     this.paused = false;
     this.sock = sock;
     this.sock.setNoDelay();
-    this.sock.on("error", this.onError.bind(this));
-    this.sock.on("data", this.onData.bind(this));
-    this.sock.on("connect", this.onConnect.bind(this));
+    this.sock.on("error", this._onError.bind(this));
+    this.sock.on("data", this._onData.bind(this));
+    this.sock.on("connect", this._onConnect.bind(this));
 
     this.config = config;
   }
 
-  private async waitForMessage(): Promise<void> {
+  private async _waitForMessage(): Promise<void> {
     if (this.buffer.takeMessage()) {
       return;
     }
@@ -167,7 +167,7 @@ class AwaitConnection {
     });
   }
 
-  private onConnect(): void {
+  private _onConnect(): void {
     if (this.connWaiterResolve) {
       this.connWaiterResolve(true);
       this.connWaiterReject = null;
@@ -175,7 +175,7 @@ class AwaitConnection {
     }
   }
 
-  private onError(err: Error): void {
+  private _onError(err: Error): void {
     if (this.connWaiterReject) {
       this.connWaiterReject(err);
       this.connWaiterReject = null;
@@ -189,7 +189,7 @@ class AwaitConnection {
     }
   }
 
-  private onData(data: Buffer): void {
+  private _onData(data: Buffer): void {
     let pause = false;
     try {
       pause = this.buffer.feed(data);
@@ -215,14 +215,14 @@ class AwaitConnection {
     }
   }
 
-  private rejectHeaders(): void {
+  private _rejectHeaders(): void {
     const nheaders = this.buffer.readInt16();
     if (nheaders) {
       throw new Error("unexpected headers");
     }
   }
 
-  private parseHeaders(): Map<number, Buffer> {
+  private _parseHeaders(): Map<number, Buffer> {
     const ret = new Map<number, Buffer>();
     let numFields = this.buffer.readInt16();
     while (numFields) {
@@ -234,8 +234,8 @@ class AwaitConnection {
     return ret;
   }
 
-  private parseDescribeTypeMessage(): [number, ICodec, ICodec] {
-    this.rejectHeaders();
+  private _parseDescribeTypeMessage(): [number, ICodec, ICodec] {
+    this._rejectHeaders();
 
     const cardinality = this.buffer.readChar();
 
@@ -258,26 +258,26 @@ class AwaitConnection {
     return [cardinality, inCodec, outCodec];
   }
 
-  private parseCommandCompleteMessage(): string {
-    this.rejectHeaders();
+  private _parseCommandCompleteMessage(): string {
+    this._rejectHeaders();
     const status = this.buffer.readString();
     this.buffer.finishMessage();
     return status;
   }
 
-  private parseErrorMessage(): Error {
+  private _parseErrorMessage(): Error {
     const severity = this.buffer.readChar();
     const code = this.buffer.readUInt32();
     const message = this.buffer.readString();
-    const attrs = this.parseHeaders();
+    const attrs = this._parseHeaders();
     this.buffer.finishMessage();
 
     const err = new Error(message);
     return err;
   }
 
-  private parseSyncMessage(): void {
-    this.parseHeaders(); // TODO: Reject Headers
+  private _parseSyncMessage(): void {
+    this._parseHeaders(); // TODO: Reject Headers
     const status = this.buffer.readChar();
     switch (status) {
       case chars.$I:
@@ -296,7 +296,7 @@ class AwaitConnection {
     this.buffer.finishMessage();
   }
 
-  private parseDataMessages(codec: ICodec, result: Set): void {
+  private _parseDataMessages(codec: ICodec, result: Set): void {
     const frb = ReadBuffer.alloc();
     const $D = chars.$D;
     const buffer = this.buffer;
@@ -308,7 +308,7 @@ class AwaitConnection {
     }
   }
 
-  private fallthrough(): void {
+  private _fallthrough(): void {
     const mtype = this.buffer.getMessageType();
 
     switch (mtype) {
@@ -324,7 +324,7 @@ class AwaitConnection {
         const severity = this.buffer.readChar();
         const code = this.buffer.readUInt32();
         const message = this.buffer.readString();
-        this.parseHeaders();
+        this._parseHeaders();
         this.buffer.finishMessage();
 
         /* tslint:disable */
@@ -362,7 +362,7 @@ class AwaitConnection {
 
     while (true) {
       if (!this.buffer.takeMessage()) {
-        await this.waitForMessage();
+        await this._waitForMessage();
       }
 
       const mtype = this.buffer.getMessageType();
@@ -371,7 +371,7 @@ class AwaitConnection {
         case chars.$v: {
           const hi = this.buffer.readInt16();
           const lo = this.buffer.readInt16();
-          this.parseHeaders();
+          this._parseHeaders();
           this.buffer.finishMessage();
 
           if (hi !== 1 || lo !== 0) {
@@ -413,21 +413,21 @@ class AwaitConnection {
         }
 
         case chars.$E: {
-          throw this.parseErrorMessage();
+          throw this._parseErrorMessage();
         }
 
         case chars.$Z: {
-          this.parseSyncMessage();
+          this._parseSyncMessage();
           return;
         }
 
         default:
-          this.fallthrough();
+          this._fallthrough();
       }
     }
   }
 
-  private async parse(
+  private async _parse(
     query: string,
     asJson: boolean,
     expectOne: boolean
@@ -456,14 +456,14 @@ class AwaitConnection {
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
-        await this.waitForMessage();
+        await this._waitForMessage();
       }
 
       const mtype = this.buffer.getMessageType();
 
       switch (mtype) {
         case chars.$1: {
-          this.rejectHeaders();
+          this._rejectHeaders();
           cardinality = this.buffer.readChar();
           inTypeId = this.buffer.readUUID();
           outTypeId = this.buffer.readUUID();
@@ -472,18 +472,18 @@ class AwaitConnection {
         }
 
         case chars.$E: {
-          error = this.parseErrorMessage();
+          error = this._parseErrorMessage();
           break;
         }
 
         case chars.$Z: {
-          this.parseSyncMessage();
+          this._parseSyncMessage();
           parsing = false;
           break;
         }
 
         default:
-          this.fallthrough();
+          this._fallthrough();
       }
     }
 
@@ -512,30 +512,34 @@ class AwaitConnection {
       parsing = true;
       while (parsing) {
         if (!this.buffer.takeMessage()) {
-          await this.waitForMessage();
+          await this._waitForMessage();
         }
 
         const mtype = this.buffer.getMessageType();
 
         switch (mtype) {
           case chars.$T: {
-            [cardinality, inCodec, outCodec] = this.parseDescribeTypeMessage();
+            [
+              cardinality,
+              inCodec,
+              outCodec,
+            ] = this._parseDescribeTypeMessage();
             break;
           }
 
           case chars.$E: {
-            error = this.parseErrorMessage();
+            error = this._parseErrorMessage();
             break;
           }
 
           case chars.$Z: {
-            this.parseSyncMessage();
+            this._parseSyncMessage();
             parsing = false;
             break;
           }
 
           default:
-            this.fallthrough();
+            this._fallthrough();
         }
       }
 
@@ -553,7 +557,7 @@ class AwaitConnection {
     return [cardinality, inCodec, outCodec];
   }
 
-  private encodeArgs(args: QueryArgs, inCodec: ICodec): Buffer {
+  private _encodeArgs(args: QueryArgs, inCodec: ICodec): Buffer {
     if (inCodec === EMPTY_TUPLE_CODEC && !args) {
       return EmptyTupleCodec.BUFFER;
     }
@@ -566,7 +570,7 @@ class AwaitConnection {
     throw new Error("invalid input codec");
   }
 
-  private async execute(
+  private async _execute(
     args: QueryArgs,
     inCodec: ICodec,
     outCodec: ICodec
@@ -575,7 +579,7 @@ class AwaitConnection {
     wb.beginMessage(chars.$E)
       .writeInt16(0) // no headers
       .writeString("") // statement name
-      .writeBuffer(this.encodeArgs(args, inCodec))
+      .writeBuffer(this._encodeArgs(args, inCodec))
       .endMessage()
       .writeSync();
 
@@ -587,7 +591,7 @@ class AwaitConnection {
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
-        await this.waitForMessage();
+        await this._waitForMessage();
       }
 
       const mtype = this.buffer.getMessageType();
@@ -596,7 +600,7 @@ class AwaitConnection {
         case chars.$D: {
           if (error == null) {
             try {
-              this.parseDataMessages(outCodec, result);
+              this._parseDataMessages(outCodec, result);
             } catch (e) {
               error = e;
               this.buffer.finishMessage();
@@ -608,23 +612,23 @@ class AwaitConnection {
         }
 
         case chars.$C: {
-          this.lastStatus = this.parseCommandCompleteMessage();
+          this.lastStatus = this._parseCommandCompleteMessage();
           break;
         }
 
         case chars.$E: {
-          error = this.parseErrorMessage();
+          error = this._parseErrorMessage();
           break;
         }
 
         case chars.$Z: {
-          this.parseSyncMessage();
+          this._parseSyncMessage();
           parsing = false;
           break;
         }
 
         default:
-          this.fallthrough();
+          this._fallthrough();
       }
     }
 
@@ -635,7 +639,7 @@ class AwaitConnection {
     return result;
   }
 
-  private async optimisticExecute(
+  private async _optimisticExecute(
     args: QueryArgs,
     asJson: boolean,
     expectOne: boolean,
@@ -651,7 +655,7 @@ class AwaitConnection {
     wb.writeString(query);
     wb.writeBuffer(inCodec.tidBuffer);
     wb.writeBuffer(outCodec.tidBuffer);
-    wb.writeBuffer(this.encodeArgs(args, inCodec));
+    wb.writeBuffer(this._encodeArgs(args, inCodec));
     wb.endMessage();
     wb.writeSync();
 
@@ -664,7 +668,7 @@ class AwaitConnection {
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
-        await this.waitForMessage();
+        await this._waitForMessage();
       }
 
       const mtype = this.buffer.getMessageType();
@@ -673,7 +677,7 @@ class AwaitConnection {
         case chars.$D: {
           if (error == null) {
             try {
-              this.parseDataMessages(outCodec, result);
+              this._parseDataMessages(outCodec, result);
             } catch (e) {
               error = e;
               this.buffer.finishMessage();
@@ -685,12 +689,12 @@ class AwaitConnection {
         }
 
         case chars.$C: {
-          this.lastStatus = this.parseCommandCompleteMessage();
+          this.lastStatus = this._parseCommandCompleteMessage();
           break;
         }
 
         case chars.$Z: {
-          this.parseSyncMessage();
+          this._parseSyncMessage();
           parsing = false;
           break;
         }
@@ -701,12 +705,12 @@ class AwaitConnection {
         }
 
         case chars.$E: {
-          error = this.parseErrorMessage();
+          error = this._parseErrorMessage();
           break;
         }
 
         default:
-          this.fallthrough();
+          this._fallthrough();
       }
     }
 
@@ -717,7 +721,7 @@ class AwaitConnection {
     return result;
   }
 
-  private async fetch(
+  private async _fetch(
     query: string,
     args: QueryArgs,
     asJson: boolean,
@@ -728,7 +732,7 @@ class AwaitConnection {
 
     if (this.queryCodecCache.has(key)) {
       const [card, inCodec, outCodec] = await this.queryCodecCache.get(key)!;
-      ret = await this.optimisticExecute(
+      ret = await this._optimisticExecute(
         args,
         asJson,
         expectOne,
@@ -737,13 +741,13 @@ class AwaitConnection {
         query
       );
     } else {
-      const [card, inCodec, outCodec] = await this.parse(
+      const [card, inCodec, outCodec] = await this._parse(
         query,
         asJson,
         expectOne
       );
       this.queryCodecCache.set(key, [card, inCodec, outCodec]);
-      ret = await this.execute(args, inCodec, outCodec);
+      ret = await this._execute(args, inCodec, outCodec);
     }
 
     if (expectOne) {
@@ -769,20 +773,68 @@ class AwaitConnection {
     }
   }
 
+  async execute(query: string): Promise<void> {
+    const wb = new WriteMessageBuffer();
+    wb.beginMessage(chars.$Q)
+      .writeInt16(0) // no headers
+      .writeString(query) // statement name
+      .endMessage();
+
+    this.sock.write(wb.unwrap());
+
+    let error: Error | null = null;
+    let parsing = true;
+
+    while (parsing) {
+      if (!this.buffer.takeMessage()) {
+        await this._waitForMessage();
+      }
+
+      const mtype = this.buffer.getMessageType();
+
+      switch (mtype) {
+        case chars.$C: {
+          this.lastStatus = this._parseCommandCompleteMessage();
+          break;
+        }
+
+        case chars.$Z: {
+          this._parseSyncMessage();
+          parsing = false;
+          break;
+        }
+
+        case chars.$E: {
+          error = this._parseErrorMessage();
+          break;
+        }
+
+        default:
+          this._fallthrough();
+      }
+    }
+
+    if (error != null) {
+      throw error;
+    }
+
+    return;
+  }
+
   async fetchAll(query: string, args: QueryArgs = null): Promise<any[]> {
-    return await this.fetch(query, args, false, false);
+    return await this._fetch(query, args, false, false);
   }
 
   async fetchOne(query: string, args: QueryArgs = null): Promise<any> {
-    return await this.fetch(query, args, false, true);
+    return await this._fetch(query, args, false, true);
   }
 
   async fetchAllJSON(query: string, args: QueryArgs = null): Promise<string> {
-    return await this.fetch(query, args, true, false);
+    return await this._fetch(query, args, true, false);
   }
 
   async fetchOneJSON(query: string, args: QueryArgs = null): Promise<string> {
-    return await this.fetch(query, args, true, true);
+    return await this._fetch(query, args, true, true);
   }
 
   async close(): Promise<void> {
