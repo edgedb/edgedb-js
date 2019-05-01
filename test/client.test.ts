@@ -701,13 +701,13 @@ test("execute", async () => {
       .then(() => {
         throw new Error("zero division was not propagated");
       })
-      .catch((e) => {
+      .catch((e: Error) => {
         expect(e.toString()).toMatch("division by zero");
       });
 
     await con.execute("start transaction isolation serializable");
     try {
-      let isolation = await con.fetchOne(
+      const isolation = await con.fetchOne(
         "select sys::get_transaction_isolation()"
       );
       expect(isolation).toBe("serializable");
@@ -717,4 +717,42 @@ test("execute", async () => {
   } finally {
     await con.close();
   }
+});
+
+test("callbacks", (done) => {
+  connect(
+    null,
+    (err, con) => {
+      if (err) {
+        throw err;
+      }
+
+      if (!con) {
+        throw new Error("no connection object");
+      }
+
+      con.execute("start transaction", (err1, _data1) => {
+        if (err1) {
+          throw err1;
+        }
+
+        con.fetchOne("select <int64>$i + 1", {i: 10}, (err2, data2) => {
+          if (err2) {
+            throw err2;
+          }
+
+          try {
+            expect(data2).toBe(11);
+          } finally {
+            con.execute("rollback", (err3, _data3) => {
+              if (err3) {
+                throw err3;
+              }
+              done();
+            });
+          }
+        });
+      });
+    }
+  );
 });

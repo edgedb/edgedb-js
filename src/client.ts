@@ -70,18 +70,21 @@ enum TransactionStatus {
   TRANS_UNKNOWN = 4, // cannot determine status
 }
 
-export type onConnect = (err: Error | null, con: Connection | null) => void;
+export type NodeCallback<T = any> = (
+  err: Error | null,
+  data: T | null
+) => void;
 
 export default function connect(
-  options?: ConnectConfig
+  options?: ConnectConfig | null
 ): Promise<AwaitConnection>;
 export default function connect(
-  options?: ConnectConfig,
-  callback?: onConnect
+  options?: ConnectConfig | null,
+  callback?: NodeCallback<Connection> | null
 ): void;
 export default function connect(
-  options?: ConnectConfig,
-  callback?: onConnect
+  options?: ConnectConfig | null,
+  callback?: NodeCallback<Connection> | null
 ): Promise<AwaitConnection> | void {
   if (callback) {
     AwaitConnection.connect(options)
@@ -821,7 +824,7 @@ class AwaitConnection {
     return;
   }
 
-  async fetchAll(query: string, args: QueryArgs = null): Promise<any[]> {
+  async fetchAll(query: string, args: QueryArgs = null): Promise<Set> {
     return await this._fetch(query, args, false, false);
   }
 
@@ -848,7 +851,11 @@ class AwaitConnection {
     return net.createConnection(port, host);
   }
 
-  static async connect(config: ConnectConfig = {}): Promise<AwaitConnection> {
+  static async connect(
+    config?: ConnectConfig | null
+  ): Promise<AwaitConnection> {
+    config = config || {};
+
     const sock = this.newSock(config);
     const conn = new this(sock, config);
     await conn.connect();
@@ -857,7 +864,71 @@ class AwaitConnection {
 }
 
 class Connection {
+  private _conn: AwaitConnection;
+
+  execute(query: string, callback: NodeCallback | null = null): void {
+    this._conn
+      .execute(query)
+      .then((value) => (callback != null ? callback(null, value) : null))
+      .catch((error) => (callback != null ? callback(error, null) : null));
+  }
+
+  fetchOne(
+    query: string,
+    args: QueryArgs,
+    callback: NodeCallback | null = null
+  ): void {
+    this._conn
+      .fetchOne(query, args)
+      .then((value) => (callback != null ? callback(null, value) : null))
+      .catch((error) => (callback != null ? callback(error, null) : null));
+  }
+
+  fetchAll(
+    query: string,
+    args: QueryArgs,
+    callback: NodeCallback<Set> | null = null
+  ): void {
+    this._conn
+      .fetchAll(query, args)
+      .then((value) => (callback != null ? callback(null, value) : null))
+      .catch((error) => (callback != null ? callback(error, null) : null));
+  }
+
+  fetchOneJSON(
+    query: string,
+    args: QueryArgs,
+    callback: NodeCallback<string> | null = null
+  ): void {
+    this._conn
+      .fetchOneJSON(query, args)
+      .then((value) => (callback != null ? callback(null, value) : null))
+      .catch((error) => (callback != null ? callback(error, null) : null));
+  }
+
+  fetchAllJSON(
+    query: string,
+    args: QueryArgs,
+    callback: NodeCallback<string> | null = null
+  ): void {
+    this._conn
+      .fetchAllJSON(query, args)
+      .then((value) => (callback ? callback(null, value) : null))
+      .catch((error) => (callback ? callback(error, null) : null));
+  }
+
+  close(callback: NodeCallback<null> | null = null): void {
+    this._conn
+      .close()
+      .then((_value) => (callback ? callback(null, null) : null))
+      .catch((error) => (callback ? callback(error, null) : null));
+  }
+
+  private constructor(conn: AwaitConnection) {
+    this._conn = conn;
+  }
+
   static wrap(conn: AwaitConnection): Connection {
-    return new Connection();
+    return new Connection(conn);
   }
 }
