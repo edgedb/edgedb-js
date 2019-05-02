@@ -16,14 +16,34 @@
  * limitations under the License.
  */
 
-export {LocalDateTime} from "./datatypes/datetime";
-export {NamedTuple} from "./datatypes/namedtuple";
-export {ObjectShape} from "./datatypes/object";
-export {Set} from "./datatypes/set";
-export {Tuple} from "./datatypes/tuple";
-export {UUID} from "./datatypes/uuid";
+import * as errors from "./index";
+import {errorMapping, ErrorType} from "./map";
 
-export * from "./errors";
+export function resolveErrorCode(code: number): ErrorType {
+  let result: ErrorType | undefined;
 
-import connect from "./client";
-export default connect;
+  result = errorMapping.get(code);
+  if (result) {
+    return result;
+  }
+
+  code = code & 0xff_ff_ff_00;
+  result = errorMapping.get(code);
+  if (result) {
+    return result;
+  }
+
+  code = code & 0xff_ff_00_00;
+  result = errorMapping.get(code);
+  if (result) {
+    return result;
+  }
+
+  code = code & 0xff_00_00_00;
+  result = errorMapping.get(code);
+  if (result) {
+    return result;
+  }
+
+  return errors.EdgeDBError;
+}

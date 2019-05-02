@@ -24,6 +24,9 @@ import connect, {
   NamedTuple,
   UUID,
   LocalDateTime,
+  DivisionByZeroError,
+  EdgeDBError,
+  MissingRequiredError,
 } from "../src/index";
 import {LocalDate, Duration} from "../src/datatypes/datetime";
 
@@ -728,6 +731,10 @@ test("execute", async () => {
       })
       .catch((e: Error) => {
         expect(e.toString()).toMatch("division by zero");
+        expect(e instanceof DivisionByZeroError).toBeTruthy();
+        expect(e instanceof MissingRequiredError).toBeFalsy();
+        expect(e instanceof EdgeDBError).toBeTruthy();
+        expect((<DivisionByZeroError>e).code).toBe(0x05_01_00_01);
       });
 
     await con.execute("start transaction isolation serializable");

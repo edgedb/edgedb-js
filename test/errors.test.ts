@@ -16,14 +16,13 @@
  * limitations under the License.
  */
 
-export {LocalDateTime} from "./datatypes/datetime";
-export {NamedTuple} from "./datatypes/namedtuple";
-export {ObjectShape} from "./datatypes/object";
-export {Set} from "./datatypes/set";
-export {Tuple} from "./datatypes/tuple";
-export {UUID} from "./datatypes/uuid";
+import * as edgedb from "../src/index";
+import {resolveErrorCode} from "../src/errors/resolve";
 
-export * from "./errors";
-
-import connect from "./client";
-export default connect;
+test("resolve error", () => {
+  expect(resolveErrorCode(0x04_02_01_01)).toBe(edgedb.InvalidLinkTargetError);
+  expect(resolveErrorCode(0x04_02_01_ff)).toBe(edgedb.InvalidTargetError);
+  expect(resolveErrorCode(0x04_02_ff_ff)).toBe(edgedb.InvalidTypeError);
+  expect(resolveErrorCode(0x04_ff_ff_ff)).toBe(edgedb.QueryError);
+  expect(resolveErrorCode(0xfe_ff_ff_ff)).toBe(edgedb.EdgeDBError);
+});

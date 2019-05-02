@@ -67,7 +67,9 @@ class Buffer {
   mappingBuf.nl();
   mappingBuf.code('import * as errors from "./index";');
   mappingBuf.nl();
-  mappingBuf.code("type ErrorType = new (msg: string) => Error;");
+  mappingBuf.code(
+    "export type ErrorType = new (msg: string) => errors.EdgeDBError;"
+  );
   mappingBuf.nl();
   mappingBuf.code("export const errorMapping = new Map<number, ErrorType>();");
   mappingBuf.nl();

@@ -19,6 +19,7 @@
 import * as net from "net";
 
 import char, * as chars from "./chars";
+import {resolveErrorCode} from "./errors/resolve";
 import {ReadMessageBuffer, WriteMessageBuffer, ReadBuffer} from "./buffer";
 import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
@@ -273,9 +274,10 @@ class AwaitConnection {
     const code = this.buffer.readUInt32();
     const message = this.buffer.readString();
     const attrs = this._parseHeaders();
+    const errorType = resolveErrorCode(code);
     this.buffer.finishMessage();
 
-    const err = new Error(message);
+    const err = new errorType(message);
     return err;
   }
 
