@@ -693,6 +693,31 @@ test("fetchAllJSON", async () => {
   }
 });
 
+test("fetchOne wrong cardinality", async () => {
+  const con = await connect();
+  try {
+    await con
+      .fetchOneJSON("start transaction")
+      .then(() => {
+        throw new Error("an exception was expected");
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch(/fetchOneJSON\(\) returned no data/);
+      });
+
+    await con
+      .fetchOne("start transaction")
+      .then(() => {
+        throw new Error("an exception was expected");
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch(/fetchOne\(\) returned no data/);
+      });
+  } finally {
+    await con.close();
+  }
+});
+
 test("execute", async () => {
   const con = await connect();
   try {
