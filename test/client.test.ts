@@ -18,7 +18,7 @@
 
 import * as util from "util";
 
-import connect, {
+import {
   Set,
   Tuple,
   NamedTuple,
@@ -29,9 +29,10 @@ import connect, {
   MissingRequiredError,
 } from "../src/index";
 import {LocalDate, Duration} from "../src/datatypes/datetime";
+import {asyncConnect, connectWithCallback} from "./testbase";
 
 test("fetchAll: basic scalars", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchAll("select {'a', 'bc'}");
@@ -96,7 +97,7 @@ test("fetchAll: basic scalars", async () => {
 });
 
 test("fetch: positional args", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     const intCases: Array<[string[], number[]]> = [
@@ -154,7 +155,7 @@ test("fetch: positional args", async () => {
 });
 
 test("fetch: named args", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne(`select <str>$a`, {a: "123"});
@@ -174,7 +175,7 @@ test("fetch: named args", async () => {
 });
 
 test("fetch: int overflow", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne(`
@@ -210,7 +211,7 @@ test("fetch: int overflow", async () => {
 });
 
 test("fetch: date", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne(`
@@ -230,7 +231,7 @@ test("fetch: date", async () => {
 });
 
 test("fetch: local_date", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne(`
@@ -253,7 +254,7 @@ test("fetch: local_date", async () => {
 });
 
 test("fetch: local_time", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     for (const time of [
@@ -284,7 +285,7 @@ test("fetch: local_time", async () => {
 });
 
 test("fetch: duration", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     for (const time of [
@@ -344,7 +345,7 @@ test("fetch: duration fuzz", async () => {
     );
   }
 
-  const con = await connect();
+  const con = await asyncConnect();
   try {
     // Test that Duration.__str__ formats the same as <str><duration>.
     const dursAsText = await con.fetchAll(
@@ -379,7 +380,7 @@ test("fetch: duration fuzz", async () => {
 });
 
 test("fetch: tuple", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchAll("select ()");
@@ -415,7 +416,7 @@ test("fetch: tuple", async () => {
 });
 
 test("fetch: object", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne(`
@@ -461,7 +462,7 @@ test("fetch: object", async () => {
 });
 
 test("fetch: set of arrays", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne(`
@@ -496,7 +497,7 @@ test("fetch: set of arrays", async () => {
 });
 
 test("fetch: object implicit fields", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne(`
@@ -531,7 +532,7 @@ test("fetch: object implicit fields", async () => {
 });
 
 test("fetch: uuid", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne("SELECT schema::ObjectType.id LIMIT 1");
@@ -550,7 +551,7 @@ test("fetch: uuid", async () => {
 });
 
 test("fetch: enum", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne("SELECT sys::get_version()");
@@ -562,7 +563,7 @@ test("fetch: enum", async () => {
 });
 
 test("fetch: namedtuple", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne("select (a := 1)");
@@ -601,7 +602,7 @@ test("fetch: namedtuple", async () => {
 });
 
 test("fetchOne: basic scalars", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne("select 'abc'");
@@ -626,7 +627,7 @@ test("fetchOne: basic scalars", async () => {
 });
 
 test("fetchOne: arrays", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne("select [12312312, -1, 123, 0, 1]");
@@ -653,7 +654,7 @@ test("fetch: long strings", async () => {
 
   // This test is meant to stress test the ring buffer.
 
-  const con = await connect();
+  const con = await asyncConnect();
   let res;
   try {
     // A 10mb string.
@@ -677,7 +678,7 @@ test("fetch: long strings", async () => {
 });
 
 test("fetchOneJSON", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   try {
     const res = await con.fetchOneJSON("select (a := 1)");
     expect(JSON.parse(res)).toEqual({a: 1});
@@ -687,7 +688,7 @@ test("fetchOneJSON", async () => {
 });
 
 test("fetchAllJSON", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   try {
     const res = await con.fetchAllJSON("select {(a := 1), (a := 2)}");
     expect(JSON.parse(res)).toEqual([{a: 1}, {a: 2}]);
@@ -697,7 +698,7 @@ test("fetchAllJSON", async () => {
 });
 
 test("fetchOne wrong cardinality", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   try {
     await con
       .fetchOneJSON("start transaction")
@@ -722,7 +723,7 @@ test("fetchOne wrong cardinality", async () => {
 });
 
 test("execute", async () => {
-  const con = await connect();
+  const con = await asyncConnect();
   try {
     await con
       .execute(`select 1/0;`)
@@ -752,47 +753,44 @@ test("execute", async () => {
 });
 
 test("callbacks", (done) => {
-  connect(
-    null,
-    (err, con) => {
-      if (err) {
-        throw err;
+  connectWithCallback(undefined, (err, con) => {
+    if (err) {
+      throw err;
+    }
+
+    if (!con) {
+      throw new Error("no connection object");
+    }
+
+    con.execute("start transaction", (err1, _data1) => {
+      if (err1) {
+        throw err1;
       }
 
-      if (!con) {
-        throw new Error("no connection object");
-      }
-
-      con.execute("start transaction", (err1, _data1) => {
-        if (err1) {
-          throw err1;
+      con.fetchOne("select <int64>$i + 1", {i: 10}, (err2, data2) => {
+        if (err2) {
+          throw err2;
         }
 
-        con.fetchOne("select <int64>$i + 1", {i: 10}, (err2, data2) => {
-          if (err2) {
-            throw err2;
-          }
-
-          try {
-            expect(data2).toBe(11);
-          } finally {
-            con.execute("rollback", (err3, _data3) => {
-              if (err3) {
-                throw err3;
-              }
-              done();
-            });
-          }
-        });
+        try {
+          expect(data2).toBe(11);
+        } finally {
+          con.execute("rollback", (err3, _data3) => {
+            if (err3) {
+              throw err3;
+            }
+            done();
+          });
+        }
       });
-    }
-  );
+    });
+  });
 });
 
 test("fetch/optimistic cache invalidation", async () => {
   const typename = "CacheInv_01";
   const query = `SELECT ${typename}.prop1 LIMIT 1`;
-  const con = await connect();
+  const con = await asyncConnect();
   await con.execute("start transaction");
   try {
     await con.execute(`

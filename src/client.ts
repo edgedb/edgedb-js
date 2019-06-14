@@ -34,6 +34,11 @@ import {
   LocalTime,
   Duration,
 } from "./datatypes/datetime";
+import {
+  parseConnectArguments,
+  ConnectConfig,
+  NormalizedConnectConfig,
+} from "./con_utils";
 
 type QueryArgPrimitive =
   | number
@@ -48,13 +53,6 @@ type QueryArgPrimitive =
   | UUID;
 type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
 type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
-
-export interface ConnectConfig {
-  port?: number;
-  host?: string;
-  user?: string;
-  database?: string;
-}
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,
@@ -100,10 +98,11 @@ export default function connect(
   }
 }
 
-class AwaitConnection {
+export class AwaitConnection {
   private sock: net.Socket;
-  private config: ConnectConfig;
+  private config: NormalizedConnectConfig;
   private paused: boolean;
+  private connected: boolean = false;
 
   private lastStatus: string | null;
 
@@ -123,7 +122,7 @@ class AwaitConnection {
   private connWaiterResolve: ((value: any) => void) | null;
   private connWaiterReject: ((value: any) => void) | null;
 
-  private constructor(sock: net.Socket, config: ConnectConfig) {
+  private constructor(sock: net.Socket, config: NormalizedConnectConfig) {
     this.buffer = new ReadMessageBuffer();
 
     this.codecsRegistry = new CodecsRegistry();
@@ -359,8 +358,8 @@ class AwaitConnection {
       .endMessage();
 
     wb.beginMessage(chars.$0)
-      .writeString(this.config.user || "edgedb") // TODO
-      .writeString(this.config.database || "edgedb")
+      .writeString(this.config.user)
+      .writeString(this.config.database)
       .endMessage();
 
     this.sock.write(wb.unwrap());
@@ -423,6 +422,7 @@ class AwaitConnection {
 
         case chars.$Z: {
           this._parseSyncMessage();
+          this.connected = true;
           return;
         }
 
@@ -874,13 +874,17 @@ class AwaitConnection {
 
   async close(): Promise<void> {
     this.sock.destroy();
+    this.connected = false;
   }
 
-  private static newSock({
-    port = 5656,
-    host = "localhost",
-  }: ConnectConfig = {}): net.Socket {
-    return net.createConnection(port, host);
+  private static newSock(addr: string | [string, number]): net.Socket {
+    if (typeof addr === "string") {
+      // unix socket
+      return net.createConnection(addr);
+    } else {
+      const [host, port] = addr;
+      return net.createConnection(port, host);
+    }
   }
 
   static async connect(
@@ -888,14 +892,53 @@ class AwaitConnection {
   ): Promise<AwaitConnection> {
     config = config || {};
 
-    const sock = this.newSock(config);
-    const conn = new this(sock, config);
-    await conn.connect();
-    return conn;
+    const {addrs, ...cfg} = parseConnectArguments(config);
+    let err: Error | undefined;
+    let errMsg: string = "failed to connect";
+
+    for (const addr of addrs) {
+      errMsg =
+        "failed to connect: could not establish connection to " +
+        (typeof addr === "string" ? addr : addr[0] + ":" + addr[1]);
+      const sock = this.newSock(addr);
+      const conn = new this(sock, {addrs: [addr], ...cfg});
+
+      const connPromise = conn.connect();
+      // set-up a timeout
+      if (cfg.connect_timeout) {
+        err = new Error(errMsg + " in " + cfg.connect_timeout + "ms");
+        setTimeout(() => {
+          if (!conn.connected) {
+            conn.sock.destroy(err);
+          }
+        }, cfg.connect_timeout);
+      }
+
+      try {
+        await connPromise;
+      } catch (e) {
+        // on timeout Error proceed to the next address, otherwise re-throw
+        if (
+          typeof e.message === "string" &&
+          e.message.indexOf("failed to connect") !== -1
+        ) {
+          continue;
+        } else {
+          throw e;
+        }
+      }
+      return conn;
+    }
+
+    // throw a generic or specific conneciton error
+    if (typeof err === "undefined") {
+      err = new Error(errMsg);
+    }
+    throw err;
   }
 }
 
-class Connection {
+export class Connection {
   private _conn: AwaitConnection;
 
   execute(query: string, callback: NodeCallback | null = null): void {

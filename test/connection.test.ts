@@ -22,6 +22,8 @@ import {
   parseConnectArguments,
   NormalizedConnectConfig,
 } from "../src/con_utils";
+import {asyncConnect} from "./testbase";
+import {AwaitConnection} from "../src/client";
 
 function env_wrap(env: {[key: string]: any}, func: () => void): void {
   const old_env: {[key: string]: any} = {};
@@ -349,5 +351,19 @@ test("parseConnectArguments", () => {
 
   for (const testCase of TESTS) {
     runConnectionTest(testCase);
+  }
+});
+
+test("connect: timeout", async () => {
+  let con: AwaitConnection | undefined;
+  try {
+    con = await asyncConnect({timeout: 1});
+    throw new Error("conneciton didn't time out");
+  } catch (e) {
+    expect(e.message).toMatch("failed to connect");
+  } finally {
+    if (typeof con !== "undefined") {
+      await con.close();
+    }
   }
 });
