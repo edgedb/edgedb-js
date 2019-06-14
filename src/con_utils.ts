@@ -88,11 +88,13 @@ function parseConnectDsnAndArgs({
   server_settings,
 }: ConnectConfig): NormalizedConnectConfig {
   if (dsn) {
+    // Comma-separated hosts cannot be parsed correctly with url.parse, so if
+    // we detect them, we need to replace the whole host before parsing. The
+    // comma-separated host list can then be handled in the same way as if it
+    // came from any other source (such as EDGEDB_HOST).
     const dsnHostMatch = /\/\/(.+?@)?(.*)\//.exec(dsn);
     let dsnHost: string | null = null;
 
-    // if the dsn host contains commas we'll need to replace
-    // the whole host before parsing
     if (dsnHostMatch && typeof dsnHostMatch[2] === "string") {
       dsnHost = dsnHostMatch[2];
       if (dsnHost.indexOf(",") !== -1) {
