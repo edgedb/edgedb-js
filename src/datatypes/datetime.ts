@@ -83,11 +83,15 @@ export class LocalDateTime {
   }
 
   toDateString(): string {
-    return this._date.toUTCString();
+    return this.toString(); // cut off " GMT"
   }
 
   toISOString(): string {
-    return this._date.toISOString().slice(0, -1); // cut off "Z"
+    const result = this._date.toISOString();
+    if (result[result.length - 1] !== "Z") {
+      throw new Error(`unexpected ISO format: ${result}`);
+    }
+    return result.slice(0, -1); // cut off "Z"
   }
 
   toJSON(): string {
@@ -99,7 +103,11 @@ export class LocalDateTime {
   }
 
   toString(): string {
-    return this._date.toUTCString();
+    const result = this._date.toUTCString();
+    if (result.slice(-4) !== " GMT") {
+      throw new Error(`unexpected UTC format: ${result}`);
+    }
+    return result.slice(0, -4); // cut off " GMT"
   }
 
   toDateTime(): Date {

@@ -16,7 +16,12 @@
  * limitations under the License.
  */
 
-export {LocalDateTime} from "./datatypes/datetime";
+export {
+  LocalDateTime,
+  LocalDate,
+  LocalTime,
+  Duration,
+} from "./datatypes/datetime";
 export {NamedTuple} from "./datatypes/namedtuple";
 export {ObjectShape} from "./datatypes/object";
 export {Set} from "./datatypes/set";
@@ -25,5 +30,6 @@ export {UUID} from "./datatypes/uuid";
 
 export * from "./errors";
 
-import connect from "./client";
+import _connect from "./client";
+export const connect = _connect;
 export default connect;
