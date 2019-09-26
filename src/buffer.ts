@@ -692,6 +692,12 @@ export class ReadBuffer {
     return this.len - this.pos;
   }
 
+  finish(): void {
+    if (this.len !== this.pos) {
+      throw new BufferError("unexpected trailing data in buffer");
+    }
+  }
+
   discard(size: number): void {
     if (this.pos + size > this.len) {
       throw new BufferError("buffer overread");
@@ -819,6 +825,11 @@ export class ReadBuffer {
   }
 
   consumeAsString(): string {
+    if (this.pos === this.len) {
+      // Fast path.
+      return "";
+    }
+
     const res = this.buffer.toString("utf8", this.pos, this.len);
     this.pos = this.len;
     return res;

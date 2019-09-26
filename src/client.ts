@@ -309,6 +309,7 @@ export class AwaitConnection {
       buffer.consumeMessageInto(frb);
       frb.discard(6);
       result.push(codec.decode(frb));
+      frb.finish();
     }
   }
 

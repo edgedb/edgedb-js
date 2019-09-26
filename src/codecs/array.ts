@@ -69,14 +69,16 @@ export class ArrayCodec extends Codec implements ICodec {
 
   decode(buf: ReadBuffer): any {
     const ndims = buf.readInt32();
+
+    // Ignore flags.
+    buf.discard(4); // ignore flags
+
     if (ndims === 0) {
       return [];
     }
     if (ndims !== 1) {
       throw new Error("only 1-dimensional arrays are supported");
     }
-
-    buf.discard(4); // ignore flags
 
     const len = buf.readUInt32();
     if (this.len !== -1 && len !== this.len) {
