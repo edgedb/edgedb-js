@@ -51,6 +51,7 @@ export class SetCodec extends Codec implements ICodec {
     }
 
     buf.discard(4); // ignore flags
+    buf.discard(4); // reserved
 
     const len = buf.readUInt32();
 
@@ -70,6 +71,8 @@ export class SetCodec extends Codec implements ICodec {
             "element envelope"
         );
       }
+
+      buf.discard(4); // reserved
 
       const elemLen = buf.readInt32();
       if (elemLen === -1) {
@@ -93,6 +96,7 @@ export class SetCodec extends Codec implements ICodec {
     }
 
     buf.discard(4); // ignore flags
+    buf.discard(4); // reserved
 
     const len = buf.readUInt32();
 

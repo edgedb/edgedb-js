@@ -57,9 +57,10 @@ export class ArrayCodec extends Codec implements ICodec {
     }
     const elemBuf = elemData.unwrap();
 
-    buf.writeInt32(8 + 8 + elemBuf.length);
+    buf.writeInt32(12 + 8 + elemBuf.length);
     buf.writeInt32(1); // number of dimensions
     buf.writeInt32(0); // flags
+    buf.writeInt32(0); // reserved
 
     buf.writeInt32(objLen);
     buf.writeInt32(1);
@@ -70,8 +71,8 @@ export class ArrayCodec extends Codec implements ICodec {
   decode(buf: ReadBuffer): any {
     const ndims = buf.readInt32();
 
-    // Ignore flags.
     buf.discard(4); // ignore flags
+    buf.discard(4); // reserved
 
     if (ndims === 0) {
       return [];

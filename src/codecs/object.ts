@@ -67,6 +67,7 @@ export class ObjectCodec extends Codec implements ICodec {
     const elemBuf = ReadBuffer.alloc();
     const result: any = new objType();
     for (let i = 0; i < els; i++) {
+      buf.discard(4); // reserved
       const elemLen = buf.readInt32();
       const name = names[i];
       let val = null;

@@ -95,15 +95,15 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     const cls = this.tupleCls;
     if (els !== subCodecs.length) {
       throw new Error(
-        `cannot decode NamedTuple: expected ${
-          subCodecs.length
-        } elements, got ${els}`
+        `cannot decode NamedTuple: expected ` +
+          `${subCodecs.length} elements, got ${els}`
       );
     }
 
     const elemBuf = ReadBuffer.alloc();
     const result = new cls(els);
     for (let i = 0; i < els; i++) {
+      buf.discard(4); // reserved
       const elemLen = buf.readInt32();
       let val = null;
       if (elemLen !== -1) {

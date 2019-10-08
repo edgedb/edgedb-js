@@ -20,7 +20,12 @@ import * as net from "net";
 
 import char, * as chars from "./chars";
 import {resolveErrorCode} from "./errors/resolve";
-import {ReadMessageBuffer, WriteMessageBuffer, ReadBuffer} from "./buffer";
+import {
+  ReadMessageBuffer,
+  WriteMessageBuffer,
+  ReadBuffer,
+  TERM_MESSAGE,
+} from "./buffer";
 import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {Set} from "./datatypes/set";
@@ -109,7 +114,7 @@ export class AwaitConnection {
   private codecsRegistry: CodecsRegistry;
   private queryCodecCache: LRU<string, [number, ICodec, ICodec]>;
 
-  private serverSecret: number;
+  private serverSecret: Buffer | null;
   private serverSettings: Map<string, string>;
   private serverXactStatus: TransactionStatus;
 
@@ -130,7 +135,7 @@ export class AwaitConnection {
 
     this.lastStatus = null;
 
-    this.serverSecret = -1;
+    this.serverSecret = null;
     this.serverSettings = new Map<string, string>();
     this.serverXactStatus = TransactionStatus.TRANS_UNKNOWN;
 
@@ -350,20 +355,24 @@ export class AwaitConnection {
   private async connect(): Promise<void> {
     await this.connWaiter;
 
-    const wb = new WriteMessageBuffer();
+    const handshake = new WriteMessageBuffer();
 
-    wb.beginMessage(chars.$V)
+    handshake
+      .beginMessage(chars.$V)
       .writeInt16(1)
-      .writeInt16(0)
-      .writeInt16(0)
-      .endMessage();
+      .writeInt16(0);
 
-    wb.beginMessage(chars.$0)
-      .writeString(this.config.user)
-      .writeString(this.config.database)
-      .endMessage();
+    handshake.writeInt16(2);
+    handshake.writeString("user");
+    handshake.writeString(this.config.user);
+    handshake.writeString("database");
+    handshake.writeString(this.config.database);
 
-    this.sock.write(wb.unwrap());
+    // No extensions requested
+    handshake.writeInt16(0);
+    handshake.endMessage();
+
+    this.sock.write(handshake.unwrap());
 
     while (true) {
       if (!this.buffer.takeMessage()) {
@@ -388,11 +397,6 @@ export class AwaitConnection {
           break;
         }
 
-        case chars.$Y: {
-          this.buffer.discardMessage();
-          break;
-        }
-
         case chars.$R: {
           const status = this.buffer.readInt32();
 
@@ -412,7 +416,7 @@ export class AwaitConnection {
         }
 
         case chars.$K: {
-          this.serverSecret = this.buffer.readInt32();
+          this.serverSecret = this.buffer.readBuffer(32);
           this.buffer.finishMessage();
           break;
         }
@@ -874,6 +878,7 @@ export class AwaitConnection {
   }
 
   async close(): Promise<void> {
+    this.sock.write(TERM_MESSAGE);
     this.sock.destroy();
     this.connected = false;
   }

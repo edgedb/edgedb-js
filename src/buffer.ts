@@ -279,6 +279,11 @@ const FLUSH_MESSAGE = new WriteMessageBuffer()
   .endMessage()
   .unwrap();
 
+export const TERM_MESSAGE = new WriteMessageBuffer()
+  .beginMessage(chars.$X)
+  .endMessage()
+  .unwrap();
+
 export class ReadMessageBuffer {
   private bufs: RingBuffer<Buffer>;
   private len: number;
