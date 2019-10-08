@@ -17,11 +17,9 @@
  */
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
-import {ICodec, Codec} from "./ifaces";
+import {ICodec, ScalarCodec} from "./ifaces";
 
-export class JSONCodec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class JSONCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "string") {
       throw new Error(`a string was expected, got "${object}"`);

@@ -18,7 +18,7 @@
 
 import {ReadBuffer} from "../buffer";
 import LRU from "../lru";
-import {ICodec, uuid} from "./ifaces";
+import {ICodec, uuid, ScalarCodec} from "./ifaces";
 import {NULL_CODEC_ID, NULL_CODEC, SCALAR_CODECS, KNOWN_TYPES} from "./codecs";
 import {EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec} from "./tuple";
 import {ArrayCodec} from "./array";
@@ -182,6 +182,11 @@ export class CodecsRegistry {
     switch (t) {
       case CTYPE_BASE_SCALAR: {
         res = SCALAR_CODECS.get(tid);
+        if (!(res instanceof ScalarCodec)) {
+          throw new Error(
+            "could not build scalar codec: base scalar has a non-scalar codec"
+          );
+        }
         break;
       }
 
@@ -230,6 +235,12 @@ export class CodecsRegistry {
             "could not build scalar codec: missing a codec for base scalar"
           );
         }
+        if (!(res instanceof ScalarCodec)) {
+          throw new Error(
+            "could not build scalar codec: base scalar has a non-scalar codec"
+          );
+        }
+        res = <ICodec>res.derive(tid);
         break;
       }
 

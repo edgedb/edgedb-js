@@ -17,11 +17,9 @@
  */
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
-import {ICodec, Codec} from "./ifaces";
+import {ICodec, ScalarCodec} from "./ifaces";
 
-export class Int64Codec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class Int64Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
       throw new Error(`a number was expected, got "${object}"`);
@@ -35,9 +33,7 @@ export class Int64Codec extends Codec implements ICodec {
   }
 }
 
-export class Int32Codec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class Int32Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
       throw new Error(`a number was expected, got "${object}"`);
@@ -51,9 +47,7 @@ export class Int32Codec extends Codec implements ICodec {
   }
 }
 
-export class Int16Codec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class Int16Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
       throw new Error(`a number was expected, got "${object}"`);
@@ -67,9 +61,7 @@ export class Int16Codec extends Codec implements ICodec {
   }
 }
 
-export class Float32Codec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class Float32Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
       throw new Error(`a number was expected, got "${object}"`);
@@ -83,9 +75,7 @@ export class Float32Codec extends Codec implements ICodec {
   }
 }
 
-export class Float64Codec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class Float64Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
       throw new Error(`a number was expected, got "${object}"`);

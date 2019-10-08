@@ -17,12 +17,10 @@
  */
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
-import {ICodec, Codec} from "./ifaces";
+import {ICodec, ScalarCodec} from "./ifaces";
 import {UUID, UUIDBufferFromString} from "../datatypes/uuid";
 
-export class UUIDCodec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class UUIDCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (object instanceof UUID) {
       const val = <UUID>object;

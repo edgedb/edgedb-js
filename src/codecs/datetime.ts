@@ -17,7 +17,7 @@
  */
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
-import {ICodec, Codec} from "./ifaces";
+import {ICodec, ScalarCodec} from "./ifaces";
 import {
   LocalDateTime,
   LocalDate,
@@ -35,9 +35,7 @@ import {ymd2ord} from "../datatypes/dateutil";
 const TIMESHIFT = 946684800000;
 const DATESHIFT_ORD = ymd2ord(2000, 1, 1);
 
-export class DateTimeCodec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class DateTimeCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof Date)) {
       throw new Error(`a Date instance was expected, got "${object}"`);
@@ -55,9 +53,7 @@ export class DateTimeCodec extends Codec implements ICodec {
   }
 }
 
-export class LocalDateTimeCodec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof LocalDateTime)) {
       throw new Error(
@@ -80,9 +76,7 @@ export class LocalDateTimeCodec extends Codec implements ICodec {
   }
 }
 
-export class LocalDateCodec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class LocalDateCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof LocalDate)) {
       throw new Error(
@@ -99,9 +93,7 @@ export class LocalDateCodec extends Codec implements ICodec {
   }
 }
 
-export class LocalTimeCodec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class LocalTimeCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof LocalTime)) {
       throw new Error(`a LocalTime instance was expected, got "${object}"`);
@@ -128,9 +120,7 @@ export class LocalTimeCodec extends Codec implements ICodec {
   }
 }
 
-export class DurationCodec extends Codec implements ICodec {
-  readonly isScalar = true;
-
+export class DurationCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof Duration)) {
       throw new Error(`a Duration instance was expected, got "${object}"`);

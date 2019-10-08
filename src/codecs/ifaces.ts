@@ -43,3 +43,12 @@ export abstract class Codec {
     this.tidBuffer = Buffer.from(tid, "hex");
   }
 }
+
+export abstract class ScalarCodec extends Codec {
+  readonly isScalar = true;
+
+  derive(tid: uuid): Codec {
+    const self = this.constructor;
+    return <Codec>new (<any>self)(tid);
+  }
+}

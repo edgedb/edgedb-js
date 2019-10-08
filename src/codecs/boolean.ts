@@ -17,11 +17,9 @@
  */
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
-import {ICodec, Codec} from "./ifaces";
+import {ICodec, ScalarCodec} from "./ifaces";
 
-export class BoolCodec extends Codec implements ICodec {
-  readonly isScalar: boolean = true;
-
+export class BoolCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     const typeOf = typeof object;
     if (typeOf !== "boolean" && typeOf !== "number") {
