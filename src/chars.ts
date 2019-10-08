@@ -41,6 +41,7 @@ export const $R: char = ord("R");
 export const $S: char = ord("S");
 export const $T: char = ord("T");
 export const $V: char = ord("V");
+export const $X: char = ord("X");
 export const $Y: char = ord("Y");
 export const $Z: char = ord("Z");
 

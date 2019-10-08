@@ -79,15 +79,15 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     const subCodecs = this.subCodecs;
     if (els !== subCodecs.length) {
       throw new Error(
-        `cannot decode Tuple: expected ${
-          subCodecs.length
-        } elements, got ${els}`
+        `cannot decode Tuple: expected ` +
+          `${subCodecs.length} elements, got ${els}`
       );
     }
 
     const elemBuf = ReadBuffer.alloc();
     const result = new Tuple(els);
     for (let i = 0; i < els; i++) {
+      buf.discard(4); // reserved
       const elemLen = buf.readInt32();
       if (elemLen === -1) {
         result[i] = null;
