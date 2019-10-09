@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {ICodec, Codec, uuid} from "./ifaces";
+import {ICodec, Codec, ScalarCodec, uuid} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../buffer";
 
 export class ArrayCodec extends Codec implements ICodec {
@@ -30,7 +30,7 @@ export class ArrayCodec extends Codec implements ICodec {
   }
 
   encode(buf: WriteBuffer, obj: any): void {
-    if (!this.subCodec.isScalar) {
+    if (!(this.subCodec instanceof ScalarCodec)) {
       throw new Error("only arrays of scalars are supported");
     }
 

@@ -23,7 +23,6 @@ export type uuid = string;
 export interface ICodec {
   readonly tid: uuid;
   readonly tidBuffer: Buffer;
-  readonly isScalar: boolean;
 
   encode(buf: WriteBuffer, object: any): void;
   decode(buf: ReadBuffer): any;
@@ -36,7 +35,6 @@ export interface IArgsCodec {
 export abstract class Codec {
   readonly tid: uuid;
   readonly tidBuffer: Buffer;
-  readonly isScalar: boolean = false;
 
   constructor(tid: uuid) {
     this.tid = tid;
@@ -45,8 +43,6 @@ export abstract class Codec {
 }
 
 export abstract class ScalarCodec extends Codec {
-  readonly isScalar = true;
-
   derive(tid: uuid): Codec {
     const self = this.constructor;
     return <Codec>new (<any>self)(tid);
