@@ -101,6 +101,7 @@ export class ArrayCodec extends Codec implements ICodec {
       } else {
         buf.sliceInto(elemBuf, elemLen);
         result[i] = subCodec.decode(elemBuf);
+        elemBuf.finish();
       }
     }
 

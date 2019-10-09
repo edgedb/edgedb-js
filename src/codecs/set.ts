@@ -81,6 +81,7 @@ export class SetCodec extends Codec implements ICodec {
 
       buf.sliceInto(elemBuf, elemLen);
       result[i] = subCodec.decode(elemBuf);
+      elemBuf.finish();
     }
 
     return result;
@@ -113,6 +114,7 @@ export class SetCodec extends Codec implements ICodec {
       } else {
         buf.sliceInto(elemBuf, elemLen);
         result[i] = subCodec.decode(elemBuf);
+        elemBuf.finish();
       }
     }
 

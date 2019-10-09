@@ -94,6 +94,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
       } else {
         buf.sliceInto(elemBuf, elemLen);
         result[i] = subCodecs[i].decode(elemBuf);
+        elemBuf.finish();
       }
     }
 

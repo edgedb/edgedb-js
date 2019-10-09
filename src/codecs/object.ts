@@ -74,6 +74,7 @@ export class ObjectCodec extends Codec implements ICodec {
       if (elemLen !== -1) {
         buf.sliceInto(elemBuf, elemLen);
         val = codecs[i].decode(elemBuf);
+        elemBuf.finish();
       }
       result[name] = val;
     }

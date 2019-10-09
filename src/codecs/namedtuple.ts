@@ -109,6 +109,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
       if (elemLen !== -1) {
         buf.sliceInto(elemBuf, elemLen);
         val = subCodecs[i].decode(elemBuf);
+        elemBuf.finish();
       }
       result[i] = val;
     }
