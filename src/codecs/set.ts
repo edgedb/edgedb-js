@@ -43,15 +43,16 @@ export class SetCodec extends Codec implements ICodec {
 
   private decodeSetOfArrays(buf: ReadBuffer): any {
     const ndims = buf.readInt32();
+
+    buf.discard(4); // ignore flags
+    buf.discard(4); // reserved
+
     if (ndims === 0) {
       return new Set(0);
     }
     if (ndims !== 1) {
       throw new Error(`expected 1-dimensional array of records of arrays`);
     }
-
-    buf.discard(4); // ignore flags
-    buf.discard(4); // reserved
 
     const len = buf.readUInt32();
 
@@ -89,15 +90,16 @@ export class SetCodec extends Codec implements ICodec {
 
   private decodeSet(buf: ReadBuffer): any {
     const ndims = buf.readInt32();
+
+    buf.discard(4); // ignore flags
+    buf.discard(4); // reserved
+
     if (ndims === 0) {
       return new Set(0);
     }
     if (ndims !== 1) {
       throw new Error(`invalid set dimensinality: ${ndims}`);
     }
-
-    buf.discard(4); // ignore flags
-    buf.discard(4); // reserved
 
     const len = buf.readUInt32();
 

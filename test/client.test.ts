@@ -456,6 +456,19 @@ test("fetch: object", async () => {
     expect(res.id instanceof UUID).toBeTruthy();
     expect(res.__tid__ instanceof UUID).toBeTruthy();
     expect(res.params[1].__tid__).not.toEqual(res.__tid__);
+
+    // regression test: test that empty sets are properly decoded.
+    await con.fetchOne(`
+      select schema::Function {
+        name,
+        params: {
+          kind,
+        } limit 0,
+        multi setarr := <array<int32>>{}
+      }
+      filter .name = 'std::str_repeat'
+      limit 1
+    `);
   } finally {
     await con.close();
   }
