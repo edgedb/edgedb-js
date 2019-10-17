@@ -33,6 +33,7 @@ import LRU from "./lru";
 import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {UUID} from "./datatypes/uuid";
+import * as scram from "./scram";
 import {
   LocalDateTime,
   LocalDate,
@@ -402,10 +403,9 @@ export class AwaitConnection {
 
           if (status === AuthenticationStatuses.AUTH_OK) {
             this.buffer.finishMessage();
-          }
-
-          if (status !== AuthenticationStatuses.AUTH_OK) {
-            // TODO: Abort the connection
+          } else if (status === AuthenticationStatuses.AUTH_SASL) {
+            await this._authSasl();
+          } else {
             throw new Error(
               `unsupported authentication method requested by the ` +
                 `server: ${status}`
@@ -433,6 +433,120 @@ export class AwaitConnection {
 
         default:
           this._fallthrough();
+      }
+    }
+  }
+
+  private async _authSasl(): Promise<void> {
+    const numMethods = this.buffer.readInt32();
+    if (numMethods <= 0) {
+      throw new Error(
+        "the server requested SASL authentication but did not offer any methods"
+      );
+    }
+
+    const methods = [];
+    let foundScram256 = false;
+    for (let _ = 0; _ < numMethods; _++) {
+      const method = this.buffer.readLenPrefixedBuffer().toString("utf8");
+      if (method === "SCRAM-SHA-256") {
+        foundScram256 = true;
+      }
+      methods.push(method);
+    }
+
+    this.buffer.finishMessage();
+
+    if (!foundScram256) {
+      throw new Error(
+        `the server offered the following SASL authentication ` +
+          `methods: ${methods.join(", ")}, neither are supported.`
+      );
+    }
+
+    const clientNonce = await scram.generateNonce();
+    const [clientFirst, clientFirstBare] = scram.buildClientFirstMessage(
+      clientNonce,
+      this.config.user
+    );
+
+    const wb = new WriteMessageBuffer();
+    wb.beginMessage(chars.$p)
+      .writeString("SCRAM-SHA-256")
+      .writeString(clientFirst)
+      .endMessage();
+    this.sock.write(wb.unwrap());
+
+    await this._ensureMessage(chars.$R, "SASLContinue");
+    let status = this.buffer.readInt32();
+    if (status !== AuthenticationStatuses.AUTH_SASL_CONTINUE) {
+      throw new Error(
+        `expected SASLContinue from the server, received ${status}`
+      );
+    }
+
+    const serverFirst = this.buffer.readString();
+    this.buffer.finishMessage();
+
+    const [serverNonce, salt, itercount] = scram.parseServerFirstMessage(
+      serverFirst
+    );
+
+    const [clientFinal, expectedServerSig] = scram.buildClientFinalMessage(
+      this.config.password || "",
+      salt,
+      itercount,
+      clientFirstBare,
+      serverFirst,
+      serverNonce
+    );
+
+    wb.reset()
+      .beginMessage(chars.$p)
+      .writeString(clientFinal)
+      .endMessage();
+    this.sock.write(wb.unwrap());
+
+    await this._ensureMessage(chars.$R, "SASLFinal");
+    status = this.buffer.readInt32();
+    if (status !== AuthenticationStatuses.AUTH_SASL_FINAL) {
+      throw new Error(
+        `expected SASLFinal from the server, received ${status}`
+      );
+    }
+
+    const serverFinal = this.buffer.readString();
+    this.buffer.finishMessage();
+
+    const serverSig = scram.parseServerFinalMessage(serverFinal);
+
+    if (!serverSig.equals(expectedServerSig)) {
+      throw new Error("server SCRAM proof does not match");
+    }
+  }
+
+  private async _ensureMessage(
+    expectedMtype: char,
+    err: string
+  ): Promise<void> {
+    if (!this.buffer.takeMessage()) {
+      await this._waitForMessage();
+    }
+    const mtype = this.buffer.getMessageType();
+
+    switch (mtype) {
+      case chars.$E: {
+        throw this._parseErrorMessage();
+      }
+
+      case expectedMtype: {
+        return;
+      }
+
+      default: {
+        throw new Error(
+          `expected ${err} from the server, received ${chars.chr(mtype)}`
+        );
       }
     }
   }
@@ -877,10 +991,18 @@ export class AwaitConnection {
     return await this._fetch(query, args, true, true);
   }
 
-  async close(): Promise<void> {
-    this.sock.write(TERM_MESSAGE);
-    this.sock.destroy();
+  private abort(): void {
+    if (this.sock && this.connected) {
+      this.sock.destroy();
+    }
     this.connected = false;
+  }
+
+  async close(): Promise<void> {
+    if (this.sock && this.connected) {
+      this.sock.write(TERM_MESSAGE);
+    }
+    this.abort();
   }
 
   private static newSock(addr: string | [string, number]): net.Socket {
@@ -910,10 +1032,11 @@ export class AwaitConnection {
       const conn = new this(sock, {addrs: [addr], ...cfg});
 
       const connPromise = conn.connect();
+      let timeout = null;
       // set-up a timeout
       if (cfg.connect_timeout) {
         err = new Error(errMsg + " in " + cfg.connect_timeout + "ms");
-        setTimeout(() => {
+        timeout = setTimeout(() => {
           if (!conn.connected) {
             conn.sock.destroy(err);
           }
@@ -923,6 +1046,8 @@ export class AwaitConnection {
       try {
         await connPromise;
       } catch (e) {
+        conn.abort();
+
         // on timeout Error proceed to the next address, otherwise re-throw
         if (
           typeof e.message === "string" &&
@@ -932,8 +1057,13 @@ export class AwaitConnection {
         } else {
           throw e;
         }
+      } finally {
+        if (timeout != null) {
+          clearTimeout(timeout);
+        }
       }
-      return conn;
+
+      return conn; // break the connection try loop
     }
 
     // throw a generic or specific conneciton error

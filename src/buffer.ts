@@ -154,8 +154,10 @@ export class WriteMessageBuffer {
     this.buffer = new WriteBuffer();
   }
 
-  reset(): void {
+  reset(): this {
+    this.messagePos = -1;
     this.buffer.reset();
+    return this;
   }
 
   beginMessage(mtype: char): this {
