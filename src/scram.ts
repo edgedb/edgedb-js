@@ -24,6 +24,12 @@ const randomBytes = util.promisify(crypto.randomBytes);
 const RAW_NONCE_LENGTH = 18;
 
 export function saslprep(str: string): string {
+  // An actual implementation of SASLPrep requires a Unicode database.
+  // One of the most important tasks is to do the NFKC normalization though.
+  // usernames/password validation happens on the server side (where
+  // SASLPrep is implemented fully) when a role is created, so worst case
+  // scenario would be that invalid usernames/passwords can be sent to the
+  // server, in which case they will be rejected.
   return str.normalize("NFKC");
 }
 
@@ -169,9 +175,13 @@ export function HMAC(key: Buffer, ...msgs: Buffer[]): Buffer {
 }
 
 export function XOR(a: Buffer, b: Buffer): Buffer {
-  const res = Buffer.allocUnsafe(a.length);
-  for (let i = 0; i < a.length; i++) {
-    res[i] = a[i] ^ (b[i] | 0);
+  const len = a.length;
+  if (len !== b.length) {
+    throw new Error("scram.XOR: buffers are of different lengths");
+  }
+  const res = Buffer.allocUnsafe(len);
+  for (let i = 0; i < len; i++) {
+    res[i] = a[i] ^ b[i];
   }
   return res;
 }
