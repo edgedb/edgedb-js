@@ -138,7 +138,7 @@ test("fetch: positional args", async () => {
     expect(res).toEqual([dt, dt]);
 
     const ldt = new LocalDateTime(2012, 5, 30, 14, 11, 33, 123);
-    res = await con.fetchOne(`select <local_datetime>$0`, [ldt]);
+    res = await con.fetchOne(`select <cal::local_datetime>$0`, [ldt]);
     expect(res instanceof LocalDateTime).toBeTruthy();
     expect((res as LocalDateTime).getHours()).toBe(14);
     expect((res as LocalDateTime).toISOString()).toBe(
@@ -210,18 +210,18 @@ test("fetch: int overflow", async () => {
   }
 });
 
-test("fetch: date", async () => {
+test("fetch: datetime", async () => {
   const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne(`
-      with dt := <datetime>'January 10, 2016 17:11:01.123 UTC'
+      with dt := <datetime>'2016-01-10T17:11:01.123Z'
       select (dt, datetime_get(dt, 'epoch') * 1000)
     `);
     expect(res[0].getTime()).toBe(res[1]);
 
     res = await con.fetchOne(`
-      with dt := <datetime>'January 10, 1716 01:00:00.123123 UTC'
+      with dt := <datetime>'1716-01-10T01:00:00.123123Z'
       select (dt, datetime_get(dt, 'epoch') * 1000)
     `);
     expect(res[0].getTime()).toBe(Math.ceil(res[1]));
@@ -230,19 +230,19 @@ test("fetch: date", async () => {
   }
 });
 
-test("fetch: local_date", async () => {
+test("fetch: cal::local_date", async () => {
   const con = await asyncConnect();
   let res;
   try {
     res = await con.fetchOne(`
-      select <local_date>'January 10, 2016';
+      select <cal::local_date>'2016-01-10';
       `);
     expect(res instanceof LocalDate).toBeTruthy();
     expect(res.toString()).toBe("2016-01-10");
 
     res = await con.fetchOne(
       `
-      select <local_date>$0;
+      select <cal::local_date>$0;
       `,
       [res]
     );
@@ -253,7 +253,7 @@ test("fetch: local_date", async () => {
   }
 });
 
-test("fetch: local_time", async () => {
+test("fetch: cal::local_time", async () => {
   const con = await asyncConnect();
   let res;
   try {
@@ -265,7 +265,7 @@ test("fetch: local_time", async () => {
     ]) {
       res = await con.fetchOne(
         `
-        select (<local_time><str>$time, <str><local_time><str>$time);
+        select (<cal::local_time><str>$time, <str><cal::local_time><str>$time);
         `,
         {time}
       );
@@ -273,7 +273,7 @@ test("fetch: local_time", async () => {
 
       const res2 = await con.fetchOne(
         `
-        select <local_time>$time;
+        select <cal::local_time>$time;
         `,
         {time: res[0]}
       );
@@ -289,8 +289,8 @@ test("fetch: duration", async () => {
   let res;
   try {
     for (const time of [
-      "12 days",
-      "2 years 1 month 33 days -93423 seconds 74 milliseconds 11 microseconds",
+      "24 hours",
+      "68464977 seconds 74 milliseconds 11 microseconds",
     ]) {
       res = await con.fetchOne(
         `
@@ -756,7 +756,7 @@ test("execute", async () => {
       const isolation = await con.fetchOne(
         "select sys::get_transaction_isolation()"
       );
-      expect(isolation).toBe("serializable");
+      expect(isolation).toBe("SERIALIZABLE");
     } finally {
       await con.execute("rollback");
     }
