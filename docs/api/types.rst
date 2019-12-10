@@ -394,24 +394,29 @@ Local Date and Time
 Duration
 ========
 
-.. js:class:: Duration(\
-        months: number = 0, \
-        days: number = 0, \
-        microseconds: number = 0)
+.. js:class:: Duration(milliseconds: number = 0)
 
     A JavaScript  representation of an EdgeDB ``duration`` value.
 
-    .. js:method:: getMonths(): number
+    .. js:method:: fromMicroseconds(us: bigint): Duration
+        :staticmethod:
 
-        Get the number of months in the duration.
+        Create duration from bigint number of microseconds.
 
-    .. js:method:: getDays(): number
-
-        Get the number of days in the duration.
+        Note: new Duration() accepts fractional seconds too but can loose
+        precision because it's floating point.
 
     .. js:method:: getMilliseconds(): number
 
-        Get the number of microseconds in the duration.
+        Get the number of microseconds in the duration (can be fractional).
+
+    .. js:method:: getSeconds(): number
+
+        Get the number of seconds in the duration (can be fractional).
+
+    .. js:method:: getMicroseconds(): bigint
+
+        Get the precise number of microseconds in the duration.
 
     .. js:method:: toString(): string
 

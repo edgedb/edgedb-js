@@ -19,7 +19,7 @@
 import * as util from "util";
 
 import {UUID} from "../src/index";
-import {LocalDate} from "../src/datatypes/datetime";
+import {LocalDate, Duration} from "../src/datatypes/datetime";
 
 test("types: UUID", async () => {
   expect(() => {
@@ -77,3 +77,7 @@ test("types: LocalDate", async () => {
     return new LocalDate(2009, 1, 31);
   }).toThrow(/invalid number of days 31.*1\.\.28/);
 });
+
+test("types: Duration", async () => {
+  expect(new Duration(68464977074.011).toString()).toBe("19018:02:57.074011");
+})

@@ -273,82 +273,46 @@ export class LocalDate {
 }
 
 export class Duration {
-  private readonly _months: number;
-  private readonly _days: number;
-  private readonly _milliseconds: number;
+  private readonly _microseconds: bigint;
 
-  constructor(months: number = 0, days: number = 0, milliseconds: number = 0) {
-    this._months = months;
-    this._days = days;
-    this._milliseconds = milliseconds;
+  constructor(milliseconds: number = 0, microseconds: bigint = BigInt(0)) {
+    this._microseconds = BigInt(Math.floor(milliseconds * 1000)) +
+                         microseconds;
   }
 
-  getMonths(): number {
-    return this._months;
+  static fromMicroseconds(microseconds: bigint): Duration {
+    return new Duration(undefined, microseconds)
   }
 
-  getDays(): number {
-    return this._days;
+  getSeconds(): number {
+    return Number(this._microseconds) / 1000000;
   }
 
   getMilliseconds(): number {
-    return this._milliseconds;
+    return Number(this._microseconds) / 1000;
+  }
+
+  getMicroseconds(): bigint {
+    return this._microseconds;
   }
 
   toString(): string {
     const buf = [];
 
-    const year = Math.trunc(this._months / 12);
-    const mon = Math.trunc(this._months % 12);
-    let time = this._milliseconds;
+    let micros = this._microseconds;
 
-    let tfrac = Math.trunc(time / 3600_000);
-    time -= tfrac * 3600_000;
-    const hour = tfrac;
+    let bint_hour = micros / BigInt(3600_000_000);
+    let time = Number(micros - bint_hour * BigInt(3600_000_000));
+    const hour = Number(bint_hour);
 
-    if (hour < 0 !== tfrac < 0) {
-      throw new Error("interval out of range");
-    }
-
-    tfrac = Math.trunc(time / 60000);
-    time -= tfrac * 60000;
+    let tfrac = Math.trunc(time / 60_000_000);
+    time -= tfrac * 60_000_000;
     const min = tfrac;
-    const sec = Math.trunc(time / 1000);
-    let fsec = time - sec * 1000;
+    const sec = Math.trunc(time / 1000_000);
+    let fsec = time - sec * 1000_000;
 
     let isFirst = true;
     let isBefore = false;
-
-    if (year) {
-      buf.push(
-        `${isFirst ? "" : " "}` +
-          `${isBefore && year > 0 ? "+" : ""}` +
-          `${year} year${year === 1 ? "" : "s"}`
-      );
-
-      isFirst = false;
-      isBefore = year < 0;
-    }
-
-    if (mon) {
-      buf.push(
-        `${isFirst ? "" : " "}${isBefore && mon > 0 ? "+" : ""}` +
-          `${mon} month${mon === 1 ? "" : "s"}`
-      );
-
-      isFirst = false;
-      isBefore = mon < 0;
-    }
-
-    if (this._days) {
-      buf.push(
-        `${isFirst ? "" : " "}${isBefore && this._days > 0 ? "+" : ""}` +
-          `${this._days} day${this._days === 1 ? "" : "s"}`
-      );
-
-      isFirst = false;
-      isBefore = this._days < 0;
-    }
 
     if (isFirst || hour !== 0 || min !== 0 || sec !== 0 || fsec !== 0) {
       const neg = hour < 0 || min < 0 || sec < 0 || fsec < 0;
@@ -367,7 +331,7 @@ export class Duration {
 
       fsec = Math.abs(fsec);
       if (fsec) {
-        fsec = Math.round((fsec *= 1000));
+        fsec = Math.round(fsec);
         buf.push(`.${fsec.toString().padStart(6, "0")}`.replace(/(0+)$/, ""));
       }
     }
