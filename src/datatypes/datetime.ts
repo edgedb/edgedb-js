@@ -284,15 +284,15 @@ export class Duration {
     return new Duration(undefined, microseconds)
   }
 
-  getSeconds(): number {
+  toSeconds(): number {
     return Number(this._microseconds) / 1000000;
   }
 
-  getMilliseconds(): number {
+  toMilliseconds(): number {
     return Number(this._microseconds) / 1000;
   }
 
-  getMicroseconds(): bigint {
+  toMicroseconds(): bigint {
     return this._microseconds;
   }
 

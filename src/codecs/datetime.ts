@@ -126,7 +126,7 @@ export class DurationCodec extends ScalarCodec implements ICodec {
       throw new Error(`a Duration instance was expected, got "${object}"`);
     }
     buf.writeInt32(16);
-    buf.writeBigInt64(object.getMicroseconds());
+    buf.writeBigInt64(object.toMicroseconds());
     buf.writeInt32(0);
     buf.writeInt32(0);
   }

@@ -364,8 +364,14 @@ test("fetch: duration fuzz", async () => {
 
     for (let i = 0; i < durs.length; i++) {
       expect(durs[i].toString()).toBe(dursAsText[i]);
-      expect(dursFromDb[i].getMilliseconds()).toEqual(
-        durs[i].getMilliseconds()
+      expect(dursFromDb[i].toMilliseconds()).toEqual(
+        durs[i].toMilliseconds()
+      );
+      expect(dursFromDb[i].toSeconds()).toEqual(
+        durs[i].toSeconds()
+      );
+      expect(dursFromDb[i].toMicroseconds()).toEqual(
+        durs[i].toMicroseconds()
       );
     }
   } finally {

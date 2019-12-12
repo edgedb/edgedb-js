@@ -406,15 +406,15 @@ Duration
         Note: new Duration() accepts fractional seconds too but can loose
         precision because it's floating point.
 
-    .. js:method:: getMilliseconds(): number
+    .. js:method:: toMilliseconds(): number
 
         Get the number of microseconds in the duration (can be fractional).
 
-    .. js:method:: getSeconds(): number
+    .. js:method:: toSeconds(): number
 
         Get the number of seconds in the duration (can be fractional).
 
-    .. js:method:: getMicroseconds(): bigint
+    .. js:method:: toMicroseconds(): bigint
 
         Get the precise number of microseconds in the duration.
 
