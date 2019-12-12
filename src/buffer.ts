@@ -132,6 +132,17 @@ export class WriteBuffer {
     return this;
   }
 
+  writeBigInt64(i: bigint): this {
+    if(i < 0) {
+        i = BigInt('18446744073709551616') + i
+    }
+    const hi = i >> BigInt(32)
+    const lo = i & BigInt(0xFFFFFFFF)
+    this.writeUInt32(Number(hi));
+    this.writeUInt32(Number(lo));
+    return this;
+  }
+
   writeBuffer(buf: Buffer): this {
     const len = buf.length;
     this.ensureAlloced(len);
@@ -805,12 +816,29 @@ export class ReadBuffer {
     this.pos += 8;
 
     if (hi === 0) {
-      return lo;
+      return lo >>> 0;
     } else if (hi >= -0x200000 && hi < 0x200000) {
-      return hi * 0x100000000 + (lo >>> 0);
+      return hi * 0x100_000_000 + (lo >>> 0);
     }
 
     return this.reportInt64Overflow(hi, lo);
+  }
+
+
+  readBigInt64(): bigint {
+    if (this.pos + 8 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    // TODO(tailhook) use: readBigInt64BE (node 12.0)
+    const hi = this.buffer.readUInt32BE(this.pos);
+    const lo = this.buffer.readUInt32BE(this.pos + 4);
+    this.pos += 8;
+
+    let res = (BigInt(hi) << BigInt(32)) + BigInt(lo)
+    if(hi >= 0x80000000) {
+        res = BigInt('-18446744073709551616') + res
+    }
+    return res
   }
 
   readBuffer(size: number): Buffer {

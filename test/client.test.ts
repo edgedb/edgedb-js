@@ -314,6 +314,7 @@ test("fetch: duration", async () => {
 });
 
 test("fetch: duration fuzz", async () => {
+  jest.setTimeout(10_000);
   const randint = (min: number, max: number) => {
     const x = Math.round(Math.random() * (max - min) + min);
     return x === -0 ? 0 : x;
@@ -321,26 +322,22 @@ test("fetch: duration fuzz", async () => {
 
   const durs = [
     new Duration(),
-    new Duration(0, 0, 1),
-    new Duration(0, 0, -1),
-    new Duration(0, 1),
-    new Duration(0, -1),
-    new Duration(1, 0),
-    new Duration(-1, 0),
-    new Duration(1, 0),
-    new Duration(1, 1, 1),
-    new Duration(-1, -1, -1),
-    new Duration(1, -1, 1),
-    new Duration(-1, 1, -1),
+    new Duration(1),
+    new Duration(-1),
+    new Duration(1),
+    new Duration(-1),
+    new Duration(-752043.296),
+    new Duration(3542924),
+    new Duration(86400000),
+    new Duration(-86400000),
   ];
 
   // Fuzz it!
   for (let _i = 0; _i < 5000; _i++) {
     durs.push(
       new Duration(
-        randint(-50, 50),
-        randint(-500, 500),
-        randint(-1000000, 1000000)
+        randint(-500, 500)*86400 +
+        randint(-1000, 1000)
       )
     );
   }
@@ -367,11 +364,14 @@ test("fetch: duration fuzz", async () => {
 
     for (let i = 0; i < durs.length; i++) {
       expect(durs[i].toString()).toBe(dursAsText[i]);
-
-      expect(dursFromDb[i].getMonths()).toEqual(durs[i].getMonths());
-      expect(dursFromDb[i].getDays()).toEqual(durs[i].getDays());
-      expect(dursFromDb[i].getMilliseconds()).toEqual(
-        durs[i].getMilliseconds()
+      expect(dursFromDb[i].toMilliseconds()).toEqual(
+        durs[i].toMilliseconds()
+      );
+      expect(dursFromDb[i].toSeconds()).toEqual(
+        durs[i].toSeconds()
+      );
+      expect(dursFromDb[i].toMicroseconds()).toEqual(
+        durs[i].toMicroseconds()
       );
     }
   } finally {

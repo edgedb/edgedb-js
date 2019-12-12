@@ -47,8 +47,8 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer): any {
-    const us = buf.readInt64();
-    const ms = us / 1000.0;
+    const us = buf.readBigInt64();
+    const ms = Number(us) / 1000.0;
     return new Date(ms + TIMESHIFT);
   }
 }
@@ -67,8 +67,8 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer): any {
-    const us = buf.readInt64();
-    const ms = us / 1000.0;
+    const us = buf.readBigInt64();
+    const ms = Number(us) / 1000.0;
     return new LocalDateTime(
       (new Date(ms + TIMESHIFT) as unknown) as number,
       (DATE_PRIVATE as unknown) as number
@@ -109,7 +109,7 @@ export class LocalTimeCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer): any {
-    const us = buf.readInt64();
+    const us = Number(buf.readBigInt64());
     let seconds = Math.floor(us / 1_000_000);
     const ms = Math.floor((us % 1_000_000) / 1000);
     let minutes = Math.floor(seconds / 60);
@@ -126,15 +126,17 @@ export class DurationCodec extends ScalarCodec implements ICodec {
       throw new Error(`a Duration instance was expected, got "${object}"`);
     }
     buf.writeInt32(16);
-    buf.writeInt64(object.getMilliseconds() * 1000.0);
-    buf.writeInt32(object.getDays());
-    buf.writeInt32(object.getMonths());
+    buf.writeBigInt64(object.toMicroseconds());
+    buf.writeInt32(0);
+    buf.writeInt32(0);
   }
 
   decode(buf: ReadBuffer): any {
-    const us = buf.readInt64();
+    const us = buf.readBigInt64();
     const days = buf.readInt32();
     const months = buf.readInt32();
-    return new Duration(months, days, us / 1000.0);
+    console.assert(days == 0, "non-zero reserved bytes in duration")
+    console.assert(months == 0, "non-zero reserved bytes in duration")
+    return Duration.fromMicroseconds(us);
   }
 }
