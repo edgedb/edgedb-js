@@ -502,7 +502,7 @@ export class AwaitConnection {
     );
 
     wb.reset()
-      .beginMessage(chars.$p)
+      .beginMessage(chars.$r)
       .writeString(clientFinal)
       .endMessage();
     this.sock.write(wb.unwrap());
