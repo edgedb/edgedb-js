@@ -117,7 +117,8 @@ export class CodecsRegistry {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
             frb.discard(1);
-            frb.discard(frb.readUInt16() + 2);
+            let elm_length = frb.readUInt32();
+            frb.discard(elm_length + 2);
           }
           break;
         }
@@ -140,7 +141,8 @@ export class CodecsRegistry {
         case CTYPE_NAMEDTUPLE: {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
-            frb.discard(2 + frb.readUInt16());
+            let elm_length = frb.readUInt32();
+            frb.discard(elm_length + 2);
           }
           break;
         }
@@ -160,7 +162,8 @@ export class CodecsRegistry {
         case CTYPE_ENUM: {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
-            frb.discard(frb.readUInt16());
+            let elm_length = frb.readUInt32();
+            frb.discard(elm_length);
           }
           break;
         }
@@ -199,7 +202,7 @@ export class CodecsRegistry {
         for (let i = 0; i < els; i++) {
           const flag = frb.readUInt8();
 
-          const strLen = frb.readUInt16();
+          const strLen = frb.readUInt32();
           const name = frb.readBuffer(strLen).toString("utf8");
 
           const pos = frb.readUInt16();
@@ -283,7 +286,7 @@ export class CodecsRegistry {
         const codecs = new Array(els);
         const names = new Array(els);
         for (let i = 0; i < els; i++) {
-          const strLen = frb.readUInt16();
+          const strLen = frb.readUInt32();
           names[i] = frb.readBuffer(strLen).toString("utf8");
 
           const pos = frb.readUInt16();
@@ -306,7 +309,7 @@ export class CodecsRegistry {
         */
         const els = frb.readUInt16();
         for (let i = 0; i < els; i++) {
-          frb.discard(frb.readUInt16());
+          frb.discard(frb.readUInt32());
         }
         res = new EnumCodec(tid);
         break;
