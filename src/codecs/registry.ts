@@ -170,7 +170,8 @@ export class CodecsRegistry {
 
         default: {
           if (t >= 0xf0 && t <= 0xff) {
-            frb.discard(frb.readUInt16());
+            let ann_length = frb.readUInt32();
+            frb.discard(ann_length);
           } else {
             throw new Error(
               `no codec implementation for EdgeDB data class ${t}`
