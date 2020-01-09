@@ -23,6 +23,7 @@
     "get-stdin": "^7.0.0",
     "jest": "^24.7.1",
     "prettier": "^1.19.1",
+    "prettylint": "^1.0.0",
     "ts-jest": "^24.0.2",
     "tslint": "^5.20.1",
     "typescript": "^3.7.4"
@@ -30,7 +31,7 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "lint": "tslint 'src/**/*.ts'",
+    "lint": "tslint 'src/**/*.ts' && prettylint 'src/**/*.ts' 'test/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js"
   }
