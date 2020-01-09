@@ -31,6 +31,7 @@
     "build": "tsc",
     "test": "jest",
     "lint": "tslint 'src/**/*.ts'",
+    "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js"
   }
 }
