@@ -101,11 +101,23 @@ test("fetch: positional args", async () => {
   let res;
   try {
     const intCases: Array<[string[], number[]]> = [
-      [["int16", "int32", "int64"], [1, 1111]],
-      [["int16", "int32", "int64"], [100, -101]],
-      [["int16", "int32", "int64"], [10011, 0]],
+      [
+        ["int16", "int32", "int64"],
+        [1, 1111],
+      ],
+      [
+        ["int16", "int32", "int64"],
+        [100, -101],
+      ],
+      [
+        ["int16", "int32", "int64"],
+        [10011, 0],
+      ],
       [["int64"], [17592186032104, -4398037227340]],
-      [["float32", "float64"], [10011, 12312]],
+      [
+        ["float32", "float64"],
+        [10011, 12312],
+      ],
     ];
     for (const [types, values] of intCases) {
       for (const type of types) {
@@ -382,7 +394,10 @@ test("fetch: tuple", async () => {
     expect(res).toEqual([[1, "abc"]]);
 
     res = await con.fetchAll("select {(1, 'abc'), (2, 'bcd')}");
-    expect(res).toEqual([[1, "abc"], [2, "bcd"]]);
+    expect(res).toEqual([
+      [1, "abc"],
+      [2, "bcd"],
+    ]);
     const t0: Tuple = res[0];
 
     // Test that the exported type informs TypeScript that

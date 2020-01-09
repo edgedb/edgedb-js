@@ -30,8 +30,5 @@ export function connectWithCallback(
   opts?: ConnectConfig,
   cb?: NodeCallback<Connection>
 ): void {
-  return connect(
-    {dsn: "edgedb://edgedb@localhost/edgedb", ...opts},
-    cb
-  );
+  return connect({dsn: "edgedb://edgedb@localhost/edgedb", ...opts}, cb);
 }

@@ -198,7 +198,10 @@ test("parseConnectArguments", () => {
     {
       opts: {dsn: "edgedb://user@host1,host2/db"},
       result: {
-        addrs: [["host1", 5656], ["host2", 5656]],
+        addrs: [
+          ["host1", 5656],
+          ["host2", 5656],
+        ],
         database: "db",
         user: "user",
       },
@@ -207,7 +210,10 @@ test("parseConnectArguments", () => {
     {
       opts: {dsn: "edgedb://user@host1:1111,host2:2222/db"},
       result: {
-        addrs: [["host1", 1111], ["host2", 2222]],
+        addrs: [
+          ["host1", 1111],
+          ["host2", 2222],
+        ],
         database: "db",
         user: "user",
       },
@@ -220,7 +226,10 @@ test("parseConnectArguments", () => {
       },
       opts: {dsn: "edgedb:///db"},
       result: {
-        addrs: [["host1", 1111], ["host2", 2222]],
+        addrs: [
+          ["host1", 1111],
+          ["host2", 2222],
+        ],
         database: "db",
         user: "foo",
       },
@@ -232,7 +241,10 @@ test("parseConnectArguments", () => {
       },
       opts: {dsn: "edgedb:///db?host=host1:1111,host2:2222"},
       result: {
-        addrs: [["host1", 1111], ["host2", 2222]],
+        addrs: [
+          ["host1", 1111],
+          ["host2", 2222],
+        ],
         database: "db",
         user: "foo",
       },
@@ -244,7 +256,10 @@ test("parseConnectArguments", () => {
       },
       opts: {dsn: "edgedb:///db", host: ["host1", "host2"]},
       result: {
-        addrs: [["host1", 5656], ["host2", 5656]],
+        addrs: [
+          ["host1", 5656],
+          ["host2", 5656],
+        ],
         database: "db",
         user: "foo",
       },
