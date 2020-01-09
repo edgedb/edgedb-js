@@ -117,7 +117,7 @@ export class CodecsRegistry {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
             frb.discard(1);
-            let elm_length = frb.readUInt32();
+            const elm_length = frb.readUInt32();
             frb.discard(elm_length + 2);
           }
           break;
@@ -141,7 +141,7 @@ export class CodecsRegistry {
         case CTYPE_NAMEDTUPLE: {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
-            let elm_length = frb.readUInt32();
+            const elm_length = frb.readUInt32();
             frb.discard(elm_length + 2);
           }
           break;
@@ -162,7 +162,7 @@ export class CodecsRegistry {
         case CTYPE_ENUM: {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
-            let elm_length = frb.readUInt32();
+            const elm_length = frb.readUInt32();
             frb.discard(elm_length);
           }
           break;
@@ -170,7 +170,7 @@ export class CodecsRegistry {
 
         default: {
           if (t >= 0xf0 && t <= 0xff) {
-            let ann_length = frb.readUInt32();
+            const ann_length = frb.readUInt32();
             frb.discard(ann_length);
           } else {
             throw new Error(
