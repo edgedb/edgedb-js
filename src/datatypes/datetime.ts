@@ -276,12 +276,12 @@ export class Duration {
   private readonly _microseconds: bigint;
 
   constructor(milliseconds: number = 0, microseconds: bigint = BigInt(0)) {
-    this._microseconds = BigInt(Math.floor(milliseconds * 1000)) +
-                         microseconds;
+    this._microseconds =
+      BigInt(Math.floor(milliseconds * 1000)) + microseconds;
   }
 
   static fromMicroseconds(microseconds: bigint): Duration {
-    return new Duration(undefined, microseconds)
+    return new Duration(undefined, microseconds);
   }
 
   toSeconds(): number {

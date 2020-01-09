@@ -80,4 +80,4 @@ test("types: LocalDate", async () => {
 
 test("types: Duration", async () => {
   expect(new Duration(68464977074.011).toString()).toBe("19018:02:57.074011");
-})
+});

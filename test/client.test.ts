@@ -334,12 +334,7 @@ test("fetch: duration fuzz", async () => {
 
   // Fuzz it!
   for (let _i = 0; _i < 5000; _i++) {
-    durs.push(
-      new Duration(
-        randint(-500, 500)*86400 +
-        randint(-1000, 1000)
-      )
-    );
+    durs.push(new Duration(randint(-500, 500) * 86400 + randint(-1000, 1000)));
   }
 
   const con = await asyncConnect();
@@ -364,15 +359,9 @@ test("fetch: duration fuzz", async () => {
 
     for (let i = 0; i < durs.length; i++) {
       expect(durs[i].toString()).toBe(dursAsText[i]);
-      expect(dursFromDb[i].toMilliseconds()).toEqual(
-        durs[i].toMilliseconds()
-      );
-      expect(dursFromDb[i].toSeconds()).toEqual(
-        durs[i].toSeconds()
-      );
-      expect(dursFromDb[i].toMicroseconds()).toEqual(
-        durs[i].toMicroseconds()
-      );
+      expect(dursFromDb[i].toMilliseconds()).toEqual(durs[i].toMilliseconds());
+      expect(dursFromDb[i].toSeconds()).toEqual(durs[i].toSeconds());
+      expect(dursFromDb[i].toMicroseconds()).toEqual(durs[i].toMicroseconds());
     }
   } finally {
     await con.close();
