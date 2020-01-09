@@ -137,7 +137,7 @@ function parseConnectDsnAndArgs({
       if (dsnHost) {
         [host, port] = parseHostlist(dsnHost, port);
       } else {
-        host = parsed.hostname;
+        host = parsed.hostname ?? undefined;
         if (parsed.port) {
           port = parseInt(parsed.port, 10);
         }

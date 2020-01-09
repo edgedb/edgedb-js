@@ -19,13 +19,13 @@
   ],
   "devDependencies": {
     "@types/jest": "^24.0.11",
-    "@types/node": "^11.13.8",
+    "@types/node": "^13.1.6",
     "get-stdin": "^7.0.0",
     "jest": "^24.7.1",
     "prettier": "^1.18.2",
     "ts-jest": "^24.0.2",
-    "tslint": "^5.16.0",
-    "typescript": "^3.6.3"
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.4"
   },
   "scripts": {
     "build": "tsc",

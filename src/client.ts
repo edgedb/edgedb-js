@@ -389,7 +389,7 @@ export class AwaitConnection {
           this._parseHeaders();
           this.buffer.finishMessage();
 
-          if (hi !== 1 || lo !== 0) {
+          if (hi !== 0 || lo !== 7) {
             throw new Error(
               `the server requested an unsupported version of ` +
                 `the protocol ${hi}.${lo}`

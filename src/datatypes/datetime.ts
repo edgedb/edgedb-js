@@ -299,41 +299,36 @@ export class Duration {
   toString(): string {
     const buf = [];
 
-    let micros = this._microseconds;
+    const micros = this._microseconds;
 
-    let bint_hour = micros / BigInt(3600_000_000);
+    const bint_hour = micros / BigInt(3600_000_000);
     let time = Number(micros - bint_hour * BigInt(3600_000_000));
     const hour = Number(bint_hour);
 
-    let tfrac = Math.trunc(time / 60_000_000);
+    const tfrac = Math.trunc(time / 60_000_000);
     time -= tfrac * 60_000_000;
     const min = tfrac;
     const sec = Math.trunc(time / 1000_000);
     let fsec = time - sec * 1000_000;
 
-    let isFirst = true;
-    let isBefore = false;
+    const neg = hour < 0 || min < 0 || sec < 0 || fsec < 0;
+    buf.push(
+      `${neg ? "-" : ""}` +
+        `${Math.abs(hour)
+          .toString()
+          .padStart(2, "0")}:` +
+        `${Math.abs(min)
+          .toString()
+          .padStart(2, "0")}:` +
+        `${Math.abs(sec)
+          .toString()
+          .padStart(2, "0")}`
+    );
 
-    if (isFirst || hour !== 0 || min !== 0 || sec !== 0 || fsec !== 0) {
-      const neg = hour < 0 || min < 0 || sec < 0 || fsec < 0;
-      buf.push(
-        `${isFirst ? "" : " "}${neg ? "-" : isBefore ? "+" : ""}` +
-          `${Math.abs(hour)
-            .toString()
-            .padStart(2, "0")}:` +
-          `${Math.abs(min)
-            .toString()
-            .padStart(2, "0")}:` +
-          `${Math.abs(sec)
-            .toString()
-            .padStart(2, "0")}`
-      );
-
-      fsec = Math.abs(fsec);
-      if (fsec) {
-        fsec = Math.round(fsec);
-        buf.push(`.${fsec.toString().padStart(6, "0")}`.replace(/(0+)$/, ""));
-      }
+    fsec = Math.abs(fsec);
+    if (fsec) {
+      fsec = Math.round(fsec);
+      buf.push(`.${fsec.toString().padStart(6, "0")}`.replace(/(0+)$/, ""));
     }
 
     return buf.join("");

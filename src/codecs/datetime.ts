@@ -135,8 +135,12 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     const us = buf.readBigInt64();
     const days = buf.readInt32();
     const months = buf.readInt32();
-    console.assert(days == 0, "non-zero reserved bytes in duration");
-    console.assert(months == 0, "non-zero reserved bytes in duration");
+    if (days !== 0) {
+      throw new Error("non-zero reserved bytes in duration");
+    }
+    if (months !== 0) {
+      throw new Error("non-zero reserved bytes in duration");
+    }
     return Duration.fromMicroseconds(us);
   }
 }

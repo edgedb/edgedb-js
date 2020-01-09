@@ -216,13 +216,13 @@ test("fetch: datetime", async () => {
   try {
     res = await con.fetchOne(`
       with dt := <datetime>'2016-01-10T17:11:01.123Z'
-      select (dt, datetime_get(dt, 'epoch') * 1000)
+      select (dt, datetime_get(dt, 'epochseconds') * 1000)
     `);
     expect(res[0].getTime()).toBe(res[1]);
 
     res = await con.fetchOne(`
       with dt := <datetime>'1716-01-10T01:00:00.123123Z'
-      select (dt, datetime_get(dt, 'epoch') * 1000)
+      select (dt, datetime_get(dt, 'epochseconds') * 1000)
     `);
     expect(res[0].getTime()).toBe(Math.ceil(res[1]));
   } finally {
