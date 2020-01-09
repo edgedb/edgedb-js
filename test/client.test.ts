@@ -778,10 +778,15 @@ test("callbacks", (done) => {
           expect(data2).toBe(11);
         } finally {
           con.execute("rollback", (err3, _data3) => {
-            if (err3) {
-              throw err3;
+            try {
+              if (err3) {
+                throw err3;
+              }
+            } finally {
+              con.close(() => {
+                done();
+              });
             }
-            done();
           });
         }
       });
