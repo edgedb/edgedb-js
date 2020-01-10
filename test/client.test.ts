@@ -674,9 +674,9 @@ test("fetch: long strings", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    // A 10mb string.
-    res = await con.fetchOne("select str_repeat('aa', <int64>(10^7));");
-    expect(res.length).toEqual(20_000_000);
+    // A 1mb string.
+    res = await con.fetchOne("select str_repeat('a', <int64>(10^6));");
+    expect(res.length).toEqual(1_000_000);
 
     // A 100mb string.
     await con
