@@ -16,19 +16,37 @@
  * limitations under the License.
  */
 
+import * as process from "process";
+
 import connect from "../src/index";
 import {NodeCallback, AwaitConnection, Connection} from "../src/client";
 import {ConnectConfig} from "../src/con_utils";
 
+function _getOpts(opts: ConnectConfig): ConnectConfig {
+  const port = process.env._JEST_EDGEDB_PORT;
+  const host = process.env._JEST_EDGEDB_HOST;
+  if (!port || !host) {
+    throw new Error("EdgeDB Jest test environmet is not initialized");
+  }
+  if (!opts.user) {
+    opts.user = "jest";
+    opts.password = "jestjest";
+  }
+  if (!opts.database) {
+    opts.database = "jest";
+  }
+  return {host, port: parseInt(port, 10), ...opts};
+}
+
 export async function asyncConnect(
   opts?: ConnectConfig
 ): Promise<AwaitConnection> {
-  return await connect({dsn: "edgedb://edgedb@localhost/edgedb", ...opts});
+  return await connect(_getOpts(opts ?? {}));
 }
 
 export function connectWithCallback(
   opts?: ConnectConfig,
   cb?: NodeCallback<Connection>
 ): void {
-  return connect({dsn: "edgedb://edgedb@localhost/edgedb", ...opts}, cb);
+  return connect(_getOpts(opts ?? {}), cb);
 }
