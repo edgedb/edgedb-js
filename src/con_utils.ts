@@ -27,7 +27,7 @@ export interface NormalizedConnectConfig {
   user: string;
   password?: string;
   database: string;
-  connect_timeout?: number;
+  connect_timeout?: number ;
   server_settings?: {[key: string]: string};
   command_timeout?: number;
 }
