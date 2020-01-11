@@ -226,7 +226,7 @@ export class InvalidOperatorDefinitionError extends InvalidDefinitionError {
   }
 }
 
-export class InvalidViewDefinitionError extends InvalidDefinitionError {
+export class InvalidAliasDefinitionError extends InvalidDefinitionError {
   get code(): number {
     return 0x04_05_01_07;
   }
@@ -451,6 +451,12 @@ export class MissingArgumentError extends QueryArgumentError {
 export class UnknownArgumentError extends QueryArgumentError {
   get code(): number {
     return 0xff_02_01_02;
+  }
+}
+
+export class InvalidArgumentError extends QueryArgumentError {
+  get code(): number {
+    return 0xff_02_01_03;
   }
 }
 
