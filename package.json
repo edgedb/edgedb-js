@@ -32,10 +32,9 @@
   "scripts": {
     "build": "tsc",
     "test": "jest --detectOpenHandles",
-    "lint": "tslint 'src/**/*.ts' && prettylint 'src/**/*.ts' 'test/**/*.ts'",
+    "lint": "tsc && tslint 'src/**/*.ts' && prettylint 'src/**/*.ts' 'test/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
-    "prepare": "yarn lint && yarn build && yarn test",
-    "preversion": "yarn lint && yarn build"
+    "prepublish": "yarn lint && yarn build && yarn test"
   }
 }
