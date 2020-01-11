@@ -36,7 +36,28 @@ export class UUID {
     if (this._str != null) {
       return this._str;
     }
-    this._str = this._buf.toString("hex");
+    /* As benchmarked, the fastest way is to covert to hex-string and
+       then slice/concat with '-'.  Calling `buf.slice()` multiple times
+       is 4x slower; using the `[].join('-')` pattern is 2x slower than
+       simple `str+str`.
+
+       Overall, this nicer formatting is going to be 1.5x slower than
+       just returning `buf.toString('hex')`.
+
+       See https://gist.github.com/1st1/5a7e5a8ff36d49f492631c74bc007515
+       for more details.
+    */
+    const sl = this._buf.toString("hex");
+    this._str =
+      sl.slice(0, 8) +
+      "-" +
+      sl.slice(8, 12) +
+      "-" +
+      sl.slice(12, 16) +
+      "-" +
+      sl.slice(16, 20) +
+      "-" +
+      sl.slice(20, 32);
     return this._str;
   }
 

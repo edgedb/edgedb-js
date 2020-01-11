@@ -32,7 +32,7 @@ test("types: UUID", async () => {
 
   const uuid = UUID.fromString("1733d49c-66ed-11e9-aa14-784f439c9965");
   expect(util.inspect(uuid)).toBe(
-    "UUID [ '1733d49c66ed11e9aa14784f439c9965' ]"
+    "UUID [ '1733d49c-66ed-11e9-aa14-784f439c9965' ]"
   );
 
   expect(() => {
