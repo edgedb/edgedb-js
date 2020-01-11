@@ -26,6 +26,7 @@ import {NamedTupleCodec} from "./namedtuple";
 import {EnumCodec} from "./enum";
 import {ObjectCodec} from "./object";
 import {SetCodec} from "./set";
+import {UUID} from "../datatypes/uuid";
 
 const CODECS_CACHE_SIZE = 1000;
 const CODECS_BUILD_CACHE_SIZE = 200;
@@ -186,6 +187,11 @@ export class CodecsRegistry {
     switch (t) {
       case CTYPE_BASE_SCALAR: {
         res = SCALAR_CODECS.get(tid);
+        if (!res) {
+          throw new Error(
+            `unsupported scalar type with ID ${UUID.fromString(tid)}`
+          );
+        }
         if (!(res instanceof ScalarCodec)) {
           throw new Error(
             "could not build scalar codec: base scalar has a non-scalar codec"
