@@ -22,6 +22,7 @@
     "@types/jest": "^24.0.11",
     "@types/node": "^13.1.6",
     "get-stdin": "^7.0.0",
+    "in-publish": "^2.0.0",
     "jest": "^24.9.0",
     "prettier": "^1.19.1",
     "prettylint": "^1.0.0",
@@ -35,6 +36,6 @@
     "lint": "tsc && tslint 'src/**/*.ts' && prettylint 'src/**/*.ts' 'test/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
-    "prepublish": "yarn lint && yarn build && yarn test"
+    "prepublish": "in-publish && yarn lint && yarn build && yarn test || not-in-publish"
   }
 }
