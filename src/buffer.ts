@@ -30,6 +30,10 @@ const BUFFER_RING_CAPACITY: number = 2048;
 
 const EMPTY_BUFFER = Buffer.allocUnsafe(0);
 
+// @ts-ignore
+// tslint:disable-next-line
+const isNode12: boolean = !!Buffer["readBigInt64BE"];
+
 export class BufferError extends Error {}
 
 export class WriteBuffer {
@@ -819,11 +823,7 @@ export class ReadBuffer {
     return this.reportInt64Overflow(hi, lo);
   }
 
-  readBigInt64(): bigint {
-    if (this.pos + 8 > this.len) {
-      throw new BufferError("buffer overread");
-    }
-    // TODO(tailhook) use: readBigInt64BE (node 12.0)
+  readBigInt64Fallback(): bigint {
     const hi = this.buffer.readUInt32BE(this.pos);
     const lo = this.buffer.readUInt32BE(this.pos + 4);
     this.pos += 8;
@@ -833,6 +833,19 @@ export class ReadBuffer {
       res = BigInt("-18446744073709551616") + res;
     }
     return res;
+  }
+
+  readBigInt64(): bigint {
+    if (this.pos + 8 > this.len) {
+      throw new BufferError("buffer overread");
+    }
+    if (isNode12) {
+      const ret = this.buffer.readBigInt64BE(this.pos);
+      this.pos += 8;
+      return ret;
+    } else {
+      return this.readBigInt64Fallback();
+    }
   }
 
   readBuffer(size: number): Buffer {
