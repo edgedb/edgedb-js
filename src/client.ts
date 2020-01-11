@@ -20,12 +20,7 @@ import * as net from "net";
 
 import char, * as chars from "./chars";
 import {resolveErrorCode} from "./errors/resolve";
-import {
-  ReadMessageBuffer,
-  WriteMessageBuffer,
-  ReadBuffer,
-  TERM_MESSAGE,
-} from "./buffer";
+import {ReadMessageBuffer, WriteMessageBuffer, ReadBuffer} from "./buffer";
 import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {Set} from "./datatypes/set";
@@ -1000,7 +995,12 @@ export class AwaitConnection {
 
   async close(): Promise<void> {
     if (this.sock && this.connected) {
-      this.sock.write(TERM_MESSAGE);
+      this.sock.write(
+        new WriteMessageBuffer()
+          .beginMessage(chars.$X)
+          .endMessage()
+          .unwrap()
+      );
     }
     this.abort();
   }
