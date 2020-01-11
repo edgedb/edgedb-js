@@ -413,7 +413,11 @@ test("fetch: tuple", async () => {
     expect(t0[1]).toBe("abc");
     expect(t0.length).toBe(2);
     expect(JSON.stringify(t0)).toBe('[1,"abc"]');
-    expect(util.inspect(t0)).toBe("Tuple [ 1, 'abc' ]");
+
+    const insp = util.inspect(t0);
+    expect(
+      insp === "Tuple [ 1, 'abc' ]" || insp === "Tuple(2) [ 1, 'abc' ]"
+    ).toBeTruthy();
   } finally {
     await con.close();
   }
