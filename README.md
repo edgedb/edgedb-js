@@ -1,6 +1,6 @@
 # The NodeJS driver for EdgeDB
 
-[![Build Status](https://github.com/edgedb/edgedb-js/workflows/Tests/badge.svg?event=push&branch=master)](https://github.com/edgedb/edgedb-js/) [![Join the community on Spectrum](https://img.shields.io/badge/join%20the%20community-on%20spectrum-blueviolet)](https://spectrum.chat/edgedb)
+[![Build Status](https://github.com/edgedb/edgedb-js/workflows/Tests/badge.svg?event=push&branch=master)](https://github.com/edgedb/edgedb-js/) [![NPM](https://img.shields.io/npm/v/edgedb)](https://www.npmjs.com/package/edgedb) [![Join the community on Spectrum](https://img.shields.io/badge/join%20the%20community-on%20spectrum-blueviolet)](https://spectrum.chat/edgedb)
 
 **edgedb** is the official [EdgeDB](https://github.com/edgedb/edgedb) driver
 for JavaScript and TypeScript.
