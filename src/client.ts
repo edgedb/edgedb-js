@@ -45,6 +45,7 @@ type QueryArgPrimitive =
   | number
   | string
   | boolean
+  | BigInt
   | Buffer
   | Date
   | LocalDateTime

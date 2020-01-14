@@ -96,6 +96,107 @@ test("fetchAll: basic scalars", async () => {
   }
 });
 
+test("fetch: bigint", async () => {
+  const con = await asyncConnect();
+  let res;
+  try {
+    const testar = [
+      BigInt("0"),
+      BigInt("-0"),
+      BigInt("+0"),
+      BigInt("1"),
+      BigInt("-1"),
+      BigInt("123"),
+      BigInt("-123"),
+      BigInt("123789"),
+      BigInt("-123789"),
+      BigInt("19876"),
+      BigInt("-19876"),
+      BigInt("19876"),
+      BigInt("-19876"),
+      BigInt("198761239812739812739801279371289371932"),
+      BigInt("-198761182763908473812974620938742386"),
+      BigInt("98761239812739812739801279371289371932"),
+      BigInt("-98761182763908473812974620938742386"),
+      BigInt("8761239812739812739801279371289371932"),
+      BigInt("-8761182763908473812974620938742386"),
+      BigInt("761239812739812739801279371289371932"),
+      BigInt("-761182763908473812974620938742386"),
+      BigInt("61239812739812739801279371289371932"),
+      BigInt("-61182763908473812974620938742386"),
+      BigInt("1239812739812739801279371289371932"),
+      BigInt("-1182763908473812974620938742386"),
+      BigInt("9812739812739801279371289371932"),
+      BigInt("-3908473812974620938742386"),
+      BigInt("98127373373209"),
+      BigInt("-4620938742386"),
+      BigInt("100000000000"),
+      BigInt("-100000000000"),
+      BigInt("10000000000"),
+      BigInt("-10000000000"),
+      BigInt("1000000000"),
+      BigInt("-1000000000"),
+      BigInt("100000000"),
+      BigInt("-100000000"),
+      BigInt("10000000"),
+      BigInt("-10000000"),
+      BigInt("1000000"),
+      BigInt("-1000000"),
+      BigInt("100000"),
+      BigInt("-100000"),
+      BigInt("10000"),
+      BigInt("-10000"),
+      BigInt("1000"),
+      BigInt("-1000"),
+      BigInt("100"),
+      BigInt("-100"),
+      BigInt("10"),
+      BigInt("-10"),
+      BigInt("100030000010"),
+      BigInt("-100000600004"),
+      BigInt("10000000100"),
+      BigInt("-10030000000"),
+      BigInt("1000040000"),
+      BigInt("-1000000000"),
+      BigInt("1010000001"),
+      BigInt("-1000000001"),
+      BigInt("1001001000"),
+      BigInt("-10000099"),
+      BigInt("99999"),
+      BigInt("9999"),
+      BigInt("999"),
+      BigInt("1011"),
+      BigInt("1009"),
+      BigInt("1709"),
+    ];
+
+    // Generate random bigints
+    for (let i = 0; i < 1000; i++) {
+      const len = Math.floor(Math.random() * 30) + 1;
+      let num = "";
+      for (let j = 0; j < len; j++) {
+        num += "0123456789"[Math.floor(Math.random() * 10)];
+      }
+      testar.push(BigInt(num));
+    }
+
+    // Generate more random bigints consisting from mostly 0s
+    for (let i = 0; i < 1000; i++) {
+      const len = Math.floor(Math.random() * 50) + 1;
+      let num = "";
+      for (let j = 0; j < len; j++) {
+        num += "0000000012"[Math.floor(Math.random() * 10)];
+      }
+      testar.push(BigInt(num));
+    }
+
+    res = await con.fetchOne("select <array<bigint>>$0", [testar]);
+    expect(res).toEqual(testar);
+  } finally {
+    await con.close();
+  }
+});
+
 test("fetch: positional args", async () => {
   const con = await asyncConnect();
   let res;

@@ -26,6 +26,7 @@ import {
   Float32Codec,
   Float64Codec,
 } from "./numbers";
+import {BigIntCodec} from "./numerics";
 import {StrCodec} from "./text";
 import {UUIDCodec} from "./uuid";
 import {BytesCodec} from "./bytes";
@@ -59,6 +60,7 @@ export const KNOWN_TYPES = new Map<uuid, string>([
   ["0000000000000000000000000000010d", "std::local_time"],
   ["0000000000000000000000000000010e", "std::duration"],
   ["0000000000000000000000000000010f", "std::json"],
+  ["00000000000000000000000000000110", "std::bigint"],
 ]);
 
 export const KNOWN_TYPENAMES = (() => {
@@ -108,6 +110,8 @@ registerScalarCodec("std::int64", Int64Codec);
 
 registerScalarCodec("std::float32", Float32Codec);
 registerScalarCodec("std::float64", Float64Codec);
+
+registerScalarCodec("std::bigint", BigIntCodec);
 
 registerScalarCodec("std::bool", BoolCodec);
 
