@@ -36,7 +36,7 @@ export class UUID {
     if (this._str != null) {
       return this._str;
     }
-    /* As benchmarked, the fastest way is to covert to hex-string and
+    /* As benchmarked, the fastest way is to convert to a hex-string and
        then slice/concat with '-'.  Calling `buf.slice()` multiple times
        is 4x slower; using the `[].join('-')` pattern is 2x slower than
        simple `str+str`.
