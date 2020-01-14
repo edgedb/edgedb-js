@@ -960,3 +960,19 @@ test("fetch/optimistic cache invalidation", async () => {
     await con.close();
   }
 });
+
+test("fetch no codec", async () => {
+  const con = await asyncConnect();
+  try {
+    await con
+      .fetchOne("select <decimal>1")
+      .then(() => {
+        throw new Error("an exception was expected");
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch(/no JS codec for std::decimal/);
+      });
+  } finally {
+    await con.close();
+  }
+});
