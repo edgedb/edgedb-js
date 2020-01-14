@@ -32,7 +32,7 @@ export class UUID {
     this._buf = buffer;
   }
 
-  private _toString(): string {
+  toString(): string {
     if (this._str != null) {
       return this._str;
     }
@@ -65,28 +65,24 @@ export class UUID {
     return this._buf;
   }
 
-  toString(): string {
-    return this._toString();
-  }
-
   valueOf(): string {
-    return this._toString();
+    return this.toString();
   }
 
   toJSON(): string {
-    return this._toString();
+    return this.toString();
   }
 
   [Symbol.toPrimitive](hint: string): string {
     if (hint === "number") {
       throw new TypeError("cannot coerce UUID to a number");
     }
-    return this._toString();
+    return this.toString();
   }
 
   [util.inspect.custom](_depth: number, options: util.InspectOptions): string {
     return `UUID [ ${util.inspect(
-      this._toString(),
+      this.toString(),
       options.showHidden,
       0,
       options.colors

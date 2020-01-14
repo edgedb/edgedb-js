@@ -35,6 +35,10 @@ test("types: UUID", async () => {
     "UUID [ '1733d49c-66ed-11e9-aa14-784f439c9965' ]"
   );
 
+  expect(JSON.stringify([uuid])).toBe(
+    '["1733d49c-66ed-11e9-aa14-784f439c9965"]'
+  );
+
   expect(() => {
     // @ts-ignore
     return +uuid;
