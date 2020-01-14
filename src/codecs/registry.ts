@@ -188,8 +188,12 @@ export class CodecsRegistry {
       case CTYPE_BASE_SCALAR: {
         res = SCALAR_CODECS.get(tid);
         if (!res) {
+          if (KNOWN_TYPES.has(tid)) {
+            throw new Error(`no JS codec for ${KNOWN_TYPES.get(tid)}`);
+          }
+
           throw new Error(
-            `unsupported scalar type with ID ${UUID.fromString(tid)}`
+            `node JS codec for the type with ID ${UUID.fromString(tid)}`
           );
         }
         if (!(res instanceof ScalarCodec)) {
