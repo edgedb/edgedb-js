@@ -179,6 +179,19 @@ Connection
         This method takes :js:class:`optional query arguments
         <AwaitConnection>`.
 
+        .. note::
+
+            Caution is advised when reading ``decimal`` or ``bigint``
+            values using this method. The JSON specification does not
+            have a limit on significant digits, so a ``decimal`` or a
+            ``bigint`` number can be losslessly represented in JSON.
+            However, JSON decoders in JavaScript will often read all
+            such numbers as ``number`` values, which may result in
+            precision loss. If such loss is unacceptable, then
+            consider casting the value into ``str`` and decoding it on
+            the client side into a more appropriate type, such as
+            BigInt_.
+
     .. js:method:: fetchOneJSON(query: string, args)
 
         Run a singleton-returning query and return its element in JSON.
@@ -188,6 +201,19 @@ Connection
 
         The *query* must return exactly one element.  If the query returns
         more than one element or an empty set, an ``Error`` is thown.
+
+        .. note::
+
+            Caution is advised when reading ``decimal`` or ``bigint``
+            values using this method. The JSON specification does not
+            have a limit on significant digits, so a ``decimal`` or a
+            ``bigint`` number can be losslessly represented in JSON.
+            However, JSON decoders in JavaScript will often read all
+            such numbers as ``number`` values, which may result in
+            precision loss. If such loss is unacceptable, then
+            consider casting the value into ``str`` and decoding it on
+            the client side into a more appropriate type, such as
+            BigInt_.
 
     .. js:method:: close()
 
@@ -257,6 +283,19 @@ Connection
 
         This method takes :js:class:`optional query arguments <Connection>`.
 
+        .. note::
+
+            Caution is advised when reading ``decimal`` or ``bigint``
+            values using this method. The JSON specification does not
+            have a limit on significant digits, so a ``decimal`` or a
+            ``bigint`` number can be losslessly represented in JSON.
+            However, JSON decoders in JavaScript will often read all
+            such numbers as ``number`` values, which may result in
+            precision loss. If such loss is unacceptable, then
+            consider casting the value into ``str`` and decoding it on
+            the client side into a more appropriate type, such as
+            BigInt_.
+
     .. js:method:: fetchOneJSON(query: string, args, callback)
 
         Run a singleton-returning query and return its element in JSON.
@@ -265,6 +304,19 @@ Connection
 
         The *query* must return exactly one element.  If the query returns
         more than one element or an empty set, an ``Error`` is thown.
+
+        .. note::
+
+            Caution is advised when reading ``decimal`` or ``bigint``
+            values using this method. The JSON specification does not
+            have a limit on significant digits, so a ``decimal`` or a
+            ``bigint`` number can be losslessly represented in JSON.
+            However, JSON decoders in JavaScript will often read all
+            such numbers as ``number`` values, which may result in
+            precision loss. If such loss is unacceptable, then
+            consider casting the value into ``str`` and decoding it on
+            the client side into a more appropriate type, such as
+            BigInt_.
 
     .. js:method:: close(callback)
 
@@ -278,3 +330,6 @@ Connection
         :staticmethod:
 
         Convert an :js:class:`AwaitConnection` into :js:class:`Connection`.
+
+.. _BigInt:
+    https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt

@@ -801,9 +801,18 @@ test("fetch: long strings", async () => {
 
 test("fetchOneJSON", async () => {
   const con = await asyncConnect();
+  let res;
   try {
-    const res = await con.fetchOneJSON("select (a := 1)");
+    res = await con.fetchOneJSON("select (a := 1)");
     expect(JSON.parse(res)).toEqual({a: 1});
+
+    res = await con.fetchOneJSON("select (a := 1n)");
+    expect(JSON.parse(res)).toEqual({a: 1});
+    expect(typeof JSON.parse(res).a).toEqual("number");
+
+    res = await con.fetchOneJSON("select (a := 1.5n)");
+    expect(JSON.parse(res)).toEqual({a: 1.5});
+    expect(typeof JSON.parse(res).a).toEqual("number");
   } finally {
     await con.close();
   }

@@ -43,6 +43,8 @@ The table below shows the correspondence between EdgeDB and JavaScript types.
 | ``int32``,           |                                                     |
 | ``int64``            |                                                     |
 +----------------------+-----------------------------------------------------+
+| ``bigint``           | BigInt_                                             |
++----------------------+-----------------------------------------------------+
 | ``decimal``          | n/a                                                 |
 +----------------------+-----------------------------------------------------+
 | ``json``             | ``string``                                          |
@@ -398,10 +400,10 @@ Duration
 
     A JavaScript  representation of an EdgeDB ``duration`` value.
 
-    .. js:method:: fromMicroseconds(us: bigint): Duration
+    .. js:method:: fromMicroseconds(us: BigInt): Duration
         :staticmethod:
 
-        Create duration from bigint number of microseconds.
+        Create duration from BigInt_ number of microseconds.
 
         Note: new Duration() accepts fractional seconds too but can loose
         precision because it's floating point.
@@ -414,7 +416,7 @@ Duration
 
         Get the number of seconds in the duration (can be fractional).
 
-    .. js:method:: toMicroseconds(): bigint
+    .. js:method:: toMicroseconds(): BigInt
 
         Get the precise number of microseconds in the duration.
 
@@ -422,3 +424,7 @@ Duration
 
         Get the string representation of the ``duration`` that is similar to
         the result of a ``str`` cast of a ``duration`` in EdgeDB.
+
+
+.. _BigInt:
+    https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt
