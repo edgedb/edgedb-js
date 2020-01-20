@@ -57,16 +57,14 @@ export default async () => {
     `);
 
     await con.execute(`
-      CREATE ROLE jest {
+      CREATE SUPERUSER ROLE jest {
         SET password := "jestjest";
-        SET allow_login := true;
       };
     `);
 
     await con.execute(`
       CONFIGURE SYSTEM INSERT Auth {
         user := "jest",
-        database := "jest",
         priority := 10,
         method := (INSERT SCRAM),
       };
