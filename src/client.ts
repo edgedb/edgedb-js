@@ -126,6 +126,7 @@ export class AwaitConnection {
 
   private opInProgress: boolean = false;
 
+  /** @internal */
   private constructor(sock: net.Socket, config: NormalizedConnectConfig) {
     this.buffer = new ReadMessageBuffer();
 
@@ -1030,7 +1031,7 @@ export class AwaitConnection {
     }
   }
 
-  private abort(): void {
+  private _abort(): void {
     if (this.sock && this.connected) {
       this.sock.destroy();
     }
@@ -1048,12 +1049,13 @@ export class AwaitConnection {
             .unwrap()
         );
       }
-      this.abort();
+      this._abort();
     } finally {
       this._leaveOp();
     }
   }
 
+  /** @internal */
   private static newSock(addr: string | [string, number]): net.Socket {
     if (typeof addr === "string") {
       // unix socket
@@ -1064,6 +1066,7 @@ export class AwaitConnection {
     }
   }
 
+  /** @internal */
   static async connect(
     config?: ConnectConfig | null
   ): Promise<AwaitConnection> {
@@ -1095,7 +1098,7 @@ export class AwaitConnection {
       try {
         await connPromise;
       } catch (e) {
-        conn.abort();
+        conn._abort();
 
         // on timeout Error proceed to the next address, otherwise re-throw
         if (
@@ -1124,6 +1127,7 @@ export class AwaitConnection {
 }
 
 export class Connection {
+  /** @internal */
   private _conn: AwaitConnection;
 
   execute(query: string, callback: NodeCallback | null = null): void {
@@ -1184,10 +1188,12 @@ export class Connection {
       .catch((error) => (callback ? callback(error, null) : null));
   }
 
+  /** @internal */
   private constructor(conn: AwaitConnection) {
     this._conn = conn;
   }
 
+  /** @internal */
   static wrap(conn: AwaitConnection): Connection {
     return new Connection(conn);
   }
