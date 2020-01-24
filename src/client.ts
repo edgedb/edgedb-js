@@ -124,6 +124,8 @@ export class AwaitConnection {
   private connWaiterResolve: ((value: any) => void) | null;
   private connWaiterReject: ((value: any) => void) | null;
 
+  private opInProgress: boolean = false;
+
   private constructor(sock: net.Socket, config: NormalizedConnectConfig) {
     this.buffer = new ReadMessageBuffer();
 
@@ -690,7 +692,7 @@ export class AwaitConnection {
     throw new Error("invalid input codec");
   }
 
-  private async _execute(
+  private async _executeFlow(
     args: QueryArgs,
     inCodec: ICodec,
     outCodec: ICodec
@@ -759,7 +761,7 @@ export class AwaitConnection {
     return result;
   }
 
-  private async _optimisticExecute(
+  private async _optimisticExecuteFlow(
     args: QueryArgs,
     asJson: boolean,
     expectOne: boolean,
@@ -844,7 +846,7 @@ export class AwaitConnection {
 
     if (reExec) {
       this._validateFetchCardinality(newCard!, asJson, expectOne);
-      return await this._execute(args, inCodec, outCodec);
+      return await this._executeFlow(args, inCodec, outCodec);
     }
 
     return result;
@@ -881,7 +883,7 @@ export class AwaitConnection {
     if (this.queryCodecCache.has(key)) {
       const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
       this._validateFetchCardinality(card, asJson, expectOne);
-      ret = await this._optimisticExecute(
+      ret = await this._optimisticExecuteFlow(
         args,
         asJson,
         expectOne,
@@ -897,7 +899,7 @@ export class AwaitConnection {
       );
       this._validateFetchCardinality(card, asJson, expectOne);
       this.queryCodecCache.set(key, [card, inCodec, outCodec]);
-      ret = await this._execute(args, inCodec, outCodec);
+      ret = await this._executeFlow(args, inCodec, outCodec);
     }
 
     if (expectOne) {
@@ -923,7 +925,7 @@ export class AwaitConnection {
     }
   }
 
-  async execute(query: string): Promise<void> {
+  private async _execute(query: string): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$Q)
       .writeInt16(0) // no headers
@@ -967,24 +969,65 @@ export class AwaitConnection {
     if (error != null) {
       throw error;
     }
+  }
 
-    return;
+  private _enterOp(): void {
+    if (this.opInProgress) {
+      throw new Error(
+        "Another operation is in progress. Use multiple separate " +
+          "connections to run operaitons concurrently."
+      );
+    }
+    this.opInProgress = true;
+  }
+
+  private _leaveOp(): void {
+    this.opInProgress = false;
+  }
+
+  async execute(query: string): Promise<void> {
+    this._enterOp();
+    try {
+      await this._execute(query);
+    } finally {
+      this._leaveOp();
+    }
   }
 
   async fetchAll(query: string, args: QueryArgs = null): Promise<Set> {
-    return await this._fetch(query, args, false, false);
+    this._enterOp();
+    try {
+      return await this._fetch(query, args, false, false);
+    } finally {
+      this._leaveOp();
+    }
   }
 
   async fetchOne(query: string, args: QueryArgs = null): Promise<any> {
-    return await this._fetch(query, args, false, true);
+    this._enterOp();
+    try {
+      return await this._fetch(query, args, false, true);
+    } finally {
+      this._leaveOp();
+    }
   }
 
   async fetchAllJSON(query: string, args: QueryArgs = null): Promise<string> {
-    return await this._fetch(query, args, true, false);
+    this._enterOp();
+    try {
+      return await this._fetch(query, args, true, false);
+    } finally {
+      this._leaveOp();
+    }
   }
 
   async fetchOneJSON(query: string, args: QueryArgs = null): Promise<string> {
-    return await this._fetch(query, args, true, true);
+    this._enterOp();
+    try {
+      return await this._fetch(query, args, true, true);
+    } finally {
+      this._leaveOp();
+    }
   }
 
   private abort(): void {
@@ -995,15 +1038,20 @@ export class AwaitConnection {
   }
 
   async close(): Promise<void> {
-    if (this.sock && this.connected) {
-      this.sock.write(
-        new WriteMessageBuffer()
-          .beginMessage(chars.$X)
-          .endMessage()
-          .unwrap()
-      );
+    this._enterOp();
+    try {
+      if (this.sock && this.connected) {
+        this.sock.write(
+          new WriteMessageBuffer()
+            .beginMessage(chars.$X)
+            .endMessage()
+            .unwrap()
+        );
+      }
+      this.abort();
+    } finally {
+      this._leaveOp();
     }
-    this.abort();
   }
 
   private static newSock(addr: string | [string, number]): net.Socket {

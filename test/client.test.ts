@@ -985,3 +985,22 @@ test("fetch no codec", async () => {
     await con.close();
   }
 });
+
+test("concurrent ops", async () => {
+  const con = await asyncConnect();
+  try {
+    const p1 = con.fetchOne(`SELECT 1 + 2`);
+    await Promise.all([p1, con.fetchOne(`SELECT sys::get_version_as_str()`)])
+      .then(() => {
+        throw new Error("an exception was expected");
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch(/Another operation is in progress/);
+      });
+
+    const res = await p1;
+    expect(res).toBe(3);
+  } finally {
+    await con.close();
+  }
+});
