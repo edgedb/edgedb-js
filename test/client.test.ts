@@ -275,8 +275,8 @@ test("fetch: named args", async () => {
     expect(res).toBe("123");
 
     res = await con.fetchOne(`select <str>$a ++ <str>$b`, {
-      a: "123",
       b: "abc",
+      a: "123",
     });
     expect(res).toBe("123abc");
 

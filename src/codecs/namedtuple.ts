@@ -49,18 +49,9 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
       );
     }
 
-    const keys = Object.keys(args);
-    const names = this.namesSet;
+    const names = this.names;
     const codecs = this.subCodecs;
     const codecsLen = codecs.length;
-
-    if (keys.length !== codecsLen) {
-      throw new Error(
-        `expected ${codecsLen} argument${codecsLen === 1 ? "" : "s"}, got ${
-          keys.length
-        }`
-      );
-    }
 
     if (!codecsLen) {
       return EmptyTupleCodec.BUFFER;
@@ -68,12 +59,14 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
 
     const elemData = new WriteBuffer();
     for (let i = 0; i < codecsLen; i++) {
-      const key = keys[i];
-      if (!names.has(key)) {
-        throw new Error(`unexpected named argument "${key}"`);
-      }
+      const key = names[i];
       const val = args[key];
-      if (val == null) {
+
+      if (val === undefined) {
+        throw new Error(`missing named argument "${key}"`);
+      }
+
+      if (val === null) {
         elemData.writeInt32(-1);
       } else {
         const codec = codecs[i];
