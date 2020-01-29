@@ -284,7 +284,11 @@ test("fetch: named args", async () => {
       b: "abc",
       a: "123",
       c: "def",
-    }).catch((e) => {
+    })
+    .then(() => {
+      throw new Error("there should have been an unexpected named argument error");
+    })
+    .catch((e) => {
       expect(e.toString()).toMatch(/unexpected named argument: "c"/);
     });
 
