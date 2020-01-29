@@ -70,7 +70,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     for (let i = 0; i < codecsLen; i++) {
       const key = keys[i];
       if (!names.has(key)) {
-        throw new Error('unexpeced named argument "${key}"');
+        throw new Error(`unexpected named argument "${key}"`);
       }
       const val = args[key];
       if (val == null) {
