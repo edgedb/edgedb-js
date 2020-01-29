@@ -60,12 +60,13 @@ main();
 
 ## Development
 
-We use yarn to develop edgedb-js.
+A local installation of EdgeDB is required to run tests. Download
+EdgeDB from [here](https://edgedb.com/download) or
+[build it manually](https://edgedb.com/docs/internals/dev/).
 
-Instructions for installing EdgeDB and edgedb-js locally can be found
-[here](https://edgedb.com/docs/internals/dev/).
-
-To run the test suite, run `yarn test`.
+We use TypeScript, yarn, prettier, and tslint to develop edgedb-js.
+To run the test suite, run `yarn test`. To lint or format the code, run
+`yarn lint` / `yarn format`.
 
 ## License
 
