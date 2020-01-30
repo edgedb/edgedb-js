@@ -280,17 +280,20 @@ test("fetch: named args", async () => {
     });
     expect(res).toBe("123abc");
 
-    res = await con.fetchOne(`select <str>$a ++ <str>$b`, {
-      b: "abc",
-      a: "123",
-      c: "def",
-    })
-    .then(() => {
-      throw new Error("there should have been an unexpected named argument error");
-    })
-    .catch((e) => {
-      expect(e.toString()).toMatch(/unexpected named argument: "c"/);
-    });
+    res = await con
+      .fetchOne(`select <str>$a ++ <str>$b`, {
+        b: "abc",
+        a: "123",
+        c: "def",
+      })
+      .then(() => {
+        throw new Error(
+          "there should have been an unexpected named argument error"
+        );
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch(/unexpected named argument: "c"/);
+      });
 
     res = await con.fetchOne(`select len(<str>$a ?? "aa")`, {a: null});
     expect(res).toBe(2);

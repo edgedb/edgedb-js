@@ -58,9 +58,9 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     if (keys.length > codecsLen) {
       const extraKeys = keys.filter((key) => !namesSet.has(key));
       throw new Error(
-        `unexpected named argument${ extraKeys.length === 1 ? '' : 's' }: "${
-          extraKeys.join('", "')
-        }"`
+        `unexpected named argument${
+          extraKeys.length === 1 ? "" : "s"
+        }: "${extraKeys.join('", "')}"`
       );
     }
 
