@@ -689,11 +689,28 @@ test("fetch: uuid", async () => {
 
 test("fetch: enum", async () => {
   const con = await asyncConnect();
-  let res;
+  await con.execute("start transaction");
   try {
-    res = await con.fetchOne("SELECT sys::get_version()");
-    expect(typeof res.stage).toBe("string");
-    expect(res.stage).toMatch(/^(dev|alpha|beta|rc|final)$/);
+    await con.execute(`
+      CREATE SCALAR TYPE MyEnum EXTENDING enum<"A", "B">;
+    `);
+
+    await con.execute("declare savepoint s1");
+    await con
+      .fetchOne("SELECT <MyEnum><str>$0", ["Z"])
+      .then(() => {
+        throw new Error("an exception was expected");
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch(/invalid input value for enum/);
+      });
+    await con.execute("rollback to savepoint s1");
+
+    let ret = await con.fetchOne("SELECT <MyEnum><str>$0", ["A"]);
+    expect(ret).toBe("A");
+
+    ret = await con.fetchOne("SELECT <MyEnum>$0", ["A"]);
+    expect(ret).toBe("A");
   } finally {
     await con.close();
   }
