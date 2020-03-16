@@ -77,6 +77,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
         throw new Error(`missing named argument "${key}"`);
       }
 
+      elemData.writeInt32(0); // reserved bytes
       if (val === null) {
         elemData.writeInt32(-1);
       } else {

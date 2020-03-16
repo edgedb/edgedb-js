@@ -58,6 +58,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     const elemData = new WriteBuffer();
     for (let i = 0; i < codecsLen; i++) {
       const arg = args[i];
+      elemData.writeInt32(0); // reserved bytes
       if (arg == null) {
         elemData.writeInt32(-1);
       } else {

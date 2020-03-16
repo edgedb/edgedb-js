@@ -41,6 +41,9 @@ import {
   NormalizedConnectConfig,
 } from "./con_utils";
 
+const PROTO_VER_MAJOR = 0;
+const PROTO_VER_MINOR = 8;
+
 type QueryArgPrimitive =
   | number
   | string
@@ -388,7 +391,7 @@ export class AwaitConnection {
           this._parseHeaders();
           this.buffer.finishMessage();
 
-          if (hi !== 0 || lo !== 7) {
+          if (hi !== PROTO_VER_MAJOR || (hi === 0 && lo !== PROTO_VER_MINOR)) {
             throw new Error(
               `the server requested an unsupported version of ` +
                 `the protocol ${hi}.${lo}`
