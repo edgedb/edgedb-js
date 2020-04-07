@@ -252,19 +252,21 @@ export class AwaitConnection {
 
     const inTypeId = this.buffer.readUUID();
     const inTypeData = this.buffer.readLenPrefixedBuffer();
+
+    const outTypeId = this.buffer.readUUID();
+    const outTypeData = this.buffer.readLenPrefixedBuffer();
+
+    this.buffer.finishMessage();
+
     let inCodec = this.codecsRegistry.getCodec(inTypeId);
     if (inCodec == null) {
       inCodec = this.codecsRegistry.buildCodec(inTypeData);
     }
 
-    const outTypeId = this.buffer.readUUID();
-    const outTypeData = this.buffer.readLenPrefixedBuffer();
     let outCodec = this.codecsRegistry.getCodec(outTypeId);
     if (outCodec == null) {
       outCodec = this.codecsRegistry.buildCodec(outTypeData);
     }
-
-    this.buffer.finishMessage();
 
     return [cardinality, inCodec, outCodec];
   }
@@ -645,11 +647,15 @@ export class AwaitConnection {
 
         switch (mtype) {
           case chars.$T: {
-            [
-              cardinality,
-              inCodec,
-              outCodec,
-            ] = this._parseDescribeTypeMessage();
+            try {
+              [
+                cardinality,
+                inCodec,
+                outCodec,
+              ] = this._parseDescribeTypeMessage();
+            } catch (e) {
+              error = e;
+            }
             break;
           }
 
@@ -827,10 +833,14 @@ export class AwaitConnection {
         }
 
         case chars.$T: {
-          [newCard, inCodec, outCodec] = this._parseDescribeTypeMessage();
-          const key = this._getQueryCacheKey(query, asJson, expectOne);
-          this.queryCodecCache.set(key, [newCard, inCodec, outCodec]);
-          reExec = true;
+          try {
+            [newCard, inCodec, outCodec] = this._parseDescribeTypeMessage();
+            const key = this._getQueryCacheKey(query, asJson, expectOne);
+            this.queryCodecCache.set(key, [newCard, inCodec, outCodec]);
+            reExec = true;
+          } catch (e) {
+            error = e;
+          }
           break;
         }
 
