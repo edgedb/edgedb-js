@@ -246,32 +246,29 @@ export class AwaitConnection {
   }
 
   private _parseDescribeTypeMessage(): [number, ICodec, ICodec] {
-    try {
-      this._rejectHeaders();
+    this._rejectHeaders();
 
-      const cardinality: char = this.buffer.readChar();
+    const cardinality: char = this.buffer.readChar();
 
-      const inTypeId = this.buffer.readUUID();
-      const inTypeData = this.buffer.readLenPrefixedBuffer();
-      let inCodec = this.codecsRegistry.getCodec(inTypeId);
-      if (inCodec == null) {
-        inCodec = this.codecsRegistry.buildCodec(inTypeData);
-      }
+    const inTypeId = this.buffer.readUUID();
+    const inTypeData = this.buffer.readLenPrefixedBuffer();
 
-      const outTypeId = this.buffer.readUUID();
-      const outTypeData = this.buffer.readLenPrefixedBuffer();
-      let outCodec = this.codecsRegistry.getCodec(outTypeId);
-      if (outCodec == null) {
-        outCodec = this.codecsRegistry.buildCodec(outTypeData);
-      }
+    const outTypeId = this.buffer.readUUID();
+    const outTypeData = this.buffer.readLenPrefixedBuffer();
 
-      this.buffer.finishMessage();
+    this.buffer.finishMessage();
 
-      return [cardinality, inCodec, outCodec];
-    } catch (e) {
-      this.buffer.discardMessage();
-      throw e;
+    let inCodec = this.codecsRegistry.getCodec(inTypeId);
+    if (inCodec == null) {
+      inCodec = this.codecsRegistry.buildCodec(inTypeData);
     }
+
+    let outCodec = this.codecsRegistry.getCodec(outTypeId);
+    if (outCodec == null) {
+      outCodec = this.codecsRegistry.buildCodec(outTypeData);
+    }
+
+    return [cardinality, inCodec, outCodec];
   }
 
   private _parseCommandCompleteMessage(): string {
