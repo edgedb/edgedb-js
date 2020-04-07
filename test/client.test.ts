@@ -1013,6 +1013,9 @@ test("fetch no codec", async () => {
       .catch((e) => {
         expect(e.toString()).toMatch(/no JS codec for std::decimal/);
       });
+    await con.fetchOne("select 123").then((res) => {
+      expect(res).toEqual(123);
+    });
   } finally {
     await con.close();
   }
