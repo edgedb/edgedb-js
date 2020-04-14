@@ -16,13 +16,9 @@
  * limitations under the License.
  */
 
-import * as edgedb from "../src/index.node";
-import {resolveErrorCode} from "../src/errors/resolve";
+import _connect from "./client";
+export const connect = _connect;
+export default connect;
 
-test("resolve error", () => {
-  expect(resolveErrorCode(0x04_02_01_01)).toBe(edgedb.InvalidLinkTargetError);
-  expect(resolveErrorCode(0x04_02_01_ff)).toBe(edgedb.InvalidTargetError);
-  expect(resolveErrorCode(0x04_02_ff_ff)).toBe(edgedb.InvalidTypeError);
-  expect(resolveErrorCode(0x04_ff_ff_ff)).toBe(edgedb.QueryError);
-  expect(resolveErrorCode(0xfe_ff_ff_ff)).toBe(edgedb.EdgeDBError);
-});
+/* Private exports */
+export * from "./index.shared";

@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-import * as util from "util";
-
+import {inspect} from "../compat";
 import {ICodec, Codec, uuid} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
 
@@ -160,7 +159,7 @@ function generateObjectClass(
 
   const code = buf.join("\n");
   const params: string[] = ["names", "flags", "IMPLICIT", "inspect"];
-  const args: any[] = [names, flags, EDGE_POINTER_IS_IMPLICIT, util.inspect];
+  const args: any[] = [names, flags, EDGE_POINTER_IS_IMPLICIT, inspect];
   return exec(params, args, code) as ObjectConstructor;
 }
 

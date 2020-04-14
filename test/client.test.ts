@@ -27,7 +27,7 @@ import {
   DivisionByZeroError,
   EdgeDBError,
   MissingRequiredError,
-} from "../src/index";
+} from "../src/index.node";
 import {LocalDate, Duration} from "../src/datatypes/datetime";
 import {asyncConnect, connectWithCallback} from "./testbase";
 

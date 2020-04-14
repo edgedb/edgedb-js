@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import * as util from "util";
+import {inspect} from "../compat";
 
 export class UUID {
   private _buf: Buffer;
@@ -80,8 +80,8 @@ export class UUID {
     return this.toString();
   }
 
-  [util.inspect.custom](_depth: number, options: util.InspectOptions): string {
-    return `UUID [ ${util.inspect(
+  [inspect.custom](_depth: number, options: any): string {
+    return `UUID [ ${inspect(
       this.toString(),
       options.showHidden,
       0,

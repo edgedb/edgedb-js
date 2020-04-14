@@ -18,7 +18,7 @@
 
 import * as util from "util";
 
-import {UUID} from "../src/index";
+import {UUID} from "../src/index.node";
 import {LocalDate, Duration} from "../src/datatypes/datetime";
 
 test("types: UUID", async () => {

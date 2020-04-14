@@ -1,7 +1,7 @@
 import * as process from "process";
 import * as child_process from "child_process";
 
-import connect from "../src/index";
+import connect from "../src/index.node";
 
 type PromiseCallback = () => void;
 

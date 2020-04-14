@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import * as util from "util";
+import {inspect} from "../compat";
 
 import {daysInMonth, ymd2ord, ord2ymd} from "./dateutil";
 
@@ -122,10 +122,7 @@ export class LocalDateTime {
     );
   }
 
-  [util.inspect.custom](
-    _depth: number,
-    _options: util.InspectOptions
-  ): string {
+  [inspect.custom](_depth: number, _options: any): string {
     return `LocalDateTime [ ${this.toISOString()} ]`;
   }
 }
@@ -200,10 +197,7 @@ export class LocalTime {
     return repr;
   }
 
-  [util.inspect.custom](
-    _depth: number,
-    _options: util.InspectOptions
-  ): string {
+  [inspect.custom](_depth: number, _options: any): string {
     return `LocalTime [ ${this.toString()} ]`;
   }
 }
@@ -255,10 +249,7 @@ export class LocalDate {
     return `${this._year}-${mm}-${dd}`;
   }
 
-  [util.inspect.custom](
-    _depth: number,
-    _options: util.InspectOptions
-  ): string {
+  [inspect.custom](_depth: number, _options: any): string {
     return `LocalDate [ ${this.toString()} ]`;
   }
 
@@ -334,10 +325,7 @@ export class Duration {
     return buf.join("");
   }
 
-  [util.inspect.custom](
-    _depth: number,
-    _options: util.InspectOptions
-  ): string {
+  [inspect.custom](_depth: number, _options: any): string {
     return `Duration [ ${this.toString()} ]`;
   }
 }
