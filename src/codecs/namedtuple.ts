@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-import * as util from "util";
-
+import {inspect} from "../compat";
 import {ICodec, Codec, uuid, IArgsCodec} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
 import {EmptyTupleCodec} from "./tuple";
@@ -269,7 +268,7 @@ function generateTupleClass(names: string[]): NamedTupleConstructor {
 
   const code = buf.join("\n");
   const params: string[] = ["names", "inspect"];
-  const args: any[] = [names, util.inspect];
+  const args: any[] = [names, inspect];
   return exec(params, args, code) as NamedTupleConstructor;
 }
 

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import * as util from "util";
+import {inspect} from "../compat";
 
 export type NamedTuple<T = any> = {
   readonly [_: number]: any;
@@ -173,7 +173,7 @@ export function generateType(names: string[]): NamedTupleConstructor {
 
   const code = buf.join("\n");
   const params: string[] = ["names", "inspect"];
-  const args: any[] = [names, util.inspect];
+  const args: any[] = [names, inspect];
   return exec(params, args, code) as NamedTupleConstructor;
 }
 

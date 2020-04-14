@@ -18,7 +18,6 @@
 
 import char, * as chars from "./chars";
 import {RingBuffer} from "./ring";
-import {Buffer} from "buffer";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE: number = 4096;

@@ -16,20 +16,5 @@
  * limitations under the License.
  */
 
-export {
-  LocalDateTime,
-  LocalDate,
-  LocalTime,
-  Duration,
-} from "./datatypes/datetime";
-export {NamedTuple} from "./datatypes/namedtuple";
-export {ObjectShape} from "./datatypes/object";
-export {Set} from "./datatypes/set";
-export {Tuple} from "./datatypes/tuple";
-export {UUID} from "./datatypes/uuid";
-
-export * from "./errors";
-
-import _connect from "./client";
-export const connect = _connect;
-export default connect;
+/* Private exports */
+export * from "./index.shared";

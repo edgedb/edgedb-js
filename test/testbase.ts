@@ -18,7 +18,7 @@
 
 import * as process from "process";
 
-import connect from "../src/index";
+import connect from "../src/index.node";
 import {NodeCallback, AwaitConnection, Connection} from "../src/client";
 import {ConnectConfig} from "../src/con_utils";
 
