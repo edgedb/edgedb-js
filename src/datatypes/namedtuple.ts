@@ -17,6 +17,7 @@
  */
 
 import {inspect} from "../compat";
+import {introspectMethod, FieldInfo} from "./introspect";
 
 export type NamedTuple<T = any> = {
   readonly [_: number]: any;
@@ -127,6 +128,13 @@ export function generateType(names: string[]): NamedTupleConstructor {
 
     class NamedTuple extends Array {
 
+      [introspectMethod]() {
+        return {
+          kind: 'namedtuple',
+          fields: introFields
+        }
+      }
+
       [inspect.custom](depth, options) {
         const buf = [options.stylize('NamedTuple', 'name'), ' [ '];
         const fieldsBuf = [];
@@ -150,8 +158,10 @@ export function generateType(names: string[]): NamedTupleConstructor {
     `,
   ];
 
+  const introFields: FieldInfo[] = [];
   for (let i = 0; i < names.length; i++) {
     buf.push(`${JSON.stringify(names[i])}: this[${i}],`);
+    introFields.push({name: names[i]});
   }
 
   buf.push(`
@@ -172,8 +182,13 @@ export function generateType(names: string[]): NamedTupleConstructor {
   `);
 
   const code = buf.join("\n");
-  const params: string[] = ["names", "inspect"];
-  const args: any[] = [names, inspect];
+  const params: string[] = [
+    "names",
+    "inspect",
+    "introspectMethod",
+    "introFields",
+  ];
+  const args: any[] = [names, inspect, introspectMethod, introFields];
   return exec(params, args, code) as NamedTupleConstructor;
 }
 

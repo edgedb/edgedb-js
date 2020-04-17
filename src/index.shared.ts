@@ -36,5 +36,7 @@ export * from "./errors";
 /* Private APIs */
 import * as reg from "./codecs/registry";
 import * as buf from "./buffer";
+import * as introspect from "./datatypes/introspect";
 export const _CodecsRegistry = reg.CodecsRegistry;
 export const _ReadBuffer = buf.ReadBuffer;
+export const _introspect = introspect.introspect;

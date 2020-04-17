@@ -21,7 +21,17 @@ import {KNOWN_TYPENAMES} from "./codecs";
 import {ICodec, Codec, uuid, IArgsCodec} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
 
-class Tuple extends Array {}
+import {
+  introspectMethod,
+  IntrospectableType,
+  CollectionInfo,
+} from "../datatypes/introspect";
+
+class Tuple extends Array implements IntrospectableType {
+  [introspectMethod](): CollectionInfo {
+    return {kind: "tuple"};
+  }
+}
 
 export class TupleCodec extends Codec implements ICodec, IArgsCodec {
   private subCodecs: ICodec[];
