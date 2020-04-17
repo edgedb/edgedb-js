@@ -16,14 +16,13 @@
  * limitations under the License.
  */
 
-import {inspect} from "../compat";
 import {ICodec, Codec, uuid} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
-
-type ObjectConstructor = new () => object;
-
-const EDGE_POINTER_IS_IMPLICIT = 1 << 0;
-const EDGE_POINTER_IS_LINKPROP = 1 << 1;
+import {
+  generateType,
+  ObjectConstructor,
+  EDGE_POINTER_IS_LINKPROP,
+} from "../datatypes/object";
 
 export class ObjectCodec extends Codec implements ICodec {
   private codecs: ICodec[];
@@ -44,7 +43,7 @@ export class ObjectCodec extends Codec implements ICodec {
       }
     }
     this.names = newNames;
-    this.objectType = generateObjectClass(newNames, flags);
+    this.objectType = generateType(newNames, flags);
   }
 
   encode(_buf: WriteBuffer, _object: any): void {
@@ -80,90 +79,4 @@ export class ObjectCodec extends Codec implements ICodec {
 
     return result;
   }
-}
-
-function generateObjectClass(
-  names: string[],
-  flags: number[]
-): ObjectConstructor {
-  /* See the explanation for why we generate classes in `namedtuple.ts`.
-   * In this particular case, we could just use an object literal or
-   * a custom "edgedb.Object" class, but we still want to have
-   * high-performance toJSON() implementation.  We also don't want
-   * to store fields' names anywhere in the object itself.
-   */
-
-  const buf = [
-    `'use strict';
-
-    class Object {
-      constructor() {
-    `,
-  ];
-
-  for (const name of names) {
-    buf.push(`this[${JSON.stringify(name)}] = null;`);
-  }
-
-  buf.push(`
-      }
-
-      [inspect.custom](depth, options) {
-        const buf = [options.stylize('Object', 'name'), ' [ '];
-        const fieldsBuf = [];
-        for (let i = 0; i < names.length; i++) {
-          const name = names[i];
-          const flag = flags[i];
-          if ((flag & IMPLICIT) && !options.showHidden) {
-            continue;
-          }
-          const val = this[name];
-          const repr = inspect(
-            val,
-            options.showHidden,
-            depth + 1,
-            options.colors
-          );
-          fieldsBuf.push(options.stylize(name, 'name') + ' := ' + repr);
-        }
-        buf.push(fieldsBuf.join(', '));
-        buf.push(' ]');
-        return buf.join('');
-      }
-
-      toJSON() {
-        return {
-  `);
-
-  let numOfJsonFields = 0;
-  for (let i = 0; i < names.length; i++) {
-    const name = names[i];
-    const flag = flags[i];
-    if (flag & EDGE_POINTER_IS_IMPLICIT) {
-      continue;
-    }
-    const sname = JSON.stringify(name);
-    buf.push(`${sname}: this[${sname}],`);
-    numOfJsonFields++;
-  }
-  if (!numOfJsonFields) {
-    buf.push(`id: this.id,`);
-  }
-
-  buf.push(`
-        }
-      }
-    };
-    return Object;
-  `);
-
-  const code = buf.join("\n");
-  const params: string[] = ["names", "flags", "IMPLICIT", "inspect"];
-  const args: any[] = [names, flags, EDGE_POINTER_IS_IMPLICIT, inspect];
-  return exec(params, args, code) as ObjectConstructor;
-}
-
-function exec(params: string[], args: any[], code: string): any {
-  const func = new Function(...params, code);
-  return func(...args);
 }

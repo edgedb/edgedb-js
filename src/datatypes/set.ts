@@ -16,4 +16,14 @@
  * limitations under the License.
  */
 
-export class Set extends Array {}
+import {
+  introspectMethod,
+  IntrospectableType,
+  CollectionInfo,
+} from "./introspect";
+
+export class Set extends Array implements IntrospectableType {
+  [introspectMethod](): CollectionInfo {
+    return {kind: "set"};
+  }
+}

@@ -17,6 +17,7 @@
  */
 
 import {inspect} from "../compat";
+import {introspectMethod, ObjectFieldInfo} from "./introspect";
 
 export type ObjectShape<T = any> = {readonly [K in keyof T]-?: T[K]} & {
   readonly id: string;
@@ -46,11 +47,25 @@ export function generateType(
     `,
   ];
 
-  for (const name of names) {
+  const introFields: ObjectFieldInfo[] = [];
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
     buf.push(`this[${JSON.stringify(name)}] = null;`);
+    introFields.push({
+      name,
+      implicit: !!(flags[i] & EDGE_POINTER_IS_IMPLICIT),
+      linkprop: !!(flags[i] & EDGE_POINTER_IS_LINKPROP),
+    });
   }
 
   buf.push(`
+      }
+
+      [introspectMethod]() {
+        return {
+          kind: 'object',
+          fields: introFields
+        }
       }
 
       [inspect.custom](depth, options) {
@@ -103,8 +118,22 @@ export function generateType(
   `);
 
   const code = buf.join("\n");
-  const params: string[] = ["names", "flags", "IMPLICIT", "inspect"];
-  const args: any[] = [names, flags, EDGE_POINTER_IS_IMPLICIT, inspect];
+  const params: string[] = [
+    "names",
+    "flags",
+    "IMPLICIT",
+    "inspect",
+    "introspectMethod",
+    "introFields",
+  ];
+  const args: any[] = [
+    names,
+    flags,
+    EDGE_POINTER_IS_IMPLICIT,
+    inspect,
+    introspectMethod,
+    introFields,
+  ];
   return exec(params, args, code) as ObjectConstructor;
 }
 

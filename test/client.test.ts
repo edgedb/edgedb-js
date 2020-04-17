@@ -27,6 +27,7 @@ import {
   DivisionByZeroError,
   EdgeDBError,
   MissingRequiredError,
+  _introspect,
 } from "../src/index.node";
 import {LocalDate, Duration} from "../src/datatypes/datetime";
 import {asyncConnect, connectWithCallback} from "./testbase";
@@ -503,6 +504,9 @@ test("fetch: tuple", async () => {
     res = await con.fetchAll("select ()");
     expect(res).toEqual([[]]);
 
+    expect(_introspect(res)).toEqual({kind: "set"});
+    expect(_introspect(res[0])).toEqual({kind: "tuple"});
+
     res = await con.fetchOne("select (1,)");
     expect(res).toEqual([1]);
 
@@ -555,6 +559,17 @@ test("fetch: object", async () => {
       filter .name = 'std::str_repeat'
       limit 1
     `);
+
+    expect(_introspect(res.params[0])).toEqual({
+      kind: "object",
+      fields: [
+        {name: "__tid__", implicit: true, linkprop: false},
+        {name: "id", implicit: true, linkprop: false},
+        {name: "kind", implicit: false, linkprop: false},
+        {name: "num", implicit: false, linkprop: false},
+        {name: "@foo", implicit: false, linkprop: true},
+      ],
+    });
 
     expect(JSON.stringify(res)).toEqual(
       JSON.stringify({
@@ -610,7 +625,18 @@ test("fetch: set of arrays", async () => {
       limit 1
     `);
 
+    expect(_introspect(res)).toEqual({
+      kind: "object",
+      fields: [
+        {name: "__tid__", implicit: true, linkprop: false},
+        {name: "id", implicit: false, linkprop: false},
+        {name: "sets", implicit: false, linkprop: false},
+      ],
+    });
+
     res = res.sets;
+    expect(_introspect(res)).toEqual({kind: "set"});
+    expect(_introspect(res[0])).toEqual({kind: "array"});
     expect(res).toEqual([[1, 2], [1]]);
     expect(res.length).toBe(2);
     expect(res instanceof Set).toBeTruthy();
@@ -723,6 +749,11 @@ test("fetch: namedtuple", async () => {
     res = await con.fetchOne("select (a := 1)");
     expect(Array.from(res)).toEqual([1]);
 
+    expect(_introspect(res)).toEqual({
+      kind: "namedtuple",
+      fields: [{name: "a"}],
+    });
+
     res = await con.fetchAll("select (a := 1, b:= 'abc')");
     expect(Array.from(res[0])).toEqual([1, "abc"]);
 
@@ -786,6 +817,7 @@ test("fetchOne: arrays", async () => {
   try {
     res = await con.fetchOne("select [12312312, -1, 123, 0, 1]");
     expect(res).toEqual([12312312, -1, 123, 0, 1]);
+    expect(_introspect(res)).toEqual({kind: "array"});
 
     res = await con.fetchOne("select ['aaa']");
     expect(res).toEqual(["aaa"]);
