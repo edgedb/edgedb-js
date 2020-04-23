@@ -296,8 +296,12 @@ test("fetch: named args", async () => {
         expect(e.toString()).toMatch(/unexpected named argument: "c"/);
       });
 
-    res = await con.fetchOne(`select len(<str>$a ?? "aa")`, {a: null});
-    expect(res).toBe(2);
+    // TODO: uncomment after alpha3:
+    //
+    // res = await con.fetchOne(`select len(<OPTIONAL str>$a ?? "aa")`, {
+    //   a: null,
+    // });
+    // expect(res).toBe(2);
   } finally {
     await con.close();
   }
