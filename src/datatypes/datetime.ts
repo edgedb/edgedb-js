@@ -17,6 +17,7 @@
  */
 
 import {inspect} from "../compat";
+import * as bi from "../bigint";
 
 import {daysInMonth, ymd2ord, ord2ymd} from "./dateutil";
 
@@ -264,11 +265,16 @@ export class LocalDate {
 }
 
 export class Duration {
-  private readonly _microseconds: bigint;
+  private readonly _microseconds: bi.BigIntLike;
 
-  constructor(milliseconds: number = 0, microseconds: bigint = BigInt(0)) {
-    this._microseconds =
-      BigInt(Math.floor(milliseconds * 1000)) + microseconds;
+  constructor(
+    milliseconds: number = 0,
+    microseconds: bigint = bi.make(0) as bigint
+  ) {
+    this._microseconds = bi.add(
+      bi.make(Math.floor(milliseconds * 1000)),
+      microseconds
+    );
   }
 
   static fromMicroseconds(microseconds: bigint): Duration {
@@ -284,7 +290,7 @@ export class Duration {
   }
 
   toMicroseconds(): bigint {
-    return this._microseconds;
+    return this._microseconds as bigint;
   }
 
   toString(): string {
@@ -292,8 +298,10 @@ export class Duration {
 
     const micros = this._microseconds;
 
-    const bint_hour = micros / BigInt(3600_000_000);
-    let time = Number(micros - bint_hour * BigInt(3600_000_000));
+    const bint_hour = bi.div(micros, bi.make(3600_000_000));
+    let time = Number(
+      bi.sub(micros, bi.mul(bint_hour, bi.make(3600_000_000)))
+    );
     const hour = Number(bint_hour);
 
     const tfrac = Math.trunc(time / 60_000_000);

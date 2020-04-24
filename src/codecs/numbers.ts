@@ -18,6 +18,7 @@
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
+import {decodeInt64ToString} from "../compat";
 
 export class Int64Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
@@ -97,65 +98,4 @@ export class Float64Codec extends ScalarCodec implements ICodec {
   decode(buf: ReadBuffer): any {
     return buf.readFloat64();
   }
-}
-
-export function decodeInt64ToString(buf: Buffer): string {
-  /* Render int64 binary into a decimal string.
-
-     Avoid using BigInts (not all platforms support them) or number
-     arithmetics (there's no int64 in JS).
-  */
-
-  if (buf.length !== 8) {
-    throw new Error("expected 8 bytes buffer");
-  }
-
-  let inp: number[] = Array.from(buf);
-
-  let negative = false;
-  if (inp[0] & 0x80) {
-    // A negative integer; invert all bits.
-    inp = inp.map((x) => x ^ 0xff);
-    // Account for the two's compliment's `1`.
-    inp[inp.length - 1]++;
-
-    negative = true;
-  }
-
-  let result = "0";
-
-  for (const digit of inp) {
-    /* The algorithm:
-
-    An int64 is a sequence of 8 bytes on the wire, say
-
-      b1 b2 b3 b4 b5 b6 b7 b8
-
-    To decode this into a decimal number we can use the following
-    formula:
-
-      b8 * 256^0 + b7 * 256^1 + b6 * 256^2 + ... + b1 * 256^7
-
-    which can be represented as
-
-      b8 + 256 * (b7 + 256 * (b6 + 256 * (b5 + 256 * (... b1 * 256))))
-
-    The code below does exactly that only using a string as a storage
-    for the result number. That way we can circumvent the JS limitation
-    of not supporting proper integers.
-    */
-
-    let acc = digit;
-    let ret = "";
-
-    for (let j = result.length - 1; j >= 0; j--) {
-      const num = parseInt(result[j], 10) * 256 + acc;
-      ret = (num % 10) + ret;
-      acc = Math.floor(num / 10);
-    }
-
-    result = acc ? acc + ret : ret;
-  }
-
-  return negative ? `-${result}` : result;
 }
