@@ -18,6 +18,8 @@
 
 import char, * as chars from "./chars";
 import {RingBuffer} from "./ring";
+import * as bi from "./bigint";
+import * as compat from "./compat";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE: number = 4096;
@@ -136,11 +138,12 @@ export class WriteBuffer {
   }
 
   writeBigInt64(i: bigint): this {
-    if (i < 0) {
-      i = BigInt("18446744073709551616") + i;
+    let ii: bi.BigIntLike = i;
+    if (ii < 0) {
+      ii = bi.add(bi.make("18446744073709551616"), i);
     }
-    const hi = i >> BigInt(32);
-    const lo = i & BigInt(0xffffffff);
+    const hi = bi.rshift(ii, bi.make(32));
+    const lo = bi.bitand(ii, bi.make(0xffffffff));
     this.writeUInt32(Number(hi));
     this.writeUInt32(Number(lo));
     return this;
@@ -794,13 +797,13 @@ export class ReadBuffer {
   }
 
   private reportInt64Overflow(hi: number, lo: number): never {
-    const bhi = BigInt(hi);
-    const blo = BigInt(lo >>> 0);
-    const num = bhi * BigInt(0x100000000) + blo;
+    const bhi = bi.make(hi);
+    const blo = bi.make(lo >>> 0);
+    const num = bi.add(bi.mul(bhi, bi.make(0x100000000)), blo);
 
     throw new Error(
-      `integer overflow: cannot unpack <std::int64>'${num}' into JavaScript ` +
-        `Number type without losing precision`
+      `integer overflow: cannot unpack <std::int64>'${num.toString()}' ` +
+        `into JavaScript Number type without losing precision`
     );
   }
 
@@ -822,19 +825,25 @@ export class ReadBuffer {
     return this.reportInt64Overflow(hi, lo);
   }
 
-  readBigInt64Fallback(): bigint {
-    const hi = this.buffer.readUInt32BE(this.pos);
-    const lo = this.buffer.readUInt32BE(this.pos + 4);
-    this.pos += 8;
+  readBigInt64Fallback(): bi.BigIntLike {
+    if (bi.hasNativeBigInt) {
+      const hi = this.buffer.readUInt32BE(this.pos);
+      const lo = this.buffer.readUInt32BE(this.pos + 4);
+      this.pos += 8;
 
-    let res = (BigInt(hi) << BigInt(32)) + BigInt(lo);
-    if (hi >= 0x80000000) {
-      res = BigInt("-18446744073709551616") + res;
+      let res = (BigInt(hi) << BigInt(32)) + BigInt(lo);
+      if (hi >= 0x80000000) {
+        res = BigInt("-18446744073709551616") + res;
+      }
+      return res;
+    } else {
+      const buf = this.readBuffer(8);
+      const snum = compat.decodeInt64ToString(buf);
+      return bi.make(snum);
     }
-    return res;
   }
 
-  readBigInt64(): bigint {
+  readBigInt64(): bi.BigIntLike {
     if (this.pos + 8 > this.len) {
       throw new BufferError("buffer overread");
     }

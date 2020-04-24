@@ -40,3 +40,6 @@ import * as introspect from "./datatypes/introspect";
 export const _CodecsRegistry = reg.CodecsRegistry;
 export const _ReadBuffer = buf.ReadBuffer;
 export const _introspect = introspect.introspect;
+
+import {plugJSBI} from "./bigint";
+export const _plugJSBI = plugJSBI;

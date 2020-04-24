@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {decodeInt64ToString} from "../src/codecs/numbers";
+import {decodeInt64ToString} from "../src/compat";
 import {WriteBuffer} from "../src/buffer";
 
 test("int64 rendering", () => {

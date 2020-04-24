@@ -141,6 +141,6 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     if (months !== 0) {
       throw new Error("non-zero reserved bytes in duration");
     }
-    return Duration.fromMicroseconds(us);
+    return Duration.fromMicroseconds(us as bigint);
   }
 }
