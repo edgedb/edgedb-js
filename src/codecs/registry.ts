@@ -19,8 +19,16 @@
 import {ReadBuffer} from "../buffer";
 import LRU from "../lru";
 import {ICodec, uuid, ScalarCodec} from "./ifaces";
-import {NULL_CODEC_ID, NULL_CODEC, SCALAR_CODECS, KNOWN_TYPES} from "./codecs";
+import {
+  NULL_CODEC_ID,
+  NULL_CODEC,
+  SCALAR_CODECS,
+  KNOWN_TYPES,
+  KNOWN_TYPENAMES,
+} from "./codecs";
 import {EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec} from "./tuple";
+import * as numerics from "./numerics";
+import * as numbers from "./numbers";
 import {ArrayCodec} from "./array";
 import {NamedTupleCodec} from "./namedtuple";
 import {EnumCodec} from "./enum";
@@ -40,13 +48,56 @@ const CTYPE_NAMEDTUPLE = 5;
 const CTYPE_ARRAY = 6;
 const CTYPE_ENUM = 7;
 
+interface StringCodecSpec {
+  decimal?: boolean;
+  bigint?: boolean;
+  int64?: boolean;
+}
+
+const DECIMAL_TYPEID = KNOWN_TYPENAMES.get("std::decimal")!;
+const BIGINT_TYPEID = KNOWN_TYPENAMES.get("std::bigint")!;
+const INT64_TYPEID = KNOWN_TYPENAMES.get("std::int64")!;
+
 export class CodecsRegistry {
   private codecsBuildCache: LRU<uuid, ICodec>;
   private codecs: LRU<uuid, ICodec>;
+  private customScalarCodecs: Map<uuid, ICodec>;
 
   constructor() {
     this.codecs = new LRU({capacity: CODECS_CACHE_SIZE});
     this.codecsBuildCache = new LRU({capacity: CODECS_BUILD_CACHE_SIZE});
+    this.customScalarCodecs = new Map();
+  }
+
+  setStringCodecs({decimal, bigint, int64}: StringCodecSpec = {}): void {
+    // This is a private API and it will change in the future.
+
+    if (decimal) {
+      this.customScalarCodecs.set(
+        DECIMAL_TYPEID,
+        new numerics.DecimalStringCodec(DECIMAL_TYPEID)
+      );
+    } else {
+      this.customScalarCodecs.delete(DECIMAL_TYPEID);
+    }
+
+    if (bigint) {
+      this.customScalarCodecs.set(
+        BIGINT_TYPEID,
+        new numerics.BigIntStringCodec(BIGINT_TYPEID)
+      );
+    } else {
+      this.customScalarCodecs.delete(BIGINT_TYPEID);
+    }
+
+    if (int64) {
+      this.customScalarCodecs.set(
+        INT64_TYPEID,
+        new numbers.Int64StringCodec(INT64_TYPEID)
+      );
+    } else {
+      this.customScalarCodecs.delete(INT64_TYPEID);
+    }
   }
 
   hasCodec(typeId: uuid): boolean {
@@ -186,6 +237,11 @@ export class CodecsRegistry {
 
     switch (t) {
       case CTYPE_BASE_SCALAR: {
+        res = this.customScalarCodecs.get(tid);
+        if (res != null) {
+          break;
+        }
+
         res = SCALAR_CODECS.get(tid);
         if (!res) {
           if (KNOWN_TYPES.has(tid)) {
