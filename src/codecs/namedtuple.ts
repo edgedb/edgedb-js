@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {ICodec, Codec, uuid, IArgsCodec} from "./ifaces";
+import {ICodec, Codec, uuid, IArgsCodec, CodecKind} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
 import {EmptyTupleCodec} from "./tuple";
 import {generateType, NamedTupleConstructor} from "../datatypes/namedtuple";
@@ -117,5 +117,17 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     }
 
     return result;
+  }
+
+  getSubcodecs(): ICodec[] {
+    return Array.from(this.subCodecs);
+  }
+
+  getSubcodecsNames(): string[] {
+    return Array.from(this.names);
+  }
+
+  getKind(): CodecKind {
+    return "namedtuple";
   }
 }

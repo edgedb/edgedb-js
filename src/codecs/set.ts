@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {ICodec, Codec, uuid} from "./ifaces";
+import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../buffer";
 import {ArrayCodec} from "./array";
 import {Set} from "../datatypes/set";
@@ -121,5 +121,13 @@ export class SetCodec extends Codec implements ICodec {
     }
 
     return result;
+  }
+
+  getSubcodecs(): ICodec[] {
+    return [this.subCodec];
+  }
+
+  getKind(): CodecKind {
+    return "set";
   }
 }

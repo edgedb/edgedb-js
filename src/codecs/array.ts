@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {ICodec, Codec, ScalarCodec, uuid} from "./ifaces";
+import {ICodec, Codec, ScalarCodec, uuid, CodecKind} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../buffer";
 
 export class ArrayCodec extends Codec implements ICodec {
@@ -106,6 +106,14 @@ export class ArrayCodec extends Codec implements ICodec {
     }
 
     return result;
+  }
+
+  getSubcodecs(): ICodec[] {
+    return [this.subCodec];
+  }
+
+  getKind(): CodecKind {
+    return "array";
   }
 }
 

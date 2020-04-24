@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {ICodec, Codec, uuid} from "./ifaces";
+import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../buffer";
 import {
   generateType,
@@ -78,5 +78,17 @@ export class ObjectCodec extends Codec implements ICodec {
     }
 
     return result;
+  }
+
+  getSubcodecs(): ICodec[] {
+    return Array.from(this.codecs);
+  }
+
+  getSubcodecsNames(): string[] {
+    return Array.from(this.names);
+  }
+
+  getKind(): CodecKind {
+    return "object";
   }
 }

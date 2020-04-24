@@ -18,7 +18,7 @@
 
 import {ReadBuffer, WriteBuffer} from "../buffer";
 import {BoolCodec} from "./boolean";
-import {ICodec, uuid, Codec} from "./ifaces";
+import {ICodec, uuid, Codec, CodecKind} from "./ifaces";
 import {
   Int16Codec,
   Int32Codec,
@@ -39,37 +39,7 @@ import {
   DurationCodec,
 } from "./datetime";
 
-export const KNOWN_TYPES = new Map<uuid, string>([
-  ["00000000000000000000000000000001", "anytype"],
-  ["00000000000000000000000000000002", "anytuple"],
-  ["000000000000000000000000000000f0", "std"],
-  ["000000000000000000000000000000ff", "empty-tuple"],
-  ["00000000000000000000000000000100", "std::uuid"],
-  ["00000000000000000000000000000101", "std::str"],
-  ["00000000000000000000000000000102", "std::bytes"],
-  ["00000000000000000000000000000103", "std::int16"],
-  ["00000000000000000000000000000104", "std::int32"],
-  ["00000000000000000000000000000105", "std::int64"],
-  ["00000000000000000000000000000106", "std::float32"],
-  ["00000000000000000000000000000107", "std::float64"],
-  ["00000000000000000000000000000108", "std::decimal"],
-  ["00000000000000000000000000000109", "std::bool"],
-  ["0000000000000000000000000000010a", "std::datetime"],
-  ["0000000000000000000000000000010b", "std::local_datetime"],
-  ["0000000000000000000000000000010c", "std::local_date"],
-  ["0000000000000000000000000000010d", "std::local_time"],
-  ["0000000000000000000000000000010e", "std::duration"],
-  ["0000000000000000000000000000010f", "std::json"],
-  ["00000000000000000000000000000110", "std::bigint"],
-]);
-
-export const KNOWN_TYPENAMES = (() => {
-  const res = new Map<string, uuid>();
-  for (const [id, name] of KNOWN_TYPES.entries()) {
-    res.set(name, id);
-  }
-  return res;
-})();
+import {KNOWN_TYPENAMES, NULL_CODEC_ID} from "./consts";
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -81,13 +51,20 @@ export class NullCodec extends Codec implements ICodec {
   decode(_buf: ReadBuffer): any {
     throw new Error("null codec cannot used to decode data");
   }
+
+  getSubcodecs(): ICodec[] {
+    return [];
+  }
+
+  getKind(): CodecKind {
+    return "scalar";
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 export const SCALAR_CODECS = new Map<uuid, ICodec>();
 
-export const NULL_CODEC_ID = "00000000000000000000000000000000";
 export const NULL_CODEC = new NullCodec(NULL_CODEC_ID);
 
 ///////////////////////////////////////////////////////////////////////////////
