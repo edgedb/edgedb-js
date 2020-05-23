@@ -126,13 +126,18 @@ Connection
     :js:class:`AwaitConnection` is not meant to be instantiated by directly,
     :js:func:`connect` should be used instead.
 
-    Some methods take query arguments as optional *args*:
 
-    * single values of any of the :ref:`basic types
-      recognized<edgedb-js-datatypes>` by EdgeDB
-    * an ``Array`` of values of any of the basic types
-    * an ``object`` with property names and values corresponding to
-      argument names and values of any of the basic types
+    .. _edgedb-js-api-async-optargs:
+
+    .. note::
+
+        Some methods take query arguments as optional *args*:
+
+        * single values of any of the :ref:`basic types
+          recognized<edgedb-js-datatypes>` by EdgeDB
+        * an ``Array`` of values of any of the basic types
+        * an ``object`` with property names and values corresponding to
+          argument names and values of any of the basic types
 
     .. js:method:: execute(query: string)
 
@@ -159,15 +164,15 @@ Connection
         Run a query and return the results as a
         :js:class:`Set` instance.
 
-        This method takes :js:class:`optional query arguments
-        <AwaitConnection>`.
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-async-optargs>`.
 
     .. js:method:: fetchOne(query: string, args)
 
         Run a singleton-returning query and return its element.
 
-        This method takes :js:class:`optional query arguments
-        <AwaitConnection>`.
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-async-optargs>`.
 
         The *query* must return exactly one element.  If the query returns
         more than one element or an empty set, an ``Error`` is thown.
@@ -176,8 +181,8 @@ Connection
 
         Run a query and return the results as JSON.
 
-        This method takes :js:class:`optional query arguments
-        <AwaitConnection>`.
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-async-optargs>`.
 
         .. note::
 
@@ -196,8 +201,8 @@ Connection
 
         Run a singleton-returning query and return its element in JSON.
 
-        This method takes :js:class:`optional query arguments
-        <AwaitConnection>`.
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-async-optargs>`.
 
         The *query* must return exactly one element.  If the query returns
         more than one element or an empty set, an ``Error`` is thown.
@@ -229,13 +234,17 @@ Connection
     Every method of this class takes a *callback* of the form
     ``function(err, data)``.
 
-    Some methods take query arguments as optional *args*:
+    .. _edgedb-js-api-sync-optargs:
 
-    * single values of any of the :ref:`basic types
-      recognized<edgedb-js-datatypes>` by EdgeDB
-    * an ``Array`` of values of any of the basic types
-    * an ``object`` with property names and values corresponding to
-      argument names and values of any of the basic types
+    .. note::
+
+        Some methods take query arguments as optional *args*:
+
+        * single values of any of the :ref:`basic types
+          recognized<edgedb-js-datatypes>` by EdgeDB
+        * an ``Array`` of values of any of the basic types
+        * an ``object`` with property names and values corresponding to
+          argument names and values of any of the basic types
 
     .. js:method:: execute(query: string, callback)
 
@@ -266,13 +275,15 @@ Connection
         Run a query and return the results as a
         :js:class:`Set` instance.
 
-        This method takes :js:class:`optional query arguments <Connection>`.
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-sync-optargs>`.
 
     .. js:method:: fetchOne(query: string, args, callback)
 
         Run a singleton-returning query and return its element.
 
-        This method takes :js:class:`optional query arguments <Connection>`.
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-sync-optargs>`.
 
         The *query* must return exactly one element.  If the query returns
         more than one element or an empty set, an ``Error`` is thown.
@@ -281,7 +292,8 @@ Connection
 
         Run a query and return the results as JSON.
 
-        This method takes :js:class:`optional query arguments <Connection>`.
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-sync-optargs>`.
 
         .. note::
 
@@ -300,7 +312,8 @@ Connection
 
         Run a singleton-returning query and return its element in JSON.
 
-        This method takes :js:class:`optional query arguments <Connection>`.
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-sync-optargs>`.
 
         The *query* must return exactly one element.  If the query returns
         more than one element or an empty set, an ``Error`` is thown.
