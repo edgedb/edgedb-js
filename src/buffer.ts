@@ -68,6 +68,7 @@ export class WriteBuffer {
     const newBuffer = Buffer.allocUnsafe(newSize);
     this.buffer.copy(newBuffer, 0, 0, this.pos);
     this.buffer = newBuffer;
+    this.size = newSize;
   }
 
   writeChar(ch: char): this {
