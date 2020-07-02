@@ -19,6 +19,7 @@
 import * as net from "net";
 
 import char, * as chars from "./chars";
+import * as errors from "./errors";
 import {resolveErrorCode} from "./errors/resolve";
 import {ReadMessageBuffer, WriteMessageBuffer, ReadBuffer} from "./buffer";
 import {CodecsRegistry} from "./codecs/registry";
@@ -57,7 +58,7 @@ type QueryArgPrimitive =
   | Duration
   | UUID;
 type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
-type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
+export type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,
@@ -93,7 +94,7 @@ export default function connect(
   if (callback) {
     AwaitConnection.connect(options)
       .then((conn) => {
-        callback(null, Connection.wrap(conn));
+        callback(null, new Connection(conn));
       })
       .catch((error) => {
         callback(<Error>error, null);
@@ -103,11 +104,30 @@ export default function connect(
   }
 }
 
-export class AwaitConnection {
+export interface ConnectionProxy {
+  onConnectionClose: () => void;
+}
+
+export interface IConnection {
+  execute(query: string): Promise<void>;
+
+  fetchAll(query: string, args?: QueryArgs): Promise<Set>;
+
+  fetchAllJSON(query: string, args?: QueryArgs): Promise<string>;
+
+  fetchOne(query: string, args?: QueryArgs): Promise<any>;
+
+  fetchOneJSON(query: string, args?: QueryArgs): Promise<string>;
+
+  close(): Promise<void>;
+}
+
+export class AwaitConnection implements IConnection {
   private sock: net.Socket;
   private config: NormalizedConnectConfig;
   private paused: boolean;
   private connected: boolean = false;
+  private _proxy: ConnectionProxy | null;
 
   private lastStatus: string | null;
 
@@ -137,6 +157,7 @@ export class AwaitConnection {
     this.queryCodecCache = new LRU({capacity: 1000});
 
     this.lastStatus = null;
+    this._proxy = null;
 
     this.serverSecret = null;
     this.serverSettings = new Map<string, string>();
@@ -158,6 +179,7 @@ export class AwaitConnection {
     this.sock.on("error", this._onError.bind(this));
     this.sock.on("data", this._onData.bind(this));
     this.sock.on("connect", this._onConnect.bind(this));
+    this.sock.on("close", this._onClose.bind(this));
 
     this.config = config;
   }
@@ -184,6 +206,10 @@ export class AwaitConnection {
       this.connWaiterReject = null;
       this.connWaiterResolve = null;
     }
+  }
+
+  private _onClose(): void {
+    this.close();
   }
 
   private _onError(err: Error): void {
@@ -989,7 +1015,7 @@ export class AwaitConnection {
     if (this.opInProgress) {
       throw new Error(
         "Another operation is in progress. Use multiple separate " +
-          "connections to run operaitons concurrently."
+          "connections to run operations concurrently."
       );
     }
     this.opInProgress = true;
@@ -1051,6 +1077,21 @@ export class AwaitConnection {
     this.connected = false;
   }
 
+  isClosed(): boolean {
+    return !this.connected;
+  }
+
+  /** @internal */
+  _setProxy(user: ConnectionProxy | null): void {
+    if (this._proxy !== null && user !== null && this._proxy !== user) {
+      throw new errors.InterfaceError(
+        "internal client error: the connection is already assigned to a proxy"
+      );
+    }
+
+    this._proxy = user;
+  }
+
   async close(): Promise<void> {
     this._enterOp();
     try {
@@ -1065,6 +1106,13 @@ export class AwaitConnection {
       this._abort();
     } finally {
       this._leaveOp();
+      this._cleanup();
+    }
+  }
+
+  private _cleanup(): void {
+    if (this._proxy !== null) {
+      this._proxy.onConnectionClose();
     }
   }
 
@@ -1139,9 +1187,13 @@ export class AwaitConnection {
   }
 }
 
-export class Connection {
+export class CallbackConnectionBase<T extends IConnection> {
   /** @internal */
-  private _conn: AwaitConnection;
+  private _conn: T;
+
+  protected get conn(): T {
+    return this._conn;
+  }
 
   execute(query: string, callback: NodeCallback | null = null): void {
     this._conn
@@ -1202,12 +1254,9 @@ export class Connection {
   }
 
   /** @internal */
-  private constructor(conn: AwaitConnection) {
+  constructor(conn: T) {
     this._conn = conn;
   }
-
-  /** @internal */
-  static wrap(conn: AwaitConnection): Connection {
-    return new Connection(conn);
-  }
 }
+
+export class Connection extends CallbackConnectionBase<IConnection> {}

@@ -198,7 +198,7 @@ Named Tuples
 ============
 
 A named EdgeDB ``tuple`` becomes an ``Array``-like ``object`` in JavaScript,
-where the elelemnts are accessible either by their names or indexes.
+where the elements are accessible either by their names or indexes.
 
 .. code-block:: js
 
@@ -390,7 +390,7 @@ Local Date and Time
     .. js:method:: toDateTime(): Date
 
         Convert the local date and time into a time-zone aware Date using the
-        default time zone for the current environemnt.
+        default time zone for the current environment.
 
 
 Duration
@@ -398,14 +398,14 @@ Duration
 
 .. js:class:: Duration(milliseconds: number = 0)
 
-    A JavaScript  representation of an EdgeDB ``duration`` value.
+    A JavaScript representation of an EdgeDB ``duration`` value.
 
     .. js:method:: fromMicroseconds(us: BigInt): Duration
         :staticmethod:
 
         Create duration from BigInt_ number of microseconds.
 
-        Note: new Duration() accepts fractional seconds too but can loose
+        Note: new Duration() accepts fractional seconds too but can lose
         precision because it's floating point.
 
     .. js:method:: toMilliseconds(): number

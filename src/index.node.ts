@@ -20,5 +20,7 @@ import _connect from "./client";
 export const connect = _connect;
 export default connect;
 
+export {createPool, Pool, PoolConnectionProxy, PoolOptions} from "./pool";
+
 /* Private exports */
 export * from "./index.shared";
