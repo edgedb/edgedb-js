@@ -3,7 +3,7 @@
 set -Exeo pipefail
 
 if [[ "${OS_NAME}" == macos* ]]; then
-    wget https://packages.edgedb.com/macos/edgedb-${SLOT}_latest.nightly.pkg \
+    wget https://packages.edgedb.com/dist/macos-x86_64.nightly/edgedb-server-${SLOT}_latest_nightly.pkg \
         -O edgedb.pkg -nv
     sudo env _EDGEDB_INSTALL_SKIP_BOOTSTRAP=1 installer \
         -dumplog -verbose -pkg "$(pwd)/edgedb.pkg" -target /
