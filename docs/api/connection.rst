@@ -245,15 +245,15 @@ Pool
 
     :param func options.onAcquire:
         Optional callback, called when a connection is acquired.
-        *(proxy: PoolConnectionProxy) => Promise<void>*
+        *(conn: Connection) => Promise<void>*
 
     :param func options.onRelease:
         Optional callback, called when a connection is released.
-        *(proxy: PoolConnectionProxy) => Promise<void>*
+        *(conn: Connection) => Promise<void>*
 
     :param func options.onConnect:
         Optional callback, called when a new connection is created.
-        *(connection: Connection) => Promise<void>*
+        *(conn: Connection) => Promise<void>*
 
     :param func options.connectionFactory:
         Optional function, used to obtain a new connection. By default, the
@@ -399,7 +399,7 @@ Pool
                 await pool.release(connection);
             }
 
-    .. js:method:: release(connectionProxy: PoolConnectionProxy)
+    .. js:method:: release(conn: Connection)
 
         Release a previously acquired connection proxy, to return it to the
         pool.
