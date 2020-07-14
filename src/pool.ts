@@ -1,7 +1,3 @@
-import * as errors from "./errors";
-import {ConnectConfig} from "./con_utils";
-import {LifoQueue} from "./queues";
-import {Set} from "./datatypes/set";
 /*!
  * This source file is part of the EdgeDB open source project.
  *
@@ -20,14 +16,21 @@ import {Set} from "./datatypes/set";
  * limitations under the License.
  */
 
-import connect, {
-  AwaitConnection,
+import * as errors from "./errors";
+import {ConnectConfig} from "./con_utils";
+import {LifoQueue} from "./queues";
+import {Set} from "./datatypes/set";
+
+import connect, {proxyMap} from "./client";
+
+import {
   QueryArgs,
-  NodeCallback,
-  IConnection,
-  CallbackConnectionBase,
   Connection,
-} from "./client";
+  IConnectionProxied,
+  Pool,
+  IPoolStats,
+  onConnectionClose,
+} from "./ifaces";
 
 export class Deferred<T> {
   private _promise: Promise<T>;
@@ -83,18 +86,18 @@ export class Deferred<T> {
 }
 
 class PoolConnectionHolder {
-  private _pool: Pool;
+  private _pool: PoolImpl;
   private _proxy: PoolConnectionProxy | null;
-  private _onAcquire?: (proxy: PoolConnectionProxy) => Promise<void>;
-  private _onRelease?: (proxy: PoolConnectionProxy) => Promise<void>;
-  private _connection: AwaitConnection | null;
+  private _onAcquire?: (proxy: Connection) => Promise<void>;
+  private _onRelease?: (proxy: Connection) => Promise<void>;
+  private _connection: Connection | null;
   private _generation: number | null;
   private _inUse: Deferred<void> | null;
 
   constructor(
-    pool: Pool,
-    onAcquire?: (proxy: PoolConnectionProxy) => Promise<void>,
-    onRelease?: (proxy: PoolConnectionProxy) => Promise<void>
+    pool: PoolImpl,
+    onAcquire?: (proxy: Connection) => Promise<void>,
+    onRelease?: (proxy: Connection) => Promise<void>
   ) {
     this._pool = pool;
     this._onAcquire = onAcquire;
@@ -105,15 +108,15 @@ class PoolConnectionHolder {
     this._generation = null;
   }
 
-  get connection(): AwaitConnection | null {
+  get connection(): Connection | null {
     return this._connection;
   }
 
-  get pool(): Pool {
+  get pool(): PoolImpl {
     return this._pool;
   }
 
-  private getConnectionOrThrow(): AwaitConnection {
+  private getConnectionOrThrow(): Connection {
     if (this._connection === null) {
       throw new TypeError("The connection is not open");
     }
@@ -267,47 +270,55 @@ class PoolConnectionHolder {
   }
 }
 
+const holderAttr = Symbol.for("holder");
 const detach = Symbol.for("detach");
-const getHolder = Symbol.for("holder getter");
+export const getHolder = Symbol.for("getHolder");
+const connectionAttr = Symbol.for("connection");
+export const unwrapConnection = Symbol.for("unwrap");
+const isDetached = Symbol.for("isDetached");
 
-export class PoolConnectionProxy implements IConnection {
-  private _holder: PoolConnectionHolder;
-  private _connection: AwaitConnection | null;
+export class PoolConnectionProxy implements IConnectionProxied {
+  private [holderAttr]: PoolConnectionHolder;
+  private [connectionAttr]: Connection | null;
 
-  constructor(holder: PoolConnectionHolder, connection: AwaitConnection) {
-    this._holder = holder;
-    this._connection = connection;
+  constructor(holder: PoolConnectionHolder, connection: Connection) {
+    this[holderAttr] = holder;
+    this[connectionAttr] = connection;
 
-    // Registers a callback that will be invoked when the
-    // when the connection is closed, release it
-    connection._setProxy(this);
+    if (proxyMap.has(connection)) {
+      throw new errors.InterfaceError(
+        "internal client error: the connection is already assigned to a proxy"
+      );
+    }
+    proxyMap.set(connection, this);
   }
 
-  private get connection(): AwaitConnection {
-    if (this._connection === null) {
+  private [unwrapConnection](): Connection {
+    const conn = this[connectionAttr];
+    if (conn === null) {
       throw new errors.InterfaceError("The proxy is detached");
     }
-    return this._connection;
+    return conn;
   }
 
   async execute(query: string): Promise<void> {
-    await this.connection.execute(query);
+    await this[unwrapConnection]().execute(query);
   }
 
   async query(query: string, args?: QueryArgs): Promise<Set> {
-    return await this.connection.query(query, args);
+    return await this[unwrapConnection]().query(query, args);
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.connection.queryJSON(query, args);
+    return await this[unwrapConnection]().queryJSON(query, args);
   }
 
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
-    return await this.connection.queryOne(query, args);
+    return await this[unwrapConnection]().queryOne(query, args);
   }
 
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.connection.queryOneJSON(query, args);
+    return await this[unwrapConnection]().queryOneJSON(query, args);
   }
 
   close(): Promise<void> {
@@ -317,39 +328,43 @@ export class PoolConnectionProxy implements IConnection {
   /**
    * Return a value indicating whether this PoolConnectionProxy is detached
    * from a connection.
+   * @internal
    */
-  get detached(): boolean {
-    return this._connection === null;
+  [isDetached](): boolean {
+    return this[connectionAttr] === null;
   }
 
   /**
    * Return a value indicating whether this PoolConnectionProxy is detached
    * from a connection, or the underlying connection is closed.
    */
-  get closed(): boolean {
-    return this._connection === null || this._connection.isClosed();
+  isClosed(): boolean {
+    const conn = this[connectionAttr];
+    return conn === null || conn.isClosed();
   }
 
   /** @internal */
-  onConnectionClose(): void {
-    this._holder._releaseOnClose();
+  [onConnectionClose](): void {
+    this[holderAttr]._releaseOnClose();
   }
 
   /** @internal */
   [getHolder](): PoolConnectionHolder {
-    return this._holder;
+    return this[holderAttr];
   }
 
   /** @internal */
-  [detach](): AwaitConnection | null {
-    if (this._connection === null) {
+  [detach](): Connection | null {
+    if (this[connectionAttr] === null) {
       return null;
     }
 
-    const connection = this._connection;
-    this._connection = null;
-    connection._setProxy(null);
-    return connection;
+    const conn = this[connectionAttr];
+    this[connectionAttr] = null;
+    if (conn != null) {
+      proxyMap.delete(conn);
+    }
+    return conn;
   }
 }
 
@@ -360,15 +375,13 @@ export interface PoolOptions {
   connectOptions?: ConnectConfig | null;
   minSize?: number;
   maxSize?: number;
-  onAcquire?: (proxy: PoolConnectionProxy) => Promise<void>;
-  onRelease?: (proxy: PoolConnectionProxy) => Promise<void>;
-  onConnect?: (connection: AwaitConnection) => Promise<void>;
-  connectionFactory?: (
-    options?: ConnectConfig | null
-  ) => Promise<AwaitConnection>;
+  onAcquire?: (proxy: Connection) => Promise<void>;
+  onRelease?: (proxy: Connection) => Promise<void>;
+  onConnect?: (connection: Connection) => Promise<void>;
+  connectionFactory?: (options?: ConnectConfig | null) => Promise<Connection>;
 }
 
-export class PoolStats {
+export class PoolStats implements IPoolStats {
   private _queueLength: number;
   private _openConnections: number;
 
@@ -404,7 +417,7 @@ export class PoolStats {
  * open cursors and other resources *except* prepared statements.
  * Pools are created by calling :func:`~edgedb.pool.create`.
  */
-export class Pool implements IConnection {
+class PoolImpl implements Pool {
   private _closed: boolean;
   private _closing: boolean;
   private _queue: LifoQueue<PoolConnectionHolder>;
@@ -413,12 +426,12 @@ export class Pool implements IConnection {
   private _initializing: boolean;
   private _minSize: number;
   private _maxSize: number;
-  private _onAcquire?: (proxy: PoolConnectionProxy) => Promise<void>;
-  private _onRelease?: (proxy: PoolConnectionProxy) => Promise<void>;
-  private _onConnect?: (connection: AwaitConnection) => Promise<void>;
+  private _onAcquire?: (proxy: Connection) => Promise<void>;
+  private _onRelease?: (proxy: Connection) => Promise<void>;
+  private _onConnect?: (connection: Connection) => Promise<void>;
   private _connectionFactory: (
     options?: ConnectConfig | null
-  ) => Promise<AwaitConnection>;
+  ) => Promise<Connection>;
   private _generation: number;
   private _connectOptions?: ConnectConfig | null;
 
@@ -470,8 +483,9 @@ export class Pool implements IConnection {
     this._queue.push(holder);
   }
 
-  static async create(options?: PoolOptions | null): Promise<Pool> {
-    const pool = new Pool(options || {});
+  /** @internal */
+  static async create(options?: PoolOptions | null): Promise<PoolImpl> {
+    const pool = new PoolImpl(options || {});
     await pool.initialize();
     return pool;
   }
@@ -565,7 +579,7 @@ export class Pool implements IConnection {
   }
 
   /** @internal */
-  async getNewConnection(): Promise<AwaitConnection> {
+  async getNewConnection(): Promise<Connection> {
     const connection = await this._connectionFactory(this._connectOptions);
 
     if (this._onConnect) {
@@ -640,8 +654,12 @@ export class Pool implements IConnection {
    *
    * @param connectionProxy: AwaitConnection
    */
-  async release(connectionProxy: PoolConnectionProxy): Promise<void> {
-    if (connectionProxy.detached) {
+  async release(connectionProxy: Connection): Promise<void> {
+    if (!(connectionProxy instanceof PoolConnectionProxy)) {
+      throw new Error("a connection obtained via pool.acquire() was expected");
+    }
+
+    if (connectionProxy[isDetached]()) {
       // Already released, do nothing
       return;
     }
@@ -663,7 +681,7 @@ export class Pool implements IConnection {
    * Acquire a connection and executes a given function, returning its return
    * value. The connection is released once done.
    */
-  async run<T>(action: (connection: IConnection) => Promise<T>): Promise<T> {
+  async run<T>(action: (connection: Connection) => Promise<T>): Promise<T> {
     const proxy = await this.acquire();
 
     try {
@@ -744,6 +762,10 @@ export class Pool implements IConnection {
     }
   }
 
+  isClosed(): boolean {
+    return this._closed;
+  }
+
   /**
    * Terminate all connections in the pool. If the pool is already closed,
    * it returns without doing anything.
@@ -771,77 +793,6 @@ export class Pool implements IConnection {
   }
 }
 
-// PoolConnectionProxy counterpart, necessary to offer the
-// callback connection api from a callback pool
-class CallbackPoolConnectionProxy {
-  private _conn: Connection;
-  private _proxy: PoolConnectionProxy;
-
-  constructor(proxy: PoolConnectionProxy) {
-    this._proxy = proxy;
-    this._conn = new Connection(proxy);
-  }
-
-  get proxy(): PoolConnectionProxy {
-    return this._proxy;
-  }
-
-  get connection(): Connection {
-    return this._conn;
-  }
-}
-
-export class CallbackPool extends CallbackConnectionBase<Pool> {
-  constructor(pool: Pool) {
-    super(pool);
-  }
-
-  acquire(
-    callback: NodeCallback<CallbackPoolConnectionProxy> | null = null
-  ): void {
-    this.conn
-      .acquire()
-      .then((_value) =>
-        callback
-          ? callback(null, new CallbackPoolConnectionProxy(_value))
-          : null
-      )
-      .catch((error) => (callback ? callback(error, null) : null));
-  }
-
-  release(
-    proxy: CallbackPoolConnectionProxy,
-    callback: NodeCallback | null = null
-  ): void {
-    this.conn
-      .release(proxy.proxy)
-      .then((_value) => (callback ? callback(null, _value) : null))
-      .catch((error) => (callback ? callback(error, null) : null));
-  }
-
-  expireConnections(): void {
-    this.conn.expireConnections();
-  }
-}
-
-export function createPool(options?: PoolOptions | null): Promise<Pool>;
-export function createPool(
-  options?: PoolOptions | null,
-  callback?: NodeCallback<CallbackPool> | null
-): void;
-export function createPool(
-  options?: PoolOptions | null,
-  callback?: NodeCallback<CallbackPool> | null
-): Promise<Pool> | void {
-  if (callback) {
-    Pool.create(options)
-      .then((pool) => {
-        callback(null, new CallbackPool(pool));
-      })
-      .catch((error) => {
-        callback(<Error>error, null);
-      });
-  } else {
-    return Pool.create(options);
-  }
+export function createPool(options?: PoolOptions | null): Promise<Pool> {
+  return PoolImpl.create(options);
 }

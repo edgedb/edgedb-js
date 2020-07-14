@@ -19,7 +19,6 @@
 import * as net from "net";
 
 import char, * as chars from "./chars";
-import * as errors from "./errors";
 import {resolveErrorCode} from "./errors/resolve";
 import {ReadMessageBuffer, WriteMessageBuffer, ReadBuffer} from "./buffer";
 import {CodecsRegistry} from "./codecs/registry";
@@ -28,14 +27,15 @@ import {Set} from "./datatypes/set";
 import LRU from "./lru";
 import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
-import {UUID} from "./datatypes/uuid";
-import * as scram from "./scram";
 import {
-  LocalDateTime,
-  LocalDate,
-  LocalTime,
-  Duration,
-} from "./datatypes/datetime";
+  QueryArgs,
+  Connection,
+  IConnectionProxied,
+  NodeCallback,
+  onConnectionClose,
+} from "./ifaces";
+import * as scram from "./scram";
+
 import {
   parseConnectArguments,
   ConnectConfig,
@@ -44,21 +44,6 @@ import {
 
 const PROTO_VER_MAJOR = 0;
 const PROTO_VER_MINOR = 8;
-
-type QueryArgPrimitive =
-  | number
-  | string
-  | boolean
-  | BigInt
-  | Buffer
-  | Date
-  | LocalDateTime
-  | LocalDate
-  | LocalTime
-  | Duration
-  | UUID;
-type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
-export type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,
@@ -75,59 +60,45 @@ enum TransactionStatus {
   TRANS_UNKNOWN = 4, // cannot determine status
 }
 
-export type NodeCallback<T = any> = (
-  err: Error | null,
-  data: T | null
-) => void;
+/* Internal mapping used to break strong reference between
+ * connections and their pool proxies.
+ */
+export const proxyMap = new WeakMap<Connection, IConnectionProxied>();
 
 export default function connect(
   options?: ConnectConfig | null
-): Promise<AwaitConnection>;
+): Promise<Connection>;
 export default function connect(
   options?: ConnectConfig | null,
-  callback?: NodeCallback<Connection> | null
+  callback?: NodeCallback<CallbackConnection> | null
 ): void;
 export default function connect(
   options?: ConnectConfig | null,
-  callback?: NodeCallback<Connection> | null
-): Promise<AwaitConnection> | void {
+  callback?: NodeCallback<CallbackConnection> | null
+): Promise<Connection> | void {
   if (callback) {
-    AwaitConnection.connect(options)
+    process.emitWarning(
+      "calling `edgedb.connect()` with callback is deprecated. Use the " +
+        "promise-based API instead."
+    );
+
+    ConnectionImpl.connect(options)
       .then((conn) => {
-        callback(null, new Connection(conn));
+        callback(null, new CallbackConnection(conn));
       })
       .catch((error) => {
         callback(<Error>error, null);
       });
   } else {
-    return AwaitConnection.connect(options);
+    return ConnectionImpl.connect(options);
   }
 }
 
-export interface ConnectionProxy {
-  onConnectionClose: () => void;
-}
-
-export interface IConnection {
-  execute(query: string): Promise<void>;
-
-  query(query: string, args?: QueryArgs): Promise<Set>;
-
-  queryJSON(query: string, args?: QueryArgs): Promise<string>;
-
-  queryOne(query: string, args?: QueryArgs): Promise<any>;
-
-  queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
-
-  close(): Promise<void>;
-}
-
-export class AwaitConnection implements IConnection {
+class ConnectionImpl implements Connection {
   private sock: net.Socket;
   private config: NormalizedConnectConfig;
   private paused: boolean;
   private connected: boolean = false;
-  private _proxy: ConnectionProxy | null;
 
   private lastStatus: string | null;
 
@@ -157,7 +128,6 @@ export class AwaitConnection implements IConnection {
     this.queryCodecCache = new LRU({capacity: 1000});
 
     this.lastStatus = null;
-    this._proxy = null;
 
     this.serverSecret = null;
     this.serverSettings = new Map<string, string>();
@@ -1081,17 +1051,6 @@ export class AwaitConnection implements IConnection {
     return !this.connected;
   }
 
-  /** @internal */
-  _setProxy(user: ConnectionProxy | null): void {
-    if (this._proxy !== null && user !== null && this._proxy !== user) {
-      throw new errors.InterfaceError(
-        "internal client error: the connection is already assigned to a proxy"
-      );
-    }
-
-    this._proxy = user;
-  }
-
   async close(): Promise<void> {
     this._enterOp();
     try {
@@ -1106,13 +1065,15 @@ export class AwaitConnection implements IConnection {
       this._abort();
     } finally {
       this._leaveOp();
-      this._cleanup();
+      this._cleanupProxy();
     }
   }
 
-  private _cleanup(): void {
-    if (this._proxy !== null) {
-      this._proxy.onConnectionClose();
+  private _cleanupProxy(): void {
+    const proxy = proxyMap.get(this);
+    if (proxy != null) {
+      proxy[onConnectionClose]();
+      proxyMap.delete(this);
     }
   }
 
@@ -1175,7 +1136,7 @@ export class AwaitConnection implements IConnection {
   /** @internal */
   static async connect(
     config?: ConnectConfig | null
-  ): Promise<AwaitConnection> {
+  ): Promise<ConnectionImpl> {
     config = config || {};
 
     const {addrs, ...cfg} = parseConnectArguments(config);
@@ -1232,7 +1193,7 @@ export class AwaitConnection implements IConnection {
   }
 }
 
-export class CallbackConnectionBase<T extends IConnection> {
+export class CallbackConnectionBase<T extends Connection> {
   /** @internal */
   private _conn: T;
 
@@ -1365,4 +1326,4 @@ export class CallbackConnectionBase<T extends IConnection> {
   }
 }
 
-export class Connection extends CallbackConnectionBase<IConnection> {}
+export class CallbackConnection extends CallbackConnectionBase<Connection> {}

@@ -23,7 +23,7 @@ import {
   NormalizedConnectConfig,
 } from "../src/con_utils";
 import {asyncConnect} from "./testbase";
-import {AwaitConnection} from "../src/client";
+import {Connection} from "../src/ifaces";
 
 function env_wrap(env: {[key: string]: any}, func: () => void): void {
   const old_env: {[key: string]: any} = {};
@@ -370,7 +370,7 @@ test("parseConnectArguments", () => {
 });
 
 test("connect: timeout", async () => {
-  let con: AwaitConnection | undefined;
+  let con: Connection | undefined;
   try {
     con = await asyncConnect({timeout: 1});
     throw new Error("conneciton didn't time out");

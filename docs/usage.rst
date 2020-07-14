@@ -7,70 +7,9 @@ Basic Usage
 **edgedb-js** has two APIs: Promise-based and callback-based.
 
 The interaction with the database normally starts with a call to ``connect()``,
-which establishes a new database session. This either results in setting up a
-callback or getting a connection ``Promise``.  The connection instance
-provides methods to run queries.
-
-Callback connection example:
-
-.. code-block:: js
-
-    const edgedb = require("edgedb");
-
-    // Establish a connection to an existing database
-    // named "test" as an "edgedb" user.
-    edgedb.connect(
-      {
-        dsn: "edgedb://edgedb@localhost/test"
-      },
-      (err, conn) => {
-        // Create a User object type.
-        conn.execute(
-          `
-          CREATE TYPE User {
-              CREATE REQUIRED PROPERTY name -> str;
-              CREATE PROPERTY dob -> cal::local_date;
-          }
-          `,
-          (err, data) => {
-            // Insert a new User object.
-            conn.fetchAll(
-              `
-              INSERT User {
-                  name := <str>$name,
-                  dob := <cal::local_date>$dob
-              }
-              `,
-              {
-                name: "Bob",
-                dob: new edgedb.LocalDate(1984, 3, 1) // 1 April 1984
-              },
-              (err, data) => {
-                // Select User objects.
-                conn.fetchAll(
-                  `
-                    SELECT User {name, dob}
-                    FILTER .name = <str>$name
-                  `,
-                  { name: "Bob" },
-                  (err, userSet) => {
-                    // *user_set* now contains
-                    // Set{Object{name := 'Bob',
-                    //            dob := datetime.date(1984, 3, 1)}}
-                    console.log(userSet);
-
-                    // Close the connection.
-                    conn.close();
-                  }
-                );
-              }
-            );
-          }
-        );
-      }
-    );
-
-An equivalent example using the Promise-based API:
+which establishes a new database session. This results in getting a
+connection ``Promise``.  The connection instance provides methods to
+run queries.
 
 .. code-block:: js
 
@@ -93,7 +32,7 @@ An equivalent example using the Promise-based API:
         `);
 
         // Insert a new User object.
-        await conn.fetchAll(
+        await conn.query(
           `
           INSERT User {
               name := <str>$name,
@@ -107,7 +46,7 @@ An equivalent example using the Promise-based API:
         );
 
         // Select User objects.
-        let userSet = await conn.fetchAll(
+        let userSet = await conn.query(
           "SELECT User {name, dob} FILTER .name = <str>$name",
           { name: "Bob" }
         );
@@ -168,8 +107,6 @@ To create a connection pool, use the ``createPool()`` method.
 The resulting :js:class:`edgedb.Pool <Pool>` object can be used to maintain
 a certain number of open connections and borrow them when needed.
 
-Below is an example of a connection pool usage, using the Promise-based API:
-
 .. code-block:: js
 
     const edgedb = require("edgedb");
@@ -193,7 +130,7 @@ Below is an example of a connection pool usage, using the Promise-based API:
         `);
 
         // Insert a new User object.
-        await pool.fetchAll(
+        await pool.query(
           `
            INSERT User {
              name := <str>$name,
@@ -207,7 +144,7 @@ Below is an example of a connection pool usage, using the Promise-based API:
         );
 
         // Select User objects.
-        let userSet = await pool.fetchAll(
+        let userSet = await pool.query(
           "SELECT User {name, dob} FILTER .name = <str>$name",
           { name: "Bob" }
         );
@@ -222,34 +159,6 @@ Below is an example of a connection pool usage, using the Promise-based API:
     }
 
     main();
-
-Below is an example using the callback API:
-
-.. code-block:: js
-
-    const edgedb = require("edgedb");
-
-    edgedb.createPool({
-      connectOptions: {
-        user: "edgedb",
-        host: "127.0.0.1"
-      },
-    }, (err, pool) => {
-      if (err) {
-        throw err;
-      }
-
-      pool.fetchOne("select <int64>$i + 1", { i: 10 }, (err2, data2) => {
-        if (err2) {
-          throw err2;
-        }
-
-        console.log(data2);
-
-        pool.close();
-      });
-    });
-
 
 See :ref:`edgedb-js-api-pool` API documentation for
 more information.
