@@ -651,8 +651,6 @@ class PoolImpl implements Pool {
 
   /**
    * Release a database connection back to the pool.
-   *
-   * @param connectionProxy: AwaitConnection
    */
   async release(connectionProxy: Connection): Promise<void> {
     if (!(connectionProxy instanceof PoolConnectionProxy)) {
