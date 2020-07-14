@@ -32,14 +32,14 @@ import {
 import {LocalDate, Duration} from "../src/datatypes/datetime";
 import {asyncConnect, connectWithCallback} from "./testbase";
 
-test("fetchAll: basic scalars", async () => {
+test("query: basic scalars", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchAll("select {'a', 'bc'}");
+    res = await con.query("select {'a', 'bc'}");
     expect(res).toEqual(["a", "bc"]);
 
-    res = await con.fetchAll(
+    res = await con.query(
       `select {
         -1,
         1,
@@ -69,28 +69,28 @@ test("fetchAll: basic scalars", async () => {
       -2251799813685125,
     ]);
 
-    res = await con.fetchAll("select <int32>{-1, 0, 1, 10, 2147483647};");
+    res = await con.query("select <int32>{-1, 0, 1, 10, 2147483647};");
     expect(res).toEqual([-1, 0, 1, 10, 2147483647]);
 
-    res = await con.fetchAll("select <int16>{-1, 0, 1, 10, 15, 22, -1111};");
+    res = await con.query("select <int16>{-1, 0, 1, 10, 15, 22, -1111};");
     expect(res).toEqual([-1, 0, 1, 10, 15, 22, -1111]);
 
-    res = await con.fetchAll("select {true, false, false, true, false};");
+    res = await con.query("select {true, false, false, true, false};");
     expect(res).toEqual([true, false, false, true, false]);
 
-    res = await con.fetchOne("select [<float64>123.2, <float64>-1.1]");
+    res = await con.queryOne("select [<float64>123.2, <float64>-1.1]");
     expect(res[0]).toBeCloseTo(123.2, 2);
     expect(res[1]).toBeCloseTo(-1.1, 2);
 
-    res = await con.fetchOne("select [<float32>123.2, <float32>-1.1]");
+    res = await con.queryOne("select [<float32>123.2, <float32>-1.1]");
     expect(res[0]).toBeCloseTo(123.2, 2);
     expect(res[1]).toBeCloseTo(-1.1, 2);
 
-    res = await con.fetchOne("select b'abcdef'");
+    res = await con.queryOne("select b'abcdef'");
     expect(res instanceof Buffer).toBeTruthy();
     expect(res).toEqual(Buffer.from("abcdef", "utf8"));
 
-    res = await con.fetchOne("select <json>[1, 2, 3]");
+    res = await con.queryOne("select <json>[1, 2, 3]");
     expect(res).toBe("[1, 2, 3]");
   } finally {
     await con.close();
@@ -191,7 +191,7 @@ test("fetch: bigint", async () => {
       testar.push(BigInt(num));
     }
 
-    res = await con.fetchOne("select <array<bigint>>$0", [testar]);
+    res = await con.queryOne("select <array<bigint>>$0", [testar]);
     expect(res).toEqual(testar);
   } finally {
     await con.close();
@@ -315,7 +315,7 @@ test("fetch: decimal as string", async () => {
   ];
 
   try {
-    const fetched = await con.fetchOne(
+    const fetched = await con.queryOne(
       `
       WITH
         inp := <array<str>>$0,
@@ -357,7 +357,7 @@ test("fetch: int64 as string", async () => {
   ];
 
   try {
-    const fetched = await con.fetchOne(
+    const fetched = await con.queryOne(
       `
       WITH
         inp := <array<str>>$0,
@@ -396,7 +396,7 @@ test("fetch: bigint as string", async () => {
   ];
 
   try {
-    const fetched = await con.fetchOne(
+    const fetched = await con.queryOne(
       `
       WITH
         inp := <array<str>>$0,
@@ -441,7 +441,7 @@ test("fetch: positional args", async () => {
     ];
     for (const [types, values] of intCases) {
       for (const type of types) {
-        res = await con.fetchOne(
+        res = await con.queryOne(
           `select (<${type}>$0 + <${type}>$1,);`,
           values
         );
@@ -449,35 +449,35 @@ test("fetch: positional args", async () => {
       }
     }
 
-    res = await con.fetchOne(`select <json>$0`, ["[1,2]"]);
+    res = await con.queryOne(`select <json>$0`, ["[1,2]"]);
     expect(res).toBe("[1, 2]");
 
-    res = await con.fetchOne(`select <str>$0`, ["[1,2]"]);
+    res = await con.queryOne(`select <str>$0`, ["[1,2]"]);
     expect(res).toBe("[1,2]");
 
-    res = await con.fetchOne(`select (<bool>$0, <bool>$1)`, [true, false]);
+    res = await con.queryOne(`select (<bool>$0, <bool>$1)`, [true, false]);
     expect(res).toEqual([true, false]);
 
     const bytes = Buffer.allocUnsafe(4);
     bytes.writeInt32BE(-12312, 0);
-    res = await con.fetchOne(`select <bytes>$0`, [bytes]);
+    res = await con.queryOne(`select <bytes>$0`, [bytes]);
     expect(res).toEqual(bytes);
 
     const dt = new Date(Date.now());
-    res = await con.fetchOne(`select <datetime>$0`, [dt]);
+    res = await con.queryOne(`select <datetime>$0`, [dt]);
     expect(res).toEqual(dt);
-    res = await con.fetchOne(`select [<datetime>$0, <datetime>$0]`, [dt]);
+    res = await con.queryOne(`select [<datetime>$0, <datetime>$0]`, [dt]);
     expect(res).toEqual([dt, dt]);
 
     const ldt = new LocalDateTime(2012, 5, 30, 14, 11, 33, 123);
-    res = await con.fetchOne(`select <cal::local_datetime>$0`, [ldt]);
+    res = await con.queryOne(`select <cal::local_datetime>$0`, [ldt]);
     expect(res instanceof LocalDateTime).toBeTruthy();
     expect((res as LocalDateTime).getHours()).toBe(14);
     expect((res as LocalDateTime).toISOString()).toBe(
       "2012-06-30T14:11:33.123"
     );
 
-    res = await con.fetchOne(`select len(<array<int64>>$0)`, [
+    res = await con.queryOne(`select len(<array<int64>>$0)`, [
       [1, 2, 3, 4, 5],
     ]);
     expect(res).toEqual(5);
@@ -490,17 +490,17 @@ test("fetch: named args", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne(`select <str>$a`, {a: "123"});
+    res = await con.queryOne(`select <str>$a`, {a: "123"});
     expect(res).toBe("123");
 
-    res = await con.fetchOne(`select <str>$a ++ <str>$b`, {
+    res = await con.queryOne(`select <str>$a ++ <str>$b`, {
       b: "abc",
       a: "123",
     });
     expect(res).toBe("123abc");
 
     res = await con
-      .fetchOne(`select <str>$a ++ <str>$b`, {
+      .queryOne(`select <str>$a ++ <str>$b`, {
         b: "abc",
         a: "123",
         c: "def",
@@ -516,7 +516,7 @@ test("fetch: named args", async () => {
 
     // TODO: uncomment after alpha3:
     //
-    // res = await con.fetchOne(`select len(<OPTIONAL str>$a ?? "aa")`, {
+    // res = await con.queryOne(`select len(<OPTIONAL str>$a ?? "aa")`, {
     //   a: null,
     // });
     // expect(res).toBe(2);
@@ -529,13 +529,13 @@ test("fetch: int overflow", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne(`
+    res = await con.queryOne(`
       select <int64>(2^53) - 1;
     `);
     expect(res).toBe(9007199254740991);
 
     await con
-      .fetchOne(`select <int64>(2^53);`)
+      .queryOne(`select <int64>(2^53);`)
       .then(() => {
         throw new Error("there should have been an overflow error");
       })
@@ -543,13 +543,13 @@ test("fetch: int overflow", async () => {
         expect(e.toString()).toMatch(/cannot unpack.*9007199254740992.*/);
       });
 
-    res = await con.fetchOne(`
+    res = await con.queryOne(`
       select -<int64>(2^53);
     `);
     expect(res).toBe(-9007199254740992);
 
     await con
-      .fetchOne(`select -<int64>(2^53) - 1;`)
+      .queryOne(`select -<int64>(2^53) - 1;`)
       .then(() => {
         throw new Error("there should have been an overflow error");
       })
@@ -565,13 +565,13 @@ test("fetch: datetime", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne(`
+    res = await con.queryOne(`
       with dt := <datetime>'2016-01-10T17:11:01.123Z'
       select (dt, datetime_get(dt, 'epochseconds') * 1000)
     `);
     expect(res[0].getTime()).toBe(res[1]);
 
-    res = await con.fetchOne(`
+    res = await con.queryOne(`
       with dt := <datetime>'1716-01-10T01:00:00.123123Z'
       select (dt, datetime_get(dt, 'epochseconds') * 1000)
     `);
@@ -585,13 +585,13 @@ test("fetch: cal::local_date", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne(`
+    res = await con.queryOne(`
       select <cal::local_date>'2016-01-10';
       `);
     expect(res instanceof LocalDate).toBeTruthy();
     expect(res.toString()).toBe("2016-01-10");
 
-    res = await con.fetchOne(
+    res = await con.queryOne(
       `
       select <cal::local_date>$0;
       `,
@@ -614,7 +614,7 @@ test("fetch: cal::local_time", async () => {
       "00:00:00",
       "23:59:59.999",
     ]) {
-      res = await con.fetchOne(
+      res = await con.queryOne(
         `
         select (<cal::local_time><str>$time, <str><cal::local_time><str>$time);
         `,
@@ -622,7 +622,7 @@ test("fetch: cal::local_time", async () => {
       );
       expect(res[0].toString()).toBe(res[1]);
 
-      const res2 = await con.fetchOne(
+      const res2 = await con.queryOne(
         `
         select <cal::local_time>$time;
         `,
@@ -643,7 +643,7 @@ test("fetch: duration", async () => {
       "24 hours",
       "68464977 seconds 74 milliseconds 11 microseconds",
     ]) {
-      res = await con.fetchOne(
+      res = await con.queryOne(
         `
         select (<duration><str>$time, <str><duration><str>$time);
         `,
@@ -651,7 +651,7 @@ test("fetch: duration", async () => {
       );
       expect(res[0].toString()).toBe(res[1]);
 
-      const res2 = await con.fetchOne(
+      const res2 = await con.queryOne(
         `
         select <duration>$time;
         `,
@@ -691,7 +691,7 @@ test("fetch: duration fuzz", async () => {
   const con = await asyncConnect();
   try {
     // Test that Duration.__str__ formats the same as <str><duration>.
-    const dursAsText = await con.fetchAll(
+    const dursAsText = await con.query(
       `
         WITH args := array_unpack(<array<duration>>$0)
         SELECT <str>args;
@@ -700,7 +700,7 @@ test("fetch: duration fuzz", async () => {
     );
 
     // Test encode/decode round trip.
-    const dursFromDb = await con.fetchAll(
+    const dursFromDb = await con.query(
       `
         WITH args := array_unpack(<array<duration>>$0)
         SELECT args;
@@ -723,19 +723,19 @@ test("fetch: tuple", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchAll("select ()");
+    res = await con.query("select ()");
     expect(res).toEqual([[]]);
 
     expect(_introspect(res)).toEqual({kind: "set"});
     expect(_introspect(res[0])).toEqual({kind: "tuple"});
 
-    res = await con.fetchOne("select (1,)");
+    res = await con.queryOne("select (1,)");
     expect(res).toEqual([1]);
 
-    res = await con.fetchAll("select (1, 'abc')");
+    res = await con.query("select (1, 'abc')");
     expect(res).toEqual([[1, "abc"]]);
 
-    res = await con.fetchAll("select {(1, 'abc'), (2, 'bcd')}");
+    res = await con.query("select {(1, 'abc'), (2, 'bcd')}");
     expect(res).toEqual([
       [1, "abc"],
       [2, "bcd"],
@@ -769,7 +769,7 @@ test("fetch: object", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne(`
+    res = await con.queryOne(`
       select schema::Function {
         name,
         params: {
@@ -819,7 +819,7 @@ test("fetch: object", async () => {
     expect(res.params[1].__tid__).not.toEqual(res.__tid__);
 
     // regression test: test that empty sets are properly decoded.
-    await con.fetchOne(`
+    await con.queryOne(`
       select schema::Function {
         name,
         params: {
@@ -839,7 +839,7 @@ test("fetch: set of arrays", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne(`
+    res = await con.queryOne(`
       select schema::Function {
         id,
         sets := {[1, 2], [1]}
@@ -866,7 +866,7 @@ test("fetch: set of arrays", async () => {
     expect(res[1] instanceof Set).toBeFalsy();
     expect(res[1] instanceof Array).toBeTruthy();
 
-    res = await con.fetchAll(`
+    res = await con.query(`
       select {[1, 2], [1]};
     `);
 
@@ -885,7 +885,7 @@ test("fetch: object implicit fields", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne(`
+    res = await con.queryOne(`
       select schema::Function {
         id,
       }
@@ -895,14 +895,14 @@ test("fetch: object implicit fields", async () => {
     expect(JSON.stringify(res)).toMatch(/^\{"id":"([\w\d\-]{36})"\}$/);
     expect(JSON.stringify(res)).not.toMatch(/"__tid__"/);
 
-    res = await con.fetchOne(`
+    res = await con.queryOne(`
       select schema::Function
       limit 1
     `);
 
     expect(JSON.stringify(res)).toMatch(/"id":"([\w\d\-]{36})"/);
 
-    res = await con.fetchOne(`
+    res = await con.queryOne(`
       select schema::Function {
         name
       }
@@ -920,11 +920,11 @@ test("fetch: uuid", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne("SELECT schema::ObjectType.id LIMIT 1");
+    res = await con.queryOne("SELECT schema::ObjectType.id LIMIT 1");
     expect(res instanceof UUID).toBeTruthy();
     expect(res.buffer.length).toBe(16);
 
-    res = await con.fetchOne(
+    res = await con.queryOne(
       "SELECT <uuid>'759637d8-6635-11e9-b9d4-098002d459d5'"
     );
     expect(res instanceof UUID).toBeTruthy();
@@ -945,7 +945,7 @@ test("fetch: enum", async () => {
 
     await con.execute("declare savepoint s1");
     await con
-      .fetchOne("SELECT <MyEnum><str>$0", ["Z"])
+      .queryOne("SELECT <MyEnum><str>$0", ["Z"])
       .then(() => {
         throw new Error("an exception was expected");
       })
@@ -954,10 +954,10 @@ test("fetch: enum", async () => {
       });
     await con.execute("rollback to savepoint s1");
 
-    let ret = await con.fetchOne("SELECT <MyEnum><str>$0", ["A"]);
+    let ret = await con.queryOne("SELECT <MyEnum><str>$0", ["A"]);
     expect(ret).toBe("A");
 
-    ret = await con.fetchOne("SELECT <MyEnum>$0", ["A"]);
+    ret = await con.queryOne("SELECT <MyEnum>$0", ["A"]);
     expect(ret).toBe("A");
   } finally {
     await con.close();
@@ -968,7 +968,7 @@ test("fetch: namedtuple", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne("select (a := 1)");
+    res = await con.queryOne("select (a := 1)");
     expect(Array.from(res)).toEqual([1]);
 
     expect(_introspect(res)).toEqual({
@@ -976,10 +976,10 @@ test("fetch: namedtuple", async () => {
       fields: [{name: "a"}],
     });
 
-    res = await con.fetchAll("select (a := 1, b:= 'abc')");
+    res = await con.query("select (a := 1, b:= 'abc')");
     expect(Array.from(res[0])).toEqual([1, "abc"]);
 
-    res = await con.fetchOne("select (a := 'aaa', b := true, c := 123)");
+    res = await con.queryOne("select (a := 'aaa', b := true, c := 123)");
     expect(Array.from(res)).toEqual(["aaa", true, 123]);
     const t0: NamedTuple = res;
 
@@ -1008,49 +1008,49 @@ test("fetch: namedtuple", async () => {
   }
 });
 
-test("fetchOne: basic scalars", async () => {
+test("queryOne: basic scalars", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne("select 'abc'");
+    res = await con.queryOne("select 'abc'");
     expect(res).toBe("abc");
 
-    res = await con.fetchOne("select 281474976710656;");
+    res = await con.queryOne("select 281474976710656;");
     expect(res).toBe(281474976710656);
 
-    res = await con.fetchOne("select <int32>2147483647;");
+    res = await con.queryOne("select <int32>2147483647;");
     expect(res).toBe(2147483647);
-    res = await con.fetchOne("select <int32>-2147483648;");
+    res = await con.queryOne("select <int32>-2147483648;");
     expect(res).toBe(-2147483648);
 
-    res = await con.fetchOne("select <int16>-10;");
+    res = await con.queryOne("select <int16>-10;");
     expect(res).toBe(-10);
 
-    res = await con.fetchOne("select false;");
+    res = await con.queryOne("select false;");
     expect(res).toBe(false);
   } finally {
     await con.close();
   }
 });
 
-test("fetchOne: arrays", async () => {
+test("queryOne: arrays", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOne("select [12312312, -1, 123, 0, 1]");
+    res = await con.queryOne("select [12312312, -1, 123, 0, 1]");
     expect(res).toEqual([12312312, -1, 123, 0, 1]);
     expect(_introspect(res)).toEqual({kind: "array"});
 
-    res = await con.fetchOne("select ['aaa']");
+    res = await con.queryOne("select ['aaa']");
     expect(res).toEqual(["aaa"]);
 
-    res = await con.fetchOne("select <array<str>>[]");
+    res = await con.queryOne("select <array<str>>[]");
     expect(res).toEqual([]);
 
-    res = await con.fetchOne("select ['aaa', '', 'bbbb']");
+    res = await con.queryOne("select ['aaa', '', 'bbbb']");
     expect(res).toEqual(["aaa", "", "bbbb"]);
 
-    res = await con.fetchOne("select ['aaa', '', 'bbbb', '', 'aaaaaa🚀a']");
+    res = await con.queryOne("select ['aaa', '', 'bbbb', '', 'aaaaaa🚀a']");
     expect(res).toEqual(["aaa", "", "bbbb", "", "aaaaaa🚀a"]);
   } finally {
     await con.close();
@@ -1066,12 +1066,12 @@ test("fetch: long strings", async () => {
   let res;
   try {
     // A 1mb string.
-    res = await con.fetchOne("select str_repeat('a', <int64>(10^6));");
+    res = await con.queryOne("select str_repeat('a', <int64>(10^6));");
     expect(res.length).toEqual(1_000_000);
 
     // A 100mb string.
     await con
-      .fetchOne("select str_repeat('aa', <int64>(10^8));")
+      .queryOne("select str_repeat('aa', <int64>(10^8));")
       .then(() => {
         throw new Error("the query should have errored out");
       })
@@ -1085,18 +1085,18 @@ test("fetch: long strings", async () => {
   }
 });
 
-test("fetchOneJSON", async () => {
+test("queryOneJSON", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.fetchOneJSON("select (a := 1)");
+    res = await con.queryOneJSON("select (a := 1)");
     expect(JSON.parse(res)).toEqual({a: 1});
 
-    res = await con.fetchOneJSON("select (a := 1n)");
+    res = await con.queryOneJSON("select (a := 1n)");
     expect(JSON.parse(res)).toEqual({a: 1});
     expect(typeof JSON.parse(res).a).toEqual("number");
 
-    res = await con.fetchOneJSON("select (a := 1.5n)");
+    res = await con.queryOneJSON("select (a := 1.5n)");
     expect(JSON.parse(res)).toEqual({a: 1.5});
     expect(typeof JSON.parse(res).a).toEqual("number");
   } finally {
@@ -1104,35 +1104,35 @@ test("fetchOneJSON", async () => {
   }
 });
 
-test("fetchAllJSON", async () => {
+test("queryJSON", async () => {
   const con = await asyncConnect();
   try {
-    const res = await con.fetchAllJSON("select {(a := 1), (a := 2)}");
+    const res = await con.queryJSON("select {(a := 1), (a := 2)}");
     expect(JSON.parse(res)).toEqual([{a: 1}, {a: 2}]);
   } finally {
     await con.close();
   }
 });
 
-test("fetchOne wrong cardinality", async () => {
+test("queryOne wrong cardinality", async () => {
   const con = await asyncConnect();
   try {
     await con
-      .fetchOneJSON("start transaction")
+      .queryOneJSON("start transaction")
       .then(() => {
         throw new Error("an exception was expected");
       })
       .catch((e) => {
-        expect(e.toString()).toMatch(/fetchOneJSON\(\) returned no data/);
+        expect(e.toString()).toMatch(/queryOneJSON\(\) returned no data/);
       });
 
     await con
-      .fetchOne("start transaction")
+      .queryOne("start transaction")
       .then(() => {
         throw new Error("an exception was expected");
       })
       .catch((e) => {
-        expect(e.toString()).toMatch(/fetchOne\(\) returned no data/);
+        expect(e.toString()).toMatch(/queryOne\(\) returned no data/);
       });
   } finally {
     await con.close();
@@ -1157,7 +1157,7 @@ test("execute", async () => {
 
     await con.execute("start transaction isolation serializable");
     try {
-      const isolation = await con.fetchOne(
+      const isolation = await con.queryOne(
         "select sys::get_transaction_isolation()"
       );
       expect(isolation).toBe("SERIALIZABLE");
@@ -1184,7 +1184,7 @@ test("callbacks", (done) => {
         throw err1;
       }
 
-      con.fetchOne("select <int64>$i + 1", {i: 10}, (err2, data2) => {
+      con.queryOne("select <int64>$i + 1", {i: 10}, (err2, data2) => {
         if (err2) {
           throw err2;
         }
@@ -1226,7 +1226,7 @@ test("fetch/optimistic cache invalidation", async () => {
     `);
 
     for (let i = 0; i < 5; i++) {
-      const res = await con.fetchOne(query);
+      const res = await con.queryOne(query);
       expect(res).toBe("aaa");
     }
 
@@ -1247,7 +1247,7 @@ test("fetch/optimistic cache invalidation", async () => {
     `);
 
     for (let i = 0; i < 5; i++) {
-      const res = await con.fetchOne(query);
+      const res = await con.queryOne(query);
       expect(res).toBe(123);
     }
   } finally {
@@ -1260,14 +1260,14 @@ test("fetch no codec", async () => {
   const con = await asyncConnect();
   try {
     await con
-      .fetchOne("select <decimal>1")
+      .queryOne("select <decimal>1")
       .then(() => {
         throw new Error("an exception was expected");
       })
       .catch((e) => {
         expect(e.toString()).toMatch(/no JS codec for std::decimal/);
       });
-    await con.fetchOne("select 123").then((res) => {
+    await con.queryOne("select 123").then((res) => {
       expect(res).toEqual(123);
     });
   } finally {
@@ -1278,8 +1278,8 @@ test("fetch no codec", async () => {
 test("concurrent ops", async () => {
   const con = await asyncConnect();
   try {
-    const p1 = con.fetchOne(`SELECT 1 + 2`);
-    await Promise.all([p1, con.fetchOne(`SELECT sys::get_version_as_str()`)])
+    const p1 = con.queryOne(`SELECT 1 + 2`);
+    await Promise.all([p1, con.queryOne(`SELECT sys::get_version_as_str()`)])
       .then(() => {
         throw new Error("an exception was expected");
       })

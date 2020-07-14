@@ -111,13 +111,13 @@ export interface ConnectionProxy {
 export interface IConnection {
   execute(query: string): Promise<void>;
 
-  fetchAll(query: string, args?: QueryArgs): Promise<Set>;
+  query(query: string, args?: QueryArgs): Promise<Set>;
 
-  fetchAllJSON(query: string, args?: QueryArgs): Promise<string>;
+  queryJSON(query: string, args?: QueryArgs): Promise<string>;
 
-  fetchOne(query: string, args?: QueryArgs): Promise<any>;
+  queryOne(query: string, args?: QueryArgs): Promise<any>;
 
-  fetchOneJSON(query: string, args?: QueryArgs): Promise<string>;
+  queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
 
   close(): Promise<void>;
 }
@@ -906,7 +906,7 @@ export class AwaitConnection implements IConnection {
     expectOne: boolean
   ): void {
     if (expectOne && card === chars.$n) {
-      const methname = asJson ? "fetchOneJSON" : "fetchOne";
+      const methname = asJson ? "queryOneJSON" : "queryOne";
       throw new Error(`query executed via ${methname}() returned no data`);
     }
   }
@@ -1034,7 +1034,7 @@ export class AwaitConnection implements IConnection {
     }
   }
 
-  async fetchAll(query: string, args: QueryArgs = null): Promise<Set> {
+  async query(query: string, args: QueryArgs = null): Promise<Set> {
     this._enterOp();
     try {
       return await this._fetch(query, args, false, false);
@@ -1043,7 +1043,7 @@ export class AwaitConnection implements IConnection {
     }
   }
 
-  async fetchOne(query: string, args: QueryArgs = null): Promise<any> {
+  async queryOne(query: string, args: QueryArgs = null): Promise<any> {
     this._enterOp();
     try {
       return await this._fetch(query, args, false, true);
@@ -1052,7 +1052,7 @@ export class AwaitConnection implements IConnection {
     }
   }
 
-  async fetchAllJSON(query: string, args: QueryArgs = null): Promise<string> {
+  async queryJSON(query: string, args: QueryArgs = null): Promise<string> {
     this._enterOp();
     try {
       return await this._fetch(query, args, true, false);
@@ -1061,7 +1061,7 @@ export class AwaitConnection implements IConnection {
     }
   }
 
-  async fetchOneJSON(query: string, args: QueryArgs = null): Promise<string> {
+  async queryOneJSON(query: string, args: QueryArgs = null): Promise<string> {
     this._enterOp();
     try {
       return await this._fetch(query, args, true, true);
@@ -1114,6 +1114,51 @@ export class AwaitConnection implements IConnection {
     if (this._proxy !== null) {
       this._proxy.onConnectionClose();
     }
+  }
+
+  /**
+   * @deprecated use the "query()" method instead
+   */
+  public fetchAll(query: string, args?: QueryArgs): Promise<Set> {
+    process.emitWarning(
+      '"fetchAll()" is deprecated, use the "query()" method instead',
+      "DeprecationWarning"
+    );
+    return this.query(query, args);
+  }
+
+  /**
+   * @deprecated use the "queryJSON()" method instead
+   */
+  public fetchAllJSON(query: string, args?: QueryArgs): Promise<string> {
+    process.emitWarning(
+      '"fetchAllJSON()" is deprecated, use the "queryJSON()" method instead',
+      "DeprecationWarning"
+    );
+    return this.queryJSON(query, args);
+  }
+
+  /**
+   * @deprecated use the "queryOne()" method instead
+   */
+  public fetchOne(query: string, args?: QueryArgs): Promise<any> {
+    process.emitWarning(
+      '"fetchOne()" is deprecated, use the "queryOne()" method instead',
+      "DeprecationWarning"
+    );
+    return this.queryOne(query, args);
+  }
+
+  /**
+   * @deprecated use the "queryOneJSON()" method instead
+   */
+  public fetchOneJSON(query: string, args?: QueryArgs): Promise<string> {
+    process.emitWarning(
+      '"fetchOneJSON()" is deprecated, use the "queryOneJSON()" method ' +
+        "instead",
+      "DeprecationWarning"
+    );
+    return this.queryOneJSON(query, args);
   }
 
   /** @internal */
@@ -1195,58 +1240,119 @@ export class CallbackConnectionBase<T extends IConnection> {
     return this._conn;
   }
 
-  execute(query: string, callback: NodeCallback | null = null): void {
+  public execute(query: string, callback: NodeCallback | null = null): void {
     this._conn
       .execute(query)
       .then((value) => (callback != null ? callback(null, value) : null))
       .catch((error) => (callback != null ? callback(error, null) : null));
   }
 
-  fetchOne(
+  public queryOne(
     query: string,
     args: QueryArgs,
     callback: NodeCallback | null = null
   ): void {
     this._conn
-      .fetchOne(query, args)
+      .queryOne(query, args)
       .then((value) => (callback != null ? callback(null, value) : null))
       .catch((error) => (callback != null ? callback(error, null) : null));
   }
 
-  fetchAll(
+  public query(
     query: string,
     args: QueryArgs,
     callback: NodeCallback<Set> | null = null
   ): void {
     this._conn
-      .fetchAll(query, args)
+      .query(query, args)
       .then((value) => (callback != null ? callback(null, value) : null))
       .catch((error) => (callback != null ? callback(error, null) : null));
   }
 
-  fetchOneJSON(
+  public queryOneJSON(
     query: string,
     args: QueryArgs,
     callback: NodeCallback<string> | null = null
   ): void {
     this._conn
-      .fetchOneJSON(query, args)
+      .queryOneJSON(query, args)
       .then((value) => (callback != null ? callback(null, value) : null))
       .catch((error) => (callback != null ? callback(error, null) : null));
   }
 
-  fetchAllJSON(
+  public queryJSON(
     query: string,
     args: QueryArgs,
     callback: NodeCallback<string> | null = null
   ): void {
     this._conn
-      .fetchAllJSON(query, args)
+      .queryJSON(query, args)
       .then((value) => (callback ? callback(null, value) : null))
       .catch((error) => (callback ? callback(error, null) : null));
   }
 
-  close(callback: NodeCallback<null> | null = null): void {
+  /**
+   * @deprecated use the "query()" method instead
+   */
+  public fetchAll(
+    query: string,
+    args: QueryArgs,
+    callback: NodeCallback<Set> | null = null
+  ): void {
+    process.emitWarning(
+      '"fetchAll()" is deprecated, use the "query()" method instead',
+      "DeprecationWarning"
+    );
+    this.query(query, args, callback);
+  }
+
+  /**
+   * @deprecated use the "queryJSON()" method instead
+   */
+  public fetchAllJSON(
+    query: string,
+    args: QueryArgs,
+    callback: NodeCallback<string> | null = null
+  ): void {
+    process.emitWarning(
+      '"fetchAllJSON()" is deprecated, use the "queryJSON()" method instead',
+      "DeprecationWarning"
+    );
+    this.queryJSON(query, args, callback);
+  }
+
+  /**
+   * @deprecated use the "queryOne()" method instead
+   */
+  public fetchOne(
+    query: string,
+    args: QueryArgs,
+    callback: NodeCallback | null = null
+  ): void {
+    process.emitWarning(
+      '"fetchOne()" is deprecated, use the "queryOne()" method instead',
+      "DeprecationWarning"
+    );
+    this.queryOne(query, args, callback);
+  }
+
+  /**
+   * @deprecated use the "queryOneJSON()" method instead
+   */
+  public fetchOneJSON(
+    query: string,
+    args: QueryArgs,
+    callback: NodeCallback<string> | null = null
+  ): void {
+    process.emitWarning(
+      '"fetchOneJSON()" is deprecated, use the "queryOneJSON()" method ' +
+        "instead",
+      "DeprecationWarning"
+    );
+    this.queryOneJSON(query, args, callback);
+  }
+
+  public close(callback: NodeCallback<null> | null = null): void {
     this._conn
       .close()
       .then((_value) => (callback ? callback(null, null) : null))
