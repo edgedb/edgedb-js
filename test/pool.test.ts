@@ -74,13 +74,13 @@ describe("pool.initialize: creates minSize count of connections", () => {
   );
 });
 
-test("pool.fetchAll: basic scalars", async () => {
+test("pool.query: basic scalars", async () => {
   const pool = await getPool();
 
-  let res = await pool.fetchAll("select {'a', 'bc'}");
+  let res = await pool.query("select {'a', 'bc'}");
   expect(res).toEqual(["a", "bc"]);
 
-  res = await pool.fetchAll(
+  res = await pool.query(
     `select {
         -1,
         1,
@@ -113,40 +113,40 @@ test("pool.fetchAll: basic scalars", async () => {
   await pool.close();
 });
 
-test("pool.fetchAllJSON", async () => {
+test("pool.queryJSON", async () => {
   const pool = await getPool();
 
-  const res = await pool.fetchAllJSON("select {(a := 1), (a := 2)}");
+  const res = await pool.queryJSON("select {(a := 1), (a := 2)}");
   expect(JSON.parse(res)).toEqual([{a: 1}, {a: 2}]);
 
   await pool.close();
 });
 
-test("pool.fetchOne", async () => {
+test("pool.queryOne", async () => {
   const pool = await getPool();
   let res;
 
-  res = await pool.fetchOne("select 100");
+  res = await pool.queryOne("select 100");
   expect(res).toBe(100);
 
-  res = await pool.fetchOne("select 'Charlie Brown'");
+  res = await pool.queryOne("select 'Charlie Brown'");
   expect(res).toBe("Charlie Brown");
 
   await pool.close();
 });
 
-test("pool.fetchOneJSON", async () => {
+test("pool.queryOneJSON", async () => {
   const pool = await getPool();
   let res;
 
-  res = await pool.fetchOneJSON("select (a := 1)");
+  res = await pool.queryOneJSON("select (a := 1)");
   expect(JSON.parse(res)).toEqual({a: 1});
 
-  res = await pool.fetchOneJSON("select (a := 1n)");
+  res = await pool.queryOneJSON("select (a := 1n)");
   expect(JSON.parse(res)).toEqual({a: 1});
   expect(typeof JSON.parse(res).a).toEqual("number");
 
-  res = await pool.fetchOneJSON("select (a := 1.5n)");
+  res = await pool.queryOneJSON("select (a := 1.5n)");
   expect(JSON.parse(res)).toEqual({a: 1.5});
   expect(typeof JSON.parse(res).a).toEqual("number");
 
@@ -165,7 +165,7 @@ describe("pool concurrency 1", () => {
 
       async function work(): Promise<void> {
         const proxy = await pool.acquire();
-        expect(await proxy.fetchOne("SELECT 1")).toBe(1);
+        expect(await proxy.queryOne("SELECT 1")).toBe(1);
         await pool.release(proxy);
       }
 
@@ -191,7 +191,7 @@ describe("pool concurrency 2", () => {
 
       async function work(): Promise<void> {
         const proxy = await pool.acquire();
-        expect(await proxy.fetchOne("SELECT 1")).toBe(1);
+        expect(await proxy.queryOne("SELECT 1")).toBe(1);
         await pool.release(proxy);
       }
 
@@ -217,7 +217,7 @@ describe("pool concurrency 3", () => {
 
       async function work(): Promise<void> {
         const result = await pool.run(async (connection) => {
-          return await connection.fetchOne("SELECT 1");
+          return await connection.queryOne("SELECT 1");
         });
         expect(result).toBe(1);
       }
@@ -410,7 +410,7 @@ test(
     await pool.release(proxy);
 
     async function failing(): Promise<void> {
-      await proxy.fetchAll("select 1");
+      await proxy.query("select 1");
     }
 
     await expect(failing()).rejects.toThrow("The proxy is detached");
@@ -529,7 +529,7 @@ test(
 
     expect(connections).toEqual(["error", getProxyConnection(proxy)]);
 
-    expect(await lastConnection.fetchOne("select 1")).toBe(1);
+    expect(await lastConnection.queryOne("select 1")).toBe(1);
 
     await pool.release(proxy);
     await pool.close();
@@ -559,7 +559,7 @@ test(
 
     const proxy = await pool.acquire();
 
-    expect(await proxy.fetchOne("SELECT 1")).toBe(1);
+    expect(await proxy.queryOne("SELECT 1")).toBe(1);
     await pool.release(proxy);
     await pool.close();
   },
@@ -612,18 +612,18 @@ test(
 );
 
 describe("pool connection methods", () => {
-  async function testFetchAll(_pool: Pool): Promise<number> {
+  async function testquery(_pool: Pool): Promise<number> {
     const i = randomInt(0, 20);
     await new Promise((resolve) => setTimeout(resolve, i));
-    const result = await _pool.fetchAll(`SELECT ${i}`);
+    const result = await _pool.query(`SELECT ${i}`);
     expect(result).toEqual([i]);
     return 1;
   }
 
-  async function testFetchOne(_pool: Pool): Promise<number> {
+  async function testqueryOne(_pool: Pool): Promise<number> {
     const i = randomInt(0, 20);
     await new Promise((resolve) => setTimeout(resolve, i));
-    const result = await _pool.fetchOne(`SELECT ${i}`);
+    const result = await _pool.queryOne(`SELECT ${i}`);
     expect(result).toEqual(i);
     return 1;
   }
@@ -652,7 +652,7 @@ describe("pool connection methods", () => {
     await pool.close();
   }
 
-  const methods = [testFetchAll, testFetchOne, testExecute];
+  const methods = [testquery, testqueryOne, testExecute];
 
   each(methods).it(
     "when method is '%s'",
@@ -722,16 +722,16 @@ test(
   BiggerTimeout
 );
 
-test("createPool.fetchOne", async () => {
+test("createPool.queryOne", async () => {
   const pool = await createPool({
     connectOptions: getConnectOptions(),
   });
   let res;
 
-  res = await pool.fetchOne("select 100");
+  res = await pool.queryOne("select 100");
   expect(res).toBe(100);
 
-  res = await pool.fetchOne("select 'Charlie Brown'");
+  res = await pool.queryOne("select 'Charlie Brown'");
   expect(res).toBe("Charlie Brown");
 
   await pool.close();
@@ -752,7 +752,7 @@ test("callbacks", (done) => {
         throw err1;
       }
 
-      pool.fetchOne("select <int64>$i + 1", {i: 10}, (err2, data2) => {
+      pool.queryOne("select <int64>$i + 1", {i: 10}, (err2, data2) => {
         if (err2) {
           throw err2;
         }
@@ -802,7 +802,7 @@ test("callbacks acquire and release", (done) => {
         throw new Error("Expected a connection for callback api");
       }
 
-      con.fetchOne("select <int64>$i + 1", {i: 10}, (err2, data1) => {
+      con.queryOne("select <int64>$i + 1", {i: 10}, (err2, data1) => {
         if (err2) {
           throw err2;
         }

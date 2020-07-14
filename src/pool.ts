@@ -294,20 +294,20 @@ export class PoolConnectionProxy implements IConnection {
     await this.connection.execute(query);
   }
 
-  async fetchAll(query: string, args?: QueryArgs): Promise<Set> {
-    return await this.connection.fetchAll(query, args);
+  async query(query: string, args?: QueryArgs): Promise<Set> {
+    return await this.connection.query(query, args);
   }
 
-  async fetchAllJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.connection.fetchAllJSON(query, args);
+  async queryJSON(query: string, args?: QueryArgs): Promise<string> {
+    return await this.connection.queryJSON(query, args);
   }
 
-  async fetchOne(query: string, args?: QueryArgs): Promise<any> {
-    return await this.connection.fetchOne(query, args);
+  async queryOne(query: string, args?: QueryArgs): Promise<any> {
+    return await this.connection.queryOne(query, args);
   }
 
-  async fetchOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.connection.fetchOneJSON(query, args);
+  async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
+    return await this.connection.queryOneJSON(query, args);
   }
 
   close(): Promise<void> {
@@ -679,27 +679,27 @@ export class Pool implements IConnection {
     });
   }
 
-  async fetchAll(query: string, args?: QueryArgs): Promise<Set> {
+  async query(query: string, args?: QueryArgs): Promise<Set> {
     return await this.run(async (connection) => {
-      return await connection.fetchAll(query, args);
+      return await connection.query(query, args);
     });
   }
 
-  async fetchAllJSON(query: string, args?: QueryArgs): Promise<string> {
+  async queryJSON(query: string, args?: QueryArgs): Promise<string> {
     return await this.run(async (connection) => {
-      return await connection.fetchAllJSON(query, args);
+      return await connection.queryJSON(query, args);
     });
   }
 
-  async fetchOne(query: string, args?: QueryArgs): Promise<any> {
+  async queryOne(query: string, args?: QueryArgs): Promise<any> {
     return await this.run(async (connection) => {
-      return await connection.fetchOne(query, args);
+      return await connection.queryOne(query, args);
     });
   }
 
-  async fetchOneJSON(query: string, args?: QueryArgs): Promise<string> {
+  async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
     return await this.run(async (connection) => {
-      return await connection.fetchOneJSON(query, args);
+      return await connection.queryOneJSON(query, args);
     });
   }
 
