@@ -16,7 +16,12 @@ export default async () => {
     ok = resolve;
   });
 
-  const proc = child_process.spawn("edgedb-server", [
+  let srvcmd = "edgedb-server";
+  if (process.env.EDGEDB_SLOT) {
+    srvcmd = `${srvcmd}-${process.env.EDGEDB_SLOT}`;
+  }
+
+  const proc = child_process.spawn(srvcmd, [
     "--temp-dir",
     "--testmode",
     "--echo-runtime-info",
