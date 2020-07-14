@@ -10,7 +10,6 @@ Connection
 ==========
 
 .. js:function:: connect(options)
-                 connect(options, callback)
 
     Establish a connection to an EdgeDB server.
 
@@ -81,17 +80,8 @@ Connection
     :param number options.timeout:
         Connection timeout in seconds.
 
-    :param callback:
-        A callback function that will be invoked when the connection is ready.
-        The callback function should be of the form ``function(error,
-        connection)``. The *connection* is an instance of
-        :js:class:`Connection`.
-
     :returns:
-        There are two ways of creating an EdgeDB connection: a Promise-based
-        approach and a callback-based. When a *callback* argument is provided,
-        the function does not return anything and instead uses the *callback*.
-        Otherwise, a ``Promise`` of an :js:class:`AwaitConnection` is returned.
+        Returns a ``Promise`` of an :js:class:`Connection` is returned.
 
     Example:
 
@@ -107,7 +97,7 @@ Connection
           });
 
           try{
-            let data = await conn.fetchOne("SELECT 1 + 1");
+            let data = await conn.queryOne("SELECT 1 + 1");
 
             // The result is a number 2.
             assert(typeof data === "number");
@@ -119,11 +109,11 @@ Connection
 
         main();
 
-.. js:class:: AwaitConnection
+.. js:class:: Connection
 
     A representation of a database session.
 
-    :js:class:`AwaitConnection` is not meant to be instantiated by directly,
+    :js:class:`Connection` is not meant to be instantiated by directly,
     :js:func:`connect` should be used instead.
 
 
@@ -159,7 +149,7 @@ Connection
                 UNION INSERT MyType { a := x };
             `)
 
-    .. js:method:: fetchAll(query: string, args)
+    .. js:method:: query(query: string, args)
 
         Run a query and return the results as a
         :js:class:`Set` instance.
@@ -167,7 +157,7 @@ Connection
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
 
-    .. js:method:: fetchOne(query: string, args)
+    .. js:method:: queryOne(query: string, args)
 
         Run a singleton-returning query and return its element.
 
@@ -177,7 +167,7 @@ Connection
         The *query* must return exactly one element.  If the query returns
         more than one element or an empty set, an ``Error`` is thrown.
 
-    .. js:method:: fetchAllJSON(query: string, args)
+    .. js:method:: queryJSON(query: string, args)
 
         Run a query and return the results as JSON.
 
@@ -197,7 +187,7 @@ Connection
             the client side into a more appropriate type, such as
             BigInt_.
 
-    .. js:method:: fetchOneJSON(query: string, args)
+    .. js:method:: queryOneJSON(query: string, args)
 
         Run a singleton-returning query and return its element in JSON.
 
@@ -224,120 +214,6 @@ Connection
 
         Close the connection gracefully.
 
-.. js:class:: Connection
-
-    A representation of a database session.
-
-    :js:class:`Connection` is not meant to be instantiated by directly,
-    :js:func:`connect` should be used instead.
-
-    Every method of this class takes a *callback* of the form
-    ``function(err, data)``.
-
-    .. _edgedb-js-api-sync-optargs:
-
-    .. note::
-
-        Some methods take query arguments as optional *args*:
-
-        * single values of any of the :ref:`basic types
-          recognized<edgedb-js-datatypes>` by EdgeDB
-        * an ``Array`` of values of any of the basic types
-        * an ``object`` with property names and values corresponding to
-          argument names and values of any of the basic types
-
-    .. js:method:: execute(query: string, callback)
-
-        Execute an EdgeQL command (or commands).
-
-        The commands must take no arguments.
-
-        Example:
-
-        .. code-block:: js
-
-            con.execute(`
-                CREATE TYPE MyType {
-                    CREATE PROPERTY a -> int64
-                };
-                FOR x IN {100, 200, 300}
-                UNION INSERT MyType { a := x };
-            `, (err, data) => {
-                if (err) {
-                    console.log('migration failed: ', err)
-                } else {
-                    console.log('migration complete');
-                }
-            })
-
-    .. js:method:: fetchAll(query: string, args)
-
-        Run a query and return the results as a
-        :js:class:`Set` instance.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-sync-optargs>`.
-
-    .. js:method:: fetchOne(query: string, args, callback)
-
-        Run a singleton-returning query and return its element.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-sync-optargs>`.
-
-        The *query* must return exactly one element.  If the query returns
-        more than one element or an empty set, an ``Error`` is thrown.
-
-    .. js:method:: fetchAllJSON(query: string, args, callback)
-
-        Run a query and return the results as JSON.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-sync-optargs>`.
-
-        .. note::
-
-            Caution is advised when reading ``decimal`` or ``bigint``
-            values using this method. The JSON specification does not
-            have a limit on significant digits, so a ``decimal`` or a
-            ``bigint`` number can be losslessly represented in JSON.
-            However, JSON decoders in JavaScript will often read all
-            such numbers as ``number`` values, which may result in
-            precision loss. If such loss is unacceptable, then
-            consider casting the value into ``str`` and decoding it on
-            the client side into a more appropriate type, such as
-            BigInt_.
-
-    .. js:method:: fetchOneJSON(query: string, args, callback)
-
-        Run a singleton-returning query and return its element in JSON.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-sync-optargs>`.
-
-        The *query* must return exactly one element.  If the query returns
-        more than one element or an empty set, an ``Error`` is thrown.
-
-        .. note::
-
-            Caution is advised when reading ``decimal`` or ``bigint``
-            values using this method. The JSON specification does not
-            have a limit on significant digits, so a ``decimal`` or a
-            ``bigint`` number can be losslessly represented in JSON.
-            However, JSON decoders in JavaScript will often read all
-            such numbers as ``number`` values, which may result in
-            precision loss. If such loss is unacceptable, then
-            consider casting the value into ``str`` and decoding it on
-            the client side into a more appropriate type, such as
-            BigInt_.
-
-    .. js:method:: close(callback)
-
-        Close the connection gracefully and invoke the *callback*.
-
-        :param callback:
-            The *callback* to be invoked after closing the connection.
-
 
 .. _BigInt:
     https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt
@@ -346,10 +222,9 @@ Connection
 .. _edgedb-js-api-pool:
 
 Pool
-==========
+====
 
 .. js:function:: createPool(options)
-                 createPool(options, callback)
 
     Create a connection pool to an EdgeDB server.
 
@@ -378,24 +253,16 @@ Pool
 
     :param func options.onConnect:
         Optional callback, called when a new connection is created.
-        *(connection: AwaitConnection) => Promise<void>*
+        *(connection: Connection) => Promise<void>*
 
     :param func options.connectionFactory:
         Optional function, used to obtain a new connection. By default, the
         function is :js:func:`connect` *(options?: ConnectConfig) =>
-        Promise<AwaitConnection>*
-
-    :param callback:
-        A callback function that will be invoked when the connection pool is
-        ready. The callback function should be of the form ``function(error,
-        pool)``. The *pool* is an instance of :js:class:`CallbackPool`.
+        Promise<Connection>*
 
     :returns:
-        There are two ways of creating an EdgeDB connection pool: a
-        Promise-based approach and a callback-based. When a *callback*
-        argument is provided, the function does not return anything and instead
-        uses the *callback* with an instance of :js:class:`CallbackPool`.
-        Otherwise, a ``Promise`` of an :js:class:`Pool` is returned.
+        Returns a ``Promise`` of an :js:class:`Pool` is returned.
+
 
 .. js:class:: Pool
 
@@ -404,7 +271,7 @@ Pool
     used to maintain and reuse connections, enhancing the performance of
     database interactions.
 
-    Pools can be created using the method ``createPool``:
+    Pools must be created using the method ``createPool``:
 
     .. code-block:: js
 
@@ -419,7 +286,7 @@ Pool
             });
 
             try {
-                let data = await pool.fetchOne("SELECT [1, 2, 3]");
+                let data = await pool.queryOne("SELECT [1, 2, 3]");
 
                 console.log(data);
             } finally {
@@ -451,7 +318,7 @@ Pool
                 UNION INSERT MyType { a := x };
             `)
 
-    .. js:method:: fetchAll(query: string, args)
+    .. js:method:: query(query: string, args)
 
         Acquire a connection, then run a query and return the results as a
         :js:class:`Set` instance.
@@ -461,7 +328,7 @@ Pool
 
         .. code-block:: js
 
-            const items = await pool.fetchAll(
+            const items = await pool.query(
                 `SELECT Movie {
                     title,
                     year,
@@ -480,7 +347,7 @@ Pool
                 }
             );
 
-    .. js:method:: fetchOne(query: string, args)
+    .. js:method:: queryOne(query: string, args)
 
         Acquire a connection, then run a query that returns a single item
         and return its result.
@@ -493,16 +360,16 @@ Pool
 
         .. code-block:: js
 
-            await pool.fetchOne("SELECT 1");
+            await pool.queryOne("SELECT 1");
 
-    .. js:method:: fetchAllJSON(query: string, args)
+    .. js:method:: queryJSON(query: string, args)
 
         Acquire a connection, then run a query and return the results as JSON.
 
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
 
-    .. js:method:: fetchOneJSON(query: string, args)
+    .. js:method:: queryOneJSON(query: string, args)
 
         Acquire a connection, then run a singleton-returning query and return
         its element in JSON.
@@ -527,7 +394,7 @@ Pool
             let value: number;
 
             try {
-                value = await connection.fetchOne("select 1");
+                value = await connection.queryOne("select 1");
             } finally {
                 await pool.release(connection);
             }
@@ -549,7 +416,7 @@ Pool
         .. code-block:: js
 
             const result = await pool.run(async (connection) => {
-                return await connection.fetchOne("SELECT 1");
+                return await connection.queryOne("SELECT 1");
             });
             expect(result).toBe(1);
 
@@ -585,133 +452,3 @@ Pool
         Terminate all connections in the pool, closing all connections non
         gracefully. If the pool is already closed, return without doing
         anything.
-
-.. _edgedb-js-api-callbackpool:
-
-CallbackPool
-============
-
-.. js:class:: CallbackPool
-
-    A :js:class:`CallbackPool` exposes a callback-based API, and can be created
-    using the function :js:func:`createPool`, specifying a callback as second
-    argument.
-
-    Every method of this class takes a *callback* of the form
-    ``function(err, data)``.
-
-    .. code-block:: js
-
-      const edgedb = require("edgedb");
-
-      edgedb.createPool({
-          connectOptions: {
-              user: "edgedb",
-              host: "127.0.0.1"
-          },
-      }, (err, pool) => {
-          if (err) {
-              throw err;
-          }
-
-          pool.fetchOne("select <int64>$i + 1", { i: 10 }, (err2, data2) => {
-              if (err2) {
-                  throw err2;
-              }
-
-              console.log(data2);
-
-              pool.close();
-          });
-      });
-
-    .. js:method:: execute(query: string, callback)
-
-        Acquire a connection and execute an EdgeQL command (or commands).
-
-        The commands must take no arguments.
-
-        Example:
-
-        .. code-block:: js
-
-            pool.execute(`
-                CREATE TYPE MyType {
-                    CREATE PROPERTY a -> int64
-                };
-                FOR x IN {100, 200, 300}
-                UNION INSERT MyType { a := x };
-            `, (err, data) => {
-                if (err) {
-                    console.log('migration failed: ', err)
-                } else {
-                    console.log('migration complete');
-                }
-            })
-
-    .. js:method:: fetchAll(query: string, args)
-
-        Acquire a connection and run a query and return the results as a
-        :js:class:`Set` instance.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-sync-optargs>`.
-
-    .. js:method:: fetchOne(query: string, args, callback)
-
-        Acquire a connection and run a singleton-returning query and return
-        its element.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-sync-optargs>`.
-
-        The *query* must return exactly one element.  If the query returns
-        more than one element or an empty set, an ``Error`` is thrown.
-
-    .. js:method:: fetchAllJSON(query: string, args, callback)
-
-        Acquire a connection and run a query and return the results as JSON.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-sync-optargs>`.
-
-    .. js:method:: fetchOneJSON(query: string, args, callback)
-
-        Acquire a connection and run a singleton-returning query and return
-        its element in JSON.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-sync-optargs>`.
-
-        The *query* must return exactly one element.  If the query returns
-        more than one element or an empty set, an ``Error`` is thrown.
-
-    .. js:method:: close(callback)
-
-        Close the connection pool gracefully and invoke the *callback*.
-
-        :param callback:
-            The *callback* to be invoked after closing the connection.
-
-    .. js:method:: acquire(callback)
-
-        Acquire a connection proxy, which provides access to an open database
-        connection. The proxy must be released to return the connection to the
-        pool. Then invoke the *callback*.
-
-        :param callback:
-            The *callback* to be invoked after closing the connection.
-
-    .. js:method:: release(proxy: CallbackPoolConnectionProxy, callback)
-
-        Release a previously acquired connection proxy, to return it to the
-        pool, and invoke the *callback*.
-
-        :param callback:
-            The *callback* to be invoked after closing the connection.
-
-    .. js:method:: expireConnections()
-
-        Expire all currently open connections.
-        Cause all currently open connections to be replaced when they are
-        acquired by the next *.acquire()* call.

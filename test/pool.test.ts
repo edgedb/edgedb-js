@@ -17,9 +17,10 @@
  */
 
 import each from "jest-each";
-import {Pool, Deferred, PoolConnectionProxy, createPool} from "../src/pool";
-import {getPool, getConnectOptions, getPoolWithCallback} from "./testbase";
-import connect, {AwaitConnection, Connection} from "../src/client";
+import {Deferred, createPool, getHolder, unwrapConnection} from "../src/pool";
+import {getPool, getConnectOptions} from "./testbase";
+import connect from "../src/client";
+import {Connection, Pool} from "../src/ifaces";
 import {ConnectConfig} from "../src/con_utils";
 
 // Jest by default applies a test timeout of 5 seconds; some of the following
@@ -38,18 +39,18 @@ function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-function getProxyConnection(proxy: PoolConnectionProxy): AwaitConnection {
+function getProxyConnection(proxy: Connection): Connection {
   // @ts-ignore
-  return proxy.connection;
+  return proxy[unwrapConnection]();
 }
 
 describe("pool.initialize: creates minSize count of connections", () => {
   each([0, 1, 5, 10, 20]).it(
     "when minSize is '%s'",
     async (minSize) => {
-      const connections: AwaitConnection[] = [];
+      const connections: Connection[] = [];
 
-      async function onConnect(connection: AwaitConnection): Promise<void> {
+      async function onConnect(connection: Connection): Promise<void> {
         if (connections.indexOf(connection) > -1) {
           throw new Error("onConnect was called more than once");
         }
@@ -57,7 +58,7 @@ describe("pool.initialize: creates minSize count of connections", () => {
       }
 
       const maxSize = minSize + 50;
-      const pool = await Pool.create({
+      const pool = await createPool({
         connectOptions: getConnectOptions(),
         minSize,
         maxSize,
@@ -157,7 +158,7 @@ describe("pool concurrency 1", () => {
   each([1, 5, 10, 20, 100]).it(
     "when concurrency is '%s'",
     async (concurrency) => {
-      const pool = await Pool.create({
+      const pool = await createPool({
         connectOptions: getConnectOptions(),
         minSize: 5,
         maxSize: 10,
@@ -183,7 +184,7 @@ describe("pool concurrency 2", () => {
   each([1, 3, 5, 10, 20, 100]).it(
     "when concurrency is '%s'",
     async (concurrency) => {
-      const pool = await Pool.create({
+      const pool = await createPool({
         connectOptions: getConnectOptions(),
         minSize: 5,
         maxSize: 5,
@@ -209,7 +210,7 @@ describe("pool concurrency 3", () => {
   each([1, 3, 5, 10, 20, 100]).it(
     "when concurrency is '%s'",
     async (concurrency) => {
-      const pool = await Pool.create({
+      const pool = await createPool({
         connectOptions: getConnectOptions(),
         minSize: 5,
         maxSize: 5,
@@ -233,13 +234,13 @@ describe("pool concurrency 3", () => {
 });
 
 test("pool.onAcquire callback", async () => {
-  const deferred = new Deferred<PoolConnectionProxy>();
+  const deferred = new Deferred<Connection>();
 
-  async function onAcquire(connection: PoolConnectionProxy): Promise<void> {
+  async function onAcquire(connection: Connection): Promise<void> {
     deferred.setResult(connection);
   }
 
-  const pool = await Pool.create({
+  const pool = await createPool({
     connectOptions: getConnectOptions(),
     minSize: 5,
     maxSize: 5,
@@ -256,13 +257,13 @@ test("pool.onAcquire callback", async () => {
 });
 
 test("pool.onRelease callback", async () => {
-  const deferred = new Deferred<PoolConnectionProxy>();
+  const deferred = new Deferred<Connection>();
 
-  async function onRelease(connection: PoolConnectionProxy): Promise<void> {
+  async function onRelease(connection: Connection): Promise<void> {
     deferred.setResult(connection);
   }
 
-  const pool = await Pool.create({
+  const pool = await createPool({
     connectOptions: getConnectOptions(),
     minSize: 5,
     maxSize: 5,
@@ -284,15 +285,15 @@ test(
     // This method tests onAcquire, onConnect execution and their order;
     // it also ensures that no more connections than the maximum size of
     // the pool are created (concurrency is 2x max size).
-    const connections: AwaitConnection[] = [];
+    const connections: Connection[] = [];
 
-    async function onAcquire(proxy: PoolConnectionProxy): Promise<void> {
+    async function onAcquire(proxy: Connection): Promise<void> {
       if (connections.indexOf(getProxyConnection(proxy)) === -1) {
         throw new Error("onAcquire was not called");
       }
     }
 
-    async function onConnect(connection: AwaitConnection): Promise<void> {
+    async function onConnect(connection: Connection): Promise<void> {
       if (connections.indexOf(connection) > -1) {
         throw new Error("onConnect was called more than once");
       }
@@ -309,7 +310,7 @@ test(
       await pool.release(proxy);
     }
 
-    const _pool = await Pool.create({
+    const _pool = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 2,
       maxSize: 5,
@@ -329,12 +330,12 @@ test(
 test(
   "pool.release raises for foreign connection proxy",
   async () => {
-    const pool1 = await Pool.create({
+    const pool1 = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
     });
-    const pool2 = await Pool.create({
+    const pool2 = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -359,7 +360,7 @@ test(
 test(
   "pool.release more than once does not raise exception",
   async () => {
-    const pool = await Pool.create({
+    const pool = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -378,7 +379,7 @@ test(
 test(
   "pool.release more than once does not raise exception",
   async () => {
-    const pool = await Pool.create({
+    const pool = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -399,7 +400,7 @@ test(
   async () => {
     // This method tests that a released connection proxy cannot be used to
     // do further queries
-    const pool = await Pool.create({
+    const pool = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -421,34 +422,13 @@ test(
 );
 
 test(
-  "a proxy is an instance of PoolConnectionProxy",
-  async () => {
-    const pool = await Pool.create({
-      connectOptions: getConnectOptions(),
-      minSize: 1,
-      maxSize: 1,
-    });
-
-    const proxy = await pool.acquire();
-
-    expect(proxy instanceof PoolConnectionProxy).toBe(true);
-
-    await pool.release(proxy);
-    await pool.close();
-  },
-  BiggerTimeout
-);
-
-test(
   "exception in onAcquire",
   async () => {
     let setupCalls = 0;
-    let lastProxy: PoolConnectionProxy | undefined;
-    const proxies: Array<PoolConnectionProxy | string> = [];
+    let lastProxy: Connection | undefined;
+    const proxies: Array<Connection | string> = [];
 
-    async function onAcquire(
-      connectionProxy: PoolConnectionProxy
-    ): Promise<void> {
+    async function onAcquire(connectionProxy: Connection): Promise<void> {
       setupCalls += 1;
       lastProxy = connectionProxy;
 
@@ -460,7 +440,7 @@ test(
       }
     }
 
-    const pool = await Pool.create({
+    const pool = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -478,7 +458,7 @@ test(
 
     // while handling the error, the pool closes the connection, so lastProxy
     // is now detached
-    expect(lastProxy.closed).toBe(true);
+    expect(lastProxy.isClosed()).toBe(true);
 
     // the next call to acquire works
     const proxy = await pool.acquire();
@@ -493,10 +473,10 @@ test(
   "exception in onConnect",
   async () => {
     let setupCalls = 0;
-    let lastConnection: AwaitConnection | undefined;
-    const connections: Array<AwaitConnection | string> = [];
+    let lastConnection: Connection | undefined;
+    const connections: Array<Connection | string> = [];
 
-    async function onConnect(connection: AwaitConnection): Promise<void> {
+    async function onConnect(connection: Connection): Promise<void> {
       setupCalls += 1;
       lastConnection = connection;
 
@@ -508,7 +488,7 @@ test(
       }
     }
 
-    const pool = await Pool.create({
+    const pool = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 0,
       maxSize: 1,
@@ -527,7 +507,9 @@ test(
     // the next call to acquire works
     const proxy = await pool.acquire();
 
-    expect(connections).toEqual(["error", getProxyConnection(proxy)]);
+    expect(connections.length).toEqual(2);
+    expect(connections[0]).toBe("error");
+    expect(connections[1]).toBe(getProxyConnection(proxy));
 
     expect(await lastConnection.queryOne("select 1")).toBe(1);
 
@@ -540,7 +522,7 @@ test(
 test(
   "no acquire deadlock",
   async (done) => {
-    const pool = await Pool.create({
+    const pool = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -593,12 +575,12 @@ test(
 
     async function connectionFactory(
       options?: ConnectConfig | null
-    ): Promise<AwaitConnection> {
+    ): Promise<Connection> {
       calls += 1;
       return await connect(options);
     }
 
-    const pool = await Pool.create({
+    const pool = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 3,
       maxSize: 5,
@@ -638,7 +620,7 @@ describe("pool connection methods", () => {
     times: number,
     method: (_pool: Pool) => Promise<number>
   ): Promise<void> {
-    const pool = await Pool.create({
+    const pool = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 5,
       maxSize: 10,
@@ -669,7 +651,7 @@ test(
     let connectionReleased = false;
     const flag = new Deferred<boolean>();
 
-    const pool = await Pool.create({
+    const pool = await createPool({
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -713,7 +695,7 @@ test(
 
     try {
       // @ts-ignore
-      const holder = proxy._holder;
+      const holder = proxy[getHolder]();
       expect(holder.connection).toBeNull();
     } finally {
       await pool.close();
@@ -737,98 +719,12 @@ test("createPool.queryOne", async () => {
   await pool.close();
 });
 
-test("callbacks", (done) => {
-  getPoolWithCallback(undefined, (err, pool) => {
-    if (err) {
-      throw err;
-    }
-
-    if (!pool) {
-      throw new Error("no connection pool object");
-    }
-
-    pool.execute("start transaction", (err1, _data1) => {
-      if (err1) {
-        throw err1;
-      }
-
-      pool.queryOne("select <int64>$i + 1", {i: 10}, (err2, data2) => {
-        if (err2) {
-          throw err2;
-        }
-
-        try {
-          expect(data2).toBe(11);
-        } finally {
-          pool.execute("rollback", (err3, _data3) => {
-            try {
-              if (err3) {
-                throw err3;
-              }
-            } finally {
-              pool.close(() => {
-                done();
-              });
-            }
-          });
-        }
-      });
-    });
-  });
-});
-
-test("callbacks acquire and release", (done) => {
-  getPoolWithCallback(undefined, (err, pool) => {
-    if (err) {
-      throw err;
-    }
-
-    if (!pool) {
-      throw new Error("no connection pool object");
-    }
-
-    pool.acquire((err1, proxy) => {
-      if (err1) {
-        throw err1;
-      }
-
-      if (!proxy) {
-        throw new Error("no connection proxy object");
-      }
-
-      const con = proxy?.connection;
-
-      if (!(con instanceof Connection)) {
-        throw new Error("Expected a connection for callback api");
-      }
-
-      con.queryOne("select <int64>$i + 1", {i: 10}, (err2, data1) => {
-        if (err2) {
-          throw err2;
-        }
-
-        expect(data1).toBe(11);
-
-        pool.release(proxy, (err3, _data2) => {
-          if (err3) {
-            throw err3;
-          }
-
-          pool.close(() => {
-            done();
-          });
-        });
-      });
-    });
-  });
-});
-
 describe("pool.getStats: includes the number of open connections", () => {
   each([0, 1, 5, 10, 20]).it(
     "when minSize is '%s'",
     async (minSize) => {
       const maxSize = minSize + 50;
-      const pool = await Pool.create({
+      const pool = await createPool({
         connectOptions: getConnectOptions(),
         minSize,
         maxSize,
@@ -853,13 +749,13 @@ describe("pool.getStats: includes queue length", () => {
       const minSize = 0;
       const maxSize = 10;
 
-      const pool = await Pool.create({
+      const pool = await createPool({
         connectOptions: getConnectOptions(),
         minSize,
         maxSize,
       });
 
-      const promises: Array<Promise<PoolConnectionProxy>> = [];
+      const promises: Array<Promise<Connection>> = [];
       // simulate consumers of the pool: for example functions that require
       // a connection to process a web request
       for (const _ of new Array(requests)) {

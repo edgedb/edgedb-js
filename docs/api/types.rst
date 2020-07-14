@@ -100,7 +100,7 @@ EdgeDB ``array``  maps onto the JavaScript ``Array``.
       });
 
       try {
-        let data = await conn.fetchOne("SELECT [1, 2, 3]");
+        let data = await conn.queryOne("SELECT [1, 2, 3]");
 
         // The result is an Array.
         assert(data instanceof Array);
@@ -134,7 +134,7 @@ object property or a link can be accessed through a corresponding object key:
       });
 
       try {
-        let data = await conn.fetchOne(`
+        let data = await conn.queryOne(`
           SELECT schema::Property {
               name,
               annotations: {name, @value}
@@ -177,7 +177,7 @@ A regular EdgeDB ``tuple`` becomes an ``Array`` in JavaScript.
       });
 
       try {
-        let data = await conn.fetchOne(`
+        let data = await conn.queryOne(`
           SELECT (1, 'a', [3])
         `);
 
@@ -212,7 +212,7 @@ where the elements are accessible either by their names or indexes.
       });
 
       try {
-        let data = await conn.fetchOne(`
+        let data = await conn.queryOne(`
           SELECT (a := 1, b := 'a', c := [3])
         `);
 
