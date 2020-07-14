@@ -324,7 +324,7 @@ Pool
         :js:class:`Set` instance.
 
         This method takes :ref:`optional query arguments
-        <edgedb-js-api-sync-optargs>`.
+        <edgedb-js-api-async-optargs>`.
 
         .. code-block:: js
 
