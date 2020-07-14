@@ -73,7 +73,7 @@ Transactions
 ------------
 
 Transactions are supported via execution of ``START TRANSACTION``, ``COMMIT``,
-and ``ROLLBACK`` EdgeDB commands. The :js:meth:`AwaitConnection.execute` can be
+and ``ROLLBACK`` EdgeDB commands. The :js:meth:`Connection.execute` can be
 used for this purpose.
 
 .. code-block:: js
