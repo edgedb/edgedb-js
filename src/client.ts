@@ -317,6 +317,12 @@ class ConnectionImpl implements Connection {
       result.push(codec.decode(frb));
       frb.finish();
     }
+
+    // @ts-ignore
+    if (this._propagateCodec) {
+      // @ts-ignore
+      result._codec = codec;
+    }
   }
 
   private _fallthrough(): void {
