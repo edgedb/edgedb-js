@@ -31,7 +31,6 @@ import {
   QueryArgs,
   Connection,
   IConnectionProxied,
-  NodeCallback,
   onConnectionClose,
 } from "./ifaces";
 import * as scram from "./scram";
@@ -67,31 +66,8 @@ export const proxyMap = new WeakMap<Connection, IConnectionProxied>();
 
 export default function connect(
   options?: ConnectConfig | null
-): Promise<Connection>;
-export default function connect(
-  options?: ConnectConfig | null,
-  callback?: NodeCallback<CallbackConnection> | null
-): void;
-export default function connect(
-  options?: ConnectConfig | null,
-  callback?: NodeCallback<CallbackConnection> | null
-): Promise<Connection> | void {
-  if (callback) {
-    process.emitWarning(
-      "calling `edgedb.connect()` with callback is deprecated. Use the " +
-        "promise-based API instead."
-    );
-
-    ConnectionImpl.connect(options)
-      .then((conn) => {
-        callback(null, new CallbackConnection(conn));
-      })
-      .catch((error) => {
-        callback(<Error>error, null);
-      });
-  } else {
-    return ConnectionImpl.connect(options);
-  }
+): Promise<Connection> {
+  return ConnectionImpl.connect(options);
 }
 
 class ConnectionImpl implements Connection {
@@ -1083,51 +1059,6 @@ class ConnectionImpl implements Connection {
     }
   }
 
-  /**
-   * @deprecated use the "query()" method instead
-   */
-  public fetchAll(query: string, args?: QueryArgs): Promise<Set> {
-    process.emitWarning(
-      '"fetchAll()" is deprecated, use the "query()" method instead',
-      "DeprecationWarning"
-    );
-    return this.query(query, args);
-  }
-
-  /**
-   * @deprecated use the "queryJSON()" method instead
-   */
-  public fetchAllJSON(query: string, args?: QueryArgs): Promise<string> {
-    process.emitWarning(
-      '"fetchAllJSON()" is deprecated, use the "queryJSON()" method instead',
-      "DeprecationWarning"
-    );
-    return this.queryJSON(query, args);
-  }
-
-  /**
-   * @deprecated use the "queryOne()" method instead
-   */
-  public fetchOne(query: string, args?: QueryArgs): Promise<any> {
-    process.emitWarning(
-      '"fetchOne()" is deprecated, use the "queryOne()" method instead',
-      "DeprecationWarning"
-    );
-    return this.queryOne(query, args);
-  }
-
-  /**
-   * @deprecated use the "queryOneJSON()" method instead
-   */
-  public fetchOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    process.emitWarning(
-      '"fetchOneJSON()" is deprecated, use the "queryOneJSON()" method ' +
-        "instead",
-      "DeprecationWarning"
-    );
-    return this.queryOneJSON(query, args);
-  }
-
   /** @internal */
   private static newSock(addr: string | [string, number]): net.Socket {
     if (typeof addr === "string") {
@@ -1191,145 +1122,10 @@ class ConnectionImpl implements Connection {
       return conn; // break the connection try loop
     }
 
-    // throw a generic or specific conneciton error
+    // throw a generic or specific connection error
     if (typeof err === "undefined") {
       err = new Error(errMsg);
     }
     throw err;
   }
 }
-
-export class CallbackConnectionBase<T extends Connection> {
-  /** @internal */
-  private _conn: T;
-
-  protected get conn(): T {
-    return this._conn;
-  }
-
-  public execute(query: string, callback: NodeCallback | null = null): void {
-    this._conn
-      .execute(query)
-      .then((value) => (callback != null ? callback(null, value) : null))
-      .catch((error) => (callback != null ? callback(error, null) : null));
-  }
-
-  public queryOne(
-    query: string,
-    args: QueryArgs,
-    callback: NodeCallback | null = null
-  ): void {
-    this._conn
-      .queryOne(query, args)
-      .then((value) => (callback != null ? callback(null, value) : null))
-      .catch((error) => (callback != null ? callback(error, null) : null));
-  }
-
-  public query(
-    query: string,
-    args: QueryArgs,
-    callback: NodeCallback<Set> | null = null
-  ): void {
-    this._conn
-      .query(query, args)
-      .then((value) => (callback != null ? callback(null, value) : null))
-      .catch((error) => (callback != null ? callback(error, null) : null));
-  }
-
-  public queryOneJSON(
-    query: string,
-    args: QueryArgs,
-    callback: NodeCallback<string> | null = null
-  ): void {
-    this._conn
-      .queryOneJSON(query, args)
-      .then((value) => (callback != null ? callback(null, value) : null))
-      .catch((error) => (callback != null ? callback(error, null) : null));
-  }
-
-  public queryJSON(
-    query: string,
-    args: QueryArgs,
-    callback: NodeCallback<string> | null = null
-  ): void {
-    this._conn
-      .queryJSON(query, args)
-      .then((value) => (callback ? callback(null, value) : null))
-      .catch((error) => (callback ? callback(error, null) : null));
-  }
-
-  /**
-   * @deprecated use the "query()" method instead
-   */
-  public fetchAll(
-    query: string,
-    args: QueryArgs,
-    callback: NodeCallback<Set> | null = null
-  ): void {
-    process.emitWarning(
-      '"fetchAll()" is deprecated, use the "query()" method instead',
-      "DeprecationWarning"
-    );
-    this.query(query, args, callback);
-  }
-
-  /**
-   * @deprecated use the "queryJSON()" method instead
-   */
-  public fetchAllJSON(
-    query: string,
-    args: QueryArgs,
-    callback: NodeCallback<string> | null = null
-  ): void {
-    process.emitWarning(
-      '"fetchAllJSON()" is deprecated, use the "queryJSON()" method instead',
-      "DeprecationWarning"
-    );
-    this.queryJSON(query, args, callback);
-  }
-
-  /**
-   * @deprecated use the "queryOne()" method instead
-   */
-  public fetchOne(
-    query: string,
-    args: QueryArgs,
-    callback: NodeCallback | null = null
-  ): void {
-    process.emitWarning(
-      '"fetchOne()" is deprecated, use the "queryOne()" method instead',
-      "DeprecationWarning"
-    );
-    this.queryOne(query, args, callback);
-  }
-
-  /**
-   * @deprecated use the "queryOneJSON()" method instead
-   */
-  public fetchOneJSON(
-    query: string,
-    args: QueryArgs,
-    callback: NodeCallback<string> | null = null
-  ): void {
-    process.emitWarning(
-      '"fetchOneJSON()" is deprecated, use the "queryOneJSON()" method ' +
-        "instead",
-      "DeprecationWarning"
-    );
-    this.queryOneJSON(query, args, callback);
-  }
-
-  public close(callback: NodeCallback<null> | null = null): void {
-    this._conn
-      .close()
-      .then((_value) => (callback ? callback(null, null) : null))
-      .catch((error) => (callback ? callback(error, null) : null));
-  }
-
-  /** @internal */
-  constructor(conn: T) {
-    this._conn = conn;
-  }
-}
-
-export class CallbackConnection extends CallbackConnectionBase<Connection> {}

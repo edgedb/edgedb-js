@@ -27,11 +27,6 @@ import {
 
 import {Set} from "./datatypes/set";
 
-export type NodeCallback<T = any> = (
-  err: Error | null,
-  data: T | null
-) => void;
-
 type QueryArgPrimitive =
   | number
   | string

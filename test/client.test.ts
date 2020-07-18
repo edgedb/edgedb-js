@@ -30,7 +30,7 @@ import {
   _introspect,
 } from "../src/index.node";
 import {LocalDate, Duration} from "../src/datatypes/datetime";
-import {asyncConnect, connectWithCallback} from "./testbase";
+import {asyncConnect} from "./testbase";
 
 test("query: basic scalars", async () => {
   const con = await asyncConnect();
@@ -1167,46 +1167,6 @@ test("execute", async () => {
   } finally {
     await con.close();
   }
-});
-
-test("callbacks", (done) => {
-  connectWithCallback(undefined, (err, con) => {
-    if (err) {
-      throw err;
-    }
-
-    if (!con) {
-      throw new Error("no connection object");
-    }
-
-    con.execute("start transaction", (err1, _data1) => {
-      if (err1) {
-        throw err1;
-      }
-
-      con.queryOne("select <int64>$i + 1", {i: 10}, (err2, data2) => {
-        if (err2) {
-          throw err2;
-        }
-
-        try {
-          expect(data2).toBe(11);
-        } finally {
-          con.execute("rollback", (err3, _data3) => {
-            try {
-              if (err3) {
-                throw err3;
-              }
-            } finally {
-              con.close(() => {
-                done();
-              });
-            }
-          });
-        }
-      });
-    });
-  });
 });
 
 test("fetch/optimistic cache invalidation", async () => {

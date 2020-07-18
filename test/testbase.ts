@@ -20,9 +20,8 @@ import * as process from "process";
 
 import connect from "../src/index.node";
 import {createPool} from "../src/index.node";
-import {CallbackConnection} from "../src/client";
 import {ConnectConfig} from "../src/con_utils";
-import {NodeCallback, Connection, Pool} from "../src/ifaces";
+import {Connection, Pool} from "../src/ifaces";
 
 function _getOpts(opts: ConnectConfig): ConnectConfig {
   const port = process.env._JEST_EDGEDB_PORT;
@@ -46,13 +45,6 @@ export function getConnectOptions(): ConnectConfig {
 
 export async function asyncConnect(opts?: ConnectConfig): Promise<Connection> {
   return await connect(_getOpts(opts ?? {}));
-}
-
-export function connectWithCallback(
-  opts?: ConnectConfig,
-  cb?: NodeCallback<CallbackConnection>
-): void {
-  return connect(_getOpts(opts ?? {}), cb);
 }
 
 export async function getPool(opts?: ConnectConfig): Promise<Pool> {
