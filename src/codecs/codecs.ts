@@ -98,8 +98,8 @@ registerScalarCodec("std::bytes", BytesCodec);
 
 registerScalarCodec("std::uuid", UUIDCodec);
 
-registerScalarCodec("std::local_date", LocalDateCodec);
-registerScalarCodec("std::local_time", LocalTimeCodec);
-registerScalarCodec("std::local_datetime", LocalDateTimeCodec);
+registerScalarCodec("cal::local_date", LocalDateCodec);
+registerScalarCodec("cal::local_time", LocalTimeCodec);
+registerScalarCodec("cal::local_datetime", LocalDateTimeCodec);
 registerScalarCodec("std::datetime", DateTimeCodec);
 registerScalarCodec("std::duration", DurationCodec);
