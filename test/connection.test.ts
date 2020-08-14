@@ -362,6 +362,39 @@ test("parseConnectArguments", () => {
         database: "user",
       },
     },
+    {
+      opts: {credentialsFile: "test/credentials1.json"},
+      result: {
+        addrs: [["localhost", 10702]],
+        user: "test3n",
+        database: "test3n",
+        password: "lZTBy1RVCfOpBAOwSCwIyBIR",
+      },
+    },
+    {
+      opts: {
+        credentialsFile: "test/credentials1.json",
+        database: "hello",
+      },
+      result: {
+        addrs: [["localhost", 10702]],
+        user: "test3n",
+        database: "hello",
+        password: "lZTBy1RVCfOpBAOwSCwIyBIR",
+      },
+    },
+    {
+      opts: {
+        dsn: "edgedb://user3@localhost:5555/abcdef",
+        // We don't even read credentials file if dns is present
+        credentialsFile: "non-existent.json",
+      },
+      result: {
+        addrs: [["localhost", 5555]],
+        user: "user3",
+        database: "abcdef",
+      },
+    },
   ];
 
   for (const testCase of TESTS) {

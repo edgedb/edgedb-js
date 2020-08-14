@@ -17,6 +17,7 @@
  */
 import * as path from "path";
 import * as url from "url";
+import {readCredentialsFile} from "./credentials";
 
 const EDGEDB_PORT = 5656;
 
@@ -34,6 +35,7 @@ export interface NormalizedConnectConfig {
 
 export interface ConnectConfig {
   dsn?: string;
+  credentialsFile?: string;
   host?: string | string[];
   port?: number | number[];
   user?: string;
@@ -79,6 +81,7 @@ export function parseConnectArguments(
 
 function parseConnectDsnAndArgs({
   dsn,
+  credentialsFile,
   host,
   port,
   user,
@@ -87,6 +90,15 @@ function parseConnectDsnAndArgs({
   admin,
   server_settings,
 }: ConnectConfig): NormalizedConnectConfig {
+  if (admin) {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `admin: true` parameter is deprecated and is scheduled " +
+        "to be removed. Admin socket should never be used in " +
+        "applications. Use command-line tool `edgedb` to setup " +
+        "proper credentials."
+    );
+  }
   if (dsn) {
     // Comma-separated hosts cannot be parsed correctly with url.parse, so if
     // we detect them, we need to replace the whole host before parsing. The
@@ -113,6 +125,15 @@ function parseConnectDsnAndArgs({
     const parsed = url.parse(dsn, true);
 
     if (typeof parsed.protocol === "string") {
+      if (parsed.protocol === "edgedbadmin:") {
+        // tslint:disable-next-line: no-console
+        console.warn(
+          "The `edgedbadmin` scheme is deprecated and is scheduled " +
+            "to be removed. Admin socket should never be used in " +
+            "applications. Use command-line tool `edgedb` to setup " +
+            "proper credentials."
+        );
+      }
       if (["edgedb:", "edgedbadmin:"].indexOf(parsed.protocol) === -1) {
         throw new Error(
           "invalid DSN: scheme is expected to be " +
@@ -186,7 +207,7 @@ function parseConnectDsnAndArgs({
       const parsedQ: {[key: string]: string} = {};
       // when given multiple params of the same name, keep the last one only
       for (const key of Object.keys(parsed.query)) {
-        const param = parsed.query[key];
+        const param = parsed.query[key]!;
         if (typeof param === "string") {
           parsedQ[key] = param;
         } else {
@@ -230,6 +251,19 @@ function parseConnectDsnAndArgs({
           server_settings = {...parsedQ, ...server_settings};
         }
       }
+    }
+  } else if (credentialsFile != null) {
+    const credentials = readCredentialsFile(credentialsFile);
+    port = credentials.port;
+    user = credentials.user;
+    if (host == null && "host" in credentials) {
+      host = credentials.host;
+    }
+    if (password == null && "password" in credentials) {
+      password = credentials.password;
+    }
+    if (database == null && "database" in credentials) {
+      database = credentials.database;
     }
   }
 
