@@ -280,6 +280,9 @@ function parseConnectDsnAndArgs({
       } else {
         host = ["/run/edgedb", "/var/run/edgedb"];
       }
+      if (!admin) {
+        host.push("localhost");
+      }
     }
   } else if (!(host instanceof Array)) {
     host = [host];

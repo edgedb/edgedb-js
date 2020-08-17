@@ -365,7 +365,11 @@ test("parseConnectArguments", () => {
     {
       opts: {credentialsFile: "test/credentials1.json"},
       result: {
-        addrs: [["localhost", 10702]],
+        addrs: [
+          "/run/edgedb/.s.EDGEDB.10702",
+          "/var/run/edgedb/.s.EDGEDB.10702",
+          ["localhost", 10702],
+        ],
         user: "test3n",
         database: "test3n",
         password: "lZTBy1RVCfOpBAOwSCwIyBIR",
@@ -377,7 +381,11 @@ test("parseConnectArguments", () => {
         database: "hello",
       },
       result: {
-        addrs: [["localhost", 10702]],
+        addrs: [
+          "/run/edgedb/.s.EDGEDB.10702",
+          "/var/run/edgedb/.s.EDGEDB.10702",
+          ["localhost", 10702],
+        ],
         user: "test3n",
         database: "hello",
         password: "lZTBy1RVCfOpBAOwSCwIyBIR",
