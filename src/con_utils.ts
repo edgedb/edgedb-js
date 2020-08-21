@@ -17,6 +17,7 @@
  */
 import * as path from "path";
 import * as url from "url";
+import * as os from "os";
 import {readCredentialsFile} from "./credentials";
 
 const EDGEDB_PORT = 5656;
@@ -81,7 +82,6 @@ export function parseConnectArguments(
 
 function parseConnectDsnAndArgs({
   dsn,
-  credentialsFile,
   host,
   port,
   user,
@@ -99,7 +99,7 @@ function parseConnectDsnAndArgs({
         "proper credentials."
     );
   }
-  if (dsn) {
+  if (dsn && /^edgedb(?:admin)?:\/\//.test(dsn)) {
     // Comma-separated hosts cannot be parsed correctly with url.parse, so if
     // we detect them, we need to replace the whole host before parsing. The
     // comma-separated host list can then be handled in the same way as if it
@@ -252,8 +252,14 @@ function parseConnectDsnAndArgs({
         }
       }
     }
-  } else if (credentialsFile != null) {
-    const credentials = readCredentialsFile(credentialsFile);
+  } else if (dsn) {
+    if (!/[A-Za-z_][A-Za-z_0-9]*/.test(dsn)) {
+        throw Error(`dsn "${dsn}" is neither a edgedb:// URI \
+            nor valid instance name`)
+    }
+    const credentials_file = path.join(os.homedir(),
+        ".edgedb", "credentials", dsn + ".json");
+    const credentials = readCredentialsFile(credentials_file);
     port = credentials.port;
     user = credentials.user;
     if (host == null && "host" in credentials) {
