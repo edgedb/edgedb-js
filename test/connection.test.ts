@@ -319,7 +319,9 @@ test("parseConnectArguments", () => {
 
     {
       opts: {dsn: "pq:///dbname?host=/unix_sock/test&user=spam"},
-      error: "invalid DSN",
+      error:
+        'dsn "pq:///dbname?host=/unix_sock/test&user=spam" ' +
+        "is neither a edgedb:// URI nor valid instance name",
     },
 
     {
@@ -360,47 +362,6 @@ test("parseConnectArguments", () => {
         addrs: [path.join("/tmp", ".s.EDGEDB.5656")],
         user: "user",
         database: "user",
-      },
-    },
-    {
-      opts: {credentialsFile: "test/credentials1.json"},
-      result: {
-        addrs: [
-          "/run/edgedb/.s.EDGEDB.10702",
-          "/var/run/edgedb/.s.EDGEDB.10702",
-          ["localhost", 10702],
-        ],
-        user: "test3n",
-        database: "test3n",
-        password: "lZTBy1RVCfOpBAOwSCwIyBIR",
-      },
-    },
-    {
-      opts: {
-        credentialsFile: "test/credentials1.json",
-        database: "hello",
-      },
-      result: {
-        addrs: [
-          "/run/edgedb/.s.EDGEDB.10702",
-          "/var/run/edgedb/.s.EDGEDB.10702",
-          ["localhost", 10702],
-        ],
-        user: "test3n",
-        database: "hello",
-        password: "lZTBy1RVCfOpBAOwSCwIyBIR",
-      },
-    },
-    {
-      opts: {
-        dsn: "edgedb://user3@localhost:5555/abcdef",
-        // We don't even read credentials file if dns is present
-        credentialsFile: "non-existent.json",
-      },
-      result: {
-        addrs: [["localhost", 5555]],
-        user: "user3",
-        database: "abcdef",
       },
     },
   ];

@@ -36,7 +36,6 @@ export interface NormalizedConnectConfig {
 
 export interface ConnectConfig {
   dsn?: string;
-  credentialsFile?: string;
   host?: string | string[];
   port?: number | number[];
   user?: string;
@@ -253,12 +252,17 @@ function parseConnectDsnAndArgs({
       }
     }
   } else if (dsn) {
-    if (!/[A-Za-z_][A-Za-z_0-9]*/.test(dsn)) {
-        throw Error(`dsn "${dsn}" is neither a edgedb:// URI \
-            nor valid instance name`)
+    if (!/^[A-Za-z_][A-Za-z_0-9]*$/.test(dsn)) {
+      throw Error(
+        `dsn "${dsn}" is neither a edgedb:// URI nor valid instance name`
+      );
     }
-    const credentials_file = path.join(os.homedir(),
-        ".edgedb", "credentials", dsn + ".json");
+    const credentials_file = path.join(
+      os.homedir(),
+      ".edgedb",
+      "credentials",
+      dsn + ".json"
+    );
     const credentials = readCredentialsFile(credentials_file);
     port = credentials.port;
     user = credentials.user;

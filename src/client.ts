@@ -65,9 +65,10 @@ enum TransactionStatus {
 export const proxyMap = new WeakMap<Connection, IConnectionProxied>();
 
 export default function connect(
+  dsn?: string,
   options?: ConnectConfig | null
 ): Promise<Connection> {
-  return ConnectionImpl.connect(options);
+  return ConnectionImpl.connect({...options, dsn});
 }
 
 class ConnectionImpl implements Connection {
