@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+import * as errors from "../src/errors";
 import each from "jest-each";
 import {Deferred, createPool, getHolder, unwrapConnection} from "../src/pool";
 import {getPool, getConnectOptions} from "./testbase";
@@ -790,4 +791,42 @@ describe("pool.getStats: includes queue length", () => {
     },
     BiggerTimeout
   );
+});
+
+test("pool transaction", async () => {
+  const typename = "PoolTransactionTest";
+  const pool = await getPool();
+
+  try {
+    await pool.execute(`
+      CREATE TYPE ${typename} {
+        CREATE REQUIRED PROPERTY name -> std::str;
+      };
+    `);
+
+    async function faulty(): Promise<void> {
+      await pool.transaction(async () => {
+        await pool.execute(`
+          INSERT ${typename} {
+            name := 'Test Transaction'
+          };
+        `);
+
+        await pool.execute("SELECT 1 / 0;");
+      });
+    }
+
+    await expect(faulty()).rejects.toThrow(
+      new errors.DivisionByZeroError().message
+    );
+
+    const items = await pool.query(
+      `select ${typename} {name} filter .name = 'Test Transaction'`
+    );
+
+    expect(items).toHaveLength(0);
+  } finally {
+    await pool.execute(`DROP TYPE ${typename};`);
+    await pool.close();
+  }
 });

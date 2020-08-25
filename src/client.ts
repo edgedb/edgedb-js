@@ -32,6 +32,7 @@ import {
   Connection,
   IConnectionProxied,
   onConnectionClose,
+  TransactionOptions,
 } from "./ifaces";
 import * as scram from "./scram";
 
@@ -40,6 +41,7 @@ import {
   ConnectConfig,
   NormalizedConnectConfig,
 } from "./con_utils";
+import {Transaction} from "./transaction";
 
 const PROTO_VER_MAJOR = 0;
 const PROTO_VER_MINOR = 8;
@@ -1020,6 +1022,24 @@ class ConnectionImpl implements Connection {
     } finally {
       this._leaveOp();
     }
+  }
+
+  async transaction<T>(
+    action: () => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T> {
+    let result: T;
+    const transaction = new Transaction(this, options);
+    await transaction.start();
+    try {
+      result = await action();
+      await transaction.commit();
+    } catch (err) {
+      await transaction.rollback();
+
+      throw err;
+    }
+    return result;
   }
 
   private _abort(): void {

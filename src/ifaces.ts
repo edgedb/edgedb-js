@@ -44,12 +44,27 @@ type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
 
 export type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
 
+export enum IsolationLevel {
+  SERIALIZABLE = "serializable",
+  REPEATABLE_READ = "repeatable_read",
+}
+
+export interface TransactionOptions {
+  deferrable?: boolean;
+  isolation?: IsolationLevel;
+  readonly?: boolean;
+}
+
 export interface Connection {
   execute(query: string): Promise<void>;
   query(query: string, args?: QueryArgs): Promise<Set>;
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
   queryOne(query: string, args?: QueryArgs): Promise<any>;
   queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
+  transaction<T>(
+    action: () => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T>;
   close(): Promise<void>;
   isClosed(): boolean;
 }

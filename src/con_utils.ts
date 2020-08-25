@@ -190,7 +190,7 @@ function parseConnectDsnAndArgs({
         if (typeof param === "string") {
           parsedQ[key] = param;
         } else {
-          parsedQ[key] = param.pop() as string;
+          parsedQ[key] = param ? (param.pop() as string) : "";
         }
       }
 
