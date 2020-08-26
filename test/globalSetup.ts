@@ -10,10 +10,13 @@ export default async () => {
   console.log("\nStarting EdgeDB test cluster...");
 
   let ok: ((_: [string, number]) => void) | null = null;
+  let err: ((_: string) => void) | null = null;
   let stdoutData: string = "";
+  let stderrData: string = "";
 
-  const done = new Promise<[string, number]>((resolve, _reject) => {
+  const done = new Promise<[string, number]>((resolve, reject) => {
     ok = resolve;
+    err = reject;
   });
 
   let srvcmd = "edgedb-server";
@@ -37,10 +40,29 @@ export default async () => {
       process.env._JEST_EDGEDB_PORT = runtimeData.port;
       process.env._JEST_EDGEDB_HOST = runtimeData.runstate_dir;
       if (ok) {
+        err = null;
         ok([runtimeData.runstate_dir, parseInt(runtimeData.port, 10)]);
       } else {
         throw new Error("'done' promise isn't initialized");
       }
+    }
+  });
+  proc.stderr.on("data", (data) => {
+    // only collect until we detect the start
+    if (err) {
+      stderrData += data;
+    }
+  });
+  proc.on("exit", (code, signal) => {
+    if (err) {
+      // only catch early exit
+      console.log("--- EdgeDB output start ---");
+      console.log(stdoutData);
+      console.log(stderrData);
+      console.log("--- EdgeDB output end ---");
+      err(
+        `EdgeDB exited prematurely with ` + `code ${code} or signal ${signal}`
+      );
     }
   });
 
