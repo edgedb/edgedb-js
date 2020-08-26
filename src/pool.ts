@@ -702,18 +702,12 @@ class PoolImpl implements Pool {
     action: () => Promise<T>,
     options?: TransactionOptions
   ): Promise<T> {
-    let result: T;
-    const transaction = new Transaction(this, options);
-    await transaction.start();
-    try {
-      result = await action();
-      await transaction.commit();
-    } catch (err) {
-      await transaction.rollback();
-
-      throw err;
-    }
-    return result;
+    throw new errors.InterfaceError(
+      "Operation not supported. Use a `transaction` on a specific db " +
+        "connection. For example: pool.run((con) => {" +
+        "con.transaction(() => {...})" +
+        "})"
+    );
   }
 
   async execute(query: string): Promise<void> {

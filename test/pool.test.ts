@@ -793,40 +793,25 @@ describe("pool.getStats: includes queue length", () => {
   );
 });
 
-test("pool transaction", async () => {
-  const typename = "PoolTransactionTest";
+test("pool transaction throws", async () => {
   const pool = await getPool();
 
   try {
-    await pool.execute(`
-      CREATE TYPE ${typename} {
-        CREATE REQUIRED PROPERTY name -> std::str;
-      };
-    `);
-
     async function faulty(): Promise<void> {
       await pool.transaction(async () => {
-        await pool.execute(`
-          INSERT ${typename} {
-            name := 'Test Transaction'
-          };
-        `);
-
-        await pool.execute("SELECT 1 / 0;");
+        //
       });
     }
 
-    await expect(faulty()).rejects.toThrow(
-      new errors.DivisionByZeroError().message
+    await expect(faulty()).rejects.toThrowError(
+      new errors.InterfaceError(
+        "Operation not supported. Use a `transaction` on a specific db " +
+          "connection. For example: pool.run((con) => {" +
+          "con.transaction(() => {...})" +
+          "})"
+      )
     );
-
-    const items = await pool.query(
-      `select ${typename} {name} filter .name = 'Test Transaction'`
-    );
-
-    expect(items).toHaveLength(0);
   } finally {
-    await pool.execute(`DROP TYPE ${typename};`);
     await pool.close();
   }
 });
