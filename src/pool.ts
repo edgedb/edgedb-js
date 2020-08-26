@@ -30,7 +30,9 @@ import {
   Pool,
   IPoolStats,
   onConnectionClose,
+  TransactionOptions,
 } from "./ifaces";
+import {Transaction} from "./transaction";
 
 export class Deferred<T> {
   private _promise: Promise<T>;
@@ -303,6 +305,13 @@ export class PoolConnectionProxy implements IConnectionProxied {
 
   async execute(query: string): Promise<void> {
     await this[unwrapConnection]().execute(query);
+  }
+
+  async transaction<T>(
+    action: () => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T> {
+    return await this[unwrapConnection]().transaction(action, options);
   }
 
   async query(query: string, args?: QueryArgs): Promise<Set> {
@@ -687,6 +696,18 @@ class PoolImpl implements Pool {
     } finally {
       await this.release(proxy);
     }
+  }
+
+  async transaction<T>(
+    action: () => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T> {
+    throw new errors.InterfaceError(
+      "Operation not supported. Use a `transaction` on a specific db " +
+        "connection. For example: pool.run((con) => {" +
+        "con.transaction(() => {...})" +
+        "})"
+    );
   }
 
   async execute(query: string): Promise<void> {

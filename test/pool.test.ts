@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+import * as errors from "../src/errors";
 import each from "jest-each";
 import {Deferred, createPool, getHolder, unwrapConnection} from "../src/pool";
 import {getPool, getConnectOptions} from "./testbase";
@@ -790,4 +791,27 @@ describe("pool.getStats: includes queue length", () => {
     },
     BiggerTimeout
   );
+});
+
+test("pool transaction throws", async () => {
+  const pool = await getPool();
+
+  try {
+    async function faulty(): Promise<void> {
+      await pool.transaction(async () => {
+        //
+      });
+    }
+
+    await expect(faulty()).rejects.toThrowError(
+      new errors.InterfaceError(
+        "Operation not supported. Use a `transaction` on a specific db " +
+          "connection. For example: pool.run((con) => {" +
+          "con.transaction(() => {...})" +
+          "})"
+      )
+    );
+  } finally {
+    await pool.close();
+  }
 });

@@ -210,6 +210,57 @@ Connection
             the client side into a more appropriate type, such as
             BigInt_.
 
+    .. js:method:: transaction(action: func, options?: TransactionOptions)
+
+        Executes a given action in transaction.
+
+        :param action: Function to be executed in transaction.
+
+        :param options: Transaction parameters object.
+
+        :param boolean|undefined options.deferrable:
+            If specified, enables DEFERRABLE or NOT DEFERRABLE option
+            for the transaction.
+
+        :param boolean|undefined options.readonly:
+            If specified, enables either READ ONLY or READ WRITE option
+            for the transaction.
+
+        :param IsolationLevel|undefined options.isolation:
+            If specified, enables either REPEATABLE READ or SERIALIZABLE
+            isolation level for the transaction.
+
+        If an exception occurs during the execution of the given
+        function argument, the transaction is automatically rolled back
+        and the exception is rethrown. Otherwise, the transaction is committed.
+
+        Example:
+
+        .. code-block:: js
+
+            await con.transaction(async () => {
+                await con.execute(`
+                    INSERT Example {
+                        name := 'Test Transaction 1'
+                    };
+                `);
+                await con.execute("SELECT 1 / 0;");
+            });
+
+            // nested transactions are supported
+            // and handle save points
+            await con.transaction(async () => {
+
+                // nested transaction
+                await con.transaction(async () => {
+                    await con.execute(`
+                        INSERT Example {
+                            name := 'Test Transaction 2'
+                        };
+                    `);
+                });
+            });
+
     .. js:method:: close()
 
         Close the connection gracefully.
