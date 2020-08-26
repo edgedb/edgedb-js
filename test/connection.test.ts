@@ -319,7 +319,9 @@ test("parseConnectArguments", () => {
 
     {
       opts: {dsn: "pq:///dbname?host=/unix_sock/test&user=spam"},
-      error: "invalid DSN",
+      error:
+        'dsn "pq:///dbname?host=/unix_sock/test&user=spam" ' +
+        "is neither a edgedb:// URI nor valid instance name",
     },
 
     {

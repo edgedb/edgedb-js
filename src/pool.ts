@@ -387,7 +387,10 @@ export interface PoolOptions {
   onAcquire?: (proxy: Connection) => Promise<void>;
   onRelease?: (proxy: Connection) => Promise<void>;
   onConnect?: (connection: Connection) => Promise<void>;
-  connectionFactory?: (options?: ConnectConfig | null) => Promise<Connection>;
+  connectionFactory?: (
+    dsn: string | undefined,
+    options?: ConnectConfig | null
+  ) => Promise<Connection>;
 }
 
 export class PoolStats implements IPoolStats {
@@ -439,12 +442,13 @@ class PoolImpl implements Pool {
   private _onRelease?: (proxy: Connection) => Promise<void>;
   private _onConnect?: (connection: Connection) => Promise<void>;
   private _connectionFactory: (
+    dsn: string | undefined,
     options?: ConnectConfig | null
   ) => Promise<Connection>;
   private _generation: number;
-  private _connectOptions?: ConnectConfig | null;
+  private _connectOptions: ConnectConfig;
 
-  protected constructor(options: PoolOptions) {
+  protected constructor(dsn?: string, options: PoolOptions = {}) {
     const {onAcquire, onRelease, onConnect, connectOptions} = options;
     const minSize =
       options.minSize === undefined ? DefaultMinPoolSize : options.minSize;
@@ -465,7 +469,7 @@ class PoolImpl implements Pool {
     this._closing = false;
     this._closed = false;
     this._generation = 0;
-    this._connectOptions = connectOptions;
+    this._connectOptions = {...connectOptions, dsn};
     this._connectionFactory = options.connectionFactory ?? connect;
   }
 
@@ -493,8 +497,11 @@ class PoolImpl implements Pool {
   }
 
   /** @internal */
-  static async create(options?: PoolOptions | null): Promise<PoolImpl> {
-    const pool = new PoolImpl(options || {});
+  static async create(
+    dsn?: string,
+    options?: PoolOptions | null
+  ): Promise<PoolImpl> {
+    const pool = new PoolImpl(dsn, options || {});
     await pool.initialize();
     return pool;
   }
@@ -589,7 +596,10 @@ class PoolImpl implements Pool {
 
   /** @internal */
   async getNewConnection(): Promise<Connection> {
-    const connection = await this._connectionFactory(this._connectOptions);
+    const connection = await this._connectionFactory(
+      this._connectOptions.dsn,
+      this._connectOptions
+    );
 
     if (this._onConnect) {
       try {
@@ -812,6 +822,20 @@ class PoolImpl implements Pool {
   }
 }
 
-export function createPool(options?: PoolOptions | null): Promise<Pool> {
-  return PoolImpl.create(options);
+export function createPool(
+  dsn?: string | PoolOptions | null,
+  options?: PoolOptions | null
+): Promise<Pool> {
+  if (typeof dsn === "string") {
+    return PoolImpl.create(dsn, options);
+  } else {
+    if (dsn != null) {
+      console.warn(
+        "`options` as the first argument to `edgedb.connect` is " +
+          "deprecated, use " +
+          "`edgedb.connect('instance_name_or_dsn', options)`"
+      );
+    }
+    return PoolImpl.create(undefined, {...dsn, ...options});
+  }
 }

@@ -59,7 +59,7 @@ describe("pool.initialize: creates minSize count of connections", () => {
       }
 
       const maxSize = minSize + 50;
-      const pool = await createPool({
+      const pool = await createPool(undefined, {
         connectOptions: getConnectOptions(),
         minSize,
         maxSize,
@@ -159,7 +159,7 @@ describe("pool concurrency 1", () => {
   each([1, 5, 10, 20, 100]).it(
     "when concurrency is '%s'",
     async (concurrency) => {
-      const pool = await createPool({
+      const pool = await createPool(undefined, {
         connectOptions: getConnectOptions(),
         minSize: 5,
         maxSize: 10,
@@ -185,7 +185,7 @@ describe("pool concurrency 2", () => {
   each([1, 3, 5, 10, 20, 100]).it(
     "when concurrency is '%s'",
     async (concurrency) => {
-      const pool = await createPool({
+      const pool = await createPool(undefined, {
         connectOptions: getConnectOptions(),
         minSize: 5,
         maxSize: 5,
@@ -211,7 +211,7 @@ describe("pool concurrency 3", () => {
   each([1, 3, 5, 10, 20, 100]).it(
     "when concurrency is '%s'",
     async (concurrency) => {
-      const pool = await createPool({
+      const pool = await createPool(undefined, {
         connectOptions: getConnectOptions(),
         minSize: 5,
         maxSize: 5,
@@ -241,7 +241,7 @@ test("pool.onAcquire callback", async () => {
     deferred.setResult(connection);
   }
 
-  const pool = await createPool({
+  const pool = await createPool(undefined, {
     connectOptions: getConnectOptions(),
     minSize: 5,
     maxSize: 5,
@@ -264,7 +264,7 @@ test("pool.onRelease callback", async () => {
     deferred.setResult(connection);
   }
 
-  const pool = await createPool({
+  const pool = await createPool(undefined, {
     connectOptions: getConnectOptions(),
     minSize: 5,
     maxSize: 5,
@@ -311,7 +311,7 @@ test(
       await pool.release(proxy);
     }
 
-    const _pool = await createPool({
+    const _pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 2,
       maxSize: 5,
@@ -331,12 +331,12 @@ test(
 test(
   "pool.release raises for foreign connection proxy",
   async () => {
-    const pool1 = await createPool({
+    const pool1 = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
     });
-    const pool2 = await createPool({
+    const pool2 = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -361,7 +361,7 @@ test(
 test(
   "pool.release more than once does not raise exception",
   async () => {
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -380,7 +380,7 @@ test(
 test(
   "pool.release more than once does not raise exception",
   async () => {
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -401,7 +401,7 @@ test(
   async () => {
     // This method tests that a released connection proxy cannot be used to
     // do further queries
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -441,7 +441,7 @@ test(
       }
     }
 
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -489,7 +489,7 @@ test(
       }
     }
 
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 0,
       maxSize: 1,
@@ -523,7 +523,7 @@ test(
 test(
   "no acquire deadlock",
   async (done) => {
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -554,7 +554,7 @@ test(
   async () => {
     let called = false;
 
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -575,13 +575,14 @@ test(
     let calls = 0;
 
     async function connectionFactory(
+      dsn: string | undefined,
       options?: ConnectConfig | null
     ): Promise<Connection> {
       calls += 1;
-      return await connect(options);
+      return await connect(dsn, options);
     }
 
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 3,
       maxSize: 5,
@@ -621,7 +622,7 @@ describe("pool connection methods", () => {
     times: number,
     method: (_pool: Pool) => Promise<number>
   ): Promise<void> {
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 5,
       maxSize: 10,
@@ -652,7 +653,7 @@ test(
     let connectionReleased = false;
     const flag = new Deferred<boolean>();
 
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -680,7 +681,7 @@ test(
 test(
   "pool expire connections",
   async () => {
-    const pool = await createPool({
+    const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
       minSize: 1,
       maxSize: 1,
@@ -706,7 +707,7 @@ test(
 );
 
 test("createPool.queryOne", async () => {
-  const pool = await createPool({
+  const pool = await createPool(undefined, {
     connectOptions: getConnectOptions(),
   });
   let res;
@@ -725,7 +726,7 @@ describe("pool.getStats: includes the number of open connections", () => {
     "when minSize is '%s'",
     async (minSize) => {
       const maxSize = minSize + 50;
-      const pool = await createPool({
+      const pool = await createPool(undefined, {
         connectOptions: getConnectOptions(),
         minSize,
         maxSize,
@@ -750,7 +751,7 @@ describe("pool.getStats: includes queue length", () => {
       const minSize = 0;
       const maxSize = 10;
 
-      const pool = await createPool({
+      const pool = await createPool(undefined, {
         connectOptions: getConnectOptions(),
         minSize,
         maxSize,

@@ -18,9 +18,7 @@ run queries.
     async function main() {
       // Establish a connection to an existing database
       // named "test" as an "edgedb" user.
-      const conn = await edgedb.connect({
-        dsn: "edgedb://edgedb@localhost/test"
-      });
+      const conn = await edgedb.connect("edgedb://edgedb@localhost/test");
 
       try {
         // Create a User object type.
@@ -113,12 +111,7 @@ a certain number of open connections and borrow them when needed.
 
     async function main() {
       // Create a connection pool to an existing database
-      const pool = await edgedb.createPool({
-        connectOptions: {
-          user: "edgedb",
-          host: "127.0.0.1"
-        },
-      });
+      const pool = await edgedb.createPool("edgedb://edgedb@localhost/test");
 
       try {
         // Create a User object type.

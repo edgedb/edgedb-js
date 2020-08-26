@@ -48,7 +48,7 @@ export default async () => {
   global.edgedbProc = proc;
 
   const [host, port] = await done;
-  const con = await connect({
+  const con = await connect(undefined, {
     host,
     port,
     user: "edgedb",

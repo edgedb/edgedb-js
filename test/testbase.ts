@@ -44,11 +44,11 @@ export function getConnectOptions(): ConnectConfig {
 }
 
 export async function asyncConnect(opts?: ConnectConfig): Promise<Connection> {
-  return await connect(_getOpts(opts ?? {}));
+  return await connect(undefined, _getOpts(opts ?? {}));
 }
 
 export async function getPool(opts?: ConnectConfig): Promise<Pool> {
-  return await createPool({
+  return await createPool(undefined, {
     connectOptions: _getOpts(opts ?? {}),
   });
 }

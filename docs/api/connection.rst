@@ -9,18 +9,20 @@ API
 Connection
 ==========
 
-.. js:function:: connect(options)
+.. js:function:: connect(dsn, options)
 
     Establish a connection to an EdgeDB server.
 
-    :param options: Connection parameters object.
+    :param string dsn:
+        If this parameter does not start with ``edgedb://`` then this is
+        a :ref:`name of an instance <edgedb-instances>`.
 
-    :param string options.dsn:
-        Connection arguments specified using as a single string in the
-        connection URI format:
+        Otherwise it specifies a single string in the connection URI format:
         ``edgedb://user:password@host:port/database?option=value``.
         The following options are recognized: host, port,
         user, database, password.
+
+    :param options: Connection parameters object.
 
     :param string|string[] options.host:
         Database host address as one of the following:
@@ -108,6 +110,20 @@ Connection
         }
 
         main();
+
+    .. note::
+
+       For compatibility this function also supports passing options as
+       the first argument:
+
+       .. code-block:: js
+
+          await connect({host: 'localhost', port: 5656})
+          // or
+          await connect({dsn: 'edgedb://localhost'})
+
+       But this form is deprecated and will be removed in the future.
+
 
 .. js:class:: Connection
 
@@ -275,9 +291,23 @@ Connection
 Pool
 ====
 
-.. js:function:: createPool(options)
+.. js:function:: createPool(dsn, options)
 
     Create a connection pool to an EdgeDB server.
+
+        If this parameter does not start with ``edgedb://`` then this is
+        a :ref:`name of an instance <edgedb-instances>`.
+
+        Otherwise it specifies a single string in the connection URI format:
+
+    :param string dsn:
+        If this parameter does not start with ``edgedb://`` then this is
+        a :ref:`name of an instance <edgedb-instances>`.
+
+        Otherwise it specifies a single string in the connection URI format:
+        ``edgedb://user:password@host:port/database?option=value``.
+        The following options are recognized: host, port,
+        user, database, password.
 
     :param options: Connection pool parameters object.
 
@@ -314,6 +344,19 @@ Pool
     :returns:
         Returns a ``Promise`` of an :js:class:`Pool` is returned.
 
+    .. note::
+
+       For compatibility this function also supports passing options as
+       the first argument:
+
+       .. code-block:: js
+
+          await createPool({
+            maxSize: 10,
+            connectOptions: {dsn: 'edgedb://localhost'},
+          })
+
+       But this form is deprecated and will be removed in the future.
 
 .. js:class:: Pool
 
@@ -329,12 +372,9 @@ Pool
         const edgedb = require("edgedb");
 
         async function main() {
-            const pool = await edgedb.createPool({
-                connectOptions: {
-                    user: "edgedb",
-                    host: "127.0.0.1",
-                },
-            });
+            const pool = await edgedb.createPool(
+                "edgedb://edgedb@localhost/test"
+            );
 
             try {
                 let data = await pool.queryOne("SELECT [1, 2, 3]");
