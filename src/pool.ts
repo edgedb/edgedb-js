@@ -830,6 +830,7 @@ export function createPool(
     return PoolImpl.create(dsn, options);
   } else {
     if (dsn != null) {
+      // tslint:disable-next-line: no-console
       console.warn(
         "`options` as the first argument to `edgedb.connect` is " +
           "deprecated, use " +

@@ -74,6 +74,7 @@ export default function connect(
     return ConnectionImpl.connect({...options, dsn});
   } else {
     if (dsn != null) {
+      // tslint:disable-next-line: no-console
       console.warn(
         "`options` as the first argument to `edgedb.connect` is " +
           "deprecated, use " +
