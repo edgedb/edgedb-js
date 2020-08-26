@@ -111,6 +111,20 @@ Connection
 
         main();
 
+    .. note::
+
+       For compatibility this function also supports passing options as
+       the first argument:
+
+       .. code-block:: js
+
+          await connect({host: 'localhost', port: 5656})
+          // or
+          await connect({dsn: 'edgedb://localhost'})
+
+       But this form is deprecated and will be removed in the future.
+
+
 .. js:class:: Connection
 
     A representation of a database session.
@@ -279,6 +293,19 @@ Pool
     :returns:
         Returns a ``Promise`` of an :js:class:`Pool` is returned.
 
+    .. note::
+
+       For compatibility this function also supports passing options as
+       the first argument:
+
+       .. code-block:: js
+
+          await createPool({
+            maxSize: 10,
+            connectOptions: {dsn: 'edgedb://localhost'},
+          })
+
+       But this form is deprecated and will be removed in the future.
 
 .. js:class:: Pool
 
