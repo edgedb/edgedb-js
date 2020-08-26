@@ -237,6 +237,7 @@ Connection
         Example:
 
         .. code-block:: js
+
             await con.transaction(async () => {
                 await con.execute(`
                     INSERT Example {
