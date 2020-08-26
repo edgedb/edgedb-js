@@ -802,8 +802,19 @@ class PoolImpl implements Pool {
 }
 
 export function createPool(
-  dsn?: string,
+  dsn?: string | PoolOptions | null,
   options?: PoolOptions | null
 ): Promise<Pool> {
-  return PoolImpl.create(dsn, options);
+  if (typeof dsn === "string") {
+    return PoolImpl.create(dsn, options);
+  } else {
+    if (dsn != null) {
+      console.warn(
+        "`options` as the first argument to `edgedb.connect` is " +
+          "deprecated, use " +
+          "`edgedb.connect('instance_name_or_dsn', options)`"
+      );
+    }
+    return PoolImpl.create(undefined, {...dsn, ...options});
+  }
 }

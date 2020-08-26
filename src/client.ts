@@ -65,10 +65,21 @@ enum TransactionStatus {
 export const proxyMap = new WeakMap<Connection, IConnectionProxied>();
 
 export default function connect(
-  dsn?: string,
+  dsn?: string | ConnectConfig | null,
   options?: ConnectConfig | null
 ): Promise<Connection> {
-  return ConnectionImpl.connect({...options, dsn});
+  if (typeof dsn === "string") {
+    return ConnectionImpl.connect({...options, dsn});
+  } else {
+    if (dsn != null) {
+      console.warn(
+        "`options` as the first argument to `edgedb.connect` is " +
+          "deprecated, use " +
+          "`edgedb.connect('instance_name_or_dsn', options)`"
+      );
+    }
+    return ConnectionImpl.connect({...dsn, ...options});
+  }
 }
 
 class ConnectionImpl implements Connection {
