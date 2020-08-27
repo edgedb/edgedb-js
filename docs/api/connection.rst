@@ -294,7 +294,6 @@ Pool
 .. js:function:: createPool(dsn, options)
 
     Create a connection pool to an EdgeDB server.
-
         If this parameter does not start with ``edgedb://`` then this is
         a :ref:`name of an instance <edgedb-instances>`.
 
