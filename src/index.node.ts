@@ -20,6 +20,8 @@ import _connect from "./client";
 export const connect = _connect;
 export default connect;
 
+export {RawConnection as _RawConnection} from "./client";
+
 export {createPool} from "./pool";
 
 export {Connection, Pool} from "./ifaces";
