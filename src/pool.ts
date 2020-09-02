@@ -352,7 +352,6 @@ export class PoolConnectionProxy implements IConnectionProxied {
     return conn === null || conn.isClosed();
   }
 
-  /** @internal */
   [onConnectionClose](): void {
     this[holderAttr]._releaseOnClose();
   }
