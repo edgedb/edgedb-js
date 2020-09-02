@@ -20,7 +20,12 @@ import * as net from "net";
 
 import char, * as chars from "./chars";
 import {resolveErrorCode} from "./errors/resolve";
-import {ReadMessageBuffer, WriteMessageBuffer, ReadBuffer} from "./buffer";
+import {
+  ReadMessageBuffer,
+  WriteMessageBuffer,
+  ReadBuffer,
+  WriteBuffer,
+} from "./buffer";
 import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {Set} from "./datatypes/set";
@@ -70,19 +75,7 @@ export default function connect(
   dsn?: string | ConnectConfig | null,
   options?: ConnectConfig | null
 ): Promise<Connection> {
-  if (typeof dsn === "string") {
-    return ConnectionImpl.connect({...options, dsn});
-  } else {
-    if (dsn != null) {
-      // tslint:disable-next-line: no-console
-      console.warn(
-        "`options` as the first argument to `edgedb.connect` is " +
-          "deprecated, use " +
-          "`edgedb.connect('instance_name_or_dsn', options)`"
-      );
-    }
-    return ConnectionImpl.connect({...dsn, ...options});
-  }
+  return ConnectionImpl.connect(dsn, options);
 }
 
 class ConnectionImpl implements Connection {
@@ -112,7 +105,7 @@ class ConnectionImpl implements Connection {
   private opInProgress: boolean = false;
 
   /** @internal */
-  private constructor(sock: net.Socket, config: NormalizedConnectConfig) {
+  protected constructor(sock: net.Socket, config: NormalizedConnectConfig) {
     this.buffer = new ReadMessageBuffer();
 
     this.codecsRegistry = new CodecsRegistry();
@@ -232,7 +225,13 @@ class ConnectionImpl implements Connection {
     return ret;
   }
 
-  private _parseDescribeTypeMessage(): [number, ICodec, ICodec] {
+  private _parseDescribeTypeMessage(): [
+    number,
+    ICodec,
+    ICodec,
+    Buffer,
+    Buffer
+  ] {
     this._rejectHeaders();
 
     const cardinality: char = this.buffer.readChar();
@@ -255,7 +254,7 @@ class ConnectionImpl implements Connection {
       outCodec = this.codecsRegistry.buildCodec(outTypeData);
     }
 
-    return [cardinality, inCodec, outCodec];
+    return [cardinality, inCodec, outCodec, inTypeData, outTypeData];
   }
 
   private _parseCommandCompleteMessage(): string {
@@ -297,22 +296,25 @@ class ConnectionImpl implements Connection {
     this.buffer.finishMessage();
   }
 
-  private _parseDataMessages(codec: ICodec, result: Set): void {
+  private _parseDataMessages(codec: ICodec, result: Set | WriteBuffer): void {
     const frb = ReadBuffer.alloc();
     const $D = chars.$D;
     const buffer = this.buffer;
 
-    while (buffer.takeMessageType($D)) {
-      buffer.consumeMessageInto(frb);
-      frb.discard(6);
-      result.push(codec.decode(frb));
-      frb.finish();
-    }
-
-    // @ts-ignore
-    if (this._propagateCodec) {
-      // @ts-ignore
-      result._codec = codec;
+    if (Array.isArray(result)) {
+      while (buffer.takeMessageType($D)) {
+        buffer.consumeMessageInto(frb);
+        frb.discard(6);
+        result.push(codec.decode(frb));
+        frb.finish();
+      }
+    } else {
+      while (buffer.takeMessageType($D)) {
+        const msg = buffer.consumeMessage();
+        result.writeChar($D);
+        result.writeInt32(msg.length + 4);
+        result.writeBuffer(msg);
+      }
     }
   }
 
@@ -548,11 +550,12 @@ class ConnectionImpl implements Connection {
     }
   }
 
-  private async _parse(
+  protected async _parse(
     query: string,
     asJson: boolean,
-    expectOne: boolean
-  ): Promise<[number, ICodec, ICodec]> {
+    expectOne: boolean,
+    alwaysDescribe: boolean
+  ): Promise<[number, ICodec, ICodec, Buffer | null, Buffer | null]> {
     const wb = new WriteMessageBuffer();
 
     wb.beginMessage(chars.$P)
@@ -574,6 +577,8 @@ class ConnectionImpl implements Connection {
     let outCodec: ICodec | null;
     let parsing = true;
     let error: Error | null = null;
+    let inCodecData: Buffer | null = null;
+    let outCodecData: Buffer | null = null;
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -619,7 +624,7 @@ class ConnectionImpl implements Connection {
     inCodec = this.codecsRegistry.getCodec(inTypeId);
     outCodec = this.codecsRegistry.getCodec(outTypeId);
 
-    if (inCodec == null || outCodec == null) {
+    if (inCodec == null || outCodec == null || alwaysDescribe) {
       wb.reset();
       wb.beginMessage(chars.$D)
         .writeInt16(0) // no headers
@@ -645,6 +650,8 @@ class ConnectionImpl implements Connection {
                 cardinality,
                 inCodec,
                 outCodec,
+                inCodecData,
+                outCodecData,
               ] = this._parseDescribeTypeMessage();
             } catch (e) {
               error = e;
@@ -679,7 +686,7 @@ class ConnectionImpl implements Connection {
       );
     }
 
-    return [cardinality, inCodec, outCodec];
+    return [cardinality, inCodec, outCodec, inCodecData, outCodecData];
   }
 
   private _encodeArgs(args: QueryArgs, inCodec: ICodec): Buffer {
@@ -695,11 +702,12 @@ class ConnectionImpl implements Connection {
     throw new Error("invalid input codec");
   }
 
-  private async _executeFlow(
+  protected async _executeFlow(
     args: QueryArgs,
     inCodec: ICodec,
-    outCodec: ICodec
-  ): Promise<any[]> {
+    outCodec: ICodec,
+    result: Set | WriteBuffer
+  ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
       .writeInt16(0) // no headers
@@ -710,7 +718,6 @@ class ConnectionImpl implements Connection {
 
     this.sock.write(wb.unwrap());
 
-    const result = new Set();
     let parsing = true;
     let error: Error | null = null;
 
@@ -760,8 +767,6 @@ class ConnectionImpl implements Connection {
     if (error != null) {
       throw error;
     }
-
-    return result;
   }
 
   private async _optimisticExecuteFlow(
@@ -770,8 +775,9 @@ class ConnectionImpl implements Connection {
     expectOne: boolean,
     inCodec: ICodec,
     outCodec: ICodec,
-    query: string
-  ): Promise<any> {
+    query: string,
+    result: Set
+  ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
     wb.writeInt16(0); // no headers
@@ -786,7 +792,6 @@ class ConnectionImpl implements Connection {
 
     this.sock.write(wb.unwrap());
 
-    const result = new Set();
     let reExec = false;
     let error: Error | null = null;
     let parsing = true;
@@ -853,10 +858,8 @@ class ConnectionImpl implements Connection {
 
     if (reExec) {
       this._validateFetchCardinality(newCard!, asJson, expectOne);
-      return await this._executeFlow(args, inCodec, outCodec);
+      return await this._executeFlow(args, inCodec, outCodec, result);
     }
-
-    return result;
   }
 
   private _getQueryCacheKey(
@@ -885,28 +888,30 @@ class ConnectionImpl implements Connection {
     expectOne: boolean
   ): Promise<any> {
     const key = this._getQueryCacheKey(query, asJson, expectOne);
-    let ret;
+    const ret = new Set();
 
     if (this.queryCodecCache.has(key)) {
       const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
       this._validateFetchCardinality(card, asJson, expectOne);
-      ret = await this._optimisticExecuteFlow(
+      await this._optimisticExecuteFlow(
         args,
         asJson,
         expectOne,
         inCodec,
         outCodec,
-        query
+        query,
+        ret
       );
     } else {
       const [card, inCodec, outCodec] = await this._parse(
         query,
         asJson,
-        expectOne
+        expectOne,
+        false
       );
       this._validateFetchCardinality(card, asJson, expectOne);
       this.queryCodecCache.set(key, [card, inCodec, outCodec]);
-      ret = await this._executeFlow(args, inCodec, outCodec);
+      await this._executeFlow(args, inCodec, outCodec, ret);
     }
 
     if (expectOne) {
@@ -1105,9 +1110,24 @@ class ConnectionImpl implements Connection {
 
   /** @internal */
   static async connect(
-    config?: ConnectConfig | null
+    dsn?: string | ConnectConfig | null,
+    options?: ConnectConfig | null
   ): Promise<ConnectionImpl> {
-    config = config || {};
+    let config: ConnectConfig | null = null;
+
+    if (typeof dsn === "string") {
+      config = {...options, dsn};
+    } else {
+      if (dsn != null) {
+        // tslint:disable-next-line: no-console
+        console.warn(
+          "`options` as the first argument to `edgedb.connect` is " +
+            "deprecated, use " +
+            "`edgedb.connect('instance_name_or_dsn', options)`"
+        );
+      }
+      config = {...dsn, ...options};
+    }
 
     const {addrs, ...cfg} = parseConnectArguments(config);
     let err: Error | undefined;
@@ -1160,5 +1180,66 @@ class ConnectionImpl implements Connection {
       err = new Error(errMsg);
     }
     throw err;
+  }
+}
+
+export class RawConnection extends ConnectionImpl {
+  // Note that this class, while exported, is not documented.
+  // Its API is subject to change.
+
+  public async rawParse(query: string): Promise<[Buffer, Buffer]> {
+    const result = await this._parse(query, false, false, true);
+    return [result[3]!, result[4]!];
+  }
+
+  public async rawExecute(): Promise<Buffer> {
+    // TODO: the method needs to be extended to accept
+    // already encoded arguments.
+
+    const result = new WriteBuffer();
+    await this._executeFlow(
+      null, // arguments
+      EMPTY_TUPLE_CODEC, // inCodec -- to encode lack of arguments.
+      EMPTY_TUPLE_CODEC, // outCodec -- does not matter, it will not be used.
+      result
+    );
+    return result.unwrap();
+  }
+
+  static async connect(
+    dsn?: string | ConnectConfig | null,
+    options?: ConnectConfig | null
+  ): Promise<ConnectionImpl> {
+    return await super.connect(dsn, options);
+  }
+
+  // Mask the actual connection API; only the raw* methods should
+  // be used with this class.
+
+  async transaction<T>(
+    action: () => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T> {
+    throw new Error("not implemented");
+  }
+
+  async execute(query: string): Promise<void> {
+    throw new Error("not implemented");
+  }
+
+  async query(query: string, args: QueryArgs = null): Promise<Set> {
+    throw new Error("not implemented");
+  }
+
+  async queryOne(query: string, args: QueryArgs = null): Promise<any> {
+    throw new Error("not implemented");
+  }
+
+  async queryJSON(query: string, args: QueryArgs = null): Promise<string> {
+    throw new Error("not implemented");
+  }
+
+  async queryOneJSON(query: string, args: QueryArgs = null): Promise<string> {
+    throw new Error("not implemented");
   }
 }
