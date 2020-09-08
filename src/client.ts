@@ -1209,8 +1209,8 @@ export class RawConnection extends ConnectionImpl {
   static async connect(
     dsn?: string | ConnectConfig | null,
     options?: ConnectConfig | null
-  ): Promise<ConnectionImpl> {
-    return await super.connect(dsn, options);
+  ): Promise<RawConnection> {
+    return (await super.connect(dsn, options)) as RawConnection;
   }
 
   // Mask the actual connection API; only the raw* methods should
