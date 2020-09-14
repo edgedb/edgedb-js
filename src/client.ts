@@ -1111,7 +1111,8 @@ class ConnectionImpl implements Connection {
   /** @internal */
   static async connect(
     dsn?: string | ConnectConfig | null,
-    options?: ConnectConfig | null
+    options?: ConnectConfig | null,
+    attempt: number = 0
   ): Promise<ConnectionImpl> {
     let config: ConnectConfig | null = null;
 
@@ -1156,6 +1157,15 @@ class ConnectionImpl implements Connection {
         await connPromise;
       } catch (e) {
         conn._abort();
+
+        // in case of ECONNRESET, try again
+        if (typeof e.code === "string" && e.code === "ECONNRESET") {
+          if (attempt < 3) {
+            return await ConnectionImpl.connect(dsn, options, attempt + 1);
+          } else {
+            throw e;
+          }
+        }
 
         // on timeout Error proceed to the next address, otherwise re-throw
         if (
