@@ -29,7 +29,7 @@ import {
   MissingRequiredError,
   _introspect,
 } from "../src/index.node";
-import {LocalDate, Duration} from "../src/datatypes/datetime";
+import {LocalDate, Duration, CustomDateTime} from "../src/datatypes/datetime";
 import {asyncConnect} from "./testbase";
 
 test("query: basic scalars", async () => {
@@ -410,6 +410,59 @@ test("fetch: bigint as string", async () => {
     expect(fetched[0].length).toBe(vals.length);
     for (let i = 0; i < fetched[0].length; i++) {
       expect(fetched[0][i]).toBe(fetched[1][i]);
+    }
+  } finally {
+    await con.close();
+  }
+});
+
+function customDateTimeToStr(dt: CustomDateTime): string {
+  return `${Math.abs(dt.year)}-${dt.month}-${dt.day}T${dt.hour}:${dt.minute}:${
+    dt.second
+  }.${dt.microsecond.toString().padStart(6, "0")} ${
+    dt.year < 0 ? "BC" : "AD"
+  }`;
+}
+
+test("fetch: datetime as string", async () => {
+  const con = await asyncConnect();
+
+  // @ts-ignore
+  const registry = con.codecsRegistry;
+  registry.setStringCodecs({local_datetime: true, datetime: true});
+
+  const maxDate = 9224318015999;
+  const minDate = -210866803200;
+  const zeroDate = -62135596800;
+
+  const vals = [maxDate, minDate, zeroDate, zeroDate - 0.00012];
+
+  for (let i = 0; i < 1000; i++) {
+    vals.push(Math.random() * (maxDate - minDate) + minDate);
+  }
+
+  try {
+    const fetched = await con.queryOne(
+      `
+      WITH
+        fmt := 'FMYYYY-FMMM-FMDDTFMHH24:FMMI:FMSS.US AD',
+        inp := array_unpack(<array<float64>>$0),
+        datetimes := to_datetime(inp),
+        local_datetimes := cal::to_local_datetime(datetimes, 'UTC'),
+      SELECT (
+        array_agg(to_str(datetimes, fmt)),
+        array_agg(datetimes),
+        array_agg(to_str(local_datetimes, fmt)),
+        array_agg(local_datetimes)
+      )
+      `,
+      [vals]
+    );
+
+    expect(fetched[0].length).toBe(vals.length);
+    for (let i = 0; i < fetched[0].length; i++) {
+      expect(customDateTimeToStr(fetched[1][i])).toBe(fetched[0][i]);
+      expect(customDateTimeToStr(fetched[3][i])).toBe(fetched[2][i]);
     }
   } finally {
     await con.close();
