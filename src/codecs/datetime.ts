@@ -26,7 +26,7 @@ import {
   Duration,
 } from "../datatypes/datetime";
 import {ymd2ord} from "../datatypes/dateutil";
-import {decodeDateTimeToCustom} from "../compat";
+import {decodeMicrosecondsToEdgeDBDateTime} from "../compat";
 
 /* PostgreSQL UTC epoch starts on "January 1, 2000", whereas
  * in JavaScript, the UTC epoch starts on "January 1, 1970" (the UNIX epoch).
@@ -54,13 +54,13 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
   }
 }
 
-export class DateTimeCustomCodec extends ScalarCodec implements ICodec {
+export class EdgeDBDateTimeCodec extends ScalarCodec implements ICodec {
   encode(_buf: WriteBuffer, _object: any): void {
     throw new Error("not implemented");
   }
 
   decode(buf: ReadBuffer): any {
-    return decodeDateTimeToCustom(buf.readBigInt64());
+    return decodeMicrosecondsToEdgeDBDateTime(buf.readBigInt64());
   }
 }
 
@@ -84,16 +84,6 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
       (new Date(ms + TIMESHIFT) as unknown) as number,
       (DATE_PRIVATE as unknown) as number
     );
-  }
-}
-
-export class LocalDateTimeCustomCodec extends ScalarCodec implements ICodec {
-  encode(_buf: WriteBuffer, _object: any): void {
-    throw new Error("not implemented");
-  }
-
-  decode(buf: ReadBuffer): any {
-    return decodeDateTimeToCustom(buf.readBigInt64());
   }
 }
 

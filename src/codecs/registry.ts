@@ -108,7 +108,7 @@ export class CodecsRegistry {
     if (datetime) {
       this.customScalarCodecs.set(
         DATETIME_TYPEID,
-        new datecodecs.DateTimeCustomCodec(DATETIME_TYPEID)
+        new datecodecs.EdgeDBDateTimeCodec(DATETIME_TYPEID)
       );
     } else {
       this.customScalarCodecs.delete(DATETIME_TYPEID);
@@ -117,7 +117,7 @@ export class CodecsRegistry {
     if (local_datetime) {
       this.customScalarCodecs.set(
         LOCAL_DATETIME_TYPEID,
-        new datecodecs.LocalDateTimeCustomCodec(LOCAL_DATETIME_TYPEID)
+        new datecodecs.EdgeDBDateTimeCodec(LOCAL_DATETIME_TYPEID)
       );
     } else {
       this.customScalarCodecs.delete(LOCAL_DATETIME_TYPEID);

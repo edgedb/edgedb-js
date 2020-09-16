@@ -110,7 +110,7 @@ export function decodeInt64ToString(buf: Buffer): string {
   return negative ? `-${result}` : result;
 }
 
-export interface CustomDateTime {
+export interface EdgeDBDateTime {
   year: number;
   month: number;
   day: number;
@@ -123,9 +123,9 @@ export interface CustomDateTime {
 const DATESHIFT_ORD = ymd2ord(2000, 1, 1);
 const bigUsPerDay = bi.make(86_400_000_000);
 
-export function decodeDateTimeToCustom(
+export function decodeMicrosecondsToEdgeDBDateTime(
   microseconds: bi.BigIntLike
-): CustomDateTime {
+): EdgeDBDateTime {
   const dayNumber = bi.div(microseconds, bigUsPerDay);
 
   let timeUs = Number(bi.sub(microseconds, bi.mul(dayNumber, bigUsPerDay)));

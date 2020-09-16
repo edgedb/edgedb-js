@@ -29,7 +29,7 @@ import {
   MissingRequiredError,
   _introspect,
 } from "../src/index.node";
-import {LocalDate, Duration, CustomDateTime} from "../src/datatypes/datetime";
+import {LocalDate, Duration, EdgeDBDateTime} from "../src/datatypes/datetime";
 import {asyncConnect} from "./testbase";
 
 test("query: basic scalars", async () => {
@@ -416,7 +416,7 @@ test("fetch: bigint as string", async () => {
   }
 });
 
-function customDateTimeToStr(dt: CustomDateTime): string {
+function edgeDBDateTimeToStr(dt: EdgeDBDateTime): string {
   return `${Math.abs(dt.year)}-${dt.month}-${dt.day}T${dt.hour}:${dt.minute}:${
     dt.second
   }.${dt.microsecond.toString().padStart(6, "0")} ${
@@ -461,8 +461,8 @@ test("fetch: datetime as string", async () => {
 
     expect(fetched[0].length).toBe(vals.length);
     for (let i = 0; i < fetched[0].length; i++) {
-      expect(customDateTimeToStr(fetched[1][i])).toBe(fetched[0][i]);
-      expect(customDateTimeToStr(fetched[3][i])).toBe(fetched[2][i]);
+      expect(edgeDBDateTimeToStr(fetched[1][i])).toBe(fetched[0][i]);
+      expect(edgeDBDateTimeToStr(fetched[3][i])).toBe(fetched[2][i]);
     }
   } finally {
     await con.close();
