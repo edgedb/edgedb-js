@@ -235,6 +235,7 @@ describe("pool concurrency 3", () => {
 });
 
 test("pool.onAcquire callback", async () => {
+  jest.setTimeout(10_000);
   const deferred = new Deferred<Connection>();
 
   async function onAcquire(connection: Connection): Promise<void> {
@@ -258,6 +259,7 @@ test("pool.onAcquire callback", async () => {
 });
 
 test("pool.onRelease callback", async () => {
+  jest.setTimeout(10_000);
   const deferred = new Deferred<Connection>();
 
   async function onRelease(connection: Connection): Promise<void> {
