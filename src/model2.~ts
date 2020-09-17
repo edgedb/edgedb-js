@@ -21,10 +21,11 @@ type Property<name extends string, T, O> = {
   name: name;
 };
 
-type Link<T> = {
+type Link<T, K extends boolean> = {
   [KIND]: "link";
-  __type: T;
   name: string;
+  target: T;
+  multi: K;
 };
 
 type Parameter<T> = Computable<T> | Property<any, T, any>;
@@ -72,12 +73,6 @@ interface PreferencesType {
 type FilterArgs<T> = {
   [k in keyof T]: T[k] extends Function ? never : k;
 }[keyof T];
-
-type SelectArgs<T> = {
-  [k in FilterArgs<T>]: T[k];
-};
-
-type UU = SelectArgs<typeof User>;
 
 type UserArgs =
   // will be auto-generated
@@ -140,12 +135,22 @@ const User = {
     return {name: "age", [KIND]: "property"} as any;
   },
 
-  get friends(): Link<UserType> {
-    return {name: "friends", [KIND]: "link", target: User} as any;
+  get friends() {
+    return {
+      name: "friends",
+      [KIND]: "link",
+      target: User,
+      multi: true,
+    } as Link<typeof User, true>;
   },
 
-  get preferences(): Link<PreferencesType> {
-    return {name: "preferences", [KIND]: "link"} as any;
+  get preferences() {
+    return {
+      name: "preferences",
+      [KIND]: "link",
+      target: Preferences,
+      multi: false,
+    } as Link<typeof Preferences, false>;
   },
 
   select: <P extends UserArgs>(spec: P): Result<P, UserArgs, UserType> => {
@@ -155,8 +160,6 @@ const User = {
 
 const Preferences = {
   // will be auto-generated
-
-  __type: (null as any) as PreferencesType,
 
   get name(): Property<"name", boolean, PreferencesType> {
     return {name: "name", [KIND]: "property"} as any;
@@ -183,6 +186,9 @@ const results = User.select({
   friends: {
     name: true,
     email: false,
+    friends: {
+      name: 1 < 0,
+    },
   },
   preferences: {
     emailNotifications: true,
