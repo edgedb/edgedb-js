@@ -22,6 +22,7 @@
     "ordered-imports": false,
     "one-line": false,
     "no-bitwise": false,
+    "no-namespace": false,
     "typedef": [true, "call-signature", "property-declaration", "parameter"],
     "whitespace": [
       true,

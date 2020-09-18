@@ -27,3 +27,5 @@ export {createPool} from "./pool";
 export {Connection, Pool} from "./ifaces";
 
 export * from "./index.shared";
+
+export {model} from "./model";

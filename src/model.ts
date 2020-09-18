@@ -1,31 +1,31 @@
-enum Kind {
+export enum Kind {
   computable,
   property,
   link,
 }
 
-enum Cardinality {
+export enum Cardinality {
   at_most_one,
   one,
   many,
   at_least_one,
 }
 
-interface SchemaObject {
+export interface SchemaObject {
   kind: Kind;
   name: string;
 }
 
-interface Pointer extends SchemaObject {
+export interface Pointer extends SchemaObject {
   cardinality: Cardinality;
 }
 
-interface Computable<T> extends SchemaObject {
+export interface Computable<T> extends SchemaObject {
   kind: Kind.computable;
   __type: T;
 }
 
-interface Property<name extends string, T, C extends Cardinality>
+export interface Property<name extends string, T, C extends Cardinality>
   extends Pointer {
   kind: Kind.property;
   cardinality: C;
@@ -33,16 +33,17 @@ interface Property<name extends string, T, C extends Cardinality>
   __type: T;
 }
 
-interface Link<name extends string, T, C extends Cardinality> extends Pointer {
+export interface Link<name extends string, T, C extends Cardinality>
+  extends Pointer {
   kind: Kind.link;
   cardinality: C;
   target: T;
   name: name;
 }
 
-type Parameter<T> = Computable<T> | Property<any, T, any>;
+export type Parameter<T> = Computable<T> | Property<any, T, any>;
 
-type Expand<T> = T extends object
+export type Expand<T> = T extends object
   ? T extends infer O
     ? {[K in keyof O]: Expand<O[K]>}
     : never
@@ -58,12 +59,12 @@ type _UnpackBoolArg<Arg, T> = Arg extends true
   ? PPT
   : T;
 
-type OnlyArgs<Args, T> = {
+type _OnlyArgs<Args, T> = {
   [k in keyof Args]: k extends keyof T ? never : k;
 }[keyof Args];
 
 type _Result<Args, T> = {
-  [k in (keyof T & keyof Args) | OnlyArgs<Args, T>]: k extends keyof T
+  [k in (keyof T & keyof Args) | _OnlyArgs<Args, T>]: k extends keyof T
     ? T[k] extends Property<any, infer PPT, any>
       ? _UnpackBoolArg<Args[k], PPT>
       : T[k] extends Link<any, infer LLT, any>
@@ -74,9 +75,9 @@ type _Result<Args, T> = {
     : never;
 };
 
-type Result<Args, T> = Expand<_Result<Args, T>>;
+export type Result<Args, T> = Expand<_Result<Args, T>>;
 
-type MakeSelectArgs<T> = {
+export type MakeSelectArgs<T> = {
   [k in keyof T]?: T[k] extends Link<infer LN, infer LT, infer LC>
     ? Link<LN, LT, LC> | MakeSelectArgs<LT> | Computable<LT> | boolean
     : T[k] extends Property<infer PN, infer PT, infer PC>
@@ -222,6 +223,7 @@ const results2 = User.shape({
     age: 1 > 0,
     friends: {
       zzz: std.len(User.name),
+      zzz2: literal(42),
       friends: {
         age: true,
       },
