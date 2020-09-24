@@ -1,3 +1,35 @@
+export enum StdScalar {
+  int16,
+  int32,
+  int64,
+  float32,
+  float64,
+  str,
+  bytes,
+  datetime,
+  duration,
+  local_datetime,
+  local_date,
+  local_time,
+  uuid,
+  bool,
+}
+
+export type StdScalarToJS<T extends StdScalar> = T extends
+  | StdScalar.int16
+  | StdScalar.int32
+  | StdScalar.int64
+  | StdScalar.float32
+  | StdScalar.float64
+  ? number
+  : T extends StdScalar.str
+  ? string
+  : T extends StdScalar.bool
+  ? boolean
+  : T extends StdScalar.bytes
+  ? Buffer
+  : unknown;
+
 export enum Kind {
   computable,
   property,
@@ -25,23 +57,22 @@ export interface Computable<T> extends SchemaObject {
   __type: T;
 }
 
-export interface Property<name extends string, T, C extends Cardinality>
+export interface Property<scalar extends StdScalar, C extends Cardinality>
   extends Pointer {
   kind: Kind.property;
   cardinality: C;
-  name: name;
-  __type: T;
+  name: string;
+  type: scalar;
 }
 
-export interface Link<name extends string, T, C extends Cardinality>
-  extends Pointer {
+export interface Link<T, C extends Cardinality> extends Pointer {
   kind: Kind.link;
   cardinality: C;
   target: T;
-  name: name;
+  name: string;
 }
 
-export type Parameter<T> = Computable<T> | Property<any, T, any>;
+export type Parameter<T extends StdScalar> = Computable<T> | Property<T, any>;
 
 export type Expand<T> = T extends object
   ? T extends infer O
@@ -49,15 +80,15 @@ export type Expand<T> = T extends object
     : never
   : T;
 
-type _UnpackBoolArg<Arg, T> = Arg extends true
-  ? T
+type _UnpackBoolArg<Arg, T extends StdScalar> = Arg extends true
+  ? StdScalarToJS<T>
   : Arg extends false
   ? undefined
   : Arg extends boolean
-  ? T | undefined
-  : Arg extends Property<any, infer PPT, any>
-  ? PPT
-  : T;
+  ? StdScalarToJS<T> | undefined
+  : Arg extends Property<infer PPT, any>
+  ? StdScalarToJS<PPT>
+  : StdScalarToJS<T>;
 
 type _OnlyArgs<Args, T> = {
   [k in keyof Args]: k extends keyof T ? never : k;
@@ -65,9 +96,9 @@ type _OnlyArgs<Args, T> = {
 
 type _Result<Args, T> = {
   [k in (keyof T & keyof Args) | _OnlyArgs<Args, T>]: k extends keyof T
-    ? T[k] extends Property<any, infer PPT, any>
+    ? T[k] extends Property<infer PPT, any>
       ? _UnpackBoolArg<Args[k], PPT>
-      : T[k] extends Link<any, infer LLT, any>
+      : T[k] extends Link<infer LLT, any>
       ? _Result<Args[k], LLT>
       : unknown
     : Args[k] extends Computable<infer CT>
@@ -78,10 +109,10 @@ type _Result<Args, T> = {
 export type Result<Args, T> = Expand<_Result<Args, T>>;
 
 export type MakeSelectArgs<T> = {
-  [k in keyof T]?: T[k] extends Link<infer LN, infer LT, infer LC>
-    ? Link<LN, LT, LC> | MakeSelectArgs<LT> | Computable<LT> | boolean
-    : T[k] extends Property<infer PN, infer PT, infer PC>
-    ? Property<PN, PT, PC> | Computable<PT> | boolean
+  [k in keyof T]?: T[k] extends Link<infer LT, infer LC>
+    ? Link<LT, LC> | MakeSelectArgs<LT> | Computable<LT> | boolean
+    : T[k] extends Property<infer PT, infer PC>
+    ? Property<PT, PC> | Computable<PT> | boolean
     : never;
 };
 
@@ -111,7 +142,8 @@ const bases = {
         kind: Kind.property,
         name: "name",
         cardinality: Cardinality.one,
-      } as Property<"name", string, Cardinality.one>;
+        type: StdScalar.str,
+      } as Property<StdScalar.str, Cardinality.one>;
     },
 
     get email() {
@@ -119,7 +151,8 @@ const bases = {
         kind: Kind.property,
         name: "email",
         cardinality: Cardinality.one,
-      } as Property<"email", string, Cardinality.one>;
+        type: StdScalar.str,
+      } as Property<StdScalar.str, Cardinality.one>;
     },
 
     get age() {
@@ -127,7 +160,8 @@ const bases = {
         kind: Kind.property,
         name: "age",
         cardinality: Cardinality.one,
-      } as Property<"age", number, Cardinality.one>;
+        type: StdScalar.int64,
+      } as Property<StdScalar.int64, Cardinality.one>;
     },
 
     get friends() {
@@ -136,7 +170,7 @@ const bases = {
         cardinality: Cardinality.many,
         name: "friends",
         target: bases.User,
-      } as Link<"friends", typeof bases.User, Cardinality.many>;
+      } as Link<typeof bases.User, Cardinality.many>;
     },
 
     get preferences() {
@@ -145,11 +179,7 @@ const bases = {
         cardinality: Cardinality.at_most_one,
         name: "preferences",
         target: bases.Preferences,
-      } as Link<
-        "preferences",
-        typeof bases.Preferences,
-        Cardinality.at_most_one
-      >;
+      } as Link<typeof bases.Preferences, Cardinality.at_most_one>;
     },
   } as const,
 
@@ -161,7 +191,8 @@ const bases = {
         kind: Kind.property,
         name: "name",
         cardinality: Cardinality.one,
-      } as Property<"name", string, Cardinality.one>;
+        type: StdScalar.str,
+      } as Property<StdScalar.str, Cardinality.one>;
     },
 
     get emailNotifications() {
@@ -169,7 +200,8 @@ const bases = {
         name: "emailNotifications",
         kind: Kind.property,
         cardinality: Cardinality.one,
-      } as Property<"emailNotifications", boolean, Cardinality.one>;
+        type: StdScalar.str,
+      } as Property<StdScalar.str, Cardinality.one>;
     },
 
     get saveOnClose() {
@@ -177,7 +209,8 @@ const bases = {
         name: "saveOnClose",
         kind: Kind.property,
         cardinality: Cardinality.at_most_one,
-      } as Property<"saveOnClose", boolean, Cardinality.at_most_one>;
+        type: StdScalar.str,
+      } as Property<StdScalar.str, Cardinality.at_most_one>;
     },
   } as const,
 };
@@ -230,3 +263,57 @@ const results2 = User.shape({
     },
   },
 });
+
+/////////////
+
+// type zzz<A1 = number, A2 = Array<[number, string]>> = {
+//   key: A1;
+//   key2: A2;
+//   0: A1;
+//   1: A2;
+// };
+
+// const f: zzz = (null as any) as zzz;
+
+// const a = f.key2;
+
+//////////////////////
+
+// type NR<T extends object> = {[k in keyof T]: T[k] | undefined};
+
+// function namedtuple<T extends object, R = Expand<NR<T>>>(P: T): R {
+//   throw new Error("aaa");
+// }
+
+// const a = namedtuple({a: 1, b: "222"});
+
+// ////////////////
+
+// const inp = {a: 1, b: "aaa", z: new Date(), k: "aaaaa"};
+// type input = typeof inp;
+
+// type eee1 = keyof input;
+
+// type Widen<T> = T extends boolean
+//   ? boolean
+//   : T extends string
+//   ? string
+//   : T extends number
+//   ? number
+//   : T;
+
+// type TTTT<T, Z extends string[]> =
+//   | {
+//       [k in keyof Z]: Widen<T[Z[k] & keyof T]>;
+//     }
+//   | {[k in keyof T]: Widen<T[k]>};
+
+// type R = TTTT<input, ["a", "b", "z", "k"]>;
+
+// ////////
+
+// type TupleFromUnion<T, S = any> = T extends S | any ? S : T;
+
+// type aa = TupleFromUnion<"aaa" | "bbb">;
+
+// // type RR = TTTT<input, TupleFromUnion<keyof input>;
