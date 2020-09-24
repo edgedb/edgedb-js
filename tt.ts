@@ -74,137 +74,123 @@ const scalarMap = new Map([
   ["std::json", "string"],
 ]);
 
-type ScalarType = {
+type UUID = string;
+
+type IntrospectedTypeKind = "object" | "scalar" | "array" | "tuple";
+
+type IntrospectedBaseType<T extends IntrospectedTypeKind> = {
+  kind: T;
+  id: string;
   name: string;
-  material: string;
-  enum_values: string[] | null;
 };
 
-type ObjectType = {
-  name: string;
+type IntrospectedScalarType = IntrospectedBaseType<"scalar"> & {
   is_abstract: boolean;
-  bases: Array<{name: string}>;
-  pointers: Array<{
-    cardinality: string;
+  bases: ReadonlyArray<UUID>;
+  enum_values: ReadonlyArray<string>;
+  material_id: UUID | null;
+};
+
+type IntrospectedObjectType = IntrospectedBaseType<"object"> & {
+  is_abstract: boolean;
+  bases: ReadonlyArray<UUID>;
+  union_of: ReadonlyArray<UUID>;
+  intersection_of: ReadonlyArray<UUID>;
+  pointers: ReadonlyArray<{
+    cardinality: "ONE" | "MANY";
+    kind: "link" | "property";
     required: boolean;
     name: string;
-    kind: "link" | "property";
     expr: string | null;
-    object_target: {
+
+    target_id: UUID;
+
+    pointers: ReadonlyArray<{
       name: string;
-      is_compound_type: boolean;
-      union_of: Array<{name: string}>;
-      intersection_of: Array<{name: string}>;
-    } | null;
-    scalar_target: {
-      name: string;
-    } | null;
-    array_target: {
-      element_type: {
-        name: string;
-      };
-    } | null;
-    tuple_target: {
-      element_types: {
-        name: string;
-        type: {
-          name: string;
-        };
-      };
-    } | null;
-    properties: {
-      name: string;
-      target: {
-        name: string;
-      };
-    } | null;
+      target_id: UUID;
+    }> | null;
   }>;
 };
 
-async function fetchScalarTypes(
+type IntrospectedArrayType = IntrospectedBaseType<"array"> & {
+  array_element_id: UUID;
+};
+
+type IntrospectedTupleType = IntrospectedBaseType<"tuple"> & {
+  tuple_elements: ReadonlyArray<{
+    name: string;
+    target_id: UUID;
+  }>;
+};
+
+type IntrospectedType =
+  | IntrospectedScalarType
+  | IntrospectedObjectType
+  | IntrospectedArrayType
+  | IntrospectedTupleType;
+
+async function fetchTypes(
   con: Connection
-): Promise<ReadonlyArray<ScalarType>> {
-  return (await con.query(`
+): Promise<Map<UUID, IntrospectedType>> {
+  const types: IntrospectedType[] = await con.query(`
     WITH
       MODULE schema,
 
       material_scalars := (
-        SELECT ScalarType {
-          name
-        }
+        SELECT ScalarType
         FILTER
           (.name LIKE 'std::%' OR .name LIKE 'cal::%')
           AND NOT .is_abstract
-      ).name
-
-    SELECT ScalarType {
-      name,
-      enum_values,
-      single material := (
-        SELECT x := ScalarType.ancestors.name
-        FILTER x IN material_scalars
-        LIMIT 1
       )
-    }
-    FILTER NOT .is_abstract
-    ORDER BY .name;
-  `)) as ScalarType[];
-}
 
-async function fetchObjectTypes(
-  con: Connection
-): Promise<ReadonlyArray<ObjectType>> {
-  const types: ObjectType[] = await con.query(`
-    WITH
-      MODULE schema
-
-    SELECT ObjectType {
+    SELECT Type {
+      id,
       name,
       is_abstract,
-      bases: {
+
+      kind := 'object' IF Type IS ObjectType ELSE
+              'scalar' IF Type IS ScalarType ELSE
+              'array' IF Type IS Array ELSE
+              'tuple' IF Type IS Tuple ELSE
+              'unknown',
+
+      [IS ScalarType].enum_values,
+
+      single material_id := (
+        SELECT x := ScalarType.ancestors
+        FILTER x IN material_scalars
+        LIMIT 1
+      ).id IF Type IS ScalarType ELSE <uuid>{},
+
+      [IS InheritingObject].bases: {
         name,
       } ORDER BY @index ASC,
-      pointers: {
+
+      [IS ObjectType].union_of,
+      [IS ObjectType].intersection_of,
+      [IS ObjectType].pointers: {
         cardinality,
         required,
         name,
         expr,
-        object_target := .target[IS ObjectType] {
+
+        target_id := .target.id,
+
+        kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property',
+
+        [IS Link].pointers: {
           name,
-          is_compound_type,
-          union_of: {
-            name,
-          },
-          intersection_of: {
-            name,
-          }
-        },
-        scalar_target := .target[IS ScalarType] {
-          name,
-        },
-        array_target := .target[IS Array] {
-          element_type: {
-            name,  # todo: this needs to be recursive
-          }
-        },
-        tuple_target := .target[IS Tuple] {
-          element_types: {
-            name,
-            type: {
-              name,  # todo: this needs to be recursive
-            }
-          }
-        },
-        [IS Link].properties: {
-          name,
-          target: {
-            name,
-          }
+          target_id := .target.id
         } FILTER @is_owned,
-        kind := 'link' IF ObjectType.pointers IS Link ELSE 'property',
       } FILTER @is_owned,
+
+      array_element_id := [IS Array].element_type.id,
+
+      tuple_elements := (SELECT [IS Tuple].element_types {
+        target_id := .type.id,
+        name
+      } ORDER BY @index ASC),
     }
-    FILTER NOT .is_compound_type
     ORDER BY .name;
   `);
 
