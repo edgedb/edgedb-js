@@ -21,6 +21,8 @@ import * as bi from "../bigint";
 
 import {daysInMonth, ymd2ord, ord2ymd} from "./dateutil";
 
+export {EdgeDBDateTime} from "../compat";
+
 export const DATE_PRIVATE = Symbol.for("edgedb.datetime");
 
 export class LocalDateTime {

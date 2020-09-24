@@ -24,6 +24,7 @@ import {NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES} from "./consts";
 import {EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec} from "./tuple";
 import * as numerics from "./numerics";
 import * as numbers from "./numbers";
+import * as datecodecs from "./datetime";
 import {ArrayCodec} from "./array";
 import {NamedTupleCodec} from "./namedtuple";
 import {EnumCodec} from "./enum";
@@ -47,11 +48,15 @@ interface StringCodecSpec {
   decimal?: boolean;
   bigint?: boolean;
   int64?: boolean;
+  datetime?: boolean;
+  local_datetime?: boolean;
 }
 
 const DECIMAL_TYPEID = KNOWN_TYPENAMES.get("std::decimal")!;
 const BIGINT_TYPEID = KNOWN_TYPENAMES.get("std::bigint")!;
 const INT64_TYPEID = KNOWN_TYPENAMES.get("std::int64")!;
+const DATETIME_TYPEID = KNOWN_TYPENAMES.get("std::datetime")!;
+const LOCAL_DATETIME_TYPEID = KNOWN_TYPENAMES.get("cal::local_datetime")!;
 
 export class CodecsRegistry {
   private codecsBuildCache: LRU<uuid, ICodec>;
@@ -64,7 +69,13 @@ export class CodecsRegistry {
     this.customScalarCodecs = new Map();
   }
 
-  setStringCodecs({decimal, bigint, int64}: StringCodecSpec = {}): void {
+  setStringCodecs({
+    decimal,
+    bigint,
+    int64,
+    datetime,
+    local_datetime,
+  }: StringCodecSpec = {}): void {
     // This is a private API and it will change in the future.
 
     if (decimal) {
@@ -92,6 +103,24 @@ export class CodecsRegistry {
       );
     } else {
       this.customScalarCodecs.delete(INT64_TYPEID);
+    }
+
+    if (datetime) {
+      this.customScalarCodecs.set(
+        DATETIME_TYPEID,
+        new datecodecs.EdgeDBDateTimeCodec(DATETIME_TYPEID)
+      );
+    } else {
+      this.customScalarCodecs.delete(DATETIME_TYPEID);
+    }
+
+    if (local_datetime) {
+      this.customScalarCodecs.set(
+        LOCAL_DATETIME_TYPEID,
+        new datecodecs.EdgeDBDateTimeCodec(LOCAL_DATETIME_TYPEID)
+      );
+    } else {
+      this.customScalarCodecs.delete(LOCAL_DATETIME_TYPEID);
     }
   }
 

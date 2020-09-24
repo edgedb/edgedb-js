@@ -51,6 +51,11 @@ export function ymd2ord(year: number, month: number, day: number): number {
   return daysBeforeYear(year) + daysBeforeMonth(year, month) + day;
 }
 
+function divmod(dividend: number, divisor: number): [number, number] {
+  const quotient = Math.floor(dividend / divisor);
+  return [quotient, dividend - divisor * quotient];
+}
+
 export function ord2ymd(n: number): [number, number, number] {
   /* ordinal -> (year, month, day), considering 01-Jan-0001 as day 1. */
 
@@ -75,8 +80,8 @@ export function ord2ymd(n: number): [number, number, number] {
   //     31 Dec  400         _DI400Y        _DI400Y -1
   //      1 Jan  401         _DI400Y +1     _DI400Y      400-year boundary
   n--;
-  const n400 = Math.trunc(n / _DI400Y);
-  n = n % _DI400Y;
+  let n400: number;
+  [n400, n] = divmod(n, _DI400Y);
 
   let year = n400 * 400 + 1; // ..., -399, 1, 401, ...
 
@@ -85,17 +90,17 @@ export function ord2ymd(n: number): [number, number, number] {
   // Note that it's possible for n100 to equal 4!  In that case 4 full
   // 100-year cycles precede the desired day, which implies the desired
   // day is December 31 at the end of a 400-year cycle.
-  const n100 = Math.trunc(n / _DI100Y);
-  n = n % _DI100Y;
+  let n100: number;
+  [n100, n] = divmod(n, _DI100Y);
 
   // Now compute how many 4-year cycles precede it.
-  const n4 = Math.trunc(n / _DI4Y);
-  n = n % _DI4Y;
+  let n4: number;
+  [n4, n] = divmod(n, _DI4Y);
 
   // And now how many single years.  Again n1 can be 4, and again meaning
   // that the desired day is December 31 at the end of the 4-year cycle.
-  const n1 = Math.trunc(n / 365);
-  n = n % 365;
+  let n1: number;
+  [n1, n] = divmod(n, 365);
 
   year += n100 * 100 + n4 * 4 + n1;
   if (n1 === 4 || n100 === 4) {
