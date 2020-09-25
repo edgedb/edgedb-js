@@ -136,6 +136,10 @@ class ConnectionImpl implements Connection {
     this.sock.on("close", this._onClose.bind(this));
 
     this.config = config;
+
+    if (config.legacyUUIDMode) {
+      this.codecsRegistry.enableLegacyUUID();
+    }
   }
 
   private async _waitForMessage(): Promise<void> {
@@ -1143,13 +1147,13 @@ class ConnectionImpl implements Connection {
       const connPromise = conn.connect();
       let timeout = null;
       // set-up a timeout
-      if (cfg.connect_timeout) {
-        err = new Error(errMsg + " in " + cfg.connect_timeout + "ms");
+      if (cfg.connectTimeout) {
+        err = new Error(errMsg + " in " + cfg.connectTimeout + "ms");
         timeout = setTimeout(() => {
           if (!conn.connected) {
             conn.sock.destroy(err);
           }
-        }, cfg.connect_timeout);
+        }, cfg.connectTimeout);
       }
 
       try {

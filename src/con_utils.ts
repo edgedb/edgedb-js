@@ -29,9 +29,10 @@ export interface NormalizedConnectConfig {
   user: string;
   password?: string;
   database: string;
-  connect_timeout?: number;
-  server_settings?: {[key: string]: string};
-  command_timeout?: number;
+  connectTimeout?: number;
+  serverSettings?: {[key: string]: string};
+  commandTimeout?: number;
+  legacyUUIDMode?: boolean;
 }
 
 export interface ConnectConfig {
@@ -43,8 +44,9 @@ export interface ConnectConfig {
   database?: string;
   admin?: boolean;
   timeout?: number;
-  command_timeout?: number;
-  server_settings?: any;
+  commandTimeout?: number;
+  serverSettings?: any;
+  legacyUUIDMode?: boolean;
 }
 
 function mapParseInt(x: any): number {
@@ -61,21 +63,38 @@ function mapParseInt(x: any): number {
 export function parseConnectArguments(
   opts: ConnectConfig = {}
 ): NormalizedConnectConfig {
-  if (opts.command_timeout != null) {
-    if (typeof opts.command_timeout !== "number" || opts.command_timeout < 0) {
+  let commandTimeout = opts.commandTimeout;
+
+  // @ts-ignore
+  if (opts.command_timeout) {
+    // @ts-ignore
+    commandTimeout = opts.command_timeout;
+  }
+
+  if (opts.commandTimeout != null) {
+    if (typeof opts.commandTimeout !== "number" || opts.commandTimeout < 0) {
       throw new Error(
-        "invalid command_timeout value: " +
+        "invalid commandTimeout value: " +
           "expected greater than 0 float (got " +
-          JSON.stringify(opts.command_timeout) +
+          JSON.stringify(opts.commandTimeout) +
           ")"
       );
     }
   }
 
+  if (opts.legacyUUIDMode) {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `legacyUUIDMode` parameter is deprecated and is scheduled " +
+        "to be removed. Upgrade to the default behavior of string UUID values."
+    );
+  }
+
   return {
     ...parseConnectDsnAndArgs(opts),
-    connect_timeout: opts.timeout,
-    command_timeout: opts.command_timeout,
+    connectTimeout: opts.timeout,
+    commandTimeout,
+    legacyUUIDMode: opts.legacyUUIDMode,
   };
 }
 
@@ -87,6 +106,8 @@ function parseConnectDsnAndArgs({
   password,
   database,
   admin,
+  serverSettings,
+  // @ts-ignore
   server_settings,
 }: ConnectConfig): NormalizedConnectConfig {
   if (admin) {
@@ -97,6 +118,14 @@ function parseConnectDsnAndArgs({
         "applications. Use command-line tool `edgedb` to setup " +
         "proper credentials."
     );
+  }
+  if (server_settings) {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `server_settings` parameter is deprecated and is scheduled " +
+        "to be removed. Use `serverSettings` instead."
+    );
+    serverSettings = server_settings;
   }
   if (dsn && /^edgedb(?:admin)?:\/\//.test(dsn)) {
     // Comma-separated hosts cannot be parsed correctly with url.parse, so if
@@ -242,12 +271,12 @@ function parseConnectDsnAndArgs({
         delete parsedQ.password;
       }
 
-      // if there are more query params left, interpret them as server_settings
+      // if there are more query params left, interpret them as serverSettings
       if (Object.keys(parsedQ).length) {
-        if (server_settings == null) {
-          server_settings = {...parsedQ};
+        if (serverSettings == null) {
+          serverSettings = {...parsedQ};
         } else {
-          server_settings = {...parsedQ, ...server_settings};
+          serverSettings = {...parsedQ, ...serverSettings};
         }
       }
     }
@@ -257,13 +286,13 @@ function parseConnectDsnAndArgs({
         `dsn "${dsn}" is neither a edgedb:// URI nor valid instance name`
       );
     }
-    const credentials_file = path.join(
+    const credentialsFile = path.join(
       os.homedir(),
       ".edgedb",
       "credentials",
       dsn + ".json"
     );
-    const credentials = readCredentialsFile(credentials_file);
+    const credentials = readCredentialsFile(credentialsFile);
     port = credentials.port;
     user = credentials.user;
     if (host == null && "host" in credentials) {
@@ -369,7 +398,7 @@ function parseConnectDsnAndArgs({
     user,
     password,
     database,
-    server_settings,
+    serverSettings,
   };
 }
 
@@ -379,8 +408,8 @@ function parseHostlist(
 ): [string[], number[]] {
   let hostspecs: string[];
   const hosts: string[] = [];
-  const hostlist_ports: number[] = [];
-  let default_port: number[] = [];
+  const hostlistPorts: number[] = [];
+  let defaultPort: number[] = [];
   let ports: number[] = [];
 
   if (hostlist instanceof Array) {
@@ -392,30 +421,30 @@ function parseHostlist(
   if (!inputPort) {
     const portspec = process.env.EDGEDB_PORT;
     if (portspec) {
-      default_port = portspec.split(",").map(mapParseInt);
-      default_port = validatePortSpec(hostspecs, default_port);
+      defaultPort = portspec.split(",").map(mapParseInt);
+      defaultPort = validatePortSpec(hostspecs, defaultPort);
     } else {
-      default_port = validatePortSpec(hostspecs, EDGEDB_PORT);
+      defaultPort = validatePortSpec(hostspecs, EDGEDB_PORT);
     }
   } else {
     ports = validatePortSpec(hostspecs, inputPort);
   }
 
   for (let i = 0; i < hostspecs.length; i++) {
-    const [addr, hostspec_port] = hostspecs[i].split(":");
+    const [addr, hostspecPort] = hostspecs[i].split(":");
     hosts.push(addr);
 
     if (!inputPort) {
-      if (hostspec_port) {
-        hostlist_ports.push(mapParseInt(hostspec_port));
+      if (hostspecPort) {
+        hostlistPorts.push(mapParseInt(hostspecPort));
       } else {
-        hostlist_ports.push(default_port[i]);
+        hostlistPorts.push(defaultPort[i]);
       }
     }
   }
 
   if (!inputPort) {
-    ports = hostlist_ports;
+    ports = hostlistPorts;
   }
 
   return [hosts, ports];

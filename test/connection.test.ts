@@ -151,14 +151,14 @@ test("parseConnectArguments", () => {
         user: "user2",
         password: "passw2",
         database: "db2",
-        server_settings: {ssl: "False"},
+        serverSettings: {ssl: "False"},
       },
       result: {
         addrs: [["host2", 456]],
         user: "user2",
         password: "passw2",
         database: "db2",
-        server_settings: {ssl: "False"},
+        serverSettings: {ssl: "False"},
       },
     },
 
@@ -179,7 +179,7 @@ test("parseConnectArguments", () => {
         user: "user3",
         password: "123123",
         database: "abcdef",
-        command_timeout: 10,
+        commandTimeout: 10,
       },
     },
 
@@ -279,7 +279,7 @@ test("parseConnectArguments", () => {
       },
       result: {
         addrs: [["127.0.0.1", 888]],
-        server_settings: {param: "123"},
+        serverSettings: {param: "123"},
         user: "me",
         password: "ask",
         database: "db",
@@ -297,11 +297,11 @@ test("parseConnectArguments", () => {
         user: "me",
         password: "ask",
         database: "db",
-        server_settings: {aa: "bb"},
+        serverSettings: {aa: "bb"},
       },
       result: {
         addrs: [["127.0.0.1", 888]],
-        server_settings: {aa: "bb", param: "123"},
+        serverSettings: {aa: "bb", param: "123"},
         user: "me",
         password: "ask",
         database: "db",
