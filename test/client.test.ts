@@ -819,7 +819,10 @@ test("fetch: tuple", async () => {
 });
 
 test("fetch: object", async () => {
-  const con = await asyncConnect();
+  const con = await asyncConnect({
+    legacyUUIDMode: true,
+  });
+
   let res;
   try {
     res = await con.queryOne(`
@@ -945,7 +948,7 @@ test("fetch: object implicit fields", async () => {
       limit 1
     `);
 
-    expect(JSON.stringify(res)).toMatch(/^\{"id":"([\w\d\-]{36})"\}$/);
+    expect(JSON.stringify(res)).toMatch(/^\{"id":"([\w\d]{32})"\}$/);
     expect(JSON.stringify(res)).not.toMatch(/"__tid__"/);
 
     res = await con.queryOne(`
@@ -953,7 +956,7 @@ test("fetch: object implicit fields", async () => {
       limit 1
     `);
 
-    expect(JSON.stringify(res)).toMatch(/"id":"([\w\d\-]{36})"/);
+    expect(JSON.stringify(res)).toMatch(/"id":"([\w\d]{32})"/);
 
     res = await con.queryOne(`
       select schema::Function {
@@ -974,15 +977,13 @@ test("fetch: uuid", async () => {
   let res;
   try {
     res = await con.queryOne("SELECT schema::ObjectType.id LIMIT 1");
-    expect(res instanceof UUID).toBeTruthy();
-    expect(res.buffer.length).toBe(16);
+    expect(typeof res).toBe("string");
+    expect(res.length).toBe(32);
 
     res = await con.queryOne(
       "SELECT <uuid>'759637d8-6635-11e9-b9d4-098002d459d5'"
     );
-    expect(res instanceof UUID).toBeTruthy();
-    expect(res.buffer.length).toBe(16);
-    expect(res.toString()).toBe("759637d8-6635-11e9-b9d4-098002d459d5");
+    expect(res).toBe("759637d8663511e9b9d4098002d459d5");
   } finally {
     await con.close();
   }

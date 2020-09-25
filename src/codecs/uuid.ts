@@ -20,7 +20,7 @@ import {ReadBuffer, WriteBuffer} from "../buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
 import {UUID, UUIDBufferFromString} from "../datatypes/uuid";
 
-export class UUIDCodec extends ScalarCodec implements ICodec {
+export class UUIDObjectCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (object instanceof UUID) {
       const val = <UUID>object;
@@ -38,5 +38,22 @@ export class UUIDCodec extends ScalarCodec implements ICodec {
 
   decode(buf: ReadBuffer): any {
     return new UUID(buf.readBuffer(16));
+  }
+}
+
+export class UUIDCodec extends ScalarCodec implements ICodec {
+  encode(buf: WriteBuffer, object: any): void {
+    if (typeof object === "string") {
+      const val = <string>object;
+      const ubuf = UUIDBufferFromString(val);
+      buf.writeInt32(16);
+      buf.writeBuffer(ubuf);
+    } else {
+      throw new Error(`cannot encode UUID "${object}": invalid type`);
+    }
+  }
+
+  decode(buf: ReadBuffer): any {
+    return buf.readBuffer(16).toString("hex");
   }
 }
