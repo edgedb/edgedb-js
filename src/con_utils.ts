@@ -110,6 +110,8 @@ function parseConnectDsnAndArgs({
   // @ts-ignore
   server_settings,
 }: ConnectConfig): NormalizedConnectConfig {
+  let usingCredentials: boolean = false;
+
   if (admin) {
     // tslint:disable-next-line: no-console
     console.warn(
@@ -286,6 +288,7 @@ function parseConnectDsnAndArgs({
         `dsn "${dsn}" is neither a edgedb:// URI nor valid instance name`
       );
     }
+    usingCredentials = true;
     const credentialsFile = path.join(
       os.homedir(),
       ".edgedb",
@@ -314,7 +317,7 @@ function parseConnectDsnAndArgs({
       host = hl[0];
       port = hl[1];
     } else {
-      if (process.platform === "win32") {
+      if (process.platform === "win32" || usingCredentials) {
         host = [];
       } else {
         host = ["/run/edgedb", "/var/run/edgedb"];
