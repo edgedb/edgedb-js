@@ -129,7 +129,7 @@ Connection
 
     A representation of a database session.
 
-    :js:class:`Connection` is not meant to be instantiated by directly,
+    :js:class:`Connection` is not meant to be instantiated directly;
     :js:func:`connect` should be used instead.
 
 
@@ -341,7 +341,7 @@ Pool
         Promise<Connection>*
 
     :returns:
-        Returns a ``Promise`` of an :js:class:`Pool` is returned.
+        Returns a ``Promise`` of a :js:class:`Pool`.
 
     .. note::
 
@@ -513,8 +513,8 @@ Pool
     .. js:method:: getStats()
 
         Return information about the current state of the pool. Information
-        include the number of currently open connections, and the number of
-        pending consumers, awaiting for a connection to become available.
+        includes the number of currently open connections and the number 
+        of pending consumers awaiting an available connection.
 
         Example:
 

@@ -405,8 +405,8 @@ Duration
 
         Create duration from BigInt_ number of microseconds.
 
-        Note: new Duration() accepts fractional seconds too but can lose
-        precision because it's floating point.
+        Note: new Duration() accepts fractional seconds too but may lose
+        precision as a floating point.
 
     .. js:method:: toMilliseconds(): number
 
