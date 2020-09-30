@@ -63,8 +63,8 @@ run queries.
 Type Conversion
 ---------------
 
-``edgedb`` automatically converts EdgeDB types to the corresponding Python
-types and vice versa.  See :ref:`edgedb-js-datatypes` for details.
+``edgedb`` automatically converts EdgeDB types to the corresponding
+JavaScript types and vice versa.  See :ref:`edgedb-js-datatypes` for details.
 
 
 Transactions
