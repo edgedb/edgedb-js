@@ -853,8 +853,8 @@ test("fetch: object", async () => {
       JSON.stringify({
         name: "std::str_repeat",
         params: [
-          {kind: "POSITIONAL", num: 0, "@foo": 42},
-          {kind: "POSITIONAL", num: 1, "@foo": 42},
+          {kind: "PositionalParam", num: 0, "@foo": 42},
+          {kind: "PositionalParam", num: 1, "@foo": 42},
         ],
       })
     );
@@ -863,7 +863,7 @@ test("fetch: object", async () => {
     expect(res.params[1].num).toBe(1);
 
     expect(util.inspect(res.params[0])).toBe(
-      "Object [ kind := 'POSITIONAL', num := 0, @foo := 42 ]"
+      "Object [ kind := 'PositionalParam', num := 0, @foo := 42 ]"
     );
 
     expect(res.params.length).toBe(2);
@@ -1214,7 +1214,7 @@ test("execute", async () => {
       const isolation = await con.queryOne(
         "select sys::get_transaction_isolation()"
       );
-      expect(isolation).toBe("SERIALIZABLE");
+      expect(isolation).toBe("Serializable");
     } finally {
       await con.execute("rollback");
     }

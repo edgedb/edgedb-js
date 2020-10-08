@@ -156,7 +156,7 @@ test("pool.queryOneJSON", async () => {
 });
 
 describe("pool concurrency 1", () => {
-  each([1, 5, 10, 20, 100]).it(
+  each([1, 5, 10, 50]).it(
     "when concurrency is '%s'",
     async (concurrency) => {
       const pool = await createPool(undefined, {
@@ -182,7 +182,7 @@ describe("pool concurrency 1", () => {
 });
 
 describe("pool concurrency 2", () => {
-  each([1, 3, 5, 10, 20, 100]).it(
+  each([1, 3, 5, 10, 50]).it(
     "when concurrency is '%s'",
     async (concurrency) => {
       const pool = await createPool(undefined, {
@@ -208,7 +208,7 @@ describe("pool concurrency 2", () => {
 });
 
 describe("pool concurrency 3", () => {
-  each([1, 3, 5, 10, 20, 100]).it(
+  each([1, 3, 5, 10, 50]).it(
     "when concurrency is '%s'",
     async (concurrency) => {
       const pool = await createPool(undefined, {
@@ -724,7 +724,7 @@ test("createPool.queryOne", async () => {
 });
 
 describe("pool.getStats: includes the number of open connections", () => {
-  each([0, 1, 5, 10, 20]).it(
+  each([0, 1, 3]).it(
     "when minSize is '%s'",
     async (minSize) => {
       const maxSize = minSize + 50;
@@ -747,7 +747,7 @@ describe("pool.getStats: includes the number of open connections", () => {
 describe("pool.getStats: includes queue length", () => {
   // This test proves that pool stats queueLength indicates a number
   // of consumers awaiting for a connection.
-  each([5, 10, 20, 30, 40]).it(
+  each([1, 3, 7]).it(
     "when request count is '%s'",
     async (requests) => {
       const minSize = 0;
