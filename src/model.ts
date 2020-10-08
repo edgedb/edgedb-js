@@ -1,34 +1,18 @@
-export enum StdScalar {
-  int16,
-  int32,
-  int64,
-  float32,
-  float64,
-  str,
-  bytes,
-  datetime,
-  duration,
-  local_datetime,
-  local_date,
-  local_time,
-  uuid,
-  bool,
-}
+type Intersect<T> = (T extends any
+? (x: T) => void
+: unknown) extends (x: infer R) => void
+  ? R
+  : never;
 
-export type StdScalarToJS<T extends StdScalar> = T extends
-  | StdScalar.int16
-  | StdScalar.int32
-  | StdScalar.int64
-  | StdScalar.float32
-  | StdScalar.float64
-  ? number
-  : T extends StdScalar.str
-  ? string
-  : T extends StdScalar.bool
-  ? boolean
-  : T extends StdScalar.bytes
-  ? Buffer
-  : unknown;
+type UnpackDNF<T> = T extends any[]
+  ? {
+      [k in keyof T]: T[k] extends [any]
+        ? T[k][number]
+        : T[k] extends any[]
+        ? Intersect<T[k][number]>
+        : never;
+    }[number]
+  : never;
 
 export enum Kind {
   computable,
@@ -57,22 +41,21 @@ export interface Computable<T> extends SchemaObject {
   __type: T;
 }
 
-export interface Property<scalar extends StdScalar, C extends Cardinality>
-  extends Pointer {
+export interface Property<scalar, C extends Cardinality> extends Pointer {
   kind: Kind.property;
   cardinality: C;
   name: string;
-  type: scalar;
 }
 
-export interface Link<T, C extends Cardinality> extends Pointer {
+export interface Link<T extends any[][], C extends Cardinality>
+  extends Pointer {
   kind: Kind.link;
   cardinality: C;
   target: T;
   name: string;
 }
 
-export type Parameter<T extends StdScalar> = Computable<T> | Property<T, any>;
+export type Parameter<T> = Computable<T> | Property<T, any>;
 
 export type Expand<T> = T extends object
   ? T extends infer O
@@ -80,15 +63,15 @@ export type Expand<T> = T extends object
     : never
   : T;
 
-type _UnpackBoolArg<Arg, T extends StdScalar> = Arg extends true
-  ? StdScalarToJS<T>
+type _UnpackBoolArg<Arg, T> = Arg extends true
+  ? T
   : Arg extends false
   ? undefined
   : Arg extends boolean
-  ? StdScalarToJS<T> | undefined
+  ? T | undefined
   : Arg extends Property<infer PPT, any>
-  ? StdScalarToJS<PPT>
-  : StdScalarToJS<T>;
+  ? PPT
+  : T;
 
 type _OnlyArgs<Args, T> = {
   [k in keyof Args]: k extends keyof T ? never : k;
@@ -99,7 +82,7 @@ type _Result<Args, T> = {
     ? T[k] extends Property<infer PPT, any>
       ? _UnpackBoolArg<Args[k], PPT>
       : T[k] extends Link<infer LLT, any>
-      ? _Result<Args[k], LLT>
+      ? _Result<Args[k], UnpackDNF<LLT>>
       : unknown
     : Args[k] extends Computable<infer CT>
     ? CT
@@ -110,7 +93,11 @@ export type Result<Args, T> = Expand<_Result<Args, T>>;
 
 export type MakeSelectArgs<T> = {
   [k in keyof T]?: T[k] extends Link<infer LT, infer LC>
-    ? Link<LT, LC> | MakeSelectArgs<LT> | Computable<LT> | boolean
+    ?
+        | Link<LT, LC>
+        | MakeSelectArgs<UnpackDNF<LT>>
+        | Computable<UnpackDNF<LT>>
+        | boolean
     : T[k] extends Property<infer PT, infer PC>
     ? Property<PT, PC> | Computable<PT> | boolean
     : never;
@@ -142,8 +129,7 @@ const bases = {
         kind: Kind.property,
         name: "name",
         cardinality: Cardinality.one,
-        type: StdScalar.str,
-      } as Property<StdScalar.str, Cardinality.one>;
+      } as Property<string, Cardinality.one>;
     },
 
     get email() {
@@ -151,8 +137,7 @@ const bases = {
         kind: Kind.property,
         name: "email",
         cardinality: Cardinality.one,
-        type: StdScalar.str,
-      } as Property<StdScalar.str, Cardinality.one>;
+      } as Property<string, Cardinality.one>;
     },
 
     get age() {
@@ -160,8 +145,7 @@ const bases = {
         kind: Kind.property,
         name: "age",
         cardinality: Cardinality.one,
-        type: StdScalar.int64,
-      } as Property<StdScalar.int64, Cardinality.one>;
+      } as Property<number, Cardinality.one>;
     },
 
     get friends() {
@@ -169,8 +153,8 @@ const bases = {
         kind: Kind.link,
         cardinality: Cardinality.many,
         name: "friends",
-        target: bases.User,
-      } as Link<typeof bases.User, Cardinality.many>;
+        target: [[bases.User]],
+      } as Link<[[typeof bases.User]], Cardinality.many>;
     },
 
     get preferences() {
@@ -178,10 +162,39 @@ const bases = {
         kind: Kind.link,
         cardinality: Cardinality.at_most_one,
         name: "preferences",
-        target: bases.Preferences,
-      } as Link<typeof bases.Preferences, Cardinality.at_most_one>;
+        target: [[bases.Preferences], [bases.LegacyPreferences]],
+      } as Link<
+        [[typeof bases.Preferences], [typeof bases.LegacyPreferences]],
+        Cardinality.at_most_one
+      >;
     },
   } as const,
+
+  LegacyPreferences: {
+    get name() {
+      return {
+        kind: Kind.property,
+        name: "name",
+        cardinality: Cardinality.one,
+      } as Property<string, Cardinality.one>;
+    },
+
+    get value() {
+      return {
+        kind: Kind.property,
+        name: "value",
+        cardinality: Cardinality.one,
+      } as Property<string, Cardinality.one>;
+    },
+
+    get saveOnClose() {
+      return {
+        name: "saveOnClose",
+        kind: Kind.property,
+        cardinality: Cardinality.at_most_one,
+      } as Property<string, Cardinality.at_most_one>;
+    },
+  },
 
   Preferences: {
     // will be auto-generated
@@ -191,8 +204,7 @@ const bases = {
         kind: Kind.property,
         name: "name",
         cardinality: Cardinality.one,
-        type: StdScalar.str,
-      } as Property<StdScalar.str, Cardinality.one>;
+      } as Property<string, Cardinality.one>;
     },
 
     get emailNotifications() {
@@ -200,8 +212,7 @@ const bases = {
         name: "emailNotifications",
         kind: Kind.property,
         cardinality: Cardinality.one,
-        type: StdScalar.str,
-      } as Property<StdScalar.str, Cardinality.one>;
+      } as Property<string, Cardinality.one>;
     },
 
     get saveOnClose() {
@@ -209,8 +220,7 @@ const bases = {
         name: "saveOnClose",
         kind: Kind.property,
         cardinality: Cardinality.at_most_one,
-        type: StdScalar.str,
-      } as Property<StdScalar.str, Cardinality.at_most_one>;
+      } as Property<string, Cardinality.at_most_one>;
     },
   } as const,
 };
@@ -235,6 +245,16 @@ const Preferences = {
   },
 } as const;
 
+const LegacyPreferences = {
+  ...bases.LegacyPreferences,
+
+  shape: <Spec extends MakeSelectArgs<typeof bases.LegacyPreferences>>(
+    spec: Spec
+  ): Query<Result<Spec, typeof bases.LegacyPreferences>> => {
+    throw new Error("not implemented");
+  },
+} as const;
+
 ////////////////
 
 class Query<T> {
@@ -247,22 +267,29 @@ class Query<T> {
 
 ////////////////
 
-const results2 = User.shape({
-  email: User.email,
-  age: false,
-  name: 1 > 0,
-  friends: {
-    name: true,
-    age: 1 > 0,
-    friends: {
-      zzz: std.len(User.name),
-      zzz2: literal(42),
-      friends: {
-        age: true,
-      },
-    },
-  },
-});
+// const results2 = User.shape({
+//   email: User.email,
+//   age: false,
+//   name: 1 > 0,
+//   friends: {
+//     name: true,
+//     age: 1 > 0,
+//     friends: {
+//       zzz: std.len(User.name),
+//       zzz2: literal(42),
+//       preferences: {
+//         name: true,
+//       },
+//       friends: {
+//         age: true,
+//       },
+//     },
+//   },
+//   preferences: {
+//     name: true,
+//     emailNotifications: true,
+//   },
+// });
 
 /////////////
 

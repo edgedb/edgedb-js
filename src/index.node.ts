@@ -28,4 +28,4 @@ export {Connection, Pool} from "./ifaces";
 
 export * from "./index.shared";
 
-export {model} from "./model";
+export * as model from "./model";

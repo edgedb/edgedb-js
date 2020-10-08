@@ -62,9 +62,8 @@ var __read = (this && this.__read) || function (o, n) {
     }
     return ar;
 };
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var index_node_1 = require("./dist/src/index.node");
-throw new Error("aaa");
 var CodeBuilder = /** @class */ (function () {
     function CodeBuilder() {
         this.buf = [];
@@ -90,23 +89,87 @@ var CodeBuilder = /** @class */ (function () {
     };
     return CodeBuilder;
 }());
-function fetchScalarTypes(con) {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, con.query("\n    WITH\n      MODULE schema,\n\n      material_scalars := (\n        SELECT ScalarType {\n          name\n        }\n        FILTER\n          (.name LIKE 'std::%' OR .name LIKE 'cal::%')\n          AND NOT .is_abstract\n      ).name\n\n    SELECT ScalarType {\n      name,\n      enum_values,\n      single material := (\n        SELECT x := ScalarType.ancestors.name\n        FILTER x IN material_scalars\n        LIMIT 1\n      )\n    }\n    FILTER NOT .is_abstract\n    ORDER BY .name;\n  ")];
-                case 1: return [2 /*return*/, (_a.sent())];
-            }
-        });
+var FileBuilder = /** @class */ (function () {
+    function FileBuilder() {
+        this._head = new CodeBuilder();
+        this._body = new CodeBuilder();
+    }
+    Object.defineProperty(FileBuilder.prototype, "head", {
+        get: function () {
+            return this._head;
+        },
+        enumerable: false,
+        configurable: true
     });
-}
-function fetchObjectTypes(con) {
+    Object.defineProperty(FileBuilder.prototype, "body", {
+        get: function () {
+            return this._body;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    FileBuilder.prototype.render = function () {
+        return this._head.render() + "\n" + this._body.render();
+    };
+    return FileBuilder;
+}());
+var DirBuilder = /** @class */ (function () {
+    function DirBuilder() {
+        this._map = new Map();
+    }
+    DirBuilder.prototype.getPath = function (path) {
+        if (!this._map.has(path)) {
+            this._map.set(path, new FileBuilder());
+        }
+        return this._map.get(path);
+    };
+    DirBuilder.prototype.debug = function () {
+        var e_1, _a;
+        var buf = [];
+        try {
+            for (var _b = __values(this._map.entries()), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var _d = __read(_c.value, 2), path = _d[0], builder = _d[1];
+                buf.push(">>> " + path + "\n");
+                buf.push(builder.render());
+                buf.push("\n");
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        return buf.join("\n");
+    };
+    return DirBuilder;
+}());
+var scalarMap = new Map([
+    ["std::bool", "boolean"],
+    ["std::str", "string"],
+    ["std::int16", "number"],
+    ["std::int32", "number"],
+    ["std::int64", "number"],
+    ["std::float32", "number"],
+    ["std::float64", "number"],
+    ["std::bigint", "BigInt"],
+    ["std::uuid", "edgedb.UUID"],
+    ["std::bytes", "Buffer"],
+    ["std::datetime", "Date"],
+    ["std::duration", "edgedb.Duration"],
+    ["cal::local_datetime", "edgedb.LocalDateTime"],
+    ["std::local_date", "edgedb.LocalDate"],
+    ["std::local_time", "edgedb.LocalTime"],
+    ["std::json", "string"],
+]);
+function fetchTypes(con) {
     return __awaiter(this, void 0, void 0, function () {
         var types, graph, adj, types_1, types_1_1, type, types_2, types_2_1, type, _a, _b, base, visiting, visited, sorted, visit, types_3, types_3_1, type;
-        var e_1, _c, e_2, _d, e_3, _e, e_4, _f;
+        var e_2, _c, e_3, _d, e_4, _e, e_5, _f;
         return __generator(this, function (_g) {
             switch (_g.label) {
-                case 0: return [4 /*yield*/, con.query("\n    WITH\n      MODULE schema\n\n    SELECT ObjectType {\n      name,\n      is_abstract,\n      bases: {\n        name,\n      } ORDER BY @index ASC,\n      pointers: {\n        cardinality,\n        required,\n        name,\n        expr,\n        object_target := .target[IS ObjectType] {\n          name,\n          is_compound_type,\n          union_of: {\n            name,\n          },\n          intersection_of: {\n            name,\n          }\n        },\n        scalar_target := .target[IS ScalarType] {\n          name,\n        },\n        array_target := .target[IS Array] {\n          element_type: {\n            name,\n          }\n        },\n        tuple_target := .target[IS Tuple] {\n          element_types: {\n            name,\n            type: {\n              name,\n            }\n          }\n        },\n        [IS Link].properties: {\n          name,\n          target: {\n            name,\n          }\n        } FILTER @is_owned,\n        kind := 'link' IF ObjectType.pointers IS Link ELSE 'property',\n      } FILTER @is_owned,\n    }\n    FILTER NOT .is_compound_type\n    ORDER BY .name;\n  ")];
+                case 0: return [4 /*yield*/, con.query("\n    WITH\n      MODULE schema,\n\n      material_scalars := (\n        SELECT ScalarType\n        FILTER\n          (.name LIKE 'std::%' OR .name LIKE 'cal::%')\n          AND NOT .is_abstract\n      )\n\n    SELECT Type {\n      id,\n      name,\n      is_abstract,\n\n      kind := 'object' IF Type IS ObjectType ELSE\n              'scalar' IF Type IS ScalarType ELSE\n              'array' IF Type IS Array ELSE\n              'tuple' IF Type IS Tuple ELSE\n              'unknown',\n\n      [IS ScalarType].enum_values,\n\n      single material_id := (\n        SELECT x := Type[IS ScalarType].ancestors\n        FILTER x IN material_scalars\n        LIMIT 1\n      ).id,\n\n      [IS InheritingObject].bases: {\n        id\n      } ORDER BY @index ASC,\n\n      [IS ObjectType].union_of,\n      [IS ObjectType].intersection_of,\n      [IS ObjectType].pointers: {\n        cardinality,\n        required,\n        name,\n        expr,\n\n        target_id := .target.id,\n\n        kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property',\n\n        [IS Link].pointers: {\n          name,\n          target_id := .target.id\n        } FILTER @is_owned,\n      } FILTER @is_owned,\n\n      array_element_id := [IS Array].element_type.id,\n\n      tuple_elements := (SELECT [IS Tuple].element_types {\n        target_id := .type.id,\n        name\n      } ORDER BY @index ASC),\n    }\n    ORDER BY .name;\n  ")];
                 case 1:
                     types = _g.sent();
                     graph = new Map();
@@ -114,78 +177,81 @@ function fetchObjectTypes(con) {
                     try {
                         for (types_1 = __values(types), types_1_1 = types_1.next(); !types_1_1.done; types_1_1 = types_1.next()) {
                             type = types_1_1.value;
-                            graph.set(type.name, type);
+                            graph.set(type.id, type);
                         }
                     }
-                    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
                     finally {
                         try {
-                            if (types_1_1 && !types_1_1.done && (_c = types_1["return"])) _c.call(types_1);
+                            if (types_1_1 && !types_1_1.done && (_c = types_1.return)) _c.call(types_1);
                         }
-                        finally { if (e_1) throw e_1.error; }
+                        finally { if (e_2) throw e_2.error; }
                     }
                     try {
                         for (types_2 = __values(types), types_2_1 = types_2.next(); !types_2_1.done; types_2_1 = types_2.next()) {
                             type = types_2_1.value;
+                            if (type.kind !== "object" && type.kind !== "scalar") {
+                                continue;
+                            }
                             try {
-                                for (_a = (e_3 = void 0, __values(type.bases)), _b = _a.next(); !_b.done; _b = _a.next()) {
-                                    base = _b.value.name;
+                                for (_a = (e_4 = void 0, __values(type.bases)), _b = _a.next(); !_b.done; _b = _a.next()) {
+                                    base = _b.value.id;
                                     if (graph.has(base)) {
-                                        if (!adj.has(type.name)) {
-                                            adj.set(type.name, new Set());
+                                        if (!adj.has(type.id)) {
+                                            adj.set(type.id, new Set());
                                         }
-                                        adj.get(type.name).add(base);
+                                        adj.get(type.id).add(base);
                                     }
                                     else {
                                         throw new Error("reference to an unknown object type: " + base);
                                     }
                                 }
                             }
-                            catch (e_3_1) { e_3 = { error: e_3_1 }; }
+                            catch (e_4_1) { e_4 = { error: e_4_1 }; }
                             finally {
                                 try {
-                                    if (_b && !_b.done && (_e = _a["return"])) _e.call(_a);
+                                    if (_b && !_b.done && (_e = _a.return)) _e.call(_a);
                                 }
-                                finally { if (e_3) throw e_3.error; }
+                                finally { if (e_4) throw e_4.error; }
                             }
                         }
                     }
-                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                    catch (e_3_1) { e_3 = { error: e_3_1 }; }
                     finally {
                         try {
-                            if (types_2_1 && !types_2_1.done && (_d = types_2["return"])) _d.call(types_2);
+                            if (types_2_1 && !types_2_1.done && (_d = types_2.return)) _d.call(types_2);
                         }
-                        finally { if (e_2) throw e_2.error; }
+                        finally { if (e_3) throw e_3.error; }
                     }
                     visiting = new Set();
                     visited = new Set();
-                    sorted = [];
+                    sorted = new Map();
                     visit = function (type) {
-                        var e_5, _a;
+                        var e_6, _a;
                         if (visiting.has(type.name)) {
                             var last = Array.from(visiting).slice(1, 2);
                             throw new Error("dependency cycle between " + type.name + " and " + last);
                         }
-                        if (!visited.has(type.name)) {
+                        if (!visited.has(type.id)) {
                             visiting.add(type.name);
-                            if (adj.has(type.name)) {
+                            if (adj.has(type.id)) {
                                 try {
-                                    for (var _b = __values(adj.get(type.name).values()), _c = _b.next(); !_c.done; _c = _b.next()) {
-                                        var adjName = _c.value;
-                                        visit(graph.get(adjName));
+                                    for (var _b = __values(adj.get(type.id).values()), _c = _b.next(); !_c.done; _c = _b.next()) {
+                                        var adjId = _c.value;
+                                        visit(graph.get(adjId));
                                     }
                                 }
-                                catch (e_5_1) { e_5 = { error: e_5_1 }; }
+                                catch (e_6_1) { e_6 = { error: e_6_1 }; }
                                 finally {
                                     try {
-                                        if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
+                                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                                     }
-                                    finally { if (e_5) throw e_5.error; }
+                                    finally { if (e_6) throw e_6.error; }
                                 }
                             }
-                            sorted.push(type);
-                            visited.add(type.name);
-                            visiting["delete"](type.name);
+                            sorted.set(type.id, type);
+                            visited.add(type.id);
+                            visiting.delete(type.name);
                         }
                     };
                     try {
@@ -194,136 +260,209 @@ function fetchObjectTypes(con) {
                             visit(type);
                         }
                     }
-                    catch (e_4_1) { e_4 = { error: e_4_1 }; }
+                    catch (e_5_1) { e_5 = { error: e_5_1 }; }
                     finally {
                         try {
-                            if (types_3_1 && !types_3_1.done && (_f = types_3["return"])) _f.call(types_3);
+                            if (types_3_1 && !types_3_1.done && (_f = types_3.return)) _f.call(types_3);
                         }
-                        finally { if (e_4) throw e_4.error; }
+                        finally { if (e_5) throw e_5.error; }
                     }
                     return [2 /*return*/, sorted];
             }
         });
     });
 }
+function getMod(name) {
+    var parts = name.split("::");
+    if (!parts || parts.length !== 2) {
+        throw new Error("getMod: invalid name " + name);
+    }
+    return parts[0];
+}
+function getName(name) {
+    var parts = name.split("::");
+    if (!parts || parts.length !== 2) {
+        throw new Error("getName: invalid name " + name);
+    }
+    return parts[1];
+}
+function snToIdent(name) {
+    if (name.includes("::")) {
+        throw new Error("snToIdent: invalid name " + name);
+    }
+    return name.replace(/([^a-zA-Z0-9_]+)/g, "_");
+}
+function fnToIdent(name) {
+    if (!name.includes("::")) {
+        throw new Error("fnToIdent: invalid name " + name);
+    }
+    return name.replace(/([^a-zA-Z0-9_]+)/g, "_");
+}
+function quote(val) {
+    return JSON.stringify(val.toString());
+}
 function main() {
     return __awaiter(this, void 0, void 0, function () {
-        var con, scalars_1, types_4, builder_1;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
+        var con, dir, types_4, modsWithEnums, _loop_1, _a, _b, type, base, body_1, modsWithEnums_1, modsWithEnums_1_1, mod;
+        var e_7, _c, e_8, _d;
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0: return [4 /*yield*/, index_node_1.connect({
-                        database: "dump01_cli",
+                        database: "dump01",
                         user: "yury",
-                        host: "localhost"
+                        host: "localhost",
                     })];
                 case 1:
-                    con = _a.sent();
-                    _a.label = 2;
+                    con = _e.sent();
+                    dir = new DirBuilder();
+                    _e.label = 2;
                 case 2:
-                    _a.trys.push([2, , 5, 7]);
-                    return [4 /*yield*/, fetchScalarTypes(con)];
+                    _e.trys.push([2, , 4, 6]);
+                    return [4 /*yield*/, fetchTypes(con)];
                 case 3:
-                    scalars_1 = _a.sent();
-                    return [4 /*yield*/, fetchObjectTypes(con)];
-                case 4:
-                    types_4 = _a.sent();
-                    builder_1 = new CodeBuilder();
-                    builder_1.writeln('import {model} from "edgedb";');
-                    builder_1.nl();
-                    builder_1.writeln("const base = (function() {");
-                    builder_1.indented(function () {
-                        var e_6, _a, e_7, _b;
-                        try {
-                            for (var scalars_2 = __values(scalars_1), scalars_2_1 = scalars_2.next(); !scalars_2_1.done; scalars_2_1 = scalars_2.next()) {
-                                var scalas = scalars_2_1.value;
-                            }
+                    types_4 = _e.sent();
+                    modsWithEnums = new Set();
+                    _loop_1 = function (type) {
+                        if (type.kind !== "scalar" ||
+                            !type.enum_values ||
+                            !type.enum_values.length) {
+                            return "continue";
                         }
-                        catch (e_6_1) { e_6 = { error: e_6_1 }; }
-                        finally {
+                        var b = dir.getPath("mods/" + getMod(type.name) + ".ts");
+                        b.body.writeln("enum " + getName(type.name) + " {");
+                        b.body.indented(function () {
+                            var e_9, _a;
                             try {
-                                if (scalars_2_1 && !scalars_2_1.done && (_a = scalars_2["return"])) _a.call(scalars_2);
+                                for (var _b = (e_9 = void 0, __values(type.enum_values)), _c = _b.next(); !_c.done; _c = _b.next()) {
+                                    var val = _c.value;
+                                    b.body.writeln(snToIdent(val) + " = " + quote(val) + ",");
+                                }
                             }
-                            finally { if (e_6) throw e_6.error; }
-                        }
-                        var _loop_1 = function (type) {
-                            var _a = __read(type.name.split("::", 2), 2), mod = _a[0], name_1 = _a[1];
-                            builder_1.writeln("const " + mod + "__" + name_1 + " = {");
-                            builder_1.indented(function () {
-                                var e_8, _a, e_9, _b;
+                            catch (e_9_1) { e_9 = { error: e_9_1 }; }
+                            finally {
                                 try {
-                                    for (var _c = (e_8 = void 0, __values(type.bases)), _d = _c.next(); !_d.done; _d = _c.next()) {
-                                        var base = _d.value.name;
-                                        var _e = __read(base.split("::", 2), 2), bm = _e[0], bn = _e[1];
-                                        builder_1.writeln("..." + bm + "__" + bn + ",");
-                                        builder_1.nl();
-                                        var _loop_2 = function (ptr) {
-                                            builder_1.writeln("get " + ptr.name + "() {");
-                                            builder_1.indented(function () {
-                                                builder_1.writeln("return {");
+                                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                                }
+                                finally { if (e_9) throw e_9.error; }
+                            }
+                        });
+                        b.body.writeln("}");
+                        b.body.nl();
+                        modsWithEnums.add(getMod(type.name));
+                    };
+                    try {
+                        for (_a = __values(types_4.values()), _b = _a.next(); !_b.done; _b = _a.next()) {
+                            type = _b.value;
+                            _loop_1(type);
+                        }
+                    }
+                    catch (e_7_1) { e_7 = { error: e_7_1 }; }
+                    finally {
+                        try {
+                            if (_b && !_b.done && (_c = _a.return)) _c.call(_a);
+                        }
+                        finally { if (e_7) throw e_7.error; }
+                    }
+                    base = dir.getPath("base.ts");
+                    body_1 = base.body;
+                    base.head.writeln('import {model} from "edgedb";');
+                    try {
+                        for (modsWithEnums_1 = __values(modsWithEnums), modsWithEnums_1_1 = modsWithEnums_1.next(); !modsWithEnums_1_1.done; modsWithEnums_1_1 = modsWithEnums_1.next()) {
+                            mod = modsWithEnums_1_1.value;
+                            base.head.writeln("import type * as " + mod + " from \"./mods/" + mod + "\";");
+                        }
+                    }
+                    catch (e_8_1) { e_8 = { error: e_8_1 }; }
+                    finally {
+                        try {
+                            if (modsWithEnums_1_1 && !modsWithEnums_1_1.done && (_d = modsWithEnums_1.return)) _d.call(modsWithEnums_1);
+                        }
+                        finally { if (e_8) throw e_8.error; }
+                    }
+                    body_1.writeln("const base = (function() {");
+                    body_1.indented(function () {
+                        var e_10, _a;
+                        var _loop_2 = function (type) {
+                            if (type.kind !== "object") {
+                                return "continue";
+                            }
+                            body_1.writeln("const " + fnToIdent(type.name) + " = {");
+                            body_1.indented(function () {
+                                var e_11, _a, e_12, _b;
+                                try {
+                                    for (var _c = (e_11 = void 0, __values(type.bases)), _d = _c.next(); !_d.done; _d = _c.next()) {
+                                        var baseType = _d.value.id;
+                                        var baseId = types_4.get(baseType).id;
+                                        body_1.writeln("..." + fnToIdent(baseId) + ",");
+                                        body_1.nl();
+                                        var _loop_3 = function (ptr) {
+                                            body_1.writeln("get " + ptr.name + "() {");
+                                            body_1.indented(function () {
+                                                body_1.writeln("return {");
                                                 if (ptr.kind === "link") {
-                                                    builder_1.indented(function () {
-                                                        builder_1.writeln("kind: model.Kind.link,");
-                                                        builder_1.writeln("name: " + JSON.stringify(ptr.name) + ",");
+                                                    body_1.indented(function () {
+                                                        body_1.writeln("kind: model.Kind.link,");
+                                                        body_1.writeln("name: " + JSON.stringify(ptr.name) + ",");
                                                     });
                                                 }
                                                 else {
-                                                    builder_1.indented(function () {
-                                                        builder_1.writeln("kind: model.Kind.property,");
-                                                        builder_1.writeln("name: " + JSON.stringify(ptr.name) + ",");
+                                                    body_1.indented(function () {
+                                                        body_1.writeln("kind: model.Kind.property,");
+                                                        body_1.writeln("name: " + JSON.stringify(ptr.name) + ",");
                                                     });
                                                 }
                                             });
-                                            builder_1.writeln("},");
-                                            builder_1.nl();
+                                            body_1.writeln("},");
+                                            body_1.nl();
                                         };
                                         try {
-                                            for (var _f = (e_9 = void 0, __values(type.pointers)), _g = _f.next(); !_g.done; _g = _f.next()) {
-                                                var ptr = _g.value;
-                                                _loop_2(ptr);
+                                            for (var _e = (e_12 = void 0, __values(type.pointers)), _f = _e.next(); !_f.done; _f = _e.next()) {
+                                                var ptr = _f.value;
+                                                _loop_3(ptr);
                                             }
                                         }
-                                        catch (e_9_1) { e_9 = { error: e_9_1 }; }
+                                        catch (e_12_1) { e_12 = { error: e_12_1 }; }
                                         finally {
                                             try {
-                                                if (_g && !_g.done && (_b = _f["return"])) _b.call(_f);
+                                                if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
                                             }
-                                            finally { if (e_9) throw e_9.error; }
+                                            finally { if (e_12) throw e_12.error; }
                                         }
                                     }
                                 }
-                                catch (e_8_1) { e_8 = { error: e_8_1 }; }
+                                catch (e_11_1) { e_11 = { error: e_11_1 }; }
                                 finally {
                                     try {
-                                        if (_d && !_d.done && (_a = _c["return"])) _a.call(_c);
+                                        if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                                     }
-                                    finally { if (e_8) throw e_8.error; }
+                                    finally { if (e_11) throw e_11.error; }
                                 }
                             });
-                            builder_1.writeln("} as const;");
-                            builder_1.nl();
+                            body_1.writeln("} as const;");
+                            body_1.nl();
                         };
                         try {
-                            for (var types_5 = __values(types_4), types_5_1 = types_5.next(); !types_5_1.done; types_5_1 = types_5.next()) {
-                                var type = types_5_1.value;
-                                _loop_1(type);
+                            for (var _b = __values(types_4.values()), _c = _b.next(); !_c.done; _c = _b.next()) {
+                                var type = _c.value;
+                                _loop_2(type);
                             }
                         }
-                        catch (e_7_1) { e_7 = { error: e_7_1 }; }
+                        catch (e_10_1) { e_10 = { error: e_10_1 }; }
                         finally {
                             try {
-                                if (types_5_1 && !types_5_1.done && (_b = types_5["return"])) _b.call(types_5);
+                                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                             }
-                            finally { if (e_7) throw e_7.error; }
+                            finally { if (e_10) throw e_10.error; }
                         }
                     });
-                    builder_1.writeln("})();");
-                    console.log(builder_1.render());
-                    return [3 /*break*/, 7];
-                case 5: return [4 /*yield*/, con.close()];
-                case 6:
-                    _a.sent();
+                    body_1.writeln("})();");
+                    console.log(dir.debug());
+                    return [3 /*break*/, 6];
+                case 4: return [4 /*yield*/, con.close()];
+                case 5:
+                    _e.sent();
                     return [7 /*endfinally*/];
-                case 7: return [2 /*return*/];
+                case 6: return [2 /*return*/];
             }
         });
     });
