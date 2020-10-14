@@ -267,29 +267,29 @@ export class Query<T> {
 
 ////////////////
 
-// const results2 = User.shape({
-//   email: User.email,
-//   age: false,
-//   name: 1 > 0,
-//   friends: {
-//     name: true,
-//     age: 1 > 0,
-//     friends: {
-//       zzz: std.len(User.name),
-//       zzz2: literal(42),
-//       preferences: {
-//         name: true,
-//       },
-//       friends: {
-//         age: true,
-//       },
-//     },
-//   },
-//   preferences: {
-//     name: true,
-//     emailNotifications: true,
-//   },
-// });
+const results2 = User.shape({
+  email: User.email,
+  age: false,
+  name: 1 > 0,
+  friends: {
+    name: true,
+    age: 1 > 0,
+    friends: {
+      zzz: std.len(User.name),
+      zzz2: literal(42),
+      preferences: {
+        name: true,
+      },
+      friends: {
+        age: true,
+      },
+    },
+  },
+  preferences: {
+    name: true,
+    emailNotifications: true,
+  },
+});
 
 /////////////
 

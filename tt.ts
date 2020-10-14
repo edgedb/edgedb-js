@@ -6,6 +6,11 @@ import * as fs from "fs";
 class CodeBuilder {
   private buf: string[] = [];
   private indent: number = 0;
+  private imports = new Set<string>();
+
+  addImport(imp: string): void {
+    this.imports.add(imp);
+  }
 
   nl(): void {
     this.buf.push("");
@@ -25,35 +30,22 @@ class CodeBuilder {
   }
 
   render(): string {
-    return this.buf.join("\n") + "\n";
-  }
-}
-
-class FileBuilder {
-  private _head = new CodeBuilder();
-  private _body = new CodeBuilder();
-
-  public flags = new Set<string>();
-
-  get head(): CodeBuilder {
-    return this._head;
+    return (
+      Array.from(this.imports).join("\n") + "\n" + this.buf.join("\n") + "\n"
+    );
   }
 
-  get body(): CodeBuilder {
-    return this._body;
-  }
-
-  render(): string {
-    return this._head.render() + "\n" + this._body.render();
+  isEmpty(): boolean {
+    return !this.buf.length && !this.imports.size;
   }
 }
 
 class DirBuilder {
-  private _map = new Map<string, FileBuilder>();
+  private _map = new Map<string, CodeBuilder>();
 
-  getPath(fn: string): FileBuilder {
+  getPath(fn: string): CodeBuilder {
     if (!this._map.has(fn)) {
-      this._map.set(fn, new FileBuilder());
+      this._map.set(fn, new CodeBuilder());
     }
     return this._map.get(fn)!;
   }
@@ -71,6 +63,10 @@ class DirBuilder {
   write(to: string): void {
     const dir = path.normalize(to);
     for (const [fn, builder] of this._map.entries()) {
+      if (builder.isEmpty()) {
+        continue;
+      }
+
       const dest = path.join(dir, fn);
       const destDir = path.dirname(dest);
 
@@ -366,40 +362,38 @@ function toJsScalarType(
 
 function toJsObjectType(
   type: IntrospectedObjectType,
-  types: IntrospectedTypes
-): [string, string] {
+  types: IntrospectedTypes,
+  currentMod: string,
+  code: CodeBuilder,
+  level: number = 0
+): string {
   if (type.intersection_of && type.intersection_of.length) {
-    let typeResult = "[[";
-    let jsResult = "[[";
-    for (const {id: intId} of type.intersection_of) {
-      const int = types.get(intId)! as IntrospectedObjectType;
-      if (int.union_of && int.union_of.length) {
-        throw new Error("intersections of unions are not supported yet");
-      }
-      typeResult += `typeof base.${fnToIdent(int.name)},`;
-      jsResult += `base.${fnToIdent(int.name)},`;
+    const res: string[] = [];
+    for (const {id: subId} of type.intersection_of) {
+      const sub = types.get(subId)! as IntrospectedObjectType;
+      res.push(toJsObjectType(sub, types, currentMod, code, level + 1));
     }
-    return [typeResult.slice(0, -1) + "]]", jsResult.slice(0, -1) + "]]"];
+    const ret = res.join(" & ");
+    return level > 0 ? `(${ret})` : ret;
   }
 
   if (type.union_of && type.union_of.length) {
-    let typeResult = "[";
-    let jsResult = "[";
-    for (const {id: uniId} of type.union_of) {
-      const uni = types.get(uniId)! as IntrospectedObjectType;
-      if (uni.intersection_of && uni.intersection_of.length) {
-        throw new Error("unions of intersections are not supported yet");
-      }
-      typeResult += `[typeof base.${fnToIdent(uni.name)}],`;
-      jsResult += `[base.${fnToIdent(uni.name)}],`;
+    const res: string[] = [];
+    for (const {id: subId} of type.union_of) {
+      const sub = types.get(subId)! as IntrospectedObjectType;
+      res.push(toJsObjectType(sub, types, currentMod, code, level + 1));
     }
-    return [typeResult.slice(0, -1) + "]", jsResult.slice(0, -1) + "]"];
+    const ret = res.join(" | ");
+    return level > 0 ? `(${ret})` : ret;
   }
 
-  return [
-    `[[typeof base.${fnToIdent(type.name)}]]`,
-    `[[base.${fnToIdent(type.name)}]]`,
-  ];
+  const mod = getMod(type.name);
+  if (mod !== currentMod) {
+    code.addImport(`import type * as ${mod}Types from "./${mod}";`);
+    return `${mod}Types.${getName(type.name)}`;
+  } else {
+    return getName(type.name);
+  }
 }
 
 async function main(): Promise<void> {
@@ -417,6 +411,13 @@ async function main(): Promise<void> {
     const modsIndex = new Set<string>();
 
     for (const type of types.values()) {
+      if (type.kind !== "scalar" && type.kind !== "object") {
+        continue;
+      }
+
+      const mod = getMod(type.name);
+      modsIndex.add(mod);
+
       if (
         type.kind !== "scalar" ||
         !type.enum_values ||
@@ -425,26 +426,120 @@ async function main(): Promise<void> {
         continue;
       }
 
-      const mod = getMod(type.name);
       const b = dir.getPath(`modules/${mod}.ts`);
 
-      b.body.writeln(`export enum ${getName(type.name)} {`);
-      b.body.indented(() => {
+      b.writeln(`export enum ${getName(type.name)} {`);
+      b.indented(() => {
         for (const val of type.enum_values) {
-          b.body.writeln(`${snToIdent(val)} = ${quote(val)},`);
+          b.writeln(`${snToIdent(val)} = ${quote(val)},`);
         }
       });
-      b.body.writeln(`}`);
-      b.body.nl();
+      b.writeln(`}`);
+      b.nl();
 
       modsWithEnums.add(mod);
-      modsIndex.add(mod);
     }
 
-    const base = dir.getPath("__base__.ts");
+    for (const type of types.values()) {
+      if (type.kind !== "object") {
+        continue;
+      }
+      if (
+        (type.union_of && type.union_of.length) ||
+        (type.intersection_of && type.intersection_of.length)
+      ) {
+        continue;
+      }
+
+      const mod = getMod(type.name);
+      const body = dir.getPath(`modules/${mod}.ts`);
+
+      body.addImport(`import {model} from "edgedb";`);
+
+      const bases = [];
+      for (const {id: baseId} of type.bases) {
+        const baseType = types.get(baseId)!;
+        const baseMod = getMod(baseType.name);
+        if (baseMod !== mod) {
+          body.addImport(
+            `import type * as ${baseMod}Types from "./${baseMod}";`
+          );
+          bases.push(`${baseMod}Types.${getName(baseType.name)}`);
+        } else {
+          bases.push(getName(baseType.name));
+        }
+      }
+      if (bases.length) {
+        body.writeln(
+          `export interface ${snToIdent(
+            getName(type.name)
+          )} extends ${bases.join(", ")} {`
+        );
+      } else {
+        body.writeln(`export interface ${snToIdent(getName(type.name))} {`);
+      }
+
+      body.indented(() => {
+        for (const ptr of type.pointers) {
+          const card = `model.Cardinality.${toCardinality(ptr)}`;
+
+          if (ptr.kind === "link") {
+            const trgType = types.get(
+              ptr.target_id
+            )! as IntrospectedObjectType;
+
+            const tsType = toJsObjectType(trgType, types, mod, body);
+
+            body.writeln(`${ptr.name}: model.Link<${tsType}, ${card}>;`);
+          } else {
+            const tsType = toJsScalarType(
+              types.get(ptr.target_id)! as IntrospectedScalarType,
+              types
+            );
+
+            body.writeln(`${ptr.name}: model.Property<${tsType}, ${card}>;`);
+          }
+        }
+      });
+      body.writeln(`}`);
+      body.nl();
+    }
+
+    for (const type of types.values()) {
+      if (type.kind !== "object") {
+        continue;
+      }
+      if (
+        (type.union_of && type.union_of.length) ||
+        (type.intersection_of && type.intersection_of.length)
+      ) {
+        continue;
+      }
+
+      const mod = getMod(type.name);
+      const body = dir.getPath(`modules/${mod}.ts`);
+
+      body.writeln(`export const ${snToIdent(getName(type.name))} = {`);
+      body.indented(() => {
+        body.writeln(
+          `shape: <Spec extends model.MakeSelectArgs<${getName(type.name)}>>(`
+        );
+        body.indented(() => {
+          body.writeln(`spec: Spec`);
+        });
+        body.writeln(
+          `): model.Query<model.Result<Spec, ${getName(
+            type.name
+          )}>> => {throw new Error("not impl");}`
+        );
+      });
+      body.writeln(`} as const;`);
+    }
+
+    /*const base = dir.getPath("__base__.ts");
     const body = base.body;
 
-    base.head.writeln(`import {model} from "edgedb";`);
+    base.addImport(`import {model} from "edgedb";`);
     base.head.nl();
     for (const mod of modsWithEnums) {
       base.head.writeln(
@@ -564,18 +659,26 @@ async function main(): Promise<void> {
     body.nl();
     body.writeln("export default base;");
 
+    */
+
     const index = dir.getPath("index.ts");
     for (const mod of modsIndex) {
-      index.head.writeln(`import * as _${mod} from "./modules/${mod}";`);
+      if (dir.getPath(`modules/${mod}.ts`).isEmpty()) {
+        continue;
+      }
+      index.addImport(`import * as _${mod} from "./modules/${mod}";`);
     }
-    index.body.writeln("const modules = {");
+    index.writeln("const modules = {");
     for (const mod of modsIndex) {
-      index.body.indented(() => {
-        index.body.writeln(`${mod}: _${mod},`);
+      if (dir.getPath(`modules/${mod}.ts`).isEmpty()) {
+        continue;
+      }
+      index.indented(() => {
+        index.writeln(`${mod}: _${mod},`);
       });
     }
-    index.body.writeln("} as const;");
-    index.body.writeln("export default modules;");
+    index.writeln("} as const;");
+    index.writeln("export default modules;");
   } finally {
     await con.close();
   }

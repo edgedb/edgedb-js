@@ -1,3 +1,13 @@
 import schema from "./aaa";
 
-console.log(schema.test.Issue.shape);
+const a = schema.test.Issue.shape({
+  owner: {
+    name: true,
+    todo: {
+      name: true,
+      references: {
+        title1: true,
+      },
+    },
+  },
+});
