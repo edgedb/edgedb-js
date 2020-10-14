@@ -376,8 +376,8 @@ function toJsObjectType(
       if (int.union_of && int.union_of.length) {
         throw new Error("intersections of unions are not supported yet");
       }
-      typeResult += `typeof base.${fnToIdent(int.name)},`;
-      jsResult += `base.${fnToIdent(int.name)},`;
+      typeResult += `typeof ${fnToIdent(int.name)},`;
+      jsResult += `${fnToIdent(int.name)},`;
     }
     return [typeResult.slice(0, -1) + "]]", jsResult.slice(0, -1) + "]]"];
   }
@@ -390,16 +390,13 @@ function toJsObjectType(
       if (uni.intersection_of && uni.intersection_of.length) {
         throw new Error("unions of intersections are not supported yet");
       }
-      typeResult += `[typeof base.${fnToIdent(uni.name)}],`;
-      jsResult += `[base.${fnToIdent(uni.name)}],`;
+      typeResult += `[typeof ${fnToIdent(uni.name)}],`;
+      jsResult += `[${fnToIdent(uni.name)}],`;
     }
     return [typeResult.slice(0, -1) + "]", jsResult.slice(0, -1) + "]"];
   }
 
-  return [
-    `[[typeof base.${fnToIdent(type.name)}]]`,
-    `[[base.${fnToIdent(type.name)}]]`,
-  ];
+  return [`[[typeof ${fnToIdent(type.name)}]]`, `[[${fnToIdent(type.name)}]]`];
 }
 
 async function main(): Promise<void> {
@@ -454,115 +451,101 @@ async function main(): Promise<void> {
 
     const topObjectTypes = new Set<string>();
 
-    body.writeln("const base = (function() {");
-    body.indented(() => {
-      for (const type of types.values()) {
-        if (type.kind !== "object") {
-          continue;
+    for (const type of types.values()) {
+      if (type.kind !== "object") {
+        continue;
+      }
+      if (
+        (type.union_of && type.union_of.length) ||
+        (type.intersection_of && type.intersection_of.length)
+      ) {
+        continue;
+      }
+
+      const mod = getMod(type.name);
+      modsIndex.add(mod);
+      topObjectTypes.add(type.name);
+
+      body.writeln(`export const ${fnToIdent(type.name)} = {`);
+      body.indented(() => {
+        for (const {id: baseId} of type.bases) {
+          const baseType = types.get(baseId)!;
+          body.writeln(`...${fnToIdent(baseType.name)},`);
         }
-        if (
-          (type.union_of && type.union_of.length) ||
-          (type.intersection_of && type.intersection_of.length)
-        ) {
-          continue;
+
+        if (type.bases.length && type.pointers.length) {
+          body.nl();
         }
 
-        const mod = getMod(type.name);
-        modsIndex.add(mod);
-        topObjectTypes.add(type.name);
+        for (const ptr of type.pointers) {
+          const card = `model.Cardinality.${toCardinality(ptr)}`;
 
-        body.writeln(`const ${fnToIdent(type.name)} = {`);
-        body.indented(() => {
-          for (const {id: baseId} of type.bases) {
-            const baseType = types.get(baseId)!;
-            body.writeln(`...${fnToIdent(baseType.name)},`);
-          }
+          if (ptr.kind === "link") {
+            const ttype = types.get(ptr.target_id)! as IntrospectedObjectType;
+            const [typeType, jsType] = toJsObjectType(ttype, types);
 
-          if (type.bases.length && type.pointers.length) {
-            body.nl();
-          }
-
-          for (const ptr of type.pointers) {
             body.writeln(`get ${ptr.name}() {`);
             body.indented(() => {
               body.writeln(`return {`);
+              body.indented(() => {
+                body.writeln(`kind: model.Kind.link,`);
+                body.writeln(`name: ${JSON.stringify(ptr.name)},`);
+                body.writeln(`cardinality: ${card},`);
+                body.writeln(`target: ${jsType},`);
+              });
+              body.writeln(`} as model.Link<${typeType}, ${card}>;`);
+            });
+            body.writeln("},");
+          } else {
+            const jstype = toJsScalarType(
+              types.get(ptr.target_id)! as IntrospectedScalarType,
+              types
+            );
 
-              const card = `model.Cardinality.${toCardinality(ptr)}`;
-
-              if (ptr.kind === "link") {
-                const ttype = types.get(
-                  ptr.target_id
-                )! as IntrospectedObjectType;
-
-                const [typeType, jsType] = toJsObjectType(ttype, types);
-
-                body.indented(() => {
-                  body.writeln(`kind: model.Kind.link,`);
-                  body.writeln(`name: ${JSON.stringify(ptr.name)},`);
-                  body.writeln(`cardinality: ${card},`);
-                  body.writeln(`target: ${jsType},`);
-                });
-                body.writeln(`} as model.Link<${typeType}, ${card}>;`);
-              } else {
-                const jstype = toJsScalarType(
-                  types.get(ptr.target_id)! as IntrospectedScalarType,
-                  types
-                );
-
-                body.indented(() => {
-                  body.writeln(`kind: model.Kind.property,`);
-                  body.writeln(`name: ${JSON.stringify(ptr.name)},`);
-                  body.writeln(`cardinality: ${card},`);
-                });
-                body.writeln(`} as model.Property<${jstype}, ${card}>;`);
-              }
+            body.writeln(`get ${ptr.name}() {`);
+            body.indented(() => {
+              body.writeln(`return {`);
+              body.indented(() => {
+                body.writeln(`kind: model.Kind.property,`);
+                body.writeln(`name: ${JSON.stringify(ptr.name)},`);
+                body.writeln(`cardinality: ${card},`);
+              });
+              body.writeln(`} as model.Property<${jstype}, ${card}>;`);
             });
             body.writeln("},");
           }
-        });
-        body.writeln(`} as const;`);
-        body.nl();
-
-        const mb = dir.getPath(`modules/${mod}.ts`);
-        if (!mb.flags.has("base-import")) {
-          mb.flags.add("base-import");
-          mb.head.writeln(`import {model} from "edgedb";`);
-          mb.head.writeln('import base from "../__base__";');
-        }
-        mb.body.writeln(`export const ${snToIdent(getName(type.name))} = {`);
-        mb.body.indented(() => {
-          mb.body.writeln(`...base.${fnToIdent(type.name)},`);
-
-          mb.body.writeln(
-            `shape: <Spec extends model.MakeSelectArgs<typeof base.${fnToIdent(
-              type.name
-            )}>>(`
-          );
-          mb.body.indented(() => {
-            mb.body.writeln(`spec: Spec`);
-          });
-          mb.body.writeln(
-            `): model.Query<model.Result<Spec, typeof base.${fnToIdent(
-              type.name
-            )}>> => {throw new Error("not impl");}`
-          );
-        });
-        mb.body.writeln(`} as const;`);
-        mb.body.nl();
-      }
-
-      body.writeln("return {");
-      body.indented(() => {
-        for (const typeName of topObjectTypes) {
-          body.writeln(`${fnToIdent(typeName)},`);
         }
       });
-      body.writeln("};");
-    });
-    body.writeln("})();");
+      body.writeln(`};`);
+      body.nl();
 
-    body.nl();
-    body.writeln("export default base;");
+      const mb = dir.getPath(`modules/${mod}.ts`);
+      if (!mb.flags.has("base-import")) {
+        mb.flags.add("base-import");
+        mb.head.writeln(`import {model} from "edgedb";`);
+        mb.head.writeln('import * as base from "../__base__";');
+      }
+      mb.body.writeln(`export const ${snToIdent(getName(type.name))} = {`);
+      mb.body.indented(() => {
+        mb.body.writeln(`...base.${fnToIdent(type.name)},`);
+
+        mb.body.writeln(
+          `shape: <Spec extends model.MakeSelectArgs<typeof base.${fnToIdent(
+            type.name
+          )}>>(`
+        );
+        mb.body.indented(() => {
+          mb.body.writeln(`spec: Spec`);
+        });
+        mb.body.writeln(
+          `): model.Query<model.Result<Spec, typeof base.${fnToIdent(
+            type.name
+          )}>> => {throw new Error("not impl");}`
+        );
+      });
+      mb.body.writeln(`} as const;`);
+      mb.body.nl();
+    }
 
     const index = dir.getPath("index.ts");
     for (const mod of modsIndex) {
