@@ -74,12 +74,12 @@ type _UnpackBoolArg<Arg, T> = Arg extends true
   ? PPT
   : T;
 
-type _OnlyArgs<Args, T> = {
+type NonTArgs<Args, T> = {
   [k in keyof Args]: k extends keyof T ? never : k;
 }[keyof Args];
 
 type _Result<Args, T> = {
-  [k in (keyof T & keyof Args) | _OnlyArgs<Args, T>]: k extends keyof T
+  [k in (keyof T & keyof Args) | NonTArgs<Args, T>]: k extends keyof T
     ? T[k] extends Property<infer PPT, any>
       ? _UnpackBoolArg<Args[k], PPT>
       : T[k] extends Link<infer LLT, any>

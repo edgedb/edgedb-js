@@ -30,9 +30,12 @@ class CodeBuilder {
   }
 
   render(): string {
-    return (
-      Array.from(this.imports).join("\n") + "\n" + this.buf.join("\n") + "\n"
-    );
+    let head = Array.from(this.imports).join("\n");
+    if (head) {
+      head += "\n\n";
+    }
+
+    return head + this.buf.join("\n") + "\n";
   }
 
   isEmpty(): boolean {
@@ -82,7 +85,7 @@ class DirBuilder {
 type UUID = string;
 
 type IntrospectedPointer = {
-  cardinality: "ONE" | "MANY";
+  cardinality: "One" | "Many";
   kind: "link" | "property";
   required: boolean;
   name: string;
@@ -130,11 +133,12 @@ type IntrospectedTupleType = IntrospectedBaseType<"tuple"> & {
   }>;
 };
 
-type IntrospectedType =
+type IntrospectedPrimitiveType =
   | IntrospectedScalarType
-  | IntrospectedObjectType
   | IntrospectedArrayType
   | IntrospectedTupleType;
+
+type IntrospectedType = IntrospectedPrimitiveType | IntrospectedObjectType;
 
 type IntrospectedTypes = Map<UUID, IntrospectedType>;
 
@@ -290,7 +294,7 @@ function quote(val: string): string {
 }
 
 function toCardinality(p: IntrospectedPointer): string {
-  if (p.cardinality === "ONE") {
+  if (p.cardinality === "One") {
     if (p.required) {
       return "One";
     } else {
@@ -326,13 +330,19 @@ function toPrimitiveJsType(s: IntrospectedScalarType): string {
     case "std::bigint":
       return "BigInt";
 
+    case "std::datetime":
+      return "Date";
+    case "std::duration":
+      return "edgedb.Duration";
+    case "cal::local_datetime":
+      return "edgedb.LocalDateTime";
+    case "cal::local_date":
+      return "edgedb.LocalDate";
+    case "cal::local_time":
+      return "edgedb.LocalTime";
+
     case "std::decimal":
     case "std::bytes":
-    case "std::datetime":
-    case "std::duration":
-    case "cal::local_datetime":
-    case "cal::local_date":
-    case "cal::local_time":
     // TODO
 
     default:
@@ -340,24 +350,85 @@ function toPrimitiveJsType(s: IntrospectedScalarType): string {
   }
 }
 
+function assertNever(arg: never): never {
+  throw new Error(`${arg} is supposed to be of "never" type`);
+}
+
 function toJsScalarType(
-  type: IntrospectedScalarType,
-  types: IntrospectedTypes
+  type: IntrospectedPrimitiveType,
+  types: IntrospectedTypes,
+  currentModule: string
 ): string {
-  if (type.enum_values && type.enum_values.length) {
-    const mod = getMod(type.name);
-    const name = getName(type.name);
-    return `${mod}Types.${name}`;
-  }
+  switch (type.kind) {
+    case "scalar": {
+      if (type.enum_values && type.enum_values.length) {
+        const mod = getMod(type.name);
+        const name = getName(type.name);
+        if (mod !== currentModule) {
+          return `${mod}Types.${name}`;
+        } else {
+          return name;
+        }
+      }
 
-  if (type.material_id) {
-    return toJsScalarType(
-      types.get(type.material_id)! as IntrospectedScalarType,
-      types
-    );
-  }
+      if (type.material_id) {
+        return toJsScalarType(
+          types.get(type.material_id)! as IntrospectedScalarType,
+          types,
+          currentModule
+        );
+      }
 
-  return toPrimitiveJsType(type);
+      return toPrimitiveJsType(type);
+    }
+
+    case "array": {
+      const tn = toJsScalarType(
+        types.get(type.array_element_id)! as IntrospectedPrimitiveType,
+        types,
+        currentModule
+      );
+      return `${tn}[]`;
+    }
+
+    case "tuple": {
+      if (!type.tuple_elements.length) {
+        return "[]";
+      }
+
+      if (
+        type.tuple_elements[0].name &&
+        Number.isNaN(parseInt(type.tuple_elements[0].name, 10))
+      ) {
+        // a named tuple
+        const res = [];
+        for (const {name, target_id} of type.tuple_elements) {
+          const tn = toJsScalarType(
+            types.get(target_id)! as IntrospectedPrimitiveType,
+            types,
+            currentModule
+          );
+          res.push(`${name}: ${tn}`);
+        }
+        return `{${res.join(",")}}`;
+      } else {
+        // an ordinary tuple
+        const res = [];
+        for (const {target_id} of type.tuple_elements) {
+          const tn = toJsScalarType(
+            types.get(target_id)! as IntrospectedPrimitiveType,
+            types,
+            currentModule
+          );
+          res.push(tn);
+        }
+        return `[${res.join(",")}]`;
+      }
+    }
+
+    default:
+      assertNever(type);
+  }
 }
 
 function toJsObjectType(
@@ -454,7 +525,8 @@ async function main(): Promise<void> {
       const mod = getMod(type.name);
       const body = dir.getPath(`modules/${mod}.ts`);
 
-      body.addImport(`import {model} from "edgedb";`);
+      body.addImport(`import {reflection as $} from "edgedb";`);
+      body.addImport(`import * as edgedb from "edgedb";`);
 
       const bases = [];
       for (const {id: baseId} of type.bases) {
@@ -481,7 +553,7 @@ async function main(): Promise<void> {
 
       body.indented(() => {
         for (const ptr of type.pointers) {
-          const card = `model.Cardinality.${toCardinality(ptr)}`;
+          const card = `$.Cardinality.${toCardinality(ptr)}`;
 
           if (ptr.kind === "link") {
             const trgType = types.get(
@@ -490,14 +562,15 @@ async function main(): Promise<void> {
 
             const tsType = toJsObjectType(trgType, types, mod, body);
 
-            body.writeln(`${ptr.name}: model.Link<${tsType}, ${card}>;`);
+            body.writeln(`${ptr.name}: $.LinkDesc<${tsType}, ${card}>;`);
           } else {
             const tsType = toJsScalarType(
-              types.get(ptr.target_id)! as IntrospectedScalarType,
-              types
+              types.get(ptr.target_id)! as IntrospectedPrimitiveType,
+              types,
+              mod
             );
 
-            body.writeln(`${ptr.name}: model.Property<${tsType}, ${card}>;`);
+            body.writeln(`${ptr.name}: $.PropertyDesc<${tsType}, ${card}>;`);
           }
         }
       });
@@ -522,144 +595,20 @@ async function main(): Promise<void> {
       body.writeln(`export const ${snToIdent(getName(type.name))} = {`);
       body.indented(() => {
         body.writeln(
-          `shape: <Spec extends model.MakeSelectArgs<${getName(type.name)}>>(`
+          `shape: <Spec extends $.MakeSelectArgs<${getName(type.name)}>>(`
         );
         body.indented(() => {
           body.writeln(`spec: Spec`);
         });
         body.writeln(
-          `): model.Query<model.Result<Spec, ${getName(
+          `): $.Query<$.Result<Spec, ${getName(
             type.name
           )}>> => {throw new Error("not impl");}`
         );
       });
       body.writeln(`} as const;`);
+      body.nl();
     }
-
-    /*const base = dir.getPath("__base__.ts");
-    const body = base.body;
-
-    base.addImport(`import {model} from "edgedb";`);
-    base.head.nl();
-    for (const mod of modsWithEnums) {
-      base.head.writeln(
-        `import type * as ${mod}Types from "./modules/${mod}";`
-      );
-    }
-
-    const topObjectTypes = new Set<string>();
-
-    body.writeln("const base = (function() {");
-    body.indented(() => {
-      for (const type of types.values()) {
-        if (type.kind !== "object") {
-          continue;
-        }
-        if (
-          (type.union_of && type.union_of.length) ||
-          (type.intersection_of && type.intersection_of.length)
-        ) {
-          continue;
-        }
-
-        const mod = getMod(type.name);
-        modsIndex.add(mod);
-        topObjectTypes.add(type.name);
-
-        body.writeln(`const ${fnToIdent(type.name)} = {`);
-        body.indented(() => {
-          for (const {id: baseId} of type.bases) {
-            const baseType = types.get(baseId)!;
-            body.writeln(`...${fnToIdent(baseType.name)},`);
-          }
-
-          if (type.bases.length && type.pointers.length) {
-            body.nl();
-          }
-
-          for (const ptr of type.pointers) {
-            body.writeln(`get ${ptr.name}() {`);
-            body.indented(() => {
-              body.writeln(`return {`);
-
-              const card = `model.Cardinality.${toCardinality(ptr)}`;
-
-              if (ptr.kind === "link") {
-                const ttype = types.get(
-                  ptr.target_id
-                )! as IntrospectedObjectType;
-
-                const [typeType, jsType] = toJsObjectType(ttype, types);
-
-                body.indented(() => {
-                  body.writeln(`kind: model.Kind.link,`);
-                  body.writeln(`name: ${JSON.stringify(ptr.name)},`);
-                  body.writeln(`cardinality: ${card},`);
-                  body.writeln(`target: ${jsType},`);
-                });
-                body.writeln(`} as model.Link<${typeType}, ${card}>;`);
-              } else {
-                const jstype = toJsScalarType(
-                  types.get(ptr.target_id)! as IntrospectedScalarType,
-                  types
-                );
-
-                body.indented(() => {
-                  body.writeln(`kind: model.Kind.property,`);
-                  body.writeln(`name: ${JSON.stringify(ptr.name)},`);
-                  body.writeln(`cardinality: ${card},`);
-                });
-                body.writeln(`} as model.Property<${jstype}, ${card}>;`);
-              }
-            });
-            body.writeln("},");
-          }
-        });
-        body.writeln(`} as const;`);
-        body.nl();
-
-        const mb = dir.getPath(`modules/${mod}.ts`);
-        if (!mb.flags.has("base-import")) {
-          mb.flags.add("base-import");
-          mb.head.writeln(`import {model} from "edgedb";`);
-          mb.head.writeln('import base from "../__base__";');
-        }
-        mb.body.writeln(`export const ${snToIdent(getName(type.name))} = {`);
-        mb.body.indented(() => {
-          mb.body.writeln(`...base.${fnToIdent(type.name)},`);
-
-          mb.body.writeln(
-            `shape: <Spec extends model.MakeSelectArgs<typeof base.${fnToIdent(
-              type.name
-            )}>>(`
-          );
-          mb.body.indented(() => {
-            mb.body.writeln(`spec: Spec`);
-          });
-          mb.body.writeln(
-            `): model.Query<model.Result<Spec, typeof base.${fnToIdent(
-              type.name
-            )}>> => {throw new Error("not impl");}`
-          );
-        });
-        mb.body.writeln(`} as const;`);
-        mb.body.nl();
-      }
-
-      body.writeln("return {");
-      body.indented(() => {
-        for (const typeName of topObjectTypes) {
-          body.writeln(`${fnToIdent(typeName)},`);
-        }
-      });
-      body.writeln("};");
-    });
-    body.writeln("})();");
-
-    body.nl();
-    body.writeln("export default base;");
-
-    */
 
     const index = dir.getPath("index.ts");
     for (const mod of modsIndex) {
