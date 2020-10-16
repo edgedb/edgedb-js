@@ -31,11 +31,18 @@ class CodeBuilder {
 
   render(): string {
     let head = Array.from(this.imports).join("\n");
-    if (head) {
+    const body = this.buf.join("\n");
+
+    if (head && body) {
       head += "\n\n";
     }
 
-    return head + this.buf.join("\n") + "\n";
+    let result = head + body;
+    if (result && result.slice(-1) != "\n") {
+      result += "\n";
+    }
+
+    return result;
   }
 
   isEmpty(): boolean {
@@ -306,7 +313,6 @@ function toCardinality(p: IntrospectedPointer): string {
     } else {
       return "Many";
     }
-    toJsObjectType;
   }
 }
 
@@ -478,7 +484,7 @@ async function main(): Promise<void> {
 
   try {
     const types = await fetchTypes(con);
-    const modsWithEnums = new Set<string>();
+    const enumsIndex = new Map<string, Set<string>>();
     const modsIndex = new Set<string>();
 
     for (const type of types.values()) {
@@ -508,7 +514,22 @@ async function main(): Promise<void> {
       b.writeln(`}`);
       b.nl();
 
-      modsWithEnums.add(mod);
+      if (!enumsIndex.has(mod)) {
+        enumsIndex.set(mod, new Set());
+      }
+      enumsIndex.get(mod)!.add(type.id);
+    }
+
+    for (const [mod, enums] of enumsIndex.entries()) {
+      const body = dir.getPath(`__types__/${mod}.ts`);
+      const out = [];
+      for (const typeId of enums) {
+        const type = types.get(typeId)! as IntrospectedScalarType;
+        out.push(getName(type.name));
+      }
+      body.addImport(
+        `import type {\n  ${out.join(",\n  ")}\n} from "../modules/${mod}";`
+      );
     }
 
     for (const type of types.values()) {
@@ -523,7 +544,7 @@ async function main(): Promise<void> {
       }
 
       const mod = getMod(type.name);
-      const body = dir.getPath(`modules/${mod}.ts`);
+      const body = dir.getPath(`__types__/${mod}.ts`);
 
       body.addImport(`import {reflection as $} from "edgedb";`);
       body.addImport(`import * as edgedb from "edgedb";`);
@@ -591,17 +612,21 @@ async function main(): Promise<void> {
 
       const mod = getMod(type.name);
       const body = dir.getPath(`modules/${mod}.ts`);
+      body.addImport(`import {reflection as $} from "edgedb";`);
+      body.addImport(`import * as __types__ from "../__types__/${mod}";`);
 
       body.writeln(`export const ${snToIdent(getName(type.name))} = {`);
       body.indented(() => {
         body.writeln(
-          `shape: <Spec extends $.MakeSelectArgs<${getName(type.name)}>>(`
+          `shape: <Spec extends $.MakeSelectArgs<__types__.${getName(
+            type.name
+          )}>>(`
         );
         body.indented(() => {
           body.writeln(`spec: Spec`);
         });
         body.writeln(
-          `): $.Query<$.Result<Spec, ${getName(
+          `): $.Query<$.Result<Spec, __types__.${getName(
             type.name
           )}>> => {throw new Error("not impl");}`
         );
@@ -615,19 +640,8 @@ async function main(): Promise<void> {
       if (dir.getPath(`modules/${mod}.ts`).isEmpty()) {
         continue;
       }
-      index.addImport(`import * as _${mod} from "./modules/${mod}";`);
+      index.addImport(`export * as ${mod} from "./modules/${mod}";`);
     }
-    index.writeln("const modules = {");
-    for (const mod of modsIndex) {
-      if (dir.getPath(`modules/${mod}.ts`).isEmpty()) {
-        continue;
-      }
-      index.indented(() => {
-        index.writeln(`${mod}: _${mod},`);
-      });
-    }
-    index.writeln("} as const;");
-    index.writeln("export default modules;");
   } finally {
     await con.close();
   }

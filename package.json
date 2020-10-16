@@ -26,8 +26,7 @@
     "get-stdin": "^7.0.0",
     "in-publish": "^2.0.0",
     "jest": "^24.9.0",
-    "prettier": "^1.19.1",
-    "prettylint": "^1.0.0",
+    "prettier": "^2.1.2",
     "ts-jest": "^24.0.2",
     "ts-node": "^9.0.0",
     "tslint": "^5.20.1",
@@ -36,7 +35,7 @@
   "scripts": {
     "build": "tsc",
     "test": "jest --detectOpenHandles",
-    "lint": "tsc && tslint 'src/**/*.ts' && prettylint 'src/**/*.ts' 'test/**/*.ts'",
+    "lint": "tsc && tslint 'src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
     "prepublish": "in-publish && yarn lint && yarn build && yarn test || not-in-publish"

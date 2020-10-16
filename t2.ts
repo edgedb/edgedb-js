@@ -1,4 +1,4 @@
-import schema from "./aaa";
+import * as schema from "./aaa";
 
 const a = schema.test.Issue.shape({
   name: true,
