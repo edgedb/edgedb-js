@@ -3,6 +3,19 @@ import {connect, Connection} from "edgedb";
 import * as path from "path";
 import * as fs from "fs";
 
+class StrictMap<K, V> extends Map<K, V> {
+  /* A version of `Map` with a `get` method that throws an
+     error on missing keys instead of returning an undefined.
+     This is easier to work with when everything is strictly typed.
+  */
+  get(key: K): V {
+    if (!this.has(key)) {
+      throw new Error(`key "${key}" is not found`);
+    }
+    return super.get(key)!;
+  }
+}
+
 class CodeBuilder {
   private buf: string[] = [];
   private indent: number = 0;
@@ -51,13 +64,13 @@ class CodeBuilder {
 }
 
 class DirBuilder {
-  private _map = new Map<string, CodeBuilder>();
+  private _map = new StrictMap<string, CodeBuilder>();
 
   getPath(fn: string): CodeBuilder {
     if (!this._map.has(fn)) {
       this._map.set(fn, new CodeBuilder());
     }
-    return this._map.get(fn)!;
+    return this._map.get(fn);
   }
 
   debug(): string {
@@ -147,7 +160,7 @@ type IntrospectedPrimitiveType =
 
 type IntrospectedType = IntrospectedPrimitiveType | IntrospectedObjectType;
 
-type IntrospectedTypes = Map<UUID, IntrospectedType>;
+type IntrospectedTypes = StrictMap<UUID, IntrospectedType>;
 
 async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
   const types: IntrospectedType[] = await con.query(`
@@ -213,8 +226,8 @@ async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
   `);
   // Now sort `types` topologically:
 
-  const graph = new Map<UUID, IntrospectedType>();
-  const adj = new Map<UUID, Set<UUID>>();
+  const graph = new StrictMap<UUID, IntrospectedType>();
+  const adj = new StrictMap<UUID, Set<UUID>>();
 
   for (const type of types) {
     graph.set(type.id, type);
@@ -230,7 +243,7 @@ async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
         if (!adj.has(type.id)) {
           adj.set(type.id, new Set());
         }
-        adj.get(type.id)!.add(base);
+        adj.get(type.id).add(base);
       } else {
         throw new Error(`reference to an unknown object type: ${base}`);
       }
@@ -239,7 +252,7 @@ async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
 
   const visiting = new Set<string>();
   const visited = new Set<UUID>();
-  const sorted = new Map<UUID, IntrospectedType>();
+  const sorted = new StrictMap<UUID, IntrospectedType>();
 
   const visit = (type: IntrospectedType) => {
     if (visiting.has(type.name)) {
@@ -249,8 +262,8 @@ async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
     if (!visited.has(type.id)) {
       visiting.add(type.name);
       if (adj.has(type.id)) {
-        for (const adjId of adj.get(type.id)!.values()) {
-          visit(graph.get(adjId)!);
+        for (const adjId of adj.get(type.id).values()) {
+          visit(graph.get(adjId));
         }
       }
       sorted.set(type.id, type);
@@ -316,7 +329,14 @@ function toCardinality(p: IntrospectedPointer): string {
   }
 }
 
-function toPrimitiveJsType(s: IntrospectedScalarType): string {
+function toPrimitiveJsType(
+  s: IntrospectedScalarType,
+  code: CodeBuilder
+): string {
+  function addEdgedbImport(): void {
+    code.addImport(`import * as edgedb from "edgedb";`);
+  }
+
   switch (s.name) {
     case "std::int16":
     case "std::int32":
@@ -338,13 +358,18 @@ function toPrimitiveJsType(s: IntrospectedScalarType): string {
 
     case "std::datetime":
       return "Date";
+
     case "std::duration":
+      addEdgedbImport();
       return "edgedb.Duration";
     case "cal::local_datetime":
+      addEdgedbImport();
       return "edgedb.LocalDateTime";
     case "cal::local_date":
+      addEdgedbImport();
       return "edgedb.LocalDate";
     case "cal::local_time":
+      addEdgedbImport();
       return "edgedb.LocalTime";
 
     case "std::decimal":
@@ -363,36 +388,41 @@ function assertNever(arg: never): never {
 function toJsScalarType(
   type: IntrospectedPrimitiveType,
   types: IntrospectedTypes,
-  currentModule: string
+  currentModule: string,
+  code: CodeBuilder,
+  level: number = 0
 ): string {
   switch (type.kind) {
     case "scalar": {
       if (type.enum_values && type.enum_values.length) {
         const mod = getMod(type.name);
         const name = getName(type.name);
-        if (mod !== currentModule) {
-          return `${mod}Types.${name}`;
-        } else {
-          return name;
-        }
+        code.addImport(
+          `import type * as ${mod}Enums from "../modules/${mod}";`
+        );
+        return `${mod}Enums.${name}`;
       }
 
       if (type.material_id) {
         return toJsScalarType(
-          types.get(type.material_id)! as IntrospectedScalarType,
+          types.get(type.material_id) as IntrospectedScalarType,
           types,
-          currentModule
+          currentModule,
+          code,
+          level + 1
         );
       }
 
-      return toPrimitiveJsType(type);
+      return toPrimitiveJsType(type, code);
     }
 
     case "array": {
       const tn = toJsScalarType(
-        types.get(type.array_element_id)! as IntrospectedPrimitiveType,
+        types.get(type.array_element_id) as IntrospectedPrimitiveType,
         types,
-        currentModule
+        currentModule,
+        code,
+        level + 1
       );
       return `${tn}[]`;
     }
@@ -410,9 +440,11 @@ function toJsScalarType(
         const res = [];
         for (const {name, target_id} of type.tuple_elements) {
           const tn = toJsScalarType(
-            types.get(target_id)! as IntrospectedPrimitiveType,
+            types.get(target_id) as IntrospectedPrimitiveType,
             types,
-            currentModule
+            currentModule,
+            code,
+            level + 1
           );
           res.push(`${name}: ${tn}`);
         }
@@ -422,9 +454,11 @@ function toJsScalarType(
         const res = [];
         for (const {target_id} of type.tuple_elements) {
           const tn = toJsScalarType(
-            types.get(target_id)! as IntrospectedPrimitiveType,
+            types.get(target_id) as IntrospectedPrimitiveType,
             types,
-            currentModule
+            currentModule,
+            code,
+            level + 1
           );
           res.push(tn);
         }
@@ -447,7 +481,7 @@ function toJsObjectType(
   if (type.intersection_of && type.intersection_of.length) {
     const res: string[] = [];
     for (const {id: subId} of type.intersection_of) {
-      const sub = types.get(subId)! as IntrospectedObjectType;
+      const sub = types.get(subId) as IntrospectedObjectType;
       res.push(toJsObjectType(sub, types, currentMod, code, level + 1));
     }
     const ret = res.join(" & ");
@@ -457,7 +491,7 @@ function toJsObjectType(
   if (type.union_of && type.union_of.length) {
     const res: string[] = [];
     for (const {id: subId} of type.union_of) {
-      const sub = types.get(subId)! as IntrospectedObjectType;
+      const sub = types.get(subId) as IntrospectedObjectType;
       res.push(toJsObjectType(sub, types, currentMod, code, level + 1));
     }
     const ret = res.join(" | ");
@@ -484,7 +518,6 @@ async function main(): Promise<void> {
 
   try {
     const types = await fetchTypes(con);
-    const enumsIndex = new Map<string, Set<string>>();
     const modsIndex = new Set<string>();
 
     for (const type of types.values()) {
@@ -513,23 +546,6 @@ async function main(): Promise<void> {
       });
       b.writeln(`}`);
       b.nl();
-
-      if (!enumsIndex.has(mod)) {
-        enumsIndex.set(mod, new Set());
-      }
-      enumsIndex.get(mod)!.add(type.id);
-    }
-
-    for (const [mod, enums] of enumsIndex.entries()) {
-      const body = dir.getPath(`__types__/${mod}.ts`);
-      const out = [];
-      for (const typeId of enums) {
-        const type = types.get(typeId)! as IntrospectedScalarType;
-        out.push(getName(type.name));
-      }
-      body.addImport(
-        `import type {\n  ${out.join(",\n  ")}\n} from "../modules/${mod}";`
-      );
     }
 
     for (const type of types.values()) {
@@ -547,11 +563,10 @@ async function main(): Promise<void> {
       const body = dir.getPath(`__types__/${mod}.ts`);
 
       body.addImport(`import {reflection as $} from "edgedb";`);
-      body.addImport(`import * as edgedb from "edgedb";`);
 
       const bases = [];
       for (const {id: baseId} of type.bases) {
-        const baseType = types.get(baseId)!;
+        const baseType = types.get(baseId);
         const baseMod = getMod(baseType.name);
         if (baseMod !== mod) {
           body.addImport(
@@ -577,19 +592,17 @@ async function main(): Promise<void> {
           const card = `$.Cardinality.${toCardinality(ptr)}`;
 
           if (ptr.kind === "link") {
-            const trgType = types.get(
-              ptr.target_id
-            )! as IntrospectedObjectType;
+            const trgType = types.get(ptr.target_id) as IntrospectedObjectType;
 
             const tsType = toJsObjectType(trgType, types, mod, body);
 
             body.writeln(`${ptr.name}: $.LinkDesc<${tsType}, ${card}>;`);
           } else {
-            const tsType = toJsScalarType(
-              types.get(ptr.target_id)! as IntrospectedPrimitiveType,
-              types,
-              mod
-            );
+            const tgtType = types.get(
+              ptr.target_id
+            ) as IntrospectedPrimitiveType;
+
+            const tsType = toJsScalarType(tgtType, types, mod, body);
 
             body.writeln(`${ptr.name}: $.PropertyDesc<${tsType}, ${card}>;`);
           }
@@ -613,7 +626,7 @@ async function main(): Promise<void> {
       const mod = getMod(type.name);
       const body = dir.getPath(`modules/${mod}.ts`);
       body.addImport(`import {reflection as $} from "edgedb";`);
-      body.addImport(`import * as __types__ from "../__types__/${mod}";`);
+      body.addImport(`import type * as __types__ from "../__types__/${mod}";`);
 
       body.writeln(`export const ${snToIdent(getName(type.name))} = {`);
       body.indented(() => {
@@ -636,7 +649,7 @@ async function main(): Promise<void> {
     }
 
     const index = dir.getPath("index.ts");
-    for (const mod of modsIndex) {
+    for (const mod of Array.from(modsIndex).sort()) {
       if (dir.getPath(`modules/${mod}.ts`).isEmpty()) {
         continue;
       }
