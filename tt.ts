@@ -630,6 +630,35 @@ async function main(): Promise<void> {
 
       body.writeln(`export const ${snToIdent(getName(type.name))} = {`);
       body.indented(() => {
+        for (const ptr of type.pointers) {
+          if (ptr.kind === "link") {
+            body.writeln(
+              `get ${ptr.name}(): ` +
+                `$.LinkRef<__types__.${getName(type.name)}["${ptr.name}"]> {`
+            );
+          } else {
+            body.writeln(
+              `get ${ptr.name}(): ` +
+                `$.PropertyRef<__types__.${getName(type.name)}["${
+                  ptr.name
+                }"]> {`
+            );
+          }
+          body.indented(() => {
+            body.writeln(`return {`);
+            body.indented(() => {
+              body.writeln(`name: "${ptr.name}",`);
+              body.writeln(`kind: $.PointerKind.${ptr.kind},`);
+              body.writeln(
+                `cardinality: $.Cardinality.${toCardinality(ptr)},`
+              );
+            });
+            body.writeln(`};`);
+          });
+          body.writeln("},");
+          body.nl();
+        }
+
         body.writeln(
           `shape: <Spec extends $.MakeSelectArgs<__types__.${getName(
             type.name
@@ -641,7 +670,7 @@ async function main(): Promise<void> {
         body.writeln(
           `): $.Query<$.Result<Spec, __types__.${getName(
             type.name
-          )}>> => {throw new Error("not impl");}`
+          )}>> => {throw new Error("not impl");},`
         );
       });
       body.writeln(`} as const;`);

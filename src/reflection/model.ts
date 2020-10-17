@@ -23,19 +23,45 @@ export enum Cardinality {
   AtLeastOne,
 }
 
-// PropertyDesc and LinkDesc must have different internal structure,
-// hence they have `propertyTarget` and `linkTarget` attributes
+// `PropertyDesc` and `LinkDesc` are used in `__types__/*` files
+// that directly reflect EdgeDB types to TypeScript types.
+//
+// These types must have different internal structure, so that's
+// why they have `propertyTarget` and `linkTarget` attributes
 // (not just `target`.)  Otherwise TS would fail to tell one from
 // another in a conditional check like `A extends PropertyDesc`.
-
 export interface PropertyDesc<T, C extends Cardinality> {
   cardinality: C;
   propertyTarget: T;
 }
-
 export interface LinkDesc<T, C extends Cardinality> {
   cardinality: C;
   linkTarget: T;
+}
+
+// `PropertyRef` and `LinkRef` are used in `schema/*` files
+// that implement concrete JS objects for users to use with
+// the query builder.
+//
+// `Property` and `Link` are empty interfaces made so that TS
+// doesn't expand them in the autocomplete.
+const PointerType = Symbol.for("pointer-type");
+export enum PointerKind {
+  link,
+  property,
+}
+interface Property {}
+interface Link {}
+export interface PropertyRef<T extends PropertyDesc<any, any>>
+  extends Property {
+  kind: PointerKind.property;
+  name: string;
+  cardinality: Cardinality;
+}
+export interface LinkRef<T extends LinkDesc<any, any>> extends Link {
+  kind: PointerKind.link;
+  name: string;
+  cardinality: Cardinality;
 }
 
 type UnpackBoolArg<Arg, T> = Arg extends true
