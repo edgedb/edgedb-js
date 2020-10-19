@@ -1,4 +1,4 @@
-import {connect, Connection} from "edgedb";
+import {connect, Connection} from "./index.node";
 
 import * as path from "path";
 import * as fs from "fs";
@@ -615,7 +615,7 @@ async function main(): Promise<void> {
 
     const bm = dir.getPath("__spec__.ts");
     bm.addImport(`import {reflection as $} from "edgedb";`);
-    bm.writeln(`export const spec = new $.StrictMap<string, $.TypeSpec>();`);
+    bm.writeln(`export const spec: $.TypesSpec = new $.StrictMap();`);
     bm.nl();
 
     for (const type of types.values()) {
@@ -709,56 +709,20 @@ async function main(): Promise<void> {
       }
 
       const mod = getMod(type.name);
+      const ident = snToIdent(getName(type.name));
       const body = dir.getPath(`modules/${mod}.ts`);
       body.addImport(`import {reflection as $} from "edgedb";`);
+      body.addImport(`import {spec as __spec__} from "../__spec__";`);
       body.addImport(`import type * as __types__ from "../__types__/${mod}";`);
 
-      body.writeln(`export const ${snToIdent(getName(type.name))} = {`);
+      body.writeln(
+        `export const ${ident} = $.objectType<__types__.${ident}>(`
+      );
       body.indented(() => {
-        for (const ptr of type.pointers) {
-          if (ptr.kind === "link") {
-            body.writeln(
-              `get ${ptr.name}(): ` +
-                `$.LinkRef<__types__.${getName(type.name)}["${ptr.name}"]> {`
-            );
-          } else {
-            body.writeln(
-              `get ${ptr.name}(): ` +
-                `$.PropertyRef<__types__.${getName(type.name)}["${
-                  ptr.name
-                }"]> {`
-            );
-          }
-          body.indented(() => {
-            body.writeln(`return {`);
-            body.indented(() => {
-              body.writeln(`name: "${ptr.name}",`);
-              body.writeln(`kind: $.PointerKind.${ptr.kind},`);
-              body.writeln(
-                `cardinality: $.Cardinality.${toCardinality(ptr)},`
-              );
-            });
-            body.writeln(`};`);
-          });
-          body.writeln("},");
-          body.nl();
-        }
-
-        body.writeln(
-          `shape: <Spec extends $.MakeSelectArgs<__types__.${getName(
-            type.name
-          )}>>(`
-        );
-        body.indented(() => {
-          body.writeln(`spec: Spec`);
-        });
-        body.writeln(
-          `): $.Query<$.Result<Spec, __types__.${getName(
-            type.name
-          )}>> => {throw new Error("not impl");},`
-        );
+        body.writeln(`__spec__,`);
+        body.writeln(`${JSON.stringify(type.name)},`);
       });
-      body.writeln(`} as const;`);
+      body.writeln(`);`);
       body.nl();
     }
 
@@ -773,7 +737,7 @@ async function main(): Promise<void> {
     await con.close();
   }
 
-  dir.write("./aaa");
+  dir.write("../tmpjs/src/aaa");
 }
 
 main();
