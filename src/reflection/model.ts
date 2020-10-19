@@ -42,7 +42,7 @@ export interface ObjectTypeDesc {
   id: PropertyDesc<string, Cardinality.One>;
 }
 
-type UnpackBoolArg<Arg, T> = Arg extends true
+export type UnpackBoolArg<Arg, T> = Arg extends true
   ? T
   : Arg extends false
   ? null
@@ -50,11 +50,11 @@ type UnpackBoolArg<Arg, T> = Arg extends true
   ? T | null
   : never;
 
-type ExcludeTFromArgs<Args, T> = {
+export type ExcludeTFromArgs<Args, T> = {
   [k in keyof Args]: k extends keyof T ? never : k;
 }[keyof Args];
 
-type BaseResult<Args, T> = {
+export type BaseResult<Args, T> = {
   [k in (keyof T & keyof Args) | ExcludeTFromArgs<Args, T>]: k extends keyof T
     ? T[k] extends PropertyDesc<
         infer PPT,
@@ -78,7 +78,7 @@ type BaseResult<Args, T> = {
     : never;
 };
 
-type ExpandResult<T> = T extends
+export type ExpandResult<T> = T extends
   | BaseResult<any, any>
   | Array<BaseResult<any, any>>
   ? T extends infer O
@@ -90,7 +90,7 @@ export type Result<Args, T extends ObjectTypeDesc> = ExpandResult<
   BaseResult<Args, T>
 >;
 
-type BaseMakeSelectArgs<T> = {
+export type BaseMakeSelectArgs<T> = {
   [k in keyof T]?: T[k] extends LinkDesc<infer LT, any>
     ? BaseMakeSelectArgs<LT> | boolean
     : T[k] extends PropertyDesc<any, any>
@@ -99,15 +99,3 @@ type BaseMakeSelectArgs<T> = {
 };
 
 export type MakeSelectArgs<T extends ObjectTypeDesc> = BaseMakeSelectArgs<T>;
-
-export class Query<T> {
-  _type!: T;
-
-  filter(): Query<T> {
-    return null as any;
-  }
-
-  async select(): Promise<T> {
-    return null as any;
-  }
-}

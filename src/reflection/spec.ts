@@ -25,7 +25,7 @@ type TypeSpec = {
 
 export type TypesSpec = StrictMap<string, TypeSpec>;
 
-type ObjectType<T extends model.ObjectTypeDesc> = {
+export type ObjectType<T extends model.ObjectTypeDesc> = {
   [k in keyof T]: T[k] extends model.LinkDesc<infer LT, any>
     ? LT extends model.ObjectTypeDesc
       ? ObjectType<LT>
@@ -34,9 +34,7 @@ type ObjectType<T extends model.ObjectTypeDesc> = {
     ? PT
     : never;
 } & {
-  shape<S extends model.MakeSelectArgs<T>>(
-    spec: S
-  ): model.Query<model.Result<S, T>>;
+  shape<S extends model.MakeSelectArgs<T>>(spec: S): Query<model.Result<S, T>>;
 };
 
 export function objectType<T extends model.ObjectTypeDesc>(
@@ -114,3 +112,15 @@ export function objectType<T extends model.ObjectTypeDesc>(
 
 //   return ret as any;
 // }
+
+export class Query<T> {
+  _type!: T;
+
+  filter(): Query<T> {
+    return null as any;
+  }
+
+  async select(): Promise<T> {
+    return null as any;
+  }
+}
