@@ -79,7 +79,7 @@ export interface Object1 {
 }
 
 type Unpack<T extends ObjectType> = {
-  [k in keyof T & T[typeof links]]: T[k] extends LinkDesc<infer LT, any>
+  [k in keyof T]: T[k] extends LinkDesc<infer LT, any>
     ? LT extends ObjectType
       ? Unpack<LT>
       : never

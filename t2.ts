@@ -1,7 +1,10 @@
 import * as schema from "./aaa2";
 
-const b = schema.test.Issue.watchers;
-console.log(schema.test.Issue.kk, "------------", b);
+const b = schema.test.Issue.related_to.owner.console.log(
+  schema.test.Issue.kk,
+  "------------",
+  b
+);
 
 // const a = schema.test.Issue.shape({
 //   name: true,

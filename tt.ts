@@ -113,10 +113,7 @@ type IntrospectedPointer = {
 
   target_id: UUID;
 
-  pointers: ReadonlyArray<{
-    name: string;
-    target_id: UUID;
-  }> | null;
+  pointers: ReadonlyArray<IntrospectedPointer> | null;
 };
 
 type IntrospectedTypeKind = "object" | "scalar" | "array" | "tuple";
@@ -210,8 +207,12 @@ async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
         kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property',
 
         [IS Link].pointers: {
+          cardinality,
+          required,
           name,
-          target_id := .target.id
+          expr,
+          target_id := .target.id,
+          kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property',
         } FILTER @is_owned,
       } FILTER @is_owned,
 
@@ -610,6 +611,90 @@ async function main(): Promise<void> {
       });
       body.writeln(`}`);
       body.nl();
+    }
+
+    const bm = dir.getPath("__spec__.ts");
+    bm.addImport(`import {reflection as $} from "edgedb";`);
+    bm.writeln(`export const spec = new $.StrictMap<string, $.TypeSpec>();`);
+    bm.nl();
+
+    for (const type of types.values()) {
+      if (type.kind !== "object") {
+        continue;
+      }
+
+      bm.writeln(`spec.set("${type.name}", {`);
+      bm.indented(() => {
+        bm.writeln(`name: ${JSON.stringify(type.name)},`);
+
+        const bases: string[] = [];
+        for (const {id: baseId} of type.bases) {
+          const base = types.get(baseId);
+          bases.push(base.name);
+        }
+        bm.writeln(`bases: ${JSON.stringify(bases)},`);
+
+        bm.writeln(`properties: [`);
+        bm.indented(() => {
+          for (const ptr of type.pointers) {
+            if (ptr.kind !== "property") {
+              continue;
+            }
+
+            bm.writeln(`{`);
+            bm.indented(() => {
+              bm.writeln(`name: ${JSON.stringify(ptr.name)},`);
+              bm.writeln(`cardinality: $.Cardinality.${toCardinality(ptr)},`);
+            });
+            bm.writeln(`},`);
+          }
+        });
+        bm.writeln(`],`);
+
+        bm.writeln(`links: [`);
+        bm.indented(() => {
+          for (const ptr of type.pointers) {
+            if (ptr.kind !== "link") {
+              continue;
+            }
+
+            bm.writeln(`{`);
+            bm.indented(() => {
+              bm.writeln(`name: ${JSON.stringify(ptr.name)},`);
+              bm.writeln(`cardinality: $.Cardinality.${toCardinality(ptr)},`);
+              bm.writeln(
+                `target: ${JSON.stringify(types.get(ptr.target_id).name)},`
+              );
+              bm.writeln(`properties: [`);
+              if (ptr.pointers && ptr.pointers.length > 2) {
+                for (const prop of ptr.pointers) {
+                  if (prop.kind !== "property") {
+                    // We only support "link properties" in EdgeDB, currently.
+                    continue;
+                  }
+                  if (prop.name === "source" || prop.name === "target") {
+                    // No use for them reflected, at the moment.
+                    continue;
+                  }
+                  bm.writeln(`{`);
+                  bm.indented(() => {
+                    bm.writeln(`name: ${JSON.stringify(prop.name)},`);
+                    bm.writeln(
+                      `cardinality: $.Cardinality.${toCardinality(prop)},`
+                    );
+                  });
+                  bm.writeln(`},`);
+                }
+              }
+              bm.writeln(`],`);
+            });
+            bm.writeln(`},`);
+          }
+        });
+        bm.writeln(`],`);
+      });
+      bm.writeln(`});`);
+      bm.nl();
     }
 
     for (const type of types.values()) {

@@ -16,6 +16,15 @@
  * limitations under the License.
  */
 
-export * from "./model";
-export * from "./spec";
-export * from "./strict";
+export class StrictMap<K, V> extends Map<K, V> {
+  /* A version of `Map` with a `get` method that throws an
+     error on missing keys instead of returning an undefined.
+     This is easier to work with when everything is strictly typed.
+  */
+  get(key: K): V {
+    if (!this.has(key)) {
+      throw new Error(`key "${key}" is not found`);
+    }
+    return super.get(key)!;
+  }
+}
