@@ -19,99 +19,140 @@ type LinkSpec = {
 type TypeSpec = {
   name: TypeName;
   bases: TypeName[];
+  ancestors: TypeName[];
   properties: PropertySpec[];
   links: LinkSpec[];
 };
 
-export type TypesSpec = StrictMap<string, TypeSpec>;
+export type TypesSpec = StrictMap<TypeName, TypeSpec>;
 
-export type ObjectType<T extends model.ObjectTypeDesc> = {
+const pathObject: unique symbol = Symbol();
+const pathParent: unique symbol = Symbol();
+const pathLink: unique symbol = Symbol();
+
+interface PathStep {
+  [pathParent]: PathStep | null;
+  [pathObject]: TypeName | null;
+  [pathLink]: string | null;
+}
+
+interface PathLeaf<T> extends PathStep {}
+
+interface PathMethods<T extends model.ObjectTypeDesc> {
+  shape<S extends model.MakeSelectArgs<T>>(spec: S): Query<model.Result<S, T>>;
+}
+
+export type Path<T extends model.ObjectTypeDesc> = {
   [k in keyof T]: T[k] extends model.LinkDesc<infer LT, any>
     ? LT extends model.ObjectTypeDesc
-      ? ObjectType<LT>
+      ? Path<LT> & PathStep
       : never
     : T[k] extends model.PropertyDesc<infer PT, any>
-    ? PT
+    ? PathLeaf<PT>
     : never;
-} & {
-  shape<S extends model.MakeSelectArgs<T>>(spec: S): Query<model.Result<S, T>>;
-};
+} &
+  PathMethods<T>;
+
+function applySpec(
+  spec: TypesSpec,
+  typeName: TypeName,
+  obj: PathStep,
+  seen: Set<string>
+): void {
+  const type = spec.get(typeName);
+
+  for (const link of type.links) {
+    if (seen.has(link.name)) {
+      continue;
+    }
+    seen.add(link.name);
+
+    Object.defineProperty(obj, link.name, {
+      get: (nextTarget: LinkSpec = link): any => {
+        return buildPath(obj, nextTarget.name, spec, nextTarget.target);
+      },
+      enumerable: true,
+    });
+  }
+
+  for (const prop of type.properties) {
+    if (seen.has(prop.name)) {
+      continue;
+    }
+    seen.add(prop.name);
+
+    Object.defineProperty(obj, prop.name, {
+      get: (nextTarget: PropertySpec = prop): any => {
+        return buildPath(obj, nextTarget.name, spec, null);
+      },
+      enumerable: true,
+    });
+  }
+}
+
+function createPathStep(
+  parent: PathStep | null,
+  linkName: string | null,
+  target: TypeName | null
+): PathStep {
+  const obj = Object.defineProperties(Object.create(null), {
+    [pathParent]: {
+      value: parent,
+    },
+    [pathObject]: {
+      value: target,
+    },
+    [pathLink]: {
+      value: linkName,
+    },
+    [Symbol.toStringTag]: {
+      get: () => {
+        const steps: string[] = [];
+
+        let parent: PathStep | null = obj;
+        while (parent != null) {
+          if (parent[pathLink] != null) {
+            steps.push(parent[pathLink]!);
+          } else {
+            steps.push(parent[pathObject]!);
+          }
+          parent = parent[pathParent];
+        }
+
+        steps.reverse();
+        return steps.join(".");
+      },
+    },
+  });
+  return obj;
+}
+
+function buildPath<T extends model.ObjectTypeDesc>(
+  parent: PathStep | null,
+  linkName: string | null,
+  spec: TypesSpec,
+  target: TypeName | null
+): Path<T> {
+  const obj = createPathStep(parent, linkName, target);
+
+  if (target != null) {
+    const type = spec.get(target);
+    const seen = new Set<string>();
+    applySpec(spec, target, obj, seen);
+    for (const anc of type.ancestors) {
+      applySpec(spec, anc, obj, seen);
+    }
+  }
+
+  return obj as any;
+}
 
 export function objectType<T extends model.ObjectTypeDesc>(
   spec: TypesSpec,
   name: string
-): ObjectType<T> {
-  return null as any;
+): Path<T> {
+  return buildPath(null, null, spec, name);
 }
-
-// // `PropertyRef` and `LinkRef` are used in `schema/*` files
-// // that implement concrete JS objects for users to use with
-// // the query builder.
-// //
-// // `Property` and `Link` are empty interfaces made so that TS
-// // doesn't expand them in the autocomplete.
-// const PointerType = Symbol.for("pointer-type");
-// const LinkTargetAttr = Symbol.for("link-target");
-// export const links = Symbol.for("object-type-links");
-// export enum PointerKind {
-//   link,
-//   property,
-// }
-// interface Property {}
-// interface Link {}
-// export interface PropertyRef<T extends PropertyDesc<any, any>>
-//   extends Property {
-//   kind: PointerKind.property;
-//   name: string;
-//   cardinality: Cardinality;
-// }
-// export interface LinkRef<T extends LinkDesc<any, any>> extends Link {
-//   kind: PointerKind.link;
-//   name: string;
-//   cardinality: Cardinality;
-// }
-
-// type LL<T extends object> = {
-//   [K in keyof T]: T[K];
-// };
-
-// export interface ObjectType {
-//   [links]: string;
-// }
-
-// export interface Object1 {
-//   [links]: [...string[]];
-// }
-
-// type Unpack<T extends ObjectType> = {
-//   [k in keyof T]: T[k] extends LinkDesc<infer LT, any>
-//     ? LT extends ObjectType
-//       ? Unpack<LT>
-//       : never
-//     : T[k] extends PropertyDesc<infer PT, any>
-//     ? PT extends ObjectType
-//       ? Unpack<PT>
-//       : never
-//     : never;
-// };
-
-// export function Path<T extends ObjectType>(
-//   parent: Object1 | null,
-//   target: () => object
-// ): Unpack<T> {
-//   const t = target() as Object1;
-//   const ret = {parent};
-
-//   for (const link of t[links]) {
-//     Object.defineProperty(ret, link, {
-//       get: (l: string = link): any => {
-//         return Path(t, () => (t as any)[l]);
-//       },
-//     });
-//   }
-
-//   return ret as any;
-// }
 
 export class Query<T> {
   _type!: T;

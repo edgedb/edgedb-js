@@ -127,6 +127,7 @@ type IntrospectedBaseType<T extends IntrospectedTypeKind> = {
 type IntrospectedScalarType = IntrospectedBaseType<"scalar"> & {
   is_abstract: boolean;
   bases: ReadonlyArray<{id: UUID}>;
+  ancestors: ReadonlyArray<{id: UUID}>;
   enum_values: ReadonlyArray<string>;
   material_id: UUID | null;
 };
@@ -134,6 +135,7 @@ type IntrospectedScalarType = IntrospectedBaseType<"scalar"> & {
 type IntrospectedObjectType = IntrospectedBaseType<"object"> & {
   is_abstract: boolean;
   bases: ReadonlyArray<{id: UUID}>;
+  ancestors: ReadonlyArray<{id: UUID}>;
   union_of: ReadonlyArray<{id: UUID}>;
   intersection_of: ReadonlyArray<{id: UUID}>;
   pointers: ReadonlyArray<IntrospectedPointer>;
@@ -191,6 +193,10 @@ async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
       ).id,
 
       [IS InheritingObject].bases: {
+        id
+      } ORDER BY @index ASC,
+
+      [IS InheritingObject].ancestors: {
         id
       } ORDER BY @index ASC,
 
@@ -633,6 +639,13 @@ async function main(): Promise<void> {
           bases.push(base.name);
         }
         bm.writeln(`bases: ${JSON.stringify(bases)},`);
+
+        const ancestors: string[] = [];
+        for (const {id: baseId} of type.ancestors) {
+          const base = types.get(baseId);
+          ancestors.push(base.name);
+        }
+        bm.writeln(`ancestors: ${JSON.stringify(ancestors)},`);
 
         bm.writeln(`properties: [`);
         bm.indented(() => {
