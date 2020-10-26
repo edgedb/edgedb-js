@@ -55,12 +55,15 @@ export interface TransactionOptions {
   readonly?: boolean;
 }
 
-export interface Connection {
+interface Executor {
   execute(query: string): Promise<void>;
   query(query: string, args?: QueryArgs): Promise<Set>;
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
   queryOne(query: string, args?: QueryArgs): Promise<any>;
   queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
+}
+
+export interface Connection extends Executor {
   transaction<T>(
     action: () => Promise<T>,
     options?: TransactionOptions
