@@ -4,31 +4,101 @@ import * as model from "./model";
 
 type TypeName = string;
 
-type PropertySpec = {
+type PropertyRawSpec = {
   name: TypeName;
   cardinality: model.Cardinality;
 };
 
-type LinkSpec = {
+type LinkRawSpec = {
   name: TypeName;
+  cardinality: model.Cardinality;
+  target: TypeName;
+  properties: PropertyRawSpec[];
+};
+
+type TypeRawSpec = Array<{
+  name: TypeName;
+  bases: TypeName[];
+  ancestors: TypeName[];
+  properties: PropertyRawSpec[];
+  links: LinkRawSpec[];
+}>;
+
+enum ScalarKind {
+  str,
+  bytes,
+  uuid,
+  bool,
+  int64,
+  int32,
+  int16,
+  float64,
+  float32,
+  datetime,
+  duration,
+  bigint,
+  decimal,
+  local_date,
+  local_time,
+  local_datetime,
+  unknown, // special type for forwards compat
+}
+
+enum PrimitiveKind {
+  scalar,
+  array,
+  tuple,
+  namedtuple,
+}
+
+type ScalarValue = {
+  kind: PrimitiveKind.scalar;
+  type: ScalarKind;
+};
+
+type ArrayValue = {
+  kind: PrimitiveKind.array;
+  element: PrimitiveValue;
+};
+
+type TupleValue = {
+  kind: PrimitiveKind.tuple;
+  elements: PrimitiveValue[];
+};
+
+type PrimitiveValue = ScalarValue | ArrayValue | TupleValue;
+
+enum PointerKind {
+  link,
+  property,
+}
+
+type PropertySpec = {
+  kind: PointerKind.property;
+  cardinality: model.Cardinality;
+  target: PrimitiveValue;
+};
+
+type LinkSpec = {
+  kind: PointerKind.link;
   cardinality: model.Cardinality;
   target: TypeName;
   properties: PropertySpec[];
 };
 
 type TypeSpec = {
-  name: TypeName;
   bases: TypeName[];
   ancestors: TypeName[];
-  properties: PropertySpec[];
-  links: LinkSpec[];
+  pointers: Map<string, PropertySpec | LinkSpec>;
 };
 
-export type TypesSpec = StrictMap<TypeName, TypeSpec>;
+type TypesSpec = Map<TypeName, TypeSpec>;
 
-const pathObject: unique symbol = Symbol();
-const pathParent: unique symbol = Symbol();
-const pathLink: unique symbol = Symbol();
+// export function buildSpec(raw: TypeRawSpec):
+
+const pathObject: unique symbol = Symbol("object");
+const pathParent: unique symbol = Symbol("parent");
+const pathLink: unique symbol = Symbol("link");
 
 interface PathStep {
   [pathParent]: PathStep | null;
@@ -151,17 +221,31 @@ export function objectType<T extends model.ObjectTypeDesc>(
   spec: TypesSpec,
   name: string
 ): Path<T> {
-  return buildPath(null, null, spec, name);
+  const obj = buildPath(null, null, spec, name);
+
+  Object.defineProperties(obj, {
+    shape: {
+      value: (shape: object): Query<any> => {
+        return new Query(obj as any, shape);
+      },
+    },
+  });
+
+  return obj as any;
 }
 
-export class Query<T> {
-  _type!: T;
+const resultType: unique symbol = Symbol("result");
 
-  filter(): Query<T> {
+export class Query<R> {
+  private [resultType]!: R;
+
+  constructor(obj: Path<any>, spec: object) {}
+
+  filter(): Query<R> {
     return null as any;
   }
 
-  async select(): Promise<T> {
+  async select(): Promise<R> {
     return null as any;
   }
 }
