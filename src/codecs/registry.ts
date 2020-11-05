@@ -163,17 +163,18 @@ export class CodecsRegistry {
     while (frb.length) {
       codec = this._buildCodec(frb, codecsList);
       if (codec == null) {
+        // An annotation; ignore.
         continue;
       }
       codecsList.push(codec);
       this.codecs.set(codec.tid, codec);
     }
 
-    if (codec == null) {
+    if (!codecsList.length) {
       throw new Error("could not build a codec");
     }
 
-    return codec;
+    return codecsList[codecsList.length - 1];
   }
 
   private _buildCodec(frb: ReadBuffer, cl: ICodec[]): ICodec | null {
@@ -251,9 +252,10 @@ export class CodecsRegistry {
         }
 
         default: {
-          if (t >= 0xf0 && t <= 0xff) {
+          if (t >= 0x7f && t <= 0xff) {
             const ann_length = frb.readUInt32();
             frb.discard(ann_length);
+            return null;
           } else {
             throw new Error(
               `no codec implementation for EdgeDB data class ${t}`
