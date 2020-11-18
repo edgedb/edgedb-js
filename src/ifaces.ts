@@ -55,13 +55,24 @@ export interface TransactionOptions {
   readonly?: boolean;
 }
 
-interface Executor {
+export interface ReadOnlyExecutor {
   execute(query: string): Promise<void>;
   query(query: string, args?: QueryArgs): Promise<Set>;
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
   queryOne(query: string, args?: QueryArgs): Promise<any>;
   queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
 }
+
+export const allow_modifications = Symbol();
+
+interface Modifiable {
+  // Just a marker that discards structural typing and uses nominal type
+  // I.e. it avoids:
+  //   An interface declaring no members is equivalent to its supertype.
+  [allow_modifications]: never;
+}
+
+export type Executor = ReadOnlyExecutor & Modifiable;
 
 export interface Connection extends Executor {
   transaction<T>(
