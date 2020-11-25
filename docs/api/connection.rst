@@ -83,7 +83,7 @@ Connection
         Connection timeout in seconds.
 
     :returns:
-        Returns a ``Promise`` of an :js:class:`Connection` is returned.
+        Returns a ``Promise`` of an :js:class:`Connection`.
 
     Example:
 
