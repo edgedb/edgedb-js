@@ -363,8 +363,8 @@ class ConnectionImpl implements Connection {
 
     handshake
       .beginMessage(chars.$V)
-      .writeInt16(1)
-      .writeInt16(0);
+      .writeInt16(PROTO_VER_MAJOR)
+      .writeInt16(PROTO_VER_MINOR);
 
     handshake.writeInt16(2);
     handshake.writeString("user");
