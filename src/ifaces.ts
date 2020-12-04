@@ -63,13 +63,13 @@ export interface ReadOnlyExecutor {
   queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
 }
 
-export const allow_modifications = Symbol();
+export const ALLOW_MODIFICATIONS = Symbol();
 
 interface Modifiable {
   // Just a marker that discards structural typing and uses nominal type
   // I.e. it avoids:
   //   An interface declaring no members is equivalent to its supertype.
-  [allow_modifications]: never;
+  [ALLOW_MODIFICATIONS]: never;
 }
 
 export type Executor = ReadOnlyExecutor & Modifiable;

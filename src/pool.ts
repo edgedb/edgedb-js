@@ -24,7 +24,7 @@ import {Set} from "./datatypes/set";
 import connect, {proxyMap} from "./client";
 
 import {
-  allow_modifications,
+  ALLOW_MODIFICATIONS,
   QueryArgs,
   Connection,
   IConnectionProxied,
@@ -281,7 +281,7 @@ export const unwrapConnection = Symbol.for("unwrap");
 const isDetached = Symbol.for("isDetached");
 
 export class PoolConnectionProxy implements IConnectionProxied {
-  [allow_modifications]: never;
+  [ALLOW_MODIFICATIONS]: never;
   private [holderAttr]: PoolConnectionHolder;
   private [connectionAttr]: Connection | null;
 
@@ -431,7 +431,7 @@ export class PoolStats implements IPoolStats {
  * Pools are created by calling :func:`~edgedb.pool.create`.
  */
 class PoolImpl implements Pool {
-  [allow_modifications]: never;
+  [ALLOW_MODIFICATIONS]: never;
   private _closed: boolean;
   private _closing: boolean;
   private _queue: LifoQueue<PoolConnectionHolder>;
