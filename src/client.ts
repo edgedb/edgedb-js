@@ -212,10 +212,12 @@ class ConnectionImpl implements Connection {
     }
   }
 
-  private _rejectHeaders(): void {
-    const nheaders = this.buffer.readInt16();
-    if (nheaders) {
-      throw new Error("unexpected headers");
+  private _ignoreHeaders(): void {
+    let numFields = this.buffer.readInt16();
+    while (numFields) {
+      this.buffer.readInt16();
+      this.buffer.readLenPrefixedBuffer();
+      numFields--;
     }
   }
 
@@ -238,7 +240,7 @@ class ConnectionImpl implements Connection {
     Buffer,
     Buffer
   ] {
-    this._rejectHeaders();
+    this._ignoreHeaders();
 
     const cardinality: char = this.buffer.readChar();
 
@@ -264,7 +266,7 @@ class ConnectionImpl implements Connection {
   }
 
   private _parseCommandCompleteMessage(): string {
-    this._rejectHeaders();
+    this._ignoreHeaders();
     const status = this.buffer.readString();
     this.buffer.finishMessage();
     return status;
@@ -595,7 +597,7 @@ class ConnectionImpl implements Connection {
 
       switch (mtype) {
         case chars.$1: {
-          this._rejectHeaders();
+          this._ignoreHeaders();
           cardinality = this.buffer.readChar();
           inTypeId = this.buffer.readUUID();
           outTypeId = this.buffer.readUUID();
