@@ -347,7 +347,7 @@ function parseConnectDsnAndArgs({
     user = process.env.EDGEDB_USER;
   }
   if (!user) {
-    throw new Error("could not determine user name to connect with");
+    user = "edgedb";
   }
 
   if (!password) {
@@ -358,10 +358,7 @@ function parseConnectDsnAndArgs({
     database = process.env.EDGEDB_DATABASE;
   }
   if (!database) {
-    database = user;
-  }
-  if (!database) {
-    throw new Error("could not determine database name to connect to");
+    database = "edgedb";
   }
 
   let haveUnixSockets = false;

@@ -92,7 +92,7 @@ test("parseConnectArguments", () => {
       result: {
         addrs: [["localhost", 5656]],
         user: "user",
-        database: "user",
+        database: "edgedb",
       },
     },
 
@@ -334,7 +334,7 @@ test("parseConnectArguments", () => {
       result: {
         addrs: [path.join("/tmp", ".s.EDGEDB.56226")],
         user: "user",
-        database: "user",
+        database: "edgedb",
       },
     },
 
@@ -343,7 +343,7 @@ test("parseConnectArguments", () => {
       result: {
         addrs: [path.join("/tmp", ".s.EDGEDB.admin.5656")],
         user: "user",
-        database: "user",
+        database: "edgedb",
       },
     },
 
@@ -352,7 +352,7 @@ test("parseConnectArguments", () => {
       result: {
         addrs: [path.join("/tmp", ".s.EDGEDB.admin.5656")],
         user: "user",
-        database: "user",
+        database: "edgedb",
       },
     },
 
@@ -361,7 +361,7 @@ test("parseConnectArguments", () => {
       result: {
         addrs: [path.join("/tmp", ".s.EDGEDB.5656")],
         user: "user",
-        database: "user",
+        database: "edgedb",
       },
     },
   ];
