@@ -33,6 +33,7 @@ import LRU from "./lru";
 import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {
+  ALLOW_MODIFICATIONS,
   QueryArgs,
   Connection,
   IConnectionProxied,
@@ -79,6 +80,7 @@ export default function connect(
 }
 
 class ConnectionImpl implements Connection {
+  [ALLOW_MODIFICATIONS]: never;
   private sock: net.Socket;
   private config: NormalizedConnectConfig;
   private paused: boolean;
