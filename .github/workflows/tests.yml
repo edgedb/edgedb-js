@@ -39,12 +39,12 @@ jobs:
       - name: Install EdgeDB
         env:
           OS_NAME: ${{ matrix.os }}
-          SLOT: 1-alpha4
+          SLOT: 1-alpha6-dev5104
         run: |
           .github/workflows/install-edgedb.sh
 
       - name: Run functional tests
         env:
-          EDGEDB_SLOT: 1-alpha4
+          EDGEDB_SLOT: 1-alpha6-dev5104
         run: |
           yarn test
