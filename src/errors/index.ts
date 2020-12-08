@@ -76,6 +76,24 @@ export class ResultCardinalityMismatchError extends ProtocolError {
   }
 }
 
+export class CapabilityError extends ProtocolError {
+  get code(): number {
+    return 0x03_04_00_00;
+  }
+}
+
+export class UnsupportedCapabilityError extends CapabilityError {
+  get code(): number {
+    return 0x03_04_01_00;
+  }
+}
+
+export class DisabledCapabilityError extends CapabilityError {
+  get code(): number {
+    return 0x03_04_02_00;
+  }
+}
+
 export class QueryError extends EdgeDBError {
   get code(): number {
     return 0x04_00_00_00;
