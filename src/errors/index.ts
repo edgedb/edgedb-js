@@ -20,7 +20,7 @@
 
 /* tslint:disable */
 
-export class EdgeDBError extends Error {}
+import {EdgeDBError, Tag} from "./base";
 
 export class InternalServerError extends EdgeDBError {
   get code(): number {
@@ -448,6 +448,24 @@ export class ClientConnectionError extends ClientError {
   }
 }
 
+export class ConnectionFailedError extends ClientConnectionError {
+  get code(): number {
+    return 0xff_01_01_00;
+  }
+}
+
+export class ConnectionTimeoutError extends ClientConnectionError {
+  get code(): number {
+    return 0xff_01_02_00;
+  }
+}
+
+export class AuthenticationFailedError extends ClientConnectionError {
+  get code(): number {
+    return 0xff_01_03_00;
+  }
+}
+
 export class InterfaceError extends ClientError {
   get code(): number {
     return 0xff_02_00_00;
@@ -483,3 +501,6 @@ export class NoDataError extends ClientError {
     return 0xff_03_00_00;
   }
 }
+
+export {EdgeDBError, Tag} from "./base";
+export * from "./tags";

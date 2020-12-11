@@ -57,7 +57,9 @@ class Buffer {
   errorsBuf.nl();
   errorsBuf.code("/* tslint:disable */");
   errorsBuf.nl();
-  errorsBuf.code("export class EdgeDBError extends Error {}");
+  errorsBuf.code("import {EdgeDBError, Tag} from './base'");
+  errorsBuf.code("export {EdgeDBError, Tag} from './base'");
+  errorsBuf.code("export * from './tags'");
   errorsBuf.nl();
 
   const mappingBuf = new Buffer();
@@ -65,11 +67,9 @@ class Buffer {
   mappingBuf.nl();
   mappingBuf.code(copy);
   mappingBuf.nl();
+  mappingBuf.code('import {ErrorType} from "./base";');
   mappingBuf.code('import * as errors from "./index";');
   mappingBuf.nl();
-  mappingBuf.code(
-    "export type ErrorType = new (msg: string) => errors.EdgeDBError;"
-  );
   mappingBuf.nl();
   mappingBuf.code("export const errorMapping = new Map<number, ErrorType>();");
   mappingBuf.nl();

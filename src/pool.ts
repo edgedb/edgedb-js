@@ -774,6 +774,7 @@ class PoolImpl implements Pool {
     }, 60e3);
 
     try {
+      // @ts-ignore
       await Promise.all(
         this._holders.map((connectionHolder) =>
           connectionHolder._waitUntilReleased()

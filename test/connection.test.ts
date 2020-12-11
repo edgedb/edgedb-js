@@ -24,6 +24,7 @@ import {
 } from "../src/con_utils";
 import {asyncConnect} from "./testbase";
 import {Connection} from "../src/ifaces";
+import * as errors from "../src/errors";
 
 function env_wrap(env: {[key: string]: any}, func: () => void): void {
   const old_env: {[key: string]: any} = {};
@@ -375,9 +376,10 @@ test("connect: timeout", async () => {
   let con: Connection | undefined;
   try {
     con = await asyncConnect({timeout: 1});
-    throw new Error("conneciton didn't time out");
+    throw new Error("connection didn't time out");
   } catch (e) {
-    expect(e.message).toMatch("failed to connect");
+    expect(e).toBeInstanceOf(errors.ConnectionTimeoutError);
+    expect(e.message).toMatch("connection timed out (1ms)");
   } finally {
     if (typeof con !== "undefined") {
       await con.close();

@@ -20,6 +20,7 @@ import * as net from "net";
 
 import char, * as chars from "./chars";
 import {resolveErrorCode} from "./errors/resolve";
+import * as errors from "./errors";
 import {
   ReadMessageBuffer,
   WriteMessageBuffer,
@@ -44,6 +45,7 @@ import * as scram from "./scram";
 
 import {
   parseConnectArguments,
+  Address,
   ConnectConfig,
   NormalizedConnectConfig,
 } from "./con_utils";
@@ -76,7 +78,118 @@ export default function connect(
   dsn?: string | ConnectConfig | null,
   options?: ConnectConfig | null
 ): Promise<Connection> {
-  return ConnectionImpl.connect(dsn, options);
+  let config: ConnectConfig | null = null;
+  if (typeof dsn === "string") {
+    config = {...options, dsn};
+  } else {
+    if (dsn != null) {
+      // tslint:disable-next-line: no-console
+      console.warn(
+        "`options` as the first argument to `edgedb.connect` is " +
+          "deprecated, use " +
+          "`edgedb.connect('instance_name_or_dsn', options)`"
+      );
+    }
+    config = {...dsn, ...options};
+  }
+  return StandaloneConnection.connect(parseConnectArguments(config));
+}
+
+class StandaloneConnection implements Connection {
+  [ALLOW_MODIFICATIONS]: never;
+  private config: NormalizedConnectConfig;
+  private _connection?: ConnectionImpl;
+  private _isClosed: boolean;  // For compatibility
+
+  private constructor(config: NormalizedConnectConfig) {
+    this.config = config;
+    this._isClosed = false;
+  }
+  async transaction<T>(
+    action: () => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T> {
+    return await (await this.connection()).transaction(action, options)
+  }
+  async close(): Promise<void> {
+    try {
+      if(this._connection) {
+          await this._connection.close();
+      }
+      // TODO(tailhook) it makes little sense to close the reconnecting
+      // connection so maybe deprecate this method
+      this._isClosed = true;
+    } finally {
+      this._cleanupProxy();
+    }
+  }
+  private _cleanupProxy(): void {
+    const proxy = proxyMap.get(this);
+    if (proxy != null) {
+      proxy[onConnectionClose]();
+      proxyMap.delete(this);
+    }
+  }
+  isClosed(): boolean {
+    return this._isClosed
+  }
+  async execute(query: string): Promise<void> {
+    return await (await this.connection()).execute(query)
+  }
+  async query(query: string, args?: QueryArgs): Promise<Set> {
+    return await (await this.connection()).query(query, args)
+  }
+  async queryJSON(query: string, args?: QueryArgs): Promise<string> {
+    return await (await this.connection()).queryJSON(query, args)
+  }
+  async queryOne(query: string, args?: QueryArgs): Promise<any> {
+    return await (await this.connection()).queryOne(query, args)
+  }
+  async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
+    return await (await this.connection()).queryOneJSON(query, args)
+  }
+  async connection(): Promise<ConnectionImpl> {
+    if(this._isClosed) {
+      throw new errors.InterfaceError("Connection is closed");
+    }
+    if(this._connection && !this._connection.isClosed()) {
+      return this._connection;
+    }
+    const max_time = new Date().getTime() +
+      (this.config.waitUntilAvailable || 0);
+    let iteration = 0;
+    while(true) {
+      iteration += 1;
+      for (const addr of this.config.addrs) {
+        try {
+          this._connection =
+            await ConnectionImpl.connect_with_timeout(addr, this.config);
+          return this._connection;
+        } catch (e) {
+          if(e instanceof errors.ClientConnectionError) {
+            if(e.hasTag(errors.SHOULD_RECONNECT)) {
+              if(iteration > 1 && new Date().getTime() > max_time) {
+                throw e;
+              }
+              continue
+            } else {
+              throw e;
+            }
+          } else {
+            throw e; // this shouldn't happen
+          }
+        }
+      }
+    }
+  }
+  /** @internal */
+  static async connect(
+    config: NormalizedConnectConfig,
+  ): Promise<StandaloneConnection> {
+    let conn = new StandaloneConnection(config)
+    await conn.connection();
+    return conn;
+  }
 }
 
 class ConnectionImpl implements Connection {
@@ -358,6 +471,39 @@ class ConnectionImpl implements Connection {
           `unexpected message type ${mtype} ("${chars.chr(mtype)}")`
         );
     }
+  }
+
+  /** @internal */
+  static async connect_with_timeout(
+    addr: Address,
+    config: NormalizedConnectConfig,
+  ): Promise<ConnectionImpl> {
+    const sock = this.newSock(addr);
+    const conn = new this(sock, {...config, addrs:[addr]});
+    const connPromise = conn.connect();
+    let timeout = null;
+    // set-up a timeout
+    if (config.connectTimeout) {
+      timeout = setTimeout(() => {
+        if (!conn.connected) {
+          conn.sock.destroy(new errors.ConnectionTimeoutError(
+            `connection timed out (${config.connectTimeout}ms)`));
+        }
+      }, config.connectTimeout);
+    }
+
+    try {
+      await connPromise;
+    } catch (e) {
+      // TODO(tailhook) wrap IO errors into EdgeDBError type
+      conn._abort();
+      throw e;
+    } finally {
+      if (timeout != null) {
+        clearTimeout(timeout);
+      }
+    }
+    return conn;
   }
 
   private async connect(): Promise<void> {
@@ -1093,15 +1239,6 @@ class ConnectionImpl implements Connection {
       this._abort();
     } finally {
       this._leaveOp();
-      this._cleanupProxy();
-    }
-  }
-
-  private _cleanupProxy(): void {
-    const proxy = proxyMap.get(this);
-    if (proxy != null) {
-      proxy[onConnectionClose]();
-      proxyMap.delete(this);
     }
   }
 
@@ -1114,80 +1251,6 @@ class ConnectionImpl implements Connection {
       const [host, port] = addr;
       return net.createConnection(port, host);
     }
-  }
-
-  /** @internal */
-  static async connect(
-    dsn?: string | ConnectConfig | null,
-    options?: ConnectConfig | null
-  ): Promise<ConnectionImpl> {
-    let config: ConnectConfig | null = null;
-
-    if (typeof dsn === "string") {
-      config = {...options, dsn};
-    } else {
-      if (dsn != null) {
-        // tslint:disable-next-line: no-console
-        console.warn(
-          "`options` as the first argument to `edgedb.connect` is " +
-            "deprecated, use " +
-            "`edgedb.connect('instance_name_or_dsn', options)`"
-        );
-      }
-      config = {...dsn, ...options};
-    }
-
-    const {addrs, ...cfg} = parseConnectArguments(config);
-    let err: Error | undefined;
-    let errMsg: string = "failed to connect";
-
-    for (const addr of addrs) {
-      errMsg =
-        "failed to connect: could not establish connection to " +
-        (typeof addr === "string" ? addr : addr[0] + ":" + addr[1]);
-      const sock = this.newSock(addr);
-      const conn = new this(sock, {addrs: [addr], ...cfg});
-
-      const connPromise = conn.connect();
-      let timeout = null;
-      // set-up a timeout
-      if (cfg.connectTimeout) {
-        err = new Error(errMsg + " in " + cfg.connectTimeout + "ms");
-        timeout = setTimeout(() => {
-          if (!conn.connected) {
-            conn.sock.destroy(err);
-          }
-        }, cfg.connectTimeout);
-      }
-
-      try {
-        await connPromise;
-      } catch (e) {
-        conn._abort();
-
-        // on timeout Error proceed to the next address, otherwise re-throw
-        if (
-          typeof e.message === "string" &&
-          e.message.indexOf("failed to connect") !== -1
-        ) {
-          continue;
-        } else {
-          throw e;
-        }
-      } finally {
-        if (timeout != null) {
-          clearTimeout(timeout);
-        }
-      }
-
-      return conn; // break the connection try loop
-    }
-
-    // throw a generic or specific connection error
-    if (typeof err === "undefined") {
-      err = new Error(errMsg);
-    }
-    throw err;
   }
 }
 
@@ -1212,13 +1275,6 @@ export class RawConnection extends ConnectionImpl {
       result
     );
     return result.unwrap();
-  }
-
-  static async connect(
-    dsn?: string | ConnectConfig | null,
-    options?: ConnectConfig | null
-  ): Promise<RawConnection> {
-    return (await super.connect(dsn, options)) as RawConnection;
   }
 
   // Mask the actual connection API; only the raw* methods should

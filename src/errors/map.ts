@@ -18,9 +18,8 @@
  * limitations under the License.
  */
 
+import {ErrorType} from "./base";
 import * as errors from "./index";
-
-export type ErrorType = new (msg: string) => errors.EdgeDBError;
 
 export const errorMapping = new Map<number, ErrorType>();
 
@@ -95,6 +94,9 @@ errorMapping.set(0xf0_00_00_00, errors.LogMessage);
 errorMapping.set(0xf0_01_00_00, errors.WarningMessage);
 errorMapping.set(0xff_00_00_00, errors.ClientError);
 errorMapping.set(0xff_01_00_00, errors.ClientConnectionError);
+errorMapping.set(0xff_01_01_00, errors.ConnectionFailedError);
+errorMapping.set(0xff_01_02_00, errors.ConnectionTimeoutError);
+errorMapping.set(0xff_01_03_00, errors.AuthenticationFailedError);
 errorMapping.set(0xff_02_00_00, errors.InterfaceError);
 errorMapping.set(0xff_02_01_00, errors.QueryArgumentError);
 errorMapping.set(0xff_02_01_01, errors.MissingArgumentError);
