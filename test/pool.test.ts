@@ -533,7 +533,7 @@ test(
 
     async function sleepAndRelease(): Promise<void> {
       await pool.run(async (connection) => {
-        await connection.execute("SELECT sys::sleep(1)");
+        await connection.execute("SELECT sys::_sleep(1)");
 
         done();
       });
