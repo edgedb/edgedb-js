@@ -105,7 +105,7 @@ class StandaloneConnection implements Connection {
   [ALLOW_MODIFICATIONS]: never;
   private config: NormalizedConnectConfig;
   private _connection?: ConnectionImpl;
-  private _isClosed: boolean;  // For compatibility
+  private _isClosed: boolean; // For compatibility
 
   private constructor(config: NormalizedConnectConfig) {
     this.config = config;
@@ -115,12 +115,12 @@ class StandaloneConnection implements Connection {
     action: () => Promise<T>,
     options?: TransactionOptions
   ): Promise<T> {
-    return await (await this.connection()).transaction(action, options)
+    return await (await this.connection()).transaction(action, options);
   }
   async close(): Promise<void> {
     try {
-      if(this._connection) {
-          await this._connection.close();
+      if (this._connection) {
+        await this._connection.close();
       }
       // TODO(tailhook) it makes little sense to close the reconnecting
       // connection so maybe deprecate this method
@@ -137,47 +137,49 @@ class StandaloneConnection implements Connection {
     }
   }
   isClosed(): boolean {
-    return this._isClosed
+    return this._isClosed;
   }
   async execute(query: string): Promise<void> {
-    return await (await this.connection()).execute(query)
+    return await (await this.connection()).execute(query);
   }
   async query(query: string, args?: QueryArgs): Promise<Set> {
-    return await (await this.connection()).query(query, args)
+    return await (await this.connection()).query(query, args);
   }
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await (await this.connection()).queryJSON(query, args)
+    return await (await this.connection()).queryJSON(query, args);
   }
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
-    return await (await this.connection()).queryOne(query, args)
+    return await (await this.connection()).queryOne(query, args);
   }
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await (await this.connection()).queryOneJSON(query, args)
+    return await (await this.connection()).queryOneJSON(query, args);
   }
   async connection(): Promise<ConnectionImpl> {
-    if(this._isClosed) {
+    if (this._isClosed) {
       throw new errors.InterfaceError("Connection is closed");
     }
-    if(this._connection && !this._connection.isClosed()) {
+    if (this._connection && !this._connection.isClosed()) {
       return this._connection;
     }
-    const max_time = new Date().getTime() +
-      (this.config.waitUntilAvailable || 0);
+    const max_time =
+      new Date().getTime() + (this.config.waitUntilAvailable || 0);
     let iteration = 0;
-    while(true) {
+    while (true) {
       iteration += 1;
       for (const addr of this.config.addrs) {
         try {
-          this._connection =
-            await ConnectionImpl.connect_with_timeout(addr, this.config);
+          this._connection = await ConnectionImpl.connect_with_timeout(
+            addr,
+            this.config
+          );
           return this._connection;
         } catch (e) {
-          if(e instanceof errors.ClientConnectionError) {
-            if(e.hasTag(errors.SHOULD_RECONNECT)) {
-              if(iteration > 1 && new Date().getTime() > max_time) {
+          if (e instanceof errors.ClientConnectionError) {
+            if (e.hasTag(errors.SHOULD_RECONNECT)) {
+              if (iteration > 1 && new Date().getTime() > max_time) {
                 throw e;
               }
-              await sleep(Math.trunc(10 + Math.random()*200));
+              await sleep(Math.trunc(10 + Math.random() * 200));
               continue;
             } else {
               throw e;
@@ -191,9 +193,9 @@ class StandaloneConnection implements Connection {
   }
   /** @internal */
   static async connect(
-    config: NormalizedConnectConfig,
+    config: NormalizedConnectConfig
   ): Promise<StandaloneConnection> {
-    let conn = new StandaloneConnection(config)
+    let conn = new StandaloneConnection(config);
     await conn.connection();
     return conn;
   }
@@ -483,18 +485,21 @@ class ConnectionImpl implements Connection {
   /** @internal */
   static async connect_with_timeout(
     addr: Address,
-    config: NormalizedConnectConfig,
+    config: NormalizedConnectConfig
   ): Promise<ConnectionImpl> {
     const sock = this.newSock(addr);
-    const conn = new this(sock, {...config, addrs:[addr]});
+    const conn = new this(sock, {...config, addrs: [addr]});
     const connPromise = conn.connect();
     let timeout = null;
     // set-up a timeout
     if (config.connectTimeout) {
       timeout = setTimeout(() => {
         if (!conn.connected) {
-          conn.sock.destroy(new errors.ConnectionTimeoutError(
-            `connection timed out (${config.connectTimeout}ms)`));
+          conn.sock.destroy(
+            new errors.ConnectionTimeoutError(
+              `connection timed out (${config.connectTimeout}ms)`
+            )
+          );
         }
       }, config.connectTimeout);
     }
@@ -504,16 +509,16 @@ class ConnectionImpl implements Connection {
     } catch (e) {
       // TODO(tailhook) wrap IO errors into EdgeDBError type
       conn._abort();
-      if(e instanceof errors.EdgeDBError) {
+      if (e instanceof errors.EdgeDBError) {
         throw e;
       } else {
         let err;
-        switch(e.code) {
-          case 'ECONNREFUSED':
-          case 'ECONNABORTED':
-          case 'ECONNRESET':
-          case 'ENOTFOUND':  // DNS name not found
-          case 'ENOENT':  // unix socket is not created yet
+        switch (e.code) {
+          case "ECONNREFUSED":
+          case "ECONNABORTED":
+          case "ECONNRESET":
+          case "ENOTFOUND": // DNS name not found
+          case "ENOENT": // unix socket is not created yet
             err = new errors.ConnectionFailedTemporarilyError(e.message);
             break;
           default:

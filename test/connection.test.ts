@@ -410,9 +410,9 @@ test("connect: refused", async () => {
   let con: Connection | undefined;
   try {
     con = await asyncConnect({
-        host: 'localhost',
-        port: 23456,
-        waitUntilAvailableMicros: 0,
+      host: "localhost",
+      port: 23456,
+      waitUntilAvailableMicros: 0,
     });
     throw new Error("connection isn't refused");
   } catch (e) {
@@ -429,9 +429,9 @@ test("connect: invalid name", async () => {
   let con: Connection | undefined;
   try {
     con = await asyncConnect({
-        host: 'invalid.example.org',
-        port: 23456,
-        waitUntilAvailableMicros: 0,
+      host: "invalid.example.org",
+      port: 23456,
+      waitUntilAvailableMicros: 0,
     });
     throw new Error("name was resolved");
   } catch (e) {
@@ -449,8 +449,8 @@ test("connect: refused unix", async () => {
   let con: Connection | undefined;
   try {
     con = await asyncConnect({
-        host: "/tmp/non-existent",
-        waitUntilAvailableMicros: 0,
+      host: "/tmp/non-existent",
+      waitUntilAvailableMicros: 0,
     });
     throw new Error("connection isn't refused");
   } catch (e) {
