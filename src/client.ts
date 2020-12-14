@@ -95,7 +95,7 @@ export default function connect(
   return StandaloneConnection.connect(parseConnectArguments(config));
 }
 
-function sleep(durationMicros: number) {
+function sleep(durationMicros: number): Promise<void> {
   return new Promise((accept, reject) => {
     setTimeout(() => accept(), durationMicros);
   });
@@ -195,7 +195,7 @@ class StandaloneConnection implements Connection {
   static async connect(
     config: NormalizedConnectConfig
   ): Promise<StandaloneConnection> {
-    let conn = new StandaloneConnection(config);
+    const conn = new StandaloneConnection(config);
     await conn.connection();
     return conn;
   }

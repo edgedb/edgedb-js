@@ -3,8 +3,8 @@ import {ErrorType} from "./base";
 import * as errors from "./index";
 
 class ListTag implements Tag {
-  classes: Array<ErrorType>;
-  constructor(classes: Array<ErrorType>) {
+  classes: ErrorType[];
+  constructor(classes: ErrorType[]) {
     this.classes = classes;
   }
   isMatching(err: EdgeDBError): boolean {
