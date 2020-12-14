@@ -59,7 +59,6 @@ class Buffer {
   errorsBuf.nl();
   errorsBuf.code("import {EdgeDBError, Tag} from './base'");
   errorsBuf.code("export {EdgeDBError, Tag} from './base'");
-  errorsBuf.code("export * from './tags'");
   errorsBuf.nl();
 
   const mappingBuf = new Buffer();
@@ -97,6 +96,9 @@ class Buffer {
 
     mappingBuf.code(`errorMapping.set(${code}, errors.${err});`);
   }
+
+  errorsBuf.nl();
+  errorsBuf.code("export * from './tags'");
 
   const errors_ts = prettier.format(errorsBuf.render(), prettierOptions);
   const mapping_ts = prettier.format(mappingBuf.render(), prettierOptions);

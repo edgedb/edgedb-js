@@ -95,6 +95,12 @@ export default function connect(
   return StandaloneConnection.connect(parseConnectArguments(config));
 }
 
+function sleep(durationMicros: number) {
+  return new Promise((accept, reject) => {
+    setTimeout(() => accept(), durationMicros);
+  });
+}
+
 class StandaloneConnection implements Connection {
   [ALLOW_MODIFICATIONS]: never;
   private config: NormalizedConnectConfig;
@@ -171,7 +177,8 @@ class StandaloneConnection implements Connection {
               if(iteration > 1 && new Date().getTime() > max_time) {
                 throw e;
               }
-              continue
+              await sleep(Math.trunc(10 + Math.random()*200));
+              continue;
             } else {
               throw e;
             }
@@ -497,7 +504,25 @@ class ConnectionImpl implements Connection {
     } catch (e) {
       // TODO(tailhook) wrap IO errors into EdgeDBError type
       conn._abort();
-      throw e;
+      if(e instanceof errors.EdgeDBError) {
+        throw e;
+      } else {
+        let err;
+        switch(e.code) {
+          case 'ECONNREFUSED':
+          case 'ECONNABORTED':
+          case 'ECONNRESET':
+          case 'ENOTFOUND':  // DNS name not found
+          case 'ENOENT':  // unix socket is not created yet
+            err = new errors.ConnectionFailedTemporarilyError(e.message);
+            break;
+          default:
+            err = new errors.ConnectionFailedError(e.message);
+            break;
+        }
+        err.source = e;
+        throw err;
+      }
     } finally {
       if (timeout != null) {
         clearTimeout(timeout);

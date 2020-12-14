@@ -94,6 +94,7 @@ test("parseConnectArguments", () => {
         addrs: [["localhost", 5656]],
         user: "user",
         database: "edgedb",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -110,6 +111,7 @@ test("parseConnectArguments", () => {
         user: "user",
         password: "passw",
         database: "testdb",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -127,12 +129,14 @@ test("parseConnectArguments", () => {
         user: "user2",
         password: "passw2",
         database: "db2",
+        waitUntilAvailable: 30_000,
       },
       result: {
         addrs: [["host2", 456]],
         user: "user2",
         password: "passw2",
         database: "db2",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -160,6 +164,7 @@ test("parseConnectArguments", () => {
         password: "passw2",
         database: "db2",
         serverSettings: {ssl: "False"},
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -181,6 +186,7 @@ test("parseConnectArguments", () => {
         password: "123123",
         database: "abcdef",
         commandTimeout: 10,
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -193,6 +199,7 @@ test("parseConnectArguments", () => {
         user: "user3",
         password: "123123",
         database: "abcdef",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -205,6 +212,7 @@ test("parseConnectArguments", () => {
         ],
         database: "db",
         user: "user",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -217,6 +225,7 @@ test("parseConnectArguments", () => {
         ],
         database: "db",
         user: "user",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -233,6 +242,7 @@ test("parseConnectArguments", () => {
         ],
         database: "db",
         user: "foo",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -248,6 +258,7 @@ test("parseConnectArguments", () => {
         ],
         database: "db",
         user: "foo",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -263,6 +274,7 @@ test("parseConnectArguments", () => {
         ],
         database: "db",
         user: "foo",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -284,6 +296,7 @@ test("parseConnectArguments", () => {
         user: "me",
         password: "ask",
         database: "db",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -306,6 +319,7 @@ test("parseConnectArguments", () => {
         user: "me",
         password: "ask",
         database: "db",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -315,6 +329,7 @@ test("parseConnectArguments", () => {
         addrs: [path.join("/unix_sock/test", ".s.EDGEDB.5656")],
         user: "spam",
         database: "dbname",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -336,6 +351,7 @@ test("parseConnectArguments", () => {
         addrs: [path.join("/tmp", ".s.EDGEDB.56226")],
         user: "user",
         database: "edgedb",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -345,6 +361,7 @@ test("parseConnectArguments", () => {
         addrs: [path.join("/tmp", ".s.EDGEDB.admin.5656")],
         user: "user",
         database: "edgedb",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -354,6 +371,7 @@ test("parseConnectArguments", () => {
         addrs: [path.join("/tmp", ".s.EDGEDB.admin.5656")],
         user: "user",
         database: "edgedb",
+        waitUntilAvailable: 30_000,
       },
     },
 
@@ -363,6 +381,7 @@ test("parseConnectArguments", () => {
         addrs: [path.join("/tmp", ".s.EDGEDB.5656")],
         user: "user",
         database: "edgedb",
+        waitUntilAvailable: 30_000,
       },
     },
   ];
@@ -375,11 +394,68 @@ test("parseConnectArguments", () => {
 test("connect: timeout", async () => {
   let con: Connection | undefined;
   try {
-    con = await asyncConnect({timeout: 1});
+    con = await asyncConnect({timeout: 1, waitUntilAvailableMicros: 0});
     throw new Error("connection didn't time out");
   } catch (e) {
     expect(e).toBeInstanceOf(errors.ConnectionTimeoutError);
     expect(e.message).toMatch("connection timed out (1ms)");
+  } finally {
+    if (typeof con !== "undefined") {
+      await con.close();
+    }
+  }
+});
+
+test("connect: refused", async () => {
+  let con: Connection | undefined;
+  try {
+    con = await asyncConnect({
+        host: 'localhost',
+        port: 23456,
+        waitUntilAvailableMicros: 0,
+    });
+    throw new Error("connection isn't refused");
+  } catch (e) {
+    expect(e).toBeInstanceOf(errors.ConnectionFailedTemporarilyError);
+    expect(e.source.code).toMatch("ECONNREFUSED");
+  } finally {
+    if (typeof con !== "undefined") {
+      await con.close();
+    }
+  }
+});
+
+test("connect: invalid name", async () => {
+  let con: Connection | undefined;
+  try {
+    con = await asyncConnect({
+        host: 'invalid.example.org',
+        port: 23456,
+        waitUntilAvailableMicros: 0,
+    });
+    throw new Error("name was resolved");
+  } catch (e) {
+    expect(e).toBeInstanceOf(errors.ConnectionFailedTemporarilyError);
+    expect(e.source.code).toMatch("ENOTFOUND");
+    expect(e.source.syscall).toMatch("getaddrinfo");
+  } finally {
+    if (typeof con !== "undefined") {
+      await con.close();
+    }
+  }
+});
+
+test("connect: refused unix", async () => {
+  let con: Connection | undefined;
+  try {
+    con = await asyncConnect({
+        host: "/tmp/non-existent",
+        waitUntilAvailableMicros: 0,
+    });
+    throw new Error("connection isn't refused");
+  } catch (e) {
+    expect(e).toBeInstanceOf(errors.ConnectionFailedTemporarilyError);
+    expect(e.source.code).toMatch("ENOENT");
   } finally {
     if (typeof con !== "undefined") {
       await con.close();

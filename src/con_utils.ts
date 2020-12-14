@@ -96,7 +96,7 @@ export function parseConnectArguments(
     ...parseConnectDsnAndArgs(opts),
     connectTimeout: opts.timeout,
     commandTimeout,
-    waitUntilAvailable: opts.waitUntilAvailableMicros,
+    waitUntilAvailable: opts.waitUntilAvailableMicros ?? 30_000,
     legacyUUIDMode: opts.legacyUUIDMode,
   };
 }

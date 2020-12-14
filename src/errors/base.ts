@@ -1,5 +1,7 @@
 
 export class EdgeDBError extends Error {
+    source?: Error;
+
     hasTag(tag: Tag): boolean {
         return tag.isMatching(this)
     }

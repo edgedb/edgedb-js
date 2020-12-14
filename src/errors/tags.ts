@@ -13,6 +13,6 @@ class ListTag implements Tag {
 }
 
 export const SHOULD_RECONNECT = new ListTag([
-    errors.ConnectionFailedError,
+    errors.ConnectionFailedTemporarilyError,
     errors.ConnectionTimeoutError,
 ])
