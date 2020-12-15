@@ -13,7 +13,6 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
-      max-parallel: 4
       matrix:
         node-version: ["10", "11", "12", "13"]
         os: [ubuntu-latest]
