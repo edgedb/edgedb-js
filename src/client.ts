@@ -161,8 +161,8 @@ class StandaloneConnection implements Connection {
     if (this._connection && !this._connection.isClosed()) {
       return this._connection;
     }
-    const max_time =
-      new Date().getTime() + (this.config.waitUntilAvailable || 0);
+    const max_time = process.hrtime.bigint()
+      + BigInt(Math.ceil((this.config.waitUntilAvailable || 0) * 1000_000));
     let iteration = 0;
     while (true) {
       iteration += 1;
@@ -176,7 +176,7 @@ class StandaloneConnection implements Connection {
         } catch (e) {
           if (e instanceof errors.ClientConnectionError) {
             if (e.hasTag(errors.SHOULD_RECONNECT)) {
-              if (iteration > 1 && new Date().getTime() > max_time) {
+              if (iteration > 1 && process.hrtime.bigint() > max_time) {
                 throw e;
               }
               await sleep(Math.trunc(10 + Math.random() * 200));
