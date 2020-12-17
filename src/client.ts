@@ -163,9 +163,8 @@ class StandaloneConnection implements Connection {
     }
     const max_time = process.hrtime.bigint()
       + BigInt(Math.ceil((this.config.waitUntilAvailable || 0) * 1000_000));
-    let iteration = 0;
+    let iteration = 1;
     while (true) {
-      iteration += 1;
       for (const addr of this.config.addrs) {
         try {
           this._connection = await ConnectionImpl.connect_with_timeout(
@@ -179,7 +178,6 @@ class StandaloneConnection implements Connection {
               if (iteration > 1 && process.hrtime.bigint() > max_time) {
                 throw e;
               }
-              await sleep(Math.trunc(10 + Math.random() * 200));
               continue;
             } else {
               throw e;
@@ -189,6 +187,9 @@ class StandaloneConnection implements Connection {
           }
         }
       }
+
+      iteration += 1;
+      await sleep(Math.trunc(10 + Math.random() * 200));
     }
   }
   /** @internal */
