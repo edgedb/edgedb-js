@@ -467,12 +467,6 @@ export class ConnectionTimeoutError extends ClientConnectionError {
   }
 }
 
-export class AuthenticationFailedError extends ClientConnectionError {
-  get code(): number {
-    return 0xff_01_03_00;
-  }
-}
-
 export class InterfaceError extends ClientError {
   get code(): number {
     return 0xff_02_00_00;
