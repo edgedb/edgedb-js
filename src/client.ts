@@ -95,9 +95,9 @@ export default function connect(
   return StandaloneConnection.connect(parseConnectArguments(config));
 }
 
-function sleep(durationMicros: number): Promise<void> {
+function sleep(durationMillis: number): Promise<void> {
   return new Promise((accept, reject) => {
-    setTimeout(() => accept(), durationMicros);
+    setTimeout(() => accept(), durationMillis);
   });
 }
 
@@ -161,13 +161,13 @@ class StandaloneConnection implements Connection {
     if (this._connection && !this._connection.isClosed()) {
       return this._connection;
     }
-    const max_time = process.hrtime.bigint()
+    const maxTime = process.hrtime.bigint()
       + BigInt(Math.ceil((this.config.waitUntilAvailable || 0) * 1_000_000));
     let iteration = 1;
     while (true) {
       for (const addr of this.config.addrs) {
         try {
-          this._connection = await ConnectionImpl.connect_with_timeout(
+          this._connection = await ConnectionImpl.connectWithTimeout(
             addr,
             this.config
           );
@@ -175,7 +175,7 @@ class StandaloneConnection implements Connection {
         } catch (e) {
           if (e instanceof errors.ClientConnectionError) {
             if (e.hasTag(errors.SHOULD_RECONNECT)) {
-              if (iteration > 1 && process.hrtime.bigint() > max_time) {
+              if (iteration > 1 && process.hrtime.bigint() > maxTime) {
                 throw e;
               }
               continue;
@@ -484,7 +484,7 @@ class ConnectionImpl implements Connection {
   }
 
   /** @internal */
-  static async connect_with_timeout(
+  static async connectWithTimeout(
     addr: Address,
     config: NormalizedConnectConfig
   ): Promise<ConnectionImpl> {
@@ -513,7 +513,7 @@ class ConnectionImpl implements Connection {
       if (e instanceof errors.EdgeDBError) {
         throw e;
       } else {
-        let err: Error;
+        let err: errors.ClientConnectionError;
         switch (e.code) {
           case "ECONNREFUSED":
           case "ECONNABORTED":
