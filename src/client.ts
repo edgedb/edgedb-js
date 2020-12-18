@@ -513,7 +513,7 @@ class ConnectionImpl implements Connection {
       if (e instanceof errors.EdgeDBError) {
         throw e;
       } else {
-        let err;
+        let err: Error;
         switch (e.code) {
           case "ECONNREFUSED":
           case "ECONNABORTED":
