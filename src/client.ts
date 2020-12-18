@@ -161,8 +161,9 @@ class StandaloneConnection implements Connection {
     if (this._connection && !this._connection.isClosed()) {
       return this._connection;
     }
-    const maxTime = process.hrtime.bigint()
-      + BigInt(Math.ceil((this.config.waitUntilAvailable || 0) * 1_000_000));
+    const maxTime =
+      process.hrtime.bigint() +
+      BigInt(Math.ceil((this.config.waitUntilAvailable || 0) * 1_000_000));
     let iteration = 1;
     while (true) {
       for (const addr of this.config.addrs) {
