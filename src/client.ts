@@ -531,7 +531,6 @@ class ConnectionImpl implements Connection {
     try {
       await connPromise;
     } catch (e) {
-      // TODO(tailhook) wrap IO errors into EdgeDBError type
       conn._abort();
       if (e instanceof errors.EdgeDBError) {
         throw e;
