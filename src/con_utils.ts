@@ -46,7 +46,7 @@ export interface ConnectConfig {
   admin?: boolean;
   timeout?: number;
   commandTimeout?: number;
-  waitUntilAvailableMicros?: number;
+  waitUntilAvailable?: number;
   serverSettings?: any;
   legacyUUIDMode?: boolean;
 }
@@ -96,7 +96,7 @@ export function parseConnectArguments(
     ...parseConnectDsnAndArgs(opts),
     connectTimeout: opts.timeout,
     commandTimeout,
-    waitUntilAvailable: opts.waitUntilAvailableMicros ?? 30_000,
+    waitUntilAvailable: opts.waitUntilAvailable ?? 30_000,
     legacyUUIDMode: opts.legacyUUIDMode,
   };
 }

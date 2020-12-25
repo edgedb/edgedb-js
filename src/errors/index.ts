@@ -451,20 +451,20 @@ export class ClientConnectionError extends ClientError {
   }
 }
 
-export class ConnectionFailedError extends ClientConnectionError {
+export class ClientConnectionFailedError extends ClientConnectionError {
   get code(): number {
     return 0xff_01_01_00;
   }
 }
 
-export class ConnectionFailedTemporarilyError extends ConnectionFailedError {
+export class ClientConnectionFailedTemporarilyError extends ClientConnectionFailedError {
   protected static tags = {[tags.SHOULD_RECONNECT]: true};
   get code(): number {
     return 0xff_01_01_01;
   }
 }
 
-export class ConnectionTimeoutError extends ClientConnectionError {
+export class ClientConnectionTimeoutError extends ClientConnectionError {
   protected static tags = {[tags.SHOULD_RECONNECT]: true};
   get code(): number {
     return 0xff_01_02_00;

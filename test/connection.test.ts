@@ -394,10 +394,10 @@ test("parseConnectArguments", () => {
 test("connect: timeout", async () => {
   let con: Connection | undefined;
   try {
-    con = await asyncConnect({timeout: 1, waitUntilAvailableMicros: 0});
+    con = await asyncConnect({timeout: 1, waitUntilAvailable: 0});
     throw new Error("connection didn't time out");
   } catch (e) {
-    expect(e).toBeInstanceOf(errors.ConnectionTimeoutError);
+    expect(e).toBeInstanceOf(errors.ClientConnectionTimeoutError);
     expect(e.message).toMatch("connection timed out (1ms)");
   } finally {
     if (typeof con !== "undefined") {
@@ -412,11 +412,11 @@ test("connect: refused", async () => {
     con = await asyncConnect({
       host: "localhost",
       port: 23456,
-      waitUntilAvailableMicros: 0,
+      waitUntilAvailable: 0,
     });
     throw new Error("connection isn't refused");
   } catch (e) {
-    expect(e).toBeInstanceOf(errors.ConnectionFailedTemporarilyError);
+    expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
     expect(e.source.code).toMatch("ECONNREFUSED");
   } finally {
     if (typeof con !== "undefined") {
@@ -431,11 +431,11 @@ test("connect: invalid name", async () => {
     con = await asyncConnect({
       host: "invalid.example.org",
       port: 23456,
-      waitUntilAvailableMicros: 0,
+      waitUntilAvailable: 0,
     });
     throw new Error("name was resolved");
   } catch (e) {
-    expect(e).toBeInstanceOf(errors.ConnectionFailedTemporarilyError);
+    expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
     expect(e.source.code).toMatch("ENOTFOUND");
     expect(e.source.syscall).toMatch("getaddrinfo");
   } finally {
@@ -450,11 +450,11 @@ test("connect: refused unix", async () => {
   try {
     con = await asyncConnect({
       host: "/tmp/non-existent",
-      waitUntilAvailableMicros: 0,
+      waitUntilAvailable: 0,
     });
     throw new Error("connection isn't refused");
   } catch (e) {
-    expect(e).toBeInstanceOf(errors.ConnectionFailedTemporarilyError);
+    expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
     expect(e.source.code).toMatch("ENOENT");
   } finally {
     if (typeof con !== "undefined") {

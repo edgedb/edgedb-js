@@ -520,7 +520,7 @@ class ConnectionImpl implements Connection {
       timeout = setTimeout(() => {
         if (!conn.connected) {
           conn.sock.destroy(
-            new errors.ConnectionTimeoutError(
+            new errors.ClientConnectionTimeoutError(
               `connection timed out (${config.connectTimeout}ms)`
             )
           );
@@ -542,10 +542,10 @@ class ConnectionImpl implements Connection {
           case "ECONNRESET":
           case "ENOTFOUND": // DNS name not found
           case "ENOENT": // unix socket is not created yet
-            err = new errors.ConnectionFailedTemporarilyError(e.message);
+            err = new errors.ClientConnectionFailedTemporarilyError(e.message);
             break;
           default:
-            err = new errors.ConnectionFailedError(e.message);
+            err = new errors.ClientConnectionFailedError(e.message);
             break;
         }
         err.source = e;
