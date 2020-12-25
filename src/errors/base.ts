@@ -1,13 +1,13 @@
 export class EdgeDBError extends Error {
   source?: Error;
+  protected static tags: object;
 
-  hasTag(tag: Tag): boolean {
-    return tag.isMatching(this);
+  hasTag(tag: symbol): boolean {
+    // Can't index by symbol, except when using <any>:
+    //   https://github.com/microsoft/TypeScript/issues/1863
+    let error_type = <any><typeof EdgeDBError>this.constructor;
+    return Boolean(error_type.tags[tag])
   }
-}
-
-export interface Tag {
-  isMatching(err: EdgeDBError): boolean;
 }
 
 export type ErrorType = new (msg: string) => EdgeDBError;

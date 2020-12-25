@@ -20,8 +20,10 @@
 
 /* tslint:disable */
 
-import {EdgeDBError, Tag} from "./base";
-export {EdgeDBError, Tag} from "./base";
+import {EdgeDBError} from "./base";
+import * as tags from "./tags";
+export {EdgeDBError} from "./base";
+export * from "./tags";
 
 export class InternalServerError extends EdgeDBError {
   get code(): number {
@@ -456,12 +458,14 @@ export class ConnectionFailedError extends ClientConnectionError {
 }
 
 export class ConnectionFailedTemporarilyError extends ConnectionFailedError {
+  protected static tags = {[tags.SHOULD_RECONNECT]: true};
   get code(): number {
     return 0xff_01_01_01;
   }
 }
 
 export class ConnectionTimeoutError extends ClientConnectionError {
+  protected static tags = {[tags.SHOULD_RECONNECT]: true};
   get code(): number {
     return 0xff_01_02_00;
   }
@@ -502,5 +506,3 @@ export class NoDataError extends ClientError {
     return 0xff_03_00_00;
   }
 }
-
-export * from "./tags";

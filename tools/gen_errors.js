@@ -57,8 +57,10 @@ class Buffer {
   errorsBuf.nl();
   errorsBuf.code("/* tslint:disable */");
   errorsBuf.nl();
-  errorsBuf.code("import {EdgeDBError, Tag} from './base'");
-  errorsBuf.code("export {EdgeDBError, Tag} from './base'");
+  errorsBuf.code("import {EdgeDBError} from './base'");
+  errorsBuf.code("import * as tags from './tags'");
+  errorsBuf.code("export {EdgeDBError} from './base'");
+  errorsBuf.code("export * from './tags'");
   errorsBuf.nl();
 
   const mappingBuf = new Buffer();
@@ -73,7 +75,7 @@ class Buffer {
   mappingBuf.code("export const errorMapping = new Map<number, ErrorType>();");
   mappingBuf.nl();
 
-  for (let [err, base, c1, c2, c3, c4] of errors) {
+  for (let [err, base, c1, c2, c3, c4, tags] of errors) {
     const code =
       "0x" +
       c1.toString(16).padStart(2, "0") +
@@ -88,8 +90,14 @@ class Buffer {
       base = "EdgeDBError";
     }
 
+    let tag_items = tags.map(t => '[tags.' + t + ']: true');
     let line = `export class ${err} extends ${base} `;
-    line += `{\n  get code(): number {\n    return ${code};\n  }\n}`;
+    line += `{\n`
+    if(tag_items.length > 0) {
+        line += `  protected static tags = {${tag_items.join(', ')}}\n`
+    }
+    line += `  get code(): number {\n    return ${code};\n  }\n`
+    line += `}`;
 
     errorsBuf.code(line);
     errorsBuf.nl();
@@ -98,7 +106,6 @@ class Buffer {
   }
 
   errorsBuf.nl();
-  errorsBuf.code("export * from './tags'");
 
   const errors_ts = prettier.format(errorsBuf.render(), prettierOptions);
   const mapping_ts = prettier.format(mappingBuf.render(), prettierOptions);
