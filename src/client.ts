@@ -115,13 +115,18 @@ class StandaloneConnection implements Connection {
     action: () => Promise<T>,
     options?: TransactionOptions
   ): Promise<T> {
-    return await (await this.connection()).transaction(action, options);
+    let connection = this._connection;
+    if(!connection || connection.isClosed()) {
+        connection = await this._reconnect();
+    }
+    return await connection.transaction(action, options);
   }
   async close(): Promise<void> {
     try {
       if (this._connection) {
         await this._connection.close();
       }
+      this._connection = undefined;
       // TODO(tailhook) it makes little sense to close the reconnecting
       // connection so maybe deprecate this method
       this._isClosed = true;
@@ -140,26 +145,43 @@ class StandaloneConnection implements Connection {
     return this._isClosed;
   }
   async execute(query: string): Promise<void> {
-    return await (await this.connection()).execute(query);
+    let connection = this._connection;
+    if(!connection || connection.isClosed()) {
+        connection = await this._reconnect();
+    }
+    return await connection.execute(query);
   }
   async query(query: string, args?: QueryArgs): Promise<Set> {
-    return await (await this.connection()).query(query, args);
+    let connection = this._connection;
+    if(!connection || connection.isClosed()) {
+        connection = await this._reconnect();
+    }
+    return await connection.query(query, args);
   }
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await (await this.connection()).queryJSON(query, args);
+    let connection = this._connection;
+    if(!connection || connection.isClosed()) {
+        connection = await this._reconnect();
+    }
+    return await connection.queryJSON(query, args);
   }
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
-    return await (await this.connection()).queryOne(query, args);
+    let connection = this._connection;
+    if(!connection || connection.isClosed()) {
+        connection = await this._reconnect();
+    }
+    return await connection.queryOne(query, args);
   }
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await (await this.connection()).queryOneJSON(query, args);
+    let connection = this._connection;
+    if(!connection || connection.isClosed()) {
+        connection = await this._reconnect();
+    }
+    return await connection.queryOneJSON(query, args);
   }
-  async connection(): Promise<ConnectionImpl> {
+  private async _reconnect(): Promise<ConnectionImpl> {
     if (this._isClosed) {
       throw new errors.InterfaceError("Connection is closed");
-    }
-    if (this._connection && !this._connection.isClosed()) {
-      return this._connection;
     }
     const maxTime =
       process.hrtime.bigint() +
@@ -198,7 +220,7 @@ class StandaloneConnection implements Connection {
     config: NormalizedConnectConfig
   ): Promise<StandaloneConnection> {
     const conn = new StandaloneConnection(config);
-    await conn.connection();
+    await conn._reconnect();
     return conn;
   }
 }
