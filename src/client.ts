@@ -116,8 +116,8 @@ class StandaloneConnection implements Connection {
     options?: TransactionOptions
   ): Promise<T> {
     let connection = this._connection;
-    if(!connection || connection.isClosed()) {
-        connection = await this._reconnect();
+    if (!connection || connection.isClosed()) {
+      connection = await this._reconnect();
     }
     return await connection.transaction(action, options);
   }
@@ -146,36 +146,36 @@ class StandaloneConnection implements Connection {
   }
   async execute(query: string): Promise<void> {
     let connection = this._connection;
-    if(!connection || connection.isClosed()) {
-        connection = await this._reconnect();
+    if (!connection || connection.isClosed()) {
+      connection = await this._reconnect();
     }
     return await connection.execute(query);
   }
   async query(query: string, args?: QueryArgs): Promise<Set> {
     let connection = this._connection;
-    if(!connection || connection.isClosed()) {
-        connection = await this._reconnect();
+    if (!connection || connection.isClosed()) {
+      connection = await this._reconnect();
     }
     return await connection.query(query, args);
   }
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
     let connection = this._connection;
-    if(!connection || connection.isClosed()) {
-        connection = await this._reconnect();
+    if (!connection || connection.isClosed()) {
+      connection = await this._reconnect();
     }
     return await connection.queryJSON(query, args);
   }
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
     let connection = this._connection;
-    if(!connection || connection.isClosed()) {
-        connection = await this._reconnect();
+    if (!connection || connection.isClosed()) {
+      connection = await this._reconnect();
     }
     return await connection.queryOne(query, args);
   }
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
     let connection = this._connection;
-    if(!connection || connection.isClosed()) {
-        connection = await this._reconnect();
+    if (!connection || connection.isClosed()) {
+      connection = await this._reconnect();
     }
     return await connection.queryOneJSON(query, args);
   }
