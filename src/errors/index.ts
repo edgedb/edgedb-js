@@ -20,7 +20,10 @@
 
 /* tslint:disable */
 
-export class EdgeDBError extends Error {}
+import {EdgeDBError} from "./base";
+import * as tags from "./tags";
+export {EdgeDBError} from "./base";
+export * from "./tags";
 
 export class InternalServerError extends EdgeDBError {
   get code(): number {
@@ -73,6 +76,24 @@ export class InputDataError extends ProtocolError {
 export class ResultCardinalityMismatchError extends ProtocolError {
   get code(): number {
     return 0x03_03_00_00;
+  }
+}
+
+export class CapabilityError extends ProtocolError {
+  get code(): number {
+    return 0x03_04_00_00;
+  }
+}
+
+export class UnsupportedCapabilityError extends CapabilityError {
+  get code(): number {
+    return 0x03_04_01_00;
+  }
+}
+
+export class DisabledCapabilityError extends CapabilityError {
+  get code(): number {
+    return 0x03_04_02_00;
   }
 }
 
@@ -427,6 +448,26 @@ export class ClientError extends EdgeDBError {
 export class ClientConnectionError extends ClientError {
   get code(): number {
     return 0xff_01_00_00;
+  }
+}
+
+export class ClientConnectionFailedError extends ClientConnectionError {
+  get code(): number {
+    return 0xff_01_01_00;
+  }
+}
+
+export class ClientConnectionFailedTemporarilyError extends ClientConnectionFailedError {
+  protected static tags = {[tags.SHOULD_RECONNECT]: true};
+  get code(): number {
+    return 0xff_01_01_01;
+  }
+}
+
+export class ClientConnectionTimeoutError extends ClientConnectionError {
+  protected static tags = {[tags.SHOULD_RECONNECT]: true};
+  get code(): number {
+    return 0xff_01_02_00;
   }
 }
 

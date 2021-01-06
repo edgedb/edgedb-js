@@ -18,9 +18,8 @@
  * limitations under the License.
  */
 
+import {ErrorType} from "./base";
 import * as errors from "./index";
-
-export type ErrorType = new (msg: string) => errors.EdgeDBError;
 
 export const errorMapping = new Map<number, ErrorType>();
 
@@ -33,6 +32,9 @@ errorMapping.set(0x03_01_00_02, errors.TypeSpecNotFoundError);
 errorMapping.set(0x03_01_00_03, errors.UnexpectedMessageError);
 errorMapping.set(0x03_02_00_00, errors.InputDataError);
 errorMapping.set(0x03_03_00_00, errors.ResultCardinalityMismatchError);
+errorMapping.set(0x03_04_00_00, errors.CapabilityError);
+errorMapping.set(0x03_04_01_00, errors.UnsupportedCapabilityError);
+errorMapping.set(0x03_04_02_00, errors.DisabledCapabilityError);
 errorMapping.set(0x04_00_00_00, errors.QueryError);
 errorMapping.set(0x04_01_00_00, errors.InvalidSyntaxError);
 errorMapping.set(0x04_01_01_00, errors.EdgeQLSyntaxError);
@@ -92,6 +94,9 @@ errorMapping.set(0xf0_00_00_00, errors.LogMessage);
 errorMapping.set(0xf0_01_00_00, errors.WarningMessage);
 errorMapping.set(0xff_00_00_00, errors.ClientError);
 errorMapping.set(0xff_01_00_00, errors.ClientConnectionError);
+errorMapping.set(0xff_01_01_00, errors.ClientConnectionFailedError);
+errorMapping.set(0xff_01_01_01, errors.ClientConnectionFailedTemporarilyError);
+errorMapping.set(0xff_01_02_00, errors.ClientConnectionTimeoutError);
 errorMapping.set(0xff_02_00_00, errors.InterfaceError);
 errorMapping.set(0xff_02_01_00, errors.QueryArgumentError);
 errorMapping.set(0xff_02_01_01, errors.MissingArgumentError);

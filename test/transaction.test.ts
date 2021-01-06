@@ -83,9 +83,11 @@ test("transaction: nested 01", async () => {
     expect(connectionsInTransaction.get(con)).toBeUndefined();
 
     function assertTransactionIsDefined(connection: Connection): void {
-      const transaction = connectionsInTransaction.get(connection);
+      // @ts-ignore
+      const transaction = connectionsInTransaction.get(connection._connection);
       expect(transaction).toBeDefined();
-      expect(transaction?._connection).toBe(connection);
+      // @ts-ignore
+      expect(transaction?._connection).toBe(connection._connection);
     }
 
     try {
