@@ -16,12 +16,8 @@
  * limitations under the License.
  */
 import * as errors from "./errors";
-import {BORROW, BorrowReason, Connection, TransactionOptions} from "./ifaces";
-import {Executor, QueryArgs, CONNECTION_IMPL} from "./ifaces";
-import {ALLOW_MODIFICATIONS} from "./ifaces";
+import {Executor, TransactionOptions} from "./ifaces";
 import {getUniqueId} from "./utils";
-import {ConnectionImpl} from "./client";
-import {Set} from "./datatypes/set";
 
 export enum TransactionState {
   NEW = 0,
@@ -36,22 +32,31 @@ export enum IsolationLevel {
   REPEATABLE_READ = "repeatable_read",
 }
 
-export class Transaction implements Executor {
-  [ALLOW_MODIFICATIONS]: never;
-  _connection: Connection;
-  _impl?: ConnectionImpl;
+export const connectionsInTransaction = new WeakMap<
+  Executor,
+  BaseTransaction
+>();
+
+class BaseTransaction {
+  _id: string | null;
+  _connection: Executor;
   _deferrable?: boolean;
   _isolation?: IsolationLevel;
+  _managed: boolean;
+  _nested: boolean;
   _readonly?: boolean;
   _state: TransactionState;
 
-  constructor(connection: Connection, options?: TransactionOptions) {
+  constructor(connection: Executor, options?: TransactionOptions) {
     if (options === undefined) {
       options = {};
     }
     this._connection = connection;
     this._deferrable = options.deferrable;
+    this._id = null;
     this._isolation = options.isolation;
+    this._managed = false;
+    this._nested = false;
     this._readonly = options.readonly;
     this._state = TransactionState.NEW;
   }
@@ -102,46 +107,120 @@ export class Transaction implements Executor {
       );
     }
 
-    let query: string = "START TRANSACTION";
+    this._checkIfNested();
 
-    if (this._isolation === IsolationLevel.REPEATABLE_READ) {
-      query = "START TRANSACTION ISOLATION REPEATABLE READ";
-    } else if (this._isolation === IsolationLevel.SERIALIZABLE) {
-      query = "START TRANSACTION ISOLATION SERIALIZABLE";
+    let query: string;
+
+    if (this._nested) {
+      this._id = getUniqueId("savepoint");
+      query = `DECLARE SAVEPOINT ${this._id};`;
+    } else {
+      query = "START TRANSACTION";
+
+      if (this._isolation === IsolationLevel.REPEATABLE_READ) {
+        query = "START TRANSACTION ISOLATION REPEATABLE READ";
+      } else if (this._isolation === IsolationLevel.SERIALIZABLE) {
+        query = "START TRANSACTION ISOLATION SERIALIZABLE";
+      }
+
+      if (this._readonly) {
+        query += " READ ONLY";
+      } else if (this._readonly !== undefined) {
+        query += " READ WRITE";
+      }
+
+      if (this._deferrable) {
+        query += " DEFERRABLE";
+      } else if (this._deferrable !== undefined) {
+        query += " NOT DEFERRABLE";
+      }
+
+      query += ";";
     }
-
-    if (this._readonly) {
-      query += " READ ONLY";
-    } else if (this._readonly !== undefined) {
-      query += " READ WRITE";
-    }
-
-    if (this._deferrable) {
-      query += " DEFERRABLE";
-    } else if (this._deferrable !== undefined) {
-      query += " NOT DEFERRABLE";
-    }
-
-    query += ";";
 
     return query;
   }
 
+  private _checkIfNested(): void {
+    const connection = this._connection;
+    const topTransaction = connectionsInTransaction.get(connection);
+
+    if (!topTransaction) {
+      connectionsInTransaction.set(connection, this);
+    } else {
+      // Nested transaction block
+      if (this._isolation === undefined) {
+        this._isolation = topTransaction._isolation;
+      }
+      if (this._readonly === undefined) {
+        this._readonly = topTransaction._readonly;
+      }
+      if (this._deferrable === undefined) {
+        this._deferrable = topTransaction._deferrable;
+      }
+
+      if (this._isolation !== topTransaction._isolation) {
+        throw new errors.InterfaceError(
+          `nested transaction has a different isolation level: ` +
+            `current ${this._isolation} != outer ${topTransaction._isolation}`
+        );
+      }
+      if (this._readonly !== topTransaction._readonly) {
+        throw new errors.InterfaceError(
+          `nested transaction has a different read-write spec: ` +
+            `current ${this._readonly} != outer ${topTransaction._readonly}`
+        );
+      }
+      if (this._deferrable !== topTransaction._deferrable) {
+        throw new errors.InterfaceError(
+          `nested transaction has a different deferrable spec: ` +
+            `current ${this._deferrable} != outer ${topTransaction._deferrable}`
+        );
+      }
+
+      this._nested = true;
+    }
+  }
+
+  protected _removeMapReference(): void {
+    if (connectionsInTransaction.get(this._connection) === this) {
+      connectionsInTransaction.delete(this._connection);
+    }
+  }
+
   protected _makeCommitQuery(): string {
     this._checkState("commit");
+
+    this._removeMapReference();
+
+    if (this._nested) {
+      return `RELEASE SAVEPOINT ${this._id};`;
+    }
+
     return "COMMIT;";
   }
 
   protected _makeRollbackQuery(): string {
     this._checkState("rollback");
+
+    this._removeMapReference();
+
+    if (this._nested) {
+      return `ROLLBACK TO SAVEPOINT ${this._id};`;
+    }
+
     return "ROLLBACK;";
   }
+}
+
+export class Transaction extends BaseTransaction {
   private async _execute(
     query: string,
     successState: TransactionState
   ): Promise<void> {
     try {
-      await this.get_conn().execute(query);
+      await this._connection.execute(query);
+
       this._state = successState;
     } catch (error) {
       this._state = TransactionState.FAILED;
@@ -150,49 +229,17 @@ export class Transaction implements Executor {
   }
 
   async start(): Promise<void> {
-    this._connection[BORROW] = BorrowReason.TRANSACTION;
-    this._impl = await this._connection[CONNECTION_IMPL]();
     await this._execute(this._makeStartQuery(), TransactionState.STARTED);
   }
 
   async commit(): Promise<void> {
-    this._connection[BORROW] = undefined;
     await this._execute(this._makeCommitQuery(), TransactionState.COMMITTED);
   }
 
   async rollback(): Promise<void> {
-    this._connection[BORROW] = undefined;
     await this._execute(
       this._makeRollbackQuery(),
       TransactionState.ROLLEDBACK
     );
-  }
-  private get_conn(): ConnectionImpl {
-    const conn = this._impl;
-    if (!conn) {
-      throw new errors.InterfaceError("Transaction is not started");
-    } else {
-      return conn
-    }
-  }
-
-  async execute(query: string): Promise<void> {
-    await this.get_conn().execute(query);
-  }
-
-  async query(query: string, args?: QueryArgs): Promise<Set> {
-    return await this.get_conn().query(query, args);
-  }
-
-  async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.get_conn().queryJSON(query, args);
-  }
-
-  async queryOne(query: string, args?: QueryArgs): Promise<any> {
-    return await this.get_conn().queryOne(query, args);
-  }
-
-  async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.get_conn().queryOneJSON(query, args);
   }
 }

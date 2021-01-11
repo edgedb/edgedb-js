@@ -808,10 +808,7 @@ test("pool transaction throws", async () => {
 
     await expect(faulty()).rejects.toThrowError(
       new errors.InterfaceError(
-        "Operation not supported. Use a `transaction` on a specific db " +
-          "connection. For example: pool.run((con) => {" +
-          "con.transaction(() => {...})" +
-          "})"
+        "Operation not supported. Use a `try_transaction()` or `retry()`"
       )
     );
   } finally {

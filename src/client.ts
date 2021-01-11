@@ -35,8 +35,12 @@ import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {
   ALLOW_MODIFICATIONS,
+  BORROW,
+  CONNECTION_IMPL,
+  Executor,
   QueryArgs,
   Connection,
+  BorrowReason,
   IConnectionProxied,
   onConnectionClose,
   TransactionOptions,
@@ -49,6 +53,7 @@ import {
   ConnectConfig,
   NormalizedConnectConfig,
 } from "./con_utils";
+import {Transaction as LegacyTransaction} from "./legacy_transaction";
 import {Transaction} from "./transaction";
 
 const PROTO_VER_MAJOR = 0;
@@ -103,6 +108,7 @@ function sleep(durationMillis: number): Promise<void> {
 
 class StandaloneConnection implements Connection {
   [ALLOW_MODIFICATIONS]: never;
+  [BORROW]?: BorrowReason;
   private config: NormalizedConnectConfig;
   private _connection?: ConnectionImpl;
   private _isClosed: boolean; // For compatibility
@@ -111,16 +117,47 @@ class StandaloneConnection implements Connection {
     this.config = config;
     this._isClosed = false;
   }
+  async [CONNECTION_IMPL](): Promise<ConnectionImpl> {
+    let connection = this._connection;
+    if (!connection || connection.isClosed()) {
+      connection = await this._reconnect();
+    }
+    return connection;
+  }
   async transaction<T>(
     action: () => Promise<T>,
     options?: TransactionOptions
   ): Promise<T> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `transaction()` method is deprecated and is scheduled to be " +
+      "removed. Use the `retry()` or `try_transaction()` method " +
+      "instead"
+    );
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.transaction(action, options);
   }
+
+  async try_transaction<T>(
+    action: (transaction: Transaction) => Promise<T>,
+  ): Promise<T> {
+    let result: T;
+    const transaction = new Transaction(this);
+    await transaction.start();
+    try {
+      result = await action(transaction);
+      await transaction.commit();
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
+    }
+    return result;
+  }
+
+
   async close(): Promise<void> {
     try {
       if (this._connection) {
@@ -145,6 +182,7 @@ class StandaloneConnection implements Connection {
     return this._isClosed;
   }
   async execute(query: string): Promise<void> {
+    this._check_borrow();
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
@@ -152,6 +190,7 @@ class StandaloneConnection implements Connection {
     return await connection.execute(query);
   }
   async query(query: string, args?: QueryArgs): Promise<Set> {
+    this._check_borrow();
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
@@ -159,6 +198,7 @@ class StandaloneConnection implements Connection {
     return await connection.query(query, args);
   }
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
+    this._check_borrow();
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
@@ -166,6 +206,7 @@ class StandaloneConnection implements Connection {
     return await connection.queryJSON(query, args);
   }
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
+    this._check_borrow();
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
@@ -173,11 +214,25 @@ class StandaloneConnection implements Connection {
     return await connection.queryOne(query, args);
   }
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
+    this._check_borrow();
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.queryOneJSON(query, args);
+  }
+  _check_borrow() {
+    let borrow = this[BORROW];
+    if(borrow) {
+      let text;
+      switch(borrow) {
+        case BorrowReason.TRANSACTION:
+          text = "Connection object is borrowed for the transaction. " +
+            "Use the methods on transaction object instead.";
+          break;
+      }
+      throw new errors.InterfaceError(text)
+    }
   }
   private async _reconnect(): Promise<ConnectionImpl> {
     if (this._isClosed) {
@@ -225,7 +280,7 @@ class StandaloneConnection implements Connection {
   }
 }
 
-class ConnectionImpl implements Connection {
+export class ConnectionImpl implements Executor {
   [ALLOW_MODIFICATIONS]: never;
   private sock: net.Socket;
   private config: NormalizedConnectConfig;
@@ -1254,14 +1309,13 @@ class ConnectionImpl implements Connection {
     options?: TransactionOptions
   ): Promise<T> {
     let result: T;
-    const transaction = new Transaction(this, options);
+    const transaction = new LegacyTransaction(this, options);
     await transaction.start();
     try {
       result = await action();
       await transaction.commit();
     } catch (err) {
       await transaction.rollback();
-
       throw err;
     }
     return result;

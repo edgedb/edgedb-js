@@ -19,7 +19,6 @@
 import * as errors from "../src/errors";
 import {asyncConnect} from "./testbase";
 import {
-  connectionsInTransaction,
   Transaction,
   TransactionState,
 } from "../src/transaction";
@@ -56,13 +55,13 @@ afterAll(async () => {
 test("transaction: regular 01", async () => {
   await run(async (con) => {
     async function faulty(): Promise<void> {
-      await con.transaction(async () => {
-        await con.execute(`
+      await con.try_transaction(async (tx) => {
+        await tx.execute(`
           INSERT ${typename} {
             name := 'Test Transaction'
           };
         `);
-        await con.execute("SELECT 1 / 0;");
+        await tx.execute("SELECT 1 / 0;");
       });
     }
 
@@ -75,161 +74,6 @@ test("transaction: regular 01", async () => {
     );
 
     expect(items).toHaveLength(0);
-  });
-});
-
-test("transaction: nested 01", async () => {
-  await run(async (con) => {
-    expect(connectionsInTransaction.get(con)).toBeUndefined();
-
-    function assertTransactionIsDefined(connection: Connection): void {
-      // @ts-ignore
-      const transaction = connectionsInTransaction.get(connection._connection);
-      expect(transaction).toBeDefined();
-      // @ts-ignore
-      expect(transaction?._connection).toBe(connection._connection);
-    }
-
-    try {
-      await con.transaction(async () => {
-        assertTransactionIsDefined(con);
-
-        // internal transaction
-        await con.transaction(async () => {
-          assertTransactionIsDefined(con);
-          await con.execute(`
-            INSERT ${typename} {
-              name := 'TXTEST 1'
-            };
-          `);
-        });
-
-        assertTransactionIsDefined(con);
-
-        async function faulty(): Promise<void> {
-          await con.transaction(async () => {
-            assertTransactionIsDefined(con);
-
-            await con.execute(`
-              INSERT ${typename} {
-                name := 'TXTEST 2'
-              };
-            `);
-            await con.execute("SELECT 1 / 0;");
-          });
-        }
-
-        await expect(faulty()).rejects.toThrow(
-          new errors.DivisionByZeroError().message
-        );
-
-        const records2 = await con.query(`
-          SELECT ${typename} {
-            name
-          }
-          FILTER .name LIKE 'TXTEST%';
-        `);
-
-        expect(records2[0].name).toEqual("TXTEST 1");
-        assertTransactionIsDefined(con);
-
-        await con.execute("SELECT 1 / 0;");
-      });
-    } catch (error) {
-      expect(error).toBeInstanceOf(errors.DivisionByZeroError);
-    }
-
-    expect(connectionsInTransaction.get(con)).toBeUndefined();
-
-    const records = await con.query(`
-      SELECT ${typename} {
-        name
-      }
-      FILTER .name LIKE 'TXTEST%';
-    `);
-
-    expect(records).toHaveLength(0);
-  });
-});
-
-test("transaction_nested_02", async () => {
-  await run(async (con) => {
-    await con.transaction(
-      async () => {
-        await con.transaction(async () => {
-          // no explicit isolation, OK, because the nested transaction
-          // inherits the setting from the top transaction
-        });
-      },
-      {
-        isolation: IsolationLevel.REPEATABLE_READ,
-      }
-    );
-
-    async function faulty1(): Promise<void> {
-      await con.transaction(
-        async () => {
-          await con.transaction(
-            async () => {
-              // ...
-            },
-            {
-              isolation: IsolationLevel.SERIALIZABLE,
-            }
-          );
-        },
-        {
-          isolation: IsolationLevel.REPEATABLE_READ,
-        }
-      );
-    }
-
-    await expect(faulty1()).rejects.toThrowError(
-      new errors.InterfaceError(
-        "nested transaction has a different isolation level: " +
-          "current serializable != outer repeatable_read"
-      )
-    );
-
-    async function faulty2(): Promise<void> {
-      await con.transaction(async () => {
-        await con.transaction(
-          async () => {
-            // ...
-          },
-          {
-            readonly: true,
-          }
-        );
-      });
-    }
-
-    await expect(faulty2()).rejects.toThrowError(
-      new errors.InterfaceError(
-        "nested transaction has a different read-write spec: " +
-          "current true != outer undefined"
-      )
-    );
-
-    async function faulty3(): Promise<void> {
-      await con.transaction(async () => {
-        await con.transaction(
-          async () => {
-            // ...
-          },
-          {
-            deferrable: true,
-          }
-        );
-      });
-    }
-
-    await expect(faulty3()).rejects.toThrowError(
-      new errors.InterfaceError(
-        "nested transaction has a different deferrable spec: " +
-          "current true != outer undefined"
-      )
-    );
   });
 });
 
@@ -258,6 +102,67 @@ test("transaction interface errors", async () => {
       new errors.InterfaceError(
         "cannot start; the transaction is already rolled back"
       )
+    );
+
+    async function borrow1(): Promise<void> {
+        await con.try_transaction(async (tx) => {
+            await con.execute("SELECT 7*9");
+        });
+    }
+
+    await expect(borrow1()).rejects.toThrowError(
+        new errors.InterfaceError(
+            "Connection object is borrowed for the transaction. " +
+            "Use the methods on transaction object instead."
+        )
+    );
+
+    async function borrow2(): Promise<void> {
+        await con.try_transaction(async (tx) => {
+            await con.query("SELECT 7*9");
+        });
+    }
+    await expect(borrow2()).rejects.toThrowError(
+        new errors.InterfaceError(
+            "Connection object is borrowed for the transaction. " +
+            "Use the methods on transaction object instead."
+        )
+    );
+
+    async function borrow3(): Promise<void> {
+        await con.try_transaction(async (tx) => {
+            await con.queryOne("SELECT 7*9");
+        });
+    }
+    await expect(borrow3()).rejects.toThrowError(
+        new errors.InterfaceError(
+            "Connection object is borrowed for the transaction. " +
+            "Use the methods on transaction object instead."
+        )
+    );
+
+    async function borrow4(): Promise<void> {
+        await con.try_transaction(async (tx) => {
+            await con.queryJSON("SELECT 7*9");
+        });
+    }
+    await expect(borrow4()).rejects.toThrowError(
+        new errors.InterfaceError(
+            "Connection object is borrowed for the transaction. " +
+            "Use the methods on transaction object instead."
+        )
+    );
+
+    async function borrow5(): Promise<void> {
+        await con.try_transaction(async (tx) => {
+            await con.queryOneJSON("SELECT 7*9");
+        });
+    }
+    await expect(borrow5()).rejects.toThrowError(
+        new errors.InterfaceError(
+            "Connection object is borrowed for the transaction. " +
+            "Use the methods on transaction object instead."
+        )
     );
   });
 });
