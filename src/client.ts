@@ -76,7 +76,7 @@ enum TransactionStatus {
 
 const DEFAULT_MAX_ITERATIONS = 3;
 
-function default_backoff(attempt: number) {
+function default_backoff(attempt: number): number {
   return 2 ** attempt * 100 + Math.random() * 100;
 }
 
@@ -268,8 +268,8 @@ class StandaloneConnection implements Connection {
     }
     return await connection.queryOneJSON(query, args);
   }
-  _check_borrow() {
-    let borrow = this[BORROW];
+  _check_borrow(): void {
+    const borrow = this[BORROW];
     if (borrow) {
       let text;
       switch (borrow) {
