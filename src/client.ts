@@ -74,6 +74,12 @@ enum TransactionStatus {
   TRANS_UNKNOWN = 4, // cannot determine status
 }
 
+const DEFAULT_MAX_ITERATIONS = 3;
+
+function default_backoff(attempt: number) {
+    return (2**attempt) * 100 + Math.random()*100;
+}
+
 /* Internal mapping used to break strong reference between
  * connections and their pool proxies.
  */
@@ -155,6 +161,47 @@ class StandaloneConnection implements Connection {
       throw err;
     }
     return result;
+  }
+
+  async retry<T>(
+    action: (transaction: Transaction) => Promise<T>,
+  ): Promise<T> {
+    let result: T;
+    for(let iteration = 0; iteration < DEFAULT_MAX_ITERATIONS; ++iteration) {
+      const transaction = new Transaction(this);
+      await transaction.start();
+      try {
+        result = await action(transaction);
+      } catch (err) {
+        try {
+          await transaction.rollback();
+        } catch(rollback_err) {
+          if(rollback_err instanceof errors.EdgeDBError) {
+            // ignore errors on rollback, just retry if possible
+            // or propagate normal error if it isn't
+          } else {
+            throw rollback_err; // rethrow other errors normally
+          }
+        }
+        if(err instanceof errors.EdgeDBError &&
+          err.hasTag(errors.SHOULD_RETRY) &&
+          iteration + 1 < DEFAULT_MAX_ITERATIONS)
+        {
+          await sleep(default_backoff(iteration));
+          continue;
+        }
+        throw err;
+      }
+      // TODO(tailhook) sort out errors on commit, early network errors
+      // and some other errors could be retried
+      // NOTE: we can't retry on all the same errors as we don't know if
+      // commit is succeeded before the database have received it or after
+      // it have been done but network is dropped before we were able
+      // to receive a response
+      await transaction.commit();
+      return result;
+    }
+    throw Error("unreachable");
   }
 
 

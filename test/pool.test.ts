@@ -815,3 +815,17 @@ test("pool transaction throws", async () => {
     await pool.close();
   }
 });
+
+test("pool retry works", async () => {
+  const pool = await getPool();
+
+  try {
+
+    let result = await pool.retry(async (tx) => {
+      return await tx.queryOne(`SELECT 33*21`);
+    });
+    expect(result).toEqual(693);
+  } finally {
+    await pool.close();
+  }
+});

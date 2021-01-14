@@ -325,6 +325,12 @@ export class PoolConnectionProxy implements IConnectionProxied {
     return await this[unwrapConnection]().try_transaction(action);
   }
 
+  async retry<T>(
+    action: (transaction: Transaction) => Promise<T>,
+  ): Promise<T> {
+    return await this[unwrapConnection]().retry(action);
+  }
+
   async query(query: string, args?: QueryArgs): Promise<Set> {
     return await this[unwrapConnection]().query(query, args);
   }
@@ -733,6 +739,14 @@ class PoolImpl implements Pool {
   ): Promise<T> {
     return await this.run(async (connection) => {
       return await connection.try_transaction(action);
+    });
+  }
+
+  async retry<T>(
+    action: (transaction: Transaction) => Promise<T>,
+  ): Promise<T> {
+    return await this.run(async (connection) => {
+      return await connection.retry(action);
     });
   }
 

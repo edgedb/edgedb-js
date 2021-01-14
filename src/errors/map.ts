@@ -97,6 +97,7 @@ errorMapping.set(0xff_01_00_00, errors.ClientConnectionError);
 errorMapping.set(0xff_01_01_00, errors.ClientConnectionFailedError);
 errorMapping.set(0xff_01_01_01, errors.ClientConnectionFailedTemporarilyError);
 errorMapping.set(0xff_01_02_00, errors.ClientConnectionTimeoutError);
+errorMapping.set(0xff_01_03_00, errors.ClientConnectionClosedError);
 errorMapping.set(0xff_02_00_00, errors.InterfaceError);
 errorMapping.set(0xff_02_01_00, errors.QueryArgumentError);
 errorMapping.set(0xff_02_01_01, errors.MissingArgumentError);
