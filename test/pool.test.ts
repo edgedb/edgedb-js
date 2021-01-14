@@ -820,7 +820,6 @@ test("pool retry works", async () => {
   const pool = await getPool();
 
   try {
-
     let result = await pool.retry(async (tx) => {
       return await tx.queryOne(`SELECT 33*21`);
     });

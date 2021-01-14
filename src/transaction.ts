@@ -172,7 +172,7 @@ export class Transaction implements Executor {
     if (!conn) {
       throw new errors.InterfaceError("Transaction is not started");
     } else {
-      return conn
+      return conn;
     }
   }
 

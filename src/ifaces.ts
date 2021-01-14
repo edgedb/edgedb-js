@@ -24,8 +24,8 @@ import {
   LocalTime,
   Duration,
 } from "./datatypes/datetime";
-import {Transaction} from "./transaction"
-import {ConnectionImpl} from "./client"
+import {Transaction} from "./transaction";
+import {ConnectionImpl} from "./client";
 
 import {Set} from "./datatypes/set";
 
@@ -90,11 +90,9 @@ export interface Connection extends Executor {
     options?: TransactionOptions
   ): Promise<T>;
   try_transaction<T>(
-    action: (transaction: Transaction) => Promise<T>,
+    action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
-  retry<T>(
-    action: (transaction: Transaction) => Promise<T>,
-  ): Promise<T>;
+  retry<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
   close(): Promise<void>;
   isClosed(): boolean;
 }
@@ -110,11 +108,9 @@ export interface Pool extends Executor {
     options?: TransactionOptions
   ): Promise<T>;
   try_transaction<T>(
-    action: (transaction: Transaction) => Promise<T>,
+    action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
-  retry<T>(
-    action: (transaction: Transaction) => Promise<T>,
-  ): Promise<T>;
+  retry<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
   close(): Promise<void>;
   isClosed(): boolean;
 

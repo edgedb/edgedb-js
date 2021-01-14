@@ -18,10 +18,7 @@
 
 import * as errors from "../src/errors";
 import {asyncConnect} from "./testbase";
-import {
-  Transaction,
-  TransactionState,
-} from "../src/transaction";
+import {Transaction, TransactionState} from "../src/transaction";
 import {Connection, IsolationLevel} from "../src/ifaces";
 
 const typename = "TransactionTest";
@@ -105,64 +102,64 @@ test("transaction interface errors", async () => {
     );
 
     async function borrow1(): Promise<void> {
-        await con.try_transaction(async (tx) => {
-            await con.execute("SELECT 7*9");
-        });
+      await con.try_transaction(async (tx) => {
+        await con.execute("SELECT 7*9");
+      });
     }
 
     await expect(borrow1()).rejects.toThrowError(
-        new errors.InterfaceError(
-            "Connection object is borrowed for the transaction. " +
-            "Use the methods on transaction object instead."
-        )
+      new errors.InterfaceError(
+        "Connection object is borrowed for the transaction. " +
+          "Use the methods on transaction object instead."
+      )
     );
 
     async function borrow2(): Promise<void> {
-        await con.try_transaction(async (tx) => {
-            await con.query("SELECT 7*9");
-        });
+      await con.try_transaction(async (tx) => {
+        await con.query("SELECT 7*9");
+      });
     }
     await expect(borrow2()).rejects.toThrowError(
-        new errors.InterfaceError(
-            "Connection object is borrowed for the transaction. " +
-            "Use the methods on transaction object instead."
-        )
+      new errors.InterfaceError(
+        "Connection object is borrowed for the transaction. " +
+          "Use the methods on transaction object instead."
+      )
     );
 
     async function borrow3(): Promise<void> {
-        await con.try_transaction(async (tx) => {
-            await con.queryOne("SELECT 7*9");
-        });
+      await con.try_transaction(async (tx) => {
+        await con.queryOne("SELECT 7*9");
+      });
     }
     await expect(borrow3()).rejects.toThrowError(
-        new errors.InterfaceError(
-            "Connection object is borrowed for the transaction. " +
-            "Use the methods on transaction object instead."
-        )
+      new errors.InterfaceError(
+        "Connection object is borrowed for the transaction. " +
+          "Use the methods on transaction object instead."
+      )
     );
 
     async function borrow4(): Promise<void> {
-        await con.try_transaction(async (tx) => {
-            await con.queryJSON("SELECT 7*9");
-        });
+      await con.try_transaction(async (tx) => {
+        await con.queryJSON("SELECT 7*9");
+      });
     }
     await expect(borrow4()).rejects.toThrowError(
-        new errors.InterfaceError(
-            "Connection object is borrowed for the transaction. " +
-            "Use the methods on transaction object instead."
-        )
+      new errors.InterfaceError(
+        "Connection object is borrowed for the transaction. " +
+          "Use the methods on transaction object instead."
+      )
     );
 
     async function borrow5(): Promise<void> {
-        await con.try_transaction(async (tx) => {
-            await con.queryOneJSON("SELECT 7*9");
-        });
+      await con.try_transaction(async (tx) => {
+        await con.queryOneJSON("SELECT 7*9");
+      });
     }
     await expect(borrow5()).rejects.toThrowError(
-        new errors.InterfaceError(
-            "Connection object is borrowed for the transaction. " +
-            "Use the methods on transaction object instead."
-        )
+      new errors.InterfaceError(
+        "Connection object is borrowed for the transaction. " +
+          "Use the methods on transaction object instead."
+      )
     );
   });
 });

@@ -18,10 +18,7 @@
 
 import * as errors from "../src/errors";
 import {asyncConnect} from "./testbase";
-import {
-  Transaction,
-  TransactionState,
-} from "../src/transaction";
+import {Transaction, TransactionState} from "../src/transaction";
 import {Connection, IsolationLevel} from "../src/ifaces";
 
 class Barrier {
@@ -32,12 +29,12 @@ class Barrier {
     this._waiters = [];
   }
   async ready() {
-    if(this._counter == 0) {
+    if (this._counter == 0) {
       return;
     }
     this._counter -= 1;
-    if(this._counter == 0) {
-      for(let waiter of this._waiters.splice(0, this._waiters.length)) {
+    if (this._counter == 0) {
+      for (let waiter of this._waiters.splice(0, this._waiters.length)) {
         waiter();
       }
     } else {
@@ -61,7 +58,7 @@ async function run(test: (con: Connection) => Promise<void>): Promise<void> {
 }
 
 async function run2(
-  test: (con1: Connection, con2: Connection) => Promise<void>,
+  test: (con1: Connection, con2: Connection) => Promise<void>
 ): Promise<void> {
   const connection = await asyncConnect();
   try {
@@ -72,7 +69,7 @@ async function run2(
       await connection2.close();
     }
   } finally {
-      await connection.close();
+    await connection.close();
   }
 }
 
@@ -151,4 +148,3 @@ test("retry: conflict", async () => {
     expect(iterations).toEqual(3);
   });
 });
-

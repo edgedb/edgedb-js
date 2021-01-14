@@ -298,7 +298,7 @@ export class PoolConnectionProxy implements IConnectionProxied {
     proxyMap.set(connection, this);
   }
   async [CONNECTION_IMPL](): Promise<ConnectionImpl> {
-    return await this[unwrapConnection]()[CONNECTION_IMPL]()
+    return await this[unwrapConnection]()[CONNECTION_IMPL]();
   }
 
   private [unwrapConnection](): Connection {
@@ -320,13 +320,13 @@ export class PoolConnectionProxy implements IConnectionProxied {
     return await this[unwrapConnection]().transaction(action, options);
   }
   async try_transaction<T>(
-    action: (transaction: Transaction) => Promise<T>,
+    action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     return await this[unwrapConnection]().try_transaction(action);
   }
 
   async retry<T>(
-    action: (transaction: Transaction) => Promise<T>,
+    action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     return await this[unwrapConnection]().retry(action);
   }
@@ -735,7 +735,7 @@ class PoolImpl implements Pool {
   }
 
   async try_transaction<T>(
-    action: (transaction: Transaction) => Promise<T>,
+    action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     return await this.run(async (connection) => {
       return await connection.try_transaction(action);
@@ -743,7 +743,7 @@ class PoolImpl implements Pool {
   }
 
   async retry<T>(
-    action: (transaction: Transaction) => Promise<T>,
+    action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     return await this.run(async (connection) => {
       return await connection.retry(action);

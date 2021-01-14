@@ -77,7 +77,7 @@ enum TransactionStatus {
 const DEFAULT_MAX_ITERATIONS = 3;
 
 function default_backoff(attempt: number) {
-    return (2**attempt) * 100 + Math.random()*100;
+  return 2 ** attempt * 100 + Math.random() * 100;
 }
 
 /* Internal mapping used to break strong reference between
@@ -137,8 +137,8 @@ class StandaloneConnection implements Connection {
     // tslint:disable-next-line: no-console
     console.warn(
       "The `transaction()` method is deprecated and is scheduled to be " +
-      "removed. Use the `retry()` or `try_transaction()` method " +
-      "instead"
+        "removed. Use the `retry()` or `try_transaction()` method " +
+        "instead"
     );
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
@@ -148,7 +148,7 @@ class StandaloneConnection implements Connection {
   }
 
   async try_transaction<T>(
-    action: (transaction: Transaction) => Promise<T>,
+    action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     let result: T;
     const transaction = new Transaction(this);
@@ -164,10 +164,10 @@ class StandaloneConnection implements Connection {
   }
 
   async retry<T>(
-    action: (transaction: Transaction) => Promise<T>,
+    action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     let result: T;
-    for(let iteration = 0; iteration < DEFAULT_MAX_ITERATIONS; ++iteration) {
+    for (let iteration = 0; iteration < DEFAULT_MAX_ITERATIONS; ++iteration) {
       const transaction = new Transaction(this);
       await transaction.start();
       try {
@@ -175,18 +175,19 @@ class StandaloneConnection implements Connection {
       } catch (err) {
         try {
           await transaction.rollback();
-        } catch(rollback_err) {
-          if(rollback_err instanceof errors.EdgeDBError) {
+        } catch (rollback_err) {
+          if (rollback_err instanceof errors.EdgeDBError) {
             // ignore errors on rollback, just retry if possible
             // or propagate normal error if it isn't
           } else {
             throw rollback_err; // rethrow other errors normally
           }
         }
-        if(err instanceof errors.EdgeDBError &&
+        if (
+          err instanceof errors.EdgeDBError &&
           err.hasTag(errors.SHOULD_RETRY) &&
-          iteration + 1 < DEFAULT_MAX_ITERATIONS)
-        {
+          iteration + 1 < DEFAULT_MAX_ITERATIONS
+        ) {
           await sleep(default_backoff(iteration));
           continue;
         }
@@ -203,7 +204,6 @@ class StandaloneConnection implements Connection {
     }
     throw Error("unreachable");
   }
-
 
   async close(): Promise<void> {
     try {
@@ -270,15 +270,16 @@ class StandaloneConnection implements Connection {
   }
   _check_borrow() {
     let borrow = this[BORROW];
-    if(borrow) {
+    if (borrow) {
       let text;
-      switch(borrow) {
+      switch (borrow) {
         case BorrowReason.TRANSACTION:
-          text = "Connection object is borrowed for the transaction. " +
+          text =
+            "Connection object is borrowed for the transaction. " +
             "Use the methods on transaction object instead.";
           break;
       }
-      throw new errors.InterfaceError(text)
+      throw new errors.InterfaceError(text);
     }
   }
   private async _reconnect(): Promise<ConnectionImpl> {
