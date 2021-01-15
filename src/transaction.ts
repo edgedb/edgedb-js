@@ -36,6 +36,8 @@ export enum IsolationLevel {
   REPEATABLE_READ = "repeatable_read",
 }
 
+export const START_TRANSACTION_IMPL = Symbol("START_TRANSACTION_IMPL");
+
 export class Transaction implements Executor {
   [ALLOW_MODIFICATIONS]: never;
   _connection: Connection;
@@ -149,9 +151,15 @@ export class Transaction implements Executor {
     }
   }
 
-  async start(): Promise<void> {
+  start(): Promise<void> {
+    return this[START_TRANSACTION_IMPL]();
+  }
+
+  async [START_TRANSACTION_IMPL](
+    single_connect: boolean = false
+  ): Promise<void> {
     this._connection[BORROW] = BorrowReason.TRANSACTION;
-    this._impl = await this._connection[CONNECTION_IMPL]();
+    this._impl = await this._connection[CONNECTION_IMPL](single_connect);
     await this._execute(this._makeStartQuery(), TransactionState.STARTED);
   }
 

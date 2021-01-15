@@ -84,7 +84,7 @@ export type Executor = ReadOnlyExecutor & Modifiable;
 
 export interface Connection extends Executor {
   [BORROW]?: BorrowReason;
-  [CONNECTION_IMPL](): Promise<ConnectionImpl>;
+  [CONNECTION_IMPL](single_connect?: boolean): Promise<ConnectionImpl>;
   transaction<T>(
     action: () => Promise<T>,
     options?: TransactionOptions

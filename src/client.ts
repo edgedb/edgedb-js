@@ -54,7 +54,7 @@ import {
   NormalizedConnectConfig,
 } from "./con_utils";
 import {Transaction as LegacyTransaction} from "./legacy_transaction";
-import {Transaction} from "./transaction";
+import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 
 const PROTO_VER_MAJOR = 0;
 const PROTO_VER_MINOR = 8;
@@ -123,10 +123,12 @@ class StandaloneConnection implements Connection {
     this.config = config;
     this._isClosed = false;
   }
-  async [CONNECTION_IMPL](): Promise<ConnectionImpl> {
+  async [CONNECTION_IMPL](
+    single_attempt: boolean = false
+  ): Promise<ConnectionImpl> {
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
-      connection = await this._reconnect();
+      connection = await this._reconnect(single_attempt);
     }
     return connection;
   }
@@ -169,7 +171,7 @@ class StandaloneConnection implements Connection {
     let result: T;
     for (let iteration = 0; iteration < DEFAULT_MAX_ITERATIONS; ++iteration) {
       const transaction = new Transaction(this);
-      await transaction.start();
+      await transaction[START_TRANSACTION_IMPL](iteration != 0);
       try {
         result = await action(transaction);
       } catch (err) {
@@ -281,13 +283,20 @@ class StandaloneConnection implements Connection {
       throw new errors.InterfaceError(text);
     }
   }
-  private async _reconnect(): Promise<ConnectionImpl> {
+  private async _reconnect(
+    single_attempt: boolean = false
+  ): Promise<ConnectionImpl> {
     if (this._isClosed) {
       throw new errors.InterfaceError("Connection is closed");
     }
-    const maxTime =
-      process.hrtime.bigint() +
-      BigInt(Math.ceil((this.config.waitUntilAvailable || 0) * 1_000_000));
+    let maxTime;
+    if (single_attempt) {
+      maxTime = 0;
+    } else {
+      maxTime =
+        process.hrtime.bigint() +
+        BigInt(Math.ceil((this.config.waitUntilAvailable || 0) * 1_000_000));
+    }
     let iteration = 1;
     while (true) {
       for (const addr of this.config.addrs) {
