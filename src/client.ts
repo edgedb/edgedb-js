@@ -176,12 +176,11 @@ class StandaloneConnection implements Connection {
         try {
           await transaction.rollback();
         } catch (rollback_err) {
-          if (rollback_err instanceof errors.EdgeDBError) {
-            // ignore errors on rollback, just retry if possible
-            // or propagate normal error if it isn't
-          } else {
-            throw rollback_err; // rethrow other errors normally
-          }
+          if (!(rollback_err instanceof errors.EdgeDBError)) {
+            // We ignore EdgeDBError errors on rollback, retrying
+            // if possible. All other errors are propagated.
+            throw rollback_err;
+          }          
         }
         if (
           err instanceof errors.EdgeDBError &&
