@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 import * as errors from "./errors";
-import {BORROW, BorrowReason, Connection, TransactionOptions} from "./ifaces";
+import {BorrowReason, Connection, TransactionOptions} from "./ifaces";
 import {Executor, QueryArgs, CONNECTION_IMPL} from "./ifaces";
-import {ALLOW_MODIFICATIONS} from "./ifaces";
+import {ALLOW_MODIFICATIONS, BORROWED_FOR} from "./ifaces";
 import {getUniqueId} from "./utils";
 import {ConnectionImpl} from "./client";
 import {Set} from "./datatypes/set";
@@ -158,18 +158,18 @@ export class Transaction implements Executor {
   async [START_TRANSACTION_IMPL](
     single_connect: boolean = false
   ): Promise<void> {
-    this._connection[BORROW] = BorrowReason.TRANSACTION;
+    this._connection[BORROWED_FOR] = BorrowReason.TRANSACTION;
     this._impl = await this._connection[CONNECTION_IMPL](single_connect);
     await this._execute(this._makeStartQuery(), TransactionState.STARTED);
   }
 
   async commit(): Promise<void> {
-    this._connection[BORROW] = undefined;
+    this._connection[BORROWED_FOR] = undefined;
     await this._execute(this._makeCommitQuery(), TransactionState.COMMITTED);
   }
 
   async rollback(): Promise<void> {
-    this._connection[BORROW] = undefined;
+    this._connection[BORROWED_FOR] = undefined;
     await this._execute(
       this._makeRollbackQuery(),
       TransactionState.ROLLEDBACK

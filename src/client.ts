@@ -35,7 +35,7 @@ import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {
   ALLOW_MODIFICATIONS,
-  BORROW,
+  BORROWED_FOR,
   CONNECTION_IMPL,
   Executor,
   QueryArgs,
@@ -112,9 +112,21 @@ function sleep(durationMillis: number): Promise<void> {
   });
 }
 
+function borrow_error(reason: BorrowReason): errors.EdgeDBError {
+  let text;
+  switch (reason) {
+    case BorrowReason.TRANSACTION:
+      text =
+        "Connection object is borrowed for the transaction. " +
+        "Use the methods on transaction object instead.";
+      break;
+  }
+  throw new errors.InterfaceError(text);
+}
+
 class StandaloneConnection implements Connection {
   [ALLOW_MODIFICATIONS]: never;
-  [BORROW]?: BorrowReason;
+  [BORROWED_FOR]?: BorrowReason;
   private config: NormalizedConnectConfig;
   private _connection?: ConnectionImpl;
   private _isClosed: boolean; // For compatibility
@@ -123,6 +135,7 @@ class StandaloneConnection implements Connection {
     this.config = config;
     this._isClosed = false;
   }
+
   async [CONNECTION_IMPL](
     single_attempt: boolean = false
   ): Promise<ConnectionImpl> {
@@ -132,6 +145,7 @@ class StandaloneConnection implements Connection {
     }
     return connection;
   }
+
   async transaction<T>(
     action: () => Promise<T>,
     options?: TransactionOptions
@@ -219,6 +233,7 @@ class StandaloneConnection implements Connection {
       this._cleanupProxy();
     }
   }
+
   private _cleanupProxy(): void {
     const proxy = proxyMap.get(this);
     if (proxy != null) {
@@ -226,63 +241,71 @@ class StandaloneConnection implements Connection {
       proxyMap.delete(this);
     }
   }
+
   isClosed(): boolean {
     return this._isClosed;
   }
+
   async execute(query: string): Promise<void> {
-    this._check_borrow();
+    let borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrow_error(borrowed_for);
+    }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.execute(query);
   }
+
   async query(query: string, args?: QueryArgs): Promise<Set> {
-    this._check_borrow();
+    let borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrow_error(borrowed_for);
+    }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.query(query, args);
   }
+
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    this._check_borrow();
+    let borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrow_error(borrowed_for);
+    }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.queryJSON(query, args);
   }
+
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
-    this._check_borrow();
+    let borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrow_error(borrowed_for);
+    }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.queryOne(query, args);
   }
+
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    this._check_borrow();
+    let borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrow_error(borrowed_for);
+    }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.queryOneJSON(query, args);
   }
-  _check_borrow(): void {
-    const borrow = this[BORROW];
-    if (borrow) {
-      let text;
-      switch (borrow) {
-        case BorrowReason.TRANSACTION:
-          text =
-            "Connection object is borrowed for the transaction. " +
-            "Use the methods on transaction object instead.";
-          break;
-      }
-      throw new errors.InterfaceError(text);
-    }
-  }
+
   private async _reconnect(
     single_attempt: boolean = false
   ): Promise<ConnectionImpl> {

@@ -69,7 +69,7 @@ export interface ReadOnlyExecutor {
   queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
 }
 
-export const BORROW = Symbol();
+export const BORROWED_FOR = Symbol();
 export const CONNECTION_IMPL = Symbol();
 export const ALLOW_MODIFICATIONS = Symbol();
 
@@ -83,7 +83,7 @@ interface Modifiable {
 export type Executor = ReadOnlyExecutor & Modifiable;
 
 export interface Connection extends Executor {
-  [BORROW]?: BorrowReason;
+  [BORROWED_FOR]?: BorrowReason;
   [CONNECTION_IMPL](single_connect?: boolean): Promise<ConnectionImpl>;
   transaction<T>(
     action: () => Promise<T>,
