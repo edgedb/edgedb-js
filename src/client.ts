@@ -185,7 +185,7 @@ class StandaloneConnection implements Connection {
     let result: T;
     for (let iteration = 0; iteration < DEFAULT_MAX_ITERATIONS; ++iteration) {
       const transaction = new Transaction(this);
-      await transaction[START_TRANSACTION_IMPL](iteration != 0);
+      await transaction[START_TRANSACTION_IMPL](iteration !== 0);
       try {
         result = await action(transaction);
       } catch (err) {
@@ -196,7 +196,7 @@ class StandaloneConnection implements Connection {
             // We ignore EdgeDBError errors on rollback, retrying
             // if possible. All other errors are propagated.
             throw rollback_err;
-          }          
+          }
         }
         if (
           err instanceof errors.EdgeDBError &&
@@ -247,7 +247,7 @@ class StandaloneConnection implements Connection {
   }
 
   async execute(query: string): Promise<void> {
-    let borrowed_for = this[BORROWED_FOR];
+    const borrowed_for = this[BORROWED_FOR];
     if (borrowed_for) {
       throw borrow_error(borrowed_for);
     }
@@ -259,7 +259,7 @@ class StandaloneConnection implements Connection {
   }
 
   async query(query: string, args?: QueryArgs): Promise<Set> {
-    let borrowed_for = this[BORROWED_FOR];
+    const borrowed_for = this[BORROWED_FOR];
     if (borrowed_for) {
       throw borrow_error(borrowed_for);
     }
@@ -271,7 +271,7 @@ class StandaloneConnection implements Connection {
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    let borrowed_for = this[BORROWED_FOR];
+    const borrowed_for = this[BORROWED_FOR];
     if (borrowed_for) {
       throw borrow_error(borrowed_for);
     }
@@ -283,7 +283,7 @@ class StandaloneConnection implements Connection {
   }
 
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
-    let borrowed_for = this[BORROWED_FOR];
+    const borrowed_for = this[BORROWED_FOR];
     if (borrowed_for) {
       throw borrow_error(borrowed_for);
     }
@@ -295,7 +295,7 @@ class StandaloneConnection implements Connection {
   }
 
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    let borrowed_for = this[BORROWED_FOR];
+    const borrowed_for = this[BORROWED_FOR];
     if (borrowed_for) {
       throw borrow_error(borrowed_for);
     }
