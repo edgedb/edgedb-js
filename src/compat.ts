@@ -121,11 +121,11 @@ export interface EdgeDBDateTime {
 }
 
 const DATESHIFT_ORD = ymd2ord(2000, 1, 1);
-const bigUsPerDay = bi.make(86_400_000_000);
 
 export function decodeMicrosecondsToEdgeDBDateTime(
   microseconds: bi.BigIntLike
 ): EdgeDBDateTime {
+  const bigUsPerDay = bi.make(86_400_000_000);
   const dayNumber = bi.div(microseconds, bigUsPerDay);
 
   let timeUs = Number(bi.sub(microseconds, bi.mul(dayNumber, bigUsPerDay)));
