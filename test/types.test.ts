@@ -19,7 +19,12 @@
 import * as util from "util";
 
 import {UUID} from "../src/index.node";
-import {LocalDate, Duration} from "../src/datatypes/datetime";
+import {
+  LocalDate,
+  Duration,
+  LocalDateToOrdinal,
+  LocalDateFromOrdinal,
+} from "../src/datatypes/datetime";
 
 test("types: UUID", async () => {
   expect(() => {
@@ -46,11 +51,11 @@ test("types: UUID", async () => {
 });
 
 test("types: LocalDate", async () => {
-  const ld = new LocalDate(2008, 0, 30);
+  const ld = new LocalDate(2008, 1, 30);
   expect(ld.toString()).toBe("2008-01-30");
-  expect(ld.getFullYear()).toBe(2008);
-  expect(ld.getDate()).toBe(30);
-  expect(ld.getMonth()).toBe(0);
+  expect(ld.year).toBe(2008);
+  expect(ld.day).toBe(30);
+  expect(ld.month).toBe(1);
 
   for (const [y, m, d, n] of [
     [1, 1, 1, 1],
@@ -58,28 +63,28 @@ test("types: LocalDate", async () => {
     [2, 1, 1, 366],
     [1945, 11, 12, 710347],
   ]) {
-    const ld2 = new LocalDate(y, m - 1, d);
-    expect(ld2.toOrdinal()).toBe(n);
-    const fromord = LocalDate.fromOrdinal(n);
+    const ld2 = new LocalDate(y, m, d);
+    expect(LocalDateToOrdinal(ld2)).toBe(n);
+    const fromord = LocalDateFromOrdinal(n);
     expect(ld2.toString()).toBe(fromord.toString());
-    expect(ld2.toOrdinal()).toBe(fromord.toOrdinal());
+    expect(LocalDateToOrdinal(ld2)).toBe(LocalDateToOrdinal(fromord));
   }
 
   expect(() => {
-    return new LocalDate(2008, 12, 11);
-  }).toThrow(/invalid monthIndex 12/);
+    return new LocalDate(2008, 13, 11);
+  }).toThrow(/invalid month 13/);
 
   expect(() => {
-    return new LocalDate(2008, 3, 31);
-  }).toThrow(/invalid number of days 31.*1\.\.30/);
+    return new LocalDate(2008, 4, 31);
+  }).toThrow(/invalid number of days 31.*1-30/);
 
   expect(() => {
-    return new LocalDate(2008, 1, 31);
-  }).toThrow(/invalid number of days 31.*1\.\.29/);
+    return new LocalDate(2008, 2, 31);
+  }).toThrow(/invalid number of days 31.*1-29/);
 
   expect(() => {
-    return new LocalDate(2009, 1, 31);
-  }).toThrow(/invalid number of days 31.*1\.\.28/);
+    return new LocalDate(2009, 2, 31);
+  }).toThrow(/invalid number of days 31.*1-28/);
 });
 
 test("types: Duration", async () => {

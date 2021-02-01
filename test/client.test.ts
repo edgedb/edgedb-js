@@ -522,12 +522,12 @@ test("fetch: positional args", async () => {
     res = await con.queryOne(`select [<datetime>$0, <datetime>$0]`, [dt]);
     expect(res).toEqual([dt, dt]);
 
-    const ldt = new LocalDateTime(2012, 5, 30, 14, 11, 33, 123);
+    const ldt = new LocalDateTime(2012, 6, 30, 14, 11, 33, 123, 456);
     res = await con.queryOne(`select <cal::local_datetime>$0`, [ldt]);
     expect(res instanceof LocalDateTime).toBeTruthy();
-    expect((res as LocalDateTime).getHours()).toBe(14);
-    expect((res as LocalDateTime).toISOString()).toBe(
-      "2012-06-30T14:11:33.123"
+    expect((res as LocalDateTime).hour).toBe(14);
+    expect((res as LocalDateTime).toString()).toBe(
+      "2012-06-30T14:11:33.123456"
     );
 
     res = await con.queryOne(`select len(<array<int64>>$0)`, [
