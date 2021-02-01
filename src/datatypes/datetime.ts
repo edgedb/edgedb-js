@@ -270,6 +270,7 @@ export class LocalDateTime extends LocalDate {
     );
   }
 
+  // tslint:disable:no-string-literal
   get hour(): number {
     return this._time["_hour"];
   }
@@ -288,6 +289,7 @@ export class LocalDateTime extends LocalDate {
   get nanosecond(): number {
     return this._time["_nanosecond"];
   }
+  // tslint:enable:no-string-literal
 
   toString(): string {
     return `${super.toString()}T${this._time.toString()}`;

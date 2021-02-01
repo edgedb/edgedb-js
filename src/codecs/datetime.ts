@@ -73,6 +73,8 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
         `a LocalDateTime instance was expected, got "${object}"`
       );
     }
+
+    // tslint:disable-next-line:no-string-literal
     const ms = bi.make(object["_date"].getTime() - TIMESHIFT);
     const us = bi.add(
       bi.mul(ms, bi.make(1000)),
