@@ -305,80 +305,6 @@ export class LocalDateTime extends LocalDate {
 }
 
 export class Duration {
-  private readonly _microseconds: bi.BigIntLike;
-
-  constructor(
-    milliseconds: number = 0,
-    microseconds: bigint = bi.make(0) as bigint
-  ) {
-    this._microseconds = bi.add(
-      bi.make(Math.floor(milliseconds * 1000)),
-      microseconds
-    );
-  }
-
-  static fromMicroseconds(microseconds: bigint): Duration {
-    return new Duration(undefined, microseconds);
-  }
-
-  toSeconds(): number {
-    return Number(this._microseconds) / 1000000;
-  }
-
-  toMilliseconds(): number {
-    return Number(this._microseconds) / 1000;
-  }
-
-  toMicroseconds(): bigint {
-    return this._microseconds as bigint;
-  }
-
-  toString(): string {
-    const buf = [];
-
-    const micros = this._microseconds;
-
-    const bint_hour = bi.div(micros, bi.make(3600_000_000));
-    let time = Number(
-      bi.sub(micros, bi.mul(bint_hour, bi.make(3600_000_000)))
-    );
-    const hour = Number(bint_hour);
-
-    const tfrac = Math.trunc(time / 60_000_000);
-    time -= tfrac * 60_000_000;
-    const min = tfrac;
-    const sec = Math.trunc(time / 1000_000);
-    let fsec = time - sec * 1000_000;
-
-    const neg = hour < 0 || min < 0 || sec < 0 || fsec < 0;
-    buf.push(
-      `${neg ? "-" : ""}` +
-        `${Math.abs(hour)
-          .toString()
-          .padStart(2, "0")}:` +
-        `${Math.abs(min)
-          .toString()
-          .padStart(2, "0")}:` +
-        `${Math.abs(sec)
-          .toString()
-          .padStart(2, "0")}`
-    );
-
-    fsec = Math.abs(fsec);
-    if (fsec) {
-      fsec = Math.round(fsec);
-      buf.push(`.${fsec.toString().padStart(6, "0")}`.replace(/(0+)$/, ""));
-    }
-
-    return buf.join("");
-  }
-
-  [inspect.custom](_depth: number, _options: any): string {
-    return `Duration [ ${this.toString()} ]`;
-  }
-}
-
-export class TemporalDuration {
   private readonly _years: number;
   private readonly _months: number;
   private readonly _weeks: number;
@@ -504,7 +430,7 @@ export class TemporalDuration {
       dateParts += this._weeks + "W";
     }
     if (this._days) {
-      dateParts += this._days + "Y";
+      dateParts += this._days + "D";
     }
 
     let timeParts = "";
@@ -542,7 +468,7 @@ export class TemporalDuration {
         seconds + (fracSeconds.length ? "." + fracSeconds : "") + "S";
     }
 
-    return dateParts + timeParts;
+    return "P" + dateParts + (timeParts ? "T" + timeParts : "");
   }
 
   toJSON(): string {

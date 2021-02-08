@@ -155,19 +155,39 @@ export class LocalTimeCodec extends ScalarCodec implements ICodec {
   }
 }
 
+const unencodableDurationFields: Array<keyof Duration> = [
+  "years",
+  "months",
+  "weeks",
+  "days",
+];
 export class DurationCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof Duration)) {
       throw new Error(`a Duration instance was expected, got "${object}"`);
     }
+    for (const field of unencodableDurationFields) {
+      if (object[field] !== 0) {
+        throw new Error(
+          `Cannot encode a 'Duration' with a non-zero number of ${field}`
+        );
+      }
+    }
+
+    let us = bi.make(object.microseconds);
+    us = bi.add(us, bi.mul(bi.make(object.milliseconds), bi.make(1_000)));
+    us = bi.add(us, bi.mul(bi.make(object.seconds), bi.make(1_000_000)));
+    us = bi.add(us, bi.mul(bi.make(object.minutes), bi.make(60_000_000)));
+    us = bi.add(us, bi.mul(bi.make(object.hours), bi.make(3_600_000_000)));
+
     buf.writeInt32(16);
-    buf.writeBigInt64(object.toMicroseconds());
+    buf.writeBigInt64(us as bigint);
     buf.writeInt32(0);
     buf.writeInt32(0);
   }
 
   decode(buf: ReadBuffer): any {
-    const us = buf.readBigInt64();
+    const bius = buf.readBigInt64();
     const days = buf.readInt32();
     const months = buf.readInt32();
     if (days !== 0) {
@@ -176,6 +196,20 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     if (months !== 0) {
       throw new Error("non-zero reserved bytes in duration");
     }
-    return Duration.fromMicroseconds(us as bigint);
+
+    const biMillion = bi.make(1_000_000);
+
+    const biSeconds = bi.div(bius, biMillion);
+    let us = Number(bi.sub(bius, bi.mul(biSeconds, biMillion)));
+    const ms = Math.floor(us / 1000);
+    us = us % 1000;
+
+    let seconds = Number(biSeconds);
+    let minutes = Math.floor(seconds / 60);
+    seconds = Math.floor(seconds % 60);
+    const hours = Math.floor(minutes / 60);
+    minutes = Math.floor(minutes % 60);
+
+    return new Duration(0, 0, 0, 0, hours, minutes, seconds, ms, us);
   }
 }
