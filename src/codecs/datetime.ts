@@ -187,7 +187,7 @@ export class DurationCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer): any {
-    const bius = buf.readBigInt64();
+    let bius = buf.readBigInt64();
     const days = buf.readInt32();
     const months = buf.readInt32();
     if (days !== 0) {
@@ -195,6 +195,12 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     }
     if (months !== 0) {
       throw new Error("non-zero reserved bytes in duration");
+    }
+
+    let sign = 1;
+    if (Number(bius) < 0) {
+      sign = -1;
+      bius = bi.mul(bi.make(-1), bius);
     }
 
     const biMillion = bi.make(1_000_000);
@@ -210,6 +216,16 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     const hours = Math.floor(minutes / 60);
     minutes = Math.floor(minutes % 60);
 
-    return new Duration(0, 0, 0, 0, hours, minutes, seconds, ms, us);
+    return new Duration(
+      0,
+      0,
+      0,
+      0,
+      hours * sign,
+      minutes * sign,
+      seconds * sign,
+      ms * sign,
+      us * sign
+    );
   }
 }

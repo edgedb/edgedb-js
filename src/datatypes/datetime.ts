@@ -149,7 +149,7 @@ export class LocalDate {
   private readonly _date: Date;
 
   constructor(isoYear: number, isoMonth: number, isoDay: number) {
-    isoYear = Math.floor(isoYear);
+    isoYear = Math.trunc(isoYear);
     isoMonth = Math.floor(isoMonth);
     isoDay = Math.floor(isoDay);
 
@@ -196,9 +196,9 @@ export class LocalDate {
       ) + this._date.getUTCDate()
     );
   }
-  get weekOfYear(): number {
-    return Math.floor((10 + this.dayOfYear - this.dayOfWeek) / 7);
-  }
+  // get weekOfYear(): number {
+  //   return Math.floor((10 + this.dayOfYear - this.dayOfWeek) / 7);
+  // }
   get daysInWeek(): number {
     return 7;
   }
@@ -360,25 +360,25 @@ export class Duration {
         throw new RangeError("infinite values not allowed as duration fields");
       }
       const fieldSign = Math.sign(field);
-      if (sign && fieldSign !== sign) {
+      if (sign && fieldSign && fieldSign !== sign) {
         throw new RangeError(
           "mixed-sign values not allowed as duration fields"
         );
       }
-      sign = sign ?? fieldSign;
+      sign = sign || fieldSign;
     }
 
-    this._years = Math.abs(years);
-    this._months = Math.abs(months);
-    this._weeks = Math.abs(weeks);
-    this._days = Math.abs(days);
-    this._hours = Math.abs(hours);
-    this._minutes = Math.abs(minutes);
-    this._seconds = Math.abs(seconds);
-    this._milliseconds = Math.abs(milliseconds);
-    this._microseconds = Math.abs(microseconds);
-    this._nanoseconds = Math.abs(nanoseconds);
-    this._sign = sign ?? 0;
+    this._years = years || 0;
+    this._months = months || 0;
+    this._weeks = weeks || 0;
+    this._days = days || 0;
+    this._hours = hours || 0;
+    this._minutes = minutes || 0;
+    this._seconds = seconds || 0;
+    this._milliseconds = milliseconds || 0;
+    this._microseconds = microseconds || 0;
+    this._nanoseconds = nanoseconds || 0;
+    this._sign = sign || 0;
   }
 
   get years(): number {
@@ -421,24 +421,24 @@ export class Duration {
   toString(): string {
     let dateParts = "";
     if (this._years) {
-      dateParts += this._years + "Y";
+      dateParts += bi.make(Math.abs(this._years)) + "Y";
     }
     if (this._months) {
-      dateParts += this._months + "M";
+      dateParts += bi.make(Math.abs(this._months)) + "M";
     }
     if (this._weeks) {
-      dateParts += this._weeks + "W";
+      dateParts += bi.make(Math.abs(this._weeks)) + "W";
     }
     if (this._days) {
-      dateParts += this._days + "D";
+      dateParts += bi.make(Math.abs(this._days)) + "D";
     }
 
     let timeParts = "";
     if (this._hours) {
-      timeParts += this._hours + "H";
+      timeParts += bi.make(Math.abs(this._hours)) + "H";
     }
     if (this._minutes) {
-      timeParts += this._minutes + "M";
+      timeParts += bi.make(Math.abs(this._minutes)) + "M";
     }
     if (
       !dateParts ||
@@ -451,12 +451,12 @@ export class Duration {
         .add(
           bi.add(
             bi.add(
-              bi.mul(bi.make(this._seconds), bi.make(1e9)),
-              bi.mul(bi.make(this._milliseconds), bi.make(1e6))
+              bi.mul(bi.make(Math.abs(this._seconds)), bi.make(1e9)),
+              bi.mul(bi.make(Math.abs(this._milliseconds)), bi.make(1e6))
             ),
-            bi.mul(bi.make(this._microseconds), bi.make(1e3))
+            bi.mul(bi.make(Math.abs(this._microseconds)), bi.make(1e3))
           ),
-          bi.make(this._nanoseconds)
+          bi.make(Math.abs(this._nanoseconds))
         )
         .toString()
         .padStart(10, "0");
@@ -468,7 +468,12 @@ export class Duration {
         seconds + (fracSeconds.length ? "." + fracSeconds : "") + "S";
     }
 
-    return "P" + dateParts + (timeParts ? "T" + timeParts : "");
+    return (
+      (this._sign === -1 ? "-" : "") +
+      "P" +
+      dateParts +
+      (timeParts ? "T" + timeParts : "")
+    );
   }
 
   toJSON(): string {
@@ -480,6 +485,6 @@ export class Duration {
   }
 
   [inspect.custom](_depth: number, _options: any): string {
-    return `TemporalDuration [ ${this.toString()} ]`;
+    return `Duration [ ${this.toString()} ]`;
   }
 }

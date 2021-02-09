@@ -17,6 +17,7 @@
  */
 
 import * as util from "util";
+import {Temporal} from "proposal-temporal";
 
 import {
   Set,
@@ -691,12 +692,14 @@ test("fetch: cal::local_time", async () => {
 test("fetch: duration", async () => {
   function formatDuration(duration: Duration): string {
     function fmt(timePart: number, len = 2): string {
-      return timePart.toString().padStart(len, "0");
+      return Math.abs(timePart)
+        .toString()
+        .padStart(len, "0");
     }
 
-    return `${fmt(duration.hours)}:${fmt(duration.minutes)}:${fmt(
-      duration.seconds
-    )}${(
+    return `${duration.sign === -1 ? "-" : ""}${fmt(duration.hours)}:${fmt(
+      duration.minutes
+    )}:${fmt(duration.seconds)}${(
       "." +
       fmt(duration.milliseconds, 3) +
       fmt(duration.microseconds, 3)
@@ -708,6 +711,7 @@ test("fetch: duration", async () => {
     for (const time of [
       "24 hours",
       "68464977 seconds 74 milliseconds 11 microseconds",
+      "-752043.296 milliseconds",
     ]) {
       res = await con.queryOne(
         `
@@ -724,6 +728,24 @@ test("fetch: duration", async () => {
         {time: res[0]}
       );
       expect(res2.toString()).toBe(res[0].toString());
+    }
+
+    for (const time of [
+      new Duration(1),
+      new Duration(0, -1),
+      new Duration(0, 0, 1, 0),
+      new Duration(0, 0, 0, -1),
+    ]) {
+      await con
+        .queryOne(`select <duration>$time`, {time})
+        .then(() => {
+          throw new Error("There should have encoding error");
+        })
+        .catch((e) => {
+          expect(e.toString()).toMatch(
+            /Cannot encode a 'Duration' with a non-zero number of.*/
+          );
+        });
     }
   } finally {
     await con.close();
@@ -777,7 +799,21 @@ test("fetch: duration fuzz", async () => {
     );
 
     for (let i = 0; i < durs.length; i++) {
-      expect(dursFromDb[i]).toEqual(durs[i]);
+      const roundedDur = Temporal.Duration.from(durs[i]).round({
+        largestUnit: "hours",
+        smallestUnit: "microseconds",
+      });
+      expect(roundedDur.years).toBe(dursFromDb[i].years);
+      expect(roundedDur.months).toBe(dursFromDb[i].months);
+      expect(roundedDur.weeks).toBe(dursFromDb[i].weeks);
+      expect(roundedDur.days).toBe(dursFromDb[i].days);
+      expect(roundedDur.hours).toBe(dursFromDb[i].hours);
+      expect(roundedDur.minutes).toBe(dursFromDb[i].minutes);
+      expect(roundedDur.seconds).toBe(dursFromDb[i].seconds);
+      expect(roundedDur.milliseconds).toBe(dursFromDb[i].milliseconds);
+      expect(roundedDur.microseconds).toBe(dursFromDb[i].microseconds);
+      expect(roundedDur.nanoseconds).toBe(dursFromDb[i].nanoseconds);
+      expect(roundedDur.sign).toBe(dursFromDb[i].sign);
     }
   } finally {
     await con.close();

@@ -17,10 +17,12 @@
  */
 
 import * as util from "util";
+import {Temporal} from "proposal-temporal";
 
 import {UUID} from "../src/index.node";
 import {
   LocalDate,
+  LocalTime,
   Duration,
   LocalDateToOrdinal,
   LocalDateFromOrdinal,
@@ -85,6 +87,63 @@ test("types: LocalDate", async () => {
   expect(() => {
     return new LocalDate(2009, 2, 31);
   }).toThrow(/invalid number of days 31.*1-28/);
+
+  for (let i = 0; i < 5000; i++) {
+    const year = Math.random() * 547579 - 271820;
+    const month = Math.random() * 12 + 1;
+    const day = Math.random() * (Math.floor(month) === 2 ? 28 : 30) + 1;
+
+    const localDate = new LocalDate(year, month, day);
+    const plainDate = new Temporal.PlainDate(year, month, day);
+
+    expect(localDate.year).toBe(plainDate.year);
+    expect(localDate.month).toBe(plainDate.month);
+    expect(localDate.day).toBe(plainDate.day);
+    expect(localDate.dayOfWeek).toBe(plainDate.dayOfWeek);
+    expect(localDate.dayOfYear).toBe(plainDate.dayOfYear);
+    // https://github.com/tc39/proposal-temporal/issues/1119
+    // expect(localDate.weekOfYear).toBe(plainDate.weekOfYear);
+    expect(localDate.daysInMonth).toBe(plainDate.daysInMonth);
+    expect(localDate.daysInYear).toBe(plainDate.daysInYear);
+    expect(localDate.monthsInYear).toBe(plainDate.monthsInYear);
+    expect(localDate.inLeapYear).toBe(plainDate.inLeapYear);
+  }
+});
+
+test("types: LocalTime", async () => {
+  for (let i = 0; i < 5000; i++) {
+    const hour = Math.random() * 23 + 1;
+    const minute = Math.random() * 59 + 1;
+    const second = Math.random() * 59 + 1;
+    const millisecond = Math.random() * 999 + 1;
+    const microsecond = Math.random() * 999 + 1;
+    const nanosecond = Math.random() * 999 + 1;
+
+    const localTime = new LocalTime(
+      hour,
+      minute,
+      second,
+      millisecond,
+      microsecond,
+      nanosecond
+    );
+    const plainTime = new Temporal.PlainTime(
+      hour,
+      minute,
+      second,
+      millisecond,
+      microsecond,
+      nanosecond
+    );
+
+    expect(localTime.hour).toBe(plainTime.hour);
+    expect(localTime.minute).toBe(plainTime.minute);
+    expect(localTime.second).toBe(plainTime.second);
+    expect(localTime.millisecond).toBe(plainTime.millisecond);
+    expect(localTime.microsecond).toBe(plainTime.microsecond);
+    expect(localTime.nanosecond).toBe(plainTime.nanosecond);
+    expect(localTime.toString()).toBe(plainTime.toString());
+  }
 });
 
 test("types: Duration", async () => {
@@ -104,4 +163,34 @@ test("types: Duration", async () => {
   ).toBe(
     "P1234567890Y1234567890M1234567890W1234567890DT1234567890H1234567890M1235803693.69245789S"
   );
+
+  for (let i = 0; i < 5000; i++) {
+    const sign = Math.sign(Math.random() - 0.5);
+
+    const args = Array(10)
+      .fill(0)
+      .map(
+        () =>
+          Math.random() *
+          (i < 100 ? Number.MAX_VALUE : Number.MAX_SAFE_INTEGER) *
+          sign
+      );
+
+    const duration = new Duration(...args);
+    const temporalDuration = new Temporal.Duration(...args);
+
+    expect(duration.years).toBe(temporalDuration.years);
+    expect(duration.months).toBe(temporalDuration.months);
+    expect(duration.weeks).toBe(temporalDuration.weeks);
+    expect(duration.days).toBe(temporalDuration.days);
+    expect(duration.hours).toBe(temporalDuration.hours);
+    expect(duration.minutes).toBe(temporalDuration.minutes);
+    expect(duration.seconds).toBe(temporalDuration.seconds);
+    expect(duration.milliseconds).toBe(temporalDuration.milliseconds);
+    expect(duration.microseconds).toBe(temporalDuration.microseconds);
+    expect(duration.nanoseconds).toBe(temporalDuration.nanoseconds);
+    expect(duration.sign).toBe(temporalDuration.sign);
+    expect(duration.blank).toBe(temporalDuration.blank);
+    expect(duration.toString()).toBe(temporalDuration.toString());
+  }
 });
