@@ -107,6 +107,7 @@ test("types: LocalDate", async () => {
     expect(localDate.daysInYear).toBe(plainDate.daysInYear);
     expect(localDate.monthsInYear).toBe(plainDate.monthsInYear);
     expect(localDate.inLeapYear).toBe(plainDate.inLeapYear);
+    expect(localDate.toString()).toBe(plainDate.toString());
   }
 });
 
