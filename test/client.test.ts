@@ -17,6 +17,7 @@
  */
 
 import * as util from "util";
+import {Temporal} from "proposal-temporal";
 
 import {
   Set,
@@ -522,12 +523,12 @@ test("fetch: positional args", async () => {
     res = await con.queryOne(`select [<datetime>$0, <datetime>$0]`, [dt]);
     expect(res).toEqual([dt, dt]);
 
-    const ldt = new LocalDateTime(2012, 5, 30, 14, 11, 33, 123);
+    const ldt = new LocalDateTime(2012, 6, 30, 14, 11, 33, 123, 456);
     res = await con.queryOne(`select <cal::local_datetime>$0`, [ldt]);
     expect(res instanceof LocalDateTime).toBeTruthy();
-    expect((res as LocalDateTime).getHours()).toBe(14);
-    expect((res as LocalDateTime).toISOString()).toBe(
-      "2012-06-30T14:11:33.123"
+    expect((res as LocalDateTime).hour).toBe(14);
+    expect((res as LocalDateTime).toString()).toBe(
+      "2012-06-30T14:11:33.123456"
     );
 
     res = await con.queryOne(`select len(<array<int64>>$0)`, [
@@ -689,12 +690,28 @@ test("fetch: cal::local_time", async () => {
 });
 
 test("fetch: duration", async () => {
+  function formatDuration(duration: Duration): string {
+    function fmt(timePart: number, len = 2): string {
+      return Math.abs(timePart)
+        .toString()
+        .padStart(len, "0");
+    }
+
+    return `${duration.sign === -1 ? "-" : ""}${fmt(duration.hours)}:${fmt(
+      duration.minutes
+    )}:${fmt(duration.seconds)}${(
+      "." +
+      fmt(duration.milliseconds, 3) +
+      fmt(duration.microseconds, 3)
+    ).replace(/\.?0+$/, "")}`;
+  }
   const con = await asyncConnect();
   let res;
   try {
     for (const time of [
       "24 hours",
       "68464977 seconds 74 milliseconds 11 microseconds",
+      "-752043.296 milliseconds",
     ]) {
       res = await con.queryOne(
         `
@@ -702,7 +719,7 @@ test("fetch: duration", async () => {
         `,
         {time}
       );
-      expect(res[0].toString()).toBe(res[1]);
+      expect(formatDuration(res[0])).toBe(res[1]);
 
       const res2 = await con.queryOne(
         `
@@ -711,6 +728,24 @@ test("fetch: duration", async () => {
         {time: res[0]}
       );
       expect(res2.toString()).toBe(res[0].toString());
+    }
+
+    for (const time of [
+      new Duration(1),
+      new Duration(0, -1),
+      new Duration(0, 0, 1, 0),
+      new Duration(0, 0, 0, -1),
+    ]) {
+      await con
+        .queryOne(`select <duration>$time`, {time})
+        .then(() => {
+          throw new Error("There should have encoding error");
+        })
+        .catch((e) => {
+          expect(e.toString()).toMatch(
+            /Cannot encode a 'Duration' with a non-zero number of.*/
+          );
+        });
     }
   } finally {
     await con.close();
@@ -726,32 +761,34 @@ test("fetch: duration fuzz", async () => {
 
   const durs = [
     new Duration(),
-    new Duration(1),
-    new Duration(-1),
-    new Duration(1),
-    new Duration(-1),
-    new Duration(-752043.296),
-    new Duration(3542924),
-    new Duration(86400000),
-    new Duration(-86400000),
+    new Duration(0, 0, 0, 0, 0, 0, 0, 1),
+    new Duration(0, 0, 0, 0, 0, 0, 0, -1),
+    new Duration(0, 0, 0, 0, 0, 0, 0, 1),
+    new Duration(0, 0, 0, 0, 0, 0, 0, -1),
+    new Duration(0, 0, 0, 0, 0, 0, 0, -752043.296),
+    new Duration(0, 0, 0, 0, 0, 0, 0, 3542924),
+    new Duration(0, 0, 0, 0, 0, 0, 0, 86400000),
+    new Duration(0, 0, 0, 0, 0, 0, 0, -86400000),
   ];
 
   // Fuzz it!
   for (let _i = 0; _i < 5000; _i++) {
-    durs.push(new Duration(randint(-500, 500) * 86400 + randint(-1000, 1000)));
+    durs.push(
+      new Duration(
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        randint(-500, 500) * 86400 + randint(-1000, 1000)
+      )
+    );
   }
 
   const con = await asyncConnect();
   try {
-    // Test that Duration.__str__ formats the same as <str><duration>.
-    const dursAsText = await con.query(
-      `
-        WITH args := array_unpack(<array<duration>>$0)
-        SELECT <str>args;
-      `,
-      [durs]
-    );
-
     // Test encode/decode round trip.
     const dursFromDb = await con.query(
       `
@@ -762,10 +799,21 @@ test("fetch: duration fuzz", async () => {
     );
 
     for (let i = 0; i < durs.length; i++) {
-      expect(durs[i].toString()).toBe(dursAsText[i]);
-      expect(dursFromDb[i].toMilliseconds()).toEqual(durs[i].toMilliseconds());
-      expect(dursFromDb[i].toSeconds()).toEqual(durs[i].toSeconds());
-      expect(dursFromDb[i].toMicroseconds()).toEqual(durs[i].toMicroseconds());
+      const roundedDur = Temporal.Duration.from(durs[i]).round({
+        largestUnit: "hours",
+        smallestUnit: "microseconds",
+      });
+      expect(roundedDur.years).toBe(dursFromDb[i].years);
+      expect(roundedDur.months).toBe(dursFromDb[i].months);
+      expect(roundedDur.weeks).toBe(dursFromDb[i].weeks);
+      expect(roundedDur.days).toBe(dursFromDb[i].days);
+      expect(roundedDur.hours).toBe(dursFromDb[i].hours);
+      expect(roundedDur.minutes).toBe(dursFromDb[i].minutes);
+      expect(roundedDur.seconds).toBe(dursFromDb[i].seconds);
+      expect(roundedDur.milliseconds).toBe(dursFromDb[i].milliseconds);
+      expect(roundedDur.microseconds).toBe(dursFromDb[i].microseconds);
+      expect(roundedDur.nanoseconds).toBe(dursFromDb[i].nanoseconds);
+      expect(roundedDur.sign).toBe(dursFromDb[i].sign);
     }
   } finally {
     await con.close();

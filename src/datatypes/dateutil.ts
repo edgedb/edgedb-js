@@ -26,7 +26,7 @@ function daysBeforeYear(year: number): number {
   );
 }
 
-function daysBeforeMonth(year: number, month: number): number {
+export function daysBeforeMonth(year: number, month: number): number {
   return _DAYS_BEFORE_MONTH[month] + (month > 2 && isLeapYear(year) ? 1 : 0);
 }
 
