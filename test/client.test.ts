@@ -889,7 +889,6 @@ test("fetch: object", async () => {
     expect(_introspect(res.params[0])).toEqual({
       kind: "object",
       fields: [
-        {name: "__tid__", implicit: true, linkprop: false},
         {name: "id", implicit: true, linkprop: false},
         {name: "kind", implicit: false, linkprop: false},
         {name: "num", implicit: false, linkprop: false},
@@ -916,11 +915,7 @@ test("fetch: object", async () => {
 
     expect(res.params.length).toBe(2);
     expect(res.params[0].id instanceof UUID).toBeTruthy();
-    expect(res.params[0].__tid__ instanceof UUID).toBeTruthy();
-    expect(res.params[1].__tid__).toEqual(res.params[0].__tid__);
     expect(res.id instanceof UUID).toBeTruthy();
-    expect(res.__tid__ instanceof UUID).toBeTruthy();
-    expect(res.params[1].__tid__).not.toEqual(res.__tid__);
 
     // regression test: test that empty sets are properly decoded.
     await con.queryOne(`
@@ -954,7 +949,6 @@ test("fetch: set of arrays", async () => {
     expect(_introspect(res)).toEqual({
       kind: "object",
       fields: [
-        {name: "__tid__", implicit: true, linkprop: false},
         {name: "id", implicit: false, linkprop: false},
         {name: "sets", implicit: false, linkprop: false},
       ],
@@ -997,7 +991,6 @@ test("fetch: object implicit fields", async () => {
     `);
 
     expect(JSON.stringify(res)).toMatch(/^\{"id":"([\w\d]{32})"\}$/);
-    expect(JSON.stringify(res)).not.toMatch(/"__tid__"/);
 
     res = await con.queryOne(`
       select schema::Function
