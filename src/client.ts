@@ -52,7 +52,7 @@ import {
 import {Transaction} from "./transaction";
 
 const PROTO_VER_MAJOR = 0;
-const PROTO_VER_MINOR = 8;
+const PROTO_VER_MINOR = 9;
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,
