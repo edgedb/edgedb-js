@@ -226,7 +226,60 @@ Connection
             the client side into a more appropriate type, such as
             BigInt_.
 
+    .. js:method:: retry<T>(action: func)
+
+        Execute a retryable transaction.
+
+        This is the preferred method of initiating and running a database
+        transaction in a robust fashion.  The `retry()` method will
+        attempt to re-execute the transaction body if a transient error
+        occurs, such as a network error or a transaction serialization error.
+
+        See :ref:`edgedb-js-api-transaction` for more details.
+
+        Example:
+
+        .. code-block:: js
+
+            await con.retry(async tx => {
+                let value = await tx.queryOne("SELECT Counter.value")
+                await tx.execute(
+                    "UPDATE Counter SET { value := <int64>$value",
+                    value=value + 1,
+                )
+            });
+
+        Note that we are executing queries on the ``tx`` object rather
+        than on the original connection ``con``.
+
+    .. js:method:: tryTransaction<T>(action: func)
+
+        Execute a non-retryable transaction.
+
+        Contrary to ``retry()``, ``tryTransaction()`` will not attempt
+        to re-run the nested code block in case a retryable error happens.
+
+        This is a low-level API and it is advised to use the ``retry()``
+        method instead.
+
+        Example:
+
+        .. code-block:: js
+
+            await con.tryTransaction(async tx => {
+                let value = await tx.queryOne("SELECT Counter.value");
+                await tx.execute(
+                    "UPDATE Counter SET { value := <int64>$value",
+                    value=value,
+                )
+            })
+
+        Note that we are executing queries on the ``tx`` object,
+        rather than on the original connection ``con``.
+
     .. js:method:: transaction(action: func, options?: TransactionOptions)
+
+        **Deprecated**: Use :js:meth:`retry` or :js:meth:`tryTransaction`
 
         Executes a given action in transaction.
 
@@ -510,10 +563,61 @@ Pool
             });
             expect(result).toBe(1);
 
+    .. js:method:: retry<T>(action: func)
+
+        Execute a retryable transaction.
+
+        This is the preferred method of initiating and running a database
+        transaction in a robust fashion.  The `retry()` method will
+        attempt to re-execute the transaction body if a transient error
+        occurs, such as a network error or a transaction serialization error.
+
+        See :ref:`edgedb-js-api-transaction` for more details.
+
+        Example:
+
+        .. code-block:: js
+
+            await pool.retry(async tx => {
+                let value = await tx.queryOne("SELECT Counter.value")
+                await tx.execute(
+                    "UPDATE Counter SET { value := <int64>$value",
+                    value=value + 1,
+                )
+            });
+
+        Note that we are executing queries on the ``tx`` object rather
+        than on the original connection pool ``pool``.
+
+    .. js:method:: tryTransaction<T>(action: func)
+
+        Execute a non-retryable transaction.
+
+        Contrary to ``retry()``, ``tryTransaction()`` will not attempt
+        to re-run the nested code block in case a retryable error happens.
+
+        This is a low-level API and it is advised to use the ``retry()``
+        method instead.
+
+        Example:
+
+        .. code-block:: js
+
+            await pool.tryTransaction(async tx => {
+                let value = await tx.queryOne("SELECT Counter.value");
+                await tx.execute(
+                    "UPDATE Counter SET { value := <int64>$value",
+                    value=value,
+                )
+            })
+
+        Note that we are executing queries on the ``tx`` object,
+        rather than on the original connection pool ``pool``.
+
     .. js:method:: getStats()
 
         Return information about the current state of the pool. Information
-        includes the number of currently open connections and the number 
+        includes the number of currently open connections and the number
         of pending consumers awaiting an available connection.
 
         Example:
