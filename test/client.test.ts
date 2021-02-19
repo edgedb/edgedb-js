@@ -1031,13 +1031,13 @@ test("fetch: uuid", async () => {
 
 test("fetch: enum", async () => {
   const con = await asyncConnect();
-  await con.execute("start transaction");
+  await con.query("start transaction");
   try {
     await con.execute(`
       CREATE SCALAR TYPE MyEnum EXTENDING enum<"A", "B">;
     `);
 
-    await con.execute("declare savepoint s1");
+    await con.query("declare savepoint s1");
     await con
       .queryOne("SELECT <MyEnum><str>$0", ["Z"])
       .then(() => {
@@ -1046,7 +1046,7 @@ test("fetch: enum", async () => {
       .catch((e) => {
         expect(e.toString()).toMatch(/invalid input value for enum/);
       });
-    await con.execute("rollback to savepoint s1");
+    await con.query("rollback to savepoint s1");
 
     let ret = await con.queryOne("SELECT <MyEnum><str>$0", ["A"]);
     expect(ret).toBe("A");
@@ -1249,14 +1249,14 @@ test("execute", async () => {
         expect((<DivisionByZeroError>e).code).toBe(0x05_01_00_01);
       });
 
-    await con.execute("start transaction isolation serializable");
+    await con.query("start transaction isolation serializable");
     try {
       const isolation = await con.queryOne(
         "select sys::get_transaction_isolation()"
       );
       expect(isolation).toBe("Serializable");
     } finally {
-      await con.execute("rollback");
+      await con.query("rollback");
     }
   } finally {
     await con.close();
@@ -1267,7 +1267,7 @@ test("fetch/optimistic cache invalidation", async () => {
   const typename = "CacheInv_01";
   const query = `SELECT ${typename}.prop1 LIMIT 1`;
   const con = await asyncConnect();
-  await con.execute("start transaction");
+  await con.query("start transaction");
   try {
     await con.execute(`
       CREATE TYPE ${typename} {
@@ -1305,7 +1305,7 @@ test("fetch/optimistic cache invalidation", async () => {
       expect(res).toBe(123);
     }
   } finally {
-    await con.execute("rollback");
+    await con.query("rollback");
     await con.close();
   }
 });
