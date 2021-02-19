@@ -219,7 +219,7 @@ export class Transaction extends BaseTransaction {
     successState: TransactionState
   ): Promise<void> {
     try {
-      await this._connection.execute(query);
+      await this._connection.query(query);
 
       this._state = successState;
     } catch (error) {

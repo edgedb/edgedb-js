@@ -79,7 +79,10 @@ export class WriteBuffer {
   }
 
   writeString(s: string): this {
-    const buf: Buffer = Buffer.from(s, "utf-8");
+    return this.writeBytes(Buffer.from(s, "utf-8"));
+  }
+
+  writeBytes(buf: Buffer): this {
     this.ensureAlloced(buf.length + 4);
     this.buffer.writeInt32BE(buf.length, this.pos);
     this.pos += 4;
@@ -216,6 +219,14 @@ export class WriteMessageBuffer {
       throw new BufferError("cannot writeString: no current message");
     }
     this.buffer.writeString(s);
+    return this;
+  }
+
+  writeBytes(val: Buffer): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeBytes: no current message");
+    }
+    this.buffer.writeBytes(val);
     return this;
   }
 

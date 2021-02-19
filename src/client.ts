@@ -74,6 +74,12 @@ enum TransactionStatus {
   TRANS_UNKNOWN = 4, // cannot determine status
 }
 
+const ALLOW_CAPABILITIES = 0xff04;
+const EXECUTE_CAPABILITIES_BYTES = Buffer.from(
+  // everything except TRANSACTION = 1 << 2 in network byte order
+  [255, 255, 255, 255, 255, 255, 255, 251]
+);
+
 const DEFAULT_MAX_ITERATIONS = 3;
 
 function default_backoff(attempt: number): number {
@@ -1304,7 +1310,9 @@ export class ConnectionImpl implements Executor {
   private async _execute(query: string): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$Q)
-      .writeInt16(0) // no headers
+      .writeInt16(1) // headers
+      .writeUInt16(ALLOW_CAPABILITIES)
+      .writeBytes(EXECUTE_CAPABILITIES_BYTES)
       .writeString(query) // statement name
       .endMessage();
 
