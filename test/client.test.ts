@@ -697,9 +697,9 @@ test("fetch: duration", async () => {
         .padStart(len, "0");
     }
 
-    return `${duration.sign === -1 ? "-" : ""}${fmt(duration.hours)}:${fmt(
-      duration.minutes
-    )}:${fmt(duration.seconds)}${(
+    return `${duration.sign === -1 ? "-" : ""}${Math.abs(
+      duration.hours
+    )}:${fmt(duration.minutes)}:${fmt(duration.seconds)}${(
       "." +
       fmt(duration.milliseconds, 3) +
       fmt(duration.microseconds, 3)
