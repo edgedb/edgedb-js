@@ -24,7 +24,7 @@ export {RawConnection as _RawConnection} from "./client";
 
 export {createPool} from "./pool";
 
-export {Connection, Pool} from "./ifaces";
+export type {Connection, Pool} from "./ifaces";
 
 export {IsolationLevel, RetryCondition, RetryOptions} from "./options";
 export {BackoffFunction, defaultBackoff} from "./options";

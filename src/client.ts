@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import * as net from "net";
+import {net, hrTime} from "./adaptor.node";
 
 import char, * as chars from "./chars";
 import {resolveErrorCode} from "./errors/resolve";
@@ -418,13 +418,11 @@ export class InnerConnection {
     if (this._isClosed) {
       throw new errors.InterfaceError("Connection is closed");
     }
-    let maxTime;
+    let maxTime: number;
     if (singleAttempt) {
       maxTime = 0;
     } else {
-      maxTime =
-        process.hrtime.bigint() +
-        BigInt(Math.ceil((this.config.waitUntilAvailable || 0) * 1_000_000));
+      maxTime = hrTime() + (this.config.waitUntilAvailable || 0);
     }
     let iteration = 1;
     while (true) {
@@ -438,7 +436,7 @@ export class InnerConnection {
         } catch (e) {
           if (e instanceof errors.ClientConnectionError) {
             if (e.hasTag(errors.SHOULD_RECONNECT)) {
-              if (iteration > 1 && process.hrtime.bigint() > maxTime) {
+              if (iteration > 1 && hrTime() > maxTime) {
                 throw e;
               }
               continue;

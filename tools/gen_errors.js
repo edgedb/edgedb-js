@@ -90,13 +90,13 @@ class Buffer {
       base = "EdgeDBError";
     }
 
-    let tag_items = tags.map(t => '[tags.' + t + ']: true');
+    let tag_items = tags.map((t) => "[tags." + t + "]: true");
     let line = `export class ${err} extends ${base} `;
-    line += `{\n`
-    if(tag_items.length > 0) {
-        line += `  protected static tags = {${tag_items.join(', ')}}\n`
+    line += `{\n`;
+    if (tag_items.length > 0) {
+      line += `  protected static tags = {${tag_items.join(", ")}}\n`;
     }
-    line += `  get code(): number {\n    return ${code};\n  }\n`
+    line += `  get code(): number {\n    return ${code};\n  }\n`;
     line += `}`;
 
     errorsBuf.code(line);

@@ -40,10 +40,11 @@ let inspect: Inspect = (() => {
   return f;
 })();
 
-if (typeof window === "undefined") {
+// @ts-ignore
+if (typeof window === "undefined" && typeof Deno === "undefined") {
   // NodeJS environment.
-  // tslint:disable-next-line
-  const utilMod = require("util");
+  // @ts-ignore
+  const utilMod = require("util"); // tslint:disable-line
   inspect = utilMod.inspect;
 }
 

@@ -31,7 +31,7 @@
     "proposal-temporal": "^0.7.0",
     "ts-jest": "^24.0.2",
     "tslint": "^5.20.1",
-    "typescript": "^3.7.4"
+    "typescript": "^4.1.0"
   },
   "scripts": {
     "build": "tsc",
@@ -39,6 +39,7 @@
     "lint": "tsc && tslint 'src/**/*.ts' && prettylint 'src/**/*.ts' 'test/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
-    "prepublish": "in-publish && yarn lint && yarn build && yarn test || not-in-publish"
+    "prepublish": "in-publish && yarn lint && yarn build && yarn test || not-in-publish",
+    "compileForDeno": "deno run --allow-read --allow-write tools/compileForDeno.ts"
   }
 }
