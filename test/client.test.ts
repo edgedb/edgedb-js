@@ -696,9 +696,7 @@ test("fetch: cal::local_time", async () => {
 test("fetch: duration", async () => {
   function formatDuration(duration: Duration): string {
     function fmt(timePart: number, len = 2): string {
-      return Math.abs(timePart)
-        .toString()
-        .padStart(len, "0");
+      return Math.abs(timePart).toString().padStart(len, "0");
     }
 
     return `${duration.sign === -1 ? "-" : ""}${Math.abs(

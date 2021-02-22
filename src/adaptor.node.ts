@@ -32,8 +32,8 @@ export function HMAC(key: Buffer, ...msgs: Buffer[]): Buffer {
   return hm.digest();
 }
 
-export function readFileUtf8Sync(path: string): string {
-  return fs.readFileSync(path, {encoding: "utf-8"});
+export function readFileUtf8Sync(filepath: string): string {
+  return fs.readFileSync(filepath, {encoding: "utf-8"});
 }
 
 export const homeDir = os.homedir;

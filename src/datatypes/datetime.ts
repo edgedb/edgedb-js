@@ -222,9 +222,7 @@ export class LocalDate {
     const year =
       this.year < 1000 || this.year > 9999
         ? (this.year < 0 ? "-" : "+") +
-          Math.abs(this.year)
-            .toString()
-            .padStart(6, "0")
+          Math.abs(this.year).toString().padStart(6, "0")
         : this.year.toString();
     const month = this.month.toString().padStart(2, "0");
     const day = this.day.toString().padStart(2, "0");
