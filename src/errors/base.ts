@@ -1,6 +1,6 @@
 export class EdgeDBError extends Error {
   source?: Error;
-  protected static tags: object;
+  protected static tags: object = {};
 
   hasTag(tag: symbol): boolean {
     // Can't index by symbol, except when using <any>:

@@ -808,12 +808,22 @@ test("pool transaction throws", async () => {
 
     await expect(faulty()).rejects.toThrowError(
       new errors.InterfaceError(
-        "Operation not supported. Use a `transaction` on a specific db " +
-          "connection. For example: pool.run((con) => {" +
-          "con.transaction(() => {...})" +
-          "})"
+        "Operation not supported. Use a `try_transaction()` or `retry()`"
       )
     );
+  } finally {
+    await pool.close();
+  }
+});
+
+test("pool retry works", async () => {
+  const pool = await getPool();
+
+  try {
+    let result = await pool.retry(async (tx) => {
+      return await tx.queryOne(`SELECT 33*21`);
+    });
+    expect(result).toEqual(693);
   } finally {
     await pool.close();
   }

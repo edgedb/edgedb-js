@@ -398,12 +398,14 @@ export class TransactionError extends ExecutionError {
 }
 
 export class TransactionSerializationError extends TransactionError {
+  protected static tags = {[tags.SHOULD_RETRY]: true};
   get code(): number {
     return 0x05_03_00_01;
   }
 }
 
 export class TransactionDeadlockError extends TransactionError {
+  protected static tags = {[tags.SHOULD_RETRY]: true};
   get code(): number {
     return 0x05_03_00_02;
   }
@@ -458,16 +460,32 @@ export class ClientConnectionFailedError extends ClientConnectionError {
 }
 
 export class ClientConnectionFailedTemporarilyError extends ClientConnectionFailedError {
-  protected static tags = {[tags.SHOULD_RECONNECT]: true};
+  protected static tags = {
+    [tags.SHOULD_RETRY]: true,
+    [tags.SHOULD_RECONNECT]: true,
+  };
   get code(): number {
     return 0xff_01_01_01;
   }
 }
 
 export class ClientConnectionTimeoutError extends ClientConnectionError {
-  protected static tags = {[tags.SHOULD_RECONNECT]: true};
+  protected static tags = {
+    [tags.SHOULD_RETRY]: true,
+    [tags.SHOULD_RECONNECT]: true,
+  };
   get code(): number {
     return 0xff_01_02_00;
+  }
+}
+
+export class ClientConnectionClosedError extends ClientConnectionError {
+  protected static tags = {
+    [tags.SHOULD_RETRY]: true,
+    [tags.SHOULD_RECONNECT]: true,
+  };
+  get code(): number {
+    return 0xff_01_03_00;
   }
 }
 

@@ -21,10 +21,11 @@ import {ConnectConfig} from "./con_utils";
 import {LifoQueue} from "./queues";
 import {Set} from "./datatypes/set";
 
-import connect, {proxyMap} from "./client";
+import connect, {proxyMap, ConnectionImpl} from "./client";
 
 import {
   ALLOW_MODIFICATIONS,
+  CONNECTION_IMPL,
   QueryArgs,
   Connection,
   IConnectionProxied,
@@ -273,12 +274,12 @@ class PoolConnectionHolder {
   }
 }
 
-const holderAttr = Symbol.for("holder");
-const detach = Symbol.for("detach");
-export const getHolder = Symbol.for("getHolder");
-const connectionAttr = Symbol.for("connection");
-export const unwrapConnection = Symbol.for("unwrap");
-const isDetached = Symbol.for("isDetached");
+const holderAttr = Symbol("holder");
+const detach = Symbol("detach");
+export const getHolder = Symbol("getHolder");
+const connectionAttr = Symbol("connection");
+export const unwrapConnection = Symbol("unwrap");
+const isDetached = Symbol("isDetached");
 
 export class PoolConnectionProxy implements IConnectionProxied {
   [ALLOW_MODIFICATIONS]: never;
@@ -295,6 +296,9 @@ export class PoolConnectionProxy implements IConnectionProxied {
       );
     }
     proxyMap.set(connection, this);
+  }
+  async [CONNECTION_IMPL](): Promise<ConnectionImpl> {
+    return await this[unwrapConnection]()[CONNECTION_IMPL]();
   }
 
   private [unwrapConnection](): Connection {
@@ -314,6 +318,17 @@ export class PoolConnectionProxy implements IConnectionProxied {
     options?: TransactionOptions
   ): Promise<T> {
     return await this[unwrapConnection]().transaction(action, options);
+  }
+  async try_transaction<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T> {
+    return await this[unwrapConnection]().try_transaction(action);
+  }
+
+  async retry<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T> {
+    return await this[unwrapConnection]().retry(action);
   }
 
   async query(query: string, args?: QueryArgs): Promise<Set> {
@@ -715,11 +730,24 @@ class PoolImpl implements Pool {
     options?: TransactionOptions
   ): Promise<T> {
     throw new errors.InterfaceError(
-      "Operation not supported. Use a `transaction` on a specific db " +
-        "connection. For example: pool.run((con) => {" +
-        "con.transaction(() => {...})" +
-        "})"
+      "Operation not supported. Use a `try_transaction()` or `retry()`"
     );
+  }
+
+  async try_transaction<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T> {
+    return await this.run(async (connection) => {
+      return await connection.try_transaction(action);
+    });
+  }
+
+  async retry<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T> {
+    return await this.run(async (connection) => {
+      return await connection.retry(action);
+    });
   }
 
   async execute(query: string): Promise<void> {

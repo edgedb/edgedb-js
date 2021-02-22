@@ -24,6 +24,8 @@ import {
   LocalTime,
   Duration,
 } from "./datatypes/datetime";
+import {Transaction} from "./transaction";
+import {ConnectionImpl} from "./client";
 
 import {Set} from "./datatypes/set";
 
@@ -49,6 +51,10 @@ export enum IsolationLevel {
   REPEATABLE_READ = "repeatable_read",
 }
 
+export enum BorrowReason {
+  TRANSACTION = "transaction",
+}
+
 export interface TransactionOptions {
   deferrable?: boolean;
   isolation?: IsolationLevel;
@@ -63,6 +69,8 @@ export interface ReadOnlyExecutor {
   queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
 }
 
+export const BORROWED_FOR = Symbol();
+export const CONNECTION_IMPL = Symbol();
 export const ALLOW_MODIFICATIONS = Symbol();
 
 interface Modifiable {
@@ -75,10 +83,16 @@ interface Modifiable {
 export type Executor = ReadOnlyExecutor & Modifiable;
 
 export interface Connection extends Executor {
+  [BORROWED_FOR]?: BorrowReason;
+  [CONNECTION_IMPL](single_connect?: boolean): Promise<ConnectionImpl>;
   transaction<T>(
     action: () => Promise<T>,
     options?: TransactionOptions
   ): Promise<T>;
+  try_transaction<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T>;
+  retry<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
   close(): Promise<void>;
   isClosed(): boolean;
 }
@@ -88,7 +102,18 @@ export interface IPoolStats {
   openConnections: number;
 }
 
-export interface Pool extends Connection {
+export interface Pool extends Executor {
+  transaction<T>(
+    action: () => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T>;
+  try_transaction<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T>;
+  retry<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
+  close(): Promise<void>;
+  isClosed(): boolean;
+
   acquire(): Promise<Connection>;
   release(connectionProxy: Connection): Promise<void>;
   run<T>(action: (connection: Connection) => Promise<T>): Promise<T>;
@@ -97,7 +122,7 @@ export interface Pool extends Connection {
   terminate(): void;
 }
 
-export const onConnectionClose = Symbol.for("onConnectionClose");
+export const onConnectionClose = Symbol("onConnectionClose");
 
 export interface IConnectionProxied extends Connection {
   [onConnectionClose](): void;

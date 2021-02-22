@@ -35,8 +35,12 @@ import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {
   ALLOW_MODIFICATIONS,
+  BORROWED_FOR,
+  CONNECTION_IMPL,
+  Executor,
   QueryArgs,
   Connection,
+  BorrowReason,
   IConnectionProxied,
   onConnectionClose,
   TransactionOptions,
@@ -49,7 +53,8 @@ import {
   ConnectConfig,
   NormalizedConnectConfig,
 } from "./con_utils";
-import {Transaction} from "./transaction";
+import {Transaction as LegacyTransaction} from "./legacy_transaction";
+import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 
 const PROTO_VER_MAJOR = 0;
 const PROTO_VER_MINOR = 9;
@@ -67,6 +72,12 @@ enum TransactionStatus {
   TRANS_INTRANS = 2, // idle, within transaction block
   TRANS_INERROR = 3, // idle, within failed transaction
   TRANS_UNKNOWN = 4, // cannot determine status
+}
+
+const DEFAULT_MAX_ITERATIONS = 3;
+
+function default_backoff(attempt: number): number {
+  return 2 ** attempt * 100 + Math.random() * 100;
 }
 
 /* Internal mapping used to break strong reference between
@@ -101,8 +112,21 @@ function sleep(durationMillis: number): Promise<void> {
   });
 }
 
+function borrow_error(reason: BorrowReason): errors.EdgeDBError {
+  let text;
+  switch (reason) {
+    case BorrowReason.TRANSACTION:
+      text =
+        "Connection object is borrowed for the transaction. " +
+        "Use the methods on transaction object instead.";
+      break;
+  }
+  throw new errors.InterfaceError(text);
+}
+
 class StandaloneConnection implements Connection {
   [ALLOW_MODIFICATIONS]: never;
+  [BORROWED_FOR]?: BorrowReason;
   private config: NormalizedConnectConfig;
   private _connection?: ConnectionImpl;
   private _isClosed: boolean; // For compatibility
@@ -111,16 +135,91 @@ class StandaloneConnection implements Connection {
     this.config = config;
     this._isClosed = false;
   }
+
+  async [CONNECTION_IMPL](
+    single_attempt: boolean = false
+  ): Promise<ConnectionImpl> {
+    let connection = this._connection;
+    if (!connection || connection.isClosed()) {
+      connection = await this._reconnect(single_attempt);
+    }
+    return connection;
+  }
+
   async transaction<T>(
     action: () => Promise<T>,
     options?: TransactionOptions
   ): Promise<T> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `transaction()` method is deprecated and is scheduled to be " +
+        "removed. Use the `retry()` or `try_transaction()` method " +
+        "instead"
+    );
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.transaction(action, options);
   }
+
+  async try_transaction<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T> {
+    let result: T;
+    const transaction = new Transaction(this);
+    await transaction.start();
+    try {
+      result = await action(transaction);
+      await transaction.commit();
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
+    }
+    return result;
+  }
+
+  async retry<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T> {
+    let result: T;
+    for (let iteration = 0; iteration < DEFAULT_MAX_ITERATIONS; ++iteration) {
+      const transaction = new Transaction(this);
+      await transaction[START_TRANSACTION_IMPL](iteration !== 0);
+      try {
+        result = await action(transaction);
+      } catch (err) {
+        try {
+          await transaction.rollback();
+        } catch (rollback_err) {
+          if (!(rollback_err instanceof errors.EdgeDBError)) {
+            // We ignore EdgeDBError errors on rollback, retrying
+            // if possible. All other errors are propagated.
+            throw rollback_err;
+          }
+        }
+        if (
+          err instanceof errors.EdgeDBError &&
+          err.hasTag(errors.SHOULD_RETRY) &&
+          iteration + 1 < DEFAULT_MAX_ITERATIONS
+        ) {
+          await sleep(default_backoff(iteration));
+          continue;
+        }
+        throw err;
+      }
+      // TODO(tailhook) sort out errors on commit, early network errors
+      // and some other errors could be retried
+      // NOTE: we can't retry on all the same errors as we don't know if
+      // commit is succeeded before the database have received it or after
+      // it have been done but network is dropped before we were able
+      // to receive a response
+      await transaction.commit();
+      return result;
+    }
+    throw Error("unreachable");
+  }
+
   async close(): Promise<void> {
     try {
       if (this._connection) {
@@ -134,6 +233,7 @@ class StandaloneConnection implements Connection {
       this._cleanupProxy();
     }
   }
+
   private _cleanupProxy(): void {
     const proxy = proxyMap.get(this);
     if (proxy != null) {
@@ -141,51 +241,85 @@ class StandaloneConnection implements Connection {
       proxyMap.delete(this);
     }
   }
+
   isClosed(): boolean {
     return this._isClosed;
   }
+
   async execute(query: string): Promise<void> {
+    const borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrow_error(borrowed_for);
+    }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.execute(query);
   }
+
   async query(query: string, args?: QueryArgs): Promise<Set> {
+    const borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrow_error(borrowed_for);
+    }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.query(query, args);
   }
+
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
+    const borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrow_error(borrowed_for);
+    }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.queryJSON(query, args);
   }
+
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
+    const borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrow_error(borrowed_for);
+    }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.queryOne(query, args);
   }
+
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
+    const borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrow_error(borrowed_for);
+    }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
     return await connection.queryOneJSON(query, args);
   }
-  private async _reconnect(): Promise<ConnectionImpl> {
+
+  private async _reconnect(
+    single_attempt: boolean = false
+  ): Promise<ConnectionImpl> {
     if (this._isClosed) {
       throw new errors.InterfaceError("Connection is closed");
     }
-    const maxTime =
-      process.hrtime.bigint() +
-      BigInt(Math.ceil((this.config.waitUntilAvailable || 0) * 1_000_000));
+    let maxTime;
+    if (single_attempt) {
+      maxTime = 0;
+    } else {
+      maxTime =
+        process.hrtime.bigint() +
+        BigInt(Math.ceil((this.config.waitUntilAvailable || 0) * 1_000_000));
+    }
     let iteration = 1;
     while (true) {
       for (const addr of this.config.addrs) {
@@ -225,7 +359,7 @@ class StandaloneConnection implements Connection {
   }
 }
 
-class ConnectionImpl implements Connection {
+export class ConnectionImpl implements Executor {
   [ALLOW_MODIFICATIONS]: never;
   private sock: net.Socket;
   private config: NormalizedConnectConfig;
@@ -1254,14 +1388,13 @@ class ConnectionImpl implements Connection {
     options?: TransactionOptions
   ): Promise<T> {
     let result: T;
-    const transaction = new Transaction(this, options);
+    const transaction = new LegacyTransaction(this, options);
     await transaction.start();
     try {
       result = await action();
       await transaction.commit();
     } catch (err) {
       await transaction.rollback();
-
       throw err;
     }
     return result;
