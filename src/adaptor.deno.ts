@@ -40,6 +40,8 @@ export function hrTime(): number {
   return performance.now();
 }
 
+// TODO: when 'net.Socket' is implemented in deno node compatibility library
+//       replace this (https://github.com/denoland/deno_std/pull/694)
 export namespace net {
   export function createConnection(
     port: number | string,
