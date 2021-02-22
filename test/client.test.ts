@@ -432,11 +432,10 @@ test("fetch: datetime as string", async () => {
   const registry = con._connection.codecsRegistry;
   registry.setStringCodecs({local_datetime: true, datetime: true});
 
-  const maxDate = 9224318015999;
-  const minDate = -210866803200;
-  const zeroDate = -62135596800;
+  const maxDate = 253402300799;
+  const minDate = -62135596800;
 
-  const vals = [maxDate, minDate, zeroDate, zeroDate - 0.00012];
+  const vals = [maxDate, minDate];
 
   for (let i = 0; i < 1000; i++) {
     vals.push(Math.random() * (maxDate - minDate) + minDate);
