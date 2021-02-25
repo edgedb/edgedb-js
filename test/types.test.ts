@@ -52,7 +52,7 @@ test("types: UUID", async () => {
   }).toThrowError(TypeError("cannot coerce UUID to a number"));
 });
 
-test("types: LocalDate", async () => {
+test.skip("types: LocalDate", async () => {
   const ld = new LocalDate(2008, 1, 30);
   expect(ld.toString()).toBe("2008-01-30");
   expect(ld.year).toBe(2008);
@@ -111,7 +111,7 @@ test("types: LocalDate", async () => {
   }
 });
 
-test("types: LocalTime", async () => {
+test.skip("types: LocalTime", async () => {
   for (let i = 0; i < 5000; i++) {
     const hour = Math.random() * 23 + 1;
     const minute = Math.random() * 59 + 1;
@@ -147,7 +147,7 @@ test("types: LocalTime", async () => {
   }
 });
 
-test("types: Duration", async () => {
+test.skip("types: Duration", async () => {
   expect(
     new Duration(
       1234567890,
