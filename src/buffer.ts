@@ -206,6 +206,23 @@ export class WriteMessageBuffer {
     return this;
   }
 
+  writeHeaders(headers: [number, Buffer | string][]): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeHeaders: no current message");
+    }
+    this.buffer.writeUInt16(headers.length);
+    for (const [code, value] of headers) {
+      this.buffer.writeUInt16(code);
+      if (Buffer.isBuffer(value)) {
+        this.buffer.writeUInt32(value.byteLength);
+        this.buffer.writeBuffer(value);
+      } else {
+        this.buffer.writeString(value);
+      }
+    }
+    return this;
+  }
+
   writeChar(ch: char): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeChar: no current message");
