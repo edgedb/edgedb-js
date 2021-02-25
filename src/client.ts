@@ -153,7 +153,7 @@ class StandaloneConnection implements Connection {
     // tslint:disable-next-line: no-console
     console.warn(
       "The `transaction()` method is deprecated and is scheduled to be " +
-        "removed. Use the `retry()` or `try_transaction()` method " +
+        "removed. Use the `retry()` or `tryTransaction()` method " +
         "instead"
     );
     let connection = this._connection;
@@ -163,7 +163,7 @@ class StandaloneConnection implements Connection {
     return await connection.transaction(action, options);
   }
 
-  async try_transaction<T>(
+  async tryTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     let result: T;
