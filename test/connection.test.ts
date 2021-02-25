@@ -404,7 +404,7 @@ test("connect: timeout", async () => {
       await con.close();
     }
   }
-});
+}, 10_000);
 
 test("connect: refused", async () => {
   let con: Connection | undefined;
