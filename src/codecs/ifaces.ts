@@ -74,7 +74,7 @@ export abstract class ScalarCodec extends Codec {
   }
 
   /** @internal */
-  setTypeName(typeName: string) {
+  setTypeName(typeName: string): void {
     this.typeName = typeName;
   }
 
