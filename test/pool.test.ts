@@ -808,7 +808,7 @@ test("pool transaction throws", async () => {
 
     await expect(faulty()).rejects.toThrowError(
       new errors.InterfaceError(
-        "Operation not supported. Use a `rawTransaction()` or `retry()`"
+        "Operation not supported. Use a `rawTransaction()` or `retryingTransaction()`"
       )
     );
   } finally {
@@ -820,7 +820,7 @@ test("pool retry works", async () => {
   const pool = await getPool();
 
   try {
-    let result = await pool.retry(async (tx) => {
+    let result = await pool.retryingTransaction(async (tx) => {
       return await tx.queryOne(`SELECT 33*21`);
     });
     expect(result).toEqual(693);
