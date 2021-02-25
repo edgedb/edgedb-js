@@ -156,10 +156,10 @@ export class Transaction implements Executor {
   }
 
   async [START_TRANSACTION_IMPL](
-    single_connect: boolean = false
+    singleConnect: boolean = false
   ): Promise<void> {
     this._connection[BORROWED_FOR] = BorrowReason.TRANSACTION;
-    this._impl = await this._connection[CONNECTION_IMPL](single_connect);
+    this._impl = await this._connection[CONNECTION_IMPL](singleConnect);
     await this._execute(this._makeStartQuery(), TransactionState.STARTED);
   }
 

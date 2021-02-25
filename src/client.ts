@@ -137,11 +137,11 @@ class StandaloneConnection implements Connection {
   }
 
   async [CONNECTION_IMPL](
-    single_attempt: boolean = false
+    singleAttempt: boolean = false
   ): Promise<ConnectionImpl> {
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
-      connection = await this._reconnect(single_attempt);
+      connection = await this._reconnect(singleAttempt);
     }
     return connection;
   }
@@ -307,13 +307,13 @@ class StandaloneConnection implements Connection {
   }
 
   private async _reconnect(
-    single_attempt: boolean = false
+    singleAttempt: boolean = false
   ): Promise<ConnectionImpl> {
     if (this._isClosed) {
       throw new errors.InterfaceError("Connection is closed");
     }
     let maxTime;
-    if (single_attempt) {
+    if (singleAttempt) {
       maxTime = 0;
     } else {
       maxTime =
