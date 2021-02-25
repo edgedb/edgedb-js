@@ -206,7 +206,7 @@ export class WriteMessageBuffer {
     return this;
   }
 
-  writeHeaders(headers: [number, Buffer | string][]): this {
+  writeHeaders(headers: Array<[number, Buffer | string]>): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeHeaders: no current message");
     }
