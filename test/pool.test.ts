@@ -808,7 +808,7 @@ test("pool transaction throws", async () => {
 
     await expect(faulty()).rejects.toThrowError(
       new errors.InterfaceError(
-        "Operation not supported. Use a `tryTransaction()` or `retry()`"
+        "Operation not supported. Use a `rawTransaction()` or `retry()`"
       )
     );
   } finally {

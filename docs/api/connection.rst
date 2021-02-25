@@ -252,11 +252,11 @@ Connection
         Note that we are executing queries on the ``tx`` object rather
         than on the original connection ``con``.
 
-    .. js:method:: tryTransaction<T>(action: func)
+    .. js:method:: rawTransaction<T>(action: func)
 
         Execute a non-retryable transaction.
 
-        Contrary to ``retry()``, ``tryTransaction()`` will not attempt
+        Contrary to ``retry()``, ``rawTransaction()`` will not attempt
         to re-run the nested code block in case a retryable error happens.
 
         This is a low-level API and it is advised to use the ``retry()``
@@ -266,7 +266,7 @@ Connection
 
         .. code-block:: js
 
-            await con.tryTransaction(async tx => {
+            await con.rawTransaction(async tx => {
                 let value = await tx.queryOne("SELECT Counter.value");
                 await tx.execute(
                     "UPDATE Counter SET { value := <int64>$value",
@@ -279,7 +279,7 @@ Connection
 
     .. js:method:: transaction(action: func, options?: TransactionOptions)
 
-        **Deprecated**: Use :js:meth:`retry` or :js:meth:`tryTransaction`
+        **Deprecated**: Use :js:meth:`retry` or :js:meth:`rawTransaction`
 
         Executes a given action in transaction.
 
@@ -589,11 +589,11 @@ Pool
         Note that we are executing queries on the ``tx`` object rather
         than on the original connection pool ``pool``.
 
-    .. js:method:: tryTransaction<T>(action: func)
+    .. js:method:: rawTransaction<T>(action: func)
 
         Execute a non-retryable transaction.
 
-        Contrary to ``retry()``, ``tryTransaction()`` will not attempt
+        Contrary to ``retry()``, ``rawTransaction()`` will not attempt
         to re-run the nested code block in case a retryable error happens.
 
         This is a low-level API and it is advised to use the ``retry()``
@@ -603,7 +603,7 @@ Pool
 
         .. code-block:: js
 
-            await pool.tryTransaction(async tx => {
+            await pool.rawTransaction(async tx => {
                 let value = await tx.queryOne("SELECT Counter.value");
                 await tx.execute(
                     "UPDATE Counter SET { value := <int64>$value",
