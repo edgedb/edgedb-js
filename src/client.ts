@@ -112,7 +112,7 @@ function sleep(durationMillis: number): Promise<void> {
   });
 }
 
-function borrow_error(reason: BorrowReason): errors.EdgeDBError {
+function borrowError(reason: BorrowReason): errors.EdgeDBError {
   let text;
   switch (reason) {
     case BorrowReason.TRANSACTION:
@@ -249,7 +249,7 @@ class StandaloneConnection implements Connection {
   async execute(query: string): Promise<void> {
     const borrowed_for = this[BORROWED_FOR];
     if (borrowed_for) {
-      throw borrow_error(borrowed_for);
+      throw borrowError(borrowed_for);
     }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
@@ -261,7 +261,7 @@ class StandaloneConnection implements Connection {
   async query(query: string, args?: QueryArgs): Promise<Set> {
     const borrowed_for = this[BORROWED_FOR];
     if (borrowed_for) {
-      throw borrow_error(borrowed_for);
+      throw borrowError(borrowed_for);
     }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
@@ -273,7 +273,7 @@ class StandaloneConnection implements Connection {
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
     const borrowed_for = this[BORROWED_FOR];
     if (borrowed_for) {
-      throw borrow_error(borrowed_for);
+      throw borrowError(borrowed_for);
     }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
@@ -285,7 +285,7 @@ class StandaloneConnection implements Connection {
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
     const borrowed_for = this[BORROWED_FOR];
     if (borrowed_for) {
-      throw borrow_error(borrowed_for);
+      throw borrowError(borrowed_for);
     }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
@@ -297,7 +297,7 @@ class StandaloneConnection implements Connection {
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
     const borrowed_for = this[BORROWED_FOR];
     if (borrowed_for) {
-      throw borrow_error(borrowed_for);
+      throw borrowError(borrowed_for);
     }
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
