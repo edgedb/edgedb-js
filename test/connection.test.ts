@@ -178,7 +178,7 @@ test("parseConnectArguments", () => {
       },
       opts: {
         dsn: "edgedb://user3:123123@localhost:5555/abcdef",
-        command_timeout: 10,
+        commandTimeout: 10,
       },
       result: {
         addrs: [["localhost", 5555]],

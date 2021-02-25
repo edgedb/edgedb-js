@@ -65,14 +65,6 @@ function mapParseInt(x: any): number {
 export function parseConnectArguments(
   opts: ConnectConfig = {}
 ): NormalizedConnectConfig {
-  let commandTimeout = opts.commandTimeout;
-
-  // @ts-ignore
-  if (opts.command_timeout) {
-    // @ts-ignore
-    commandTimeout = opts.command_timeout;
-  }
-
   if (opts.commandTimeout != null) {
     if (typeof opts.commandTimeout !== "number" || opts.commandTimeout < 0) {
       throw new Error(
@@ -95,7 +87,7 @@ export function parseConnectArguments(
   return {
     ...parseConnectDsnAndArgs(opts),
     connectTimeout: opts.timeout,
-    commandTimeout,
+    commandTimeout: opts.commandTimeout,
     waitUntilAvailable: opts.waitUntilAvailable ?? 30_000,
     legacyUUIDMode: opts.legacyUUIDMode,
   };
