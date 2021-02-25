@@ -256,7 +256,11 @@ export class CodecsRegistry {
             const ann_length = frb.readUInt32();
             if (t === 0xff) {
               const typeName = frb.readBuffer(ann_length).toString("utf8");
-              KNOWN_TYPES.set(tid, typeName);
+              const codec =
+                this.codecs.get(tid) ?? this.codecsBuildCache.get(tid);
+              if (codec instanceof ScalarCodec) {
+                codec.setTypeName(typeName);
+              }
             } else {
               frb.discard(ann_length);
             }
