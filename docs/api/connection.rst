@@ -226,13 +226,13 @@ Connection
             the client side into a more appropriate type, such as
             BigInt_.
 
-    .. js:method:: retry<T>(action: func)
+    .. js:method:: retryingTransaction<T>(action: func)
 
         Execute a retryable transaction.
 
         This is the preferred method of initiating and running a database
-        transaction in a robust fashion.  The `retry()` method will
-        attempt to re-execute the transaction body if a transient error
+        transaction in a robust fashion.  The ``retryingTransaction()`` method
+        will attempt to re-execute the transaction body if a transient error
         occurs, such as a network error or a transaction serialization error.
 
         See :ref:`edgedb-js-api-transaction` for more details.
@@ -241,7 +241,7 @@ Connection
 
         .. code-block:: js
 
-            await con.retry(async tx => {
+            await con.retryingTransaction(async tx => {
                 let value = await tx.queryOne("SELECT Counter.value")
                 await tx.execute(
                     "UPDATE Counter SET { value := <int64>$value",
@@ -256,11 +256,12 @@ Connection
 
         Execute a non-retryable transaction.
 
-        Contrary to ``retry()``, ``rawTransaction()`` will not attempt
-        to re-run the nested code block in case a retryable error happens.
+        Contrary to ``retryingTransaction()``, ``rawTransaction()`` will not
+        attempt to re-run the nested code block in case a retryable error
+        happens.
 
-        This is a low-level API and it is advised to use the ``retry()``
-        method instead.
+        This is a low-level API and it is advised to use the
+        ``retryingTransaction()`` method instead.
 
         Example:
 
@@ -563,13 +564,13 @@ Pool
             });
             expect(result).toBe(1);
 
-    .. js:method:: retry<T>(action: func)
+    .. js:method:: retryingTransaction<T>(action: func)
 
         Execute a retryable transaction.
 
         This is the preferred method of initiating and running a database
-        transaction in a robust fashion.  The `retry()` method will
-        attempt to re-execute the transaction body if a transient error
+        transaction in a robust fashion.  The ``retryingTransaction()`` method
+        will attempt to re-execute the transaction body if a transient error
         occurs, such as a network error or a transaction serialization error.
 
         See :ref:`edgedb-js-api-transaction` for more details.
@@ -578,7 +579,7 @@ Pool
 
         .. code-block:: js
 
-            await pool.retry(async tx => {
+            await pool.retryingTransaction(async tx => {
                 let value = await tx.queryOne("SELECT Counter.value")
                 await tx.execute(
                     "UPDATE Counter SET { value := <int64>$value",
@@ -593,11 +594,12 @@ Pool
 
         Execute a non-retryable transaction.
 
-        Contrary to ``retry()``, ``rawTransaction()`` will not attempt
-        to re-run the nested code block in case a retryable error happens.
+        Contrary to ``retryingTransaction()``, ``rawTransaction()`` will not
+        attempt to re-run the nested code block in case a retryable
+        error happens.
 
-        This is a low-level API and it is advised to use the ``retry()``
-        method instead.
+        This is a low-level API and it is advised to use the
+        ``retryingTransaction()`` method instead.
 
         Example:
 

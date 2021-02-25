@@ -92,7 +92,9 @@ export interface Connection extends Executor {
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
-  retry<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
+  retryingTransaction<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T>;
   close(): Promise<void>;
   isClosed(): boolean;
 }
@@ -110,7 +112,9 @@ export interface Pool extends Executor {
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
-  retry<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
+  retryingTransaction<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T>;
   close(): Promise<void>;
   isClosed(): boolean;
 

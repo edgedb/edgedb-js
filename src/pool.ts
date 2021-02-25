@@ -325,10 +325,10 @@ export class PoolConnectionProxy implements IConnectionProxied {
     return await this[unwrapConnection]().rawTransaction(action);
   }
 
-  async retry<T>(
+  async retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
-    return await this[unwrapConnection]().retry(action);
+    return await this[unwrapConnection]().retryingTransaction(action);
   }
 
   async query(query: string, args?: QueryArgs): Promise<Set> {
@@ -730,7 +730,8 @@ class PoolImpl implements Pool {
     options?: TransactionOptions
   ): Promise<T> {
     throw new errors.InterfaceError(
-      "Operation not supported. Use a `rawTransaction()` or `retry()`"
+      "Operation not supported. Use a `rawTransaction()` or " +
+        "`retryingTransaction()`"
     );
   }
 
@@ -742,11 +743,11 @@ class PoolImpl implements Pool {
     });
   }
 
-  async retry<T>(
+  async retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     return await this.run(async (connection) => {
-      return await connection.retry(action);
+      return await connection.retryingTransaction(action);
     });
   }
 

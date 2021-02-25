@@ -135,11 +135,11 @@ Transactions
 ------------
 
 The most robust way to execute transactional code is to use
-the ``retry()`` API:
+the ``retryingTransaction()`` API:
 
 .. code-block:: js
 
-    await pool.retry(tx => {
+    await pool.retryingTransaction(tx => {
       await tx.execute("INSERT User {name := 'Don'}");
     });
 
@@ -147,13 +147,15 @@ Note that we execute queries on the ``tx`` object in the above
 example, rather than on the original connection pool ``pool``
 object.
 
-The ``retry()`` API guarantees that:
+The ``retryingTransaction()`` API guarantees that:
 
 1. Transactions are executed atomically;
 2. If a transaction is failed for any of the number of transient errors (i.e.
-   a network failure or a concurrent update error), the transaction would be retried;
+   a network failure or a concurrent update error), the transaction
+   would be retried;
 3. If any other, non-retryable exception occurs, the transaction is rolled back,
-   and the exception is propagated, immediately aborting the ``retry()`` block.
+   and the exception is propagated, immediately aborting the
+   ``retryingTransaction()`` block.
 
 The key implication of retrying transactions is that the entire
 nested code block can be re-run, including any non-querying
@@ -161,7 +163,7 @@ JavaScript code. Here is an example:
 
 .. code-block:: js
 
-    pool.retry(tx => {
+    pool.retryingTransaction(tx => {
         let user = await tx.queryOne(
             "SELECT User { email } FILTER .login = <str>$login",
             login=login,
@@ -197,7 +199,7 @@ negatively impact the performance of the DB server.
 See also:
 
 * RFC1004_
-* :js:meth:`Connection.retry()`
+* :js:meth:`Connection.retryingTransaction()`
 * :js:meth:`Connection.rawTransaction()`
 
 .. _RFC1004: https://github.com/edgedb/rfcs/blob/master/text/1004-transactions-api.rst
