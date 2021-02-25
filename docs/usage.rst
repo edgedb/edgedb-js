@@ -131,6 +131,8 @@ See :ref:`edgedb-js-api-pool` API documentation for
 more information.
 
 
+.. _edgedb-js-api-transaction:
+
 Transactions
 ------------
 
@@ -199,7 +201,7 @@ negatively impact the performance of the DB server.
 See also:
 
 * RFC1004_
-* :js:meth:`Connection.retryingTransaction()`
-* :js:meth:`Connection.rawTransaction()`
+* :js:meth:`Connection.retryingTransaction\<T\>`
+* :js:meth:`Connection.rawTransaction\<T\>`
 
 .. _RFC1004: https://github.com/edgedb/rfcs/blob/master/text/1004-transactions-api.rst

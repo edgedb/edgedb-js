@@ -280,7 +280,8 @@ Connection
 
     .. js:method:: transaction(action: func, options?: TransactionOptions)
 
-        **Deprecated**: Use :js:meth:`retry` or :js:meth:`rawTransaction`
+        **Deprecated**: Use :js:meth:`retryingTransaction\<T\>` or
+        :js:meth:`rawTransaction\<T\>`.
 
         Executes a given action in transaction.
 
