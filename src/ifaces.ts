@@ -89,7 +89,7 @@ export interface Connection extends Executor {
     action: () => Promise<T>,
     options?: TransactionOptions
   ): Promise<T>;
-  try_transaction<T>(
+  tryTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
   retry<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
@@ -107,7 +107,7 @@ export interface Pool extends Executor {
     action: () => Promise<T>,
     options?: TransactionOptions
   ): Promise<T>;
-  try_transaction<T>(
+  tryTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
   retry<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
