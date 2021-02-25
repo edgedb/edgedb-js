@@ -198,6 +198,6 @@ See also:
 
 * RFC1004_
 * :js:meth:`Connection.retry()`
-* :js:meth:`Connection.tryTransaction()`
+* :js:meth:`Connection.rawTransaction()`
 
 .. _RFC1004: https://github.com/edgedb/rfcs/blob/master/text/1004-transactions-api.rst

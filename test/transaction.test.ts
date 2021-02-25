@@ -52,7 +52,7 @@ afterAll(async () => {
 test("transaction: regular 01", async () => {
   await run(async (con) => {
     async function faulty(): Promise<void> {
-      await con.tryTransaction(async (tx) => {
+      await con.rawTransaction(async (tx) => {
         await tx.execute(`
           INSERT ${typename} {
             name := 'Test Transaction'
@@ -102,7 +102,7 @@ test("transaction interface errors", async () => {
     );
 
     async function borrow1(): Promise<void> {
-      await con.tryTransaction(async (tx) => {
+      await con.rawTransaction(async (tx) => {
         await con.execute("SELECT 7*9");
       });
     }
@@ -115,7 +115,7 @@ test("transaction interface errors", async () => {
     );
 
     async function borrow2(): Promise<void> {
-      await con.tryTransaction(async (tx) => {
+      await con.rawTransaction(async (tx) => {
         await con.query("SELECT 7*9");
       });
     }
@@ -127,7 +127,7 @@ test("transaction interface errors", async () => {
     );
 
     async function borrow3(): Promise<void> {
-      await con.tryTransaction(async (tx) => {
+      await con.rawTransaction(async (tx) => {
         await con.queryOne("SELECT 7*9");
       });
     }
@@ -139,7 +139,7 @@ test("transaction interface errors", async () => {
     );
 
     async function borrow4(): Promise<void> {
-      await con.tryTransaction(async (tx) => {
+      await con.rawTransaction(async (tx) => {
         await con.queryJSON("SELECT 7*9");
       });
     }
@@ -151,7 +151,7 @@ test("transaction interface errors", async () => {
     );
 
     async function borrow5(): Promise<void> {
-      await con.tryTransaction(async (tx) => {
+      await con.rawTransaction(async (tx) => {
         await con.queryOneJSON("SELECT 7*9");
       });
     }
