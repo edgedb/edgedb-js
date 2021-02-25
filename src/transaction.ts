@@ -143,7 +143,7 @@ export class Transaction implements Executor {
     successState: TransactionState
   ): Promise<void> {
     try {
-      await this.get_conn().execute(query);
+      await this.getConn().execute(query);
       this._state = successState;
     } catch (error) {
       this._state = TransactionState.FAILED;
@@ -175,7 +175,7 @@ export class Transaction implements Executor {
       TransactionState.ROLLEDBACK
     );
   }
-  private get_conn(): ConnectionImpl {
+  private getConn(): ConnectionImpl {
     const conn = this._impl;
     if (!conn) {
       throw new errors.InterfaceError("Transaction is not started");
@@ -185,22 +185,22 @@ export class Transaction implements Executor {
   }
 
   async execute(query: string): Promise<void> {
-    await this.get_conn().execute(query);
+    await this.getConn().execute(query);
   }
 
   async query(query: string, args?: QueryArgs): Promise<Set> {
-    return await this.get_conn().query(query, args);
+    return await this.getConn().query(query, args);
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.get_conn().queryJSON(query, args);
+    return await this.getConn().queryJSON(query, args);
   }
 
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
-    return await this.get_conn().queryOne(query, args);
+    return await this.getConn().queryOne(query, args);
   }
 
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.get_conn().queryOneJSON(query, args);
+    return await this.getConn().queryOneJSON(query, args);
   }
 }
