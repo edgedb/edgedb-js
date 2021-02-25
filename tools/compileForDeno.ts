@@ -2,7 +2,13 @@ import {
   join,
   relative,
   dirname,
-} from "https://deno.land/std@0.87.0/path/mod.ts";
+  basename,
+} from "https://deno.land/std@0.88.0/path/mod.ts";
+import {createRequire} from "https://deno.land/std@0.88.0/node/module.ts";
+
+const require = createRequire(import.meta.url);
+
+const ts = require("typescript");
 
 const injectImports = [
   {
@@ -24,34 +30,65 @@ async function compileFileForDeno(filePath: string, outPath: string) {
     return await Deno.writeTextFile(outPath, file);
   }
 
-  let injectedImports = injectImports
-    .map(({imports, from}) => {
-      const imported = imports.filter((importName) =>
-        file.includes(importName)
-      );
-      if (!imported.length) {
-        return null;
+  const parsedSource = ts.createSourceFile(
+    basename(filePath),
+    file,
+    ts.ScriptTarget.Latest,
+    false,
+    ts.ScriptKind.TS
+  );
+
+  const rewrittenFile: string[] = [];
+  let cursor = 0;
+  let firstNode = true;
+  parsedSource.forEachChild((node: any) => {
+    if (firstNode) {
+      firstNode = false;
+
+      const injected = injectImports
+        .map(({imports, from}) => {
+          const imported = imports.filter((importName) =>
+            parsedSource.identifiers?.has(importName)
+          );
+          if (!imported.length) {
+            return null;
+          }
+          return `import {${imported.join(", ")}} from "./${relative(
+            dirname(filePath),
+            from
+          )}";`;
+        })
+        .filter((importStr) => importStr);
+
+      if (injected.length) {
+        const injectPos =
+          node.getLeadingTriviaWidth?.(parsedSource) ?? node.pos;
+        rewrittenFile.push(file.slice(cursor, injectPos));
+        rewrittenFile.push(`${injected.join("\n")}\n\n`);
+        cursor = injectPos;
       }
-      return `import {${imported.join(", ")}} from "./${relative(
-        dirname(filePath),
-        from
-      )}";`;
-    })
-    .filter((importStr) => importStr)
-    .join("\n");
+    }
+    if (
+      (node.kind === ts.SyntaxKind.ImportDeclaration ||
+        node.kind === ts.SyntaxKind.ExportDeclaration) &&
+      node.moduleSpecifier
+    ) {
+      const pos = node.moduleSpecifier.pos + 2;
+      const end = node.moduleSpecifier.end - 1;
 
-  injectedImports += injectedImports ? "\n" : "";
+      rewrittenFile.push(file.slice(cursor, pos));
+      cursor = end;
 
-  const replacedFile = file.replace(
-    /(?:import|export)\s(?:.|\n|\r)*?\sfrom\s+["'](.+)['"]/g,
-    (match: string, path: string) => {
+      const path = file.slice(pos, end);
+
       if (path.endsWith("./adaptor.node")) {
-        return match.replace("./adaptor.node", "./adaptor.deno.ts");
+        rewrittenFile.push(
+          path.replace("./adaptor.node", "./adaptor.deno.ts")
+        );
+        return;
       }
 
-      const pathIndex = match.lastIndexOf(path);
-
-      let resolvedPath = path;
+      let resolvedPath = file.slice(pos, end);
 
       if (!fileExists(join(dirname(filePath), resolvedPath) + ".ts")) {
         resolvedPath += "/index";
@@ -61,16 +98,12 @@ async function compileFileForDeno(filePath: string, outPath: string) {
         }
       }
 
-      return (
-        match.slice(0, pathIndex) +
-        resolvedPath +
-        ".ts" +
-        match.slice(pathIndex + path.length)
-      );
+      rewrittenFile.push(resolvedPath + ".ts");
     }
-  );
+  });
+  rewrittenFile.push(file.slice(cursor));
 
-  await Deno.writeTextFile(outPath, injectedImports + replacedFile);
+  await Deno.writeTextFile(outPath, rewrittenFile.join(""));
 }
 
 async function compileDir(dirPath: string, outDirPath: string) {
