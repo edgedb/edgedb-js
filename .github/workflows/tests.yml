@@ -43,7 +43,7 @@ jobs:
 
       - name: Run functional tests
         run: |
-          yarn test --runInBand
+          yarn test connection
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.
