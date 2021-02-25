@@ -448,11 +448,7 @@ export class ConnectionImpl implements Executor {
     }
   }
 
-  private _onClose(): void {
-    this.close();
-  }
-
-  private _onError(err: Error): void {
+  private _abortWaiters(err: Error): void {
     if (this.connWaiterReject) {
       this.connWaiterReject(err);
       this.connWaiterReject = null;
@@ -464,6 +460,23 @@ export class ConnectionImpl implements Executor {
       this.messageWaiterResolve = null;
       this.messageWaiterReject = null;
     }
+  }
+
+  private _onClose(): void {
+    if (this.connWaiterReject || this.messageWaiterReject) {
+      /* This can happen, particularly, during the connect phase.
+         If the connection is aborted with a client-side timeout, there can be
+         a situation where the connection has actually been established,
+         and so `conn.sock.destroy` would simply close the socket,
+         without invoking the 'error' event.
+      */
+      this._abortWaiters(new errors.ClientConnectionClosedError());
+    }
+    this.close();
+  }
+
+  private _onError(err: Error): void {
+    this._abortWaiters(err);
   }
 
   private _onData(data: Buffer): void {
@@ -648,11 +661,13 @@ export class ConnectionImpl implements Executor {
     const sock = this.newSock(addr);
     const conn = new this(sock, {...config, addrs: [addr]});
     const connPromise = conn.connect();
-    let timeout = null;
+    let timeoutCb = null;
+    let timeoutHappened = false;
     // set-up a timeout
     if (config.connectTimeout) {
-      timeout = setTimeout(() => {
+      timeoutCb = setTimeout(() => {
         if (!conn.connected) {
+          timeoutHappened = true;
           conn.sock.destroy(
             new errors.ClientConnectionTimeoutError(
               `connection timed out (${config.connectTimeout}ms)`
@@ -666,6 +681,14 @@ export class ConnectionImpl implements Executor {
       await connPromise;
     } catch (e) {
       conn._abort();
+      if (timeoutHappened && e instanceof errors.ClientConnectionClosedError) {
+        /* A race between our timeout `timeoutCb` callback and the client
+           being actually connected.  See the `ConnectionImpl._onClose` method.
+        */
+        throw new errors.ClientConnectionTimeoutError(
+          `connection timed out (${config.connectTimeout}ms)`
+        );
+      }
       if (e instanceof errors.EdgeDBError) {
         throw e;
       } else {
@@ -686,8 +709,8 @@ export class ConnectionImpl implements Executor {
         throw err;
       }
     } finally {
-      if (timeout != null) {
-        clearTimeout(timeout);
+      if (timeoutCb != null) {
+        clearTimeout(timeoutCb);
       }
     }
     return conn;
