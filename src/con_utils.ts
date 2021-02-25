@@ -124,24 +124,24 @@ function parseConnectDsnAndArgs({
     serverSettings = server_settings;
   }
   if (dsn && /^edgedb(?:admin)?:\/\//.test(dsn)) {
-    // Comma-separated hosts cannot be parsed correctly with url.parse, so if
-    // we detect them, we need to replace the whole host before parsing. The
-    // comma-separated host list can then be handled in the same way as if it
-    // came from any other source (such as EDGEDB_HOST).
-    const dsnHostMatch = /\/\/(.+?@)?(.*)\//.exec(dsn);
+    // Comma-separated hosts and empty hosts cannot always be parsed
+    // correctly with new URL(), so if we detect them, we need to replace the
+    // whole host before parsing. The comma-separated host list can then be
+    // handled in the same way as if it came from any other source
+    // (such as EDGEDB_HOST).
+    const dsnHostMatch = /\/\/(.+?@)?(.*?)([/?])/.exec(dsn);
     let dsnHost: string | null = null;
 
     if (dsnHostMatch && typeof dsnHostMatch[2] === "string") {
       dsnHost = dsnHostMatch[2];
-      if (dsnHost.indexOf(",") !== -1) {
-        let rep: string;
+      if (dsnHost === "" || dsnHost.includes(",")) {
+        const rep = dsnHostMatch[1] ? "@" : "//";
+        const suffix = dsnHostMatch[3];
 
-        if (dsnHostMatch[1]) {
-          rep = "@";
-        } else {
-          rep = "//";
-        }
-        dsn = dsn.replace(rep + dsnHost + "/", rep + "replaced_host/");
+        dsn = dsn.replace(
+          rep + dsnHost + suffix,
+          rep + "replaced_host" + suffix
+        );
       } else {
         dsnHost = null;
       }
@@ -179,8 +179,10 @@ function parseConnectDsnAndArgs({
     if (!host && parsed.host) {
       // if the host was replaced, use the original value to
       // process comma-separated hosts
-      if (dsnHost) {
-        [host, port] = parseHostlist(dsnHost, port);
+      if (dsnHost !== null) {
+        if (dsnHost !== "") {
+          [host, port] = parseHostlist(dsnHost, port);
+        }
       } else {
         host = parsed.hostname ?? undefined;
         if (parsed.port) {
