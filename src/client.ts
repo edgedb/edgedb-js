@@ -962,10 +962,7 @@ export class ConnectionImpl {
       serverNonce
     );
 
-    wb.reset()
-      .beginMessage(chars.$r)
-      .writeString(clientFinal)
-      .endMessage();
+    wb.reset().beginMessage(chars.$r).writeString(clientFinal).endMessage();
     this.sock.write(wb.unwrap());
 
     await this._ensureMessage(chars.$R, "SASLFinal");
@@ -1462,10 +1459,7 @@ export class ConnectionImpl {
   async close(): Promise<void> {
     if (this.sock && this.connected) {
       this.sock.write(
-        new WriteMessageBuffer()
-          .beginMessage(chars.$X)
-          .endMessage()
-          .unwrap()
+        new WriteMessageBuffer().beginMessage(chars.$X).endMessage().unwrap()
       );
     }
     this._abort();
