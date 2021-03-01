@@ -10,7 +10,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout edgedb-js
+        uses: actions/checkout@v2
+
+      - name: Checkout edgedb-deno
+        uses: actions/checkout@v2
+        with:
+          repository: edgedb/edgedb-deno
+          path: edgedb-deno
 
       - uses: actions/setup-node@v2
         with:
@@ -28,7 +35,10 @@ jobs:
         run: |
           yarn compileForDeno
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: deno-build
-          path: deno/
+      - name: Push to edgedb-deno
+        run: |
+          cd edgedb-deno
+          git add .
+          git commit -m "Build from edgedb-js ${{ github.sha }}"
+          git push
+

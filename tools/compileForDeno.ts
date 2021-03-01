@@ -10,6 +10,7 @@ const require = createRequire(import.meta.url);
 
 const ts = require("typescript");
 
+const targetDir = './edgedb-deno/_src';
 const injectImports = [
   {
     imports: ["Buffer", "process"],
@@ -18,12 +19,18 @@ const injectImports = [
 ];
 
 try {
-  await Deno.remove("./deno", {recursive: true});
+  await Deno.remove(targetDir, {recursive: true});
 } catch {}
 
 async function compileFileForDeno(filePath: string, outPath: string) {
-  if (filePath.endsWith(".node.ts") && !filePath.endsWith("index.node.ts")) {
+  const isIndex = filePath.endsWith("index.node.ts");
+
+  if (filePath.endsWith(".node.ts") && !isIndex) {
     return;
+  }
+
+  if (isIndex) {
+    outPath = join(dirname(outPath), '../mod.ts');
   }
 
   const file = await Deno.readTextFile(filePath);
@@ -100,6 +107,10 @@ async function compileFileForDeno(filePath: string, outPath: string) {
         }
       }
 
+      if (isIndex) {
+        resolvedPath = './' + join('_src', resolvedPath);
+      }
+
       rewrittenFile.push(resolvedPath + ".ts");
     }
   });
@@ -135,4 +146,4 @@ function fileExists(filePath: string) {
   }
 }
 
-await compileDir("./src", "./deno");
+await compileDir("./src", targetDir);
