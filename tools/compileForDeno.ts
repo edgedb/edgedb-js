@@ -17,7 +17,9 @@ const injectImports = [
   },
 ];
 
-await Deno.remove("./deno", {recursive: true});
+try {
+  await Deno.remove("./deno", {recursive: true});
+} catch {}
 
 async function compileFileForDeno(filePath: string, outPath: string) {
   if (filePath.endsWith(".node.ts") && !filePath.endsWith("index.node.ts")) {

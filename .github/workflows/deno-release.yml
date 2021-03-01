@@ -1,0 +1,34 @@
+name: Deno Release
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - uses: denolib/setup-deno@v2
+        with:
+          deno-version: v1.x
+
+      - name: Install dev deps
+        run: |
+          yarn install
+
+      - name: Compile for Deno
+        run: |
+          yarn compileForDeno
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: deno-build
+          path: deno/
