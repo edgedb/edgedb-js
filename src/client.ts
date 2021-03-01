@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {net, hrTime} from "./adaptor.node";
+import {net, hrTime} from "./adapter.node";
 
 import char, * as chars from "./chars";
 import {resolveErrorCode} from "./errors/resolve";

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {path, homeDir} from "./adaptor.node";
+import {path, homeDir} from "./adapter.node";
 import {readCredentialsFile} from "./credentials";
 
 const EDGEDB_PORT = 5656;

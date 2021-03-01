@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {randomBytes, H, HMAC} from "./adaptor.node";
+import {randomBytes, H, HMAC} from "./adapter.node";
 
 export {H, HMAC};
 

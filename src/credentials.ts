@@ -1,4 +1,4 @@
-import {readFileUtf8Sync} from "./adaptor.node";
+import {readFileUtf8Sync} from "./adapter.node";
 
 export interface Credentials {
   host?: string;

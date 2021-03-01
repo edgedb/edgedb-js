@@ -90,9 +90,9 @@ async function compileFileForDeno(filePath: string, outPath: string) {
 
       const path = file.slice(pos, end);
 
-      if (path.endsWith("./adaptor.node")) {
+      if (path.endsWith("./adapter.node")) {
         rewrittenFile.push(
-          path.replace("./adaptor.node", "./adaptor.deno.ts")
+          path.replace("./adapter.node", "./adapter.deno.ts")
         );
         return;
       }
