@@ -1,6 +1,6 @@
 /dist
 /node_modules
-/deno
+/edgedb-deno
 /.bench
 /.vscode
 
