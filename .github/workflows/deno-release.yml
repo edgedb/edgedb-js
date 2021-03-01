@@ -16,6 +16,7 @@ jobs:
       - name: Checkout edgedb-deno
         uses: actions/checkout@v2
         with:
+          token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
           repository: edgedb/edgedb-deno
           path: edgedb-deno
 
