@@ -33,7 +33,16 @@ export function readFileUtf8Sync(path: string): string {
 }
 
 export function homeDir(): string {
-  throw new Error("not implemented");
+  const homeDir = Deno.env.get("HOME") ?? Deno.env.get("USERPROFILE");
+  if (homeDir) {
+    return homeDir;
+  }
+  const homeDrive = Deno.env.get("HOMEDRIVE"),
+    homePath = Deno.env.get("HOMEPATH");
+  if (homeDrive && homePath) {
+    return path.join(homeDrive, homePath);
+  }
+  throw new Error("Unable to determine home path");
 }
 
 export function hrTime(): number {
