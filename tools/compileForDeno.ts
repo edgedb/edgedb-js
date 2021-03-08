@@ -3,14 +3,14 @@ import {
   relative,
   dirname,
   basename,
-} from "https://deno.land/std@0.88.0/path/mod.ts";
-import {createRequire} from "https://deno.land/std@0.88.0/node/module.ts";
+} from "https://deno.land/std@0.89.0/path/mod.ts";
+import {createRequire} from "https://deno.land/std@0.89.0/node/module.ts";
 
 const require = createRequire(import.meta.url);
 
 const ts = require("typescript");
 
-const targetDir = './edgedb-deno/_src';
+const targetDir = "./edgedb-deno/_src";
 const injectImports = [
   {
     imports: ["Buffer", "process"],
@@ -30,7 +30,7 @@ async function compileFileForDeno(filePath: string, outPath: string) {
   }
 
   if (isIndex) {
-    outPath = join(dirname(outPath), '../mod.ts');
+    outPath = join(dirname(outPath), "../mod.ts");
   }
 
   const file = await Deno.readTextFile(filePath);
@@ -108,7 +108,7 @@ async function compileFileForDeno(filePath: string, outPath: string) {
       }
 
       if (isIndex) {
-        resolvedPath = './' + join('_src', resolvedPath);
+        resolvedPath = "./" + join("_src", resolvedPath);
       }
 
       rewrittenFile.push(resolvedPath + ".ts");
