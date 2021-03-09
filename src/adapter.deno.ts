@@ -56,11 +56,14 @@ export namespace net {
     port: number | string,
     hostname?: string
   ): Socket {
-    if (typeof port === "string") {
-      throw new Error("connection to socket path unsupported");
-    }
+    // TODO: unix transport is currently behind --unstable flag, add correct
+    // typing when (if?) this becomes stable
+    const opts: any =
+      typeof port === "string"
+        ? {transport: "unix", path: port}
+        : {port, hostname};
 
-    const conn = Deno.connect({port, hostname});
+    const conn = Deno.connect(opts);
 
     return new Socket(conn);
   }
