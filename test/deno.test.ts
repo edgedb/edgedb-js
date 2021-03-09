@@ -24,12 +24,17 @@ test("run deno test", async () => {
   return new Promise<void>((resolve, reject) => {
     execFile(
       "deno",
-      ["test", "--allow-net", "--allow-env", "--allow-read", "test/deno"],
+      [
+        "test",
+        "--unstable",
+        "--allow-net",
+        "--allow-env",
+        "--allow-read",
+        "--allow-write",
+        "test/deno",
+      ],
       {
-        env: {
-          ...process.env,
-          _JEST_EDGEDB_HOST: "localhost",
-        },
+        env: process.env,
       },
       (error, stdout, stderr) => {
         if (error) {
