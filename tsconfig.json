@@ -21,6 +21,7 @@
     "test"
   ],
   "exclude": [
-    "**/*.deno.ts"
+    "**/*.deno.ts",
+    "test/deno/*"
   ]
 }
