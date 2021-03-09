@@ -1,7 +1,7 @@
 name: Deno Release
 
 on:
-  pull_request:
+  push:
     branches:
       - master
 
@@ -44,4 +44,3 @@ jobs:
           git add .
           git commit -m "Build from edgedb-js ${{ github.sha }}"
           git push
-
