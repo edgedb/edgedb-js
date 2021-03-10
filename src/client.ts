@@ -44,6 +44,8 @@ import {
   IConnectionProxied,
   onConnectionClose,
   TransactionOptions,
+  ParseOptions,
+  PrepareMessageHeaders,
 } from "./ifaces";
 import * as scram from "./scram";
 
@@ -924,12 +926,13 @@ export class ConnectionImpl implements Executor {
     query: string,
     asJson: boolean,
     expectOne: boolean,
-    alwaysDescribe: boolean
+    alwaysDescribe: boolean,
+    options?: ParseOptions
   ): Promise<[number, ICodec, ICodec, Buffer | null, Buffer | null]> {
     const wb = new WriteMessageBuffer();
 
     wb.beginMessage(chars.$P)
-      .writeInt16(0) // no headers
+      .writeHeaders(options?.headers ?? {})
       .writeChar(asJson ? chars.$j : chars.$b)
       .writeChar(expectOne ? chars.$o : chars.$m)
       .writeString("") // statement name
@@ -1475,8 +1478,11 @@ export class RawConnection extends ConnectionImpl {
   // Note that this class, while exported, is not documented.
   // Its API is subject to change.
 
-  public async rawParse(query: string): Promise<[Buffer, Buffer]> {
-    const result = await this._parse(query, false, false, true);
+  public async rawParse(
+    query: string,
+    headers?: PrepareMessageHeaders
+  ): Promise<[Buffer, Buffer]> {
+    const result = await this._parse(query, false, false, true, {headers});
     return [result[3]!, result[4]!];
   }
 

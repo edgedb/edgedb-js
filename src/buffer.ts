@@ -20,6 +20,7 @@ import char, * as chars from "./chars";
 import {RingBuffer} from "./ring";
 import * as bi from "./bigint";
 import * as compat from "./compat";
+import {MessageHeaders, HeaderCodes} from "./ifaces";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE: number = 4096;
@@ -206,13 +207,16 @@ export class WriteMessageBuffer {
     return this;
   }
 
-  writeHeaders(headers: Array<[number, Buffer | string]>): this {
+  writeHeaders(headers: MessageHeaders): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeHeaders: no current message");
     }
-    this.buffer.writeUInt16(headers.length);
-    for (const [code, value] of headers) {
-      this.buffer.writeUInt16(code);
+    const entries = Object.entries(headers).filter(
+      ([_, value]) => value !== undefined
+    ) as Array<[keyof typeof HeaderCodes, string | Buffer]>;
+    this.buffer.writeUInt16(entries.length);
+    for (const [code, value] of entries) {
+      this.buffer.writeUInt16(HeaderCodes[code]);
       if (Buffer.isBuffer(value)) {
         this.buffer.writeUInt32(value.byteLength);
         this.buffer.writeBuffer(value);
