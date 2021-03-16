@@ -95,6 +95,12 @@ export interface Connection extends Executor {
   retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
+  /*
+  withTransactionOptions(
+    opt: TransactionOptions | Partial<TransactionOptions>
+  ): Connection;
+  withRetryOptions(opt: RetryOptions | PartialRetryRule): Connection;
+  */
   close(): Promise<void>;
   isClosed(): boolean;
 }
@@ -115,6 +121,12 @@ export interface Pool extends Executor {
   retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
+  /*
+  withTransactionOptions(
+    opt: TransactionOptions | Partial<TransactionOptions>
+  ): Connection;
+  withRetryOptions(opt: RetryOptions | PartialRetryRule): Connection;
+  */
   close(): Promise<void>;
   isClosed(): boolean;
 

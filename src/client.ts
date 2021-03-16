@@ -48,6 +48,7 @@ import {
   PrepareMessageHeaders,
 } from "./ifaces";
 import * as scram from "./scram";
+import {Options} from "./options";
 
 import {
   parseConnectArguments,
@@ -141,12 +142,14 @@ class StandaloneConnection implements Connection {
   [ALLOW_MODIFICATIONS]: never;
   [BORROWED_FOR]?: BorrowReason;
   private config: NormalizedConnectConfig;
+  private options: Options;
   private _connection?: ConnectionImpl;
   private _isClosed: boolean; // For compatibility
 
   private constructor(config: NormalizedConnectConfig) {
     this.config = config;
     this._isClosed = false;
+    this.options = Options.defaults();
   }
 
   async [CONNECTION_IMPL](
