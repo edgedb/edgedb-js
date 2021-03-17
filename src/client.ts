@@ -126,13 +126,23 @@ function sleep(durationMillis: number): Promise<void> {
   });
 }
 
-function borrowError(reason: BorrowReason): errors.EdgeDBError {
+export function borrowError(reason: BorrowReason): errors.EdgeDBError {
   let text;
   switch (reason) {
     case BorrowReason.TRANSACTION:
       text =
         "Connection object is borrowed for the transaction. " +
         "Use the methods on transaction object instead.";
+      break;
+    case BorrowReason.QUERY:
+      text =
+        "Another operation is in progress. Use multiple separate " +
+        "connections to run operations concurrently.";
+      break;
+    case BorrowReason.CLOSE:
+      text =
+        "Connection is being closed. Use multiple separate " +
+        "connections to run operations concurrently.";
       break;
   }
   throw new errors.InterfaceError(text);
@@ -166,6 +176,7 @@ class StandaloneConnection implements Connection {
     action: () => Promise<T>,
     options?: TransactionOptions
   ): Promise<T> {
+    let result: T;
     // tslint:disable-next-line: no-console
     console.warn(
       "The `transaction()` method is deprecated and is scheduled to be " +
@@ -176,7 +187,16 @@ class StandaloneConnection implements Connection {
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
-    return await connection.transaction(action, options);
+    const transaction = new LegacyTransaction(this, options);
+    await transaction.start();
+    try {
+      result = await action();
+      await transaction.commit();
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
+    }
+    return result;
   }
 
   async rawTransaction<T>(
@@ -237,16 +257,25 @@ class StandaloneConnection implements Connection {
   }
 
   async close(): Promise<void> {
+    const borrowed_for = this[BORROWED_FOR];
+    if (borrowed_for) {
+      throw borrowError(borrowed_for);
+    }
+    this[BORROWED_FOR] = BorrowReason.CLOSE;
     try {
-      if (this._connection) {
-        await this._connection.close();
+      try {
+        if (this._connection) {
+          await this._connection.close();
+        }
+        this._connection = undefined;
+        // TODO(tailhook) it makes little sense to close the reconnecting
+        // connection so maybe deprecate this method
+        this._isClosed = true;
+      } finally {
+        this._cleanupProxy();
       }
-      this._connection = undefined;
-      // TODO(tailhook) it makes little sense to close the reconnecting
-      // connection so maybe deprecate this method
-      this._isClosed = true;
     } finally {
-      this._cleanupProxy();
+      this[BORROWED_FOR] = undefined;
     }
   }
 
@@ -267,11 +296,16 @@ class StandaloneConnection implements Connection {
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
+    this[BORROWED_FOR] = BorrowReason.QUERY;
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
-    return await connection.execute(query);
+    try {
+      return await connection.execute(query);
+    } finally {
+      this[BORROWED_FOR] = undefined;
+    }
   }
 
   async query(query: string, args?: QueryArgs): Promise<Set> {
@@ -279,11 +313,16 @@ class StandaloneConnection implements Connection {
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
+    this[BORROWED_FOR] = BorrowReason.QUERY;
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
-    return await connection.query(query, args);
+    try {
+      return await connection.fetch(query, args, false, false);
+    } finally {
+      this[BORROWED_FOR] = undefined;
+    }
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
@@ -291,11 +330,16 @@ class StandaloneConnection implements Connection {
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
+    this[BORROWED_FOR] = BorrowReason.QUERY;
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
-    return await connection.queryJSON(query, args);
+    try {
+      return await connection.fetch(query, args, true, false);
+    } finally {
+      this[BORROWED_FOR] = undefined;
+    }
   }
 
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
@@ -303,11 +347,16 @@ class StandaloneConnection implements Connection {
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
+    this[BORROWED_FOR] = BorrowReason.QUERY;
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
-    return await connection.queryOne(query, args);
+    try {
+      return await connection.fetch(query, args, false, true);
+    } finally {
+      this[BORROWED_FOR] = undefined;
+    }
   }
 
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
@@ -315,11 +364,16 @@ class StandaloneConnection implements Connection {
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
+    this[BORROWED_FOR] = BorrowReason.QUERY;
     let connection = this._connection;
     if (!connection || connection.isClosed()) {
       connection = await this._reconnect();
     }
-    return await connection.queryOneJSON(query, args);
+    try {
+      return await connection.fetch(query, args, true, true);
+    } finally {
+      this[BORROWED_FOR] = undefined;
+    }
   }
 
   private async _reconnect(
@@ -375,7 +429,7 @@ class StandaloneConnection implements Connection {
   }
 }
 
-export class ConnectionImpl implements Executor {
+export class ConnectionImpl {
   [ALLOW_MODIFICATIONS]: never;
   private sock: net.Socket;
   private config: NormalizedConnectConfig;
@@ -1265,9 +1319,9 @@ export class ConnectionImpl implements Executor {
     }
   }
 
-  private async _fetch(
+  async fetch(
     query: string,
-    args: QueryArgs,
+    args: QueryArgs = null,
     asJson: boolean,
     expectOne: boolean
   ): Promise<any> {
@@ -1321,7 +1375,7 @@ export class ConnectionImpl implements Executor {
     }
   }
 
-  private async _execute(query: string): Promise<void> {
+  async execute(query: string): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$Q)
       .writeInt16(1) // headers
@@ -1369,82 +1423,6 @@ export class ConnectionImpl implements Executor {
     }
   }
 
-  private _enterOp(): void {
-    if (this.opInProgress) {
-      throw new Error(
-        "Another operation is in progress. Use multiple separate " +
-          "connections to run operations concurrently."
-      );
-    }
-    this.opInProgress = true;
-  }
-
-  private _leaveOp(): void {
-    this.opInProgress = false;
-  }
-
-  async execute(query: string): Promise<void> {
-    this._enterOp();
-    try {
-      await this._execute(query);
-    } finally {
-      this._leaveOp();
-    }
-  }
-
-  async query(query: string, args: QueryArgs = null): Promise<Set> {
-    this._enterOp();
-    try {
-      return await this._fetch(query, args, false, false);
-    } finally {
-      this._leaveOp();
-    }
-  }
-
-  async queryOne(query: string, args: QueryArgs = null): Promise<any> {
-    this._enterOp();
-    try {
-      return await this._fetch(query, args, false, true);
-    } finally {
-      this._leaveOp();
-    }
-  }
-
-  async queryJSON(query: string, args: QueryArgs = null): Promise<string> {
-    this._enterOp();
-    try {
-      return await this._fetch(query, args, true, false);
-    } finally {
-      this._leaveOp();
-    }
-  }
-
-  async queryOneJSON(query: string, args: QueryArgs = null): Promise<string> {
-    this._enterOp();
-    try {
-      return await this._fetch(query, args, true, true);
-    } finally {
-      this._leaveOp();
-    }
-  }
-
-  async transaction<T>(
-    action: () => Promise<T>,
-    options?: TransactionOptions
-  ): Promise<T> {
-    let result: T;
-    const transaction = new LegacyTransaction(this, options);
-    await transaction.start();
-    try {
-      result = await action();
-      await transaction.commit();
-    } catch (err) {
-      await transaction.rollback();
-      throw err;
-    }
-    return result;
-  }
-
   private _abort(): void {
     if (this.sock && this.connected) {
       this.sock.destroy();
@@ -1457,20 +1435,15 @@ export class ConnectionImpl implements Executor {
   }
 
   async close(): Promise<void> {
-    this._enterOp();
-    try {
-      if (this.sock && this.connected) {
-        this.sock.write(
-          new WriteMessageBuffer()
-            .beginMessage(chars.$X)
-            .endMessage()
-            .unwrap()
-        );
-      }
-      this._abort();
-    } finally {
-      this._leaveOp();
+    if (this.sock && this.connected) {
+      this.sock.write(
+        new WriteMessageBuffer()
+          .beginMessage(chars.$X)
+          .endMessage()
+          .unwrap()
+      );
     }
+    this._abort();
   }
 
   /** @internal */

@@ -20,7 +20,7 @@ import {BorrowReason, Connection, TransactionOptions} from "./ifaces";
 import {Executor, QueryArgs, CONNECTION_IMPL} from "./ifaces";
 import {ALLOW_MODIFICATIONS, BORROWED_FOR} from "./ifaces";
 import {getUniqueId} from "./utils";
-import {ConnectionImpl} from "./client";
+import {ConnectionImpl, borrowError} from "./client";
 import {Set} from "./datatypes/set";
 
 export enum TransactionState {
@@ -46,6 +46,7 @@ export class Transaction implements Executor {
   _isolation?: IsolationLevel;
   _readonly?: boolean;
   _state: TransactionState;
+  _opInProgress: boolean;
 
   constructor(connection: Connection, options?: TransactionOptions) {
     if (options === undefined) {
@@ -56,6 +57,7 @@ export class Transaction implements Executor {
     this._isolation = options.isolation;
     this._readonly = options.readonly;
     this._state = TransactionState.NEW;
+    this._opInProgress = false;
   }
 
   get state(): TransactionState {
@@ -138,12 +140,13 @@ export class Transaction implements Executor {
     this._checkState("rollback");
     return "ROLLBACK;";
   }
+
   private async _execute(
     query: string,
     successState: TransactionState
   ): Promise<void> {
     try {
-      await this.getConn().query(query);
+      await this.getConn().fetch(query, null, false, false);
       this._state = successState;
     } catch (error) {
       this._state = TransactionState.FAILED;
@@ -158,22 +161,46 @@ export class Transaction implements Executor {
   async [START_TRANSACTION_IMPL](
     singleConnect: boolean = false
   ): Promise<void> {
-    this._connection[BORROWED_FOR] = BorrowReason.TRANSACTION;
-    this._impl = await this._connection[CONNECTION_IMPL](singleConnect);
-    await this._execute(this._makeStartQuery(), TransactionState.STARTED);
+    if (this._opInProgress) {
+      throw borrowError(BorrowReason.QUERY);
+    }
+    this._opInProgress = true;
+    try {
+      this._connection[BORROWED_FOR] = BorrowReason.TRANSACTION;
+      this._impl = await this._connection[CONNECTION_IMPL](singleConnect);
+      await this._execute(this._makeStartQuery(), TransactionState.STARTED);
+    } finally {
+      this._opInProgress = false;
+    }
   }
 
   async commit(): Promise<void> {
-    this._connection[BORROWED_FOR] = undefined;
-    await this._execute(this._makeCommitQuery(), TransactionState.COMMITTED);
+    if (this._opInProgress) {
+      throw borrowError(BorrowReason.QUERY);
+    }
+    this._opInProgress = true;
+    try {
+      this._connection[BORROWED_FOR] = undefined;
+      await this._execute(this._makeCommitQuery(), TransactionState.COMMITTED);
+    } finally {
+      this._opInProgress = false;
+    }
   }
 
   async rollback(): Promise<void> {
-    this._connection[BORROWED_FOR] = undefined;
-    await this._execute(
-      this._makeRollbackQuery(),
-      TransactionState.ROLLEDBACK
-    );
+    if (this._opInProgress) {
+      throw borrowError(BorrowReason.QUERY);
+    }
+    this._opInProgress = true;
+    try {
+      this._connection[BORROWED_FOR] = undefined;
+      await this._execute(
+        this._makeRollbackQuery(),
+        TransactionState.ROLLEDBACK
+      );
+    } finally {
+      this._opInProgress = false;
+    }
   }
   private getConn(): ConnectionImpl {
     const conn = this._impl;
@@ -185,22 +212,62 @@ export class Transaction implements Executor {
   }
 
   async execute(query: string): Promise<void> {
-    await this.getConn().execute(query);
+    if (this._opInProgress) {
+      throw borrowError(BorrowReason.QUERY);
+    }
+    this._opInProgress = true;
+    try {
+      await this.getConn().execute(query);
+    } finally {
+      this._opInProgress = false;
+    }
   }
 
   async query(query: string, args?: QueryArgs): Promise<Set> {
-    return await this.getConn().query(query, args);
+    if (this._opInProgress) {
+      throw borrowError(BorrowReason.QUERY);
+    }
+    this._opInProgress = true;
+    try {
+      return await this.getConn().fetch(query, args, false, false);
+    } finally {
+      this._opInProgress = false;
+    }
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.getConn().queryJSON(query, args);
+    if (this._opInProgress) {
+      throw borrowError(BorrowReason.QUERY);
+    }
+    this._opInProgress = true;
+    try {
+      return await this.getConn().fetch(query, args, true, false);
+    } finally {
+      this._opInProgress = false;
+    }
   }
 
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
-    return await this.getConn().queryOne(query, args);
+    if (this._opInProgress) {
+      throw borrowError(BorrowReason.QUERY);
+    }
+    this._opInProgress = true;
+    try {
+      return await this.getConn().fetch(query, args, false, true);
+    } finally {
+      this._opInProgress = false;
+    }
   }
 
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.getConn().queryOneJSON(query, args);
+    if (this._opInProgress) {
+      throw borrowError(BorrowReason.QUERY);
+    }
+    this._opInProgress = true;
+    try {
+      return await this.getConn().fetch(query, args, true, true);
+    } finally {
+      this._opInProgress = false;
+    }
   }
 }

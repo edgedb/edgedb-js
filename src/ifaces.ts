@@ -53,6 +53,8 @@ export enum IsolationLevel {
 
 export enum BorrowReason {
   TRANSACTION = "transaction",
+  QUERY = "query",
+  CLOSE = "close",
 }
 
 export interface TransactionOptions {
