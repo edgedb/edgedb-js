@@ -207,10 +207,15 @@ export class WriteMessageBuffer {
     return this;
   }
 
-  writeHeaders(headers: MessageHeaders): this {
+  writeHeaders(headers: MessageHeaders | null): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeHeaders: no current message");
     }
+    if (!headers) {
+      this.buffer.writeUInt16(0);
+      return this;
+    }
+
     const entries = Object.entries(headers).filter(
       ([_, value]) => value !== undefined
     ) as Array<[keyof typeof HeaderCodes, string | Buffer]>;
@@ -220,8 +225,12 @@ export class WriteMessageBuffer {
       if (Buffer.isBuffer(value)) {
         this.buffer.writeUInt32(value.byteLength);
         this.buffer.writeBuffer(value);
-      } else {
+      } else if (typeof value === "string") {
         this.buffer.writeString(value);
+      } else {
+        throw new BufferError(
+          "cannot write header: value is not a Buffer or string"
+        );
       }
     }
     return this;

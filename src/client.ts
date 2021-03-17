@@ -932,7 +932,7 @@ export class ConnectionImpl implements Executor {
     const wb = new WriteMessageBuffer();
 
     wb.beginMessage(chars.$P)
-      .writeHeaders(options?.headers ?? {})
+      .writeHeaders(options?.headers ?? null)
       .writeChar(asJson ? chars.$j : chars.$b)
       .writeChar(expectOne ? chars.$o : chars.$m)
       .writeString("") // statement name
