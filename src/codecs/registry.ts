@@ -254,7 +254,16 @@ export class CodecsRegistry {
         default: {
           if (t >= 0x7f && t <= 0xff) {
             const ann_length = frb.readUInt32();
-            frb.discard(ann_length);
+            if (t === 0xff) {
+              const typeName = frb.readBuffer(ann_length).toString("utf8");
+              const codec =
+                this.codecs.get(tid) ?? this.codecsBuildCache.get(tid);
+              if (codec instanceof ScalarCodec) {
+                codec.setTypeName(typeName);
+              }
+            } else {
+              frb.discard(ann_length);
+            }
             return null;
           } else {
             throw new Error(
