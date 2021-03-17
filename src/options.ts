@@ -16,12 +16,11 @@ export enum RetryCondition {
 }
 
 class RetryRule {
-  attempts: number;
-  backoff: BackoffFunction;
+  readonly attempts: number;
+  readonly backoff: BackoffFunction;
   constructor(attempts: number, backoff: BackoffFunction) {
     this.attempts = attempts;
     this.backoff = backoff;
-    Object.freeze(this);
   }
 }
 
@@ -32,12 +31,11 @@ interface PartialRetryRule {
 }
 
 export class RetryOptions {
-  default: RetryRule;
+  readonly default: RetryRule;
   private overrides: Map<RetryCondition, RetryRule>;
   constructor(attempts: number, backoff: BackoffFunction) {
     this.default = new RetryRule(attempts, backoff);
     this.overrides = new Map();
-    Object.freeze(this);
   }
   withRule(
     condition: RetryCondition,
@@ -53,7 +51,7 @@ export class RetryOptions {
     const result = Object.create(RetryOptions.prototype);
     result.default = def;
     result.overrides = overrides;
-    return Object.freeze(result);
+    return result;
   }
   static defaults(): RetryOptions {
     return new RetryOptions(3, default_backoff);
@@ -61,9 +59,9 @@ export class RetryOptions {
 }
 
 export class TransactionOptions {
-  isolation: IsolationLevel;
-  readonly: boolean;
-  deferrable: boolean;
+  readonly isolation: IsolationLevel;
+  readonly readonly: boolean;
+  readonly deferrable: boolean;
   constructor({
     isolation = IsolationLevel.RepeatableRead,
     readonly = false,
@@ -76,7 +74,6 @@ export class TransactionOptions {
     this.isolation = isolation;
     this.readonly = readonly;
     this.deferrable = deferrable;
-    Object.freeze(this);
   }
   static defaults(): TransactionOptions {
     return new TransactionOptions();
@@ -84,8 +81,8 @@ export class TransactionOptions {
 }
 
 export class Options {
-  retry_options: RetryOptions;
-  transaction_options: TransactionOptions;
+  readonly retry_options: RetryOptions;
+  readonly transaction_options: TransactionOptions;
 
   constructor({
     retry_options = RetryOptions.defaults(),
@@ -96,7 +93,6 @@ export class Options {
   } = {}) {
     this.retry_options = retry_options;
     this.transaction_options = transaction_options;
-    Object.freeze(this);
   }
 
   withTransactionOptions(
@@ -109,7 +105,7 @@ export class Options {
     } else {
       result.transaction_options = new TransactionOptions(opt);
     }
-    return Object.freeze(result);
+    return result;
   }
 
   withRetryOptions(opt: RetryOptions | PartialRetryRule): Options {
@@ -130,7 +126,7 @@ export class Options {
         opt.backoff ?? old.backoff
       );
     }
-    return Object.freeze(result);
+    return result;
   }
 
   static defaults(): Options {
