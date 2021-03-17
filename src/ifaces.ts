@@ -131,3 +131,24 @@ export const onConnectionClose = Symbol("onConnectionClose");
 export interface IConnectionProxied extends Connection {
   [onConnectionClose](): void;
 }
+
+export const HeaderCodes = {
+  implicitLimit: 0xff01,
+  implicitTypenames: 0xff02,
+  implicitTypeids: 0xff03,
+  allowCapabilities: 0xff04,
+};
+
+export type MessageHeaders = {
+  [key in keyof typeof HeaderCodes]?: string | Buffer;
+};
+
+export interface PrepareMessageHeaders {
+  implicitLimit?: string;
+  implicitTypenames?: "true";
+  implicitTypeids?: "true";
+}
+
+export interface ParseOptions {
+  headers?: PrepareMessageHeaders;
+}
