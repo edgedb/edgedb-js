@@ -17,10 +17,10 @@
  */
 import * as errors from "./errors";
 import {BorrowReason, Connection, TransactionOptions} from "./ifaces";
-import {Executor, QueryArgs, CONNECTION_IMPL} from "./ifaces";
-import {ALLOW_MODIFICATIONS, BORROWED_FOR} from "./ifaces";
+import {Executor, QueryArgs} from "./ifaces";
+import {ALLOW_MODIFICATIONS, INNER} from "./ifaces";
 import {getUniqueId} from "./utils";
-import {ConnectionImpl, borrowError} from "./client";
+import {ConnectionImpl, InnerConnection, borrowError} from "./client";
 import {Set} from "./datatypes/set";
 
 export enum TransactionState {
@@ -41,6 +41,7 @@ export const START_TRANSACTION_IMPL = Symbol("START_TRANSACTION_IMPL");
 export class Transaction implements Executor {
   [ALLOW_MODIFICATIONS]: never;
   _connection: Connection;
+  _inner?: InnerConnection;
   _impl?: ConnectionImpl;
   _deferrable?: boolean;
   _isolation?: IsolationLevel;
@@ -161,14 +162,20 @@ export class Transaction implements Executor {
   async [START_TRANSACTION_IMPL](
     singleConnect: boolean = false
   ): Promise<void> {
+    const start_query = this._makeStartQuery();
     if (this._opInProgress) {
       throw borrowError(BorrowReason.QUERY);
     }
     this._opInProgress = true;
     try {
-      this._connection[BORROWED_FOR] = BorrowReason.TRANSACTION;
-      this._impl = await this._connection[CONNECTION_IMPL](singleConnect);
-      await this._execute(this._makeStartQuery(), TransactionState.STARTED);
+      const inner = this._connection[INNER];
+      if(inner.borrowed_for) {
+        throw borrowError(BorrowReason.QUERY);
+      }
+      inner.borrowed_for = BorrowReason.TRANSACTION;
+      this._inner = inner;
+      this._impl = await inner.getImpl(singleConnect);
+      await this._execute(start_query, TransactionState.STARTED);
     } finally {
       this._opInProgress = false;
     }
@@ -180,7 +187,7 @@ export class Transaction implements Executor {
     }
     this._opInProgress = true;
     try {
-      this._connection[BORROWED_FOR] = undefined;
+      this._inner!.borrowed_for = undefined;
       await this._execute(this._makeCommitQuery(), TransactionState.COMMITTED);
     } finally {
       this._opInProgress = false;
@@ -193,7 +200,7 @@ export class Transaction implements Executor {
     }
     this._opInProgress = true;
     try {
-      this._connection[BORROWED_FOR] = undefined;
+      this._inner!.borrowed_for = undefined;
       await this._execute(
         this._makeRollbackQuery(),
         TransactionState.ROLLEDBACK

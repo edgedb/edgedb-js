@@ -17,15 +17,15 @@
  */
 
 import * as errors from "./errors";
-import {ConnectConfig} from "./con_utils";
+import {ConnectConfig, NormalizedConnectConfig} from "./con_utils";
 import {LifoQueue} from "./queues";
 import {Set} from "./datatypes/set";
 
 import connect, {proxyMap, ConnectionImpl} from "./client";
+import {StandaloneConnection} from "./client";
 
 import {
   ALLOW_MODIFICATIONS,
-  CONNECTION_IMPL,
   QueryArgs,
   Connection,
   IConnectionProxied,
@@ -146,6 +146,8 @@ class PoolConnectionHolder {
   }
 
   async acquire(): Promise<PoolConnectionProxy> {
+    throw Error("not implemented");
+    /*
     if (this._connection === null || this._connection.isClosed()) {
       this._connection = null;
       await this.connect();
@@ -180,9 +182,12 @@ class PoolConnectionHolder {
 
     this._inUse = new Deferred<void>();
     return proxy;
+      */
   }
 
   async release(): Promise<void> {
+    throw Error("not implemented")
+    /*
     if (this._inUse === null) {
       throw new errors.ClientError(
         "PoolConnectionHolder.release() called on " +
@@ -224,6 +229,7 @@ class PoolConnectionHolder {
     // Free this connection holder and invalidate the
     // connection proxy.
     await this._release();
+    */
   }
 
   /** @internal */
@@ -274,122 +280,28 @@ class PoolConnectionHolder {
   }
 }
 
-const holderAttr = Symbol("holder");
+const HOLDER = Symbol("holder");
 const detach = Symbol("detach");
 export const getHolder = Symbol("getHolder");
 const connectionAttr = Symbol("connection");
 export const unwrapConnection = Symbol("unwrap");
 const isDetached = Symbol("isDetached");
 
-export class PoolConnectionProxy implements IConnectionProxied {
-  [ALLOW_MODIFICATIONS]: never;
-  private [holderAttr]: PoolConnectionHolder;
-  private [connectionAttr]: Connection | null;
+export class PoolConnectionProxy extends StandaloneConnection {
+  [HOLDER]: PoolConnectionHolder;
 
-  constructor(holder: PoolConnectionHolder, connection: Connection) {
-    this[holderAttr] = holder;
-    this[connectionAttr] = connection;
-
-    if (proxyMap.has(connection)) {
-      throw new errors.InterfaceError(
-        "internal client error: the connection is already assigned to a proxy"
-      );
-    }
-    proxyMap.set(connection, this);
-  }
-  async [CONNECTION_IMPL](): Promise<ConnectionImpl> {
-    return await this[unwrapConnection]()[CONNECTION_IMPL]();
-  }
-
-  private [unwrapConnection](): Connection {
-    const conn = this[connectionAttr];
-    if (conn === null) {
-      throw new errors.InterfaceError("The proxy is detached");
-    }
-    return conn;
-  }
-
-  async execute(query: string): Promise<void> {
-    await this[unwrapConnection]().execute(query);
-  }
-
-  async transaction<T>(
-    action: () => Promise<T>,
-    options?: TransactionOptions
-  ): Promise<T> {
-    return await this[unwrapConnection]().transaction(action, options);
-  }
-  async rawTransaction<T>(
-    action: (transaction: Transaction) => Promise<T>
-  ): Promise<T> {
-    return await this[unwrapConnection]().rawTransaction(action);
-  }
-
-  async retryingTransaction<T>(
-    action: (transaction: Transaction) => Promise<T>
-  ): Promise<T> {
-    return await this[unwrapConnection]().retryingTransaction(action);
-  }
-
-  async query(query: string, args?: QueryArgs): Promise<Set> {
-    return await this[unwrapConnection]().query(query, args);
-  }
-
-  async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this[unwrapConnection]().queryJSON(query, args);
-  }
-
-  async queryOne(query: string, args?: QueryArgs): Promise<any> {
-    return await this[unwrapConnection]().queryOne(query, args);
-  }
-
-  async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this[unwrapConnection]().queryOneJSON(query, args);
+  constructor(holder: PoolConnectionHolder, config: NormalizedConnectConfig) {
+    super(config);
+    this[HOLDER] = holder;
   }
 
   close(): Promise<void> {
     throw new errors.InterfaceError("The proxy cannot be closed");
   }
 
-  /**
-   * Return a value indicating whether this PoolConnectionProxy is detached
-   * from a connection.
-   * @internal
-   */
-  [isDetached](): boolean {
-    return this[connectionAttr] === null;
-  }
-
-  /**
-   * Return a value indicating whether this PoolConnectionProxy is detached
-   * from a connection, or the underlying connection is closed.
-   */
-  isClosed(): boolean {
-    const conn = this[connectionAttr];
-    return conn === null || conn.isClosed();
-  }
-
-  [onConnectionClose](): void {
-    this[holderAttr]._releaseOnClose();
-  }
-
-  /** @internal */
-  [getHolder](): PoolConnectionHolder {
-    return this[holderAttr];
-  }
-
   /** @internal */
   [detach](): Connection | null {
-    if (this[connectionAttr] === null) {
-      return null;
-    }
-
-    const conn = this[connectionAttr];
-    this[connectionAttr] = null;
-    if (conn != null) {
-      proxyMap.delete(conn);
-    }
-    return conn;
+    throw Error("not implemented");
   }
 }
 
@@ -689,6 +601,8 @@ class PoolImpl implements Pool {
    * Release a database connection back to the pool.
    */
   async release(connectionProxy: Connection): Promise<void> {
+    throw Error("not implemented");
+    /*
     if (!(connectionProxy instanceof PoolConnectionProxy)) {
       throw new Error("a connection obtained via pool.acquire() was expected");
     }
@@ -709,6 +623,7 @@ class PoolImpl implements Pool {
 
     // Let the connection do its internal housekeeping when it's released.
     return await holder.release();
+    */
   }
 
   /**

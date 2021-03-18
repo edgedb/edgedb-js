@@ -25,7 +25,8 @@ import {
   Duration,
 } from "./datatypes/datetime";
 import {Transaction} from "./transaction";
-import {ConnectionImpl} from "./client";
+import {InnerConnection, ConnectionImpl} from "./client";
+import {Options} from "./options";
 
 import {Set} from "./datatypes/set";
 
@@ -71,8 +72,8 @@ export interface ReadOnlyExecutor {
   queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
 }
 
-export const BORROWED_FOR = Symbol();
-export const CONNECTION_IMPL = Symbol();
+export const INNER = Symbol();
+export const OPTIONS = Symbol();
 export const ALLOW_MODIFICATIONS = Symbol();
 
 interface Modifiable {
@@ -85,8 +86,8 @@ interface Modifiable {
 export type Executor = ReadOnlyExecutor & Modifiable;
 
 export interface Connection extends Executor {
-  [BORROWED_FOR]?: BorrowReason;
-  [CONNECTION_IMPL](singleConnect?: boolean): Promise<ConnectionImpl>;
+  [INNER]: InnerConnection;
+  [OPTIONS]: Options;
   transaction<T>(
     action: () => Promise<T>,
     options?: TransactionOptions

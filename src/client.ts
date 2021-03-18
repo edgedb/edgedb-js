@@ -35,8 +35,8 @@ import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {
   ALLOW_MODIFICATIONS,
-  BORROWED_FOR,
-  CONNECTION_IMPL,
+  INNER,
+  OPTIONS,
   Executor,
   QueryArgs,
   Connection,
@@ -148,28 +148,14 @@ export function borrowError(reason: BorrowReason): errors.EdgeDBError {
   throw new errors.InterfaceError(text);
 }
 
-class StandaloneConnection implements Connection {
+export class StandaloneConnection implements Connection {
   [ALLOW_MODIFICATIONS]: never;
-  [BORROWED_FOR]?: BorrowReason;
-  private config: NormalizedConnectConfig;
-  private options: Options;
-  private _connection?: ConnectionImpl;
-  private _isClosed: boolean; // For compatibility
+  [INNER]: InnerConnection;
+  [OPTIONS]: Options;
 
-  private constructor(config: NormalizedConnectConfig) {
-    this.config = config;
-    this._isClosed = false;
-    this.options = Options.defaults();
-  }
-
-  async [CONNECTION_IMPL](
-    singleAttempt: boolean = false
-  ): Promise<ConnectionImpl> {
-    let connection = this._connection;
-    if (!connection || connection.isClosed()) {
-      connection = await this._reconnect(singleAttempt);
-    }
-    return connection;
+  protected constructor(config: NormalizedConnectConfig) {
+    this[INNER] = new InnerConnection(config)
+    this[OPTIONS] = Options.defaults();
   }
 
   async transaction<T>(
@@ -183,9 +169,9 @@ class StandaloneConnection implements Connection {
         "removed. Use the `retryingTransaction()` or `rawTransaction()` " +
         "method instead"
     );
-    let connection = this._connection;
+    let connection = this[INNER].connection;
     if (!connection || connection.isClosed()) {
-      connection = await this._reconnect();
+      connection = await this[INNER].reconnect();
     }
     const transaction = new LegacyTransaction(this, options);
     await transaction.start();
@@ -257,126 +243,156 @@ class StandaloneConnection implements Connection {
   }
 
   async close(): Promise<void> {
-    const borrowed_for = this[BORROWED_FOR];
+    const borrowed_for = this[INNER].borrowed_for;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    this[BORROWED_FOR] = BorrowReason.CLOSE;
+    this[INNER].borrowed_for = BorrowReason.CLOSE;
     try {
       try {
-        if (this._connection) {
-          await this._connection.close();
+        const conn = this[INNER].connection;
+        if (conn) {
+          await conn.close();
         }
-        this._connection = undefined;
-        // TODO(tailhook) it makes little sense to close the reconnecting
-        // connection so maybe deprecate this method
-        this._isClosed = true;
+        this[INNER].connection = undefined;
+        this[INNER]._isClosed = true;
       } finally {
-        this._cleanupProxy();
+        // TODO(tailhook) figure out
+        // this[INNER].cleanupProxy();
       }
     } finally {
-      this[BORROWED_FOR] = undefined;
-    }
-  }
-
-  private _cleanupProxy(): void {
-    const proxy = proxyMap.get(this);
-    if (proxy != null) {
-      proxy[onConnectionClose]();
-      proxyMap.delete(this);
+      this[INNER].borrowed_for = undefined;
     }
   }
 
   isClosed(): boolean {
-    return this._isClosed;
+    return this[INNER]._isClosed;
   }
 
   async execute(query: string): Promise<void> {
-    const borrowed_for = this[BORROWED_FOR];
+    const inner = this[INNER]
+    const borrowed_for = inner.borrowed_for;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    this[BORROWED_FOR] = BorrowReason.QUERY;
-    let connection = this._connection;
+    inner.borrowed_for = BorrowReason.QUERY;
+    let connection = inner.connection;
     if (!connection || connection.isClosed()) {
-      connection = await this._reconnect();
+      connection = await inner.reconnect();
     }
     try {
       return await connection.execute(query);
     } finally {
-      this[BORROWED_FOR] = undefined;
+      inner.borrowed_for = undefined;
     }
   }
 
   async query(query: string, args?: QueryArgs): Promise<Set> {
-    const borrowed_for = this[BORROWED_FOR];
+    const inner = this[INNER];
+    const borrowed_for = inner.borrowed_for;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    this[BORROWED_FOR] = BorrowReason.QUERY;
-    let connection = this._connection;
+    inner.borrowed_for = BorrowReason.QUERY;
+    let connection = inner.connection;
     if (!connection || connection.isClosed()) {
-      connection = await this._reconnect();
+      connection = await inner.reconnect();
     }
     try {
       return await connection.fetch(query, args, false, false);
     } finally {
-      this[BORROWED_FOR] = undefined;
+      inner.borrowed_for = undefined;
     }
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    const borrowed_for = this[BORROWED_FOR];
+    const inner = this[INNER]
+    const borrowed_for = inner.borrowed_for;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    this[BORROWED_FOR] = BorrowReason.QUERY;
-    let connection = this._connection;
+    inner.borrowed_for = BorrowReason.QUERY;
+    let connection = inner.connection;
     if (!connection || connection.isClosed()) {
-      connection = await this._reconnect();
+      connection = await inner.reconnect();
     }
     try {
       return await connection.fetch(query, args, true, false);
     } finally {
-      this[BORROWED_FOR] = undefined;
+      inner.borrowed_for = undefined;
     }
   }
 
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
-    const borrowed_for = this[BORROWED_FOR];
+    const inner = this[INNER];
+    const borrowed_for = inner.borrowed_for;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    this[BORROWED_FOR] = BorrowReason.QUERY;
-    let connection = this._connection;
+    inner.borrowed_for = BorrowReason.QUERY;
+    let connection = inner.connection;
     if (!connection || connection.isClosed()) {
-      connection = await this._reconnect();
+      connection = await inner.reconnect();
     }
     try {
       return await connection.fetch(query, args, false, true);
     } finally {
-      this[BORROWED_FOR] = undefined;
+      inner.borrowed_for = undefined;
     }
   }
 
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    const borrowed_for = this[BORROWED_FOR];
+    const inner = this[INNER];
+    const borrowed_for = inner.borrowed_for;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    this[BORROWED_FOR] = BorrowReason.QUERY;
-    let connection = this._connection;
+    inner.borrowed_for = BorrowReason.QUERY;
+    let connection = inner.connection;
     if (!connection || connection.isClosed()) {
-      connection = await this._reconnect();
+      connection = await inner.reconnect();
     }
     try {
       return await connection.fetch(query, args, true, true);
     } finally {
-      this[BORROWED_FOR] = undefined;
+      inner.borrowed_for = undefined;
     }
   }
 
-  private async _reconnect(
+  /** @internal */
+  static async connect(
+    config: NormalizedConnectConfig
+  ): Promise<StandaloneConnection> {
+    const conn = new StandaloneConnection(config);
+    await conn[INNER].reconnect();
+    return conn;
+  }
+}
+
+export class InnerConnection {
+  borrowed_for?: BorrowReason;
+  config: NormalizedConnectConfig;
+  connection?: ConnectionImpl;
+  _isClosed: boolean; // For compatibility
+
+  constructor(config: NormalizedConnectConfig) {
+    this.config = config;
+    this._isClosed = false;
+  }
+
+  async getImpl(singleAttempt: boolean = false): Promise<ConnectionImpl> {
+    let connection = this.connection;
+    if (!connection || connection.isClosed()) {
+      connection = await this.reconnect(singleAttempt);
+    }
+    return connection;
+  }
+
+  isClosed(): boolean {
+    return this._isClosed
+  }
+
+  async reconnect(
     singleAttempt: boolean = false
   ): Promise<ConnectionImpl> {
     if (this._isClosed) {
@@ -394,11 +410,11 @@ class StandaloneConnection implements Connection {
     while (true) {
       for (const addr of this.config.addrs) {
         try {
-          this._connection = await ConnectionImpl.connectWithTimeout(
+          this.connection = await ConnectionImpl.connectWithTimeout(
             addr,
             this.config
           );
-          return this._connection;
+          return this.connection;
         } catch (e) {
           if (e instanceof errors.ClientConnectionError) {
             if (e.hasTag(errors.SHOULD_RECONNECT)) {
@@ -419,18 +435,9 @@ class StandaloneConnection implements Connection {
       await sleep(Math.trunc(10 + Math.random() * 200));
     }
   }
-  /** @internal */
-  static async connect(
-    config: NormalizedConnectConfig
-  ): Promise<StandaloneConnection> {
-    const conn = new StandaloneConnection(config);
-    await conn._reconnect();
-    return conn;
-  }
 }
 
 export class ConnectionImpl {
-  [ALLOW_MODIFICATIONS]: never;
   private sock: net.Socket;
   private config: NormalizedConnectConfig;
   private paused: boolean;

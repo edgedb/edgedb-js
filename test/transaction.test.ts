@@ -29,7 +29,11 @@ async function run(test: (con: Connection) => Promise<void>): Promise<void> {
   try {
     await test(connection);
   } finally {
-    await connection.close();
+    try {
+        await connection.close();
+    } catch(e) {
+        console.error("Error closing connection", e)
+    }
   }
 }
 
