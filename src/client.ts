@@ -94,11 +94,6 @@ function default_backoff(attempt: number): number {
   return 2 ** attempt * 100 + Math.random() * 100;
 }
 
-/* Internal mapping used to break strong reference between
- * connections and their pool proxies.
- */
-export const proxyMap = new WeakMap<Connection, IConnectionProxied>();
-
 export default function connect(
   dsn?: string | ConnectConfig | null,
   options?: ConnectConfig | null
@@ -153,9 +148,21 @@ export class StandaloneConnection implements Connection {
   [INNER]: InnerConnection;
   [OPTIONS]: Options;
 
-  protected constructor(config: NormalizedConnectConfig) {
-    this[INNER] = new InnerConnection(config)
+  /** @internal */
+  constructor(config: NormalizedConnectConfig) {
+    this.initInner(config);
     this[OPTIONS] = Options.defaults();
+  }
+
+  protected initInner(config: NormalizedConnectConfig) {
+    this[INNER] = new InnerConnection(config)
+  }
+
+  protected shallowClone(): this {
+    const result = Object.create(this.constructor.prototype);
+    result[INNER] = this[INNER];
+    result[OPTIONS] = this[OPTIONS];
+    return result;
   }
 
   async transaction<T>(
@@ -257,12 +264,14 @@ export class StandaloneConnection implements Connection {
         this[INNER].connection = undefined;
         this[INNER]._isClosed = true;
       } finally {
-        // TODO(tailhook) figure out
-        // this[INNER].cleanupProxy();
+        this.cleanup();
       }
     } finally {
       this[INNER].borrowed_for = undefined;
     }
+  }
+
+  protected cleanup() {
   }
 
   isClosed(): boolean {
@@ -360,10 +369,11 @@ export class StandaloneConnection implements Connection {
   }
 
   /** @internal */
-  static async connect(
+  static async connect<S extends StandaloneConnection>(
+    this: new(config: NormalizedConnectConfig) => S,
     config: NormalizedConnectConfig
-  ): Promise<StandaloneConnection> {
-    const conn = new StandaloneConnection(config);
+  ): Promise<S> {
+    const conn = new this(config);
     await conn[INNER].reconnect();
     return conn;
   }

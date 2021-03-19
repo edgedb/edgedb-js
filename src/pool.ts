@@ -17,15 +17,17 @@
  */
 
 import * as errors from "./errors";
-import {ConnectConfig, NormalizedConnectConfig} from "./con_utils";
+import {ConnectConfig} from "./con_utils";
+import {parseConnectArguments, NormalizedConnectConfig} from "./con_utils";
 import {LifoQueue} from "./queues";
 import {Set} from "./datatypes/set";
 
-import connect, {proxyMap, ConnectionImpl} from "./client";
+import {ConnectionImpl, InnerConnection} from "./client";
 import {StandaloneConnection} from "./client";
 
 import {
   ALLOW_MODIFICATIONS,
+  INNER,
   QueryArgs,
   Connection,
   IConnectionProxied,
@@ -35,6 +37,10 @@ import {
   TransactionOptions,
 } from "./ifaces";
 import {Transaction} from "./transaction";
+
+const DETACH = Symbol("detach");
+const DETACHED = Symbol("detached");
+export const HOLDER = Symbol("holder");
 
 export class Deferred<T> {
   private _promise: Promise<T>;
@@ -91,10 +97,9 @@ export class Deferred<T> {
 
 class PoolConnectionHolder {
   private _pool: PoolImpl;
-  private _proxy: PoolConnectionProxy | null;
   private _onAcquire?: (proxy: Connection) => Promise<void>;
   private _onRelease?: (proxy: Connection) => Promise<void>;
-  private _connection: Connection | null;
+  private _connection: PoolConnection | null;
   private _generation: number | null;
   private _inUse: Deferred<void> | null;
 
@@ -107,7 +112,6 @@ class PoolConnectionHolder {
     this._onAcquire = onAcquire;
     this._onRelease = onRelease;
     this._connection = null;
-    this._proxy = null;
     this._inUse = null;
     this._generation = null;
   }
@@ -142,28 +146,27 @@ class PoolConnectionHolder {
     }
 
     this._connection = await this._pool.getNewConnection();
+    this._connection[INNER][HOLDER] = this;
     this._generation = this._pool.generation;
   }
 
-  async acquire(): Promise<PoolConnectionProxy> {
-    throw Error("not implemented");
-    /*
+  async acquire(): Promise<PoolConnection> {
     if (this._connection === null || this._connection.isClosed()) {
       this._connection = null;
       await this.connect();
     } else if (this._generation !== this._pool.generation) {
       // Connections have been expired, re-connect the holder.
-      await this._connection.close();
+
+      // Do closure in aconcurrent task, hence no await
+      this._connection.close();
+
       this._connection = null;
       await this.connect();
     }
 
-    const proxy = new PoolConnectionProxy(this, this.getConnectionOrThrow());
-    this._proxy = proxy;
-
     if (this._onAcquire) {
       try {
-        await this._onAcquire(proxy);
+        await this._onAcquire(this._connection!);
       } catch (error) {
         // If a user-defined `onAcquire` function fails, we don't
         // know if the connection is safe for re-use, hence
@@ -181,13 +184,10 @@ class PoolConnectionHolder {
     }
 
     this._inUse = new Deferred<void>();
-    return proxy;
-      */
+    return this._connection!;
   }
 
   async release(): Promise<void> {
-    throw Error("not implemented")
-    /*
     if (this._inUse === null) {
       throw new errors.ClientError(
         "PoolConnectionHolder.release() called on " +
@@ -209,27 +209,29 @@ class PoolConnectionHolder {
       return;
     }
 
-    if (this._onRelease && this._proxy) {
+    if (this._onRelease && this._connection) {
       try {
-        await this._onRelease(this._proxy);
+        await this._onRelease(this._connection);
       } catch (error) {
-        // If a user-defined `onRelease` function fails, we don't
-        // know if the connection is safe for re-use, hence
-        // we close it.  A new connection will be created
-        // when `acquire` is called again.
-        await this._connection?.close();
-        // Use `close()` to close the connection gracefully.
-        // An exception in `setup` isn't necessarily caused
-        // by an IO or a protocol error.  close() will
-        // do the necessary cleanup via releaseOnClose().
-        throw error;
+        try {
+            // If a user-defined `onRelease` function fails, we don't
+            // know if the connection is safe for re-use, hence
+            // we close it.  A new connection will be created
+            // when `acquire` is called again.
+            await this._connection?.close();
+            // Use `close()` to close the connection gracefully.
+            // An exception in `setup` isn't necessarily caused
+            // by an IO or a protocol error.  close() will
+            // do the necessary cleanup via releaseOnClose().
+        } finally {
+            throw error;
+        }
       }
     }
 
     // Free this connection holder and invalidate the
     // connection proxy.
     await this._release();
-    */
   }
 
   /** @internal */
@@ -267,41 +269,54 @@ class PoolConnectionHolder {
 
     this._inUse = null;
 
-    // Deinitialize the connection proxy.  All subsequent
-    // operations on it will fail.
-    if (this._proxy !== null) {
-      // ts ignore below because detach is private
-      this._proxy[detach]();
-      this._proxy = null;
-    }
+    this._connection = this._connection![DETACH]();
 
     // Put ourselves back to the pool queue.
     this._pool.enqueue(this);
   }
 }
 
-const HOLDER = Symbol("holder");
-const detach = Symbol("detach");
-export const getHolder = Symbol("getHolder");
-const connectionAttr = Symbol("connection");
-export const unwrapConnection = Symbol("unwrap");
-const isDetached = Symbol("isDetached");
+export class PoolInnerConnection extends InnerConnection {
+    private [DETACHED]: boolean;
+    private [HOLDER]: PoolConnectionHolder;
+    constructor(config: NormalizedConnectConfig) {
+        super(config)
+        this[DETACHED] = false
+    }
+    detach() {
+        const impl = this.connection
+        this.connection = undefined
+        const cls = this.constructor;
+        const result = new PoolInnerConnection(this.config);
+        result.connection = impl;
+        return result
+    }
+}
 
-export class PoolConnectionProxy extends StandaloneConnection {
-  [HOLDER]: PoolConnectionHolder;
+export class PoolConnection extends StandaloneConnection {
+  [INNER]: PoolInnerConnection;
 
-  constructor(holder: PoolConnectionHolder, config: NormalizedConnectConfig) {
-    super(config);
-    this[HOLDER] = holder;
+  protected initInner(config: NormalizedConnectConfig) {
+    this[INNER] = new PoolInnerConnection(config)
   }
 
-  close(): Promise<void> {
-    throw new errors.InterfaceError("The proxy cannot be closed");
+  protected cleanup() {
+    if(this[INNER][HOLDER]) {
+      this[INNER][HOLDER]._releaseOnClose();
+    }
   }
 
-  /** @internal */
-  [detach](): Connection | null {
-    throw Error("not implemented");
+  [DETACH](): PoolConnection | null {
+    const result = this.shallowClone();
+    const inner = this[INNER]
+    const holder = inner[HOLDER]
+    const detached = inner[DETACHED]
+    inner[HOLDER] = holder
+    inner[DETACHED] = detached
+    result[INNER] = inner.detach()
+    result[INNER][HOLDER] = holder
+    result[INNER][DETACHED] = detached
+    return result;
   }
 }
 
@@ -315,10 +330,7 @@ export interface PoolOptions {
   onAcquire?: (proxy: Connection) => Promise<void>;
   onRelease?: (proxy: Connection) => Promise<void>;
   onConnect?: (connection: Connection) => Promise<void>;
-  connectionFactory?: (
-    dsn: string | undefined,
-    options?: ConnectConfig | null
-  ) => Promise<Connection>;
+  connectionFactory?: (options: NormalizedConnectConfig) => Promise<PoolConnection>;
 }
 
 export class PoolStats implements IPoolStats {
@@ -348,6 +360,10 @@ export class PoolStats implements IPoolStats {
   }
 }
 
+export function connect(config: NormalizedConnectConfig): Promise<PoolConnection> {
+  return PoolConnection.connect(config)
+}
+
 /**
  * A connection pool.
  *
@@ -370,12 +386,9 @@ class PoolImpl implements Pool {
   private _onAcquire?: (proxy: Connection) => Promise<void>;
   private _onRelease?: (proxy: Connection) => Promise<void>;
   private _onConnect?: (connection: Connection) => Promise<void>;
-  private _connectionFactory: (
-    dsn: string | undefined,
-    options?: ConnectConfig | null
-  ) => Promise<Connection>;
+  private _connectionFactory: (options: NormalizedConnectConfig) => Promise<PoolConnection>;
   private _generation: number;
-  private _connectOptions: ConnectConfig;
+  private _connectOptions: NormalizedConnectConfig;
 
   protected constructor(dsn?: string, options: PoolOptions = {}) {
     const {onAcquire, onRelease, onConnect, connectOptions} = options;
@@ -398,7 +411,7 @@ class PoolImpl implements Pool {
     this._closing = false;
     this._closed = false;
     this._generation = 0;
-    this._connectOptions = {...connectOptions, dsn};
+    this._connectOptions = parseConnectArguments({...connectOptions, dsn});
     this._connectionFactory = options.connectionFactory ?? connect;
   }
 
@@ -524,9 +537,8 @@ class PoolImpl implements Pool {
   }
 
   /** @internal */
-  async getNewConnection(): Promise<Connection> {
+  async getNewConnection(): Promise<PoolConnection> {
     const connection = await this._connectionFactory(
-      this._connectOptions.dsn,
       this._connectOptions
     );
 
@@ -567,7 +579,7 @@ class PoolImpl implements Pool {
     }
   }
 
-  async acquire(): Promise<PoolConnectionProxy> {
+  async acquire(): Promise<PoolConnection> {
     if (this._closing) {
       throw new errors.InterfaceError("The pool is closing");
     }
@@ -577,10 +589,10 @@ class PoolImpl implements Pool {
     }
 
     this._checkInit();
-    return await this._acquireConnectionProxy();
+    return await this._acquireConnection();
   }
 
-  private async _acquireConnectionProxy(): Promise<PoolConnectionProxy> {
+  private async _acquireConnection(): Promise<PoolConnection> {
     // Ref: asyncio_pool _acquire
 
     // gets the last item from the queue,
@@ -600,19 +612,16 @@ class PoolImpl implements Pool {
   /**
    * Release a database connection back to the pool.
    */
-  async release(connectionProxy: Connection): Promise<void> {
-    throw Error("not implemented");
-    /*
-    if (!(connectionProxy instanceof PoolConnectionProxy)) {
+  async release(connection: Connection): Promise<void> {
+    if (!(connection instanceof PoolConnection)) {
       throw new Error("a connection obtained via pool.acquire() was expected");
     }
 
-    if (connectionProxy[isDetached]()) {
-      // Already released, do nothing
-      return;
+    const holder = connection[INNER][HOLDER];
+    if (holder == null) {
+        // Already released, do nothing
+        return;
     }
-
-    const holder = connectionProxy[getHolder]();
     if (holder.pool !== this) {
       throw new errors.InterfaceError(
         "The connection proxy does not belong to this pool."
@@ -623,7 +632,6 @@ class PoolImpl implements Pool {
 
     // Let the connection do its internal housekeeping when it's released.
     return await holder.release();
-    */
   }
 
   /**

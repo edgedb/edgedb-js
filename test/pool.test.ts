@@ -18,11 +18,11 @@
 
 import * as errors from "../src/errors";
 import each from "jest-each";
-import {Deferred, createPool, getHolder, unwrapConnection} from "../src/pool";
+import {Deferred, createPool, HOLDER, PoolConnection} from "../src/pool";
 import {getPool, getConnectOptions} from "./testbase";
-import connect from "../src/client";
-import {Connection, Pool} from "../src/ifaces";
-import {ConnectConfig} from "../src/con_utils";
+import {connect} from "../src/pool";
+import {Connection, Pool, INNER} from "../src/ifaces";
+import {ConnectConfig, NormalizedConnectConfig} from "../src/con_utils";
 
 // Jest by default applies a test timeout of 5 seconds; some of the following
 // tests occasionally require more time to execute
@@ -38,11 +38,6 @@ class CrashTestError extends Error {
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
-function getProxyConnection(proxy: Connection): Connection {
-  // @ts-ignore
-  return proxy[unwrapConnection]();
 }
 
 describe("pool.initialize: creates minSize count of connections", () => {
@@ -76,7 +71,7 @@ describe("pool.initialize: creates minSize count of connections", () => {
   );
 });
 
-test("pool.query: basic scalars", async () => {
+test.only("pool.query: basic scalars", async () => {
   const pool = await getPool();
 
   let res = await pool.query("select {'a', 'bc'}");
@@ -166,9 +161,9 @@ describe("pool concurrency 1", () => {
       });
 
       async function work(): Promise<void> {
-        const proxy = await pool.acquire();
-        expect(await proxy.queryOne("SELECT 1")).toBe(1);
-        await pool.release(proxy);
+        const conn = await pool.acquire();
+        expect(await conn.queryOne("SELECT 1")).toBe(1);
+        await pool.release(conn);
       }
 
       await Promise.all(
@@ -192,9 +187,9 @@ describe("pool concurrency 2", () => {
       });
 
       async function work(): Promise<void> {
-        const proxy = await pool.acquire();
-        expect(await proxy.queryOne("SELECT 1")).toBe(1);
-        await pool.release(proxy);
+        const conn = await pool.acquire();
+        expect(await conn.queryOne("SELECT 1")).toBe(1);
+        await pool.release(conn);
       }
 
       await Promise.all(
@@ -249,11 +244,11 @@ test("pool.onAcquire callback", async () => {
     onAcquire,
   });
 
-  const proxy = await pool.acquire();
-  await pool.release(proxy);
+  const conn = await pool.acquire();
+  await pool.release(conn);
 
   expect(deferred.done).toBe(true);
-  expect(deferred.result).toBe(proxy);
+  expect(deferred.result).toBe(conn);
 
   await pool.close();
 });
@@ -273,11 +268,11 @@ test("pool.onRelease callback", async () => {
     onRelease,
   });
 
-  const proxy = await pool.acquire();
-  await pool.release(proxy);
+  const conn = await pool.acquire();
+  await pool.release(conn);
 
   expect(deferred.done).toBe(true);
-  expect(deferred.result).toBe(proxy);
+  expect(deferred.result).toBe(conn);
 
   await pool.close();
 });
@@ -290,8 +285,8 @@ test(
     // the pool are created (concurrency is 2x max size).
     const connections: Connection[] = [];
 
-    async function onAcquire(proxy: Connection): Promise<void> {
-      if (connections.indexOf(getProxyConnection(proxy)) === -1) {
+    async function onAcquire(conn: Connection): Promise<void> {
+      if (connections.indexOf(conn) === -1) {
         throw new Error("onAcquire was not called");
       }
     }
@@ -304,13 +299,13 @@ test(
     }
 
     async function user(pool: Pool): Promise<void> {
-      const proxy = await pool.acquire();
+      const conn = await pool.acquire();
 
-      if (connections.indexOf(getProxyConnection(proxy)) === -1) {
+      if (connections.indexOf(conn) === -1) {
         throw new Error("init was not called");
       }
 
-      await pool.release(proxy);
+      await pool.release(conn);
     }
 
     const _pool = await createPool(undefined, {
@@ -331,7 +326,7 @@ test(
 );
 
 test(
-  "pool.release raises for foreign connection proxy",
+  "pool.release raises for foreign connection",
   async () => {
     const pool1 = await createPool(undefined, {
       connectOptions: getConnectOptions(),
@@ -344,14 +339,14 @@ test(
       maxSize: 1,
     });
 
-    const proxy = await pool1.acquire();
+    const conn = await pool1.acquire();
 
     try {
-      await expect(pool2.release(proxy)).rejects.toThrow(
-        "The connection proxy does not belong to this pool."
+      await expect(pool2.release(conn)).rejects.toThrow(
+        "The connection does not belong to this pool."
       );
     } finally {
-      await pool1.release(proxy);
+      await pool1.release(conn);
     }
 
     await pool1.close();
@@ -369,10 +364,10 @@ test(
       maxSize: 1,
     });
 
-    const proxy = await pool.acquire();
+    const conn = await pool.acquire();
 
-    await pool.release(proxy);
-    await pool.release(proxy);
+    await pool.release(conn);
+    await pool.release(conn);
 
     await pool.close();
   },
@@ -388,10 +383,10 @@ test(
       maxSize: 1,
     });
 
-    const proxy = await pool.acquire();
+    const conn = await pool.acquire();
 
-    await pool.release(proxy);
-    await pool.release(proxy);
+    await pool.release(conn);
+    await pool.release(conn);
 
     await pool.close();
   },
@@ -399,9 +394,9 @@ test(
 );
 
 test(
-  "a released proxy cannot be used to query",
+  "a released connection cannot be used to query",
   async () => {
-    // This method tests that a released connection proxy cannot be used to
+    // This method tests that a released connection cannot be used to
     // do further queries
     const pool = await createPool(undefined, {
       connectOptions: getConnectOptions(),
@@ -409,12 +404,12 @@ test(
       maxSize: 1,
     });
 
-    const proxy = await pool.acquire();
+    const conn = await pool.acquire();
 
-    await pool.release(proxy);
+    await pool.release(conn);
 
     async function failing(): Promise<void> {
-      await proxy.query("select 1");
+      await conn.query("select 1");
     }
 
     await expect(failing()).rejects.toThrow("The proxy is detached");
@@ -464,10 +459,10 @@ test(
     expect(lastProxy.isClosed()).toBe(true);
 
     // the next call to acquire works
-    const proxy = await pool.acquire();
-    expect(proxies).toEqual(["error", proxy]);
+    const conn = await pool.acquire();
+    expect(proxies).toEqual(["error", conn]);
 
-    await pool.release(proxy);
+    await pool.release(conn);
     await pool.close();
   },
   BiggerTimeout
@@ -508,15 +503,15 @@ test(
     expect(lastConnection.isClosed()).toBe(true);
 
     // the next call to acquire works
-    const proxy = await pool.acquire();
+    const conn = await pool.acquire();
 
     expect(connections.length).toEqual(2);
     expect(connections[0]).toBe("error");
-    expect(connections[1]).toBe(getProxyConnection(proxy));
+    expect(connections[1]).toBe(conn);
 
     expect(await lastConnection.queryOne("select 1")).toBe(1);
 
-    await pool.release(proxy);
+    await pool.release(conn);
     await pool.close();
   },
   BiggerTimeout
@@ -542,10 +537,10 @@ test(
     sleepAndRelease();
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const proxy = await pool.acquire();
+    const conn = await pool.acquire();
 
-    expect(await proxy.queryOne("SELECT 1")).toBe(1);
-    await pool.release(proxy);
+    expect(await conn.queryOne("SELECT 1")).toBe(1);
+    await pool.release(conn);
     await pool.close();
   },
   BiggerTimeout
@@ -576,12 +571,9 @@ test(
   async () => {
     let calls = 0;
 
-    async function connectionFactory(
-      dsn: string | undefined,
-      options?: ConnectConfig | null
-    ): Promise<Connection> {
+    async function connectionFactory(options: NormalizedConnectConfig): Promise<PoolConnection> {
       calls += 1;
-      return await connect(dsn, options);
+      return await connect(options);
     }
 
     const pool = await createPool(undefined, {
@@ -662,13 +654,13 @@ test(
     });
 
     async function work(): Promise<void> {
-      const proxy = await pool.acquire();
+      const conn = await pool.acquire();
 
       flag.setResult(true);
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       connectionReleased = true;
-      await pool.release(proxy);
+      await pool.release(conn);
     }
 
     work();
@@ -689,17 +681,17 @@ test(
       maxSize: 1,
     });
 
-    const proxy = await pool.acquire();
+    const conn = await pool.acquire();
 
     try {
       pool.expireConnections();
     } finally {
-      await pool.release(proxy);
+      await pool.release(conn);
     }
 
     try {
       // @ts-ignore
-      const holder = proxy[getHolder]();
+      const holder = conn[INNER][HOLDER]();
       expect(holder.connection).toBeNull();
     } finally {
       await pool.close();
@@ -780,8 +772,8 @@ describe("pool.getStats: includes queue length", () => {
         expect(stats.queueLength).toBe(Math.max(0, requests - maxSize));
       } finally {
         // release proxies
-        for (const proxy of firstPromises) {
-          await pool.release(proxy);
+        for (const conn of firstPromises) {
+          await pool.release(conn);
         }
 
         if (requests > maxSize) {
