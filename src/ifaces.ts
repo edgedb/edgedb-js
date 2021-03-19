@@ -26,7 +26,8 @@ import {
 } from "./datatypes/datetime";
 import {Transaction} from "./transaction";
 import {InnerConnection, ConnectionImpl} from "./client";
-import {Options} from "./options";
+import {Options, RetryOptions, TransactionOptions} from "./options";
+import {PartialRetryRule} from "./options";
 
 import {Set} from "./datatypes/set";
 
@@ -47,21 +48,10 @@ type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
 
 export type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
 
-export enum IsolationLevel {
-  SERIALIZABLE = "serializable",
-  REPEATABLE_READ = "repeatable_read",
-}
-
 export enum BorrowReason {
   TRANSACTION = "transaction",
   QUERY = "query",
   CLOSE = "close",
-}
-
-export interface TransactionOptions {
-  deferrable?: boolean;
-  isolation?: IsolationLevel;
-  readonly?: boolean;
 }
 
 export interface ReadOnlyExecutor {
@@ -86,11 +76,11 @@ interface Modifiable {
 export type Executor = ReadOnlyExecutor & Modifiable;
 
 export interface Connection extends Executor {
-  [INNER]: InnerConnection;
-  [OPTIONS]: Options;
+  //[INNER]: InnerConnection;
+  //[OPTIONS]: Options;
   transaction<T>(
     action: () => Promise<T>,
-    options?: TransactionOptions
+    options?: Partial<TransactionOptions>
   ): Promise<T>;
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
@@ -98,12 +88,10 @@ export interface Connection extends Executor {
   retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
-  /*
   withTransactionOptions(
     opt: TransactionOptions | Partial<TransactionOptions>
   ): Connection;
   withRetryOptions(opt: RetryOptions | PartialRetryRule): Connection;
-  */
   close(): Promise<void>;
   isClosed(): boolean;
 }
@@ -116,7 +104,7 @@ export interface IPoolStats {
 export interface Pool extends Executor {
   transaction<T>(
     action: () => Promise<T>,
-    options?: TransactionOptions
+    options?: Partial<TransactionOptions>
   ): Promise<T>;
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
@@ -124,12 +112,10 @@ export interface Pool extends Executor {
   retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
-  /*
   withTransactionOptions(
     opt: TransactionOptions | Partial<TransactionOptions>
   ): Connection;
   withRetryOptions(opt: RetryOptions | PartialRetryRule): Connection;
-  */
   close(): Promise<void>;
   isClosed(): boolean;
 

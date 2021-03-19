@@ -19,7 +19,8 @@
 import * as errors from "../src/errors";
 import {asyncConnect} from "./testbase";
 import {Transaction, TransactionState} from "../src/transaction";
-import {Connection, IsolationLevel} from "../src/ifaces";
+import {Connection} from "../src/ifaces";
+import {IsolationLevel} from "../src/options";
 
 class Barrier {
   _counter: number;
@@ -66,10 +67,18 @@ async function run2(
     try {
       await test(connection, connection2);
     } finally {
-      await connection2.close();
+        try {
+          await connection2.close();
+        } catch(e) {
+            console.error("Error closing connection", e)
+        }
     }
   } finally {
-    await connection.close();
+    try {
+        await connection.close();
+    } catch(e) {
+        console.error("Error closing connection", e)
+    }
   }
 }
 

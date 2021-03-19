@@ -24,7 +24,8 @@ import {Set} from "./datatypes/set";
 
 import {ConnectionImpl, InnerConnection} from "./client";
 import {StandaloneConnection} from "./client";
-import {Options} from "./options";
+import {Options, RetryOptions, TransactionOptions} from "./options";
+import {PartialRetryRule} from "./options";
 
 import {
   ALLOW_MODIFICATIONS,
@@ -36,7 +37,6 @@ import {
   Pool,
   IPoolStats,
   onConnectionClose,
-  TransactionOptions,
 } from "./ifaces";
 import {Transaction} from "./transaction";
 
@@ -384,6 +384,28 @@ class PoolShell implements Pool {
     this.impl = new PoolImpl(dsn, options)
     this.options = Options.defaults()
   }
+
+  protected shallowClone(): this {
+    const result = Object.create(this.constructor.prototype);
+    result.impl = this.impl;
+    result.options = this.options;
+    return result;
+  }
+
+  withTransactionOptions(
+    opt: TransactionOptions | Partial<TransactionOptions>
+  ): this {
+    let result = this.shallowClone();
+    result.options = this.options.withTransactionOptions(opt)
+    return result
+  }
+
+  withRetryOptions(opt: RetryOptions | PartialRetryRule): this {
+    let result = this.shallowClone();
+    result.options = this.options.withRetryOptions(opt)
+    return result
+  }
+
   /**
    * Get information about the current state of the pool.
    */

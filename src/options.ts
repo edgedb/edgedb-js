@@ -24,7 +24,7 @@ class RetryRule {
   }
 }
 
-interface PartialRetryRule {
+export interface PartialRetryRule {
   condition?: RetryCondition;
   attempts?: number;
   backoff?: BackoffFunction;

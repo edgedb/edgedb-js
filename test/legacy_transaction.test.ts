@@ -23,7 +23,8 @@ import {
   Transaction,
   TransactionState,
 } from "../src/legacy_transaction";
-import {Connection, IsolationLevel} from "../src/ifaces";
+import {Connection} from "../src/ifaces";
+import {IsolationLevel} from "../src/options";
 
 const typename = "TransactionTest";
 
@@ -162,7 +163,7 @@ test("transaction_nested_02", async () => {
         });
       },
       {
-        isolation: IsolationLevel.REPEATABLE_READ,
+        isolation: IsolationLevel.RepeatableRead,
       }
     );
 
@@ -174,12 +175,12 @@ test("transaction_nested_02", async () => {
               // ...
             },
             {
-              isolation: IsolationLevel.SERIALIZABLE,
+              isolation: IsolationLevel.Serializable,
             }
           );
         },
         {
-          isolation: IsolationLevel.REPEATABLE_READ,
+          isolation: IsolationLevel.RepeatableRead,
         }
       );
     }
@@ -187,7 +188,7 @@ test("transaction_nested_02", async () => {
     await expect(faulty1()).rejects.toThrowError(
       new errors.InterfaceError(
         "nested transaction has a different isolation level: " +
-          "current serializable != outer repeatable_read"
+          "current SERIALIZABLE != outer REPEATABLE READ"
       )
     );
 

@@ -19,7 +19,8 @@
 import * as errors from "../src/errors";
 import {asyncConnect} from "./testbase";
 import {Transaction, TransactionState} from "../src/transaction";
-import {Connection, IsolationLevel} from "../src/ifaces";
+import {Connection} from "../src/ifaces";
+import {IsolationLevel} from "../src/options";
 
 const typename = "TransactionTest";
 

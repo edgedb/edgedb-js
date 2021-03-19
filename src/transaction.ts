@@ -16,12 +16,14 @@
  * limitations under the License.
  */
 import * as errors from "./errors";
-import {BorrowReason, Connection, TransactionOptions} from "./ifaces";
+import {BorrowReason, Connection} from "./ifaces";
 import {Executor, QueryArgs} from "./ifaces";
 import {ALLOW_MODIFICATIONS, INNER} from "./ifaces";
 import {getUniqueId} from "./utils";
 import {ConnectionImpl, InnerConnection, borrowError} from "./client";
+import {StandaloneConnection} from "./client";
 import {Set} from "./datatypes/set";
+import {TransactionOptions, IsolationLevel} from "./options";
 
 export enum TransactionState {
   NEW = 0,
@@ -31,29 +33,23 @@ export enum TransactionState {
   FAILED = 4,
 }
 
-export enum IsolationLevel {
-  SERIALIZABLE = "serializable",
-  REPEATABLE_READ = "repeatable_read",
-}
-
 export const START_TRANSACTION_IMPL = Symbol("START_TRANSACTION_IMPL");
 
 export class Transaction implements Executor {
   [ALLOW_MODIFICATIONS]: never;
-  _connection: Connection;
+  _connection: StandaloneConnection;
   _inner?: InnerConnection;
   _impl?: ConnectionImpl;
-  _deferrable?: boolean;
-  _isolation?: IsolationLevel;
-  _readonly?: boolean;
+  _deferrable: boolean;
+  _isolation: IsolationLevel;
+  _readonly: boolean;
   _state: TransactionState;
   _opInProgress: boolean;
 
-  constructor(connection: Connection, options?: TransactionOptions) {
-    if (options === undefined) {
-      options = {};
-    }
-    this._connection = connection;
+  constructor(connection: Connection, options: TransactionOptions = TransactionOptions.defaults()) {
+    console.assert(connection instanceof StandaloneConnection,
+      "connection is of unkwown type for transaction");
+    this._connection = connection as StandaloneConnection;
     this._deferrable = options.deferrable;
     this._isolation = options.isolation;
     this._readonly = options.readonly;
@@ -107,29 +103,24 @@ export class Transaction implements Executor {
       );
     }
 
-    let query: string = "START TRANSACTION";
 
-    if (this._isolation === IsolationLevel.REPEATABLE_READ) {
-      query = "START TRANSACTION ISOLATION REPEATABLE READ";
-    } else if (this._isolation === IsolationLevel.SERIALIZABLE) {
-      query = "START TRANSACTION ISOLATION SERIALIZABLE";
-    }
+    const isolation = this._isolation;
 
+    let mode;
     if (this._readonly) {
-      query += " READ ONLY";
+      mode = "READ ONLY";
     } else if (this._readonly !== undefined) {
-      query += " READ WRITE";
+      mode = "READ WRITE";
     }
 
+    let defer;
     if (this._deferrable) {
-      query += " DEFERRABLE";
+      defer = "DEFERRABLE";
     } else if (this._deferrable !== undefined) {
-      query += " NOT DEFERRABLE";
+      defer = "NOT DEFERRABLE";
     }
 
-    query += ";";
-
-    return query;
+    return `START TRANSACTION ISOLATION ${isolation}, ${mode}, ${defer};`
   }
 
   protected _makeCommitQuery(): string {

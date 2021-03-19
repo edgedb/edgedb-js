@@ -43,12 +43,12 @@ import {
   BorrowReason,
   IConnectionProxied,
   onConnectionClose,
-  TransactionOptions,
   ParseOptions,
   PrepareMessageHeaders,
 } from "./ifaces";
 import * as scram from "./scram";
-import {Options} from "./options";
+import {Options, RetryOptions, TransactionOptions} from "./options";
+import {PartialRetryRule} from "./options";
 
 import {
   parseConnectArguments,
@@ -165,9 +165,23 @@ export class StandaloneConnection implements Connection {
     return result;
   }
 
+  withTransactionOptions(
+    opt: TransactionOptions | Partial<TransactionOptions>
+  ): this {
+    let result = this.shallowClone();
+    result[OPTIONS] = this[OPTIONS].withTransactionOptions(opt)
+    return result
+  }
+
+  withRetryOptions(opt: RetryOptions | PartialRetryRule): this {
+    let result = this.shallowClone();
+    result[OPTIONS] = this[OPTIONS].withRetryOptions(opt)
+    return result
+  }
+
   async transaction<T>(
     action: () => Promise<T>,
-    options?: TransactionOptions
+    options?: Partial<TransactionOptions>
   ): Promise<T> {
     let result: T;
     // tslint:disable-next-line: no-console
@@ -1506,7 +1520,7 @@ export class RawConnection extends ConnectionImpl {
 
   async transaction<T>(
     action: () => Promise<T>,
-    options?: TransactionOptions
+    options?: Partial<TransactionOptions>
   ): Promise<T> {
     throw new Error("not implemented");
   }
