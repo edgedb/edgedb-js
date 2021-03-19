@@ -20,7 +20,7 @@ import * as errors from "../src/errors";
 import {asyncConnect} from "./testbase";
 import {Transaction, TransactionState} from "../src/transaction";
 import {Connection} from "../src/ifaces";
-import {IsolationLevel} from "../src/options";
+import {TransactionOptions, IsolationLevel} from "../src/options";
 
 const typename = "TransactionTest";
 
@@ -166,5 +166,40 @@ test("transaction interface errors", async () => {
           "Use the methods on transaction object instead."
       )
     );
+  });
+});
+
+function* all_options(): Generator<[IsolationLevel | undefined, boolean | undefined, boolean | undefined], void, void> {
+    let levels = [
+        undefined,
+        IsolationLevel.Serializable,
+        IsolationLevel.RepeatableRead,
+    ]
+    let booleans = [undefined, true, false]
+    for(let isolation of levels) {
+        for(let readonly of booleans) {
+            for(let deferred of booleans) {
+                yield [isolation, readonly, deferred]
+            }
+        }
+    }
+}
+
+test("transaction: kinds", async () => {
+  await run(async (con) => {
+    for(let [isolation, readonly, defer] of all_options()) {
+      let partial = {isolation, readonly, defer}
+      await con.withTransactionOptions(partial)
+          .rawTransaction(async (tx) => {
+          });
+      await con.withTransactionOptions(partial)
+          .retryingTransaction(async (tx) => {
+          });
+      let opt = new TransactionOptions(partial)
+      await con.withTransactionOptions(opt)
+          .rawTransaction(async (tx) => { });
+      await con.withTransactionOptions(opt)
+          .retryingTransaction(async (tx) => { });
+    }
   });
 });
