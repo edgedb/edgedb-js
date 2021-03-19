@@ -67,17 +67,17 @@ async function run2(
     try {
       await test(connection, connection2);
     } finally {
-        try {
-          await connection2.close();
-        } catch(e) {
-            console.error("Error closing connection", e)
-        }
+      try {
+        await connection2.close();
+      } catch (e) {
+        console.error("Error closing connection", e);
+      }
     }
   } finally {
     try {
-        await connection.close();
-    } catch(e) {
-        console.error("Error closing connection", e)
+      await connection.close();
+    } catch (e) {
+      console.error("Error closing connection", e);
     }
   }
 }

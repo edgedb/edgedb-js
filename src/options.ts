@@ -60,12 +60,12 @@ export class RetryOptions {
 
   getRuleForException(err: errors.EdgeDBError): RetryRule {
     let result;
-    if(err instanceof errors.TransactionSerializationError) {
-        result = this.overrides.get(RetryCondition.SerializationError)
-    } else if(err instanceof errors.TransactionDeadlockError) {
-        result = this.overrides.get(RetryCondition.Deadlock)
-    } else if(err instanceof errors.ClientError) {
-        result = this.overrides.get(RetryCondition.NetworkError)
+    if (err instanceof errors.TransactionSerializationError) {
+      result = this.overrides.get(RetryCondition.SerializationError);
+    } else if (err instanceof errors.TransactionDeadlockError) {
+      result = this.overrides.get(RetryCondition.Deadlock);
+    } else if (err instanceof errors.ClientError) {
+      result = this.overrides.get(RetryCondition.NetworkError);
     }
     return result ?? this.default;
   }

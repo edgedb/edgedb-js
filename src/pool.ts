@@ -217,18 +217,19 @@ class PoolConnectionHolder {
         await this._onRelease(this._connection);
       } catch (error) {
         try {
-            // If a user-defined `onRelease` function fails, we don't
-            // know if the connection is safe for re-use, hence
-            // we close it.  A new connection will be created
-            // when `acquire` is called again.
-            await this._connection?.close();
-            // Use `close()` to close the connection gracefully.
-            // An exception in `setup` isn't necessarily caused
-            // by an IO or a protocol error.  close() will
-            // do the necessary cleanup via releaseOnClose().
-        } finally {
-            throw error;
+          // If a user-defined `onRelease` function fails, we don't
+          // know if the connection is safe for re-use, hence
+          // we close it.  A new connection will be created
+          // when `acquire` is called again.
+          await this._connection?.close();
+          // Use `close()` to close the connection gracefully.
+          // An exception in `setup` isn't necessarily caused
+          // by an IO or a protocol error.  close() will
+          // do the necessary cleanup via releaseOnClose().
+        } catch (e) {
+          // silence this error so original one is visible
         }
+        throw error;
       }
     }
 
@@ -280,45 +281,45 @@ class PoolConnectionHolder {
 }
 
 export class PoolInnerConnection extends InnerConnection {
-    private [DETACHED]: boolean;
-    private [HOLDER]: PoolConnectionHolder;
-    constructor(config: NormalizedConnectConfig) {
-        super(config)
-        this[DETACHED] = false
-    }
-    detach() {
-        const impl = this.connection
-        this.connection = undefined
-        const cls = this.constructor;
-        const result = new PoolInnerConnection(this.config);
-        result.connection = impl;
-        return result
-    }
+  private [DETACHED]: boolean;
+  private [HOLDER]: PoolConnectionHolder;
+  constructor(config: NormalizedConnectConfig) {
+    super(config);
+    this[DETACHED] = false;
+  }
+  detach(): PoolInnerConnection {
+    const impl = this.connection;
+    this.connection = undefined;
+    const cls = this.constructor;
+    const result = new PoolInnerConnection(this.config);
+    result.connection = impl;
+    return result;
+  }
 }
 
 export class PoolConnection extends StandaloneConnection {
   [INNER]: PoolInnerConnection;
 
-  protected initInner(config: NormalizedConnectConfig) {
-    this[INNER] = new PoolInnerConnection(config)
+  protected initInner(config: NormalizedConnectConfig): void {
+    this[INNER] = new PoolInnerConnection(config);
   }
 
-  protected cleanup() {
-    if(this[INNER][HOLDER]) {
+  protected cleanup(): void {
+    if (this[INNER][HOLDER]) {
       this[INNER][HOLDER]._releaseOnClose();
     }
   }
 
   [DETACH](): PoolConnection | null {
     const result = this.shallowClone();
-    const inner = this[INNER]
-    const holder = inner[HOLDER]
-    const detached = inner[DETACHED]
-    inner[HOLDER] = holder
-    inner[DETACHED] = detached
-    result[INNER] = inner.detach()
-    result[INNER][HOLDER] = holder
-    result[INNER][DETACHED] = detached
+    const inner = this[INNER];
+    const holder = inner[HOLDER];
+    const detached = inner[DETACHED];
+    inner[HOLDER] = holder;
+    inner[DETACHED] = detached;
+    result[INNER] = inner.detach();
+    result[INNER][HOLDER] = holder;
+    result[INNER][DETACHED] = detached;
     return result;
   }
 }
@@ -333,7 +334,9 @@ export interface PoolOptions {
   onAcquire?: (proxy: Connection) => Promise<void>;
   onRelease?: (proxy: Connection) => Promise<void>;
   onConnect?: (connection: Connection) => Promise<void>;
-  connectionFactory?: (options: NormalizedConnectConfig) => Promise<PoolConnection>;
+  connectionFactory?: (
+    options: NormalizedConnectConfig
+  ) => Promise<PoolConnection>;
 }
 
 export class PoolStats implements IPoolStats {
@@ -363,8 +366,10 @@ export class PoolStats implements IPoolStats {
   }
 }
 
-export function connect(config: NormalizedConnectConfig): Promise<PoolConnection> {
-  return PoolConnection.connect(config)
+export function connect(
+  config: NormalizedConnectConfig
+): Promise<PoolConnection> {
+  return PoolConnection.connect(config);
 }
 
 /**
@@ -381,8 +386,8 @@ class PoolShell implements Pool {
   impl: PoolImpl;
   options: Options;
   protected constructor(dsn?: string, options: PoolOptions = {}) {
-    this.impl = new PoolImpl(dsn, options)
-    this.options = Options.defaults()
+    this.impl = new PoolImpl(dsn, options);
+    this.options = Options.defaults();
   }
 
   protected shallowClone(): this {
@@ -395,22 +400,22 @@ class PoolShell implements Pool {
   withTransactionOptions(
     opt: TransactionOptions | Partial<TransactionOptions>
   ): this {
-    let result = this.shallowClone();
-    result.options = this.options.withTransactionOptions(opt)
-    return result
+    const result = this.shallowClone();
+    result.options = this.options.withTransactionOptions(opt);
+    return result;
   }
 
   withRetryOptions(opt: RetryOptions | PartialRetryRule): this {
-    let result = this.shallowClone();
-    result.options = this.options.withRetryOptions(opt)
-    return result
+    const result = this.shallowClone();
+    result.options = this.options.withRetryOptions(opt);
+    return result;
   }
 
   /**
    * Get information about the current state of the pool.
    */
   getStats(): PoolStats {
-    return this.impl.getStats()
+    return this.impl.getStats();
   }
 
   /** @internal */
@@ -430,11 +435,11 @@ class PoolShell implements Pool {
    * next Pool.acquire() call.
    */
   expireConnections(): void {
-    this.impl.expireConnections()
+    this.impl.expireConnections();
   }
 
   async acquire(): Promise<PoolConnection> {
-    return await this.impl.acquire(this.options)
+    return await this.impl.acquire(this.options);
   }
   /**
    * Release a database connection back to the pool.
@@ -521,7 +526,7 @@ class PoolShell implements Pool {
    * in ``close()``, the pool will terminate by calling ``terminate()``.
    */
   async close(): Promise<void> {
-    await this.impl.close()
+    await this.impl.close();
   }
 
   isClosed(): boolean {
@@ -532,9 +537,8 @@ class PoolShell implements Pool {
    * it returns without doing anything.
    */
   terminate(): void {
-    this.impl.terminate()
+    this.impl.terminate();
   }
-
 }
 
 class PoolImpl {
@@ -549,7 +553,9 @@ class PoolImpl {
   private _onAcquire?: (proxy: Connection) => Promise<void>;
   private _onRelease?: (proxy: Connection) => Promise<void>;
   private _onConnect?: (connection: Connection) => Promise<void>;
-  private _connectionFactory: (options: NormalizedConnectConfig) => Promise<PoolConnection>;
+  private _connectionFactory: (
+    options: NormalizedConnectConfig
+  ) => Promise<PoolConnection>;
   private _generation: number;
   private _connectOptions: NormalizedConnectConfig;
 
@@ -691,9 +697,7 @@ class PoolImpl {
 
   /** @internal */
   async getNewConnection(): Promise<PoolConnection> {
-    const connection = await this._connectionFactory(
-      this._connectOptions
-    );
+    const connection = await this._connectionFactory(this._connectOptions);
 
     if (this._onConnect) {
       try {
@@ -772,8 +776,8 @@ class PoolImpl {
 
     const holder = connection[INNER][HOLDER];
     if (holder == null) {
-        // Already released, do nothing
-        return;
+      // Already released, do nothing
+      return;
     }
     if (holder.pool !== this) {
       throw new errors.InterfaceError(

@@ -571,7 +571,9 @@ test(
   async () => {
     let calls = 0;
 
-    async function connectionFactory(options: NormalizedConnectConfig): Promise<PoolConnection> {
+    async function connectionFactory(
+      options: NormalizedConnectConfig
+    ): Promise<PoolConnection> {
       calls += 1;
       return await connect(options);
     }

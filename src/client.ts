@@ -154,8 +154,8 @@ export class StandaloneConnection implements Connection {
     this[OPTIONS] = Options.defaults();
   }
 
-  protected initInner(config: NormalizedConnectConfig) {
-    this[INNER] = new InnerConnection(config)
+  protected initInner(config: NormalizedConnectConfig): void {
+    this[INNER] = new InnerConnection(config);
   }
 
   protected shallowClone(): this {
@@ -168,15 +168,15 @@ export class StandaloneConnection implements Connection {
   withTransactionOptions(
     opt: TransactionOptions | Partial<TransactionOptions>
   ): this {
-    let result = this.shallowClone();
-    result[OPTIONS] = this[OPTIONS].withTransactionOptions(opt)
-    return result
+    const result = this.shallowClone();
+    result[OPTIONS] = this[OPTIONS].withTransactionOptions(opt);
+    return result;
   }
 
   withRetryOptions(opt: RetryOptions | PartialRetryRule): this {
-    let result = this.shallowClone();
-    result[OPTIONS] = this[OPTIONS].withRetryOptions(opt)
-    return result
+    const result = this.shallowClone();
+    result[OPTIONS] = this[OPTIONS].withRetryOptions(opt);
+    return result;
   }
 
   async transaction<T>(
@@ -245,11 +245,11 @@ export class StandaloneConnection implements Connection {
           err instanceof errors.EdgeDBError &&
           err.hasTag(errors.SHOULD_RETRY)
         ) {
-          let rule = this[OPTIONS].retryOptions.getRuleForException(err)
-          if(iteration + 1 >= rule.attempts) {
+          const rule = this[OPTIONS].retryOptions.getRuleForException(err);
+          if (iteration + 1 >= rule.attempts) {
             throw err;
           }
-          await sleep(rule.backoff(iteration+1));
+          await sleep(rule.backoff(iteration + 1));
           continue;
         }
         throw err;
@@ -288,7 +288,8 @@ export class StandaloneConnection implements Connection {
     }
   }
 
-  protected cleanup() {
+  protected cleanup(): void {
+    // empty
   }
 
   isClosed(): boolean {
@@ -296,7 +297,7 @@ export class StandaloneConnection implements Connection {
   }
 
   async execute(query: string): Promise<void> {
-    const inner = this[INNER]
+    const inner = this[INNER];
     const borrowed_for = inner.borrowed_for;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
@@ -332,7 +333,7 @@ export class StandaloneConnection implements Connection {
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    const inner = this[INNER]
+    const inner = this[INNER];
     const borrowed_for = inner.borrowed_for;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
@@ -387,7 +388,7 @@ export class StandaloneConnection implements Connection {
 
   /** @internal */
   static async connect<S extends StandaloneConnection>(
-    this: new(config: NormalizedConnectConfig) => S,
+    this: new (config: NormalizedConnectConfig) => S,
     config: NormalizedConnectConfig
   ): Promise<S> {
     const conn = new this(config);
@@ -416,12 +417,10 @@ export class InnerConnection {
   }
 
   isClosed(): boolean {
-    return this._isClosed
+    return this._isClosed;
   }
 
-  async reconnect(
-    singleAttempt: boolean = false
-  ): Promise<ConnectionImpl> {
+  async reconnect(singleAttempt: boolean = false): Promise<ConnectionImpl> {
     if (this._isClosed) {
       throw new errors.InterfaceError("Connection is closed");
     }

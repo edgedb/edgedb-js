@@ -76,8 +76,6 @@ interface Modifiable {
 export type Executor = ReadOnlyExecutor & Modifiable;
 
 export interface Connection extends Executor {
-  //[INNER]: InnerConnection;
-  //[OPTIONS]: Options;
   transaction<T>(
     action: () => Promise<T>,
     options?: Partial<TransactionOptions>

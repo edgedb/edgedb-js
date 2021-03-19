@@ -46,9 +46,15 @@ export class Transaction implements Executor {
   _state: TransactionState;
   _opInProgress: boolean;
 
-  constructor(connection: Connection, options: TransactionOptions = TransactionOptions.defaults()) {
-    console.assert(connection instanceof StandaloneConnection,
-      "connection is of unkwown type for transaction");
+  constructor(
+    connection: Connection,
+    options: TransactionOptions = TransactionOptions.defaults()
+  ) {
+    if (!(connection instanceof StandaloneConnection)) {
+      throw new errors.InterfaceError(
+        "connection is of unkwown type for transaction"
+      );
+    }
     this._connection = connection as StandaloneConnection;
     this._deferrable = options.deferrable;
     this._isolation = options.isolation;
@@ -103,7 +109,6 @@ export class Transaction implements Executor {
       );
     }
 
-
     const isolation = this._isolation;
 
     let mode;
@@ -120,7 +125,7 @@ export class Transaction implements Executor {
       defer = "NOT DEFERRABLE";
     }
 
-    return `START TRANSACTION ISOLATION ${isolation}, ${mode}, ${defer};`
+    return `START TRANSACTION ISOLATION ${isolation}, ${mode}, ${defer};`;
   }
 
   protected _makeCommitQuery(): string {
@@ -160,7 +165,7 @@ export class Transaction implements Executor {
     this._opInProgress = true;
     try {
       const inner = this._connection[INNER];
-      if(inner.borrowed_for) {
+      if (inner.borrowed_for) {
         throw borrowError(BorrowReason.QUERY);
       }
       inner.borrowed_for = BorrowReason.TRANSACTION;

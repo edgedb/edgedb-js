@@ -31,9 +31,9 @@ async function run(test: (con: Connection) => Promise<void>): Promise<void> {
     await test(connection);
   } finally {
     try {
-        await connection.close();
-    } catch(e) {
-        console.error("Error closing connection", e)
+      await connection.close();
+    } catch (e) {
+      console.error("Error closing connection", e);
     }
   }
 }
@@ -169,37 +169,41 @@ test("transaction interface errors", async () => {
   });
 });
 
-function* all_options(): Generator<[IsolationLevel | undefined, boolean | undefined, boolean | undefined], void, void> {
-    let levels = [
-        undefined,
-        IsolationLevel.Serializable,
-        IsolationLevel.RepeatableRead,
-    ]
-    let booleans = [undefined, true, false]
-    for(let isolation of levels) {
-        for(let readonly of booleans) {
-            for(let deferred of booleans) {
-                yield [isolation, readonly, deferred]
-            }
-        }
+function* all_options(): Generator<
+  [IsolationLevel | undefined, boolean | undefined, boolean | undefined],
+  void,
+  void
+> {
+  let levels = [
+    undefined,
+    IsolationLevel.Serializable,
+    IsolationLevel.RepeatableRead,
+  ];
+  let booleans = [undefined, true, false];
+  for (let isolation of levels) {
+    for (let readonly of booleans) {
+      for (let deferred of booleans) {
+        yield [isolation, readonly, deferred];
+      }
     }
+  }
 }
 
 test("transaction: kinds", async () => {
   await run(async (con) => {
-    for(let [isolation, readonly, defer] of all_options()) {
-      let partial = {isolation, readonly, defer}
-      await con.withTransactionOptions(partial)
-          .rawTransaction(async (tx) => {
-          });
-      await con.withTransactionOptions(partial)
-          .retryingTransaction(async (tx) => {
-          });
-      let opt = new TransactionOptions(partial)
-      await con.withTransactionOptions(opt)
-          .rawTransaction(async (tx) => { });
-      await con.withTransactionOptions(opt)
-          .retryingTransaction(async (tx) => { });
+    for (let [isolation, readonly, defer] of all_options()) {
+      let partial = {isolation, readonly, defer};
+      await con
+        .withTransactionOptions(partial)
+        .rawTransaction(async (tx) => {});
+      await con
+        .withTransactionOptions(partial)
+        .retryingTransaction(async (tx) => {});
+      let opt = new TransactionOptions(partial);
+      await con.withTransactionOptions(opt).rawTransaction(async (tx) => {});
+      await con
+        .withTransactionOptions(opt)
+        .retryingTransaction(async (tx) => {});
     }
   });
 });
