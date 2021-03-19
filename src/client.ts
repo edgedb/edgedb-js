@@ -243,10 +243,13 @@ export class StandaloneConnection implements Connection {
         }
         if (
           err instanceof errors.EdgeDBError &&
-          err.hasTag(errors.SHOULD_RETRY) &&
-          iteration + 1 < DEFAULT_MAX_ITERATIONS
+          err.hasTag(errors.SHOULD_RETRY)
         ) {
-          await sleep(default_backoff(iteration));
+          let rule = this[OPTIONS].retryOptions.getRuleForException(err)
+          if(iteration + 1 >= rule.attempts) {
+            throw err;
+          }
+          await sleep(rule.backoff(iteration+1));
           continue;
         }
         throw err;

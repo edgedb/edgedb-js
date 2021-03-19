@@ -1,3 +1,5 @@
+import * as errors from "./errors";
+
 export type BackoffFunction = (n: number) => number;
 
 export function default_backoff(attempt: number): number {
@@ -33,10 +35,12 @@ export interface PartialRetryRule {
 export class RetryOptions {
   readonly default: RetryRule;
   private overrides: Map<RetryCondition, RetryRule>;
+
   constructor(attempts: number, backoff: BackoffFunction) {
     this.default = new RetryRule(attempts, backoff);
     this.overrides = new Map();
   }
+
   withRule(
     condition: RetryCondition,
     attempts?: number,
@@ -53,6 +57,19 @@ export class RetryOptions {
     result.overrides = overrides;
     return result;
   }
+
+  getRuleForException(err: errors.EdgeDBError): RetryRule {
+    let result;
+    if(err instanceof errors.TransactionSerializationError) {
+        result = this.overrides.get(RetryCondition.SerializationError)
+    } else if(err instanceof errors.TransactionDeadlockError) {
+        result = this.overrides.get(RetryCondition.Deadlock)
+    } else if(err instanceof errors.ClientError) {
+        result = this.overrides.get(RetryCondition.NetworkError)
+    }
+    return result ?? this.default;
+  }
+
   static defaults(): RetryOptions {
     return new RetryOptions(3, default_backoff);
   }
@@ -75,53 +92,54 @@ export class TransactionOptions {
     this.readonly = readonly;
     this.deferrable = deferrable;
   }
+
   static defaults(): TransactionOptions {
     return new TransactionOptions();
   }
 }
 
 export class Options {
-  readonly retry_options: RetryOptions;
-  readonly transaction_options: TransactionOptions;
+  readonly retryOptions: RetryOptions;
+  readonly transactionOptions: TransactionOptions;
 
   constructor({
-    retry_options = RetryOptions.defaults(),
-    transaction_options = TransactionOptions.defaults(),
+    retryOptions = RetryOptions.defaults(),
+    transactionOptions = TransactionOptions.defaults(),
   }: {
-    retry_options?: RetryOptions;
-    transaction_options?: TransactionOptions;
+    retryOptions?: RetryOptions;
+    transactionOptions?: TransactionOptions;
   } = {}) {
-    this.retry_options = retry_options;
-    this.transaction_options = transaction_options;
+    this.retryOptions = retryOptions;
+    this.transactionOptions = transactionOptions;
   }
 
   withTransactionOptions(
     opt: TransactionOptions | Partial<TransactionOptions>
   ): Options {
     const result = Object.create(Options);
-    result.retry_options = this.retry_options;
+    result.retryOptions = this.retryOptions;
     if (opt instanceof TransactionOptions) {
-      result.transaction_options = opt;
+      result.transactionOptions = opt;
     } else {
-      result.transaction_options = new TransactionOptions(opt);
+      result.transactionOptions = new TransactionOptions(opt);
     }
     return result;
   }
 
   withRetryOptions(opt: RetryOptions | PartialRetryRule): Options {
     const result = Object.create(Options);
-    result.transaction_options = this.transaction_options;
+    result.transactionOptions = this.transactionOptions;
     if (opt instanceof RetryOptions) {
-      result.retry_options = opt;
+      result.retryOptions = opt;
     } else if (opt.condition) {
-      result.retry_options = this.retry_options.withRule(
+      result.retryOptions = this.retryOptions.withRule(
         opt.condition,
         opt.attempts,
         opt.backoff
       );
     } else {
-      const old = result.retry_options;
-      result.retry_options = new RetryOptions(
+      const old = result.retryOptions;
+      result.retryOptions = new RetryOptions(
         opt.attempts ?? old.attempts,
         opt.backoff ?? old.backoff
       );
