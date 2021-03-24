@@ -165,10 +165,10 @@ export class Transaction implements Executor {
     this._opInProgress = true;
     try {
       const inner = this._connection[INNER];
-      if (inner.borrowed_for) {
+      if (inner.borrowedFor) {
         throw borrowError(BorrowReason.QUERY);
       }
-      inner.borrowed_for = BorrowReason.TRANSACTION;
+      inner.borrowedFor = BorrowReason.TRANSACTION;
       this._inner = inner;
       this._impl = await inner.getImpl(singleConnect);
       await this._execute(start_query, TransactionState.STARTED);
@@ -183,7 +183,7 @@ export class Transaction implements Executor {
     }
     this._opInProgress = true;
     try {
-      this._inner!.borrowed_for = undefined;
+      this._inner!.borrowedFor = undefined;
       await this._execute(this._makeCommitQuery(), TransactionState.COMMITTED);
     } finally {
       this._opInProgress = false;
@@ -196,7 +196,7 @@ export class Transaction implements Executor {
     }
     this._opInProgress = true;
     try {
-      this._inner!.borrowed_for = undefined;
+      this._inner!.borrowedFor = undefined;
       await this._execute(
         this._makeRollbackQuery(),
         TransactionState.ROLLEDBACK

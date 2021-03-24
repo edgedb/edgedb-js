@@ -90,10 +90,6 @@ const OLD_ERROR_CODES = new Map([
 
 const DEFAULT_MAX_ITERATIONS = 3;
 
-function default_backoff(attempt: number): number {
-  return 2 ** attempt * 100 + Math.random() * 100;
-}
-
 export default function connect(
   dsn?: string | ConnectConfig | null,
   options?: ConnectConfig | null
@@ -267,11 +263,11 @@ export class StandaloneConnection implements Connection {
   }
 
   async close(): Promise<void> {
-    const borrowed_for = this[INNER].borrowed_for;
+    const borrowed_for = this[INNER].borrowedFor;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    this[INNER].borrowed_for = BorrowReason.CLOSE;
+    this[INNER].borrowedFor = BorrowReason.CLOSE;
     try {
       try {
         const conn = this[INNER].connection;
@@ -284,7 +280,7 @@ export class StandaloneConnection implements Connection {
         this.cleanup();
       }
     } finally {
-      this[INNER].borrowed_for = undefined;
+      this[INNER].borrowedFor = undefined;
     }
   }
 
@@ -298,11 +294,11 @@ export class StandaloneConnection implements Connection {
 
   async execute(query: string): Promise<void> {
     const inner = this[INNER];
-    const borrowed_for = inner.borrowed_for;
+    const borrowed_for = inner.borrowedFor;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    inner.borrowed_for = BorrowReason.QUERY;
+    inner.borrowedFor = BorrowReason.QUERY;
     let connection = inner.connection;
     if (!connection || connection.isClosed()) {
       connection = await inner.reconnect();
@@ -310,17 +306,17 @@ export class StandaloneConnection implements Connection {
     try {
       return await connection.execute(query);
     } finally {
-      inner.borrowed_for = undefined;
+      inner.borrowedFor = undefined;
     }
   }
 
   async query(query: string, args?: QueryArgs): Promise<Set> {
     const inner = this[INNER];
-    const borrowed_for = inner.borrowed_for;
+    const borrowed_for = inner.borrowedFor;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    inner.borrowed_for = BorrowReason.QUERY;
+    inner.borrowedFor = BorrowReason.QUERY;
     let connection = inner.connection;
     if (!connection || connection.isClosed()) {
       connection = await inner.reconnect();
@@ -328,17 +324,17 @@ export class StandaloneConnection implements Connection {
     try {
       return await connection.fetch(query, args, false, false);
     } finally {
-      inner.borrowed_for = undefined;
+      inner.borrowedFor = undefined;
     }
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
     const inner = this[INNER];
-    const borrowed_for = inner.borrowed_for;
+    const borrowed_for = inner.borrowedFor;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    inner.borrowed_for = BorrowReason.QUERY;
+    inner.borrowedFor = BorrowReason.QUERY;
     let connection = inner.connection;
     if (!connection || connection.isClosed()) {
       connection = await inner.reconnect();
@@ -346,17 +342,17 @@ export class StandaloneConnection implements Connection {
     try {
       return await connection.fetch(query, args, true, false);
     } finally {
-      inner.borrowed_for = undefined;
+      inner.borrowedFor = undefined;
     }
   }
 
   async queryOne(query: string, args?: QueryArgs): Promise<any> {
     const inner = this[INNER];
-    const borrowed_for = inner.borrowed_for;
+    const borrowed_for = inner.borrowedFor;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    inner.borrowed_for = BorrowReason.QUERY;
+    inner.borrowedFor = BorrowReason.QUERY;
     let connection = inner.connection;
     if (!connection || connection.isClosed()) {
       connection = await inner.reconnect();
@@ -364,17 +360,17 @@ export class StandaloneConnection implements Connection {
     try {
       return await connection.fetch(query, args, false, true);
     } finally {
-      inner.borrowed_for = undefined;
+      inner.borrowedFor = undefined;
     }
   }
 
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
     const inner = this[INNER];
-    const borrowed_for = inner.borrowed_for;
+    const borrowed_for = inner.borrowedFor;
     if (borrowed_for) {
       throw borrowError(borrowed_for);
     }
-    inner.borrowed_for = BorrowReason.QUERY;
+    inner.borrowedFor = BorrowReason.QUERY;
     let connection = inner.connection;
     if (!connection || connection.isClosed()) {
       connection = await inner.reconnect();
@@ -382,7 +378,7 @@ export class StandaloneConnection implements Connection {
     try {
       return await connection.fetch(query, args, true, true);
     } finally {
-      inner.borrowed_for = undefined;
+      inner.borrowedFor = undefined;
     }
   }
 
@@ -398,7 +394,7 @@ export class StandaloneConnection implements Connection {
 }
 
 export class InnerConnection {
-  borrowed_for?: BorrowReason;
+  borrowedFor?: BorrowReason;
   config: NormalizedConnectConfig;
   connection?: ConnectionImpl;
   _isClosed: boolean; // For compatibility

@@ -27,6 +27,6 @@ export {createPool} from "./pool";
 export {Connection, Pool} from "./ifaces";
 
 export {IsolationLevel, RetryCondition, RetryOptions} from "./options";
-export {BackoffFunction, default_backoff} from "./options";
+export {BackoffFunction, defaultBackoff} from "./options";
 
 export * from "./index.shared";

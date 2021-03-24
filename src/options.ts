@@ -2,7 +2,7 @@ import * as errors from "./errors";
 
 export type BackoffFunction = (n: number) => number;
 
-export function default_backoff(attempt: number): number {
+export function defaultBackoff(attempt: number): number {
   return 2 ** attempt * 100 + Math.random() * 100;
 }
 
@@ -71,7 +71,7 @@ export class RetryOptions {
   }
 
   static defaults(): RetryOptions {
-    return new RetryOptions(3, default_backoff);
+    return new RetryOptions(3, defaultBackoff);
   }
 }
 
