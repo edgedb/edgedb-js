@@ -110,37 +110,17 @@ export class Options {
     this.transactionOptions = transactionOptions;
   }
 
-  withTransactionOptions(
-    opt: TransactionOptions | Partial<TransactionOptions>
-  ): Options {
+  withTransactionOptions(opt: TransactionOptions): Options {
     const result = Object.create(Options);
     result.retryOptions = this.retryOptions;
-    if (opt instanceof TransactionOptions) {
-      result.transactionOptions = opt;
-    } else {
-      result.transactionOptions = new TransactionOptions(opt);
-    }
+    result.transactionOptions = opt;
     return result;
   }
 
-  withRetryOptions(opt: RetryOptions | PartialRetryRule): Options {
+  withRetryOptions(opt: RetryOptions): Options {
     const result = Object.create(Options);
     result.transactionOptions = this.transactionOptions;
-    if (opt instanceof RetryOptions) {
-      result.retryOptions = opt;
-    } else if (opt.condition) {
-      result.retryOptions = this.retryOptions.withRule(
-        opt.condition,
-        opt.attempts,
-        opt.backoff
-      );
-    } else {
-      const old = result.retryOptions;
-      result.retryOptions = new RetryOptions(
-        opt.attempts ?? old.attempts,
-        opt.backoff ?? old.backoff
-      );
-    }
+    result.retryOptions = opt;
     return result;
   }
 

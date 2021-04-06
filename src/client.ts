@@ -161,15 +161,13 @@ export class StandaloneConnection implements Connection {
     return result;
   }
 
-  withTransactionOptions(
-    opt: TransactionOptions | Partial<TransactionOptions>
-  ): this {
+  withTransactionOptions(opt: TransactionOptions): this {
     const result = this.shallowClone();
     result[OPTIONS] = this[OPTIONS].withTransactionOptions(opt);
     return result;
   }
 
-  withRetryOptions(opt: RetryOptions | PartialRetryRule): this {
+  withRetryOptions(opt: RetryOptions): this {
     const result = this.shallowClone();
     result[OPTIONS] = this[OPTIONS].withRetryOptions(opt);
     return result;

@@ -193,12 +193,6 @@ test("transaction: kinds", async () => {
   await run(async (con) => {
     for (let [isolation, readonly, defer] of all_options()) {
       let partial = {isolation, readonly, defer};
-      await con
-        .withTransactionOptions(partial)
-        .rawTransaction(async (tx) => {});
-      await con
-        .withTransactionOptions(partial)
-        .retryingTransaction(async (tx) => {});
       let opt = new TransactionOptions(partial);
       await con.withTransactionOptions(opt).rawTransaction(async (tx) => {});
       await con
