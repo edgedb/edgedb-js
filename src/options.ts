@@ -12,7 +12,7 @@ export enum IsolationLevel {
 }
 
 export enum RetryCondition {
-  Conflict,
+  TransactionConflict,
   NetworkError,
 }
 
@@ -60,7 +60,7 @@ export class RetryOptions {
   getRuleForException(err: errors.EdgeDBError): RetryRule {
     let result;
     if (err instanceof errors.TransactionConflictError) {
-      result = this.overrides.get(RetryCondition.Conflict);
+      result = this.overrides.get(RetryCondition.TransactionConflict);
     } else if (err instanceof errors.ClientError) {
       result = this.overrides.get(RetryCondition.NetworkError);
     }
