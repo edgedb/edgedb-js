@@ -59,7 +59,8 @@ import {Transaction as LegacyTransaction} from "./legacy_transaction";
 import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 
 const PROTO_VER_MAJOR = 0;
-const PROTO_VER_MINOR = 9;
+const PROTO_VER_MINOR_MIN = 9;
+const PROTO_VER_MINOR = 10;
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,
@@ -81,6 +82,10 @@ const EXECUTE_CAPABILITIES_BYTES = Buffer.from(
   // everything except TRANSACTION = 1 << 2 in network byte order
   [255, 255, 255, 255, 255, 255, 255, 251]
 );
+const OLD_ERROR_CODES = new Map([
+  [0x05_03_00_01, 0x05_03_01_01], // TransactionSerializationError #2431
+  [0x05_03_00_02, 0x05_03_01_02], // TransactionDeadlockError      #2431
+]);
 
 const DEFAULT_MAX_ITERATIONS = 3;
 
@@ -578,7 +583,7 @@ export class ConnectionImpl implements Executor {
     const code = this.buffer.readUInt32();
     const message = this.buffer.readString();
     const attrs = this._parseHeaders();
-    const errorType = resolveErrorCode(code);
+    const errorType = resolveErrorCode(OLD_ERROR_CODES.get(code) ?? code);
     this.buffer.finishMessage();
 
     const err = new errorType(message);
@@ -760,7 +765,10 @@ export class ConnectionImpl implements Executor {
           this._parseHeaders();
           this.buffer.finishMessage();
 
-          if (hi !== PROTO_VER_MAJOR || (hi === 0 && lo !== PROTO_VER_MINOR)) {
+          if (
+            hi !== PROTO_VER_MAJOR ||
+            (hi === 0 && (lo < PROTO_VER_MINOR_MIN || lo > PROTO_VER_MINOR))
+          ) {
             throw new Error(
               `the server requested an unsupported version of ` +
                 `the protocol ${hi}.${lo}`
