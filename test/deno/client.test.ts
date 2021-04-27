@@ -20,7 +20,7 @@ import {expect} from "https://deno.land/x/expect/mod.ts";
 
 import {Buffer} from "../../src/globals.deno.ts";
 
-import {asyncConnect} from "./testbase.ts";
+import {asyncConnect, getConnectOptions} from "./testbase.ts";
 
 import {
   Set,
@@ -32,12 +32,16 @@ import {
   EdgeDBError,
   MissingRequiredError,
   _introspect,
+  _RawConnection,
+  _CodecsRegistry,
+  _ReadBuffer,
 } from "../../edgedb-deno/mod.ts";
 import {
   LocalDate,
   Duration,
   EdgeDBDateTime,
 } from "../../edgedb-deno/_src/datatypes/datetime.ts";
+import {parseConnectArguments} from "../../edgedb-deno/_src/con_utils.ts";
 
 const test = Deno.test;
 
@@ -1348,6 +1352,51 @@ test("concurrent ops", async () => {
 
     const res = await p1;
     expect(res).toBe(3);
+  } finally {
+    await con.close();
+  }
+});
+
+test("'implicit*' headers", async () => {
+  const config = parseConnectArguments(getConnectOptions());
+  const con = (await _RawConnection.connectWithTimeout(
+    config.addrs[0],
+    config
+  )) as _RawConnection;
+  try {
+    const [_, outCodecData] = await con.rawParse(
+      `SELECT schema::Function {
+        name
+      }`,
+      {
+        implicitTypenames: "true",
+        implicitLimit: "5",
+      }
+    );
+    const resultData = await con.rawExecute();
+
+    const registry = new _CodecsRegistry();
+    const codec = registry.buildCodec(outCodecData);
+
+    const result = new Set();
+    const buf = new _ReadBuffer(resultData);
+    const codecReadBuf = _ReadBuffer.alloc();
+    while (buf.length > 0) {
+      const msgType = buf.readUInt8();
+      const len = buf.readUInt32();
+
+      if (msgType !== 68 || len <= 4) {
+        throw new Error("invalid data packet");
+      }
+
+      buf.sliceInto(codecReadBuf, len - 4);
+      codecReadBuf.discard(6);
+      const val = codec.decode(codecReadBuf);
+      result.push(val);
+    }
+
+    expect(result).toHaveLength(5);
+    expect(result[0].__tname__).toBe("schema::Function");
   } finally {
     await con.close();
   }
