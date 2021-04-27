@@ -36,6 +36,7 @@ import {
   _CodecsRegistry,
   _ReadBuffer,
 } from "../../edgedb-deno/mod.ts";
+import {INNER} from "../../edgedb-deno/_src/ifaces.ts";
 import {
   LocalDate,
   Duration,
@@ -215,7 +216,7 @@ test("fetch: decimal as string", async () => {
   const con = await asyncConnect();
 
   // @ts-ignore
-  const registry = con._connection.codecsRegistry;
+  const registry = con[INNER].connection.codecsRegistry;
   registry.setStringCodecs({decimal: true});
 
   const vals = [
@@ -352,7 +353,7 @@ test("fetch: int64 as string", async () => {
   const con = await asyncConnect();
 
   // @ts-ignore
-  const registry = con._connection.codecsRegistry;
+  const registry = con[INNER].connection.codecsRegistry;
   registry.setStringCodecs({int64: true});
 
   const vals = [
@@ -394,7 +395,7 @@ test("fetch: bigint as string", async () => {
   const con = await asyncConnect();
 
   // @ts-ignore
-  const registry = con._connection.codecsRegistry;
+  const registry = con[INNER].connection.codecsRegistry;
   registry.setStringCodecs({bigint: true});
 
   const vals = [
@@ -441,7 +442,7 @@ test("fetch: datetime as string", async () => {
   const con = await asyncConnect();
 
   // @ts-ignore
-  const registry = con._connection.codecsRegistry;
+  const registry = con[INNER].connection.codecsRegistry;
   registry.setStringCodecs({local_datetime: true, datetime: true});
 
   const maxDate = 253402300799;
