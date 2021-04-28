@@ -1,9 +1,9 @@
-import {process} from "https://deno.land/std@0.89.0/node/process.ts";
-import {Buffer} from "https://deno.land/std@0.89.0/node/buffer.ts";
-import {Sha256, HmacSha256} from "https://deno.land/std@0.89.0/hash/sha256.ts";
-import path from "https://deno.land/std@0.89.0/node/path.ts";
-import EventEmitter from "https://deno.land/std@0.89.0/node/events.ts";
-import util from "https://deno.land/std@0.89.0/node/util.ts";
+import {process} from "https://deno.land/std@0.95.0/node/process.ts";
+import {Buffer} from "https://deno.land/std@0.95.0/node/buffer.ts";
+import {Sha256, HmacSha256} from "https://deno.land/std@0.95.0/hash/sha256.ts";
+import path from "https://deno.land/std@0.95.0/node/path.ts";
+import EventEmitter from "https://deno.land/std@0.95.0/node/events.ts";
+import util from "https://deno.land/std@0.95.0/node/util.ts";
 
 export {Buffer, path, process, util};
 
