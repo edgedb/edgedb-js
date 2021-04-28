@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 import * as errors from "./errors";
-import {Executor, TransactionOptions} from "./ifaces";
+import {Executor} from "./ifaces";
 import {getUniqueId} from "./utils";
+import {TransactionOptions, IsolationLevel} from "./options";
 
 export enum TransactionState {
   NEW = 0,
@@ -25,11 +26,6 @@ export enum TransactionState {
   COMMITTED = 2,
   ROLLEDBACK = 3,
   FAILED = 4,
-}
-
-export enum IsolationLevel {
-  SERIALIZABLE = "serializable",
-  REPEATABLE_READ = "repeatable_read",
 }
 
 export const connectionsInTransaction = new WeakMap<
@@ -47,7 +43,7 @@ class BaseTransaction {
   _readonly?: boolean;
   _state: TransactionState;
 
-  constructor(connection: Executor, options?: TransactionOptions) {
+  constructor(connection: Executor, options?: Partial<TransactionOptions>) {
     if (options === undefined) {
       options = {};
     }
@@ -117,9 +113,9 @@ class BaseTransaction {
     } else {
       query = "START TRANSACTION";
 
-      if (this._isolation === IsolationLevel.REPEATABLE_READ) {
+      if (this._isolation === IsolationLevel.RepeatableRead) {
         query = "START TRANSACTION ISOLATION REPEATABLE READ";
-      } else if (this._isolation === IsolationLevel.SERIALIZABLE) {
+      } else if (this._isolation === IsolationLevel.Serializable) {
         query = "START TRANSACTION ISOLATION SERIALIZABLE";
       }
 

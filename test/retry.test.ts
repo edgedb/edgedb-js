@@ -19,7 +19,8 @@
 import * as errors from "../src/errors";
 import {asyncConnect} from "./testbase";
 import {Transaction, TransactionState} from "../src/transaction";
-import {Connection, IsolationLevel} from "../src/ifaces";
+import {Connection} from "../src/ifaces";
+import {IsolationLevel, RetryOptions, defaultBackoff} from "../src/options";
 
 class Barrier {
   _counter: number;
@@ -66,10 +67,18 @@ async function run2(
     try {
       await test(connection, connection2);
     } finally {
-      await connection2.close();
+      try {
+        await connection2.close();
+      } catch (e) {
+        console.error("Error closing connection", e);
+      }
     }
   } finally {
-    await connection.close();
+    try {
+      await connection.close();
+    } catch (e) {
+      console.error("Error closing connection", e);
+    }
   }
 }
 
@@ -106,45 +115,65 @@ test("retry: regular 01", async () => {
   });
 });
 
+async function checkRetries(con: Connection, con2: Connection, name: string) {
+  let iterations = 0;
+  let barrier = new Barrier(2);
+
+  async function transaction(con: Connection): Promise<void> {
+    return await con.retryingTransaction(async (tx) => {
+      iterations += 1;
+
+      // This magic query makes the test more reliable for some
+      // reason. I guess this is because starting a transaction
+      // in EdgeDB (and/or Postgres) is accomplished somewhat
+      // lazily, i.e. only start transaction on the first query
+      // rather than on the `START TRANSACTION`.
+      await tx.query(`SELECT 1`);
+
+      // Start both transactions at the same initial data.
+      // One should succeed other should fail and retry.
+      // On next attempt, the latter should succeed
+      await barrier.ready();
+
+      return await tx.queryOne(
+        `
+        SELECT (
+          INSERT ${typename} {
+            name := <str>$name,
+            value := 1,
+          } UNLESS CONFLICT ON .name
+          ELSE (
+            UPDATE ${typename}
+            SET { value := .value + 1 }
+          )
+        ).value
+      `,
+        {name}
+      );
+    });
+  }
+
+  let results = await Promise.all([transaction(con), transaction(con2)]);
+  results.sort();
+  expect(results).toEqual([1, 2]);
+  expect(iterations).toEqual(3);
+}
+
 test("retry: conflict", async () => {
   await run2(async (con, con2) => {
-    let iterations = 0;
-    let barrier = new Barrier(2);
-
-    async function transaction(con: Connection): Promise<void> {
-      return await con.retryingTransaction(async (tx) => {
-        iterations += 1;
-
-        // This magic query makes the test more reliable for some
-        // reason. I guess this is because starting a transaction
-        // in EdgeDB (and/or Postgres) is accomplished somewhat
-        // lazily, i.e. only start transaction on the first query
-        // rather than on the `START TRANSACTION`.
-        await tx.query(`SELECT 1`);
-
-        // Start both transactions at the same initial data.
-        // One should succeed other should fail and retry.
-        // On next attempt, the latter should succeed
-        await barrier.ready();
-
-        return await tx.queryOne(`
-          SELECT (
-            INSERT ${typename} {
-              name := 'counter2',
-              value := 1,
-            } UNLESS CONFLICT ON .name
-            ELSE (
-              UPDATE ${typename}
-              SET { value := .value + 1 }
-            )
-          ).value
-        `);
-      });
-    }
-
-    let results = await Promise.all([transaction(con), transaction(con2)]);
-    results.sort();
-    expect(results).toEqual([1, 2]);
-    expect(iterations).toEqual(3);
+    await checkRetries(con, con2, "counter2");
   });
+});
+
+test("retry: conflict no retry", async () => {
+  await expect(
+    run2(async (con, con2) => {
+      const opt = new RetryOptions(1, defaultBackoff);
+      await checkRetries(
+        con.withRetryOptions(opt),
+        con2.withRetryOptions(opt),
+        "counter3"
+      );
+    })
+  ).rejects.toBeInstanceOf(errors.TransactionSerializationError);
 });
