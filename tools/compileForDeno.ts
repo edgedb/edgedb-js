@@ -86,7 +86,11 @@ async function run({
   sourceFilter?: (path: string) => boolean;
 }) {
   try {
-    await Deno.remove(destDir, {recursive: true});
+    for await (const entry of Deno.readDir(destDir)) {
+      if (entry.isFile || (entry.isDirectory && entry.name !== ".git")) {
+        await Deno.remove(join(destDir, entry.name), {recursive: true});
+      }
+    }
   } catch {}
 
   const sourceFilePathMap = new Map<string, string>();
