@@ -16,9 +16,6 @@
  * limitations under the License.
  */
 
-import * as util from "util";
-import {Temporal} from "proposal-temporal";
-
 import {
   Set,
   Tuple,
@@ -35,7 +32,7 @@ import {
 } from "../src/index.node";
 import {INNER} from "../src/ifaces";
 import {LocalDate, Duration, EdgeDBDateTime} from "../src/datatypes/datetime";
-import {asyncConnect, getConnectOptions} from "./testbase";
+import {asyncConnect, getConnectOptions, isDeno} from "./testbase";
 import {parseConnectArguments} from "../src/con_utils";
 
 test("query: basic scalars", async () => {
@@ -754,73 +751,78 @@ test("fetch: duration", async () => {
   }
 });
 
-test("fetch: duration fuzz", async () => {
-  jest.setTimeout(10_000);
-  const randint = (min: number, max: number) => {
-    const x = Math.round(Math.random() * (max - min) + min);
-    return x === -0 ? 0 : x;
-  };
+if (!isDeno) {
+  test("fetch: duration fuzz", async () => {
+    // @ts-ignore
+    const Temporal = require("proposal-temporal").Temporal;
 
-  const durs = [
-    new Duration(),
-    new Duration(0, 0, 0, 0, 0, 0, 0, 1),
-    new Duration(0, 0, 0, 0, 0, 0, 0, -1),
-    new Duration(0, 0, 0, 0, 0, 0, 0, 1),
-    new Duration(0, 0, 0, 0, 0, 0, 0, -1),
-    new Duration(0, 0, 0, 0, 0, 0, 0, -752043.296),
-    new Duration(0, 0, 0, 0, 0, 0, 0, 3542924),
-    new Duration(0, 0, 0, 0, 0, 0, 0, 86400000),
-    new Duration(0, 0, 0, 0, 0, 0, 0, -86400000),
-  ];
+    jest.setTimeout(10_000);
+    const randint = (min: number, max: number) => {
+      const x = Math.round(Math.random() * (max - min) + min);
+      return x === -0 ? 0 : x;
+    };
 
-  // Fuzz it!
-  for (let _i = 0; _i < 5000; _i++) {
-    durs.push(
-      new Duration(
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        randint(-500, 500) * 86400 + randint(-1000, 1000)
-      )
-    );
-  }
+    const durs = [
+      new Duration(),
+      new Duration(0, 0, 0, 0, 0, 0, 0, 1),
+      new Duration(0, 0, 0, 0, 0, 0, 0, -1),
+      new Duration(0, 0, 0, 0, 0, 0, 0, 1),
+      new Duration(0, 0, 0, 0, 0, 0, 0, -1),
+      new Duration(0, 0, 0, 0, 0, 0, 0, -752043.296),
+      new Duration(0, 0, 0, 0, 0, 0, 0, 3542924),
+      new Duration(0, 0, 0, 0, 0, 0, 0, 86400000),
+      new Duration(0, 0, 0, 0, 0, 0, 0, -86400000),
+    ];
 
-  const con = await asyncConnect();
-  try {
-    // Test encode/decode round trip.
-    const dursFromDb = await con.query(
-      `
+    // Fuzz it!
+    for (let _i = 0; _i < 5000; _i++) {
+      durs.push(
+        new Duration(
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          randint(-500, 500) * 86400 + randint(-1000, 1000)
+        )
+      );
+    }
+
+    const con = await asyncConnect();
+    try {
+      // Test encode/decode round trip.
+      const dursFromDb = await con.query(
+        `
         WITH args := array_unpack(<array<duration>>$0)
         SELECT args;
       `,
-      [durs]
-    );
+        [durs]
+      );
 
-    for (let i = 0; i < durs.length; i++) {
-      const roundedDur = Temporal.Duration.from(durs[i]).round({
-        largestUnit: "hours",
-        smallestUnit: "microseconds",
-      });
-      expect(roundedDur.years).toBe(dursFromDb[i].years);
-      expect(roundedDur.months).toBe(dursFromDb[i].months);
-      expect(roundedDur.weeks).toBe(dursFromDb[i].weeks);
-      expect(roundedDur.days).toBe(dursFromDb[i].days);
-      expect(roundedDur.hours).toBe(dursFromDb[i].hours);
-      expect(roundedDur.minutes).toBe(dursFromDb[i].minutes);
-      expect(roundedDur.seconds).toBe(dursFromDb[i].seconds);
-      expect(roundedDur.milliseconds).toBe(dursFromDb[i].milliseconds);
-      expect(roundedDur.microseconds).toBe(dursFromDb[i].microseconds);
-      expect(roundedDur.nanoseconds).toBe(dursFromDb[i].nanoseconds);
-      expect(roundedDur.sign).toBe(dursFromDb[i].sign);
+      for (let i = 0; i < durs.length; i++) {
+        const roundedDur = Temporal.Duration.from(durs[i]).round({
+          largestUnit: "hours",
+          smallestUnit: "microseconds",
+        });
+        expect(roundedDur.years).toBe(dursFromDb[i].years);
+        expect(roundedDur.months).toBe(dursFromDb[i].months);
+        expect(roundedDur.weeks).toBe(dursFromDb[i].weeks);
+        expect(roundedDur.days).toBe(dursFromDb[i].days);
+        expect(roundedDur.hours).toBe(dursFromDb[i].hours);
+        expect(roundedDur.minutes).toBe(dursFromDb[i].minutes);
+        expect(roundedDur.seconds).toBe(dursFromDb[i].seconds);
+        expect(roundedDur.milliseconds).toBe(dursFromDb[i].milliseconds);
+        expect(roundedDur.microseconds).toBe(dursFromDb[i].microseconds);
+        expect(roundedDur.nanoseconds).toBe(dursFromDb[i].nanoseconds);
+        expect(roundedDur.sign).toBe(dursFromDb[i].sign);
+      }
+    } finally {
+      await con.close();
     }
-  } finally {
-    await con.close();
-  }
-});
+  });
+}
 
 test("fetch: tuple", async () => {
   const con = await asyncConnect();
@@ -859,10 +861,13 @@ test("fetch: tuple", async () => {
     expect(t0.length).toBe(2);
     expect(JSON.stringify(t0)).toBe('[1,"abc"]');
 
-    const insp = util.inspect(t0);
-    expect(
-      insp === "Tuple [ 1, 'abc' ]" || insp === "Tuple(2) [ 1, 'abc' ]"
-    ).toBeTruthy();
+    if (!isDeno) {
+      // @ts-ignore
+      const insp = require("util").inspect(t0);
+      expect(
+        insp === "Tuple [ 1, 'abc' ]" || insp === "Tuple(2) [ 1, 'abc' ]"
+      ).toBeTruthy();
+    }
   } finally {
     await con.close();
   }
@@ -911,9 +916,12 @@ test("fetch: object", async () => {
     expect(res.params[0].num).toBe(0);
     expect(res.params[1].num).toBe(1);
 
-    expect(util.inspect(res.params[0])).toBe(
-      "Object [ kind := 'PositionalParam', num := 0, @foo := 42 ]"
-    );
+    if (!isDeno) {
+      // @ts-ignore
+      expect(require("util").inspect(res.params[0])).toBe(
+        "Object [ kind := 'PositionalParam', num := 0, @foo := 42 ]"
+      );
+    }
 
     expect(res.params.length).toBe(2);
     expect(res.params[0].id instanceof UUID).toBeTruthy();
@@ -1097,9 +1105,12 @@ test("fetch: namedtuple", async () => {
     expect(t0.c).toBe(123);
     expect(t0.length).toBe(3);
     expect(JSON.stringify(t0)).toBe('{"a":"aaa","b":true,"c":123}');
-    expect(util.inspect(t0)).toBe(
-      "NamedTuple [ a := 'aaa', b := true, c := 123 ]"
-    );
+    if (!isDeno) {
+      // @ts-ignore
+      expect(require("util").inspect(t0)).toBe(
+        "NamedTuple [ a := 'aaa', b := true, c := 123 ]"
+      );
+    }
   } finally {
     await con.close();
   }
