@@ -41,6 +41,6 @@ jobs:
           cd edgedb-deno
           git config user.name edgedb-ci
           git config user.email releases@edgedb.com
-          git add .
+          git add . -f
           git commit -m "Build from edgedb-js ${{ github.sha }}"
           git push
