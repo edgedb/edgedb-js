@@ -25,10 +25,10 @@ export {
   Duration,
 } from "./datatypes/datetime";
 
-export {NamedTuple} from "./datatypes/namedtuple";
-export {ObjectShape} from "./datatypes/object";
+export type {NamedTuple} from "./datatypes/namedtuple";
+export type {ObjectShape} from "./datatypes/object";
 export {Set} from "./datatypes/set";
-export {Tuple} from "./datatypes/tuple";
+export type {Tuple} from "./datatypes/tuple";
 export {UUID} from "./datatypes/uuid";
 
 export * from "./errors";

@@ -39,7 +39,7 @@ class Barrier {
         waiter();
       }
     } else {
-      await new Promise((accept) => {
+      await new Promise<void>((accept) => {
         this._waiters.push(accept);
       });
     }

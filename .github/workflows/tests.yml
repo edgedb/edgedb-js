@@ -28,6 +28,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Set up Deno
+        uses: denolib/setup-deno@v2
+        with:
+          deno-version: v1.x
+
       - name: Install dev deps
         run: |
           yarn install
@@ -35,6 +40,10 @@ jobs:
       - name: Lint
         run: |
           yarn lint
+
+      - name: Compile for Deno
+        run: |
+          yarn compileForDeno
 
       - name: Install EdgeDB
         uses: edgedb/setup-edgedb@v1

@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-import * as util from "util";
-import * as crypto from "crypto";
+import {randomBytes, H, HMAC} from "./adapter.node";
 
-const randomBytes = util.promisify(crypto.randomBytes);
+export {H, HMAC};
 
 const RAW_NONCE_LENGTH = 18;
 
@@ -166,14 +165,6 @@ export function getServerKey(saltedPassword: Buffer): Buffer {
   return HMAC(saltedPassword, Buffer.from("Server Key", "utf8"));
 }
 
-export function HMAC(key: Buffer, ...msgs: Buffer[]): Buffer {
-  const hm = crypto.createHmac("sha256", key);
-  for (const msg of msgs) {
-    hm.update(msg);
-  }
-  return hm.digest();
-}
-
 export function XOR(a: Buffer, b: Buffer): Buffer {
   const len = a.length;
   if (len !== b.length) {
@@ -184,10 +175,4 @@ export function XOR(a: Buffer, b: Buffer): Buffer {
     res[i] = a[i] ^ b[i];
   }
   return res;
-}
-
-export function H(msg: Buffer): Buffer {
-  const sign = crypto.createHash("sha256");
-  sign.update(msg);
-  return sign.digest();
 }

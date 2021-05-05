@@ -1,0 +1,46 @@
+name: Deno Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout edgedb-js
+        uses: actions/checkout@v2
+
+      - name: Checkout edgedb-deno
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
+          repository: edgedb/edgedb-deno
+          path: edgedb-deno
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - uses: denolib/setup-deno@v2
+        with:
+          deno-version: v1.x
+
+      - name: Install dev deps
+        run: |
+          yarn install
+
+      - name: Compile for Deno
+        run: |
+          yarn compileForDeno
+
+      - name: Push to edgedb-deno
+        run: |
+          cd edgedb-deno
+          git config user.name edgedb-ci
+          git config user.email releases@edgedb.com
+          git add .
+          git commit -m "Build from edgedb-js ${{ github.sha }}"
+          git push

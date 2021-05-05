@@ -10,8 +10,18 @@
     "removeComments": true,
     "declarationDir": "./dist",
     "outDir": "./dist",
-    "typeRoots": ["./node_modules/@types"],
-    "stripInternal": true
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "stripInternal": true,
+    "isolatedModules": true,
   },
-  "include": ["src", "test"]
+  "include": [
+    "src",
+    "test"
+  ],
+  "exclude": [
+    "**/*.deno.ts",
+    "test/deno/*"
+  ]
 }

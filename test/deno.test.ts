@@ -16,18 +16,34 @@
  * limitations under the License.
  */
 
-import _connect from "./client";
-export const connect = _connect;
-export default connect;
+import {execFile} from "child_process";
 
-export {RawConnection as _RawConnection} from "./client";
+test("run deno test", async () => {
+  jest.setTimeout(60_000);
 
-export {createPool} from "./pool";
-
-export type {Connection, Pool} from "./ifaces";
-
-export {IsolationLevel, RetryCondition, RetryOptions} from "./options";
-export {defaultBackoff} from "./options";
-export type {BackoffFunction} from "./options";
-
-export * from "./index.shared";
+  return new Promise<void>((resolve, reject) => {
+    execFile(
+      "deno",
+      [
+        "test",
+        "--unstable",
+        "--allow-net",
+        "--allow-env",
+        "--allow-read",
+        "--allow-write",
+        "test/deno",
+      ],
+      {
+        env: process.env,
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          console.error(stderr);
+          reject(error);
+        }
+        console.log(stdout);
+        resolve();
+      }
+    );
+  });
+});

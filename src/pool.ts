@@ -45,13 +45,13 @@ const DETACHED = Symbol("detached");
 export const HOLDER = Symbol("holder");
 
 export class Deferred<T> {
-  private _promise: Promise<T>;
+  private _promise: Promise<T | undefined>;
   private _resolve?: (value?: T | PromiseLike<T> | undefined) => void;
   private _reject?: (reason?: any) => void;
   private _result: T | PromiseLike<T> | undefined;
   private _done: boolean;
 
-  get promise(): Promise<T> {
+  get promise(): Promise<T | undefined> {
     return this._promise;
   }
 
@@ -68,14 +68,14 @@ export class Deferred<T> {
 
   async setResult(value?: T | PromiseLike<T> | undefined): Promise<void> {
     while (!this._resolve) {
-      await new Promise((resolve) => process.nextTick(resolve));
+      await new Promise<void>((resolve) => process.nextTick(resolve));
     }
     this._resolve(value);
   }
 
   async setFailed(reason?: any): Promise<void> {
     while (!this._reject) {
-      await new Promise((resolve) => process.nextTick(resolve));
+      await new Promise<void>((resolve) => process.nextTick(resolve));
     }
     this._reject(reason);
   }

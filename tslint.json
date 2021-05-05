@@ -34,5 +34,10 @@
     "no-console": {
       "severity": "warning"
     }
+  },
+  "linterOptions": {
+    "exclude": [
+      "**/*.deno.ts"
+    ]
   }
 }

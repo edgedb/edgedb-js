@@ -6,7 +6,7 @@ export class EdgeDBError extends Error {
     // Can't index by symbol, except when using <any>:
     //   https://github.com/microsoft/TypeScript/issues/1863
     const error_type = <any>(<typeof EdgeDBError>this.constructor);
-    return Boolean(error_type.tags[tag]);
+    return Boolean(error_type.tags?.[tag]);
   }
 }
 

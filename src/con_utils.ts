@@ -15,9 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as path from "path";
-import * as url from "url";
-import * as os from "os";
+
+import {path, homeDir} from "./adapter.node";
 import {readCredentialsFile} from "./credentials";
 
 const EDGEDB_PORT = 5656;
@@ -125,29 +124,29 @@ function parseConnectDsnAndArgs({
     serverSettings = server_settings;
   }
   if (dsn && /^edgedb(?:admin)?:\/\//.test(dsn)) {
-    // Comma-separated hosts cannot be parsed correctly with url.parse, so if
-    // we detect them, we need to replace the whole host before parsing. The
-    // comma-separated host list can then be handled in the same way as if it
-    // came from any other source (such as EDGEDB_HOST).
-    const dsnHostMatch = /\/\/(.+?@)?(.*)\//.exec(dsn);
+    // Comma-separated hosts and empty hosts cannot always be parsed
+    // correctly with new URL(), so if we detect them, we need to replace the
+    // whole host before parsing. The comma-separated host list can then be
+    // handled in the same way as if it came from any other source
+    // (such as EDGEDB_HOST).
+    const dsnHostMatch = /\/\/(.+?@)?(.*?)([/?])/.exec(dsn);
     let dsnHost: string | null = null;
 
     if (dsnHostMatch && typeof dsnHostMatch[2] === "string") {
       dsnHost = dsnHostMatch[2];
-      if (dsnHost.indexOf(",") !== -1) {
-        let rep: string;
+      if (dsnHost === "" || dsnHost.includes(",")) {
+        const rep = dsnHostMatch[1] ? "@" : "//";
+        const suffix = dsnHostMatch[3];
 
-        if (dsnHostMatch[1]) {
-          rep = "@";
-        } else {
-          rep = "//";
-        }
-        dsn = dsn.replace(rep + dsnHost + "/", rep + "replaced_host/");
+        dsn = dsn.replace(
+          rep + dsnHost + suffix,
+          rep + "replaced_host" + suffix
+        );
       } else {
         dsnHost = null;
       }
     }
-    const parsed = url.parse(dsn, true);
+    const parsed = new URL(dsn);
 
     if (typeof parsed.protocol === "string") {
       if (parsed.protocol === "edgedbadmin:") {
@@ -180,8 +179,10 @@ function parseConnectDsnAndArgs({
     if (!host && parsed.host) {
       // if the host was replaced, use the original value to
       // process comma-separated hosts
-      if (dsnHost) {
-        [host, port] = parseHostlist(dsnHost, port);
+      if (dsnHost !== null) {
+        if (dsnHost !== "") {
+          [host, port] = parseHostlist(dsnHost, port);
+        }
       } else {
         host = parsed.hostname ?? undefined;
         if (parsed.port) {
@@ -197,47 +198,35 @@ function parseConnectDsnAndArgs({
       }
     }
 
-    if (parsed.auth) {
-      const [puser, ppass] = parsed.auth.split(":");
-      if (puser && user == null) {
-        user = puser;
-      }
-      if (ppass && password == null) {
-        password = ppass;
-      }
+    if (parsed.username && user == null) {
+      user = parsed.username;
+    }
+    if (parsed.password && password == null) {
+      password = parsed.password;
     }
 
     // extract the connection parameters from the query
-    if (parsed.query) {
-      if ("port" in parsed.query) {
-        if (!port && parsed.query.port) {
-          let pport: string;
-          if (parsed.query.port instanceof Array) {
-            pport = parsed.query.port[parsed.query.port.length - 1];
-          } else {
-            pport = parsed.query.port;
-          }
+    if (parsed.searchParams) {
+      if (parsed.searchParams.has("port")) {
+        const pport = parsed.searchParams.get("port")!;
+        if (!port && pport) {
           port = pport.split(",").map(mapParseInt);
         }
-        delete parsed.query.port;
+        parsed.searchParams.delete("port");
       }
 
-      if ("host" in parsed.query) {
-        if (!host && parsed.query.host) {
-          [host, port] = parseHostlist(parsed.query.host, port);
+      if (parsed.searchParams.has("host")) {
+        const phost = parsed.searchParams.get("host")!;
+        if (!host && phost) {
+          [host, port] = parseHostlist(phost, port);
         }
-        delete parsed.query.host;
+        parsed.searchParams.delete("host");
       }
 
       const parsedQ: {[key: string]: string} = {};
       // when given multiple params of the same name, keep the last one only
-      for (const key of Object.keys(parsed.query)) {
-        const param = parsed.query[key]!;
-        if (typeof param === "string") {
-          parsedQ[key] = param;
-        } else {
-          parsedQ[key] = param ? (param.pop() as string) : "";
-        }
+      for (const [key, param] of parsed.searchParams.entries()) {
+        parsedQ[key] = param;
       }
 
       if ("dbname" in parsedQ) {
@@ -285,7 +274,7 @@ function parseConnectDsnAndArgs({
     }
     usingCredentials = true;
     const credentialsFile = path.join(
-      os.homedir(),
+      homeDir(),
       ".edgedb",
       "credentials",
       dsn + ".json"

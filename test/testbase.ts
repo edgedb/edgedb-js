@@ -16,18 +16,20 @@
  * limitations under the License.
  */
 
-import * as process from "process";
-
-import connect from "../src/index.node";
-import {createPool} from "../src/index.node";
+import connect, {createPool} from "../src/index.node";
 import {ConnectConfig} from "../src/con_utils";
 import {Connection, Pool} from "../src/ifaces";
+
+export const isDeno =
+  typeof window !== "undefined" &&
+  // @ts-ignore
+  typeof Deno !== "undefined";
 
 function _getOpts(opts: ConnectConfig): ConnectConfig {
   const port = process.env._JEST_EDGEDB_PORT;
   const host = process.env._JEST_EDGEDB_HOST;
   if (!port || !host) {
-    throw new Error("EdgeDB Jest test environmet is not initialized");
+    throw new Error("EdgeDB Jest test environment is not initialized");
   }
   if (!opts.user) {
     opts.user = "jest";
