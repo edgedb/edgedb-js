@@ -1,10 +1,12 @@
 import * as crypto from "crypto";
+import {createHash} from "crypto";
 import * as fs from "fs";
+import {existsSync, realpathSync} from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as net from "net";
 
-export {path, net};
+export {path, net, createHash, existsSync, realpathSync};
 
 export async function randomBytes(size: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
