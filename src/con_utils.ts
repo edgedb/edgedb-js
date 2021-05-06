@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 
-import {path, homeDir} from "./adapter.node";
+import {path, homeDir, crypto, fs} from "./adapter.node";
+import * as errors from "./errors";
 import {readCredentialsFile} from "./credentials";
 
 const EDGEDB_PORT = 5656;
@@ -92,6 +93,19 @@ export function parseConnectArguments(
   };
 }
 
+function stashPath(projectDir: string): string {
+  let projectPath = fs.realpathSync(projectDir);
+  if (process.platform === "win32" && !projectPath.startsWith("\\\\")) {
+    projectPath = "\\\\?\\" + projectPath;
+  }
+  const hasher = crypto.createHash("sha1");
+  hasher.update(projectPath);
+  const hash = hasher.digest("hex");
+  const baseName = path.basename(projectPath);
+  const dirName = baseName + "-" + hash;
+  return path.join(homeDir(), ".edgedb", "projects", dirName);
+}
+
 function parseConnectDsnAndArgs({
   dsn,
   host,
@@ -123,6 +137,43 @@ function parseConnectDsnAndArgs({
     );
     serverSettings = server_settings;
   }
+
+  if (
+    !(
+      dsn ||
+      host ||
+      port ||
+      process.env.EDGEDB_HOST ||
+      process.env.EDGEDB_PORT
+    )
+  ) {
+    if (process.env.EDGEDB_INSTANCE) {
+      dsn = process.env.EDGEDB_INSTANCE;
+    } else {
+      const dir = process.cwd();
+      if (!fs.existsSync(path.join(dir, "edgedb.toml"))) {
+        throw new errors.ClientConnectionError(
+          "no `edgedb.toml` found and no connection options specified" +
+            " either via arguments to connect API or via environment" +
+            " variables EDGEDB_HOST/EDGEDB_PORT or EDGEDB_INSTANCE"
+        );
+      }
+      const stashDir = stashPath(dir);
+      if (fs.existsSync(stashDir)) {
+        dsn = fs
+          .readFileSync(path.join(stashDir, "instance-name"), {
+            encoding: "utf8",
+          })
+          .trim();
+      } else {
+        throw new errors.ClientConnectionError(
+          "Found `edgedb.toml` but the project is not initialized. " +
+            "Run `edgedb project init`."
+        );
+      }
+    }
+  }
+
   if (dsn && /^edgedb(?:admin)?:\/\//.test(dsn)) {
     // Comma-separated hosts and empty hosts cannot always be parsed
     // correctly with new URL(), so if we detect them, we need to replace the

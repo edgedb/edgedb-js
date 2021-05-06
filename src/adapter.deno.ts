@@ -1,15 +1,17 @@
 import {process} from "https://deno.land/std@0.95.0/node/process.ts";
 import {Buffer} from "https://deno.land/std@0.95.0/node/buffer.ts";
+import * as crypto from "https://deno.land/std@0.95.0/node/crypto.ts";
+import * as fs from "https://deno.land/std@0.95.0/node/fs.ts";
 import {Sha256, HmacSha256} from "https://deno.land/std@0.95.0/hash/sha256.ts";
 import path from "https://deno.land/std@0.95.0/node/path.ts";
 import EventEmitter from "https://deno.land/std@0.95.0/node/events.ts";
 import util from "https://deno.land/std@0.95.0/node/util.ts";
 
-export {Buffer, path, process, util};
+export {Buffer, path, process, util, fs, crypto};
 
 export async function randomBytes(size: number): Promise<Buffer> {
   const buf = new Uint8Array(size);
-  const rand = crypto.getRandomValues(buf);
+  const rand = globalThis.crypto.getRandomValues(buf);
 
   return Buffer.from(rand);
 }
@@ -26,10 +28,6 @@ export function HMAC(key: Buffer, ...msgs: Buffer[]): Buffer {
     hm.update(msg);
   }
   return Buffer.from(hm.arrayBuffer());
-}
-
-export function readFileUtf8Sync(path: string): string {
-  return Deno.readTextFileSync(path);
 }
 
 export function homeDir(): string {
