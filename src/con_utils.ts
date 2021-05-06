@@ -98,12 +98,16 @@ function stashPath(projectDir: string): string {
   if (process.platform === "win32" && !projectPath.startsWith("\\\\")) {
     projectPath = "\\\\?\\" + projectPath;
   }
+  return stashPathRaw(projectPath, homeDir());
+}
+
+export function stashPathRaw(projectPath: string, home: string): string {
   const hasher = crypto.createHash("sha1");
   hasher.update(projectPath);
   const hash = hasher.digest("hex");
   const baseName = path.basename(projectPath);
   const dirName = baseName + "-" + hash;
-  return path.join(homeDir(), ".edgedb", "projects", dirName);
+  return path.join(home, ".edgedb", "projects", dirName);
 }
 
 function parseConnectDsnAndArgs({
