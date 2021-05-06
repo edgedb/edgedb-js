@@ -17,11 +17,17 @@
  */
 
 import {execFile} from "child_process";
+import * as fs from "fs";
 
 test("run deno test", async () => {
   jest.setTimeout(60_000);
 
-  return new Promise<void>((resolve, reject) => {
+  if (!fs.existsSync("test/deno")) {
+    console.warn("skipping deno tests; run `yarn `compileForDeno`");
+    return;
+  }
+
+  return await new Promise<void>((resolve, reject) => {
     execFile(
       "deno",
       [
@@ -41,7 +47,32 @@ test("run deno test", async () => {
           console.error(stderr);
           reject(error);
         }
-        console.log(stdout);
+        resolve();
+      }
+    );
+  });
+});
+
+test("deno check", async () => {
+  jest.setTimeout(60_000);
+
+  if (!fs.existsSync("test/deno")) {
+    console.warn("skipping deno tests; run `yarn `compileForDeno`");
+    return;
+  }
+
+  return await new Promise<void>((resolve, reject) => {
+    execFile(
+      "deno",
+      ["eval", 'import * as edgedb from "./edgedb-deno/mod.ts"'],
+      {
+        env: process.env,
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          console.error(stderr);
+          reject(error);
+        }
         resolve();
       }
     );

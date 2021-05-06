@@ -1,13 +1,16 @@
 import {process} from "https://deno.land/std@0.95.0/node/process.ts";
 import {Buffer} from "https://deno.land/std@0.95.0/node/buffer.ts";
 import * as crypto from "https://deno.land/std@0.95.0/node/crypto.ts";
-import * as fs from "https://deno.land/std@0.95.0/node/fs.ts";
 import {Sha256, HmacSha256} from "https://deno.land/std@0.95.0/hash/sha256.ts";
 import path from "https://deno.land/std@0.95.0/node/path.ts";
 import EventEmitter from "https://deno.land/std@0.95.0/node/events.ts";
 import util from "https://deno.land/std@0.95.0/node/util.ts";
 
-export {Buffer, path, process, util, fs, crypto};
+export {Buffer, path, process, util, crypto};
+
+export function readFileUtf8Sync(path: string): string {
+  return Deno.readTextFileSync(path);
+}
 
 export async function randomBytes(size: number): Promise<Buffer> {
   const buf = new Uint8Array(size);
@@ -45,6 +48,28 @@ export function homeDir(): string {
 
 export function hrTime(): number {
   return performance.now();
+}
+
+// TODO: replace this with
+//       `import * as fs from "https://deno.land/std@0.95.0/node/fs.ts";`
+//       when the 'fs' compat module does not require '--unstable' flag.
+export namespace fs {
+  export function existsSync(fn: string | URL): boolean {
+    fn = fn instanceof URL ? path.fromFileUrl(fn) : fn;
+    try {
+      Deno.lstatSync(fn);
+      return true;
+    } catch (err) {
+      if (err instanceof Deno.errors.NotFound) {
+        return false;
+      }
+      throw err;
+    }
+  }
+
+  export function realpathSync(path: string): string {
+    return Deno.realPathSync(path);
+  }
 }
 
 // TODO: when 'net.Socket' is implemented in deno node compatibility library

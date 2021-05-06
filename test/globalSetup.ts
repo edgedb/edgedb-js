@@ -38,7 +38,11 @@ export default async () => {
     if (m) {
       const runtimeData = JSON.parse(m[1]);
       process.env._JEST_EDGEDB_PORT = runtimeData.port;
-      process.env._JEST_EDGEDB_HOST = runtimeData.runstate_dir;
+
+      // Use runtimeData.runstate_dir instead of 127.0.0.1 to force
+      // testing on the UNIX socket. Deno, however, has problems with
+      // that, hence the TCP address.
+      process.env._JEST_EDGEDB_HOST = "127.0.0.1";
       if (ok) {
         err = null;
         ok([runtimeData.runstate_dir, parseInt(runtimeData.port, 10)]);
