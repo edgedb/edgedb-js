@@ -14,6 +14,7 @@ const ts = require("typescript");
 run({
   sourceDir: "./src",
   destDir: "./edgedb-deno",
+  destEntriesToClean: ["_src", "mod.ts"],
   pathRewriteRules: [
     {match: /^src\/index.node.ts$/, replace: "mod.ts"},
     {match: /^src\//, replace: "_src/"},
@@ -70,6 +71,7 @@ run({
 async function run({
   sourceDir,
   destDir,
+  destEntriesToClean,
   pathRewriteRules = [],
   importRewriteRules = [],
   injectImports = [],
@@ -77,6 +79,7 @@ async function run({
 }: {
   sourceDir: string;
   destDir: string;
+  destEntriesToClean?: string[];
   pathRewriteRules?: {match: RegExp; replace: string}[];
   importRewriteRules?: {
     match: RegExp;
@@ -85,9 +88,10 @@ async function run({
   injectImports?: {imports: string[]; from: string}[];
   sourceFilter?: (path: string) => boolean;
 }) {
+  const destClean = new Set(destEntriesToClean);
   try {
     for await (const entry of Deno.readDir(destDir)) {
-      if (entry.isFile || (entry.isDirectory && entry.name !== ".git")) {
+      if (!destEntriesToClean || destClean.has(entry.name)) {
         await Deno.remove(join(destDir, entry.name), {recursive: true});
       }
     }
