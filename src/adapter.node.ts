@@ -1,12 +1,11 @@
 import * as crypto from "crypto";
-import {createHash} from "crypto";
 import * as fs from "fs";
 import {existsSync, realpathSync} from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as net from "net";
 
-export {path, net, createHash, existsSync, realpathSync};
+export {path, net, crypto, fs, existsSync, realpathSync};
 
 export async function randomBytes(size: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -32,10 +31,6 @@ export function HMAC(key: Buffer, ...msgs: Buffer[]): Buffer {
     hm.update(msg);
   }
   return hm.digest();
-}
-
-export function readFileUtf8Sync(filepath: string): string {
-  return fs.readFileSync(filepath, {encoding: "utf-8"});
 }
 
 export const homeDir = os.homedir;

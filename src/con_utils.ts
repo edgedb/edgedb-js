@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-import {path, homeDir, createHash} from "./adapter.node";
-import {readFileUtf8Sync, existsSync, realpathSync} from "./adapter.node";
+import {path, homeDir, crypto, fs} from "./adapter.node";
 import * as errors from "./errors";
 import {readCredentialsFile} from "./credentials";
 
@@ -95,11 +94,11 @@ export function parseConnectArguments(
 }
 
 function stashPath(projectDir: string): string {
-  let projectPath = realpathSync(projectDir);
+  let projectPath = fs.realpathSync(projectDir);
   if (process.platform === "win32" && !projectPath.startsWith("\\\\")) {
     projectPath = "\\\\?\\" + projectPath;
   }
-  const hasher = createHash("sha1");
+  const hasher = crypto.createHash("sha1");
   hasher.update(projectPath);
   const hash = hasher.digest("hex");
   const baseName = path.basename(projectPath);
@@ -152,7 +151,7 @@ function parseConnectDsnAndArgs({
       dsn = process.env.EDGEDB_INSTANCE;
     } else {
       const dir = process.cwd();
-      if (!existsSync(path.join(dir, "edgedb.toml"))) {
+      if (!fs.existsSync(path.join(dir, "edgedb.toml"))) {
         throw new errors.ClientConnectionError(
           "no `edgedb.toml` found and no connection options specified" +
             " either via arguments to connect API or via environment" +
@@ -160,8 +159,12 @@ function parseConnectDsnAndArgs({
         );
       }
       const stashDir = stashPath(dir);
-      if (existsSync(stashDir)) {
-        dsn = readFileUtf8Sync(path.join(stashDir, "instance-name")).trim();
+      if (fs.existsSync(stashDir)) {
+        dsn = fs
+          .readFileSync(path.join(stashDir, "instance-name"), {
+            encoding: "utf8",
+          })
+          .trim();
       } else {
         throw new errors.ClientConnectionError(
           "Found `edgedb.toml` but the project is not initialized. " +
