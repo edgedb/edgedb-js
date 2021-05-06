@@ -7,6 +7,10 @@ import * as net from "net";
 
 export {path, net, crypto, fs, existsSync, realpathSync};
 
+export function readFileUtf8Sync(fn: string): string {
+  return fs.readFileSync(fn, {encoding: "utf8"});
+}
+
 export async function randomBytes(size: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     crypto.randomBytes(size, (err, buf) => {

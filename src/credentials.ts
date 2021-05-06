@@ -1,4 +1,4 @@
-import {fs} from "./adapter.node";
+import {readFileUtf8Sync} from "./adapter.node";
 
 export interface Credentials {
   host?: string;
@@ -10,7 +10,7 @@ export interface Credentials {
 
 export function readCredentialsFile(file: string): Credentials {
   try {
-    const data: string = fs.readFileSync(file, {encoding: "utf8"});
+    const data: string = readFileUtf8Sync(file);
     return validateCredentials(JSON.parse(data));
   } catch (e) {
     throw Error(`cannot read credentials file ${file}: ${e}`);

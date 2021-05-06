@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {path, homeDir, crypto, fs} from "./adapter.node";
+import {path, homeDir, crypto, fs, readFileUtf8Sync} from "./adapter.node";
 import * as errors from "./errors";
 import {readCredentialsFile} from "./credentials";
 
@@ -160,11 +160,7 @@ function parseConnectDsnAndArgs({
       }
       const stashDir = stashPath(dir);
       if (fs.existsSync(stashDir)) {
-        dsn = fs
-          .readFileSync(path.join(stashDir, "instance-name"), {
-            encoding: "utf8",
-          })
-          .trim();
+        dsn = readFileUtf8Sync(path.join(stashDir, "instance-name")).trim();
       } else {
         throw new errors.ClientConnectionError(
           "Found `edgedb.toml` but the project is not initialized. " +
