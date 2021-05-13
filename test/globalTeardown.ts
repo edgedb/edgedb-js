@@ -14,7 +14,7 @@ export default async () => {
         // tslint:disable-next-line
         console.error("!!! EdgeDB exit timeout... !!!");
         proc.kill("SIGTERM");
-      }, 5000);
+      }, 20_000);
 
       proc.on("exit", (code: number, signal: string) => {
         clearTimeout(to);
