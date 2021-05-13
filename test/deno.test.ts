@@ -23,8 +23,12 @@ test("run deno test", async () => {
   jest.setTimeout(60_000);
 
   if (!fs.existsSync("test/deno")) {
-    console.warn("skipping deno tests; run `yarn `compileForDeno`");
-    return;
+    if (process.env.CI) {
+      throw new Error("Cannot find 'test/deno' directory");
+    } else {
+      console.warn("skipping deno tests; run `yarn `compileForDeno`");
+      return;
+    }
   }
 
   return await new Promise<void>((resolve, reject) => {
@@ -47,6 +51,7 @@ test("run deno test", async () => {
           console.error(stderr);
           reject(error);
         }
+        console.log(stdout);
         resolve();
       }
     );
@@ -57,8 +62,12 @@ test("deno check", async () => {
   jest.setTimeout(60_000);
 
   if (!fs.existsSync("test/deno")) {
-    console.warn("skipping deno tests; run `yarn `compileForDeno`");
-    return;
+    if (process.env.CI) {
+      throw new Error("Cannot find 'test/deno' directory");
+    } else {
+      console.warn("skipping deno tests; run `yarn `compileForDeno`");
+      return;
+    }
   }
 
   return await new Promise<void>((resolve, reject) => {
