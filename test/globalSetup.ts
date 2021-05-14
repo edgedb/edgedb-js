@@ -38,7 +38,7 @@ export default async () => {
     args = [
       "sudo",
       "-u",
-      "nobody",
+      "edgedb",
       srvcmd,
       ...args,
       "--bootstrap-command=ALTER ROLE edgedb { SET password := ''  }",
