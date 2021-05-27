@@ -15,10 +15,19 @@ jobs:
     strategy:
       matrix:
         node-version: ["12", "13", "14", "15"]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         edgedb-version: ["stable", "nightly"]
 
     steps:
+      - name: Setup WSL
+        if: ${{ matrix.os == 'windows-latest' }}
+        uses: vampire/setup-wsl@v1
+        with:
+          wsl-shell-user: edgedb
+          additional-packages:
+            ca-certificates
+            curl
+
       - uses: actions/checkout@v1
         with:
           fetch-depth: 50

@@ -24,19 +24,41 @@ export default async () => {
     srvcmd = `${srvcmd}-${process.env.EDGEDB_SLOT}`;
   }
 
-  const proc = child_process.spawn(srvcmd, [
+  let useAdmin = true;
+  let args = [
     "--temp-dir",
     "--testmode",
     "--echo-runtime-info",
     "--port=auto",
     "--auto-shutdown",
-  ]);
+  ];
+
+  if (process.platform === "win32") {
+    useAdmin = false;
+    args = [
+      "sudo",
+      "-u",
+      "edgedb",
+      srvcmd,
+      ...args,
+      "--bootstrap-command=ALTER ROLE edgedb { SET password := ''  }",
+    ];
+    srvcmd = "wsl";
+  }
+
+  const proc = child_process.spawn(srvcmd, args);
 
   proc.stdout.on("data", (data) => {
     stdoutData += data;
     const m = stdoutData.match(/\nEDGEDB_SERVER_DATA:(\{[^\n]+\})\n/);
     if (m) {
       const runtimeData = JSON.parse(m[1]);
+
+      let host = runtimeData.runstate_dir;
+      if (process.platform == "win32") {
+        host = "127.0.0.1";
+      }
+
       process.env._JEST_EDGEDB_PORT = runtimeData.port;
 
       // Use runtimeData.runstate_dir instead of 127.0.0.1 to force
@@ -45,7 +67,7 @@ export default async () => {
       process.env._JEST_EDGEDB_HOST = "127.0.0.1";
       if (ok) {
         err = null;
-        ok([runtimeData.runstate_dir, parseInt(runtimeData.port, 10)]);
+        ok([host, parseInt(runtimeData.port, 10)]);
       } else {
         throw new Error("'done' promise isn't initialized");
       }
@@ -79,7 +101,7 @@ export default async () => {
     port,
     user: "edgedb",
     database: "edgedb",
-    admin: true,
+    admin: useAdmin,
   });
 
   try {

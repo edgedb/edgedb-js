@@ -4,12 +4,14 @@ import {
   relative,
   dirname,
   basename,
-} from "https://deno.land/std@0.95.0/path/mod.ts";
+} from "https://deno.land/std@0.95.0/path/posix.ts";
 import {createRequire} from "https://deno.land/std@0.95.0/node/module.ts";
 
 const require = createRequire(import.meta.url);
 
 const ts = require("typescript");
+
+const normalisePath = (path: string) => path.replace(/\\/g, '/');
 
 run({
   sourceDir: "./src",
@@ -100,7 +102,7 @@ async function run({
   const sourceFilePathMap = new Map<string, string>();
 
   for await (const entry of walk(sourceDir, {includeDirs: false})) {
-    const sourcePath = entry.path;
+    const sourcePath = normalisePath(entry.path);
     if (!sourceFilter || sourceFilter(sourcePath)) {
       sourceFilePathMap.set(sourcePath, resolveDestPath(sourcePath));
     }
