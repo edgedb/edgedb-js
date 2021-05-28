@@ -495,3 +495,111 @@ export class Duration {
     return `Duration [ ${this.toString()} ]`;
   }
 }
+
+export class RelativeDuration {
+  private readonly _years: number;
+  private readonly _months: number;
+  private readonly _weeks: number;
+  private readonly _days: number;
+  private readonly _hours: number;
+  private readonly _minutes: number;
+  private readonly _seconds: number;
+  private readonly _milliseconds: number;
+  private readonly _microseconds: number;
+
+  constructor(
+    years: number = 0,
+    months: number = 0,
+    weeks: number = 0,
+    days: number = 0,
+    hours: number = 0,
+    minutes: number = 0,
+    seconds: number = 0,
+    milliseconds: number = 0,
+    microseconds: number = 0
+  ) {
+    this._years = Math.trunc(years) || 0;
+    this._months = Math.trunc(months) || 0;
+    this._weeks = Math.trunc(weeks) || 0;
+    this._days = Math.trunc(days) || 0;
+    this._hours = Math.trunc(hours) || 0;
+    this._minutes = Math.trunc(minutes) || 0;
+    this._seconds = Math.trunc(seconds) || 0;
+    this._milliseconds = Math.trunc(milliseconds) || 0;
+    this._microseconds = Math.trunc(microseconds) || 0;
+  }
+  get years(): number {
+    return this._years;
+  }
+  get months(): number {
+    return this._months;
+  }
+  get weeks(): number {
+    return this._weeks;
+  }
+  get days(): number {
+    return this._days;
+  }
+  get hours(): number {
+    return this._hours;
+  }
+  get minutes(): number {
+    return this._minutes;
+  }
+  get seconds(): number {
+    return this._seconds;
+  }
+  get milliseconds(): number {
+    return this._milliseconds;
+  }
+  get microseconds(): number {
+    return this._microseconds;
+  }
+
+  toString(): string {
+    let str = "P";
+    if (this._years) {
+      str += `${this._years}Y`;
+    }
+    if (this._months) {
+      str += `${this._months}M`;
+    }
+    const days = this._days + 7 * this._weeks;
+    if (days) {
+      str += `${days}D`;
+    }
+
+    let timeParts = "";
+    if (this._hours) {
+      timeParts += `${this._hours}H`;
+    }
+    if (this._minutes) {
+      timeParts += `${this._minutes}M`;
+    }
+
+    const seconds =
+      this._seconds + this._milliseconds / 1e3 + this._microseconds / 1e6;
+
+    if (seconds !== 0) {
+      timeParts += `${seconds}S`;
+    }
+
+    if (timeParts) {
+      str += `T${timeParts}`;
+    }
+
+    if (str === "P") {
+      return "PT0S";
+    }
+
+    return str;
+  }
+
+  toJSON(): string {
+    return this.toString();
+  }
+
+  valueOf(): any {
+    throw new TypeError("Not possible to compare RelativeDuration");
+  }
+}

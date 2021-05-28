@@ -24,6 +24,7 @@ import {
   LocalDate,
   LocalTime,
   Duration,
+  RelativeDuration,
   LocalDateFromOrdinal,
   LocalDateToOrdinal,
 } from "../datatypes/datetime";
@@ -161,6 +162,7 @@ const unencodableDurationFields: Array<keyof Duration> = [
   "weeks",
   "days",
 ];
+
 export class DurationCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof Duration)) {
@@ -221,6 +223,70 @@ export class DurationCodec extends ScalarCodec implements ICodec {
       0,
       0,
       0,
+      hours * sign,
+      minutes * sign,
+      seconds * sign,
+      ms * sign,
+      us * sign
+    );
+  }
+}
+
+export class RelativeDurationCodec extends ScalarCodec implements ICodec {
+  encode(buf: WriteBuffer, object: any): void {
+    if (!(object instanceof RelativeDuration)) {
+      throw new Error(`
+        a RelativeDuration instance was expected, got "${object}"
+      `);
+    }
+
+    let us = bi.make(object.microseconds);
+    us = bi.add(us, bi.mul(bi.make(object.milliseconds), bi.make(1_000)));
+    us = bi.add(us, bi.mul(bi.make(object.seconds), bi.make(1_000_000)));
+    us = bi.add(us, bi.mul(bi.make(object.minutes), bi.make(60_000_000)));
+    us = bi.add(us, bi.mul(bi.make(object.hours), bi.make(3_600_000_000)));
+
+    buf.writeInt32(16);
+    buf.writeBigInt64(us as bigint);
+    buf.writeInt32(object.days + 7 * object.weeks);
+    buf.writeInt32(object.months + 12 * object.years);
+  }
+
+  decode(buf: ReadBuffer): any {
+    let bius = buf.readBigInt64();
+    let days = buf.readInt32();
+    let months = buf.readInt32();
+
+    let sign = 1;
+    if (Number(bius) < 0) {
+      sign = -1;
+      bius = bi.mul(bi.make(-1), bius);
+    }
+
+    const biMillion = bi.make(1_000_000);
+
+    const biSeconds = bi.div(bius, biMillion);
+    let us = Number(bi.sub(bius, bi.mul(biSeconds, biMillion)));
+    const ms = Math.trunc(us / 1000);
+    us = us % 1000;
+
+    let seconds = Number(biSeconds);
+    let minutes = Math.trunc(seconds / 60);
+    seconds = Math.trunc(seconds % 60);
+    const hours = Math.trunc(minutes / 60);
+    minutes = Math.trunc(minutes % 60);
+
+    const weeks = Math.trunc(days / 7);
+    days = Math.trunc(days % 7);
+
+    const years = Math.trunc(months / 12);
+    months = Math.trunc(months % 12);
+
+    return new RelativeDuration(
+      years,
+      months,
+      weeks,
+      days,
       hours * sign,
       minutes * sign,
       seconds * sign,
