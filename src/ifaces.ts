@@ -23,6 +23,7 @@ import {
   LocalDate,
   LocalTime,
   Duration,
+  RelativeDuration,
 } from "./datatypes/datetime";
 import {Transaction} from "./transaction";
 import {InnerConnection, ConnectionImpl} from "./client";
@@ -44,6 +45,7 @@ type QueryArgPrimitive =
   | LocalDate
   | LocalTime
   | Duration
+  | RelativeDuration
   | UUID;
 
 type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;

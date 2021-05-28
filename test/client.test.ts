@@ -31,7 +31,12 @@ import {
   _ReadBuffer,
 } from "../src/index.node";
 import {INNER} from "../src/ifaces";
-import {LocalDate, Duration, EdgeDBDateTime} from "../src/datatypes/datetime";
+import {
+  LocalDate,
+  Duration,
+  RelativeDuration,
+  EdgeDBDateTime,
+} from "../src/datatypes/datetime";
 import {asyncConnect, getConnectOptions, isDeno} from "./testbase";
 import {parseConnectArguments} from "../src/con_utils";
 
@@ -681,17 +686,44 @@ test("fetch: cal::local_time", async () => {
 
 test("fetch: duration", async () => {
   function formatLegacyDuration(duration: Duration): string {
-    function fmt(timePart: number, len = 2): string {
+    function fmt(timePart: number, len = 3): string {
       return Math.abs(timePart).toString().padStart(len, "0");
     }
 
-    return `${duration.sign === -1 ? "-" : ""}${Math.abs(
-      duration.hours
-    )}:${fmt(duration.minutes)}:${fmt(duration.seconds)}${(
-      "." +
-      fmt(duration.milliseconds, 3) +
-      fmt(duration.microseconds, 3)
-    ).replace(/\.?0+$/, "")}`;
+    let dateParts = "P";
+    const days = duration.days + 7 * duration.weeks;
+    if (duration.years) {
+      dateParts += `${duration.years}Y`;
+    }
+    if (duration.months) {
+      dateParts += `${duration.months}M`;
+    }
+    if (days) {
+      dateParts += `${days}D`;
+    }
+
+    let timeParts = "";
+    if (duration.hours) {
+      timeParts += `${duration.hours}H`;
+    }
+    if (duration.minutes) {
+      timeParts += `${duration.minutes}M`;
+    }
+    if (duration.seconds || duration.milliseconds || duration.microseconds) {
+      timeParts += `${duration.seconds}`;
+      if (duration.milliseconds || duration.microseconds) {
+        timeParts += `.${fmt(duration.milliseconds)}${fmt(
+          duration.microseconds
+        )}`;
+      }
+      timeParts += "S";
+    }
+
+    if (timeParts) {
+      dateParts += `T${timeParts}`;
+    }
+
+    return dateParts;
   }
   function normaliseIsoDuration(duration: string) {
     if (duration.includes("-")) {
@@ -823,6 +855,100 @@ if (!isDeno) {
         expect(roundedDur.microseconds).toBe(dursFromDb[i].microseconds);
         expect(roundedDur.nanoseconds).toBe(dursFromDb[i].nanoseconds);
         expect(roundedDur.sign).toBe(dursFromDb[i].sign);
+      }
+    } finally {
+      await con.close();
+    }
+  });
+}
+
+test("fetch: relative_duration", async () => {
+  const con = await asyncConnect();
+  let res: any;
+  try {
+    for (const time of [
+      "24 hours",
+      "68464977 seconds 74 milliseconds 11 microseconds",
+      "-752043.296 milliseconds",
+      "20 years 5 days 10 seconds",
+      "3 months",
+      "7 weeks 9 microseconds",
+    ]) {
+      res = await con.queryOne(
+        `
+          select (
+            <cal::relative_duration><str>$time,
+            <str><cal::relative_duration><str>$time,
+          );
+        `,
+        {time}
+      );
+      expect(res[0].toString()).toBe(res[1]);
+
+      const res2: any = await con.queryOne(
+        `
+        select <cal::relative_duration>$time;
+        `,
+        {time: res[0]}
+      );
+      expect(res2.toString()).toBe(res[0].toString());
+    }
+  } finally {
+    await con.close();
+  }
+});
+
+if (!isDeno) {
+  test("fetch: relative_duration fuzz", async () => {
+    jest.setTimeout(10_000);
+    const randint = (min: number, max: number) => {
+      const x = Math.round(Math.random() * (max - min) + min);
+      return x === -0 ? 0 : x;
+    };
+
+    const durs = [
+      new RelativeDuration(),
+      new RelativeDuration(0, 0, 0, 0, 0, 0, 0, 1),
+      new RelativeDuration(0, 0, 0, 0, 0, 0, 0, -1),
+      new RelativeDuration(0, 0, 0, 0, 0, 0, 0, 1),
+      new RelativeDuration(0, 0, 0, 0, 0, 0, 0, -1),
+      new RelativeDuration(0, 0, 0, 0, 0, -12, -32, -43.296),
+      new RelativeDuration(0, 0, 0, 0, 0, 59, 2, 924),
+      new RelativeDuration(0, 0, 0, 0, 24, 0, 0, 0),
+      new RelativeDuration(0, 0, 0, 0, -24, 0, 0, 0),
+    ];
+
+    // Fuzz it!
+    for (let _i = 0; _i < 5000; _i++) {
+      const sign = [-1, 1][randint(0, 2)];
+      durs.push(
+        new RelativeDuration(
+          sign * randint(0, 100),
+          sign * randint(0, 11),
+          sign * randint(0, 3),
+          sign * randint(0, 6),
+          sign * randint(0, 23),
+          sign * randint(0, 59),
+          sign * randint(0, 59),
+          sign * randint(0, 999),
+          sign * randint(0, 999)
+        )
+      );
+    }
+
+    const con = await asyncConnect();
+    try {
+      // Test encode/decode round trip.
+      const dursFromDb: any = await con.query(
+        `
+          WITH args := array_unpack(<array<cal::relative_duration>>$0)
+          SELECT args;
+        `,
+        [durs]
+      );
+
+      for (let i = 0; i < durs.length; i++) {
+        expect(durs[i].toString()).toBe(dursFromDb[i].toString());
       }
     } finally {
       await con.close();
