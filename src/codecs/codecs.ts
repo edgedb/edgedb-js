@@ -37,6 +37,7 @@ import {
   LocalDateTimeCodec,
   LocalTimeCodec,
   DurationCodec,
+  RelativeDurationCodec,
 } from "./datetime";
 
 import {KNOWN_TYPENAMES, NULL_CODEC_ID} from "./consts";
@@ -103,3 +104,4 @@ registerScalarCodec("cal::local_time", LocalTimeCodec);
 registerScalarCodec("cal::local_datetime", LocalDateTimeCodec);
 registerScalarCodec("std::datetime", DateTimeCodec);
 registerScalarCodec("std::duration", DurationCodec);
+registerScalarCodec("cal::relative_duration", RelativeDurationCodec);
