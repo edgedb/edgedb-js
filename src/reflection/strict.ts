@@ -1,7 +1,7 @@
 /*!
  * This source file is part of the EdgeDB open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2020-present MagicStack Inc. and the EdgeDB authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,15 @@
  * limitations under the License.
  */
 
-import _connect from "./client";
-export const connect = _connect;
-export default connect;
-
-export {RawConnection as _RawConnection} from "./client";
-
-export {createPool} from "./pool";
-
-export type {Connection, Pool} from "./ifaces";
-
-export {IsolationLevel, RetryCondition, RetryOptions} from "./options";
-export {defaultBackoff} from "./options";
-export type {BackoffFunction} from "./options";
-
-export * from "./index.shared";
-export * as reflection from "./reflection";
+export class StrictMap<K, V> extends Map<K, V> {
+  /* A version of `Map` with a `get` method that throws an
+     error on missing keys instead of returning an undefined.
+     This is easier to work with when everything is strictly typed.
+  */
+  get(key: K): V {
+    if (!this.has(key)) {
+      throw new Error(`key "${key}" is not found`);
+    }
+    return super.get(key)!;
+  }
+}
