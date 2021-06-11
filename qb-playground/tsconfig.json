@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "es5",
+      "es6",
+      "es7",
+      "esnext",
+      "dom"
+    ],
+    "target": "es5",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "downlevelIteration": true,
+    "isolatedModules": true,
+    "paths": {
+      "edgedb": [
+        "../../js/src"
+      ] // This mapping is relative to "baseUrl"
+    }
+  },
+  "include": [
+    ".",
+  ],
+}
