@@ -183,14 +183,23 @@ Movie.characters;
 ### Type filters
 
 ```ts
-e.is(Hero, Movie.characters);
+// Movie.characters[IS Hero]
+Movie.characters.$is(Hero);
 ```
 
 ### Backward links
 
 ```ts
-Hero.nemesis_Villain;
-Hero.characters_Movie;
+Hero.$back.nemesis.$is(Villain);
+
+// Hero.$back(Villain.nemesis);
+// `Hero.<nemesis`
+// `Hero.<nemesis[IS Villain]`
+// Hero.$of(Villain.nemesis);
+// e.back(Hero, Villain.nemesis);
+// sugar options
+// e.is(Hero["<nemesis"]);
+// Hero.nemesis_Villain;
 ```
 
 ## Select
@@ -209,13 +218,14 @@ Shape defaults to `{ id: true }`;
 
 ```ts
 e.select(Hero);
+// Select Hero;
 ```
 
 ### Object-defined shape
 
 ```ts
 e.select(Hero, {
-  id: true,
+  id: 1 > 0, // optional
   name: true,
   villains: {
     id: true,
@@ -231,7 +241,7 @@ e.select(Hero, {
   id: true,
   name: true,
 })
-  .filter(e.ilike(Hero.name, "%Man"))
+  .filter(e.or(e.ilike(Hero.name, "%Man"), e.ilike(Hero.name, "The %")))
   .filter(e.ilike(Hero.secret_identity, "Peter%"));
 ```
 
@@ -244,13 +254,60 @@ e.select(Hero, {
   id: true,
   name: true,
   villains: e
-    .select(Villain, {
+    .select(Villain.$is(Villain), {
       id: true,
       name: true,
     })
     .filter(e.eq(e.len(Hero.name), e.len(Villain.name))),
 }).filter(e.eq(Hero.name, e.str("Iron Man")));
 ```
+
+### Type intersection
+
+```ts
+// with h1 := Hero,
+//   villains := h1.villains[IS Subvillain]
+
+// const newHero = e.insert(Hero,{})
+e.select(Hero, {
+  id: true,
+  name: true,
+  villains: (() => {
+    const villains = Hero.villain.$is(Subvillain);
+    return e
+      .select(villains, {
+        id: true,
+        name: true,
+      })
+      .filter(e.eq(e.len(Hero.name), e.len(villains.name)));
+  })(),
+}).filter(e.eq(Hero.name, e.str("Iron Man")));
+```
+
+Explicit WITH
+
+```ts
+e.select(Hero, {
+  id: true,
+  name: true,
+  villains: e.with(
+    {
+      villains: Hero.villain.$is(Subvillain),
+    },
+    (ctx) =>
+      e
+        .select(ctx.villains, {
+          id: true,
+          name: true,
+        })
+        .filter(e.eq(e.len(Hero.name), e.len(villains.name)))
+  ),
+}).filter(e.eq(Hero.name, e.str("Iron Man")));
+```
+
+- path expressions are inlined
+- statements are inlined if used only once
+- statements referenced more than once require explicit WITH
 
 ### Computables
 
@@ -260,12 +317,12 @@ const Person = e.default.Person;
 e.select(Person, {
   id: true,
   name: true,
-  uppercase_name: e.str_upper(Person.name)
+  uppercase_name: e.str_upper(Person.name),
   is_hero: e.is(Person, e.default.Hero),
 });
 ```
 
-### Arguments
+### Parameters
 
 ```ts
 const fetchPerson = e.withParams(
@@ -281,14 +338,6 @@ const fetchPerson = e.withParams(
 );
 ```
 
-Alternative (typechecking args not possible):
-
-```ts
-e.select(Person, {
-  id: true,
-}).filter(e.in(Person.name, e.array_unpack(e.args("name", e.ARRAY(e.str)))));
-```
-
 ### Polymorphism
 
 Option 1: variadic shape arguments.
@@ -298,22 +347,23 @@ e.select(
   Person,
   {
     id: true,
-  },
-  {
     name: true,
   },
-  e.is(Hero, {
+  Person.$is(Hero, {
     secret_identity: true,
     villains: {
       id: true,
       name: true,
     },
   }),
-  e.is(Villain, {
+  Person.$is(Villain, {
     nemesis: {id: true},
   })
 );
 ```
+
+SELECT Movie.characters[IS Hero];
+SELECT Movie.characters IS Hero;
 
 ### Type intersection
 
@@ -331,7 +381,7 @@ Use subqueries:
 ```ts
 e.select(Movie, {
   id: true,
-  characters: e.select(e.is(Movie.characters, e.default.Hero), {
+  characters: e.select(Movie.characters.$is(e.default.Hero), {
     id: true,
     secret_identity: true,
   }),
@@ -369,12 +419,22 @@ e.select(Hero, {
 })
   .orderBy(Hero.name, e.DESC, e.EMPTY_FIRST)
   .orderBy(Hero.secret_identity, e.ASC, e.EMPTY_LAST);
+
+`SELECT Hero
+  ORDER BY .name DESC EMPTY LAST
+  THEN .secret_identity ASC EMPTY LAST`;
 ```
 
 ### Pagination
 
 ```ts
 e.select(Hero).offset(e.len(Hero.name)).limit(15);
+```
+
+No chained `offset` or `limit`
+
+```ts
+e.select(Hero).offset(e.len(Hero.name)).offset(15); // TypeError
 ```
 
 ## Insert
@@ -400,7 +460,7 @@ e.insert(Movie, {
     .select(Person)
     .filter(e.in(Person.name, e.set("Spider-Man", "Doc Ock"))),
 }).unlessConflict(
-  [Movie.title],
+  Movie.title, // can be any expression
   e.update(Movie, {
     characters: e
       .select(Person)
@@ -412,32 +472,40 @@ e.insert(Movie, {
 ## Update
 
 ```ts
-e.update(Movie, {
-  set: {
-    title: e.str("Avengers: Endgame"),
-  },
-  add: {
-    characters: e.set(e.select(Hero), e.select(Villain)),
-  },
-  remove: {
-    characters: e.select(Villain).filter(e.eq(villain.name, e.str("Thanos")))
-  }
-})).filter(e.eq(Movie.title, e.str("Avengers 4")));
+// update method
+e.select(Movie)
+  .filter(e.eq(Movie.title, e.str("Avengers 4")))
+  .orderBy(/**/)
+  .offset(/**/)
+  .update({
+    set: {
+      title: e.str("Avengers: Endgame"),
+    },
+    add: {
+      characters: e.set(e.select(Hero), e.select(Villain)),
+    },
+    remove: {
+      characters: e
+        .select(Villain)
+        .filter(e.eq(villain.name, e.str("Thanos"))),
+    },
+  });
 ```
 
 ## Delete
 
 ```ts
-e.delete(Hero)
+e.select(Hero)
   .filter(e.eq(Hero.name, "Captain America"))
   .orderBy(/**/)
   .offset(/**/)
-  .limit(/**/);
+  .limit(/**/)
+  .delete();
 ```
 
 ## WITH clauses
 
-During the query rendering step, references to different clauses are tracked, and all orphan clauses are added in a WITH block. Clause identifiers (e.g. `WITH h1 := ()`) are generated internally.
+During the query rendering step, references to different clauses are tracked, and all orphan clauses are added in a WITH block. Expression identifiers (e.g. `WITH h1 := ()`) are generated internally.
 
 ```ts
 const newHero = e.insert(Hero, {
@@ -507,9 +575,24 @@ SELECT x := {1,2,3} FILTER x > 2;
 As the `Set` class (described under "Type System") has a `cardinality` property, we're able to represent singleton cardinality inside a FOR/IN loop.
 
 ```ts
+e.for(e.set("1", "2", "3"), (number) => {
+  // do stuff
+});
+
 e.for(Hero, (hero) => {
   // do stuff
 });
+```
+
+## Type declarations
+
+```ts
+e.decimal(15);
+e.cast(e.decimal, 14);
+
+e.tuple([e.int16, e.str]); // tuple<int16, str>
+e.tuple([e.int16(0), e.str("asdf")]); // ('0', 'asdf')
+e.tuple([Hero, Villain]); // ???
 ```
 
 ## Casting
