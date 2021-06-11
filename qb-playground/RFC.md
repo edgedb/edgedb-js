@@ -195,6 +195,13 @@ Hero.characters_Movie;
 
 ## SELECT
 
+### Scalars
+
+```ts
+e.select(e.int64(1243));
+e.select(e.concat('aaaa', e.to_str(e.int64(111)));
+```
+
 ### Simple select
 
 Shape defaults to `{ id: true }`;
@@ -260,12 +267,16 @@ e.select(Person, {
 ### Arguments
 
 ```ts
-const fetchPerson = e.params({name: e.Array(e.Str)}, (args) =>
-  e
-    .select(Person, {
-      id: true,
-    })
-    .filter(e.in(Person.name, e.array_unpack(args.name)))
+const fetchPerson = e.withParams(
+  {
+    name: e.Array(e.Str),
+  },
+  (args) =>
+    e
+      .select(Person, {
+        id: true,
+      })
+      .filter(e.in(Person.name, e.array_unpack(args.name)))
 );
 ```
 
@@ -301,37 +312,6 @@ e.select(
     nemesis: {id: true},
   })
 );
-```
-
-Option 2: `IS_` keys
-
-```ts
-e.select(Person, {
-  id: true,
-  name: true,
-  IS_Hero: {
-    secret_identity: true,
-    villains: {
-      id: true,
-      name: true,
-    },
-  },
-  IS_Villain: {
-    nemesis: {
-      id: true,
-    },
-  },
-});
-```
-
-Pro: less verbose
-Con: not compatible with more union type filters in shapes (which aren't currently supported in EdgeQL but may be in the future), e.g.
-
-```
-SELECT Person {
-  id,
-  [IS Hero | Villain].sharedProperty
-}
 ```
 
 ### Type intersection
@@ -474,7 +454,7 @@ return e.select(newVillain, {
 });
 ```
 
-If reference tracking isn't possible for some reason, alternative APIs:
+If reference tracking isn't possible for some reason, alternative APIs include a "dependency list":
 
 ```ts
 return e
@@ -485,7 +465,7 @@ return e
   });
 ```
 
-OR a fully self-contained version:
+or a fully self-contained version:
 
 ```ts
 return e
@@ -506,6 +486,13 @@ return e
       name: true,
     })
   );
+```
+
+## Inline aliases
+
+```ts
+const x = e.select(e.set(e.int64(1), e.int64(2), e.int64(3), e.int64(4)));
+e.select(x).filter(e.gt(x, e.int64(2)));
 ```
 
 ## FOR IN
