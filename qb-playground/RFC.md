@@ -4,7 +4,7 @@
 
 EdgeDB's type system can be represented as either interfaces or branded types, which both support an analog of multiple interitance.
 
-"Multiple inheritance" is used to represent implicit casting/compatibilty. e.g. `Int64` extends `Float64` and `BigInt`.
+"Multiple inheritance" is used to represent implicit casting/compatibilty. e.g. `interface Int64 implements Float64, BigInt {}`.
 
 - interface AnyType<TSType>
   - Bool
@@ -32,7 +32,7 @@ EdgeDB's type system can be represented as either interfaces or branded types, w
 
 ## Class structure
 
-All syntactic structures are subclasses of `Expression` augmented with a mixin according to its return type. This is necessary to enable things like creating path expressions from subqueries, etc.
+All syntactic structures are subclasses of `Expression` augmented with a mixin corresponding to its return type.
 
 ```ts
 Expression<Output extends Set<any, any>, TSType> {}
@@ -106,40 +106,12 @@ Use overloading to represent implicit casting behavior
 
 ```ts
 // allow castable heterogeneous types
+
 e.set(e.int16(1234), e.int64(1234));
 // => Literal<Set<Int64>, number[]>
-e.set(e.int64(1234), e.float(12.34));
+
+e.set(e.int64(1234), e.float32(12.34));
 // => Literal<Set<Float64>, number[]>
-```
-
-Correctly typing heterogeneous literal sets can be accomplished by properly constructing the scalar graph and relying on TypeScript's overloading order. Proof of concept:
-
-```ts
-type AnyType = {__type: true};
-type Str = AnyType & {__str: true};
-type Bool = AnyType & {__bool: true};
-type Decimal = AnyType & {__decimal: true};
-type BigInt = Decimal & {__bigint: true};
-type Float64 = AnyType & {__float64: true};
-type Float32 = Float64 & {__float32: true};
-type Int64 = Float64 & BigInt & {__int64: true};
-type Int32 = Int64 & {__int32: true};
-type Int16 = Int32 & {__int16: true};
-
-function infer<T extends AnyType>(...args: T[]): T[];
-function infer(...args: Float64[]): Float64[];
-function infer(...args: any) {
-  return args as any;
-}
-
-const VAL = "whatever" as any;
-
-infer(VAL as Int32, VAL as Int64);
-// => Int64[]
-infer(VAL as Int64, VAL as Float32);
-// => Float64[] <- shared parent (caught by second overload)
-infer(VAL as Int64, VAL as Decimal);
-// => Decimal[]
 ```
 
 ## Arrays
@@ -307,7 +279,7 @@ e.select(Person, {
 
 ### Polymorphism
 
-Option 1. Precludes the ability to add additional parameters/options to `e.select`, as it would be variadic.
+Option 1: variadic shape arguments.
 
 ```ts
 e.select(
@@ -331,7 +303,7 @@ e.select(
 );
 ```
 
-Option 2:
+Option 2: `IS_` keys
 
 ```ts
 e.select(Person, {
@@ -352,7 +324,8 @@ e.select(Person, {
 });
 ```
 
-Downside with Option 2: not compatible with more union type filters in shapes (which aren't currently supported in EdgeQL but may be in the future), e.g.
+Pro: less verbose
+Con: not compatible with more union type filters in shapes (which aren't currently supported in EdgeQL but may be in the future), e.g.
 
 ```
 SELECT Person {
@@ -387,9 +360,9 @@ e.select(Movie, {
 ### Path reference
 
 ```ts
-e.select(Hero.villains(), (villain) => ({
-  shape: {id: true},
-}));
+e.select(Hero.villains, {
+  id: true,
+});
 ```
 
 ### Property reference
