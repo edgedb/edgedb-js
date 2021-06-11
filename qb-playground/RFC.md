@@ -69,8 +69,8 @@ Proposed subclass tree
 e.str("234"); // naked string literals supported where possible
 e.int64(123);
 e.float64(1234.1234);
-e.bool(true);
-e.bigint(12345n); // bigint supported where possible
+e.bool(true); // boolean literals supported where possible
+e.bigint(12345n); // bigint literals supported where possible
 
 e.decimal("1234.1234n");
 e.datetime(`2021-06-04T02:26:18.617Z`);
