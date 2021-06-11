@@ -1,0 +1,16 @@
+{
+  "name": "query-builder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Colin McDonnell",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^15.12.2",
+    "edgedb": "file:../../js/src/index.node.ts"
+  }
+}
