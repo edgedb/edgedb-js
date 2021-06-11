@@ -1,4 +1,4 @@
-# Query builder
+# Query builder pre-RFC
 
 ## Type system
 
