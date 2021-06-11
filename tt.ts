@@ -516,9 +516,11 @@ function toJsObjectType(
 
 async function main(): Promise<void> {
   const con = await connect({
-    database: "select",
+    database: "edgedb",
+    port: 10732,
     user: "edgedb",
     host: "localhost",
+    password: "PwMeDq01U7UGq5JaT3NfMEuH",
   });
 
   const dir = new DirBuilder();
@@ -750,7 +752,8 @@ async function main(): Promise<void> {
     await con.close();
   }
 
-  dir.write("../tmpjs/src/aaa");
+  console.log(`writing to disk.`);
+  dir.write("./qb-playground/test");
 }
 
 main();
