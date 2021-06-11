@@ -6,7 +6,12 @@
 
 */
 
-import * as e from "./schema";
+// import * as e from "./schema";
+
+`node_modules/.prisma``@prisma/client`;
+export * from "./.prisma";
+
+import {PrismaClient} from "@prisma/client";
 
 //// Object-defined shape
 
@@ -163,7 +168,6 @@ e.select(e.Hero.villains, {
 
 let data = (() => {
   const name = e.default.Hero.name;
-
   return e.select(name).filter(e.eq(name, "Iron Man")).orderBy(e.len(name));
 })();
 
