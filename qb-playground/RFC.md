@@ -193,12 +193,13 @@ Hero.nemesis_Villain;
 Hero.characters_Movie;
 ```
 
-## SELECT
+## Select
 
 ### Scalars
 
 ```ts
 e.select(e.int64(1243));
+e.select(a.add(e.int64(2), e.int64(2)));
 e.select(e.concat('aaaa', e.to_str(e.int64(111)));
 ```
 
@@ -376,7 +377,7 @@ e.select(Hero, {
 e.select(Hero).offset(e.len(Hero.name)).limit(15);
 ```
 
-## INSERT
+## Insert
 
 ```ts
 const Movie = e.default.Movie;
@@ -408,7 +409,7 @@ e.insert(Movie, {
 );
 ```
 
-## UPDATE
+## Update
 
 ```ts
 e.update(Movie, {
@@ -424,7 +425,7 @@ e.update(Movie, {
 })).filter(e.eq(Movie.title, e.str("Avengers 4")));
 ```
 
-## DELETE
+## Delete
 
 ```ts
 e.delete(Hero)
@@ -491,8 +492,14 @@ return e
 ## Inline aliases
 
 ```ts
-const x = e.select(e.set(e.int64(1), e.int64(2), e.int64(3), e.int64(4)));
+const x = e.select(e.set(e.int64(1), e.int64(2), e.int64(3)));
 e.select(x).filter(e.gt(x, e.int64(2)));
+```
+
+Renders to:
+
+```
+SELECT x := {1,2,3} FILTER x > 2;
 ```
 
 ## FOR IN
