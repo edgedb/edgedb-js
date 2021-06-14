@@ -18,4 +18,4 @@
 
 export * from "./model";
 export * from "./spec";
-export * from "./strict";
+export * from "./strictMap";

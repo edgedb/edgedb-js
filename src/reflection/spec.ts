@@ -1,6 +1,7 @@
 //import {Link} from "../m3";
 
 import * as model from "./model";
+import {StrictMap} from "./strictMap";
 
 type TypeName = string;
 
@@ -88,9 +89,7 @@ type TypeSpec = {
   properties: PropertySpec[];
 };
 
-export type TypesSpec = Map<TypeName, TypeSpec>;
-
-// export function buildSpec(raw: TypeRawSpec):
+export type TypesSpec = StrictMap<TypeName, TypeSpec>;
 
 const pathObject: unique symbol = Symbol("object");
 const pathParent: unique symbol = Symbol("parent");

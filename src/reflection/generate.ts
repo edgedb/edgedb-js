@@ -1,106 +1,9 @@
-import {connect, Connection} from "./dist/src/index.node";
-
 import * as path from "path";
-import * as fs from "fs";
-
-class StrictMap<K, V> extends Map<K, V> {
-  /* A version of `Map` with a `get` method that throws an
-     error on missing keys instead of returning an undefined.
-     This is easier to work with when everything is strictly typed.
-  */
-  get(key: K): V {
-    if (!this.has(key)) {
-      throw new Error(`key "${key}" is not found`);
-    }
-    return super.get(key)!;
-  }
-}
-
-class CodeBuilder {
-  private buf: string[] = [];
-  private indent: number = 0;
-  private imports = new Set<string>();
-
-  addImport(imp: string): void {
-    this.imports.add(imp);
-  }
-
-  nl(): void {
-    this.buf.push("");
-  }
-
-  indented(nested: () => void): void {
-    this.indent++;
-    try {
-      nested();
-    } finally {
-      this.indent--;
-    }
-  }
-
-  writeln(line: string): void {
-    this.buf.push("  ".repeat(this.indent) + line);
-  }
-
-  render(): string {
-    let head = Array.from(this.imports).join("\n");
-    const body = this.buf.join("\n");
-
-    if (head && body) {
-      head += "\n\n";
-    }
-
-    let result = head + body;
-    if (result && result.slice(-1) != "\n") {
-      result += "\n";
-    }
-
-    return result;
-  }
-
-  isEmpty(): boolean {
-    return !this.buf.length && !this.imports.size;
-  }
-}
-
-class DirBuilder {
-  private _map = new StrictMap<string, CodeBuilder>();
-
-  getPath(fn: string): CodeBuilder {
-    if (!this._map.has(fn)) {
-      this._map.set(fn, new CodeBuilder());
-    }
-    return this._map.get(fn);
-  }
-
-  debug(): string {
-    const buf = [];
-    for (const [fn, builder] of this._map.entries()) {
-      buf.push(`>>> ${fn}\n`);
-      buf.push(builder.render());
-      buf.push(`\n`);
-    }
-    return buf.join("\n");
-  }
-
-  write(to: string): void {
-    const dir = path.normalize(to);
-    for (const [fn, builder] of this._map.entries()) {
-      if (builder.isEmpty()) {
-        continue;
-      }
-
-      const dest = path.join(dir, fn);
-      const destDir = path.dirname(dest);
-
-      if (!fs.existsSync(destDir)) {
-        fs.mkdirSync(destDir, {recursive: true});
-      }
-
-      fs.writeFileSync(dest, builder.render());
-    }
-  }
-}
+import {CodeBuilder, DirBuilder} from "./builders";
+import {connect} from "../index.node";
+import {Connection} from "../ifaces";
+import {StrictMap} from "./strictMap";
+import {ConnectConfig} from "../con_utils";
 
 type UUID = string;
 
@@ -161,8 +64,8 @@ type IntrospectedType = IntrospectedPrimitiveType | IntrospectedObjectType;
 
 type IntrospectedTypes = StrictMap<UUID, IntrospectedType>;
 
-async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
-  const types: IntrospectedType[] = await con.query(`
+export async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
+  const QUERY = `
     WITH
       MODULE schema,
 
@@ -230,7 +133,9 @@ async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
       } ORDER BY @index ASC),
     }
     ORDER BY .name;
-  `);
+  `;
+  const types: IntrospectedType[] = await con.query(QUERY);
+  console.log(JSON.stringify(JSON.parse(await con.queryJSON(QUERY)), null, 2));
   // Now sort `types` topologically:
 
   const graph = new StrictMap<UUID, IntrospectedType>();
@@ -246,14 +151,14 @@ async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
     }
 
     for (const {id: base} of type.bases) {
-      if (graph.has(base)) {
-        if (!adj.has(type.id)) {
-          adj.set(type.id, new Set());
-        }
-        adj.get(type.id).add(base);
-      } else {
+      if (!graph.has(base))
         throw new Error(`reference to an unknown object type: ${base}`);
+
+      if (!adj.has(type.id)) {
+        adj.set(type.id, new Set());
       }
+
+      adj.get(type.id).add(base);
     }
   }
 
@@ -286,10 +191,10 @@ async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
   return sorted;
 }
 
-function getMod(name: string): string {
+function getModule(name: string): string {
   const parts = name.split("::");
   if (!parts || parts.length !== 2) {
-    throw new Error(`getMod: invalid name ${name}`);
+    throw new Error(`getModule: invalid name ${name}`);
   }
   return parts[0];
 }
@@ -309,9 +214,9 @@ function snToIdent(name: string): string {
   return name.replace(/([^a-zA-Z0-9_]+)/g, "_");
 }
 
-function fnToIdent(name: string): string {
+function fqnToIdent(name: string): string {
   if (!name.includes("::")) {
-    throw new Error(`fnToIdent: invalid name ${name}`);
+    throw new Error(`fqnToIdent: invalid name ${name}`);
   }
   return name.replace(/([^a-zA-Z0-9_]+)/g, "_");
 }
@@ -402,7 +307,7 @@ function toJsScalarType(
   switch (type.kind) {
     case "scalar": {
       if (type.enum_values && type.enum_values.length) {
-        const mod = getMod(type.name);
+        const mod = getModule(type.name);
         const name = getName(type.name);
         code.addImport(
           `import type * as ${mod}Enums from "../modules/${mod}";`
@@ -505,7 +410,7 @@ function toJsObjectType(
     return level > 0 ? `(${ret})` : ret;
   }
 
-  const mod = getMod(type.name);
+  const mod = getModule(type.name);
   if (mod !== currentMod) {
     code.addImport(`import type * as ${mod}Types from "./${mod}";`);
     return `${mod}Types.${getName(type.name)}`;
@@ -514,14 +419,11 @@ function toJsObjectType(
   }
 }
 
-async function main(): Promise<void> {
-  const con = await connect({
-    database: "edgedb",
-    port: 10732,
-    user: "edgedb",
-    host: "localhost",
-    password: "PwMeDq01U7UGq5JaT3NfMEuH",
-  });
+export async function generateQB(
+  to: string,
+  cxn: ConnectConfig
+): Promise<void> {
+  const con = await connect(cxn);
 
   const dir = new DirBuilder();
 
@@ -534,7 +436,7 @@ async function main(): Promise<void> {
         continue;
       }
 
-      const mod = getMod(type.name);
+      const mod = getModule(type.name);
       modsIndex.add(mod);
 
       if (
@@ -568,7 +470,7 @@ async function main(): Promise<void> {
         continue;
       }
 
-      const mod = getMod(type.name);
+      const mod = getModule(type.name);
       const body = dir.getPath(`__types__/${mod}.ts`);
 
       body.addImport(`import {reflection as $} from "edgedb";`);
@@ -576,7 +478,7 @@ async function main(): Promise<void> {
       const bases = [];
       for (const {id: baseId} of type.bases) {
         const baseType = types.get(baseId);
-        const baseMod = getMod(baseType.name);
+        const baseMod = getModule(baseType.name);
         if (baseMod !== mod) {
           body.addImport(
             `import type * as ${baseMod}Types from "./${baseMod}";`
@@ -723,7 +625,7 @@ async function main(): Promise<void> {
         continue;
       }
 
-      const mod = getMod(type.name);
+      const mod = getModule(type.name);
       const ident = snToIdent(getName(type.name));
       const body = dir.getPath(`modules/${mod}.ts`);
       body.addImport(`import {reflection as $} from "edgedb";`);
@@ -753,7 +655,5 @@ async function main(): Promise<void> {
   }
 
   console.log(`writing to disk.`);
-  dir.write("./qb-playground/test");
+  dir.write(to);
 }
-
-main();
