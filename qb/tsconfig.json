@@ -18,10 +18,11 @@
     "noFallthroughCasesInSwitch": true,
     "downlevelIteration": true,
     "isolatedModules": true,
+    "baseUrl": ".",
     "paths": {
       "edgedb": [
-        "../../js/src"
-      ] // This mapping is relative to "baseUrl"
+        "../src/index.node.ts"
+      ]
     }
   },
   "include": [
