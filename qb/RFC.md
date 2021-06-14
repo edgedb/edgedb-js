@@ -447,7 +447,7 @@ e.insert(Movie, {
   title: "Spider-Man 2",
   characters: e
     .select(Person)
-    .filter(e.in(Person.name, e.set("Spider-Man", "Doc-Ock"))),
+    .filter(e.in(Person.name, e.set("Spider-Man", "Doc Ock"))),
 });
 ```
 

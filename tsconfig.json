@@ -15,6 +15,7 @@
     ],
     "stripInternal": true,
     "isolatedModules": true,
+    "esModuleInterop": true
   },
   "include": [
     "src",
