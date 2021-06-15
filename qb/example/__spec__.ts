@@ -201,11 +201,11 @@ spec.set("default::Hero", {
   ancestors: ["default::Person","std::Object","std::BaseObject"],
   properties: [
     {
-      name: "secret_identity",
+      name: "number_of_movies",
       cardinality: $.Cardinality.AtMostOne,
     },
     {
-      name: "number_of_movies",
+      name: "secret_identity",
       cardinality: $.Cardinality.AtMostOne,
     },
   ],

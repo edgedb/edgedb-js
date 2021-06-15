@@ -10,12 +10,18 @@
     "removeComments": true,
     "declarationDir": "./dist",
     "outDir": "./dist",
+    "stripInternal": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "downlevelIteration": true,
+    "baseUrl": ".",
     "typeRoots": [
       "./node_modules/@types"
     ],
-    "stripInternal": true,
-    "isolatedModules": true,
-    "esModuleInterop": true
   },
   "include": [
     "src",

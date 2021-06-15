@@ -6,9 +6,9 @@ export interface Person extends stdTypes.Object {
 }
 
 export interface Hero extends Person {
-  villains: $.LinkDesc<Villain, $.Cardinality.Many>;
-  secret_identity: $.PropertyDesc<string, $.Cardinality.AtMostOne>;
   number_of_movies: $.PropertyDesc<number, $.Cardinality.AtMostOne>;
+  secret_identity: $.PropertyDesc<string, $.Cardinality.AtMostOne>;
+  villains: $.LinkDesc<Villain, $.Cardinality.Many>;
 }
 
 export interface Movie extends stdTypes.Object {
