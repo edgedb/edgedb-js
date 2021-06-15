@@ -42,6 +42,6 @@
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
     "prepublish": "in-publish && yarn lint && yarn build && yarn compileForDeno && yarn test || not-in-publish",
     "compileForDeno": "deno run --unstable --allow-env --allow-read --allow-write tools/compileForDeno.ts",
-    "generate": "ts-node src/reflection/generate.ts"
+    "generate": "cd qb && ts-node --project tsconfig.json run.ts"
   }
 }

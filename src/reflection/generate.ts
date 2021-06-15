@@ -1,9 +1,9 @@
-import * as path from "path";
 import {CodeBuilder, DirBuilder} from "./builders";
 import {connect} from "../index.node";
 import {Connection} from "../ifaces";
 import {StrictMap} from "./strictMap";
 import {ConnectConfig} from "../con_utils";
+import {getCasts} from "./casts";
 
 type UUID = string;
 
@@ -134,6 +134,7 @@ export async function fetchTypes(con: Connection): Promise<IntrospectedTypes> {
     }
     ORDER BY .name;
   `;
+
   const types: IntrospectedType[] = await con.query(QUERY);
   console.log(JSON.stringify(JSON.parse(await con.queryJSON(QUERY)), null, 2));
   // Now sort `types` topologically:
@@ -419,9 +420,15 @@ function toJsObjectType(
   }
 }
 
+export async function generateCasts(cxn?: ConnectConfig): Promise<void> {
+  const con = await connect(cxn);
+  const casts = await getCasts(con);
+  console.log(casts);
+}
+
 export async function generateQB(
   to: string,
-  cxn: ConnectConfig
+  cxn?: ConnectConfig
 ): Promise<void> {
   const con = await connect(cxn);
 

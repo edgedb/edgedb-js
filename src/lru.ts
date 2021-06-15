@@ -179,6 +179,7 @@ export default class LRU<K, V> {
       this.deque.moveToTop(node);
       return node.value;
     }
+    return undefined;
   }
 
   set(key: K, value: V): void {

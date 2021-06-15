@@ -5,26 +5,6 @@ import {StrictMap} from "./strictMap";
 
 type TypeName = string;
 
-type PropertyRawSpec = {
-  name: TypeName;
-  cardinality: model.Cardinality;
-};
-
-type LinkRawSpec = {
-  name: TypeName;
-  cardinality: model.Cardinality;
-  target: TypeName;
-  properties: PropertyRawSpec[];
-};
-
-type TypeRawSpec = Array<{
-  name: TypeName;
-  bases: TypeName[];
-  ancestors: TypeName[];
-  properties: PropertyRawSpec[];
-  links: LinkRawSpec[];
-}>;
-
 enum ScalarKind {
   str,
   bytes,
@@ -101,7 +81,7 @@ interface PathStep {
   [pathLink]: string | null;
 }
 
-interface PathLeaf<T> extends PathStep {}
+interface PathLeaf<_T> extends PathStep {}
 
 interface PathMethods<T extends model.ObjectTypeDesc> {
   shape<S extends model.MakeSelectArgs<T>>(spec: S): Query<model.Result<S, T>>;
@@ -124,7 +104,7 @@ function applySpec(
   obj: PathStep,
   seen: Set<string>
 ): void {
-  const type = spec.get(typeName)!;
+  const type = spec.get(typeName);
 
   for (const link of type.links) {
     if (seen.has(link.name)) {
@@ -170,23 +150,21 @@ function createPathStep(
     [pathLink]: {
       value: linkName,
     },
-    [Symbol.toStringTag]: {
-      get: () => {
-        const steps: string[] = [];
+    get [Symbol.toStringTag]() {
+      const steps: string[] = [];
 
-        let parent: PathStep | null = obj;
-        while (parent != null) {
-          if (parent[pathLink] != null) {
-            steps.push(parent[pathLink]!);
-          } else {
-            steps.push(parent[pathObject]!);
-          }
-          parent = parent[pathParent];
+      let parent: PathStep | null = obj;
+      while (parent !== null) {
+        if (parent[pathLink] !== null) {
+          steps.push(parent[pathLink]!);
+        } else {
+          steps.push(parent[pathObject]!);
         }
+        parent = parent[pathParent];
+      }
 
-        steps.reverse();
-        return steps.join(".");
-      },
+      steps.reverse();
+      return steps.join(".");
     },
   });
   return obj;
@@ -232,9 +210,9 @@ export function objectType<T extends model.ObjectTypeDesc>(
 const resultType: unique symbol = Symbol("result");
 
 export class Query<R> {
-  private [resultType]!: R;
+  [resultType]!: R;
 
-  constructor(obj: Path<any>, spec: object) {}
+  constructor(public obj: Path<any>, public spec: object) {}
 
   filter(): Query<R> {
     return null as any;
