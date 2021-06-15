@@ -1,11 +1,11 @@
 Arguments: 
-  /Users/colinmcd94/.nvm/versions/node/v14.15.1/bin/node /Users/colinmcd94/.config/yarn/global/node_modules/.bin/yarn
+  /Users/colinmcd94/.nvm/versions/node/v14.15.1/bin/node /Users/colinmcd94/.yarn/bin/yarn.js add ../package.json
 
 PATH: 
-  /Library/Frameworks/Python.framework/Versions/3.9/bin:/Users/colinmcd94/.edgedb/bin:/Users/colinmcd94/mongodb/bin:/Users/colinmcd94/.config/yarn/global/node_modules/.bin:/usr/local/Cellar/node/8.1.0_1/bin:/opt/local/bin:/opt/local/sbin:/Users/colinmcd94/.deno/bin:/Users/colinmcd94/perl5/perlbrew/bin:/Users/colinmcd94/perl5/perlbrew/perls/perl-5.28.0/bin:/Users/colinmcd94/.nvm/versions/node/v14.15.1/bin:/Users/colinmcd94/.yarn/bin:/Users/colinmcd94/.config/yarn/global/node_modules/.bin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin:/usr/local/MacGPG2/bin:/Library/Frameworks/EdgeDB.framework/bin:/opt/X11/bin:/Library/Apple/usr/bin:/Users/colinmcd94/.cargo/bin:/usr/local/bin:~/.cargo/bin:/Users/colinmcd94/Documents/Projects/flutter/bin:/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home:/Library/gurobi651/mac64/bin/:/Applications/Julia-0.4.5.app/Contents/Resources/julia/bin/julia:/Users/colinmcd94/Library/Android/sdk/tools:/Users/colinmcd94/Library/Android/sdk/platform-tools
+  /Users/colinmcd94/.yarn/bin:/Users/colinmcd94/.config/yarn/global/node_modules/.bin:/Library/Frameworks/Python.framework/Versions/3.9/bin:/Users/colinmcd94/.edgedb/bin:/Users/colinmcd94/mongodb/bin:/Users/colinmcd94/.config/yarn/global/node_modules/.bin:/usr/local/Cellar/node/8.1.0_1/bin:/opt/local/bin:/opt/local/sbin:/Users/colinmcd94/.deno/bin:/Users/colinmcd94/perl5/perlbrew/bin:/Users/colinmcd94/perl5/perlbrew/perls/perl-5.28.0/bin:/Users/colinmcd94/.nvm/versions/node/v14.15.1/bin:/Users/colinmcd94/.yarn/bin:/Users/colinmcd94/.config/yarn/global/node_modules/.bin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin:/usr/local/MacGPG2/bin:/Library/Frameworks/EdgeDB.framework/bin:/opt/X11/bin:/Library/Apple/usr/bin:/Users/colinmcd94/.cargo/bin:/usr/local/bin:~/.cargo/bin:/Users/colinmcd94/Documents/Projects/flutter/bin:/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home:/Library/gurobi651/mac64/bin/:/Applications/Julia-0.4.5.app/Contents/Resources/julia/bin/julia:/Users/colinmcd94/Library/Android/sdk/tools:/Users/colinmcd94/Library/Android/sdk/platform-tools
 
 Yarn version: 
-  1.13.0
+  1.22.5
 
 Node version: 
   14.15.1
@@ -14,7 +14,7 @@ Platform:
   darwin x64
 
 Trace: 
-  Error: ENOTDIR: not a directory, scandir '/Users/colinmcd94/Library/Caches/Yarn/v4/npm-edgedb-0.0.0-0717a557-335c-4caf-9208-27b3ed2bfa6a-1623367952742/node_modules/edgedb'
+  Error: ENOTDIR: not a directory, scandir '/Users/colinmcd94/Library/Caches/Yarn/v6/npm-sers-colinmcd94-ocuments-edgedb-js-0.0.0-36c5219e-806c-483b-9e28-13fcd091c618-1623727450489/node_modules/Users/colinmcd94/Documents/edgedb/js'
 
 npm manifest: 
   {
@@ -23,14 +23,16 @@ npm manifest:
     "description": "",
     "main": "index.js",
     "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1"
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "generate": "ts-node run.ts",
+      "play": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings"
     },
     "keywords": [],
     "author": "Colin McDonnell",
     "license": "ISC",
     "dependencies": {
       "@types/node": "^15.12.2",
-      "edgedb": "file:../../js/src/index.node.ts"
+      "edgedb": "file:../src"
     }
   }
 
