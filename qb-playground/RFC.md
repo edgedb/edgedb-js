@@ -1,5 +1,34 @@
 # Query builder pre-RFC
 
+## Generation
+
+Generation logic should live inside inside edgedb-js so the generation logic is versioned alongside the driver.
+
+### Generation output
+
+Option 1: Generate into `node_modules/.edgedb` and re-export from inside the `edgedb` module. This is what Prisma does. This means the query builder typically won't be checked into version control.
+
+Option 2: Generate to a file/directory in the local project, e.g. `./generated/edgedb.ts`. This can be customizable.
+
+### Delegation
+
+The `edgedb` CLI command should scan for a package.json containing `edgedb`.
+
+1. If found, it should delegate the generation step to the installed package. It will pass the connection options to the package as arguments.
+2. If a package.json is discovered but edgedb isn't installed, it can be auto-installed.
+3. If the command wasn't executed inside a JS package (no `package.json` in any ancestor), error.
+
+### Executable
+
+The `edgedb` module can contain an executable `generate` command exposed via package.json ["bin"](https://docs.npmjs.com/cli/v7/configuring-npm/package-json#bin). Users could optionally call the package's CLI directly with `npx edgedb generate`. This doesn't causes clashes with globally installed CLIs, as `npx` doesn't look at the global path.
+
+### Output location
+
+Generate definitions into `node_modules/.edgedb` and re-export from `node_modules/edgedb/index.js`. This is what Prisma does.
+
+- Keeps the generated code out of version control.
+- Pro: This lets us define a bunch of TS code in the `edgedb` JS package, then reference it in the `generated` code, and the schema-specific artifacts can be generated to a particular spot in the package.
+
 ## Type system
 
 EdgeDB's type system can be represented as either interfaces or branded types, which both support an analog of multiple interitance.
@@ -63,7 +92,30 @@ Proposed subclass tree
     - subclasses for each built-in function
     - plus an overloaded factory function
 
+## Conflicts
+
+All types, functions, and operators are generated into a single file and properly namespaced:
+
+```ts
+e.std.array_unpack;
+e.default.User;
+e.math.floor;
+e.sys.get_version;
+e.cal.datetime;
+```
+
+All operators and the `std` module are also aliased to top-level functions for convenience:
+
+```ts
+e.len;
+e.eq;
+```
+
+If there are any name conflicts (e.g. a user-defined module called `len`) then the generation script will forgo aliasing `e.std.len` to `e.len`.
+
 ## Literals
+
+These will be rendered as EdgeQL string literals.
 
 ```ts
 e.str("234"); // naked string literals supported where possible
@@ -73,13 +125,16 @@ e.bool(true); // boolean literals supported where possible
 e.bigint(12345n); // bigint literals supported where possible
 
 e.decimal("1234.1234n");
-e.datetime(`2021-06-04T02:26:18.617Z`);
-e.localDatetime(`2021-06-04T02:26:18.617193`);
-e.duration("45.6 seconds");
+e.datetime(new Date());
+// same type signatures as edgedb-js constructors
+e.localDate(1776, 07, 04);
+e.localTime(13, 15, 0);
+e.localDateTime(1776, 07, 04, 13, 15, 0);
+e.duration(400, 5, 12, 1, 2, 3);
 e.uuid("599236a4-2a5e-4249-91b6-ec435d3afe20");
 e.json(JSON.stringify({asdf: 1234}));
 
-e.enums.CustomEnum.green;
+e.default.CustomEnum.green;
 ```
 
 ## Sets and overloading
