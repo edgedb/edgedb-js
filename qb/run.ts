@@ -1,5 +1,9 @@
 import path from "path";
-import {generateCasts, generateQB} from "../src/reflection/generate";
+import {
+  generateCasts,
+  generateQB,
+  generateScalars,
+} from "../src/reflection/generate";
 
 const CXN = {
   database: "edgedb",
@@ -9,5 +13,10 @@ const CXN = {
   password: "PwMeDq01U7UGq5JaT3NfMEuH",
 };
 
-generateQB(path.join(__dirname, "example"));
-// generateCasts(CXN);
+const run = async () => {
+  // await generateQB(path.join(__dirname, "example"));
+  await generateCasts(CXN);
+  // await generateScalars(CXN);
+  process.exit();
+};
+run();
