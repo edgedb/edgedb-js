@@ -6,6 +6,8 @@ type Cast = {
   allow_assignment: boolean;
   allow_implicit: boolean;
 };
+
+const mode: "shallow" = "shallow";
 export const getCasts = async (cxn: Connection) => {
   const QUERY = `WITH MODULE schema
         SELECT Cast {
@@ -16,20 +18,21 @@ export const getCasts = async (cxn: Connection) => {
         }
         FILTER .from_type IS ScalarType AND .to_type IS ScalarType`;
 
-  const castsResult: Cast[] = await cxn.query(QUERY);
-  // console.log(JSON.stringify(castsResult, null, 2));
+  const allCasts: Cast[] = await cxn.query(QUERY);
 
-  const castsBySource: {[k: string]: Cast[]} = {};
-  const implicitCasts = castsResult.filter((c) => c.allow_implicit);
-
+  // initialize castsBySource and types
   const types = new Set<string>();
-  for (const cast of implicitCasts) {
+  const castsBySource: {[k: string]: Cast[]} = {};
+  for (const cast of allCasts) {
     types.add(cast.source);
     types.add(cast.target);
+    castsBySource[cast.source] = castsBySource[cast.source] || [];
+    castsBySource[cast.target] = castsBySource[cast.target] || [];
   }
 
+  const implicitCasts = allCasts.filter((c) => c.allow_implicit);
+
   for (const cast of implicitCasts) {
-    castsBySource[cast.source] = castsBySource[cast.source] || [];
     castsBySource[cast.source].push(cast);
   }
 
@@ -43,9 +46,6 @@ export const getCasts = async (cxn: Connection) => {
     });
     return [...reachable];
   };
-
-  console.log(`ALL TYPES`);
-  console.log([...types]);
 
   const castsFrom: {[k: string]: string[]} = {};
   for (const type of [...types]) {

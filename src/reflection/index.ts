@@ -18,4 +18,5 @@
 
 export * from "./model";
 export * from "./spec";
+export * from "./typeutil";
 export * from "./strictMap";
