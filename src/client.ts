@@ -1163,7 +1163,7 @@ export class ConnectionImpl {
   }
 
   protected async _executeFlow(
-    args: QueryArgs,
+    args: QueryArgs | Buffer,
     inCodec: ICodec,
     outCodec: ICodec,
     result: Set | WriteBuffer
@@ -1172,7 +1172,9 @@ export class ConnectionImpl {
     wb.beginMessage(chars.$E)
       .writeInt16(0) // no headers
       .writeString("") // statement name
-      .writeBuffer(this._encodeArgs(args, inCodec))
+      .writeBuffer(
+        args instanceof Buffer ? args : this._encodeArgs(args, inCodec)
+      )
       .endMessage()
       .writeSync();
 
@@ -1489,13 +1491,10 @@ export class RawConnection extends ConnectionImpl {
     return [result[3]!, result[4]!];
   }
 
-  public async rawExecute(): Promise<Buffer> {
-    // TODO: the method needs to be extended to accept
-    // already encoded arguments.
-
+  public async rawExecute(encodedArgs: Buffer | null = null): Promise<Buffer> {
     const result = new WriteBuffer();
     await this._executeFlow(
-      null, // arguments
+      encodedArgs, // arguments
       EMPTY_TUPLE_CODEC, // inCodec -- to encode lack of arguments.
       EMPTY_TUPLE_CODEC, // outCodec -- does not matter, it will not be used.
       result
