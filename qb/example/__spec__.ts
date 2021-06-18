@@ -181,6 +181,100 @@ spec.set("std::Object", {
   ],
 });
 
+spec.set("default::Bag", {
+  name: "default::Bag",
+  bases: ["std::Object"],
+  ancestors: ["std::Object","std::BaseObject"],
+  properties: [
+    {
+      name: "bigintField",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "boolField",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "datetimeField",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "decimalField",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "durationField",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "float32Field",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "float64Field",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "genre",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "int16Field",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "int32Field",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "int64Field",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "localDateField",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "localDateTimeField",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "localTimeField",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "namedTuple",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "secret_identity",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "stringMultiArr",
+      cardinality: $.Cardinality.Many,
+    },
+    {
+      name: "stringsArr",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "stringsMulti",
+      cardinality: $.Cardinality.AtLeastOne,
+    },
+    {
+      name: "unnamedTuple",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+    {
+      name: "enumArr",
+      cardinality: $.Cardinality.AtMostOne,
+    },
+  ],
+  links: [
+  ],
+});
+
 spec.set("default::Person", {
   name: "default::Person",
   bases: ["std::Object"],
@@ -228,6 +322,10 @@ spec.set("default::Movie", {
     {
       name: "title",
       cardinality: $.Cardinality.One,
+    },
+    {
+      name: "rating",
+      cardinality: $.Cardinality.AtMostOne,
     },
   ],
   links: [
