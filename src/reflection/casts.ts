@@ -1,57 +1,147 @@
 import {Connection} from "../ifaces";
 
 type Cast = {
-  source: string;
-  target: string;
+  id: string;
+  source: {id: string; name: string};
+  target: {id: string; name: string};
   allow_assignment: boolean;
   allow_implicit: boolean;
 };
 
-const mode: "shallow" = "shallow";
-export const getCasts = async (cxn: Connection) => {
-  const QUERY = `WITH MODULE schema
+const reachableFrom: (
+  source: string,
+  adj: {[k: string]: string[]},
+  seen?: Set<string>
+) => string[] = (source, adj, seen = new Set<string>()) => {
+  const reachable = new Set<string>();
+  if (seen.has(source)) return [];
+  seen.add(source);
+
+  (adj[source] || []).map((cast) => {
+    reachable.add(cast);
+    for (const item of reachableFrom(cast, adj, seen)) {
+      reachable.add(item);
+    }
+  });
+  return [...reachable];
+};
+
+export const getCasts = async (
+  cxn: Connection,
+  params?: {debug?: boolean}
+) => {
+  const allCasts: Cast[] = await cxn.query(`WITH MODULE schema
         SELECT Cast {
-            source := .from_type.name,
-            target := .to_type.name,
+            id,
+            source := .from_type { id, name },
+            target := .to_type { id, name },
             allow_assignment,
             allow_implicit,
         }
-        FILTER .from_type IS ScalarType AND .to_type IS ScalarType`;
-
-  const allCasts: Cast[] = await cxn.query(QUERY);
+        FILTER .from_type IS ScalarType
+        AND .to_type IS ScalarType
+        # AND .from_type.is_abstract = false
+        # AND .to_type.is_abstract = false
+        `);
 
   // initialize castsBySource and types
   const types = new Set<string>();
-  const castsBySource: {[k: string]: Cast[]} = {};
+  const typesById: Record<string, {name: string; id: string}> = {};
+  const castsById: Record<string, Cast> = {};
+  const castsBySource: Record<string, string[]> = {};
+  const implicitCastsBySource: Record<string, string[]> = {};
+  const assignmentCastsBySource: Record<string, string[]> = {};
+  const assignmentCastsByTarget: Record<string, string[]> = {};
+
   for (const cast of allCasts) {
-    types.add(cast.source);
-    types.add(cast.target);
-    castsBySource[cast.source] = castsBySource[cast.source] || [];
-    castsBySource[cast.target] = castsBySource[cast.target] || [];
+    typesById[cast.source.id] = cast.source;
+    typesById[cast.target.id] = cast.target;
+    types.add(cast.source.id);
+    types.add(cast.target.id);
+    castsById[cast.id] = cast;
+    castsBySource[cast.source.id] = castsBySource[cast.source.id] || [];
+    castsBySource[cast.source.id].push(cast.target.id);
+
+    if (cast.allow_assignment) {
+      assignmentCastsBySource[cast.source.id] =
+        assignmentCastsBySource[cast.source.id] || [];
+      assignmentCastsBySource[cast.source.id].push(cast.target.id);
+    }
+
+    if (cast.allow_assignment) {
+      assignmentCastsByTarget[cast.target.id] =
+        assignmentCastsByTarget[cast.target.id] || [];
+      assignmentCastsByTarget[cast.target.id].push(cast.source.id);
+    }
+
+    if (cast.allow_implicit) {
+      implicitCastsBySource[cast.source.id] =
+        implicitCastsBySource[cast.source.id] || [];
+      implicitCastsBySource[cast.source.id].push(cast.target.id);
+    }
   }
 
-  const implicitCasts = allCasts.filter((c) => c.allow_implicit);
+  const castMap: {[k: string]: string[]} = {};
+  const implicitCastMap: {[k: string]: string[]} = {};
+  const assignmentCastMap: {[k: string]: string[]} = {};
+  const assignableByMap: {[k: string]: string[]} = {};
 
-  for (const cast of implicitCasts) {
-    castsBySource[cast.source].push(cast);
-  }
-
-  const reachableFrom: (source: string) => string[] = (source: string) => {
-    const reachable = new Set<string>();
-    (castsBySource[source] || []).map((cast) => {
-      reachable.add(cast.target);
-      for (const item of reachableFrom(cast.target)) {
-        reachable.add(item);
-      }
-    });
-    return [...reachable];
-  };
-
-  const castsFrom: {[k: string]: string[]} = {};
   for (const type of [...types]) {
-    castsFrom[type] = reachableFrom(type);
+    castMap[type] = castsBySource[type] || []; //reachableFrom(type, castsBySource);
+    implicitCastMap[type] = reachableFrom(type, implicitCastsBySource);
+    assignmentCastMap[type] = reachableFrom(type, assignmentCastsBySource);
+    assignableByMap[type] = reachableFrom(type, assignmentCastsByTarget);
   }
-  // console.log(JSON.stringify(castsFrom, null, 2));
-  return castsFrom;
-  // return castsResult;
+
+  if (params?.debug === true) {
+    console.log(`\nIMPLICIT`);
+    for (const fromId in implicitCastMap) {
+      const castArr = implicitCastMap[fromId];
+      console.log(
+        `${typesById[fromId].name} implicitly castable to: [${castArr
+          .map((id) => typesById[id].name)
+          .join(", ")}]`
+      );
+    }
+
+    console.log(`\nASSIGNABLE TO`);
+    for (const fromId in assignmentCastMap) {
+      const castArr = assignmentCastMap[fromId];
+      console.log(
+        `${typesById[fromId].name} assignable to: [${castArr
+          .map((id) => typesById[id].name)
+          .join(", ")}]`
+      );
+    }
+
+    console.log(`\nASSIGNABLE BY`);
+    for (const fromId in assignableByMap) {
+      const castArr = assignableByMap[fromId];
+      console.log(
+        `${typesById[fromId].name} assignable by: [${castArr
+          .map((id) => typesById[id].name)
+          .join(", ")}]`
+      );
+    }
+
+    console.log(`\nEXPLICIT`);
+    for (const fromId in castMap) {
+      const castArr = castMap[fromId];
+      console.log(
+        `${typesById[fromId].name} castable to: [${castArr
+          .map((id) => {
+            return typesById[id].name;
+          })
+          .join(", ")}]`
+      );
+    }
+  }
+  return {
+    castsById,
+    typesById,
+    castMap,
+    implicitCastMap,
+    assignmentCastMap,
+    assignableByMap,
+  };
 };

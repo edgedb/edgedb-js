@@ -75,10 +75,10 @@ const pathObject: unique symbol = Symbol("object");
 const pathParent: unique symbol = Symbol("parent");
 const pathLink: unique symbol = Symbol("link");
 
+type PathParent = {parent: PathStep; linkName: TypeName};
 interface PathStep {
-  [pathParent]: PathStep | null;
+  [pathParent]: PathParent | null;
   [pathObject]: TypeName | null;
-  [pathLink]: string | null;
 }
 
 interface PathLeaf<_T> extends PathStep {}
@@ -114,7 +114,11 @@ function applySpec(
 
     Object.defineProperty(obj, link.name, {
       get: (nextTarget: LinkSpec = link): any => {
-        return buildPath(obj, nextTarget.name, spec, nextTarget.target);
+        return buildPath(
+          {parent: obj, linkName: nextTarget.name},
+          spec,
+          nextTarget.target
+        );
       },
       enumerable: true,
     });
@@ -128,7 +132,7 @@ function applySpec(
 
     Object.defineProperty(obj, prop.name, {
       get: (nextTarget: PropertySpec = prop): any => {
-        return buildPath(obj, nextTarget.name, spec, null);
+        return buildPath({parent: obj, linkName: nextTarget.name}, spec, null);
       },
       enumerable: true,
     });
@@ -136,8 +140,7 @@ function applySpec(
 }
 
 function createPathStep(
-  parent: PathStep | null,
-  linkName: string | null,
+  parent: PathParent | null,
   target: TypeName | null
 ): PathStep {
   const obj = Object.defineProperties(Object.create(null), {
@@ -147,20 +150,18 @@ function createPathStep(
     [pathObject]: {
       value: target,
     },
-    [pathLink]: {
-      value: linkName,
-    },
     get [Symbol.toStringTag]() {
       const steps: string[] = [];
 
       let parent: PathStep | null = obj;
       while (parent !== null) {
-        if (parent[pathLink] !== null) {
-          steps.push(parent[pathLink]!);
+        let parentParent = parent[pathParent];
+        if (parentParent !== null) {
+          steps.push(parentParent.linkName);
         } else {
           steps.push(parent[pathObject]!);
         }
-        parent = parent[pathParent];
+        parent = parent[pathParent]?.parent || null;
       }
 
       steps.reverse();
@@ -171,15 +172,14 @@ function createPathStep(
 }
 
 function buildPath<T extends model.ObjectTypeDesc>(
-  parent: PathStep | null,
-  linkName: string | null,
+  parent: PathParent | null,
   spec: TypesSpec,
   target: TypeName | null
 ): Path<T> {
-  const obj = createPathStep(parent, linkName, target);
+  const obj = createPathStep(parent, target);
 
   if (target != null) {
-    const type = spec.get(target)!;
+    const type = spec.get(target);
     const seen = new Set<string>();
     applySpec(spec, target, obj, seen);
     for (const anc of type.ancestors) {
@@ -194,7 +194,7 @@ export function objectType<T extends model.ObjectTypeDesc>(
   spec: TypesSpec,
   name: string
 ): Path<T> {
-  const obj = buildPath(null, null, spec, name);
+  const obj = buildPath(null, spec, name);
 
   Object.defineProperties(obj, {
     shape: {
