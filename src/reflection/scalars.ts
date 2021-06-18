@@ -1,4 +1,5 @@
 import {Connection} from "../ifaces";
+import {getCasts} from "./casts";
 
 type Scalar = {
   id: string;
@@ -11,34 +12,49 @@ type Scalar = {
   ancestors: {id: string; name: string}[];
 };
 
+/**
+  for scalars
+    if abstract
+      generate union type with all descendants
+    if real
+      generate declaration
+      implicitCasts: tuple of all implicitly castable types and non abstract ancestors
+      assignableCasts: tuple of all assignable castable types and non abstract ancestors
+
+      add all castable
+  for objects
+    generate declaration
+ *
+ */
+
 const mode: "shallow" = "shallow";
 export const getScalars = async (cxn: Connection) => {
-  const QUERY = `WITH MODULE schema,
-    SELECT Type {
-      # id,
-      name,
-      # is_abstract,
+  const castMap = await getCasts(cxn);
 
-      # bases := array_agg((
-      #   SELECT Type[IS InheritingObject].bases ORDER BY @index ASC
-      # ).name),
-      # [IS InheritingObject].bases: {
-      #   id, name
-      # } ORDER BY @index ASC,
+  const inheritanceHierarchy: {
+    id: string;
+    name: string;
+    is_abstract: boolean;
+    bases: {id: string; name: string}[];
+    ancestors: {id: string; name: string}[];
+    children: {id: string; name: string}[];
+    descendants: {id: string; name: string}[];
+  }[] = await cxn.query(`with module schema
+select InheritingObject {
+  id,
+  name,
+  is_abstract,
+  bases: { id, name },
+  ancestors: { id, name },
+  children := .<bases[IS Type] { id, name },
+  descendants := .<ancestors[IS Type] { id, name }
+}
+FILTER
+  InheritingObject IS ScalarType OR
+  InheritingObject IS ObjectType
+`);
 
-      ancestors := array_agg((
-        SELECT Type[IS InheritingObject].ancestors ORDER BY @index ASC
-      ).name),
-      # [IS InheritingObject].ancestors: {
-      #  id, name
-      # } ORDER BY @index ASC,
-    }
-    FILTER Type IS ScalarType
-    ORDER BY .name;`;
-
-  const allScalars: Scalar[] = JSON.parse(await cxn.queryJSON(QUERY));
-
-  return allScalars;
+  return {castMap, inheritanceHierarchy};
   // initialize castsBySource and types
   // const types = new Set<string>();
   // const castsBySource: {[k: string]: Cast[]} = {};

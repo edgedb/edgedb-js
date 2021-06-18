@@ -104,9 +104,9 @@ export function toJsScalarType(
       if (type.enum_values && type.enum_values.length) {
         const {mod, name} = splitName(type.name);
         code.addImport(
-          `import type * as ${mod}Enums from "../modules/${mod}";`
+          `import type * as ${mod}Types from "../modules/${mod}";`
         );
-        return `${mod}Enums.${name}`;
+        return `${mod}Types.${name}`;
       }
 
       if (type.material_id) {
@@ -213,3 +213,32 @@ export function toJsObjectType(
     return name;
   }
 }
+
+export function capitalize(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+export function displayName(str: string) {
+  const {name} = splitName(str);
+  const stripped = name
+    .replace(/[^$0-9a-zA-Z]/g, " ")
+    .split(" ")
+    .filter((x) => !!x)
+    .map(capitalize)
+    .join("");
+  return stripped;
+}
+
+export const getScopedDisplayName = (
+  activeModule: string,
+  sc: CodeBuilder
+) => (fqn: string) => {
+  const {mod: castMod, name: castName} = splitName(fqn);
+
+  if (activeModule !== castMod) {
+    sc.addImport(`import type * as ${castMod}Types from "./${castMod}";`);
+    return `${castMod}Types.${displayName(fqn)}`;
+  } else {
+    return displayName(fqn);
+  }
+};

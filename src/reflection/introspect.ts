@@ -57,7 +57,10 @@ export type Type = PrimitiveType | ObjectType;
 
 export type Types = StrictMap<UUID, Type>;
 
-export async function fetchTypes(con: Connection): Promise<Types> {
+export async function fetchTypes(
+  cxn: Connection,
+  params?: {debug?: boolean}
+): Promise<Types> {
   const QUERY = `
     WITH
       MODULE schema,
@@ -129,10 +132,15 @@ export async function fetchTypes(con: Connection): Promise<Types> {
     ORDER BY .name;
   `;
 
-  const types: Type[] = await con.query(QUERY);
-  console.log(JSON.stringify(JSON.parse(await con.queryJSON(QUERY)), null, 2));
-  // Now sort `types` topologically:
+  const types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
+  // const jsonTypes = await cxn.queryJSON(QUERY);
+  if (params?.debug) console.log(JSON.stringify(types, null, 2));
 
+  // Now sort `types` topologically:
+  return topoSort(types);
+}
+
+export function topoSort(types: Type[]) {
   const graph = new StrictMap<UUID, Type>();
   const adj = new StrictMap<UUID, Set<UUID>>();
 

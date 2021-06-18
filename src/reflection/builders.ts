@@ -2,17 +2,38 @@ import * as path from "path";
 import * as fs from "fs";
 import {StrictMap} from "./strictMap";
 
+namespace arg1 {
+  export const arg1 = {
+    get asdf() {
+      return arg2.arg2;
+    },
+  };
+}
+namespace arg2 {
+  export const arg2 = {asdf: arg1.arg1};
+}
 export class CodeBuilder {
   private buf: string[] = [];
+  private namespaces: {[k: string]: string[]} = {};
   private indent: number = 0;
   private imports = new Set<string>();
 
+  getBuf() {
+    return this.buf;
+  }
   addImport(imp: string): void {
     this.imports.add(imp);
   }
 
   nl(): void {
     this.buf.push("");
+    this.namespaces;
+  }
+
+  namespace(ns: string, nested: (cb: CodeBuilder) => void): void {
+    const newCB = new CodeBuilder();
+    newCB.indented(() => nested(newCB));
+    this.namespaces[ns] = [...this.namespaces[ns], ...newCB.getBuf()];
   }
 
   indented(nested: () => void): void {
@@ -31,7 +52,16 @@ export class CodeBuilder {
   render(): string {
     let head = Array.from(this.imports).join("\n");
     const body = this.buf.join("\n");
+    const namespaces = Object.keys(this.namespaces)
+      .map((ns) =>
+        [`namespace ${ns} {`, ...this.namespaces[ns], `}`].join("\n")
+      )
+      .join("\n\n");
 
+    if (head && namespaces.length) {
+      head += "\n\n";
+      head += namespaces;
+    }
     if (head && body) {
       head += "\n\n";
     }
