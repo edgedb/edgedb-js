@@ -448,7 +448,7 @@ export class Duration {
       timeParts += bi.make(Math.abs(this._minutes)) + "M";
     }
     if (
-      !dateParts ||
+      (!dateParts && !timeParts) ||
       this._seconds ||
       this._milliseconds ||
       this._microseconds ||

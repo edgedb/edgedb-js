@@ -165,6 +165,8 @@ test("types: Duration", async () => {
     "P1234567890Y1234567890M1234567890W1234567890DT1234567890H1234567890M1235803693.69245789S"
   );
 
+  expect(new Duration(0, 0, 0, 0, 24).toString()).toBe("PT24H");
+
   for (let i = 0; i < 5000; i++) {
     const sign = Math.sign(Math.random() - 0.5);
 
