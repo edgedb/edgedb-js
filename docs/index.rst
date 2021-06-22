@@ -4,12 +4,15 @@ EdgeDB JavaScript Driver
 
 **edgedb-js** is the official EdgeDB driver for JavaScript written in TypeScript.
 
+Support for the Deno runtime is provided by its mirror library:
+`edgedb-deno <https://github.com/edgedb/edgedb-deno>`_
+
 .. rubric:: Contents
 
 * :ref:`edgedb-js-installation`
 
-  edgedb-js is installable via ``$ npm install edgedb``.  Read
-  the section for more information on how to install the library.
+  **edgedb-js** is available on *npm* (and on *deno.land/x*) as ``edgedb``.
+  Read this section for more information on how to install the library.
 
 * :ref:`edgedb-js-examples`
 
