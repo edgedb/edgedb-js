@@ -16,6 +16,31 @@ To install EdgeDB driver with **yarn** use:
 
     $ yarn add edgedb
 
+To use with **Deno**, import from ``mod.ts`` (all the public api is exported
+from here):
+
+.. code-block:: typescript
+
+    import * as edgedb from "https://deno.land/x/edgedb/mod.ts";
+
+    // It is recommended to import a specific tagged version. eg:
+    import * as edgedb from "https://deno.land/x/edgedb@0.14.0/mod.ts";
+
+Deno permissions
+----------------
+
+If using Deno, the following permission flags may be required:
+
+* ``--allow-net`` (required):
+  This permission is required to connect to EdgeDB instances.
+
+* ``--allow-env`` (optional):
+  Needed if connecting using environment variables, or with an instance name
+  (to find the directory where the instance credentials are stored).
+
+* ``--allow-read`` (optional):
+  Needed if connecting with an instance name, to read the instance credentials
+  file.
 
 Building from source
 --------------------
