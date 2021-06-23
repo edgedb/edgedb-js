@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-export * from "./model";
-export * from "./spec";
-export * from "./typeutil";
+export * from "./typesystem";
+export * as spec from "./spec";
 export * from "./strictMap";
+export * from "./util";
