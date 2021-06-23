@@ -1,5 +1,5 @@
 Arguments: 
-  /Users/colinmcd94/.nvm/versions/node/v14.15.1/bin/node /Users/colinmcd94/.yarn/bin/yarn.js add ../package.json
+  /Users/colinmcd94/.nvm/versions/node/v14.15.1/bin/node /Users/colinmcd94/.yarn/bin/yarn.js
 
 PATH: 
   /Users/colinmcd94/.yarn/bin:/Users/colinmcd94/.config/yarn/global/node_modules/.bin:/Library/Frameworks/Python.framework/Versions/3.9/bin:/Users/colinmcd94/.edgedb/bin:/Users/colinmcd94/mongodb/bin:/Users/colinmcd94/.config/yarn/global/node_modules/.bin:/usr/local/Cellar/node/8.1.0_1/bin:/opt/local/bin:/opt/local/sbin:/Users/colinmcd94/.deno/bin:/Users/colinmcd94/perl5/perlbrew/bin:/Users/colinmcd94/perl5/perlbrew/perls/perl-5.28.0/bin:/Users/colinmcd94/.nvm/versions/node/v14.15.1/bin:/Users/colinmcd94/.yarn/bin:/Users/colinmcd94/.config/yarn/global/node_modules/.bin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin:/usr/local/MacGPG2/bin:/Library/Frameworks/EdgeDB.framework/bin:/opt/X11/bin:/Library/Apple/usr/bin:/Users/colinmcd94/.cargo/bin:/usr/local/bin:~/.cargo/bin:/Users/colinmcd94/Documents/Projects/flutter/bin:/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home:/Library/gurobi651/mac64/bin/:/Applications/Julia-0.4.5.app/Contents/Resources/julia/bin/julia:/Users/colinmcd94/Library/Android/sdk/tools:/Users/colinmcd94/Library/Android/sdk/platform-tools
@@ -14,7 +14,12 @@ Platform:
   darwin x64
 
 Trace: 
-  Error: ENOTDIR: not a directory, scandir '/Users/colinmcd94/Library/Caches/Yarn/v6/npm-sers-colinmcd94-ocuments-edgedb-js-0.0.0-36c5219e-806c-483b-9e28-13fcd091c618-1623727450489/node_modules/Users/colinmcd94/Documents/edgedb/js'
+  SyntaxError: /Users/colinmcd94/Documents/edgedb/js/qb/package.json: Unexpected token } in JSON at position 428
+      at JSON.parse (<anonymous>)
+      at /Users/colinmcd94/.yarn/lib/cli.js:1625:59
+      at Generator.next (<anonymous>)
+      at step (/Users/colinmcd94/.yarn/lib/cli.js:310:30)
+      at /Users/colinmcd94/.yarn/lib/cli.js:321:13
 
 npm manifest: 
   {
@@ -32,7 +37,6 @@ npm manifest:
     "license": "ISC",
     "dependencies": {
       "@types/node": "^15.12.2",
-      "edgedb": "file:../src"
     }
   }
 
@@ -49,5 +53,5 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/@types/node/-/node-15.12.2.tgz#1f2b42c4be7156ff4a6f914b2fb03d05fa84e38d"
     integrity sha512-zjQ69G564OCIWIOHSXyQEEDpdpGl+G348RAKY0XXy9Z5kU9Vzv1GMNnkar/ZJ8dzXB3COzD9Mo9NtRZ4xfgUww==
   
-  edgedb@../../js/src:
-    version "0.0.0"
+  edgedb@./..:
+    version "0.15.0-alpha.0"

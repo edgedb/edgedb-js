@@ -22,6 +22,11 @@
     "typeRoots": [
       "./node_modules/@types"
     ],
+    "paths": {
+      "edgedb": [
+        "src/index.node.ts"
+      ]
+    }
   },
   "include": [
     "src",
