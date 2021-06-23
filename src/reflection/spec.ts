@@ -1,6 +1,6 @@
 //import {Link} from "../m3";
 
-import * as model from "./model";
+import * as model from "./objects";
 import {StrictMap} from "./strictMap";
 
 type TypeName = string;
@@ -71,9 +71,8 @@ type TypeSpec = {
 
 export type TypesSpec = StrictMap<TypeName, TypeSpec>;
 
-const pathObject: unique symbol = Symbol("object");
-const pathParent: unique symbol = Symbol("parent");
-const pathLink: unique symbol = Symbol("link");
+export const pathObject: unique symbol = Symbol("object");
+export const pathParent: unique symbol = Symbol("parent");
 
 type PathParent = {parent: PathStep; linkName: TypeName};
 interface PathStep {
@@ -83,16 +82,25 @@ interface PathStep {
 
 interface PathLeaf<_T> extends PathStep {}
 
-interface PathMethods<T extends model.ObjectTypeDesc> {
+interface PathMethods<T extends model.AnyObject> {
   shape<S extends model.MakeSelectArgs<T>>(spec: S): Query<model.Result<S, T>>;
 }
 
-export type Path<T extends model.ObjectTypeDesc> = {
-  [k in keyof T]: T[k] extends model.LinkDesc<infer LT, any>
-    ? LT extends model.ObjectTypeDesc
+type arg = {arg: string} & {blarg: number};
+class Expression implements arg {
+  constructor() {}
+  arg: string = "adf";
+  blarg = 13;
+}
+export type Path<T extends model.AnyObject> = {
+  [k in keyof T["__shape"]]: T["__shape"][k] extends model.LinkDesc<
+    infer LT,
+    any
+  >
+    ? LT extends model.AnyObject
       ? Path<LT> & PathStep
       : never
-    : T[k] extends model.PropertyDesc<infer PT, any>
+    : T["__shape"][k] extends model.PropertyDesc<infer PT, any>
     ? PathLeaf<PT>
     : never;
 } &
@@ -171,14 +179,14 @@ function createPathStep(
   return obj;
 }
 
-function buildPath<T extends model.ObjectTypeDesc>(
+function buildPath<T extends model.AnyObject>(
   parent: PathParent | null,
   spec: TypesSpec,
   target: TypeName | null
 ): Path<T> {
   const obj = createPathStep(parent, target);
 
-  if (target != null) {
+  if (target !== null) {
     const type = spec.get(target);
     const seen = new Set<string>();
     applySpec(spec, target, obj, seen);
@@ -190,7 +198,7 @@ function buildPath<T extends model.ObjectTypeDesc>(
   return obj as any;
 }
 
-export function objectType<T extends model.ObjectTypeDesc>(
+export function objectType<T extends model.AnyObject>(
   spec: TypesSpec,
   name: string
 ): Path<T> {
@@ -206,6 +214,23 @@ export function objectType<T extends model.ObjectTypeDesc>(
 
   return obj as any;
 }
+
+// export function makeObjectType<T extends model.AnyObject>(
+//   spec: TypesSpec,
+//   name: string
+// ): Path<T> {
+//   const obj = buildPath(null, spec, name);
+
+//   Object.defineProperties(obj, {
+//     shape: {
+//       value: (shape: object): Query<any> => {
+//         return new Query(obj as any, shape);
+//       },
+//     },
+//   });
+
+//   return obj as any;
+// }
 
 const resultType: unique symbol = Symbol("result");
 
