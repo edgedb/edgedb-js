@@ -1,5 +1,6 @@
+import type {GeneratorParams} from "../generate";
 import {genutil} from "../genutil";
-import {GeneratorParams} from "./generateCastMaps";
+
 import * as introspect from "../queries/getTypes";
 
 export const generateObjectTypes = async (params: GeneratorParams) => {
@@ -20,8 +21,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     const ident = genutil.toIdent(name);
     const body = dir.getPath(`modules/${mod}.ts`);
     body.addImport(`import {reflection as $} from "edgedb";`);
-    // body.addImport(`import {spec as __spec__} from "../__spec__";`);
-    body.addImport(`import {spec as __spec__} from "../__newspec__";`);
+    body.addImport(`import {spec as __spec__} from "../__spec__";`);
 
     const scopeName = genutil.getScopedDisplayName(mod, body);
 
@@ -113,20 +113,20 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
       kind: "link" | "property";
     }[] = [];
 
-    const allPointers: introspect.Pointer[] = [];
-    for (const ancestor of type.ancestors) {
-      const ancestorType = types.get(ancestor.id) as introspect.ObjectType;
-      allPointers.push(...ancestorType.pointers);
-    }
-    const seen = new Set<string>();
-    allPointers.push(...type.pointers);
+    // const allPointers: introspect.Pointer[] = [];
+    // for (const ancestor of type.ancestors) {
+    //   const ancestorType = types.get(ancestor.id) as introspect.ObjectType;
+    //   allPointers.push(...ancestorType.pointers);
+    // }
+    // const seen = new Set<string>();
+    // allPointers.push(...type.pointers);
 
-    const filteredPointers = allPointers.filter((ptr) => {
-      if (seen.has(ptr.name)) return false;
-      seen.add(ptr.name);
-      return true;
-    });
-    for (const ptr of filteredPointers) {
+    // const filteredPointers = allPointers.filter((ptr) => {
+    //   if (seen.has(ptr.name)) return false;
+    //   seen.add(ptr.name);
+    //   return true;
+    // });
+    for (const ptr of type.pointers) {
       const card = `$.Cardinality.${genutil.toCardinality(ptr)}`;
       const target = types.get(ptr.target_id);
       const {staticType, runtimeType} = getStringRepresentation(target);

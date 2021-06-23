@@ -1,5 +1,5 @@
 import {genutil} from "../genutil";
-import {GeneratorParams} from "./generateCastMaps";
+import type {GeneratorParams} from "../generate";
 
 export const generateScalars = async (params: GeneratorParams) => {
   const {dir, types, casts, scalars} = params;
@@ -49,7 +49,7 @@ export interface Anyenum<
     }
 
     sc.addImport(`import {reflection as $} from "edgedb";`);
-    sc.addImport(`import {spec as __spec__} from "../__newspec__";`);
+    sc.addImport(`import {spec as __spec__} from "../__spec__";`);
 
     // generate enum
     if (type.enum_values && type.enum_values.length) {

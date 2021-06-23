@@ -10,5 +10,7 @@ console.log(Hero.__shape__.villains.cardinality);
 console.log(Hero.__shape__.villains.linkTarget.__name__);
 console.log(Hero.__shape__.villains.properties);
 
+// type asdf = TypeSet<Str, Cardinality>;
+
 Hero.__ismaterialtype__;
 export {};
