@@ -5,17 +5,18 @@ import {Connection} from "../../ifaces";
 import {StrictMap} from "../strictMap";
 import {ConnectConfig} from "../../con_utils";
 import {Casts, getCasts} from "../queries/getCasts";
-import {getScalars} from "../queries/getScalars";
 import * as introspect from "../queries/getTypes";
 import {genutil} from "../genutil";
 import path from "path";
 import {util} from "../util";
+import {ScalarTypes} from "../queries/getScalars";
 
 export type GeneratorParams = {
   dir: DirBuilder;
   types: introspect.Types;
   typesByName: Record<string, introspect.Type>;
   casts: Casts;
+  scalars: ScalarTypes;
 };
 
 export const generateCastMaps = async (params: GeneratorParams) => {

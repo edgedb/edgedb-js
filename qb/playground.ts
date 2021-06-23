@@ -10,5 +10,6 @@ console.log(Hero.__shape__);
 console.log(Hero.__shape__.name);
 console.log(Hero.__shape__.villains);
 
+// const asdf = $.spec.objectType(Hero);
 Hero.__ismaterialtype__;
 export {};

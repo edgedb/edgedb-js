@@ -1,39 +1,49 @@
 import {genutil} from "../genutil";
-import {util} from "../util";
 import {GeneratorParams} from "./generateCastMaps";
 
 export const generateScalars = async (params: GeneratorParams) => {
-  const {dir, types, casts} = params;
-  const {castMap, implicitCastMap, assignableByMap} = casts;
+  const {dir, types, casts, scalars} = params;
   for (const type of types.values()) {
     if (type.kind !== "scalar") {
       continue;
     }
 
     const {mod, name} = genutil.splitName(type.name);
-    const symbolName = `${name.toUpperCase()}_SYMBOL`;
     const displayName = genutil.displayName(type.name);
 
     const sc = dir.getPath(`modules/${mod}.ts`);
-    const getScopedDisplayName = genutil.getScopedDisplayName(mod, sc);
-    const baseExtends = type.bases
-      .map((a) => types.get(a.id))
-      .map((t) => getScopedDisplayName(t.name));
+    const scopeName = genutil.getScopedDisplayName(mod, sc);
 
-    if (type.is_abstract && !["std::anyenum"].includes(type.name)) {
-      sc.writeln(
-        `const ${symbolName}: unique symbol = Symbol("${type.name}")`
-      );
-
-      const bases = baseExtends.join(", ");
-      sc.writeln(
-        `export interface ${displayName} ${bases ? `extends ${bases} ` : ""} {`
-      );
-      sc.indented(() => {
-        sc.writeln(`[${symbolName}]: true;`);
-      });
-      sc.writeln(`}`);
+    if (type.name === "std::anyenum") {
+      sc.writeln(`
+const ANYENUM_SYMBOL: unique symbol = Symbol("std::anyenum");
+export interface Anyenum<
+  TsType = unknown,
+  Name extends string = string,
+  Values extends [string, ...string[]] = [string, ...string[]]
+> extends $.Materialtype<Name, TsType> {
+  [ANYENUM_SYMBOL]: true;
+  __values__: Values;
+}`);
       sc.nl();
+      continue;
+    }
+    if (type.is_abstract) {
+      const scalarType = scalars.get(type.id);
+      if (scalarType.children.length) {
+        const scopedNames = scalarType.children.map((desc) =>
+          scopeName(desc.name)
+        );
+        sc.writeln(`export type ${displayName} = ${scopedNames.join(" | ")};`);
+        sc.nl();
+      } else if (scalarType.bases.length) {
+        // for std::sequence
+        const bases = scalarType.bases.map((base) => scopeName(base.name));
+        sc.writeln(
+          `export interface ${displayName} extends ${bases.join(", ")} {}`
+        );
+        sc.nl();
+      }
 
       continue;
     }
@@ -54,12 +64,12 @@ export const generateScalars = async (params: GeneratorParams) => {
         .map((v) => `"${v}"`)
         .join(", ")}]`;
       sc.writeln(
-        `export type ${name} = typeof ${name}Enum & ${getScopedDisplayName(
+        `export type ${name} = typeof ${name}Enum & ${scopeName(
           "std::anyenum"
         )}<${name}Enum, "${type.name}", ${valuesArr}>;`
       );
       sc.writeln(
-        `export const ${name}: ${name} = {...${name}Enum, __values: ${valuesArr}} as any;`
+        `export const ${name}: ${name} = {...${name}Enum, __values__: ${valuesArr}} as any;`
       );
 
       sc.nl();
@@ -69,49 +79,13 @@ export const generateScalars = async (params: GeneratorParams) => {
     // generate non-enum non-abstract scalar
     let jsType = genutil.toJsScalarType(type, types, mod, sc);
     let nameType = `"${type.name}"`;
-    let genericOverride = "";
     let isRuntime = true;
     let typeLines: string[] = [];
-
-    const castableTypes = util
-      .deduplicate([...util.getFromArrayMap(castMap, type.id)])
-      .map((id) => types.get(id).name)
-      .map(getScopedDisplayName);
-    const castableTypesUnion = `${castableTypes.join(" | ")}` || "never";
-    const assignableTypes = util
-      .deduplicate([...util.getFromArrayMap(assignableByMap, type.id)])
-      .map((id) => types.get(id).name)
-      .map(getScopedDisplayName);
-
-    const assignableTypesUnion = `${assignableTypes.join(" | ")}` || "never";
-    const implicitlyCastableTypes = util
-      .deduplicate([...util.getFromArrayMap(implicitCastMap, type.id)])
-      .map((id) => types.get(id).name)
-      .map(getScopedDisplayName);
-    // const implicitlyCastableTypesArrayString = `[${implicitlyCastableTypes.join(", ")}]`;
-    const implicitlyCastableTypesUnion =
-      `${implicitlyCastableTypes.join(" | ")}` || "never";
-
-    sc.writeln(`const ${symbolName}: unique symbol = Symbol("${type.name}");`);
-
-    if (type.name === "std::anyenum") {
-      jsType = "TsType";
-      nameType = "Name";
-      isRuntime = false;
-      genericOverride = `<TsType = unknown, Name extends string = string, Values extends [string, ...string[]] = [string, ...string[]]>`;
-      typeLines = [`__values: Values;`];
-    }
-
-    const bases = baseExtends.join(", ");
     sc.writeln(
-      `export interface ${displayName}${genericOverride}${
-        bases ? ` extends ${bases}` : ""
-      }, $.Materialtype<${nameType}, ${jsType}> {`
-      // ,${castableTypesUnion}, ${assignableTypesUnion}, ${implicitlyCastableTypesUnion}
+      `export interface ${displayName} extends $.Materialtype<${nameType}, ${jsType}> {`
     );
 
     sc.indented(() => {
-      sc.writeln(`[${symbolName}]: true;`);
       for (const line of typeLines) {
         sc.writeln(line);
       }
