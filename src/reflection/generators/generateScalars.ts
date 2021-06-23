@@ -49,6 +49,7 @@ export interface Anyenum<
     }
 
     sc.addImport(`import {reflection as $} from "edgedb";`);
+    sc.addImport(`import {spec as __spec__} from "../__newspec__";`);
 
     // generate enum
     if (type.enum_values && type.enum_values.length) {
@@ -81,10 +82,12 @@ export interface Anyenum<
     sc.writeln(
       `export type ${displayName} = $.Materialtype<"${type.name}", ${jsType}>;`
     );
-
-    sc.writeln(`export const ${displayName}: ${displayName} = {`);
-    sc.writeln(`  __name__: "${type.name}",`);
-    sc.writeln(`} as any;`);
+    sc.writeln(
+      `export const ${displayName}: ${displayName} = $.makeType(__spec__, "${type.id}");`
+    );
+    // sc.writeln(`export const ${displayName}: ${displayName} = {`);
+    // sc.writeln(`  __name__: "${type.name}",`);
+    // sc.writeln(`} as any;`);
 
     sc.nl();
   }

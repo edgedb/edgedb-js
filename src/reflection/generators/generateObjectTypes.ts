@@ -20,7 +20,8 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     const ident = genutil.toIdent(name);
     const body = dir.getPath(`modules/${mod}.ts`);
     body.addImport(`import {reflection as $} from "edgedb";`);
-    body.addImport(`import {spec as __spec__} from "../__spec__";`);
+    // body.addImport(`import {spec as __spec__} from "../__spec__";`);
+    body.addImport(`import {spec as __spec__} from "../__newspec__";`);
 
     const scopeName = genutil.getScopedDisplayName(mod, body);
 
@@ -168,44 +169,44 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     //////////////
     // generate runtime type
     //////////////
-    body.writeln(`export const ${ident}: ${ident} = {`);
-    body.indented(() => {
-      body.writeln(`__name__: "${type.name}",`);
-      body.writeln(`__shape__: {`);
-      // for (const base of bases) {
-      //   body.indented(() => {
-      //     body.writeln(`...${base}.__shape__,`);
-      //   });
-      // }
-      for (const line of lines) {
-        body.indented(() => {
-          if (line.kind === "property") {
-            body.writeln(
-              `${line.key}: { get propertyTarget(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
-            );
-          } else {
-            body.writeln(
-              `${line.key}: { get linkTarget(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
-            );
-          }
-        });
-      }
-      body.writeln(`}`);
-    });
-    body.writeln(`} as any;`);
+    // body.writeln(`export const ${ident}: ${ident} = {`);
+    // body.indented(() => {
+    //   body.writeln(`__name__: "${type.name}",`);
+    //   body.writeln(`__shape__: {`);
+    //   // for (const base of bases) {
+    //   //   body.indented(() => {
+    //   //     body.writeln(`...${base}.__shape__,`);
+    //   //   });
+    //   // }
+    //   for (const line of lines) {
+    //     body.indented(() => {
+    //       if (line.kind === "property") {
+    //         body.writeln(
+    //           `${line.key}: { get propertyTarget(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
+    //         );
+    //       } else {
+    //         body.writeln(
+    //           `${line.key}: { get linkTarget(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
+    //         );
+    //       }
+    //     });
+    //   }
+    //   body.writeln(`}`);
+    // });
+    // body.writeln(`} as any;`);
 
     body.nl();
     /////////
     // generate path expression
     /////////
 
-    // body.writeln(`export const ${ident}Path = $.objectType<${ident}>(`);
-    // body.indented(() => {
-    //   body.writeln(`__spec__,`);
-    //   body.writeln(`${JSON.stringify(type.name)},`);
-    // });
-    // body.writeln(`);`);
-    // body.nl();
-    // body.nl();
+    body.writeln(`export const ${ident} = $.makeType<${ident}>(`);
+    body.indented(() => {
+      body.writeln(`__spec__,`);
+      body.writeln(`${JSON.stringify(type.id)},`);
+    });
+    body.writeln(`);`);
+    body.nl();
+    body.nl();
   }
 };

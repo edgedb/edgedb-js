@@ -1,10 +1,12 @@
 import {Connection} from "../../ifaces";
 import {StrictMap} from "../strictMap";
+import {Cardinality} from "../typesystem";
 
 export type UUID = string;
 
 export type Pointer = {
   cardinality: "One" | "Many";
+  realCardinality: Cardinality;
   kind: "link" | "property";
   required: boolean;
   name: string;
@@ -15,7 +17,7 @@ export type Pointer = {
   pointers: ReadonlyArray<Pointer> | null;
 };
 
-export type TypeKind = "object" | "scalar" | "array" | "tuple";
+export type TypeKind = "object" | "scalar" | "array" | "tuple" | "unknown";
 
 export type BaseType<T extends TypeKind> = {
   kind: T;
@@ -42,6 +44,7 @@ export type ObjectType = BaseType<"object"> & {
 
 export type ArrayType = BaseType<"array"> & {
   array_element_id: UUID;
+  is_abstract: boolean;
 };
 
 export type TupleType = BaseType<"tuple"> & {
@@ -49,6 +52,7 @@ export type TupleType = BaseType<"tuple"> & {
     name: string;
     target_id: UUID;
   }>;
+  is_abstract: boolean;
 };
 
 export type PrimitiveType = ScalarType | ArrayType | TupleType;
@@ -93,11 +97,11 @@ export async function getTypes(
       ).id,
 
       [IS InheritingObject].bases: {
-        id, name
+        id
       } ORDER BY @index ASC,
 
       [IS InheritingObject].ancestors: {
-        id, name
+        id
       } ORDER BY @index ASC,
 
       [IS ObjectType].union_of,
@@ -105,6 +109,7 @@ export async function getTypes(
       [IS ObjectType].pointers: {
         cardinality,
         required,
+        realCardinality := "One" IF .required ELSE "AtMostOne" IF <str>.cardinality = "One" ELSE "AtLeastOne" IF .required ELSE "Many",
         name,
         expr,
 

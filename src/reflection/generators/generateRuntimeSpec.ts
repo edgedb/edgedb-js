@@ -4,6 +4,16 @@ import {GeneratorParams} from "./generateCastMaps";
 export const generateRuntimeSpec = async (params: GeneratorParams) => {
   const {dir, types} = params;
 
+  const spec = dir.getPath("__newspec__.ts");
+  spec.addImport(`import {reflection as $} from "edgedb";`);
+  spec.writeln(`export const spec: $.introspect.Types = new $.StrictMap();`);
+  spec.nl();
+
+  for (const type of types.values()) {
+    spec.writeln(`spec.set("${type.id}", ${JSON.stringify(type)} as any)`);
+  }
+  if (1 > 0) return;
+
   const bm = dir.getPath("__spec__.ts");
   bm.addImport(`import {reflection as $} from "edgedb";`);
   bm.writeln(`export const spec: $.spec.TypesSpec = new $.StrictMap();`);
@@ -78,6 +88,7 @@ export const generateRuntimeSpec = async (params: GeneratorParams) => {
                   // No use for them reflected, at the moment.
                   continue;
                 }
+
                 bm.writeln(`{`);
                 bm.indented(() => {
                   bm.writeln(`name: ${JSON.stringify(prop.name)},`);
