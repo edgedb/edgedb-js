@@ -2,8 +2,8 @@ import {DirBuilder} from "./builders";
 import {connect} from "../index.node";
 
 import {ConnectConfig} from "../con_utils";
-import {getCasts} from "./queries/getCasts";
-import {getScalars} from "./queries/getScalars";
+import {getCasts, Casts} from "./queries/getCasts";
+import {getScalars, ScalarTypes} from "./queries/getScalars";
 import * as introspect from "./queries/getTypes";
 import {genutil} from "./genutil";
 import {generateCastMaps} from "./generators/generateCastMaps";
@@ -12,6 +12,14 @@ import {generateObjectTypes} from "./generators/generateObjectTypes";
 import {generateRuntimeSpec} from "./generators/generateRuntimeSpec";
 
 const DEBUG = true;
+
+export type GeneratorParams = {
+  dir: DirBuilder;
+  types: introspect.Types;
+  typesByName: Record<string, introspect.Type>;
+  casts: Casts;
+  scalars: ScalarTypes;
+};
 
 export async function generateQB(
   to: string,

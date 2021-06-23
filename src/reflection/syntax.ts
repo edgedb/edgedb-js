@@ -6,8 +6,6 @@ import {
   AnyMaterialtype,
 } from "./typesystem";
 
-import * as e from "../../qb/generated/example/index";
-import type {Str} from "../../qb/generated/example/modules/std";
 export interface TypeSet<
   T extends AnyMaterialtype = AnyMaterialtype,
   Card extends Cardinality = Cardinality
@@ -16,13 +14,11 @@ export interface TypeSet<
   cardinality: Card;
 }
 
-type asdfasdf = e.std.Str extends AnyMaterialtype ? true : false;
-
 export interface ObjectTypeSet<
   T extends AnyObject,
   Card extends Cardinality = Cardinality
 > extends TypeSet<T, Card> {}
-type asdf = TypeSet<Str, Cardinality>;
+
 type PathParent<Type extends AnyObject> = {type: Type; linkName: string};
 type Path<Type extends AnyObject, Parent extends PathParent<any> | null> = {
   type: Type;
