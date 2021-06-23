@@ -38,7 +38,7 @@ type Pathify<Type extends AnyObject> = {
     any
   >
     ? PathLeaf<Type["__shape__"][k]["propertyTarget"]>
-    : Type["__shape__"][k] extends LinkDesc<any, any>
+    : Type["__shape__"][k] extends LinkDesc<any, any, any>
     ? Path<Type["__shape__"][k]["linkTarget"], PathParent<Type>>
     : never;
 };

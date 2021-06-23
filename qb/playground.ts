@@ -1,5 +1,7 @@
-import * as e from "./generated/example";
 import {reflection as $} from "edgedb";
+console.log("asdf");
+
+import * as e from "./generated/example";
 
 e.default.Movie;
 

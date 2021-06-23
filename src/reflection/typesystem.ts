@@ -120,6 +120,7 @@ export enum Cardinality {
   Empty = "Empty",
 }
 
+export const asdlfkj = "asdflakjsdf";
 // `PropertyDesc` and `LinkDesc` are used in `__types__/*` files
 // that directly reflect EdgeDB types to TypeScript types.
 //
@@ -137,14 +138,20 @@ export interface PropertyDesc<
 
 export interface LinkDesc<
   T extends ObjectType<any, any>,
-  C extends Cardinality
+  C extends Cardinality,
+  LinkProps extends PropertyShape = {}
 > {
   cardinality: C;
   linkTarget: T;
+  properties: LinkProps;
 }
 
+export type PropertyShape = {
+  [k: string]: PropertyDesc<any, any>;
+};
+
 export type ObjectTypeShape = {
-  [k: string]: PropertyDesc<any, any> | LinkDesc<any, any>;
+  [k: string]: PropertyDesc<any, any> | LinkDesc<any, any, any>;
 };
 
 export type typeAndCardToTsType<
@@ -169,15 +176,15 @@ export type PropertyDescToTsType<
   : never;
 
 export type LinkDescToTsType<
-  Link extends LinkDesc<any, any>
-> = Link extends LinkDesc<infer Type, infer Card>
+  Link extends LinkDesc<any, any, any>
+> = Link extends LinkDesc<infer Type, infer Card, any>
   ? typeAndCardToTsType<Type, Card>
   : never;
 
 export type ObjectTypeShapeToTsType<T extends ObjectTypeShape> = {
   [k in keyof T]: T[k] extends PropertyDesc<any, any>
     ? PropertyDescToTsType<T[k]>
-    : T[k] extends LinkDesc<any, any>
+    : T[k] extends LinkDesc<any, any, any>
     ? LinkDescToTsType<T[k]>
     : never;
 };
@@ -189,6 +196,9 @@ export interface ObjectType<Name extends string, Shape extends ObjectTypeShape>
 
 export type AnyObject = ObjectType<string, ObjectTypeShape>;
 
+///////////////
+/// Type inference helpers
+////////////////
 export type UnpackBoolArg<Arg, T> = Arg extends true
   ? T
   : Arg extends false
@@ -224,11 +234,6 @@ export type BaseResult<Args, T> = {
       : unknown // : Args[k] extends Computable<infer CT> // ? CT
     : never;
 };
-
-// export const OBJECT_SYMBOL: unique symbol = Symbol();
-// export interface AnyObject {
-//   [OBJECT_SYMBOL]: true
-// }
 
 export type ExpandResult<T> = T extends
   | BaseResult<any, any>

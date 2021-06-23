@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 
-export * from "./typesystem";
-export * as spec from "./spec";
-export * from "./strictMap";
 export * from "./util";
+export * from "./typesystem";
+export * from "./strictMap";
+export * as introspect from "./queries/getTypes";
+export * from "./hydrate";
