@@ -1,4 +1,6 @@
 import {Connection} from "../../ifaces";
+import {StrictMap} from "../strictMap";
+import {typeutil} from "../util";
 import {getCasts} from "./getCasts";
 
 type Scalar = {
@@ -27,19 +29,10 @@ type Scalar = {
  *
  */
 
-const mode: "shallow" = "shallow";
-export const getScalars = async (cxn: Connection) => {
-  const castMap = await getCasts(cxn);
+export type ScalarTypes = typeutil.depromisify<ReturnType<typeof getScalars>>;
 
-  const inheritanceHierarchy: {
-    id: string;
-    name: string;
-    is_abstract: boolean;
-    bases: {id: string; name: string}[];
-    ancestors: {id: string; name: string}[];
-    children: {id: string; name: string}[];
-    descendants: {id: string; name: string}[];
-  }[] = await cxn.query(`with module schema
+export const getScalars = async (cxn: Connection) => {
+  const scalarArray = await cxn.queryJSON(`with module schema
 select InheritingObject {
   id,
   name,
@@ -51,10 +44,27 @@ select InheritingObject {
 }
 FILTER
   InheritingObject IS ScalarType OR
-  InheritingObject IS ObjectType
+  InheritingObject IS ObjectType;
 `);
 
-  return {castMap, inheritanceHierarchy};
+  const scalars = new StrictMap<
+    string,
+    {
+      id: string;
+      name: string;
+      is_abstract: boolean;
+      bases: {id: string; name: string}[];
+      ancestors: {id: string; name: string}[];
+      children: {id: string; name: string}[];
+      descendants: {id: string; name: string}[];
+    }
+  >();
+
+  for (const type of JSON.parse(scalarArray)) {
+    scalars.set(type.id, type);
+  }
+
+  return scalars;
   // initialize castsBySource and types
   // const types = new Set<string>();
   // const castsBySource: {[k: string]: Cast[]} = {};

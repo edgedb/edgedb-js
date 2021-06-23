@@ -194,6 +194,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     });
     body.writeln(`} as any;`);
 
+    body.nl();
     /////////
     // generate path expression
     /////////

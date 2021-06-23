@@ -1,27 +1,17 @@
-import fs from "fs";
-import {CodeBuilder, DirBuilder} from "./builders";
+import {DirBuilder} from "./builders";
 import {connect} from "../index.node";
-import {Connection} from "../ifaces";
-import {StrictMap} from "./strictMap";
+
 import {ConnectConfig} from "../con_utils";
 import {getCasts} from "./queries/getCasts";
 import {getScalars} from "./queries/getScalars";
 import * as introspect from "./queries/getTypes";
 import {genutil} from "./genutil";
-import path from "path";
-import {util} from "./util";
 import {generateCastMaps} from "./generators/generateCastMaps";
 import {generateScalars} from "./generators/generateScalars";
 import {generateObjectTypes} from "./generators/generateObjectTypes";
 import {generateRuntimeSpec} from "./generators/generateRuntimeSpec";
 
 const DEBUG = true;
-// get from map, defaults to empty array;
-
-type Bigint = {name: "bigint"; castable: Bigint};
-type Int64 = {name: "int64"; castable: Bigint};
-type Float64 = {name: "float64"; castable: never};
-type Int32 = {name: "int32"; castable: Int64 | Float64};
 
 export async function generateQB(
   to: string,
@@ -32,6 +22,7 @@ export async function generateQB(
 
   try {
     const types = await introspect.getTypes(cxn, {debug: DEBUG});
+    const scalars = await getScalars(cxn);
     const casts = await getCasts(cxn, {
       debug: DEBUG,
     });
@@ -40,14 +31,15 @@ export async function generateQB(
     const typesByName: Record<string, introspect.Type> = {};
     for (const type of types.values()) {
       typesByName[type.name] = type;
+
       // skip "anytype" and "anytuple"
-      if (type.name.includes("::")) {
-        const {mod} = genutil.splitName(type.name);
-        modsIndex.add(mod);
-      }
+      if (!type.name.includes("::")) continue;
+
+      const {mod} = genutil.splitName(type.name);
+      modsIndex.add(mod);
     }
 
-    const generatorParams = {dir, types, typesByName, casts};
+    const generatorParams = {dir, types, typesByName, casts, scalars};
     await generateCastMaps(generatorParams);
     await generateScalars(generatorParams);
     await generateObjectTypes(generatorParams);
