@@ -59,14 +59,14 @@ export interface ArrayType<
   Name extends string,
   Element extends AnyMaterialtype
 > extends Materialtype<Name, Element["__tstype__"][]> {
-  __elementType: Element;
+  __element__: Element;
 }
 
 export function ArrayType<
   Name extends string,
   Element extends AnyMaterialtype
 >(name: Name, element: Element): ArrayType<Name, Element> {
-  return {__name__: name, __elementType: element} as any;
+  return {__name__: name, __element__: element} as any;
 }
 
 export interface UnnamedTupleType<
@@ -80,13 +80,13 @@ export interface UnnamedTupleType<
         : never;
     }
   > {
-  __items: Items;
+  __items__: Items;
 }
 export function UnnamedTupleType<
   Name extends string,
   Items extends AnyMaterialtypeTuple
 >(name: Name, items: Items): UnnamedTupleType<Name, Items> {
-  return {__name__: name, __items: items} as any;
+  return {__name__: name, __items__: items} as any;
 }
 
 export type NamedTupleShape = {[k: string]: AnyMaterialtype};
