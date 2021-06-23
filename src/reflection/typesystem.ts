@@ -1,46 +1,16 @@
-// export type AnyAnytype = Anytype;
-
-// export const ANYTYPE: unique symbol = Symbol("anytype");
-// export type ANYTYPE = typeof ANYTYPE;
-// export const MATERIAL_TYPE: unique symbol = Symbol("material_type");
-// export type MATERIAL_TYPE = typeof MATERIAL_TYPE;
-// export const TSTYPE: unique symbol = Symbol("tstype");
-// export type TSTYPE = '__tstype__';
-// export const TYPENAME: unique symbol = Symbol("typename");
-// export type TYPENAME = typeof TYPENAME;
-// export const CASTABLE: unique symbol = Symbol("castable");
-// type CASTABLE = typeof CASTABLE;
-// const ASSIGNABLE: unique symbol = Symbol("assignable");
-// type ASSIGNABLE = typeof ASSIGNABLE;
-// const IMPLICITCAST: unique symbol = Symbol("implicitly_castable");
-// type IMPLICITCAST = typeof IMPLICITCAST;
-
 /////////////////////////
 /// ABSTRACT TYPES
 /////////////////////////
 
+import {typeutil} from "./util";
+
 export interface Anytype {
-  // CastableTo extends AnyAnytype,
-  // AssignableTo extends AnyAnytype,
-  // ImplicitlyCastableTo extends AnyAnytype
-  // CastableTo extends AnytypeTuple,
-  // AssignableTo extends AnytypeTuple,
-  // ImplicitlyCastableTo extends AnytypeTuple
   __isanytype__: true;
-  // [CASTABLE]: CastableTo;
-  // [ASSIGNABLE]: AssignableTo;
-  // [IMPLICITCAST]: ImplicitlyCastableTo;
   __name__: string;
 }
 export type AnytypeTuple = [Anytype, ...Anytype[]] | [];
 
-export interface Materialtype<
-  Name extends string,
-  TsType
-  // CastableTo extends AnyAnytype,
-  // AssignableTo extends AnyAnytype,
-  // ImplicitlyCastableTo extends AnyAnytype
-> extends Anytype {
+export interface Materialtype<Name extends string, TsType> extends Anytype {
   __ismaterialtype__: true;
   __tstype__: TsType;
   __name__: Name;
@@ -120,14 +90,6 @@ export enum Cardinality {
   Empty = "Empty",
 }
 
-export const asdlfkj = "asdflakjsdf";
-// `PropertyDesc` and `LinkDesc` are used in `__types__/*` files
-// that directly reflect EdgeDB types to TypeScript types.
-//
-// These types must have different internal structure, so that's
-// why they have `propertyTarget` and `linkTarget` attributes
-// (not just `target`.)  Otherwise TS would fail to tell one from
-// another in a conditional check like `A extends PropertyDesc`.
 export interface PropertyDesc<
   T extends AnyMaterialtype,
   C extends Cardinality
@@ -135,6 +97,10 @@ export interface PropertyDesc<
   cardinality: C;
   propertyTarget: T;
 }
+
+export type PropertyShape = {
+  [k: string]: PropertyDesc<any, any>;
+};
 
 export interface LinkDesc<
   T extends ObjectType<any, any>,
@@ -145,10 +111,6 @@ export interface LinkDesc<
   linkTarget: T;
   properties: LinkProps;
 }
-
-export type PropertyShape = {
-  [k: string]: PropertyDesc<any, any>;
-};
 
 export type ObjectTypeShape = {
   [k: string]: PropertyDesc<any, any> | LinkDesc<any, any, any>;
@@ -162,11 +124,13 @@ export type typeAndCardToTsType<
   : Card extends Cardinality.One
   ? Type["__tstype__"]
   : Card extends Cardinality.AtLeastOne
-  ? Type["__tstype__"][]
+  ? [Type["__tstype__"], ...Type["__tstype__"][]]
   : Card extends Cardinality.AtMostOne
   ? Type["__tstype__"] | null
   : Card extends Cardinality.Many
   ? Type["__tstype__"][]
+  : Card extends Cardinality.Empty
+  ? null
   : never;
 
 export type PropertyDescToTsType<
@@ -181,13 +145,17 @@ export type LinkDescToTsType<
   ? typeAndCardToTsType<Type, Card>
   : never;
 
-export type ObjectTypeShapeToTsType<T extends ObjectTypeShape> = {
-  [k in keyof T]: T[k] extends PropertyDesc<any, any>
-    ? PropertyDescToTsType<T[k]>
-    : T[k] extends LinkDesc<any, any, any>
-    ? LinkDescToTsType<T[k]>
-    : never;
-};
+export type ObjectTypeShapeToTsType<
+  T extends ObjectTypeShape
+> = typeutil.flatten<
+  {
+    [k in keyof T]: T[k] extends PropertyDesc<any, any>
+      ? PropertyDescToTsType<T[k]>
+      : T[k] extends LinkDesc<any, any, any>
+      ? LinkDescToTsType<T[k]>
+      : never;
+  }
+>;
 
 export interface ObjectType<Name extends string, Shape extends ObjectTypeShape>
   extends Materialtype<Name, ObjectTypeShapeToTsType<Shape>> {

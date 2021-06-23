@@ -1,23 +1,8 @@
-import fs from "fs";
 import {CodeBuilder, DirBuilder} from "../builders";
-import {connect} from "../../index.node";
-import {Connection} from "../../ifaces";
-import {StrictMap} from "../strictMap";
-import {ConnectConfig} from "../../con_utils";
-import {Casts, getCasts} from "../queries/getCasts";
-import * as introspect from "../queries/getTypes";
+import type {GeneratorParams} from "../generate";
+import type * as introspect from "../queries/getTypes";
 import {genutil} from "../genutil";
-import path from "path";
 import {util} from "../util";
-import {ScalarTypes} from "../queries/getScalars";
-
-export type GeneratorParams = {
-  dir: DirBuilder;
-  types: introspect.Types;
-  typesByName: Record<string, introspect.Type>;
-  casts: Casts;
-  scalars: ScalarTypes;
-};
 
 export const generateCastMaps = async (params: GeneratorParams) => {
   const {dir, types, typesByName, casts} = params;
@@ -129,10 +114,8 @@ export const generateCastMaps = async (params: GeneratorParams) => {
 
   generateCastMap({
     typeList: materialScalars,
-    // casting:
     casting: (id: string) => {
       const type = types.get(id);
-
       return util.deduplicate([
         ...util.getFromArrayMap(implicitCastMap, type.id),
       ]);
