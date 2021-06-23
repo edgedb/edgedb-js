@@ -10,7 +10,7 @@ import {
 function applySpec(
   spec: Types,
   type: ObjectType,
-  obj: any,
+  shape: any,
   seen: Set<string>
 ): void {
   // const type = spec.get(typeName);
@@ -22,9 +22,11 @@ function applySpec(
     seen.add(ptr.name);
 
     if (ptr.kind === "link") {
-      Object.defineProperty(obj, ptr.name, {
+      Object.defineProperty(shape, ptr.name, {
         get: () => {
           const linkObj: any = {};
+
+          // generate link properties
           Object.defineProperty(linkObj, "properties", {
             get: () => {
               const linkProperties: {[k: string]: any} = {};
@@ -40,6 +42,7 @@ function applySpec(
                   get: () => {
                     return makeType(spec, linkProp.target_id);
                   },
+                  enumerable: true,
                 });
                 return linkPropObject;
               });
@@ -54,11 +57,12 @@ function applySpec(
             },
             enumerable: true,
           });
+          return linkObj;
         },
         enumerable: true,
       });
     } else if (ptr.kind === "property") {
-      Object.defineProperty(obj, ptr.name, {
+      Object.defineProperty(shape, ptr.name, {
         get: () => {
           const propObject: any = {};
           propObject.cardinality = ptr.realCardinality;
@@ -66,7 +70,9 @@ function applySpec(
             get: () => {
               return makeType(spec, ptr.target_id);
             },
+            enumerable: true,
           });
+          return propObject;
         },
         enumerable: true,
       });
@@ -79,32 +85,64 @@ export function makeType<T extends AnyMaterialtype>(
   id: string
 ): T {
   const type = spec.get(id);
+  const obj: any = {};
+  obj.__name__ = type.name;
   if (type.kind === "object") {
-    const obj = {};
-    const seen = new Set<string>();
-    applySpec(spec, type, obj, seen);
-    for (const anc of type.ancestors) {
-      const ancType = spec.get(anc.id);
-      if (ancType.kind !== "object") throw new Error(`Not an object: ${id}`);
-      applySpec(spec, ancType, obj, seen);
-    }
-    return obj as any;
+    Object.defineProperty(obj, "__shape__", {
+      get: () => {
+        const shape: any = {};
+        const seen = new Set<string>();
+        applySpec(spec, type, shape, seen);
+        for (const anc of type.ancestors) {
+          const ancType = spec.get(anc.id);
+          if (ancType.kind !== "object")
+            throw new Error(`Not an object: ${id}`);
+          applySpec(spec, ancType, shape, seen);
+        }
+        return shape as any;
+      },
+      enumerable: true,
+    });
+    return obj;
   } else if (type.kind === "scalar") {
-    return {__name__: type.name} as any;
+    return obj;
   } else if (type.kind === "array") {
-    return ArrayType(type.name, makeType(spec, type.array_element_id)) as any;
+    Object.defineProperty(obj, "__element__", {
+      get: function () {
+        return ArrayType(
+          type.name,
+          makeType(spec, type.array_element_id)
+        ) as any;
+      },
+      enumerable: true,
+    });
+    return obj;
   } else if (type.kind === "tuple") {
     if (type.tuple_elements[0].name === "0") {
-      return UnnamedTupleType(
-        type.name,
-        type.tuple_elements.map((el) => makeType(spec, el.target_id)) as any
-      ) as any;
+      Object.defineProperty(obj, "__items__", {
+        get: function () {
+          return UnnamedTupleType(
+            type.name,
+            type.tuple_elements.map((el) =>
+              makeType(spec, el.target_id)
+            ) as any
+          ) as any;
+        },
+        enumerable: true,
+      });
+      return obj;
     } else {
-      const shape: any = {};
-      type.tuple_elements.forEach((el) => {
-        shape[el.name] = makeType(spec, el.target_id);
-      }) as any;
-      return NamedTupleType(type.name, shape as any) as any;
+      Object.defineProperty(obj, "__shape__", {
+        get: function () {
+          const shape: any = {};
+          type.tuple_elements.forEach((el) => {
+            shape[el.name] = makeType(spec, el.target_id);
+          }) as any;
+          return NamedTupleType(type.name, shape as any) as any;
+        },
+        enumerable: true,
+      });
+      return obj;
     }
   } else {
     throw new Error("Invalid type.");

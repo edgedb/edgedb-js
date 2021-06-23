@@ -12,7 +12,6 @@
   "author": "Colin McDonnell",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^15.12.2",
-    "edgedb": "./.."
+    "@types/node": "^15.12.2"
   }
 }
