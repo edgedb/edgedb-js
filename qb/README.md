@@ -1,38 +1,25 @@
 ## Query builder dev instructions
 
-1. Install deps
+1. Set up
 
 ```
 yarn
-cd qb
-yarn
+yarn link
 ```
 
 2. Initialize project inside `qb`
 
 ```
 cd qb
+edgedb server upgrade --nightly
 edgedb project init
-cd ..
-```
-
-3. Symlink edgedb-js to `qb`
-
-```
-yarn link
-cd qb
 yarn link "edgedb"
+yarn
 ```
 
-4. Start edgedb-js watcher
+3. Generate query builder
 
-In `edgedb-js` root:
-
-```
-yarn build:dev
-```
-
-5. Generate query builder
+Run `yarn generate` anywhere inside `edgedb-js` or `edgedb-js/qb`. Files are generated into `qb/generated`.
 
 ```
 yarn generate
@@ -41,8 +28,8 @@ yarn generate
 yarn generate:dev
 ```
 
-Files are generated into `qb`
+4. Scratchpad: `qb/playground.ts`
 
-6. Scratchpad: `qb/playground.ts`
+Run `yarn play` inside `edgedb-js/qb` to execute `qb/playground.ts` in watch mode. This is an easy way to test things in development.
 
-This file uses the symlinked version of `edgedb-js`, which is _built_ version of edgedb-js. You need to re-run `yarn build` for any changes to `edgedb-js` to be reflected in your playground code. Running the `yarn build:dev` watcher is an easy way to rebuild the project anytime you make a change.
+All imports from `"edgedb"` resolve to the symlinked version of `edgedb-js`. This imports the _built_ library, not the so you need to re-run `yarn build` inside `edgedb-js` for changes to be reflected in your playground code. Running the `yarn build:dev` watcher inside the root `edgedb-js` directory is an easy way to rebuild the project anytime you make a change.
