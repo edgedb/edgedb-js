@@ -1,13 +1,28 @@
-import {AnyObject, Cardinality, LinkDesc, PropertyDesc} from "./objects";
-import {AnyMaterialtype, Anytype, Materialtype, TSTYPE} from "./typesystem";
+import {
+  AnyObject,
+  Cardinality,
+  LinkDesc,
+  PropertyDesc,
+  AnyMaterialtype,
+} from "./typesystem";
 
-export interface Set<
+import * as e from "../../qb/generated/example/index";
+import type {Str} from "../../qb/generated/example/modules/std";
+export interface TypeSet<
   T extends AnyMaterialtype = AnyMaterialtype,
   Card extends Cardinality = Cardinality
 > {
   type: T;
   cardinality: Card;
 }
+
+type asdfasdf = e.std.Str extends AnyMaterialtype ? true : false;
+
+export interface ObjectTypeSet<
+  T extends AnyObject,
+  Card extends Cardinality = Cardinality
+> extends TypeSet<T, Card> {}
+type asdf = TypeSet<Str, Cardinality>;
 type PathParent<Type extends AnyObject> = {type: Type; linkName: string};
 type Path<Type extends AnyObject, Parent extends PathParent<any> | null> = {
   type: Type;
@@ -33,8 +48,4 @@ const toPathExpression = <T extends AnyObject>(
 ): Pathify<T> => {
   return "asdf" as any;
 };
-type Expression<Type extends Set> = {};
-
-// export class SetExpression<Type extends Set, TSType = typeAndCardToTsType<Type['type'], Type['cardinality']>{
-
-// }
+// type Expression<Type extends Set> = {};

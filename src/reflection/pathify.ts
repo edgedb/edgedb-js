@@ -1,6 +1,6 @@
 //import {Link} from "../m3";
 
-import * as model from "./objects";
+import * as typesystem from "./typesystem";
 import {StrictMap} from "./strictMap";
 
 type TypeName = string;
@@ -51,12 +51,12 @@ type PrimitiveValue = ScalarValue | ArrayValue | TupleValue;
 
 type PropertySpec = {
   name: string;
-  cardinality: model.Cardinality;
+  cardinality: typesystem.Cardinality;
 };
 
 type LinkSpec = {
   name: string;
-  cardinality: model.Cardinality;
+  cardinality: typesystem.Cardinality;
   target: TypeName;
   properties: PropertySpec[];
 };
@@ -82,8 +82,10 @@ interface PathStep {
 
 interface PathLeaf<_T> extends PathStep {}
 
-interface PathMethods<T extends model.AnyObject> {
-  shape<S extends model.MakeSelectArgs<T>>(spec: S): Query<model.Result<S, T>>;
+interface PathMethods<T extends typesystem.AnyObject> {
+  shape<S extends typesystem.MakeSelectArgs<T>>(
+    spec: S
+  ): Query<typesystem.Result<S, T>>;
 }
 
 type arg = {arg: string} & {blarg: number};
@@ -92,15 +94,15 @@ class Expression implements arg {
   arg: string = "adf";
   blarg = 13;
 }
-export type Path<T extends model.AnyObject> = {
-  [k in keyof T["__shape__"]]: T["__shape__"][k] extends model.LinkDesc<
+export type Path<T extends typesystem.AnyObject> = {
+  [k in keyof T["__shape__"]]: T["__shape__"][k] extends typesystem.LinkDesc<
     infer LT,
     any
   >
-    ? LT extends model.AnyObject
+    ? LT extends typesystem.AnyObject
       ? Path<LT> & PathStep
       : never
-    : T["__shape__"][k] extends model.PropertyDesc<infer PT, any>
+    : T["__shape__"][k] extends typesystem.PropertyDesc<infer PT, any>
     ? PathLeaf<PT>
     : never;
 } &
@@ -179,7 +181,7 @@ function createPathStep(
   return obj;
 }
 
-function buildPath<T extends model.AnyObject>(
+function buildPath<T extends typesystem.AnyObject>(
   parent: PathParent | null,
   spec: TypesSpec,
   target: TypeName | null
@@ -198,7 +200,7 @@ function buildPath<T extends model.AnyObject>(
   return obj as any;
 }
 
-export function objectType<T extends model.AnyObject>(
+export function objectType<T extends typesystem.AnyObject>(
   spec: TypesSpec,
   name: string
 ): Path<T> {
