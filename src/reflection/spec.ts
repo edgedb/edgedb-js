@@ -93,14 +93,14 @@ class Expression implements arg {
   blarg = 13;
 }
 export type Path<T extends model.AnyObject> = {
-  [k in keyof T["__shape"]]: T["__shape"][k] extends model.LinkDesc<
+  [k in keyof T["__shape__"]]: T["__shape__"][k] extends model.LinkDesc<
     infer LT,
     any
   >
     ? LT extends model.AnyObject
       ? Path<LT> & PathStep
       : never
-    : T["__shape"][k] extends model.PropertyDesc<infer PT, any>
+    : T["__shape__"][k] extends model.PropertyDesc<infer PT, any>
     ? PathLeaf<PT>
     : never;
 } &
