@@ -120,18 +120,7 @@ export const generateScalars = async (params: GeneratorParams) => {
 
     if (isRuntime) {
       sc.writeln(`export const ${displayName}: ${displayName} = {`);
-      // sc.writeln(`  [scalarBase.ANYTYPE]: true,`);
-      // sc.writeln(`  [${symbolName}]: true,`);
-      // sc.writeln(
-      //   `  get [scalarBase.CASTABLE](){ return ${castableTypesArrayString} },`
-      // );
-      // sc.writeln(
-      //   `  get [scalarBase.ASSIGNABLE](){ return ${assignableTypesArrayString} },`
-      // );
-      // sc.writeln(
-      //   `  get [scalarBase.IMPLICITCAST](){ return ${implicitlyCastableTypesArrayString} },`
-      // );
-      sc.writeln(`  [$.TYPENAME]: "${type.name}",`);
+      sc.writeln(`  __name__: "${type.name}",`);
       sc.writeln(`} as any;`);
     }
     sc.nl();
