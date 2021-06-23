@@ -78,25 +78,14 @@ export interface Anyenum<
 
     // generate non-enum non-abstract scalar
     let jsType = genutil.toJsScalarType(type, types, mod, sc);
-    let nameType = `"${type.name}"`;
-    let isRuntime = true;
-    let typeLines: string[] = [];
     sc.writeln(
-      `export interface ${displayName} extends $.Materialtype<${nameType}, ${jsType}> {`
+      `export type ${displayName} = $.Materialtype<"${type.name}", ${jsType}>;`
     );
 
-    sc.indented(() => {
-      for (const line of typeLines) {
-        sc.writeln(line);
-      }
-    });
-    sc.writeln("}");
+    sc.writeln(`export const ${displayName}: ${displayName} = {`);
+    sc.writeln(`  __name__: "${type.name}",`);
+    sc.writeln(`} as any;`);
 
-    if (isRuntime) {
-      sc.writeln(`export const ${displayName}: ${displayName} = {`);
-      sc.writeln(`  __name__: "${type.name}",`);
-      sc.writeln(`} as any;`);
-    }
     sc.nl();
   }
 };
