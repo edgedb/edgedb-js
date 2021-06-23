@@ -59,13 +59,13 @@ export type typeAndCardToTsType<
 > = Card extends Cardinality.Empty
   ? null
   : Card extends Cardinality.One
-  ? Type[typeof TSTYPE]
+  ? Type["__tstype__"]
   : Card extends Cardinality.AtLeastOne
-  ? Type[typeof TSTYPE][]
+  ? Type["__tstype__"][]
   : Card extends Cardinality.AtMostOne
-  ? Type[typeof TSTYPE] | null
+  ? Type["__tstype__"] | null
   : Card extends Cardinality.Many
-  ? Type[typeof TSTYPE][]
+  ? Type["__tstype__"][]
   : never;
 
 export type PropertyDescToTsType<
@@ -90,7 +90,7 @@ export type ObjectTypeShapeToTsType<T extends ObjectTypeShape> = {
 
 export interface ObjectType<Name extends string, Shape extends ObjectTypeShape>
   extends Materialtype<Name, ObjectTypeShapeToTsType<Shape>> {
-  __shape: Shape;
+  __shape__: Shape;
 }
 
 export type AnyObject = ObjectType<string, ObjectTypeShape>;
@@ -157,9 +157,12 @@ export type Result<Args, T extends AnyObject> = ExpandResult<
 >;
 
 export type BaseMakeSelectArgs<T extends AnyObject> = {
-  [k in keyof T["__shape"]]?: T["__shape"][k] extends LinkDesc<infer LT, any>
+  [k in keyof T["__shape__"]]?: T["__shape__"][k] extends LinkDesc<
+    infer LT,
+    any
+  >
     ? BaseMakeSelectArgs<LT> | boolean
-    : T["__shape"][k] extends PropertyDesc<any, any>
+    : T["__shape__"][k] extends PropertyDesc<any, any>
     ? boolean
     : never;
 };

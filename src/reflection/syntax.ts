@@ -18,13 +18,13 @@ type PathLeaf<Type extends AnyMaterialtype> = {
   parent: PathParent<any>;
 };
 type Pathify<Type extends AnyObject> = {
-  [k in keyof Type["__shape"]]: Type["__shape"][k] extends PropertyDesc<
+  [k in keyof Type["__shape__"]]: Type["__shape__"][k] extends PropertyDesc<
     any,
     any
   >
-    ? PathLeaf<Type["__shape"][k]["propertyTarget"]>
-    : Type["__shape"][k] extends LinkDesc<any, any>
-    ? Path<Type["__shape"][k]["linkTarget"], PathParent<Type>>
+    ? PathLeaf<Type["__shape__"][k]["propertyTarget"]>
+    : Type["__shape__"][k] extends LinkDesc<any, any>
+    ? Path<Type["__shape__"][k]["linkTarget"], PathParent<Type>>
     : never;
 };
 

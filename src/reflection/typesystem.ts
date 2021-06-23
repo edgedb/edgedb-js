@@ -1,13 +1,13 @@
 // export type AnyAnytype = Anytype;
 
-export const ANYTYPE: unique symbol = Symbol("anytype");
-export type ANYTYPE = typeof ANYTYPE;
-export const MATERIAL_TYPE: unique symbol = Symbol("material_type");
-export type MATERIAL_TYPE = typeof MATERIAL_TYPE;
-export const TSTYPE: unique symbol = Symbol("tstype");
-export type TSTYPE = typeof TSTYPE;
-export const TYPENAME: unique symbol = Symbol("typename");
-export type TYPENAME = typeof TYPENAME;
+// export const ANYTYPE: unique symbol = Symbol("anytype");
+// export type ANYTYPE = typeof ANYTYPE;
+// export const MATERIAL_TYPE: unique symbol = Symbol("material_type");
+// export type MATERIAL_TYPE = typeof MATERIAL_TYPE;
+// export const TSTYPE: unique symbol = Symbol("tstype");
+// export type TSTYPE = '__tstype__';
+// export const TYPENAME: unique symbol = Symbol("typename");
+// export type TYPENAME = typeof TYPENAME;
 // export const CASTABLE: unique symbol = Symbol("castable");
 // type CASTABLE = typeof CASTABLE;
 // const ASSIGNABLE: unique symbol = Symbol("assignable");
@@ -26,11 +26,11 @@ export interface Anytype {
   // CastableTo extends AnytypeTuple,
   // AssignableTo extends AnytypeTuple,
   // ImplicitlyCastableTo extends AnytypeTuple
-  [ANYTYPE]: true;
+  __isanytype__: true;
   // [CASTABLE]: CastableTo;
   // [ASSIGNABLE]: AssignableTo;
   // [IMPLICITCAST]: ImplicitlyCastableTo;
-  [TYPENAME]: string;
+  __name__: string;
 }
 export type AnytypeTuple = [Anytype, ...Anytype[]] | [];
 
@@ -41,9 +41,9 @@ export interface Materialtype<
   // AssignableTo extends AnyAnytype,
   // ImplicitlyCastableTo extends AnyAnytype
 > extends Anytype {
-  [MATERIAL_TYPE]: true;
-  [TSTYPE]: TsType;
-  [TYPENAME]: Name;
+  __ismaterialtype__: true;
+  __tstype__: TsType;
+  __name__: Name;
 }
 
 export type AnyMaterialtype = Materialtype<string, any>;
@@ -58,7 +58,7 @@ export type AnyMaterialtypeTuple =
 export interface ArrayType<
   Name extends string,
   Element extends AnyMaterialtype
-> extends Materialtype<Name, Element[typeof TSTYPE][]> {
+> extends Materialtype<Name, Element["__tstype__"][]> {
   __elementType: Element;
 }
 
@@ -66,7 +66,7 @@ export function ArrayType<
   Name extends string,
   Element extends AnyMaterialtype
 >(name: Name, element: Element): ArrayType<Name, Element> {
-  return {[TYPENAME]: name, __elementType: element} as any;
+  return {__name__: name, __elementType: element} as any;
 }
 
 export interface UnnamedTupleType<
@@ -76,7 +76,7 @@ export interface UnnamedTupleType<
     Name,
     {
       [k in keyof Items]: Items[k] extends AnyMaterialtype
-        ? Items[k][typeof TSTYPE]
+        ? Items[k]["__tstype__"]
         : never;
     }
   > {
@@ -86,7 +86,7 @@ export function UnnamedTupleType<
   Name extends string,
   Items extends AnyMaterialtypeTuple
 >(name: Name, items: Items): UnnamedTupleType<Name, Items> {
-  return {[TYPENAME]: name, __items: items} as any;
+  return {__name__: name, __items: items} as any;
 }
 
 export type NamedTupleShape = {[k: string]: AnyMaterialtype};
@@ -96,16 +96,16 @@ export interface NamedTupleType<
 > extends Materialtype<
     Name,
     {
-      [k in keyof Shape]: Shape[k][typeof TSTYPE];
+      [k in keyof Shape]: Shape[k]["__tstype__"];
     }
   > {
-  __shape: Shape;
+  __shape__: Shape;
 }
 export function NamedTupleType<
   Name extends string,
   Shape extends NamedTupleShape
 >(name: Name, shape: Shape): NamedTupleType<Name, Shape> {
-  return {[TYPENAME]: name, __shape: shape} as any;
+  return {__name__: name, __shape__: shape} as any;
 }
 
 /////////////////////////
@@ -153,13 +153,13 @@ export type typeAndCardToTsType<
 > = Card extends Cardinality.Empty
   ? null
   : Card extends Cardinality.One
-  ? Type[typeof TSTYPE]
+  ? Type["__tstype__"]
   : Card extends Cardinality.AtLeastOne
-  ? Type[typeof TSTYPE][]
+  ? Type["__tstype__"][]
   : Card extends Cardinality.AtMostOne
-  ? Type[typeof TSTYPE] | null
+  ? Type["__tstype__"] | null
   : Card extends Cardinality.Many
-  ? Type[typeof TSTYPE][]
+  ? Type["__tstype__"][]
   : never;
 
 export type PropertyDescToTsType<
@@ -184,7 +184,7 @@ export type ObjectTypeShapeToTsType<T extends ObjectTypeShape> = {
 
 export interface ObjectType<Name extends string, Shape extends ObjectTypeShape>
   extends Materialtype<Name, ObjectTypeShapeToTsType<Shape>> {
-  __shape: Shape;
+  __shape__: Shape;
 }
 
 export type AnyObject = ObjectType<string, ObjectTypeShape>;
@@ -243,9 +243,12 @@ export type Result<Args, T extends AnyObject> = ExpandResult<
 >;
 
 export type BaseMakeSelectArgs<T extends AnyObject> = {
-  [k in keyof T["__shape"]]?: T["__shape"][k] extends LinkDesc<infer LT, any>
+  [k in keyof T["__shape__"]]?: T["__shape__"][k] extends LinkDesc<
+    infer LT,
+    any
+  >
     ? BaseMakeSelectArgs<LT> | boolean
-    : T["__shape"][k] extends PropertyDesc<any, any>
+    : T["__shape__"][k] extends PropertyDesc<any, any>
     ? boolean
     : never;
 };

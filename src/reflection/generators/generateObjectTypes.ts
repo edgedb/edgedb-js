@@ -112,7 +112,20 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
       kind: "link" | "property";
     }[] = [];
 
-    for (const ptr of type.pointers) {
+    const allPointers: introspect.Pointer[] = [];
+    for (const ancestor of type.ancestors) {
+      const ancestorType = types.get(ancestor.id) as introspect.ObjectType;
+      allPointers.push(...ancestorType.pointers);
+    }
+    const seen = new Set<string>();
+    allPointers.push(...type.pointers);
+
+    const filteredPointers = allPointers.filter((ptr) => {
+      if (seen.has(ptr.name)) return false;
+      seen.add(ptr.name);
+      return true;
+    });
+    for (const ptr of filteredPointers) {
       const card = `$.Cardinality.${genutil.toCardinality(ptr)}`;
       const target = types.get(ptr.target_id);
       const {staticType, runtimeType} = getStringRepresentation(target);
@@ -157,18 +170,18 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     //////////////
     body.writeln(`export const ${ident}: ${ident} = {`);
     body.indented(() => {
-      body.writeln(`[$.TYPENAME]: "${type.name}",`);
-      body.writeln(`__shape: {`);
-      for (const base of bases) {
-        body.indented(() => {
-          body.writeln(`...${base}.__shape,`);
-        });
-      }
+      body.writeln(`__name__: "${type.name}",`);
+      body.writeln(`__shape__: {`);
+      // for (const base of bases) {
+      //   body.indented(() => {
+      //     body.writeln(`...${base}.__shape__,`);
+      //   });
+      // }
       for (const line of lines) {
         body.indented(() => {
           if (line.kind === "property") {
             body.writeln(
-              `${line.key}: { propertyTarget: ${line.runtimeType}, cardinality: ${line.card} },`
+              `${line.key}: { get propertyTarget(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
             );
           } else {
             body.writeln(
