@@ -45,8 +45,10 @@ export class CodeBuilder {
     }
   }
 
-  writeln(line: string): void {
-    this.buf.push("  ".repeat(this.indent) + line);
+  writeln(...lines: string[]): void {
+    lines.forEach((line) => {
+      this.buf.push("  ".repeat(this.indent) + line);
+    });
   }
 
   render(): string {
