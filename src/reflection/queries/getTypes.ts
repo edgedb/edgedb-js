@@ -133,7 +133,6 @@ export async function getTypes(
   `;
 
   const types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
-  // const jsonTypes = await cxn.queryJSON(QUERY);
   if (params?.debug) console.log(JSON.stringify(types, null, 2));
 
   // Now sort `types` topologically:
