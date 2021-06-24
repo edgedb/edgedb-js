@@ -182,11 +182,11 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     //     body.indented(() => {
     //       if (line.kind === "property") {
     //         body.writeln(
-    //           `${line.key}: { get propertyTarget(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
+    //           `${line.key}: { get target(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
     //         );
     //       } else {
     //         body.writeln(
-    //           `${line.key}: { get linkTarget(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
+    //           `${line.key}: { get target(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
     //         );
     //       }
     //     });

@@ -2,7 +2,7 @@
 /// ABSTRACT TYPES
 /////////////////////////
 
-import {typeutil} from "./util";
+import {typeutil} from "./typeutil";
 
 export interface Anytype {
   __isanytype__: true;
@@ -16,7 +16,7 @@ export interface Materialtype<Name extends string, TsType> extends Anytype {
   __name__: Name;
 }
 
-export type AnyMaterialtype = Materialtype<string, any>;
+export type AnyMaterialtype = Materialtype<string, unknown>;
 export type AnyMaterialtypeTuple =
   | [AnyMaterialtype, ...AnyMaterialtype[]]
   | [];
@@ -91,29 +91,31 @@ export enum Cardinality {
 }
 
 export interface PropertyDesc<
-  T extends AnyMaterialtype,
-  C extends Cardinality
+  T extends AnyMaterialtype = AnyMaterialtype,
+  C extends Cardinality = Cardinality
 > {
+  __kind__: "property";
   cardinality: C;
-  propertyTarget: T;
+  target: T;
 }
 
 export type PropertyShape = {
-  [k: string]: PropertyDesc<any, any>;
+  [k: string]: PropertyDesc;
 };
 
 export interface LinkDesc<
-  T extends ObjectType<any, any>,
-  C extends Cardinality,
+  T extends ObjectType<any, any> = ObjectType<any, any>,
+  C extends Cardinality = Cardinality,
   LinkProps extends PropertyShape = {}
 > {
+  __kind__: "link";
   cardinality: C;
-  linkTarget: T;
+  target: T;
   properties: LinkProps;
 }
 
 export type ObjectTypeShape = {
-  [k: string]: PropertyDesc<any, any> | LinkDesc<any, any, any>;
+  [k: string]: PropertyDesc | LinkDesc;
 };
 
 export type typeAndCardToTsType<
@@ -159,71 +161,29 @@ export type ObjectTypeShapeToTsType<
 
 export interface ObjectType<Name extends string, Shape extends ObjectTypeShape>
   extends Materialtype<Name, ObjectTypeShapeToTsType<Shape>> {
+  __isobjecttype__: true;
   __shape__: Shape;
 }
 
 export type AnyObject = ObjectType<string, ObjectTypeShape>;
 
-///////////////
-/// Type inference helpers
-////////////////
-export type UnpackBoolArg<Arg, T> = Arg extends true
-  ? T
-  : Arg extends false
-  ? null
-  : Arg extends boolean
-  ? T | null
-  : never;
+export interface SetType<
+  T extends AnyMaterialtype = AnyMaterialtype,
+  Card extends Cardinality = Cardinality
+> {
+  __element__: T;
+  __cardinality__: Card;
+}
 
-export type ExcludeTFromArgs<Args, T> = {
-  [k in keyof Args]: k extends keyof T ? never : k;
-}[keyof Args];
+export type ObjectSetType<
+  T extends AnyObject = AnyObject,
+  Card extends Cardinality = Cardinality
+> = SetType<T, Card>;
 
-export type BaseResult<Args, T> = {
-  [k in (keyof T & keyof Args) | ExcludeTFromArgs<Args, T>]: k extends keyof T
-    ? T[k] extends PropertyDesc<
-        infer PPT,
-        Cardinality.Many | Cardinality.AtLeastOne
-      >
-      ? Array<UnpackBoolArg<Args[k], PPT>>
-      : T[k] extends PropertyDesc<infer PPT1, Cardinality.One>
-      ? UnpackBoolArg<Args[k], PPT1>
-      : T[k] extends PropertyDesc<infer PPT2, Cardinality.AtMostOne>
-      ? UnpackBoolArg<Args[k], PPT2> | null
-      : T[k] extends LinkDesc<
-          infer LLT,
-          Cardinality.Many | Cardinality.AtLeastOne
-        >
-      ? Array<BaseResult<Args[k], LLT>>
-      : T[k] extends LinkDesc<infer LLT1, Cardinality.One>
-      ? BaseResult<Args[k], LLT1>
-      : T[k] extends LinkDesc<infer LLT2, Cardinality.AtMostOne>
-      ? BaseResult<Args[k], LLT2> | null
-      : unknown // : Args[k] extends Computable<infer CT> // ? CT
-    : never;
+export type Expression<Set extends SetType> = Set & {
+  toEdgeQL(): string;
 };
 
-export type ExpandResult<T> = T extends
-  | BaseResult<any, any>
-  | Array<BaseResult<any, any>>
-  ? T extends infer O
-    ? {[K in keyof O]: ExpandResult<O[K]>}
-    : never
-  : T;
-
-export type Result<Args, T extends AnyObject> = ExpandResult<
-  BaseResult<Args, T>
->;
-
-export type BaseMakeSelectArgs<T extends AnyObject> = {
-  [k in keyof T["__shape__"]]?: T["__shape__"][k] extends LinkDesc<
-    infer LT,
-    any
-  >
-    ? BaseMakeSelectArgs<LT> | boolean
-    : T["__shape__"][k] extends PropertyDesc<any, any>
-    ? boolean
-    : never;
-};
-
-export type MakeSelectArgs<T extends AnyObject> = BaseMakeSelectArgs<T>;
+export type ObjectExpression<
+  Set extends ObjectSetType = ObjectSetType
+> = Expression<Set>;
