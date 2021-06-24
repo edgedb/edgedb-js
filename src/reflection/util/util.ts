@@ -21,6 +21,17 @@ export namespace util {
     return Object.defineProperty(obj, name, def) as any;
   };
 
+  export const defineGetter = <T>(
+    obj: T,
+    name: string,
+    getter: (this: T) => any
+  ): T => {
+    return Object.defineProperty(obj, name, {
+      get: getter,
+      enumerable: true,
+    }) as any;
+  };
+
   export const defineMethod = <
     T
     // Def extends PropertyDef<T, P>

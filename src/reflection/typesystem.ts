@@ -4,7 +4,7 @@ import {typeutil} from "./util/typeutil";
 //////////////////
 // BASE TYPES
 //////////////////
-enum TypeKind {
+export enum TypeKind {
   scalar = "scalar",
   object = "object",
   namedtuple = "namedtuple",
@@ -91,7 +91,6 @@ export type ObjectTypeExpression<
 /////////////////////////
 /// COLLECTION TYPES
 /////////////////////////
-type ArrayElementTypes = BaseType;
 export type ArrayType<
   Name extends string = string,
   Element extends BaseType = BaseType
@@ -106,7 +105,11 @@ export function ArrayType<Name extends string, Element extends BaseType>(
   name: Name,
   element: Element
 ): ArrayType<Name, Element> {
-  return {__name__: name, __element__: element} as any;
+  return {
+    __kind__: TypeKind.array,
+    __name__: name,
+    __element__: element,
+  } as any;
 }
 
 export type MaterialTypeTuple = [MaterialType, ...MaterialType[]] | [];
@@ -128,7 +131,11 @@ export function UnnamedTupleType<
   Name extends string,
   Items extends typeutil.tupleOf<BaseType>
 >(name: Name, items: Items): UnnamedTupleType<Name, Items> {
-  return {__kind__: "unnamedtuple", __name__: name, __items__: items} as any;
+  return {
+    __kind__: TypeKind.unnamedtuple,
+    __name__: name,
+    __items__: items,
+  } as any;
 }
 
 export type NamedTupleShape = {[k: string]: MaterialType};
@@ -147,7 +154,11 @@ export function NamedTupleType<
   Name extends string,
   Shape extends NamedTupleShape
 >(name: Name, shape: Shape): NamedTupleType<Name, Shape> {
-  return {__kind__: "namedtuple", __name__: name, __shape__: shape} as any;
+  return {
+    __kind__: TypeKind.namedtuple,
+    __name__: name,
+    __shape__: shape,
+  } as any;
 }
 
 /////////////////////////

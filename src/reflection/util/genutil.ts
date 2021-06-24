@@ -25,21 +25,21 @@ export namespace genutil {
     return JSON.stringify(val.toString());
   }
 
-  export function toCardinality(p: introspect.Pointer): string {
-    if (p.cardinality === "One") {
-      if (p.required) {
-        return "One";
-      } else {
-        return "AtMostOne";
-      }
-    } else {
-      if (p.required) {
-        return "AtLeastOne";
-      } else {
-        return "Many";
-      }
-    }
-  }
+  // export function toCardinality(p: introspect.Pointer): string {
+  //   if (p.cardinality === "One") {
+  //     if (p.required) {
+  //       return "One";
+  //     } else {
+  //       return "AtMostOne";
+  //     }
+  //   } else {
+  //     if (p.required) {
+  //       return "AtLeastOne";
+  //     } else {
+  //       return "Many";
+  //     }
+  //   }
+  // }
 
   export function toPrimitiveJsType(
     s: introspect.ScalarType,

@@ -128,7 +128,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     //   return true;
     // });
     const ptrToLine: (ptr: introspect.Pointer) => Line = (ptr) => {
-      const card = `$.Cardinality.${genutil.toCardinality(ptr)}`;
+      const card = `$.Cardinality.${ptr.realCardinality}`;
       const target = types.get(ptr.target_id);
       const {staticType, runtimeType} = getStringRepresentation(target);
       return {
