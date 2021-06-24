@@ -1,5 +1,5 @@
 import type {GeneratorParams} from "../generate";
-import {genutil} from "../genutil";
+import {genutil} from "../util/genutil";
 
 import * as introspect from "../queries/getTypes";
 

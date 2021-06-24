@@ -1,5 +1,5 @@
-import {CodeBuilder} from "./builders";
-import * as introspect from "./queries/getTypes";
+import {CodeBuilder} from "../builders";
+import * as introspect from "../queries/getTypes";
 
 export namespace genutil {
   export function splitName(name: string) {

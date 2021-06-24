@@ -2,16 +2,6 @@ import * as path from "path";
 import * as fs from "fs";
 import {StrictMap} from "./strictMap";
 
-namespace arg1 {
-  export const arg1 = {
-    get asdf() {
-      return arg2.arg2;
-    },
-  };
-}
-namespace arg2 {
-  export const arg2 = {asdf: arg1.arg1};
-}
 export class CodeBuilder {
   private buf: string[] = [];
   private namespaces: {[k: string]: string[]} = {};

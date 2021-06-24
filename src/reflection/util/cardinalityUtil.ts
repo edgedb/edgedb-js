@@ -5,7 +5,7 @@
 // Many {0-n}        0             Many                Many         Many          Many
 // AtLeastOne {1-n}  0             Many                AtLeastOne   Many          AtLeastOne
 
-import {Cardinality} from "./typesystem";
+import {Cardinality} from "../typesystem";
 
 export type mergeCardinalities<
   C1 extends Cardinality,
