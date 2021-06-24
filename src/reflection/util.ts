@@ -4,16 +4,32 @@ export namespace util {
   export const getFromArrayMap = <T>(map: Record<string, T[]>, id: string) => {
     return map[id] || [];
   };
-}
+  type PropertyDef = {
+    configurable?: boolean;
+    enumerable?: boolean;
+    writable?: boolean;
+    value?: any;
+    set?: (v: any) => any;
+    get?: () => any;
+  };
 
-export namespace typeutil {
-  export type assertEqual<T, Expected> = [T] extends [Expected]
-    ? [Expected] extends [T]
-      ? true
-      : false
-    : false;
+  export const defineProperty = <T>(
+    obj: T,
+    name: string,
+    def: PropertyDef & ThisType<T>
+  ): T => {
+    return Object.defineProperty(obj, name, def) as any;
+  };
 
-  export type depromisify<T> = T extends Promise<infer U> ? depromisify<U> : T;
-  export type identity<T> = T;
-  export type flatten<T> = identity<{[k in keyof T]: T[k]}>;
+  export const defineMethod = <
+    T
+    // Def extends PropertyDef<T, P>
+  >(
+    obj: T,
+    name: string,
+    method: (this: T) => any
+  ): T => {
+    (obj as any)[name] = method.bind(obj);
+    return obj;
+  };
 }

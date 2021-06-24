@@ -24,11 +24,13 @@ function applySpec(
     if (ptr.kind === "link") {
       Object.defineProperty(shape, ptr.name, {
         get: () => {
-          const linkObj: any = {};
-
-          // generate link properties
-          Object.defineProperty(linkObj, "properties", {
-            get: () => {
+          return {
+            __kind__: "link",
+            cardinality: ptr.realCardinality,
+            get target() {
+              return makeType(spec, ptr.target_id);
+            },
+            get properties() {
               const linkProperties: {[k: string]: any} = {};
               (ptr.pointers || []).forEach((linkProp) => {
                 // We only support "link properties" in EdgeDB, currently.
@@ -36,9 +38,11 @@ function applySpec(
                 // No use for them reflected, at the moment.
                 if (linkProp.name === "source" || linkProp.name === "target")
                   return;
-                const linkPropObject: any = {};
+                const linkPropObject: any = {
+                  __kind__: "property",
+                };
                 linkPropObject.cardinality = linkProp.realCardinality;
-                Object.defineProperty(linkPropObject, "propertyTarget", {
+                Object.defineProperty(linkPropObject, "target", {
                   get: () => {
                     return makeType(spec, linkProp.target_id);
                   },
@@ -48,31 +52,20 @@ function applySpec(
               });
               return linkProperties;
             },
-            enumerable: true,
-          });
-          linkObj.cardinality = ptr.realCardinality;
-          Object.defineProperty(linkObj, "linkTarget", {
-            get: (): any => {
-              return makeType(spec, ptr.target_id);
-            },
-            enumerable: true,
-          });
-          return linkObj;
+          };
         },
         enumerable: true,
       });
     } else if (ptr.kind === "property") {
       Object.defineProperty(shape, ptr.name, {
         get: () => {
-          const propObject: any = {};
-          propObject.cardinality = ptr.realCardinality;
-          Object.defineProperty(propObject, "propertyTarget", {
-            get: () => {
+          return {
+            __kind__: "property",
+            cardinality: ptr.realCardinality,
+            get target() {
               return makeType(spec, ptr.target_id);
             },
-            enumerable: true,
-          });
-          return propObject;
+          };
         },
         enumerable: true,
       });
@@ -89,7 +82,7 @@ export function makeType<T extends AnyMaterialtype>(
   obj.__name__ = type.name;
   if (type.kind === "object") {
     Object.defineProperty(obj, "__shape__", {
-      get: () => {
+      get: function () {
         const shape: any = {};
         const seen = new Set<string>();
         applySpec(spec, type, shape, seen);

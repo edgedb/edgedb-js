@@ -1,4 +1,15 @@
-## Query builder dev instructions
+# Query builder
+
+## Todo
+
+- [ ] Add link properties to generateObjectTypes
+- [ ] Implement Set
+- [ ] Implement mixinPath function
+- [ ] Implement Literal and literal constructors (`e.str`, `e.duration`)
+- [ ] Implement `e.set` constructor
+- [ ]
+
+## Project setup
 
 1. Set up
 

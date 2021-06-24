@@ -1,5 +1,5 @@
 import {Connection} from "../../ifaces";
-import {typeutil, util} from "../util";
+import {typeutil} from "../typeutil";
 
 type Cast = {
   id: string;
