@@ -114,19 +114,6 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
       lines: Line[];
     };
 
-    // const allPointers: introspect.Pointer[] = [];
-    // for (const ancestor of type.ancestors) {
-    //   const ancestorType = types.get(ancestor.id) as introspect.ObjectType;
-    //   allPointers.push(...ancestorType.pointers);
-    // }
-    // const seen = new Set<string>();
-    // allPointers.push(...type.pointers);
-
-    // const filteredPointers = allPointers.filter((ptr) => {
-    //   if (seen.has(ptr.name)) return false;
-    //   seen.add(ptr.name);
-    //   return true;
-    // });
     const ptrToLine: (ptr: introspect.Pointer) => Line = (ptr) => {
       const card = `$.Cardinality.${ptr.realCardinality}`;
       const target = types.get(ptr.target_id);
@@ -186,40 +173,9 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
       `export type ${ident} = $.ObjectType<"${type.name}", ${ident}Shape>;`
     );
 
-    //////////////
+    /////////
     // generate runtime type
-    //////////////
-    // body.writeln(`export const ${ident}: ${ident} = {`);
-    // body.indented(() => {
-    //   body.writeln(`__name__: "${type.name}",`);
-    //   body.writeln(`__shape__: {`);
-    //   // for (const base of bases) {
-    //   //   body.indented(() => {
-    //   //     body.writeln(`...${base}.__shape__,`);
-    //   //   });
-    //   // }
-    //   for (const line of lines) {
-    //     body.indented(() => {
-    //       if (line.kind === "property") {
-    //         body.writeln(
-    //           `${line.key}: { get target(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
-    //         );
-    //       } else {
-    //         body.writeln(
-    //           `${line.key}: { get target(){ return ${line.runtimeType} }, cardinality: ${line.card} },`
-    //         );
-    //       }
-    //     });
-    //   }
-    //   body.writeln(`}`);
-    // });
-    // body.writeln(`} as any;`);
-
-    body.nl();
     /////////
-    // generate path expression
-    /////////
-
     body.writeln(`export const ${ident} = $.makeType<${ident}>(`);
     body.indented(() => {
       body.writeln(`__spec__,`);
