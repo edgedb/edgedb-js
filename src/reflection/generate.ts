@@ -68,6 +68,7 @@ export async function generateQB(
     await cxn.close();
   }
 
+  // tslint:disable-next-line
   console.log(`writing to disk.`);
   dir.write(to);
 }

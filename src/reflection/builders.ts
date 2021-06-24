@@ -17,13 +17,6 @@ export class CodeBuilder {
 
   nl(): void {
     this.buf.push("");
-    this.namespaces;
-  }
-
-  namespace(ns: string, nested: (cb: CodeBuilder) => void): void {
-    const newCB = new CodeBuilder();
-    newCB.indented(() => nested(newCB));
-    this.namespaces[ns] = [...this.namespaces[ns], ...newCB.getBuf()];
   }
 
   indented(nested: () => void): void {
@@ -44,22 +37,13 @@ export class CodeBuilder {
   render(): string {
     let head = Array.from(this.imports).join("\n");
     const body = this.buf.join("\n");
-    const namespaces = Object.keys(this.namespaces)
-      .map((ns) =>
-        [`namespace ${ns} {`, ...this.namespaces[ns], `}`].join("\n")
-      )
-      .join("\n\n");
 
-    if (head && namespaces.length) {
-      head += "\n\n";
-      head += namespaces;
-    }
     if (head && body) {
       head += "\n\n";
     }
 
     let result = head + body;
-    if (result && result.slice(-1) != "\n") {
+    if (result && result.slice(-1) !== "\n") {
       result += "\n";
     }
 

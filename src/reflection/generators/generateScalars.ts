@@ -78,9 +78,9 @@ export interface Anyenum<
     }
 
     // generate non-enum non-abstract scalar
-    let jsType = genutil.toJsScalarType(type, types, mod, sc);
+    const tsType = genutil.toTSScalarType(type, types, mod, sc);
     sc.writeln(
-      `export type ${displayName} = $.ScalarType<"${type.name}", ${jsType}>;`
+      `export type ${displayName} = $.ScalarType<"${type.name}", ${tsType}>;`
     );
     sc.writeln(
       `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`

@@ -18,12 +18,6 @@ export interface BaseType {
 }
 export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
 
-// export interface MaterialType<Name extends string, TsType> extends BaseType {
-//   __ismaterialtype__: true;
-//   __tstype__: TsType;
-//   __name__: Name;
-// }
-
 export interface ScalarType<Name extends string = string, TsType = unknown> {
   __kind__: TypeKind.scalar;
   __tstype__: TsType;
