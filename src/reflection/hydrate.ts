@@ -1,12 +1,6 @@
 import {ObjectType, Types} from "./queries/getTypes";
 
-import {
-  ArrayType,
-  // NamedTupleType,
-  // UnnamedTupleType,
-  BaseType,
-  TypeKind,
-} from "./typesystem";
+import {BaseType, TypeKind} from "./typesystem";
 import {util} from "./util/util";
 
 function applySpec(
@@ -15,8 +9,6 @@ function applySpec(
   shape: any,
   seen: Set<string>
 ): void {
-  // const type = spec.get(typeName);
-
   for (const ptr of type.pointers) {
     if (seen.has(ptr.name)) {
       continue;
@@ -100,7 +92,7 @@ export function makeType<T extends BaseType>(spec: Types, id: string): T {
     return obj;
   } else if (type.kind === "tuple") {
     if (type.tuple_elements[0].name === "0") {
-      // unnamed
+      // unnamed tuple
       obj.__kind__ = TypeKind.unnamedtuple;
 
       util.defineGetter(obj, "__items__", () => {
@@ -110,6 +102,7 @@ export function makeType<T extends BaseType>(spec: Types, id: string): T {
       });
       return obj;
     } else {
+      // named tuple
       obj.__kind__ = TypeKind.namedtuple;
 
       util.defineGetter(obj, "__shape__", () => {
@@ -118,7 +111,6 @@ export function makeType<T extends BaseType>(spec: Types, id: string): T {
           shape[el.name] = makeType(spec, el.target_id);
         }) as any;
         return shape;
-        // return NamedTupleType(type.name, shape as any) as any;
       });
       return obj;
     }
