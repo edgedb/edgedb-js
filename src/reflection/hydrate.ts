@@ -38,6 +38,10 @@ function applySpec(
                 // No use for them reflected, at the moment.
                 if (linkProp.name === "source" || linkProp.name === "target")
                   return;
+
+                console.log(
+                  `adding link property! ${type.name}.${ptr.name}.${linkProp.name}`
+                );
                 const linkPropObject: any = {
                   __kind__: "property",
                 };
@@ -48,7 +52,7 @@ function applySpec(
                   },
                   enumerable: true,
                 });
-                return linkPropObject;
+                linkProperties[linkProp.name] = linkPropObject;
               });
               return linkProperties;
             },
