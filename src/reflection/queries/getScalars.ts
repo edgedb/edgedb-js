@@ -13,19 +13,20 @@ type Scalar = {
   ancestors: {id: string; name: string}[];
 };
 
-/**
+/*
   for scalars
     if abstract
       generate union type with all descendants
     if real
       generate declaration
-      implicitCasts: tuple of all implicitly castable types and non abstract ancestors
-      assignableCasts: tuple of all assignable castable types and non abstract ancestors
+      implicitCasts:
+        tuple of all implicitly castable types and non abstract ancestors
+      assignableCasts:
+        tuple of all assignable castable types and non abstract ancestors
 
       add all castable
   for objects
-    generate declaration
- *
+    generate declarationd
  */
 
 export type ScalarTypes = typeutil.depromisify<ReturnType<typeof getScalars>>;

@@ -27,14 +27,14 @@ function applySpec(
             const linkProperties: {[k: string]: any} = {};
             (ptr.pointers || []).forEach((linkProp) => {
               // We only support "link properties" in EdgeDB, currently.
-              if (linkProp.kind !== "property") return;
-              // No use for them reflected, at the moment.
-              if (linkProp.name === "source" || linkProp.name === "target")
+              if (linkProp.kind !== "property") {
                 return;
+              }
+              // No use for them reflected, at the moment.
+              if (linkProp.name === "source" || linkProp.name === "target") {
+                return;
+              }
 
-              console.log(
-                `adding link property! ${type.name}.${ptr.name}.${linkProp.name}`
-              );
               const linkPropObject: any = {
                 __kind__: "property",
               };
@@ -107,9 +107,9 @@ export function makeType<T extends BaseType>(spec: Types, id: string): T {
 
       util.defineGetter(obj, "__shape__", () => {
         const shape: any = {};
-        type.tuple_elements.forEach((el) => {
+        for (const el of type.tuple_elements) {
           shape[el.name] = makeType(spec, el.target_id);
-        }) as any;
+        }
         return shape;
       });
       return obj;

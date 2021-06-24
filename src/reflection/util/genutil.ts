@@ -93,7 +93,7 @@ export namespace genutil {
     }
   }
 
-  export function toJsScalarType(
+  export function toTSScalarType(
     type: introspect.PrimitiveType,
     types: introspect.Types,
     currentModule: string,
@@ -109,7 +109,7 @@ export namespace genutil {
         }
 
         if (type.material_id) {
-          return toJsScalarType(
+          return toTSScalarType(
             types.get(type.material_id) as introspect.ScalarType,
             types,
             currentModule,
@@ -122,7 +122,7 @@ export namespace genutil {
       }
 
       case "array": {
-        const tn = toJsScalarType(
+        const tn = toTSScalarType(
           types.get(type.array_element_id) as introspect.PrimitiveType,
           types,
           currentModule,
@@ -144,7 +144,7 @@ export namespace genutil {
           // a named tuple
           const res = [];
           for (const {name, target_id} of type.tuple_elements) {
-            const tn = toJsScalarType(
+            const tn = toTSScalarType(
               types.get(target_id) as introspect.PrimitiveType,
               types,
               currentModule,
@@ -158,7 +158,7 @@ export namespace genutil {
           // an ordinary tuple
           const res = [];
           for (const {target_id} of type.tuple_elements) {
-            const tn = toJsScalarType(
+            const tn = toTSScalarType(
               types.get(target_id) as introspect.PrimitiveType,
               types,
               currentModule,
@@ -176,7 +176,7 @@ export namespace genutil {
     }
   }
 
-  export function toJsObjectType(
+  export function toTSObjectType(
     type: introspect.ObjectType,
     types: introspect.Types,
     currentMod: string,
@@ -187,7 +187,7 @@ export namespace genutil {
       const res: string[] = [];
       for (const {id: subId} of type.intersection_of) {
         const sub = types.get(subId) as introspect.ObjectType;
-        res.push(toJsObjectType(sub, types, currentMod, code, level + 1));
+        res.push(toTSObjectType(sub, types, currentMod, code, level + 1));
       }
       const ret = res.join(" & ");
       return level > 0 ? `(${ret})` : ret;
@@ -197,7 +197,7 @@ export namespace genutil {
       const res: string[] = [];
       for (const {id: subId} of type.union_of) {
         const sub = types.get(subId) as introspect.ObjectType;
-        res.push(toJsObjectType(sub, types, currentMod, code, level + 1));
+        res.push(toTSObjectType(sub, types, currentMod, code, level + 1));
       }
       const ret = res.join(" | ");
       return level > 0 ? `(${ret})` : ret;

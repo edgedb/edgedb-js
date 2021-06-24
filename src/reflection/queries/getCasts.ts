@@ -90,16 +90,16 @@ export const getCasts = async (
   const assignableByMap: {[k: string]: string[]} = {};
 
   for (const type of [...types]) {
-    castMap[type] = castsBySource[type] || []; //reachableFrom(type, castsBySource);
+    castMap[type] = castsBySource[type] || [];
     implicitCastMap[type] = reachableFrom(type, implicitCastsBySource);
     assignmentCastMap[type] = reachableFrom(type, assignmentCastsBySource);
     assignableByMap[type] = reachableFrom(type, assignmentCastsByTarget);
   }
 
+  // tslint:disable:no-console
   if (params?.debug === true) {
     console.log(`\nIMPLICIT`);
-    for (const fromId in implicitCastMap) {
-      const castArr = implicitCastMap[fromId];
+    for (const [fromId, castArr] of Object.entries(implicitCastMap)) {
       console.log(
         `${typesById[fromId].name} implicitly castable to: [${castArr
           .map((id) => typesById[id].name)
@@ -108,8 +108,7 @@ export const getCasts = async (
     }
 
     console.log(`\nASSIGNABLE TO`);
-    for (const fromId in assignmentCastMap) {
-      const castArr = assignmentCastMap[fromId];
+    for (const [fromId, castArr] of Object.entries(assignmentCastMap)) {
       console.log(
         `${typesById[fromId].name} assignable to: [${castArr
           .map((id) => typesById[id].name)
@@ -118,8 +117,7 @@ export const getCasts = async (
     }
 
     console.log(`\nASSIGNABLE BY`);
-    for (const fromId in assignableByMap) {
-      const castArr = assignableByMap[fromId];
+    for (const [fromId, castArr] of Object.entries(assignableByMap)) {
       console.log(
         `${typesById[fromId].name} assignable by: [${castArr
           .map((id) => typesById[id].name)
@@ -128,8 +126,7 @@ export const getCasts = async (
     }
 
     console.log(`\nEXPLICIT`);
-    for (const fromId in castMap) {
-      const castArr = castMap[fromId];
+    for (const [fromId, castArr] of Object.entries(castMap)) {
       console.log(
         `${typesById[fromId].name} castable to: [${castArr
           .map((id) => {

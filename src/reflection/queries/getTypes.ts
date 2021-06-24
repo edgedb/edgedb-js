@@ -139,6 +139,7 @@ export async function getTypes(
   `;
 
   const types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
+  // tslint:disable-next-line
   if (params?.debug) console.log(JSON.stringify(types, null, 2));
 
   // Now sort `types` topologically:
@@ -159,8 +160,9 @@ export function topoSort(types: Type[]) {
     }
 
     for (const {id: base} of type.bases) {
-      if (!graph.has(base))
+      if (!graph.has(base)) {
         throw new Error(`reference to an unknown object type: ${base}`);
+      }
 
       if (!adj.has(type.id)) {
         adj.set(type.id, new Set());

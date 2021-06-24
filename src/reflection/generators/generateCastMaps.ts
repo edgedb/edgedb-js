@@ -18,14 +18,14 @@ export const generateCastMaps = async (params: GeneratorParams) => {
   );
 
   // generate minimal typescript cast
-  const generateCastMap = (params: {
+  const generateCastMap = (castParams: {
     typeList: introspect.Type[];
     casting: (id: string) => string[];
     file: CodeBuilder;
     mapName: string;
     baseCase?: string;
   }) => {
-    const {typeList, casting, file, mapName, baseCase} = params;
+    const {typeList, casting, file, mapName, baseCase} = castParams;
     const scopedBaseCase = baseCase ? getScopedDisplayName(baseCase) : "";
     file.writeln(
       `export type ${mapName}<A${
@@ -107,8 +107,9 @@ export const generateCastMaps = async (params: GeneratorParams) => {
         .map((t) => t.id)
         .includes(typesByName["std::Object"].id) &&
       type.name !== "std::Object"
-    )
+    ) {
       return false;
+    }
     return true;
   });
 
