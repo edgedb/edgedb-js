@@ -1,8 +1,8 @@
 import {CodeBuilder, DirBuilder} from "../builders";
 import type {GeneratorParams} from "../generate";
 import type * as introspect from "../queries/getTypes";
-import {genutil} from "../genutil";
-import {util} from "../util";
+import {genutil} from "../util/genutil";
+import {util} from "../util/util";
 
 export const generateCastMaps = async (params: GeneratorParams) => {
   const {dir, types, typesByName, casts} = params;
@@ -97,7 +97,7 @@ export const generateCastMaps = async (params: GeneratorParams) => {
 
   const userDefinedObjectTypes = reverseTopo.filter((type) => {
     if (type.kind !== "object") return false;
-    if (type.name) if (type.name.includes("schema::")) return false;
+    if (type.name.includes("schema::")) return false;
     if (type.name.includes("sys::")) return false;
     if (type.name.includes("cfg::")) return false;
     if (type.name.includes("seq::")) return false;

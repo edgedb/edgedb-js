@@ -1,4 +1,4 @@
-import {AnyObject, Cardinality, LinkDesc, PropertyDesc} from "./typesystem";
+import {ObjectType, Cardinality, LinkDesc, PropertyDesc} from "../typesystem";
 
 export namespace selectUtil {
   ///////////////
@@ -50,11 +50,11 @@ export namespace selectUtil {
       : never
     : T;
 
-  export type Result<Args, T extends AnyObject> = ExpandResult<
+  export type Result<Args, T extends ObjectType> = ExpandResult<
     BaseResult<Args, T>
   >;
 
-  export type BaseMakeSelectArgs<T extends AnyObject> = {
+  export type BaseMakeSelectArgs<T extends ObjectType> = {
     [k in keyof T["__shape__"]]?: T["__shape__"][k] extends LinkDesc<
       infer LT,
       any
@@ -65,5 +65,5 @@ export namespace selectUtil {
       : never;
   };
 
-  export type MakeSelectArgs<T extends AnyObject> = BaseMakeSelectArgs<T>;
+  export type MakeSelectArgs<T extends ObjectType> = BaseMakeSelectArgs<T>;
 }

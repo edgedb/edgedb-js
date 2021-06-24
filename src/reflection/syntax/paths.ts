@@ -1,28 +1,30 @@
-import {mergeCardinalities} from "../mergeCardinalities";
+import {mergeCardinalities} from "../util/cardinalityUtil";
 import {
   Cardinality,
   LinkDesc,
   PropertyDesc,
-  AnyMaterialtype,
-  ObjectSetType,
-  SetType,
-  ObjectExpression,
+  MaterialType,
+  ObjectTypeSet,
+  TypeSet,
+  ObjectTypeExpression,
 } from "../typesystem";
-import {util} from "../util";
+import {util} from "../util/util";
 
 // path parent must be object expression
-interface PathParent<Parent extends ObjectExpression = ObjectExpression> {
+interface PathParent<
+  Parent extends ObjectTypeExpression = ObjectTypeExpression
+> {
   type: Parent;
   linkName: string;
 }
 
 // used exclusively in the definition of toEdgeQL
-type PathLeafOrNode<Set extends SetType, Parent extends PathParent> = Set & {
+type PathLeafOrNode<Set extends TypeSet, Parent extends PathParent> = Set & {
   __parent__: Parent;
 };
 
 // stringify function for Paths
-function toEdgeQL(this: PathLeafOrNode<SetType, PathParent>) {
+function toEdgeQL(this: PathLeafOrNode<TypeSet, PathParent>) {
   if (!this.__parent__) {
     return this.__element__.__name__;
   } else {
@@ -34,10 +36,10 @@ function toEdgeQL(this: PathLeafOrNode<SetType, PathParent>) {
 
 // get the set representing the result of a path traversal
 // including cardinality merging
-type getChildOfObjectSetType<
-  Root extends ObjectSetType,
+type getChildOfObjectTypeSet<
+  Root extends ObjectTypeSet,
   Child extends keyof Root["__element__"]["__shape__"]
-> = SetType<
+> = TypeSet<
   Root["__element__"]["__shape__"][Child]["target"],
   mergeCardinalities<
     Root["__cardinality__"],
@@ -46,13 +48,13 @@ type getChildOfObjectSetType<
 >;
 
 // leaves are Set & Expression & HasParent
-type makePathLeaf<Root extends SetType, Parent extends PathParent> = Root & {
+type makePathLeaf<Root extends TypeSet, Parent extends PathParent> = Root & {
   toEdgeQL(): string;
 } & {__parent__: Parent};
 
 // leaves are Set & Expression & HasParent & {getters for each property/link}
 type makePathNode<
-  Root extends ObjectSetType,
+  Root extends ObjectTypeSet,
   Parent extends PathParent | null
 > = Root & {
   toEdgeQL(): string;
@@ -61,13 +63,13 @@ type makePathNode<
     [k in keyof Root["__element__"]["__shape__"] &
       string]: Root["__element__"]["__shape__"][k] extends PropertyDesc
       ? makePathLeaf<
-          getChildOfObjectSetType<Root, k>,
+          getChildOfObjectTypeSet<Root, k>,
           {type: makePathNode<Root, Parent>; linkName: k}
         >
       : Root["__element__"]["__shape__"][k] extends LinkDesc
-      ? getChildOfObjectSetType<Root, k> extends ObjectSetType
+      ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
         ? makePathNode<
-            getChildOfObjectSetType<Root, k>,
+            getChildOfObjectTypeSet<Root, k>,
             {type: makePathNode<Root, Parent>; linkName: k}
           >
         : never
@@ -75,10 +77,10 @@ type makePathNode<
   };
 
 // utlity function for creating set
-export const toSet = <Root extends AnyMaterialtype, Card extends Cardinality>(
+export const toSet = <Root extends MaterialType, Card extends Cardinality>(
   root: Root,
   card: Card
-): SetType<Root, Card> => {
+): TypeSet<Root, Card> => {
   return {
     __element__: root,
     __cardinality__: card,
@@ -86,7 +88,7 @@ export const toSet = <Root extends AnyMaterialtype, Card extends Cardinality>(
 };
 
 // create leaf (should only be used internally)
-const makePathLeaf = <Root extends SetType, Parent extends PathParent>(
+const makePathLeaf = <Root extends TypeSet, Parent extends PathParent>(
   _root: Root,
   parent: PathParent | null
 ): makePathLeaf<Root, Parent> => {
@@ -98,7 +100,7 @@ const makePathLeaf = <Root extends SetType, Parent extends PathParent>(
 
 // create non-leaf path node
 export const makePathNode = <
-  Root extends ObjectSetType,
+  Root extends ObjectTypeSet,
   Parent extends PathParent
 >(
   _root: Root,

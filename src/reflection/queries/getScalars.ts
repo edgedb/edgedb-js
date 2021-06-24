@@ -1,6 +1,6 @@
 import {Connection} from "../../ifaces";
 import {StrictMap} from "../strictMap";
-import {typeutil} from "../typeutil";
+import {typeutil} from "../util/typeutil";
 
 type Scalar = {
   id: string;

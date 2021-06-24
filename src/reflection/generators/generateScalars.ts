@@ -1,4 +1,4 @@
-import {genutil} from "../genutil";
+import {genutil} from "../util/genutil";
 import type {GeneratorParams} from "../generate";
 
 export const generateScalars = async (params: GeneratorParams) => {
@@ -21,7 +21,7 @@ export interface Anyenum<
   TsType = unknown,
   Name extends string = string,
   Values extends [string, ...string[]] = [string, ...string[]]
-> extends $.Materialtype<Name, TsType> {
+> extends $.ScalarType<Name, TsType> {
   [ANYENUM_SYMBOL]: true;
   __values__: Values;
 }`);
@@ -80,10 +80,10 @@ export interface Anyenum<
     // generate non-enum non-abstract scalar
     let jsType = genutil.toJsScalarType(type, types, mod, sc);
     sc.writeln(
-      `export type ${displayName} = $.Materialtype<"${type.name}", ${jsType}>;`
+      `export type ${displayName} = $.ScalarType<"${type.name}", ${jsType}>;`
     );
     sc.writeln(
-      `export const ${displayName}: ${displayName} = $.makeType(__spec__, "${type.id}");`
+      `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`
     );
     // sc.writeln(`export const ${displayName}: ${displayName} = {`);
     // sc.writeln(`  __name__: "${type.name}",`);
