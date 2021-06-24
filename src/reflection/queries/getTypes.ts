@@ -19,13 +19,13 @@ export type Pointer = {
 
 export type TypeKind = "object" | "scalar" | "array" | "tuple" | "unknown";
 
-export type BaseType<T extends TypeKind> = {
+export type TypeProperties<T extends TypeKind> = {
   kind: T;
   id: UUID;
   name: string;
 };
 
-export type ScalarType = BaseType<"scalar"> & {
+export type ScalarType = TypeProperties<"scalar"> & {
   is_abstract: boolean;
   bases: ReadonlyArray<{id: UUID}>;
   ancestors: ReadonlyArray<{id: UUID}>;
@@ -33,7 +33,7 @@ export type ScalarType = BaseType<"scalar"> & {
   material_id: UUID | null;
 };
 
-export type ObjectType = BaseType<"object"> & {
+export type ObjectType = TypeProperties<"object"> & {
   is_abstract: boolean;
   bases: ReadonlyArray<{id: UUID}>;
   ancestors: ReadonlyArray<{id: UUID}>;
@@ -42,12 +42,12 @@ export type ObjectType = BaseType<"object"> & {
   pointers: ReadonlyArray<Pointer>;
 };
 
-export type ArrayType = BaseType<"array"> & {
+export type ArrayType = TypeProperties<"array"> & {
   array_element_id: UUID;
   is_abstract: boolean;
 };
 
-export type TupleType = BaseType<"tuple"> & {
+export type TupleType = TypeProperties<"tuple"> & {
   tuple_elements: ReadonlyArray<{
     name: string;
     target_id: UUID;

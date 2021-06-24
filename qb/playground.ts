@@ -34,6 +34,7 @@ console.log(Hero.__element__);
 console.log(`## Hero.__type__`);
 console.log(Hero.__type__);
 console.log(`## Hero.__type__.__cardinality__`);
+
 console.log(Hero.__type__.__cardinality__);
 console.log(`## Hero.__type__.__type__`);
 console.log(Hero.__type__.__type__);

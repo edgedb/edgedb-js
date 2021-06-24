@@ -1,10 +1,10 @@
 import {ObjectType, Types} from "./queries/getTypes";
 
 import {
-  AnyMaterialtype,
   ArrayType,
   NamedTupleType,
   UnnamedTupleType,
+  BaseType,
 } from "./typesystem";
 
 function applySpec(
@@ -73,10 +73,7 @@ function applySpec(
   }
 }
 
-export function makeType<T extends AnyMaterialtype>(
-  spec: Types,
-  id: string
-): T {
+export function makeType<T extends BaseType>(spec: Types, id: string): T {
   const type = spec.get(id);
   const obj: any = {};
   obj.__name__ = type.name;

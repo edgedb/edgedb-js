@@ -5,7 +5,7 @@ import {ConnectConfig} from "../con_utils";
 import {getCasts, Casts} from "./queries/getCasts";
 import {getScalars, ScalarTypes} from "./queries/getScalars";
 import * as introspect from "./queries/getTypes";
-import {genutil} from "./genutil";
+import {genutil} from "./util/genutil";
 import {generateCastMaps} from "./generators/generateCastMaps";
 import {generateScalars} from "./generators/generateScalars";
 import {generateObjectTypes} from "./generators/generateObjectTypes";
