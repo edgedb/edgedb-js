@@ -1,9 +1,9 @@
-// Cardinality       Empty {0}     AtMostOne {0-1}     One {1}      Many {0-n}    AtLeastOne {1-n}
-// Empty {0}         0             0                   0            0             0
-// AtMostOne {0-1}   0             AtMostOne           AtMostOne    Many          Many
-// One {1}           0             AtMostOne           One          Many          AtLeastOne
-// Many {0-n}        0             Many                Many         Many          Many
-// AtLeastOne {1-n}  0             Many                AtLeastOne   Many          AtLeastOne
+// Cardinality  Empty  AtMostOne  One         Many  AtLeastOne
+// Empty        0      0          0           0     0
+// AtMostOne    0      AtMostOne  AtMostOne   Many  Many
+// One          0      AtMostOne  One         Many  AtLeastOne
+// Many         0      Many       Many        Many  Many
+// AtLeastOne   0      Many       AtLeastOne  Many  AtLeastOne
 
 import {Cardinality} from "../typesystem";
 
