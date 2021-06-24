@@ -119,6 +119,7 @@ export async function getTypes(
 
         [IS Link].pointers: {
           cardinality,
+          realCardinality := "One" IF .required ELSE "AtMostOne" IF <str>.cardinality = "One" ELSE "AtLeastOne" IF .required ELSE "Many",
           required,
           name,
           expr,
