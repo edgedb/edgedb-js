@@ -7,6 +7,16 @@ const Hero = $.makePathNode(HeroRoot, null);
 const VillainRoot = $.toSet(e.default.Villain, $.Cardinality.One);
 const Villain = $.makePathNode(VillainRoot, null);
 
+console.log(
+  e.schema.AnnotationSubject.__shape__.annotations.properties.value.target
+);
+console.log(
+  e.schema.AnnotationSubject.__shape__.annotations.properties.value.cardinality
+);
+console.log(
+  e.schema.AnnotationSubject.__shape__.annotations.properties.value.__kind__
+);
+
 console.log(HeroType);
 console.log(HeroType.__name__);
 console.log(HeroType.__shape__);

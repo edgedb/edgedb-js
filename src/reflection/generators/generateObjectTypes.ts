@@ -105,13 +105,14 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     // generate interface
     /////////
 
-    let lines: {
+    type Line = {
       card: string;
       staticType: string;
       runtimeType: string;
       key: string;
       kind: "link" | "property";
-    }[] = [];
+      lines: Line[];
+    };
 
     // const allPointers: introspect.Pointer[] = [];
     // for (const ancestor of type.ancestors) {
@@ -126,18 +127,23 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     //   seen.add(ptr.name);
     //   return true;
     // });
-    for (const ptr of type.pointers) {
+    const ptrToLine: (ptr: introspect.Pointer) => Line = (ptr) => {
       const card = `$.Cardinality.${genutil.toCardinality(ptr)}`;
       const target = types.get(ptr.target_id);
       const {staticType, runtimeType} = getStringRepresentation(target);
-      lines.push({
+      return {
         key: ptr.name,
         staticType,
         runtimeType,
         card,
         kind: ptr.kind,
-      });
-    }
+        lines: (ptr.pointers ?? [])
+          .filter((ptr) => ptr.name !== "target" && ptr.name !== "source")
+          .map(ptrToLine),
+      };
+    };
+
+    const lines = type.pointers.map(ptrToLine);
 
     // generate shape type
     const baseTypesUnion = bases.length
@@ -149,9 +155,23 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     body.indented(() => {
       for (const line of lines) {
         if (line.kind === "link") {
-          body.writeln(
-            `${line.key}: $.LinkDesc<${line.staticType}, ${line.card}>;`
-          );
+          if (!line.lines.length) {
+            body.writeln(
+              `${line.key}: $.LinkDesc<${line.staticType}, ${line.card}, {}>;`
+            );
+          } else {
+            body.writeln(
+              `${line.key}: $.LinkDesc<${line.staticType}, ${line.card}, {`
+            );
+            body.indented(() => {
+              for (const linkProp of line.lines) {
+                body.writeln(
+                  `${linkProp.key}: $.PropertyDesc<${linkProp.staticType}, ${linkProp.card}>;`
+                );
+              }
+            });
+            body.writeln(`}>;`);
+          }
         } else {
           body.writeln(
             `${line.key}: $.PropertyDesc<${line.staticType}, ${line.card}>;`
