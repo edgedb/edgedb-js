@@ -2,6 +2,9 @@ module default {
 
   scalar type Genre extending enum<Horror, Action, RomCom>;
 
+  abstract link movie_character {
+    property character_name -> str;
+  }
   abstract type Person {
     required property name -> str {
       constraint exclusive;
@@ -21,7 +24,7 @@ module default {
   type Movie {
     property rating -> float64;
     required property title -> str;
-    multi link characters -> Person;
+    multi link characters extending movie_character -> Person;
   }
 
   type Bag {
@@ -40,11 +43,9 @@ module default {
     property float32Field -> float32;
     property float64Field -> float64;
     property bigintField -> bigint;
-
     required multi property stringsMulti -> str;
     property stringsArr -> array<str>;
     multi property stringMultiArr -> array<str>;
-
     property namedTuple -> tuple<x: str, y: int64>;
     property unnamedTuple -> tuple<str, int64>;
     property enumArr -> array<Genre>;
