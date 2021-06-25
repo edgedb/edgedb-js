@@ -10,6 +10,7 @@ export const generateScalars = async (params: GeneratorParams) => {
 
     const {mod, name} = genutil.splitName(type.name);
     const displayName = genutil.displayName(type.name);
+    // const lcName = name.toLowerCase();
 
     const sc = dir.getPath(`modules/${mod}.ts`);
     const scopeName = genutil.getScopedDisplayName(mod, sc);
@@ -84,6 +85,9 @@ export interface Anyenum<
     );
     sc.writeln(
       `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`
+    );
+    sc.writeln(
+      `export const ${name} = (val:${tsType})=>$.Literal(${displayName}, val);`
     );
     // sc.writeln(`export const ${displayName}: ${displayName} = {`);
     // sc.writeln(`  __name__: "${type.name}",`);
