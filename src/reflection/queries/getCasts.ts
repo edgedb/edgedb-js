@@ -33,7 +33,7 @@ export const getCasts = async (
   cxn: Connection,
   params?: {debug?: boolean}
 ) => {
-  const allCasts: Cast[] = await cxn.query(`WITH MODULE schema
+  const allCastsRaw = await cxn.queryJSON(`WITH MODULE schema
         SELECT Cast {
             id,
             source := .from_type { id, name },
@@ -47,6 +47,7 @@ export const getCasts = async (
         # AND .to_type.is_abstract = false
         `);
 
+  const allCasts: Cast[] = JSON.parse(allCastsRaw);
   // initialize castsBySource and types
   const types = new Set<string>();
   const typesById: Record<string, {name: string; id: string}> = {};
