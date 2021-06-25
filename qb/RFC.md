@@ -328,7 +328,7 @@ e.select(Hero, {
   id: true,
   name: true,
   villains: (() => {
-    const villains = Hero.villain.$is(Subvillain);
+    const villains = Hero.villains.$is(Subvillain);
     return e
       .select(villains, {
         id: true,
@@ -377,22 +377,6 @@ e.select(Person, {
 });
 ```
 
-### Parameters
-
-```ts
-const fetchPerson = e.withParams(
-  {
-    name: e.Array(e.Str),
-  },
-  (args) =>
-    e
-      .select(Person, {
-        id: true,
-      })
-      .filter(e.in(Person.name, e.array_unpack(args.name)))
-);
-```
-
 ### Polymorphism
 
 Option 1: variadic shape arguments.
@@ -417,8 +401,12 @@ e.select(
 );
 ```
 
+Potential ambiguity:
+
+```
 SELECT Movie.characters[IS Hero];
 SELECT Movie.characters IS Hero;
+```
 
 ### Type intersection
 
@@ -443,7 +431,9 @@ e.select(Movie, {
 });
 ```
 
-### Path reference
+### Paths
+
+Links
 
 ```ts
 e.select(Hero.villains, {
@@ -451,7 +441,7 @@ e.select(Hero.villains, {
 });
 ```
 
-### Property reference
+Properties
 
 ```ts
 const name = e.default.Hero.name;
@@ -556,6 +546,22 @@ e.select(Hero)
   .offset(/**/)
   .limit(/**/)
   .delete();
+```
+
+## Parameters
+
+```ts
+const fetchPerson = e.withParams(
+  {
+    name: e.Array(e.Str),
+  },
+  (args) =>
+    e
+      .select(Person, {
+        id: true,
+      })
+      .filter(e.in(Person.name, e.array_unpack(args.name)))
+);
 ```
 
 ## WITH clauses
