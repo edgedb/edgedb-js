@@ -11,11 +11,12 @@ export const generateCastMaps = async (params: GeneratorParams) => {
   // generate implicit scalar mapping
   /////////////////////////////////////
 
-  const f = dir.getPath("modules/__typeutil__.ts");
+  const f = dir.getPath("modules/$castMaps.ts");
   const getScopedDisplayName = genutil.getScopedDisplayName(
     `${Math.random()}`,
     f
   );
+  // f.addImport(`import {reflection as $} from "edgedb";`);
   // generate minimal typescript cast
   const generateCastMap = (castParams: {
     typeList: introspect.Type[];
@@ -26,11 +27,12 @@ export const generateCastMaps = async (params: GeneratorParams) => {
   }) => {
     const {typeList, casting, file, mapName, baseCase} = castParams;
     const scopedBaseCase = baseCase ? getScopedDisplayName(baseCase) : "";
-    file.writeln(
-      `export type ${mapName}<A${
-        scopedBaseCase ? ` extends ${scopedBaseCase}` : ""
-      }, B${scopedBaseCase ? ` extends ${scopedBaseCase}` : ""}> = `
-    );
+    // file.writeln(
+    //   `export type ${mapName}<A${
+    //     scopedBaseCase ? ` extends ${scopedBaseCase}` : ""
+    //   }, B${scopedBaseCase ? ` extends ${scopedBaseCase}` : ""}> = `
+    // );
+    file.writeln(`export type ${mapName}<A, B> = `);
     file.indented(() => {
       for (const outer of typeList) {
         const outerCastableTo = casting(outer.id);

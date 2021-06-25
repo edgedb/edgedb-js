@@ -74,7 +74,7 @@ export type ObjectTypeSet<
   Card extends Cardinality = Cardinality
 > = TypeSet<T, Card>;
 
-export type Expression<Set extends TypeSet> = Set & {
+export type Expression<Set extends TypeSet = TypeSet> = Set & {
   toEdgeQL(): string;
 };
 

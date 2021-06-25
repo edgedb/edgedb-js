@@ -1,4 +1,4 @@
-import {mergeCardinalities} from "../util/cardinalityUtil";
+import {pointerCardinality} from "../util/cardinalityUtil";
 import {
   Cardinality,
   LinkDesc,
@@ -41,7 +41,7 @@ type getChildOfObjectTypeSet<
   Child extends keyof Root["__element__"]["__shape__"]
 > = TypeSet<
   Root["__element__"]["__shape__"][Child]["target"],
-  mergeCardinalities<
+  pointerCardinality<
     Root["__cardinality__"],
     Root["__element__"]["__shape__"][Child]["cardinality"]
   >
@@ -118,7 +118,7 @@ export const makePathNode = <
           return makePathLeaf(
             toSet(
               ptr.target,
-              mergeCardinalities(root.__cardinality__, ptr.cardinality)
+              pointerCardinality(root.__cardinality__, ptr.cardinality)
             ),
             {
               linkName: key,
@@ -135,7 +135,7 @@ export const makePathNode = <
             return makePathNode(
               toSet(
                 ptr.target,
-                mergeCardinalities(root.__cardinality__, ptr.cardinality)
+                pointerCardinality(root.__cardinality__, ptr.cardinality)
               ),
               {
                 linkName: key,
