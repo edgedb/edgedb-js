@@ -16,7 +16,6 @@ export const generateCastMaps = async (params: GeneratorParams) => {
     `${Math.random()}`,
     f
   );
-
   // generate minimal typescript cast
   const generateCastMap = (castParams: {
     typeList: introspect.Type[];
@@ -36,12 +35,15 @@ export const generateCastMaps = async (params: GeneratorParams) => {
       for (const outer of typeList) {
         const outerCastableTo = casting(outer.id);
         file.writeln(`A extends ${getScopedDisplayName(outer.name)} ? `);
+
+        if (outer.name === baseCase) {
+          file.writeln(`A :`);
+          continue;
+        }
         file.indented(() => {
           for (const inner of typeList) {
             const innerCastableTo = casting(inner.id);
-
             const sameType = inner.name === outer.name;
-
             const aCastableToB = outerCastableTo.includes(inner.id);
             const bCastableToA = innerCastableTo.includes(outer.id);
 
@@ -117,9 +119,12 @@ export const generateCastMaps = async (params: GeneratorParams) => {
     typeList: materialScalars,
     casting: (id: string) => {
       const type = types.get(id);
-      return util.deduplicate([
+
+      const castable = util.deduplicate([
         ...util.getFromArrayMap(implicitCastMap, type.id),
       ]);
+
+      return castable;
     },
     file: f,
     mapName: "getSharedParentScalar",
