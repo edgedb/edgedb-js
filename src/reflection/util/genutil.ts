@@ -217,6 +217,7 @@ export namespace genutil {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  // convert FQN into capital camel case
   export function displayName(str: string) {
     const {name} = splitName(str);
     const stripped = name
@@ -225,6 +226,7 @@ export namespace genutil {
       .filter((x) => !!x)
       .map(capitalize)
       .join("");
+    // if (stripped === "Object") return `ObjectType`;
     return stripped;
   }
 

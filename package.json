@@ -38,11 +38,12 @@
     "build": "tsc --incremental",
     "test": "jest --detectOpenHandles",
     "lint": "tsc && tslint 'src/**/*.ts' && prettylint 'src/**/*.ts' 'test/**/*.ts'",
+    "lint:fix": "tslint --fix 'src/**/*.ts' 'qb/**/*.ts' --exclude '**/node_modules/**'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
     "prepublish": "in-publish && yarn lint && yarn build && yarn compileForDeno && yarn test || not-in-publish",
     "compileForDeno": "deno run --unstable --allow-env --allow-read --allow-write tools/compileForDeno.ts",
-    "generate": "cd qb && ts-node --project tsconfig.json run.ts",
+    "generate": "cd qb && ts-node --project tsconfig.json run.ts && prettier --write './**/*.ts'",
     "generate:dev": "cd qb && nodemon -e ts -w ../src -x ts-node --project tsconfig.json run.ts",
     "build:dev": "nodemon -e ts -w ./src -x yarn build"
   }

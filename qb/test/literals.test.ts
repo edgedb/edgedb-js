@@ -45,3 +45,17 @@ test("literals", () => {
     `<cal::relative_duration>'1 year'`
   );
 });
+
+test("collection type literals", () => {
+  const literalArray = e.Literal(e.Array("asdf", e.Str), ["adsf"]);
+  expect(literalArray.toEdgeQL()).toEqual(`<array<std::str>>[]`);
+  const literalNamedTuple = e.Literal(e.NamedTuple("asdf", {str: e.Str}), {
+    str: "asdf",
+  });
+  expect(literalNamedTuple.toEdgeQL()).toEqual(``);
+  const literalUnnamedTuple = e.Literal(
+    e.UnnamedTuple("asdf", [e.Str, e.Int64]),
+    ["asdf", 1234]
+  );
+  expect(literalUnnamedTuple.toEdgeQL()).toEqual(``);
+});
