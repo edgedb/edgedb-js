@@ -4,7 +4,13 @@ import {
   LocalDateTime,
   LocalTime,
 } from "../../datatypes/datetime";
-import {Cardinality, makeSet, MaterialType, TypeKind} from "../typesystem";
+import {
+  Cardinality,
+  makeSet,
+  MaterialType,
+  TypeKind,
+  TypeSet,
+} from "../typesystem";
 
 const valueToEdgeQL: (type: MaterialType, val: any) => string = (
   type,
@@ -52,13 +58,17 @@ const valueToEdgeQL: (type: MaterialType, val: any) => string = (
   return `<${type.__name__}>${stringRep}`;
 };
 
+export type LiteralExpression<Type extends MaterialType> = {
+  __element__: Type;
+  __cardinality__: Cardinality.One;
+  __value__: Type["__tstype__"];
+  toEdgeQL(): string;
+};
+
 export const Literal = <T extends MaterialType>(
   type: T,
   value: T["__tstype__"]
-): makeSet<T, Cardinality.One> & {
-  __value__: T["__tstype__"];
-  toEdgeQL(): string;
-} => {
+): LiteralExpression<T> => {
   return {
     __element__: type,
     __cardinality__: Cardinality.One,
