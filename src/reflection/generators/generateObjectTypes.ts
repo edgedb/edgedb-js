@@ -76,6 +76,14 @@ const getStringRepresentation: (
 export const generateObjectTypes = async (params: GeneratorParams) => {
   const {dir, types, casts} = params;
 
+  const stdFile = dir.getPath(`modules/std.ts`);
+  stdFile.writeln(`const UnnamedTupleType = $.UnnamedTupleType;`);
+  stdFile.writeln(`export {UnnamedTupleType as UnnamedTuple};`);
+  stdFile.writeln(`const NamedTupleType = $.NamedTupleType;`);
+  stdFile.writeln(`export {NamedTupleType as NamedTuple};`);
+  stdFile.writeln(`const ArrayType = $.ArrayType;`);
+  stdFile.writeln(`export {ArrayType as Array};`);
+
   for (const type of types.values()) {
     if (type.kind !== "object") {
       continue;
@@ -88,7 +96,8 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     }
 
     const {mod, name} = genutil.splitName(type.name);
-    const ident = genutil.toIdent(name);
+
+    const ident = genutil.displayName(type.name);
     const body = dir.getPath(`modules/${mod}.ts`);
     body.addImport(`import {reflection as $} from "edgedb";`);
     body.addImport(`import {spec as __spec__} from "../__spec__";`);
@@ -173,7 +182,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
         }
       }
     });
-    body.writeln(`}>`);
+    body.writeln(`}>;`);
 
     // instantiate ObjectType subtype from shape
     body.writeln(
