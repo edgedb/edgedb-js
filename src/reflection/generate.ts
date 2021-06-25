@@ -64,7 +64,9 @@ export async function generateQB(
       }
       index.addImport(`export * as ${mod} from "./modules/${mod}";`);
     }
+    index.addImport(`export * from "./modules/$castMaps";`);
     index.addImport(`export * from "./modules/std";`);
+
     index.addImport(`export * from "edgedb/src/reflection/external";`);
   } finally {
     await cxn.close();
