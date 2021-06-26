@@ -16,15 +16,20 @@
  * limitations under the License.
  */
 
+import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 
 import {
   parseConnectArguments,
   NormalizedConnectConfig,
+  stashPathRaw,
 } from "../src/con_utils";
 import {asyncConnect} from "./testbase";
 import {Connection} from "../src/ifaces";
 import * as errors from "../src/errors";
+
+jest.mock("os");
 
 function env_wrap(env: {[key: string]: any}, func: () => void): void {
   const old_env: {[key: string]: any} = {};
@@ -460,5 +465,62 @@ test("connect: refused unix", async () => {
     if (typeof con !== "undefined") {
       await con.close();
     }
+  }
+});
+
+test("stash path", () => {
+  expect(stashPathRaw("/home/user/work/project1", "/home/user")).toEqual(
+    "/home/user/.edgedb/projects/project1-" +
+      "cf1c841351bf7f147d70dcb6203441cf77a05249"
+  );
+});
+
+test("use project config", () => {
+  if (process.platform == "win32") {
+    // skips on win32 because there is no /tmp
+    return;
+  }
+  const old_cwd = process.cwd;
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), "edgedb-test-"));
+  const home = path.join(base, "home");
+  const project = path.join(base, "project");
+  require("os").__setHomedir(home);
+  try {
+    process.cwd = function () {
+      return project;
+    };
+
+    fs.mkdirSync(project);
+    fs.writeFileSync(path.join(project, "edgedb.toml"), "");
+
+    const stash = stashPathRaw(project, home);
+    fs.mkdirSync(stash, {
+      recursive: true,
+    });
+    fs.writeFileSync(path.join(stash, "instance-name"), "inst1");
+    fs.mkdirSync(path.join(home, ".edgedb", "credentials"));
+    fs.writeFileSync(
+      path.join(home, ".edgedb", "credentials", "inst1.json"),
+      JSON.stringify({
+        host: "inst1.example.org",
+        port: 12323,
+        user: "inst1_user",
+        password: "passw1",
+        database: "inst1_db",
+      })
+    );
+
+    let conn = parseConnectArguments();
+    expect(conn).toEqual({
+      addrs: [["inst1.example.org", 12323]],
+      user: "inst1_user",
+      password: "passw1",
+      database: "inst1_db",
+      waitUntilAvailable: 30_000,
+    });
+  } finally {
+    process.cwd = old_cwd;
+    require("os").__setHomedir(null);
+    fs.rmdirSync(base, {recursive: true});
   }
 });
