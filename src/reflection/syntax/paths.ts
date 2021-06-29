@@ -7,11 +7,13 @@ import {
   ObjectTypeSet,
   TypeSet,
   ObjectTypeExpression,
+  ObjectType,
 } from "../typesystem";
 import {util} from "../util/util";
+import {typeutil} from "../util/typeutil";
 
 // path parent must be object expression
-interface PathParent<
+export interface PathParent<
   Parent extends ObjectTypeExpression = ObjectTypeExpression
 > {
   type: Parent;
@@ -53,28 +55,37 @@ type makePathLeaf<Root extends TypeSet, Parent extends PathParent> = Root & {
 } & {__parent__: Parent};
 
 // leaves are Set & Expression & HasParent & {getters for each property/link}
-type makePathNode<
+export type pathify<
+  Root extends TypeSet,
+  Parent extends PathParent | null = null
+> = Root extends ObjectTypeSet
+  ? ObjectTypeSet extends Root
+    ? unknown
+    : {
+        // & string required to avod typeError on linkName
+        [k in keyof Root["__element__"]["__shape__"] &
+          string]: Root["__element__"]["__shape__"][k] extends PropertyDesc
+          ? makePathLeaf<
+              getChildOfObjectTypeSet<Root, k>,
+              {type: makePathNode<Root, Parent>; linkName: k}
+            >
+          : Root["__element__"]["__shape__"][k] extends LinkDesc
+          ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
+            ? makePathNode<
+                getChildOfObjectTypeSet<Root, k>,
+                {type: makePathNode<Root, Parent>; linkName: k}
+              >
+            : never
+          : never;
+      }
+  : unknown;
+
+export type makePathNode<
   Root extends ObjectTypeSet,
   Parent extends PathParent | null
 > = Root & {
   toEdgeQL(): string;
-} & {__parent__: Parent} & {
-    // & string required to avod typeError on linkName
-    [k in keyof Root["__element__"]["__shape__"] &
-      string]: Root["__element__"]["__shape__"][k] extends PropertyDesc
-      ? makePathLeaf<
-          getChildOfObjectTypeSet<Root, k>,
-          {type: makePathNode<Root, Parent>; linkName: k}
-        >
-      : Root["__element__"]["__shape__"][k] extends LinkDesc
-      ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
-        ? makePathNode<
-            getChildOfObjectTypeSet<Root, k>,
-            {type: makePathNode<Root, Parent>; linkName: k}
-          >
-        : never
-      : never;
-  };
+} & {__parent__: Parent} & pathify<Root, Parent>;
 
 // utlity function for creating set
 export const toSet = <Root extends MaterialType, Card extends Cardinality>(

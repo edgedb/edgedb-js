@@ -8,9 +8,10 @@ export const generateScalars = async (params: GeneratorParams) => {
       continue;
     }
 
-    const {mod, name} = genutil.splitName(type.name);
+    const {mod, name: _name} = genutil.splitName(type.name);
+    // const name = `$${_name}`;
     const displayName = genutil.displayName(type.name);
-    // const lcName = name.toLowerCase();
+    const literalConstructor = _name.toLowerCase();
 
     const sc = dir.getPath(`modules/${mod}.ts`);
     const scopeName = genutil.getScopedDisplayName(mod, sc);
@@ -18,7 +19,7 @@ export const generateScalars = async (params: GeneratorParams) => {
     if (type.name === "std::anyenum") {
       sc.writeln(`
 const ANYENUM_SYMBOL: unique symbol = Symbol("std::anyenum");
-export interface Anyenum<
+export interface $Anyenum<
   TsType = unknown,
   Name extends string = string,
   Values extends [string, ...string[]] = [string, ...string[]]
@@ -54,7 +55,7 @@ export interface Anyenum<
 
     // generate enum
     if (type.enum_values && type.enum_values.length) {
-      sc.writeln(`export enum ${name}Enum {`);
+      sc.writeln(`export enum ${displayName}Enum {`);
       sc.indented(() => {
         for (const val of type.enum_values) {
           sc.writeln(`${genutil.toIdent(val)} = ${genutil.quote(val)},`);
@@ -66,12 +67,12 @@ export interface Anyenum<
         .map((v) => `"${v}"`)
         .join(", ")}]`;
       sc.writeln(
-        `export type ${name} = typeof ${name}Enum & ${scopeName(
+        `export type ${displayName} = typeof ${displayName}Enum & ${scopeName(
           "std::anyenum"
-        )}<${name}Enum, "${type.name}", ${valuesArr}>;`
+        )}<${displayName}Enum, "${type.name}", ${valuesArr}>;`
       );
       sc.writeln(
-        `export const ${name}: ${name} = {...${name}Enum, __values__: ${valuesArr}} as any;`
+        `export const ${displayName}: ${displayName} = {...${displayName}Enum, __values__: ${valuesArr}} as any;`
       );
 
       sc.nl();
@@ -87,7 +88,7 @@ export interface Anyenum<
       `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`
     );
     sc.writeln(
-      `export const ${name} = (val:${tsType})=>$.Literal(${displayName}, val);`
+      `export const ${literalConstructor} = (val:${tsType})=>$.Literal(${displayName}, val);`
     );
     // sc.writeln(`export const ${displayName}: ${displayName} = {`);
     // sc.writeln(`  __name__: "${type.name}",`);

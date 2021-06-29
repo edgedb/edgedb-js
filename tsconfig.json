@@ -34,6 +34,7 @@
   ],
   "exclude": [
     "**/*.deno.ts",
-    "test/deno/*"
+    "test/deno/*",
+    "dist"
   ]
 }

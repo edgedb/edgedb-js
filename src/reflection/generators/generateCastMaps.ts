@@ -64,7 +64,9 @@ export const generateCastMaps = async (params: GeneratorParams) => {
               sameType || aCastableToB || bCastableToA || sharedParent;
 
             if (validCast) {
-              file.writeln(`B extends ${getScopedDisplayName(inner.name)} ? `);
+              file.writeln(
+                `B extends ${getScopedDisplayName(inner.name)} ? `
+              );
 
               if (sameType) {
                 file.writeln(`B`);
@@ -99,23 +101,23 @@ export const generateCastMaps = async (params: GeneratorParams) => {
       (!type.enum_values || !type.enum_values.length)
   );
 
-  const userDefinedObjectTypes = reverseTopo.filter((type) => {
-    if (type.kind !== "object") return false;
-    if (type.name.includes("schema::")) return false;
-    if (type.name.includes("sys::")) return false;
-    if (type.name.includes("cfg::")) return false;
-    if (type.name.includes("seq::")) return false;
-    if (type.name.includes("stdgraphql::")) return false;
-    if (
-      !type.ancestors
-        .map((t) => t.id)
-        .includes(typesByName["std::Object"].id) &&
-      type.name !== "std::Object"
-    ) {
-      return false;
-    }
-    return true;
-  });
+  // const userDefinedObjectTypes = reverseTopo.filter((type) => {
+  //   if (type.kind !== "object") return false;
+  //   if (type.name.includes("schema::")) return false;
+  //   if (type.name.includes("sys::")) return false;
+  //   if (type.name.includes("cfg::")) return false;
+  //   if (type.name.includes("seq::")) return false;
+  //   if (type.name.includes("stdgraphql::")) return false;
+  //   if (
+  //     !type.ancestors
+  //       .map((t) => t.id)
+  //       .includes(typesByName["std::Object"].id) &&
+  //     type.name !== "std::Object"
+  //   ) {
+  //     return false;
+  //   }
+  //   return true;
+  // });
 
   generateCastMap({
     typeList: materialScalars,
@@ -134,16 +136,16 @@ export const generateCastMaps = async (params: GeneratorParams) => {
 
   f.nl();
 
-  generateCastMap({
-    typeList: userDefinedObjectTypes,
-    casting: (id: string) => {
-      const type = types.get(id);
-      return util.deduplicate([
-        ...(type.kind === "object" ? type.ancestors.map((a) => a.id) : []),
-      ]);
-    },
-    file: f,
-    mapName: "getSharedParentObject",
-    baseCase: "std::Object",
-  });
+  // generateCastMap({
+  //   typeList: userDefinedObjectTypes,
+  //   casting: (id: string) => {
+  //     const type = types.get(id);
+  //     return util.deduplicate([
+  //       ...(type.kind === "object" ? type.ancestors.map((a) => a.id) : []),
+  //     ]);
+  //   },
+  //   file: f,
+  //   mapName: "getSharedParentObject",
+  //   baseCase: "std::Object",
+  // });
 };

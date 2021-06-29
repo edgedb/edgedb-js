@@ -1,11 +1,18 @@
-import {ObjectType, Types} from "./queries/getTypes";
+import * as introspect from "./queries/getTypes";
 
-import {BaseType, TypeKind} from "./typesystem";
+import {
+  BaseType,
+  TypeKind,
+  ObjectType,
+  ObjectTypeShape,
+  shapeToTsType,
+} from "./typesystem";
+import {typeutil} from "./util/typeutil";
 import {util} from "./util/util";
 
 function applySpec(
-  spec: Types,
-  type: ObjectType,
+  spec: introspect.Types,
+  type: introspect.ObjectType,
   shape: any,
   seen: Set<string>
 ): void {
@@ -62,7 +69,10 @@ function applySpec(
   }
 }
 
-export function makeType<T extends BaseType>(spec: Types, id: string): T {
+export function makeType<T extends BaseType>(
+  spec: introspect.Types,
+  id: string
+): T {
   const type = spec.get(id);
   const obj: any = {};
   obj.__name__ = type.name;
@@ -75,7 +85,9 @@ export function makeType<T extends BaseType>(spec: Types, id: string): T {
       applySpec(spec, type, shape, seen);
       for (const anc of type.ancestors) {
         const ancType = spec.get(anc.id);
-        if (ancType.kind !== "object") throw new Error(`Not an object: ${id}`);
+        if (ancType.kind !== "object") {
+          throw new Error(`Not an object: ${id}`);
+        }
         applySpec(spec, ancType, shape, seen);
       }
       return shape as any;
@@ -117,4 +129,48 @@ export function makeType<T extends BaseType>(spec: Types, id: string): T {
   } else {
     throw new Error("Invalid type.");
   }
+}
+export type mergeObjectShapes<
+  A extends ObjectTypeShape,
+  B extends ObjectTypeShape
+> = typeutil.flatten<
+  {
+    [k in keyof A & keyof B]: A[k] extends B[k] // possible performance issue?
+      ? B[k] extends A[k]
+        ? A[k]
+        : never
+      : never;
+  }
+>;
+
+export type mergeObjectTypes<A extends ObjectType, B extends ObjectType> = {
+  __kind__: TypeKind.object;
+  __name__: `${A["__name__"]} & ${B["__name__"]}`;
+  __shape__: mergeObjectShapes<A["__shape__"], B["__shape__"]>;
+  __tstype__: A["__tstype__"] & B["__tstype__"];
+  // shapeToTsType<mergeObjectShapes<A["__shape__"], B["__shape__"]>>;
+};
+
+export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
+  a: A,
+  b: B
+): mergeObjectTypes<A, B> {
+  const obj: any = {
+    __kind__: TypeKind.object,
+    __name__: `${a.__name__} & ${b.__name__}`,
+    get __shape__() {
+      const merged: any = {};
+      for (const [akey, aitem] of Object.entries(a.__shape__)) {
+        if (!b.__shape__[akey]) continue;
+
+        const bitem = b.__shape__[akey];
+        if (aitem.cardinality !== bitem.cardinality) continue;
+        // names must reflect full type
+        if (aitem.target.__name__ !== bitem.target.__name__) continue;
+        merged[akey] = aitem;
+      }
+      return merged;
+    },
+  };
+  return obj;
 }

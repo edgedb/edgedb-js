@@ -220,12 +220,14 @@ export namespace genutil {
   // convert FQN into capital camel case
   export function displayName(str: string) {
     const {name} = splitName(str);
-    const stripped = name
-      .replace(/[^$0-9a-zA-Z]/g, " ")
-      .split(" ")
-      .filter((x) => !!x)
-      .map(capitalize)
-      .join("");
+    const stripped =
+      "$" +
+      name
+        .replace(/[^$0-9a-zA-Z]/g, " ")
+        .split(" ")
+        .filter((x) => !!x)
+        .map(capitalize)
+        .join("");
     // if (stripped === "Object") return `ObjectType`;
     return stripped;
   }

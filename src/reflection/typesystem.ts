@@ -1,4 +1,4 @@
-import {generateObjectTypes} from "./generators/generateObjectTypes";
+import {pathify} from "./syntax/paths";
 import {typeutil} from "./util/typeutil";
 
 //////////////////
@@ -69,19 +69,33 @@ export type makeSet<
   __cardinality__: Card;
 };
 
+export type Expression<Set extends TypeSet = TypeSet> = Set & {
+  toEdgeQL(): string;
+} & pathify<Set>;
+
 export type ObjectTypeSet<
   T extends ObjectType = ObjectType,
   Card extends Cardinality = Cardinality
 > = TypeSet<T, Card>;
 
-export type Expression<Set extends TypeSet = TypeSet> = Set & {
-  toEdgeQL(): string;
-};
-
 export type ObjectTypeExpression<
   Set extends ObjectTypeSet = ObjectTypeSet
 > = Expression<Set>;
 
+export type PrimitiveType =
+  | ScalarType
+  | UnnamedTupleType
+  | NamedTupleType
+  | ArrayType;
+
+export type PrimitiveTypeSet<
+  T extends PrimitiveType = PrimitiveType,
+  Card extends Cardinality = Cardinality
+> = TypeSet<T, Card>;
+
+export type PrimitiveExpression<
+  Set extends PrimitiveTypeSet = PrimitiveTypeSet
+> = Expression<Set>;
 /////////////////////////
 /// COLLECTION TYPES
 /////////////////////////
@@ -192,6 +206,8 @@ export type ObjectTypeShape = {
   [k: string]: PropertyDesc | LinkDesc;
 };
 
+type adsfqewr = shapeToTsType<ObjectTypeShape>;
+
 /////////////////////
 /// TSTYPE HELPERS
 /////////////////////
@@ -227,12 +243,19 @@ export type linkToTsType<
   ? setToTsType<makeSet<Type, Card>>
   : never;
 
-export type shapeToTsType<T extends ObjectTypeShape> = typeutil.flatten<
-  {
-    [k in keyof T]: T[k] extends PropertyDesc
-      ? propToTsType<T[k]>
-      : T[k] extends LinkDesc<any, any, any>
-      ? linkToTsType<T[k]>
-      : never;
-  }
->;
+export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
+  ? any
+  : typeutil.flatten<
+      {
+        [k in keyof T]: T[k] extends PropertyDesc
+          ? propToTsType<T[k]>
+          : T[k] extends LinkDesc<any, any, any>
+          ? linkToTsType<T[k]>
+          : never;
+      }
+    >;
+
+type asdfadf = typeutil.flatten<shapeToTsType<ObjectTypeShape>>;
+
+type asldkjf = string extends keyof {asdf: string} ? true : false;
+type asldkjkmf = string extends keyof {[k: string]: string} ? true : false;
