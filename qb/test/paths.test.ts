@@ -3,13 +3,12 @@ import {reflection as $} from "edgedb";
 import {typeutil} from "../../src/reflection";
 
 test("path structure", () => {
-  const HeroSetMany = $.toSet(e.default.Hero, $.Cardinality.Many);
-  const Hero = $.makePathNode(HeroSetMany, null);
+  const Hero = e.default.Hero;
   type Hero = typeof Hero;
-  const HeroSetSingleton = $.toSet(e.default.Hero, $.Cardinality.One);
+  const HeroSetSingleton = $.toSet(e.default.$Hero, $.Cardinality.One);
   const HeroSingleton = $.makePathNode(HeroSetSingleton, null);
   type HeroSingleton = typeof HeroSingleton;
-  const VillainRoot = $.toSet(e.default.Villain, $.Cardinality.One);
+  const VillainRoot = $.toSet(e.default.$Villain, $.Cardinality.One);
   const Villain = $.makePathNode(VillainRoot, null);
 
   expect(Hero.name.__element__.__kind__).toEqual($.TypeKind.scalar);
@@ -44,7 +43,10 @@ test("path structure", () => {
 
   // AtMostOneHero.name
   // test cardinality merging
-  const HeroSetAtLeastOne = $.toSet(e.default.Hero, $.Cardinality.AtLeastOne);
+  const HeroSetAtLeastOne = $.toSet(
+    e.default.$Hero,
+    $.Cardinality.AtLeastOne
+  );
   const AtLeastOneHero = $.makePathNode(HeroSetAtLeastOne, null);
   type AtLeastOneHero = typeof AtLeastOneHero;
   expect(AtLeastOneHero.id.__cardinality__).toEqual($.Cardinality.AtLeastOne);
@@ -66,9 +68,8 @@ test("path structure", () => {
   expect(Hero.villains.nemesis.villains.name.toEdgeQL()).toEqual(
     "default::Hero.villains.nemesis.villains.name"
   );
-  expect(
-    Hero.__type__.__type__.__type__.annotations.__type__.computed_fields.toEdgeQL()
-  ).toEqual(
+  const Herotype = Hero.__type__.__type__.__type__;
+  expect(Herotype.annotations.__type__.computed_fields.toEdgeQL()).toEqual(
     "default::Hero.__type__.__type__.__type__.annotations.__type__.computed_fields"
   );
   expect(Hero.villains.__parent__.linkName).toEqual("villains");

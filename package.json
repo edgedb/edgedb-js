@@ -32,10 +32,10 @@
     "ts-jest": "^26.5.2",
     "ts-node": "^10.0.0",
     "tslint": "^5.20.1",
-    "typescript": "^4.3.2"
+    "typescript": "^4.3.4"
   },
   "scripts": {
-    "build": "tsc --incremental",
+    "build": "tsc --project tsconfig.json",
     "test": "jest --detectOpenHandles",
     "lint": "tsc && tslint 'src/**/*.ts' && prettylint 'src/**/*.ts' 'test/**/*.ts'",
     "lint:fix": "tslint --fix 'src/**/*.ts' 'qb/**/*.ts' --exclude '**/node_modules/**'",

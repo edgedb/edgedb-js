@@ -97,12 +97,15 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
 
     const {mod, name} = genutil.splitName(type.name);
 
-    const ident = genutil.displayName(type.name);
     const body = dir.getPath(`modules/${mod}.ts`);
     body.addImport(`import {reflection as $} from "edgedb";`);
     body.addImport(`import {spec as __spec__} from "../__spec__";`);
 
     const scopeName = genutil.getScopedDisplayName(mod, body);
+
+    const ident = genutil.displayName(type.name);
+    const {name: pathName} = genutil.splitName(type.name);
+    // const typeName = genutil.displayName(type.name);
 
     // get bases
     const bases: string[] = [];
@@ -198,6 +201,10 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
       body.writeln(`${JSON.stringify(type.id)},`);
     });
     body.writeln(`);`);
+    body.nl();
+    body.writeln(
+      `export const ${pathName} = $.makePathNode($.toSet(${ident}, $.Cardinality.Many), null);`
+    );
     body.nl();
     body.nl();
   }

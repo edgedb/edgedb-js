@@ -27,7 +27,15 @@ module default {
     multi link characters extending movie_character -> Person;
   }
 
-  type Bag {
+
+  abstract type HasName {
+    property name -> str;
+  }
+  abstract type HasAge {
+    property age -> int64;
+  }
+
+  type Bag extending HasName, HasAge {
     property secret_identity -> str;
     property genre -> Genre;
     property boolField -> bool;
@@ -50,4 +58,6 @@ module default {
     property unnamedTuple -> tuple<str, int64>;
     property enumArr -> array<Genre>;
   }
+
+  type Simple extending HasName, HasAge {}
 }
