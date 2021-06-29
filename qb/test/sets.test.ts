@@ -1,0 +1,48 @@
+import * as e from "../generated/example";
+import {reflection as $} from "edgedb";
+import {Cardinality, TypeKind, typeutil} from "../../src/reflection";
+
+test("object set contructor", () => {
+  const hero = e.set(e.default.Hero);
+  expect(hero.id.__element__.__name__).toEqual("std::uuid");
+  expect(hero.name.__element__.__name__).toEqual("std::str");
+  expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
+
+  const person = e.set(e.default.Hero, e.default.Villain);
+  expect(person.id.__element__.__name__).toEqual("std::uuid");
+  expect(person.name.__element__.__name__).toEqual("std::str");
+  expect((person as any).number_of_movies).toEqual(undefined);
+  expect(person.__element__.__name__).toEqual(
+    "default::Hero & default::Villain"
+  );
+
+  const merged = e.set(e.default.Hero, e.default.Villain, e.default.Person);
+  expect(merged.__element__.__name__).toEqual(
+    "default::Hero & default::Villain & default::Person"
+  );
+});
+
+test("scalar set contructor", () => {
+  // single elements
+  const _f1 = e.set(e.str("asdf"));
+  expect(_f1.__element__.__name__).toEqual("std::str");
+  expect(_f1.__cardinality__).toEqual(Cardinality.One);
+  expect(_f1.__element__.__kind__).toEqual(TypeKind.scalar);
+
+  // multiple elements
+  const _f2 = e.set(e.str("asdf"), e.str("qwer"), e.str("poiu"));
+  expect(_f2.__element__.__name__).toEqual("std::str");
+  expect(_f2.__cardinality__).toEqual(Cardinality.AtLeastOne);
+
+  // nevers
+  const _f3 = e.set(e.str("asdf"), e.int64(1243)).__element__;
+  const _t3: typeutil.assertEqual<typeof _f3, never> = true;
+  const _f4 = e.set(e.bool(true), e.bigint(BigInt(14))).__element__;
+  const _t5: typeutil.assertEqual<typeof _f4, never> = true;
+
+  // implicit casting
+  const _f5 = e.set(e.int32(5), e.float32(1234.5));
+  expect(_f5.__element__.__name__).toEqual("std::float64");
+  const _f6 = e.set(e.int16(5), e.bigint(BigInt(1234.5)));
+  expect(_f6.__element__.__name__).toEqual("std::bigint");
+});
