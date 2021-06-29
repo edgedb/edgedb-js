@@ -1386,7 +1386,7 @@ test("'implicit*' headers", async () => {
     config
   )) as _RawConnection;
   try {
-    const [_, outCodecData] = await con.rawParse(
+    const [_, outCodecData, protocolVersion] = await con.rawParse(
       `SELECT schema::Function {
         name
       }`,
@@ -1398,7 +1398,7 @@ test("'implicit*' headers", async () => {
     const resultData = await con.rawExecute();
 
     const registry = new _CodecsRegistry();
-    const codec = registry.buildCodec(outCodecData);
+    const codec = registry.buildCodec(outCodecData, protocolVersion);
 
     const result = new Set();
     const buf = new _ReadBuffer(resultData);
