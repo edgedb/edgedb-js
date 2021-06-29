@@ -27,9 +27,13 @@ const valueToEdgeQL: (type: MaterialType, val: any) => string = (
     stringRep = `${val.toString()}n`;
   } else if (Array.isArray(val)) {
     if (type.__kind__ === TypeKind.array) {
-      stringRep = `[${val.map(valueToEdgeQL).join(", ")}]`;
+      stringRep = `[${val
+        .map((el) => valueToEdgeQL(type.__element__ as any, el))
+        .join(", ")}]`;
     } else if (type.__kind__ === TypeKind.unnamedtuple) {
-      stringRep = `( ${val.map(valueToEdgeQL).join(", ")} )`;
+      stringRep = `( ${val
+        .map((el, j) => valueToEdgeQL(type.__items__[j] as any, el))
+        .join(", ")} )`;
     } else {
       throw new Error(`Invalid value for type ${type.__name__}`);
     }

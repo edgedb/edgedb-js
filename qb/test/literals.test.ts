@@ -48,7 +48,7 @@ test("literals", () => {
 
 test("collection type literals", () => {
   const literalArray = e.Literal(e.Array("asdf", e.Str), ["adsf"]);
-  expect(literalArray.toEdgeQL()).toEqual(`<array<std::str>>[]`);
+  expect(literalArray.toEdgeQL()).toEqual(`<array<std::str>>['adsf']`);
   const literalNamedTuple = e.Literal(e.NamedTuple("asdf", {str: e.Str}), {
     str: "asdf",
   });
