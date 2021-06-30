@@ -60,7 +60,7 @@ test("array tests", () => {
 
 test("merging tests", () => {
   const merged = mergeObjectTypes(e.default.$Bag, e.default.$Simple);
-  expect(Object.keys(merged.__shape__).length).toEqual(3);
+  expect(Object.keys(merged.__shape__).length).toEqual(4);
   expect(Object.keys(merged.__shape__).includes("id")).toEqual(true);
   expect(Object.keys(merged.__shape__).includes("__type__")).toEqual(true);
   expect(Object.keys(merged.__shape__).includes("name")).toEqual(true);

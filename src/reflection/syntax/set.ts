@@ -12,14 +12,15 @@ import {
   PrimitiveExpression,
   TypeSet,
   UnnamedTupleType,
+  TypeKind,
 } from "../typesystem";
 
 import {getSharedParentScalar} from "../../../qb/generated/example";
-
+import {pathify} from "./paths";
 import {mergeCardinalitiesTuple} from "../util/cardinalityUtil";
 import {mergeObjectTypes} from "../hydrate";
 
-export type SetExpression<Set extends TypeSet> = Expression<Set> & {
+export type SetExpression<Set extends TypeSet = TypeSet> = Expression<Set> & {
   __exprs__: Expression<Set>[];
 };
 
@@ -148,8 +149,42 @@ export function set<
     mergeCardinalitiesTuple<getCardsFromExprs<Exprs>>
   >
 >;
-export function set(...exprs: any[]) {
-  // TODO
-  // requires a runtime representation of implicit cast maps
-  return "asdf" as any;
+export function set(..._exprs: any[]) {
+  // if object set
+  // return set expression with appropriate exprs
+  // if scalar
+  // return shared parent of scalars
+  const exprs: Expression[] = _exprs;
+  if (exprs.every((expr) => expr.__element__.__kind__ === TypeKind.object)) {
+    // merge object types;
+    return pathify({
+      __element__: exprs
+        .map((expr) => expr.__element__ as any)
+        .reduce(mergeObjectTypes),
+      __cardinality__: mergeCardinalitiesTuple(
+        exprs.map((expr) => expr.__cardinality__) as any
+      ),
+      toEdgeQL() {
+        return `{ ${this.__exprs__
+          .map((expr) => expr.toEdgeQL())
+          .join(", ")} }`;
+      },
+      __exprs__: exprs,
+    }) as any;
+  }
+
+  return {
+    __element__: exprs
+      .map((expr) => expr.__element__ as any)
+      .reduce(getSharedParentScalar),
+    __cardinality__: mergeCardinalitiesTuple(
+      exprs.map((expr) => expr.__cardinality__) as any
+    ),
+    toEdgeQL() {
+      return `{ ${this.__exprs__
+        .map((expr) => expr.toEdgeQL())
+        .join(", ")} }`;
+    },
+    __exprs__: exprs,
+  } as SetExpression;
 }

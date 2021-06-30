@@ -98,28 +98,13 @@ export const toSet = <Root extends MaterialType, Card extends Cardinality>(
   };
 };
 
-// create leaf (should only be used internally)
-const makePathLeaf = <Root extends TypeSet, Parent extends PathParent>(
-  _root: Root,
-  parent: PathParent | null
-): makePathLeaf<Root, Parent> => {
-  const leaf: makePathLeaf<Root, Parent> = _root as any;
-  util.defineMethod(leaf, "toEdgeQL", toEdgeQL);
-  leaf.__parent__ = parent as any;
-  return leaf;
-};
-
-// create non-leaf path node
-export const makePathNode = <
+export const pathify = <
   Root extends ObjectTypeSet,
   Parent extends PathParent
 >(
-  _root: Root,
-  parent: PathParent | null
-): makePathNode<Root, Parent> => {
+  _root: Root
+): pathify<Root, Parent> => {
   const root: makePathNode<Root, Parent> = _root as any;
-  root.__parent__ = parent as any;
-  util.defineMethod(root, "toEdgeQL", toEdgeQL);
 
   for (const line of Object.entries(root.__element__.__shape__)) {
     const [key, ptr] = line;
@@ -160,4 +145,29 @@ export const makePathNode = <
     }
   }
   return root as any;
+};
+
+// create leaf (should only be used internally)
+const makePathLeaf = <Root extends TypeSet, Parent extends PathParent>(
+  _root: Root,
+  parent: PathParent | null
+): makePathLeaf<Root, Parent> => {
+  const leaf: makePathLeaf<Root, Parent> = _root as any;
+  util.defineMethod(leaf, "toEdgeQL", toEdgeQL);
+  leaf.__parent__ = parent as any;
+  return leaf;
+};
+
+// create non-leaf path node
+export const makePathNode = <
+  Root extends ObjectTypeSet,
+  Parent extends PathParent
+>(
+  _root: Root,
+  parent: PathParent | null
+): makePathNode<Root, Parent> => {
+  const root: any = {..._root};
+  root.__parent__ = parent as any;
+  util.defineMethod(root, "toEdgeQL", toEdgeQL);
+  return pathify(root) as any;
 };
