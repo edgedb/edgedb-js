@@ -9,6 +9,7 @@ export const generateCastMaps = async (params: GeneratorParams) => {
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("modules/$castMaps.ts");
+  f.addImport(`import {reflection as $} from "edgedb";`);
   const getScopedDisplayName = genutil.getScopedDisplayName(
     `${Math.random()}`,
     f
@@ -37,54 +38,86 @@ export const generateCastMaps = async (params: GeneratorParams) => {
     return castable;
   };
 
-  f.writeln(`export type getSharedParentScalar<A, B> = `);
-  f.indented(() => {
-    for (const outer of materialScalars) {
-      const outerCastableTo = casting(outer.id);
-      f.writeln(`A extends ${getScopedDisplayName(outer.name)} ? `);
+  const staticMap: string[] = [`export type getSharedParentScalar<A, B> =`];
+  const runtimeMap: string[] = [
+    `export function getSharedParentScalar<A extends $.ScalarType, B extends $.ScalarType>(a: A, b: B){`,
+  ];
 
-      f.indented(() => {
-        for (const inner of materialScalars) {
-          const innerCastableTo = casting(inner.id);
-          const sameType = inner.name === outer.name;
-          const aCastableToB = outerCastableTo.includes(inner.id);
-          const bCastableToA = innerCastableTo.includes(outer.id);
+  for (const outer of materialScalars) {
+    const outerCastableTo = casting(outer.id);
+    staticMap.push(`  A extends ${getScopedDisplayName(outer.name)} ?`);
+    runtimeMap.push(
+      `  if (a.__name__ === ${getScopedDisplayName(outer.name)}.__name__) {`
+    );
+    // f.writeln(`A extends ${getScopedDisplayName(outer.name)} ?`);
 
-          let sharedParent: string | null = null;
-          const sharedParentId = outerCastableTo.find((t) =>
-            innerCastableTo.includes(t)
+    for (const inner of materialScalars) {
+      const innerCastableTo = casting(inner.id);
+      const sameType = inner.name === outer.name;
+      const aCastableToB = outerCastableTo.includes(inner.id);
+      const bCastableToA = innerCastableTo.includes(outer.id);
+
+      let sharedParent: string | null = null;
+      const sharedParentId = outerCastableTo.find((t) =>
+        innerCastableTo.includes(t)
+      );
+      if (sharedParentId) {
+        const sharedParentName = types.get(sharedParentId).name;
+        sharedParent = sharedParentName;
+      }
+
+      const validCast =
+        sameType || aCastableToB || bCastableToA || sharedParent;
+
+      if (validCast) {
+        staticMap.push(`    B extends ${getScopedDisplayName(inner.name)} ?`);
+        runtimeMap.push(
+          `    if(b.__name__ === ${getScopedDisplayName(
+            inner.name
+          )}.__name__) {`
+        );
+
+        if (sameType) {
+          staticMap.push(`    B`);
+          runtimeMap.push(`      return b;`);
+        } else if (aCastableToB) {
+          staticMap.push(`    B`);
+          runtimeMap.push(`      return b;`);
+        } else if (bCastableToA) {
+          staticMap.push(`    A`);
+          runtimeMap.push(`      return a;`);
+        } else if (sharedParent) {
+          const scoped = getScopedDisplayName(sharedParent);
+
+          staticMap.push(`    ${scoped}`);
+          runtimeMap.push(`      return ${scoped};`);
+        } else {
+          staticMap.push("    never");
+          runtimeMap.push(
+            `      throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`
           );
-          if (sharedParentId) {
-            const sharedParentName = types.get(sharedParentId).name;
-            sharedParent = sharedParentName;
-          }
-
-          const validCast =
-            sameType || aCastableToB || bCastableToA || sharedParent;
-
-          if (validCast) {
-            f.writeln(`B extends ${getScopedDisplayName(inner.name)} ? `);
-
-            if (sameType) {
-              f.writeln(`B`);
-            } else if (aCastableToB) {
-              f.writeln(`B`);
-            } else if (bCastableToA) {
-              f.writeln(`A`);
-            } else if (sharedParent) {
-              f.writeln(getScopedDisplayName(sharedParent));
-            } else {
-              f.writeln("never");
-            }
-            f.writeln(`:`);
-          }
         }
-        f.writeln("never");
-      });
-      f.writeln(":");
+        staticMap.push(`    :`);
+        runtimeMap.push(`    }`);
+      }
     }
-    f.writeln("never");
-  });
+    staticMap.push("    never");
+    runtimeMap.push(
+      `    throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`
+    );
+    runtimeMap.push("    }");
+
+    staticMap.push("  :");
+  }
+  staticMap.push("never");
+  runtimeMap.push(
+    `  throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`
+  );
+  runtimeMap.push(`}`);
+
+  f.writeln(staticMap.join("\n"));
+  f.nl();
+  f.writeln(runtimeMap.join("\n"));
 
   // const userDefinedObjectTypes = reverseTopo.filter((type) => {
   //   if (type.kind !== "object") return false;

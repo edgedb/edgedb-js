@@ -143,13 +143,13 @@ export type mergeObjectShapes<
   }
 >;
 
-export type mergeObjectTypes<A extends ObjectType, B extends ObjectType> = {
-  __kind__: TypeKind.object;
-  __name__: `${A["__name__"]} & ${B["__name__"]}`;
-  __shape__: mergeObjectShapes<A["__shape__"], B["__shape__"]>;
-  __tstype__: A["__tstype__"] & B["__tstype__"];
-  // shapeToTsType<mergeObjectShapes<A["__shape__"], B["__shape__"]>>;
-};
+export type mergeObjectTypes<
+  A extends ObjectType,
+  B extends ObjectType
+> = ObjectType<
+  `${A["__name__"]} & ${B["__name__"]}`,
+  mergeObjectShapes<A["__shape__"], B["__shape__"]>
+>;
 
 export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
   a: A,
