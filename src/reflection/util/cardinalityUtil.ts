@@ -129,5 +129,8 @@ export function mergeCardinalitiesTuple<
   if (cards.length === 1) return cards[0] as any;
   const [first, second, ...rest] = cards;
   if (cards.length === 2) return mergeCardinalities(first, second) as any;
-  return mergeCardinalitiesTuple([mergeCardinalities(first, second), ...rest]);
+  return mergeCardinalitiesTuple([
+    mergeCardinalities(first, second),
+    ...rest,
+  ]);
 }

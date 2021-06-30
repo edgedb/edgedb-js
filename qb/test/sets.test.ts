@@ -34,15 +34,19 @@ test("scalar set contructor", () => {
   expect(_f2.__element__.__name__).toEqual("std::str");
   expect(_f2.__cardinality__).toEqual(Cardinality.AtLeastOne);
 
-  // nevers
-  const _f3 = e.set(e.str("asdf"), e.int64(1243)).__element__;
-  const _t3: typeutil.assertEqual<typeof _f3, never> = true;
-  const _f4 = e.set(e.bool(true), e.bigint(BigInt(14))).__element__;
-  const _t5: typeutil.assertEqual<typeof _f4, never> = true;
+  // never
+  expect(() => {
+    const _f3 = e.set(e.str("asdf"), e.int64(1243)).__element__;
+    const _t3: typeutil.assertEqual<typeof _f3, never> = true;
+  }).toThrow();
+  expect(() => {
+    const _f4 = e.set(e.bool(true), e.bigint(BigInt(14))).__element__;
+    const _t5: typeutil.assertEqual<typeof _f4, never> = true;
+  }).toThrow();
 
   // implicit casting
   const _f5 = e.set(e.int32(5), e.float32(1234.5));
   expect(_f5.__element__.__name__).toEqual("std::float64");
-  const _f6 = e.set(e.int16(5), e.bigint(BigInt(1234.5)));
+  const _f6 = e.set(e.int16(5), e.bigint(BigInt(1234)));
   expect(_f6.__element__.__name__).toEqual("std::bigint");
 });

@@ -52,7 +52,8 @@
   },
   "linterOptions": {
     "exclude": [
-      "**/*.deno.ts"
+      "**/*.deno.ts",
+      "**/generated/**"
     ]
   }
 }
