@@ -1,7 +1,7 @@
 import {
   ArrayType,
   BaseTypeTuple,
-  Expression,
+  // Expression,
   makeSet,
   MaterialType,
   NamedTupleType,
@@ -12,15 +12,19 @@ import {
   UnnamedTupleType,
   TypeKind,
   PrimitiveType,
+  BaseExpression,
+  ExpressionKind,
 } from "../typesystem";
 
 import {getSharedParentScalar} from "../../../qb/generated/example";
 import {pathify} from "./paths";
 import {mergeCardinalitiesVariadic} from "../util/cardinalityUtil";
 import {mergeObjectTypes} from "../hydrate";
+import {toEdgeQL} from "./toEdgeQL";
 
-export type SetExpression<Set extends TypeSet = TypeSet> = Expression<Set> & {
-  __exprs__: Expression<Set>[];
+export type expr_Set<Set extends TypeSet = TypeSet> = BaseExpression<Set> & {
+  __exprs__: BaseExpression<Set>[];
+  __kind__: ExpressionKind.Set;
 };
 
 type mergeTypeTuples<AItems, BItems> = {
@@ -130,8 +134,10 @@ export type mergeObjectTypesVariadic<
   ? _mergeObjectTypesVariadic<Types>
   : never;
 
-type getTypesFromExprs<Exprs extends [Expression, ...Expression[]]> = {
-  [k in keyof Exprs]: Exprs[k] extends Expression
+type getTypesFromExprs<
+  Exprs extends [BaseExpression, ...BaseExpression[]]
+> = {
+  [k in keyof Exprs]: Exprs[k] extends BaseExpression
     ? Exprs[k]["__element__"]
     : never;
 };
@@ -144,8 +150,10 @@ type getTypesFromObjectExprs<
     : never;
 };
 
-type getCardsFromExprs<Exprs extends [Expression, ...Expression[]]> = {
-  [k in keyof Exprs]: Exprs[k] extends Expression
+type getCardsFromExprs<
+  Exprs extends [BaseExpression, ...BaseExpression[]]
+> = {
+  [k in keyof Exprs]: Exprs[k] extends BaseExpression
     ? Exprs[k]["__cardinality__"]
     : never;
 };
@@ -155,7 +163,7 @@ export function set<
   Exprs extends [Expr, ...Expr[]]
 >(
   ...exprs: Exprs
-): SetExpression<
+): expr_Set<
   makeSet<
     mergeObjectTypesVariadic<getTypesFromObjectExprs<Exprs>>,
     mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
@@ -166,7 +174,7 @@ export function set<
   Exprs extends [Expr, ...Expr[]]
 >(
   ...exprs: Exprs
-): SetExpression<
+): expr_Set<
   makeSet<
     getSharedParentPrimitiveVariadic<getTypesFromExprs<Exprs>>,
     mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
@@ -177,42 +185,36 @@ export function set(..._exprs: any[]) {
   //   merged objects
   // if primitive
   //   return shared parent of scalars
-  const exprs: Expression[] = _exprs;
+  const exprs: BaseExpression[] = _exprs;
   if (exprs.every((expr) => expr.__element__.__kind__ === TypeKind.object)) {
     // merge object types;
     return pathify({
+      __kind__: ExpressionKind.Set,
       __element__: exprs
         .map((expr) => expr.__element__ as any)
         .reduce(mergeObjectTypes),
       __cardinality__: mergeCardinalitiesVariadic(
         exprs.map((expr) => expr.__cardinality__) as any
       ),
-      toEdgeQL() {
-        return `{ ${this.__exprs__
-          .map((expr) => expr.toEdgeQL())
-          .join(", ")} }`;
-      },
+      toEdgeQL,
       __exprs__: exprs,
     }) as any;
   }
   if (exprs.every((expr) => expr.__element__.__kind__ !== TypeKind.object)) {
     return {
+      __kind__: ExpressionKind.Set,
       __element__: exprs
         .map((expr) => expr.__element__ as any)
         .reduce(getSharedParentScalar),
       __cardinality__: mergeCardinalitiesVariadic(
         exprs.map((expr) => expr.__cardinality__) as any
       ),
-      toEdgeQL() {
-        return `{ ${this.__exprs__
-          .map((expr) => expr.toEdgeQL())
-          .join(", ")} }`;
-      },
+      toEdgeQL,
       __exprs__: exprs,
-    } as SetExpression;
+    } as expr_Set;
   }
   throw new Error(
-    `Invalid arguments to set constructor: ${(_exprs as Expression[])
+    `Invalid arguments to set constructor: ${(_exprs as BaseExpression[])
       .map((expr) => expr.__element__.__name__)
       .join(", ")}`
   );

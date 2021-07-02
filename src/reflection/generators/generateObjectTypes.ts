@@ -197,7 +197,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     body.writeln(`);`);
     body.nl();
     body.writeln(
-      `export const ${pathName} = $.makePathNode($.toSet(${ident}, $.Cardinality.Many), null);`
+      `export const ${pathName} = $.expr_PathNode($.toSet(${ident}, $.Cardinality.Many), null);`
     );
     body.nl();
     body.nl();

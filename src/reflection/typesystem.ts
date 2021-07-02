@@ -69,9 +69,18 @@ export type makeSet<
   __cardinality__: Card;
 };
 
-export type Expression<Set extends TypeSet = TypeSet> = Set & {
+export type BaseExpression<Set extends TypeSet = TypeSet> = {
+  __element__: Set["__element__"];
+  __cardinality__: Set["__cardinality__"];
   toEdgeQL(): string;
 } & pathify<Set>;
+
+export enum ExpressionKind {
+  Set = "Set",
+  PathNode = "PathNode",
+  PathLeaf = "PathLeaf",
+  Literal = "Literal",
+}
 
 export type ObjectTypeSet<
   T extends ObjectType = ObjectType,
@@ -80,7 +89,7 @@ export type ObjectTypeSet<
 
 export type ObjectTypeExpression<
   Set extends ObjectTypeSet = ObjectTypeSet
-> = Expression<Set>;
+> = BaseExpression<Set>;
 
 export type PrimitiveType =
   | ScalarType
@@ -95,7 +104,7 @@ export type PrimitiveTypeSet<
 
 export type PrimitiveExpression<
   Set extends PrimitiveTypeSet = PrimitiveTypeSet
-> = Expression<Set>;
+> = BaseExpression<Set>;
 /////////////////////////
 /// COLLECTION TYPES
 /////////////////////////

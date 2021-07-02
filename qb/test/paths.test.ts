@@ -6,10 +6,10 @@ test("path structure", () => {
   const Hero = e.default.Hero;
   type Hero = typeof Hero;
   const HeroSetSingleton = $.toSet(e.default.$Hero, $.Cardinality.One);
-  const HeroSingleton = $.makePathNode(HeroSetSingleton, null);
+  const HeroSingleton = $.expr_PathNode(HeroSetSingleton, null);
   type HeroSingleton = typeof HeroSingleton;
   const VillainRoot = $.toSet(e.default.$Villain, $.Cardinality.One);
-  const Villain = $.makePathNode(VillainRoot, null);
+  const Villain = $.expr_PathNode(VillainRoot, null);
 
   expect(Hero.name.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(Hero.name.__element__.__name__).toEqual("std::str");
@@ -47,7 +47,7 @@ test("path structure", () => {
     e.default.$Hero,
     $.Cardinality.AtLeastOne
   );
-  const AtLeastOneHero = $.makePathNode(HeroSetAtLeastOne, null);
+  const AtLeastOneHero = $.expr_PathNode(HeroSetAtLeastOne, null);
   type AtLeastOneHero = typeof AtLeastOneHero;
   expect(AtLeastOneHero.id.__cardinality__).toEqual($.Cardinality.AtLeastOne);
   expect(AtLeastOneHero.number_of_movies.__cardinality__).toEqual(
