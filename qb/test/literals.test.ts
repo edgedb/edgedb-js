@@ -52,14 +52,20 @@ test("literals", () => {
 
 test("collection type literals", () => {
   const literalArray = e.Literal(e.$Array(e.$Str), ["adsf"]);
-  expect(literalArray.toEdgeQL()).toEqual(`<array<std::str>>['adsf']`);
+  expect(literalArray.toEdgeQL()).toEqual(
+    `<array<std::str>>[<std::str>'adsf']`
+  );
   const literalNamedTuple = e.Literal(e.$NamedTuple({str: e.$Str}), {
     str: "asdf",
   });
-  expect(literalNamedTuple.toEdgeQL()).toEqual(``);
+  expect(literalNamedTuple.toEdgeQL()).toEqual(
+    `<tuple<str: std::str>>( str := <std::str>'asdf' )`
+  );
   const literalUnnamedTuple = e.Literal(e.$UnnamedTuple([e.$Str, e.$Int64]), [
     "asdf",
     1234,
   ]);
-  expect(literalUnnamedTuple.toEdgeQL()).toEqual(``);
+  expect(literalUnnamedTuple.toEdgeQL()).toEqual(
+    `<tuple<std::str, std::int64>>( <std::str>'asdf', <std::int64>1234 )`
+  );
 });
