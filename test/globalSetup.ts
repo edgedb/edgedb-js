@@ -30,7 +30,7 @@ export default async () => {
     "--testmode",
     "--echo-runtime-info",
     "--port=auto",
-    "--auto-shutdown",
+    "--auto-shutdown-after=30",
   ];
 
   if (process.platform === "win32") {
