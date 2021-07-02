@@ -101,7 +101,7 @@ export function mergeCardinalities<
 type test1 = mergeCardinalities<Cardinality.AtMostOne, Cardinality.One>;
 type test2 = mergeCardinalities<Cardinality.AtMostOne, Cardinality.AtMostOne>;
 
-type _mergeCardinalitiesTuple<
+type _mergeCardinalitiesVariadic<
   Cards extends [Cardinality, ...Cardinality[]]
 > = Cards extends [infer Card]
   ? Card
@@ -110,26 +110,26 @@ type _mergeCardinalitiesTuple<
     ? B extends Cardinality
       ? Rest extends Cardinality[]
         ? mergeCardinalities<A, B> extends Cardinality
-          ? _mergeCardinalitiesTuple<[mergeCardinalities<A, B>, ...Rest]>
+          ? _mergeCardinalitiesVariadic<[mergeCardinalities<A, B>, ...Rest]>
           : never
         : never
       : never
     : never
   : never;
 
-export type mergeCardinalitiesTuple<
+export type mergeCardinalitiesVariadic<
   Cards extends [Cardinality, ...Cardinality[]]
-> = _mergeCardinalitiesTuple<Cards> extends Cardinality
-  ? _mergeCardinalitiesTuple<Cards>
+> = _mergeCardinalitiesVariadic<Cards> extends Cardinality
+  ? _mergeCardinalitiesVariadic<Cards>
   : never;
-export function mergeCardinalitiesTuple<
+export function mergeCardinalitiesVariadic<
   Cards extends [Cardinality, ...Cardinality[]]
->(cards: Cards): mergeCardinalitiesTuple<Cards> {
+>(cards: Cards): mergeCardinalitiesVariadic<Cards> {
   if (cards.length === 0) throw new Error("Empty tuple not allowed");
   if (cards.length === 1) return cards[0] as any;
   const [first, second, ...rest] = cards;
   if (cards.length === 2) return mergeCardinalities(first, second) as any;
-  return mergeCardinalitiesTuple([
+  return mergeCardinalitiesVariadic([
     mergeCardinalities(first, second),
     ...rest,
   ]);
