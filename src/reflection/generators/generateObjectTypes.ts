@@ -21,11 +21,11 @@ const getStringRepresentation: (
     // const tsType = genutil.toJsScalarType(target, types, mod, body);
   } else if (type.kind === "array") {
     return {
-      staticType: `$.ArrayType<"${type.name}", ${
+      staticType: `$.ArrayType<${
         getStringRepresentation(types.get(type.array_element_id), params)
           .staticType
       }>`,
-      runtimeType: `$.ArrayType("${type.name}", ${
+      runtimeType: `$.ArrayType(${
         getStringRepresentation(types.get(type.array_element_id), params)
           .runtimeType
       })`,
@@ -52,8 +52,8 @@ const getStringRepresentation: (
         )
         .join(", ");
       return {
-        staticType: `$.NamedTupleType<"${type.name}", {${itemsStatic}}>`,
-        runtimeType: `$.NamedTupleType("${type.name}", {${itemsRuntime}})`,
+        staticType: `$.NamedTupleType<{${itemsStatic}}>`,
+        runtimeType: `$.NamedTupleType({${itemsRuntime}})`,
       };
     } else {
       const items = type.tuple_elements
@@ -62,10 +62,12 @@ const getStringRepresentation: (
         .map((el) => getStringRepresentation(el, params));
 
       return {
-        staticType: `$.UnnamedTupleType<"${type.name}",
-                [${items.map((it) => it.staticType).join(", ")}]>`,
-        runtimeType: `$.UnnamedTupleType("${type.name}",
-                [${items.map((it) => it.runtimeType).join(", ")}])`,
+        staticType: `$.UnnamedTupleType<[${items
+          .map((it) => it.staticType)
+          .join(", ")}]>`,
+        runtimeType: `$.UnnamedTupleType([${items
+          .map((it) => it.runtimeType)
+          .join(", ")}])`,
       };
     }
   } else {
@@ -75,14 +77,6 @@ const getStringRepresentation: (
 
 export const generateObjectTypes = async (params: GeneratorParams) => {
   const {dir, types, casts} = params;
-
-  const stdFile = dir.getPath(`modules/std.ts`);
-  stdFile.writeln(`const UnnamedTupleType = $.UnnamedTupleType;`);
-  stdFile.writeln(`export {UnnamedTupleType as UnnamedTuple};`);
-  stdFile.writeln(`const NamedTupleType = $.NamedTupleType;`);
-  stdFile.writeln(`export {NamedTupleType as NamedTuple};`);
-  stdFile.writeln(`const ArrayType = $.ArrayType;`);
-  stdFile.writeln(`export {ArrayType as Array};`);
 
   for (const type of types.values()) {
     if (type.kind !== "object") {

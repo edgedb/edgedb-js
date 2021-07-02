@@ -553,7 +553,7 @@ e.select(Hero)
 ```ts
 const fetchPerson = e.withParams(
   {
-    name: e.Array(e.Str),
+    name: e.$Array(e.Str),
   },
   (args) =>
     e

@@ -100,8 +100,8 @@ export type PrimitiveExpression<
 /// COLLECTION TYPES
 /////////////////////////
 export type ArrayType<
-  Name extends string = string,
-  Element extends BaseType = BaseType
+  Element extends BaseType = BaseType,
+  Name extends string = `array<${Element["__name__"]}>`
 > = {
   __name__: Name;
   __kind__: TypeKind.array;
@@ -109,24 +109,20 @@ export type ArrayType<
   __element__: Element;
 };
 
-export function ArrayType<Name extends string, Element extends BaseType>(
-  name: Name,
+export function ArrayType<Element extends BaseType>(
   element: Element
-): ArrayType<Name, Element> {
+): ArrayType<Element> {
   return {
     __kind__: TypeKind.array,
-    __name__: name,
+    __name__: `array<${element.__name__}>`,
     __element__: element,
   } as any;
 }
 
 export type MaterialTypeTuple = [MaterialType, ...MaterialType[]] | [];
 
-export type UnnamedTupleType<
-  Name extends string = string,
-  Items extends BaseTypeTuple = BaseTypeTuple
-> = {
-  __name__: Name;
+export type UnnamedTupleType<Items extends BaseTypeTuple = BaseTypeTuple> = {
+  __name__: string;
   __kind__: TypeKind.unnamedtuple;
   __tstype__: {
     [k in keyof Items]: Items[k] extends BaseType
@@ -135,10 +131,10 @@ export type UnnamedTupleType<
   };
   __items__: Items;
 };
-export function UnnamedTupleType<
-  Name extends string,
-  Items extends typeutil.tupleOf<BaseType>
->(name: Name, items: Items): UnnamedTupleType<Name, Items> {
+export function UnnamedTupleType<Items extends typeutil.tupleOf<BaseType>>(
+  items: Items
+): UnnamedTupleType<Items> {
+  const name = `tuple<${items.map((item) => item.__name__).join(", ")}>`;
   return {
     __kind__: TypeKind.unnamedtuple,
     __name__: name,
@@ -148,20 +144,21 @@ export function UnnamedTupleType<
 
 export type NamedTupleShape = {[k: string]: MaterialType};
 export type NamedTupleType<
-  Name extends string = string,
   Shape extends NamedTupleShape = NamedTupleShape
 > = {
-  __name__: Name;
+  __name__: string;
   __kind__: TypeKind.namedtuple;
   __tstype__: {
     [k in keyof Shape]: Shape[k]["__tstype__"];
   };
   __shape__: Shape;
 };
-export function NamedTupleType<
-  Name extends string,
-  Shape extends NamedTupleShape
->(name: Name, shape: Shape): NamedTupleType<Name, Shape> {
+export function NamedTupleType<Shape extends NamedTupleShape>(
+  shape: Shape
+): NamedTupleType<Shape> {
+  const name = `tuple<${Object.entries(shape)
+    .map(([key, val]) => `${key}: ${val.__name__}`)
+    .join(", ")}>`;
   return {
     __kind__: TypeKind.namedtuple,
     __name__: name,
