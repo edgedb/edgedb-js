@@ -1,89 +1,117 @@
 import * as process from "process";
 import * as child_process from "child_process";
+import * as path from "path";
+import * as os from "os";
+import * as fs from "fs";
+import * as readline from "readline";
+import {ConnectConfig} from "../src/con_utils";
+import {readFileUtf8Sync} from "../src/adapter.node";
 
 import connect from "../src/index.node";
+import {promisify} from "util";
 
 type PromiseCallback = () => void;
+
+const getServerInfo = async (
+  filename: string
+): Promise<{
+  port: number;
+  socket_dir: string;
+  tls_cert_file?: string;
+} | null> => {
+  if (!fs.existsSync(filename)) {
+    return null;
+  }
+
+  const input = fs.createReadStream(filename);
+  const rl = readline.createInterface({input});
+
+  let line;
+  for await (line of rl) {
+    if (line.startsWith("READY=")) {
+      break;
+    }
+  }
+
+  if (!line) {
+    throw new Error("no data found in " + filename);
+  }
+
+  return JSON.parse(line.replace("READY=", ""));
+};
+
+const getWSLPath = (path: string): string => {
+  return path.replace("C:", "/mnt/c").split("\\").join("/").toLowerCase();
+};
 
 export default async () => {
   // tslint:disable-next-line
   console.log("\nStarting EdgeDB test cluster...");
 
-  let ok: ((_: [string, number]) => void) | null = null;
   let err: ((_: string) => void) | null = null;
-  let stdoutData: string = "";
   let stderrData: string = "";
 
-  const done = new Promise<[string, number]>((resolve, reject) => {
-    ok = resolve;
+  const done = new Promise<null>((resolve, reject) => {
     err = reject;
   });
 
   let srvcmd = "edgedb-server";
-  if (process.env.EDGEDB_SLOT) {
-    srvcmd = `${srvcmd}-${process.env.EDGEDB_SLOT}`;
+  if (process.env.EDGEDB_SERVER_BIN) {
+    srvcmd = process.env.EDGEDB_SERVER_BIN;
   }
 
-  let useAdmin = true;
-  let args = [
+  const tmpid = Math.floor(Math.random() * 999999999);
+  const statusFile = path.join(os.tmpdir(), `edgedb-js-status-file-${tmpid}`);
+  console.log("status file:", statusFile);
+
+  const statusFileUnix = getWSLPath(statusFile);
+
+  let args = [srvcmd];
+  if (process.platform === "win32") {
+    args = ["wsl", "-u", "edgedb", ...args];
+  }
+
+  const helpCmd = [...args, "--help"];
+  const help = child_process.execSync(helpCmd.join(" "));
+
+  if (help.includes("--generate-self-signed-cert")) {
+    args.push("--generate-self-signed-cert");
+  }
+
+  if (help.includes("--auto-shutdown-after")) {
+    args.push("--auto-shutdown-after=0");
+  } else {
+    args.push("--auto-shutdown");
+  }
+
+  args = [
+    ...args,
     "--temp-dir",
     "--testmode",
-    "--echo-runtime-info",
     "--port=auto",
-    "--auto-shutdown",
+    "--emit-server-status=" + statusFileUnix,
+    "--bootstrap-command=ALTER ROLE edgedb { SET password := '' }",
   ];
 
-  if (process.platform === "win32") {
-    useAdmin = false;
-    args = [
-      "sudo",
-      "-u",
-      "edgedb",
-      srvcmd,
-      ...args,
-      "--bootstrap-command=ALTER ROLE edgedb { SET password := ''  }",
-    ];
-    srvcmd = "wsl";
+  const proc = child_process.spawn(args[0], args.slice(1, args.length));
+
+  if (process.env.EDGEDB_DEBUG_SERVER) {
+    proc.stdout.on("data", (data) => {
+      console.log(data.toString());
+    });
   }
 
-  const proc = child_process.spawn(srvcmd, args);
-
-  proc.stdout.on("data", (data) => {
-    stdoutData += data;
-    const m = stdoutData.match(/\nEDGEDB_SERVER_DATA:(\{[^\n]+\})\n/);
-    if (m) {
-      const runtimeData = JSON.parse(m[1]);
-
-      let host = runtimeData.runstate_dir;
-      if (process.platform == "win32") {
-        host = "127.0.0.1";
-      }
-
-      process.env._JEST_EDGEDB_PORT = runtimeData.port;
-
-      // Use runtimeData.runstate_dir instead of 127.0.0.1 to force
-      // testing on the UNIX socket. Deno, however, has problems with
-      // that, hence the TCP address.
-      process.env._JEST_EDGEDB_HOST = "127.0.0.1";
-      if (ok) {
-        err = null;
-        ok([host, parseInt(runtimeData.port, 10)]);
-      } else {
-        throw new Error("'done' promise isn't initialized");
-      }
-    }
-  });
   proc.stderr.on("data", (data) => {
     // only collect until we detect the start
     if (err) {
       stderrData += data;
     }
   });
+
   proc.on("exit", (code, signal) => {
     if (err) {
       // only catch early exit
       console.log("--- EdgeDB output start ---");
-      console.log(stdoutData);
       console.log(stderrData);
       console.log("--- EdgeDB output end ---");
       err(
@@ -92,17 +120,51 @@ export default async () => {
     }
   });
 
+  let runtimeData;
+  for (let i = 0; i < 250; i++) {
+    runtimeData = await getServerInfo(statusFile);
+
+    if (runtimeData == null) {
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+    } else {
+      break;
+    }
+  }
+
+  if (runtimeData == null) {
+    proc.kill();
+    throw new Error("could not open server status file " + statusFile);
+  } else {
+    err = null;
+  }
+
+  if (runtimeData.tls_cert_file && process.platform === "win32") {
+    const tmpFile = path.join(os.tmpdir(), `edbtlscert-${tmpid}.pem`);
+    const cmd = `wsl -u edgedb cp ${runtimeData.tls_cert_file} ${getWSLPath(
+      tmpFile
+    )}`;
+    child_process.execSync(cmd);
+    runtimeData.tls_cert_file = tmpFile;
+  }
+
+  const config: ConnectConfig = {
+    host: "127.0.0.1",
+    port: runtimeData.port,
+    user: "edgedb",
+    database: "edgedb",
+    tlsVerifyHostname: false,
+  };
+
+  if (typeof runtimeData.tls_cert_file === "string") {
+    config.tlsCAFile = runtimeData.tls_cert_file;
+  }
+
+  process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(config);
+
   // @ts-ignore
   global.edgedbProc = proc;
 
-  const [host, port] = await done;
-  const con = await connect(undefined, {
-    host,
-    port,
-    user: "edgedb",
-    database: "edgedb",
-    admin: useAdmin,
-  });
+  const con = await connect(undefined, config);
 
   try {
     await con.execute(`
@@ -131,7 +193,5 @@ export default async () => {
   global.edgedbConn = con;
 
   // tslint:disable-next-line
-  console.log(
-    `EdgeDB test cluster is up [port: ${process.env._JEST_EDGEDB_PORT}]...`
-  );
+  console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);
 };

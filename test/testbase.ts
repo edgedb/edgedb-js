@@ -26,9 +26,10 @@ export const isDeno =
   typeof Deno !== "undefined";
 
 function _getOpts(opts: ConnectConfig): ConnectConfig {
-  const port = process.env._JEST_EDGEDB_PORT;
-  const host = process.env._JEST_EDGEDB_HOST;
-  if (!port || !host) {
+  let config;
+  try {
+    config = JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG || "");
+  } catch {
     throw new Error("EdgeDB Jest test environment is not initialized");
   }
   if (!opts.user) {
@@ -38,7 +39,7 @@ function _getOpts(opts: ConnectConfig): ConnectConfig {
   if (!opts.database) {
     opts.database = "jest";
   }
-  return {host, port: parseInt(port, 10), ...opts};
+  return {...config, ...opts};
 }
 
 export function getConnectOptions(): ConnectConfig {

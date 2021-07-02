@@ -161,3 +161,35 @@ export namespace net {
     }
   }
 }
+
+// TODO: deno's TLS implementation doesn't currently support ALPN.
+export namespace tls {
+  export function connect(options: tls.ConnectionOptions): net.Socket {
+    if (options.host == null) {
+      throw new Error("host option must be set");
+    }
+
+    if (options.port == null) {
+      throw new Error("port option must be set");
+    }
+
+    return net.createConnection(options.host, options.port.toString());
+  }
+
+  export function checkServerIdentity(
+    hostname: string,
+    cert: Object
+  ): Error | undefined {
+    return undefined;
+  }
+
+  export interface ConnectionOptions {
+    host?: string;
+    port?: number;
+    ALPNProtocols?: string[];
+    ca?: string[];
+    checkServerIdentity?: (a: string, b: any) => Error | undefined;
+  }
+
+  export class TLSSocket extends net.Socket {}
+}
