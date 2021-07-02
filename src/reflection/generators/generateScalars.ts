@@ -1,5 +1,6 @@
 import {genutil} from "../util/genutil";
 import type {GeneratorParams} from "../generate";
+import {ScalarType} from "qb/generated/example/modules/schema";
 
 export const generateScalars = async (params: GeneratorParams) => {
   const {dir, types, casts, scalars} = params;
@@ -30,23 +31,23 @@ export interface $Anyenum<
       sc.nl();
       continue;
     }
+
     if (type.is_abstract) {
       const scalarType = scalars.get(type.id);
+
+      // for sequence
+      if (!scalarType.bases.length) {
+        break;
+      }
       if (scalarType.children.length) {
         const scopedNames = scalarType.children.map((desc) =>
           scopeName(desc.name)
         );
-        sc.writeln(`export type ${displayName} = ${scopedNames.join(" | ")};`);
-        sc.nl();
-      } else if (scalarType.bases.length) {
-        // for std::sequence
-        const bases = scalarType.bases.map((base) => scopeName(base.name));
         sc.writeln(
-          `export interface ${displayName} extends ${bases.join(", ")} {}`
+          `export type ${displayName} = ${scopedNames.join(" | ")};`
         );
         sc.nl();
       }
-
       continue;
     }
 

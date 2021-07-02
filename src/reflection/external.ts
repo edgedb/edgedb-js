@@ -16,6 +16,10 @@
  * limitations under the License.
  */
 
-export * as $types from "./typesystem";
-import * as syntax from "./syntax/syntax";
+export {
+  ArrayType as $Array,
+  UnnamedTupleType as $UnnamedTuple,
+  NamedTupleType as $NamedTuple,
+} from "./typesystem";
+// import * as syntax from "./syntax/syntax";
 export * from "./syntax/syntax";

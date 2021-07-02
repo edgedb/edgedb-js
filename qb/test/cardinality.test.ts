@@ -1,7 +1,7 @@
 import {Cardinality, typeutil} from "../../src/reflection";
 import {
   mergeCardinalities,
-  mergeCardinalitiesTuple,
+  mergeCardinalitiesVariadic,
   pointerCardinality,
 } from "../../src/reflection/util/cardinalityUtil";
 
@@ -55,7 +55,7 @@ test("mergeCardinality", () => {
   > = true;
 
   const _f5: typeutil.assertEqual<
-    mergeCardinalitiesTuple<
+    mergeCardinalitiesVariadic<
       [Cardinality.One, Cardinality.Empty, Cardinality.AtMostOne]
     >,
     Cardinality.AtLeastOne

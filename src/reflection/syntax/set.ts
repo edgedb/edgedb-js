@@ -1,23 +1,22 @@
 import {
   ArrayType,
   BaseTypeTuple,
-  Cardinality,
   Expression,
   makeSet,
   MaterialType,
   NamedTupleType,
   ObjectType,
   ObjectTypeExpression,
-  PrimitiveType,
   PrimitiveExpression,
   TypeSet,
   UnnamedTupleType,
   TypeKind,
+  PrimitiveType,
 } from "../typesystem";
 
 import {getSharedParentScalar} from "../../../qb/generated/example";
 import {pathify} from "./paths";
-import {mergeCardinalitiesTuple} from "../util/cardinalityUtil";
+import {mergeCardinalitiesVariadic} from "../util/cardinalityUtil";
 import {mergeObjectTypes} from "../hydrate";
 
 export type SetExpression<Set extends TypeSet = TypeSet> = Expression<Set> & {
@@ -31,16 +30,15 @@ type mergeTypeTuples<AItems, BItems> = {
 };
 
 // find shared parent of two primitives
-export type getSharedParentPrimitive<A, B> = A extends ArrayType<infer AEl>
+type getSharedParentPrimitive<A, B> = A extends ArrayType<infer AEl>
   ? B extends ArrayType<infer BEl>
-    ? ArrayType<"asd", getSharedParentScalar<AEl, BEl>>
+    ? ArrayType<getSharedParentScalar<AEl, BEl>>
     : never
   : A extends NamedTupleType<infer AShape>
   ? B extends NamedTupleType<infer BShape>
     ? NamedTupleType<
-        "asd",
         {
-          [k in keyof AShape & keyof BShape]: getSharedParentPrimitive<
+          [k in keyof AShape & keyof BShape]: getSharedParentScalar<
             AShape[k],
             BShape[k]
           >;
@@ -50,44 +48,69 @@ export type getSharedParentPrimitive<A, B> = A extends ArrayType<infer AEl>
   : A extends UnnamedTupleType<infer AItems>
   ? B extends UnnamedTupleType<infer BItems>
     ? mergeTypeTuples<AItems, BItems> extends BaseTypeTuple
-      ? UnnamedTupleType<"adsf", mergeTypeTuples<AItems, BItems>>
+      ? UnnamedTupleType<mergeTypeTuples<AItems, BItems>>
       : never
     : never
   : getSharedParentScalar<A, B>;
 
-type _getSharedParentPrimitiveTuple<
+// type getSharedParentPrimitive<A, B> = {
+//   array: ArrayType<getSharedParentScalar<A["__element__"], B>>;
+//   never: never;
+// }[A extends ArrayType<infer AEl>
+//   ? B extends ArrayType<infer BEl>
+//     ? "array"
+//     : "never"
+//   : "never"];
+// : A extends NamedTupleType<infer AShape>
+// ? B extends NamedTupleType<infer BShape>
+//   ? NamedTupleType<mergeTypeTuples<AShape, BShape>>
+//   : never
+// : A extends UnnamedTupleType<infer AItems>
+// ? B extends UnnamedTupleType<infer BItems>
+//   ? mergeTypeTuples<AItems, BItems> extends BaseTypeTuple
+//     ? UnnamedTupleType<mergeTypeTuples<AItems, BItems>>
+//     : never
+//   : never
+// : getSharedParentScalar<A, B>;
+
+type _getSharedParentPrimitiveVariadic<
   Types extends [any, ...any[]]
 > = Types extends [infer U]
   ? U
   : Types extends [infer A, infer B, ...infer Rest]
-  ? getSharedParentPrimitive<A, B> extends PrimitiveType
-    ? getSharedParentPrimitiveTuple<[getSharedParentPrimitive<A, B>, ...Rest]>
-    : never
+  ? // this object trick is required to prevent
+    // "instantiation is excessively deep"
+    {
+      istype: _getSharedParentPrimitiveVariadic<
+        [getSharedParentPrimitive<A, B>, ...Rest]
+      >;
+      nev: never;
+    }[getSharedParentPrimitive<A, B> extends PrimitiveType ? "istype" : "nev"]
   : never;
 
-export type getSharedParentPrimitiveTuple<
+export type getSharedParentPrimitiveVariadic<
   Types extends [any, ...any[]]
-> = _getSharedParentPrimitiveTuple<Types> extends MaterialType
-  ? _getSharedParentPrimitiveTuple<Types>
+> = _getSharedParentPrimitiveVariadic<Types> extends MaterialType
+  ? _getSharedParentPrimitiveVariadic<Types>
   : never;
 
-// type _getSharedParentScalarTuple<
+// type _getSharedParentScalarVariadic<
 //   Types extends [MaterialType, ...MaterialType[]]
-// > = Types extends [infer U]
+// > = Types extends [ U]
 //   ? U
 //   : Types extends [infer A, infer B, ...infer Rest]
 //   ? getSharedParentScalar<A, B> extends MaterialType
-//     ? mergeObjectTypesTuple<[getSharedParentScalar<A, B>, ...Rest]>
+//     ? mergeObjectTypesVariadic<[getSharedParentScalar<A, B>, ...Rest]>
 //     : never
 //   : never;
 
-// type getSharedParentScalarTuple<
+// type getSharedParentScalarVariadic<
 //   Types extends [any, ...any[]]
-// > = _getSharedParentScalarTuple<Types> extends ObjectType
-//   ? _getSharedParentScalarTuple<Types>
+// > = _getSharedParentScalarVariadic<Types> extends ObjectType
+//   ? _getSharedParentScalarVariadic<Types>
 //   : never;
 
-type _mergeObjectTypesTuple<
+type _mergeObjectTypesVariadic<
   Types extends [ObjectType, ...ObjectType[]]
 > = Types extends [infer U]
   ? U
@@ -95,16 +118,16 @@ type _mergeObjectTypesTuple<
   ? A extends ObjectType
     ? B extends ObjectType
       ? mergeObjectTypes<A, B> extends MaterialType
-        ? mergeObjectTypesTuple<[mergeObjectTypes<A, B>, ...Rest]>
+        ? mergeObjectTypesVariadic<[mergeObjectTypes<A, B>, ...Rest]>
         : never
       : never
     : never
   : never;
 
-export type mergeObjectTypesTuple<
+export type mergeObjectTypesVariadic<
   Types extends [any, ...any[]]
-> = _mergeObjectTypesTuple<Types> extends MaterialType
-  ? _mergeObjectTypesTuple<Types>
+> = _mergeObjectTypesVariadic<Types> extends MaterialType
+  ? _mergeObjectTypesVariadic<Types>
   : never;
 
 type getTypesFromExprs<Exprs extends [Expression, ...Expression[]]> = {
@@ -134,8 +157,8 @@ export function set<
   ...exprs: Exprs
 ): SetExpression<
   makeSet<
-    mergeObjectTypesTuple<getTypesFromObjectExprs<Exprs>>,
-    mergeCardinalitiesTuple<getCardsFromExprs<Exprs>>
+    mergeObjectTypesVariadic<getTypesFromObjectExprs<Exprs>>,
+    mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
   >
 >;
 export function set<
@@ -145,15 +168,15 @@ export function set<
   ...exprs: Exprs
 ): SetExpression<
   makeSet<
-    getSharedParentPrimitiveTuple<getTypesFromExprs<Exprs>>,
-    mergeCardinalitiesTuple<getCardsFromExprs<Exprs>>
+    getSharedParentPrimitiveVariadic<getTypesFromExprs<Exprs>>,
+    mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
   >
 >;
 export function set(..._exprs: any[]) {
   // if object set
-  // return set expression with appropriate exprs
-  // if scalar
-  // return shared parent of scalars
+  //   merged objects
+  // if primitive
+  //   return shared parent of scalars
   const exprs: Expression[] = _exprs;
   if (exprs.every((expr) => expr.__element__.__kind__ === TypeKind.object)) {
     // merge object types;
@@ -161,7 +184,7 @@ export function set(..._exprs: any[]) {
       __element__: exprs
         .map((expr) => expr.__element__ as any)
         .reduce(mergeObjectTypes),
-      __cardinality__: mergeCardinalitiesTuple(
+      __cardinality__: mergeCardinalitiesVariadic(
         exprs.map((expr) => expr.__cardinality__) as any
       ),
       toEdgeQL() {
@@ -172,19 +195,25 @@ export function set(..._exprs: any[]) {
       __exprs__: exprs,
     }) as any;
   }
-
-  return {
-    __element__: exprs
-      .map((expr) => expr.__element__ as any)
-      .reduce(getSharedParentScalar),
-    __cardinality__: mergeCardinalitiesTuple(
-      exprs.map((expr) => expr.__cardinality__) as any
-    ),
-    toEdgeQL() {
-      return `{ ${this.__exprs__
-        .map((expr) => expr.toEdgeQL())
-        .join(", ")} }`;
-    },
-    __exprs__: exprs,
-  } as SetExpression;
+  if (exprs.every((expr) => expr.__element__.__kind__ !== TypeKind.object)) {
+    return {
+      __element__: exprs
+        .map((expr) => expr.__element__ as any)
+        .reduce(getSharedParentScalar),
+      __cardinality__: mergeCardinalitiesVariadic(
+        exprs.map((expr) => expr.__cardinality__) as any
+      ),
+      toEdgeQL() {
+        return `{ ${this.__exprs__
+          .map((expr) => expr.toEdgeQL())
+          .join(", ")} }`;
+      },
+      __exprs__: exprs,
+    } as SetExpression;
+  }
+  throw new Error(
+    `Invalid arguments to set constructor: ${(_exprs as Expression[])
+      .map((expr) => expr.__element__.__name__)
+      .join(", ")}`
+  );
 }
