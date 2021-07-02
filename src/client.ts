@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {net, hrTime} from "./adapter.node";
+import {net, hrTime, tls} from "./adapter.node";
 
 import char, * as chars from "./chars";
 import {resolveErrorCode} from "./errors/resolve";
@@ -460,6 +460,7 @@ export class ConnectionImpl {
   private config: NormalizedConnectConfig;
   private paused: boolean;
   private connected: boolean = false;
+  private protocolVersion: number[] = [];
 
   private lastStatus: string | null;
 
@@ -753,7 +754,7 @@ export class ConnectionImpl {
     addr: Address,
     config: NormalizedConnectConfig
   ): Promise<ConnectionImpl> {
-    const sock = this.newSock(addr);
+    const sock = this.newSock(addr, config.tlsOptions);
     const conn = new this(sock, {...config, addrs: [addr]});
     const connPromise = conn.connect();
     let timeoutCb = null;
@@ -789,6 +790,17 @@ export class ConnectionImpl {
       } else {
         let err: errors.ClientConnectionError;
         switch (e.code) {
+          case "EPROTO":
+            if (config.tlsOptions == null) {
+              err = new errors.ClientConnectionFailedError(e.message);
+            } else {
+              // connecting over tls failed
+              // try to connect using clear text
+              return this.connectWithTimeout(addr, {
+                ...config,
+                tlsOptions: undefined,
+              });
+            }
           case "ECONNREFUSED":
           case "ECONNABORTED":
           case "ECONNRESET":
@@ -832,6 +844,7 @@ export class ConnectionImpl {
     handshake.endMessage();
 
     this.sock.write(handshake.unwrap());
+    this.protocolVersion = [PROTO_VER_MAJOR, PROTO_VER_MINOR];
 
     while (true) {
       if (!this.buffer.takeMessage()) {
@@ -856,6 +869,8 @@ export class ConnectionImpl {
                 `the protocol ${hi}.${lo}`
             );
           }
+
+          this.protocolVersion = [hi, lo];
           break;
         }
 
@@ -888,6 +903,15 @@ export class ConnectionImpl {
 
         case chars.$Z: {
           this._parseSyncMessage();
+
+          if (
+            !(this.sock instanceof tls.TLSSocket) &&
+            this.protocolVersion >= [0, 11]
+          ) {
+            const [hi, lo] = this.protocolVersion;
+            throw new Error(`the protocol version requires TLS: ${hi}.${lo}`);
+          }
+
           this.connected = true;
           return;
         }
@@ -1468,14 +1492,22 @@ export class ConnectionImpl {
   }
 
   /** @internal */
-  private static newSock(addr: string | [string, number]): net.Socket {
+  private static newSock(
+    addr: string | [string, number],
+    options?: tls.ConnectionOptions
+  ): net.Socket {
     if (typeof addr === "string") {
       // unix socket
       return net.createConnection(addr);
-    } else {
-      const [host, port] = addr;
+    }
+
+    const [host, port] = addr;
+    if (options == null) {
       return net.createConnection(port, host);
     }
+
+    const opts = {...options, host, port};
+    return tls.connect(opts);
   }
 }
 
