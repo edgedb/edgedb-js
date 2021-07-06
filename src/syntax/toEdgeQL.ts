@@ -1,19 +1,14 @@
-import {
-  Duration,
-  LocalDate,
-  LocalDateTime,
-  LocalTime,
-} from "../../datatypes/datetime";
-import {expr_PathLeaf, expr_PathNode} from "./paths";
-import {expr_Literal} from "./literals";
-import {expr_Set} from "./set";
-import {ExpressionKind, MaterialType, TypeKind} from "../typesystem";
+import {ExpressionKind, MaterialType, TypeKind} from "reflection";
+import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
+import {$expr_PathLeaf, $expr_PathNode} from "./path";
+import {$expr_Literal} from "./literal";
+import {$expr_Set} from "./set";
 
 export type SomeExpression =
-  | expr_PathNode
-  | expr_PathLeaf
-  | expr_Literal
-  | expr_Set;
+  | $expr_PathNode
+  | $expr_PathLeaf
+  | $expr_Literal
+  | $expr_Set;
 
 export function toEdgeQL(this: any) {
   const expr: SomeExpression = this;

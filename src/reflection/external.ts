@@ -21,5 +21,5 @@ export {
   UnnamedTupleType as $UnnamedTuple,
   NamedTupleType as $NamedTuple,
 } from "./typesystem";
-// import * as syntax from "./syntax/syntax";
-export * from "./syntax/syntax";
+
+export {};

@@ -12,9 +12,7 @@ test("literals", () => {
     `<std::bigint>9007199254740991n`
   );
   expect(e.std.bool(true).toEdgeQL()).toEqual(`<std::bool>true`);
-  expect(e.std.bytes("whatever").toEdgeQL()).toEqual(
-    `<std::bytes>'whatever'`
-  );
+  expect(e.std.bytes("whatever").toEdgeQL()).toEqual(`<std::bytes>'whatever'`);
   expect(
     e.std.datetime(new Date("2021-06-25T02:01:13.681Z")).toEdgeQL()
   ).toEqual(`<std::datetime>'2021-06-25T02:01:13.681Z'`);
@@ -24,9 +22,7 @@ test("literals", () => {
   expect(e.std.duration(duration).toEdgeQL()).toEqual(
     `<std::duration>'PT5H6M7.00800901S'`
   );
-  expect(e.std.float32(144.1235).toEdgeQL()).toEqual(
-    `<std::float32>144.1235`
-  );
+  expect(e.std.float32(144.1235).toEdgeQL()).toEqual(`<std::float32>144.1235`);
   expect(e.std.float64(1234.15).toEdgeQL()).toEqual(`<std::float64>1234.15`);
   expect(e.std.int16(1234.1234).toEdgeQL()).toEqual(`<std::int16>1234.1234`);
   expect(e.std.int32(124).toEdgeQL()).toEqual(`<std::int32>124`);
@@ -51,20 +47,20 @@ test("literals", () => {
 });
 
 test("collection type literals", () => {
-  const literalArray = e.Literal(e.$Array(e.$Str), ["adsf"]);
+  const literalArray = e.$expr_Literal(e.$Array(e.$Str), ["adsf"]);
   expect(literalArray.toEdgeQL()).toEqual(
     `<array<std::str>>[<std::str>'adsf']`
   );
-  const literalNamedTuple = e.Literal(e.$NamedTuple({str: e.$Str}), {
+  const literalNamedTuple = e.$expr_Literal(e.$NamedTuple({str: e.$Str}), {
     str: "asdf",
   });
   expect(literalNamedTuple.toEdgeQL()).toEqual(
     `<tuple<str: std::str>>( str := <std::str>'asdf' )`
   );
-  const literalUnnamedTuple = e.Literal(e.$UnnamedTuple([e.$Str, e.$Int64]), [
-    "asdf",
-    1234,
-  ]);
+  const literalUnnamedTuple = e.$expr_Literal(
+    e.$UnnamedTuple([e.$Str, e.$Int64]),
+    ["asdf", 1234]
+  );
   expect(literalUnnamedTuple.toEdgeQL()).toEqual(
     `<tuple<std::str, std::int64>>( <std::str>'asdf', <std::int64>1234 )`
   );
