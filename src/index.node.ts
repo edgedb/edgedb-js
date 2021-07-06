@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-console.log(`old`);
 import _connect from "./client";
 export const connect = _connect;
 export default connect;
