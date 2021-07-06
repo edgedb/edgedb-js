@@ -9,7 +9,12 @@ import {expr_Literal} from "./literals";
 import {expr_Set} from "./set";
 import {ExpressionKind, MaterialType, TypeKind} from "../typesystem";
 
-type SomeExpression = expr_PathNode | expr_PathLeaf | expr_Literal | expr_Set;
+export type SomeExpression =
+  | expr_PathNode
+  | expr_PathLeaf
+  | expr_Literal
+  | expr_Set;
+
 export function toEdgeQL(this: any) {
   const expr: SomeExpression = this;
   if (
