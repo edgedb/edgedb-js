@@ -7,8 +7,8 @@ import {
   ObjectTypeShape,
   shapeToTsType,
 } from "./typesystem";
-import {typeutil} from "./util/typeutil";
-import {util} from "./util/util";
+
+import {typeutil, util} from "./util/util";
 
 function applySpec(
   spec: introspect.Types,
@@ -83,8 +83,12 @@ export function makeType<T extends BaseType>(
       const shape: any = {};
       const seen = new Set<string>();
       applySpec(spec, type, shape, seen);
-      for (const anc of type.ancestors) {
+      const ancestors = [...type.bases];
+      for (const anc of ancestors) {
         const ancType = spec.get(anc.id);
+        if (ancType.kind === "object" || ancType.kind === "scalar") {
+          ancestors.push(...ancType.bases);
+        }
         if (ancType.kind !== "object") {
           throw new Error(`Not an object: ${id}`);
         }

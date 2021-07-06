@@ -1,5 +1,6 @@
-import {pathify} from "./syntax/paths";
-import {typeutil} from "./util/typeutil";
+// no runtime imports
+import type {$pathify} from "../syntax/path";
+import type {typeutil} from "./util/typeutil";
 
 //////////////////
 // BASE TYPES
@@ -73,7 +74,7 @@ export type BaseExpression<Set extends TypeSet = TypeSet> = {
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
   toEdgeQL(): string;
-} & pathify<Set>;
+} & $pathify<Set>;
 
 export enum ExpressionKind {
   Set = "Set",
@@ -152,9 +153,7 @@ export function UnnamedTupleType<Items extends typeutil.tupleOf<BaseType>>(
 }
 
 export type NamedTupleShape = {[k: string]: MaterialType};
-export type NamedTupleType<
-  Shape extends NamedTupleShape = NamedTupleShape
-> = {
+export type NamedTupleType<Shape extends NamedTupleShape = NamedTupleShape> = {
   __name__: string;
   __kind__: TypeKind.namedtuple;
   __tstype__: {

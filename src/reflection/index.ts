@@ -17,10 +17,9 @@
  */
 
 export * from "./util/util";
-export * from "./util/typeutil";
 export * from "./typesystem";
 export * from "./strictMap";
 export * as introspect from "./queries/getTypes";
 export * from "./hydrate";
-export * from "./syntax/paths";
-export * from "./syntax/literals";
+
+// export * from "./syntax/syntax";

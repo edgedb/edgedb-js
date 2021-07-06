@@ -14,6 +14,7 @@ export const generateScalars = async (params: GeneratorParams) => {
     const literalConstructor = _name.toLowerCase();
 
     const sc = dir.getPath(`modules/${mod}.ts`);
+
     const scopeName = genutil.getScopedDisplayName(mod, sc);
 
     if (type.name === "std::anyenum") {
@@ -35,11 +36,13 @@ export interface $Anyenum<
       const scalarType = scalars.get(type.id);
 
       if (scalarType.children.length) {
+        // is abstract
         const scopedNames = scalarType.children.map((desc) =>
           scopeName(desc.name)
         );
+        sc.writeln(`export type ${displayName} = ${scopedNames.join(" | ")};`);
         sc.writeln(
-          `export type ${displayName} = ${scopedNames.join(" | ")};`
+          `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`
         );
         sc.nl();
       } else if (scalarType.bases.length) {
@@ -87,6 +90,8 @@ export interface $Anyenum<
     }
 
     // generate non-enum non-abstract scalar
+    sc.addImport(`import * as syntax from "../syntax/syntax";`);
+
     const tsType = genutil.toTSScalarType(type, types, mod, sc);
     sc.writeln(
       `export type ${displayName} = $.ScalarType<"${type.name}", ${tsType}>;`
@@ -95,7 +100,7 @@ export interface $Anyenum<
       `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`
     );
     sc.writeln(
-      `export const ${literalConstructor} = (val:${tsType})=>$.Literal(${displayName}, val);`
+      `export const ${literalConstructor} = (val:${tsType})=>syntax.$expr_Literal(${displayName}, val);`
     );
     // sc.writeln(`export const ${displayName}: ${displayName} = {`);
     // sc.writeln(`  __name__: "${type.name}",`);
