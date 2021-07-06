@@ -16,7 +16,7 @@ import {
   cardinalityUtil,
   mergeObjectTypes,
 } from "reflection";
-import {getSharedParentScalar} from "@generated/index";
+import {getSharedParentScalar} from "@generated/castMaps";
 import {$pathify} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
 

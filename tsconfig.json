@@ -29,11 +29,8 @@
       "reflection": [
         "./src/reflection/index.ts"
       ],
-      "@syntax/*": [
-        "src/syntax/*"
-      ],
       "@generated/*": [
-        "./qb/generated/example"
+        "./qb/generated/example/*"
       ],
     }
   },
