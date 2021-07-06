@@ -24,8 +24,17 @@
     ],
     "paths": {
       "edgedb": [
-        "src/index.node.ts"
-      ]
+        "./src/index.node.ts"
+      ],
+      "reflection": [
+        "./src/reflection/index.ts"
+      ],
+      "@syntax/*": [
+        "src/syntax/*"
+      ],
+      "@generated/*": [
+        "./qb/generated/example"
+      ],
     }
   },
   "include": [

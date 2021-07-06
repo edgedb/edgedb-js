@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import {DirBuilder} from "./builders";
 import {connect} from "../index.node";
 
@@ -67,8 +69,7 @@ export async function generateQB(
     index.addImport(`export * from "./modules/$castMaps";`);
     index.addImport(`export * from "./modules/std";`);
     index.addImport(`export * from "./modules/default";`);
-
-    index.addImport(`export * from "edgedb/src/reflection/external";`);
+    index.addImport(`export * from "./syntax/syntax";`);
   } finally {
     await cxn.close();
   }
@@ -76,4 +77,21 @@ export async function generateQB(
   // tslint:disable-next-line
   console.log(`writing to disk.`);
   dir.write(to);
+
+  // write syntax files
+  const syntaxDir = path.join(__dirname, "..", "syntax");
+  const syntaxFiles = fs.readdirSync(syntaxDir);
+  for (const fileName of syntaxFiles) {
+    const filePath = path.join(syntaxDir, fileName);
+    let contents = fs.readFileSync(filePath, "utf8");
+    contents = contents.replace(
+      /from "reflection"/g,
+      `from "edgedb/src/reflection"`
+    );
+    contents = contents.replace(/from "@generated\//g, `from "../`);
+    const outputDir = path.join(to, "syntax");
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
+    const outputFile = path.join(outputDir, fileName);
+    fs.writeFileSync(outputFile, contents);
+  }
 }

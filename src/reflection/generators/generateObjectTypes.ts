@@ -93,6 +93,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
 
     const body = dir.getPath(`modules/${mod}.ts`);
     body.addImport(`import {reflection as $} from "edgedb";`);
+    body.addImport(`import * as syntax from "../syntax/syntax";`);
     body.addImport(`import {spec as __spec__} from "../__spec__";`);
 
     const scopeName = genutil.getScopedDisplayName(mod, body);
@@ -197,7 +198,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     body.writeln(`);`);
     body.nl();
     body.writeln(
-      `export const ${pathName} = $.expr_PathNode($.toSet(${ident}, $.Cardinality.Many), null);`
+      `export const ${pathName} = syntax.$expr_PathNode(syntax.$toSet(${ident}, $.Cardinality.Many), null);`
     );
     body.nl();
     body.nl();

@@ -28,7 +28,7 @@ export type TypeProperties<T extends TypeKind> = {
 export type ScalarType = TypeProperties<"scalar"> & {
   is_abstract: boolean;
   bases: ReadonlyArray<{id: UUID}>;
-  ancestors: ReadonlyArray<{id: UUID}>;
+  // ancestors: ReadonlyArray<{id: UUID}>;
   enum_values: ReadonlyArray<string>;
   material_id: UUID | null;
 };
@@ -36,7 +36,7 @@ export type ScalarType = TypeProperties<"scalar"> & {
 export type ObjectType = TypeProperties<"object"> & {
   is_abstract: boolean;
   bases: ReadonlyArray<{id: UUID}>;
-  ancestors: ReadonlyArray<{id: UUID}>;
+  // ancestors: ReadonlyArray<{id: UUID}>;
   union_of: ReadonlyArray<{id: UUID}>;
   intersection_of: ReadonlyArray<{id: UUID}>;
   pointers: ReadonlyArray<Pointer>;
@@ -100,9 +100,9 @@ export async function getTypes(
         id
       } ORDER BY @index ASC,
 
-      [IS InheritingObject].ancestors: {
-        id
-      } ORDER BY @index ASC,
+      # [IS InheritingObject].ancestors: {
+        # id
+      # } ORDER BY @index ASC,
 
       [IS ObjectType].union_of,
       [IS ObjectType].intersection_of,
