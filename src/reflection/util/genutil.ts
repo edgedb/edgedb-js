@@ -234,12 +234,14 @@ export namespace genutil {
 
   export const getScopedDisplayName = (
     activeModule: string,
-    sc: CodeBuilder
+    sc: CodeBuilder,
+    params?: {prefix?: string}
   ) => (fqn: string) => {
     const {mod: castMod} = splitName(fqn);
 
     if (activeModule !== castMod) {
-      sc.addImport(`import * as ${castMod}Types from "./${castMod}";`);
+      const prefix = params?.prefix || "./";
+      sc.addImport(`import * as ${castMod}Types from "${prefix}${castMod}";`);
       return `${castMod}Types.${displayName(fqn)}`;
     } else {
       return displayName(fqn);
