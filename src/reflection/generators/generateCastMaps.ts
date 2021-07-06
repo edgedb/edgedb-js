@@ -8,11 +8,12 @@ export const generateCastMaps = async (params: GeneratorParams) => {
   const {dir, types, typesByName, casts} = params;
   const {implicitCastMap} = casts;
 
-  const f = dir.getPath("modules/$castMaps.ts");
+  const f = dir.getPath("castMaps.ts");
   f.addImport(`import {reflection as $} from "edgedb";`);
   const getScopedDisplayName = genutil.getScopedDisplayName(
     `${Math.random()}`,
-    f
+    f,
+    {prefix: "./modules/"}
   );
 
   const reverseTopo = Array.from(types)

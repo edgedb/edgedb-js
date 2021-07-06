@@ -66,7 +66,7 @@ export async function generateQB(
       }
       index.addImport(`export * as ${mod} from "./modules/${mod}";`);
     }
-    index.addImport(`export * from "./modules/$castMaps";`);
+    index.addImport(`export * from "./castMaps";`);
     index.addImport(`export * from "./modules/std";`);
     index.addImport(`export * from "./modules/default";`);
     index.addImport(`export * from "./syntax/syntax";`);
