@@ -100,7 +100,7 @@ export interface $Anyenum<
       `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`
     );
     sc.writeln(
-      `export const ${literalConstructor} = (val:${tsType})=>syntax.$expr_Literal(${displayName}, val);`
+      `export const ${literalConstructor} = (val:${tsType})=>syntax.literal(${displayName}, val);`
     );
     // sc.writeln(`export const ${displayName}: ${displayName} = {`);
     // sc.writeln(`  __name__: "${type.name}",`);
