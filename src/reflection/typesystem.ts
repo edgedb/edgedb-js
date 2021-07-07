@@ -35,13 +35,6 @@ export interface ObjectType<
   __shape__: Shape;
 }
 
-export type MaterialType =
-  | ScalarType
-  | ObjectType
-  | UnnamedTupleType
-  | NamedTupleType
-  | ArrayType;
-
 ////////////////////
 // SETS AND EXPRESSIONS
 ////////////////////
@@ -261,7 +254,13 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
       }
     >;
 
-type asdfadf = typeutil.flatten<shapeToTsType<ObjectTypeShape>>;
+///////////////////////////////////
+// DISCRIMINATED UNION OF ALL MATERIAL TYPES
+///////////////////////////////////
 
-type asldkjf = string extends keyof {asdf: string} ? true : false;
-type asldkjkmf = string extends keyof {[k: string]: string} ? true : false;
+export type MaterialType =
+  | ScalarType
+  | ObjectType
+  | UnnamedTupleType
+  | NamedTupleType
+  | ArrayType;
