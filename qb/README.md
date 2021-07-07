@@ -1,14 +1,5 @@
 # Query builder
 
-## Todo
-
-- [ ] Add link properties to generateObjectTypes
-- [ ] Implement Set
-- [ ] Implement mixinPath function
-- [ ] Implement Literal and literal constructors (`e.str`, `e.duration`)
-- [ ] Implement `e.set` constructor
-- [ ]
-
 ## Project setup
 
 1. Set up
@@ -52,3 +43,24 @@ Inside `qb`:
 ```
 yarn test
 ```
+
+## File structure
+
+- `src/reflection`: Most introspection and type logic is implemented in `edgedb-js/src/reflection`
+  - `reflection/typesystem.ts`: Implements the foundational structure/logic of the entire typesystem. Very important.
+  - `reflection/queries`: Subdirectory containing introspection queries
+  - `reflection/generators`: Subdirectory containing code generation logic
+  - `reflection/util`: Various utils
+- `src/syntax`: All top-level syntactic structures are declared in this directory: literals, `set`, `cast`, `select`, etc. The contents of this directory are copied into the generated query builder.
+- `qb`: A directory added to make query builder development easier. It is an EdgeDB project containing a sample schema.
+  - `qb/run.ts`: The script that generates the query builder. Delegates to generate.ts.
+  - `qb/generate.ts`: The script that generates the query builder.
+  - `qb/tests`: Directory containing QB tests.
+  - `qb/generated/example`: The query builder is generated into this directory. This path is hard-coded in `run.ts`.
+  - `qb/generated/example/module/{MODULE_NAME}`: The contents of each module is generated into an appropriately named file.
+  - `qb/generated/example/syntax`: Modified versions of the files in `src/syntax/*` are generated into this File
+  - `qb/generated/example/__spec__.ts`: A "dehydrated" representation of all types in the database, including all metadata and inheritance info. These types are "hydrated" by the `makeType` function in `src/reflection/hydrate.ts`, which produces a statically typed
+
+## Generation
+
+A flat runtime representation of the typesystem is generated
