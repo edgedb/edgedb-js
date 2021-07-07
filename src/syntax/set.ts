@@ -15,7 +15,9 @@ import {
   ExpressionKind,
   cardinalityUtil,
   mergeObjectTypes,
+  Cardinality,
 } from "reflection";
+// "@generated/" path gets replaced during generation step
 import {getSharedParentScalar} from "@generated/castMaps";
 import {$pathify} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
@@ -152,6 +154,9 @@ type getCardsFromExprs<Exprs extends [BaseExpression, ...BaseExpression[]]> = {
     : never;
 };
 
+export function set<Type extends MaterialType>(
+  type: Type
+): $expr_Set<makeSet<Type, Cardinality.Empty>>;
 export function set<
   Expr extends ObjectTypeExpression,
   Exprs extends [Expr, ...Expr[]]
@@ -175,10 +180,25 @@ export function set<
   >
 >;
 export function set(..._exprs: any[]) {
+  // if arg
+  //   return empty set
   // if object set
   //   merged objects
   // if primitive
   //   return shared parent of scalars
+  if (
+    _exprs.length === 1 &&
+    Object.values(TypeKind).includes(_exprs[0].__kind__)
+  ) {
+    const element: MaterialType = _exprs[0] as any;
+    return $pathify({
+      __kind__: ExpressionKind.Set,
+      __element__: element,
+      __cardinality__: Cardinality.Empty,
+      toEdgeQL,
+      __exprs__: [],
+    }) as any;
+  }
   const exprs: BaseExpression[] = _exprs;
   if (exprs.every((expr) => expr.__element__.__kind__ === TypeKind.object)) {
     // merge object types;

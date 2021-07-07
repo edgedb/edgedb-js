@@ -26,3 +26,5 @@ export const $expr_Literal = <T extends MaterialType>(
     toEdgeQL,
   } as any;
 };
+
+export {$expr_Literal as literal};

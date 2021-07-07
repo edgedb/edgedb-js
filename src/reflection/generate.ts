@@ -84,6 +84,7 @@ export async function generateQB(
   for (const fileName of syntaxFiles) {
     const filePath = path.join(syntaxDir, fileName);
     let contents = fs.readFileSync(filePath, "utf8");
+    // rewrite scoped import paths
     contents = contents.replace(
       /from "reflection"/g,
       `from "edgedb/src/reflection"`

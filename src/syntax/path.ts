@@ -10,6 +10,7 @@ import {
   BaseExpression,
   ExpressionKind,
   util,
+  TypeKind,
 } from "reflection";
 
 import {toEdgeQL} from "./toEdgeQL";
@@ -52,7 +53,7 @@ export type $pathify<
   Parent extends PathParent | null = null
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
-    ? unknown
+    ? unknown // Root is literally ObjectTypeSet
     : {
         // & string required to avod typeError on linkName
         [k in keyof Root["__element__"]["__shape__"] &
@@ -70,13 +71,16 @@ export type $pathify<
             : never
           : never;
       }
-  : unknown;
+  : unknown; // pathify does nothing on non-object types
 
-export function $pathify<
-  Root extends ObjectTypeSet,
-  Parent extends PathParent
->(_root: Root): $pathify<Root, Parent> {
-  const root: $expr_PathNode<Root, Parent> = _root as any;
+export function $pathify<Root extends TypeSet, Parent extends PathParent>(
+  _root: Root
+): $pathify<Root, Parent> {
+  if (_root.__element__.__kind__ !== TypeKind.object) {
+    return _root as any;
+  }
+
+  const root: $expr_PathNode<ObjectTypeSet, Parent> = _root as any;
 
   for (const line of Object.entries(root.__element__.__shape__)) {
     const [key, ptr] = line;

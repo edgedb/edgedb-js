@@ -81,6 +81,7 @@ export enum ExpressionKind {
   PathNode = "PathNode",
   PathLeaf = "PathLeaf",
   Literal = "Literal",
+  Cast = "Cast",
 }
 
 export type ObjectTypeSet<
