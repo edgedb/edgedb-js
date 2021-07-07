@@ -2,6 +2,13 @@ import * as e from "../generated/example";
 import {reflection as $} from "edgedb";
 import {Cardinality, TypeKind, typeutil} from "../../src/reflection";
 
+test("empty sets", () => {
+  const stringSet = e.set(e.$Str);
+  expect(stringSet.toEdgeQL()).toEqual(`<std::str>{}`);
+  const heroSet = e.set(e.$Hero);
+  expect(heroSet.toEdgeQL()).toEqual(`<default::Hero>{}`);
+});
+
 test("object set contructor", () => {
   const hero = e.set(e.default.Hero);
   expect(hero.id.__element__.__name__).toEqual("std::uuid");

@@ -3,12 +3,14 @@ import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
 import {$expr_PathLeaf, $expr_PathNode} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
+import {$expr_Cast} from "./cast";
 
 export type SomeExpression =
   | $expr_PathNode
   | $expr_PathLeaf
   | $expr_Literal
-  | $expr_Set;
+  | $expr_Set
+  | $expr_Cast;
 
 export function toEdgeQL(this: any) {
   const expr: SomeExpression = this;
@@ -27,11 +29,12 @@ export function toEdgeQL(this: any) {
     return literalToEdgeQL(expr.__element__, expr.__value__);
   } else if (expr.__kind__ === ExpressionKind.Set) {
     const exprs = expr.__exprs__;
-    if (exprs.every((ex) => ex.__element__.__kind__ === TypeKind.object)) {
-      return `{ ${exprs.map((ex) => ex.toEdgeQL()).join(", ")} }`;
-    } else if (
+
+    if (
+      exprs.every((ex) => ex.__element__.__kind__ === TypeKind.object) ||
       exprs.every((ex) => ex.__element__.__kind__ !== TypeKind.object)
     ) {
+      if (exprs.length === 0) return `<${expr.__element__.__name__}>{}`;
       return `{ ${exprs.map((ex) => ex.toEdgeQL()).join(", ")} }`;
     } else {
       throw new Error(
@@ -40,6 +43,8 @@ export function toEdgeQL(this: any) {
           .join(", ")}`
       );
     }
+  } else if (expr.__kind__ === ExpressionKind.Cast) {
+    return `<${expr.__element__.__name__}>${expr.__expr__.toEdgeQL()}`;
   } else {
     throw new Error(`Unrecognized expression kind.`);
   }
