@@ -1,0 +1,24 @@
+{
+  "name": "query-builder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "generate": "ts-node run.ts",
+    "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
+    "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings"
+  },
+  "keywords": [],
+  "author": "Colin McDonnell",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^15.12.2"
+  },
+  "devDependencies": {
+    "jest": "^27.0.5",
+    "ts-jest": "^27.0.3",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.3.4"
+  }
+}

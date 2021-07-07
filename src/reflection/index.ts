@@ -1,7 +1,7 @@
 /*!
  * This source file is part of the EdgeDB open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2020-present MagicStack Inc. and the EdgeDB authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,10 @@
  * limitations under the License.
  */
 
-import _connect from "./client";
-export const connect = _connect;
-export default connect;
+export * from "./util/util";
+export * from "./typesystem";
+export * from "./strictMap";
+export * as introspect from "./queries/getTypes";
+export * from "./hydrate";
 
-export {RawConnection as _RawConnection} from "./client";
-
-export {createPool} from "./pool";
-
-export type {Connection, Pool} from "./ifaces";
-
-export {IsolationLevel, RetryCondition, RetryOptions} from "./options";
-export {defaultBackoff} from "./options";
-export type {BackoffFunction} from "./options";
-
-export * from "./index.shared";
-
-export * as reflection from "./reflection";
+// export * from "./syntax/syntax";

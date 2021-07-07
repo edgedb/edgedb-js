@@ -10,11 +10,29 @@
     "removeComments": true,
     "declarationDir": "./dist",
     "outDir": "./dist",
+    "stripInternal": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "downlevelIteration": true,
+    "baseUrl": ".",
     "typeRoots": [
       "./node_modules/@types"
     ],
-    "stripInternal": true,
-    "isolatedModules": true,
+    "paths": {
+      "edgedb": [
+        "./src/index.node.ts"
+      ],
+      "reflection": [
+        "./src/reflection/index.ts"
+      ],
+      "@generated/*": [
+        "./qb/generated/example/*"
+      ],
+    }
   },
   "include": [
     "src",
@@ -22,6 +40,7 @@
   ],
   "exclude": [
     "**/*.deno.ts",
-    "test/deno/*"
+    "test/deno/*",
+    "dist"
   ]
 }
