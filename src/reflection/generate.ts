@@ -13,7 +13,7 @@ import {generateScalars} from "./generators/generateScalars";
 import {generateObjectTypes} from "./generators/generateObjectTypes";
 import {generateRuntimeSpec} from "./generators/generateRuntimeSpec";
 
-const DEBUG = true;
+const DEBUG = false;
 
 export type GeneratorParams = {
   dir: DirBuilder;

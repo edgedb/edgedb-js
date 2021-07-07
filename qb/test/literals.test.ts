@@ -41,9 +41,10 @@ test("literals", () => {
   expect(e.cal.local_time(localtime).toEdgeQL()).toEqual(
     `<cal::local_time>'15:15:00'`
   );
-  expect(e.cal.relative_duration("1 year").toEdgeQL()).toEqual(
-    `<cal::relative_duration>'1 year'`
-  );
+  // not available in beta2
+  // expect(e.cal.relative_duration("1 year").toEdgeQL()).toEqual(
+  //   `<cal::relative_duration>'1 year'`
+  // );
 });
 
 test("collection type literals", () => {
