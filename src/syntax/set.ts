@@ -17,7 +17,9 @@ import {
   mergeObjectTypes,
   Cardinality,
 } from "reflection";
+
 // "@generated/" path gets replaced during generation step
+// @ts-ignore
 import {getSharedParentScalar} from "@generated/castMaps";
 import {$pathify} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
