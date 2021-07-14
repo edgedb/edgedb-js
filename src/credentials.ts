@@ -6,6 +6,8 @@ export interface Credentials {
   user: string;
   password?: string;
   database?: string;
+  tlsCertData?: string;
+  tlsVerifyHostname?: boolean;
 }
 
 export function readCredentialsFile(file: string): Credentials {
@@ -58,6 +60,22 @@ export function validateCredentials(data: any): Credentials {
       throw Error("`password` must be string");
     }
     result.password = password;
+  }
+
+  const certData = data.tls_cert_data;
+  if (certData != null) {
+    if (typeof certData !== "string") {
+      throw Error("`tls_cert_data` must be string");
+    }
+    result.tlsCertData = certData;
+  }
+
+  const verifyHostname = data.tls_verifyhostname;
+  if (verifyHostname != null) {
+    if (typeof verifyHostname !== "boolean") {
+      throw Error("`tls_verifyhostname` must be boolean");
+    }
+    result.tlsVerifyHostname = verifyHostname;
   }
 
   return result;
