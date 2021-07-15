@@ -12,6 +12,7 @@ import {generateCastMaps} from "./generators/generateCastMaps";
 import {generateScalars} from "./generators/generateScalars";
 import {generateObjectTypes} from "./generators/generateObjectTypes";
 import {generateRuntimeSpec} from "./generators/generateRuntimeSpec";
+import {queryTest} from "./queries/queryTest";
 
 const DEBUG = false;
 
@@ -31,11 +32,13 @@ export async function generateQB(
   const dir = new DirBuilder();
 
   try {
+    await queryTest(cxn);
     const types = await introspect.getTypes(cxn, {debug: DEBUG});
     const scalars = await getScalars(cxn);
     const casts = await getCasts(cxn, {
       debug: DEBUG,
     });
+
     const modsIndex = new Set<string>();
 
     const typesByName: Record<string, introspect.Type> = {};

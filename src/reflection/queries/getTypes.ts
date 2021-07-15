@@ -100,10 +100,6 @@ export async function getTypes(
         id
       } ORDER BY @index ASC,
 
-      # [IS InheritingObject].ancestors: {
-        # id
-      # } ORDER BY @index ASC,
-
       [IS ObjectType].union_of,
       [IS ObjectType].intersection_of,
       [IS ObjectType].pointers: {
@@ -140,7 +136,9 @@ export async function getTypes(
 
   const types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
   // tslint:disable-next-line
-  if (params?.debug) console.log(JSON.stringify(types, null, 2));
+  // if (params?.debug)
+  // console.log(`TYPES`);
+  // console.log(JSON.stringify(types, null, 2));
 
   // Now sort `types` topologically:
   return topoSort(types);

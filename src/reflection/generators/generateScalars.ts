@@ -99,9 +99,16 @@ export interface $Anyenum<
     sc.writeln(
       `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`
     );
-    sc.writeln(
-      `export const ${literalConstructor} = (val:${tsType})=>syntax.literal(${displayName}, val);`
-    );
+    // make string literals literal
+    if (type.name === "std::str") {
+      sc.writeln(
+        `export const str = <T extends string>(val: T) => syntax.literal<$.ScalarType<"std::str", T>>($Str as any, val);`
+      );
+    } else {
+      sc.writeln(
+        `export const ${literalConstructor} = (val:${tsType})=>syntax.literal(${displayName}, val);`
+      );
+    }
     // sc.writeln(`export const ${displayName}: ${displayName} = {`);
     // sc.writeln(`  __name__: "${type.name}",`);
     // sc.writeln(`} as any;`);

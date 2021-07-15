@@ -387,6 +387,9 @@ e.select(
   {
     id: true,
     name: true,
+    IS_Hero: {
+      secret_identity:true
+    }
   },
   Person.$is(Hero, {
     secret_identity: true,

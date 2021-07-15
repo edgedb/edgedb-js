@@ -1,12 +1,34 @@
 // tslint:disable:no-console
+import {select, selectParams, simpleShape} from "@syntax/select";
 import * as e from "./generated/example";
 
-const asdf = e.set(e.int16(15), e.int16(15));
-const cast1 = e.cast(e.$Int32, asdf);
-console.log(cast1);
+import {reflection as $} from "edgedb";
 
-const cast2 = e.cast(e.$Float32, e.float64(3.14));
-console.log(cast2);
+e.str("asdf");
+e.bigint(BigInt(1234));
 
-const castObject = e.cast(e.$Float32, e.float64(3.14));
-console.log(cast2);
+e.$Array(e.$Str);
+e.$NamedTuple({asdf: e.$Str});
+const asdf = e.$UnnamedTuple([e.$Str]);
+e.literal(asdf, ["asdf"]);
+
+e.cast(e.$Str, e.int64(1234));
+e.set(e.Hero, e.Villain);
+
+select(e.Hero, {
+  villains: {nemesis: {villains: {nemesis: true}}},
+});
+
+const qwer = select(
+  e.Person,
+  {
+    id: true,
+    __type__: {
+      id: true,
+      name: true,
+    },
+    name: 1 > 0,
+  },
+  e.shape(e.Hero, {secret_identity: true, kind: e.str("hero")}),
+  e.shape(e.Villain, {kind: e.str("villain"), nemesis: {id: true}, name: true})
+);
