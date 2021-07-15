@@ -26,10 +26,18 @@ if (process.platform === "darwin") {
   };
 }
 
-export function getConfigDir(): string {
-  let configDir = _configDir();
-  if (!fs.existsSync(configDir)) {
-    configDir = path.join(homeDir(), ".edgedb");
+export function searchConfigDir(...configPath: string[]): string {
+  const filePath = path.join(_configDir(), ...configPath);
+
+  if (fs.existsSync(filePath)) {
+    return filePath;
   }
-  return configDir;
+
+  const fallbackPath = path.join(homeDir(), ".edgedb", ...configPath);
+  if (fs.existsSync(fallbackPath)) {
+    return fallbackPath;
+  }
+
+  // None of the searched files exists, return the new path.
+  return filePath;
 }

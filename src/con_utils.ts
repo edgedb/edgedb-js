@@ -99,12 +99,12 @@ function stashPath(projectDir: string): string {
   if (platform.isWindows && !projectPath.startsWith("\\\\")) {
     projectPath = "\\\\?\\" + projectPath;
   }
-  const hasher = crypto.createHash("sha1");
-  hasher.update(projectPath);
-  const hash = hasher.digest("hex");
+
+  const hash = crypto.createHash("sha1").update(projectPath).digest("hex");
   const baseName = path.basename(projectPath);
   const dirName = baseName + "-" + hash;
-  return path.join(platform.getConfigDir(), "projects", dirName);
+
+  return platform.searchConfigDir("projects", dirName);
 }
 
 function parseConnectDsnAndArgs({

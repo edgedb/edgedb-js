@@ -10,11 +10,7 @@ export interface Credentials {
 }
 
 export function getCredentialsPath(instanceName: string): string {
-  return path.join(
-    platform.getConfigDir(),
-    "credentials",
-    instanceName + ".json"
-  );
+  return platform.searchConfigDir("credentials", instanceName + ".json");
 }
 
 export function readCredentialsFile(file: string): Credentials {
