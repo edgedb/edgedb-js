@@ -4,7 +4,7 @@ import {$expr_PathLeaf, $expr_PathNode} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
-import {$expr_Select} from "./select";
+import {$expr_Select, Poly} from "./select";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -14,6 +14,59 @@ export type SomeExpression =
   | $expr_Cast
   | $expr_Select;
 
+function shapeToEdgeQL(
+  _shape: object,
+  polys: Poly[] = [],
+  params: {depth: number} = {depth: 1}
+) {
+  const depth = params.depth ?? 1;
+  const outerSpacing = Array(depth).join("  ");
+  const innerSpacing = Array(depth + 1).join("  ");
+  const lines: string[] = [];
+  const addLine = (line: string) => lines.push(`${innerSpacing}${line},`);
+
+  const shapes = [{is: null, params: _shape}, ...polys];
+  const seen = new Set();
+  for (const shapeObj of shapes) {
+    const shape = shapeObj.params;
+    const polyType = shapeObj.is?.__element__.__name__;
+    const polyIntersection = polyType ? `[IS ${polyType}].` : "";
+    for (const key in shape) {
+      if (!shape.hasOwnProperty(key)) continue;
+      if (seen.has(key)) {
+        console.warn(`Duplicate key: ${key}`);
+        continue;
+      }
+      seen.add(key);
+      const val = (shape as any)[key];
+      if (val === true) {
+        addLine(`${polyIntersection}${key}`);
+      } else if (typeof val === "boolean") {
+      } else if (val.hasOwnProperty("__kind__")) {
+        if (polyIntersection) {
+          console.warn(
+            `Invalid: no computable fields inside polymorphic shapes.`
+          );
+          continue;
+        }
+        addLine(`${key} := (${val.toEdgeQL()})`);
+      } else if (typeof val === "object") {
+        const nestedPolys = polys
+          .map((poly) => (poly as any)[key])
+          .filter((x) => !!x);
+        addLine(
+          `${polyIntersection}${key}: ${shapeToEdgeQL(val, nestedPolys, {
+            depth: depth + 1,
+          })}`
+        );
+      } else {
+        throw new Error("Invalid shape.");
+      }
+    }
+  }
+
+  return `{\n${lines.join("\n")}\n${outerSpacing}}`;
+}
 export function toEdgeQL(this: any) {
   const expr: SomeExpression = this;
   if (
@@ -48,7 +101,10 @@ export function toEdgeQL(this: any) {
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${expr.__expr__.toEdgeQL()}`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
-    return `SELECT ${expr.__expr__.toEdgeQL()}`;
+    const lines = [];
+    lines.push(`SELECT ${expr.__expr__.toEdgeQL()}`);
+    lines.push(shapeToEdgeQL(expr.__params__, expr.__polys__ || []));
+    return lines.join("\n");
   } else {
     throw new Error(`Unrecognized expression kind.`);
   }
