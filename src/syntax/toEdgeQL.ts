@@ -4,13 +4,15 @@ import {$expr_PathLeaf, $expr_PathNode} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
+import {$expr_Select} from "./select";
 
 export type SomeExpression =
   | $expr_PathNode
   | $expr_PathLeaf
   | $expr_Literal
   | $expr_Set
-  | $expr_Cast;
+  | $expr_Cast
+  | $expr_Select;
 
 export function toEdgeQL(this: any) {
   const expr: SomeExpression = this;
@@ -45,6 +47,8 @@ export function toEdgeQL(this: any) {
     }
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${expr.__expr__.toEdgeQL()}`;
+  } else if (expr.__kind__ === ExpressionKind.Select) {
+    return `SELECT ${expr.__expr__.toEdgeQL()}`;
   } else {
     throw new Error(`Unrecognized expression kind.`);
   }

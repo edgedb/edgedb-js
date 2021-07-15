@@ -75,6 +75,7 @@ export enum ExpressionKind {
   PathLeaf = "PathLeaf",
   Literal = "Literal",
   Cast = "Cast",
+  Select = "Select",
 }
 
 export type ObjectTypeSet<
@@ -242,15 +243,19 @@ export type linkToTsType<
   ? setToTsType<makeSet<Type, Card>>
   : never;
 
+export type shapeElementToTsType<
+  El extends PropertyDesc | LinkDesc
+> = El extends PropertyDesc
+  ? propToTsType<El>
+  : El extends LinkDesc<any, any, any>
+  ? linkToTsType<El>
+  : never;
+
 export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
   ? any
   : typeutil.flatten<
       {
-        [k in keyof T]: T[k] extends PropertyDesc
-          ? propToTsType<T[k]>
-          : T[k] extends LinkDesc<any, any, any>
-          ? linkToTsType<T[k]>
-          : never;
+        [k in keyof T]: shapeElementToTsType<T[k]>;
       }
     >;
 

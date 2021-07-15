@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url);
 
 const ts = require("typescript");
 
-const normalisePath = (path: string) => path.replace(/\\/g, '/');
+const normalisePath = (path: string) => path.replace(/\\/g, "/");
 
 run({
   sourceDir: "./src",
