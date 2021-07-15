@@ -1,5 +1,5 @@
 // tslint:disable:no-console
-import {select, selectParams, simpleShape} from "@syntax/select";
+// import {select, selectParams, simpleShape} from "@syntax/select";
 import * as e from "./generated/example";
 
 import {reflection as $} from "edgedb";
@@ -15,11 +15,11 @@ e.literal(asdf, ["asdf"]);
 e.cast(e.$Str, e.int64(1234));
 e.set(e.Hero, e.Villain);
 
-select(e.Hero, {
+e.select(e.Hero, {
   villains: {nemesis: {villains: {nemesis: true}}},
 });
 
-const qwer = select(
+const qwer = e.select(
   e.Person,
   {
     id: true,
@@ -30,5 +30,10 @@ const qwer = select(
     name: 1 > 0,
   },
   e.shape(e.Hero, {secret_identity: true, kind: e.str("hero")}),
-  e.shape(e.Villain, {kind: e.str("villain"), nemesis: {id: true}, name: true})
+  e.shape(e.Villain, {
+    kind: e.str("villain"),
+    nemesis: {id: true},
+    name: true,
+  })
 );
+console.log(qwer.toEdgeQL());
