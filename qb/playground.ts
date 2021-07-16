@@ -19,7 +19,9 @@ e.select(e.Hero, {
   villains: {nemesis: {villains: {nemesis: true}}},
 });
 
-const qwer = e.select(
+// e.$Hero.__shape__.__type__.name;
+
+const query = e.select(
   e.Person,
   {
     id: true,
@@ -28,12 +30,13 @@ const qwer = e.select(
       name: true,
     },
     name: 1 > 0,
+    computed: e.str("person"),
   },
-  e.shape(e.Hero, {secret_identity: true, kind: e.str("hero")}),
+  e.shape(e.Hero, {secret_identity: true, __type__: {name: true}}),
   e.shape(e.Villain, {
-    kind: e.str("villain"),
     nemesis: {id: true},
     name: true,
   })
-);
-console.log(qwer.toEdgeQL());
+).__tstype__;
+
+const q2 = e.select(e.Villain).__tstype__;
