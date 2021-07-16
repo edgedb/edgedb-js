@@ -34,16 +34,17 @@ function shapeToEdgeQL(
     for (const key in shape) {
       if (!shape.hasOwnProperty(key)) continue;
       if (seen.has(key)) {
-        console.warn(`Duplicate key: ${key}`);
+        // tslint:disable-next-line
+        console.warn(`Invalid: duplicate key "${key}"`);
         continue;
       }
       seen.add(key);
       const val = (shape as any)[key];
       if (val === true) {
         addLine(`${polyIntersection}${key}`);
-      } else if (typeof val === "boolean") {
       } else if (val.hasOwnProperty("__kind__")) {
         if (polyIntersection) {
+          // tslint:disable-next-line
           console.warn(
             `Invalid: no computable fields inside polymorphic shapes.`
           );

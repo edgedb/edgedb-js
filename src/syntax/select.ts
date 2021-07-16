@@ -42,7 +42,7 @@ export type BaseSelect<Expr extends BaseExpression = BaseExpression> = Expr & {
 export type selectParams<
   T extends BaseExpression
 > = T["__element__"] extends ObjectType
-  ? shapeToSelectParams<T["__element__"]["__shape__"]>
+  ? shapeToSelectParams<T["__element__"]["__shape__"]> | undefined
   : {};
 
 export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
@@ -102,16 +102,24 @@ type computeSelectShape<
   Expr extends BaseExpression = BaseExpression,
   Params extends selectParams<Expr> = selectParams<Expr>,
   Polys extends Poly[] = Poly[]
-> = Expr extends infer U
+> = [undefined] extends [Params]
+  ? {id: true} extends infer Default
+    ? Default extends selectParams<Expr>
+      ? computeSelectShape<Expr, Default, Polys>
+      : never
+    : never
+  : Expr extends infer U
   ? U extends ObjectTypeExpression
     ? simpleShape<U, Params> extends infer BaseShape
-      ? Polys[number] extends infer P
+      ? Polys extends []
+        ? BaseShape
+        : Polys[number] extends infer P
         ? P extends Poly
           ? typeutil.flatten<BaseShape & simpleShape<P["is"], P["params"]>>
           : unknown
         : unknown
       : never
-    : never
+    : setToTsType<Expr>
   : never;
 
 // if object: compute type from shape
@@ -171,13 +179,13 @@ export function shape<
 }
 
 export function select<
-  Expr extends ObjectTypeExpression,
+  Expr extends BaseExpression,
   Params extends selectParams<Expr>,
   PolyExpr extends ObjectTypeExpression,
   Polys extends Poly<PolyExpr>[]
 >(
   expr: Expr,
-  params: Params,
+  params?: Params,
   ...polys: Polys
 ): $expr_Select<Expr, Params, Polys>;
 export function select(expr: any, params: any, ...polys: any[]) {
