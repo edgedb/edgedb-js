@@ -1,10 +1,10 @@
-import {ExpressionKind, MaterialType, TypeKind} from "reflection";
+import {ExpressionKind, MaterialType, Poly, TypeKind} from "reflection";
 import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
 import {$expr_PathLeaf, $expr_PathNode} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
-import {$expr_Select, Poly} from "./select";
+import {$expr_Select} from "./select";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -104,7 +104,12 @@ export function toEdgeQL(this: any) {
   } else if (expr.__kind__ === ExpressionKind.Select) {
     const lines = [];
     lines.push(`SELECT ${expr.__expr__.toEdgeQL()}`);
-    lines.push(shapeToEdgeQL(expr.__params__, expr.__polys__ || []));
+    lines.push(
+      shapeToEdgeQL(
+        expr.__element__.__params__,
+        expr.__element__.__polys__ || []
+      )
+    );
     return lines.join("\n");
   } else {
     throw new Error(`Unrecognized expression kind.`);
