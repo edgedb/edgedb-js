@@ -35,7 +35,6 @@ export async function generateQB(
     // await queryTest(cxn);
     const types = await introspect.getTypes(cxn, {debug: DEBUG});
     const scalars = await getScalars(cxn);
-    console.log(JSON.stringify(scalars, null, 2));
     const casts = await getCasts(cxn, {
       debug: DEBUG,
     });
