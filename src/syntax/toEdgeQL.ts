@@ -4,7 +4,7 @@ import {$expr_PathLeaf, $expr_PathNode} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
-import {$expr_Select} from "./select";
+import {$expr_SimpleSelect, $expr_ShapeSelect} from "./select";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -12,7 +12,8 @@ export type SomeExpression =
   | $expr_Literal
   | $expr_Set
   | $expr_Cast
-  | $expr_Select;
+  | $expr_SimpleSelect
+  | $expr_ShapeSelect;
 
 function shapeToEdgeQL(
   _shape: object,
@@ -101,7 +102,9 @@ export function toEdgeQL(this: any) {
     }
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${expr.__expr__.toEdgeQL()}`;
-  } else if (expr.__kind__ === ExpressionKind.Select) {
+  } else if (expr.__kind__ === ExpressionKind.SimpleSelect) {
+    return `SELECT ${expr.__expr__.toEdgeQL()}`;
+  } else if (expr.__kind__ === ExpressionKind.ShapeSelect) {
     const lines = [];
     lines.push(`SELECT ${expr.__expr__.toEdgeQL()}`);
     lines.push(

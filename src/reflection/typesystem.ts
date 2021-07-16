@@ -83,7 +83,9 @@ export enum ExpressionKind {
   PathLeaf = "PathLeaf",
   Literal = "Literal",
   Cast = "Cast",
-  Select = "Select",
+  // Select = "Select",
+  ShapeSelect = "ShapeSelect",
+  SimpleSelect = "SimpleSelect",
 }
 
 export type ObjectTypeSet<
@@ -271,6 +273,7 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
 // SHAPE VARIANTS
 ///////////////////////////////////
 export type BaseShapeType = {
+  __root__: ObjectType;
   __expr__: BaseExpression;
   __kind__: TypeKind.shape;
   __name__: string;
@@ -279,11 +282,28 @@ export type BaseShapeType = {
   __polys__: unknown[];
 };
 
+export type BaseShapeTypeSet<
+  T extends BaseShapeType = BaseShapeType,
+  Card extends Cardinality = Cardinality
+> = TypeSet<T, Card>;
+
+export type BaseShapeExpression<
+  Set extends BaseShapeTypeSet = BaseShapeTypeSet
+> = BaseExpression<Set>;
+
+type unwrapType<T extends ObjectType | BaseShapeType> = T extends BaseShapeType
+  ? unwrapType<T["__root__"]>
+  : T;
+
 export interface ShapeType<
-  Expr extends BaseExpression = BaseExpression,
-  Params extends selectParams<Expr> = selectParams<Expr>,
-  Polys extends Poly[] = Poly[]
+  Expr extends ObjectTypeExpression | BaseShapeExpression =
+    | ObjectTypeExpression
+    | BaseShapeExpression,
+  Params extends any = any,
+  Polys extends Poly[] = Poly[],
+  Root extends ObjectType = ObjectType
 > {
+  __root__: unwrapType<Expr["__element__"]>;
   __expr__: Expr;
   __kind__: TypeKind.shape;
   __name__: `shape`;
@@ -298,7 +318,7 @@ export type selectParams<
 > = T["__element__"] extends ObjectType
   ? shapeToSelectParams<T["__element__"]["__shape__"]>
   : T["__element__"] extends BaseShapeType
-  ? selectParams<T["__element__"]["__expr__"]>
+  ? shapeToSelectParams<T["__element__"]["__root__"]["__shape__"]>
   : {};
 
 export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
@@ -324,7 +344,7 @@ export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
 
 export type computeSelectShape<
   Expr extends BaseExpression = BaseExpression,
-  Params extends selectParams<Expr> = selectParams<Expr>,
+  Params extends any = any,
   Polys extends Poly[] = Poly[]
 > =
   // if expr is shapeexpression, go deeper
