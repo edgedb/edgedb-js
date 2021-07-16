@@ -20,6 +20,7 @@ e.select(e.Hero, {
 });
 
 // e.$Hero.__shape__.__type__.name;
+// e.default.Hero;
 
 const query = e.select(
   e.Person,
@@ -39,4 +40,8 @@ const query = e.select(
   })
 ).__tstype__;
 
-const q2 = e.select(e.Villain).__tstype__;
+const q2 = e.select(e.Villain.nemesis, {
+  number_of_movies: true,
+  secret_identity: true,
+});
+console.log(q2.toEdgeQL());
