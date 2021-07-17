@@ -319,7 +319,7 @@ export type selectParams<
   ? shapeToSelectParams<T["__element__"]["__shape__"]>
   : T["__element__"] extends BaseShapeType
   ? shapeToSelectParams<T["__element__"]["__root__"]["__shape__"]>
-  : {};
+  : unknown;
 
 export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
   {
