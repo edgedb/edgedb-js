@@ -313,13 +313,23 @@ export interface ShapeType<
   // __name__: Name;
 }
 
-export type selectParams<
-  T extends BaseExpression
-> = T["__element__"] extends ObjectType
-  ? shapeToSelectParams<T["__element__"]["__shape__"]>
-  : T["__element__"] extends BaseShapeType
+export type exprToSelectParams<
+  T extends ObjectTypeExpression | BaseShapeExpression
+> = T extends ObjectTypeExpression
+  ? selectParams<T["__element__"]>
+  : T extends BaseShapeExpression
+  ? selectParams<T["__element__"]["__root__"]>
+  : never;
+
+export type selectParams<T extends ObjectType> = shapeToSelectParams<
+  T["__shape__"]
+>;
+
+export type shapeExprToParams<
+  T extends BaseShapeExpression
+> = T["__element__"]["__root__"] extends ObjectType
   ? shapeToSelectParams<T["__element__"]["__root__"]["__shape__"]>
-  : unknown;
+  : never;
 
 export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
   {
@@ -411,11 +421,11 @@ export type shapeElementToTsTypeSimple<
 
 export type Poly<Expr extends ObjectTypeExpression = ObjectTypeExpression> = {
   is: Expr;
-  params: selectParams<Expr>;
+  params: selectParams<Expr["__element__"]>;
 };
 export function shape<
   Expr extends ObjectTypeExpression,
-  Params extends selectParams<Expr>
+  Params extends selectParams<Expr["__element__"]>
 >(expr: Expr, params: Params) {
   return {is: expr, params};
 }
