@@ -51,14 +51,12 @@ const q2 = e.select(e.Villain.nemesis, {
   number_of_movies: true,
   secret_identity: true,
   id: true,
+  name: true,
 });
 
 type params = selectParams<typeof q2>;
-const asfdf = e.select(q2, {
-  name: true,
-  id: true,
-  number_of_movies: true,
-}).__element__.__tstype__;
+type lkjlk = typeof q2["__element__"]["__root__"]["__shape__"];
+const asfdf = e.select(q2, {}).__element__.__tstype__;
 
 const qwers = e.select(e.Movie, {
   title: true,
