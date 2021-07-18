@@ -9,6 +9,7 @@ import {
   LinkDesc,
   linkToTsType,
   makeSet,
+  objectExprToSelectParams,
   ObjectType,
   ObjectTypeExpression,
   ObjectTypeShape,
@@ -18,7 +19,7 @@ import {
   selectParams,
   setToTsType,
   shapeElementToTsType,
-  shapeExprToParams,
+  shapeExprToSelectParams,
   ShapeType,
   simpleShape,
   TypeKind,
@@ -97,16 +98,32 @@ export function shape<
   return {is: expr, params};
 }
 
+// export function select<
+//   OT extends ObjectType,
+//   Expr extends {__element__: OT} | {__element__: {__root__: OT}},
+//   Params extends selectParams<OT>
+// >(expr: Expr, params: Params): $expr_ShapeSelect<Expr, Params>;
+// export function select<
+//   OT extends ObjectType,
+//   Expr extends {__element__: {__root__: OT}},
+//   Params extends selectParams<OT>
+// >(
+//   expr: Expr,
+//   params: Params
+// ): Expr extends ObjectTypeExpression | BaseShapeExpression
+//   ? $expr_ShapeSelect<Expr, Params>
+//   : never;
 export function select<
-  Expr extends ObjectTypeExpression | BaseShapeExpression,
-  // ShapeExpr extends {__element__: {__root__: OT}},
-  // Expr extends {__element__: {__root__: OT}},
-  Params extends exprToSelectParams<Expr>
->(
-  expr: Expr,
-  params: Params
-  // ...polys: Polys
-): $expr_ShapeSelect<Expr, Params>;
+  Expr extends ObjectTypeExpression,
+  Params extends objectExprToSelectParams<Expr>
+>(expr: Expr, params: Params): $expr_ShapeSelect<Expr, Params>;
+export function select<
+  Expr extends BaseShapeExpression,
+  Params extends shapeExprToSelectParams<Expr>
+>(expr: Expr, params: Params): $expr_ShapeSelect<Expr, Params>;
+
+// objectExprToSelectParams;
+// shapeExprToSelectParams;
 // export function select<
 //   Expr extends ObjectTypeExpression,
 //   Params extends selectParams<Expr["__element__"]>,
@@ -117,12 +134,12 @@ export function select<
 //   params: Params,
 //   ...polys: Polys
 // ): $expr_ShapeSelect<Expr, Params, Polys>;
-export function select<Expr extends ObjectTypeExpression>(
-  expr: Expr
-): $expr_ShapeSelect<Expr, {id: true}, []>;
-export function select<Expr extends BaseExpression>(
-  expr: Expr
-): $expr_SimpleSelect<Expr>;
+// export function select<Expr extends ObjectTypeExpression>(
+//   expr: Expr
+// ): $expr_ShapeSelect<Expr, {id: true}, []>;
+// export function select<Expr extends BaseExpression>(
+//   expr: Expr
+// ): $expr_SimpleSelect<Expr>;
 // export function select<
 //   Expr extends BaseShapeExpression,
 //   Params extends shapeExprToParams<Expr>

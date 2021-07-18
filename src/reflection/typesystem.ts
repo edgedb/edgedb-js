@@ -288,8 +288,11 @@ export type BaseShapeTypeSet<
 > = TypeSet<T, Card>;
 
 export type BaseShapeExpression<
-  Set extends BaseShapeTypeSet = BaseShapeTypeSet
-> = BaseExpression<Set>;
+  Type extends BaseShapeType = BaseShapeType
+> = BaseExpression<{
+  __element__: Type;
+  __cardinality__: Cardinality;
+}>;
 
 type unwrapType<T extends ObjectType | BaseShapeType> = T extends BaseShapeType
   ? unwrapType<T["__root__"]>
@@ -321,15 +324,17 @@ export type exprToSelectParams<
   ? selectParams<T["__element__"]["__root__"]>
   : never;
 
+export type objectExprToSelectParams<
+  T extends ObjectTypeExpression
+> = selectParams<T["__element__"]>;
+
+export type shapeExprToSelectParams<
+  T extends BaseShapeExpression
+> = selectParams<T["__element__"]["__root__"]>;
+
 export type selectParams<T extends ObjectType> = shapeToSelectParams<
   T["__shape__"]
 >;
-
-export type shapeExprToParams<
-  T extends BaseShapeExpression
-> = T["__element__"]["__root__"] extends ObjectType
-  ? shapeToSelectParams<T["__element__"]["__root__"]["__shape__"]>
-  : never;
 
 export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
   {
