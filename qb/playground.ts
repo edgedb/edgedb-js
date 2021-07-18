@@ -10,8 +10,10 @@ import {
   ObjectTypeExpression,
   Poly,
   selectParams,
-  shapeExprToParams,
+  shapeExprToSelectParams,
 } from "reflection";
+import {select} from "@syntax/select";
+import {argv} from "process";
 
 e.str("asdf");
 e.bigint(BigInt(1234));
@@ -24,56 +26,40 @@ e.literal(asdf, ["asdf"]);
 e.cast(e.$Str, e.int64(1234));
 e.set(e.Hero, e.Villain);
 
-e.select(e.Hero, {
+select(e.Hero, {
   villains: {nemesis: {villains: {nemesis: true}}},
 });
 
 // e.$Hero.__shape__.__type__.name;
 // e.default.Hero;
 
-const query = e.select(
-  e.Person,
-  {
-    id: true,
-    __type__: {
-      id: true,
-      name: true,
-    },
-    name: 1 > 0,
-    computed: e.str("person"),
-  }
-  // e.shape(e.Hero, {secret_identity: true, __type__: {name: true}}),
-  // e.shape(e.Villain, {
-  //   nemesis: {id: true},
-  //   name: true,
-  // })
-).__element__.__tstype__;
-
-const q2 = e.select(e.Villain, {
-  // number_of_movies: true,
-  name: true,
+const q2 = select(e.Villain, {
   id: true,
+  name: 1 > 0,
+  nemesis: {id: true},
+  computed: e.str("person"),
 });
+type q2 = typeof q2["__element__"]["__tstype__"];
 
-type aldkjflds = exprToSelectParams<typeof q2>;
-
-type kljgfg = typeof q2["__element__"]["__root__"];
-
-type lakjdsfd = shapeExprToParams<typeof q2>;
-
-const q3 = e.select(q2, {id: true});
-const q4 = e.select(e.Hero, {id: true, name: true});
-// const q3 = e.select(e.Hero, {id: true});
-
-type params = selectParams<typeof q2>;
-type lkjlk = typeof q2["__element__"]["__root__"]["__shape__"];
-const asfdf = e.select(q2, {}).__element__.__tstype__;
-
-const qwers = e.select(e.Movie, {
-  title: true,
+const q3 = select(q2, {
   id: true,
-  characters: {
-    name: true,
-    "@ac": true,
-  },
-}).__element__.__tstype__;
+  name: 1 > 0,
+  nemesis: {id: true},
+  computed: e.str("person"),
+});
+type q3 = typeof q3["__element__"]["__tstype__"];
+
+const myshape = {a: "asdf", b: "qwer"};
+function test<
+  A extends {shape: object},
+  T extends {[k in keyof A["shape"]]?: true}
+>(a: A, arg: T): T;
+function test<
+  A extends {nested: object},
+  T extends {[k in keyof A["nested"]]?: true}
+>(a: A, arg: T): T;
+function test(arg: any, b: any) {
+  return "asdf" as any;
+}
+const a = test({shape: myshape}, {a: true});
+const b = test({nested: myshape}, {b: true});
