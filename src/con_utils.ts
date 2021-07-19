@@ -271,46 +271,48 @@ function parseConnectDsnAndArgs({
         parsed.searchParams.delete("host");
       }
 
-      const parsedQ: {[key: string]: string} = {};
+      const parsedQ: Map<string, string> = new Map();
       // when given multiple params of the same name, keep the last one only
       for (const [key, param] of parsed.searchParams.entries()) {
-        parsedQ[key] = param;
+        parsedQ.set(key, param);
       }
 
-      if ("dbname" in parsedQ) {
+      if (parsedQ.has("dbname")) {
         if (!database) {
-          database = parsedQ.dbname;
+          database = parsedQ.get("dbname");
         }
-        delete parsedQ.dbname;
+        parsedQ.delete("dbname");
       }
 
-      if ("database" in parsedQ) {
+      if (parsedQ.has("database")) {
         if (!database) {
-          database = parsedQ.database;
+          database = parsedQ.get("database");
         }
-        delete parsedQ.database;
+        parsedQ.delete("database");
       }
 
-      if ("user" in parsedQ) {
+      if (parsedQ.has("user")) {
         if (!user) {
-          user = parsedQ.user;
+          user = parsedQ.get("user");
         }
-        delete parsedQ.user;
+        parsedQ.delete("user");
       }
 
-      if ("password" in parsedQ) {
+      if (parsedQ.has("password")) {
         if (!password) {
-          password = parsedQ.password;
+          password = parsedQ.get("password");
         }
-        delete parsedQ.password;
+        parsedQ.delete("password");
       }
 
       // if there are more query params left, interpret them as serverSettings
-      if (Object.keys(parsedQ).length) {
+      if (parsedQ.size) {
         if (serverSettings == null) {
-          serverSettings = {...parsedQ};
-        } else {
-          serverSettings = {...parsedQ, ...serverSettings};
+          serverSettings = {};
+        }
+
+        for (const [key, val] of parsedQ) {
+          serverSettings[key] = val;
         }
       }
     }
