@@ -1,7 +1,10 @@
 import {process} from "https://deno.land/std@0.102.0/node/process.ts";
 import {Buffer} from "https://deno.land/std@0.102.0/node/buffer.ts";
 import * as crypto from "https://deno.land/std@0.102.0/node/crypto.ts";
-import {Sha256, HmacSha256} from "https://deno.land/std@0.102.0/hash/sha256.ts";
+import {
+  Sha256,
+  HmacSha256,
+} from "https://deno.land/std@0.102.0/hash/sha256.ts";
 import path from "https://deno.land/std@0.102.0/node/path.ts";
 import EventEmitter from "https://deno.land/std@0.102.0/node/events.ts";
 import util from "https://deno.land/std@0.102.0/node/util.ts";
@@ -75,8 +78,8 @@ export namespace fs {
 // TODO: when 'net.Socket' is implemented in deno node compatibility library
 //       replace this (https://github.com/denoland/deno_std/pull/694)
 export namespace net {
-  export function createConnection(port: number, hostname?: string): Socket
-  export function createConnection(unixpath: string): Socket
+  export function createConnection(port: number, hostname?: string): Socket;
+  export function createConnection(unixpath: string): Socket;
   export function createConnection(
     port: number | string,
     hostname?: string
