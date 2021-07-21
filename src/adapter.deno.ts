@@ -75,6 +75,8 @@ export namespace fs {
 // TODO: when 'net.Socket' is implemented in deno node compatibility library
 //       replace this (https://github.com/denoland/deno_std/pull/694)
 export namespace net {
+  export function createConnection(port: number, hostname?: string): Socket
+  export function createConnection(unixpath: string): Socket
   export function createConnection(
     port: number | string,
     hostname?: string
@@ -173,7 +175,7 @@ export namespace tls {
       throw new Error("port option must be set");
     }
 
-    return net.createConnection(options.host, options.port.toString());
+    return net.createConnection(options.port, options.host);
   }
 
   export function checkServerIdentity(
