@@ -32,7 +32,7 @@ import {ObjectCodec} from "./object";
 import {SetCodec} from "./set";
 import {UUIDObjectCodec} from "./uuid";
 import {UUID} from "../datatypes/uuid";
-import {ProtocolVersion} from "../ifaces";
+import {versionGreaterThanOrEqual} from "../client";
 
 const CODECS_CACHE_SIZE = 1000;
 const CODECS_BUILD_CACHE_SIZE = 200;
@@ -156,7 +156,7 @@ export class CodecsRegistry {
     return null;
   }
 
-  buildCodec(spec: Buffer, protocolVersion: ProtocolVersion): ICodec {
+  buildCodec(spec: Buffer, protocolVersion: [number, number]): ICodec {
     const frb = new ReadBuffer(spec);
     const codecsList: ICodec[] = [];
     let codec: ICodec | null = null;
@@ -181,7 +181,7 @@ export class CodecsRegistry {
   private _buildCodec(
     frb: ReadBuffer,
     cl: ICodec[],
-    protocolVersion: ProtocolVersion
+    protocolVersion: [number, number]
   ): ICodec | null {
     const t = frb.readUInt8();
     const tid = frb.readUUID();
@@ -204,10 +204,7 @@ export class CodecsRegistry {
         case CTYPE_SHAPE: {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
-            if (
-              protocolVersion.major > 0 ||
-              (protocolVersion.major === 0 && protocolVersion.minor >= 11)
-            ) {
+            if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
               frb.discard(5); // 4 (flags) + 1 (cardinality)
             } else {
               frb.discard(1); // flags
@@ -322,10 +319,7 @@ export class CodecsRegistry {
 
         for (let i = 0; i < els; i++) {
           let flag: number;
-          if (
-            protocolVersion.major > 0 ||
-            (protocolVersion.major === 0 && protocolVersion.minor >= 11)
-          ) {
+          if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
             flag = frb.readUInt32();
             frb.discard(1); // cardinality
           } else {

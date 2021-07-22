@@ -75,10 +75,10 @@ export function validateCredentials(data: any): Credentials {
     result.tlsCAData = certData;
   }
 
-  const verifyHostname = data.tls_verifyhostname;
+  const verifyHostname = data.tls_verify_hostname;
   if (verifyHostname != null) {
     if (typeof verifyHostname !== "boolean") {
-      throw Error("`tls_verifyhostname` must be boolean");
+      throw Error("`tls_verify_hostname` must be boolean");
     }
     result.tlsVerifyHostname = verifyHostname;
   }

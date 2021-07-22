@@ -5,6 +5,7 @@ import * as os from "os";
 import * as fs from "fs";
 import * as readline from "readline";
 import {ConnectConfig} from "../src/con_utils";
+import {Connection} from "../src/ifaces";
 import {readFileUtf8Sync} from "../src/adapter.node";
 
 import connect from "../src/index.node";
@@ -44,27 +45,19 @@ const getWSLPath = (path: string): string => {
   return path.replace("C:", "/mnt/c").split("\\").join("/").toLowerCase();
 };
 
-export default async () => {
-  // tslint:disable-next-line
-  console.log("\nStarting EdgeDB test cluster...");
+const generateTempID = (): number => {
+  return Math.floor(Math.random() * 999999999);
+};
 
-  let err: ((_: string) => void) | null = null;
-  let stderrData: string = "";
+const generateStatusFileName = (): string => {
+  return path.join(os.tmpdir(), `edgedb-js-status-file-${generateTempID()}`);
+};
 
-  const done = new Promise<null>((resolve, reject) => {
-    err = reject;
-  });
-
+const getServerCommand = (statusFile: string): string[] => {
   let srvcmd = "edgedb-server";
   if (process.env.EDGEDB_SERVER_BIN) {
     srvcmd = process.env.EDGEDB_SERVER_BIN;
   }
-
-  const tmpid = Math.floor(Math.random() * 999999999);
-  const statusFile = path.join(os.tmpdir(), `edgedb-js-status-file-${tmpid}`);
-  console.log("status file:", statusFile);
-
-  const statusFileUnix = getWSLPath(statusFile);
 
   let args = [srvcmd];
   if (process.platform === "win32") {
@@ -89,11 +82,20 @@ export default async () => {
     "--temp-dir",
     "--testmode",
     "--port=auto",
-    "--emit-server-status=" + statusFileUnix,
+    "--emit-server-status=" + statusFile,
     "--bootstrap-command=ALTER ROLE edgedb { SET password := '' }",
   ];
 
-  const proc = child_process.spawn(args[0], args.slice(1, args.length));
+  return args;
+};
+
+const startServer = async (
+  cmd: string[],
+  statusFile: string
+): Promise<{config: ConnectConfig; proc: child_process.ChildProcess}> => {
+  let err: ((_: string) => void) | null = null;
+  let stderrData: string = "";
+  const proc = child_process.spawn(cmd[0], cmd.slice(1, cmd.length));
 
   if (process.env.EDGEDB_DEBUG_SERVER) {
     proc.stdout.on("data", (data) => {
@@ -139,7 +141,10 @@ export default async () => {
   }
 
   if (runtimeData.tls_cert_file && process.platform === "win32") {
-    const tmpFile = path.join(os.tmpdir(), `edbtlscert-${tmpid}.pem`);
+    const tmpFile = path.join(
+      os.tmpdir(),
+      `edbtlscert-${generateTempID()}.pem`
+    );
     const cmd = `wsl -u edgedb cp ${runtimeData.tls_cert_file} ${getWSLPath(
       tmpFile
     )}`;
@@ -159,23 +164,22 @@ export default async () => {
     config.tlsCAFile = runtimeData.tls_cert_file;
   }
 
-  process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(config);
+  return {config, proc};
+};
 
-  // @ts-ignore
-  global.edgedbProc = proc;
-
+const connectToServer = async (config: ConnectConfig): Promise<Connection> => {
   const con = await connect(undefined, config);
 
   try {
     await con.execute(`
       CREATE DATABASE jest;
-    `);
+		`);
 
     await con.execute(`
       CREATE SUPERUSER ROLE jest {
         SET password := "jestjest";
       };
-    `);
+		`);
 
     await con.execute(`
       CONFIGURE SYSTEM INSERT Auth {
@@ -189,8 +193,39 @@ export default async () => {
     throw e;
   }
 
+  return con;
+};
+
+export default async () => {
+  // tslint:disable-next-line
+  console.log("\nStarting EdgeDB test cluster...");
+
+  const denoStatusFile = generateStatusFileName();
+  const denoArgs = getServerCommand(getWSLPath(denoStatusFile));
+  if (denoArgs.includes("--generate-self-signed-cert")) {
+    denoArgs.push("--allow-cleartext-connections");
+  }
+  const denoPromise = startServer(denoArgs, denoStatusFile);
+
+  const statusFile = generateStatusFileName();
+  console.log("status file:", statusFile);
+
+  const args = getServerCommand(getWSLPath(statusFile));
+  const {proc, config} = await startServer(args, statusFile);
   // @ts-ignore
-  global.edgedbConn = con;
+  global.edgedbProc = proc;
+
+  const {proc: denoProc, config: denoConfig} = await denoPromise;
+  // @ts-ignore
+  global.edgedbDenoProc = denoProc;
+
+  process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(config);
+  process.env._JEST_EDGEDB_DENO_CONNECT_CONFIG = JSON.stringify(denoConfig);
+
+  // @ts-ignore
+  global.edgedbConn = await connectToServer(config);
+  // @ts-ignore
+  global.edgedbDenoConn = await connectToServer(denoConfig);
 
   // tslint:disable-next-line
   console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);

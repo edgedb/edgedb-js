@@ -45,6 +45,7 @@ import {
   onConnectionClose,
   ParseOptions,
   PrepareMessageHeaders,
+  ProtocolVersion,
 } from "./ifaces";
 import * as scram from "./scram";
 import {Options, RetryOptions, TransactionOptions} from "./options";
@@ -59,38 +60,8 @@ import {
 import {Transaction as LegacyTransaction} from "./legacy_transaction";
 import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 
-class ProtocolVersion {
-  readonly major: number;
-  readonly minor: number;
-
-  constructor(major: number, minor: number) {
-    this.major = major;
-    this.minor = minor;
-  }
-
-  greaterThan(other: ProtocolVersion): boolean {
-    if (this.major > other.major) {
-      return true;
-    }
-
-    if (this.major < other.major) {
-      return false;
-    }
-
-    return this.minor > other.minor;
-  }
-
-  greaterThanOrEqual(other: ProtocolVersion): boolean {
-    if (this.major === other.major && this.minor === other.minor) {
-      return true;
-    }
-
-    return this.greaterThan(other);
-  }
-}
-
-const PROTO_VER = new ProtocolVersion(0, 11);
-const PROTO_VER_MIN = new ProtocolVersion(0, 9);
+const PROTO_VER: [number, number] = [0, 11];
+const PROTO_VER_MIN: [number, number] = [0, 9];
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,
@@ -118,6 +89,32 @@ const OLD_ERROR_CODES = new Map([
 ]);
 
 const DEFAULT_MAX_ITERATIONS = 3;
+
+export function versionGreaterThan(
+  left: [number, number],
+  right: [number, number]
+): boolean {
+  if (left[0] > right[0]) {
+    return true;
+  }
+
+  if (left[0] < right[0]) {
+    return false;
+  }
+
+  return left[1] > right[1];
+}
+
+export function versionGreaterThanOrEqual(
+  left: [number, number],
+  right: [number, number]
+): boolean {
+  if (left[0] === right[0] && left[1] === right[1]) {
+    return true;
+  }
+
+  return versionGreaterThan(left, right);
+}
 
 export default function connect(
   dsn?: string | ConnectConfig | null,
@@ -510,7 +507,7 @@ export class ConnectionImpl {
 
   private opInProgress: boolean = false;
 
-  protected protocolVersion: ProtocolVersion = PROTO_VER;
+  protected protocolVersion: [number, number] = PROTO_VER;
 
   /** @internal */
   protected constructor(sock: net.Socket, config: NormalizedConnectConfig) {
@@ -870,8 +867,8 @@ export class ConnectionImpl {
 
     handshake
       .beginMessage(chars.$V)
-      .writeInt16(this.protocolVersion.major)
-      .writeInt16(this.protocolVersion.minor);
+      .writeInt16(this.protocolVersion[0])
+      .writeInt16(this.protocolVersion[1]);
 
     handshake.writeInt16(2);
     handshake.writeString("user");
@@ -898,11 +895,11 @@ export class ConnectionImpl {
           const lo = this.buffer.readInt16();
           this._parseHeaders();
           this.buffer.finishMessage();
-          const proposed = new ProtocolVersion(hi, lo);
+          const proposed: [number, number] = [hi, lo];
 
           if (
-            proposed.greaterThan(PROTO_VER) ||
-            PROTO_VER_MIN.greaterThan(proposed)
+            versionGreaterThan(proposed, PROTO_VER) ||
+            versionGreaterThan(PROTO_VER_MIN, proposed)
           ) {
             throw new Error(
               `the server requested an unsupported version of ` +
@@ -910,7 +907,7 @@ export class ConnectionImpl {
             );
           }
 
-          this.protocolVersion = new ProtocolVersion(hi, lo);
+          this.protocolVersion = [hi, lo];
           break;
         }
 
@@ -946,9 +943,11 @@ export class ConnectionImpl {
 
           if (
             !(this.sock instanceof tls.TLSSocket) &&
-            this.protocolVersion.greaterThanOrEqual(new ProtocolVersion(0, 11))
+            // @ts-ignore
+            typeof Deno === "undefined" &&
+            versionGreaterThanOrEqual(this.protocolVersion, [0, 11])
           ) {
-            const {major, minor} = this.protocolVersion;
+            const [major, minor] = this.protocolVersion;
             throw new Error(
               `the protocol version requires TLS: ${major}.${minor}`
             );
@@ -1560,7 +1559,7 @@ export class RawConnection extends ConnectionImpl {
   public async rawParse(
     query: string,
     headers?: PrepareMessageHeaders
-  ): Promise<[Buffer, Buffer, ProtocolVersion]> {
+  ): Promise<[Buffer, Buffer, [number, number]]> {
     const result = await this._parse(query, false, false, true, {headers});
     return [result[3]!, result[4]!, this.protocolVersion];
   }

@@ -491,7 +491,7 @@ function parseConnectDsnAndArgs({
         tlsVerifyHostname = false;
       }
 
-      // this option only needs to be set for self signed certificates
+      // this option replaces the system CA certificates with the one provided.
       tlsOptions.ca = tlsCAData;
     } else {
       if (tlsVerifyHostname == null) {
