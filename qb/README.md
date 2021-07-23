@@ -6,7 +6,6 @@
 
 ```
 yarn
-yarn link
 ```
 
 2. Initialize project inside `qb`
@@ -15,7 +14,6 @@ yarn link
 cd qb
 edgedb server upgrade --nightly
 edgedb project init
-yarn link "edgedb" // symlinks edgedb-js into qb
 yarn
 ```
 
