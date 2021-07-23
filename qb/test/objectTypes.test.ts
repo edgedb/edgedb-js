@@ -1,6 +1,7 @@
-import * as e from "../generated/example";
+import e from "../generated/example";
 import {reflection as $} from "edgedb";
 import {mergeObjectTypes, typeutil} from "../../src/reflection";
+
 const HeroType = e.default.$Hero;
 
 test("property hydration", () => {
@@ -8,7 +9,7 @@ test("property hydration", () => {
   expect(HeroType.__name__).toBe("default::Hero");
   expect(HeroType.__shape__.name.__kind__).toBe("property");
   expect(HeroType.__shape__.name.cardinality).toBe($.Cardinality.One);
-  expect(HeroType.__shape__.name.target).toEqual(e.std.$Str);
+  expect(HeroType.__shape__.name.target).toEqual(e.std.$str);
   expect(HeroType.__shape__.name.target.__kind__).toEqual($.TypeKind.scalar);
 });
 
@@ -45,7 +46,7 @@ test("unnamed tuple tests", () => {
   // named tuple tests
   const BagShape = e.default.$Bag.__shape__;
   const unnamedTuple = BagShape.unnamedTuple.target;
-  expect(unnamedTuple.__kind__).toEqual($.TypeKind.unnamedtuple);
+  expect(unnamedTuple.__kind__).toEqual($.TypeKind.tuple);
   expect(unnamedTuple.__items__[0].__name__).toEqual("std::str");
   expect(unnamedTuple.__items__[1].__name__).toEqual("std::int64");
 });

@@ -46,7 +46,7 @@ export function toEdgeQL(this: any) {
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${expr.__expr__.toEdgeQL()}`;
   } else {
-    throw new Error(`Unrecognized expression kind.`);
+    util.assertNever(expr, new Error(`Unrecognized expression kind.`));
   }
 }
 
@@ -65,7 +65,7 @@ export function literalToEdgeQL(type: MaterialType, val: any): string {
       stringRep = `[${val
         .map((el) => literalToEdgeQL(type.__element__ as any, el))
         .join(", ")}]`;
-    } else if (type.__kind__ === TypeKind.unnamedtuple) {
+    } else if (type.__kind__ === TypeKind.tuple) {
       stringRep = `( ${val
         .map((el, j) => literalToEdgeQL(type.__items__[j] as any, el))
         .join(", ")} )`;

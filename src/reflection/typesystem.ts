@@ -9,7 +9,7 @@ export enum TypeKind {
   scalar = "scalar",
   object = "object",
   namedtuple = "namedtuple",
-  unnamedtuple = "unnamedtuple",
+  tuple = "tuple",
   array = "array",
 }
 export interface BaseType {
@@ -88,7 +88,7 @@ export type ObjectTypeExpression<
 
 export type PrimitiveType =
   | ScalarType
-  | UnnamedTupleType
+  | TupleType
   | NamedTupleType
   | ArrayType;
 
@@ -100,6 +100,7 @@ export type PrimitiveTypeSet<
 export type PrimitiveExpression<
   Set extends PrimitiveTypeSet = PrimitiveTypeSet
 > = BaseExpression<Set>;
+
 /////////////////////////
 /// COLLECTION TYPES
 /////////////////////////
@@ -125,9 +126,9 @@ export function ArrayType<Element extends BaseType>(
 
 export type MaterialTypeTuple = [MaterialType, ...MaterialType[]] | [];
 
-export type UnnamedTupleType<Items extends BaseTypeTuple = BaseTypeTuple> = {
+export type TupleType<Items extends BaseTypeTuple = BaseTypeTuple> = {
   __name__: string;
-  __kind__: TypeKind.unnamedtuple;
+  __kind__: TypeKind.tuple;
   __tstype__: {
     [k in keyof Items]: Items[k] extends BaseType
       ? Items[k]["__tstype__"]
@@ -135,12 +136,12 @@ export type UnnamedTupleType<Items extends BaseTypeTuple = BaseTypeTuple> = {
   };
   __items__: Items;
 };
-export function UnnamedTupleType<Items extends typeutil.tupleOf<BaseType>>(
+export function TupleType<Items extends typeutil.tupleOf<BaseType>>(
   items: Items
-): UnnamedTupleType<Items> {
+): TupleType<Items> {
   const name = `tuple<${items.map((item) => item.__name__).join(", ")}>`;
   return {
-    __kind__: TypeKind.unnamedtuple,
+    __kind__: TypeKind.tuple,
     __name__: name,
     __items__: items,
   } as any;
@@ -172,11 +173,7 @@ export function NamedTupleType<Shape extends NamedTupleShape>(
 /// OBJECT TYPES
 /////////////////////////
 
-type PropertyTypes =
-  | ScalarType
-  | ArrayType
-  | UnnamedTupleType
-  | NamedTupleType;
+type PropertyTypes = ScalarType | ArrayType | TupleType | NamedTupleType;
 export interface PropertyDesc<
   T extends PropertyTypes = PropertyTypes,
   C extends Cardinality = Cardinality
@@ -261,6 +258,6 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
 export type MaterialType =
   | ScalarType
   | ObjectType
-  | UnnamedTupleType
+  | TupleType
   | NamedTupleType
   | ArrayType;

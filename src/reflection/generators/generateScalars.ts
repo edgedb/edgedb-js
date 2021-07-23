@@ -1,4 +1,12 @@
-import {genutil} from "../util/genutil";
+import {
+  splitName,
+  getRef,
+  frag,
+  joinFrags,
+  toIdent,
+  quote,
+  toTSScalarType,
+} from "../util/genutil";
 import type {GeneratorParams} from "../generate";
 
 export const generateScalars = async (params: GeneratorParams) => {
@@ -8,19 +16,19 @@ export const generateScalars = async (params: GeneratorParams) => {
       continue;
     }
 
-    const {mod, name: _name} = genutil.splitName(type.name);
-    // const name = `$${_name}`;
-    const displayName = genutil.displayName(type.name);
-    const literalConstructor = _name.toLowerCase();
+    const {mod, name: _name} = splitName(type.name);
 
-    const sc = dir.getPath(`modules/${mod}.ts`);
+    const sc = dir.getModule(mod);
 
-    const scopeName = genutil.getScopedDisplayName(mod, sc);
+    sc.registerRef(type.name, type.id);
+
+    const ref = getRef(type.name);
+    const literal = getRef(type.name, {prefix: ""});
 
     if (type.name === "std::anyenum") {
-      sc.writeln(`
+      sc.writeln(frag`
 const ANYENUM_SYMBOL: unique symbol = Symbol("std::anyenum");
-export interface $Anyenum<
+export interface ${ref}<
   TsType = unknown,
   Name extends string = string,
   Values extends [string, ...string[]] = [string, ...string[]]
@@ -37,74 +45,76 @@ export interface $Anyenum<
 
       if (scalarType.children.length) {
         // is abstract
-        const scopedNames = scalarType.children.map((desc) =>
-          scopeName(desc.name)
-        );
-        sc.writeln(`export type ${displayName} = ${scopedNames.join(" | ")};`);
+        const children = scalarType.children.map((desc) => getRef(desc.name));
+        sc.writeln(frag`export type ${ref} = ${joinFrags(children, " | ")};`);
         sc.writeln(
-          `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`
+          frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}");`
         );
         sc.nl();
+
+        sc.addExport(ref, `$${_name}`);
       } else if (scalarType.bases.length) {
         // for std::sequence
-        const bases = scalarType.bases.map((base) => scopeName(base.name));
+        const bases = scalarType.bases.map((base) => getRef(base.name));
         sc.writeln(
-          `export interface ${displayName} extends ${bases.join(", ")} {}`
+          frag`export interface ${ref} extends ${joinFrags(bases, ", ")} {}`
         );
         sc.writeln(
-          `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`
+          frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}");`
         );
         sc.nl();
+
+        sc.addExport(ref, `$${_name}`);
       }
 
       continue;
     }
 
-    sc.addImport(`import {reflection as $} from "edgedb";`);
-    sc.addImport(`import {spec as __spec__} from "../__spec__";`);
-
     // generate enum
     if (type.enum_values && type.enum_values.length) {
-      sc.writeln(`export enum ${displayName}Enum {`);
+      sc.writeln(frag`export enum ${ref}_Enum {`);
       sc.indented(() => {
         for (const val of type.enum_values) {
-          sc.writeln(`${genutil.toIdent(val)} = ${genutil.quote(val)},`);
+          sc.writeln(frag`${toIdent(val)} = ${quote(val)},`);
         }
       });
-      sc.writeln(`}`);
+      sc.writeln([`}`]);
 
       const valuesArr = `[${type.enum_values
-        .map((v) => `"${v}"`)
+        .map((v) => quote(v))
         .join(", ")}]`;
       sc.writeln(
-        `export type ${displayName} = typeof ${displayName}Enum & ${scopeName(
+        frag`export type ${ref} = typeof ${ref}_Enum & ${getRef(
           "std::anyenum"
-        )}<${displayName}Enum, "${type.name}", ${valuesArr}>;`
+        )}<${ref}_Enum, "${type.name}", ${valuesArr}>;`
       );
       sc.writeln(
-        `export const ${displayName}: ${displayName} = {...${displayName}Enum, __values__: ${valuesArr}} as any;`
+        frag`export const ${literal}: ${ref} = {...${ref}_Enum, __values__: ${valuesArr}} as any;`
       );
 
       sc.nl();
+      sc.addExport(literal, _name);
       continue;
     }
 
     // generate non-enum non-abstract scalar
-    sc.addImport(`import * as syntax from "../syntax/syntax";`);
 
-    const tsType = genutil.toTSScalarType(type, types, mod, sc);
+    const tsType = toTSScalarType(type, types, mod, sc);
     sc.writeln(
-      `export type ${displayName} = $.ScalarType<"${type.name}", ${tsType}>;`
+      frag`export type ${ref} = $.ScalarType<"${type.name}", ${tsType}>;`
     );
     sc.writeln(
-      `export const ${displayName} = $.makeType<${displayName}>(__spec__, "${type.id}");`
+      frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}");`
     );
     sc.writeln(
-      `export const ${literalConstructor} = (val:${tsType})=>syntax.literal(${displayName}, val);`
+      frag`export const ${literal} = (val: ${tsType}) => _.syntax.literal(${ref}, val);`
     );
     // sc.writeln(`export const ${displayName}: ${displayName} = {`);
     // sc.writeln(`  __name__: "${type.name}",`);
     // sc.writeln(`} as any;`);
+
+    sc.addExport(ref, `$${_name}`);
+    sc.addExport(literal, _name);
 
     sc.nl();
   }

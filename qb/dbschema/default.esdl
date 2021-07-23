@@ -27,6 +27,8 @@ module default {
     multi link characters extending movie_character -> Person;
   }
 
+  type MovieShape {
+  }
 
   abstract type HasName {
     property name -> str;
@@ -60,4 +62,59 @@ module default {
   }
 
   type Simple extending HasName, HasAge {}
-}
+
+  # Unicode handling
+  # https://github.com/edgedb/edgedb/blob/master/tests/schemas/dump02_default.esdl
+
+  abstract annotation `🍿`;
+
+  abstract constraint `🚀🍿`(max: int64) extending max_len_value;
+
+  function `💯`(NAMED ONLY `🙀`: int64) -> int64 {
+      using (
+          SELECT 100 - `🙀`
+      );
+
+      annotation `🍿` := 'fun!🚀';
+      volatility := 'Immutable';
+  }
+
+  type `S p a M` {
+      required property `🚀` -> int32;
+      property c100 := (SELECT `💯`(`🙀` := .`🚀`));
+  }
+
+  type A {
+      required link `s p A m 🤞` -> `S p a M`;
+  }
+
+  scalar type 你好 extending str;
+
+  scalar type مرحبا extending 你好 {
+      constraint `🚀🍿`(100);
+  };
+
+  scalar type `🚀🚀🚀` extending مرحبا;
+
+  type Łukasz {
+      required property `Ł🤞` -> `🚀🚀🚀` {
+          default := <`🚀🚀🚀`>'你好🤞'
+      }
+      index on (.`Ł🤞`);
+
+      link `Ł💯` -> A {
+          property `🙀🚀🚀🚀🙀` -> `🚀🚀🚀`;
+          property `🙀مرحبا🙀` -> مرحبا {
+              constraint `🚀🍿`(200);
+          }
+      };
+  }
+
+};
+
+module `💯💯💯` {
+  function `🚀🙀🚀`(`🤞`: default::`🚀🚀🚀`) -> default::`🚀🚀🚀`
+    using (
+      SELECT <default::`🚀🚀🚀`>(`🤞` ++ 'Ł🙀')
+    );
+};

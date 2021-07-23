@@ -109,7 +109,7 @@ export function makeType<T extends BaseType>(
   } else if (type.kind === "tuple") {
     if (type.tuple_elements[0].name === "0") {
       // unnamed tuple
-      obj.__kind__ = TypeKind.unnamedtuple;
+      obj.__kind__ = TypeKind.tuple;
 
       util.defineGetter(obj, "__items__", () => {
         return type.tuple_elements.map((el) =>
@@ -134,6 +134,7 @@ export function makeType<T extends BaseType>(
     throw new Error("Invalid type.");
   }
 }
+
 export type mergeObjectShapes<
   A extends ObjectTypeShape,
   B extends ObjectTypeShape

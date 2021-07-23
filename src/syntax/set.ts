@@ -8,7 +8,7 @@ import {
   ObjectTypeExpression,
   PrimitiveExpression,
   TypeSet,
-  UnnamedTupleType,
+  TupleType,
   TypeKind,
   PrimitiveType,
   BaseExpression,
@@ -51,10 +51,10 @@ type getSharedParentPrimitive<A, B> = A extends ArrayType<infer AEl>
         }
       >
     : never
-  : A extends UnnamedTupleType<infer AItems>
-  ? B extends UnnamedTupleType<infer BItems>
+  : A extends TupleType<infer AItems>
+  ? B extends TupleType<infer BItems>
     ? mergeTypeTuples<AItems, BItems> extends BaseTypeTuple
-      ? UnnamedTupleType<mergeTypeTuples<AItems, BItems>>
+      ? TupleType<mergeTypeTuples<AItems, BItems>>
       : never
     : never
   : getSharedParentScalar<A, B>;
@@ -71,10 +71,10 @@ type getSharedParentPrimitive<A, B> = A extends ArrayType<infer AEl>
 // ? B extends NamedTupleType<infer BShape>
 //   ? NamedTupleType<mergeTypeTuples<AShape, BShape>>
 //   : never
-// : A extends UnnamedTupleType<infer AItems>
-// ? B extends UnnamedTupleType<infer BItems>
+// : A extends TupleType<infer AItems>
+// ? B extends TupleType<infer BItems>
 //   ? mergeTypeTuples<AItems, BItems> extends BaseTypeTuple
-//     ? UnnamedTupleType<mergeTypeTuples<AItems, BItems>>
+//     ? TupleType<mergeTypeTuples<AItems, BItems>>
 //     : never
 //   : never
 // : getSharedParentScalar<A, B>;

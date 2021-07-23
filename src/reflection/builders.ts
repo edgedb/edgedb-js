@@ -1,22 +1,50 @@
 import * as path from "path";
 import * as fs from "fs";
 import {StrictMap} from "./strictMap";
+import * as genutil from "./util/genutil";
+
+export interface IdentRef {
+  type: "identRef";
+  name: string;
+  opts?: {prefix?: string};
+}
+
+export type CodeFragment = string | IdentRef;
 
 export class CodeBuilder {
-  private buf: string[] = [];
+  private buf: CodeFragment[][] = [];
   private namespaces: {[k: string]: string[]} = {};
   private indent: number = 0;
   private imports = new Set<string>();
+  private exports = new Map<string, IdentRef>();
+
+  constructor(private dirBuilder: DirBuilder, private dir: string) {}
 
   getBuf() {
     return this.buf;
   }
+
   addImport(imp: string): void {
     this.imports.add(imp);
   }
 
+  addExport(ref: IdentRef, as: string) {
+    this.exports.set(as, ref);
+  }
+
+  registerRef(fqn: string, id: string) {
+    if (this.dirBuilder._refs.has(fqn)) {
+      throw new Error(`ref name: ${fqn} already registered`);
+    }
+
+    this.dirBuilder._refs.set(fqn, {
+      dir: this.dir,
+      internalName: genutil.getInternalName({id, fqn}),
+    });
+  }
+
   nl(): void {
-    this.buf.push("");
+    this.buf.push([""]);
   }
 
   indented(nested: () => void): void {
@@ -28,15 +56,73 @@ export class CodeBuilder {
     }
   }
 
-  writeln(...lines: string[]): void {
+  writeln(...lines: CodeFragment[][]): void {
     lines.forEach((line) => {
-      this.buf.push("  ".repeat(this.indent) + line);
+      this.buf.push(["  ".repeat(this.indent), ...line]);
     });
   }
 
   render(): string {
-    let head = Array.from(this.imports).join("\n");
-    const body = this.buf.join("\n");
+    const imports = new Set(this.imports);
+
+    let body = this.buf
+      .map((line) => {
+        return line
+          .map((frag) => {
+            if (typeof frag === "string") {
+              return frag;
+            } else {
+              const ref = this.dirBuilder._refs.get(frag.name);
+
+              if (!ref) {
+                throw new Error(`Cannot find ref: ${frag.name}`);
+              }
+
+              let prefix = "";
+              if (ref.dir !== this.dir) {
+                const mod = path.basename(ref.dir, path.extname(ref.dir));
+                prefix = `_${mod}`;
+
+                let importPath = path.join(
+                  path.relative(path.dirname(this.dir), path.dirname(ref.dir)),
+                  mod
+                );
+
+                if (!importPath.startsWith("../")) {
+                  importPath = "./" + importPath;
+                }
+
+                imports.add(`import * as ${prefix} from "${importPath}"`);
+              }
+
+              return (
+                (prefix ? prefix + "." : "") +
+                (frag.opts?.prefix ?? "") +
+                ref.internalName
+              );
+            }
+          })
+          .join("");
+      })
+      .join("\n");
+
+    if (this.exports.size) {
+      body += `\n\nexport default {\n${[...this.exports.entries()]
+        .map(([name, refFrag]) => {
+          const ref = this.dirBuilder._refs.get(refFrag.name);
+
+          if (!ref) {
+            throw new Error(`Cannot find ref: ${refFrag.name}`);
+          }
+
+          return `  ${genutil.quote(name)}: ${
+            (refFrag.opts?.prefix ?? "") + ref.internalName
+          }`;
+        })
+        .join(",\n")}\n}`;
+    }
+
+    let head = Array.from(imports).join("\n");
 
     if (head && body) {
       head += "\n\n";
@@ -55,14 +141,37 @@ export class CodeBuilder {
   }
 }
 
+let moduleCounter = 0;
+
 export class DirBuilder {
   private _map = new StrictMap<string, CodeBuilder>();
+  _refs = new Map<string, {internalName: string; dir: string}>();
+  _modules = new Map<string, string>();
 
   getPath(fn: string): CodeBuilder {
     if (!this._map.has(fn)) {
-      this._map.set(fn, new CodeBuilder());
+      this._map.set(fn, new CodeBuilder(this, fn));
     }
     return this._map.get(fn);
+  }
+
+  getModule(moduleName: string): CodeBuilder {
+    if (!this._modules.has(moduleName)) {
+      const internalName = genutil.makeValidIdent({
+        name: moduleName,
+        id: `${moduleCounter++}`,
+        skipKeywordCheck: true,
+      });
+
+      this._modules.set(moduleName, internalName);
+    }
+
+    const mod = this.getPath(`modules/${this._modules.get(moduleName)}.ts`);
+
+    mod.addImport(`import {reflection as $} from "edgedb";`);
+    mod.addImport(`import * as _ from "../imports";`);
+
+    return mod;
   }
 
   debug(): string {
