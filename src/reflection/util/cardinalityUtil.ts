@@ -1,4 +1,4 @@
-import {Cardinality} from "../typesystem";
+import {Cardinality, MaterialType, TypeSet} from "../typesystem";
 
 // Computing cardinality of path
 // From base set cadinality and pointer cardinality
@@ -10,7 +10,7 @@ import {Cardinality} from "../typesystem";
 // Many         0      Many       Many        Many  Many
 // AtLeastOne   0      Many       AtLeastOne  Many  AtLeastOne
 export namespace cardinalityUtil {
-  export type pointerCardinality<
+  export type multiplyCardinalities<
     C1 extends Cardinality,
     C2 extends Cardinality
   > = C1 extends Cardinality.Empty
@@ -35,7 +35,7 @@ export namespace cardinalityUtil {
       : C2
     : never;
 
-  export function pointerCardinality(
+  export function multiplyCardinalities(
     c1: Cardinality,
     c2: Cardinality
   ): Cardinality {
@@ -57,6 +57,41 @@ export namespace cardinalityUtil {
       return c2;
     }
     throw new Error(`Invalid Cardinality ${c1}`);
+  }
+
+  type _multiplyCardinalitiesVariadic<
+    Cards extends [Cardinality, ...Cardinality[]]
+  > = Cards extends [infer Card]
+    ? Card
+    : Cards extends [infer A, infer B, ...infer Rest]
+    ? A extends Cardinality
+      ? B extends Cardinality
+        ? Rest extends Cardinality[]
+          ? multiplyCardinalities<A, B> extends Cardinality
+            ? _multiplyCardinalitiesVariadic<
+                [multiplyCardinalities<A, B>, ...Rest]
+              >
+            : never
+          : never
+        : never
+      : never
+    : never;
+
+  export type multiplyCardinalitiesVariadic<
+    Cards extends [Cardinality, ...Cardinality[]]
+  > = _multiplyCardinalitiesVariadic<Cards> extends Cardinality
+    ? _multiplyCardinalitiesVariadic<Cards>
+    : never;
+
+  export function multiplyCardinalitiesVariadic<
+    Cards extends [Cardinality, ...Cardinality[]]
+  >(cards: Cards): multiplyCardinalitiesVariadic<Cards> {
+    if (cards.length === 0) throw new Error("Empty tuple not allowed");
+    if (cards.length === 1) return cards[0] as any;
+    return cards.reduce(
+      (product, card) => multiplyCardinalities(product, card),
+      Cardinality.One
+    ) as any;
   }
 
   // Merging two sets
@@ -125,6 +160,7 @@ export namespace cardinalityUtil {
   > = _mergeCardinalitiesVariadic<Cards> extends Cardinality
     ? _mergeCardinalitiesVariadic<Cards>
     : never;
+
   export function mergeCardinalitiesVariadic<
     Cards extends [Cardinality, ...Cardinality[]]
   >(cards: Cards): mergeCardinalitiesVariadic<Cards> {
@@ -137,4 +173,58 @@ export namespace cardinalityUtil {
       ...rest,
     ]);
   }
+
+  //          Empty  AtMostOne  One         Many        AtLeastOne
+  // One      One    One        One         AtLeastOne  AtLeastOne
+  // Zero     0      AtMostOne  AtMostOne   Many        Many
+
+  export type overrideLowerBound<
+    C extends Cardinality,
+    O extends "One" | "Zero"
+  > = O extends "One"
+    ? C extends Cardinality.Many
+      ? Cardinality.AtLeastOne
+      : C extends Cardinality.AtLeastOne
+      ? Cardinality.AtLeastOne
+      : Cardinality.One
+    : C extends Cardinality.Empty
+    ? Cardinality.Empty
+    : C extends Cardinality.Many
+    ? Cardinality.Many
+    : C extends Cardinality.AtLeastOne
+    ? Cardinality.Many
+    : Cardinality.AtMostOne;
+
+  export function overrideLowerBound<
+    C extends Cardinality,
+    O extends "One" | "Zero"
+  >(card: C, override: O): overrideLowerBound<C, O> {
+    if (override === "One") {
+      if (card === Cardinality.Many || card === Cardinality.AtLeastOne) {
+        return Cardinality.AtLeastOne as any;
+      } else {
+        return Cardinality.One as any;
+      }
+    } else {
+      if (card === Cardinality.Many || card === Cardinality.AtLeastOne) {
+        return Cardinality.Many as any;
+      } else if (card === Cardinality.Empty) {
+        return Cardinality.Empty as any;
+      } else {
+        return Cardinality.AtMostOne as any;
+      }
+    }
+  }
+
+  export type optionalParamCardinality<
+    P extends TypeSet | TypeSet[] | undefined
+  > = P extends TypeSet
+    ? overrideLowerBound<P["__cardinality__"], "One">
+    : P extends TypeSet[]
+    ? paramArrayCardinality<P>
+    : Cardinality.One;
+
+  export type paramArrayCardinality<T> = {
+    [K in keyof T]: T[K] extends TypeSet ? T[K]["__cardinality__"] : never;
+  };
 }

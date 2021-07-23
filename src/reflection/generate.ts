@@ -6,12 +6,14 @@ import {connect} from "../index.node";
 import {ConnectConfig} from "../con_utils";
 import {getCasts, Casts} from "./queries/getCasts";
 import {getScalars, ScalarTypes} from "./queries/getScalars";
+import {FunctionTypes, getFunctions} from "./queries/getFunctions";
 import * as introspect from "./queries/getTypes";
 import * as genutil from "./util/genutil";
 import {generateCastMaps} from "./generators/generateCastMaps";
 import {generateScalars} from "./generators/generateScalars";
 import {generateObjectTypes} from "./generators/generateObjectTypes";
 import {generateRuntimeSpec} from "./generators/generateRuntimeSpec";
+import {generateFunctionTypes} from "./generators/generateFunctionTypes";
 
 const DEBUG = false;
 
@@ -21,6 +23,7 @@ export type GeneratorParams = {
   typesByName: Record<string, introspect.Type>;
   casts: Casts;
   scalars: ScalarTypes;
+  functions: FunctionTypes;
 };
 
 export async function generateQB(
@@ -36,6 +39,7 @@ export async function generateQB(
     const casts = await getCasts(cxn, {
       debug: DEBUG,
     });
+    const functions = await getFunctions(cxn);
 
     const typesByName: Record<string, introspect.Type> = {};
     for (const type of types.values()) {
@@ -45,11 +49,19 @@ export async function generateQB(
       if (!type.name.includes("::")) continue;
     }
 
-    const generatorParams = {dir, types, typesByName, casts, scalars};
+    const generatorParams: GeneratorParams = {
+      dir,
+      types,
+      typesByName,
+      casts,
+      scalars,
+      functions,
+    };
     await generateCastMaps(generatorParams);
     await generateScalars(generatorParams);
     await generateObjectTypes(generatorParams);
     await generateRuntimeSpec(generatorParams);
+    await generateFunctionTypes(generatorParams);
 
     // generate module imports
 

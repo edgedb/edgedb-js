@@ -11,7 +11,9 @@ export enum TypeKind {
   namedtuple = "namedtuple",
   tuple = "tuple",
   array = "array",
+  function = "function",
 }
+
 export interface BaseType {
   __kind__: TypeKind;
   __tstype__: unknown;
@@ -75,7 +77,13 @@ export enum ExpressionKind {
   PathLeaf = "PathLeaf",
   Literal = "Literal",
   Cast = "Cast",
+  Function = "Function",
 }
+
+export type MaterialTypeSet<
+  T extends MaterialType = MaterialType,
+  Card extends Cardinality = Cardinality
+> = TypeSet<T, Card>;
 
 export type ObjectTypeSet<
   T extends ObjectType = ObjectType,

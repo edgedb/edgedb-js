@@ -6,6 +6,7 @@ import {
   ObjectType,
   ObjectTypeShape,
   shapeToTsType,
+  MaterialType,
 } from "./typesystem";
 
 import {typeutil, util} from "./util/util";
@@ -71,11 +72,17 @@ function applySpec(
 
 export function makeType<T extends BaseType>(
   spec: introspect.Types,
-  id: string
+  id: string,
+  anytype?: MaterialType
 ): T {
   const type = spec.get(id);
   const obj: any = {};
   obj.__name__ = type.name;
+
+  if (type.name === "anytype") {
+    if (anytype) return anytype as T;
+    throw new Error("anytype not provided");
+  }
 
   if (type.kind === "object") {
     obj.__kind__ = TypeKind.object;

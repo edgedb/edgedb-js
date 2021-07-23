@@ -1,18 +1,20 @@
-import {ExpressionKind, MaterialType, TypeKind} from "reflection";
+import {ExpressionKind, util, MaterialType, TypeKind} from "reflection";
 import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
 import {$expr_PathLeaf, $expr_PathNode} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
+import {$expr_Function} from "./function";
 
 export type SomeExpression =
   | $expr_PathNode
   | $expr_PathLeaf
   | $expr_Literal
   | $expr_Set
-  | $expr_Cast;
+  | $expr_Cast
+  | $expr_Function;
 
-export function toEdgeQL(this: any) {
+export function toEdgeQL(this: any): string {
   const expr: SomeExpression = this;
   if (
     expr.__kind__ === ExpressionKind.PathNode ||
@@ -45,6 +47,13 @@ export function toEdgeQL(this: any) {
     }
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${expr.__expr__.toEdgeQL()}`;
+  } else if (expr.__kind__ === ExpressionKind.Function) {
+    let args = expr.__args__.map((arg) => (arg as any).toEdgeQL());
+    for (const [key, arg] of Object.entries(expr.__namedargs__)) {
+      args.push(`${key} := ${(arg as any).toEdgeQL()}`);
+    }
+    // const args: string[] = [];
+    return `${expr.__name__}(${args.join(", ")})`;
   } else {
     util.assertNever(expr, new Error(`Unrecognized expression kind.`));
   }

@@ -4,13 +4,19 @@ import {getRef, frag, joinFrags, splitName, quote} from "../util/genutil";
 import * as introspect from "../queries/getTypes";
 import {CodeFragment} from "../builders";
 
-const getStringRepresentation: (
+export const getStringRepresentation: (
   type: introspect.Type,
-  params: {types: introspect.Types}
+  params: {types: introspect.Types; anytype?: string}
 ) => {staticType: CodeFragment[]; runtimeType: CodeFragment[]} = (
   type,
   params
 ) => {
+  if (type.name === "anytype") {
+    return {
+      staticType: [params.anytype ?? `$.MaterialType`],
+      runtimeType: [],
+    };
+  }
   const {types} = params;
   if (type.kind === "object") {
     return {
