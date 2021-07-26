@@ -4,8 +4,9 @@ import {existsSync, realpathSync} from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as net from "net";
+import * as tls from "tls";
 
-export {path, net, crypto, fs, existsSync, realpathSync};
+export {path, net, crypto, fs, existsSync, realpathSync, tls};
 
 export function readFileUtf8Sync(fn: string): string {
   return fs.readFileSync(fn, {encoding: "utf8"});

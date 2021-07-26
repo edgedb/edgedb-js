@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {net, hrTime} from "./adapter.node";
+import {net, hrTime, tls} from "./adapter.node";
 
 import char, * as chars from "./chars";
 import {resolveErrorCode} from "./errors/resolve";
@@ -60,9 +60,8 @@ import {
 import {Transaction as LegacyTransaction} from "./legacy_transaction";
 import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 
-const PROTO_VER_MAJOR = 0;
-const PROTO_VER_MINOR_MIN = 9;
-const PROTO_VER_MINOR = 11;
+const PROTO_VER: [number, number] = [0, 11];
+const PROTO_VER_MIN: [number, number] = [0, 9];
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,
@@ -90,6 +89,32 @@ const OLD_ERROR_CODES = new Map([
 ]);
 
 const DEFAULT_MAX_ITERATIONS = 3;
+
+export function versionGreaterThan(
+  left: [number, number],
+  right: [number, number]
+): boolean {
+  if (left[0] > right[0]) {
+    return true;
+  }
+
+  if (left[0] < right[0]) {
+    return false;
+  }
+
+  return left[1] > right[1];
+}
+
+export function versionGreaterThanOrEqual(
+  left: [number, number],
+  right: [number, number]
+): boolean {
+  if (left[0] === right[0] && left[1] === right[1]) {
+    return true;
+  }
+
+  return versionGreaterThan(left, right);
+}
 
 export default function connect(
   dsn?: string | ConnectConfig | null,
@@ -482,10 +507,7 @@ export class ConnectionImpl {
 
   private opInProgress: boolean = false;
 
-  protected protocolVersion: ProtocolVersion = {
-    major: PROTO_VER_MAJOR,
-    minor: PROTO_VER_MINOR,
-  };
+  protected protocolVersion: [number, number] = PROTO_VER;
 
   /** @internal */
   protected constructor(sock: net.Socket, config: NormalizedConnectConfig) {
@@ -765,7 +787,7 @@ export class ConnectionImpl {
     addr: Address,
     config: NormalizedConnectConfig
   ): Promise<ConnectionImpl> {
-    const sock = this.newSock(addr);
+    const sock = this.newSock(addr, config.tlsOptions);
     const conn = new this(sock, {...config, addrs: [addr]});
     const connPromise = conn.connect();
     let timeoutCb = null;
@@ -801,6 +823,21 @@ export class ConnectionImpl {
       } else {
         let err: errors.ClientConnectionError;
         switch (e.code) {
+          case "EPROTO":
+            if (config.tlsOptions != null) {
+              // connecting over tls failed
+              // try to connect using clear text
+              try {
+                return this.connectWithTimeout(addr, {
+                  ...config,
+                  tlsOptions: undefined,
+                });
+              } catch {
+                // pass
+              }
+            }
+
+            err = new errors.ClientConnectionFailedError(e.message);
           case "ECONNREFUSED":
           case "ECONNABORTED":
           case "ECONNRESET":
@@ -830,8 +867,8 @@ export class ConnectionImpl {
 
     handshake
       .beginMessage(chars.$V)
-      .writeInt16(PROTO_VER_MAJOR)
-      .writeInt16(PROTO_VER_MINOR);
+      .writeInt16(this.protocolVersion[0])
+      .writeInt16(this.protocolVersion[1]);
 
     handshake.writeInt16(2);
     handshake.writeString("user");
@@ -858,10 +895,11 @@ export class ConnectionImpl {
           const lo = this.buffer.readInt16();
           this._parseHeaders();
           this.buffer.finishMessage();
+          const proposed: [number, number] = [hi, lo];
 
           if (
-            hi !== PROTO_VER_MAJOR ||
-            (hi === 0 && (lo < PROTO_VER_MINOR_MIN || lo > PROTO_VER_MINOR))
+            versionGreaterThan(proposed, PROTO_VER) ||
+            versionGreaterThan(PROTO_VER_MIN, proposed)
           ) {
             throw new Error(
               `the server requested an unsupported version of ` +
@@ -869,8 +907,7 @@ export class ConnectionImpl {
             );
           }
 
-          this.protocolVersion = {major: hi, minor: lo};
-
+          this.protocolVersion = [hi, lo];
           break;
         }
 
@@ -903,6 +940,19 @@ export class ConnectionImpl {
 
         case chars.$Z: {
           this._parseSyncMessage();
+
+          if (
+            !(this.sock instanceof tls.TLSSocket) &&
+            // @ts-ignore
+            typeof Deno === "undefined" &&
+            versionGreaterThanOrEqual(this.protocolVersion, [0, 11])
+          ) {
+            const [major, minor] = this.protocolVersion;
+            throw new Error(
+              `the protocol version requires TLS: ${major}.${minor}`
+            );
+          }
+
           this.connected = true;
           return;
         }
@@ -1483,14 +1533,22 @@ export class ConnectionImpl {
   }
 
   /** @internal */
-  private static newSock(addr: string | [string, number]): net.Socket {
+  private static newSock(
+    addr: string | [string, number],
+    options?: tls.ConnectionOptions
+  ): net.Socket {
     if (typeof addr === "string") {
       // unix socket
       return net.createConnection(addr);
-    } else {
-      const [host, port] = addr;
+    }
+
+    const [host, port] = addr;
+    if (options == null) {
       return net.createConnection(port, host);
     }
+
+    const opts = {...options, host, port};
+    return tls.connect(opts);
   }
 }
 
@@ -1501,7 +1559,7 @@ export class RawConnection extends ConnectionImpl {
   public async rawParse(
     query: string,
     headers?: PrepareMessageHeaders
-  ): Promise<[Buffer, Buffer, ProtocolVersion]> {
+  ): Promise<[Buffer, Buffer, [number, number]]> {
     const result = await this._parse(query, false, false, true, {headers});
     return [result[3]!, result[4]!, this.protocolVersion];
   }

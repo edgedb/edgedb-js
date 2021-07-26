@@ -26,7 +26,7 @@ jobs:
 
       - uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.10.x
+          deno-version: v1.12.x
 
       - name: Install dev deps
         run: |
