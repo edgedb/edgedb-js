@@ -32,7 +32,7 @@ export async function generateQB(
   const dir = new DirBuilder();
 
   try {
-    // await queryTest(cxn);
+    await queryTest(cxn);
     const types = await introspect.getTypes(cxn, {debug: DEBUG});
     const scalars = await getScalars(cxn);
     const casts = await getCasts(cxn, {
