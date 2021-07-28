@@ -838,6 +838,7 @@ export class ConnectionImpl {
             }
 
             err = new errors.ClientConnectionFailedError(e.message);
+            break;
           case "ECONNREFUSED":
           case "ECONNABORTED":
           case "ECONNRESET":
