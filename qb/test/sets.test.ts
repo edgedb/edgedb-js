@@ -1,6 +1,6 @@
-import * as e from "../generated/example";
-import {reflection as $} from "edgedb";
 import {Cardinality, TypeKind, typeutil} from "../../src/reflection";
+import {reflection as $} from "edgedb";
+import * as e from "../generated/example";
 
 test("empty sets", () => {
   const stringSet = e.set(e.$Str);

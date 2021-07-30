@@ -1,5 +1,5 @@
-import {Cardinality, typeutil} from "../../src/reflection";
-import {cardinalityUtil} from "../../src/reflection/util/cardinalityUtil";
+import {Cardinality, typeutil, cardinalityUtil} from "../../src/reflection";
+// import {cardinalityUtil} from "../../src/reflection/util/cardinalityUtil";
 
 test("pointerCardinality", () => {
   const _f0: typeutil.assertEqual<
