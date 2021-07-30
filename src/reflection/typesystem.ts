@@ -36,7 +36,7 @@ export interface ScalarType<Name extends string = string, TsType = unknown> {
 //////////////////
 // OBJECT TYPES
 //////////////////
-export type SomeObjectType = ObjectType<string, ObjectTypeShape, any, any[]>;
+export type SomeObjectType = ObjectType; //<string, ObjectTypeShape, any, any[]>;
 // {
 //   __kind__: TypeKind.object;
 //   __tstype__: any;
@@ -46,10 +46,10 @@ export type SomeObjectType = ObjectType<string, ObjectTypeShape, any, any[]>;
 //   __polys__: any[];
 // };
 export interface ObjectType<
-  Name extends string,
-  Shape extends ObjectTypeShape,
-  Params extends object | null,
-  Polys extends Poly[]
+  Name extends string = string,
+  Shape extends ObjectTypeShape = ObjectTypeShape,
+  Params extends object | null = object | null,
+  Polys extends Poly[] = Poly[]
 > {
   __kind__: TypeKind.object;
   __tstype__: computeObjectShape<Shape, Params, Polys>;
@@ -62,10 +62,6 @@ export interface ObjectType<
 export type objectExprToSelectParams<
   T extends ObjectTypeExpression
 > = shapeToSelectParams<T["__element__"]["__shape__"]>;
-
-// export type shapeExprToSelectParams<
-//   T extends BaseShapeExpression
-// > = objectTypeToSelectParams<T["__element__"]["__root__"]>;
 
 export type objectTypeToSelectParams<
   T extends SomeObjectType
@@ -114,30 +110,16 @@ export type shapeWithPolysToTs<
   Shape extends ObjectTypeShape,
   Params extends object | null,
   Polys extends Poly[]
-> =
-  // if expr is shapeexpression, go deeper
-  typeutil.flatten<
-    simpleShapeToTs<Shape, Params> &
-      unionToIntersection<
-        Polys[number] extends infer P
-          ? P extends Poly
-            ? Partial<simpleShapeToTs<P["type"]["__shape__"], P["params"]>>
-            : never
+> = typeutil.flatten<
+  simpleShapeToTs<Shape, Params> &
+    unionToIntersection<
+      Polys[number] extends infer P
+        ? P extends Poly
+          ? Partial<simpleShapeToTs<P["type"]["__shape__"], P["params"]>>
           : never
-      >
-  >;
-
-// simpleShapeToTs<Shape, Params> extends infer BaseShape
-//   ? Polys extends []
-//     ? BaseShape
-//     : Polys[number] extends infer P
-//     ? P extends Poly
-//       ? typeutil.flatten<
-//           BaseShape & simpleShapeToTs<P["type"]["__shape__"], P["params"]>
-//         >
-//       : unknown
-//     : unknown
-//   : never;
+        : never
+    >
+>;
 
 export type simpleShapeToTs<
   Shape extends ObjectTypeShape,
@@ -249,6 +231,7 @@ export type PrimitiveTypeSet<
 export type PrimitiveExpression<
   Set extends PrimitiveTypeSet = PrimitiveTypeSet
 > = BaseExpression<Set>;
+
 /////////////////////////
 /// COLLECTION TYPES
 /////////////////////////
@@ -406,60 +389,12 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
     >;
 
 ///////////////////////////////////
-// SHAPE VARIANTS
-///////////////////////////////////
-// export type BaseShapeType = {
-//   __root__: ObjectType;
-//   __expr__: BaseExpression;
-//   __kind__: TypeKind.shape;
-//   __name__: string;
-//   __tstype__: unknown;
-//   __params__: unknown;
-//   __polys__: unknown[];
-// };
-
-// export type BaseShapeTypeSet<
-//   T extends BaseShapeType = BaseShapeType,
-//   Card extends Cardinality = Cardinality
-// > = TypeSet<T, Card>;
-
-// export type BaseShapeExpression<
-//   Type extends BaseShapeType = BaseShapeType
-// > = BaseExpression<{
-//   __element__: Type;
-//   __cardinality__: Cardinality;
-// }>;
-
-// type unwrapType<T extends ObjectType | BaseShapeType> = T extends BaseShapeType
-//   ? unwrapType<T["__root__"]>
-//   : T;
-
-// export interface ShapeType<
-//   Expr extends ObjectTypeExpression | BaseShapeExpression =
-//     | ObjectTypeExpression
-//     | BaseShapeExpression,
-//   Params extends any = any,
-//   Polys extends Poly[] = Poly[],
-//   Root extends SomeObjectType = SomeObjectType
-// > {
-//   __root__: unwrapType<Expr["__element__"]>;
-//   __expr__: Expr;
-//   __kind__: TypeKind.shape;
-//   __name__: `shape`;
-//   __tstype__: computeObjectShape<Expr, Params, Polys>;
-//   __params__: Params;
-//   __polys__: Polys;
-//   // __name__: Name;
-// }
-
-///////////////////////////////////
 // DISCRIMINATED UNION OF ALL MATERIAL TYPES
 ///////////////////////////////////
 
 export type MaterialType =
   | ScalarType
-  | SomeObjectType
+  | ObjectType
   | UnnamedTupleType
   | NamedTupleType
   | ArrayType;
-// | BaseShapeType;
