@@ -177,7 +177,6 @@ export function select(expr: any, params?: any, ...polys: any[]) {
     }) as any;
   }
   return $pathify({
-    // __root__: (expr as ObjectTypeExpression).__element__,
     __element__: {
       __root__: (expr as ObjectTypeExpression).__element__,
       __expr__: expr,
@@ -192,54 +191,3 @@ export function select(expr: any, params?: any, ...polys: any[]) {
     toEdgeQL,
   }) as any;
 }
-
-// export type testcomputeObjectShape<
-//   Expr extends BaseExpression = BaseExpression,
-//   Params extends objectTypeToSelectParams<Expr> = objectTypeToSelectParams<Expr>,
-//   Polys extends Poly[] = Poly[]
-// > =
-//   // if expr is shapeexpression, go deeper
-//   Expr["__element__"] extends BaseShapeType
-//     ? testcomputeObjectShape<Expr["__element__"]["__expr__"], Params, Polys>
-//     : [undefined] extends [Params]
-//     ? {id: true} extends infer Default
-//       ? Default extends objectTypeToSelectParams<Expr>
-//         ? computeObjectShape<Expr, Default, Polys>
-//         : never
-//       : never
-//     : Expr extends infer U
-//     ? U extends ObjectTypeExpression
-//       ? simpleShape<U, Params> extends infer BaseShape
-//         ? Polys extends []
-//           ? BaseShape
-//           : Polys[number] extends infer P
-//           ? P extends Poly
-//             ? typeutil.flatten<BaseShape
-// & simpleShape<P["is"], P["params"]>>
-//             : unknown
-//           : unknown
-//         : never
-//       : setToTsType<Expr>
-//     : never;
-
-// export function testselect<
-//   Expr extends BaseExpression,
-//   Params extends objectTypeToSelectParams<Expr>,
-//   PolyExpr extends ObjectTypeExpression,
-//   Polys extends Poly<PolyExpr>[]
-// >(
-//   expr: Expr,
-//   params?: Params,
-//   ...polys: Polys
-// ): testcomputeObjectShape<Expr, Params, Polys>;
-// export function testselect(expr: any, params: any, ...polys: any[]) {
-//   return $pathify({
-//     __element__: (expr as ObjectTypeExpression).__element__,
-//     __cardinality__: (expr as ObjectTypeExpression).__cardinality__,
-//     __expr__: expr,
-//     __kind__: ExpressionKind.Select,
-//     __params__: params,
-//     __polys__: polys || [],
-//     toEdgeQL,
-//   }) as any;
-// }
