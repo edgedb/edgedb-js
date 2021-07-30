@@ -1,6 +1,6 @@
 import {
   BaseExpression,
-  BaseObjectType,
+  SomeObjectType,
   // BaseShapeExpression,
   // BaseShapeType,
   BaseTypeSet,
@@ -25,6 +25,7 @@ import {
   TypeKind,
   TypeSet,
   typeutil,
+  AnyPoly,
 } from "reflection";
 import {$pathify} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
@@ -48,9 +49,9 @@ type OrderBy = {
 };
 
 export type $expr_ShapeSelect<
-  Expr extends ObjectTypeExpression = ObjectTypeExpression,
-  Params extends unknown = {},
-  Polys extends Poly[] = []
+  Expr extends ObjectTypeExpression,
+  Params extends object | null,
+  Polys extends Poly[]
 > = BaseExpression<{
   __element__: ObjectType<
     `${Expr["__element__"]["__name__"]}_variant`,
@@ -85,11 +86,18 @@ export type $expr_SimpleSelect<
 //   ? mergeObjectsVariadic<[mergeObjects<A, B>, ...Rest]>
 //   : never;
 
-export function shape<
+// export function shape<
+//   Type extends SomeObjectType,
+//   Params extends objectTypeToSelectParams<Type>
+// >(expr: {__element__: Type}, params: Params) {
+//   return {type: expr.__element__, params};
+// }
+
+export function is<
   Expr extends ObjectTypeExpression,
   Params extends objectTypeToSelectParams<Expr["__element__"]>
->(expr: Expr, params: Params) {
-  return {is: expr, params};
+>(expr: Expr, params: Params): Poly<Expr["__element__"], Params> {
+  return {type: expr.__element__, params};
 }
 
 // export function select<
@@ -141,10 +149,23 @@ export function shape<
 //   params: Params
 //   // ...polys: Polys
 // ): Params; //$expr_ShapeSelect<Expr, Params>;
+export function select<Expr extends ObjectTypeExpression>(
+  expr: Expr
+): $expr_ShapeSelect<Expr, {id: true}, []>;
+export function select<Expr extends BaseExpression>(
+  expr: Expr
+): $expr_SimpleSelect<Expr>;
 export function select<
   Expr extends ObjectTypeExpression,
-  Params extends objectExprToSelectParams<Expr>
->(expr: Expr, params: Params): $expr_ShapeSelect<Expr, Params>;
+  Params extends objectExprToSelectParams<Expr>,
+  // variadic inference doesn't work properly
+  // if additional constraints are placed on Polys
+  Polys extends any[]
+>(
+  expr: Expr,
+  params: Params,
+  ...polys: Polys
+): $expr_ShapeSelect<Expr, Params, Polys>;
 export function select(expr: any, params?: any, ...polys: any[]) {
   if (!params) {
     return $pathify({

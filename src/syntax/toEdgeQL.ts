@@ -1,4 +1,11 @@
-import {ExpressionKind, MaterialType, Poly, TypeKind} from "reflection";
+import {
+  ExpressionKind,
+  MaterialType,
+  ObjectTypeExpression,
+  Poly,
+  SomeObjectType,
+  TypeKind,
+} from "reflection";
 import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
 import {$expr_PathLeaf, $expr_PathNode} from "./path";
 import {$expr_Literal} from "./literal";
@@ -13,7 +20,7 @@ export type SomeExpression =
   | $expr_Set
   | $expr_Cast
   | $expr_SimpleSelect
-  | $expr_ShapeSelect;
+  | $expr_ShapeSelect<ObjectTypeExpression, any, any>;
 
 function shapeToEdgeQL(
   _shape: object,

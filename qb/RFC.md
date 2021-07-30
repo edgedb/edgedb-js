@@ -388,17 +388,17 @@ e.select(
     id: true,
     name: true,
     IS_Hero: {
-      secret_identity:true
-    }
+      secret_identity: true,
+    },
   },
-  Person.$is(Hero, {
+  e.is(Hero, {
     secret_identity: true,
     villains: {
       id: true,
       name: true,
     },
   }),
-  Person.$is(Villain, {
+  e.is(Villain, {
     nemesis: {id: true},
   })
 );

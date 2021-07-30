@@ -10,3 +10,4 @@
 .DS_Store
 node_modules
 qb/generated
+.vscode

@@ -36,19 +36,20 @@ export interface ScalarType<Name extends string = string, TsType = unknown> {
 //////////////////
 // OBJECT TYPES
 //////////////////
-export type BaseObjectType = {
-  __kind__: TypeKind.object;
-  __tstype__: any;
-  __name__: string;
-  __shape__: ObjectTypeShape;
-  __params__: any;
-  __polys__: any[];
-};
+export type SomeObjectType = ObjectType<string, ObjectTypeShape, any, any[]>;
+// {
+//   __kind__: TypeKind.object;
+//   __tstype__: any;
+//   __name__: string;
+//   __shape__: ObjectTypeShape;
+//   __params__: any;
+//   __polys__: any[];
+// };
 export interface ObjectType<
-  Name extends string = string,
-  Shape extends ObjectTypeShape = ObjectTypeShape,
-  Params extends any = any,
-  Polys extends Poly[] = Poly[]
+  Name extends string,
+  Shape extends ObjectTypeShape,
+  Params extends object | null,
+  Polys extends Poly[]
 > {
   __kind__: TypeKind.object;
   __tstype__: computeObjectShape<Shape, Params, Polys>;
@@ -67,7 +68,7 @@ export type objectExprToSelectParams<
 // > = objectTypeToSelectParams<T["__element__"]["__root__"]>;
 
 export type objectTypeToSelectParams<
-  T extends BaseObjectType
+  T extends SomeObjectType
 > = shapeToSelectParams<T["__shape__"]>;
 
 export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
@@ -95,51 +96,73 @@ type isEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
 
 export type computeObjectShape<
   Shape extends ObjectTypeShape,
-  Params extends unknown,
+  Params extends object | null,
   Polys extends Poly[]
 > = isEqual<Shape, ObjectTypeShape> extends true
-  ? unknown
-  : isEqual<Params, unknown> extends true
+  ? any
+  : isEqual<Params, null> extends true
   ? shapeToTsType<Shape>
   : shapeWithPolysToTs<Shape, Params, Polys>;
 
+type unionToIntersection<U> = (
+  U extends any ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never;
+
 export type shapeWithPolysToTs<
   Shape extends ObjectTypeShape,
-  Params extends unknown,
+  Params extends object | null,
   Polys extends Poly[]
 > =
   // if expr is shapeexpression, go deeper
-  simpleShapeToTs<Shape, Params> extends infer BaseShape
-    ? Polys extends []
-      ? BaseShape
-      : Polys[number] extends infer P
-      ? P extends Poly
-        ? typeutil.flatten<
-            BaseShape & simpleShapeToTs<P["type"]["__shape__"], P["params"]>
-          >
-        : unknown
-      : unknown
-    : never;
+  typeutil.flatten<
+    simpleShapeToTs<Shape, Params> &
+      unionToIntersection<
+        Polys[number] extends infer P
+          ? P extends Poly
+            ? Partial<simpleShapeToTs<P["type"]["__shape__"], P["params"]>>
+            : never
+          : never
+      >
+  >;
 
-export type simpleShapeToTs<Shape extends ObjectTypeShape, Params> = {
-  [k in string & keyof Params]: k extends keyof Shape
-    ? Params[k] extends true
-      ? shapeElementToTsTypeSimple<Shape[k]>
-      : Params[k] extends false
-      ? never
-      : Params[k] extends boolean
-      ? shapeElementToTsType<Shape[k]> | undefined
-      : Params[k] extends object
-      ? Shape[k]["target"] extends BaseObjectType
-        ? simpleShapeToTs<Shape[k]["target"]["__shape__"], Params[k]>
+// simpleShapeToTs<Shape, Params> extends infer BaseShape
+//   ? Polys extends []
+//     ? BaseShape
+//     : Polys[number] extends infer P
+//     ? P extends Poly
+//       ? typeutil.flatten<
+//           BaseShape & simpleShapeToTs<P["type"]["__shape__"], P["params"]>
+//         >
+//       : unknown
+//     : unknown
+//   : never;
+
+export type simpleShapeToTs<
+  Shape extends ObjectTypeShape,
+  Params
+> = typeutil.flatten<
+  {
+    [k in keyof Params]: k extends keyof Shape
+      ? Params[k] extends true
+        ? shapeElementToTsTypeSimple<Shape[k]>
+        : Params[k] extends false
+        ? never
+        : Params[k] extends boolean
+        ? shapeElementToTsType<Shape[k]> | undefined
+        : Params[k] extends object
+        ? Shape[k]["target"] extends SomeObjectType
+          ? simpleShapeToTs<Shape[k]["target"]["__shape__"], Params[k]>
+          : never
         : never
-      : never
-    : Params[k] extends infer U
-    ? U extends TypeSet
-      ? setToTsType<U>
-      : never
-    : "invalid key";
-};
+      : Params[k] extends infer U
+      ? U extends TypeSet
+        ? setToTsType<U>
+        : never
+      : "invalid key";
+  }
+>;
 
 export type shapeElementToTsTypeSimple<
   El extends PropertyDesc | LinkDesc
@@ -150,18 +173,13 @@ export type shapeElementToTsTypeSimple<
   : never;
 
 export type Poly<
-  Type extends BaseObjectType = BaseObjectType,
+  Type extends SomeObjectType = SomeObjectType,
   Params extends objectTypeToSelectParams<Type> = any
 > = {
   type: Type;
   params: Params;
 };
-export function shape<
-  Expr extends ObjectTypeExpression,
-  Params extends objectTypeToSelectParams<Expr["__element__"]>
->(expr: Expr, params: Params) {
-  return {is: expr, params};
-}
+export type AnyPoly = {type: any; params: any};
 
 ////////////////////
 // SETS AND EXPRESSIONS
@@ -209,7 +227,7 @@ export enum ExpressionKind {
 }
 
 export type ObjectTypeSet<
-  T extends BaseObjectType = BaseObjectType,
+  T extends SomeObjectType = SomeObjectType,
   Card extends Cardinality = Cardinality
 > = TypeSet<T, Card>;
 
@@ -322,7 +340,7 @@ export type PropertyShape = {
 };
 
 export interface LinkDesc<
-  T extends BaseObjectType = BaseObjectType,
+  T extends SomeObjectType = SomeObjectType,
   C extends Cardinality = Cardinality,
   LinkProps extends PropertyShape = {}
 > {
@@ -335,8 +353,6 @@ export interface LinkDesc<
 export type ObjectTypeShape = {
   [k: string]: PropertyDesc | LinkDesc;
 };
-
-type adsfqewr = shapeToTsType<ObjectTypeShape>;
 
 /////////////////////
 /// TSTYPE HELPERS
@@ -424,7 +440,7 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
 //     | BaseShapeExpression,
 //   Params extends any = any,
 //   Polys extends Poly[] = Poly[],
-//   Root extends BaseObjectType = BaseObjectType
+//   Root extends SomeObjectType = SomeObjectType
 // > {
 //   __root__: unwrapType<Expr["__element__"]>;
 //   __expr__: Expr;
@@ -442,7 +458,7 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
 
 export type MaterialType =
   | ScalarType
-  | BaseObjectType
+  | SomeObjectType
   | UnnamedTupleType
   | NamedTupleType
   | ArrayType;
