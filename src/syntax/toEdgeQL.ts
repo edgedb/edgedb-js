@@ -26,11 +26,11 @@ function shapeToEdgeQL(
   const lines: string[] = [];
   const addLine = (line: string) => lines.push(`${innerSpacing}${line},`);
 
-  const shapes = [{is: null, params: _shape}, ...polys];
+  const shapes = [{type: null, params: _shape}, ...polys];
   const seen = new Set();
   for (const shapeObj of shapes) {
     const shape = shapeObj.params;
-    const polyType = shapeObj.is?.__element__.__name__;
+    const polyType = shapeObj.type?.__name__;
     const polyIntersection = polyType ? `[IS ${polyType}].` : "";
     for (const key in shape) {
       if (!shape.hasOwnProperty(key)) continue;
@@ -109,7 +109,7 @@ export function toEdgeQL(this: any) {
     lines.push(`SELECT ${expr.__expr__.toEdgeQL()}`);
     lines.push(
       shapeToEdgeQL(
-        expr.__element__.__params__,
+        (expr.__element__.__params__ || {}) as object,
         expr.__element__.__polys__ || []
       )
     );

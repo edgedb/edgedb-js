@@ -1,11 +1,11 @@
 import {
   BaseExpression,
-  BaseShapeExpression,
-  BaseShapeType,
+  BaseObjectType,
+  // BaseShapeExpression,
+  // BaseShapeType,
   BaseTypeSet,
-  computeSelectShape,
+  computeObjectShape,
   ExpressionKind,
-  exprToSelectParams,
   LinkDesc,
   linkToTsType,
   makeSet,
@@ -13,15 +13,15 @@ import {
   ObjectType,
   ObjectTypeExpression,
   ObjectTypeShape,
+  objectTypeToSelectParams,
   Poly,
   PropertyDesc,
   propToTsType,
-  selectParams,
   setToTsType,
   shapeElementToTsType,
-  shapeExprToSelectParams,
-  ShapeType,
-  simpleShape,
+  // shapeExprToSelectParams,
+  // ShapeType,
+  // simpleShape,
   TypeKind,
   TypeSet,
   typeutil,
@@ -48,28 +48,22 @@ type OrderBy = {
 };
 
 export type $expr_ShapeSelect<
-  Expr extends ObjectTypeExpression | BaseShapeExpression =
-    | ObjectTypeExpression
-    | BaseShapeExpression,
-  Params extends any = {},
+  Expr extends ObjectTypeExpression = ObjectTypeExpression,
+  Params extends unknown = {},
   Polys extends Poly[] = []
-  // Filters extends BaseExpression[] = BaseExpression[],
-  // OrderBys extends OrderBy[] = OrderBy[],
-  // Limit extends BaseExpression | null = BaseExpression | null,
-  // Offset extends BaseExpression | null = BaseExpression | null
 > = BaseExpression<{
-  __element__: ShapeType<Expr, Params, Polys>;
+  __element__: ObjectType<
+    `${Expr["__element__"]["__name__"]}_variant`,
+    Expr["__element__"]["__shape__"],
+    Params,
+    Polys
+  >;
   __cardinality__: Expr["__cardinality__"];
 }> & {
   __expr__: Expr;
   __kind__: ExpressionKind.ShapeSelect;
   __params__: Params;
   __polys__: Polys;
-  // __filters__: Filters;
-  // __orderBys__: OrderBys;
-  // __limit__: Limit;
-  // __offset__: Offset;
-  // __tstype__: computeSelectShape<Expr, Params, Polys>;
 };
 
 export type $expr_SimpleSelect<
@@ -93,7 +87,7 @@ export type $expr_SimpleSelect<
 
 export function shape<
   Expr extends ObjectTypeExpression,
-  Params extends selectParams<Expr["__element__"]>
+  Params extends objectTypeToSelectParams<Expr["__element__"]>
 >(expr: Expr, params: Params) {
   return {is: expr, params};
 }
@@ -101,32 +95,29 @@ export function shape<
 // export function select<
 //   OT extends ObjectType,
 //   Expr extends {__element__: OT} | {__element__: {__root__: OT}},
-//   Params extends selectParams<OT>
+//   Params extends objectTypeToSelectParams<OT>
 // >(expr: Expr, params: Params): $expr_ShapeSelect<Expr, Params>;
 // export function select<
 //   OT extends ObjectType,
 //   Expr extends {__element__: {__root__: OT}},
-//   Params extends selectParams<OT>
+//   Params extends objectTypeToSelectParams<OT>
 // >(
 //   expr: Expr,
 //   params: Params
 // ): Expr extends ObjectTypeExpression | BaseShapeExpression
 //   ? $expr_ShapeSelect<Expr, Params>
 //   : never;
-export function select<
-  Expr extends ObjectTypeExpression,
-  Params extends objectExprToSelectParams<Expr>
->(expr: Expr, params: Params): $expr_ShapeSelect<Expr, Params>;
-export function select<
-  Expr extends BaseShapeExpression,
-  Params extends shapeExprToSelectParams<Expr>
->(expr: Expr, params: Params): $expr_ShapeSelect<Expr, Params>;
+
+// export function select<
+//   Expr extends BaseShapeExpression,
+//   Params extends shapeExprToSelectParams<Expr>
+// >(expr: Expr, params: Params): $expr_ShapeSelect<Expr, Params>;
 
 // objectExprToSelectParams;
 // shapeExprToSelectParams;
 // export function select<
 //   Expr extends ObjectTypeExpression,
-//   Params extends selectParams<Expr["__element__"]>,
+//   Params extends objectTypeToSelectParams<Expr["__element__"]>,
 //   PolyExpr extends ObjectTypeExpression,
 //   Polys extends Poly<PolyExpr>[]
 // >(
@@ -150,6 +141,10 @@ export function select<
 //   params: Params
 //   // ...polys: Polys
 // ): Params; //$expr_ShapeSelect<Expr, Params>;
+export function select<
+  Expr extends ObjectTypeExpression,
+  Params extends objectExprToSelectParams<Expr>
+>(expr: Expr, params: Params): $expr_ShapeSelect<Expr, Params>;
 export function select(expr: any, params?: any, ...polys: any[]) {
   if (!params) {
     return $pathify({
@@ -177,18 +172,18 @@ export function select(expr: any, params?: any, ...polys: any[]) {
   }) as any;
 }
 
-// export type testComputeSelectShape<
+// export type testcomputeObjectShape<
 //   Expr extends BaseExpression = BaseExpression,
-//   Params extends selectParams<Expr> = selectParams<Expr>,
+//   Params extends objectTypeToSelectParams<Expr> = objectTypeToSelectParams<Expr>,
 //   Polys extends Poly[] = Poly[]
 // > =
 //   // if expr is shapeexpression, go deeper
 //   Expr["__element__"] extends BaseShapeType
-//     ? testComputeSelectShape<Expr["__element__"]["__expr__"], Params, Polys>
+//     ? testcomputeObjectShape<Expr["__element__"]["__expr__"], Params, Polys>
 //     : [undefined] extends [Params]
 //     ? {id: true} extends infer Default
-//       ? Default extends selectParams<Expr>
-//         ? computeSelectShape<Expr, Default, Polys>
+//       ? Default extends objectTypeToSelectParams<Expr>
+//         ? computeObjectShape<Expr, Default, Polys>
 //         : never
 //       : never
 //     : Expr extends infer U
@@ -208,14 +203,14 @@ export function select(expr: any, params?: any, ...polys: any[]) {
 
 // export function testselect<
 //   Expr extends BaseExpression,
-//   Params extends selectParams<Expr>,
+//   Params extends objectTypeToSelectParams<Expr>,
 //   PolyExpr extends ObjectTypeExpression,
 //   Polys extends Poly<PolyExpr>[]
 // >(
 //   expr: Expr,
 //   params?: Params,
 //   ...polys: Polys
-// ): testComputeSelectShape<Expr, Params, Polys>;
+// ): testcomputeObjectShape<Expr, Params, Polys>;
 // export function testselect(expr: any, params: any, ...polys: any[]) {
 //   return $pathify({
 //     __element__: (expr as ObjectTypeExpression).__element__,
