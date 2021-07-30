@@ -96,6 +96,8 @@ export function makeType<T extends BaseType>(
       }
       return shape as any;
     });
+    obj.__params__ = null;
+    obj.__polys__ = [];
     return obj;
   } else if (type.kind === "scalar") {
     obj.__kind__ = TypeKind.scalar;

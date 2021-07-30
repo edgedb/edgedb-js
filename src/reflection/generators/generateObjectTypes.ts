@@ -184,7 +184,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
 
     // instantiate ObjectType subtype from shape
     body.writeln(
-      `export type ${ident} = $.ObjectType<"${type.name}", ${ident}Shape>;`
+      `export type ${ident} = $.ObjectType<"${type.name}", ${ident}Shape, null, []>;`
     );
 
     /////////

@@ -33,14 +33,134 @@ export interface ScalarType<Name extends string = string, TsType = unknown> {
   __name__: Name;
 }
 
+//////////////////
+// OBJECT TYPES
+//////////////////
+export type BaseObjectType = {
+  __kind__: TypeKind.object;
+  __tstype__: any;
+  __name__: string;
+  __shape__: ObjectTypeShape;
+  __params__: any;
+  __polys__: any[];
+};
 export interface ObjectType<
   Name extends string = string,
-  Shape extends ObjectTypeShape = ObjectTypeShape
+  Shape extends ObjectTypeShape = ObjectTypeShape,
+  Params extends any = any,
+  Polys extends Poly[] = Poly[]
 > {
   __kind__: TypeKind.object;
-  __tstype__: shapeToTsType<Shape>;
+  __tstype__: computeObjectShape<Shape, Params, Polys>;
   __name__: Name;
   __shape__: Shape;
+  __params__: Params;
+  __polys__: Polys;
+}
+
+export type objectExprToSelectParams<
+  T extends ObjectTypeExpression
+> = shapeToSelectParams<T["__element__"]["__shape__"]>;
+
+// export type shapeExprToSelectParams<
+//   T extends BaseShapeExpression
+// > = objectTypeToSelectParams<T["__element__"]["__root__"]>;
+
+export type objectTypeToSelectParams<
+  T extends BaseObjectType
+> = shapeToSelectParams<T["__shape__"]>;
+
+export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
+  {
+    [k in keyof Shape]: Shape[k] extends PropertyDesc
+      ? boolean
+      : Shape[k] extends LinkDesc
+      ?
+          | true
+          | (shapeToSelectParams<Shape[k]["target"]["__shape__"]> &
+              linkDescShape<Shape[k]>)
+      : any;
+  }
+>;
+
+export type linkDescShape<Link extends LinkDesc> = addAtSigns<
+  Link["properties"]
+> extends ObjectTypeShape
+  ? shapeToSelectParams<addAtSigns<Link["properties"]>>
+  : never;
+
+export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
+
+type isEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
+
+export type computeObjectShape<
+  Shape extends ObjectTypeShape,
+  Params extends unknown,
+  Polys extends Poly[]
+> = isEqual<Shape, ObjectTypeShape> extends true
+  ? unknown
+  : isEqual<Params, unknown> extends true
+  ? shapeToTsType<Shape>
+  : shapeWithPolysToTs<Shape, Params, Polys>;
+
+export type shapeWithPolysToTs<
+  Shape extends ObjectTypeShape,
+  Params extends unknown,
+  Polys extends Poly[]
+> =
+  // if expr is shapeexpression, go deeper
+  simpleShapeToTs<Shape, Params> extends infer BaseShape
+    ? Polys extends []
+      ? BaseShape
+      : Polys[number] extends infer P
+      ? P extends Poly
+        ? typeutil.flatten<
+            BaseShape & simpleShapeToTs<P["type"]["__shape__"], P["params"]>
+          >
+        : unknown
+      : unknown
+    : never;
+
+export type simpleShapeToTs<Shape extends ObjectTypeShape, Params> = {
+  [k in string & keyof Params]: k extends keyof Shape
+    ? Params[k] extends true
+      ? shapeElementToTsTypeSimple<Shape[k]>
+      : Params[k] extends false
+      ? never
+      : Params[k] extends boolean
+      ? shapeElementToTsType<Shape[k]> | undefined
+      : Params[k] extends object
+      ? Shape[k]["target"] extends BaseObjectType
+        ? simpleShapeToTs<Shape[k]["target"]["__shape__"], Params[k]>
+        : never
+      : never
+    : Params[k] extends infer U
+    ? U extends TypeSet
+      ? setToTsType<U>
+      : never
+    : "invalid key";
+};
+
+export type shapeElementToTsTypeSimple<
+  El extends PropertyDesc | LinkDesc
+> = El extends PropertyDesc
+  ? propToTsType<El>
+  : El extends LinkDesc<any, any, any>
+  ? {id: string}
+  : never;
+
+export type Poly<
+  Type extends BaseObjectType = BaseObjectType,
+  Params extends objectTypeToSelectParams<Type> = any
+> = {
+  type: Type;
+  params: Params;
+};
+export function shape<
+  Expr extends ObjectTypeExpression,
+  Params extends objectTypeToSelectParams<Expr["__element__"]>
+>(expr: Expr, params: Params) {
+  return {is: expr, params};
 }
 
 ////////////////////
@@ -89,7 +209,7 @@ export enum ExpressionKind {
 }
 
 export type ObjectTypeSet<
-  T extends ObjectType = ObjectType,
+  T extends BaseObjectType = BaseObjectType,
   Card extends Cardinality = Cardinality
 > = TypeSet<T, Card>;
 
@@ -202,7 +322,7 @@ export type PropertyShape = {
 };
 
 export interface LinkDesc<
-  T extends ObjectType = ObjectType,
+  T extends BaseObjectType = BaseObjectType,
   C extends Cardinality = Cardinality,
   LinkProps extends PropertyShape = {}
 > {
@@ -272,168 +392,49 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
 ///////////////////////////////////
 // SHAPE VARIANTS
 ///////////////////////////////////
-export type BaseShapeType = {
-  __root__: ObjectType;
-  __expr__: BaseExpression;
-  __kind__: TypeKind.shape;
-  __name__: string;
-  __tstype__: unknown;
-  __params__: unknown;
-  __polys__: unknown[];
-};
+// export type BaseShapeType = {
+//   __root__: ObjectType;
+//   __expr__: BaseExpression;
+//   __kind__: TypeKind.shape;
+//   __name__: string;
+//   __tstype__: unknown;
+//   __params__: unknown;
+//   __polys__: unknown[];
+// };
 
-export type BaseShapeTypeSet<
-  T extends BaseShapeType = BaseShapeType,
-  Card extends Cardinality = Cardinality
-> = TypeSet<T, Card>;
+// export type BaseShapeTypeSet<
+//   T extends BaseShapeType = BaseShapeType,
+//   Card extends Cardinality = Cardinality
+// > = TypeSet<T, Card>;
 
-export type BaseShapeExpression<
-  Type extends BaseShapeType = BaseShapeType
-> = BaseExpression<{
-  __element__: Type;
-  __cardinality__: Cardinality;
-}>;
+// export type BaseShapeExpression<
+//   Type extends BaseShapeType = BaseShapeType
+// > = BaseExpression<{
+//   __element__: Type;
+//   __cardinality__: Cardinality;
+// }>;
 
-type unwrapType<T extends ObjectType | BaseShapeType> = T extends BaseShapeType
-  ? unwrapType<T["__root__"]>
-  : T;
+// type unwrapType<T extends ObjectType | BaseShapeType> = T extends BaseShapeType
+//   ? unwrapType<T["__root__"]>
+//   : T;
 
-export interface ShapeType<
-  Expr extends ObjectTypeExpression | BaseShapeExpression =
-    | ObjectTypeExpression
-    | BaseShapeExpression,
-  Params extends any = any,
-  Polys extends Poly[] = Poly[],
-  Root extends ObjectType = ObjectType
-> {
-  __root__: unwrapType<Expr["__element__"]>;
-  __expr__: Expr;
-  __kind__: TypeKind.shape;
-  __name__: `shape`;
-  __tstype__: computeSelectShape<Expr, Params, Polys>;
-  __params__: Params;
-  __polys__: Polys;
-  // __name__: Name;
-}
-
-export type exprToSelectParams<
-  T extends ObjectTypeExpression | BaseShapeExpression
-> = T extends ObjectTypeExpression
-  ? selectParams<T["__element__"]>
-  : T extends BaseShapeExpression
-  ? selectParams<T["__element__"]["__root__"]>
-  : never;
-
-export type objectExprToSelectParams<
-  T extends ObjectTypeExpression
-> = selectParams<T["__element__"]>;
-
-export type shapeExprToSelectParams<
-  T extends BaseShapeExpression
-> = selectParams<T["__element__"]["__root__"]>;
-
-export type selectParams<T extends ObjectType> = shapeToSelectParams<
-  T["__shape__"]
->;
-
-export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
-  {
-    [k in keyof Shape]: Shape[k] extends PropertyDesc
-      ? boolean
-      : Shape[k] extends LinkDesc
-      ?
-          | true
-          | (shapeToSelectParams<Shape[k]["target"]["__shape__"]> &
-              linkDescShape<Shape[k]>)
-      : any;
-  }
->;
-
-export type linkDescShape<Link extends LinkDesc> = addAtSigns<
-  Link["properties"]
-> extends ObjectTypeShape
-  ? shapeToSelectParams<addAtSigns<Link["properties"]>>
-  : never;
-
-export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
-
-export type computeSelectShape<
-  Expr extends BaseExpression = BaseExpression,
-  Params extends any = any,
-  Polys extends Poly[] = Poly[]
-> =
-  // if expr is shapeexpression, go deeper
-  Expr["__element__"] extends BaseShapeType
-    ? computeSelectShape<Expr["__element__"]["__expr__"], Params, Polys>
-    : Expr extends infer U
-    ? U extends ObjectTypeExpression
-      ? simpleShape<U, Params> extends infer BaseShape
-        ? Polys extends []
-          ? BaseShape
-          : Polys[number] extends infer P
-          ? P extends Poly
-            ? typeutil.flatten<BaseShape & simpleShape<P["is"], P["params"]>>
-            : unknown
-          : unknown
-        : never
-      : setToTsType<Expr>
-    : never;
-
-// if object: compute type from shape
-// else: return ts representation of expression
-export type simpleShape<
-  Expr extends ObjectTypeExpression,
-  Params
-> = Expr extends ObjectTypeExpression
-  ? {
-      [k in string &
-        keyof Params]: k extends keyof Expr["__element__"]["__shape__"]
-        ? Params[k] extends true
-          ? shapeElementToTsTypeSimple<Expr["__element__"]["__shape__"][k]>
-          : Params[k] extends false
-          ? never
-          : Params[k] extends boolean
-          ?
-              | shapeElementToTsType<Expr["__element__"]["__shape__"][k]>
-              | undefined
-          : Params[k] extends object
-          ? Expr["__element__"]["__shape__"][k]["target"] extends ObjectType
-            ? simpleShape<
-                {
-                  __cardinality__: Expr["__element__"]["__shape__"][k]["cardinality"];
-                  __element__: Expr["__element__"]["__shape__"][k]["target"];
-                  toEdgeQL: any;
-                },
-                Params[k]
-              >
-            : never
-          : never
-        : Params[k] extends infer U
-        ? U extends TypeSet
-          ? setToTsType<U>
-          : never
-        : "invalid key";
-    }
-  : setToTsType<Expr>;
-
-export type shapeElementToTsTypeSimple<
-  El extends PropertyDesc | LinkDesc
-> = El extends PropertyDesc
-  ? propToTsType<El>
-  : El extends LinkDesc<any, any, any>
-  ? {id: string}
-  : never;
-
-export type Poly<Expr extends ObjectTypeExpression = ObjectTypeExpression> = {
-  is: Expr;
-  params: selectParams<Expr["__element__"]>;
-};
-export function shape<
-  Expr extends ObjectTypeExpression,
-  Params extends selectParams<Expr["__element__"]>
->(expr: Expr, params: Params) {
-  return {is: expr, params};
-}
+// export interface ShapeType<
+//   Expr extends ObjectTypeExpression | BaseShapeExpression =
+//     | ObjectTypeExpression
+//     | BaseShapeExpression,
+//   Params extends any = any,
+//   Polys extends Poly[] = Poly[],
+//   Root extends BaseObjectType = BaseObjectType
+// > {
+//   __root__: unwrapType<Expr["__element__"]>;
+//   __expr__: Expr;
+//   __kind__: TypeKind.shape;
+//   __name__: `shape`;
+//   __tstype__: computeObjectShape<Expr, Params, Polys>;
+//   __params__: Params;
+//   __polys__: Polys;
+//   // __name__: Name;
+// }
 
 ///////////////////////////////////
 // DISCRIMINATED UNION OF ALL MATERIAL TYPES
@@ -441,8 +442,8 @@ export function shape<
 
 export type MaterialType =
   | ScalarType
-  | ObjectType
+  | BaseObjectType
   | UnnamedTupleType
   | NamedTupleType
-  | ArrayType
-  | BaseShapeType;
+  | ArrayType;
+// | BaseShapeType;

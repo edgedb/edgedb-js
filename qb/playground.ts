@@ -3,17 +3,9 @@
 import * as e from "./generated/example";
 
 import {reflection as $} from "edgedb";
-import {
-  BaseExpression,
-  exprToSelectParams,
-  linkDescShape,
-  ObjectTypeExpression,
-  Poly,
-  selectParams,
-  shapeExprToSelectParams,
-} from "reflection";
+import {} from "reflection";
 import {select} from "@syntax/select";
-import {argv} from "process";
+// import {argv} from "process";
 
 e.str("asdf");
 e.bigint(BigInt(1234));
@@ -36,14 +28,16 @@ select(e.Hero, {
 const q2 = select(e.Villain, {
   id: true,
   name: 1 > 0,
+  // nemesis: {id: true},
   nemesis: {id: true},
   computed: e.str("person"),
 });
-type q2 = typeof q2["__element__"]["__tstype__"];
+type q2 = typeof q2["__element__"];
 
 const q3 = select(q2, {
   id: true,
-  name: 1 > 0,
+  // name: true,
+  name: true,
   nemesis: {id: true},
   computed: e.str("person"),
 });
@@ -58,7 +52,7 @@ function test<
   A extends {nested: object},
   T extends {[k in keyof A["nested"]]?: true}
 >(a: A, arg: T): T;
-function test(arg: any, b: any) {
+function test(arg: any, _b: any) {
   return "asdf" as any;
 }
 const a = test({shape: myshape}, {a: true});
