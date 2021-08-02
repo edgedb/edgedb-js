@@ -7,7 +7,7 @@ import {
   TypeKind,
 } from "reflection";
 import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
-import {$expr_PathLeaf, $expr_PathNode} from "./path";
+import {$expr_PathLeaf, $expr_PathNode, $pathify} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
@@ -21,6 +21,13 @@ export type SomeExpression =
   | $expr_Cast
   | $expr_SimpleSelect
   | $expr_ShapeSelect<ObjectTypeExpression, any, any>;
+
+// type expr = $expr_ShapeSelect<ObjectTypeExpression, any, any>;
+// type elem = expr["__element__"];
+// type p = $pathify<{
+//   __element__: expr["__element__"];
+//   __cardinality__: expr["__cardinality__"];
+// }>;
 
 function shapeToEdgeQL(
   _shape: object,

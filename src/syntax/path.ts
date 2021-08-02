@@ -11,6 +11,7 @@ import {
   ExpressionKind,
   util,
   TypeKind,
+  ObjectTypeShape,
 } from "reflection";
 
 import {toEdgeQL} from "./toEdgeQL";
@@ -54,6 +55,8 @@ export type $pathify<
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
     ? unknown // Root is literally ObjectTypeSet
+    : ObjectTypeShape extends Root["__element__"]["__shape__"]
+    ? unknown
     : {
         // & string required to avod typeError on linkName
         [k in keyof Root["__element__"]["__shape__"] &

@@ -23,7 +23,7 @@ export const $expr_Literal = <T extends MaterialType>(
     __cardinality__: Cardinality.One,
     __kind__: ExpressionKind.Literal,
     __value__: value,
-    toEdgeQL,
+    // toEdgeQL,
   } as any;
 };
 

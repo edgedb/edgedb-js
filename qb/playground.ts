@@ -1,10 +1,7 @@
 // tslint:disable:no-console
 // import {select, selectParams, simpleShape} from "@syntax/select";
 import * as e from "./generated/example";
-
-import {reflection as $} from "edgedb";
-import {} from "reflection";
-import {is, select} from "@syntax/select";
+// import {is, select} from "../src/syntax/syntax";
 // import {argv} from "process";
 
 e.str("asdf");
@@ -18,25 +15,25 @@ e.literal(asdf, ["asdf"]);
 e.cast(e.$Str, e.int64(1234));
 e.set(e.Hero, e.Villain);
 
-select(e.Hero, {
+e.select(e.Hero, {
   villains: {nemesis: {villains: {nemesis: true}}},
 });
 
-const villainShape = is(e.Villain, {
+const villainShape = e.is(e.Villain, {
   nemesis: {name: true},
 });
 
-const q2 = select(
+const q2 = e.select(
   e.Person,
   {
     id: true,
     name: true,
     computed: e.str("person"),
   },
-  is(e.Hero, {
+  e.is(e.Hero, {
     secret_identity: true,
   }),
-  is(e.Villain, {
+  e.is(e.Villain, {
     nemesis: {name: true},
   })
 );
@@ -55,13 +52,13 @@ type q2 = typeof q2["__element__"]["__tstype__"];
 }
 */
 
-const result = select(e.Hero);
+const result = e.select(e.Hero);
 type result = typeof result["__element__"]["__tstype__"];
 
-const asldfkj = select(e.str("asdf"));
+const asldfkj = e.select(e.str("asdf"));
 type asldfkj = typeof asldfkj["__element__"]["__tstype__"];
 
-const q3 = select(q2, {
+const q3 = e.select(q2, {
   id: true,
   name: true,
   nemesis: {id: true},

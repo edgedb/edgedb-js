@@ -16,7 +16,7 @@ export function cast<Target extends MaterialType, Expr extends BaseExpression>(
     __cardinality__: expr.__cardinality__,
     __expr__: expr,
     __kind__: ExpressionKind.Cast,
-    toEdgeQL,
+    // toEdgeQL,
   }) as any;
 }
 

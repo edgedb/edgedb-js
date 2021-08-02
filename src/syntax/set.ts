@@ -198,7 +198,7 @@ export function set(..._exprs: any[]) {
       __kind__: ExpressionKind.Set,
       __element__: element,
       __cardinality__: Cardinality.Empty,
-      toEdgeQL,
+      // toEdgeQL,
       __exprs__: [],
     }) as any;
   }

@@ -1,5 +1,5 @@
 // import * as edgedb from "edgedb";
-import {computeObjectShape, simpleShapeToTs, typeutil} from "reflection";
+import {ExpressionKind, TypeKind, typeutil} from "edgedb/src/reflection";
 import * as e from "../generated/example";
 
 test("basic select", () => {
@@ -57,6 +57,7 @@ test("composability", () => {
       name: string | undefined;
     }
   > = true;
+  console.log(nested);
 });
 
 test("polymorphism", () => {
@@ -72,7 +73,19 @@ test("polymorphism", () => {
     })
   );
 
-  type poly = typeof query["__polys__"][0];
+  console.log(query);
+  expect(query.__kind__).toEqual(ExpressionKind.ShapeSelect);
+  expect(query.__element__.__kind__).toEqual(TypeKind.object);
+  expect(query.__element__.__name__).toEqual("default::Person_shape");
+  expect(query.__element__.__params__).toEqual({id: true, name: true});
+  expect(query.__element__.__polys__[0].params).toEqual({
+    secret_identity: true,
+  });
+  expect(query.__element__.__polys__[1].params).toEqual({
+    nemesis: {name: true},
+  });
+
+  type poly = typeof query["__element__"]["__polys__"][0];
   const f1: typeutil.assertEqual<
     poly["params"],
     {secret_identity: true}

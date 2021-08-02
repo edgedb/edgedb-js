@@ -1,5 +1,6 @@
 // no runtime imports
-import type {$pathify} from "../syntax/path";
+// import type {$pathify} from "../syntax/path";
+import type {$pathify} from "@generated/syntax/path";
 import type {typeutil} from "./util/typeutil";
 
 //////////////////
@@ -35,16 +36,16 @@ export interface ScalarType<Name extends string = string, TsType = unknown> {
 //////////////////
 // OBJECT TYPES
 //////////////////
-export type SomeObjectType = ObjectType;
+// export type SomeObjectType = ObjectType;
 
-// {
-//   __kind__: TypeKind.object;
-//   __tstype__: any;
-//   __name__: string;
-//   __shape__: ObjectTypeShape;
-//   __params__: any;
-//   __polys__: any[];
-// };
+export type SomeObjectType = {
+  __kind__: TypeKind.object;
+  __tstype__: any;
+  __name__: string;
+  __shape__: ObjectTypeShape;
+  __params__: any;
+  __polys__: any[];
+};
 
 // ObjectType; //<string, ObjectTypeShape, any, any[]>;;
 export interface ObjectType<
@@ -92,11 +93,13 @@ export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
 
 type isEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
 
+type aldskfj = keyof {asdf: "alskdfj"};
+
 export type computeObjectShape<
   Shape extends ObjectTypeShape,
   Params extends object | null,
   Polys extends Poly[]
-> = isEqual<Shape, ObjectTypeShape> extends true
+> = string extends keyof Shape // checks if Shape is actually defined
   ? any
   : isEqual<Params, null> extends true
   ? shapeToTsType<Shape>
@@ -158,7 +161,7 @@ export type shapeElementToTsTypeSimple<
 
 export type Poly<
   Type extends SomeObjectType = SomeObjectType,
-  Params extends objectTypeToSelectParams<Type> = any
+  Params extends any = any
 > = {
   type: Type;
   params: Params;
