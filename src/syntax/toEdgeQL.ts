@@ -1,10 +1,17 @@
-import {ExpressionKind, MaterialType, TypeKind} from "reflection";
+import {
+  ExpressionKind,
+  MaterialType,
+  ObjectTypeExpression,
+  Poly,
+  SomeObjectType,
+  TypeKind,
+} from "reflection";
 import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
 import {$expr_PathLeaf, $expr_PathNode} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
-import {$expr_Select, Poly} from "./select";
+import {$expr_SimpleSelect, $expr_ShapeSelect} from "./select";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -12,7 +19,8 @@ export type SomeExpression =
   | $expr_Literal
   | $expr_Set
   | $expr_Cast
-  | $expr_Select;
+  | $expr_SimpleSelect
+  | $expr_ShapeSelect<ObjectTypeExpression, any, any>;
 
 function shapeToEdgeQL(
   _shape: object,
@@ -25,11 +33,11 @@ function shapeToEdgeQL(
   const lines: string[] = [];
   const addLine = (line: string) => lines.push(`${innerSpacing}${line},`);
 
-  const shapes = [{is: null, params: _shape}, ...polys];
+  const shapes = [{type: null, params: _shape}, ...polys];
   const seen = new Set();
   for (const shapeObj of shapes) {
     const shape = shapeObj.params;
-    const polyType = shapeObj.is?.__element__.__name__;
+    const polyType = shapeObj.type?.__name__;
     const polyIntersection = polyType ? `[IS ${polyType}].` : "";
     for (const key in shape) {
       if (!shape.hasOwnProperty(key)) continue;
@@ -101,10 +109,17 @@ export function toEdgeQL(this: any) {
     }
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${expr.__expr__.toEdgeQL()}`;
-  } else if (expr.__kind__ === ExpressionKind.Select) {
+  } else if (expr.__kind__ === ExpressionKind.SimpleSelect) {
+    return `SELECT ${expr.__expr__.toEdgeQL()}`;
+  } else if (expr.__kind__ === ExpressionKind.ShapeSelect) {
     const lines = [];
     lines.push(`SELECT ${expr.__expr__.toEdgeQL()}`);
-    lines.push(shapeToEdgeQL(expr.__params__, expr.__polys__ || []));
+    lines.push(
+      shapeToEdgeQL(
+        (expr.__element__.__params__ || {}) as object,
+        expr.__element__.__polys__ || []
+      )
+    );
     return lines.join("\n");
   } else {
     throw new Error(`Unrecognized expression kind.`);

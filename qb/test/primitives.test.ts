@@ -1,5 +1,5 @@
 import * as edgedb from "edgedb";
-import {typeutil} from "../../src/reflection";
+import {typeutil} from "reflection";
 import * as e from "../generated/example";
 
 test("primitive types", () => {

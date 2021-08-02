@@ -21,5 +21,6 @@ export * from "./typesystem";
 export * from "./strictMap";
 export * as introspect from "./queries/getTypes";
 export * from "./hydrate";
+export * from "./util/cardinalityUtil";
 
 // export * from "./syntax/syntax";

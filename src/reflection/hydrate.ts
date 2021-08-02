@@ -6,6 +6,7 @@ import {
   ObjectType,
   ObjectTypeShape,
   shapeToTsType,
+  SomeObjectType,
 } from "./typesystem";
 
 import {typeutil, util} from "./util/util";
@@ -96,6 +97,8 @@ export function makeType<T extends BaseType>(
       }
       return shape as any;
     });
+    obj.__params__ = null;
+    obj.__polys__ = [];
     return obj;
   } else if (type.kind === "scalar") {
     obj.__kind__ = TypeKind.scalar;
@@ -148,17 +151,19 @@ export type mergeObjectShapes<
 >;
 
 export type mergeObjectTypes<
-  A extends ObjectType,
-  B extends ObjectType
+  A extends SomeObjectType,
+  B extends SomeObjectType
 > = ObjectType<
   `${A["__name__"]} UNION ${B["__name__"]}`,
-  mergeObjectShapes<A["__shape__"], B["__shape__"]>
+  mergeObjectShapes<A["__shape__"], B["__shape__"]>,
+  null,
+  []
 >;
 
-export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
-  a: A,
-  b: B
-): mergeObjectTypes<A, B> {
+export function mergeObjectTypes<
+  A extends SomeObjectType,
+  B extends SomeObjectType
+>(a: A, b: B): mergeObjectTypes<A, B> {
   const obj: any = {
     __kind__: TypeKind.object,
     __name__: `${a.__name__} UNION ${b.__name__}`,
