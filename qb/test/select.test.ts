@@ -93,3 +93,8 @@ test("polymorphism", () => {
     }
   > = true;
 });
+
+test("shape type name", () => {
+  const name = e.select(e.Hero).__element__.__name__;
+  const f1: typeutil.assertEqual<typeof name, "default::Hero_shape"> = true;
+});

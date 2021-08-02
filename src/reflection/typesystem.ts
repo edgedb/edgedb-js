@@ -11,7 +11,6 @@ export enum TypeKind {
   namedtuple = "namedtuple",
   unnamedtuple = "unnamedtuple",
   array = "array",
-  shape = "shape",
 }
 export interface BaseType {
   __kind__: TypeKind;
@@ -36,7 +35,8 @@ export interface ScalarType<Name extends string = string, TsType = unknown> {
 //////////////////
 // OBJECT TYPES
 //////////////////
-export type SomeObjectType = ObjectType; //<string, ObjectTypeShape, any, any[]>;
+export type SomeObjectType = ObjectType;
+
 // {
 //   __kind__: TypeKind.object;
 //   __tstype__: any;
@@ -45,6 +45,8 @@ export type SomeObjectType = ObjectType; //<string, ObjectTypeShape, any, any[]>
 //   __params__: any;
 //   __polys__: any[];
 // };
+
+// ObjectType; //<string, ObjectTypeShape, any, any[]>;;
 export interface ObjectType<
   Name extends string = string,
   Shape extends ObjectTypeShape = ObjectTypeShape,
@@ -394,7 +396,7 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
 
 export type MaterialType =
   | ScalarType
-  | ObjectType
+  | SomeObjectType
   | UnnamedTupleType
   | NamedTupleType
   | ArrayType;

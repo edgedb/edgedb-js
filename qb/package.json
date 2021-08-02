@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --detectOpenHandles",
     "generate": "ts-node --project tsconfig.json run.ts",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings"
