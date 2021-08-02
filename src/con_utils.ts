@@ -16,9 +16,17 @@
  * limitations under the License.
  */
 
-import {path, homeDir, crypto, fs, readFileUtf8Sync} from "./adapter.node";
+import {
+  path,
+  homeDir,
+  crypto,
+  fs,
+  readFileUtf8Sync,
+  tls,
+} from "./adapter.node";
 import * as errors from "./errors";
-import {readCredentialsFile} from "./credentials";
+import {getCredentialsPath, readCredentialsFile} from "./credentials";
+import * as platform from "./platform";
 
 const EDGEDB_PORT = 5656;
 
@@ -34,6 +42,7 @@ export interface NormalizedConnectConfig {
   commandTimeout?: number;
   waitUntilAvailable?: number;
   legacyUUIDMode?: boolean;
+  tlsOptions?: tls.ConnectionOptions;
 }
 
 export interface ConnectConfig {
@@ -49,6 +58,8 @@ export interface ConnectConfig {
   waitUntilAvailable?: number;
   serverSettings?: any;
   legacyUUIDMode?: boolean;
+  tlsCAFile?: string;
+  tlsVerifyHostname?: boolean;
 }
 
 function mapParseInt(x: any): number {
@@ -60,6 +71,27 @@ function mapParseInt(x: any): number {
   }
 
   return res;
+}
+
+function parseVerifyHostname(s: string): boolean {
+  switch (s.toLowerCase()) {
+    case "true":
+    case "t":
+    case "yes":
+    case "y":
+    case "on":
+    case "1":
+      return true;
+    case "false":
+    case "f":
+    case "no":
+    case "n":
+    case "off":
+    case "0":
+      return false;
+    default:
+      throw new Error(`invalid tls_verify_hostname value: ${s}`);
+  }
 }
 
 export function parseConnectArguments(
@@ -95,15 +127,15 @@ export function parseConnectArguments(
 
 function stashPath(projectDir: string): string {
   let projectPath = fs.realpathSync(projectDir);
-  if (process.platform === "win32" && !projectPath.startsWith("\\\\")) {
+  if (platform.isWindows && !projectPath.startsWith("\\\\")) {
     projectPath = "\\\\?\\" + projectPath;
   }
-  const hasher = crypto.createHash("sha1");
-  hasher.update(projectPath);
-  const hash = hasher.digest("hex");
+
+  const hash = crypto.createHash("sha1").update(projectPath).digest("hex");
   const baseName = path.basename(projectPath);
   const dirName = baseName + "-" + hash;
-  return path.join(homeDir(), ".edgedb", "projects", dirName);
+
+  return platform.searchConfigDir("projects", dirName);
 }
 
 function parseConnectDsnAndArgs({
@@ -114,11 +146,14 @@ function parseConnectDsnAndArgs({
   password,
   database,
   admin,
+  tlsCAFile,
+  tlsVerifyHostname,
   serverSettings,
   // @ts-ignore
   server_settings,
 }: ConnectConfig): NormalizedConnectConfig {
   let usingCredentials: boolean = false;
+  const tlsCAData: string[] = [];
 
   if (admin) {
     // tslint:disable-next-line: no-console
@@ -270,46 +305,64 @@ function parseConnectDsnAndArgs({
         parsed.searchParams.delete("host");
       }
 
-      const parsedQ: {[key: string]: string} = {};
+      const parsedQ: Map<string, string> = new Map();
       // when given multiple params of the same name, keep the last one only
       for (const [key, param] of parsed.searchParams.entries()) {
-        parsedQ[key] = param;
+        parsedQ.set(key, param);
       }
 
-      if ("dbname" in parsedQ) {
+      if (parsedQ.has("dbname")) {
         if (!database) {
-          database = parsedQ.dbname;
+          database = parsedQ.get("dbname");
         }
-        delete parsedQ.dbname;
+        parsedQ.delete("dbname");
       }
 
-      if ("database" in parsedQ) {
+      if (parsedQ.has("database")) {
         if (!database) {
-          database = parsedQ.database;
+          database = parsedQ.get("database");
         }
-        delete parsedQ.database;
+        parsedQ.delete("database");
       }
 
-      if ("user" in parsedQ) {
+      if (parsedQ.has("user")) {
         if (!user) {
-          user = parsedQ.user;
+          user = parsedQ.get("user");
         }
-        delete parsedQ.user;
+        parsedQ.delete("user");
       }
 
-      if ("password" in parsedQ) {
+      if (parsedQ.has("password")) {
         if (!password) {
-          password = parsedQ.password;
+          password = parsedQ.get("password");
         }
-        delete parsedQ.password;
+        parsedQ.delete("password");
+      }
+
+      if (parsedQ.has("tls_cert_file")) {
+        if (!tlsCAFile) {
+          tlsCAFile = parsedQ.get("tls_cert_file");
+        }
+        parsedQ.delete("tls_cert_file");
+      }
+
+      if (parsedQ.has("tls_verify_hostname")) {
+        if (tlsVerifyHostname == null) {
+          tlsVerifyHostname = parseVerifyHostname(
+            parsedQ.get("tls_verify_hostname") || ""
+          );
+        }
+        parsedQ.delete("tls_verify_hostname");
       }
 
       // if there are more query params left, interpret them as serverSettings
-      if (Object.keys(parsedQ).length) {
+      if (parsedQ.size) {
         if (serverSettings == null) {
-          serverSettings = {...parsedQ};
-        } else {
-          serverSettings = {...parsedQ, ...serverSettings};
+          serverSettings = {};
+        }
+
+        for (const [key, val] of parsedQ) {
+          serverSettings[key] = val;
         }
       }
     }
@@ -320,12 +373,7 @@ function parseConnectDsnAndArgs({
       );
     }
     usingCredentials = true;
-    const credentialsFile = path.join(
-      homeDir(),
-      ".edgedb",
-      "credentials",
-      dsn + ".json"
-    );
+    const credentialsFile = getCredentialsPath(dsn);
     const credentials = readCredentialsFile(credentialsFile);
     port = credentials.port;
     user = credentials.user;
@@ -338,6 +386,12 @@ function parseConnectDsnAndArgs({
     if (database == null && "database" in credentials) {
       database = credentials.database;
     }
+    if (tlsCAFile == null && credentials.tlsCAData != null) {
+      tlsCAData.push(credentials.tlsCAData);
+    }
+    if (tlsVerifyHostname == null && "tlsVerifyHostname" in credentials) {
+      tlsVerifyHostname = credentials.tlsVerifyHostname;
+    }
   }
 
   // figure out host setting
@@ -348,7 +402,7 @@ function parseConnectDsnAndArgs({
       host = hl[0];
       port = hl[1];
     } else {
-      if (process.platform === "win32" || usingCredentials) {
+      if (platform.isWindows || usingCredentials) {
         host = [];
       } else {
         host = ["/run/edgedb", "/var/run/edgedb"];
@@ -424,12 +478,52 @@ function parseConnectDsnAndArgs({
     throw new Error("could not determine the database address to connect to");
   }
 
+  let tlsOptions: tls.ConnectionOptions | undefined;
+  if (!admin) {
+    if (tlsCAFile) {
+      tlsCAData.push(readFileUtf8Sync(tlsCAFile));
+    }
+
+    tlsOptions = {ALPNProtocols: ["edgedb-binary"]};
+
+    if (tlsCAData.length !== 0) {
+      if (tlsVerifyHostname == null) {
+        tlsVerifyHostname = false;
+      }
+
+      // this option replaces the system CA certificates with the one provided.
+      tlsOptions.ca = tlsCAData;
+    } else {
+      if (tlsVerifyHostname == null) {
+        tlsVerifyHostname = true;
+      }
+    }
+
+    if (!tlsVerifyHostname) {
+      tlsOptions.checkServerIdentity = (hostname: string, cert: any) => {
+        const err = tls.checkServerIdentity(hostname, cert);
+
+        if (err === undefined) {
+          return undefined;
+        }
+
+        // ignore failed hostname check
+        if (err.message.startsWith("Hostname/IP does not match certificate")) {
+          return undefined;
+        }
+
+        return err;
+      };
+    }
+  }
+
   return {
     addrs,
     user,
     password,
     database,
     serverSettings,
+    tlsOptions,
   };
 }
 

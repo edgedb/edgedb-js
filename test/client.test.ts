@@ -691,7 +691,7 @@ test("fetch: cal::local_time", async () => {
 });
 
 test("fetch: duration", async () => {
-  function formatDuration(duration: Duration): string {
+  function formatLegacyDuration(duration: Duration): string {
     function fmt(timePart: number, len = 2): string {
       return Math.abs(timePart).toString().padStart(len, "0");
     }
@@ -704,9 +704,22 @@ test("fetch: duration", async () => {
       fmt(duration.microseconds, 3)
     ).replace(/\.?0+$/, "")}`;
   }
+  function normaliseIsoDuration(duration: string) {
+    if (duration.includes("-")) {
+      return `-${duration.replace(/-/g, "")}`;
+    }
+    return duration;
+  }
+
   const con = await asyncConnect();
   let res;
   try {
+    const ver = await con.queryOne("select sys::get_version()");
+    const isoFormat =
+      ver.major > 1 ||
+      ver.minor > 0 ||
+      (ver.stage === "beta" && ver.stage_no >= 3);
+
     for (const time of [
       "24 hours",
       "68464977 seconds 74 milliseconds 11 microseconds",
@@ -718,7 +731,11 @@ test("fetch: duration", async () => {
         `,
         {time}
       );
-      expect(formatDuration(res[0])).toBe(res[1]);
+      if (isoFormat) {
+        expect(res[0].toString()).toBe(normaliseIsoDuration(res[1]));
+      } else {
+        expect(formatLegacyDuration(res[0])).toBe(res[1]);
+      }
 
       const res2 = await con.queryOne(
         `
@@ -1369,7 +1386,7 @@ test("'implicit*' headers", async () => {
     config
   )) as _RawConnection;
   try {
-    const [_, outCodecData] = await con.rawParse(
+    const [_, outCodecData, protocolVersion] = await con.rawParse(
       `SELECT schema::Function {
         name
       }`,
@@ -1381,7 +1398,7 @@ test("'implicit*' headers", async () => {
     const resultData = await con.rawExecute();
 
     const registry = new _CodecsRegistry();
-    const codec = registry.buildCodec(outCodecData);
+    const codec = registry.buildCodec(outCodecData, protocolVersion);
 
     const result = new Set();
     const buf = new _ReadBuffer(resultData);

@@ -95,6 +95,9 @@ test("parseConnectArguments", () => {
         user: "user",
         database: "edgedb",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -112,6 +115,9 @@ test("parseConnectArguments", () => {
         password: "passw",
         database: "testdb",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -130,6 +136,9 @@ test("parseConnectArguments", () => {
         password: "passw2",
         database: "db2",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
       result: {
         addrs: [["host2", 456]],
@@ -137,6 +146,9 @@ test("parseConnectArguments", () => {
         password: "passw2",
         database: "db2",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -165,6 +177,9 @@ test("parseConnectArguments", () => {
         database: "db2",
         serverSettings: {ssl: "False"},
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -187,6 +202,9 @@ test("parseConnectArguments", () => {
         database: "abcdef",
         commandTimeout: 10,
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -200,6 +218,9 @@ test("parseConnectArguments", () => {
         password: "123123",
         database: "abcdef",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -213,6 +234,9 @@ test("parseConnectArguments", () => {
         database: "db",
         user: "user",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -226,6 +250,9 @@ test("parseConnectArguments", () => {
         database: "db",
         user: "user",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -243,6 +270,9 @@ test("parseConnectArguments", () => {
         database: "db",
         user: "foo",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -259,6 +289,9 @@ test("parseConnectArguments", () => {
         database: "db",
         user: "foo",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -275,6 +308,9 @@ test("parseConnectArguments", () => {
         database: "db",
         user: "foo",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -297,6 +333,9 @@ test("parseConnectArguments", () => {
         password: "ask",
         database: "db",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -320,6 +359,9 @@ test("parseConnectArguments", () => {
         password: "ask",
         database: "db",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -330,6 +372,9 @@ test("parseConnectArguments", () => {
         user: "spam",
         database: "dbname",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -352,6 +397,9 @@ test("parseConnectArguments", () => {
         user: "user",
         database: "edgedb",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
 
@@ -382,6 +430,9 @@ test("parseConnectArguments", () => {
         user: "user",
         database: "edgedb",
         waitUntilAvailable: 30_000,
+        tlsOptions: {
+          ALPNProtocols: ["edgedb-binary"],
+        },
       },
     },
   ];

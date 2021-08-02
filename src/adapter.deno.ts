@@ -1,10 +1,13 @@
-import {process} from "https://deno.land/std@0.95.0/node/process.ts";
-import {Buffer} from "https://deno.land/std@0.95.0/node/buffer.ts";
-import * as crypto from "https://deno.land/std@0.95.0/node/crypto.ts";
-import {Sha256, HmacSha256} from "https://deno.land/std@0.95.0/hash/sha256.ts";
-import path from "https://deno.land/std@0.95.0/node/path.ts";
-import EventEmitter from "https://deno.land/std@0.95.0/node/events.ts";
-import util from "https://deno.land/std@0.95.0/node/util.ts";
+import {process} from "https://deno.land/std@0.102.0/node/process.ts";
+import {Buffer} from "https://deno.land/std@0.102.0/node/buffer.ts";
+import * as crypto from "https://deno.land/std@0.102.0/node/crypto.ts";
+import {
+  Sha256,
+  HmacSha256,
+} from "https://deno.land/std@0.102.0/hash/sha256.ts";
+import path from "https://deno.land/std@0.102.0/node/path.ts";
+import EventEmitter from "https://deno.land/std@0.102.0/node/events.ts";
+import util from "https://deno.land/std@0.102.0/node/util.ts";
 
 export {Buffer, path, process, util, crypto};
 
@@ -75,6 +78,8 @@ export namespace fs {
 // TODO: when 'net.Socket' is implemented in deno node compatibility library
 //       replace this (https://github.com/denoland/deno_std/pull/694)
 export namespace net {
+  export function createConnection(port: number, hostname?: string): Socket;
+  export function createConnection(unixpath: string): Socket;
   export function createConnection(
     port: number | string,
     hostname?: string
@@ -160,4 +165,36 @@ export namespace net {
       }
     }
   }
+}
+
+// TODO: deno's TLS implementation doesn't currently support ALPN.
+export namespace tls {
+  export function connect(options: tls.ConnectionOptions): net.Socket {
+    if (options.host == null) {
+      throw new Error("host option must be set");
+    }
+
+    if (options.port == null) {
+      throw new Error("port option must be set");
+    }
+
+    return net.createConnection(options.port, options.host);
+  }
+
+  export function checkServerIdentity(
+    hostname: string,
+    cert: Object
+  ): Error | undefined {
+    return undefined;
+  }
+
+  export interface ConnectionOptions {
+    host?: string;
+    port?: number;
+    ALPNProtocols?: string[];
+    ca?: string[];
+    checkServerIdentity?: (a: string, b: any) => Error | undefined;
+  }
+
+  export class TLSSocket extends net.Socket {}
 }

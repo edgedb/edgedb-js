@@ -1,11 +1,11 @@
-import {walk, ensureDir} from "https://deno.land/std@0.95.0/fs/mod.ts";
+import {walk, ensureDir} from "https://deno.land/std@0.102.0/fs/mod.ts";
 import {
   join,
   relative,
   dirname,
   basename,
-} from "https://deno.land/std@0.95.0/path/posix.ts";
-import {createRequire} from "https://deno.land/std@0.95.0/node/module.ts";
+} from "https://deno.land/std@0.102.0/path/posix.ts";
+import {createRequire} from "https://deno.land/std@0.102.0/node/module.ts";
 
 const require = createRequire(import.meta.url);
 

@@ -24,9 +24,9 @@ jobs:
         with:
           node-version: "14"
 
-      - uses: denolib/setup-deno@v2
+      - uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.x
+          deno-version: v1.12.x
 
       - name: Install dev deps
         run: |

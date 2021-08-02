@@ -1,4 +1,5 @@
-import {readFileUtf8Sync} from "./adapter.node";
+import {readFileUtf8Sync, path} from "./adapter.node";
+import * as platform from "./platform";
 
 export interface Credentials {
   host?: string;
@@ -6,6 +7,12 @@ export interface Credentials {
   user: string;
   password?: string;
   database?: string;
+  tlsCAData?: string;
+  tlsVerifyHostname?: boolean;
+}
+
+export function getCredentialsPath(instanceName: string): string {
+  return platform.searchConfigDir("credentials", instanceName + ".json");
 }
 
 export function readCredentialsFile(file: string): Credentials {
@@ -58,6 +65,22 @@ export function validateCredentials(data: any): Credentials {
       throw Error("`password` must be string");
     }
     result.password = password;
+  }
+
+  const certData = data.tls_cert_data;
+  if (certData != null) {
+    if (typeof certData !== "string") {
+      throw Error("`tls_cert_data` must be string");
+    }
+    result.tlsCAData = certData;
+  }
+
+  const verifyHostname = data.tls_verify_hostname;
+  if (verifyHostname != null) {
+    if (typeof verifyHostname !== "boolean") {
+      throw Error("`tls_verify_hostname` must be boolean");
+    }
+    result.tlsVerifyHostname = verifyHostname;
   }
 
   return result;
