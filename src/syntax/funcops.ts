@@ -31,6 +31,20 @@ export type $expr_Function<
   __namedargs__: NamedArgs;
 };
 
+export type OperatorKind = "Infix" | "Postfix" | "Prefix" | "Ternary";
+
+export type $expr_Operator<
+  Name extends string = string,
+  OpKind extends OperatorKind = OperatorKind,
+  Args extends MaterialTypeSet[] = MaterialTypeSet[],
+  ReturnType extends MaterialTypeSet = MaterialTypeSet
+> = BaseExpression<ReturnType> & {
+  __kind__: ExpressionKind.Operator;
+  __name__: Name;
+  __opkind__: OpKind;
+  __args__: Args;
+};
+
 interface OverloadFuncArgDef {
   typeId: string;
   optional?: boolean;

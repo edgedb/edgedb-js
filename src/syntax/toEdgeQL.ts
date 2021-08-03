@@ -4,7 +4,7 @@ import {$expr_PathLeaf, $expr_PathNode} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
-import {$expr_Function} from "./function";
+import {$expr_Function, $expr_Operator} from "./funcops";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -12,7 +12,8 @@ export type SomeExpression =
   | $expr_Literal
   | $expr_Set
   | $expr_Cast
-  | $expr_Function;
+  | $expr_Function
+  | $expr_Operator;
 
 export function toEdgeQL(this: any): string {
   const expr: SomeExpression = this;
@@ -52,10 +53,31 @@ export function toEdgeQL(this: any): string {
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
       args.push(`${key} := ${(arg as any).toEdgeQL()}`);
     }
-    // const args: string[] = [];
     return `${expr.__name__}(${args.join(", ")})`;
+  } else if (expr.__kind__ === ExpressionKind.Operator) {
+    const operator = expr.__name__.split("::")[1];
+    const args = expr.__args__;
+    switch (expr.__opkind__) {
+      case "Infix":
+        return `(${(args[0] as any).toEdgeQL()} ${operator} ${(args[1] as any).toEdgeQL()})`;
+      case "Postfix":
+        return `(${(args[0] as any).toEdgeQL()} ${operator})`;
+      case "Prefix":
+        return `(${operator} ${(args[0] as any).toEdgeQL()})`;
+      case "Ternary":
+        if (operator === "IF") {
+          return `(${(args[0] as any).toEdgeQL()} IF ${(args[1] as any).toEdgeQL()} ELSE ${(args[2] as any).toEdgeQL()})`;
+        } else {
+          throw new Error(`Unknown operator: ${operator}`);
+        }
+      default:
+        util.assertNever(
+          expr.__opkind__,
+          new Error(`Unknown operator kind: ${expr.__opkind__}`)
+        );
+    }
   } else {
-    util.assertNever(expr, new Error(`Unrecognized expression kind.`));
+    util.assertNever(expr, new Error(`Unrecognized expression kind: ${expr}`));
   }
 }
 

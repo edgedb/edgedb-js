@@ -78,6 +78,7 @@ export enum ExpressionKind {
   Literal = "Literal",
   Cast = "Cast",
   Function = "Function",
+  Operator = "Operator",
 }
 
 export type MaterialTypeSet<
