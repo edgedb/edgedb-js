@@ -109,6 +109,21 @@ export interface ${ref}<
     sc.writeln(
       frag`export const ${literal} = (val: ${tsType}) => _.syntax.literal(${ref}, val);`
     );
+
+    if (casts.implicitCastFromMap[type.id]?.length) {
+      sc.writeln(
+        frag`export type ${ref}λICastableTo = ${joinFrags(
+          [
+            ref,
+            ...casts.implicitCastFromMap[type.id].map((typeId) =>
+              getRef(types.get(typeId).name)
+            ),
+          ],
+          " | "
+        )};`
+      );
+    }
+
     // sc.writeln(`export const ${displayName}: ${displayName} = {`);
     // sc.writeln(`  __name__: "${type.name}",`);
     // sc.writeln(`} as any;`);

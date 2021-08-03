@@ -11,10 +11,15 @@ import {
   cardinalityUtil,
 } from "reflection";
 import {set} from "./set";
+// @ts-ignore
+import {isImplicitlyCastableTo} from "@generated/castMaps";
 
 export type $expr_Function<
   Name extends string = string,
-  Args extends MaterialTypeSet[] = MaterialTypeSet[],
+  Args extends (MaterialTypeSet | undefined)[] = (
+    | MaterialTypeSet
+    | undefined
+  )[],
   NamedArgs extends {[key: string]: MaterialTypeSet} = {
     [key: string]: MaterialTypeSet;
   },
@@ -28,12 +33,13 @@ export type $expr_Function<
 
 interface OverloadFuncArgDef {
   typeId: string;
-  optional: boolean;
-  setoftype: boolean;
-  variadic: boolean;
+  optional?: boolean;
+  setoftype?: boolean;
+  variadic?: boolean;
 }
 
 interface OverloadFuncDef {
+  kind?: string;
   args: OverloadFuncArgDef[];
   namedArgs?: {[key: string]: OverloadFuncArgDef};
   returnTypeId: string;
@@ -70,6 +76,7 @@ function _tryOverload(
   typeSpec: introspect.Types,
   funcDef: OverloadFuncDef
 ): {
+  kind?: string;
   returnType: MaterialType;
   cardinality: Cardinality;
   args: MaterialTypeSet[];
@@ -178,6 +185,7 @@ function _tryOverload(
   }
 
   return {
+    kind: funcDef.kind,
     returnType: makeType(typeSpec, funcDef.returnTypeId, returnAnytype),
     cardinality: cardinality,
     args: positionalArgs,
@@ -198,7 +206,10 @@ function compareType(
 
   if (type.kind === "scalar") {
     return {
-      match: arg.__kind__ === TypeKind.scalar && type.name === arg.__name__,
+      match:
+        arg.__kind__ === TypeKind.scalar &&
+        (arg.__name__ === type.name ||
+          isImplicitlyCastableTo(arg.__name__, type.name)),
     };
   }
   if (type.kind === "array") {
@@ -206,7 +217,7 @@ function compareType(
       return compareType(
         typeSpec,
         type.array_element_id,
-        (arg.__element__ as ArrayType).__element__ as MaterialType
+        arg.__element__ as MaterialType
       );
     }
   }

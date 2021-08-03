@@ -7,17 +7,140 @@ import {
   splitName,
   makeValidIdent,
 } from "../util/genutil";
+import {CodeBuffer, CodeBuilder, CodeFragment, DirBuilder} from "../builders";
 
-import {FunctionDef, Typemod} from "../queries/getFunctions";
+import {FunctionDef, Param, Typemod} from "../queries/getFunctions";
 import {getStringRepresentation} from "./generateObjectTypes";
-import {introspect} from "reflection";
+import {introspect, StrictMap} from "reflection";
+import {
+  getTypesSpecificity,
+  sortFuncopOverloads,
+  getImplicitRootTypes,
+} from "../util/functionUtils";
+import {Casts} from "../queries/getCasts";
 
-export const generateFunctionTypes = async ({
+export const generateFunctionTypes = ({
   dir,
   functions,
   types,
+  casts,
 }: GeneratorParams) => {
-  for (const [funcName, funcDefs] of functions.entries()) {
+  generateFuncopTypes(
+    dir,
+    types,
+    casts,
+    functions,
+    "Function",
+    "FuncExpr",
+    true,
+    (code, funcDef, args, namedArgs, returnType) => {
+      // Name
+      code.writeln(frag`${quote(funcDef.name)},`);
+      // Args
+      code.writeln(args);
+      // NamedArgs
+      code.writeln(namedArgs);
+      // ReturnType
+      code.writeln(returnType);
+    },
+    (code, funcName) => {
+      code.writeln(frag`__name__: ${quote(funcName)},`);
+      code.writeln(frag`__args__: positionalArgs,`);
+      code.writeln(frag`__namedargs__: namedArgs,`);
+    }
+  );
+};
+
+export interface FuncopDef {
+  id: string;
+  name: string;
+  kind?: string;
+  description?: string;
+  return_type: {id: string; name: string};
+  return_typemod: Typemod;
+  params: Param[];
+}
+
+export function generateFuncopTypes<F extends FuncopDef>(
+  dir: DirBuilder,
+  types: introspect.Types,
+  casts: Casts,
+  funcops: StrictMap<string, F[]>,
+  funcopExprKind: string,
+  typeDefSuffix: string,
+  optionalUndefined: boolean,
+  typeDefGen: (
+    code: CodeBuilder,
+    def: F,
+    args: CodeFragment[],
+    namedArgs: CodeFragment[],
+    returnType: CodeFragment[]
+  ) => void,
+  implReturnGen: (
+    code: CodeBuilder,
+    funcopName: string,
+    funcopDefs: F[]
+  ) => void
+) {
+  const typeSpecificities = getTypesSpecificity(types, casts);
+  const implicitRootTypes = getImplicitRootTypes(casts);
+
+  for (const [funcName, _funcDefs] of funcops.entries()) {
+    const funcDefs = sortFuncopOverloads<F>(
+      _funcDefs,
+      typeSpecificities
+    ).flatMap((funcDef, overloadIndex) => {
+      const overload = {
+        ...funcDef,
+        overloadIndex,
+        params: groupParams(funcDef.params),
+        anytype: null as
+          | {kind: "castable"; paramType: CodeFragment[]}
+          | {
+              kind: "noncastable";
+              paramName: string;
+              paramPath: string;
+            }
+          | null,
+      };
+
+      const anytypeSourceParam = overload.params.positional.find((param) =>
+        param.type.name.includes("anytype")
+      );
+      if (anytypeSourceParam) {
+        const sourcePath = findPathOfAnytype(
+          anytypeSourceParam.type.id,
+          types
+        );
+        if (!sourcePath) {
+          throw new Error(`Cannot find anytype in ${anytypeSourceParam.name}`);
+        }
+
+        return [
+          ...implicitRootTypes.map((rootTypeId) => ({
+            ...overload,
+            anytype: {
+              kind: "castable" as const,
+              paramType: getStringRepresentation(types.get(rootTypeId), {
+                types,
+                casts: casts.implicitCastFromMap,
+              }).staticType,
+            },
+          })),
+          {
+            ...overload,
+            anytype: {
+              kind: "noncastable" as const,
+              paramName: anytypeSourceParam.name,
+              paramPath: `${anytypeSourceParam.typeName}${sourcePath}`,
+            },
+          },
+        ];
+      } else {
+        return [overload];
+      }
+    });
+
     const {mod, name} = splitName(funcName);
 
     const code = dir.getModule(mod);
@@ -25,10 +148,13 @@ export const generateFunctionTypes = async ({
     code.registerRef(funcName, funcDefs[0].id);
     code.addExport(getRef(funcName, {prefix: ""}), name);
 
-    for (const funcDef of funcDefs) {
-      const params = groupParams(funcDef.params);
+    const overloadsBuf = new CodeBuffer();
 
-      const hasParams = funcDef.params.length > 0;
+    let overloadDefIndex = 1;
+    for (const funcDef of funcDefs) {
+      const {params} = funcDef;
+
+      const hasParams = params.positional.length + params.named.length > 0;
 
       const namedParamsOverloads =
         !hasParams ||
@@ -43,133 +169,198 @@ export const generateFunctionTypes = async ({
 
       for (const hasNamedParams of namedParamsOverloads) {
         if (funcDef.description) {
-          code.writeln(frag`/**
+          overloadsBuf.writeln(frag`/**
  * ${funcDef.description.replace(/\*\//g, "")}
  */`);
         }
 
+        const functionTypeName = frag`${getRef(funcName, {
+          prefix: "",
+        })}λ${typeDefSuffix}${
+          overloadDefIndex++ > 1 ? String(overloadDefIndex - 1) : ""
+        }`;
+
+        const functionTypeSig = frag`${functionTypeName}${
+          hasParams
+            ? `<${[
+                ...(hasNamedParams ? ["NamedArgs"] : []),
+                ...params.positional.map((param) => param.typeName),
+              ].join(", ")}>`
+            : ""
+        };`;
+
         code.writeln(
-          frag`function ${getRef(funcName, {prefix: ""})}${
-            hasParams ? "<" : "(): _.syntax.$expr_Function<"
+          frag`type ${functionTypeName}${
+            hasParams ? `<` : ` = _.syntax.$expr_${funcopExprKind}<`
           }`
         );
 
-        let anytype: string | undefined = undefined;
+        overloadsBuf.writeln(
+          frag`function ${getRef(funcName, {prefix: ""})}${
+            hasParams ? "<" : frag`(): ${functionTypeSig}`
+          }`
+        );
+
+        let anytypes: string[] = [];
 
         if (hasParams) {
           // param types
           code.indented(() => {
-            // named params
-            if (hasNamedParams) {
-              code.writeln(frag`NamedArgs extends {`);
-              code.indented(() => {
-                for (const param of params.named) {
-                  const paramType = getStringRepresentation(
-                    types.get(param.type.id),
-                    {
-                      types,
-                      anytype,
+            overloadsBuf.indented(() => {
+              // named params
+              if (hasNamedParams) {
+                code.writeln(frag`NamedArgs extends {`);
+                overloadsBuf.writeln(frag`NamedArgs extends {`);
+
+                code.indented(() => {
+                  overloadsBuf.indented(() => {
+                    for (const param of params.named) {
+                      const anytype = funcDef.anytype
+                        ? funcDef.anytype.kind === "castable"
+                          ? funcDef.anytype.paramType
+                          : funcDef.anytype.paramPath
+                        : undefined;
+
+                      const paramType = getStringRepresentation(
+                        types.get(param.type.id),
+                        {
+                          types,
+                          anytype,
+                          casts: casts.implicitCastFromMap,
+                        }
+                      );
+                      const line = frag`${quote(param.name)}${
+                        param.typemod === "OptionalType" || param.hasDefault
+                          ? "?"
+                          : ""
+                      }: $.TypeSet<${paramType.staticType}>,`;
+
+                      code.writeln(line);
+                      overloadsBuf.writeln(line);
                     }
-                  );
-                  code.writeln(
-                    frag`${quote(param.name)}${
-                      param.typemod === "OptionalType" || param.hasDefault
-                        ? "?"
-                        : ""
-                    }: $.TypeSet<${paramType.staticType}>,`
-                  );
-                }
-              });
-              code.writeln(frag`},`);
-            }
-
-            // positional + variadic params
-            for (const param of params.positional) {
-              let paramType = types.get(param.type.id);
-              if (param.kind === "VariadicParam") {
-                if (paramType.kind !== "array") {
-                  throw new Error("Variadic param not array type");
-                }
-                paramType = types.get(paramType.array_element_id);
+                  });
+                });
+                code.writeln(frag`},`);
+                overloadsBuf.writeln(frag`},`);
               }
-              const paramTypeStr = getStringRepresentation(paramType, {
-                types,
-                anytype,
-              });
 
-              const type = frag`$.TypeSet<${paramTypeStr.staticType}>`;
+              // positional + variadic params
+              for (const param of params.positional) {
+                let paramType = types.get(param.type.id);
+                if (param.kind === "VariadicParam") {
+                  if (paramType.kind !== "array") {
+                    throw new Error("Variadic param not array type");
+                  }
+                  paramType = types.get(paramType.array_element_id);
+                }
+                const anytype = funcDef.anytype
+                  ? funcDef.anytype.kind === "castable"
+                    ? funcDef.anytype.paramType
+                    : funcDef.anytype.paramName === param.name
+                    ? undefined
+                    : funcDef.anytype.paramPath
+                  : undefined;
+                const paramTypeStr = getStringRepresentation(paramType, {
+                  types,
+                  anytype,
+                  casts: casts.implicitCastFromMap,
+                });
 
-              code.writeln(
-                frag`$${param.internalName} extends ${
+                const type = frag`$.TypeSet<${paramTypeStr.staticType}>`;
+
+                const line = frag`${param.typeName} extends ${
                   param.kind === "VariadicParam"
                     ? frag`[${type}, ...${type}[]]`
                     : type
-                },`
-              );
+                }${
+                  optionalUndefined &&
+                  (param.typemod === "OptionalType" || param.hasDefault)
+                    ? " | undefined"
+                    : ""
+                },`;
 
-              if (!anytype && param.type.name.includes("anytype")) {
-                const path = findPathOfAnytype(param.type.id, types);
-                if (!path) {
-                  throw new Error(`Cannot find anytype in ${param.name}`);
+                code.writeln(line);
+                overloadsBuf.writeln(line);
+
+                if (
+                  param.type.name.includes("anytype") &&
+                  funcDef.anytype?.kind === "castable"
+                ) {
+                  const path = findPathOfAnytype(param.type.id, types);
+                  if (!path) {
+                    throw new Error(`Cannot find anytype in ${param.name}`);
+                  }
+                  anytypes.push(`${param.typeName}${path}`);
                 }
-                anytype = `$${param.internalName}${path}`;
               }
-            }
+            });
           });
 
-          code.writeln(frag`>(`);
+          code.writeln(frag`> = _.syntax.$expr_${funcopExprKind}<`);
+          overloadsBuf.writeln(frag`>(`);
 
           // args signature
-          code.indented(() => {
+          overloadsBuf.indented(() => {
             if (hasNamedParams) {
-              code.writeln(frag`namedArgs: NamedArgs,`);
+              overloadsBuf.writeln(frag`namedArgs: NamedArgs,`);
             }
 
             for (const param of params.positional) {
-              code.writeln(
-                frag`${
-                  param.kind === "VariadicParam" ? "..." : ""
-                }${param.internalName.slice(1)}${
-                  param.typemod === "OptionalType" || param.hasDefault
+              overloadsBuf.writeln(
+                frag`${param.kind === "VariadicParam" ? "..." : ""}${
+                  param.internalName
+                }${
+                  optionalUndefined &&
+                  (param.typemod === "OptionalType" || param.hasDefault)
                     ? "?"
                     : ""
-                }: $${param.internalName}${
+                }: ${param.typeName}${
                   param.kind === "VariadicParam" ? "" : ","
                 }`
               );
             }
           });
 
-          code.writeln(frag`): _.syntax.$expr_Function<`);
+          overloadsBuf.writeln(frag`): ${functionTypeSig}`);
         }
 
         code.indented(() => {
-          // Name
-          code.writeln(frag`${quote(funcDef.name)},`);
-          // Args
-          code.writeln(
-            frag`[${params.positional
-              .map(
-                (param) =>
-                  `${param.kind === "VariadicParam" ? "..." : ""}$${
-                    param.internalName
-                  }`
-              )
-              .join(", ")}],`
-          );
-          // NamedArgs
-          code.writeln(
-            frag`${hasParams && hasNamedParams ? "NamedArgs" : "{}"},`
-          );
-          // ReturnType
+          const returnAnytype = funcDef.anytype
+            ? funcDef.anytype.kind === "castable"
+              ? anytypes.length <= 1
+                ? anytypes[0]
+                : anytypes
+                    .slice(1)
+                    .reduce(
+                      (parent, type) =>
+                        `_.syntax.getSharedParentPrimitive<${parent}, ${type}>`,
+                      anytypes[0]
+                    )
+              : funcDef.anytype.paramPath
+            : undefined;
           const returnType = getStringRepresentation(
             types.get(funcDef.return_type.id),
             {
               types,
-              anytype,
+              anytype: returnAnytype,
             }
           );
-          code.writeln(
+
+          typeDefGen(
+            code,
+            funcDef,
+            // args
+            frag`[${params.positional
+              .map(
+                (param) =>
+                  `${param.kind === "VariadicParam" ? "..." : ""}${
+                    param.typeName
+                  }`
+              )
+              .join(", ")}],`,
+            // named args
+            frag`${hasParams && hasNamedParams ? "NamedArgs" : "{}"},`,
+            // return type
             frag`$.TypeSet<${
               returnType.staticType
             }, ${generateReturnCardinality(
@@ -184,6 +375,8 @@ export const generateFunctionTypes = async ({
       }
     }
 
+    code.writeBuf(overloadsBuf);
+
     // implementation
     code.writeln(
       frag`function ${getRef(funcName, {prefix: ""})}(...args: any[]) {`
@@ -191,11 +384,19 @@ export const generateFunctionTypes = async ({
 
     code.indented(() => {
       code.writeln(
-        frag`const {returnType, cardinality, args: positionalArgs, namedArgs} = _.syntax.resolveOverload(args, _.spec, [`
+        frag`const {${
+          funcDefs[0].kind ? "kind, " : ""
+        }returnType, cardinality, args: positionalArgs, namedArgs} = _.syntax.resolveOverload(args, _.spec, [`
       );
       code.indented(() => {
+        let overloadIndex = 0;
         for (const funcDef of funcDefs) {
-          const params = groupParams(funcDef.params);
+          if (funcDef.overloadIndex !== overloadIndex) {
+            continue;
+          }
+          overloadIndex++;
+
+          const {params} = funcDef;
 
           function getArgSpec(param: FunctionDef["params"][number]) {
             return `{typeId: ${quote(
@@ -204,7 +405,7 @@ export const generateFunctionTypes = async ({
                     .array_element_id
                 : param.type.id
             )}, optional: ${(
-              param.typemod === "OptionalType" || param.hasDefault
+              param.typemod === "OptionalType" || !!param.hasDefault
             ).toString()}, setoftype: ${(
               param.typemod === "SetOfType"
             ).toString()}, variadic: ${(
@@ -224,7 +425,9 @@ export const generateFunctionTypes = async ({
             : "";
 
           code.writeln(
-            frag`{args: [${argsDef.join(
+            frag`{${
+              funcDef.kind ? `kind: ${quote(funcDef.kind)}, ` : ""
+            }args: [${argsDef.join(
               ", "
             )}], ${namedArgsDef}returnTypeId: ${quote(
               funcDef.return_type.id
@@ -240,12 +443,10 @@ export const generateFunctionTypes = async ({
 
       code.writeln(frag`return {`);
       code.indented(() => {
-        code.writeln(frag`__kind__: $.ExpressionKind.Function,`);
+        code.writeln(frag`__kind__: $.ExpressionKind.${funcopExprKind},`);
         code.writeln(frag`__element__: returnType,`);
         code.writeln(frag`__cardinality__: cardinality,`);
-        code.writeln(frag`__name__: ${quote(funcName)},`);
-        code.writeln(frag`__args__: positionalArgs,`);
-        code.writeln(frag`__namedargs__: namedArgs,`);
+        implReturnGen(code, funcName, funcDefs);
         code.writeln(frag`toEdgeQL: _.syntax.toEdgeQL`);
       });
       code.writeln(frag`} as any;`);
@@ -255,7 +456,7 @@ export const generateFunctionTypes = async ({
 
     code.nl();
   }
-};
+}
 
 function groupParams(params: FunctionDef["params"]) {
   return {
@@ -267,7 +468,8 @@ function groupParams(params: FunctionDef["params"]) {
       .map((param, i) => {
         return {
           ...param,
-          internalName: "$" + makeValidIdent({id: `${i}`, name: param.name}),
+          internalName: makeValidIdent({id: `${i}`, name: param.name}),
+          typeName: `P${i + 1}`,
         };
       }),
     named: params.filter((param) => param.kind === "NamedOnlyParam"),
@@ -297,7 +499,7 @@ function generateReturnCardinality(
   const paramCardinalities = [
     ...params.positional.map((p) => ({
       ...p,
-      genTypeName: `$${p.internalName}`,
+      genTypeName: p.typeName,
     })),
     ...(hasNamedParams
       ? params.named.map((p) => ({

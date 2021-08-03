@@ -11,36 +11,12 @@ export interface IdentRef {
 
 export type CodeFragment = string | IdentRef;
 
-export class CodeBuilder {
+export class CodeBuffer {
   private buf: CodeFragment[][] = [];
-  private namespaces: {[k: string]: string[]} = {};
   private indent: number = 0;
-  private imports = new Set<string>();
-  private exports = new Map<string, IdentRef>();
-
-  constructor(private dirBuilder: DirBuilder, private dir: string) {}
 
   getBuf() {
     return this.buf;
-  }
-
-  addImport(imp: string): void {
-    this.imports.add(imp);
-  }
-
-  addExport(ref: IdentRef, as: string) {
-    this.exports.set(as, ref);
-  }
-
-  registerRef(fqn: string, id: string) {
-    if (this.dirBuilder._refs.has(fqn)) {
-      throw new Error(`ref name: ${fqn} already registered`);
-    }
-
-    this.dirBuilder._refs.set(fqn, {
-      dir: this.dir,
-      internalName: genutil.getInternalName({id, fqn}),
-    });
   }
 
   nl(): void {
@@ -62,10 +38,64 @@ export class CodeBuilder {
     });
   }
 
+  writeBuf(buf: CodeBuffer) {
+    this.writeln(...buf.getBuf());
+  }
+
+  isEmpty(): boolean {
+    return !this.buf.length;
+  }
+}
+
+export class CodeBuilder {
+  private buf = new CodeBuffer();
+  private namespaces: {[k: string]: string[]} = {};
+  private indent: number = 0;
+  private imports = new Set<string>();
+  private exports = new Map<string, IdentRef>();
+
+  constructor(private dirBuilder: DirBuilder, private dir: string) {}
+
+  addImport(imp: string): void {
+    this.imports.add(imp);
+  }
+
+  addExport(ref: IdentRef, as: string) {
+    this.exports.set(as, ref);
+  }
+
+  registerRef(fqn: string, id: string) {
+    if (this.dirBuilder._refs.has(fqn)) {
+      throw new Error(`ref name: ${fqn} already registered`);
+    }
+
+    this.dirBuilder._refs.set(fqn, {
+      dir: this.dir,
+      internalName: genutil.getInternalName({id, fqn}),
+    });
+  }
+
+  nl(): void {
+    this.buf.nl();
+  }
+
+  indented(nested: () => void): void {
+    this.buf.indented(nested);
+  }
+
+  writeln(...lines: CodeFragment[][]): void {
+    this.buf.writeln(...lines);
+  }
+
+  writeBuf(buf: CodeBuffer) {
+    this.buf.writeBuf(buf);
+  }
+
   render(): string {
     const imports = new Set(this.imports);
 
     let body = this.buf
+      .getBuf()
       .map((line) => {
         return line
           .map((frag) => {
@@ -137,7 +167,7 @@ export class CodeBuilder {
   }
 
   isEmpty(): boolean {
-    return !this.buf.length && !this.imports.size;
+    return this.buf.isEmpty() && !this.imports.size;
   }
 }
 

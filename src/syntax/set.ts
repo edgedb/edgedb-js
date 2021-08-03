@@ -36,7 +36,7 @@ type mergeTypeTuples<AItems, BItems> = {
 };
 
 // find shared parent of two primitives
-type getSharedParentPrimitive<A, B> = A extends ArrayType<infer AEl>
+export type getSharedParentPrimitive<A, B> = A extends ArrayType<infer AEl>
   ? B extends ArrayType<infer BEl>
     ? ArrayType<getSharedParentScalar<AEl, BEl>>
     : never

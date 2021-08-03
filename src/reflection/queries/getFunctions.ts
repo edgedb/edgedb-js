@@ -6,19 +6,21 @@ export type Typemod = "SetOfType" | "OptionalType" | "SingletonType";
 
 export type ParamKind = "VariadicParam" | "NamedOnlyParam" | "PositionalParam";
 
+export interface Param {
+  name: string;
+  type: {id: string; name: string};
+  kind: ParamKind;
+  typemod: Typemod;
+  hasDefault?: boolean;
+}
+
 export interface FunctionDef {
   id: string;
   name: string;
   description?: string;
   return_type: {id: string; name: string};
   return_typemod: Typemod;
-  params: {
-    name: string;
-    type: {id: string; name: string};
-    kind: ParamKind;
-    typemod: Typemod;
-    hasDefault: boolean;
-  }[];
+  params: Param[];
 }
 
 export type FunctionTypes = typeutil.depromisify<
@@ -59,20 +61,6 @@ export const getFunctions = async (cxn: Connection) => {
       ...func,
       description: func.annotations[0]?.["@value"],
     });
-  }
-
-  for (const [funcName, funcDefs] of functions) {
-    functions.set(
-      funcName,
-      funcDefs
-        .map((def) => ({
-          def,
-          paramCount: def.params.filter((p) => p.kind !== "NamedOnlyParam")
-            .length,
-        }))
-        .sort((a, b) => a.paramCount - b.paramCount)
-        .map((overload) => overload.def)
-    );
   }
 
   return functions;

@@ -269,3 +269,5 @@ export type MaterialType =
   | TupleType
   | NamedTupleType
   | ArrayType;
+
+export type AnyTupleType = TupleType | NamedTupleType;

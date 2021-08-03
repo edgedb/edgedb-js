@@ -6,18 +6,25 @@ import {CodeFragment} from "../builders";
 
 export const getStringRepresentation: (
   type: introspect.Type,
-  params: {types: introspect.Types; anytype?: string}
+  params: {
+    types: introspect.Types;
+    anytype?: string | CodeFragment[];
+    casts?: {[key: string]: string[]};
+  }
 ) => {staticType: CodeFragment[]; runtimeType: CodeFragment[]} = (
   type,
   params
 ) => {
-  if (type.name === "anytype") {
+  if (type.name === "anytype" || type.name === "anytuple") {
     return {
-      staticType: [params.anytype ?? `$.MaterialType`],
+      staticType: params.anytype
+        ? frag`${params.anytype}`
+        : [type.name === "anytuple" ? `$.AnyTupleType` : `$.MaterialType`],
+
       runtimeType: [],
     };
   }
-  const {types} = params;
+  const {types, casts} = params;
   if (type.kind === "object") {
     return {
       staticType: [getRef(type.name)],
@@ -25,7 +32,10 @@ export const getStringRepresentation: (
     };
   } else if (type.kind === "scalar") {
     return {
-      staticType: [getRef(type.name)],
+      staticType: [
+        getRef(type.name),
+        casts?.[type.id]?.length ? "λICastableTo" : "",
+      ],
       runtimeType: [getRef(type.name)],
     };
     // const tsType = toJsScalarType(target, types, mod, body);

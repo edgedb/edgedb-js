@@ -1,6 +1,6 @@
 import {CodeFragment} from "../builders";
 import type {GeneratorParams} from "../generate";
-import {getRef, frag, joinFrags} from "../util/genutil";
+import {getRef, frag, joinFrags, quote} from "../util/genutil";
 import {util} from "../util/util";
 
 export const generateCastMaps = async (params: GeneratorParams) => {
@@ -163,4 +163,23 @@ export const generateCastMaps = async (params: GeneratorParams) => {
   //   mapName: "getSharedParentObject",
   //   baseCase: "std::Object",
   // });
+
+  f.writeln(frag`const implicitCastMap = new Map<string, Set<string>>([`);
+  f.indented(() => {
+    for (const [id, castableTo] of Object.entries(casts.implicitCastMap)) {
+      if (castableTo.length) {
+        f.writeln(
+          frag`[${quote(types.get(id).name)}, new Set([${castableTo
+            .map((id) => quote(types.get(id).name))
+            .join(", ")}])],`
+        );
+      }
+    }
+  });
+  f.writeln(frag`]);`);
+  f.writeln(
+    frag`export function isImplicitlyCastableTo(from: string, to: string): boolean {
+  return implicitCastMap.get(from)?.has(to) ?? false;
+};\n`
+  );
 };

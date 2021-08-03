@@ -217,11 +217,9 @@ export namespace cardinalityUtil {
   }
 
   export type optionalParamCardinality<
-    P extends TypeSet | TypeSet[] | undefined
+    P extends TypeSet | undefined
   > = P extends TypeSet
     ? overrideLowerBound<P["__cardinality__"], "One">
-    : P extends TypeSet[]
-    ? paramArrayCardinality<P>
     : Cardinality.One;
 
   export type paramArrayCardinality<T> = {
