@@ -9,50 +9,44 @@ The library requires NodeJS 10 or later.
 
 ## Installation
 
-```
-npm install edgedb --save
-```
-
-or
-
-```
-yarn add edgedb --save
+```bash
+npm install edgedb
+# or
+yarn add edgedb
 ```
 
-## Quick Start
+## Quickstart
 
-Follow the [EdgeDB tutorial](https://edgedb.com/docs/tutorial/index)
-to get EdgeDB installed and minimally configured.
+First, go through the [EdgeDB Quickstart](https://edgedb.com/docs/quickstart)
+to install EdgeDB and set up your first EdgeDB project.
 
-Next, create the `package.json` file:
+Now in your project directory, install the "edgedb" library:
 
-```
-mkdir myproject
-cd myproject
+```bash
 npm init
+
+npm install edgedb
 ```
 
-Next, install the "edgedb" library:
-
-```
-npm install edgedb --save
-```
-
-And here's a simple script to connect to an EdgeDB instance and
+And here's a simple script to connect to your EdgeDB instance and
 run a simple query:
 
 ```js
 const edgedb = require("edgedb");
 
 async function main() {
-  const conn = await edgedb.connect({
-    user: "edgedb",
-    host: "127.0.0.1",
-  });
+  const conn = await edgedb.connect();
 
-  console.log(await conn.fetchOne("SELECT 1 + 1"));
+  try {
 
-  await conn.close();
+    console.log(
+      await conn.querySingle(`SELECT re_replace('World', 'EdgeDB',
+       'Hello World!')`)
+    );
+
+  } finally {
+    await conn.close();
+  }
 }
 
 main();
