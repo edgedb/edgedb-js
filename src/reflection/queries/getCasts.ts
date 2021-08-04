@@ -54,6 +54,7 @@ export const getCasts = async (
   const castsById: Record<string, Cast> = {};
   const castsBySource: Record<string, string[]> = {};
   const implicitCastsBySource: Record<string, string[]> = {};
+  const implicitCastsByTarget: Record<string, string[]> = {};
   const assignmentCastsBySource: Record<string, string[]> = {};
   const assignmentCastsByTarget: Record<string, string[]> = {};
 
@@ -82,17 +83,22 @@ export const getCasts = async (
       implicitCastsBySource[cast.source.id] =
         implicitCastsBySource[cast.source.id] || [];
       implicitCastsBySource[cast.source.id].push(cast.target.id);
+
+      implicitCastsByTarget[cast.target.id] ??= [];
+      implicitCastsByTarget[cast.target.id].push(cast.source.id);
     }
   }
 
   const castMap: {[k: string]: string[]} = {};
   const implicitCastMap: {[k: string]: string[]} = {};
+  const implicitCastFromMap: {[k: string]: string[]} = {};
   const assignmentCastMap: {[k: string]: string[]} = {};
   const assignableByMap: {[k: string]: string[]} = {};
 
   for (const type of [...types]) {
     castMap[type] = castsBySource[type] || [];
     implicitCastMap[type] = reachableFrom(type, implicitCastsBySource);
+    implicitCastFromMap[type] = reachableFrom(type, implicitCastsByTarget);
     assignmentCastMap[type] = reachableFrom(type, assignmentCastsBySource);
     assignableByMap[type] = reachableFrom(type, assignmentCastsByTarget);
   }
@@ -103,6 +109,14 @@ export const getCasts = async (
     for (const [fromId, castArr] of Object.entries(implicitCastMap)) {
       console.log(
         `${typesById[fromId].name} implicitly castable to: [${castArr
+          .map((id) => typesById[id].name)
+          .join(", ")}]`
+      );
+    }
+    console.log("");
+    for (const [fromId, castArr] of Object.entries(implicitCastFromMap)) {
+      console.log(
+        `${typesById[fromId].name} implicitly castable from: [${castArr
           .map((id) => typesById[id].name)
           .join(", ")}]`
       );
@@ -142,6 +156,7 @@ export const getCasts = async (
     typesById,
     castMap,
     implicitCastMap,
+    implicitCastFromMap,
     assignmentCastMap,
     assignableByMap,
   };

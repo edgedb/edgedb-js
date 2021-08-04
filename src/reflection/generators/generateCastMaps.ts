@@ -1,7 +1,6 @@
-import {CodeBuilder, DirBuilder} from "../builders";
+import {CodeFragment} from "../builders";
 import type {GeneratorParams} from "../generate";
-import type * as introspect from "../queries/getTypes";
-import {genutil} from "../util/genutil";
+import {getRef, frag, joinFrags, quote} from "../util/genutil";
 import {util} from "../util/util";
 
 export const generateCastMaps = async (params: GeneratorParams) => {
@@ -10,11 +9,6 @@ export const generateCastMaps = async (params: GeneratorParams) => {
 
   const f = dir.getPath("castMaps.ts");
   f.addImport(`import {reflection as $} from "edgedb";`);
-  const getScopedDisplayName = genutil.getScopedDisplayName(
-    `${Math.random()}`,
-    f,
-    {prefix: "./modules/"}
-  );
 
   const reverseTopo = Array.from(types)
     .reverse() // reverse topological order
@@ -39,16 +33,20 @@ export const generateCastMaps = async (params: GeneratorParams) => {
     return castable;
   };
 
-  const staticMap: string[] = [`export type getSharedParentScalar<A, B> =`];
-  const runtimeMap: string[] = [
-    `export function getSharedParentScalar<A extends $.ScalarType, B extends $.ScalarType>(a: A, b: B){`,
+  const staticMap: CodeFragment[][] = [
+    [`export type getSharedParentScalar<A, B> =`],
+  ];
+  const runtimeMap: CodeFragment[][] = [
+    [
+      `export function getSharedParentScalar<A extends $.ScalarType, B extends $.ScalarType>(a: A, b: B){`,
+    ],
   ];
 
   for (const outer of materialScalars) {
     const outerCastableTo = casting(outer.id);
-    staticMap.push(`  A extends ${getScopedDisplayName(outer.name)} ?`);
+    staticMap.push(frag`  A extends ${getRef(outer.name)} ?`);
     runtimeMap.push(
-      `  if (a.__name__ === ${getScopedDisplayName(outer.name)}.__name__) {`
+      frag`  if (a.__name__ === ${getRef(outer.name)}.__name__) {`
     );
     // f.writeln(`A extends ${getScopedDisplayName(outer.name)} ?`);
 
@@ -71,54 +69,52 @@ export const generateCastMaps = async (params: GeneratorParams) => {
         sameType || aCastableToB || bCastableToA || sharedParent;
 
       if (validCast) {
-        staticMap.push(`    B extends ${getScopedDisplayName(inner.name)} ?`);
+        staticMap.push(frag`    B extends ${getRef(inner.name)} ?`);
         runtimeMap.push(
-          `    if(b.__name__ === ${getScopedDisplayName(
-            inner.name
-          )}.__name__) {`
+          frag`    if(b.__name__ === ${getRef(inner.name)}.__name__) {`
         );
 
         if (sameType) {
-          staticMap.push(`    B`);
-          runtimeMap.push(`      return b;`);
+          staticMap.push([`    B`]);
+          runtimeMap.push([`      return b;`]);
         } else if (aCastableToB) {
-          staticMap.push(`    B`);
-          runtimeMap.push(`      return b;`);
+          staticMap.push([`    B`]);
+          runtimeMap.push([`      return b;`]);
         } else if (bCastableToA) {
-          staticMap.push(`    A`);
-          runtimeMap.push(`      return a;`);
+          staticMap.push([`    A`]);
+          runtimeMap.push([`      return a;`]);
         } else if (sharedParent) {
-          const scoped = getScopedDisplayName(sharedParent);
+          const scoped = getRef(sharedParent);
 
-          staticMap.push(`    ${scoped}`);
-          runtimeMap.push(`      return ${scoped};`);
+          staticMap.push(frag`    ${scoped}`);
+          runtimeMap.push(frag`      return ${scoped};`);
         } else {
-          staticMap.push("    never");
-          runtimeMap.push(
-            `      throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`
-          );
+          staticMap.push(["    never"]);
+          runtimeMap.push([
+            `      throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`,
+          ]);
         }
-        staticMap.push(`    :`);
-        runtimeMap.push(`    }`);
+        staticMap.push([`    :`]);
+        runtimeMap.push([`    }`]);
       }
     }
-    staticMap.push("    never");
-    runtimeMap.push(
-      `    throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`
-    );
-    runtimeMap.push("    }");
+    staticMap.push(["    never"]);
+    runtimeMap.push([
+      `    throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`,
+    ]);
+    runtimeMap.push(["    }"]);
 
-    staticMap.push("  :");
+    staticMap.push(["  :"]);
   }
-  staticMap.push("never");
-  runtimeMap.push(
-    `  throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`
-  );
-  runtimeMap.push(`}`);
+  staticMap.push(["never"]);
+  runtimeMap.push([
+    `  throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`,
+  ]);
+  runtimeMap.push([`}`]);
 
-  f.writeln(staticMap.join("\n"));
+  f.writeln(joinFrags(staticMap, "\n"));
   f.nl();
-  f.writeln(runtimeMap.join("\n"));
+  f.writeln(joinFrags(runtimeMap, "\n"));
 
   // const userDefinedObjectTypes = reverseTopo.filter((type) => {
   //   if (type.kind !== "object") return false;
@@ -167,4 +163,27 @@ export const generateCastMaps = async (params: GeneratorParams) => {
   //   mapName: "getSharedParentObject",
   //   baseCase: "std::Object",
   // });
+
+  f.writeln(frag`const implicitCastMap = new Map<string, Set<string>>([`);
+  f.indented(() => {
+    for (const [sourceId, castableTo] of Object.entries(
+      casts.implicitCastMap
+    )) {
+      if (castableTo.length) {
+        f.writeln(
+          frag`[${quote(
+            types.get(sourceId).name
+          )}, new Set([${castableTo
+            .map((targetId) => quote(types.get(targetId).name))
+            .join(", ")}])],`
+        );
+      }
+    }
+  });
+  f.writeln(frag`]);`);
+  f.writeln(
+    frag`export function isImplicitlyCastableTo(from: string, to: string): boolean {
+  return implicitCastMap.get(from)?.has(to) ?? false;
+};\n`
+  );
 };

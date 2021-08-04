@@ -6,7 +6,7 @@ import {
   ObjectType,
   ObjectTypeShape,
   shapeToTsType,
-  SomeObjectType,
+  MaterialType,
 } from "./typesystem";
 
 import {typeutil, util} from "./util/util";
@@ -72,11 +72,17 @@ function applySpec(
 
 export function makeType<T extends BaseType>(
   spec: introspect.Types,
-  id: string
+  id: string,
+  anytype?: MaterialType
 ): T {
   const type = spec.get(id);
   const obj: any = {};
   obj.__name__ = type.name;
+
+  if (type.name === "anytype") {
+    if (anytype) return (anytype as unknown) as T;
+    throw new Error("anytype not provided");
+  }
 
   if (type.kind === "object") {
     obj.__kind__ = TypeKind.object;
@@ -97,8 +103,6 @@ export function makeType<T extends BaseType>(
       }
       return shape as any;
     });
-    obj.__params__ = null;
-    obj.__polys__ = [];
     return obj;
   } else if (type.kind === "scalar") {
     obj.__kind__ = TypeKind.scalar;
@@ -106,18 +110,26 @@ export function makeType<T extends BaseType>(
   } else if (type.kind === "array") {
     obj.__kind__ = TypeKind.array;
     util.defineGetter(obj, "__element__", () => {
-      return makeType(spec, type.array_element_id);
+      return makeType(spec, type.array_element_id, anytype);
+    });
+    util.defineGetter(obj, "__name__", () => {
+      return `array<${obj.__element__.__name__}>`;
     });
     return obj;
   } else if (type.kind === "tuple") {
     if (type.tuple_elements[0].name === "0") {
       // unnamed tuple
-      obj.__kind__ = TypeKind.unnamedtuple;
+      obj.__kind__ = TypeKind.tuple;
 
       util.defineGetter(obj, "__items__", () => {
         return type.tuple_elements.map((el) =>
-          makeType(spec, el.target_id)
+          makeType(spec, el.target_id, anytype)
         ) as any;
+      });
+      util.defineGetter(obj, "__name__", () => {
+        return `tuple<${obj.__items__
+          .map((item: any) => item.__name__)
+          .join(", ")}>`;
       });
       return obj;
     } else {
@@ -127,9 +139,14 @@ export function makeType<T extends BaseType>(
       util.defineGetter(obj, "__shape__", () => {
         const shape: any = {};
         for (const el of type.tuple_elements) {
-          shape[el.name] = makeType(spec, el.target_id);
+          shape[el.name] = makeType(spec, el.target_id, anytype);
         }
         return shape;
+      });
+      util.defineGetter(obj, "__name__", () => {
+        return `tuple<${Object.entries(obj.__shape__)
+          .map(([key, val]: [string, any]) => `${key}: ${val.__name__}`)
+          .join(", ")}>`;
       });
       return obj;
     }
@@ -151,19 +168,17 @@ export type mergeObjectShapes<
 >;
 
 export type mergeObjectTypes<
-  A extends SomeObjectType,
-  B extends SomeObjectType
+  A extends ObjectType,
+  B extends ObjectType
 > = ObjectType<
   `${A["__name__"]} UNION ${B["__name__"]}`,
-  mergeObjectShapes<A["__shape__"], B["__shape__"]>,
-  null,
-  []
+  mergeObjectShapes<A["__shape__"], B["__shape__"]>
 >;
 
-export function mergeObjectTypes<
-  A extends SomeObjectType,
-  B extends SomeObjectType
->(a: A, b: B): mergeObjectTypes<A, B> {
+export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
+  a: A,
+  b: B
+): mergeObjectTypes<A, B> {
   const obj: any = {
     __kind__: TypeKind.object,
     __name__: `${a.__name__} UNION ${b.__name__}`,

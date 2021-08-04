@@ -105,7 +105,7 @@ export async function getTypes(
       [IS ObjectType].pointers: {
         cardinality,
         required,
-        realCardinality := "One" IF .required ELSE "AtMostOne" IF <str>.cardinality = "One" ELSE "AtLeastOne" IF .required ELSE "Many",
+        realCardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
         name,
         expr,
 
@@ -115,7 +115,7 @@ export async function getTypes(
 
         [IS Link].pointers: {
           cardinality,
-          realCardinality := "One" IF .required ELSE "AtMostOne" IF <str>.cardinality = "One" ELSE "AtLeastOne" IF .required ELSE "Many",
+          realCardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
           required,
           name,
           expr,
@@ -136,9 +136,7 @@ export async function getTypes(
 
   const types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
   // tslint:disable-next-line
-  // if (params?.debug)
-  // console.log(`TYPES`);
-  // console.log(JSON.stringify(types, null, 2));
+  if (params?.debug) console.log(JSON.stringify(types, null, 2));
 
   // Now sort `types` topologically:
   return topoSort(types);

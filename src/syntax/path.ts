@@ -23,7 +23,7 @@ type getChildOfObjectTypeSet<
   ChildKey extends keyof Root["__element__"]["__shape__"]
 > = TypeSet<
   Root["__element__"]["__shape__"][ChildKey]["target"],
-  cardinalityUtil.pointerCardinality<
+  cardinalityUtil.multiplyCardinalities<
     Root["__cardinality__"],
     Root["__element__"]["__shape__"][ChildKey]["cardinality"]
   >
@@ -93,7 +93,7 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
           return $expr_PathLeaf(
             $toSet(
               ptr.target,
-              cardinalityUtil.pointerCardinality(
+              cardinalityUtil.multiplyCardinalities(
                 root.__cardinality__,
                 ptr.cardinality
               )
@@ -113,7 +113,7 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
             return $expr_PathNode(
               $toSet(
                 ptr.target,
-                cardinalityUtil.pointerCardinality(
+                cardinalityUtil.multiplyCardinalities(
                   root.__cardinality__,
                   ptr.cardinality
                 )

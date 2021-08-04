@@ -1,21 +1,21 @@
 // import * as edgedb from "edgedb";
 import {ExpressionKind, TypeKind, typeutil} from "edgedb/src/reflection";
-import * as e from "../generated/example";
+import e, {is, select} from "../generated/example";
 
 test("basic select", () => {
-  const result = e.select(e.str("asdf" as string));
+  const result = select(e.std.str("asdf" as string));
   type result = typeof result["__element__"]["__tstype__"];
   const f1: typeutil.assertEqual<result, string> = true;
 });
 
 test("basic shape", () => {
-  const result = e.select(e.Hero);
+  const result = select(e.default.Hero);
   type result = typeof result["__element__"]["__tstype__"];
   const f1: typeutil.assertEqual<result, {id: string}> = true;
   expect(result.__element__.__params__).toEqual({id: true});
 });
 
-const q1 = e.select(e.Hero, {
+const q1 = select(e.Hero, {
   id: true,
   secret_identity: true,
   name: 1 > 0,
@@ -36,9 +36,9 @@ test("complex shape", () => {
       secret_identity: string | null;
       villains: {
         id: string;
-        computed: "test";
+        computed: string;
       };
-      computed: "test";
+      computed: string;
     }
   > = true;
 });
@@ -46,7 +46,7 @@ test("complex shape", () => {
 test("compositionality", () => {
   // selecting a select statement should
   // default to { id }
-  const no_params = e.select(q1);
+  const no_params = select(q1);
   type no_params = typeof no_params["__element__"]["__tstype__"];
   const no_params_test: typeutil.assertEqual<
     no_params,
@@ -58,7 +58,7 @@ test("compositionality", () => {
   expect(no_params.__element__.__polys__).toEqual([]);
 
   // allow override params
-  const override_params = e.select(q1, {
+  const override_params = select(q1, {
     id: true,
     secret_identity: true,
   });
@@ -73,14 +73,14 @@ test("compositionality", () => {
 });
 
 test("polymorphism", () => {
-  const query = e.select(
+  const query = select(
     e.Person,
     {
       id: true,
       name: true,
     },
-    e.is(e.Hero, {secret_identity: true}),
-    e.is(e.Villain, {
+    is(e.Hero, {secret_identity: true}),
+    is(e.Villain, {
       nemesis: {name: true},
     })
   );
@@ -125,6 +125,6 @@ test("polymorphism", () => {
 });
 
 test("shape type name", () => {
-  const name = e.select(e.Hero).__element__.__name__;
+  const name = select(e.Hero).__element__.__name__;
   const f1: typeutil.assertEqual<typeof name, "default::Hero_shape"> = true;
 });

@@ -1,34 +1,34 @@
-import {Cardinality, typeutil, cardinalityUtil} from "../../src/reflection";
-// import {cardinalityUtil} from "../../src/reflection/util/cardinalityUtil";
+import {Cardinality, typeutil} from "../../src/reflection";
+import {cardinalityUtil} from "../../src/reflection/util/cardinalityUtil";
 
-test("pointerCardinality", () => {
+test("multiplyCardinality", () => {
   const _f0: typeutil.assertEqual<
-    cardinalityUtil.pointerCardinality<Cardinality.One, Cardinality.One>,
+    cardinalityUtil.multiplyCardinalities<Cardinality.One, Cardinality.One>,
     Cardinality.One
   > = true;
   const _f2: typeutil.assertEqual<
-    cardinalityUtil.pointerCardinality<
+    cardinalityUtil.multiplyCardinalities<
       Cardinality.AtLeastOne,
       Cardinality.Many
     >,
     Cardinality.Many
   > = true;
   const _f3: typeutil.assertEqual<
-    cardinalityUtil.pointerCardinality<
+    cardinalityUtil.multiplyCardinalities<
       Cardinality.AtLeastOne,
       Cardinality.AtLeastOne
     >,
     Cardinality.AtLeastOne
   > = true;
   const _f4: typeutil.assertEqual<
-    cardinalityUtil.pointerCardinality<
+    cardinalityUtil.multiplyCardinalities<
       Cardinality.AtMostOne,
       Cardinality.AtMostOne
     >,
     Cardinality.AtMostOne
   > = true;
   const _f5: typeutil.assertEqual<
-    cardinalityUtil.pointerCardinality<Cardinality.Empty, Cardinality.Many>,
+    cardinalityUtil.multiplyCardinalities<Cardinality.Empty, Cardinality.Many>,
     Cardinality.Empty
   > = true;
 });

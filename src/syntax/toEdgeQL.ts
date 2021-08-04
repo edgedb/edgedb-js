@@ -5,6 +5,7 @@ import {
   Poly,
   SomeObjectType,
   TypeKind,
+  util,
 } from "reflection";
 import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
 import {$expr_PathLeaf, $expr_PathNode, $pathify} from "./path";
@@ -12,6 +13,7 @@ import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
 import {$expr_SimpleSelect, $expr_ShapeSelect} from "./select";
+import {$expr_Function, $expr_Operator} from "./funcops";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -20,7 +22,9 @@ export type SomeExpression =
   | $expr_Set
   | $expr_Cast
   | $expr_SimpleSelect
-  | $expr_ShapeSelect<ObjectTypeExpression, any, any>;
+  | $expr_ShapeSelect<ObjectTypeExpression, any, any>
+  | $expr_Function
+  | $expr_Operator;
 
 // type expr = $expr_ShapeSelect<ObjectTypeExpression, any, any>;
 // type elem = expr["__element__"];
@@ -128,8 +132,36 @@ export function toEdgeQL(this: any) {
       )
     );
     return lines.join("\n");
+  } else if (expr.__kind__ === ExpressionKind.Function) {
+    const args = expr.__args__.map((arg) => (arg as any).toEdgeQL());
+    for (const [key, arg] of Object.entries(expr.__namedargs__)) {
+      args.push(`${key} := ${(arg as any).toEdgeQL()}`);
+    }
+    return `${expr.__name__}(${args.join(", ")})`;
+  } else if (expr.__kind__ === ExpressionKind.Operator) {
+    const operator = expr.__name__.split("::")[1];
+    const args = expr.__args__;
+    switch (expr.__opkind__) {
+      case "Infix":
+        return `(${(args[0] as any).toEdgeQL()} ${operator} ${(args[1] as any).toEdgeQL()})`;
+      case "Postfix":
+        return `(${(args[0] as any).toEdgeQL()} ${operator})`;
+      case "Prefix":
+        return `(${operator} ${(args[0] as any).toEdgeQL()})`;
+      case "Ternary":
+        if (operator === "IF") {
+          return `(${(args[0] as any).toEdgeQL()} IF ${(args[1] as any).toEdgeQL()} ELSE ${(args[2] as any).toEdgeQL()})`;
+        } else {
+          throw new Error(`Unknown operator: ${operator}`);
+        }
+      default:
+        util.assertNever(
+          expr.__opkind__,
+          new Error(`Unknown operator kind: ${expr.__opkind__}`)
+        );
+    }
   } else {
-    throw new Error(`Unrecognized expression kind.`);
+    util.assertNever(expr, new Error(`Unrecognized expression kind: ${expr}`));
   }
 }
 
@@ -148,7 +180,7 @@ export function literalToEdgeQL(type: MaterialType, val: any): string {
       stringRep = `[${val
         .map((el) => literalToEdgeQL(type.__element__ as any, el))
         .join(", ")}]`;
-    } else if (type.__kind__ === TypeKind.unnamedtuple) {
+    } else if (type.__kind__ === TypeKind.tuple) {
       stringRep = `( ${val
         .map((el, j) => literalToEdgeQL(type.__items__[j] as any, el))
         .join(", ")} )`;

@@ -1,5 +1,5 @@
 import * as edgedb from "edgedb";
-import * as e from "../generated/example";
+import e, {literal, $Array, $NamedTuple, $Tuple} from "../generated/example";
 
 test("literals", () => {
   const duration = new edgedb.Duration(0, 0, 0, 0, 5, 6, 7, 8, 9, 10);
@@ -48,21 +48,18 @@ test("literals", () => {
 });
 
 test("collection type literals", () => {
-  const literalArray = e.literal(e.$Array(e.$Str), ["adsf"]);
+  const literalArray = literal($Array(e.$str), ["adsf"]);
   expect(literalArray.toEdgeQL()).toEqual(
     `<array<std::str>>[<std::str>'adsf']`
   );
-  const literalNamedTuple = e.literal(e.$NamedTuple({str: e.$Str}), {
+  const literalNamedTuple = literal($NamedTuple({str: e.$str}), {
     str: "asdf",
   });
   expect(literalNamedTuple.toEdgeQL()).toEqual(
     `<tuple<str: std::str>>( str := <std::str>'asdf' )`
   );
-  const literalUnnamedTuple = e.literal(e.$UnnamedTuple([e.$Str, e.$Int64]), [
-    "asdf",
-    1234,
-  ]);
-  expect(literalUnnamedTuple.toEdgeQL()).toEqual(
+  const literalTuple = literal($Tuple([e.$str, e.$int64]), ["asdf", 1234]);
+  expect(literalTuple.toEdgeQL()).toEqual(
     `<tuple<std::str, std::int64>>( <std::str>'asdf', <std::int64>1234 )`
   );
 });

@@ -1,86 +1,35 @@
 // tslint:disable:no-console
-// import {select, selectParams, simpleShape} from "@syntax/select";
-import * as e from "./generated/example";
-import * as edgedb from "edgedb";
+import e, {cast, set, $Array, literal} from "./generated/example";
 
-const run = async () => {
-  const pool = await edgedb.createPool();
-  const res = await pool.query(``);
-};
+const asdf = set(e.int16(15), e.int16(15));
+const cast1 = cast(e.$int32, asdf);
+console.log(cast1);
 
-e.str("asdf");
-e.bigint(BigInt(1234));
+const cast2 = cast(e.$float32, e.float64(3.14));
+console.log(cast2);
 
-e.$Array(e.$Str);
-e.$NamedTuple({asdf: e.$Str});
-const asdf = e.$UnnamedTuple([e.$Str]);
-e.literal(asdf, ["asdf"]);
+console.log(e.len(set(e.$bytes)).toEdgeQL());
 
-e.cast(e.$Str, e.int64(1234));
-e.set(e.Hero, e.Villain);
+const haystack = literal($Array(e.$str), ["hello", "world"]);
+// @ts-expect-error
+e.contains(haystack, e.int32(5));
 
-e.select(e.Hero, {
-  villains: {nemesis: {villains: {nemesis: true}}},
-});
+const func = e.contains(haystack, set(e.str("world"), e.str("hello")));
+console.log(func);
 
-const villainShape = e.is(e.Villain, {
-  nemesis: {name: true},
-});
+console.log(func.toEdgeQL());
 
-const q2 = e.select(
-  e.Person,
-  {
-    id: true,
-    name: true,
-    computed: e.str("person"),
-  },
-  e.is(e.Hero, {
-    secret_identity: true,
-  }),
-  e.is(e.Villain, {
-    nemesis: {name: true},
-  })
+const variadicFunc = e.json_get(e.json("json"), e.str("some"), e.str("path"));
+
+console.log(variadicFunc);
+console.log(variadicFunc.toEdgeQL());
+
+const namedVariadicFunc = e.json_get(
+  {default: e.json("defaultjson")},
+  e.json("json"),
+  e.str("some"),
+  e.str("path")
 );
-type q2 = typeof q2["__element__"]["__tstype__"];
 
-/*
-{
-    id: string;
-    name: string;
-    computed: "asdfsadf";
-    secret_identity: string | null;
-    computed: ["asdfsadf", ..."asdfsadf"[]];
-    nemesis: {
-        ...;
-    };
-}
-*/
-
-const result = e.select(e.Hero);
-type result = typeof result["__element__"]["__tstype__"];
-
-const asldfkj = e.select(e.str("asdf"));
-type asldfkj = typeof asldfkj["__element__"]["__tstype__"];
-
-const q3 = e.select(q2, {
-  id: true,
-  name: true,
-  nemesis: {id: true},
-  computed: e.str("person"),
-});
-type q3 = typeof q3["__element__"]["__tstype__"];
-
-const myshape = {a: "asdf", b: "qwer"};
-function test<
-  A extends {shape: object},
-  T extends {[k in keyof A["shape"]]?: true}
->(a: A, arg: T): T;
-function test<
-  A extends {nested: object},
-  T extends {[k in keyof A["nested"]]?: true}
->(a: A, arg: T): T;
-function test(arg: any, _b: any) {
-  return "asdf" as any;
-}
-const a = test({shape: myshape}, {a: true});
-const b = test({nested: myshape}, {b: true});
+console.log(namedVariadicFunc);
+console.log(namedVariadicFunc.toEdgeQL());

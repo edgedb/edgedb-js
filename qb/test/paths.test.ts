@@ -1,14 +1,14 @@
-import * as e from "../generated/example";
+import e, {$toSet, $expr_PathNode} from "../generated/example";
 import {reflection as $} from "edgedb";
 
 test("path structure", () => {
   const Hero = e.default.Hero;
   type Hero = typeof Hero;
-  const HeroSetSingleton = e.$toSet(e.default.$Hero, $.Cardinality.One);
-  const HeroSingleton = e.$expr_PathNode(HeroSetSingleton, null);
+  const HeroSetSingleton = $toSet(e.default.$Hero, $.Cardinality.One);
+  const HeroSingleton = $expr_PathNode(HeroSetSingleton, null);
   type HeroSingleton = typeof HeroSingleton;
-  const VillainRoot = e.$toSet(e.default.$Villain, $.Cardinality.One);
-  const Villain = e.$expr_PathNode(VillainRoot, null);
+  const VillainRoot = $toSet(e.default.$Villain, $.Cardinality.One);
+  const Villain = $expr_PathNode(VillainRoot, null);
 
   expect(Hero.name.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(Hero.name.__element__.__name__).toEqual("std::str");
@@ -42,11 +42,8 @@ test("path structure", () => {
 
   // AtMostOneHero.name
   // test cardinality merging
-  const HeroSetAtLeastOne = e.$toSet(
-    e.default.$Hero,
-    $.Cardinality.AtLeastOne
-  );
-  const AtLeastOneHero = e.$expr_PathNode(HeroSetAtLeastOne, null);
+  const HeroSetAtLeastOne = $toSet(e.default.$Hero, $.Cardinality.AtLeastOne);
+  const AtLeastOneHero = $expr_PathNode(HeroSetAtLeastOne, null);
   type AtLeastOneHero = typeof AtLeastOneHero;
   expect(AtLeastOneHero.id.__cardinality__).toEqual($.Cardinality.AtLeastOne);
   expect(AtLeastOneHero.number_of_movies.__cardinality__).toEqual(

@@ -2,7 +2,7 @@ import {TypeSet, setToTsType} from "reflection";
 
 export {
   ArrayType as $Array,
-  UnnamedTupleType as $UnnamedTuple,
+  TupleType as $Tuple,
   NamedTupleType as $NamedTuple,
 } from "reflection";
 
