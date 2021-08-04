@@ -1,8 +1,12 @@
 // tslint:disable:no-console
 // import {select, selectParams, simpleShape} from "@syntax/select";
 import * as e from "./generated/example";
-// import {is, select} from "../src/syntax/syntax";
-// import {argv} from "process";
+import * as edgedb from "edgedb";
+
+const run = async () => {
+  const pool = await edgedb.createPool();
+  const res = await pool.query(``);
+};
 
 e.str("asdf");
 e.bigint(BigInt(1234));

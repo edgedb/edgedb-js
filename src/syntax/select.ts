@@ -81,25 +81,14 @@ export function select(expr: BaseExpression, params?: any, ...polys: any[]) {
   if (!params) {
     if (expr.__element__.__kind__ === TypeKind.object) {
       const objectExpr: ObjectTypeExpression = expr as any;
-      let defaultParams = {id: true};
-      let defaultPolys = [];
-
-      // if another select expression is passed into select
-      // its shape is inherited
-      if ((objectExpr as any).__kind__ === ExpressionKind.ShapeSelect) {
-        const selectExpr: $expr_ShapeSelect<any, any, any> = objectExpr as any;
-        defaultParams = selectExpr.__element__.__params__;
-        defaultPolys = selectExpr.__element__.__polys__;
-      }
-
       return $pathify({
         __kind__: ExpressionKind.ShapeSelect,
         __element__: {
           __kind__: TypeKind.object,
           __name__: `${objectExpr.__element__.__name__}_shape`,
           __shape__: objectExpr.__element__.__shape__,
-          __params__: defaultParams,
-          __polys__: defaultPolys,
+          __params__: {id: true},
+          __polys__: [],
           __tstype__: undefined as any,
         },
         __cardinality__: objectExpr.__cardinality__,

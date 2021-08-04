@@ -1,18 +1,20 @@
 import * as edgedb from "edgedb";
 
 export async function setupTests() {
+  // tslint:disable-next-line: no-console
+  console.log(`Seeding database...`);
   const pool = await edgedb.createPool();
   const ironMan = await pool.queryOne(`INSERT Hero {
   name := "Iron Man",
   secret_identity := "Tony Stark"
 }`);
-  console.log(ironMan);
+  // console.log(ironMan);
 
   const cap = await pool.queryOne(`INSERT Hero {
   name := "Captain America",
   secret_identity := "Steve Rogers"
 }`);
-  console.log(cap);
+  // console.log(cap);
   const thanos = await pool.queryOne(
     `INSERT Villain {
   name := "Thanos",
@@ -20,20 +22,26 @@ export async function setupTests() {
 }`,
     {nemesis_id: ironMan.id}
   );
-  console.log(thanos);
+  // console.log(thanos);
+  // tslint:disable-next-line: no-console
+  console.log(`Done.`);
 }
 export async function teardownTests() {
+  // tslint:disable-next-line: no-console
+  console.log(`Deleting database contents...`);
   const pool = await edgedb.createPool();
   await pool.execute(`DELETE Villain;`);
   await pool.execute(`DELETE Hero;`);
   await pool.execute(`DELETE Movie;`);
   await pool.execute(`DELETE Bag;`);
   await pool.execute(`DELETE Simple;`);
+  // tslint:disable-next-line: no-console
+  console.log(`Done.`);
 }
 
 beforeAll(() => setupTests());
 afterAll(() => teardownTests());
 
-test("test", () => {
+test("2=2", () => {
   expect(2).toEqual(2);
 });

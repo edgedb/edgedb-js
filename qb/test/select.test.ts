@@ -12,6 +12,7 @@ test("basic shape", () => {
   const result = e.select(e.Hero);
   type result = typeof result["__element__"]["__tstype__"];
   const f1: typeutil.assertEqual<result, {id: string}> = true;
+  expect(result.__element__.__params__).toEqual({id: true});
 });
 
 const q1 = e.select(e.Hero, {
@@ -42,22 +43,33 @@ test("complex shape", () => {
   > = true;
 });
 
-test("composability", () => {
-  const nested = e.select(q1, {
+test("compositionality", () => {
+  // selecting a select statement should
+  // default to { id }
+  const no_params = e.select(q1);
+  type no_params = typeof no_params["__element__"]["__tstype__"];
+  const no_params_test: typeutil.assertEqual<
+    no_params,
+    {
+      id: string;
+    }
+  > = true;
+  expect(no_params.__element__.__params__).toEqual({id: true});
+  expect(no_params.__element__.__polys__).toEqual([]);
+
+  // allow override params
+  const override_params = e.select(q1, {
     id: true,
     secret_identity: true,
-    name: 1 > 0,
   });
-  type nested = typeof nested["__element__"]["__tstype__"];
+  type override_params = typeof override_params["__element__"]["__tstype__"];
   const f1: typeutil.assertEqual<
-    nested,
+    override_params,
     {
       id: string;
       secret_identity: string | null;
-      name: string | undefined;
     }
   > = true;
-  console.log(nested);
 });
 
 test("polymorphism", () => {
@@ -73,7 +85,6 @@ test("polymorphism", () => {
     })
   );
 
-  console.log(query);
   expect(query.__kind__).toEqual(ExpressionKind.ShapeSelect);
   expect(query.__element__.__kind__).toEqual(TypeKind.object);
   expect(query.__element__.__name__).toEqual("default::Person_shape");
@@ -81,9 +92,15 @@ test("polymorphism", () => {
   expect(query.__element__.__polys__[0].params).toEqual({
     secret_identity: true,
   });
+  expect(query.__element__.__polys__[0].type.__name__).toEqual(
+    "default::Hero"
+  );
   expect(query.__element__.__polys__[1].params).toEqual({
     nemesis: {name: true},
   });
+  expect(query.__element__.__polys__[1].type.__name__).toEqual(
+    "default::Villain"
+  );
 
   type poly = typeof query["__element__"]["__polys__"][0];
   const f1: typeutil.assertEqual<

@@ -551,12 +551,18 @@ e.select(Hero)
   .delete();
 ```
 
+## Detach
+
+```ts
+const detachedHero = e.detach(e.Hero);
+```
+
 ## Parameters
 
 ```ts
 const fetchPerson = e.withParams(
   {
-    name: e.$Array(e.Str),
+    name: e.$Array(e.$Str),
   },
   (args) =>
     e

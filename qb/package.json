@@ -7,6 +7,7 @@
     "test": "jest --detectOpenHandles",
     "generate": "ts-node --project tsconfig.json run.ts",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
+    "play2": "ts-node play2.ts --project ../tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings"
   },
   "keywords": [],

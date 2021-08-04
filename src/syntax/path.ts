@@ -48,7 +48,7 @@ export interface PathParent<
   linkName: string;
 }
 
-// leaves are Set & Expression & HasParent & {getters for each property/link}
+// leaves are Expression & {getters for each property/link}
 export type $pathify<
   Root extends TypeSet,
   Parent extends PathParent | null = null
@@ -154,7 +154,6 @@ export const $expr_PathNode = <
   return $pathify(root) as any;
 };
 
-// leaves are Set & Expression & HasParent
 export type $expr_PathLeaf<
   Root extends TypeSet = TypeSet,
   Parent extends PathParent = PathParent
