@@ -1,9 +1,13 @@
 export {cardinalityUtil} from "./cardinalityUtil";
 export type {selectUtil} from "./selectUtil";
 export type {typeutil} from "./typeutil";
-export {genutil} from "./genutil";
+export * as genutil from "./genutil";
 
 export namespace util {
+  export function assertNever(arg: never, error?: Error): never {
+    throw error ?? new Error(`${arg} is supposed to be of "never" type`);
+  }
+
   export const deduplicate = (args: string[]) => [...new Set(args)];
 
   export const getFromArrayMap = <T>(map: Record<string, T[]>, id: string) => {

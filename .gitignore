@@ -1,12 +1,13 @@
 /dist
-/node_modules
 /edgedb-deno
 /test/deno
 /.bench
 /.vscode
+node_modules
+**/.yarn/*
+!.yarn/releases
 
 /coverage
 /yarn-error.log
 .DS_Store
-node_modules
 qb/generated

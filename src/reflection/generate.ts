@@ -4,14 +4,20 @@ import {DirBuilder} from "./builders";
 import {connect} from "../index.node";
 
 import {ConnectConfig} from "../con_utils";
+
 import {getCasts, Casts} from "./queries/getCasts";
 import {getScalars, ScalarTypes} from "./queries/getScalars";
+import {FunctionTypes, getFunctions} from "./queries/getFunctions";
+import {getOperators, OperatorTypes} from "./queries/getOperators";
 import * as introspect from "./queries/getTypes";
-import {genutil} from "./util/genutil";
+import * as genutil from "./util/genutil";
+
 import {generateCastMaps} from "./generators/generateCastMaps";
 import {generateScalars} from "./generators/generateScalars";
 import {generateObjectTypes} from "./generators/generateObjectTypes";
 import {generateRuntimeSpec} from "./generators/generateRuntimeSpec";
+import {generateFunctionTypes} from "./generators/generateFunctionTypes";
+import {generateOperatorTypes} from "./generators/generateOperatorTypes";
 
 const DEBUG = false;
 
@@ -21,6 +27,8 @@ export type GeneratorParams = {
   typesByName: Record<string, introspect.Type>;
   casts: Casts;
   scalars: ScalarTypes;
+  functions: FunctionTypes;
+  operators: OperatorTypes;
 };
 
 export async function generateQB(
@@ -36,7 +44,8 @@ export async function generateQB(
     const casts = await getCasts(cxn, {
       debug: DEBUG,
     });
-    const modsIndex = new Set<string>();
+    const functions = await getFunctions(cxn);
+    const operators = await getOperators(cxn);
 
     const typesByName: Record<string, introspect.Type> = {};
     for (const type of types.values()) {
@@ -44,32 +53,63 @@ export async function generateQB(
 
       // skip "anytype" and "anytuple"
       if (!type.name.includes("::")) continue;
-
-      const {mod} = genutil.splitName(type.name);
-      modsIndex.add(mod);
     }
 
-    const generatorParams = {dir, types, typesByName, casts, scalars};
+    const generatorParams: GeneratorParams = {
+      dir,
+      types,
+      typesByName,
+      casts,
+      scalars,
+      functions,
+      operators,
+    };
     await generateCastMaps(generatorParams);
     await generateScalars(generatorParams);
     await generateObjectTypes(generatorParams);
     await generateRuntimeSpec(generatorParams);
+    await generateFunctionTypes(generatorParams);
+    await generateOperatorTypes(generatorParams);
+
+    // generate module imports
+
+    const importsFile = dir.getPath("imports.ts");
+    importsFile.writeln(
+      genutil.frag`export * as edgedb from "edgedb";
+export {spec} from "./__spec__";
+export * as syntax from "./syntax/syntax";`
+    );
 
     /////////////////////////
     // generate index file
     /////////////////////////
 
     const index = dir.getPath("index.ts");
-    for (const mod of Array.from(modsIndex).sort()) {
-      if (dir.getPath(`modules/${mod}.ts`).isEmpty()) {
-        continue;
-      }
-      index.addImport(`export * as ${mod} from "./modules/${mod}";`);
-    }
     index.addImport(`export * from "./castMaps";`);
-    index.addImport(`export * from "./modules/std";`);
-    index.addImport(`export * from "./modules/default";`);
     index.addImport(`export * from "./syntax/syntax";`);
+
+    index.writeln(genutil.frag`export default {`);
+    index.indented(() => {
+      for (const moduleName of ["std", "default"]) {
+        if (dir._modules.has(moduleName)) {
+          index.writeln(genutil.frag`..._${dir._modules.get(moduleName)!},`);
+        }
+      }
+
+      for (const [moduleName, internalName] of dir._modules) {
+        if (dir.getModule(moduleName).isEmpty()) {
+          continue;
+        }
+        index.addImport(
+          `import _${internalName} from "./modules/${internalName}";`
+        );
+
+        index.writeln(
+          genutil.frag`${genutil.quote(moduleName)}: _${internalName},`
+        );
+      }
+    });
+    index.writeln(genutil.frag`};`);
   } finally {
     await cxn.close();
   }
