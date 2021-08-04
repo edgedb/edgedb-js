@@ -87,17 +87,16 @@ export * as syntax from "./syntax/syntax";`
     const index = dir.getPath("index.ts");
     index.addImport(`export * from "./castMaps";`);
     index.addImport(`export * from "./syntax/syntax";`);
-    index.addImport(`import _syntax from "./syntax/syntax";`);
+    index.addImport(`import * as _syntax from "./syntax/syntax";`);
 
     index.writeln(genutil.frag`export default {`);
     index.indented(() => {
-      index.writeln(genutil.frag`..._syntax,`);
-
       for (const moduleName of ["std", "default"]) {
         if (dir._modules.has(moduleName)) {
           index.writeln(genutil.frag`..._${dir._modules.get(moduleName)!},`);
         }
       }
+      index.writeln(genutil.frag`..._syntax,`);
 
       for (const [moduleName, internalName] of dir._modules) {
         if (dir.getModule(moduleName).isEmpty()) {

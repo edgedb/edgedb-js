@@ -26,6 +26,13 @@ const q1 = select(e.Hero, {
   computed: e.str("test"),
 });
 
+test("path construction", () => {
+  const result = select(e.default.Hero);
+  expect(result.villains.nemesis.name.__element__.__name__).toEqual(
+    "std::str"
+  );
+});
+
 test("complex shape", () => {
   type q1type = typeof q1["__element__"]["__tstype__"];
   const f1: typeutil.assertEqual<

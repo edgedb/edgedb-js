@@ -218,7 +218,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     body.writeln(
       frag`export type ${ref} = $.ObjectType<${quote(
         type.name
-      )}, ${ref}λShape>;`
+      )}, ${ref}λShape, null, []>;`
     );
 
     /////////

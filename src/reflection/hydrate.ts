@@ -172,7 +172,9 @@ export type mergeObjectTypes<
   B extends ObjectType
 > = ObjectType<
   `${A["__name__"]} UNION ${B["__name__"]}`,
-  mergeObjectShapes<A["__shape__"], B["__shape__"]>
+  mergeObjectShapes<A["__shape__"], B["__shape__"]>,
+  null,
+  []
 >;
 
 export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(

@@ -22,9 +22,10 @@ export async function setupTests() {
 }`,
     {nemesis_id: ironMan.id}
   );
-  // console.log(thanos);
-  // tslint:disable-next-line: no-console
-  console.log(`Done.`);
+
+  await pool.close();
+
+  return "done";
 }
 export async function teardownTests() {
   // tslint:disable-next-line: no-console
@@ -35,8 +36,10 @@ export async function teardownTests() {
   await pool.execute(`DELETE Movie;`);
   await pool.execute(`DELETE Bag;`);
   await pool.execute(`DELETE Simple;`);
-  // tslint:disable-next-line: no-console
-  console.log(`Done.`);
+
+  await pool.close();
+
+  return "done";
 }
 
 beforeAll(() => setupTests());

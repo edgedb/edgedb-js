@@ -94,20 +94,18 @@ export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
 
 type isEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
 
-type aldskfj = keyof {asdf: "alskdfj"};
-
 export type computeObjectShape<
   Shape extends ObjectTypeShape,
   Params extends object | null,
   Polys extends Poly[]
 > = string extends keyof Shape // checks if Shape is actually defined
   ? any
-  : isEqual<Params, null> extends true
-  ? shapeToTsType<Shape>
   : isEqual<Params, object | null> extends true
   ? any
   : isEqual<Polys, Poly[]> extends true
   ? any
+  : isEqual<Params, null> extends true
+  ? shapeToTsType<Shape>
   : shapeWithPolysToTs<Shape, Params, Polys>;
 
 type unionToIntersection<U> = (

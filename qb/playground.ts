@@ -1,4 +1,5 @@
 // tslint:disable:no-console
+import {TupleType} from "reflection";
 import e, {cast, set, $Array, literal} from "./generated/example";
 
 const asdf = set(e.int16(15), e.int16(15));
