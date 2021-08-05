@@ -63,13 +63,11 @@ export interface ObjectType<
   __polys__: Polys;
 }
 
-export type objectExprToSelectParams<
-  T extends ObjectTypeExpression
-> = shapeToSelectParams<T["__element__"]["__shape__"]>;
+export type objectExprToSelectParams<T extends ObjectTypeExpression> =
+  shapeToSelectParams<T["__element__"]["__shape__"]>;
 
-export type objectTypeToSelectParams<
-  T extends SomeObjectType
-> = shapeToSelectParams<T["__shape__"]>;
+export type objectTypeToSelectParams<T extends SomeObjectType> =
+  shapeToSelectParams<T["__shape__"]>;
 
 export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
   {
@@ -154,13 +152,12 @@ export type simpleShapeToTs<
   }
 >;
 
-export type shapeElementToTsTypeSimple<
-  El extends PropertyDesc | LinkDesc
-> = El extends PropertyDesc
-  ? propToTsType<El>
-  : El extends LinkDesc<any, any, any>
-  ? {id: string}
-  : never;
+export type shapeElementToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
+  El extends PropertyDesc
+    ? propToTsType<El>
+    : El extends LinkDesc<any, any, any>
+    ? {id: string}
+    : never;
 
 export type Poly<
   Type extends SomeObjectType = SomeObjectType,
@@ -211,9 +208,7 @@ export enum ExpressionKind {
   PathLeaf = "PathLeaf",
   Literal = "Literal",
   Cast = "Cast",
-  // Select = "Select",
-  ShapeSelect = "ShapeSelect",
-  SimpleSelect = "SimpleSelect",
+  Select = "Select",
   Function = "Function",
   Operator = "Operator",
 }
@@ -228,9 +223,8 @@ export type ObjectTypeSet<
   Card extends Cardinality = Cardinality
 > = TypeSet<T, Card>;
 
-export type ObjectTypeExpression<
-  Set extends ObjectTypeSet = ObjectTypeSet
-> = BaseExpression<Set>;
+export type ObjectTypeExpression<Set extends ObjectTypeSet = ObjectTypeSet> =
+  BaseExpression<Set>;
 
 export type PrimitiveType =
   | ScalarType
@@ -371,25 +365,22 @@ export type setToTsType<Set extends BaseTypeSet> = Set extends makeSet<
     : never
   : never;
 
-export type propToTsType<
-  Prop extends PropertyDesc
-> = Prop extends PropertyDesc<infer Type, infer Card>
-  ? setToTsType<makeSet<Type, Card>>
-  : never;
+export type propToTsType<Prop extends PropertyDesc> =
+  Prop extends PropertyDesc<infer Type, infer Card>
+    ? setToTsType<makeSet<Type, Card>>
+    : never;
 
-export type linkToTsType<
-  Link extends LinkDesc<any, any, any>
-> = Link extends LinkDesc<infer Type, infer Card, any>
-  ? setToTsType<makeSet<Type, Card>>
-  : never;
+export type linkToTsType<Link extends LinkDesc<any, any, any>> =
+  Link extends LinkDesc<infer Type, infer Card, any>
+    ? setToTsType<makeSet<Type, Card>>
+    : never;
 
-export type shapeElementToTsType<
-  El extends PropertyDesc | LinkDesc
-> = El extends PropertyDesc
-  ? propToTsType<El>
-  : El extends LinkDesc<any, any, any>
-  ? linkToTsType<El>
-  : never;
+export type shapeElementToTsType<El extends PropertyDesc | LinkDesc> =
+  El extends PropertyDesc
+    ? propToTsType<El>
+    : El extends LinkDesc<any, any, any>
+    ? linkToTsType<El>
+    : never;
 
 export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
   ? any

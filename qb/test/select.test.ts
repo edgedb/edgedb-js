@@ -92,7 +92,7 @@ test("polymorphism", () => {
     })
   );
 
-  expect(query.__kind__).toEqual(ExpressionKind.ShapeSelect);
+  expect(query.__kind__).toEqual(ExpressionKind.Select);
   expect(query.__element__.__kind__).toEqual(TypeKind.object);
   expect(query.__element__.__name__).toEqual("default::Person_shape");
   expect(query.__element__.__params__).toEqual({id: true, name: true});
@@ -110,10 +110,8 @@ test("polymorphism", () => {
   );
 
   type poly = typeof query["__element__"]["__polys__"][0];
-  const f1: typeutil.assertEqual<
-    poly["params"],
-    {secret_identity: true}
-  > = true;
+  const f1: typeutil.assertEqual<poly["params"], {secret_identity: true}> =
+    true;
 
   type result = typeof query["__element__"]["__tstype__"];
   const f2: typeutil.assertEqual<

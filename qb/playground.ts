@@ -1,36 +1,33 @@
 // tslint:disable:no-console
-import {TupleType} from "reflection";
-import e, {cast, set, $Array, literal} from "./generated/example";
 
-const asdf = set(e.int16(15), e.int16(15));
-const cast1 = cast(e.$int32, asdf);
-console.log(cast1);
+// import {select} from "../src/syntax/select";
+import {typeutil} from "reflection";
+import e from "./generated/example";
 
-const cast2 = cast(e.$float32, e.float64(3.14));
-console.log(cast2);
-
-console.log(e.len(set(e.$bytes)).toEdgeQL());
-
-const haystack = literal($Array(e.$str), ["hello", "world"]);
-// @ts-expect-error
-e.contains(haystack, e.int32(5));
-
-const func = e.contains(haystack, set(e.str("world"), e.str("hello")));
-console.log(func);
-
-console.log(func.toEdgeQL());
-
-const variadicFunc = e.json_get(e.json("json"), e.str("some"), e.str("path"));
-
-console.log(variadicFunc);
-console.log(variadicFunc.toEdgeQL());
-
-const namedVariadicFunc = e.json_get(
-  {default: e.json("defaultjson")},
-  e.json("json"),
-  e.str("some"),
-  e.str("path")
+// const select = s
+const q1 = e.select(
+  e.Person,
+  {
+    id: true,
+    qwer: e.plus(e.int64(1234), e.int64(1)),
+  },
+  e.is(e.Hero, {
+    secret_identity: true,
+  }),
+  e.is(e.Villain, {
+    nemesis: {name: true},
+  })
 );
+type q1 = typeof q1;
 
-console.log(namedVariadicFunc);
-console.log(namedVariadicFunc.toEdgeQL());
+console.log(q1);
+
+const asdf = q1
+  .filter(e.eq(e.Person.name, e.str("Iron Man")))
+  .orderBy(e.Person.name, e.DESC, e.EMPTY_FIRST)
+  .offset(e.set(e.$int64))
+  .limit(e.int64(10));
+type asdf = typeof asdf["__expr__"];
+
+// console.log(asdf.toEdgeQL());
+console.log(e.select(asdf).toEdgeQL());
