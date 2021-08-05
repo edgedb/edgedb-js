@@ -12,7 +12,7 @@ import {$expr_PathLeaf, $expr_PathNode, $pathify} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
-import {$expr_SimpleSelect, $expr_ShapeSelect} from "./select";
+import {$expr_Select, ModifierKind} from "./select";
 import {$expr_Function, $expr_Operator} from "./funcops";
 
 export type SomeExpression =
@@ -21,8 +21,7 @@ export type SomeExpression =
   | $expr_Literal
   | $expr_Set
   | $expr_Cast
-  | $expr_SimpleSelect
-  | $expr_ShapeSelect<ObjectTypeExpression, any, any>
+  | $expr_Select
   | $expr_Function
   | $expr_Operator;
 
@@ -34,10 +33,13 @@ export type SomeExpression =
 // }>;
 
 function shapeToEdgeQL(
-  _shape: object,
+  _shape: object | null,
   polys: Poly[] = [],
   params: {depth: number} = {depth: 1}
 ) {
+  if (_shape === null) {
+    return ``;
+  }
   const depth = params.depth ?? 1;
   const outerSpacing = Array(depth).join("  ");
   const innerSpacing = Array(depth + 1).join("  ");
@@ -84,8 +86,8 @@ function shapeToEdgeQL(
       }
     }
   }
-
-  return `{\n${lines.join("\n")}\n${outerSpacing}}`;
+  const finalLines = lines.length === 0 ? ["id"] : lines;
+  return `{\n${finalLines.join("\n")}\n${outerSpacing}}`;
 }
 export function toEdgeQL(this: any) {
   const expr: SomeExpression = this;
@@ -120,18 +122,46 @@ export function toEdgeQL(this: any) {
     }
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${expr.__expr__.toEdgeQL()}`;
-  } else if (expr.__kind__ === ExpressionKind.SimpleSelect) {
-    return `SELECT ${expr.__expr__.toEdgeQL()}`;
-  } else if (expr.__kind__ === ExpressionKind.ShapeSelect) {
-    const lines = [];
-    lines.push(`SELECT ${expr.__expr__.toEdgeQL()}`);
-    lines.push(
-      shapeToEdgeQL(
-        (expr.__element__.__params__ || {}) as object,
-        expr.__element__.__polys__ || []
-      )
-    );
-    return lines.join("\n");
+  } else if (expr.__kind__ === ExpressionKind.Select) {
+    // if modifier exists, just render it
+    // and the wrapped __expr__
+    if (expr.__modifier__) {
+      const lines = [];
+      const mod = expr.__modifier__!;
+      if (mod.kind === ModifierKind.filter) {
+        lines.push(expr.__expr__.toEdgeQL());
+        lines.push(`FILTER ${mod.expr.toEdgeQL()}`);
+      } else if (mod.kind === ModifierKind.order_by) {
+        lines.push(expr.__expr__.toEdgeQL());
+        lines.push(`ORDER BY ${mod.expr.toEdgeQL()}`);
+        if (mod.direction) lines.push(mod.direction);
+        if (mod.empty) lines.push(mod.empty);
+      } else if (mod.kind === ModifierKind.offset) {
+        lines.push(expr.__expr__.toEdgeQL());
+        lines.push(`OFFSET ${mod.expr.toEdgeQL()}`);
+      } else if (mod.kind === ModifierKind.limit) {
+        lines.push(expr.__expr__.toEdgeQL());
+        lines.push(`LIMIT ${mod.expr.toEdgeQL()}`);
+      } else {
+        util.assertNever(mod, new Error(`Unknown operator kind: ${mod}`));
+      }
+      return lines.join("\n");
+    }
+    if (expr.__element__.__kind__ === TypeKind.object) {
+      const lines = [];
+      lines.push(`SELECT (${expr.__expr__.toEdgeQL()})`);
+
+      lines.push(
+        shapeToEdgeQL(
+          (expr.__element__.__params__ || {}) as object,
+          expr.__element__.__polys__ || []
+        )
+      );
+      return lines.join("\n");
+    } else {
+      // non-object/non-shape select expression
+      return `SELECT (${expr.__expr__.toEdgeQL()})`;
+    }
   } else if (expr.__kind__ === ExpressionKind.Function) {
     const args = expr.__args__.map((arg) => (arg as any).toEdgeQL());
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
@@ -143,14 +173,18 @@ export function toEdgeQL(this: any) {
     const args = expr.__args__;
     switch (expr.__opkind__) {
       case "Infix":
-        return `(${(args[0] as any).toEdgeQL()} ${operator} ${(args[1] as any).toEdgeQL()})`;
+        return `(${(args[0] as any).toEdgeQL()} ${operator} ${(
+          args[1] as any
+        ).toEdgeQL()})`;
       case "Postfix":
         return `(${(args[0] as any).toEdgeQL()} ${operator})`;
       case "Prefix":
         return `(${operator} ${(args[0] as any).toEdgeQL()})`;
       case "Ternary":
         if (operator === "IF") {
-          return `(${(args[0] as any).toEdgeQL()} IF ${(args[1] as any).toEdgeQL()} ELSE ${(args[2] as any).toEdgeQL()})`;
+          return `(${(args[0] as any).toEdgeQL()} IF ${(
+            args[1] as any
+          ).toEdgeQL()} ELSE ${(args[2] as any).toEdgeQL()})`;
         } else {
           throw new Error(`Unknown operator: ${operator}`);
         }

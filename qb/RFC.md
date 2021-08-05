@@ -141,14 +141,14 @@ e.default.CustomEnum.green;
 
 ```ts
 e.set(e.str("asdf"), e.str("qwer"));
-// => SetLiteral<Set<String>, string[]>
+// => {'asdf', 'qwer'}
 ```
 
-Overload with support for naked strings
+Overload with support for naked strings.
 
 ```ts
 e.set("asdf", "asdf");
-// => SetLiteral<Set<String>, string[]>
+// => {'asdf', 'qwer'}
 ```
 
 Disallow incompatible types.
@@ -160,13 +160,19 @@ e.set(e.str("asdf"), e.int32(12)); // TypeError
 Use overloading to represent implicit casting behavior
 
 ```ts
-// allow castable heterogeneous types
-
+// allow distinct types that are implicitly castable
 e.set(e.int16(1234), e.int64(1234));
 // => Literal<Set<Int64>, number[]>
 
 e.set(e.int64(1234), e.float32(12.34));
 // => Literal<Set<Float64>, number[]>
+```
+
+For an empty set, pass a type as the first and only argument:
+
+```ts
+e.set(e.$int64);
+// => <std::int64>{}
 ```
 
 ## Arrays
@@ -196,6 +202,14 @@ Unnamed
 
 ```ts
 e.tuple([e.str("Peter Parker"), e.int64(100)]);
+```
+
+## Literals of collection types
+
+```ts
+e.literal(e.array(e.str), ["asdf"]);
+e.literal(e.tuple([e.str]), ["asdf"]);
+e.literal(e.tuple([e.str]), ["asdf"]);
 ```
 
 ## Set references
