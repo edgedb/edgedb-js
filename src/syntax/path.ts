@@ -11,6 +11,7 @@ import {
   ExpressionKind,
   util,
   TypeKind,
+  ObjectTypeShape,
 } from "reflection";
 
 import {toEdgeQL} from "./toEdgeQL";
@@ -47,13 +48,15 @@ export interface PathParent<
   linkName: string;
 }
 
-// leaves are Set & Expression & HasParent & {getters for each property/link}
+// leaves are Expression & {getters for each property/link}
 export type $pathify<
   Root extends TypeSet,
   Parent extends PathParent | null = null
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
     ? unknown // Root is literally ObjectTypeSet
+    : ObjectTypeShape extends Root["__element__"]["__shape__"]
+    ? unknown
     : {
         // & string required to avod typeError on linkName
         [k in keyof Root["__element__"]["__shape__"] &
@@ -151,7 +154,6 @@ export const $expr_PathNode = <
   return $pathify(root) as any;
 };
 
-// leaves are Set & Expression & HasParent
 export type $expr_PathLeaf<
   Root extends TypeSet = TypeSet,
   Parent extends PathParent = PathParent

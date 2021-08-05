@@ -201,7 +201,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
           }`
         );
 
-        let anytypes: string[] = [];
+        const anytypes: string[] = [];
 
         if (hasParams) {
           // param types
@@ -329,13 +329,9 @@ export function generateFuncopTypes<F extends FuncopDef>(
             ? funcDef.anytype.kind === "castable"
               ? anytypes.length <= 1
                 ? anytypes[0]
-                : anytypes
-                    .slice(1)
-                    .reduce(
-                      (parent, type) =>
-                        `_.syntax.getSharedParentPrimitive<${parent}, ${type}>`,
-                      anytypes[0]
-                    )
+                : anytypes.slice(1).reduce((parent, type) => {
+                    return `_.syntax.getSharedParentPrimitive<${parent}, ${type}>`;
+                  }, anytypes[0])
               : funcDef.anytype.paramPath
             : undefined;
           const returnType = getStringRepresentation(
@@ -484,7 +480,8 @@ function groupParams(params: FunctionDef["params"]) {
 // - (optional || hasDefault) -> override lower cardinality of actual to 1
 
 // return typemod:
-// - optional -> override return lower cardinality to 0 (product with AtMostOne)
+// - optional -> override return lower cardinality to 0
+//    (product with AtMostOne)
 // - setoftype -> always Many
 
 function generateReturnCardinality(
@@ -513,7 +510,8 @@ function generateReturnCardinality(
     }
 
     if (param.typemod === "OptionalType" || param.hasDefault) {
-      return `$.cardinalityUtil.optionalParamCardinality<${param.genTypeName}>`;
+      const _alias = `$.cardinalityUtil.optionalParamCardinality`;
+      return `${_alias}<${param.genTypeName}>`;
     }
 
     if (param.kind === "VariadicParam") {

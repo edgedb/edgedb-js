@@ -33,6 +33,7 @@
     "one-line": false,
     "no-bitwise": false,
     "array-type": false,
+    "no-empty": false,
     "typedef": [
       true,
       "property-declaration",

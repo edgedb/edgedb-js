@@ -100,10 +100,6 @@ export async function getTypes(
         id
       } ORDER BY @index ASC,
 
-      # [IS InheritingObject].ancestors: {
-        # id
-      # } ORDER BY @index ASC,
-
       [IS ObjectType].union_of,
       [IS ObjectType].intersection_of,
       [IS ObjectType].pointers: {

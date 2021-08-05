@@ -1,9 +1,18 @@
-import {ExpressionKind, util, MaterialType, TypeKind} from "reflection";
+import {
+  ExpressionKind,
+  MaterialType,
+  ObjectTypeExpression,
+  Poly,
+  SomeObjectType,
+  TypeKind,
+  util,
+} from "reflection";
 import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
-import {$expr_PathLeaf, $expr_PathNode} from "./path";
+import {$expr_PathLeaf, $expr_PathNode, $pathify} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
+import {$expr_SimpleSelect, $expr_ShapeSelect} from "./select";
 import {$expr_Function, $expr_Operator} from "./funcops";
 
 export type SomeExpression =
@@ -12,10 +21,73 @@ export type SomeExpression =
   | $expr_Literal
   | $expr_Set
   | $expr_Cast
+  | $expr_SimpleSelect
+  | $expr_ShapeSelect<ObjectTypeExpression, any, any>
   | $expr_Function
   | $expr_Operator;
 
-export function toEdgeQL(this: any): string {
+// type expr = $expr_ShapeSelect<ObjectTypeExpression, any, any>;
+// type elem = expr["__element__"];
+// type p = $pathify<{
+//   __element__: expr["__element__"];
+//   __cardinality__: expr["__cardinality__"];
+// }>;
+
+function shapeToEdgeQL(
+  _shape: object,
+  polys: Poly[] = [],
+  params: {depth: number} = {depth: 1}
+) {
+  const depth = params.depth ?? 1;
+  const outerSpacing = Array(depth).join("  ");
+  const innerSpacing = Array(depth + 1).join("  ");
+  const lines: string[] = [];
+  const addLine = (line: string) => lines.push(`${innerSpacing}${line},`);
+
+  const shapes = [{type: null, params: _shape}, ...polys];
+  const seen = new Set();
+  for (const shapeObj of shapes) {
+    const shape = shapeObj.params;
+    const polyType = shapeObj.type?.__name__;
+    const polyIntersection = polyType ? `[IS ${polyType}].` : "";
+    for (const key in shape) {
+      if (!shape.hasOwnProperty(key)) continue;
+      if (seen.has(key)) {
+        // tslint:disable-next-line
+        console.warn(`Invalid: duplicate key "${key}"`);
+        continue;
+      }
+      seen.add(key);
+      const val = (shape as any)[key];
+      if (val === true) {
+        addLine(`${polyIntersection}${key}`);
+      } else if (val.hasOwnProperty("__kind__")) {
+        if (polyIntersection) {
+          // tslint:disable-next-line
+          console.warn(
+            `Invalid: no computable fields inside polymorphic shapes.`
+          );
+          continue;
+        }
+        addLine(`${key} := (${val.toEdgeQL()})`);
+      } else if (typeof val === "object") {
+        const nestedPolys = polys
+          .map((poly) => (poly as any)[key])
+          .filter((x) => !!x);
+        addLine(
+          `${polyIntersection}${key}: ${shapeToEdgeQL(val, nestedPolys, {
+            depth: depth + 1,
+          })}`
+        );
+      } else {
+        throw new Error("Invalid shape.");
+      }
+    }
+  }
+
+  return `{\n${lines.join("\n")}\n${outerSpacing}}`;
+}
+export function toEdgeQL(this: any) {
   const expr: SomeExpression = this;
   if (
     expr.__kind__ === ExpressionKind.PathNode ||
@@ -48,8 +120,20 @@ export function toEdgeQL(this: any): string {
     }
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${expr.__expr__.toEdgeQL()}`;
+  } else if (expr.__kind__ === ExpressionKind.SimpleSelect) {
+    return `SELECT ${expr.__expr__.toEdgeQL()}`;
+  } else if (expr.__kind__ === ExpressionKind.ShapeSelect) {
+    const lines = [];
+    lines.push(`SELECT ${expr.__expr__.toEdgeQL()}`);
+    lines.push(
+      shapeToEdgeQL(
+        (expr.__element__.__params__ || {}) as object,
+        expr.__element__.__polys__ || []
+      )
+    );
+    return lines.join("\n");
   } else if (expr.__kind__ === ExpressionKind.Function) {
-    let args = expr.__args__.map((arg) => (arg as any).toEdgeQL());
+    const args = expr.__args__.map((arg) => (arg as any).toEdgeQL());
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
       args.push(`${key} := ${(arg as any).toEdgeQL()}`);
     }

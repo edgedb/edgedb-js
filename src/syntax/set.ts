@@ -16,6 +16,7 @@ import {
   cardinalityUtil,
   mergeObjectTypes,
   Cardinality,
+  SomeObjectType,
 } from "reflection";
 
 // "@generated/" path gets replaced during generation step
@@ -117,12 +118,12 @@ export type getSharedParentPrimitiveVariadic<
 //   : never;
 
 type _mergeObjectTypesVariadic<
-  Types extends [ObjectType, ...ObjectType[]]
+  Types extends [SomeObjectType, ...SomeObjectType[]]
 > = Types extends [infer U]
   ? U
   : Types extends [infer A, infer B, ...infer Rest]
-  ? A extends ObjectType
-    ? B extends ObjectType
+  ? A extends SomeObjectType
+    ? B extends SomeObjectType
       ? mergeObjectTypes<A, B> extends MaterialType
         ? mergeObjectTypesVariadic<[mergeObjectTypes<A, B>, ...Rest]>
         : never

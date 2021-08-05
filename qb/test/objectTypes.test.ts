@@ -1,6 +1,11 @@
 import e from "../generated/example";
+
 import {reflection as $} from "edgedb";
-import {mergeObjectTypes, typeutil} from "../../src/reflection";
+import {
+  computeObjectShape,
+  mergeObjectTypes,
+  typeutil,
+} from "../../src/reflection";
 
 const HeroType = e.default.$Hero;
 
@@ -61,11 +66,20 @@ test("array tests", () => {
 
 test("merging tests", () => {
   const merged = mergeObjectTypes(e.default.$Bag, e.default.$Simple);
+  type merged = typeof merged;
+  type alkdjf = string extends keyof merged["__shape__"] ? true : false;
+  type adf = computeObjectShape<
+    merged["__shape__"],
+    merged["__params__"],
+    merged["__polys__"]
+  >;
+  // type aklsdjf = keyof (object | null);
   expect(Object.keys(merged.__shape__).length).toEqual(4);
   expect(Object.keys(merged.__shape__).includes("id")).toEqual(true);
   expect(Object.keys(merged.__shape__).includes("__type__")).toEqual(true);
   expect(Object.keys(merged.__shape__).includes("name")).toEqual(true);
   expect(Object.keys(merged.__shape__).includes("age")).toEqual(true);
+  type asdf = typeof merged["__tstype__"];
   const _f1: typeutil.assertEqual<
     typeof merged["__tstype__"],
     {id: string; age: number | null; name: string | null; __type__: any}

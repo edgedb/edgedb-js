@@ -13,8 +13,6 @@
     "stripInternal": true,
     "isolatedModules": true,
     "esModuleInterop": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "downlevelIteration": true,

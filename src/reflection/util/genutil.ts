@@ -270,8 +270,8 @@ export function joinFrags(
   sep: string
 ) {
   const joined: CodeFragment[] = [];
-  for (const frag of frags) {
-    joined.push(...(Array.isArray(frag) ? frag : [frag]), sep);
+  for (const fragment of frags) {
+    joined.push(...(Array.isArray(fragment) ? fragment : [fragment]), sep);
   }
   return joined.slice(0, -1);
 }

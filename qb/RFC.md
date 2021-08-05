@@ -388,14 +388,14 @@ e.select(
     id: true,
     name: true,
   },
-  Person.$is(Hero, {
+  e.is(Hero, {
     secret_identity: true,
     villains: {
       id: true,
       name: true,
     },
   }),
-  Person.$is(Villain, {
+  e.is(Villain, {
     nemesis: {id: true},
   })
 );
@@ -548,12 +548,18 @@ e.select(Hero)
   .delete();
 ```
 
+## Detach
+
+```ts
+const detachedHero = e.detach(e.Hero);
+```
+
 ## Parameters
 
 ```ts
 const fetchPerson = e.withParams(
   {
-    name: e.$Array(e.Str),
+    name: e.$Array(e.$Str),
   },
   (args) =>
     e

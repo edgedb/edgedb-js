@@ -160,7 +160,6 @@ export namespace cardinalityUtil {
   > = _mergeCardinalitiesVariadic<Cards> extends Cardinality
     ? _mergeCardinalitiesVariadic<Cards>
     : never;
-
   export function mergeCardinalitiesVariadic<
     Cards extends [Cardinality, ...Cardinality[]]
   >(cards: Cards): mergeCardinalitiesVariadic<Cards> {

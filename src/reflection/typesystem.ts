@@ -19,6 +19,13 @@ export interface BaseType {
   __tstype__: unknown;
   __name__: string;
 }
+export interface BaseTypeSet<
+  T extends BaseType = BaseType,
+  Card extends Cardinality = Cardinality
+> {
+  __element__: T;
+  __cardinality__: Card;
+}
 export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
 
 export interface ScalarType<Name extends string = string, TsType = unknown> {
@@ -27,15 +34,142 @@ export interface ScalarType<Name extends string = string, TsType = unknown> {
   __name__: Name;
 }
 
+//////////////////
+// OBJECT TYPES
+//////////////////
+// export type SomeObjectType = ObjectType;
+
+export type SomeObjectType = {
+  __kind__: TypeKind.object;
+  __tstype__: any;
+  __name__: string;
+  __shape__: ObjectTypeShape;
+  __params__: any;
+  __polys__: any[];
+};
+
+// ObjectType; //<string, ObjectTypeShape, any, any[]>;;
 export interface ObjectType<
   Name extends string = string,
-  Shape extends ObjectTypeShape = ObjectTypeShape
+  Shape extends ObjectTypeShape = ObjectTypeShape,
+  Params extends object | null = object | null,
+  Polys extends Poly[] = Poly[]
 > {
   __kind__: TypeKind.object;
-  __tstype__: shapeToTsType<Shape>;
+  __tstype__: computeObjectShape<Shape, Params, Polys>;
   __name__: Name;
   __shape__: Shape;
+  __params__: Params;
+  __polys__: Polys;
 }
+
+export type objectExprToSelectParams<
+  T extends ObjectTypeExpression
+> = shapeToSelectParams<T["__element__"]["__shape__"]>;
+
+export type objectTypeToSelectParams<
+  T extends SomeObjectType
+> = shapeToSelectParams<T["__shape__"]>;
+
+export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
+  {
+    [k in keyof Shape]: Shape[k] extends PropertyDesc
+      ? boolean
+      : Shape[k] extends LinkDesc
+      ?
+          | true
+          | (shapeToSelectParams<Shape[k]["target"]["__shape__"]> &
+              linkDescShape<Shape[k]>)
+      : any;
+  }
+>;
+
+export type linkDescShape<Link extends LinkDesc> = addAtSigns<
+  Link["properties"]
+> extends ObjectTypeShape
+  ? shapeToSelectParams<addAtSigns<Link["properties"]>>
+  : never;
+
+export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
+
+type isEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
+
+export type computeObjectShape<
+  Shape extends ObjectTypeShape,
+  Params extends object | null,
+  Polys extends Poly[]
+> = string extends keyof Shape // checks if Shape is actually defined
+  ? any
+  : isEqual<Params, object | null> extends true
+  ? any
+  : isEqual<Polys, Poly[]> extends true
+  ? any
+  : isEqual<Params, null> extends true
+  ? shapeToTsType<Shape>
+  : shapeWithPolysToTs<Shape, Params, Polys>;
+
+type unionToIntersection<U> = (
+  U extends any ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never;
+
+export type shapeWithPolysToTs<
+  Shape extends ObjectTypeShape,
+  Params extends object | null,
+  Polys extends Poly[]
+> = typeutil.flatten<
+  simpleShapeToTs<Shape, Params> &
+    unionToIntersection<
+      Polys[number] extends infer P
+        ? P extends Poly
+          ? Partial<simpleShapeToTs<P["type"]["__shape__"], P["params"]>>
+          : never
+        : never
+    >
+>;
+
+export type simpleShapeToTs<
+  Shape extends ObjectTypeShape,
+  Params
+> = typeutil.flatten<
+  {
+    [k in keyof Params]: k extends keyof Shape
+      ? Params[k] extends true
+        ? shapeElementToTsTypeSimple<Shape[k]>
+        : Params[k] extends false
+        ? never
+        : Params[k] extends boolean
+        ? shapeElementToTsType<Shape[k]> | undefined
+        : Params[k] extends object
+        ? Shape[k]["target"] extends SomeObjectType
+          ? simpleShapeToTs<Shape[k]["target"]["__shape__"], Params[k]>
+          : never
+        : never
+      : Params[k] extends infer U
+      ? U extends TypeSet
+        ? setToTsType<U>
+        : never
+      : "invalid key";
+  }
+>;
+
+export type shapeElementToTsTypeSimple<
+  El extends PropertyDesc | LinkDesc
+> = El extends PropertyDesc
+  ? propToTsType<El>
+  : El extends LinkDesc<any, any, any>
+  ? {id: string}
+  : never;
+
+export type Poly<
+  Type extends SomeObjectType = SomeObjectType,
+  Params extends any = any
+> = {
+  type: Type;
+  params: Params;
+};
+export type AnyPoly = {type: any; params: any};
 
 ////////////////////
 // SETS AND EXPRESSIONS
@@ -77,6 +211,9 @@ export enum ExpressionKind {
   PathLeaf = "PathLeaf",
   Literal = "Literal",
   Cast = "Cast",
+  // Select = "Select",
+  ShapeSelect = "ShapeSelect",
+  SimpleSelect = "SimpleSelect",
   Function = "Function",
   Operator = "Operator",
 }
@@ -87,7 +224,7 @@ export type MaterialTypeSet<
 > = TypeSet<T, Card>;
 
 export type ObjectTypeSet<
-  T extends ObjectType = ObjectType,
+  T extends SomeObjectType = SomeObjectType,
   Card extends Cardinality = Cardinality
 > = TypeSet<T, Card>;
 
@@ -197,7 +334,7 @@ export type PropertyShape = {
 };
 
 export interface LinkDesc<
-  T extends ObjectType = ObjectType,
+  T extends SomeObjectType = SomeObjectType,
   C extends Cardinality = Cardinality,
   LinkProps extends PropertyShape = {}
 > {
@@ -211,13 +348,11 @@ export type ObjectTypeShape = {
   [k: string]: PropertyDesc | LinkDesc;
 };
 
-type adsfqewr = shapeToTsType<ObjectTypeShape>;
-
 /////////////////////
 /// TSTYPE HELPERS
 /////////////////////
 
-export type setToTsType<Set extends TypeSet> = Set extends makeSet<
+export type setToTsType<Set extends BaseTypeSet> = Set extends makeSet<
   infer Type,
   infer Card
 >
@@ -248,15 +383,19 @@ export type linkToTsType<
   ? setToTsType<makeSet<Type, Card>>
   : never;
 
+export type shapeElementToTsType<
+  El extends PropertyDesc | LinkDesc
+> = El extends PropertyDesc
+  ? propToTsType<El>
+  : El extends LinkDesc<any, any, any>
+  ? linkToTsType<El>
+  : never;
+
 export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
   ? any
   : typeutil.flatten<
       {
-        [k in keyof T]: T[k] extends PropertyDesc
-          ? propToTsType<T[k]>
-          : T[k] extends LinkDesc<any, any, any>
-          ? linkToTsType<T[k]>
-          : never;
+        [k in keyof T]: shapeElementToTsType<T[k]>;
       }
     >;
 

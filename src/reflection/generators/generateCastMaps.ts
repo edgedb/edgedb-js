@@ -166,11 +166,15 @@ export const generateCastMaps = async (params: GeneratorParams) => {
 
   f.writeln(frag`const implicitCastMap = new Map<string, Set<string>>([`);
   f.indented(() => {
-    for (const [id, castableTo] of Object.entries(casts.implicitCastMap)) {
+    for (const [sourceId, castableTo] of Object.entries(
+      casts.implicitCastMap
+    )) {
       if (castableTo.length) {
         f.writeln(
-          frag`[${quote(types.get(id).name)}, new Set([${castableTo
-            .map((id) => quote(types.get(id).name))
+          frag`[${quote(
+            types.get(sourceId).name
+          )}, new Set([${castableTo
+            .map((targetId) => quote(types.get(targetId).name))
             .join(", ")}])],`
         );
       }
