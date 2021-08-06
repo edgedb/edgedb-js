@@ -134,6 +134,15 @@ interface SelectMethods<Self extends TypeSet> {
       expr: Expr;
     }
   >;
+  offset(expr: number): $expr_Select<
+    Self,
+    this,
+    {
+      kind: ModifierKind.offset;
+      expr: $expr_Literal<$int64>;
+    }
+  >;
+
   limit<Expr extends LimitExpression>(
     expr: Expr
   ): $expr_Select<
@@ -216,7 +225,7 @@ function orderByFunc(
   );
 }
 
-function offsetFunc(this: any, expr: OffsetExpression) {
+function offsetFunc(this: any, expr: OffsetExpression | number) {
   return $pathify(
     $selectify({
       __kind__: ExpressionKind.Select,
@@ -225,7 +234,7 @@ function offsetFunc(this: any, expr: OffsetExpression) {
       __expr__: this,
       __modifier__: {
         kind: ModifierKind.offset,
-        expr,
+        expr: typeof expr === "number" ? int64(expr) : expr,
       },
       toEdgeQL,
     })

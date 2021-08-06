@@ -175,3 +175,10 @@ test("limit literal inference", () => {
   const _f3: typeutil.assertEqual<c3, Cardinality.Many> = true;
   expect(r3.__cardinality__).toEqual(Cardinality.Many);
 });
+
+test("offset", () => {
+  const q = e.select(e.Hero, {name: true});
+
+  const r1 = q.offset(5);
+  expect(r1.__modifier__.expr.__element__.__name__).toEqual("std::int64");
+});
