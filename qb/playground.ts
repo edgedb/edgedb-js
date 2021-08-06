@@ -1,11 +1,7 @@
 // tslint:disable:no-console
-
-import {select} from "../src/syntax/select";
-import {typeutil} from "reflection";
 import e from "./generated/example";
 
-// const select = s
-const q1 = select(
+const q1 = e.select(
   e.Person,
   {
     id: true,
