@@ -1,5 +1,11 @@
 // import * as edgedb from "edgedb";
-import {ExpressionKind, TypeKind, typeutil} from "edgedb/src/reflection";
+import {assert} from "console";
+import {
+  Cardinality,
+  ExpressionKind,
+  TypeKind,
+  typeutil,
+} from "edgedb/src/reflection";
 import e, {is, select} from "../generated/example";
 
 test("basic select", () => {
@@ -132,4 +138,40 @@ test("polymorphism", () => {
 test("shape type name", () => {
   const name = select(e.Hero).__element__.__name__;
   const f1: typeutil.assertEqual<typeof name, "default::Hero_shape"> = true;
+});
+
+test("limit inference", () => {
+  const r1 = e.select(e.Hero, {name: true}).limit(e.int64(1));
+  type c1 = typeof r1["__cardinality__"];
+  const _f1: typeutil.assertEqual<c1, Cardinality.AtMostOne> = true;
+  expect(r1.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const r2 = e.select(e.Hero, {name: true}).limit(e.int64(1));
+  type c2 = typeof r2["__cardinality__"];
+  const _f2: typeutil.assertEqual<c2, Cardinality.AtMostOne> = true;
+  expect(r2.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const r3 = e.select(e.Hero, {name: true}).limit(e.int64(2));
+  type c3 = typeof r3["__cardinality__"];
+  const _f3: typeutil.assertEqual<c3, Cardinality.Many> = true;
+  expect(r3.__cardinality__).toEqual(Cardinality.Many);
+});
+
+test("limit literal inference", () => {
+  const r1 = e.select(e.Hero, {name: true}).limit(1);
+  type c1 = typeof r1["__cardinality__"];
+  const _f1: typeutil.assertEqual<c1, Cardinality.AtMostOne> = true;
+  expect(r1.__cardinality__).toEqual(Cardinality.AtMostOne);
+  expect(r1.__modifier__.expr.__element__.__name__).toEqual("std::int64");
+  expect(r1.__modifier__.expr.__value__).toEqual(1);
+
+  const r2 = e.select(e.Hero, {name: true}).limit(1);
+  type c2 = typeof r2["__cardinality__"];
+  const _f2: typeutil.assertEqual<c2, Cardinality.AtMostOne> = true;
+  expect(r2.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const r3 = e.select(e.Hero, {name: true}).limit(2);
+  type c3 = typeof r3["__cardinality__"];
+  const _f3: typeutil.assertEqual<c3, Cardinality.Many> = true;
+  expect(r3.__cardinality__).toEqual(Cardinality.Many);
 });

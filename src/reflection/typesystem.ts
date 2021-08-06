@@ -350,7 +350,7 @@ export type setToTsType<Set extends BaseTypeSet> = Set extends makeSet<
   infer Type,
   infer Card
 >
-  ? Set["__cardinality__"] extends Cardinality.Empty
+  ? Card extends Cardinality.Empty
     ? null
     : Card extends Cardinality.One
     ? Type["__tstype__"]
@@ -360,8 +360,6 @@ export type setToTsType<Set extends BaseTypeSet> = Set extends makeSet<
     ? Type["__tstype__"] | null
     : Card extends Cardinality.Many
     ? Type["__tstype__"][]
-    : Card extends Cardinality.Empty
-    ? null
     : never
   : never;
 
