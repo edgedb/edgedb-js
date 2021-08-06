@@ -1,4 +1,4 @@
-import {$anyint, $bool} from "@generated/modules/std";
+import {$anyint, $bool, $int64, int64} from "@generated/modules/std";
 import {
   BaseExpression,
   Cardinality,
@@ -91,23 +91,19 @@ export type $expr_Select<
   __expr__: Expr;
   __kind__: ExpressionKind.Select;
   __modifier__: Modifier;
-} & SelectMethods<{
-    __element__: Set["__element__"];
-    __cardinality__: Set["__cardinality__"];
-    toEdgeQL: () => string;
-  }>;
+} & SelectMethods<Set>;
 
-interface SelectMethods<Self extends BaseExpression> {
+interface SelectMethods<Self extends TypeSet> {
   // required so `this` passes validation
   // as a BaseExpression
   __element__: Self["__element__"];
   __cardinality__: Self["__cardinality__"];
-  toEdgeQL: Self["toEdgeQL"];
+  toEdgeQL: () => string;
 
   filter<Expr extends SelectFilterExpression>(
     expr: Expr
   ): $expr_Select<
-    Expr,
+    Self,
     this,
     {
       kind: ModifierKind.filter;
@@ -119,7 +115,7 @@ interface SelectMethods<Self extends BaseExpression> {
     dir?: OrderByDirection,
     empty?: OrderByEmpty
   ): $expr_Select<
-    Expr,
+    Self,
     this,
     {
       kind: ModifierKind.order_by;
@@ -131,28 +127,54 @@ interface SelectMethods<Self extends BaseExpression> {
   offset<Expr extends OffsetExpression>(
     expr: Expr
   ): $expr_Select<
-    Expr,
+    Self,
     this,
     {
       kind: ModifierKind.offset;
       expr: Expr;
     }
   >;
+  offset(expr: number): $expr_Select<
+    Self,
+    this,
+    {
+      kind: ModifierKind.offset;
+      expr: $expr_Literal<$int64>;
+    }
+  >;
+
   limit<Expr extends LimitExpression>(
     expr: Expr
   ): $expr_Select<
     {
-      __element__: Expr["__element__"];
+      __element__: Self["__element__"];
       __cardinality__: Expr["__element__"]["__tstype__"] extends 0
         ? Cardinality.Empty
         : Expr["__element__"]["__tstype__"] extends 1
         ? Cardinality.AtMostOne
-        : Expr["__cardinality__"];
+        : Self["__cardinality__"];
     },
     this,
     {
       kind: ModifierKind.limit;
       expr: Expr;
+    }
+  >;
+  limit<Limit extends number>(
+    expr: Limit
+  ): $expr_Select<
+    {
+      __element__: Self["__element__"];
+      __cardinality__: Limit extends 0
+        ? Cardinality.Empty
+        : Limit extends 1
+        ? Cardinality.AtMostOne
+        : Self["__cardinality__"];
+    },
+    this,
+    {
+      kind: ModifierKind.limit;
+      expr: $expr_Literal<$int64>;
     }
   >;
 }
@@ -203,7 +225,7 @@ function orderByFunc(
   );
 }
 
-function offsetFunc(this: any, expr: OffsetExpression) {
+function offsetFunc(this: any, expr: OffsetExpression | number) {
   return $pathify(
     $selectify({
       __kind__: ExpressionKind.Select,
@@ -212,15 +234,23 @@ function offsetFunc(this: any, expr: OffsetExpression) {
       __expr__: this,
       __modifier__: {
         kind: ModifierKind.offset,
-        expr,
+        expr: typeof expr === "number" ? int64(expr) : expr,
       },
       toEdgeQL,
     })
   );
 }
 
-function limitFunc(this: any, expr: LimitExpression) {
+function limitFunc(this: any, expr: LimitExpression | number) {
   let card = this.__cardinality__;
+  if (typeof expr === "number") {
+    if (expr === 1) {
+      card = Cardinality.AtMostOne;
+    } else if (expr === 0) {
+      card = Cardinality.Empty;
+    }
+  }
+
   if ((expr as any).__kind__ === ExpressionKind.Literal) {
     const literalExpr: $expr_Literal = expr as any;
     if (literalExpr.__value__ === 1) {
@@ -233,11 +263,11 @@ function limitFunc(this: any, expr: LimitExpression) {
     $selectify({
       __kind__: ExpressionKind.Select,
       __element__: this.__element__,
-      __cardinality__: this.__cardinality__,
+      __cardinality__: card,
       __expr__: this,
       __modifier__: {
         kind: ModifierKind.limit,
-        expr,
+        expr: typeof expr === "number" ? int64(expr) : expr,
       },
       toEdgeQL,
     })
