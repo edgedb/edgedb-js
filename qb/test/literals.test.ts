@@ -26,6 +26,7 @@ test("literals", () => {
   expect(e.std.float64(1234.15).toEdgeQL()).toEqual(`<std::float64>1234.15`);
   expect(e.std.int16(1234.1234).toEdgeQL()).toEqual(`<std::int16>1234.1234`);
   expect(e.std.int32(124).toEdgeQL()).toEqual(`<std::int32>124`);
+
   expect(e.std.int64(1234).toEdgeQL()).toEqual(`<std::int64>1234`);
   expect(e.std.json('"asdf"').toEdgeQL()).toEqual(`<std::json>'"asdf"'`);
   expect(e.std.str(`asdfaf`).toEdgeQL()).toEqual(`<std::str>'asdfaf'`);

@@ -14,6 +14,7 @@ import {
   TypeSet,
   util,
 } from "reflection";
+import {$expr_Literal} from "./literal";
 import {$pathify} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
 
@@ -81,21 +82,18 @@ export type mod_Limit<Expr extends OffsetExpression = OffsetExpression> = {
 export type SelectModifier = mod_Filter | mod_OrderBy | mod_Offset | mod_Limit;
 
 export type $expr_Select<
-  Type extends MaterialType = MaterialType,
+  Set extends TypeSet = TypeSet,
   Expr extends BaseExpression = BaseExpression,
   Modifier extends SelectModifier | null = SelectModifier | null
   // Params extends object | null,
   // Polys extends Poly[]
-> = BaseExpression<{
-  __element__: Type;
-  __cardinality__: Expr["__cardinality__"];
-}> & {
+> = BaseExpression<Set> & {
   __expr__: Expr;
   __kind__: ExpressionKind.Select;
   __modifier__: Modifier;
 } & SelectMethods<{
-    __element__: Type;
-    __cardinality__: Expr["__cardinality__"];
+    __element__: Set["__element__"];
+    __cardinality__: Set["__cardinality__"];
     toEdgeQL: () => string;
   }>;
 
@@ -109,7 +107,7 @@ interface SelectMethods<Self extends BaseExpression> {
   filter<Expr extends SelectFilterExpression>(
     expr: Expr
   ): $expr_Select<
-    Expr["__element__"],
+    Expr,
     this,
     {
       kind: ModifierKind.filter;
@@ -121,7 +119,7 @@ interface SelectMethods<Self extends BaseExpression> {
     dir?: OrderByDirection,
     empty?: OrderByEmpty
   ): $expr_Select<
-    Expr["__element__"],
+    Expr,
     this,
     {
       kind: ModifierKind.order_by;
@@ -133,7 +131,7 @@ interface SelectMethods<Self extends BaseExpression> {
   offset<Expr extends OffsetExpression>(
     expr: Expr
   ): $expr_Select<
-    Expr["__element__"],
+    Expr,
     this,
     {
       kind: ModifierKind.offset;
@@ -143,7 +141,14 @@ interface SelectMethods<Self extends BaseExpression> {
   limit<Expr extends LimitExpression>(
     expr: Expr
   ): $expr_Select<
-    Expr["__element__"],
+    {
+      __element__: Expr["__element__"];
+      __cardinality__: Expr["__element__"]["__tstype__"] extends 0
+        ? Cardinality.Empty
+        : Expr["__element__"]["__tstype__"] extends 1
+        ? Cardinality.AtMostOne
+        : Expr["__cardinality__"];
+    },
     this,
     {
       kind: ModifierKind.limit;
@@ -215,6 +220,15 @@ function offsetFunc(this: any, expr: OffsetExpression) {
 }
 
 function limitFunc(this: any, expr: LimitExpression) {
+  let card = this.__cardinality__;
+  if ((expr as any).__kind__ === ExpressionKind.Literal) {
+    const literalExpr: $expr_Literal = expr as any;
+    if (literalExpr.__value__ === 1) {
+      card = Cardinality.AtMostOne;
+    } else if (literalExpr.__value__ === 0) {
+      card = Cardinality.Empty;
+    }
+  }
   return $pathify(
     $selectify({
       __kind__: ExpressionKind.Select,
@@ -243,18 +257,21 @@ export function $selectify<Expr extends TypeSet>(expr: Expr) {
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
 ): $expr_Select<
-  ObjectType<
-    `${Expr["__element__"]["__name__"]}_shape`,
-    Expr["__element__"]["__shape__"],
-    {id: true},
-    []
-  >,
+  {
+    __element__: ObjectType<
+      `${Expr["__element__"]["__name__"]}_shape`,
+      Expr["__element__"]["__shape__"],
+      {id: true},
+      []
+    >;
+    __cardinality__: Expr["__cardinality__"];
+  },
   Expr,
   null
 >;
 export function select<Expr extends BaseExpression>(
   expr: Expr
-): $expr_Select<Expr["__element__"], Expr, null>;
+): $expr_Select<Expr, Expr, null>;
 export function select<
   Expr extends ObjectTypeExpression,
   Params extends objectExprToSelectParams<Expr>,
@@ -266,12 +283,15 @@ export function select<
   params: Params,
   ...polys: Polys
 ): $expr_Select<
-  ObjectType<
-    `${Expr["__element__"]["__name__"]}_shape`,
-    Expr["__element__"]["__shape__"],
-    Params,
-    Polys
-  >,
+  {
+    __element__: ObjectType<
+      `${Expr["__element__"]["__name__"]}_shape`,
+      Expr["__element__"]["__shape__"],
+      Params,
+      Polys
+    >;
+    __cardinality__: Expr["__cardinality__"];
+  },
   Expr,
   null
 >;

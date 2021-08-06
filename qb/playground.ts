@@ -1,10 +1,6 @@
 // tslint:disable:no-console
-
-// import {select} from "../src/syntax/select";
-import {typeutil} from "reflection";
 import e from "./generated/example";
 
-// const select = s
 const q1 = e.select(
   e.Person,
   {
@@ -29,5 +25,7 @@ const asdf = q1
   .limit(e.int64(10));
 type asdf = typeof asdf["__expr__"];
 
+const one = e.std.int64(1);
+const single = q1.limit(one);
 // console.log(asdf.toEdgeQL());
 console.log(e.select(asdf).toEdgeQL());
