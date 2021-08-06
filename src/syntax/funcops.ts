@@ -136,7 +136,7 @@ function _tryOverload(
 
   const positionalArgs: MaterialTypeSet[] = [];
 
-  let returnAnytype: MaterialType | undefined = undefined;
+  let returnAnytype: MaterialType | undefined;
 
   for (let i = 0; i < funcDef.args.length; i++) {
     const argDef = funcDef.args[i];
@@ -175,7 +175,7 @@ function _tryOverload(
         const card = argDef.variadic
           ? cardinalityUtil.multiplyCardinalitiesVariadic(
               (args.slice(i) as MaterialTypeSet[]).map(
-                (arg) => arg.__cardinality__
+                (el) => el.__cardinality__
               ) as [Cardinality, ...Cardinality[]]
             )
           : arg.__cardinality__;
@@ -201,7 +201,7 @@ function _tryOverload(
   return {
     kind: funcDef.kind,
     returnType: makeType(typeSpec, funcDef.returnTypeId, returnAnytype),
-    cardinality: cardinality,
+    cardinality,
     args: positionalArgs,
     namedArgs: namedArgs ?? {},
   };
