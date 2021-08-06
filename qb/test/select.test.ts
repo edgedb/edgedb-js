@@ -212,4 +212,13 @@ test("infer cardinality", () => {
     Cardinality.Many
   > = true;
   expect(q5.__cardinality__).toEqual(Cardinality.Many);
+
+  const q6 = e
+    .select(e.Villain.nemesis)
+    .filter(e.eq(e.Villain.nemesis.name, e.str("asdf")));
+  const _f6: typeutil.assertEqual<
+    typeof q6["__cardinality__"],
+    Cardinality.AtMostOne
+  > = true;
+  expect(q6.__cardinality__).toEqual(Cardinality.AtMostOne);
 });
