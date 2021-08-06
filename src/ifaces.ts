@@ -63,6 +63,8 @@ export interface ReadOnlyExecutor {
   execute(query: string): Promise<void>;
   query(query: string, args?: QueryArgs): Promise<Set>;
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
+  querySingle(query: string, args?: QueryArgs): Promise<any>;
+  querySingleJSON(query: string, args?: QueryArgs): Promise<string>;
   queryOne(query: string, args?: QueryArgs): Promise<any>;
   queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
 }

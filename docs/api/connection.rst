@@ -99,7 +99,7 @@ Connection
           });
 
           try{
-            let data = await conn.queryOne("SELECT 1 + 1");
+            let data = await conn.querySingle("SELECT 1 + 1");
 
             // The result is a number 2.
             assert(typeof data === "number");
@@ -173,7 +173,7 @@ Connection
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
 
-    .. js:method:: queryOne(query: string, args)
+    .. js:method:: querySingle(query: string, args)
 
         Run a singleton-returning query and return its element.
 
@@ -203,7 +203,7 @@ Connection
             the client side into a more appropriate type, such as
             BigInt_.
 
-    .. js:method:: queryOneJSON(query: string, args)
+    .. js:method:: querySingleJSON(query: string, args)
 
         Run a singleton-returning query and return its element in JSON.
 
@@ -242,7 +242,7 @@ Connection
         .. code-block:: js
 
             await con.retryingTransaction(async tx => {
-                let value = await tx.queryOne("SELECT Counter.value")
+                let value = await tx.querySingle("SELECT Counter.value")
                 await tx.execute(
                     "UPDATE Counter SET { value := <int64>$value",
                     value=value + 1,
@@ -268,7 +268,7 @@ Connection
         .. code-block:: js
 
             await con.rawTransaction(async tx => {
-                let value = await tx.queryOne("SELECT Counter.value");
+                let value = await tx.querySingle("SELECT Counter.value");
                 await tx.execute(
                     "UPDATE Counter SET { value := <int64>$value",
                     value=value,
@@ -431,7 +431,7 @@ Pool
             );
 
             try {
-                let data = await pool.queryOne("SELECT [1, 2, 3]");
+                let data = await pool.querySingle("SELECT [1, 2, 3]");
 
                 console.log(data);
             } finally {
@@ -492,7 +492,7 @@ Pool
                 }
             );
 
-    .. js:method:: queryOne(query: string, args)
+    .. js:method:: querySingle(query: string, args)
 
         Acquire a connection, then run a query that returns a single item
         and return its result.
@@ -505,7 +505,7 @@ Pool
 
         .. code-block:: js
 
-            await pool.queryOne("SELECT 1");
+            await pool.querySingle("SELECT 1");
 
     .. js:method:: queryJSON(query: string, args)
 
@@ -514,7 +514,7 @@ Pool
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
 
-    .. js:method:: queryOneJSON(query: string, args)
+    .. js:method:: querySingleJSON(query: string, args)
 
         Acquire a connection, then run a singleton-returning query and return
         its element in JSON.
@@ -539,7 +539,7 @@ Pool
             let value: number;
 
             try {
-                value = await connection.queryOne("select 1");
+                value = await connection.querySingle("select 1");
             } finally {
                 await pool.release(connection);
             }
@@ -561,7 +561,7 @@ Pool
         .. code-block:: js
 
             const result = await pool.run(async (connection) => {
-                return await connection.queryOne("SELECT 1");
+                return await connection.querySingle("SELECT 1");
             });
             expect(result).toBe(1);
 
@@ -581,7 +581,7 @@ Pool
         .. code-block:: js
 
             await pool.retryingTransaction(async tx => {
-                let value = await tx.queryOne("SELECT Counter.value")
+                let value = await tx.querySingle("SELECT Counter.value")
                 await tx.execute(
                     "UPDATE Counter SET { value := <int64>$value",
                     value=value + 1,
@@ -607,7 +607,7 @@ Pool
         .. code-block:: js
 
             await pool.rawTransaction(async tx => {
-                let value = await tx.queryOne("SELECT Counter.value");
+                let value = await tx.querySingle("SELECT Counter.value");
                 await tx.execute(
                     "UPDATE Counter SET { value := <int64>$value",
                     value=value,

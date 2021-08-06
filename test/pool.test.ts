@@ -119,31 +119,31 @@ test("pool.queryJSON", async () => {
   await pool.close();
 });
 
-test("pool.queryOne", async () => {
+test("pool.querySingle", async () => {
   const pool = await getPool();
   let res;
 
-  res = await pool.queryOne("select 100");
+  res = await pool.querySingle("select 100");
   expect(res).toBe(100);
 
-  res = await pool.queryOne("select 'Charlie Brown'");
+  res = await pool.querySingle("select 'Charlie Brown'");
   expect(res).toBe("Charlie Brown");
 
   await pool.close();
 });
 
-test("pool.queryOneJSON", async () => {
+test("pool.querySingleJSON", async () => {
   const pool = await getPool();
   let res;
 
-  res = await pool.queryOneJSON("select (a := 1)");
+  res = await pool.querySingleJSON("select (a := 1)");
   expect(JSON.parse(res)).toEqual({a: 1});
 
-  res = await pool.queryOneJSON("select (a := 1n)");
+  res = await pool.querySingleJSON("select (a := 1n)");
   expect(JSON.parse(res)).toEqual({a: 1});
   expect(typeof JSON.parse(res).a).toEqual("number");
 
-  res = await pool.queryOneJSON("select (a := 1.5n)");
+  res = await pool.querySingleJSON("select (a := 1.5n)");
   expect(JSON.parse(res)).toEqual({a: 1.5});
   expect(typeof JSON.parse(res).a).toEqual("number");
 
@@ -162,7 +162,7 @@ describe("pool concurrency 1", () => {
 
       async function work(): Promise<void> {
         const conn = await pool.acquire();
-        expect(await conn.queryOne("SELECT 1")).toBe(1);
+        expect(await conn.querySingle("SELECT 1")).toBe(1);
         await pool.release(conn);
       }
 
@@ -188,7 +188,7 @@ describe("pool concurrency 2", () => {
 
       async function work(): Promise<void> {
         const conn = await pool.acquire();
-        expect(await conn.queryOne("SELECT 1")).toBe(1);
+        expect(await conn.querySingle("SELECT 1")).toBe(1);
         await pool.release(conn);
       }
 
@@ -214,7 +214,7 @@ describe("pool concurrency 3", () => {
 
       async function work(): Promise<void> {
         const result = await pool.run(async (connection) => {
-          return await connection.queryOne("SELECT 1");
+          return await connection.querySingle("SELECT 1");
         });
         expect(result).toBe(1);
       }
@@ -509,7 +509,7 @@ test(
     expect(connections[0]).toBe("error");
     expect(connections[1]).toBe(conn);
 
-    expect(await lastConnection.queryOne("select 1")).toBe(1);
+    expect(await lastConnection.querySingle("select 1")).toBe(1);
 
     await pool.release(conn);
     await pool.close();
@@ -539,7 +539,7 @@ test(
 
     const conn = await pool.acquire();
 
-    expect(await conn.queryOne("SELECT 1")).toBe(1);
+    expect(await conn.querySingle("SELECT 1")).toBe(1);
     await pool.release(conn);
     await pool.close();
   },
@@ -600,10 +600,10 @@ describe("pool connection methods", () => {
     return 1;
   }
 
-  async function testqueryOne(_pool: Pool): Promise<number> {
+  async function testquerySingle(_pool: Pool): Promise<number> {
     const i = randomInt(0, 20);
     await new Promise((resolve) => setTimeout(resolve, i));
-    const result = await _pool.queryOne(`SELECT ${i}`);
+    const result = await _pool.querySingle(`SELECT ${i}`);
     expect(result).toEqual(i);
     return 1;
   }
@@ -632,7 +632,7 @@ describe("pool connection methods", () => {
     await pool.close();
   }
 
-  const methods = [testquery, testqueryOne, testExecute];
+  const methods = [testquery, testquerySingle, testExecute];
 
   each(methods).it(
     "when method is '%s'",
@@ -702,16 +702,16 @@ test(
   BiggerTimeout
 );
 
-test("createPool.queryOne", async () => {
+test("createPool.querySingle", async () => {
   const pool = await createPool(undefined, {
     connectOptions: getConnectOptions(),
   });
   let res;
 
-  res = await pool.queryOne("select 100");
+  res = await pool.querySingle("select 100");
   expect(res).toBe(100);
 
-  res = await pool.queryOne("select 'Charlie Brown'");
+  res = await pool.querySingle("select 'Charlie Brown'");
   expect(res).toBe("Charlie Brown");
 
   await pool.close();
@@ -815,7 +815,7 @@ test("pool retry works", async () => {
 
   try {
     let result = await pool.retryingTransaction(async (tx) => {
-      return await tx.queryOne(`SELECT 33*21`);
+      return await tx.querySingle(`SELECT 33*21`);
     });
     expect(result).toEqual(693);
   } finally {

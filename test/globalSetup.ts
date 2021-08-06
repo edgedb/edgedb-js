@@ -123,7 +123,7 @@ const startServer = async (
   });
 
   let runtimeData;
-  for (let i = 0; i < 250; i++) {
+  for (let i = 0; i < 400; i++) {
     runtimeData = await getServerInfo(statusFile);
 
     if (runtimeData == null) {

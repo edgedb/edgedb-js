@@ -81,19 +81,19 @@ test("query: basic scalars", async () => {
     res = await con.query("select {true, false, false, true, false};");
     expect(res).toEqual([true, false, false, true, false]);
 
-    res = await con.queryOne("select [<float64>123.2, <float64>-1.1]");
+    res = await con.querySingle("select [<float64>123.2, <float64>-1.1]");
     expect(res[0]).toBeCloseTo(123.2, 2);
     expect(res[1]).toBeCloseTo(-1.1, 2);
 
-    res = await con.queryOne("select [<float32>123.2, <float32>-1.1]");
+    res = await con.querySingle("select [<float32>123.2, <float32>-1.1]");
     expect(res[0]).toBeCloseTo(123.2, 2);
     expect(res[1]).toBeCloseTo(-1.1, 2);
 
-    res = await con.queryOne("select b'abcdef'");
+    res = await con.querySingle("select b'abcdef'");
     expect(res instanceof Buffer).toBeTruthy();
     expect(res).toEqual(Buffer.from("abcdef", "utf8"));
 
-    res = await con.queryOne("select <json>[1, 2, 3]");
+    res = await con.querySingle("select <json>[1, 2, 3]");
     expect(res).toBe("[1, 2, 3]");
   } finally {
     await con.close();
@@ -194,7 +194,7 @@ test("fetch: bigint", async () => {
       testar.push(BigInt(num));
     }
 
-    res = await con.queryOne("select <array<bigint>>$0", [testar]);
+    res = await con.querySingle("select <array<bigint>>$0", [testar]);
     expect(res).toEqual(testar);
   } finally {
     await con.close();
@@ -318,7 +318,7 @@ test("fetch: decimal as string", async () => {
   ];
 
   try {
-    const fetched = await con.queryOne(
+    const fetched = await con.querySingle(
       `
       WITH
         inp := <array<str>>$0,
@@ -360,7 +360,7 @@ test("fetch: int64 as string", async () => {
   ];
 
   try {
-    const fetched = await con.queryOne(
+    const fetched = await con.querySingle(
       `
       WITH
         inp := <array<str>>$0,
@@ -399,7 +399,7 @@ test("fetch: bigint as string", async () => {
   ];
 
   try {
-    const fetched = await con.queryOne(
+    const fetched = await con.querySingle(
       `
       WITH
         inp := <array<str>>$0,
@@ -444,7 +444,7 @@ test("fetch: datetime as string", async () => {
   }
 
   try {
-    const fetched = await con.queryOne(
+    const fetched = await con.querySingle(
       `
       WITH
         fmt := 'FMYYYY-FMMM-FMDDTFMHH24:FMMI:FMSS.US AD',
@@ -496,7 +496,7 @@ test("fetch: positional args", async () => {
     ];
     for (const [types, values] of intCases) {
       for (const type of types) {
-        res = await con.queryOne(
+        res = await con.querySingle(
           `select (<${type}>$0 + <${type}>$1,);`,
           values
         );
@@ -504,35 +504,35 @@ test("fetch: positional args", async () => {
       }
     }
 
-    res = await con.queryOne(`select <json>$0`, ["[1,2]"]);
+    res = await con.querySingle(`select <json>$0`, ["[1,2]"]);
     expect(res).toBe("[1, 2]");
 
-    res = await con.queryOne(`select <str>$0`, ["[1,2]"]);
+    res = await con.querySingle(`select <str>$0`, ["[1,2]"]);
     expect(res).toBe("[1,2]");
 
-    res = await con.queryOne(`select (<bool>$0, <bool>$1)`, [true, false]);
+    res = await con.querySingle(`select (<bool>$0, <bool>$1)`, [true, false]);
     expect(res).toEqual([true, false]);
 
     const bytes = Buffer.allocUnsafe(4);
     bytes.writeInt32BE(-12312, 0);
-    res = await con.queryOne(`select <bytes>$0`, [bytes]);
+    res = await con.querySingle(`select <bytes>$0`, [bytes]);
     expect(res).toEqual(bytes);
 
     const dt = new Date(Date.now());
-    res = await con.queryOne(`select <datetime>$0`, [dt]);
+    res = await con.querySingle(`select <datetime>$0`, [dt]);
     expect(res).toEqual(dt);
-    res = await con.queryOne(`select [<datetime>$0, <datetime>$0]`, [dt]);
+    res = await con.querySingle(`select [<datetime>$0, <datetime>$0]`, [dt]);
     expect(res).toEqual([dt, dt]);
 
     const ldt = new LocalDateTime(2012, 6, 30, 14, 11, 33, 123, 456);
-    res = await con.queryOne(`select <cal::local_datetime>$0`, [ldt]);
+    res = await con.querySingle(`select <cal::local_datetime>$0`, [ldt]);
     expect(res instanceof LocalDateTime).toBeTruthy();
     expect((res as LocalDateTime).hour).toBe(14);
     expect((res as LocalDateTime).toString()).toBe(
       "2012-06-30T14:11:33.123456"
     );
 
-    res = await con.queryOne(`select len(<array<int64>>$0)`, [
+    res = await con.querySingle(`select len(<array<int64>>$0)`, [
       [1, 2, 3, 4, 5],
     ]);
     expect(res).toEqual(5);
@@ -545,17 +545,17 @@ test("fetch: named args", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOne(`select <str>$a`, {a: "123"});
+    res = await con.querySingle(`select <str>$a`, {a: "123"});
     expect(res).toBe("123");
 
-    res = await con.queryOne(`select <str>$a ++ <str>$b`, {
+    res = await con.querySingle(`select <str>$a ++ <str>$b`, {
       b: "abc",
       a: "123",
     });
     expect(res).toBe("123abc");
 
     res = await con
-      .queryOne(`select <str>$a ++ <str>$b`, {
+      .querySingle(`select <str>$a ++ <str>$b`, {
         b: "abc",
         a: "123",
         c: "def",
@@ -569,12 +569,10 @@ test("fetch: named args", async () => {
         expect(e.toString()).toMatch(/unexpected named argument: "c"/);
       });
 
-    // TODO: uncomment after alpha3:
-    //
-    // res = await con.queryOne(`select len(<OPTIONAL str>$a ?? "aa")`, {
-    //   a: null,
-    // });
-    // expect(res).toBe(2);
+    res = await con.querySingle(`select len(<OPTIONAL str>$a ?? "aa")`, {
+      a: null,
+    });
+    expect(res).toBe(2);
   } finally {
     await con.close();
   }
@@ -584,13 +582,13 @@ test("fetch: int overflow", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOne(`
+    res = await con.querySingle(`
       select <int64>(2^53) - 1;
     `);
     expect(res).toBe(9007199254740991);
 
     await con
-      .queryOne(`select <int64>(2^53);`)
+      .querySingle(`select <int64>(2^53);`)
       .then(() => {
         throw new Error("there should have been an overflow error");
       })
@@ -598,13 +596,13 @@ test("fetch: int overflow", async () => {
         expect(e.toString()).toMatch(/cannot unpack.*9007199254740992.*/);
       });
 
-    res = await con.queryOne(`
+    res = await con.querySingle(`
       select -<int64>(2^53);
     `);
     expect(res).toBe(-9007199254740992);
 
     await con
-      .queryOne(`select -<int64>(2^53) - 1;`)
+      .querySingle(`select -<int64>(2^53) - 1;`)
       .then(() => {
         throw new Error("there should have been an overflow error");
       })
@@ -620,13 +618,13 @@ test("fetch: datetime", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOne(`
+    res = await con.querySingle(`
       with dt := <datetime>'2016-01-10T17:11:01.123Z'
       select (dt, datetime_get(dt, 'epochseconds') * 1000)
     `);
     expect(res[0].getTime()).toBe(res[1]);
 
-    res = await con.queryOne(`
+    res = await con.querySingle(`
       with dt := <datetime>'1716-01-10T01:00:00.123123Z'
       select (dt, datetime_get(dt, 'epochseconds') * 1000)
     `);
@@ -640,13 +638,13 @@ test("fetch: cal::local_date", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOne(`
+    res = await con.querySingle(`
       select <cal::local_date>'2016-01-10';
       `);
     expect(res instanceof LocalDate).toBeTruthy();
     expect(res.toString()).toBe("2016-01-10");
 
-    res = await con.queryOne(
+    res = await con.querySingle(
       `
       select <cal::local_date>$0;
       `,
@@ -669,7 +667,7 @@ test("fetch: cal::local_time", async () => {
       "00:00:00",
       "23:59:59.999",
     ]) {
-      res = await con.queryOne(
+      res = await con.querySingle(
         `
         select (<cal::local_time><str>$time, <str><cal::local_time><str>$time);
         `,
@@ -677,7 +675,7 @@ test("fetch: cal::local_time", async () => {
       );
       expect(res[0].toString()).toBe(res[1]);
 
-      const res2 = await con.queryOne(
+      const res2 = await con.querySingle(
         `
         select <cal::local_time>$time;
         `,
@@ -714,7 +712,7 @@ test("fetch: duration", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    const ver = await con.queryOne("select sys::get_version()");
+    const ver = await con.querySingle("select sys::get_version()");
     const isoFormat =
       ver.major > 1 ||
       ver.minor > 0 ||
@@ -725,7 +723,7 @@ test("fetch: duration", async () => {
       "68464977 seconds 74 milliseconds 11 microseconds",
       "-752043.296 milliseconds",
     ]) {
-      res = await con.queryOne(
+      res = await con.querySingle(
         `
         select (<duration><str>$time, <str><duration><str>$time);
         `,
@@ -737,7 +735,7 @@ test("fetch: duration", async () => {
         expect(formatLegacyDuration(res[0])).toBe(res[1]);
       }
 
-      const res2 = await con.queryOne(
+      const res2 = await con.querySingle(
         `
         select <duration>$time;
         `,
@@ -753,7 +751,7 @@ test("fetch: duration", async () => {
       new Duration(0, 0, 0, -1),
     ]) {
       await con
-        .queryOne(`select <duration>$time`, {time})
+        .querySingle(`select <duration>$time`, {time})
         .then(() => {
           throw new Error("There should have encoding error");
         })
@@ -851,7 +849,7 @@ test("fetch: tuple", async () => {
     expect(_introspect(res)).toEqual({kind: "set"});
     expect(_introspect(res[0])).toEqual({kind: "tuple"});
 
-    res = await con.queryOne("select (1,)");
+    res = await con.querySingle("select (1,)");
     expect(res).toEqual([1]);
 
     res = await con.query("select (1, 'abc')");
@@ -897,7 +895,7 @@ test("fetch: object", async () => {
 
   let res;
   try {
-    res = await con.queryOne(`
+    res = await con.querySingle(`
       select schema::Function {
         name,
         params: {
@@ -945,7 +943,7 @@ test("fetch: object", async () => {
     expect(res.id instanceof UUID).toBeTruthy();
 
     // regression test: test that empty sets are properly decoded.
-    await con.queryOne(`
+    await con.querySingle(`
       select schema::Function {
         name,
         params: {
@@ -965,7 +963,7 @@ test("fetch: set of arrays", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOne(`
+    res = await con.querySingle(`
       select schema::Function {
         id,
         sets := {[1, 2], [1]}
@@ -1010,7 +1008,7 @@ test("fetch: object implicit fields", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOne(`
+    res = await con.querySingle(`
       select schema::Function {
         id,
       }
@@ -1019,14 +1017,14 @@ test("fetch: object implicit fields", async () => {
 
     expect(JSON.stringify(res)).toMatch(/^\{"id":"([\w\d]{32})"\}$/);
 
-    res = await con.queryOne(`
+    res = await con.querySingle(`
       select schema::Function
       limit 1
     `);
 
     expect(JSON.stringify(res)).toMatch(/"id":"([\w\d]{32})"/);
 
-    res = await con.queryOne(`
+    res = await con.querySingle(`
       select schema::Function {
         name
       }
@@ -1044,11 +1042,11 @@ test("fetch: uuid", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOne("SELECT schema::ObjectType.id LIMIT 1");
+    res = await con.querySingle("SELECT schema::ObjectType.id LIMIT 1");
     expect(typeof res).toBe("string");
     expect(res.length).toBe(32);
 
-    res = await con.queryOne(
+    res = await con.querySingle(
       "SELECT <uuid>'759637d8-6635-11e9-b9d4-098002d459d5'"
     );
     expect(res).toBe("759637d8663511e9b9d4098002d459d5");
@@ -1067,7 +1065,7 @@ test("fetch: enum", async () => {
 
     await con.query("declare savepoint s1");
     await con
-      .queryOne("SELECT <MyEnum><str>$0", ["Z"])
+      .querySingle("SELECT <MyEnum><str>$0", ["Z"])
       .then(() => {
         throw new Error("an exception was expected");
       })
@@ -1076,10 +1074,10 @@ test("fetch: enum", async () => {
       });
     await con.query("rollback to savepoint s1");
 
-    let ret = await con.queryOne("SELECT <MyEnum><str>$0", ["A"]);
+    let ret = await con.querySingle("SELECT <MyEnum><str>$0", ["A"]);
     expect(ret).toBe("A");
 
-    ret = await con.queryOne("SELECT <MyEnum>$0", ["A"]);
+    ret = await con.querySingle("SELECT <MyEnum>$0", ["A"]);
     expect(ret).toBe("A");
   } finally {
     await con.close();
@@ -1090,7 +1088,7 @@ test("fetch: namedtuple", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOne("select (a := 1)");
+    res = await con.querySingle("select (a := 1)");
     expect(Array.from(res)).toEqual([1]);
 
     expect(_introspect(res)).toEqual({
@@ -1101,7 +1099,7 @@ test("fetch: namedtuple", async () => {
     res = await con.query("select (a := 1, b:= 'abc')");
     expect(Array.from(res[0])).toEqual([1, "abc"]);
 
-    res = await con.queryOne("select (a := 'aaa', b := true, c := 123)");
+    res = await con.querySingle("select (a := 'aaa', b := true, c := 123)");
     expect(Array.from(res)).toEqual(["aaa", true, 123]);
     const t0: NamedTuple = res;
 
@@ -1133,49 +1131,49 @@ test("fetch: namedtuple", async () => {
   }
 });
 
-test("queryOne: basic scalars", async () => {
+test("querySingle: basic scalars", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOne("select 'abc'");
+    res = await con.querySingle("select 'abc'");
     expect(res).toBe("abc");
 
-    res = await con.queryOne("select 281474976710656;");
+    res = await con.querySingle("select 281474976710656;");
     expect(res).toBe(281474976710656);
 
-    res = await con.queryOne("select <int32>2147483647;");
+    res = await con.querySingle("select <int32>2147483647;");
     expect(res).toBe(2147483647);
-    res = await con.queryOne("select <int32>-2147483648;");
+    res = await con.querySingle("select <int32>-2147483648;");
     expect(res).toBe(-2147483648);
 
-    res = await con.queryOne("select <int16>-10;");
+    res = await con.querySingle("select <int16>-10;");
     expect(res).toBe(-10);
 
-    res = await con.queryOne("select false;");
+    res = await con.querySingle("select false;");
     expect(res).toBe(false);
   } finally {
     await con.close();
   }
 });
 
-test("queryOne: arrays", async () => {
+test("querySingle: arrays", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOne("select [12312312, -1, 123, 0, 1]");
+    res = await con.querySingle("select [12312312, -1, 123, 0, 1]");
     expect(res).toEqual([12312312, -1, 123, 0, 1]);
     expect(_introspect(res)).toEqual({kind: "array"});
 
-    res = await con.queryOne("select ['aaa']");
+    res = await con.querySingle("select ['aaa']");
     expect(res).toEqual(["aaa"]);
 
-    res = await con.queryOne("select <array<str>>[]");
+    res = await con.querySingle("select <array<str>>[]");
     expect(res).toEqual([]);
 
-    res = await con.queryOne("select ['aaa', '', 'bbbb']");
+    res = await con.querySingle("select ['aaa', '', 'bbbb']");
     expect(res).toEqual(["aaa", "", "bbbb"]);
 
-    res = await con.queryOne("select ['aaa', '', 'bbbb', '', 'aaaaaa🚀a']");
+    res = await con.querySingle("select ['aaa', '', 'bbbb', '', 'aaaaaa🚀a']");
     expect(res).toEqual(["aaa", "", "bbbb", "", "aaaaaa🚀a"]);
   } finally {
     await con.close();
@@ -1191,12 +1189,12 @@ test("fetch: long strings", async () => {
   let res;
   try {
     // A 1mb string.
-    res = await con.queryOne("select str_repeat('a', <int64>(10^6));");
+    res = await con.querySingle("select str_repeat('a', <int64>(10^6));");
     expect(res.length).toEqual(1_000_000);
 
     // A 100mb string.
     await con
-      .queryOne("select str_repeat('aa', <int64>(10^8));")
+      .querySingle("select str_repeat('aa', <int64>(10^8));")
       .then(() => {
         throw new Error("the query should have errored out");
       })
@@ -1210,18 +1208,18 @@ test("fetch: long strings", async () => {
   }
 });
 
-test("queryOneJSON", async () => {
+test("querySingleJSON", async () => {
   const con = await asyncConnect();
   let res;
   try {
-    res = await con.queryOneJSON("select (a := 1)");
+    res = await con.querySingleJSON("select (a := 1)");
     expect(JSON.parse(res)).toEqual({a: 1});
 
-    res = await con.queryOneJSON("select (a := 1n)");
+    res = await con.querySingleJSON("select (a := 1n)");
     expect(JSON.parse(res)).toEqual({a: 1});
     expect(typeof JSON.parse(res).a).toEqual("number");
 
-    res = await con.queryOneJSON("select (a := 1.5n)");
+    res = await con.querySingleJSON("select (a := 1.5n)");
     expect(JSON.parse(res)).toEqual({a: 1.5});
     expect(typeof JSON.parse(res).a).toEqual("number");
   } finally {
@@ -1239,25 +1237,25 @@ test("queryJSON", async () => {
   }
 });
 
-test("queryOne wrong cardinality", async () => {
+test("querySingle wrong cardinality", async () => {
   const con = await asyncConnect();
   try {
     await con
-      .queryOneJSON("start transaction")
+      .querySingleJSON("start transaction")
       .then(() => {
         throw new Error("an exception was expected");
       })
       .catch((e) => {
-        expect(e.toString()).toMatch(/queryOneJSON\(\) returned no data/);
+        expect(e.toString()).toMatch(/querySingleJSON\(\) returned no data/);
       });
 
     await con
-      .queryOne("start transaction")
+      .querySingle("start transaction")
       .then(() => {
         throw new Error("an exception was expected");
       })
       .catch((e) => {
-        expect(e.toString()).toMatch(/queryOne\(\) returned no data/);
+        expect(e.toString()).toMatch(/querySingle\(\) returned no data/);
       });
   } finally {
     await con.close();
@@ -1282,7 +1280,7 @@ test("execute", async () => {
 
     await con.query("start transaction isolation serializable");
     try {
-      const isolation = await con.queryOne(
+      const isolation = await con.querySingle(
         "select sys::get_transaction_isolation()"
       );
       expect(isolation).toBe("Serializable");
@@ -1311,7 +1309,7 @@ test("fetch/optimistic cache invalidation", async () => {
     `);
 
     for (let i = 0; i < 5; i++) {
-      const res = await con.queryOne(query);
+      const res = await con.querySingle(query);
       expect(res).toBe("aaa");
     }
 
@@ -1332,7 +1330,7 @@ test("fetch/optimistic cache invalidation", async () => {
     `);
 
     for (let i = 0; i < 5; i++) {
-      const res = await con.queryOne(query);
+      const res = await con.querySingle(query);
       expect(res).toBe(123);
     }
   } finally {
@@ -1345,14 +1343,14 @@ test("fetch no codec", async () => {
   const con = await asyncConnect();
   try {
     await con
-      .queryOne("select <decimal>1")
+      .querySingle("select <decimal>1")
       .then(() => {
         throw new Error("an exception was expected");
       })
       .catch((e) => {
         expect(e.toString()).toMatch(/no JS codec for std::decimal/);
       });
-    await con.queryOne("select 123").then((res) => {
+    await con.querySingle("select 123").then((res) => {
       expect(res).toEqual(123);
     });
   } finally {
@@ -1363,8 +1361,11 @@ test("fetch no codec", async () => {
 test("concurrent ops", async () => {
   const con = await asyncConnect();
   try {
-    const p1 = con.queryOne(`SELECT 1 + 2`);
-    await Promise.all([p1, con.queryOne(`SELECT sys::get_version_as_str()`)])
+    const p1 = con.querySingle(`SELECT 1 + 2`);
+    await Promise.all([
+      p1,
+      con.querySingle(`SELECT sys::get_version_as_str()`),
+    ])
       .then(() => {
         throw new Error("an exception was expected");
       })

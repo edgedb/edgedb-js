@@ -135,7 +135,7 @@ async function checkRetries(con: Connection, con2: Connection, name: string) {
       // On next attempt, the latter should succeed
       await barrier.ready();
 
-      return await tx.queryOne(
+      return await tx.querySingle(
         `
         SELECT (
           INSERT ${typename} {
