@@ -155,7 +155,7 @@ export type simpleShapeToTs<
 export type shapeElementToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
   El extends PropertyDesc
     ? propToTsType<El>
-    : El extends LinkDesc<any, any, any>
+    : El extends LinkDesc<any, any, any, any>
     ? {id: string}
     : never;
 
@@ -315,12 +315,14 @@ export function NamedTupleType<Shape extends NamedTupleShape>(
 
 type PropertyTypes = ScalarType | ArrayType | TupleType | NamedTupleType;
 export interface PropertyDesc<
-  T extends PropertyTypes = PropertyTypes,
-  C extends Cardinality = Cardinality
+  Type extends PropertyTypes = PropertyTypes,
+  Card extends Cardinality = Cardinality,
+  Exclusive extends boolean = boolean
 > {
   __kind__: "property";
-  cardinality: C;
-  target: T;
+  target: Type;
+  cardinality: Card;
+  exclusive: Exclusive;
 }
 
 export type PropertyShape = {
@@ -328,14 +330,16 @@ export type PropertyShape = {
 };
 
 export interface LinkDesc<
-  T extends SomeObjectType = SomeObjectType,
-  C extends Cardinality = Cardinality,
-  LinkProps extends PropertyShape = {}
+  Type extends SomeObjectType = SomeObjectType,
+  Card extends Cardinality = Cardinality,
+  LinkProps extends PropertyShape = PropertyShape,
+  Exclusive extends boolean = boolean
 > {
   __kind__: "link";
-  cardinality: C;
-  target: T;
+  target: Type;
+  cardinality: Card;
   properties: LinkProps;
+  exclusive: Exclusive;
 }
 
 export type ObjectTypeShape = {
@@ -368,7 +372,7 @@ export type propToTsType<Prop extends PropertyDesc> =
     ? setToTsType<makeSet<Type, Card>>
     : never;
 
-export type linkToTsType<Link extends LinkDesc<any, any, any>> =
+export type linkToTsType<Link extends LinkDesc<any, any, any, any>> =
   Link extends LinkDesc<infer Type, infer Card, any>
     ? setToTsType<makeSet<Type, Card>>
     : never;
@@ -376,7 +380,7 @@ export type linkToTsType<Link extends LinkDesc<any, any, any>> =
 export type shapeElementToTsType<El extends PropertyDesc | LinkDesc> =
   El extends PropertyDesc
     ? propToTsType<El>
-    : El extends LinkDesc<any, any, any>
+    : El extends LinkDesc<any, any, any, any>
     ? linkToTsType<El>
     : never;
 

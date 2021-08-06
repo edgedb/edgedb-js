@@ -18,6 +18,8 @@ type q1 = typeof q1;
 
 console.log(q1);
 
+// e.Hero.name.
+
 const asdf = q1
   .filter(e.eq(e.Person.name, e.str("Iron Man")))
   .orderBy(e.Person.name, e.DESC, e.EMPTY_FIRST)

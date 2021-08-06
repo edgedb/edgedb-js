@@ -182,3 +182,34 @@ test("offset", () => {
   const r1 = q.offset(5);
   expect(r1.__modifier__.expr.__element__.__name__).toEqual("std::int64");
 });
+
+test("infer cardinality", () => {
+  const q = e.select(e.Hero);
+  const q2 = q.filter(e.eq(e.Hero.name, e.str("asdf")));
+  const _f2: typeutil.assertEqual<
+    typeof q2["__cardinality__"],
+    Cardinality.AtMostOne
+  > = true;
+  expect(q2.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const q3 = q.filter(e.eq(e.Hero.id, e.uuid("asdf")));
+  const _f3: typeutil.assertEqual<
+    typeof q3["__cardinality__"],
+    Cardinality.AtMostOne
+  > = true;
+  expect(q3.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const q4 = q2.secret_identity;
+  const _f4: typeutil.assertEqual<
+    typeof q4["__cardinality__"],
+    Cardinality.AtMostOne
+  > = true;
+  expect(q4.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const q5 = q.filter(e.eq(e.Hero.secret_identity, e.str("asdf")));
+  const _f5: typeutil.assertEqual<
+    typeof q5["__cardinality__"],
+    Cardinality.Many
+  > = true;
+  expect(q5.__cardinality__).toEqual(Cardinality.Many);
+});

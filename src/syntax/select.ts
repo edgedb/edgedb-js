@@ -1,4 +1,7 @@
+import {Hero} from "@generated/modules/default";
+import _std from "@generated/modules/std";
 import {$anyint, $bool, $int64, int64} from "@generated/modules/std";
+import {$expr_PathNode} from "@generated/syntax/path";
 import {
   BaseExpression,
   Cardinality,
@@ -12,10 +15,13 @@ import {
   ScalarType,
   TypeKind,
   TypeSet,
+  typeutil,
   util,
 } from "reflection";
+import {cast} from "./cast";
+import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "./literal";
-import {$pathify} from "./path";
+import {$expr_PathLeaf, $pathify} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
 
 // export type $expr_SimpleSelect<
@@ -91,9 +97,32 @@ export type $expr_Select<
   __expr__: Expr;
   __kind__: ExpressionKind.Select;
   __modifier__: Modifier;
-} & SelectMethods<Set>;
+} & SelectMethods<Set, Expr>;
 
-interface SelectMethods<Self extends TypeSet> {
+// Base is PathNode &
+// Filter is equality &
+// Filter.args[0] is PathLeaf &
+// Filter.args[0] is unique &
+// Filter.args[0].parent.__element__ === Base.__element__
+export type inferCardinality<
+  Base extends TypeSet,
+  Filter extends TypeSet
+> = Base extends $expr_PathNode
+  ? Filter extends $expr_Operator<"std::=", any, [infer P1, any], any>
+    ? P1 extends $expr_PathLeaf
+      ? P1["__exclusive__"] extends true
+        ? typeutil.assertEqual<
+            P1["__parent__"]["type"]["__element__"]["__name__"],
+            Base["__element__"]["__name__"]
+          > extends true
+          ? Cardinality.AtMostOne
+          : Base["__cardinality__"]
+        : Base["__cardinality__"]
+      : Base["__cardinality__"]
+    : Base["__cardinality__"]
+  : Base["__cardinality__"];
+
+interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
   // required so `this` passes validation
   // as a BaseExpression
   __element__: Self["__element__"];
@@ -103,7 +132,10 @@ interface SelectMethods<Self extends TypeSet> {
   filter<Expr extends SelectFilterExpression>(
     expr: Expr
   ): $expr_Select<
-    Self,
+    {
+      __element__: Self["__element__"];
+      __cardinality__: inferCardinality<Root, Expr>;
+    },
     this,
     {
       kind: ModifierKind.filter;
@@ -187,11 +219,41 @@ export function is<
 }
 
 function filterFunc(this: any, expr: SelectFilterExpression) {
+  let card = this.__cardinality__;
+
+  // extremely fiddly cardinality inference logic
+  const base = this.__expr__;
+  const filter: any = expr;
+  // Base is PathNode
+  if (base.__kind__ === ExpressionKind.PathNode) {
+    // Filter is eq
+    if (
+      filter.__kind__ === ExpressionKind.Operator &&
+      filter.__name__ === "std::="
+    ) {
+      // Filter.args[0] is PathLeaf
+      const _arg = filter.__args__[0];
+      if (_arg && _arg.__kind__ === ExpressionKind.PathLeaf) {
+        const arg: $expr_PathLeaf = _arg;
+        // Filter.args[0] is unique
+        if (arg.__exclusive__ === true) {
+          // Filter.args[0].parent.__element__ === Base.__element__)
+          if (
+            arg.__parent__.type.__element__.__name__ ===
+            base.__element__.__name__
+          ) {
+            card = Cardinality.AtMostOne;
+          }
+        }
+      }
+    }
+  }
+
   return $pathify(
     $selectify({
       __kind__: ExpressionKind.Select,
       __element__: this.__element__,
-      __cardinality__: this.__cardinality__,
+      __cardinality__: card,
       __expr__: this,
       __modifier__: {
         kind: ModifierKind.filter,

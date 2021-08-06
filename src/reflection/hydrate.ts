@@ -54,6 +54,7 @@ function applySpec(
             });
             return linkProperties;
           },
+          exclusive: ptr.is_exclusive,
         };
       });
     } else if (ptr.kind === "property") {
@@ -64,6 +65,7 @@ function applySpec(
           get target() {
             return makeType(spec, ptr.target_id);
           },
+          exclusive: ptr.is_exclusive,
         };
       });
     }
@@ -80,7 +82,7 @@ export function makeType<T extends BaseType>(
   obj.__name__ = type.name;
 
   if (type.name === "anytype") {
-    if (anytype) return (anytype as unknown) as T;
+    if (anytype) return anytype as unknown as T;
     throw new Error("anytype not provided");
   }
 
