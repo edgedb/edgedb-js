@@ -106,9 +106,8 @@ export interface ${ref}<
     sc.writeln(
       frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}");`
     );
-
     sc.writeln(
-      frag`export const ${literal} = (val: ${tsType}) => _.syntax.literal(${ref}, val);`
+      frag`export const ${literal} = <T extends ${tsType}>(val: T) => _.syntax.literal<$.ScalarType<"${type.name}", T>>(${ref} as any, val);`
     );
 
     if (casts.implicitCastFromMap[type.id]?.length) {

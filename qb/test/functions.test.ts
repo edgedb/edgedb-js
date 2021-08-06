@@ -296,9 +296,9 @@ test("variadic args", () => {
 
 test("anytype", () => {
   checkFunctionExpr(
-    e.min(e.json("json")),
+    e.min(e.json("json" as string)),
     "std::min",
-    [e.json("json")],
+    [e.json("json" as string)],
     {},
     e.$json,
     Cardinality.AtMostOne
@@ -316,9 +316,9 @@ test("anytype", () => {
   // e.min(set(e.int64(1), e.str('str')))
 
   checkFunctionExpr(
-    e.array_agg(e.str("str")),
+    e.array_agg(e.str("str" as string)),
     "std::array_agg",
-    [e.str("str")],
+    [e.str("str" as string)],
     {},
     $Array(e.$str),
     Cardinality.One

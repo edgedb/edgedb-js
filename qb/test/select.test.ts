@@ -43,9 +43,9 @@ test("complex shape", () => {
       secret_identity: string | null;
       villains: {
         id: string;
-        computed: string;
+        computed: "test";
       };
-      computed: string;
+      computed: "test";
     }
   > = true;
 });
