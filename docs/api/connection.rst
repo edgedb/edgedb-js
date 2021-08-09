@@ -527,6 +527,8 @@ Pool
 
     .. js:method:: acquire()
 
+        **Deprecated**: use the query methods on ``Pool`` instead.
+
         Acquire a connection proxy, which provides access to an open database
         connection. The proxy must be released to return the connection to the
         pool.
@@ -546,10 +548,14 @@ Pool
 
     .. js:method:: release(conn: Connection)
 
+        **Deprecated**: use the query methods on ``Pool`` instead.
+
         Release a previously acquired connection proxy, to return it to the
         pool.
 
     .. js:method:: run<T>(action: func)
+
+        **Deprecated**: use the query methods on ``Pool`` instead.
 
         Acquire a connection and use it to run the given action that accepts
         a connection, and return *T*, which is any type returned by the user's
