@@ -15,12 +15,15 @@ export const getStringRepresentation: (
   type,
   params
 ) => {
-  if (type.name === "anytype" || type.name === "anytuple") {
+  if (type.name === "anytype") {
     return {
-      staticType: params.anytype
-        ? frag`${params.anytype}`
-        : [type.name === "anytuple" ? `$.AnyTupleType` : `$.MaterialType`],
-
+      staticType: frag`${params.anytype ?? `$.MaterialType`}`,
+      runtimeType: [],
+    };
+  }
+  if (type.name === "anytuple") {
+    return {
+      staticType: [`$.AnyTupleType`],
       runtimeType: [],
     };
   }

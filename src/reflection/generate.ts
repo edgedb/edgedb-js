@@ -18,6 +18,7 @@ import {generateObjectTypes} from "./generators/generateObjectTypes";
 import {generateRuntimeSpec} from "./generators/generateRuntimeSpec";
 import {generateFunctionTypes} from "./generators/generateFunctionTypes";
 import {generateOperatorTypes} from "./generators/generateOperatorTypes";
+import {generateSetImpl} from "./generators/generateSetImpl";
 
 const DEBUG = false;
 
@@ -68,8 +69,9 @@ export async function generateQB(
     await generateScalars(generatorParams);
     await generateObjectTypes(generatorParams);
     await generateRuntimeSpec(generatorParams);
-    await generateFunctionTypes(generatorParams);
-    await generateOperatorTypes(generatorParams);
+    generateFunctionTypes(generatorParams);
+    generateOperatorTypes(generatorParams);
+    generateSetImpl(generatorParams);
 
     // generate module imports
 

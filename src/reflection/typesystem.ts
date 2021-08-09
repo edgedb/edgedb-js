@@ -245,7 +245,7 @@ export type PrimitiveExpression<
 /// COLLECTION TYPES
 /////////////////////////
 export type ArrayType<
-  Element extends BaseType = BaseType,
+  Element extends NonArrayMaterialType = NonArrayMaterialType,
   Name extends string = `array<${Element["__name__"]}>`
 > = {
   __name__: Name;
@@ -254,7 +254,7 @@ export type ArrayType<
   __element__: Element;
 };
 
-export function ArrayType<Element extends BaseType>(
+export function ArrayType<Element extends NonArrayMaterialType>(
   element: Element
 ): ArrayType<Element> {
   return {
@@ -398,5 +398,11 @@ export type MaterialType =
   | TupleType
   | NamedTupleType
   | ArrayType;
+
+export type NonArrayMaterialType =
+  | ScalarType
+  | ObjectType
+  | TupleType
+  | NamedTupleType;
 
 export type AnyTupleType = TupleType | NamedTupleType;

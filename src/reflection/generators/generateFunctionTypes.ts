@@ -11,11 +11,14 @@ import {CodeBuffer, CodeBuilder, CodeFragment, DirBuilder} from "../builders";
 
 import {FunctionDef, Param, Typemod} from "../queries/getFunctions";
 import {getStringRepresentation} from "./generateObjectTypes";
-import {introspect, StrictMap} from "reflection";
+import {introspect, StrictMap} from "../../reflection";
 import {
   getTypesSpecificity,
   sortFuncopOverloads,
-  getImplicitRootTypes,
+  getImplicitCastableRootTypes,
+  expandFuncopAnytypeOverloads,
+  GroupedParams,
+  findPathOfAnytype,
 } from "../util/functionUtils";
 import {Casts} from "../queries/getCasts";
 
@@ -83,63 +86,15 @@ export function generateFuncopTypes<F extends FuncopDef>(
   ) => void
 ) {
   const typeSpecificities = getTypesSpecificity(types, casts);
-  const implicitRootTypes = getImplicitRootTypes(casts);
+  const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
 
   for (const [funcName, _funcDefs] of funcops.entries()) {
-    const funcDefs = sortFuncopOverloads<F>(
-      _funcDefs,
-      typeSpecificities
-    ).flatMap((funcDef, overloadIndex) => {
-      const overload = {
-        ...funcDef,
-        overloadIndex,
-        params: groupParams(funcDef.params),
-        anytype: null as
-          | {kind: "castable"; paramType: CodeFragment[]}
-          | {
-              kind: "noncastable";
-              paramName: string;
-              paramPath: string;
-            }
-          | null,
-      };
-
-      const anytypeSourceParam = overload.params.positional.find((param) =>
-        param.type.name.includes("anytype")
-      );
-      if (anytypeSourceParam) {
-        const sourcePath = findPathOfAnytype(
-          anytypeSourceParam.type.id,
-          types
-        );
-        if (!sourcePath) {
-          throw new Error(`Cannot find anytype in ${anytypeSourceParam.name}`);
-        }
-
-        return [
-          ...implicitRootTypes.map((rootTypeId) => ({
-            ...overload,
-            anytype: {
-              kind: "castable" as const,
-              paramType: getStringRepresentation(types.get(rootTypeId), {
-                types,
-                casts: casts.implicitCastFromMap,
-              }).staticType,
-            },
-          })),
-          {
-            ...overload,
-            anytype: {
-              kind: "noncastable" as const,
-              paramName: anytypeSourceParam.name,
-              paramPath: `${anytypeSourceParam.typeName}${sourcePath}`,
-            },
-          },
-        ];
-      } else {
-        return [overload];
-      }
-    });
+    const funcDefs = expandFuncopAnytypeOverloads(
+      sortFuncopOverloads<F>(_funcDefs, typeSpecificities),
+      types,
+      casts,
+      implicitCastableRootTypes
+    );
 
     const {mod, name} = splitName(funcName);
 
@@ -201,7 +156,31 @@ export function generateFuncopTypes<F extends FuncopDef>(
           }`
         );
 
-        const anytypes: string[] = [];
+        const anytypes = funcDef.anytypes;
+        const anytypeParams: string[] = [];
+
+        function getParamAnytype(
+          paramTypeName: string,
+          paramType: introspect.Type,
+          optional: boolean
+        ) {
+          if (!anytypes) return undefined;
+          if (anytypes.kind === "castable") {
+            if (paramType.name.includes("anytype")) {
+              const path = findPathOfAnytype(paramType.id, types);
+              anytypeParams.push(
+                optional
+                  ? `${paramTypeName} extends $.TypeSet ? ${paramTypeName}${path} : undefined`
+                  : `${paramTypeName}${path}`
+              );
+            }
+            return anytypes.type;
+          } else {
+            return anytypes.refName === paramTypeName
+              ? anytypes.type
+              : `${anytypes.refName}${anytypes.refPath}`;
+          }
+        }
 
         if (hasParams) {
           // param types
@@ -215,20 +194,17 @@ export function generateFuncopTypes<F extends FuncopDef>(
                 code.indented(() => {
                   overloadsBuf.indented(() => {
                     for (const param of params.named) {
-                      const anytype = funcDef.anytype
-                        ? funcDef.anytype.kind === "castable"
-                          ? funcDef.anytype.paramType
-                          : funcDef.anytype.paramPath
-                        : undefined;
-
-                      const paramType = getStringRepresentation(
-                        types.get(param.type.id),
-                        {
-                          types,
-                          anytype,
-                          casts: casts.implicitCastFromMap,
-                        }
+                      const anytype = getParamAnytype(
+                        param.typeName,
+                        param.type,
+                        param.typemod === "OptionalType" || !!param.hasDefault
                       );
+
+                      const paramType = getStringRepresentation(param.type, {
+                        types,
+                        anytype,
+                        casts: casts.implicitCastFromMap,
+                      });
                       const line = frag`${quote(param.name)}${
                         param.typemod === "OptionalType" || param.hasDefault
                           ? "?"
@@ -246,21 +222,14 @@ export function generateFuncopTypes<F extends FuncopDef>(
 
               // positional + variadic params
               for (const param of params.positional) {
-                let paramType = types.get(param.type.id);
-                if (param.kind === "VariadicParam") {
-                  if (paramType.kind !== "array") {
-                    throw new Error("Variadic param not array type");
-                  }
-                  paramType = types.get(paramType.array_element_id);
-                }
-                const anytype = funcDef.anytype
-                  ? funcDef.anytype.kind === "castable"
-                    ? funcDef.anytype.paramType
-                    : funcDef.anytype.paramName === param.name
-                    ? undefined
-                    : funcDef.anytype.paramPath
-                  : undefined;
-                const paramTypeStr = getStringRepresentation(paramType, {
+                const anytype = getParamAnytype(
+                  param.typeName,
+                  param.type,
+                  optionalUndefined &&
+                    (param.typemod === "OptionalType" || !!param.hasDefault)
+                );
+
+                const paramTypeStr = getStringRepresentation(param.type, {
                   types,
                   anytype,
                   casts: casts.implicitCastFromMap,
@@ -281,17 +250,6 @@ export function generateFuncopTypes<F extends FuncopDef>(
 
                 code.writeln(line);
                 overloadsBuf.writeln(line);
-
-                if (
-                  param.type.name.includes("anytype") &&
-                  funcDef.anytype?.kind === "castable"
-                ) {
-                  const path = findPathOfAnytype(param.type.id, types);
-                  if (!path) {
-                    throw new Error(`Cannot find anytype in ${param.name}`);
-                  }
-                  anytypes.push(`${param.typeName}${path}`);
-                }
               }
             });
           });
@@ -325,14 +283,14 @@ export function generateFuncopTypes<F extends FuncopDef>(
         }
 
         code.indented(() => {
-          const returnAnytype = funcDef.anytype
-            ? funcDef.anytype.kind === "castable"
-              ? anytypes.length <= 1
-                ? anytypes[0]
-                : anytypes.slice(1).reduce((parent, type) => {
-                    return `_.syntax.getSharedParentPrimitive<${parent}, ${type}>`;
-                  }, anytypes[0])
-              : funcDef.anytype.paramPath
+          const returnAnytype = anytypes
+            ? anytypes.kind === "castable"
+              ? anytypeParams.length <= 1
+                ? anytypeParams[0]
+                : anytypeParams.slice(1).reduce((parent, type) => {
+                    return `${anytypes.returnAnytypeWrapper}<${parent}, ${type}>`;
+                  }, anytypeParams[0])
+              : `${anytypes.refName}${anytypes.refPath}`
             : undefined;
           const returnType = getStringRepresentation(
             types.get(funcDef.return_type.id),
@@ -394,13 +352,10 @@ export function generateFuncopTypes<F extends FuncopDef>(
 
           const {params} = funcDef;
 
-          function getArgSpec(param: FunctionDef["params"][number]) {
-            return `{typeId: ${quote(
-              param.kind === "VariadicParam"
-                ? (types.get(param.type.id) as introspect.ArrayType)
-                    .array_element_id
-                : param.type.id
-            )}, optional: ${(
+          function getArgSpec(
+            param: GroupedParams["named" | "positional"][number]
+          ) {
+            return `{typeId: ${quote(param.type.id)}, optional: ${(
               param.typemod === "OptionalType" || !!param.hasDefault
             ).toString()}, setoftype: ${(
               param.typemod === "SetOfType"
@@ -454,24 +409,6 @@ export function generateFuncopTypes<F extends FuncopDef>(
   }
 }
 
-function groupParams(params: FunctionDef["params"]) {
-  return {
-    positional: params
-      .filter(
-        (param) =>
-          param.kind === "PositionalParam" || param.kind === "VariadicParam"
-      )
-      .map((param, i) => {
-        return {
-          ...param,
-          internalName: makeValidIdent({id: `${i}`, name: param.name}),
-          typeName: `P${i + 1}`,
-        };
-      }),
-    named: params.filter((param) => param.kind === "NamedOnlyParam"),
-  };
-}
-
 // default -> cardinality of cartesian product of params actual cardinality
 // (or overridden cardinality below)
 
@@ -485,7 +422,7 @@ function groupParams(params: FunctionDef["params"]) {
 // - setoftype -> always Many
 
 function generateReturnCardinality(
-  params: ReturnType<typeof groupParams>,
+  params: GroupedParams,
   returnTypemod: Typemod,
   hasNamedParams: boolean
 ) {
@@ -536,31 +473,4 @@ function generateReturnCardinality(
   return returnTypemod === "OptionalType"
     ? `$.cardinalityUtil.overrideLowerBound<${cardinality}, 'Zero'>`
     : cardinality;
-}
-
-function findPathOfAnytype(
-  typeId: string,
-  types: introspect.Types
-): string | null {
-  const type = types.get(typeId);
-
-  if (type.name === "anytype") {
-    return '["__element__"]';
-  }
-  if (type.kind === "array") {
-    const elPath = findPathOfAnytype(type.array_element_id, types);
-    if (elPath) {
-      return `["__element__"]${elPath}`;
-    }
-  } else if (type.kind === "tuple") {
-    const isNamed = type.tuple_elements[0].name !== "0";
-    for (const {name, target_id} of type.tuple_elements) {
-      const elPath = findPathOfAnytype(target_id, types);
-      if (elPath) {
-        return `[${isNamed ? quote(name) : name}]${elPath}`;
-      }
-    }
-  }
-
-  return null;
 }
