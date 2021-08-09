@@ -3,12 +3,14 @@ import type {GeneratorParams} from "../generate";
 import {getRef, frag, joinFrags, quote} from "../util/genutil";
 import {util} from "../util/util";
 
+const getRuntimeRef = (name: string) => getRef(name, {prefix: ""});
+
 export const generateCastMaps = async (params: GeneratorParams) => {
   const {dir, types, typesByName, casts} = params;
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps.ts");
-  f.addImport(`import {reflection as $} from "edgedb";`);
+  f.addImport(`import {reflection as $} from "edgedb/src/index.node";`);
 
   const reverseTopo = Array.from(types)
     .reverse() // reverse topological order
@@ -46,7 +48,7 @@ export const generateCastMaps = async (params: GeneratorParams) => {
     const outerCastableTo = casting(outer.id);
     staticMap.push(frag`  A extends ${getRef(outer.name)} ?`);
     runtimeMap.push(
-      frag`  if (a.__name__ === ${getRef(outer.name)}.__name__) {`
+      frag`  if (a.__name__ === ${getRuntimeRef(outer.name)}.__name__) {`
     );
     // f.writeln(`A extends ${getScopedDisplayName(outer.name)} ?`);
 
@@ -71,7 +73,7 @@ export const generateCastMaps = async (params: GeneratorParams) => {
       if (validCast) {
         staticMap.push(frag`    B extends ${getRef(inner.name)} ?`);
         runtimeMap.push(
-          frag`    if(b.__name__ === ${getRef(inner.name)}.__name__) {`
+          frag`    if(b.__name__ === ${getRuntimeRef(inner.name)}.__name__) {`
         );
 
         if (sameType) {
@@ -84,10 +86,8 @@ export const generateCastMaps = async (params: GeneratorParams) => {
           staticMap.push([`    A`]);
           runtimeMap.push([`      return a;`]);
         } else if (sharedParent) {
-          const scoped = getRef(sharedParent);
-
-          staticMap.push(frag`    ${scoped}`);
-          runtimeMap.push(frag`      return ${scoped};`);
+          staticMap.push(frag`    ${getRef(sharedParent)}`);
+          runtimeMap.push(frag`      return ${getRuntimeRef(sharedParent)};`);
         } else {
           staticMap.push(["    never"]);
           runtimeMap.push([
@@ -171,9 +171,7 @@ export const generateCastMaps = async (params: GeneratorParams) => {
     )) {
       if (castableTo.length) {
         f.writeln(
-          frag`[${quote(
-            types.get(sourceId).name
-          )}, new Set([${castableTo
+          frag`[${quote(types.get(sourceId).name)}, new Set([${castableTo
             .map((targetId) => quote(types.get(targetId).name))
             .join(", ")}])],`
         );

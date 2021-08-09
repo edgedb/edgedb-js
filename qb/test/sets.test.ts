@@ -3,7 +3,7 @@ import {reflection as $} from "edgedb";
 import {Cardinality, TypeKind, typeutil} from "../../src/reflection";
 
 test("empty sets", () => {
-  const stringSet = set(e.$str);
+  const stringSet = set(e.str);
   expect(stringSet.toEdgeQL()).toEqual(`<std::str>{}`);
   const heroSet = set(e.$Hero);
   expect(heroSet.toEdgeQL()).toEqual(`<default::Hero>{}`);
@@ -35,14 +35,14 @@ test("scalar set contructor", () => {
   expect(_f1.__element__.__name__).toEqual("std::str");
   expect(_f1.__cardinality__).toEqual(Cardinality.One);
   expect(_f1.__element__.__kind__).toEqual(TypeKind.scalar);
-  expect(_f1.toEdgeQL()).toEqual(`{ <std::str>'asdf' }`);
+  expect(_f1.toEdgeQL()).toEqual(`{ <std::str>"asdf" }`);
 
   // multiple elements
   const _f2 = set(e.str("asdf"), e.str("qwer"), e.str("poiu"));
   expect(_f2.__element__.__name__).toEqual("std::str");
   expect(_f2.__cardinality__).toEqual(Cardinality.AtLeastOne);
   expect(_f2.toEdgeQL()).toEqual(
-    `{ <std::str>'asdf', <std::str>'qwer', <std::str>'poiu' }`
+    `{ <std::str>"asdf", <std::str>"qwer", <std::str>"poiu" }`
   );
 
   // implicit casting
@@ -61,11 +61,11 @@ test("invalid sets", () => {
 
   // never
   expect(() => {
-    const _f3 = set(e.str("asdf"), e.int64(1243)).__element__;
-    const _t3: typeutil.assertEqual<typeof _f3, never> = true;
+    // @ts-expect-error
+    set(e.str("asdf"), e.int64(1243));
   }).toThrow();
   expect(() => {
-    const _f4 = set(e.bool(true), e.bigint(BigInt(14))).__element__;
-    const _t5: typeutil.assertEqual<typeof _f4, never> = true;
+    // @ts-expect-error
+    set(e.bool(true), e.bigint(BigInt(14)));
   }).toThrow();
 });

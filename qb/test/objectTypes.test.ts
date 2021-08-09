@@ -1,6 +1,6 @@
 import e from "../generated/example";
 
-import {reflection as $} from "edgedb";
+import {reflection as $} from "edgedb/src/index.node";
 import {
   computeObjectShape,
   mergeObjectTypes,
@@ -14,7 +14,7 @@ test("property hydration", () => {
   expect(HeroType.__name__).toBe("default::Hero");
   expect(HeroType.__shape__.name.__kind__).toBe("property");
   expect(HeroType.__shape__.name.cardinality).toBe($.Cardinality.One);
-  expect(HeroType.__shape__.name.target).toEqual(e.std.$str);
+  expect(HeroType.__shape__.name.target).toEqual(e.std.str);
   expect(HeroType.__shape__.name.target.__kind__).toEqual($.TypeKind.scalar);
 });
 

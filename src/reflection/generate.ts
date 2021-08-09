@@ -77,7 +77,7 @@ export async function generateQB(
 
     const importsFile = dir.getPath("imports.ts");
     importsFile.writeln(
-      genutil.frag`export * as edgedb from "edgedb";
+      genutil.frag`export * as edgedb from "edgedb/src/index.node";
 export {spec} from "./__spec__";
 export * as syntax from "./syntax/syntax";`
     );
@@ -131,7 +131,7 @@ export * as syntax from "./syntax/syntax";`
     let contents = fs.readFileSync(filePath, "utf8");
     // rewrite scoped import paths
     contents = contents.replace(
-      /from "reflection"/g,
+      /from "(..\/)?reflection"/g,
       `from "edgedb/src/reflection"`
     );
     contents = contents.replace(/from "@generated\//g, `from "../`);

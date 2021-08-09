@@ -7,7 +7,12 @@ import {
   TypeKind,
   util,
 } from "reflection";
-import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
+import {
+  Duration,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+} from "edgedb/src/index.node";
 import {$expr_PathLeaf, $expr_PathNode, $pathify} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
@@ -89,6 +94,7 @@ function shapeToEdgeQL(
   const finalLines = lines.length === 0 ? ["id"] : lines;
   return `{\n${finalLines.join("\n")}\n${outerSpacing}}`;
 }
+
 export function toEdgeQL(this: any) {
   const expr: SomeExpression = this;
   if (
@@ -202,7 +208,7 @@ export function toEdgeQL(this: any) {
 export function literalToEdgeQL(type: MaterialType, val: any): string {
   let stringRep;
   if (typeof val === "string") {
-    stringRep = `'${val}'`;
+    stringRep = JSON.stringify(val);
   } else if (typeof val === "number") {
     stringRep = `${val.toString()}`;
   } else if (typeof val === "boolean") {

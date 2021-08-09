@@ -11,11 +11,14 @@ import {
 
 import {typeutil, util} from "./util/util";
 
+const typeCache = new Map<string, BaseType>();
+
 function applySpec(
   spec: introspect.Types,
   type: introspect.ObjectType,
   shape: any,
-  seen: Set<string>
+  seen: Set<string>,
+  literal: any
 ): void {
   for (const ptr of type.pointers) {
     if (seen.has(ptr.name)) {
@@ -29,7 +32,7 @@ function applySpec(
           __kind__: "link",
           cardinality: ptr.realCardinality,
           get target() {
-            return makeType(spec, ptr.target_id);
+            return makeType(spec, ptr.target_id, literal);
           },
           get properties() {
             const linkProperties: {[k: string]: any} = {};
@@ -48,7 +51,7 @@ function applySpec(
               };
               linkPropObject.cardinality = linkProp.realCardinality;
               util.defineGetter(linkPropObject, "target", () => {
-                return makeType(spec, linkProp.target_id);
+                return makeType(spec, linkProp.target_id, literal);
               });
               linkProperties[linkProp.name] = linkPropObject;
             });
@@ -62,7 +65,7 @@ function applySpec(
           __kind__: "property",
           cardinality: ptr.realCardinality,
           get target() {
-            return makeType(spec, ptr.target_id);
+            return makeType(spec, ptr.target_id, literal);
           },
         };
       });
@@ -73,14 +76,20 @@ function applySpec(
 export function makeType<T extends BaseType>(
   spec: introspect.Types,
   id: string,
+  literal: (type: any, val: any) => any,
   anytype?: MaterialType
 ): T {
   const type = spec.get(id);
+
+  if (typeCache.has(type.name)) {
+    return typeCache.get(type.name) as T;
+  }
+
   const obj: any = {};
   obj.__name__ = type.name;
 
   if (type.name === "anytype") {
-    if (anytype) return (anytype as unknown) as T;
+    if (anytype) return anytype as unknown as T;
     throw new Error("anytype not provided");
   }
 
@@ -89,7 +98,7 @@ export function makeType<T extends BaseType>(
     util.defineGetter(obj, "__shape__", () => {
       const shape: any = {};
       const seen = new Set<string>();
-      applySpec(spec, type, shape, seen);
+      applySpec(spec, type, shape, seen, literal);
       const ancestors = [...type.bases];
       for (const anc of ancestors) {
         const ancType = spec.get(anc.id);
@@ -99,18 +108,28 @@ export function makeType<T extends BaseType>(
         if (ancType.kind !== "object") {
           throw new Error(`Not an object: ${id}`);
         }
-        applySpec(spec, ancType, shape, seen);
+        applySpec(spec, ancType, shape, seen, literal);
       }
       return shape as any;
     });
     return obj;
   } else if (type.kind === "scalar") {
-    obj.__kind__ = TypeKind.scalar;
+    const obj = ((val: any) => {
+      return literal(obj, val);
+    }) as any;
+    obj.__kind__ = type.enum_values ? TypeKind.enum : TypeKind.scalar;
+    obj.__name__ = type.name;
+    if (type.enum_values) {
+      for (const val of type.enum_values) {
+        obj[val] = val;
+      }
+    }
+    typeCache.set(type.name, obj);
     return obj;
   } else if (type.kind === "array") {
     obj.__kind__ = TypeKind.array;
     util.defineGetter(obj, "__element__", () => {
-      return makeType(spec, type.array_element_id, anytype);
+      return makeType(spec, type.array_element_id, literal, anytype);
     });
     util.defineGetter(obj, "__name__", () => {
       return `array<${obj.__element__.__name__}>`;
@@ -123,7 +142,7 @@ export function makeType<T extends BaseType>(
 
       util.defineGetter(obj, "__items__", () => {
         return type.tuple_elements.map((el) =>
-          makeType(spec, el.target_id, anytype)
+          makeType(spec, el.target_id, literal, anytype)
         ) as any;
       });
       util.defineGetter(obj, "__name__", () => {
@@ -139,7 +158,7 @@ export function makeType<T extends BaseType>(
       util.defineGetter(obj, "__shape__", () => {
         const shape: any = {};
         for (const el of type.tuple_elements) {
-          shape[el.name] = makeType(spec, el.target_id, anytype);
+          shape[el.name] = makeType(spec, el.target_id, literal, anytype);
         }
         return shape;
       });

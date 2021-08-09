@@ -1,5 +1,6 @@
 // no runtime imports
 import type {$pathify} from "../syntax/path";
+import type {literal} from "../syntax/literal";
 import type {typeutil} from "./util/typeutil";
 
 //////////////////
@@ -7,6 +8,7 @@ import type {typeutil} from "./util/typeutil";
 //////////////////
 export enum TypeKind {
   scalar = "scalar",
+  enum = "enum",
   object = "object",
   namedtuple = "namedtuple",
   tuple = "tuple",
@@ -28,10 +30,25 @@ export interface BaseTypeSet<
 }
 export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
 
-export interface ScalarType<Name extends string = string, TsType = unknown> {
+export interface ScalarType<
+  Name extends string = string,
+  TsType extends any = any
+> {
   __kind__: TypeKind.scalar;
   __tstype__: TsType;
   __name__: Name;
+  (val: TsType): literal<this>;
+}
+
+export interface EnumType<
+  Name extends string = string,
+  TsType extends any = any,
+  Vals extends any = any
+> {
+  __kind__: TypeKind.enum;
+  __tstype__: TsType;
+  __name__: Name;
+  (val: TsType | Vals): literal<this>;
 }
 
 //////////////////
@@ -228,6 +245,7 @@ export type ObjectTypeExpression<Set extends ObjectTypeSet = ObjectTypeSet> =
 
 export type PrimitiveType =
   | ScalarType
+  | EnumType
   | TupleType
   | NamedTupleType
   | ArrayType;
@@ -313,7 +331,12 @@ export function NamedTupleType<Shape extends NamedTupleShape>(
 /// OBJECT TYPES
 /////////////////////////
 
-type PropertyTypes = ScalarType | ArrayType | TupleType | NamedTupleType;
+type PropertyTypes =
+  | ScalarType
+  | EnumType
+  | ArrayType
+  | TupleType
+  | NamedTupleType;
 export interface PropertyDesc<
   T extends PropertyTypes = PropertyTypes,
   C extends Cardinality = Cardinality
@@ -394,6 +417,7 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
 
 export type MaterialType =
   | ScalarType
+  | EnumType
   | ObjectType
   | TupleType
   | NamedTupleType
@@ -401,6 +425,7 @@ export type MaterialType =
 
 export type NonArrayMaterialType =
   | ScalarType
+  | EnumType
   | ObjectType
   | TupleType
   | NamedTupleType;

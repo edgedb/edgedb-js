@@ -1,4 +1,4 @@
-import * as edgedb from "edgedb";
+import * as edgedb from "edgedb/src/index.node";
 
 export async function setupTests() {
   // tslint:disable-next-line: no-console

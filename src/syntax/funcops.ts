@@ -13,6 +13,7 @@ import {
 import {set} from "./set";
 // @ts-ignore
 import {isImplicitlyCastableTo} from "@generated/castMaps";
+import {literal} from "@generated/syntax/literal";
 
 export type $expr_Function<
   Name extends string = string,
@@ -149,7 +150,7 @@ function _tryOverload(
 
       if (i < args.length) {
         // arg is explicitly undefined, inject empty set
-        const argType = makeType<any>(typeSpec, argDef.typeId);
+        const argType = makeType<any>(typeSpec, argDef.typeId, literal);
         positionalArgs.push(set(argType));
       }
     } else {
@@ -200,7 +201,12 @@ function _tryOverload(
 
   return {
     kind: funcDef.kind,
-    returnType: makeType(typeSpec, funcDef.returnTypeId, returnAnytype),
+    returnType: makeType(
+      typeSpec,
+      funcDef.returnTypeId,
+      literal,
+      returnAnytype
+    ),
     cardinality: cardinality,
     args: positionalArgs,
     namedArgs: namedArgs ?? {},

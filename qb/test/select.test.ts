@@ -5,7 +5,7 @@ import {
   ExpressionKind,
   TypeKind,
   typeutil,
-} from "edgedb/src/reflection";
+} from "../../src/reflection";
 import e, {is, select} from "../generated/example";
 
 test("basic select", () => {

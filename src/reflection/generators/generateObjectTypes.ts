@@ -27,6 +27,12 @@ export const getStringRepresentation: (
       runtimeType: [],
     };
   }
+  if (type.name === "std::anyenum") {
+    return {
+      staticType: [`$.EnumType`],
+      runtimeType: [],
+    };
+  }
   const {types, casts} = params;
   if (type.kind === "object") {
     return {
@@ -235,6 +241,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     body.indented(() => {
       body.writeln([`_.spec,`]);
       body.writeln([`${quote(type.id)},`]);
+      body.writeln([`_.syntax.literal`]);
     });
     body.writeln([`);`]);
     body.nl();
