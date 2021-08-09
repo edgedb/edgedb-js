@@ -1015,9 +1015,8 @@ export class ConnectionImpl {
     const serverFirst = this.buffer.readString();
     this.buffer.finishMessage();
 
-    const [serverNonce, salt, itercount] = scram.parseServerFirstMessage(
-      serverFirst
-    );
+    const [serverNonce, salt, itercount] =
+      scram.parseServerFirstMessage(serverFirst);
 
     const [clientFinal, expectedServerSig] = scram.buildClientFinalMessage(
       this.config.password || "",
@@ -1172,13 +1171,8 @@ export class ConnectionImpl {
         switch (mtype) {
           case chars.$T: {
             try {
-              [
-                cardinality,
-                inCodec,
-                outCodec,
-                inCodecData,
-                outCodecData,
-              ] = this._parseDescribeTypeMessage();
+              [cardinality, inCodec, outCodec, inCodecData, outCodecData] =
+                this._parseDescribeTypeMessage();
             } catch (e) {
               error = e;
             }

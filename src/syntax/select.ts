@@ -99,28 +99,42 @@ export type $expr_Select<
   __modifier__: Modifier;
 } & SelectMethods<Set, Expr>;
 
-// Base is PathNode &
+// Base is ObjectTypeExpression &
 // Filter is equality &
 // Filter.args[0] is PathLeaf &
 // Filter.args[0] is unique &
 // Filter.args[0].parent.__element__ === Base.__element__
-export type inferCardinality<
-  Base extends TypeSet,
-  Filter extends TypeSet
-> = Base extends $expr_PathNode
-  ? Filter extends $expr_Operator<"std::=", any, [infer P1, any], any>
-    ? P1 extends $expr_PathLeaf
-      ? P1["__exclusive__"] extends true
-        ? typeutil.assertEqual<
-            P1["__parent__"]["type"]["__element__"]["__name__"],
-            Base["__element__"]["__name__"]
-          > extends true
-          ? Cardinality.AtMostOne
+// Filter.args[1].__cardinality__ is AtMostOne or One
+
+export type inferCardinality<Base extends TypeSet, Filter extends TypeSet> =
+  // Base is ObjectTypeExpression &
+  Base extends ObjectTypeExpression // $expr_PathNode
+    ? // Filter is equality
+      Filter extends $expr_Operator<"std::=", any, infer Args, any>
+      ? // Filter.args[0] is PathLeaf
+        Args[0] extends $expr_PathLeaf
+        ? // Filter.args[0] is unique
+          Args[0]["__exclusive__"] extends true
+          ? //   Filter.args[0].parent.__element__ === Base.__element__
+            typeutil.assertEqual<
+              Args[0]["__parent__"]["type"]["__element__"]["__name__"],
+              Base["__element__"]["__name__"]
+            > extends true
+            ? // Filter.args[1].__cardinality__ is AtMostOne or One
+              Args[1] extends TypeSet
+              ? [Args[1]["__cardinality__"]] extends [
+                  Cardinality.AtMostOne | Cardinality.One
+                ]
+                ? Cardinality.AtMostOne
+                : [Args[1]["__cardinality__"]] extends [Cardinality.Empty]
+                ? Cardinality.Empty
+                : Base["__cardinality__"]
+              : Base["__cardinality__"]
+            : Base["__cardinality__"]
           : Base["__cardinality__"]
         : Base["__cardinality__"]
       : Base["__cardinality__"]
-    : Base["__cardinality__"]
-  : Base["__cardinality__"];
+    : Base["__cardinality__"];
 
 interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
   // required so `this` passes validation
@@ -224,28 +238,34 @@ function filterFunc(this: any, expr: SelectFilterExpression) {
   // extremely fiddly cardinality inference logic
   const base = this.__expr__;
   const filter: any = expr;
-  // Base is PathNode
-  if (base.__kind__ === ExpressionKind.PathNode) {
-    // Filter is eq
+  // Base is ObjectExpression
+  const baseIsObjectExpr = base?.__element__?.__kind__ === TypeKind.object;
+  const filterExprIsEq =
+    filter.__kind__ === ExpressionKind.Operator &&
+    filter.__name__ === "std::=";
+  const arg0: $expr_PathLeaf = filter?.__args__?.[0];
+  const arg1: BaseExpression = filter?.__args__?.[1];
+  const arg0IsPathLeaf = !!arg0 && arg0.__kind__ === ExpressionKind.PathLeaf;
+  const arg0IsUnique = arg0.__exclusive__ === true;
+  const baseEqualsArg0Parent =
+    arg0.__parent__.type.__element__.__name__ === base.__element__.__name__;
+  const arg1Exists = !!arg1 && !!arg1.__cardinality__;
+
+  if (
+    baseIsObjectExpr &&
+    filterExprIsEq &&
+    arg0IsPathLeaf &&
+    arg0IsUnique &&
+    baseEqualsArg0Parent &&
+    arg1Exists
+  ) {
     if (
-      filter.__kind__ === ExpressionKind.Operator &&
-      filter.__name__ === "std::="
+      arg1.__cardinality__ === Cardinality.One ||
+      arg1.__cardinality__ === Cardinality.AtMostOne
     ) {
-      // Filter.args[0] is PathLeaf
-      const _arg = filter.__args__[0];
-      if (_arg && _arg.__kind__ === ExpressionKind.PathLeaf) {
-        const arg: $expr_PathLeaf = _arg;
-        // Filter.args[0] is unique
-        if (arg.__exclusive__ === true) {
-          // Filter.args[0].parent.__element__ === Base.__element__)
-          if (
-            arg.__parent__.type.__element__.__name__ ===
-            base.__element__.__name__
-          ) {
-            card = Cardinality.AtMostOne;
-          }
-        }
-      }
+      card = Cardinality.AtMostOne;
+    } else if (arg1.__cardinality__ === Cardinality.Empty) {
+      card = Cardinality.Empty;
     }
   }
 
