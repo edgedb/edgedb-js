@@ -49,8 +49,11 @@ const generateTempID = (): number => {
   return Math.floor(Math.random() * 999999999);
 };
 
-const generateStatusFileName = (): string => {
-  return path.join(os.tmpdir(), `edgedb-js-status-file-${generateTempID()}`);
+const generateStatusFileName = (tag: string): string => {
+  return path.join(
+    os.tmpdir(),
+    `edgedb-js-status-file-${tag}-${generateTempID()}`
+  );
 };
 
 const getServerCommand = (statusFile: string): string[] => {
@@ -99,14 +102,18 @@ const startServer = async (
 
   if (process.env.EDGEDB_DEBUG_SERVER) {
     proc.stdout.on("data", (data) => {
-      console.log(data.toString());
+      process.stdout.write(data.toString());
     });
   }
 
   proc.stderr.on("data", (data) => {
-    // only collect until we detect the start
-    if (err) {
-      stderrData += data;
+    if (process.env.EDGEDB_DEBUG_SERVER) {
+      process.stderr.write(data.toString());
+    } else {
+      // only collect until we detect the start
+      if (err) {
+        stderrData += data;
+      }
     }
   });
 
@@ -200,15 +207,16 @@ export default async () => {
   // tslint:disable-next-line
   console.log("\nStarting EdgeDB test cluster...");
 
-  const denoStatusFile = generateStatusFileName();
+  const denoStatusFile = generateStatusFileName("deno");
+  console.log("deno status file:", denoStatusFile);
   const denoArgs = getServerCommand(getWSLPath(denoStatusFile));
   if (denoArgs.includes("--generate-self-signed-cert")) {
-    denoArgs.push("--allow-cleartext-connections");
+    denoArgs.push("--allow-insecure-binary-clients");
   }
   const denoPromise = startServer(denoArgs, denoStatusFile);
 
-  const statusFile = generateStatusFileName();
-  console.log("status file:", statusFile);
+  const statusFile = generateStatusFileName("node");
+  console.log("node status file:", statusFile);
 
   const args = getServerCommand(getWSLPath(statusFile));
   const {proc, config} = await startServer(args, statusFile);

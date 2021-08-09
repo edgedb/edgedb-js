@@ -250,7 +250,7 @@ export class Transaction implements Executor {
     }
   }
 
-  async queryOne(query: string, args?: QueryArgs): Promise<any> {
+  async querySingle(query: string, args?: QueryArgs): Promise<any> {
     if (this._opInProgress) {
       throw borrowError(BorrowReason.QUERY);
     }
@@ -262,7 +262,16 @@ export class Transaction implements Executor {
     }
   }
 
-  async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
+  async queryOne(query: string, args?: QueryArgs): Promise<any> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `queryOne()` method is deprecated and is scheduled to be " +
+        "removed. Use the `querySingle()` method instead"
+    );
+    return this.querySingle(query, args);
+  }
+
+  async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
     if (this._opInProgress) {
       throw borrowError(BorrowReason.QUERY);
     }
@@ -272,5 +281,14 @@ export class Transaction implements Executor {
     } finally {
       this._opInProgress = false;
     }
+  }
+
+  async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `queryOneJSON()` method is deprecated and is scheduled to be " +
+        "removed. Use the `querySingleJSON()` method instead"
+    );
+    return this.querySingleJSON(query, args);
   }
 }

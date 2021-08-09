@@ -370,7 +370,7 @@ export class StandaloneConnection implements Connection {
     }
   }
 
-  async queryOne(query: string, args?: QueryArgs): Promise<any> {
+  async querySingle(query: string, args?: QueryArgs): Promise<any> {
     const inner = this[INNER];
     const borrowed_for = inner.borrowedFor;
     if (borrowed_for) {
@@ -388,7 +388,16 @@ export class StandaloneConnection implements Connection {
     }
   }
 
-  async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
+  async queryOne(query: string, args?: QueryArgs): Promise<any> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `queryOne()` method is deprecated and is scheduled to be " +
+        "removed. Use the `querySingle()` method instead"
+    );
+    return this.querySingle(query, args);
+  }
+
+  async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
     const inner = this[INNER];
     const borrowed_for = inner.borrowedFor;
     if (borrowed_for) {
@@ -404,6 +413,15 @@ export class StandaloneConnection implements Connection {
     } finally {
       inner.borrowedFor = undefined;
     }
+  }
+
+  async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `queryOneJSON()` method is deprecated and is scheduled to be " +
+        "removed. Use the `querySingleJSON()` method instead"
+    );
+    return this.querySingleJSON(query, args);
   }
 
   /** @internal */
@@ -1404,7 +1422,7 @@ export class ConnectionImpl {
     expectOne: boolean
   ): void {
     if (expectOne && card === chars.$n) {
-      const methname = asJson ? "queryOneJSON" : "queryOne";
+      const methname = asJson ? "querySingleJSON" : "querySingle";
       throw new Error(`query executed via ${methname}() returned no data`);
     }
   }
@@ -1594,15 +1612,36 @@ export class RawConnection extends ConnectionImpl {
     throw new Error("not implemented");
   }
 
-  async queryOne(query: string, args: QueryArgs = null): Promise<any> {
+  async querySingle(query: string, args: QueryArgs = null): Promise<any> {
     throw new Error("not implemented");
+  }
+
+  async queryOne(query: string, args: QueryArgs = null): Promise<any> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `queryOne()` method is deprecated and is scheduled to be " +
+        "removed. Use the `querySingle()` method instead"
+    );
+    this.querySingle(query, args);
   }
 
   async queryJSON(query: string, args: QueryArgs = null): Promise<string> {
     throw new Error("not implemented");
   }
 
-  async queryOneJSON(query: string, args: QueryArgs = null): Promise<string> {
+  async querySingleJSON(
+    query: string,
+    args: QueryArgs = null
+  ): Promise<string> {
     throw new Error("not implemented");
+  }
+
+  async queryOneJSON(query: string, args: QueryArgs = null): Promise<string> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `queryOneJSON()` method is deprecated and is scheduled to be " +
+        "removed. Use the `querySingleJSON()` method instead"
+    );
+    return this.querySingleJSON(query, args);
   }
 }

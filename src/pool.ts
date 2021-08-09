@@ -504,16 +504,34 @@ class PoolShell implements Pool {
     });
   }
 
-  async queryOne(query: string, args?: QueryArgs): Promise<any> {
+  async querySingle(query: string, args?: QueryArgs): Promise<any> {
     return await this.run(async (connection) => {
-      return await connection.queryOne(query, args);
+      return await connection.querySingle(query, args);
+    });
+  }
+
+  async queryOne(query: string, args?: QueryArgs): Promise<any> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `queryOne()` method is deprecated and is scheduled to be " +
+        "removed. Use the `querySingle()` method instead"
+    );
+    return this.querySingle(query, args);
+  }
+
+  async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
+    return await this.run(async (connection) => {
+      return await connection.querySingleJSON(query, args);
     });
   }
 
   async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.run(async (connection) => {
-      return await connection.queryOneJSON(query, args);
-    });
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `queryOneJSON()` method is deprecated and is scheduled to be " +
+        "removed. Use the `querySingleJSON()` method instead"
+    );
+    return this.querySingleJSON(query, args);
   }
 
   /**

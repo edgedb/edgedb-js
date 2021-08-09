@@ -20,7 +20,7 @@ import {execFile} from "child_process";
 import * as fs from "fs";
 
 test("run deno test", async () => {
-  jest.setTimeout(60_000);
+  jest.setTimeout(120_000);
 
   if (!fs.existsSync("test/deno")) {
     if (process.env.CI) {

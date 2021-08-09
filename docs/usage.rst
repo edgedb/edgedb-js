@@ -166,7 +166,7 @@ JavaScript code. Here is an example:
 .. code-block:: js
 
     pool.retryingTransaction(tx => {
-        let user = await tx.queryOne(
+        let user = await tx.querySingle(
             "SELECT User { email } FILTER .login = <str>$login",
             login=login,
         )
@@ -177,7 +177,7 @@ JavaScript code. Here is an example:
             },
         )
         let data = await query.json()
-        user = await tx.queryOne('''
+        user = await tx.querySingle('''
                 UPDATE User FILTER .login = <str>$login
                 SET { email_info := <json>$data}
             ''',

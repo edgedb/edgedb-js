@@ -133,7 +133,7 @@ test("transaction interface errors", async () => {
 
     async function borrow3(): Promise<void> {
       await con.rawTransaction(async (tx) => {
-        await con.queryOne("SELECT 7*9");
+        await con.querySingle("SELECT 7*9");
       });
     }
     await expect(borrow3()).rejects.toThrowError(
@@ -157,7 +157,7 @@ test("transaction interface errors", async () => {
 
     async function borrow5(): Promise<void> {
       await con.rawTransaction(async (tx) => {
-        await con.queryOneJSON("SELECT 7*9");
+        await con.querySingleJSON("SELECT 7*9");
       });
     }
     await expect(borrow5()).rejects.toThrowError(
