@@ -437,12 +437,22 @@ class PoolShell implements Pool {
   }
 
   async acquire(): Promise<PoolConnection> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `acquire()` method is deprecated and is scheduled to be " +
+        "removed. Use the query methods on Pool() instead."
+    );
     return await this.impl.acquire(this.options);
   }
   /**
    * Release a database connection back to the pool.
    */
   async release(connection: Connection): Promise<void> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `release()` method is deprecated and is scheduled to be " +
+        "removed. Use the query methods on Pool() instead."
+    );
     await this.impl.release(connection);
   }
 
@@ -451,6 +461,11 @@ class PoolShell implements Pool {
    * value. The connection is released once done.
    */
   async run<T>(action: (connection: Connection) => Promise<T>): Promise<T> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      "The `run()` method is deprecated and is scheduled to be " +
+        "removed. Use the query methods on Pool() instead."
+    );
     const conn = await this.acquire();
 
     try {
