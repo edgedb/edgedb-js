@@ -19,6 +19,8 @@ import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
 import {$expr_Select, ModifierKind} from "./select";
 import {$expr_Function, $expr_Operator} from "./funcops";
+import {$expr_For} from "./for";
+import {$expr_ForVar} from "@generated/syntax/for";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -28,7 +30,9 @@ export type SomeExpression =
   | $expr_Cast
   | $expr_Select
   | $expr_Function
-  | $expr_Operator;
+  | $expr_Operator
+  | $expr_For
+  | $expr_ForVar;
 
 // type expr = $expr_ShapeSelect<ObjectTypeExpression, any, any>;
 // type elem = expr["__element__"];
@@ -206,8 +210,18 @@ export function toEdgeQL(this: any) {
           new Error(`Unknown operator kind: ${expr.__opkind__}`)
         );
     }
+  } else if (expr.__kind__ === ExpressionKind.For) {
+    return `FOR ${expr.__forVar__.toEdgeQL()} IN {${(
+      expr.__iterSet__ as any
+    ).toEdgeQL()}}
+UNION (${expr.__expr__.toEdgeQL()})`;
+  } else if (expr.__kind__ === ExpressionKind.ForVar) {
+    return `__forVar_${expr.__id__}`;
   } else {
-    util.assertNever(expr, new Error(`Unrecognized expression kind: ${expr}`));
+    util.assertNever(
+      expr,
+      new Error(`Unrecognized expression kind: "${(expr as any).__kind__}"`)
+    );
   }
 }
 

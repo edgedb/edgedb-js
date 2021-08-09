@@ -5,4 +5,5 @@ export * from "./cast";
 export * from "./select";
 export * from "./misc";
 export * from "./funcops";
+export * from "./for";
 export * from "./toEdgeQL";

@@ -34,3 +34,16 @@ console.log(e.sys.VersionStage);
 console.log(e.sys.VersionStage.dev);
 console.log(e.sys.VersionStage("alpha"));
 console.log(e.sys.VersionStage("beta").toEdgeQL());
+
+const simpleFor = e.for(e.set(e.int64(1), e.int64(2), e.int64(3)), (x) =>
+  e.mult(x, e.int32(2))
+);
+
+console.log(simpleFor);
+console.log(simpleFor.toEdgeQL());
+
+const nestedFor = e.for(e.set(e.str("a"), e.str("b"), e.str("c")), (x) =>
+  e.for(e.int64(3), (n) => e.concat(x, e.cast(e.str, n)))
+);
+
+console.log(nestedFor.toEdgeQL());

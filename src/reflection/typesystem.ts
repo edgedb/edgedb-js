@@ -228,6 +228,8 @@ export enum ExpressionKind {
   Select = "Select",
   Function = "Function",
   Operator = "Operator",
+  For = "For",
+  ForVar = "ForVar",
 }
 
 export type MaterialTypeSet<
