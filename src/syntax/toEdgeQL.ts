@@ -179,6 +179,12 @@ export function toEdgeQL(this: any) {
     const args = expr.__args__;
     switch (expr.__opkind__) {
       case "Infix":
+        if (operator === "[]") {
+          const val = (args[1] as any).__value__;
+          return `(${(args[0] as any).toEdgeQL()}[${
+            Array.isArray(val) ? val.join(":") : val
+          }])`;
+        }
         return `(${(args[0] as any).toEdgeQL()} ${operator} ${(
           args[1] as any
         ).toEdgeQL()})`;
