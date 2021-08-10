@@ -46,11 +46,7 @@ makeSet<
 
 export function set<Type extends MaterialType>(
   type: Type
-): $expr_Set<makeSet<Type, Cardinality.Empty>>;
-export function set<
-  Expr extends BaseExpression<TypeSet<_std.$str>>,
-  Exprs extends [Expr, ...Expr[]]
->(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;`);
+): $expr_Set<makeSet<Type, Cardinality.Empty>>;`);
 
   for (const implicitRootTypeId of implicitCastableRootTypes) {
     code.writeln(frag`export function set<
