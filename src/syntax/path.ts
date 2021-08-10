@@ -10,7 +10,6 @@ import {
   ObjectTypeExpression,
   BaseExpression,
   ExpressionKind,
-  util,
   TypeKind,
   ObjectTypeShape,
 } from "reflection";
@@ -49,15 +48,16 @@ export interface PathParent<
   linkName: string;
 }
 
-// leaves are Expression & {getters for each property/link}
+// type asdfasdf = $expr_PathNode<ObjectTypeSet, null>;
+// type lkjl = asdfasdf['$is']
 export type $pathify<
   Root extends TypeSet,
   Parent extends PathParent | null = null
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
-    ? unknown // Root is literally ObjectTypeSet
+    ? PathNodeMethods<Root> // Root is literally ObjectTypeSet
     : ObjectTypeShape extends Root["__element__"]["__shape__"]
-    ? unknown
+    ? PathNodeMethods<Root>
     : {
         // & string required to avod typeError on linkName
         [k in keyof Root["__element__"]["__shape__"] &
@@ -76,8 +76,19 @@ export type $pathify<
               >
             : never
           : never;
-      }
+      } &
+        PathNodeMethods<Root>
   : unknown; // pathify does nothing on non-object types
+
+function isFunc(this: any, expr: ObjectTypeExpression) {
+  return $pathify({
+    __kind__: ExpressionKind.TypeIntersection,
+    __cardinality__: this.__cardinality__,
+    __element__: expr.__element__,
+    toEdgeQL,
+    __expr__: this,
+  });
+}
 
 export function $pathify<Root extends TypeSet, Parent extends PathParent>(
   _root: Root
@@ -132,6 +143,8 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
       });
     }
   }
+
+  (root as any).$is = isFunc.bind(root);
   return root as any;
 }
 
@@ -143,7 +156,7 @@ export type $expr_PathNode<
   __parent__: Parent;
   __kind__: ExpressionKind.PathNode;
   __exclusive__: Exclusive;
-} & PathNodeMethods<Root>;
+};
 
 interface PathNodeMethods<Self extends TypeSet> {
   __element__: Self["__element__"];
@@ -161,23 +174,17 @@ export type $expr_TypeIntersection<
   __kind__: ExpressionKind.TypeIntersection;
   __expr__: Expr;
 };
+
 export const $expr_PathNode = <
   Root extends ObjectTypeSet,
-  Parent extends PathParent,
+  Parent extends PathParent | null,
   Exclusive extends boolean = boolean
 >(
   root: Root,
-  parent: PathParent | null,
+  parent: Parent,
   exclusive: Exclusive
 ): $expr_PathNode<Root, Parent, Exclusive> => {
-  // return $pathify({
-  //   __kind__: ExpressionKind.PathNode,
-  //   __element__: root.__element__,
-  //   __cardinality__: root.__cardinality__,
-  //   __parent__: parent,
-  //   toEdgeQL,
-  // }) as any;
-  return $pathify({
+  const pathNode = $pathify({
     __kind__: ExpressionKind.PathNode,
     __element__: root.__element__,
     __cardinality__: root.__cardinality__,
@@ -185,11 +192,7 @@ export const $expr_PathNode = <
     __exclusive__: exclusive,
     toEdgeQL,
   }) as any;
-  // const root: any = {..._root};
-  // root.__parent__ = parent as any;
-  // root.__kind__ = ExpressionKind.PathNode;
-  // util.defineMethod(root, "toEdgeQL", toEdgeQL);
-  // return $pathify(root) as any;
+  return pathNode;
 };
 
 export type $expr_PathLeaf<
