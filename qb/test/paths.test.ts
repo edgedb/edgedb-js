@@ -90,6 +90,7 @@ test("type intersection on path node", () => {
   expect(hero.__expr__).toBe(person);
   // check that pathify works
   expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
+  expect(hero.toEdgeQL()).toEqual(`default::Person[IS default::Hero]`);
 });
 
 test("type intersection on select", () => {
@@ -104,10 +105,4 @@ test("type intersection on select", () => {
   expect(hero.__expr__).toBe(q2);
   // check that pathify works
   expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
-
-  const selectHero = e.select(hero, {secret_identity: true});
-  expect(selectHero.__expr__).toBe(hero);
-  expect(selectHero.number_of_movies.__element__.__name__).toEqual(
-    "std::int64"
-  );
 });

@@ -8,7 +8,7 @@ import {
   util,
 } from "reflection";
 import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
-import {$expr_PathLeaf, $expr_PathNode, $pathify} from "./path";
+import {$expr_PathLeaf, $expr_PathNode, $expr_TypeIntersection} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
@@ -23,7 +23,8 @@ export type SomeExpression =
   | $expr_Cast
   | $expr_Select
   | $expr_Function
-  | $expr_Operator;
+  | $expr_Operator
+  | $expr_TypeIntersection;
 
 // type expr = $expr_ShapeSelect<ObjectTypeExpression, any, any>;
 // type elem = expr["__element__"];
@@ -194,6 +195,10 @@ export function toEdgeQL(this: any) {
           new Error(`Unknown operator kind: ${expr.__opkind__}`)
         );
     }
+  } else if (expr.__kind__ === ExpressionKind.TypeIntersection) {
+    return `${(expr.__expr__ as any).toEdgeQL()}[IS ${
+      expr.__element__.__name__
+    }]`;
   } else {
     util.assertNever(expr, new Error(`Unrecognized expression kind: ${expr}`));
   }
