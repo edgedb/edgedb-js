@@ -31,20 +31,13 @@ export async function teardownTests() {
   // tslint:disable-next-line: no-console
   console.log(`Deleting database contents...`);
   const pool = await edgedb.createPool();
-  await pool.execute(`DELETE Villain;`);
-  await pool.execute(`DELETE Hero;`);
-  await pool.execute(`DELETE Movie;`);
-  await pool.execute(`DELETE Bag;`);
-  await pool.execute(`DELETE Simple;`);
+  // await pool.execute(`DELETE Villain;`);
+  // await pool.execute(`DELETE Hero;`);
+  // await pool.execute(`DELETE Movie;`);
+  // await pool.execute(`DELETE Bag;`);
+  // await pool.execute(`DELETE Simple;`);
 
   await pool.close();
 
   return "done";
 }
-
-beforeAll(() => setupTests());
-afterAll(() => teardownTests());
-
-test("2=2", () => {
-  expect(2).toEqual(2);
-});

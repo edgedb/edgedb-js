@@ -1,6 +1,10 @@
 import e, {$toSet, $expr_PathNode} from "../generated/example";
 import {reflection as $} from "edgedb";
 
+import {$Hero} from "generated/example/modules/default";
+
+import {ExpressionKind, TypeKind, typeutil} from "edgedb/src/reflection";
+
 test("path structure", () => {
   const Hero = e.default.Hero;
   type Hero = typeof Hero;
@@ -71,5 +75,39 @@ test("path structure", () => {
   expect(Hero.villains.__parent__.linkName).toEqual("villains");
   expect(Hero.villains.__parent__.type.__element__.__name__).toEqual(
     "default::Hero"
+  );
+});
+
+test("type intersection on path node", () => {
+  const person = e.Person;
+  const hero = person.$is(e.Hero);
+  const f1: typeutil.assertEqual<typeof hero["__element__"], typeof $Hero> =
+    true;
+  expect(hero.__element__.__name__).toEqual("default::Hero");
+  expect(hero.__element__.__kind__).toEqual(TypeKind.object);
+  expect(hero.__kind__).toEqual(ExpressionKind.TypeIntersection);
+  // referential equality
+  expect(hero.__expr__).toBe(person);
+  // check that pathify works
+  expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
+});
+
+test("type intersection on select", () => {
+  const q2 = e.select(e.Person, {id: true, name: true}).limit(5);
+  const hero = q2.$is(e.Hero);
+  const f2: typeutil.assertEqual<typeof hero["__element__"], typeof $Hero> =
+    true;
+  expect(hero.__element__.__name__).toEqual("default::Hero");
+  expect(hero.__element__.__kind__).toEqual(TypeKind.object);
+  expect(hero.__kind__).toEqual(ExpressionKind.TypeIntersection);
+  // referential equality
+  expect(hero.__expr__).toBe(q2);
+  // check that pathify works
+  expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
+
+  const selectHero = e.select(hero, {secret_identity: true});
+  expect(selectHero.__expr__).toBe(hero);
+  expect(selectHero.number_of_movies.__element__.__name__).toEqual(
+    "std::int64"
   );
 });

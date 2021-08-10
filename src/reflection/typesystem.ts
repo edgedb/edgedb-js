@@ -211,6 +211,7 @@ export enum ExpressionKind {
   Select = "Select",
   Function = "Function",
   Operator = "Operator",
+  TypeIntersection = "TypeIntersection",
 }
 
 export type MaterialTypeSet<
