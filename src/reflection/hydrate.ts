@@ -57,6 +57,7 @@ function applySpec(
             });
             return linkProperties;
           },
+          exclusive: ptr.is_exclusive,
         };
       });
     } else if (ptr.kind === "property") {
@@ -67,6 +68,7 @@ function applySpec(
           get target() {
             return makeType(spec, ptr.target_id, literal);
           },
+          exclusive: ptr.is_exclusive,
         };
       });
     }
@@ -89,7 +91,7 @@ export function makeType<T extends BaseType>(
   obj.__name__ = type.name;
 
   if (type.name === "anytype") {
-    if (anytype) return anytype as unknown as T;
+    if (anytype) return (anytype as unknown) as T;
     throw new Error("anytype not provided");
   }
 
@@ -114,18 +116,18 @@ export function makeType<T extends BaseType>(
     });
     return obj;
   } else if (type.kind === "scalar") {
-    const obj = ((val: any) => {
-      return literal(obj, val);
+    const scalarObj = ((val: any) => {
+      return literal(scalarObj, val);
     }) as any;
-    obj.__kind__ = type.enum_values ? TypeKind.enum : TypeKind.scalar;
-    obj.__name__ = type.name;
+    scalarObj.__kind__ = type.enum_values ? TypeKind.enum : TypeKind.scalar;
+    scalarObj.__name__ = type.name;
     if (type.enum_values) {
       for (const val of type.enum_values) {
-        obj[val] = val;
+        scalarObj[val] = val;
       }
     }
-    typeCache.set(type.name, obj);
-    return obj;
+    typeCache.set(type.name, scalarObj);
+    return scalarObj;
   } else if (type.kind === "array") {
     obj.__kind__ = TypeKind.array;
     util.defineGetter(obj, "__element__", () => {

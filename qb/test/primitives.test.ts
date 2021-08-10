@@ -13,12 +13,12 @@ test("primitive types", () => {
 });
 
 test("collection types", () => {
-  const arrayType = $Array(e.str);
+  const arrayType = e.array(e.str);
   expect(arrayType.__name__).toEqual("array<std::str>");
-  const named = $NamedTuple({str: e.str});
+  const named = e.namedTuple({str: e.str});
   expect(named.__name__).toEqual("tuple<str: std::str>");
   expect(named.__shape__.str.__name__).toEqual("std::str");
-  const unnamed = $Tuple([e.str, e.int64]);
+  const unnamed = e.tuple([e.str, e.int64]);
   expect(unnamed.__name__).toEqual("tuple<std::str, std::int64>");
   expect(unnamed.__items__[0].__name__).toEqual("std::str");
   expect(unnamed.__items__[1].__name__).toEqual("std::int64");

@@ -1,6 +1,6 @@
 import type {$expr_Function} from "@syntax/funcops";
 import {Cardinality, TypeSet, typeutil} from "../../src/reflection";
-import e, {$NamedTuple, literal, set, $Array} from "../generated/example";
+import e from "../generated/example";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,
@@ -32,12 +32,12 @@ test("no args", () => {
     "sys::get_version",
     [],
     {},
-    $NamedTuple({
+    e.namedTuple({
       major: e.int64,
       minor: e.int64,
       stage: e.sys.VersionStage,
       stage_no: e.int64,
-      local: $Array(e.str),
+      local: e.array(e.str),
     }),
     Cardinality.One
   );
@@ -68,15 +68,15 @@ test("positional args", () => {
   );
 
   checkFunctionExpr(
-    e.len(literal($Array(e.int32), [1, 2, 3])),
+    e.len(e.literal(e.array(e.int32), [1, 2, 3])),
     "std::len",
-    [literal($Array(e.int32), [1, 2, 3])],
+    [e.literal(e.array(e.int32), [1, 2, 3])],
     {},
     e.int64,
     Cardinality.One
   );
 
-  const setOfStr = set(e.str("test"), e.str("test2"));
+  const setOfStr = e.set(e.str("test"), e.str("test2"));
   checkFunctionExpr(
     e.len(setOfStr),
     "std::len",
@@ -98,7 +98,7 @@ test("positional args", () => {
 
   const datetime_getArgs2 = [
     e.datetime(new Date()),
-    set(e.str("day"), e.str("month"), e.str("year")),
+    e.set(e.str("day"), e.str("month"), e.str("year")),
   ] as const;
   checkFunctionExpr(
     e.datetime_get(...datetime_getArgs2),
@@ -150,14 +150,14 @@ test("named args", () => {
   );
   checkFunctionExpr(
     e.std.re_replace(
-      {flags: set(e.str)},
+      {flags: e.set(e.str)},
       e.str("pattern"),
       e.str("sub"),
       e.str("str")
     ),
     "std::re_replace",
     [e.str("pattern"), e.str("sub"), e.str("str")],
-    {flags: set(e.str)},
+    {flags: e.set(e.str)},
     e.str,
     Cardinality.One
   );
@@ -187,10 +187,10 @@ test("named args", () => {
     Cardinality.One
   );
   checkFunctionExpr(
-    e.to_duration({hours: set(e.int64(5), e.int16(6))}),
+    e.to_duration({hours: e.set(e.int64(5), e.int16(6))}),
     "std::to_duration",
     [],
-    {hours: set(e.int64(5), e.int16(6))},
+    {hours: e.set(e.int64(5), e.int16(6))},
     e.duration,
     Cardinality.AtLeastOne
   );
@@ -257,10 +257,10 @@ test("variadic args", () => {
     e.json_get(
       e.json("json"),
       e.str("some"),
-      set(e.str("path"), e.str("extended"))
+      e.set(e.str("path"), e.str("extended"))
     ),
     "std::json_get",
-    [e.json("json"), e.str("some"), set(e.str("path"), e.str("extended"))],
+    [e.json("json"), e.str("some"), e.set(e.str("path"), e.str("extended"))],
     {},
     e.json,
     Cardinality.Many
@@ -270,10 +270,10 @@ test("variadic args", () => {
       {},
       e.json("json"),
       e.str("some"),
-      set(e.str("path"), e.str("extended"))
+      e.set(e.str("path"), e.str("extended"))
     ),
     "std::json_get",
-    [e.json("json"), e.str("some"), set(e.str("path"), e.str("extended"))],
+    [e.json("json"), e.str("some"), e.set(e.str("path"), e.str("extended"))],
     {},
     e.json,
     Cardinality.Many
@@ -303,29 +303,29 @@ test("anytype", () => {
     Cardinality.AtMostOne
   );
   checkFunctionExpr(
-    e.min(set(e.int64(1), e.int64(2))),
+    e.min(e.set(e.int64(1), e.int64(2))),
     "std::min",
-    [set(e.int64(1), e.int64(2))],
+    [e.set(e.int64(1), e.int64(2))],
     {},
     e.int64,
     Cardinality.AtMostOne
   );
 
   // BROKEN
-  // e.min(set(e.int64(1), e.str('str')))
+  // e.min(e.set(e.int64(1), e.str('str')))
 
   checkFunctionExpr(
     e.array_agg(e.str("str" as string)),
     "std::array_agg",
     [e.str("str" as string)],
     {},
-    $Array(e.str),
+    e.array(e.str),
     Cardinality.One
   );
   checkFunctionExpr(
-    e.array_unpack(literal($Array(e.str), ["str"])),
+    e.array_unpack(e.literal(e.array(e.str), ["str"])),
     "std::array_unpack",
-    [literal($Array(e.str), ["str"])],
+    [e.literal(e.array(e.str), ["str"])],
     {},
     e.str,
     Cardinality.Many
@@ -333,13 +333,13 @@ test("anytype", () => {
 
   checkFunctionExpr(
     e.contains(
-      literal($Array(e.str), ["test", "haystack"]),
-      set(e.str("needle"), e.str("haystack"))
+      e.literal(e.array(e.str), ["test", "haystack"]),
+      e.set(e.str("needle"), e.str("haystack"))
     ),
     "std::contains",
     [
-      literal($Array(e.str), ["test", "haystack"]),
-      set(e.str("needle"), e.str("haystack")),
+      e.literal(e.array(e.str), ["test", "haystack"]),
+      e.set(e.str("needle"), e.str("haystack")),
     ],
     {},
     e.bool,
@@ -347,18 +347,18 @@ test("anytype", () => {
   );
 
   checkFunctionExpr(
-    e.contains(literal($Array(e.int16), [1, 2, 3]), e.bigint(BigInt(2))),
+    e.contains(e.literal(e.array(e.int16), [1, 2, 3]), e.bigint(BigInt(2))),
     "std::contains",
-    [literal($Array(e.int16), [1, 2, 3]), e.bigint(BigInt(2))],
+    [e.literal(e.array(e.int16), [1, 2, 3]), e.bigint(BigInt(2))],
     {},
     e.bool,
     Cardinality.One
   );
 
   checkFunctionExpr(
-    e.contains(literal($Array(e.float32), [1, 2, 3]), e.int64(2)),
+    e.contains(e.literal(e.array(e.float32), [1, 2, 3]), e.int64(2)),
     "std::contains",
-    [literal($Array(e.float32), [1, 2, 3]), e.int64(2)],
+    [e.literal(e.array(e.float32), [1, 2, 3]), e.int64(2)],
     {},
     e.bool,
     Cardinality.One
@@ -367,11 +367,14 @@ test("anytype", () => {
   checkFunctionExpr(
     e.array_get(
       {default: e.bigint(BigInt(0))},
-      literal($Array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
       e.int64(4)
     ),
     "std::array_get",
-    [literal($Array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]), e.int64(4)],
+    [
+      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      e.int64(4),
+    ],
     {default: e.bigint(BigInt(0))},
     e.bigint,
     Cardinality.AtMostOne
@@ -379,17 +382,17 @@ test("anytype", () => {
 
   try {
     // @ts-expect-error
-    e.contains(literal($Array(e.str), ["test", "haystack"]), e.int64(1));
+    e.contains(e.literal(e.array(e.str), ["test", "haystack"]), e.int64(1));
 
     e.array_get(
       // @ts-expect-error
       {default: e.str("0")},
-      literal($Array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
       e.int64(4)
     );
 
     // @ts-expect-error
-    e.contains(literal($Array(e.float32), [1, 2, 3]), e.bigint(BigInt(2)));
+    e.contains(e.literal(e.array(e.float32), [1, 2, 3]), e.bigint(BigInt(2)));
   } catch {}
 });
 
@@ -404,9 +407,9 @@ test("cardinality inference", () => {
     Cardinality.One
   );
   checkFunctionExpr(
-    e.to_str(e.int64(123), set(e.str)),
+    e.to_str(e.int64(123), e.set(e.str)),
     "std::to_str",
-    [e.int64(123), set(e.str)],
+    [e.int64(123), e.set(e.str)],
     {},
     e.str,
     Cardinality.One
@@ -414,15 +417,15 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.to_str(e.int64(123), undefined),
     "std::to_str",
-    [e.int64(123), set(e.str) as undefined],
+    [e.int64(123), e.set(e.str) as undefined],
     {},
     e.str,
     Cardinality.One
   );
   checkFunctionExpr(
-    e.to_str(set(e.int64(123), e.int64(456)), undefined),
+    e.to_str(e.set(e.int64(123), e.int64(456)), undefined),
     "std::to_str",
-    [set(e.int64(123), e.int64(456)), set(e.str) as undefined],
+    [e.set(e.int64(123), e.int64(456)), e.set(e.str) as undefined],
     {},
     e.str,
     Cardinality.AtLeastOne
@@ -446,17 +449,17 @@ test("cardinality inference", () => {
     Cardinality.One
   );
   checkFunctionExpr(
-    e.sum(set(e.int64(1), e.int64(2))),
+    e.sum(e.set(e.int64(1), e.int64(2))),
     "std::sum",
-    [set(e.int64(1), e.int64(2))],
+    [e.set(e.int64(1), e.int64(2))],
     {},
     e.int64,
     Cardinality.One
   );
   checkFunctionExpr(
-    e.sum(set(e.int64)),
+    e.sum(e.set(e.int64)),
     "std::sum",
-    [set(e.int64)],
+    [e.set(e.int64)],
     {},
     e.int64,
     Cardinality.One
@@ -465,19 +468,22 @@ test("cardinality inference", () => {
   // optional return
   checkFunctionExpr(
     e.array_get(
-      literal($Array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
       e.int64(1)
     ),
     "std::array_get",
-    [literal($Array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]), e.int64(1)],
+    [
+      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      e.int64(1),
+    ],
     {},
     e.bigint,
     Cardinality.AtMostOne
   );
   checkFunctionExpr(
-    e.array_get(set($Array(e.bigint)), e.int64(1)),
+    e.array_get(e.set(e.array(e.bigint)), e.int64(1)),
     "std::array_get",
-    [set($Array(e.bigint)), e.int64(1)],
+    [e.set(e.array(e.bigint)), e.int64(1)],
     {},
     e.bigint,
     Cardinality.Empty
@@ -485,17 +491,17 @@ test("cardinality inference", () => {
   // BROKEN
   // checkFunctionExpr(
   //   e.array_get(
-  //     set(
-  //       literal($Array(e.$bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-  //       literal($Array(e.$bigint), [BigInt(4)])
+  //     e.set(
+  //       e.literal(e.array(e.$bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+  //       e.literal(e.array(e.$bigint), [BigInt(4)])
   //     ),
   //     e.int64(1)
   //   ),
   //   "std::array_get",
   //   [
-  //     set(
-  //       literal($Array(e.$bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-  //       literal($Array(e.$bigint), [BigInt(4)])
+  //     e.set(
+  //       e.literal(e.array(e.$bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+  //       e.literal(e.array(e.$bigint), [BigInt(4)])
   //     ),
   //     e.int64(1),
   //   ],
@@ -506,25 +512,25 @@ test("cardinality inference", () => {
 
   // setoftype return
   checkFunctionExpr(
-    e.array_unpack(literal($Array(e.str), ["str"])),
+    e.array_unpack(e.literal(e.array(e.str), ["str"])),
     "std::array_unpack",
-    [literal($Array(e.str), ["str"])],
+    [e.literal(e.array(e.str), ["str"])],
     {},
     e.str,
     Cardinality.Many
   );
   checkFunctionExpr(
-    e.array_unpack(set($Array(e.str))),
+    e.array_unpack(e.set(e.array(e.str))),
     "std::array_unpack",
-    [set($Array(e.str))],
+    [e.set(e.array(e.str))],
     {},
     e.str,
     Cardinality.Many
   );
   checkFunctionExpr(
-    e.array_unpack(literal($Array(e.str), ["str"])),
+    e.array_unpack(e.literal(e.array(e.str), ["str"])),
     "std::array_unpack",
-    [literal($Array(e.str), ["str"])],
+    [e.literal(e.array(e.str), ["str"])],
     {},
     e.str,
     Cardinality.Many

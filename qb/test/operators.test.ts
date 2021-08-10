@@ -22,9 +22,12 @@ function checkOperatorExpr<T extends $expr_Operator>(
 
 test("slice and index ops", () => {
   checkOperatorExpr(
-    e.slice(e.str("test string"), literal($Tuple([e.int64, e.int32]), [2, 5])),
+    e.slice(
+      e.str("test string"),
+      literal(e.tuple([e.int64, e.int32]), [2, 5])
+    ),
     "std::[]",
-    [e.str("test string"), literal($Tuple([e.int64, e.int32]), [2, 5])],
+    [e.str("test string"), literal(e.tuple([e.int64, e.int32]), [2, 5])],
     e.str,
     Cardinality.One,
     `(<std::str>"test string"[2:5])`
@@ -32,15 +35,15 @@ test("slice and index ops", () => {
 
   checkOperatorExpr(
     e.slice(
-      literal($Array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      literal($Tuple([e.int64, e.int32]), [1, 2])
+      literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      literal(e.tuple([e.int64, e.int32]), [1, 2])
     ),
     "std::[]",
     [
-      literal($Array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      literal($Tuple([e.int64, e.int32]), [1, 2]),
+      literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      literal(e.tuple([e.int64, e.int32]), [1, 2]),
     ],
-    $Array(e.bigint),
+    e.array(e.bigint),
     Cardinality.One,
     `(<array<std::bigint>>[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][1:2])`
   );
@@ -56,11 +59,14 @@ test("slice and index ops", () => {
 
   checkOperatorExpr(
     e.index(
-      literal($Array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
       e.int32(2)
     ),
     "std::[]",
-    [literal($Array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]), e.int32(2)],
+    [
+      literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      e.int32(2),
+    ],
     e.bigint,
     Cardinality.One,
     `(<array<std::bigint>>[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][2])`

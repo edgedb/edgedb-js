@@ -1,5 +1,4 @@
 export {cardinalityUtil} from "./cardinalityUtil";
-export type {selectUtil} from "./selectUtil";
 export type {typeutil} from "./typeutil";
 export * as genutil from "./genutil";
 

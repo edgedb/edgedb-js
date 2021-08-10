@@ -8,16 +8,20 @@ import {
 import {toEdgeQL} from "./toEdgeQL";
 
 export type $expr_Literal<
-  Type extends MaterialType = MaterialType
+  Type extends MaterialType = MaterialType,
+  TsType extends Type["__tstype__"] = Type["__tstype__"]
 > = BaseExpression<TypeSet<Type, Cardinality.One>> & {
   __kind__: ExpressionKind.Literal;
-  __value__: Type["__tstype__"];
+  __value__: TsType;
 };
 
-export const $expr_Literal = <T extends MaterialType>(
+export const $expr_Literal = <
+  T extends MaterialType,
+  TsType extends T["__tstype__"] = T["__tstype__"]
+>(
   type: T,
-  value: T["__tstype__"]
-): $expr_Literal<T> => {
+  value: TsType
+): $expr_Literal<T & {__tstype__: TsType}> => {
   return {
     __element__: type,
     __cardinality__: Cardinality.One,

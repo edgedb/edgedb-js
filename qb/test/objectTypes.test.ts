@@ -16,6 +16,17 @@ test("property hydration", () => {
   expect(HeroType.__shape__.name.cardinality).toBe($.Cardinality.One);
   expect(HeroType.__shape__.name.target).toEqual(e.std.str);
   expect(HeroType.__shape__.name.target.__kind__).toEqual($.TypeKind.scalar);
+  expect(HeroType.__shape__.name.exclusive).toEqual(true);
+  expect(HeroType.__shape__.secret_identity.exclusive).toEqual(false);
+
+  expect(e.default.Movie.__element__.__shape__.profile.exclusive).toEqual(
+    true
+  );
+  expect(e.default.Movie.profile.__exclusive__).toEqual(true);
+  expect(e.default.Movie.__element__.__shape__.characters.exclusive).toEqual(
+    false
+  );
+  expect(e.default.Movie.characters.__exclusive__).toEqual(false);
 });
 
 test("link hydration", () => {
@@ -85,5 +96,3 @@ test("merging tests", () => {
     {id: string; age: number | null; name: string | null; __type__: any}
   > = true;
 });
-
-export {};

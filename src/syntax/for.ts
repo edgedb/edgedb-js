@@ -26,14 +26,15 @@ export type $expr_For<
   __expr__: Expr;
 };
 
-export type $expr_ForVar<Type extends MaterialType = MaterialType> =
-  BaseExpression<{
-    __element__: Type;
-    __cardinality__: Cardinality.One;
-  }> & {
-    __kind__: ExpressionKind.ForVar;
-    __id__: number;
-  };
+export type $expr_ForVar<
+  Type extends MaterialType = MaterialType
+> = BaseExpression<{
+  __element__: Type;
+  __cardinality__: Cardinality.One;
+}> & {
+  __kind__: ExpressionKind.ForVar;
+  __id__: number;
+};
 
 let forVarId = 0;
 
@@ -47,7 +48,7 @@ function _for<
   const forVar: $expr_ForVar<IteratorSet["__element__"]> = {
     __kind__: ExpressionKind.ForVar,
     __id__: forVarId++,
-    __element__: set["__element__"],
+    __element__: set.__element__,
     __cardinality__: Cardinality.One,
     toEdgeQL,
   };
@@ -56,8 +57,8 @@ function _for<
 
   return {
     __kind__: ExpressionKind.For,
-    __element__: returnExpr["__element__"],
-    __cardinality__: returnExpr["__cardinality__"],
+    __element__: returnExpr.__element__,
+    __cardinality__: returnExpr.__cardinality__,
     __iterSet__: set,
     __expr__: returnExpr,
     __forVar__: forVar,

@@ -13,7 +13,7 @@ import {
   LocalDateTime,
   LocalTime,
 } from "edgedb/src/index.node";
-import {$expr_PathLeaf, $expr_PathNode, $pathify} from "./path";
+import {$expr_PathLeaf, $expr_PathNode, $expr_TypeIntersection} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
@@ -32,7 +32,8 @@ export type SomeExpression =
   | $expr_Function
   | $expr_Operator
   | $expr_For
-  | $expr_ForVar;
+  | $expr_ForVar
+  | $expr_TypeIntersection;
 
 // type expr = $expr_ShapeSelect<ObjectTypeExpression, any, any>;
 // type elem = expr["__element__"];
@@ -189,18 +190,14 @@ export function toEdgeQL(this: any) {
             Array.isArray(val) ? val.join(":") : val
           }])`;
         }
-        return `(${(args[0] as any).toEdgeQL()} ${operator} ${(
-          args[1] as any
-        ).toEdgeQL()})`;
+        return `(${(args[0] as any).toEdgeQL()} ${operator} ${(args[1] as any).toEdgeQL()})`;
       case "Postfix":
         return `(${(args[0] as any).toEdgeQL()} ${operator})`;
       case "Prefix":
         return `(${operator} ${(args[0] as any).toEdgeQL()})`;
       case "Ternary":
         if (operator === "IF") {
-          return `(${(args[0] as any).toEdgeQL()} IF ${(
-            args[1] as any
-          ).toEdgeQL()} ELSE ${(args[2] as any).toEdgeQL()})`;
+          return `(${(args[0] as any).toEdgeQL()} IF ${(args[1] as any).toEdgeQL()} ELSE ${(args[2] as any).toEdgeQL()})`;
         } else {
           throw new Error(`Unknown operator: ${operator}`);
         }
@@ -211,12 +208,14 @@ export function toEdgeQL(this: any) {
         );
     }
   } else if (expr.__kind__ === ExpressionKind.For) {
-    return `FOR ${expr.__forVar__.toEdgeQL()} IN {${(
-      expr.__iterSet__ as any
-    ).toEdgeQL()}}
+    return `FOR ${expr.__forVar__.toEdgeQL()} IN {${(expr.__iterSet__ as any).toEdgeQL()}}
 UNION (${expr.__expr__.toEdgeQL()})`;
   } else if (expr.__kind__ === ExpressionKind.ForVar) {
     return `__forVar_${expr.__id__}`;
+  } else if (expr.__kind__ === ExpressionKind.TypeIntersection) {
+    return `${(expr.__expr__ as any).toEdgeQL()}[IS ${
+      expr.__element__.__name__
+    }]`;
   } else {
     util.assertNever(
       expr,
