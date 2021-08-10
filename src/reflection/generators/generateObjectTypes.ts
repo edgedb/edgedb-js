@@ -145,6 +145,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
       staticType: CodeFragment[];
       runtimeType: CodeFragment[];
       key: string;
+      isExclusive: boolean;
       kind: "link" | "property";
       lines: Line[];
     };
@@ -161,6 +162,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
         runtimeType,
         card,
         kind: ptr.kind,
+        isExclusive: ptr.is_exclusive,
         lines: (ptr.pointers ?? [])
           .filter((p) => p.name !== "target" && p.name !== "source")
           .map(ptrToLine),
@@ -184,7 +186,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
             body.writeln(
               frag`${quote(line.key)}: $.LinkDesc<${line.staticType}, ${
                 line.card
-              }, {}>;`
+              }, {}, ${`${line.isExclusive}`}>;`
             );
           } else {
             body.writeln(
@@ -201,13 +203,13 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
                 );
               }
             });
-            body.writeln([`}>;`]);
+            body.writeln([`}, ${`${line.isExclusive}`}>;`]);
           }
         } else {
           body.writeln(
             frag`${quote(line.key)}: $.PropertyDesc<${line.staticType}, ${
               line.card
-            }>;`
+            }, ${`${line.isExclusive}`}>;`
           );
         }
       }
@@ -236,7 +238,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     body.writeln([`);`]);
     body.nl();
     body.writeln(
-      frag`export const ${literal} = _.syntax.$expr_PathNode(_.syntax.$toSet(${ref}, $.Cardinality.Many), null);`
+      frag`export const ${literal} = _.syntax.$expr_PathNode(_.syntax.$toSet(${ref}, $.Cardinality.Many), null, false);`
     );
     body.nl();
     body.nl();

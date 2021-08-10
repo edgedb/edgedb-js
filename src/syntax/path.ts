@@ -63,13 +63,15 @@ export type $pathify<
           string]: Root["__element__"]["__shape__"][k] extends PropertyDesc
           ? $expr_PathLeaf<
               getChildOfObjectTypeSet<Root, k>,
-              {type: $expr_PathNode<Root, Parent>; linkName: k}
+              {type: $expr_PathNode<Root, Parent>; linkName: k},
+              Root["__element__"]["__shape__"][k]["exclusive"]
             >
           : Root["__element__"]["__shape__"][k] extends LinkDesc
           ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
             ? $expr_PathNode<
                 getChildOfObjectTypeSet<Root, k>,
-                {type: $expr_PathNode<Root, Parent>; linkName: k}
+                {type: $expr_PathNode<Root, Parent>; linkName: k},
+                Root["__element__"]["__shape__"][k]["exclusive"]
               >
             : never
           : never;
@@ -91,41 +93,41 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
       Object.defineProperty(root, key, {
         get() {
           return $expr_PathLeaf(
-            $toSet(
-              ptr.target,
-              cardinalityUtil.multiplyCardinalities(
+            {
+              __element__: ptr.target,
+              __cardinality__: cardinalityUtil.multiplyCardinalities(
                 root.__cardinality__,
                 ptr.cardinality
-              )
-            ),
+              ),
+            },
             {
               linkName: key,
               type: root,
-            }
+            },
+            ptr.exclusive
           );
         },
         enumerable: true,
       });
     } else {
-      Object.defineProperties(root, {
-        [key]: {
-          get: () => {
-            return $expr_PathNode(
-              $toSet(
-                ptr.target,
-                cardinalityUtil.multiplyCardinalities(
-                  root.__cardinality__,
-                  ptr.cardinality
-                )
+      Object.defineProperty(root, key, {
+        get: () => {
+          return $expr_PathNode(
+            {
+              __element__: ptr.target,
+              __cardinality__: cardinalityUtil.multiplyCardinalities(
+                root.__cardinality__,
+                ptr.cardinality
               ),
-              {
-                linkName: key,
-                type: root,
-              }
-            );
-          },
-          enumerable: true,
+            },
+            {
+              linkName: key,
+              type: root,
+            },
+            ptr.exclusive
+          );
         },
+        enumerable: true,
       });
     }
   }
@@ -134,44 +136,68 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
 
 export type $expr_PathNode<
   Root extends ObjectTypeSet = ObjectTypeSet,
-  Parent extends PathParent | null = PathParent | null
+  Parent extends PathParent | null = PathParent | null,
+  Exclusive extends boolean = boolean
 > = BaseExpression<Root> & {
   __parent__: Parent;
   __kind__: ExpressionKind.PathNode;
+  __exclusive__: Exclusive;
 };
-// create non-leaf path node
 export const $expr_PathNode = <
   Root extends ObjectTypeSet,
-  Parent extends PathParent
+  Parent extends PathParent,
+  Exclusive extends boolean = boolean
 >(
-  _root: Root,
-  parent: PathParent | null
-): $expr_PathNode<Root, Parent> => {
-  const root: any = {..._root};
-  root.__parent__ = parent as any;
-  root.__kind__ = ExpressionKind.PathNode;
-  util.defineMethod(root, "toEdgeQL", toEdgeQL);
-  return $pathify(root) as any;
+  root: Root,
+  parent: PathParent | null,
+  exclusive: Exclusive
+): $expr_PathNode<Root, Parent, Exclusive> => {
+  // return $pathify({
+  //   __kind__: ExpressionKind.PathNode,
+  //   __element__: root.__element__,
+  //   __cardinality__: root.__cardinality__,
+  //   __parent__: parent,
+  //   toEdgeQL,
+  // }) as any;
+  return $pathify({
+    __kind__: ExpressionKind.PathNode,
+    __element__: root.__element__,
+    __cardinality__: root.__cardinality__,
+    __parent__: parent,
+    __exclusive__: exclusive,
+    toEdgeQL,
+  }) as any;
+  // const root: any = {..._root};
+  // root.__parent__ = parent as any;
+  // root.__kind__ = ExpressionKind.PathNode;
+  // util.defineMethod(root, "toEdgeQL", toEdgeQL);
+  // return $pathify(root) as any;
 };
 
 export type $expr_PathLeaf<
   Root extends TypeSet = TypeSet,
-  Parent extends PathParent = PathParent
+  Parent extends PathParent = PathParent,
+  Exclusive extends boolean = boolean
 > = BaseExpression<Root> & {
   __kind__: ExpressionKind.PathLeaf;
   __parent__: Parent;
+  __exclusive__: Exclusive;
 };
-// create leaf (should only be used internally)
 export const $expr_PathLeaf = <
   Root extends TypeSet,
-  Parent extends PathParent
+  Parent extends PathParent,
+  Exclusive extends boolean = boolean
 >(
-  _root: Root,
-  parent: PathParent | null
-): $expr_PathLeaf<Root, Parent> => {
-  const leaf: $expr_PathLeaf<Root, Parent> = _root as any;
-  util.defineMethod(leaf, "toEdgeQL", toEdgeQL);
-  leaf.__parent__ = parent as any;
-  leaf.__kind__ = ExpressionKind.PathLeaf;
-  return leaf;
+  root: Root,
+  parent: PathParent | null,
+  exclusive: Exclusive
+): $expr_PathLeaf<Root, Parent, Exclusive> => {
+  return {
+    __kind__: ExpressionKind.PathLeaf,
+    __element__: root.__element__,
+    __cardinality__: root.__cardinality__,
+    __parent__: parent,
+    __exclusive__: exclusive,
+    toEdgeQL,
+  } as any;
 };

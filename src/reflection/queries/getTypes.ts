@@ -11,9 +11,8 @@ export type Pointer = {
   required: boolean;
   name: string;
   expr: string | null;
-
   target_id: UUID;
-
+  is_exclusive: boolean;
   pointers: ReadonlyArray<Pointer> | null;
 };
 
@@ -108,11 +107,9 @@ export async function getTypes(
         realCardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
         name,
         expr,
-
         target_id := .target.id,
-
         kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property',
-
+        is_exclusive := exists (select .constraints filter .name = 'std::exclusive'),
         [IS Link].pointers: {
           cardinality,
           realCardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
@@ -120,7 +117,7 @@ export async function getTypes(
           name,
           expr,
           target_id := .target.id,
-          kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property',
+          kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property'
         } FILTER @is_owned,
       } FILTER @is_owned,
 

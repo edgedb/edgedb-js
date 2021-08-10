@@ -1,5 +1,3 @@
-// import * as edgedb from "edgedb";
-import {assert} from "console";
 import {
   Cardinality,
   ExpressionKind,
@@ -181,4 +179,77 @@ test("offset", () => {
 
   const r1 = q.offset(5);
   expect(r1.__modifier__.expr.__element__.__name__).toEqual("std::int64");
+});
+
+test("infer cardinality", () => {
+  const q = e.select(e.Hero);
+  // q.__element__.__kind__;
+  const q2 = q.filter(e.eq(e.Hero.name, e.str("asdf")));
+  const _f2: typeutil.assertEqual<
+    typeof q2["__cardinality__"],
+    Cardinality.AtMostOne
+  > = true;
+  expect(q2.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const u3 = e.uuid("asdf");
+  const q3 = q.filter(e.eq(e.Hero.id, u3));
+  const _f3: typeutil.assertEqual<
+    typeof q3["__cardinality__"],
+    Cardinality.AtMostOne
+  > = true;
+  expect(q3.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const q4 = q2.secret_identity;
+  const _f4: typeutil.assertEqual<
+    typeof q4["__cardinality__"],
+    Cardinality.AtMostOne
+  > = true;
+  expect(q4.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const q5 = q.filter(e.eq(e.Hero.secret_identity, e.str("asdf")));
+  const _f5: typeutil.assertEqual<
+    typeof q5["__cardinality__"],
+    Cardinality.Many
+  > = true;
+  expect(q5.__cardinality__).toEqual(Cardinality.Many);
+
+  const q6 = e
+    .select(e.Villain.nemesis)
+    .filter(e.eq(e.Villain.nemesis.name, e.str("asdf")));
+  const _f6: typeutil.assertEqual<
+    typeof q6["__cardinality__"],
+    Cardinality.AtMostOne
+  > = true;
+  expect(q6.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const strs = e.set(e.str("asdf"), e.str("qwer"));
+  const q7 = e.select(e.Villain).filter(e.eq(e.Villain.name, strs));
+  const _f7: typeutil.assertEqual<
+    typeof q7["__cardinality__"],
+    Cardinality.Many
+  > = true;
+  expect(q7.__cardinality__).toEqual(Cardinality.Many);
+
+  const expr8 = e.select(e.Villain, {id: true, name: true});
+  const q8 = e.select(expr8).filter(e.eq(expr8.name, e.str("asdf")));
+  const _f8: typeutil.assertEqual<
+    typeof q8["__cardinality__"],
+    Cardinality.AtMostOne
+  > = true;
+  expect(q8.__cardinality__).toEqual(Cardinality.AtMostOne);
+
+  const expr9 = e.select(e.Villain, {id: true, name: true});
+  const q9 = e.select(expr9).filter(e.eq(e.Villain.name, e.str("asdf")));
+  const _f9: typeutil.assertEqual<
+    typeof q9["__cardinality__"],
+    Cardinality.Many
+  > = true;
+  expect(q9.__cardinality__).toEqual(Cardinality.Many);
+
+  const q10 = e.select(e.Villain).filter(e.eq(e.Villain.name, e.set(e.$str)));
+  const _f10: typeutil.assertEqual<
+    typeof q10["__cardinality__"],
+    Cardinality.Empty
+  > = true;
+  expect(q10.__cardinality__).toEqual(Cardinality.Empty);
 });

@@ -1,6 +1,13 @@
 // tslint:disable:no-console
 import e from "./generated/example";
+import * as edgedb from "edgedb";
 
+// async function run() {
+//   const asdf = await edgedb.connect();
+//   const pool = await edgedb.createPool();
+//   pool.query<{asdf: string}>(`asdf`);
+//   asdf.query<{asdf: string}>(`asdf`);
+// }
 const q1 = e.select(
   e.Person,
   {
@@ -17,6 +24,8 @@ const q1 = e.select(
 type q1 = typeof q1;
 
 console.log(q1);
+
+// e.Hero.name.
 
 const asdf = q1
   .filter(e.eq(e.Person.name, e.str("Iron Man")))

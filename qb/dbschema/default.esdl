@@ -22,9 +22,17 @@ module default {
   }
 
   type Movie {
+    property genre -> Genre;
     property rating -> float64;
     required property title -> str;
     multi link characters extending movie_character -> Person;
+    link profile -> Profile {
+      constraint exclusive;
+    }
+  }
+
+  type Profile {
+    property plot_summary -> str;
   }
 
   type MovieShape {
