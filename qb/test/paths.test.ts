@@ -1,5 +1,8 @@
 import e, {$toSet, $expr_PathNode} from "../generated/example";
 import {reflection as $} from "edgedb";
+import {ExpressionKind, typeutil} from "reflection";
+import {$Hero} from "generated/example/modules/default";
+import {assert} from "console";
 
 test("path structure", () => {
   const Hero = e.default.Hero;
@@ -72,4 +75,12 @@ test("path structure", () => {
   expect(Hero.villains.__parent__.type.__element__.__name__).toEqual(
     "default::Hero"
   );
+});
+
+test("is", () => {
+  const hero = e.Person.$is(e.Hero);
+  const f1: typeutil.assertEqual<typeof hero["__element__"], typeof $Hero> =
+    true;
+  expect(hero.__element__.__name__).toEqual("default::Hero");
+  expect(hero.__element__.__kind__).toEqual(ExpressionKind.TypeIntersection);
 });

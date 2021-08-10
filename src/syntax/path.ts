@@ -1,3 +1,4 @@
+import {$Hero, $Person} from "@generated/modules/default";
 import {
   cardinalityUtil,
   Cardinality,
@@ -142,6 +143,23 @@ export type $expr_PathNode<
   __parent__: Parent;
   __kind__: ExpressionKind.PathNode;
   __exclusive__: Exclusive;
+} & PathNodeMethods<Root>;
+
+interface PathNodeMethods<Self extends TypeSet> {
+  __element__: Self["__element__"];
+  __cardinality__: Self["__cardinality__"];
+  $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
+}
+
+export type $expr_TypeIntersection<
+  Expr extends TypeSet = TypeSet,
+  Intersection extends ObjectTypeExpression = ObjectTypeExpression
+> = BaseExpression<{
+  __element__: Intersection["__element__"];
+  __cardinality__: Expr["__cardinality__"];
+}> & {
+  __kind__: ExpressionKind.TypeIntersection;
+  __expr__: Expr;
 };
 export const $expr_PathNode = <
   Root extends ObjectTypeSet,
