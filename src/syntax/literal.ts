@@ -7,12 +7,11 @@ import {
 } from "reflection";
 import {toEdgeQL} from "./toEdgeQL";
 
-export type $expr_Literal<
-  Type extends MaterialType = MaterialType
-> = BaseExpression<TypeSet<Type, Cardinality.One>> & {
-  __kind__: ExpressionKind.Literal;
-  __value__: Type["__tstype__"];
-};
+export type $expr_Literal<Type extends MaterialType = MaterialType> =
+  BaseExpression<TypeSet<Type, Cardinality.One>> & {
+    __kind__: ExpressionKind.Literal;
+    __value__: Type["__tstype__"];
+  };
 
 export const $expr_Literal = <T extends MaterialType>(
   type: T,

@@ -26,17 +26,17 @@ export const generateScalars = async (params: GeneratorParams) => {
     const literal = getRef(type.name, {prefix: ""});
 
     if (type.name === "std::anyenum") {
-      sc.writeln(frag`
-const ANYENUM_SYMBOL: unique symbol = Symbol("std::anyenum");
-export interface ${ref}<
-  TsType = unknown,
-  Name extends string = string,
-  Values extends [string, ...string[]] = [string, ...string[]]
-> extends $.ScalarType<Name, TsType> {
-  [ANYENUM_SYMBOL]: true;
-  __values__: Values;
-}`);
-      sc.nl();
+      //       sc.writeln(frag`
+      // const ANYENUM_SYMBOL: unique symbol = Symbol("std::anyenum");
+      // export interface ${ref}<
+      //   TsType = unknown,
+      //   Name extends string = string,
+      //   Values extends [string, ...string[]] = [string, ...string[]]
+      // > extends $.ScalarType<Name, TsType> {
+      //   [ANYENUM_SYMBOL]: true;
+      //   __values__: Values;
+      // }`);
+      //       sc.nl();
       continue;
     }
 
@@ -45,10 +45,12 @@ export interface ${ref}<
 
       if (scalarType.children.length) {
         // is abstract
-        const children = scalarType.children.map((desc) => getRef(desc.name));
+        const children = scalarType.children.map((desc) =>
+          desc.name === "std::anyenum" ? "$.EnumType" : getRef(desc.name)
+        );
         sc.writeln(frag`export type ${ref} = ${joinFrags(children, " | ")};`);
         sc.writeln(
-          frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}");`
+          frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}", _.syntax.literal);`
         );
         sc.nl();
 
@@ -60,7 +62,7 @@ export interface ${ref}<
           frag`export interface ${ref} extends ${joinFrags(bases, ", ")} {}`
         );
         sc.writeln(
-          frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}");`
+          frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}", _.syntax.literal);`
         );
         sc.nl();
 
@@ -72,7 +74,7 @@ export interface ${ref}<
 
     // generate enum
     if (type.enum_values && type.enum_values.length) {
-      sc.writeln(frag`export enum ${ref}_Enum {`);
+      sc.writeln(frag`export enum ${ref}λEnum {`);
       sc.indented(() => {
         for (const val of type.enum_values) {
           sc.writeln(frag`${toIdent(val)} = ${quote(val)},`);
@@ -80,16 +82,13 @@ export interface ${ref}<
       });
       sc.writeln([`}`]);
 
-      const valuesArr = `[${type.enum_values
-        .map((v) => quote(v))
-        .join(", ")}]`;
       sc.writeln(
-        frag`export type ${ref} = typeof ${ref}_Enum & ${getRef(
-          "std::anyenum"
-        )}<${ref}_Enum, "${type.name}", ${valuesArr}>;`
+        frag`export type ${ref} = typeof ${ref}λEnum & $.EnumType<${quote(
+          type.name
+        )}, ${ref}λEnum, \`\${${ref}λEnum}\`>;`
       );
       sc.writeln(
-        frag`export const ${literal}: ${ref} = {...${ref}_Enum, __values__: ${valuesArr}} as any;`
+        frag`export const ${literal} = $.makeType<${ref}>(_.spec, "${type.id}", _.syntax.literal);`
       );
 
       sc.nl();
@@ -104,11 +103,11 @@ export interface ${ref}<
       frag`export type ${ref} = $.ScalarType<"${type.name}", ${tsType}>;`
     );
     sc.writeln(
-      frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}");`
+      frag`export const ${literal} = $.makeType<${ref}>(_.spec, "${type.id}", _.syntax.literal);`
     );
-    sc.writeln(
-      frag`export const ${literal} = <T extends ${tsType}>(val: T) => _.syntax.literal<$.ScalarType<"${type.name}", T>>(${ref} as any, val);`
-    );
+    // sc.writeln(
+    //   frag`export const ${literal} = <T extends ${tsType}>(val: T) => _.syntax.literal<$.ScalarType<"${type.name}", T>>(${ref} as any, val);`
+    // );
 
     if (casts.implicitCastFromMap[type.id]?.length) {
       sc.writeln(
@@ -128,7 +127,6 @@ export interface ${ref}<
     // sc.writeln(`  __name__: "${type.name}",`);
     // sc.writeln(`} as any;`);
 
-    sc.addExport(ref, `$${_name}`);
     sc.addExport(literal, _name);
 
     sc.nl();

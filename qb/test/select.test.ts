@@ -3,7 +3,7 @@ import {
   ExpressionKind,
   TypeKind,
   typeutil,
-} from "edgedb/src/reflection";
+} from "../../src/reflection";
 import e, {is, select} from "../generated/example";
 
 test("basic select", () => {
@@ -114,8 +114,10 @@ test("polymorphism", () => {
   );
 
   type poly = typeof query["__element__"]["__polys__"][0];
-  const f1: typeutil.assertEqual<poly["params"], {secret_identity: true}> =
-    true;
+  const f1: typeutil.assertEqual<
+    poly["params"],
+    {secret_identity: true}
+  > = true;
 
   type result = typeof query["__element__"]["__tstype__"];
   const f2: typeutil.assertEqual<
@@ -144,15 +146,20 @@ test("limit inference", () => {
   const _f1: typeutil.assertEqual<c1, Cardinality.AtMostOne> = true;
   expect(r1.__cardinality__).toEqual(Cardinality.AtMostOne);
 
-  const r2 = e.select(e.Hero, {name: true}).limit(e.int64(1));
+  const r2 = e.select(e.Hero, {name: true}).limit(e.int64(0));
   type c2 = typeof r2["__cardinality__"];
-  const _f2: typeutil.assertEqual<c2, Cardinality.AtMostOne> = true;
-  expect(r2.__cardinality__).toEqual(Cardinality.AtMostOne);
+  const _f2: typeutil.assertEqual<c2, Cardinality.Empty> = true;
+  expect(r2.__cardinality__).toEqual(Cardinality.Empty);
 
   const r3 = e.select(e.Hero, {name: true}).limit(e.int64(2));
   type c3 = typeof r3["__cardinality__"];
   const _f3: typeutil.assertEqual<c3, Cardinality.Many> = true;
   expect(r3.__cardinality__).toEqual(Cardinality.Many);
+
+  const r4 = e.select(e.Hero, {name: true}).limit(e.set(e.int64(1)));
+  type c4 = typeof r4["__cardinality__"];
+  const _f4: typeutil.assertEqual<c4, Cardinality.AtMostOne> = true;
+  expect(r4.__cardinality__).toEqual(Cardinality.AtMostOne);
 });
 
 test("limit literal inference", () => {
@@ -246,7 +253,7 @@ test("infer cardinality", () => {
   > = true;
   expect(q9.__cardinality__).toEqual(Cardinality.Many);
 
-  const q10 = e.select(e.Villain).filter(e.eq(e.Villain.name, e.set(e.$str)));
+  const q10 = e.select(e.Villain).filter(e.eq(e.Villain.name, e.set(e.str)));
   const _f10: typeutil.assertEqual<
     typeof q10["__cardinality__"],
     Cardinality.Empty

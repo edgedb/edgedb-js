@@ -7,13 +7,20 @@ import {
   TypeKind,
   util,
 } from "reflection";
-import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
+import {
+  Duration,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+} from "edgedb/src/index.node";
 import {$expr_PathLeaf, $expr_PathNode, $expr_TypeIntersection} from "./path";
 import {$expr_Literal} from "./literal";
 import {$expr_Set} from "./set";
 import {$expr_Cast} from "./cast";
 import {$expr_Select, ModifierKind} from "./select";
 import {$expr_Function, $expr_Operator} from "./funcops";
+import {$expr_For} from "./for";
+import {$expr_ForVar} from "@generated/syntax/for";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -24,6 +31,8 @@ export type SomeExpression =
   | $expr_Select
   | $expr_Function
   | $expr_Operator
+  | $expr_For
+  | $expr_ForVar
   | $expr_TypeIntersection;
 
 // type expr = $expr_ShapeSelect<ObjectTypeExpression, any, any>;
@@ -90,6 +99,7 @@ function shapeToEdgeQL(
   const finalLines = lines.length === 0 ? ["id"] : lines;
   return `{\n${finalLines.join("\n")}\n${outerSpacing}}`;
 }
+
 export function toEdgeQL(this: any) {
   const expr: SomeExpression = this;
   if (
@@ -174,18 +184,20 @@ export function toEdgeQL(this: any) {
     const args = expr.__args__;
     switch (expr.__opkind__) {
       case "Infix":
-        return `(${(args[0] as any).toEdgeQL()} ${operator} ${(
-          args[1] as any
-        ).toEdgeQL()})`;
+        if (operator === "[]") {
+          const val = (args[1] as any).__value__;
+          return `(${(args[0] as any).toEdgeQL()}[${
+            Array.isArray(val) ? val.join(":") : val
+          }])`;
+        }
+        return `(${(args[0] as any).toEdgeQL()} ${operator} ${(args[1] as any).toEdgeQL()})`;
       case "Postfix":
         return `(${(args[0] as any).toEdgeQL()} ${operator})`;
       case "Prefix":
         return `(${operator} ${(args[0] as any).toEdgeQL()})`;
       case "Ternary":
         if (operator === "IF") {
-          return `(${(args[0] as any).toEdgeQL()} IF ${(
-            args[1] as any
-          ).toEdgeQL()} ELSE ${(args[2] as any).toEdgeQL()})`;
+          return `(${(args[0] as any).toEdgeQL()} IF ${(args[1] as any).toEdgeQL()} ELSE ${(args[2] as any).toEdgeQL()})`;
         } else {
           throw new Error(`Unknown operator: ${operator}`);
         }
@@ -195,19 +207,27 @@ export function toEdgeQL(this: any) {
           new Error(`Unknown operator kind: ${expr.__opkind__}`)
         );
     }
+  } else if (expr.__kind__ === ExpressionKind.For) {
+    return `FOR ${expr.__forVar__.toEdgeQL()} IN {${(expr.__iterSet__ as any).toEdgeQL()}}
+UNION (${expr.__expr__.toEdgeQL()})`;
+  } else if (expr.__kind__ === ExpressionKind.ForVar) {
+    return `__forVar_${expr.__id__}`;
   } else if (expr.__kind__ === ExpressionKind.TypeIntersection) {
     return `${(expr.__expr__ as any).toEdgeQL()}[IS ${
       expr.__element__.__name__
     }]`;
   } else {
-    util.assertNever(expr, new Error(`Unrecognized expression kind: ${expr}`));
+    util.assertNever(
+      expr,
+      new Error(`Unrecognized expression kind: "${(expr as any).__kind__}"`)
+    );
   }
 }
 
 export function literalToEdgeQL(type: MaterialType, val: any): string {
   let stringRep;
   if (typeof val === "string") {
-    stringRep = `'${val}'`;
+    stringRep = JSON.stringify(val);
   } else if (typeof val === "number") {
     stringRep = `${val.toString()}`;
   } else if (typeof val === "boolean") {

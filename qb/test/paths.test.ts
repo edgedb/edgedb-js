@@ -1,5 +1,5 @@
 import e, {$toSet, $expr_PathNode} from "../generated/example";
-import {reflection as $} from "edgedb";
+import {reflection as $} from "edgedb/src/index.node";
 
 import {$Hero} from "generated/example/modules/default";
 

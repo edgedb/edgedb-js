@@ -1,6 +1,6 @@
 import {Connection} from "../../ifaces";
 import {StrictMap} from "../strictMap";
-import {typeutil} from "reflection";
+import {typeutil} from "../../reflection";
 
 export type Typemod = "SetOfType" | "OptionalType" | "SingletonType";
 

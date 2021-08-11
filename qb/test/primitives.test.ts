@@ -8,17 +8,17 @@ import e, {
 } from "../generated/example";
 
 test("primitive types", () => {
-  expect(e.$int16.__name__).toEqual("std::int16");
+  expect(e.int16.__name__).toEqual("std::int16");
   // expect(e.std.).toEqual("std::int64");
 });
 
 test("collection types", () => {
-  const arrayType = $Array(e.$str);
+  const arrayType = e.array(e.str);
   expect(arrayType.__name__).toEqual("array<std::str>");
-  const named = $NamedTuple({str: e.$str});
+  const named = e.namedTuple({str: e.str});
   expect(named.__name__).toEqual("tuple<str: std::str>");
   expect(named.__shape__.str.__name__).toEqual("std::str");
-  const unnamed = $Tuple([e.$str, e.$int64]);
+  const unnamed = e.tuple([e.str, e.int64]);
   expect(unnamed.__name__).toEqual("tuple<std::str, std::int64>");
   expect(unnamed.__items__[0].__name__).toEqual("std::str");
   expect(unnamed.__items__[1].__name__).toEqual("std::int64");
@@ -26,37 +26,37 @@ test("collection types", () => {
 
 test("scalar type merging", () => {
   type _t1 = getSharedParentPrimitiveVariadic<
-    [typeof e.std.$str, typeof e.std.$str]
+    [typeof e.std.str, typeof e.std.str]
   >;
-  const _f1: typeutil.assertEqual<_t1, typeof e.std.$str> = true;
+  const _f1: typeutil.assertEqual<_t1, typeof e.std.str> = true;
   type _t2 = getSharedParentPrimitiveVariadic<
-    [typeof e.std.$str, typeof e.std.$int32]
+    [typeof e.std.str, typeof e.std.int32]
   >;
   const _f2: typeutil.assertEqual<_t2, never> = true;
   type _t3 = getSharedParentPrimitiveVariadic<
-    [typeof e.std.$int16, typeof e.std.$int32]
+    [typeof e.std.int16, typeof e.std.int32]
   >;
-  const _f3: typeutil.assertEqual<_t3, typeof e.$int32> = true;
+  const _f3: typeutil.assertEqual<_t3, typeof e.int32> = true;
   type _t4 = getSharedParentPrimitiveVariadic<
-    [typeof e.std.$int64, typeof e.std.$float32]
+    [typeof e.std.int64, typeof e.std.float32]
   >;
-  const _f4: typeutil.assertEqual<_t4, typeof e.$float64> = true;
+  const _f4: typeutil.assertEqual<_t4, typeof e.float64> = true;
   type _t5 = getSharedParentPrimitiveVariadic<
-    [$Array<typeof e.std.$int64>, $Array<typeof e.std.$float32>]
+    [$Array<typeof e.std.int64>, $Array<typeof e.std.float32>]
   >;
-  const _f5: typeutil.assertEqual<_t5, $Array<typeof e.$float64>> = true;
+  const _f5: typeutil.assertEqual<_t5, $Array<typeof e.float64>> = true;
   type _t6 = getSharedParentPrimitiveVariadic<
-    [$Tuple<[typeof e.std.$int64]>, $Tuple<[typeof e.std.$float32]>]
+    [$Tuple<[typeof e.std.int64]>, $Tuple<[typeof e.std.float32]>]
   >;
-  const _f6: typeutil.assertEqual<_t6, $Tuple<[typeof e.$float64]>> = true;
+  const _f6: typeutil.assertEqual<_t6, $Tuple<[typeof e.float64]>> = true;
   type _t7 = getSharedParentPrimitiveVariadic<
     [
-      $NamedTuple<{num: typeof e.std.$int64}>,
-      $NamedTuple<{num: typeof e.std.$float32}>
+      $NamedTuple<{num: typeof e.std.int64}>,
+      $NamedTuple<{num: typeof e.std.float32}>
     ]
   >;
   const _f7: typeutil.assertEqual<
     _t7,
-    $NamedTuple<{num: typeof e.$float64}>
+    $NamedTuple<{num: typeof e.float64}>
   > = true;
 });

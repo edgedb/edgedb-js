@@ -48,16 +48,18 @@ export interface PathParent<
   linkName: string;
 }
 
-// type asdfasdf = $expr_PathNode<ObjectTypeSet, null>;
+type asdfasdf = $expr_PathNode<ObjectTypeSet, PathParent | null>;
+
 // type lkjl = asdfasdf['$is']
+
 export type $pathify<
   Root extends TypeSet,
   Parent extends PathParent | null = null
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
-    ? PathNodeMethods<Root> // Root is literally ObjectTypeSet
+    ? {} // Root is literally ObjectTypeSet
     : ObjectTypeShape extends Root["__element__"]["__shape__"]
-    ? PathNodeMethods<Root>
+    ? {}
     : {
         // & string required to avod typeError on linkName
         [k in keyof Root["__element__"]["__shape__"] &
