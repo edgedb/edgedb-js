@@ -11,6 +11,7 @@ import {
   ExpressionKind,
   mergeObjectTypes,
   SomeObjectType,
+  ScalarType,
 } from "reflection";
 
 // "@generated/" path gets replaced during generation step
@@ -161,3 +162,7 @@ export type getCardsFromExprs<
     ? Exprs[k]["__cardinality__"]
     : never;
 };
+
+export type getPrimitiveBaseType<T extends MaterialType> = T extends ScalarType
+  ? ScalarType<T["__name__"], T["__tstype__"]>
+  : T;

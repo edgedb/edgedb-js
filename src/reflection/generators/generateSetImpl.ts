@@ -35,6 +35,7 @@ import {
   getTypesFromObjectExprs,
   getCardsFromExprs,
   getSharedParentPrimitiveVariadic,
+  getPrimitiveBaseType,
 } from "./set";
 `);
 
@@ -46,7 +47,8 @@ makeSet<
 
 export function set<Type extends MaterialType>(
   type: Type
-): $expr_Set<makeSet<Type, Cardinality.Empty>>;`);
+): $expr_Set<makeSet<Type, Cardinality.Empty>>;
+export function set<Expr extends BaseExpression>(expr: Expr): $expr_Set<Expr>;`);
 
   for (const implicitRootTypeId of implicitCastableRootTypes) {
     code.writeln(frag`export function set<
@@ -84,12 +86,17 @@ export function set<
   Expr extends BaseExpression<TypeSet<AnyTupleType>>,
   Exprs extends [Expr, ...Expr[]]
 >(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;
-export function set<Expr extends PrimitiveExpression, Exprs extends Expr[]>(
+export function set<
+  Expr extends PrimitiveExpression,
+  Exprs extends BaseExpression<
+    TypeSet<getPrimitiveBaseType<Expr["__element__"]>>
+  >[]
+>(
   expr: Expr,
   ...exprs: Exprs
 ): $expr_Set<
   makeSet<
-    Expr["__element__"],
+    getPrimitiveBaseType<Expr["__element__"]>,
     cardinalityUtil.mergeCardinalitiesVariadic<
       getCardsFromExprs<[Expr, ...Exprs]>
     >

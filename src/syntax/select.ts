@@ -194,9 +194,9 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
   ): $expr_Select<
     {
       __element__: Self["__element__"];
-      __cardinality__: Expr["__element__"]["__tstype__"] extends 0
+      __cardinality__: Expr["__element__"]["__tsconsttype__"] extends 0
         ? Cardinality.Empty
-        : Expr["__element__"]["__tstype__"] extends 1
+        : Expr["__element__"]["__tsconsttype__"] extends 1
         ? Cardinality.AtMostOne
         : Self["__cardinality__"];
     },
@@ -331,6 +331,10 @@ function limitFunc(this: any, expr: LimitExpression | number) {
     } else if (expr === 0) {
       card = Cardinality.Empty;
     }
+  }
+
+  if ((expr as any).__kind__ === ExpressionKind.Set) {
+    expr = (expr as any).__exprs__[0];
   }
 
   if ((expr as any).__kind__ === ExpressionKind.Literal) {

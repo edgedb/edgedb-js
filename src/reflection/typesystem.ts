@@ -32,12 +32,14 @@ export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
 
 export interface ScalarType<
   Name extends string = string,
-  TsType extends any = any
+  TsType extends any = any,
+  TsConstType extends TsType = TsType
 > {
   __kind__: TypeKind.scalar;
   __tstype__: TsType;
+  __tsconsttype__: TsConstType;
   __name__: Name;
-  <T extends TsType = TsType>(val: TsType): literal<this & {__tstype__: T}, T>;
+  <T extends TsType = TsType>(val: T): literal<ScalarType<Name, TsType, T>>;
 }
 
 export interface EnumType<
@@ -380,6 +382,10 @@ export type ObjectTypeShape = {
 /// TSTYPE HELPERS
 /////////////////////
 
+type TypeToTsType<Type extends BaseType> = Type extends ScalarType
+  ? Type["__tsconsttype__"]
+  : Type["__tstype__"];
+
 export type setToTsType<Set extends BaseTypeSet> = Set extends makeSet<
   infer Type,
   infer Card
@@ -387,13 +393,13 @@ export type setToTsType<Set extends BaseTypeSet> = Set extends makeSet<
   ? Card extends Cardinality.Empty
     ? null
     : Card extends Cardinality.One
-    ? Type["__tstype__"]
+    ? TypeToTsType<Type>
     : Card extends Cardinality.AtLeastOne
-    ? [Type["__tstype__"], ...Type["__tstype__"][]]
+    ? [TypeToTsType<Type>, ...TypeToTsType<Type>[]]
     : Card extends Cardinality.AtMostOne
-    ? Type["__tstype__"] | null
+    ? TypeToTsType<Type> | null
     : Card extends Cardinality.Many
-    ? Type["__tstype__"][]
+    ? TypeToTsType<Type>[]
     : never
   : never;
 

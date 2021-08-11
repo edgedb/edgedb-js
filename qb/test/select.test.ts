@@ -19,17 +19,15 @@ test("basic shape", () => {
   expect(result.__element__.__params__).toEqual({id: true});
 });
 
-const asdf = e.str("asdf");
-
 const q1 = select(e.Hero, {
   id: true,
   secret_identity: true,
   name: 1 > 0,
   villains: {
     id: true,
-    computed: e.str<"test">("test"),
+    computed: e.str("test"),
   },
-  computed: e.str<"test">("test"),
+  computed: e.str("test"),
 });
 
 test("path construction", () => {
@@ -143,20 +141,25 @@ test("shape type name", () => {
 });
 
 test("limit inference", () => {
-  const r1 = e.select(e.Hero, {name: true}).limit(e.int64<1>(1));
+  const r1 = e.select(e.Hero, {name: true}).limit(e.int64(1));
   type c1 = typeof r1["__cardinality__"];
   const _f1: typeutil.assertEqual<c1, Cardinality.AtMostOne> = true;
   expect(r1.__cardinality__).toEqual(Cardinality.AtMostOne);
 
-  const r2 = e.select(e.Hero, {name: true}).limit(e.int64<1>(1));
+  const r2 = e.select(e.Hero, {name: true}).limit(e.int64(0));
   type c2 = typeof r2["__cardinality__"];
-  const _f2: typeutil.assertEqual<c2, Cardinality.AtMostOne> = true;
-  expect(r2.__cardinality__).toEqual(Cardinality.AtMostOne);
+  const _f2: typeutil.assertEqual<c2, Cardinality.Empty> = true;
+  expect(r2.__cardinality__).toEqual(Cardinality.Empty);
 
-  const r3 = e.select(e.Hero, {name: true}).limit(e.int64<2>(2));
+  const r3 = e.select(e.Hero, {name: true}).limit(e.int64(2));
   type c3 = typeof r3["__cardinality__"];
   const _f3: typeutil.assertEqual<c3, Cardinality.Many> = true;
   expect(r3.__cardinality__).toEqual(Cardinality.Many);
+
+  const r4 = e.select(e.Hero, {name: true}).limit(e.set(e.int64(1)));
+  type c4 = typeof r4["__cardinality__"];
+  const _f4: typeutil.assertEqual<c4, Cardinality.AtMostOne> = true;
+  expect(r4.__cardinality__).toEqual(Cardinality.AtMostOne);
 });
 
 test("limit literal inference", () => {
