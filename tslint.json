@@ -1,13 +1,25 @@
 {
-  "extends": "tslint:recommended",
+  "extends": [
+    "tslint:recommended",
+    "tslint-config-prettier"
+  ],
+  "rulesDirectory": [
+    "tslint-plugin-prettier"
+  ],
   "rules": {
+    "prettier": true,
     "max-line-length": {
-      "options": [79]
+      "options": [
+        79
+      ]
     },
     "new-parens": true,
     "no-arg": true,
     "no-conditional-assignment": true,
-    "no-consecutive-blank-lines": [true, 2],
+    "no-consecutive-blank-lines": [
+      true,
+      2
+    ],
     "no-angle-bracket-type-assertion": false,
     "interface-over-type-literal": false,
     "interface-name": false,
@@ -22,7 +34,12 @@
     "ordered-imports": false,
     "one-line": false,
     "no-bitwise": false,
-    "typedef": [true, "call-signature", "property-declaration", "parameter"],
+    "typedef": [
+      true,
+      "call-signature",
+      "property-declaration",
+      "parameter"
+    ],
     "whitespace": [
       true,
       "check-branch",
