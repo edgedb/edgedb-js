@@ -39,8 +39,9 @@ import {
 } from "./set";
 `);
 
-  code.writeln(frag`type getSetTypeFromExprs<Exprs extends [BaseExpression, ...BaseExpression[]]> =
-makeSet<
+  code.writeln(frag`type getSetTypeFromExprs<
+  Exprs extends [BaseExpression, ...BaseExpression[]]
+> = makeSet<
   getSharedParentPrimitiveVariadic<getTypesFromExprs<Exprs>>,
   cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
 >;
@@ -48,7 +49,9 @@ makeSet<
 export function set<Type extends MaterialType>(
   type: Type
 ): $expr_Set<makeSet<Type, Cardinality.Empty>>;
-export function set<Expr extends BaseExpression>(expr: Expr): $expr_Set<Expr>;`);
+export function set<
+  Expr extends BaseExpression
+>(expr: Expr): $expr_Set<Expr>;`);
 
   for (const implicitRootTypeId of implicitCastableRootTypes) {
     code.writeln(frag`export function set<

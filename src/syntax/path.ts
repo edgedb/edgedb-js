@@ -160,10 +160,11 @@ export type $expr_PathNode<
   __exclusive__: Exclusive;
 };
 
-interface PathNodeMethods<Self extends TypeSet> {
+interface PathNodeMethods<Self extends ObjectTypeSet> {
   __element__: Self["__element__"];
   __cardinality__: Self["__cardinality__"];
   $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
+  // $back: Self['__element__']['']
 }
 
 export type $expr_TypeIntersection<

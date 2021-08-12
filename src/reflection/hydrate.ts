@@ -91,7 +91,7 @@ export function makeType<T extends BaseType>(
   obj.__name__ = type.name;
 
   if (type.name === "anytype") {
-    if (anytype) return (anytype as unknown) as T;
+    if (anytype) return anytype as unknown as T;
     throw new Error("anytype not provided");
   }
 
@@ -114,6 +114,9 @@ export function makeType<T extends BaseType>(
       }
       return shape as any;
     });
+    obj.__params__ = {};
+    obj.__polys__ = [];
+    // obj.__backlinks__ = type.
     return obj;
   } else if (type.kind === "scalar") {
     const scalarObj = ((val: any) => {
@@ -197,7 +200,8 @@ export type mergeObjectTypes<
         `${A["__name__"]} UNION ${B["__name__"]}`,
         mergeObjectShapes<A["__shape__"], B["__shape__"]>,
         null,
-        []
+        [],
+        {[k in keyof A["__backlinks__"] & B["__backlinks__"]]: true}
       >
     : A
   : B extends ObjectType
@@ -208,7 +212,12 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
   a: A,
   b: B
 ): mergeObjectTypes<A, B> {
-  const obj: any = {
+  const sharedBacklinks = Object.keys(a.__backlinks__).filter(
+    (k) => !!b.__backlinks__[k]
+  );
+  const sharedBacklinksObject: {[k: string]: true} = {};
+  for (const k of sharedBacklinks) sharedBacklinksObject[k] = true;
+  const obj: ObjectType = {
     __kind__: TypeKind.object,
     __name__: `${a.__name__} UNION ${b.__name__}`,
     get __shape__() {
@@ -224,6 +233,10 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
       }
       return merged;
     },
+    __params__: {},
+    __polys__: [],
+    __backlinks__: sharedBacklinksObject,
+    __tstype__: undefined as any,
   };
-  return obj;
+  return obj as any;
 }

@@ -58,21 +58,23 @@ export interface EnumType<
 //////////////////
 // export type SomeObjectType = ObjectType;
 
-export type SomeObjectType = {
-  __kind__: TypeKind.object;
-  __tstype__: any;
-  __name__: string;
-  __shape__: ObjectTypeShape;
-  __params__: any;
-  __polys__: any[];
-};
+export type SomeObjectType = ObjectType;
+// {
+//   __kind__: TypeKind.object;
+//   __tstype__: any;
+//   __name__: string;
+//   __shape__: ObjectTypeShape;
+//   __params__: any;
+//   __polys__: any[];
+//   __backlinks__: object
+// };
 
-// ObjectType; //<string, ObjectTypeShape, any, any[]>;;
 export interface ObjectType<
   Name extends string = string,
   Shape extends ObjectTypeShape = ObjectTypeShape,
-  Params extends object | null = object | null,
-  Polys extends Poly[] = Poly[]
+  Params extends object | null = any,
+  Polys extends Poly[] = Poly[],
+  Backlinks extends {[k: string]: true} = {[k: string]: true}
 > {
   __kind__: TypeKind.object;
   __tstype__: computeObjectShape<Shape, Params, Polys>;
@@ -80,15 +82,14 @@ export interface ObjectType<
   __shape__: Shape;
   __params__: Params;
   __polys__: Polys;
+  __backlinks__: Backlinks;
 }
 
-export type objectExprToSelectParams<
-  T extends ObjectTypeExpression
-> = shapeToSelectParams<T["__element__"]["__shape__"]>;
+export type objectExprToSelectParams<T extends ObjectTypeExpression> =
+  shapeToSelectParams<T["__element__"]["__shape__"]>;
 
-export type objectTypeToSelectParams<
-  T extends SomeObjectType
-> = shapeToSelectParams<T["__shape__"]>;
+export type objectTypeToSelectParams<T extends SomeObjectType> =
+  shapeToSelectParams<T["__shape__"]>;
 
 export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
   {
@@ -173,13 +174,12 @@ export type simpleShapeToTs<
   }
 >;
 
-export type shapeElementToTsTypeSimple<
-  El extends PropertyDesc | LinkDesc
-> = El extends PropertyDesc
-  ? propToTsType<El>
-  : El extends LinkDesc<any, any, any, any>
-  ? {id: string}
-  : never;
+export type shapeElementToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
+  El extends PropertyDesc
+    ? propToTsType<El>
+    : El extends LinkDesc<any, any, any, any>
+    ? {id: string}
+    : never;
 
 export type Poly<
   Type extends SomeObjectType = SomeObjectType,
@@ -248,9 +248,8 @@ export type ObjectTypeSet<
   Card extends Cardinality = Cardinality
 > = TypeSet<T, Card>;
 
-export type ObjectTypeExpression<
-  Set extends ObjectTypeSet = ObjectTypeSet
-> = BaseExpression<Set>;
+export type ObjectTypeExpression<Set extends ObjectTypeSet = ObjectTypeSet> =
+  BaseExpression<Set>;
 
 export type PrimitiveType =
   | ScalarType
@@ -403,25 +402,22 @@ export type setToTsType<Set extends BaseTypeSet> = Set extends makeSet<
     : never
   : never;
 
-export type propToTsType<
-  Prop extends PropertyDesc
-> = Prop extends PropertyDesc<infer Type, infer Card>
-  ? setToTsType<makeSet<Type, Card>>
-  : never;
+export type propToTsType<Prop extends PropertyDesc> =
+  Prop extends PropertyDesc<infer Type, infer Card>
+    ? setToTsType<makeSet<Type, Card>>
+    : never;
 
-export type linkToTsType<
-  Link extends LinkDesc<any, any, any, any>
-> = Link extends LinkDesc<infer Type, infer Card, any>
-  ? setToTsType<makeSet<Type, Card>>
-  : never;
+export type linkToTsType<Link extends LinkDesc<any, any, any, any>> =
+  Link extends LinkDesc<infer Type, infer Card, any>
+    ? setToTsType<makeSet<Type, Card>>
+    : never;
 
-export type shapeElementToTsType<
-  El extends PropertyDesc | LinkDesc
-> = El extends PropertyDesc
-  ? propToTsType<El>
-  : El extends LinkDesc<any, any, any, any>
-  ? linkToTsType<El>
-  : never;
+export type shapeElementToTsType<El extends PropertyDesc | LinkDesc> =
+  El extends PropertyDesc
+    ? propToTsType<El>
+    : El extends LinkDesc<any, any, any, any>
+    ? linkToTsType<El>
+    : never;
 
 export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
   ? any
