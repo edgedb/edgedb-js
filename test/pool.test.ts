@@ -94,17 +94,8 @@ test.only("pool.query: basic scalars", async () => {
       `
   );
   expect(res).toEqual([
-    -1,
-    1,
-    0,
-    15,
-    281474976710656,
-    22,
-    -11111,
-    346456723423,
-    -346456723423,
-    2251799813685125,
-    -2251799813685125,
+    -1, 1, 0, 15, 281474976710656, 22, -11111, 346456723423, -346456723423,
+    2251799813685125, -2251799813685125,
   ]);
 
   await pool.close();
@@ -814,7 +805,7 @@ test("pool retry works", async () => {
   const pool = await getPool();
 
   try {
-    let result = await pool.retryingTransaction(async (tx) => {
+    const result = await pool.retryingTransaction(async (tx) => {
       return await tx.querySingle(`SELECT 33*21`);
     });
     expect(result).toEqual(693);

@@ -37,7 +37,7 @@ import {parseConnectArguments} from "../src/con_utils";
 
 test("query: basic scalars", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.query("select {'a', 'bc'}");
     expect(res).toEqual(["a", "bc"]);
@@ -59,17 +59,8 @@ test("query: basic scalars", async () => {
       `
     );
     expect(res).toEqual([
-      -1,
-      1,
-      0,
-      15,
-      281474976710656,
-      22,
-      -11111,
-      346456723423,
-      -346456723423,
-      2251799813685125,
-      -2251799813685125,
+      -1, 1, 0, 15, 281474976710656, 22, -11111, 346456723423, -346456723423,
+      2251799813685125, -2251799813685125,
     ]);
 
     res = await con.query("select <int32>{-1, 0, 1, 10, 2147483647};");
@@ -102,7 +93,7 @@ test("query: basic scalars", async () => {
 
 test("fetch: bigint", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     const testar = [
       BigInt("0"),
@@ -318,7 +309,7 @@ test("fetch: decimal as string", async () => {
   ];
 
   try {
-    const fetched = await con.querySingle(
+    const fetched = await con.querySingle<any>(
       `
       WITH
         inp := <array<str>>$0,
@@ -360,7 +351,7 @@ test("fetch: int64 as string", async () => {
   ];
 
   try {
-    const fetched = await con.querySingle(
+    const fetched = await con.querySingle<any>(
       `
       WITH
         inp := <array<str>>$0,
@@ -399,7 +390,7 @@ test("fetch: bigint as string", async () => {
   ];
 
   try {
-    const fetched = await con.querySingle(
+    const fetched = await con.querySingle<any>(
       `
       WITH
         inp := <array<str>>$0,
@@ -444,7 +435,7 @@ test("fetch: datetime as string", async () => {
   }
 
   try {
-    const fetched = await con.querySingle(
+    const fetched = await con.querySingle<any>(
       `
       WITH
         fmt := 'FMYYYY-FMMM-FMDDTFMHH24:FMMI:FMSS.US AD',
@@ -473,7 +464,7 @@ test("fetch: datetime as string", async () => {
 
 test("fetch: positional args", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     const intCases: Array<[string[], number[]]> = [
       [
@@ -543,7 +534,7 @@ test("fetch: positional args", async () => {
 
 test("fetch: named args", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingle(`select <str>$a`, {a: "123"});
     expect(res).toBe("123");
@@ -580,7 +571,7 @@ test("fetch: named args", async () => {
 
 test("fetch: int overflow", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingle(`
       select <int64>(2^53) - 1;
@@ -616,7 +607,7 @@ test("fetch: int overflow", async () => {
 
 test("fetch: datetime", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingle(`
       with dt := <datetime>'2016-01-10T17:11:01.123Z'
@@ -636,7 +627,7 @@ test("fetch: datetime", async () => {
 
 test("fetch: cal::local_date", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingle(`
       select <cal::local_date>'2016-01-10';
@@ -659,7 +650,7 @@ test("fetch: cal::local_date", async () => {
 
 test("fetch: cal::local_time", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     for (const time of [
       "11:12:13",
@@ -675,7 +666,7 @@ test("fetch: cal::local_time", async () => {
       );
       expect(res[0].toString()).toBe(res[1]);
 
-      const res2 = await con.querySingle(
+      const res2 = await con.querySingle<any>(
         `
         select <cal::local_time>$time;
         `,
@@ -710,9 +701,9 @@ test("fetch: duration", async () => {
   }
 
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
-    const ver = await con.querySingle("select sys::get_version()");
+    const ver = await con.querySingle<any>("select sys::get_version()");
     const isoFormat =
       ver.major > 1 ||
       ver.minor > 0 ||
@@ -735,7 +726,7 @@ test("fetch: duration", async () => {
         expect(formatLegacyDuration(res[0])).toBe(res[1]);
       }
 
-      const res2 = await con.querySingle(
+      const res2 = await con.querySingle<any>(
         `
         select <duration>$time;
         `,
@@ -808,7 +799,7 @@ if (!isDeno) {
     const con = await asyncConnect();
     try {
       // Test encode/decode round trip.
-      const dursFromDb = await con.query(
+      const dursFromDb = await con.query<any>(
         `
         WITH args := array_unpack(<array<duration>>$0)
         SELECT args;
@@ -841,7 +832,7 @@ if (!isDeno) {
 
 test("fetch: tuple", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.query("select ()");
     expect(res).toEqual([[]]);
@@ -893,7 +884,7 @@ test("fetch: object", async () => {
     legacyUUIDMode: true,
   });
 
-  let res;
+  let res: any;
   try {
     res = await con.querySingle(`
       select schema::Function {
@@ -961,7 +952,7 @@ test("fetch: object", async () => {
 
 test("fetch: set of arrays", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingle(`
       select schema::Function {
@@ -1006,7 +997,7 @@ test("fetch: set of arrays", async () => {
 
 test("fetch: object implicit fields", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingle(`
       select schema::Function {
@@ -1040,7 +1031,7 @@ test("fetch: object implicit fields", async () => {
 
 test("fetch: uuid", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingle("SELECT schema::ObjectType.id LIMIT 1");
     expect(typeof res).toBe("string");
@@ -1086,7 +1077,7 @@ test("fetch: enum", async () => {
 
 test("fetch: namedtuple", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingle("select (a := 1)");
     expect(Array.from(res)).toEqual([1]);
@@ -1133,7 +1124,7 @@ test("fetch: namedtuple", async () => {
 
 test("querySingle: basic scalars", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingle("select 'abc'");
     expect(res).toBe("abc");
@@ -1158,7 +1149,7 @@ test("querySingle: basic scalars", async () => {
 
 test("querySingle: arrays", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingle("select [12312312, -1, 123, 0, 1]");
     expect(res).toEqual([12312312, -1, 123, 0, 1]);
@@ -1186,7 +1177,7 @@ test("fetch: long strings", async () => {
   // This test is meant to stress test the ring buffer.
 
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     // A 1mb string.
     res = await con.querySingle("select str_repeat('a', <int64>(10^6));");
@@ -1210,7 +1201,7 @@ test("fetch: long strings", async () => {
 
 test("querySingleJSON", async () => {
   const con = await asyncConnect();
-  let res;
+  let res: any;
   try {
     res = await con.querySingleJSON("select (a := 1)");
     expect(JSON.parse(res)).toEqual({a: 1});

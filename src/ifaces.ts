@@ -61,11 +61,11 @@ export enum BorrowReason {
 
 export interface ReadOnlyExecutor {
   execute(query: string): Promise<void>;
-  query(query: string, args?: QueryArgs): Promise<Set>;
+  query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]>;
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
-  querySingle(query: string, args?: QueryArgs): Promise<any>;
+  querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T>;
   querySingleJSON(query: string, args?: QueryArgs): Promise<string>;
-  queryOne(query: string, args?: QueryArgs): Promise<any>;
+  queryOne<T = unknown>(query: string, args?: QueryArgs): Promise<T>;
   queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
 }
 

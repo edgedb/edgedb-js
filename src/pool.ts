@@ -507,7 +507,7 @@ class PoolShell implements Pool {
     });
   }
 
-  async query(query: string, args?: QueryArgs): Promise<Set> {
+  async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
     return await this.run(async (connection) => {
       return await connection.query(query, args);
     });
@@ -519,13 +519,13 @@ class PoolShell implements Pool {
     });
   }
 
-  async querySingle(query: string, args?: QueryArgs): Promise<any> {
+  async querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T> {
     return await this.run(async (connection) => {
       return await connection.querySingle(query, args);
     });
   }
 
-  async queryOne(query: string, args?: QueryArgs): Promise<any> {
+  async queryOne<T = unknown>(query: string, args?: QueryArgs): Promise<T> {
     // tslint:disable-next-line: no-console
     console.warn(
       "The `queryOne()` method is deprecated and is scheduled to be " +

@@ -42,21 +42,23 @@ run queries.
         );
 
         // Select User objects.
-        let userSet = await conn.query(
+        const userSet = await conn.query(
           "SELECT User {name, dob} FILTER .name = <str>$name",
           { name: "Bob" }
         );
+        userSet; // [{ name: 'Bob', dob: edgedb.LocalDate(1984, 3, 1) }]
 
-        // *userSet* now contains
-        // Set{Object{name := 'Bob',
-        //            dob := datetime.date(1984, 3, 1)}}
-        console.log(userSet);
       } finally {
         conn.close()
       }
     }
 
     main();
+
+TypeScript
+---------------
+
+For details on usage with TypeScript, go to :ref:`edgedb-js-typescript`.
 
 
 Type Conversion
@@ -115,11 +117,8 @@ a certain number of open connections and borrow them when needed.
           "SELECT User {name, dob} FILTER .name = <str>$name",
           { name: "Bob" }
         );
+        userSet; // [{ name: 'Bob', dob: edgedb.LocalDate(1984, 3, 1) }]
 
-        // *userSet* now contains
-        // Set{Object{name := 'Bob',
-        //            dob := datetime.date(1984, 3, 1)}}
-        console.log(userSet);
       } finally {
         await pool.close();
       }
@@ -155,8 +154,8 @@ The ``retryingTransaction()`` API guarantees that:
 2. If a transaction is failed for any of the number of transient errors (i.e.
    a network failure or a concurrent update error), the transaction
    would be retried;
-3. If any other, non-retryable exception occurs, the transaction is rolled back,
-   and the exception is propagated, immediately aborting the
+3. If any other, non-retryable exception occurs, the transaction is rolled
+   back, and the exception is propagated, immediately aborting the
    ``retryingTransaction()`` block.
 
 The key implication of retrying transactions is that the entire

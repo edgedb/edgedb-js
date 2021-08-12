@@ -226,7 +226,7 @@ export class Transaction implements Executor {
     }
   }
 
-  async query(query: string, args?: QueryArgs): Promise<Set> {
+  async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
     if (this._opInProgress) {
       throw borrowError(BorrowReason.QUERY);
     }
@@ -250,7 +250,7 @@ export class Transaction implements Executor {
     }
   }
 
-  async querySingle(query: string, args?: QueryArgs): Promise<any> {
+  async querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T> {
     if (this._opInProgress) {
       throw borrowError(BorrowReason.QUERY);
     }
@@ -262,7 +262,7 @@ export class Transaction implements Executor {
     }
   }
 
-  async queryOne(query: string, args?: QueryArgs): Promise<any> {
+  async queryOne<T = unknown>(query: string, args?: QueryArgs): Promise<T> {
     // tslint:disable-next-line: no-console
     console.warn(
       "The `queryOne()` method is deprecated and is scheduled to be " +
