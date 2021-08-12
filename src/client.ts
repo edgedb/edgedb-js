@@ -27,6 +27,7 @@ import {
   ReadBuffer,
   WriteBuffer,
 } from "./buffer";
+import {versionGreaterThan, versionGreaterThanOrEqual} from "./utils";
 import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {Set} from "./datatypes/set";
@@ -60,8 +61,8 @@ import {
 import {Transaction as LegacyTransaction} from "./legacy_transaction";
 import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 
-const PROTO_VER: [number, number] = [0, 11];
-const PROTO_VER_MIN: [number, number] = [0, 9];
+const PROTO_VER: ProtocolVersion = [0, 11];
+const PROTO_VER_MIN: ProtocolVersion = [0, 9];
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,
@@ -89,32 +90,6 @@ const OLD_ERROR_CODES = new Map([
 ]);
 
 const DEFAULT_MAX_ITERATIONS = 3;
-
-export function versionGreaterThan(
-  left: [number, number],
-  right: [number, number]
-): boolean {
-  if (left[0] > right[0]) {
-    return true;
-  }
-
-  if (left[0] < right[0]) {
-    return false;
-  }
-
-  return left[1] > right[1];
-}
-
-export function versionGreaterThanOrEqual(
-  left: [number, number],
-  right: [number, number]
-): boolean {
-  if (left[0] === right[0] && left[1] === right[1]) {
-    return true;
-  }
-
-  return versionGreaterThan(left, right);
-}
 
 export default function connect(
   dsn?: string | ConnectConfig | null,
@@ -525,7 +500,7 @@ export class ConnectionImpl {
 
   private opInProgress: boolean = false;
 
-  protected protocolVersion: [number, number] = PROTO_VER;
+  protected protocolVersion: ProtocolVersion = PROTO_VER;
 
   /** @internal */
   protected constructor(sock: net.Socket, config: NormalizedConnectConfig) {
@@ -914,7 +889,7 @@ export class ConnectionImpl {
           const lo = this.buffer.readInt16();
           this._parseHeaders();
           this.buffer.finishMessage();
-          const proposed: [number, number] = [hi, lo];
+          const proposed: ProtocolVersion = [hi, lo];
 
           if (
             versionGreaterThan(proposed, PROTO_VER) ||
@@ -1572,7 +1547,7 @@ export class RawConnection extends ConnectionImpl {
   public async rawParse(
     query: string,
     headers?: PrepareMessageHeaders
-  ): Promise<[Buffer, Buffer, [number, number]]> {
+  ): Promise<[Buffer, Buffer, ProtocolVersion]> {
     const result = await this._parse(query, false, false, true, {headers});
     return [result[3]!, result[4]!, this.protocolVersion];
   }

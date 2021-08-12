@@ -31,10 +31,7 @@ import {PartialRetryRule} from "./options";
 
 import {Set} from "./datatypes/set";
 
-export interface ProtocolVersion {
-  major: number;
-  minor: number;
-}
+export type ProtocolVersion = [number, number];
 
 type QueryArgPrimitive =
   | number
