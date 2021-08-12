@@ -77,13 +77,21 @@ Sets
 
 .. js:class:: Set() extends Array
 
-    ``Set`` represents the set of values returned by a query. If a query
-    contained an explicit ``ORDER BY`` clause, the values will be ordered,
-    otherwise no specific ordering is guaranteed.
+    Under the hood, the result of the ``.query`` method is an instance of
+    ``edgedb.Set``. This class represents a set of values returned by a query.
+    If the query contained an explicit ``ORDER BY`` clause, the values will be
+    ordered, otherwise no specific ordering is guaranteed.
 
     This type also allows to differentiate between a set of values and an
     explicit array.
 
+    .. code-block:: js
+
+        const result = await conn.query(`SELECT {0, 1, 2};`);
+        result instanceof edgedb.Set; // true
+        result[0]; // 0
+        result[1]; // 1
+        result[2]; // 2
 
 Arrays
 ======

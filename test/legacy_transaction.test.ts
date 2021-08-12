@@ -124,7 +124,7 @@ test("transaction: nested 01", async () => {
           new errors.DivisionByZeroError().message
         );
 
-        const records2 = await con.query(`
+        const records2 = await con.query<any>(`
           SELECT ${typename} {
             name
           }

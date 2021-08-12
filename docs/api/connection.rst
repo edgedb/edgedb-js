@@ -165,17 +165,17 @@ Connection
                 UNION INSERT MyType { a := x };
             `)
 
-    .. js:method:: query(query: string, args)
+    .. js:method:: query<T>(query: string, args): T[]
 
-        Run a query and return the results as a
-        :js:class:`Set` instance.
+        Run a query and return the results as an array. This method **always**
+        returns an array.
 
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
 
-    .. js:method:: querySingle(query: string, args)
+    .. js:method:: querySingle<T>(query: string, args): T
 
-        Run a singleton-returning query and return its element.
+        Run a singleton-returning query and return the result.
 
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
@@ -463,10 +463,10 @@ Pool
                 UNION INSERT MyType { a := x };
             `)
 
-    .. js:method:: query(query: string, args)
+    .. js:method:: query<T>(query: string, args): T[]
 
-        Acquire a connection, then run a query and return the results as a
-        :js:class:`Set` instance.
+        Acquire a connection, run a query, and return the results as an array.
+        This method **always** returns an array.
 
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
@@ -492,9 +492,9 @@ Pool
                 }
             );
 
-    .. js:method:: querySingle(query: string, args)
+    .. js:method:: querySingle<T>(query: string, args): T
 
-        Acquire a connection, then run a query that returns a single item
+        Acquire a connection, then run a query that returns a singleton
         and return its result.
 
         This method takes :ref:`optional query arguments
