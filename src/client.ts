@@ -63,6 +63,8 @@ import {
 import {Transaction as LegacyTransaction} from "./legacy_transaction";
 import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 
+const IS_NETWORK_ERROR = Symbol("network error");
+
 const PROTO_VER: ProtocolVersion = [0, 12];
 const PROTO_VER_MIN: ProtocolVersion = [0, 9];
 
@@ -223,12 +225,37 @@ export class StandaloneConnection implements Connection {
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     let result: T;
-    for (let iteration = 0; iteration < DEFAULT_MAX_ITERATIONS; ++iteration) {
+
+    bigloop: for (
+      let iteration = 0;
+      iteration < DEFAULT_MAX_ITERATIONS;
+      ++iteration
+    ) {
       const transaction = new Transaction(this);
-      await transaction[START_TRANSACTION_IMPL](iteration !== 0);
       try {
+        await transaction[START_TRANSACTION_IMPL](iteration !== 0);
         result = await action(transaction);
       } catch (err) {
+        if (err[IS_NETWORK_ERROR]) {
+          const rule = this[OPTIONS].retryOptions.getRuleForException(err);
+          const inner = this[INNER];
+
+          for (; iteration + 1 < rule.attempts; ++iteration) {
+            inner.borrowedFor = undefined;
+            try {
+              await inner.reconnect(true);
+              continue bigloop;
+            } catch (e) {
+              err = e;
+              await sleep(rule.backoff(iteration + 1));
+              continue;
+            }
+          }
+
+          inner.borrowedFor = undefined;
+          throw err;
+        }
+
         try {
           await transaction.rollback();
         } catch (rollback_err) {
@@ -238,6 +265,7 @@ export class StandaloneConnection implements Connection {
             throw rollback_err;
           }
         }
+
         if (
           err instanceof errors.EdgeDBError &&
           err.hasTag(errors.SHOULD_RETRY)
@@ -599,12 +627,17 @@ export class ConnectionImpl {
          and so `conn.sock.destroy` would simply close the socket,
          without invoking the 'error' event.
       */
-      this._abortWaiters(new errors.ClientConnectionClosedError());
+      const err = new errors.ClientConnectionClosedError();
+      // @ts-ignore
+      err[IS_NETWORK_ERROR] = true;
+      this._abortWaiters(err);
     }
     this.close();
   }
 
   private _onError(err: Error): void {
+    // @ts-ignore
+    err[IS_NETWORK_ERROR] = true;
     this._abortWaiters(err);
   }
 
