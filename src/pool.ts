@@ -442,8 +442,13 @@ class PoolShell implements Pool {
       "The `acquire()` method is deprecated and is scheduled to be " +
         "removed. Use the query methods on Pool() instead."
     );
+    return this._acquire();
+  }
+
+  private async _acquire(): Promise<PoolConnection> {
     return await this.impl.acquire(this.options);
   }
+
   /**
    * Release a database connection back to the pool.
    */
@@ -453,6 +458,10 @@ class PoolShell implements Pool {
       "The `release()` method is deprecated and is scheduled to be " +
         "removed. Use the query methods on Pool() instead."
     );
+    return this._release(connection);
+  }
+
+  private async _release(connection: Connection): Promise<void> {
     await this.impl.release(connection);
   }
 
@@ -466,12 +475,18 @@ class PoolShell implements Pool {
       "The `run()` method is deprecated and is scheduled to be " +
         "removed. Use the query methods on Pool() instead."
     );
-    const conn = await this.acquire();
+    return this._run(action);
+  }
+
+  private async _run<T>(
+    action: (conection: Connection) => Promise<T>
+  ): Promise<T> {
+    const conn = await this._acquire();
 
     try {
       return await action(conn);
     } finally {
-      await this.release(conn);
+      await this._release(conn);
     }
   }
 
@@ -488,7 +503,7 @@ class PoolShell implements Pool {
   async rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
-    return await this.run(async (connection) => {
+    return await this._run(async (connection) => {
       return await connection.rawTransaction(action);
     });
   }
@@ -496,31 +511,31 @@ class PoolShell implements Pool {
   async retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
-    return await this.run(async (connection) => {
+    return await this._run(async (connection) => {
       return await connection.retryingTransaction(action);
     });
   }
 
   async execute(query: string): Promise<void> {
-    return await this.run(async (connection) => {
+    return await this._run(async (connection) => {
       return await connection.execute(query);
     });
   }
 
   async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
-    return await this.run(async (connection) => {
+    return await this._run(async (connection) => {
       return await connection.query(query, args);
     });
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.run(async (connection) => {
+    return await this._run(async (connection) => {
       return await connection.queryJSON(query, args);
     });
   }
 
   async querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T> {
-    return await this.run(async (connection) => {
+    return await this._run(async (connection) => {
       return await connection.querySingle(query, args);
     });
   }
@@ -535,7 +550,7 @@ class PoolShell implements Pool {
   }
 
   async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
-    return await this.run(async (connection) => {
+    return await this._run(async (connection) => {
       return await connection.querySingleJSON(query, args);
     });
   }
