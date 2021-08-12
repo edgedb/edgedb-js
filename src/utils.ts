@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+import {ProtocolVersion} from "./ifaces";
+
 const idCounter: {[key: string]: number} = {};
 
 export function getUniqueId(prefix: string = ""): string {
@@ -24,4 +26,30 @@ export function getUniqueId(prefix: string = ""): string {
   }
   const id = ++idCounter[prefix];
   return `_edgedb_${prefix}_${id.toString(16)}_`;
+}
+
+export function versionGreaterThan(
+  left: ProtocolVersion,
+  right: ProtocolVersion
+): boolean {
+  if (left[0] > right[0]) {
+    return true;
+  }
+
+  if (left[0] < right[0]) {
+    return false;
+  }
+
+  return left[1] > right[1];
+}
+
+export function versionGreaterThanOrEqual(
+  left: ProtocolVersion,
+  right: ProtocolVersion
+): boolean {
+  if (left[0] === right[0] && left[1] === right[1]) {
+    return true;
+  }
+
+  return versionGreaterThan(left, right);
 }
