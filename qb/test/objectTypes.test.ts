@@ -7,6 +7,7 @@ import {
   mergeObjectTypes,
   typeutil,
 } from "../../src/reflection";
+import {$BaseObject} from "generated/example/modules/std";
 
 const HeroType = e.default.$Hero;
 

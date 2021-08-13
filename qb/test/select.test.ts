@@ -257,4 +257,7 @@ test("infer cardinality", () => {
     Cardinality.Empty
   > = true;
   expect(q10.__cardinality__).toEqual(Cardinality.Empty);
+
+  // test cardinality inference on object equality
+  // e.select(e.Profile).filter(e.eq(e.Profile["<profile[IS default::Movie]"], e.select(e.Profile).limit(1)));
 });

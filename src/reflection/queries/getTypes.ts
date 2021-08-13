@@ -124,7 +124,7 @@ export async function getTypes(
           kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property'
         } FILTER @is_owned,
       } FILTER @is_owned,
-      backlinks := (SELECT Link FILTER .target = Type) {
+      backlinks := (SELECT DETACHED Link FILTER .target = Type) {
         real_cardinality := "AtMostOne" IF EXISTS (select .constraints filter .name = 'std::exclusive') ELSE "Many",
         name := '<' ++ .name ++ '[IS ' ++ std::assert_single(.source.name) ++ ']',
         stub := .name,

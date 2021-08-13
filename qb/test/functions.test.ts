@@ -322,6 +322,7 @@ test("anytype", () => {
     e.array(e.str),
     Cardinality.One
   );
+
   checkFunctionExpr(
     e.array_unpack(e.literal(e.array(e.str), ["str"])),
     "std::array_unpack",

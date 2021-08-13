@@ -58,16 +58,14 @@ export interface EnumType<
 //////////////////
 // export type SomeObjectType = ObjectType;
 
-export type SomeObjectType = ObjectType;
-// {
-//   __kind__: TypeKind.object;
-//   __tstype__: any;
-//   __name__: string;
-//   __shape__: ObjectTypeShape;
-//   __params__: any;
-//   __polys__: any[];
-//   __backlinks__: object
-// };
+export type SomeObjectType = {
+  __kind__: TypeKind.object;
+  __tstype__: any;
+  __name__: string;
+  __shape__: ObjectTypeShape;
+  __params__: any;
+  __polys__: any[];
+};
 
 export interface ObjectType<
   Name extends string = string,
@@ -81,7 +79,6 @@ export interface ObjectType<
   __shape__: Shape;
   __params__: Params;
   __polys__: Polys;
-  // __backlinks__: Backlinks;
 }
 
 export type objectExprToSelectParams<T extends ObjectTypeExpression> =
@@ -124,7 +121,7 @@ export type computeObjectShape<
   : isEqual<Polys, Poly[]> extends true
   ? any
   : isEqual<Params, null> extends true
-  ? shapeToTsType<Shape>
+  ? any
   : shapeWithPolysToTs<Shape, Params, Polys>;
 
 type unionToIntersection<U> = (
