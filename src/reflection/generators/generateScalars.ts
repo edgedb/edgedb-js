@@ -9,7 +9,7 @@ import {
 } from "../util/genutil";
 import type {GeneratorParams} from "../generate";
 
-export const generateScalars = async (params: GeneratorParams) => {
+export const generateScalars = (params: GeneratorParams) => {
   const {dir, types, casts, scalars} = params;
   for (const type of types.values()) {
     if (type.kind !== "scalar") {

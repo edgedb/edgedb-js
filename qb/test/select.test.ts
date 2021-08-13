@@ -5,22 +5,22 @@ import {
   TypeKind,
   typeutil,
 } from "../../src/reflection";
-import e, {is, select} from "../generated/example";
+import e from "../generated/example";
 
 test("basic select", () => {
-  const result = select(e.std.str("asdf" as string));
+  const result = e.select(e.std.str("asdf" as string));
   type result = typeof result["__element__"]["__tstype__"];
   const f1: typeutil.assertEqual<result, string> = true;
 });
 
 test("basic shape", () => {
-  const result = select(e.default.Hero);
+  const result = e.select(e.default.Hero);
   type result = typeof result["__element__"]["__tstype__"];
   const f1: typeutil.assertEqual<result, {id: string}> = true;
   expect(result.__element__.__params__).toEqual({id: true});
 });
 
-const q1 = select(e.Hero, {
+const q1 = e.select(e.Hero, {
   id: true,
   secret_identity: true,
   name: 1 > 0,
@@ -32,7 +32,7 @@ const q1 = select(e.Hero, {
 });
 
 test("path construction", () => {
-  const result = select(e.default.Hero);
+  const result = e.select(e.default.Hero);
   expect(result.villains.nemesis.name.__element__.__name__).toEqual(
     "std::str"
   );
@@ -58,7 +58,7 @@ test("complex shape", () => {
 test("compositionality", () => {
   // selecting a select statement should
   // default to { id }
-  const no_params = select(q1);
+  const no_params = e.select(q1);
   type no_params = typeof no_params["__element__"]["__tstype__"];
   const no_params_test: typeutil.assertEqual<
     no_params,
@@ -70,7 +70,7 @@ test("compositionality", () => {
   expect(no_params.__element__.__polys__).toEqual([]);
 
   // allow override params
-  const override_params = select(q1, {
+  const override_params = e.select(q1, {
     id: true,
     secret_identity: true,
   });
@@ -85,14 +85,14 @@ test("compositionality", () => {
 });
 
 test("polymorphism", () => {
-  const query = select(
+  const query = e.select(
     e.Person,
     {
       id: true,
       name: true,
     },
-    is(e.Hero, {secret_identity: true}),
-    is(e.Villain, {
+    e.is(e.Hero, {secret_identity: true}),
+    e.is(e.Villain, {
       nemesis: {name: true},
     })
   );
@@ -135,7 +135,7 @@ test("polymorphism", () => {
 });
 
 test("shape type name", () => {
-  const name = select(e.Hero).__element__.__name__;
+  const name = e.select(e.Hero).__element__.__name__;
   const f1: typeutil.assertEqual<typeof name, "default::Hero_shape"> = true;
 });
 
@@ -187,7 +187,7 @@ test("offset", () => {
   expect(r1.__modifier__.expr.__element__.__name__).toEqual("std::int64");
 });
 
-test("infer cardinality", () => {
+test("infer cardinality - scalar filters", () => {
   const q = e.select(e.Hero);
   // q.__element__.__kind__;
   const q2 = q.filter(e.eq(e.Hero.name, e.str("asdf")));
@@ -261,6 +261,41 @@ test("infer cardinality", () => {
 
   // test cardinality inference on object equality
   // e.select(e.Profile).filter(e.eq(e.Profile["<profile[IS default::Movie]"], e.select(e.Profile).limit(1)));
+});
+
+test("infer cardinality - object type filters", () => {
+  const oneHero = e.select(e.Hero).limit(1);
+
+  const singleHero = e.select(e.Hero).filter(e.eq(e.Hero, oneHero));
+
+  const c1 = singleHero.__cardinality__;
+  const t1: typeutil.assertEqual<typeof c1, Cardinality.AtMostOne> = true;
+  expect(c1).toEqual(Cardinality.AtMostOne);
+
+  const oneProfile = e.select(e.Hero).limit(1);
+  const singleMovie = e
+    .select(e.Movie)
+    .filter(e.eq(e.Movie.profile, oneProfile));
+
+  const c2 = singleMovie.__cardinality__;
+  const t2: typeutil.assertEqual<typeof c2, Cardinality.AtMostOne> = true;
+  expect(c2).toEqual(Cardinality.AtMostOne);
+
+  // not a singleton
+
+  const c3 = e
+    .select(e.Villain)
+    .filter(e.eq(e.Villain.nemesis, oneHero)).__cardinality__;
+  const t3: typeutil.assertEqual<typeof c3, Cardinality.Many> = true;
+  expect(c3).toEqual(Cardinality.Many);
+
+  // not a singleton
+
+  const c4 = e
+    .select(e.Villain)
+    .filter(e.eq(e.Villain, e.Villain)).__cardinality__;
+  const t4: typeutil.assertEqual<typeof c4, Cardinality.Many> = true;
+  expect(c4).toEqual(Cardinality.Many);
 });
 
 test("nonchainable offset/limit", () => {

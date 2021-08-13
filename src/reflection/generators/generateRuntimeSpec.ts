@@ -1,6 +1,6 @@
 import type {GeneratorParams} from "../generate";
 
-export const generateRuntimeSpec = async (params: GeneratorParams) => {
+export const generateRuntimeSpec = (params: GeneratorParams) => {
   const {dir, types} = params;
 
   const spec = dir.getPath("__spec__.ts");
