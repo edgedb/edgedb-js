@@ -1,3 +1,4 @@
+import {$expr_Select} from "@syntax/select";
 import {
   Cardinality,
   ExpressionKind,
@@ -260,4 +261,23 @@ test("infer cardinality", () => {
 
   // test cardinality inference on object equality
   // e.select(e.Profile).filter(e.eq(e.Profile["<profile[IS default::Movie]"], e.select(e.Profile).limit(1)));
+});
+
+test("nonchainable offset/limit", () => {
+  const val0 = e.select(e.Hero).orderBy(e.Hero.name);
+  type val0 = typeof val0;
+  const f0: "filter" extends keyof val0 ? true : false = false;
+
+  const val1 = e.select(e.str("asdf")).offset(e.int64(5));
+  type val1 = typeof val1;
+  const f1: "offset" extends keyof val1 ? true : false = false;
+
+  const val2 = e.select(e.str("asdf")).limit(1);
+  type val2 = typeof val2;
+  const f2a: "limit" extends keyof val2 ? true : false = false;
+  const f2b: "offset" extends keyof val2 ? true : false = false;
+  const f2c: "filter" extends keyof val2 ? true : false = false;
+  const f2d: "orderBy" extends keyof val2 ? true : false = false;
+
+  const f3: val2 extends $expr_Select ? true : false = true;
 });

@@ -1,7 +1,5 @@
-import {Hero} from "@generated/modules/default";
 import _std from "@generated/modules/std";
 import {$anyint, $bool, $int64, int64} from "@generated/modules/std";
-import {$expr_PathNode} from "@generated/syntax/path";
 import {
   BaseExpression,
   Cardinality,
@@ -23,17 +21,6 @@ import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "./literal";
 import {$expr_PathLeaf, $pathify} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
-
-// export type $expr_SimpleSelect<
-//   Expr extends BaseExpression = BaseExpression
-// > =
-//   BaseExpression<{
-//     __element__: Expr["__element__"];
-//     __cardinality__: Expr["__cardinality__"];
-//   }> & {
-//     __expr__: Expr;
-//     __kind__: ExpressionKind.SimpleSelect;
-//   };
 
 // filter
 // order by
@@ -87,17 +74,24 @@ export type mod_Limit<Expr extends OffsetExpression = OffsetExpression> = {
 
 export type SelectModifier = mod_Filter | mod_OrderBy | mod_Offset | mod_Limit;
 
+export type SelectMethodNames = "filter" | "orderBy" | "offset" | "limit";
+export type SelectPlusMethods<
+  Set extends TypeSet = TypeSet,
+  Expr extends BaseExpression = BaseExpression,
+  Modifier extends SelectModifier | null = SelectModifier | null,
+  Methods extends SelectMethodNames = never
+> = $expr_Select<Set, Expr, Modifier> &
+  Pick<SelectMethods<Set, Expr>, Methods>;
+
 export type $expr_Select<
   Set extends TypeSet = TypeSet,
   Expr extends BaseExpression = BaseExpression,
   Modifier extends SelectModifier | null = SelectModifier | null
-  // Params extends object | null,
-  // Polys extends Poly[]
 > = BaseExpression<Set> & {
   __expr__: Expr;
   __kind__: ExpressionKind.Select;
   __modifier__: Modifier;
-} & SelectMethods<Set, Expr>;
+};
 
 // Base is ObjectTypeExpression &
 // Filter is equality &
@@ -105,7 +99,6 @@ export type $expr_Select<
 // Filter.args[0] is unique &
 // Filter.args[0].parent.__element__ === Base.__element__
 // Filter.args[1].__cardinality__ is AtMostOne or One
-
 export type inferCardinality<Base extends TypeSet, Filter extends TypeSet> =
   // Base is ObjectTypeExpression &
   Base extends ObjectTypeExpression // $expr_PathNode
@@ -145,7 +138,7 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
 
   filter<Expr extends SelectFilterExpression>(
     expr: Expr
-  ): $expr_Select<
+  ): SelectPlusMethods<
     {
       __element__: Self["__element__"];
       __cardinality__: inferCardinality<Root, Expr>;
@@ -154,13 +147,14 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
     {
       kind: ModifierKind.filter;
       expr: Expr;
-    }
+    },
+    SelectMethodNames // all methods
   >;
   orderBy<Expr extends OrderByExpression>(
     expr: Expr,
     dir?: OrderByDirection,
     empty?: OrderByEmpty
-  ): $expr_Select<
+  ): SelectPlusMethods<
     Self,
     this,
     {
@@ -168,30 +162,33 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
       expr: Expr;
       direction: OrderByDirection;
       empty: OrderByEmpty;
-    }
+    },
+    "orderBy" | "limit" | "offset" // all methods
   >;
   offset<Expr extends OffsetExpression>(
     expr: Expr
-  ): $expr_Select<
+  ): SelectPlusMethods<
     Self,
     this,
     {
       kind: ModifierKind.offset;
       expr: Expr;
-    }
+    },
+    "limit" // all methods
   >;
-  offset(expr: number): $expr_Select<
+  offset(expr: number): SelectPlusMethods<
     Self,
     this,
     {
       kind: ModifierKind.offset;
       expr: $expr_Literal<$int64>;
-    }
+    },
+    "limit"
   >;
 
   limit<Expr extends LimitExpression>(
     expr: Expr
-  ): $expr_Select<
+  ): SelectPlusMethods<
     {
       __element__: Self["__element__"];
       __cardinality__: Expr["__element__"]["__tsconsttype__"] extends 0
@@ -204,11 +201,12 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
     {
       kind: ModifierKind.limit;
       expr: Expr;
-    }
+    },
+    never
   >;
   limit<Limit extends number>(
     expr: Limit
-  ): $expr_Select<
+  ): SelectPlusMethods<
     {
       __element__: Self["__element__"];
       __cardinality__: Limit extends 0
@@ -221,7 +219,8 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
     {
       kind: ModifierKind.limit;
       expr: $expr_Literal<$int64>;
-    }
+    },
+    never
   >;
 }
 
@@ -372,7 +371,7 @@ export function $selectify<Expr extends TypeSet>(expr: Expr) {
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
-): $expr_Select<
+): SelectPlusMethods<
   {
     __element__: ObjectType<
       `${Expr["__element__"]["__name__"]}_shape`,
@@ -383,11 +382,12 @@ export function select<Expr extends ObjectTypeExpression>(
     __cardinality__: Expr["__cardinality__"];
   },
   Expr,
-  null
+  null,
+  SelectMethodNames
 >;
 export function select<Expr extends BaseExpression>(
   expr: Expr
-): $expr_Select<Expr, Expr, null>;
+): SelectPlusMethods<Expr, Expr, null, SelectMethodNames>;
 export function select<
   Expr extends ObjectTypeExpression,
   Params extends objectExprToSelectParams<Expr>,
@@ -398,7 +398,7 @@ export function select<
   expr: Expr,
   params: Params,
   ...polys: Polys
-): $expr_Select<
+): SelectPlusMethods<
   {
     __element__: ObjectType<
       `${Expr["__element__"]["__name__"]}_shape`,
@@ -409,7 +409,8 @@ export function select<
     __cardinality__: Expr["__cardinality__"];
   },
   Expr,
-  null
+  null,
+  SelectMethodNames
 >;
 export function select(expr: BaseExpression, params?: any, ...polys: any[]) {
   if (!params) {

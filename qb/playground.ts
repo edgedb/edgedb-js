@@ -41,7 +41,7 @@ console.log(q1);
 const asdf = q1
   .filter(e.eq(e.Person.name, e.str("Iron Man")))
   .orderBy(e.Person.name, e.DESC, e.EMPTY_FIRST)
-  .offset(e.set(e.int64))
+  .offset(e.set(e.int64(4)))
   .limit(e.int64(10));
 type asdf = typeof asdf["__expr__"];
 
