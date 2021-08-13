@@ -65,10 +65,10 @@ export async function generateQB(
       functions,
       operators,
     };
+    await generateRuntimeSpec(generatorParams);
     await generateCastMaps(generatorParams);
     await generateScalars(generatorParams);
     await generateObjectTypes(generatorParams);
-    await generateRuntimeSpec(generatorParams);
     generateFunctionTypes(generatorParams);
     generateOperatorTypes(generatorParams);
     generateSetImpl(generatorParams);

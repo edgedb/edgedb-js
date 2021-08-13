@@ -5,15 +5,23 @@ import {Cardinality} from "../typesystem";
 export type UUID = string;
 
 export type Pointer = {
-  cardinality: "One" | "Many";
-  realCardinality: Cardinality;
+  // cardinality: "One" | "Many";
+  real_cardinality: Cardinality;
   kind: "link" | "property";
-  required: boolean;
   name: string;
-  expr: string | null;
   target_id: UUID;
   is_exclusive: boolean;
   pointers: ReadonlyArray<Pointer> | null;
+};
+
+export type Backlink = Pointer & {
+  real_cardinality: Cardinality;
+  kind: "link";
+  name: string;
+  target_id: UUID;
+  is_exclusive: boolean;
+  pointers: null;
+  stub: string;
 };
 
 export type TypeKind = "object" | "scalar" | "array" | "tuple" | "unknown";
@@ -39,6 +47,8 @@ export type ObjectType = TypeProperties<"object"> & {
   union_of: ReadonlyArray<{id: UUID}>;
   intersection_of: ReadonlyArray<{id: UUID}>;
   pointers: ReadonlyArray<Pointer>;
+  backlinks: ReadonlyArray<Backlink>;
+  backlink_stubs: ReadonlyArray<Backlink>;
 };
 
 export type ArrayType = TypeProperties<"array"> & {
@@ -102,25 +112,41 @@ export async function getTypes(
       [IS ObjectType].union_of,
       [IS ObjectType].intersection_of,
       [IS ObjectType].pointers: {
-        cardinality,
-        required,
-        realCardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
+        real_cardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
         name,
-        expr,
         target_id := .target.id,
         kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property',
         is_exclusive := exists (select .constraints filter .name = 'std::exclusive'),
         [IS Link].pointers: {
-          cardinality,
-          realCardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
-          required,
+          real_cardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
           name,
-          expr,
           target_id := .target.id,
           kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property'
         } FILTER @is_owned,
       } FILTER @is_owned,
-
+      backlinks := (SELECT DETACHED Link FILTER .target = Type) {
+        real_cardinality := "AtMostOne" IF EXISTS (select .constraints filter .name = 'std::exclusive') ELSE "Many",
+        name := '<' ++ .name ++ '[IS ' ++ std::assert_single(.source.name) ++ ']',
+        stub := .name,
+        target_id := .source.id,
+        kind := 'link',
+        is_exclusive := (EXISTS (select .constraints filter .name = 'std::exclusive')) AND <str>.cardinality = "One",
+      },
+      backlink_stubs := (
+        WITH
+          stubs := DISTINCT (SELECT DETACHED Link FILTER .target = Type).name,
+          baseObjectId := (SELECT DETACHED ObjectType FILTER .name = 'std::BaseObject' LIMIT 1).id
+        FOR stub in { stubs }
+        UNION (
+          SELECT {
+            real_cardinality := "Many",
+            name := '<' ++ stub,
+            target_id := baseObjectId,
+            kind := 'link',
+            is_exclusive := false,
+          }
+        )
+      ),
       array_element_id := [IS Array].element_type.id,
 
       tuple_elements := (SELECT [IS Tuple].element_types {

@@ -114,10 +114,8 @@ test("polymorphism", () => {
   );
 
   type poly = typeof query["__element__"]["__polys__"][0];
-  const f1: typeutil.assertEqual<
-    poly["params"],
-    {secret_identity: true}
-  > = true;
+  const f1: typeutil.assertEqual<poly["params"], {secret_identity: true}> =
+    true;
 
   type result = typeof query["__element__"]["__tstype__"];
   const f2: typeutil.assertEqual<
@@ -259,4 +257,7 @@ test("infer cardinality", () => {
     Cardinality.Empty
   > = true;
   expect(q10.__cardinality__).toEqual(Cardinality.Empty);
+
+  // test cardinality inference on object equality
+  // e.select(e.Profile).filter(e.eq(e.Profile["<profile[IS default::Movie]"], e.select(e.Profile).limit(1)));
 });

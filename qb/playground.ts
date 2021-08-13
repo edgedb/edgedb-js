@@ -9,8 +9,16 @@ import * as edgedb from "edgedb";
 //   asdf.query<{asdf: string}>(`asdf`);
 // }
 
-const adf = e.str("asdf");
-const val = e.literal(e.array(e.str), ["asdf"]);
+// select Movie filter .title = 'asdf'; // not exclusive
+// select Movie filter .profile = p; // exclusive
+// select Profile filter .<profile[IS Movie] = p; // exclusive
+// select Person filter .<owner[IS Shirt] = ; // not exclusive
+// select Shirt filter .<shirts[IS Person] = p; // not exclusive
+
+console.log(e.Hero);
+const heroMovie = e.Hero["<characters[IS default::Movie]"];
+console.log(heroMovie.toEdgeQL());
+
 const q1 = e.select(
   e.Person,
   {

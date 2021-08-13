@@ -454,6 +454,7 @@ export function select(expr: BaseExpression, params?: any, ...polys: any[]) {
         __shape__: objExpr.__element__.__shape__,
         __params__: params,
         __polys__: polys,
+
         __tstype__: undefined as any,
       },
       __cardinality__: objExpr.__cardinality__,

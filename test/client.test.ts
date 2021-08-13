@@ -59,17 +59,8 @@ test("query: basic scalars", async () => {
       `
     );
     expect(res).toEqual([
-      -1,
-      1,
-      0,
-      15,
-      281474976710656,
-      22,
-      -11111,
-      346456723423,
-      -346456723423,
-      2251799813685125,
-      -2251799813685125,
+      -1, 1, 0, 15, 281474976710656, 22, -11111, 346456723423, -346456723423,
+      2251799813685125, -2251799813685125,
     ]);
 
     res = await con.query("select <int32>{-1, 0, 1, 10, 2147483647};");
@@ -692,7 +683,7 @@ test("fetch: cal::local_time", async () => {
 
 test("fetch: duration", async () => {
   function formatLegacyDuration(duration: Duration): string {
-    function fmt(timePart: number, len = 2): string {
+    function fmt(timePart: number, len: number = 2): string {
       return Math.abs(timePart).toString().padStart(len, "0");
     }
 
