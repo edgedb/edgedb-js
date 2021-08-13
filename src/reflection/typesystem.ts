@@ -56,16 +56,16 @@ export interface EnumType<
 //////////////////
 // OBJECT TYPES
 //////////////////
-// export type SomeObjectType = ObjectType;
 
-export type SomeObjectType = {
-  __kind__: TypeKind.object;
-  __tstype__: unknown;
-  __name__: string;
-  __shape__: ObjectTypeShape;
-  __params__: object | null;
-  __polys__: Poly[];
-};
+export type SomeObjectType = ObjectType;
+// export type SomeObjectType = {
+//   __kind__: TypeKind.object;
+//   __tstype__: unknown;
+//   __name__: string;
+//   __shape__: ObjectTypeShape;
+//   __params__: object | null;
+//   __polys__: Poly[];
+// };
 
 export interface ObjectType<
   Name extends string = string,
