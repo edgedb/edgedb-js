@@ -36,7 +36,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
       anytypes: null,
     };
 
-    // Each overload with 'anytype' params gets expanded into multiple overloads:
+    // Each overload with 'anytype' params is expanded into several overloads:
     // - overload for each implicitly castable root type union
     //   and array wrapped type overload (unless some param/return type
     //   is 'array<anytype>')
@@ -50,7 +50,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
     //   - return anytype: getSharedParentPrimitive<...all anytype param refs>
     // - final catch all overload (if overload only has one anytype param,
     //   only this overload generated)
-    //   - param types: first param is 'MaterialType' (or 'NonArrayMaterialType')
+    //   - param types: 1st param is 'MaterialType' (or 'NonArrayMaterialType')
     //                  other params reference first param type
     //   - return anytype: references first param type
 
@@ -240,7 +240,7 @@ export function getTypesSpecificity(types: introspect.Types, casts: Casts) {
   let typesToVisit: introspect.Type[] = [...types.values()].filter(
     (type) => (casts.implicitCastFromMap[type.id] ?? []).length === 0
   );
-  let nextTypesToVisit = new Set<introspect.Type>();
+  const nextTypesToVisit = new Set<introspect.Type>();
 
   while (typesToVisit.length) {
     for (const type of typesToVisit) {

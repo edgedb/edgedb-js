@@ -60,18 +60,18 @@ export interface EnumType<
 
 export type SomeObjectType = {
   __kind__: TypeKind.object;
-  __tstype__: any;
+  __tstype__: unknown;
   __name__: string;
   __shape__: ObjectTypeShape;
-  __params__: any;
-  __polys__: any[];
+  __params__: object | null;
+  __polys__: Poly[];
 };
 
 export interface ObjectType<
   Name extends string = string,
   Shape extends ObjectTypeShape = ObjectTypeShape,
   Params extends object | null = any,
-  Polys extends Poly[] = Poly[]
+  Polys extends Poly[] = any[]
 > {
   __kind__: TypeKind.object;
   __tstype__: computeObjectShape<Shape, Params, Polys>;
