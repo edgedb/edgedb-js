@@ -5,7 +5,7 @@ import {util} from "../util/util";
 
 const getRuntimeRef = (name: string) => getRef(name, {prefix: ""});
 
-export const generateCastMaps = async (params: GeneratorParams) => {
+export const generateCastMaps = (params: GeneratorParams) => {
   const {dir, types, typesByName, casts} = params;
   const {implicitCastMap} = casts;
 

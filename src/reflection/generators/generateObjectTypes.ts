@@ -36,6 +36,12 @@ export const getStringRepresentation: (
   }
   const {types, casts} = params;
   if (type.kind === "object") {
+    if (type.name === "std::BaseObject") {
+      return {
+        staticType: ["$.SomeObjectType"],
+        runtimeType: [getRef(type.name)],
+      };
+    }
     return {
       staticType: [getRef(type.name)],
       runtimeType: [getRef(type.name)],
@@ -110,7 +116,7 @@ export const getStringRepresentation: (
   }
 };
 
-export const generateObjectTypes = async (params: GeneratorParams) => {
+export const generateObjectTypes = (params: GeneratorParams) => {
   const {dir, types, casts} = params;
 
   for (const type of types.values()) {
@@ -268,7 +274,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     body.writeln([`);`]);
     body.nl();
     body.writeln(
-      frag`export const ${literal} = _.syntax.$expr_PathNode(_.syntax.$toSet(${ref}, $.Cardinality.Many), null, false);`
+      frag`export const ${literal} = _.syntax.$expr_PathNode(_.syntax.$toSet(${ref}, $.Cardinality.Many), null, true);`
     );
     body.nl();
     body.nl();

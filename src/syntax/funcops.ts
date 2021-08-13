@@ -9,6 +9,7 @@ import {
   TypeKind,
   ArrayType,
   cardinalityUtil,
+  ObjectType,
 } from "reflection";
 import {set} from "./set";
 // @ts-ignore
@@ -242,8 +243,27 @@ function compareType(
     }
   }
   if (type.kind === "object") {
+    if (arg.__kind__ !== TypeKind.object) return {match: false};
+
+    const objectArg = arg as ObjectType;
+    let match = true;
+
+    // shape comparison
+    for (const ptr of type.pointers) {
+      if (objectArg.__shape__[ptr.name]) {
+        const argPtr = objectArg.__shape__[ptr.name];
+        const ptrTarget = typeSpec.get(ptr.target_id);
+        if (
+          ptrTarget.name !== argPtr.target.__name__ ||
+          ptr.real_cardinality !== argPtr.cardinality
+        ) {
+          match = false;
+        }
+      }
+    }
+
     return {
-      match: arg.__kind__ === TypeKind.object && type.name === arg.__name__,
+      match,
     };
   }
   if (type.kind === "tuple") {

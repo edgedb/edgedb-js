@@ -19,7 +19,7 @@ import {
 import {cast} from "./cast";
 import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "./literal";
-import {$expr_PathLeaf, $pathify} from "./path";
+import {$expr_PathLeaf, $expr_PathNode, $pathify, PathParent} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
 
 // filter
@@ -93,12 +93,33 @@ export type $expr_Select<
   __modifier__: Modifier;
 };
 
+// select User filter User.id = 'adsf'
+// select User filter User = someUser
+// select User filter User.profile = someProfile
+
 // Base is ObjectTypeExpression &
 // Filter is equality &
-// Filter.args[0] is PathLeaf &
-// Filter.args[0] is unique &
-// Filter.args[0].parent.__element__ === Base.__element__
-// Filter.args[1].__cardinality__ is AtMostOne or One
+// Filter.args[0] is PathLeaf
+//   Filter.args[0] is __exclusive__ &
+//   Filter.args[0].parent.__element__ === Base.__element__
+//   Filter.args[1].__cardinality__ is AtMostOne or One
+// if Filter.args[0] is PathNode:
+//   Filter.args[0] is __exclusive__ &
+//   if Filter.args[0].parent === null
+//     Filter.args[0].parent.__element__ === Base.__element__
+//     Filter.args[1].__cardinality__ is AtMostOne or One
+//   else
+//     Filter.args[0].type.__element__ === Base.__element__ &
+//     Filter.args[1].__cardinality__ is AtMostOne or One
+
+export type argCardToResultCard<
+  OpCard extends Cardinality,
+  BaseCase extends Cardinality
+> = [OpCard] extends [Cardinality.AtMostOne | Cardinality.One]
+  ? Cardinality.AtMostOne
+  : [OpCard] extends [Cardinality.Empty]
+  ? Cardinality.Empty
+  : BaseCase;
 export type inferCardinality<Base extends TypeSet, Filter extends TypeSet> =
   // Base is ObjectTypeExpression &
   Base extends ObjectTypeExpression // $expr_PathNode
@@ -114,13 +135,37 @@ export type inferCardinality<Base extends TypeSet, Filter extends TypeSet> =
               Base["__element__"]["__name__"]
             > extends true
             ? // Filter.args[1].__cardinality__ is AtMostOne or One
-              Args[1] extends TypeSet
-              ? [Args[1]["__cardinality__"]] extends [
-                  Cardinality.AtMostOne | Cardinality.One
-                ]
-                ? Cardinality.AtMostOne
-                : [Args[1]["__cardinality__"]] extends [Cardinality.Empty]
-                ? Cardinality.Empty
+              argCardToResultCard<
+                Args[1]["__cardinality__"],
+                Base["__cardinality__"]
+              >
+            : Base["__cardinality__"]
+          : Base["__cardinality__"]
+        : Args[0] extends $expr_PathNode
+        ? Args[0]["__exclusive__"] extends true
+          ? //   Filter.args[0].parent.__element__ === Base.__element__
+            Args[0]["__parent__"] extends null
+            ? typeutil.assertEqual<
+                Args[0]["__element__"]["__name__"],
+                Base["__element__"]["__name__"]
+              > extends true
+              ? // Filter.args[1].__cardinality__ is AtMostOne or One
+                argCardToResultCard<
+                  Args[1]["__cardinality__"],
+                  Base["__cardinality__"]
+                >
+              : Base["__cardinality__"]
+            : Args[0]["__parent__"] extends infer Parent
+            ? Parent extends PathParent
+              ? typeutil.assertEqual<
+                  Parent["type"]["__element__"]["__name__"],
+                  Base["__element__"]["__name__"]
+                > extends true
+                ? // Filter.args[1].__cardinality__ is AtMostOne or One
+                  argCardToResultCard<
+                    Args[1]["__cardinality__"],
+                    Base["__cardinality__"]
+                  >
                 : Base["__cardinality__"]
               : Base["__cardinality__"]
             : Base["__cardinality__"]
@@ -235,36 +280,61 @@ function filterFunc(this: any, expr: SelectFilterExpression) {
   let card = this.__cardinality__;
 
   // extremely fiddly cardinality inference logic
-  const base = this.__expr__;
+  const base: BaseExpression = this.__expr__;
+
   const filter: any = expr;
   // Base is ObjectExpression
   const baseIsObjectExpr = base?.__element__?.__kind__ === TypeKind.object;
   const filterExprIsEq =
     filter.__kind__ === ExpressionKind.Operator &&
     filter.__name__ === "std::=";
-  const arg0: $expr_PathLeaf = filter?.__args__?.[0];
+  const arg0: $expr_PathLeaf | $expr_PathNode = filter?.__args__?.[0];
   const arg1: BaseExpression = filter?.__args__?.[1];
-  const arg0IsPathLeaf = !!arg0 && arg0.__kind__ === ExpressionKind.PathLeaf;
-  const arg0IsUnique = arg0.__exclusive__ === true;
-  const baseEqualsArg0Parent =
-    arg0.__parent__.type.__element__.__name__ === base.__element__.__name__;
-  const arg1Exists = !!arg1 && !!arg1.__cardinality__;
+  const argsExist = !!arg0 && !!arg1 && !!arg1.__cardinality__;
+  const arg0IsUnique = arg0?.__exclusive__ === true;
 
-  if (
-    baseIsObjectExpr &&
-    filterExprIsEq &&
-    arg0IsPathLeaf &&
-    arg0IsUnique &&
-    baseEqualsArg0Parent &&
-    arg1Exists
-  ) {
-    if (
-      arg1.__cardinality__ === Cardinality.One ||
-      arg1.__cardinality__ === Cardinality.AtMostOne
-    ) {
-      card = Cardinality.AtMostOne;
-    } else if (arg1.__cardinality__ === Cardinality.Empty) {
-      card = Cardinality.Empty;
+  // const baseEqualsArg0Parent =
+  //   arg0.__parent__.type.__element__.__name__ === base.__element__.__name__;
+
+  const newCard =
+    arg1.__cardinality__ === Cardinality.One ||
+    arg1.__cardinality__ === Cardinality.AtMostOne
+      ? Cardinality.AtMostOne
+      : arg1.__cardinality__ === Cardinality.Empty
+      ? Cardinality.Empty
+      : this.__cardinality__;
+
+  if (baseIsObjectExpr && filterExprIsEq && argsExist && arg0IsUnique) {
+    if (arg0.__kind__ === ExpressionKind.PathLeaf) {
+      const arg0ParentMatchesBase =
+        arg0.__parent__.type.__element__.__name__ ===
+        base.__element__.__name__;
+      if (arg0ParentMatchesBase) {
+        card = newCard;
+      }
+    } else if (arg0.__kind__ === ExpressionKind.PathNode) {
+      // if Filter.args[0] is PathNode:
+      //   Filter.args[0] is __exclusive__ &
+      //   if Filter.args[0].parent === null
+      //     Filter.args[0].__element__ === Base.__element__
+      //     Filter.args[1].__cardinality__ is AtMostOne or One
+      //   else
+      //     Filter.args[0].type.__element__ === Base.__element__ &
+      //     Filter.args[1].__cardinality__ is AtMostOne or One
+      const parent = arg0.__parent__;
+      if (parent === null) {
+        const arg0MatchesBase =
+          arg0.__element__.__name__ === base.__element__.__name__;
+        if (arg0MatchesBase) {
+          card = newCard;
+        }
+      } else {
+        const arg0ParentMatchesBase =
+          parent?.type.__element__.__name__ === base.__element__.__name__;
+        if (arg0ParentMatchesBase) {
+          card = newCard;
+        }
+      }
     }
   }
 

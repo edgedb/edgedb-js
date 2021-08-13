@@ -50,8 +50,6 @@ export interface PathParent<
 
 type asdfasdf = $expr_PathNode<ObjectTypeSet, PathParent | null>;
 
-// type lkjl = asdfasdf['$is']
-
 export type $pathify<
   Root extends TypeSet,
   Parent extends PathParent | null = null

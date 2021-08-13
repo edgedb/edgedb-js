@@ -1,6 +1,6 @@
 import {$expr_Operator} from "@syntax/funcops";
-import {Cardinality, typeutil} from "../../src/reflection";
-import e, {$Tuple, literal, set, $Array} from "../generated/example";
+import {Cardinality} from "../../src/reflection";
+import e from "../generated/example";
 
 function checkOperatorExpr<T extends $expr_Operator>(
   expr: T,
@@ -24,10 +24,10 @@ test("slice and index ops", () => {
   checkOperatorExpr(
     e.slice(
       e.str("test string"),
-      literal(e.tuple([e.int64, e.int32]), [2, 5])
+      e.literal(e.tuple([e.int64, e.int32]), [2, 5])
     ),
     "std::[]",
-    [e.str("test string"), literal(e.tuple([e.int64, e.int32]), [2, 5])],
+    [e.str("test string"), e.literal(e.tuple([e.int64, e.int32]), [2, 5])],
     e.str,
     Cardinality.One,
     `(<std::str>"test string"[2:5])`
@@ -35,13 +35,13 @@ test("slice and index ops", () => {
 
   checkOperatorExpr(
     e.slice(
-      literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      literal(e.tuple([e.int64, e.int32]), [1, 2])
+      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      e.literal(e.tuple([e.int64, e.int32]), [1, 2])
     ),
     "std::[]",
     [
-      literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      literal(e.tuple([e.int64, e.int32]), [1, 2]),
+      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      e.literal(e.tuple([e.int64, e.int32]), [1, 2]),
     ],
     e.array(e.bigint),
     Cardinality.One,
@@ -59,12 +59,12 @@ test("slice and index ops", () => {
 
   checkOperatorExpr(
     e.index(
-      literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
       e.int32(2)
     ),
     "std::[]",
     [
-      literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
+      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
       e.int32(2),
     ],
     e.bigint,
