@@ -41,6 +41,7 @@ export async function generateQB(
 
   try {
     const types = await introspect.getTypes(cxn, {debug: DEBUG});
+    console.log(`Found ${[...types.values()].length} types.`);
     const scalars = await getScalars(cxn);
     const casts = await getCasts(cxn, {
       debug: DEBUG,
@@ -65,10 +66,10 @@ export async function generateQB(
       functions,
       operators,
     };
+    await generateRuntimeSpec(generatorParams);
     await generateCastMaps(generatorParams);
     await generateScalars(generatorParams);
     await generateObjectTypes(generatorParams);
-    await generateRuntimeSpec(generatorParams);
     generateFunctionTypes(generatorParams);
     generateOperatorTypes(generatorParams);
     generateSetImpl(generatorParams);

@@ -73,8 +73,7 @@ export interface ObjectType<
   Name extends string = string,
   Shape extends ObjectTypeShape = ObjectTypeShape,
   Params extends object | null = any,
-  Polys extends Poly[] = Poly[],
-  Backlinks extends {[k: string]: true} = {[k: string]: true}
+  Polys extends Poly[] = Poly[]
 > {
   __kind__: TypeKind.object;
   __tstype__: computeObjectShape<Shape, Params, Polys>;
@@ -82,7 +81,7 @@ export interface ObjectType<
   __shape__: Shape;
   __params__: Params;
   __polys__: Polys;
-  __backlinks__: Backlinks;
+  // __backlinks__: Backlinks;
 }
 
 export type objectExprToSelectParams<T extends ObjectTypeExpression> =

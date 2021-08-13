@@ -378,8 +378,7 @@ export function select<Expr extends ObjectTypeExpression>(
       `${Expr["__element__"]["__name__"]}_shape`,
       Expr["__element__"]["__shape__"],
       {id: true},
-      [],
-      Expr["__element__"]["__backlinks__"]
+      []
     >;
     __cardinality__: Expr["__cardinality__"];
   },
@@ -405,8 +404,7 @@ export function select<
       `${Expr["__element__"]["__name__"]}_shape`,
       Expr["__element__"]["__shape__"],
       Params,
-      Polys,
-      Expr["__element__"]["__backlinks__"]
+      Polys
     >;
     __cardinality__: Expr["__cardinality__"];
   },
@@ -427,7 +425,6 @@ export function select(expr: BaseExpression, params?: any, ...polys: any[]) {
             __params__: {id: true},
             __polys__: [],
             __tstype__: undefined as any,
-            __backlinks__: objectExpr.__element__.__backlinks__,
           },
           __cardinality__: objectExpr.__cardinality__,
           __expr__: objectExpr,
@@ -457,7 +454,7 @@ export function select(expr: BaseExpression, params?: any, ...polys: any[]) {
         __shape__: objExpr.__element__.__shape__,
         __params__: params,
         __polys__: polys,
-        __backlinks__: objExpr.__element__.__backlinks__,
+
         __tstype__: undefined as any,
       },
       __cardinality__: objExpr.__cardinality__,

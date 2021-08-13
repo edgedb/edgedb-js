@@ -114,10 +114,8 @@ test("polymorphism", () => {
   );
 
   type poly = typeof query["__element__"]["__polys__"][0];
-  const f1: typeutil.assertEqual<
-    poly["params"],
-    {secret_identity: true}
-  > = true;
+  const f1: typeutil.assertEqual<poly["params"], {secret_identity: true}> =
+    true;
 
   type result = typeof query["__element__"]["__tstype__"];
   const f2: typeutil.assertEqual<

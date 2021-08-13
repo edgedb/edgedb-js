@@ -2,6 +2,7 @@ import e from "../generated/example";
 
 import {reflection as $} from "edgedb/src/index.node";
 import {
+  Cardinality,
   computeObjectShape,
   mergeObjectTypes,
   typeutil,
@@ -95,4 +96,31 @@ test("merging tests", () => {
     typeof merged["__tstype__"],
     {id: string; age: number | null; name: string | null; __type__: any}
   > = true;
+});
+
+test("backlinks", () => {
+  const heroMovie = e.Hero["<characters[IS default::Movie]"];
+
+  const heroVillain = e.Hero["<nemesis[IS default::Villain]"];
+  expect(heroMovie.toEdgeQL()).toEqual(
+    `default::Hero.<characters[IS default::Movie]`
+  );
+  expect(heroMovie.__element__.__name__).toEqual("default::Movie");
+  expect(heroVillain.nemesis.__element__.__name__).toEqual("default::Hero");
+  expect(e.select(e.Villain).limit(1).nemesis.__cardinality__).toEqual(
+    Cardinality.AtMostOne
+  );
+
+  expect(e.Profile["<profile"].__element__.__name__).toEqual(
+    "std::BaseObject"
+  );
+  expect(e.Profile["<profile"].__cardinality__).toEqual(Cardinality.Many);
+
+  const merged = mergeObjectTypes(e.Hero.__element__, e.Villain.__element__);
+  expect(merged.__shape__["<characters"].target.__name__).toEqual(
+    "std::BaseObject"
+  );
+  expect(
+    merged.__shape__["<characters[IS default::Movie]"].target.__name__
+  ).toEqual("default::Movie");
 });

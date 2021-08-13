@@ -3,6 +3,7 @@ import {getRef, frag, joinFrags, splitName, quote} from "../util/genutil";
 
 import * as introspect from "../queries/getTypes";
 import {CodeFragment} from "../builders";
+import {Cardinality} from "../typesystem";
 
 export const getStringRepresentation: (
   type: introspect.Type,
@@ -143,6 +144,7 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
     //   )(types.get(baseId).name);
     //   bases.push(baseName);
     // }
+
     const bases = type.bases.map((base) => getRef(types.get(base.id).name));
 
     /////////
@@ -159,26 +161,44 @@ export const generateObjectTypes = async (params: GeneratorParams) => {
       lines: Line[];
     };
 
-    const ptrToLine: (ptr: introspect.Pointer) => Line = (ptr) => {
-      const card = `$.Cardinality.${ptr.realCardinality}`;
-      const target = types.get(ptr.target_id);
-      const {staticType, runtimeType} = getStringRepresentation(target, {
-        types,
-      });
-      return {
-        key: ptr.name,
-        staticType,
-        runtimeType,
-        card,
-        kind: ptr.kind,
-        isExclusive: ptr.is_exclusive,
-        lines: (ptr.pointers ?? [])
-          .filter((p) => p.name !== "target" && p.name !== "source")
-          .map(ptrToLine),
+    const ptrToLine: (ptr: introspect.Pointer | introspect.Backlink) => Line =
+      (ptr) => {
+        const card = `$.Cardinality.${ptr.real_cardinality}`;
+        const target = types.get(ptr.target_id);
+        const {staticType, runtimeType} = getStringRepresentation(target, {
+          types,
+        });
+        return {
+          key: ptr.name,
+          staticType,
+          runtimeType,
+          card,
+          kind: ptr.kind,
+          isExclusive: ptr.is_exclusive,
+          lines: (ptr.pointers ?? [])
+            .filter((p) => p.name !== "target" && p.name !== "source")
+            .map(ptrToLine),
+        };
       };
-    };
 
-    const lines = type.pointers.map(ptrToLine);
+    // unique
+    // const BaseObject = params.typesByName["std::BaseObject"];
+    // const uniqueStubs = [...new Set(type.backlinks.map((bl) => bl.stub))];
+    // const stubLines = uniqueStubs.map((stub): introspect.Pointer => {
+    //   return {
+    //     real_cardinality: Cardinality.Many,
+    //     kind: "link",
+    //     name: `<${stub}`,
+    //     target_id: BaseObject.id,
+    //     is_exclusive: false,
+    //     pointers: null,
+    //   };
+    // });
+    const lines = [
+      ...type.pointers,
+      ...type.backlinks,
+      ...type.backlink_stubs,
+    ].map(ptrToLine);
 
     // generate shape type
     const baseTypesUnion = bases.length

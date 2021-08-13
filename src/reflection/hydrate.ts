@@ -20,7 +20,12 @@ function applySpec(
   seen: Set<string>,
   literal: any
 ): void {
-  for (const ptr of type.pointers) {
+  const allPointers = [
+    ...type.pointers,
+    ...type.backlinks,
+    ...type.backlink_stubs,
+  ];
+  for (const ptr of allPointers) {
     if (seen.has(ptr.name)) {
       continue;
     }
@@ -30,7 +35,7 @@ function applySpec(
       util.defineGetter(shape, ptr.name, () => {
         return {
           __kind__: "link",
-          cardinality: ptr.realCardinality,
+          cardinality: ptr.real_cardinality,
           get target() {
             return makeType(spec, ptr.target_id, literal);
           },
@@ -49,7 +54,7 @@ function applySpec(
               const linkPropObject: any = {
                 __kind__: "property",
               };
-              linkPropObject.cardinality = linkProp.realCardinality;
+              linkPropObject.cardinality = linkProp.real_cardinality;
               util.defineGetter(linkPropObject, "target", () => {
                 return makeType(spec, linkProp.target_id, literal);
               });
@@ -64,7 +69,7 @@ function applySpec(
       util.defineGetter(shape, ptr.name, () => {
         return {
           __kind__: "property",
-          cardinality: ptr.realCardinality,
+          cardinality: ptr.real_cardinality,
           get target() {
             return makeType(spec, ptr.target_id, literal);
           },
@@ -116,7 +121,6 @@ export function makeType<T extends BaseType>(
     });
     obj.__params__ = {};
     obj.__polys__ = [];
-    // obj.__backlinks__ = type.
     return obj;
   } else if (type.kind === "scalar") {
     const scalarObj = ((val: any) => {
@@ -200,8 +204,7 @@ export type mergeObjectTypes<
         `${A["__name__"]} UNION ${B["__name__"]}`,
         mergeObjectShapes<A["__shape__"], B["__shape__"]>,
         null,
-        [],
-        {[k in keyof A["__backlinks__"] & B["__backlinks__"]]: true}
+        []
       >
     : A
   : B extends ObjectType
@@ -212,11 +215,6 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
   a: A,
   b: B
 ): mergeObjectTypes<A, B> {
-  const sharedBacklinks = Object.keys(a.__backlinks__).filter(
-    (k) => !!b.__backlinks__[k]
-  );
-  const sharedBacklinksObject: {[k: string]: true} = {};
-  for (const k of sharedBacklinks) sharedBacklinksObject[k] = true;
   const obj: ObjectType = {
     __kind__: TypeKind.object,
     __name__: `${a.__name__} UNION ${b.__name__}`,
@@ -235,7 +233,6 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
     },
     __params__: {},
     __polys__: [],
-    __backlinks__: sharedBacklinksObject,
     __tstype__: undefined as any,
   };
   return obj as any;
