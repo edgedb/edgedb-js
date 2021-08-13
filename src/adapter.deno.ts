@@ -196,5 +196,9 @@ export namespace tls {
     checkServerIdentity?: (a: string, b: any) => Error | undefined;
   }
 
-  export class TLSSocket extends net.Socket {}
+  export class TLSSocket extends net.Socket {
+    get alpnProtocol(): string {
+      throw new Error("deno does not support ALPN");
+    }
+  }
 }
