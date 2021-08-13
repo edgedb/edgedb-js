@@ -530,7 +530,18 @@ export class ConnectionImpl {
     this.sock.setNoDelay();
     this.sock.on("error", this._onError.bind(this));
     this.sock.on("data", this._onData.bind(this));
-    this.sock.on("connect", this._onConnect.bind(this));
+
+    if (this.sock instanceof tls.TLSSocket) {
+      // This is bizarre, but "connect" can be fired before
+      // "secureConnect" for some reason. The documentation
+      // doesn't provide a clue why. We need to be able to validate
+      // that the 'edgedb-binary' ALPN protocol was selected
+      // in connect when we're connecting over TLS.
+      // @ts-ignore
+      this.sock.on("secureConnect", this._onConnect.bind(this));
+    } else {
+      this.sock.on("connect", this._onConnect.bind(this));
+    }
     this.sock.on("close", this._onClose.bind(this));
 
     this.config = config;
@@ -856,6 +867,14 @@ export class ConnectionImpl {
 
   private async connect(): Promise<void> {
     await this.connWaiter;
+
+    if (this.sock instanceof tls.TLSSocket) {
+      if (this.sock.alpnProtocol !== "edgedb-binary") {
+        throw new errors.ClientConnectionFailedError(
+          "The server doesn't support the edgedb-binary protocol."
+        );
+      }
+    }
 
     const handshake = new WriteMessageBuffer();
 
