@@ -2,23 +2,22 @@ import {
   BaseExpression,
   Expression,
   ExpressionKind,
-  makeSet,
+  TypeSet,
   MaterialType,
 } from "reflection";
-import {$pathify} from "./path";
+import {$expressionify} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
 
 export function cast<Target extends MaterialType, Expr extends BaseExpression>(
   target: Target,
   expr: Expr
 ): $expr_Cast<Target, Expr> {
-  return $pathify({
+  return $expressionify({
     __element__: target,
     __cardinality__: expr.__cardinality__,
     __expr__: expr,
     __kind__: ExpressionKind.Cast,
-    toEdgeQL,
-  }) as any;
+  });
 }
 
 export type $expr_Cast<

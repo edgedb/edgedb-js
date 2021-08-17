@@ -8,10 +8,10 @@ import {ExpressionKind, TypeKind, typeutil} from "edgedb/src/reflection";
 test("path structure", () => {
   const Hero = e.default.Hero;
   type Hero = typeof Hero;
-  const HeroSetSingleton = e.$toSet(e.default.$Hero, $.Cardinality.One);
+  const HeroSetSingleton = $.$toSet(e.default.$Hero, $.Cardinality.One);
   const HeroSingleton = e.$expr_PathNode(HeroSetSingleton, null, false);
   type HeroSingleton = typeof HeroSingleton;
-  const VillainRoot = e.$toSet(e.default.$Villain, $.Cardinality.One);
+  const VillainRoot = $.$toSet(e.default.$Villain, $.Cardinality.One);
   const Villain = e.$expr_PathNode(VillainRoot, null, false);
 
   expect(Hero.name.__element__.__kind__).toEqual($.TypeKind.scalar);
@@ -46,7 +46,7 @@ test("path structure", () => {
 
   // AtMostOneHero.name
   // test cardinality merging
-  const HeroSetAtLeastOne = e.$toSet(
+  const HeroSetAtLeastOne = $.$toSet(
     e.default.$Hero,
     $.Cardinality.AtLeastOne
   );

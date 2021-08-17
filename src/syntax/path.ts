@@ -29,17 +29,6 @@ type getChildOfObjectTypeSet<
   >
 >;
 
-// utlity function for creating set
-export const $toSet = <Root extends MaterialType, Card extends Cardinality>(
-  root: Root,
-  card: Card
-): TypeSet<Root, Card> => {
-  return {
-    __element__: root,
-    __cardinality__: card,
-  };
-};
-
 // path parent must be object expression
 export interface PathParent<
   Parent extends ObjectTypeExpression = ObjectTypeExpression
@@ -47,8 +36,6 @@ export interface PathParent<
   type: Parent;
   linkName: string;
 }
-
-type asdfasdf = $expr_PathNode<ObjectTypeSet, PathParent | null>;
 
 export type $pathify<
   Root extends TypeSet,
@@ -81,11 +68,10 @@ export type $pathify<
   : unknown; // pathify does nothing on non-object types
 
 function isFunc(this: any, expr: ObjectTypeExpression) {
-  return $pathify({
+  return $expressionify({
     __kind__: ExpressionKind.TypeIntersection,
     __cardinality__: this.__cardinality__,
     __element__: expr.__element__,
-    toEdgeQL,
     __expr__: this,
   });
 }
@@ -152,17 +138,17 @@ export type $expr_PathNode<
   Root extends ObjectTypeSet = ObjectTypeSet,
   Parent extends PathParent | null = PathParent | null,
   Exclusive extends boolean = boolean
-> = Expression<Root> & {
+> = Expression<{
+  __element__: Root["__element__"];
+  __cardinality__: Root["__cardinality__"];
   __parent__: Parent;
   __kind__: ExpressionKind.PathNode;
   __exclusive__: Exclusive;
-};
+}>;
 
 interface PathNodeMethods<Self extends ObjectTypeSet> {
   __element__: Self["__element__"];
   __cardinality__: Self["__cardinality__"];
-  // $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
-  // $back: Self['__element__']['']
 }
 
 export type $expr_TypeIntersection<
@@ -171,10 +157,9 @@ export type $expr_TypeIntersection<
 > = Expression<{
   __element__: Intersection["__element__"];
   __cardinality__: Expr["__cardinality__"];
-}> & {
   __kind__: ExpressionKind.TypeIntersection;
   __expr__: Expr;
-};
+}>;
 
 export const $expr_PathNode = <
   Root extends ObjectTypeSet,
@@ -185,14 +170,13 @@ export const $expr_PathNode = <
   parent: Parent,
   exclusive: Exclusive
 ): $expr_PathNode<Root, Parent, Exclusive> => {
-  const pathNode = $pathify({
+  const pathNode = $expressionify({
     __kind__: ExpressionKind.PathNode,
     __element__: root.__element__,
     __cardinality__: root.__cardinality__,
     __parent__: parent,
     __exclusive__: exclusive,
-    toEdgeQL,
-  }) as any;
+  });
   return pathNode;
 };
 
@@ -200,28 +184,29 @@ export type $expr_PathLeaf<
   Root extends TypeSet = TypeSet,
   Parent extends PathParent = PathParent,
   Exclusive extends boolean = boolean
-> = Expression<Root> & {
+> = Expression<{
+  __element__: Root["__element__"];
+  __cardinality__: Root["__cardinality__"];
   __kind__: ExpressionKind.PathLeaf;
   __parent__: Parent;
   __exclusive__: Exclusive;
-};
+}>;
 export const $expr_PathLeaf = <
   Root extends TypeSet,
   Parent extends PathParent,
   Exclusive extends boolean = boolean
 >(
   root: Root,
-  parent: PathParent | null,
+  parent: Parent,
   exclusive: Exclusive
 ): $expr_PathLeaf<Root, Parent, Exclusive> => {
-  return {
+  return $expressionify({
     __kind__: ExpressionKind.PathLeaf,
     __element__: root.__element__,
     __cardinality__: root.__cardinality__,
     __parent__: parent,
     __exclusive__: exclusive,
-    toEdgeQL,
-  } as any;
+  });
 };
 
 export type ExpressionRoot = {

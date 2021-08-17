@@ -38,13 +38,6 @@ export type SomeExpression =
   | $expr_ForVar
   | $expr_TypeIntersection;
 
-// type expr = $expr_ShapeSelect<ObjectTypeExpression, any, any>;
-// type elem = expr["__element__"];
-// type p = $pathify<{
-//   __element__: expr["__element__"];
-//   __cardinality__: expr["__cardinality__"];
-// }>;
-
 function shapeToEdgeQL(
   _shape: object | null,
   polys: Poly[] = [],

@@ -19,8 +19,12 @@ import {
 
 import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "./literal";
-import {$expr_PathLeaf, $expr_PathNode, $pathify, PathParent} from "./path";
-import {toEdgeQL} from "./toEdgeQL";
+import {
+  $expr_PathLeaf,
+  $expr_PathNode,
+  $expressionify,
+  PathParent,
+} from "./path";
 
 // filter
 // order by
@@ -72,17 +76,19 @@ export type SelectPlusMethods<
   Modifier extends SelectModifier | null = SelectModifier | null,
   Methods extends SelectMethodNames = never
 > = $expr_Select<Set, Expr, Modifier> &
-  Pick<SelectMethods<Set, Expr>, Methods>;
+  Pick<SelectMethods<$expr_Select<Set, Expr, Modifier>, Expr>, Methods>;
 
 export type $expr_Select<
   Set extends TypeSet = TypeSet,
   Expr extends BaseExpression = BaseExpression,
   Modifier extends SelectModifier | null = SelectModifier | null
-> = Expression<Set> & {
+> = Expression<{
+  __element__: Set["__element__"];
+  __cardinality__: Set["__cardinality__"];
   __expr__: Expr;
   __kind__: ExpressionKind.Select;
   __modifier__: Modifier;
-};
+}>;
 
 // select User filter User.id = 'adsf'
 // select User filter User = someUser
@@ -165,12 +171,17 @@ export type inferCardinality<Base extends TypeSet, Filter extends TypeSet> =
       : Base["__cardinality__"]
     : Base["__cardinality__"];
 
-interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
+interface SelectMethods<
+  Self extends BaseExpression,
+  Root extends BaseExpression
+> {
   // required so `this` passes validation
   // as a BaseExpression
   __element__: Self["__element__"];
   __cardinality__: Self["__cardinality__"];
-  toEdgeQL: () => string;
+  toEdgeQL: Self["toEdgeQL"];
+  // __kind__: Self["__kind__"];
+  // $is: Self["$is"];
 
   filter<Expr extends SelectFilterExpression>(
     expr: Expr
@@ -329,7 +340,7 @@ function filterFunc(this: any, expr: SelectFilterExpression) {
     }
   }
 
-  return $pathify(
+  return $expressionify(
     $selectify({
       __kind__: ExpressionKind.Select,
       __element__: this.__element__,
@@ -339,7 +350,6 @@ function filterFunc(this: any, expr: SelectFilterExpression) {
         kind: SelectModifierKind.filter,
         expr,
       },
-      toEdgeQL,
     })
   );
 }
@@ -350,7 +360,7 @@ function orderByFunc(
   dir?: OrderByDirection,
   empty?: OrderByEmpty
 ) {
-  return $pathify(
+  return $expressionify(
     $selectify({
       __kind__: ExpressionKind.Select,
       __element__: this.__element__,
@@ -362,13 +372,12 @@ function orderByFunc(
         direction: dir || ASC,
         empty: empty || dir === "DESC" ? EMPTY_LAST : EMPTY_FIRST,
       },
-      toEdgeQL,
     })
   );
 }
 
 function offsetFunc(this: any, expr: OffsetExpression | number) {
-  return $pathify(
+  return $expressionify(
     $selectify({
       __kind__: ExpressionKind.Select,
       __element__: this.__element__,
@@ -378,7 +387,6 @@ function offsetFunc(this: any, expr: OffsetExpression | number) {
         kind: SelectModifierKind.offset,
         expr: typeof expr === "number" ? int64(expr) : expr,
       },
-      toEdgeQL,
     })
   );
 }
@@ -405,7 +413,7 @@ function limitFunc(this: any, expr: LimitExpression | number) {
       card = Cardinality.Empty;
     }
   }
-  return $pathify(
+  return $expressionify(
     $selectify({
       __kind__: ExpressionKind.Select,
       __element__: this.__element__,
@@ -415,7 +423,6 @@ function limitFunc(this: any, expr: LimitExpression | number) {
         kind: SelectModifierKind.limit,
         expr: typeof expr === "number" ? int64(expr) : expr,
       },
-      toEdgeQL,
     })
   );
 }
@@ -477,7 +484,7 @@ export function select(expr: BaseExpression, params?: any, ...polys: any[]) {
   if (!params) {
     if (expr.__element__.__kind__ === TypeKind.object) {
       const objectExpr: ObjectTypeExpression = expr as any;
-      return $pathify(
+      return $expressionify(
         $selectify({
           __kind__: ExpressionKind.Select,
           __element__: {
@@ -491,7 +498,6 @@ export function select(expr: BaseExpression, params?: any, ...polys: any[]) {
           __cardinality__: objectExpr.__cardinality__,
           __expr__: objectExpr,
           __modifier__: null,
-          toEdgeQL,
         })
       );
     } else {
@@ -501,13 +507,12 @@ export function select(expr: BaseExpression, params?: any, ...polys: any[]) {
         __cardinality__: expr.__cardinality__,
         __expr__: expr,
         __modifier__: null,
-        toEdgeQL,
       });
     }
   }
 
   const objExpr: ObjectTypeExpression = expr as any;
-  return $pathify(
+  return $expressionify(
     $selectify({
       __kind__: ExpressionKind.Select,
       __element__: {
@@ -522,7 +527,6 @@ export function select(expr: BaseExpression, params?: any, ...polys: any[]) {
       __cardinality__: objExpr.__cardinality__,
       __expr__: expr,
       __modifier__: null,
-      toEdgeQL,
     })
   );
 }

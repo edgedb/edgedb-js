@@ -2,7 +2,7 @@
 import type {$expr_TypeIntersection, $pathify} from "../syntax/path";
 import type {literal} from "../syntax/literal";
 import type {typeutil} from "./util/typeutil";
-import {Cardinality, TypeKind} from "./enums";
+import {Cardinality, ExpressionKind, TypeKind} from "./enums";
 
 //////////////////
 // BASE TYPES
@@ -190,21 +190,27 @@ export interface TypeSet<
   __cardinality__: Card;
 }
 
-export type makeSet<
-  T extends MaterialType = MaterialType,
-  Card extends Cardinality = Cardinality
-> = {
-  __element__: T;
-  __cardinality__: Card;
+// utlity function for creating set
+export function $toSet<Root extends MaterialType, Card extends Cardinality>(
+  root: Root,
+  card: Card
+): TypeSet<Root, Card> {
+  return {
+    __element__: root,
+    __cardinality__: card,
+  };
+}
+
+export type BaseExpression<Set extends TypeSet = TypeSet> = {
+  __element__: Set["__element__"];
+  __cardinality__: Set["__cardinality__"];
+  // __kind__: ExpressionKind;
+  toEdgeQL(): string;
 };
 
-export type BaseExpression<Set extends TypeSet = TypeSet> = typeutil.flatten<
-  Set & ExpressionMethods<Set> & $pathify<Set>
->;
-
-export type Expression<Set extends TypeSet = TypeSet> = typeutil.flatten<
-  Set & ExpressionMethods<Set> & $pathify<Set>
->;
+export type Expression<Set extends TypeSet = TypeSet> = Set &
+  ExpressionMethods<Set> &
+  $pathify<Set>;
 
 export interface ExpressionMethods<Set extends TypeSet> {
   __element__: Set["__element__"];
@@ -360,7 +366,7 @@ type TypeToTsType<Type extends BaseType> = Type extends ScalarType
   ? Type["__tsconsttype__"]
   : Type["__tstype__"];
 
-export type setToTsType<Set extends BaseTypeSet> = Set extends makeSet<
+export type setToTsType<Set extends BaseTypeSet> = Set extends TypeSet<
   infer Type,
   infer Card
 >
@@ -379,12 +385,12 @@ export type setToTsType<Set extends BaseTypeSet> = Set extends makeSet<
 
 export type propToTsType<Prop extends PropertyDesc> =
   Prop extends PropertyDesc<infer Type, infer Card>
-    ? setToTsType<makeSet<Type, Card>>
+    ? setToTsType<TypeSet<Type, Card>>
     : never;
 
 export type linkToTsType<Link extends LinkDesc<any, any, any, any>> =
   Link extends LinkDesc<infer Type, infer Card, any>
-    ? setToTsType<makeSet<Type, Card>>
+    ? setToTsType<TypeSet<Type, Card>>
     : never;
 
 export type shapeElementToTsType<El extends PropertyDesc | LinkDesc> =
