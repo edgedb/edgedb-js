@@ -10,7 +10,7 @@ const pageResults = e
     id: true,
     name: true,
   })
-  .limit(10);
+  .limit(1);
 
 const query = e.select(e.std.FreeObject, {
   id: true,

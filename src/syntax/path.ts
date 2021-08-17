@@ -79,15 +79,6 @@ export type $pathify<
         PathNodeMethods<Root>
   : unknown; // pathify does nothing on non-object types
 
-function isFunc(this: any, expr: ObjectTypeSet) {
-  return $expressionify({
-    __kind__: ExpressionKind.TypeIntersection,
-    __cardinality__: this.__cardinality__,
-    __element__: expr.__element__,
-    __expr__: this,
-  });
-}
-
 export function $pathify<Root extends TypeSet, Parent extends PathParent>(
   _root: Root
 ): $pathify<Root, Parent> {
@@ -226,6 +217,15 @@ export type ExpressionRoot = {
   __kind__: ExpressionKind;
 };
 
+function isFunc(this: any, expr: ObjectTypeSet) {
+  return $expressionify({
+    __kind__: ExpressionKind.TypeIntersection,
+    __cardinality__: this.__cardinality__,
+    __element__: expr.__element__,
+    __expr__: this,
+  });
+}
+
 export function $expressionify<T extends ExpressionRoot>(
   _expr: T
 ): Expression<T> {
@@ -233,6 +233,6 @@ export function $expressionify<T extends ExpressionRoot>(
   expr.$is = isFunc.bind(expr) as any;
   expr.toEdgeQL = toEdgeQL.bind(expr);
   $pathify(expr);
-  // expr.$assertSingle = () => _std.assert_single(expr) as any;
+  expr.$assertSingle = () => _std.assert_single(expr) as any;
   return expr as any;
 }
