@@ -67,7 +67,7 @@ export interface ObjectType<
 > {
   __kind__: TypeKind.object;
   // __tstype__: computeObjectShape<Shape, Params, Polys>;
-  __tstype__: testComputeObjectShape<Shape, Params, Polys>;
+  __tstype__: newComputeObjectShape<Shape, Params, Polys>;
   __name__: Name;
   __shape__: Shape;
   __params__: Params;
@@ -103,7 +103,7 @@ export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
 
 type isEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
 
-export type testComputeObjectShape<
+export type newComputeObjectShape<
   Shape extends ObjectTypeShape,
   Params extends object | null,
   Polys extends Poly[]
@@ -115,22 +115,22 @@ export type testComputeObjectShape<
   ? any
   : isEqual<Params, null> extends true
   ? any
-  : testShapeWithPolysToTs<Shape, Params, Polys>;
+  : newShapeWithPolysToTs<Shape, Params, Polys>;
 
-export type testShapeWithPolysToTs<
+export type newShapeWithPolysToTs<
   Shape extends ObjectTypeShape,
   Params extends object | null,
   Polys extends Poly[]
-> = testSimpleShapeToTs<Shape, Params> &
+> = newSimpleShapeToTs<Shape, Params> &
   unionToIntersection<
     Polys[number] extends infer P
       ? P extends Poly
-        ? Partial<testSimpleShapeToTs<P["type"]["__shape__"], P["params"]>>
+        ? Partial<newSimpleShapeToTs<P["type"]["__shape__"], P["params"]>>
         : never
       : never
   >;
 
-export type testSimpleShapeToTs<
+export type newSimpleShapeToTs<
   Shape extends ObjectTypeShape,
   Params
 > = typeutil.flatten<
@@ -147,7 +147,7 @@ export type testSimpleShapeToTs<
           ? setToTsType<Param>
           : Param extends object
           ? Shape[k]["target"] extends SomeObjectType
-            ? testSimpleShapeToTs<Shape[k]["target"]["__shape__"], Param>
+            ? newSimpleShapeToTs<Shape[k]["target"]["__shape__"], Param>
             : never
           : never
         : Param extends TypeSet
