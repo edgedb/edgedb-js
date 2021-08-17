@@ -6,13 +6,10 @@ import {
   MaterialType,
   ObjectTypeSet,
   TypeSet,
-  // ObjectTypeSet,
   Expression,
   ExpressionKind,
   TypeKind,
   ObjectTypeShape,
-  SomeObjectType,
-  ExpressionMethods,
 } from "reflection";
 
 import {toEdgeQL} from "./toEdgeQL";
