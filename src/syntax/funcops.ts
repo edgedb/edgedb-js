@@ -27,12 +27,14 @@ export type $expr_Function<
     [key: string]: MaterialTypeSet;
   },
   ReturnType extends MaterialTypeSet = MaterialTypeSet
-> = Expression<ReturnType> & {
+> = Expression<{
+  __element__: ReturnType["__element__"];
+  __cardinality__: ReturnType["__cardinality__"];
   __kind__: ExpressionKind.Function;
   __name__: Name;
   __args__: Args;
   __namedargs__: NamedArgs;
-};
+}>;
 
 export type OperatorKind = "Infix" | "Postfix" | "Prefix" | "Ternary";
 

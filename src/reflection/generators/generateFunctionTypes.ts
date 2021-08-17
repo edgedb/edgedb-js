@@ -1,15 +1,8 @@
 import type {GeneratorParams} from "../generate";
-import {
-  frag,
-  getRef,
-  joinFrags,
-  quote,
-  splitName,
-  makeValidIdent,
-} from "../util/genutil";
+import {frag, getRef, quote, splitName} from "../util/genutil";
 import {CodeBuffer, CodeBuilder, CodeFragment, DirBuilder} from "../builders";
 
-import {FunctionDef, Param, Typemod} from "../queries/getFunctions";
+import {Param, Typemod} from "../queries/getFunctions";
 import {getStringRepresentation} from "./generateObjectTypes";
 import {introspect, StrictMap} from "../../reflection";
 import {
@@ -392,7 +385,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
       });
       code.writeln(frag`]);`);
 
-      code.writeln(frag`return {`);
+      code.writeln(frag`return _.syntax.$expressionify({`);
       code.indented(() => {
         code.writeln(frag`__kind__: $.ExpressionKind.${funcopExprKind},`);
         code.writeln(frag`__element__: returnType,`);
@@ -400,7 +393,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
         implReturnGen(code, funcName, funcDefs);
         code.writeln(frag`toEdgeQL: _.syntax.toEdgeQL`);
       });
-      code.writeln(frag`} as any;`);
+      code.writeln(frag`}) as any;`);
     });
 
     code.writeln(frag`};`);

@@ -21,10 +21,12 @@ import {getSharedParentScalar} from "@generated/castMaps";
 // @ts-ignore
 export {set} from "@generated/syntax/setImpl";
 
-export type $expr_Set<Set extends TypeSet = TypeSet> = Expression<Set> & {
+export type $expr_Set<Set extends TypeSet = TypeSet> = Expression<{
+  __element__: Set["__element__"];
+  __cardinality__: Set["__cardinality__"];
   __exprs__: Expression<Set>[];
   __kind__: ExpressionKind.Set;
-};
+}>;
 
 type mergeTypeTuples<AItems, BItems> = {
   [k in keyof AItems]: k extends keyof BItems

@@ -10,13 +10,13 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
 
   code.addImport(`import {
   ArrayType,
-  makeSet,
+  TypeSet,
   MaterialType,
   ObjectTypeExpression,
   PrimitiveExpression,
-  TypeSet,
   TypeKind,
-  BaseExpression, Expression,
+  BaseExpression,
+  Expression,
   ExpressionKind,
   cardinalityUtil,
   mergeObjectTypes,
@@ -25,7 +25,7 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
 } from "edgedb/src/reflection";
 
 import {getSharedParentScalar} from "../castMaps";
-import {$pathify} from "./path";
+import {$expressionify} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
 
 import {
@@ -41,14 +41,14 @@ import {
 
   code.writeln(frag`type getSetTypeFromExprs<
   Exprs extends [BaseExpression, ...BaseExpression[]]
-> = makeSet<
+> = TypeSet<
   getSharedParentPrimitiveVariadic<getTypesFromExprs<Exprs>>,
   cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
 >;
 
 export function set<Type extends MaterialType>(
   type: Type
-): $expr_Set<makeSet<Type, Cardinality.Empty>>;
+): $expr_Set<TypeSet<Type, Cardinality.Empty>>;
 export function set<
   Expr extends BaseExpression
 >(expr: Expr): $expr_Set<Expr>;`);
@@ -80,7 +80,7 @@ export function set<
 >(
   ...exprs: Exprs
 ): $expr_Set<
-  makeSet<
+  TypeSet<
     mergeObjectTypesVariadic<getTypesFromObjectExprs<Exprs>>,
     cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
   >
@@ -98,7 +98,7 @@ export function set<
   expr: Expr,
   ...exprs: Exprs
 ): $expr_Set<
-  makeSet<
+  TypeSet<
     getPrimitiveBaseType<Expr["__element__"]>,
     cardinalityUtil.mergeCardinalitiesVariadic<
       getCardsFromExprs<[Expr, ...Exprs]>
@@ -119,18 +119,17 @@ export function set<
     Object.values(TypeKind).includes(_exprs[0].__kind__)
   ) {
     const element: MaterialType = _exprs[0] as any;
-    return $pathify({
+    return $expressionify({
       __kind__: ExpressionKind.Set,
       __element__: element,
       __cardinality__: Cardinality.Empty,
-      toEdgeQL,
       __exprs__: [],
     }) as any;
   }
   const exprs: BaseExpression[] = _exprs;
   if (exprs.every((expr) => expr.__element__.__kind__ === TypeKind.object)) {
     // merge object types;
-    return $pathify({
+    return $expressionify({
       __kind__: ExpressionKind.Set,
       __element__: exprs
         .map((expr) => expr.__element__ as any)
@@ -138,12 +137,11 @@ export function set<
       __cardinality__: cardinalityUtil.mergeCardinalitiesVariadic(
         exprs.map((expr) => expr.__cardinality__) as any
       ),
-      toEdgeQL,
       __exprs__: exprs,
     }) as any;
   }
   if (exprs.every((expr) => expr.__element__.__kind__ !== TypeKind.object)) {
-    return {
+    return $expressionify({
       __kind__: ExpressionKind.Set,
       __element__: exprs
         .map((expr) => expr.__element__ as any)
@@ -151,9 +149,8 @@ export function set<
       __cardinality__: cardinalityUtil.mergeCardinalitiesVariadic(
         exprs.map((expr) => expr.__cardinality__) as any
       ),
-      toEdgeQL,
       __exprs__: exprs,
-    } as $expr_Set;
+    }) as any;
   }
   throw new Error(
     ${

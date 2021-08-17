@@ -274,7 +274,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     body.writeln([`);`]);
     body.nl();
     body.writeln(
-      frag`export const ${literal} = _.syntax.$expr_PathNode(_.syntax.$toSet(${ref}, $.Cardinality.Many), null, true);`
+      frag`export const ${literal} = _.syntax.$expr_PathNode($.$toSet(${ref}, $.Cardinality.Many), null, true);`
     );
     body.nl();
     body.nl();
