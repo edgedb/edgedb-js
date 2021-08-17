@@ -1,9 +1,8 @@
 import {
   ExpressionKind,
   MaterialType,
-  ObjectTypeExpression,
   Poly,
-  SomeObjectType,
+  SelectModifierKind,
   TypeKind,
   util,
 } from "reflection";
@@ -13,14 +12,18 @@ import {
   LocalDateTime,
   LocalTime,
 } from "edgedb/src/index.node";
-import {$expr_PathLeaf, $expr_PathNode, $expr_TypeIntersection} from "./path";
-import {$expr_Literal} from "./literal";
-import {$expr_Set} from "./set";
-import {$expr_Cast} from "./cast";
-import {$expr_Select, ModifierKind} from "./select";
-import {$expr_Function, $expr_Operator} from "./funcops";
-import {$expr_For} from "./for";
-import {$expr_ForVar} from "@generated/syntax/for";
+import type {
+  $expr_PathLeaf,
+  $expr_PathNode,
+  $expr_TypeIntersection,
+} from "./path";
+import type {$expr_Literal} from "./literal";
+import type {$expr_Set} from "./set";
+import type {$expr_Cast} from "./cast";
+import type {$expr_Select} from "./select";
+import type {$expr_Function, $expr_Operator} from "./funcops";
+import type {$expr_For} from "./for";
+import type {$expr_ForVar} from "@generated/syntax/for";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -139,18 +142,18 @@ export function toEdgeQL(this: any) {
     if (expr.__modifier__) {
       const lines = [];
       const mod = expr.__modifier__!;
-      if (mod.kind === ModifierKind.filter) {
+      if (mod.kind === SelectModifierKind.filter) {
         lines.push(expr.__expr__.toEdgeQL());
         lines.push(`FILTER ${mod.expr.toEdgeQL()}`);
-      } else if (mod.kind === ModifierKind.order_by) {
+      } else if (mod.kind === SelectModifierKind.order_by) {
         lines.push(expr.__expr__.toEdgeQL());
         lines.push(`ORDER BY ${mod.expr.toEdgeQL()}`);
         if (mod.direction) lines.push(mod.direction);
         if (mod.empty) lines.push(mod.empty);
-      } else if (mod.kind === ModifierKind.offset) {
+      } else if (mod.kind === SelectModifierKind.offset) {
         lines.push(expr.__expr__.toEdgeQL());
         lines.push(`OFFSET ${mod.expr.toEdgeQL()}`);
-      } else if (mod.kind === ModifierKind.limit) {
+      } else if (mod.kind === SelectModifierKind.limit) {
         lines.push(expr.__expr__.toEdgeQL());
         lines.push(`LIMIT ${mod.expr.toEdgeQL()}`);
       } else {
@@ -190,14 +193,18 @@ export function toEdgeQL(this: any) {
             Array.isArray(val) ? val.join(":") : val
           }])`;
         }
-        return `(${(args[0] as any).toEdgeQL()} ${operator} ${(args[1] as any).toEdgeQL()})`;
+        return `(${(args[0] as any).toEdgeQL()} ${operator} ${(
+          args[1] as any
+        ).toEdgeQL()})`;
       case "Postfix":
         return `(${(args[0] as any).toEdgeQL()} ${operator})`;
       case "Prefix":
         return `(${operator} ${(args[0] as any).toEdgeQL()})`;
       case "Ternary":
         if (operator === "IF") {
-          return `(${(args[0] as any).toEdgeQL()} IF ${(args[1] as any).toEdgeQL()} ELSE ${(args[2] as any).toEdgeQL()})`;
+          return `(${(args[0] as any).toEdgeQL()} IF ${(
+            args[1] as any
+          ).toEdgeQL()} ELSE ${(args[2] as any).toEdgeQL()})`;
         } else {
           throw new Error(`Unknown operator: ${operator}`);
         }
@@ -208,7 +215,9 @@ export function toEdgeQL(this: any) {
         );
     }
   } else if (expr.__kind__ === ExpressionKind.For) {
-    return `FOR ${expr.__forVar__.toEdgeQL()} IN {${(expr.__iterSet__ as any).toEdgeQL()}}
+    return `FOR ${expr.__forVar__.toEdgeQL()} IN {${(
+      expr.__iterSet__ as any
+    ).toEdgeQL()}}
 UNION (${expr.__expr__.toEdgeQL()})`;
   } else if (expr.__kind__ === ExpressionKind.ForVar) {
     return `__forVar_${expr.__id__}`;

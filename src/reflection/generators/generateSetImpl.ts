@@ -16,7 +16,7 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
   PrimitiveExpression,
   TypeSet,
   TypeKind,
-  BaseExpression,
+  BaseExpression, Expression,
   ExpressionKind,
   cardinalityUtil,
   mergeObjectTypes,
@@ -55,7 +55,7 @@ export function set<
 
   for (const implicitRootTypeId of implicitCastableRootTypes) {
     code.writeln(frag`export function set<
-  Expr extends BaseExpression<TypeSet<${
+  Expr extends Expression<TypeSet<${
     getStringRepresentation(types.get(implicitRootTypeId), {
       types,
       casts: casts.implicitCastFromMap,
@@ -64,7 +64,7 @@ export function set<
   Exprs extends [Expr, ...Expr[]]
 >(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;`);
     code.writeln(frag`export function set<
-  Expr extends BaseExpression<TypeSet<ArrayType<${
+  Expr extends Expression<TypeSet<ArrayType<${
     getStringRepresentation(types.get(implicitRootTypeId), {
       types,
       casts: casts.implicitCastFromMap,
@@ -86,12 +86,12 @@ export function set<
   >
 >;
 export function set<
-  Expr extends BaseExpression<TypeSet<AnyTupleType>>,
+  Expr extends Expression<TypeSet<AnyTupleType>>,
   Exprs extends [Expr, ...Expr[]]
 >(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;
 export function set<
   Expr extends PrimitiveExpression,
-  Exprs extends BaseExpression<
+  Exprs extends Expression<
     TypeSet<getPrimitiveBaseType<Expr["__element__"]>>
   >[]
 >(

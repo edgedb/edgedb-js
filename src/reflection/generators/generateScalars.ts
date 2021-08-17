@@ -106,7 +106,8 @@ export const generateScalars = (params: GeneratorParams) => {
       frag`export const ${literal} = $.makeType<${ref}>(_.spec, "${type.id}", _.syntax.literal);`
     );
     // sc.writeln(
-    //   frag`export const ${literal} = <T extends ${tsType}>(val: T) => _.syntax.literal<$.ScalarType<"${type.name}", T>>(${ref} as any, val);`
+    //   frag`export const ${literal} = <T extends ${tsType}>(val: T) =>
+    //  _.syntax.literal<$.ScalarType<"${type.name}", T>>(${ref} as any, val);`
     // );
 
     if (casts.implicitCastFromMap[type.id]?.length) {

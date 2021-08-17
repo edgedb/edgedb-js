@@ -1,6 +1,6 @@
 import {Connection} from "../../ifaces";
+import {Cardinality} from "../enums";
 import {StrictMap} from "../strictMap";
-import {Cardinality} from "../typesystem";
 
 export type UUID = string;
 

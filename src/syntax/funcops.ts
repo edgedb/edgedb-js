@@ -1,5 +1,6 @@
 import {
   BaseExpression,
+  Expression,
   MaterialType,
   MaterialTypeSet,
   Cardinality,
@@ -26,7 +27,7 @@ export type $expr_Function<
     [key: string]: MaterialTypeSet;
   },
   ReturnType extends MaterialTypeSet = MaterialTypeSet
-> = BaseExpression<ReturnType> & {
+> = Expression<ReturnType> & {
   __kind__: ExpressionKind.Function;
   __name__: Name;
   __args__: Args;
@@ -40,12 +41,14 @@ export type $expr_Operator<
   OpKind extends OperatorKind = OperatorKind,
   Args extends MaterialTypeSet[] = MaterialTypeSet[],
   ReturnType extends MaterialTypeSet = MaterialTypeSet
-> = BaseExpression<ReturnType> & {
+> = Expression<{
+  __element__: ReturnType["__element__"];
+  __cardinality__: ReturnType["__cardinality__"];
   __kind__: ExpressionKind.Operator;
   __name__: Name;
   __opkind__: OpKind;
   __args__: Args;
-};
+}>;
 
 interface OverloadFuncArgDef {
   typeId: string;

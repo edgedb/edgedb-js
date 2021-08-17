@@ -1,5 +1,6 @@
 import {
   BaseExpression,
+  Expression,
   ExpressionKind,
   makeSet,
   MaterialType,
@@ -23,7 +24,9 @@ export function cast<Target extends MaterialType, Expr extends BaseExpression>(
 export type $expr_Cast<
   Target extends MaterialType = MaterialType,
   Expr extends BaseExpression = BaseExpression
-> = BaseExpression<makeSet<Target, Expr["__cardinality__"]>> & {
-  __expr__: Expr;
+> = Expression<{
+  __element__: Target;
+  __cardinality__: Expr["__cardinality__"];
   __kind__: ExpressionKind.Cast;
-};
+  __expr__: Expr;
+}>;
