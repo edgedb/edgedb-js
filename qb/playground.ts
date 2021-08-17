@@ -1,6 +1,6 @@
 // tslint:disable:no-console
 import {select} from "@syntax/select";
-import {setToTsType, simpleShapeToTs, TypeSet} from "reflection";
+import {setToTsType} from "reflection";
 import e from "./generated/example";
 
 const skip = e.int64(10);
@@ -12,7 +12,6 @@ const pageResults = e
   })
   .limit(10);
 
-// pageResults.__element__.
 type pageResultsType = setToTsType<typeof pageResults>;
 
 const query = select(e.Hero, {

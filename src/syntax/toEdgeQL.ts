@@ -136,19 +136,19 @@ export function toEdgeQL(this: any) {
       const lines = [];
       const mod = expr.__modifier__!;
       if (mod.kind === SelectModifierKind.filter) {
-        lines.push(expr.__expr__.toEdgeQL());
-        lines.push(`FILTER ${mod.expr.toEdgeQL()}`);
+        lines.push((expr.__expr__ as any).toEdgeQL());
+        lines.push(`FILTER ${(mod.expr as any).toEdgeQL()}`);
       } else if (mod.kind === SelectModifierKind.order_by) {
-        lines.push(expr.__expr__.toEdgeQL());
-        lines.push(`ORDER BY ${mod.expr.toEdgeQL()}`);
+        lines.push((expr.__expr__ as any).toEdgeQL());
+        lines.push(`ORDER BY ${(mod.expr as any).toEdgeQL()}`);
         if (mod.direction) lines.push(mod.direction);
         if (mod.empty) lines.push(mod.empty);
       } else if (mod.kind === SelectModifierKind.offset) {
-        lines.push(expr.__expr__.toEdgeQL());
-        lines.push(`OFFSET ${mod.expr.toEdgeQL()}`);
+        lines.push((expr.__expr__ as any).toEdgeQL());
+        lines.push(`OFFSET ${(mod.expr as any).toEdgeQL()}`);
       } else if (mod.kind === SelectModifierKind.limit) {
-        lines.push(expr.__expr__.toEdgeQL());
-        lines.push(`LIMIT ${mod.expr.toEdgeQL()}`);
+        lines.push((expr.__expr__ as any).toEdgeQL());
+        lines.push(`LIMIT ${(mod.expr as any).toEdgeQL()}`);
       } else {
         util.assertNever(mod, new Error(`Unknown operator kind: ${mod}`));
       }
@@ -156,7 +156,7 @@ export function toEdgeQL(this: any) {
     }
     if (expr.__element__.__kind__ === TypeKind.object) {
       const lines = [];
-      lines.push(`SELECT (${expr.__expr__.toEdgeQL()})`);
+      lines.push(`SELECT (${(expr.__expr__ as any).toEdgeQL()})`);
 
       lines.push(
         shapeToEdgeQL(
@@ -167,7 +167,7 @@ export function toEdgeQL(this: any) {
       return lines.join("\n");
     } else {
       // non-object/non-shape select expression
-      return `SELECT (${expr.__expr__.toEdgeQL()})`;
+      return `SELECT (${(expr.__expr__ as any).toEdgeQL()})`;
     }
   } else if (expr.__kind__ === ExpressionKind.Function) {
     const args = expr.__args__.map((arg) => (arg as any).toEdgeQL());

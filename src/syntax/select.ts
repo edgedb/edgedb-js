@@ -1,6 +1,5 @@
 import {$anyint, $bool, $int64, int64} from "@generated/modules/std";
 import {
-  BaseExpression,
   Expression,
   Cardinality,
   ExpressionKind,
@@ -30,7 +29,7 @@ import {
 // offset
 // limit
 
-export type SelectFilterExpression = Expression<TypeSet<$bool, Cardinality>>;
+export type SelectFilterExpression = TypeSet<$bool, Cardinality>;
 export type mod_Filter<Expr = SelectFilterExpression> = {
   kind: SelectModifierKind.filter;
   expr: Expr;
@@ -42,7 +41,7 @@ export const EMPTY_FIRST: "EMPTY FIRST" = "EMPTY FIRST";
 export const EMPTY_LAST: "EMPTY LAST" = "EMPTY LAST";
 export type OrderByDirection = "ASC" | "DESC";
 export type OrderByEmpty = "EMPTY FIRST" | "EMPTY LAST";
-export type OrderByExpression = Expression<TypeSet<ScalarType, Cardinality>>;
+export type OrderByExpression = TypeSet<ScalarType, Cardinality>;
 export type mod_OrderBy<Expr extends OrderByExpression = OrderByExpression> = {
   kind: SelectModifierKind.order_by;
   expr: Expr;
@@ -50,16 +49,19 @@ export type mod_OrderBy<Expr extends OrderByExpression = OrderByExpression> = {
   empty: OrderByEmpty;
 };
 
-export type OffsetExpression = Expression<
-  TypeSet<$anyint, Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne>
+export type OffsetExpression = TypeSet<
+  $anyint,
+  Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
+
 export type mod_Offset<Expr extends OffsetExpression = OffsetExpression> = {
   kind: SelectModifierKind.offset;
   expr: Expr;
 };
 
-export type LimitExpression = Expression<
-  TypeSet<$anyint, Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne>
+export type LimitExpression = TypeSet<
+  $anyint,
+  Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
 export type mod_Limit<Expr extends OffsetExpression = OffsetExpression> = {
   kind: SelectModifierKind.limit;
@@ -71,15 +73,15 @@ export type SelectModifier = mod_Filter | mod_OrderBy | mod_Offset | mod_Limit;
 export type SelectMethodNames = "filter" | "orderBy" | "offset" | "limit";
 export type SelectPlusMethods<
   Set extends TypeSet = TypeSet,
-  Expr extends BaseExpression = BaseExpression,
+  Expr extends TypeSet = TypeSet,
   Modifier extends SelectModifier | null = SelectModifier | null,
   Methods extends SelectMethodNames = never
 > = $expr_Select<Set, Expr, Modifier> &
-  Pick<SelectMethods<$expr_Select<Set, Expr, Modifier>, Expr>, Methods>;
+  Pick<SelectMethods<Set, Expr>, Methods>;
 
 export type $expr_Select<
   Set extends TypeSet = TypeSet,
-  Expr extends BaseExpression = BaseExpression,
+  Expr extends TypeSet = TypeSet,
   Modifier extends SelectModifier | null = SelectModifier | null
 > = Expression<{
   __element__: Set["__element__"];
@@ -170,15 +172,12 @@ export type inferCardinality<Base extends TypeSet, Filter extends TypeSet> =
       : Base["__cardinality__"]
     : Base["__cardinality__"];
 
-interface SelectMethods<
-  Self extends BaseExpression,
-  Root extends BaseExpression
-> {
+interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
   // required so `this` passes validation
-  // as a BaseExpression
+  // as a TypeSet
   __element__: Self["__element__"];
   __cardinality__: Self["__cardinality__"];
-  toEdgeQL: Self["toEdgeQL"];
+  // toEdgeQL: Self["toEdgeQL"];
   // __kind__: Self["__kind__"];
   // $is: Self["$is"];
 
@@ -281,7 +280,7 @@ function filterFunc(this: any, expr: SelectFilterExpression) {
   let card = this.__cardinality__;
 
   // extremely fiddly cardinality inference logic
-  const base: BaseExpression = this.__expr__;
+  const base: TypeSet = this.__expr__;
 
   const filter: any = expr;
   // Base is ObjectExpression
@@ -290,7 +289,7 @@ function filterFunc(this: any, expr: SelectFilterExpression) {
     filter.__kind__ === ExpressionKind.Operator &&
     filter.__name__ === "std::=";
   const arg0: $expr_PathLeaf | $expr_PathNode = filter?.__args__?.[0];
-  const arg1: BaseExpression = filter?.__args__?.[1];
+  const arg1: TypeSet = filter?.__args__?.[1];
   const argsExist = !!arg0 && !!arg1 && !!arg1.__cardinality__;
   const arg0IsUnique = arg0?.__exclusive__ === true;
 
@@ -452,7 +451,7 @@ export function select<Expr extends ObjectTypeExpression>(
   null,
   SelectMethodNames
 >;
-export function select<Expr extends BaseExpression>(
+export function select<Expr extends TypeSet>(
   expr: Expr
 ): SelectPlusMethods<Expr, Expr, null, SelectMethodNames>;
 export function select<
@@ -479,7 +478,7 @@ export function select<
   null,
   SelectMethodNames
 >;
-export function select(expr: BaseExpression, params?: any, ...polys: any[]) {
+export function select(expr: TypeSet, params?: any, ...polys: any[]) {
   if (!params) {
     if (expr.__element__.__kind__ === TypeKind.object) {
       const objectExpr: ObjectTypeExpression = expr as any;
