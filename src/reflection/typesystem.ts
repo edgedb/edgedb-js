@@ -273,21 +273,24 @@ export type Expression<Set extends TypeSet = TypeSet> = Set &
 // importing the actual alias from
 // generated/modules/std didn't work.
 // returned 'any' every time
-// export type $assertSingle<Type extends MaterialType, Args> = Expression<{
-//   __element__: Type;
-//   __cardinality__: Cardinality.One;
-//   __kind__: ExpressionKind.Function;
-//   __name__: "std::assert_single";
-//   __args__: Args;
-//   __namedargs__: {};
-// }>;
+export type $assertSingle<Type extends MaterialType, Args> = Expression<{
+  __element__: Type;
+  __cardinality__: Cardinality.One;
+  __kind__: ExpressionKind.Function;
+  __name__: "std::assert_single";
+  __args__: Args;
+  __namedargs__: {};
+}>;
 
 export interface ExpressionMethods<Set extends TypeSet> {
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
   toEdgeQL(): string;
   $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
-  // $assertSingle(): $assertSingle<Set["__element__"], [this]>;
+  $assertSingle<This extends this = this>(): $assertSingle<
+    Set["__element__"],
+    This
+  >;
 }
 
 export type MaterialTypeSet<

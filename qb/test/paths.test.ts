@@ -115,11 +115,11 @@ test("type intersection on select", () => {
   expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
 });
 
-// test("assertSingle", () => {
-//   const singleHero = e.Hero.$assertSingle();
-//   const f1: typeutil.assertEqual<
-//     typeof singleHero["__cardinality__"],
-//     Cardinality.One
-//   > = true;
-//   expect(singleHero.__cardinality__).toEqual(Cardinality.One);
-// });
+test("assertSingle", () => {
+  const singleHero = e.Hero.$assertSingle();
+  const f1: typeutil.assertEqual<
+    typeof singleHero["__cardinality__"],
+    Cardinality.One
+  > = true;
+  expect(singleHero.__cardinality__).toEqual(Cardinality.One);
+});
