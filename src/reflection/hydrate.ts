@@ -1,8 +1,8 @@
+import {TypeKind} from "./enums";
 import * as introspect from "./queries/getTypes";
 
 import {
   BaseType,
-  TypeKind,
   ObjectType,
   ObjectTypeShape,
   shapeToTsType,

@@ -1,4 +1,3 @@
-import {$Hero, $Person} from "@generated/modules/default";
 import {
   cardinalityUtil,
   Cardinality,
@@ -9,6 +8,7 @@ import {
   TypeSet,
   ObjectTypeExpression,
   BaseExpression,
+  Expression,
   ExpressionKind,
   TypeKind,
   ObjectTypeShape,
@@ -152,7 +152,7 @@ export type $expr_PathNode<
   Root extends ObjectTypeSet = ObjectTypeSet,
   Parent extends PathParent | null = PathParent | null,
   Exclusive extends boolean = boolean
-> = BaseExpression<Root> & {
+> = Expression<Root> & {
   __parent__: Parent;
   __kind__: ExpressionKind.PathNode;
   __exclusive__: Exclusive;
@@ -161,14 +161,14 @@ export type $expr_PathNode<
 interface PathNodeMethods<Self extends ObjectTypeSet> {
   __element__: Self["__element__"];
   __cardinality__: Self["__cardinality__"];
-  $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
+  // $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
   // $back: Self['__element__']['']
 }
 
 export type $expr_TypeIntersection<
   Expr extends TypeSet = TypeSet,
   Intersection extends ObjectTypeExpression = ObjectTypeExpression
-> = BaseExpression<{
+> = Expression<{
   __element__: Intersection["__element__"];
   __cardinality__: Expr["__cardinality__"];
 }> & {
@@ -200,7 +200,7 @@ export type $expr_PathLeaf<
   Root extends TypeSet = TypeSet,
   Parent extends PathParent = PathParent,
   Exclusive extends boolean = boolean
-> = BaseExpression<Root> & {
+> = Expression<Root> & {
   __kind__: ExpressionKind.PathLeaf;
   __parent__: Parent;
   __exclusive__: Exclusive;
@@ -223,3 +223,18 @@ export const $expr_PathLeaf = <
     toEdgeQL,
   } as any;
 };
+
+export type ExpressionRoot = {
+  __element__: MaterialType;
+  __cardinality__: Cardinality;
+  __kind__: ExpressionKind;
+};
+export function $expressionify<T extends ExpressionRoot>(
+  _expr: T
+): Expression<T> {
+  const expr: Expression = _expr as any;
+  expr.$is = isFunc.bind(expr) as any;
+  expr.toEdgeQL = toEdgeQL.bind(expr);
+  $pathify(expr);
+  return expr as any;
+}

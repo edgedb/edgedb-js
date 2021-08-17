@@ -3,7 +3,7 @@ import {getRef, frag, joinFrags, splitName, quote} from "../util/genutil";
 
 import * as introspect from "../queries/getTypes";
 import {CodeFragment} from "../builders";
-import {Cardinality} from "../typesystem";
+import {Cardinality} from "../enums";
 
 export const getStringRepresentation: (
   type: introspect.Type,

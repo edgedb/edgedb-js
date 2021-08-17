@@ -2,9 +2,9 @@ import _std from "@generated/modules/std";
 import {$anyint, $bool, $int64, int64} from "@generated/modules/std";
 import {
   BaseExpression,
+  Expression,
   Cardinality,
   ExpressionKind,
-  MaterialType,
   objectExprToSelectParams,
   ObjectType,
   ObjectTypeExpression,
@@ -14,9 +14,9 @@ import {
   TypeKind,
   TypeSet,
   typeutil,
-  util,
+  SelectModifierKind,
 } from "reflection";
-import {cast} from "./cast";
+
 import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "./literal";
 import {$expr_PathLeaf, $expr_PathNode, $pathify, PathParent} from "./path";
@@ -26,17 +26,10 @@ import {toEdgeQL} from "./toEdgeQL";
 // order by
 // offset
 // limit
-export enum ModifierKind {
-  filter = "filter",
-  order_by = "order_by",
-  offset = "offset",
-  limit = "limit",
-}
-export type SelectFilterExpression = BaseExpression<
-  TypeSet<$bool, Cardinality>
->;
+
+export type SelectFilterExpression = Expression<TypeSet<$bool, Cardinality>>;
 export type mod_Filter<Expr = SelectFilterExpression> = {
-  kind: ModifierKind.filter;
+  kind: SelectModifierKind.filter;
   expr: Expr;
 };
 
@@ -46,29 +39,27 @@ export const EMPTY_FIRST: "EMPTY FIRST" = "EMPTY FIRST";
 export const EMPTY_LAST: "EMPTY LAST" = "EMPTY LAST";
 export type OrderByDirection = "ASC" | "DESC";
 export type OrderByEmpty = "EMPTY FIRST" | "EMPTY LAST";
-export type OrderByExpression = BaseExpression<
-  TypeSet<ScalarType, Cardinality>
->;
+export type OrderByExpression = Expression<TypeSet<ScalarType, Cardinality>>;
 export type mod_OrderBy<Expr extends OrderByExpression = OrderByExpression> = {
-  kind: ModifierKind.order_by;
+  kind: SelectModifierKind.order_by;
   expr: Expr;
   direction: OrderByDirection;
   empty: OrderByEmpty;
 };
 
-export type OffsetExpression = BaseExpression<
+export type OffsetExpression = Expression<
   TypeSet<$anyint, Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne>
 >;
 export type mod_Offset<Expr extends OffsetExpression = OffsetExpression> = {
-  kind: ModifierKind.offset;
+  kind: SelectModifierKind.offset;
   expr: Expr;
 };
 
-export type LimitExpression = BaseExpression<
+export type LimitExpression = Expression<
   TypeSet<$anyint, Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne>
 >;
 export type mod_Limit<Expr extends OffsetExpression = OffsetExpression> = {
-  kind: ModifierKind.limit;
+  kind: SelectModifierKind.limit;
   expr: Expr;
 };
 
@@ -87,7 +78,7 @@ export type $expr_Select<
   Set extends TypeSet = TypeSet,
   Expr extends BaseExpression = BaseExpression,
   Modifier extends SelectModifier | null = SelectModifier | null
-> = BaseExpression<Set> & {
+> = Expression<Set> & {
   __expr__: Expr;
   __kind__: ExpressionKind.Select;
   __modifier__: Modifier;
@@ -190,7 +181,7 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
     },
     this,
     {
-      kind: ModifierKind.filter;
+      kind: SelectModifierKind.filter;
       expr: Expr;
     },
     SelectMethodNames // all methods
@@ -203,7 +194,7 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
     Self,
     this,
     {
-      kind: ModifierKind.order_by;
+      kind: SelectModifierKind.order_by;
       expr: Expr;
       direction: OrderByDirection;
       empty: OrderByEmpty;
@@ -216,7 +207,7 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
     Self,
     this,
     {
-      kind: ModifierKind.offset;
+      kind: SelectModifierKind.offset;
       expr: Expr;
     },
     "limit" // all methods
@@ -225,7 +216,7 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
     Self,
     this,
     {
-      kind: ModifierKind.offset;
+      kind: SelectModifierKind.offset;
       expr: $expr_Literal<$int64>;
     },
     "limit"
@@ -244,7 +235,7 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
     },
     this,
     {
-      kind: ModifierKind.limit;
+      kind: SelectModifierKind.limit;
       expr: Expr;
     },
     never
@@ -262,7 +253,7 @@ interface SelectMethods<Self extends TypeSet, Root extends BaseExpression> {
     },
     this,
     {
-      kind: ModifierKind.limit;
+      kind: SelectModifierKind.limit;
       expr: $expr_Literal<$int64>;
     },
     never
@@ -345,7 +336,7 @@ function filterFunc(this: any, expr: SelectFilterExpression) {
       __cardinality__: card,
       __expr__: this,
       __modifier__: {
-        kind: ModifierKind.filter,
+        kind: SelectModifierKind.filter,
         expr,
       },
       toEdgeQL,
@@ -366,7 +357,7 @@ function orderByFunc(
       __cardinality__: this.__cardinality__,
       __expr__: this,
       __modifier__: {
-        kind: ModifierKind.order_by,
+        kind: SelectModifierKind.order_by,
         expr,
         direction: dir || ASC,
         empty: empty || dir === "DESC" ? EMPTY_LAST : EMPTY_FIRST,
@@ -384,7 +375,7 @@ function offsetFunc(this: any, expr: OffsetExpression | number) {
       __cardinality__: this.__cardinality__,
       __expr__: this,
       __modifier__: {
-        kind: ModifierKind.offset,
+        kind: SelectModifierKind.offset,
         expr: typeof expr === "number" ? int64(expr) : expr,
       },
       toEdgeQL,
@@ -421,7 +412,7 @@ function limitFunc(this: any, expr: LimitExpression | number) {
       __cardinality__: card,
       __expr__: this,
       __modifier__: {
-        kind: ModifierKind.limit,
+        kind: SelectModifierKind.limit,
         expr: typeof expr === "number" ? int64(expr) : expr,
       },
       toEdgeQL,

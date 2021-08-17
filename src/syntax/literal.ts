@@ -1,5 +1,6 @@
 import {
   BaseExpression,
+  Expression,
   Cardinality,
   ExpressionKind,
   MaterialType,
@@ -8,7 +9,7 @@ import {
 import {toEdgeQL} from "./toEdgeQL";
 
 export type $expr_Literal<Type extends MaterialType = MaterialType> =
-  BaseExpression<TypeSet<Type, Cardinality.One>> & {
+  Expression<TypeSet<Type, Cardinality.One>> & {
     __kind__: ExpressionKind.Literal;
     __value__: Type["__tstype__"];
   };

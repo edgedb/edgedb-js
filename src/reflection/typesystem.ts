@@ -1,20 +1,12 @@
 // no runtime imports
-import type {$pathify} from "../syntax/path";
+import type {$expr_TypeIntersection, $pathify} from "../syntax/path";
 import type {literal} from "../syntax/literal";
 import type {typeutil} from "./util/typeutil";
+import {Cardinality, TypeKind} from "./enums";
 
 //////////////////
 // BASE TYPES
 //////////////////
-export enum TypeKind {
-  scalar = "scalar",
-  enum = "enum",
-  object = "object",
-  namedtuple = "namedtuple",
-  tuple = "tuple",
-  array = "array",
-  function = "function",
-}
 
 export interface BaseType {
   __kind__: TypeKind;
@@ -190,14 +182,6 @@ export type AnyPoly = {type: any; params: any};
 // SETS AND EXPRESSIONS
 ////////////////////
 
-export enum Cardinality {
-  AtMostOne = "AtMostOne",
-  One = "One",
-  Many = "Many",
-  AtLeastOne = "AtLeastOne",
-  Empty = "Empty",
-}
-
 export interface TypeSet<
   T extends MaterialType = MaterialType,
   Card extends Cardinality = Cardinality
@@ -214,24 +198,19 @@ export type makeSet<
   __cardinality__: Card;
 };
 
-export type BaseExpression<Set extends TypeSet = TypeSet> = {
+export type BaseExpression<Set extends TypeSet = TypeSet> = typeutil.flatten<
+  Set & ExpressionMethods<Set> & $pathify<Set>
+>;
+
+export type Expression<Set extends TypeSet = TypeSet> = typeutil.flatten<
+  Set & ExpressionMethods<Set> & $pathify<Set>
+>;
+
+export interface ExpressionMethods<Set extends TypeSet> {
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
   toEdgeQL(): string;
-} & $pathify<Set>;
-
-export enum ExpressionKind {
-  Set = "Set",
-  PathNode = "PathNode",
-  PathLeaf = "PathLeaf",
-  Literal = "Literal",
-  Cast = "Cast",
-  Select = "Select",
-  Function = "Function",
-  Operator = "Operator",
-  For = "For",
-  ForVar = "ForVar",
-  TypeIntersection = "TypeIntersection",
+  $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
 }
 
 export type MaterialTypeSet<
@@ -245,7 +224,7 @@ export type ObjectTypeSet<
 > = TypeSet<T, Card>;
 
 export type ObjectTypeExpression<Set extends ObjectTypeSet = ObjectTypeSet> =
-  BaseExpression<Set>;
+  Expression<Set>;
 
 export type PrimitiveType =
   | ScalarType
@@ -261,7 +240,7 @@ export type PrimitiveTypeSet<
 
 export type PrimitiveExpression<
   Set extends PrimitiveTypeSet = PrimitiveTypeSet
-> = BaseExpression<Set>;
+> = Expression<Set>;
 
 /////////////////////////
 /// COLLECTION TYPES

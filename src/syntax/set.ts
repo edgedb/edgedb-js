@@ -8,6 +8,7 @@ import {
   TupleType,
   PrimitiveType,
   BaseExpression,
+  Expression,
   ExpressionKind,
   mergeObjectTypes,
   SomeObjectType,
@@ -20,8 +21,8 @@ import {getSharedParentScalar} from "@generated/castMaps";
 // @ts-ignore
 export {set} from "@generated/syntax/setImpl";
 
-export type $expr_Set<Set extends TypeSet = TypeSet> = BaseExpression<Set> & {
-  __exprs__: BaseExpression<Set>[];
+export type $expr_Set<Set extends TypeSet = TypeSet> = Expression<Set> & {
+  __exprs__: Expression<Set>[];
   __kind__: ExpressionKind.Set;
 };
 

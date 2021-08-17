@@ -1,4 +1,5 @@
-import {Cardinality, MaterialType, TypeSet} from "../typesystem";
+import {Cardinality} from "../enums";
+import type {TypeSet} from "../typesystem";
 
 // Computing cardinality of path
 // From base set cadinality and pointer cardinality
@@ -215,11 +216,10 @@ export namespace cardinalityUtil {
     }
   }
 
-  export type optionalParamCardinality<
-    P extends TypeSet | undefined
-  > = P extends TypeSet
-    ? overrideLowerBound<P["__cardinality__"], "One">
-    : Cardinality.One;
+  export type optionalParamCardinality<P extends TypeSet | undefined> =
+    P extends TypeSet
+      ? overrideLowerBound<P["__cardinality__"], "One">
+      : Cardinality.One;
 
   export type paramArrayCardinality<T> = {
     [K in keyof T]: T[K] extends TypeSet ? T[K]["__cardinality__"] : never;

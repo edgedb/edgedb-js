@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+export * from "./enums";
 export * from "./util/util";
 export * from "./typesystem";
 export * from "./strictMap";
