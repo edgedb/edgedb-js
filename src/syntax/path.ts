@@ -6,15 +6,17 @@ import {
   MaterialType,
   ObjectTypeSet,
   TypeSet,
-  ObjectTypeExpression,
-  BaseExpression,
+  // ObjectTypeSet,
   Expression,
   ExpressionKind,
   TypeKind,
   ObjectTypeShape,
+  SomeObjectType,
+  ExpressionMethods,
 } from "reflection";
 
 import {toEdgeQL} from "./toEdgeQL";
+import _std from "@generated/modules/std";
 
 // get the set representing the result of a path traversal
 // including cardinality merging
@@ -30,12 +32,22 @@ type getChildOfObjectTypeSet<
 >;
 
 // path parent must be object expression
-export interface PathParent<
-  Parent extends ObjectTypeExpression = ObjectTypeExpression
-> {
+export interface PathParent<Parent extends ObjectTypeSet = ObjectTypeSet> {
   type: Parent;
   linkName: string;
 }
+
+// type t1 = assert_singleλFuncExpr<
+//   $expr_PathNode<ObjectTypeSet, PathParent | null, boolean>
+// >;
+// type t2 = assert_singleλFuncExpr<
+//   Expression<ObjectTypeSet<SomeObjectType, Cardinality>>
+// >;
+
+// const arg = (arg1: t1) => {
+//   return arg1;
+// };
+// arg("dsf" as t2);
 
 export type $pathify<
   Root extends TypeSet,
@@ -67,7 +79,7 @@ export type $pathify<
         PathNodeMethods<Root>
   : unknown; // pathify does nothing on non-object types
 
-function isFunc(this: any, expr: ObjectTypeExpression) {
+function isFunc(this: any, expr: ObjectTypeSet) {
   return $expressionify({
     __kind__: ExpressionKind.TypeIntersection,
     __cardinality__: this.__cardinality__,
@@ -130,7 +142,6 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
     }
   }
 
-  (root as any).$is = isFunc.bind(root);
   return root as any;
 }
 
@@ -153,7 +164,7 @@ interface PathNodeMethods<Self extends ObjectTypeSet> {
 
 export type $expr_TypeIntersection<
   Expr extends TypeSet = TypeSet,
-  Intersection extends ObjectTypeExpression = ObjectTypeExpression
+  Intersection extends ObjectTypeSet = ObjectTypeSet
 > = Expression<{
   __element__: Intersection["__element__"];
   __cardinality__: Expr["__cardinality__"];
@@ -177,7 +188,7 @@ export const $expr_PathNode = <
     __parent__: parent,
     __exclusive__: exclusive,
   });
-  return pathNode;
+  return pathNode as any;
 };
 
 export type $expr_PathLeaf<
@@ -206,7 +217,7 @@ export const $expr_PathLeaf = <
     __cardinality__: root.__cardinality__,
     __parent__: parent,
     __exclusive__: exclusive,
-  });
+  }) as any;
 };
 
 export type ExpressionRoot = {
@@ -214,6 +225,7 @@ export type ExpressionRoot = {
   __cardinality__: Cardinality;
   __kind__: ExpressionKind;
 };
+
 export function $expressionify<T extends ExpressionRoot>(
   _expr: T
 ): Expression<T> {
@@ -221,5 +233,6 @@ export function $expressionify<T extends ExpressionRoot>(
   expr.$is = isFunc.bind(expr) as any;
   expr.toEdgeQL = toEdgeQL.bind(expr);
   $pathify(expr);
+  // expr.$assertSingle = () => _std.assert_single(expr) as any;
   return expr as any;
 }

@@ -105,7 +105,7 @@ export function toEdgeQL(this: any) {
     if (!expr.__parent__) {
       return expr.__element__.__name__;
     } else {
-      return `${expr.__parent__.type.toEdgeQL()}.${
+      return `${(expr.__parent__.type as any).toEdgeQL()}.${
         expr.__parent__.linkName
       }`.trim();
     }

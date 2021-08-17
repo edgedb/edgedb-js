@@ -138,7 +138,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
         };`;
 
         code.writeln(
-          frag`type ${functionTypeName}${
+          frag`export type ${functionTypeName}${
             hasParams ? `<` : ` = _.syntax.$expr_${funcopExprKind}<`
           }`
         );

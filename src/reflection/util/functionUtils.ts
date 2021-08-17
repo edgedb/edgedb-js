@@ -109,7 +109,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
             ...overload,
             anytypes: {
               kind: "castable" as const,
-              type: [`$.ObjectType`],
+              type: [`$.SomeObjectType`],
               returnAnytypeWrapper: "_.syntax.mergeObjectTypes",
             },
           },

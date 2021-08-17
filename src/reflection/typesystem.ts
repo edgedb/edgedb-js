@@ -66,7 +66,8 @@ export interface ObjectType<
   Polys extends Poly[] = any[]
 > {
   __kind__: TypeKind.object;
-  __tstype__: computeObjectShape<Shape, Params, Polys>;
+  // __tstype__: computeObjectShape<Shape, Params, Polys>;
+  __tstype__: testComputeObjectShape<Shape, Params, Polys>;
   __name__: Name;
   __shape__: Shape;
   __params__: Params;
@@ -102,6 +103,60 @@ export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
 
 type isEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
 
+export type testComputeObjectShape<
+  Shape extends ObjectTypeShape,
+  Params extends object | null,
+  Polys extends Poly[]
+> = string extends keyof Shape // checks if Shape is actually defined
+  ? any
+  : isEqual<Params, object | null> extends true
+  ? any
+  : isEqual<Polys, Poly[]> extends true
+  ? any
+  : isEqual<Params, null> extends true
+  ? any
+  : testShapeWithPolysToTs<Shape, Params, Polys>;
+
+export type testShapeWithPolysToTs<
+  Shape extends ObjectTypeShape,
+  Params extends object | null,
+  Polys extends Poly[]
+> = testSimpleShapeToTs<Shape, Params> &
+  unionToIntersection<
+    Polys[number] extends infer P
+      ? P extends Poly
+        ? Partial<testSimpleShapeToTs<P["type"]["__shape__"], P["params"]>>
+        : never
+      : never
+  >;
+
+export type testSimpleShapeToTs<
+  Shape extends ObjectTypeShape,
+  Params
+> = typeutil.flatten<
+  {
+    [k in keyof Params]: Params[k] extends infer Param
+      ? k extends keyof Shape
+        ? Param extends true
+          ? shapeElementToTsTypeSimple<Shape[k]>
+          : Param extends false
+          ? never
+          : Param extends boolean
+          ? shapeElementToTsType<Shape[k]> | undefined
+          : Param extends TypeSet
+          ? setToTsType<Param>
+          : Param extends object
+          ? Shape[k]["target"] extends SomeObjectType
+            ? testSimpleShapeToTs<Shape[k]["target"]["__shape__"], Param>
+            : never
+          : never
+        : Param extends TypeSet
+        ? setToTsType<Param>
+        : never
+      : never;
+  }
+>;
+
 export type computeObjectShape<
   Shape extends ObjectTypeShape,
   Params extends object | null,
@@ -126,39 +181,39 @@ export type shapeWithPolysToTs<
   Shape extends ObjectTypeShape,
   Params extends object | null,
   Polys extends Poly[]
-> = typeutil.flatten<
-  simpleShapeToTs<Shape, Params> &
-    unionToIntersection<
-      Polys[number] extends infer P
-        ? P extends Poly
-          ? Partial<simpleShapeToTs<P["type"]["__shape__"], P["params"]>>
-          : never
+> = simpleShapeToTs<Shape, Params> &
+  unionToIntersection<
+    Polys[number] extends infer P
+      ? P extends Poly
+        ? Partial<simpleShapeToTs<P["type"]["__shape__"], P["params"]>>
         : never
-    >
->;
+      : never
+  >;
 
 export type simpleShapeToTs<
   Shape extends ObjectTypeShape,
   Params
 > = typeutil.flatten<
   {
-    [k in keyof Params]: k extends keyof Shape
-      ? Params[k] extends true
-        ? shapeElementToTsTypeSimple<Shape[k]>
-        : Params[k] extends false
-        ? never
-        : Params[k] extends boolean
-        ? shapeElementToTsType<Shape[k]> | undefined
-        : Params[k] extends object
-        ? Shape[k]["target"] extends SomeObjectType
-          ? simpleShapeToTs<Shape[k]["target"]["__shape__"], Params[k]>
+    [k in keyof Params]: Params[k] extends infer Param
+      ? k extends keyof Shape
+        ? Param extends true
+          ? shapeElementToTsTypeSimple<Shape[k]>
+          : Param extends false
+          ? never
+          : Param extends boolean
+          ? shapeElementToTsType<Shape[k]> | undefined
+          : Param extends TypeSet
+          ? setToTsType<Param>
+          : Param extends object
+          ? Shape[k]["target"] extends SomeObjectType
+            ? simpleShapeToTs<Shape[k]["target"]["__shape__"], Param>
+            : never
           : never
+        : Param extends TypeSet
+        ? setToTsType<Param>
         : never
-      : Params[k] extends infer U
-      ? U extends TypeSet
-        ? setToTsType<U>
-        : never
-      : "invalid key";
+      : never;
   }
 >;
 
@@ -209,14 +264,30 @@ export type BaseExpression<Set extends TypeSet = TypeSet> = {
 };
 
 export type Expression<Set extends TypeSet = TypeSet> = Set &
-  ExpressionMethods<Set> &
+  ExpressionMethods<{
+    __element__: Set["__element__"];
+    __cardinality__: Set["__cardinality__"];
+  }> &
   $pathify<Set>;
+
+// importing the actual alias from
+// generated/modules/std didn't work.
+// returned 'any' every time
+// export type $assertSingle<Type extends MaterialType, Args> = Expression<{
+//   __element__: Type;
+//   __cardinality__: Cardinality.One;
+//   __kind__: ExpressionKind.Function;
+//   __name__: "std::assert_single";
+//   __args__: Args;
+//   __namedargs__: {};
+// }>;
 
 export interface ExpressionMethods<Set extends TypeSet> {
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
   toEdgeQL(): string;
   $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
+  // $assertSingle(): $assertSingle<Set["__element__"], [this]>;
 }
 
 export type MaterialTypeSet<
@@ -366,22 +437,18 @@ type TypeToTsType<Type extends BaseType> = Type extends ScalarType
   ? Type["__tsconsttype__"]
   : Type["__tstype__"];
 
-export type setToTsType<Set extends BaseTypeSet> = Set extends TypeSet<
-  infer Type,
-  infer Card
->
-  ? Card extends Cardinality.Empty
+export type setToTsType<Set extends TypeSet> =
+  Set["__cardinality__"] extends Cardinality.Empty
     ? null
-    : Card extends Cardinality.One
-    ? TypeToTsType<Type>
-    : Card extends Cardinality.AtLeastOne
-    ? [TypeToTsType<Type>, ...TypeToTsType<Type>[]]
-    : Card extends Cardinality.AtMostOne
-    ? TypeToTsType<Type> | null
-    : Card extends Cardinality.Many
-    ? TypeToTsType<Type>[]
-    : never
-  : never;
+    : Set["__cardinality__"] extends Cardinality.One
+    ? TypeToTsType<Set["__element__"]>
+    : Set["__cardinality__"] extends Cardinality.AtLeastOne
+    ? [TypeToTsType<Set["__element__"]>, ...TypeToTsType<Set["__element__"]>[]]
+    : Set["__cardinality__"] extends Cardinality.AtMostOne
+    ? TypeToTsType<Set["__element__"]> | null
+    : Set["__cardinality__"] extends Cardinality.Many
+    ? 'TypeToTsType<Set["__element__"]>[]'
+    : never;
 
 export type propToTsType<Prop extends PropertyDesc> =
   Prop extends PropertyDesc<infer Type, infer Card>
