@@ -136,12 +136,12 @@ export type testSimpleShapeToTs<
 > = typeutil.flatten<
   {
     [k in keyof Params]: Params[k] extends infer Param
-      ? k extends keyof Shape
-        ? Param extends true
+      ? [k] extends [keyof Shape]
+        ? [Param] extends [true]
           ? shapeElementToTsTypeSimple<Shape[k]>
-          : Param extends false
+          : [Param] extends [false]
           ? never
-          : Param extends boolean
+          : [Param] extends [boolean]
           ? shapeElementToTsType<Shape[k]> | undefined
           : Param extends TypeSet
           ? setToTsType<Param>
@@ -447,7 +447,7 @@ export type setToTsType<Set extends TypeSet> =
     : Set["__cardinality__"] extends Cardinality.AtMostOne
     ? TypeToTsType<Set["__element__"]> | null
     : Set["__cardinality__"] extends Cardinality.Many
-    ? 'TypeToTsType<Set["__element__"]>[]'
+    ? TypeToTsType<Set["__element__"]>[]
     : never;
 
 export type propToTsType<Prop extends PropertyDesc> =
