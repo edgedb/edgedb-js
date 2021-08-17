@@ -1,15 +1,29 @@
 // tslint:disable:no-console
-// import e from "./generated/example";
+import {select} from "@syntax/select";
+import {setToTsType, simpleShapeToTs, TypeSet} from "reflection";
+import e from "./generated/example";
 
-function func(this: any) {
-  console.log(this.asdf);
-}
-const arg: any = {
-  asdf: 42,
-};
-arg.func = func.bind(arg);
+const skip = e.int64(10);
+const remainingHeros = select(e.Hero).orderBy(e.Hero.id).offset(skip);
+const pageResults = e
+  .select(remainingHeros, {
+    id: true,
+    name: true,
+  })
+  .limit(10);
 
-arg.func();
-const f = arg.func;
-f();
+// pageResults.__element__.
+type pageResultsType = setToTsType<typeof pageResults>;
+
+const query = select(e.Hero, {
+  id: true,
+  simple: e.str("13r"),
+  pageResults,
+  // nextOffset: select(e.plus(skip, e.count(pageResults))),
+  // hasMore: select(e.gt(e.count(remainingHeros), e.int64(10))),
+});
+type query = typeof query;
+type params = query["__element__"]["__params__"];
+type returntype = query["__element__"]["__tstype__"];
+
 export {};

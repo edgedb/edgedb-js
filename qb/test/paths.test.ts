@@ -3,7 +3,12 @@ import {reflection as $} from "edgedb/src/index.node";
 
 import {$Hero} from "generated/example/modules/default";
 
-import {ExpressionKind, TypeKind, typeutil} from "edgedb/src/reflection";
+import {
+  Cardinality,
+  ExpressionKind,
+  TypeKind,
+  typeutil,
+} from "edgedb/src/reflection";
 
 test("path structure", () => {
   const Hero = e.default.Hero;
@@ -109,3 +114,12 @@ test("type intersection on select", () => {
   // check that pathify works
   expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
 });
+
+// test("assertSingle", () => {
+//   const singleHero = e.Hero.$assertSingle();
+//   const f1: typeutil.assertEqual<
+//     typeof singleHero["__cardinality__"],
+//     Cardinality.One
+//   > = true;
+//   expect(singleHero.__cardinality__).toEqual(Cardinality.One);
+// });

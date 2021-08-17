@@ -1,4 +1,3 @@
-import _std from "@generated/modules/std";
 import {$anyint, $bool, $int64, int64} from "@generated/modules/std";
 import {
   BaseExpression,
