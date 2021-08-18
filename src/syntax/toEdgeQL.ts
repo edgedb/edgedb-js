@@ -225,6 +225,8 @@ UNION (${expr.__expr__.toEdgeQL()})`;
   }
 }
 
+const noCastTypes = new Set(["std::str"]);
+
 export function literalToEdgeQL(type: MaterialType, val: any): string {
   let stringRep;
   if (typeof val === "string") {
@@ -268,6 +270,9 @@ export function literalToEdgeQL(type: MaterialType, val: any): string {
     }
   } else {
     throw new Error(`Invalid value for type ${type.__name__}`);
+  }
+  if (noCastTypes.has(type.__name__)) {
+    return stringRep;
   }
   return `<${type.__name__}>${stringRep}`;
 }

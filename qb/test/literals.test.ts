@@ -29,9 +29,9 @@ test("literals", () => {
 
   expect(e.std.int64(1234).toEdgeQL()).toEqual(`<std::int64>1234`);
   expect(e.std.json('"asdf"').toEdgeQL()).toEqual(`<std::json>"\\"asdf\\""`);
-  expect(e.std.str(`asdfaf`).toEdgeQL()).toEqual(`<std::str>"asdfaf"`);
+  expect(e.std.str(`asdfaf`).toEdgeQL()).toEqual(`"asdfaf"`);
   expect(e.std.str(`string " with ' all \` quotes`).toEdgeQL()).toEqual(
-    `<std::str>"string \\" with ' all \` quotes"`
+    `"string \\" with ' all \` quotes"`
   );
   expect(e.std.uuid(uuid).toEdgeQL()).toEqual(
     `<std::uuid>"317fee4c-0da5-45aa-9980-fedac211bfb6"`
@@ -53,17 +53,15 @@ test("literals", () => {
 
 test("collection type literals", () => {
   const literalArray = e.literal(e.array(e.str), ["adsf"]);
-  expect(literalArray.toEdgeQL()).toEqual(
-    `<array<std::str>>[<std::str>"adsf"]`
-  );
+  expect(literalArray.toEdgeQL()).toEqual(`<array<std::str>>["adsf"]`);
   const literalNamedTuple = e.literal(e.namedTuple({str: e.str}), {
     str: "asdf",
   });
   expect(literalNamedTuple.toEdgeQL()).toEqual(
-    `<tuple<str: std::str>>( str := <std::str>"asdf" )`
+    `<tuple<str: std::str>>( str := "asdf" )`
   );
   const literalTuple = e.literal(e.tuple([e.str, e.int64]), ["asdf", 1234]);
   expect(literalTuple.toEdgeQL()).toEqual(
-    `<tuple<std::str, std::int64>>( <std::str>"asdf", <std::int64>1234 )`
+    `<tuple<std::str, std::int64>>( "asdf", <std::int64>1234 )`
   );
 });

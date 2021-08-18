@@ -33,7 +33,7 @@ test("slice and index ops", () => {
     [e.str("test string"), e.literal(e.tuple([e.int64, e.int32]), [2, 5])],
     e.str,
     Cardinality.One,
-    `(<std::str>"test string"[2:5])`
+    `("test string"[2:5])`
   );
 
   checkOperatorExpr(
@@ -57,7 +57,7 @@ test("slice and index ops", () => {
     [e.str("test string"), e.int32(3)],
     e.str,
     Cardinality.One,
-    `(<std::str>"test string"[3])`
+    `("test string"[3])`
   );
 
   checkOperatorExpr(
@@ -88,6 +88,6 @@ test("if else op", () => {
     [e.str("this"), e.eq(e.int64(42), e.float32(42)), e.str("that")],
     e.str,
     Cardinality.Many,
-    `(<std::str>"this" IF (<std::int64>42 = <std::float32>42) ELSE <std::str>"that")`
+    `("this" IF (<std::int64>42 = <std::float32>42) ELSE "that")`
   );
 });
