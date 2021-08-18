@@ -35,15 +35,13 @@ test("scalar set contructor", () => {
   expect(_f1.__element__.__name__).toEqual("std::str");
   expect(_f1.__cardinality__).toEqual(Cardinality.One);
   expect(_f1.__element__.__kind__).toEqual(TypeKind.scalar);
-  expect(_f1.toEdgeQL()).toEqual(`{ <std::str>"asdf" }`);
+  expect(_f1.toEdgeQL()).toEqual(`{ "asdf" }`);
 
   // multiple elements
   const _f2 = e.set(e.str("asdf"), e.str("qwer"), e.str("poiu"));
   expect(_f2.__element__.__name__).toEqual("std::str");
   expect(_f2.__cardinality__).toEqual(Cardinality.AtLeastOne);
-  expect(_f2.toEdgeQL()).toEqual(
-    `{ <std::str>"asdf", <std::str>"qwer", <std::str>"poiu" }`
-  );
+  expect(_f2.toEdgeQL()).toEqual(`{ "asdf", "qwer", "poiu" }`);
 
   // implicit casting
   const _f5 = e.set(e.int32(5), e.float32(1234.5));
