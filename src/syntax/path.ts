@@ -231,5 +231,5 @@ export function $expressionify<T extends ExpressionRoot>(
   expr.toEdgeQL = toEdgeQL.bind(expr);
   $pathify(expr);
   expr.$assertSingle = () => _std.assert_single(expr) as any;
-  return expr as any;
+  return Object.freeze(expr) as any;
 }
