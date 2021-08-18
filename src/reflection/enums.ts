@@ -28,6 +28,8 @@ export enum ExpressionKind {
   For = "For",
   ForVar = "ForVar",
   TypeIntersection = "TypeIntersection",
+  Alias = "Alias",
+  With = "With",
 }
 
 export enum SelectModifierKind {
