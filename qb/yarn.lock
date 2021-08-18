@@ -2200,7 +2200,7 @@ __metadata:
     ts-jest: ^26.5.2
     ts-node: ^10.0.0
     tslint: ^5.20.1
-    typescript: ^4.3.5
+    typescript: 4.3.5
   languageName: node
   linkType: soft
 
@@ -5567,7 +5567,7 @@ __metadata:
     superjson: ^1.7.5
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
-    typescript: ^4.3.4
+    typescript: 4.3.5
   languageName: unknown
   linkType: soft
 
@@ -6648,7 +6648,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@^4.3.4, typescript@^4.3.5":
+typescript@4.3.5:
   version: 4.3.5
   resolution: "typescript@npm:4.3.5"
   bin:
@@ -6658,7 +6658,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@^4.3.4#builtin<compat/typescript>, typescript@patch:typescript@^4.3.5#builtin<compat/typescript>":
+"typescript@patch:typescript@4.3.5#builtin<compat/typescript>":
   version: 4.3.5
   resolution: "typescript@patch:typescript@npm%3A4.3.5#builtin<compat/typescript>::version=4.3.5&hash=ddfc1b"
   bin:

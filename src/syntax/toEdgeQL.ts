@@ -22,8 +22,7 @@ import type {$expr_Set} from "./set";
 import type {$expr_Cast} from "./cast";
 import type {$expr_Select} from "./select";
 import type {$expr_Function, $expr_Operator} from "./funcops";
-import type {$expr_For} from "./for";
-import type {$expr_ForVar} from "@generated/syntax/for";
+import type {$expr_For, $expr_ForVar} from "./for";
 
 export type SomeExpression =
   | $expr_PathNode

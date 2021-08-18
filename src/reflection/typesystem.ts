@@ -289,7 +289,7 @@ export interface ExpressionMethods<Set extends TypeSet> {
   $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
   $assertSingle<This extends this = this>(): $assertSingle<
     Set["__element__"],
-    This
+    [This]
   >;
 }
 
