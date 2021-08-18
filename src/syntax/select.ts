@@ -1,4 +1,5 @@
-import {$anyint, $bool, $int64, int64} from "@generated/modules/std";
+import _std from "@generated/modules/std";
+import type {$anyint, $bool, $int64} from "@generated/modules/std";
 import {
   Expression,
   Cardinality,
@@ -383,13 +384,14 @@ function offsetFunc(this: any, expr: OffsetExpression | number) {
       __expr__: this,
       __modifier__: {
         kind: SelectModifierKind.offset,
-        expr: typeof expr === "number" ? int64(expr) : expr,
+        expr: typeof expr === "number" ? _std.int64(expr) : expr,
       },
     })
   );
 }
 
 function limitFunc(this: any, expr: LimitExpression | number) {
+  const self = this;
   let card = this.__cardinality__;
   if (typeof expr === "number") {
     if (expr === 1) {
@@ -411,15 +413,16 @@ function limitFunc(this: any, expr: LimitExpression | number) {
       card = Cardinality.Empty;
     }
   }
+
   return $expressionify(
     $selectify({
       __kind__: ExpressionKind.Select,
-      __element__: this.__element__,
+      __element__: self.__element__,
       __cardinality__: card,
-      __expr__: this,
+      __expr__: self,
       __modifier__: {
         kind: SelectModifierKind.limit,
-        expr: typeof expr === "number" ? int64(expr) : expr,
+        expr: typeof expr === "number" ? _std.int64(expr) : expr,
       },
     })
   );
@@ -499,13 +502,15 @@ export function select(expr: TypeSet, params?: any, ...polys: any[]) {
         })
       );
     } else {
-      return $selectify({
-        __kind__: ExpressionKind.Select,
-        __element__: expr.__element__,
-        __cardinality__: expr.__cardinality__,
-        __expr__: expr,
-        __modifier__: null,
-      });
+      return $expressionify(
+        $selectify({
+          __kind__: ExpressionKind.Select,
+          __element__: expr.__element__,
+          __cardinality__: expr.__cardinality__,
+          __expr__: expr,
+          __modifier__: null,
+        })
+      );
     }
   }
 

@@ -26,7 +26,6 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
 
 import {getSharedParentScalar} from "../castMaps";
 import {$expressionify} from "./path";
-import {toEdgeQL} from "./toEdgeQL";
 
 import {
   $expr_Set,

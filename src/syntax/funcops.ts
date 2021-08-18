@@ -15,7 +15,7 @@ import {
 import {set} from "./set";
 // @ts-ignore
 import {isImplicitlyCastableTo} from "@generated/castMaps";
-import {literal} from "@generated/syntax/literal";
+import {literal} from "./literal";
 
 export type $expr_Function<
   Name extends string = string,

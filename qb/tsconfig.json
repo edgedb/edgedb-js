@@ -10,6 +10,7 @@
     "downlevelIteration": true,
     "isolatedModules": true,
     "baseUrl": ".",
+    "outDir": "dist",
     "paths": {
       "edgedb": [
         "../src/index.node.ts"
@@ -21,7 +22,7 @@
         "../src/syntax/*"
       ],
       "@generated/*": [
-        "../qb/generated/example"
+        "./generated/example/*"
       ],
     }
   },
