@@ -8,6 +8,7 @@ export * from "./select";
 export * from "./collections";
 export * from "./funcops";
 export * from "./for";
+export * from "./with";
 export * from "./toEdgeQL";
 
 export type $infer<A extends TypeSet> = setToTsType<A>;

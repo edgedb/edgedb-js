@@ -22,6 +22,8 @@ import {generateSetImpl} from "./generators/generateSetImpl";
 
 const DEBUG = false;
 
+const syntaxOnly = process.argv.some((arg) => arg === "--syntaxOnly");
+
 export type GeneratorParams = {
   dir: DirBuilder;
   types: introspect.Types;
@@ -36,92 +38,94 @@ export async function generateQB(
   to: string,
   cxnConfig?: ConnectConfig
 ): Promise<void> {
-  const cxn = await connect(cxnConfig);
-  const dir = new DirBuilder();
+  if (!syntaxOnly) {
+    const cxn = await connect(cxnConfig);
+    const dir = new DirBuilder();
 
-  try {
-    const types = await introspect.getTypes(cxn, {debug: DEBUG});
-    const scalars = await getScalars(cxn);
-    const casts = await getCasts(cxn, {
-      debug: DEBUG,
-    });
-    const functions = await getFunctions(cxn);
-    const operators = await getOperators(cxn);
+    try {
+      const types = await introspect.getTypes(cxn, {debug: DEBUG});
+      const scalars = await getScalars(cxn);
+      const casts = await getCasts(cxn, {
+        debug: DEBUG,
+      });
+      const functions = await getFunctions(cxn);
+      const operators = await getOperators(cxn);
 
-    const typesByName: Record<string, introspect.Type> = {};
-    for (const type of types.values()) {
-      typesByName[type.name] = type;
+      const typesByName: Record<string, introspect.Type> = {};
+      for (const type of types.values()) {
+        typesByName[type.name] = type;
 
-      // skip "anytype" and "anytuple"
-      if (!type.name.includes("::")) continue;
-    }
+        // skip "anytype" and "anytuple"
+        if (!type.name.includes("::")) continue;
+      }
 
-    const generatorParams: GeneratorParams = {
-      dir,
-      types,
-      typesByName,
-      casts,
-      scalars,
-      functions,
-      operators,
-    };
-    generateRuntimeSpec(generatorParams);
-    generateCastMaps(generatorParams);
-    generateScalars(generatorParams);
-    generateObjectTypes(generatorParams);
-    generateFunctionTypes(generatorParams);
-    generateOperatorTypes(generatorParams);
-    generateSetImpl(generatorParams);
+      const generatorParams: GeneratorParams = {
+        dir,
+        types,
+        typesByName,
+        casts,
+        scalars,
+        functions,
+        operators,
+      };
+      generateRuntimeSpec(generatorParams);
+      generateCastMaps(generatorParams);
+      generateScalars(generatorParams);
+      generateObjectTypes(generatorParams);
+      generateFunctionTypes(generatorParams);
+      generateOperatorTypes(generatorParams);
+      generateSetImpl(generatorParams);
 
-    // generate module imports
+      // generate module imports
 
-    const importsFile = dir.getPath("imports.ts");
-    importsFile.writeln(
-      genutil.frag`export * as edgedb from "edgedb/src/index.node";
+      const importsFile = dir.getPath("imports.ts");
+      importsFile.writeln(
+        genutil.frag`export * as edgedb from "edgedb/src/index.node";
 export {spec} from "./__spec__";
 export * as syntax from "./syntax/syntax";`
-    );
+      );
 
-    /////////////////////////
-    // generate index file
-    /////////////////////////
+      /////////////////////////
+      // generate index file
+      /////////////////////////
 
-    const index = dir.getPath("index.ts");
-    index.addImport(`export * from "./castMaps";`);
-    index.addImport(`export * from "./syntax/syntax";`);
-    index.addImport(`import * as _syntax from "./syntax/syntax";`);
+      const index = dir.getPath("index.ts");
+      index.addImport(`export * from "./castMaps";`);
+      index.addImport(`export * from "./syntax/syntax";`);
+      index.addImport(`import * as _syntax from "./syntax/syntax";`);
 
-    index.writeln(genutil.frag`export default {`);
-    index.indented(() => {
-      for (const moduleName of ["std", "default"]) {
-        if (dir._modules.has(moduleName)) {
-          index.writeln(genutil.frag`..._${dir._modules.get(moduleName)!},`);
+      index.writeln(genutil.frag`export default {`);
+      index.indented(() => {
+        for (const moduleName of ["std", "default"]) {
+          if (dir._modules.has(moduleName)) {
+            index.writeln(genutil.frag`..._${dir._modules.get(moduleName)!},`);
+          }
         }
-      }
-      index.writeln(genutil.frag`..._syntax,`);
+        index.writeln(genutil.frag`..._syntax,`);
 
-      for (const [moduleName, internalName] of dir._modules) {
-        if (dir.getModule(moduleName).isEmpty()) {
-          continue;
+        for (const [moduleName, internalName] of dir._modules) {
+          if (dir.getModule(moduleName).isEmpty()) {
+            continue;
+          }
+          index.addImport(
+            `import _${internalName} from "./modules/${internalName}";`
+          );
+
+          index.writeln(
+            genutil.frag`${genutil.quote(moduleName)}: _${internalName},`
+          );
         }
-        index.addImport(
-          `import _${internalName} from "./modules/${internalName}";`
-        );
+      });
 
-        index.writeln(
-          genutil.frag`${genutil.quote(moduleName)}: _${internalName},`
-        );
-      }
-    });
+      index.writeln(genutil.frag`};`);
+    } finally {
+      await cxn.close();
+    }
 
-    index.writeln(genutil.frag`};`);
-  } finally {
-    await cxn.close();
+    // tslint:disable-next-line
+    console.log(`writing to disk.`);
+    dir.write(to);
   }
-
-  // tslint:disable-next-line
-  console.log(`writing to disk.`);
-  dir.write(to);
 
   // write syntax files
   const syntaxDir = path.join(__dirname, "..", "syntax");
