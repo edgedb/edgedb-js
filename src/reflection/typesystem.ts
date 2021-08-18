@@ -101,28 +101,6 @@ export type linkDescShape<Link extends LinkDesc> = addAtSigns<
 
 export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
 
-type isEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
-
-export type computeObjectShape<
-  Shape extends ObjectTypeShape,
-  Params extends object | null,
-  Polys extends Poly[]
-> = string extends keyof Shape // checks if Shape is actually defined
-  ? any
-  : isEqual<Params, object | null> extends true
-  ? any
-  : isEqual<Polys, Poly[]> extends true
-  ? any
-  : isEqual<Params, null> extends true
-  ? any
-  : shapeWithPolysToTs<Shape, Params, Polys>;
-
-type unionToIntersection<U> = (
-  U extends any ? (k: U) => void : never
-) extends (k: infer I) => void
-  ? I
-  : never;
-
 export type shapeWithPolysToTs<
   Shape extends ObjectTypeShape,
   Params extends object | null,
@@ -142,12 +120,12 @@ export type simpleShapeToTs<
 > = typeutil.flatten<
   {
     [k in keyof Params]: Params[k] extends infer Param
-      ? k extends keyof Shape
-        ? Param extends true
+      ? [k] extends [keyof Shape]
+        ? [Param] extends [true]
           ? shapeElementToTsTypeSimple<Shape[k]>
-          : Param extends false
+          : [Param] extends [false]
           ? never
-          : Param extends boolean
+          : [Param] extends [boolean]
           ? shapeElementToTsType<Shape[k]> | undefined
           : Param extends TypeSet
           ? setToTsType<Param>
@@ -162,6 +140,26 @@ export type simpleShapeToTs<
       : never;
   }
 >;
+
+export type computeObjectShape<
+  Shape extends ObjectTypeShape,
+  Params extends object | null,
+  Polys extends Poly[]
+> = string extends keyof Shape // checks if Shape is actually defined
+  ? any
+  : typeutil.assertEqual<Params, object | null> extends true
+  ? any
+  : typeutil.assertEqual<Polys, Poly[]> extends true
+  ? any
+  : typeutil.assertEqual<Params, null> extends true
+  ? any
+  : shapeWithPolysToTs<Shape, Params, Polys>;
+
+type unionToIntersection<U> = (
+  U extends any ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never;
 
 export type shapeElementToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
   El extends PropertyDesc
