@@ -492,9 +492,7 @@ UNION (${renderEdgeQL(expr.__expr__ as any, ctx)})`
     }
     return forVar;
   } else if (expr.__kind__ === ExpressionKind.Param) {
-    return `<${
-      expr.__cardinality__ === Cardinality.AtMostOne ? "OPTIONAL " : ""
-    }${expr.__element__.__name__}>$${expr.__name__}`;
+    return `<${expr.__element__.__name__}>$${expr.__name__}`;
   } else {
     util.assertNever(
       expr,

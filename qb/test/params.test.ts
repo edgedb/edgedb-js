@@ -21,7 +21,8 @@ test("simple params", () => {
   expect(query.toEdgeQL()).toEqual(`SELECT {
   str := (<std::str>$str),
   nums := (std::array_unpack((<array<std::int64>>$numArr))),
-  x := (("true" IF <OPTIONAL std::bool>$optBool ELSE "false"))
+  optBool := (<OPTIONAL std::bool>$optBool),
+  x := (("true" IF <std::bool>$bool ELSE "false"))
 }`);
 
   expect(() => e.select(query).toEdgeQL()).toThrow();
