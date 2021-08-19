@@ -88,6 +88,6 @@ test("if else op", () => {
     [e.str("this"), e.eq(e.int64(42), e.float32(42)), e.str("that")],
     e.str,
     Cardinality.Many,
-    `("this" IF (<std::int64>42 = <std::float32>42) ELSE "that")`
+    `("this" IF (42 = <std::float32>42) ELSE "that")`
   );
 });

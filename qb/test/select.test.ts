@@ -349,7 +349,7 @@ test("filter by id", async () => {
 test("limit 1", async () => {
   const query = e.select(e.Hero).orderBy(e.Hero.name).offset(1).limit(1);
   const result = await query.query(pool);
-  expect(result?.id).toEqual(data.ironMan.id);
+  expect(result?.id).toEqual(data.iron_man.id);
 });
 
 test("limit 2", async () => {
@@ -357,5 +357,76 @@ test("limit 2", async () => {
   const results = await query.query(pool);
 
   expect(results.length).toEqual(2);
-  expect(results).toEqual([{id: data.ironMan.id}, {id: data.spidey.id}]);
+  expect(results).toEqual([{id: data.iron_man.id}, {id: data.spidey.id}]);
+});
+
+test("shapes", async () => {
+  const query = e
+    .select(e.Hero, {
+      id: true,
+      name: true,
+      secret_identity: true,
+      villains: {id: true},
+    })
+    .filter(e.eq(e.Hero.name, e.str("Iron Man")));
+
+  const result = await query.query(pool);
+
+  expect(result?.id).toEqual(data.iron_man.id);
+  expect(result?.name).toEqual(data.iron_man.name);
+  expect(result?.secret_identity).toEqual(data.iron_man.secret_identity);
+  expect(result?.villains).toEqual([{id: data.thanos.id}]);
+});
+
+test("computables", async () => {
+  const query = e
+    .select(e.Person.$is(e.Hero), {
+      id: true,
+      computable: e.int64(35),
+      all_heroes: e.select(e.Hero, {__type__: {name: true}}),
+    })
+    .orderBy(e.Person.name)
+    .limit(1);
+  const results = await query.query(pool);
+
+  expect(results?.id).toEqual(data.cap.id);
+  expect(results?.computable).toEqual(35);
+  expect(
+    results?.all_heroes.every((hero) => hero.__type__.name === "default::Hero")
+  ).toEqual(true);
+});
+
+test("type intersections", async () => {
+  const query = e.select(e.Person.$is(e.Hero), {
+    id: true,
+    __type__: {name: true},
+  });
+  const results = await query.query(pool);
+  expect(
+    results.every((person) => person.__type__.name === "default::Hero")
+  ).toEqual(true);
+});
+
+test("backlinks", async () => {
+  const result1 = await e
+    .select(e.Hero["<characters[IS default::Movie]"], {
+      id: true,
+      __type__: {name: true},
+      title: true,
+    })
+    .query(pool);
+
+  const result2 = await e
+    .select(e.Hero["<characters"].$is(e.Movie), {
+      id: true,
+      __type__: {name: true},
+      title: true,
+    })
+    .query(pool);
+
+  expect(result1).toEqual(result2);
+  expect(Array.isArray(result1)).toEqual(true);
+  expect(
+    [data.the_avengers.title, data.civil_war.title].includes(result1[0].title)
+  ).toEqual(true);
 });

@@ -8,5 +8,5 @@ test("casting", () => {
     typeof primitiveCast["__element__"],
     typeof e.float32
   > = true;
-  expect(primitiveCast.toEdgeQL()).toEqual(`<std::float32><std::float64>3.14`);
+  expect(primitiveCast.toEdgeQL()).toEqual(`<std::float32>3.14`);
 });

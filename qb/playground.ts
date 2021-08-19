@@ -5,7 +5,7 @@ import {setupTests, teardownTests} from "./test/setupTeardown";
 async function run() {
   await teardownTests();
   await setupTests();
-  await teardownTests();
+  // await teardownTests();
 }
 run();
 export {};

@@ -1,6 +1,7 @@
 import {
   ExpressionKind,
   MaterialType,
+  ObjectTypeShape,
   Poly,
   SelectModifierKind,
   TypeKind,
@@ -49,10 +50,11 @@ export type SomeExpression =
 type WithScopeExpr = $expr_Select | $expr_For;
 
 function shapeToEdgeQL(
+  typeShape: ObjectTypeShape,
   _shape: object | null,
   polys: Poly[],
   ctx: RenderCtx,
-  keysOnly = false,
+  keysOnly: boolean = false,
   params: {depth: number} = {depth: 1}
 ) {
   if (_shape === null) {
@@ -80,9 +82,10 @@ function shapeToEdgeQL(
       }
       seen.add(key);
       const val = (shape as any)[key];
-      if (keysOnly || val === true) {
+      if (val === true) {
         addLine(`${polyIntersection}${key}`);
       } else if (val.hasOwnProperty("__kind__")) {
+        if (keysOnly) continue;
         if (polyIntersection) {
           // tslint:disable-next-line
           console.warn(
@@ -93,10 +96,11 @@ function shapeToEdgeQL(
         addLine(`${key} := (${renderEdgeQL(val, ctx)})`);
       } else if (typeof val === "object") {
         const nestedPolys = polys
-          .map((poly) => (poly as any)[key])
-          .filter((x) => !!x);
+          .filter((poly) => !!poly.params[key])
+          .map((poly) => ({type: poly.type, params: poly.params[key]}));
         addLine(
           `${polyIntersection}${key}: ${shapeToEdgeQL(
+            typeShape,
             val,
             nestedPolys,
             ctx,
@@ -193,7 +197,8 @@ export function toEdgeQL(this: any) {
       for (const withVar of [expr, ...refData.aliases]) {
         const withVarBoundScope = walkExprCtx.seen.get(withVar)!.boundScope;
         if (withVarBoundScope && withVarBoundScope !== refData.boundScope) {
-          // withVar is an alias already explicitly bound to an inner WITH block
+          // withVar is an alias already explicitly bound
+          // to an inner WITH block
           continue;
         }
 
@@ -261,6 +266,7 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
       expr.__element__.__kind__ === TypeKind.object
         ? " " +
           shapeToEdgeQL(
+            expr.__element__.__shape__,
             (expr.__element__.__params__ || {}) as object,
             expr.__element__.__polys__ || [],
             ctx,
@@ -412,6 +418,7 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
 
       lines.push(
         shapeToEdgeQL(
+          expr.__element__.__shape__,
           (expr.__element__.__params__ || {}) as object,
           expr.__element__.__polys__ || [],
           ctx
@@ -575,7 +582,7 @@ function walkExprTree(
           for (const param of Object.values(
             expr.__element__.__params__ ?? {}
           )) {
-            if (typeof param !== "boolean") {
+            if (!!(param as any).__kind__) {
               childExprs.push(...walkExprTree(param as any, expr, ctx));
             }
           }
@@ -617,13 +624,25 @@ function walkExprTree(
   }
 }
 
-const noCastTypes = new Set(["std::str"]);
+const noCastTypes = new Set(["std::str", "std::int64"]);
 
 export function literalToEdgeQL(type: MaterialType, val: any): string {
+  let skipCast = false;
   let stringRep;
   if (typeof val === "string") {
+    if (type.__name__ === "std::str") {
+      skipCast = true;
+    }
     stringRep = JSON.stringify(val);
   } else if (typeof val === "number") {
+    if (type.__name__ === "std::int64" && Number.isInteger(val)) {
+      skipCast = true;
+    } else if (
+      type.__name__ === "std::float64" &&
+      val.toString().includes(".")
+    ) {
+      skipCast = true;
+    }
     stringRep = `${val.toString()}`;
   } else if (typeof val === "boolean") {
     stringRep = `${val.toString()}`;
@@ -663,7 +682,7 @@ export function literalToEdgeQL(type: MaterialType, val: any): string {
   } else {
     throw new Error(`Invalid value for type ${type.__name__}`);
   }
-  if (noCastTypes.has(type.__name__)) {
+  if (skipCast) {
     return stringRep;
   }
   return `<${type.__name__}>${stringRep}`;

@@ -5,7 +5,7 @@ test("simple repeated expression", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   expect(e.select(e.plus(numbers, numbers)).toEdgeQL()).toEqual(`WITH
-  __withVar_0 := ({ <std::int64>1, <std::int32>2, <std::int16>3 })
+  __withVar_0 := ({ 1, <std::int32>2, <std::int16>3 })
 SELECT ((__withVar_0 + __withVar_0))`);
 });
 
@@ -13,7 +13,7 @@ test("simple expression with alias", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   expect(e.select(e.plus(numbers, e.alias(numbers))).toEdgeQL()).toEqual(`WITH
-  __withVar_0 := ({ <std::int64>1, <std::int32>2, <std::int16>3 }),
+  __withVar_0 := ({ 1, <std::int32>2, <std::int16>3 }),
   __withVar_1 := (__withVar_0)
 SELECT ((__withVar_0 + __withVar_1))`);
 });
@@ -28,14 +28,14 @@ test("implicit 'WITH' vars referencing each other", () => {
     })
     .limit(10);
 
-  let query = e.select({
+  const query = e.select({
     pageResults,
     nextOffset: e.plus(skip, e.count(pageResults)),
     hasMore: e.select(e.gt(e.count(remainingHeros), e.int64(10))),
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __withVar_2 := (<std::int64>10),
+  __withVar_2 := (10),
   __withVar_1 := (
     SELECT (default::Hero) {
       id
@@ -48,12 +48,12 @@ test("implicit 'WITH' vars referencing each other", () => {
       id,
       name
     }
-    LIMIT <std::int64>10
+    LIMIT 10
   )
 SELECT {
   pageResults := (__withVar_0 {id, name}),
   nextOffset := ((__withVar_2 + std::count((__withVar_0 {id, name})))),
-  hasMore := (SELECT ((std::count((__withVar_1 {id})) > <std::int64>10)))
+  hasMore := (SELECT ((std::count((__withVar_1 {id})) > 10)))
 }`);
 
   type queryType = typeof query["__element__"]["__tstype__"];
@@ -80,7 +80,7 @@ test("explicit 'WITH' block", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   expect(e.with([numbers], e.select(numbers)).toEdgeQL()).toEqual(`WITH
-  __withVar_0 := ({ <std::int64>1, <std::int32>2, <std::int16>3 })
+  __withVar_0 := ({ 1, <std::int32>2, <std::int16>3 })
 SELECT (__withVar_0)`);
 });
 
@@ -95,7 +95,7 @@ test("explicit 'WITH' block in nested query", () => {
       .toEdgeQL()
   ).toEqual(`SELECT {
   nested := (WITH
-  __withVar_0 := ({ <std::int64>1, <std::int32>2, <std::int16>3 })
+  __withVar_0 := ({ 1, <std::int32>2, <std::int16>3 })
 SELECT (__withVar_0))
 }`);
 });
@@ -128,7 +128,7 @@ test("explicit 'WITH' block nested in implicit 'WITH' block", () => {
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ <std::int64>1, <std::int32>2, <std::int16>3 })
+      __withVar_1 := ({ 1, <std::int32>2, <std::int16>3 })
     SELECT (__withVar_1)
   )
 SELECT {
@@ -154,7 +154,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block", () => {
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ <std::int64>1, <std::int32>2, <std::int16>3 })
+      __withVar_1 := ({ 1, <std::int32>2, <std::int16>3 })
     SELECT (__withVar_1)
   )
 SELECT {
@@ -181,7 +181,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block, sub expr explicitly
   __withVar_2 := (<std::int32>2),
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ <std::int64>1, __withVar_2, <std::int16>3 })
+      __withVar_1 := ({ 1, __withVar_2, <std::int16>3 })
     SELECT (__withVar_1)
   )
 SELECT {
@@ -227,7 +227,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block, sub expr implicitly
   __withVar_0 := (<std::int32>2),
   __withVar_1 := (
     WITH
-      __withVar_2 := ({ <std::int64>1, __withVar_0, <std::int16>3 })
+      __withVar_2 := ({ 1, __withVar_0, <std::int16>3 })
     SELECT (__withVar_2)
   )
 SELECT {
@@ -248,7 +248,7 @@ test("implicit 'WITH' and explicit 'WITH' in sub expr", () => {
 
   const nextOffset = e.plus(skip, e.count(pageResults));
 
-  let query = e.select({
+  const query = e.select({
     pageResults,
     // @ts-ignore
     nextOffset: e.with([nextOffset], e.select(nextOffset)),
@@ -256,7 +256,7 @@ test("implicit 'WITH' and explicit 'WITH' in sub expr", () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __withVar_2 := (<std::int64>10),
+  __withVar_2 := (10),
   __withVar_1 := (
     SELECT (default::Hero) {
       id
@@ -269,14 +269,14 @@ test("implicit 'WITH' and explicit 'WITH' in sub expr", () => {
       id,
       name
     }
-    LIMIT <std::int64>10
+    LIMIT 10
   )
 SELECT {
   pageResults := (__withVar_0 {id, name}),
   nextOffset := (WITH
   __withVar_3 := ((__withVar_2 + std::count((__withVar_0 {id, name}))))
 SELECT (__withVar_3)),
-  hasMore := (SELECT ((std::count((__withVar_1 {id})) > <std::int64>10)))
+  hasMore := (SELECT ((std::count((__withVar_1 {id})) > 10)))
 }`);
 });
 
@@ -297,7 +297,7 @@ test("explicit 'WITH' block nested in implicit 'WITH' block + alias implicit", (
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ <std::int64>1, <std::int32>2, <std::int16>3 }),
+      __withVar_1 := ({ 1, <std::int32>2, <std::int16>3 }),
       __withVar_2 := (__withVar_1)
     SELECT {
       numbers := (__withVar_1),
@@ -330,7 +330,7 @@ test("explicit 'WITH' block nested in implicit 'WITH' block + alias explicit", (
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ <std::int64>1, <std::int32>2, <std::int16>3 }),
+      __withVar_1 := ({ 1, <std::int32>2, <std::int16>3 }),
       __withVar_2 := (__withVar_1)
     SELECT {
       numbers := (__withVar_1),
@@ -385,7 +385,7 @@ test(
         )
         .toEdgeQL()
     ).toEqual(`WITH
-  __withVar_1 := ({ <std::int64>1, <std::int32>2, <std::int16>3 }),
+  __withVar_1 := ({ 1, <std::int32>2, <std::int16>3 }),
   __withVar_0 := (
     WITH
       __withVar_2 := (__withVar_1)
@@ -422,7 +422,7 @@ test(
         )
         .toEdgeQL()
     ).toEqual(`WITH
-  __withVar_1 := ({ <std::int64>1, <std::int32>2, <std::int16>3 }),
+  __withVar_1 := ({ 1, <std::int32>2, <std::int16>3 }),
   __withVar_2 := (__withVar_1),
   __withVar_0 := (
     WITH
