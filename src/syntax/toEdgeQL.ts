@@ -124,6 +124,7 @@ interface RenderCtx {
     {name: string; scope: WithScopeExpr; childExprs: Set<SomeExpression>}
   >;
   renderWithVar?: SomeExpression;
+  forVars: Map<$expr_ForVar, string>;
 }
 
 export function toEdgeQL(this: any) {
@@ -141,7 +142,12 @@ export function toEdgeQL(this: any) {
   >();
 
   for (const [expr, refData] of walkExprCtx.seen) {
-    if (withVars.has(expr)) {
+    if (
+      withVars.has(expr) ||
+      (expr.__kind__ === ExpressionKind.PathNode &&
+        expr.__parent__ === null) ||
+      expr.__kind__ === ExpressionKind.ForVar
+    ) {
       continue;
     }
 
@@ -203,7 +209,7 @@ export function toEdgeQL(this: any) {
     }
   }
 
-  return renderEdgeQL(this, {withBlocks, withVars});
+  return renderEdgeQL(this, {withBlocks, withVars, forVars: new Map()});
 }
 
 function topoSortWithVars(
@@ -396,7 +402,13 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
 
     if (expr.__element__.__kind__ === TypeKind.object) {
       const lines = [];
-      lines.push(`SELECT (${renderEdgeQL(expr.__expr__ as any, ctx)})`);
+      lines.push(
+        `SELECT${
+          expr.__expr__.__element__.__name__ === "std::FreeObject"
+            ? ""
+            : ` (${renderEdgeQL(expr.__expr__ as any, ctx)})`
+        }`
+      );
 
       lines.push(
         shapeToEdgeQL(
@@ -457,16 +469,21 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
       expr.__element__.__name__
     }]`;
   } else if (expr.__kind__ === ExpressionKind.For) {
+    ctx.forVars.set(expr.__forVar__, `__forVar__${ctx.forVars.size}`);
     return (
       withBlock +
-      `FOR ${renderEdgeQL(expr.__forVar__, ctx)} IN {${renderEdgeQL(
+      `FOR ${ctx.forVars.get(expr.__forVar__)} IN {${renderEdgeQL(
         expr.__iterSet__ as any,
         ctx
       )}}
 UNION (${renderEdgeQL(expr.__expr__ as any, ctx)})`
     );
   } else if (expr.__kind__ === ExpressionKind.ForVar) {
-    return `__forVar_${expr.__id__}`;
+    const forVar = ctx.forVars.get(expr);
+    if (!forVar) {
+      throw new Error(`'FOR' loop variable used outside of 'FOR' loop`);
+    }
+    return forVar;
   } else {
     util.assertNever(
       expr,

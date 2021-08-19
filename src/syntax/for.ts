@@ -25,10 +25,7 @@ export type $expr_ForVar<Type extends MaterialType = MaterialType> =
     __element__: Type;
     __cardinality__: Cardinality.One;
     __kind__: ExpressionKind.ForVar;
-    __id__: number;
   }>;
-
-let forVarId = 0;
 
 function _for<
   IteratorSet extends MaterialTypeSet,
@@ -39,7 +36,6 @@ function _for<
 ): $expr_For<IteratorSet, Expr> {
   const forVar = $expressionify({
     __kind__: ExpressionKind.ForVar,
-    __id__: forVarId++,
     __element__: set.__element__,
     __cardinality__: Cardinality.One,
   }) as $expr_ForVar<IteratorSet["__element__"]>;

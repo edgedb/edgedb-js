@@ -1,5 +1,6 @@
 import _std from "@generated/modules/std";
 import type {$anyint, $bool, $int64} from "@generated/modules/std";
+import {FreeObject} from "@generated/modules/std";
 import {
   Expression,
   Cardinality,
@@ -481,7 +482,21 @@ export function select<
   null,
   SelectMethodNames
 >;
-export function select(expr: TypeSet, params?: any, ...polys: any[]) {
+export function select<Params extends {[key: string]: TypeSet}>(
+  params: Params
+): SelectPlusMethods<
+  {
+    __element__: ObjectType<`std::FreeObject_shape`, {}, Params, []>;
+    __cardinality__: Cardinality.One;
+  },
+  typeof FreeObject,
+  null,
+  SelectMethodNames
+>;
+export function select(...args: any[]) {
+  const [expr, params, ...polys] =
+    typeof args[0].__element__ !== "undefined" ? args : [FreeObject, ...args];
+
   if (!params) {
     if (expr.__element__.__kind__ === TypeKind.object) {
       const objectExpr: ObjectTypeExpression = expr as any;
@@ -524,7 +539,6 @@ export function select(expr: TypeSet, params?: any, ...polys: any[]) {
         __shape__: objExpr.__element__.__shape__,
         __params__: params,
         __polys__: polys,
-
         __tstype__: undefined as any,
       },
       __cardinality__: objExpr.__cardinality__,

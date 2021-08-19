@@ -28,8 +28,7 @@ test("implicit 'WITH' vars referencing each other", () => {
     })
     .limit(10);
 
-  let query = e.select(e.std.FreeObject, {
-    id: true,
+  let query = e.select({
     pageResults,
     nextOffset: e.plus(skip, e.count(pageResults)),
     hasMore: e.select(e.gt(e.count(remainingHeros), e.int64(10))),
@@ -51,8 +50,7 @@ test("implicit 'WITH' vars referencing each other", () => {
     }
     LIMIT <std::int64>10
   )
-SELECT (std::FreeObject) {
-  id,
+SELECT {
   pageResults := (__withVar_0 {id, name}),
   nextOffset := ((__withVar_2 + std::count((__withVar_0 {id, name})))),
   hasMore := (SELECT ((std::count((__withVar_1 {id})) > <std::int64>10)))
@@ -62,7 +60,6 @@ SELECT (std::FreeObject) {
   const f1: typeutil.assertEqual<
     queryType,
     {
-      id: string;
       pageResults: {
         id: string;
         name: string;
@@ -92,13 +89,11 @@ test("explicit 'WITH' block in nested query", () => {
 
   expect(
     e
-      .select(e.std.FreeObject, {
-        id: true,
+      .select({
         nested: e.with([numbers], e.select(numbers)),
       })
       .toEdgeQL()
-  ).toEqual(`SELECT (std::FreeObject) {
-  id,
+  ).toEqual(`SELECT {
   nested := (WITH
   __withVar_0 := ({ <std::int64>1, <std::int32>2, <std::int16>3 })
 SELECT (__withVar_0))
@@ -110,8 +105,7 @@ test("explicit 'WITH' block in nested query, var used outside 'WITH' block", () 
 
   expect(() =>
     e
-      .select(e.std.FreeObject, {
-        id: true,
+      .select({
         numbers,
         nested: e.with([numbers], e.select(numbers)),
       })
@@ -126,8 +120,7 @@ test("explicit 'WITH' block nested in implicit 'WITH' block", () => {
 
   expect(
     e
-      .select(e.std.FreeObject, {
-        id: true,
+      .select({
         numbers: explicitWith,
         numbers2: explicitWith,
       })
@@ -138,8 +131,7 @@ test("explicit 'WITH' block nested in implicit 'WITH' block", () => {
       __withVar_1 := ({ <std::int64>1, <std::int32>2, <std::int16>3 })
     SELECT (__withVar_1)
   )
-SELECT (std::FreeObject) {
-  id,
+SELECT {
   numbers := (__withVar_0),
   numbers2 := (__withVar_0)
 }`);
@@ -154,8 +146,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block", () => {
     e
       .with(
         [explicitWith],
-        e.select(e.std.FreeObject, {
-          id: true,
+        e.select({
           numbers: explicitWith,
         })
       )
@@ -166,8 +157,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block", () => {
       __withVar_1 := ({ <std::int64>1, <std::int32>2, <std::int16>3 })
     SELECT (__withVar_1)
   )
-SELECT (std::FreeObject) {
-  id,
+SELECT {
   numbers := (__withVar_0)
 }`);
 });
@@ -182,8 +172,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block, sub expr explicitly
     e
       .with(
         [explicitWith, number],
-        e.select(e.std.FreeObject, {
-          id: true,
+        e.select({
           numbers: explicitWith,
         })
       )
@@ -195,8 +184,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block, sub expr explicitly
       __withVar_1 := ({ <std::int64>1, __withVar_2, <std::int16>3 })
     SELECT (__withVar_1)
   )
-SELECT (std::FreeObject) {
-  id,
+SELECT {
   numbers := (__withVar_0)
 }`);
 });
@@ -211,8 +199,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block, expr declared in bo
     e
       .with(
         [explicitWith, numbers],
-        e.select(e.std.FreeObject, {
-          id: true,
+        e.select({
           numbers: explicitWith,
         })
       )
@@ -230,8 +217,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block, sub expr implicitly
     e
       .with(
         [explicitWith],
-        e.select(e.std.FreeObject, {
-          id: true,
+        e.select({
           number,
           numbers: explicitWith,
         })
@@ -244,8 +230,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block, sub expr implicitly
       __withVar_2 := ({ <std::int64>1, __withVar_0, <std::int16>3 })
     SELECT (__withVar_2)
   )
-SELECT (std::FreeObject) {
-  id,
+SELECT {
   number := (__withVar_0),
   numbers := (__withVar_1)
 }`);
@@ -263,8 +248,7 @@ test("implicit 'WITH' and explicit 'WITH' in sub expr", () => {
 
   const nextOffset = e.plus(skip, e.count(pageResults));
 
-  let query = e.select(e.std.FreeObject, {
-    id: true,
+  let query = e.select({
     pageResults,
     // @ts-ignore
     nextOffset: e.with([nextOffset], e.select(nextOffset)),
@@ -287,8 +271,7 @@ test("implicit 'WITH' and explicit 'WITH' in sub expr", () => {
     }
     LIMIT <std::int64>10
   )
-SELECT (std::FreeObject) {
-  id,
+SELECT {
   pageResults := (__withVar_0 {id, name}),
   nextOffset := (WITH
   __withVar_3 := ((__withVar_2 + std::count((__withVar_0 {id, name}))))
@@ -302,33 +285,26 @@ test("explicit 'WITH' block nested in implicit 'WITH' block + alias implicit", (
 
   const numbersAlias = e.alias(numbers);
 
-  const explicitWith = e.with(
-    [numbers],
-    e.select(e.std.FreeObject, {id: true, numbers, numbersAlias})
-  );
+  const explicitWith = e.with([numbers], e.select({numbers, numbersAlias}));
 
   expect(
     e
-      .select(e.std.FreeObject, {
-        id: true,
+      .select({
         numbers: explicitWith,
         numbers2: explicitWith,
       })
       .toEdgeQL()
   ).toEqual(`WITH
-  __withVar_3 := (std::FreeObject),
   __withVar_0 := (
     WITH
       __withVar_1 := ({ <std::int64>1, <std::int32>2, <std::int16>3 }),
       __withVar_2 := (__withVar_1)
-    SELECT (__withVar_3) {
-      id,
+    SELECT {
       numbers := (__withVar_1),
       numbersAlias := (__withVar_2)
     }
   )
-SELECT (__withVar_3) {
-  id,
+SELECT {
   numbers := (__withVar_0),
   numbers2 := (__withVar_0)
 }`);
@@ -341,31 +317,27 @@ test("explicit 'WITH' block nested in implicit 'WITH' block + alias explicit", (
 
   const explicitWith = e.with(
     [numbers, numbersAlias],
-    e.select(e.std.FreeObject, {id: true, numbers, numbersAlias})
+    e.select({numbers, numbersAlias})
   );
 
   expect(
     e
-      .select(e.std.FreeObject, {
-        id: true,
+      .select({
         numbers: explicitWith,
         numbers2: explicitWith,
       })
       .toEdgeQL()
   ).toEqual(`WITH
-  __withVar_3 := (std::FreeObject),
   __withVar_0 := (
     WITH
       __withVar_1 := ({ <std::int64>1, <std::int32>2, <std::int16>3 }),
       __withVar_2 := (__withVar_1)
-    SELECT (__withVar_3) {
-      id,
+    SELECT {
       numbers := (__withVar_1),
       numbersAlias := (__withVar_2)
     }
   )
-SELECT (__withVar_3) {
-  id,
+SELECT {
   numbers := (__withVar_0),
   numbers2 := (__withVar_0)
 }`);
@@ -376,15 +348,11 @@ test("explicit 'WITH' block nested in implicit 'WITH' block + alias outside 'WIT
 
   const numbersAlias = e.alias(numbers);
 
-  const explicitWith = e.with(
-    [numbers],
-    e.select(e.std.FreeObject, {id: true, numbers, numbersAlias})
-  );
+  const explicitWith = e.with([numbers], e.select({numbers, numbersAlias}));
 
   expect(() =>
     e
-      .select(e.std.FreeObject, {
-        id: true,
+      .select({
         numbers: explicitWith,
         numbers2: explicitWith,
         numbersAlias,
@@ -411,8 +379,7 @@ test(
       e
         .with(
           [explicitWith, numbers],
-          e.select(e.std.FreeObject, {
-            id: true,
+          e.select({
             numbers: explicitWith,
           })
         )
@@ -424,8 +391,7 @@ test(
       __withVar_2 := (__withVar_1)
     SELECT ((__withVar_1 + __withVar_2))
   )
-SELECT (std::FreeObject) {
-  id,
+SELECT {
   numbers := (__withVar_0)
 }`);
   }
@@ -450,8 +416,7 @@ test(
       e
         .with(
           [explicitWith, numbers],
-          e.select(e.std.FreeObject, {
-            id: true,
+          e.select({
             numbers: explicitWith,
           })
         )
@@ -464,8 +429,7 @@ test(
       __withVar_3 := (__withVar_2)
     SELECT ((__withVar_1 + __withVar_3))
   )
-SELECT (std::FreeObject) {
-  id,
+SELECT {
   numbers := (__withVar_0)
 }`);
   }
