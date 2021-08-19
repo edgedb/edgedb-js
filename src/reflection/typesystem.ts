@@ -42,6 +42,7 @@ export interface EnumType<
   __kind__: TypeKind.enum;
   __tstype__: TsType;
   __name__: Name;
+  __vals__: Vals;
   (val: TsType | Vals): literal<this>;
 }
 
@@ -50,21 +51,34 @@ export interface EnumType<
 //////////////////
 export type OptionalArg = ScalarType | EnumType;
 
-export interface OptionalType<Element extends OptionalArg = OptionalArg> {
-  __kind__: TypeKind.optional;
-  __tstype__: Element["__tstype__"] | undefined;
-  __name__: `OPTIONAL ${Element["__name__"]}`;
-  __element__: Element;
-}
-
 export function optional<Element extends OptionalArg>(
   element: Element
-): OptionalType<Element> {
-  return {
-    __kind__: TypeKind.optional,
-    __name__: `OPTIONAL ${element.__name__}`,
-    __element__: element,
-  } as any;
+): Element extends ScalarType
+  ? ScalarType<
+      `OPTIONAL ${Element["__name__"]}`,
+      Element["__tstype__"] | undefined,
+      Element["__tsconsttype__"] | undefined
+    >
+  : Element extends EnumType
+  ? EnumType<
+      `OPTIONAL ${Element["__name__"]}`,
+      Element["__tstype__"] | undefined,
+      Element["__vals__"]
+    >
+  : never {
+  if (element.__kind__ === TypeKind.scalar) {
+    return {
+      __kind__: TypeKind.scalar,
+      __name__: `OPTIONAL ${element.__name__}`,
+    } as any;
+  } else if (element.__kind__ === TypeKind.enum) {
+    return {
+      __kind__: TypeKind.enum,
+      __name__: `OPTIONAL ${element.__name__}`,
+      __vals__: element.__vals__,
+    } as any;
+  }
+  throw new Error("Invalid argument: must be scalar or enum type.");
 }
 
 //////////////////
@@ -451,7 +465,6 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
 export type MaterialType =
   | ScalarType
   | EnumType
-  | OptionalType
   | ObjectType
   | TupleType
   | NamedTupleType
@@ -466,4 +479,4 @@ export type NonArrayMaterialType =
 
 export type AnyTupleType = TupleType | NamedTupleType;
 
-export type ParamType = ScalarType | ArrayType<ScalarType> | OptionalType;
+export type ParamType = ScalarType | ArrayType<ScalarType>;

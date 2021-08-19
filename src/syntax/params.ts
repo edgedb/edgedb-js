@@ -4,7 +4,6 @@ import {
   BaseExpression,
   ParamType,
   Cardinality,
-  OptionalType,
   TypeKind,
 } from "reflection";
 import {$expressionify} from "./path";
@@ -38,7 +37,9 @@ export type $expr_Param<
 > = Expression<{
   __kind__: ExpressionKind.Param;
   __element__: Type;
-  __cardinality__: Type extends OptionalType
+  __cardinality__: ParamType extends Type
+    ? Cardinality.AtMostOne | Cardinality.One
+    : undefined extends Type["__tstype__"]
     ? Cardinality.AtMostOne
     : Cardinality.One;
   __name__: Name;
@@ -69,7 +70,8 @@ export function withParams<
       __kind__: ExpressionKind.Param,
       __element__: param,
       __cardinality__:
-        param.__kind__ === TypeKind.optional
+        param.__kind__ === TypeKind.scalar &&
+        param.__name__.includes("OPTIONAL")
           ? Cardinality.AtMostOne
           : Cardinality.One,
       __name__: key,
