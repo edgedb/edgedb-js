@@ -8,6 +8,7 @@ export enum Cardinality {
 
 export enum TypeKind {
   scalar = "scalar",
+  optional = "optional",
   enum = "enum",
   object = "object",
   namedtuple = "namedtuple",
@@ -32,7 +33,6 @@ export enum ExpressionKind {
   With = "With",
   WithParams = "WithParams",
   Param = "Param",
-  OptionalParam = "OptionalParam",
 }
 
 export enum SelectModifierKind {

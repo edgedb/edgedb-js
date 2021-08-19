@@ -4,26 +4,14 @@ import {
   BaseExpression,
   ParamType,
   Cardinality,
+  OptionalType,
+  TypeKind,
 } from "reflection";
 import {$expressionify} from "./path";
 
-export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
-  __kind__: ExpressionKind.OptionalParam;
-  __type__: Type;
-};
-
-export function optional<Type extends ParamType>(
-  type: Type
-): $expr_OptionalParam<Type> {
-  return {
-    __kind__: ExpressionKind.OptionalParam,
-    __type__: type,
-  };
-}
-
 export type $expr_WithParams<
   Params extends {
-    [key: string]: ParamType | $expr_OptionalParam;
+    [key: string]: ParamType;
   } = {},
   Expr extends BaseExpression = BaseExpression
 > = Expression<{
@@ -36,24 +24,21 @@ export type $expr_WithParams<
 
 type paramsToParamTypes<
   Params extends {
-    [key: string]: ParamType | $expr_OptionalParam;
+    [key: string]: ParamType;
   }
 > = {
-  [key in keyof Params]: Params[key] extends $expr_OptionalParam
-    ? Params[key]["__type__"]["__tstype__"] | null
-    : Params[key] extends ParamType
+  [key in keyof Params]: Params[key] extends ParamType
     ? Params[key]["__tstype__"]
     : never;
 };
 
 export type $expr_Param<
   Name extends string | number | symbol = string,
-  Type extends ParamType = ParamType,
-  Optional extends boolean = boolean
+  Type extends ParamType = ParamType
 > = Expression<{
   __kind__: ExpressionKind.Param;
   __element__: Type;
-  __cardinality__: Optional extends true
+  __cardinality__: Type extends OptionalType
     ? Cardinality.AtMostOne
     : Cardinality.One;
   __name__: Name;
@@ -61,19 +46,17 @@ export type $expr_Param<
 
 type paramsToParamExprs<
   Params extends {
-    [key: string]: ParamType | $expr_OptionalParam;
+    [key: string]: ParamType;
   }
 > = {
-  [key in keyof Params]: Params[key] extends $expr_OptionalParam
-    ? $expr_Param<key, Params[key]["__type__"], true>
-    : Params[key] extends ParamType
-    ? $expr_Param<key, Params[key], false>
+  [key in keyof Params]: Params[key] extends ParamType
+    ? $expr_Param<key, Params[key]>
     : never;
 };
 
 export function withParams<
   Params extends {
-    [key: string]: ParamType | $expr_OptionalParam;
+    [key: string]: ParamType;
   } = {},
   Expr extends BaseExpression = BaseExpression
 >(
@@ -84,12 +67,9 @@ export function withParams<
   for (const [key, param] of Object.entries(params)) {
     paramExprs[key] = $expressionify({
       __kind__: ExpressionKind.Param,
-      __element__:
-        param.__kind__ === ExpressionKind.OptionalParam
-          ? param.__type__
-          : param,
+      __element__: param,
       __cardinality__:
-        param.__kind__ === ExpressionKind.OptionalParam
+        param.__kind__ === TypeKind.optional
           ? Cardinality.AtMostOne
           : Cardinality.One,
       __name__: key,

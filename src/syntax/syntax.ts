@@ -6,6 +6,7 @@ export * from "./set";
 export * from "./cast";
 export * from "./select";
 export * from "./collections";
+export * from "./types";
 export * from "./funcops";
 export * from "./for";
 export * from "./with";

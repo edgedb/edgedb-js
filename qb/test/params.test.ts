@@ -7,12 +7,14 @@ test("simple params", () => {
       str: e.str,
       numArr: e.array(e.int64),
       optBool: e.optional(e.bool),
+      bool: e.bool,
     },
     (params) =>
       e.select({
         str: params.str,
         nums: e.array_unpack(params.numArr),
-        x: e.if_else(e.str("true"), params.optBool, e.str("false")),
+        optBool: params.optBool,
+        x: e.if_else(e.str("true"), params.bool, e.str("false")),
       })
   );
 
@@ -30,7 +32,8 @@ test("simple params", () => {
     {
       str: string;
       numArr: number[];
-      optBool: boolean | null;
+      optBool: boolean | undefined;
+      bool: boolean;
     }
   > = true;
 });

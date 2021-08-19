@@ -46,6 +46,28 @@ export interface EnumType<
 }
 
 //////////////////
+// OPTIONAL TYPES
+//////////////////
+export type OptionalArg = ScalarType | EnumType;
+
+export interface OptionalType<Element extends OptionalArg = OptionalArg> {
+  __kind__: TypeKind.optional;
+  __tstype__: Element["__tstype__"] | undefined;
+  __name__: `OPTIONAL ${Element["__name__"]}`;
+  __element__: Element;
+}
+
+export function optional<Element extends OptionalArg>(
+  element: Element
+): OptionalType<Element> {
+  return {
+    __kind__: TypeKind.optional,
+    __name__: `OPTIONAL ${element.__name__}`,
+    __element__: element,
+  } as any;
+}
+
+//////////////////
 // OBJECT TYPES
 //////////////////
 // export type SomeObjectType = ObjectType;
@@ -429,6 +451,7 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
 export type MaterialType =
   | ScalarType
   | EnumType
+  | OptionalType
   | ObjectType
   | TupleType
   | NamedTupleType
@@ -443,4 +466,4 @@ export type NonArrayMaterialType =
 
 export type AnyTupleType = TupleType | NamedTupleType;
 
-export type ParamType = ScalarType | ArrayType<ScalarType>;
+export type ParamType = ScalarType | ArrayType<ScalarType> | OptionalType;
