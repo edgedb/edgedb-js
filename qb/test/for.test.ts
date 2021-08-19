@@ -7,7 +7,6 @@ test("simple for loop", () => {
         e.plus(e.mult(x, e.int32(2)), x)
       )
       .toEdgeQL()
-  )
-    .toEqual(`FOR __forVar__0 IN {{ <std::int64>1, <std::int64>2, <std::int64>3 }}
+  ).toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
 UNION (((__forVar__0 * <std::int32>2) + __forVar__0))`);
 });

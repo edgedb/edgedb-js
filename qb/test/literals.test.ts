@@ -23,11 +23,12 @@ test("literals", () => {
     `<std::duration>'PT5H6M7.00800901S'`
   );
   expect(e.std.float32(144.1235).toEdgeQL()).toEqual(`<std::float32>144.1235`);
-  expect(e.std.float64(1234.15).toEdgeQL()).toEqual(`<std::float64>1234.15`);
+  expect(e.std.float64(1234.15).toEdgeQL()).toEqual(`1234.15`);
   expect(e.std.int16(1234.1234).toEdgeQL()).toEqual(`<std::int16>1234.1234`);
   expect(e.std.int32(124).toEdgeQL()).toEqual(`<std::int32>124`);
 
-  expect(e.std.int64(1234).toEdgeQL()).toEqual(`<std::int64>1234`);
+  expect(e.std.int64(1234).toEdgeQL()).toEqual(`1234`);
+  expect(e.std.int32(1234).toEdgeQL()).toEqual(`<std::int32>1234`);
   expect(e.std.json('"asdf"').toEdgeQL()).toEqual(`<std::json>"\\"asdf\\""`);
   expect(e.std.str(`asdfaf`).toEdgeQL()).toEqual(`"asdfaf"`);
   expect(e.std.str(`string " with ' all \` quotes`).toEdgeQL()).toEqual(
@@ -62,6 +63,6 @@ test("collection type literals", () => {
   );
   const literalTuple = e.literal(e.tuple([e.str, e.int64]), ["asdf", 1234]);
   expect(literalTuple.toEdgeQL()).toEqual(
-    `<tuple<std::str, std::int64>>( "asdf", <std::int64>1234 )`
+    `<tuple<std::str, std::int64>>( "asdf", 1234 )`
   );
 });

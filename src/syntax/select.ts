@@ -434,14 +434,12 @@ function limitFunc(this: any, expr: LimitExpression | number) {
   );
 }
 
-function queryFunc(this: any, cxn: edgedb.Connection | edgedb.Pool) {
-  console.log(`executing query: ${this.__cardinality__}`);
-  console.log(this.toEdgeQL());
+async function queryFunc(this: any, cxn: edgedb.Connection | edgedb.Pool) {
   if (
     this.__cardinality__ === Cardinality.One ||
     this.__cardinality__ === Cardinality.AtMostOne
   ) {
-    return cxn.queryOne(this.toEdgeQL());
+    return await cxn.queryOne(this.toEdgeQL());
   } else {
     return cxn.query(this.toEdgeQL());
   }
