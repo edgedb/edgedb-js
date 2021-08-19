@@ -30,6 +30,9 @@ export enum ExpressionKind {
   TypeIntersection = "TypeIntersection",
   Alias = "Alias",
   With = "With",
+  WithParams = "WithParams",
+  Param = "Param",
+  OptionalParam = "OptionalParam",
 }
 
 export enum SelectModifierKind {

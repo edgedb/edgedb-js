@@ -1,4 +1,5 @@
 import {
+  Cardinality,
   ExpressionKind,
   MaterialType,
   Poly,
@@ -30,6 +31,7 @@ import type {
 import type {$expr_Function, $expr_Operator} from "./funcops";
 import type {$expr_For, $expr_ForVar} from "./for";
 import type {$expr_Alias, $expr_With} from "./with";
+import type {$expr_Param, $expr_WithParams} from "./params";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -44,7 +46,9 @@ export type SomeExpression =
   | $expr_ForVar
   | $expr_TypeIntersection
   | $expr_Alias
-  | $expr_With;
+  | $expr_With
+  | $expr_WithParams
+  | $expr_Param;
 
 type WithScopeExpr = $expr_Select | $expr_For;
 
@@ -290,7 +294,10 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
       : "";
   }
 
-  if (expr.__kind__ === ExpressionKind.With) {
+  if (
+    expr.__kind__ === ExpressionKind.With ||
+    expr.__kind__ === ExpressionKind.WithParams
+  ) {
     return renderEdgeQL(expr.__expr__ as any, ctx);
   } else if (expr.__kind__ === ExpressionKind.Alias) {
     const aliasedExprVar = ctx.withVars.get(expr.__expr__ as any);
@@ -484,6 +491,10 @@ UNION (${renderEdgeQL(expr.__expr__ as any, ctx)})`
       throw new Error(`'FOR' loop variable used outside of 'FOR' loop`);
     }
     return forVar;
+  } else if (expr.__kind__ === ExpressionKind.Param) {
+    return `<${
+      expr.__cardinality__ === Cardinality.AtMostOne ? "OPTIONAL " : ""
+    }${expr.__element__.__name__}>$${expr.__name__}`;
   } else {
     util.assertNever(
       expr,
@@ -554,6 +565,7 @@ function walkExprTree(
       case ExpressionKind.PathLeaf:
       case ExpressionKind.PathNode:
       case ExpressionKind.ForVar:
+      case ExpressionKind.Param:
         break;
       case ExpressionKind.Cast:
         childExprs.push(
@@ -602,6 +614,17 @@ function walkExprTree(
       case ExpressionKind.For: {
         childExprs.push(...walkExprTree(expr.__iterSet__ as any, expr, ctx));
         childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
+        break;
+      }
+      case ExpressionKind.WithParams: {
+        if (parentScope !== null) {
+          throw new Error(
+            `'withParams' does not support being used as a nested expression`
+          );
+        }
+        childExprs.push(
+          ...walkExprTree(expr.__expr__ as any, parentScope, ctx)
+        );
         break;
       }
       default:
