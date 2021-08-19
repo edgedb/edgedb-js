@@ -444,3 +444,5 @@ export type NonArrayMaterialType =
   | NamedTupleType;
 
 export type AnyTupleType = TupleType | NamedTupleType;
+
+export type ParamType = ScalarType | ArrayType<ScalarType>;
