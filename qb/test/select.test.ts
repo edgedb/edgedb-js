@@ -1,11 +1,27 @@
+import {edgedb} from "@generated/imports";
 import {$expr_Select} from "@syntax/select";
+import {createPool} from "edgedb";
 import {
   Cardinality,
   ExpressionKind,
+  setToTsType,
   TypeKind,
   typeutil,
 } from "../../src/reflection";
 import e from "../generated/example";
+import {setupTests, teardownTests, TestData} from "./setupTeardown";
+
+let pool: edgedb.Pool;
+let data: TestData;
+beforeAll(async () => {
+  pool = await createPool();
+  data = await setupTests();
+});
+
+afterAll(async () => {
+  await teardownTests();
+  await pool.close();
+});
 
 test("basic select", () => {
   const result = e.select(e.std.str("asdf" as string));
@@ -182,7 +198,6 @@ test("limit literal inference", () => {
 
 test("offset", () => {
   const q = e.select(e.Hero, {name: true});
-
   const r1 = q.offset(5);
   expect(r1.__modifier__.expr.__element__.__name__).toEqual("std::int64");
 });
@@ -316,4 +331,31 @@ test("nonchainable offset/limit", () => {
   const f2d: "orderBy" extends keyof val2 ? true : false = false;
 
   const f3: val2 extends $expr_Select ? true : false = true;
+});
+
+test("fetch heroes", async () => {
+  const result = await pool.query(e.select(e.Hero).toEdgeQL());
+  expect(result.length).toEqual(3);
+  expect(result.every((h) => typeof h.id === "string")).toEqual(true);
+});
+test("filter by id", async () => {
+  const result = await e
+    .select(e.Hero)
+    .filter(e.eq(e.Hero.id, e.uuid(data.spidey.id)))
+    .query(pool);
+
+  expect(result?.id).toEqual(data.spidey.id);
+});
+test("limit 1", async () => {
+  const query = e.select(e.Hero).orderBy(e.Hero.name).offset(1).limit(1);
+  const result = await query.query(pool);
+  expect(result?.id).toEqual(data.ironMan.id);
+});
+
+test("limit 2", async () => {
+  const query = e.select(e.Hero).orderBy(e.Hero.name).offset(1).limit(2);
+  const results = await query.query(pool);
+
+  expect(results.length).toEqual(2);
+  expect(results).toEqual([{id: data.ironMan.id}, {id: data.spidey.id}]);
 });

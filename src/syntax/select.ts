@@ -15,6 +15,7 @@ import {
   TypeSet,
   typeutil,
   SelectModifierKind,
+  setToTsType,
 } from "reflection";
 
 import {$expr_Operator} from "./funcops";
@@ -25,6 +26,7 @@ import {
   $expressionify,
   PathParent,
 } from "./path";
+import {edgedb} from "@generated/imports";
 
 // filter
 // order by
@@ -91,6 +93,9 @@ export type $expr_Select<
   __expr__: Expr;
   __kind__: ExpressionKind.Select;
   __modifier__: Modifier;
+  query(
+    cxn: edgedb.Pool | edgedb.Connection
+  ): Promise<setToTsType<TypeSet<Set["__element__"], Set["__cardinality__"]>>>;
 }>;
 
 // select User filter User.id = 'adsf'
@@ -429,12 +434,26 @@ function limitFunc(this: any, expr: LimitExpression | number) {
   );
 }
 
+function queryFunc(this: any, cxn: edgedb.Connection | edgedb.Pool) {
+  console.log(`executing query: ${this.__cardinality__}`);
+  console.log(this.toEdgeQL());
+  if (
+    this.__cardinality__ === Cardinality.One ||
+    this.__cardinality__ === Cardinality.AtMostOne
+  ) {
+    return cxn.queryOne(this.toEdgeQL());
+  } else {
+    return cxn.query(this.toEdgeQL());
+  }
+}
+
 export function $selectify<Expr extends TypeSet>(expr: Expr) {
   Object.assign(expr, {
     filter: filterFunc.bind(expr),
     orderBy: orderByFunc.bind(expr),
     offset: offsetFunc.bind(expr),
     limit: limitFunc.bind(expr),
+    query: queryFunc.bind(expr),
   });
   return expr;
 }

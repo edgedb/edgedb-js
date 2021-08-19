@@ -395,6 +395,8 @@ export type setToTsType<Set extends TypeSet> =
     ? TypeToTsType<Set["__element__"]> | null
     : Set["__cardinality__"] extends Cardinality.Many
     ? TypeToTsType<Set["__element__"]>[]
+    : Set["__cardinality__"] extends Cardinality
+    ? unknown
     : never;
 
 export type propToTsType<Prop extends PropertyDesc> =
