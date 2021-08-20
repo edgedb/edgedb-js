@@ -361,20 +361,21 @@ test("limit 2", async () => {
 });
 
 test("shapes", async () => {
-  const query = e
-    .select(e.Hero, {
+  const query = e.select(
+    e
+      .select(e.Hero)
+      .filter(e.eq(e.Hero.name, e.str("Iron Man")))
+      .$assertSingle(),
+    {
       id: true,
       name: true,
       secret_identity: true,
       villains: {id: true},
-    })
-    .filter(e.eq(e.Hero.name, e.str("Iron Man")));
+    }
+  );
 
-  const result = await query.query(pool);
-
-  expect(result?.id).toEqual(data.iron_man.id);
-  expect(result?.name).toEqual(data.iron_man.name);
-  expect(result?.secret_identity).toEqual(data.iron_man.secret_identity);
+  const result = await query.query(pool); // query.query(pool);
+  expect(result).toMatchObject(data.iron_man);
   expect(result?.villains).toEqual([{id: data.thanos.id}]);
 });
 
