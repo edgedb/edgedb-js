@@ -154,7 +154,7 @@ e.literal(e.tuple([e.str]), ["asdf"]);
 
 ### Object set references
 
-Module-scoped set references. Instance of `ObjectSetReference`.
+Module-scoped set references.
 
 ```ts
 e.default.Hero;
@@ -171,16 +171,12 @@ const {Hero, Villain, Movie, Person} = e.default;
 
 ### Property set references
 
-Returns `PropertySetReference`.
-
 ```ts
 Hero.name;
 Movie.title;
 ```
 
 ### Traverse links
-
-Returns another `ObjectSetReference`.
 
 ```ts
 Hero.villains;
@@ -205,7 +201,7 @@ Hero["<nemesis[IS default::Villain]"];
 Also support "untyped" backlinks. By default, these return a set of `BaseObject` with cardinality `Many`. These can be refined with `$is` and `$assertSingle`.
 
 ```ts
-Hero.['<nemesis'];
+e.Hero.['<nemesis'].$is(e.Villain);
 ```
 
 ## Select
@@ -237,6 +233,16 @@ e.select(Hero, {
     id: true,
     name: true,
   },
+});
+```
+
+### Free shapes
+
+```ts
+e.select({
+  name: e.str("Name"),
+  number: e.int64(1234),
+  heroes: e.Hero,
 });
 ```
 
@@ -502,15 +508,17 @@ const detachedHero = e.detached(e.Hero);
 ## Parameters
 
 ```ts
-const fetchPerson = e.with(
+const fetchPerson = e.withParams(
   {
     name: e.arg(e.array(e.str)),
-    name: e.arg(e.bool),
+    bool: e.arg(e.bool),
+    optionalStr: e.optional(e.bool),
   },
   (args) =>
     e
       .select(Person, {
         id: true,
+        optionalStr,
       })
       .filter(e.in(Person.name, e.array_unpack(args.name)))
 );
