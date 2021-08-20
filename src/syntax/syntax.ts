@@ -10,6 +10,7 @@ export * from "./funcops";
 export * from "./for";
 export * from "./with";
 export * from "./params";
+export * from "./detached";
 export * from "./toEdgeQL";
 
 export type $infer<A extends TypeSet> = setToTsType<A>;
