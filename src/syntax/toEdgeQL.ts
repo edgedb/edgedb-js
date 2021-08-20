@@ -1,4 +1,5 @@
 import {
+  BaseExpression,
   Cardinality,
   ExpressionKind,
   MaterialType,
@@ -6,6 +7,7 @@ import {
   Poly,
   SelectModifierKind,
   TypeKind,
+  TypeSet,
   util,
 } from "reflection";
 import {
@@ -33,6 +35,7 @@ import type {$expr_Function, $expr_Operator} from "./funcops";
 import type {$expr_For, $expr_ForVar} from "./for";
 import type {$expr_Alias, $expr_With} from "./with";
 import type {$expr_Param, $expr_WithParams} from "./params";
+import type {$expr_Detached} from "./detached";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -49,7 +52,8 @@ export type SomeExpression =
   | $expr_Alias
   | $expr_With
   | $expr_WithParams
-  | $expr_Param;
+  | $expr_Param
+  | $expr_Detached;
 
 type WithScopeExpr = $expr_Select | $expr_For;
 
@@ -262,7 +266,14 @@ function topoSortWithVars(
   return sorted;
 }
 
-function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
+function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
+  if (
+    !(_expr as any).__kind__ ||
+    !Object.values(ExpressionKind).includes((_expr as any).__kind__)
+  ) {
+    throw new Error("Invalid expression.");
+  }
+  const expr = _expr as SomeExpression;
   if (ctx.withVars.has(expr) && ctx.renderWithVar !== expr) {
     return (
       ctx.withVars.get(expr)!.name +
@@ -304,7 +315,7 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
     expr.__kind__ === ExpressionKind.With ||
     expr.__kind__ === ExpressionKind.WithParams
   ) {
-    return renderEdgeQL(expr.__expr__ as any, ctx);
+    return renderEdgeQL(expr.__expr__, ctx);
   } else if (expr.__kind__ === ExpressionKind.Alias) {
     const aliasedExprVar = ctx.withVars.get(expr.__expr__ as any);
     if (!aliasedExprVar) {
@@ -320,7 +331,7 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
     if (!expr.__parent__) {
       return expr.__element__.__name__;
     } else {
-      return `${renderEdgeQL(expr.__parent__.type as any, ctx)}.${
+      return `${renderEdgeQL(expr.__parent__.type, ctx)}.${
         expr.__parent__.linkName
       }`.trim();
     }
@@ -334,9 +345,7 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
       exprs.every((ex) => ex.__element__.__kind__ !== TypeKind.object)
     ) {
       if (exprs.length === 0) return `<${expr.__element__.__name__}>{}`;
-      return `{ ${exprs
-        .map((ex) => renderEdgeQL(ex as any, ctx))
-        .join(", ")} }`;
+      return `{ ${exprs.map((ex) => renderEdgeQL(ex, ctx)).join(", ")} }`;
     } else {
       throw new Error(
         `Invalid arguments to set constructor: ${exprs
@@ -345,10 +354,7 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
       );
     }
   } else if (expr.__kind__ === ExpressionKind.Cast) {
-    return `<${expr.__element__.__name__}>${renderEdgeQL(
-      expr.__expr__ as any,
-      ctx
-    )}`;
+    return `<${expr.__element__.__name__}>${renderEdgeQL(expr.__expr__, ctx)}`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
     if (expr.__modifier__) {
       // if modifier exists, unwrap nested 'selects'
@@ -382,11 +388,11 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
         selectExpr = selectExpr.__expr__ as $expr_Select;
       }
 
-      const lines = [renderEdgeQL(selectExpr as any, ctx)];
+      const lines = [renderEdgeQL(selectExpr, ctx)];
       if (mods.filter.length) {
         lines.push(
           `FILTER ${mods.filter
-            .map((mod) => renderEdgeQL(mod.expr as any, ctx))
+            .map((mod) => renderEdgeQL(mod.expr, ctx))
             .join(" AND ")}`
         );
       }
@@ -395,7 +401,7 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
           ...mods.order.map(
             (mod, i) =>
               `${i === 0 ? "ORDER BY" : "THEN"} ${renderEdgeQL(
-                mod.expr as any,
+                mod.expr,
                 ctx
               )}${mod.direction ? " " + mod.direction : ""}${
                 mod.empty ? " " + mod.empty : ""
@@ -404,10 +410,10 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
         );
       }
       if (mods.offsetBy) {
-        lines.push(`OFFSET ${renderEdgeQL(mods.offsetBy.expr as any, ctx)}`);
+        lines.push(`OFFSET ${renderEdgeQL(mods.offsetBy.expr, ctx)}`);
       }
       if (mods.limit) {
-        lines.push(`LIMIT ${renderEdgeQL(mods.limit.expr as any, ctx)}`);
+        lines.push(`LIMIT ${renderEdgeQL(mods.limit.expr, ctx)}`);
       }
 
       return withBlock + lines.join("\n");
@@ -419,7 +425,7 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
         `SELECT${
           expr.__expr__.__element__.__name__ === "std::FreeObject"
             ? ""
-            : ` (${renderEdgeQL(expr.__expr__ as any, ctx)})`
+            : ` (${renderEdgeQL(expr.__expr__, ctx)})`
         }`
       );
 
@@ -434,14 +440,12 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
       return withBlock + lines.join(" ");
     } else {
       // non-object/non-shape select expression
-      return withBlock + `SELECT (${renderEdgeQL(expr.__expr__ as any, ctx)})`;
+      return withBlock + `SELECT (${renderEdgeQL(expr.__expr__, ctx)})`;
     }
   } else if (expr.__kind__ === ExpressionKind.Function) {
-    const args = expr.__args__.map(
-      (arg) => `(${renderEdgeQL(arg as any, ctx)})`
-    );
+    const args = expr.__args__.map((arg) => `(${renderEdgeQL(arg!, ctx)})`);
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
-      args.push(`${key} := (${renderEdgeQL(arg as any, ctx)})`);
+      args.push(`${key} := (${renderEdgeQL(arg, ctx)})`);
     }
     return `${expr.__name__}(${args.join(", ")})`;
   } else if (expr.__kind__ === ExpressionKind.Operator) {
@@ -451,24 +455,24 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
       case "Infix":
         if (operator === "[]") {
           const val = (args[1] as any).__value__;
-          return `(${renderEdgeQL(args[0] as any, ctx)}[${
+          return `(${renderEdgeQL(args[0], ctx)}[${
             Array.isArray(val) ? val.join(":") : val
           }])`;
         }
-        return `(${renderEdgeQL(
-          args[0] as any,
+        return `(${renderEdgeQL(args[0], ctx)} ${operator} ${renderEdgeQL(
+          args[1],
           ctx
-        )} ${operator} ${renderEdgeQL(args[1] as any, ctx)})`;
+        )})`;
       case "Postfix":
-        return `(${renderEdgeQL(args[0] as any, ctx)} ${operator})`;
+        return `(${renderEdgeQL(args[0], ctx)} ${operator})`;
       case "Prefix":
-        return `(${operator} ${renderEdgeQL(args[0] as any, ctx)})`;
+        return `(${operator} ${renderEdgeQL(args[0], ctx)})`;
       case "Ternary":
         if (operator === "IF") {
-          return `(${renderEdgeQL(args[0] as any, ctx)} IF ${renderEdgeQL(
-            args[1] as any,
+          return `(${renderEdgeQL(args[0], ctx)} IF ${renderEdgeQL(
+            args[1],
             ctx
-          )} ELSE ${renderEdgeQL(args[2] as any, ctx)})`;
+          )} ELSE ${renderEdgeQL(args[2], ctx)})`;
         } else {
           throw new Error(`Unknown operator: ${operator}`);
         }
@@ -479,7 +483,7 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
         );
     }
   } else if (expr.__kind__ === ExpressionKind.TypeIntersection) {
-    return `${renderEdgeQL(expr.__expr__ as any, ctx)}[IS ${
+    return `${renderEdgeQL(expr.__expr__, ctx)}[IS ${
       expr.__element__.__name__
     }]`;
   } else if (expr.__kind__ === ExpressionKind.For) {
@@ -487,10 +491,10 @@ function renderEdgeQL(expr: SomeExpression, ctx: RenderCtx): string {
     return (
       withBlock +
       `FOR ${ctx.forVars.get(expr.__forVar__)} IN {${renderEdgeQL(
-        expr.__iterSet__ as any,
+        expr.__iterSet__,
         ctx
       )}}
-UNION (${renderEdgeQL(expr.__expr__ as any, ctx)})`
+UNION (${renderEdgeQL(expr.__expr__, ctx)})`
     );
   } else if (expr.__kind__ === ExpressionKind.ForVar) {
     const forVar = ctx.forVars.get(expr);
@@ -502,6 +506,8 @@ UNION (${renderEdgeQL(expr.__expr__ as any, ctx)})`
     return `<${
       expr.__cardinality__ === Cardinality.AtMostOne ? "OPTIONAL " : ""
     }${expr.__element__.__name__}>$${expr.__name__}`;
+  } else if (expr.__kind__ === ExpressionKind.Detached) {
+    return `DETACHED ${renderEdgeQL(expr.__expr__, ctx)}`;
   } else {
     util.assertNever(
       expr,
@@ -525,10 +531,17 @@ interface WalkExprTreeCtx {
 }
 
 function walkExprTree(
-  expr: SomeExpression,
+  _expr: TypeSet,
   parentScope: WithScopeExpr | null,
   ctx: WalkExprTreeCtx
 ): SomeExpression[] {
+  if (
+    !(_expr as any).__kind__ ||
+    !Object.values(ExpressionKind).includes((_expr as any).__kind__)
+  ) {
+    throw new Error("Invalid expression.");
+  }
+  const expr = _expr as SomeExpression;
   if (!ctx.rootScope && parentScope) {
     ctx.rootScope = parentScope;
   }
@@ -550,17 +563,13 @@ function walkExprTree(
 
     switch (expr.__kind__) {
       case ExpressionKind.Alias:
-        childExprs.push(
-          ...walkExprTree(expr.__expr__ as any, parentScope, ctx)
-        );
+        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
         ctx.seen.get(expr.__expr__ as any)!.aliases.push(expr);
         break;
       case ExpressionKind.With:
-        childExprs.push(
-          ...walkExprTree(expr.__expr__ as any, parentScope, ctx)
-        );
+        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
         for (const refExpr of expr.__refs__) {
-          walkExprTree(refExpr as any, expr.__expr__, ctx);
+          walkExprTree(refExpr, expr.__expr__, ctx);
           const seenRef = ctx.seen.get(refExpr as any)!;
           if (seenRef.boundScope) {
             throw new Error(`Expression bound to multiple 'WITH' blocks`);
@@ -575,13 +584,11 @@ function walkExprTree(
       case ExpressionKind.Param:
         break;
       case ExpressionKind.Cast:
-        childExprs.push(
-          ...walkExprTree(expr.__expr__ as any, parentScope, ctx)
-        );
+        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
         break;
       case ExpressionKind.Set:
         for (const subExpr of expr.__exprs__) {
-          childExprs.push(...walkExprTree(subExpr as any, parentScope, ctx));
+          childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
         }
         break;
       case ExpressionKind.Select: {
@@ -603,18 +610,16 @@ function walkExprTree(
         break;
       }
       case ExpressionKind.TypeIntersection:
-        childExprs.push(
-          ...walkExprTree(expr.__expr__ as any, parentScope, ctx)
-        );
+        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
         break;
       case ExpressionKind.Operator:
       case ExpressionKind.Function:
         for (const subExpr of expr.__args__) {
-          childExprs.push(...walkExprTree(subExpr as any, parentScope, ctx));
+          childExprs.push(...walkExprTree(subExpr!, parentScope, ctx));
         }
         if (expr.__kind__ === ExpressionKind.Function) {
           for (const subExpr of Object.values(expr.__namedargs__)) {
-            childExprs.push(...walkExprTree(subExpr as any, parentScope, ctx));
+            childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
           }
         }
         break;
@@ -629,9 +634,11 @@ function walkExprTree(
             `'withParams' does not support being used as a nested expression`
           );
         }
-        childExprs.push(
-          ...walkExprTree(expr.__expr__ as any, parentScope, ctx)
-        );
+        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
+        break;
+      }
+      case ExpressionKind.Detached: {
+        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
         break;
       }
       default:

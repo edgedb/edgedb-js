@@ -33,6 +33,7 @@ export enum ExpressionKind {
   WithParams = "WithParams",
   Param = "Param",
   OptionalParam = "OptionalParam",
+  Detached = "Detached",
 }
 
 export enum SelectModifierKind {
