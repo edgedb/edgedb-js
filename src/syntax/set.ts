@@ -13,11 +13,16 @@ import {
   mergeObjectTypes,
   SomeObjectType,
   ScalarType,
+  ObjectType,
+  NonArrayMaterialType,
+  typeutil,
+  BaseType,
 } from "reflection";
 
 // "@generated/" path gets replaced during generation step
 // @ts-ignore
-import {getSharedParentScalar} from "@generated/castMaps";
+import {getSharedParentScalar, scalarAssignableBy} from "@generated/castMaps";
+
 // @ts-ignore
 export {set} from "@generated/syntax/setImpl";
 

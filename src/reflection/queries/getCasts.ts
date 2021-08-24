@@ -67,21 +67,16 @@ export const getCasts = async (
     castsBySource[cast.source.id] = castsBySource[cast.source.id] || [];
     castsBySource[cast.source.id].push(cast.target.id);
 
-    if (cast.allow_assignment) {
-      assignmentCastsBySource[cast.source.id] =
-        assignmentCastsBySource[cast.source.id] || [];
+    if (cast.allow_assignment || cast.allow_implicit) {
+      assignmentCastsBySource[cast.source.id] ??= [];
       assignmentCastsBySource[cast.source.id].push(cast.target.id);
-    }
 
-    if (cast.allow_assignment) {
-      assignmentCastsByTarget[cast.target.id] =
-        assignmentCastsByTarget[cast.target.id] || [];
+      assignmentCastsByTarget[cast.target.id] ??= [];
       assignmentCastsByTarget[cast.target.id].push(cast.source.id);
     }
 
     if (cast.allow_implicit) {
-      implicitCastsBySource[cast.source.id] =
-        implicitCastsBySource[cast.source.id] || [];
+      implicitCastsBySource[cast.source.id] ??= [];
       implicitCastsBySource[cast.source.id].push(cast.target.id);
 
       implicitCastsByTarget[cast.target.id] ??= [];

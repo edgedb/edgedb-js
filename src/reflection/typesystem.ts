@@ -125,7 +125,7 @@ export type simpleShapeToTs<
     [k in keyof Params]: Params[k] extends infer Param
       ? [k] extends [keyof Shape]
         ? [Param] extends [true]
-          ? shapeElementToTsTypeSimple<Shape[k]>
+          ? shapeElementToTsType<Shape[k]>
           : [Param] extends [false]
           ? never
           : [Param] extends [boolean]
@@ -418,7 +418,7 @@ export type linkToTsType<Link extends LinkDesc<any, any, any, any>> =
     ? setToTsType<TypeSet<Type, Card>>
     : never;
 
-export type assignmentCardinality<C extends Cardinality> =
+export type assignableCardinality<C extends Cardinality> =
   C extends Cardinality.Empty
     ? Cardinality.Empty
     : C extends Cardinality.AtMostOne
@@ -430,9 +430,10 @@ export type assignmentCardinality<C extends Cardinality> =
     : C extends Cardinality.Many
     ? Cardinality
     : never;
+
 export type shapeElementToExpression<Element extends PropertyDesc | LinkDesc> =
   Element extends PropertyDesc
-    ? TypeSet<Element["target"], assignmentCardinality<Element["cardinality"]>>
+    ? TypeSet<Element["target"], assignableCardinality<Element["cardinality"]>>
     : Element extends LinkDesc
     ? TypeSet<
         ObjectType<
@@ -442,9 +443,10 @@ export type shapeElementToExpression<Element extends PropertyDesc | LinkDesc> =
           Element["target"]["__name__"],
           Element["target"]["__shape__"]
         >,
-        assignmentCardinality<Element["cardinality"]>
+        assignableCardinality<Element["cardinality"]>
       >
     : never;
+
 export type shapeElementToTsType<El extends PropertyDesc | LinkDesc> =
   El extends PropertyDesc
     ? propToTsType<El>

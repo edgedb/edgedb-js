@@ -2,6 +2,7 @@ import {CodeFragment} from "../builders";
 import type {GeneratorParams} from "../generate";
 import {getRef, frag, joinFrags, quote} from "../util/genutil";
 import {util} from "../util/util";
+import {getStringRepresentation} from "./generateObjectTypes";
 
 const getRuntimeRef = (name: string) => getRef(name, {prefix: ""});
 
@@ -35,6 +36,10 @@ export const generateCastMaps = (params: GeneratorParams) => {
     return castable;
   };
 
+  const assignableMap: CodeFragment[][] = [
+    [`export type scalarAssignableBy<T extends $.ScalarType> =`],
+  ];
+
   const staticMap: CodeFragment[][] = [
     [`export type getSharedParentScalar<A, B> =`],
   ];
@@ -45,6 +50,16 @@ export const generateCastMaps = (params: GeneratorParams) => {
   ];
 
   for (const outer of materialScalars) {
+    assignableMap.push(
+      frag`  T extends ${getRef(outer.name)} ? ${
+        getStringRepresentation(types.get(outer.id), {
+          types,
+          casts: casts.assignableByMap,
+          castSuffix: "λIAssignableBy",
+        }).staticType
+      } : `
+    );
+
     const outerCastableTo = casting(outer.id);
     staticMap.push(frag`  A extends ${getRef(outer.name)} ?`);
     runtimeMap.push(
@@ -98,6 +113,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
         runtimeMap.push([`    }`]);
       }
     }
+
     staticMap.push(["    never"]);
     runtimeMap.push([
       `    throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`,
@@ -106,12 +122,15 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
     staticMap.push(["  :"]);
   }
+  assignableMap.push([`  never`]);
   staticMap.push(["never"]);
   runtimeMap.push([
     `  throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`,
   ]);
   runtimeMap.push([`}`]);
 
+  f.writeln(joinFrags(assignableMap, "\n"));
+  f.nl();
   f.writeln(joinFrags(staticMap, "\n"));
   f.nl();
   f.writeln(joinFrags(runtimeMap, "\n"));
