@@ -7,7 +7,7 @@ import * as edgedb from "edgedb/src/index.node";
 // insert doc ock
 // insert "The Avengers"
 type depromisify<T> = T extends Promise<infer U> ? U : T;
-export type TestData = depromisify<ReturnType<typeof setupTests>>;
+export type TestData = depromisify<ReturnType<typeof setupTests>>["data"];
 
 interface Hero {
   id: string;
@@ -27,11 +27,12 @@ interface Movie {
 }
 
 export async function setupTests() {
-  await teardownTests();
-
   // tslint:disable-next-line: no-console
   console.log(`Seeding database...`);
   const pool = await edgedb.createPool();
+
+  await cleanupData(pool);
+
   const iron_man: Hero = await pool.queryOne(`SELECT (INSERT Hero {
   name := "Iron Man",
   secret_identity := "Tony Stark"
@@ -85,20 +86,20 @@ SELECT (INSERT Movie {
   await pool.close();
 
   return {
-    iron_man,
-    cap,
-    spidey,
-    thanos,
-    docock,
-    the_avengers,
-    civil_war,
+    data: {
+      iron_man,
+      cap,
+      spidey,
+      thanos,
+      docock,
+      the_avengers,
+      civil_war,
+    },
+    pool,
   };
 }
 
-export async function teardownTests() {
-  // tslint:disable-next-line: no-console
-  const pool = await edgedb.createPool();
-
+async function cleanupData(pool: edgedb.Pool) {
   await pool.execute(`DELETE \`S p a M\``);
   await pool.execute(`DELETE A`);
   await pool.execute(`DELETE Łukasz`);
@@ -107,8 +108,10 @@ export async function teardownTests() {
   await pool.execute(`DELETE Movie;`);
   await pool.execute(`DELETE Villain;`);
   await pool.execute(`DELETE Hero;`);
+}
+
+export async function teardownTests(pool: edgedb.Pool) {
+  await cleanupData(pool);
 
   await pool.close();
-  // tslint:disable-next-line: no-console
-  return "done";
 }
