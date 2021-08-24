@@ -16,6 +16,11 @@ import {
   typeutil,
   SelectModifierKind,
   setToTsType,
+  ObjectTypeSet,
+  PropertyDesc,
+  LinkDesc,
+  shapeElementToExpression,
+  ObjectTypeShape,
 } from "reflection";
 
 import {$expr_Operator} from "./funcops";
@@ -27,6 +32,7 @@ import {
   PathParent,
 } from "./path";
 import {edgedb} from "@generated/imports";
+import {Hero} from "@generated/modules/default";
 
 // filter
 // order by
@@ -75,28 +81,34 @@ export type mod_Limit<Expr extends OffsetExpression = OffsetExpression> = {
 export type SelectModifier = mod_Filter | mod_OrderBy | mod_Offset | mod_Limit;
 
 export type SelectMethodNames = "filter" | "orderBy" | "offset" | "limit";
-export type SelectPlusMethods<
-  Set extends TypeSet = TypeSet,
-  Expr extends TypeSet = TypeSet,
-  Modifier extends SelectModifier | null = SelectModifier | null,
-  Methods extends SelectMethodNames = never
-> = $expr_Select<Set, Expr, Modifier> &
-  Pick<SelectMethods<Set, Expr>, Methods>;
+// export type $expr_Select<
+//   Set extends TypeSet = TypeSet,
+//   Expr extends TypeSet = TypeSet,
+//   Modifier extends SelectModifier | null = SelectModifier | null,
+//   Methods extends SelectMethodNames = never
+// > = $expr_Select<Set, Expr, Modifier> &
+//   Pick<SelectMethods<Set, Expr>, Methods>;
 
 export type $expr_Select<
   Set extends TypeSet = TypeSet,
   Expr extends TypeSet = TypeSet,
-  Modifier extends SelectModifier | null = SelectModifier | null
-> = Expression<{
-  __element__: Set["__element__"];
-  __cardinality__: Set["__cardinality__"];
-  __expr__: Expr;
-  __kind__: ExpressionKind.Select;
-  __modifier__: Modifier;
-  query(
-    cxn: edgedb.Pool | edgedb.Connection
-  ): Promise<setToTsType<TypeSet<Set["__element__"], Set["__cardinality__"]>>>;
-}>;
+  Modifier extends SelectModifier | null = SelectModifier | null,
+  Methods extends SelectMethodNames = never
+> = Expression<
+  {
+    __element__: Set["__element__"];
+    __cardinality__: Set["__cardinality__"];
+    __expr__: Expr;
+    __kind__: ExpressionKind.Select;
+    __modifier__: Modifier;
+    query(
+      cxn: edgedb.Pool | edgedb.Connection
+    ): Promise<
+      setToTsType<TypeSet<Set["__element__"], Set["__cardinality__"]>>
+    >;
+  } & Pick<SelectMethods<Set, Expr>, Methods> &
+    (Set extends ObjectTypeSet ? SelectObjectMethods<Set> : {})
+>;
 
 // select User filter User.id = 'adsf'
 // select User filter User = someUser
@@ -184,31 +196,28 @@ interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
   // as a TypeSet
   __element__: Self["__element__"];
   __cardinality__: Self["__cardinality__"];
-  // toEdgeQL: Self["toEdgeQL"];
-  // __kind__: Self["__kind__"];
-  // $is: Self["$is"];
 
-  filter<Expr extends SelectFilterExpression>(
+  filter<Expr extends SelectFilterExpression, This extends this = this>(
     expr: Expr
-  ): SelectPlusMethods<
+  ): $expr_Select<
     {
       __element__: Self["__element__"];
       __cardinality__: inferCardinality<Root, Expr>;
     },
-    this,
+    This,
     {
       kind: SelectModifierKind.filter;
       expr: Expr;
     },
     SelectMethodNames // all methods
   >;
-  orderBy<Expr extends OrderByExpression>(
+  orderBy<Expr extends OrderByExpression, This extends this = this>(
     expr: Expr,
     dir?: OrderByDirection,
     empty?: OrderByEmpty
-  ): SelectPlusMethods<
+  ): $expr_Select<
     Self,
-    this,
+    This,
     {
       kind: SelectModifierKind.order_by;
       expr: Expr;
@@ -217,20 +226,22 @@ interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
     },
     "orderBy" | "limit" | "offset" // all methods
   >;
-  offset<Expr extends OffsetExpression>(
+  offset<Expr extends OffsetExpression, This extends this = this>(
     expr: Expr
-  ): SelectPlusMethods<
+  ): $expr_Select<
     Self,
-    this,
+    This,
     {
       kind: SelectModifierKind.offset;
       expr: Expr;
     },
     "limit" // all methods
   >;
-  offset(expr: number): SelectPlusMethods<
+  offset<This extends this = this>(
+    expr: number
+  ): $expr_Select<
     Self,
-    this,
+    This,
     {
       kind: SelectModifierKind.offset;
       expr: $expr_Literal<$int64>;
@@ -238,9 +249,9 @@ interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
     "limit"
   >;
 
-  limit<Expr extends LimitExpression>(
+  limit<Expr extends LimitExpression, This extends this = this>(
     expr: Expr
-  ): SelectPlusMethods<
+  ): $expr_Select<
     {
       __element__: Self["__element__"];
       __cardinality__: Expr["__element__"]["__tsconsttype__"] extends 0
@@ -249,16 +260,16 @@ interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
         ? Cardinality.AtMostOne
         : Self["__cardinality__"];
     },
-    this,
+    This,
     {
       kind: SelectModifierKind.limit;
       expr: Expr;
     },
     never
   >;
-  limit<Limit extends number>(
+  limit<Limit extends number, This extends this = this>(
     expr: Limit
-  ): SelectPlusMethods<
+  ): $expr_Select<
     {
       __element__: Self["__element__"];
       __cardinality__: Limit extends 0
@@ -267,7 +278,7 @@ interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
         ? Cardinality.AtMostOne
         : Self["__cardinality__"];
     },
-    this,
+    This,
     {
       kind: SelectModifierKind.limit;
       expr: $expr_Literal<$int64>;
@@ -275,6 +286,46 @@ interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
     never
   >;
 }
+
+type stripBacklinks<T extends ObjectTypeShape> = {
+  [k in keyof T]: k extends `<${string}` ? never : T[k];
+};
+
+type stripNonWritables<T extends ObjectTypeShape> = {
+  [k in keyof T]: [T[k]["writable"]] extends [true] ? T[k] : never;
+};
+
+export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
+  stripNonWritables<stripBacklinks<Root["__element__"]["__shape__"]>>
+> extends infer Shape
+  ? Shape extends ObjectTypeShape
+    ? {
+        [k in keyof Shape]?:
+          | shapeElementToExpression<Shape[k]>
+          | {"+=": shapeElementToExpression<Shape[k]>}
+          | {"-=": shapeElementToExpression<Shape[k]>};
+      }
+    : never
+  : never;
+
+export type $expr_Update<
+  Root extends ObjectTypeSet = ObjectTypeSet,
+  Shape extends UpdateShape<Root> = any
+> = Expression<{
+  __kind__: ExpressionKind.Update;
+  __element__: Root["__element__"];
+  __cardinality__: Root["__cardinality__"];
+  __expr__: Root;
+  __shape__: Shape;
+}>;
+
+type SelectObjectMethods<Root extends ObjectTypeSet> = {
+  __element__: Root["__element__"];
+  __cardinality__: Root["__cardinality__"];
+  update<Shape extends UpdateShape<Root>>(
+    shape: Shape
+  ): $expr_Update<Root, Shape>;
+};
 
 export function is<
   Expr extends ObjectTypeExpression,
@@ -434,6 +485,18 @@ function limitFunc(this: any, expr: LimitExpression | number) {
   );
 }
 
+function updateFunc(this: any, shape: any) {
+  return $expressionify(
+    $selectify({
+      __kind__: ExpressionKind.Update,
+      __element__: this["__element__"],
+      __cardinality__: this["__cardinality__"],
+      __expr__: this,
+      __shape__: shape,
+    })
+  ) as $expr_Update;
+}
+
 async function queryFunc(this: any, cxn: edgedb.Connection | edgedb.Pool) {
   if (
     this.__cardinality__ === Cardinality.One ||
@@ -451,6 +514,7 @@ export function $selectify<Expr extends TypeSet>(expr: Expr) {
     orderBy: orderByFunc.bind(expr),
     offset: offsetFunc.bind(expr),
     limit: limitFunc.bind(expr),
+    update: updateFunc.bind(expr),
     query: queryFunc.bind(expr),
   });
   return expr;
@@ -458,10 +522,10 @@ export function $selectify<Expr extends TypeSet>(expr: Expr) {
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
-): SelectPlusMethods<
+): $expr_Select<
   {
     __element__: ObjectType<
-      `${Expr["__element__"]["__name__"]}_shape`,
+      `${Expr["__element__"]["__name__"]}`, // _shape
       Expr["__element__"]["__shape__"],
       {id: true},
       []
@@ -474,7 +538,7 @@ export function select<Expr extends ObjectTypeExpression>(
 >;
 export function select<Expr extends TypeSet>(
   expr: Expr
-): SelectPlusMethods<Expr, Expr, null, SelectMethodNames>;
+): $expr_Select<Expr, Expr, null, SelectMethodNames>;
 export function select<
   Expr extends ObjectTypeExpression,
   Params extends objectExprToSelectParams<Expr>,
@@ -485,10 +549,10 @@ export function select<
   expr: Expr,
   params: Params,
   ...polys: Polys
-): SelectPlusMethods<
+): $expr_Select<
   {
     __element__: ObjectType<
-      `${Expr["__element__"]["__name__"]}_shape`,
+      `${Expr["__element__"]["__name__"]}`, // _shape
       Expr["__element__"]["__shape__"],
       Params,
       Polys
@@ -501,9 +565,9 @@ export function select<
 >;
 export function select<Params extends {[key: string]: TypeSet}>(
   params: Params
-): SelectPlusMethods<
+): $expr_Select<
   {
-    __element__: ObjectType<`std::FreeObject_shape`, {}, Params, []>;
+    __element__: ObjectType<`std::FreeObject`, {}, Params, []>; // _shape
     __cardinality__: Cardinality.One;
   },
   typeof FreeObject,
@@ -522,7 +586,7 @@ export function select(...args: any[]) {
           __kind__: ExpressionKind.Select,
           __element__: {
             __kind__: TypeKind.object,
-            __name__: `${objectExpr.__element__.__name__}_shape`,
+            __name__: `${objectExpr.__element__.__name__}`, // _shape
             __shape__: objectExpr.__element__.__shape__,
             __params__: {id: true},
             __polys__: [],
@@ -552,7 +616,7 @@ export function select(...args: any[]) {
       __kind__: ExpressionKind.Select,
       __element__: {
         __kind__: TypeKind.object,
-        __name__: `${objExpr.__element__.__name__}_shape`,
+        __name__: `${objExpr.__element__.__name__}`, // _shape
         __shape__: objExpr.__element__.__shape__,
         __params__: params,
         __polys__: polys,

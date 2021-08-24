@@ -43,8 +43,9 @@
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
     "prepublish": "in-publish && yarn lint && yarn build && yarn compileForDeno && yarn test || not-in-publish",
     "compileForDeno": "deno run --unstable --allow-env --allow-read --allow-write tools/compileForDeno.ts",
-    "generate": "cd qb && ts-node --project ../tsconfig.json run.ts && prettier --write './**/*.ts'",
+    "generate": "cd qb && ts-node --project ../tsconfig.json run.ts",
     "generate:dev": "cd qb && nodemon -e ts -w ../src -x ts-node --project ../tsconfig.json run.ts",
-    "build:dev": "nodemon -e ts -w ./src -w ./qb -x yarn build --incremental"
+    "build:dev": "nodemon -e ts -w ./src -w ./qb -x 'yarn build --incremental'",
+    "dev": "nodemon -e ts -w ./src -x 'yarn generate && echo \"Compiling TypeScript...\" && yarn build --incremental'"
   }
 }

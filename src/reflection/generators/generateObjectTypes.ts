@@ -163,6 +163,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       runtimeType: CodeFragment[];
       key: string;
       isExclusive: boolean;
+      writable: boolean;
       kind: "link" | "property";
       lines: Line[];
     };
@@ -174,6 +175,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
         const {staticType, runtimeType} = getStringRepresentation(target, {
           types,
         });
+
         return {
           key: ptr.name,
           staticType,
@@ -181,6 +183,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
           card,
           kind: ptr.kind,
           isExclusive: ptr.is_exclusive,
+          writable: ptr.is_writable ?? false,
           lines: (ptr.pointers ?? [])
             .filter((p) => p.name !== "target" && p.name !== "source")
             .map(ptrToLine),
@@ -221,7 +224,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
             body.writeln(
               frag`${quote(line.key)}: $.LinkDesc<${line.staticType}, ${
                 line.card
-              }, {}, ${`${line.isExclusive}`}>;`
+              }, {}, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`
             );
           } else {
             body.writeln(
@@ -238,13 +241,15 @@ export const generateObjectTypes = (params: GeneratorParams) => {
                 );
               }
             });
-            body.writeln([`}, ${`${line.isExclusive}`}>;`]);
+            body.writeln([
+              `}, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`,
+            ]);
           }
         } else {
           body.writeln(
             frag`${quote(line.key)}: $.PropertyDesc<${line.staticType}, ${
               line.card
-            }, ${`${line.isExclusive}`}>;`
+            }, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`
           );
         }
       }

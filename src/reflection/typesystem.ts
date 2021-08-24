@@ -83,12 +83,15 @@ export type objectTypeToSelectParams<T extends SomeObjectType> =
 export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
   {
     [k in keyof Shape]: Shape[k] extends PropertyDesc
-      ? boolean
+      ? boolean | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
       : Shape[k] extends LinkDesc
       ?
           | true
-          | (shapeToSelectParams<Shape[k]["target"]["__shape__"]> &
-              linkDescShape<Shape[k]>)
+          | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
+          | typeutil.flatten<
+              shapeToSelectParams<Shape[k]["target"]["__shape__"]> &
+                linkDescShape<Shape[k]>
+            >
       : any;
   }
 >;
@@ -230,7 +233,9 @@ export interface ExpressionMethods<Set extends TypeSet> {
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
   toEdgeQL(): string;
-  $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
+  $is<T extends ObjectTypeExpression, This extends this = this>(
+    ixn: T
+  ): $expr_TypeIntersection<This, T>;
   $assertSingle<This extends this = this>(): $assertSingle<
     Set["__element__"],
     [This]
@@ -347,12 +352,14 @@ type PropertyTypes =
 export interface PropertyDesc<
   Type extends PropertyTypes = PropertyTypes,
   Card extends Cardinality = Cardinality,
-  Exclusive extends boolean = boolean
+  Exclusive extends boolean = boolean,
+  Writable extends boolean = boolean
 > {
   __kind__: "property";
   target: Type;
   cardinality: Card;
   exclusive: Exclusive;
+  writable: Writable;
 }
 
 export type PropertyShape = {
@@ -363,13 +370,15 @@ export interface LinkDesc<
   Type extends SomeObjectType = SomeObjectType,
   Card extends Cardinality = Cardinality,
   LinkProps extends PropertyShape = PropertyShape,
-  Exclusive extends boolean = boolean
+  Exclusive extends boolean = boolean,
+  Writable extends boolean = boolean
 > {
   __kind__: "link";
   target: Type;
   cardinality: Card;
   properties: LinkProps;
   exclusive: Exclusive;
+  writable: Writable;
 }
 
 export type ObjectTypeShape = {
@@ -409,6 +418,33 @@ export type linkToTsType<Link extends LinkDesc<any, any, any, any>> =
     ? setToTsType<TypeSet<Type, Card>>
     : never;
 
+export type assignmentCardinality<C extends Cardinality> =
+  C extends Cardinality.Empty
+    ? Cardinality.Empty
+    : C extends Cardinality.AtMostOne
+    ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
+    : C extends Cardinality.One
+    ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
+    : C extends Cardinality.AtLeastOne
+    ? Cardinality.One | Cardinality.AtLeastOne | Cardinality.Many
+    : C extends Cardinality.Many
+    ? Cardinality
+    : never;
+export type shapeElementToExpression<Element extends PropertyDesc | LinkDesc> =
+  Element extends PropertyDesc
+    ? TypeSet<Element["target"], assignmentCardinality<Element["cardinality"]>>
+    : Element extends LinkDesc
+    ? TypeSet<
+        ObjectType<
+          // anonymize the link target
+          // generated object types are too limiting
+          // they have no shape or polys
+          Element["target"]["__name__"],
+          Element["target"]["__shape__"]
+        >,
+        assignmentCardinality<Element["cardinality"]>
+      >
+    : never;
 export type shapeElementToTsType<El extends PropertyDesc | LinkDesc> =
   El extends PropertyDesc
     ? propToTsType<El>

@@ -38,6 +38,8 @@ export async function generateQB(
   to: string,
   cxnConfig?: ConnectConfig
 ): Promise<void> {
+  // tslint:disable-next-line
+  console.log(`Generating query builder...`);
   if (!syntaxOnly) {
     const cxn = await connect(cxnConfig);
     const dir = new DirBuilder();
@@ -123,7 +125,7 @@ export * as syntax from "./syntax/syntax";`
     }
 
     // tslint:disable-next-line
-    console.log(`writing to disk.`);
+    console.log(`Writing to disk...`);
     dir.write(to);
   }
 

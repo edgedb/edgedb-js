@@ -26,6 +26,7 @@ import type {$expr_Set} from "./set";
 import type {$expr_Cast} from "./cast";
 import type {
   $expr_Select,
+  $expr_Update,
   mod_Filter,
   mod_OrderBy,
   mod_Offset,
@@ -44,6 +45,7 @@ export type SomeExpression =
   | $expr_Set
   | $expr_Cast
   | $expr_Select
+  | $expr_Update
   | $expr_Function
   | $expr_Operator
   | $expr_For
@@ -55,7 +57,7 @@ export type SomeExpression =
   | $expr_Param
   | $expr_Detached;
 
-type WithScopeExpr = $expr_Select | $expr_For;
+type WithScopeExpr = $expr_Select | $expr_Update | $expr_For;
 
 function shapeToEdgeQL(
   typeShape: ObjectTypeShape,
@@ -442,6 +444,16 @@ function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
       // non-object/non-shape select expression
       return withBlock + `SELECT (${renderEdgeQL(expr.__expr__, ctx)})`;
     }
+  } else if (expr.__kind__ === ExpressionKind.Update) {
+    return `UPDATE (${renderEdgeQL(
+      expr.__expr__ as any,
+      ctx
+    )}) SET ${shapeToEdgeQL(
+      expr.__element__.__shape__,
+      expr.__shape__,
+      [],
+      ctx
+    )}`;
   } else if (expr.__kind__ === ExpressionKind.Function) {
     const args = expr.__args__.map((arg) => `(${renderEdgeQL(arg!, ctx)})`);
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
@@ -606,6 +618,15 @@ function walkExprTree(
             }
           }
         }
+
+        childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
+        break;
+      }
+      case ExpressionKind.Update: {
+        for (const element of Object.values(expr.__shape__ ?? {})) {
+          childExprs.push(...walkExprTree(element as any, expr, ctx));
+        }
+
         childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
         break;
       }

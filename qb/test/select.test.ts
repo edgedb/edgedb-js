@@ -1,5 +1,5 @@
 import {edgedb} from "@generated/imports";
-import {$expr_Select} from "@syntax/select";
+import {$expr_Select, UpdateShape} from "@syntax/select";
 import {createPool} from "edgedb";
 import {
   Cardinality,
@@ -115,7 +115,7 @@ test("polymorphism", () => {
 
   expect(query.__kind__).toEqual(ExpressionKind.Select);
   expect(query.__element__.__kind__).toEqual(TypeKind.object);
-  expect(query.__element__.__name__).toEqual("default::Person_shape");
+  expect(query.__element__.__name__).toEqual("default::Person");
   expect(query.__element__.__params__).toEqual({id: true, name: true});
   expect(query.__element__.__polys__[0].params).toEqual({
     secret_identity: true,
@@ -152,7 +152,7 @@ test("polymorphism", () => {
 
 test("shape type name", () => {
   const name = e.select(e.Hero).__element__.__name__;
-  const f1: typeutil.assertEqual<typeof name, "default::Hero_shape"> = true;
+  const f1: typeutil.assertEqual<typeof name, "default::Hero"> = true;
 });
 
 test("limit inference", () => {
@@ -263,7 +263,7 @@ test("infer cardinality - scalar filters", () => {
   const q9 = e.select(expr9).filter(e.eq(e.Villain.name, e.str("asdf")));
   const _f9: typeutil.assertEqual<
     typeof q9["__cardinality__"],
-    Cardinality.Many
+    Cardinality.AtMostOne
   > = true;
   expect(q9.__cardinality__).toEqual(Cardinality.Many);
 
@@ -430,4 +430,19 @@ test("backlinks", async () => {
   expect(
     [data.the_avengers.title, data.civil_war.title].includes(result1[0].title)
   ).toEqual(true);
+});
+
+test("assertSingle this check", () => {
+  const inner = e.select(e.Hero);
+  const outer = e.select(e.Hero).$assertSingle().__args__[0];
+  const t1: typeutil.assertEqual<typeof inner, typeof outer> = true;
+});
+
+test("update", async () => {
+  type HeroUpdate = UpdateShape<typeof e["Hero"]>;
+
+  e.select(e.Hero).update({
+    name: e.str("asdf"),
+    villains: e.select(e.Villain),
+  });
 });
