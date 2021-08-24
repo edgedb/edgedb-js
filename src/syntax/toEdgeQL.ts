@@ -74,11 +74,9 @@ function shapeToEdgeQL(
     return ``;
   }
   const depth = params.depth ?? 1;
-  const outerSpacing = Array(depth).join("  ");
-  const innerSpacing = Array(depth + 1).join("  ");
   const lines: string[] = [];
   const addLine = (line: string) =>
-    lines.push(`${keysOnly ? "" : innerSpacing}${line}`);
+    lines.push(`${keysOnly ? "" : "  ".repeat(depth)}${line}`);
 
   const elements = [{type: null, params: basicShape}, ...polys];
   const seen = new Set();
@@ -116,7 +114,17 @@ function shapeToEdgeQL(
           );
           continue;
         }
-        addLine(`${key} ${operator} (${renderEdgeQL(val, ctx)})`);
+        const renderedExpr = renderEdgeQL(val, ctx);
+
+        addLine(
+          `${key} ${operator} (${
+            renderedExpr.includes("\n")
+              ? `\n${indent(renderedExpr, (depth + 1) * 2)}\n${"  ".repeat(
+                  depth
+                )}`
+              : renderedExpr
+          })`
+        );
       } else if (typeof val === "object") {
         const nestedPolys = polys
           .filter((poly) => !!poly.params[key])
@@ -140,7 +148,7 @@ function shapeToEdgeQL(
   const finalLines = lines.length === 0 ? ["id"] : lines;
   return keysOnly
     ? `{${finalLines.join(", ")}}`
-    : `{\n${finalLines.join(",\n")}\n${outerSpacing}}`;
+    : `{\n${finalLines.join(",\n")}\n${"  ".repeat(depth - 1)}}`;
 }
 
 interface RenderCtx {
@@ -280,7 +288,11 @@ function topoSortWithVars(
   return sorted;
 }
 
-function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
+function renderEdgeQL(
+  _expr: TypeSet,
+  ctx: RenderCtx,
+  renderShape = true
+): string {
   if (
     !(_expr as any).__kind__ ||
     !Object.values(ExpressionKind).includes((_expr as any).__kind__)
@@ -288,10 +300,12 @@ function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
     throw new Error("Invalid expression.");
   }
   const expr = _expr as SomeExpression;
+
   if (ctx.withVars.has(expr) && ctx.renderWithVar !== expr) {
     return (
       ctx.withVars.get(expr)!.name +
-      (expr.__kind__ === ExpressionKind.Select &&
+      (renderShape &&
+      expr.__kind__ === ExpressionKind.Select &&
       expr.__element__.__kind__ === TypeKind.object
         ? " " +
           shapeToEdgeQL(
@@ -438,7 +452,7 @@ function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
         `SELECT${
           expr.__expr__.__element__.__name__ === "std::FreeObject"
             ? ""
-            : ` (${renderEdgeQL(expr.__expr__, ctx)})`
+            : ` (${renderEdgeQL(expr.__expr__, ctx, false)})`
         }`
       );
 
@@ -468,9 +482,11 @@ function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
       ctx
     )}`;
   } else if (expr.__kind__ === ExpressionKind.Function) {
-    const args = expr.__args__.map((arg) => `(${renderEdgeQL(arg!, ctx)})`);
+    const args = expr.__args__.map(
+      (arg) => `(${renderEdgeQL(arg!, ctx, false)})`
+    );
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
-      args.push(`${key} := (${renderEdgeQL(arg, ctx)})`);
+      args.push(`${key} := (${renderEdgeQL(arg, ctx, false)})`);
     }
     return `${expr.__name__}(${args.join(", ")})`;
   } else if (expr.__kind__ === ExpressionKind.Operator) {
@@ -519,7 +535,7 @@ function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
         expr.__iterSet__,
         ctx
       )}}
-UNION (${renderEdgeQL(expr.__expr__, ctx)})`
+UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n)`
     );
   } else if (expr.__kind__ === ExpressionKind.ForVar) {
     const forVar = ctx.forVars.get(expr);
@@ -621,8 +637,7 @@ function walkExprTree(
           childExprs.push(
             ...walkExprTree(expr.__modifier__.expr as any, expr, ctx)
           );
-        }
-        if (expr.__element__.__kind__ === TypeKind.object) {
+        } else if (expr.__element__.__kind__ === TypeKind.object) {
           for (const param of Object.values(
             expr.__element__.__params__ ?? {}
           )) {
@@ -710,8 +725,6 @@ function walkExprTree(
   }
 }
 
-const noCastTypes = new Set(["std::str", "std::int64"]);
-
 export function literalToEdgeQL(type: MaterialType, val: any): string {
   let skipCast = false;
   let stringRep;
@@ -721,11 +734,10 @@ export function literalToEdgeQL(type: MaterialType, val: any): string {
     }
     stringRep = JSON.stringify(val);
   } else if (typeof val === "number") {
-    if (type.__name__ === "std::int64" && Number.isInteger(val)) {
-      skipCast = true;
-    } else if (
-      type.__name__ === "std::float64" &&
-      val.toString().includes(".")
+    const isInt = Number.isInteger(val);
+    if (
+      (type.__name__ === "std::int64" && isInt) ||
+      (type.__name__ === "std::float64" && !isInt)
     ) {
       skipCast = true;
     }

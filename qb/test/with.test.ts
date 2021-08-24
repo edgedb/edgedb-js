@@ -44,7 +44,7 @@ test("implicit 'WITH' vars referencing each other", () => {
     OFFSET __withVar_2
   ),
   __withVar_0 := (
-    SELECT (__withVar_1 {id}) {
+    SELECT (__withVar_1) {
       id,
       name
     }
@@ -52,8 +52,8 @@ test("implicit 'WITH' vars referencing each other", () => {
   )
 SELECT {
   pageResults := (__withVar_0 {id, name}),
-  nextOffset := ((__withVar_2 + std::count((__withVar_0 {id, name})))),
-  hasMore := (SELECT ((std::count((__withVar_1 {id})) > 10)))
+  nextOffset := ((__withVar_2 + std::count((__withVar_0)))),
+  hasMore := (SELECT ((std::count((__withVar_1)) > 10)))
 }`);
 
   type queryType = BaseTypeToTsType<typeof query["__element__"]>;
@@ -94,9 +94,11 @@ test("explicit 'WITH' block in nested query", () => {
       })
       .toEdgeQL()
   ).toEqual(`SELECT {
-  nested := (WITH
-  __withVar_0 := ({ 1, <std::int32>2, <std::int16>3 })
-SELECT (__withVar_0))
+  nested := (
+    WITH
+      __withVar_0 := ({ 1, <std::int32>2, <std::int16>3 })
+    SELECT (__withVar_0)
+  )
 }`);
 });
 
@@ -265,7 +267,7 @@ test("implicit 'WITH' and explicit 'WITH' in sub expr", () => {
     OFFSET __withVar_2
   ),
   __withVar_0 := (
-    SELECT (__withVar_1 {id}) {
+    SELECT (__withVar_1) {
       id,
       name
     }
@@ -273,10 +275,12 @@ test("implicit 'WITH' and explicit 'WITH' in sub expr", () => {
   )
 SELECT {
   pageResults := (__withVar_0 {id, name}),
-  nextOffset := (WITH
-  __withVar_3 := ((__withVar_2 + std::count((__withVar_0 {id, name}))))
-SELECT (__withVar_3)),
-  hasMore := (SELECT ((std::count((__withVar_1 {id})) > 10)))
+  nextOffset := (
+    WITH
+      __withVar_3 := ((__withVar_2 + std::count((__withVar_0))))
+    SELECT (__withVar_3)
+  ),
+  hasMore := (SELECT ((std::count((__withVar_1)) > 10)))
 }`);
 });
 
@@ -434,3 +438,29 @@ SELECT {
 }`);
   }
 );
+
+test("query with no 'WITH' block", () => {
+  const query = e
+    .select(e.Person.$is(e.Hero), {
+      id: true,
+      computable: e.int64(35),
+      all_heroes: e.select(e.Hero, {__type__: {name: true}}),
+    })
+    .orderBy(e.Person.name)
+    .limit(1);
+
+  expect(query.toEdgeQL())
+    .toEqual(`SELECT (default::Person[IS default::Hero]) {
+  id,
+  computable := (35),
+  all_heroes := (
+    SELECT (default::Hero) {
+      __type__: {
+        name
+      }
+    }
+  )
+}
+ORDER BY default::Person.name ASC EMPTY FIRST
+LIMIT 1`);
+});
