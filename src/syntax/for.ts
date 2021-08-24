@@ -5,6 +5,7 @@ import {
   MaterialTypeSet,
   Cardinality,
   ExpressionKind,
+  cardinalityUtil,
 } from "reflection";
 import {$expressionify} from "./path";
 
@@ -13,7 +14,10 @@ export type $expr_For<
   Expr extends BaseExpression = BaseExpression
 > = Expression<{
   __element__: Expr["__element__"];
-  __cardinality__: Expr["__cardinality__"];
+  __cardinality__: cardinalityUtil.multiplyCardinalities<
+    IterSet["__cardinality__"],
+    Expr["__cardinality__"]
+  >;
   __kind__: ExpressionKind.For;
   __iterSet__: IterSet;
   __forVar__: $expr_ForVar;
@@ -45,7 +49,10 @@ function _for<
   return $expressionify({
     __kind__: ExpressionKind.For,
     __element__: returnExpr.__element__,
-    __cardinality__: returnExpr.__cardinality__,
+    __cardinality__: cardinalityUtil.multiplyCardinalities(
+      set.__cardinality__,
+      returnExpr.__cardinality__
+    ),
     __iterSet__: set,
     __expr__: returnExpr,
     __forVar__: forVar,
