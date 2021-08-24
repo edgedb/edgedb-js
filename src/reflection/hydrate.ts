@@ -237,7 +237,6 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
     },
     __params__: {},
     __polys__: [],
-    __tstype__: undefined as any,
   };
   return obj as any;
 }

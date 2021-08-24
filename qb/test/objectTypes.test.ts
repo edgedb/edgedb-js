@@ -6,6 +6,7 @@ import {
   computeObjectShape,
   mergeObjectTypes,
   typeutil,
+  BaseTypeToTsType,
 } from "../../src/reflection";
 import {$BaseObject} from "generated/example/modules/std";
 
@@ -92,9 +93,9 @@ test("merging tests", () => {
   expect(Object.keys(merged.__shape__).includes("__type__")).toEqual(true);
   expect(Object.keys(merged.__shape__).includes("name")).toEqual(true);
   expect(Object.keys(merged.__shape__).includes("age")).toEqual(true);
-  type asdf = typeof merged["__tstype__"];
+  type asdf = BaseTypeToTsType<typeof merged>;
   const _f1: typeutil.assertEqual<
-    typeof merged["__tstype__"],
+    BaseTypeToTsType<typeof merged>,
     {id: string; age: number | null; name: string | null; __type__: any}
   > = true;
 });

@@ -1,4 +1,4 @@
-import {typeutil} from "../../src/reflection";
+import {typeutil, BaseTypeToTsType} from "../../src/reflection";
 import e from "../generated/example";
 
 test("simple repeated expression", () => {
@@ -56,7 +56,7 @@ SELECT {
   hasMore := (SELECT ((std::count((__withVar_1 {id})) > 10)))
 }`);
 
-  type queryType = typeof query["__element__"]["__tstype__"];
+  type queryType = BaseTypeToTsType<typeof query["__element__"]>;
   const f1: typeutil.assertEqual<
     queryType,
     {

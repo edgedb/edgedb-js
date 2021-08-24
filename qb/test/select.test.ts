@@ -7,6 +7,7 @@ import {
   setToTsType,
   TypeKind,
   typeutil,
+  BaseTypeToTsType,
 } from "../../src/reflection";
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
@@ -25,13 +26,13 @@ afterAll(async () => {
 
 test("basic select", () => {
   const result = e.select(e.std.str("asdf" as string));
-  type result = typeof result["__element__"]["__tstype__"];
+  type result = BaseTypeToTsType<typeof result["__element__"]>;
   const f1: typeutil.assertEqual<result, string> = true;
 });
 
 test("basic shape", () => {
   const result = e.select(e.default.Hero);
-  type result = typeof result["__element__"]["__tstype__"];
+  type result = BaseTypeToTsType<typeof result["__element__"]>;
   const f1: typeutil.assertEqual<result, {id: string}> = true;
   expect(result.__element__.__params__).toEqual({id: true});
 });
@@ -55,7 +56,7 @@ test("path construction", () => {
 });
 
 test("complex shape", () => {
-  type q1type = typeof q1["__element__"]["__tstype__"];
+  type q1type = BaseTypeToTsType<typeof q1["__element__"]>;
   const f1: typeutil.assertEqual<
     q1type,
     {
@@ -75,7 +76,7 @@ test("compositionality", () => {
   // selecting a select statement should
   // default to { id }
   const no_params = e.select(q1);
-  type no_params = typeof no_params["__element__"]["__tstype__"];
+  type no_params = BaseTypeToTsType<typeof no_params["__element__"]>;
   const no_params_test: typeutil.assertEqual<
     no_params,
     {
@@ -90,7 +91,9 @@ test("compositionality", () => {
     id: true,
     secret_identity: true,
   });
-  type override_params = typeof override_params["__element__"]["__tstype__"];
+  type override_params = BaseTypeToTsType<
+    typeof override_params["__element__"]
+  >;
   const f1: typeutil.assertEqual<
     override_params,
     {
@@ -134,7 +137,7 @@ test("polymorphism", () => {
   const f1: typeutil.assertEqual<poly["params"], {secret_identity: true}> =
     true;
 
-  type result = typeof query["__element__"]["__tstype__"];
+  type result = BaseTypeToTsType<typeof query["__element__"]>;
   const f2: typeutil.assertEqual<
     result,
     {

@@ -10,7 +10,6 @@ import {Cardinality, ExpressionKind, TypeKind} from "./enums";
 
 export interface BaseType {
   __kind__: TypeKind;
-  __tstype__: unknown;
   __name__: string;
 }
 export interface BaseTypeSet<
@@ -52,7 +51,6 @@ export interface EnumType<
 
 export type SomeObjectType = {
   __kind__: TypeKind.object;
-  __tstype__: unknown;
   __name__: string;
   __shape__: ObjectTypeShape;
   __params__: object | null;
@@ -66,8 +64,6 @@ export interface ObjectType<
   Polys extends Poly[] = any[]
 > {
   __kind__: TypeKind.object;
-  // __tstype__: computeObjectShape<Shape, Params, Polys>;
-  __tstype__: computeObjectShape<Shape, Params, Polys>;
   __name__: Name;
   __shape__: Shape;
   __params__: Params;
@@ -280,7 +276,6 @@ export type ArrayType<
 > = {
   __name__: Name;
   __kind__: TypeKind.array;
-  __tstype__: Array<Element["__tstype__"]>;
   __element__: Element;
 };
 
@@ -294,16 +289,15 @@ export function ArrayType<Element extends NonArrayMaterialType>(
   } as any;
 }
 
+type ArrayTypeToTsType<Type extends ArrayType> = Array<
+  BaseTypeToTsType<Type["__element__"]>
+>;
+
 export type MaterialTypeTuple = [MaterialType, ...MaterialType[]] | [];
 
 export type TupleType<Items extends BaseTypeTuple = BaseTypeTuple> = {
   __name__: string;
   __kind__: TypeKind.tuple;
-  __tstype__: {
-    [k in keyof Items]: Items[k] extends BaseType
-      ? Items[k]["__tstype__"]
-      : never;
-  };
   __items__: Items;
 };
 export function TupleType<Items extends typeutil.tupleOf<BaseType>>(
@@ -317,13 +311,16 @@ export function TupleType<Items extends typeutil.tupleOf<BaseType>>(
   } as any;
 }
 
+type TupleItemsToTsType<Items extends BaseTypeTuple> = {
+  [k in keyof Items]: Items[k] extends BaseType
+    ? BaseTypeToTsType<Items[k]>
+    : never;
+};
+
 export type NamedTupleShape = {[k: string]: MaterialType};
 export type NamedTupleType<Shape extends NamedTupleShape = NamedTupleShape> = {
   __name__: string;
   __kind__: TypeKind.namedtuple;
-  __tstype__: {
-    [k in keyof Shape]: Shape[k]["__tstype__"];
-  };
   __shape__: Shape;
 };
 export function NamedTupleType<Shape extends NamedTupleShape>(
@@ -338,6 +335,10 @@ export function NamedTupleType<Shape extends NamedTupleShape>(
     __shape__: shape,
   } as any;
 }
+
+type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
+  [k in keyof Type["__shape__"]]: BaseTypeToTsType<Type["__shape__"][k]>;
+};
 
 /////////////////////////
 /// OBJECT TYPES
@@ -389,21 +390,38 @@ export type ObjectTypeShape = {
 /// TSTYPE HELPERS
 /////////////////////
 
-type TypeToTsType<Type extends BaseType> = Type extends ScalarType
+export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
   ? Type["__tsconsttype__"]
-  : Type["__tstype__"];
+  : Type extends EnumType
+  ? Type["__tstype__"]
+  : Type extends ArrayType
+  ? ArrayTypeToTsType<Type>
+  : Type extends TupleType
+  ? TupleItemsToTsType<Type["__items__"]>
+  : Type extends NamedTupleType
+  ? NamedTupleTypeToTsType<Type>
+  : Type extends ObjectType
+  ? computeObjectShape<
+      Type["__shape__"],
+      Type["__params__"],
+      Type["__polys__"]
+    >
+  : never;
 
 export type setToTsType<Set extends TypeSet> =
   Set["__cardinality__"] extends Cardinality.Empty
     ? null
     : Set["__cardinality__"] extends Cardinality.One
-    ? TypeToTsType<Set["__element__"]>
+    ? BaseTypeToTsType<Set["__element__"]>
     : Set["__cardinality__"] extends Cardinality.AtLeastOne
-    ? [TypeToTsType<Set["__element__"]>, ...TypeToTsType<Set["__element__"]>[]]
+    ? [
+        BaseTypeToTsType<Set["__element__"]>,
+        ...BaseTypeToTsType<Set["__element__"]>[]
+      ]
     : Set["__cardinality__"] extends Cardinality.AtMostOne
-    ? TypeToTsType<Set["__element__"]> | null
+    ? BaseTypeToTsType<Set["__element__"]> | null
     : Set["__cardinality__"] extends Cardinality.Many
-    ? TypeToTsType<Set["__element__"]>[]
+    ? BaseTypeToTsType<Set["__element__"]>[]
     : Set["__cardinality__"] extends Cardinality
     ? unknown
     : never;
