@@ -11,11 +11,13 @@ export const getStringRepresentation: (
     types: introspect.Types;
     anytype?: string | CodeFragment[];
     casts?: {[key: string]: string[]};
+    castSuffix?: string;
   }
 ) => {staticType: CodeFragment[]; runtimeType: CodeFragment[]} = (
   type,
   params
 ) => {
+  const suffix = params.castSuffix || `λICastableTo`;
   if (type.name === "anytype") {
     return {
       staticType: frag`${params.anytype ?? `$.MaterialType`}`,
@@ -48,10 +50,7 @@ export const getStringRepresentation: (
     };
   } else if (type.kind === "scalar") {
     return {
-      staticType: [
-        getRef(type.name),
-        casts?.[type.id]?.length ? "λICastableTo" : "",
-      ],
+      staticType: [getRef(type.name), casts?.[type.id]?.length ? suffix : ""],
       runtimeType: [getRef(type.name)],
     };
     // const tsType = toJsScalarType(target, types, mod, body);

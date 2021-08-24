@@ -15,9 +15,7 @@ export namespace typeutil {
     [k in keyof T]: [T[k]] extends [never] ? never : k;
   }[keyof T];
 
-  export type stripNever<T> = identity<
-    {
-      [k in nonNeverKeys<T>]: k extends keyof T ? T[k] : never;
-    }
-  >;
+  export type stripNever<T> = {
+    [k in nonNeverKeys<T>]: k extends keyof T ? T[k] : never;
+  };
 }

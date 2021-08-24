@@ -83,6 +83,9 @@ function shapeToEdgeQL(
     const shape = shapeObj.params;
     const polyType = shapeObj.type?.__name__;
     const polyIntersection = polyType ? `[IS ${polyType}].` : "";
+
+    // TODO: handle += and -=
+
     for (const key in shape) {
       if (!shape.hasOwnProperty(key)) continue;
       if (seen.has(key)) {
@@ -91,7 +94,16 @@ function shapeToEdgeQL(
         continue;
       }
       seen.add(key);
-      const val = (shape as any)[key];
+      let val = (shape as any)[key];
+      let operator = ":=";
+      if (!!val["+="]) {
+        operator = "+=";
+        val = val["+="];
+      }
+      if (!!val["-="]) {
+        operator = "-=";
+        val = val["-="];
+      }
       if (val === true) {
         addLine(`${polyIntersection}${key}`);
       } else if (val.hasOwnProperty("__kind__")) {
@@ -103,7 +115,7 @@ function shapeToEdgeQL(
           );
           continue;
         }
-        addLine(`${key} := (${renderEdgeQL(val, ctx)})`);
+        addLine(`${key} ${operator} (${renderEdgeQL(val, ctx)})`);
       } else if (typeof val === "object") {
         const nestedPolys = polys
           .filter((poly) => !!poly.params[key])
@@ -623,7 +635,12 @@ function walkExprTree(
         break;
       }
       case ExpressionKind.Update: {
-        for (const element of Object.values(expr.__shape__ ?? {})) {
+        const shape: any = expr.__shape__ ?? {};
+
+        for (const _element of Object.values(shape)) {
+          let element: any = _element;
+          if (element["+="]) element = element["+="];
+          if (element["-="]) element = element["-="];
           childExprs.push(...walkExprTree(element as any, expr, ctx));
         }
 

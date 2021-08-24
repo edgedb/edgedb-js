@@ -124,6 +124,18 @@ export const generateScalars = (params: GeneratorParams) => {
       );
     }
 
+    const assignableMap = casts.assignableByMap[type.id] || [];
+    if (casts.assignableByMap[type.id]?.length) {
+      sc.writeln(
+        frag`export type ${ref}λIAssignableBy = ${joinFrags(
+          assignableMap.length
+            ? assignableMap.map((typeId) => getRef(types.get(typeId).name))
+            : [ref],
+          " | "
+        )};`
+      );
+    }
+
     // sc.writeln(`export const ${displayName}: ${displayName} = {`);
     // sc.writeln(`  __name__: "${type.name}",`);
     // sc.writeln(`} as any;`);
