@@ -23,6 +23,7 @@ export enum ExpressionKind {
   Literal = "Literal",
   Cast = "Cast",
   Select = "Select",
+  Update = "Update",
   Function = "Function",
   Operator = "Operator",
   For = "For",

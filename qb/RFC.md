@@ -457,10 +457,12 @@ e.insert(Movie, {
     .filter(e.in(Person.name, e.set("Spider-Man", "Doc Ock"))),
 }).unlessConflict(
   Movie.title, // can be any expression
-  e.update(Movie, {
-    characters: e
-      .select(Person)
-      .filter(e.in(Person.name, e.set("Spider-Man", "Doc Ock"))),
+  e.select(Movie).update({
+    "+=": {
+      characters: e
+        .select(Person)
+        .filter(e.in(Person.name, e.set("Spider-Man", "Doc Ock"))),
+    },
   })
 );
 ```

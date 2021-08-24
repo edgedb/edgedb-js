@@ -7,6 +7,8 @@ import {
   ObjectTypeShape,
   shapeToTsType,
   MaterialType,
+  LinkDesc,
+  PropertyDesc,
 } from "./typesystem";
 
 import {typeutil, util} from "./util/util";
@@ -63,7 +65,8 @@ function applySpec(
             return linkProperties;
           },
           exclusive: ptr.is_exclusive,
-        };
+          writable: ptr.is_writable,
+        } as LinkDesc;
       });
     } else if (ptr.kind === "property") {
       util.defineGetter(shape, ptr.name, () => {
@@ -74,7 +77,8 @@ function applySpec(
             return makeType(spec, ptr.target_id, literal);
           },
           exclusive: ptr.is_exclusive,
-        };
+          writable: ptr.is_writable,
+        } as PropertyDesc;
       });
     }
   }
