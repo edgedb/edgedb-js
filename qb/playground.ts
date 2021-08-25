@@ -17,8 +17,17 @@ async function run() {
         .filter(e.eq(e.Villain.name, e.str(data.thanos.name))),
     },
   });
-  console.log(q);
+
   console.log(q.toEdgeQL());
+
+  const q2 = e.insert(e.Villain, {
+    name: e.str("Loki"),
+    nemesis: e.insert(e.Hero, {
+      name: e.str("Thor"),
+      secret_identity: e.str("Thor"),
+    }),
+  });
+  console.log(q2.toEdgeQL());
 }
 run();
 export {};

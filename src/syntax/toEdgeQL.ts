@@ -26,7 +26,6 @@ import type {$expr_Set} from "./set";
 import type {$expr_Cast} from "./cast";
 import type {
   $expr_Select,
-  $expr_Update,
   mod_Filter,
   mod_OrderBy,
   mod_Offset,
@@ -37,6 +36,9 @@ import type {$expr_For, $expr_ForVar} from "./for";
 import type {$expr_Alias, $expr_With} from "./with";
 import type {$expr_Param, $expr_WithParams} from "./params";
 import type {$expr_Detached} from "./detached";
+import {$expr_Update} from "./update";
+import {$expr_Insert} from "./insert";
+import {$expr_Delete} from "@generated/syntax/select";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -45,7 +47,9 @@ export type SomeExpression =
   | $expr_Set
   | $expr_Cast
   | $expr_Select
+  | $expr_Delete
   | $expr_Update
+  | $expr_Insert
   | $expr_Function
   | $expr_Operator
   | $expr_For
@@ -57,17 +61,16 @@ export type SomeExpression =
   | $expr_Param
   | $expr_Detached;
 
-type WithScopeExpr = $expr_Select | $expr_Update | $expr_For;
+type WithScopeExpr = $expr_Select | $expr_Update | $expr_Insert | $expr_For;
 
 function shapeToEdgeQL(
-  typeShape: ObjectTypeShape,
-  _shape: object | null,
+  basicShape: object | null,
   polys: Poly[],
   ctx: RenderCtx,
   keysOnly: boolean = false,
   params: {depth: number} = {depth: 1}
 ) {
-  if (_shape === null) {
+  if (basicShape === null) {
     return ``;
   }
   const depth = params.depth ?? 1;
@@ -77,14 +80,12 @@ function shapeToEdgeQL(
   const addLine = (line: string) =>
     lines.push(`${keysOnly ? "" : innerSpacing}${line}`);
 
-  const shapes = [{type: null, params: _shape}, ...polys];
+  const elements = [{type: null, params: basicShape}, ...polys];
   const seen = new Set();
-  for (const shapeObj of shapes) {
-    const shape = shapeObj.params;
-    const polyType = shapeObj.type?.__name__;
+  for (const element of elements) {
+    const shape = element.params;
+    const polyType = element.type?.__name__;
     const polyIntersection = polyType ? `[IS ${polyType}].` : "";
-
-    // TODO: handle += and -=
 
     for (const key in shape) {
       if (!shape.hasOwnProperty(key)) continue;
@@ -122,7 +123,6 @@ function shapeToEdgeQL(
           .map((poly) => ({type: poly.type, params: poly.params[key]}));
         addLine(
           `${polyIntersection}${key}: ${shapeToEdgeQL(
-            typeShape,
             val,
             nestedPolys,
             ctx,
@@ -295,7 +295,6 @@ function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
       expr.__element__.__kind__ === TypeKind.object
         ? " " +
           shapeToEdgeQL(
-            expr.__element__.__shape__,
             (expr.__element__.__params__ || {}) as object,
             expr.__element__.__polys__ || [],
             ctx,
@@ -445,7 +444,6 @@ function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
 
       lines.push(
         shapeToEdgeQL(
-          expr.__element__.__shape__,
           (expr.__element__.__params__ || {}) as object,
           expr.__element__.__polys__ || [],
           ctx
@@ -460,8 +458,11 @@ function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
     return `UPDATE (${renderEdgeQL(
       expr.__expr__ as any,
       ctx
-    )}) SET ${shapeToEdgeQL(
-      expr.__element__.__shape__,
+    )}) SET ${shapeToEdgeQL(expr.__shape__, [], ctx)}`;
+  } else if (expr.__kind__ === ExpressionKind.Delete) {
+    return `DELETE (${renderEdgeQL(expr.__expr__ as any, ctx)})`;
+  } else if (expr.__kind__ === ExpressionKind.Insert) {
+    return `INSERT ${renderEdgeQL(expr.__expr__ as any, ctx)} ${shapeToEdgeQL(
       expr.__shape__,
       [],
       ctx
@@ -634,6 +635,7 @@ function walkExprTree(
         childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
         break;
       }
+
       case ExpressionKind.Update: {
         const shape: any = expr.__shape__ ?? {};
 
@@ -641,6 +643,22 @@ function walkExprTree(
           let element: any = _element;
           if (element["+="]) element = element["+="];
           if (element["-="]) element = element["-="];
+          childExprs.push(...walkExprTree(element as any, expr, ctx));
+        }
+
+        childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
+        break;
+      }
+      case ExpressionKind.Delete: {
+        childExprs.push(
+          ...walkExprTree(expr.__expr__ as any, parentScope, ctx)
+        );
+        break;
+      }
+      case ExpressionKind.Insert: {
+        const shape: any = expr.__shape__ ?? {};
+
+        for (const element of Object.values(shape)) {
           childExprs.push(...walkExprTree(element as any, expr, ctx));
         }
 
