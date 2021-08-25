@@ -34,7 +34,7 @@ test("basic shape", () => {
   const result = e.select(e.default.Hero);
   type result = BaseTypeToTsType<typeof result["__element__"]>;
   const f1: typeutil.assertEqual<result, {id: string}> = true;
-  expect(result.__element__.__params__).toEqual({id: true});
+  expect(result.__element__.__shape__).toEqual({id: true});
 });
 
 const q1 = e.select(e.Hero, {
@@ -83,7 +83,7 @@ test("compositionality", () => {
       id: string;
     }
   > = true;
-  expect(no_params.__element__.__params__).toEqual({id: true});
+  expect(no_params.__element__.__shape__).toEqual({id: true});
   expect(no_params.__element__.__polys__).toEqual([]);
 
   // allow override params
@@ -119,7 +119,7 @@ test("polymorphism", () => {
   expect(query.__kind__).toEqual(ExpressionKind.Select);
   expect(query.__element__.__kind__).toEqual(TypeKind.object);
   expect(query.__element__.__name__).toEqual("default::Person");
-  expect(query.__element__.__params__).toEqual({id: true, name: true});
+  expect(query.__element__.__shape__).toEqual({id: true, name: true});
   expect(query.__element__.__polys__[0].params).toEqual({
     secret_identity: true,
   });

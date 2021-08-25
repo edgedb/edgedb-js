@@ -255,8 +255,8 @@ function compareType(
 
     // shape comparison
     for (const ptr of type.pointers) {
-      if (objectArg.__shape__[ptr.name]) {
-        const argPtr = objectArg.__shape__[ptr.name];
+      if (objectArg.__pointers__[ptr.name]) {
+        const argPtr = objectArg.__pointers__[ptr.name];
         const ptrTarget = typeSpec.get(ptr.target_id);
         if (
           ptrTarget.name !== argPtr.target.__name__ ||

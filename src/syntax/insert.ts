@@ -26,7 +26,7 @@ type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
     : false;
 
 export type InsertShape<Root extends ObjectTypeSet> = typeutil.stripNever<
-  stripNonWritables<stripBacklinks<Root["__element__"]["__shape__"]>>
+  stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
 > extends infer Shape
   ? Shape extends ObjectTypeShape
     ? typeutil.addQuestionMarks<

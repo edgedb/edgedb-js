@@ -29,7 +29,7 @@ import {scalarAssignableBy} from "@generated/castMaps";
 
 export type anonymizeObject<T extends SomeObjectType> = ObjectType<
   string,
-  T["__shape__"],
+  T["__pointers__"],
   any,
   any[]
 >;
@@ -82,14 +82,14 @@ export type shapeElementToAssignmentExpression<
       ObjectType<
         // anonymize the object type
         string,
-        Element["target"]["__shape__"]
+        Element["target"]["__pointers__"]
       >,
       assignableCardinality<Element["cardinality"]>
     >
   : never;
 
 export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
-  stripNonWritables<stripBacklinks<Root["__element__"]["__shape__"]>>
+  stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
 > extends infer Shape
   ? Shape extends ObjectTypeShape
     ? {

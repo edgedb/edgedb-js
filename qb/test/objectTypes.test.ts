@@ -15,34 +15,38 @@ const HeroType = e.default.$Hero;
 test("property hydration", () => {
   expect(typeof HeroType).toBe("object");
   expect(HeroType.__name__).toBe("default::Hero");
-  expect(HeroType.__shape__.name.__kind__).toBe("property");
-  expect(HeroType.__shape__.name.cardinality).toBe($.Cardinality.One);
-  expect(HeroType.__shape__.name.target).toEqual(e.std.str);
-  expect(HeroType.__shape__.name.target.__kind__).toEqual($.TypeKind.scalar);
-  expect(HeroType.__shape__.name.exclusive).toEqual(true);
-  expect(HeroType.__shape__.secret_identity.exclusive).toEqual(false);
+  expect(HeroType.__pointers__.name.__kind__).toBe("property");
+  expect(HeroType.__pointers__.name.cardinality).toBe($.Cardinality.One);
+  expect(HeroType.__pointers__.name.target).toEqual(e.std.str);
+  expect(HeroType.__pointers__.name.target.__kind__).toEqual(
+    $.TypeKind.scalar
+  );
+  expect(HeroType.__pointers__.name.exclusive).toEqual(true);
+  expect(HeroType.__pointers__.secret_identity.exclusive).toEqual(false);
 
-  expect(e.default.Movie.__element__.__shape__.profile.exclusive).toEqual(
+  expect(e.default.Movie.__element__.__pointers__.profile.exclusive).toEqual(
     true
   );
   expect(e.default.Movie.profile.__exclusive__).toEqual(true);
-  expect(e.default.Movie.__element__.__shape__.characters.exclusive).toEqual(
-    false
-  );
+  expect(
+    e.default.Movie.__element__.__pointers__.characters.exclusive
+  ).toEqual(false);
   expect(e.default.Movie.characters.__exclusive__).toEqual(false);
 });
 
 test("link hydration", () => {
-  expect(HeroType.__shape__.villains.__kind__).toBe("link");
-  expect(HeroType.__shape__.villains.target.__kind__).toBe($.TypeKind.object);
-  expect(HeroType.__shape__.villains.cardinality).toBe($.Cardinality.Many);
-  expect(HeroType.__shape__.villains.target.__name__).toEqual(
+  expect(HeroType.__pointers__.villains.__kind__).toBe("link");
+  expect(HeroType.__pointers__.villains.target.__kind__).toBe(
+    $.TypeKind.object
+  );
+  expect(HeroType.__pointers__.villains.cardinality).toBe($.Cardinality.Many);
+  expect(HeroType.__pointers__.villains.target.__name__).toEqual(
     "default::Villain"
   );
-  expect(HeroType.__shape__.villains.properties).toEqual({});
+  expect(HeroType.__pointers__.villains.properties).toEqual({});
 });
 
-const link = e.schema.$AnnotationSubject.__shape__.annotations;
+const link = e.schema.$AnnotationSubject.__pointers__.annotations;
 test("link properties", () => {
   expect(link.properties.value.target.__name__).toEqual("std::str");
   expect(link.properties.value.cardinality).toEqual($.Cardinality.AtMostOne);
@@ -51,7 +55,7 @@ test("link properties", () => {
 
 test("named tuple tests", () => {
   // named tuple tests
-  const BagShape = e.default.$Bag.__shape__;
+  const BagShape = e.default.$Bag.__pointers__;
   expect(BagShape.namedTuple.cardinality).toEqual($.Cardinality.AtMostOne);
 
   const namedTuple = BagShape.namedTuple.target;
@@ -63,7 +67,7 @@ test("named tuple tests", () => {
 
 test("unnamed tuple tests", () => {
   // named tuple tests
-  const BagShape = e.default.$Bag.__shape__;
+  const BagShape = e.default.$Bag.__pointers__;
   const unnamedTuple = BagShape.unnamedTuple.target;
   expect(unnamedTuple.__kind__).toEqual($.TypeKind.tuple);
   expect(unnamedTuple.__items__[0].__name__).toEqual("std::str");
@@ -72,7 +76,7 @@ test("unnamed tuple tests", () => {
 
 test("array tests", () => {
   // named tuple tests
-  const BagShape = e.default.$Bag.__shape__;
+  const BagShape = e.default.$Bag.__pointers__;
   const arrayProp = BagShape.stringsArr.target;
   expect(arrayProp.__kind__).toEqual($.TypeKind.array);
   expect(arrayProp.__element__.__name__).toEqual("std::str");
@@ -81,18 +85,18 @@ test("array tests", () => {
 test("merging tests", () => {
   const merged = mergeObjectTypes(e.default.$Bag, e.default.$Simple);
   type merged = typeof merged;
-  type alkdjf = string extends keyof merged["__shape__"] ? true : false;
+  type alkdjf = string extends keyof merged["__pointers__"] ? true : false;
   type adf = computeObjectShape<
+    merged["__pointers__"],
     merged["__shape__"],
-    merged["__params__"],
     merged["__polys__"]
   >;
   // type aklsdjf = keyof (object | null);
-  expect(Object.keys(merged.__shape__).length).toEqual(4);
-  expect(Object.keys(merged.__shape__).includes("id")).toEqual(true);
-  expect(Object.keys(merged.__shape__).includes("__type__")).toEqual(true);
-  expect(Object.keys(merged.__shape__).includes("name")).toEqual(true);
-  expect(Object.keys(merged.__shape__).includes("age")).toEqual(true);
+  expect(Object.keys(merged.__pointers__).length).toEqual(4);
+  expect(Object.keys(merged.__pointers__).includes("id")).toEqual(true);
+  expect(Object.keys(merged.__pointers__).includes("__type__")).toEqual(true);
+  expect(Object.keys(merged.__pointers__).includes("name")).toEqual(true);
+  expect(Object.keys(merged.__pointers__).includes("age")).toEqual(true);
   type asdf = BaseTypeToTsType<typeof merged>;
   const _f1: typeutil.assertEqual<
     BaseTypeToTsType<typeof merged>,
@@ -119,10 +123,10 @@ test("backlinks", () => {
   expect(e.Profile["<profile"].__cardinality__).toEqual(Cardinality.Many);
 
   const merged = mergeObjectTypes(e.Hero.__element__, e.Villain.__element__);
-  expect(merged.__shape__["<characters"].target.__name__).toEqual(
+  expect(merged.__pointers__["<characters"].target.__name__).toEqual(
     "std::BaseObject"
   );
   expect(
-    merged.__shape__["<characters[IS default::Movie]"].target.__name__
+    merged.__pointers__["<characters[IS default::Movie]"].target.__name__
   ).toEqual("default::Movie");
 });

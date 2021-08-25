@@ -309,7 +309,7 @@ function renderEdgeQL(
       expr.__element__.__kind__ === TypeKind.object
         ? " " +
           shapeToEdgeQL(
-            (expr.__element__.__params__ || {}) as object,
+            (expr.__element__.__shape__ || {}) as object,
             expr.__element__.__polys__ || [],
             ctx,
             true
@@ -458,7 +458,7 @@ function renderEdgeQL(
 
       lines.push(
         shapeToEdgeQL(
-          (expr.__element__.__params__ || {}) as object,
+          (expr.__element__.__shape__ || {}) as object,
           expr.__element__.__polys__ || [],
           ctx
         )
@@ -639,7 +639,7 @@ function walkExprTree(
           );
         } else if (expr.__element__.__kind__ === TypeKind.object) {
           for (const param of Object.values(
-            expr.__element__.__params__ ?? {}
+            expr.__element__.__shape__ ?? {}
           )) {
             if (!!(param as any).__kind__) {
               childExprs.push(...walkExprTree(param as any, expr, ctx));

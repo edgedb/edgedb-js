@@ -52,31 +52,31 @@ export interface EnumType<
 export type SomeObjectType = {
   __kind__: TypeKind.object;
   __name__: string;
-  __shape__: ObjectTypeShape;
-  __params__: object | null;
+  __pointers__: ObjectTypeShape;
+  __shape__: object | null;
   __polys__: Poly[];
 };
 
 export interface ObjectType<
   Name extends string = string,
-  Shape extends ObjectTypeShape = ObjectTypeShape,
-  Params extends object | null = any,
+  Pointers extends ObjectTypeShape = ObjectTypeShape,
+  Shape extends object | null = any,
   Polys extends Poly[] = any[]
 > {
   __kind__: TypeKind.object;
   __name__: Name;
+  __pointers__: Pointers;
   __shape__: Shape;
-  __params__: Params;
   __polys__: Polys;
 }
 
-export type objectExprToSelectParams<T extends ObjectTypeExpression> =
-  shapeToSelectParams<T["__element__"]["__shape__"]>;
+export type objectExprToSelectShape<T extends ObjectTypeExpression> =
+  shapeToSelectShape<T["__element__"]["__pointers__"]>;
 
-export type objectTypeToSelectParams<T extends SomeObjectType> =
-  shapeToSelectParams<T["__shape__"]>;
+export type objectTypeToSelectShape<T extends SomeObjectType> =
+  shapeToSelectShape<T["__pointers__"]>;
 
-export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
+export type shapeToSelectShape<Shape extends ObjectTypeShape> = Partial<
   {
     [k in keyof Shape]: Shape[k] extends PropertyDesc
       ? boolean | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
@@ -85,7 +85,7 @@ export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
           | true
           | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
           | typeutil.flatten<
-              shapeToSelectParams<Shape[k]["target"]["__shape__"]> &
+              shapeToSelectShape<Shape[k]["target"]["__pointers__"]> &
                 linkDescShape<Shape[k]>
             >
       : any;
@@ -95,42 +95,42 @@ export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
 export type linkDescShape<Link extends LinkDesc> = addAtSigns<
   Link["properties"]
 > extends ObjectTypeShape
-  ? shapeToSelectParams<addAtSigns<Link["properties"]>>
+  ? shapeToSelectShape<addAtSigns<Link["properties"]>>
   : never;
 
 export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
 
 export type shapeWithPolysToTs<
-  Shape extends ObjectTypeShape,
-  Params extends object | null,
+  Pointers extends ObjectTypeShape,
+  Shape extends object | null,
   Polys extends Poly[]
-> = simpleShapeToTs<Shape, Params> &
+> = simpleShapeToTs<Pointers, Shape> &
   unionToIntersection<
     Polys[number] extends infer P
       ? P extends Poly
-        ? Partial<simpleShapeToTs<P["type"]["__shape__"], P["params"]>>
+        ? Partial<simpleShapeToTs<P["type"]["__pointers__"], P["params"]>>
         : never
       : never
   >;
 
 export type simpleShapeToTs<
-  Shape extends ObjectTypeShape,
-  Params
+  Pointers extends ObjectTypeShape,
+  Shape
 > = typeutil.flatten<
   {
-    [k in keyof Params]: Params[k] extends infer Param
-      ? [k] extends [keyof Shape]
+    [k in keyof Shape]: Shape[k] extends infer Param
+      ? [k] extends [keyof Pointers]
         ? [Param] extends [true]
-          ? shapeElementToTsType<Shape[k]>
+          ? shapeElementToTsType<Pointers[k]>
           : [Param] extends [false]
           ? never
           : [Param] extends [boolean]
-          ? shapeElementToTsType<Shape[k]> | undefined
+          ? shapeElementToTsType<Pointers[k]> | undefined
           : Param extends TypeSet
           ? setToTsType<Param>
           : Param extends object
-          ? Shape[k]["target"] extends SomeObjectType
-            ? simpleShapeToTs<Shape[k]["target"]["__shape__"], Param>
+          ? Pointers[k]["target"] extends SomeObjectType
+            ? simpleShapeToTs<Pointers[k]["target"]["__pointers__"], Param>
             : never
           : never
         : Param extends TypeSet
@@ -141,18 +141,18 @@ export type simpleShapeToTs<
 >;
 
 export type computeObjectShape<
-  Shape extends ObjectTypeShape,
-  Params extends object | null,
+  Pointers extends ObjectTypeShape,
+  Shape extends object | null,
   Polys extends Poly[]
-> = string extends keyof Shape // checks if Shape is actually defined
+> = string extends keyof Pointers // checks if Shape is actually defined
   ? any
-  : typeutil.assertEqual<Params, object | null> extends true
+  : typeutil.assertEqual<Shape, object | null> extends true
   ? any
   : typeutil.assertEqual<Polys, Poly[]> extends true
   ? any
-  : typeutil.assertEqual<Params, null> extends true
+  : typeutil.assertEqual<Shape, null> extends true
   ? any
-  : shapeWithPolysToTs<Shape, Params, Polys>;
+  : shapeWithPolysToTs<Pointers, Shape, Polys>;
 
 type unionToIntersection<U> = (
   U extends any ? (k: U) => void : never
@@ -402,8 +402,8 @@ export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
   ? NamedTupleTypeToTsType<Type>
   : Type extends ObjectType
   ? computeObjectShape<
+      Type["__pointers__"],
       Type["__shape__"],
-      Type["__params__"],
       Type["__polys__"]
     >
   : never;
@@ -459,7 +459,7 @@ export type shapeElementToExpression<Element extends PropertyDesc | LinkDesc> =
           // generated object types are too limiting
           // they have no shape or polys
           Element["target"]["__name__"],
-          Element["target"]["__shape__"]
+          Element["target"]["__pointers__"]
         >,
         assignableCardinality<Element["cardinality"]>
       >

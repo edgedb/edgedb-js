@@ -4,10 +4,10 @@ import {
   Expression,
   Cardinality,
   ExpressionKind,
-  objectExprToSelectParams,
+  objectExprToSelectShape,
   ObjectType,
   ObjectTypeExpression,
-  objectTypeToSelectParams,
+  objectTypeToSelectShape,
   Poly,
   ScalarType,
   TypeKind,
@@ -281,7 +281,7 @@ interface SelectObjectMethods<Root extends ObjectTypeSet> {
 
 export function is<
   Expr extends ObjectTypeExpression,
-  Params extends objectTypeToSelectParams<Expr["__element__"]>
+  Params extends objectTypeToSelectShape<Expr["__element__"]>
 >(expr: Expr, params: Params): Poly<Expr["__element__"], Params> {
   return {type: expr.__element__, params};
 }
@@ -494,7 +494,7 @@ export function select<Expr extends ObjectTypeExpression>(
   {
     __element__: ObjectType<
       `${Expr["__element__"]["__name__"]}`, // _shape
-      Expr["__element__"]["__shape__"],
+      Expr["__element__"]["__pointers__"],
       {id: true},
       []
     >;
@@ -509,20 +509,20 @@ export function select<Expr extends TypeSet>(
 ): $expr_Select<Expr, Expr, null, SelectMethodNames>;
 export function select<
   Expr extends ObjectTypeExpression,
-  Params extends objectExprToSelectParams<Expr>,
+  Shape extends objectExprToSelectShape<Expr>,
   // variadic inference doesn't work properly
   // if additional constraints are placed on Polys
   Polys extends any[]
 >(
   expr: Expr,
-  params: Params,
+  shape: Shape,
   ...polys: Polys
 ): $expr_Select<
   {
     __element__: ObjectType<
       `${Expr["__element__"]["__name__"]}`, // _shape
-      Expr["__element__"]["__shape__"],
-      Params,
+      Expr["__element__"]["__pointers__"],
+      Shape,
       Polys
     >;
     __cardinality__: Expr["__cardinality__"];
@@ -531,11 +531,11 @@ export function select<
   null,
   SelectMethodNames
 >;
-export function select<Params extends {[key: string]: TypeSet}>(
-  params: Params
+export function select<Shape extends {[key: string]: TypeSet}>(
+  shape: Shape
 ): $expr_Select<
   {
-    __element__: ObjectType<`std::FreeObject`, {}, Params, []>; // _shape
+    __element__: ObjectType<`std::FreeObject`, {}, Shape, []>; // _shape
     __cardinality__: Cardinality.One;
   },
   typeof FreeObject,
@@ -543,10 +543,10 @@ export function select<Params extends {[key: string]: TypeSet}>(
   SelectMethodNames
 >;
 export function select(...args: any[]) {
-  const [expr, params, ...polys] =
+  const [expr, shape, ...polys] =
     typeof args[0].__element__ !== "undefined" ? args : [FreeObject, ...args];
 
-  if (!params) {
+  if (!shape) {
     if (expr.__element__.__kind__ === TypeKind.object) {
       const objectExpr: ObjectTypeExpression = expr as any;
       return $expressionify(
@@ -555,8 +555,8 @@ export function select(...args: any[]) {
           __element__: {
             __kind__: TypeKind.object,
             __name__: `${objectExpr.__element__.__name__}`, // _shape
-            __shape__: objectExpr.__element__.__shape__,
-            __params__: {id: true},
+            __pointers__: objectExpr.__element__.__pointers__,
+            __shape__: {id: true},
             __polys__: [],
           },
           __cardinality__: objectExpr.__cardinality__,
@@ -584,8 +584,8 @@ export function select(...args: any[]) {
       __element__: {
         __kind__: TypeKind.object,
         __name__: `${objExpr.__element__.__name__}`, // _shape
-        __shape__: objExpr.__element__.__shape__,
-        __params__: params,
+        __pointers__: objExpr.__element__.__pointers__,
+        __shape__: shape,
         __polys__: polys,
       },
       __cardinality__: objExpr.__cardinality__,

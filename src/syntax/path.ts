@@ -19,12 +19,12 @@ import _std from "@generated/modules/std";
 // including cardinality merging
 type getChildOfObjectTypeSet<
   Root extends ObjectTypeSet,
-  ChildKey extends keyof Root["__element__"]["__shape__"]
+  ChildKey extends keyof Root["__element__"]["__pointers__"]
 > = TypeSet<
-  Root["__element__"]["__shape__"][ChildKey]["target"],
+  Root["__element__"]["__pointers__"][ChildKey]["target"],
   cardinalityUtil.multiplyCardinalities<
     Root["__cardinality__"],
-    Root["__element__"]["__shape__"][ChildKey]["cardinality"]
+    Root["__element__"]["__pointers__"][ChildKey]["cardinality"]
   >
 >;
 
@@ -52,23 +52,23 @@ export type $pathify<
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
     ? {} // Root is literally ObjectTypeSet
-    : ObjectTypeShape extends Root["__element__"]["__shape__"]
+    : ObjectTypeShape extends Root["__element__"]["__pointers__"]
     ? {}
     : {
         // & string required to avod typeError on linkName
-        [k in keyof Root["__element__"]["__shape__"] &
-          string]: Root["__element__"]["__shape__"][k] extends PropertyDesc
+        [k in keyof Root["__element__"]["__pointers__"] &
+          string]: Root["__element__"]["__pointers__"][k] extends PropertyDesc
           ? $expr_PathLeaf<
               getChildOfObjectTypeSet<Root, k>,
               {type: $expr_PathNode<Root, Parent>; linkName: k},
-              Root["__element__"]["__shape__"][k]["exclusive"]
+              Root["__element__"]["__pointers__"][k]["exclusive"]
             >
-          : Root["__element__"]["__shape__"][k] extends LinkDesc
+          : Root["__element__"]["__pointers__"][k] extends LinkDesc
           ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
             ? $expr_PathNode<
                 getChildOfObjectTypeSet<Root, k>,
                 {type: $expr_PathNode<Root, Parent>; linkName: k},
-                Root["__element__"]["__shape__"][k]["exclusive"]
+                Root["__element__"]["__pointers__"][k]["exclusive"]
               >
             : never
           : never;
@@ -85,7 +85,7 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
 
   const root: $expr_PathNode<ObjectTypeSet, Parent> = _root as any;
 
-  for (const line of Object.entries(root.__element__.__shape__)) {
+  for (const line of Object.entries(root.__element__.__pointers__)) {
     const [key, ptr] = line;
     if (ptr.__kind__ === "property") {
       Object.defineProperty(root, key, {
