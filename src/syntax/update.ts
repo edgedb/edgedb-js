@@ -73,24 +73,14 @@ export type stripNonWritables<T extends ObjectTypeShape> = {
 export type shapeElementToAssignmentExpression<
   Element extends PropertyDesc | LinkDesc
 > = [Element] extends [PropertyDesc]
-  ? // TypeSet<
-    // required to avoid excessively deep
-    // [Element["target"]] extends [infer A]
-    //   ? [A] extends [BaseType]
-    //     ? assignableBy<A>
-    //     : never
-    //   : never,
-    {
+  ? {
       __element__: assignableBy<Element["target"]>;
       __cardinality__: assignableCardinality<Element["cardinality"]>;
     }
-  : // >
-  [Element] extends [LinkDesc]
+  : [Element] extends [LinkDesc]
   ? TypeSet<
       ObjectType<
-        // anonymize the link target
-        // generated object types are too limiting
-        // they have no shape or polys
+        // anonymize the object type
         string,
         Element["target"]["__shape__"]
       >,
@@ -122,9 +112,3 @@ export type $expr_Update<
   __expr__: Root;
   __shape__: Shape;
 }>;
-
-export type SelectObjectMethods<Root extends ObjectTypeSet> = {
-  __element__: Root["__element__"];
-  __cardinality__: Root["__cardinality__"];
-  update(shape: UpdateShape<Root>): $expr_Update<Root, UpdateShape<Root>>;
-};

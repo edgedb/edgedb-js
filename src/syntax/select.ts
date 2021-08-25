@@ -19,8 +19,7 @@ import {
 } from "reflection";
 import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "./literal";
-import type {$expr_Update, SelectObjectMethods} from "./update";
-import type {$expr_Insert} from "./insert";
+import type {$expr_Update, UpdateShape} from "./update";
 import {
   $expr_PathLeaf,
   $expr_PathNode,
@@ -78,13 +77,6 @@ export type mod_Limit<Expr extends OffsetExpression = OffsetExpression> = {
 export type SelectModifier = mod_Filter | mod_OrderBy | mod_Offset | mod_Limit;
 
 export type SelectMethodNames = "filter" | "orderBy" | "offset" | "limit";
-// export type $expr_Select<
-//   Set extends TypeSet = TypeSet,
-//   Expr extends TypeSet = TypeSet,
-//   Modifier extends SelectModifier | null = SelectModifier | null,
-//   Methods extends SelectMethodNames = never
-// > = $expr_Select<Set, Expr, Modifier> &
-//   Pick<SelectMethods<Set, Expr>, Methods>;
 
 export type $expr_Select<
   Set extends TypeSet = TypeSet,
@@ -106,10 +98,6 @@ export type $expr_Select<
   } & Pick<SelectMethods<Set, Expr>, Methods> &
     (Set extends ObjectTypeSet ? SelectObjectMethods<Set> : {})
 >;
-
-// select User filter User.id = 'adsf'
-// select User filter User = someUser
-// select User filter User.profile = someProfile
 
 // Base is ObjectTypeExpression &
 // Filter is equality &
@@ -284,6 +272,13 @@ interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
   >;
 }
 
+interface SelectObjectMethods<Root extends ObjectTypeSet> {
+  __element__: Root["__element__"];
+  __cardinality__: Root["__cardinality__"];
+  update(shape: UpdateShape<Root>): $expr_Update<Root, UpdateShape<Root>>;
+  delete(): $expr_Delete<Root>;
+}
+
 export function is<
   Expr extends ObjectTypeExpression,
   Params extends objectTypeToSelectParams<Expr["__element__"]>
@@ -294,7 +289,6 @@ export function is<
 function filterFunc(this: any, expr: SelectFilterExpression) {
   let card = this.__cardinality__;
 
-  // extremely fiddly cardinality inference logic
   const base: TypeSet = this.__expr__;
 
   const filter: any = expr;
@@ -307,9 +301,6 @@ function filterFunc(this: any, expr: SelectFilterExpression) {
   const arg1: TypeSet = filter?.__args__?.[1];
   const argsExist = !!arg0 && !!arg1 && !!arg1.__cardinality__;
   const arg0IsUnique = arg0?.__exclusive__ === true;
-
-  // const baseEqualsArg0Parent =
-  //   arg0.__parent__.type.__element__.__name__ === base.__element__.__name__;
 
   const newCard =
     arg1.__cardinality__ === Cardinality.One ||
@@ -465,6 +456,25 @@ function updateFunc(this: any, shape: any) {
   ) as $expr_Update;
 }
 
+export type $expr_Delete<Root extends ObjectTypeSet = ObjectTypeSet> =
+  Expression<{
+    __kind__: ExpressionKind.Delete;
+    __element__: Root["__element__"];
+    __cardinality__: Root["__cardinality__"];
+    __expr__: Root;
+  }>;
+
+function deleteFunc(this: any) {
+  return $expressionify(
+    $selectify({
+      __kind__: ExpressionKind.Delete,
+      __element__: this.__element__,
+      __cardinality__: this.__cardinality__,
+      __expr__: this,
+    })
+  ) as $expr_Delete;
+}
+
 export function $selectify<Expr extends TypeSet>(expr: Expr) {
   Object.assign(expr, {
     filter: filterFunc.bind(expr),
@@ -472,6 +482,7 @@ export function $selectify<Expr extends TypeSet>(expr: Expr) {
     offset: offsetFunc.bind(expr),
     limit: limitFunc.bind(expr),
     update: updateFunc.bind(expr),
+    delete: deleteFunc.bind(expr),
     query: queryFunc.bind(expr),
   });
   return expr;

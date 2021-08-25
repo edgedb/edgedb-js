@@ -15,7 +15,6 @@ beforeAll(async () => {
 afterAll(async () => {
   await teardownTests();
   await pool.close();
-  console.log("closed pool");
 });
 
 test("detached", async () => {

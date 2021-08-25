@@ -38,6 +38,7 @@ import type {$expr_Param, $expr_WithParams} from "./params";
 import type {$expr_Detached} from "./detached";
 import {$expr_Update} from "./update";
 import {$expr_Insert} from "./insert";
+import {$expr_Delete} from "@generated/syntax/select";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -46,6 +47,7 @@ export type SomeExpression =
   | $expr_Set
   | $expr_Cast
   | $expr_Select
+  | $expr_Delete
   | $expr_Update
   | $expr_Insert
   | $expr_Function
@@ -457,6 +459,8 @@ function renderEdgeQL(_expr: TypeSet, ctx: RenderCtx): string {
       expr.__expr__ as any,
       ctx
     )}) SET ${shapeToEdgeQL(expr.__shape__, [], ctx)}`;
+  } else if (expr.__kind__ === ExpressionKind.Delete) {
+    return `DELETE (${renderEdgeQL(expr.__expr__ as any, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Insert) {
     return `INSERT ${renderEdgeQL(expr.__expr__ as any, ctx)} ${shapeToEdgeQL(
       expr.__shape__,
@@ -631,6 +635,7 @@ function walkExprTree(
         childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
         break;
       }
+
       case ExpressionKind.Update: {
         const shape: any = expr.__shape__ ?? {};
 
@@ -642,6 +647,12 @@ function walkExprTree(
         }
 
         childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
+        break;
+      }
+      case ExpressionKind.Delete: {
+        childExprs.push(
+          ...walkExprTree(expr.__expr__ as any, parentScope, ctx)
+        );
         break;
       }
       case ExpressionKind.Insert: {
