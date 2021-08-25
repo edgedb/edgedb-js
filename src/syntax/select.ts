@@ -16,21 +16,11 @@ import {
   SelectModifierKind,
   setToTsType,
   ObjectTypeSet,
-  PropertyDesc,
-  LinkDesc,
-  ObjectTypeShape,
-  assignableCardinality,
-  ArrayType,
-  TupleType,
-  NamedTupleType,
-  MaterialType,
-  BaseTypeTuple,
-  NonArrayMaterialType,
-  SomeObjectType,
-  BaseType,
 } from "reflection";
 import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "./literal";
+import type {$expr_Update, SelectObjectMethods} from "./update";
+import type {$expr_Insert} from "./insert";
 import {
   $expr_PathLeaf,
   $expr_PathNode,
@@ -40,8 +30,6 @@ import {
 import _std from "@generated/modules/std";
 import type {$anyint, $bool, $int64} from "@generated/modules/std";
 import {FreeObject} from "@generated/modules/std";
-import {Movie} from "@generated/modules/default";
-import {scalarAssignableBy} from "@generated/castMaps";
 
 // filter
 // order by
@@ -296,114 +284,6 @@ interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
   >;
 }
 
-/////////////////
-/// UPDATE
-/////////////////
-
-type anonymizeObject<T extends SomeObjectType> = ObjectType<
-  string,
-  T["__shape__"],
-  any,
-  any[]
->;
-
-export type assignableTuple<Items extends BaseTypeTuple> = {
-  [k in keyof Items]: Items[k] extends MaterialType
-    ? assignableBy<Items[k]>
-    : never;
-} extends infer NewItems
-  ? NewItems extends BaseTypeTuple
-    ? NewItems
-    : never
-  : never;
-
-export type assignableBy<T extends BaseType> = T extends ScalarType
-  ? scalarAssignableBy<T>
-  : T extends SomeObjectType
-  ? anonymizeObject<T>
-  : T extends ArrayType
-  ? assignableBy<T["__element__"]> extends NonArrayMaterialType
-    ? ArrayType<assignableBy<T["__element__"]>>
-    : never
-  : T extends TupleType
-  ? TupleType<assignableTuple<T["__items__"]>>
-  : T extends NamedTupleType
-  ? NamedTupleType<
-      {
-        [k in keyof T["__shape__"]]: assignableBy<T["__shape__"][k]>;
-      }
-    >
-  : never;
-
-type stripBacklinks<T extends ObjectTypeShape> = {
-  [k in keyof T]: k extends `<${string}` ? never : T[k];
-};
-
-type stripNonWritables<T extends ObjectTypeShape> = {
-  [k in keyof T]: [T[k]["writable"]] extends [true] ? T[k] : never;
-};
-
-type UpdateUser = UpdateShape<typeof Movie>["characters"];
-
-export type shapeElementToAssignmentExpression<
-  Element extends PropertyDesc | LinkDesc
-> = [Element] extends [PropertyDesc]
-  ? // TypeSet<
-    // required to avoid excessively deep
-    // [Element["target"]] extends [infer A]
-    //   ? [A] extends [BaseType]
-    //     ? assignableBy<A>
-    //     : never
-    //   : never,
-    {
-      __element__: assignableBy<Element["target"]>;
-      __cardinality__: assignableCardinality<Element["cardinality"]>;
-    }
-  : // >
-  [Element] extends [LinkDesc]
-  ? TypeSet<
-      ObjectType<
-        // anonymize the link target
-        // generated object types are too limiting
-        // they have no shape or polys
-        string,
-        Element["target"]["__shape__"]
-      >,
-      assignableCardinality<Element["cardinality"]>
-    >
-  : never;
-
-export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
-  stripNonWritables<stripBacklinks<Root["__element__"]["__shape__"]>>
-> extends infer Shape
-  ? Shape extends ObjectTypeShape
-    ? {
-        [k in keyof Shape]?: shapeElementToAssignmentExpression<
-          Shape[k]
-        > extends infer S
-          ? S | {"+=": S} | {"-=": S}
-          : never;
-      }
-    : never
-  : never;
-
-export type $expr_Update<
-  Root extends ObjectTypeSet = ObjectTypeSet,
-  Shape extends UpdateShape<Root> = any
-> = Expression<{
-  __kind__: ExpressionKind.Update;
-  __element__: Root["__element__"];
-  __cardinality__: Root["__cardinality__"];
-  __expr__: Root;
-  __shape__: Shape;
-}>;
-
-type SelectObjectMethods<Root extends ObjectTypeSet> = {
-  __element__: Root["__element__"];
-  __cardinality__: Root["__cardinality__"];
-  update(shape: UpdateShape<Root>): $expr_Update<Root, UpdateShape<Root>>;
-};
-
 export function is<
   Expr extends ObjectTypeExpression,
   Params extends objectTypeToSelectParams<Expr["__element__"]>
@@ -562,6 +442,17 @@ function limitFunc(this: any, expr: LimitExpression | number) {
   );
 }
 
+async function queryFunc(this: any, cxn: edgedb.Connection | edgedb.Pool) {
+  if (
+    this.__cardinality__ === Cardinality.One ||
+    this.__cardinality__ === Cardinality.AtMostOne
+  ) {
+    return await cxn.queryOne(this.toEdgeQL());
+  } else {
+    return cxn.query(this.toEdgeQL());
+  }
+}
+
 function updateFunc(this: any, shape: any) {
   return $expressionify(
     $selectify({
@@ -572,17 +463,6 @@ function updateFunc(this: any, shape: any) {
       __shape__: shape,
     })
   ) as $expr_Update;
-}
-
-async function queryFunc(this: any, cxn: edgedb.Connection | edgedb.Pool) {
-  if (
-    this.__cardinality__ === Cardinality.One ||
-    this.__cardinality__ === Cardinality.AtMostOne
-  ) {
-    return await cxn.queryOne(this.toEdgeQL());
-  } else {
-    return cxn.query(this.toEdgeQL());
-  }
 }
 
 export function $selectify<Expr extends TypeSet>(expr: Expr) {

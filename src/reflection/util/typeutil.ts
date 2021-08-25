@@ -18,4 +18,18 @@ export namespace typeutil {
   export type stripNever<T> = {
     [k in nonNeverKeys<T>]: k extends keyof T ? T[k] : never;
   };
+
+  export type optionalKeys<T extends object> = {
+    [k in keyof T]: undefined extends T[k] ? k : never;
+  }[keyof T];
+
+  export type requiredKeys<T extends object> = Exclude<
+    keyof T,
+    optionalKeys<T>
+  >;
+
+  export type addQuestionMarks<T extends object> = {
+    [k in optionalKeys<T>]?: T[k];
+  } &
+    {[k in requiredKeys<T>]: T[k]};
 }

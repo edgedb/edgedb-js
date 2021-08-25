@@ -5,6 +5,7 @@ export * from "./path";
 export * from "./set";
 export * from "./cast";
 export * from "./select";
+export * from "./insert";
 export * from "./collections";
 export * from "./funcops";
 export * from "./for";

@@ -24,6 +24,7 @@ export enum ExpressionKind {
   Cast = "Cast",
   Select = "Select",
   Update = "Update",
+  Insert = "Insert",
   Function = "Function",
   Operator = "Operator",
   For = "For",
