@@ -1,20 +1,20 @@
 import {edgedb} from "@generated/imports";
 import {$expr_Select} from "@syntax/select";
-import {createPool} from "edgedb";
 import {typeutil} from "../../src/reflection";
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let pool: edgedb.Pool;
 let data: TestData;
+
 beforeAll(async () => {
-  pool = await createPool();
-  data = await setupTests();
+  const setup = await setupTests();
+  pool = setup.pool;
+  data = setup.data;
 });
 
 afterAll(async () => {
-  await teardownTests();
-  await pool.close();
+  await teardownTests(pool);
 });
 
 test("detached", async () => {

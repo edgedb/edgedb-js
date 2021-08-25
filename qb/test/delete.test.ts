@@ -12,13 +12,13 @@ let pool: edgedb.Pool;
 let data: TestData;
 
 beforeAll(async () => {
-  pool = await createPool();
-  data = await setupTests();
+  const setup = await setupTests();
+  pool = setup.pool;
+  data = setup.data;
 });
 
 afterAll(async () => {
-  await teardownTests();
-  await pool.close();
+  await teardownTests(pool);
 });
 
 test("basic insert", async () => {

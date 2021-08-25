@@ -2,7 +2,6 @@ import {edgedb} from "@generated/imports";
 import {Villain} from "@generated/modules/default";
 import {InsertShape} from "@syntax/insert";
 import {UpdateShape} from "@syntax/update";
-import {createPool} from "edgedb";
 import {typeutil} from "reflection";
 
 import e from "../generated/example";
@@ -12,13 +11,13 @@ let pool: edgedb.Pool;
 let data: TestData;
 
 beforeAll(async () => {
-  pool = await createPool();
-  data = await setupTests();
+  const setup = await setupTests();
+  pool = setup.pool;
+  data = setup.data;
 });
 
 afterAll(async () => {
-  await teardownTests();
-  await pool.close();
+  await teardownTests(pool);
 });
 
 test("insert shape check", async () => {

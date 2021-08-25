@@ -83,8 +83,6 @@ SELECT (INSERT Movie {
 }) {id, title, rating, genre, characters: {id}};`
   );
 
-  await pool.close();
-
   return {
     data: {
       iron_man,
