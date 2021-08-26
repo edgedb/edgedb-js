@@ -1,6 +1,5 @@
-// no runtime imports
-import type {$expr_TypeIntersection, $pathify} from "../syntax/path";
-import type {literal} from "../syntax/literal";
+import type {$expr_TypeIntersection, $pathify} from "./path";
+import type {$expr_Literal} from "./literal";
 import type {typeutil} from "./util/typeutil";
 import {Cardinality, ExpressionKind, TypeKind} from "./enums";
 
@@ -30,7 +29,9 @@ export interface ScalarType<
   __tstype__: TsType;
   __tsconsttype__: TsConstType;
   __name__: Name;
-  <T extends TsType = TsType>(val: T): literal<ScalarType<Name, TsType, T>>;
+  <T extends TsType = TsType>(val: T): $expr_Literal<
+    ScalarType<Name, TsType, T>
+  >;
 }
 
 export interface EnumType<
@@ -41,7 +42,7 @@ export interface EnumType<
   __kind__: TypeKind.enum;
   __tstype__: TsType;
   __name__: Name;
-  (val: TsType | Vals): literal<this>;
+  (val: TsType | Vals): $expr_Literal<this>;
 }
 
 //////////////////

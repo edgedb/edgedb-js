@@ -6,7 +6,7 @@ import {
   Cardinality,
   ExpressionKind,
   cardinalityUtil,
-} from "reflection";
+} from "../reflection";
 import {$expressionify} from "./path";
 
 export type $expr_For<

@@ -4,6 +4,7 @@ import {
   ExpressionKind,
   MaterialType,
   ObjectTypeShape,
+  OperatorKind,
   Poly,
   SelectModifierKind,
   TypeKind,
@@ -20,10 +21,10 @@ import type {
   $expr_PathLeaf,
   $expr_PathNode,
   $expr_TypeIntersection,
-} from "./path";
-import type {$expr_Literal} from "./literal";
 import type {$expr_Set} from "./set";
 import type {$expr_Cast} from "./cast";
+} from "../reflection/path";
+import type {$expr_Literal} from "../reflection/literal";
 import type {
   $expr_Select,
   mod_Filter,
@@ -493,7 +494,7 @@ function renderEdgeQL(
     const operator = expr.__name__.split("::")[1];
     const args = expr.__args__;
     switch (expr.__opkind__) {
-      case "Infix":
+      case OperatorKind.Infix:
         if (operator === "[]") {
           const val = (args[1] as any).__value__;
           return `(${renderEdgeQL(args[0], ctx)}[${
@@ -504,11 +505,11 @@ function renderEdgeQL(
           args[1],
           ctx
         )})`;
-      case "Postfix":
+      case OperatorKind.Postfix:
         return `(${renderEdgeQL(args[0], ctx)} ${operator})`;
-      case "Prefix":
+      case OperatorKind.Prefix:
         return `(${operator} ${renderEdgeQL(args[0], ctx)})`;
-      case "Ternary":
+      case OperatorKind.Ternary:
         if (operator === "IF") {
           return `(${renderEdgeQL(args[0], ctx)} IF ${renderEdgeQL(
             args[1],

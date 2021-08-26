@@ -2,11 +2,9 @@ import {
   BaseExpression,
   Expression,
   ExpressionKind,
-  TypeSet,
   MaterialType,
-} from "reflection";
+} from "../reflection";
 import {$expressionify} from "./path";
-import {toEdgeQL} from "./toEdgeQL";
 
 export function cast<Target extends MaterialType, Expr extends BaseExpression>(
   target: Target,

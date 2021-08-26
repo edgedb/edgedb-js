@@ -16,16 +16,12 @@ import {
   SelectModifierKind,
   setToTsType,
   ObjectTypeSet,
-} from "reflection";
+} from "../reflection";
 import {$expr_Operator} from "./funcops";
-import {$expr_Literal} from "./literal";
+import {$expr_Literal} from "../reflection/literal";
 import type {$expr_Update, UpdateShape} from "./update";
-import {
-  $expr_PathLeaf,
-  $expr_PathNode,
-  $expressionify,
-  PathParent,
-} from "./path";
+import {$expr_PathLeaf, $expr_PathNode, PathParent} from "../reflection/path";
+import {$expressionify} from "./path";
 import _std from "@generated/modules/std";
 import type {$anyint, $bool, $int64} from "@generated/modules/std";
 import {FreeObject} from "@generated/modules/std";

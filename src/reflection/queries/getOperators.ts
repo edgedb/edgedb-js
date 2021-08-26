@@ -1,10 +1,9 @@
 import {Connection} from "../../ifaces";
 import {StrictMap} from "../strictMap";
-import {typeutil} from "../../reflection";
 
 import {Param, Typemod} from "./getFunctions";
-import {genutil} from "../util/util";
-import type {OperatorKind} from "../../syntax/funcops";
+import {genutil, typeutil} from "../util/util";
+import {OperatorKind} from "../enums";
 
 export type {Typemod};
 

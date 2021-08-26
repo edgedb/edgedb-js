@@ -11,7 +11,8 @@ import {
   ArrayType,
   cardinalityUtil,
   ObjectType,
-} from "reflection";
+  OperatorKind,
+} from "../reflection";
 import {set} from "./set";
 // @ts-ignore
 import {isImplicitlyCastableTo} from "@generated/castMaps";
@@ -36,7 +37,6 @@ export type $expr_Function<
   __namedargs__: NamedArgs;
 }>;
 
-export type OperatorKind = "Infix" | "Postfix" | "Prefix" | "Ternary";
 
 export type $expr_Operator<
   Name extends string = string,

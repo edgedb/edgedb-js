@@ -8,14 +8,15 @@ import {
   ObjectTypeShape,
   PropertyDesc,
   typeutil,
-} from "reflection";
+} from "../reflection";
 import _std from "@generated/modules/std";
 import {
   shapeElementToAssignmentExpression,
   stripBacklinks,
   stripNonWritables,
 } from "./update";
-import {$expressionify, $expr_PathNode} from "./path";
+import {$expressionify} from "./path";
+import {$expr_PathNode} from "../reflection/path";
 
 type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
   T["cardinality"] extends
