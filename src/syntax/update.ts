@@ -18,7 +18,7 @@ import {
   NonArrayMaterialType,
   SomeObjectType,
   BaseType,
-} from "reflection";
+} from "../reflection";
 import _std from "@generated/modules/std";
 import {Movie} from "@generated/modules/default";
 import {scalarAssignableBy} from "@generated/castMaps";

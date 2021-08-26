@@ -4,7 +4,7 @@ import {
   ExpressionKind,
   TypeSet,
   MaterialType,
-} from "reflection";
+} from "../reflection";
 import {$expressionify} from "./path";
 import {toEdgeQL} from "./toEdgeQL";
 

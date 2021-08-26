@@ -5,7 +5,7 @@ import {
   MaterialTypeSet,
   Cardinality,
   ExpressionKind,
-} from "reflection";
+} from "../reflection";
 import {$expressionify} from "./path";
 
 export type $expr_For<

@@ -10,7 +10,7 @@ import {
   ExpressionKind,
   TypeKind,
   ObjectTypeShape,
-} from "reflection";
+} from "../reflection";
 
 import {toEdgeQL} from "./toEdgeQL";
 import _std from "@generated/modules/std";

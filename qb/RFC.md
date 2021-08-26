@@ -8,48 +8,98 @@ Generation logic should live inside inside edgedb-js so the generation logic is 
 
 `npx edgedb generate`
 
+Accepts basic connection options:
+
+```
+--instance, --dsn, -I
+--database, -d
+--host, -h,
+--port, -P
+--username, -u
+--password, -p
+
+// more?
+```
+
+Also accepts:
+
+```
+--output [output]  (default: "./node_modules/.edgedb")
+  This is the name of the subdirectory the query builder will be generated into. It is resolved from the computed project root. This lets users optionally generate the query builder elsewhere in their codebase (possible to a location where it will be tracked by verison control.)
+
+  It also makes it possible for users to generate multiple QBs from different instances. This isn't possible in Prisma. To do so, it is recommended to generate into a subdirectory of `node_modules` that starts with a period, which will prevent the generated code from being pruned by Yarn when new modules are installed.
+```
+
 ### Connection
 
-- The `npx` command accepts connection options which take first precedence
-- Any `.env` file in the root directory is parsed and added to `process.env`. Perhaps the `npx` command can also accept a flag `--env` that points to an environment variable that should be parsed.
-- The connection is attempted with no configuration passed to `edgedb-js`, relying on the resolution of `edgedb-js`
-- If connection fails, throw error
+The `npx edgedb generate` command accepts connection options. If fully defined (e.g. `dsn` exists, or `port+host` exists), these are passed explicitly to `edgedb-js`.
 
-### Folder resolution
+Else, check root directory for `.env` file, parse it, and merge into `process.env`. The `npx` command will also accept an optional `--env` argument that points to a `*.env` file to be parsed.
 
-1. find nearest node_modules folder
-2. if `.pnpm` is inside, follow `edgedb` symlink
-3. if `.pnp.cjs`: throw (Prisma doesn't support currently)
+Then attempt connection, relying on the resolution of `edgedb-js`.
 
-- read .env files?
-- generate into node_modules/.edgedb
-- post-install
-- regenerate after migration?
+### Generation
 
-### Generation output
+Identity project root:
 
-Option 1: Generate into `node_modules/.edgedb` and re-export from inside the `edgedb` module. This is what Prisma does. This means the query builder typically won't be checked into version control.
+1. Search up the file system for nearest node_modules folder
+2. If `.pnpm` is inside, follow `edgedb` symlink.
+3. if `.pnp.cjs`, throw error. Codegen is incompatible with global module caching. Prisma doesn't support this either: https://github.com/prisma/prisma/issues/1439
 
-Option 2: Generate to a file/directory in the local project, e.g. `./generated/edgedb.ts`. This can be customizable.
+Compute generation location:
 
-### Delegation
+```js
+// outputRelativePath defaults to `node_modules/.edgedb`
+// it can be set with the `--output` CLI argument
+const outputPath = path.join(projectRoot, outputRelativePath);
+```
 
-The `edgedb` CLI command should scan for a package.json containing `edgedb`.
+Generate TS files into temporary directory:
 
-1. If found, it should delegate the generation step to the installed package. It will pass the connection options to the package as arguments.
-2. If a package.json is discovered but edgedb isn't installed, it can be auto-installed.
-3. If the command wasn't executed inside a JS package (no `package.json` in any ancestor), error.
+`{project_root}/node_modules/.edgedb_temp`
 
-### Executable
+Use the [Compiler API](https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API) to generate `.js/.d.ts` files:
 
-The `edgedb` module can contain an executable `generate` command exposed via package.json ["bin"](https://docs.npmjs.com/cli/v7/configuring-npm/package-json#bin). Users could optionally call the package's CLI directly with `npx edgedb generate`. This doesn't causes clashes with globally installed CLIs, as `npx` doesn't look at the global path.
+- JS: `{outputDir}/*.js`
+- DTS: `{outputDir}/*.d.ts`
 
-### Output location
+The contents of `.edgedb` are re-exported from `edgedb-js/src/`
 
-Generate definitions into `node_modules/.edgedb` and re-export from `node_modules/edgedb/index.js`. This is what Prisma does.
+### Other ideas
 
-- Keeps the generated code out of version control.
-- Pro: This lets us define a bunch of TS code in the `edgedb` JS package, then reference it in the `generated` code, and the schema-specific artifacts can be generated to a particular spot in the package.
+- Re-generate in `postinstall` hook?
+- Re-generate after `edgedb migration`?
+
+## Usage
+
+### Importing
+
+```ts
+import {EdgeDBClient} from "edgedb/client";
+// or, if `--name [name]` passed to `npx edgedb generate`
+import {EdgeDBClient} from "edgedb/client/${name}";
+
+const e = new EdgeDBClient(/*
+  accepts: {
+    pool?: edgedb.Pool;
+    connection?: edgedb.Connection;
+  }
+*/);
+
+const query = e.select(/* ... */);
+```
+
+### Execution
+
+Top-level statements (for, select, insert, update, delete, with) have a `.query` method with the following signature:
+
+```ts
+query(data: getArgsType<this>, params?: {
+  pool?: edgedb.Pool;
+  connection?: edgedb.Connection;
+  tx?: edgedb.Transaction;
+}): Promise<T>
+```
 
 ## Conflicts
 

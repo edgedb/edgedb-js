@@ -8,7 +8,7 @@ import {
   ObjectTypeShape,
   PropertyDesc,
   typeutil,
-} from "reflection";
+} from "../reflection";
 import _std from "@generated/modules/std";
 import {
   shapeElementToAssignmentExpression,

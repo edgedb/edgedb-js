@@ -17,7 +17,7 @@ import {
   NonArrayMaterialType,
   typeutil,
   BaseType,
-} from "reflection";
+} from "../reflection";
 
 // "@generated/" path gets replaced during generation step
 // @ts-ignore

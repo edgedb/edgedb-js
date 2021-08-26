@@ -9,7 +9,7 @@ import {
   TypeKind,
   TypeSet,
   util,
-} from "reflection";
+} from "../reflection";
 import {
   Duration,
   LocalDate,

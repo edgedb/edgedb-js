@@ -1,4 +1,4 @@
-import {BaseExpression, ExpressionKind} from "reflection";
+import {BaseExpression, ExpressionKind} from "../reflection";
 import {$expr_Select} from "./select";
 import {$expr_For} from "./for";
 import {$expressionify} from "./path";

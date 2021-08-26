@@ -11,7 +11,7 @@ import {
   ArrayType,
   cardinalityUtil,
   ObjectType,
-} from "reflection";
+} from "../reflection";
 import {set} from "./set";
 // @ts-ignore
 import {isImplicitlyCastableTo} from "@generated/castMaps";

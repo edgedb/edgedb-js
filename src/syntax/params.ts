@@ -4,7 +4,7 @@ import {
   BaseExpression,
   ParamType,
   Cardinality,
-} from "reflection";
+} from "../reflection";
 import {$expressionify} from "./path";
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {

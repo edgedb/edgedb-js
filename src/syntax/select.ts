@@ -16,7 +16,7 @@ import {
   SelectModifierKind,
   setToTsType,
   ObjectTypeSet,
-} from "reflection";
+} from "../reflection";
 import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "./literal";
 import type {$expr_Update, UpdateShape} from "./update";
