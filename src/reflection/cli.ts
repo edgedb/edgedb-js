@@ -34,7 +34,9 @@ const run = async () => {
   }
 
   console.log(JSON.stringify(cxn, null, 2));
+
   const TO = path.join(__dirname, "generated/example");
+  console.log(TO);
   await generateQB(TO, cxn.dsn ? cxn.dsn : cxn);
   process.exit();
 };
