@@ -4,6 +4,19 @@
 
 Generation logic should live inside inside edgedb-js so the generation logic is versioned alongside the driver.
 
+Finding root folder
+1. find nearest node_modules folder
+2. if `.pnpm` is inside, follow `edgedb` symlink
+3. if `.pnp.cjs`: throw (Prisma doesn't support currently)
+
+- read .env files?
+- generate into node_modules
+- post-install
+- regenerate after migration?
+
+
+
+
 ### Generation output
 
 Option 1: Generate into `node_modules/.edgedb` and re-export from inside the `edgedb` module. This is what Prisma does. This means the query builder typically won't be checked into version control.
