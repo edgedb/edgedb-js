@@ -47,5 +47,8 @@
     "generate:dev": "cd qb && nodemon -e ts -w ../src -x ts-node --project ../tsconfig.json run.ts",
     "build:dev": "nodemon -e ts -w ./src -w ./qb -x 'yarn build --incremental'",
     "dev": "nodemon -e ts -w ./src -x 'yarn generate && echo \"Compiling TypeScript...\" && yarn build --incremental'"
+  },
+  "bin": {
+    "edgedb": "./dist/src/reflection/cli.js"
   }
 }

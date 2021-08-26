@@ -36,7 +36,7 @@ export type GeneratorParams = {
 
 export async function generateQB(
   to: string,
-  cxnConfig?: ConnectConfig
+  cxnConfig?: string | ConnectConfig
 ): Promise<void> {
   // tslint:disable-next-line
   console.log(`Generating query builder...`);
