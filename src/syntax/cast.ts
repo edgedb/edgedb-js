@@ -25,5 +25,8 @@ export type $expr_Cast<
   __element__: Target;
   __cardinality__: Expr["__cardinality__"];
   __kind__: ExpressionKind.Cast;
-  __expr__: Expr;
 }>;
+
+export type $runtimeExpr_Cast = $expr_Cast & {
+  __expr__: BaseExpression;
+};

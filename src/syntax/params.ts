@@ -32,9 +32,12 @@ export type $expr_WithParams<
   __kind__: ExpressionKind.WithParams;
   __element__: Expr["__element__"];
   __cardinality__: Expr["__cardinality__"];
-  __expr__: Expr;
   __paramststype__: paramsToParamTypes<Params>;
 }>;
+
+export type $runtimeExpr_WithParams = $expr_WithParams & {
+  __expr__: BaseExpression;
+};
 
 type getParamTsType<Param extends ParamType> = Param extends ScalarType
   ? Param["__tstype__"]

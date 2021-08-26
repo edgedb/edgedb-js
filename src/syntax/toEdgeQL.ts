@@ -10,7 +10,7 @@ import {
   TypeKind,
   TypeSet,
   util,
-} from "reflection";
+} from "../reflection";
 import {
   Duration,
   LocalDate,
@@ -21,48 +21,52 @@ import type {
   $expr_PathLeaf,
   $expr_PathNode,
   $expr_TypeIntersection,
-import type {$expr_Set} from "./set";
-import type {$expr_Cast} from "./cast";
 } from "../reflection/path";
 import type {$expr_Literal} from "../reflection/literal";
+import type {$runtimeExpr_Set} from "./set";
+import type {$runtimeExpr_Cast} from "./cast";
 import type {
-  $expr_Select,
+  $runtimeExpr_Select,
   mod_Filter,
   mod_OrderBy,
   mod_Offset,
   mod_Limit,
+  $expr_Delete,
 } from "./select";
-import type {$expr_Function, $expr_Operator} from "./funcops";
-import type {$expr_For, $expr_ForVar} from "./for";
-import type {$expr_Alias, $expr_With} from "./with";
-import type {$expr_Param, $expr_WithParams} from "./params";
-import type {$expr_Detached} from "./detached";
+import type {$runtimeExpr_Function, $runtimeExpr_Operator} from "./funcops";
+import type {$runtimeExpr_For, $expr_ForVar} from "./for";
+import type {
+  $runtimeExpr_Alias,
+  $runtimeExpr_With,
+  WithableRuntimeExpression,
+} from "./with";
+import type {$expr_Param, $runtimeExpr_WithParams} from "./params";
+import type {$runtimeExpr_Detached} from "./detached";
 import {$expr_Update} from "./update";
 import {$expr_Insert} from "./insert";
-import {$expr_Delete} from "@generated/syntax/select";
 
 export type SomeExpression =
   | $expr_PathNode
   | $expr_PathLeaf
   | $expr_Literal
-  | $expr_Set
-  | $expr_Cast
-  | $expr_Select
+  | $runtimeExpr_Set
+  | $runtimeExpr_Cast
+  | $runtimeExpr_Select
   | $expr_Delete
   | $expr_Update
   | $expr_Insert
-  | $expr_Function
-  | $expr_Operator
-  | $expr_For
+  | $runtimeExpr_Function
+  | $runtimeExpr_Operator
+  | $runtimeExpr_For
   | $expr_ForVar
   | $expr_TypeIntersection
-  | $expr_Alias
-  | $expr_With
-  | $expr_WithParams
+  | $runtimeExpr_Alias
+  | $runtimeExpr_With
+  | $runtimeExpr_WithParams
   | $expr_Param
-  | $expr_Detached;
+  | $runtimeExpr_Detached;
 
-type WithScopeExpr = $expr_Select | $expr_Update | $expr_Insert | $expr_For;
+type WithScopeExpr = WithableRuntimeExpression;
 
 function shapeToEdgeQL(
   basicShape: object | null,
@@ -413,7 +417,7 @@ function renderEdgeQL(
           default:
             util.assertNever(mod, new Error(`Unknown operator kind: ${mod}`));
         }
-        selectExpr = selectExpr.__expr__ as $expr_Select;
+        selectExpr = selectExpr.__expr__ as $runtimeExpr_Select;
       }
 
       const lines = [renderEdgeQL(selectExpr, ctx)];

@@ -1,16 +1,18 @@
-import type {$expr_Function} from "@syntax/funcops";
+import type {$expr_Function, $runtimeExpr_Function} from "@syntax/funcops";
 import {Cardinality, TypeSet, typeutil} from "../../src/reflection";
 import e from "../generated/example";
 import superjson from "superjson";
 
 function checkFunctionExpr<T extends $expr_Function>(
-  expr: T,
+  _expr: T,
   name: T["__name__"],
-  args: T["__args__"],
-  namedargs: T["__namedargs__"],
+  args: any[],
+  namedargs: {[key: string]: any},
   returnType: T["__element__"],
   cardinality: T["__cardinality__"]
 ) {
+  const expr = _expr as unknown as $runtimeExpr_Function;
+
   expect(expr.__name__).toEqual(name);
   expect(superjson.stringify(expr.__args__)).toEqual(
     superjson.stringify(args.filter((arg) => arg !== undefined))

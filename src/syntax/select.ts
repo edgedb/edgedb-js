@@ -76,24 +76,28 @@ export type SelectMethodNames = "filter" | "orderBy" | "offset" | "limit";
 
 export type $expr_Select<
   Set extends TypeSet = TypeSet,
-  Expr extends TypeSet = TypeSet,
-  Modifier extends SelectModifier | null = SelectModifier | null,
+  // Expr extends TypeSet = TypeSet,
+  // Modifier extends SelectModifier | null = SelectModifier | null,
   Methods extends SelectMethodNames = never
 > = Expression<
   {
     __element__: Set["__element__"];
     __cardinality__: Set["__cardinality__"];
-    __expr__: Expr;
     __kind__: ExpressionKind.Select;
-    __modifier__: Modifier;
+
     query(
       cxn: edgedb.Pool | edgedb.Connection
     ): Promise<
       setToTsType<TypeSet<Set["__element__"], Set["__cardinality__"]>>
     >;
-  } & Pick<SelectMethods<Set, Expr>, Methods> &
+  } & Pick<SelectMethods<Set /*, Expr*/>, Methods> &
     (Set extends ObjectTypeSet ? SelectObjectMethods<Set> : {})
 >;
+
+export type $runtimeExpr_Select = $expr_Select & {
+  __expr__: TypeSet;
+  __modifier__: SelectModifier | null;
+};
 
 // Base is ObjectTypeExpression &
 // Filter is equality &
@@ -118,119 +122,120 @@ export type argCardToResultCard<
   : [OpCard] extends [Cardinality.Empty]
   ? Cardinality.Empty
   : BaseCase;
-export type inferCardinality<Base extends TypeSet, Filter extends TypeSet> =
-  // Base is ObjectTypeExpression &
-  Base extends ObjectTypeExpression // $expr_PathNode
-    ? // Filter is equality
-      Filter extends $expr_Operator<"std::=", any, infer Args, any>
-      ? // Filter.args[0] is PathLeaf
-        Args[0] extends $expr_PathLeaf
-        ? // Filter.args[0] is unique
-          Args[0]["__exclusive__"] extends true
-          ? //   Filter.args[0].parent.__element__ === Base.__element__
-            typeutil.assertEqual<
-              Args[0]["__parent__"]["type"]["__element__"]["__name__"],
-              Base["__element__"]["__name__"]
-            > extends true
-            ? // Filter.args[1].__cardinality__ is AtMostOne or One
-              argCardToResultCard<
-                Args[1]["__cardinality__"],
-                Base["__cardinality__"]
-              >
-            : Base["__cardinality__"]
-          : Base["__cardinality__"]
-        : Args[0] extends $expr_PathNode
-        ? Args[0]["__exclusive__"] extends true
-          ? //   Filter.args[0].parent.__element__ === Base.__element__
-            Args[0]["__parent__"] extends null
-            ? typeutil.assertEqual<
-                Args[0]["__element__"]["__name__"],
-                Base["__element__"]["__name__"]
-              > extends true
-              ? // Filter.args[1].__cardinality__ is AtMostOne or One
-                argCardToResultCard<
-                  Args[1]["__cardinality__"],
-                  Base["__cardinality__"]
-                >
-              : Base["__cardinality__"]
-            : Args[0]["__parent__"] extends infer Parent
-            ? Parent extends PathParent
-              ? typeutil.assertEqual<
-                  Parent["type"]["__element__"]["__name__"],
-                  Base["__element__"]["__name__"]
-                > extends true
-                ? // Filter.args[1].__cardinality__ is AtMostOne or One
-                  argCardToResultCard<
-                    Args[1]["__cardinality__"],
-                    Base["__cardinality__"]
-                  >
-                : Base["__cardinality__"]
-              : Base["__cardinality__"]
-            : Base["__cardinality__"]
-          : Base["__cardinality__"]
-        : Base["__cardinality__"]
-      : Base["__cardinality__"]
-    : Base["__cardinality__"];
+// export type inferCardinality<Base extends TypeSet, Filter extends TypeSet> =
+//   // Base is ObjectTypeExpression &
+//   Base extends ObjectTypeExpression // $expr_PathNode
+//     ? // Filter is equality
+//       Filter extends $expr_Operator<"std::=", any, infer Args, any>
+//       ? // Filter.args[0] is PathLeaf
+//         Args[0] extends $expr_PathLeaf
+//         ? // Filter.args[0] is unique
+//           Args[0]["__exclusive__"] extends true
+//           ? //   Filter.args[0].parent.__element__ === Base.__element__
+//             typeutil.assertEqual<
+//               Args[0]["__parent__"]["type"]["__element__"]["__name__"],
+//               Base["__element__"]["__name__"]
+//             > extends true
+//             ? // Filter.args[1].__cardinality__ is AtMostOne or One
+//               argCardToResultCard<
+//                 Args[1]["__cardinality__"],
+//                 Base["__cardinality__"]
+//               >
+//             : Base["__cardinality__"]
+//           : Base["__cardinality__"]
+//         : Args[0] extends $expr_PathNode
+//         ? Args[0]["__exclusive__"] extends true
+//           ? //   Filter.args[0].parent.__element__ === Base.__element__
+//             Args[0]["__parent__"] extends null
+//             ? typeutil.assertEqual<
+//                 Args[0]["__element__"]["__name__"],
+//                 Base["__element__"]["__name__"]
+//               > extends true
+//               ? // Filter.args[1].__cardinality__ is AtMostOne or One
+//                 argCardToResultCard<
+//                   Args[1]["__cardinality__"],
+//                   Base["__cardinality__"]
+//                 >
+//               : Base["__cardinality__"]
+//             : Args[0]["__parent__"] extends infer Parent
+//             ? Parent extends PathParent
+//               ? typeutil.assertEqual<
+//                   Parent["type"]["__element__"]["__name__"],
+//                   Base["__element__"]["__name__"]
+//                 > extends true
+//                 ? // Filter.args[1].__cardinality__ is AtMostOne or One
+//                   argCardToResultCard<
+//                     Args[1]["__cardinality__"],
+//                     Base["__cardinality__"]
+//                   >
+//                 : Base["__cardinality__"]
+//               : Base["__cardinality__"]
+//             : Base["__cardinality__"]
+//           : Base["__cardinality__"]
+//         : Base["__cardinality__"]
+//       : Base["__cardinality__"]
+//     : Base["__cardinality__"];
 
-interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
+interface SelectMethods<Self extends TypeSet /*, Root extends TypeSet*/> {
   // required so `this` passes validation
   // as a TypeSet
   __element__: Self["__element__"];
   __cardinality__: Self["__cardinality__"];
 
-  filter<Expr extends SelectFilterExpression, This extends this = this>(
+  filter<Expr extends SelectFilterExpression /*, This extends this = this*/>(
     expr: Expr
   ): $expr_Select<
     {
       __element__: Self["__element__"];
-      __cardinality__: inferCardinality<Root, Expr>;
+      __cardinality__: Self["__cardinality__"]; // inferCardinality<Root, Expr>;
     },
-    This,
-    {
-      kind: SelectModifierKind.filter;
-      expr: Expr;
-    },
+    // This,
+    // {
+    //   kind: SelectModifierKind.filter;
+    //   expr: Expr;
+    // },
     SelectMethodNames // all methods
   >;
-  orderBy<Expr extends OrderByExpression, This extends this = this>(
+
+  orderBy<Expr extends OrderByExpression /*, This extends this = this*/>(
     expr: Expr,
     dir?: OrderByDirection,
     empty?: OrderByEmpty
   ): $expr_Select<
     Self,
-    This,
-    {
-      kind: SelectModifierKind.order_by;
-      expr: Expr;
-      direction: OrderByDirection;
-      empty: OrderByEmpty;
-    },
+    // This,
+    // {
+    //   kind: SelectModifierKind.order_by;
+    //   expr: Expr;
+    //   direction: OrderByDirection;
+    //   empty: OrderByEmpty;
+    // },
     "orderBy" | "limit" | "offset" // all methods
   >;
-  offset<Expr extends OffsetExpression, This extends this = this>(
+
+  offset<Expr extends OffsetExpression /*, This extends this = this*/>(
     expr: Expr
   ): $expr_Select<
     Self,
-    This,
-    {
-      kind: SelectModifierKind.offset;
-      expr: Expr;
-    },
+    // This,
+    // {
+    //   kind: SelectModifierKind.offset;
+    //   expr: Expr;
+    // },
     "limit" // all methods
   >;
-  offset<This extends this = this>(
-    expr: number
-  ): $expr_Select<
+  // offset<This extends this = this>(
+  offset(expr: number): $expr_Select<
     Self,
-    This,
-    {
-      kind: SelectModifierKind.offset;
-      expr: $expr_Literal<$int64>;
-    },
+    // This,
+    // {
+    //   kind: SelectModifierKind.offset;
+    //   expr: $expr_Literal<$int64>;
+    // },
     "limit"
   >;
 
-  limit<Expr extends LimitExpression, This extends this = this>(
+  limit<Expr extends LimitExpression /*, This extends this = this*/>(
     expr: Expr
   ): $expr_Select<
     {
@@ -241,14 +246,14 @@ interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
         ? Cardinality.AtMostOne
         : Self["__cardinality__"];
     },
-    This,
-    {
-      kind: SelectModifierKind.limit;
-      expr: Expr;
-    },
+    // This,
+    // {
+    //   kind: SelectModifierKind.limit;
+    //   expr: Expr;
+    // },
     never
   >;
-  limit<Limit extends number, This extends this = this>(
+  limit<Limit extends number /*, This extends this = this*/>(
     expr: Limit
   ): $expr_Select<
     {
@@ -259,11 +264,11 @@ interface SelectMethods<Self extends TypeSet, Root extends TypeSet> {
         ? Cardinality.AtMostOne
         : Self["__cardinality__"];
     },
-    This,
-    {
-      kind: SelectModifierKind.limit;
-      expr: $expr_Literal<$int64>;
-    },
+    // This,
+    // {
+    //   kind: SelectModifierKind.limit;
+    //   expr: $expr_Literal<$int64>;
+    // },
     never
   >;
 }
@@ -496,13 +501,13 @@ export function select<Expr extends ObjectTypeExpression>(
     >;
     __cardinality__: Expr["__cardinality__"];
   },
-  Expr,
-  null,
+  // Expr,
+  // null,
   SelectMethodNames
 >;
 export function select<Expr extends TypeSet>(
   expr: Expr
-): $expr_Select<Expr, Expr, null, SelectMethodNames>;
+): $expr_Select<Expr, /*Expr, null,*/ SelectMethodNames>;
 export function select<
   Expr extends ObjectTypeExpression,
   Shape extends objectExprToSelectShape<Expr>,
@@ -523,8 +528,8 @@ export function select<
     >;
     __cardinality__: Expr["__cardinality__"];
   },
-  Expr,
-  null,
+  // Expr,
+  // null,
   SelectMethodNames
 >;
 export function select<Shape extends {[key: string]: TypeSet}>(
@@ -534,8 +539,8 @@ export function select<Shape extends {[key: string]: TypeSet}>(
     __element__: ObjectType<`std::FreeObject`, {}, Shape, []>; // _shape
     __cardinality__: Cardinality.One;
   },
-  typeof FreeObject,
-  null,
+  // typeof FreeObject,
+  // null,
   SelectMethodNames
 >;
 export function select(...args: any[]) {
@@ -558,7 +563,7 @@ export function select(...args: any[]) {
           __cardinality__: objectExpr.__cardinality__,
           __expr__: objectExpr,
           __modifier__: null,
-        })
+        } as any)
       );
     } else {
       return $expressionify(
