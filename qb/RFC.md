@@ -4,18 +4,27 @@
 
 Generation logic should live inside inside edgedb-js so the generation logic is versioned alongside the driver.
 
-Finding root folder
+### Command
+
+`npx edgedb generate`
+
+### Connection
+
+- The `npx` command accepts connection options which take first precedence
+- Any `.env` file in the root directory is parsed and added to `process.env`. Perhaps the `npx` command can also accept a flag `--env` that points to an environment variable that should be parsed.
+- The connection is attempted with no configuration passed to `edgedb-js`, relying on the resolution of `edgedb-js`
+- If connection fails, throw error
+
+### Folder resolution
+
 1. find nearest node_modules folder
 2. if `.pnpm` is inside, follow `edgedb` symlink
 3. if `.pnp.cjs`: throw (Prisma doesn't support currently)
 
 - read .env files?
-- generate into node_modules
+- generate into node_modules/.edgedb
 - post-install
 - regenerate after migration?
-
-
-
 
 ### Generation output
 
