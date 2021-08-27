@@ -25,14 +25,25 @@ Also accepts:
 
 ```
 --output [output]  (default: "./node_modules/.edgedb")
-  This is the name of the subdirectory the query builder will be generated into. It is resolved from the computed project root. This lets users optionally generate the query builder elsewhere in their codebase (possible to a location where it will be tracked by verison control.)
+  This is the name of the subdirectory the query
+  builder will be generated into. It is resolved from
+  the computed project root. This lets users optionally
+  generate the query builder elsewhere in their
+  codebase (possible to a location where it will be
+  tracked by verison control.)
 
-  It also makes it possible for users to generate multiple QBs from different instances. This isn't possible in Prisma. To do so, it is recommended to generate into a subdirectory of `node_modules` that starts with a period, which will prevent the generated code from being pruned by Yarn when new modules are installed.
+  It also makes it possible for users to generate
+  multiple QBs from different instances. This isn't
+  possible in Prisma. To do so, it is recommended
+  to generate into a subdirectory of `node_modules`
+  that starts with a period, which will prevent
+  the generated code from being pruned by Yarn when
+  new modules are installed.
 ```
 
 ### Connection
 
-The `npx edgedb generate` command accepts connection options. If fully defined (e.g. `dsn` exists, or `port+host` exists), these are passed explicitly to `edgedb-js`.
+The `npx edgedb generate` command accepts connection options. If fully defined (e.g. `dsn` exists, or `port+host` exists, etc), these are passed explicitly to `edgedb-js`.
 
 Else, check root directory for `.env` file, parse it, and merge into `process.env`. The `npx` command will also accept an optional `--env` argument that points to a `*.env` file to be parsed.
 
