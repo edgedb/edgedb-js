@@ -6,6 +6,28 @@ async function run() {
   await teardownTests();
   const data = await setupTests();
 
+  //   SELECT Type {
+  //   [IS InheritingObject].bases: {
+  //     id
+  //   } ORDER BY @index ASC,
+  // }
+
+  // e.select(
+  //   e.schema.Type,
+  //   {
+  //     bases: e
+  //       .select(e.schema.Type.$is(e.schema.InheritingObject), {
+  //         id: true,
+  //       })
+  //       .orderBy(e.schema.Type.$is(e.schema.InheritingObject).),
+  //   },
+  //   e.is(e.schema.InheritingObject, {
+  //     bases: {
+  //       id: true,
+  //     },
+  //   })
+  // );
+
   const theAvengers = e
     .select(e.Movie)
     .filter(e.eq(e.Movie.title, e.str("The Avengers")))

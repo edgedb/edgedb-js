@@ -86,12 +86,10 @@ The contents of `.edgedb` are re-exported from `edgedb-js/src/`
 ### Importing
 
 ```ts
-import {EdgeDBClient} from "edgedb/client";
-// or, if `--name [name]` passed to `npx edgedb generate`
-import {EdgeDBClient} from "edgedb/client/${name}";
+import {EdgeDBQueryBuilder} from "edgedb/queryBuilder";
 
 const e = new EdgeDBClient(/*
-  accepts: {
+  {
     pool?: edgedb.Pool;
     connection?: edgedb.Connection;
   }
