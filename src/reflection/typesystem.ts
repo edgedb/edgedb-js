@@ -105,14 +105,7 @@ export type shapeWithPolysToTs<
   Pointers extends ObjectTypeShape,
   Shape extends object | null,
   Polys extends Poly[]
-> = simpleShapeToTs<Pointers, Shape> &
-  unionToIntersection<
-    Polys[number] extends infer P
-      ? P extends Poly
-        ? Partial<simpleShapeToTs<P["type"]["__pointers__"], P["shape"]>>
-        : never
-      : never
-  >;
+> = simpleShapeToTs<Pointers, Shape>;
 
 export type simpleShapeToTs<
   Pointers extends ObjectTypeShape,

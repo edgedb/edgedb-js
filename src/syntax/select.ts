@@ -525,7 +525,7 @@ export function select<
     __element__: ObjectType<
       `${Expr["__element__"]["__name__"]}`, // _shape
       Expr["__element__"]["__pointers__"],
-      Shape,
+      flattenShape<Shape>,
       Polys
     >;
     __cardinality__: Expr["__cardinality__"];
