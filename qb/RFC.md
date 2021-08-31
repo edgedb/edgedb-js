@@ -350,6 +350,52 @@ e.select(e.Hero, hero => ({
 }));
 ```
 
+### Shapes: computables
+
+```ts
+e.select(e.Person, person => ({
+  id: true,
+  name: true,
+  uppercase_name: e.str_upper(person.name),
+  is_hero: e.is(person, e.Hero),
+}));
+```
+
+Computables can share a key with an actual link/properties as long as the type signatures agree:
+
+```ts
+e.select(e.Hero, hero => ({
+  id: true,
+  name: e.str_upper(hero.name),
+  villains: e.select(e.Villain, villain => ({
+    id: true,
+    name: true,
+    filter: e.eq(e.len(hero.name), e.len(villain.name)),
+  })),
+}));
+```
+
+### Shapes: polymorphism
+
+`e.is` returns a shape. The values should be of type `$expr_PolyShapeElement`, which keeps a reference to the polymorphic type. Inside `toEdgeQL`, when a `$expr_PolyShapeElement` is encountered, the key should be prefixed with the appropriate type intersection: `[IS Hero].secret_identity`, etc.
+
+```ts
+e.select(e.Movie.characters, character => ({
+  id: true,
+  name: true,
+  ...e.is(e.Villain, () => ({id: true, nemesis: true})),
+  ...e.is(e.Hero, hero => ({
+    secret_identity: true,
+    villains: {
+      id: true,
+      name: true,
+    },
+  })),
+}));
+```
+
+`e.is(Type, ref => Shape)`: `Shape` should not allow top-level computables, as this isn't valid EdgeQL:
+
 ### Basic filtering
 
 ```ts
@@ -373,31 +419,6 @@ e.select(e.Hero, hero => ({
     filter: e.like(villain.name, "Mr. %"),
   }),
   filter: e.eq(hero.name, e.str("Iron Man")),
-}));
-```
-
-### Computables
-
-```ts
-e.select(e.Person, person => ({
-  id: true,
-  name: true,
-  uppercase_name: e.str_upper(person.name),
-  is_hero: e.is(person, e.Hero),
-}));
-```
-
-Computables can share a key with an actual link/properties as long as the type signatures agree:
-
-```ts
-e.select(e.Hero, hero => ({
-  id: true,
-  name: e.str_upper(hero.name),
-  villains: e.select(e.Villain, villain => ({
-    id: true,
-    name: true,
-    filter: e.eq(e.len(hero.name), e.len(villain.name)),
-  })),
 }));
 ```
 
@@ -472,27 +493,6 @@ e.select(e.Movie, movie => ({
   })),
 }));
 ```
-
-### Polymorphism
-
-`e.is` returns a shape. The values should be of type `$expr_PolyShapeElement`, which keeps a reference to the polymorphic type. Inside `toEdgeQL`, when a `$expr_PolyShapeElement` is encountered, the key should be prefixed with the appropriate type intersection: `[IS Hero].secret_identity`, etc.
-
-```ts
-e.select(e.Movie.characters, character => ({
-  id: true,
-  name: true,
-  ...e.is(e.Villain, () => ({id: true, nemesis: true})),
-  ...e.is(e.Hero, hero => ({
-    secret_identity: true,
-    villains: {
-      id: true,
-      name: true,
-    },
-  })),
-}));
-```
-
-`e.is(Type, ref => Shape)`: `Shape` should not allow top-level computables, as this isn't valid EdgeQL:
 
 ## Insert
 
