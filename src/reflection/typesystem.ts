@@ -109,7 +109,7 @@ export type shapeWithPolysToTs<
   unionToIntersection<
     Polys[number] extends infer P
       ? P extends Poly
-        ? Partial<simpleShapeToTs<P["type"]["__pointers__"], P["params"]>>
+        ? Partial<simpleShapeToTs<P["type"]["__pointers__"], P["shape"]>>
         : never
       : never
   >;
@@ -119,23 +119,26 @@ export type simpleShapeToTs<
   Shape
 > = typeutil.flatten<
   {
-    [k in keyof Shape]: Shape[k] extends infer Param
+    [k in keyof Shape]: Shape[k] extends infer ShapeElement
       ? [k] extends [keyof Pointers]
-        ? [Param] extends [true]
+        ? [ShapeElement] extends [true]
           ? shapeElementToTsType<Pointers[k]>
-          : [Param] extends [false]
+          : [ShapeElement] extends [false]
           ? never
-          : [Param] extends [boolean]
+          : [ShapeElement] extends [boolean]
           ? shapeElementToTsType<Pointers[k]> | undefined
-          : Param extends TypeSet
-          ? setToTsType<Param>
-          : Param extends object
+          : ShapeElement extends TypeSet
+          ? setToTsType<ShapeElement>
+          : ShapeElement extends object
           ? Pointers[k]["target"] extends SomeObjectType
-            ? simpleShapeToTs<Pointers[k]["target"]["__pointers__"], Param>
+            ? simpleShapeToTs<
+                Pointers[k]["target"]["__pointers__"],
+                ShapeElement
+              >
             : never
           : never
-        : Param extends TypeSet
-        ? setToTsType<Param>
+        : ShapeElement extends TypeSet
+        ? setToTsType<ShapeElement>
         : never
       : never;
   }
@@ -170,12 +173,12 @@ export type shapeElementToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
 
 export type Poly<
   Type extends SomeObjectType = SomeObjectType,
-  Params extends any = any
+  Shape extends any = any
 > = {
   type: Type;
-  params: Params;
+  shape: Shape;
 };
-export type AnyPoly = {type: any; params: any};
+export type AnyPoly = {type: any; shape: any};
 
 ////////////////////
 // SETS AND EXPRESSIONS
@@ -214,15 +217,31 @@ export type Expression<Set extends TypeSet = TypeSet> = Set &
   }> &
   $pathify<Set>;
 
+export type flatten<T> = "__element__" extends keyof T
+  ? "__cardinality__" extends keyof T
+    ? {
+        __element__: T["__element__"];
+        __cardinality__: T["__cardinality__"];
+      }
+    : T
+  : T;
+
+export type flattenShape<T> = {
+  [k in keyof T]: flatten<T[k]>;
+};
+
 // importing the actual alias from
 // generated/modules/std didn't work.
 // returned 'any' every time
-export type $assertSingle<Type extends MaterialType, Args> = Expression<{
+export type $assertSingle<
+  Type extends MaterialType,
+  Expr extends TypeSet
+> = Expression<{
   __element__: Type;
   __cardinality__: Cardinality.One;
   __kind__: ExpressionKind.Function;
   __name__: "std::assert_single";
-  __args__: Args;
+  __args__: [Expr];
   __namedargs__: {};
 }>;
 
@@ -233,10 +252,7 @@ export interface ExpressionMethods<Set extends TypeSet> {
   $is<T extends ObjectTypeExpression, This extends this = this>(
     ixn: T
   ): $expr_TypeIntersection<This, T>;
-  $assertSingle<This extends this = this>(): $assertSingle<
-    Set["__element__"],
-    [This]
-  >;
+  $assertSingle(): $assertSingle<Set["__element__"], flatten<this>>;
 }
 
 export type MaterialTypeSet<

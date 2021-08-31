@@ -16,6 +16,7 @@ import {
   SelectModifierKind,
   setToTsType,
   ObjectTypeSet,
+  flattenShape,
 } from "../reflection";
 import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "../reflection/literal";
@@ -282,9 +283,9 @@ interface SelectObjectMethods<Root extends ObjectTypeSet> {
 
 export function is<
   Expr extends ObjectTypeExpression,
-  Params extends objectTypeToSelectShape<Expr["__element__"]>
->(expr: Expr, params: Params): Poly<Expr["__element__"], Params> {
-  return {type: expr.__element__, params};
+  Shape extends objectTypeToSelectShape<Expr["__element__"]>
+>(expr: Expr, shape: Shape): Poly<Expr["__element__"], Shape> {
+  return {type: expr.__element__, shape};
 }
 
 function filterFunc(this: any, expr: SelectFilterExpression) {
@@ -508,6 +509,7 @@ export function select<Expr extends ObjectTypeExpression>(
 export function select<Expr extends TypeSet>(
   expr: Expr
 ): $expr_Select<Expr, /*Expr, null,*/ SelectMethodNames>;
+
 export function select<
   Expr extends ObjectTypeExpression,
   Shape extends objectExprToSelectShape<Expr>,

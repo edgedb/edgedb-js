@@ -11,12 +11,7 @@ import {
   TypeSet,
   util,
 } from "../reflection";
-import {
-  Duration,
-  LocalDate,
-  LocalDateTime,
-  LocalTime,
-} from "edgedb/src/index.node";
+import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
 import type {
   $expr_PathLeaf,
   $expr_PathNode,
@@ -83,10 +78,10 @@ function shapeToEdgeQL(
   const addLine = (line: string) =>
     lines.push(`${keysOnly ? "" : "  ".repeat(depth)}${line}`);
 
-  const elements = [{type: null, params: basicShape}, ...polys];
+  const elements = [{type: null, shape: basicShape}, ...polys];
   const seen = new Set();
   for (const element of elements) {
-    const shape = element.params;
+    const shape = element.shape;
     const polyType = element.type?.__name__;
     const polyIntersection = polyType ? `[IS ${polyType}].` : "";
 
@@ -132,8 +127,8 @@ function shapeToEdgeQL(
         );
       } else if (typeof val === "object") {
         const nestedPolys = polys
-          .filter((poly) => !!poly.params[key])
-          .map((poly) => ({type: poly.type, params: poly.params[key]}));
+          .filter((poly) => !!poly.shape[key])
+          .map((poly) => ({type: poly.type, shape: poly.shape[key]}));
         addLine(
           `${polyIntersection}${key}: ${shapeToEdgeQL(
             val,
@@ -296,7 +291,7 @@ function topoSortWithVars(
 function renderEdgeQL(
   _expr: TypeSet,
   ctx: RenderCtx,
-  renderShape = true
+  renderShape: boolean = true
 ): string {
   if (
     !(_expr as any).__kind__ ||

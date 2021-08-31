@@ -75,27 +75,25 @@ test("complex shape", () => {
 test("compositionality", () => {
   // selecting a select statement should
   // default to { id }
-  const no_params = e.select(q1);
-  type no_params = BaseTypeToTsType<typeof no_params["__element__"]>;
-  const no_params_test: typeutil.assertEqual<
-    no_params,
+  const no_shape = e.select(q1);
+  type no_shape = BaseTypeToTsType<typeof no_shape["__element__"]>;
+  const no_shape_test: typeutil.assertEqual<
+    no_shape,
     {
       id: string;
     }
   > = true;
-  expect(no_params.__element__.__shape__).toEqual({id: true});
-  expect(no_params.__element__.__polys__).toEqual([]);
+  expect(no_shape.__element__.__shape__).toEqual({id: true});
+  expect(no_shape.__element__.__polys__).toEqual([]);
 
-  // allow override params
-  const override_params = e.select(q1, {
+  // allow override shape
+  const override_shape = e.select(q1, {
     id: true,
     secret_identity: true,
   });
-  type override_params = BaseTypeToTsType<
-    typeof override_params["__element__"]
-  >;
+  type override_shape = BaseTypeToTsType<typeof override_shape["__element__"]>;
   const f1: typeutil.assertEqual<
-    override_params,
+    override_shape,
     {
       id: string;
       secret_identity: string | null;
@@ -120,13 +118,13 @@ test("polymorphism", () => {
   expect(query.__element__.__kind__).toEqual(TypeKind.object);
   expect(query.__element__.__name__).toEqual("default::Person");
   expect(query.__element__.__shape__).toEqual({id: true, name: true});
-  expect(query.__element__.__polys__[0].params).toEqual({
+  expect(query.__element__.__polys__[0].shape).toEqual({
     secret_identity: true,
   });
   expect(query.__element__.__polys__[0].type.__name__).toEqual(
     "default::Hero"
   );
-  expect(query.__element__.__polys__[1].params).toEqual({
+  expect(query.__element__.__polys__[1].shape).toEqual({
     nemesis: {name: true},
   });
   expect(query.__element__.__polys__[1].type.__name__).toEqual(
@@ -134,7 +132,7 @@ test("polymorphism", () => {
   );
 
   type poly = typeof query["__element__"]["__polys__"][0];
-  const f1: typeutil.assertEqual<poly["params"], {secret_identity: true}> =
+  const f1: typeutil.assertEqual<poly["shape"], {secret_identity: true}> =
     true;
 
   type result = BaseTypeToTsType<typeof query["__element__"]>;
