@@ -425,7 +425,7 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.to_str(e.int64(123), undefined),
     "std::to_str",
-    [e.int64(123), e.set(e.str) as undefined],
+    [e.int64(123), e.set(e.str) as any as undefined],
     {},
     e.str,
     Cardinality.One
@@ -433,7 +433,7 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.to_str(e.set(e.int64(123), e.int64(456)), undefined),
     "std::to_str",
-    [e.set(e.int64(123), e.int64(456)), e.set(e.str) as undefined],
+    [e.set(e.int64(123), e.int64(456)), e.set(e.str) as any as undefined],
     {},
     e.str,
     Cardinality.AtLeastOne

@@ -219,7 +219,7 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
   a: A,
   b: B
 ): mergeObjectTypes<A, B> {
-  const obj: ObjectType = {
+  const obj = {
     __kind__: TypeKind.object,
     __name__: `${a.__name__} UNION ${b.__name__}`,
     get __pointers__() {
@@ -237,6 +237,7 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
     },
     __shape__: {},
     __polys__: [],
-  };
+    __tstype__: undefined as any,
+  } as ObjectType;
   return obj as any;
 }

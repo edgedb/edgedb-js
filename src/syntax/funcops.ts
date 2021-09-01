@@ -243,7 +243,7 @@ function compareType(
       return compareType(
         typeSpec,
         type.array_element_id,
-        arg.__element__ as MaterialType
+        (arg as any as ArrayType).__element__ as MaterialType
       );
     }
   }
@@ -274,9 +274,9 @@ function compareType(
   if (type.kind === "tuple") {
     const items =
       arg.__kind__ === TypeKind.tuple
-        ? arg.__items__
+        ? (arg as any).__items__
         : arg.__kind__ === TypeKind.namedtuple
-        ? arg.__shape__
+        ? (arg as any).__shape__
         : null;
     if (items) {
       const keys = Object.keys(items);

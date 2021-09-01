@@ -2,6 +2,10 @@ import {
   BaseExpression,
   Cardinality,
   ExpressionKind,
+  isArrayType,
+  isNamedTupleType,
+  isObjectType,
+  isTupleType,
   MaterialType,
   ObjectTypeShape,
   OperatorKind,
@@ -306,8 +310,9 @@ function renderEdgeQL(
       ctx.withVars.get(expr)!.name +
       (renderShape &&
       expr.__kind__ === ExpressionKind.Select &&
-      expr.__element__.__kind__ === TypeKind.object
-        ? " " +
+      isObjectType(expr.__element__)
+        ? // .__kind__ === TypeKind.object
+          " " +
           shapeToEdgeQL(
             (expr.__element__.__shape__ || {}) as object,
             expr.__element__.__polys__ || [],
@@ -446,7 +451,7 @@ function renderEdgeQL(
       return withBlock + lines.join("\n");
     }
 
-    if (expr.__element__.__kind__ === TypeKind.object) {
+    if (isObjectType(expr.__element__)) {
       const lines = [];
       lines.push(
         `SELECT${
@@ -637,7 +642,7 @@ function walkExprTree(
           childExprs.push(
             ...walkExprTree(expr.__modifier__.expr as any, expr, ctx)
           );
-        } else if (expr.__element__.__kind__ === TypeKind.object) {
+        } else if (isObjectType(expr.__element__)) {
           for (const param of Object.values(
             expr.__element__.__shape__ ?? {}
           )) {
@@ -747,11 +752,11 @@ export function literalToEdgeQL(type: MaterialType, val: any): string {
   } else if (typeof val === "bigint") {
     stringRep = `${val.toString()}n`;
   } else if (Array.isArray(val)) {
-    if (type.__kind__ === TypeKind.array) {
+    if (isArrayType(type)) {
       stringRep = `[${val
         .map((el) => literalToEdgeQL(type.__element__ as any, el))
         .join(", ")}]`;
-    } else if (type.__kind__ === TypeKind.tuple) {
+    } else if (isTupleType(type)) {
       stringRep = `( ${val
         .map((el, j) => literalToEdgeQL(type.__items__[j] as any, el))
         .join(", ")} )`;
@@ -769,7 +774,7 @@ export function literalToEdgeQL(type: MaterialType, val: any): string {
   } else if (val instanceof Duration) {
     stringRep = `'${val.toString()}'`;
   } else if (typeof val === "object") {
-    if (type.__kind__ === TypeKind.namedtuple) {
+    if (isNamedTupleType(type)) {
       stringRep = `( ${Object.entries(val).map(
         ([key, value]) =>
           `${key} := ${literalToEdgeQL(type.__shape__[key], value)}`

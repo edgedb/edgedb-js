@@ -48,9 +48,7 @@ export type assignableBy<T extends BaseType> = T extends ScalarType
   : T extends SomeObjectType
   ? anonymizeObject<T>
   : T extends ArrayType
-  ? assignableBy<T["__element__"]> extends NonArrayMaterialType
-    ? ArrayType<assignableBy<T["__element__"]>>
-    : never
+  ? ArrayType<assignableBy<T["__element__"]>>
   : T extends TupleType
   ? TupleType<assignableTuple<T["__items__"]>>
   : T extends NamedTupleType

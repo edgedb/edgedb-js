@@ -21,7 +21,12 @@ import {
 import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "../reflection/literal";
 import type {$expr_Update, UpdateShape} from "./update";
-import {$expr_PathLeaf, $expr_PathNode, PathParent} from "../reflection/path";
+import {
+  $expr_PathLeaf,
+  $expr_PathNode,
+  ExpressionRoot,
+  PathParent,
+} from "../reflection/path";
 import {$expressionify} from "./path";
 import _std from "@generated/modules/std";
 import type {$anyint, $bool, $int64} from "@generated/modules/std";
@@ -75,25 +80,25 @@ export type SelectModifier = mod_Filter | mod_OrderBy | mod_Offset | mod_Limit;
 
 export type SelectMethodNames = "filter" | "orderBy" | "offset" | "limit";
 
+const arg: $expr_Select = "asdf" as any;
+
+type asdf = setToTsType<TypeSet>;
 export type $expr_Select<
   Set extends TypeSet = TypeSet,
   // Expr extends TypeSet = TypeSet,
   // Modifier extends SelectModifier | null = SelectModifier | null,
   Methods extends SelectMethodNames = never
-> = Expression<
-  {
-    __element__: Set["__element__"];
-    __cardinality__: Set["__cardinality__"];
-    __kind__: ExpressionKind.Select;
+> = Expression<{
+  __element__: Set["__element__"];
+  __cardinality__: Set["__cardinality__"];
+  __kind__: ExpressionKind.Select;
 
-    query(
-      cxn: edgedb.Pool | edgedb.Connection
-    ): Promise<
-      setToTsType<TypeSet<Set["__element__"], Set["__cardinality__"]>>
-    >;
-  } & Pick<SelectMethods<Set /*, Expr*/>, Methods> &
-    (Set extends ObjectTypeSet ? SelectObjectMethods<Set> : {})
->;
+  query(
+    cxn: edgedb.Pool | edgedb.Connection
+  ): Promise<setToTsType<TypeSet<Set["__element__"], Set["__cardinality__"]>>>;
+}> &
+  Pick<SelectMethods<Set /*, Expr*/>, Methods> &
+  (Set extends ObjectTypeSet ? SelectObjectMethods<Set> : {});
 
 export type $runtimeExpr_Select = $expr_Select & {
   __expr__: TypeSet;
@@ -188,7 +193,8 @@ interface SelectMethods<Self extends TypeSet /*, Root extends TypeSet*/> {
   ): $expr_Select<
     {
       __element__: Self["__element__"];
-      __cardinality__: Self["__cardinality__"]; // inferCardinality<Root, Expr>;
+      __cardinality__: Self["__cardinality__"];
+      // inferCardinality<Root, Expr>;
     },
     // This,
     // {
@@ -477,7 +483,7 @@ function deleteFunc(this: any) {
   ) as $expr_Delete;
 }
 
-export function $selectify<Expr extends TypeSet>(expr: Expr) {
+export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   Object.assign(expr, {
     filter: filterFunc.bind(expr),
     orderBy: orderByFunc.bind(expr),
@@ -590,7 +596,7 @@ export function select(...args: any[]) {
         __pointers__: objExpr.__element__.__pointers__,
         __shape__: shape,
         __polys__: polys,
-      },
+      } as any,
       __cardinality__: objExpr.__cardinality__,
       __expr__: expr,
       __modifier__: null,
