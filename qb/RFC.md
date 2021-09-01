@@ -4,30 +4,102 @@
 
 Generation logic should live inside inside edgedb-js so the generation logic is versioned alongside the driver.
 
-### Generation output
+### Command
 
-Option 1: Generate into `node_modules/.edgedb` and re-export from inside the `edgedb` module. This is what Prisma does. This means the query builder typically won't be checked into version control.
+`npx edgedb generate`
 
-Option 2: Generate to a file/directory in the local project, e.g. `./generated/edgedb.ts`. This can be customizable.
+Accepts basic connection options:
 
-### Delegation
+```
+--instance, --dsn, -I
+--database, -d
+--host, -h,
+--port, -P
+--username, -u
+--password, -p
 
-The `edgedb` CLI command should scan for a package.json containing `edgedb`.
+// more?
+```
 
-1. If found, it should delegate the generation step to the installed package. It will pass the connection options to the package as arguments.
-2. If a package.json is discovered but edgedb isn't installed, it can be auto-installed.
-3. If the command wasn't executed inside a JS package (no `package.json` in any ancestor), error.
+Also accepts:
 
-### Executable
+```
+--output [output]  (default: "./node_modules/.edgedb")
+  This is the name of the subdirectory the query
+  builder will be generated into. It is resolved from
+  the computed project root. This lets users optionally
+  generate the query builder elsewhere in their
+  codebase (possible to a location where it will be
+  tracked by verison control.)
 
-The `edgedb` module can contain an executable `generate` command exposed via package.json ["bin"](https://docs.npmjs.com/cli/v7/configuring-npm/package-json#bin). Users could optionally call the package's CLI directly with `npx edgedb generate`. This doesn't causes clashes with globally installed CLIs, as `npx` doesn't look at the global path.
+  It also makes it possible for users to generate
+  multiple QBs from different instances. This isn't
+  possible in Prisma. To do so, it is recommended
+  to generate into a subdirectory of `node_modules`
+  that starts with a period, which will prevent
+  the generated code from being pruned by Yarn when
+  new modules are installed.
+```
 
-### Output location
+### Connection
 
-Generate definitions into `node_modules/.edgedb` and re-export from `node_modules/edgedb/index.js`. This is what Prisma does.
+The `npx edgedb generate` command accepts connection options. If fully defined (e.g. `dsn` exists, or `port+host` exists, etc), these are passed explicitly to `edgedb-js`.
 
-- Keeps the generated code out of version control.
-- Pro: This lets us define a bunch of TS code in the `edgedb` JS package, then reference it in the `generated` code, and the schema-specific artifacts can be generated to a particular spot in the package.
+Else, check root directory for `.env` file, parse it, and merge into `process.env`. The `npx` command will also accept an optional `--env` argument that points to a `*.env` file to be parsed.
+
+Then attempt connection, relying on the resolution of `edgedb-js`.
+
+### Generation
+
+Identity project root:
+
+1. Search up the file system for nearest node_modules folder
+2. If `.pnpm` is inside, follow `edgedb` symlink.
+3. if `.pnp.cjs`, throw error. Codegen is incompatible with global module caching. Prisma doesn't support this either: https://github.com/prisma/prisma/issues/1439
+
+Compute generation location:
+
+```js
+// outputRelativePath defaults to `node_modules/.edgedb`
+// it can be set with the `--output` CLI argument
+const outputPath = path.join(projectRoot, outputRelativePath);
+```
+
+Generate TS files into temporary directory:
+
+`{project_root}/node_modules/.edgedb_temp`
+
+Use the [Compiler API](https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API) to generate `.js/.d.ts` files:
+
+- JS: `{outputPath}/*.js`
+- DTS: `{outputPath}/*.d.ts`
+
+The contents of `.edgedb` are re-exported from `edgedb-js/queryBuilder/index.ts`
+
+### Other ideas
+
+- Re-generate in `postinstall` hook?
+- Re-generate after `edgedb migration`?
+
+## Usage
+
+### Importing
+
+```ts
+import e from "edgedb/queryBuilder";
+
+const myQuery = e.select(/* ... */);
+```
+
+### Execution
+
+Top-level statements (for, select, insert, update, delete, with) have a `.query` method with the following signature:
+
+```ts
+myQuery.query(connection: Connection | Pool | Transaction, args: Args): Promise<T>
+```
+
+The type of `Args` is inferred from `myQuery`.
 
 ## Conflicts
 
@@ -187,7 +259,7 @@ Movie.characters;
 
 ```ts
 // Movie.characters[IS Hero]
-Movie.characters.$is(Hero);
+Movie.characters.$is(e.Hero);
 ```
 
 ### Backward links
@@ -204,6 +276,23 @@ Also support "untyped" backlinks. By default, these return a set of `BaseObject`
 e.Hero.['<nemesis'].$is(e.Villain);
 ```
 
+## Casting
+
+All types are available at the top-level. Returns `Expression<Set<CastedType>>`. This syntax is liable to change based on the underlying representation of the type system (not finalized).
+
+```ts
+e.cast(e.int16, e.int32(1255)); // <int16><int32>1255;
+e.cast(e.UUID, e.str("ab1bcd81...")); // <uuid>'ab1bcd81...';
+```
+
+## Functions
+
+All operators are available as overloaded functions at the top level.
+
+## Operators
+
+Operators are implements as top-level overloaded functions using the same approach used for functions.
+
 ## Select
 
 ### Scalars
@@ -212,28 +301,6 @@ e.Hero.['<nemesis'].$is(e.Villain);
 e.select(e.int64(1243));
 e.select(a.add(e.int64(2), e.int64(2)));
 e.select(e.concat('aaaa', e.to_str(e.int64(111)));
-```
-
-### Simple select
-
-Shape defaults to `{ id: true }`;
-
-```ts
-e.select(Hero);
-// Select Hero;
-```
-
-### Object-defined shape
-
-```ts
-e.select(Hero, {
-  id: 1 > 0, // optional
-  name: true,
-  villains: {
-    id: true,
-    name: true,
-  },
-});
 ```
 
 ### Free shapes
@@ -246,15 +313,97 @@ e.select({
 });
 ```
 
+### Object type select
+
+Shape defaults to `{ id: true }`;
+
+```ts
+e.select(e.Hero); // select Hero { id };
+```
+
+### Shapes: object syntax
+
+The scoped `hero` variable is a singleton-ified variant of the expression being SELECTed.
+
+```ts
+e.select(e.Hero, hero => ({
+  id: 1 > 0, // optional
+  name: true,
+  villains: {
+    id: true,
+    name: true,
+  },
+}));
+```
+
+### Shapes: closure syntax
+
+```ts
+e.select(e.Hero, hero => ({
+  id: 1 > 0, // optional
+  name: true,
+  villains: villain => ({
+    id: true,
+    name: true,
+    name_upper: e.str_upper(villain.name),
+  }),
+}));
+```
+
+### Shapes: computables
+
+```ts
+e.select(e.Person, person => ({
+  id: true,
+  name: true,
+  uppercase_name: e.str_upper(person.name),
+  is_hero: e.is(person, e.Hero),
+}));
+```
+
+Computables can share a key with an actual link/properties as long as the type signatures agree:
+
+```ts
+e.select(e.Hero, hero => ({
+  id: true,
+  name: e.str_upper(hero.name),
+  villains: e.select(e.Villain, villain => ({
+    id: true,
+    name: true,
+    filter: e.eq(e.len(hero.name), e.len(villain.name)),
+  })),
+}));
+```
+
+### Shapes: polymorphism
+
+`e.is` returns a shape. The values should be of type `$expr_PolyShapeElement`, which keeps a reference to the polymorphic type. Inside `toEdgeQL`, when a `$expr_PolyShapeElement` is encountered, the key should be prefixed with the appropriate type intersection: `[IS Hero].secret_identity`, etc.
+
+```ts
+e.select(e.Movie.characters, character => ({
+  id: true,
+  name: true,
+  ...e.is(e.Villain, () => ({id: true, nemesis: true})),
+  ...e.is(e.Hero, hero => ({
+    secret_identity: true,
+    villains: {
+      id: true,
+      name: true,
+    },
+  })),
+}));
+```
+
+`e.is(Type, ref => Shape)`: `Shape` should not allow top-level computables, as this isn't valid EdgeQL:
+
 ### Basic filtering
 
 ```ts
-e.select(Hero, {
+e.select(e.Hero, hero => ({
   id: true,
   name: true,
-})
-  .filter(e.or(e.ilike(Hero.name, "%Man"), e.ilike(Hero.name, "The %")))
-  .filter(e.ilike(Hero.secret_identity, "Peter%"));
+  filter: e.or(e.ilike(hero.name, "%Man"), e.ilike(hero.name, "The %")))
+}))
 ```
 
 > Filters are checked to determine whether the result set should be a singleton or not.
@@ -262,242 +411,166 @@ e.select(Hero, {
 ### Nested filtering
 
 ```ts
-e.select(Hero, {
+e.select(e.Hero, hero => ({
   id: true,
   name: true,
-  villains: e
-    .select(Villain, {
-      id: true,
-      name: true,
-    })
-    .filter(e.eq(e.len(Hero.name), e.len(Villain.name))),
-}).filter(e.eq(Hero.name, e.str("Iron Man")));
-```
-
-### Type intersection
-
-```ts
-e.select(Hero, {
-  villains: (() => {
-    const villains = Hero.villains.$is(Subvillain);
-    return e
-      .select(villains, {
-        id: true,
-        name: true,
-      })
-      .filter(e.eq(e.len(Hero.name), e.len(villains.name)));
-  })(),
-}).filter(e.eq(Hero.name, e.str("Iron Man")));
-```
-
-Explicit WITH
-
-```ts
-e.select(Hero, {
-  id: true,
-  name: true,
-  villains: e.with(
-    {
-      villains: Hero.villain.$is(Subvillain),
-    },
-    (ctx) =>
-      e
-        .select(ctx.villains, {
-          id: true,
-          name: true,
-        })
-        .filter(e.eq(e.len(Hero.name), e.len(villains.name)))
-  ),
-}).filter(e.eq(Hero.name, e.str("Iron Man")));
-```
-
-- path expressions are inlined
-- statements are inlined if used only once
-- statements referenced more than once require explicit WITH
-
-### Computables
-
-```ts
-const Person = e.default.Person;
-
-e.select(Person, {
-  id: true,
-  name: true,
-  uppercase_name: e.str_upper(Person.name),
-  is_hero: e.is(Person, e.default.Hero),
-});
-```
-
-### Polymorphism
-
-Option 1: variadic shape arguments.
-
-```ts
-e.select(
-  Person,
-  {
+  villains: villain => ({
     id: true,
-    name: true,
-  },
-  e.is(Hero, {
-    secret_identity: true,
-    villains: {
-      id: true,
-      name: true,
-    },
+    filter: e.like(villain.name, "Mr. %"),
   }),
-  e.is(Villain, {
-    nemesis: {id: true},
-  })
-);
-```
-
-Potential ambiguity:
-
-```
-SELECT Movie.characters[IS Hero];
-SELECT Movie.characters IS Hero;
-```
-
-### Type intersection
-
-```
-SELECT Movie {
-  id,
-  characters[IS Hero]: {
-    id, secret_identity
-  }
-}
-```
-
-Use subqueries:
-
-```ts
-e.select(Movie, {
-  id: true,
-  characters: e.select(Movie.characters.$is(e.default.Hero), {
-    id: true,
-    secret_identity: true,
-  }),
-});
-```
-
-### Paths
-
-Links
-
-```ts
-e.select(Hero.villains, {
-  id: true,
-});
-```
-
-Properties
-
-```ts
-const name = e.default.Hero.name;
-e.select(name).filter(e.eq(name, "Iron Man")).orderBy(e.len(name));
+  filter: e.eq(hero.name, e.str("Iron Man")),
+}));
 ```
 
 ### Ordering
 
+Simple:
+
 ```ts
-e.select(Hero).orderBy(Hero.name);
-e.select(Hero).orderBy(Hero.name, e.ASC);
-e.select(Hero).orderBy(Hero.name, e.ASC, e.EMPTY_LAST);
+e.select(e.Hero, hero => ({
+  order: hero.name,
+}));
 ```
 
-### Multiple ordering
+Advanced:
 
 ```ts
-e.select(Hero, {
-  name: true,
-})
-  .orderBy(Hero.name, e.DESC, e.EMPTY_FIRST)
-  .orderBy(Hero.secret_identity, e.ASC, e.EMPTY_LAST);
+e.select(e.Hero, hero => ({
+  order: {
+    expression: hero.name,
+    direction: e.DESC,
+    empty: e.EMPTY_FIRST,
+  },
+}));
+```
 
-`SELECT Hero
-  ORDER BY .name DESC EMPTY LAST
-  THEN .secret_identity ASC EMPTY LAST`;
+Multiple ordering
+
+```ts
+e.select(e.Hero, hero => ({
+  name: true,
+  order: [
+    {
+      expression: hero.name,
+      direction: e.DESC,
+      empty: e.EMPTY_FIRST,
+    },
+    {
+      expression: hero.secret_identity,
+      direction: e.ASC,
+      empty: e.EMPTY_LAST,
+    },
+  ],
+}));
 ```
 
 ### Pagination
 
 ```ts
-e.select(Hero).offset(e.len(Hero.name)).limit(15);
+e.select(e.Hero, hero => ({
+  offset: e.len(hero.name),
+  limit: 15,
+}));
 ```
 
-No chained `offset` or `limit`
+### Type intersection
 
 ```ts
-e.select(Hero).offset(e.len(Hero.name)).offset(15); // TypeError
+// select Movie { characters[IS Hero]: { id }}
+e.select(e.Movie, movie => ({
+  characters: movie.characters.$is(e.Hero),
+}));
+```
+
+To specify shape, use subqueries:
+
+```ts
+e.select(e.Movie, movie => ({
+  id: true,
+  characters: e.select(movie.characters.$is(e.default.Hero), hero => ({
+    id: true,
+    secret_identity: true,
+  })),
+}));
 ```
 
 ## Insert
 
 ```ts
-const Movie = e.default.Movie;
-const Person = e.default.Person;
-
-e.insert(Movie, {
+e.insert(e.Movie, {
   title: "Spider-Man 2",
-  characters: e
-    .select(Person)
-    .filter(e.in(Person.name, e.set("Spider-Man", "Doc Ock"))),
+  characters: e.select(e.Person, person => ({
+    filter: e.in(person.name, e.set("Spider-Man", "Doc Ock")),
+  })),
 });
 ```
 
 ### Conflicts
 
+Simple
+
 ```ts
-e.insert(Movie, {
+e.insert(e.Movie, {
   title: "Spider-Man 2",
-  characters: e
-    .select(Person)
-    .filter(e.in(Person.name, e.set("Spider-Man", "Doc Ock"))),
-}).unlessConflict(
-  Movie.title, // can be any expression
-  e.select(Movie).update({
-    "+=": {
-      characters: e
-        .select(Person)
-        .filter(e.in(Person.name, e.set("Spider-Man", "Doc Ock"))),
-    },
-  })
-);
+}).unlessConflict();
+```
+
+Specify `ON`:
+
+```ts
+e.insert(e.Movie, {
+  title: "Spider-Man 2",
+}).unlessConflict(movie => ({
+  on: movie.title, // can be any expression
+}));
+```
+
+Specify `ON ... ELSE`
+
+```ts
+e.insert(e.Movie, {
+  title: "Spider-Man 2",
+}).unlessConflict(movie => ({
+  on: movie.title,
+  else: e.select(movie).update({
+    title: "Spider-Man 2",
+  }),
+}));
 ```
 
 ## Update
 
 ```ts
 // update method
-e.select(Movie)
-  .filter(e.eq(Movie.title, e.str("Avengers 4")))
-  .orderBy(/**/)
-  .offset(/**/)
-  .update({
-    set: {
-      title: e.str("Avengers: Endgame"),
-    },
-    add: {
-      characters: e.set(e.select(Hero), e.select(Villain)),
-    },
-    remove: {
-      characters: e
-        .select(Villain)
-        .filter(e.eq(villain.name, e.str("Thanos"))),
-    },
-  });
+e.select(e.Movie, movie => ({
+  filter: e.eq(movie.title, e.str("Avengers 4")),
+  // order: ...,
+  // offset: ...,
+})).update({
+  // set
+  title: e.str("Avengers: Endgame"),
+
+  // append
+  characters: {"+=": e.set(e.Hero, e.Villain)},
+
+  // remove
+  characters: {
+    "-=": e.select(e.Villain, villain => ({
+      filter: e.eq(villain.name, e.str("Thanos")),
+    })),
+  },
+});
 ```
 
 ## Delete
 
 ```ts
-e.select(Hero)
-  .filter(e.eq(Hero.name, "Captain America"))
-  .orderBy(/**/)
-  .offset(/**/)
-  .limit(/**/)
+e.select(e.Hero, hero => ({
+  filter: e.eq(hero.name, "Captain America"),
+  order: ...,
+  offset: ...,
+  limit: ...
+}))
   .delete();
 ```
 
@@ -514,15 +587,14 @@ const fetchPerson = e.withParams(
   {
     name: e.arg(e.array(e.str)),
     bool: e.arg(e.bool),
-    optionalStr: e.optional(e.bool),
+    optionalStr: e.optional(e.str),
   },
-  (args) =>
-    e
-      .select(Person, {
-        id: true,
-        optionalStr,
-      })
-      .filter(e.in(Person.name, e.array_unpack(args.name)))
+  args =>
+    e.select(e.Person, person => ({
+      id: true,
+      optionalStr, // computable
+      filter: e.in(person.name, e.array_unpack(args.name)),
+    }))
 );
 ```
 
@@ -530,7 +602,7 @@ const fetchPerson = e.withParams(
 
 During the query rendering step, the number of occurrences of each expression are tracked. All expressions that are referenced more than once and all orphan clauses are extracted into a top-level WITH block.
 
-```
+```ts
 const a = e.set(e.int64(1), e.int64(2), e.int64(3));
 const b = e.alias(a);
 
@@ -542,11 +614,11 @@ e.select(e.plus(a, b)).toEdgeQL();
 ```
 
 ```ts
-const newHero = e.insert(Hero, {
+const newHero = e.insert(e.Hero, {
   name: "Batman",
 });
 
-const newVillain = e.insert(Villain, {
+const newVillain = e.insert(e.Villain, {
   name: "Dr. Evil",
   nemesis: newHero,
 });
@@ -559,78 +631,30 @@ return e.select(newVillain, {
 
 To embed `WITH` statements inside queries, you can short-circuit this logic with a "dependency list". It's an error to pass an expr to multiple `e.with`s, and an error to use an expr passed to `e.with` outside of that WITH block in the query.
 
-We add a top level e.alias() function - this will create an alias of the expr passed to it in a WITH block, eg.
+We add a top level e.alias() function. This will create an alias of the expr passed to it in a WITH block.
 
 ```ts
 return e.select(
-  e
-    .with(newHero, newVillain) // list "dependencies"
-    .select(newVillain, {
+  e.with(
+    [newHero, newVillain], // list "dependencies";
+    e.select(newVillain, {
       id: true,
       name: true,
-    });
-)
+    })
+  )
+);
 ```
 
-## FOR IN
+## FOR ... IN
 
 As the `Set` class (described under "Type System") has a `cardinality` property, we're able to represent singleton cardinality inside a FOR/IN loop.
 
 ```ts
-e.for(e.set("1", "2", "3"), (number) => {
+e.for(e.set("1", "2", "3"), number => {
   // do stuff
 });
 
-e.for(Hero, (hero) => {
+e.for(e.Hero, hero => {
   // do stuff
 });
 ```
-
-## Type declarations
-
-```ts
-e.decimal(15);
-e.cast(e.decimal, 14);
-
-e.tuple([e.int16, e.str]); // tuple<int16, str>
-e.tuple([e.int16(0), e.str("asdf")]); // ('0', 'asdf')
-e.tuple([Hero, Villain]); // ???
-```
-
-## Casting
-
-All types are available at the top-level. Returns `Expression<Set<CastedType>>`. This syntax is liable to change based on the underlying representation of the type system (not finalized).
-
-```ts
-e.cast(e.int16, e.int32(1255)); // <int16><int32>1255;
-e.cast(e.UUID, e.str("ab1bcd81...")); // <int16>len(Hero.name);
-```
-
-## Functions
-
-All operators are available as overloaded functions at the top level.
-
-```ts
-type AnyExpression = Expression<Set<any>, any>>;
-
-class Len<Arg extends AnyExpression> extends Expression<Set<Int64, Arg["__cardinality"]>, number>{
-  _expr: Arg;
-}
-
-function len<T extends Expression<Set<Bytes>, any>>(arg: T): Len<T>;
-function len<T extends Expression<Set<Str>, any>>(arg: T): Len<T>;
-function len<T extends Expression<Set<Array<any>>, any>>(arg: T): Len<T>;
-function len(arg: any) {
-  return new Len(arg) as any;
-}
-
-len(e.str("asdasdf"));
-```
-
-The overload enforces that `len` only accepts sets of `Bytes`, `Str`, or `Array` types. Also, the cardinality of the output reflects the cardinality of the input.
-
-A class will be generated for each custom function in the schema.
-
-## Operators
-
-Operators are implements as top-level overloaded functions using the same approach used for functions.
