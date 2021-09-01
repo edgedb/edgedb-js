@@ -57,12 +57,14 @@ export type mod_OrderBy<Expr extends OrderByExpression = OrderByExpression> = {
   empty: OrderByEmpty;
 };
 
-export type OffsetExpression = TypeSet<
+export type LimitOffsetExpression = TypeSet<
   $anyint,
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
 
-export type mod_Offset<Expr extends OffsetExpression = OffsetExpression> = {
+export type mod_Offset<
+  Expr extends LimitOffsetExpression = LimitOffsetExpression
+> = {
   kind: SelectModifierKind.offset;
   expr: Expr;
 };
@@ -71,7 +73,9 @@ export type LimitExpression = TypeSet<
   $anyint,
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
-export type mod_Limit<Expr extends OffsetExpression = OffsetExpression> = {
+export type mod_Limit<
+  Expr extends LimitOffsetExpression = LimitOffsetExpression
+> = {
   kind: SelectModifierKind.limit;
   expr: Expr;
 };
@@ -92,7 +96,8 @@ export type $expr_Select<
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
   __kind__: ExpressionKind.Select;
-
+  __expr__: TypeSet;
+  __modifier__: SelectModifier | null;
   query(
     cxn: edgedb.Pool | edgedb.Connection
   ): Promise<setToTsType<TypeSet<Set["__element__"], Set["__cardinality__"]>>>;
@@ -220,7 +225,7 @@ interface SelectMethods<Self extends TypeSet /*, Root extends TypeSet*/> {
     "orderBy" | "limit" | "offset" // all methods
   >;
 
-  offset<Expr extends OffsetExpression /*, This extends this = this*/>(
+  offset<Expr extends LimitOffsetExpression /*, This extends this = this*/>(
     expr: Expr
   ): $expr_Select<
     Self,
@@ -388,7 +393,7 @@ function orderByFunc(
   );
 }
 
-function offsetFunc(this: any, expr: OffsetExpression | number) {
+function offsetFunc(this: any, expr: LimitOffsetExpression | number) {
   return $expressionify(
     $selectify({
       __kind__: ExpressionKind.Select,

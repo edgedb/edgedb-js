@@ -35,12 +35,13 @@ import {
   getCardsFromExprs,
   getSharedParentPrimitiveVariadic,
   getPrimitiveBaseType,
+  LooseTypeSet
 } from "./set";
 `);
 
   code.writeln(frag`type getSetTypeFromExprs<
-  Exprs extends [BaseExpression, ...BaseExpression[]]
-> = TypeSet<
+  Exprs extends [TypeSet, ...TypeSet[]]
+> = LooseTypeSet<
   getSharedParentPrimitiveVariadic<getTypesFromExprs<Exprs>>,
   cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
 >;
@@ -49,26 +50,26 @@ export function set<Type extends MaterialType>(
   type: Type
 ): $expr_Set<TypeSet<Type, Cardinality.Empty>>;
 export function set<
-  Expr extends BaseExpression
+  Expr extends TypeSet
 >(expr: Expr): $expr_Set<Expr>;`);
 
   for (const implicitRootTypeId of implicitCastableRootTypes) {
     code.writeln(frag`export function set<
-  Expr extends Expression<TypeSet<${
+  Expr extends TypeSet<${
+    getStringRepresentation(types.get(implicitRootTypeId), {
+      types,
+      casts: casts.implicitCastFromMap,
+    }).staticType
+  }>,
+  Exprs extends [Expr, ...Expr[]]
+>(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;`);
+    code.writeln(frag`export function set<
+  Expr extends TypeSet<ArrayType<${
     getStringRepresentation(types.get(implicitRootTypeId), {
       types,
       casts: casts.implicitCastFromMap,
     }).staticType
   }>>,
-  Exprs extends [Expr, ...Expr[]]
->(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;`);
-    code.writeln(frag`export function set<
-  Expr extends Expression<TypeSet<ArrayType<${
-    getStringRepresentation(types.get(implicitRootTypeId), {
-      types,
-      casts: casts.implicitCastFromMap,
-    }).staticType
-  }>>>,
   Exprs extends [Expr, ...Expr[]]
 >(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;`);
   }
@@ -79,20 +80,19 @@ export function set<
 >(
   ...exprs: Exprs
 ): $expr_Set<
-  TypeSet<
+  LooseTypeSet<
     mergeObjectTypesVariadic<getTypesFromObjectExprs<Exprs>>,
     cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
   >
 >;
 export function set<
-  Expr extends Expression<TypeSet<AnyTupleType>>,
+  Expr extends TypeSet<AnyTupleType>,
   Exprs extends [Expr, ...Expr[]]
 >(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;
 export function set<
   Expr extends PrimitiveExpression,
-  Exprs extends Expression<
-    TypeSet<getPrimitiveBaseType<Expr["__element__"]>>
-  >[]
+  Exprs extends
+    TypeSet<getPrimitiveBaseType<Expr["__element__"]>>[]
 >(
   expr: Expr,
   ...exprs: Exprs
@@ -125,7 +125,7 @@ export function set<
       __exprs__: [],
     }) as any;
   }
-  const exprs: BaseExpression[] = _exprs;
+  const exprs: TypeSet[] = _exprs;
   if (exprs.every((expr) => expr.__element__.__kind__ === TypeKind.object)) {
     // merge object types;
     return $expressionify({
@@ -153,7 +153,7 @@ export function set<
   }
   throw new Error(
     ${
-      "`Invalid arguments to set constructor: ${(_exprs as BaseExpression[])\n" +
+      "`Invalid arguments to set constructor: ${(_exprs as TypeSet[])\n" +
       "      .map((expr) => expr.__element__.__name__)\n" +
       '      .join(", ")}`'
     }

@@ -38,6 +38,7 @@ export type $runtimeExpr_Function = $expr_Function & {
 export type $expr_Operator<
   Name extends string = string,
   OpKind extends OperatorKind = OperatorKind,
+  Args extends TypeSet[] = TypeSet[],
   ReturnType extends TypeSet = TypeSet
 > = Expression<{
   __element__: ReturnType["__element__"];
@@ -45,6 +46,7 @@ export type $expr_Operator<
   __kind__: ExpressionKind.Operator;
   __name__: Name;
   __opkind__: OpKind;
+  __args__: Args;
 }>;
 
 export type $runtimeExpr_Operator = $expr_Operator & {

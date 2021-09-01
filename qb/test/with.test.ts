@@ -374,10 +374,12 @@ test(
 
     const numbersAlias = e.alias(numbers);
 
+    const arg = e.plus(numbers, numbersAlias);
     const explicitWith = e.with(
       [numbersAlias],
       e.select(e.plus(numbers, numbersAlias))
     );
+    // explicitWith.
 
     expect(
       e

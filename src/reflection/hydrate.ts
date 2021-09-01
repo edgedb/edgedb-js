@@ -5,6 +5,7 @@ import {
   BaseType,
   ObjectType,
   ObjectTypeShape,
+  SomeObjectType,
   shapeToTsType,
   MaterialType,
   LinkDesc,
@@ -200,10 +201,10 @@ export type mergeObjectShapes<
 >;
 
 export type mergeObjectTypes<
-  A extends ObjectType | undefined,
-  B extends ObjectType | undefined
-> = A extends ObjectType
-  ? B extends ObjectType
+  A extends SomeObjectType | undefined,
+  B extends SomeObjectType | undefined
+> = A extends SomeObjectType
+  ? B extends SomeObjectType
     ? ObjectType<
         `${A["__name__"]} UNION ${B["__name__"]}`,
         mergeObjectShapes<A["__pointers__"], B["__pointers__"]>,
@@ -211,14 +212,14 @@ export type mergeObjectTypes<
         []
       >
     : A
-  : B extends ObjectType
+  : B extends SomeObjectType
   ? B
   : undefined;
 
-export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
-  a: A,
-  b: B
-): mergeObjectTypes<A, B> {
+export function mergeObjectTypes<
+  A extends SomeObjectType,
+  B extends SomeObjectType
+>(a: A, b: B): mergeObjectTypes<A, B> {
   const obj = {
     __kind__: TypeKind.object,
     __name__: `${a.__name__} UNION ${b.__name__}`,

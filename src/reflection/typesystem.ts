@@ -62,7 +62,7 @@ export interface SomeObjectType extends BaseType {
 
 export interface ObjectType<
   Name extends string = string,
-  Pointers extends ObjectTypeShape = ObjectTypeShape,
+  Pointers extends ObjectTypeShape = any,
   Shape extends object | null = any,
   Polys extends Poly[] = any[]
 > extends BaseType {
@@ -212,16 +212,19 @@ export function $toSet<Root extends MaterialType, Card extends Cardinality>(
   };
 }
 
-export type BaseExpression<Set extends TypeSet = TypeSet> = {
-  __element__: Set["__element__"];
-  __cardinality__: Set["__cardinality__"];
+export type BaseExpression = {
+  __element__: BaseType;
+  __cardinality__: Cardinality;
   // __kind__: ExpressionKind;
   toEdgeQL(): string;
+  $is: any;
+  $assertSingle: any;
 };
 
-export type Expression<Set extends TypeSet = TypeSet> = Set &
-  ExpressionMethods<flatten<Set>> &
-  $pathify<Set>;
+export type Expression<Set extends TypeSet = TypeSet> =
+  BaseType extends Set["__element__"]
+    ? Set & {toEdgeQL(): string; $is: any; $assertSingle: any}
+    : Set & ExpressionMethods<flatten<Set>> & $pathify<Set>;
 
 export type flatten<T> = "__element__" extends keyof T
   ? "__cardinality__" extends keyof T
@@ -267,23 +270,25 @@ export type MaterialTypeSet<
   Card extends Cardinality = Cardinality
 > = TypeSet<T, Card>;
 
-export type ObjectTypeSet<
-  T extends SomeObjectType = SomeObjectType,
-  Card extends Cardinality = Cardinality
-> = TypeSet<T, Card>;
+export type ObjectTypeSet = TypeSet<SomeObjectType, Cardinality>;
 
-export type ObjectTypeExpression<Set extends ObjectTypeSet = ObjectTypeSet> =
-  Expression<Set>;
+// export type ObjectTypeExpression<
+// Set extends ObjectTypeSet = ObjectTypeSet> =
+//   Expression<Set>;
+export type ObjectTypeExpression<
+  El extends SomeObjectType = SomeObjectType,
+  Card extends Cardinality = Cardinality
+> = TypeSet<El, Card>;
 
 const arg: ObjectTypeExpression = "asdf" as any;
 // arg.
 
-export type PrimitiveType = BaseType;
-// | ScalarType
-// | EnumType
-// | TupleType
-// | NamedTupleType
-// | ArrayType;
+export type PrimitiveType =
+  | ScalarType
+  | EnumType
+  | TupleType
+  | NamedTupleType
+  | ArrayType;
 
 export type PrimitiveTypeSet<
   T extends PrimitiveType = PrimitiveType,
@@ -398,9 +403,9 @@ export type PropertyShape = {
 };
 
 export interface LinkDesc<
-  Type extends SomeObjectType = SomeObjectType,
+  Type extends SomeObjectType = any,
   Card extends Cardinality = Cardinality,
-  LinkProps extends PropertyShape = PropertyShape,
+  LinkProps extends PropertyShape = any,
   Exclusive extends boolean = boolean,
   Writable extends boolean = boolean
 > {
@@ -529,6 +534,13 @@ export type MaterialType = BaseType;
 // | TupleType
 // | NamedTupleType
 // | ArrayType;
+
+const argScalarType: ScalarType = "asdf" as any;
+const argEnumType: EnumType = "asdf" as any;
+const argObjectType: ObjectType = "asdf" as any;
+const argTupleType: TupleType = "asdf" as any;
+const argNamedTupleType: NamedTupleType = "asdf" as any;
+const argArrayType: ArrayType = "asdf" as any;
 
 export function isScalarType(type: BaseType): type is ScalarType {
   return type.__kind__ === TypeKind.scalar;

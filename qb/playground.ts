@@ -11,6 +11,9 @@ import e from "./generated/example";
 // import {setupTests, teardownTests} from "./test/setupTeardown";
 
 async function run() {
+  const heroset = e.set(e.Hero);
+  const personset = e.set(e.Hero, e.Villain);
+
   // await teardownTests();
   // const {data, pool} = await setupTests();
   // const q1 = e
@@ -62,21 +65,21 @@ async function run() {
   // // const arg = q2.__element__.__shape__;
   // // type arg = typeof arg;
   // // type farg = flattenShape<arg>;
-  // const q3 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q2,
-  // });
-  // type q3 = setToTsType<typeof q3>;
-  // const q4 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q3,
-  // });
-  // type q4 = setToTsType<typeof q4>;
-  // const q5 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q4,
-  // });
-  // type q5 = setToTsType<typeof q5>;
+  const q3 = e.select(e.Hero, {
+    id: true,
+    q: q2,
+  });
+  type q3 = setToTsType<typeof q3>;
+  const q4 = e.select(e.Hero, {
+    id: true,
+    q: q3,
+  });
+  type q4 = setToTsType<typeof q4>;
+  const q5 = e.select(e.Hero, {
+    id: true,
+    q: q4,
+  });
+  type q5 = setToTsType<typeof q5>;
   // const q6 = e.select(e.Hero, {
   //   id: true,
   //   q: q5,

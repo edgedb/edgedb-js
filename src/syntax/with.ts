@@ -1,17 +1,20 @@
-import {BaseExpression, ExpressionKind} from "../reflection";
+import {
+  BaseExpression,
+  ExpressionKind,
+  TypeSet,
+  Expression,
+} from "../reflection";
 import {$expr_Select, $runtimeExpr_Select} from "./select";
 import {$expr_For, $runtimeExpr_For} from "./for";
 import {$expr_Insert} from "./insert";
 import {$expr_Update} from "./update";
 import {$expressionify} from "./path";
 
-export type $expr_Alias<Expr extends BaseExpression = BaseExpression> =
-  BaseExpression<{
-    __element__: Expr["__element__"];
-    __cardinality__: Expr["__cardinality__"];
-  }> & {
-    __kind__: ExpressionKind.Alias;
-  };
+export type $expr_Alias<Expr extends TypeSet = TypeSet> = Expression<{
+  __element__: Expr["__element__"];
+  __cardinality__: Expr["__cardinality__"];
+  __kind__: ExpressionKind.Alias;
+}>;
 
 export type $runtimeExpr_Alias = $expr_Alias & {
   __expr__: BaseExpression;
@@ -28,11 +31,17 @@ export function alias<Expr extends BaseExpression>(
   });
 }
 
-type WithableExpression =
-  | $expr_Select
-  | $expr_For
-  | $expr_Insert
-  | $expr_Update;
+export type WithableExpression = TypeSet & {
+  __kind__:
+    | ExpressionKind.Select
+    | ExpressionKind.For
+    | ExpressionKind.Insert
+    | ExpressionKind.Update;
+};
+// | $expr_Select
+// | $expr_For
+// | $expr_Insert
+// | $expr_Update;
 
 export type WithableRuntimeExpression =
   | $runtimeExpr_Select
@@ -41,9 +50,11 @@ export type WithableRuntimeExpression =
   | $expr_Update;
 
 export type $expr_With<Expr extends WithableExpression = WithableExpression> =
-  BaseExpression<Expr> & {
+  Expression<{
+    __element__: Expr["__element__"];
+    __cardinality__: Expr["__cardinality__"];
     __kind__: ExpressionKind.With;
-  };
+  }>;
 
 export type $runtimeExpr_With = $expr_With & {
   __expr__: WithableRuntimeExpression;
@@ -59,7 +70,7 @@ function _with<Refs extends BaseExpression[], Expr extends WithableExpression>(
     __element__: expr.__element__,
     __cardinality__: expr.__cardinality__,
     __refs__: refs,
-    __expr__: expr,
+    __expr__: expr as any,
   });
 }
 

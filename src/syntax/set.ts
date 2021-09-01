@@ -7,7 +7,7 @@ import {
   TypeSet,
   TupleType,
   PrimitiveType,
-  BaseExpression,
+  // TypeSet,
   Expression,
   ExpressionKind,
   mergeObjectTypes,
@@ -17,16 +17,17 @@ import {
   NonArrayMaterialType,
   typeutil,
   BaseType,
+  Cardinality,
 } from "../reflection";
 
 // "@generated/" path gets replaced during generation step
 // @ts-ignore
-import {getSharedParentScalar, scalarAssignableBy} from "@generated/castMaps";
+import {getSharedParentScalar, scalarAssignableBy} from "../castMaps";
 
 // @ts-ignore
-export {set} from "@generated/syntax/setImpl";
+export {set} from "../syntax/setImpl";
 
-export type $expr_Set<Set extends TypeSet = TypeSet> = Expression<{
+export type $expr_Set<Set extends LooseTypeSet = LooseTypeSet> = Expression<{
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
   __kind__: ExpressionKind.Set;
@@ -96,22 +97,23 @@ type _getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
   Types extends [infer U]
     ? U
     : Types extends [infer A, infer B, ...infer Rest]
-    ? // this object trick is required to prevent
+    ? _getSharedParentPrimitiveVariadic<
+        [getSharedParentPrimitive<A, B>, ...Rest]
+      >
+    : // this object trick is required to prevent
       // "instantiation is excessively deep"
-      {
-        istype: _getSharedParentPrimitiveVariadic<
-          [getSharedParentPrimitive<A, B>, ...Rest]
-        >;
-        nev: never;
-      }[getSharedParentPrimitive<A, B> extends PrimitiveType
-        ? "istype"
-        : "nev"]
-    : never;
+      // {
+      //   istype: _getSharedParentPrimitiveVariadic<
+      //     [getSharedParentPrimitive<A, B>, ...Rest]
+      //   >;
+      //   nev: never;
+      // }[getSharedParentPrimitive<A, B> extends PrimitiveType
+      //   ? "istype"
+      //   : "nev"]
+      never;
 
 export type getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
-  _getSharedParentPrimitiveVariadic<Types> extends MaterialType
-    ? _getSharedParentPrimitiveVariadic<Types>
-    : never;
+  _getSharedParentPrimitiveVariadic<Types>;
 
 // type _getSharedParentScalarVariadic<
 //   Types extends [MaterialType, ...MaterialType[]]
@@ -128,6 +130,13 @@ export type getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
 // > = _getSharedParentScalarVariadic<Types> extends ObjectType
 //   ? _getSharedParentScalarVariadic<Types>
 //   : never;
+export type LooseTypeSet<
+  T extends any = any,
+  C extends Cardinality = Cardinality
+> = {
+  __element__: T;
+  __cardinality__: C;
+};
 
 export {mergeObjectTypes};
 
@@ -146,32 +155,20 @@ type _mergeObjectTypesVariadic<
   : never;
 
 export type mergeObjectTypesVariadic<Types extends [any, ...any[]]> =
-  _mergeObjectTypesVariadic<Types> extends MaterialType
-    ? _mergeObjectTypesVariadic<Types>
-    : never;
+  _mergeObjectTypesVariadic<Types>;
 
-export type getTypesFromExprs<
-  Exprs extends [BaseExpression, ...BaseExpression[]]
-> = {
-  [k in keyof Exprs]: Exprs[k] extends BaseExpression
-    ? Exprs[k]["__element__"]
-    : never;
+export type getTypesFromExprs<Exprs extends [TypeSet, ...TypeSet[]]> = {
+  [k in keyof Exprs]: Exprs[k] extends TypeSet<infer El, any> ? El : never;
 };
 
 export type getTypesFromObjectExprs<
   Exprs extends [ObjectTypeExpression, ...ObjectTypeExpression[]]
 > = {
-  [k in keyof Exprs]: Exprs[k] extends ObjectTypeExpression
-    ? Exprs[k]["__element__"]
-    : never;
+  [k in keyof Exprs]: Exprs[k] extends TypeSet<infer El, any> ? El : never;
 };
 
-export type getCardsFromExprs<
-  Exprs extends [BaseExpression, ...BaseExpression[]]
-> = {
-  [k in keyof Exprs]: Exprs[k] extends BaseExpression
-    ? Exprs[k]["__cardinality__"]
-    : never;
+export type getCardsFromExprs<Exprs extends [TypeSet, ...TypeSet[]]> = {
+  [k in keyof Exprs]: Exprs[k] extends TypeSet<any, infer Card> ? Card : never;
 };
 
 export type getPrimitiveBaseType<T extends MaterialType> = T extends ScalarType
