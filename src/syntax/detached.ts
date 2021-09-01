@@ -16,8 +16,5 @@ export type $expr_Detached<Expr extends TypeSet = TypeSet> = Expression<{
   __element__: Expr["__element__"];
   __cardinality__: Expr["__cardinality__"];
   __kind__: ExpressionKind.Detached;
+  __expr__: Expr;
 }>;
-
-export type $runtimeExpr_Detached = $expr_Detached & {
-  __expr__: TypeSet;
-};

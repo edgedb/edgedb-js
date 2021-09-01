@@ -30,12 +30,9 @@ export {set} from "../syntax/setImpl";
 export type $expr_Set<Set extends LooseTypeSet = LooseTypeSet> = Expression<{
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
+  __exprs__: Expression<Set>[];
   __kind__: ExpressionKind.Set;
 }>;
-
-export type $runtimeExpr_Set = $expr_Set & {
-  __exprs__: Expression[];
-};
 
 type mergeTypeTuples<AItems, BItems> = {
   [k in keyof AItems]: k extends keyof BItems

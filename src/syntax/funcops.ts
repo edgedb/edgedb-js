@@ -2,7 +2,7 @@ import {
   BaseExpression,
   Expression,
   MaterialType,
-  TypeSet,
+  MaterialTypeSet,
   Cardinality,
   ExpressionKind,
   introspect,
@@ -12,6 +12,7 @@ import {
   cardinalityUtil,
   ObjectType,
   OperatorKind,
+  TypeSet,
 } from "../reflection";
 import {set} from "./set";
 // @ts-ignore
@@ -20,20 +21,22 @@ import {literal} from "./literal";
 
 export type $expr_Function<
   Name extends string = string,
-  ReturnType extends TypeSet = TypeSet
+  Args extends (MaterialTypeSet | undefined)[] = (
+    | MaterialTypeSet
+    | undefined
+  )[],
+  NamedArgs extends {[key: string]: MaterialTypeSet} = {
+    [key: string]: MaterialTypeSet;
+  },
+  ReturnType extends MaterialTypeSet = MaterialTypeSet
 > = Expression<{
   __element__: ReturnType["__element__"];
   __cardinality__: ReturnType["__cardinality__"];
   __kind__: ExpressionKind.Function;
   __name__: Name;
+  __args__: Args;
+  __namedargs__: NamedArgs;
 }>;
-
-export type $runtimeExpr_Function = $expr_Function & {
-  __args__: TypeSet[];
-  __namedargs__: {
-    [key: string]: TypeSet;
-  };
-};
 
 export type $expr_Operator<
   Name extends string = string,
@@ -48,10 +51,6 @@ export type $expr_Operator<
   __opkind__: OpKind;
   __args__: Args;
 }>;
-
-export type $runtimeExpr_Operator = $expr_Operator & {
-  __args__: TypeSet[];
-};
 
 interface OverloadFuncArgDef {
   typeId: string;
@@ -93,16 +92,16 @@ export function resolveOverload(
 }
 
 function _tryOverload(
-  args: (TypeSet | undefined)[],
-  namedArgs: {[key: string]: TypeSet} | undefined,
+  args: (MaterialTypeSet | undefined)[],
+  namedArgs: {[key: string]: MaterialTypeSet} | undefined,
   typeSpec: introspect.Types,
   funcDef: OverloadFuncDef
 ): {
   kind?: string;
   returnType: MaterialType;
   cardinality: Cardinality;
-  args: TypeSet[];
-  namedArgs: {[key: string]: TypeSet};
+  args: MaterialTypeSet[];
+  namedArgs: {[key: string]: MaterialTypeSet};
 } | null {
   if (
     (funcDef.namedArgs === undefined && namedArgs !== undefined) ||
@@ -142,7 +141,7 @@ function _tryOverload(
     }
   }
 
-  const positionalArgs: TypeSet[] = [];
+  const positionalArgs: MaterialTypeSet[] = [];
 
   let returnAnytype: MaterialType | undefined;
 
@@ -175,17 +174,16 @@ function _tryOverload(
       }
 
       positionalArgs.push(
-        ...(argDef.variadic ? (args.slice(i) as TypeSet[]) : [arg])
+        ...(argDef.variadic ? (args.slice(i) as MaterialTypeSet[]) : [arg])
       );
       if (argDef.setoftype) {
         paramCardinalities.push(Cardinality.One);
       } else {
         const card = argDef.variadic
           ? cardinalityUtil.multiplyCardinalitiesVariadic(
-              (args.slice(i) as TypeSet[]).map((el) => el.__cardinality__) as [
-                Cardinality,
-                ...Cardinality[]
-              ]
+              (args.slice(i) as MaterialTypeSet[]).map(
+                (el) => el.__cardinality__
+              ) as [Cardinality, ...Cardinality[]]
             )
           : arg.__cardinality__;
 
@@ -209,7 +207,7 @@ function _tryOverload(
 
   return {
     kind: funcDef.kind,
-    returnType: makeType<any>(
+    returnType: makeType(
       typeSpec,
       funcDef.returnTypeId,
       literal,

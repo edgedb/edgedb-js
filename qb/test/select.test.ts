@@ -1,5 +1,5 @@
 import {edgedb} from "@generated/imports";
-import {$expr_Select} from "@syntax/select";
+import {$expr_Select, inferCardinality} from "@syntax/select";
 import {
   Cardinality,
   ExpressionKind,
@@ -212,8 +212,13 @@ test("offset", () => {
 
 test("infer cardinality - scalar filters", () => {
   const q = e.select(e.Hero);
-  // q.__element__.__kind__;
-  const q2 = q.filter(e.eq(e.Hero.name, e.str("asdf")));
+  q.$assertSingle();
+  const filter = e.eq(e.Hero.name, e.str("asdf"));
+  // q.__element__.__name__;
+  // filter.__args__[0].$assertSingle
+  type inferred = inferCardinality<typeof q, typeof filter>;
+
+  const q2 = q.filter(filter);
   const _f2: typeutil.assertEqual<
     typeof q2["__cardinality__"],
     Cardinality.AtMostOne

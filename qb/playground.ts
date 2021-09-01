@@ -3,8 +3,8 @@ import {
   BaseTypeToTsType,
   computeObjectShape,
   computeTsType,
-  flatten,
-  flattenShape,
+  stripSet,
+  stripSetShape,
   setToTsType,
 } from "reflection";
 import e from "./generated/example";
@@ -12,7 +12,8 @@ import e from "./generated/example";
 
 async function run() {
   const heroset = e.set(e.Hero);
-  const personset = e.set(e.Hero, e.Villain);
+  // const personset = e.set(e.Hero, e.Villain);
+  // personset.i
 
   // await teardownTests();
   // const {data, pool} = await setupTests();
@@ -64,7 +65,7 @@ async function run() {
   // // type adsf = typeof q2["__element__"]["__shape__"];
   // // const arg = q2.__element__.__shape__;
   // // type arg = typeof arg;
-  // // type farg = flattenShape<arg>;
+  // // type farg = stripSetShape<arg>;
   const q3 = e.select(e.Hero, {
     id: true,
     q: q2,
@@ -80,46 +81,46 @@ async function run() {
     q: q4,
   });
   type q5 = setToTsType<typeof q5>;
-  // const q6 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q5,
-  // });
-  // type q6 = setToTsType<typeof q6>;
-  // const q7 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q6,
-  // });
-  // type q7 = setToTsType<typeof q7>;
-  // const q8 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q7,
-  // });
-  // type q8 = setToTsType<typeof q8>;
-  // const q9 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q8,
-  // });
-  // type q9 = setToTsType<typeof q9>;
-  // const q10 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q9,
-  // });
-  // type q10 = setToTsType<typeof q10>;
-  // const q11 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q10,
-  // });
-  // type q11 = setToTsType<typeof q11>;
-  // const q12 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q11,
-  // });
-  // type q12 = setToTsType<typeof q12>;
-  // const q13 = e.select(e.Hero, {
-  //   id: true,
-  //   q: q12,
-  // });
-  // type q13 = setToTsType<typeof q13>;
+  const q6 = e.select(e.Hero, {
+    id: true,
+    q: q5,
+  });
+  type q6 = setToTsType<typeof q6>;
+  const q7 = e.select(e.Hero, {
+    id: true,
+    q: q6,
+  });
+  type q7 = setToTsType<typeof q7>;
+  const q8 = e.select(e.Hero, {
+    id: true,
+    q: q7,
+  });
+  type q8 = setToTsType<typeof q8>;
+  const q9 = e.select(e.Hero, {
+    id: true,
+    q: q8,
+  });
+  type q9 = setToTsType<typeof q9>;
+  const q10 = e.select(e.Hero, {
+    id: true,
+    q: q9,
+  });
+  type q10 = setToTsType<typeof q10>;
+  const q11 = e.select(e.Hero, {
+    id: true,
+    q: q10,
+  });
+  type q11 = setToTsType<typeof q11>;
+  const q12 = e.select(e.Hero, {
+    id: true,
+    q: q11,
+  });
+  type q12 = setToTsType<typeof q12>;
+  const q13 = e.select(e.Hero, {
+    id: true,
+    q: q12,
+  });
+  type q13 = setToTsType<typeof q13>;
 }
 
 run();

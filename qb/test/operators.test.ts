@@ -1,18 +1,16 @@
-import {$expr_Operator, $runtimeExpr_Operator} from "@syntax/funcops";
+import {$expr_Operator} from "@syntax/funcops";
 import {Cardinality} from "../../src/reflection";
 import e from "../generated/example";
 import superjson from "superjson";
 
 function checkOperatorExpr<T extends $expr_Operator>(
-  _expr: T,
+  expr: T,
   name: T["__name__"],
-  args: any[],
+  args: T["__args__"],
   returnType: T["__element__"],
   cardinality: T["__cardinality__"],
   edgeql?: string
 ) {
-  const expr = _expr as unknown as $runtimeExpr_Operator;
-
   expect(expr.__name__).toEqual(name);
   expect(superjson.stringify(expr.__args__)).toEqual(
     superjson.stringify(args.filter((arg) => arg !== undefined))

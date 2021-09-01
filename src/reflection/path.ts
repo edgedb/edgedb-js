@@ -9,6 +9,7 @@ import {
 } from "./typesystem";
 import {Cardinality, ExpressionKind} from "./enums";
 import {cardinalityUtil} from "./util/cardinalityUtil";
+import {stripSet} from "reflection";
 
 // get the set representing the result of a path traversal
 // including cardinality merging
@@ -28,18 +29,6 @@ export interface PathParent<Parent extends ObjectTypeSet = ObjectTypeSet> {
   type: Parent;
   linkName: string;
 }
-
-// type t1 = assert_singleλFuncExpr<
-//   $expr_PathNode<ObjectTypeSet, PathParent | null, boolean>
-// >;
-// type t2 = assert_singleλFuncExpr<
-//   Expression<ObjectTypeSet<SomeObjectType, Cardinality>>
-// >;
-
-// const arg = (arg1: t1) => {
-//   return arg1;
-// };
-// arg("dsf" as t2);
 
 export type $pathify<
   Root extends TypeSet,
@@ -95,7 +84,7 @@ export type $expr_TypeIntersection<
   __element__: Intersection["__element__"];
   __cardinality__: Expr["__cardinality__"];
   __kind__: ExpressionKind.TypeIntersection;
-  __expr__: Expr;
+  __expr__: stripSet<Expr>;
 }>;
 
 export type $expr_PathLeaf<

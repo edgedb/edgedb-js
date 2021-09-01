@@ -32,6 +32,10 @@ export const generateFunctionTypes = ({
     (code, funcDef, args, namedArgs, returnType) => {
       // Name
       code.writeln(frag`${quote(funcDef.name)},`);
+      // Args
+      code.writeln(args);
+      // NamedArgs
+      code.writeln(namedArgs);
       // ReturnType
       code.writeln(returnType);
     },

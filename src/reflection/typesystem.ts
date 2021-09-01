@@ -53,11 +53,9 @@ export interface EnumType<
 
 export interface SomeObjectType extends BaseType {
   __kind__: TypeKind.object;
-  __name__: string;
   __pointers__: ObjectTypeShape;
   __shape__: object | null;
   __polys__: Poly[];
-  __tstype__: any;
 }
 
 export interface ObjectType<
@@ -181,7 +179,7 @@ export type shapeElementToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
     : never;
 
 export type Poly<
-  Type extends SomeObjectType = SomeObjectType,
+  Type extends SomeObjectType = any,
   Shape extends any = any
 > = {
   type: Type;
@@ -224,9 +222,9 @@ export type BaseExpression = {
 export type Expression<Set extends TypeSet = TypeSet> =
   BaseType extends Set["__element__"]
     ? Set & {toEdgeQL(): string; $is: any; $assertSingle: any}
-    : Set & ExpressionMethods<flatten<Set>> & $pathify<Set>;
+    : Set & ExpressionMethods<stripSet<Set>> & $pathify<Set>;
 
-export type flatten<T> = "__element__" extends keyof T
+export type stripSet<T> = "__element__" extends keyof T
   ? "__cardinality__" extends keyof T
     ? {
         __element__: T["__element__"];
@@ -235,22 +233,22 @@ export type flatten<T> = "__element__" extends keyof T
     : T
   : T;
 
-export type flattenShape<T> = {
-  [k in keyof T]: flatten<T[k]>;
+export type stripSetShape<T> = {
+  [k in keyof T]: stripSet<T[k]>;
 };
 
 // importing the actual alias from
 // generated/modules/std didn't work.
 // returned 'any' every time
 export type $assertSingle<
-  Type extends MaterialType,
-  Expr extends TypeSet
+  Type extends MaterialType
+  // Expr extends TypeSet
 > = Expression<{
   __element__: Type;
   __cardinality__: Cardinality.One;
   __kind__: ExpressionKind.Function;
   __name__: "std::assert_single";
-  __args__: [Expr];
+  __args__: [TypeSet];
   __namedargs__: {};
 }>;
 
@@ -259,10 +257,8 @@ export interface ExpressionMethods<Set extends TypeSet> {
   __cardinality__: Set["__cardinality__"];
 
   toEdgeQL(): string;
-  $is<T extends ObjectTypeExpression>(
-    ixn: T
-  ): $expr_TypeIntersection<flatten<this>, T>;
-  $assertSingle(): $assertSingle<Set["__element__"], flatten<this>>;
+  $is<T extends ObjectTypeExpression>(ixn: T): $expr_TypeIntersection<this, T>;
+  $assertSingle(): $assertSingle<Set["__element__"] /*, stripSet<this> */>;
 }
 
 export type MaterialTypeSet<
@@ -272,16 +268,10 @@ export type MaterialTypeSet<
 
 export type ObjectTypeSet = TypeSet<SomeObjectType, Cardinality>;
 
-// export type ObjectTypeExpression<
-// Set extends ObjectTypeSet = ObjectTypeSet> =
-//   Expression<Set>;
 export type ObjectTypeExpression<
   El extends SomeObjectType = SomeObjectType,
   Card extends Cardinality = Cardinality
 > = TypeSet<El, Card>;
-
-const arg: ObjectTypeExpression = "asdf" as any;
-// arg.
 
 export type PrimitiveType =
   | ScalarType
@@ -535,13 +525,6 @@ export type MaterialType = BaseType;
 // | NamedTupleType
 // | ArrayType;
 
-const argScalarType: ScalarType = "asdf" as any;
-const argEnumType: EnumType = "asdf" as any;
-const argObjectType: ObjectType = "asdf" as any;
-const argTupleType: TupleType = "asdf" as any;
-const argNamedTupleType: NamedTupleType = "asdf" as any;
-const argArrayType: ArrayType = "asdf" as any;
-
 export function isScalarType(type: BaseType): type is ScalarType {
   return type.__kind__ === TypeKind.scalar;
 }
@@ -561,12 +544,12 @@ export function isArrayType(type: BaseType): type is ArrayType {
   return type.__kind__ === TypeKind.array;
 }
 
-export type NonArrayMaterialType = BaseType;
-// | ScalarType
-// | EnumType
-// | ObjectType
-// | TupleType
-// | NamedTupleType;
+export type NonArrayMaterialType =
+  | ScalarType
+  | EnumType
+  | ObjectType
+  | TupleType
+  | NamedTupleType;
 
 export type AnyTupleType = TupleType | NamedTupleType;
 
