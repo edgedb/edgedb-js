@@ -32,8 +32,8 @@ async function run() {
 
   type q1 = setToTsType<typeof q1>;
 
-  const q2 = e.select(e.Hero, {
-    id: e.uuid("true"),
+  const q2 = e.select({
+    id: e.str("true"),
     q: q1,
   });
 
@@ -50,11 +50,11 @@ async function run() {
   });
   type q3 = setToTsType<typeof q3>;
 
-  // const q4 = e.select({
-  //   id: e.str("true"),
-  //   q: q3,
-  // });
-  // type q4 = setToTsType<typeof q4>;
+  const q4 = e.select({
+    id: e.str("true"),
+    q: q3,
+  });
+  type q4 = setToTsType<typeof q4>;
 
   // const q5 = e.select({
   //   id: e.str("true"),

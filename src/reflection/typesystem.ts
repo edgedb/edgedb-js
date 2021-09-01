@@ -185,7 +185,7 @@ export interface TypeSet<
   __cardinality__: Card;
 }
 
-// utlity function for creating set
+// utility function for creating set
 export function $toSet<Root extends MaterialType, Card extends Cardinality>(
   root: Root,
   card: Card
@@ -242,9 +242,9 @@ export interface ExpressionMethods<Set extends TypeSet> {
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
   toEdgeQL(): string;
-  $is<T extends ObjectTypeExpression, This extends this = this>(
+  $is<T extends ObjectTypeExpression>(
     ixn: T
-  ): $expr_TypeIntersection<This, T>;
+  ): $expr_TypeIntersection<flatten<this>, T>;
   $assertSingle(): $assertSingle<Set["__element__"], flatten<this>>;
 }
 
@@ -418,23 +418,27 @@ export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
     >
   : never;
 
-export type setToTsType<Set extends TypeSet> =
-  Set["__cardinality__"] extends Cardinality.Empty
-    ? null
-    : Set["__cardinality__"] extends Cardinality.One
-    ? BaseTypeToTsType<Set["__element__"]>
-    : Set["__cardinality__"] extends Cardinality.AtLeastOne
-    ? [
-        BaseTypeToTsType<Set["__element__"]>,
-        ...BaseTypeToTsType<Set["__element__"]>[]
-      ]
-    : Set["__cardinality__"] extends Cardinality.AtMostOne
-    ? BaseTypeToTsType<Set["__element__"]> | null
-    : Set["__cardinality__"] extends Cardinality.Many
-    ? BaseTypeToTsType<Set["__element__"]>[]
-    : Set["__cardinality__"] extends Cardinality
-    ? unknown
-    : never;
+export type setToTsType<Set extends TypeSet> = computeTsType<
+  Set["__element__"],
+  Set["__cardinality__"]
+>;
+
+export type computeTsType<
+  T extends MaterialType,
+  C extends Cardinality
+> = C extends Cardinality.Empty
+  ? null
+  : C extends Cardinality.One
+  ? BaseTypeToTsType<T>
+  : C extends Cardinality.AtLeastOne
+  ? [BaseTypeToTsType<T>, ...BaseTypeToTsType<T>[]]
+  : C extends Cardinality.AtMostOne
+  ? BaseTypeToTsType<T> | null
+  : C extends Cardinality.Many
+  ? BaseTypeToTsType<T>[]
+  : C extends Cardinality
+  ? unknown
+  : never;
 
 export type propToTsType<Prop extends PropertyDesc> =
   Prop extends PropertyDesc<infer Type, infer Card>
