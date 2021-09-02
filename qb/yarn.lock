@@ -3286,7 +3286,7 @@ fsevents@^2.3.2:
     superjson: ^1.7.5
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
-    typescript: latest
+    typescript: ^4.4.2
   languageName: unknown
   linkType: soft
 
@@ -3874,7 +3874,7 @@ resolve@^1.20.0:
   languageName: node
   linkType: hard
 
-typescript@latest:
+typescript@^4.4.2:
   version: 4.4.2
   resolution: "typescript@npm:4.4.2"
   bin:
@@ -3884,7 +3884,7 @@ typescript@latest:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@latest#~builtin<compat/typescript>":
+"typescript@patch:typescript@^4.4.2#~builtin<compat/typescript>":
   version: 4.4.2
   resolution: "typescript@patch:typescript@npm%3A4.4.2#~builtin<compat/typescript>::version=4.4.2&hash=d8b4e7"
   bin:

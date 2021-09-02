@@ -22,7 +22,7 @@
     "superjson": "^1.7.5",
     "ts-jest": "^27.0.3",
     "ts-node": "^10.0.0",
-    "typescript": "latest"
+    "typescript": "^4.4.2"
   },
   "resolutions": {
     "edgedb": "portal:..",
