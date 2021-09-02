@@ -1,14 +1,7 @@
-import e from "../generated/example";
 import {reflection as $} from "edgedb/src/index.node";
-
+import {Cardinality, ExpressionKind, TypeKind} from "edgedb/src/reflection";
 import {$Hero} from "generated/example/modules/default";
-
-import {
-  Cardinality,
-  ExpressionKind,
-  TypeKind,
-  typeutil,
-} from "edgedb/src/reflection";
+import e from "../generated/example";
 import {tc} from "./setupTeardown";
 
 test("path structure", () => {
@@ -24,6 +17,10 @@ test("path structure", () => {
   expect(Hero.name.__element__.__name__).toEqual("std::str");
   expect(Hero.name.__cardinality__).toEqual($.Cardinality.Many);
   expect(HeroSingleton.name.__cardinality__).toEqual($.Cardinality.One);
+
+  expect(Villain["<villains[IS default::Hero]"].__element__.__name__).toEqual(
+    "default::Hero"
+  );
 
   // check path root cardinalities
   tc.assert<tc.IsExact<Hero["__cardinality__"], $.Cardinality.Many>>(true);

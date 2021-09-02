@@ -28,7 +28,7 @@ test("basic insert", async () => {
     secret_identity: e.str("Natasha Romanoff"),
   });
 
-  const r1 = await pool.queryOne(q1.toEdgeQL());
+  await pool.queryOne(q1.toEdgeQL());
 
   pool.execute(`DELETE Hero FILTER .name = 'Black Widow';`);
   return;

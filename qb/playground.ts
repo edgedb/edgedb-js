@@ -96,7 +96,7 @@ async function run() {
     e.Hero,
     {
       id: true,
-      // q: q7,
+      q: q7,
       "<characters[IS default::Movie]": {
         title: true,
         characters: {

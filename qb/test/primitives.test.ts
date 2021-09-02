@@ -1,5 +1,3 @@
-import * as edgedb from "edgedb";
-import {typeutil} from "../../src/reflection";
 import e, {
   $Array,
   $NamedTuple,

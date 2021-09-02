@@ -1,17 +1,13 @@
 import {edgedb} from "@generated/imports";
+import {$expr_Select} from "@syntax/select";
 import * as tc from "conditional-type-checks";
-import {$Villain} from "@generated/modules/default";
-import {$expr_Select, inferCardinality} from "@syntax/select";
 import {
   BaseTypeToTsType,
   Cardinality,
-  computeTsType,
   ExpressionKind,
-  polyToTs,
   SelectModifierKind,
   setToTsType,
   TypeKind,
-  typeutil,
 } from "../../src/reflection";
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
@@ -114,17 +110,6 @@ test("deep shape", () => {
       }[]
     >
   >(true);
-  const all_heroes = e.select(e.Hero, {__type__: {name: true}});
-  type all_heroes = setToTsType<typeof all_heroes>;
-  const query = e.select(e.Person.$is(e.Hero), {
-    id: true,
-    all_heroes: e.select(e.Hero, {
-      id: true,
-      name: true,
-      __type__: {name: true},
-    }),
-  });
-  type query = setToTsType<typeof query>;
 });
 test("compositionality", () => {
   // selecting a select statement should
@@ -190,7 +175,6 @@ test("polymorphism", () => {
   );
 
   type poly = typeof query["__element__"]["__polys__"][0];
-  type t1 = polyToTs<poly>;
   tc.assert<tc.IsExact<poly["shape"], {secret_identity: true}>>(true);
 
   const func = <T extends {arg: string}>(arg: T) => arg;
@@ -274,7 +258,6 @@ test("infer cardinality - scalar filters", () => {
   const q = e.select(e.Hero);
   q.$assertSingle();
   const filter = e.eq(e.Hero.name, e.str("asdf"));
-  type inferred = inferCardinality<typeof q, typeof filter>;
 
   const q2 = q.filter(filter);
   tc.assert<tc.IsExact<typeof q2["__cardinality__"], Cardinality.AtMostOne>>(
@@ -375,11 +358,11 @@ test("infer cardinality - object type filters", () => {
 test("nonchainable offset/limit", () => {
   const val0 = e.select(e.Hero).orderBy(e.Hero.name);
   type val0 = typeof val0;
-  const f0: "filter" extends keyof val0 ? true : false = false;
+  tc.assert<"filter" extends keyof val0 ? true : false>(false);
 
   const val1 = e.select(e.str("asdf")).offset(e.int64(5));
   type val1 = typeof val1;
-  const f1: "offset" extends keyof val1 ? true : false = false;
+  tc.assert<"offset" extends keyof val1 ? true : false>(false);
 
   const val2 = e.select(e.str("asdf")).limit(1);
   type val2 = typeof val2;

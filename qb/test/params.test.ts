@@ -1,4 +1,3 @@
-import {typeutil} from "../../src/reflection";
 import e from "../generated/example";
 import {tc} from "./setupTeardown";
 

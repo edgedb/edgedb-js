@@ -65,7 +65,7 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
 
   const root: $expr_PathNode<ObjectTypeSet, Parent> = _root as any;
 
-  for (const line of Object.entries(root.__element__.__pointers__)) {
+  for (const line of Object.entries(root.__element__.__pointers__ as any)) {
     const [key, _ptr] = line;
     const ptr: LinkDesc | PropertyDesc = _ptr as any;
     if ((ptr as any).__kind__ === "property") {
@@ -119,7 +119,7 @@ function isFunc(this: any, expr: ObjectTypeSet) {
     __kind__: ExpressionKind.TypeIntersection,
     __cardinality__: this.__cardinality__,
     __element__: {
-      ...expr,
+      ...expr.__element__,
       __polys__: [],
       __shape__: {id: true},
     } as any,

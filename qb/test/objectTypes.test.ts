@@ -1,11 +1,5 @@
 import {reflection as $} from "edgedb/src/index.node";
-import {
-  BaseTypeToTsType,
-  Cardinality,
-  computeObjectShape,
-  mergeObjectTypes,
-  typeutil,
-} from "../../src/reflection";
+import {Cardinality, mergeObjectTypes} from "../../src/reflection";
 import e from "../generated/example";
 import {tc} from "./setupTeardown";
 

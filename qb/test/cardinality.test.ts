@@ -1,4 +1,4 @@
-import {Cardinality, typeutil} from "../../src/reflection";
+import {Cardinality} from "../../src/reflection";
 import {cardinalityUtil} from "../../src/reflection/util/cardinalityUtil";
 import {tc} from "./setupTeardown";
 

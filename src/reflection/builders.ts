@@ -33,7 +33,7 @@ export class CodeBuffer {
   }
 
   writeln(...lines: CodeFragment[][]): void {
-    lines.forEach((line) => {
+    lines.forEach(line => {
       this.buf.push(["  ".repeat(this.indent), ...line]);
     });
   }
@@ -49,8 +49,6 @@ export class CodeBuffer {
 
 export class CodeBuilder {
   private buf = new CodeBuffer();
-  private namespaces: {[k: string]: string[]} = {};
-  private indent: number = 0;
   private imports = new Set<string>();
   private exports = new Map<string, IdentRef>();
 
@@ -96,9 +94,9 @@ export class CodeBuilder {
 
     let body = this.buf
       .getBuf()
-      .map((line) => {
+      .map(line => {
         return line
-          .map((frag) => {
+          .map(frag => {
             if (typeof frag === "string") {
               return frag;
             } else {

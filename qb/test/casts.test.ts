@@ -1,5 +1,4 @@
 import e from "../generated/example";
-import {typeutil} from "../../src/reflection";
 import {tc} from "./setupTeardown";
 
 test("casting", () => {

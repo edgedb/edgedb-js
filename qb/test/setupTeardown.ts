@@ -28,8 +28,6 @@ interface Movie {
 }
 
 export async function setupTests() {
-  // tslint:disable-next-line: no-console
-  console.log(`Seeding database...`);
   const pool = await edgedb.createPool();
 
   await cleanupData(pool);

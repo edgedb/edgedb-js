@@ -1,5 +1,4 @@
 import {edgedb} from "@generated/imports";
-import {typeutil} from "../../src/reflection";
 import e from "../generated/example";
 import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 
