@@ -29,16 +29,6 @@ export function alias<Expr extends BaseExpression>(
 }
 
 export type WithableExpression =
-  // TypeSet & {
-  //   __kind__:
-  //     | ExpressionKind.Select
-  //     | ExpressionKind.For
-  //     | ExpressionKind.Insert
-  //     | ExpressionKind.Update;
-  // };
-  $expr_Select | $expr_For | $expr_Insert | $expr_Update;
-
-export type WithableRuntimeExpression =
   | $expr_Select
   | $expr_For
   | $expr_Insert
@@ -54,15 +44,6 @@ export type $expr_With<
   __expr__: Expr;
   __refs__: Refs;
 }>;
-
-// export type $expr_With<
-//   Refs extends BaseExpression[] = BaseExpression[],
-//   Expr extends WithableExpression = WithableExpression
-// > = BaseExpression<Expr> & {
-//   __kind__: ExpressionKind.With;
-//   __expr__: Expr;
-//   __refs__: Refs;
-// };
 
 function _with<Refs extends BaseExpression[], Expr extends WithableExpression>(
   refs: Refs,
