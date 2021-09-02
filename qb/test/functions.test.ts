@@ -1,7 +1,7 @@
 import type {$expr_Function} from "@syntax/funcops";
-import {Cardinality, TypeSet, typeutil} from "../../src/reflection";
-import e from "../generated/example";
 import superjson from "superjson";
+import {Cardinality, typeutil} from "../../src/reflection";
+import e from "../generated/example";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,
@@ -13,7 +13,7 @@ function checkFunctionExpr<T extends $expr_Function>(
 ) {
   expect(expr.__name__).toEqual(name);
   expect(superjson.stringify(expr.__args__)).toEqual(
-    superjson.stringify(args.filter((arg) => arg !== undefined))
+    superjson.stringify(args.filter(arg => arg !== undefined))
   );
   expect(superjson.stringify(expr.__namedargs__)).toEqual(
     superjson.stringify(namedargs)

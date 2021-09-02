@@ -1,8 +1,8 @@
 import {
   BaseExpression,
   Expression,
-  MaterialType,
-  MaterialTypeSet,
+  BaseType,
+  BaseTypeSet,
   Cardinality,
   ExpressionKind,
   cardinalityUtil,
@@ -10,7 +10,7 @@ import {
 import {$expressionify} from "./path";
 
 export type $expr_For<
-  IterSet extends MaterialTypeSet = MaterialTypeSet,
+  IterSet extends BaseTypeSet = BaseTypeSet,
   Expr extends BaseExpression = BaseExpression
 > = Expression<{
   __element__: Expr["__element__"];
@@ -24,17 +24,13 @@ export type $expr_For<
   __expr__: Expr;
 }>;
 
-export type $expr_ForVar<Type extends MaterialType = MaterialType> =
-  Expression<{
-    __element__: Type;
-    __cardinality__: Cardinality.One;
-    __kind__: ExpressionKind.ForVar;
-  }>;
+export type $expr_ForVar<Type extends BaseType = BaseType> = Expression<{
+  __element__: Type;
+  __cardinality__: Cardinality.One;
+  __kind__: ExpressionKind.ForVar;
+}>;
 
-function _for<
-  IteratorSet extends MaterialTypeSet,
-  Expr extends BaseExpression
->(
+function _for<IteratorSet extends BaseTypeSet, Expr extends BaseExpression>(
   set: IteratorSet,
   expr: (variable: $expr_ForVar<IteratorSet["__element__"]>) => Expr
 ): $expr_For<IteratorSet, Expr> {

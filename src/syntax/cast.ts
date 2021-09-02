@@ -2,11 +2,11 @@ import {
   BaseExpression,
   Expression,
   ExpressionKind,
-  MaterialType,
+  BaseType,
 } from "../reflection";
 import {$expressionify} from "./path";
 
-export function cast<Target extends MaterialType, Expr extends BaseExpression>(
+export function cast<Target extends BaseType, Expr extends BaseExpression>(
   target: Target,
   expr: Expr
 ): $expr_Cast<Target, Expr> {
@@ -19,7 +19,7 @@ export function cast<Target extends MaterialType, Expr extends BaseExpression>(
 }
 
 export type $expr_Cast<
-  Target extends MaterialType = MaterialType,
+  Target extends BaseType = BaseType,
   Expr extends BaseExpression = BaseExpression
 > = Expression<{
   __element__: Target;

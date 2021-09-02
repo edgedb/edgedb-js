@@ -20,7 +20,7 @@ export const getStringRepresentation: (
   const suffix = params.castSuffix || `λICastableTo`;
   if (type.name === "anytype") {
     return {
-      staticType: frag`${params.anytype ?? `$.MaterialType`}`,
+      staticType: frag`${params.anytype ?? `$.BaseType`}`,
       runtimeType: [],
     };
   }

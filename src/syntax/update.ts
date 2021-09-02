@@ -7,7 +7,6 @@ import {
   Expression,
   ExpressionKind,
   LinkDesc,
-  MaterialType,
   NamedTupleType,
   ObjectType,
   ObjectTypeSet,
@@ -31,7 +30,7 @@ export type anonymizeObject<T extends ObjectType> = ObjectType<
 >;
 
 export type assignableTuple<Items extends BaseTypeTuple> = {
-  [k in keyof Items]: Items[k] extends MaterialType
+  [k in keyof Items]: Items[k] extends BaseType
     ? assignableBy<Items[k]>
     : never;
 } extends infer NewItems

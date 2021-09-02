@@ -11,7 +11,7 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
   code.addImport(`import {
   ArrayType,
   TypeSet,
-  MaterialType,
+  BaseType,
   ObjectTypeSet,
   PrimitiveTypeSet,
   TypeKind,
@@ -46,7 +46,7 @@ import {
   cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
 >;
 
-export function set<Type extends MaterialType>(
+export function set<Type extends BaseType>(
   type: Type
 ): $expr_Set<TypeSet<Type, Cardinality.Empty>>;
 export function set<
@@ -117,7 +117,7 @@ export function set<
     _exprs.length === 1 &&
     Object.values(TypeKind).includes(_exprs[0].__kind__)
   ) {
-    const element: MaterialType = _exprs[0] as any;
+    const element: BaseType = _exprs[0] as any;
     return $expressionify({
       __kind__: ExpressionKind.Set,
       __element__: element,

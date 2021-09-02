@@ -1,13 +1,13 @@
 import {
   Cardinality,
   ExpressionKind,
-  MaterialType,
+  BaseType,
   BaseTypeToTsType,
 } from "../reflection";
 import {$expr_Literal} from "../reflection/literal";
 import {$expressionify} from "./path";
 
-function $expr_Literal<T extends MaterialType>(
+function $expr_Literal<T extends BaseType>(
   type: T,
   value: BaseTypeToTsType<T>
 ): $expr_Literal<T> {

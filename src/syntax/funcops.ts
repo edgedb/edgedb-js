@@ -1,8 +1,8 @@
 import {
   BaseExpression,
   Expression,
-  MaterialType,
-  MaterialTypeSet,
+  BaseType,
+  BaseTypeSet,
   Cardinality,
   ExpressionKind,
   introspect,
@@ -21,14 +21,11 @@ import {literal} from "./literal";
 
 export type $expr_Function<
   Name extends string = string,
-  Args extends (MaterialTypeSet | undefined)[] = (
-    | MaterialTypeSet
-    | undefined
-  )[],
-  NamedArgs extends {[key: string]: MaterialTypeSet} = {
-    [key: string]: MaterialTypeSet;
+  Args extends (BaseTypeSet | undefined)[] = (BaseTypeSet | undefined)[],
+  NamedArgs extends {[key: string]: BaseTypeSet} = {
+    [key: string]: BaseTypeSet;
   },
-  ReturnType extends MaterialTypeSet = MaterialTypeSet
+  ReturnType extends BaseTypeSet = BaseTypeSet
 > = Expression<{
   __element__: ReturnType["__element__"];
   __cardinality__: ReturnType["__cardinality__"];
@@ -92,22 +89,22 @@ export function resolveOverload(
 }
 
 function _tryOverload(
-  args: (MaterialTypeSet | undefined)[],
-  namedArgs: {[key: string]: MaterialTypeSet} | undefined,
+  args: (BaseTypeSet | undefined)[],
+  namedArgs: {[key: string]: BaseTypeSet} | undefined,
   typeSpec: introspect.Types,
   funcDef: OverloadFuncDef
 ): {
   kind?: string;
-  returnType: MaterialType;
+  returnType: BaseType;
   cardinality: Cardinality;
-  args: MaterialTypeSet[];
-  namedArgs: {[key: string]: MaterialTypeSet};
+  args: BaseTypeSet[];
+  namedArgs: {[key: string]: BaseTypeSet};
 } | null {
   if (
     (funcDef.namedArgs === undefined && namedArgs !== undefined) ||
     (namedArgs === undefined &&
       funcDef.namedArgs &&
-      Object.values(funcDef.namedArgs).some((arg) => !arg.optional))
+      Object.values(funcDef.namedArgs).some(arg => !arg.optional))
   ) {
     return null;
   }
@@ -141,9 +138,9 @@ function _tryOverload(
     }
   }
 
-  const positionalArgs: MaterialTypeSet[] = [];
+  const positionalArgs: BaseTypeSet[] = [];
 
-  let returnAnytype: MaterialType | undefined;
+  let returnAnytype: BaseType | undefined;
 
   for (let i = 0; i < funcDef.args.length; i++) {
     const argDef = funcDef.args[i];
@@ -174,15 +171,15 @@ function _tryOverload(
       }
 
       positionalArgs.push(
-        ...(argDef.variadic ? (args.slice(i) as MaterialTypeSet[]) : [arg])
+        ...(argDef.variadic ? (args.slice(i) as BaseTypeSet[]) : [arg])
       );
       if (argDef.setoftype) {
         paramCardinalities.push(Cardinality.One);
       } else {
         const card = argDef.variadic
           ? cardinalityUtil.multiplyCardinalitiesVariadic(
-              (args.slice(i) as MaterialTypeSet[]).map(
-                (el) => el.__cardinality__
+              (args.slice(i) as BaseTypeSet[]).map(
+                el => el.__cardinality__
               ) as [Cardinality, ...Cardinality[]]
             )
           : arg.__cardinality__;
@@ -222,8 +219,8 @@ function _tryOverload(
 function compareType(
   typeSpec: introspect.Types,
   typeId: string,
-  arg: MaterialType
-): {match: boolean; anytype?: MaterialType} {
+  arg: BaseType
+): {match: boolean; anytype?: BaseType} {
   const type = typeSpec.get(typeId);
 
   if (type.name === "anytype") {
@@ -243,7 +240,7 @@ function compareType(
       return compareType(
         typeSpec,
         type.array_element_id,
-        (arg as any as ArrayType).__element__ as MaterialType
+        (arg as any as ArrayType).__element__ as BaseType
       );
     }
   }
@@ -282,7 +279,7 @@ function compareType(
       const keys = Object.keys(items);
 
       if (keys.length === type.tuple_elements.length) {
-        let anytype: MaterialType | undefined;
+        let anytype: BaseType | undefined;
         for (let i = 0; i < keys.length; i++) {
           if (keys[i] !== type.tuple_elements[i].name) {
             return {match: false};

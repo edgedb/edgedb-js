@@ -1,5 +1,4 @@
 import {edgedb} from "@generated/imports";
-import {$expr_Select} from "@syntax/select";
 import {typeutil} from "../../src/reflection";
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";

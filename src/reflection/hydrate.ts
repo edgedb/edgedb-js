@@ -5,8 +5,6 @@ import {
   BaseType,
   ObjectType,
   ObjectTypeShape,
-  shapeToTsType,
-  MaterialType,
   LinkDesc,
   PropertyDesc,
 } from "./typesystem";
@@ -88,7 +86,7 @@ export function makeType<T extends BaseType>(
   spec: introspect.Types,
   id: string,
   literal: (type: any, val: any) => any,
-  anytype?: MaterialType
+  anytype?: BaseType
 ): T {
   const type = spec.get(id);
 

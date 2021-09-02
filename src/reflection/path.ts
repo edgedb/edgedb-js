@@ -1,7 +1,7 @@
 import {
   LinkDesc,
   PropertyDesc,
-  MaterialType,
+  BaseType,
   ObjectTypeSet,
   TypeSet,
   Expression,
@@ -100,7 +100,7 @@ export type $expr_PathLeaf<
 }>;
 
 export type ExpressionRoot = {
-  __element__: MaterialType;
+  __element__: BaseType;
   __cardinality__: Cardinality;
   __kind__: ExpressionKind;
 };

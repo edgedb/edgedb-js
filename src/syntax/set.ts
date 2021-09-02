@@ -1,7 +1,7 @@
 import {
   ArrayType,
   BaseTypeTuple,
-  MaterialType,
+  BaseType,
   NamedTupleType,
   ObjectTypeSet,
   TypeSet,
@@ -13,9 +13,7 @@ import {
   mergeObjectTypes,
   ObjectType,
   ScalarType,
-  NonArrayMaterialType,
-  typeutil,
-  BaseType,
+  NonArrayBaseType,
   Cardinality,
 } from "../reflection";
 
@@ -112,11 +110,11 @@ export type getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
   _getSharedParentPrimitiveVariadic<Types>;
 
 // type _getSharedParentScalarVariadic<
-//   Types extends [MaterialType, ...MaterialType[]]
+//   Types extends [BaseType, ...BaseType[]]
 // > = Types extends [ U]
 //   ? U
 //   : Types extends [infer A, infer B, ...infer Rest]
-//   ? getSharedParentScalar<A, B> extends MaterialType
+//   ? getSharedParentScalar<A, B> extends BaseType
 //     ? mergeObjectTypesVariadic<[getSharedParentScalar<A, B>, ...Rest]>
 //     : never
 //   : never;
@@ -142,7 +140,7 @@ type _mergeObjectTypesVariadic<Types extends [ObjectType, ...ObjectType[]]> =
     : Types extends [infer A, infer B, ...infer Rest]
     ? A extends ObjectType
       ? B extends ObjectType
-        ? mergeObjectTypes<A, B> extends MaterialType
+        ? mergeObjectTypes<A, B> extends BaseType
           ? mergeObjectTypesVariadic<[mergeObjectTypes<A, B>, ...Rest]>
           : never
         : never
@@ -166,6 +164,6 @@ export type getCardsFromExprs<Exprs extends [TypeSet, ...TypeSet[]]> = {
   [k in keyof Exprs]: Exprs[k] extends TypeSet<any, infer Card> ? Card : never;
 };
 
-export type getPrimitiveBaseType<T extends MaterialType> = T extends ScalarType
+export type getPrimitiveBaseType<T extends BaseType> = T extends ScalarType
   ? ScalarType<T["__name__"], T["__tstype__"]>
   : T;

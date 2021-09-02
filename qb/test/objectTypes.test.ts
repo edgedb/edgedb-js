@@ -1,14 +1,12 @@
-import e from "../generated/example";
-
 import {reflection as $} from "edgedb/src/index.node";
 import {
+  BaseTypeToTsType,
   Cardinality,
   computeObjectShape,
   mergeObjectTypes,
   typeutil,
-  BaseTypeToTsType,
 } from "../../src/reflection";
-import {$BaseObject} from "generated/example/modules/std";
+import e from "../generated/example";
 
 const HeroType = e.default.$Hero;
 

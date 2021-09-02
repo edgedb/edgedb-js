@@ -6,7 +6,7 @@ import {
   isNamedTupleType,
   isObjectType,
   isTupleType,
-  MaterialType,
+  BaseType,
   ObjectTypeShape,
   OperatorKind,
   Poly,
@@ -721,7 +721,7 @@ function walkExprTree(
   }
 }
 
-export function literalToEdgeQL(type: MaterialType, val: any): string {
+export function literalToEdgeQL(type: BaseType, val: any): string {
   let skipCast = false;
   let stringRep;
   if (typeof val === "string") {

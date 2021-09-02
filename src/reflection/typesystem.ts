@@ -174,7 +174,7 @@ export type AnyPoly = {type: any; shape: any};
 ////////////////////
 
 export interface TypeSet<
-  T extends MaterialType = MaterialType,
+  T extends BaseType = BaseType,
   Card extends Cardinality = Cardinality
 > {
   __element__: T;
@@ -182,7 +182,7 @@ export interface TypeSet<
 }
 
 // utility function for creating set
-export function $toSet<Root extends MaterialType, Card extends Cardinality>(
+export function $toSet<Root extends BaseType, Card extends Cardinality>(
   root: Root,
   card: Card
 ): TypeSet<Root, Card> {
@@ -193,7 +193,7 @@ export function $toSet<Root extends MaterialType, Card extends Cardinality>(
 }
 
 export type BaseExpression = {
-  __element__: MaterialType;
+  __element__: BaseType;
   __cardinality__: Cardinality;
   toEdgeQL(): string;
   $is: any;
@@ -222,7 +222,7 @@ export type stripSetShape<T> = {
 // generated/modules/std didn't work.
 // returned 'any' every time
 export type $assertSingle<
-  Type extends MaterialType
+  Type extends BaseType
   // Expr extends TypeSet
 > = Expression<{
   __element__: Type;
@@ -255,7 +255,7 @@ export type PrimitiveTypeSet = TypeSet<PrimitiveType, Cardinality>;
 /// COLLECTION TYPES
 /////////////////////////
 export interface ArrayType<
-  Element extends NonArrayMaterialType = NonArrayMaterialType,
+  Element extends NonArrayBaseType = NonArrayBaseType,
   Name extends string = `array<${Element["__name__"]}>`
 > extends BaseType {
   __name__: Name;
@@ -263,7 +263,7 @@ export interface ArrayType<
   __element__: Element;
 }
 
-export function ArrayType<Element extends NonArrayMaterialType>(
+export function ArrayType<Element extends NonArrayBaseType>(
   element: Element
 ): ArrayType<Element> {
   return {
@@ -276,8 +276,6 @@ export function ArrayType<Element extends NonArrayMaterialType>(
 type ArrayTypeToTsType<Type extends ArrayType> = Array<
   BaseTypeToTsType<Type["__element__"]>
 >;
-
-export type MaterialTypeTuple = [MaterialType, ...MaterialType[]] | [];
 
 export interface TupleType<Items extends BaseTypeTuple = BaseTypeTuple>
   extends BaseType {
@@ -302,7 +300,7 @@ type TupleItemsToTsType<Items extends BaseTypeTuple> = {
     : never;
 };
 
-export type NamedTupleShape = {[k: string]: MaterialType};
+export type NamedTupleShape = {[k: string]: BaseType};
 export interface NamedTupleType<
   Shape extends NamedTupleShape = NamedTupleShape
 > extends BaseType {
@@ -382,7 +380,7 @@ export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
   : Type extends EnumType
   ? Type["__tstype__"]
   : Type extends ArrayType
-  ? Array<BaseTypeToTsType<Type["__element__"]>>
+  ? ArrayTypeToTsType<Type>
   : Type extends TupleType
   ? TupleItemsToTsType<Type["__items__"]>
   : Type extends NamedTupleType
@@ -401,11 +399,11 @@ export type setToTsType<Set extends TypeSet> = computeTsType<
 >;
 
 export type computeTsType<
-  T extends MaterialType,
+  T extends BaseType,
   C extends Cardinality
 > = Cardinality extends C
   ? unknown
-  : MaterialType extends T
+  : BaseType extends T
   ? unknown
   : C extends Cardinality.Empty
   ? null
@@ -479,16 +477,6 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
 // DISCRIMINATED UNION OF ALL MATERIAL TYPES
 ///////////////////////////////////
 
-export type MaterialType =
-  | ScalarType
-  | EnumType
-  | ObjectType
-  | TupleType
-  | NamedTupleType
-  | ArrayType;
-
-export type MaterialTypeSet = TypeSet<MaterialType, Cardinality>;
-
 export function isScalarType(type: BaseType): type is ScalarType {
   return type.__kind__ === TypeKind.scalar;
 }
@@ -508,7 +496,7 @@ export function isArrayType(type: BaseType): type is ArrayType {
   return type.__kind__ === TypeKind.array;
 }
 
-export type NonArrayMaterialType =
+export type NonArrayBaseType =
   | ScalarType
   | EnumType
   | ObjectType
