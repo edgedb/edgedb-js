@@ -1,32 +1,29 @@
+import {scalarAssignableBy} from "@generated/castMaps";
 import {
+  ArrayType,
+  assignableCardinality,
+  BaseType,
+  BaseTypeTuple,
   Expression,
   ExpressionKind,
+  LinkDesc,
+  MaterialType,
+  NamedTupleType,
   ObjectType,
+  ObjectTypeSet,
+  ObjectTypeShape,
+  PropertyDesc,
   ScalarType,
+  TupleType,
   TypeSet,
   typeutil,
-  ObjectTypeSet,
-  PropertyDesc,
-  LinkDesc,
-  ObjectTypeShape,
-  assignableCardinality,
-  ArrayType,
-  TupleType,
-  NamedTupleType,
-  MaterialType,
-  BaseTypeTuple,
-  NonArrayMaterialType,
-  SomeObjectType,
-  BaseType,
 } from "../reflection";
-import _std from "@generated/modules/std";
-import {scalarAssignableBy} from "@generated/castMaps";
 
 /////////////////
 /// UPDATE
 /////////////////
 
-export type anonymizeObject<T extends SomeObjectType> = ObjectType<
+export type anonymizeObject<T extends ObjectType> = ObjectType<
   string,
   T["__pointers__"],
   any,
@@ -45,7 +42,7 @@ export type assignableTuple<Items extends BaseTypeTuple> = {
 
 export type assignableBy<T extends BaseType> = T extends ScalarType
   ? scalarAssignableBy<T>
-  : T extends SomeObjectType
+  : T extends ObjectType
   ? anonymizeObject<T>
   : T extends ArrayType
   ? ArrayType<assignableBy<T["__element__"]>>

@@ -12,8 +12,8 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
   ArrayType,
   TypeSet,
   MaterialType,
-  ObjectTypeExpression,
-  PrimitiveExpression,
+  ObjectTypeSet,
+  PrimitiveTypeSet,
   TypeKind,
   BaseExpression,
   Expression,
@@ -75,7 +75,7 @@ export function set<
   }
 
   code.writeln(frag`export function set<
-  Expr extends ObjectTypeExpression,
+  Expr extends ObjectTypeSet,
   Exprs extends [Expr, ...Expr[]]
 >(
   ...exprs: Exprs
@@ -90,7 +90,7 @@ export function set<
   Exprs extends [Expr, ...Expr[]]
 >(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;
 export function set<
-  Expr extends PrimitiveExpression,
+  Expr extends PrimitiveTypeSet,
   Exprs extends
     TypeSet<getPrimitiveBaseType<Expr["__element__"]>>[]
 >(

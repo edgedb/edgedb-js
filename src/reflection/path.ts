@@ -84,7 +84,7 @@ export type $expr_TypeIntersection<
   __element__: Intersection["__element__"];
   __cardinality__: Expr["__cardinality__"];
   __kind__: ExpressionKind.TypeIntersection;
-  __expr__: stripSet<Expr>;
+  __expr__: Expr;
 }>;
 
 export type $expr_PathLeaf<

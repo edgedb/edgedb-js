@@ -8,9 +8,10 @@ import {
   setToTsType,
 } from "reflection";
 import e from "./generated/example";
-// import {setupTests, teardownTests} from "./test/setupTeardown";
+import {setupTests, teardownTests} from "./test/setupTeardown";
 
 async function run() {
+  await setupTests();
   const q = e.select(e.Hero, {
     id: true,
     "<nemesis[IS default::Villain]": {
@@ -20,10 +21,17 @@ async function run() {
   type q = setToTsType<typeof q>;
 
   const q1 = e
-    .select(e.Hero, {
-      id: true,
-      q,
-    })
+    .select(
+      e.Hero,
+      {
+        id: true,
+        // name: true,
+        q,
+      },
+      e.is(e.Villain, {
+        nemesis: {name: true},
+      })
+    )
     .limit(1);
   type q1 = setToTsType<typeof q1>;
 
@@ -66,18 +74,26 @@ async function run() {
     q: q8,
   });
   type q9 = setToTsType<typeof q9>;
-  const q10 = e.select(e.Hero, {
-    id: true,
-    q: q9,
-  });
+  const q10 = e.select(
+    e.Hero,
+    {
+      id: true,
+      q: q9,
+    },
+    e.is(e.Villain, {
+      id: true,
+      nemesis: {id: true},
+    })
+  );
   type q10 = setToTsType<typeof q10>;
   const q11 = e.select(e.Hero, {
     id: true,
     q: q10,
+    computable: e.select(e.Hero),
   });
   type q11 = setToTsType<typeof q11>;
   const q12 = e.select(e.Hero, {
-    id: true,
+    id: false,
     q: q11,
   });
   type q12 = setToTsType<typeof q12>;

@@ -34,6 +34,7 @@
     "no-bitwise": false,
     "array-type": false,
     "no-empty": false,
+    "arrow-parens": false,
     "typedef": [
       true,
       "property-declaration",

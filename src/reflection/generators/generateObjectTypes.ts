@@ -40,7 +40,7 @@ export const getStringRepresentation: (
   if (type.kind === "object") {
     if (type.name === "std::BaseObject") {
       return {
-        staticType: ["$.SomeObjectType"],
+        staticType: ["$.ObjectType"],
         runtimeType: [getRef(type.name)],
       };
     }
@@ -70,7 +70,7 @@ export const getStringRepresentation: (
     if (isNamed) {
       const itemsStatic = joinFrags(
         type.tuple_elements.map(
-          (it) =>
+          it =>
             frag`${it.name}: ${
               getStringRepresentation(types.get(it.target_id), params)
                 .staticType
@@ -80,7 +80,7 @@ export const getStringRepresentation: (
       );
       const itemsRuntime = joinFrags(
         type.tuple_elements.map(
-          (it) =>
+          it =>
             frag`${it.name}: ${
               getStringRepresentation(types.get(it.target_id), params)
                 .runtimeType
@@ -95,17 +95,17 @@ export const getStringRepresentation: (
       };
     } else {
       const items = type.tuple_elements
-        .map((it) => it.target_id)
-        .map((id) => types.get(id))
-        .map((el) => getStringRepresentation(el, params));
+        .map(it => it.target_id)
+        .map(id => types.get(id))
+        .map(el => getStringRepresentation(el, params));
 
       return {
         staticType: frag`$.TupleType<[${joinFrags(
-          items.map((it) => it.staticType),
+          items.map(it => it.staticType),
           ", "
         )}]>`,
         runtimeType: frag`$.TupleType([${joinFrags(
-          items.map((it) => it.runtimeType),
+          items.map(it => it.runtimeType),
           ", "
         )}])`,
       };
@@ -150,7 +150,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     //   bases.push(baseName);
     // }
 
-    const bases = type.bases.map((base) => getRef(types.get(base.id).name));
+    const bases = type.bases.map(base => getRef(types.get(base.id).name));
 
     /////////
     // generate interface
@@ -168,7 +168,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     };
 
     const ptrToLine: (ptr: introspect.Pointer | introspect.Backlink) => Line =
-      (ptr) => {
+      ptr => {
         const card = `$.Cardinality.${ptr.real_cardinality}`;
         const target = types.get(ptr.target_id);
         const {staticType, runtimeType} = getStringRepresentation(target, {
@@ -184,7 +184,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
           isExclusive: ptr.is_exclusive,
           writable: ptr.is_writable ?? false,
           lines: (ptr.pointers ?? [])
-            .filter((p) => p.name !== "target" && p.name !== "source")
+            .filter(p => p.name !== "target" && p.name !== "source")
             .map(ptrToLine),
         };
       };

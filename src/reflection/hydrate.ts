@@ -5,7 +5,6 @@ import {
   BaseType,
   ObjectType,
   ObjectTypeShape,
-  SomeObjectType,
   shapeToTsType,
   MaterialType,
   LinkDesc,
@@ -44,7 +43,7 @@ function applySpec(
           },
           get properties() {
             const linkProperties: {[k: string]: any} = {};
-            (ptr.pointers || []).forEach((linkProp) => {
+            (ptr.pointers || []).forEach(linkProp => {
               // We only support "link properties" in EdgeDB, currently.
               if (linkProp.kind !== "property") {
                 return;
@@ -155,7 +154,7 @@ export function makeType<T extends BaseType>(
       obj.__kind__ = TypeKind.tuple;
 
       util.defineGetter(obj, "__items__", () => {
-        return type.tuple_elements.map((el) =>
+        return type.tuple_elements.map(el =>
           makeType(spec, el.target_id, literal, anytype)
         ) as any;
       });
@@ -201,10 +200,10 @@ export type mergeObjectShapes<
 >;
 
 export type mergeObjectTypes<
-  A extends SomeObjectType | undefined,
-  B extends SomeObjectType | undefined
-> = A extends SomeObjectType
-  ? B extends SomeObjectType
+  A extends ObjectType | undefined,
+  B extends ObjectType | undefined
+> = A extends ObjectType
+  ? B extends ObjectType
     ? ObjectType<
         `${A["__name__"]} UNION ${B["__name__"]}`,
         mergeObjectShapes<A["__pointers__"], B["__pointers__"]>,
@@ -212,14 +211,14 @@ export type mergeObjectTypes<
         []
       >
     : A
-  : B extends SomeObjectType
+  : B extends ObjectType
   ? B
   : undefined;
 
-export function mergeObjectTypes<
-  A extends SomeObjectType,
-  B extends SomeObjectType
->(a: A, b: B): mergeObjectTypes<A, B> {
+export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
+  a: A,
+  b: B
+): mergeObjectTypes<A, B> {
   const obj = {
     __kind__: TypeKind.object,
     __name__: `${a.__name__} UNION ${b.__name__}`,

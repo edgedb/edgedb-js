@@ -81,6 +81,7 @@ function shapeToEdgeQL(
 
   const elements = [{type: null, shape: basicShape}, ...polys];
   const seen = new Set();
+
   for (const element of elements) {
     const shape = element.shape;
     const polyType = element.type?.__name__;
@@ -127,19 +128,13 @@ function shapeToEdgeQL(
           })`
         );
       } else if (typeof val === "object") {
-        const nestedPolys = polys
-          .filter((poly) => !!poly.shape[key])
-          .map((poly) => ({type: poly.type, shape: poly.shape[key]}));
+        // const nestedPolys = polys
+        //   .filter(poly => !!poly.shape[key])
+        //   .map(poly => ({type: poly.type, shape: poly.shape[key]}));
         addLine(
-          `${polyIntersection}${key}: ${shapeToEdgeQL(
-            val,
-            nestedPolys,
-            ctx,
-            keysOnly,
-            {
-              depth: depth + 1,
-            }
-          )}`
+          `${polyIntersection}${key}: ${shapeToEdgeQL(val, [], ctx, keysOnly, {
+            depth: depth + 1,
+          })}`
         );
       } else {
         throw new Error("Invalid shape.");
@@ -211,7 +206,7 @@ export function toEdgeQL(this: any) {
       ]);
       for (const scope of [
         ...refData.parentScopes,
-        ...refData.aliases.flatMap((alias) => [
+        ...refData.aliases.flatMap(alias => [
           ...walkExprCtx.seen.get(alias)!.parentScopes,
         ]),
       ]) {
@@ -308,8 +303,7 @@ function renderEdgeQL(
       (renderShape &&
       expr.__kind__ === ExpressionKind.Select &&
       isObjectType(expr.__element__)
-        ? // .__kind__ === TypeKind.object
-          " " +
+        ? " " +
           shapeToEdgeQL(
             (expr.__element__.__shape__ || {}) as object,
             expr.__element__.__polys__ || [],
@@ -325,7 +319,7 @@ function renderEdgeQL(
     const blockVars = topoSortWithVars(ctx.withBlocks.get(expr as any)!, ctx);
     withBlock = blockVars.length
       ? `WITH\n${blockVars
-          .map((varExpr) => {
+          .map(varExpr => {
             const renderedExpr = renderEdgeQL(varExpr, {
               ...ctx,
               renderWithVar: varExpr,
@@ -370,15 +364,15 @@ function renderEdgeQL(
     const exprs = expr.__exprs__;
 
     if (
-      exprs.every((ex) => ex.__element__.__kind__ === TypeKind.object) ||
-      exprs.every((ex) => ex.__element__.__kind__ !== TypeKind.object)
+      exprs.every(ex => ex.__element__.__kind__ === TypeKind.object) ||
+      exprs.every(ex => ex.__element__.__kind__ !== TypeKind.object)
     ) {
       if (exprs.length === 0) return `<${expr.__element__.__name__}>{}`;
-      return `{ ${exprs.map((ex) => renderEdgeQL(ex, ctx)).join(", ")} }`;
+      return `{ ${exprs.map(ex => renderEdgeQL(ex, ctx)).join(", ")} }`;
     } else {
       throw new Error(
         `Invalid arguments to set constructor: ${exprs
-          .map((ex) => expr.__element__.__name__)
+          .map(ex => expr.__element__.__name__)
           .join(", ")}`
       );
     }
@@ -421,7 +415,7 @@ function renderEdgeQL(
       if (mods.filter.length) {
         lines.push(
           `FILTER ${mods.filter
-            .map((mod) => renderEdgeQL(mod.expr, ctx))
+            .map(mod => renderEdgeQL(mod.expr, ctx))
             .join(" AND ")}`
         );
       }
@@ -485,7 +479,7 @@ function renderEdgeQL(
     )}`;
   } else if (expr.__kind__ === ExpressionKind.Function) {
     const args = expr.__args__.map(
-      (arg) => `(${renderEdgeQL(arg!, ctx, false)})`
+      arg => `(${renderEdgeQL(arg!, ctx, false)})`
     );
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
       args.push(`${key} := (${renderEdgeQL(arg, ctx, false)})`);
@@ -751,7 +745,7 @@ export function literalToEdgeQL(type: MaterialType, val: any): string {
   } else if (Array.isArray(val)) {
     if (isArrayType(type)) {
       stringRep = `[${val
-        .map((el) => literalToEdgeQL(type.__element__ as any, el))
+        .map(el => literalToEdgeQL(type.__element__ as any, el))
         .join(", ")}]`;
     } else if (isTupleType(type)) {
       stringRep = `( ${val
@@ -791,6 +785,6 @@ export function literalToEdgeQL(type: MaterialType, val: any): string {
 function indent(str: string, depth: number) {
   return str
     .split("\n")
-    .map((line) => " ".repeat(depth) + line)
+    .map(line => " ".repeat(depth) + line)
     .join("\n");
 }

@@ -1,13 +1,14 @@
 import {edgedb} from "@generated/imports";
 import {$expr_Select, inferCardinality} from "@syntax/select";
 import {
+  BaseTypeToTsType,
   Cardinality,
   ExpressionKind,
+  polyToTs,
+  SelectModifierKind,
   setToTsType,
   TypeKind,
   typeutil,
-  BaseTypeToTsType,
-  SelectModifierKind,
 } from "../../src/reflection";
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
@@ -135,8 +136,12 @@ test("polymorphism", () => {
   );
 
   type poly = typeof query["__element__"]["__polys__"][0];
+  type t1 = polyToTs<poly>;
   const f1: typeutil.assertEqual<poly["shape"], {secret_identity: true}> =
     true;
+
+  const func = <T extends {arg: string}>(arg: T) => arg;
+  func({arg: "asdf"});
 
   type result = BaseTypeToTsType<typeof query["__element__"]>;
   const f2: typeutil.assertEqual<
@@ -214,8 +219,6 @@ test("infer cardinality - scalar filters", () => {
   const q = e.select(e.Hero);
   q.$assertSingle();
   const filter = e.eq(e.Hero.name, e.str("asdf"));
-  // q.__element__.__name__;
-  // filter.__args__[0].$assertSingle
   type inferred = inferCardinality<typeof q, typeof filter>;
 
   const q2 = q.filter(filter);
@@ -349,7 +352,7 @@ test("nonchainable offset/limit", () => {
 test("fetch heroes", async () => {
   const result = await pool.query(e.select(e.Hero).toEdgeQL());
   expect(result.length).toEqual(3);
-  expect(result.every((h) => typeof h.id === "string")).toEqual(true);
+  expect(result.every(h => typeof h.id === "string")).toEqual(true);
 });
 test("filter by id", async () => {
   const result = await e
@@ -406,7 +409,7 @@ test("computables", async () => {
   expect(results?.id).toEqual(data.cap.id);
   expect(results?.computable).toEqual(35);
   expect(
-    results?.all_heroes.every((hero) => hero.__type__.name === "default::Hero")
+    results?.all_heroes.every(hero => hero.__type__.name === "default::Hero")
   ).toEqual(true);
 });
 
@@ -417,7 +420,7 @@ test("type intersections", async () => {
   });
   const results = await query.query(pool);
   expect(
-    results.every((person) => person.__type__.name === "default::Hero")
+    results.every(person => person.__type__.name === "default::Hero")
   ).toEqual(true);
 });
 

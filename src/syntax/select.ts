@@ -6,7 +6,7 @@ import {
   ExpressionKind,
   objectExprToSelectShape,
   ObjectType,
-  ObjectTypeExpression,
+  ObjectTypeSet,
   objectTypeToSelectShape,
   Poly,
   ScalarType,
@@ -15,7 +15,7 @@ import {
   typeutil,
   SelectModifierKind,
   setToTsType,
-  ObjectTypeSet,
+  // ObjectTypeSet,
   stripSetShape,
   stripSet,
 } from "../reflection";
@@ -105,7 +105,7 @@ export type $expr_Select<
     (Set extends ObjectTypeSet ? SelectObjectMethods<Set> : {})
 >;
 
-// Base is ObjectTypeExpression &
+// Base is ObjectTypeSet &
 // Filter is equality &
 // Filter.args[0] is PathLeaf
 //   Filter.args[0] is __exclusive__ &
@@ -130,8 +130,8 @@ export type argCardToResultCard<
   : BaseCase;
 
 export type inferCardinality<Base extends TypeSet, Filter extends TypeSet> =
-  // Base is ObjectTypeExpression &
-  Base extends ObjectTypeExpression // $expr_PathNode
+  // Base is ObjectTypeSet &
+  Base extends ObjectTypeSet // $expr_PathNode
     ? // Filter is equality
       Filter extends $expr_Operator<"std::=", any, infer Args, any>
       ? // Filter.args[0] is PathLeaf
@@ -286,7 +286,7 @@ interface SelectObjectMethods<Root extends ObjectTypeSet> {
 }
 
 export function is<
-  Expr extends ObjectTypeExpression,
+  Expr extends ObjectTypeSet,
   Shape extends objectTypeToSelectShape<Expr["__element__"]>
 >(expr: Expr, shape: Shape): Poly<Expr["__element__"], Shape> {
   return {type: expr.__element__, shape};
@@ -494,7 +494,7 @@ export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   return expr;
 }
 
-export function select<Expr extends ObjectTypeExpression>(
+export function select<Expr extends ObjectTypeSet>(
   expr: Expr
 ): $expr_Select<
   {
@@ -514,7 +514,7 @@ export function select<Expr extends TypeSet>(
   expr: Expr
 ): $expr_Select<stripSet<Expr>, Expr, null, SelectMethodNames>;
 export function select<
-  Expr extends ObjectTypeExpression,
+  Expr extends ObjectTypeSet,
   Shape extends objectExprToSelectShape<Expr>,
   // variadic inference doesn't work properly
   // if additional constraints are placed on Polys
@@ -554,7 +554,7 @@ export function select(...args: any[]) {
 
   if (!shape) {
     if (expr.__element__.__kind__ === TypeKind.object) {
-      const objectExpr: ObjectTypeExpression = expr as any;
+      const objectExpr: ObjectTypeSet = expr as any;
       return $expressionify(
         $selectify({
           __kind__: ExpressionKind.Select,
@@ -583,7 +583,7 @@ export function select(...args: any[]) {
     }
   }
 
-  const objExpr: ObjectTypeExpression = expr as any;
+  const objExpr: ObjectTypeSet = expr as any;
   return $expressionify(
     $selectify({
       __kind__: ExpressionKind.Select,

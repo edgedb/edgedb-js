@@ -3,7 +3,7 @@ import {
   BaseTypeTuple,
   MaterialType,
   NamedTupleType,
-  ObjectTypeExpression,
+  ObjectTypeSet,
   TypeSet,
   TupleType,
   PrimitiveType,
@@ -11,9 +11,8 @@ import {
   Expression,
   ExpressionKind,
   mergeObjectTypes,
-  SomeObjectType,
-  ScalarType,
   ObjectType,
+  ScalarType,
   NonArrayMaterialType,
   typeutil,
   BaseType,
@@ -137,19 +136,18 @@ export type LooseTypeSet<
 
 export {mergeObjectTypes};
 
-type _mergeObjectTypesVariadic<
-  Types extends [SomeObjectType, ...SomeObjectType[]]
-> = Types extends [infer U]
-  ? U
-  : Types extends [infer A, infer B, ...infer Rest]
-  ? A extends SomeObjectType
-    ? B extends SomeObjectType
-      ? mergeObjectTypes<A, B> extends MaterialType
-        ? mergeObjectTypesVariadic<[mergeObjectTypes<A, B>, ...Rest]>
+type _mergeObjectTypesVariadic<Types extends [ObjectType, ...ObjectType[]]> =
+  Types extends [infer U]
+    ? U
+    : Types extends [infer A, infer B, ...infer Rest]
+    ? A extends ObjectType
+      ? B extends ObjectType
+        ? mergeObjectTypes<A, B> extends MaterialType
+          ? mergeObjectTypesVariadic<[mergeObjectTypes<A, B>, ...Rest]>
+          : never
         : never
       : never
-    : never
-  : never;
+    : never;
 
 export type mergeObjectTypesVariadic<Types extends [any, ...any[]]> =
   _mergeObjectTypesVariadic<Types>;
@@ -159,7 +157,7 @@ export type getTypesFromExprs<Exprs extends [TypeSet, ...TypeSet[]]> = {
 };
 
 export type getTypesFromObjectExprs<
-  Exprs extends [ObjectTypeExpression, ...ObjectTypeExpression[]]
+  Exprs extends [ObjectTypeSet, ...ObjectTypeSet[]]
 > = {
   [k in keyof Exprs]: Exprs[k] extends TypeSet<infer El, any> ? El : never;
 };
