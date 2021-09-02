@@ -118,7 +118,11 @@ function isFunc(this: any, expr: ObjectTypeSet) {
   return $expressionify({
     __kind__: ExpressionKind.TypeIntersection,
     __cardinality__: this.__cardinality__,
-    __element__: expr.__element__,
+    __element__: {
+      ...expr,
+      __polys__: [],
+      __shape__: {id: true},
+    } as any,
     __expr__: this,
   });
 }

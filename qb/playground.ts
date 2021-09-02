@@ -37,35 +37,95 @@ async function run() {
     q: q2,
   });
   type q3 = setToTsType<typeof q3>;
-  const q4 = e.select(e.Hero, {
-    id: true,
-    q: q3,
-  });
+  const q4 = e.select(
+    e.Hero,
+    {
+      id: true,
+      q: q3,
+    },
+    e.is(e.Villain, {
+      id: true,
+      nemesis: {id: true},
+      computable: e.int64(1234),
+    })
+  );
   type q4 = setToTsType<typeof q4>;
-  const q5 = e.select(e.Hero, {
-    id: true,
-    q: q4,
-  });
+  const q5 = e.select(
+    e.Hero,
+    {
+      id: true,
+      q: q4,
+    },
+    e.is(e.Villain, {
+      id: true,
+      nemesis: {id: true},
+      computable: e.int64(1234),
+    })
+  );
   type q5 = setToTsType<typeof q5>;
-  const q6 = e.select(e.Hero, {
-    id: true,
-    q: q5,
-  });
+  const q6 = e.select(
+    e.Hero,
+    {
+      id: true,
+      q: q5,
+    },
+    e.is(e.Villain, {
+      id: true,
+      nemesis: {id: true},
+      computable: e.insert(e.Villain, {name: e.str("Loki")}),
+    })
+  );
   type q6 = setToTsType<typeof q6>;
-  const q7 = e.select(e.Hero, {
-    id: true,
-    q: q6,
-  });
+  const q7 = e.select(
+    e.Hero,
+    {
+      id: true,
+      q: q6,
+    },
+    e.is(e.Villain, {
+      id: true,
+      nemesis: {id: true},
+      computable: e.select(e.insert(e.Villain, {name: e.str("Loki")}), {
+        name: true,
+        id: true,
+      }),
+    })
+  );
   type q7 = setToTsType<typeof q7>;
-  const q8 = e.select(e.Hero, {
-    id: true,
-    q: q7,
-  });
+  const q8 = e.select(
+    e.Hero,
+    {
+      id: true,
+      // q: q7,
+      "<characters[IS default::Movie]": {
+        title: true,
+        characters: {
+          "@character_name": true,
+          name: true,
+        },
+        villainChars: e.select(e.Movie.characters).$is(e.Villain),
+        heroCharNames: e.select(e.Movie.characters).$is(e.Hero).name,
+      },
+    },
+    e.is(e.Villain, {
+      id: true,
+      nemesis: {id: true},
+      computable: e.insert(e.Person, {name: e.str("Loki")}),
+    })
+  );
   type q8 = setToTsType<typeof q8>;
-  const q9 = e.select(e.Hero, {
-    id: true,
-    q: q8,
-  });
+  const q9 = e.select(
+    e.Hero,
+    {
+      id: true,
+      q: q8,
+    },
+    e.is(e.Villain, {
+      id: true,
+      nemesis: {id: true},
+      computable: e.int64(1234),
+    })
+  );
   type q9 = setToTsType<typeof q9>;
   const q10 = e.select(
     e.Hero,

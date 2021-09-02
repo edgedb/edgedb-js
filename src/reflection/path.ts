@@ -9,6 +9,7 @@ import {
 } from "./typesystem";
 import {Cardinality, ExpressionKind} from "./enums";
 import {cardinalityUtil} from "./util/cardinalityUtil";
+import {ObjectType} from "reflection";
 
 // get the set representing the result of a path traversal
 // including cardinality merging
@@ -78,9 +79,9 @@ interface PathNodeMethods<Self extends ObjectTypeSet> {
 
 export type $expr_TypeIntersection<
   Expr extends TypeSet = TypeSet,
-  Intersection extends ObjectTypeSet = ObjectTypeSet
+  Intersection extends ObjectType = ObjectType
 > = Expression<{
-  __element__: Intersection["__element__"];
+  __element__: Intersection;
   __cardinality__: Expr["__cardinality__"];
   __kind__: ExpressionKind.TypeIntersection;
   __expr__: Expr;

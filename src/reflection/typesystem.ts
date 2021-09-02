@@ -104,7 +104,17 @@ export interface ExpressionMethods<Set extends TypeSet> {
   __cardinality__: Set["__cardinality__"];
 
   toEdgeQL(): string;
-  $is<T extends ObjectTypeSet>(ixn: T): $expr_TypeIntersection<this, T>;
+  $is<T extends ObjectTypeSet>(
+    ixn: T
+  ): $expr_TypeIntersection<
+    this,
+    ObjectType<
+      T["__element__"]["__name__"],
+      T["__element__"]["__pointers__"],
+      {id: true},
+      []
+    >
+  >;
   $assertSingle(): $assertSingle<Set["__element__"]>;
 }
 
@@ -192,21 +202,19 @@ export type objectTypeToSelectShape<T extends ObjectType> = shapeToSelectShape<
   T["__pointers__"]
 >;
 
-export type shapeToSelectShape<Shape extends ObjectTypeShape> = Partial<
-  {
-    [k in keyof Shape]: Shape[k] extends PropertyDesc
-      ? boolean | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
-      : Shape[k] extends LinkDesc
-      ?
-          | true
-          | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
-          | typeutil.flatten<
-              shapeToSelectShape<Shape[k]["target"]["__pointers__"]> &
-                linkDescShape<Shape[k]>
-            >
-      : any;
-  }
->;
+export type shapeToSelectShape<Shape extends ObjectTypeShape> = {
+  [k in keyof Shape]?: Shape[k] extends PropertyDesc
+    ? boolean | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
+    : Shape[k] extends LinkDesc
+    ?
+        | true
+        | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
+        | typeutil.flatten<
+            shapeToSelectShape<Shape[k]["target"]["__pointers__"]> &
+              linkDescShape<Shape[k]>
+          >
+    : any;
+}; // & {[k:string]: boolean | TypeSet | object};
 
 export type linkDescShape<Link extends LinkDesc> = addAtSigns<
   Link["properties"]
@@ -253,8 +261,8 @@ export type simpleShapeToTs<
           ? simpleShapeToTs<Pointers[k]["target"]["__pointers__"], Shape[k]>
           : never
         : never
-      : Shape[k] extends TypeSet<infer E, infer C>
-      ? computeTsType<E, C>
+      : Shape[k] extends TypeSet
+      ? setToTsType<Shape[k]>
       : never;
   }
 >;

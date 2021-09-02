@@ -9,6 +9,7 @@ import {
   TypeKind,
   typeutil,
 } from "edgedb/src/reflection";
+import {tc} from "./setupTeardown";
 
 test("path structure", () => {
   const Hero = e.default.Hero;
@@ -25,29 +26,23 @@ test("path structure", () => {
   expect(HeroSingleton.name.__cardinality__).toEqual($.Cardinality.One);
 
   // check path root cardinalities
-  const _t1: $.typeutil.assertEqual<
-    Hero["__cardinality__"],
-    $.Cardinality.Many
-  > = true;
-  const _t2: $.typeutil.assertEqual<
-    HeroSingleton["__cardinality__"],
-    $.Cardinality.One
-  > = true;
+  tc.assert<tc.IsExact<Hero["__cardinality__"], $.Cardinality.Many>>(true);
+  tc.assert<tc.IsExact<HeroSingleton["__cardinality__"], $.Cardinality.One>>(
+    true
+  );
 
   // Hero.name
   expect(Hero.name.__element__.__name__).toEqual("std::str");
   expect(Hero.name.__cardinality__).toEqual($.Cardinality.Many);
-  const _t1952: $.typeutil.assertEqual<
-    Hero["name"]["__cardinality__"],
-    $.Cardinality.Many
-  > = true;
+  tc.assert<tc.IsExact<Hero["name"]["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
 
   // HeroSingleton.name
   expect(HeroSingleton.name.__cardinality__).toEqual($.Cardinality.One);
-  const _t3: $.typeutil.assertEqual<
-    HeroSingleton["name"]["__cardinality__"],
-    $.Cardinality.One
-  > = true;
+  tc.assert<
+    tc.IsExact<HeroSingleton["name"]["__cardinality__"], $.Cardinality.One>
+  >(true);
 
   // AtMostOneHero.name
   // test cardinality merging
@@ -61,17 +56,21 @@ test("path structure", () => {
   expect(AtLeastOneHero.number_of_movies.__cardinality__).toEqual(
     $.Cardinality.Many
   );
-  const _t41853: $.typeutil.assertEqual<
-    AtLeastOneHero["number_of_movies"]["__cardinality__"],
-    $.Cardinality.Many
-  > = true;
+  tc.assert<
+    tc.IsExact<
+      AtLeastOneHero["number_of_movies"]["__cardinality__"],
+      $.Cardinality.Many
+    >
+  >(true);
 
   // Hero.villains.id
   expect(Hero.villains.id.__cardinality__).toEqual($.Cardinality.Many);
-  const _t4896: $.typeutil.assertEqual<
-    HeroSingleton["villains"]["id"]["__cardinality__"],
-    $.Cardinality.Many
-  > = true;
+  tc.assert<
+    tc.IsExact<
+      HeroSingleton["villains"]["id"]["__cardinality__"],
+      $.Cardinality.Many
+    >
+  >(true);
 
   expect(Hero.villains.nemesis.villains.name.toEdgeQL()).toEqual(
     "default::Hero.villains.nemesis.villains.name"
@@ -89,8 +88,23 @@ test("path structure", () => {
 test("type intersection on path node", () => {
   const person = e.Person;
   const hero = person.$is(e.Hero);
-  const f1: typeutil.assertEqual<typeof hero["__element__"], typeof $Hero> =
-    true;
+  tc.assert<
+    tc.IsExact<
+      typeof hero["__element__"]["__pointers__"],
+      typeof $Hero["__pointers__"]
+    >
+  >(true);
+  tc.assert<
+    tc.IsExact<
+      typeof hero["__element__"]["__name__"],
+      typeof $Hero["__name__"]
+    >
+  >(true);
+  tc.assert<tc.IsExact<typeof hero["__element__"]["__polys__"], []>>(true);
+  tc.assert<tc.IsExact<typeof hero["__element__"]["__shape__"], {id: true}>>(
+    true
+  );
+  expect(hero.__element__.__shape__).toEqual({id: true});
   expect(hero.__element__.__name__).toEqual("default::Hero");
   expect(hero.__element__.__kind__).toEqual(TypeKind.object);
   expect(hero.__kind__).toEqual(ExpressionKind.TypeIntersection);
@@ -104,8 +118,6 @@ test("type intersection on path node", () => {
 test("type intersection on select", () => {
   const q2 = e.select(e.Person, {id: true, name: true}).limit(5);
   const hero = q2.$is(e.Hero);
-  const f2: typeutil.assertEqual<typeof hero["__element__"], typeof $Hero> =
-    true;
   expect(hero.__element__.__name__).toEqual("default::Hero");
   expect(hero.__element__.__kind__).toEqual(TypeKind.object);
   expect(hero.__kind__).toEqual(ExpressionKind.TypeIntersection);
@@ -117,9 +129,8 @@ test("type intersection on select", () => {
 
 test("assertSingle", () => {
   const singleHero = e.Hero.$assertSingle();
-  const f1: typeutil.assertEqual<
-    typeof singleHero["__cardinality__"],
-    Cardinality.One
-  > = true;
+  tc.assert<tc.IsExact<typeof singleHero["__cardinality__"], Cardinality.One>>(
+    true
+  );
   expect(singleHero.__cardinality__).toEqual(Cardinality.One);
 });

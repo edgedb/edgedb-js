@@ -1,5 +1,6 @@
 import {typeutil, BaseTypeToTsType} from "../../src/reflection";
 import e from "../generated/example";
+import {tc} from "./setupTeardown";
 
 test("simple repeated expression", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
@@ -57,17 +58,19 @@ SELECT {
 }`);
 
   type queryType = BaseTypeToTsType<typeof query["__element__"]>;
-  const f1: typeutil.assertEqual<
-    queryType,
-    {
-      pageResults: {
-        id: string;
-        name: string;
-      }[];
-      nextOffset: number;
-      hasMore: boolean;
-    }
-  > = true;
+  tc.assert<
+    tc.IsExact<
+      queryType,
+      {
+        pageResults: {
+          id: string;
+          name: string;
+        }[];
+        nextOffset: number;
+        hasMore: boolean;
+      }
+    >
+  >(true);
 });
 
 test("simple repeated expression not in select expr", () => {

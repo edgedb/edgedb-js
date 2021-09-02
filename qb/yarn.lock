@@ -1344,6 +1344,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"conditional-type-checks@npm:^1.0.5":
+  version: 1.0.5
+  resolution: "conditional-type-checks@npm:1.0.5"
+  checksum: 5653cc87d58d15de2985e20c6132bd034f4ef6793164c0a2c5a9b7e90f34dabaee35517649d85bffa374b0190b588c27c80165bb8f4c23e5a073afc7164c3b9c
+  languageName: node
+  linkType: hard
+
 "console-control-strings@npm:^1.0.0, console-control-strings@npm:~1.1.0":
   version: 1.1.0
   resolution: "console-control-strings@npm:1.1.0"
@@ -3281,6 +3288,7 @@ fsevents@^2.3.2:
   resolution: "query-builder@workspace:."
   dependencies:
     "@types/node": ^15.12.2
+    conditional-type-checks: ^1.0.5
     edgedb: ^0.14.0
     jest: ^27.0.5
     superjson: ^1.7.5

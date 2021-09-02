@@ -17,6 +17,7 @@
     "@types/node": "^15.12.2"
   },
   "devDependencies": {
+    "conditional-type-checks": "^1.0.5",
     "edgedb": "^0.14.0",
     "jest": "^27.0.5",
     "superjson": "^1.7.5",

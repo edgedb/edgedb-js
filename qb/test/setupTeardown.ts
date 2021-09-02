@@ -1,5 +1,6 @@
 import * as edgedb from "edgedb/src/index.node";
-
+import * as tc from "conditional-type-checks";
+export {tc};
 // insert tony
 // insert cap
 // insert spidey
