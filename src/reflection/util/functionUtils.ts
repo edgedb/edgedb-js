@@ -50,7 +50,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
     //   - return anytype: getSharedParentPrimitive<...all anytype param refs>
     // - final catch all overload (if overload only has one anytype param,
     //   only this overload generated)
-    //   - param types: 1st param is 'BaseType' (or 'NonArrayBaseType')
+    //   - param types: 1st param is 'BaseType' (or 'NonArrayType')
     //                  other params reference first param type
     //   - return anytype: references first param type
 
@@ -69,7 +69,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
         ...overload,
         anytypes: {
           kind: "noncastable" as const,
-          type: [hasArrayType ? "$.NonArrayBaseType" : "$.BaseType"],
+          type: [hasArrayType ? "$.NonArrayType" : "$.BaseType"],
           refName: anytypeParams[0].typeName,
           refPath: findPathOfAnytype(anytypeParams[0].type.id, types),
         },

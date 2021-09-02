@@ -15,8 +15,6 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
   ObjectTypeSet,
   PrimitiveTypeSet,
   TypeKind,
-  BaseExpression,
-  Expression,
   ExpressionKind,
   cardinalityUtil,
   mergeObjectTypes,

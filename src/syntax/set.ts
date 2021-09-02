@@ -6,14 +6,11 @@ import {
   ObjectTypeSet,
   TypeSet,
   TupleType,
-  PrimitiveType,
-  // TypeSet,
   Expression,
   ExpressionKind,
   mergeObjectTypes,
   ObjectType,
   ScalarType,
-  NonArrayBaseType,
   Cardinality,
 } from "../reflection";
 
@@ -67,26 +64,6 @@ export type getSharedParentPrimitive<A, B> = A extends undefined
     : never
   : getSharedParentScalar<A, B>;
 
-// type getSharedParentPrimitive<A, B> = {
-//   array: ArrayType<getSharedParentScalar<A["__element__"], B>>;
-//   never: never;
-// }[A extends ArrayType<infer AEl>
-//   ? B extends ArrayType<infer BEl>
-//     ? "array"
-//     : "never"
-//   : "never"];
-// : A extends NamedTupleType<infer AShape>
-// ? B extends NamedTupleType<infer BShape>
-//   ? NamedTupleType<mergeTypeTuples<AShape, BShape>>
-//   : never
-// : A extends TupleType<infer AItems>
-// ? B extends TupleType<infer BItems>
-//   ? mergeTypeTuples<AItems, BItems> extends BaseTypeTuple
-//     ? TupleType<mergeTypeTuples<AItems, BItems>>
-//     : never
-//   : never
-// : getSharedParentScalar<A, B>;
-
 type _getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
   Types extends [infer U]
     ? U
@@ -94,36 +71,11 @@ type _getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
     ? _getSharedParentPrimitiveVariadic<
         [getSharedParentPrimitive<A, B>, ...Rest]
       >
-    : // this object trick is required to prevent
-      // "instantiation is excessively deep"
-      // {
-      //   istype: _getSharedParentPrimitiveVariadic<
-      //     [getSharedParentPrimitive<A, B>, ...Rest]
-      //   >;
-      //   nev: never;
-      // }[getSharedParentPrimitive<A, B> extends PrimitiveType
-      //   ? "istype"
-      //   : "nev"]
-      never;
+    : never;
 
 export type getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
   _getSharedParentPrimitiveVariadic<Types>;
 
-// type _getSharedParentScalarVariadic<
-//   Types extends [BaseType, ...BaseType[]]
-// > = Types extends [ U]
-//   ? U
-//   : Types extends [infer A, infer B, ...infer Rest]
-//   ? getSharedParentScalar<A, B> extends BaseType
-//     ? mergeObjectTypesVariadic<[getSharedParentScalar<A, B>, ...Rest]>
-//     : never
-//   : never;
-
-// type getSharedParentScalarVariadic<
-//   Types extends [any, ...any[]]
-// > = _getSharedParentScalarVariadic<Types> extends ObjectType
-//   ? _getSharedParentScalarVariadic<Types>
-//   : never;
 export type LooseTypeSet<
   T extends any = any,
   C extends Cardinality = Cardinality

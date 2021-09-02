@@ -1,5 +1,4 @@
 import {
-  BaseExpression,
   Expression,
   BaseType,
   BaseTypeSet,

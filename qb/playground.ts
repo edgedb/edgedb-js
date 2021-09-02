@@ -1,14 +1,7 @@
 // tslint:disable:no-console
-import {
-  BaseTypeToTsType,
-  computeObjectShape,
-  computeTsType,
-  stripSet,
-  stripSetShape,
-  setToTsType,
-} from "reflection";
+import {setToTsType} from "reflection";
 import e from "./generated/example";
-import {setupTests, teardownTests} from "./test/setupTeardown";
+import {setupTests} from "./test/setupTeardown";
 
 async function run() {
   await setupTests();
@@ -97,11 +90,11 @@ async function run() {
     q: q11,
   });
   type q12 = setToTsType<typeof q12>;
-  const q13 = e.select(e.Hero, {
+  const _q13 = e.select(e.Hero, {
     id: true,
     q: q12,
   });
-  type q13 = setToTsType<typeof q13>;
+  type _q13 = setToTsType<typeof _q13>;
 }
 
 run();

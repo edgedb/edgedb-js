@@ -4,7 +4,7 @@ import type {typeutil} from "./util/typeutil";
 import {Cardinality, ExpressionKind, TypeKind} from "./enums";
 
 //////////////////
-// BASE TYPES
+// BASETYPE
 //////////////////
 
 export interface BaseType {
@@ -16,6 +16,10 @@ export type BaseTypeSet = {
   __cardinality__: Cardinality;
 };
 export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
+
+//////////////////
+// SCALARTYPE
+//////////////////
 
 export interface ScalarType<
   Name extends string = string,
@@ -31,6 +35,83 @@ export interface ScalarType<
   >;
 }
 
+////////////////////
+// SETS AND EXPRESSIONS
+////////////////////
+
+export interface TypeSet<
+  T extends BaseType = BaseType,
+  Card extends Cardinality = Cardinality
+> {
+  __element__: T;
+  __cardinality__: Card;
+}
+
+// utility function for creating set
+export function $toSet<Root extends BaseType, Card extends Cardinality>(
+  root: Root,
+  card: Card
+): TypeSet<Root, Card> {
+  return {
+    __element__: root,
+    __cardinality__: card,
+  };
+}
+
+export type BaseExpression = {
+  __element__: BaseType;
+  __cardinality__: Cardinality;
+  toEdgeQL(): string;
+  $is: any;
+  $assertSingle: any;
+};
+
+export type Expression<Set extends TypeSet = TypeSet> =
+  BaseType extends Set["__element__"]
+    ? Set & {toEdgeQL(): string; $is: any; $assertSingle: any}
+    : Set & ExpressionMethods<stripSet<Set>> & $pathify<Set>;
+
+export type stripSet<T> = "__element__" extends keyof T
+  ? "__cardinality__" extends keyof T
+    ? {
+        __element__: T["__element__"];
+        __cardinality__: T["__cardinality__"];
+      }
+    : T
+  : T;
+
+export type stripSetShape<T> = {
+  [k in keyof T]: stripSet<T[k]>;
+};
+
+// importing the actual alias from
+// generated/modules/std didn't work.
+// returned 'any' every time
+export type $assertSingle<
+  Type extends BaseType
+  // Expr extends TypeSet
+> = Expression<{
+  __element__: Type;
+  __cardinality__: Cardinality.One;
+  __kind__: ExpressionKind.Function;
+  __name__: "std::assert_single";
+  __args__: [TypeSet]; // discard wrapped expression
+  __namedargs__: {};
+}>;
+
+export interface ExpressionMethods<Set extends TypeSet> {
+  __element__: Set["__element__"];
+  __cardinality__: Set["__cardinality__"];
+
+  toEdgeQL(): string;
+  $is<T extends ObjectTypeSet>(ixn: T): $expr_TypeIntersection<this, T>;
+  $assertSingle(): $assertSingle<Set["__element__"]>;
+}
+
+//////////////////
+// ENUMTYPE
+//////////////////
+
 export interface EnumType<
   Name extends string = string,
   TsType extends any = any,
@@ -43,8 +124,9 @@ export interface EnumType<
 }
 
 //////////////////
-// OBJECT TYPES
+// OBJECTTYPE
 //////////////////
+
 export type ObjectTypeSet = TypeSet<ObjectType, Cardinality>;
 
 export interface ObjectType<
@@ -60,7 +142,48 @@ export interface ObjectType<
   __polys__: Polys;
 }
 
-type adsf = typeutil.assertEqual<ObjectType, ObjectType>;
+export type PropertyTypes =
+  | ScalarType
+  | EnumType
+  | ArrayType
+  | TupleType
+  | NamedTupleType;
+
+export interface PropertyDesc<
+  Type extends PropertyTypes = PropertyTypes,
+  Card extends Cardinality = Cardinality,
+  Exclusive extends boolean = boolean,
+  Writable extends boolean = boolean
+> {
+  __kind__: "property";
+  target: Type;
+  cardinality: Card;
+  exclusive: Exclusive;
+  writable: Writable;
+}
+
+export type PropertyShape = {
+  [k: string]: PropertyDesc;
+};
+
+export interface LinkDesc<
+  Type extends ObjectType = any,
+  Card extends Cardinality = Cardinality,
+  LinkProps extends PropertyShape = any,
+  Exclusive extends boolean = boolean,
+  Writable extends boolean = boolean
+> {
+  __kind__: "link";
+  target: Type;
+  cardinality: Card;
+  properties: LinkProps;
+  exclusive: Exclusive;
+  writable: Writable;
+}
+
+export type ObjectTypeShape = {
+  [k: string]: PropertyDesc | LinkDesc;
+};
 
 export type objectExprToSelectShape<T extends ObjectTypeSet> =
   shapeToSelectShape<T["__element__"]["__pointers__"]>;
@@ -169,79 +292,6 @@ export type Poly<Type extends ObjectType = any, Shape extends any = any> = {
 };
 export type AnyPoly = {type: any; shape: any};
 
-////////////////////
-// SETS AND EXPRESSIONS
-////////////////////
-
-export interface TypeSet<
-  T extends BaseType = BaseType,
-  Card extends Cardinality = Cardinality
-> {
-  __element__: T;
-  __cardinality__: Card;
-}
-
-// utility function for creating set
-export function $toSet<Root extends BaseType, Card extends Cardinality>(
-  root: Root,
-  card: Card
-): TypeSet<Root, Card> {
-  return {
-    __element__: root,
-    __cardinality__: card,
-  };
-}
-
-export type BaseExpression = {
-  __element__: BaseType;
-  __cardinality__: Cardinality;
-  toEdgeQL(): string;
-  $is: any;
-  $assertSingle: any;
-};
-
-export type Expression<Set extends TypeSet = TypeSet> =
-  BaseType extends Set["__element__"]
-    ? Set & {toEdgeQL(): string; $is: any; $assertSingle: any}
-    : Set & ExpressionMethods<stripSet<Set>> & $pathify<Set>;
-
-export type stripSet<T> = "__element__" extends keyof T
-  ? "__cardinality__" extends keyof T
-    ? {
-        __element__: T["__element__"];
-        __cardinality__: T["__cardinality__"];
-      }
-    : T
-  : T;
-
-export type stripSetShape<T> = {
-  [k in keyof T]: stripSet<T[k]>;
-};
-
-// importing the actual alias from
-// generated/modules/std didn't work.
-// returned 'any' every time
-export type $assertSingle<
-  Type extends BaseType
-  // Expr extends TypeSet
-> = Expression<{
-  __element__: Type;
-  __cardinality__: Cardinality.One;
-  __kind__: ExpressionKind.Function;
-  __name__: "std::assert_single";
-  __args__: [TypeSet]; // discard wrapped expression
-  __namedargs__: {};
-}>;
-
-export interface ExpressionMethods<Set extends TypeSet> {
-  __element__: Set["__element__"];
-  __cardinality__: Set["__cardinality__"];
-
-  toEdgeQL(): string;
-  $is<T extends ObjectTypeSet>(ixn: T): $expr_TypeIntersection<this, T>;
-  $assertSingle(): $assertSingle<Set["__element__"]>;
-}
-
 export type PrimitiveType =
   | ScalarType
   | EnumType
@@ -252,10 +302,10 @@ export type PrimitiveType =
 export type PrimitiveTypeSet = TypeSet<PrimitiveType, Cardinality>;
 
 /////////////////////////
-/// COLLECTION TYPES
+/// ARRAYTYPE
 /////////////////////////
 export interface ArrayType<
-  Element extends NonArrayBaseType = NonArrayBaseType,
+  Element extends NonArrayType = NonArrayType,
   Name extends string = `array<${Element["__name__"]}>`
 > extends BaseType {
   __name__: Name;
@@ -263,7 +313,7 @@ export interface ArrayType<
   __element__: Element;
 }
 
-export function ArrayType<Element extends NonArrayBaseType>(
+export function ArrayType<Element extends NonArrayType>(
   element: Element
 ): ArrayType<Element> {
   return {
@@ -277,6 +327,9 @@ type ArrayTypeToTsType<Type extends ArrayType> = Array<
   BaseTypeToTsType<Type["__element__"]>
 >;
 
+/////////////////////////
+/// TUPLE TYPE
+/////////////////////////
 export interface TupleType<Items extends BaseTypeTuple = BaseTypeTuple>
   extends BaseType {
   __name__: string;
@@ -299,6 +352,10 @@ type TupleItemsToTsType<Items extends BaseTypeTuple> = {
     ? BaseTypeToTsType<Items[k]>
     : never;
 };
+
+/////////////////////////
+/// NAMED TUPLE TYPE
+/////////////////////////
 
 export type NamedTupleShape = {[k: string]: BaseType};
 export interface NamedTupleType<
@@ -325,54 +382,8 @@ type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
   [k in keyof Type["__shape__"]]: BaseTypeToTsType<Type["__shape__"][k]>;
 };
 
-/////////////////////////
-/// OBJECT TYPES
-/////////////////////////
-
-type PropertyTypes =
-  | ScalarType
-  | EnumType
-  | ArrayType
-  | TupleType
-  | NamedTupleType;
-export interface PropertyDesc<
-  Type extends PropertyTypes = PropertyTypes,
-  Card extends Cardinality = Cardinality,
-  Exclusive extends boolean = boolean,
-  Writable extends boolean = boolean
-> {
-  __kind__: "property";
-  target: Type;
-  cardinality: Card;
-  exclusive: Exclusive;
-  writable: Writable;
-}
-
-export type PropertyShape = {
-  [k: string]: PropertyDesc;
-};
-
-export interface LinkDesc<
-  Type extends ObjectType = any,
-  Card extends Cardinality = Cardinality,
-  LinkProps extends PropertyShape = any,
-  Exclusive extends boolean = boolean,
-  Writable extends boolean = boolean
-> {
-  __kind__: "link";
-  target: Type;
-  cardinality: Card;
-  properties: LinkProps;
-  exclusive: Exclusive;
-  writable: Writable;
-}
-
-export type ObjectTypeShape = {
-  [k: string]: PropertyDesc | LinkDesc;
-};
-
 /////////////////////
-/// TSTYPE HELPERS
+/// TSTYPE COMPUTATION
 /////////////////////
 
 export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
@@ -429,35 +440,6 @@ export type linkToTsType<Link extends LinkDesc<any, any, any, any>> =
     ? setToTsType<TypeSet<Type, Card>>
     : never;
 
-export type assignableCardinality<C extends Cardinality> =
-  C extends Cardinality.Empty
-    ? Cardinality.Empty
-    : C extends Cardinality.AtMostOne
-    ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
-    : C extends Cardinality.One
-    ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
-    : C extends Cardinality.AtLeastOne
-    ? Cardinality.One | Cardinality.AtLeastOne | Cardinality.Many
-    : C extends Cardinality.Many
-    ? Cardinality
-    : never;
-
-export type shapeElementToExpression<Element extends PropertyDesc | LinkDesc> =
-  Element extends PropertyDesc
-    ? TypeSet<Element["target"], assignableCardinality<Element["cardinality"]>>
-    : Element extends LinkDesc
-    ? TypeSet<
-        ObjectType<
-          // anonymize the link target
-          // generated object types are too limiting
-          // they have no shape or polys
-          Element["target"]["__name__"],
-          Element["target"]["__pointers__"]
-        >,
-        assignableCardinality<Element["cardinality"]>
-      >
-    : never;
-
 export type shapeElementToTsType<El extends PropertyDesc | LinkDesc> =
   El extends PropertyDesc
     ? propToTsType<El>
@@ -473,9 +455,9 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
       }
     >;
 
-///////////////////////////////////
-// DISCRIMINATED UNION OF ALL MATERIAL TYPES
-///////////////////////////////////
+///////////////////
+// TYPE HELPERS
+///////////////////
 
 export function isScalarType(type: BaseType): type is ScalarType {
   return type.__kind__ === TypeKind.scalar;
@@ -496,7 +478,7 @@ export function isArrayType(type: BaseType): type is ArrayType {
   return type.__kind__ === TypeKind.array;
 }
 
-export type NonArrayBaseType =
+export type NonArrayType =
   | ScalarType
   | EnumType
   | ObjectType

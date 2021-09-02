@@ -1,9 +1,9 @@
 import {scalarAssignableBy} from "@generated/castMaps";
 import {
   ArrayType,
-  assignableCardinality,
   BaseType,
   BaseTypeTuple,
+  cardinalityUtil,
   Expression,
   ExpressionKind,
   LinkDesc,
@@ -68,7 +68,7 @@ export type shapeElementToAssignmentExpression<
 > = [Element] extends [PropertyDesc]
   ? {
       __element__: assignableBy<Element["target"]>;
-      __cardinality__: assignableCardinality<Element["cardinality"]>;
+      __cardinality__: cardinalityUtil.assignable<Element["cardinality"]>;
     }
   : [Element] extends [LinkDesc]
   ? TypeSet<
@@ -77,7 +77,7 @@ export type shapeElementToAssignmentExpression<
         string,
         Element["target"]["__pointers__"]
       >,
-      assignableCardinality<Element["cardinality"]>
+      cardinalityUtil.assignable<Element["cardinality"]>
     >
   : never;
 

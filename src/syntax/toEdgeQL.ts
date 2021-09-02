@@ -1,13 +1,13 @@
+import {$expr_Delete} from "@generated/syntax/select";
+import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
 import {
-  BaseExpression,
+  BaseType,
   Cardinality,
   ExpressionKind,
   isArrayType,
   isNamedTupleType,
   isObjectType,
   isTupleType,
-  BaseType,
-  ObjectTypeShape,
   OperatorKind,
   Poly,
   SelectModifierKind,
@@ -15,31 +15,28 @@ import {
   TypeSet,
   util,
 } from "../reflection";
-import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
+import type {$expr_Literal} from "../reflection/literal";
 import type {
   $expr_PathLeaf,
   $expr_PathNode,
   $expr_TypeIntersection,
 } from "../reflection/path";
-
-import type {$expr_Set} from "./set";
 import type {$expr_Cast} from "./cast";
-import type {$expr_Literal} from "../reflection/literal";
+import type {$expr_Detached} from "./detached";
+import type {$expr_For, $expr_ForVar} from "./for";
+import type {$expr_Function, $expr_Operator} from "./funcops";
+import {$expr_Insert} from "./insert";
+import type {$expr_Param, $expr_WithParams} from "./params";
 import type {
   $expr_Select,
   mod_Filter,
-  mod_OrderBy,
-  mod_Offset,
   mod_Limit,
+  mod_Offset,
+  mod_OrderBy,
 } from "./select";
-import type {$expr_Function, $expr_Operator} from "./funcops";
-import type {$expr_For, $expr_ForVar} from "./for";
-import type {$expr_Alias, $expr_With} from "./with";
-import type {$expr_Param, $expr_WithParams} from "./params";
-import type {$expr_Detached} from "./detached";
+import type {$expr_Set} from "./set";
 import {$expr_Update} from "./update";
-import {$expr_Insert} from "./insert";
-import {$expr_Delete} from "@generated/syntax/select";
+import type {$expr_Alias, $expr_With} from "./with";
 
 export type SomeExpression =
   | $expr_PathNode
