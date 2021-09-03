@@ -20,13 +20,15 @@ SELECT ((__withVar_0 + __withVar_1))`);
 
 test("implicit 'WITH' vars referencing each other", () => {
   const skip = e.int64(10);
-  const remainingHeros = e.select(e.Hero).orderBy(e.Hero.id).offset(skip);
-  const pageResults = e
-    .select(remainingHeros, {
-      id: true,
-      name: true,
-    })
-    .limit(10);
+  const remainingHeros = e.select(e.Hero, (hero) => ({
+    order: hero.id,
+    offset: skip,
+  }));
+  const pageResults = e.select(remainingHeros, () => ({
+    id: true,
+    name: true,
+    limit: 10,
+  }));
 
   const query = e.select({
     pageResults,
@@ -35,16 +37,18 @@ test("implicit 'WITH' vars referencing each other", () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __withVar_2 := (10),
-  __withVar_1 := (
-    SELECT (default::Hero) {
+  __withVar_3 := (10),
+  __withVar_2 := (
+    WITH
+      __scope_1_Hero := (DETACHED default::Hero)
+    SELECT (__scope_1_Hero) {
       id
     }
-    ORDER BY default::Hero.id ASC EMPTY FIRST
-    OFFSET __withVar_2
+    ORDER BY __scope_1_Hero.id
+    OFFSET __withVar_3
   ),
   __withVar_0 := (
-    SELECT (__withVar_1) {
+    SELECT (__withVar_2) {
       id,
       name
     }
@@ -52,8 +56,8 @@ test("implicit 'WITH' vars referencing each other", () => {
   )
 SELECT {
   pageResults := (__withVar_0 {id, name}),
-  nextOffset := ((__withVar_2 + std::count((__withVar_0)))),
-  hasMore := (SELECT ((std::count((__withVar_1)) > 10)))
+  nextOffset := ((__withVar_3 + std::count((__withVar_0)))),
+  hasMore := (SELECT ((std::count((__withVar_2)) > 10)))
 }`);
 
   type queryType = BaseTypeToTsType<typeof query["__element__"]>;
@@ -240,34 +244,37 @@ SELECT {
 
 test("implicit 'WITH' and explicit 'WITH' in sub expr", () => {
   const skip = e.int64(10);
-  const remainingHeros = e.select(e.Hero).orderBy(e.Hero.id).offset(skip);
-  const pageResults = e
-    .select(remainingHeros, {
-      id: true,
-      name: true,
-    })
-    .limit(10);
+  const remainingHeros = e.select(e.Hero, (hero) => ({
+    order: hero.id,
+    offset: skip,
+  }));
+  const pageResults = e.select(remainingHeros, () => ({
+    id: true,
+    name: true,
+    limit: 10,
+  }));
 
   const nextOffset = e.plus(skip, e.count(pageResults));
 
   const query = e.select({
     pageResults,
-    // @ts-ignore
     nextOffset: e.with([nextOffset], e.select(nextOffset)),
     hasMore: e.select(e.gt(e.count(remainingHeros), e.int64(10))),
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __withVar_2 := (10),
-  __withVar_1 := (
-    SELECT (default::Hero) {
+  __withVar_3 := (10),
+  __withVar_2 := (
+    WITH
+      __scope_1_Hero := (DETACHED default::Hero)
+    SELECT (__scope_1_Hero) {
       id
     }
-    ORDER BY default::Hero.id ASC EMPTY FIRST
-    OFFSET __withVar_2
+    ORDER BY __scope_1_Hero.id
+    OFFSET __withVar_3
   ),
   __withVar_0 := (
-    SELECT (__withVar_1) {
+    SELECT (__withVar_2) {
       id,
       name
     }
@@ -277,10 +284,10 @@ SELECT {
   pageResults := (__withVar_0 {id, name}),
   nextOffset := (
     WITH
-      __withVar_3 := ((__withVar_2 + std::count((__withVar_0))))
-    SELECT (__withVar_3)
+      __withVar_4 := ((__withVar_3 + std::count((__withVar_0))))
+    SELECT (__withVar_4)
   ),
-  hasMore := (SELECT ((std::count((__withVar_1)) > 10)))
+  hasMore := (SELECT ((std::count((__withVar_2)) > 10)))
 }`);
 });
 
@@ -440,27 +447,52 @@ SELECT {
 );
 
 test("query with no 'WITH' block", () => {
-  const query = e
-    .select(e.Person.$is(e.Hero), {
-      id: true,
-      computable: e.int64(35),
-      all_heroes: e.select(e.Hero, {__type__: {name: true}}),
-    })
-    .orderBy(e.Person.name)
-    .limit(1);
+  const query = e.select(e.Person.$is(e.Hero), (person) => ({
+    id: true,
+    computable: e.int64(35),
+    all_heroes: e.select(e.Hero, () => ({__type__: {name: true}})),
+    order: person.name,
+    limit: 1,
+  }));
 
-  expect(query.toEdgeQL())
-    .toEqual(`SELECT (default::Person[IS default::Hero]) {
+  expect(query.toEdgeQL()).toEqual(`WITH
+  __scope_0_Hero := (DETACHED default::Person[IS default::Hero])
+SELECT (__scope_0_Hero) {
   id,
   computable := (35),
   all_heroes := (
-    SELECT (default::Hero) {
+    SELECT (DETACHED default::Hero) {
       __type__: {
         name
       }
     }
   )
 }
-ORDER BY default::Person.name ASC EMPTY FIRST
+ORDER BY __scope_0_Hero.name
 LIMIT 1`);
+});
+
+test("repeated expression referencing scoped select object", () => {
+  const query = e.select(e.Hero, (hero) => {
+    const secret = e.concat(
+      e.concat(hero.name, e.str(" is ")),
+      hero.secret_identity
+    );
+    return {
+      name: true,
+      secret,
+      secret2: secret,
+    };
+  });
+
+  expect(query.toEdgeQL())
+    .toEqual(`FOR __scope_0_Hero IN {DETACHED default::Hero} UNION (
+WITH
+  __withVar_1 := (((__scope_0_Hero.name ++ \" is \") ++ __scope_0_Hero.secret_identity))
+SELECT (__scope_0_Hero) {
+  name,
+  secret := (__withVar_1),
+  secret2 := (__withVar_1)
+}
+)`);
 });

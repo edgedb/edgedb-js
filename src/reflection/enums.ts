@@ -36,6 +36,7 @@ export enum ExpressionKind {
   Param = "Param",
   OptionalParam = "OptionalParam",
   Detached = "Detached",
+  PolyShapeElement = "PolyShapeElement",
 }
 
 export enum SelectModifierKind {

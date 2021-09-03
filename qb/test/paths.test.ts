@@ -74,11 +74,11 @@ test("path structure", () => {
   > = true;
 
   expect(Hero.villains.nemesis.villains.name.toEdgeQL()).toEqual(
-    "default::Hero.villains.nemesis.villains.name"
+    "DETACHED default::Hero.villains.nemesis.villains.name"
   );
   const Herotype = Hero.__type__.__type__.__type__;
   expect(Herotype.annotations.__type__.computed_fields.toEdgeQL()).toEqual(
-    "default::Hero.__type__.__type__.__type__.annotations.__type__.computed_fields"
+    "DETACHED default::Hero.__type__.__type__.__type__.annotations.__type__.computed_fields"
   );
   expect(Hero.villains.__parent__.linkName).toEqual("villains");
   expect(Hero.villains.__parent__.type.__element__.__name__).toEqual(
@@ -98,11 +98,13 @@ test("type intersection on path node", () => {
   expect(hero.__expr__).toBe(person);
   // check that pathify works
   expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
-  expect(hero.toEdgeQL()).toEqual(`default::Person[IS default::Hero]`);
+  expect(hero.toEdgeQL()).toEqual(
+    `DETACHED default::Person[IS default::Hero]`
+  );
 });
 
 test("type intersection on select", () => {
-  const q2 = e.select(e.Person, {id: true, name: true}).limit(5);
+  const q2 = e.select(e.Person, () => ({id: true, name: true, limit: 5}));
   const hero = q2.$is(e.Hero);
   const f2: typeutil.assertEqual<typeof hero["__element__"], typeof $Hero> =
     true;

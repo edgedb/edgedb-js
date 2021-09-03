@@ -86,11 +86,7 @@ test("merging tests", () => {
   const merged = mergeObjectTypes(e.default.$Bag, e.default.$Simple);
   type merged = typeof merged;
   type alkdjf = string extends keyof merged["__pointers__"] ? true : false;
-  type adf = computeObjectShape<
-    merged["__pointers__"],
-    merged["__shape__"],
-    merged["__polys__"]
-  >;
+  type adf = computeObjectShape<merged["__pointers__"], merged["__shape__"]>;
   // type aklsdjf = keyof (object | null);
   expect(Object.keys(merged.__pointers__).length).toEqual(4);
   expect(Object.keys(merged.__pointers__).includes("id")).toEqual(true);
@@ -109,13 +105,13 @@ test("backlinks", () => {
 
   const heroVillain = e.Hero["<nemesis[IS default::Villain]"];
   expect(heroMovie.toEdgeQL()).toEqual(
-    `default::Hero.<characters[IS default::Movie]`
+    `DETACHED default::Hero.<characters[IS default::Movie]`
   );
   expect(heroMovie.__element__.__name__).toEqual("default::Movie");
   expect(heroVillain.nemesis.__element__.__name__).toEqual("default::Hero");
-  expect(e.select(e.Villain).limit(1).nemesis.__cardinality__).toEqual(
-    Cardinality.AtMostOne
-  );
+  expect(
+    e.select(e.Villain, () => ({limit: 1})).nemesis.__cardinality__
+  ).toEqual(Cardinality.AtMostOne);
 
   expect(e.Profile["<profile"].__element__.__name__).toEqual(
     "std::BaseObject"

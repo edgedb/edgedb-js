@@ -45,7 +45,7 @@ export async function setupTests() {
 
   const spidey: Hero = await pool.queryOne(`SELECT (INSERT Hero {
   name := "Spider-Man",
-  secret_identity := "Peter Parket"
+  secret_identity := "Peter Parker"
 }) { id, name, secret_identity }`);
 
   const thanos: Villain = await pool.queryOne(

@@ -259,7 +259,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     body.writeln(
       frag`export type ${ref} = $.ObjectType<${quote(
         type.name
-      )}, ${ref}λShape, null, []>;`
+      )}, ${ref}λShape, null>;`
     );
 
     /////////

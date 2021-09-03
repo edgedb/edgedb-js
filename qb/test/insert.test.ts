@@ -46,10 +46,10 @@ test("nested insert", async () => {
     }),
   });
 
-  const q2 = e.select(q1, {
+  const q2 = e.select(q1, () => ({
     name: true,
     nemesis: {name: true},
-  });
+  }));
 
   const result = await pool.queryOne(q2.toEdgeQL());
 

@@ -21,12 +21,12 @@ test("detached", async () => {
   const heroes = await e.select(e.Hero).query(pool);
 
   const result = await e
-    .select(e.Hero, {
+    .select(e.Hero, (hero) => ({
       id: true,
       name: true,
       friends: e.select(e.detached(e.Hero)),
-    })
-    .filter(e.eq(e.Hero.name, e.str("Iron Man")))
+      filter: e.eq(hero.name, e.str("Iron Man")),
+    }))
     .query(pool);
   type result = typeof result;
   const f1: typeutil.assertEqual<

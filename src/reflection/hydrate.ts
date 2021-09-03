@@ -207,8 +207,7 @@ export type mergeObjectTypes<
     ? ObjectType<
         `${A["__name__"]} UNION ${B["__name__"]}`,
         mergeObjectShapes<A["__pointers__"], B["__pointers__"]>,
-        null,
-        []
+        null
       >
     : A
   : B extends ObjectType
@@ -236,7 +235,7 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
       return merged;
     },
     __shape__: {},
-    __polys__: [],
+    // __polys__: [],
   };
   return obj as any;
 }

@@ -21,9 +21,9 @@ export const generateOperatorTypes = ({
       // Name
       code.writeln(frag`${quote(opDef.originalName)},`);
       // OperatorKind
+      code.writeln(frag`$.OperatorKind.${opDef.operator_kind},`);
       // Args
       code.writeln(args);
-      code.writeln(frag`$.OperatorKind.${opDef.operator_kind},`);
       // ReturnType
       code.writeln(returnType);
     },

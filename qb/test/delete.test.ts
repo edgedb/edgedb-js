@@ -30,8 +30,9 @@ test("basic insert", async () => {
   await pool.queryOne(insertBlackWidow.toEdgeQL());
 
   const deleteBlackWidow = e
-    .select(e.Hero)
-    .filter(e.eq(e.Hero.name, e.str("Black Widow")))
+    .select(e.Hero, (hero) => ({
+      filter: e.eq(hero.name, e.str("Black Widow")),
+    }))
     .delete();
   await pool.queryOne(deleteBlackWidow.toEdgeQL());
 
