@@ -1,6 +1,5 @@
 import {edgedb} from "@generated/imports";
 import {UpdateShape} from "@syntax/update";
-import {createPool} from "edgedb";
 
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
@@ -9,13 +8,13 @@ let pool: edgedb.Pool;
 let data: TestData;
 
 beforeAll(async () => {
-  pool = await createPool();
-  data = await setupTests();
+  const setup = await setupTests();
+  pool = setup.pool;
+  data = setup.data;
 });
 
 afterAll(async () => {
-  await teardownTests();
-  await pool.close();
+  await teardownTests(pool);
 });
 
 test("update", async () => {
@@ -43,29 +42,29 @@ test("update assignable", () => {
 });
 
 test("update link property", async () => {
-  const theAvengers = e
-    .select(e.Movie)
-    .filter(e.eq(e.Movie.title, e.str("The Avengers")))
-    .limit(1);
+  const theAvengers = e.select(e.Movie, (movie) => ({
+    filter: e.eq(movie.title, e.str("The Avengers")),
+    limit: 1,
+  }));
 
   const qq1 = await e
-    .select(theAvengers, {id: true, characters: true})
+    .select(theAvengers, () => ({id: true, characters: true}))
     .query(pool);
 
   expect(qq1?.characters.length).toEqual(2);
 
   const q2 = theAvengers.update({
     characters: {
-      "+=": e
-        .select(e.Villain)
-        .filter(e.eq(e.Villain.name, e.str(data.thanos.name))),
+      "+=": e.select(e.Villain, (villain) => ({
+        filter: e.eq(villain.name, e.str(data.thanos.name)),
+      })),
     },
   });
   // console.log(q2.toEdgeQL());
   await pool.execute(q2.toEdgeQL());
 
   const t2 = await e
-    .select(theAvengers, {id: true, characters: true})
+    .select(theAvengers, () => ({id: true, characters: true}))
     .query(pool);
   expect(t2?.characters.length).toEqual(3);
 
@@ -73,16 +72,16 @@ test("update link property", async () => {
     theAvengers
       .update({
         characters: {
-          "-=": e
-            .select(e.Villain)
-            .filter(e.eq(e.Villain.name, e.str(data.thanos.name))),
+          "-=": e.select(e.Villain, (villain) => ({
+            filter: e.eq(villain.name, e.str(data.thanos.name)),
+          })),
         },
       })
       .toEdgeQL()
   );
 
   const t3 = await e
-    .select(theAvengers, {id: true, characters: true})
+    .select(theAvengers, () => ({id: true, characters: true}))
     .query(pool);
   expect(t3?.characters.length).toEqual(2);
 
@@ -95,27 +94,25 @@ test("update link property", async () => {
   );
 
   const t4 = await e
-    .select(theAvengers, {id: true, characters: true})
+    .select(theAvengers, () => ({id: true, characters: true}))
     .query(pool);
   expect(t4?.characters.length).toEqual(0);
 
   await pool.execute(
     theAvengers
       .update({
-        characters: e
-          .select(e.Hero)
-          .filter(
-            e.in(
-              e.Hero.id,
-              e.set(e.uuid(data.cap.id), e.uuid(data.iron_man.id))
-            )
+        characters: e.select(e.Hero, (hero) => ({
+          filter: e.in(
+            hero.id,
+            e.set(e.uuid(data.cap.id), e.uuid(data.iron_man.id))
           ),
+        })),
       })
       .toEdgeQL()
   );
 
   const t5 = await e
-    .select(theAvengers, {id: true, characters: true})
+    .select(theAvengers, () => ({id: true, characters: true}))
     .query(pool);
   expect(t5?.characters.length).toEqual(2);
 });

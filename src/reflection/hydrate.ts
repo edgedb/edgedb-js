@@ -5,8 +5,6 @@ import {
   BaseType,
   ObjectType,
   ObjectTypeShape,
-  shapeToTsType,
-  MaterialType,
   LinkDesc,
   PropertyDesc,
 } from "./typesystem";
@@ -43,7 +41,7 @@ function applySpec(
           },
           get properties() {
             const linkProperties: {[k: string]: any} = {};
-            (ptr.pointers || []).forEach((linkProp) => {
+            (ptr.pointers || []).forEach(linkProp => {
               // We only support "link properties" in EdgeDB, currently.
               if (linkProp.kind !== "property") {
                 return;
@@ -88,7 +86,7 @@ export function makeType<T extends BaseType>(
   spec: introspect.Types,
   id: string,
   literal: (type: any, val: any) => any,
-  anytype?: MaterialType
+  anytype?: BaseType
 ): T {
   const type = spec.get(id);
 
@@ -106,7 +104,7 @@ export function makeType<T extends BaseType>(
 
   if (type.kind === "object") {
     obj.__kind__ = TypeKind.object;
-    util.defineGetter(obj, "__shape__", () => {
+    util.defineGetter(obj, "__pointers__", () => {
       const shape: any = {};
       const seen = new Set<string>();
       applySpec(spec, type, shape, seen, literal);
@@ -123,7 +121,7 @@ export function makeType<T extends BaseType>(
       }
       return shape as any;
     });
-    obj.__params__ = {};
+    obj.__shape__ = {};
     obj.__polys__ = [];
     return obj;
   } else if (type.kind === "scalar") {
@@ -154,7 +152,7 @@ export function makeType<T extends BaseType>(
       obj.__kind__ = TypeKind.tuple;
 
       util.defineGetter(obj, "__items__", () => {
-        return type.tuple_elements.map((el) =>
+        return type.tuple_elements.map(el =>
           makeType(spec, el.target_id, literal, anytype)
         ) as any;
       });
@@ -206,9 +204,8 @@ export type mergeObjectTypes<
   ? B extends ObjectType
     ? ObjectType<
         `${A["__name__"]} UNION ${B["__name__"]}`,
-        mergeObjectShapes<A["__shape__"], B["__shape__"]>,
-        null,
-        []
+        mergeObjectShapes<A["__pointers__"], B["__pointers__"]>,
+        null
       >
     : A
   : B extends ObjectType
@@ -219,15 +216,15 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
   a: A,
   b: B
 ): mergeObjectTypes<A, B> {
-  const obj: ObjectType = {
+  const obj = {
     __kind__: TypeKind.object,
     __name__: `${a.__name__} UNION ${b.__name__}`,
-    get __shape__() {
+    get __pointers__() {
       const merged: any = {};
-      for (const [akey, aitem] of Object.entries(a.__shape__)) {
-        if (!b.__shape__[akey]) continue;
+      for (const [akey, aitem] of Object.entries(a.__pointers__)) {
+        if (!b.__pointers__[akey]) continue;
 
-        const bitem = b.__shape__[akey];
+        const bitem = b.__pointers__[akey];
         if (aitem.cardinality !== bitem.cardinality) continue;
         // names must reflect full type
         if (aitem.target.__name__ !== bitem.target.__name__) continue;
@@ -235,9 +232,8 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
       }
       return merged;
     },
-    __params__: {},
-    __polys__: [],
-    __tstype__: undefined as any,
+    __shape__: {},
+    // __polys__: [],
   };
   return obj as any;
 }

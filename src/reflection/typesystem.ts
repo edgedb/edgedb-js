@@ -1,199 +1,54 @@
-// no runtime imports
-import type {$expr_TypeIntersection, $pathify} from "../syntax/path";
-import type {literal} from "../syntax/literal";
+import type {$expr_TypeIntersection, $pathify, $expr_PathNode} from "./path";
+import type {$expr_Literal} from "./literal";
 import type {typeutil} from "./util/typeutil";
 import {Cardinality, ExpressionKind, TypeKind} from "./enums";
 
 //////////////////
-// BASE TYPES
+// BASETYPE
 //////////////////
 
 export interface BaseType {
   __kind__: TypeKind;
-  __tstype__: unknown;
   __name__: string;
 }
-export interface BaseTypeSet<
-  T extends BaseType = BaseType,
-  Card extends Cardinality = Cardinality
-> {
-  __element__: T;
-  __cardinality__: Card;
-}
+export type BaseTypeSet = {
+  __element__: BaseType;
+  __cardinality__: Cardinality;
+};
 export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
+
+//////////////////
+// SCALARTYPE
+//////////////////
 
 export interface ScalarType<
   Name extends string = string,
   TsType extends any = any,
   TsConstType extends TsType = TsType
-> {
+> extends BaseType {
   __kind__: TypeKind.scalar;
   __tstype__: TsType;
   __tsconsttype__: TsConstType;
   __name__: Name;
-  <T extends TsType = TsType>(val: T): literal<ScalarType<Name, TsType, T>>;
-}
-
-export interface EnumType<
-  Name extends string = string,
-  TsType extends any = any,
-  Vals extends any = any
-> {
-  __kind__: TypeKind.enum;
-  __tstype__: TsType;
-  __name__: Name;
-  (val: TsType | Vals): literal<this>;
-}
-
-//////////////////
-// OBJECT TYPES
-//////////////////
-// export type SomeObjectType = ObjectType;
-
-export type SomeObjectType = {
-  __kind__: TypeKind.object;
-  __tstype__: unknown;
-  __name__: string;
-  __shape__: ObjectTypeShape;
-  __params__: object | null;
-  __polys__: Poly[];
-};
-
-export interface ObjectType<
-  Name extends string = string,
-  Shape extends ObjectTypeShape = ObjectTypeShape,
-  Params extends object | null = any,
-  Polys extends Poly[] = any[]
-> {
-  __kind__: TypeKind.object;
-  // __tstype__: computeObjectShape<Shape, Params, Polys>;
-  __tstype__: computeObjectShape<Shape, Params, Polys>;
-  __name__: Name;
-  __shape__: Shape;
-  __params__: Params;
-  __polys__: Polys;
-}
-
-export type objectExprToSelectParams<T extends ObjectTypeExpression> =
-  shapeToSelectParams<T["__element__"]["__shape__"]>;
-
-export type objectTypeToSelectParams<T extends SomeObjectType> =
-  shapeToSelectParams<T["__shape__"]>;
-
-export type shapeToSelectParams<Shape extends ObjectTypeShape> = Partial<
-  {
-    [k in keyof Shape]: Shape[k] extends PropertyDesc
-      ? boolean | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
-      : Shape[k] extends LinkDesc
-      ?
-          | true
-          | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
-          | typeutil.flatten<
-              shapeToSelectParams<Shape[k]["target"]["__shape__"]> &
-                linkDescShape<Shape[k]>
-            >
-      : any;
-  }
->;
-
-export type linkDescShape<Link extends LinkDesc> = addAtSigns<
-  Link["properties"]
-> extends ObjectTypeShape
-  ? shapeToSelectParams<addAtSigns<Link["properties"]>>
-  : never;
-
-export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
-
-export type shapeWithPolysToTs<
-  Shape extends ObjectTypeShape,
-  Params extends object | null,
-  Polys extends Poly[]
-> = simpleShapeToTs<Shape, Params> &
-  unionToIntersection<
-    Polys[number] extends infer P
-      ? P extends Poly
-        ? Partial<simpleShapeToTs<P["type"]["__shape__"], P["params"]>>
-        : never
-      : never
+  <T extends TsType = TsType>(val: T): $expr_Literal<
+    ScalarType<Name, TsType, T>
   >;
-
-export type simpleShapeToTs<
-  Shape extends ObjectTypeShape,
-  Params
-> = typeutil.flatten<
-  {
-    [k in keyof Params]: Params[k] extends infer Param
-      ? [k] extends [keyof Shape]
-        ? [Param] extends [true]
-          ? shapeElementToTsType<Shape[k]>
-          : [Param] extends [false]
-          ? never
-          : [Param] extends [boolean]
-          ? shapeElementToTsType<Shape[k]> | undefined
-          : Param extends TypeSet
-          ? setToTsType<Param>
-          : Param extends object
-          ? Shape[k]["target"] extends SomeObjectType
-            ? simpleShapeToTs<Shape[k]["target"]["__shape__"], Param>
-            : never
-          : never
-        : Param extends TypeSet
-        ? setToTsType<Param>
-        : never
-      : never;
-  }
->;
-
-export type computeObjectShape<
-  Shape extends ObjectTypeShape,
-  Params extends object | null,
-  Polys extends Poly[]
-> = string extends keyof Shape // checks if Shape is actually defined
-  ? any
-  : typeutil.assertEqual<Params, object | null> extends true
-  ? any
-  : typeutil.assertEqual<Polys, Poly[]> extends true
-  ? any
-  : typeutil.assertEqual<Params, null> extends true
-  ? any
-  : shapeWithPolysToTs<Shape, Params, Polys>;
-
-type unionToIntersection<U> = (
-  U extends any ? (k: U) => void : never
-) extends (k: infer I) => void
-  ? I
-  : never;
-
-export type shapeElementToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
-  El extends PropertyDesc
-    ? propToTsType<El>
-    : El extends LinkDesc<any, any, any, any>
-    ? {id: string}
-    : never;
-
-export type Poly<
-  Type extends SomeObjectType = SomeObjectType,
-  Params extends any = any
-> = {
-  type: Type;
-  params: Params;
-};
-export type AnyPoly = {type: any; params: any};
+}
 
 ////////////////////
 // SETS AND EXPRESSIONS
 ////////////////////
 
 export interface TypeSet<
-  T extends MaterialType = MaterialType,
+  T extends BaseType = BaseType,
   Card extends Cardinality = Cardinality
 > {
   __element__: T;
   __cardinality__: Card;
 }
 
-// utlity function for creating set
-export function $toSet<Root extends MaterialType, Card extends Cardinality>(
+// utility function for creating set
+export function $toSet<Root extends BaseType, Card extends Cardinality>(
   root: Root,
   card: Card
 ): TypeSet<Root, Card> {
@@ -203,152 +58,99 @@ export function $toSet<Root extends MaterialType, Card extends Cardinality>(
   };
 }
 
-export type BaseExpression<Set extends TypeSet = TypeSet> = {
-  __element__: Set["__element__"];
-  __cardinality__: Set["__cardinality__"];
-  // __kind__: ExpressionKind;
-  toEdgeQL(): string;
-};
+export type Expression<Set extends TypeSet = TypeSet> =
+  BaseType extends Set["__element__"]
+    ? Set & {toEdgeQL(): string; $is: any; $assertSingle: any}
+    : Set & ExpressionMethods<stripSet<Set>> & $pathify<Set>;
 
-export type Expression<Set extends TypeSet = TypeSet> = Set &
-  ExpressionMethods<{
-    __element__: Set["__element__"];
-    __cardinality__: Set["__cardinality__"];
-  }> &
-  $pathify<Set>;
+export type stripSet<T> = "__element__" extends keyof T
+  ? "__cardinality__" extends keyof T
+    ? {
+        __element__: T["__element__"];
+        __cardinality__: T["__cardinality__"];
+      }
+    : T
+  : T;
+
+export type stripSetShape<T> = {
+  [k in keyof T]: stripSet<T[k]>;
+};
 
 // importing the actual alias from
 // generated/modules/std didn't work.
 // returned 'any' every time
-export type $assertSingle<Type extends MaterialType, Args> = Expression<{
+export type $assertSingle<
+  Type extends BaseType
+  // Expr extends TypeSet
+> = Expression<{
   __element__: Type;
   __cardinality__: Cardinality.One;
   __kind__: ExpressionKind.Function;
   __name__: "std::assert_single";
-  __args__: Args;
+  __args__: [TypeSet]; // discard wrapped expression
   __namedargs__: {};
 }>;
 
 export interface ExpressionMethods<Set extends TypeSet> {
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
+
   toEdgeQL(): string;
-  $is<T extends ObjectTypeExpression, This extends this = this>(
+  $is<T extends ObjectTypeSet>(
     ixn: T
-  ): $expr_TypeIntersection<This, T>;
-  $assertSingle<This extends this = this>(): $assertSingle<
-    Set["__element__"],
-    [This]
+  ): $expr_TypeIntersection<
+    this, // might cause performance issues
+    ObjectType<
+      T["__element__"]["__name__"],
+      T["__element__"]["__pointers__"],
+      {id: true}
+    >
   >;
+  $assertSingle(): $assertSingle<Set["__element__"]>;
 }
 
-export type MaterialTypeSet<
-  T extends MaterialType = MaterialType,
-  Card extends Cardinality = Cardinality
-> = TypeSet<T, Card>;
+//////////////////
+// ENUMTYPE
+//////////////////
 
-export type ObjectTypeSet<
-  T extends SomeObjectType = SomeObjectType,
-  Card extends Cardinality = Cardinality
-> = TypeSet<T, Card>;
-
-export type ObjectTypeExpression<Set extends ObjectTypeSet = ObjectTypeSet> =
-  Expression<Set>;
-
-export type PrimitiveType =
-  | ScalarType
-  | EnumType
-  | TupleType
-  | NamedTupleType
-  | ArrayType;
-
-export type PrimitiveTypeSet<
-  T extends PrimitiveType = PrimitiveType,
-  Card extends Cardinality = Cardinality
-> = TypeSet<T, Card>;
-
-export type PrimitiveExpression<
-  Set extends PrimitiveTypeSet = PrimitiveTypeSet
-> = Expression<Set>;
-
-/////////////////////////
-/// COLLECTION TYPES
-/////////////////////////
-export type ArrayType<
-  Element extends NonArrayMaterialType = NonArrayMaterialType,
-  Name extends string = `array<${Element["__name__"]}>`
-> = {
+export interface EnumType<
+  Name extends string = string,
+  TsType extends any = any,
+  Vals extends any = any
+> extends BaseType {
+  __kind__: TypeKind.enum;
+  __tstype__: TsType;
   __name__: Name;
-  __kind__: TypeKind.array;
-  __tstype__: Array<Element["__tstype__"]>;
-  __element__: Element;
-};
-
-export function ArrayType<Element extends NonArrayMaterialType>(
-  element: Element
-): ArrayType<Element> {
-  return {
-    __kind__: TypeKind.array,
-    __name__: `array<${element.__name__}>`,
-    __element__: element,
-  } as any;
+  (val: TsType | Vals): $expr_Literal<this>;
 }
 
-export type MaterialTypeTuple = [MaterialType, ...MaterialType[]] | [];
+//////////////////
+// OBJECTTYPE
+//////////////////
 
-export type TupleType<Items extends BaseTypeTuple = BaseTypeTuple> = {
-  __name__: string;
-  __kind__: TypeKind.tuple;
-  __tstype__: {
-    [k in keyof Items]: Items[k] extends BaseType
-      ? Items[k]["__tstype__"]
-      : never;
-  };
-  __items__: Items;
-};
-export function TupleType<Items extends typeutil.tupleOf<BaseType>>(
-  items: Items
-): TupleType<Items> {
-  const name = `tuple<${items.map((item) => item.__name__).join(", ")}>`;
-  return {
-    __kind__: TypeKind.tuple,
-    __name__: name,
-    __items__: items,
-  } as any;
-}
+export type ObjectTypeSet = TypeSet<ObjectType, Cardinality>;
+export type ObjectTypeExpression = TypeSet<ObjectType, Cardinality>;
 
-export type NamedTupleShape = {[k: string]: MaterialType};
-export type NamedTupleType<Shape extends NamedTupleShape = NamedTupleShape> = {
-  __name__: string;
-  __kind__: TypeKind.namedtuple;
-  __tstype__: {
-    [k in keyof Shape]: Shape[k]["__tstype__"];
-  };
+export interface ObjectType<
+  Name extends string = string,
+  Pointers extends ObjectTypeShape = ObjectTypeShape,
+  Shape extends object | null = any
+  // Polys extends Poly[] = any[]
+> extends BaseType {
+  __kind__: TypeKind.object;
+  __name__: Name;
+  __pointers__: Pointers;
   __shape__: Shape;
-};
-export function NamedTupleType<Shape extends NamedTupleShape>(
-  shape: Shape
-): NamedTupleType<Shape> {
-  const name = `tuple<${Object.entries(shape)
-    .map(([key, val]) => `${key}: ${val.__name__}`)
-    .join(", ")}>`;
-  return {
-    __kind__: TypeKind.namedtuple,
-    __name__: name,
-    __shape__: shape,
-  } as any;
+  // __polys__: Polys;
 }
 
-/////////////////////////
-/// OBJECT TYPES
-/////////////////////////
-
-type PropertyTypes =
+export type PropertyTypes =
   | ScalarType
   | EnumType
   | ArrayType
   | TupleType
   | NamedTupleType;
+
 export interface PropertyDesc<
   Type extends PropertyTypes = PropertyTypes,
   Card extends Cardinality = Cardinality,
@@ -362,14 +164,46 @@ export interface PropertyDesc<
   writable: Writable;
 }
 
+export type shapeToSelectShape<
+  Shape extends ObjectTypeShape,
+  AllowComputed extends boolean = true
+> = Partial<
+  {
+    [k in keyof Shape]: Shape[k] extends PropertyDesc
+      ?
+          | boolean
+          | (AllowComputed extends true
+              ? TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
+              : never)
+      : Shape[k] extends LinkDesc
+      ?
+          | boolean
+          | (AllowComputed extends true
+              ? TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
+              : never)
+          | typeutil.flatten<
+              shapeToSelectShape<Shape[k]["target"]["__pointers__"]> &
+                linkDescShape<Shape[k]>
+            >
+          | ((
+              scope: $expr_PathNode<
+                TypeSet<Shape[k]["target"], Cardinality.One>,
+                null,
+                true
+              >
+            ) => shapeToSelectShape<Shape[k]["target"]["__pointers__"]> &
+              linkDescShape<Shape[k]>)
+      : any;
+  }
+>;
 export type PropertyShape = {
   [k: string]: PropertyDesc;
 };
 
 export interface LinkDesc<
-  Type extends SomeObjectType = SomeObjectType,
+  Type extends ObjectType = any,
   Card extends Cardinality = Cardinality,
-  LinkProps extends PropertyShape = PropertyShape,
+  LinkProps extends PropertyShape = any,
   Exclusive extends boolean = boolean,
   Writable extends boolean = boolean
 > {
@@ -385,28 +219,267 @@ export type ObjectTypeShape = {
   [k: string]: PropertyDesc | LinkDesc;
 };
 
-/////////////////////
-/// TSTYPE HELPERS
-/////////////////////
+export type objectExprToSelectShape<T extends ObjectTypeSet> =
+  shapeToSelectShape<T["__element__"]["__pointers__"]>;
 
-type TypeToTsType<Type extends BaseType> = Type extends ScalarType
-  ? Type["__tsconsttype__"]
-  : Type["__tstype__"];
+export type objectTypeToSelectShape<T extends ObjectType> = shapeToSelectShape<
+  T["__pointers__"]
+>;
 
-export type setToTsType<Set extends TypeSet> =
-  Set["__cardinality__"] extends Cardinality.Empty
-    ? null
-    : Set["__cardinality__"] extends Cardinality.One
-    ? TypeToTsType<Set["__element__"]>
-    : Set["__cardinality__"] extends Cardinality.AtLeastOne
-    ? [TypeToTsType<Set["__element__"]>, ...TypeToTsType<Set["__element__"]>[]]
-    : Set["__cardinality__"] extends Cardinality.AtMostOne
-    ? TypeToTsType<Set["__element__"]> | null
-    : Set["__cardinality__"] extends Cardinality.Many
-    ? TypeToTsType<Set["__element__"]>[]
-    : Set["__cardinality__"] extends Cardinality
-    ? unknown
+// export type shapeToSelectShape<Shape extends ObjectTypeShape> = {
+//   [k in keyof Shape]?: Shape[k] extends PropertyDesc
+//     ? boolean | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
+//     : Shape[k] extends LinkDesc
+//     ?
+//         | true
+//         | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
+//         | typeutil.flatten<
+//             shapeToSelectShape<Shape[k]["target"]["__pointers__"]> &
+//               linkDescShape<Shape[k]>
+//           >
+//     : any;
+// }; // & {[k:string]: boolean | TypeSet | object};
+
+export type linkDescShape<Link extends LinkDesc> = addAtSigns<
+  Link["properties"]
+> extends ObjectTypeShape
+  ? shapeToSelectShape<addAtSigns<Link["properties"]>>
+  : never;
+
+export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
+
+// export type shapeWithPolysToTs<
+//   Pointers extends ObjectTypeShape,
+//   Shape extends object | null,
+//   Polys extends Poly[]
+// > = simpleShapeToTs<Pointers, Shape> &
+//   unionToIntersection<
+//     Polys[number] extends infer P
+//       ? P extends Poly
+//         ? Partial<simpleShapeToTs<P["type"]["__pointers__"], P["params"]>>
+//         : never
+//       : never
+//   >;
+
+type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
+  Element
+] extends [true]
+  ? shapeElementToTsType<Pointer>
+  : [Element] extends [false]
+  ? never
+  : [Element] extends [boolean]
+  ? shapeElementToTsType<Pointer> | undefined
+  : Element extends TypeSet
+  ? setToTsType<Element>
+  : Element extends (scope: any) => any
+  ? Pointer["target"] extends ObjectType
+    ? simpleShapeToTs<Pointer["target"]["__pointers__"], ReturnType<Element>>
+    : never
+  : Element extends object
+  ? Pointer["target"] extends ObjectType
+    ? simpleShapeToTs<Pointer["target"]["__pointers__"], Element>
+    : never
+  : never;
+
+export type $expr_PolyShapeElement<
+  PolyType extends ObjectTypeSet = ObjectTypeSet,
+  ShapeElement extends any = any
+> = {
+  __kind__: ExpressionKind.PolyShapeElement;
+  __polyType__: PolyType;
+  __shapeElement__: ShapeElement;
+};
+
+export type simpleShapeToTs<
+  Pointers extends ObjectTypeShape,
+  Shape
+> = typeutil.flatten<
+  keyof Shape extends never
+    ? {id: string}
+    : {
+        [k in keyof Shape]: Shape[k] extends $expr_PolyShapeElement<
+          infer PolyType,
+          infer ShapeEl
+        >
+          ? [k] extends [keyof PolyType["__element__"]["__pointers__"]]
+            ? shapeElementToTs<
+                PolyType["__element__"]["__pointers__"][k],
+                ShapeEl
+              > | null
+            : never
+          : [k] extends [keyof Pointers]
+          ? shapeElementToTs<Pointers[k], Shape[k]>
+          : Shape[k] extends TypeSet
+          ? setToTsType<Shape[k]>
+          : never;
+      }
+>;
+
+export type computeObjectShape<
+  Pointers extends ObjectTypeShape,
+  Shape extends object | null
+  // Polys extends Poly[]
+> = simpleShapeToTs<Pointers, Shape>;
+//  string extends keyof Pointers // checks if Shape is actually defined
+//   ? any
+//   : typeutil.assertEqual<Shape, object | null> extends true
+//   ? any
+//   : typeutil.assertEqual<Polys, Poly[]> extends true
+//   ? any
+//   : typeutil.assertEqual<Shape, null> extends true
+//   ? any
+//   : shapeWithPolysToTs<Pointers, Shape, Polys>;
+
+type unionToIntersection<U> = (
+  U extends any ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never;
+
+export type shapeElementToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
+  El extends PropertyDesc
+    ? propToTsType<El>
+    : El extends LinkDesc<any, any, any, any>
+    ? {id: string}
     : never;
+
+export type PrimitiveType =
+  | ScalarType
+  | EnumType
+  | TupleType
+  | NamedTupleType
+  | ArrayType;
+
+export type PrimitiveTypeSet = TypeSet<PrimitiveType, Cardinality>;
+
+/////////////////////////
+/// ARRAYTYPE
+/////////////////////////
+export interface ArrayType<
+  Element extends NonArrayType = NonArrayType,
+  Name extends string = `array<${Element["__name__"]}>`
+> extends BaseType {
+  __name__: Name;
+  __kind__: TypeKind.array;
+  __element__: Element;
+}
+
+export function ArrayType<Element extends NonArrayType>(
+  element: Element
+): ArrayType<Element> {
+  return {
+    __kind__: TypeKind.array,
+    __name__: `array<${element.__name__}>`,
+    __element__: element,
+  } as any;
+}
+
+type ArrayTypeToTsType<Type extends ArrayType> = Array<
+  BaseTypeToTsType<Type["__element__"]>
+>;
+
+/////////////////////////
+/// TUPLE TYPE
+/////////////////////////
+export interface TupleType<Items extends BaseTypeTuple = BaseTypeTuple>
+  extends BaseType {
+  __name__: string;
+  __kind__: TypeKind.tuple;
+  __items__: Items;
+}
+export function TupleType<Items extends typeutil.tupleOf<BaseType>>(
+  items: Items
+): TupleType<Items> {
+  const name = `tuple<${items.map(item => item.__name__).join(", ")}>`;
+  return {
+    __kind__: TypeKind.tuple,
+    __name__: name,
+    __items__: items,
+  } as any;
+}
+
+type TupleItemsToTsType<Items extends BaseTypeTuple> = {
+  [k in keyof Items]: Items[k] extends BaseType
+    ? BaseTypeToTsType<Items[k]>
+    : never;
+};
+
+/////////////////////////
+/// NAMED TUPLE TYPE
+/////////////////////////
+
+export type NamedTupleShape = {[k: string]: BaseType};
+export interface NamedTupleType<
+  Shape extends NamedTupleShape = NamedTupleShape
+> extends BaseType {
+  __name__: string;
+  __kind__: TypeKind.namedtuple;
+  __shape__: Shape;
+}
+export function NamedTupleType<Shape extends NamedTupleShape>(
+  shape: Shape
+): NamedTupleType<Shape> {
+  const name = `tuple<${Object.entries(shape)
+    .map(([key, val]) => `${key}: ${val.__name__}`)
+    .join(", ")}>`;
+  return {
+    __kind__: TypeKind.namedtuple,
+    __name__: name,
+    __shape__: shape,
+  } as any;
+}
+
+type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
+  [k in keyof Type["__shape__"]]: BaseTypeToTsType<Type["__shape__"][k]>;
+};
+
+/////////////////////
+/// TSTYPE COMPUTATION
+/////////////////////
+
+export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
+  ? Type["__tsconsttype__"]
+  : Type extends EnumType
+  ? Type["__tstype__"]
+  : Type extends ArrayType
+  ? ArrayTypeToTsType<Type>
+  : Type extends TupleType
+  ? TupleItemsToTsType<Type["__items__"]>
+  : Type extends NamedTupleType
+  ? NamedTupleTypeToTsType<Type>
+  : Type extends ObjectType
+  ? computeObjectShape<
+      Type["__pointers__"],
+      Type["__shape__"]
+      // Type["__polys__"]
+    >
+  : never;
+
+export type setToTsType<Set extends TypeSet> = computeTsType<
+  Set["__element__"],
+  Set["__cardinality__"]
+>;
+
+export type computeTsType<
+  T extends BaseType,
+  C extends Cardinality
+> = Cardinality extends C
+  ? unknown
+  : BaseType extends T
+  ? unknown
+  : C extends Cardinality.Empty
+  ? null
+  : C extends Cardinality.One
+  ? BaseTypeToTsType<T>
+  : C extends Cardinality.AtLeastOne
+  ? [BaseTypeToTsType<T>, ...BaseTypeToTsType<T>[]]
+  : C extends Cardinality.AtMostOne
+  ? BaseTypeToTsType<T> | null
+  : C extends Cardinality.Many
+  ? BaseTypeToTsType<T>[]
+  : C extends Cardinality
+  ? unknown
+  : never;
 
 export type propToTsType<Prop extends PropertyDesc> =
   Prop extends PropertyDesc<infer Type, infer Card>
@@ -416,35 +489,6 @@ export type propToTsType<Prop extends PropertyDesc> =
 export type linkToTsType<Link extends LinkDesc<any, any, any, any>> =
   Link extends LinkDesc<infer Type, infer Card, any>
     ? setToTsType<TypeSet<Type, Card>>
-    : never;
-
-export type assignableCardinality<C extends Cardinality> =
-  C extends Cardinality.Empty
-    ? Cardinality.Empty
-    : C extends Cardinality.AtMostOne
-    ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
-    : C extends Cardinality.One
-    ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
-    : C extends Cardinality.AtLeastOne
-    ? Cardinality.One | Cardinality.AtLeastOne | Cardinality.Many
-    : C extends Cardinality.Many
-    ? Cardinality
-    : never;
-
-export type shapeElementToExpression<Element extends PropertyDesc | LinkDesc> =
-  Element extends PropertyDesc
-    ? TypeSet<Element["target"], assignableCardinality<Element["cardinality"]>>
-    : Element extends LinkDesc
-    ? TypeSet<
-        ObjectType<
-          // anonymize the link target
-          // generated object types are too limiting
-          // they have no shape or polys
-          Element["target"]["__name__"],
-          Element["target"]["__shape__"]
-        >,
-        assignableCardinality<Element["cardinality"]>
-      >
     : never;
 
 export type shapeElementToTsType<El extends PropertyDesc | LinkDesc> =
@@ -462,19 +506,30 @@ export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
       }
     >;
 
-///////////////////////////////////
-// DISCRIMINATED UNION OF ALL MATERIAL TYPES
-///////////////////////////////////
+///////////////////
+// TYPE HELPERS
+///////////////////
 
-export type MaterialType =
-  | ScalarType
-  | EnumType
-  | ObjectType
-  | TupleType
-  | NamedTupleType
-  | ArrayType;
+export function isScalarType(type: BaseType): type is ScalarType {
+  return type.__kind__ === TypeKind.scalar;
+}
+export function isEnumType(type: BaseType): type is EnumType {
+  return type.__kind__ === TypeKind.enum;
+}
+export function isObjectType(type: BaseType): type is ObjectType {
+  return type.__kind__ === TypeKind.object;
+}
+export function isTupleType(type: BaseType): type is TupleType {
+  return type.__kind__ === TypeKind.tuple;
+}
+export function isNamedTupleType(type: BaseType): type is NamedTupleType {
+  return type.__kind__ === TypeKind.namedtuple;
+}
+export function isArrayType(type: BaseType): type is ArrayType {
+  return type.__kind__ === TypeKind.array;
+}
 
-export type NonArrayMaterialType =
+export type NonArrayType =
   | ScalarType
   | EnumType
   | ObjectType

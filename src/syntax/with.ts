@@ -1,20 +1,18 @@
-import {BaseExpression, ExpressionKind} from "reflection";
+import {Expression, ExpressionKind, TypeSet} from "../reflection";
 import {$expr_Select} from "./select";
 import {$expr_For} from "./for";
+import {$expr_Insert} from "./insert";
+import {$expr_Update} from "./update";
 import {$expressionify} from "./path";
 
-export type $expr_Alias<Expr extends BaseExpression = BaseExpression> =
-  BaseExpression<{
-    __element__: Expr["__element__"];
-    __cardinality__: Expr["__cardinality__"];
-  }> & {
-    __kind__: ExpressionKind.Alias;
-    __expr__: Expr;
-  };
+export type $expr_Alias<Expr extends TypeSet = TypeSet> = Expression<{
+  __element__: Expr["__element__"];
+  __cardinality__: Expr["__cardinality__"];
+  __kind__: ExpressionKind.Alias;
+  __expr__: Expr;
+}>;
 
-export function alias<Expr extends BaseExpression>(
-  expr: Expr
-): $expr_Alias<Expr> {
+export function alias<Expr extends Expression>(expr: Expr): $expr_Alias<Expr> {
   return $expressionify({
     __kind__: ExpressionKind.Alias,
     __element__: expr.__element__,
@@ -23,18 +21,24 @@ export function alias<Expr extends BaseExpression>(
   });
 }
 
-type WithableExpression = $expr_Select | $expr_For; // insert | update | delete
+export type WithableExpression =
+  | $expr_Select
+  | $expr_For
+  | $expr_Insert
+  | $expr_Update;
 
 export type $expr_With<
-  Refs extends BaseExpression[] = BaseExpression[],
+  Refs extends TypeSet[] = TypeSet[],
   Expr extends WithableExpression = WithableExpression
-> = BaseExpression<Expr> & {
+> = Expression<{
+  __element__: Expr["__element__"];
+  __cardinality__: Expr["__cardinality__"];
   __kind__: ExpressionKind.With;
   __expr__: Expr;
   __refs__: Refs;
-};
+}>;
 
-function _with<Refs extends BaseExpression[], Expr extends WithableExpression>(
+function _with<Refs extends Expression[], Expr extends WithableExpression>(
   refs: Refs,
   expr: Expr
 ): $expr_With<Refs, Expr> {
@@ -43,7 +47,7 @@ function _with<Refs extends BaseExpression[], Expr extends WithableExpression>(
     __element__: expr.__element__,
     __cardinality__: expr.__cardinality__,
     __refs__: refs,
-    __expr__: expr,
+    __expr__: expr as any,
   });
 }
 

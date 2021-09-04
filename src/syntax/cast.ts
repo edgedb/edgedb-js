@@ -1,14 +1,7 @@
-import {
-  BaseExpression,
-  Expression,
-  ExpressionKind,
-  TypeSet,
-  MaterialType,
-} from "reflection";
+import {Expression, ExpressionKind, BaseType} from "../reflection";
 import {$expressionify} from "./path";
-import {toEdgeQL} from "./toEdgeQL";
 
-export function cast<Target extends MaterialType, Expr extends BaseExpression>(
+export function cast<Target extends BaseType, Expr extends Expression>(
   target: Target,
   expr: Expr
 ): $expr_Cast<Target, Expr> {
@@ -21,8 +14,8 @@ export function cast<Target extends MaterialType, Expr extends BaseExpression>(
 }
 
 export type $expr_Cast<
-  Target extends MaterialType = MaterialType,
-  Expr extends BaseExpression = BaseExpression
+  Target extends BaseType = BaseType,
+  Expr extends Expression = Expression
 > = Expression<{
   __element__: Target;
   __cardinality__: Expr["__cardinality__"];

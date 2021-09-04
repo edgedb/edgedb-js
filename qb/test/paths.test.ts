@@ -1,14 +1,8 @@
-import e from "../generated/example";
 import {reflection as $} from "edgedb/src/index.node";
-
+import {Cardinality, ExpressionKind, TypeKind} from "edgedb/src/reflection";
 import {$Hero} from "generated/example/modules/default";
-
-import {
-  Cardinality,
-  ExpressionKind,
-  TypeKind,
-  typeutil,
-} from "edgedb/src/reflection";
+import e from "../generated/example";
+import {tc} from "./setupTeardown";
 
 test("path structure", () => {
   const Hero = e.default.Hero;
@@ -24,30 +18,28 @@ test("path structure", () => {
   expect(Hero.name.__cardinality__).toEqual($.Cardinality.Many);
   expect(HeroSingleton.name.__cardinality__).toEqual($.Cardinality.One);
 
+  expect(Villain["<villains[IS default::Hero]"].__element__.__name__).toEqual(
+    "default::Hero"
+  );
+
   // check path root cardinalities
-  const _t1: $.typeutil.assertEqual<
-    Hero["__cardinality__"],
-    $.Cardinality.Many
-  > = true;
-  const _t2: $.typeutil.assertEqual<
-    HeroSingleton["__cardinality__"],
-    $.Cardinality.One
-  > = true;
+  tc.assert<tc.IsExact<Hero["__cardinality__"], $.Cardinality.Many>>(true);
+  tc.assert<tc.IsExact<HeroSingleton["__cardinality__"], $.Cardinality.One>>(
+    true
+  );
 
   // Hero.name
   expect(Hero.name.__element__.__name__).toEqual("std::str");
   expect(Hero.name.__cardinality__).toEqual($.Cardinality.Many);
-  const _t1952: $.typeutil.assertEqual<
-    Hero["name"]["__cardinality__"],
-    $.Cardinality.Many
-  > = true;
+  tc.assert<tc.IsExact<Hero["name"]["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
 
   // HeroSingleton.name
   expect(HeroSingleton.name.__cardinality__).toEqual($.Cardinality.One);
-  const _t3: $.typeutil.assertEqual<
-    HeroSingleton["name"]["__cardinality__"],
-    $.Cardinality.One
-  > = true;
+  tc.assert<
+    tc.IsExact<HeroSingleton["name"]["__cardinality__"], $.Cardinality.One>
+  >(true);
 
   // AtMostOneHero.name
   // test cardinality merging
@@ -61,24 +53,28 @@ test("path structure", () => {
   expect(AtLeastOneHero.number_of_movies.__cardinality__).toEqual(
     $.Cardinality.Many
   );
-  const _t41853: $.typeutil.assertEqual<
-    AtLeastOneHero["number_of_movies"]["__cardinality__"],
-    $.Cardinality.Many
-  > = true;
+  tc.assert<
+    tc.IsExact<
+      AtLeastOneHero["number_of_movies"]["__cardinality__"],
+      $.Cardinality.Many
+    >
+  >(true);
 
   // Hero.villains.id
   expect(Hero.villains.id.__cardinality__).toEqual($.Cardinality.Many);
-  const _t4896: $.typeutil.assertEqual<
-    HeroSingleton["villains"]["id"]["__cardinality__"],
-    $.Cardinality.Many
-  > = true;
+  tc.assert<
+    tc.IsExact<
+      HeroSingleton["villains"]["id"]["__cardinality__"],
+      $.Cardinality.Many
+    >
+  >(true);
 
   expect(Hero.villains.nemesis.villains.name.toEdgeQL()).toEqual(
-    "default::Hero.villains.nemesis.villains.name"
+    "DETACHED default::Hero.villains.nemesis.villains.name"
   );
   const Herotype = Hero.__type__.__type__.__type__;
   expect(Herotype.annotations.__type__.computed_fields.toEdgeQL()).toEqual(
-    "default::Hero.__type__.__type__.__type__.annotations.__type__.computed_fields"
+    "DETACHED default::Hero.__type__.__type__.__type__.annotations.__type__.computed_fields"
   );
   expect(Hero.villains.__parent__.linkName).toEqual("villains");
   expect(Hero.villains.__parent__.type.__element__.__name__).toEqual(
@@ -89,8 +85,22 @@ test("path structure", () => {
 test("type intersection on path node", () => {
   const person = e.Person;
   const hero = person.$is(e.Hero);
-  const f1: typeutil.assertEqual<typeof hero["__element__"], typeof $Hero> =
-    true;
+  tc.assert<
+    tc.IsExact<
+      typeof hero["__element__"]["__pointers__"],
+      typeof $Hero["__pointers__"]
+    >
+  >(true);
+  tc.assert<
+    tc.IsExact<
+      typeof hero["__element__"]["__name__"],
+      typeof $Hero["__name__"]
+    >
+  >(true);
+  tc.assert<tc.IsExact<typeof hero["__element__"]["__shape__"], {id: true}>>(
+    true
+  );
+  expect(hero.__element__.__shape__).toEqual({id: true});
   expect(hero.__element__.__name__).toEqual("default::Hero");
   expect(hero.__element__.__kind__).toEqual(TypeKind.object);
   expect(hero.__kind__).toEqual(ExpressionKind.TypeIntersection);
@@ -98,14 +108,14 @@ test("type intersection on path node", () => {
   expect(hero.__expr__).toBe(person);
   // check that pathify works
   expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
-  expect(hero.toEdgeQL()).toEqual(`default::Person[IS default::Hero]`);
+  expect(hero.toEdgeQL()).toEqual(
+    `DETACHED default::Person[IS default::Hero]`
+  );
 });
 
 test("type intersection on select", () => {
-  const q2 = e.select(e.Person, {id: true, name: true}).limit(5);
+  const q2 = e.select(e.Person, () => ({id: true, name: true, limit: 5}));
   const hero = q2.$is(e.Hero);
-  const f2: typeutil.assertEqual<typeof hero["__element__"], typeof $Hero> =
-    true;
   expect(hero.__element__.__name__).toEqual("default::Hero");
   expect(hero.__element__.__kind__).toEqual(TypeKind.object);
   expect(hero.__kind__).toEqual(ExpressionKind.TypeIntersection);
@@ -117,9 +127,8 @@ test("type intersection on select", () => {
 
 test("assertSingle", () => {
   const singleHero = e.Hero.$assertSingle();
-  const f1: typeutil.assertEqual<
-    typeof singleHero["__cardinality__"],
-    Cardinality.One
-  > = true;
+  tc.assert<tc.IsExact<typeof singleHero["__cardinality__"], Cardinality.One>>(
+    true
+  );
   expect(singleHero.__cardinality__).toEqual(Cardinality.One);
 });

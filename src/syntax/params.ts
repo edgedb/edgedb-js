@@ -1,10 +1,11 @@
 import {
   Expression,
   ExpressionKind,
-  BaseExpression,
   ParamType,
   Cardinality,
-} from "reflection";
+  ScalarType,
+  ArrayType,
+} from "../reflection";
 import {$expressionify} from "./path";
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
@@ -25,7 +26,7 @@ export type $expr_WithParams<
   Params extends {
     [key: string]: ParamType | $expr_OptionalParam;
   } = {},
-  Expr extends BaseExpression = BaseExpression
+  Expr extends Expression = Expression
 > = Expression<{
   __kind__: ExpressionKind.WithParams;
   __element__: Expr["__element__"];
@@ -34,15 +35,21 @@ export type $expr_WithParams<
   __paramststype__: paramsToParamTypes<Params>;
 }>;
 
+type getParamTsType<Param extends ParamType> = Param extends ScalarType
+  ? Param["__tstype__"]
+  : Param extends ArrayType
+  ? Param["__element__"]["__tstype__"][]
+  : never;
+
 type paramsToParamTypes<
   Params extends {
     [key: string]: ParamType | $expr_OptionalParam;
   }
 > = {
   [key in keyof Params]: Params[key] extends $expr_OptionalParam
-    ? Params[key]["__type__"]["__tstype__"] | null
+    ? getParamTsType<Params[key]["__type__"]> | null
     : Params[key] extends ParamType
-    ? Params[key]["__tstype__"]
+    ? getParamTsType<Params[key]>
     : never;
 };
 
@@ -75,7 +82,7 @@ export function withParams<
   Params extends {
     [key: string]: ParamType | $expr_OptionalParam;
   } = {},
-  Expr extends BaseExpression = BaseExpression
+  Expr extends Expression = Expression
 >(
   params: Params,
   expr: (params: paramsToParamExprs<Params>) => Expr

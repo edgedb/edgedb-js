@@ -134,12 +134,6 @@ export namespace cardinalityUtil {
     return Cardinality.Many as any;
   }
 
-  type test1 = mergeCardinalities<Cardinality.AtMostOne, Cardinality.One>;
-  type test2 = mergeCardinalities<
-    Cardinality.AtMostOne,
-    Cardinality.AtMostOne
-  >;
-
   type _mergeCardinalitiesVariadic<
     Cards extends [Cardinality, ...Cardinality[]]
   > = Cards extends [infer Card]
@@ -224,4 +218,16 @@ export namespace cardinalityUtil {
   export type paramArrayCardinality<T> = {
     [K in keyof T]: T[K] extends TypeSet ? T[K]["__cardinality__"] : never;
   };
+
+  export type assignable<C extends Cardinality> = C extends Cardinality.Empty
+    ? Cardinality.Empty
+    : C extends Cardinality.AtMostOne
+    ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
+    : C extends Cardinality.One
+    ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
+    : C extends Cardinality.AtLeastOne
+    ? Cardinality.One | Cardinality.AtLeastOne | Cardinality.Many
+    : C extends Cardinality.Many
+    ? Cardinality
+    : never;
 }

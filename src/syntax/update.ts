@@ -1,41 +1,35 @@
+import {scalarAssignableBy} from "@generated/castMaps";
 import {
+  ArrayType,
+  BaseType,
+  BaseTypeTuple,
+  cardinalityUtil,
   Expression,
   ExpressionKind,
+  LinkDesc,
+  NamedTupleType,
   ObjectType,
+  ObjectTypeSet,
+  ObjectTypeShape,
+  PropertyDesc,
   ScalarType,
+  TupleType,
   TypeSet,
   typeutil,
-  ObjectTypeSet,
-  PropertyDesc,
-  LinkDesc,
-  ObjectTypeShape,
-  assignableCardinality,
-  ArrayType,
-  TupleType,
-  NamedTupleType,
-  MaterialType,
-  BaseTypeTuple,
-  NonArrayMaterialType,
-  SomeObjectType,
-  BaseType,
-} from "reflection";
-import _std from "@generated/modules/std";
-import {Movie} from "@generated/modules/default";
-import {scalarAssignableBy} from "@generated/castMaps";
+} from "../reflection";
 
 /////////////////
 /// UPDATE
 /////////////////
 
-export type anonymizeObject<T extends SomeObjectType> = ObjectType<
+export type anonymizeObject<T extends ObjectType> = ObjectType<
   string,
-  T["__shape__"],
-  any,
-  any[]
+  T["__pointers__"],
+  any
 >;
 
 export type assignableTuple<Items extends BaseTypeTuple> = {
-  [k in keyof Items]: Items[k] extends MaterialType
+  [k in keyof Items]: Items[k] extends BaseType
     ? assignableBy<Items[k]>
     : never;
 } extends infer NewItems
@@ -46,12 +40,10 @@ export type assignableTuple<Items extends BaseTypeTuple> = {
 
 export type assignableBy<T extends BaseType> = T extends ScalarType
   ? scalarAssignableBy<T>
-  : T extends SomeObjectType
+  : T extends ObjectType
   ? anonymizeObject<T>
   : T extends ArrayType
-  ? assignableBy<T["__element__"]> extends NonArrayMaterialType
-    ? ArrayType<assignableBy<T["__element__"]>>
-    : never
+  ? ArrayType<assignableBy<T["__element__"]>>
   : T extends TupleType
   ? TupleType<assignableTuple<T["__items__"]>>
   : T extends NamedTupleType
@@ -75,21 +67,21 @@ export type shapeElementToAssignmentExpression<
 > = [Element] extends [PropertyDesc]
   ? {
       __element__: assignableBy<Element["target"]>;
-      __cardinality__: assignableCardinality<Element["cardinality"]>;
+      __cardinality__: cardinalityUtil.assignable<Element["cardinality"]>;
     }
   : [Element] extends [LinkDesc]
   ? TypeSet<
       ObjectType<
         // anonymize the object type
         string,
-        Element["target"]["__shape__"]
+        Element["target"]["__pointers__"]
       >,
-      assignableCardinality<Element["cardinality"]>
+      cardinalityUtil.assignable<Element["cardinality"]>
     >
   : never;
 
 export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
-  stripNonWritables<stripBacklinks<Root["__element__"]["__shape__"]>>
+  stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
 > extends infer Shape
   ? Shape extends ObjectTypeShape
     ? {

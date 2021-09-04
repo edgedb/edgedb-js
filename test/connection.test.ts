@@ -447,7 +447,8 @@ test("connect: timeout", async () => {
   try {
     con = await asyncConnect({timeout: 1, waitUntilAvailable: 0});
     throw new Error("connection didn't time out");
-  } catch (e) {
+  } catch (_e) {
+    const e = _e as any;
     expect(e).toBeInstanceOf(errors.ClientConnectionTimeoutError);
     expect(e.message).toMatch("connection timed out (1ms)");
   } finally {
@@ -466,7 +467,8 @@ test("connect: refused", async () => {
       waitUntilAvailable: 0,
     });
     throw new Error("connection isn't refused");
-  } catch (e) {
+  } catch (_e) {
+    const e = _e as any;
     expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
     expect(e.source.code).toMatch("ECONNREFUSED");
   } finally {
@@ -485,7 +487,8 @@ test("connect: invalid name", async () => {
       waitUntilAvailable: 0,
     });
     throw new Error("name was resolved");
-  } catch (e) {
+  } catch (_e) {
+    const e = _e as any;
     expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
     expect(e.source.code).toMatch("ENOTFOUND");
     expect(e.source.syscall).toMatch("getaddrinfo");
@@ -504,7 +507,8 @@ test("connect: refused unix", async () => {
       waitUntilAvailable: 0,
     });
     throw new Error("connection isn't refused");
-  } catch (e) {
+  } catch (_e) {
+    const e = _e as any;
     expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
     expect(e.source.code).toMatch("ENOENT");
   } finally {

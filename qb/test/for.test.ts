@@ -8,5 +8,7 @@ test("simple for loop", () => {
       )
       .toEdgeQL()
   ).toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
-UNION (((__forVar__0 * <std::int32>2) + __forVar__0))`);
+UNION (
+  ((__forVar__0 * <std::int32>2) + __forVar__0)
+)`);
 });

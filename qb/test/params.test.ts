@@ -1,5 +1,5 @@
-import {typeutil} from "../../src/reflection";
 import e from "../generated/example";
+import {tc} from "./setupTeardown";
 
 test("simple params", () => {
   const query = e.withParams(
@@ -8,7 +8,7 @@ test("simple params", () => {
       numArr: e.array(e.int64),
       optBool: e.optional(e.bool),
     },
-    (params) =>
+    params =>
       e.select({
         str: params.str,
         nums: e.array_unpack(params.numArr),
@@ -25,12 +25,14 @@ test("simple params", () => {
   expect(() => e.select(query).toEdgeQL()).toThrow();
 
   type paramsType = typeof query["__paramststype__"];
-  const f1: typeutil.assertEqual<
-    paramsType,
-    {
-      str: string;
-      numArr: number[];
-      optBool: boolean | null;
-    }
-  > = true;
+  tc.assert<
+    tc.IsExact<
+      paramsType,
+      {
+        str: string;
+        numArr: number[];
+        optBool: boolean | null;
+      }
+    >
+  >(true);
 });

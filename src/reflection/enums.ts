@@ -13,7 +13,6 @@ export enum TypeKind {
   namedtuple = "namedtuple",
   tuple = "tuple",
   array = "array",
-  function = "function",
 }
 
 export enum ExpressionKind {
@@ -37,6 +36,7 @@ export enum ExpressionKind {
   Param = "Param",
   OptionalParam = "OptionalParam",
   Detached = "Detached",
+  PolyShapeElement = "PolyShapeElement",
 }
 
 export enum SelectModifierKind {
@@ -44,4 +44,11 @@ export enum SelectModifierKind {
   order_by = "order_by",
   offset = "offset",
   limit = "limit",
+}
+
+export enum OperatorKind {
+  Infix = "Infix",
+  Postfix = "Postfix",
+  Prefix = "Prefix",
+  Ternary = "Ternary",
 }

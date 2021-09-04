@@ -3,19 +3,19 @@ import {
   Expression,
   ExpressionKind,
   LinkDesc,
-  ObjectTypeExpression,
   ObjectTypeSet,
   ObjectTypeShape,
   PropertyDesc,
   typeutil,
-} from "reflection";
+} from "../reflection";
 import _std from "@generated/modules/std";
 import {
   shapeElementToAssignmentExpression,
   stripBacklinks,
   stripNonWritables,
 } from "./update";
-import {$expressionify, $expr_PathNode} from "./path";
+import {$expressionify} from "./path";
+import {$expr_PathNode} from "../reflection/path";
 
 type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
   T["cardinality"] extends
@@ -26,7 +26,7 @@ type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
     : false;
 
 export type InsertShape<Root extends ObjectTypeSet> = typeutil.stripNever<
-  stripNonWritables<stripBacklinks<Root["__element__"]["__shape__"]>>
+  stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
 > extends infer Shape
   ? Shape extends ObjectTypeShape
     ? typeutil.addQuestionMarks<

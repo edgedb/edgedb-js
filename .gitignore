@@ -1,4 +1,4 @@
-/dist
+dist
 /edgedb-deno
 /test/deno
 /.bench

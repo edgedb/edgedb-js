@@ -1,10 +1,6 @@
 import {edgedb} from "@generated/imports";
 import {Villain} from "@generated/modules/default";
 import {InsertShape} from "@syntax/insert";
-import {UpdateShape} from "@syntax/update";
-import {createPool} from "edgedb";
-import {typeutil} from "reflection";
-
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
@@ -12,13 +8,13 @@ let pool: edgedb.Pool;
 let data: TestData;
 
 beforeAll(async () => {
-  pool = await createPool();
-  data = await setupTests();
+  const setup = await setupTests();
+  pool = setup.pool;
+  data = setup.data;
 });
 
 afterAll(async () => {
-  await teardownTests();
-  await pool.close();
+  await teardownTests(pool);
 });
 
 test("insert shape check", async () => {
@@ -32,7 +28,7 @@ test("basic insert", async () => {
     secret_identity: e.str("Natasha Romanoff"),
   });
 
-  const r1 = await pool.queryOne(q1.toEdgeQL());
+  await pool.queryOne(q1.toEdgeQL());
 
   pool.execute(`DELETE Hero FILTER .name = 'Black Widow';`);
   return;
@@ -47,10 +43,10 @@ test("nested insert", async () => {
     }),
   });
 
-  const q2 = e.select(q1, {
+  const q2 = e.select(q1, () => ({
     name: true,
     nemesis: {name: true},
-  });
+  }));
 
   const result = await pool.queryOne(q2.toEdgeQL());
 

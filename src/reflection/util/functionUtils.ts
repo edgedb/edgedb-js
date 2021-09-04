@@ -50,18 +50,18 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
     //   - return anytype: getSharedParentPrimitive<...all anytype param refs>
     // - final catch all overload (if overload only has one anytype param,
     //   only this overload generated)
-    //   - param types: 1st param is 'MaterialType' (or 'NonArrayMaterialType')
+    //   - param types: 1st param is 'BaseType' (or 'NonArrayType')
     //                  other params reference first param type
     //   - return anytype: references first param type
 
     const anytypeParams = [
       ...overload.params.positional,
       ...overload.params.named,
-    ].filter((param) => param.type.name.includes("anytype"));
+    ].filter(param => param.type.name.includes("anytype"));
 
     if (anytypeParams.length) {
       const hasArrayType =
-        anytypeParams.some((param) =>
+        anytypeParams.some(param =>
           param.type.name.includes("array<anytype>")
         ) || overload.return_type.name.includes("array<anytype>");
 
@@ -69,7 +69,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
         ...overload,
         anytypes: {
           kind: "noncastable" as const,
-          type: [hasArrayType ? "$.NonArrayMaterialType" : "$.MaterialType"],
+          type: [hasArrayType ? "$.NonArrayType" : "$.BaseType"],
           refName: anytypeParams[0].typeName,
           refPath: findPathOfAnytype(anytypeParams[0].type.id, types),
         },
@@ -79,7 +79,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
         return [catchAllOverload];
       } else {
         return [
-          ...implicitCastableRootTypes.map((rootTypeId) => ({
+          ...implicitCastableRootTypes.map(rootTypeId => ({
             ...overload,
             anytypes: {
               kind: "castable" as const,
@@ -91,7 +91,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
             },
           })),
           ...(!hasArrayType
-            ? implicitCastableRootTypes.map((rootTypeId) => ({
+            ? implicitCastableRootTypes.map(rootTypeId => ({
                 ...overload,
                 anytypes: {
                   kind: "castable" as const,
@@ -109,7 +109,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
             ...overload,
             anytypes: {
               kind: "castable" as const,
-              type: [`$.SomeObjectType`],
+              type: [`$.ObjectType`],
               returnAnytypeWrapper: "_.syntax.mergeObjectTypes",
             },
           },
@@ -134,7 +134,7 @@ function groupParams(params: Param[], types: introspect.Types) {
   return {
     positional: params
       .filter(
-        (param) =>
+        param =>
           param.kind === "PositionalParam" || param.kind === "VariadicParam"
       )
       .map((param, i) => {
@@ -153,8 +153,8 @@ function groupParams(params: Param[], types: introspect.Types) {
         };
       }),
     named: params
-      .filter((param) => param.kind === "NamedOnlyParam")
-      .map((param) => ({
+      .filter(param => param.kind === "NamedOnlyParam")
+      .map(param => ({
         ...param,
         type: types.get(param.type.id),
         typeName: `NamedArgs[${quote(param.name)}]`,
@@ -238,7 +238,7 @@ export function getTypesSpecificity(types: introspect.Types, casts: Casts) {
 
   let currentSpec = 0;
   let typesToVisit: introspect.Type[] = [...types.values()].filter(
-    (type) => (casts.implicitCastFromMap[type.id] ?? []).length === 0
+    type => (casts.implicitCastFromMap[type.id] ?? []).length === 0
   );
   const nextTypesToVisit = new Set<introspect.Type>();
 
