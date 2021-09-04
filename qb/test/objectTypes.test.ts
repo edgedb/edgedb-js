@@ -1,14 +1,7 @@
-import e from "../generated/example";
-
 import {reflection as $} from "edgedb/src/index.node";
-import {
-  Cardinality,
-  computeObjectShape,
-  mergeObjectTypes,
-  typeutil,
-  BaseTypeToTsType,
-} from "../../src/reflection";
-import {$BaseObject} from "generated/example/modules/std";
+import {Cardinality, mergeObjectTypes} from "../../src/reflection";
+import e from "../generated/example";
+import {tc} from "./setupTeardown";
 
 const HeroType = e.default.$Hero;
 
@@ -84,20 +77,14 @@ test("array tests", () => {
 
 test("merging tests", () => {
   const merged = mergeObjectTypes(e.default.$Bag, e.default.$Simple);
-  type merged = typeof merged;
-  type alkdjf = string extends keyof merged["__pointers__"] ? true : false;
-  type adf = computeObjectShape<merged["__pointers__"], merged["__shape__"]>;
-  // type aklsdjf = keyof (object | null);
   expect(Object.keys(merged.__pointers__).length).toEqual(4);
   expect(Object.keys(merged.__pointers__).includes("id")).toEqual(true);
   expect(Object.keys(merged.__pointers__).includes("__type__")).toEqual(true);
   expect(Object.keys(merged.__pointers__).includes("name")).toEqual(true);
   expect(Object.keys(merged.__pointers__).includes("age")).toEqual(true);
-  type asdf = BaseTypeToTsType<typeof merged>;
-  const _f1: typeutil.assertEqual<
-    BaseTypeToTsType<typeof merged>,
-    {id: string; age: number | null; name: string | null; __type__: any}
-  > = true;
+  type merged = keyof typeof merged["__pointers__"];
+  // shared keys
+  tc.assert<tc.IsExact<merged, "id" | "__type__" | "name" | "age">>(true);
 });
 
 test("backlinks", () => {

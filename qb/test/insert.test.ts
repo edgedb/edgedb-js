@@ -1,9 +1,6 @@
 import {edgedb} from "@generated/imports";
 import {Villain} from "@generated/modules/default";
 import {InsertShape} from "@syntax/insert";
-import {UpdateShape} from "@syntax/update";
-import {typeutil} from "reflection";
-
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
@@ -31,7 +28,7 @@ test("basic insert", async () => {
     secret_identity: e.str("Natasha Romanoff"),
   });
 
-  const r1 = await pool.queryOne(q1.toEdgeQL());
+  await pool.queryOne(q1.toEdgeQL());
 
   pool.execute(`DELETE Hero FILTER .name = 'Black Widow';`);
   return;

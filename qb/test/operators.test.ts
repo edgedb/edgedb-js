@@ -1,7 +1,7 @@
 import {$expr_Operator} from "@syntax/funcops";
+import superjson from "superjson";
 import {Cardinality} from "../../src/reflection";
 import e from "../generated/example";
-import superjson from "superjson";
 
 function checkOperatorExpr<T extends $expr_Operator>(
   expr: T,
@@ -13,7 +13,7 @@ function checkOperatorExpr<T extends $expr_Operator>(
 ) {
   expect(expr.__name__).toEqual(name);
   expect(superjson.stringify(expr.__args__)).toEqual(
-    superjson.stringify(args.filter((arg) => arg !== undefined))
+    superjson.stringify(args.filter(arg => arg !== undefined))
   );
   expect(expr.__element__).toEqual(returnType);
   expect(expr.__cardinality__).toEqual(cardinality);

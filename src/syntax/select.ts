@@ -1,34 +1,35 @@
+import type {$anyint, $bool} from "@generated/modules/std";
+import _std from "@generated/modules/std";
 import * as edgedb from "edgedb";
-
 import {
-  Expression,
+  $expr_PolyShapeElement,
   Cardinality,
   cardinalityUtil,
+  Expression,
   ExpressionKind,
   objectExprToSelectShape,
   ObjectType,
   ObjectTypeExpression,
-  objectTypeToSelectShape,
+  ObjectTypeSet,
   ScalarType,
+  setToTsType,
+  shapeToSelectShape,
+  stripSet,
+  stripSetShape,
   TypeKind,
   TypeSet,
   typeutil,
-  SelectModifierKind,
-  setToTsType,
-  ObjectTypeSet,
-  SomeObjectType,
-  shapeToSelectShape,
-  $expr_PolyShapeElement,
 } from "../reflection";
-import {$expr_Operator} from "./funcops";
 import {$expr_Literal} from "../reflection/literal";
+import {
+  $expr_PathLeaf,
+  $expr_PathNode,
+  ExpressionRoot,
+  PathParent,
+} from "../reflection/path";
+import {$expr_Operator} from "./funcops";
+import {$expressionify} from "./path";
 import type {$expr_Update, UpdateShape} from "./update";
-import {$expr_PathLeaf, $expr_PathNode, PathParent} from "../reflection/path";
-import {$expressionify, $expr_PathNode as expr_PathNode} from "./path";
-import _std from "@generated/modules/std";
-import type {$anyint, $bool, $int64} from "@generated/modules/std";
-
-export type SelectFilterExpression = TypeSet<$bool, Cardinality>;
 
 export const ASC: "ASC" = "ASC";
 export const DESC: "DESC" = "DESC";
@@ -54,6 +55,11 @@ export type OffsetExpression = TypeSet<
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
 
+export type SelectFilterExpression = TypeSet<$bool, Cardinality>;
+export type LimitOffsetExpression = TypeSet<
+  $anyint,
+  Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
+>;
 export type LimitExpression = TypeSet<
   $anyint,
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
@@ -109,7 +115,7 @@ export type $expr_Select<
   {
     __element__: Set["__element__"];
     __cardinality__: Set["__cardinality__"];
-    __expr__: Expr;
+    __expr__: stripSet<Expr>; // avoid infinite recursion
     __kind__: ExpressionKind.Select;
     __modifiers__: Modifiers;
     __scope__?: ObjectTypeExpression;
@@ -121,7 +127,7 @@ export type $expr_Select<
   } & (Set extends ObjectTypeSet ? SelectObjectMethods<Set> : {})
 >;
 
-// Base is ObjectTypeExpression &
+// Base is ObjectTypeSet &
 // Filter is equality &
 // Filter.args[0] is PathLeaf
 //   Filter.args[0] is __exclusive__ &
@@ -150,7 +156,7 @@ export type InferFilterCardinality<
   Filter extends TypeSet | undefined
 > = Filter extends TypeSet
   ? // Base is ObjectTypeExpression &
-    Base extends ObjectTypeExpression // $expr_PathNode
+    Base extends ObjectTypeSet // $expr_PathNode
     ? // Filter is equality
       Filter extends $expr_Operator<"std::=", any, infer Args, any>
       ? // Filter.args[0] is PathLeaf
@@ -216,9 +222,6 @@ export function is<
 >(
   expr: Expr,
   shape: Shape
-  // shape: (
-  //   scope: ObjectTypeExpression<TypeSet<Expr["__element__"], Cardinality.One>>
-  // ) => Shape
 ): {
   [k in keyof Shape]: $expr_PolyShapeElement<Expr, Shape[k]>;
 } {
@@ -299,17 +302,17 @@ function computeFilterCardinality(
 
 function handleModifiers(
   modifiers: SelectModifiers,
-  expr: ObjectTypeExpression
+  rootExpr: ObjectTypeExpression
 ): {modifiers: SelectModifiers; cardinality: Cardinality} {
   const mods = {...modifiers};
-  let card = expr.__cardinality__;
+  let card = rootExpr.__cardinality__;
 
   if (mods.filter) {
-    card = computeFilterCardinality(mods.filter, card, expr);
+    card = computeFilterCardinality(mods.filter, card, rootExpr);
   }
   if (mods.order) {
     const orderExprs = Array.isArray(mods.order) ? mods.order : [mods.order];
-    mods.order = orderExprs.map((expr) =>
+    mods.order = orderExprs.map(expr =>
       typeof (expr as any).__element__ === "undefined"
         ? expr
         : {expression: expr}
@@ -383,7 +386,7 @@ function deleteFunc(this: any) {
   ) as $expr_Delete;
 }
 
-export function $selectify<Expr extends TypeSet>(expr: Expr) {
+export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   Object.assign(expr, {
     update: updateFunc.bind(expr),
     delete: deleteFunc.bind(expr),
@@ -417,6 +420,10 @@ type ComputeSelectCardinality<
   Modifiers["limit"]
 >;
 
+type Singletonify<T extends ObjectTypeSet> = typeutil.flatten<
+  Omit<T, "__cardinality__"> & {__cardinality__: Cardinality.One}
+>;
+
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
 ): $expr_Select<
@@ -432,22 +439,20 @@ export function select<Expr extends ObjectTypeExpression>(
 >;
 export function select<Expr extends TypeSet>(
   expr: Expr
-): $expr_Select<Expr, Expr>;
+): $expr_Select<stripSet<Expr>, Expr>;
 export function select<
   Expr extends ObjectTypeExpression,
   Shape extends objectExprToSelectShape<Expr> & SelectModifiers,
   Modifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
-  shape: (
-    scope: ObjectTypeExpression<TypeSet<Expr["__element__"], Cardinality.One>>
-  ) => Readonly<Shape>
+  shape: (scope: Singletonify<Expr>) => Readonly<Shape>
 ): $expr_Select<
   {
     __element__: ObjectType<
       `${Expr["__element__"]["__name__"]}`, // _shape
       Expr["__element__"]["__pointers__"],
-      Omit<Shape, SelectModifierNames>
+      Omit<stripSetShape<Shape>, SelectModifierNames>
     >;
     __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
   },
@@ -456,9 +461,7 @@ export function select<
 >;
 export function select<Expr extends ObjectTypeExpression, Set extends TypeSet>(
   expr: Expr,
-  shape: (
-    scope: ObjectTypeExpression<TypeSet<Expr["__element__"], Cardinality.One>>
-  ) => Set
+  shape: (scope: Singletonify<Expr>) => Set
 ): $expr_Select<
   {
     __element__: Set["__element__"];
@@ -486,7 +489,7 @@ export function select(...args: any[]) {
 
   if (!shapeGetter) {
     if (expr.__element__.__kind__ === TypeKind.object) {
-      const objectExpr: ObjectTypeExpression = expr as any;
+      const objectExpr: ObjectTypeSet = expr as any;
       return $expressionify(
         $selectify({
           __kind__: ExpressionKind.Select,
@@ -496,7 +499,7 @@ export function select(...args: any[]) {
             __pointers__: objectExpr.__element__.__pointers__,
             __shape__: {id: true},
             __polys__: [],
-          },
+          } as any,
           __cardinality__: objectExpr.__cardinality__,
           __expr__: objectExpr,
           __modifiers__: {},

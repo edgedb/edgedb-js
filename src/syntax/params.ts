@@ -1,7 +1,6 @@
 import {
   Expression,
   ExpressionKind,
-  BaseExpression,
   ParamType,
   Cardinality,
   ScalarType,
@@ -27,7 +26,7 @@ export type $expr_WithParams<
   Params extends {
     [key: string]: ParamType | $expr_OptionalParam;
   } = {},
-  Expr extends BaseExpression = BaseExpression
+  Expr extends Expression = Expression
 > = Expression<{
   __kind__: ExpressionKind.WithParams;
   __element__: Expr["__element__"];
@@ -83,7 +82,7 @@ export function withParams<
   Params extends {
     [key: string]: ParamType | $expr_OptionalParam;
   } = {},
-  Expr extends BaseExpression = BaseExpression
+  Expr extends Expression = Expression
 >(
   params: Params,
   expr: (params: paramsToParamExprs<Params>) => Expr

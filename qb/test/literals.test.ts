@@ -1,4 +1,4 @@
-import * as edgedb from "edgedb/src/index.node";
+import * as edgedb from "edgedb";
 import e from "../generated/example";
 
 test("literals", () => {

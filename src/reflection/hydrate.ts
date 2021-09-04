@@ -5,8 +5,6 @@ import {
   BaseType,
   ObjectType,
   ObjectTypeShape,
-  shapeToTsType,
-  MaterialType,
   LinkDesc,
   PropertyDesc,
 } from "./typesystem";
@@ -43,7 +41,7 @@ function applySpec(
           },
           get properties() {
             const linkProperties: {[k: string]: any} = {};
-            (ptr.pointers || []).forEach((linkProp) => {
+            (ptr.pointers || []).forEach(linkProp => {
               // We only support "link properties" in EdgeDB, currently.
               if (linkProp.kind !== "property") {
                 return;
@@ -88,7 +86,7 @@ export function makeType<T extends BaseType>(
   spec: introspect.Types,
   id: string,
   literal: (type: any, val: any) => any,
-  anytype?: MaterialType
+  anytype?: BaseType
 ): T {
   const type = spec.get(id);
 
@@ -154,7 +152,7 @@ export function makeType<T extends BaseType>(
       obj.__kind__ = TypeKind.tuple;
 
       util.defineGetter(obj, "__items__", () => {
-        return type.tuple_elements.map((el) =>
+        return type.tuple_elements.map(el =>
           makeType(spec, el.target_id, literal, anytype)
         ) as any;
       });
@@ -218,7 +216,7 @@ export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
   a: A,
   b: B
 ): mergeObjectTypes<A, B> {
-  const obj: ObjectType = {
+  const obj = {
     __kind__: TypeKind.object,
     __name__: `${a.__name__} UNION ${b.__name__}`,
     get __pointers__() {

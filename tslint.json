@@ -1,6 +1,7 @@
 {
   "extends": "tslint:recommended",
   "rules": {
+    "no-unused-variable": true,
     "max-line-length": {
       "options": [
         79
@@ -34,6 +35,7 @@
     "no-bitwise": false,
     "array-type": false,
     "no-empty": false,
+    "arrow-parens": false,
     "typedef": [
       true,
       "property-declaration",

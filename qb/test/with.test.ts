@@ -1,5 +1,6 @@
 import {typeutil, BaseTypeToTsType} from "../../src/reflection";
 import e from "../generated/example";
+import {tc} from "./setupTeardown";
 
 test("simple repeated expression", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
@@ -18,9 +19,9 @@ test("simple expression with alias", () => {
 SELECT ((__withVar_0 + __withVar_1))`);
 });
 
-test("implicit 'WITH' vars referencing each other", () => {
+test("implicit WITH vars referencing each other", () => {
   const skip = e.int64(10);
-  const remainingHeros = e.select(e.Hero, (hero) => ({
+  const remainingHeros = e.select(e.Hero, hero => ({
     order: hero.id,
     offset: skip,
   }));
@@ -61,17 +62,19 @@ SELECT {
 }`);
 
   type queryType = BaseTypeToTsType<typeof query["__element__"]>;
-  const f1: typeutil.assertEqual<
-    queryType,
-    {
-      pageResults: {
-        id: string;
-        name: string;
-      }[];
-      nextOffset: number;
-      hasMore: boolean;
-    }
-  > = true;
+  tc.assert<
+    tc.IsExact<
+      queryType,
+      {
+        pageResults: {
+          id: string;
+          name: string;
+        }[];
+        nextOffset: number;
+        hasMore: boolean;
+      }
+    >
+  >(true);
 });
 
 test("simple repeated expression not in select expr", () => {
@@ -80,7 +83,7 @@ test("simple repeated expression not in select expr", () => {
   expect(() => e.plus(numbers, numbers).toEdgeQL()).toThrow();
 });
 
-test("explicit 'WITH' block", () => {
+test("explicit WITH block", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   expect(e.with([numbers], e.select(numbers)).toEdgeQL()).toEqual(`WITH
@@ -88,7 +91,7 @@ test("explicit 'WITH' block", () => {
 SELECT (__withVar_0)`);
 });
 
-test("explicit 'WITH' block in nested query", () => {
+test("explicit WITH block in nested query", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   expect(
@@ -106,7 +109,7 @@ test("explicit 'WITH' block in nested query", () => {
 }`);
 });
 
-test("explicit 'WITH' block in nested query, var used outside 'WITH' block", () => {
+test("explicit WITH in nested query, var used outside WITH block", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   expect(() =>
@@ -119,7 +122,7 @@ test("explicit 'WITH' block in nested query, var used outside 'WITH' block", () 
   ).toThrow();
 });
 
-test("explicit 'WITH' block nested in implicit 'WITH' block", () => {
+test("explicit WITH block nested in implicit WITH block", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   const explicitWith = e.with([numbers], e.select(numbers));
@@ -143,7 +146,7 @@ SELECT {
 }`);
 });
 
-test("explicit 'WITH' block nested in explicit 'WITH' block", () => {
+test("explicit WITH block nested in explicit WITH block", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   const explicitWith = e.with([numbers], e.select(numbers));
@@ -168,7 +171,7 @@ SELECT {
 }`);
 });
 
-test("explicit 'WITH' block nested in explicit 'WITH' block, sub expr explicitly extracted", () => {
+test("explicit WITH block nested in explicit WITH block, sub expr explicitly extracted", () => {
   const number = e.int32(2);
   const numbers = e.set(e.int64(1), number, e.int16(3));
 
@@ -195,7 +198,7 @@ SELECT {
 }`);
 });
 
-test("explicit 'WITH' block nested in explicit 'WITH' block, expr declared in both", () => {
+test("explicit WITH nested in explicit WITH, expr declared in both", () => {
   const number = e.int32(2);
   const numbers = e.set(e.int64(1), number, e.int16(3));
 
@@ -213,7 +216,7 @@ test("explicit 'WITH' block nested in explicit 'WITH' block, expr declared in bo
   ).toThrow();
 });
 
-test("explicit 'WITH' block nested in explicit 'WITH' block, sub expr implicitly extracted", () => {
+test("explicit WITH block nested in explicit WITH block, sub expr implicitly extracted", () => {
   const number = e.int32(2);
   const numbers = e.set(e.int64(1), number, e.int16(3));
 
@@ -242,9 +245,9 @@ SELECT {
 }`);
 });
 
-test("implicit 'WITH' and explicit 'WITH' in sub expr", () => {
+test("implicit WITH and explicit WITH in sub expr", () => {
   const skip = e.int64(10);
-  const remainingHeros = e.select(e.Hero, (hero) => ({
+  const remainingHeros = e.select(e.Hero, hero => ({
     order: hero.id,
     offset: skip,
   }));
@@ -291,7 +294,7 @@ SELECT {
 }`);
 });
 
-test("explicit 'WITH' block nested in implicit 'WITH' block + alias implicit", () => {
+test("explicit WITH nested in implicit WITH + alias implicit", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   const numbersAlias = e.alias(numbers);
@@ -321,7 +324,7 @@ SELECT {
 }`);
 });
 
-test("explicit 'WITH' block nested in implicit 'WITH' block + alias explicit", () => {
+test("explicit WITH nested in implicit WITH + alias explicit", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   const numbersAlias = e.alias(numbers);
@@ -354,7 +357,7 @@ SELECT {
 }`);
 });
 
-test("explicit 'WITH' block nested in implicit 'WITH' block + alias outside 'WITH'", () => {
+test("explicit WITH nested in implicit WITH + alias outside WITH", () => {
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
   const numbersAlias = e.alias(numbers);
@@ -373,18 +376,20 @@ test("explicit 'WITH' block nested in implicit 'WITH' block + alias outside 'WIT
 });
 
 test(
-  "explicit 'WITH' block nested in explicit 'WITH' block, " +
-    "alias declared in inner 'WITH'",
+  "explicit WITH block nested in explicit WITH block, " +
+    "alias declared in inner WITH",
   () => {
     const number = e.int32(2);
     const numbers = e.set(e.int64(1), number, e.int16(3));
 
     const numbersAlias = e.alias(numbers);
 
+    const arg = e.plus(numbers, numbersAlias);
     const explicitWith = e.with(
       [numbersAlias],
       e.select(e.plus(numbers, numbersAlias))
     );
+    // explicitWith.
 
     expect(
       e
@@ -409,8 +414,8 @@ SELECT {
 );
 
 test(
-  "explicit 'WITH' block nested in explicit 'WITH' block, " +
-    "alias of alias declared in inner 'WITH'",
+  "explicit WITH block nested in explicit WITH block, " +
+    "alias of alias declared in inner WITH",
   () => {
     const number = e.int32(2);
     const numbers = e.set(e.int64(1), number, e.int16(3));
@@ -446,8 +451,8 @@ SELECT {
   }
 );
 
-test("query with no 'WITH' block", () => {
-  const query = e.select(e.Person.$is(e.Hero), (person) => ({
+test("query with no WITH block", () => {
+  const query = e.select(e.Person.$is(e.Hero), person => ({
     id: true,
     computable: e.int64(35),
     all_heroes: e.select(e.Hero, () => ({__type__: {name: true}})),
@@ -473,7 +478,7 @@ LIMIT 1`);
 });
 
 test("repeated expression referencing scoped select object", () => {
-  const query = e.select(e.Hero, (hero) => {
+  const query = e.select(e.Hero, hero => {
     const secret = e.concat(
       e.concat(hero.name, e.str(" is ")),
       hero.secret_identity

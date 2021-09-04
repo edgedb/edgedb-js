@@ -1,7 +1,7 @@
 import {
   LinkDesc,
   PropertyDesc,
-  MaterialType,
+  BaseType,
   ObjectTypeSet,
   TypeSet,
   Expression,
@@ -9,6 +9,7 @@ import {
 } from "./typesystem";
 import {Cardinality, ExpressionKind} from "./enums";
 import {cardinalityUtil} from "./util/cardinalityUtil";
+import {ObjectType} from "reflection";
 
 // get the set representing the result of a path traversal
 // including cardinality merging
@@ -28,18 +29,6 @@ export interface PathParent<Parent extends ObjectTypeSet = ObjectTypeSet> {
   type: Parent;
   linkName: string;
 }
-
-// type t1 = assert_singleλFuncExpr<
-//   $expr_PathNode<ObjectTypeSet, PathParent | null, boolean>
-// >;
-// type t2 = assert_singleλFuncExpr<
-//   Expression<ObjectTypeSet<SomeObjectType, Cardinality>>
-// >;
-
-// const arg = (arg1: t1) => {
-//   return arg1;
-// };
-// arg("dsf" as t2);
 
 export type $pathify<
   Root extends TypeSet,
@@ -90,9 +79,9 @@ interface PathNodeMethods<Self extends ObjectTypeSet> {
 
 export type $expr_TypeIntersection<
   Expr extends TypeSet = TypeSet,
-  Intersection extends ObjectTypeSet = ObjectTypeSet
+  Intersection extends ObjectType = ObjectType
 > = Expression<{
-  __element__: Intersection["__element__"];
+  __element__: Intersection;
   __cardinality__: Expr["__cardinality__"];
   __kind__: ExpressionKind.TypeIntersection;
   __expr__: Expr;
@@ -111,7 +100,7 @@ export type $expr_PathLeaf<
 }>;
 
 export type ExpressionRoot = {
-  __element__: MaterialType;
+  __element__: BaseType;
   __cardinality__: Cardinality;
   __kind__: ExpressionKind;
 };

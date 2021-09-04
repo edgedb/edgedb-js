@@ -1,7 +1,7 @@
 import type {$expr_Function} from "@syntax/funcops";
-import {Cardinality, TypeSet, typeutil} from "../../src/reflection";
-import e from "../generated/example";
 import superjson from "superjson";
+import {Cardinality, typeutil} from "../../src/reflection";
+import e from "../generated/example";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,
@@ -13,7 +13,7 @@ function checkFunctionExpr<T extends $expr_Function>(
 ) {
   expect(expr.__name__).toEqual(name);
   expect(superjson.stringify(expr.__args__)).toEqual(
-    superjson.stringify(args.filter((arg) => arg !== undefined))
+    superjson.stringify(args.filter(arg => arg !== undefined))
   );
   expect(superjson.stringify(expr.__namedargs__)).toEqual(
     superjson.stringify(namedargs)
@@ -423,7 +423,7 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.to_str(e.int64(123), undefined),
     "std::to_str",
-    [e.int64(123), e.set(e.str) as undefined],
+    [e.int64(123), e.set(e.str) as any as undefined],
     {},
     e.str,
     Cardinality.One
@@ -431,7 +431,7 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.to_str(e.set(e.int64(123), e.int64(456)), undefined),
     "std::to_str",
-    [e.set(e.int64(123), e.int64(456)), e.set(e.str) as undefined],
+    [e.set(e.int64(123), e.int64(456)), e.set(e.str) as any as undefined],
     {},
     e.str,
     Cardinality.AtLeastOne

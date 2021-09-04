@@ -1,5 +1,6 @@
 import * as edgedb from "edgedb/src/index.node";
-
+import * as tc from "conditional-type-checks";
+export {tc};
 // insert tony
 // insert cap
 // insert spidey
@@ -27,8 +28,6 @@ interface Movie {
 }
 
 export async function setupTests() {
-  // tslint:disable-next-line: no-console
-  console.log(`Seeding database...`);
   const pool = await edgedb.createPool();
 
   await cleanupData(pool);

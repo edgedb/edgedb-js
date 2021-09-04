@@ -3,7 +3,6 @@ import {
   Expression,
   ExpressionKind,
   LinkDesc,
-  ObjectTypeExpression,
   ObjectTypeSet,
   ObjectTypeShape,
   PropertyDesc,

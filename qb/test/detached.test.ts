@@ -1,8 +1,6 @@
 import {edgedb} from "@generated/imports";
-import {$expr_Select} from "@syntax/select";
-import {typeutil} from "../../src/reflection";
 import e from "../generated/example";
-import {setupTests, teardownTests, TestData} from "./setupTeardown";
+import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 
 let pool: edgedb.Pool;
 let data: TestData;
@@ -29,14 +27,16 @@ test("detached", async () => {
     }))
     .query(pool);
   type result = typeof result;
-  const f1: typeutil.assertEqual<
-    result,
-    {
-      id: string;
-      name: string;
-      friends: {id: string}[];
-    } | null
-  > = true;
+  tc.assert<
+    tc.IsExact<
+      result,
+      {
+        id: string;
+        name: string;
+        friends: {id: string}[];
+      } | null
+    >
+  >(true);
   expect(result).toMatchObject({
     id: data.iron_man.id,
     name: data.iron_man.name,
