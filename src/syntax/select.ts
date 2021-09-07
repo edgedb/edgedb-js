@@ -1,5 +1,5 @@
 import type {$anyint, $bool} from "@generated/modules/std";
-import _std from "@generated/modules/std";
+import _std from "../../qb/generated/example/modules/std";
 import * as edgedb from "edgedb";
 import {
   $expr_PolyShapeElement,

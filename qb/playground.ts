@@ -48,7 +48,7 @@ async function run() {
   type q4 = setToTsType<typeof q4>;
   const q5 = e.select(e.Hero, hero => ({
     id: true,
-    // q: q4,
+    q: q4,
     // ...e.is(e.Villain, {
     //   id: true,
     //   nemesis: {id: true},
@@ -67,7 +67,7 @@ async function run() {
   type q6 = setToTsType<typeof q6>;
   const q7 = e.select(e.Hero, hero => ({
     id: true,
-    q: q6,
+    // q: q6,
     ...e.is(e.Villain, {
       nemesis: {id: true},
       computable: e.select(
@@ -128,7 +128,7 @@ async function run() {
   }));
   type q12 = setToTsType<typeof q12>;
   const _q13 = e.select(e.Hero, hero => ({
-    id: 1 > 0,
+    id: true,
     q: q12,
   }));
   type _q13 = setToTsType<typeof _q13>;
