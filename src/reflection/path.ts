@@ -1,4 +1,4 @@
-import {
+import type {
   LinkDesc,
   PropertyDesc,
   BaseType,
@@ -6,10 +6,10 @@ import {
   TypeSet,
   Expression,
   ObjectTypeShape,
+  ObjectType,
 } from "./typesystem";
 import {Cardinality, ExpressionKind} from "./enums";
 import {cardinalityUtil} from "./util/cardinalityUtil";
-import {ObjectType} from "reflection";
 
 // get the set representing the result of a path traversal
 // including cardinality merging

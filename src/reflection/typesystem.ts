@@ -2,6 +2,7 @@ import type {$expr_TypeIntersection, $pathify, $expr_PathNode} from "./path";
 import type {$expr_Literal} from "./literal";
 import type {typeutil} from "./util/typeutil";
 import {Cardinality, ExpressionKind, TypeKind} from "./enums";
+import {cardinalityUtil} from "reflection";
 
 //////////////////
 // BASETYPE
@@ -355,6 +356,17 @@ export type PrimitiveTypeSet = TypeSet<PrimitiveType, Cardinality>;
 /////////////////////////
 /// ARRAYTYPE
 /////////////////////////
+export type $expr_Array<
+  Type extends BaseType = BaseType,
+  Card extends Cardinality = Cardinality
+  // Items extends typeutil.tupleOf<TypeSet<Type>>
+> = Expression<{
+  __kind__: ExpressionKind.Array;
+  __items__: typeutil.tupleOf<TypeSet<Type>>;
+  __element__: Type;
+  __cardinality__: Card;
+}>;
+
 export interface ArrayType<
   Element extends NonArrayType = NonArrayType,
   Name extends string = `array<${Element["__name__"]}>`
@@ -364,38 +376,47 @@ export interface ArrayType<
   __element__: Element;
 }
 
-export function ArrayType<Element extends NonArrayType>(
-  element: Element
-): ArrayType<Element> {
-  return {
-    __kind__: TypeKind.array,
-    __name__: `array<${element.__name__}>`,
-    __element__: element,
-  } as any;
-}
-
-type ArrayTypeToTsType<Type extends ArrayType> = Array<
-  BaseTypeToTsType<Type["__element__"]>
->;
+type ArrayTypeToTsType<Type extends ArrayType> = BaseTypeToTsType<
+  Type["__element__"]
+>[];
 
 /////////////////////////
 /// TUPLE TYPE
 /////////////////////////
+export type baseTupleElementsToTupleType<T extends typeutil.tupleOf<TypeSet>> =
+  {
+    [k in keyof T]: T[k] extends TypeSet ? T[k]["__element__"] : never;
+  };
+export type tupleElementsToTupleType<T extends typeutil.tupleOf<TypeSet>> =
+  baseTupleElementsToTupleType<T> extends BaseTypeTuple
+    ? TupleType<baseTupleElementsToTupleType<T>>
+    : never;
+
+export type baseTupleElementsToCardTuple<T> = {
+  [k in keyof T]: T[k] extends TypeSet<any, infer C> ? C : never;
+};
+
+export type tupleElementsToCardTuple<T> =
+  baseTupleElementsToCardTuple<T> extends [Cardinality, ...Cardinality[]]
+    ? baseTupleElementsToCardTuple<T>
+    : never;
+
+export type $expr_Tuple<
+  Items extends typeutil.tupleOf<TypeSet> = typeutil.tupleOf<TypeSet>
+> = Expression<{
+  __kind__: ExpressionKind.Tuple;
+  __items__: Items;
+  __element__: tupleElementsToTupleType<Items>;
+  __cardinality__: cardinalityUtil.multiplyCardinalitiesVariadic<
+    tupleElementsToCardTuple<Items>
+  >;
+}>;
+
 export interface TupleType<Items extends BaseTypeTuple = BaseTypeTuple>
   extends BaseType {
   __name__: string;
   __kind__: TypeKind.tuple;
   __items__: Items;
-}
-export function TupleType<Items extends typeutil.tupleOf<BaseType>>(
-  items: Items
-): TupleType<Items> {
-  const name = `tuple<${items.map(item => item.__name__).join(", ")}>`;
-  return {
-    __kind__: TypeKind.tuple,
-    __name__: name,
-    __items__: items,
-  } as any;
 }
 
 type TupleItemsToTsType<Items extends BaseTypeTuple> = {
@@ -407,7 +428,36 @@ type TupleItemsToTsType<Items extends BaseTypeTuple> = {
 /////////////////////////
 /// NAMED TUPLE TYPE
 /////////////////////////
+type literalShapeToType<T extends NamedTupleLiteralShape> = NamedTupleType<
+  {
+    [k in keyof T]: T[k]["__element__"];
+  }
+>;
+type shapeCardinalities<Shape extends NamedTupleLiteralShape> =
+  Shape[keyof Shape]["__cardinality__"];
+type inferNamedTupleCardinality<Shape extends NamedTupleLiteralShape> = [
+  Cardinality.Many
+] extends [shapeCardinalities<Shape>]
+  ? Cardinality.Many
+  : [Cardinality.Empty] extends [shapeCardinalities<Shape>]
+  ? Cardinality.Empty
+  : [shapeCardinalities<Shape>] extends [Cardinality.AtMostOne]
+  ? Cardinality.AtMostOne
+  : [shapeCardinalities<Shape>] extends [
+      Cardinality.AtMostOne | Cardinality.One
+    ]
+  ? Cardinality.One
+  : Cardinality.Many;
+export type $expr_NamedTuple<
+  Shape extends NamedTupleLiteralShape = NamedTupleLiteralShape
+> = Expression<{
+  __kind__: ExpressionKind.NamedTuple;
+  __element__: literalShapeToType<Shape>;
+  __cardinality__: inferNamedTupleCardinality<Shape>;
+  __shape__: Shape;
+}>;
 
+export type NamedTupleLiteralShape = {[k: string]: TypeSet};
 export type NamedTupleShape = {[k: string]: BaseType};
 export interface NamedTupleType<
   Shape extends NamedTupleShape = NamedTupleShape
@@ -415,18 +465,6 @@ export interface NamedTupleType<
   __name__: string;
   __kind__: TypeKind.namedtuple;
   __shape__: Shape;
-}
-export function NamedTupleType<Shape extends NamedTupleShape>(
-  shape: Shape
-): NamedTupleType<Shape> {
-  const name = `tuple<${Object.entries(shape)
-    .map(([key, val]) => `${key}: ${val.__name__}`)
-    .join(", ")}>`;
-  return {
-    __kind__: TypeKind.namedtuple,
-    __name__: name,
-    __shape__: shape,
-  } as any;
 }
 
 type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
@@ -437,23 +475,25 @@ type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
 /// TSTYPE COMPUTATION
 /////////////////////
 
-export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
-  ? Type["__tsconsttype__"]
-  : Type extends EnumType
-  ? Type["__tstype__"]
-  : Type extends ArrayType
-  ? ArrayTypeToTsType<Type>
-  : Type extends TupleType
-  ? TupleItemsToTsType<Type["__items__"]>
-  : Type extends NamedTupleType
-  ? NamedTupleTypeToTsType<Type>
-  : Type extends ObjectType
-  ? computeObjectShape<
-      Type["__pointers__"],
-      Type["__shape__"]
-      // Type["__polys__"]
-    >
-  : never;
+export type BaseTypeToTsType<Type extends BaseType> = typeutil.flatten<
+  Type extends ScalarType
+    ? Type["__tsconsttype__"]
+    : Type extends EnumType
+    ? Type["__tstype__"]
+    : Type extends ArrayType
+    ? ArrayTypeToTsType<Type>
+    : Type extends TupleType
+    ? TupleItemsToTsType<Type["__items__"]>
+    : Type extends NamedTupleType
+    ? NamedTupleTypeToTsType<Type>
+    : Type extends ObjectType
+    ? computeObjectShape<
+        Type["__pointers__"],
+        Type["__shape__"]
+        // Type["__polys__"]
+      >
+    : never
+>;
 
 export type setToTsType<Set extends TypeSet> = computeTsType<
   Set["__element__"],

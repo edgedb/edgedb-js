@@ -5,6 +5,7 @@ import {setupTests} from "./test/setupTeardown";
 
 async function run() {
   await setupTests();
+
   const q = e.select(e.Hero, hero => ({
     id: true,
     "<nemesis[IS default::Villain]": {
