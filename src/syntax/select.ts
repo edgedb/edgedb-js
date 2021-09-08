@@ -1,5 +1,5 @@
 import type {$anyint, $bool} from "@generated/modules/std";
-import _std from "../../qb/generated/example/modules/std";
+import _std from "@generated/modules/std";
 import * as edgedb from "edgedb";
 import {
   $expr_PolyShapeElement,
@@ -420,7 +420,7 @@ type ComputeSelectCardinality<
   Modifiers["limit"]
 >;
 
-type Singletonify<T extends ObjectTypeSet> = typeutil.flatten<
+export type Singletonify<T extends ObjectTypeSet> = typeutil.flatten<
   Omit<T, "__cardinality__"> & {__cardinality__: Cardinality.One}
 >;
 
@@ -565,7 +565,7 @@ export function select(...args: any[]) {
 function resolveShape(
   shapeGetter: ((scope: any) => any) | any,
   expr: ObjectTypeExpression
-): {modifiers: any; shape: any; scope: $expr_PathNode; expr?: TypeSet} {
+): {modifiers: any; shape: any; scope: TypeSet; expr?: TypeSet} {
   const modifiers: any = {};
   const shape: any = {};
 

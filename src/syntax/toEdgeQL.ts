@@ -23,17 +23,11 @@ import type {$expr_Cast} from "./cast";
 import type {$expr_Detached} from "./detached";
 import type {$expr_For, $expr_ForVar} from "./for";
 import type {$expr_Function, $expr_Operator} from "./funcops";
-import {$expr_Insert} from "./insert";
+import {$expr_Insert, $expr_InsertUnlessConflict} from "./insert";
 import type {$expr_Param, $expr_WithParams} from "./params";
 import type {$expr_Set} from "./set";
 import {$expr_Update} from "./update";
-import type {
-  $expr_Select,
-  OrderByExpr,
-  OrderByObjExpr,
-  OffsetExpression,
-  LimitExpression,
-} from "./select";
+import type {$expr_Select, OffsetExpression, LimitExpression} from "./select";
 
 import type {$expr_Alias, $expr_With} from "./with";
 
@@ -47,6 +41,7 @@ export type SomeExpression =
   | $expr_Delete
   | $expr_Update
   | $expr_Insert
+  | $expr_InsertUnlessConflict
   | $expr_Function
   | $expr_Operator
   | $expr_For
@@ -58,7 +53,12 @@ export type SomeExpression =
   | $expr_Param
   | $expr_Detached;
 
-type WithScopeExpr = $expr_Select | $expr_Update | $expr_Insert | $expr_For;
+type WithScopeExpr =
+  | $expr_Select
+  | $expr_Update
+  | $expr_Insert
+  | $expr_InsertUnlessConflict
+  | $expr_For;
 
 function shapeToEdgeQL(
   shape: object | null,
@@ -438,7 +438,8 @@ function renderEdgeQL(
                   ? expr.__scope__!
                   : expr.__expr__,
                 ctx,
-                false
+                false,
+                noImplicitDetached
               )})`
         }`
       );
@@ -506,22 +507,36 @@ function renderEdgeQL(
       );
     }
   } else if (expr.__kind__ === ExpressionKind.Update) {
-    return `UPDATE (${renderEdgeQL(
-      expr.__expr__ as any,
+    return `UPDATE (${renderEdgeQL(expr.__expr__, ctx)}) SET ${shapeToEdgeQL(
+      expr.__shape__,
       ctx
-    )}) SET ${shapeToEdgeQL(expr.__shape__, ctx)}`;
+    )}`;
   } else if (expr.__kind__ === ExpressionKind.Delete) {
-    return `DELETE (${renderEdgeQL(expr.__expr__ as any, ctx)})`;
+    return `DELETE (${renderEdgeQL(expr.__expr__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Insert) {
     return `INSERT ${renderEdgeQL(
-      expr.__expr__ as any,
+      expr.__expr__,
       ctx,
       false,
       true
-    )} ${shapeToEdgeQL(
-      expr.__shape__,
-
-      ctx
+    )} ${shapeToEdgeQL(expr.__shape__, ctx)}`;
+  } else if (expr.__kind__ === ExpressionKind.InsertUnlessConflict) {
+    const $on = expr.__conflict__.on;
+    const $else = expr.__conflict__.else;
+    const clause: string[] = [];
+    if (!$on) {
+      clause.push("\nUNLESS CONFLICT");
+    }
+    if ($on) {
+      clause.push(
+        `\nUNLESS CONFLICT ON ${renderEdgeQL($on, ctx, false, true)}`
+      );
+    }
+    if ($else) {
+      clause.push(`\nELSE ${renderEdgeQL($else, ctx, true, true)}`);
+    }
+    return `${renderEdgeQL(expr.__expr__, ctx, false, true)} ${clause.join(
+      ""
     )}`;
   } else if (expr.__kind__ === ExpressionKind.Function) {
     const args = expr.__args__.map(
@@ -720,7 +735,7 @@ function walkExprTree(
           walkShape(expr.__element__.__shape__ ?? {});
         }
 
-        childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
+        childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
         break;
       }
 
@@ -734,13 +749,11 @@ function walkExprTree(
           childExprs.push(...walkExprTree(element as any, expr, ctx));
         }
 
-        childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
+        childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
         break;
       }
       case ExpressionKind.Delete: {
-        childExprs.push(
-          ...walkExprTree(expr.__expr__ as any, parentScope, ctx)
-        );
+        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
         break;
       }
       case ExpressionKind.Insert: {
@@ -750,7 +763,18 @@ function walkExprTree(
           childExprs.push(...walkExprTree(element as any, expr, ctx));
         }
 
-        childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
+        childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
+        break;
+      }
+      case ExpressionKind.InsertUnlessConflict: {
+        if (expr.__conflict__.on) {
+          childExprs.push(...walkExprTree(expr.__conflict__.on, expr, ctx));
+        }
+        if (expr.__conflict__.else) {
+          childExprs.push(...walkExprTree(expr.__conflict__.else, expr, ctx));
+        }
+
+        childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
         break;
       }
       case ExpressionKind.TypeIntersection:
@@ -769,7 +793,7 @@ function walkExprTree(
         break;
       case ExpressionKind.For: {
         childExprs.push(...walkExprTree(expr.__iterSet__ as any, expr, ctx));
-        childExprs.push(...walkExprTree(expr.__expr__ as any, expr, ctx));
+        childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
         break;
       }
       case ExpressionKind.WithParams: {

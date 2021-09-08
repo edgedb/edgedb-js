@@ -25,6 +25,7 @@ export enum ExpressionKind {
   Update = "Update",
   Delete = "Delete",
   Insert = "Insert",
+  InsertUnlessConflict = "InsertUnlessConflict",
   Function = "Function",
   Operator = "Operator",
   For = "For",
