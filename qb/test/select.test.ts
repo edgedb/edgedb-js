@@ -177,6 +177,28 @@ test("polymorphism", () => {
   >(true);
 });
 
+test("polymorphic with nested modifiers", () => {
+  e.is(e.Villain, {
+    id: true,
+  });
+
+  const query = e.select(e.Person, person => ({
+    id: true,
+    name: true,
+    ...e.is(e.Villain, {
+      nemesis: hero => ({
+        name: true,
+        order: hero.name,
+        filter: e.eq(hero.name, hero.name),
+        limit: 1,
+        offset: 10,
+      }),
+    }),
+  }));
+
+  type q = setToTsType<typeof query>;
+});
+
 test("computables in polymorphics", () => {
   const q = e.select(e.Person, person => ({
     id: true,

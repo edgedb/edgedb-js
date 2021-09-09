@@ -4,7 +4,7 @@ import * as introspect from "./queries/getTypes";
 import {
   BaseType,
   ObjectType,
-  ObjectTypeShape,
+  ObjectTypePointers,
   LinkDesc,
   PropertyDesc,
 } from "./typesystem";
@@ -185,8 +185,8 @@ export function makeType<T extends BaseType>(
   }
 }
 export type mergeObjectShapes<
-  A extends ObjectTypeShape,
-  B extends ObjectTypeShape
+  A extends ObjectTypePointers,
+  B extends ObjectTypePointers
 > = typeutil.flatten<
   {
     [k in keyof A & keyof B]: A[k] extends B[k] // possible performance issue?

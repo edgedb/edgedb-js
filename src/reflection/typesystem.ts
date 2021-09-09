@@ -134,7 +134,7 @@ export type ObjectTypeExpression = TypeSet<ObjectType, Cardinality>;
 
 export interface ObjectType<
   Name extends string = string,
-  Pointers extends ObjectTypeShape = ObjectTypeShape,
+  Pointers extends ObjectTypePointers = ObjectTypePointers,
   Shape extends object | null = any
   // Polys extends Poly[] = any[]
 > extends BaseType {
@@ -165,38 +165,12 @@ export interface PropertyDesc<
   writable: Writable;
 }
 
-export type pointersToSelectShape<
-  Shape extends ObjectTypeShape,
-  AllowComputed extends boolean = true
-> = Partial<
-  {
-    [k in keyof Shape]: Shape[k] extends PropertyDesc
-      ?
-          | boolean
-          | (AllowComputed extends true
-              ? TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
-              : never)
-      : Shape[k] extends LinkDesc
-      ?
-          | boolean
-          | (AllowComputed extends true
-              ? TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
-              : never)
-          | typeutil.flatten<
-              pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-                linkDescShape<Shape[k]>
-            >
-          | ((
-              scope: $expr_PathNode<
-                TypeSet<Shape[k]["target"], Cardinality.One>,
-                null,
-                true
-              >
-            ) => pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-              linkDescShape<Shape[k]>)
-      : any;
-  }
+export type $scopify<Type extends ObjectType> = $expr_PathNode<
+  TypeSet<Type, Cardinality.One>,
+  null,
+  true // exclusivity
 >;
+
 export type PropertyShape = {
   [k: string]: PropertyDesc;
 };
@@ -216,48 +190,23 @@ export interface LinkDesc<
   writable: Writable;
 }
 
-export type ObjectTypeShape = {
+export type ObjectTypePointers = {
   [k: string]: PropertyDesc | LinkDesc;
 };
 
-// export type objectExprToSelectShape<T extends ObjectTypeSet> =
-//   pointersToSelectShape<T["__element__"]["__pointers__"]>;
+export type stripBacklinks<T extends ObjectTypePointers> = {
+  [k in keyof T]: k extends `<${string}` ? never : T[k];
+};
 
-// export type objectTypeToSelectShape<T extends ObjectType> =
-//   pointersToSelectShape<T["__pointers__"]>;
+export type stripNonWritables<T extends ObjectTypePointers> = {
+  [k in keyof T]: [T[k]["writable"]] extends [true] ? T[k] : never;
+};
 
-// export type pointersToSelectShape<Shape extends ObjectTypeShape> = {
-//   [k in keyof Shape]?: Shape[k] extends PropertyDesc
-//     ? boolean | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
-//     : Shape[k] extends LinkDesc
-//     ?
-//         | true
-//         | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
-//         | typeutil.flatten<
-//             pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-//               linkDescShape<Shape[k]>
-//           >
-//     : any;
-// }; // & {[k:string]: boolean | TypeSet | object};
-
-export type linkDescShape<Link extends LinkDesc> = pointersToSelectShape<
-  addAtSigns<Link["properties"]>
+export type linkDescToPointers<Link extends LinkDesc> = addAtSigns<
+  Link["properties"]
 >;
 
 export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
-
-// export type shapeWithPolysToTs<
-//   Pointers extends ObjectTypeShape,
-//   Shape extends object | null,
-//   Polys extends Poly[]
-// > = simpleShapeToTs<Pointers, Shape> &
-//   unionToIntersection<
-//     Polys[number] extends infer P
-//       ? P extends Poly
-//         ? Partial<simpleShapeToTs<P["type"]["__pointers__"], P["params"]>>
-//         : never
-//       : never
-//   >;
 
 type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
   Element
@@ -289,7 +238,7 @@ export type $expr_PolyShapeElement<
 };
 
 export type simpleShapeToTs<
-  Pointers extends ObjectTypeShape,
+  Pointers extends ObjectTypePointers,
   Shape
 > = typeutil.flatten<
   keyof Shape extends never
@@ -314,7 +263,7 @@ export type simpleShapeToTs<
 >;
 
 export type computeObjectShape<
-  Pointers extends ObjectTypeShape,
+  Pointers extends ObjectTypePointers,
   Shape extends object | null
   // Polys extends Poly[]
 > = simpleShapeToTs<Pointers, Shape>;
@@ -496,13 +445,14 @@ export type shapeElementToTsType<El extends PropertyDesc | LinkDesc> =
     ? linkToTsType<El>
     : never;
 
-export type shapeToTsType<T extends ObjectTypeShape> = string extends keyof T
-  ? any
-  : typeutil.flatten<
-      {
-        [k in keyof T]: shapeElementToTsType<T[k]>;
-      }
-    >;
+export type shapeToTsType<T extends ObjectTypePointers> =
+  string extends keyof T
+    ? any
+    : typeutil.flatten<
+        {
+          [k in keyof T]: shapeElementToTsType<T[k]>;
+        }
+      >;
 
 ///////////////////
 // TYPE HELPERS

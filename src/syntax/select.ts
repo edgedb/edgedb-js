@@ -7,18 +7,22 @@ import {
   cardinalityUtil,
   Expression,
   ExpressionKind,
-  // objectExprToSelectShape,
   ObjectType,
   ObjectTypeExpression,
   ObjectTypeSet,
   ScalarType,
   setToTsType,
-  pointersToSelectShape,
   stripSet,
   stripSetShape,
   TypeKind,
   TypeSet,
   typeutil,
+  $scopify,
+  stripBacklinks,
+  ObjectTypePointers,
+  PropertyDesc,
+  LinkDesc,
+  linkDescToPointers,
 } from "../reflection";
 import {$expr_Literal} from "../reflection/literal";
 import {
@@ -216,12 +220,31 @@ interface SelectObjectMethods<Root extends ObjectTypeSet> {
   delete(): $expr_Delete<Root>;
 }
 
+export type polymorphicShape<
+  RawShape extends ObjectTypePointers,
+  Stripped = stripBacklinks<RawShape>
+> = {
+  [k in keyof Stripped]?: Stripped[k] extends PropertyDesc
+    ? boolean
+    : Stripped[k] extends LinkDesc
+    ?
+        | boolean
+        | pointersToSelectShape<
+            Stripped[k]["target"]["__pointers__"] &
+              linkDescToPointers<Stripped[k]>
+          >
+        | ((
+            scope: $scopify<Stripped[k]["target"]>
+          ) => pointersToSelectShape<
+            Stripped[k]["target"]["__pointers__"] &
+              linkDescToPointers<Stripped[k]>
+          >)
+    : any;
+};
+
 export function is<
   Expr extends ObjectTypeExpression,
-  Shape extends pointersToSelectShape<
-    Expr["__element__"]["__pointers__"],
-    false
-  >
+  Shape extends polymorphicShape<Expr["__element__"]["__pointers__"]>
 >(
   expr: Expr,
   shape: Shape
@@ -423,9 +446,32 @@ type ComputeSelectCardinality<
   Modifiers["limit"]
 >;
 
-type Singletonify<T extends ObjectTypeSet> = typeutil.flatten<
-  Omit<T, "__cardinality__"> & {__cardinality__: Cardinality.One}
->;
+// type $scopify<T extends ObjectTypeSet> = typeutil.flatten<
+//   Omit<T, "__cardinality__"> & {__cardinality__: Cardinality.One}
+// >;
+
+// allow computed
+// allow modifiers
+export type pointersToSelectShape<Shape extends ObjectTypePointers> = Partial<
+  {
+    [k in keyof Shape]: Shape[k] extends PropertyDesc
+      ? boolean | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
+      : Shape[k] extends LinkDesc
+      ?
+          | boolean
+          | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
+          | pointersToSelectShape<
+              Shape[k]["target"]["__pointers__"] & linkDescToPointers<Shape[k]>
+            >
+          | ((
+              scope: $scopify<Shape[k]["target"]>
+            ) => pointersToSelectShape<
+              Shape[k]["target"]["__pointers__"] & linkDescToPointers<Shape[k]>
+            >)
+      : any;
+  }
+> &
+  SelectModifiers;
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
@@ -445,12 +491,12 @@ export function select<Expr extends TypeSet>(
 ): $expr_Select<stripSet<Expr>, Expr>;
 export function select<
   Expr extends ObjectTypeExpression,
-  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]> &
-    SelectModifiers,
+  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]>,
+  // & SelectModifiers,
   Modifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
-  shape: (scope: Singletonify<Expr>) => Readonly<Shape>
+  shape: (scope: $scopify<Expr["__element__"]>) => Readonly<Shape>
 ): $expr_Select<
   {
     __element__: ObjectType<
@@ -465,7 +511,7 @@ export function select<
 >;
 export function select<Expr extends ObjectTypeExpression, Set extends TypeSet>(
   expr: Expr,
-  shape: (scope: Singletonify<Expr>) => Set
+  shape: (scope: $scopify<Expr["__element__"]>) => Set
 ): $expr_Select<
   {
     __element__: Set["__element__"];

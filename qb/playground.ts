@@ -1,10 +1,26 @@
 // tslint:disable:no-console
+import {$Villain} from "@generated/modules/default";
+import {polymorphicShape} from "@syntax/select";
 import {setToTsType} from "reflection";
 import e from "./generated/example";
 import {setupTests} from "./test/setupTeardown";
 
 async function run() {
   await setupTests();
+
+  e.is(e.Villain, {
+    id: true,
+    nemesis: hero => ({
+      id: true,
+      secret_identity: true,
+      "<nemesis[IS default::Villain]": {
+        name: true,
+      },
+      order: hero.name,
+    }),
+    name: true,
+  });
+
   const q = e.select(e.Hero, hero => ({
     id: true,
     "<nemesis[IS default::Villain]": {

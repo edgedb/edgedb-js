@@ -10,9 +10,11 @@ import {
   NamedTupleType,
   ObjectType,
   ObjectTypeSet,
-  ObjectTypeShape,
+  ObjectTypePointers,
   PropertyDesc,
   ScalarType,
+  stripBacklinks,
+  stripNonWritables,
   TupleType,
   TypeSet,
   typeutil,
@@ -54,14 +56,6 @@ export type assignableBy<T extends BaseType> = T extends ScalarType
     >
   : never;
 
-export type stripBacklinks<T extends ObjectTypeShape> = {
-  [k in keyof T]: k extends `<${string}` ? never : T[k];
-};
-
-export type stripNonWritables<T extends ObjectTypeShape> = {
-  [k in keyof T]: [T[k]["writable"]] extends [true] ? T[k] : never;
-};
-
 export type shapeElementToAssignmentExpression<
   Element extends PropertyDesc | LinkDesc
 > = [Element] extends [PropertyDesc]
@@ -83,7 +77,7 @@ export type shapeElementToAssignmentExpression<
 export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
   stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
 > extends infer Shape
-  ? Shape extends ObjectTypeShape
+  ? Shape extends ObjectTypePointers
     ? {
         [k in keyof Shape]?: shapeElementToAssignmentExpression<
           Shape[k]

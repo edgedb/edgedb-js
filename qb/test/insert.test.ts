@@ -26,6 +26,7 @@ test("basic insert", async () => {
   const q1 = e.insert(e.Hero, {
     name: e.str("Black Widow"),
     secret_identity: e.str("Natasha Romanoff"),
+    // id
   });
 
   await pool.queryOne(q1.toEdgeQL());

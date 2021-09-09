@@ -4,16 +4,14 @@ import {
   ExpressionKind,
   LinkDesc,
   ObjectTypeSet,
-  ObjectTypeShape,
+  ObjectTypePointers,
   PropertyDesc,
+  stripBacklinks,
+  stripNonWritables,
   typeutil,
 } from "../reflection";
 import _std from "@generated/modules/std";
-import {
-  shapeElementToAssignmentExpression,
-  stripBacklinks,
-  stripNonWritables,
-} from "./update";
+import {shapeElementToAssignmentExpression} from "./update";
 import {$expressionify} from "./path";
 import {$expr_PathNode} from "../reflection/path";
 
@@ -28,7 +26,7 @@ type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
 export type InsertShape<Root extends ObjectTypeSet> = typeutil.stripNever<
   stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
 > extends infer Shape
-  ? Shape extends ObjectTypeShape
+  ? Shape extends ObjectTypePointers
     ? typeutil.addQuestionMarks<
         {
           [k in keyof Shape]:
