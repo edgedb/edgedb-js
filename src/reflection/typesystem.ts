@@ -164,7 +164,7 @@ export interface PropertyDesc<
   writable: Writable;
 }
 
-export type shapeToSelectShape<
+export type pointersToSelectShape<
   Shape extends ObjectTypeShape,
   AllowComputed extends boolean = true
 > = Partial<
@@ -182,7 +182,7 @@ export type shapeToSelectShape<
               ? TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
               : never)
           | typeutil.flatten<
-              shapeToSelectShape<Shape[k]["target"]["__pointers__"]> &
+              pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
                 linkDescShape<Shape[k]>
             >
           | ((
@@ -191,7 +191,7 @@ export type shapeToSelectShape<
                 null,
                 true
               >
-            ) => shapeToSelectShape<Shape[k]["target"]["__pointers__"]> &
+            ) => pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
               linkDescShape<Shape[k]>)
       : any;
   }
@@ -220,13 +220,12 @@ export type ObjectTypeShape = {
 };
 
 export type objectExprToSelectShape<T extends ObjectTypeSet> =
-  shapeToSelectShape<T["__element__"]["__pointers__"]>;
+  pointersToSelectShape<T["__element__"]["__pointers__"]>;
 
-export type objectTypeToSelectShape<T extends ObjectType> = shapeToSelectShape<
-  T["__pointers__"]
->;
+export type objectTypeToSelectShape<T extends ObjectType> =
+  pointersToSelectShape<T["__pointers__"]>;
 
-// export type shapeToSelectShape<Shape extends ObjectTypeShape> = {
+// export type pointersToSelectShape<Shape extends ObjectTypeShape> = {
 //   [k in keyof Shape]?: Shape[k] extends PropertyDesc
 //     ? boolean | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
 //     : Shape[k] extends LinkDesc
@@ -234,7 +233,7 @@ export type objectTypeToSelectShape<T extends ObjectType> = shapeToSelectShape<
 //         | true
 //         | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
 //         | typeutil.flatten<
-//             shapeToSelectShape<Shape[k]["target"]["__pointers__"]> &
+//             pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
 //               linkDescShape<Shape[k]>
 //           >
 //     : any;
@@ -243,7 +242,7 @@ export type objectTypeToSelectShape<T extends ObjectType> = shapeToSelectShape<
 export type linkDescShape<Link extends LinkDesc> = addAtSigns<
   Link["properties"]
 > extends ObjectTypeShape
-  ? shapeToSelectShape<addAtSigns<Link["properties"]>>
+  ? pointersToSelectShape<addAtSigns<Link["properties"]>>
   : never;
 
 export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};

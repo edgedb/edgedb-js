@@ -13,7 +13,7 @@ import {
   ObjectTypeSet,
   ScalarType,
   setToTsType,
-  shapeToSelectShape,
+  pointersToSelectShape,
   stripSet,
   stripSetShape,
   TypeKind,
@@ -218,7 +218,10 @@ interface SelectObjectMethods<Root extends ObjectTypeSet> {
 
 export function is<
   Expr extends ObjectTypeExpression,
-  Shape extends shapeToSelectShape<Expr["__element__"]["__pointers__"], false>
+  Shape extends pointersToSelectShape<
+    Expr["__element__"]["__pointers__"],
+    false
+  >
 >(
   expr: Expr,
   shape: Shape
