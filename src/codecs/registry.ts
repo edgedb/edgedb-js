@@ -317,14 +317,17 @@ export class CodecsRegistry {
         const codecs: ICodec[] = new Array(els);
         const names: string[] = new Array(els);
         const flags: number[] = new Array(els);
+        const cards: number[] = new Array(els);
 
         for (let i = 0; i < els; i++) {
           let flag: number;
+          let card: number;
           if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
             flag = frb.readUInt32();
-            frb.discard(1); // cardinality
+            card = frb.readUInt8(); // cardinality
           } else {
             flag = frb.readUInt8();
+            card = 0;
           }
 
           const strLen = frb.readUInt32();
@@ -339,9 +342,10 @@ export class CodecsRegistry {
           codecs[i] = subCodec;
           names[i] = name;
           flags[i] = flag;
+          cards[i] = card;
         }
 
-        res = new ObjectCodec(tid, codecs, names, flags);
+        res = new ObjectCodec(tid, codecs, names, flags, cards);
         break;
       }
 
