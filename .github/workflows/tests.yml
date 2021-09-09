@@ -14,19 +14,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node-version: ["12", "13", "14", "15", "16"]
+        node-version: ["12", "13", "14", "15", "16.8"]
         os: [ubuntu-latest]
         edgedb-version: ["stable"]
 
         include:
           - os: ubuntu-latest
-            node-version: "16"
+            node-version: "16.8"
             edgedb-version: "nightly"
           - os: macos-latest
-            node-version: "16"
+            node-version: "16.8"
             edgedb-version: "stable"
           - os: windows-latest
-            node-version: "16"
+            node-version: "16.8"
             edgedb-version: "stable"
 
     steps:
