@@ -130,6 +130,7 @@ function shapeToEdgeQL(
         })`
       );
     } else if (typeof val === "object") {
+      // nested shape
       addLine(
         `${polyIntersection}${key}: ${shapeToEdgeQL(val, ctx, keysOnly, {
           depth: depth + 1,
@@ -444,11 +445,7 @@ function renderEdgeQL(
       );
 
       lines.push(
-        shapeToEdgeQL(
-          (expr.__element__.__shape__ || {}) as object,
-
-          ctx
-        )
+        shapeToEdgeQL((expr.__element__.__shape__ || {}) as object, ctx)
       );
 
       const modifiers = [];

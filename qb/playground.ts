@@ -9,16 +9,18 @@ async function run() {
   await setupTests();
 
   e.is(e.Villain, {
+    // id: true,
     id: true,
+    name: true,
     nemesis: hero => ({
       id: true,
       secret_identity: true,
+      number_of_movies: true,
       "<nemesis[IS default::Villain]": {
         name: true,
       },
       order: hero.name,
     }),
-    name: true,
   });
 
   const q = e.select(e.Hero, hero => ({

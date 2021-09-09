@@ -198,6 +198,9 @@ export type stripBacklinks<T extends ObjectTypePointers> = {
   [k in keyof T]: k extends `<${string}` ? never : T[k];
 };
 
+export type omitBacklinks<T extends string | number | symbol> =
+  T extends `<${string}` ? never : T extends string ? T : never;
+
 export type stripNonWritables<T extends ObjectTypePointers> = {
   [k in keyof T]: [T[k]["writable"]] extends [true] ? T[k] : never;
 };
