@@ -99,7 +99,8 @@ export interface ExpressionMethods<Set extends TypeSet> {
   $is<T extends ObjectTypeSet>(
     ixn: T
   ): $expr_TypeIntersection<
-    this, // might cause performance issues
+    {__cardinality__: Set["__cardinality__"]; __element__: Set["__element__"]},
+    // might cause performance issues
     ObjectType<
       T["__element__"]["__name__"],
       T["__element__"]["__pointers__"],
@@ -152,7 +153,7 @@ export type PropertyTypes =
   | NamedTupleType;
 
 export interface PropertyDesc<
-  Type extends PropertyTypes = PropertyTypes,
+  Type extends BaseType = BaseType,
   Card extends Cardinality = Cardinality,
   Exclusive extends boolean = boolean,
   Writable extends boolean = boolean
@@ -219,11 +220,11 @@ export type ObjectTypeShape = {
   [k: string]: PropertyDesc | LinkDesc;
 };
 
-export type objectExprToSelectShape<T extends ObjectTypeSet> =
-  pointersToSelectShape<T["__element__"]["__pointers__"]>;
+// export type objectExprToSelectShape<T extends ObjectTypeSet> =
+//   pointersToSelectShape<T["__element__"]["__pointers__"]>;
 
-export type objectTypeToSelectShape<T extends ObjectType> =
-  pointersToSelectShape<T["__pointers__"]>;
+// export type objectTypeToSelectShape<T extends ObjectType> =
+//   pointersToSelectShape<T["__pointers__"]>;
 
 // export type pointersToSelectShape<Shape extends ObjectTypeShape> = {
 //   [k in keyof Shape]?: Shape[k] extends PropertyDesc
@@ -239,11 +240,9 @@ export type objectTypeToSelectShape<T extends ObjectType> =
 //     : any;
 // }; // & {[k:string]: boolean | TypeSet | object};
 
-export type linkDescShape<Link extends LinkDesc> = addAtSigns<
-  Link["properties"]
-> extends ObjectTypeShape
-  ? pointersToSelectShape<addAtSigns<Link["properties"]>>
-  : never;
+export type linkDescShape<Link extends LinkDesc> = pointersToSelectShape<
+  addAtSigns<Link["properties"]>
+>;
 
 export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
 

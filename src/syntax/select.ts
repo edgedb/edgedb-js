@@ -7,7 +7,7 @@ import {
   cardinalityUtil,
   Expression,
   ExpressionKind,
-  objectExprToSelectShape,
+  // objectExprToSelectShape,
   ObjectType,
   ObjectTypeExpression,
   ObjectTypeSet,
@@ -445,7 +445,8 @@ export function select<Expr extends TypeSet>(
 ): $expr_Select<stripSet<Expr>, Expr>;
 export function select<
   Expr extends ObjectTypeExpression,
-  Shape extends objectExprToSelectShape<Expr> & SelectModifiers,
+  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]> &
+    SelectModifiers,
   Modifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,

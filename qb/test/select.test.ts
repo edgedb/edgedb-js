@@ -111,6 +111,7 @@ test("deep shape", () => {
     >
   >(true);
 });
+
 test("compositionality", () => {
   // selecting a select statement should
   // default to { id }

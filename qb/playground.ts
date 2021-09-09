@@ -64,6 +64,7 @@ async function run() {
       computable: e.insert(e.Villain, {name: e.str("Loki")}),
     }),
   }));
+
   type q6 = setToTsType<typeof q6>;
   const q7 = e.select(e.Hero, hero => ({
     id: true,
