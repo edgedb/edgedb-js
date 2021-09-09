@@ -20,7 +20,7 @@ import * as errors from "../src/errors";
 import each from "jest-each";
 import {Deferred, createPool, HOLDER, PoolConnection} from "../src/pool";
 import {getPool, getConnectOptions} from "./testbase";
-import {connect} from "../src/pool";
+import {defaultConnectionFactory} from "../src/pool";
 import {Connection, Pool, INNER} from "../src/ifaces";
 import {ConnectConfig, NormalizedConnectConfig} from "../src/con_utils";
 
@@ -566,7 +566,7 @@ test(
       options: NormalizedConnectConfig
     ): Promise<PoolConnection> {
       calls += 1;
-      return await connect(options);
+      return await defaultConnectionFactory(options);
     }
 
     const pool = await createPool(undefined, {

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import _connect from "./client";
+import _connect from "./pool";
 export const connect = _connect;
 export default connect;
 
