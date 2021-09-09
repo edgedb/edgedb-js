@@ -93,27 +93,6 @@ const OLD_ERROR_CODES = new Map([
 
 const DEFAULT_MAX_ITERATIONS = 3;
 
-export default function connect(
-  dsn?: string | ConnectConfig | null,
-  options?: ConnectConfig | null
-): Promise<Connection> {
-  let config: ConnectConfig | null = null;
-  if (typeof dsn === "string") {
-    config = {...options, dsn};
-  } else {
-    if (dsn != null) {
-      // tslint:disable-next-line: no-console
-      console.warn(
-        "`options` as the first argument to `edgedb.connect` is " +
-          "deprecated, use " +
-          "`edgedb.connect('instance_name_or_dsn', options)`"
-      );
-    }
-    config = {...dsn, ...options};
-  }
-  return StandaloneConnection.connect(parseConnectArguments(config));
-}
-
 function sleep(durationMillis: number): Promise<void> {
   return new Promise((accept, reject) => {
     setTimeout(() => accept(), durationMillis);

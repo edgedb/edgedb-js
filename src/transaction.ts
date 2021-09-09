@@ -52,7 +52,7 @@ export class Transaction implements Executor {
   ) {
     if (!(connection instanceof StandaloneConnection)) {
       throw new errors.InterfaceError(
-        "connection is of unkwown type for transaction"
+        "connection is of unknown type for transaction"
       );
     }
     this._connection = connection as StandaloneConnection;

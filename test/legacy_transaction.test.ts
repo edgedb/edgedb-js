@@ -23,22 +23,26 @@ import {
   Transaction,
   TransactionState,
 } from "../src/legacy_transaction";
-import {Connection} from "../src/ifaces";
+import {Connection, Pool} from "../src/ifaces";
 import {IsolationLevel} from "../src/options";
 
 const typename = "TransactionTest";
 
-async function run(test: (con: Connection) => Promise<void>): Promise<void> {
-  const connection = await asyncConnect();
+let pool: Pool;
 
+async function run(test: (con: Connection) => Promise<void>): Promise<void> {
+  // @ts-ignore
+  const connection = await pool._acquire();
   try {
     await test(connection);
   } finally {
-    await connection.close();
+    // @ts-ignore
+    pool._release(connection);
   }
 }
 
 beforeAll(async () => {
+  pool = await asyncConnect();
   await run(async (con) => {
     await con.execute(`
       CREATE TYPE ${typename} {
@@ -52,6 +56,7 @@ afterAll(async () => {
   await run(async (con) => {
     await con.execute(`DROP TYPE ${typename};`);
   });
+  await pool.close();
 });
 
 test("transaction: regular 01", async () => {

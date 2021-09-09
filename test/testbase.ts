@@ -19,13 +19,14 @@
 import connect, {createPool} from "../src/index.node";
 import {ConnectConfig} from "../src/con_utils";
 import {Connection, Pool} from "../src/ifaces";
+import {ConnectOptions} from "../src/pool";
 
 export const isDeno =
   typeof window !== "undefined" &&
   // @ts-ignore
   typeof Deno !== "undefined";
 
-function _getOpts(opts: ConnectConfig): ConnectConfig {
+function _getOpts(opts: ConnectOptions): ConnectOptions {
   let config;
   try {
     if (isDeno) {
@@ -46,11 +47,11 @@ function _getOpts(opts: ConnectConfig): ConnectConfig {
   return {...config, ...opts};
 }
 
-export function getConnectOptions(): ConnectConfig {
+export function getConnectOptions(): ConnectOptions {
   return _getOpts({});
 }
 
-export async function asyncConnect(opts?: ConnectConfig): Promise<Connection> {
+export async function asyncConnect(opts?: ConnectOptions): Promise<Pool> {
   return await connect(undefined, _getOpts(opts ?? {}));
 }
 

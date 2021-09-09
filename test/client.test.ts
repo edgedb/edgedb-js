@@ -30,7 +30,7 @@ import {
   _CodecsRegistry,
   _ReadBuffer,
 } from "../src/index.node";
-import {INNER} from "../src/ifaces";
+import {Connection, INNER} from "../src/ifaces";
 import {
   LocalDate,
   Duration,
@@ -39,6 +39,28 @@ import {
 } from "../src/datatypes/datetime";
 import {asyncConnect, getConnectOptions, isDeno} from "./testbase";
 import {parseConnectArguments} from "../src/con_utils";
+
+function setStringCodecs(codecs: string[]) {
+  return {
+    pool: {
+      onAcquire: async (conn: Connection) => {
+        // @ts-ignore
+        const registry = conn[INNER].connection.codecsRegistry;
+        registry.setStringCodecs(
+          codecs.reduce((obj, codec) => {
+            obj[codec] = true;
+            return obj;
+          }, {} as any)
+        );
+      },
+      onRelease: async (conn: Connection) => {
+        // @ts-ignore
+        const registry = conn[INNER].connection.codecsRegistry;
+        registry.setStringCodecs({});
+      },
+    },
+  };
+}
 
 test("query: basic scalars", async () => {
   const con = await asyncConnect();
@@ -198,11 +220,7 @@ test("fetch: bigint", async () => {
 });
 
 test("fetch: decimal as string", async () => {
-  const con = await asyncConnect();
-
-  // @ts-ignore
-  const registry = con[INNER].connection.codecsRegistry;
-  registry.setStringCodecs({decimal: true});
+  const con = await asyncConnect(setStringCodecs(["decimal"]));
 
   const vals = [
     "0.001",
@@ -335,11 +353,7 @@ test("fetch: decimal as string", async () => {
 });
 
 test("fetch: int64 as string", async () => {
-  const con = await asyncConnect();
-
-  // @ts-ignore
-  const registry = con[INNER].connection.codecsRegistry;
-  registry.setStringCodecs({int64: true});
+  const con = await asyncConnect(setStringCodecs(["int64"]));
 
   const vals = [
     "0",
@@ -377,11 +391,7 @@ test("fetch: int64 as string", async () => {
 });
 
 test("fetch: bigint as string", async () => {
-  const con = await asyncConnect();
-
-  // @ts-ignore
-  const registry = con[INNER].connection.codecsRegistry;
-  registry.setStringCodecs({bigint: true});
+  const con = await asyncConnect(setStringCodecs(["bigint"]));
 
   const vals = [
     "0",
@@ -424,11 +434,9 @@ function edgeDBDateTimeToStr(dt: EdgeDBDateTime): string {
 }
 
 test("fetch: datetime as string", async () => {
-  const con = await asyncConnect();
-
-  // @ts-ignore
-  const registry = con[INNER].connection!.codecsRegistry;
-  registry.setStringCodecs({local_datetime: true, datetime: true});
+  const con = await asyncConnect(
+    setStringCodecs(["local_datetime", "datetime"])
+  );
 
   const maxDate = 253402300799;
   const minDate = -62135596800;
@@ -874,7 +882,7 @@ test("fetch: relative_duration", async () => {
       "3 months",
       "7 weeks 9 microseconds",
     ]) {
-      res = await con.queryOne(
+      res = await con.querySingle(
         `
           select (
             <cal::relative_duration><str>$time,
@@ -885,7 +893,7 @@ test("fetch: relative_duration", async () => {
       );
       expect(res[0].toString()).toBe(res[1]);
 
-      const res2: any = await con.queryOne(
+      const res2: any = await con.querySingle(
         `
         select <cal::relative_duration>$time;
         `,
@@ -1476,7 +1484,8 @@ test("fetch no codec", async () => {
 });
 
 test("concurrent ops", async () => {
-  const con = await asyncConnect();
+  const pool = await asyncConnect();
+  const con = await pool.acquire();
   try {
     const p1 = con.querySingle(`SELECT 1 + 2`);
     await Promise.all([
@@ -1493,7 +1502,8 @@ test("concurrent ops", async () => {
     const res = await p1;
     expect(res).toBe(3);
   } finally {
-    await con.close();
+    await pool.release(con);
+    await pool.close();
   }
 });
 

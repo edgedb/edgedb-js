@@ -306,7 +306,7 @@ export class PoolInnerConnection extends InnerConnection {
 }
 
 export class PoolConnection extends StandaloneConnection {
-  [INNER]: PoolInnerConnection;
+  declare [INNER]: PoolInnerConnection;
 
   protected initInner(config: NormalizedConnectConfig): void {
     this[INNER] = new PoolInnerConnection(config);
@@ -337,7 +337,6 @@ const DefaultMinPoolSize = 0;
 const DefaultMaxPoolSize = 100;
 
 export interface PoolOptions {
-  connectOptions?: ConnectConfig | null;
   minSize?: number;
   maxSize?: number;
   onAcquire?: (proxy: Connection) => Promise<void>;
@@ -346,6 +345,10 @@ export interface PoolOptions {
   connectionFactory?: (
     options: NormalizedConnectConfig
   ) => Promise<PoolConnection>;
+}
+
+export interface LegacyPoolOptions extends PoolOptions {
+  connectOptions?: ConnectConfig | null;
 }
 
 export class PoolStats implements IPoolStats {
@@ -375,7 +378,7 @@ export class PoolStats implements IPoolStats {
   }
 }
 
-export function connect(
+export function defaultConnectionFactory(
   config: NormalizedConnectConfig
 ): Promise<PoolConnection> {
   return PoolConnection.connect(config);
@@ -390,12 +393,16 @@ export function connect(
  * open cursors and other resources *except* prepared statements.
  * Pools are created by calling :func:`~edgedb.pool.create`.
  */
-class PoolShell implements Pool {
+export class PoolShell implements Pool {
   [ALLOW_MODIFICATIONS]: never;
   impl: PoolImpl;
   options: Options;
-  protected constructor(dsn?: string, options: PoolOptions = {}) {
-    this.impl = new PoolImpl(dsn, options);
+  protected constructor(
+    dsn?: string,
+    connectOptions: ConnectConfig = {},
+    poolOptions: PoolOptions = {}
+  ) {
+    this.impl = new PoolImpl(dsn, connectOptions, poolOptions);
     this.options = Options.defaults();
   }
 
@@ -428,9 +435,10 @@ class PoolShell implements Pool {
   /** @internal */
   static async create(
     dsn?: string,
-    options?: PoolOptions | null
+    connectOptions?: ConnectConfig | null,
+    poolOptions?: PoolOptions | null
   ): Promise<PoolShell> {
-    const pool = new PoolShell(dsn, options || {});
+    const pool = new PoolShell(dsn, connectOptions || {}, poolOptions || {});
     await pool.impl.initialize();
     return pool;
   }
@@ -614,12 +622,20 @@ class PoolImpl {
   private _generation: number;
   private _connectOptions: NormalizedConnectConfig;
 
-  constructor(dsn?: string, options: PoolOptions = {}) {
-    const {onAcquire, onRelease, onConnect, connectOptions} = options;
+  constructor(
+    dsn?: string,
+    connectOptions: ConnectConfig = {},
+    poolOptions: PoolOptions = {}
+  ) {
+    const {onAcquire, onRelease, onConnect} = poolOptions;
     const minSize =
-      options.minSize === undefined ? DefaultMinPoolSize : options.minSize;
+      poolOptions.minSize === undefined
+        ? DefaultMinPoolSize
+        : poolOptions.minSize;
     const maxSize =
-      options.maxSize === undefined ? DefaultMaxPoolSize : options.maxSize;
+      poolOptions.maxSize === undefined
+        ? DefaultMaxPoolSize
+        : poolOptions.maxSize;
 
     this.validateSizeParameters(minSize, maxSize);
 
@@ -636,7 +652,8 @@ class PoolImpl {
     this._closed = false;
     this._generation = 0;
     this._connectOptions = parseConnectArguments({...connectOptions, dsn});
-    this._connectionFactory = options.connectionFactory ?? connect;
+    this._connectionFactory =
+      poolOptions.connectionFactory ?? defaultConnectionFactory;
   }
 
   /**
@@ -919,11 +936,15 @@ class PoolImpl {
 }
 
 export function createPool(
-  dsn?: string | PoolOptions | null,
-  options?: PoolOptions | null
+  dsn?: string | LegacyPoolOptions | null,
+  options?: LegacyPoolOptions | null
 ): Promise<Pool> {
+  console.warn(
+    "`createPool()` is deprecated and is scheduled to be removed. " +
+      "Use `connect()` instead"
+  );
   if (typeof dsn === "string") {
-    return PoolShell.create(dsn, options);
+    return PoolShell.create(dsn, options?.connectOptions, options);
   } else {
     if (dsn != null) {
       // tslint:disable-next-line: no-console
@@ -933,6 +954,31 @@ export function createPool(
           "`edgedb.connect('instance_name_or_dsn', options)`"
       );
     }
-    return PoolShell.create(undefined, {...dsn, ...options});
+    const opts = {...dsn, ...options};
+    return PoolShell.create(undefined, opts.connectOptions, opts);
+  }
+}
+
+export interface ConnectOptions extends ConnectConfig {
+  pool?: PoolOptions;
+}
+
+export default function connect(
+  dsn?: string | ConnectOptions | null,
+  options?: ConnectOptions | null
+): Promise<Pool> {
+  if (typeof dsn === "string") {
+    return PoolShell.create(dsn, options, options?.pool);
+  } else {
+    if (dsn != null) {
+      // tslint:disable-next-line: no-console
+      console.warn(
+        "`options` as the first argument to `edgedb.connect` is " +
+          "deprecated, use " +
+          "`edgedb.connect('instance_name_or_dsn', options)`"
+      );
+    }
+    const opts = {...dsn, ...options};
+    return PoolShell.create(undefined, opts, opts.pool);
   }
 }
