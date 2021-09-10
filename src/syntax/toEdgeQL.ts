@@ -192,7 +192,7 @@ export function toEdgeQL(this: any) {
         withBlocks.set(withBlock, new Set());
       }
 
-      const scopeVar = expr.__scope__! as SomeExpression;
+      const scopeVar = expr.__scope__ as SomeExpression;
 
       const scopeVarName = `__scope_${withVars.size}_${
         scopeVar.__element__.__name__.split("::")[1]
@@ -690,15 +690,12 @@ function walkExprTree(
           }
         }
         if (modifiers.offset) {
-          childExprs.push(
-            ...walkExprTree(modifiers.offset as OffsetExpression, expr, ctx)
-          );
+          childExprs.push(...walkExprTree(modifiers.offset!, expr, ctx));
         }
         if (modifiers.limit) {
-          childExprs.push(
-            ...walkExprTree(modifiers.limit as LimitExpression, expr, ctx)
-          );
+          childExprs.push(...walkExprTree(modifiers.limit!, expr, ctx));
         }
+
         if (isObjectType(expr.__element__)) {
           const walkShape = (shape: object) => {
             for (let param of Object.values(shape)) {

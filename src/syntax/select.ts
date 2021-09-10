@@ -3,13 +3,17 @@ import _std from "@generated/modules/std";
 import * as edgedb from "edgedb";
 import {
   $expr_PolyShapeElement,
+  $scopify,
   Cardinality,
   cardinalityUtil,
   Expression,
   ExpressionKind,
+  LinkDesc,
   ObjectType,
   ObjectTypeExpression,
+  ObjectTypePointers,
   ObjectTypeSet,
+  PropertyDesc,
   ScalarType,
   setToTsType,
   stripSet,
@@ -17,24 +21,16 @@ import {
   TypeKind,
   TypeSet,
   typeutil,
-  $scopify,
-  stripBacklinks,
-  ObjectTypePointers,
-  PropertyDesc,
-  LinkDesc,
-  linkDescToPointers,
-  omitBacklinks,
 } from "../reflection";
-import {$expr_Literal} from "../reflection/literal";
+import type {$expr_Literal} from "../reflection/literal";
 import type {
   $expr_PathLeaf,
   $expr_PathNode,
   ExpressionRoot,
   PathParent,
 } from "../reflection/path";
-import {$expr_PathNode as makePathNode} from "./path";
-import {$expr_Operator} from "./funcops";
-import {$expressionify} from "./path";
+import type {$expr_Operator} from "./funcops";
+import {$expressionify, $expr_PathNode as makePathNode} from "./path";
 import type {$expr_Update, UpdateShape} from "./update";
 
 export const ASC: "ASC" = "ASC";
@@ -255,16 +251,12 @@ export type polymorphicShape<RawShape extends ObjectTypePointers> = {
     : RawShape[k] extends LinkDesc
     ?
         | boolean
-        | pointersToSelectShape<
-            RawShape[k]["target"]["__pointers__"] &
-              linkDescToPointers<RawShape[k]>
-          >
+        | (pointersToSelectShape<RawShape[k]["target"]["__pointers__"]> &
+            pointersToSelectShape<RawShape[k]["properties"]>)
         | ((
             scope: $scopify<RawShape[k]["target"]>
-          ) => pointersToSelectShape<
-            RawShape[k]["target"]["__pointers__"] &
-              linkDescToPointers<RawShape[k]>
-          >)
+          ) => pointersToSelectShape<RawShape[k]["target"]["__pointers__"]> &
+            pointersToSelectShape<RawShape[k]["properties"]>)
     : any;
 };
 
@@ -455,14 +447,12 @@ export type pointersToSelectShape<Shape extends ObjectTypePointers> = Partial<
       ?
           | boolean
           | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
-          | pointersToSelectShape<
-              Shape[k]["target"]["__pointers__"] & linkDescToPointers<Shape[k]>
-            >
+          | (pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
+              pointersToSelectShape<Shape[k]["properties"]>)
           | ((
               scope: $scopify<Shape[k]["target"]>
-            ) => pointersToSelectShape<
-              Shape[k]["target"]["__pointers__"] & linkDescToPointers<Shape[k]>
-            >)
+            ) => pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
+              pointersToSelectShape<Shape[k]["properties"]>)
       : any;
   }
 > &

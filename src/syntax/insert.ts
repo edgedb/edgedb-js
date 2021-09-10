@@ -11,7 +11,7 @@ import {
   typeutil,
 } from "../reflection";
 import _std from "@generated/modules/std";
-import {shapeElementToAssignmentExpression} from "./update";
+import {pointerToAssignmentExpression} from "./update";
 import {$expressionify} from "./path";
 import {$expr_PathNode} from "../reflection/path";
 
@@ -30,7 +30,7 @@ export type InsertShape<Root extends ObjectTypeSet> = typeutil.stripNever<
     ? typeutil.addQuestionMarks<
         {
           [k in keyof Shape]:
-            | shapeElementToAssignmentExpression<Shape[k]>
+            | pointerToAssignmentExpression<Shape[k]>
             | (true extends pointerIsOptional<Shape[k]> ? undefined : never);
         }
       >

@@ -205,31 +205,42 @@ export type stripNonWritables<T extends ObjectTypePointers> = {
   [k in keyof T]: [T[k]["writable"]] extends [true] ? T[k] : never;
 };
 
-export type linkDescToPointers<Link extends LinkDesc> = addAtSigns<
-  Link["properties"]
->;
-
-export type addAtSigns<T> = {[k in string & keyof T as `@${k}`]: T[k]};
-
 type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
   Element
 ] extends [true]
-  ? shapeElementToTsType<Pointer>
+  ? pointerToTsType<Pointer>
   : [Element] extends [false]
   ? never
   : [Element] extends [boolean]
-  ? shapeElementToTsType<Pointer> | undefined
+  ? pointerToTsType<Pointer> | undefined
   : Element extends TypeSet
   ? setToTsType<Element>
-  : Element extends (scope: any) => any
-  ? Pointer["target"] extends ObjectType
-    ? simpleShapeToTs<Pointer["target"]["__pointers__"], ReturnType<Element>>
-    : never
-  : Element extends object
-  ? Pointer["target"] extends ObjectType
-    ? simpleShapeToTs<Pointer["target"]["__pointers__"], Element>
+  : Pointer extends LinkDesc
+  ? Element extends (...scope: any[]) => any
+    ? computeObjectShape<
+        Pointer["target"]["__pointers__"] & Pointer["properties"],
+        ReturnType<Element>
+      >
+    : Element extends object
+    ? computeObjectShape<
+        Pointer["target"]["__pointers__"] & Pointer["properties"],
+        Element
+      >
     : never
   : never;
+
+// Element extends (scope: any) => any
+// ? Pointer["target"] extends ObjectType
+//   ? computeObjectShape<
+//       Pointer["target"]["__pointers__"],
+//       ReturnType<Element>
+//     >
+//   : never
+// : Element extends object
+// ? Pointer["target"] extends ObjectType
+//   ? computeObjectShape<Pointer["target"]["__pointers__"], Element>
+//   : never
+// : never;
 
 export type $expr_PolyShapeElement<
   PolyType extends ObjectTypeSet = ObjectTypeSet,
@@ -240,7 +251,7 @@ export type $expr_PolyShapeElement<
   __shapeElement__: ShapeElement;
 };
 
-export type simpleShapeToTs<
+export type computeObjectShape<
   Pointers extends ObjectTypePointers,
   Shape
 > = typeutil.flatten<
@@ -265,28 +276,7 @@ export type simpleShapeToTs<
       }
 >;
 
-export type computeObjectShape<
-  Pointers extends ObjectTypePointers,
-  Shape extends object | null
-  // Polys extends Poly[]
-> = simpleShapeToTs<Pointers, Shape>;
-//  string extends keyof Pointers // checks if Shape is actually defined
-//   ? any
-//   : typeutil.assertEqual<Shape, object | null> extends true
-//   ? any
-//   : typeutil.assertEqual<Polys, Poly[]> extends true
-//   ? any
-//   : typeutil.assertEqual<Shape, null> extends true
-//   ? any
-//   : shapeWithPolysToTs<Pointers, Shape, Polys>;
-
-type unionToIntersection<U> = (
-  U extends any ? (k: U) => void : never
-) extends (k: infer I) => void
-  ? I
-  : never;
-
-export type shapeElementToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
+export type pointerToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
   El extends PropertyDesc
     ? propToTsType<El>
     : El extends LinkDesc<any, any, any, any>
@@ -436,26 +426,17 @@ export type propToTsType<Prop extends PropertyDesc> =
     ? setToTsType<TypeSet<Type, Card>>
     : never;
 
-export type linkToTsType<Link extends LinkDesc<any, any, any, any>> =
-  Link extends LinkDesc<infer Type, infer Card, any>
-    ? setToTsType<TypeSet<Type, Card>>
-    : never;
+export type linkToTsType<Link extends LinkDesc> = computeTsType<
+  Link["target"],
+  Link["cardinality"]
+>;
 
-export type shapeElementToTsType<El extends PropertyDesc | LinkDesc> =
+export type pointerToTsType<El extends PropertyDesc | LinkDesc> =
   El extends PropertyDesc
     ? propToTsType<El>
     : El extends LinkDesc<any, any, any, any>
     ? linkToTsType<El>
     : never;
-
-export type shapeToTsType<T extends ObjectTypePointers> =
-  string extends keyof T
-    ? any
-    : typeutil.flatten<
-        {
-          [k in keyof T]: shapeElementToTsType<T[k]>;
-        }
-      >;
 
 ///////////////////
 // TYPE HELPERS

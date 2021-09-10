@@ -56,21 +56,21 @@ export type assignableBy<T extends BaseType> = T extends ScalarType
     >
   : never;
 
-export type shapeElementToAssignmentExpression<
-  Element extends PropertyDesc | LinkDesc
-> = [Element] extends [PropertyDesc]
+export type pointerToAssignmentExpression<
+  Pointer extends PropertyDesc | LinkDesc
+> = [Pointer] extends [PropertyDesc]
   ? {
-      __element__: assignableBy<Element["target"]>;
-      __cardinality__: cardinalityUtil.assignable<Element["cardinality"]>;
+      __element__: assignableBy<Pointer["target"]>;
+      __cardinality__: cardinalityUtil.assignable<Pointer["cardinality"]>;
     }
-  : [Element] extends [LinkDesc]
+  : [Pointer] extends [LinkDesc]
   ? TypeSet<
       ObjectType<
         // anonymize the object type
         string,
-        Element["target"]["__pointers__"]
+        Pointer["target"]["__pointers__"]
       >,
-      cardinalityUtil.assignable<Element["cardinality"]>
+      cardinalityUtil.assignable<Pointer["cardinality"]>
     >
   : never;
 
@@ -79,7 +79,7 @@ export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
 > extends infer Shape
   ? Shape extends ObjectTypePointers
     ? {
-        [k in keyof Shape]?: shapeElementToAssignmentExpression<
+        [k in keyof Shape]?: pointerToAssignmentExpression<
           Shape[k]
         > extends infer S
           ? S | {"+=": S} | {"-=": S}

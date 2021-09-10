@@ -1,6 +1,6 @@
 // tslint:disable:no-console
-import {$Villain} from "@generated/modules/default";
-import {polymorphicShape} from "@syntax/select";
+import {$Movie, $MovieShape, $Villain} from "@generated/modules/default";
+import {pointersToSelectShape, polymorphicShape} from "@syntax/select";
 import {setToTsType} from "reflection";
 import e from "./generated/example";
 import {setupTests} from "./test/setupTeardown";
@@ -22,6 +22,39 @@ async function run() {
       order: hero.name,
     }),
   });
+
+  type arg = pointersToSelectShape<typeof $Movie["__pointers__"]>;
+  type moviepointers = $Movie["__pointers__"];
+  type charfields = pointersToSelectShape<
+    moviepointers["characters"]["target"]["__pointers__"] &
+      moviepointers["characters"]["properties"]
+  >;
+  type charfield = charfields["@character_name"];
+
+  const arg = e.is(e.Movie, {
+    characters: char => ({
+      "@character_name": true,
+    }),
+  });
+
+  const arg2 = e.is(e.Movie, {
+    characters: {
+      "@character_name": true,
+    },
+  });
+
+  const nested = e.select(e.Object, movie => ({
+    id: true,
+    ...e.is(e.Movie, {
+      characters: {
+        "@character_name": true,
+      },
+    }),
+  }));
+  const chars = nested.__element__.__shape__.characters;
+  type nested = setToTsType<typeof nested>;
+
+  console.log(nested.toEdgeQL());
 
   const q = e.select(e.Hero, hero => ({
     id: true,
