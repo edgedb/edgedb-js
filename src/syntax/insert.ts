@@ -11,7 +11,7 @@ import {
   typeutil,
 } from "../reflection";
 import _std from "@generated/modules/std";
-import {pointerToAssignmentExpression} from "./update";
+import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify} from "./path";
 import {$expr_PathNode} from "../reflection/path";
 

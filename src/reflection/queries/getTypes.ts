@@ -121,7 +121,7 @@ export async function getTypes(
         is_writable := len(.computed_fields) = 0 AND .readonly = false,
         [IS Link].pointers: {
           real_cardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
-          name,
+          name := '@' ++ .name,
           target_id := .target.id,
           kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property',
           is_writable := len(.computed_fields) = 0 AND .readonly = false,

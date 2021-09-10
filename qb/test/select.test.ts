@@ -514,6 +514,14 @@ test("backlinks", async () => {
   ).toEqual(true);
 });
 
+test("overrides with implicit casting", () => {
+  e.select(e.Hero, () => ({
+    id: e.uuid("asdf"),
+    number_of_movies: e.int64(1234),
+    name: e.str("adsf"),
+  }));
+});
+
 // test("assertSingle this check", () => {
 //   const inner = e.select(e.Hero);
 //   const outer = e.select(e.Hero).$assertSingle().__args__[0];

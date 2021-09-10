@@ -29,6 +29,12 @@ import type {
   ExpressionRoot,
   PathParent,
 } from "../reflection/path";
+import {
+  anonymizeObject,
+  castableFrom,
+  pointerToAssignmentExpression,
+  pointerToCastableExpression,
+} from "./casting";
 import type {$expr_Operator} from "./funcops";
 import {$expressionify, $expr_PathNode as makePathNode} from "./path";
 import type {$expr_Update, UpdateShape} from "./update";
@@ -442,11 +448,23 @@ export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
 export type pointersToSelectShape<Shape extends ObjectTypePointers> = Partial<
   {
     [k in keyof Shape]: Shape[k] extends PropertyDesc
-      ? boolean | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
-      : Shape[k] extends LinkDesc
       ?
           | boolean
-          | TypeSet<Shape[k]["target"], Shape[k]["cardinality"]>
+          | TypeSet<
+              // causes excessively deep error:
+              // castableFrom<Shape[k]["target"]>
+              Shape[k]["target"],
+              cardinalityUtil.assignable<Shape[k]["cardinality"]>
+            >
+      : // | pointerToCastableExpression<Shape[k]>
+      Shape[k] extends LinkDesc
+      ?
+          | boolean
+          // | pointerToCastableExpression<Shape[k]>
+          | TypeSet<
+              anonymizeObject<Shape[k]["target"]>,
+              cardinalityUtil.assignable<Shape[k]["cardinality"]>
+            >
           | (pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
               pointersToSelectShape<Shape[k]["properties"]>)
           | ((
@@ -600,18 +618,18 @@ function resolveShape(
   const modifiers: any = {};
   const shape: any = {};
 
-  // const scope = $expressionify({
-  //   ...expr,
-  //   __cardinality__: Cardinality.One,
-  // } as any);
-  const scope = makePathNode(
-    {
-      __element__: expr.__element__,
-      __cardinality__: Cardinality.One,
-    },
-    null,
-    true
-  );
+  const scope = $expressionify({
+    ...expr,
+    __cardinality__: Cardinality.One,
+  } as any);
+  // const scope = makePathNode(
+  //   {
+  //     __element__: expr.__element__,
+  //     __cardinality__: Cardinality.One,
+  //   },
+  //   null,
+  //   true
+  // );
 
   const selectShape =
     typeof shapeGetter === "function" ? shapeGetter(scope) : shapeGetter;

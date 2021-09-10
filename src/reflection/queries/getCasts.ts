@@ -18,7 +18,7 @@ const reachableFrom: (
   if (seen.has(source)) return [];
   seen.add(source);
 
-  (adj[source] || []).map((cast) => {
+  (adj[source] || []).map(cast => {
     reachable.add(cast);
     for (const item of reachableFrom(cast, adj, seen)) {
       reachable.add(item);
@@ -104,7 +104,7 @@ export const getCasts = async (
     for (const [fromId, castArr] of Object.entries(implicitCastMap)) {
       console.log(
         `${typesById[fromId].name} implicitly castable to: [${castArr
-          .map((id) => typesById[id].name)
+          .map(id => typesById[id].name)
           .join(", ")}]`
       );
     }
@@ -112,7 +112,7 @@ export const getCasts = async (
     for (const [fromId, castArr] of Object.entries(implicitCastFromMap)) {
       console.log(
         `${typesById[fromId].name} implicitly castable from: [${castArr
-          .map((id) => typesById[id].name)
+          .map(id => typesById[id].name)
           .join(", ")}]`
       );
     }
@@ -121,7 +121,7 @@ export const getCasts = async (
     for (const [fromId, castArr] of Object.entries(assignmentCastMap)) {
       console.log(
         `${typesById[fromId].name} assignable to: [${castArr
-          .map((id) => typesById[id].name)
+          .map(id => typesById[id].name)
           .join(", ")}]`
       );
     }
@@ -130,7 +130,7 @@ export const getCasts = async (
     for (const [fromId, castArr] of Object.entries(assignableByMap)) {
       console.log(
         `${typesById[fromId].name} assignable by: [${castArr
-          .map((id) => typesById[id].name)
+          .map(id => typesById[id].name)
           .join(", ")}]`
       );
     }
@@ -139,7 +139,7 @@ export const getCasts = async (
     for (const [fromId, castArr] of Object.entries(castMap)) {
       console.log(
         `${typesById[fromId].name} castable to: [${castArr
-          .map((id) => {
+          .map(id => {
             return typesById[id].name;
           })
           .join(", ")}]`

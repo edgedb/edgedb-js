@@ -65,5 +65,10 @@ test("insert type enforcement", async () => {
 
   // @ts-expect-error missing required field
   e.insert(e.Villain, {});
+
+  e.insert(e.Villain, {
+    // @ts-expect-error
+    name: e.set(e.str),
+  });
   return;
 });

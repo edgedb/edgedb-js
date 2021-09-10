@@ -1,78 +1,17 @@
-import {scalarAssignableBy} from "@generated/castMaps";
 import {
-  ArrayType,
-  BaseType,
-  BaseTypeTuple,
-  cardinalityUtil,
   Expression,
   ExpressionKind,
-  LinkDesc,
-  NamedTupleType,
-  ObjectType,
-  ObjectTypeSet,
   ObjectTypePointers,
-  PropertyDesc,
-  ScalarType,
+  ObjectTypeSet,
   stripBacklinks,
   stripNonWritables,
-  TupleType,
-  TypeSet,
   typeutil,
 } from "../reflection";
+import type {pointerToAssignmentExpression} from "./casting";
 
 /////////////////
 /// UPDATE
 /////////////////
-
-export type anonymizeObject<T extends ObjectType> = ObjectType<
-  string,
-  T["__pointers__"],
-  any
->;
-
-export type assignableTuple<Items extends BaseTypeTuple> = {
-  [k in keyof Items]: Items[k] extends BaseType
-    ? assignableBy<Items[k]>
-    : never;
-} extends infer NewItems
-  ? NewItems extends BaseTypeTuple
-    ? NewItems
-    : never
-  : never;
-
-export type assignableBy<T extends BaseType> = T extends ScalarType
-  ? scalarAssignableBy<T>
-  : T extends ObjectType
-  ? anonymizeObject<T>
-  : T extends ArrayType
-  ? ArrayType<assignableBy<T["__element__"]>>
-  : T extends TupleType
-  ? TupleType<assignableTuple<T["__items__"]>>
-  : T extends NamedTupleType
-  ? NamedTupleType<
-      {
-        [k in keyof T["__shape__"]]: assignableBy<T["__shape__"][k]>;
-      }
-    >
-  : never;
-
-export type pointerToAssignmentExpression<
-  Pointer extends PropertyDesc | LinkDesc
-> = [Pointer] extends [PropertyDesc]
-  ? {
-      __element__: assignableBy<Pointer["target"]>;
-      __cardinality__: cardinalityUtil.assignable<Pointer["cardinality"]>;
-    }
-  : [Pointer] extends [LinkDesc]
-  ? TypeSet<
-      ObjectType<
-        // anonymize the object type
-        string,
-        Pointer["target"]["__pointers__"]
-      >,
-      cardinalityUtil.assignable<Pointer["cardinality"]>
-    >
-  : never;
 
 export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
   stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>

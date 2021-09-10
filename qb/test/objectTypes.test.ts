@@ -41,9 +41,11 @@ test("link hydration", () => {
 
 const link = e.schema.$AnnotationSubject.__pointers__.annotations;
 test("link properties", () => {
-  expect(link.properties.value.target.__name__).toEqual("std::str");
-  expect(link.properties.value.cardinality).toEqual($.Cardinality.AtMostOne);
-  expect(link.properties.value.__kind__).toEqual("property");
+  expect(link.properties["@value"].target.__name__).toEqual("std::str");
+  expect(link.properties["@value"].cardinality).toEqual(
+    $.Cardinality.AtMostOne
+  );
+  expect(link.properties["@value"].__kind__).toEqual("property");
 });
 
 test("named tuple tests", () => {

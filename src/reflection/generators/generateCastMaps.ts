@@ -22,7 +22,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   /////////////////////////////////////
 
   const materialScalars = reverseTopo.filter(
-    (type) =>
+    type =>
       type.kind === "scalar" &&
       !type.is_abstract &&
       (!type.enum_values || !type.enum_values.length)
@@ -38,6 +38,9 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
   const assignableMap: CodeFragment[][] = [
     [`export type scalarAssignableBy<T extends $.ScalarType> =`],
+  ];
+  const castableMap: CodeFragment[][] = [
+    [`export type scalarCastableFrom<T extends $.ScalarType> =`],
   ];
 
   const staticMap: CodeFragment[][] = [
@@ -59,6 +62,15 @@ export const generateCastMaps = (params: GeneratorParams) => {
         }).staticType
       } : `
     );
+    castableMap.push(
+      frag`  T extends ${getRef(outer.name)} ? ${
+        getStringRepresentation(types.get(outer.id), {
+          types,
+          casts: casts.implicitCastFromMap,
+          castSuffix: "λICastableTo",
+        }).staticType
+      } : `
+    );
 
     const outerCastableTo = casting(outer.id);
     staticMap.push(frag`  A extends ${getRef(outer.name)} ?`);
@@ -74,7 +86,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
       const bCastableToA = innerCastableTo.includes(outer.id);
 
       let sharedParent: string | null = null;
-      const sharedParentId = outerCastableTo.find((t) =>
+      const sharedParentId = outerCastableTo.find(t =>
         innerCastableTo.includes(t)
       );
       if (sharedParentId) {
@@ -123,6 +135,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
     staticMap.push(["  :"]);
   }
   assignableMap.push([`  never`]);
+  castableMap.push([`  never`]);
   staticMap.push(["never"]);
   runtimeMap.push([
     `  throw new Error(\`Types are not castable: \${a.__name__}, \${b.__name__}\`);`,
@@ -130,6 +143,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
   runtimeMap.push([`}`]);
 
   f.writeln(joinFrags(assignableMap, "\n"));
+  f.nl();
+  f.writeln(joinFrags(castableMap, "\n"));
   f.nl();
   f.writeln(joinFrags(staticMap, "\n"));
   f.nl();
@@ -191,7 +206,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
       if (castableTo.length) {
         f.writeln(
           frag`[${quote(types.get(sourceId).name)}, new Set([${castableTo
-            .map((targetId) => quote(types.get(targetId).name))
+            .map(targetId => quote(types.get(targetId).name))
             .join(", ")}])],`
         );
       }

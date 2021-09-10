@@ -2,6 +2,7 @@ import type {$expr_TypeIntersection, $pathify, $expr_PathNode} from "./path";
 import type {$expr_Literal} from "./literal";
 import type {typeutil} from "./util/typeutil";
 import {Cardinality, ExpressionKind, TypeKind} from "./enums";
+import {cardinalityUtil} from "reflection";
 
 //////////////////
 // BASETYPE

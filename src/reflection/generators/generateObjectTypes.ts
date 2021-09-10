@@ -234,7 +234,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
             body.indented(() => {
               for (const linkProp of line.lines) {
                 body.writeln(
-                  frag`${quote(`@${linkProp.key}`)}: $.PropertyDesc<${
+                  frag`${quote(linkProp.key)}: $.PropertyDesc<${
                     linkProp.staticType
                   }, ${linkProp.card}>;`
                 );
