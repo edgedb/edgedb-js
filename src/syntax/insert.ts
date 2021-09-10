@@ -31,7 +31,7 @@ export type InsertShape<Root extends ObjectTypeSet> = typeutil.stripNever<
         {
           [k in keyof Shape]:
             | pointerToAssignmentExpression<Shape[k]>
-            | (true extends pointerIsOptional<Shape[k]> ? undefined : never);
+            | (pointerIsOptional<Shape[k]> extends true ? undefined : never);
         }
       >
     : never

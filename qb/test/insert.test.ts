@@ -37,11 +37,17 @@ test("basic insert", async () => {
 
 test("nested insert", async () => {
   const q1 = e.insert(e.Villain, {
-    name: e.str("Loki"),
+    // name: e.str("Loki"),
+    name: e.str("asdf"),
     nemesis: e.insert(e.Hero, {
-      name: e.str("Thor"),
-      secret_identity: e.str("Thor"),
+      name: e.str("asdf"),
     }),
+    // nemesis: e.select(e.Hero, hero => ({limit: 1})),
+
+    // nemesis: e.insert(e.Hero, {
+    //   name: e.str("Thor"),
+    //   secret_identity: e.str("Thor"),
+    // }),
   });
 
   const q2 = e.select(q1, () => ({
