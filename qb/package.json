@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest --detectOpenHandles --forceExit",
-    "generate": "ts-node --project tsconfig.json run.ts",
+    "generate": "ts-node --project ../tsconfig.json ../run.ts",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",
     "build": "tsc --build  --verbose"
