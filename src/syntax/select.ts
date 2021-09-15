@@ -276,8 +276,8 @@ export function is<
   [k in keyof Shape]: $expr_PolyShapeElement<Expr, Shape[k]>;
 } {
   const mappedShape: any = {};
-  const {shape: resolvedShape} = resolveShape(shape, expr);
-  for (const [key, value] of Object.entries(resolvedShape)) {
+  // const {shape: resolvedShape, scope} = resolveShape(shape, expr);
+  for (const [key, value] of Object.entries(shape)) {
     mappedShape[key] = {
       __kind__: ExpressionKind.PolyShapeElement,
       __polyType__: expr,
@@ -606,7 +606,7 @@ export function select(...args: any[]) {
       __cardinality__: cardinality,
       __expr__: expr,
       __modifiers__: modifiers,
-      __scope__: scope,
+      __scope__: expr !== _std.FreeObject ? scope : undefined,
     })
   );
 }
@@ -647,44 +647,55 @@ function resolveShape(
     ) {
       modifiers[key] = value;
     } else {
-      if (typeof value === "boolean") {
-        shape[key] = value;
-      } else if (
-        Object.values(ExpressionKind).includes((value as any).__kind__)
-      ) {
-        shape[key] = value;
-      } else if (typeof value === "function") {
-        if (expr.__element__.__pointers__[key].__kind__ !== "link") {
-          throw new Error(`Invalid shape input at ${key}`);
-        }
-        const childExpr = (scope as any)[key];
-        const {shape: childShape, scope: childScope} = resolveShape(
-          value as any,
-          childExpr
-        );
-
-        shape[key] = {
-          __kind__: ExpressionKind.Select,
-          __element__: {
-            __kind__: TypeKind.object,
-            __name__: `${childExpr.__name__}`, // _shape
-            __pointers__: childExpr.__pointers__,
-            __shape__: childShape,
-          },
-          __cardinality__: expr.__element__.__pointers__[key].cardinality,
-          __expr__: childExpr,
-          __modifiers__: {},
-          __scope__: scope,
-        };
-      } else if (
-        // plain selection object
-        typeof value === "object"
-      ) {
-        shape[key] = resolveShape(value as any, (scope as any)[key]).shape;
-      } else {
-        throw new Error(`Invalid shape input at ${key}`);
-      }
+      shape[key] = resolveShapeElement(key, value, scope);
     }
   }
   return {shape, modifiers, scope};
+}
+
+function resolveShapeElement(
+  key: any,
+  value: any,
+  scope: ObjectTypeExpression
+): any {
+  if (
+    (typeof value === "function" &&
+      scope.__element__.__pointers__[key]?.__kind__ === "link") ||
+    (typeof value === "object" &&
+      typeof (value as any).__kind__ === "undefined")
+  ) {
+    const childExpr = (scope as any)[key];
+    const {shape: childShape, scope: childScope} = resolveShape(
+      value as any,
+      childExpr
+    );
+
+    return {
+      __kind__: ExpressionKind.Select,
+      __element__: {
+        __kind__: TypeKind.object,
+        __name__: `${childExpr.__name__}`,
+        __pointers__: childExpr.__pointers__,
+        __shape__: childShape,
+      },
+      __cardinality__: scope.__element__.__pointers__[key].cardinality,
+      __expr__: childExpr,
+      __modifiers__: {},
+      __scope__: childScope,
+    };
+  } else if ((value as any)?.__kind__ === ExpressionKind.PolyShapeElement) {
+    const polyElement = value as $expr_PolyShapeElement;
+    const polyScope = (scope as any).$is(polyElement.__polyType__);
+    return {
+      __kind__: ExpressionKind.PolyShapeElement,
+      __polyType__: polyScope,
+      __shapeElement__: resolveShapeElement(
+        key,
+        polyElement.__shapeElement__,
+        polyScope
+      ),
+    };
+  } else {
+    return value;
+  }
 }

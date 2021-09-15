@@ -55,7 +55,7 @@ export async function setupTests() {
     {nemesis_id: iron_man.id}
   );
 
-  const docock: Villain = await pool.queryOne(
+  const docOck: Villain = await pool.queryOne(
     `SELECT (INSERT Villain {
   name := "Doc Ock",
   nemesis := (SELECT Hero FILTER .id = <uuid>$nemesis_id)
@@ -88,7 +88,7 @@ SELECT (INSERT Movie {
       cap,
       spidey,
       thanos,
-      docock,
+      docOck,
       the_avengers,
       civil_war,
     },

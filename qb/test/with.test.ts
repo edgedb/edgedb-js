@@ -38,27 +38,29 @@ test("implicit WITH vars referencing each other", () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __withVar_3 := (10),
-  __withVar_2 := (
+  __withVar_4 := (10),
+  __withVar_3 := (
     WITH
-      __scope_1_Hero := (DETACHED default::Hero)
-    SELECT (__scope_1_Hero) {
+      __scope_2_Hero := (DETACHED default::Hero)
+    SELECT (__scope_2_Hero) {
       id
     }
-    ORDER BY __scope_1_Hero.id
-    OFFSET __withVar_3
+    ORDER BY __scope_2_Hero.id
+    OFFSET __withVar_4
   ),
-  __withVar_0 := (
-    SELECT (__withVar_2) {
+  __withVar_1 := (
+    WITH
+      __scope_0_Hero := (__withVar_3)
+    SELECT (__scope_0_Hero) {
       id,
       name
     }
     LIMIT 10
   )
 SELECT {
-  pageResults := (__withVar_0 {id, name}),
-  nextOffset := ((__withVar_3 + std::count((__withVar_0)))),
-  hasMore := (SELECT ((std::count((__withVar_2)) > 10)))
+  pageResults := (__withVar_1 {id, name}),
+  nextOffset := ((__withVar_4 + std::count((__withVar_1)))),
+  hasMore := (SELECT ((std::count((__withVar_3)) > 10)))
 }`);
 
   type queryType = BaseTypeToTsType<typeof query["__element__"]>;
@@ -233,15 +235,15 @@ test("explicit WITH block nested in explicit WITH block, sub expr implicitly ext
       )
       .toEdgeQL()
   ).toEqual(`WITH
-  __withVar_0 := (<std::int32>2),
-  __withVar_1 := (
+  __withVar_2 := (<std::int32>2),
+  __withVar_0 := (
     WITH
-      __withVar_2 := ({ 1, __withVar_0, <std::int16>3 })
-    SELECT (__withVar_2)
+      __withVar_1 := ({ 1, __withVar_2, <std::int16>3 })
+    SELECT (__withVar_1)
   )
 SELECT {
-  number := (__withVar_0),
-  numbers := (__withVar_1)
+  number := (__withVar_2),
+  numbers := (__withVar_0)
 }`);
 });
 
@@ -266,31 +268,33 @@ test("implicit WITH and explicit WITH in sub expr", () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __withVar_3 := (10),
-  __withVar_2 := (
+  __withVar_5 := (10),
+  __withVar_4 := (
     WITH
       __scope_1_Hero := (DETACHED default::Hero)
     SELECT (__scope_1_Hero) {
       id
     }
     ORDER BY __scope_1_Hero.id
-    OFFSET __withVar_3
+    OFFSET __withVar_5
   ),
-  __withVar_0 := (
-    SELECT (__withVar_2) {
+  __withVar_3 := (
+    WITH
+      __scope_0_Hero := (__withVar_4)
+    SELECT (__scope_0_Hero) {
       id,
       name
     }
     LIMIT 10
   )
 SELECT {
-  pageResults := (__withVar_0 {id, name}),
+  pageResults := (__withVar_3 {id, name}),
   nextOffset := (
     WITH
-      __withVar_4 := ((__withVar_3 + std::count((__withVar_0))))
-    SELECT (__withVar_4)
+      __withVar_2 := ((__withVar_5 + std::count((__withVar_3))))
+    SELECT (__withVar_2)
   ),
-  hasMore := (SELECT ((std::count((__withVar_2)) > 10)))
+  hasMore := (SELECT ((std::count((__withVar_4)) > 10)))
 }`);
 });
 
@@ -466,10 +470,16 @@ SELECT (__scope_0_Hero) {
   id,
   computable := (35),
   all_heroes := (
-    SELECT (DETACHED default::Hero) {
-      __type__: {
-        name
-      }
+    WITH
+      __scope_1_Hero := (DETACHED default::Hero)
+    SELECT (__scope_1_Hero) {
+      __type__ := (
+        WITH
+          __scope_2_Type := (__scope_1_Hero.__type__)
+        SELECT (__scope_2_Type) {
+          name
+        }
+      )
     }
   )
 }
@@ -490,14 +500,18 @@ test("repeated expression referencing scoped select object", () => {
     };
   });
 
-  expect(query.toEdgeQL())
-    .toEqual(`FOR __scope_0_Hero IN {DETACHED default::Hero} UNION (
-WITH
-  __withVar_1 := (((__scope_0_Hero.name ++ \" is \") ++ __scope_0_Hero.secret_identity))
+  expect(query.toEdgeQL()).toEqual(`WITH
+  __scope_0_Hero_expr := (DETACHED default::Hero),
+  __scope_0_Hero := (FOR __scope_0_Hero_inner IN {__scope_0_Hero_expr} UNION (
+    WITH
+      __withVar_1 := (((__scope_0_Hero_inner.name ++ " is ") ++ __scope_0_Hero_inner.secret_identity))
+    SELECT __scope_0_Hero_inner {
+      __withVar_1 := __withVar_1
+    }
+  ))
 SELECT (__scope_0_Hero) {
   name,
-  secret := (__withVar_1),
-  secret2 := (__withVar_1)
-}
-)`);
+  secret := (__scope_0_Hero.__withVar_1),
+  secret2 := (__scope_0_Hero.__withVar_1)
+}`);
 });
