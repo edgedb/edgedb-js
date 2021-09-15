@@ -16,7 +16,7 @@
         "../src/index.node.ts"
       ],
       "edgedb/*": [
-        "../src/*"
+        "../*"
       ],
       "reflection": [
         "../src/reflection"

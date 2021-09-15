@@ -522,6 +522,30 @@ test("overrides with implicit casting", () => {
   }));
 });
 
+test("link properties", () => {
+  const result = e.select(e.Movie, movie => ({
+    id: true,
+    characters: char => ({
+      name: true,
+      "@character_name": true,
+    }),
+  }));
+
+  type result = setToTsType<typeof result>;
+  tc.assert<
+    tc.IsExact<
+      result,
+      {
+        id: string;
+        characters: {
+          name: string;
+          "@character_name": string | null;
+        };
+      }[]
+    >
+  >(true);
+});
+
 // test("assertSingle this check", () => {
 //   const inner = e.select(e.Hero);
 //   const outer = e.select(e.Hero).$assertSingle().__args__[0];

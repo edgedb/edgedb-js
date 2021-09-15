@@ -1,19 +1,20 @@
 // tslint:disable:no-console
 
 import {setToTsType} from "reflection";
-import {$Hero, $Movie} from "./generated/example/modules/default";
-import {pointersToSelectShape} from "@syntax/select";
+import type {$Movie} from "./generated/example/modules/default";
+import type {pointersToSelectShape} from "@syntax/select";
 
 import e from "./generated/example";
 import {setupTests} from "./test/setupTeardown";
 
 async function run() {
-  const asdf = e.tuple([e.str, e.int64]);
-  await setupTests();
+  // const asdf = e.tuple([e.str, e.int64]);
+  const pool = await setupTests();
+  await pool.pool.close();
 
-  $Hero.__pointers__.villains.properties;
+  console.log(`asdf`);
 
-  if (1 > 0) return;
+  console.log(e.Hero.__element__.__pointers__.villains.properties);
 
   e.is(e.Villain, {
     // id: true,
@@ -120,12 +121,12 @@ async function run() {
   type q4 = setToTsType<typeof q4>;
   const q5 = e.select(e.Hero, hero => ({
     id: true,
-    // q: q4,
-    // ...e.is(e.Villain, {
-    //   id: true,
-    //   nemesis: {id: true},
-    //   computable: e.int64(1234),
-    // }),
+    q: q4,
+    ...e.is(e.Villain, {
+      // id: true,
+      nemesis: {id: true},
+      computable: e.int64(1234),
+    }),
   }));
   type q5 = setToTsType<typeof q5>;
   const q6 = e.select(e.Hero, hero => ({
