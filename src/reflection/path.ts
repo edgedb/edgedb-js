@@ -5,7 +5,7 @@ import type {
   ObjectTypeSet,
   TypeSet,
   Expression,
-  ObjectTypeShape,
+  ObjectTypePointers,
   ObjectType,
 } from "./typesystem";
 import {Cardinality, ExpressionKind} from "./enums";
@@ -36,7 +36,7 @@ export type $pathify<
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
     ? {} // Root is literally ObjectTypeSet
-    : ObjectTypeShape extends Root["__element__"]["__pointers__"]
+    : ObjectTypePointers extends Root["__element__"]["__pointers__"]
     ? {}
     : {
         // & string required to avod typeError on linkName
@@ -56,8 +56,7 @@ export type $pathify<
               >
             : never
           : never;
-      } &
-        PathNodeMethods<Root>
+      }
   : unknown; // pathify does nothing on non-object types
 
 export type $expr_PathNode<
@@ -71,11 +70,6 @@ export type $expr_PathNode<
   __kind__: ExpressionKind.PathNode;
   __exclusive__: Exclusive;
 }>;
-
-interface PathNodeMethods<Self extends ObjectTypeSet> {
-  __element__: Self["__element__"];
-  __cardinality__: Self["__cardinality__"];
-}
 
 export type $expr_TypeIntersection<
   Expr extends TypeSet = TypeSet,

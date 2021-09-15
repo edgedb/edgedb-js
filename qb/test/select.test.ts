@@ -111,6 +111,7 @@ test("deep shape", () => {
     >
   >(true);
 });
+
 test("compositionality", () => {
   // selecting a select statement should
   // default to { id }
@@ -174,6 +175,28 @@ test("polymorphism", () => {
       }
     >
   >(true);
+});
+
+test("polymorphic with nested modifiers", () => {
+  e.is(e.Villain, {
+    id: true,
+  });
+
+  const query = e.select(e.Person, person => ({
+    id: true,
+    name: true,
+    ...e.is(e.Villain, {
+      nemesis: hero => ({
+        name: true,
+        order: hero.name,
+        filter: e.eq(hero.name, hero.name),
+        limit: 1,
+        offset: 10,
+      }),
+    }),
+  }));
+
+  type q = setToTsType<typeof query>;
 });
 
 test("computables in polymorphics", () => {
@@ -489,6 +512,14 @@ test("backlinks", async () => {
   expect(
     [data.the_avengers.title, data.civil_war.title].includes(result1[0].title)
   ).toEqual(true);
+});
+
+test("overrides with implicit casting", () => {
+  e.select(e.Hero, () => ({
+    id: e.uuid("asdf"),
+    number_of_movies: e.int64(1234),
+    name: e.str("adsf"),
+  }));
 });
 
 // test("assertSingle this check", () => {

@@ -26,6 +26,7 @@ test("basic insert", async () => {
   const q1 = e.insert(e.Hero, {
     name: e.str("Black Widow"),
     secret_identity: e.str("Natasha Romanoff"),
+    // id
   });
 
   await pool.queryOne(q1.toEdgeQL());
@@ -36,11 +37,17 @@ test("basic insert", async () => {
 
 test("nested insert", async () => {
   const q1 = e.insert(e.Villain, {
-    name: e.str("Loki"),
+    // name: e.str("Loki"),
+    name: e.str("asdf"),
     nemesis: e.insert(e.Hero, {
-      name: e.str("Thor"),
-      secret_identity: e.str("Thor"),
+      name: e.str("asdf"),
     }),
+    // nemesis: e.select(e.Hero, hero => ({limit: 1})),
+
+    // nemesis: e.insert(e.Hero, {
+    //   name: e.str("Thor"),
+    //   secret_identity: e.str("Thor"),
+    // }),
   });
 
   const q2 = e.select(q1, () => ({
@@ -64,5 +71,10 @@ test("insert type enforcement", async () => {
 
   // @ts-expect-error missing required field
   e.insert(e.Villain, {});
+
+  e.insert(e.Villain, {
+    // @ts-expect-error
+    name: e.set(e.str),
+  });
   return;
 });

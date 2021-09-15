@@ -120,7 +120,6 @@ function isFunc(this: any, expr: ObjectTypeSet) {
     __cardinality__: this.__cardinality__,
     __element__: {
       ...expr.__element__,
-      __polys__: [],
       __shape__: {id: true},
     } as any,
     __expr__: this,

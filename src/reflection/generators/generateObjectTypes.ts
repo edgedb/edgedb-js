@@ -184,7 +184,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
           isExclusive: ptr.is_exclusive,
           writable: ptr.is_writable ?? false,
           lines: (ptr.pointers ?? [])
-            .filter(p => p.name !== "target" && p.name !== "source")
+            .filter(p => p.name !== "@target" && p.name !== "@source")
             .map(ptrToLine),
         };
       };

@@ -221,9 +221,9 @@ export namespace cardinalityUtil {
 
   export type assignable<C extends Cardinality> = C extends Cardinality.Empty
     ? Cardinality.Empty
-    : C extends Cardinality.AtMostOne
-    ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
     : C extends Cardinality.One
+    ? Cardinality.One
+    : C extends Cardinality.AtMostOne
     ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
     : C extends Cardinality.AtLeastOne
     ? Cardinality.One | Cardinality.AtLeastOne | Cardinality.Many

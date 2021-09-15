@@ -4,21 +4,20 @@ import {
   ExpressionKind,
   LinkDesc,
   ObjectTypeSet,
-  ObjectTypeShape,
+  ObjectTypePointers,
   PropertyDesc,
-  stripSet,
-  TypeSet,
-  typeutil,
-} from "../reflection";
-
-import {
-  shapeElementToAssignmentExpression,
   stripBacklinks,
   stripNonWritables,
-} from "./update";
+  typeutil,
+  $scopify,
+  stripSet,
+  TypeSet,
+} from "../reflection";
+import _std from "@generated/modules/std";
+import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify} from "./path";
 import {$expr_PathNode} from "../reflection/path";
-import {Singletonify} from "./select";
+// import {Singletonify} from "./select";
 
 type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
   T["cardinality"] extends
@@ -31,12 +30,12 @@ type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
 export type InsertShape<Root extends ObjectTypeSet> = typeutil.stripNever<
   stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
 > extends infer Shape
-  ? Shape extends ObjectTypeShape
+  ? Shape extends ObjectTypePointers
     ? typeutil.addQuestionMarks<
         {
           [k in keyof Shape]:
-            | shapeElementToAssignmentExpression<Shape[k]>
-            | (true extends pointerIsOptional<Shape[k]> ? undefined : never);
+            | pointerToAssignmentExpression<Shape[k]>
+            | (pointerIsOptional<Shape[k]> extends true ? undefined : never);
         }
       >
     : never
@@ -76,7 +75,7 @@ export type $expr_Insert<
     {on: null}
   >;
   unlessConflict<Conflict extends UnlessConflict>(
-    conflictGetter: (scope: Singletonify<Root>) => Conflict
+    conflictGetter: (scope: $scopify<Root["__element__"]>) => Conflict
   ): $expr_InsertUnlessConflict<
     Expression<{
       __kind__: ExpressionKind.Insert;

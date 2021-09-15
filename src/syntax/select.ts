@@ -3,32 +3,40 @@ import _std from "@generated/modules/std";
 import * as edgedb from "edgedb";
 import {
   $expr_PolyShapeElement,
+  $scopify,
   Cardinality,
   cardinalityUtil,
   Expression,
   ExpressionKind,
-  objectExprToSelectShape,
+  LinkDesc,
   ObjectType,
   ObjectTypeExpression,
+  ObjectTypePointers,
   ObjectTypeSet,
+  PropertyDesc,
   ScalarType,
   setToTsType,
-  shapeToSelectShape,
   stripSet,
   stripSetShape,
   TypeKind,
   TypeSet,
   typeutil,
 } from "../reflection";
-import {$expr_Literal} from "../reflection/literal";
-import {
+import type {$expr_Literal} from "../reflection/literal";
+import type {
   $expr_PathLeaf,
   $expr_PathNode,
   ExpressionRoot,
   PathParent,
 } from "../reflection/path";
-import {$expr_Operator} from "./funcops";
-import {$expressionify} from "./path";
+import {
+  anonymizeObject,
+  castableFrom,
+  pointerToAssignmentExpression,
+  pointerToCastableExpression,
+} from "./casting";
+import type {$expr_Operator} from "./funcops";
+import {$expressionify, $expr_PathNode as makePathNode} from "./path";
 import type {$expr_Update, UpdateShape} from "./update";
 
 export const ASC: "ASC" = "ASC";
@@ -127,6 +135,13 @@ export type $expr_Select<
   } & (Set extends ObjectTypeSet ? SelectObjectMethods<Set> : {})
 >;
 
+interface SelectObjectMethods<Root extends ObjectTypeSet> {
+  __element__: Root["__element__"];
+  __cardinality__: Root["__cardinality__"];
+  update(shape: UpdateShape<Root>): $expr_Update<Root, UpdateShape<Root>>;
+  delete(): $expr_Delete<Root>;
+}
+
 // Base is ObjectTypeSet &
 // Filter is equality &
 // Filter.args[0] is PathLeaf
@@ -209,16 +224,51 @@ export type InferFilterCardinality<
     : Base["__cardinality__"]
   : Base["__cardinality__"];
 
-interface SelectObjectMethods<Root extends ObjectTypeSet> {
-  __element__: Root["__element__"];
-  __cardinality__: Root["__cardinality__"];
-  update(shape: UpdateShape<Root>): $expr_Update<Root, UpdateShape<Root>>;
-  delete(): $expr_Delete<Root>;
-}
+type InferLimitCardinality<
+  Card extends Cardinality,
+  Limit extends LimitExpression | number | undefined
+> = Limit extends number
+  ? Limit extends 0
+    ? Cardinality.Empty
+    : Limit extends 1
+    ? Cardinality.AtMostOne
+    : Card
+  : Limit extends LimitExpression
+  ? Limit["__element__"]["__tsconsttype__"] extends 0
+    ? Cardinality.Empty
+    : Limit["__element__"]["__tsconsttype__"] extends 1
+    ? Cardinality.AtMostOne
+    : Card
+  : Card;
+
+type ComputeSelectCardinality<
+  Expr extends ObjectTypeExpression,
+  Modifiers extends SelectModifiers
+> = InferLimitCardinality<
+  InferFilterCardinality<Expr, Modifiers["filter"]>,
+  Modifiers["limit"]
+>;
+
+export type polymorphicShape<RawShape extends ObjectTypePointers> = {
+  [k in keyof RawShape]?: k extends `<${string}`
+    ? any
+    : RawShape[k] extends PropertyDesc
+    ? boolean
+    : RawShape[k] extends LinkDesc
+    ?
+        | boolean
+        | (pointersToSelectShape<RawShape[k]["target"]["__pointers__"]> &
+            pointersToSelectShape<RawShape[k]["properties"]>)
+        | ((
+            scope: $scopify<RawShape[k]["target"]>
+          ) => pointersToSelectShape<RawShape[k]["target"]["__pointers__"]> &
+            pointersToSelectShape<RawShape[k]["properties"]>)
+    : any;
+};
 
 export function is<
   Expr extends ObjectTypeExpression,
-  Shape extends shapeToSelectShape<Expr["__element__"]["__pointers__"], false>
+  Shape extends polymorphicShape<Expr["__element__"]["__pointers__"]>
 >(
   expr: Expr,
   shape: Shape
@@ -303,7 +353,7 @@ function computeFilterCardinality(
 function handleModifiers(
   modifiers: SelectModifiers,
   rootExpr: ObjectTypeExpression
-): {modifiers: SelectModifiers; cardinality: Cardinality} {
+): {modifiers: NormalisedSelectModifiers; cardinality: Cardinality} {
   const mods = {...modifiers};
   let card = rootExpr.__cardinality__;
 
@@ -341,7 +391,7 @@ function handleModifiers(
     }
   }
 
-  return {modifiers: mods, cardinality: card};
+  return {modifiers: mods as NormalisedSelectModifiers, cardinality: card};
 }
 
 async function queryFunc(this: any, cxn: edgedb.Connection | edgedb.Pool) {
@@ -395,34 +445,36 @@ export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   return expr;
 }
 
-type InferLimitCardinality<
-  Card extends Cardinality,
-  Limit extends LimitExpression | number | undefined
-> = Limit extends number
-  ? Limit extends 0
-    ? Cardinality.Empty
-    : Limit extends 1
-    ? Cardinality.AtMostOne
-    : Card
-  : Limit extends LimitExpression
-  ? Limit["__element__"]["__tsconsttype__"] extends 0
-    ? Cardinality.Empty
-    : Limit["__element__"]["__tsconsttype__"] extends 1
-    ? Cardinality.AtMostOne
-    : Card
-  : Card;
-
-type ComputeSelectCardinality<
-  Expr extends ObjectTypeExpression,
-  Modifiers extends SelectModifiers
-> = InferLimitCardinality<
-  InferFilterCardinality<Expr, Modifiers["filter"]>,
-  Modifiers["limit"]
->;
-
-export type Singletonify<T extends ObjectTypeSet> = typeutil.flatten<
-  Omit<T, "__cardinality__"> & {__cardinality__: Cardinality.One}
->;
+export type pointersToSelectShape<Shape extends ObjectTypePointers> = Partial<
+  {
+    [k in keyof Shape]: Shape[k] extends PropertyDesc
+      ?
+          | boolean
+          | TypeSet<
+              // causes excessively deep error:
+              // castableFrom<Shape[k]["target"]>
+              Shape[k]["target"],
+              cardinalityUtil.assignable<Shape[k]["cardinality"]>
+            >
+      : // | pointerToCastableExpression<Shape[k]>
+      Shape[k] extends LinkDesc
+      ?
+          | boolean
+          // | pointerToCastableExpression<Shape[k]>
+          | TypeSet<
+              anonymizeObject<Shape[k]["target"]>,
+              cardinalityUtil.assignable<Shape[k]["cardinality"]>
+            >
+          | (pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
+              pointersToSelectShape<Shape[k]["properties"]>)
+          | ((
+              scope: $scopify<Shape[k]["target"]>
+            ) => pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
+              pointersToSelectShape<Shape[k]["properties"]>)
+      : any;
+  }
+> &
+  SelectModifiers;
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
@@ -442,11 +494,11 @@ export function select<Expr extends TypeSet>(
 ): $expr_Select<stripSet<Expr>, Expr>;
 export function select<
   Expr extends ObjectTypeExpression,
-  Shape extends objectExprToSelectShape<Expr> & SelectModifiers,
+  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]>,
   Modifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
-  shape: (scope: Singletonify<Expr>) => Readonly<Shape>
+  shape: (scope: $scopify<Expr["__element__"]>) => Readonly<Shape>
 ): $expr_Select<
   {
     __element__: ObjectType<
@@ -457,11 +509,10 @@ export function select<
     __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
   },
   Expr
-  // NormaliseSelectModifiers<Modifiers>
 >;
 export function select<Expr extends ObjectTypeExpression, Set extends TypeSet>(
   expr: Expr,
-  shape: (scope: Singletonify<Expr>) => Set
+  shape: (scope: $scopify<Expr["__element__"]>) => Set
 ): $expr_Select<
   {
     __element__: Set["__element__"];
@@ -498,7 +549,6 @@ export function select(...args: any[]) {
             __name__: `${objectExpr.__element__.__name__}`, // _shape
             __pointers__: objectExpr.__element__.__pointers__,
             __shape__: {id: true},
-            __polys__: [],
           } as any,
           __cardinality__: objectExpr.__cardinality__,
           __expr__: objectExpr,
@@ -552,7 +602,6 @@ export function select(...args: any[]) {
         __name__: `${objExpr.__element__.__name__}`, // _shape
         __pointers__: objExpr.__element__.__pointers__,
         __shape__: shape,
-        __polys__: [],
       },
       __cardinality__: cardinality,
       __expr__: expr,
@@ -573,6 +622,14 @@ function resolveShape(
     ...expr,
     __cardinality__: Cardinality.One,
   } as any);
+  // const scope = makePathNode(
+  //   {
+  //     __element__: expr.__element__,
+  //     __cardinality__: Cardinality.One,
+  //   },
+  //   null,
+  //   true
+  // );
 
   const selectShape =
     typeof shapeGetter === "function" ? shapeGetter(scope) : shapeGetter;
@@ -590,10 +647,16 @@ function resolveShape(
     ) {
       modifiers[key] = value;
     } else {
-      if (
-        typeof value === "function" &&
-        expr.__element__.__pointers__[key].__kind__ === "link"
+      if (typeof value === "boolean") {
+        shape[key] = value;
+      } else if (
+        Object.values(ExpressionKind).includes((value as any).__kind__)
       ) {
+        shape[key] = value;
+      } else if (typeof value === "function") {
+        if (expr.__element__.__pointers__[key].__kind__ !== "link") {
+          throw new Error(`Invalid shape input at ${key}`);
+        }
         const childExpr = (scope as any)[key];
         const {shape: childShape, scope: childScope} = resolveShape(
           value as any,
@@ -607,7 +670,6 @@ function resolveShape(
             __name__: `${childExpr.__name__}`, // _shape
             __pointers__: childExpr.__pointers__,
             __shape__: childShape,
-            __polys__: [],
           },
           __cardinality__: expr.__element__.__pointers__[key].cardinality,
           __expr__: childExpr,
@@ -615,12 +677,12 @@ function resolveShape(
           __scope__: scope,
         };
       } else if (
-        typeof value === "object" &&
-        typeof (value as any).__kind__ === "undefined"
+        // plain selection object
+        typeof value === "object"
       ) {
         shape[key] = resolveShape(value as any, (scope as any)[key]).shape;
       } else {
-        shape[key] = value;
+        throw new Error(`Invalid shape input at ${key}`);
       }
     }
   }
