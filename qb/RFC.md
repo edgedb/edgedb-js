@@ -324,6 +324,7 @@ e.select(e.Hero); // select Hero { id };
 ### Shapes: object syntax
 
 The scoped `hero` variable is a singleton-ified variant of the expression being SELECTed.
+Any non-scoped objects (eg. `e.Hero`) are implicitly `DETACHED`.
 
 ```ts
 e.select(e.Hero, hero => ({
@@ -348,6 +349,14 @@ e.select(e.Hero, hero => ({
     name_upper: e.str_upper(villain.name),
   }),
 }));
+```
+
+The closure syntax also supports arbitrary expressions:
+
+```ts
+e.select(e.Hero, hero =>
+  e.concat(e.concat(hero.name, e.str(" is ")), hero.secret_identity)
+);
 ```
 
 ### Shapes: computables
@@ -394,7 +403,7 @@ e.select(e.Movie.characters, character => ({
 }));
 ```
 
-`e.is(Type, ref => Shape)`: `Shape` should not allow top-level computables, as this isn't valid EdgeQL:
+`e.is(Type, ref => Shape)`: `Shape` should not allow top-level computables, as this isn't valid EdgeQL.
 
 ### Basic filtering
 
@@ -600,7 +609,10 @@ const fetchPerson = e.withParams(
 
 ## WITH clauses
 
-During the query rendering step, the number of occurrences of each expression are tracked. All expressions that are referenced more than once and all orphan clauses are extracted into a top-level WITH block.
+During the query rendering step, the number of occurrences of each expression are tracked.
+All expressions that are referenced more than once and are not explicitly defined in a
+`WITH` block (with `e.with`), are extracted into the nearest `WITH` block that encloses
+all usages of the expression.
 
 ```ts
 const a = e.set(e.int64(1), e.int64(2), e.int64(3));
