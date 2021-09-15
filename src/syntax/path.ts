@@ -56,6 +56,8 @@ function _$expr_PathNode<
   return pathNode as any;
 }
 
+const pathCache = Symbol();
+
 function _$pathify<Root extends TypeSet, Parent extends PathParent>(
   _root: Root
 ): $pathify<Root, Parent> {
@@ -65,25 +67,30 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
 
   const root: $expr_PathNode<ObjectTypeSet, Parent> = _root as any;
 
+  (root as any)[pathCache] = {};
+
   for (const line of Object.entries(root.__element__.__pointers__ as any)) {
     const [key, _ptr] = line;
     const ptr: LinkDesc | PropertyDesc = _ptr as any;
     if ((ptr as any).__kind__ === "property") {
       Object.defineProperty(root, key, {
         get() {
-          return _$expr_PathLeaf(
-            {
-              __element__: ptr.target,
-              __cardinality__: cardinalityUtil.multiplyCardinalities(
-                root.__cardinality__,
-                ptr.cardinality
-              ),
-            },
-            {
-              linkName: key,
-              type: root,
-            },
-            ptr.exclusive
+          return (
+            (root as any)[pathCache][key] ??
+            ((root as any)[pathCache][key] = _$expr_PathLeaf(
+              {
+                __element__: ptr.target,
+                __cardinality__: cardinalityUtil.multiplyCardinalities(
+                  root.__cardinality__,
+                  ptr.cardinality
+                ),
+              },
+              {
+                linkName: key,
+                type: root,
+              },
+              ptr.exclusive
+            ))
           );
         },
         enumerable: true,
@@ -91,19 +98,22 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
     } else {
       Object.defineProperty(root, key, {
         get: () => {
-          return _$expr_PathNode(
-            {
-              __element__: ptr.target,
-              __cardinality__: cardinalityUtil.multiplyCardinalities(
-                root.__cardinality__,
-                ptr.cardinality
-              ),
-            },
-            {
-              linkName: key,
-              type: root,
-            },
-            ptr.exclusive
+          return (
+            (root as any)[pathCache][key] ??
+            ((root as any)[pathCache][key] = _$expr_PathNode(
+              {
+                __element__: ptr.target,
+                __cardinality__: cardinalityUtil.multiplyCardinalities(
+                  root.__cardinality__,
+                  ptr.cardinality
+                ),
+              },
+              {
+                linkName: key,
+                type: root,
+              },
+              ptr.exclusive
+            ))
           );
         },
         enumerable: true,

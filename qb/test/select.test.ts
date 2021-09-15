@@ -496,3 +496,83 @@ test("backlinks", async () => {
 //   const outer = e.select(e.Hero).$assertSingle().__args__[0];
 //   tc.assert<tc.IsExact<typeof inner, typeof outer>>(true);
 // });
+
+test("polymorphic subqueries", async () => {
+  const query = e.select(e.Movie.characters, character => ({
+    id: true,
+    name: true,
+    ...e.is(e.Villain, {nemesis: true}),
+    ...e.is(e.Hero, {
+      secret_identity: true,
+      villains: {
+        id: true,
+        name: true,
+        nemesis: nemesis => {
+          const nameLen = e.len(nemesis.name);
+          return {
+            name: true,
+            nameLen,
+            nameLen2: nameLen,
+          };
+        },
+      },
+    }),
+  }));
+
+  expect(query.toEdgeQL()).toEqual(`WITH
+  __scope_0_Person := (DETACHED default::Movie.characters)
+SELECT (__scope_0_Person) {
+  id,
+  name,
+  [IS default::Villain].nemesis,
+  [IS default::Hero].secret_identity,
+  villains := (
+    WITH
+      __scope_1_Villain := (__scope_0_Person[IS default::Hero].villains)
+    SELECT (__scope_1_Villain) {
+      id,
+      name,
+      nemesis := (
+        WITH
+          __scope_2_Hero_expr := (__scope_1_Villain.nemesis),
+          __scope_2_Hero := (FOR __scope_2_Hero_inner IN {__scope_2_Hero_expr} UNION (
+            WITH
+              __withVar_3 := (std::len((__scope_2_Hero_inner.name)))
+            SELECT __scope_2_Hero_inner {
+              __withVar_3 := __withVar_3
+            }
+          ))
+        SELECT (__scope_2_Hero) {
+          name,
+          nameLen := (__scope_2_Hero.__withVar_3),
+          nameLen2 := (__scope_2_Hero.__withVar_3)
+        }
+      )
+    }
+  )
+}`);
+
+  await query.query(pool);
+});
+
+test("scoped expr select", async () => {
+  const unscopedQuery = e.select(
+    e.concat(e.concat(e.Hero.name, e.str(" is ")), e.Hero.secret_identity)
+  );
+
+  const scopedQuery = e.select(e.Hero, hero =>
+    e.concat(e.concat(hero.name, e.str(" is ")), hero.secret_identity)
+  );
+
+  const heros = [data.cap, data.iron_man, data.spidey];
+
+  expect((await unscopedQuery.query(pool)).sort()).toEqual(
+    heros
+      .flatMap(h1 => heros.map(h2 => `${h1.name} is ${h2.secret_identity}`))
+      .sort()
+  );
+
+  expect((await scopedQuery.query(pool)).sort()).toEqual(
+    heros.map(h => `${h.name} is ${h.secret_identity}`).sort()
+  );
+});
