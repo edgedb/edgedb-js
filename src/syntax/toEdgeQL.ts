@@ -33,6 +33,7 @@ import type {
   LimitExpression,
 } from "./select";
 import type {$expr_Alias, $expr_With} from "./with";
+import reservedKeywords from "../reflection/reservedKeywords";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -101,17 +102,17 @@ function shapeToEdgeQL(
 
     if (typeof val === "boolean") {
       if (val) {
-        addLine(`${polyIntersection}${key}`);
+        addLine(`${polyIntersection}${q(key)}`);
       }
     } else if (val.hasOwnProperty("__kind__")) {
       if (keysOnly) {
-        addLine(key);
+        addLine(q(key));
         continue;
       }
       const renderedExpr = renderEdgeQL(val, ctx);
 
       addLine(
-        `${key} ${operator} (${
+        `${q(key)} ${operator} (${
           renderedExpr.includes("\n")
             ? `\n${indent(renderedExpr, 4)}\n  `
             : renderedExpr
@@ -460,7 +461,7 @@ function renderEdgeQL(
         ctx,
         false,
         noImplicitDetached
-      )}.${expr.__parent__.linkName}`.trim();
+      )}.${q(expr.__parent__.linkName)}`.trim();
     }
   } else if (expr.__kind__ === ExpressionKind.Literal) {
     return literalToEdgeQL(expr.__element__, expr.__value__);
@@ -557,17 +558,13 @@ function renderEdgeQL(
       ctx,
       false,
       true
-    )} ${shapeToEdgeQL(
-      expr.__shape__,
-
-      ctx
-    )}`;
+    )} ${shapeToEdgeQL(expr.__shape__, ctx)}`;
   } else if (expr.__kind__ === ExpressionKind.Function) {
     const args = expr.__args__.map(
       arg => `(${renderEdgeQL(arg!, ctx, false)})`
     );
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
-      args.push(`${key} := (${renderEdgeQL(arg, ctx, false)})`);
+      args.push(`${q(key)} := (${renderEdgeQL(arg, ctx, false)})`);
     }
     return `${expr.__name__}(${args.join(", ")})`;
   } else if (expr.__kind__ === ExpressionKind.Operator) {
@@ -898,4 +895,27 @@ function indent(str: string, depth: number) {
     .split("\n")
     .map(line => " ".repeat(depth) + line)
     .join("\n");
+}
+
+// backtick quote identifiers if needed
+// https://github.com/edgedb/edgedb/blob/master/edb/edgeql/quote.py
+function q(ident: string, allowReserved = false): string {
+  if (!ident || ident.startsWith("@") || ident.includes("::")) {
+    return ident;
+  }
+
+  const isAlphaNum = /^([^\W\d]\w*|([1-9]\d*|0))$/.test(ident);
+
+  const lident = ident.toLowerCase();
+
+  const isReserved =
+    lident !== "__type__" &&
+    lident !== "__std__" &&
+    reservedKeywords.includes(lident);
+
+  if (isAlphaNum && (allowReserved || !isReserved)) {
+    return ident;
+  }
+
+  return "`" + ident.replace(/`/g, "``") + "`";
 }
