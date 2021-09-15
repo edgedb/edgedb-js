@@ -17,6 +17,9 @@ export enum TypeKind {
 
 export enum ExpressionKind {
   Set = "Set",
+  Array = "Array",
+  Tuple = "Tuple",
+  NamedTuple = "NamedTuple",
   PathNode = "PathNode",
   PathLeaf = "PathLeaf",
   Literal = "Literal",

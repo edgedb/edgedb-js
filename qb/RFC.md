@@ -199,19 +199,17 @@ e.array([e.int16(5), e.int64(51234)]);
 
 ## Tuples
 
-Named
+```ts
+e.tuple([e.str("Peter Parker"), e.int64(100)]);
+```
+
+With names:
 
 ```ts
 e.tuple({
   name: e.str("Peter Parker"),
   age: e.int64(18),
 });
-```
-
-Unnamed
-
-```ts
-e.tuple([e.str("Peter Parker"), e.int64(100)]);
 ```
 
 ## Literals of collection types

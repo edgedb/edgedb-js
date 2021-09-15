@@ -1,6 +1,9 @@
 import {$expr_Delete} from "@generated/syntax/select";
 import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
 import {
+  $expr_Array,
+  $expr_NamedTuple,
+  $expr_Tuple,
   BaseType,
   Cardinality,
   ExpressionKind,
@@ -36,6 +39,9 @@ export type SomeExpression =
   | $expr_PathLeaf
   | $expr_Literal
   | $expr_Set
+  | $expr_Array
+  | $expr_Tuple
+  | $expr_NamedTuple
   | $expr_Cast
   | $expr_Select
   | $expr_Delete
@@ -424,6 +430,21 @@ function renderEdgeQL(
           .join(", ")}`
       );
     }
+  } else if (expr.__kind__ === ExpressionKind.Array) {
+    // ExpressionKind.Array
+    return `[\n${expr.__items__
+      .map(item => `  ` + renderEdgeQL(item, ctx))
+      .join(",\n")}\n]`;
+  } else if (expr.__kind__ === ExpressionKind.Tuple) {
+    // ExpressionKind.Tuple
+    return `(\n${expr.__items__
+      .map(item => `  ` + renderEdgeQL(item, ctx))
+      .join(",\n")}\n)`;
+  } else if (expr.__kind__ === ExpressionKind.NamedTuple) {
+    // ExpressionKind.NamedTuple
+    return `(\n${Object.keys(expr.__shape__)
+      .map(key => `  ${key} := ${renderEdgeQL(expr.__shape__[key], ctx)}`)
+      .join(",\n")}\n)`;
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${renderEdgeQL(expr.__expr__, ctx)}`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
@@ -694,6 +715,21 @@ function walkExprTree(
         break;
       case ExpressionKind.Set:
         for (const subExpr of expr.__exprs__) {
+          childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
+        }
+        break;
+      case ExpressionKind.Array:
+        for (const subExpr of expr.__items__) {
+          childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
+        }
+        break;
+      case ExpressionKind.Tuple:
+        for (const subExpr of expr.__items__) {
+          childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
+        }
+        break;
+      case ExpressionKind.NamedTuple:
+        for (const subExpr of Object.values(expr.__shape__)) {
           childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
         }
         break;
