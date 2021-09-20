@@ -1485,7 +1485,7 @@ test("concurrent ops", async () => {
 test("'implicit*' headers", async () => {
   const config = parseConnectArguments(getConnectOptions());
   const con = (await _RawConnection.connectWithTimeout(
-    config.addrs[0],
+    config.connectionParams.address,
     config
   )) as _RawConnection;
   try {
