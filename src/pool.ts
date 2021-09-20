@@ -793,21 +793,21 @@ export interface ConnectOptions extends ConnectConfig {
 }
 
 export default function connect(
-  dsn?: string | ConnectOptions | null,
+  dsnOrInstanceName?: string | ConnectOptions | null,
   options?: ConnectOptions | null
 ): Promise<Pool> {
-  if (typeof dsn === "string") {
-    return PoolShell.create(dsn, options, options?.pool);
+  if (typeof dsnOrInstanceName === "string") {
+    return PoolShell.create(dsnOrInstanceName, options, options?.pool);
   } else {
-    if (dsn != null) {
+    if (dsnOrInstanceName != null) {
       // tslint:disable-next-line: no-console
       console.warn(
         "`options` as the first argument to `edgedb.connect` is " +
           "deprecated, use " +
-          "`edgedb.connect('instance_name_or_dsn', options)`"
+          "`edgedb.connect(dsnOrInstanceName, options)`"
       );
     }
-    const opts = {...dsn, ...options};
+    const opts = {...dsnOrInstanceName, ...options};
     return PoolShell.create(undefined, opts, opts.pool);
   }
 }

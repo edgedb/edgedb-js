@@ -16,6 +16,7 @@
     "stripInternal": true,
     "isolatedModules": true,
     "useDefineForClassFields": true,
+    "resolveJsonModule": true
   },
   "include": [
     "src",

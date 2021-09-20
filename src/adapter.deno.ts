@@ -1,13 +1,13 @@
-import {process} from "https://deno.land/std@0.102.0/node/process.ts";
-import {Buffer} from "https://deno.land/std@0.102.0/node/buffer.ts";
-import * as crypto from "https://deno.land/std@0.102.0/node/crypto.ts";
+import {process} from "https://deno.land/std@0.108.0/node/process.ts";
+import {Buffer} from "https://deno.land/std@0.108.0/node/buffer.ts";
+import * as crypto from "https://deno.land/std@0.108.0/node/crypto.ts";
 import {
   Sha256,
   HmacSha256,
-} from "https://deno.land/std@0.102.0/hash/sha256.ts";
-import path from "https://deno.land/std@0.102.0/node/path.ts";
-import EventEmitter from "https://deno.land/std@0.102.0/node/events.ts";
-import util from "https://deno.land/std@0.102.0/node/util.ts";
+} from "https://deno.land/std@0.108.0/hash/sha256.ts";
+import path from "https://deno.land/std@0.108.0/node/path.ts";
+import EventEmitter from "https://deno.land/std@0.108.0/node/events.ts";
+import util from "https://deno.land/std@0.108.0/node/util.ts";
 
 export {Buffer, path, process, util, crypto};
 
@@ -192,7 +192,7 @@ export namespace tls {
     host?: string;
     port?: number;
     ALPNProtocols?: string[];
-    ca?: string[];
+    ca?: string | string[];
     checkServerIdentity?: (a: string, b: any) => Error | undefined;
   }
 

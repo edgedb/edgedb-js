@@ -406,7 +406,7 @@ export class InnerConnection {
     let iteration = 1;
     let lastLoggingAt = 0;
     while (true) {
-      for (const addr of this.config.addrs) {
+      for (const addr of [this.config.connectionParams.address]) {
         try {
           this.connection = await ConnectionImpl.connectWithTimeout(
             addr,
@@ -772,10 +772,14 @@ export class ConnectionImpl {
   static async connectWithTimeout(
     addr: Address,
     config: NormalizedConnectConfig,
-    registry: CodecsRegistry
+    registry: CodecsRegistry,
+    useTls: boolean = true
   ): Promise<ConnectionImpl> {
-    const sock = this.newSock(addr, config.tlsOptions);
-    const conn = new this(sock, {...config, addrs: [addr]}, registry);
+    const sock = this.newSock(
+      addr,
+      useTls ? config.connectionParams.tlsOptions : undefined
+    );
+    const conn = new this(sock, config, registry);
     const connPromise = conn.connect();
     let timeoutCb = null;
     let timeoutHappened = false;
@@ -811,34 +815,33 @@ export class ConnectionImpl {
         let err: errors.ClientConnectionError;
         switch (e.code) {
           case "EPROTO":
-            if (config.tlsOptions != null) {
+            if (useTls === true) {
               // connecting over tls failed
               // try to connect using clear text
               try {
-                return this.connectWithTimeout(
-                  addr,
-                  {
-                    ...config,
-                    tlsOptions: undefined,
-                  },
-                  registry
-                );
+                return this.connectWithTimeout(addr, config, registry, false);
               } catch {
                 // pass
               }
             }
 
-            err = new errors.ClientConnectionFailedError(e.message);
+            err = new errors.ClientConnectionFailedError(
+              `${e.message}\n${config.connectionParams.explainConfig()}`
+            );
             break;
           case "ECONNREFUSED":
           case "ECONNABORTED":
           case "ECONNRESET":
           case "ENOTFOUND": // DNS name not found
           case "ENOENT": // unix socket is not created yet
-            err = new errors.ClientConnectionFailedTemporarilyError(e.message);
+            err = new errors.ClientConnectionFailedTemporarilyError(
+              `${e.message}\n${config.connectionParams.explainConfig()}`
+            );
             break;
           default:
-            err = new errors.ClientConnectionFailedError(e.message);
+            err = new errors.ClientConnectionFailedError(
+              `${e.message}\n${config.connectionParams.explainConfig()}`
+            );
             break;
         }
         err.source = e;
@@ -872,9 +875,9 @@ export class ConnectionImpl {
 
     handshake.writeInt16(2);
     handshake.writeString("user");
-    handshake.writeString(this.config.user);
+    handshake.writeString(this.config.connectionParams.user);
     handshake.writeString("database");
-    handshake.writeString(this.config.database);
+    handshake.writeString(this.config.connectionParams.database);
 
     // No extensions requested
     handshake.writeInt16(0);
@@ -993,7 +996,7 @@ export class ConnectionImpl {
     const clientNonce = await scram.generateNonce();
     const [clientFirst, clientFirstBare] = scram.buildClientFirstMessage(
       clientNonce,
-      this.config.user
+      this.config.connectionParams.user
     );
 
     const wb = new WriteMessageBuffer();
@@ -1018,7 +1021,7 @@ export class ConnectionImpl {
       scram.parseServerFirstMessage(serverFirst);
 
     const [clientFinal, expectedServerSig] = scram.buildClientFinalMessage(
-      this.config.password || "",
+      this.config.connectionParams.password || "",
       salt,
       itercount,
       clientFirstBare,

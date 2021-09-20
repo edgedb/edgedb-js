@@ -3,7 +3,7 @@ import * as platform from "./platform";
 
 export interface Credentials {
   host?: string;
-  port: number;
+  port?: number;
   user: string;
   password?: string;
   database?: string;
@@ -25,11 +25,8 @@ export function readCredentialsFile(file: string): Credentials {
 }
 
 export function validateCredentials(data: any): Credentials {
-  let port = data.port;
-  if (port == null) {
-    port = 5656;
-  }
-  if (typeof port !== "number" || port < 1 || port > 65535) {
+  const port = data.port;
+  if (port != null && (typeof port !== "number" || port < 1 || port > 65535)) {
     throw Error("invalid `port` value");
   }
 
