@@ -32,17 +32,30 @@ const EDGEDB_PORT = 5656;
 
 export type Address = string | [string, number];
 
-export interface NormalizedConnectConfig {
+interface PartiallyNormalizedConfig {
   addrs: Address[];
   user: string;
   password?: string;
   database: string;
-  connectTimeout?: number;
   serverSettings?: {[key: string]: string};
-  commandTimeout?: number;
-  waitUntilAvailable?: number;
-  legacyUUIDMode?: boolean;
   tlsOptions?: tls.ConnectionOptions;
+
+  // true if the program is run in a directory with `edgedb.toml`
+  inProject: boolean;
+  // true if the connection params were initialized from a project
+  fromProject: boolean;
+  // true if any of the connection params were sourced from environment
+  fromEnv: boolean;
+}
+
+export interface NormalizedConnectConfig extends PartiallyNormalizedConfig {
+  connectTimeout?: number;
+
+  commandTimeout?: number;
+  waitUntilAvailable: number;
+  legacyUUIDMode: boolean;
+
+  logging: boolean;
 }
 
 export interface ConnectConfig {
@@ -60,6 +73,7 @@ export interface ConnectConfig {
   legacyUUIDMode?: boolean;
   tlsCAFile?: string;
   tlsVerifyHostname?: boolean;
+  logging?: boolean;
 }
 
 function mapParseInt(x: any): number {
@@ -116,12 +130,16 @@ export function parseConnectArguments(
     );
   }
 
+  const cwd = process.cwd();
+  const inProject = fs.existsSync(path.join(cwd, "edgedb.toml"));
+
   return {
-    ...parseConnectDsnAndArgs(opts),
+    ...parseConnectDsnAndArgs(opts, cwd, inProject),
     connectTimeout: opts.timeout,
     commandTimeout: opts.commandTimeout,
     waitUntilAvailable: opts.waitUntilAvailable ?? 30_000,
-    legacyUUIDMode: opts.legacyUUIDMode,
+    legacyUUIDMode: !!opts.legacyUUIDMode,
+    logging: opts.logging ?? true,
   };
 }
 
@@ -138,22 +156,28 @@ function stashPath(projectDir: string): string {
   return platform.searchConfigDir("projects", dirName);
 }
 
-function parseConnectDsnAndArgs({
-  dsn,
-  host,
-  port,
-  user,
-  password,
-  database,
-  admin,
-  tlsCAFile,
-  tlsVerifyHostname,
-  serverSettings,
-  // @ts-ignore
-  server_settings,
-}: ConnectConfig): NormalizedConnectConfig {
+function parseConnectDsnAndArgs(
+  {
+    dsn,
+    host,
+    port,
+    user,
+    password,
+    database,
+    admin,
+    tlsCAFile,
+    tlsVerifyHostname,
+    serverSettings,
+    // @ts-ignore
+    server_settings,
+  }: ConnectConfig,
+  cwd: string,
+  inProject: boolean
+): PartiallyNormalizedConfig {
   let usingCredentials: boolean = false;
   const tlsCAData: string[] = [];
+  let fromProject = false;
+  let fromEnv = false;
 
   if (admin) {
     // tslint:disable-next-line: no-console
@@ -184,16 +208,16 @@ function parseConnectDsnAndArgs({
   ) {
     if (process.env.EDGEDB_INSTANCE) {
       dsn = process.env.EDGEDB_INSTANCE;
+      fromEnv ||= true;
     } else {
-      const dir = process.cwd();
-      if (!fs.existsSync(path.join(dir, "edgedb.toml"))) {
+      if (!inProject) {
         throw new errors.ClientConnectionError(
           "no `edgedb.toml` found and no connection options specified" +
             " either via arguments to connect API or via environment" +
             " variables EDGEDB_HOST/EDGEDB_PORT or EDGEDB_INSTANCE"
         );
       }
-      const stashDir = stashPath(dir);
+      const stashDir = stashPath(cwd);
       if (fs.existsSync(stashDir)) {
         dsn = readFileUtf8Sync(path.join(stashDir, "instance-name")).trim();
       } else {
@@ -202,6 +226,8 @@ function parseConnectDsnAndArgs({
             "Run `edgedb project init`."
         );
       }
+
+      fromProject = true;
     }
   }
 
@@ -263,7 +289,9 @@ function parseConnectDsnAndArgs({
       // process comma-separated hosts
       if (dsnHost !== null) {
         if (dsnHost !== "") {
-          [host, port] = parseHostlist(dsnHost, port);
+          let portFromEnv: boolean;
+          [host, port, portFromEnv] = parseHostlist(dsnHost, port);
+          fromEnv ||= portFromEnv;
         }
       } else {
         host = parsed.hostname ?? undefined;
@@ -300,7 +328,9 @@ function parseConnectDsnAndArgs({
       if (parsed.searchParams.has("host")) {
         const phost = parsed.searchParams.get("host")!;
         if (!host && phost) {
-          [host, port] = parseHostlist(phost, port);
+          let portFromEnv: boolean;
+          [host, port, portFromEnv] = parseHostlist(phost, port);
+          fromEnv ||= portFromEnv;
         }
         parsed.searchParams.delete("host");
       }
@@ -398,16 +428,17 @@ function parseConnectDsnAndArgs({
   if (!host) {
     const hostspec = process.env.EDGEDB_HOST;
     if (hostspec) {
+      fromEnv ||= true;
       const hl = parseHostlist(hostspec, port);
       host = hl[0];
       port = hl[1];
     } else {
-      if (platform.isWindows || usingCredentials) {
-        host = [];
+      host = [];
+      if (admin) {
+        if (!(platform.isWindows || usingCredentials)) {
+          host.push("/run/edgedb", "/var/run/edgedb");
+        }
       } else {
-        host = ["/run/edgedb", "/var/run/edgedb"];
-      }
-      if (!admin) {
         host.push("localhost");
       }
     }
@@ -419,6 +450,7 @@ function parseConnectDsnAndArgs({
   if (!port) {
     const portspec = process.env.EDGEDB_PORT;
     if (portspec) {
+      fromEnv ||= true;
       port = portspec.split(",").map(mapParseInt);
     } else {
       port = EDGEDB_PORT;
@@ -430,6 +462,7 @@ function parseConnectDsnAndArgs({
 
   if (!user) {
     user = process.env.EDGEDB_USER;
+    fromEnv ||= !!user;
   }
   if (!user) {
     user = "edgedb";
@@ -437,10 +470,12 @@ function parseConnectDsnAndArgs({
 
   if (!password) {
     password = process.env.EDGEDB_PASSWORD;
+    fromEnv ||= !!password;
   }
 
   if (!database) {
     database = process.env.EDGEDB_DATABASE;
+    fromEnv ||= !!database;
   }
   if (!database) {
     database = "edgedb";
@@ -524,18 +559,22 @@ function parseConnectDsnAndArgs({
     database,
     serverSettings,
     tlsOptions,
+    fromProject,
+    fromEnv,
+    inProject,
   };
 }
 
 function parseHostlist(
   hostlist: string | string[],
   inputPort?: number | number[]
-): [string[], number[]] {
+): [string[], number[], boolean] {
   let hostspecs: string[];
   const hosts: string[] = [];
   const hostlistPorts: number[] = [];
   let defaultPort: number[] = [];
   let ports: number[] = [];
+  let fromEnv = false;
 
   if (hostlist instanceof Array) {
     hostspecs = hostlist;
@@ -546,6 +585,7 @@ function parseHostlist(
   if (!inputPort) {
     const portspec = process.env.EDGEDB_PORT;
     if (portspec) {
+      fromEnv = true;
       defaultPort = portspec.split(",").map(mapParseInt);
       defaultPort = validatePortSpec(hostspecs, defaultPort);
     } else {
@@ -572,7 +612,7 @@ function parseHostlist(
     ports = hostlistPorts;
   }
 
-  return [hosts, ports];
+  return [hosts, ports, fromEnv];
 }
 
 function validatePortSpec(
