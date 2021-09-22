@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 
-import {UUID} from "./datatypes/uuid";
-
 import {
   LocalDateTime,
   LocalDate,
@@ -45,8 +43,7 @@ type QueryArgPrimitive =
   | LocalDate
   | LocalTime
   | Duration
-  | RelativeDuration
-  | UUID;
+  | RelativeDuration;
 
 type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
 
@@ -64,8 +61,6 @@ export interface ReadOnlyExecutor {
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
   querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T>;
   querySingleJSON(query: string, args?: QueryArgs): Promise<string>;
-  queryOne<T = unknown>(query: string, args?: QueryArgs): Promise<T>;
-  queryOneJSON(query: string, args?: QueryArgs): Promise<string>;
 }
 
 export const INNER = Symbol("INNER");
@@ -82,10 +77,6 @@ interface Modifiable {
 export type Executor = ReadOnlyExecutor & Modifiable;
 
 export interface Connection extends Executor {
-  transaction<T>(
-    action: () => Promise<T>,
-    options?: Partial<TransactionOptions>
-  ): Promise<T>;
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
@@ -104,10 +95,6 @@ export interface IPoolStats {
 }
 
 export interface Pool extends Executor {
-  transaction<T>(
-    action: () => Promise<T>,
-    options?: Partial<TransactionOptions>
-  ): Promise<T>;
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
@@ -119,18 +106,8 @@ export interface Pool extends Executor {
   close(): Promise<void>;
   isClosed(): boolean;
 
-  acquire(): Promise<Connection>;
-  release(connectionProxy: Connection): Promise<void>;
-  run<T>(action: (connection: Connection) => Promise<T>): Promise<T>;
-  expireConnections(): void;
   getStats(): IPoolStats;
   terminate(): void;
-}
-
-export const onConnectionClose = Symbol("onConnectionClose");
-
-export interface IConnectionProxied extends Connection {
-  [onConnectionClose](): void;
 }
 
 export const HeaderCodes = {

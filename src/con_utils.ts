@@ -53,7 +53,6 @@ export interface NormalizedConnectConfig extends PartiallyNormalizedConfig {
 
   commandTimeout?: number;
   waitUntilAvailable: number;
-  legacyUUIDMode: boolean;
 
   logging: boolean;
 }
@@ -65,12 +64,10 @@ export interface ConnectConfig {
   user?: string;
   password?: string;
   database?: string;
-  admin?: boolean;
   timeout?: number;
   commandTimeout?: number;
   waitUntilAvailable?: number;
   serverSettings?: any;
-  legacyUUIDMode?: boolean;
   tlsCAFile?: string;
   tlsVerifyHostname?: boolean;
   logging?: boolean;
@@ -122,14 +119,6 @@ export function parseConnectArguments(
     }
   }
 
-  if (opts.legacyUUIDMode) {
-    // tslint:disable-next-line: no-console
-    console.warn(
-      "The `legacyUUIDMode` parameter is deprecated and is scheduled " +
-        "to be removed. Upgrade to the default behavior of string UUID values."
-    );
-  }
-
   const cwd = process.cwd();
   const inProject = fs.existsSync(path.join(cwd, "edgedb.toml"));
 
@@ -138,7 +127,6 @@ export function parseConnectArguments(
     connectTimeout: opts.timeout,
     commandTimeout: opts.commandTimeout,
     waitUntilAvailable: opts.waitUntilAvailable ?? 30_000,
-    legacyUUIDMode: !!opts.legacyUUIDMode,
     logging: opts.logging ?? true,
   };
 }
@@ -164,7 +152,6 @@ function parseConnectDsnAndArgs(
     user,
     password,
     database,
-    admin,
     tlsCAFile,
     tlsVerifyHostname,
     serverSettings,
@@ -179,15 +166,6 @@ function parseConnectDsnAndArgs(
   let fromProject = false;
   let fromEnv = false;
 
-  if (admin) {
-    // tslint:disable-next-line: no-console
-    console.warn(
-      "The `admin: true` parameter is deprecated and is scheduled " +
-        "to be removed. Admin socket should never be used in " +
-        "applications. Use command-line tool `edgedb` to setup " +
-        "proper credentials."
-    );
-  }
   if (server_settings) {
     // tslint:disable-next-line: no-console
     console.warn(
@@ -231,7 +209,7 @@ function parseConnectDsnAndArgs(
     }
   }
 
-  if (dsn && /^edgedb(?:admin)?:\/\//.test(dsn)) {
+  if (dsn && /^edgedb:\/\//.test(dsn)) {
     // Comma-separated hosts and empty hosts cannot always be parsed
     // correctly with new URL(), so if we detect them, we need to replace the
     // whole host before parsing. The comma-separated host list can then be
@@ -257,31 +235,14 @@ function parseConnectDsnAndArgs(
     const parsed = new URL(dsn);
 
     if (typeof parsed.protocol === "string") {
-      if (parsed.protocol === "edgedbadmin:") {
-        // tslint:disable-next-line: no-console
-        console.warn(
-          "The `edgedbadmin` scheme is deprecated and is scheduled " +
-            "to be removed. Admin socket should never be used in " +
-            "applications. Use command-line tool `edgedb` to setup " +
-            "proper credentials."
-        );
-      }
-      if (["edgedb:", "edgedbadmin:"].indexOf(parsed.protocol) === -1) {
+      if (parsed.protocol !== "edgedb:") {
         throw new Error(
-          "invalid DSN: scheme is expected to be " +
-            '"edgedb" or "edgedbadmin", got ' +
+          "invalid DSN: scheme is expected to be 'edgedb', got " +
             (parsed.protocol ? parsed.protocol.slice(0, -1) : parsed.protocol)
         );
       }
     } else {
-      throw new Error(
-        "invalid DSN: scheme is expected to be " +
-          '"edgedb" or "edgedbadmin", but it\'s missing'
-      );
-    }
-
-    if (admin == null) {
-      admin = parsed.protocol === "edgedbadmin:";
+      throw new Error("invalid DSN: scheme is expected to be 'edgedb'");
     }
 
     if (!host && parsed.host) {
@@ -433,14 +394,7 @@ function parseConnectDsnAndArgs(
       host = hl[0];
       port = hl[1];
     } else {
-      host = [];
-      if (admin) {
-        if (!(platform.isWindows || usingCredentials)) {
-          host.push("/run/edgedb", "/var/run/edgedb");
-        }
-      } else {
-        host.push("localhost");
-      }
+      host = ["localhost"];
     }
   } else if (!(host instanceof Array)) {
     host = [host];
@@ -481,75 +435,59 @@ function parseConnectDsnAndArgs(
     database = "edgedb";
   }
 
-  let haveUnixSockets = false;
   const addrs: Address[] = [];
   for (let i = 0; i < host.length; i++) {
-    let h = host[i];
+    const h = host[i];
     const p = port[i];
 
     if (h[0] === "/") {
       // UNIX socket name
-      if (h.indexOf(".s.EDGEDB.") === -1) {
-        let sockName: string;
-        if (admin) {
-          sockName = ".s.EDGEDB.admin." + p;
-        } else {
-          sockName = ".s.EDGEDB." + p;
-        }
-        h = path.join(h, sockName);
-        haveUnixSockets = true;
-      }
-      addrs.push(h);
-    } else if (!admin) {
+      throw new Error("UNIX sockets are not supported");
+    } else {
       // TCP host/port
       addrs.push([h, p]);
     }
   }
 
-  if (admin && !haveUnixSockets) {
-    throw new Error("admin connections are only supported over UNIX sockets");
-  }
   if (addrs.length === 0) {
     throw new Error("could not determine the database address to connect to");
   }
 
   let tlsOptions: tls.ConnectionOptions | undefined;
-  if (!admin) {
-    if (tlsCAFile) {
-      tlsCAData.push(readFileUtf8Sync(tlsCAFile));
+  if (tlsCAFile) {
+    tlsCAData.push(readFileUtf8Sync(tlsCAFile));
+  }
+
+  tlsOptions = {ALPNProtocols: ["edgedb-binary"]};
+
+  if (tlsCAData.length !== 0) {
+    if (tlsVerifyHostname == null) {
+      tlsVerifyHostname = false;
     }
 
-    tlsOptions = {ALPNProtocols: ["edgedb-binary"]};
+    // this option replaces the system CA certificates with the one provided.
+    tlsOptions.ca = tlsCAData;
+  } else {
+    if (tlsVerifyHostname == null) {
+      tlsVerifyHostname = true;
+    }
+  }
 
-    if (tlsCAData.length !== 0) {
-      if (tlsVerifyHostname == null) {
-        tlsVerifyHostname = false;
+  if (!tlsVerifyHostname) {
+    tlsOptions.checkServerIdentity = (hostname: string, cert: any) => {
+      const err = tls.checkServerIdentity(hostname, cert);
+
+      if (err === undefined) {
+        return undefined;
       }
 
-      // this option replaces the system CA certificates with the one provided.
-      tlsOptions.ca = tlsCAData;
-    } else {
-      if (tlsVerifyHostname == null) {
-        tlsVerifyHostname = true;
+      // ignore failed hostname check
+      if (err.message.startsWith("Hostname/IP does not match certificate")) {
+        return undefined;
       }
-    }
 
-    if (!tlsVerifyHostname) {
-      tlsOptions.checkServerIdentity = (hostname: string, cert: any) => {
-        const err = tls.checkServerIdentity(hostname, cert);
-
-        if (err === undefined) {
-          return undefined;
-        }
-
-        // ignore failed hostname check
-        if (err.message.startsWith("Hostname/IP does not match certificate")) {
-          return undefined;
-        }
-
-        return err;
-      };
-    }
+      return err;
+    };
   }
 
   return {

@@ -19,7 +19,6 @@
 import * as util from "util";
 import {Temporal} from "proposal-temporal";
 
-import {UUID} from "../src/index.node";
 import {
   LocalDate,
   LocalTime,
@@ -27,30 +26,6 @@ import {
   LocalDateToOrdinal,
   LocalDateFromOrdinal,
 } from "../src/datatypes/datetime";
-
-test("types: UUID", async () => {
-  expect(() => {
-    return UUID.fromString("aaa");
-  }).toThrow("invalid UUID");
-
-  expect(() => {
-    return new UUID(Buffer.allocUnsafe(10));
-  }).toThrow("expected buffer to be 16");
-
-  const uuid = UUID.fromString("1733d49c-66ed-11e9-aa14-784f439c9965");
-  expect(util.inspect(uuid)).toBe(
-    "UUID [ '1733d49c-66ed-11e9-aa14-784f439c9965' ]"
-  );
-
-  expect(JSON.stringify([uuid])).toBe(
-    '["1733d49c-66ed-11e9-aa14-784f439c9965"]'
-  );
-
-  expect(() => {
-    // @ts-ignore
-    return +uuid;
-  }).toThrowError(TypeError("cannot coerce UUID to a number"));
-});
 
 test("types: LocalDate", async () => {
   const ld = new LocalDate(2008, 1, 30);
