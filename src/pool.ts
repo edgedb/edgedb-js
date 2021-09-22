@@ -255,8 +255,8 @@ class PoolConnectionHolder {
   }
 
   /** @internal */
-  _releaseOnClose(): void {
-    this._release();
+  async _releaseOnClose(): Promise<void> {
+    await this._release();
     this._connection = null;
   }
 
@@ -282,10 +282,18 @@ class PoolConnectionHolder {
 
 export class PoolInnerConnection extends InnerConnection {
   private [DETACHED]: boolean;
-  private [HOLDER]: PoolConnectionHolder;
+  private [HOLDER]: PoolConnectionHolder | null;
   constructor(config: NormalizedConnectConfig) {
     super(config);
     this[DETACHED] = false;
+  }
+  async reconnect(singleAttempt: boolean = false): Promise<ConnectionImpl> {
+    if (this[DETACHED]) {
+      throw new errors.InterfaceError(
+        "Connection has been released to a pool"
+      );
+    }
+    return await super.reconnect(singleAttempt);
   }
   detach(): PoolInnerConnection {
     const impl = this.connection;
@@ -305,8 +313,9 @@ export class PoolConnection extends StandaloneConnection {
   }
 
   protected cleanup(): void {
-    if (this[INNER][HOLDER]) {
-      this[INNER][HOLDER]._releaseOnClose();
+    const holder = this[INNER][HOLDER];
+    if (holder) {
+      holder._releaseOnClose();
     }
   }
 
@@ -315,8 +324,8 @@ export class PoolConnection extends StandaloneConnection {
     const inner = this[INNER];
     const holder = inner[HOLDER];
     const detached = inner[DETACHED];
-    inner[HOLDER] = holder;
-    inner[DETACHED] = detached;
+    inner[HOLDER] = null;
+    inner[DETACHED] = true;
     result[INNER] = inner.detach();
     result[INNER][HOLDER] = holder;
     result[INNER][DETACHED] = detached;
