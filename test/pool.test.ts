@@ -22,6 +22,7 @@ import {Deferred, createPool, HOLDER, PoolConnection} from "../src/pool";
 import {getPool, getConnectOptions} from "./testbase";
 import {connect} from "../src/pool";
 import {Connection, Pool, INNER} from "../src/ifaces";
+import {ConnectionImpl} from "../src/client";
 import {ConnectConfig, NormalizedConnectConfig} from "../src/con_utils";
 
 // Jest by default applies a test timeout of 5 seconds; some of the following
@@ -61,84 +62,98 @@ describe("pool.initialize: creates minSize count of connections", () => {
         onConnect,
       });
 
-      // @ts-ignore
-      expect(pool._queue).toHaveLength(maxSize);
-      expect(connections).toHaveLength(minSize);
-
-      await pool.close();
+      try {
+        // @ts-ignore
+        expect(pool.impl._queue).toHaveLength(maxSize);
+        expect(connections).toHaveLength(minSize);
+      }
+      finally {
+        await pool.close();
+      }
     },
     BiggerTimeout
   );
 });
 
-test.only("pool.query: basic scalars", async () => {
+test("pool.query: basic scalars", async () => {
   const pool = await getPool();
 
-  let res = await pool.query("select {'a', 'bc'}");
-  expect(res).toEqual(["a", "bc"]);
+  try {
+    let res = await pool.query("select {'a', 'bc'}");
+    expect(res).toEqual(["a", "bc"]);
 
-  res = await pool.query(
-    `select {
-        -1,
-        1,
-        0,
-        15,
-        281474976710656,
-        22,
-        -11111,
-        346456723423,
-        -346456723423,
-        2251799813685125,
-        -2251799813685125
-      };
-      `
-  );
-  expect(res).toEqual([
-    -1, 1, 0, 15, 281474976710656, 22, -11111, 346456723423, -346456723423,
-    2251799813685125, -2251799813685125,
-  ]);
-
-  await pool.close();
+    res = await pool.query(
+      `select {
+          -1,
+          1,
+          0,
+          15,
+          281474976710656,
+          22,
+          -11111,
+          346456723423,
+          -346456723423,
+          2251799813685125,
+          -2251799813685125
+        };
+        `
+    );
+    expect(res).toEqual([
+      -1, 1, 0, 15, 281474976710656, 22, -11111, 346456723423, -346456723423,
+      2251799813685125, -2251799813685125,
+    ]);
+  }
+  finally {
+    await pool.close();
+  }
 });
 
 test("pool.queryJSON", async () => {
   const pool = await getPool();
-
-  const res = await pool.queryJSON("select {(a := 1), (a := 2)}");
-  expect(JSON.parse(res)).toEqual([{a: 1}, {a: 2}]);
-
-  await pool.close();
+  try {
+    const res = await pool.queryJSON("select {(a := 1), (a := 2)}");
+    expect(JSON.parse(res)).toEqual([{a: 1}, {a: 2}]);
+  }
+  finally {
+    await pool.close();
+  }
 });
 
 test("pool.querySingle", async () => {
   const pool = await getPool();
-  let res;
+  try {
+    let res;
 
-  res = await pool.querySingle("select 100");
-  expect(res).toBe(100);
+    res = await pool.querySingle("select 100");
+    expect(res).toBe(100);
 
-  res = await pool.querySingle("select 'Charlie Brown'");
-  expect(res).toBe("Charlie Brown");
-
-  await pool.close();
+    res = await pool.querySingle("select 'Charlie Brown'");
+    expect(res).toBe("Charlie Brown");
+  }
+  finally {
+    await pool.close();
+  }
 });
 
 test("pool.querySingleJSON", async () => {
   const pool = await getPool();
-  let res;
+  try {
+    let res;
 
-  res = await pool.querySingleJSON("select (a := 1)");
-  expect(JSON.parse(res)).toEqual({a: 1});
+    res = await pool.querySingleJSON("select (a := 1)");
+    expect(JSON.parse(res)).toEqual({a: 1});
 
-  res = await pool.querySingleJSON("select (a := 1n)");
-  expect(JSON.parse(res)).toEqual({a: 1});
-  expect(typeof JSON.parse(res).a).toEqual("number");
+    res = await pool.querySingleJSON("select (a := 1n)");
+    expect(JSON.parse(res)).toEqual({a: 1});
+    expect(typeof JSON.parse(res).a).toEqual("number");
 
-  res = await pool.querySingleJSON("select (a := 1.5n)");
-  expect(JSON.parse(res)).toEqual({a: 1.5});
-  expect(typeof JSON.parse(res).a).toEqual("number");
-
-  await pool.close();
+    res = await pool.querySingleJSON("select (a := 1.5n)");
+    expect(JSON.parse(res)).toEqual({a: 1.5});
+    expect(typeof JSON.parse(res).a).toEqual("number");
+  }
+  finally {
+    await pool.close();
+  }
 });
 
 describe("pool concurrency 1", () => {
@@ -151,17 +166,20 @@ describe("pool concurrency 1", () => {
         maxSize: 10,
       });
 
-      async function work(): Promise<void> {
-        const conn = await pool.acquire();
-        expect(await conn.querySingle("SELECT 1")).toBe(1);
-        await pool.release(conn);
+      try {
+        async function work(): Promise<void> {
+          const conn = await pool.acquire();
+          expect(await conn.querySingle("SELECT 1")).toBe(1);
+          await pool.release(conn);
+        }
+
+        await Promise.all(
+          new Array(concurrency).fill(undefined).map(() => work())
+        );
       }
-
-      await Promise.all(
-        new Array(concurrency).fill(undefined).map(() => work())
-      );
-
-      await pool.close();
+      finally {
+        await pool.close();
+      }
     },
     BiggerTimeout
   );
@@ -176,18 +194,20 @@ describe("pool concurrency 2", () => {
         minSize: 5,
         maxSize: 5,
       });
+      try {
+        async function work(): Promise<void> {
+          const conn = await pool.acquire();
+          expect(await conn.querySingle("SELECT 1")).toBe(1);
+          await pool.release(conn);
+        }
 
-      async function work(): Promise<void> {
-        const conn = await pool.acquire();
-        expect(await conn.querySingle("SELECT 1")).toBe(1);
-        await pool.release(conn);
+        await Promise.all(
+          new Array(concurrency).fill(undefined).map(() => work())
+        );
       }
-
-      await Promise.all(
-        new Array(concurrency).fill(undefined).map(() => work())
-      );
-
-      await pool.close();
+      finally {
+        await pool.close();
+      }
     },
     BiggerTimeout
   );
@@ -203,18 +223,21 @@ describe("pool concurrency 3", () => {
         maxSize: 5,
       });
 
-      async function work(): Promise<void> {
-        const result = await pool.run(async (connection) => {
-          return await connection.querySingle("SELECT 1");
-        });
-        expect(result).toBe(1);
+      try {
+        async function work(): Promise<void> {
+          const result = await pool.run(async (connection) => {
+            return await connection.querySingle("SELECT 1");
+          });
+          expect(result).toBe(1);
+        }
+
+        await Promise.all(
+          new Array(concurrency).fill(undefined).map(() => work())
+        );
       }
-
-      await Promise.all(
-        new Array(concurrency).fill(undefined).map(() => work())
-      );
-
-      await pool.close();
+      finally {
+        await pool.close();
+      }
     },
     BiggerTimeout
   );
@@ -234,14 +257,16 @@ test("pool.onAcquire callback", async () => {
     maxSize: 5,
     onAcquire,
   });
+  try {
+    const conn = await pool.acquire();
+    await pool.release(conn);
 
-  const conn = await pool.acquire();
-  await pool.release(conn);
-
-  expect(deferred.done).toBe(true);
-  expect(deferred.result).toBe(conn);
-
-  await pool.close();
+    expect(deferred.done).toBe(true);
+    expect(deferred.result).toBe(conn);
+  }
+  finally {
+    await pool.close();
+  }
 });
 
 test("pool.onRelease callback", async () => {
@@ -258,14 +283,16 @@ test("pool.onRelease callback", async () => {
     maxSize: 5,
     onRelease,
   });
+  try {
+    const conn = await pool.acquire();
+    await pool.release(conn);
 
-  const conn = await pool.acquire();
-  await pool.release(conn);
-
-  expect(deferred.done).toBe(true);
-  expect(deferred.result).toBe(conn);
-
-  await pool.close();
+    expect(deferred.done).toBe(true);
+    expect(deferred.result).toBe(conn);
+  }
+  finally {
+    await pool.close();
+  }
 });
 
 test(
@@ -274,25 +301,36 @@ test(
     // This method tests onAcquire, onConnect execution and their order;
     // it also ensures that no more connections than the maximum size of
     // the pool are created (concurrency is 2x max size).
-    const connections: Connection[] = [];
+    const connections: ConnectionImpl[] = [];
 
     async function onAcquire(conn: Connection): Promise<void> {
-      if (connections.indexOf(conn) === -1) {
-        throw new Error("onAcquire was not called");
+      // @ts-ingore
+      if (
+        connections.indexOf((conn as PoolConnection)[INNER].connection!) == -1
+      ) {
+        throw new Error("onConnect was not called");
       }
     }
 
     async function onConnect(connection: Connection): Promise<void> {
-      if (connections.indexOf(connection) > -1) {
+      // @ts-ingore
+      if (
+        connections.indexOf(
+          (connection as PoolConnection)[INNER].connection!
+        ) > -1
+      ) {
         throw new Error("onConnect was called more than once");
       }
-      connections.push(connection);
+      // @ts-ingore
+      connections.push((connection as PoolConnection)[INNER].connection!);
     }
 
     async function user(pool: Pool): Promise<void> {
       const conn = await pool.acquire();
 
-      if (connections.indexOf(conn) === -1) {
+      if (
+        connections.indexOf((conn as PoolConnection)[INNER].connection!) === -1
+      ) {
         throw new Error("init was not called");
       }
 
@@ -307,11 +345,14 @@ test(
       onConnect,
     });
 
-    await Promise.all(new Array(10).fill(undefined).map(() => user(_pool)));
+    try {
+      await Promise.all(new Array(10).fill(undefined).map(() => user(_pool)));
 
-    expect(connections).toHaveLength(5);
-
-    await _pool.close();
+      expect(connections).toHaveLength(5);
+    }
+    finally {
+      await _pool.close();
+    }
   },
   BiggerTimeout
 );
@@ -329,57 +370,63 @@ test(
       minSize: 1,
       maxSize: 1,
     });
+    try {
+      const conn = await pool1.acquire();
+      try {
+        await expect(pool2.release(conn)).rejects.toThrow(
+          "The connection proxy does not belong to this pool."
+        );
+      } finally {
+        await pool1.release(conn);
+      }
+    }
+    finally {
+      await pool1.close();
+      await pool2.close();
+    }
+  },
+  BiggerTimeout
+);
 
-    const conn = await pool1.acquire();
+test(
+  "pool.release more than once raises exception",
+  async () => {
+    const pool = await createPool(undefined, {
+      connectOptions: getConnectOptions(),
+      minSize: 1,
+      maxSize: 1,
+    });
+    try {
+      const conn = await pool.acquire();
+
+      await pool.release(conn);
+      await pool.release(conn);
+    }
+    finally {
+      await pool.close();
+    }
+  },
+  BiggerTimeout
+);
+
+test(
+  "pool.release more than once does not raise exception",
+  async () => {
+    const pool = await createPool(undefined, {
+      connectOptions: getConnectOptions(),
+      minSize: 1,
+      maxSize: 1,
+    });
 
     try {
-      await expect(pool2.release(conn)).rejects.toThrow(
-        "The connection does not belong to this pool."
-      );
-    } finally {
-      await pool1.release(conn);
+      const conn = await pool.acquire();
+
+      await pool.release(conn);
+      await pool.release(conn);
     }
-
-    await pool1.close();
-    await pool2.close();
-  },
-  BiggerTimeout
-);
-
-test(
-  "pool.release more than once does not raise exception",
-  async () => {
-    const pool = await createPool(undefined, {
-      connectOptions: getConnectOptions(),
-      minSize: 1,
-      maxSize: 1,
-    });
-
-    const conn = await pool.acquire();
-
-    await pool.release(conn);
-    await pool.release(conn);
-
-    await pool.close();
-  },
-  BiggerTimeout
-);
-
-test(
-  "pool.release more than once does not raise exception",
-  async () => {
-    const pool = await createPool(undefined, {
-      connectOptions: getConnectOptions(),
-      minSize: 1,
-      maxSize: 1,
-    });
-
-    const conn = await pool.acquire();
-
-    await pool.release(conn);
-    await pool.release(conn);
-
-    await pool.close();
+    finally {
+      await pool.close();
+    }
   },
   BiggerTimeout
 );
@@ -395,17 +442,21 @@ test(
       maxSize: 1,
     });
 
-    const conn = await pool.acquire();
+    try {
+      const conn = await pool.acquire();
+      await pool.release(conn);
 
-    await pool.release(conn);
+      async function failing(): Promise<void> {
+        await conn.query("select 1");
+      }
 
-    async function failing(): Promise<void> {
-      await conn.query("select 1");
+      await expect(failing()).rejects.toThrow(
+        "Connection has been released to a pool"
+      );
     }
-
-    await expect(failing()).rejects.toThrow("The proxy is detached");
-
-    await pool.close();
+    finally {
+      await pool.close();
+    }
   },
   BiggerTimeout
 );
@@ -436,25 +487,31 @@ test(
       onAcquire,
     });
 
-    // initialize causes setupCalls to become 1, since minSize == 1
-    // the next call to .acquire() fails because onAcquire raises an error
-    await expect(pool.acquire()).rejects.toThrow(new CrashTestError().message);
+    try {
+      // initialize causes setupCalls to become 1, since minSize == 1
+      // the next call to .acquire() fails because onAcquire raises an error
+      await expect(pool.acquire()).rejects.toThrow(
+        new CrashTestError().message
+      );
 
-    if (lastProxy === undefined) {
-      await pool.close();
-      throw new Error("Expected a populated lastProxy");
+      if (lastProxy === undefined) {
+        await pool.close();
+        throw new Error("Expected a populated lastProxy");
+      }
+
+      // while handling the error, the pool closes the connection, so lastProxy
+      // is now detached
+      expect(lastProxy.isClosed()).toBe(true);
+
+      // the next call to acquire works
+      const conn = await pool.acquire();
+      expect(proxies).toEqual(["error", conn]);
+
+      await pool.release(conn);
     }
-
-    // while handling the error, the pool closes the connection, so lastProxy
-    // is now detached
-    expect(lastProxy.isClosed()).toBe(true);
-
-    // the next call to acquire works
-    const conn = await pool.acquire();
-    expect(proxies).toEqual(["error", conn]);
-
-    await pool.release(conn);
-    await pool.close();
+    finally {
+      await pool.close();
+    }
   },
   BiggerTimeout
 );
@@ -484,26 +541,31 @@ test(
       onConnect,
     });
 
-    await expect(pool.acquire()).rejects.toThrow(new CrashTestError().message);
+    try {
+      await expect(pool.acquire()).rejects.toThrow(
+        new CrashTestError().message);
 
-    if (lastConnection === undefined) {
-      await pool.close();
-      throw new Error("Expected a populated lastConnection");
+      if (lastConnection === undefined) {
+        await pool.close();
+        throw new Error("Expected a populated lastConnection");
+      }
+
+      expect(lastConnection.isClosed()).toBe(true);
+
+      // the next call to acquire works
+      const conn = await pool.acquire();
+
+      expect(connections.length).toEqual(2);
+      expect(connections[0]).toBe("error");
+      expect(connections[1]).toBe(conn);
+
+      expect(await lastConnection.querySingle("select 1")).toBe(1);
+
+      await pool.release(conn);
     }
-
-    expect(lastConnection.isClosed()).toBe(true);
-
-    // the next call to acquire works
-    const conn = await pool.acquire();
-
-    expect(connections.length).toEqual(2);
-    expect(connections[0]).toBe("error");
-    expect(connections[1]).toBe(conn);
-
-    expect(await lastConnection.querySingle("select 1")).toBe(1);
-
-    await pool.release(conn);
-    await pool.close();
+    finally {
+      await pool.close();
+    }
   },
   BiggerTimeout
 );
@@ -529,10 +591,13 @@ test(
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     const conn = await pool.acquire();
-
-    expect(await conn.querySingle("SELECT 1")).toBe(1);
-    await pool.release(conn);
-    await pool.close();
+    try {
+      expect(await conn.querySingle("SELECT 1")).toBe(1);
+      await pool.release(conn);
+    }
+    finally {
+      await pool.close();
+    }
   },
   BiggerTimeout
 );
@@ -551,8 +616,12 @@ test(
       },
     });
 
-    expect(called).toBe(true);
-    await pool.close();
+    try {
+      expect(called).toBe(true);
+    }
+    finally {
+      await pool.close();
+    }
   },
   BiggerTimeout
 );
@@ -576,8 +645,12 @@ test(
       connectionFactory,
     });
 
-    expect(calls).toBe(3);
-    await pool.close();
+    try {
+      expect(calls).toBe(3);
+    }
+    finally {
+      await pool.close();
+    }
   },
   BiggerTimeout
 );
@@ -615,12 +688,16 @@ describe("pool connection methods", () => {
       maxSize: 10,
     });
 
-    const results = await Promise.all<number>(
-      new Array(times).fill(undefined).map(() => method(pool))
-    );
+    try {
+      const results = await Promise.all<number>(
+        new Array(times).fill(undefined).map(() => method(pool))
+      );
 
-    expect(results).toEqual(new Array(times).fill(1));
-    await pool.close();
+      expect(results).toEqual(new Array(times).fill(1));
+    }
+    finally {
+      await pool.close();
+    }
   }
 
   const methods = [testquery, testquerySingle, testExecute];
@@ -646,20 +723,24 @@ test(
       maxSize: 1,
     });
 
-    async function work(): Promise<void> {
-      const conn = await pool.acquire();
+    try {
+      async function work(): Promise<void> {
+        const conn = await pool.acquire();
 
-      flag.setResult(true);
-      await new Promise((resolve) => setTimeout(resolve, 100));
+        flag.setResult(true);
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-      connectionReleased = true;
-      await pool.release(conn);
+        connectionReleased = true;
+        await pool.release(conn);
+      }
+
+      work();
+
+      await flag.promise;
     }
-
-    work();
-
-    await flag.promise;
-    await pool.close();
+    finally {
+      await pool.close();
+    }
     expect(connectionReleased).toBe(true);
   },
   BiggerTimeout
@@ -674,18 +755,18 @@ test(
       maxSize: 1,
     });
 
-    const conn = await pool.acquire();
-
     try {
-      pool.expireConnections();
-    } finally {
-      await pool.release(conn);
-    }
+      const conn = await pool.acquire();
 
-    try {
+      try {
+        pool.expireConnections();
+      } finally {
+        await pool.release(conn);
+      }
+
       // @ts-ignore
-      const holder = conn[INNER][HOLDER]();
-      expect(holder.connection).toBeNull();
+      const holder = conn[INNER][HOLDER];
+      expect(holder).toBeNull();
     } finally {
       await pool.close();
     }
@@ -699,13 +780,16 @@ test("createPool.querySingle", async () => {
   });
   let res;
 
-  res = await pool.querySingle("select 100");
-  expect(res).toBe(100);
+  try {
+    res = await pool.querySingle("select 100");
+    expect(res).toBe(100);
 
-  res = await pool.querySingle("select 'Charlie Brown'");
-  expect(res).toBe("Charlie Brown");
-
-  await pool.close();
+    res = await pool.querySingle("select 'Charlie Brown'");
+    expect(res).toBe("Charlie Brown");
+  }
+  finally {
+    await pool.close();
+  }
 });
 
 describe("pool.getStats: includes the number of open connections", () => {
@@ -719,11 +803,14 @@ describe("pool.getStats: includes the number of open connections", () => {
         maxSize,
       });
 
-      const stats = pool.getStats();
-      expect(stats.queueLength).toBe(0);
-      expect(stats.openConnections).toBe(minSize);
-
-      await pool.close();
+      try {
+        const stats = pool.getStats();
+        expect(stats.queueLength).toBe(0);
+        expect(stats.openConnections).toBe(minSize);
+      }
+      finally {
+        await pool.close();
+      }
     },
     BiggerTimeout
   );
@@ -744,36 +831,40 @@ describe("pool.getStats: includes queue length", () => {
         maxSize,
       });
 
-      const promises: Array<Promise<Connection>> = [];
-      // simulate consumers of the pool: for example functions that require
-      // a connection to process a web request
-      for (const _ of new Array(requests)) {
-        promises.push(pool.acquire());
-      }
-
-      // await for maxSize count of promises: these are resolved
-      // as soon as maxSize connections are open
-      const firstPromises = await Promise.all(
-        promises.slice(0, Math.min(requests, maxSize))
-      );
-
-      // get stats: the queue length must be the number of consumers awaiting
-      // for a connection
-      const stats = pool.getStats();
-
       try {
-        expect(stats.queueLength).toBe(Math.max(0, requests - maxSize));
-      } finally {
-        // release proxies
-        for (const conn of firstPromises) {
-          await pool.release(conn);
+        const promises: Array<Promise<Connection>> = [];
+        // simulate consumers of the pool: for example functions that require
+        // a connection to process a web request
+        for (const _ of new Array(requests)) {
+          promises.push(pool.acquire());
         }
 
-        if (requests > maxSize) {
-          for (const promise of promises.slice(maxSize)) {
-            await pool.release(await promise);
+        // await for maxSize count of promises: these are resolved
+        // as soon as maxSize connections are open
+        const firstPromises = await Promise.all(
+          promises.slice(0, Math.min(requests, maxSize))
+        );
+
+        // get stats: the queue length must be the number of consumers awaiting
+        // for a connection
+        const stats = pool.getStats();
+
+        try {
+          expect(stats.queueLength).toBe(Math.max(0, requests - maxSize));
+        } finally {
+          // release proxies
+          for (const conn of firstPromises) {
+            await pool.release(conn);
+          }
+
+          if (requests > maxSize) {
+            for (const promise of promises.slice(maxSize)) {
+              await pool.release(await promise);
+            }
           }
         }
+      }
+      finally {
         await pool.close();
       }
     },
