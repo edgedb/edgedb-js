@@ -435,17 +435,39 @@ export class InnerConnection {
     return this._isClosed;
   }
 
+  logConnectionError(...args: any): void {
+    if (!this.config.logging) {
+      return;
+    }
+    if (
+      this.config.inProject &&
+      !this.config.fromProject &&
+      !this.config.fromEnv
+    ) {
+      args.push(
+        `\n\n\n` +
+          `Hint: it looks like the program is running from a ` +
+          `directory initialized with "edgedb project init". ` +
+          `Consider calling "edgedb.connect()" without arguments.` +
+          `\n`
+      );
+    }
+    // tslint:disable-next-line: no-console
+    console.warn(...args);
+  }
+
   async reconnect(singleAttempt: boolean = false): Promise<ConnectionImpl> {
     if (this._isClosed) {
       throw new errors.InterfaceError("Connection is closed");
     }
     let maxTime: number;
-    if (singleAttempt) {
+    if (singleAttempt || this.config.waitUntilAvailable === 0) {
       maxTime = 0;
     } else {
       maxTime = hrTime() + (this.config.waitUntilAvailable || 0);
     }
     let iteration = 1;
+    let lastLoggingAt = 0;
     while (true) {
       for (const addr of this.config.addrs) {
         try {
@@ -457,14 +479,34 @@ export class InnerConnection {
         } catch (e) {
           if (e instanceof errors.ClientConnectionError) {
             if (e.hasTag(errors.SHOULD_RECONNECT)) {
-              if (iteration > 1 && hrTime() > maxTime) {
+              const now = hrTime();
+              if (iteration > 1 && now > maxTime) {
+                // We check here for `iteration > 1` to make sure that all of
+                // `this.configs.addrs` were attempted to be connected.
                 throw e;
+              }
+              if (
+                iteration > 1 &&
+                (!lastLoggingAt || now - lastLoggingAt > 5_000)
+              ) {
+                // We check here for `iteration > 1` to only log
+                // when all addrs of `this.configs.addrs` were attempted to
+                // be connected and we're starting to wait for the DB to
+                // become available.
+                lastLoggingAt = now;
+                this.logConnectionError(
+                  `A client connection error occurred; reconnecting because ` +
+                    `of "waitUntilAvailable=${this.config.waitUntilAvailable}".`,
+                  e
+                );
               }
               continue;
             } else {
               throw e;
             }
           } else {
+            // tslint:disable-next-line: no-console
+            console.error("Unexpected connection error:", e);
             throw e; // this shouldn't happen
           }
         }

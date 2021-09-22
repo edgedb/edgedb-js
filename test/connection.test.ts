@@ -17,6 +17,7 @@
  */
 
 import * as path from "path";
+import * as util from "util";
 
 import {
   parseConnectArguments,
@@ -29,13 +30,13 @@ import * as errors from "../src/errors";
 function env_wrap(env: {[key: string]: any}, func: () => void): void {
   const old_env: {[key: string]: any} = {};
 
-  // record the envuronment variables
+  // record the environment variables
   for (const key in env) {
     if (process.env[key] !== undefined) {
       old_env[key] = process.env[key];
     }
   }
-  // set up the envuronment variables
+  // set up the environment variables
   for (const key in env) {
     if (env[key] == null) {
       delete process.env[key];
@@ -47,7 +48,7 @@ function env_wrap(env: {[key: string]: any}, func: () => void): void {
   try {
     func();
   } finally {
-    // restore the envuronment variables
+    // restore the environment variables
     for (const key in env) {
       if (old_env[key] === undefined) {
         delete process.env[key];
@@ -61,7 +62,7 @@ function env_wrap(env: {[key: string]: any}, func: () => void): void {
 interface ConnectionTestCase {
   env?: {[key: string]: string};
   opts?: {[key: string]: any};
-  result?: NormalizedConnectConfig;
+  result?: Partial<NormalizedConnectConfig>;
   error?: string | RegExp;
 }
 
@@ -78,7 +79,7 @@ function runConnectionTest({
   } else {
     env_wrap(env, () => {
       const args = parseConnectArguments(opts);
-      expect(args).toEqual(result);
+      expect(args).toMatchObject(result!);
     });
   }
 }
@@ -89,15 +90,21 @@ test("parseConnectArguments", () => {
       opts: {
         user: "user",
         host: "localhost",
+        logging: false,
+        waitUntilAvailable: 0,
       },
       result: {
         addrs: [["localhost", 5656]],
         user: "user",
         database: "edgedb",
-        waitUntilAvailable: 30_000,
+        waitUntilAvailable: 0,
         tlsOptions: {
           ALPNProtocols: ["edgedb-binary"],
         },
+        logging: false,
+        inProject: false,
+        fromProject: false,
+        fromEnv: false,
       },
     },
 
@@ -118,6 +125,10 @@ test("parseConnectArguments", () => {
         tlsOptions: {
           ALPNProtocols: ["edgedb-binary"],
         },
+        logging: true,
+        inProject: false,
+        fromProject: false,
+        fromEnv: true,
       },
     },
 
@@ -149,6 +160,7 @@ test("parseConnectArguments", () => {
         tlsOptions: {
           ALPNProtocols: ["edgedb-binary"],
         },
+        fromEnv: false,
       },
     },
 
