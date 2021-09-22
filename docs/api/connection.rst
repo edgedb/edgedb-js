@@ -54,9 +54,6 @@ Connection
         or the value of the ``EDGEDB_PORT`` environment variable, or ``5656``
         if neither is specified.
 
-    :param boolean options.admin:
-        If ``true``, try to connect to the special administration socket.
-
     :param string options.user:
         The name of the database role used for authentication.
 

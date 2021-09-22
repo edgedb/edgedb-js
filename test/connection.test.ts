@@ -379,15 +379,7 @@ test("parseConnectArguments", () => {
 
     {
       opts: {dsn: "edgedb:///dbname?host=/unix_sock/test&user=spam"},
-      result: {
-        addrs: [path.join("/unix_sock/test", ".s.EDGEDB.5656")],
-        user: "spam",
-        database: "dbname",
-        waitUntilAvailable: 30_000,
-        tlsOptions: {
-          ALPNProtocols: ["edgedb-binary"],
-        },
-      },
+      error: "UNIX sockets are not supported",
     },
 
     {
@@ -404,48 +396,7 @@ test("parseConnectArguments", () => {
 
     {
       opts: {dsn: "edgedb://user@?port=56226&host=%2Ftmp"},
-      result: {
-        addrs: [path.join("/tmp", ".s.EDGEDB.56226")],
-        user: "user",
-        database: "edgedb",
-        waitUntilAvailable: 30_000,
-        tlsOptions: {
-          ALPNProtocols: ["edgedb-binary"],
-        },
-      },
-    },
-
-    {
-      opts: {dsn: "edgedb://user@?host=%2Ftmp", admin: true},
-      result: {
-        addrs: [path.join("/tmp", ".s.EDGEDB.admin.5656")],
-        user: "user",
-        database: "edgedb",
-        waitUntilAvailable: 30_000,
-      },
-    },
-
-    {
-      opts: {dsn: "edgedbadmin://user@?host=%2Ftmp"},
-      result: {
-        addrs: [path.join("/tmp", ".s.EDGEDB.admin.5656")],
-        user: "user",
-        database: "edgedb",
-        waitUntilAvailable: 30_000,
-      },
-    },
-
-    {
-      opts: {dsn: "edgedbadmin://user@?host=%2Ftmp", admin: false},
-      result: {
-        addrs: [path.join("/tmp", ".s.EDGEDB.5656")],
-        user: "user",
-        database: "edgedb",
-        waitUntilAvailable: 30_000,
-        tlsOptions: {
-          ALPNProtocols: ["edgedb-binary"],
-        },
-      },
+      error: "UNIX sockets are not supported",
     },
   ];
 
@@ -524,8 +475,7 @@ test("connect: refused unix", async () => {
     });
     throw new Error("connection isn't refused");
   } catch (e: any) {
-    expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
-    expect(e.source.code).toMatch("ENOENT");
+    expect(e.toString()).toMatch("UNIX sockets are not supported");
   } finally {
     if (typeof con !== "undefined") {
       await con.close();

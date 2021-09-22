@@ -20,7 +20,6 @@ import {
   Set,
   Tuple,
   NamedTuple,
-  UUID,
   LocalDateTime,
   DivisionByZeroError,
   EdgeDBError,
@@ -40,26 +39,15 @@ import {
 import {asyncConnect, getConnectOptions, isDeno} from "./testbase";
 import {parseConnectArguments} from "../src/con_utils";
 
-function setStringCodecs(codecs: string[]) {
-  return {
-    pool: {
-      onAcquire: async (conn: Connection) => {
-        // @ts-ignore
-        const registry = conn[INNER].connection.codecsRegistry;
-        registry.setStringCodecs(
-          codecs.reduce((obj, codec) => {
-            obj[codec] = true;
-            return obj;
-          }, {} as any)
-        );
-      },
-      onRelease: async (conn: Connection) => {
-        // @ts-ignore
-        const registry = conn[INNER].connection.codecsRegistry;
-        registry.setStringCodecs({});
-      },
-    },
-  };
+function setStringCodecs(codecs: string[], conn: Connection) {
+  // @ts-ignore
+  const registry = conn.impl._codecsRegistry;
+  registry.setStringCodecs(
+    codecs.reduce((obj, codec) => {
+      obj[codec] = true;
+      return obj;
+    }, {} as any)
+  );
 }
 
 test("query: basic scalars", async () => {
@@ -220,7 +208,8 @@ test("fetch: bigint", async () => {
 });
 
 test("fetch: decimal as string", async () => {
-  const con = await asyncConnect(setStringCodecs(["decimal"]));
+  const con = await asyncConnect();
+  setStringCodecs(["decimal"], con);
 
   const vals = [
     "0.001",
@@ -353,7 +342,8 @@ test("fetch: decimal as string", async () => {
 });
 
 test("fetch: int64 as string", async () => {
-  const con = await asyncConnect(setStringCodecs(["int64"]));
+  const con = await asyncConnect();
+  setStringCodecs(["int64"], con);
 
   const vals = [
     "0",
@@ -391,7 +381,8 @@ test("fetch: int64 as string", async () => {
 });
 
 test("fetch: bigint as string", async () => {
-  const con = await asyncConnect(setStringCodecs(["bigint"]));
+  const con = await asyncConnect();
+  setStringCodecs(["bigint"], con);
 
   const vals = [
     "0",
@@ -434,9 +425,8 @@ function edgeDBDateTimeToStr(dt: EdgeDBDateTime): string {
 }
 
 test("fetch: datetime as string", async () => {
-  const con = await asyncConnect(
-    setStringCodecs(["local_datetime", "datetime"])
-  );
+  const con = await asyncConnect();
+  setStringCodecs(["local_datetime", "datetime"], con);
 
   const maxDate = 253402300799;
   const minDate = -62135596800;
@@ -1014,9 +1004,7 @@ test("fetch: tuple", async () => {
 });
 
 test("fetch: object", async () => {
-  const con = await asyncConnect({
-    legacyUUIDMode: true,
-  });
+  const con = await asyncConnect();
 
   let res: any;
   try {
@@ -1064,8 +1052,6 @@ test("fetch: object", async () => {
     }
 
     expect(res.params.length).toBe(2);
-    expect(res.params[0].id instanceof UUID).toBeTruthy();
-    expect(res.id instanceof UUID).toBeTruthy();
 
     // regression test: test that empty sets are properly decoded.
     await con.querySingle(`
@@ -1485,24 +1471,13 @@ test("fetch no codec", async () => {
 
 test("concurrent ops", async () => {
   const pool = await asyncConnect();
-  const con = await pool.acquire();
   try {
-    const p1 = con.querySingle(`SELECT 1 + 2`);
-    await Promise.all([
-      p1,
-      con.querySingle(`SELECT sys::get_version_as_str()`),
-    ])
-      .then(() => {
-        throw new Error("an exception was expected");
-      })
-      .catch((e) => {
-        expect(e.toString()).toMatch(/Another operation is in progress/);
-      });
-
-    const res = await p1;
-    expect(res).toBe(3);
+    const p1 = pool.querySingle(`SELECT 1 + 2`);
+    const p2 = pool.querySingle(`SELECT 2 + 2`);
+    await Promise.all([p1, p2]);
+    expect(await p1).toBe(3);
+    expect(await p2).toBe(4);
   } finally {
-    await pool.release(con);
     await pool.close();
   }
 });
