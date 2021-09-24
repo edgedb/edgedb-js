@@ -458,7 +458,10 @@ function parseConnectDsnAndArgs(
     tlsCAData.push(readFileUtf8Sync(tlsCAFile));
   }
 
-  tlsOptions = {ALPNProtocols: ["edgedb-binary"]};
+  tlsOptions = {
+    ALPNProtocols: ["edgedb-binary"],
+    rejectUnauthorized: !process.env.EDGEDB_INSECURE_DEV_MODE,
+  };
 
   if (tlsCAData.length !== 0) {
     if (tlsVerifyHostname == null) {

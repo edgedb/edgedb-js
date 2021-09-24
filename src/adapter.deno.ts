@@ -194,6 +194,7 @@ export namespace tls {
     ALPNProtocols?: string[];
     ca?: string[];
     checkServerIdentity?: (a: string, b: any) => Error | undefined;
+    rejectUnauthorized?: bool,
   }
 
   export class TLSSocket extends net.Socket {
