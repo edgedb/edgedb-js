@@ -1,4 +1,4 @@
-import {Pool, reflection as $} from "edgedb";
+import {Pool, $} from "edgedb";
 
 import * as tc from "conditional-type-checks";
 

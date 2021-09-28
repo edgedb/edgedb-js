@@ -1,5 +1,5 @@
 // tslint:disable:no-console
-import {reflection as $} from "edgedb";
+import {$} from "edgedb";
 import type {$Movie} from "./generated/example/modules/default";
 import type {pointersToSelectShape} from "./generated/example/syntax/select";
 

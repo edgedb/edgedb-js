@@ -11,7 +11,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps.ts");
-  f.addImport(`import {reflection as $} from "edgedb";`);
+  f.addImport(`import {$} from "edgedb";`);
 
   const reverseTopo = Array.from(types)
     .reverse() // reverse topological order

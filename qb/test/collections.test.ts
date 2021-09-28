@@ -1,4 +1,4 @@
-import {Pool, reflection as $} from "edgedb";
+import {Pool, $} from "edgedb";
 import e from "../generated/example";
 import {tc} from "./setupTeardown";
 

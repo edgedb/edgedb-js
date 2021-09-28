@@ -1,4 +1,4 @@
-import {reflection as $} from "edgedb";
+import {$} from "edgedb";
 import e from "../generated/example";
 import {$Hero} from "../generated/example/modules/default";
 import {tc} from "./setupTeardown";

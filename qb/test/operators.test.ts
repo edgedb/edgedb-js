@@ -1,6 +1,6 @@
 import {$expr_Operator} from "@syntax/funcops";
 import superjson from "superjson";
-import {reflection as $} from "edgedb";
+import {$} from "edgedb";
 import e from "../generated/example";
 
 function checkOperatorExpr<T extends $expr_Operator>(
