@@ -1,4 +1,4 @@
-import {Cardinality, TypeKind} from "../../src/reflection";
+import {reflection as $} from "edgedb";
 import e from "../generated/example";
 
 test("empty sets", () => {
@@ -32,14 +32,14 @@ test("scalar set contructor", () => {
   // single elements
   const _f1 = e.set(e.str("asdf"));
   expect(_f1.__element__.__name__).toEqual("std::str");
-  expect(_f1.__cardinality__).toEqual(Cardinality.One);
-  expect(_f1.__element__.__kind__).toEqual(TypeKind.scalar);
+  expect(_f1.__cardinality__).toEqual($.Cardinality.One);
+  expect(_f1.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(_f1.toEdgeQL()).toEqual(`{ "asdf" }`);
 
   // multiple elements
   const _f2 = e.set(e.str("asdf"), e.str("qwer"), e.str("poiu"));
   expect(_f2.__element__.__name__).toEqual("std::str");
-  expect(_f2.__cardinality__).toEqual(Cardinality.AtLeastOne);
+  expect(_f2.__cardinality__).toEqual($.Cardinality.AtLeastOne);
   expect(_f2.toEdgeQL()).toEqual(`{ "asdf", "qwer", "poiu" }`);
 
   // implicit casting

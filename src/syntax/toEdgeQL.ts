@@ -21,22 +21,22 @@ import type {
   $expr_PathNode,
   $expr_TypeIntersection,
 } from "../reflection/path";
+import reservedKeywords from "../reflection/reservedKeywords";
 import type {$expr_Cast} from "./cast";
 import type {$expr_Detached} from "./detached";
 import type {$expr_For, $expr_ForVar} from "./for";
 import type {$expr_Function, $expr_Operator} from "./funcops";
-import {$expr_Insert, $expr_InsertUnlessConflict} from "./insert";
+import type {$expr_Insert, $expr_InsertUnlessConflict} from "./insert";
 import type {$expr_Param, $expr_WithParams} from "./params";
-import type {$expr_Set} from "./set";
-import {$expr_Update} from "./update";
 import type {
-  $expr_Select,
   $expr_Delete,
-  OffsetExpression,
+  $expr_Select,
   LimitExpression,
+  OffsetExpression,
 } from "./select";
+import type {$expr_Set} from "./set";
+import type {$expr_Update} from "./update";
 import type {$expr_Alias, $expr_With} from "./with";
-import reservedKeywords from "../reflection/reservedKeywords";
 
 export type SomeExpression =
   | $expr_PathNode

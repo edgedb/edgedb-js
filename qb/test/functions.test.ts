@@ -1,6 +1,6 @@
 import type {$expr_Function} from "@syntax/funcops";
 import superjson from "superjson";
-import {Cardinality, typeutil} from "../../src/reflection";
+import {reflection as $} from "edgedb";
 import e from "../generated/example";
 
 function checkFunctionExpr<T extends $expr_Function>(
@@ -29,7 +29,7 @@ test("no args", () => {
     [],
     {},
     e.str,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   checkFunctionExpr(
@@ -44,7 +44,7 @@ test("no args", () => {
       stage_no: e.int64,
       local: e.array(e.str),
     }),
-    Cardinality.One
+    $.Cardinality.One
   );
 
   try {
@@ -60,7 +60,7 @@ test("positional args", () => {
     [e.str("test")],
     {},
     e.int64,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   checkFunctionExpr(
@@ -69,7 +69,7 @@ test("positional args", () => {
     [e.bytes("")],
     {},
     e.int64,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   checkFunctionExpr(
@@ -78,7 +78,7 @@ test("positional args", () => {
     [e.literal(e.array(e.int32), [1, 2, 3])],
     {},
     e.int64,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   const setOfStr = e.set(e.str("test"), e.str("test2"));
@@ -88,17 +88,17 @@ test("positional args", () => {
     [setOfStr],
     {},
     e.int64,
-    Cardinality.AtLeastOne
+    $.Cardinality.AtLeastOne
   );
 
   const datetime_getArgs = [e.datetime(new Date()), e.str("day")] as const;
   checkFunctionExpr(
     e.datetime_get(...datetime_getArgs),
     "std::datetime_get",
-    datetime_getArgs as typeutil.writeable<typeof datetime_getArgs>,
+    datetime_getArgs as $.typeutil.writeable<typeof datetime_getArgs>,
     {},
     e.float64,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   const datetime_getArgs2 = [
@@ -108,10 +108,10 @@ test("positional args", () => {
   checkFunctionExpr(
     e.datetime_get(...datetime_getArgs2),
     "std::datetime_get",
-    datetime_getArgs2 as typeutil.writeable<typeof datetime_getArgs2>,
+    datetime_getArgs2 as $.typeutil.writeable<typeof datetime_getArgs2>,
     {},
     e.float64,
-    Cardinality.AtLeastOne
+    $.Cardinality.AtLeastOne
   );
 
   try {
@@ -130,7 +130,7 @@ test("named args", () => {
     [e.str("pattern"), e.str("sub"), e.str("str")],
     {},
     e.str,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.std.re_replace(
@@ -143,7 +143,7 @@ test("named args", () => {
     [e.str("pattern"), e.str("sub"), e.str("str")],
     {flags: e.str("flags")},
     e.str,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.std.re_replace({}, e.str("pattern"), e.str("sub"), e.str("str")),
@@ -151,7 +151,7 @@ test("named args", () => {
     [e.str("pattern"), e.str("sub"), e.str("str")],
     {},
     e.str,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.std.re_replace(
@@ -164,7 +164,7 @@ test("named args", () => {
     [e.str("pattern"), e.str("sub"), e.str("str")],
     {flags: e.set(e.str)},
     e.str,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   checkFunctionExpr(
@@ -173,7 +173,7 @@ test("named args", () => {
     [],
     {},
     e.duration,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.to_duration({hours: e.int64(5)}),
@@ -181,7 +181,7 @@ test("named args", () => {
     [],
     {hours: e.int64(5)},
     e.duration,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.to_duration({hours: e.int64(5), seconds: e.float64(30)}),
@@ -189,7 +189,7 @@ test("named args", () => {
     [],
     {hours: e.int64(5), seconds: e.float64(30)},
     e.duration,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.to_duration({hours: e.set(e.int64(5), e.int16(6))}),
@@ -197,7 +197,7 @@ test("named args", () => {
     [],
     {hours: e.set(e.int64(5), e.int16(6))},
     e.duration,
-    Cardinality.AtLeastOne
+    $.Cardinality.AtLeastOne
   );
   checkFunctionExpr(
     e.to_duration({hours: e.int16(5)}),
@@ -205,7 +205,7 @@ test("named args", () => {
     [],
     {hours: e.int16(5)},
     e.duration,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   checkFunctionExpr(
@@ -214,7 +214,7 @@ test("named args", () => {
     [],
     {"🙀": e.int64(1)},
     e.int64,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   try {
@@ -248,7 +248,7 @@ test("variadic args", () => {
     [e.json("json"), e.str("path")],
     {},
     e.json,
-    Cardinality.AtMostOne
+    $.Cardinality.AtMostOne
   );
   checkFunctionExpr(
     e.json_get(e.json("json"), e.str("some"), e.str("path")),
@@ -256,7 +256,7 @@ test("variadic args", () => {
     [e.json("json"), e.str("some"), e.str("path")],
     {},
     e.json,
-    Cardinality.AtMostOne
+    $.Cardinality.AtMostOne
   );
   checkFunctionExpr(
     e.json_get(
@@ -268,7 +268,7 @@ test("variadic args", () => {
     [e.json("json"), e.str("some"), e.set(e.str("path"), e.str("extended"))],
     {},
     e.json,
-    Cardinality.Many
+    $.Cardinality.Many
   );
   checkFunctionExpr(
     e.json_get(
@@ -281,7 +281,7 @@ test("variadic args", () => {
     [e.json("json"), e.str("some"), e.set(e.str("path"), e.str("extended"))],
     {},
     e.json,
-    Cardinality.Many
+    $.Cardinality.Many
   );
   checkFunctionExpr(
     e.json_get(
@@ -294,7 +294,7 @@ test("variadic args", () => {
     [e.json("json"), e.str("some"), e.str("path")],
     {default: e.json("defaultjson")},
     e.json,
-    Cardinality.AtMostOne
+    $.Cardinality.AtMostOne
   );
 });
 
@@ -305,7 +305,7 @@ test("anytype", () => {
     [e.json("json" as string)],
     {},
     e.json,
-    Cardinality.AtMostOne
+    $.Cardinality.AtMostOne
   );
   checkFunctionExpr(
     e.min(e.set(e.int64(1), e.int64(2))),
@@ -313,7 +313,7 @@ test("anytype", () => {
     [e.set(e.int64(1), e.int64(2))],
     {},
     e.int64,
-    Cardinality.AtMostOne
+    $.Cardinality.AtMostOne
   );
 
   // BROKEN
@@ -325,7 +325,7 @@ test("anytype", () => {
     [e.str("str" as string)],
     {},
     e.array(e.str),
-    Cardinality.One
+    $.Cardinality.One
   );
 
   checkFunctionExpr(
@@ -334,7 +334,7 @@ test("anytype", () => {
     [e.literal(e.array(e.str), ["str"])],
     {},
     e.str,
-    Cardinality.Many
+    $.Cardinality.Many
   );
 
   checkFunctionExpr(
@@ -349,7 +349,7 @@ test("anytype", () => {
     ],
     {},
     e.bool,
-    Cardinality.AtLeastOne
+    $.Cardinality.AtLeastOne
   );
 
   checkFunctionExpr(
@@ -358,7 +358,7 @@ test("anytype", () => {
     [e.literal(e.array(e.int16), [1, 2, 3]), e.bigint(BigInt(2))],
     {},
     e.bool,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   checkFunctionExpr(
@@ -367,7 +367,7 @@ test("anytype", () => {
     [e.literal(e.array(e.float32), [1, 2, 3]), e.int64(2)],
     {},
     e.bool,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   checkFunctionExpr(
@@ -383,7 +383,7 @@ test("anytype", () => {
     ],
     {default: e.bigint(BigInt(0))},
     e.bigint,
-    Cardinality.AtMostOne
+    $.Cardinality.AtMostOne
   );
 
   try {
@@ -410,7 +410,7 @@ test("cardinality inference", () => {
     [e.int64(123), e.str("")],
     {},
     e.str,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.to_str(e.int64(123), e.set(e.str)),
@@ -418,7 +418,7 @@ test("cardinality inference", () => {
     [e.int64(123), e.set(e.str)],
     {},
     e.str,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.to_str(e.int64(123), undefined),
@@ -426,7 +426,7 @@ test("cardinality inference", () => {
     [e.int64(123), e.set(e.str) as any as undefined],
     {},
     e.str,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.to_str(e.set(e.int64(123), e.int64(456)), undefined),
@@ -434,7 +434,7 @@ test("cardinality inference", () => {
     [e.set(e.int64(123), e.int64(456)), e.set(e.str) as any as undefined],
     {},
     e.str,
-    Cardinality.AtLeastOne
+    $.Cardinality.AtLeastOne
   );
   checkFunctionExpr(
     e.to_str(e.int64(123)),
@@ -442,7 +442,7 @@ test("cardinality inference", () => {
     [e.int64(123), undefined],
     {},
     e.str,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   // setoftype param
@@ -452,7 +452,7 @@ test("cardinality inference", () => {
     [e.int64(1)],
     {},
     e.int64,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.sum(e.set(e.int64(1), e.int64(2))),
@@ -460,7 +460,7 @@ test("cardinality inference", () => {
     [e.set(e.int64(1), e.int64(2))],
     {},
     e.int64,
-    Cardinality.One
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.sum(e.set(e.int64)),
@@ -468,7 +468,7 @@ test("cardinality inference", () => {
     [e.set(e.int64)],
     {},
     e.int64,
-    Cardinality.One
+    $.Cardinality.One
   );
 
   // optional return
@@ -484,7 +484,7 @@ test("cardinality inference", () => {
     ],
     {},
     e.bigint,
-    Cardinality.AtMostOne
+    $.Cardinality.AtMostOne
   );
   checkFunctionExpr(
     e.array_get(e.set(e.array(e.bigint)), e.int64(1)),
@@ -492,7 +492,7 @@ test("cardinality inference", () => {
     [e.set(e.array(e.bigint)), e.int64(1)],
     {},
     e.bigint,
-    Cardinality.Empty
+    $.Cardinality.Empty
   );
   // BROKEN
   // checkFunctionExpr(
@@ -513,7 +513,7 @@ test("cardinality inference", () => {
   //   ],
   //   {},
   //   e.$bigint,
-  //   Cardinality.Many
+  //   $.Cardinality.Many
   // );
 
   // setoftype return
@@ -523,7 +523,7 @@ test("cardinality inference", () => {
     [e.literal(e.array(e.str), ["str"])],
     {},
     e.str,
-    Cardinality.Many
+    $.Cardinality.Many
   );
   checkFunctionExpr(
     e.array_unpack(e.set(e.array(e.str))),
@@ -531,7 +531,7 @@ test("cardinality inference", () => {
     [e.set(e.array(e.str))],
     {},
     e.str,
-    Cardinality.Many
+    $.Cardinality.Many
   );
   checkFunctionExpr(
     e.array_unpack(e.literal(e.array(e.str), ["str"])),
@@ -539,6 +539,6 @@ test("cardinality inference", () => {
     [e.literal(e.array(e.str), ["str"])],
     {},
     e.str,
-    Cardinality.Many
+    $.Cardinality.Many
   );
 });

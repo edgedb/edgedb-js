@@ -21,15 +21,12 @@
       "./node_modules/@types"
     ],
     "paths": {
-      "edgedb/src/index.node": [
-        "./dist/index.node.ts"
-      ],
       "edgedb": [
-        "./dist/index.node.ts"
+        "./src/index.node"
       ],
-      // "reflection": [
-      //   "./src/reflection/index.ts"
-      // ],
+      "edgedb/*": [
+        "./dist/*"
+      ],
       "@generated/*": [
         "./qb/generated/example/*"
       ],
@@ -43,6 +40,5 @@
     "test/deno/*",
     "dist",
     "qb",
-    "src/syntax/*"
   ]
 }

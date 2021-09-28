@@ -14,6 +14,7 @@ import {
   TypeSet,
 } from "../reflection";
 import _std from "@generated/modules/std";
+// import _std from "../../qb/generated/example/modules/std";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify} from "./path";
 import {$expr_PathNode} from "../reflection/path";

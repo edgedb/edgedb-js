@@ -140,7 +140,7 @@ export * as syntax from "./syntax/syntax";`
     // rewrite scoped import paths
     contents = contents.replace(
       /from "(..\/)?reflection(.*)"/g,
-      `from "edgedb/src/reflection$2"`
+      `from "edgedb/dist/reflection$2"`
     );
     contents = contents.replace(/from "@generated\//g, `from "../`);
     const outputDir = path.join(to, "syntax");

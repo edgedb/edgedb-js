@@ -33,3 +33,4 @@ export type {BackoffFunction} from "./options";
 export * from "./index.shared";
 
 export * as reflection from "./reflection";
+export * as $ from "./reflection";

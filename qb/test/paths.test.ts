@@ -1,8 +1,6 @@
-import {reflection as $} from "edgedb/src/index.node";
-// import {reflection as $} from "edgedb";
-// import {Cardinality, ExpressionKind, $.TypeKind} from "edgedb/src/reflection";
-import {$Hero} from "../generated/example/modules/default";
+import {reflection as $} from "edgedb";
 import e from "../generated/example";
+import {$Hero} from "../generated/example/modules/default";
 import {tc} from "./setupTeardown";
 
 test("path structure", () => {

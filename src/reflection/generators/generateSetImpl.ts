@@ -20,7 +20,7 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
   mergeObjectTypes,
   Cardinality,
   AnyTupleType,
-} from "edgedb/src/reflection";
+} from "edgedb/dist/reflection";
 
 import {getSharedParentScalar} from "../castMaps";
 import {$expressionify} from "./path";

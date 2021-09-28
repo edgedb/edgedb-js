@@ -196,7 +196,7 @@ export class DirBuilder {
 
     const mod = this.getPath(`modules/${this._modules.get(moduleName)}.ts`);
 
-    mod.addImport(`import {reflection as $} from "edgedb/src/index.node";`);
+    mod.addImport(`import {reflection as $} from "edgedb";`);
     mod.addImport(`import * as _ from "../imports";`);
 
     return mod;

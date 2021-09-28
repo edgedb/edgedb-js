@@ -1,6 +1,6 @@
 import {$expr_Operator} from "@syntax/funcops";
 import superjson from "superjson";
-import {Cardinality} from "../../src/reflection";
+import {reflection as $} from "edgedb";
 import e from "../generated/example";
 
 function checkOperatorExpr<T extends $expr_Operator>(
@@ -32,7 +32,7 @@ test("slice and index ops", () => {
     "std::[]",
     [e.str("test string"), e.literal(e.tuple([e.int64, e.int32]), [2, 5])],
     e.str,
-    Cardinality.One,
+    $.Cardinality.One,
     `("test string"[2:5])`
   );
 
@@ -47,7 +47,7 @@ test("slice and index ops", () => {
       e.literal(e.tuple([e.int64, e.int32]), [1, 2]),
     ],
     e.array(e.bigint),
-    Cardinality.One,
+    $.Cardinality.One,
     `(<array<std::bigint>>[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][1:2])`
   );
 
@@ -56,7 +56,7 @@ test("slice and index ops", () => {
     "std::[]",
     [e.str("test string"), e.int32(3)],
     e.str,
-    Cardinality.One,
+    $.Cardinality.One,
     `("test string"[3])`
   );
 
@@ -71,7 +71,7 @@ test("slice and index ops", () => {
       e.int32(2),
     ],
     e.bigint,
-    Cardinality.One,
+    $.Cardinality.One,
     `(<array<std::bigint>>[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][2])`
   );
 });
@@ -87,7 +87,7 @@ test("if else op", () => {
     "std::IF",
     [e.str("this"), e.eq(e.int64(42), e.float32(42)), e.str("that")],
     e.str,
-    Cardinality.Many,
+    $.Cardinality.Many,
     `("this" IF (42 = <std::float32>42) ELSE "that")`
   );
 });

@@ -1,6 +1,5 @@
 // tslint:disable:no-console
-
-import {setToTsType} from "../src/reflection";
+import {reflection as $} from "edgedb";
 import type {$Movie} from "./generated/example/modules/default";
 import type {pointersToSelectShape} from "./generated/example/syntax/select";
 
@@ -60,7 +59,7 @@ async function run() {
     }),
   }));
   const chars = nested.__element__.__shape__.characters;
-  type nested = setToTsType<typeof nested>;
+  type nested = $.setToTsType<typeof nested>;
 
   console.log(nested.toEdgeQL());
 
@@ -70,7 +69,7 @@ async function run() {
       id: true,
     },
   }));
-  type q = setToTsType<typeof q>;
+  type q = $.setToTsType<typeof q>;
 
   const val1 = e
     .insert(e.Hero, {
@@ -106,7 +105,7 @@ async function run() {
     id: true,
     q,
   }));
-  type q3 = setToTsType<typeof q3>;
+  type q3 = $.setToTsType<typeof q3>;
   const q4 = e.select(e.Person, person => ({
     id: true,
     q: q3,
@@ -118,7 +117,7 @@ async function run() {
       computable: e.int64(1234),
     }),
   }));
-  type q4 = setToTsType<typeof q4>;
+  type q4 = $.setToTsType<typeof q4>;
   const q5 = e.select(e.Hero, hero => ({
     id: true,
     q: q4,
@@ -128,7 +127,7 @@ async function run() {
       computable: e.int64(1234),
     }),
   }));
-  type q5 = setToTsType<typeof q5>;
+  type q5 = $.setToTsType<typeof q5>;
   const q6 = e.select(e.Hero, hero => ({
     id: true,
     q: q5,
@@ -138,7 +137,7 @@ async function run() {
     }),
   }));
 
-  type q6 = setToTsType<typeof q6>;
+  type q6 = $.setToTsType<typeof q6>;
   const q7 = e.select(e.Hero, hero => ({
     id: true,
     q: q6,
@@ -153,7 +152,7 @@ async function run() {
       ),
     }),
   }));
-  type q7 = setToTsType<typeof q7>;
+  type q7 = $.setToTsType<typeof q7>;
   const q8 = e.select(e.Hero, hero => ({
     id: true,
     q: q7,
@@ -171,7 +170,7 @@ async function run() {
       computable: e.insert(e.Person, {name: e.str("Loki")}),
     }),
   }));
-  type q8 = setToTsType<typeof q8>;
+  type q8 = $.setToTsType<typeof q8>;
   const q9 = e.select(e.Hero, hero => ({
     id: true,
     q: q8,
@@ -181,7 +180,7 @@ async function run() {
       computable: e.int64(1234),
     }),
   }));
-  type q9 = setToTsType<typeof q9>;
+  type q9 = $.setToTsType<typeof q9>;
   const q10 = e.select(e.Hero, hero => ({
     id: true,
     q: q9,
@@ -189,23 +188,23 @@ async function run() {
       nemesis: {id: true},
     }),
   }));
-  type q10 = setToTsType<typeof q10>;
+  type q10 = $.setToTsType<typeof q10>;
   const q11 = e.select(e.Hero, hero => ({
     id: true,
     q: q10,
     computable: e.select(e.Hero),
   }));
-  type q11 = setToTsType<typeof q11>;
+  type q11 = $.setToTsType<typeof q11>;
   const q12 = e.select(e.Hero, hero => ({
     id: false,
     q: q11,
   }));
-  type q12 = setToTsType<typeof q12>;
+  type q12 = $.setToTsType<typeof q12>;
   const _q13 = e.select(e.Hero, hero => ({
     id: 1 > 0,
     q: q12,
   }));
-  type _q13 = setToTsType<typeof _q13>;
+  type _q13 = $.setToTsType<typeof _q13>;
 }
 
 run();
