@@ -135,7 +135,22 @@ export class CodeBuilder {
       .join("\n");
 
     if (this.exports.size) {
-      body += `\n\nexport default {\n${[...this.exports.entries()]
+      body += `\n\ntype DefaultExport = {\n${[...this.exports.entries()]
+        .map(([name, refFrag]) => {
+          const ref = this.dirBuilder._refs.get(refFrag.name);
+
+          if (!ref) {
+            throw new Error(`Cannot find ref: ${refFrag.name}`);
+          }
+
+          return `  ${genutil.quote(name)}: typeof ${
+            (refFrag.opts?.prefix ?? "") + ref.internalName
+          }`;
+        })
+        .join(";\n")}\n};`;
+      body += `\n\nconst DefaultExport: DefaultExport = {\n${[
+        ...this.exports.entries(),
+      ]
         .map(([name, refFrag]) => {
           const ref = this.dirBuilder._refs.get(refFrag.name);
 
@@ -147,7 +162,8 @@ export class CodeBuilder {
             (refFrag.opts?.prefix ?? "") + ref.internalName
           }`;
         })
-        .join(",\n")}\n}`;
+        .join(",\n")}\n};\n`;
+      body += `\nexport default DefaultExport;`;
     }
 
     let head = Array.from(imports).join("\n");

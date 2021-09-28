@@ -10,8 +10,10 @@
     "downlevelIteration": true,
     "isolatedModules": true,
     "baseUrl": ".",
-    "outDir": "dist",
-    // "declaration": true,
+    // "outDir": "dist",
+    "declaration": true,
+    // "declarationMap": true,
+    "preserveSymlinks": true,
     "paths": {
       "@syntax/*": [
         "./generated/example/syntax/*"

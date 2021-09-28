@@ -6,4 +6,5 @@ const run = async () => {
   await generateQB(TO);
   process.exit();
 };
+
 run();

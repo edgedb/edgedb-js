@@ -98,7 +98,28 @@ export * as syntax from "./syntax/syntax";`
       index.addImport(`export * from "./syntax/syntax";`);
       index.addImport(`import * as _syntax from "./syntax/syntax";`);
 
-      index.writeln(genutil.frag`export default {`);
+      index.writeln(
+        genutil.frag`const ExportDefault: typeof _default & typeof _std & typeof _syntax & {`
+      );
+      index.indented(() => {
+        // for (const moduleName of ["std", "default"]) {
+        //   if (dir._modules.has(moduleName)) {
+        //     index.writeln(genutil.frag`typeof _${dir._modules.get(moduleName)!} & `);
+        //   }
+        // }
+        // index.writeln(genutil.frag`typeof _syntax & {`);
+
+        for (const [moduleName, internalName] of dir._modules) {
+          if (dir.getModule(moduleName).isEmpty()) continue;
+          index.writeln(
+            genutil.frag`${genutil.quote(
+              moduleName
+            )}: typeof _${internalName};`
+          );
+        }
+      });
+
+      index.writeln(genutil.frag`} = {`);
       index.indented(() => {
         for (const moduleName of ["std", "default"]) {
           if (dir._modules.has(moduleName)) {
@@ -120,8 +141,8 @@ export * as syntax from "./syntax/syntax";`
           );
         }
       });
-
       index.writeln(genutil.frag`};`);
+      index.writeln(genutil.frag`export default ExportDefault;`);
     } finally {
       await cxn.close();
     }

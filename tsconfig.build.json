@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src",
+  ],
+  "exclude": [
+    "**/*.deno.ts",
+    "test/deno/*",
+    "dist",
+    "qb",
+    "src/syntax/*"
+  ]
+}
