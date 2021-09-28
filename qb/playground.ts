@@ -1,8 +1,8 @@
 // tslint:disable:no-console
 
-import {setToTsType} from "reflection";
+import {setToTsType} from "../src/reflection";
 import type {$Movie} from "./generated/example/modules/default";
-import type {pointersToSelectShape} from "@syntax/select";
+import type {pointersToSelectShape} from "./generated/example/syntax/select";
 
 import e from "./generated/example";
 import {setupTests} from "./test/setupTeardown";

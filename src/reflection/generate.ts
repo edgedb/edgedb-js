@@ -22,7 +22,7 @@ import {generateSetImpl} from "./generators/generateSetImpl";
 
 const DEBUG = false;
 
-const syntaxOnly = process.argv.some((arg) => arg === "--syntaxOnly");
+const syntaxOnly = process.argv.some(arg => arg === "--syntaxOnly");
 
 export type GeneratorParams = {
   dir: DirBuilder;
@@ -32,6 +32,7 @@ export type GeneratorParams = {
   scalars: ScalarTypes;
   functions: FunctionTypes;
   operators: OperatorTypes;
+  mode: "ts" | "js+dts";
 };
 
 export async function generateQB(
@@ -69,6 +70,7 @@ export async function generateQB(
         scalars,
         functions,
         operators,
+        mode: "ts",
       };
       generateRuntimeSpec(generatorParams);
       generateCastMaps(generatorParams);
@@ -82,7 +84,7 @@ export async function generateQB(
 
       const importsFile = dir.getPath("imports.ts");
       importsFile.writeln(
-        genutil.frag`export * as edgedb from "edgedb/src/index.node";
+        genutil.frag`export * as edgedb from "edgedb";
 export {spec} from "./__spec__";
 export * as syntax from "./syntax/syntax";`
       );

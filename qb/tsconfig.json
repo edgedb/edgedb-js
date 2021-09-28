@@ -11,16 +11,17 @@
     "isolatedModules": true,
     "baseUrl": ".",
     "outDir": "dist",
+    // "declaration": true,
     "paths": {
-      "edgedb": [
-        "../src/index.node.ts"
-      ],
-      "edgedb/*": [
-        "../*"
-      ],
-      "reflection": [
-        "../src/reflection"
-      ],
+      // "edgedb": [
+      //   "../src/index.node.ts"
+      // ],
+      // "edgedb/*": [
+      //   "../*"
+      // ],
+      // "reflection": [
+      //   "../src/reflection"
+      // ],
       "@syntax/*": [
         "../src/syntax/*"
       ],

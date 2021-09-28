@@ -8,7 +8,7 @@
     "generate": "ts-node --project tsconfig.json run.ts",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",
-    "build": "tsc --build  --verbose"
+    "build": "tsc --project tsconfig.build.json"
   },
   "keywords": [],
   "author": "Colin McDonnell",
@@ -26,7 +26,8 @@
     "typescript": "^4.4.2"
   },
   "resolutions": {
-    "edgedb": "portal:..",
+    "edgedb": "portal:../dist",
+    "edgedb/*": "portal:../dist/*",
     "@generated/modules": "./generated/example"
   }
 }

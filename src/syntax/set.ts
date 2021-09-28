@@ -16,10 +16,10 @@ import {
 
 // "@generated/" path gets replaced during generation step
 // @ts-ignore
-import {getSharedParentScalar, scalarAssignableBy} from "../castMaps";
+import {getSharedParentScalar} from "../castMaps";
 
 // @ts-ignore
-export {set} from "../syntax/setImpl";
+export {set} from "./setImpl";
 
 export type $expr_Set<Set extends LooseTypeSet = LooseTypeSet> = Expression<{
   __element__: Set["__element__"];

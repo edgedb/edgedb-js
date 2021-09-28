@@ -1,4 +1,4 @@
-import {edgedb} from "@generated/imports";
+import * as edgedb from "edgedb";
 import {
   setToTsType,
   TypeKind,

@@ -1,4 +1,4 @@
-import {edgedb} from "@generated/imports";
+import * as edgedb from "edgedb";
 import {Villain} from "@generated/modules/default";
 import {InsertShape} from "@syntax/insert";
 import e from "../generated/example";

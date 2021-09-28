@@ -1,5 +1,6 @@
-import {edgedb} from "@generated/imports";
-import {$expr_Select} from "@syntax/select";
+import * as edgedb from "edgedb";
+// import {edgedb} from "../generated/example/imports";
+
 import * as tc from "conditional-type-checks";
 import {
   BaseTypeToTsType,

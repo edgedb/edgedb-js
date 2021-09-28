@@ -1,4 +1,4 @@
-import {reflection as $} from "edgedb/src/index.node";
+import {reflection as $} from "edgedb";
 import {Cardinality, mergeObjectTypes} from "../../src/reflection";
 import e from "../generated/example";
 import {tc} from "./setupTeardown";

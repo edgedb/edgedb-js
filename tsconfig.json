@@ -22,22 +22,21 @@
     ],
     "paths": {
       "edgedb/src/index.node": [
-        "./src/index.node.ts"
+        "./dist/index.node.ts"
       ],
       "edgedb": [
-        "./src/index.node.ts"
+        "./dist/index.node.ts"
       ],
-      "reflection": [
-        "./src/reflection/index.ts"
-      ],
+      // "reflection": [
+      //   "./src/reflection/index.ts"
+      // ],
       "@generated/*": [
-        "./generated/example/*"
+        "./qb/generated/example/*"
       ],
     }
   },
   "include": [
-    "src",
-    "test"
+    "."
   ],
   "exclude": [
     "**/*.deno.ts",

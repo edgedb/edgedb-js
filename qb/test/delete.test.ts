@@ -1,4 +1,4 @@
-import {edgedb} from "@generated/imports";
+import * as edgedb from "edgedb";
 
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
@@ -25,7 +25,7 @@ test("basic insert", async () => {
   await pool.queryOne(insertBlackWidow.toEdgeQL());
 
   const deleteBlackWidow = e
-    .select(e.Hero, (hero) => ({
+    .select(e.Hero, hero => ({
       filter: e.eq(hero.name, e.str("Black Widow")),
     }))
     .delete();
