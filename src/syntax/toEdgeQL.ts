@@ -263,7 +263,7 @@ export function toEdgeQL(this: any) {
       ]);
       for (const scope of [
         ...refData.parentScopes,
-        ...refData.aliases.flatMap(alias => [
+        ...util.flatMap(refData.aliases, alias => [
           ...walkExprCtx.seen.get(alias)!.parentScopes,
         ]),
       ]) {

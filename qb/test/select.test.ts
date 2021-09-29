@@ -621,8 +621,12 @@ test("scoped expr select", async () => {
   const heros = [data.cap, data.iron_man, data.spidey];
 
   expect((await unscopedQuery.query(pool)).sort()).toEqual(
-    heros
-      .flatMap(h1 => heros.map(h2 => `${h1.name} is ${h2.secret_identity}`))
+    // heros
+    //   .flatMap(h1 => heros.map(h2 => `${h1.name} is ${h2.secret_identity}`))
+    $.util
+      .flatMap(heros, h1 =>
+        heros.map(h2 => `${h1.name} is ${h2.secret_identity}`)
+      )
       .sort()
   );
 

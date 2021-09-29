@@ -6,6 +6,7 @@ import {Casts} from "../queries/getCasts";
 import {Param} from "../queries/getFunctions";
 import {StrictMap} from "../strictMap";
 import {frag, makeValidIdent, quote} from "./genutil";
+import {util} from "./util";
 
 type AnytypeDef =
   | {kind: "castable"; type: CodeFragment[]; returnAnytypeWrapper: string}
@@ -28,7 +29,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
   casts: Casts,
   implicitCastableRootTypes: string[]
 ): FuncopDefOverload<F>[] {
-  return overloads.flatMap((funcDef, overloadIndex) => {
+  return util.flatMap(overloads, (funcDef, overloadIndex) => {
     const overload: FuncopDefOverload<F> = {
       ...funcDef,
       overloadIndex,

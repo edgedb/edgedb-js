@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es2019",
-    "esModuleInterop": true,
+    "target": "ES5",
+    // "module": "commonjs",
+    // "esModuleInterop": true,
     "moduleResolution": "node",
     "strict": true,
     "strictPropertyInitialization": false,
@@ -10,9 +11,7 @@
     "downlevelIteration": true,
     "isolatedModules": true,
     "baseUrl": ".",
-    // "outDir": "dist",
     "declaration": true,
-    // "declarationMap": true,
     "preserveSymlinks": true,
     "paths": {
       "@syntax/*": [
