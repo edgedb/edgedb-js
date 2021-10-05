@@ -1,5 +1,4 @@
 import * as edgedb from "edgedb";
-import {UpdateShape} from "@syntax/update";
 
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
@@ -18,8 +17,6 @@ afterAll(async () => {
 });
 
 test("update", async () => {
-  type HeroUpdate = UpdateShape<typeof e["Hero"]>;
-
   e.select(e.Hero).update({
     name: e.str("asdf"),
   });

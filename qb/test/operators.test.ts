@@ -1,4 +1,4 @@
-import {$expr_Operator} from "@syntax/funcops";
+import {$expr_Operator} from "../generated/example/syntax/funcops";
 import superjson from "superjson";
 import {$} from "edgedb";
 import e from "../generated/example";

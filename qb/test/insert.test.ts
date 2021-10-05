@@ -1,6 +1,6 @@
 import {Pool} from "edgedb";
-import {Villain} from "@generated/modules/default";
-import {InsertShape} from "@syntax/insert";
+import {Villain} from "../generated/example/modules/default";
+import {InsertShape} from "../generated/example/syntax/insert";
 import e from "../generated/example";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 

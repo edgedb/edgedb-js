@@ -24,9 +24,6 @@
       "edgedb": [
         "./src/index.node"
       ],
-      "edgedb/*": [
-        "./dist/*"
-      ],
       "@generated/*": [
         "./qb/generated/example/*"
       ],

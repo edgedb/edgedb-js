@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES5",
-    // "module": "commonjs",
-    // "esModuleInterop": true,
+    "target": "es2017", // "es5"
+    "module": "commonjs",
+    "esModuleInterop": true,
     "moduleResolution": "node",
     "strict": true,
     "strictPropertyInitialization": false,
@@ -13,14 +13,7 @@
     "baseUrl": ".",
     "declaration": true,
     "preserveSymlinks": true,
-    "paths": {
-      "@syntax/*": [
-        "./generated/example/syntax/*"
-      ],
-      "@generated/*": [
-        "./generated/example/*"
-      ],
-    }
+    "paths": {}
   },
   "include": [
     ".",
