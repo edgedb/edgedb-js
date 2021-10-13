@@ -1520,6 +1520,8 @@ __metadata:
 "edgedb@portal:..::locator=query-builder%40workspace%3A.":
   version: 0.0.0-use.local
   resolution: "edgedb@portal:..::locator=query-builder%40workspace%3A."
+  bin:
+    edgedb-generate: ./dist/reflection/cli.js
   languageName: node
   linkType: soft
 

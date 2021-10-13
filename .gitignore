@@ -11,4 +11,5 @@ node_modules
 /yarn-error.log
 .DS_Store
 qb/generated
+qb/dbschema/edgeql
 .vscode

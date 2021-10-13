@@ -2069,6 +2069,8 @@ __metadata:
     ts-node: ^10.0.0
     tslint: ^5.20.1
     typescript: ^4.4.2
+  bin:
+    edgedb-generate: ./dist/reflection/cli.js
   languageName: unknown
   linkType: soft
 
