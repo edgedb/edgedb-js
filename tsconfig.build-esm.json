@@ -1,6 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "module": "es2015",
+    "outDir": "./dist/__esm",
+    "declaration": false,
+    "declarationDir": null,
     "paths": {
       "edgedb": [
         "./src/index.node"
@@ -11,7 +15,7 @@
     }
   },
   "include": [
-    "src",
+    "src/syntax",
   ],
   "exclude": [
     "**/*.deno.ts",

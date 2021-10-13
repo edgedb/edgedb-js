@@ -1,6 +1,15 @@
 import type {GeneratorParams} from "../generate";
 import {frag, getRef, quote, splitName} from "../util/genutil";
-import {CodeBuffer, CodeBuilder, CodeFragment, DirBuilder} from "../builders";
+import {
+  CodeBuffer,
+  CodeBuilder,
+  CodeFragment,
+  DirBuilder,
+  dts,
+  r,
+  t,
+  ts,
+} from "../builders";
 
 import {Param, Typemod} from "../queries/getFunctions";
 import {getStringRepresentation} from "./generateObjectTypes";
@@ -31,18 +40,18 @@ export const generateFunctionTypes = ({
     true,
     (code, funcDef, args, namedArgs, returnType) => {
       // Name
-      code.writeln(frag`${quote(funcDef.name)},`);
+      code.writeln([t`${quote(funcDef.name)},`]);
       // Args
-      code.writeln(args);
+      code.writeln([t`${args}`]);
       // NamedArgs
-      code.writeln(namedArgs);
+      code.writeln([t`${namedArgs}`]);
       // ReturnType
-      code.writeln(returnType);
+      code.writeln([t`${returnType}`]);
     },
     (code, funcName) => {
-      code.writeln(frag`__name__: ${quote(funcName)},`);
-      code.writeln(frag`__args__: positionalArgs,`);
-      code.writeln(frag`__namedargs__: namedArgs,`);
+      code.writeln([r`__name__: ${quote(funcName)},`]);
+      code.writeln([r`__args__: positionalArgs,`]);
+      code.writeln([r`__namedargs__: namedArgs,`]);
     }
   );
 };
@@ -94,7 +103,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
     const code = dir.getModule(mod);
 
     code.registerRef(funcName, funcDefs[0].id);
-    code.addExport(getRef(funcName, {prefix: ""}), name);
+    code.addRefsDefaultExport(getRef(funcName, {prefix: ""}), name);
 
     const overloadsBuf = new CodeBuffer();
 
@@ -108,7 +117,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
         !hasParams ||
         params.positional.length === 0 ||
         params.named.some(
-          (param) => !(param.typemod === "OptionalType" || param.hasDefault)
+          param => !(param.typemod === "OptionalType" || param.hasDefault)
         )
           ? [true]
           : params.named.length > 0
@@ -117,9 +126,11 @@ export function generateFuncopTypes<F extends FuncopDef>(
 
       for (const hasNamedParams of namedParamsOverloads) {
         if (funcDef.description) {
-          overloadsBuf.writeln(frag`/**
+          overloadsBuf.writeln([
+            t`/**
  * ${funcDef.description.replace(/\*\//g, "")}
- */`);
+ */`,
+          ]);
         }
 
         const functionTypeName = frag`${getRef(funcName, {
@@ -132,22 +143,24 @@ export function generateFuncopTypes<F extends FuncopDef>(
           hasParams
             ? `<${[
                 ...(hasNamedParams ? ["NamedArgs"] : []),
-                ...params.positional.map((param) => param.typeName),
+                ...params.positional.map(param => param.typeName),
               ].join(", ")}>`
             : ""
         };`;
 
-        code.writeln(
-          frag`export type ${functionTypeName}${
+        code.writeln([
+          dts`declare `,
+          t`type ${functionTypeName}${
             hasParams ? `<` : ` = _.syntax.$expr_${funcopExprKind}<`
-          }`
-        );
+          }`,
+        ]);
 
-        overloadsBuf.writeln(
-          frag`function ${getRef(funcName, {prefix: ""})}${
+        overloadsBuf.writeln([
+          dts`declare `,
+          t`function ${getRef(funcName, {prefix: ""})}${
             hasParams ? "<" : frag`(): ${functionTypeSig}`
-          }`
-        );
+          }`,
+        ]);
 
         const anytypes = funcDef.anytypes;
         const anytypeParams: string[] = [];
@@ -181,8 +194,8 @@ export function generateFuncopTypes<F extends FuncopDef>(
             overloadsBuf.indented(() => {
               // named params
               if (hasNamedParams) {
-                code.writeln(frag`NamedArgs extends {`);
-                overloadsBuf.writeln(frag`NamedArgs extends {`);
+                code.writeln([t`NamedArgs extends {`]);
+                overloadsBuf.writeln([t`NamedArgs extends {`]);
 
                 code.indented(() => {
                   overloadsBuf.indented(() => {
@@ -198,19 +211,19 @@ export function generateFuncopTypes<F extends FuncopDef>(
                         anytype,
                         casts: casts.implicitCastFromMap,
                       });
-                      const line = frag`${quote(param.name)}${
+                      const line = t`${quote(param.name)}${
                         param.typemod === "OptionalType" || param.hasDefault
                           ? "?"
                           : ""
                       }: $.TypeSet<${paramType.staticType}>,`;
 
-                      code.writeln(line);
-                      overloadsBuf.writeln(line);
+                      code.writeln([line]);
+                      overloadsBuf.writeln([line]);
                     }
                   });
                 });
-                code.writeln(frag`},`);
-                overloadsBuf.writeln(frag`},`);
+                code.writeln([t`},`]);
+                overloadsBuf.writeln([t`},`]);
               }
 
               // positional + variadic params
@@ -230,7 +243,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
 
                 const type = frag`$.TypeSet<${paramTypeStr.staticType}>`;
 
-                const line = frag`${param.typeName} extends ${
+                const line = t`${param.typeName} extends ${
                   param.kind === "VariadicParam"
                     ? frag`[${type}, ...${type}[]]`
                     : type
@@ -241,24 +254,24 @@ export function generateFuncopTypes<F extends FuncopDef>(
                     : ""
                 },`;
 
-                code.writeln(line);
-                overloadsBuf.writeln(line);
+                code.writeln([line]);
+                overloadsBuf.writeln([line]);
               }
             });
           });
 
-          code.writeln(frag`> = _.syntax.$expr_${funcopExprKind}<`);
-          overloadsBuf.writeln(frag`>(`);
+          code.writeln([t`> = _.syntax.$expr_${funcopExprKind}<`]);
+          overloadsBuf.writeln([t`>(`]);
 
           // args signature
           overloadsBuf.indented(() => {
             if (hasNamedParams) {
-              overloadsBuf.writeln(frag`namedArgs: NamedArgs,`);
+              overloadsBuf.writeln([t`namedArgs: NamedArgs,`]);
             }
 
             for (const param of params.positional) {
-              overloadsBuf.writeln(
-                frag`${param.kind === "VariadicParam" ? "..." : ""}${
+              overloadsBuf.writeln([
+                t`${param.kind === "VariadicParam" ? "..." : ""}${
                   param.internalName
                 }${
                   optionalUndefined &&
@@ -267,12 +280,12 @@ export function generateFuncopTypes<F extends FuncopDef>(
                     : ""
                 }: ${param.typeName}${
                   param.kind === "VariadicParam" ? "" : ","
-                }`
-              );
+                }`,
+              ]);
             }
           });
 
-          overloadsBuf.writeln(frag`): ${functionTypeSig}`);
+          overloadsBuf.writeln([t`): ${functionTypeSig}`]);
         }
 
         code.indented(() => {
@@ -299,7 +312,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
             // args
             frag`[${params.positional
               .map(
-                (param) =>
+                param =>
                   `${param.kind === "VariadicParam" ? "..." : ""}${
                     param.typeName
                   }`
@@ -318,23 +331,25 @@ export function generateFuncopTypes<F extends FuncopDef>(
           );
         });
 
-        code.writeln(frag`>;`);
+        code.writeln([t`>;`]);
       }
     }
 
     code.writeBuf(overloadsBuf);
 
     // implementation
-    code.writeln(
-      frag`function ${getRef(funcName, {prefix: ""})}(...args: any[]) {`
-    );
+    code.writeln([
+      r`function ${getRef(funcName, {prefix: ""})}(...args`,
+      ts`: any[]`,
+      r`) {`,
+    ]);
 
     code.indented(() => {
-      code.writeln(
-        frag`const {${
+      code.writeln([
+        r`const {${
           funcDefs[0].kind ? "kind, " : ""
-        }returnType, cardinality, args: positionalArgs, namedArgs} = _.syntax.resolveOverload(args, _.spec, [`
-      );
+        }returnType, cardinality, args: positionalArgs, namedArgs} = _.syntax.resolveOverload(args, _.spec, [`,
+      ]);
       code.indented(() => {
         let overloadIndex = 0;
         for (const funcDef of funcDefs) {
@@ -357,19 +372,19 @@ export function generateFuncopTypes<F extends FuncopDef>(
             ).toString()}}`;
           }
 
-          const argsDef = params.positional.map((param) => {
+          const argsDef = params.positional.map(param => {
             return getArgSpec(param);
           });
           const namedArgsDef = params.named.length
             ? `namedArgs: {${params.named
-                .map((param) => {
+                .map(param => {
                   return `${quote(param.name)}: ${getArgSpec(param)}`;
                 })
                 .join(", ")}}, `
             : "";
 
-          code.writeln(
-            frag`{${
+          code.writeln([
+            r`{${
               funcDef.kind ? `kind: ${quote(funcDef.kind)}, ` : ""
             }args: [${argsDef.join(
               ", "
@@ -379,24 +394,23 @@ export function generateFuncopTypes<F extends FuncopDef>(
               funcDef.return_typemod === "SingletonType"
                 ? ""
                 : `, returnTypemod: ${quote(funcDef.return_typemod)}`
-            }},`
-          );
+            }},`,
+          ]);
         }
       });
-      code.writeln(frag`]);`);
+      code.writeln([r`]);`]);
 
-      code.writeln(frag`return _.syntax.$expressionify({`);
+      code.writeln([r`return _.syntax.$expressionify({`]);
       code.indented(() => {
-        code.writeln(frag`__kind__: $.ExpressionKind.${funcopExprKind},`);
-        code.writeln(frag`__element__: returnType,`);
-        code.writeln(frag`__cardinality__: cardinality,`);
+        code.writeln([r`__kind__: $.ExpressionKind.${funcopExprKind},`]);
+        code.writeln([r`__element__: returnType,`]);
+        code.writeln([r`__cardinality__: cardinality,`]);
         implReturnGen(code, funcName, funcDefs);
-        code.writeln(frag`toEdgeQL: _.syntax.toEdgeQL`);
       });
-      code.writeln(frag`}) as any;`);
+      code.writeln([r`})`, ts` as any`, r`;`]);
     });
 
-    code.writeln(frag`};`);
+    code.writeln([r`};`]);
 
     code.nl();
   }
@@ -424,17 +438,17 @@ function generateReturnCardinality(
   }
 
   const paramCardinalities = [
-    ...params.positional.map((p) => ({
+    ...params.positional.map(p => ({
       ...p,
       genTypeName: p.typeName,
     })),
     ...(hasNamedParams
-      ? params.named.map((p) => ({
+      ? params.named.map(p => ({
           ...p,
           genTypeName: `NamedArgs[${quote(p.name)}]`,
         }))
       : []),
-  ].map((param) => {
+  ].map(param => {
     if (param.typemod === "SetOfType") {
       return `$.Cardinality.One`;
     }

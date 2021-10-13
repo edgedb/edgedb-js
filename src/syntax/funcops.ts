@@ -14,7 +14,6 @@ import {
   TypeSet,
 } from "../reflection";
 import {set} from "./set";
-// @ts-ignore
 import {isImplicitlyCastableTo} from "@generated/castMaps";
 import {literal} from "./literal";
 
