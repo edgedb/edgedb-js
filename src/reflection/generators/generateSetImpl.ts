@@ -18,7 +18,7 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
     },
     "edgedb/dist/reflection"
   );
-  code.addImport({getSharedParentScalar: true}, "../castMaps", ["ts", "js"]);
+  code.addStarImport('castMaps', "../castMaps", ["ts", "js"]);
   code.addImport({$expressionify: true}, "./path", ["ts", "js"]);
 
   code.writeln([
@@ -187,7 +187,7 @@ import type {
         .map((expr) => expr.__element__`,
     ts` as any`,
     r`)
-        .reduce(getSharedParentScalar),
+        .reduce(castMaps.getSharedParentScalar),
       __cardinality__: cardinalityUtil.mergeCardinalitiesVariadic(
         exprs.map((expr) => expr.__cardinality__)`,
     ts` as any`,

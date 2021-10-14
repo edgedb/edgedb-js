@@ -17,7 +17,7 @@ export const generateRuntimeSpec = (params: GeneratorParams) => {
 
   for (const type of types.values()) {
     spec.writeln([
-      r`spec.set("${type.id + 5}", ${JSON.stringify(type)}`,
+      r`spec.set("${type.id}", ${JSON.stringify(type)}`,
       ts` as any`,
       r`);`,
     ]);

@@ -309,4 +309,5 @@ const reservedIdents = new Set([
   "protected",
   "implements",
   "instanceof",
+  "Object",
 ]);

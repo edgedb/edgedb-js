@@ -252,6 +252,7 @@ class BuilderImportsExports {
     helpers: Set<keyof typeof importExportHelpers>;
   }) {
     const exports: string[] = [];
+    const exportsFrom: string[] = [];
     const exportList: string[] = [];
     const refsDefault: {ref: string; as: string}[] = [];
     let hasDefaultExport = false;
@@ -299,7 +300,7 @@ class BuilderImportsExports {
           break;
         case "from":
           if (moduleKind === "esm") {
-            exports.push(
+            exportsFrom.push(
               `export { ${Object.entries(exp.names)
                 .map(([key, val]) => {
                   if (typeof val === "boolean" && !val) return null;
@@ -310,25 +311,25 @@ class BuilderImportsExports {
             );
           } else {
             const modName = exp.fromPath.replace(/[^a-z]/gi, "") + "_1";
-            exports.push(
+            exportsFrom.push(
               `(function () {\n  var ${modName} = require("${exp.fromPath}");`
             );
             for (const [name, val] of Object.entries(exp.names)) {
               if (typeof val === "boolean" && !val) {
                 continue;
               }
-              exports.push(
+              exportsFrom.push(
                 `  Object.defineProperty(exports, "${
                   typeof val === "string" ? val : name
                 }", { enumerable: true, get: function () { return ${modName}.${name}; } });`
               );
             }
-            exports.push(`})();`);
+            exportsFrom.push(`})();`);
           }
           break;
         case "starFrom":
           if (moduleKind === "esm") {
-            exports.push(
+            exportsFrom.push(
               `export * ${exp.name !== null ? `as ${exp.name} ` : ""}from "${
                 exp.fromPath
               }";`
@@ -339,12 +340,12 @@ class BuilderImportsExports {
                 .add("createBinding")
                 .add("setModuleDefault")
                 .add("importStar");
-              exports.push(
+              exportsFrom.push(
                 `exports.${exp.name} = __importStar(require("${exp.fromPath}"));`
               );
             } else {
               helpers.add("createBinding").add("exportStar");
-              exports.push(
+              exportsFrom.push(
                 `__exportStar(require("${exp.fromPath}"), exports);`
               );
             }
@@ -405,7 +406,7 @@ class BuilderImportsExports {
         exports.push(`exports.default = __defaultExports;`);
       }
     }
-    return exports.join("\n");
+    return {exports: exports.join("\n"), exportsFrom: exportsFrom.join('\n')};
   }
 
   clone() {
@@ -531,14 +532,16 @@ export class CodeBuilder {
 
     const helpers = new Set<keyof typeof importExportHelpers>();
 
-    body +=
-      "\n\n" +
-      importsExports.renderExports({
+    const {exports, exportsFrom} = importsExports.renderExports({
         mode,
         moduleKind,
         refs: this.dirBuilder._refs,
         helpers,
       });
+
+    body +=
+      "\n\n" +
+      exports;
 
     let head =
       mode === "js"
@@ -553,6 +556,7 @@ Object.defineProperty(exports, "__esModule", { value: true });\n`
         .map(helperName => importExportHelpers[helperName])
         .join("\n");
     }
+    head += exportsFrom+'\n';
     head += imports;
 
     if (head && body) {

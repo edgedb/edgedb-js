@@ -187,7 +187,7 @@ export async function generateQB({
     let contents = fs.readFileSync(filePath, "utf8");
 
     // rewrite scoped import paths
-    if (target === "cjs") {
+    if (filetype === 'js') {
       contents = contents
         .replace(
           /require\("(..\/)?reflection(.*)"\)/g,

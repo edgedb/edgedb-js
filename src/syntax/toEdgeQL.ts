@@ -599,7 +599,7 @@ function renderEdgeQL(
       );
     }
     if ($else) {
-      clause.push(`\nELSE ${renderEdgeQL($else, ctx, true, true)}`);
+      clause.push(`\nELSE (${renderEdgeQL($else, ctx, true, true)})`);
     }
     return `${renderEdgeQL(expr.__expr__, ctx, false, true)} ${clause.join(
       ""
