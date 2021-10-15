@@ -1,7 +1,7 @@
-import type {$expr_Function} from "../generated/example/syntax/funcops";
+import type {$expr_Function} from "../dbschema/edgeql/syntax/funcops";
 import superjson from "superjson";
 import {$} from "edgedb";
-import e from "../generated/example";
+import e from "../dbschema/edgeql";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,

@@ -1,5 +1,5 @@
 import {Pool, $} from "edgedb";
-import e from "../generated/example";
+import e from "../dbschema/edgeql";
 import {tc} from "./setupTeardown";
 
 import {setupTests, teardownTests, TestData} from "./setupTeardown";

@@ -1,5 +1,5 @@
 import * as edgedb from "edgedb";
-import e from "../generated/example";
+import e from "../dbschema/edgeql";
 import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 
 let pool: edgedb.Pool;

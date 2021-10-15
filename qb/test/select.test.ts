@@ -2,7 +2,7 @@ import {Pool, $} from "edgedb";
 
 import * as tc from "conditional-type-checks";
 
-import e from "../generated/example";
+import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let pool: Pool;

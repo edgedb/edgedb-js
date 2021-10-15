@@ -1,7 +1,7 @@
 import {Pool} from "edgedb";
-import {Villain} from "../generated/example/modules/default";
-import {InsertShape} from "../generated/example/syntax/insert";
-import e from "../generated/example";
+import {Villain} from "../dbschema/edgeql/modules/default";
+import {InsertShape} from "../dbschema/edgeql/syntax/insert";
+import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let pool: Pool;

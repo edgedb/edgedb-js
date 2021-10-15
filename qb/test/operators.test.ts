@@ -1,7 +1,7 @@
-import {$expr_Operator} from "../generated/example/syntax/funcops";
+import {$expr_Operator} from "../dbschema/edgeql/syntax/funcops";
 import superjson from "superjson";
 import {$} from "edgedb";
-import e from "../generated/example";
+import e from "../dbschema/edgeql";
 
 function checkOperatorExpr<T extends $expr_Operator>(
   expr: T,

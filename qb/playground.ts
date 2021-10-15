@@ -1,9 +1,9 @@
 // tslint:disable:no-console
 import {$} from "edgedb";
-import type {$Movie} from "./generated/example/modules/default";
-import type {pointersToSelectShape} from "./generated/example/syntax/select";
+import type {$Movie} from "./dbschema/edgeql/modules/default";
+import type {pointersToSelectShape} from "./dbschema/edgeql/syntax/select";
 
-import e from "./generated/example";
+import e from "./dbschema/edgeql";
 import {setupTests} from "./test/setupTeardown";
 
 async function run() {

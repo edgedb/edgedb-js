@@ -1,5 +1,5 @@
 import {$} from "edgedb";
-import e from "../generated/example";
+import e from "../dbschema/edgeql";
 
 test("empty sets", () => {
   const stringSet = e.set(e.str);

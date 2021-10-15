@@ -3,7 +3,7 @@ import e, {
   $NamedTuple,
   $Tuple,
   getSharedParentPrimitiveVariadic,
-} from "../generated/example";
+} from "../dbschema/edgeql";
 import {tc} from "./setupTeardown";
 
 test("primitive types", () => {

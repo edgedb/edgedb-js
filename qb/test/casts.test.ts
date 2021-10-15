@@ -1,4 +1,4 @@
-import e from "../generated/example";
+import e from "../dbschema/edgeql";
 import {tc} from "./setupTeardown";
 
 test("casting", () => {

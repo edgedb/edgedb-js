@@ -1,6 +1,6 @@
 import {$} from "edgedb";
-import e from "../generated/example";
-import {$Hero} from "../generated/example/modules/default";
+import e from "../dbschema/edgeql";
+import {$Hero} from "../dbschema/edgeql/modules/default";
 import {tc} from "./setupTeardown";
 
 test("path structure", () => {
