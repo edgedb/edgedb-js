@@ -10,6 +10,4 @@ node_modules
 /coverage
 /yarn-error.log
 .DS_Store
-qb/generated
-qb/dbschema/edgeql
 .vscode

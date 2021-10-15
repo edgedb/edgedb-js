@@ -3,7 +3,7 @@
 // tslint:disable no-console
 
 import path from "path";
-import fs from "fs";
+import {promises as fs} from "fs";
 import readline from "readline";
 import {Writable} from "stream";
 
@@ -20,6 +20,8 @@ const run = async () => {
     outputDir?: string;
     promptPassword?: boolean;
     passwordFromStdin?: boolean;
+    overwrite?: boolean;
+    updateIgnoreFile?: boolean;
   } = {};
 
   while (args.length) {
@@ -114,6 +116,9 @@ const run = async () => {
       case "--output-dir":
         options.outputDir = getVal();
         break;
+      case "--overwrite":
+        options.overwrite = true;
+        break;
       default:
         exitWithError(`Unknown option: ${flag}`);
     }
@@ -156,7 +161,7 @@ OPTIONS:
   const systemRoot = path.parse(currentDir).root;
 
   while (currentDir !== systemRoot) {
-    if (fs.existsSync(path.join(currentDir, "package.json"))) {
+    if (await exists(path.join(currentDir, "package.json"))) {
       projectRoot = currentDir;
       break;
     }
@@ -179,7 +184,7 @@ OPTIONS:
   // }
 
   if (!options.target) {
-    const tsconfigExists = fs.existsSync(
+    const tsconfigExists = await exists(
       path.join(projectRoot, "tsconfig.json")
     );
 
@@ -188,7 +193,7 @@ OPTIONS:
       console.log(`tsconfig.json detected, generating for 'ts' target`);
     } else {
       const packageJson = JSON.parse(
-        fs.readFileSync(projectRoot, "package.json")
+        await fs.readFile(path.join(projectRoot, "package.json"), "utf8")
       );
       if (packageJson?.type === "module") {
         options.target = "esm";
@@ -197,6 +202,28 @@ OPTIONS:
         );
       }
     }
+  }
+
+  const outputDir =
+    options.outputDir ?? path.join(projectRoot, "dbschema", "edgeql");
+
+  if (await exists(outputDir)) {
+    if (
+      !options.overwrite &&
+      !(
+        isTTY() &&
+        (await promptBoolean(
+          `Output directory '${outputDir}' already exists.\nDo you want to overwrite?`,
+          true
+        ))
+      )
+    ) {
+      exitWithError(`Error: Output directory '${outputDir}' already exists`);
+    }
+    await fs.rmdir(outputDir, {recursive: true});
+  } else {
+    // output dir doesn't exist, so assume first run
+    options.updateIgnoreFile = true;
   }
 
   if (options.promptPassword) {
@@ -210,17 +237,102 @@ OPTIONS:
     connectionConfig.password = await readPasswordFromStdin();
   }
 
-  const outputDir =
-    options.outputDir ?? path.join(projectRoot, "dbschema", "edgeql");
-
   await generateQB({outputDir, connectionConfig, target: options.target!});
+
+  if (options.updateIgnoreFile) {
+    const vcs = (await exists(path.join(projectRoot, ".gitignore")))
+      ? "git"
+      : (await exists(path.join(projectRoot, ".hgignore")))
+      ? "hg"
+      : null;
+
+    console.log(
+      "It is not recommended to commit the generated querybuilder into version control."
+    );
+    let updateVcs: typeof vcs = null;
+    if (vcs) {
+      if (
+        await promptBoolean(
+          `Update existing .${vcs}ignore to ignore generated querybuilder?`,
+          true
+        )
+      ) {
+        updateVcs = vcs;
+      }
+    } else {
+      const response = await promptEnum(
+        `Create .gitignore/.hgignore file and ignore generated querybuilder?`,
+        ["git", "hg", "no", "n"],
+        "git"
+      );
+      if (response === "git" || response === "hg") {
+        updateVcs = response;
+      }
+    }
+    if (updateVcs) {
+      await fs.appendFile(
+        path.join(projectRoot, `.${updateVcs}ignore`),
+        `${path.posix.relative(projectRoot, outputDir)}\n`
+      );
+    }
+  }
+
   process.exit();
 };
 
 run();
 
+async function exists(filepath: string): Promise<boolean> {
+  try {
+    await fs.stat(filepath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function isTTY() {
   return process.stdin.isTTY && process.stdout.isTTY;
+}
+
+async function promptBoolean(prompt: string, defaultVal?: boolean) {
+  const response = await promptEnum(
+    prompt,
+    ["yes", "no", "y", "n"],
+    defaultVal !== undefined ? (defaultVal ? "yes" : "no") : undefined
+  );
+  return response[0] === "y";
+}
+
+function promptEnum<Val extends string, Default extends Val>(
+  prompt: string,
+  vals: Val[],
+  defaultVal?: Default
+): Promise<Val> {
+  return new Promise(resolve => {
+    var rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    rl.question(
+      `${prompt} [${vals.join("/")}]: ${
+        defaultVal !== undefined ? `(${defaultVal}) ` : ""
+      }`,
+      function (response) {
+        rl.close();
+        response = response.trim().toLowerCase();
+
+        if (vals.includes(response as any)) {
+          resolve(response as Val);
+        } else if (!response && defaultVal !== undefined) {
+          resolve(defaultVal);
+        } else {
+          exitWithError(`Unknown value: '${response}'`);
+        }
+      }
+    );
+  });
 }
 
 function promptForPassword(username: string) {
