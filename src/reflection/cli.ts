@@ -204,6 +204,8 @@ OPTIONS:
         console.log(
           `type: "module" in package.json, generating for 'esm' target`
         );
+      } else {
+        options.target = "cjs";
       }
     }
   }
