@@ -84,7 +84,7 @@ export type LooseTypeSet<
   __cardinality__: C;
 };
 
-export {mergeObjectTypes};
+export type {mergeObjectTypes};
 
 type _mergeObjectTypesVariadic<Types extends [ObjectType, ...ObjectType[]]> =
   Types extends [infer U]

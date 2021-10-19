@@ -156,7 +156,7 @@ interface RenderCtx {
   forVars: Map<$expr_ForVar, string>;
 }
 
-export function toEdgeQL(this: any) {
+export function $toEdgeQL(this: any) {
   const walkExprCtx: WalkExprTreeCtx = {
     seen: new Map(),
     rootScope: null,
@@ -895,7 +895,7 @@ function walkExprTree(
   }
 }
 
-export function literalToEdgeQL(type: BaseType, val: any): string {
+function literalToEdgeQL(type: BaseType, val: any): string {
   let skipCast = false;
   let stringRep;
   if (typeof val === "string") {

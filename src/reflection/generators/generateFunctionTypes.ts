@@ -348,7 +348,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
       code.writeln([
         r`const {${
           funcDefs[0].kind ? "kind, " : ""
-        }returnType, cardinality, args: positionalArgs, namedArgs} = _.syntax.resolveOverload(args, _.spec, [`,
+        }returnType, cardinality, args: positionalArgs, namedArgs} = _.syntax.$resolveOverload(args, _.spec, [`,
       ]);
       code.indented(() => {
         let overloadIndex = 0;

@@ -406,7 +406,7 @@ class BuilderImportsExports {
         exports.push(`exports.default = __defaultExports;`);
       }
     }
-    return {exports: exports.join("\n"), exportsFrom: exportsFrom.join('\n')};
+    return {exports: exports.join("\n"), exportsFrom: exportsFrom.join("\n")};
   }
 
   clone() {
@@ -437,6 +437,12 @@ export class CodeBuilder {
   addExportStarFrom = this.importsExports.addExportStarFrom.bind(
     this.importsExports
   );
+
+  getDefaultExportKeys(): string[] {
+    return [...this.importsExports.exports]
+      .filter(exp => exp.type === "refsDefault")
+      .map(exp => (exp as any).as);
+  }
 
   registerRef(fqn: string, id: string) {
     if (this.dirBuilder._refs.has(fqn)) {
@@ -533,15 +539,13 @@ export class CodeBuilder {
     const helpers = new Set<keyof typeof importExportHelpers>();
 
     const {exports, exportsFrom} = importsExports.renderExports({
-        mode,
-        moduleKind,
-        refs: this.dirBuilder._refs,
-        helpers,
-      });
+      mode,
+      moduleKind,
+      refs: this.dirBuilder._refs,
+      helpers,
+    });
 
-    body +=
-      "\n\n" +
-      exports;
+    body += "\n\n" + exports;
 
     let head =
       mode === "js"
@@ -556,7 +560,7 @@ Object.defineProperty(exports, "__esModule", { value: true });\n`
         .map(helperName => importExportHelpers[helperName])
         .join("\n");
     }
-    head += exportsFrom+'\n';
+    head += exportsFrom + "\n";
     head += imports;
 
     if (head && body) {

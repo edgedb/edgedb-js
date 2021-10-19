@@ -58,4 +58,22 @@ export namespace util {
   ): U[] {
     return Array.prototype.concat(...array.map(callbackfn));
   }
+
+  type ExcludeDollarPrefixed<S> = S extends `$${string}` ? never : S;
+
+  export type OmitDollarPrefixed<O> = {
+    [K in ExcludeDollarPrefixed<keyof O>]: O[K];
+  };
+
+  export function omitDollarPrefixed<O extends {[k: string]: any}>(
+    object: O
+  ): OmitDollarPrefixed<O> {
+    const obj: any = {};
+    for (const key of Object.keys(object)) {
+      if (!key.startsWith("$")) {
+        obj[key] = object[key];
+      }
+    }
+    return obj;
+  }
 }

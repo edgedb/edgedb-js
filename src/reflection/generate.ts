@@ -109,12 +109,69 @@ export async function generateQB({
     const index = dir.getPath("index");
     index.addExportStarFrom(null, "./castMaps");
     index.addExportStarFrom(null, "./syntax/syntax");
-    index.addStarImport("_syntax", "./syntax/syntax");
+    index.addImport({$: true}, "edgedb");
+    index.addStarImport("$syntax", "./syntax/syntax");
+
+    const spreadModules = [
+      {
+        name: "$syntax",
+        keys: [
+          "ASC",
+          "DESC",
+          "EMPTY_FIRST",
+          "EMPTY_LAST",
+          "alias",
+          "array",
+          "cast",
+          "detached",
+          "for",
+          "insert",
+          "is",
+          "literal",
+          "namedTuple",
+          "optional",
+          "select",
+          "set",
+          "tuple",
+          "with",
+          "withParams",
+        ],
+      },
+      {
+        name: "_default",
+        module: dir.getModule("default"),
+      },
+      {name: "_std", module: dir.getModule("std")},
+    ];
+    const excludedKeys = new Set<string>(dir._modules.keys());
+
+    const spreadTypes: string[] = [];
+    for (let {name, keys, module} of spreadModules) {
+      if (module?.isEmpty()) {
+        continue;
+      }
+      keys = keys ?? module!.getDefaultExportKeys();
+      const conflictingKeys = keys.filter(key => excludedKeys.has(key));
+      let typeStr: string;
+      if (conflictingKeys.length) {
+        typeStr = `Omit<typeof ${name}, ${conflictingKeys
+          .map(genutil.quote)
+          .join(" | ")}>`;
+      } else {
+        typeStr = `typeof ${name}`;
+      }
+      spreadTypes.push(
+        name === "$syntax" ? `$.util.OmitDollarPrefixed<${typeStr}>` : typeStr
+      );
+      for (const key of keys) {
+        excludedKeys.add(key);
+      }
+    }
 
     index.writeln([
       dts`declare `,
       `const ExportDefault`,
-      t`: typeof _default & typeof _std & typeof _syntax & {`,
+      t`: ${spreadTypes.reverse().join(" & \n  ")} & {`,
     ]);
     index.indented(() => {
       for (const [moduleName, internalName] of dir._modules) {
@@ -127,12 +184,16 @@ export async function generateQB({
 
     index.writeln([t`}`, r` = {`]);
     index.indented(() => {
-      for (const moduleName of ["std", "default"]) {
-        if (dir._modules.has(moduleName)) {
-          index.writeln([r`..._${dir._modules.get(moduleName)!},`]);
+      for (const {name, module} of [...spreadModules].reverse()) {
+        if (module?.isEmpty()) {
+          continue;
         }
+        index.writeln([
+          r`...${
+            name === "$syntax" ? `$.util.omitDollarPrefixed($syntax)` : name
+          },`,
+        ]);
       }
-      index.writeln([r`..._syntax,`]);
 
       for (const [moduleName, internalName] of dir._modules) {
         if (dir.getModule(moduleName).isEmpty()) {
@@ -187,7 +248,7 @@ export async function generateQB({
     let contents = fs.readFileSync(filePath, "utf8");
 
     // rewrite scoped import paths
-    if (filetype === 'js') {
+    if (filetype === "js") {
       contents = contents
         .replace(
           /require\("(..\/)?reflection(.*)"\)/g,

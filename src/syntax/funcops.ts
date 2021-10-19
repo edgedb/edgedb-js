@@ -62,7 +62,7 @@ interface OverloadFuncDef {
   returnTypemod?: "SetOfType" | "OptionalType";
 }
 
-export function resolveOverload(
+export function $resolveOverload(
   args: any[],
   typeSpec: introspect.Types,
   funcDefs: OverloadFuncDef[]

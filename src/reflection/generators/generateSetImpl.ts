@@ -14,7 +14,7 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
       ExpressionKind: true,
       Cardinality: true,
       cardinalityUtil: true,
-      mergeObjectTypes: true,
+      $mergeObjectTypes: true,
     },
     "edgedb/dist/reflection"
   );
@@ -169,7 +169,7 @@ import type {
         .map((expr) => expr.__element__`,
     ts` as any`,
     r`)
-        .reduce(mergeObjectTypes),
+        .reduce($mergeObjectTypes),
       __cardinality__: cardinalityUtil.mergeCardinalitiesVariadic(
         exprs.map((expr) => expr.__cardinality__)`,
     ts` as any`,
