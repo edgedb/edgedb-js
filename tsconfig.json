@@ -25,7 +25,7 @@
         "./src/index.node"
       ],
       "@generated/*": [
-        "./qb/generated/example/*"
+        "./qb/dbschema/edgeql/*"
       ],
     }
   },

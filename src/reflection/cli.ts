@@ -8,21 +8,23 @@ import readline from "readline";
 import {Writable} from "stream";
 
 import {ConnectConfig, parseConnectArguments} from "../con_utils";
-import {exitWithError, generateQB} from "./generate";
+import {configFileHeader, exitWithError, generateQB} from "./generate";
+
+interface Options {
+  showHelp?: boolean;
+  target?: "ts" | "esm" | "cjs";
+  outputDir?: string;
+  promptPassword?: boolean;
+  passwordFromStdin?: boolean;
+  forceOverwrite?: boolean;
+  updateIgnoreFile?: boolean;
+}
 
 const run = async () => {
   const args = process.argv.slice(2);
 
   const connectionConfig: ConnectConfig = {};
-  const options: {
-    showHelp?: boolean;
-    target?: "ts" | "esm" | "cjs";
-    outputDir?: string;
-    promptPassword?: boolean;
-    passwordFromStdin?: boolean;
-    overwrite?: boolean;
-    updateIgnoreFile?: boolean;
-  } = {};
+  const options: Options = {};
 
   while (args.length) {
     let flag = args.shift()!;
@@ -116,8 +118,8 @@ const run = async () => {
       case "--output-dir":
         options.outputDir = getVal();
         break;
-      case "--overwrite":
-        options.overwrite = true;
+      case "--force-overwrite":
+        options.forceOverwrite = true;
         break;
       default:
         exitWithError(`Unknown option: ${flag}`);
@@ -151,6 +153,8 @@ OPTIONS:
     --target <target>
         Valid targets: 'ts', 'esm', 'cjs'
     --output-dir <output-dir>
+    --force-overwrite
+        If 'output-dir' already exists, will overwrite without confirmation
 `);
     process.exit();
   }
@@ -208,19 +212,9 @@ OPTIONS:
     options.outputDir ?? path.join(projectRoot, "dbschema", "edgeql");
 
   if (await exists(outputDir)) {
-    if (
-      !options.overwrite &&
-      !(
-        isTTY() &&
-        (await promptBoolean(
-          `Output directory '${outputDir}' already exists.\nDo you want to overwrite?`,
-          true
-        ))
-      )
-    ) {
-      exitWithError(`Error: Output directory '${outputDir}' already exists`);
+    if (await canOverwrite(outputDir, options)) {
+      await fs.rmdir(outputDir, {recursive: true});
     }
-    await fs.rmdir(outputDir, {recursive: true});
   } else {
     // output dir doesn't exist, so assume first run
     options.updateIgnoreFile = true;
@@ -281,6 +275,39 @@ OPTIONS:
 };
 
 run();
+
+async function canOverwrite(outputDir: string, options: Options) {
+  if (options.forceOverwrite) {
+    return true;
+  }
+
+  let config: any = null;
+  try {
+    const [header, ..._config] = (
+      await fs.readFile(path.join(outputDir, "config.json"), "utf8")
+    ).split("\n");
+    if (header === configFileHeader) {
+      config = JSON.parse(_config.join("\n"));
+
+      if (config.target === options.target) {
+        return true;
+      }
+    }
+  } catch {}
+
+  const error = config
+    ? `Querybuilder already exists in '${outputDir}' with different config.`
+    : `Output directory '${outputDir}' already exists.`;
+
+  if (
+    isTTY() &&
+    (await promptBoolean(`${error}\nDo you want to overwrite?`, true))
+  ) {
+    return true;
+  }
+
+  return exitWithError(`Error: ${error}`);
+}
 
 async function exists(filepath: string): Promise<boolean> {
   try {

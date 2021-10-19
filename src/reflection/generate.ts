@@ -22,6 +22,8 @@ import {generateSetImpl} from "./generators/generateSetImpl";
 
 const DEBUG = false;
 
+export const configFileHeader = `// edgedb-js querybuilder - to update run 'edgedb-generate'`;
+
 export type GeneratorParams = {
   dir: DirBuilder;
   types: introspect.Types;
@@ -277,6 +279,11 @@ export async function generateQB({
     const outputPath = path.join(syntaxOutDir, fileName);
     fs.writeFileSync(outputPath, contents);
   }
+
+  fs.writeFileSync(
+    path.join(outputDir, "config.json"),
+    `${configFileHeader}\n${JSON.stringify({target: target})}\n`
+  );
 
   console.log("Done!");
 }
