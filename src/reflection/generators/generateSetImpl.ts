@@ -16,10 +16,11 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
       cardinalityUtil: true,
       $mergeObjectTypes: true,
     },
-    "edgedb/dist/reflection"
+    "edgedb/dist/reflection/index",
+    true
   );
-  code.addStarImport('castMaps', "../castMaps", ["ts", "js"]);
-  code.addImport({$expressionify: true}, "./path", ["ts", "js"]);
+  code.addStarImport("castMaps", "../castMaps", true, ["ts", "js"]);
+  code.addImport({$expressionify: true}, "./path", true, ["ts", "js"]);
 
   code.writeln([
     t`import type {

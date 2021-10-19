@@ -99,18 +99,18 @@ export async function generateQB({
     const importsFile = dir.getPath("imports");
 
     importsFile.addExportStarFrom("edgedb", "edgedb");
-    importsFile.addExportFrom({spec: true}, "./__spec__");
-    importsFile.addExportStarFrom("syntax", "./syntax/syntax");
+    importsFile.addExportFrom({spec: true}, "./__spec__", true);
+    importsFile.addExportStarFrom("syntax", "./syntax/syntax", true);
 
     /////////////////////////
     // generate index file
     /////////////////////////
 
     const index = dir.getPath("index");
-    index.addExportStarFrom(null, "./castMaps");
-    index.addExportStarFrom(null, "./syntax/syntax");
+    index.addExportStarFrom(null, "./castMaps", true);
+    index.addExportStarFrom(null, "./syntax/syntax", true);
     index.addImport({$: true}, "edgedb");
-    index.addStarImport("$syntax", "./syntax/syntax");
+    index.addStarImport("$syntax", "./syntax/syntax", true);
 
     const spreadModules = [
       {
@@ -201,7 +201,8 @@ export async function generateQB({
         }
         index.addDefaultImport(
           `_${internalName}`,
-          `./modules/${internalName}`
+          `./modules/${internalName}`,
+          true
         );
 
         index.writeln([r`${genutil.quote(moduleName)}: _${internalName},`]);
@@ -259,9 +260,18 @@ export async function generateQB({
       contents = contents
         .replace(
           /from "(..\/)?reflection(.*)"/g,
-          `from "edgedb/dist/reflection$2"`
+          `from "edgedb/dist/reflection$2${filetype === "esm" ? ".js" : ""}"`
         )
         .replace(/from "@generated\//g, `from "../`);
+
+      if (filetype === "esm") {
+        contents = contents
+          .replace(
+            /from "edgedb\/dist\/reflection\.js"/g,
+            `from "edgedb/dist/reflection/index.js"`
+          )
+          .replace(/from "(\.?\.\/.+)"/g, `from "$1.mjs"`);
+      }
     }
 
     const outputPath = path.join(syntaxOutDir, fileName);
