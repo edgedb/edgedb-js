@@ -48,6 +48,11 @@ jest.mock("fs", () => {
 
       return filepath;
     },
+    statSync: (filepath: string, ...args: any[]) => {
+      if (!mockedFiles) return actualFs.statSync(filepath, ...args);
+
+      return {dev: 0};
+    },
   };
 });
 jest.mock("os", () => {
