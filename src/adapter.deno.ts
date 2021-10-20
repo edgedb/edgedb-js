@@ -73,6 +73,10 @@ export namespace fs {
   export function realpathSync(path: string): string {
     return Deno.realPathSync(path);
   }
+
+  export function statSync(path: string): Deno.FileInfo {
+    return Deno.statSync(path);
+  }
 }
 
 // TODO: when 'net.Socket' is implemented in deno node compatibility library

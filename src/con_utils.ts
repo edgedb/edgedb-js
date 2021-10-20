@@ -86,11 +86,10 @@ export function parseConnectArguments(
     }
   }
 
-  const cwd = process.cwd();
-  const inProject = fs.existsSync(path.join(cwd, "edgedb.toml"));
+  const projectDir = findProjectDir();
 
   return {
-    ...parseConnectDsnAndArgs(opts, cwd, inProject),
+    ...parseConnectDsnAndArgs(opts, projectDir),
     connectTimeout: opts.timeout,
     commandTimeout: opts.commandTimeout,
     waitUntilAvailable: opts.waitUntilAvailable ?? 30_000,
@@ -375,8 +374,7 @@ function validateHost(host: string): string {
 
 function parseConnectDsnAndArgs(
   config: ConnectConfig,
-  cwd: string,
-  inProject: boolean
+  projectDir: string | null
 ): PartiallyNormalizedConfig {
   const resolvedConfig = new ResolvedConnectConfig();
   let fromEnv = false;
@@ -466,14 +464,14 @@ function parseConnectDsnAndArgs(
 
   if (!hasCompoundOptions) {
     // resolve config from project
-    if (!inProject) {
+    if (!projectDir) {
       throw new errors.ClientConnectionError(
         "no 'edgedb.toml' found and no connection options specified" +
           " either via arguments to `connect()` API or via environment" +
           " variables EDGEDB_HOST, EDGEDB_INSTANCE, EDGEDB_DSN or EDGEDB_CREDENTIALS_FILE"
       );
     }
-    const stashDir = stashPath(cwd);
+    const stashDir = stashPath(projectDir);
     if (fs.existsSync(stashDir)) {
       const instName = readFileUtf8Sync(
         path.join(stashDir, "instance-name")
@@ -496,7 +494,7 @@ function parseConnectDsnAndArgs(
 
   return {
     connectionParams: resolvedConfig,
-    inProject,
+    inProject: !!projectDir,
     fromEnv,
     fromProject,
   };
@@ -513,6 +511,21 @@ function stashPath(projectDir: string): string {
   const dirName = baseName + "-" + hash;
 
   return platform.searchConfigDir("projects", dirName);
+}
+
+function findProjectDir(): string | null {
+  let dir = process.cwd();
+  const cwdDev = fs.statSync(dir).dev;
+  while (true) {
+    if (fs.existsSync(path.join(dir, "edgedb.toml"))) {
+      return dir;
+    }
+    const parentDir = path.join(dir, "..");
+    if (parentDir === dir || fs.statSync(parentDir).dev !== cwdDev) {
+      return null;
+    }
+    dir = parentDir;
+  }
 }
 
 interface ResolveConfigOptionsConfig {
