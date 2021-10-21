@@ -305,7 +305,7 @@ async function canOverwrite(outputDir: string, options: Options) {
 
   if (
     isTTY() &&
-    (await promptBoolean(`${error}\nDo you want to overwrite?`, true))
+    (await promptBoolean(`${error}\nDo you want to overwrite? `, true))
   ) {
     return true;
   }
