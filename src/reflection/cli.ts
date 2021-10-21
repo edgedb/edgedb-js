@@ -21,7 +21,6 @@ interface Options {
 }
 
 const run = async () => {
-  console.log(process.argv);
   const args = process.argv.slice(2);
 
   const connectionConfig: ConnectConfig = {};
@@ -134,7 +133,7 @@ const run = async () => {
   if (options.showHelp) {
     console.log(`edgedb-generate
 
-Generates a querybuilder
+Generates a query builder
 
 CONNECTION OPTIONS:
     -I, --instance <instance>
@@ -237,40 +236,42 @@ OPTIONS:
   await generateQB({outputDir, connectionConfig, target: options.target!});
 
   if (options.updateIgnoreFile) {
-    const vcs = (await exists(path.join(projectRoot, ".gitignore")))
-      ? "git"
-      : (await exists(path.join(projectRoot, ".hgignore")))
-      ? "hg"
-      : null;
+    const gitignorePath = path.join(projectRoot, ".gitignore");
+    const gitignoreExists = (await exists(gitignorePath)) ? "git" : null;
+    const gitignoreFile = await fs.readFile(gitignorePath, "utf8");
+    const vcsLine = path.posix.relative(projectRoot, outputDir);
+    const alreadyIgnored = gitignoreFile.includes(`\n${vcsLine}\n`);
+    if (!alreadyIgnored) {
+      console.log(
+        "Checking the generated query builder into version control is NOT RECOMMENDED."
+      );
 
-    console.log(
-      "It is not recommended to commit the generated querybuilder into version control."
-    );
-    let updateVcs: typeof vcs = null;
-    if (vcs) {
-      if (
-        await promptBoolean(
-          `Update existing .${vcs}ignore to ignore generated querybuilder?`,
-          true
-        )
-      ) {
-        updateVcs = vcs;
+      let updateVcs: "y" | "n" | null = null;
+      if (gitignoreExists) {
+        if (
+          await promptBoolean(
+            `Would you like to update .gitignore to ignore the query builder directory?\nThe following line will be added:\n\n  ${vcsLine}\n\n`,
+            true
+          )
+        ) {
+          updateVcs = "y";
+        }
+      } else {
+        const response = await promptEnum(
+          `Would you like to create a .gitignore file to ignore the query builder directory? `,
+          ["y", "n"],
+          "y"
+        );
+        if (response === "y") {
+          updateVcs = response;
+        }
       }
-    } else {
-      const response = await promptEnum(
-        `Create .gitignore/.hgignore file and ignore generated querybuilder?`,
-        ["git", "hg", "no", "n"],
-        "git"
-      );
-      if (response === "git" || response === "hg") {
-        updateVcs = response;
+      if (updateVcs) {
+        await fs.appendFile(
+          path.join(projectRoot, `.gitignore`),
+          `${vcsLine}\n`
+        );
       }
-    }
-    if (updateVcs) {
-      await fs.appendFile(
-        path.join(projectRoot, `.${updateVcs}ignore`),
-        `${path.posix.relative(projectRoot, outputDir)}\n`
-      );
     }
   }
 
@@ -299,7 +300,7 @@ async function canOverwrite(outputDir: string, options: Options) {
   } catch {}
 
   const error = config
-    ? `Querybuilder already exists in '${outputDir}' with different config.`
+    ? `query builder already exists in '${outputDir}' with different config.`
     : `Output directory '${outputDir}' already exists.`;
 
   if (
@@ -328,8 +329,8 @@ function isTTY() {
 async function promptBoolean(prompt: string, defaultVal?: boolean) {
   const response = await promptEnum(
     prompt,
-    ["yes", "no", "y", "n"],
-    defaultVal !== undefined ? (defaultVal ? "yes" : "no") : undefined
+    ["y", "n"],
+    defaultVal !== undefined ? (defaultVal ? "y" : "n") : undefined
   );
   return response[0] === "y";
 }
@@ -346,9 +347,9 @@ function promptEnum<Val extends string, Default extends Val>(
     });
 
     rl.question(
-      `${prompt} [${vals.join("/")}]: ${
-        defaultVal !== undefined ? `(${defaultVal}) ` : ""
-      }`,
+      `${prompt}[${vals.join("/")}]${
+        defaultVal !== undefined ? ` (leave blank for "${defaultVal}")` : ""
+      }\n> `,
       function (response) {
         rl.close();
         response = response.trim().toLowerCase();

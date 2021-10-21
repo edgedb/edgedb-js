@@ -22,7 +22,7 @@ import {generateSetImpl} from "./generators/generateSetImpl";
 
 const DEBUG = false;
 
-export const configFileHeader = `// edgedb-js querybuilder - to update run 'edgedb-generate'`;
+export const configFileHeader = `// edgedb-js query builder - to update run 'edgedb-generate'`;
 
 export type GeneratorParams = {
   dir: DirBuilder;
@@ -69,7 +69,7 @@ export async function generateQB({
     const functions = await getFunctions(cxn);
     const operators = await getOperators(cxn);
 
-    console.log(`Generating querybuilder into "${outputDir}"...`);
+    console.log(`Generating query builder into ${outputDir}...`);
 
     const typesByName: Record<string, introspect.Type> = {};
     for (const type of types.values()) {
@@ -285,5 +285,5 @@ export async function generateQB({
     `${configFileHeader}\n${JSON.stringify({target: target})}\n`
   );
 
-  console.log("Done!");
+  console.log("Generation complete.");
 }
