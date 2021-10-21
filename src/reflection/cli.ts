@@ -21,6 +21,7 @@ interface Options {
 }
 
 const run = async () => {
+  console.log(process.argv);
   const args = process.argv.slice(2);
 
   const connectionConfig: ConnectConfig = {};
