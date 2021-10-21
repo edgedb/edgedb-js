@@ -8,11 +8,7 @@ import readline from "readline";
 import {Writable} from "stream";
 
 import {ConnectConfig, parseConnectArguments} from "../con_utils";
-import {
-  //configFileHeader,
-  exitWithError,
-  generateQB,
-} from "./generate";
+import {configFileHeader, exitWithError, generateQB} from "./generate";
 
 interface Options {
   showHelp?: boolean;
@@ -29,6 +25,7 @@ const run = async () => {
 
   const connectionConfig: ConnectConfig = {};
   const options: Options = {};
+  console.log();
 
   while (args.length) {
     let flag = args.shift()!;
@@ -200,8 +197,8 @@ OPTIONS:
       path.join(projectRoot, "tsconfig.json")
     );
 
-    const overrideTargetMessage = `To override this, use the --target flag.
-Run \`npx edgedb-generate --help\` for details.`;
+    const overrideTargetMessage = `   To override this, use the --target flag.
+   Run \`npx edgedb-generate --help\` for details.`;
 
     if (tsconfigExists) {
       options.target = "ts";
@@ -225,8 +222,23 @@ Run \`npx edgedb-generate --help\` for details.`;
     console.log(overrideTargetMessage);
   }
 
-  const outputDir =
-    options.outputDir ?? path.join(projectRoot, "dbschema", "edgeql");
+  const outputDir = options.outputDir
+    ? path.resolve(projectRoot, options.outputDir || "")
+    : path.join(projectRoot, "dbschema", "edgeql");
+
+  const relativeOutputDir = path.posix.relative(projectRoot, outputDir);
+  const outputDirInProject =
+    !!relativeOutputDir &&
+    !path.isAbsolute(relativeOutputDir) &&
+    !relativeOutputDir.startsWith("..");
+  const prettyOutputDir = outputDirInProject
+    ? `./${relativeOutputDir}`
+    : outputDir;
+
+  console.log(`outputDirInProject: ${outputDirInProject}`);
+
+  console.log(`Generating query builder into
+   ${prettyOutputDir}`);
 
   if (await exists(outputDir)) {
     if (await canOverwrite(outputDir, options)) {
@@ -250,22 +262,31 @@ Run \`npx edgedb-generate --help\` for details.`;
 
   await generateQB({outputDir, connectionConfig, target: options.target!});
 
-  if (options.updateIgnoreFile) {
+  console.log(`Generation successful!`);
+
+  if (!outputDirInProject) {
+    console.log(
+      `\nChecking the generated query builder into version control
+is NOT RECOMMENDED. Consider updating the .gitignore of your
+project to exclude these files.`
+    );
+  } else if (options.updateIgnoreFile) {
     const gitignorePath = path.join(projectRoot, ".gitignore");
     const gitignoreExists = (await exists(gitignorePath)) ? "git" : null;
     const gitignoreFile = await fs.readFile(gitignorePath, "utf8");
     const vcsLine = path.posix.relative(projectRoot, outputDir);
     const alreadyIgnored = gitignoreFile.includes(`\n${vcsLine}\n`);
-    if (!alreadyIgnored) {
-      console.log(
-        "Checking the generated query builder into version control is NOT RECOMMENDED."
-      );
 
+    if (!alreadyIgnored) {
       let updateVcs: "y" | "n" | null = null;
       if (gitignoreExists) {
         if (
           await promptBoolean(
-            `Would you like to update .gitignore to ignore the query builder directory?\nThe following line will be added:\n\n  ${vcsLine}\n\n`,
+            `Checking the generated query builder into version control
+   is NOT RECOMMENDED. Would you like to update .gitignore to ignore
+   the query builder directory? The following line will be added:
+
+  ${vcsLine}\n\n`,
             true
           )
         ) {
@@ -273,7 +294,9 @@ Run \`npx edgedb-generate --help\` for details.`;
         }
       } else {
         const response = await promptEnum(
-          `Would you like to create a .gitignore file to ignore the query builder directory? `,
+          `Checking the generated query builder into version control
+   is NOT RECOMMENDED. Would you like to create a .gitignore file to ignore
+   the query builder directory?`,
           ["y", "n"],
           "y"
         );
@@ -300,34 +323,32 @@ async function canOverwrite(outputDir: string, options: Options) {
     return true;
   }
 
-  // let config: any = null;
-  // try {
-  //   const [header, ..._config] = (
-  //     await fs.readFile(path.join(outputDir, "config.json"), "utf8")
-  //   ).split("\n");
-  //   if (header === configFileHeader) {
-  //     config = JSON.parse(_config.join("\n"));
+  let config: any = null;
+  try {
+    const [header, ..._config] = (
+      await fs.readFile(path.join(outputDir, "config.json"), "utf8")
+    ).split("\n");
+    if (header === configFileHeader) {
+      config = JSON.parse(_config.join("\n"));
 
-  //     if (config.target === options.target) {
-  //       return true;
-  //     }
-  //   }
-  // } catch {}
+      if (config.target === options.target) {
+        return true;
+      }
+    }
+  } catch {}
 
-  // const error = config
-  //   ? `Query builder already exists in '${outputDir}' with different config.`
-  //   : `Output directory '${outputDir}' already exists.`;
+  const error = config
+    ? `A query builder with a different config already exists in that location.`
+    : `Output directory '${outputDir}' already exists.`;
 
-  // if (
-  //   isTTY() &&
-  //   (await promptBoolean(`${error}\nDo you want to overwrite? `, true))
-  // ) {
-  //   return true;
-  // }
+  if (
+    isTTY() &&
+    (await promptBoolean(`${error}\nDo you want to overwrite? `, true))
+  ) {
+    return true;
+  }
 
-  // return exitWithError(`Error: ${error}`);
-
-  return true;
+  return exitWithError(`Error: ${error}`);
 }
 
 async function exists(filepath: string): Promise<boolean> {

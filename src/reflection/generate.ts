@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import {DirBuilder, dts, r, t} from "./builders";
-import {connect, Connection} from "../index.node";
+import {connect, createPool, Connection} from "../index.node";
 
 import {ConnectConfig} from "../con_utils";
 
@@ -22,7 +22,7 @@ import {generateSetImpl} from "./generators/generateSetImpl";
 
 const DEBUG = false;
 
-// export const configFileHeader = `// edgedb-js query builder - to update run 'edgedb-generate'`;
+export const configFileHeader = `// edgedb-js query builder - to update run 'edgedb-generate'`;
 
 export type GeneratorParams = {
   dir: DirBuilder;
@@ -52,7 +52,11 @@ export async function generateQB({
   console.log(`Connecting to EdgeDB instance...`);
   let cxn: Connection;
   try {
-    cxn = await connect(null, connectionConfig);
+    connect;
+    cxn = await createPool(null, {
+      connectOptions: connectionConfig,
+      maxSize: 5,
+    });
   } catch (e) {
     return exitWithError(`Failed to connect: ${(e as Error).message}`);
   }
@@ -61,15 +65,14 @@ export async function generateQB({
 
   try {
     console.log(`Introspecting database schema...`);
-    const types = await introspect.getTypes(cxn, {debug: DEBUG});
-    const scalars = await getScalars(cxn);
-    const casts = await getCasts(cxn, {
-      debug: DEBUG,
-    });
-    const functions = await getFunctions(cxn);
-    const operators = await getOperators(cxn);
 
-    console.log(`Generating query builder into ${outputDir}...`);
+    const [types, scalars, casts, functions, operators] = await Promise.all([
+      introspect.getTypes(cxn, {debug: DEBUG}),
+      getScalars(cxn),
+      getCasts(cxn, {debug: DEBUG}),
+      getFunctions(cxn),
+      getOperators(cxn),
+    ]);
 
     const typesByName: Record<string, introspect.Type> = {};
     for (const type of types.values()) {
@@ -280,10 +283,8 @@ export async function generateQB({
     fs.writeFileSync(outputPath, contents);
   }
 
-  // fs.writeFileSync(
-  //   path.join(outputDir, "config.json"),
-  //   `${configFileHeader}\n${JSON.stringify({target: target})}\n`
-  // );
-
-  console.log("Generation successful!");
+  fs.writeFileSync(
+    path.join(outputDir, "config.json"),
+    `${configFileHeader}\n${JSON.stringify({target: target})}\n`
+  );
 }
