@@ -1,3 +1,4 @@
+import type * as edgedb from "edgedb";
 import type {$expr_TypeIntersection, $pathify, $expr_PathNode} from "./path";
 import type {$expr_Literal} from "./literal";
 import type {typeutil} from "./util/typeutil";
@@ -63,6 +64,11 @@ export type Expression<Set extends TypeSet = TypeSet> =
   BaseType extends Set["__element__"]
     ? Set & {toEdgeQL(): string; $is: any; $assertSingle: any}
     : Set & ExpressionMethods<stripSet<Set>> & $pathify<Set>;
+
+export type QueryableExpression<Set extends TypeSet = TypeSet> =
+  Expression<Set> & {
+    query(cxn: edgedb.Pool | edgedb.Connection): Promise<setToTsType<Set>>;
+  };
 
 export type stripSet<T> = "__element__" extends keyof T
   ? "__cardinality__" extends keyof T

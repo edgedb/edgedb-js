@@ -1,9 +1,15 @@
-import {Expression, ExpressionKind, TypeSet} from "../reflection";
+import {
+  Expression,
+  ExpressionKind,
+  QueryableExpression,
+  TypeSet,
+} from "../reflection";
 import {$expr_Select} from "./select";
 import {$expr_For} from "./for";
 import {$expr_Insert} from "./insert";
 import {$expr_Update} from "./update";
 import {$expressionify} from "./path";
+import {$queryify} from "./query";
 
 export type $expr_Alias<Expr extends TypeSet = TypeSet> = Expression<{
   __element__: Expr["__element__"];
@@ -30,7 +36,7 @@ export type WithableExpression =
 export type $expr_With<
   Refs extends TypeSet[] = TypeSet[],
   Expr extends WithableExpression = WithableExpression
-> = Expression<{
+> = QueryableExpression<{
   __element__: Expr["__element__"];
   __cardinality__: Expr["__cardinality__"];
   __kind__: ExpressionKind.With;
@@ -42,13 +48,15 @@ function _with<Refs extends Expression[], Expr extends WithableExpression>(
   refs: Refs,
   expr: Expr
 ): $expr_With<Refs, Expr> {
-  return $expressionify({
-    __kind__: ExpressionKind.With,
-    __element__: expr.__element__,
-    __cardinality__: expr.__cardinality__,
-    __refs__: refs,
-    __expr__: expr as any,
-  });
+  return $expressionify(
+    $queryify({
+      __kind__: ExpressionKind.With,
+      __element__: expr.__element__,
+      __cardinality__: expr.__cardinality__,
+      __refs__: refs,
+      __expr__: expr as any,
+    })
+  ) as any;
 }
 
 export {_with as with};

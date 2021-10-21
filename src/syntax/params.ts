@@ -1,3 +1,4 @@
+import type * as edgedb from "edgedb";
 import {
   Expression,
   ExpressionKind,
@@ -5,8 +6,11 @@ import {
   Cardinality,
   ScalarType,
   ArrayType,
+  setToTsType,
+  TypeSet,
 } from "../reflection";
 import {$expressionify} from "./path";
+import {$queryify} from "./query";
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
   __kind__: ExpressionKind.OptionalParam;
@@ -22,18 +26,33 @@ export function optional<Type extends ParamType>(
   };
 }
 
+export type QueryableWithParamsExpression<
+  Set extends TypeSet = TypeSet,
+  Params extends {
+    [key: string]: ParamType | $expr_OptionalParam;
+  } = {}
+> = Expression<Set> & {
+  query(
+    cxn: edgedb.Pool | edgedb.Connection,
+    args: paramsToParamArgs<Params>
+  ): Promise<setToTsType<Set>>;
+};
+
 export type $expr_WithParams<
   Params extends {
     [key: string]: ParamType | $expr_OptionalParam;
   } = {},
   Expr extends Expression = Expression
-> = Expression<{
-  __kind__: ExpressionKind.WithParams;
-  __element__: Expr["__element__"];
-  __cardinality__: Expr["__cardinality__"];
-  __expr__: Expr;
-  __paramststype__: paramsToParamTypes<Params>;
-}>;
+> = QueryableWithParamsExpression<
+  {
+    __kind__: ExpressionKind.WithParams;
+    __element__: Expr["__element__"];
+    __cardinality__: Expr["__cardinality__"];
+    __expr__: Expr;
+    __paramststype__: paramsToParamTypes<Params>;
+  },
+  Params
+>;
 
 type getParamTsType<Param extends ParamType> = Param extends ScalarType
   ? Param["__tstype__"]
@@ -52,6 +71,25 @@ type paramsToParamTypes<
     ? getParamTsType<Params[key]>
     : never;
 };
+
+type paramsToParamArgs<
+  Params extends {
+    [key: string]: ParamType | $expr_OptionalParam;
+  }
+> = {
+  [key in keyof Params as Params[key] extends ParamType
+    ? key
+    : never]: Params[key] extends ParamType
+    ? getParamTsType<Params[key]>
+    : never;
+} &
+  {
+    [key in keyof Params as Params[key] extends $expr_OptionalParam
+      ? key
+      : never]?: Params[key] extends $expr_OptionalParam
+      ? getParamTsType<Params[key]["__type__"]> | null
+      : never;
+  };
 
 export type $expr_Param<
   Name extends string | number | symbol = string,
@@ -105,10 +143,12 @@ export function withParams<
 
   const returnExpr = expr(paramExprs as any);
 
-  return $expressionify({
-    __kind__: ExpressionKind.WithParams,
-    __element__: returnExpr.__element__,
-    __cardinality__: returnExpr.__cardinality__,
-    __expr__: returnExpr,
-  }) as any;
+  return $expressionify(
+    $queryify({
+      __kind__: ExpressionKind.WithParams,
+      __element__: returnExpr.__element__,
+      __cardinality__: returnExpr.__cardinality__,
+      __expr__: returnExpr,
+    })
+  ) as any;
 }

@@ -1,5 +1,5 @@
 import {
-  Expression,
+  QueryableExpression,
   ExpressionKind,
   ObjectTypePointers,
   ObjectTypeSet,
@@ -30,7 +30,7 @@ export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
 export type $expr_Update<
   Root extends ObjectTypeSet = ObjectTypeSet,
   Shape extends UpdateShape<Root> = any
-> = Expression<{
+> = QueryableExpression<{
   __kind__: ExpressionKind.Update;
   __element__: Root["__element__"];
   __cardinality__: Root["__cardinality__"];
