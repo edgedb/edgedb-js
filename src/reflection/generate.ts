@@ -22,7 +22,7 @@ import {generateSetImpl} from "./generators/generateSetImpl";
 
 const DEBUG = false;
 
-export const configFileHeader = `// edgedb-js query builder - to update run 'edgedb-generate'`;
+// export const configFileHeader = `// edgedb-js query builder - to update run 'edgedb-generate'`;
 
 export type GeneratorParams = {
   dir: DirBuilder;
@@ -280,10 +280,10 @@ export async function generateQB({
     fs.writeFileSync(outputPath, contents);
   }
 
-  fs.writeFileSync(
-    path.join(outputDir, "config.json"),
-    `${configFileHeader}\n${JSON.stringify({target: target})}\n`
-  );
+  // fs.writeFileSync(
+  //   path.join(outputDir, "config.json"),
+  //   `${configFileHeader}\n${JSON.stringify({target: target})}\n`
+  // );
 
-  console.log("Generation complete.");
+  console.log("Generation successful!");
 }

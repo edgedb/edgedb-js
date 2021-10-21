@@ -8,7 +8,11 @@ import readline from "readline";
 import {Writable} from "stream";
 
 import {ConnectConfig, parseConnectArguments} from "../con_utils";
-import {configFileHeader, exitWithError, generateQB} from "./generate";
+import {
+  //configFileHeader,
+  exitWithError,
+  generateQB,
+} from "./generate";
 
 interface Options {
   showHelp?: boolean;
@@ -285,32 +289,34 @@ async function canOverwrite(outputDir: string, options: Options) {
     return true;
   }
 
-  let config: any = null;
-  try {
-    const [header, ..._config] = (
-      await fs.readFile(path.join(outputDir, "config.json"), "utf8")
-    ).split("\n");
-    if (header === configFileHeader) {
-      config = JSON.parse(_config.join("\n"));
+  // let config: any = null;
+  // try {
+  //   const [header, ..._config] = (
+  //     await fs.readFile(path.join(outputDir, "config.json"), "utf8")
+  //   ).split("\n");
+  //   if (header === configFileHeader) {
+  //     config = JSON.parse(_config.join("\n"));
 
-      if (config.target === options.target) {
-        return true;
-      }
-    }
-  } catch {}
+  //     if (config.target === options.target) {
+  //       return true;
+  //     }
+  //   }
+  // } catch {}
 
-  const error = config
-    ? `query builder already exists in '${outputDir}' with different config.`
-    : `Output directory '${outputDir}' already exists.`;
+  // const error = config
+  //   ? `Query builder already exists in '${outputDir}' with different config.`
+  //   : `Output directory '${outputDir}' already exists.`;
 
-  if (
-    isTTY() &&
-    (await promptBoolean(`${error}\nDo you want to overwrite? `, true))
-  ) {
-    return true;
-  }
+  // if (
+  //   isTTY() &&
+  //   (await promptBoolean(`${error}\nDo you want to overwrite? `, true))
+  // ) {
+  //   return true;
+  // }
 
-  return exitWithError(`Error: ${error}`);
+  // return exitWithError(`Error: ${error}`);
+
+  return true;
 }
 
 async function exists(filepath: string): Promise<boolean> {
