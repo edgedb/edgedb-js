@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
-    "generate": "edgedb-generate --target ts",
+    "generate": "edgedb-generate",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",
     "build": "tsc --project tsconfig.build.json"

@@ -137,7 +137,7 @@ const run = async () => {
   if (options.showHelp) {
     console.log(`edgedb-generate
 
-Generates a query builder
+Introspects the schema of an EdgeDB instance schema generates a TypeScript/JavaScript query builder
 
 CONNECTION OPTIONS:
     -I, --instance <instance>
@@ -154,8 +154,12 @@ CONNECTION OPTIONS:
     --no-tls-verify-hostname
 
 OPTIONS:
-    --target <target>
-        Valid targets: 'ts', 'esm', 'cjs'
+    --target [ts,esm,cjs]
+
+        ts     Generate TypeScript files
+        esm    Generate JavaScript with ES Module syntax
+        cjs    Generate JavaScript with CommonJS syntax
+
     --output-dir <output-dir>
     --force-overwrite
         If 'output-dir' already exists, will overwrite without confirmation
@@ -196,9 +200,12 @@ OPTIONS:
       path.join(projectRoot, "tsconfig.json")
     );
 
+    const overrideTargetMessage = `To override this, use the --target flag.
+Run \`npx edgedb-generate --help\` for details.`;
+
     if (tsconfigExists) {
       options.target = "ts";
-      console.log(`tsconfig.json detected, generating for 'ts' target`);
+      console.log(`Detected tsconfig.json, generating TypeScript files.`);
     } else {
       const packageJson = JSON.parse(
         await fs.readFile(path.join(projectRoot, "package.json"), "utf8")
@@ -206,12 +213,16 @@ OPTIONS:
       if (packageJson?.type === "module") {
         options.target = "esm";
         console.log(
-          `type: "module" in package.json, generating for 'esm' target`
+          `Detected "type": "module" in package.json, generating .js files with ES module syntax.`
         );
       } else {
+        console.log(
+          `Detected package.json. Generating .js files with CommonJS module syntax.`
+        );
         options.target = "cjs";
       }
     }
+    console.log(overrideTargetMessage);
   }
 
   const outputDir =
