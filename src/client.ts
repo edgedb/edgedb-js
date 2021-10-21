@@ -1400,7 +1400,9 @@ export class ConnectionImpl {
   ): void {
     if (expectOne && card === chars.$n) {
       const methname = asJson ? "queryOneJSON" : "queryOne";
-      throw new Error(`query executed via ${methname}() returned no data`);
+      throw new errors.NoDataError(
+        `query executed via ${methname}() returned no data`
+      );
     }
   }
 
@@ -1441,7 +1443,7 @@ export class ConnectionImpl {
       if (ret && ret.length) {
         return ret[0];
       } else {
-        throw new Error("query returned no data");
+        throw new errors.NoDataError("query returned no data");
       }
     } else {
       if (ret && ret.length) {

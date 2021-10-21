@@ -9,11 +9,63 @@ import {setupTests} from "./test/setupTeardown";
 async function run() {
   // const asdf = e.tuple([e.str, e.int64]);
   const pool = await setupTests();
-  await pool.pool.close();
 
   console.log(`asdf`);
 
   console.log(e.Hero.__element__.__pointers__.villains.properties);
+
+  console.log(await e.select(e.int16(5)).query(pool.pool));
+  console.log(
+    await e
+      .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
+      .query(pool.pool)
+  );
+  console.log(
+    await e
+      .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
+      .update({number_of_movies: e.int16(5)})
+      .query(pool.pool)
+  );
+  console.log(
+    await e
+      .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
+      .delete()
+      .query(pool.pool)
+  );
+
+  console.log(await e.insert(e.Hero, {name: e.str("Loki")}).query(pool.pool));
+  console.log(
+    await e
+      .insert(e.Hero, {name: e.str("Loki")})
+      .unlessConflict()
+      .query(pool.pool)
+  );
+
+  console.log(await e.for(e.Hero, hero => hero.name).query(pool.pool));
+
+  const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
+
+  console.log(await e.with([numbers], e.select(numbers)).query(pool.pool));
+
+  console.log(
+    await e
+      .withParams(
+        {
+          str: e.str,
+          numArr: e.array(e.int64),
+          optBool: e.optional(e.bool),
+        },
+        params =>
+          e.select({
+            str: params.str,
+            nums: e.array_unpack(params.numArr),
+            x: e.if_else(e.str("true"), params.optBool, e.str("false")),
+          })
+      )
+      .query(pool.pool, {numArr: [7], str: "test", optBool: true})
+  );
+
+  pool.pool.close();
 
   e.is(e.Villain, {
     // id: true,

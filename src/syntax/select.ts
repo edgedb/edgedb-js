@@ -1,12 +1,11 @@
 import type {$anyint, $bool} from "@generated/modules/std";
 import _std from "@generated/modules/std";
-import * as edgedb from "edgedb";
+
 import {
   $expr_PolyShapeElement,
   $scopify,
   Cardinality,
   cardinalityUtil,
-  Expression,
   ExpressionKind,
   LinkDesc,
   ObjectType,
@@ -14,8 +13,8 @@ import {
   ObjectTypePointers,
   ObjectTypeSet,
   PropertyDesc,
+  QueryableExpression,
   ScalarType,
-  setToTsType,
   stripSet,
   stripSetShape,
   TypeKind,
@@ -37,6 +36,7 @@ import {
 } from "./casting";
 import type {$expr_Operator} from "./funcops";
 import {$expressionify, $expr_PathNode as makePathNode} from "./path";
+import {$queryify} from "./query";
 import type {$expr_Update, UpdateShape} from "./update";
 
 export const ASC: "ASC" = "ASC";
@@ -119,7 +119,7 @@ export type $expr_Select<
   Set extends TypeSet = TypeSet,
   Expr extends TypeSet = TypeSet,
   Modifiers extends NormalisedSelectModifiers = NormalisedSelectModifiers
-> = Expression<
+> = QueryableExpression<
   {
     __element__: Set["__element__"];
     __cardinality__: Set["__cardinality__"];
@@ -127,11 +127,6 @@ export type $expr_Select<
     __kind__: ExpressionKind.Select;
     __modifiers__: Modifiers;
     __scope__?: ObjectTypeExpression;
-    query(
-      cxn: edgedb.Pool | edgedb.Connection
-    ): Promise<
-      setToTsType<TypeSet<Set["__element__"], Set["__cardinality__"]>>
-    >;
   } & (Set extends ObjectTypeSet ? SelectObjectMethods<Set> : {})
 >;
 
@@ -394,20 +389,9 @@ function handleModifiers(
   return {modifiers: mods as NormalisedSelectModifiers, cardinality: card};
 }
 
-async function queryFunc(this: any, cxn: edgedb.Connection | edgedb.Pool) {
-  if (
-    this.__cardinality__ === Cardinality.One ||
-    this.__cardinality__ === Cardinality.AtMostOne
-  ) {
-    return await cxn.queryOne(this.toEdgeQL());
-  } else {
-    return cxn.query(this.toEdgeQL());
-  }
-}
-
 function updateFunc(this: any, shape: any) {
   return $expressionify(
-    $selectify({
+    $queryify({
       __kind__: ExpressionKind.Update,
       __element__: this.__element__,
       __cardinality__: this.__cardinality__,
@@ -418,7 +402,7 @@ function updateFunc(this: any, shape: any) {
 }
 
 export type $expr_Delete<Root extends ObjectTypeSet = ObjectTypeSet> =
-  Expression<{
+  QueryableExpression<{
     __kind__: ExpressionKind.Delete;
     __element__: Root["__element__"];
     __cardinality__: Root["__cardinality__"];
@@ -427,7 +411,7 @@ export type $expr_Delete<Root extends ObjectTypeSet = ObjectTypeSet> =
 
 function deleteFunc(this: any) {
   return $expressionify(
-    $selectify({
+    $queryify({
       __kind__: ExpressionKind.Delete,
       __element__: this.__element__,
       __cardinality__: this.__cardinality__,
@@ -440,9 +424,8 @@ export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   Object.assign(expr, {
     update: updateFunc.bind(expr),
     delete: deleteFunc.bind(expr),
-    query: queryFunc.bind(expr),
   });
-  return expr;
+  return $queryify(expr);
 }
 
 export type pointersToSelectShape<Shape extends ObjectTypePointers> = Partial<
@@ -557,7 +540,7 @@ export function select(...args: any[]) {
       );
     } else {
       return $expressionify(
-        $selectify({
+        $queryify({
           __kind__: ExpressionKind.Select,
           __element__: expr.__element__,
           __cardinality__: expr.__cardinality__,
@@ -579,7 +562,7 @@ export function select(...args: any[]) {
 
   if (selectExpr) {
     return $expressionify(
-      $selectify({
+      $queryify({
         __kind__: ExpressionKind.Select,
         __element__: selectExpr.__element__,
         __cardinality__: cardinalityUtil.multiplyCardinalities(
