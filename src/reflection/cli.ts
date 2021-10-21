@@ -134,7 +134,7 @@ const run = async () => {
   if (options.showHelp) {
     console.log(`edgedb-generate
 
-Introspects the schema of an EdgeDB instance schema generates a TypeScript/JavaScript query builder
+Introspects the schema of an EdgeDB instance and generates a TypeScript/JavaScript query builder
 
 CONNECTION OPTIONS:
     -I, --instance <instance>
@@ -235,10 +235,13 @@ OPTIONS:
     ? `./${relativeOutputDir}`
     : outputDir;
 
-  console.log(`outputDirInProject: ${outputDirInProject}`);
-
-  console.log(`Generating query builder into
-   ${prettyOutputDir}`);
+  console.log(
+    `Generating query builder into ${
+      path.isAbsolute(prettyOutputDir)
+        ? `\n   ${prettyOutputDir}`
+        : `${prettyOutputDir}`
+    }`
+  );
 
   if (await exists(outputDir)) {
     if (await canOverwrite(outputDir, options)) {
@@ -267,48 +270,38 @@ OPTIONS:
   if (!outputDirInProject) {
     console.log(
       `\nChecking the generated query builder into version control
-is NOT RECOMMENDED. Consider updating the .gitignore of your
+is not recommended. Consider updating the .gitignore of your
 project to exclude these files.`
     );
   } else if (options.updateIgnoreFile) {
-    const gitignorePath = path.join(projectRoot, ".gitignore");
-    const gitignoreExists = (await exists(gitignorePath)) ? "git" : null;
-    const gitignoreFile = await fs.readFile(gitignorePath, "utf8");
-    const vcsLine = path.posix.relative(projectRoot, outputDir);
-    const alreadyIgnored = gitignoreFile.includes(`\n${vcsLine}\n`);
+    const gitIgnorePath = path.join(projectRoot, ".gitignore");
 
-    if (!alreadyIgnored) {
-      let updateVcs: "y" | "n" | null = null;
-      if (gitignoreExists) {
-        if (
-          await promptBoolean(
-            `Checking the generated query builder into version control
-   is NOT RECOMMENDED. Would you like to update .gitignore to ignore
-   the query builder directory? The following line will be added:
+    let gitIgnoreFile: string | null = null;
+    try {
+      gitIgnoreFile = await fs.readFile(gitIgnorePath, "utf8");
+    } catch {}
+
+    const vcsLine = path.posix.relative(projectRoot, outputDir);
+
+    if (
+      gitIgnoreFile === null ||
+      !RegExp(`^${vcsLine}$`, "m").test(gitIgnoreFile) // not already ignored
+    ) {
+      if (
+        await promptBoolean(
+          gitIgnoreFile === null
+            ? `Checking the generated query builder into version control
+is NOT RECOMMENDED. Would you like to create a .gitignore file to ignore
+the query builder directory?`
+            : `Checking the generated query builder into version control
+is NOT RECOMMENDED. Would you like to update .gitignore to ignore
+the query builder directory? The following line will be added:
 
   ${vcsLine}\n\n`,
-            true
-          )
-        ) {
-          updateVcs = "y";
-        }
-      } else {
-        const response = await promptEnum(
-          `Checking the generated query builder into version control
-   is NOT RECOMMENDED. Would you like to create a .gitignore file to ignore
-   the query builder directory?`,
-          ["y", "n"],
-          "y"
-        );
-        if (response === "y") {
-          updateVcs = response;
-        }
-      }
-      if (updateVcs) {
-        await fs.appendFile(
-          path.join(projectRoot, `.gitignore`),
-          `${vcsLine}\n`
-        );
+          true
+        )
+      ) {
+        await fs.appendFile(gitIgnorePath, `${vcsLine}\n`);
       }
     }
   }
@@ -370,7 +363,7 @@ async function promptBoolean(prompt: string, defaultVal?: boolean) {
     ["y", "n"],
     defaultVal !== undefined ? (defaultVal ? "y" : "n") : undefined
   );
-  return response[0] === "y";
+  return response === "y";
 }
 
 function promptEnum<Val extends string, Default extends Val>(
