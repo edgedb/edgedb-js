@@ -101,12 +101,12 @@ export interface Client extends Executor {
   retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
-  withTransactionOptions(opt: TransactionOptions): Connection;
-  withRetryOptions(opt: RetryOptions): Connection;
+  withTransactionOptions(opt: TransactionOptions): Client;
+  withRetryOptions(opt: RetryOptions): Client;
   close(): Promise<void>;
   isClosed(): boolean;
 
-  ensureConnected(): Promise<void>;
+  ensureConnected(): Promise<Client>;
   getStats(): IClientStats;
   terminate(): void;
 }
