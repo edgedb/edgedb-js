@@ -60,6 +60,7 @@ interface OverloadFuncDef {
   namedArgs?: {[key: string]: OverloadFuncArgDef};
   returnTypeId: string;
   returnTypemod?: "SetOfType" | "OptionalType";
+  preservesOptionality?: boolean;
 }
 
 export function $resolveOverload(
@@ -128,7 +129,9 @@ function _tryOverload(
 
       paramCardinalities.push(
         argDef.setoftype
-          ? Cardinality.One
+          ? funcDef.preservesOptionality
+            ? cardinalityUtil.overrideUpperBound(value.__cardinality__, "One")
+            : Cardinality.One
           : argDef.optional
           ? cardinalityUtil.overrideLowerBound(value.__cardinality__, "One")
           : value.__cardinality__
@@ -172,7 +175,11 @@ function _tryOverload(
         ...(argDef.variadic ? (args.slice(i) as BaseTypeSet[]) : [arg])
       );
       if (argDef.setoftype) {
-        paramCardinalities.push(Cardinality.One);
+        paramCardinalities.push(
+          funcDef.preservesOptionality
+            ? cardinalityUtil.overrideUpperBound(arg.__cardinality__, "One")
+            : Cardinality.One
+        );
       } else {
         const card = argDef.variadic
           ? cardinalityUtil.multiplyCardinalitiesVariadic(
@@ -196,7 +203,10 @@ function _tryOverload(
       ? Cardinality.Many
       : cardinalityUtil.multiplyCardinalitiesVariadic(paramCardinalities);
 
-  if (funcDef.returnTypemod === "OptionalType") {
+  if (
+    funcDef.returnTypemod === "OptionalType" &&
+    !funcDef.preservesOptionality
+  ) {
     cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
   }
 

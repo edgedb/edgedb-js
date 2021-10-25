@@ -127,7 +127,7 @@ test("type intersection on select", () => {
 test("assertSingle", () => {
   const singleHero = e.Hero.$assertSingle();
   tc.assert<
-    tc.IsExact<typeof singleHero["__cardinality__"], $.Cardinality.One>
+    tc.IsExact<typeof singleHero["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);
-  expect(singleHero.__cardinality__).toEqual($.Cardinality.One);
+  expect(singleHero.__cardinality__).toEqual($.Cardinality.AtMostOne);
 });

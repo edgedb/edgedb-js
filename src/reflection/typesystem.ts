@@ -86,12 +86,12 @@ export type stripSetShape<T> = {
 // importing the actual alias from
 // generated/modules/std didn't work.
 // returned 'any' every time
-export type $assertSingle<
-  Type extends BaseType
-  // Expr extends TypeSet
-> = Expression<{
-  __element__: Type;
-  __cardinality__: Cardinality.One;
+export type $assertSingle<Expr extends TypeSet> = Expression<{
+  __element__: Expr["__element__"];
+  __cardinality__: cardinalityUtil.overrideUpperBound<
+    Expr["__cardinality__"],
+    "One"
+  >;
   __kind__: ExpressionKind.Function;
   __name__: "std::assert_single";
   __args__: [TypeSet]; // discard wrapped expression
@@ -114,7 +114,7 @@ export interface ExpressionMethods<Set extends TypeSet> {
       {id: true}
     >
   >;
-  $assertSingle(): $assertSingle<Set["__element__"]>;
+  $assertSingle(): $assertSingle<Set>;
 }
 
 //////////////////

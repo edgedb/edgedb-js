@@ -210,6 +210,48 @@ export namespace cardinalityUtil {
     }
   }
 
+  //          Empty      AtMostOne  One         Many        AtLeastOne
+  // One      AtMostOne  AtMostOne  One         AtMostOne   One
+  // Many     Many       Many       AtLeastOne  Many        AtLeastOne
+
+  export type overrideUpperBound<
+    C extends Cardinality,
+    O extends "One" | "Many"
+  > = O extends "One"
+    ? C extends Cardinality.Many
+      ? Cardinality.AtMostOne
+      : C extends Cardinality.AtLeastOne
+      ? Cardinality.One
+      : C extends Cardinality.Empty
+      ? Cardinality.AtMostOne
+      : C
+    : C extends Cardinality.One
+    ? Cardinality.AtLeastOne
+    : C extends Cardinality.AtMostOne
+    ? Cardinality.Many
+    : C extends Cardinality.Empty
+    ? Cardinality.Many
+    : C;
+
+  export function overrideUpperBound<
+    C extends Cardinality,
+    O extends "One" | "Many"
+  >(card: C, override: O): overrideUpperBound<C, O> {
+    if (override === "One") {
+      if (card === Cardinality.One || card === Cardinality.AtLeastOne) {
+        return Cardinality.One as any;
+      } else {
+        return Cardinality.AtMostOne as any;
+      }
+    } else {
+      if (card === Cardinality.One || card === Cardinality.AtLeastOne) {
+        return Cardinality.AtLeastOne as any;
+      } else {
+        return Cardinality.Many as any;
+      }
+    }
+  }
+
   export type optionalParamCardinality<P extends TypeSet | undefined> =
     P extends TypeSet
       ? overrideLowerBound<P["__cardinality__"], "One">

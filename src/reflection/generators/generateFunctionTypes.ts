@@ -64,6 +64,7 @@ export interface FuncopDef {
   return_type: {id: string; name: string};
   return_typemod: Typemod;
   params: Param[];
+  preserves_optionality?: boolean;
 }
 
 export function generateFuncopTypes<F extends FuncopDef>(
@@ -326,7 +327,8 @@ export function generateFuncopTypes<F extends FuncopDef>(
             }, ${generateReturnCardinality(
               params,
               funcDef.return_typemod,
-              hasNamedParams
+              hasNamedParams,
+              funcDef.preserves_optionality
             )}>`
           );
         });
@@ -394,6 +396,10 @@ export function generateFuncopTypes<F extends FuncopDef>(
               funcDef.return_typemod === "SingletonType"
                 ? ""
                 : `, returnTypemod: ${quote(funcDef.return_typemod)}`
+            }${
+              funcDef.preserves_optionality
+                ? `, preservesOptionality: true`
+                : ""
             }},`,
           ]);
         }
@@ -421,17 +427,19 @@ export function generateFuncopTypes<F extends FuncopDef>(
 
 // param typemods override actual param cardinality:
 // - setoftype -> One
+//     (unless preservesOptionality -> override upper cardinality to 1)
 // - (optional || hasDefault) -> override lower cardinality of actual to 1
 
 // return typemod:
 // - optional -> override return lower cardinality to 0
-//    (product with AtMostOne)
+//    (product with AtMostOne) (ignored if preservesOptionality)
 // - setoftype -> always Many
 
 function generateReturnCardinality(
   params: GroupedParams,
   returnTypemod: Typemod,
-  hasNamedParams: boolean
+  hasNamedParams: boolean,
+  preservesOptionality: boolean = false
 ) {
   if (returnTypemod === "SetOfType") {
     return `$.Cardinality.Many`;
@@ -450,7 +458,11 @@ function generateReturnCardinality(
       : []),
   ].map(param => {
     if (param.typemod === "SetOfType") {
-      return `$.Cardinality.One`;
+      if (preservesOptionality) {
+        return `$.cardinalityUtil.overrideUpperBound<${param.genTypeName}["__cardinality__"], "One">`;
+      } else {
+        return `$.Cardinality.One`;
+      }
     }
 
     if (param.typemod === "OptionalType" || param.hasDefault) {
@@ -477,7 +489,7 @@ function generateReturnCardinality(
       : paramCardinalities[0]
     : "$.Cardinality.One";
 
-  return returnTypemod === "OptionalType"
+  return returnTypemod === "OptionalType" && !preservesOptionality
     ? `$.cardinalityUtil.overrideLowerBound<${cardinality}, 'Zero'>`
     : cardinality;
 }
