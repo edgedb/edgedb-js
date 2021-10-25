@@ -429,7 +429,6 @@ test.skip("connect: timeout", async () => {
     con = getClient({
       timeout: 1,
       waitUntilAvailable: 0,
-      pool: {minSize: 1},
     });
     throw new Error("connection didn't time out");
   } catch (e: any) {
@@ -449,7 +448,6 @@ test.skip("connect: refused", async () => {
       host: "localhost",
       port: 23456,
       waitUntilAvailable: 0,
-      pool: {minSize: 1},
     });
     throw new Error("connection isn't refused");
   } catch (e: any) {
@@ -469,7 +467,6 @@ test.skip("connect: invalid name", async () => {
       host: "invalid.example.org",
       port: 23456,
       waitUntilAvailable: 0,
-      pool: {minSize: 1},
     });
     throw new Error("name was resolved");
   } catch (e: any) {
@@ -489,7 +486,6 @@ test("connect: refused unix", async () => {
     con = getClient({
       host: "/tmp/non-existent",
       waitUntilAvailable: 0,
-      pool: {minSize: 1},
     });
     throw new Error("connection isn't refused");
   } catch (e: any) {

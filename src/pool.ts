@@ -278,12 +278,8 @@ export class ClientConnection extends StandaloneConnection {
   }
 }
 
-const DefaultMinPoolSize = 0;
-const DefaultMaxPoolSize = 100;
-
-export interface PoolOptions {
-  minSize?: number;
-  maxSize?: number;
+export interface ClientOptions {
+  concurrency?: number;
 }
 
 export class ClientStats implements IClientStats {
@@ -327,12 +323,8 @@ export class ClientShell implements Client {
   private impl: ClientImpl;
   private options: Options;
 
-  protected constructor(
-    dsn?: string,
-    connectOptions: ConnectConfig = {},
-    poolOptions: PoolOptions = {}
-  ) {
-    this.impl = new ClientImpl(dsn, connectOptions, poolOptions);
+  protected constructor(dsn?: string, connectOptions: ConnectOptions = {}) {
+    this.impl = new ClientImpl(dsn, connectOptions);
     this.options = Options.defaults();
   }
 
@@ -363,16 +355,8 @@ export class ClientShell implements Client {
   }
 
   /** @internal */
-  static create(
-    dsn?: string,
-    connectOptions?: ConnectConfig | null,
-    poolOptions?: PoolOptions | null
-  ): ClientShell {
-    const client = new ClientShell(
-      dsn,
-      connectOptions || {},
-      poolOptions || {}
-    );
+  static create(dsn?: string, options?: ConnectOptions | null): ClientShell {
+    const client = new ClientShell(dsn, options ?? {});
     client.impl.initialize();
     return client;
   }
@@ -473,39 +457,26 @@ class ClientImpl {
   private _queue: LifoQueue<ClientConnectionHolder>;
   private _holders: ClientConnectionHolder[];
   private _initialized: boolean;
-  private _minSize: number;
-  private _maxSize: number;
+  private _userConcurrency: number | null;
+  private _suggestedConcurrency: number | null;
   private _generation: number;
   private _connectOptions: NormalizedConnectConfig;
   private _codecsRegistry: CodecsRegistry;
 
-  constructor(
-    dsn?: string,
-    connectOptions: ConnectConfig = {},
-    poolOptions: PoolOptions = {}
-  ) {
-    const minSize =
-      poolOptions.minSize === undefined
-        ? DefaultMinPoolSize
-        : poolOptions.minSize;
-    const maxSize =
-      poolOptions.maxSize === undefined
-        ? DefaultMaxPoolSize
-        : poolOptions.maxSize;
-
-    this.validateSizeParameters(minSize, maxSize);
+  constructor(dsn?: string, options: ConnectOptions = {}) {
+    this.validateClientOptions(options);
 
     this._codecsRegistry = new CodecsRegistry();
 
     this._queue = new LifoQueue<ClientConnectionHolder>();
     this._holders = [];
     this._initialized = false;
-    this._minSize = minSize;
-    this._maxSize = maxSize;
+    this._userConcurrency = options.concurrency ?? null;
+    this._suggestedConcurrency = null;
     this._closing = false;
     this._closed = false;
     this._generation = 0;
-    this._connectOptions = parseConnectArguments({...connectOptions, dsn});
+    this._connectOptions = parseConnectArguments({...options, dsn});
   }
 
   /**
@@ -531,22 +502,24 @@ class ClientImpl {
     this._queue.push(holder);
   }
 
-  private validateSizeParameters(minSize: number, maxSize: number): void {
-    if (maxSize <= 0) {
-      throw new errors.InterfaceError(
-        "maxSize is expected to be greater than zero"
+  private validateClientOptions(opts: ClientOptions): void {
+    if (
+      opts.concurrency != null &&
+      (typeof opts.concurrency !== "number" ||
+        !Number.isInteger(opts.concurrency) ||
+        opts.concurrency < 0)
+    ) {
+      throw new Error(
+        `invalid 'concurrency' value: ` +
+          `expected integer greater than 0 (got ${JSON.stringify(
+            opts.concurrency
+          )})`
       );
     }
+  }
 
-    if (minSize < 0) {
-      throw new errors.InterfaceError(
-        "minSize is expected to be greater or equal to zero"
-      );
-    }
-
-    if (minSize > maxSize) {
-      throw new errors.InterfaceError("minSize is greater than maxSize");
-    }
+  private get _concurrency() {
+    return this._userConcurrency ?? this._suggestedConcurrency ?? 1;
   }
 
   initialize(): void {
@@ -558,14 +531,25 @@ class ClientImpl {
       throw new errors.InterfaceError("The client is closed");
     }
 
-    for (let i = 0; i < this._maxSize; i++) {
-      const connectionHolder = new ClientConnectionHolder(this);
-
-      this._holders.push(connectionHolder);
-      this._queue.push(connectionHolder);
-    }
-
+    this._resizeHolderPool();
     this._initialized = true;
+  }
+
+  private _resizeHolderPool() {
+    const holdersDiff = this._concurrency - this._holders.length;
+    if (holdersDiff > 0) {
+      for (let i = 0; i < holdersDiff; i++) {
+        const connectionHolder = new ClientConnectionHolder(this);
+
+        this._holders.push(connectionHolder);
+        this._queue.push(connectionHolder);
+      }
+    } else if (holdersDiff < 0) {
+      // TODO: remove unconnected holders, followed by idle connection holders
+      // until pool reduced to concurrency setting
+      // (Also need to way to drop currently in use holders once they're
+      // returned to the pool)
+    }
   }
 
   /** @internal */
@@ -574,6 +558,13 @@ class ClientImpl {
       this._connectOptions,
       this._codecsRegistry
     );
+    const suggestedConcurrency = connection[
+      INNER
+    ].connection?.serverSettings.get("suggested_pool_concurrency");
+    if (suggestedConcurrency) {
+      this._suggestedConcurrency = parseInt(suggestedConcurrency);
+      this._resizeHolderPool();
+    }
     return connection;
   }
 
@@ -721,16 +712,14 @@ class ClientImpl {
   }
 }
 
-export interface ConnectOptions extends ConnectConfig {
-  pool?: PoolOptions;
-}
+export type ConnectOptions = ConnectConfig & ClientOptions;
 
 export function createClient(
   dsnOrInstanceName?: string | ConnectOptions | null,
   options?: ConnectOptions | null
 ): Client {
   if (typeof dsnOrInstanceName === "string") {
-    return ClientShell.create(dsnOrInstanceName, options, options?.pool);
+    return ClientShell.create(dsnOrInstanceName, options);
   } else {
     if (dsnOrInstanceName != null) {
       // tslint:disable-next-line: no-console
@@ -741,6 +730,6 @@ export function createClient(
       );
     }
     const opts = {...dsnOrInstanceName, ...options};
-    return ClientShell.create(undefined, opts, opts.pool);
+    return ClientShell.create(undefined, opts);
   }
 }

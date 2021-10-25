@@ -468,7 +468,7 @@ export class ConnectionImpl {
   private queryCodecCache: LRU<string, [number, ICodec, ICodec]>;
 
   private serverSecret: Buffer | null;
-  private serverSettings: Map<string, string>;
+  /** @internal */ serverSettings: Map<string, string>;
   private serverXactStatus: TransactionStatus;
 
   private buffer: ReadMessageBuffer;
