@@ -69,7 +69,7 @@ jest.mock("os", () => {
 import * as fs from "fs";
 import {parseConnectArguments} from "../src/con_utils";
 import {getClient} from "./testbase";
-import {Connection} from "../src/ifaces";
+import {Client, Connection} from "../src/ifaces";
 import * as errors from "../src/errors";
 
 function env_wrap(
@@ -423,59 +423,62 @@ test("logging, inProject, fromProject, fromEnv", () => {
   }
 });
 
-test.skip("connect: timeout", async () => {
-  let con: Connection | undefined;
+test("connect: timeout", async () => {
+  let client: Client | undefined;
   try {
-    con = getClient({
+    client = getClient({
       timeout: 1,
       waitUntilAvailable: 0,
     });
+    await client.ensureConnected();
     throw new Error("connection didn't time out");
   } catch (e: any) {
     expect(e).toBeInstanceOf(errors.ClientConnectionTimeoutError);
     expect(e.message).toMatch("connection timed out (1ms)");
   } finally {
-    if (typeof con !== "undefined") {
-      await con.close();
+    if (typeof client !== "undefined") {
+      await client.close();
     }
   }
 });
 
-test.skip("connect: refused", async () => {
-  let con: Connection | undefined;
+test("connect: refused", async () => {
+  let client: Client | undefined;
   try {
-    con = getClient({
+    client = getClient({
       host: "localhost",
       port: 23456,
       waitUntilAvailable: 0,
     });
+    await client.ensureConnected();
     throw new Error("connection isn't refused");
   } catch (e: any) {
     expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
     expect(e.source.code).toMatch("ECONNREFUSED");
   } finally {
-    if (typeof con !== "undefined") {
-      await con.close();
+    if (typeof client !== "undefined") {
+      await client.close();
     }
   }
 });
 
-test.skip("connect: invalid name", async () => {
-  let con: Connection | undefined;
+test("connect: invalid name", async () => {
+  let client: Client | undefined;
   try {
-    con = getClient({
+    client = getClient({
       host: "invalid.example.org",
       port: 23456,
       waitUntilAvailable: 0,
     });
+    await client.ensureConnected();
     throw new Error("name was resolved");
   } catch (e: any) {
     expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
     expect(e.source.code).toMatch("ENOTFOUND");
     expect(e.source.syscall).toMatch("getaddrinfo");
   } finally {
-    if (typeof con !== "undefined") {
-      await con.close();
+    if (typeof client !== "undefined") {
+      await client.close();
     }
   }
 });
