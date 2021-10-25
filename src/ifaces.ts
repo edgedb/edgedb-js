@@ -106,6 +106,7 @@ export interface Client extends Executor {
   close(): Promise<void>;
   isClosed(): boolean;
 
+  ensureConnected(): Promise<void>;
   getStats(): IClientStats;
   terminate(): void;
 }

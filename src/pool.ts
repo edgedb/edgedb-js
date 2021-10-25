@@ -354,6 +354,10 @@ export class ClientShell implements Client {
     return this.impl.getStats();
   }
 
+  ensureConnected() {
+    return this.impl.ensureConnected();
+  }
+
   /** @internal */
   static create(dsn?: string, options?: ConnectOptions | null): ClientShell {
     const client = new ClientShell(dsn, options ?? {});
@@ -490,6 +494,17 @@ class ClientImpl {
           holder.connection !== null && holder.connection.isClosed() === false
       ).length
     );
+  }
+
+  async ensureConnected(): Promise<void> {
+    if (this.getStats().openConnections > 0) {
+      return;
+    }
+    const connHolder = this._holders[0];
+    if (!connHolder) {
+      throw new Error("Client pool is empty");
+    }
+    await connHolder.connect();
   }
 
   /** @internal */
