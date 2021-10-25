@@ -354,8 +354,9 @@ export class ClientShell implements Client {
     return this.impl.getStats();
   }
 
-  ensureConnected() {
-    return this.impl.ensureConnected();
+  async ensureConnected(): Promise<this> {
+    await this.impl.ensureConnected();
+    return this;
   }
 
   /** @internal */

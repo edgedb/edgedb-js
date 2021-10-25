@@ -426,11 +426,10 @@ test("logging, inProject, fromProject, fromEnv", () => {
 test("connect: timeout", async () => {
   let client: Client | undefined;
   try {
-    client = getClient({
+    client = await getClient({
       timeout: 1,
       waitUntilAvailable: 0,
-    });
-    await client.ensureConnected();
+    }).ensureConnected();
     throw new Error("connection didn't time out");
   } catch (e: any) {
     expect(e).toBeInstanceOf(errors.ClientConnectionTimeoutError);
@@ -445,12 +444,11 @@ test("connect: timeout", async () => {
 test("connect: refused", async () => {
   let client: Client | undefined;
   try {
-    client = getClient({
+    client = await getClient({
       host: "localhost",
       port: 23456,
       waitUntilAvailable: 0,
-    });
-    await client.ensureConnected();
+    }).ensureConnected();
     throw new Error("connection isn't refused");
   } catch (e: any) {
     expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
@@ -465,12 +463,11 @@ test("connect: refused", async () => {
 test("connect: invalid name", async () => {
   let client: Client | undefined;
   try {
-    client = getClient({
+    client = await getClient({
       host: "invalid.example.org",
       port: 23456,
       waitUntilAvailable: 0,
-    });
-    await client.ensureConnected();
+    }).ensureConnected();
     throw new Error("name was resolved");
   } catch (e: any) {
     expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
