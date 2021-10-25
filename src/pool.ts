@@ -33,8 +33,8 @@ import {
   OPTIONS,
   QueryArgs,
   Connection,
-  Pool,
-  IPoolStats,
+  Client,
+  IClientStats,
 } from "./ifaces";
 import {Transaction} from "./transaction";
 
@@ -95,14 +95,14 @@ export class Deferred<T> {
   }
 }
 
-class PoolConnectionHolder {
-  private _pool: PoolImpl;
-  private _connection: PoolConnection | null;
+class ClientConnectionHolder {
+  private _client: ClientImpl;
+  private _connection: ClientConnection | null;
   private _generation: number | null;
   private _inUse: Deferred<void> | null;
 
-  constructor(pool: PoolImpl) {
-    this._pool = pool;
+  constructor(client: ClientImpl) {
+    this._client = client;
     this._connection = null;
     this._inUse = null;
     this._generation = null;
@@ -112,8 +112,8 @@ class PoolConnectionHolder {
     return this._connection;
   }
 
-  get pool(): PoolImpl {
-    return this._pool;
+  get client(): ClientImpl {
+    return this._client;
   }
 
   terminate(): void {
@@ -125,21 +125,21 @@ class PoolConnectionHolder {
   async connect(): Promise<void> {
     if (this._connection !== null) {
       throw new errors.ClientError(
-        "PoolConnectionHolder.connect() called while another " +
+        "ClientConnectionHolder.connect() called while another " +
           "connection already exists"
       );
     }
 
-    this._connection = await this._pool.getNewConnection();
+    this._connection = await this._client.getNewConnection();
     this._connection[INNER][HOLDER] = this;
-    this._generation = this._pool.generation;
+    this._generation = this._client.generation;
   }
 
-  async acquire(options: Options): Promise<PoolConnection> {
+  async acquire(options: Options): Promise<ClientConnection> {
     if (this._connection === null || this._connection.isClosed()) {
       this._connection = null;
       await this.connect();
-    } else if (this._generation !== this._pool.generation) {
+    } else if (this._generation !== this._client.generation) {
       // Connections have been expired, re-connect the holder.
 
       // Perform closing in a concurrent task, hence no await:
@@ -157,7 +157,7 @@ class PoolConnectionHolder {
   async release(): Promise<void> {
     if (this._inUse === null) {
       throw new errors.ClientError(
-        "PoolConnectionHolder.release() called on " +
+        "ClientConnectionHolder.release() called on " +
           "a free connection holder"
       );
     }
@@ -168,9 +168,9 @@ class PoolConnectionHolder {
       return;
     }
 
-    if (this._generation !== this._pool.generation) {
+    if (this._generation !== this._client.generation) {
       // The connection has expired because it belongs to
-      // an older generation (Pool.expire_connections() has
+      // an older generation (Client.expire_connections() has
       // been called).
       await this._connection?.close();
       return;
@@ -219,13 +219,13 @@ class PoolConnectionHolder {
     this._connection = this._connection![DETACH]();
 
     // Put ourselves back to the pool queue.
-    this._pool.enqueue(this);
+    this._client.enqueue(this);
   }
 }
 
-export class PoolInnerConnection extends InnerConnection {
+export class ClientInnerConnection extends InnerConnection {
   private [DETACHED]: boolean;
-  private [HOLDER]: PoolConnectionHolder | null;
+  private [HOLDER]: ClientConnectionHolder | null;
   constructor(config: NormalizedConnectConfig, registry: CodecsRegistry) {
     super(config, registry);
     this[DETACHED] = false;
@@ -238,23 +238,23 @@ export class PoolInnerConnection extends InnerConnection {
     }
     return await super.reconnect(singleAttempt);
   }
-  detach(): PoolInnerConnection {
+  detach(): ClientInnerConnection {
     const impl = this.connection;
     this.connection = undefined;
-    const result = new PoolInnerConnection(this.config, this.registry);
+    const result = new ClientInnerConnection(this.config, this.registry);
     result.connection = impl;
     return result;
   }
 }
 
-export class PoolConnection extends StandaloneConnection {
-  declare [INNER]: PoolInnerConnection;
+export class ClientConnection extends StandaloneConnection {
+  declare [INNER]: ClientInnerConnection;
 
   protected initInner(
     config: NormalizedConnectConfig,
     registry: CodecsRegistry
   ): void {
-    this[INNER] = new PoolInnerConnection(config, registry);
+    this[INNER] = new ClientInnerConnection(config, registry);
   }
 
   protected cleanup(): void {
@@ -264,7 +264,7 @@ export class PoolConnection extends StandaloneConnection {
     }
   }
 
-  [DETACH](): PoolConnection | null {
+  [DETACH](): ClientConnection | null {
     const result = this.shallowClone();
     const inner = this[INNER];
     const holder = inner[HOLDER];
@@ -286,11 +286,7 @@ export interface PoolOptions {
   maxSize?: number;
 }
 
-export interface LegacyPoolOptions extends PoolOptions {
-  connectOptions?: ConnectConfig | null;
-}
-
-export class PoolStats implements IPoolStats {
+export class ClientStats implements IClientStats {
   private _queueLength: number;
   private _openConnections: number;
 
@@ -310,7 +306,7 @@ export class PoolStats implements IPoolStats {
   }
 
   /**
-   * Get the length of currently open connections of the connection pool.
+   * Get the length of currently open connections of the client pool.
    */
   get openConnections(): number {
     return this._openConnections;
@@ -326,9 +322,9 @@ export class PoolStats implements IPoolStats {
  * open cursors and other resources *except* prepared statements.
  * Pools are created by calling :func:`~edgedb.pool.create`.
  */
-export class PoolShell implements Pool {
+export class ClientShell implements Client {
   [ALLOW_MODIFICATIONS]: never;
-  private impl: PoolImpl;
+  private impl: ClientImpl;
   private options: Options;
 
   protected constructor(
@@ -336,7 +332,7 @@ export class PoolShell implements Pool {
     connectOptions: ConnectConfig = {},
     poolOptions: PoolOptions = {}
   ) {
-    this.impl = new PoolImpl(dsn, connectOptions, poolOptions);
+    this.impl = new ClientImpl(dsn, connectOptions, poolOptions);
     this.options = Options.defaults();
   }
 
@@ -360,9 +356,9 @@ export class PoolShell implements Pool {
   }
 
   /**
-   * Get information about the current state of the pool.
+   * Get information about the current state of the client.
    */
-  getStats(): PoolStats {
+  getStats(): ClientStats {
     return this.impl.getStats();
   }
 
@@ -371,10 +367,14 @@ export class PoolShell implements Pool {
     dsn?: string,
     connectOptions?: ConnectConfig | null,
     poolOptions?: PoolOptions | null
-  ): Promise<PoolShell> {
-    const pool = new PoolShell(dsn, connectOptions || {}, poolOptions || {});
-    await pool.impl.initialize();
-    return pool;
+  ): Promise<ClientShell> {
+    const client = new ClientShell(
+      dsn,
+      connectOptions || {},
+      poolOptions || {}
+    );
+    await client.impl.initialize();
+    return client;
   }
 
   async rawTransaction<T>(
@@ -445,11 +445,11 @@ export class PoolShell implements Pool {
   }
 
   /**
-   * Attempt to gracefully close all connections in the pool.
+   * Attempt to gracefully close all connections in the client pool.
    *
-   * Waits until all pool connections are released, closes them and
-   * shuts down the pool. If any error occurs
-   * in ``close()``, the pool will terminate by calling ``terminate()``.
+   * Waits until all client pool connections are released, closes them and
+   * shuts down the client. If any error occurs
+   * in ``close()``, the client will terminate by calling ``terminate()``.
    */
   async close(): Promise<void> {
     await this.impl.close();
@@ -459,7 +459,7 @@ export class PoolShell implements Pool {
     return this.impl.isClosed();
   }
   /**
-   * Terminate all connections in the pool. If the pool is already closed,
+   * Terminate all connections in the client pool. If the client is already closed,
    * it returns without doing anything.
    */
   terminate(): void {
@@ -467,11 +467,11 @@ export class PoolShell implements Pool {
   }
 }
 
-class PoolImpl {
+class ClientImpl {
   private _closed: boolean;
   private _closing: boolean;
-  private _queue: LifoQueue<PoolConnectionHolder>;
-  private _holders: PoolConnectionHolder[];
+  private _queue: LifoQueue<ClientConnectionHolder>;
+  private _holders: ClientConnectionHolder[];
   private _initialized: boolean;
   private _initializing: boolean;
   private _minSize: number;
@@ -498,7 +498,7 @@ class PoolImpl {
 
     this._codecsRegistry = new CodecsRegistry();
 
-    this._queue = new LifoQueue<PoolConnectionHolder>();
+    this._queue = new LifoQueue<ClientConnectionHolder>();
     this._holders = [];
     this._initialized = false;
     this._initializing = false;
@@ -511,10 +511,10 @@ class PoolImpl {
   }
 
   /**
-   * Get information about the current state of the pool.
+   * Get information about the current state of the client.
    */
-  getStats(): PoolStats {
-    return new PoolStats(
+  getStats(): ClientStats {
+    return new ClientStats(
       this._queue.pending,
       this._holders.filter(
         (holder) =>
@@ -529,7 +529,7 @@ class PoolImpl {
   }
 
   /** @internal */
-  enqueue(holder: PoolConnectionHolder): void {
+  enqueue(holder: ClientConnectionHolder): void {
     this._queue.push(holder);
   }
 
@@ -560,13 +560,13 @@ class PoolImpl {
       throw new errors.InterfaceError("The pool is already being initialized");
     }
     if (this._closed) {
-      throw new errors.InterfaceError("The pool is closed");
+      throw new errors.InterfaceError("The client is closed");
     }
 
     this._initializing = true;
 
     for (let i = 0; i < this._maxSize; i++) {
-      const connectionHolder = new PoolConnectionHolder(this);
+      const connectionHolder = new ClientConnectionHolder(this);
 
       this._holders.push(connectionHolder);
       this._queue.push(connectionHolder);
@@ -607,8 +607,8 @@ class PoolImpl {
   }
 
   /** @internal */
-  async getNewConnection(): Promise<PoolConnection> {
-    const connection = await PoolConnection.connect(
+  async getNewConnection(): Promise<ClientConnection> {
+    const connection = await ClientConnection.connect(
       this._connectOptions,
       this._codecsRegistry
     );
@@ -626,30 +626,32 @@ class PoolImpl {
       }
 
       throw new errors.InterfaceError(
-        "The pool is not initialized. Call the ``initialize`` method " +
+        "The client is not initialized. Call the ``initialize`` method " +
           "before using it."
       );
     }
 
     if (this._closed) {
-      throw new errors.InterfaceError("The pool is closed");
+      throw new errors.InterfaceError("The client is closed");
     }
   }
 
-  async acquire(options: Options): Promise<PoolConnection> {
+  async acquire(options: Options): Promise<ClientConnection> {
     if (this._closing) {
-      throw new errors.InterfaceError("The pool is closing");
+      throw new errors.InterfaceError("The client is closing");
     }
 
     if (this._closed) {
-      throw new errors.InterfaceError("The pool is closed");
+      throw new errors.InterfaceError("The client is closed");
     }
 
     this._checkInit();
     return await this._acquireConnection(options);
   }
 
-  private async _acquireConnection(options: Options): Promise<PoolConnection> {
+  private async _acquireConnection(
+    options: Options
+  ): Promise<ClientConnection> {
     // Ref: asyncio_pool _acquire
 
     // gets the last item from the queue,
@@ -667,11 +669,13 @@ class PoolImpl {
   }
 
   /**
-   * Release a database connection back to the pool.
+   * Release a database connection back to the client pool.
    */
   async release(connection: Connection): Promise<void> {
-    if (!(connection instanceof PoolConnection)) {
-      throw new Error("a connection obtained via pool.acquire() was expected");
+    if (!(connection instanceof ClientConnection)) {
+      throw new Error(
+        "a connection obtained via client.acquire() was expected"
+      );
     }
 
     const holder = connection[INNER][HOLDER];
@@ -679,9 +683,9 @@ class PoolImpl {
       // Already released, do nothing
       return;
     }
-    if (holder.pool !== this) {
+    if (holder.client !== this) {
       throw new errors.InterfaceError(
-        "The connection proxy does not belong to this pool."
+        "The connection proxy does not belong to this client."
       );
     }
 
@@ -692,11 +696,11 @@ class PoolImpl {
   }
 
   /**
-   * Attempt to gracefully close all connections in the pool.
+   * Attempt to gracefully close all connections in the client pool.
    *
-   * Waits until all pool connections are released, closes them and
-   * shuts down the pool. If any error occurs
-   * in ``close()``, the pool will terminate by calling ``terminate()``.
+   * Waits until all client pool connections are released, closes them and
+   * shuts down the client. If any error occurs
+   * in ``close()``, the client will terminate by calling ``terminate()``.
    */
   async close(): Promise<void> {
     // Ref. asyncio_pool aclose
@@ -737,7 +741,7 @@ class PoolImpl {
   }
 
   /**
-   * Terminate all connections in the pool. If the pool is already closed,
+   * Terminate all connections in the client pool. If the client is already closed,
    * it returns without doing anything.
    */
   terminate(): void {
@@ -757,34 +761,9 @@ class PoolImpl {
   private _warn_on_long_close(): void {
     // tslint:disable-next-line: no-console
     console.warn(
-      "Pool.close() is taking over 60 seconds to complete. " +
+      "Client.close() is taking over 60 seconds to complete. " +
         "Check if you have any unreleased connections left."
     );
-  }
-}
-
-export function createPool(
-  dsn?: string | LegacyPoolOptions | null,
-  options?: LegacyPoolOptions | null
-): Promise<Pool> {
-  // tslint:disable-next-line: no-console
-  console.warn(
-    "`createPool()` is deprecated and is scheduled to be removed. " +
-      "Use `connect()` instead"
-  );
-  if (typeof dsn === "string") {
-    return PoolShell.create(dsn, options?.connectOptions, options);
-  } else {
-    if (dsn != null) {
-      // tslint:disable-next-line: no-console
-      console.warn(
-        "`options` as the first argument to `edgedb.connect` is " +
-          "deprecated, use " +
-          "`edgedb.connect('instance_name_or_dsn', options)`"
-      );
-    }
-    const opts = {...dsn, ...options};
-    return PoolShell.create(undefined, opts.connectOptions, opts);
   }
 }
 
@@ -792,22 +771,22 @@ export interface ConnectOptions extends ConnectConfig {
   pool?: PoolOptions;
 }
 
-export default function connect(
+export function createClient(
   dsnOrInstanceName?: string | ConnectOptions | null,
   options?: ConnectOptions | null
-): Promise<Pool> {
+): Promise<Client> {
   if (typeof dsnOrInstanceName === "string") {
-    return PoolShell.create(dsnOrInstanceName, options, options?.pool);
+    return ClientShell.create(dsnOrInstanceName, options, options?.pool);
   } else {
     if (dsnOrInstanceName != null) {
       // tslint:disable-next-line: no-console
       console.warn(
-        "`options` as the first argument to `edgedb.connect` is " +
+        "`options` as the first argument to `edgedb.createClient` is " +
           "deprecated, use " +
-          "`edgedb.connect(dsnOrInstanceName, options)`"
+          "`edgedb.createClient(dsnOrInstanceName, options)`"
       );
     }
     const opts = {...dsnOrInstanceName, ...options};
-    return PoolShell.create(undefined, opts, opts.pool);
+    return ClientShell.create(undefined, opts, opts.pool);
   }
 }
