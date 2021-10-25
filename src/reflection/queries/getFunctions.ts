@@ -21,6 +21,7 @@ export interface FunctionDef {
   return_type: {id: string; name: string};
   return_typemod: Typemod;
   params: Param[];
+  preserves_optionality: boolean;
 }
 
 export type FunctionTypes = typeutil.depromisify<
@@ -46,6 +47,7 @@ export const getFunctions = async (cxn: Connection) => {
         typemod,
         hasDefault := exists .default,
       } order by @index,
+      preserves_optionality,
     } filter .internal = false
   `);
 

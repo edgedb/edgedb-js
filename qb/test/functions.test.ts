@@ -300,12 +300,12 @@ test("variadic args", () => {
 
 test("anytype", () => {
   checkFunctionExpr(
-    e.min(e.json("json" as string)),
+    e.min(e.json("json")),
     "std::min",
-    [e.json("json" as string)],
+    [e.json("json")],
     {},
     e.json,
-    $.Cardinality.AtMostOne
+    $.Cardinality.One
   );
   checkFunctionExpr(
     e.min(e.set(e.int64(1), e.int64(2))),
@@ -313,7 +313,7 @@ test("anytype", () => {
     [e.set(e.int64(1), e.int64(2))],
     {},
     e.int64,
-    $.Cardinality.AtMostOne
+    $.Cardinality.One
   );
 
   // BROKEN
