@@ -534,7 +534,7 @@ class ClientImpl {
     }
   }
 
-  private get _concurrency() {
+  private get _concurrency(): number {
     return this._userConcurrency ?? this._suggestedConcurrency ?? 1;
   }
 
@@ -551,7 +551,7 @@ class ClientImpl {
     this._initialized = true;
   }
 
-  private _resizeHolderPool() {
+  private _resizeHolderPool(): void {
     const holdersDiff = this._concurrency - this._holders.length;
     if (holdersDiff > 0) {
       for (let i = 0; i < holdersDiff; i++) {
@@ -578,7 +578,7 @@ class ClientImpl {
       INNER
     ].connection?.serverSettings.get("suggested_pool_concurrency");
     if (suggestedConcurrency) {
-      this._suggestedConcurrency = parseInt(suggestedConcurrency);
+      this._suggestedConcurrency = parseInt(suggestedConcurrency, 10);
       this._resizeHolderPool();
     }
     return connection;
