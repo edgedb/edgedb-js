@@ -49,7 +49,7 @@ class Barrier {
 const typename = "RetryTest";
 
 async function run(test: (con: Connection) => Promise<void>): Promise<void> {
-  const connection = await getClient();
+  const connection = getClient();
 
   try {
     await test(connection);
@@ -61,9 +61,9 @@ async function run(test: (con: Connection) => Promise<void>): Promise<void> {
 async function run2(
   test: (con1: Connection, con2: Connection) => Promise<void>
 ): Promise<void> {
-  const connection = await getClient();
+  const connection = getClient();
   try {
-    const connection2 = await getClient();
+    const connection2 = getClient();
     try {
       await test(connection, connection2);
     } finally {

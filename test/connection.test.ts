@@ -426,7 +426,7 @@ test("logging, inProject, fromProject, fromEnv", () => {
 test.skip("connect: timeout", async () => {
   let con: Connection | undefined;
   try {
-    con = await getClient({
+    con = getClient({
       timeout: 1,
       waitUntilAvailable: 0,
       pool: {minSize: 1},
@@ -445,7 +445,7 @@ test.skip("connect: timeout", async () => {
 test.skip("connect: refused", async () => {
   let con: Connection | undefined;
   try {
-    con = await getClient({
+    con = getClient({
       host: "localhost",
       port: 23456,
       waitUntilAvailable: 0,
@@ -465,7 +465,7 @@ test.skip("connect: refused", async () => {
 test.skip("connect: invalid name", async () => {
   let con: Connection | undefined;
   try {
-    con = await getClient({
+    con = getClient({
       host: "invalid.example.org",
       port: 23456,
       waitUntilAvailable: 0,
@@ -486,7 +486,7 @@ test.skip("connect: invalid name", async () => {
 test("connect: refused unix", async () => {
   let con: Connection | undefined;
   try {
-    con = await getClient({
+    con = getClient({
       host: "/tmp/non-existent",
       waitUntilAvailable: 0,
       pool: {minSize: 1},
