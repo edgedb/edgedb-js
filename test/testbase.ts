@@ -51,6 +51,6 @@ export function getConnectOptions(): ConnectOptions {
   return _getOpts({});
 }
 
-export function getClient(opts: ConnectOptions = {}): Promise<Client> {
+export function getClient(opts: ConnectOptions = {}): Client {
   return createClient(undefined, _getOpts(opts));
 }

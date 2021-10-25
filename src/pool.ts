@@ -363,17 +363,17 @@ export class ClientShell implements Client {
   }
 
   /** @internal */
-  static async create(
+  static create(
     dsn?: string,
     connectOptions?: ConnectConfig | null,
     poolOptions?: PoolOptions | null
-  ): Promise<ClientShell> {
+  ): ClientShell {
     const client = new ClientShell(
       dsn,
       connectOptions || {},
       poolOptions || {}
     );
-    await client.impl.initialize();
+    client.impl.initialize();
     return client;
   }
 
@@ -459,8 +459,8 @@ export class ClientShell implements Client {
     return this.impl.isClosed();
   }
   /**
-   * Terminate all connections in the client pool. If the client is already closed,
-   * it returns without doing anything.
+   * Terminate all connections in the client pool. If the client is already
+   * closed, it returns without doing anything.
    */
   terminate(): void {
     this.impl.terminate();
@@ -473,7 +473,6 @@ class ClientImpl {
   private _queue: LifoQueue<ClientConnectionHolder>;
   private _holders: ClientConnectionHolder[];
   private _initialized: boolean;
-  private _initializing: boolean;
   private _minSize: number;
   private _maxSize: number;
   private _generation: number;
@@ -501,7 +500,6 @@ class ClientImpl {
     this._queue = new LifoQueue<ClientConnectionHolder>();
     this._holders = [];
     this._initialized = false;
-    this._initializing = false;
     this._minSize = minSize;
     this._maxSize = maxSize;
     this._closing = false;
@@ -551,19 +549,14 @@ class ClientImpl {
     }
   }
 
-  async initialize(): Promise<void> {
+  initialize(): void {
     // Ref: asyncio_pool.py _async__init__
     if (this._initialized) {
       return;
     }
-    if (this._initializing) {
-      throw new errors.InterfaceError("The pool is already being initialized");
-    }
     if (this._closed) {
       throw new errors.InterfaceError("The client is closed");
     }
-
-    this._initializing = true;
 
     for (let i = 0; i < this._maxSize; i++) {
       const connectionHolder = new ClientConnectionHolder(this);
@@ -572,38 +565,7 @@ class ClientImpl {
       this._queue.push(connectionHolder);
     }
 
-    try {
-      await this._initializeHolders();
-    } finally {
-      this._initialized = true;
-      this._initializing = false;
-    }
-  }
-
-  private async _initializeHolders(): Promise<void> {
-    if (!this._minSize) {
-      return;
-    }
-
-    // Since we use a LIFO queue, the first items in the queue will be
-    // the last ones in `self._holders`.  We want to pre-connect the
-    // first few connections in the queue, therefore we want to walk
-    // `self._holders` in reverse.
-
-    const tasks: Array<Promise<void>> = [];
-
-    let count = 0;
-    for (let i = this._holders.length - 1; i >= 0; i--) {
-      if (count >= this._minSize) {
-        break;
-      }
-
-      const connectionHolder = this._holders[i];
-      tasks.push(connectionHolder.connect());
-      count += 1;
-    }
-
-    await Promise.all(tasks);
+    this._initialized = true;
   }
 
   /** @internal */
@@ -617,14 +579,6 @@ class ClientImpl {
 
   private _checkInit(): void {
     if (!this._initialized) {
-      if (this._initializing) {
-        throw new errors.InterfaceError(
-          "The pool is being initialized, but not yet ready: " +
-            "likely there is a race between creating a pool and " +
-            "using it"
-        );
-      }
-
       throw new errors.InterfaceError(
         "The client is not initialized. Call the ``initialize`` method " +
           "before using it."
@@ -741,8 +695,8 @@ class ClientImpl {
   }
 
   /**
-   * Terminate all connections in the client pool. If the client is already closed,
-   * it returns without doing anything.
+   * Terminate all connections in the client pool. If the client is already
+   * closed, it returns without doing anything.
    */
   terminate(): void {
     if (this._closed) {
@@ -774,7 +728,7 @@ export interface ConnectOptions extends ConnectConfig {
 export function createClient(
   dsnOrInstanceName?: string | ConnectOptions | null,
   options?: ConnectOptions | null
-): Promise<Client> {
+): Client {
   if (typeof dsnOrInstanceName === "string") {
     return ClientShell.create(dsnOrInstanceName, options, options?.pool);
   } else {
