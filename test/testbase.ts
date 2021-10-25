@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import connect, {createPool} from "../src/index.node";
+import createClient from "../src/index.node";
 import {ConnectConfig} from "../src/con_utils";
-import {Connection, Pool} from "../src/ifaces";
+import {Connection, Client} from "../src/ifaces";
 import {ConnectOptions} from "../src/pool";
 
 export const isDeno =
@@ -51,12 +51,6 @@ export function getConnectOptions(): ConnectOptions {
   return _getOpts({});
 }
 
-export async function asyncConnect(opts?: ConnectOptions): Promise<Pool> {
-  return await connect(undefined, _getOpts(opts ?? {}));
-}
-
-export async function getPool(opts?: ConnectConfig): Promise<Pool> {
-  return await createPool(undefined, {
-    connectOptions: _getOpts(opts ?? {}),
-  });
+export function getClient(opts: ConnectOptions = {}): Promise<Client> {
+  return createClient(undefined, _getOpts(opts));
 }

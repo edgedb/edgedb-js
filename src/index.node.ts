@@ -16,15 +16,13 @@
  * limitations under the License.
  */
 
-import _connect from "./pool";
-export const connect = _connect;
-export default connect;
+export {createClient} from "./pool";
+import {createClient} from "./pool";
+export default createClient;
 
 export {RawConnection as _RawConnection} from "./client";
 
-export {createPool} from "./pool";
-
-export type {Connection, Pool} from "./ifaces";
+export type {Connection, Client} from "./ifaces";
 
 export {IsolationLevel, RetryCondition, RetryOptions} from "./options";
 export {defaultBackoff} from "./options";

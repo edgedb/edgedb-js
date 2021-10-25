@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import {getPool} from "./testbase";
+import {getClient} from "./testbase";
 
 test("pool.query: basic scalars", async () => {
-  const pool = await getPool();
+  const pool = await getClient();
 
   try {
     let res = await pool.query("select {'a', 'bc'}");
@@ -51,7 +51,7 @@ test("pool.query: basic scalars", async () => {
 });
 
 test("pool.queryJSON", async () => {
-  const pool = await getPool();
+  const pool = await getClient();
   try {
     const res = await pool.queryJSON("select {(a := 1), (a := 2)}");
     expect(JSON.parse(res)).toEqual([{a: 1}, {a: 2}]);
@@ -61,7 +61,7 @@ test("pool.queryJSON", async () => {
 });
 
 test("pool.querySingle", async () => {
-  const pool = await getPool();
+  const pool = await getClient();
   try {
     let res;
 
@@ -76,7 +76,7 @@ test("pool.querySingle", async () => {
 });
 
 test("pool.querySingleJSON", async () => {
-  const pool = await getPool();
+  const pool = await getClient();
   try {
     let res;
 
@@ -96,7 +96,7 @@ test("pool.querySingleJSON", async () => {
 });
 
 test("createPool.querySingle", async () => {
-  const pool = await getPool();
+  const pool = await getClient();
   let res;
 
   try {
@@ -111,7 +111,7 @@ test("createPool.querySingle", async () => {
 });
 
 test("pool retry works", async () => {
-  const pool = await getPool();
+  const pool = await getClient();
 
   try {
     const result = await pool.retryingTransaction(async (tx) => {

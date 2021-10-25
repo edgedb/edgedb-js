@@ -17,21 +17,21 @@
  */
 
 import * as errors from "../src/errors";
-import {asyncConnect} from "./testbase";
+import {getClient} from "./testbase";
 import {Transaction, TransactionState} from "../src/transaction";
-import {Connection, Pool} from "../src/ifaces";
+import {Connection, Client} from "../src/ifaces";
 import {TransactionOptions, IsolationLevel} from "../src/options";
 
 const typename = "TransactionTest";
 
 async function run(test: (con: Connection) => Promise<void>): Promise<void> {
-  const connection = await asyncConnect();
+  const client = await getClient();
 
   try {
-    await test(connection);
+    await test(client);
   } finally {
     try {
-      await connection.close();
+      await client.close();
     } catch (e) {
       console.error("Error closing connection", e);
     }

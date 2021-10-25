@@ -17,7 +17,7 @@
  */
 
 import * as errors from "../src/errors";
-import {asyncConnect} from "./testbase";
+import {getClient} from "./testbase";
 import {Transaction, TransactionState} from "../src/transaction";
 import {Connection} from "../src/ifaces";
 import {IsolationLevel, RetryOptions, defaultBackoff} from "../src/options";
@@ -49,7 +49,7 @@ class Barrier {
 const typename = "RetryTest";
 
 async function run(test: (con: Connection) => Promise<void>): Promise<void> {
-  const connection = await asyncConnect();
+  const connection = await getClient();
 
   try {
     await test(connection);
@@ -61,9 +61,9 @@ async function run(test: (con: Connection) => Promise<void>): Promise<void> {
 async function run2(
   test: (con1: Connection, con2: Connection) => Promise<void>
 ): Promise<void> {
-  const connection = await asyncConnect();
+  const connection = await getClient();
   try {
-    const connection2 = await asyncConnect();
+    const connection2 = await getClient();
     try {
       await test(connection, connection2);
     } finally {

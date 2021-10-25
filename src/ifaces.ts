@@ -89,12 +89,12 @@ export interface Connection extends Executor {
   isClosed(): boolean;
 }
 
-export interface IPoolStats {
+export interface IClientStats {
   queueLength: number;
   openConnections: number;
 }
 
-export interface Pool extends Executor {
+export interface Client extends Executor {
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
@@ -106,7 +106,7 @@ export interface Pool extends Executor {
   close(): Promise<void>;
   isClosed(): boolean;
 
-  getStats(): IPoolStats;
+  getStats(): IClientStats;
   terminate(): void;
 }
 

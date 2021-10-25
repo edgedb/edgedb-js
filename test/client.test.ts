@@ -36,7 +36,7 @@ import {
   RelativeDuration,
   EdgeDBDateTime,
 } from "../src/datatypes/datetime";
-import {asyncConnect, getConnectOptions, isDeno} from "./testbase";
+import {getClient, getConnectOptions, isDeno} from "./testbase";
 import {parseConnectArguments} from "../src/con_utils";
 
 function setStringCodecs(codecs: string[], conn: Connection) {
@@ -51,7 +51,7 @@ function setStringCodecs(codecs: string[], conn: Connection) {
 }
 
 test("query: basic scalars", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.query("select {'a', 'bc'}");
@@ -107,7 +107,7 @@ test("query: basic scalars", async () => {
 });
 
 test("fetch: bigint", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     const testar = [
@@ -208,7 +208,7 @@ test("fetch: bigint", async () => {
 });
 
 test("fetch: decimal as string", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   setStringCodecs(["decimal"], con);
 
   const vals = [
@@ -342,7 +342,7 @@ test("fetch: decimal as string", async () => {
 });
 
 test("fetch: int64 as string", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   setStringCodecs(["int64"], con);
 
   const vals = [
@@ -381,7 +381,7 @@ test("fetch: int64 as string", async () => {
 });
 
 test("fetch: bigint as string", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   setStringCodecs(["bigint"], con);
 
   const vals = [
@@ -425,7 +425,7 @@ function edgeDBDateTimeToStr(dt: EdgeDBDateTime): string {
 }
 
 test("fetch: datetime as string", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   setStringCodecs(["local_datetime", "datetime"], con);
 
   const maxDate = 253402300799;
@@ -466,7 +466,7 @@ test("fetch: datetime as string", async () => {
 });
 
 test("fetch: positional args", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     const intCases: Array<[string[], number[]]> = [
@@ -536,7 +536,7 @@ test("fetch: positional args", async () => {
 });
 
 test("fetch: named args", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingle(`select <str>$a`, {a: "123"});
@@ -573,7 +573,7 @@ test("fetch: named args", async () => {
 });
 
 test("fetch: int overflow", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingle(`
@@ -609,7 +609,7 @@ test("fetch: int overflow", async () => {
 });
 
 test("fetch: datetime", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingle(`
@@ -629,7 +629,7 @@ test("fetch: datetime", async () => {
 });
 
 test("fetch: cal::local_date", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingle(`
@@ -652,7 +652,7 @@ test("fetch: cal::local_date", async () => {
 });
 
 test("fetch: cal::local_time", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     for (const time of [
@@ -730,7 +730,7 @@ test("fetch: duration", async () => {
     return duration;
   }
 
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     const ver = await con.querySingle<any>("select sys::get_version()");
@@ -826,7 +826,7 @@ if (!isDeno) {
       );
     }
 
-    const con = await asyncConnect();
+    const con = await getClient();
     try {
       // Test encode/decode round trip.
       const dursFromDb = await con.query<any>(
@@ -861,7 +861,7 @@ if (!isDeno) {
 }
 
 test("fetch: relative_duration", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     for (const time of [
@@ -934,7 +934,7 @@ if (!isDeno) {
       );
     }
 
-    const con = await asyncConnect();
+    const con = await getClient();
     try {
       // Test encode/decode round trip.
       const dursFromDb: any = await con.query(
@@ -955,7 +955,7 @@ if (!isDeno) {
 }
 
 test("fetch: tuple", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.query("select ()");
@@ -1004,7 +1004,7 @@ test("fetch: tuple", async () => {
 });
 
 test("fetch: object", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
 
   let res: any;
   try {
@@ -1071,7 +1071,7 @@ test("fetch: object", async () => {
 });
 
 test("fetch: set of arrays", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingle(`
@@ -1116,7 +1116,7 @@ test("fetch: set of arrays", async () => {
 });
 
 test("fetch: object implicit fields", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingle(`
@@ -1150,7 +1150,7 @@ test("fetch: object implicit fields", async () => {
 });
 
 test("fetch: uuid", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingle("SELECT schema::ObjectType.id LIMIT 1");
@@ -1167,7 +1167,7 @@ test("fetch: uuid", async () => {
 });
 
 test("fetch: enum", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   await con.query("start transaction");
   try {
     await con.execute(`
@@ -1196,7 +1196,7 @@ test("fetch: enum", async () => {
 });
 
 test("fetch: namedtuple", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingle("select (a := 1)");
@@ -1243,7 +1243,7 @@ test("fetch: namedtuple", async () => {
 });
 
 test("querySingle: basic scalars", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingle("select 'abc'");
@@ -1268,7 +1268,7 @@ test("querySingle: basic scalars", async () => {
 });
 
 test("querySingle: arrays", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingle("select [12312312, -1, 123, 0, 1]");
@@ -1296,7 +1296,7 @@ test("fetch: long strings", async () => {
 
   // This test is meant to stress test the ring buffer.
 
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     // A 1mb string.
@@ -1320,7 +1320,7 @@ test("fetch: long strings", async () => {
 });
 
 test("querySingleJSON", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   let res: any;
   try {
     res = await con.querySingleJSON("select (a := 1)");
@@ -1339,7 +1339,7 @@ test("querySingleJSON", async () => {
 });
 
 test("queryJSON", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   try {
     const res = await con.queryJSON("select {(a := 1), (a := 2)}");
     expect(JSON.parse(res)).toEqual([{a: 1}, {a: 2}]);
@@ -1349,7 +1349,7 @@ test("queryJSON", async () => {
 });
 
 test("querySingle wrong cardinality", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   try {
     await con
       .querySingleJSON("start transaction")
@@ -1374,7 +1374,7 @@ test("querySingle wrong cardinality", async () => {
 });
 
 test("execute", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   try {
     await con
       .execute(`select 1/0;`)
@@ -1406,7 +1406,7 @@ test("execute", async () => {
 test("fetch/optimistic cache invalidation", async () => {
   const typename = "CacheInv_01";
   const query = `SELECT ${typename}.prop1 LIMIT 1`;
-  const con = await asyncConnect();
+  const con = await getClient();
   await con.query("start transaction");
   try {
     await con.execute(`
@@ -1451,7 +1451,7 @@ test("fetch/optimistic cache invalidation", async () => {
 });
 
 test("fetch no codec", async () => {
-  const con = await asyncConnect();
+  const con = await getClient();
   try {
     await con
       .querySingle("select <decimal>1")
@@ -1470,7 +1470,7 @@ test("fetch no codec", async () => {
 });
 
 test("concurrent ops", async () => {
-  const pool = await asyncConnect();
+  const pool = await getClient();
   try {
     const p1 = pool.querySingle(`SELECT 1 + 2`);
     const p2 = pool.querySingle(`SELECT 2 + 2`);
