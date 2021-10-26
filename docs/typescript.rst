@@ -19,20 +19,19 @@ to these methods to retrieve a strongly typed result.
 
     async function main() {
 
-      const conn = await edgedb.connect("edgedb://edgedb@localhost/test");
-
+      const client = edgedb.createClient();
 
       // Select several Users
-      let userSet = await conn.query<User>(
-        `SELECT User {id, name, dob} FILTER .name ILIKE 'B%';`
+      let userSet = await client.query<User>(
+        `select User {id, name, dob} filter .name ilike 'B%';`
       );
 
       userSet[0].name; // "Bob"
 
 
       // Select a single user
-      const bob = await conn.querySingle<User>(
-        `SELECT User {id, name, dob} FILTER .name = 'Bob' LIMIT 1;`
+      const bob = await client.querySingle<User>(
+        `select User {id, name, dob} filter .name = 'Bob' limit 1;`
       );
 
       bob.dob; // edgedb.LocalDate

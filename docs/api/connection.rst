@@ -6,81 +6,79 @@ API
 
 .. _edgedb-js-api-connection:
 
-Connection
-==========
+Client
+======
 
-.. js:function:: connect(dsn, options)
+.. js:function:: createClient( \
+        dsnOrInstanceName: string | undefined, \
+        options?: ConnectOptions \
+    ): Client
 
-    Establish a connection to an EdgeDB server.
+    Creates a new :js:class:`Client` instance.
 
-    :param string dsn:
+    :param string dsnOrInstanceName:
         If this parameter does not start with ``edgedb://`` then this is
         a :ref:`name of an instance <edgedb-instances>`.
 
         Otherwise it specifies a single string in the connection URI format:
         ``edgedb://user:password@host:port/database?option=value``.
-        The following options are recognized: host, port,
-        user, database, password.
 
-    :param options: Connection parameters object.
+        See the :ref:`Connection Parameters <client_connection>`
+        docs for full details.
 
-    :param string|string[] options.host:
-        Database host address as one of the following:
+    :param options: Connection and client options object.
 
-        - an IP address or a domain name;
-        - an absolute path to the directory containing the database
-          server Unix-domain socket (not supported on Windows);
-        - an array of any of the above, in which case the addresses
-          will be tried in order, and the first successful connection
-          will be returned.
+    :param string options.dsn:
+        Specifies the DSN of the instance.
 
-        If not specified, the following will be tried, in order:
+    :param string options.credentialsFile:
+        Path to a file containing credentials.
 
-        - host address(es) parsed from the *dsn* argument,
-        - the value of the ``EDGEDB_HOST`` environment variable,
-        - on Unix, common directories used for EdgeDB Unix-domain
-          sockets: ``"/run/edgedb"`` and ``"/var/run/edgedb"``,
-        - ``"localhost"``.
+    :param string options.host:
+        Database host address as either an IP address or a domain name.
 
-    :param number|number[] options.port:
-        Port number to connect to at the server host
-        (or Unix-domain socket file extension).  If multiple host
-        addresses are specified, this parameter may specify an
-        array of port numbers of the same length as the host array,
-        or it may specify a single port number to be used for all host
-        addresses.
-
-        If not specified, the value parsed from the *dsn* argument is used,
-        or the value of the ``EDGEDB_PORT`` environment variable, or ``5656``
-        if neither is specified.
+    :param number options.port:
+        Port number to connect to at the server host.
 
     :param string options.user:
         The name of the database role used for authentication.
 
-        If not specified, the value parsed from the *dsn* argument is used,
-        or the value of the ``EDGEDB_USER`` environment variable, or the
-        operating system name of the user running the application.
-
     :param string options.database:
         The name of the database to connect to.
 
-        If not specified, the value parsed from the *dsn* argument is used,
-        or the value of the ``EDGEDB_DATABASE`` environment variable, or the
-        operating system name of the user running the application.
-
     :param string options.password:
-        Password to be used for authentication, if the server requires
-        one.  If not specified, the value parsed from the *dsn* argument
-        is used, or the value of the ``EDGEDB_PASSWORD`` environment variable.
-        Note that the use of the environment variable is discouraged as
-        other users and applications may be able to read it without needing
-        specific privileges.
+        Password to be used for authentication, if the server requires one.
+
+    :param string options.tlsCAFile:
+        Path to a file containing the root certificate of the server.
+
+    :param boolean options.tlsVerifyHostname:
+        Specifies whether to check that the hostname of the TLS certificate
+        matches the hostname of the server.
+
+    The above connection options can also be specified by their corresponding
+    environment variable. For full details, see the
+    :ref:`Connection Parameters <client_connection>` docs.
+
 
     :param number options.timeout:
-        Connection timeout in seconds.
+        Connection timeout in milliseconds.
+
+    :param number options.waitUntilAvailable:
+        If first connection fails, the number of milliseconds to keep retrying
+        to connect (Defaults to 30 seconds). Useful if your development
+        instance and app are started together, to allow the server time to
+        be ready.
+
+    :param number options.concurrency:
+        The maximum number of connection the ``Client`` will create in it's
+        connection pool. If not specified the concurrency will be controlled
+        by the server. This is recommended as it allows the server to better
+        manage the number of client connections based on it's own available
+        resources.
 
     :returns:
-        Returns a ``Promise`` of an :js:class:`Connection`.
+        Returns an instance of :js:class:`Client`.
 
     Example:
 
@@ -91,19 +89,13 @@ Connection
         const edgedb = require("edgedb");
 
         async function main() {
-          const conn = await edgedb.connect({
-            dsn: "edgedb://edgedb@localhost/"
-          });
+          const client = edgedb.createClient();
 
-          try{
-            let data = await conn.querySingle("SELECT 1 + 1");
+          const data = await client.querySingle("select 1 + 1");
 
-            // The result is a number 2.
-            assert(typeof data === "number");
-            assert(data === 2);
-          } finally {
-            conn.close();
-          }
+          // The result is a number 2.
+          assert(typeof data === "number");
+          assert(data === 2);
         }
 
         main();
@@ -115,54 +107,66 @@ Connection
 
        .. code-block:: js
 
-          await connect({host: 'localhost', port: 5656})
+          createClient({host: 'localhost', port: 5656})
           // or
-          await connect({dsn: 'edgedb://localhost'})
+          createClient({dsn: 'edgedb://localhost'})
 
        But this form is deprecated and will be removed in the future.
 
 
-.. js:class:: Connection
+.. js:class:: Client
 
-    A representation of a database session.
+    A ``Client`` allows you to run queries on an EdgeDB instance.
 
-    :js:class:`Connection` is not meant to be instantiated directly;
-    :js:func:`connect` should be used instead.
+    Since opening connections is an expensive operation, ``Client`` also
+    maintains a internal pool of connections to the instance, allowing
+    connections to be automatically reused, and you to run multiple queries
+    on the client simultaneously, enhancing the performance of
+    database interactions.
+
+    :js:class:`Client` is not meant to be instantiated directly;
+    :js:func:`createClient` should be used instead.
 
 
     .. _edgedb-js-api-async-optargs:
 
     .. note::
 
-        Some methods take query arguments as optional *args*:
+        Some methods take query arguments as an *args* parameter. The type of
+        the *args* parameter depends on the query:
 
-        * single values of any of the :ref:`basic types
-          recognized<edgedb-js-datatypes>` by EdgeDB
-        * an ``Array`` of values of any of the basic types
-        * an ``object`` with property names and values corresponding to
-          argument names and values of any of the basic types
+        * If the query uses positional query arguments, the *args* parameter
+          must be an ``array`` of values of the types specified by each query
+          argument's type cast.
+        * If the query uses named query arguments, the *args* parameter must
+          be an ``object`` with property names and values corresponding to
+          the query argument names and type casts.
 
-    .. js:method:: execute(query: string)
+        If a query argument is defined as ``optional``, the key/value can be
+        either omitted from the *args* object or be a ``null`` value.
+
+    .. js:method:: execute(query: string): Promise<void>
 
         Execute an EdgeQL command (or commands).
 
         :param query: Query text.
 
-        The commands must take no arguments.
+        This commands takes no arguments.
 
         Example:
 
         .. code-block:: js
 
-            await con.execute(`
+            await client.execute(`
                 CREATE TYPE MyType {
                     CREATE PROPERTY a -> int64
                 };
-                FOR x IN {100, 200, 300}
-                UNION INSERT MyType { a := x };
+
+                for x in {100, 200, 300}
+                union (insert MyType { a := x });
             `)
 
-    .. js:method:: query<T>(query: string, args): T[]
+    .. js:method:: query<T>(query: string, args?: QueryArgs): Promise<T[]>
 
         Run a query and return the results as an array. This method **always**
         returns an array.
@@ -170,7 +174,7 @@ Connection
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
 
-    .. js:method:: querySingle<T>(query: string, args): T
+    .. js:method:: querySingle<T>(query: string, args?: QueryArgs): Promise<T>
 
         Run a singleton-returning query and return the result.
 
@@ -180,7 +184,7 @@ Connection
         The *query* must return exactly one element.  If the query returns
         more than one element or an empty set, an ``Error`` is thrown.
 
-    .. js:method:: queryJSON(query: string, args)
+    .. js:method:: queryJSON(query: string, args?: QueryArgs): Promise<string>
 
         Run a query and return the results as JSON.
 
@@ -200,7 +204,10 @@ Connection
             the client side into a more appropriate type, such as
             BigInt_.
 
-    .. js:method:: querySingleJSON(query: string, args)
+    .. js:method:: querySingleJSON( \
+            query: string, \
+            args?: QueryArgs \
+        ): Promise<string>
 
         Run a singleton-returning query and return its element in JSON.
 
@@ -223,9 +230,12 @@ Connection
             the client side into a more appropriate type, such as
             BigInt_.
 
-    .. js:method:: retryingTransaction<T>(action: func)
+    .. js:method:: retryingTransaction<T>( \
+            action: (tx: Transaction) => Promise<T> \
+        ): Promise<T>
 
-        Execute a retryable transaction.
+        Execute a retryable transaction. The ``Transaction`` object passed to
+        the action function, has the same ``query*`` methods as ``Client``.
 
         This is the preferred method of initiating and running a database
         transaction in a robust fashion.  The ``retryingTransaction()`` method
@@ -238,18 +248,20 @@ Connection
 
         .. code-block:: js
 
-            await con.retryingTransaction(async tx => {
-                let value = await tx.querySingle("SELECT Counter.value")
-                await tx.execute(
-                    "UPDATE Counter SET { value := <int64>$value",
-                    value=value + 1,
-                )
+            await client.retryingTransaction(async tx => {
+              const value = await tx.querySingle("select Counter.value")
+              await tx.execute(
+                `update Counter set { value := <int64>$value }`,
+                {value: value + 1},
+              )
             });
 
         Note that we are executing queries on the ``tx`` object rather
-        than on the original connection ``con``.
+        than on the original ``client``.
 
-    .. js:method:: rawTransaction<T>(action: func)
+    .. js:method:: rawTransaction<T>( \
+            action: (tx: Transaction) => Promise<T> \
+        ): Promise<T>
 
         Execute a non-retryable transaction.
 
@@ -264,391 +276,87 @@ Connection
 
         .. code-block:: js
 
-            await con.rawTransaction(async tx => {
-                let value = await tx.querySingle("SELECT Counter.value");
-                await tx.execute(
-                    "UPDATE Counter SET { value := <int64>$value",
-                    value=value,
-                )
+            await client.rawTransaction(async tx => {
+              const value = await tx.querySingle("select Counter.value");
+              await tx.execute(
+                "update Counter set { value := <int64>$value }",
+                {value: value + 1},
+              )
             })
 
         Note that we are executing queries on the ``tx`` object,
-        rather than on the original connection ``con``.
+        rather than on the original ``client``.
 
-    .. js:method:: transaction(action: func, options?: TransactionOptions)
+    .. js:method:: ensureConnected(): Promise<Client>
 
-        **Deprecated**: Use :js:meth:`retryingTransaction\<T\>` or
-        :js:meth:`rawTransaction\<T\>`.
+        If the client does not yet have any open connections in it's pool,
+        attempts to open a connection, else returns immediately.
 
-        Executes a given action in transaction.
-
-        :param action: Function to be executed in transaction.
-
-        :param options: Transaction parameters object.
-
-        :param boolean|undefined options.deferrable:
-            If specified, enables DEFERRABLE or NOT DEFERRABLE option
-            for the transaction.
-
-        :param boolean|undefined options.readonly:
-            If specified, enables either READ ONLY or READ WRITE option
-            for the transaction.
-
-        :param IsolationLevel|undefined options.isolation:
-            If specified, enables either REPEATABLE READ or SERIALIZABLE
-            isolation level for the transaction.
-
-        If an exception occurs during the execution of the given
-        function argument, the transaction is automatically rolled back
-        and the exception is rethrown. Otherwise, the transaction is committed.
+        Since the client lazily creates new connections as needed (up to the
+        configured ``concurrency`` limit), the first connection attempt will
+        only occur when the first query is run a client. ``ensureConnected``
+        can be useful to catch any errors resulting from connection
+        mis-configuration by triggering the first connection attempt
+        explicitly.
 
         Example:
 
         .. code-block:: js
 
-            await con.transaction(async () => {
-                await con.execute(`
-                    INSERT Example {
-                        name := 'Test Transaction 1'
-                    };
-                `);
-                await con.execute("SELECT 1 / 0;");
-            });
+            import {createClient} from 'edgedb';
 
-            // nested transactions are supported
-            // and handle save points
-            await con.transaction(async () => {
+            async function getClient() {
+              try {
+                return await createClient('custom_instance').ensureConnected();
+              } catch (err) {
+                // handle connection error
+              }
+            }
 
-                // nested transaction
-                await con.transaction(async () => {
-                    await con.execute(`
-                        INSERT Example {
-                            name := 'Test Transaction 2'
-                        };
-                    `);
-                });
-            });
+            function main() {
+              const client = await getClient();
 
-    .. js:method:: close()
+              await client.query('select ...');
+            }
 
-        Close the connection gracefully.
+    .. js:method:: getStats(): ClientStats
+
+        Return information about the current state of the client's connection
+        pool. Information includes the number of currently open connections
+        and the number of pending queries awaiting an available connection.
+
+        Example:
+
+        .. code-block:: js
+
+            const stats = client.getStats();
+            const queueLength = stats.queueLength;
+            const openConnections = stats.openConnections;
+
+    .. js:method:: close(): Promise<void>
+
+        Close the client's open connections gracefully. When a client is
+        closed, all its underlying connections are awaited to complete their
+        pending operations, then closed. A warning is produced if the pool
+        takes more than 60 seconds to close.
+
+        .. note::
+
+            Clients will not prevent Node.js from exiting once all of it's
+            open connections are idle and Node.js has no further tasks it is
+            awaiting on, so it is not necessary to explicitly call ``close()``
+            if it is more convenient for your application.
+
+    .. js:method:: isClosed(): boolean
+
+        Returns true if ``close()`` has been called on the client.
+
+    .. js:method:: terminate(): void
+
+        Terminate all connections in the client, closing all connections non
+        gracefully. If the client is already closed, return without doing
+        anything.
 
 
 .. _BigInt:
     https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt
-
-
-.. _edgedb-js-api-pool:
-
-Pool
-====
-
-.. js:function:: createPool(dsn, options)
-
-    Create a connection pool to an EdgeDB server.
-        If this parameter does not start with ``edgedb://`` then this is
-        a :ref:`name of an instance <edgedb-instances>`.
-
-        Otherwise it specifies a single string in the connection URI format:
-
-    :param string dsn:
-        If this parameter does not start with ``edgedb://`` then this is
-        a :ref:`name of an instance <edgedb-instances>`.
-
-        Otherwise it specifies a single string in the connection URI format:
-        ``edgedb://user:password@host:port/database?option=value``.
-        The following options are recognized: host, port,
-        user, database, password.
-
-    :param options: Connection pool parameters object.
-
-    :param ConnectConfig options.connectOptions:
-        Connection parameters object, used when establishing new connections.
-        Refer to the documentation at :ref:`edgedb-js-api-connection`.
-
-    :param number options.minSize:
-        The minimum number of connections initialized by the connection pool.
-        If not specified, this value is by default 0: the first connection is
-        created when required.
-
-    :param number options.maxSize:
-        The maximum number of connections created by the connection pool.
-        If not specified, this value is by default 100.
-
-    :param func options.onAcquire:
-        Optional callback, called when a connection is acquired.
-        *(conn: Connection) => Promise<void>*
-
-    :param func options.onRelease:
-        Optional callback, called when a connection is released.
-        *(conn: Connection) => Promise<void>*
-
-    :param func options.onConnect:
-        Optional callback, called when a new connection is created.
-        *(conn: Connection) => Promise<void>*
-
-    :param func options.connectionFactory:
-        Optional function, used to obtain a new connection. By default, the
-        function is :js:func:`connect` *(options?: ConnectConfig) =>
-        Promise<Connection>*
-
-    :returns:
-        Returns a ``Promise`` of a :js:class:`Pool`.
-
-    .. note::
-
-       For compatibility this function also supports passing options as
-       the first argument:
-
-       .. code-block:: js
-
-          await createPool({
-            maxSize: 10,
-            connectOptions: {dsn: 'edgedb://localhost'},
-          })
-
-       But this form is deprecated and will be removed in the future.
-
-.. js:class:: Pool
-
-    A connection pool is used to manage a set of connections to a database.
-    Since opening connections is an expensive operation, connection pools are
-    used to maintain and reuse connections, enhancing the performance of
-    database interactions.
-
-    Pools must be created using the method ``createPool``:
-
-    .. code-block:: js
-
-        const edgedb = require("edgedb");
-
-        async function main() {
-            const pool = await edgedb.createPool(
-                "edgedb://edgedb@localhost/test"
-            );
-
-            try {
-                let data = await pool.querySingle("SELECT [1, 2, 3]");
-
-                console.log(data);
-            } finally {
-                // in this example, the pool is closed after a single
-                // operation; in real scenarios a pool is initialized
-                // at application startup, and closed at application shutdown
-                await pool.close();
-            }
-        }
-
-        main();
-
-    The pool accepts the following parameters:
-
-    .. js:method:: execute(query: string)
-
-        Acquire a connection, then execute an EdgeQL command (or commands).
-        The commands must take no arguments.
-
-        :param query: Query text.
-
-        .. code-block:: js
-
-            await pool.execute(`
-                CREATE TYPE MyType {
-                    CREATE PROPERTY a -> int64
-                };
-                FOR x IN {100, 200, 300}
-                UNION INSERT MyType { a := x };
-            `)
-
-    .. js:method:: query<T>(query: string, args): T[]
-
-        Acquire a connection, run a query, and return the results as an array.
-        This method **always** returns an array.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-async-optargs>`.
-
-        .. code-block:: js
-
-            const items = await pool.query(
-                `SELECT Movie {
-                    title,
-                    year,
-                    director: {
-                        first_name,
-                        last_name
-                    },
-                    actors: {
-                        first_name,
-                        last_name
-                    }
-                }
-                FILTER .id = <uuid>$id;`,
-                {
-                    id: movieId,
-                }
-            );
-
-    .. js:method:: querySingle<T>(query: string, args): T
-
-        Acquire a connection, then run a query that returns a singleton
-        and return its result.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-async-optargs>`.
-
-        The *query* must return exactly one element.  If the query returns
-        more than one element or an empty set, an ``Error`` is thrown.
-
-        .. code-block:: js
-
-            await pool.querySingle("SELECT 1");
-
-    .. js:method:: queryJSON(query: string, args)
-
-        Acquire a connection, then run a query and return the results as JSON.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-async-optargs>`.
-
-    .. js:method:: querySingleJSON(query: string, args)
-
-        Acquire a connection, then run a singleton-returning query and return
-        its element in JSON.
-
-        This method takes :ref:`optional query arguments
-        <edgedb-js-api-async-optargs>`.
-
-        The *query* must return exactly one element.  If the query returns
-        more than one element or an empty set, an ``Error`` is thrown.
-
-    .. js:method:: acquire()
-
-        **Deprecated**: use the query methods on ``Pool`` instead.
-
-        Acquire a connection proxy, which provides access to an open database
-        connection. The proxy must be released to return the connection to the
-        pool.
-
-        Example:
-
-        .. code-block:: js
-
-            const connection = await pool.acquire();
-            let value: number;
-
-            try {
-                value = await connection.querySingle("select 1");
-            } finally {
-                await pool.release(connection);
-            }
-
-    .. js:method:: release(conn: Connection)
-
-        **Deprecated**: use the query methods on ``Pool`` instead.
-
-        Release a previously acquired connection proxy, to return it to the
-        pool.
-
-    .. js:method:: run<T>(action: func)
-
-        **Deprecated**: use the query methods on ``Pool`` instead.
-
-        Acquire a connection and use it to run the given action that accepts
-        a connection, and return *T*, which is any type returned by the user's
-        defined function argument. The connection is automatically returned
-        to the pool.
-
-        Example:
-
-        .. code-block:: js
-
-            const result = await pool.run(async (connection) => {
-                return await connection.querySingle("SELECT 1");
-            });
-            expect(result).toBe(1);
-
-    .. js:method:: retryingTransaction<T>(action: func)
-
-        Execute a retryable transaction.
-
-        This is the preferred method of initiating and running a database
-        transaction in a robust fashion.  The ``retryingTransaction()`` method
-        will attempt to re-execute the transaction body if a transient error
-        occurs, such as a network error or a transaction serialization error.
-
-        See :ref:`edgedb-js-api-transaction` for more details.
-
-        Example:
-
-        .. code-block:: js
-
-            await pool.retryingTransaction(async tx => {
-                let value = await tx.querySingle("SELECT Counter.value")
-                await tx.execute(
-                    "UPDATE Counter SET { value := <int64>$value",
-                    value=value + 1,
-                )
-            });
-
-        Note that we are executing queries on the ``tx`` object rather
-        than on the original connection pool ``pool``.
-
-    .. js:method:: rawTransaction<T>(action: func)
-
-        Execute a non-retryable transaction.
-
-        Contrary to ``retryingTransaction()``, ``rawTransaction()`` will not
-        attempt to re-run the nested code block in case a retryable
-        error happens.
-
-        This is a low-level API and it is advised to use the
-        ``retryingTransaction()`` method instead.
-
-        Example:
-
-        .. code-block:: js
-
-            await pool.rawTransaction(async tx => {
-                let value = await tx.querySingle("SELECT Counter.value");
-                await tx.execute(
-                    "UPDATE Counter SET { value := <int64>$value",
-                    value=value,
-                )
-            })
-
-        Note that we are executing queries on the ``tx`` object,
-        rather than on the original connection pool ``pool``.
-
-    .. js:method:: getStats()
-
-        Return information about the current state of the pool. Information
-        includes the number of currently open connections and the number
-        of pending consumers awaiting an available connection.
-
-        Example:
-
-        .. code-block:: js
-
-            const stats = pool.getStats();
-            const queueLength = stats.queueLength;
-            const openConnections = stats.openConnections;
-
-    .. js:method:: expireConnections()
-
-        Expire all currently open connections.
-        Cause all currently open connections to be replaced when they are
-        acquired by the next *.acquire()* call.
-
-    .. js:method:: close()
-
-        Close the connection pool gracefully. When a connection pool is closed,
-        all its underlying connections are awaited to complete their pending
-        operations, then closed. A warning is produced if the pool takes more
-        than 60 seconds to close.
-
-    .. js:method:: terminate()
-
-        Terminate all connections in the pool, closing all connections non
-        gracefully. If the pool is already closed, return without doing
-        anything.

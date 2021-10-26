@@ -15,7 +15,7 @@ EdgeDB JavaScript Driver
 
 * :ref:`edgedb-js-examples`
 
-  High-level examples on how to use edgedb connections, connection pools,
+  High-level examples on how to use the edgedb-js client,
   as well as on how to work with transactions.
 
 * :ref:`edgedb-js-typescript`
