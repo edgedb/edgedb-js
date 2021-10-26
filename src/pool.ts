@@ -23,7 +23,13 @@ import {LifoQueue} from "./queues";
 
 import {ConnectionImpl, InnerConnection} from "./client";
 import {StandaloneConnection} from "./client";
-import {Options, RetryOptions, TransactionOptions} from "./options";
+import {
+  Options,
+  RetryOptions,
+  SimpleRetryOptions,
+  SimpleTransactionOptions,
+  TransactionOptions,
+} from "./options";
 
 import {CodecsRegistry} from "./codecs/registry";
 
@@ -335,13 +341,15 @@ export class ClientShell implements Client {
     return result;
   }
 
-  withTransactionOptions(opt: TransactionOptions): this {
+  withTransactionOptions(
+    opt: TransactionOptions | SimpleTransactionOptions
+  ): this {
     const result = this.shallowClone();
     result.options = this.options.withTransactionOptions(opt);
     return result;
   }
 
-  withRetryOptions(opt: RetryOptions): this {
+  withRetryOptions(opt: RetryOptions | SimpleRetryOptions): this {
     const result = this.shallowClone();
     result.options = this.options.withRetryOptions(opt);
     return result;

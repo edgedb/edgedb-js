@@ -49,7 +49,13 @@ import {
   ProtocolVersion,
 } from "./ifaces";
 import * as scram from "./scram";
-import {Options, RetryOptions, TransactionOptions} from "./options";
+import {
+  Options,
+  RetryOptions,
+  SimpleRetryOptions,
+  SimpleTransactionOptions,
+  TransactionOptions,
+} from "./options";
 import {PartialRetryRule} from "./options";
 
 import {
@@ -143,13 +149,15 @@ export class StandaloneConnection implements Connection {
     return result;
   }
 
-  withTransactionOptions(opt: TransactionOptions): this {
+  withTransactionOptions(
+    opt: TransactionOptions | SimpleTransactionOptions
+  ): this {
     const result = this.shallowClone();
     result[OPTIONS] = this[OPTIONS].withTransactionOptions(opt);
     return result;
   }
 
-  withRetryOptions(opt: RetryOptions): this {
+  withRetryOptions(opt: RetryOptions | SimpleRetryOptions): this {
     const result = this.shallowClone();
     result[OPTIONS] = this[OPTIONS].withRetryOptions(opt);
     return result;

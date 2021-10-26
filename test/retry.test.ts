@@ -168,11 +168,22 @@ test("retry: conflict", async () => {
 test("retry: conflict no retry", async () => {
   await expect(
     run2(async (con, con2) => {
-      const opt = new RetryOptions(1, defaultBackoff);
+      const opt = new RetryOptions(1, defaultBackoff); // class api
       await checkRetries(
         con.withRetryOptions(opt),
         con2.withRetryOptions(opt),
         "counter3"
+      );
+    })
+  ).rejects.toBeInstanceOf(errors.TransactionSerializationError);
+
+  await expect(
+    run2(async (con, con2) => {
+      const opt = {attempts: 1}; // obj api
+      await checkRetries(
+        con.withRetryOptions(opt),
+        con2.withRetryOptions(opt),
+        "counter4"
       );
     })
   ).rejects.toBeInstanceOf(errors.TransactionSerializationError);

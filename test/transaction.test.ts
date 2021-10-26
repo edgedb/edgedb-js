@@ -169,7 +169,17 @@ test("transaction: kinds", async () => {
   await run(async (con) => {
     for (let [isolation, readonly, defer] of all_options()) {
       let partial = {isolation, readonly, defer};
-      let opt = new TransactionOptions(partial);
+      let opt = new TransactionOptions(partial); // class api
+      await con.withTransactionOptions(opt).rawTransaction(async (tx) => {});
+      await con
+        .withTransactionOptions(opt)
+        .retryingTransaction(async (tx) => {});
+    }
+  });
+
+  await run(async (con) => {
+    for (let [isolation, readonly, defer] of all_options()) {
+      let opt = {isolation, readonly, defer}; // obj api
       await con.withTransactionOptions(opt).rawTransaction(async (tx) => {});
       await con
         .withTransactionOptions(opt)
