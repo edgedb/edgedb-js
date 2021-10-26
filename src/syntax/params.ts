@@ -1,4 +1,4 @@
-import type * as edgedb from "edgedb";
+import type {Executor} from "edgedb";
 import {
   Expression,
   ExpressionKind,
@@ -33,7 +33,7 @@ export type QueryableWithParamsExpression<
   } = {}
 > = Expression<Set> & {
   query(
-    cxn: edgedb.Pool | edgedb.Connection,
+    cxn: Executor,
     args: paramsToParamArgs<Params>
   ): Promise<setToTsType<Set>>;
 };

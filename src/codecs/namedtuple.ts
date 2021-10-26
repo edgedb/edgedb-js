@@ -53,7 +53,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     const codecsLen = codecs.length;
 
     if (keys.length > codecsLen) {
-      const extraKeys = keys.filter((key) => !namesSet.has(key));
+      const extraKeys = keys.filter(key => !namesSet.has(key));
       throw new Error(
         `unexpected named argument${
           extraKeys.length === 1 ? "" : "s"
@@ -70,12 +70,8 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
       const key = names[i];
       const val = args[key];
 
-      if (val === undefined) {
-        throw new Error(`missing named argument "${key}"`);
-      }
-
       elemData.writeInt32(0); // reserved bytes
-      if (val === null) {
+      if (val == null) {
         elemData.writeInt32(-1);
       } else {
         const codec = codecs[i];

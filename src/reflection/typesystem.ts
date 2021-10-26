@@ -1,4 +1,4 @@
-import type * as edgedb from "edgedb";
+import type {Executor} from "../ifaces";
 import type {$expr_TypeIntersection, $pathify, $expr_PathNode} from "./path";
 import type {$expr_Literal} from "./literal";
 import type {typeutil} from "./util/typeutil";
@@ -67,7 +67,7 @@ export type Expression<Set extends TypeSet = TypeSet> =
 
 export type QueryableExpression<Set extends TypeSet = TypeSet> =
   Expression<Set> & {
-    query(cxn: edgedb.Pool | edgedb.Connection): Promise<setToTsType<Set>>;
+    query(cxn: Executor): Promise<setToTsType<Set>>;
   };
 
 export type stripSet<T> = "__element__" extends keyof T
