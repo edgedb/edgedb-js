@@ -16,7 +16,8 @@ import {
   ExpressionRoot,
 } from "../reflection/path";
 
-import {toEdgeQL} from "./toEdgeQL";
+import {$toEdgeQL} from "./toEdgeQL";
+
 import _std from "@generated/modules/std";
 
 function _$expr_PathLeaf<
@@ -141,7 +142,7 @@ export function $expressionify<T extends ExpressionRoot>(
 ): Expression<T> {
   const expr: Expression = _expr as any;
   expr.$is = isFunc.bind(expr) as any;
-  expr.toEdgeQL = toEdgeQL.bind(expr);
+  expr.toEdgeQL = $toEdgeQL.bind(expr);
   _$pathify(expr);
   expr.$assertSingle = () => _std.assert_single(expr) as any;
   return Object.freeze(expr) as any;

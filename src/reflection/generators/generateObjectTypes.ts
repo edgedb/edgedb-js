@@ -2,7 +2,7 @@ import type {GeneratorParams} from "../generate";
 import {getRef, frag, joinFrags, splitName, quote} from "../util/genutil";
 
 import * as introspect from "../queries/getTypes";
-import {CodeFragment} from "../builders";
+import {CodeFragment, dts, r, t, ts} from "../builders";
 import {Cardinality} from "../enums";
 
 export const getStringRepresentation: (
@@ -213,77 +213,82 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       ? frag`${joinFrags(bases, "λShape & ")}λShape & `
       : // ? `${bases.map((b) => `${b}λShape`).join(" & ")} & `
         ``;
-    body.writeln(
-      frag`export type ${ref}λShape = $.typeutil.flatten<${baseTypesUnion}{`
-    );
+    body.writeln([
+      t`export `,
+      dts`declare `,
+      t`type ${ref}λShape = $.typeutil.flatten<${baseTypesUnion}{`,
+    ]);
     body.indented(() => {
       for (const line of lines) {
         if (line.kind === "link") {
           if (!line.lines.length) {
-            body.writeln(
-              frag`${quote(line.key)}: $.LinkDesc<${line.staticType}, ${
+            body.writeln([
+              t`${quote(line.key)}: $.LinkDesc<${line.staticType}, ${
                 line.card
-              }, {}, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`
-            );
+              }, {}, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`,
+            ]);
           } else {
-            body.writeln(
-              frag`${quote(line.key)}: $.LinkDesc<${line.staticType}, ${
+            body.writeln([
+              t`${quote(line.key)}: $.LinkDesc<${line.staticType}, ${
                 line.card
-              }, {`
-            );
+              }, {`,
+            ]);
             body.indented(() => {
               for (const linkProp of line.lines) {
-                body.writeln(
-                  frag`${quote(linkProp.key)}: $.PropertyDesc<${
+                body.writeln([
+                  t`${quote(linkProp.key)}: $.PropertyDesc<${
                     linkProp.staticType
-                  }, ${linkProp.card}>;`
-                );
+                  }, ${linkProp.card}>;`,
+                ]);
               }
             });
             body.writeln([
-              `}, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`,
+              t`}, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`,
             ]);
           }
         } else {
-          body.writeln(
-            frag`${quote(line.key)}: $.PropertyDesc<${line.staticType}, ${
+          body.writeln([
+            t`${quote(line.key)}: $.PropertyDesc<${line.staticType}, ${
               line.card
-            }, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`
-          );
+            }, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`,
+          ]);
         }
       }
     });
-    body.writeln([`}>;`]);
+    body.writeln([t`}>;`]);
 
     // instantiate ObjectType subtype from shape
-    body.writeln(
-      frag`export type ${ref} = $.ObjectType<${quote(
-        type.name
-      )}, ${ref}λShape, null>;`
-    );
+    body.writeln([
+      dts`declare `,
+      t`type ${ref} = $.ObjectType<${quote(type.name)}, ${ref}λShape, null>;`,
+    ]);
 
     /////////
     // generate runtime type
     /////////
-    const literal = getRef(type.name, {
-      prefix: "",
-    });
+    const literal = getRef(type.name, {prefix: ""});
 
-    body.writeln(frag`export const ${ref} = $.makeType<${ref}>(`);
-    body.indented(() => {
-      body.writeln([`_.spec,`]);
-      body.writeln([`${quote(type.id)},`]);
-      body.writeln([`_.syntax.literal`]);
-    });
-    body.writeln([`);`]);
+    body.writeln([
+      dts`declare `,
+      ...frag`const ${ref}`,
+      dts`: ${ref}`,
+      r` = $.makeType`,
+      ts`<${ref}>`,
+      r`(_.spec, ${quote(type.id)}, _.syntax.literal);`,
+    ]);
+    body.addExport(ref);
+    body.addRefsDefaultExport(ref, `$${name}`);
+
     body.nl();
-    body.writeln(
-      frag`export const ${literal} = _.syntax.$expr_PathNode($.$toSet(${ref}, $.Cardinality.Many), null, true);`
-    );
-    body.nl();
+    body.writeln([
+      dts`declare `,
+      ...frag`const ${literal}`,
+      t`: $.$expr_PathNode<$.TypeSet<${ref}, $.Cardinality.Many>, null, true> `,
+      r`= _.syntax.$expr_PathNode($.$toSet(${ref}, $.Cardinality.Many), null, true);`,
+    ]);
     body.nl();
 
-    body.addExport(ref, `$${name}`);
-    body.addExport(literal, name);
+    body.addExport(literal);
+    body.addRefsDefaultExport(literal, name);
   }
 };

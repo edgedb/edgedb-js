@@ -1,103 +1,111 @@
-import {Cardinality} from "../../src/reflection";
-import {cardinalityUtil} from "../../src/reflection/util/cardinalityUtil";
+import {$} from "edgedb";
 import {tc} from "./setupTeardown";
 
-test("multiplyCardinality", () => {
+test("multiply$.Cardinality", () => {
   tc.assert<
     tc.IsExact<
-      cardinalityUtil.multiplyCardinalities<Cardinality.One, Cardinality.One>,
-      Cardinality.One
+      $.cardinalityUtil.multiplyCardinalities<
+        $.Cardinality.One,
+        $.Cardinality.One
+      >,
+      $.Cardinality.One
     >
   >(true);
   tc.assert<
     tc.IsExact<
-      cardinalityUtil.multiplyCardinalities<
-        Cardinality.AtLeastOne,
-        Cardinality.Many
+      $.cardinalityUtil.multiplyCardinalities<
+        $.Cardinality.AtLeastOne,
+        $.Cardinality.Many
       >,
-      Cardinality.Many
+      $.Cardinality.Many
     >
   >(true);
   tc.assert<
     tc.IsExact<
-      cardinalityUtil.multiplyCardinalities<
-        Cardinality.AtLeastOne,
-        Cardinality.AtLeastOne
+      $.cardinalityUtil.multiplyCardinalities<
+        $.Cardinality.AtLeastOne,
+        $.Cardinality.AtLeastOne
       >,
-      Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne
     >
   >(true);
   tc.assert<
     tc.IsExact<
-      cardinalityUtil.multiplyCardinalities<
-        Cardinality.AtMostOne,
-        Cardinality.AtMostOne
+      $.cardinalityUtil.multiplyCardinalities<
+        $.Cardinality.AtMostOne,
+        $.Cardinality.AtMostOne
       >,
-      Cardinality.AtMostOne
+      $.Cardinality.AtMostOne
     >
   >(true);
   tc.assert<
     tc.IsExact<
-      cardinalityUtil.multiplyCardinalities<
-        Cardinality.Empty,
-        Cardinality.Many
+      $.cardinalityUtil.multiplyCardinalities<
+        $.Cardinality.Empty,
+        $.Cardinality.Many
       >,
-      Cardinality.Empty
+      $.Cardinality.Empty
     >
   >(true);
 });
 
-test("mergeCardinality", () => {
+test("merge$.Cardinality", () => {
   tc.assert<
     tc.IsExact<
-      cardinalityUtil.mergeCardinalities<
-        Cardinality.AtMostOne,
-        Cardinality.One
+      $.cardinalityUtil.mergeCardinalities<
+        $.Cardinality.AtMostOne,
+        $.Cardinality.One
       >,
-      Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne
     >
   >(true);
 
   tc.assert<
     tc.IsExact<
-      cardinalityUtil.mergeCardinalities<
-        Cardinality.AtMostOne,
-        Cardinality.AtMostOne
+      $.cardinalityUtil.mergeCardinalities<
+        $.Cardinality.AtMostOne,
+        $.Cardinality.AtMostOne
       >,
-      Cardinality.Many
+      $.Cardinality.Many
     >
   >(true);
 
   tc.assert<
     tc.IsExact<
-      cardinalityUtil.mergeCardinalities<Cardinality.One, Cardinality.One>,
-      Cardinality.AtLeastOne
-    >
-  >(true);
-
-  tc.assert<
-    tc.IsExact<
-      cardinalityUtil.mergeCardinalities<
-        Cardinality.Empty,
-        Cardinality.AtLeastOne
+      $.cardinalityUtil.mergeCardinalities<
+        $.Cardinality.One,
+        $.Cardinality.One
       >,
-      Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne
     >
   >(true);
 
   tc.assert<
     tc.IsExact<
-      cardinalityUtil.mergeCardinalities<Cardinality.One, Cardinality.Many>,
-      Cardinality.AtLeastOne
-    >
-  >(true);
-
-  tc.assert<
-    tc.IsExact<
-      cardinalityUtil.mergeCardinalitiesVariadic<
-        [Cardinality.One, Cardinality.Empty, Cardinality.AtMostOne]
+      $.cardinalityUtil.mergeCardinalities<
+        $.Cardinality.Empty,
+        $.Cardinality.AtLeastOne
       >,
-      Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne
+    >
+  >(true);
+
+  tc.assert<
+    tc.IsExact<
+      $.cardinalityUtil.mergeCardinalities<
+        $.Cardinality.One,
+        $.Cardinality.Many
+      >,
+      $.Cardinality.AtLeastOne
+    >
+  >(true);
+
+  tc.assert<
+    tc.IsExact<
+      $.cardinalityUtil.mergeCardinalitiesVariadic<
+        [$.Cardinality.One, $.Cardinality.Empty, $.Cardinality.AtMostOne]
+      >,
+      $.Cardinality.AtLeastOne
     >
   >(true);
 });

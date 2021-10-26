@@ -1,3 +1,4 @@
+import {r, t} from "../builders";
 import type {GeneratorParams} from "../generate";
 import {frag, quote} from "../util/genutil";
 
@@ -19,18 +20,18 @@ export const generateOperatorTypes = ({
     false,
     (code, opDef, args, namedArgs, returnType) => {
       // Name
-      code.writeln(frag`${quote(opDef.originalName)},`);
+      code.writeln([t`${quote(opDef.originalName)},`]);
       // OperatorKind
-      code.writeln(frag`$.OperatorKind.${opDef.operator_kind},`);
+      code.writeln([t`$.OperatorKind.${opDef.operator_kind},`]);
       // Args
-      code.writeln(args);
+      code.writeln([t`${args}`]);
       // ReturnType
-      code.writeln(returnType);
+      code.writeln([t`${returnType}`]);
     },
     (code, opName, opDefs) => {
-      code.writeln(frag`__name__: ${quote(opDefs[0].originalName)},`);
-      code.writeln(frag`__opkind__: kind,`);
-      code.writeln(frag`__args__: positionalArgs,`);
+      code.writeln([r`__name__: ${quote(opDefs[0].originalName)},`]);
+      code.writeln([r`__opkind__: kind,`]);
+      code.writeln([r`__args__: positionalArgs,`]);
     }
   );
 };

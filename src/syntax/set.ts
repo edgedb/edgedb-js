@@ -16,10 +16,10 @@ import {
 
 // "@generated/" path gets replaced during generation step
 // @ts-ignore
-import {getSharedParentScalar, scalarAssignableBy} from "../castMaps";
+import {getSharedParentScalar} from "../castMaps";
 
 // @ts-ignore
-export {set} from "../syntax/setImpl";
+export {set} from "./setImpl";
 
 export type $expr_Set<Set extends LooseTypeSet = LooseTypeSet> = Expression<{
   __element__: Set["__element__"];
@@ -84,7 +84,7 @@ export type LooseTypeSet<
   __cardinality__: C;
 };
 
-export {mergeObjectTypes};
+export type {mergeObjectTypes};
 
 type _mergeObjectTypesVariadic<Types extends [ObjectType, ...ObjectType[]]> =
   Types extends [infer U]

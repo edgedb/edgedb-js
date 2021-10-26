@@ -1,7 +1,6 @@
-import {edgedb} from "@generated/imports";
-import {UpdateShape} from "@syntax/update";
+import * as edgedb from "edgedb";
 
-import e from "../generated/example";
+import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let pool: edgedb.Pool;
@@ -18,8 +17,6 @@ afterAll(async () => {
 });
 
 test("update", async () => {
-  type HeroUpdate = UpdateShape<typeof e["Hero"]>;
-
   e.select(e.Hero).update({
     name: e.str("asdf"),
   });
@@ -42,7 +39,7 @@ test("update assignable", () => {
 });
 
 test("update link property", async () => {
-  const theAvengers = e.select(e.Movie, (movie) => ({
+  const theAvengers = e.select(e.Movie, movie => ({
     filter: e.eq(movie.title, e.str("The Avengers")),
     limit: 1,
   }));
@@ -55,7 +52,7 @@ test("update link property", async () => {
 
   const q2 = theAvengers.update({
     characters: {
-      "+=": e.select(e.Villain, (villain) => ({
+      "+=": e.select(e.Villain, villain => ({
         filter: e.eq(villain.name, e.str(data.thanos.name)),
       })),
     },
@@ -72,7 +69,7 @@ test("update link property", async () => {
     theAvengers
       .update({
         characters: {
-          "-=": e.select(e.Villain, (villain) => ({
+          "-=": e.select(e.Villain, villain => ({
             filter: e.eq(villain.name, e.str(data.thanos.name)),
           })),
         },
@@ -101,7 +98,7 @@ test("update link property", async () => {
   await pool.execute(
     theAvengers
       .update({
-        characters: e.select(e.Hero, (hero) => ({
+        characters: e.select(e.Hero, hero => ({
           filter: e.in(
             hero.id,
             e.set(e.uuid(data.cap.id), e.uuid(data.iron_man.id))

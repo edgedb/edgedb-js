@@ -188,7 +188,7 @@ export function displayName(str: string) {
     name
       .replace(/[^$0-9a-zA-Z]/g, " ")
       .split(" ")
-      .filter((x) => !!x)
+      .filter(x => !!x)
       .map(capitalize)
       .join("");
   // if (stripped === "Object") return `ObjectType`;
@@ -309,4 +309,5 @@ const reservedIdents = new Set([
   "protected",
   "implements",
   "instanceof",
+  "Object",
 ]);

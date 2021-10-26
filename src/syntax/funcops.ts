@@ -14,7 +14,6 @@ import {
   TypeSet,
 } from "../reflection";
 import {set} from "./set";
-// @ts-ignore
 import {isImplicitlyCastableTo} from "@generated/castMaps";
 import {literal} from "./literal";
 
@@ -63,7 +62,7 @@ interface OverloadFuncDef {
   returnTypemod?: "SetOfType" | "OptionalType";
 }
 
-export function resolveOverload(
+export function $resolveOverload(
   args: any[],
   typeSpec: introspect.Types,
   funcDefs: OverloadFuncDef[]

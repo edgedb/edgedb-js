@@ -1,9 +1,9 @@
-import e from "../generated/example";
+import e from "../dbschema/edgeql";
 
 test("simple for loop", () => {
   expect(
     e
-      .for(e.set(e.int64(1), e.int64(2), e.int64(3)), (x) =>
+      .for(e.set(e.int64(1), e.int64(2), e.int64(3)), x =>
         e.plus(e.mult(x, e.int32(2)), x)
       )
       .toEdgeQL()

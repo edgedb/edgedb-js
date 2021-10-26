@@ -212,7 +212,7 @@ export type mergeObjectTypes<
   ? B
   : undefined;
 
-export function mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
+export function $mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
   a: A,
   b: B
 ): mergeObjectTypes<A, B> {

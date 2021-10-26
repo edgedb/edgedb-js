@@ -21,29 +21,21 @@
       "./node_modules/@types"
     ],
     "paths": {
-      "edgedb/src/index.node": [
-        "./src/index.node.ts"
-      ],
       "edgedb": [
-        "./src/index.node.ts"
-      ],
-      "reflection": [
-        "./src/reflection/index.ts"
+        "./src/index.node"
       ],
       "@generated/*": [
-        "./generated/example/*"
+        "./qb/dbschema/edgeql/*"
       ],
     }
   },
   "include": [
-    "src",
-    "test"
+    "."
   ],
   "exclude": [
     "**/*.deno.ts",
     "test/deno/*",
     "dist",
     "qb",
-    "src/syntax/*"
   ]
 }

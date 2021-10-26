@@ -21,22 +21,22 @@ import type {
   $expr_PathNode,
   $expr_TypeIntersection,
 } from "../reflection/path";
+import reservedKeywords from "../reflection/reservedKeywords";
 import type {$expr_Cast} from "./cast";
 import type {$expr_Detached} from "./detached";
 import type {$expr_For, $expr_ForVar} from "./for";
 import type {$expr_Function, $expr_Operator} from "./funcops";
-import {$expr_Insert, $expr_InsertUnlessConflict} from "./insert";
+import type {$expr_Insert, $expr_InsertUnlessConflict} from "./insert";
 import type {$expr_Param, $expr_WithParams} from "./params";
-import type {$expr_Set} from "./set";
-import {$expr_Update} from "./update";
 import type {
-  $expr_Select,
   $expr_Delete,
-  OffsetExpression,
+  $expr_Select,
   LimitExpression,
+  OffsetExpression,
 } from "./select";
+import type {$expr_Set} from "./set";
+import type {$expr_Update} from "./update";
 import type {$expr_Alias, $expr_With} from "./with";
-import reservedKeywords from "../reflection/reservedKeywords";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -156,7 +156,7 @@ interface RenderCtx {
   forVars: Map<$expr_ForVar, string>;
 }
 
-export function toEdgeQL(this: any) {
+export function $toEdgeQL(this: any) {
   const walkExprCtx: WalkExprTreeCtx = {
     seen: new Map(),
     rootScope: null,
@@ -263,7 +263,7 @@ export function toEdgeQL(this: any) {
       ]);
       for (const scope of [
         ...refData.parentScopes,
-        ...refData.aliases.flatMap(alias => [
+        ...util.flatMap(refData.aliases, alias => [
           ...walkExprCtx.seen.get(alias)!.parentScopes,
         ]),
       ]) {
@@ -599,7 +599,7 @@ function renderEdgeQL(
       );
     }
     if ($else) {
-      clause.push(`\nELSE ${renderEdgeQL($else, ctx, true, true)}`);
+      clause.push(`\nELSE (${renderEdgeQL($else, ctx, true, true)})`);
     }
     return `${renderEdgeQL(expr.__expr__, ctx, false, true)} ${clause.join(
       ""
@@ -895,7 +895,7 @@ function walkExprTree(
   }
 }
 
-export function literalToEdgeQL(type: BaseType, val: any): string {
+function literalToEdgeQL(type: BaseType, val: any): string {
   let skipCast = false;
   let stringRep;
   if (typeof val === "string") {

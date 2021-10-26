@@ -129,13 +129,13 @@ export async function getTypes(
       } FILTER @is_owned,
       backlinks := (SELECT DETACHED Link FILTER .target = Type) {
         real_cardinality := "AtMostOne" IF EXISTS (select .constraints filter .name = 'std::exclusive') ELSE "Many",
-        name := '<' ++ .name ++ '[IS ' ++ std::assert_single(.source.name) ++ ']',
+        name := '<' ++ .name ++ '[IS ' ++ std::assert_exists(.source.name) ++ ']',
         stub := .name,
         target_id := .source.id,
         kind := 'link',
         is_exclusive := (EXISTS (select .constraints filter .name = 'std::exclusive')) AND <str>.cardinality = "One",
       },
-      backlink_stubs := (
+      backlink_stubs := array_agg((
         WITH
           stubs := DISTINCT (SELECT DETACHED Link FILTER .target = Type).name,
           baseObjectId := (SELECT DETACHED ObjectType FILTER .name = 'std::BaseObject' LIMIT 1).id
@@ -149,7 +149,7 @@ export async function getTypes(
             is_exclusive := false,
           }
         )
-      ),
+      )),
       array_element_id := [IS Array].element_type.id,
 
       tuple_elements := (SELECT [IS Tuple].element_types {

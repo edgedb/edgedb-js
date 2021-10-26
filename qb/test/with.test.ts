@@ -1,5 +1,5 @@
-import {typeutil, BaseTypeToTsType} from "../../src/reflection";
-import e from "../generated/example";
+import {$} from "edgedb";
+import e from "../dbschema/edgeql";
 import {tc} from "./setupTeardown";
 
 test("simple repeated expression", () => {
@@ -63,7 +63,7 @@ SELECT {
   hasMore := (SELECT ((std::count((__withVar_3)) > 10)))
 }`);
 
-  type queryType = BaseTypeToTsType<typeof query["__element__"]>;
+  type queryType = $.BaseTypeToTsType<typeof query["__element__"]>;
   tc.assert<
     tc.IsExact<
       queryType,

@@ -1,10 +1,10 @@
-import {edgedb} from "@generated/imports";
-import {Villain} from "@generated/modules/default";
-import {InsertShape} from "@syntax/insert";
-import e from "../generated/example";
+import {Pool} from "edgedb";
+import {Villain} from "../dbschema/edgeql/modules/default";
+import {InsertShape} from "../dbschema/edgeql/syntax/insert";
+import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
-let pool: edgedb.Pool;
+let pool: Pool;
 let data: TestData;
 
 beforeAll(async () => {
@@ -37,17 +37,10 @@ test("basic insert", async () => {
 
 test("nested insert", async () => {
   const q1 = e.insert(e.Villain, {
-    // name: e.str("Loki"),
     name: e.str("asdf"),
     nemesis: e.insert(e.Hero, {
       name: e.str("asdf"),
     }),
-    // nemesis: e.select(e.Hero, hero => ({limit: 1})),
-
-    // nemesis: e.insert(e.Hero, {
-    //   name: e.str("Thor"),
-    //   secret_identity: e.str("Thor"),
-    // }),
   });
 
   const q2 = e.select(q1, () => ({

@@ -13,11 +13,9 @@ import {
   stripSet,
   TypeSet,
 } from "../reflection";
-import _std from "@generated/modules/std";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify} from "./path";
 import {$expr_PathNode} from "../reflection/path";
-// import {Singletonify} from "./select";
 
 type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
   T["cardinality"] extends

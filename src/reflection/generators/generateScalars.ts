@@ -7,6 +7,7 @@ import {
   quote,
   toTSScalarType,
 } from "../util/genutil";
+import {dts, js, r, t, ts} from "../builders";
 import type {GeneratorParams} from "../generate";
 
 export const generateScalars = (params: GeneratorParams) => {
@@ -45,28 +46,41 @@ export const generateScalars = (params: GeneratorParams) => {
 
       if (scalarType.children.length) {
         // is abstract
-        const children = scalarType.children.map((desc) =>
+        const children = scalarType.children.map(desc =>
           desc.name === "std::anyenum" ? "$.EnumType" : getRef(desc.name)
         );
-        sc.writeln(frag`export type ${ref} = ${joinFrags(children, " | ")};`);
-        sc.writeln(
-          frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}", _.syntax.literal);`
-        );
+        sc.writeln([
+          dts`declare `,
+          t`type ${ref} = ${joinFrags(children, " | ")};`,
+        ]);
+        sc.writeln([
+          dts`declare `,
+          ...frag`const ${ref}`,
+          t`: ${ref}`,
+          r` = $.makeType`,
+          ts`<${ref}>`,
+          r`(_.spec, "${type.id}", _.syntax.literal);`,
+        ]);
         sc.nl();
 
-        sc.addExport(ref, `$${_name}`);
+        sc.addExport(ref);
+        sc.addRefsDefaultExport(ref, `$${_name}`);
       } else if (scalarType.bases.length) {
         // for std::sequence
-        const bases = scalarType.bases.map((base) => getRef(base.name));
-        sc.writeln(
-          frag`export interface ${ref} extends ${joinFrags(bases, ", ")} {}`
-        );
-        sc.writeln(
-          frag`export const ${ref} = $.makeType<${ref}>(_.spec, "${type.id}", _.syntax.literal);`
-        );
+        const bases = scalarType.bases.map(base => getRef(base.name));
+        sc.writeln([t`interface ${ref} extends ${joinFrags(bases, ", ")} {}`]);
+        sc.writeln([
+          dts`declare `,
+          ...frag`const ${ref}`,
+          t`: ${ref}`,
+          r` = $.makeType`,
+          ts`<${ref}>`,
+          r`(_.spec, "${type.id}", _.syntax.literal);`,
+        ]);
         sc.nl();
 
-        sc.addExport(ref, `$${_name}`);
+        sc.addExport(ref);
+        sc.addRefsDefaultExport(ref, `$${_name}`);
       }
 
       continue;
@@ -74,73 +88,93 @@ export const generateScalars = (params: GeneratorParams) => {
 
     // generate enum
     if (type.enum_values && type.enum_values.length) {
-      sc.writeln(frag`export enum ${ref}λEnum {`);
+      sc.writeln([
+        dts`declare `,
+        t`enum `,
+        js`const `,
+        ...frag`${ref}λEnum `,
+        js`= `,
+        `{`,
+      ]);
       sc.indented(() => {
         for (const val of type.enum_values) {
-          sc.writeln(frag`${toIdent(val)} = ${quote(val)},`);
+          sc.writeln([toIdent(val), t` = `, js`: `, quote(val), `,`]);
         }
       });
       sc.writeln([`}`]);
+      sc.addExport(frag`${ref}λEnum`);
 
-      sc.writeln(
-        frag`export type ${ref} = typeof ${ref}λEnum & $.EnumType<${quote(
+      sc.writeln([
+        t`export `,
+        dts`declare `,
+        t`type ${ref} = typeof ${ref}λEnum & $.EnumType<${quote(
           type.name
-        )}, ${ref}λEnum, \`\${${ref}λEnum}\`>;`
-      );
-      sc.writeln(
-        frag`export const ${literal} = $.makeType<${ref}>(_.spec, "${type.id}", _.syntax.literal);`
-      );
+        )}, ${ref}λEnum, \`\${${ref}λEnum}\`>;`,
+      ]);
+      sc.writeln([
+        dts`declare `,
+        ...frag`const ${literal}`,
+        t`: ${ref}`,
+        r` = $.makeType`,
+        ts`<${ref}>`,
+        r`(_.spec, "${type.id}", _.syntax.literal);`,
+      ]);
 
       sc.nl();
-      sc.addExport(literal, _name);
+      sc.addExport(literal);
+      sc.addRefsDefaultExport(literal, _name);
       continue;
     }
 
     // generate non-enum non-abstract scalar
 
     const tsType = toTSScalarType(type, types, mod, sc);
-    sc.writeln(
-      frag`export type ${ref} = $.ScalarType<"${type.name}", ${tsType}>;`
-    );
-    sc.writeln(
-      frag`export const ${literal} = $.makeType<${ref}>(_.spec, "${type.id}", _.syntax.literal);`
-    );
-    // sc.writeln(
-    //   frag`export const ${literal} = <T extends ${tsType}>(val: T) =>
-    //  _.syntax.literal<$.ScalarType<"${type.name}", T>>(${ref} as any, val);`
-    // );
+    sc.writeln([
+      t`export `,
+      dts`declare `,
+      t`type ${ref} = $.ScalarType<"${type.name}", ${tsType}>;`,
+    ]);
+    sc.writeln([
+      dts`declare `,
+      ...frag`const ${literal}`,
+      t`: ${ref}`,
+      r` = $.makeType`,
+      ts`<${ref}>`,
+      r`(_.spec, "${type.id}", _.syntax.literal);`,
+    ]);
 
     if (casts.implicitCastFromMap[type.id]?.length) {
-      sc.writeln(
-        frag`export type ${ref}λICastableTo = ${joinFrags(
+      sc.writeln([
+        t`export `,
+        dts`declare `,
+        t`type ${ref}λICastableTo = ${joinFrags(
           [
             ref,
-            ...casts.implicitCastFromMap[type.id].map((typeId) =>
+            ...casts.implicitCastFromMap[type.id].map(typeId =>
               getRef(types.get(typeId).name)
             ),
           ],
           " | "
-        )};`
-      );
+        )};`,
+      ]);
     }
 
     const assignableMap = casts.assignableByMap[type.id] || [];
     if (casts.assignableByMap[type.id]?.length) {
-      sc.writeln(
-        frag`export type ${ref}λIAssignableBy = ${joinFrags(
+      sc.writeln([
+        t`export `,
+        dts`declare `,
+        t`type ${ref}λIAssignableBy = ${joinFrags(
           assignableMap.length
-            ? assignableMap.map((typeId) => getRef(types.get(typeId).name))
+            ? assignableMap.map(typeId => getRef(types.get(typeId).name))
             : [ref],
           " | "
-        )};`
-      );
+        )};`,
+      ]);
     }
 
-    // sc.writeln(`export const ${displayName}: ${displayName} = {`);
-    // sc.writeln(`  __name__: "${type.name}",`);
-    // sc.writeln(`} as any;`);
-
-    sc.addExport(literal, _name);
+    sc.addExport(literal);
+    sc.addRefsDefaultExport(literal, _name);
 
     sc.nl();
   }

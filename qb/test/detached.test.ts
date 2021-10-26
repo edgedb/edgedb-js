@@ -1,5 +1,5 @@
-import {edgedb} from "@generated/imports";
-import e from "../generated/example";
+import * as edgedb from "edgedb";
+import e from "../dbschema/edgeql";
 import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 
 let pool: edgedb.Pool;
@@ -19,7 +19,7 @@ test("detached", async () => {
   const heroes = await e.select(e.Hero).query(pool);
 
   const result = await e
-    .select(e.Hero, (hero) => ({
+    .select(e.Hero, hero => ({
       id: true,
       name: true,
       friends: e.select(e.detached(e.Hero)),

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2019",
+    "target": "es2017", // "es5"
+    "module": "commonjs",
     "esModuleInterop": true,
     "moduleResolution": "node",
     "strict": true,
@@ -10,24 +11,9 @@
     "downlevelIteration": true,
     "isolatedModules": true,
     "baseUrl": ".",
-    "outDir": "dist",
-    "paths": {
-      "edgedb": [
-        "../src/index.node.ts"
-      ],
-      "edgedb/*": [
-        "../*"
-      ],
-      "reflection": [
-        "../src/reflection"
-      ],
-      "@syntax/*": [
-        "../src/syntax/*"
-      ],
-      "@generated/*": [
-        "./generated/example/*"
-      ],
-    }
+    "declaration": true,
+    "preserveSymlinks": true,
+    "paths": {}
   },
   "include": [
     ".",

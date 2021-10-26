@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "edgedb": [
+        "./src/index.node"
+      ],
+      "@generated/*": [
+        "./src/syntax/genMock/*"
+      ],
+    }
+  },
+  "include": [
+    "src",
+  ],
+  "exclude": [
+    "**/*.deno.ts",
+    "test/deno/*",
+    "dist",
+    "qb",
+  ]
+}

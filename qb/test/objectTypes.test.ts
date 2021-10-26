@@ -1,6 +1,5 @@
-import {reflection as $} from "edgedb/src/index.node";
-import {Cardinality, mergeObjectTypes} from "../../src/reflection";
-import e from "../generated/example";
+import {$} from "edgedb";
+import e from "../dbschema/edgeql";
 import {tc} from "./setupTeardown";
 
 const HeroType = e.default.$Hero;
@@ -78,7 +77,7 @@ test("array tests", () => {
 });
 
 test("merging tests", () => {
-  const merged = mergeObjectTypes(e.default.$Bag, e.default.$Simple);
+  const merged = $.$mergeObjectTypes(e.default.$Bag, e.default.$Simple);
   expect(Object.keys(merged.__pointers__).length).toEqual(4);
   expect(Object.keys(merged.__pointers__).includes("id")).toEqual(true);
   expect(Object.keys(merged.__pointers__).includes("__type__")).toEqual(true);
@@ -100,14 +99,17 @@ test("backlinks", () => {
   expect(heroVillain.nemesis.__element__.__name__).toEqual("default::Hero");
   expect(
     e.select(e.Villain, () => ({limit: 1})).nemesis.__cardinality__
-  ).toEqual(Cardinality.AtMostOne);
+  ).toEqual($.Cardinality.AtMostOne);
 
   expect(e.Profile["<profile"].__element__.__name__).toEqual(
     "std::BaseObject"
   );
-  expect(e.Profile["<profile"].__cardinality__).toEqual(Cardinality.Many);
+  expect(e.Profile["<profile"].__cardinality__).toEqual($.Cardinality.Many);
 
-  const merged = mergeObjectTypes(e.Hero.__element__, e.Villain.__element__);
+  const merged = $.$mergeObjectTypes(
+    e.Hero.__element__,
+    e.Villain.__element__
+  );
   expect(merged.__pointers__["<characters"].target.__name__).toEqual(
     "std::BaseObject"
   );
