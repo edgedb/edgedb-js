@@ -62,7 +62,7 @@ async function run() {
             x: e.if_else(e.str("true"), params.optBool, e.str("false")),
           })
       )
-      .query(pool.pool, {numArr: [7], str: "test", optBool: true})
+      .query(pool.pool, {numArr: [7], str: "test"})
   );
 
   pool.pool.close();
