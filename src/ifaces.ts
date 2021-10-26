@@ -25,7 +25,13 @@ import {
 } from "./datatypes/datetime";
 import {Transaction} from "./transaction";
 import {InnerConnection, ConnectionImpl} from "./client";
-import {Options, RetryOptions, TransactionOptions} from "./options";
+import {
+  Options,
+  RetryOptions,
+  SimpleRetryOptions,
+  SimpleTransactionOptions,
+  TransactionOptions,
+} from "./options";
 import {PartialRetryRule} from "./options";
 
 import {Set} from "./datatypes/set";
@@ -83,8 +89,10 @@ export interface Connection extends Executor {
   retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
-  withTransactionOptions(opt: TransactionOptions): Connection;
-  withRetryOptions(opt: RetryOptions): Connection;
+  withTransactionOptions(
+    opt: TransactionOptions | SimpleTransactionOptions
+  ): Connection;
+  withRetryOptions(opt: RetryOptions | SimpleRetryOptions): Connection;
   close(): Promise<void>;
   isClosed(): boolean;
 }
@@ -101,8 +109,10 @@ export interface Client extends Executor {
   retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
-  withTransactionOptions(opt: TransactionOptions): Client;
-  withRetryOptions(opt: RetryOptions): Client;
+  withTransactionOptions(
+    opt: TransactionOptions | SimpleTransactionOptions
+  ): Client;
+  withRetryOptions(opt: RetryOptions | SimpleRetryOptions): Client;
   close(): Promise<void>;
   isClosed(): boolean;
 
