@@ -128,6 +128,16 @@ export namespace net {
       // No deno api for this
     }
 
+    unref() {
+      // No deno api for this
+      return this;
+    }
+
+    ref() {
+      // No deno api for this
+      return this;
+    }
+
     pause() {
       this._paused = true;
     }
