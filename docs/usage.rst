@@ -4,53 +4,67 @@
 Basic Usage
 ===========
 
-The interaction with the database normally starts with a call to ``connect()``,
-which establishes a new database session. This results in getting a
-connection ``Promise``.  The connection instance provides methods to
-run queries.
+The interaction with the database normally starts with a call to
+``createClient()``, which returns a new ``Client`` object. The client will
+maintain a pool of connections to your EdgeDB instance, and provides methods
+to run queries.
 
 .. code-block:: js
 
     const edgedb = require("edgedb");
 
     async function main() {
-      // Establish a connection to an existing database
-      // named "test" as an "edgedb" user.
-      const conn = await edgedb.connect("edgedb://edgedb@localhost/test");
+      // If you're running in an EdgeDB project directory, there's no need
+      // to provide any connection config to 'createClient', edgedb-js will
+      // find your database instance automatically
+      const client = edgedb.createClient();
 
-      try {
-        // Create a User object type.
-        await conn.execute(`
-          CREATE TYPE User {
-              CREATE REQUIRED PROPERTY name -> str;
-              CREATE PROPERTY dob -> cal::local_date;
-          }
-        `);
+      // The 'Client' creates connections lazily as they are needed, so until
+      // you run a query no connection will be made. If you want to explicitly
+      // ensure that the client is connected, use the 'ensureConnected' method:
+      // await client.ensureConnected();
 
-        // Insert a new User object.
-        await conn.query(
-          `
-          INSERT User {
-              name := <str>$name,
-              dob := <cal::local_date>$dob
-          }
-          `,
-          {
-            name: "Bob",
-            dob: new edgedb.LocalDate(1984, 3, 1)
-          }
-        );
+      // Create a User object type.
+      await client.execute(`
+        CREATE TYPE User {
+          CREATE REQUIRED PROPERTY name -> str;
+          CREATE PROPERTY dob -> cal::local_date;
+        }
+      `);
 
-        // Select User objects.
-        const userSet = await conn.query(
-          "SELECT User {name, dob} FILTER .name = <str>$name",
-          { name: "Bob" }
-        );
-        userSet; // [{ name: 'Bob', dob: edgedb.LocalDate(1984, 3, 1) }]
+      // Insert a new User object.
+      await client.query(
+        `insert User {
+          name := <str>$name,
+          dob := <cal::local_date>$dob
+        }`,
+        {
+          name: "Bob",
+          dob: new edgedb.LocalDate(1984, 3, 1)
+        }
+      );
 
-      } finally {
-        conn.close()
-      }
+      // Select User objects.
+      const userBob = await client.querySingle(
+        `select User {name, dob}
+         filter .name = <str>$name`,
+        { name: "Bob" }
+      );
+      console.log(userBob);
+      // { name: 'Bob', dob: edgedb.LocalDate(1984, 3, 1) }
+
+      // Try running multiple queries at once
+      const results = await Promise.all([
+        client.query(`select User`),
+        client.querySingle(`select 1 + 2`),
+      ]);
+      console.log(results);
+      // [
+      //   [{ name: 'Bob', dob: edgedb.LocalDate(1984, 3, 1) }],
+      //   3
+      // ]
+
+      client.close();
     }
 
     main();
@@ -67,68 +81,6 @@ Type Conversion
 ``edgedb`` automatically converts EdgeDB types to the corresponding
 JavaScript types and vice versa.  See :ref:`edgedb-js-datatypes` for details.
 
-.. _edgedb-js-connection-pool:
-
-
-Connection Pools
-----------------
-
-For server-side applications that handle frequent requests and need
-database connections for short periods of time, it is recommended to use a
-connection pool. The edgedb-js API provides an implementation of such pool.
-
-To create a connection pool, use the ``createPool()`` method.
-The resulting :js:class:`edgedb.Pool <Pool>` object can be used to maintain
-a certain number of open connections and borrow them when needed.
-
-.. code-block:: js
-
-    const edgedb = require("edgedb");
-
-    async function main() {
-      // Create a connection pool to an existing database
-      const pool = await edgedb.createPool("edgedb://edgedb@localhost/test");
-
-      try {
-        // Create a User object type.
-        await pool.execute(`
-          CREATE TYPE User {
-              CREATE REQUIRED PROPERTY name -> str;
-              CREATE PROPERTY dob -> cal::local_date;
-          }
-        `);
-
-        // Insert a new User object.
-        await pool.query(
-          `
-           INSERT User {
-             name := <str>$name,
-             dob := <cal::local_date>$dob
-           }
-          `,
-          {
-            name: "Bob",
-            dob: new edgedb.LocalDate(1984, 3, 1)
-          }
-        );
-
-        // Select User objects.
-        let userSet = await pool.query(
-          "SELECT User {name, dob} FILTER .name = <str>$name",
-          { name: "Bob" }
-        );
-        userSet; // [{ name: 'Bob', dob: edgedb.LocalDate(1984, 3, 1) }]
-
-      } finally {
-        await pool.close();
-      }
-    }
-
-    main();
-
-See :ref:`edgedb-js-api-pool` API documentation for
-more information.
-
 
 .. _edgedb-js-api-transaction:
 
@@ -140,13 +92,12 @@ the ``retryingTransaction()`` API:
 
 .. code-block:: js
 
-    await pool.retryingTransaction(tx => {
-      await tx.execute("INSERT User {name := 'Don'}");
+    await client.retryingTransaction(tx => {
+      await tx.execute("insert User {name := 'Don'}");
     });
 
 Note that we execute queries on the ``tx`` object in the above
-example, rather than on the original connection pool ``pool``
-object.
+example, rather than on the original ``client`` object.
 
 The ``retryingTransaction()`` API guarantees that:
 
@@ -164,25 +115,25 @@ JavaScript code. Here is an example:
 
 .. code-block:: js
 
-    pool.retryingTransaction(tx => {
-        let user = await tx.querySingle(
-            "SELECT User { email } FILTER .login = <str>$login",
-            login=login,
-        )
-        let query = await fetch(
-            'https://service.local/email_info', {
-                body: JSON.stringify({email: user.email})
-                headers: { 'Content-Type': 'application/json' },
-            },
-        )
-        let data = await query.json()
-        user = await tx.querySingle('''
-                UPDATE User FILTER .login = <str>$login
-                SET { email_info := <json>$data}
-            ''',
-            login=login,
-            data=data,
-        )
+    client.retryingTransaction(tx => {
+      const user = await tx.querySingle(
+        `select User { email } filter .login = <str>$login`,
+        {login},
+      )
+      const query = await fetch(
+        'https://service.local/email_info', {
+          body: JSON.stringify({email: user.email})
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
+      const data = await query.json()
+      await tx.querySingle(`
+        update User filter .login = <str>$login
+        set { email_info := <json>$data}
+      `, {
+        login,
+        data,
+      })
     })
 
 In the above example, the execution of the HTTP request would be retried
@@ -200,7 +151,7 @@ negatively impact the performance of the DB server.
 See also:
 
 * RFC1004_
-* :js:meth:`Connection.retryingTransaction\<T\>`
-* :js:meth:`Connection.rawTransaction\<T\>`
+* :js:meth:`Client.retryingTransaction\<T\>`
+* :js:meth:`Client.rawTransaction\<T\>`
 
 .. _RFC1004: https://github.com/edgedb/rfcs/blob/master/text/1004-transactions-api.rst

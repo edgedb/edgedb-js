@@ -87,7 +87,7 @@ Sets
 
     .. code-block:: js
 
-        const result = await conn.query(`SELECT {0, 1, 2};`);
+        const result = await client.query(`select {0, 1, 2}`);
         result instanceof edgedb.Set; // true
         result[0]; // 0
         result[1]; // 1
@@ -105,21 +105,15 @@ EdgeDB ``array``  maps onto the JavaScript ``Array``.
     const edgedb = require("edgedb");
 
     async function main() {
-      const conn = await edgedb.connect({
-        dsn: "edgedb://edgedb@localhost/"
-      });
+      const client = edgedb.createClient("edgedb://edgedb@localhost/");
 
-      try {
-        let data = await conn.querySingle("SELECT [1, 2, 3]");
+      const data = await client.querySingle("select [1, 2, 3]");
 
-        // The result is an Array.
-        assert(data instanceof Array);
-        assert(typeof data[0] === "number");
-        assert(data.length === 3);
-        assert(data[2] === 3);
-      } finally {
-        conn.close();
-      }
+      // The result is an Array.
+      assert(data instanceof Array);
+      assert(typeof data[0] === "number");
+      assert(data.length === 3);
+      assert(data[2] === 3);
     }
 
     main();
@@ -139,33 +133,27 @@ object property or a link can be accessed through a corresponding object key:
     const edgedb = require("edgedb");
 
     async function main() {
-      const conn = await edgedb.connect({
-        dsn: "edgedb://edgedb@localhost/"
-      });
+      const client = edgedb.createClient("edgedb://edgedb@localhost/");
 
-      try {
-        let data = await conn.querySingle(`
-          SELECT schema::Property {
-              name,
-              annotations: {name, @value}
-          }
-          FILTER .name = 'listen_port'
-              AND .source.name = 'cfg::Config'
-          LIMIT 1
-        `);
+      const data = await client.querySingle(`
+        select schema::Property {
+            name,
+            annotations: {name, @value}
+        }
+        filter .name = 'listen_port'
+            and .source.name = 'cfg::Config'
+        limit 1
+      `);
 
-        // The property 'name' is accessible.
-        assert(typeof data.name === "string");
-        // The link 'annotaions' is accessible and is a Set.
-        assert(typeof data.annotations === "object");
-        assert(data.annotations instanceof edgedb.Set);
-        // The Set of 'annotations' is array-like.
-        assert(data.annotations.length > 0);
-        assert(data.annotations[0].name === "cfg::system");
-        assert(data.annotations[0]["@value"] === "true");
-      } finally {
-        conn.close();
-      }
+      // The property 'name' is accessible.
+      assert(typeof data.name === "string");
+      // The link 'annotaions' is accessible and is a Set.
+      assert(typeof data.annotations === "object");
+      assert(data.annotations instanceof edgedb.Set);
+      // The Set of 'annotations' is array-like.
+      assert(data.annotations.length > 0);
+      assert(data.annotations[0].name === "cfg::system");
+      assert(data.annotations[0]["@value"] === "true");
     }
 
     main();
@@ -182,24 +170,18 @@ A regular EdgeDB ``tuple`` becomes an ``Array`` in JavaScript.
     const edgedb = require("edgedb");
 
     async function main() {
-      const conn = await edgedb.connect({
-        dsn: "edgedb://edgedb@localhost/"
-      });
+      const client = edgedb.createClient("edgedb://edgedb@localhost/");
 
-      try {
-        let data = await conn.querySingle(`
-          SELECT (1, 'a', [3])
-        `);
+      const data = await client.querySingle(`
+        select (1, 'a', [3])
+      `);
 
-        // The resulting tuple is an Array.
-        assert(data instanceof Array);
-        assert(data.length === 3);
-        assert(typeof data[0] === "number");
-        assert(typeof data[1] === "string");
-        assert(data[2] instanceof Array);
-      } finally {
-        conn.close();
-      }
+      // The resulting tuple is an Array.
+      assert(data instanceof Array);
+      assert(data.length === 3);
+      assert(typeof data[0] === "number");
+      assert(typeof data[1] === "string");
+      assert(data[2] instanceof Array);
     }
 
     main();
@@ -217,28 +199,22 @@ where the elements are accessible either by their names or indexes.
     const edgedb = require("edgedb");
 
     async function main() {
-      const conn = await edgedb.connect({
-        dsn: "edgedb://edgedb@localhost/"
-      });
+      const client = edgedb.createClient("edgedb://edgedb@localhost/");
 
-      try {
-        let data = await conn.querySingle(`
-          SELECT (a := 1, b := 'a', c := [3])
-        `);
+      const data = await client.querySingle(`
+        select (a := 1, b := 'a', c := [3])
+      `);
 
-        // The resulting tuple is an Array.
-        assert(data instanceof Array);
-        assert(data.length === 3);
-        assert(typeof data[0] === "number");
-        assert(typeof data[1] === "string");
-        assert(data[2] instanceof Array);
-        // Elements can be accessed by their names.
-        assert(typeof data.a === "number");
-        assert(typeof data["b"] === "string");
-        assert(data.c instanceof Array);
-      } finally {
-        conn.close();
-      }
+      // The resulting tuple is an Array.
+      assert(data instanceof Array);
+      assert(data.length === 3);
+      assert(typeof data[0] === "number");
+      assert(typeof data[1] === "string");
+      assert(data[2] instanceof Array);
+      // Elements can be accessed by their names.
+      assert(typeof data.a === "number");
+      assert(typeof data["b"] === "string");
+      assert(data.c instanceof Array);
     }
 
     main();
