@@ -1,3 +1,5 @@
+.. _edgedb-js-intro:
+
 ========================
 EdgeDB JavaScript Driver
 ========================
