@@ -150,11 +150,7 @@ function* all_options(): Generator<
   void,
   void
 > {
-  let levels = [
-    undefined,
-    IsolationLevel.Serializable,
-    IsolationLevel.RepeatableRead,
-  ];
+  let levels = [undefined, IsolationLevel.Serializable];
   let booleans = [undefined, true, false];
   for (let isolation of levels) {
     for (let readonly of booleans) {

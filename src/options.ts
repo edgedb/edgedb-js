@@ -8,7 +8,6 @@ export function defaultBackoff(attempt: number): number {
 
 export enum IsolationLevel {
   Serializable = "SERIALIZABLE",
-  RepeatableRead = "REPEATABLE READ",
 }
 
 export enum RetryCondition {
@@ -91,7 +90,7 @@ export class TransactionOptions {
   readonly readonly: boolean;
   readonly deferrable: boolean;
   constructor({
-    isolation = IsolationLevel.RepeatableRead,
+    isolation = IsolationLevel.Serializable,
     readonly = false,
     deferrable = false,
   }: SimpleTransactionOptions = {}) {
