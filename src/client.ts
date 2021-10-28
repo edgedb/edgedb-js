@@ -543,10 +543,15 @@ export class ConnectionImpl {
       this.sock.resume();
     }
 
-    await new Promise<void>((resolve, reject) => {
-      this.messageWaiterResolve = resolve;
-      this.messageWaiterReject = reject;
-    });
+    this.sock.ref();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.messageWaiterResolve = resolve;
+        this.messageWaiterReject = reject;
+      });
+    } finally {
+      this.sock.unref();
+    }
   }
 
   private _onConnect(): void {
@@ -962,7 +967,6 @@ export class ConnectionImpl {
             );
           }
 
-          this.sock.unref();
           this.connected = true;
           return;
         }
@@ -1437,33 +1441,28 @@ export class ConnectionImpl {
     const key = this._getQueryCacheKey(query, asJson, expectOne);
     const ret = new Set();
 
-    this.sock.ref();
-    try {
-      if (this.queryCodecCache.has(key)) {
-        const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
-        this._validateFetchCardinality(card, asJson, expectOne);
-        await this._optimisticExecuteFlow(
-          args,
-          asJson,
-          expectOne,
-          inCodec,
-          outCodec,
-          query,
-          ret
-        );
-      } else {
-        const [card, inCodec, outCodec] = await this._parse(
-          query,
-          asJson,
-          expectOne,
-          false
-        );
-        this._validateFetchCardinality(card, asJson, expectOne);
-        this.queryCodecCache.set(key, [card, inCodec, outCodec]);
-        await this._executeFlow(args, inCodec, outCodec, ret);
-      }
-    } finally {
-      this.sock.unref();
+    if (this.queryCodecCache.has(key)) {
+      const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
+      this._validateFetchCardinality(card, asJson, expectOne);
+      await this._optimisticExecuteFlow(
+        args,
+        asJson,
+        expectOne,
+        inCodec,
+        outCodec,
+        query,
+        ret
+      );
+    } else {
+      const [card, inCodec, outCodec] = await this._parse(
+        query,
+        asJson,
+        expectOne,
+        false
+      );
+      this._validateFetchCardinality(card, asJson, expectOne);
+      this.queryCodecCache.set(key, [card, inCodec, outCodec]);
+      await this._executeFlow(args, inCodec, outCodec, ret);
     }
 
     if (expectOne) {
@@ -1490,8 +1489,6 @@ export class ConnectionImpl {
   }
 
   async execute(query: string): Promise<void> {
-    this.sock.ref();
-
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$Q)
       .writeInt16(1) // headers
@@ -1500,43 +1497,38 @@ export class ConnectionImpl {
       .writeString(query) // statement name
       .endMessage();
 
+    this.sock.write(wb.unwrap());
+
     let error: Error | null = null;
+    let parsing = true;
 
-    try {
-      this.sock.write(wb.unwrap());
-
-      let parsing = true;
-
-      while (parsing) {
-        if (!this.buffer.takeMessage()) {
-          await this._waitForMessage();
-        }
-
-        const mtype = this.buffer.getMessageType();
-
-        switch (mtype) {
-          case chars.$C: {
-            this.lastStatus = this._parseCommandCompleteMessage();
-            break;
-          }
-
-          case chars.$Z: {
-            this._parseSyncMessage();
-            parsing = false;
-            break;
-          }
-
-          case chars.$E: {
-            error = this._parseErrorMessage();
-            break;
-          }
-
-          default:
-            this._fallthrough();
-        }
+    while (parsing) {
+      if (!this.buffer.takeMessage()) {
+        await this._waitForMessage();
       }
-    } finally {
-      this.sock.unref();
+
+      const mtype = this.buffer.getMessageType();
+
+      switch (mtype) {
+        case chars.$C: {
+          this.lastStatus = this._parseCommandCompleteMessage();
+          break;
+        }
+
+        case chars.$Z: {
+          this._parseSyncMessage();
+          parsing = false;
+          break;
+        }
+
+        case chars.$E: {
+          error = this._parseErrorMessage();
+          break;
+        }
+
+        default:
+          this._fallthrough();
+      }
     }
 
     if (error != null) {
