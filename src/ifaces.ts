@@ -122,7 +122,7 @@ export interface Client extends Executor {
   close(): Promise<void>;
   isClosed(): boolean;
 
-  ensureConnected(): Promise<Client>;
+  ensureConnected(): Promise<this>;
 
   /**
    * @deprecated
