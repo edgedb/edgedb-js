@@ -779,3 +779,48 @@ export function createClient(
     return ClientShell.create(undefined, opts);
   }
 }
+
+/**
+ * @deprecated
+ */
+export function connect(
+  dsnOrInstanceName?: string | ConnectConfig | null,
+  options?: ConnectConfig | null
+): Promise<Client> {
+  // tslint:disable-next-line: no-console
+  console.warn(
+    `The 'connect()' API is deprecated, use 'createClient()' instead`
+  );
+  return createClient(dsnOrInstanceName, {
+    concurrency: 1,
+    ...options,
+  }).ensureConnected();
+}
+
+interface PoolOptions {
+  connectOptions?: ConnectConfig;
+  minSize?: number;
+  maxSize?: number;
+}
+
+/**
+ * @deprecated
+ */
+export function createPool(
+  dsnOrInstanceName?: string | PoolOptions | null,
+  options?: PoolOptions | null
+): Promise<Client> {
+  // tslint:disable-next-line: no-console
+  console.warn(
+    `The 'createPool()' API is deprecated, use 'createClient()' instead`
+  );
+  const [dsn, opts] =
+    typeof dsnOrInstanceName === "string"
+      ? [dsnOrInstanceName, options]
+      : [undefined, {...dsnOrInstanceName, ...options}];
+
+  return createClient(dsn, {
+    ...opts?.connectOptions,
+    concurrency: opts?.maxSize,
+  }).ensureConnected();
+}
