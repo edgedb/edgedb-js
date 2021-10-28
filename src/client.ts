@@ -231,7 +231,6 @@ export class StandaloneConnection implements Connection {
           await conn.close();
         }
         this[INNER].connection = undefined;
-        this[INNER]._isClosed = true;
       } finally {
         this.cleanup();
       }
@@ -355,12 +354,10 @@ export class InnerConnection {
   config: NormalizedConnectConfig;
   connection?: ConnectionImpl;
   registry: CodecsRegistry;
-  _isClosed: boolean; // For compatibility
 
   constructor(config: NormalizedConnectConfig, registry: CodecsRegistry) {
     this.config = config;
     this.registry = registry;
-    this._isClosed = false;
   }
 
   async getImpl(singleAttempt: boolean = false): Promise<ConnectionImpl> {
@@ -371,8 +368,8 @@ export class InnerConnection {
     return connection;
   }
 
-  isClosed(): boolean {
-    return this._isClosed;
+  get _isClosed(): boolean {
+    return this.connection?.isClosed() ?? false;
   }
 
   logConnectionError(...args: any): void {
