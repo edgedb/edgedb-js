@@ -356,9 +356,12 @@ export class ClientShell implements Client {
   }
 
   /**
+   * @deprecated
    * Get information about the current state of the client.
    */
   getStats(): ClientStats {
+    // tslint:disable-next-line: no-console
+    console.warn(`The 'Client.getStats()' method is deprecated`);
     return this.impl.getStats();
   }
 
@@ -374,9 +377,17 @@ export class ClientShell implements Client {
     return client;
   }
 
+  /**
+   * @deprecated
+   */
   async rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      `The 'Client.rawTransaction()' method is deprecated, instead try ` +
+        `'client.withRetryOptions({attempts: 1}).retryingTransaction()'`
+    );
     const conn = await this.impl.acquire(this.options);
     try {
       return await conn.rawTransaction(action);

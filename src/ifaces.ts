@@ -83,6 +83,9 @@ interface Modifiable {
 export type Executor = ReadOnlyExecutor & Modifiable;
 
 export interface Connection extends Executor {
+  /**
+   * @deprecated
+   */
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
@@ -103,6 +106,9 @@ export interface IClientStats {
 }
 
 export interface Client extends Executor {
+  /**
+   * @deprecated
+   */
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
@@ -117,6 +123,11 @@ export interface Client extends Executor {
   isClosed(): boolean;
 
   ensureConnected(): Promise<Client>;
+
+  /**
+   * @deprecated
+   * Get information about the current state of the client.
+   */
   getStats(): IClientStats;
   terminate(): void;
 }
