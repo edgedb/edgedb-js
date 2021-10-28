@@ -473,7 +473,7 @@ class ClientImpl {
   private _userConcurrency: number | null;
   private _suggestedConcurrency: number | null;
   private _generation: number;
-  private _connectOptions: NormalizedConnectConfig;
+  private _connectConfig: ConnectConfig;
   private _codecsRegistry: CodecsRegistry;
 
   constructor(dsn?: string, options: ConnectOptions = {}) {
@@ -489,7 +489,7 @@ class ClientImpl {
     this._closing = false;
     this._closed = false;
     this._generation = 0;
-    this._connectOptions = parseConnectArguments({...options, dsn});
+    this._connectConfig = {...options, ...(dsn !== undefined ? {dsn} : {})};
   }
 
   /**
@@ -576,10 +576,21 @@ class ClientImpl {
     }
   }
 
+  private __normalizedConnectConfig: Promise<NormalizedConnectConfig> | null =
+    null;
+  private get _normalizedConnectConfig(): Promise<NormalizedConnectConfig> {
+    return (
+      this.__normalizedConnectConfig ??
+      (this.__normalizedConnectConfig = parseConnectArguments(
+        this._connectConfig
+      ))
+    );
+  }
+
   /** @internal */
   async getNewConnection(): Promise<ClientConnection> {
     const connection = await ClientConnection.connect(
-      this._connectOptions,
+      await this._normalizedConnectConfig,
       this._codecsRegistry
     );
     const suggestedConcurrency = connection[

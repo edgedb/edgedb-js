@@ -1,4 +1,4 @@
-import {path, homeDir, fs} from "./adapter.node";
+import {path, homeDir, exists} from "./adapter.node";
 
 export const isWindows = process.platform === "win32";
 
@@ -26,15 +26,17 @@ if (process.platform === "darwin") {
   };
 }
 
-export function searchConfigDir(...configPath: string[]): string {
+export async function searchConfigDir(
+  ...configPath: string[]
+): Promise<string> {
   const filePath = path.join(_configDir(), ...configPath);
 
-  if (fs.existsSync(filePath)) {
+  if (await exists(filePath)) {
     return filePath;
   }
 
   const fallbackPath = path.join(homeDir(), ".edgedb", ...configPath);
-  if (fs.existsSync(fallbackPath)) {
+  if (await exists(fallbackPath)) {
     return fallbackPath;
   }
 

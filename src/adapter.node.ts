@@ -1,15 +1,23 @@
 import * as crypto from "crypto";
-import * as fs from "fs";
-import {existsSync, realpathSync} from "fs";
+import {promises as fs} from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as net from "net";
 import * as tls from "tls";
 
-export {path, net, crypto, fs, existsSync, realpathSync, tls};
+export {path, net, crypto, fs, tls};
 
-export function readFileUtf8Sync(fn: string): string {
-  return fs.readFileSync(fn, {encoding: "utf8"});
+export async function readFileUtf8(fn: string): Promise<string> {
+  return fs.readFile(fn, {encoding: "utf8"});
+}
+
+export async function exists(filepath: string): Promise<boolean> {
+  try {
+    await fs.access(filepath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function randomBytes(size: number): Promise<Buffer> {
