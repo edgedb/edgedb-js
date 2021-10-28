@@ -347,6 +347,9 @@ Client
             awaiting on, so it is not necessary to explicitly call ``close()``
             if it is more convenient for your application.
 
+            (This does not apply to Deno, since Deno is missing the
+            required API's to `unref` idle connections)
+
     .. js:method:: isClosed(): boolean
 
         Returns true if ``close()`` has been called on the client.
