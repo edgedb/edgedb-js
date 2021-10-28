@@ -58,12 +58,7 @@ import {
 } from "./options";
 import {PartialRetryRule} from "./options";
 
-import {
-  parseConnectArguments,
-  Address,
-  ConnectConfig,
-  NormalizedConnectConfig,
-} from "./con_utils";
+import {Address, NormalizedConnectConfig} from "./con_utils";
 import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 
 const PROTO_VER: ProtocolVersion = [0, 12];

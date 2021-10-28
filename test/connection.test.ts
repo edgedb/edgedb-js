@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 
-let mockedFiles: {[key: string]: string} | null = null;
+let mockFs = false;
+let mockedFiles: {[key: string]: string} = {};
 let homedir: string | null = null;
 
 jest.mock("fs", () => {
@@ -24,34 +25,39 @@ jest.mock("fs", () => {
 
   return {
     ...actualFs,
-    existsSync: (filepath: string, ...args: any[]) => {
-      if (!mockedFiles) return actualFs.existsSync(filepath, ...args);
+    promises: {
+      ...actualFs.promises,
+      access: async (filepath: string, ...args: any[]) => {
+        if (!mockFs) return actualFs.promises.access(filepath, ...args);
 
-      return mockedFiles[filepath] !== undefined;
-    },
-    readFileSync: (filepath: string, ...args: any[]) => {
-      if (!mockedFiles) return actualFs.readFileSync(filepath, ...args);
+        if (mockedFiles[filepath] === undefined) {
+          throw new Error(`File doesn't exist`);
+        }
+      },
+      readFile: async (filepath: string, ...args: any[]) => {
+        if (!mockFs) return actualFs.promises.readFile(filepath, ...args);
 
-      if (mockedFiles[filepath] !== undefined) {
-        return mockedFiles[filepath];
-      } else {
-        const err = new Error(
-          `ENOENT: no such file or directory, open '${filepath}'`
-        ) as any;
-        err.errno = -2;
-        err.code = "ENOENT";
-        throw err;
-      }
-    },
-    realpathSync: (filepath: string, ...args: any[]) => {
-      if (!mockedFiles) return actualFs.realpathSync(filepath, ...args);
+        if (mockedFiles[filepath] !== undefined) {
+          return mockedFiles[filepath];
+        } else {
+          const err = new Error(
+            `ENOENT: no such file or directory, open '${filepath}'`
+          ) as any;
+          err.errno = -2;
+          err.code = "ENOENT";
+          throw err;
+        }
+      },
+      realpath: async (filepath: string, ...args: any[]) => {
+        if (!mockFs) return actualFs.promises.realpath(filepath, ...args);
 
-      return filepath;
-    },
-    statSync: (filepath: string, ...args: any[]) => {
-      if (!mockedFiles) return actualFs.statSync(filepath, ...args);
+        return filepath;
+      },
+      stat: async (filepath: string, ...args: any[]) => {
+        if (!mockFs) return actualFs.promises.stat(filepath, ...args);
 
-      return {dev: 0};
+        return {dev: 0};
+      },
     },
   };
 });
@@ -72,7 +78,7 @@ import {getClient} from "./testbase";
 import {Client, Connection} from "../src/ifaces";
 import * as errors from "../src/errors";
 
-function env_wrap(
+async function env_wrap(
   {
     env,
     fs,
@@ -82,8 +88,8 @@ function env_wrap(
     fs: ConnectionTestCase["fs"];
     captureWarnings?: boolean;
   },
-  func: () => void
-): string[] {
+  func: () => Promise<unknown>
+): Promise<string[]> {
   let oldEnv: {[key: string]: any};
   let oldCwd: any;
   let oldWarn: any;
@@ -110,9 +116,11 @@ function env_wrap(
     console.warn = (warning: string) => warnings.push(warning);
   }
 
+  mockFs = true;
   try {
-    func();
+    await func();
   } finally {
+    mockFs = false;
     if (env) {
       process.env = oldEnv!;
     }
@@ -124,7 +132,7 @@ function env_wrap(
         homedir = null;
       }
       if (mockedFiles) {
-        mockedFiles = null;
+        mockedFiles = {};
       }
     }
     if (captureWarnings) {
@@ -184,7 +192,7 @@ type ConnectionTestCase = {
   warnings?: string[];
 } & ({result: ConnectionResult} | {error: {type: string}});
 
-function runConnectionTest(testcase: ConnectionTestCase): void {
+async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
   const {env = {}, opts = {}, fs, platform} = testcase;
   if (
     fs &&
@@ -201,14 +209,14 @@ function runConnectionTest(testcase: ConnectionTestCase): void {
     if (!error) {
       throw new Error(`Unknown error type: ${testcase.error.type}`);
     }
-    expect(() => {
-      env_wrap({env, fs}, parseConnectArguments.bind(null, opts));
-    }).toThrow(error);
+    await expect(() =>
+      env_wrap({env, fs}, () => parseConnectArguments(opts))
+    ).rejects.toThrow(error);
   } else {
-    const warnings = env_wrap(
+    const warnings = await env_wrap(
       {env, fs, captureWarnings: !!testcase.warnings},
-      () => {
-        const {connectionParams} = parseConnectArguments(opts);
+      async () => {
+        const {connectionParams} = await parseConnectArguments(opts);
         expect({
           address: connectionParams.address,
           database: connectionParams.database,
@@ -232,7 +240,7 @@ function runConnectionTest(testcase: ConnectionTestCase): void {
   }
 }
 
-test("parseConnectArguments", () => {
+test("parseConnectArguments", async () => {
   let connectionTestcases: any[];
   try {
     connectionTestcases = JSON.parse(
@@ -250,11 +258,11 @@ test("parseConnectArguments", () => {
   }
 
   for (const testcase of connectionTestcases) {
-    runConnectionTest(testcase);
+    await runConnectionTest(testcase);
   }
 });
 
-test("logging, inProject, fromProject, fromEnv", () => {
+test("logging, inProject, fromProject, fromEnv", async () => {
   const defaults = {
     address: ["localhost", 5656],
     database: "edgedb",
@@ -403,23 +411,26 @@ test("logging, inProject, fromProject, fromEnv", () => {
       continue;
     }
 
-    env_wrap({env: testcase.env as any, fs: testcase.fs as any}, () => {
-      const {connectionParams, logging, inProject, fromProject, fromEnv} =
-        parseConnectArguments(testcase.opts);
-      expect({
-        address: connectionParams.address,
-        database: connectionParams.database,
-        user: connectionParams.user,
-        password: connectionParams.password ?? null,
-        tlsCAData: connectionParams.tlsOptions.ca ?? null,
-        tlsVerifyHostname: connectionParams.tlsVerifyHostname,
-        serverSettings: connectionParams.serverSettings,
-      }).toEqual(testcase.result);
-      expect(logging).toEqual(testcase.logging);
-      expect(inProject).toEqual(testcase.inProject);
-      expect(fromProject).toEqual(testcase.fromProject);
-      expect(fromEnv).toEqual(testcase.fromEnv);
-    });
+    await env_wrap(
+      {env: testcase.env as any, fs: testcase.fs as any},
+      async () => {
+        const {connectionParams, logging, inProject, fromProject, fromEnv} =
+          await parseConnectArguments(testcase.opts);
+        expect({
+          address: connectionParams.address,
+          database: connectionParams.database,
+          user: connectionParams.user,
+          password: connectionParams.password ?? null,
+          tlsCAData: connectionParams.tlsOptions.ca ?? null,
+          tlsVerifyHostname: connectionParams.tlsVerifyHostname,
+          serverSettings: connectionParams.serverSettings,
+        }).toEqual(testcase.result);
+        expect(logging).toEqual(testcase.logging);
+        expect(inProject).toEqual(testcase.inProject);
+        expect(fromProject).toEqual(testcase.fromProject);
+        expect(fromEnv).toEqual(testcase.fromEnv);
+      }
+    );
   }
 });
 
@@ -483,10 +494,10 @@ test("connect: invalid name", async () => {
 test("connect: refused unix", async () => {
   let con: Connection | undefined;
   try {
-    con = getClient({
+    con = await getClient({
       host: "/tmp/non-existent",
       waitUntilAvailable: 0,
-    });
+    }).ensureConnected();
     throw new Error("connection isn't refused");
   } catch (e: any) {
     expect(e.message).toEqual("unix socket paths not supported");

@@ -1,7 +1,7 @@
 import {readCredentialsFile, validateCredentials} from "../src/credentials";
 
-test("readCredentialsFile", () => {
-  let data = readCredentialsFile("test/credentials1.json");
+test("readCredentialsFile", async () => {
+  let data = await readCredentialsFile("test/credentials1.json");
   expect(data).toEqual({
     database: "test3n",
     password: "lZTBy1RVCfOpBAOwSCwIyBIR",

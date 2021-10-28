@@ -1,4 +1,4 @@
-import {readFileUtf8Sync, path} from "./adapter.node";
+import {readFileUtf8, path} from "./adapter.node";
 import * as platform from "./platform";
 
 export interface Credentials {
@@ -11,13 +11,15 @@ export interface Credentials {
   tlsVerifyHostname?: boolean;
 }
 
-export function getCredentialsPath(instanceName: string): string {
+export async function getCredentialsPath(
+  instanceName: string
+): Promise<string> {
   return platform.searchConfigDir("credentials", instanceName + ".json");
 }
 
-export function readCredentialsFile(file: string): Credentials {
+export async function readCredentialsFile(file: string): Promise<Credentials> {
   try {
-    const data: string = readFileUtf8Sync(file);
+    const data: string = await readFileUtf8(file);
     return validateCredentials(JSON.parse(data));
   } catch (e) {
     throw Error(`cannot read credentials file ${file}: ${e}`);
