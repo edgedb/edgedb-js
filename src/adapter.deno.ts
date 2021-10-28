@@ -130,6 +130,8 @@ export namespace net {
 
     unref() {
       // No deno api for this
+      // Without this api, open idle connections will block deno from exiting
+      // after all other tasks are finished
       return this;
     }
 
