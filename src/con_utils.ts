@@ -283,15 +283,22 @@ export class ResolvedConnectConfig {
   }
 
   explainConfig(): string {
-    const output: string[] = [];
+    const output: string[] = [
+      `Parameter          Value                                    Source`,
+      `---------          -----                                    ------`,
+    ];
 
     const outputLine = (param: string, val: any, rawVal: any, source: any) => {
+      const isDefault = rawVal === null;
+      const maxValLength = 40 - (isDefault ? 10 : 0);
+      let value = String(val);
+      if (value.length > maxValLength) {
+        value = value.slice(0, maxValLength - 3) + "...";
+      }
       output.push(
-        `${param}: ${typeof val === "string" ? `'${val}'` : val} from ${
-          source
-            ? `${source}${rawVal === null ? " (default)" : ""}`
-            : "default"
-        }`
+        param.padEnd(19, " ") +
+          (value + (isDefault ? " (default)" : "")).padEnd(42, " ") +
+          source ?? "default"
       );
     };
 
@@ -306,13 +313,14 @@ export class ResolvedConnectConfig {
     outputLine("user", this.user, this._user, this._userSource);
     outputLine(
       "password",
-      this.password,
+      this.password &&
+        this.password.slice(0, 3).padEnd(this.password.length, "*"),
       this._password,
       this._passwordSource
     );
     outputLine(
       "tlsCAData",
-      this._tlsCAData ? this._tlsCAData.slice(0, 50) + "..." : this._tlsCAData,
+      this._tlsCAData && this._tlsCAData.replace("\n", ""),
       this._tlsCAData,
       this._tlsCADataSource
     );

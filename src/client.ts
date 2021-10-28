@@ -829,7 +829,9 @@ export class ConnectionImpl {
             }
 
             err = new errors.ClientConnectionFailedError(
-              `${e.message}\n${config.connectionParams.explainConfig()}`
+              `${e.message}\n` +
+                `Attempted to connect using the following credentials:\n` +
+                `${config.connectionParams.explainConfig()}\n`
             );
             break;
           case "ECONNREFUSED":
@@ -838,12 +840,16 @@ export class ConnectionImpl {
           case "ENOTFOUND": // DNS name not found
           case "ENOENT": // unix socket is not created yet
             err = new errors.ClientConnectionFailedTemporarilyError(
-              `${e.message}\n${config.connectionParams.explainConfig()}`
+              `${e.message}\n` +
+                `Attempted to connect using the following credentials:\n` +
+                `${config.connectionParams.explainConfig()}\n`
             );
             break;
           default:
             err = new errors.ClientConnectionFailedError(
-              `${e.message}\n${config.connectionParams.explainConfig()}`
+              `${e.message}\n` +
+                `Attempted to connect using the following credentials:\n` +
+                `${config.connectionParams.explainConfig()}\n`
             );
             break;
         }
