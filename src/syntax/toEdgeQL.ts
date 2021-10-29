@@ -156,7 +156,13 @@ interface RenderCtx {
   forVars: Map<$expr_ForVar, string>;
 }
 
+const toEdgeQLCache = new WeakMap<any, string>();
+
 export function $toEdgeQL(this: any) {
+  if (toEdgeQLCache.has(this)) {
+    return toEdgeQLCache.get(this)!;
+  }
+
   const walkExprCtx: WalkExprTreeCtx = {
     seen: new Map(),
     rootScope: null,
@@ -297,7 +303,14 @@ export function $toEdgeQL(this: any) {
     }
   }
 
-  return renderEdgeQL(this, {withBlocks, withVars, forVars: new Map()});
+  const edgeQL = renderEdgeQL(this, {
+    withBlocks,
+    withVars,
+    forVars: new Map(),
+  });
+  toEdgeQLCache.set(this, edgeQL);
+
+  return edgeQL;
 }
 
 function topoSortWithVars(

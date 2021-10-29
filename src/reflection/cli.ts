@@ -25,7 +25,6 @@ const run = async () => {
 
   const connectionConfig: ConnectConfig = {};
   const options: Options = {};
-  console.log();
 
   while (args.length) {
     let flag = args.shift()!;
