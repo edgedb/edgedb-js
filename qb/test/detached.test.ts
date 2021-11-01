@@ -16,7 +16,7 @@ afterAll(async () => {
 });
 
 test("detached", async () => {
-  const heroes = await e.select(e.Hero).query(pool);
+  const heroes = await e.select(e.Hero).run(pool);
 
   const result = await e
     .select(e.Hero, hero => ({
@@ -25,7 +25,7 @@ test("detached", async () => {
       friends: e.select(e.detached(e.Hero)),
       filter: e.eq(hero.name, e.str("Iron Man")),
     }))
-    .query(pool);
+    .run(pool);
   type result = typeof result;
   tc.assert<
     tc.IsExact<

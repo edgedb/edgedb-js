@@ -14,38 +14,38 @@ async function run() {
 
   console.log(e.Hero.__element__.__pointers__.villains.properties);
 
-  console.log(await e.select(e.int16(5)).query(pool.pool));
+  console.log(await e.select(e.int16(5)).run(pool.pool));
   console.log(
     await e
       .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
-      .query(pool.pool)
+      .run(pool.pool)
   );
   console.log(
     await e
       .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
       .update({number_of_movies: e.int16(5)})
-      .query(pool.pool)
+      .run(pool.pool)
   );
   console.log(
     await e
       .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
       .delete()
-      .query(pool.pool)
+      .run(pool.pool)
   );
 
-  console.log(await e.insert(e.Hero, {name: e.str("Loki")}).query(pool.pool));
+  console.log(await e.insert(e.Hero, {name: e.str("Loki")}).run(pool.pool));
   console.log(
     await e
       .insert(e.Hero, {name: e.str("Loki")})
       .unlessConflict()
-      .query(pool.pool)
+      .run(pool.pool)
   );
 
-  console.log(await e.for(e.Hero, hero => hero.name).query(pool.pool));
+  console.log(await e.for(e.Hero, hero => hero.name).run(pool.pool));
 
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
-  console.log(await e.with([numbers], e.select(numbers)).query(pool.pool));
+  console.log(await e.with([numbers], e.select(numbers)).run(pool.pool));
 
   console.log(
     await e
@@ -62,7 +62,7 @@ async function run() {
             x: e.if_else(e.str("true"), params.optBool, e.str("false")),
           })
       )
-      .query(pool.pool, {numArr: [7], str: "test"})
+      .run(pool.pool, {numArr: [7], str: "test"})
   );
 
   pool.pool.close();

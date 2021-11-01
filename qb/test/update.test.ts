@@ -46,7 +46,7 @@ test("update link property", async () => {
 
   const qq1 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
-    .query(pool);
+    .run(pool);
 
   expect(qq1?.characters.length).toEqual(2);
 
@@ -62,7 +62,7 @@ test("update link property", async () => {
 
   const t2 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
-    .query(pool);
+    .run(pool);
   expect(t2?.characters.length).toEqual(3);
 
   await pool.execute(
@@ -79,7 +79,7 @@ test("update link property", async () => {
 
   const t3 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
-    .query(pool);
+    .run(pool);
   expect(t3?.characters.length).toEqual(2);
 
   await pool.execute(
@@ -92,7 +92,7 @@ test("update link property", async () => {
 
   const t4 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
-    .query(pool);
+    .run(pool);
   expect(t4?.characters.length).toEqual(0);
 
   await pool.execute(
@@ -110,6 +110,6 @@ test("update link property", async () => {
 
   const t5 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
-    .query(pool);
+    .run(pool);
   expect(t5?.characters.length).toEqual(2);
 });
