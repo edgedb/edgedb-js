@@ -37,9 +37,9 @@ test("basic insert", async () => {
 
 test("nested insert", async () => {
   const q1 = e.insert(e.Villain, {
-    name: e.str("asdf"),
+    name: e.str("villain"),
     nemesis: e.insert(e.Hero, {
-      name: e.str("asdf"),
+      name: e.str("hero"),
     }),
   });
 
@@ -48,7 +48,12 @@ test("nested insert", async () => {
     nemesis: {name: true},
   }));
 
-  const result = await pool.queryOne(q2.toEdgeQL());
+  const result = await q2.run(pool); //pool.queryOne(q2.toEdgeQL());
+
+  expect(result).toMatchObject({
+    name: "villain",
+    nemesis: {name: "hero"},
+  });
 
   // cleanup
   await pool.execute(`delete Villain filter .name = '${result.name}';`);

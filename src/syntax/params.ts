@@ -32,7 +32,7 @@ export type QueryableWithParamsExpression<
     [key: string]: ParamType | $expr_OptionalParam;
   } = {}
 > = Expression<Set> & {
-  query(
+  run(
     cxn: Executor,
     args: paramsToParamArgs<Params>
   ): Promise<setToTsType<Set>>;

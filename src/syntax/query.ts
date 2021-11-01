@@ -28,6 +28,6 @@ async function queryFunc(
 
 export function $queryify<Expr extends ExpressionRoot>(expr: Expr) {
   return Object.assign(expr, {
-    query: queryFunc.bind(expr),
+    run: queryFunc.bind(expr),
   });
 }

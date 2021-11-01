@@ -67,7 +67,7 @@ export type Expression<Set extends TypeSet = TypeSet> =
 
 export type QueryableExpression<Set extends TypeSet = TypeSet> =
   Expression<Set> & {
-    query(cxn: Executor): Promise<setToTsType<Set>>;
+    run(cxn: Executor): Promise<setToTsType<Set>>;
   };
 
 export type stripSet<T> = "__element__" extends keyof T
