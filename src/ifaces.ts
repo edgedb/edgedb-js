@@ -65,8 +65,13 @@ export interface ReadOnlyExecutor {
   execute(query: string): Promise<void>;
   query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]>;
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
-  querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T>;
+  querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T | null>;
   querySingleJSON(query: string, args?: QueryArgs): Promise<string>;
+  queryRequiredSingle<T = unknown>(
+    query: string,
+    args?: QueryArgs
+  ): Promise<T>;
+  queryRequiredSingleJSON(query: string, args?: QueryArgs): Promise<string>;
 }
 
 export const INNER = Symbol("INNER");

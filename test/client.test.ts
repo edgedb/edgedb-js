@@ -28,8 +28,10 @@ import {
   _RawConnection,
   _CodecsRegistry,
   _ReadBuffer,
+  ResultCardinalityMismatchError,
+  NoDataError,
 } from "../src/index.node";
-import {Connection, INNER} from "../src/ifaces";
+import {Connection, Executor, INNER} from "../src/ifaces";
 import {
   LocalDate,
   Duration,
@@ -1350,26 +1352,89 @@ test("queryJSON", async () => {
   }
 });
 
+test("query(Required)Single cardinality", async () => {
+  const client = getClient();
+
+  const querySingleTests = async (conn: Executor) => {
+    expect(await conn.querySingle(`select 'test'`)).toBe("test");
+    expect(await conn.querySingle(`select <str>{}`)).toBe(null);
+    await expect(
+      conn.querySingle(`select {'multiple', 'test', 'strings'}`)
+    ).rejects.toBeInstanceOf(ResultCardinalityMismatchError);
+  };
+  const queryRequiredSingleTests = async (conn: Executor) => {
+    expect(await conn.queryRequiredSingle(`select 'test'`)).toBe("test");
+    await expect(
+      conn.queryRequiredSingle(`select <str>{}`)
+    ).rejects.toBeInstanceOf(NoDataError);
+    await expect(
+      conn.queryRequiredSingle(`select {'multiple', 'test', 'strings'}`)
+    ).rejects.toBeInstanceOf(ResultCardinalityMismatchError);
+  };
+  const querySingleJSONTests = async (conn: Executor) => {
+    expect(await conn.querySingleJSON(`select 'test'`)).toBe('"test"');
+    expect(await conn.querySingleJSON(`select <str>{}`)).toBe("null");
+    await expect(
+      conn.querySingleJSON(`select {'multiple', 'test', 'strings'}`)
+    ).rejects.toBeInstanceOf(ResultCardinalityMismatchError);
+  };
+  const queryRequiredSingleJSONTests = async (conn: Executor) => {
+    expect(await conn.queryRequiredSingleJSON(`select 'test'`)).toBe('"test"');
+    await expect(
+      conn.queryRequiredSingleJSON(`select <str>{}`)
+    ).rejects.toBeInstanceOf(NoDataError);
+    await expect(
+      conn.queryRequiredSingleJSON(`select {'multiple', 'test', 'strings'}`)
+    ).rejects.toBeInstanceOf(ResultCardinalityMismatchError);
+  };
+
+  for (const tests of [
+    querySingleTests,
+    queryRequiredSingleTests,
+    querySingleJSONTests,
+    queryRequiredSingleJSONTests,
+  ]) {
+    await tests(client);
+    try {
+      await client.retryingTransaction((tx) => tests(tx));
+    } catch {}
+  }
+
+  client.close();
+});
+
 test("querySingle wrong cardinality", async () => {
   const con = getClient();
   try {
     await con
-      .querySingleJSON("start transaction")
+      .queryRequiredSingleJSON("start transaction")
       .then(() => {
         throw new Error("an exception was expected");
       })
       .catch((e) => {
-        expect(e.toString()).toMatch(/querySingleJSON\(\) returned no data/);
+        expect(e.toString()).toMatch(
+          /queryRequiredSingleJSON\(\) returned no data/
+        );
       });
 
     await con
-      .querySingle("start transaction")
+      .queryRequiredSingle("start transaction")
       .then(() => {
         throw new Error("an exception was expected");
       })
       .catch((e) => {
-        expect(e.toString()).toMatch(/querySingle\(\) returned no data/);
+        expect(e.toString()).toMatch(
+          /queryRequiredSingle\(\) returned no data/
+        );
       });
+
+    await con.querySingleJSON("start transaction").then((res) => {
+      expect(res).toBe("null");
+    });
+
+    await con.querySingle("start transaction").then((res) => {
+      expect(res).toBe(null);
+    });
   } finally {
     await con.close();
   }

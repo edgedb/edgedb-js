@@ -299,7 +299,10 @@ export class StandaloneConnection implements Connection {
     }
   }
 
-  async querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T> {
+  async querySingle<T = unknown>(
+    query: string,
+    args?: QueryArgs
+  ): Promise<T | null> {
     const inner = this[INNER];
     const borrowed_for = inner.borrowedFor;
     if (borrowed_for) {
@@ -330,6 +333,48 @@ export class StandaloneConnection implements Connection {
     }
     try {
       return await connection.fetch(query, args, true, true);
+    } finally {
+      inner.borrowedFor = undefined;
+    }
+  }
+
+  async queryRequiredSingle<T = unknown>(
+    query: string,
+    args?: QueryArgs
+  ): Promise<T> {
+    const inner = this[INNER];
+    const borrowed_for = inner.borrowedFor;
+    if (borrowed_for) {
+      throw borrowError(borrowed_for);
+    }
+    inner.borrowedFor = BorrowReason.QUERY;
+    let connection = inner.connection;
+    if (!connection || connection.isClosed()) {
+      connection = await inner.reconnect();
+    }
+    try {
+      return await connection.fetch(query, args, false, true, true);
+    } finally {
+      inner.borrowedFor = undefined;
+    }
+  }
+
+  async queryRequiredSingleJSON(
+    query: string,
+    args?: QueryArgs
+  ): Promise<string> {
+    const inner = this[INNER];
+    const borrowed_for = inner.borrowedFor;
+    if (borrowed_for) {
+      throw borrowError(borrowed_for);
+    }
+    inner.borrowedFor = BorrowReason.QUERY;
+    let connection = inner.connection;
+    if (!connection || connection.isClosed()) {
+      connection = await inner.reconnect();
+    }
+    try {
+      return await connection.fetch(query, args, true, true, true);
     } finally {
       inner.borrowedFor = undefined;
     }
@@ -1322,6 +1367,7 @@ export class ConnectionImpl {
     args: QueryArgs,
     asJson: boolean,
     expectOne: boolean,
+    requiredOne: boolean,
     inCodec: ICodec,
     outCodec: ICodec,
     query: string,
@@ -1406,7 +1452,7 @@ export class ConnectionImpl {
     }
 
     if (reExec) {
-      this._validateFetchCardinality(newCard!, asJson, expectOne);
+      this._validateFetchCardinality(newCard!, asJson, requiredOne);
       return await this._executeFlow(args, inCodec, outCodec, result);
     }
   }
@@ -1422,11 +1468,14 @@ export class ConnectionImpl {
   private _validateFetchCardinality(
     card: char,
     asJson: boolean,
-    expectOne: boolean
+    requiredOne: boolean
   ): void {
-    if (expectOne && card === chars.$n) {
-      const methname = asJson ? "querySingleJSON" : "querySingle";
-      throw new Error(`query executed via ${methname}() returned no data`);
+    if (requiredOne && card === chars.$n) {
+      throw new errors.NoDataError(
+        `query executed via queryRequiredSingle${
+          asJson ? "JSON" : ""
+        }() returned no data`
+      );
     }
   }
 
@@ -1434,18 +1483,20 @@ export class ConnectionImpl {
     query: string,
     args: QueryArgs = null,
     asJson: boolean,
-    expectOne: boolean
+    expectOne: boolean,
+    requiredOne: boolean = false
   ): Promise<any> {
     const key = this._getQueryCacheKey(query, asJson, expectOne);
     const ret = new Set();
 
     if (this.queryCodecCache.has(key)) {
       const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
-      this._validateFetchCardinality(card, asJson, expectOne);
+      this._validateFetchCardinality(card, asJson, requiredOne);
       await this._optimisticExecuteFlow(
         args,
         asJson,
         expectOne,
+        requiredOne,
         inCodec,
         outCodec,
         query,
@@ -1458,16 +1509,16 @@ export class ConnectionImpl {
         expectOne,
         false
       );
-      this._validateFetchCardinality(card, asJson, expectOne);
+      this._validateFetchCardinality(card, asJson, requiredOne);
       this.queryCodecCache.set(key, [card, inCodec, outCodec]);
       await this._executeFlow(args, inCodec, outCodec, ret);
     }
 
     if (expectOne) {
-      if (ret && ret.length) {
-        return ret[0];
+      if (requiredOne && !ret.length) {
+        throw new errors.NoDataError("query returned no data");
       } else {
-        throw new Error("query returned no data");
+        return ret[0] ?? (asJson ? "null" : null);
       }
     } else {
       if (ret && ret.length) {
