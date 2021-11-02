@@ -119,7 +119,7 @@ async function checkRetries(con: Connection, con2: Connection, name: string) {
   let iterations = 0;
   let barrier = new Barrier(2);
 
-  async function transaction(con: Connection): Promise<void> {
+  async function transaction(con: Connection): Promise<unknown> {
     return await con.retryingTransaction(async (tx) => {
       iterations += 1;
 
@@ -187,4 +187,22 @@ test("retry: conflict no retry", async () => {
       );
     })
   ).rejects.toBeInstanceOf(errors.TransactionSerializationError);
+});
+
+test("retry attempts", async () => {
+  const client = getClient().withRetryOptions({attempts: 5});
+
+  let counter = 0;
+
+  try {
+    await client.retryingTransaction(() => {
+      counter++;
+
+      throw new errors.TransactionConflictError();
+    });
+  } catch {}
+
+  expect(counter).toBe(5);
+
+  await client.close();
 });

@@ -89,8 +89,6 @@ const OLD_ERROR_CODES = new Map([
   [0x05_03_00_02, 0x05_03_01_02], // TransactionDeadlockError      #2431
 ]);
 
-const DEFAULT_MAX_ITERATIONS = 3;
-
 function sleep(durationMillis: number): Promise<void> {
   return new Promise((accept, reject) => {
     setTimeout(() => accept(), durationMillis);
@@ -178,7 +176,7 @@ export class StandaloneConnection implements Connection {
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     let result: T;
-    for (let iteration = 0; iteration < DEFAULT_MAX_ITERATIONS; ++iteration) {
+    for (let iteration = 0; iteration >= 0; ++iteration) {
       const transaction = new Transaction(this);
       await transaction[START_TRANSACTION_IMPL](iteration !== 0);
       try {
