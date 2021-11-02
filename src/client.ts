@@ -1536,6 +1536,16 @@ export class ConnectionImpl {
     }
   }
 
+  async resetState(): Promise<void> {
+    if (this.serverXactStatus !== TransactionStatus.TRANS_IDLE) {
+      try {
+        await this.fetch(`rollback`, null, false, false);
+      } catch {
+        this.close();
+      }
+    }
+  }
+
   private _abort(): void {
     if (this.sock && this.connected) {
       this.sock.destroy();

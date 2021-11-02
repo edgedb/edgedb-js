@@ -216,6 +216,8 @@ class ClientConnectionHolder {
       return;
     }
 
+    await this._connection?.[INNER].connection?.resetState();
+
     if (!this._inUse.done) {
       await this._inUse.setResult();
     }
