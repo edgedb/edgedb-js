@@ -436,7 +436,10 @@ export class ClientShell implements Client {
     }
   }
 
-  async querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T> {
+  async querySingle<T = unknown>(
+    query: string,
+    args?: QueryArgs
+  ): Promise<T | null> {
     const conn = await this.impl.acquire(this.options);
     try {
       return await conn.querySingle(query, args);
@@ -449,6 +452,30 @@ export class ClientShell implements Client {
     const conn = await this.impl.acquire(this.options);
     try {
       return await conn.querySingleJSON(query, args);
+    } finally {
+      await this.impl.release(conn);
+    }
+  }
+
+  async queryRequiredSingle<T = unknown>(
+    query: string,
+    args?: QueryArgs
+  ): Promise<T> {
+    const conn = await this.impl.acquire(this.options);
+    try {
+      return await conn.queryRequiredSingle(query, args);
+    } finally {
+      await this.impl.release(conn);
+    }
+  }
+
+  async queryRequiredSingleJSON(
+    query: string,
+    args?: QueryArgs
+  ): Promise<string> {
+    const conn = await this.impl.acquire(this.options);
+    try {
+      return await conn.queryRequiredSingleJSON(query, args);
     } finally {
       await this.impl.release(conn);
     }

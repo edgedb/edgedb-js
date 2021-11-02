@@ -250,7 +250,10 @@ export class Transaction implements Executor {
     }
   }
 
-  async querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T> {
+  async querySingle<T = unknown>(
+    query: string,
+    args?: QueryArgs
+  ): Promise<T | null> {
     if (this._opInProgress) {
       throw borrowError(BorrowReason.QUERY);
     }
@@ -260,15 +263,6 @@ export class Transaction implements Executor {
     } finally {
       this._opInProgress = false;
     }
-  }
-
-  async queryOne<T = unknown>(query: string, args?: QueryArgs): Promise<T> {
-    // tslint:disable-next-line: no-console
-    console.warn(
-      "The `queryOne()` method is deprecated and is scheduled to be " +
-        "removed. Use the `querySingle()` method instead"
-    );
-    return this.querySingle(query, args);
   }
 
   async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
@@ -283,12 +277,33 @@ export class Transaction implements Executor {
     }
   }
 
-  async queryOneJSON(query: string, args?: QueryArgs): Promise<string> {
-    // tslint:disable-next-line: no-console
-    console.warn(
-      "The `queryOneJSON()` method is deprecated and is scheduled to be " +
-        "removed. Use the `querySingleJSON()` method instead"
-    );
-    return this.querySingleJSON(query, args);
+  async queryRequiredSingle<T = unknown>(
+    query: string,
+    args?: QueryArgs
+  ): Promise<T> {
+    if (this._opInProgress) {
+      throw borrowError(BorrowReason.QUERY);
+    }
+    this._opInProgress = true;
+    try {
+      return await this.getConn().fetch(query, args, false, true, true);
+    } finally {
+      this._opInProgress = false;
+    }
+  }
+
+  async queryRequiredSingleJSON(
+    query: string,
+    args?: QueryArgs
+  ): Promise<string> {
+    if (this._opInProgress) {
+      throw borrowError(BorrowReason.QUERY);
+    }
+    this._opInProgress = true;
+    try {
+      return await this.getConn().fetch(query, args, true, true, true);
+    } finally {
+      this._opInProgress = false;
+    }
   }
 }
