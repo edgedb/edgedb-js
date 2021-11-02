@@ -1167,32 +1167,34 @@ test("fetch: uuid", async () => {
 });
 
 test("fetch: enum", async () => {
-  const con = getClient();
-  await con.query("start transaction");
-  try {
-    await con.execute(`
-      CREATE SCALAR TYPE MyEnum EXTENDING enum<"A", "B">;
-    `);
+  const client = getClient();
 
-    await con.query("declare savepoint s1");
-    await con
-      .querySingle("SELECT <MyEnum><str>$0", ["Z"])
-      .then(() => {
-        throw new Error("an exception was expected");
-      })
-      .catch((e) => {
-        expect(e.toString()).toMatch(/invalid input value for enum/);
-      });
-    await con.query("rollback to savepoint s1");
+  await client
+    .withRetryOptions({attempts: 1})
+    .retryingTransaction(async (tx) => {
+      await tx.execute(`
+        CREATE SCALAR TYPE MyEnum EXTENDING enum<"A", "B">;
+      `);
 
-    let ret = await con.querySingle("SELECT <MyEnum><str>$0", ["A"]);
-    expect(ret).toBe("A");
+      await tx.query("declare savepoint s1");
+      await tx
+        .querySingle("SELECT <MyEnum><str>$0", ["Z"])
+        .then(() => {
+          throw new Error("an exception was expected");
+        })
+        .catch((e) => {
+          expect(e.toString()).toMatch(/invalid input value for enum/);
+        });
+      await tx.query("rollback to savepoint s1");
 
-    ret = await con.querySingle("SELECT <MyEnum>$0", ["A"]);
-    expect(ret).toBe("A");
-  } finally {
-    await con.close();
-  }
+      let ret = await tx.querySingle("SELECT <MyEnum><str>$0", ["A"]);
+      expect(ret).toBe("A");
+
+      ret = await tx.querySingle("SELECT <MyEnum>$0", ["A"]);
+      expect(ret).toBe("A");
+    });
+
+  await client.close();
 });
 
 test("fetch: namedtuple", async () => {
@@ -1371,6 +1373,38 @@ test("querySingle wrong cardinality", async () => {
   } finally {
     await con.close();
   }
+});
+
+test("transaction state cleanup", async () => {
+  // concurrency 1 to ensure we reuse the underlying connection
+  const client = getClient({concurrency: 1});
+
+  await client.query(`start transaction`);
+
+  try {
+    await client.query(`select 1/0`);
+  } catch {}
+
+  await expect(client.querySingle(`select 'success'`)).resolves.toBe(
+    "success"
+  );
+
+  await expect(
+    client.retryingTransaction(async (tx) => {
+      try {
+        await tx.query(`select 1/0`);
+      } catch {
+        // catch the error in the transaction so retryingTransaction doesn't
+        // attempt rollback
+      }
+    })
+  ).rejects.toThrow(/current transaction is aborted/);
+
+  await expect(client.querySingle(`select 'success'`)).resolves.toBe(
+    "success"
+  );
+
+  client.close();
 });
 
 test("execute", async () => {
