@@ -114,7 +114,7 @@ test("pool retry works", async () => {
   const pool = getClient();
 
   try {
-    const result = await pool.retryingTransaction(async (tx) => {
+    const result = await pool.transaction(async (tx) => {
       return await tx.querySingle(`SELECT 33*21`);
     });
     expect(result).toEqual(693);

@@ -1171,30 +1171,28 @@ test("fetch: uuid", async () => {
 test("fetch: enum", async () => {
   const client = getClient();
 
-  await client
-    .withRetryOptions({attempts: 1})
-    .retryingTransaction(async (tx) => {
-      await tx.execute(`
+  await client.withRetryOptions({attempts: 1}).transaction(async (tx) => {
+    await tx.execute(`
         CREATE SCALAR TYPE MyEnum EXTENDING enum<"A", "B">;
       `);
 
-      await tx.query("declare savepoint s1");
-      await tx
-        .querySingle("SELECT <MyEnum><str>$0", ["Z"])
-        .then(() => {
-          throw new Error("an exception was expected");
-        })
-        .catch((e) => {
-          expect(e.toString()).toMatch(/invalid input value for enum/);
-        });
-      await tx.query("rollback to savepoint s1");
+    await tx.query("declare savepoint s1");
+    await tx
+      .querySingle("SELECT <MyEnum><str>$0", ["Z"])
+      .then(() => {
+        throw new Error("an exception was expected");
+      })
+      .catch((e) => {
+        expect(e.toString()).toMatch(/invalid input value for enum/);
+      });
+    await tx.query("rollback to savepoint s1");
 
-      let ret = await tx.querySingle("SELECT <MyEnum><str>$0", ["A"]);
-      expect(ret).toBe("A");
+    let ret = await tx.querySingle("SELECT <MyEnum><str>$0", ["A"]);
+    expect(ret).toBe("A");
 
-      ret = await tx.querySingle("SELECT <MyEnum>$0", ["A"]);
-      expect(ret).toBe("A");
-    });
+    ret = await tx.querySingle("SELECT <MyEnum>$0", ["A"]);
+    expect(ret).toBe("A");
+  });
 
   await client.close();
 });
@@ -1396,7 +1394,7 @@ test("query(Required)Single cardinality", async () => {
   ]) {
     await tests(client);
     try {
-      await client.retryingTransaction((tx) => tests(tx));
+      await client.transaction((tx) => tests(tx));
     } catch {}
   }
 
@@ -1455,11 +1453,11 @@ test("transaction state cleanup", async () => {
   );
 
   await expect(
-    client.retryingTransaction(async (tx) => {
+    client.transaction(async (tx) => {
       try {
         await tx.query(`select 1/0`);
       } catch {
-        // catch the error in the transaction so retryingTransaction doesn't
+        // catch the error in the transaction so `transaction` method doesn't
         // attempt rollback
       }
     })
