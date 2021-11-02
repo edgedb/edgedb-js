@@ -172,7 +172,9 @@ export class StandaloneConnection implements Connection {
     return result;
   }
 
-  async retryingTransaction<T>(
+  retryingTransaction = this.transaction;
+
+  async transaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     let result: T;

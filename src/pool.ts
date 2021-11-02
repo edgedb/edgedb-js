@@ -401,9 +401,21 @@ export class ClientShell implements Client {
   async retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
+    // tslint:disable-next-line: no-console
+    console.warn(
+      `The 'Client.retryingTransaction()' method has been renamed ` +
+        `to 'Client.transaction()'`
+    );
+
+    return this.transaction(action);
+  }
+
+  async transaction<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T> {
     const conn = await this.impl.acquire(this.options);
     try {
-      return await conn.retryingTransaction(action);
+      return await conn.transaction(action);
     } finally {
       await this.impl.release(conn);
     }

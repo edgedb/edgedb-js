@@ -105,7 +105,7 @@ afterAll(async () => {
 
 test("retry: regular 01", async () => {
   await run(async (con) => {
-    await con.retryingTransaction(async (tx) => {
+    await con.transaction(async (tx) => {
       await tx.execute(`
         INSERT ${typename} {
           name := 'counter1'
@@ -120,7 +120,7 @@ async function checkRetries(con: Connection, con2: Connection, name: string) {
   let barrier = new Barrier(2);
 
   async function transaction(con: Connection): Promise<unknown> {
-    return await con.retryingTransaction(async (tx) => {
+    return await con.transaction(async (tx) => {
       iterations += 1;
 
       // This magic query makes the test more reliable for some
@@ -195,7 +195,7 @@ test("retry attempts", async () => {
   let counter = 0;
 
   try {
-    await client.retryingTransaction(() => {
+    await client.transaction(() => {
       counter++;
 
       throw new errors.TransactionConflictError();

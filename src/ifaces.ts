@@ -94,9 +94,14 @@ export interface Connection extends Executor {
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
+  /**
+   * @deprecated
+   */
   retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
+
+  transaction<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
   withTransactionOptions(
     opt: TransactionOptions | SimpleTransactionOptions
   ): Connection;
@@ -117,9 +122,14 @@ export interface Client extends Executor {
   rawTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
+  /**
+   * @deprecated
+   */
   retryingTransaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T>;
+
+  transaction<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
   withTransactionOptions(
     opt: TransactionOptions | SimpleTransactionOptions
   ): Client;
