@@ -23,6 +23,15 @@ import * as platform from "./platform";
 
 export type Address = [string, number];
 
+export const validTlsSecurityValues = [
+  "insecure",
+  "no_host_verification",
+  "strict",
+  "default",
+] as const;
+
+export type TlsSecurity = typeof validTlsSecurityValues[number];
+
 interface PartiallyNormalizedConfig {
   connectionParams: ResolvedConnectConfig;
 
@@ -53,7 +62,7 @@ export interface ConnectConfig {
   password?: string;
   serverSettings?: any;
   tlsCAFile?: string;
-  tlsVerifyHostname?: boolean;
+  tlsSecurity?: TlsSecurity;
 
   timeout?: number;
   commandTimeout?: number;
@@ -93,7 +102,7 @@ type ConnectConfigParams =
   | "user"
   | "password"
   | "tlsCAData"
-  | "tlsVerifyHostname";
+  | "tlsSecurity";
 
 export class ResolvedConnectConfig {
   _host: string | null = null;
@@ -114,8 +123,8 @@ export class ResolvedConnectConfig {
   _tlsCAData: string | null = null;
   _tlsCADataSource: string | null = null;
 
-  _tlsVerifyHostname: boolean | null = null;
-  _tlsVerifyHostnameSource: string | null = null;
+  _tlsSecurity: TlsSecurity | null = null;
+  _tlsSecuritySource: string | null = null;
 
   serverSettings: {[key: string]: string} = {};
 
@@ -127,7 +136,7 @@ export class ResolvedConnectConfig {
     this.setPassword = this.setPassword.bind(this);
     this.setTlsCAData = this.setTlsCAData.bind(this);
     this.setTlsCAFile = this.setTlsCAFile.bind(this);
-    this.setTlsVerifyHostname = this.setTlsVerifyHostname.bind(this);
+    this.setTlsSecurity = this.setTlsSecurity.bind(this);
   }
 
   _setParam<Param extends ConnectConfigParams, Value extends any>(
@@ -205,18 +214,22 @@ export class ResolvedConnectConfig {
     );
   }
 
-  setTlsVerifyHostname(
-    verifyHostname: boolean | string | null,
-    source: string
-  ): boolean {
+  setTlsSecurity(tlsSecurity: string | null, source: string): boolean {
     return this._setParam(
-      "tlsVerifyHostname",
-      verifyHostname,
+      "tlsSecurity",
+      tlsSecurity,
       source,
-      (verifyHN) =>
-        typeof verifyHN === "boolean"
-          ? verifyHN
-          : parseVerifyHostname(verifyHN)
+      (_tlsSecurity: string) => {
+        if (!validTlsSecurityValues.includes(_tlsSecurity as any)) {
+          throw new Error(
+            `invalid 'tlsSecurity' value: '${_tlsSecurity}', ` +
+              `must be one of ${validTlsSecurityValues
+                .map((val) => `'${val}'`)
+                .join(", ")}`
+          );
+        }
+        return _tlsSecurity as TlsSecurity;
+      }
     );
   }
 
@@ -243,10 +256,12 @@ export class ResolvedConnectConfig {
     return this._password ?? undefined;
   }
 
-  get tlsVerifyHostname(): boolean {
-    return (
-      this._tlsVerifyHostname ?? (this._tlsCAData === null ? true : false)
-    );
+  get tlsSecurity(): Exclude<TlsSecurity, "default"> {
+    return this._tlsSecurity && this._tlsSecurity !== "default"
+      ? this._tlsSecurity
+      : this._tlsCAData !== null
+      ? "no_host_verification"
+      : "strict";
   }
 
   private _tlsOptions?: tls.ConnectionOptions;
@@ -255,14 +270,17 @@ export class ResolvedConnectConfig {
       return this._tlsOptions;
     }
 
-    this._tlsOptions = {ALPNProtocols: ["edgedb-binary"]};
+    this._tlsOptions = {
+      ALPNProtocols: ["edgedb-binary"],
+      rejectUnauthorized: this.tlsSecurity !== "insecure",
+    };
 
     if (this._tlsCAData !== null) {
       // this option replaces the system CA certificates with the one provided.
       this._tlsOptions.ca = this._tlsCAData;
     }
 
-    if (!this.tlsVerifyHostname) {
+    if (this.tlsSecurity === "no_host_verification") {
       this._tlsOptions.checkServerIdentity = (hostname: string, cert: any) => {
         const err = tls.checkServerIdentity(hostname, cert);
 
@@ -325,34 +343,13 @@ export class ResolvedConnectConfig {
       this._tlsCADataSource
     );
     outputLine(
-      "tlsVerifyHostname",
-      this.tlsVerifyHostname,
-      this._tlsVerifyHostname,
-      this._tlsVerifyHostnameSource
+      "tlsSecurity",
+      this.tlsSecurity,
+      this._tlsSecurity,
+      this._tlsSecuritySource
     );
 
     return output.join("\n");
-  }
-}
-
-function parseVerifyHostname(s: string): boolean {
-  switch (s.toLowerCase()) {
-    case "true":
-    case "t":
-    case "yes":
-    case "y":
-    case "on":
-    case "1":
-      return true;
-    case "false":
-    case "f":
-    case "no":
-    case "n":
-    case "off":
-    case "0":
-      return false;
-    default:
-      throw new Error(`invalid tls_verify_hostname value: ${s}`);
   }
 }
 
@@ -411,7 +408,7 @@ async function parseConnectDsnAndArgs(
       user: config.user,
       password: config.password,
       tlsCAFile: config.tlsCAFile,
-      tlsVerifyHostname: config.tlsVerifyHostname,
+      tlsSecurity: config.tlsSecurity,
       serverSettings: config.serverSettings,
     },
     {
@@ -424,7 +421,7 @@ async function parseConnectDsnAndArgs(
       user: `'user' option`,
       password: `'password' option`,
       tlsCAFile: `'tlsCAFile' option`,
-      tlsVerifyHostname: `'tlsVerifyHostname' option`,
+      tlsSecurity: `'tlsSecurity' option`,
       serverSettings: `'serverSettings' option`,
     },
     `Cannot have more than one of the following connection options: ` +
@@ -457,7 +454,7 @@ async function parseConnectDsnAndArgs(
           user: process.env.EDGEDB_USER,
           password: process.env.EDGEDB_PASSWORD,
           tlsCAFile: process.env.EDGEDB_TLS_CA_FILE,
-          tlsVerifyHostname: process.env.EDGEDB_TLS_VERIFY_HOSTNAME,
+          tlsSecurity: process.env.EDGEDB_CLIENT_TLS_SECURITY,
         },
         {
           dsn: `'EDGEDB_DSN' environment variable`,
@@ -469,7 +466,7 @@ async function parseConnectDsnAndArgs(
           user: `'EDGEDB_USER' environment variable`,
           password: `'EDGEDB_PASSWORD' environment variable`,
           tlsCAFile: `'EDGEDB_TLS_CA_FILE' environment variable`,
-          tlsVerifyHostname: `'EDGEDB_TLS_VERIFY_HOSTNAME' environment variable`,
+          tlsSecurity: `'EDGEDB_CLIENT_TLS_SECURITY' environment variable`,
         },
         `Cannot have more than one of the following connection environment variables: ` +
           `'EDGEDB_DSN', 'EDGEDB_INSTANCE', 'EDGEDB_CREDENTIALS_FILE' or 'EDGEDB_HOST'`
@@ -562,7 +559,7 @@ interface ResolveConfigOptionsConfig {
   user: string;
   password: string;
   tlsCAFile: string;
-  tlsVerifyHostname: boolean | string;
+  tlsSecurity: string;
   serverSettings: {[key: string]: string};
 }
 
@@ -591,9 +588,9 @@ async function resolveConfigOptions<
       sources.tlsCAFile!
     )) || anyOptionsUsed;
   anyOptionsUsed =
-    resolvedConfig.setTlsVerifyHostname(
-      config.tlsVerifyHostname ?? null,
-      sources.tlsVerifyHostname!
+    resolvedConfig.setTlsSecurity(
+      config.tlsSecurity ?? null,
+      sources.tlsSecurity!
     ) || anyOptionsUsed;
   resolvedConfig.addServerSettings(config.serverSettings ?? {});
 
@@ -654,10 +651,7 @@ async function resolveConfigOptions<
       resolvedConfig.setUser(creds.user ?? null, source);
       resolvedConfig.setPassword(creds.password ?? null, source);
       resolvedConfig.setTlsCAData(creds.tlsCAData ?? null, source);
-      resolvedConfig.setTlsVerifyHostname(
-        creds.tlsVerifyHostname ?? null,
-        source
-      );
+      resolvedConfig.setTlsSecurity(creds.tlsSecurity ?? null, source);
     }
     return {hasCompoundOptions: true, anyOptionsUsed: true};
   }
@@ -778,10 +772,10 @@ async function parseDSNIntoConfig(
   );
 
   await handleDSNPart(
-    "tls_verify_hostname",
+    "tls_security",
     null,
-    config._tlsVerifyHostname,
-    config.setTlsVerifyHostname
+    config._tlsSecurity,
+    config.setTlsSecurity
   );
 
   const serverSettings: any = {};

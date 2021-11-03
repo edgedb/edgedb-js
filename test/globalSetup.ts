@@ -163,7 +163,7 @@ const startServer = async (
     port: runtimeData.port,
     user: "edgedb",
     database: "edgedb",
-    tlsVerifyHostname: false,
+    tlsSecurity: "no_host_verification",
   };
 
   if (typeof runtimeData.tls_cert_file === "string") {
