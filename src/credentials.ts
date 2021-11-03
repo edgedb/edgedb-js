@@ -1,4 +1,5 @@
-import {readFileUtf8, path} from "./adapter.node";
+import {readFileUtf8, path, tls} from "./adapter.node";
+import {validTlsSecurityValues, TlsSecurity} from "./con_utils";
 import * as platform from "./platform";
 
 export interface Credentials {
@@ -8,7 +9,7 @@ export interface Credentials {
   password?: string;
   database?: string;
   tlsCAData?: string;
-  tlsVerifyHostname?: boolean;
+  tlsSecurity?: TlsSecurity;
 }
 
 export async function getCredentialsPath(
@@ -22,22 +23,22 @@ export async function readCredentialsFile(file: string): Promise<Credentials> {
     const data: string = await readFileUtf8(file);
     return validateCredentials(JSON.parse(data));
   } catch (e) {
-    throw Error(`cannot read credentials file ${file}: ${e}`);
+    throw new Error(`cannot read credentials file ${file}: ${e}`);
   }
 }
 
 export function validateCredentials(data: any): Credentials {
   const port = data.port;
   if (port != null && (typeof port !== "number" || port < 1 || port > 65535)) {
-    throw Error("invalid `port` value");
+    throw new Error("invalid `port` value");
   }
 
   const user = data.user;
   if (user == null) {
-    throw Error("`user` key is required");
+    throw new Error("`user` key is required");
   }
   if (typeof user !== "string") {
-    throw Error("`user` must be string");
+    throw new Error("`user` must be string");
   }
 
   const result: Credentials = {user, port};
@@ -45,7 +46,7 @@ export function validateCredentials(data: any): Credentials {
   const host = data.host;
   if (host != null) {
     if (typeof host !== "string") {
-      throw Error("`host` must be string");
+      throw new Error("`host` must be string");
     }
     result.host = host;
   }
@@ -53,7 +54,7 @@ export function validateCredentials(data: any): Credentials {
   const database = data.database;
   if (database != null) {
     if (typeof database !== "string") {
-      throw Error("`database` must be string");
+      throw new Error("`database` must be string");
     }
     result.database = database;
   }
@@ -61,7 +62,7 @@ export function validateCredentials(data: any): Credentials {
   const password = data.password;
   if (password != null) {
     if (typeof password !== "string") {
-      throw Error("`password` must be string");
+      throw new Error("`password` must be string");
     }
     result.password = password;
   }
@@ -69,17 +70,39 @@ export function validateCredentials(data: any): Credentials {
   const certData = data.tls_cert_data;
   if (certData != null) {
     if (typeof certData !== "string") {
-      throw Error("`tls_cert_data` must be string");
+      throw new Error("`tls_cert_data` must be string");
     }
     result.tlsCAData = certData;
   }
 
-  const verifyHostname = data.tls_verify_hostname;
+  let verifyHostname = data.tls_verify_hostname;
+  const tlsSecurity = data.tls_security;
   if (verifyHostname != null) {
-    if (typeof verifyHostname !== "boolean") {
-      throw Error("`tls_verify_hostname` must be boolean");
+    if (typeof verifyHostname === "boolean") {
+      verifyHostname = verifyHostname ? "strict" : "no_host_verification";
+    } else {
+      throw new Error("`tls_verify_hostname` must be boolean");
     }
-    result.tlsVerifyHostname = verifyHostname;
+  }
+  if (
+    tlsSecurity != null &&
+    (typeof tlsSecurity !== "string" ||
+      !validTlsSecurityValues.includes(tlsSecurity as any))
+  ) {
+    throw new Error(
+      `\`tls_security\` must be one of ${validTlsSecurityValues
+        .map((val) => `"${val}"`)
+        .join(", ")}`
+    );
+  }
+  if (verifyHostname && tlsSecurity && verifyHostname !== tlsSecurity) {
+    throw new Error(
+      `both 'tls_security' and 'tls_verify_hostname' are defined, ` +
+        `and are not in agreement`
+    );
+  }
+  if (tlsSecurity || verifyHostname) {
+    result.tlsSecurity = tlsSecurity ?? verifyHostname;
   }
 
   return result;
