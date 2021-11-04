@@ -143,7 +143,7 @@ export class Transaction implements Executor {
     successState: TransactionState
   ): Promise<void> {
     try {
-      await this.getConn().fetch(query, null, false, false);
+      await this.getConn().execute(query, true);
       this._state = successState;
     } catch (error) {
       this._state = TransactionState.FAILED;

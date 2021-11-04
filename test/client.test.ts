@@ -1176,16 +1176,16 @@ test("fetch: enum", async () => {
         CREATE SCALAR TYPE MyEnum EXTENDING enum<"A", "B">;
       `);
 
-    await tx.query("declare savepoint s1");
-    await tx
-      .querySingle("SELECT <MyEnum><str>$0", ["Z"])
-      .then(() => {
-        throw new Error("an exception was expected");
-      })
-      .catch((e) => {
-        expect(e.toString()).toMatch(/invalid input value for enum/);
-      });
-    await tx.query("rollback to savepoint s1");
+    // await tx.query("declare savepoint s1");
+    // await tx
+    //   .querySingle("SELECT <MyEnum><str>$0", ["Z"])
+    //   .then(() => {
+    //     throw new Error("an exception was expected");
+    //   })
+    //   .catch((e) => {
+    //     expect(e.toString()).toMatch(/invalid input value for enum/);
+    //   });
+    // await tx.query("rollback to savepoint s1");
 
     let ret = await tx.querySingle("SELECT <MyEnum><str>$0", ["A"]);
     expect(ret).toBe("A");
@@ -1405,7 +1405,7 @@ test("querySingle wrong cardinality", async () => {
   const con = getClient();
   try {
     await con
-      .queryRequiredSingleJSON("start transaction")
+      .queryRequiredSingleJSON("set module default")
       .then(() => {
         throw new Error("an exception was expected");
       })
@@ -1416,7 +1416,7 @@ test("querySingle wrong cardinality", async () => {
       });
 
     await con
-      .queryRequiredSingle("start transaction")
+      .queryRequiredSingle("set module default")
       .then(() => {
         throw new Error("an exception was expected");
       })
@@ -1426,11 +1426,11 @@ test("querySingle wrong cardinality", async () => {
         );
       });
 
-    await con.querySingleJSON("start transaction").then((res) => {
+    await con.querySingleJSON("set module default").then((res) => {
       expect(res).toBe("null");
     });
 
-    await con.querySingle("start transaction").then((res) => {
+    await con.querySingle("set module default").then((res) => {
       expect(res).toBe(null);
     });
   } finally {
@@ -1441,16 +1441,6 @@ test("querySingle wrong cardinality", async () => {
 test("transaction state cleanup", async () => {
   // concurrency 1 to ensure we reuse the underlying connection
   const client = getClient({concurrency: 1});
-
-  await client.query(`start transaction`);
-
-  try {
-    await client.query(`select 1/0`);
-  } catch {}
-
-  await expect(client.querySingle(`select 'success'`)).resolves.toBe(
-    "success"
-  );
 
   await expect(
     client.transaction(async (tx) => {
@@ -1485,16 +1475,6 @@ test("execute", async () => {
         expect(e instanceof EdgeDBError).toBeTruthy();
         expect((<DivisionByZeroError>e).code).toBe(0x05_01_00_01);
       });
-
-    await con.query("start transaction isolation serializable");
-    try {
-      const isolation = await con.querySingle(
-        "select sys::get_transaction_isolation()"
-      );
-      expect(isolation).toBe("Serializable");
-    } finally {
-      await con.query("rollback");
-    }
   } finally {
     await con.close();
   }
@@ -1503,47 +1483,47 @@ test("execute", async () => {
 test("fetch/optimistic cache invalidation", async () => {
   const typename = "CacheInv_01";
   const query = `SELECT ${typename}.prop1 LIMIT 1`;
-  const con = getClient();
-  await con.query("start transaction");
+  const client = getClient();
   try {
-    await con.execute(`
-      CREATE TYPE ${typename} {
-        CREATE REQUIRED PROPERTY prop1 -> std::str;
-      };
+    await client.transaction(async (tx) => {
+      await tx.execute(`
+        CREATE TYPE ${typename} {
+          CREATE REQUIRED PROPERTY prop1 -> std::str;
+        };
 
-      INSERT ${typename} {
-        prop1 := 'aaa'
-      };
-    `);
+        INSERT ${typename} {
+          prop1 := 'aaa'
+        };
+      `);
 
-    for (let i = 0; i < 5; i++) {
-      const res = await con.querySingle(query);
-      expect(res).toBe("aaa");
-    }
+      for (let i = 0; i < 5; i++) {
+        const res = await tx.querySingle(query);
+        expect(res).toBe("aaa");
+      }
 
-    await con.execute(`
-      DELETE (SELECT ${typename});
+      await tx.execute(`
+        DELETE (SELECT ${typename});
 
-      ALTER TYPE ${typename} {
-        DROP PROPERTY prop1;
-      };
+        ALTER TYPE ${typename} {
+          DROP PROPERTY prop1;
+        };
 
-      ALTER TYPE ${typename} {
-        CREATE REQUIRED PROPERTY prop1 -> std::int64;
-      };
+        ALTER TYPE ${typename} {
+          CREATE REQUIRED PROPERTY prop1 -> std::int64;
+        };
 
-      INSERT ${typename} {
-        prop1 := 123
-      };
-    `);
+        INSERT ${typename} {
+          prop1 := 123
+        };
+      `);
 
-    for (let i = 0; i < 5; i++) {
-      const res = await con.querySingle(query);
-      expect(res).toBe(123);
-    }
+      for (let i = 0; i < 5; i++) {
+        const res = await tx.querySingle(query);
+        expect(res).toBe(123);
+      }
+    });
   } finally {
-    await con.query("rollback");
-    await con.close();
+    await client.close();
   }
 });
 
