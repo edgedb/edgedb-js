@@ -270,9 +270,23 @@ export class ResolvedConnectConfig {
       return this._tlsOptions;
     }
 
+    let tlsSecurity = this.tlsSecurity;
+    const clientSecurity = process.env.EDGEDB_CLIENT_SECURITY;
+    if (clientSecurity !== undefined) {
+      if (!["default", "insecure_dev_mode"].includes(clientSecurity)) {
+        throw new Error(
+          `invalid EDGEDB_CLIENT_SECURITY value: '${clientSecurity}', ` +
+            `must be either 'default' or 'insecure_dev_mode'`
+        );
+      }
+      if (clientSecurity === "insecure_dev_mode") {
+        tlsSecurity = "insecure";
+      }
+    }
+
     this._tlsOptions = {
       ALPNProtocols: ["edgedb-binary"],
-      rejectUnauthorized: this.tlsSecurity !== "insecure",
+      rejectUnauthorized: tlsSecurity !== "insecure",
     };
 
     if (this._tlsCAData !== null) {
@@ -280,7 +294,7 @@ export class ResolvedConnectConfig {
       this._tlsOptions.ca = this._tlsCAData;
     }
 
-    if (this.tlsSecurity === "no_host_verification") {
+    if (tlsSecurity === "no_host_verification") {
       this._tlsOptions.checkServerIdentity = (hostname: string, cert: any) => {
         const err = tls.checkServerIdentity(hostname, cert);
 
