@@ -4,7 +4,7 @@
 API
 ===
 
-.. _edgedb-js-api-connection:
+.. _edgedb-js-api-client:
 
 Client
 ======
@@ -419,7 +419,7 @@ Client
             if it is more convenient for your application.
 
             (This does not apply to Deno, since Deno is missing the
-            required API's to `unref` idle connections)
+            required API's to ``unref`` idle connections)
 
     .. js:method:: isClosed(): boolean
 
