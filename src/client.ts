@@ -79,11 +79,26 @@ enum TransactionStatus {
   TRANS_UNKNOWN = 4, // cannot determine status
 }
 
-const ALLOW_CAPABILITIES = 0xff04;
-const EXECUTE_CAPABILITIES_BYTES = Buffer.from(
-  // everything except TRANSACTION = 1 << 2 in network byte order
-  [255, 255, 255, 255, 255, 255, 255, 251]
-);
+enum Capabilities {
+  MODIFICATONS = 0b00001, // query is not read-only
+  SESSION_CONFIG = 0b00010, // query contains session config change
+  TRANSACTION = 0b00100, // query contains start/commit/rollback of
+  // transaction or savepoint manipulation
+  DDL = 0b01000, // query contains DDL
+  PERSISTENT_CONFIG = 0b10000, // server or database config change
+}
+
+const NO_TRANSACTION_CAPABILITIES_BYTES = Buffer.from([
+  255,
+  255,
+  255,
+  255,
+  255,
+  255,
+  255,
+  255 & ~Capabilities.TRANSACTION,
+]);
+
 const OLD_ERROR_CODES = new Map([
   [0x05_03_00_01, 0x05_03_01_01], // TransactionSerializationError #2431
   [0x05_03_00_02, 0x05_03_01_02], // TransactionDeadlockError      #2431
@@ -1142,7 +1157,10 @@ export class ConnectionImpl {
     const wb = new WriteMessageBuffer();
 
     wb.beginMessage(chars.$P)
-      .writeHeaders(options?.headers ?? null)
+      .writeHeaders({
+        ...(options?.headers ?? {}),
+        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+      })
       .writeChar(asJson ? chars.$j : chars.$b)
       .writeChar(expectOne ? chars.$o : chars.$m)
       .writeString("") // statement name
@@ -1304,7 +1322,7 @@ export class ConnectionImpl {
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
-      .writeInt16(0) // no headers
+      .writeHeaders({allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES})
       .writeString("") // statement name
       .writeBuffer(
         args instanceof Buffer ? args : this._encodeArgs(args, inCodec)
@@ -1377,7 +1395,7 @@ export class ConnectionImpl {
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
-    wb.writeInt16(0); // no headers
+    wb.writeHeaders({allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES});
     wb.writeChar(asJson ? chars.$j : chars.$b);
     wb.writeChar(expectOne ? chars.$o : chars.$m);
     wb.writeString(query);
@@ -1539,12 +1557,17 @@ export class ConnectionImpl {
     }
   }
 
-  async execute(query: string): Promise<void> {
+  async execute(
+    query: string,
+    allowTransactionCommands: boolean = false
+  ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$Q)
-      .writeInt16(1) // headers
-      .writeUInt16(ALLOW_CAPABILITIES)
-      .writeBytes(EXECUTE_CAPABILITIES_BYTES)
+      .writeHeaders({
+        allowCapabilities: !allowTransactionCommands
+          ? NO_TRANSACTION_CAPABILITIES_BYTES
+          : undefined,
+      })
       .writeString(query) // statement name
       .endMessage();
 

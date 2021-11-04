@@ -189,3 +189,29 @@ test("transaction: kinds", async () => {
     }
   });
 });
+
+test("no transaction statements", async () => {
+  const client = getClient();
+
+  await expect(client.execute("start transaction")).rejects.toThrow(
+    errors.CapabilityError
+  );
+
+  await expect(client.query("start transaction")).rejects.toThrow(
+    errors.CapabilityError
+  );
+
+  // This test is broken, first rollback query throws CapabilityError, but
+  // then second rollback query doesn't throw any error
+  // https://github.com/edgedb/edgedb/issues/3120
+
+  // await client.transaction(async (tx) => {
+  //   await expect(tx.execute("rollback")).rejects.toThrow(
+  //     errors.CapabilityError
+  //   );
+
+  //   await expect(tx.query("rollback")).rejects.toThrow(errors.CapabilityError);
+  // });
+
+  await client.close();
+});
