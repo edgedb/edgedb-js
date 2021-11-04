@@ -35,18 +35,13 @@ run a simple query:
 const edgedb = require("edgedb");
 
 async function main() {
-  const conn = await edgedb.connect();
+  const client = edgedb.createClient();
 
-  try {
-
-    console.log(
-      await conn.querySingle(`SELECT re_replace('World', 'EdgeDB',
-       'Hello World!')`)
-    );
-
-  } finally {
-    await conn.close();
-  }
+  console.log(
+    await client.querySingle(
+      `SELECT re_replace('World', 'EdgeDB', 'Hello World!')`
+    )
+  );
 }
 
 main();

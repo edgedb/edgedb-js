@@ -52,12 +52,19 @@ Client
     :param string options.tlsCAFile:
         Path to a file containing the root certificate of the server.
 
-    :param boolean options.tlsVerifyHostname:
-        Specifies whether to check that the hostname of the TLS certificate
-        matches the hostname of the server.
+    :param boolean options.tlsSecurity:
+        Determines whether certificate and hostname verification is enabled.
+        Valid values are ``'strict'`` (certificate will be fully validated),
+        ``'no_host_verification'`` (certificate will be validated, but
+        hostname may not match), ``'insecure'`` (certificate not validated,
+        self-signed certificates will be trusted), or ``'default'`` (acts as
+        ``strict`` by default, or ``no_host_verification`` if ``tlsCAFile``
+        is set).
 
     The above connection options can also be specified by their corresponding
-    environment variable. For full details, see the
+    environment variable. If none of ``dsn``, ``credentialsFile``, ``host`` or
+    ``port`` are explicitly specified, the client will connect to your
+    linked project instance, if it exists. For full details, see the
     :ref:`Connection Parameters <client_connection>` docs.
 
 
@@ -174,15 +181,34 @@ Client
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
 
-    .. js:method:: querySingle<T>(query: string, args?: QueryArgs): Promise<T>
+    .. js:method:: querySingle<T>( \
+            query: string, \
+            args?: QueryArgs \
+        ): Promise<T | null>
+
+        Run an optional singleton-returning query and return the result.
+
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-async-optargs>`.
+
+        The *query* must return no more than one element. If the query returns
+        more than one element, a ``ResultCardinalityMismatchError`` error is
+        thrown.
+
+    .. js:method:: queryRequiredSingle<T>( \
+            query: string, \
+            args?: QueryArgs \
+        ): Promise<T>
 
         Run a singleton-returning query and return the result.
 
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
 
-        The *query* must return exactly one element.  If the query returns
-        more than one element or an empty set, an ``Error`` is thrown.
+        The *query* must return exactly one element. If the query returns
+        more than one element, a ``ResultCardinalityMismatchError`` error is
+        thrown. If the query returns an empty set, a ``NoDataError`` error is
+        thrown.
 
     .. js:method:: queryJSON(query: string, args?: QueryArgs): Promise<string>
 
@@ -209,13 +235,15 @@ Client
             args?: QueryArgs \
         ): Promise<string>
 
-        Run a singleton-returning query and return its element in JSON.
+        Run an optional singleton-returning query and return its element
+        in JSON.
 
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
 
-        The *query* must return exactly one element.  If the query returns
-        more than one element or an empty set, an ``Error`` is thrown.
+        The *query* must return at most one element.  If the query returns
+        more than one element, an ``ResultCardinalityMismatchError`` error
+        is thrown.
 
         .. note::
 
@@ -230,7 +258,35 @@ Client
             the client side into a more appropriate type, such as
             BigInt_.
 
-    .. js:method:: retryingTransaction<T>( \
+    .. js:method:: queryRequiredSingleJSON( \
+            query: string, \
+            args?: QueryArgs \
+        ): Promise<string>
+
+        Run a singleton-returning query and return its element in JSON.
+
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-async-optargs>`.
+
+        The *query* must return exactly one element.  If the query returns
+        more than one element, a ``ResultCardinalityMismatchError`` error
+        is thrown. If the query returns an empty set, a ``NoDataError`` error
+        is thrown.
+
+        .. note::
+
+            Caution is advised when reading ``decimal`` or ``bigint``
+            values using this method. The JSON specification does not
+            have a limit on significant digits, so a ``decimal`` or a
+            ``bigint`` number can be losslessly represented in JSON.
+            However, JSON decoders in JavaScript will often read all
+            such numbers as ``number`` values, which may result in
+            precision loss. If such loss is unacceptable, then
+            consider casting the value into ``str`` and decoding it on
+            the client side into a more appropriate type, such as
+            BigInt_.
+
+    .. js:method:: transaction<T>( \
             action: (tx: Transaction) => Promise<T> \
         ): Promise<T>
 
@@ -238,7 +294,7 @@ Client
         the action function, has the same ``query*`` methods as ``Client``.
 
         This is the preferred method of initiating and running a database
-        transaction in a robust fashion.  The ``retryingTransaction()`` method
+        transaction in a robust fashion.  The ``transaction()`` method
         will attempt to re-execute the transaction body if a transient error
         occurs, such as a network error or a transaction serialization error.
 
@@ -248,7 +304,7 @@ Client
 
         .. code-block:: js
 
-            await client.retryingTransaction(async tx => {
+            await client.transaction(async tx => {
               const value = await tx.querySingle("select Counter.value")
               await tx.execute(
                 `update Counter set { value := <int64>$value }`,
@@ -259,18 +315,33 @@ Client
         Note that we are executing queries on the ``tx`` object rather
         than on the original ``client``.
 
+    .. js:method:: retryingTransaction<T>( \
+            action: (tx: Transaction) => Promise<T> \
+        ): Promise<T>
+
+        .. warning::
+
+            The ``retryingTransaction`` method is deprecated, and has been
+            renamed to :js:meth:`Client.transaction\<T\>`.
+
     .. js:method:: rawTransaction<T>( \
             action: (tx: Transaction) => Promise<T> \
         ): Promise<T>
 
+        .. warning::
+
+            The ``rawTransaction`` method is deprecated, instead use
+            the :js:meth:`Client.transaction\<T\>` method with a single
+            attempt: ``client.withRetryOptions({attempts: 1}).transaction(...)``
+
         Execute a non-retryable transaction.
 
-        Contrary to ``retryingTransaction()``, ``rawTransaction()`` will not
+        Contrary to ``transaction()``, ``rawTransaction()`` will not
         attempt to re-run the nested code block in case a retryable error
         happens.
 
         This is a low-level API and it is advised to use the
-        ``retryingTransaction()`` method instead.
+        ``transaction()`` method instead.
 
         Example:
 
@@ -289,7 +360,7 @@ Client
 
     .. js:method:: ensureConnected(): Promise<Client>
 
-        If the client does not yet have any open connections in it's pool,
+        If the client does not yet have any open connections in its pool,
         attempts to open a connection, else returns immediately.
 
         Since the client lazily creates new connections as needed (up to the

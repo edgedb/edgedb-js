@@ -88,18 +88,18 @@ Transactions
 ------------
 
 The most robust way to execute transactional code is to use
-the ``retryingTransaction()`` API:
+the ``transaction()`` API:
 
 .. code-block:: js
 
-    await client.retryingTransaction(tx => {
+    await client.transaction(tx => {
       await tx.execute("insert User {name := 'Don'}");
     });
 
 Note that we execute queries on the ``tx`` object in the above
 example, rather than on the original ``client`` object.
 
-The ``retryingTransaction()`` API guarantees that:
+The ``transaction()`` API guarantees that:
 
 1. Transactions are executed atomically;
 2. If a transaction is failed for any of the number of transient errors (i.e.
@@ -107,7 +107,7 @@ The ``retryingTransaction()`` API guarantees that:
    would be retried;
 3. If any other, non-retryable exception occurs, the transaction is rolled
    back, and the exception is propagated, immediately aborting the
-   ``retryingTransaction()`` block.
+   ``transaction()`` block.
 
 The key implication of retrying transactions is that the entire
 nested code block can be re-run, including any non-querying
@@ -115,7 +115,7 @@ JavaScript code. Here is an example:
 
 .. code-block:: js
 
-    client.retryingTransaction(tx => {
+    client.transaction(tx => {
       const user = await tx.querySingle(
         `select User { email } filter .login = <str>$login`,
         {login},
@@ -151,7 +151,7 @@ negatively impact the performance of the DB server.
 See also:
 
 * RFC1004_
-* :js:meth:`Client.retryingTransaction\<T\>`
+* :js:meth:`Client.transaction\<T\>`
 * :js:meth:`Client.rawTransaction\<T\>`
 
 .. _RFC1004: https://github.com/edgedb/rfcs/blob/master/text/1004-transactions-api.rst
