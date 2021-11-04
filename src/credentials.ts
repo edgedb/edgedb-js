@@ -95,7 +95,12 @@ export function validateCredentials(data: any): Credentials {
         .join(", ")}`
     );
   }
-  if (verifyHostname && tlsSecurity && verifyHostname !== tlsSecurity) {
+  if (
+    verifyHostname &&
+    tlsSecurity &&
+    verifyHostname !== tlsSecurity &&
+    !(verifyHostname === "no_host_verification" && tlsSecurity === "insecure")
+  ) {
     throw new Error(
       `both 'tls_security' and 'tls_verify_hostname' are defined, ` +
         `and are not in agreement`
