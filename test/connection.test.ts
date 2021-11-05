@@ -73,10 +73,21 @@ jest.mock("os", () => {
 });
 
 import * as fs from "fs";
+import * as crypto from "crypto";
+import {join as pathJoin} from "path";
 import {parseConnectArguments} from "../src/con_utils";
 import {getClient} from "./testbase";
 import {Client, Connection} from "../src/ifaces";
 import * as errors from "../src/errors";
+import * as platform from "../src/platform";
+
+function projectPathHash(projectPath: string): string {
+  if (platform.isWindows && !projectPath.startsWith("\\\\")) {
+    projectPath = "\\\\?\\" + projectPath;
+  }
+
+  return crypto.createHash("sha1").update(projectPath).digest("hex");
+}
 
 async function env_wrap(
   {
@@ -108,7 +119,23 @@ async function env_wrap(
       homedir = fs.homedir;
     }
     if (fs.files) {
-      mockedFiles = fs.files;
+      mockedFiles = Object.entries(fs.files).reduce(
+        (files, [path, content]) => {
+          if (typeof content === "string") {
+            files[path] = content;
+          } else {
+            const filepath = path.replace(
+              "${HASH}",
+              projectPathHash(content["project-path"])
+            );
+            files[filepath] = "";
+            files[pathJoin(filepath, "instance-name")] =
+              content["instance-name"];
+          }
+          return files;
+        },
+        {} as {[key: string]: string}
+      );
     }
   }
   if (captureWarnings) {
@@ -187,14 +214,17 @@ type ConnectionTestCase = {
   fs?: {
     cwd?: string;
     homedir?: string;
-    files?: {[key: string]: string};
+    files?: {
+      [key: string]:
+        | string
+        | {"instance-name": string; "project-path": string};
+    };
   };
   warnings?: string[];
 } & ({result: ConnectionResult} | {error: {type: string}});
 
 async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
   const {env = {}, opts = {}, fs, platform} = testcase;
-  if (fs) return; // TODO: Fix fs tests
   if (
     fs &&
     ((!platform &&
