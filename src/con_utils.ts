@@ -371,7 +371,7 @@ export class ResolvedConnectConfig {
     );
     outputLine(
       "tlsCAData",
-      this._tlsCAData && this._tlsCAData.replace("\n", ""),
+      this._tlsCAData && this._tlsCAData.replace(/\r\n?|\n/, ""),
       this._tlsCAData,
       this._tlsCADataSource
     );

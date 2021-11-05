@@ -47,6 +47,7 @@ import {
   ParseOptions,
   PrepareMessageHeaders,
   ProtocolVersion,
+  ServerSettings,
 } from "./ifaces";
 import * as scram from "./scram";
 import {
@@ -61,7 +62,7 @@ import {PartialRetryRule} from "./options";
 import {Address, NormalizedConnectConfig} from "./con_utils";
 import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 
-const PROTO_VER: ProtocolVersion = [0, 12];
+const PROTO_VER: ProtocolVersion = [0, 13];
 const PROTO_VER_MIN: ProtocolVersion = [0, 9];
 
 enum AuthenticationStatuses {
@@ -528,7 +529,7 @@ export class ConnectionImpl {
   private queryCodecCache: LRU<string, [number, ICodec, ICodec]>;
 
   private serverSecret: Buffer | null;
-  /** @internal */ serverSettings: Map<string, string>;
+  /** @internal */ serverSettings: ServerSettings;
   private serverXactStatus: TransactionStatus;
 
   private buffer: ReadMessageBuffer;
@@ -558,7 +559,7 @@ export class ConnectionImpl {
     this.lastStatus = null;
 
     this.serverSecret = null;
-    this.serverSettings = new Map<string, string>();
+    this.serverSettings = {};
     this.serverXactStatus = TransactionStatus.TRANS_UNKNOWN;
 
     this.messageWaiterResolve = null;
@@ -799,14 +800,29 @@ export class ConnectionImpl {
     }
   }
 
+  private _parseServerSettings(name: string, value: Buffer): void {
+    switch (name) {
+      case "suggested_pool_concurrency":
+        this.serverSettings.suggested_pool_concurrency = parseInt(
+          value.toString("utf8"),
+          10
+        );
+        break;
+      case "system_config":
+      default:
+        this.serverSettings[name] = value;
+        break;
+    }
+  }
+
   private _fallthrough(): void {
     const mtype = this.buffer.getMessageType();
 
     switch (mtype) {
       case chars.$S: {
         const name = this.buffer.readString();
-        const value = this.buffer.readString();
-        this.serverSettings.set(name, value);
+        const value = this.buffer.readLenPrefixedBuffer();
+        this._parseServerSettings(name, value);
         this.buffer.finishMessage();
         break;
       }
