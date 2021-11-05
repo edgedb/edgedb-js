@@ -26,7 +26,10 @@ export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
       throw new Error(`a ConfigMemory instance was expected, got "${object}"`);
     }
     buf.writeInt32(8);
-    buf.writeBigInt64(object["_bytes"]);
+    buf.writeBigInt64(
+      // @ts-ignore
+      object._bytes
+    );
   }
 
   decode(buf: ReadBuffer): any {

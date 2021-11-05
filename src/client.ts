@@ -809,6 +809,25 @@ export class ConnectionImpl {
         );
         break;
       case "system_config":
+        const buf = new ReadBuffer(value);
+        const typedescLen = buf.readInt32() - 16;
+        const typedescId = buf.readUUID();
+        const typedesc = buf.readBuffer(typedescLen);
+
+        let codec = this.codecsRegistry.getCodec(typedescId);
+        if (codec === null) {
+          codec = this.codecsRegistry.buildCodec(
+            typedesc,
+            this.protocolVersion
+          );
+        }
+
+        buf.discard(4); // discard data length int32
+        const data = codec.decode(buf);
+        buf.finish();
+
+        this.serverSettings.system_config = data;
+        break;
       default:
         this.serverSettings[name] = value;
         break;
