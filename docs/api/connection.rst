@@ -6,6 +6,7 @@ API
 
 .. _edgedb-js-api-client:
 
+
 Client
 ======
 
@@ -23,7 +24,7 @@ Client
         Otherwise it specifies a single string in the connection URI format:
         ``edgedb://user:password@host:port/database?option=value``.
 
-        See the :ref:`Connection Parameters <client_connection>`
+        See the :ref:`Connection Parameters <ref_client_connection>`
         docs for full details.
 
     :param options: Connection and client options object.
@@ -65,7 +66,7 @@ Client
     environment variable. If none of ``dsn``, ``credentialsFile``, ``host`` or
     ``port`` are explicitly specified, the client will connect to your
     linked project instance, if it exists. For full details, see the
-    :ref:`Connection Parameters <client_connection>` docs.
+    :ref:`Connection Parameters <ref_client_connection>` docs.
 
 
     :param number options.timeout:
