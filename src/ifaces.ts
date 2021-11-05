@@ -147,6 +147,15 @@ export interface Client extends Executor {
   terminate(): void;
 }
 
+export interface KnownServerSettings {
+  suggested_pool_concurrency?: number;
+  system_config?: any;
+}
+
+export type ServerSettings = KnownServerSettings & {
+  [key: string]: Buffer;
+};
+
 export const HeaderCodes = {
   implicitLimit: 0xff01,
   implicitTypenames: 0xff02,

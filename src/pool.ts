@@ -645,11 +645,10 @@ class ClientImpl {
       await this._normalizedConnectConfig,
       this._codecsRegistry
     );
-    const suggestedConcurrency = connection[
-      INNER
-    ].connection?.serverSettings.get("suggested_pool_concurrency");
+    const suggestedConcurrency =
+      connection[INNER].connection?.serverSettings.suggested_pool_concurrency;
     if (suggestedConcurrency) {
-      this._suggestedConcurrency = parseInt(suggestedConcurrency, 10);
+      this._suggestedConcurrency = suggestedConcurrency;
       this._resizeHolderPool();
     }
     return connection;
