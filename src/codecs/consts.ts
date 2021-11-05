@@ -43,6 +43,7 @@ export const KNOWN_TYPES = new Map<uuid, string>([
   ["0000000000000000000000000000010f", "std::json"],
   ["00000000000000000000000000000110", "std::bigint"],
   ["00000000000000000000000000000111", "cal::relative_duration"],
+  ["00000000000000000000000000000130", "cfg::memory"],
 ]);
 
 export const KNOWN_TYPENAMES = (() => {

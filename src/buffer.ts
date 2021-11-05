@@ -142,9 +142,9 @@ export class WriteBuffer {
     return this;
   }
 
-  writeBigInt64(i: bigint): this {
+  writeBigInt64(i: bi.BigIntLike): this {
     let ii: bi.BigIntLike = i;
-    if (ii < 0) {
+    if (bi.lt(ii, bi.make(0))) {
       ii = bi.add(bi.make("18446744073709551616"), i);
     }
     const hi = bi.rshift(ii, bi.make(32));

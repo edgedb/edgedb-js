@@ -25,6 +25,8 @@ export {
   Duration,
 } from "./datatypes/datetime";
 
+export {ConfigMemory} from "./datatypes/memory";
+
 export type {NamedTuple} from "./datatypes/namedtuple";
 export type {ObjectShape} from "./datatypes/object";
 export {Set} from "./datatypes/set";

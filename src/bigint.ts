@@ -57,6 +57,9 @@ let _sub;
 let _mul;
 let _rshift;
 let _bitand;
+let _gte;
+let _lt;
+let _remainder;
 
 if (hasNativeBigInt) {
   _make = (val: string | number): BigIntLike => BigInt(val);
@@ -78,6 +81,15 @@ if (hasNativeBigInt) {
 
   _bitand = (op1: BigIntLike, op2: BigIntLike): BigIntLike =>
     ((op1 as bigint) & (op2 as bigint)) as BigIntLike;
+
+  _gte = (op1: BigIntLike, op2: BigIntLike): boolean =>
+    (op1 as bigint) >= (op2 as bigint);
+
+  _lt = (op1: BigIntLike, op2: BigIntLike): boolean =>
+    (op1 as bigint) < (op2 as bigint);
+
+  _remainder = (op1: BigIntLike, op2: BigIntLike): BigIntLike =>
+    ((op1 as bigint) % (op2 as bigint)) as BigIntLike;
 } else {
   _make = (val: string | number): BigIntLike => {
     const j = ensureJSBI();
@@ -113,6 +125,21 @@ if (hasNativeBigInt) {
     const j = ensureJSBI();
     return j.bitwiseAnd(op1 as JSBI, op2 as JSBI);
   };
+
+  _gte = (op1: BigIntLike, op2: BigIntLike): boolean => {
+    const j = ensureJSBI();
+    return j.greaterThanOrEqual(op1 as JSBI, op2 as JSBI);
+  };
+
+  _lt = (op1: BigIntLike, op2: BigIntLike): boolean => {
+    const j = ensureJSBI();
+    return j.lessThan(op1 as JSBI, op2 as JSBI);
+  };
+
+  _remainder = (op1: BigIntLike, op2: BigIntLike): BigIntLike => {
+    const j = ensureJSBI();
+    return j.remainder(op1 as JSBI, op2 as JSBI);
+  };
 }
 
 function ensureJSBI(): JSBI {
@@ -130,3 +157,6 @@ export const div = _div;
 export const mul = _mul;
 export const rshift = _rshift;
 export const bitand = _bitand;
+export const gte = _gte;
+export const lt = _lt;
+export const remainder = _remainder;
