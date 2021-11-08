@@ -228,6 +228,37 @@ export class ResolvedConnectConfig {
                 .join(", ")}`
           );
         }
+        const clientSecurity = process.env.EDGEDB_CLIENT_SECURITY;
+        if (clientSecurity !== undefined) {
+          if (
+            !["default", "insecure_dev_mode", "strict"].includes(
+              clientSecurity
+            )
+          ) {
+            throw new Error(
+              `invalid EDGEDB_CLIENT_SECURITY value: '${clientSecurity}', ` +
+                `must be one of 'default', 'insecure_dev_mode' or 'strict'`
+            );
+          }
+          if (clientSecurity === "insecure_dev_mode") {
+            if (_tlsSecurity === "default") {
+              _tlsSecurity = "insecure";
+            }
+          } else if (clientSecurity === "strict") {
+            if (
+              _tlsSecurity === "insecure" ||
+              _tlsSecurity === "no_host_verification"
+            ) {
+              throw new Error(
+                `'tlsSecurity' value (${_tlsSecurity}) conflicts with ` +
+                  `EDGEDB_CLIENT_SECURITY value (${clientSecurity}), ` +
+                  `'tlsSecurity' value cannot be lower than security level ` +
+                  `set by EDGEDB_CLIENT_SECURITY`
+              );
+            }
+            _tlsSecurity = "strict";
+          }
+        }
         return _tlsSecurity as TlsSecurity;
       }
     );
@@ -271,18 +302,6 @@ export class ResolvedConnectConfig {
     }
 
     let tlsSecurity = this.tlsSecurity;
-    const clientSecurity = process.env.EDGEDB_CLIENT_SECURITY;
-    if (clientSecurity !== undefined) {
-      if (!["default", "insecure_dev_mode"].includes(clientSecurity)) {
-        throw new Error(
-          `invalid EDGEDB_CLIENT_SECURITY value: '${clientSecurity}', ` +
-            `must be either 'default' or 'insecure_dev_mode'`
-        );
-      }
-      if (clientSecurity === "insecure_dev_mode") {
-        tlsSecurity = "insecure";
-      }
-    }
 
     this._tlsOptions = {
       ALPNProtocols: ["edgedb-binary"],
@@ -516,6 +535,8 @@ async function parseConnectDsnAndArgs(
       );
     }
   }
+
+  resolvedConfig.setTlsSecurity("default", "default");
 
   return {
     connectionParams: resolvedConfig,
