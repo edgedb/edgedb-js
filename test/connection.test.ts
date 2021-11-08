@@ -89,14 +89,14 @@ function projectPathHash(projectPath: string): string {
   return crypto.createHash("sha1").update(projectPath).digest("hex");
 }
 
-async function env_wrap(
+async function envWrap(
   {
     env,
     fs,
     captureWarnings = false,
   }: {
     env: ConnectionTestCase["env"];
-    fs: ConnectionTestCase["fs"];
+    fs?: ConnectionTestCase["fs"];
     captureWarnings?: boolean;
   },
   func: () => Promise<unknown>
@@ -241,10 +241,10 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
       throw new Error(`Unknown error type: ${testcase.error.type}`);
     }
     await expect(() =>
-      env_wrap({env, fs}, () => parseConnectArguments(opts))
+      envWrap({env, fs}, () => parseConnectArguments(opts))
     ).rejects.toThrow(error);
   } else {
-    const warnings = await env_wrap(
+    const warnings = await envWrap(
       {env, fs, captureWarnings: !!testcase.warnings},
       async () => {
         const {connectionParams} = await parseConnectArguments(opts);
@@ -442,7 +442,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       continue;
     }
 
-    await env_wrap(
+    await envWrap(
       {env: testcase.env as any, fs: testcase.fs as any},
       async () => {
         const {connectionParams, logging, inProject, fromProject, fromEnv} =
@@ -460,6 +460,46 @@ test("logging, inProject, fromProject, fromEnv", async () => {
         expect(inProject).toEqual(testcase.inProject);
         expect(fromProject).toEqual(testcase.fromProject);
         expect(fromEnv).toEqual(testcase.fromEnv);
+      }
+    );
+  }
+});
+
+test("EDGEDB_CLIENT_SECURITY env var", async () => {
+  const truthTable: [string, string, string | null][] = [
+    // CLIENT_SECURITY, CLIENT_TLS_SECURITY, result
+    ["default", "default", "default"],
+    ["default", "insecure", "insecure"],
+    ["default", "no_host_verification", "no_host_verification"],
+    ["default", "strict", "strict"],
+    ["insecure_dev_mode", "default", "insecure"],
+    ["insecure_dev_mode", "insecure", "insecure"],
+    ["insecure_dev_mode", "no_host_verification", "no_host_verification"],
+    ["insecure_dev_mode", "strict", "strict"],
+    ["strict", "default", "strict"],
+    ["strict", "insecure", null],
+    ["strict", "no_host_verification", null],
+    ["strict", "strict", "strict"],
+  ];
+
+  for (const [clientSecurity, clientTlsSecurity, result] of truthTable) {
+    await envWrap(
+      {
+        env: {
+          EDGEDB_CLIENT_SECURITY: clientSecurity,
+        },
+      },
+      async () => {
+        const parseConnectArgs = parseConnectArguments({
+          host: "localhost",
+          tlsSecurity: clientTlsSecurity as any,
+        });
+        if (!result) {
+          await expect(parseConnectArgs).rejects.toThrow();
+        } else {
+          const {connectionParams} = await parseConnectArgs;
+          expect(connectionParams._tlsSecurity).toBe(result);
+        }
       }
     );
   }
