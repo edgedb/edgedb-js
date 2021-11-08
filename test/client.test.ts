@@ -956,6 +956,54 @@ if (!isDeno) {
   });
 }
 
+test.only("fetch: ConfigMemory", async () => {
+  const client = await getClient();
+
+  if (
+    (await client.queryRequiredSingle(
+      `select exists (select schema::Type filter .name = 'cfg::memory')`
+    )) === false
+  ) {
+    return;
+  }
+
+  let res: any;
+  try {
+    for (const mem of [
+      "0B",
+      "0GiB",
+      "1024MiB",
+      "9223372036854775807B",
+      "123KiB",
+      "9MiB",
+      "102938GiB",
+      "108TiB",
+      "42PiB",
+    ]) {
+      res = await client.querySingle(
+        `
+          select (
+            <cfg::memory><str>$mem,
+            <str><cfg::memory><str>$mem,
+          );
+        `,
+        {mem}
+      );
+      expect(res[0].toString()).toBe(res[1]);
+
+      const res2: any = await client.querySingle(
+        `
+        select <cfg::memory>$mem;
+        `,
+        {mem: res[0]}
+      );
+      expect(res2.toString()).toBe(res[0].toString());
+    }
+  } finally {
+    await client.close();
+  }
+});
+
 test("fetch: tuple", async () => {
   const con = getClient();
   let res: any;
