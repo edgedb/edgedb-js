@@ -301,7 +301,7 @@ export class ResolvedConnectConfig {
       return this._tlsOptions;
     }
 
-    let tlsSecurity = this.tlsSecurity;
+    const tlsSecurity = this.tlsSecurity;
 
     this._tlsOptions = {
       ALPNProtocols: ["edgedb-binary"],
