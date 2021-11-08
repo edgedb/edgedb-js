@@ -31,6 +31,34 @@ export class ConfigMemory {
     this._bytes = bytes;
   }
 
+  get bytes(): number {
+    return Number(this._bytes);
+  }
+
+  get bytesBigInt(): BigInt {
+    return this._bytes as BigInt;
+  }
+
+  get kibibytes(): number {
+    return Number(this._bytes) / KiB;
+  }
+
+  get mebibytes(): number {
+    return Number(this._bytes) / MiB;
+  }
+
+  get gibibytes(): number {
+    return Number(this._bytes) / GiB;
+  }
+
+  get tebibytes(): number {
+    return Number(this._bytes) / TiB;
+  }
+
+  get pebibytes(): number {
+    return Number(this._bytes) / PiB;
+  }
+
   toString(): string {
     const bytes = this._bytes;
     const bigPiB = bi.make(PiB);
