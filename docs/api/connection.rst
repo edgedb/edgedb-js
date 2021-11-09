@@ -19,12 +19,12 @@ Client
 
     :param string dsnOrInstanceName:
         If this parameter does not start with ``edgedb://`` then this is
-        a :ref:`name of an instance <edgedb-instances>`.
+        a :ref:`name of an instance <ref_reference_connection_instance_name>`.
 
         Otherwise it specifies a single string in the connection URI format:
         ``edgedb://user:password@host:port/database?option=value``.
 
-        See the :ref:`Connection Parameters <ref_client_connection>`
+        See the :ref:`Connection Parameters <ref_reference_connection>`
         docs for full details.
 
     :param options: Connection and client options object.
@@ -66,7 +66,7 @@ Client
     environment variable. If none of ``dsn``, ``credentialsFile``, ``host`` or
     ``port`` are explicitly specified, the client will connect to your
     linked project instance, if it exists. For full details, see the
-    :ref:`Connection Parameters <ref_client_connection>` docs.
+    :ref:`Connection Parameters <ref_reference_connection>` docs.
 
 
     :param number options.timeout:
