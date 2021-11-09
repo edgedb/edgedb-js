@@ -93,11 +93,14 @@ const getServerCommand = (statusFile: string): string[] => {
 
 const startServer = async (
   cmd: string[],
-  statusFile: string
+  statusFile: string,
+  env: {[key: string]: string} = {}
 ): Promise<{config: ConnectConfig; proc: child_process.ChildProcess}> => {
   let err: ((_: string) => void) | null = null;
   let stderrData: string = "";
-  const proc = child_process.spawn(cmd[0], cmd.slice(1, cmd.length));
+  const proc = child_process.spawn(cmd[0], cmd.slice(1, cmd.length), {
+    env: {...process.env, ...env},
+  });
 
   if (process.env.EDGEDB_DEBUG_SERVER) {
     proc.stdout.on("data", (data) => {
@@ -209,10 +212,12 @@ export default async () => {
   const denoStatusFile = generateStatusFileName("deno");
   console.log("deno status file:", denoStatusFile);
   const denoArgs = getServerCommand(getWSLPath(denoStatusFile));
+  const denoEnv: any = {};
   if (denoArgs.includes("--generate-self-signed-cert")) {
-    denoArgs.push("--allow-insecure-binary-clients");
+    denoEnv["EDGEDB_SERVER_ALLOW_INSECURE_BINARY_CLIENTS"] = "1";
+    denoEnv["EDGEDB_SERVER_BINARY_ENDPOINT_SECURITY"] = "optional";
   }
-  const denoPromise = startServer(denoArgs, denoStatusFile);
+  const denoPromise = startServer(denoArgs, denoStatusFile, denoEnv);
 
   const statusFile = generateStatusFileName("node");
   console.log("node status file:", statusFile);
