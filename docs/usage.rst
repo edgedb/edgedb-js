@@ -4,9 +4,20 @@
 Basic Usage
 ===========
 
+
+Connection
+----------
+
+The client library must be able to establish a connection to a running EdgeDB
+instance to execute queries. Refer to the :ref:`Client Library Connection
+<edgedb_client_connection>` docs for details on configuring connections.
+
+Creating a Client
+-----------------
+
 The interaction with the database normally starts with a call to
 ``createClient()``, which returns a new ``Client`` object. The client will
-maintain a pool of connections to your EdgeDB instance, and provides methods
+maintains a pool of connections to your EdgeDB instance and provides methods
 to run queries.
 
 .. code-block:: js
