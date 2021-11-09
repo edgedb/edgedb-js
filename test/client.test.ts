@@ -956,7 +956,7 @@ if (!isDeno) {
   });
 }
 
-test.only("fetch: ConfigMemory", async () => {
+test("fetch: ConfigMemory", async () => {
   const client = await getClient();
 
   if (
