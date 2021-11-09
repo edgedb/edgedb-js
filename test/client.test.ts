@@ -964,6 +964,7 @@ test("fetch: ConfigMemory", async () => {
       `select exists (select schema::Type filter .name = 'cfg::memory')`
     )) === false
   ) {
+    await client.close();
     return;
   }
 
