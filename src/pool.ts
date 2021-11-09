@@ -168,12 +168,6 @@ class ClientConnectionHolder {
       );
     }
 
-    if (this._connection?.isClosed()) {
-      // When closing, pool connections perform the necessary
-      // cleanup, so we don't have to do anything else here.
-      return;
-    }
-
     if (this._generation !== this._client.generation) {
       // The connection has expired because it belongs to
       // an older generation (Client.expire_connections() has
