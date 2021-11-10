@@ -212,7 +212,10 @@ export default async () => {
   const denoStatusFile = generateStatusFileName("deno");
   console.log("deno status file:", denoStatusFile);
   const denoArgs = getServerCommand(getWSLPath(denoStatusFile));
-  if (denoArgs.includes("--generate-self-signed-cert")) {
+  if (
+    denoArgs.includes("--generate-self-signed-cert") &&
+    process.env.EDGEDB_SERVER_VERSION === "nightly"
+  ) {
     denoArgs.push("--binary-endpoint-security=optional");
   }
   const denoPromise = startServer(denoArgs, denoStatusFile);

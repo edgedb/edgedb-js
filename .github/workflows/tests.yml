@@ -75,6 +75,8 @@ jobs:
           server-version: ${{ matrix.edgedb-version }}
 
       - name: Run functional tests
+        env:
+          EDGEDB_SERVER_VERSION: ${{ matrix.edgedb-version }}
         run: |
           yarn test
 
