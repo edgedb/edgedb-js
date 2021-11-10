@@ -212,12 +212,10 @@ export default async () => {
   const denoStatusFile = generateStatusFileName("deno");
   console.log("deno status file:", denoStatusFile);
   const denoArgs = getServerCommand(getWSLPath(denoStatusFile));
-  const denoEnv: any = {};
   if (denoArgs.includes("--generate-self-signed-cert")) {
-    denoEnv["EDGEDB_SERVER_ALLOW_INSECURE_BINARY_CLIENTS"] = "1";
-    denoEnv["EDGEDB_SERVER_BINARY_ENDPOINT_SECURITY"] = "optional";
+    denoArgs.push("--binary-endpoint-security=optional");
   }
-  const denoPromise = startServer(denoArgs, denoStatusFile, denoEnv);
+  const denoPromise = startServer(denoArgs, denoStatusFile);
 
   const statusFile = generateStatusFileName("node");
   console.log("node status file:", statusFile);
