@@ -104,9 +104,7 @@ test("unref idle connections", async () => {
     `const {createClient} = require('./dist/src/index.node');
 
 (async () => {
-  const client = createClient(undefined, ${JSON.stringify(
-    getConnectOptions()
-  )});
+  const client = createClient(${JSON.stringify(getConnectOptions())});
 
   await client.query('select 1');
 

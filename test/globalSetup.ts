@@ -7,7 +7,7 @@ import * as readline from "readline";
 import {ConnectConfig} from "../src/con_utils";
 import {Connection} from "../src/ifaces";
 
-import connect from "../src/index.node";
+import {connect} from "../src/index.node";
 import {promisify} from "util";
 
 type PromiseCallback = () => void;
