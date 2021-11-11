@@ -533,7 +533,7 @@ test("connect: refused", async () => {
     }).ensureConnected();
     throw new Error("connection isn't refused");
   } catch (e: any) {
-    expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
+    expect(e).toBeInstanceOf(errors.ClientConnectionClosedError);
     expect(e.source.code).toMatch("ECONNREFUSED");
   } finally {
     if (typeof client !== "undefined") {
@@ -552,7 +552,7 @@ test("connect: invalid name", async () => {
     }).ensureConnected();
     throw new Error("name was resolved");
   } catch (e: any) {
-    expect(e).toBeInstanceOf(errors.ClientConnectionFailedTemporarilyError);
+    expect(e).toBeInstanceOf(errors.ClientConnectionClosedError);
     expect(e.source.code).toMatch("ENOTFOUND");
     expect(e.source.syscall).toMatch("getaddrinfo");
   } finally {

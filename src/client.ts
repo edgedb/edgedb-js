@@ -455,9 +455,6 @@ export class InnerConnection {
   }
 
   async reconnect(singleAttempt: boolean = false): Promise<ConnectionImpl> {
-    if (this._isClosed) {
-      throw new errors.InterfaceError("Connection is closed");
-    }
     let maxTime: number;
     if (singleAttempt || this.config.waitUntilAvailable === 0) {
       maxTime = 0;
@@ -541,9 +538,9 @@ export class ConnectionImpl {
   private connWaiterResolve: ((value: any) => void) | null;
   private connWaiterReject: ((value: any) => void) | null;
 
-  private opInProgress: boolean = false;
-
   protected protocolVersion: ProtocolVersion = PROTO_VER;
+
+  private _abortedWith: Error | null = null;
 
   /** @internal */
   protected constructor(
@@ -638,6 +635,14 @@ export class ConnectionImpl {
   }
 
   private _onClose(): void {
+    if (!this.connected) {
+      return;
+    }
+
+    const newErr = new errors.ClientConnectionClosedError(
+      `the connection has been aborted`
+    );
+
     if (this.connWaiterReject || this.messageWaiterReject) {
       /* This can happen, particularly, during the connect phase.
          If the connection is aborted with a client-side timeout, there can be
@@ -645,13 +650,36 @@ export class ConnectionImpl {
          and so `conn.sock.destroy` would simply close the socket,
          without invoking the 'error' event.
       */
-      this._abortWaiters(new errors.ClientConnectionClosedError());
+      this._abortWaiters(newErr);
     }
-    this.close();
+
+    this._abortWithError(newErr);
   }
 
   private _onError(err: Error): void {
-    this._abortWaiters(err);
+    const newErr = new errors.ClientConnectionClosedError(
+      `network error: ${err}`
+    );
+    newErr.source = err;
+
+    try {
+      this._abortWaiters(newErr);
+    } finally {
+      // We cannot recover this raw connection from a socket error.
+      // Just abort it and let the higher-level API reconnect.
+      this._abortWithError(newErr);
+    }
+  }
+
+  private _abortWithError(err: Error): void {
+    this._abortedWith = err;
+    this._abort();
+  }
+
+  private _checkState(): void {
+    if (this._abortedWith != null) {
+      throw this._abortedWith;
+    }
   }
 
   private _onData(data: Buffer): void {
@@ -1541,6 +1569,8 @@ export class ConnectionImpl {
     expectOne: boolean,
     requiredOne: boolean = false
   ): Promise<any> {
+    this._checkState();
+
     const key = this._getQueryCacheKey(query, asJson, expectOne);
     const ret = new Set();
 
@@ -1596,6 +1626,8 @@ export class ConnectionImpl {
     query: string,
     allowTransactionCommands: boolean = false
   ): Promise<void> {
+    this._checkState();
+
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$Q)
       .writeHeaders({
