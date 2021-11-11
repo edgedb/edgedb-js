@@ -97,7 +97,7 @@ const NO_TRANSACTION_CAPABILITIES_BYTES = Buffer.from([
   255,
   255,
   255,
-  255 & ~Capabilities.TRANSACTION,
+  255 & ~Capabilities.TRANSACTION & ~Capabilities.SESSION_CONFIG,
 ]);
 
 const OLD_ERROR_CODES = new Map([
