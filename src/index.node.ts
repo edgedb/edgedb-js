@@ -20,6 +20,8 @@ export {createClient} from "./pool";
 import {createClient} from "./pool";
 export default createClient;
 
+export {connect, createPool} from "./pool";
+
 export {RawConnection as _RawConnection} from "./client";
 
 export type {Connection, Client} from "./ifaces";

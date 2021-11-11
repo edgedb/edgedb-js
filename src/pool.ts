@@ -794,7 +794,7 @@ class ClientImpl {
 
 export type ConnectOptions = ConnectConfig & ClientOptions;
 
-export function createClient(
+function _createClientWithLegacyArgs(
   dsnOrInstanceName?: string | ConnectOptions | null,
   options?: ConnectOptions | null
 ): Client {
@@ -814,6 +814,16 @@ export function createClient(
   }
 }
 
+export function createClient(
+  options?: string | ConnectOptions | null
+): Client {
+  if (typeof options === "string") {
+    return ClientShell.create(options);
+  } else {
+    return ClientShell.create(undefined, options);
+  }
+}
+
 /**
  * @deprecated
  */
@@ -825,7 +835,7 @@ export function connect(
   console.warn(
     `The 'connect()' API is deprecated, use 'createClient()' instead`
   );
-  return createClient(dsnOrInstanceName, {
+  return _createClientWithLegacyArgs(dsnOrInstanceName, {
     concurrency: 1,
     ...options,
   }).ensureConnected();
@@ -853,7 +863,7 @@ export function createPool(
       ? [dsnOrInstanceName, options]
       : [undefined, {...dsnOrInstanceName, ...options}];
 
-  return createClient(dsn, {
+  return _createClientWithLegacyArgs(dsn, {
     ...opts?.connectOptions,
     concurrency: opts?.maxSize,
   }).ensureConnected();

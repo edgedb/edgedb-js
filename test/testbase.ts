@@ -52,5 +52,5 @@ export function getConnectOptions(): ConnectOptions {
 }
 
 export function getClient(opts: ConnectOptions = {}): Client {
-  return createClient(undefined, _getOpts(opts));
+  return createClient(_getOpts(opts));
 }
