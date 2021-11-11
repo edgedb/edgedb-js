@@ -11,7 +11,7 @@ Client
 ======
 
 .. js:function:: createClient( \
-        options: string | ConnectOptions | null
+        options: string | ConnectOptions | null \
     ): Client
 
     Creates a new :js:class:`Client` instance.
