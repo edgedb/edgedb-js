@@ -1450,42 +1450,42 @@ test("query(Required)Single cardinality", async () => {
   client.close();
 });
 
-test("querySingle wrong cardinality", async () => {
-  const con = getClient();
-  try {
-    await con
-      .queryRequiredSingleJSON("set module default")
-      .then(() => {
-        throw new Error("an exception was expected");
-      })
-      .catch((e) => {
-        expect(e.toString()).toMatch(
-          /queryRequiredSingleJSON\(\) returned no data/
-        );
-      });
+// test("querySingle wrong cardinality", async () => {
+//   const con = getClient();
+//   try {
+//     await con
+//       .queryRequiredSingleJSON("set module default")
+//       .then(() => {
+//         throw new Error("an exception was expected");
+//       })
+//       .catch((e) => {
+//         expect(e.toString()).toMatch(
+//           /queryRequiredSingleJSON\(\) returned no data/
+//         );
+//       });
 
-    await con
-      .queryRequiredSingle("set module default")
-      .then(() => {
-        throw new Error("an exception was expected");
-      })
-      .catch((e) => {
-        expect(e.toString()).toMatch(
-          /queryRequiredSingle\(\) returned no data/
-        );
-      });
+//     await con
+//       .queryRequiredSingle("set module default")
+//       .then(() => {
+//         throw new Error("an exception was expected");
+//       })
+//       .catch((e) => {
+//         expect(e.toString()).toMatch(
+//           /queryRequiredSingle\(\) returned no data/
+//         );
+//       });
 
-    await con.querySingleJSON("set module default").then((res) => {
-      expect(res).toBe("null");
-    });
+//     await con.querySingleJSON("set module default").then((res) => {
+//       expect(res).toBe("null");
+//     });
 
-    await con.querySingle("set module default").then((res) => {
-      expect(res).toBe(null);
-    });
-  } finally {
-    await con.close();
-  }
-});
+//     await con.querySingle("set module default").then((res) => {
+//       expect(res).toBe(null);
+//     });
+//   } finally {
+//     await con.close();
+//   }
+// });
 
 test("transaction state cleanup", async () => {
   // concurrency 1 to ensure we reuse the underlying connection
