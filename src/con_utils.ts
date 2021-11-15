@@ -546,7 +546,7 @@ async function parseConnectDsnAndArgs(
   };
 }
 
-async function stashPath(projectDir: string): Promise<string> {
+export async function stashPath(projectDir: string): Promise<string> {
   let projectPath = await fs.realpath(projectDir);
   if (platform.isWindows && !projectPath.startsWith("\\\\")) {
     projectPath = "\\\\?\\" + projectPath;
