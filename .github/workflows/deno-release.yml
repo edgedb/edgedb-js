@@ -37,10 +37,5 @@ jobs:
           yarn compileForDeno
 
       - name: Push to edgedb-deno
-        run: |
-          cd edgedb-deno
-          git config user.name edgedb-ci
-          git config user.email releases@edgedb.com
-          git add . -f
-          git commit -m "Build from edgedb-js ${{ github.sha }}"
-          git push
+        run: ./.github/workflows/push-edgedb-deno.sh
+        shell: bash
