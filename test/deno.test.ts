@@ -20,10 +20,6 @@ import {execFile} from "child_process";
 import * as fs from "fs";
 
 test("run deno test", async () => {
-  if (process.env.EDGEDB_SERVER_VERSION === "stable") {
-    return;
-  }
-
   jest.setTimeout(120_000);
 
   if (!fs.existsSync("test/deno")) {
