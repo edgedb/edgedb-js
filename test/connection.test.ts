@@ -75,7 +75,7 @@ jest.mock("os", () => {
 import * as fs from "fs";
 import * as crypto from "crypto";
 import {join as pathJoin} from "path";
-import {parseConnectArguments} from "../src/con_utils";
+import {parseConnectArguments, stashPath} from "../src/con_utils";
 import {getClient} from "./testbase";
 import {Client, Connection} from "../src/ifaces";
 import * as errors from "../src/errors";
@@ -190,7 +190,8 @@ const errorMapping: {[key: string]: string | RegExp} = {
     /^Cannot have more than one of the following connection environment variables/,
   env_not_found: /environment variable '.*' doesn't exist/,
   file_not_found: /no such file or directory/,
-  invalid_tls_security: /^invalid 'tlsSecurity' value/,
+  invalid_tls_security:
+    /^invalid 'tlsSecurity' value|'tlsSecurity' value cannot be lower than security level set by EDGEDB_CLIENT_SECURITY/,
 };
 
 const warningMapping: {[key: string]: string} = {
@@ -290,6 +291,48 @@ test("parseConnectArguments", async () => {
 
   for (const testcase of connectionTestcases) {
     await runConnectionTest(testcase);
+  }
+});
+
+const platformNames: {[key: string]: string} = {
+  windows: "win32",
+  macos: "darwin",
+  linux: "linux",
+};
+
+test("project path hashing", async () => {
+  let hashingTestcases: {
+    platform: string;
+    homeDir: string;
+    env?: {
+      [key: string]: string;
+    };
+    project: string;
+    result: string;
+  }[];
+  try {
+    hashingTestcases = JSON.parse(
+      fs.readFileSync(
+        "./test/shared-client-testcases/project_path_hashing_testcases.json",
+        "utf8"
+      )
+    );
+  } catch (err) {
+    throw new Error(
+      `Failed to read 'project_path_hashing_testcases.json': ${err}.\n` +
+        `Is the 'shared-client-testcases' submodule initialised? ` +
+        `Try running 'git submodule update --init'.`
+    );
+  }
+
+  for (const testcase of hashingTestcases) {
+    if (platformNames[testcase.platform] === process.platform) {
+      await envWrap(
+        {env: testcase.env ?? {}, fs: {homedir: testcase.homeDir}},
+        async () =>
+          expect(await stashPath(testcase.project)).toBe(testcase.result)
+      );
+    }
   }
 });
 
