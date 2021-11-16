@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
+import {Client} from "../src/ifaces";
 import createClient from "../src/index.node";
-import {ConnectConfig} from "../src/con_utils";
-import {Connection, Client} from "../src/ifaces";
 import {ConnectOptions} from "../src/pool";
 
 export const isDeno =

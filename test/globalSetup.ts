@@ -8,9 +8,6 @@ import {ConnectConfig} from "../src/con_utils";
 import {Connection} from "../src/ifaces";
 
 import {connect} from "../src/index.node";
-import {promisify} from "util";
-
-type PromiseCallback = () => void;
 
 const getServerInfo = async (
   filename: string
@@ -211,7 +208,7 @@ export default async () => {
   console.log("\nStarting EdgeDB test cluster...");
 
   const denoStatusFile = generateStatusFileName("deno");
-  console.log("deno status file:", denoStatusFile);
+  console.log("Deno status file:", denoStatusFile);
   const denoArgs = getServerCommand(getWSLPath(denoStatusFile));
   if (denoArgs.includes("--generate-self-signed-cert")) {
     denoArgs.push("--binary-endpoint-security=optional");
@@ -219,12 +216,11 @@ export default async () => {
   const denoPromise = startServer(denoArgs, denoStatusFile);
 
   const statusFile = generateStatusFileName("node");
-  console.log("node status file:", statusFile);
+  console.log("Node status file:", statusFile);
 
   const args = getServerCommand(getWSLPath(statusFile));
-  console.log(`Starting server...`);
+
   const {proc, config} = await startServer(args, statusFile);
-  console.log(`server started`);
   // @ts-ignore
   global.edgedbProc = proc;
 

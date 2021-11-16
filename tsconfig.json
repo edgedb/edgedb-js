@@ -16,6 +16,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "downlevelIteration": true,
+    "noUnusedLocals": true,
     "baseUrl": ".",
     "typeRoots": [
       "./node_modules/@types"

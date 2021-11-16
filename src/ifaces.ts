@@ -17,24 +17,19 @@
  */
 
 import {
-  LocalDateTime,
-  LocalDate,
-  LocalTime,
   Duration,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
   RelativeDuration,
 } from "./datatypes/datetime";
-import {Transaction} from "./transaction";
-import {InnerConnection, ConnectionImpl} from "./client";
 import {
-  Options,
   RetryOptions,
   SimpleRetryOptions,
   SimpleTransactionOptions,
   TransactionOptions,
 } from "./options";
-import {PartialRetryRule} from "./options";
-
-import {Set} from "./datatypes/set";
+import {Transaction} from "./transaction";
 
 export type ProtocolVersion = [number, number];
 

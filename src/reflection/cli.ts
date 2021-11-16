@@ -194,7 +194,8 @@ OPTIONS:
   // const edgedbPath = path.join(rootDir, "node_modules", "edgedb");
   // if (!fs.existsSync(edgedbPath)) {
   //   console.error(
-  //     "Error: 'edgedb' package is not yet installed locally. Run `npm install edgedb` before generating the query builder."
+  //     `Error: 'edgedb' package is not yet installed locally.
+  //  Run `npm install edgedb` before generating the query builder.`
   //   );
   //   process.exit();
   // }
@@ -381,7 +382,7 @@ function promptEnum<Val extends string, Default extends Val>(
   defaultVal?: Default
 ): Promise<Val> {
   return new Promise(resolve => {
-    var rl = readline.createInterface({
+    const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
@@ -390,7 +391,7 @@ function promptEnum<Val extends string, Default extends Val>(
       `${prompt}[${vals.join("/")}]${
         defaultVal !== undefined ? ` (leave blank for "${defaultVal}")` : ""
       }\n> `,
-      function (response) {
+      (response: string) => {
         rl.close();
         response = response.trim().toLowerCase();
 
@@ -418,19 +419,19 @@ function promptForPassword(username: string) {
     let silent = false;
 
     const silentStdout = new Writable({
-      write: function (chunk, encoding, callback) {
+      write(chunk: any, encoding: string, callback: (...args: any) => void) {
         if (!silent) process.stdout.write(chunk, encoding);
         callback();
       },
     });
 
-    var rl = readline.createInterface({
+    const rl = readline.createInterface({
       input: process.stdin,
       output: silentStdout,
       terminal: true,
     });
 
-    rl.question(`Password for '${username}': `, function (password) {
+    rl.question(`Password for '${username}': `, (password: string) => {
       rl.close();
       resolve(password);
     });

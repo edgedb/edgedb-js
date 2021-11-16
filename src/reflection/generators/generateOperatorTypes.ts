@@ -1,7 +1,6 @@
 import {r, t} from "../builders";
 import type {GeneratorParams} from "../generate";
-import {frag, quote} from "../util/genutil";
-
+import {quote} from "../util/genutil";
 import {generateFuncopTypes} from "./generateFunctionTypes";
 
 export const generateOperatorTypes = ({

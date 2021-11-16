@@ -2,17 +2,6 @@ import {Connection} from "../../ifaces";
 import {StrictMap} from "../strictMap";
 import {typeutil} from "../util/typeutil";
 
-type Scalar = {
-  id: string;
-  name: string;
-  is_abstract: boolean;
-  bases: {
-    id: string;
-    name: string;
-  }[];
-  ancestors: {id: string; name: string}[];
-};
-
 /*
   for scalars
     if abstract

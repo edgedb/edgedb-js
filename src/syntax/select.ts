@@ -1,6 +1,5 @@
 import type {$anyint, $bool} from "@generated/modules/std";
 import _std from "@generated/modules/std";
-
 import {
   $expr_PolyShapeElement,
   $scopify,
@@ -28,14 +27,9 @@ import type {
   ExpressionRoot,
   PathParent,
 } from "../reflection/path";
-import {
-  anonymizeObject,
-  castableFrom,
-  pointerToAssignmentExpression,
-  pointerToCastableExpression,
-} from "./casting";
+import {anonymizeObject} from "./casting";
 import type {$expr_Operator} from "./funcops";
-import {$expressionify, $expr_PathNode as makePathNode} from "./path";
+import {$expressionify} from "./path";
 import {$queryify} from "./query";
 import type {$expr_Update, UpdateShape} from "./update";
 
@@ -428,35 +422,33 @@ export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   return $queryify(expr);
 }
 
-export type pointersToSelectShape<Shape extends ObjectTypePointers> = Partial<
-  {
-    [k in keyof Shape]: Shape[k] extends PropertyDesc
-      ?
-          | boolean
-          | TypeSet<
-              // causes excessively deep error:
-              // castableFrom<Shape[k]["target"]>
-              Shape[k]["target"],
-              cardinalityUtil.assignable<Shape[k]["cardinality"]>
-            >
-      : // | pointerToCastableExpression<Shape[k]>
-      Shape[k] extends LinkDesc
-      ?
-          | boolean
-          // | pointerToCastableExpression<Shape[k]>
-          | TypeSet<
-              anonymizeObject<Shape[k]["target"]>,
-              cardinalityUtil.assignable<Shape[k]["cardinality"]>
-            >
-          | (pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-              pointersToSelectShape<Shape[k]["properties"]>)
-          | ((
-              scope: $scopify<Shape[k]["target"]>
-            ) => pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-              pointersToSelectShape<Shape[k]["properties"]>)
-      : any;
-  }
-> &
+export type pointersToSelectShape<Shape extends ObjectTypePointers> = Partial<{
+  [k in keyof Shape]: Shape[k] extends PropertyDesc
+    ?
+        | boolean
+        | TypeSet<
+            // causes excessively deep error:
+            // castableFrom<Shape[k]["target"]>
+            Shape[k]["target"],
+            cardinalityUtil.assignable<Shape[k]["cardinality"]>
+          >
+    : // | pointerToCastableExpression<Shape[k]>
+    Shape[k] extends LinkDesc
+    ?
+        | boolean
+        // | pointerToCastableExpression<Shape[k]>
+        | TypeSet<
+            anonymizeObject<Shape[k]["target"]>,
+            cardinalityUtil.assignable<Shape[k]["cardinality"]>
+          >
+        | (pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
+            pointersToSelectShape<Shape[k]["properties"]>)
+        | ((
+            scope: $scopify<Shape[k]["target"]>
+          ) => pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
+            pointersToSelectShape<Shape[k]["properties"]>)
+    : any;
+}> &
   SelectModifiers;
 
 export function select<Expr extends ObjectTypeExpression>(

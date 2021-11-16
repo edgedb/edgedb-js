@@ -1,9 +1,7 @@
-import type {GeneratorParams} from "../generate";
-import {getRef, frag, joinFrags, splitName, quote} from "../util/genutil";
-
-import * as introspect from "../queries/getTypes";
 import {CodeFragment, dts, r, t, ts} from "../builders";
-import {Cardinality} from "../enums";
+import type {GeneratorParams} from "../generate";
+import * as introspect from "../queries/getTypes";
+import {frag, getRef, joinFrags, quote, splitName} from "../util/genutil";
 
 export const getStringRepresentation: (
   type: introspect.Type,
@@ -116,7 +114,7 @@ export const getStringRepresentation: (
 };
 
 export const generateObjectTypes = (params: GeneratorParams) => {
-  const {dir, types, casts} = params;
+  const {dir, types} = params;
 
   for (const type of types.values()) {
     if (type.kind !== "object") {
@@ -137,7 +135,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
 
     const ref = getRef(type.name);
 
-    const {name: pathName} = splitName(type.name);
+    // const {name: pathName} = splitName(type.name);
     // const typeName = displayName(type.name);
 
     // get bases
@@ -283,6 +281,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     body.writeln([
       dts`declare `,
       ...frag`const ${literal}`,
+      // tslint:disable-next-line
       t`: $.$expr_PathNode<$.TypeSet<${ref}, $.Cardinality.Many>, null, true> `,
       r`= _.syntax.$expr_PathNode($.$toSet(${ref}, $.Cardinality.Many), null, true);`,
     ]);

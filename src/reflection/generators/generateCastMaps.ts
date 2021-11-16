@@ -1,13 +1,13 @@
-import {CodeBuffer, CodeFragment, dts, IdentRef, r, t, ts} from "../builders";
+import {CodeBuffer, dts, r, t, ts} from "../builders";
 import type {GeneratorParams} from "../generate";
-import {getRef, frag, joinFrags, quote} from "../util/genutil";
+import {getRef, joinFrags, quote} from "../util/genutil";
 import {util} from "../util/util";
 import {getStringRepresentation} from "./generateObjectTypes";
 
 const getRuntimeRef = (name: string) => getRef(name, {prefix: ""});
 
 export const generateCastMaps = (params: GeneratorParams) => {
-  const {dir, types, typesByName, casts} = params;
+  const {dir, types, casts} = params;
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps");
@@ -88,8 +88,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
       const bCastableToA = innerCastableTo.includes(outer.id);
 
       let sharedParent: string | null = null;
-      const sharedParentId = outerCastableTo.find(t =>
-        innerCastableTo.includes(t)
+      const sharedParentId = outerCastableTo.find(type =>
+        innerCastableTo.includes(type)
       );
       if (sharedParentId) {
         const sharedParentName = types.get(sharedParentId).name;

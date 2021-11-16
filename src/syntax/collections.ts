@@ -4,7 +4,6 @@ import {
   $expr_Tuple,
   ArrayType,
   BaseType,
-  BaseTypeTuple,
   cardinalityUtil,
   ExpressionKind,
   NamedTupleLiteralShape,
@@ -12,12 +11,10 @@ import {
   NamedTupleType,
   NonArrayType,
   TupleType,
+  TypeKind,
   TypeSet,
   typeutil,
 } from "../reflection";
-import {Cardinality, TypeKind} from "../reflection";
-import {$expr_Literal} from "../reflection/literal";
-import {literal} from "./literal";
 import {$expressionify} from "./path";
 import {getCardsFromExprs, getPrimitiveBaseType} from "./set";
 
@@ -156,8 +153,8 @@ export function namedTuple(shape: any): any {
 
 export type {
   ArrayType as $Array,
-  TupleType as $Tuple,
   NamedTupleType as $NamedTuple,
+  TupleType as $Tuple,
 } from "../reflection";
 
 // export { array,  tuple,  namedTuple};

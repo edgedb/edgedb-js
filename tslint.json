@@ -7,7 +7,6 @@
     "tslint-plugin-prettier"
   ],
   "rules": {
-    "no-unused-variable": true,
     "max-line-length": {
       "options": [
         79

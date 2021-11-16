@@ -108,14 +108,14 @@ type Export = {modes?: Set<Mode>} & (
 
 class BuilderImportsExports {
   constructor(
-    public imports = new Set<Import>(),
-    public exports = new Set<Export>()
+    public imports: Set<Import> = new Set<Import>(),
+    public exports: Set<Export> = new Set<Export>()
   ) {}
 
   addImport(
     names: {[key: string]: string | boolean},
     fromPath: string,
-    allowFileExt = false,
+    allowFileExt: boolean = false,
     modes?: Mode[]
   ) {
     this.imports.add({
@@ -130,7 +130,7 @@ class BuilderImportsExports {
   addDefaultImport(
     name: string,
     fromPath: string,
-    allowFileExt = false,
+    allowFileExt: boolean = false,
     modes?: Mode[]
   ) {
     this.imports.add({
@@ -145,7 +145,7 @@ class BuilderImportsExports {
   addStarImport(
     name: string,
     fromPath: string,
-    allowFileExt = false,
+    allowFileExt: boolean = false,
     modes?: Mode[]
   ) {
     this.imports.add({
@@ -183,7 +183,7 @@ class BuilderImportsExports {
   addExportFrom(
     names: {[key: string]: string | boolean},
     fromPath: string,
-    allowFileExt = false,
+    allowFileExt: boolean = false,
     modes?: Mode[]
   ) {
     this.exports.add({
@@ -198,7 +198,7 @@ class BuilderImportsExports {
   addExportStarFrom(
     name: string | null,
     fromPath: string,
-    allowFileExt = false,
+    allowFileExt: boolean = false,
     modes?: Mode[]
   ) {
     this.exports.add({
@@ -307,13 +307,13 @@ class BuilderImportsExports {
             if (typeof nameFrag === "string") {
               name += nameFrag;
             } else {
-              const ref = refs.get(nameFrag.name);
+              const nameRef = refs.get(nameFrag.name);
 
-              if (!ref) {
+              if (!nameRef) {
                 throw new Error(`Cannot find ref: ${nameFrag.name}`);
               }
 
-              name += (nameFrag.opts?.prefix ?? "") + ref.internalName;
+              name += (nameFrag.opts?.prefix ?? "") + nameRef.internalName;
             }
           }
 
@@ -359,14 +359,14 @@ class BuilderImportsExports {
             exportsFrom.push(
               `(function () {\n  var ${modName} = require("${exp.fromPath}");`
             );
-            for (const [name, val] of Object.entries(exp.names)) {
+            for (const [expName, val] of Object.entries(exp.names)) {
               if (typeof val === "boolean" && !val) {
                 continue;
               }
               exportsFrom.push(
                 `  Object.defineProperty(exports, "${
-                  typeof val === "string" ? val : name
-                }", { enumerable: true, get: function () { return ${modName}.${name}; } });`
+                  typeof val === "string" ? val : expName
+                }", { enumerable: true, get: function () { return ${modName}.${expName}; } });`
               );
             }
             exportsFrom.push(`})();`);
@@ -571,10 +571,10 @@ export class CodeBuilder {
             return this.resolveIdentRef(frag, importsExports);
           } else if (frag.modes.has(mode)) {
             return frag.content
-              .map(frag =>
-                typeof frag === "string"
-                  ? frag
-                  : this.resolveIdentRef(frag, importsExports)
+              .map(contentFrag =>
+                typeof contentFrag === "string"
+                  ? contentFrag
+                  : this.resolveIdentRef(contentFrag, importsExports)
               )
               .join("");
           } else {
@@ -665,7 +665,7 @@ export class DirBuilder {
 
   debug(): string {
     const buf = [];
-    for (const [fn, builder] of this._map.entries()) {
+    for (const [fn, _builder] of this._map.entries()) {
       buf.push(`>>> ${fn}\n`);
       // buf.push(builder.render());
       buf.push(`\n`);

@@ -35,6 +35,7 @@ export type GeneratorParams = {
 };
 
 export function exitWithError(message: string) {
+  // tslint:disable-next-line
   console.error(message);
   process.exit(1);
 }
@@ -63,6 +64,7 @@ export async function generateQB({
   const dir = new DirBuilder();
 
   try {
+    // tslint:disable-next-line
     console.log(`Introspecting database schema...`);
 
     const [types, scalars, casts, functions, operators] = await Promise.all([
@@ -284,6 +286,6 @@ export async function generateQB({
 
   fs.writeFileSync(
     path.join(outputDir, "config.json"),
-    `${configFileHeader}\n${JSON.stringify({target: target})}\n`
+    `${configFileHeader}\n${JSON.stringify({target})}\n`
   );
 }
