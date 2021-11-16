@@ -229,13 +229,12 @@ export namespace tls {
       throw new Error("port option must be set");
     }
 
-    console.log(options);
-
     const conn = Deno.connectTls({
       port: options.port,
       hostname: options.host,
       // @ts-ignore
       alpnProtocols: options.ALPNProtocols,
+      caCerts: typeof options.ca === "string" ? [options.ca] : options.ca,
     });
 
     return new TLSSocket(conn);
@@ -280,7 +279,7 @@ export namespace tls {
     }
 
     get alpnProtocol(): string | false {
-      return this._alpnProtocol ? this._alpnProtocol : false;
+      return this._alpnProtocol ?? false;
     }
   }
 }
