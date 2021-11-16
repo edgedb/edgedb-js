@@ -3,7 +3,7 @@ import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
-let pool: edgedb.Pool;
+let pool: edgedb.Client;
 let data: TestData;
 
 beforeAll(async () => {

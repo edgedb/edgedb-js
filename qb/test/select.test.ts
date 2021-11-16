@@ -1,11 +1,11 @@
-import {Pool, $} from "edgedb";
+import {Client, $} from "edgedb";
 
 import * as tc from "conditional-type-checks";
 
 import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
-let pool: Pool;
+let pool: Client;
 let data: TestData;
 
 beforeAll(async () => {
@@ -387,7 +387,7 @@ test("infer cardinality - object type filters", () => {
 });
 
 test("fetch heroes", async () => {
-  const result = await pool.query(e.select(e.Hero).toEdgeQL());
+  const result = await e.select(e.Hero).run(pool);
   expect(result.length).toEqual(3);
   expect(result.every(h => typeof h.id === "string")).toEqual(true);
 });
