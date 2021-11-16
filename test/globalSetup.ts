@@ -163,7 +163,7 @@ export const startServer = async (
   }
 
   const config: ConnectConfig = {
-    host: "127.0.0.1",
+    host: "localhost",
     port: runtimeData.port,
     user: "edgedb",
     password: "edgedbtest",
@@ -211,14 +211,6 @@ export default async () => {
   // tslint:disable-next-line
   console.log("\nStarting EdgeDB test cluster...");
 
-  const denoStatusFile = generateStatusFileName("deno");
-  console.log("Deno status file:", denoStatusFile);
-  const denoArgs = getServerCommand(getWSLPath(denoStatusFile));
-  if (denoArgs.includes("--generate-self-signed-cert")) {
-    denoArgs.push("--binary-endpoint-security=optional");
-  }
-  const denoPromise = startServer(denoArgs, denoStatusFile);
-
   const statusFile = generateStatusFileName("node");
   console.log("Node status file:", statusFile);
 
@@ -228,17 +220,10 @@ export default async () => {
   // @ts-ignore
   global.edgedbProc = proc;
 
-  const {proc: denoProc, config: denoConfig} = await denoPromise;
-  // @ts-ignore
-  global.edgedbDenoProc = denoProc;
-
   process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(config);
-  process.env._JEST_EDGEDB_DENO_CONNECT_CONFIG = JSON.stringify(denoConfig);
 
   // @ts-ignore
   global.edgedbConn = await connectToServer(config);
-  // @ts-ignore
-  global.edgedbDenoConn = await connectToServer(denoConfig);
 
   // tslint:disable-next-line
   console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);
