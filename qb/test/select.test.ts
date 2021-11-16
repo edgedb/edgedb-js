@@ -510,7 +510,6 @@ test("backlinks", async () => {
     // __type__: {name: true},
     title: true,
   }));
-  console.log(q2.toEdgeQL());
 
   const result2 = await q2.run(pool);
 

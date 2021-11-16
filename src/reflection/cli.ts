@@ -301,7 +301,7 @@ project to exclude these files.`
           gitIgnoreFile === null
             ? `Checking the generated query builder into version control
 is NOT RECOMMENDED. Would you like to create a .gitignore file to ignore
-the query builder directory?`
+the query builder directory? `
             : `Checking the generated query builder into version control
 is NOT RECOMMENDED. Would you like to update .gitignore to ignore
 the query builder directory? The following line will be added:
