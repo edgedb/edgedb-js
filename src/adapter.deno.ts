@@ -138,22 +138,10 @@ export namespace net {
     on(eventName: "close", listener: () => void): this;
   }
 
-  export class Socket extends EventEmitter {
-    private _conn: Deno.Conn | null = null;
-    private _readIter: AsyncIterableIterator<Uint8Array> | null = null;
-    private _paused = true;
-
-    constructor(pconn: Promise<Deno.Conn>) {
-      super();
-      pconn
-        .then(conn => {
-          this._conn = conn;
-          this._readIter = Deno.iter(conn);
-          this.emit("connect");
-          this.resume();
-        })
-        .catch(e => this.emit("error", e));
-    }
+  export class BaseSocket<T extends Deno.Conn> extends EventEmitter {
+    protected _conn: T | null = null;
+    protected _readIter: AsyncIterableIterator<Uint8Array> | null = null;
+    protected _paused = true;
 
     setNoDelay() {
       // No deno api for this
@@ -212,11 +200,27 @@ export namespace net {
       }
     }
   }
+
+  export class Socket extends BaseSocket<Deno.Conn> {
+    constructor(pconn: Promise<Deno.Conn>) {
+      super();
+      pconn
+        .then(conn => {
+          this._conn = conn;
+          this._readIter = Deno.iter(conn);
+          this.emit("connect");
+          this.resume();
+        })
+        .catch(e => {
+          this.emit("error", e);
+        });
+    }
+  }
 }
 
 // TODO: deno's TLS implementation doesn't currently support ALPN.
 export namespace tls {
-  export function connect(options: tls.ConnectionOptions): net.Socket {
+  export function connect(options: tls.ConnectionOptions): tls.TLSSocket {
     if (options.host == null) {
       throw new Error("host option must be set");
     }
@@ -225,7 +229,16 @@ export namespace tls {
       throw new Error("port option must be set");
     }
 
-    return net.createConnection(options.port, options.host);
+    console.log(options);
+
+    const conn = Deno.connectTls({
+      port: options.port,
+      hostname: options.host,
+      // @ts-ignore
+      alpnProtocols: options.ALPNProtocols,
+    });
+
+    return new TLSSocket(conn);
   }
 
   export function checkServerIdentity(
@@ -244,9 +257,30 @@ export namespace tls {
     rejectUnauthorized?: boolean;
   }
 
-  export class TLSSocket extends net.Socket {
-    get alpnProtocol(): string {
-      throw new Error("deno does not support ALPN");
+  export class TLSSocket extends net.BaseSocket<Deno.TlsConn> {
+    private _alpnProtocol: string | null = null;
+
+    constructor(pconn: Promise<Deno.TlsConn>) {
+      super();
+      pconn
+        .then(async conn => {
+          await conn.handshake();
+          // @ts-ignore
+          this._alpnProtocol = (await conn.getAgreedAlpnProtocol()) as
+            | string
+            | null;
+          this._conn = conn;
+          this._readIter = Deno.iter(conn);
+          this.emit("secureConnect");
+          this.resume();
+        })
+        .catch(e => {
+          this.emit("error", e);
+        });
+    }
+
+    get alpnProtocol(): string | false {
+      return this._alpnProtocol ? this._alpnProtocol : false;
     }
   }
 }
