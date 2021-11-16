@@ -7,7 +7,11 @@ import {promises as fs} from "fs";
 import readline from "readline";
 import {Writable} from "stream";
 
-import {ConnectConfig, parseConnectArguments} from "../con_utils";
+import {
+  ConnectConfig,
+  parseConnectArguments,
+  validTlsSecurityValues,
+} from "../con_utils";
 import {configFileHeader, exitWithError, generateQB} from "./generate";
 
 interface Options {
@@ -100,11 +104,16 @@ const run = async () => {
       case "--tls-ca-file":
         connectionConfig.tlsCAFile = getVal();
         break;
-      case "--tls-verify-hostname":
-        connectionConfig.tlsVerifyHostname = true;
-        break;
-      case "--no-tls-verify-hostname":
-        connectionConfig.tlsVerifyHostname = false;
+      case "--tls-security":
+        const tlsSec: any = getVal();
+        if (!validTlsSecurityValues.includes(tlsSec)) {
+          exitWithError(
+            `Invalid value for --tls-security. Must be one of: ${validTlsSecurityValues
+              .map(x => `"${x}"`)
+              .join(" | ")}`
+          );
+        }
+        connectionConfig.tlsSecurity = tlsSec;
         break;
       case "--target":
         const target = getVal();
@@ -138,16 +147,15 @@ Introspects the schema of an EdgeDB instance and generates a TypeScript/JavaScri
 CONNECTION OPTIONS:
     -I, --instance <instance>
     --dsn <dsn>
-    --credentials-file <credentials file>
+    --credentials-file <path/to/credentials.json>
     -H, --host <host>
     -P, --port <port>
     -d, --database <database>
     -u, --user <user>
     --password
     --password-from-stdin
-    --tls-ca-file <tls ca file>
-    --tls-verify-hostname
-    --no-tls-verify-hostname
+    --tls-ca-file <path/to/certificate>
+    --tls-security <insecure | no_host_verification | strict | default>
 
 OPTIONS:
     --target [ts,esm,cjs]
@@ -252,10 +260,12 @@ OPTIONS:
   }
 
   if (options.promptPassword) {
-    const username = parseConnectArguments({
-      ...connectionConfig,
-      password: "",
-    }).user;
+    const username = (
+      await parseConnectArguments({
+        ...connectionConfig,
+        password: "",
+      })
+    ).connectionParams.user;
     connectionConfig.password = await promptForPassword(username);
   }
   if (options.passwordFromStdin) {
