@@ -1240,6 +1240,8 @@ test("fetch: enum", async () => {
 
     ret = await tx.querySingle("SELECT <MyEnum>$0", ["A"]);
     expect(ret).toBe("A");
+
+    await tx.rollback();
   });
 
   await client.close();
@@ -1569,6 +1571,8 @@ test("fetch/optimistic cache invalidation", async () => {
         const res = await tx.querySingle(query);
         expect(res).toBe(123);
       }
+
+      await tx.rollback();
     });
   } finally {
     await client.close();
