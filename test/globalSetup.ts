@@ -98,17 +98,18 @@ const startServer = async (
 ): Promise<{config: ConnectConfig; proc: child_process.ChildProcess}> => {
   let err: ((_: string) => void) | null = null;
   let stderrData: string = "";
+  console.log(cmd);
   const proc = child_process.spawn(cmd[0], cmd.slice(1, cmd.length), {
     env: {...process.env, ...env},
   });
 
   if (process.env.EDGEDB_DEBUG_SERVER) {
-    proc.stdout.on("data", (data) => {
+    proc.stdout.on("data", data => {
       process.stdout.write(data.toString());
     });
   }
 
-  proc.stderr.on("data", (data) => {
+  proc.stderr.on("data", data => {
     if (process.env.EDGEDB_DEBUG_SERVER) {
       process.stderr.write(data.toString());
     } else {
@@ -136,7 +137,7 @@ const startServer = async (
     runtimeData = await getServerInfo(statusFile);
 
     if (runtimeData == null) {
-      await new Promise((resolve) => setTimeout(resolve, 1_000));
+      await new Promise(resolve => setTimeout(resolve, 1_000));
     } else {
       break;
     }
@@ -221,7 +222,9 @@ export default async () => {
   console.log("node status file:", statusFile);
 
   const args = getServerCommand(getWSLPath(statusFile));
+  console.log(`Starting server...`);
   const {proc, config} = await startServer(args, statusFile);
+  console.log(`server started`);
   // @ts-ignore
   global.edgedbProc = proc;
 

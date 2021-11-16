@@ -28,26 +28,26 @@ interface Movie {
 }
 
 export async function setupTests() {
-  const pool = await edgedb.createPool();
+  const pool = await edgedb.createClient();
 
   await cleanupData(pool);
 
-  const iron_man: Hero = await pool.queryOne(`SELECT (INSERT Hero {
+  const iron_man: Hero = await pool.queryRequiredSingle(`SELECT (INSERT Hero {
   name := "Iron Man",
   secret_identity := "Tony Stark"
 }) {id, name, secret_identity}`);
 
-  const cap: Hero = await pool.queryOne(`SELECT (INSERT Hero {
+  const cap: Hero = await pool.queryRequiredSingle(`SELECT (INSERT Hero {
   name := "Captain America",
   secret_identity := "Steve Rogers"
 }) { id, name, secret_identity }`);
 
-  const spidey: Hero = await pool.queryOne(`SELECT (INSERT Hero {
+  const spidey: Hero = await pool.queryRequiredSingle(`SELECT (INSERT Hero {
   name := "Spider-Man",
   secret_identity := "Peter Parker"
 }) { id, name, secret_identity }`);
 
-  const thanos: Villain = await pool.queryOne(
+  const thanos: Villain = await pool.queryRequiredSingle(
     `SELECT (INSERT Villain {
   name := "Thanos",
   nemesis := (SELECT Hero FILTER .id = <uuid>$nemesis_id)
@@ -55,7 +55,7 @@ export async function setupTests() {
     {nemesis_id: iron_man.id}
   );
 
-  const docOck: Villain = await pool.queryOne(
+  const docOck: Villain = await pool.queryRequiredSingle(
     `SELECT (INSERT Villain {
   name := "Doc Ock",
   nemesis := (SELECT Hero FILTER .id = <uuid>$nemesis_id)
@@ -63,7 +63,7 @@ export async function setupTests() {
     {nemesis_id: spidey.id}
   );
 
-  const the_avengers: Movie = await pool.queryOne(
+  const the_avengers: Movie = await pool.queryRequiredSingle(
     `WITH char_ids := array_unpack(<array<uuid>>$character_ids)
 SELECT (INSERT Movie {
   title := "The Avengers",
@@ -73,7 +73,7 @@ SELECT (INSERT Movie {
 }) {id, title, rating, genre, characters: {id}};`,
     {character_ids: [iron_man.id, cap.id]}
   );
-  const civil_war: Movie = await pool.queryOne(
+  const civil_war: Movie = await pool.queryRequiredSingle(
     `SELECT (INSERT Movie {
   title := "Captain America: Civil War",
   rating := 10,
@@ -96,7 +96,7 @@ SELECT (INSERT Movie {
   };
 }
 
-async function cleanupData(pool: edgedb.Pool) {
+async function cleanupData(pool: edgedb.Client) {
   await pool.execute(`DELETE \`S p a M\``);
   await pool.execute(`DELETE A`);
   await pool.execute(`DELETE Łukasz`);
@@ -107,7 +107,7 @@ async function cleanupData(pool: edgedb.Pool) {
   await pool.execute(`DELETE Hero;`);
 }
 
-export async function teardownTests(pool: edgedb.Pool) {
+export async function teardownTests(pool: edgedb.Client) {
   await cleanupData(pool);
 
   await pool.close();

@@ -21,7 +21,15 @@
       "./node_modules/@types"
     ],
     "useDefineForClassFields": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "edgedb": [
+        "./src/index.node"
+      ],
+      "@generated/*": [
+        "./qb/dbschema/edgeql/*"
+      ],
+    }
   },
   "include": [
     "."

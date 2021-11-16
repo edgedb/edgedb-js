@@ -1,10 +1,10 @@
-import {Pool} from "edgedb";
+import {Client} from "edgedb";
 import {Villain} from "../dbschema/edgeql/modules/default";
 import {InsertShape} from "../dbschema/edgeql/syntax/insert";
 import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
-let pool: Pool;
+let pool: Client;
 let data: TestData;
 
 beforeAll(async () => {
@@ -29,7 +29,7 @@ test("basic insert", async () => {
     // id
   });
 
-  await pool.queryOne(q1.toEdgeQL());
+  await pool.querySingle(q1.toEdgeQL());
 
   pool.execute(`DELETE Hero FILTER .name = 'Black Widow';`);
   return;
@@ -48,7 +48,7 @@ test("nested insert", async () => {
     nemesis: {name: true},
   }));
 
-  const result = await q2.run(pool); //pool.queryOne(q2.toEdgeQL());
+  const result = await q2.run(pool);
 
   expect(result).toMatchObject({
     name: "villain",

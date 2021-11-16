@@ -1,10 +1,10 @@
-import {Pool, $} from "edgedb";
+import {Client, $} from "edgedb";
 import e from "../dbschema/edgeql";
 import {tc} from "./setupTeardown";
 
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
-let pool: Pool;
+let pool: Client;
 let data: TestData;
 
 beforeAll(async () => {
@@ -32,7 +32,7 @@ test("array literal", async () => {
   expect(arg.__element__.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(arg.__element__.__element__.__name__).toEqual("std::str");
 
-  const result = await pool.queryOne(e.select(arg).toEdgeQL());
+  const result = await pool.querySingle(e.select(arg).toEdgeQL());
   expect(result).toEqual(["asdf", "qwer"]);
 
   const multiArray = e.array([
@@ -73,7 +73,7 @@ test("tuple literal", async () => {
   expect(myTuple.__element__.__items__[0].__name__).toEqual("std::str");
   expect(myTuple.__element__.__items__[1].__kind__).toEqual($.TypeKind.scalar);
   expect(myTuple.__element__.__items__[1].__name__).toEqual("std::int64");
-  const myTupleResult = await pool.queryOne(e.select(myTuple).toEdgeQL());
+  const myTupleResult = await pool.querySingle(e.select(myTuple).toEdgeQL());
   expect(myTupleResult).toEqual(["asdf", 45]);
 
   const multiTuple = e.tuple([
@@ -132,7 +132,7 @@ test("namedTuple literal", async () => {
     $.TypeKind.scalar
   );
   expect(named.__element__.__shape__.number.__name__).toEqual("std::int64");
-  const namedResult = await pool.queryOne(e.select(named).toEdgeQL());
+  const namedResult = await pool.querySingle(e.select(named).toEdgeQL());
   expect(JSON.stringify(namedResult)).toEqual(
     JSON.stringify({string: "asdf", number: 1234})
   );

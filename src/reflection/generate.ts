@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import {DirBuilder, dts, r, t} from "./builders";
-import {connect, createPool, Connection} from "../index.node";
+import {createClient, Connection} from "../index.node";
 
 import {ConnectConfig} from "../con_utils";
 
@@ -52,10 +52,9 @@ export async function generateQB({
   console.log(`Connecting to EdgeDB instance...`);
   let cxn: Connection;
   try {
-    connect;
-    cxn = await createPool(null, {
-      connectOptions: connectionConfig,
-      maxSize: 5,
+    cxn = await createClient({
+      ...connectionConfig,
+      concurrency: 5,
     });
   } catch (e) {
     return exitWithError(`Failed to connect: ${(e as Error).message}`);
