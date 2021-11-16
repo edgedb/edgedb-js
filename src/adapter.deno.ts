@@ -1,14 +1,14 @@
-import {process} from "https://deno.land/std@0.108.0/node/process.ts";
-import {Buffer} from "https://deno.land/std@0.108.0/node/buffer.ts";
-import * as crypto from "https://deno.land/std@0.108.0/node/crypto.ts";
+import {process} from "https://deno.land/std@0.114.0/node/process.ts";
+import {Buffer} from "https://deno.land/std@0.114.0/node/buffer.ts";
+import * as crypto from "https://deno.land/std@0.114.0/node/crypto.ts";
 import {
   Sha256,
   HmacSha256,
-} from "https://deno.land/std@0.108.0/hash/sha256.ts";
-import path from "https://deno.land/std@0.108.0/node/path.ts";
-import * as _fs from "https://deno.land/std@0.115.0/fs/mod.ts";
-import EventEmitter from "https://deno.land/std@0.108.0/node/events.ts";
-import util from "https://deno.land/std@0.108.0/node/util.ts";
+} from "https://deno.land/std@0.114.0/hash/sha256.ts";
+import path from "https://deno.land/std@0.114.0/node/path.ts";
+import EventEmitter from "https://deno.land/std@0.114.0/node/events.ts";
+import util from "https://deno.land/std@0.114.0/node/util.ts";
+import {iterateReader} from "https://deno.land/std@0.114.0/streams/conversion.ts";
 
 export {Buffer, path, process, util, crypto};
 
@@ -207,7 +207,7 @@ export namespace net {
       pconn
         .then(conn => {
           this._conn = conn;
-          this._readIter = Deno.iter(conn);
+          this._readIter = iterateReader(conn);
           this.emit("connect");
           this.resume();
         })
@@ -269,7 +269,7 @@ export namespace tls {
             | string
             | null;
           this._conn = conn;
-          this._readIter = Deno.iter(conn);
+          this._readIter = iterateReader(conn);
           this.emit("secureConnect");
           this.resume();
         })

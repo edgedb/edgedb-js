@@ -65,7 +65,7 @@ jobs:
         uses: denoland/setup-deno@v1
         if: steps.release.outputs.version == 0
         with:
-          deno-version: v1.14.x
+          deno-version: v1.16.x
 
       - name: Install dev deps
         if: steps.release.outputs.version == 0
