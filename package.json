@@ -40,10 +40,13 @@
     "typescript": "^4.4.2"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json && tsc --project tsconfig.build-esm.json && ./tools/copySyntaxToDist.sh",
-    "build:esm": "tsc --project tsconfig.build-esm.json",
+    "build": "yarn build:cjs && yarn build:esm",
+    "build:esm": "tsc --project tsconfig.build-esm.json && ./tools/copySyntaxToDist.sh",
+    "build:cjs": "tsc --project tsconfig.build.json",
     "build:cli": "tsc --project tsconfig.cli.json",
-    "test": "jest --detectOpenHandles",
+    "test": "yarn test:lib && yarn test:qb",
+    "test:lib": "jest --detectOpenHandles",
+    "test:qb": "cd qb && yarn generate && yarn test",
     "lint": "tslint 'src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",

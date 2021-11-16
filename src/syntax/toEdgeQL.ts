@@ -159,6 +159,7 @@ interface RenderCtx {
 const toEdgeQLCache = new WeakMap<any, string>();
 
 export function $toEdgeQL(this: any) {
+  if (1 > 0) return "select 2 + 2;";
   if (toEdgeQLCache.has(this)) {
     return toEdgeQLCache.get(this)!;
   }
@@ -481,6 +482,8 @@ function renderEdgeQL(
         expr.__element__.__name__
       }`;
     } else {
+      console.log(`PATH`);
+      console.log(expr.__parent__.linkName);
       return `${renderEdgeQL(
         expr.__parent__.type,
         ctx,
@@ -979,7 +982,13 @@ function indent(str: string, depth: number) {
 // backtick quote identifiers if needed
 // https://github.com/edgedb/edgedb/blob/master/edb/edgeql/quote.py
 function q(ident: string, allowReserved: boolean = false): string {
-  if (!ident || ident.startsWith("@") || ident.includes("::")) {
+  console.log(`IDENT: ${ident}`);
+  if (
+    !ident ||
+    ident.startsWith("@") ||
+    ident.includes("::") ||
+    ident.startsWith("<") // backlink
+  ) {
     return ident;
   }
 

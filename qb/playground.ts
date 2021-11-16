@@ -10,6 +10,20 @@ async function run() {
   // const asdf = e.tuple([e.str, e.int64]);
   const pool = await setupTests();
 
+  const backlinkQuery = await e.select(
+    e.Hero["<characters"].$is(e.Movie),
+    () => ({
+      id: true,
+      title: true,
+    })
+  );
+  console.log(`QUERY`);
+  console.log(backlinkQuery.toEdgeQL());
+  const result = await backlinkQuery.run(pool.pool);
+  console.log(result);
+
+  if (1 > 0) return;
+
   console.log(`asdf`);
 
   console.log(e.Hero.__element__.__pointers__.villains.properties);
