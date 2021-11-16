@@ -7,7 +7,7 @@
     "tslint-plugin-prettier"
   ],
   "rules": {
-    "prettier": true,
+    "no-unused-variable": true,
     "max-line-length": {
       "options": [
         79
@@ -15,6 +15,11 @@
     },
     "new-parens": true,
     "no-arg": true,
+    "curly": [
+      true,
+      "ignore-same-line"
+    ],
+    "no-namespace": false,
     "no-conditional-assignment": true,
     "no-consecutive-blank-lines": [
       true,
@@ -34,9 +39,11 @@
     "ordered-imports": false,
     "one-line": false,
     "no-bitwise": false,
+    "array-type": false,
+    "no-empty": false,
+    "arrow-parens": false,
     "typedef": [
       true,
-      "call-signature",
       "property-declaration",
       "parameter"
     ],
@@ -54,7 +61,8 @@
   },
   "linterOptions": {
     "exclude": [
-      "**/*.deno.ts"
+      "**/*.deno.ts",
+      "**/generated/**"
     ]
   }
 }

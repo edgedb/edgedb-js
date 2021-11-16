@@ -688,7 +688,7 @@ export class ConnectionImpl {
       pause = this.buffer.feed(data);
     } catch (e: any) {
       if (this.messageWaiterReject) {
-        this.messageWaiterReject(e);
+        this.messageWaiterReject(e as Error);
       } else {
         throw e;
       }

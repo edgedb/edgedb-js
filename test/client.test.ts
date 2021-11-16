@@ -686,7 +686,7 @@ test("fetch: cal::local_time", async () => {
 
 test("fetch: duration", async () => {
   function formatLegacyDuration(duration: Duration): string {
-    function fmt(timePart: number, len = 3): string {
+    function fmt(timePart: number, len: number = 3): string {
       return Math.abs(timePart).toString().padStart(len, "0");
     }
 

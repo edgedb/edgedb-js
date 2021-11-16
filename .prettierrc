@@ -4,6 +4,6 @@
   "semi": true,
   "trailingComma": "es5",
   "bracketSpacing": false,
-  "arrowParens": "always",
+  "arrowParens": "avoid",
   "endOfLine": "auto"
 }

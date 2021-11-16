@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2018",
+    "target": "es2019",
     "module": "commonjs",
     "moduleResolution": "node",
     "declaration": true,
@@ -10,20 +10,26 @@
     "removeComments": true,
     "declarationDir": "./dist",
     "outDir": "./dist",
+    "stripInternal": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "downlevelIteration": true,
+    "baseUrl": ".",
     "typeRoots": [
       "./node_modules/@types"
     ],
-    "stripInternal": true,
-    "isolatedModules": true,
     "useDefineForClassFields": true,
     "resolveJsonModule": true
   },
   "include": [
-    "src",
-    "test"
+    "."
   ],
   "exclude": [
     "**/*.deno.ts",
-    "test/deno/*"
+    "test/deno/*",
+    "dist",
+    "qb",
   ]
 }
