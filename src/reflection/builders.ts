@@ -1,5 +1,6 @@
-import * as path from "path";
-import * as fs from "fs";
+// import * as path from "path";
+// import * as fs from "fs";
+import {fs, path, exists} from "../adapter.node";
 import {StrictMap} from "./strictMap";
 import * as genutil from "./util/genutil";
 import {importExportHelpers} from "./importExportHelpers";
@@ -673,7 +674,11 @@ export class DirBuilder {
     return buf.join("\n");
   }
 
-  write(to: string, mode: "ts" | "js+dts", moduleKind: ModuleKind): void {
+  async write(
+    to: string,
+    mode: "ts" | "js+dts",
+    moduleKind: ModuleKind
+  ): Promise<void> {
     const dir = path.normalize(to);
     for (const [fn, builder] of this._map.entries()) {
       if (builder.isEmpty()) {
@@ -683,18 +688,18 @@ export class DirBuilder {
       const dest = path.join(dir, fn);
       const destDir = path.dirname(dest);
 
-      if (!fs.existsSync(destDir)) {
-        fs.mkdirSync(destDir, {recursive: true});
+      if (!(await exists(destDir))) {
+        await fs.mkdir(destDir, {recursive: true});
       }
 
       if (mode === "ts") {
-        fs.writeFileSync(dest + ".ts", builder.render({mode: "ts"}));
+        await fs.writeFile(dest + ".ts", builder.render({mode: "ts"}));
       } else if (mode === "js+dts") {
-        fs.writeFileSync(
+        await fs.writeFile(
           dest + (moduleKind === "esm" ? ".mjs" : ".js"),
           builder.render({mode: "js", moduleKind})
         );
-        fs.writeFileSync(dest + ".d.ts", builder.render({mode: "dts"}));
+        await fs.writeFile(dest + ".d.ts", builder.render({mode: "dts"}));
       }
     }
   }

@@ -104,6 +104,7 @@ async function run({
 
   for await (const entry of walk(sourceDir, {includeDirs: false})) {
     const sourcePath = normalisePath(entry.path);
+    if (entry.path.startsWith("src/syntax")) continue;
 
     if (!sourceFilter || sourceFilter(sourcePath)) {
       sourceFilePathMap.set(sourcePath, resolveDestPath(sourcePath));

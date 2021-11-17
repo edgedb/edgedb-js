@@ -4,6 +4,8 @@ import * as path from "path";
 import * as os from "os";
 import * as net from "net";
 import * as tls from "tls";
+import * as readline from "readline";
+import {Writable} from "stream";
 
 export {path, net, crypto, fs, tls};
 
@@ -18,6 +20,34 @@ export async function exists(filepath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export function input(
+  message: string,
+  params?: {silent?: boolean}
+): Promise<string> {
+  let silent = false;
+
+  const output = !!params?.silent
+    ? new Writable({
+        write(chunk: any, encoding: string, callback: (...args: any) => void) {
+          if (!silent) process.stdout.write(chunk, encoding);
+          callback();
+        },
+      })
+    : process.stdout;
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: output,
+  });
+
+  return new Promise((resolve, rej) => {
+    rl.question(message, val => {
+      rl.close();
+      resolve(val);
+    });
+    silent = true;
+  });
 }
 
 export async function randomBytes(size: number): Promise<Buffer> {

@@ -1,11 +1,7 @@
 #!/usr/bin/env node
 
 // tslint:disable no-console
-
-import path from "path";
-import {promises as fs} from "fs";
-import readline from "readline";
-import {Writable} from "stream";
+import {path, fs, readFileUtf8, exists, input} from "../adapter.node";
 
 import {
   ConnectConfig,
@@ -213,7 +209,7 @@ OPTIONS:
       console.log(`Detected tsconfig.json, generating TypeScript files.`);
     } else {
       const packageJson = JSON.parse(
-        await fs.readFile(path.join(projectRoot, "package.json"), "utf8")
+        await readFileUtf8(path.join(projectRoot, "package.json"))
       );
       if (packageJson?.type === "module") {
         options.target = "esm";
@@ -288,7 +284,7 @@ project to exclude these files.`
 
     let gitIgnoreFile: string | null = null;
     try {
-      gitIgnoreFile = await fs.readFile(gitIgnorePath, "utf8");
+      gitIgnoreFile = await readFileUtf8(gitIgnorePath);
     } catch {}
 
     const vcsLine = path.posix.relative(projectRoot, outputDir);
@@ -329,7 +325,7 @@ async function canOverwrite(outputDir: string, options: Options) {
   let config: any = null;
   try {
     const [header, ..._config] = (
-      await fs.readFile(path.join(outputDir, "config.json"), "utf8")
+      await readFileUtf8(path.join(outputDir, "config.json"))
     ).split("\n");
     if (header === configFileHeader) {
       config = JSON.parse(_config.join("\n"));
@@ -354,15 +350,6 @@ async function canOverwrite(outputDir: string, options: Options) {
   return exitWithError(`Error: ${error}`);
 }
 
-async function exists(filepath: string): Promise<boolean> {
-  try {
-    await fs.stat(filepath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function isTTY() {
   return process.stdin.isTTY && process.stdout.isTTY;
 }
@@ -376,38 +363,28 @@ async function promptBoolean(prompt: string, defaultVal?: boolean) {
   return response === "y";
 }
 
-function promptEnum<Val extends string, Default extends Val>(
-  prompt: string,
+async function promptEnum<Val extends string, Default extends Val>(
+  question: string,
   vals: Val[],
   defaultVal?: Default
 ): Promise<Val> {
-  return new Promise(resolve => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
+  let response = await input(
+    `${question}[${vals.join("/")}]${
+      defaultVal !== undefined ? ` (leave blank for "${defaultVal}")` : ""
+    }\n> `
+  );
+  response = response.trim().toLowerCase();
 
-    rl.question(
-      `${prompt}[${vals.join("/")}]${
-        defaultVal !== undefined ? ` (leave blank for "${defaultVal}")` : ""
-      }\n> `,
-      (response: string) => {
-        rl.close();
-        response = response.trim().toLowerCase();
-
-        if (vals.includes(response as any)) {
-          resolve(response as Val);
-        } else if (!response && defaultVal !== undefined) {
-          resolve(defaultVal);
-        } else {
-          exitWithError(`Unknown value: '${response}'`);
-        }
-      }
-    );
-  });
+  if (vals.includes(response as any)) {
+    return response as Val;
+  } else if (!response && defaultVal !== undefined) {
+    return defaultVal as Val;
+  } else {
+    exitWithError(`Unknown value: '${response}'`);
+  }
 }
 
-function promptForPassword(username: string) {
+async function promptForPassword(username: string) {
   if (!isTTY()) {
     exitWithError(
       `Cannot use --password option in non-interactive mode. ` +
@@ -415,29 +392,7 @@ function promptForPassword(username: string) {
     );
   }
 
-  return new Promise<string>(resolve => {
-    let silent = false;
-
-    const silentStdout = new Writable({
-      write(chunk: any, encoding: string, callback: (...args: any) => void) {
-        if (!silent) process.stdout.write(chunk, encoding);
-        callback();
-      },
-    });
-
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: silentStdout,
-      terminal: true,
-    });
-
-    rl.question(`Password for '${username}': `, (password: string) => {
-      rl.close();
-      resolve(password);
-    });
-
-    silent = true;
-  });
+  return await input(`Password for '${username}': `, {silent: true});
 }
 
 function readPasswordFromStdin() {

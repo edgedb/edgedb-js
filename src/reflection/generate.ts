@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import {fs, path, exists, readFileUtf8} from "../adapter.node";
+
 import {DirBuilder, dts, r, t} from "./builders";
 import {createClient, Connection} from "../index.node";
 
@@ -34,7 +34,7 @@ export type GeneratorParams = {
   operators: OperatorTypes;
 };
 
-export function exitWithError(message: string) {
+export function exitWithError(message: string): never {
   // tslint:disable-next-line
   console.error(message);
   process.exit(1);
@@ -220,7 +220,7 @@ export async function generateQB({
     await cxn.close();
   }
 
-  dir.write(
+  await dir.write(
     outputDir,
     target === "ts" ? "ts" : "js+dts",
     target === "cjs" ? "cjs" : "esm"
@@ -229,11 +229,11 @@ export async function generateQB({
   // write syntax files
   const syntaxDir = path.join(__dirname, "..", "syntax");
   const syntaxOutDir = path.join(outputDir, "syntax");
-  if (!fs.existsSync(syntaxOutDir)) {
-    fs.mkdirSync(syntaxOutDir);
+  if (!(await exists(syntaxOutDir))) {
+    await fs.mkdir(syntaxOutDir);
   }
 
-  const syntaxFiles = fs.readdirSync(syntaxDir);
+  const syntaxFiles = await fs.readdir(syntaxDir);
   for (const fileName of syntaxFiles) {
     const filetype = fileName.endsWith(".js")
       ? "js"
@@ -252,7 +252,7 @@ export async function generateQB({
       continue;
     }
     const filePath = path.join(syntaxDir, fileName);
-    let contents = fs.readFileSync(filePath, "utf8");
+    let contents = await readFileUtf8(filePath);
 
     // rewrite scoped import paths
     if (filetype === "js") {
@@ -281,10 +281,10 @@ export async function generateQB({
     }
 
     const outputPath = path.join(syntaxOutDir, fileName);
-    fs.writeFileSync(outputPath, contents);
+    await fs.writeFile(outputPath, contents);
   }
 
-  fs.writeFileSync(
+  await fs.writeFile(
     path.join(outputDir, "config.json"),
     `${configFileHeader}\n${JSON.stringify({target})}\n`
   );
