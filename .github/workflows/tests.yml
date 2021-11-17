@@ -74,12 +74,6 @@ jobs:
         with:
           server-version: ${{ matrix.edgedb-version }}
 
-      - name: Generate query builder
-        working-directory: ./qb
-        run: |
-          edgedb project init --non-interactive
-          yarn generate
-
       - name: Run functional tests
         run: |
           yarn test
