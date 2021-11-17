@@ -42,7 +42,7 @@ export function input(
     : process.stdout;
   const rl = readline.createInterface({
     input: process.stdin,
-    output: output,
+    output,
   });
 
   return new Promise((resolve, rej) => {
