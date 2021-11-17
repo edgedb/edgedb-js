@@ -33,15 +33,7 @@ import {
 
 import {CodecsRegistry} from "./codecs/registry";
 
-import {
-  ALLOW_MODIFICATIONS,
-  INNER,
-  OPTIONS,
-  QueryArgs,
-  Connection,
-  Client,
-  IClientStats,
-} from "./ifaces";
+import {INNER, OPTIONS, QueryArgs, Connection, Client} from "./ifaces";
 import {Transaction} from "./transaction";
 
 const DETACH = Symbol("detach");
@@ -284,33 +276,6 @@ export interface ClientOptions {
   concurrency?: number;
 }
 
-export class ClientStats implements IClientStats {
-  private _queueLength: number;
-  private _openConnections: number;
-
-  constructor(queueLength: number, openConnections: number) {
-    this._queueLength = queueLength;
-    this._openConnections = openConnections;
-  }
-
-  /**
-   * Get the length of the queue used to obtain a DB connection.
-   * The queue length indicates the count of pending operations, awaiting for
-   * an available connection. If your application is receiving more
-   * requests than the server can handle, this can be the bottleneck.
-   */
-  get queueLength(): number {
-    return this._queueLength;
-  }
-
-  /**
-   * Get the length of currently open connections of the client pool.
-   */
-  get openConnections(): number {
-    return this._openConnections;
-  }
-}
-
 /**
  * A connection pool.
  *
@@ -321,7 +286,6 @@ export class ClientStats implements IClientStats {
  * Pools are created by calling :func:`~edgedb.pool.create`.
  */
 export class ClientShell implements Client {
-  [ALLOW_MODIFICATIONS]: never;
   private impl: ClientImpl;
   private options: Options;
 
@@ -351,16 +315,6 @@ export class ClientShell implements Client {
     return result;
   }
 
-  /**
-   * @deprecated
-   * Get information about the current state of the client.
-   */
-  getStats(): ClientStats {
-    // tslint:disable-next-line: no-console
-    console.warn(`The 'Client.getStats()' method is deprecated`);
-    return this.impl.getStats();
-  }
-
   async ensureConnected(): Promise<this> {
     await this.impl.ensureConnected();
     return this;
@@ -371,37 +325,6 @@ export class ClientShell implements Client {
     const client = new ClientShell(dsn, options ?? {});
     client.impl.initialize();
     return client;
-  }
-
-  /**
-   * @deprecated
-   */
-  async rawTransaction<T>(
-    action: (transaction: Transaction) => Promise<T>
-  ): Promise<T> {
-    // tslint:disable-next-line: no-console
-    console.warn(
-      `The 'Client.rawTransaction()' method is deprecated, instead try ` +
-        `'client.withRetryOptions({attempts: 1}).retryingTransaction()'`
-    );
-    const conn = await this.impl.acquire(this.options);
-    try {
-      return await conn.rawTransaction(action);
-    } finally {
-      await this.impl.release(conn);
-    }
-  }
-
-  async retryingTransaction<T>(
-    action: (transaction: Transaction) => Promise<T>
-  ): Promise<T> {
-    // tslint:disable-next-line: no-console
-    console.warn(
-      `The 'Client.retryingTransaction()' method has been renamed ` +
-        `to 'Client.transaction()'`
-    );
-
-    return this.transaction(action);
   }
 
   async transaction<T>(
@@ -538,21 +461,18 @@ class ClientImpl {
     this._connectConfig = {...options, ...(dsn !== undefined ? {dsn} : {})};
   }
 
-  /**
-   * Get information about the current state of the client.
-   */
-  getStats(): ClientStats {
-    return new ClientStats(
-      this._queue.pending,
-      this._holders.filter(
+  _getStats(): {openConnections: number; queueLength: number} {
+    return {
+      queueLength: this._queue.pending,
+      openConnections: this._holders.filter(
         (holder) =>
           holder.connection !== null && holder.connection.isClosed() === false
-      ).length
-    );
+      ).length,
+    };
   }
 
   async ensureConnected(): Promise<void> {
-    if (this.getStats().openConnections > 0) {
+    if (this._getStats().openConnections > 0) {
       return;
     }
     const connHolder = this._holders[0];
@@ -794,26 +714,6 @@ class ClientImpl {
 
 export type ConnectOptions = ConnectConfig & ClientOptions;
 
-function _createClientWithLegacyArgs(
-  dsnOrInstanceName?: string | ConnectOptions | null,
-  options?: ConnectOptions | null
-): Client {
-  if (typeof dsnOrInstanceName === "string") {
-    return ClientShell.create(dsnOrInstanceName, options);
-  } else {
-    if (dsnOrInstanceName != null) {
-      // tslint:disable-next-line: no-console
-      console.warn(
-        "`options` as the first argument to `edgedb.createClient` is " +
-          "deprecated, use " +
-          "`edgedb.createClient(dsnOrInstanceName, options)`"
-      );
-    }
-    const opts = {...dsnOrInstanceName, ...options};
-    return ClientShell.create(undefined, opts);
-  }
-}
-
 export function createClient(
   options?: string | ConnectOptions | null
 ): Client {
@@ -822,49 +722,4 @@ export function createClient(
   } else {
     return ClientShell.create(undefined, options);
   }
-}
-
-/**
- * @deprecated
- */
-export function connect(
-  dsnOrInstanceName?: string | ConnectConfig | null,
-  options?: ConnectConfig | null
-): Promise<Client> {
-  // tslint:disable-next-line: no-console
-  console.warn(
-    `The 'connect()' API is deprecated, use 'createClient()' instead`
-  );
-  return _createClientWithLegacyArgs(dsnOrInstanceName, {
-    concurrency: 1,
-    ...options,
-  }).ensureConnected();
-}
-
-interface PoolOptions {
-  connectOptions?: ConnectConfig;
-  minSize?: number;
-  maxSize?: number;
-}
-
-/**
- * @deprecated
- */
-export function createPool(
-  dsnOrInstanceName?: string | PoolOptions | null,
-  options?: PoolOptions | null
-): Promise<Client> {
-  // tslint:disable-next-line: no-console
-  console.warn(
-    `The 'createPool()' API is deprecated, use 'createClient()' instead`
-  );
-  const [dsn, opts] =
-    typeof dsnOrInstanceName === "string"
-      ? [dsnOrInstanceName, options]
-      : [undefined, {...dsnOrInstanceName, ...options}];
-
-  return _createClientWithLegacyArgs(dsn, {
-    ...opts?.connectOptions,
-    concurrency: opts?.maxSize,
-  }).ensureConnected();
 }

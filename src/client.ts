@@ -37,7 +37,6 @@ import {NamedTupleCodec} from "./codecs/namedtuple";
 import {ObjectCodec} from "./codecs/object";
 import {NULL_CODEC, NullCodec} from "./codecs/codecs";
 import {
-  ALLOW_MODIFICATIONS,
   INNER,
   OPTIONS,
   Executor,
@@ -134,7 +133,6 @@ export function borrowError(reason: BorrowReason): errors.EdgeDBError {
 }
 
 export class StandaloneConnection implements Connection {
-  [ALLOW_MODIFICATIONS]: never;
   [INNER]: InnerConnection;
   [OPTIONS]: Options;
 
@@ -171,24 +169,6 @@ export class StandaloneConnection implements Connection {
     result[OPTIONS] = this[OPTIONS].withRetryOptions(opt);
     return result;
   }
-
-  async rawTransaction<T>(
-    action: (transaction: Transaction) => Promise<T>
-  ): Promise<T> {
-    let result: T;
-    const transaction = new Transaction(this);
-    await transaction.start();
-    try {
-      result = await action(transaction);
-      await transaction.commit();
-    } catch (err) {
-      await transaction.rollback();
-      throw err;
-    }
-    return result;
-  }
-
-  retryingTransaction = this.transaction;
 
   async transaction<T>(
     action: (transaction: Transaction) => Promise<T>

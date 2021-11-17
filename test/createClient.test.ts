@@ -22,13 +22,15 @@ import {getClient, getConnectOptions} from "./testbase";
 test("lazy connect + concurrency", async () => {
   let client = getClient();
 
-  expect(client.getStats().openConnections).toEqual(0);
+  // @ts-ignore
+  expect(client.impl._getStats().openConnections).toEqual(0);
   // @ts-ignore
   expect(client.impl._holders.length).toEqual(1);
 
   await client.query(`select 1`);
 
-  expect(client.getStats().openConnections).toEqual(1);
+  // @ts-ignore
+  expect(client.impl._getStats().openConnections).toEqual(1);
   // @ts-ignore
   expect(client.impl._holders.length).toBeGreaterThan(1);
 
@@ -36,19 +38,22 @@ test("lazy connect + concurrency", async () => {
 
   client = getClient({concurrency: 3});
 
-  expect(client.getStats().openConnections).toEqual(0);
+  // @ts-ignore
+  expect(client.impl._getStats().openConnections).toEqual(0);
   // @ts-ignore
   expect(client.impl._holders.length).toEqual(3);
 
   await client.ensureConnected();
 
-  expect(client.getStats().openConnections).toEqual(1);
+  // @ts-ignore
+  expect(client.impl._getStats().openConnections).toEqual(1);
   // @ts-ignore
   expect(client.impl._holders.length).toEqual(3);
 
   await client.ensureConnected();
 
-  expect(client.getStats().openConnections).toEqual(1);
+  // @ts-ignore
+  expect(client.impl._getStats().openConnections).toEqual(1);
 
   const promises = Promise.all(
     Array(10)
@@ -56,11 +61,13 @@ test("lazy connect + concurrency", async () => {
       .map((_, i) => client.query(`select <int16>$i`, {i}))
   );
 
-  expect(client.getStats().queueLength).toEqual(7);
+  // @ts-ignore
+  expect(client.impl._getStats().queueLength).toEqual(7);
 
   await promises;
 
-  expect(client.getStats().openConnections).toEqual(3);
+  // @ts-ignore
+  expect(client.impl._getStats().openConnections).toEqual(3);
 
   await client.close();
 });

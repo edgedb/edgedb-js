@@ -7,8 +7,7 @@ import * as readline from "readline";
 import {ConnectConfig} from "../src/con_utils";
 import {Connection} from "../src/ifaces";
 
-import {connect} from "../src/index.node";
-import {promisify} from "util";
+import {createClient} from "../src/index.node";
 
 type PromiseCallback = () => void;
 
@@ -177,7 +176,7 @@ const startServer = async (
 };
 
 const connectToServer = async (config: ConnectConfig): Promise<Connection> => {
-  const con = await connect(undefined, config);
+  const con = createClient(config);
 
   try {
     await con.execute(`

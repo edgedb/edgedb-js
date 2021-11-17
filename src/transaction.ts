@@ -18,7 +18,7 @@
 import * as errors from "./errors";
 import {BorrowReason, Connection} from "./ifaces";
 import {Executor, QueryArgs} from "./ifaces";
-import {ALLOW_MODIFICATIONS, INNER} from "./ifaces";
+import {INNER} from "./ifaces";
 import {getUniqueId} from "./utils";
 import {ConnectionImpl, InnerConnection, borrowError} from "./client";
 import {StandaloneConnection} from "./client";
@@ -36,7 +36,6 @@ export enum TransactionState {
 export const START_TRANSACTION_IMPL = Symbol("START_TRANSACTION_IMPL");
 
 export class Transaction implements Executor {
-  [ALLOW_MODIFICATIONS]: never;
   _connection: StandaloneConnection;
   _inner?: InnerConnection;
   _impl?: ConnectionImpl;

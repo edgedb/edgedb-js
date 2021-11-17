@@ -20,11 +20,9 @@ export {createClient} from "./pool";
 import {createClient} from "./pool";
 export default createClient;
 
-export {connect, createPool} from "./pool";
-
 export {RawConnection as _RawConnection} from "./client";
 
-export type {Connection, Client} from "./ifaces";
+export type {Executor, Client} from "./ifaces";
 
 export {IsolationLevel, RetryCondition, RetryOptions} from "./options";
 export {defaultBackoff} from "./options";
