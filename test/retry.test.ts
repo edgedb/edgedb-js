@@ -19,7 +19,7 @@
 import * as errors from "../src/errors";
 import {getClient} from "./testbase";
 import {Transaction, TransactionState} from "../src/transaction";
-import {Connection} from "../src/ifaces";
+import {Client, Connection} from "../src/ifaces";
 import {IsolationLevel, RetryOptions, defaultBackoff} from "../src/options";
 
 class Barrier {
@@ -59,7 +59,7 @@ async function run(test: (con: Connection) => Promise<void>): Promise<void> {
 }
 
 async function run2(
-  test: (con1: Connection, con2: Connection) => Promise<void>
+  test: (con1: Client, con2: Client) => Promise<void>
 ): Promise<void> {
   const connection = getClient();
   try {

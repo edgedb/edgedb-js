@@ -21,7 +21,7 @@ import {ConnectConfig} from "./con_utils";
 import {parseConnectArguments, NormalizedConnectConfig} from "./con_utils";
 import {LifoQueue} from "./primitives/queues";
 
-import {ClientConnection, DETACH, HOLDER} from "./client";
+import {ClientConnection, HOLDER} from "./client";
 import {
   Options,
   RetryOptions,
@@ -72,7 +72,7 @@ export class ClientConnectionHolder {
     }
 
     this._connection = await this._client.getNewConnection();
-    this._connection[INNER][HOLDER] = this;
+    this._connection[HOLDER] = this;
     this._generation = this._client.generation;
   }
 
@@ -145,15 +145,13 @@ export class ClientConnectionHolder {
       return;
     }
 
-    await this._connection?.[INNER].connection?.resetState();
+    await this._connection?.connection?.resetState();
 
     if (!this._inUse.done) {
       await this._inUse.setResult();
     }
 
     this._inUse = null;
-
-    this._connection = this._connection![DETACH]();
 
     // Put ourselves back to the pool queue.
     this._client.enqueue(this);
@@ -448,7 +446,7 @@ class ClientImpl {
       this._codecsRegistry
     );
     const suggestedConcurrency =
-      connection[INNER].connection?.serverSettings.suggested_pool_concurrency;
+      connection.connection?.serverSettings.suggested_pool_concurrency;
     if (suggestedConcurrency) {
       this._suggestedConcurrency = suggestedConcurrency;
       this._resizeHolderPool();
@@ -511,7 +509,7 @@ class ClientImpl {
       );
     }
 
-    const holder = connection[INNER][HOLDER];
+    const holder = connection[HOLDER];
     if (holder == null) {
       // Already released, do nothing
       return;

@@ -24,7 +24,7 @@ import {TransactionOptions, IsolationLevel} from "../src/options";
 
 const typename = "TransactionTest";
 
-async function run(test: (con: Connection) => Promise<void>): Promise<void> {
+async function run(test: (con: Client) => Promise<void>): Promise<void> {
   const client = getClient();
 
   try {

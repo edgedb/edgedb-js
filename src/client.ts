@@ -46,68 +46,19 @@ import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 import {RawConnection} from "./rawConn";
 import {ClientConnectionHolder} from "./pool";
 
-export const DETACH = Symbol("detach");
-export const DETACHED = Symbol("detached");
 export const HOLDER = Symbol("holder");
 
-export function borrowError(reason: BorrowReason): errors.EdgeDBError {
-  let text;
-  switch (reason) {
-    case BorrowReason.TRANSACTION:
-      text =
-        "Connection object is borrowed for the transaction. " +
-        "Use the methods on transaction object instead.";
-      break;
-    case BorrowReason.QUERY:
-      text =
-        "Another operation is in progress. Use multiple separate " +
-        "connections to run operations concurrently.";
-      break;
-    case BorrowReason.CLOSE:
-      text =
-        "Connection is being closed. Use multiple separate " +
-        "connections to run operations concurrently.";
-      break;
-  }
-  throw new errors.InterfaceError(text);
-}
-
 export class ClientConnection implements Connection {
-  declare [INNER]: ClientInnerConnection;
+  connection?: RawConnection;
   [OPTIONS]: Options;
+  private [HOLDER]: ClientConnectionHolder | null;
 
   /** @internal */
-  constructor(config: NormalizedConnectConfig, registry: CodecsRegistry) {
-    this.initInner(config, registry);
+  constructor(
+    private config: NormalizedConnectConfig,
+    private registry: CodecsRegistry
+  ) {
     this[OPTIONS] = Options.defaults();
-  }
-
-  protected initInner(
-    config: NormalizedConnectConfig,
-    registry: CodecsRegistry
-  ): void {
-    this[INNER] = new ClientInnerConnection(config, registry);
-  }
-
-  protected shallowClone(): this {
-    const result = Object.create(this.constructor.prototype);
-    result[INNER] = this[INNER];
-    result[OPTIONS] = this[OPTIONS];
-    return result;
-  }
-
-  withTransactionOptions(
-    opt: TransactionOptions | SimpleTransactionOptions
-  ): this {
-    const result = this.shallowClone();
-    result[OPTIONS] = this[OPTIONS].withTransactionOptions(opt);
-    return result;
-  }
-
-  withRetryOptions(opt: RetryOptions | SimpleRetryOptions): this {
-    const result = this.shallowClone();
-    result[OPTIONS] = this[OPTIONS].withRetryOptions(opt);
-    return result;
   }
 
   async transaction<T>(
@@ -155,183 +106,84 @@ export class ClientConnection implements Connection {
   }
 
   async close(): Promise<void> {
-    const borrowed_for = this[INNER].borrowedFor;
-    if (borrowed_for) {
-      throw borrowError(borrowed_for);
-    }
-    this[INNER].borrowedFor = BorrowReason.CLOSE;
     try {
-      try {
-        const conn = this[INNER].connection;
-        if (conn) {
-          await conn.close();
-        }
-        this[INNER].connection = undefined;
-      } finally {
-        this.cleanup();
+      if (this.connection) {
+        await this.connection.close();
       }
+      this.connection = undefined;
     } finally {
-      this[INNER].borrowedFor = undefined;
+      this.cleanup();
     }
   }
 
   protected cleanup(): void {
-    const holder = this[INNER][HOLDER];
+    const holder = this[HOLDER];
     if (holder) {
       holder._releaseOnClose();
     }
   }
 
-  [DETACH](): ClientConnection | null {
-    const result = this.shallowClone();
-    const inner = this[INNER];
-    const holder = inner[HOLDER];
-    const detached = inner[DETACHED];
-    inner[HOLDER] = null;
-    inner[DETACHED] = true;
-    result[INNER] = inner.detach();
-    result[INNER][HOLDER] = holder;
-    result[INNER][DETACHED] = detached;
-    return result;
+  isClosed(): boolean {
+    return this.connection?.isClosed() ?? false;
   }
 
-  isClosed(): boolean {
-    return this[INNER]._isClosed;
+  async _getConnection(
+    singleConnect: boolean = false
+  ): Promise<RawConnection> {
+    if (!this.connection || this.connection.isClosed()) {
+      this.connection = singleConnect
+        ? await RawConnection.connectWithTimeout(
+            this.config.connectionParams.address,
+            this.config,
+            this.registry
+          )
+        : await retryingConnect(this.config, this.registry);
+    }
+    return this.connection;
   }
 
   async execute(query: string): Promise<void> {
-    const inner = this[INNER];
-    const borrowed_for = inner.borrowedFor;
-    if (borrowed_for) {
-      throw borrowError(borrowed_for);
-    }
-    inner.borrowedFor = BorrowReason.QUERY;
-    let connection = inner.connection;
-    if (!connection || connection.isClosed()) {
-      connection = await inner.reconnect();
-    }
-    try {
-      return await connection.execute(query);
-    } finally {
-      inner.borrowedFor = undefined;
-    }
+    const conn = await this._getConnection();
+    return await conn.execute(query);
   }
 
   async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
-    const inner = this[INNER];
-    const borrowed_for = inner.borrowedFor;
-    if (borrowed_for) {
-      throw borrowError(borrowed_for);
-    }
-    inner.borrowedFor = BorrowReason.QUERY;
-    let connection = inner.connection;
-    if (!connection || connection.isClosed()) {
-      connection = await inner.reconnect();
-    }
-    try {
-      return await connection.fetch(query, args, false, false);
-    } finally {
-      inner.borrowedFor = undefined;
-    }
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, false, false);
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    const inner = this[INNER];
-    const borrowed_for = inner.borrowedFor;
-    if (borrowed_for) {
-      throw borrowError(borrowed_for);
-    }
-    inner.borrowedFor = BorrowReason.QUERY;
-    let connection = inner.connection;
-    if (!connection || connection.isClosed()) {
-      connection = await inner.reconnect();
-    }
-    try {
-      return await connection.fetch(query, args, true, false);
-    } finally {
-      inner.borrowedFor = undefined;
-    }
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, true, false);
   }
 
   async querySingle<T = unknown>(
     query: string,
     args?: QueryArgs
   ): Promise<T | null> {
-    const inner = this[INNER];
-    const borrowed_for = inner.borrowedFor;
-    if (borrowed_for) {
-      throw borrowError(borrowed_for);
-    }
-    inner.borrowedFor = BorrowReason.QUERY;
-    let connection = inner.connection;
-    if (!connection || connection.isClosed()) {
-      connection = await inner.reconnect();
-    }
-    try {
-      return await connection.fetch(query, args, false, true);
-    } finally {
-      inner.borrowedFor = undefined;
-    }
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, false, true);
   }
 
   async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
-    const inner = this[INNER];
-    const borrowed_for = inner.borrowedFor;
-    if (borrowed_for) {
-      throw borrowError(borrowed_for);
-    }
-    inner.borrowedFor = BorrowReason.QUERY;
-    let connection = inner.connection;
-    if (!connection || connection.isClosed()) {
-      connection = await inner.reconnect();
-    }
-    try {
-      return await connection.fetch(query, args, true, true);
-    } finally {
-      inner.borrowedFor = undefined;
-    }
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, true, true);
   }
 
   async queryRequiredSingle<T = unknown>(
     query: string,
     args?: QueryArgs
   ): Promise<T> {
-    const inner = this[INNER];
-    const borrowed_for = inner.borrowedFor;
-    if (borrowed_for) {
-      throw borrowError(borrowed_for);
-    }
-    inner.borrowedFor = BorrowReason.QUERY;
-    let connection = inner.connection;
-    if (!connection || connection.isClosed()) {
-      connection = await inner.reconnect();
-    }
-    try {
-      return await connection.fetch(query, args, false, true, true);
-    } finally {
-      inner.borrowedFor = undefined;
-    }
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, false, true, true);
   }
 
   async queryRequiredSingleJSON(
     query: string,
     args?: QueryArgs
   ): Promise<string> {
-    const inner = this[INNER];
-    const borrowed_for = inner.borrowedFor;
-    if (borrowed_for) {
-      throw borrowError(borrowed_for);
-    }
-    inner.borrowedFor = BorrowReason.QUERY;
-    let connection = inner.connection;
-    if (!connection || connection.isClosed()) {
-      connection = await inner.reconnect();
-    }
-    try {
-      return await connection.fetch(query, args, true, true, true);
-    } finally {
-      inner.borrowedFor = undefined;
-    }
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, true, true, true);
   }
 
   /** @internal */
@@ -341,130 +193,66 @@ export class ClientConnection implements Connection {
     registry: CodecsRegistry
   ): Promise<S> {
     const conn = new this(config, registry);
-    await conn[INNER].reconnect();
+    await conn._getConnection();
     return conn;
   }
 }
 
-export class ClientInnerConnection {
-  private [DETACHED]: boolean;
-  private [HOLDER]: ClientConnectionHolder | null;
-
-  borrowedFor?: BorrowReason;
-  config: NormalizedConnectConfig;
-  connection?: RawConnection;
-  registry: CodecsRegistry;
-
-  constructor(config: NormalizedConnectConfig, registry: CodecsRegistry) {
-    this.config = config;
-    this.registry = registry;
-    this[DETACHED] = false;
-  }
-
-  async getImpl(singleAttempt: boolean = false): Promise<RawConnection> {
-    let connection = this.connection;
-    if (!connection || connection.isClosed()) {
-      connection = await this.reconnect(singleAttempt);
-    }
-    return connection;
-  }
-
-  get _isClosed(): boolean {
-    return this.connection?.isClosed() ?? false;
-  }
-
-  logConnectionError(...args: any): void {
-    if (!this.config.logging) {
-      return;
-    }
-    if (
-      this.config.inProject &&
-      !this.config.fromProject &&
-      !this.config.fromEnv
-    ) {
-      args.push(
-        `\n\n\n` +
-          `Hint: it looks like the program is running from a ` +
-          `directory initialized with "edgedb project init". ` +
-          `Consider calling "edgedb.connect()" without arguments.` +
-          `\n`
+export async function retryingConnect(
+  config: NormalizedConnectConfig,
+  registry: CodecsRegistry
+): Promise<RawConnection> {
+  const maxTime =
+    config.waitUntilAvailable === 0 ? 0 : hrTime() + config.waitUntilAvailable;
+  let lastLoggingAt = 0;
+  while (true) {
+    try {
+      return await RawConnection.connectWithTimeout(
+        config.connectionParams.address,
+        config,
+        registry
       );
-    }
-    // tslint:disable-next-line: no-console
-    console.warn(...args);
-  }
-
-  async reconnect(singleAttempt: boolean = false): Promise<RawConnection> {
-    if (this[DETACHED]) {
-      throw new errors.InterfaceError(
-        "Connection has been released to a pool"
-      );
-    }
-
-    let maxTime: number;
-    if (singleAttempt || this.config.waitUntilAvailable === 0) {
-      maxTime = 0;
-    } else {
-      maxTime = hrTime() + (this.config.waitUntilAvailable || 0);
-    }
-    let iteration = 1;
-    let lastLoggingAt = 0;
-    while (true) {
-      for (const addr of [this.config.connectionParams.address]) {
-        try {
-          this.connection = await RawConnection.connectWithTimeout(
-            addr,
-            this.config,
-            this.registry
-          );
-          return this.connection;
-        } catch (e) {
-          if (e instanceof errors.ClientConnectionError) {
-            if (e.hasTag(errors.SHOULD_RECONNECT)) {
-              const now = hrTime();
-              if (iteration > 1 && now > maxTime) {
-                // We check here for `iteration > 1` to make sure that all of
-                // `this.configs.addrs` were attempted to be connected.
-                throw e;
-              }
-              if (
-                iteration > 1 &&
-                (!lastLoggingAt || now - lastLoggingAt > 5_000)
-              ) {
-                // We check here for `iteration > 1` to only log
-                // when all addrs of `this.configs.addrs` were attempted to
-                // be connected and we're starting to wait for the DB to
-                // become available.
-                lastLoggingAt = now;
-                this.logConnectionError(
-                  `A client connection error occurred; reconnecting because ` +
-                    `of "waitUntilAvailable=${this.config.waitUntilAvailable}".`,
-                  e
-                );
-              }
-              continue;
-            } else {
-              throw e;
-            }
-          } else {
-            // tslint:disable-next-line: no-console
-            console.error("Unexpected connection error:", e);
-            throw e; // this shouldn't happen
+    } catch (e) {
+      if (e instanceof errors.ClientConnectionError) {
+        if (e.hasTag(errors.SHOULD_RECONNECT)) {
+          const now = hrTime();
+          if (now > maxTime) {
+            throw e;
           }
+          if (
+            config.logging &&
+            (!lastLoggingAt || now - lastLoggingAt > 5_000)
+          ) {
+            lastLoggingAt = now;
+            const logMsg = [
+              `A client connection error occurred; reconnecting because ` +
+                `of "waitUntilAvailable=${config.waitUntilAvailable}".`,
+              e,
+            ];
+
+            if (config.inProject && !config.fromProject && !config.fromEnv) {
+              logMsg.push(
+                `\n\n\n` +
+                  `Hint: it looks like the program is running from a ` +
+                  `directory initialized with "edgedb project init". ` +
+                  `Consider calling "edgedb.connect()" without arguments.` +
+                  `\n`
+              );
+            }
+            // tslint:disable-next-line: no-console
+            console.warn(...logMsg);
+          }
+        } else {
+          throw e;
         }
+      } else {
+        // tslint:disable-next-line: no-console
+        console.error("Unexpected connection error:", e);
+        throw e; // this shouldn't happen
       }
-
-      iteration += 1;
-      await sleep(Math.trunc(10 + Math.random() * 200));
     }
-  }
 
-  detach(): ClientInnerConnection {
-    const impl = this.connection;
-    this.connection = undefined;
-    const result = new ClientInnerConnection(this.config, this.registry);
-    result.connection = impl;
-    return result;
+    await sleep(Math.trunc(10 + Math.random() * 200));
   }
 }
 

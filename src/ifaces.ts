@@ -76,10 +76,6 @@ export const OPTIONS = Symbol("OPTIONS");
 
 export interface Connection extends Executor {
   transaction<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
-  withTransactionOptions(
-    opt: TransactionOptions | SimpleTransactionOptions
-  ): Connection;
-  withRetryOptions(opt: RetryOptions | SimpleRetryOptions): Connection;
   close(): Promise<void>;
   isClosed(): boolean;
 }
