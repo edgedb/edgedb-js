@@ -27,15 +27,6 @@ run({
       from: "src/globals.deno.ts",
     },
   ],
-  importRewriteRules: [
-    {
-      match: /^[a-z\-]+$/,
-      replace: match => {
-        console.log(`std: ${match}`);
-        return `https://deno.land/std/${match}/mod.ts`;
-      },
-    },
-  ],
 });
 
 const denoTestFiles = new Set([
@@ -67,13 +58,6 @@ run({
           match.endsWith(".ts") ? "" : ".ts"
         }`,
     },
-    // {
-    //   match: /^[a-z\-]+$/,
-    //   replace: match => {
-    //     console.log(`matched ${match}`);
-    //     return `https://deno.land/std/${match}/mod.ts`;
-    //   },
-    // },
   ],
   injectImports: [
     {
@@ -120,8 +104,6 @@ async function run({
 
   for await (const entry of walk(sourceDir, {includeDirs: false})) {
     const sourcePath = normalisePath(entry.path);
-    if (entry.path.startsWith("src/syntax")) continue;
-    if (entry.path.startsWith("src/reflection/cli")) continue;
 
     if (!sourceFilter || sourceFilter(sourcePath)) {
       sourceFilePathMap.set(sourcePath, resolveDestPath(sourcePath));
