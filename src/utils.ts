@@ -28,6 +28,12 @@ export function getUniqueId(prefix: string = ""): string {
   return `_edgedb_${prefix}_${id.toString(16)}_`;
 }
 
+export function sleep(durationMillis: number): Promise<void> {
+  return new Promise((accept) => {
+    setTimeout(() => accept(), durationMillis);
+  });
+}
+
 export function versionGreaterThan(
   left: ProtocolVersion,
   right: ProtocolVersion

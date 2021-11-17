@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-import {BufferError, WriteMessageBuffer} from "../src/buffer";
-import * as chars from "../src/chars";
+import {BufferError, WriteMessageBuffer} from "../src/primitives/buffer";
+import * as chars from "../src/primitives/chars";
 
 test("matches edgedb-python packing", () => {
   const w: WriteMessageBuffer = new WriteMessageBuffer();

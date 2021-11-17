@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import LRU from "../src/lru";
+import LRU from "../src/primitives/lru";
 
 test("invalid capacity", () => {
   expect(() => {

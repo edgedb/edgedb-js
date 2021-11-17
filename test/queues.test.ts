@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {LifoQueue} from "../src/queues";
+import {LifoQueue} from "../src/primitives/queues";
 
 test("LifoQueue `get` awaits for items in the queue", async () => {
   let result = -1;

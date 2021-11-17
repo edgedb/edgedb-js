@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import * as bi from "./bigint";
+import * as bi from "./primitives/bigint";
 import {ymd2ord, ord2ymd} from "./datatypes/dateutil";
 
 /* A compatibility layer for symbols/functions required in both

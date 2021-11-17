@@ -17,7 +17,7 @@
  */
 
 import {decodeInt64ToString} from "../src/compat";
-import {WriteBuffer} from "../src/buffer";
+import {WriteBuffer} from "../src/primitives/buffer";
 
 test("int64 rendering", () => {
   const genInt = (min: number, max: number): number =>

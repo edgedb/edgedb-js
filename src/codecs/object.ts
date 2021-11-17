@@ -17,7 +17,7 @@
  */
 
 import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
-import {ReadBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ONE, AT_LEAST_ONE} from "./consts";
 import {
   generateType,

@@ -19,7 +19,7 @@
 import * as errors from "./errors";
 import {ConnectConfig} from "./con_utils";
 import {parseConnectArguments, NormalizedConnectConfig} from "./con_utils";
-import {LifoQueue} from "./queues";
+import {LifoQueue} from "./primitives/queues";
 
 import {ClientConnection, DETACH, HOLDER} from "./client";
 import {
@@ -34,59 +34,7 @@ import {CodecsRegistry} from "./codecs/registry";
 
 import {INNER, OPTIONS, QueryArgs, Connection, Client} from "./ifaces";
 import {Transaction} from "./transaction";
-
-export class Deferred<T> {
-  private _promise: Promise<T | undefined>;
-  private _resolve?: (value?: T | PromiseLike<T> | undefined) => void;
-  private _reject?: (reason?: any) => void;
-  private _result: T | PromiseLike<T> | undefined;
-  private _done: boolean;
-
-  get promise(): Promise<T | undefined> {
-    return this._promise;
-  }
-
-  get done(): boolean {
-    return this._done;
-  }
-
-  get result(): T | PromiseLike<T> | undefined {
-    if (!this._done) {
-      throw new Error("The deferred is not resolved.");
-    }
-    return this._result;
-  }
-
-  async setResult(value?: T | PromiseLike<T> | undefined): Promise<void> {
-    while (!this._resolve) {
-      await new Promise<void>((resolve) => process.nextTick(resolve));
-    }
-    this._resolve(value);
-  }
-
-  async setFailed(reason?: any): Promise<void> {
-    while (!this._reject) {
-      await new Promise<void>((resolve) => process.nextTick(resolve));
-    }
-    this._reject(reason);
-  }
-
-  constructor() {
-    this._done = false;
-    this._reject = undefined;
-    this._resolve = undefined;
-
-    this._promise = new Promise((resolve, reject) => {
-      this._reject = reject;
-
-      this._resolve = (value?: T | PromiseLike<T> | undefined) => {
-        this._done = true;
-        this._result = value;
-        resolve(value);
-      };
-    });
-  }
-}
+import {Deferred} from "./primitives/deferred";
 
 export class ClientConnectionHolder {
   private _client: ClientImpl;

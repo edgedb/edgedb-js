@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-import {ReadBuffer} from "../buffer";
-import LRU from "../lru";
+import {ReadBuffer} from "../primitives/buffer";
+import LRU from "../primitives/lru";
 import {ICodec, uuid, ScalarCodec} from "./ifaces";
 import {NULL_CODEC, SCALAR_CODECS} from "./codecs";
 import {NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES} from "./consts";

@@ -20,10 +20,11 @@ import {BorrowReason, Connection} from "./ifaces";
 import {Executor, QueryArgs} from "./ifaces";
 import {INNER} from "./ifaces";
 import {getUniqueId} from "./utils";
-import {ConnectionImpl, borrowError, ClientInnerConnection} from "./client";
+import {borrowError, ClientInnerConnection} from "./client";
 import {ClientConnection} from "./client";
 import {Set} from "./datatypes/set";
 import {TransactionOptions, IsolationLevel} from "./options";
+import {RawConnection} from "./rawConn";
 
 export enum TransactionState {
   NEW = 0,
@@ -38,7 +39,7 @@ export const START_TRANSACTION_IMPL = Symbol("START_TRANSACTION_IMPL");
 export class Transaction implements Executor {
   _connection: ClientConnection;
   _inner?: ClientInnerConnection;
-  _impl?: ConnectionImpl;
+  _impl?: RawConnection;
   _deferrable: boolean;
   _isolation: IsolationLevel;
   _readonly: boolean;
@@ -204,7 +205,7 @@ export class Transaction implements Executor {
       this._opInProgress = false;
     }
   }
-  private getConn(): ConnectionImpl {
+  private getConn(): RawConnection {
     const conn = this._impl;
     if (!conn) {
       throw new errors.InterfaceError("Transaction is not started");

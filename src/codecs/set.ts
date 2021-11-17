@@ -17,7 +17,7 @@
  */
 
 import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
-import {WriteBuffer, ReadBuffer} from "../buffer";
+import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
 import {ArrayCodec} from "./array";
 import {Set} from "../datatypes/set";
 

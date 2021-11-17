@@ -19,8 +19,8 @@
 import char, * as chars from "./chars";
 import {RingBuffer} from "./ring";
 import * as bi from "./bigint";
-import * as compat from "./compat";
-import {MessageHeaders, HeaderCodes} from "./ifaces";
+import * as compat from "../compat";
+import {MessageHeaders, HeaderCodes} from "../ifaces";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE: number = 4096;

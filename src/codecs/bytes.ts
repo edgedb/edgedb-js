@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
 
 export class BytesCodec extends ScalarCodec implements ICodec {

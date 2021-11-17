@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {BoolCodec} from "./boolean";
 import {ICodec, uuid, Codec, CodecKind} from "./ifaces";
 import {
