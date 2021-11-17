@@ -9,7 +9,7 @@ import {Connection} from "../src/ifaces";
 
 import {connect} from "../src/index.node";
 
-const getServerInfo = async (
+export const getServerInfo = async (
   filename: string
 ): Promise<{
   port: number;
@@ -37,7 +37,7 @@ const getServerInfo = async (
   return JSON.parse(line.replace("READY=", ""));
 };
 
-const getWSLPath = (path: string): string => {
+export const getWSLPath = (path: string): string => {
   return path.replace("C:", "/mnt/c").split("\\").join("/").toLowerCase();
 };
 
@@ -45,14 +45,14 @@ const generateTempID = (): number => {
   return Math.floor(Math.random() * 999999999);
 };
 
-const generateStatusFileName = (tag: string): string => {
+export const generateStatusFileName = (tag: string): string => {
   return path.join(
     os.tmpdir(),
     `edgedb-js-status-file-${tag}-${generateTempID()}`
   );
 };
 
-const getServerCommand = (statusFile: string): string[] => {
+export const getServerCommand = (statusFile: string): string[] => {
   let srvcmd = "edgedb-server";
   if (process.env.EDGEDB_SERVER_BIN) {
     srvcmd = process.env.EDGEDB_SERVER_BIN;
@@ -88,7 +88,7 @@ const getServerCommand = (statusFile: string): string[] => {
   return args;
 };
 
-const startServer = async (
+export const startServer = async (
   cmd: string[],
   statusFile: string,
   env: {[key: string]: string} = {}
@@ -174,7 +174,9 @@ const startServer = async (
   return {config, proc};
 };
 
-const connectToServer = async (config: ConnectConfig): Promise<Connection> => {
+export const connectToServer = async (
+  config: ConnectConfig
+): Promise<Connection> => {
   const con = await connect(undefined, config);
 
   try {

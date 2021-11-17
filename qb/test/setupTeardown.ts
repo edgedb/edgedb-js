@@ -1,5 +1,6 @@
 import * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
+import {Client} from "../../src/ifaces";
 export {tc};
 // insert tony
 // insert cap
@@ -28,7 +29,12 @@ interface Movie {
 }
 
 export async function setupTests() {
-  const pool = await edgedb.createClient();
+  const opts = JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!);
+  const pool: edgedb.Client = edgedb.createClient(opts);
+
+  if (!pool) {
+    throw new Error("No client found.");
+  }
 
   await cleanupData(pool);
 

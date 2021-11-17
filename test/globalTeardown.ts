@@ -1,7 +1,7 @@
 import * as child_process from "child_process";
 import {Connection} from "../src/ifaces";
 
-const shutdown = async (
+export const shutdown = async (
   proc: child_process.ChildProcess,
   conn: Connection
 ) => {

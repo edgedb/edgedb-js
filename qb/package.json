@@ -4,11 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
+    "test": "yarn pretest && NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
     "generate": "edgedb-generate",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",
-    "build": "tsc --project tsconfig.build.json"
+    "build": "tsc --project tsconfig.build.json",
+    "pretest": "ts-node test/globalSetup.ts"
   },
   "keywords": [],
   "author": "Colin McDonnell",
