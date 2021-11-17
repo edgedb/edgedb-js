@@ -53,6 +53,10 @@ async function generateQB(config: ConnectConfig) {
 }
 
 export default async () => {
+  if (process.env["EDGEDB_TEST_USE_LOCAL"]) {
+    console.log(`\nSkipping EdgeDB test cluster initialization.`);
+    return;
+  }
   // tslint:disable-next-line
   console.log("\nStarting EdgeDB test cluster...");
 
@@ -88,6 +92,9 @@ export default async () => {
   console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);
 };
 
+// the query builder must be generated
+// prior to "yarn test". otherwise the generated
+// TS files are not recognized.
 async function prejestSetup() {
   console.log(`Pre-Jest setup...`);
   const statusFile = generateStatusFileName("node");

@@ -29,7 +29,9 @@ interface Movie {
 }
 
 export async function setupTests() {
-  const opts = JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!);
+  const opts = process.env._JEST_EDGEDB_CONNECT_CONFIG
+    ? JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG || "")
+    : undefined;
   const pool: edgedb.Client = edgedb.createClient(opts);
 
   if (!pool) {

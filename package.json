@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",
-    "@types/node": "^13.1.6",
+    "@types/node": "14",
     "get-stdin": "^7.0.0",
     "in-publish": "^2.0.0",
     "jest": "^26.6.3",
@@ -45,7 +45,7 @@
     "build:cjs": "tsc --project tsconfig.build.json",
     "build:cli": "tsc --project tsconfig.cli.json",
     "test": "jest --detectOpenHandles",
-    "test:all": "yarn test:lib && yarn test:qb",
+    "test:all": "yarn test && yarn test:qb",
     "test:qb": "cd qb && yarn test",
     "lint": "tslint 'src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",

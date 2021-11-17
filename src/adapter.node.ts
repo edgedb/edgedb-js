@@ -30,7 +30,11 @@ export function input(
 
   const output = !!params?.silent
     ? new Writable({
-        write(chunk: any, encoding: string, callback: (...args: any) => void) {
+        write(
+          chunk: any,
+          encoding: BufferEncoding,
+          callback: (...args: any) => void
+        ) {
           if (!silent) process.stdout.write(chunk, encoding);
           callback();
         },

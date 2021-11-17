@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "yarn pretest && NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
+    "test:dev": "EDGEDB_TEST_USE_LOCAL=true NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
     "generate": "edgedb-generate",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",

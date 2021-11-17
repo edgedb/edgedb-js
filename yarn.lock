@@ -860,10 +860,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^13.1.6":
-  version: 13.13.52
-  resolution: "@types/node@npm:13.13.52"
-  checksum: 8f1afff497ebeba209e2dc340d823284e087a47632afe99a7daa30eaff80893e520f222ad400cd1f2d3b8288e93cf3eaded52a8e64eaefb8aacfe6c35de98f42
+"@types/node@npm:14":
+  version: 14.17.33
+  resolution: "@types/node@npm:14.17.33"
+  checksum: 47ee8d5a398f84b376023f03b83e43a71f1bf617d1014d34c0af24b0332b42e7b392c967c20bfb907fb37971993035e3b25c47a1678c745c5d122d8205ba5a19
   languageName: node
   linkType: hard
 
@@ -2021,7 +2021,7 @@ __metadata:
   resolution: "edgedb@workspace:."
   dependencies:
     "@types/jest": ^24.0.11
-    "@types/node": ^13.1.6
+    "@types/node": 14
     get-stdin: ^7.0.0
     in-publish: ^2.0.0
     jest: ^26.6.3

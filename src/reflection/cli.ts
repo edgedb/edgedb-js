@@ -62,9 +62,9 @@ const run = async () => {
       case "--dsn":
         connectionConfig.dsn = getVal();
         break;
-      // case '--credentials-file':
-      //   connectionConfig.credentialsFile = getVal();
-      //   break;
+      case "--credentials-file":
+        connectionConfig.credentialsFile = getVal();
+        break;
       case "-H":
       case "--host":
         connectionConfig.host = getVal();
