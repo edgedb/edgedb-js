@@ -41,11 +41,12 @@ async function applyMigrations(client: Client) {
 }
 
 async function generateQB(config: ConnectConfig) {
-  console.log(`Generating qb...`);
+  console.log(`Generating query builder...`);
   const genCmd = [
     `yarn generate`,
     `--dsn edgedb://localhost:${config.port}`,
     `--tls-security insecure`,
+    `--force-overwrite`,
   ];
 
   console.log(genCmd.join(" "));

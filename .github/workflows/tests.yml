@@ -79,8 +79,9 @@ jobs:
           yarn test
 
       - name: Run query builder tests
+        working-directory: qb
         run: |
-          cd qb && yarn test
+          yarn && yarn test
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.

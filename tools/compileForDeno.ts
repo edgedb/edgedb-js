@@ -104,9 +104,8 @@ async function run({
 
   for await (const entry of walk(sourceDir, {includeDirs: false})) {
     const sourcePath = normalisePath(entry.path);
-    // console.log(entry.path);
     if (entry.path.includes("syntax")) {
-      console.log(entry.path);
+      console.log(`skipping ${entry.path}`);
       continue;
     }
 
