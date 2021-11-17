@@ -20,8 +20,8 @@ import {BorrowReason, Connection} from "./ifaces";
 import {Executor, QueryArgs} from "./ifaces";
 import {INNER} from "./ifaces";
 import {getUniqueId} from "./utils";
-import {ConnectionImpl, InnerConnection, borrowError} from "./client";
-import {StandaloneConnection} from "./client";
+import {ConnectionImpl, borrowError, ClientInnerConnection} from "./client";
+import {ClientConnection} from "./client";
 import {Set} from "./datatypes/set";
 import {TransactionOptions, IsolationLevel} from "./options";
 
@@ -36,8 +36,8 @@ export enum TransactionState {
 export const START_TRANSACTION_IMPL = Symbol("START_TRANSACTION_IMPL");
 
 export class Transaction implements Executor {
-  _connection: StandaloneConnection;
-  _inner?: InnerConnection;
+  _connection: ClientConnection;
+  _inner?: ClientInnerConnection;
   _impl?: ConnectionImpl;
   _deferrable: boolean;
   _isolation: IsolationLevel;
@@ -49,12 +49,12 @@ export class Transaction implements Executor {
     connection: Connection,
     options: TransactionOptions = TransactionOptions.defaults()
   ) {
-    if (!(connection instanceof StandaloneConnection)) {
+    if (!(connection instanceof ClientConnection)) {
       throw new errors.InterfaceError(
         "connection is of unknown type for transaction"
       );
     }
-    this._connection = connection as StandaloneConnection;
+    this._connection = connection as ClientConnection;
     this._deferrable = options.deferrable;
     this._isolation = options.isolation;
     this._readonly = options.readonly;

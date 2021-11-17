@@ -21,8 +21,7 @@ import {ConnectConfig} from "./con_utils";
 import {parseConnectArguments, NormalizedConnectConfig} from "./con_utils";
 import {LifoQueue} from "./queues";
 
-import {ConnectionImpl, InnerConnection} from "./client";
-import {StandaloneConnection} from "./client";
+import {ClientConnection, DETACH, HOLDER} from "./client";
 import {
   Options,
   RetryOptions,
@@ -35,10 +34,6 @@ import {CodecsRegistry} from "./codecs/registry";
 
 import {INNER, OPTIONS, QueryArgs, Connection, Client} from "./ifaces";
 import {Transaction} from "./transaction";
-
-const DETACH = Symbol("detach");
-const DETACHED = Symbol("detached");
-export const HOLDER = Symbol("holder");
 
 export class Deferred<T> {
   private _promise: Promise<T | undefined>;
@@ -93,7 +88,7 @@ export class Deferred<T> {
   }
 }
 
-class ClientConnectionHolder {
+export class ClientConnectionHolder {
   private _client: ClientImpl;
   private _connection: ClientConnection | null;
   private _generation: number | null;
@@ -214,61 +209,6 @@ class ClientConnectionHolder {
 
     // Put ourselves back to the pool queue.
     this._client.enqueue(this);
-  }
-}
-
-export class ClientInnerConnection extends InnerConnection {
-  private [DETACHED]: boolean;
-  private [HOLDER]: ClientConnectionHolder | null;
-  constructor(config: NormalizedConnectConfig, registry: CodecsRegistry) {
-    super(config, registry);
-    this[DETACHED] = false;
-  }
-  async reconnect(singleAttempt: boolean = false): Promise<ConnectionImpl> {
-    if (this[DETACHED]) {
-      throw new errors.InterfaceError(
-        "Connection has been released to a pool"
-      );
-    }
-    return await super.reconnect(singleAttempt);
-  }
-  detach(): ClientInnerConnection {
-    const impl = this.connection;
-    this.connection = undefined;
-    const result = new ClientInnerConnection(this.config, this.registry);
-    result.connection = impl;
-    return result;
-  }
-}
-
-export class ClientConnection extends StandaloneConnection {
-  declare [INNER]: ClientInnerConnection;
-
-  protected initInner(
-    config: NormalizedConnectConfig,
-    registry: CodecsRegistry
-  ): void {
-    this[INNER] = new ClientInnerConnection(config, registry);
-  }
-
-  protected cleanup(): void {
-    const holder = this[INNER][HOLDER];
-    if (holder) {
-      holder._releaseOnClose();
-    }
-  }
-
-  [DETACH](): ClientConnection | null {
-    const result = this.shallowClone();
-    const inner = this[INNER];
-    const holder = inner[HOLDER];
-    const detached = inner[DETACHED];
-    inner[HOLDER] = null;
-    inner[DETACHED] = true;
-    result[INNER] = inner.detach();
-    result[INNER][HOLDER] = holder;
-    result[INNER][DETACHED] = detached;
-    return result;
   }
 }
 

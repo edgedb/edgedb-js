@@ -60,6 +60,7 @@ import {PartialRetryRule} from "./options";
 
 import {Address, NormalizedConnectConfig} from "./con_utils";
 import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
+import {ClientConnectionHolder} from "./pool";
 
 const PROTO_VER: ProtocolVersion = [0, 13];
 const PROTO_VER_MIN: ProtocolVersion = [0, 9];
@@ -104,6 +105,10 @@ const OLD_ERROR_CODES = new Map([
   [0x05_03_00_02, 0x05_03_01_02], // TransactionDeadlockError      #2431
 ]);
 
+export const DETACH = Symbol("detach");
+export const DETACHED = Symbol("detached");
+export const HOLDER = Symbol("holder");
+
 function sleep(durationMillis: number): Promise<void> {
   return new Promise((accept, reject) => {
     setTimeout(() => accept(), durationMillis);
@@ -132,8 +137,8 @@ export function borrowError(reason: BorrowReason): errors.EdgeDBError {
   throw new errors.InterfaceError(text);
 }
 
-export class StandaloneConnection implements Connection {
-  [INNER]: InnerConnection;
+export class ClientConnection implements Connection {
+  declare [INNER]: ClientInnerConnection;
   [OPTIONS]: Options;
 
   /** @internal */
@@ -146,7 +151,7 @@ export class StandaloneConnection implements Connection {
     config: NormalizedConnectConfig,
     registry: CodecsRegistry
   ): void {
-    this[INNER] = new InnerConnection(config, registry);
+    this[INNER] = new ClientInnerConnection(config, registry);
   }
 
   protected shallowClone(): this {
@@ -236,7 +241,23 @@ export class StandaloneConnection implements Connection {
   }
 
   protected cleanup(): void {
-    // empty
+    const holder = this[INNER][HOLDER];
+    if (holder) {
+      holder._releaseOnClose();
+    }
+  }
+
+  [DETACH](): ClientConnection | null {
+    const result = this.shallowClone();
+    const inner = this[INNER];
+    const holder = inner[HOLDER];
+    const detached = inner[DETACHED];
+    inner[HOLDER] = null;
+    inner[DETACHED] = true;
+    result[INNER] = inner.detach();
+    result[INNER][HOLDER] = holder;
+    result[INNER][DETACHED] = detached;
+    return result;
   }
 
   isClosed(): boolean {
@@ -379,7 +400,7 @@ export class StandaloneConnection implements Connection {
   }
 
   /** @internal */
-  static async connect<S extends StandaloneConnection>(
+  static async connect<S extends ClientConnection>(
     this: new (config: NormalizedConnectConfig, registry: CodecsRegistry) => S,
     config: NormalizedConnectConfig,
     registry: CodecsRegistry
@@ -390,7 +411,10 @@ export class StandaloneConnection implements Connection {
   }
 }
 
-export class InnerConnection {
+export class ClientInnerConnection {
+  private [DETACHED]: boolean;
+  private [HOLDER]: ClientConnectionHolder | null;
+
   borrowedFor?: BorrowReason;
   config: NormalizedConnectConfig;
   connection?: ConnectionImpl;
@@ -399,6 +423,7 @@ export class InnerConnection {
   constructor(config: NormalizedConnectConfig, registry: CodecsRegistry) {
     this.config = config;
     this.registry = registry;
+    this[DETACHED] = false;
   }
 
   async getImpl(singleAttempt: boolean = false): Promise<ConnectionImpl> {
@@ -435,6 +460,12 @@ export class InnerConnection {
   }
 
   async reconnect(singleAttempt: boolean = false): Promise<ConnectionImpl> {
+    if (this[DETACHED]) {
+      throw new errors.InterfaceError(
+        "Connection has been released to a pool"
+      );
+    }
+
     let maxTime: number;
     if (singleAttempt || this.config.waitUntilAvailable === 0) {
       maxTime = 0;
@@ -491,6 +522,14 @@ export class InnerConnection {
       iteration += 1;
       await sleep(Math.trunc(10 + Math.random() * 200));
     }
+  }
+
+  detach(): ClientInnerConnection {
+    const impl = this.connection;
+    this.connection = undefined;
+    const result = new ClientInnerConnection(this.config, this.registry);
+    result.connection = impl;
+    return result;
   }
 }
 
