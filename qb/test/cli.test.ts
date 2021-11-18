@@ -8,6 +8,7 @@ import {createClient} from "../../src/pool";
 const QBDIR = path.resolve(__dirname, "../dbschema/qbout");
 
 test("basic generate", async () => {
+  jest.setTimeout(10000);
   const opts = process.env._JEST_EDGEDB_CONNECT_CONFIG
     ? JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!)
     : undefined;
@@ -20,7 +21,7 @@ test("basic generate", async () => {
         `--force-overwrite`,
         `--output-dir ./dbschema/qbout`,
       ]
-    : [`yarn generate`, `--force-overwrite`];
+    : [`yarn generate`, `--output-dir ./dbschema/qbout`, `--force-overwrite`];
 
   // test TypeScript generation
   console.log(`Generating TS...`);
@@ -48,5 +49,5 @@ test("basic generate", async () => {
 
   // re-generate TS
   // expected for other tests
-  await fs.rmdir(QBDIR);
+  await fs.rmdir(QBDIR, {recursive: true});
 });
