@@ -43,7 +43,6 @@
     "build": "yarn build:cjs && yarn build:esm",
     "build:esm": "tsc --project tsconfig.build-esm.json && ./tools/copySyntaxToDist.sh",
     "build:cjs": "tsc --project tsconfig.build.json",
-    "build:cli": "tsc --project tsconfig.cli.json",
     "test": "jest --detectOpenHandles",
     "test:all": "yarn test && yarn test:qb",
     "test:qb": "cd qb && yarn test",

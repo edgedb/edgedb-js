@@ -2,20 +2,29 @@ import path from "path";
 import {exists, fs, readFileUtf8} from "../../src/adapter.node";
 import util from "util";
 import {exec as execCB, execSync} from "child_process";
+import {ConnectConfig} from "edgedb/dist/con_utils";
 const exec = util.promisify(execCB);
 
 const QBDIR = path.resolve(__dirname, "../dbschema/qbout");
 
 test("basic generate", async () => {
-  const opts = process.env._JEST_EDGEDB_CONNECT_CONFIG
-    ? JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!)
-    : undefined;
+  const opts = process.env.EDGEDB_TEST_USE_LOCAL
+    ? undefined
+    : <ConnectConfig>JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG || "");
+
+  if (!process.env.EDGEDB_TEST_USE_LOCAL && !opts) {
+    throw new Error("No connection options found.");
+  }
 
   const CMD = opts
     ? [
         `yarn generate`,
-        `--dsn edgedb://localhost:${opts.port}`,
-        `--tls-security insecure`,
+        `--host ${opts.host}`,
+        `--port ${opts.port}`,
+        `--user ${opts.user}`,
+        `--database ${opts.database}`,
+        `--tls-security ${opts.tlsSecurity}`,
+        `--tls-ca-file ${opts.tlsCAFile}`,
         `--force-overwrite`,
         `--output-dir ./dbschema/qbout`,
       ]
@@ -23,21 +32,12 @@ test("basic generate", async () => {
 
   // test TypeScript generation
   console.log(`Generating TS...`);
-  // await generateQB({outputDir: QBDIR, target:"ts", connectionConfig: opts});
-  console.time("qb_gen");
   const tsResult = execSync(CMD.join(" "));
-  // console.log(tsResult.stderr);
-  // console.log(tsResult.stdout);
-  console.timeEnd("qb_gen");
   expect(await exists(path.resolve(QBDIR, "index.ts"))).toEqual(true);
 
   // test JS + ESM
   console.log(`Generating ESM...`);
-  console.time("qb_gen");
   const esmResult = execSync([...CMD, "--target esm"].join(" "));
-  // console.log(esmResult.stderr);
-  // console.log(esmResult.stdout);
-  console.timeEnd("qb_gen");
   expect(await exists(path.resolve(QBDIR, "index.mjs"))).toEqual(true);
   expect(await exists(path.resolve(QBDIR, "index.d.ts"))).toEqual(true);
   const esmFile = await readFileUtf8(path.resolve(QBDIR, "index.mjs"));
@@ -47,11 +47,7 @@ test("basic generate", async () => {
 
   // test JS + ESM
   console.log(`Generating CJS...`);
-  console.time("qb_gen");
   const cjsResult = execSync([...CMD, "--target cjs"].join(" "));
-  // console.log(cjsResult.stderr);
-  // console.log(cjsResult.stdout);
-  console.timeEnd("qb_gen");
   expect(await exists(path.resolve(QBDIR, "index.js"))).toEqual(true);
   expect(await exists(path.resolve(QBDIR, "index.d.ts"))).toEqual(true);
   const cjsFile = await readFileUtf8(path.resolve(QBDIR, "index.js"));

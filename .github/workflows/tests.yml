@@ -24,9 +24,9 @@ jobs:
           - os: macos-latest
             node-version: "16"
             edgedb-version: "stable"
-          # - os: windows-latest
-          #   node-version: "16"
-            # edgedb-version: "stable"
+          - os: windows-latest
+            node-version: "16"
+            edgedb-version: "stable"
 
     steps:
       - name: Setup WSL

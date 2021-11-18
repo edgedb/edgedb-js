@@ -30,8 +30,7 @@ interface Movie {
 }
 
 export async function setupTests() {
-  const opts = JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!);
-  console.log(opts);
+  const opts = JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG || "{}");
   const pool = process.env.EDGEDB_TEST_USE_LOCAL
     ? createClient()
     : createClient(opts);
