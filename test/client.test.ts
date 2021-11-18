@@ -32,7 +32,7 @@ import {
   NoDataError,
   Client,
 } from "../src/index.node";
-import {Connection, Executor} from "../src/ifaces";
+import {Executor} from "../src/ifaces";
 import {
   LocalDate,
   Duration,

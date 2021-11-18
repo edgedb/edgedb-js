@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 import * as errors from "./errors";
-import {Connection, Executor, QueryArgs} from "./ifaces";
+import {Executor, QueryArgs} from "./ifaces";
 import {getUniqueId} from "./utils";
-import {ClientConnection} from "./client";
 import {TransactionOptions, IsolationLevel} from "./options";
 import {RawConnection} from "./rawConn";
+import {ClientConnectionHolder} from "./pool";
 
 export enum TransactionState {
   NEW = 0,
@@ -33,7 +33,7 @@ export enum TransactionState {
 export const START_TRANSACTION_IMPL = Symbol("START_TRANSACTION_IMPL");
 
 export class Transaction implements Executor {
-  _connection: ClientConnection;
+  _holder: ClientConnectionHolder;
   _impl?: RawConnection;
   _deferrable: boolean;
   _isolation: IsolationLevel;
@@ -42,15 +42,10 @@ export class Transaction implements Executor {
   _opInProgress: boolean;
 
   constructor(
-    connection: Connection,
+    holder: ClientConnectionHolder,
     options: TransactionOptions = TransactionOptions.defaults()
   ) {
-    if (!(connection instanceof ClientConnection)) {
-      throw new errors.InterfaceError(
-        "connection is of unknown type for transaction"
-      );
-    }
-    this._connection = connection as ClientConnection;
+    this._holder = holder;
     this._deferrable = options.deferrable;
     this._isolation = options.isolation;
     this._readonly = options.readonly;
@@ -166,7 +161,7 @@ export class Transaction implements Executor {
     this._checkOp();
     this._opInProgress = true;
     try {
-      this._impl = await this._connection._getConnection(singleConnect);
+      this._impl = await this._holder._getConnection(singleConnect);
       await this._execute(start_query, TransactionState.STARTED);
     } finally {
       this._opInProgress = false;

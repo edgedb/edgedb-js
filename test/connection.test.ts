@@ -78,7 +78,6 @@ import {join as pathJoin} from "path";
 import {Client} from "../src/index.node";
 import {parseConnectArguments, stashPath} from "../src/con_utils";
 import {getClient} from "./testbase";
-import {Connection} from "../src/ifaces";
 import * as errors from "../src/errors";
 import * as platform from "../src/platform";
 
@@ -607,9 +606,9 @@ test("connect: invalid name", async () => {
 });
 
 test("connect: refused unix", async () => {
-  let con: Connection | undefined;
+  let client: Client | undefined;
   try {
-    con = await getClient({
+    client = await getClient({
       host: "/tmp/non-existent",
       waitUntilAvailable: 0,
     }).ensureConnected();
@@ -617,8 +616,8 @@ test("connect: refused unix", async () => {
   } catch (e: any) {
     expect(e.message).toEqual("unix socket paths not supported");
   } finally {
-    if (typeof con !== "undefined") {
-      await con.close();
+    if (typeof client !== "undefined") {
+      await client.close();
     }
   }
 });

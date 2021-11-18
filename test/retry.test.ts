@@ -19,7 +19,6 @@
 import {Client} from "../src/index.node";
 import * as errors from "../src/errors";
 import {getClient} from "./testbase";
-import {Connection} from "../src/ifaces";
 import {RetryOptions, defaultBackoff} from "../src/options";
 
 class Barrier {
@@ -48,13 +47,13 @@ class Barrier {
 
 const typename = "RetryTest";
 
-async function run(test: (con: Connection) => Promise<void>): Promise<void> {
-  const connection = getClient();
+async function run(test: (client: Client) => Promise<void>): Promise<void> {
+  const client = getClient();
 
   try {
-    await test(connection);
+    await test(client);
   } finally {
-    await connection.close();
+    await client.close();
   }
 }
 
@@ -115,12 +114,12 @@ test("retry: regular 01", async () => {
   });
 });
 
-async function checkRetries(con: Connection, con2: Connection, name: string) {
+async function checkRetries(client: Client, client2: Client, name: string) {
   let iterations = 0;
   let barrier = new Barrier(2);
 
-  async function transaction(con: Connection): Promise<unknown> {
-    return await con.transaction(async (tx) => {
+  async function transaction(client: Client): Promise<unknown> {
+    return await client.transaction(async (tx) => {
       iterations += 1;
 
       // This magic query makes the test more reliable for some
@@ -153,7 +152,7 @@ async function checkRetries(con: Connection, con2: Connection, name: string) {
     });
   }
 
-  let results = await Promise.all([transaction(con), transaction(con2)]);
+  let results = await Promise.all([transaction(client), transaction(client2)]);
   results.sort();
   expect(results).toEqual([1, 2]);
   expect(iterations).toEqual(3);

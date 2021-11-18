@@ -21,7 +21,7 @@ import {ConnectConfig} from "./con_utils";
 import {parseConnectArguments, NormalizedConnectConfig} from "./con_utils";
 import {LifoQueue} from "./primitives/queues";
 
-import {ClientConnection, HOLDER} from "./client";
+import {retryingConnect} from "./client";
 import {
   Options,
   RetryOptions,
@@ -32,56 +32,53 @@ import {
 
 import {CodecsRegistry} from "./codecs/registry";
 
-import {OPTIONS, QueryArgs, Connection, Executor} from "./ifaces";
-import {Transaction} from "./transaction";
+import {QueryArgs, Executor} from "./ifaces";
+import {START_TRANSACTION_IMPL, Transaction} from "./transaction";
 import {Deferred} from "./primitives/deferred";
+import {RawConnection} from "./rawConn";
+import {sleep} from "./utils";
 
 export class ClientConnectionHolder {
-  private _client: ClientPool;
-  private _connection: ClientConnection | null;
+  private _pool: ClientPool;
+  private _connection: RawConnection | null;
+  private _options: Options | null;
   private _inUse: Deferred<void> | null;
 
-  constructor(client: ClientPool) {
-    this._client = client;
+  constructor(pool: ClientPool) {
+    this._pool = pool;
     this._connection = null;
+    this._options = null;
     this._inUse = null;
   }
 
-  get connection(): Connection | null {
+  get options(): Options {
+    return this._options ?? Options.defaults();
+  }
+
+  async _getConnection(
+    singleConnect: boolean = false
+  ): Promise<RawConnection> {
+    if (!this._connection || this._connection.isClosed()) {
+      this._connection = await this._pool.getNewConnection(singleConnect);
+    }
     return this._connection;
   }
 
-  get client(): ClientPool {
-    return this._client;
+  get connectionOpen(): boolean {
+    return this._connection !== null && !this._connection.isClosed();
   }
 
-  terminate(): void {
-    if (this._connection !== null) {
-      this._connection.close();
-    }
-  }
-
-  async connect(): Promise<void> {
-    if (this._connection !== null) {
-      throw new errors.ClientError(
-        "ClientConnectionHolder.connect() called while another " +
-          "connection already exists"
+  async acquire(options: Options): Promise<ClientConnectionHolder> {
+    if (this._inUse) {
+      throw new Error(
+        "ClientConnectionHolder cannot be acquired, already in use"
       );
     }
 
-    this._connection = await this._client.getNewConnection();
-    this._connection[HOLDER] = this;
-  }
-
-  async acquire(options: Options): Promise<ClientConnection> {
-    if (this._connection === null || this._connection.isClosed()) {
-      this._connection = null;
-      await this.connect();
-    }
-    this._connection![OPTIONS] = options;
-
+    this._options = options;
     this._inUse = new Deferred<void>();
-    return this._connection!;
+
+    return this;
   }
 
   async release(): Promise<void> {
@@ -92,41 +89,16 @@ export class ClientConnectionHolder {
       );
     }
 
-    // Free this connection holder and invalidate the
-    // connection proxy.
+    this._options = null;
     await this._release();
-  }
-
-  /** @internal */
-  async _waitUntilReleased(): Promise<void> {
-    if (this._inUse === null) {
-      return;
-    }
-    await this._inUse.promise;
-  }
-
-  async close(): Promise<void> {
-    if (this._connection !== null) {
-      // AsyncIOConnection.aclose() will call releaseOnClose() to
-      // finish holder cleanup.
-      await this._connection.close();
-    }
-  }
-
-  /** @internal */
-  async _releaseOnClose(): Promise<void> {
-    await this._release();
-    this._connection = null;
   }
 
   private async _release(): Promise<void> {
-    // Release this connection holder.
     if (this._inUse === null) {
-      // The holder is not checked out.
       return;
     }
 
-    await this._connection?.connection?.resetState();
+    await this._connection?.resetState();
 
     if (!this._inUse.done) {
       await this._inUse.setResult();
@@ -135,7 +107,101 @@ export class ClientConnectionHolder {
     this._inUse = null;
 
     // Put ourselves back to the pool queue.
-    this._client.enqueue(this);
+    this._pool.enqueue(this);
+  }
+
+  /** @internal */
+  async _waitUntilReleasedAndClose(): Promise<void> {
+    if (this._inUse) {
+      await this._inUse.promise;
+    }
+    await this._connection?.close();
+  }
+
+  terminate(): void {
+    this._connection?.close();
+  }
+
+  async transaction<T>(
+    action: (transaction: Transaction) => Promise<T>
+  ): Promise<T> {
+    let result: T;
+    for (let iteration = 0; iteration >= 0; ++iteration) {
+      const transaction = new Transaction(this);
+      await transaction[START_TRANSACTION_IMPL](iteration !== 0);
+      try {
+        result = await action(transaction);
+      } catch (err) {
+        try {
+          await transaction.rollback();
+        } catch (rollback_err) {
+          if (!(rollback_err instanceof errors.EdgeDBError)) {
+            // We ignore EdgeDBError errors on rollback, retrying
+            // if possible. All other errors are propagated.
+            throw rollback_err;
+          }
+        }
+        if (
+          err instanceof errors.EdgeDBError &&
+          err.hasTag(errors.SHOULD_RETRY)
+        ) {
+          const rule = this.options.retryOptions.getRuleForException(err);
+          if (iteration + 1 >= rule.attempts) {
+            throw err;
+          }
+          await sleep(rule.backoff(iteration + 1));
+          continue;
+        }
+        throw err;
+      }
+      // TODO(tailhook) sort out errors on commit, early network errors
+      // and some other errors could be retried
+      // NOTE: we can't retry on all the same errors as we don't know if
+      // commit is succeeded before the database have received it or after
+      // it have been done but network is dropped before we were able
+      // to receive a response
+      await transaction.commit();
+      return result;
+    }
+    throw Error("unreachable");
+  }
+
+  async execute(query: string): Promise<void> {
+    const conn = await this._getConnection();
+    return await conn.execute(query);
+  }
+
+  async query(query: string, args?: QueryArgs): Promise<any> {
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, false, false);
+  }
+
+  async queryJSON(query: string, args?: QueryArgs): Promise<string> {
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, true, false);
+  }
+
+  async querySingle(query: string, args?: QueryArgs): Promise<any> {
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, false, true);
+  }
+
+  async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, true, true);
+  }
+
+  async queryRequiredSingle(query: string, args?: QueryArgs): Promise<any> {
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, false, true, true);
+  }
+
+  async queryRequiredSingleJSON(
+    query: string,
+    args?: QueryArgs
+  ): Promise<string> {
+    const conn = await this._getConnection();
+    return await conn.fetch(query, args, true, true, true);
   }
 }
 
@@ -184,10 +250,8 @@ class ClientPool {
   _getStats(): {openConnections: number; queueLength: number} {
     return {
       queueLength: this._queue.pending,
-      openConnections: this._holders.filter(
-        (holder) =>
-          holder.connection !== null && holder.connection.isClosed() === false
-      ).length,
+      openConnections: this._holders.filter((holder) => holder.connectionOpen)
+        .length,
     };
   }
 
@@ -199,7 +263,7 @@ class ClientPool {
     if (!connHolder) {
       throw new Error("Client pool is empty");
     }
-    await connHolder.connect();
+    await connHolder._getConnection();
   }
 
   private get _concurrency(): number {
@@ -225,7 +289,7 @@ class ClientPool {
 
   private __normalizedConnectConfig: Promise<NormalizedConnectConfig> | null =
     null;
-  private get _normalizedConnectConfig(): Promise<NormalizedConnectConfig> {
+  private _getNormalizedConnectConfig(): Promise<NormalizedConnectConfig> {
     return (
       this.__normalizedConnectConfig ??
       (this.__normalizedConnectConfig = parseConnectArguments(
@@ -234,14 +298,23 @@ class ClientPool {
     );
   }
 
-  async getNewConnection(): Promise<ClientConnection> {
-    const connection = await ClientConnection.connect(
-      await this._normalizedConnectConfig,
-      this._codecsRegistry
-    );
+  async getNewConnection(
+    singleConnect: boolean = false
+  ): Promise<RawConnection> {
+    const config = await this._getNormalizedConnectConfig();
+    const connection = singleConnect
+      ? await RawConnection.connectWithTimeout(
+          config.connectionParams.address,
+          config,
+          this._codecsRegistry
+        )
+      : await retryingConnect(config, this._codecsRegistry);
     const suggestedConcurrency =
-      connection.connection?.serverSettings.suggested_pool_concurrency;
-    if (suggestedConcurrency) {
+      connection.serverSettings.suggested_pool_concurrency;
+    if (
+      suggestedConcurrency &&
+      suggestedConcurrency !== this._suggestedConcurrency
+    ) {
       this._suggestedConcurrency = suggestedConcurrency;
       this._resizeHolderPool();
     }
@@ -258,7 +331,7 @@ class ClientPool {
     }
   }
 
-  async acquire(options: Options): Promise<ClientConnection> {
+  async acquireHolder(options: Options): Promise<ClientConnectionHolder> {
     this._checkState();
 
     const connectionHolder = await this._queue.get();
@@ -269,30 +342,6 @@ class ClientPool {
 
       throw error;
     }
-  }
-
-  async release(connection: Connection): Promise<void> {
-    if (!(connection instanceof ClientConnection)) {
-      throw new Error(
-        "a connection obtained via client.acquire() was expected"
-      );
-    }
-
-    const holder = connection[HOLDER];
-    if (holder == null) {
-      // Already released, do nothing
-      return;
-    }
-    if (holder.client !== this) {
-      throw new errors.InterfaceError(
-        "The connection proxy does not belong to this client."
-      );
-    }
-
-    this._checkState();
-
-    // Let the connection do its internal housekeeping when it's released.
-    return await holder.release();
   }
 
   enqueue(holder: ClientConnectionHolder): void {
@@ -323,12 +372,8 @@ class ClientPool {
     try {
       await Promise.all(
         this._holders.map((connectionHolder) =>
-          connectionHolder._waitUntilReleased()
+          connectionHolder._waitUntilReleasedAndClose()
         )
-      );
-
-      await Promise.all(
-        this._holders.map((connectionHolder) => connectionHolder.close())
       );
     } catch (error) {
       this.terminate();
@@ -419,38 +464,38 @@ export class Client implements Executor {
   async transaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
-    const conn = await this.pool.acquire(this.options);
+    const holder = await this.pool.acquireHolder(this.options);
     try {
-      return await conn.transaction(action);
+      return await holder.transaction(action);
     } finally {
-      await this.pool.release(conn);
+      await holder.release();
     }
   }
 
   async execute(query: string): Promise<void> {
-    const conn = await this.pool.acquire(this.options);
+    const holder = await this.pool.acquireHolder(this.options);
     try {
-      return await conn.execute(query);
+      return await holder.execute(query);
     } finally {
-      await this.pool.release(conn);
+      await holder.release();
     }
   }
 
   async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
-    const conn = await this.pool.acquire(this.options);
+    const holder = await this.pool.acquireHolder(this.options);
     try {
-      return await conn.query(query, args);
+      return await holder.query(query, args);
     } finally {
-      await this.pool.release(conn);
+      await holder.release();
     }
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    const conn = await this.pool.acquire(this.options);
+    const holder = await this.pool.acquireHolder(this.options);
     try {
-      return await conn.queryJSON(query, args);
+      return await holder.queryJSON(query, args);
     } finally {
-      await this.pool.release(conn);
+      await holder.release();
     }
   }
 
@@ -458,20 +503,20 @@ export class Client implements Executor {
     query: string,
     args?: QueryArgs
   ): Promise<T | null> {
-    const conn = await this.pool.acquire(this.options);
+    const holder = await this.pool.acquireHolder(this.options);
     try {
-      return await conn.querySingle(query, args);
+      return await holder.querySingle(query, args);
     } finally {
-      await this.pool.release(conn);
+      await holder.release();
     }
   }
 
   async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
-    const conn = await this.pool.acquire(this.options);
+    const holder = await this.pool.acquireHolder(this.options);
     try {
-      return await conn.querySingleJSON(query, args);
+      return await holder.querySingleJSON(query, args);
     } finally {
-      await this.pool.release(conn);
+      await holder.release();
     }
   }
 
@@ -479,11 +524,11 @@ export class Client implements Executor {
     query: string,
     args?: QueryArgs
   ): Promise<T> {
-    const conn = await this.pool.acquire(this.options);
+    const holder = await this.pool.acquireHolder(this.options);
     try {
-      return await conn.queryRequiredSingle(query, args);
+      return await holder.queryRequiredSingle(query, args);
     } finally {
-      await this.pool.release(conn);
+      await holder.release();
     }
   }
 
@@ -491,11 +536,11 @@ export class Client implements Executor {
     query: string,
     args?: QueryArgs
   ): Promise<string> {
-    const conn = await this.pool.acquire(this.options);
+    const holder = await this.pool.acquireHolder(this.options);
     try {
-      return await conn.queryRequiredSingleJSON(query, args);
+      return await holder.queryRequiredSingleJSON(query, args);
     } finally {
-      await this.pool.release(conn);
+      await holder.release();
     }
   }
 }

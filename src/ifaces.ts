@@ -24,13 +24,6 @@ import {
   RelativeDuration,
 } from "./datatypes/datetime";
 import {ConfigMemory} from "./datatypes/memory";
-import {Transaction} from "./transaction";
-import {
-  RetryOptions,
-  SimpleRetryOptions,
-  SimpleTransactionOptions,
-  TransactionOptions,
-} from "./options";
 
 export type ProtocolVersion = [number, number];
 
@@ -63,14 +56,6 @@ export interface Executor {
     args?: QueryArgs
   ): Promise<T>;
   queryRequiredSingleJSON(query: string, args?: QueryArgs): Promise<string>;
-}
-
-export const OPTIONS = Symbol("OPTIONS");
-
-export interface Connection extends Executor {
-  transaction<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
-  close(): Promise<void>;
-  isClosed(): boolean;
 }
 
 export interface KnownServerSettings {
