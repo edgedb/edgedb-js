@@ -52,12 +52,6 @@ type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
 
 export type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
 
-export enum BorrowReason {
-  TRANSACTION = "transaction",
-  QUERY = "query",
-  CLOSE = "close",
-}
-
 export interface Executor {
   execute(query: string): Promise<void>;
   query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]>;
@@ -71,27 +65,12 @@ export interface Executor {
   queryRequiredSingleJSON(query: string, args?: QueryArgs): Promise<string>;
 }
 
-export const INNER = Symbol("INNER");
 export const OPTIONS = Symbol("OPTIONS");
 
 export interface Connection extends Executor {
   transaction<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
   close(): Promise<void>;
   isClosed(): boolean;
-}
-
-export interface Client extends Executor {
-  transaction<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
-  withTransactionOptions(
-    opt: TransactionOptions | SimpleTransactionOptions
-  ): Client;
-  withRetryOptions(opt: RetryOptions | SimpleRetryOptions): Client;
-  close(): Promise<void>;
-  isClosed(): boolean;
-
-  ensureConnected(): Promise<this>;
-
-  terminate(): void;
 }
 
 export interface KnownServerSettings {

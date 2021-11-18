@@ -22,16 +22,14 @@ import * as errors from "./errors";
 import {sleep} from "./utils";
 import {CodecsRegistry} from "./codecs/registry";
 import {
-  INNER,
   OPTIONS,
   Executor,
   QueryArgs,
-  Connection,
-  BorrowReason,
   ParseOptions,
   PrepareMessageHeaders,
   ProtocolVersion,
   ServerSettings,
+  Connection,
 } from "./ifaces";
 import {
   Options,

@@ -16,12 +16,9 @@
  * limitations under the License.
  */
 import * as errors from "./errors";
-import {BorrowReason, Connection} from "./ifaces";
-import {Executor, QueryArgs} from "./ifaces";
-import {INNER} from "./ifaces";
+import {Connection, Executor, QueryArgs} from "./ifaces";
 import {getUniqueId} from "./utils";
 import {ClientConnection} from "./client";
-import {Set} from "./datatypes/set";
 import {TransactionOptions, IsolationLevel} from "./options";
 import {RawConnection} from "./rawConn";
 

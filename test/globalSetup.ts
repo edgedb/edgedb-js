@@ -5,9 +5,8 @@ import * as os from "os";
 import * as fs from "fs";
 import * as readline from "readline";
 import {ConnectConfig} from "../src/con_utils";
-import {Connection} from "../src/ifaces";
 
-import {createClient} from "../src/index.node";
+import {Client, createClient} from "../src/index.node";
 
 type PromiseCallback = () => void;
 
@@ -175,21 +174,21 @@ const startServer = async (
   return {config, proc};
 };
 
-const connectToServer = async (config: ConnectConfig): Promise<Connection> => {
-  const con = createClient(config);
+const connectToServer = async (config: ConnectConfig): Promise<Client> => {
+  const client = createClient(config);
 
   try {
-    await con.execute(`
+    await client.execute(`
       CREATE DATABASE jest;
 		`);
 
-    await con.execute(`
+    await client.execute(`
       CREATE SUPERUSER ROLE jest {
         SET password := "jestjest";
       };
 		`);
 
-    await con.execute(`
+    await client.execute(`
       CONFIGURE SYSTEM INSERT Auth {
         user := "jest",
         priority := 10,
@@ -197,11 +196,11 @@ const connectToServer = async (config: ConnectConfig): Promise<Connection> => {
       };
     `);
   } catch (e) {
-    await con.close();
+    await client.close();
     throw e;
   }
 
-  return con;
+  return client;
 };
 
 export default async () => {

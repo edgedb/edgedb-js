@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
+import {Client} from "../src/index.node";
 import * as errors from "../src/errors";
 import {getClient} from "./testbase";
-import {Transaction, TransactionState} from "../src/transaction";
-import {Connection, Client} from "../src/ifaces";
 import {TransactionOptions, IsolationLevel} from "../src/options";
 
 const typename = "TransactionTest";

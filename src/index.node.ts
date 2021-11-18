@@ -22,7 +22,8 @@ export default createClient;
 
 // export {RawConnection as _RawConnection} from "./client";
 
-export type {Executor, Client} from "./ifaces";
+export type {Executor} from "./ifaces";
+export type {Client} from "./pool";
 
 export {IsolationLevel, RetryCondition, RetryOptions} from "./options";
 export {defaultBackoff} from "./options";

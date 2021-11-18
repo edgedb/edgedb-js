@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {net, hrTime, tls} from "./adapter.node";
+import {net, tls} from "./adapter.node";
 
 import char, * as chars from "./primitives/chars";
 import {resolveErrorCode} from "./errors/resolve";
@@ -27,7 +27,7 @@ import {
   ReadBuffer,
   WriteBuffer,
 } from "./primitives/buffer";
-import {sleep, versionGreaterThan, versionGreaterThanOrEqual} from "./utils";
+import {versionGreaterThan, versionGreaterThanOrEqual} from "./utils";
 import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {Set} from "./datatypes/set";
@@ -37,28 +37,13 @@ import {NamedTupleCodec} from "./codecs/namedtuple";
 import {ObjectCodec} from "./codecs/object";
 import {NULL_CODEC, NullCodec} from "./codecs/codecs";
 import {
-  INNER,
-  OPTIONS,
-  Executor,
   QueryArgs,
-  Connection,
-  BorrowReason,
   ParseOptions,
-  PrepareMessageHeaders,
   ProtocolVersion,
   ServerSettings,
 } from "./ifaces";
 import * as scram from "./scram";
-import {
-  Options,
-  RetryOptions,
-  SimpleRetryOptions,
-  SimpleTransactionOptions,
-  TransactionOptions,
-} from "./options";
-import {PartialRetryRule} from "./options";
 import {Address, NormalizedConnectConfig} from "./con_utils";
-import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
 
 const PROTO_VER: ProtocolVersion = [0, 13];
 const PROTO_VER_MIN: ProtocolVersion = [0, 9];

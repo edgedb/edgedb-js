@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
+import {Client} from "../src/index.node";
 import * as errors from "../src/errors";
 import {getClient} from "./testbase";
-import {Transaction, TransactionState} from "../src/transaction";
-import {Client, Connection} from "../src/ifaces";
-import {IsolationLevel, RetryOptions, defaultBackoff} from "../src/options";
+import {Connection} from "../src/ifaces";
+import {RetryOptions, defaultBackoff} from "../src/options";
 
 class Barrier {
   _counter: number;

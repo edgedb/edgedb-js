@@ -23,37 +23,37 @@ test("lazy connect + concurrency", async () => {
   let client = getClient();
 
   // @ts-ignore
-  expect(client.impl._getStats().openConnections).toEqual(0);
+  expect(client.pool._getStats().openConnections).toEqual(0);
   // @ts-ignore
-  expect(client.impl._holders.length).toEqual(1);
+  expect(client.pool._holders.length).toEqual(1);
 
   await client.query(`select 1`);
 
   // @ts-ignore
-  expect(client.impl._getStats().openConnections).toEqual(1);
+  expect(client.pool._getStats().openConnections).toEqual(1);
   // @ts-ignore
-  expect(client.impl._holders.length).toBeGreaterThan(1);
+  expect(client.pool._holders.length).toBeGreaterThan(1);
 
   await client.close();
 
   client = getClient({concurrency: 3});
 
   // @ts-ignore
-  expect(client.impl._getStats().openConnections).toEqual(0);
+  expect(client.pool._getStats().openConnections).toEqual(0);
   // @ts-ignore
-  expect(client.impl._holders.length).toEqual(3);
+  expect(client.pool._holders.length).toEqual(3);
 
   await client.ensureConnected();
 
   // @ts-ignore
-  expect(client.impl._getStats().openConnections).toEqual(1);
+  expect(client.pool._getStats().openConnections).toEqual(1);
   // @ts-ignore
-  expect(client.impl._holders.length).toEqual(3);
+  expect(client.pool._holders.length).toEqual(3);
 
   await client.ensureConnected();
 
   // @ts-ignore
-  expect(client.impl._getStats().openConnections).toEqual(1);
+  expect(client.pool._getStats().openConnections).toEqual(1);
 
   const promises = Promise.all(
     Array(10)
@@ -62,12 +62,12 @@ test("lazy connect + concurrency", async () => {
   );
 
   // @ts-ignore
-  expect(client.impl._getStats().queueLength).toEqual(7);
+  expect(client.pool._getStats().queueLength).toEqual(7);
 
   await promises;
 
   // @ts-ignore
-  expect(client.impl._getStats().openConnections).toEqual(3);
+  expect(client.pool._getStats().openConnections).toEqual(3);
 
   await client.close();
 });

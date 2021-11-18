@@ -30,8 +30,9 @@ import {
   _ReadBuffer,
   ResultCardinalityMismatchError,
   NoDataError,
+  Client,
 } from "../src/index.node";
-import {Connection, Executor, INNER} from "../src/ifaces";
+import {Connection, Executor} from "../src/ifaces";
 import {
   LocalDate,
   Duration,
@@ -41,9 +42,9 @@ import {
 import {getClient, getConnectOptions, isDeno} from "./testbase";
 import {parseConnectArguments} from "../src/con_utils";
 
-function setStringCodecs(codecs: string[], conn: Connection) {
+function setStringCodecs(codecs: string[], client: Client) {
   // @ts-ignore
-  const registry = conn.impl._codecsRegistry;
+  const registry = client.pool._codecsRegistry;
   registry.setStringCodecs(
     codecs.reduce((obj, codec) => {
       obj[codec] = true;
