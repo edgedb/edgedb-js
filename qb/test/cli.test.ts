@@ -5,20 +5,20 @@ import path from "path";
 import * as tc from "conditional-type-checks";
 import {createClient} from "../../src/pool";
 
-const QBDIR = path.resolve(__dirname, "../dbschema/edgeql");
+const QBDIR = path.resolve(__dirname, "../dbschema/qbout");
 
 test("basic generate", async () => {
   const opts = process.env._JEST_EDGEDB_CONNECT_CONFIG
     ? JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!)
     : undefined;
 
-  if (1 > 0) return;
   const CMD = opts
     ? [
         `yarn generate`,
         `--dsn edgedb://localhost:${opts.port}`,
         `--tls-security insecure`,
         `--force-overwrite`,
+        `--output-dir ./dbschema/qbout`,
       ]
     : [`yarn generate`, `--force-overwrite`];
 
@@ -48,5 +48,5 @@ test("basic generate", async () => {
 
   // re-generate TS
   // expected for other tests
-  await child_process.execSync(CMD.join(" "));
+  await fs.rmdir(QBDIR);
 });
