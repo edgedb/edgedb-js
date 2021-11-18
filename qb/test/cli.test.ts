@@ -2,20 +2,33 @@ import path from "path";
 import {exists, fs, readFileUtf8} from "../../src/adapter.node";
 import util from "util";
 import {exec as execCB, execSync} from "child_process";
+import {ConnectConfig} from "edgedb/dist/con_utils";
 const exec = util.promisify(execCB);
 
 const QBDIR = path.resolve(__dirname, "../dbschema/qbout");
 
 test("basic generate", async () => {
-  const opts = process.env._JEST_EDGEDB_CONNECT_CONFIG
-    ? JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!)
-    : undefined;
+  const opts = process.env.EDGEDB_TEST_USE_LOCAL
+    ? undefined
+    : (JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!) as ConnectConfig);
+
+  if (!process.env.EDGEDB_TEST_USE_LOCAL && !opts) {
+    throw new Error("No connection options found.");
+  }
+
+  console.log(`CLI options:`);
+  console.log(opts);
 
   const CMD = opts
     ? [
         `yarn generate`,
-        `--dsn edgedb://localhost:${opts.port}`,
-        `--tls-security insecure`,
+        // `--dsn edgedb://localhost:${opts.port}`,
+        `--host ${opts.host}`,
+        `--port ${opts.port}`,
+        `--user ${opts.user}`,
+        `--database ${opts.database}`,
+        `--tls-security ${opts.tlsSecurity}`,
+        `--tls-ca-file ${opts.tlsCAFile}`,
         `--force-overwrite`,
         `--output-dir ./dbschema/qbout`,
       ]

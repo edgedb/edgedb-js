@@ -270,6 +270,9 @@ OPTIONS:
     connectionConfig.password = await readPasswordFromStdin();
   }
 
+  console.log("OPTIONS");
+  console.log(JSON.stringify(options, null, 2));
+
   await generateQB({outputDir, connectionConfig, target: options.target!});
 
   console.log(`Generation successful!`);

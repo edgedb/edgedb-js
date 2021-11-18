@@ -40,15 +40,13 @@ export function exitWithError(message: string): never {
   process.exit(1);
 }
 
-export async function generateQB({
-  outputDir,
-  connectionConfig,
-  target,
-}: {
+export async function generateQB(params: {
   outputDir: string;
   connectionConfig: ConnectConfig;
   target: "ts" | "esm" | "cjs";
 }): Promise<void> {
+  const {outputDir, connectionConfig, target} = params;
+  console.log(JSON.stringify(params, null, 2));
   // tslint:disable-next-line
   console.log(`Connecting to EdgeDB instance...`);
   let cxn: Connection;

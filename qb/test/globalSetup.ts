@@ -48,8 +48,14 @@ async function generateQB(config: ConnectConfig) {
   console.log(`Generating query builder...`);
   const genCmd = [
     `yarn generate`,
-    `--dsn edgedb://localhost:${config.port}`,
-    `--tls-security insecure`,
+    // `--dsn edgedb://localhost:${config.port}`,
+    `--host ${config.host}`,
+    `--port ${config.port}`,
+    `--user ${config.user}`,
+    `--database ${config.database}`,
+    `--tls-security ${config.tlsSecurity}`,
+    `--tls-ca-file ${config.tlsCAFile}`,
+
     `--force-overwrite`,
   ];
 
