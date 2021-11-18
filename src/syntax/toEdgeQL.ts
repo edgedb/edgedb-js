@@ -182,8 +182,8 @@ export function $toEdgeQL(this: any) {
   >();
 
   const seen = new Map(walkExprCtx.seen);
-
-  for (const [expr, refData] of seen) {
+  for (const expr of Array.from(seen.keys())) {
+    const refData = seen.get(expr)!;
     seen.delete(expr);
 
     if (
@@ -226,7 +226,7 @@ export function $toEdgeQL(this: any) {
     ) {
       let withBlock = refData.boundScope;
 
-      const parentScopes = [...refData.parentScopes].filter(
+      const parentScopes = Array.from(refData.parentScopes).filter(
         scope => scope !== null
       ) as WithScopeExpr[];
       if (!withBlock) {
@@ -268,9 +268,9 @@ export function $toEdgeQL(this: any) {
         ...walkExprCtx.seen.get(withBlock)!.childExprs,
       ]);
       for (const scope of [
-        ...refData.parentScopes,
+        ...Array.from(refData.parentScopes),
         ...util.flatMap(refData.aliases, alias => [
-          ...walkExprCtx.seen.get(alias)!.parentScopes,
+          ...Array.from(walkExprCtx.seen.get(alias)!.parentScopes),
         ]),
       ]) {
         if (scope === null || !validScopes.has(scope)) {
@@ -326,7 +326,7 @@ function topoSortWithVars(
   const unvisited = new Set(vars);
   const visiting = new Set<SomeExpression>();
 
-  for (const withVar of unvisited) {
+  for (const withVar of Array.from(unvisited)) {
     visit(withVar);
   }
 
@@ -340,7 +340,7 @@ function topoSortWithVars(
 
     visiting.add(withVar);
 
-    for (const child of ctx.withVars.get(withVar)!.childExprs) {
+    for (const child of Array.from(ctx.withVars.get(withVar)!.childExprs)) {
       if (vars.has(child)) {
         visit(child);
       }

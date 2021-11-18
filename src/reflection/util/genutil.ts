@@ -32,21 +32,16 @@ export function toPrimitiveJsType(
     case "std::float32":
     case "std::float64":
       return "number";
-
     case "std::str":
     case "std::uuid":
     case "std::json":
       return "string";
-
     case "std::bool":
       return "boolean";
-
     case "std::bigint":
-      return "BigInt";
-
+      return "bigint";
     case "std::datetime":
       return "Date";
-
     case "std::duration":
       return "_.edgedb.Duration";
     case "cal::local_datetime":
