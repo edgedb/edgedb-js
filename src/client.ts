@@ -33,7 +33,7 @@ import {
 import {CodecsRegistry} from "./codecs/registry";
 
 import {QueryArgs, Executor} from "./ifaces";
-import {START_TRANSACTION_IMPL, Transaction} from "./transaction";
+import {Transaction} from "./transaction";
 import {Deferred} from "./primitives/deferred";
 import {RawConnection} from "./rawConn";
 import {sleep} from "./utils";
@@ -127,13 +127,12 @@ export class ClientConnectionHolder {
   ): Promise<T> {
     let result: T;
     for (let iteration = 0; iteration >= 0; ++iteration) {
-      const transaction = new Transaction(this);
-      await transaction[START_TRANSACTION_IMPL](iteration !== 0);
+      const transaction = await Transaction._startTransaction(this);
       try {
         result = await action(transaction);
       } catch (err) {
         try {
-          await transaction.rollback();
+          await transaction._rollback();
         } catch (rollback_err) {
           if (!(rollback_err instanceof errors.EdgeDBError)) {
             // We ignore EdgeDBError errors on rollback, retrying
@@ -160,7 +159,7 @@ export class ClientConnectionHolder {
       // commit is succeeded before the database have received it or after
       // it have been done but network is dropped before we were able
       // to receive a response
-      await transaction.commit();
+      await transaction._commit();
       return result;
     }
     throw Error("unreachable");
