@@ -1,6 +1,10 @@
 import {promises as fs} from "fs";
+import util from "util";
+import {exec as execCB} from "child_process";
+const exec = util.promisify(execCB);
+
 import path from "path";
-import child_process from "child_process";
+// import child_process from "child_process";
 import {createClient} from "../../src/pool";
 
 import {
@@ -50,7 +54,8 @@ async function generateQB(config: ConnectConfig) {
   ];
 
   console.log(genCmd.join(" "));
-  child_process.execSync(genCmd.join(" "));
+  await exec(genCmd.join(" "));
+  return "done";
 }
 
 export default async () => {
@@ -105,6 +110,9 @@ async function prejestSetup() {
   await applyMigrations(client);
   await generateQB(config);
   await shutdown(proc, client);
+
+  const outpath = path.join(__dirname, "../dbschema/edgeql");
+  console.log(await fs.readdir(outpath));
 }
 
 if (require.main === module) {

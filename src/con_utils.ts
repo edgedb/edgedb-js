@@ -209,7 +209,7 @@ export class ResolvedConnectConfig {
   }
 
   setTlsCAFile(caFile: string | null, source: string): Promise<boolean> {
-    return this._setParamAsync("tlsCAData", caFile, source, (caFilePath) =>
+    return this._setParamAsync("tlsCAData", caFile, source, caFilePath =>
       readFileUtf8(caFilePath)
     );
   }
@@ -224,7 +224,7 @@ export class ResolvedConnectConfig {
           throw new Error(
             `invalid 'tlsSecurity' value: '${_tlsSecurity}', ` +
               `must be one of ${validTlsSecurityValues
-                .map((val) => `'${val}'`)
+                .map(val => `'${val}'`)
                 .join(", ")}`
           );
         }
@@ -517,7 +517,7 @@ async function parseConnectDsnAndArgs(
     }
     const stashDir = await stashPath(projectDir);
     const instName = await readFileUtf8(path.join(stashDir, "instance-name"))
-      .then((name) => name.trim())
+      .then(name => name.trim())
       .catch(() => null);
 
     if (instName !== null) {
@@ -634,7 +634,7 @@ async function resolveConfigOptions<
     config.instanceName,
     config.credentialsFile,
     config.host ?? config.port,
-  ].filter((param) => param !== undefined).length;
+  ].filter(param => param !== undefined).length;
 
   if (compoundParamsCount > 1) {
     throw new Error(compoundParamsError);
@@ -726,7 +726,7 @@ async function parseDSNIntoConfig(
     value: string | null,
     currentValue: any,
     setter: (value: string | null, source: string) => any | Promise<unknown>,
-    formatter: (val: string) => string = (val) => val
+    formatter: (val: string) => string = val => val
   ): Promise<void> {
     if (
       [
@@ -734,7 +734,7 @@ async function parseDSNIntoConfig(
         searchParams.get(paramName),
         searchParams.get(`${paramName}_env`),
         searchParams.get(`${paramName}_file`),
-      ].filter((param) => param != null).length > 1
+      ].filter(param => param != null).length > 1
     ) {
       throw new Error(
         `invalid DSN: more than one of ${

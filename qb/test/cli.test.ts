@@ -1,11 +1,11 @@
 import child_process from "child_process";
 import path from "path";
 import {exists, fs, readFileUtf8} from "../../src/adapter.node";
+import {generateQB} from "../../src/reflection/generate";
 
 const QBDIR = path.resolve(__dirname, "../dbschema/qbout");
 
 test("basic generate", async () => {
-  jest.setTimeout(10000);
   const opts = process.env._JEST_EDGEDB_CONNECT_CONFIG
     ? JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!)
     : undefined;
@@ -22,12 +22,17 @@ test("basic generate", async () => {
 
   // test TypeScript generation
   console.log(`Generating TS...`);
+  // await generateQB({outputDir: QBDIR, target:"ts", connectionConfig: opts});
+  console.time("qb_gen");
   child_process.execSync(CMD.join(" "));
+  console.timeEnd("qb_gen");
   expect(await exists(path.resolve(QBDIR, "index.ts"))).toEqual(true);
 
   // test JS + ESM
   console.log(`Generating ESM...`);
+  console.time("qb_gen");
   child_process.execSync([...CMD, "--target esm"].join(" "));
+  console.timeEnd("qb_gen");
   expect(await exists(path.resolve(QBDIR, "index.mjs"))).toEqual(true);
   expect(await exists(path.resolve(QBDIR, "index.d.ts"))).toEqual(true);
   const esmFile = await readFileUtf8(path.resolve(QBDIR, "index.mjs"));
@@ -37,7 +42,9 @@ test("basic generate", async () => {
 
   // test JS + ESM
   console.log(`Generating CJS...`);
+  console.time("qb_gen");
   child_process.execSync([...CMD, "--target cjs"].join(" "));
+  console.timeEnd("qb_gen");
   expect(await exists(path.resolve(QBDIR, "index.js"))).toEqual(true);
   expect(await exists(path.resolve(QBDIR, "index.d.ts"))).toEqual(true);
   const cjsFile = await readFileUtf8(path.resolve(QBDIR, "index.js"));
