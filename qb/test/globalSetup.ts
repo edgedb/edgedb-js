@@ -114,6 +114,7 @@ async function prejestSetup() {
   await shutdown(proc, client);
 
   const outpath = path.join(__dirname, "../dbschema/edgeql");
+  console.log(`outpath: ${outpath}`);
   console.log(await fs.readdir(outpath));
 }
 
