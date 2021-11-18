@@ -73,9 +73,9 @@ jobs:
         with:
           server-version: ${{ matrix.edgedb-version }}
 
-      # - name: Run functional tests
-      #   run: |
-      #     yarn test
+      - name: Run functional tests
+        run: |
+          yarn test
 
       - name: Run query builder tests
         working-directory: qb

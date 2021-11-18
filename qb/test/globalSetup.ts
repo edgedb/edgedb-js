@@ -54,7 +54,9 @@ async function generateQB(config: ConnectConfig) {
   ];
 
   console.log(genCmd.join(" "));
-  await exec(genCmd.join(" "));
+  const result = await exec(genCmd.join(" "));
+  console.log(result.stdout);
+  console.log(result.stderr);
   return "done";
 }
 

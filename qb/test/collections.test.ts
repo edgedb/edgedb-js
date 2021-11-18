@@ -1,4 +1,5 @@
 import {Client, $} from "edgedb";
+// import {$} from "edgedb";
 import e from "../dbschema/edgeql";
 import {tc} from "./setupTeardown";
 

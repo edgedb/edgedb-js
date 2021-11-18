@@ -1,7 +1,8 @@
-import * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
-import {Client} from "../../src/ifaces";
+import {Client, createClient} from "edgedb";
+
 export {tc};
+
 // insert tony
 // insert cap
 // insert spidey
@@ -29,12 +30,11 @@ interface Movie {
 }
 
 export async function setupTests() {
-  const opts = process.env._JEST_EDGEDB_CONNECT_CONFIG
-    ? JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!)
-    : undefined;
-  console.log(`connecting`);
+  const opts = JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG!);
   console.log(opts);
-  const pool: edgedb.Client = edgedb.createClient(opts);
+  const pool = process.env.EDGEDB_TEST_USE_LOCAL
+    ? createClient()
+    : createClient(opts);
 
   if (!pool) {
     throw new Error("No client found.");
@@ -106,7 +106,7 @@ SELECT (INSERT Movie {
   };
 }
 
-async function cleanupData(pool: edgedb.Client) {
+async function cleanupData(pool: Client) {
   await pool.execute(`DELETE \`S p a M\``);
   await pool.execute(`DELETE A`);
   await pool.execute(`DELETE Łukasz`);
@@ -117,7 +117,7 @@ async function cleanupData(pool: edgedb.Client) {
   await pool.execute(`DELETE Hero;`);
 }
 
-export async function teardownTests(pool: edgedb.Client) {
+export async function teardownTests(pool: Client) {
   await cleanupData(pool);
 
   await pool.close();

@@ -1,7 +1,8 @@
-import child_process from "child_process";
 import path from "path";
 import {exists, fs, readFileUtf8} from "../../src/adapter.node";
-import {generateQB} from "../../src/reflection/generate";
+import util from "util";
+import {exec as execCB} from "child_process";
+const exec = util.promisify(execCB);
 
 const QBDIR = path.resolve(__dirname, "../dbschema/qbout");
 
@@ -24,14 +25,18 @@ test("basic generate", async () => {
   console.log(`Generating TS...`);
   // await generateQB({outputDir: QBDIR, target:"ts", connectionConfig: opts});
   console.time("qb_gen");
-  child_process.execSync(CMD.join(" "));
+  const tsResult = await exec(CMD.join(" "));
+  console.log(tsResult.stderr);
+  console.log(tsResult.stdout);
   console.timeEnd("qb_gen");
   expect(await exists(path.resolve(QBDIR, "index.ts"))).toEqual(true);
 
   // test JS + ESM
   console.log(`Generating ESM...`);
   console.time("qb_gen");
-  child_process.execSync([...CMD, "--target esm"].join(" "));
+  const esmResult = await exec([...CMD, "--target esm"].join(" "));
+  console.log(esmResult.stderr);
+  console.log(esmResult.stdout);
   console.timeEnd("qb_gen");
   expect(await exists(path.resolve(QBDIR, "index.mjs"))).toEqual(true);
   expect(await exists(path.resolve(QBDIR, "index.d.ts"))).toEqual(true);
@@ -43,7 +48,9 @@ test("basic generate", async () => {
   // test JS + ESM
   console.log(`Generating CJS...`);
   console.time("qb_gen");
-  child_process.execSync([...CMD, "--target cjs"].join(" "));
+  const cjsResult = await exec([...CMD, "--target cjs"].join(" "));
+  console.log(cjsResult.stderr);
+  console.log(cjsResult.stdout);
   console.timeEnd("qb_gen");
   expect(await exists(path.resolve(QBDIR, "index.js"))).toEqual(true);
   expect(await exists(path.resolve(QBDIR, "index.d.ts"))).toEqual(true);
