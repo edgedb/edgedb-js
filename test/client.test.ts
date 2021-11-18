@@ -25,7 +25,7 @@ import {
   EdgeDBError,
   MissingRequiredError,
   _introspect,
-  // _RawConnection,
+  _RawBinaryConnection,
   _CodecsRegistry,
   _ReadBuffer,
   ResultCardinalityMismatchError,
@@ -1609,47 +1609,44 @@ test("concurrent ops", async () => {
   }
 });
 
-// test("'implicit*' headers", async () => {
-//   const config = await parseConnectArguments(getConnectOptions());
-//   const con = (await _RawConnection.connectWithTimeout(
-//     config.connectionParams.address,
-//     config
-//   )) as _RawConnection;
-//   try {
-//     const [_, outCodecData, protocolVersion] = await con.rawParse(
-//       `SELECT schema::Function {
-//         name
-//       }`,
-//       {
-//         implicitTypenames: "true",
-//         implicitLimit: "5",
-//       }
-//     );
-//     const resultData = await con.rawExecute();
+test("'implicit*' headers", async () => {
+  const config = await parseConnectArguments(getConnectOptions());
+  const con = await _RawBinaryConnection.retryingConnectWithTimeout(config);
+  try {
+    const [_, outCodecData, protocolVersion] = await con.rawParse(
+      `SELECT schema::Function {
+        name
+      }`,
+      {
+        implicitTypenames: "true",
+        implicitLimit: "5",
+      }
+    );
+    const resultData = await con.rawExecute();
 
-//     const registry = new _CodecsRegistry();
-//     const codec = registry.buildCodec(outCodecData, protocolVersion);
+    const registry = new _CodecsRegistry();
+    const codec = registry.buildCodec(outCodecData, protocolVersion);
 
-//     const result = new Set();
-//     const buf = new _ReadBuffer(resultData);
-//     const codecReadBuf = _ReadBuffer.alloc();
-//     while (buf.length > 0) {
-//       const msgType = buf.readUInt8();
-//       const len = buf.readUInt32();
+    const result = new Set();
+    const buf = new _ReadBuffer(resultData);
+    const codecReadBuf = _ReadBuffer.alloc();
+    while (buf.length > 0) {
+      const msgType = buf.readUInt8();
+      const len = buf.readUInt32();
 
-//       if (msgType !== 68 || len <= 4) {
-//         throw new Error("invalid data packet");
-//       }
+      if (msgType !== 68 || len <= 4) {
+        throw new Error("invalid data packet");
+      }
 
-//       buf.sliceInto(codecReadBuf, len - 4);
-//       codecReadBuf.discard(6);
-//       const val = codec.decode(codecReadBuf);
-//       result.push(val);
-//     }
+      buf.sliceInto(codecReadBuf, len - 4);
+      codecReadBuf.discard(6);
+      const val = codec.decode(codecReadBuf);
+      result.push(val);
+    }
 
-//     expect(result).toHaveLength(5);
-//     expect(result[0].__tname__).toBe("schema::Function");
-//   } finally {
-//     await con.close();
-//   }
-// });
+    expect(result).toHaveLength(5);
+    expect(result[0].__tname__).toBe("schema::Function");
+  } finally {
+    await con.close();
+  }
+});

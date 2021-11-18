@@ -112,7 +112,7 @@ export class RawConnection {
   private connWaiterResolve: ((value: any) => void) | null;
   private connWaiterReject: ((value: any) => void) | null;
 
-  protected protocolVersion: ProtocolVersion = PROTO_VER;
+  protocolVersion: ProtocolVersion = PROTO_VER;
 
   private _abortedWith: Error | null = null;
 
@@ -784,7 +784,7 @@ export class RawConnection {
     }
   }
 
-  protected async _parse(
+  async _parse(
     query: string,
     asJson: boolean,
     expectOne: boolean,
@@ -951,7 +951,7 @@ export class RawConnection {
     }
   }
 
-  protected async _executeFlow(
+  async _executeFlow(
     args: QueryArgs | Buffer,
     inCodec: ICodec,
     outCodec: ICodec,
