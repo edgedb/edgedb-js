@@ -32,6 +32,8 @@ export type {ObjectShape} from "./datatypes/object";
 export {Set} from "./datatypes/set";
 export type {Tuple} from "./datatypes/tuple";
 
+export type {Executor} from "./ifaces";
+
 export * from "./errors";
 
 /* Private APIs */

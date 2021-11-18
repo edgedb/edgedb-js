@@ -16,15 +16,13 @@
  * limitations under the License.
  */
 
-import * as util from "util";
 import {Temporal} from "proposal-temporal";
-
 import {
-  LocalDate,
-  LocalTime,
   Duration,
-  LocalDateToOrdinal,
+  LocalDate,
   LocalDateFromOrdinal,
+  LocalDateToOrdinal,
+  LocalTime,
 } from "../src/datatypes/datetime";
 
 test("types: LocalDate", async () => {

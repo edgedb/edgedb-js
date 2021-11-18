@@ -8,11 +8,8 @@ import {ConnectConfig} from "../src/con_utils";
 import {Connection} from "../src/ifaces";
 
 import {connect} from "../src/index.node";
-import {promisify} from "util";
 
-type PromiseCallback = () => void;
-
-const getServerInfo = async (
+export const getServerInfo = async (
   filename: string
 ): Promise<{
   port: number;
@@ -40,7 +37,7 @@ const getServerInfo = async (
   return JSON.parse(line.replace("READY=", ""));
 };
 
-const getWSLPath = (path: string): string => {
+export const getWSLPath = (path: string): string => {
   return path.replace("C:", "/mnt/c").split("\\").join("/").toLowerCase();
 };
 
@@ -48,14 +45,14 @@ const generateTempID = (): number => {
   return Math.floor(Math.random() * 999999999);
 };
 
-const generateStatusFileName = (tag: string): string => {
+export const generateStatusFileName = (tag: string): string => {
   return path.join(
     os.tmpdir(),
     `edgedb-js-status-file-${tag}-${generateTempID()}`
   );
 };
 
-const getServerCommand = (statusFile: string): string[] => {
+export const getServerCommand = (statusFile: string): string[] => {
   let srvcmd = "edgedb-server";
   if (process.env.EDGEDB_SERVER_BIN) {
     srvcmd = process.env.EDGEDB_SERVER_BIN;
@@ -91,24 +88,25 @@ const getServerCommand = (statusFile: string): string[] => {
   return args;
 };
 
-const startServer = async (
+export const startServer = async (
   cmd: string[],
   statusFile: string,
   env: {[key: string]: string} = {}
 ): Promise<{config: ConnectConfig; proc: child_process.ChildProcess}> => {
   let err: ((_: string) => void) | null = null;
   let stderrData: string = "";
+  console.log(cmd);
   const proc = child_process.spawn(cmd[0], cmd.slice(1, cmd.length), {
     env: {...process.env, ...env},
   });
 
   if (process.env.EDGEDB_DEBUG_SERVER) {
-    proc.stdout.on("data", (data) => {
+    proc.stdout.on("data", data => {
       process.stdout.write(data.toString());
     });
   }
 
-  proc.stderr.on("data", (data) => {
+  proc.stderr.on("data", data => {
     if (process.env.EDGEDB_DEBUG_SERVER) {
       process.stderr.write(data.toString());
     } else {
@@ -136,7 +134,7 @@ const startServer = async (
     runtimeData = await getServerInfo(statusFile);
 
     if (runtimeData == null) {
-      await new Promise((resolve) => setTimeout(resolve, 1_000));
+      await new Promise(resolve => setTimeout(resolve, 1_000));
     } else {
       break;
     }
@@ -176,7 +174,9 @@ const startServer = async (
   return {config, proc};
 };
 
-const connectToServer = async (config: ConnectConfig): Promise<Connection> => {
+export const connectToServer = async (
+  config: ConnectConfig
+): Promise<Connection> => {
   const con = await connect(undefined, config);
 
   try {
@@ -210,7 +210,7 @@ export default async () => {
   console.log("\nStarting EdgeDB test cluster...");
 
   const denoStatusFile = generateStatusFileName("deno");
-  console.log("deno status file:", denoStatusFile);
+  console.log("Deno status file:", denoStatusFile);
   const denoArgs = getServerCommand(getWSLPath(denoStatusFile));
   if (denoArgs.includes("--generate-self-signed-cert")) {
     denoArgs.push("--binary-endpoint-security=optional");
@@ -218,9 +218,10 @@ export default async () => {
   const denoPromise = startServer(denoArgs, denoStatusFile);
 
   const statusFile = generateStatusFileName("node");
-  console.log("node status file:", statusFile);
+  console.log("Node status file:", statusFile);
 
   const args = getServerCommand(getWSLPath(statusFile));
+
   const {proc, config} = await startServer(args, statusFile);
   // @ts-ignore
   global.edgedbProc = proc;

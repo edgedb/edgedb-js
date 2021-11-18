@@ -16,40 +16,37 @@
  * limitations under the License.
  */
 
-import {net, hrTime, tls} from "./adapter.node";
-
-import char, * as chars from "./chars";
-import {resolveErrorCode} from "./errors/resolve";
-import * as errors from "./errors";
+import {hrTime, net, tls} from "./adapter.node";
 import {
-  ReadMessageBuffer,
-  WriteMessageBuffer,
   ReadBuffer,
+  ReadMessageBuffer,
   WriteBuffer,
+  WriteMessageBuffer,
 } from "./buffer";
-import {versionGreaterThan, versionGreaterThanOrEqual} from "./utils";
-import {CodecsRegistry} from "./codecs/registry";
+import char, * as chars from "./chars";
+import {NullCodec, NULL_CODEC} from "./codecs/codecs";
 import {ICodec, uuid} from "./codecs/ifaces";
-import {Set} from "./datatypes/set";
-import LRU from "./lru";
-import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {ObjectCodec} from "./codecs/object";
-import {NULL_CODEC, NullCodec} from "./codecs/codecs";
+import {CodecsRegistry} from "./codecs/registry";
+import {EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec} from "./codecs/tuple";
+import {Address, NormalizedConnectConfig} from "./con_utils";
+import {Set} from "./datatypes/set";
+import * as errors from "./errors";
+import {resolveErrorCode} from "./errors/resolve";
 import {
   ALLOW_MODIFICATIONS,
+  BorrowReason,
+  Connection,
   INNER,
   OPTIONS,
-  Executor,
-  QueryArgs,
-  Connection,
-  BorrowReason,
   ParseOptions,
   PrepareMessageHeaders,
   ProtocolVersion,
+  QueryArgs,
   ServerSettings,
 } from "./ifaces";
-import * as scram from "./scram";
+import LRU from "./lru";
 import {
   Options,
   RetryOptions,
@@ -57,10 +54,9 @@ import {
   SimpleTransactionOptions,
   TransactionOptions,
 } from "./options";
-import {PartialRetryRule} from "./options";
-
-import {Address, NormalizedConnectConfig} from "./con_utils";
-import {Transaction, START_TRANSACTION_IMPL} from "./transaction";
+import * as scram from "./scram";
+import {START_TRANSACTION_IMPL, Transaction} from "./transaction";
+import {versionGreaterThan, versionGreaterThanOrEqual} from "./utils";
 
 const PROTO_VER: ProtocolVersion = [0, 13];
 const PROTO_VER_MIN: ProtocolVersion = [0, 9];
@@ -519,12 +515,12 @@ export class ConnectionImpl {
   private config: NormalizedConnectConfig;
   private paused: boolean;
   private connected: boolean = false;
-
+  // @ts-ignore
   private lastStatus: string | null;
 
   private codecsRegistry: CodecsRegistry;
   private queryCodecCache: LRU<string, [number, ICodec, ICodec]>;
-
+  // @ts-ignore
   private serverSecret: Buffer | null;
   /** @internal */ serverSettings: ServerSettings;
   private serverXactStatus: TransactionStatus;
@@ -688,7 +684,7 @@ export class ConnectionImpl {
       pause = this.buffer.feed(data);
     } catch (e: any) {
       if (this.messageWaiterReject) {
-        this.messageWaiterReject(e);
+        this.messageWaiterReject(e as Error);
       } else {
         throw e;
       }
@@ -775,9 +771,11 @@ export class ConnectionImpl {
   }
 
   private _parseErrorMessage(): Error {
+    // @ts-ignore
     const severity = this.buffer.readChar();
     const code = this.buffer.readUInt32();
     const message = this.buffer.readString();
+    // @ts-ignore
     const attrs = this._parseHeaders();
     const errorType = resolveErrorCode(OLD_ERROR_CODES.get(code) ?? code);
     this.buffer.finishMessage();
