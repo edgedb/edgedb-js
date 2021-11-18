@@ -1,7 +1,6 @@
 import {promises as fs} from "fs";
 import util from "util";
-import {exec as execCB} from "child_process";
-const exec = util.promisify(execCB);
+import {execSync} from "child_process";
 
 import path from "path";
 // import child_process from "child_process";
@@ -48,7 +47,6 @@ async function generateQB(config: ConnectConfig) {
   console.log(`Generating query builder...`);
   const genCmd = [
     `yarn generate`,
-    // `--dsn edgedb://localhost:${config.port}`,
     `--host ${config.host}`,
     `--port ${config.port}`,
     `--user ${config.user}`,
@@ -60,9 +58,7 @@ async function generateQB(config: ConnectConfig) {
   ];
 
   console.log(genCmd.join(" "));
-  const result = await exec(genCmd.join(" "));
-  console.log(result.stdout);
-  console.log(result.stderr);
+  execSync(genCmd.join(" "));
   return "done";
 }
 
@@ -108,7 +104,8 @@ export default async () => {
 
 // the query builder must be generated
 // prior to "yarn test". otherwise the generated
-// TS files are not recognized.
+// TS files are not recognized. this is true even if the
+// files are generated during "globalSetup".
 async function prejestSetup() {
   console.log(`Pre-Jest setup...`);
   const statusFile = generateStatusFileName("node");
@@ -120,8 +117,6 @@ async function prejestSetup() {
   await shutdown(proc, client);
 
   const outpath = path.join(__dirname, "../dbschema/edgeql");
-  console.log(`outpath: ${outpath}`);
-  console.log(await fs.readdir(outpath));
 }
 
 if (require.main === module) {

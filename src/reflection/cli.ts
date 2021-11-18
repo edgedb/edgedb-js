@@ -122,7 +122,6 @@ const run = async () => {
         break;
       case "--output-dir":
         options.outputDir = getVal();
-        console.log(`Got output-dir: ${options.outputDir}`);
         break;
       case "--force-overwrite":
         options.forceOverwrite = true;
@@ -269,9 +268,6 @@ OPTIONS:
   if (options.passwordFromStdin) {
     connectionConfig.password = await readPasswordFromStdin();
   }
-
-  console.log("OPTIONS");
-  console.log(JSON.stringify(options, null, 2));
 
   await generateQB({outputDir, connectionConfig, target: options.target!});
 
