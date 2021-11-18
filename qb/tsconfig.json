@@ -4,7 +4,7 @@
       "dom",
       "es6"
     ],
-    "target": "es3",
+    "target": "es5",
     "module": "commonjs",
     "esModuleInterop": true,
     "moduleResolution": "node",
@@ -12,7 +12,7 @@
     "strictPropertyInitialization": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    // "downlevelIteration": true,
+    "downlevelIteration": true,
     "isolatedModules": true,
     "baseUrl": ".",
     "declaration": true,

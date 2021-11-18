@@ -1517,12 +1517,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"edgedb@portal:..::locator=query-builder%40workspace%3A.":
+"edgedb@portal:..::locator=edgeqb-query-builder%40workspace%3A.":
   version: 0.0.0-use.local
-  resolution: "edgedb@portal:..::locator=query-builder%40workspace%3A."
+  resolution: "edgedb@portal:..::locator=edgeqb-query-builder%40workspace%3A."
   bin:
     edgedb-generate: ./dist/reflection/cli.js
   languageName: node
+  linkType: soft
+
+"edgeqb-query-builder@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "edgeqb-query-builder@workspace:."
+  dependencies:
+    "@types/node": ^15.12.2
+    conditional-type-checks: ^1.0.5
+    edgedb: ^0.14.0
+    jest: ^27.0.5
+    superjson: ^1.7.5
+    ts-jest: ^27.0.3
+    ts-node: ^10.0.0
+    typescript: ^4.4.2
+  languageName: unknown
   linkType: soft
 
 "electron-to-chromium@npm:^1.3.793":
@@ -3284,21 +3299,6 @@ fsevents@^2.3.2:
   checksum: 823bf443c6dd14f669984dea25757b37993f67e8d94698996064035edd43bed8a5a17a9f12e439c2b35df1078c6bec05a6c86e336209eb1061e8025c481168e8
   languageName: node
   linkType: hard
-
-"query-builder@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "query-builder@workspace:."
-  dependencies:
-    "@types/node": ^15.12.2
-    conditional-type-checks: ^1.0.5
-    edgedb: ^0.14.0
-    jest: ^27.0.5
-    superjson: ^1.7.5
-    ts-jest: ^27.0.3
-    ts-node: ^10.0.0
-    typescript: ^4.4.2
-  languageName: unknown
-  linkType: soft
 
 "react-is@npm:^17.0.1":
   version: 17.0.2

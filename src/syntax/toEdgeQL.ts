@@ -21,7 +21,7 @@ import type {
   $expr_PathNode,
   $expr_TypeIntersection,
 } from "../reflection/path";
-import reservedKeywords from "../reflection/reservedKeywords";
+import {reservedKeywords} from "../reflection/reservedKeywords";
 import type {$expr_Cast} from "./cast";
 import type {$expr_Detached} from "./detached";
 import type {$expr_For, $expr_ForVar} from "./for";
@@ -182,7 +182,7 @@ export function $toEdgeQL(this: any) {
   >();
 
   const seen = new Map(walkExprCtx.seen);
-  for (const expr of Array.from(seen.keys())) {
+  for (const expr of seen.keys()) {
     const refData = seen.get(expr)!;
     seen.delete(expr);
 
@@ -268,9 +268,9 @@ export function $toEdgeQL(this: any) {
         ...walkExprCtx.seen.get(withBlock)!.childExprs,
       ]);
       for (const scope of [
-        ...Array.from(refData.parentScopes),
+        ...refData.parentScopes,
         ...util.flatMap(refData.aliases, alias => [
-          ...Array.from(walkExprCtx.seen.get(alias)!.parentScopes),
+          ...walkExprCtx.seen.get(alias)!.parentScopes,
         ]),
       ]) {
         if (scope === null || !validScopes.has(scope)) {
@@ -326,7 +326,7 @@ function topoSortWithVars(
   const unvisited = new Set(vars);
   const visiting = new Set<SomeExpression>();
 
-  for (const withVar of Array.from(unvisited)) {
+  for (const withVar of unvisited) {
     visit(withVar);
   }
 
@@ -340,7 +340,7 @@ function topoSortWithVars(
 
     visiting.add(withVar);
 
-    for (const child of Array.from(ctx.withVars.get(withVar)!.childExprs)) {
+    for (const child of ctx.withVars.get(withVar)!.childExprs) {
       if (vars.has(child)) {
         visit(child);
       }
