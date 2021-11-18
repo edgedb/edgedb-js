@@ -76,7 +76,7 @@ import * as fs from "fs";
 import * as crypto from "crypto";
 import {join as pathJoin} from "path";
 import {Client} from "../src/index.node";
-import {parseConnectArguments, stashPath} from "../src/con_utils";
+import {parseConnectArguments, stashPath} from "../src/conUtils";
 import {getClient} from "./testbase";
 import * as errors from "../src/errors";
 import * as platform from "../src/platform";

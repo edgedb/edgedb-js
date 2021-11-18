@@ -4,7 +4,7 @@ import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
 import * as readline from "readline";
-import {ConnectConfig} from "../src/con_utils";
+import {ConnectConfig} from "../src/conUtils";
 
 import {Client, createClient} from "../src/index.node";
 

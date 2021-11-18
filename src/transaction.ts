@@ -20,7 +20,7 @@ import {Executor, QueryArgs} from "./ifaces";
 import {getUniqueId} from "./utils";
 import {TransactionOptions, IsolationLevel} from "./options";
 import {RawConnection} from "./rawConn";
-import {ClientConnectionHolder} from "./pool";
+import {ClientConnectionHolder} from "./client";
 
 export enum TransactionState {
   NEW = 0,

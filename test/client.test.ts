@@ -40,7 +40,7 @@ import {
   EdgeDBDateTime,
 } from "../src/datatypes/datetime";
 import {getClient, getConnectOptions, isDeno} from "./testbase";
-import {parseConnectArguments} from "../src/con_utils";
+import {parseConnectArguments} from "../src/conUtils";
 
 function setStringCodecs(codecs: string[], client: Client) {
   // @ts-ignore

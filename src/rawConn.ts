@@ -43,7 +43,7 @@ import {
   ServerSettings,
 } from "./ifaces";
 import * as scram from "./scram";
-import {Address, NormalizedConnectConfig} from "./con_utils";
+import {Address, NormalizedConnectConfig} from "./conUtils";
 
 const PROTO_VER: ProtocolVersion = [0, 13];
 const PROTO_VER_MIN: ProtocolVersion = [0, 9];

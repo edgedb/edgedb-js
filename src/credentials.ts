@@ -1,5 +1,5 @@
 import {readFileUtf8, path, tls} from "./adapter.node";
-import {validTlsSecurityValues, TlsSecurity} from "./con_utils";
+import {validTlsSecurityValues, TlsSecurity} from "./conUtils";
 import * as platform from "./platform";
 
 export interface Credentials {
