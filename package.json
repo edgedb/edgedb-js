@@ -11,36 +11,48 @@
     "url": "https://github.com/edgedb/edgedb-js.git"
   },
   "version": "0.15.2",
-  "main": "./dist/src/index.node.js",
-  "types": "./dist/src/index.node.d.ts",
+  "main": "./dist/index.node.js",
+  "types": "./dist/index.node.d.ts",
   "license": "Apache-2.0",
   "files": [
     "/dist"
   ],
   "browser": {
-    "./dist/src/index.node.js": "./dist/src/index.browser.js"
+    "./dist/index.node.js": "./dist/index.browser.js"
+  },
+  "bin": {
+    "edgedb-generate": "./dist/reflection/cli.js"
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",
-    "@types/node": "^13.1.6",
+    "@types/node": "14",
     "get-stdin": "^7.0.0",
     "in-publish": "^2.0.0",
     "jest": "^26.6.3",
+    "nodemon": "^2.0.13",
     "prettier": "^2.3.2",
     "proposal-temporal": "^0.7.0",
     "ts-jest": "^26.5.2",
+    "ts-node": "^10.0.0",
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
     "tslint-plugin-prettier": "^2.3.0",
     "typescript": "^4.4.2"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "yarn build:cjs && yarn build:esm",
+    "build:esm": "tsc --project tsconfig.build-esm.json && ./tools/copySyntaxToDist.sh",
+    "build:cjs": "tsc --project tsconfig.build.json",
     "test": "jest --detectOpenHandles",
+    "test:all": "yarn test && yarn test:qb",
+    "test:qb": "cd qb && yarn test",
     "lint": "tslint 'src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
     "prepublish": "in-publish && yarn lint && yarn build && yarn compileForDeno && yarn test || not-in-publish",
-    "compileForDeno": "deno run --unstable --allow-env --allow-read --allow-write tools/compileForDeno.ts"
+    "compileForDeno": "deno run --unstable --allow-env --allow-read --allow-write tools/compileForDeno.ts",
+    "build:dev": "nodemon -e ts -w ./src -w ./qb -x 'yarn tsc --project tsconfig.build.json --incremental'",
+    "dev": "yarn generate && echo \"Compiling TypeScript...\" && yarn build --incremental",
+    "dev:watch": "nodemon -e ts -w ./src -x 'yarn generate && echo \"Compiling TypeScript...\" && yarn build --incremental'"
   }
 }

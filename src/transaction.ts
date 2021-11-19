@@ -15,12 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import {ClientConnectionHolder} from "./client";
 import * as errors from "./errors";
 import {Executor, QueryArgs} from "./ifaces";
-import {getUniqueId} from "./utils";
-import {TransactionOptions} from "./options";
 import {RawConnection} from "./rawConn";
-import {ClientConnectionHolder} from "./client";
 
 export enum TransactionState {
   ACTIVE = 0,

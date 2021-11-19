@@ -17,10 +17,10 @@
  */
 
 import {
-  LocalDateTime,
-  LocalDate,
-  LocalTime,
   Duration,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
   RelativeDuration,
 } from "./datatypes/datetime";
 import {ConfigMemory} from "./datatypes/memory";

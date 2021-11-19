@@ -83,16 +83,16 @@ function timeScriptShutdown(script: string, timeout = 5_000) {
 
     let shutdownStart = 0;
     let err = "";
-    proc.stdout.on("data", (data) => {
+    proc.stdout.on("data", data => {
       if (String(data).trim() === "done") {
         shutdownStart = Date.now();
       }
     });
-    proc.stderr.on("data", (data) => {
+    proc.stderr.on("data", data => {
       err += data;
     });
 
-    proc.on("close", (code) => {
+    proc.on("close", code => {
       if (code == null) {
         return;
       }
@@ -108,7 +108,7 @@ function timeScriptShutdown(script: string, timeout = 5_000) {
 
 test("unref idle connections", async () => {
   const shutdownTime = await timeScriptShutdown(
-    `const {createClient} = require('./dist/src/index.node');
+    `const {createClient} = require('./dist/index.node');
 
 (async () => {
   const client = createClient(${JSON.stringify(getConnectOptions())});

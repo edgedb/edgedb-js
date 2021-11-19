@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es2017", // "es5"
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "downlevelIteration": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "declaration": true,
+    "preserveSymlinks": true,
+    "paths": {}
+  },
+  "include": [
+    ".",
+  ],
+}

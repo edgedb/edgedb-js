@@ -23,6 +23,7 @@ export {
   LocalDate,
   LocalTime,
   Duration,
+  RelativeDuration,
 } from "./datatypes/datetime";
 
 export {ConfigMemory} from "./datatypes/memory";
@@ -31,6 +32,8 @@ export type {NamedTuple} from "./datatypes/namedtuple";
 export type {ObjectShape} from "./datatypes/object";
 export {Set} from "./datatypes/set";
 export type {Tuple} from "./datatypes/tuple";
+
+export type {Executor} from "./ifaces";
 
 export * from "./errors";
 

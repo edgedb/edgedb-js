@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import {Client} from "../src/index.node";
 import * as errors from "../src/errors";
+import {Client} from "../src/index.node";
+import {IsolationLevel, TransactionOptions} from "../src/options";
 import {getClient} from "./testbase";
-import {TransactionOptions, IsolationLevel} from "../src/options";
 
 const typename = "TransactionTest";
 
@@ -38,7 +38,7 @@ async function run(test: (con: Client) => Promise<void>): Promise<void> {
 }
 
 beforeAll(async () => {
-  await run(async (con) => {
+  await run(async con => {
     await con.execute(`
       CREATE TYPE ${typename} {
         CREATE REQUIRED PROPERTY name -> std::str;
@@ -48,17 +48,17 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await run(async (con) => {
+  await run(async con => {
     await con.execute(`DROP TYPE ${typename};`);
   });
 });
 
 test("transaction: regular 01", async () => {
-  await run(async (con) => {
+  await run(async con => {
     const rawTransaction = con.withRetryOptions({attempts: 1}).transaction;
 
     async function faulty(): Promise<void> {
-      await rawTransaction(async (tx) => {
+      await rawTransaction(async tx => {
         await tx.execute(`
           INSERT ${typename} {
             name := 'Test Transaction'
@@ -82,11 +82,11 @@ test("transaction: regular 01", async () => {
 
 test.skip("transaction interface errors", async () => {
   // TODO: use execution context to fix borrowed checks
-  await run(async (con) => {
+  await run(async con => {
     const rawTransaction = con.withRetryOptions({attempts: 1}).transaction;
 
     async function borrow1(): Promise<void> {
-      await rawTransaction(async (tx) => {
+      await rawTransaction(async tx => {
         await con.execute("SELECT 7*9");
       });
     }
@@ -99,7 +99,7 @@ test.skip("transaction interface errors", async () => {
     );
 
     async function borrow2(): Promise<void> {
-      await rawTransaction(async (tx) => {
+      await rawTransaction(async tx => {
         await con.query("SELECT 7*9");
       });
     }
@@ -111,7 +111,7 @@ test.skip("transaction interface errors", async () => {
     );
 
     async function borrow3(): Promise<void> {
-      await rawTransaction(async (tx) => {
+      await rawTransaction(async tx => {
         await con.querySingle("SELECT 7*9");
       });
     }
@@ -123,7 +123,7 @@ test.skip("transaction interface errors", async () => {
     );
 
     async function borrow4(): Promise<void> {
-      await rawTransaction(async (tx) => {
+      await rawTransaction(async tx => {
         await con.queryJSON("SELECT 7*9");
       });
     }
@@ -135,7 +135,7 @@ test.skip("transaction interface errors", async () => {
     );
 
     async function borrow5(): Promise<void> {
-      await rawTransaction(async (tx) => {
+      await rawTransaction(async tx => {
         await con.querySingleJSON("SELECT 7*9");
       });
     }
@@ -165,26 +165,26 @@ function* all_options(): Generator<
 }
 
 test("transaction: kinds", async () => {
-  await run(async (con) => {
+  await run(async con => {
     for (let [isolation, readonly, defer] of all_options()) {
       let partial = {isolation, readonly, defer};
       let opt = new TransactionOptions(partial); // class api
       await con
         .withTransactionOptions(opt)
         .withRetryOptions({attempts: 1})
-        .transaction(async (tx) => {});
-      await con.withTransactionOptions(opt).transaction(async (tx) => {});
+        .transaction(async tx => {});
+      await con.withTransactionOptions(opt).transaction(async tx => {});
     }
   });
 
-  await run(async (con) => {
+  await run(async con => {
     for (let [isolation, readonly, defer] of all_options()) {
       let opt = {isolation, readonly, defer}; // obj api
       await con
         .withTransactionOptions(opt)
         .withRetryOptions({attempts: 1})
-        .transaction(async (tx) => {});
-      await con.withTransactionOptions(opt).transaction(async (tx) => {});
+        .transaction(async tx => {});
+      await con.withTransactionOptions(opt).transaction(async tx => {});
     }
   });
 });

@@ -1,5 +1,5 @@
-import {readFileUtf8, path, tls} from "./adapter.node";
-import {validTlsSecurityValues, TlsSecurity} from "./conUtils";
+import {readFileUtf8} from "./adapter.node";
+import {TlsSecurity, validTlsSecurityValues} from "./conUtils";
 import * as platform from "./platform";
 
 export interface Credentials {
@@ -91,7 +91,7 @@ export function validateCredentials(data: any): Credentials {
   ) {
     throw new Error(
       `\`tls_security\` must be one of ${validTlsSecurityValues
-        .map((val) => `"${val}"`)
+        .map(val => `"${val}"`)
         .join(", ")}`
     );
   }

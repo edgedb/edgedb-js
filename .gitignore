@@ -1,10 +1,13 @@
-/dist
-/node_modules
+dist
 /edgedb-deno
 /test/deno
 /.bench
 /.vscode
+node_modules
+**/.yarn/*
+!.yarn/releases
 
 /coverage
 /yarn-error.log
-
+.DS_Store
+.vscode

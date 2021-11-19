@@ -16,31 +16,29 @@
  * limitations under the License.
  */
 
+import {EdgeDBDateTime} from "src/datatypes/datetime";
+import {parseConnectArguments} from "../src/conUtils";
 import {
+  Client,
+  DivisionByZeroError,
+  Duration,
+  EdgeDBError,
+  Executor,
+  LocalDate,
+  LocalDateTime,
+  MissingRequiredError,
+  NamedTuple,
+  NoDataError,
+  RelativeDuration,
+  ResultCardinalityMismatchError,
   Set,
   Tuple,
-  NamedTuple,
-  LocalDateTime,
-  DivisionByZeroError,
-  EdgeDBError,
-  MissingRequiredError,
+  _CodecsRegistry,
   _introspect,
   _RawBinaryConnection,
-  _CodecsRegistry,
   _ReadBuffer,
-  ResultCardinalityMismatchError,
-  NoDataError,
-  Client,
 } from "../src/index.node";
-import {Executor} from "../src/ifaces";
-import {
-  LocalDate,
-  Duration,
-  RelativeDuration,
-  EdgeDBDateTime,
-} from "../src/datatypes/datetime";
 import {getClient, getConnectOptions, isDeno} from "./testbase";
-import {parseConnectArguments} from "../src/conUtils";
 
 function setStringCodecs(codecs: string[], client: Client) {
   // @ts-ignore
@@ -562,7 +560,7 @@ test("fetch: named args", async () => {
           "there should have been an unexpected named argument error"
         );
       })
-      .catch((e) => {
+      .catch(e => {
         expect(e.toString()).toMatch(/unexpected named argument: "c"/);
       });
 
@@ -589,7 +587,7 @@ test("fetch: int overflow", async () => {
       .then(() => {
         throw new Error("there should have been an overflow error");
       })
-      .catch((e) => {
+      .catch(e => {
         expect(e.toString()).toMatch(/cannot unpack.*9007199254740992.*/);
       });
 
@@ -603,7 +601,7 @@ test("fetch: int overflow", async () => {
       .then(() => {
         throw new Error("there should have been an overflow error");
       })
-      .catch((e) => {
+      .catch(e => {
         expect(e.toString()).toMatch(/cannot unpack.*-9007199254740993.*/);
       });
   } finally {
@@ -687,7 +685,7 @@ test("fetch: cal::local_time", async () => {
 
 test("fetch: duration", async () => {
   function formatLegacyDuration(duration: Duration): string {
-    function fmt(timePart: number, len = 3): string {
+    function fmt(timePart: number, len: number = 3): string {
       return Math.abs(timePart).toString().padStart(len, "0");
     }
 
@@ -779,7 +777,7 @@ test("fetch: duration", async () => {
         .then(() => {
           throw new Error("There should have encoding error");
         })
-        .catch((e) => {
+        .catch(e => {
           expect(e.toString()).toMatch(
             /Cannot encode a 'Duration' with a non-zero number of.*/
           );
@@ -1221,7 +1219,7 @@ test("fetch: uuid", async () => {
 test("fetch: enum", async () => {
   const client = getClient();
 
-  await client.withRetryOptions({attempts: 1}).transaction(async (tx) => {
+  await client.withRetryOptions({attempts: 1}).transaction(async tx => {
     await tx.execute(`
         CREATE SCALAR TYPE MyEnum EXTENDING enum<"A", "B">;
       `);
@@ -1361,7 +1359,7 @@ test("fetch: long strings", async () => {
       .then(() => {
         throw new Error("the query should have errored out");
       })
-      .catch((e) => {
+      .catch(e => {
         expect(e.toString()).toMatch(
           /query result is too big: buffer overflow/
         );
@@ -1444,7 +1442,7 @@ test("query(Required)Single cardinality", async () => {
   ]) {
     await tests(client);
     try {
-      await client.transaction((tx) => tests(tx));
+      await client.transaction(tx => tests(tx));
     } catch {}
   }
 
@@ -1493,7 +1491,7 @@ test("transaction state cleanup", async () => {
   const client = getClient({concurrency: 1});
 
   await expect(
-    client.transaction(async (tx) => {
+    client.transaction(async tx => {
       try {
         await tx.query(`select 1/0`);
       } catch {
@@ -1535,7 +1533,7 @@ test("fetch/optimistic cache invalidation", async () => {
   const query = `SELECT ${typename}.prop1 LIMIT 1`;
   const client = getClient();
   try {
-    await client.transaction(async (tx) => {
+    await client.transaction(async tx => {
       await tx.execute(`
         CREATE TYPE ${typename} {
           CREATE REQUIRED PROPERTY prop1 -> std::str;
@@ -1585,10 +1583,10 @@ test("fetch no codec", async () => {
       .then(() => {
         throw new Error("an exception was expected");
       })
-      .catch((e) => {
+      .catch(e => {
         expect(e.toString()).toMatch(/no JS codec for std::decimal/);
       });
-    await con.querySingle("select 123").then((res) => {
+    await con.querySingle("select 123").then(res => {
       expect(res).toEqual(123);
     });
   } finally {

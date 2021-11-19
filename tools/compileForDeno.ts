@@ -34,10 +34,11 @@ const denoTestFiles = new Set([
   "test/client.test.ts",
   "test/credentials.test.ts",
 ]);
+
 run({
   sourceDir: "./test",
   destDir: "./test/deno",
-  sourceFilter: (path) => {
+  sourceFilter: path => {
     return denoTestFiles.has(path);
   },
   pathRewriteRules: [{match: /^test\//, replace: ""}],
@@ -52,7 +53,7 @@ run({
     },
     {
       match: /^\.\.\/src\/.+/,
-      replace: (match) =>
+      replace: match =>
         `${match.replace(/^\.\.\/src\//, "../../edgedb-deno/_src/")}${
           match.endsWith(".ts") ? "" : ".ts"
         }`,
@@ -103,6 +104,11 @@ async function run({
 
   for await (const entry of walk(sourceDir, {includeDirs: false})) {
     const sourcePath = normalisePath(entry.path);
+    if (entry.path.includes("syntax")) {
+      console.log(`skipping ${entry.path}`);
+      continue;
+    }
+
     if (!sourceFilter || sourceFilter(sourcePath)) {
       sourceFilePathMap.set(sourcePath, resolveDestPath(sourcePath));
     }
@@ -141,7 +147,7 @@ async function run({
 
         const neededImports = injectImports.reduce(
           (neededImports, {imports, from}) => {
-            const usedImports = imports.filter((importName) =>
+            const usedImports = imports.filter(importName =>
               parsedSource.identifiers?.has(importName)
             );
             if (usedImports.length) {
@@ -156,7 +162,7 @@ async function run({
         );
 
         if (neededImports.length) {
-          const importDecls = neededImports.map((neededImport) => {
+          const importDecls = neededImports.map(neededImport => {
             const imports = neededImport.imports.join(", ");
             const importPath = resolveImportPath(
               relative(dirname(sourcePath), neededImport.from),

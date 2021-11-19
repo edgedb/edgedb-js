@@ -6,6 +6,7 @@ import {
   HmacSha256,
 } from "https://deno.land/std@0.108.0/hash/sha256.ts";
 import path from "https://deno.land/std@0.108.0/node/path.ts";
+import * as _fs from "https://deno.land/std@0.115.0/fs/mod.ts";
 import EventEmitter from "https://deno.land/std@0.108.0/node/events.ts";
 import util from "https://deno.land/std@0.108.0/node/util.ts";
 
@@ -77,6 +78,36 @@ export namespace fs {
   export function stat(path: string): Promise<Deno.FileInfo> {
     return Deno.stat(path);
   }
+
+  export function rmdir(
+    path: string,
+    params?: {recursive?: boolean}
+  ): Promise<void> {
+    return Deno.remove(path, params);
+  }
+  export function mkdir(
+    path: string,
+    _params?: {recursive?: boolean}
+  ): Promise<void> {
+    return _fs.ensureDir(path);
+  }
+
+  export function writeFile(path: string, contents: string): Promise<void> {
+    return Deno.writeTextFile(path, contents);
+  }
+  export function writeFileSync(path: string, contents: string): void {
+    return Deno.writeTextFileSync(path, contents);
+  }
+  export function appendFile(path: string, contents: string): Promise<void> {
+    return Deno.writeTextFile(path, contents, {append: true});
+  }
+}
+
+export async function input(message = "", _params?: {silent?: boolean}) {
+  const buf = new Uint8Array(1024);
+  await Deno.stdout.write(new TextEncoder().encode(message));
+  const n = <number>await Deno.stdin.read(buf);
+  return new TextDecoder().decode(buf.subarray(0, n)).trim();
 }
 
 // TODO: when 'net.Socket' is implemented in deno node compatibility library
@@ -115,13 +146,13 @@ export namespace net {
     constructor(pconn: Promise<Deno.Conn>) {
       super();
       pconn
-        .then((conn) => {
+        .then(conn => {
           this._conn = conn;
           this._readIter = Deno.iter(conn);
           this.emit("connect");
           this.resume();
         })
-        .catch((e) => this.emit("error", e));
+        .catch(e => this.emit("error", e));
     }
 
     setNoDelay() {

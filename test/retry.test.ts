@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import {Client} from "../src/index.node";
 import * as errors from "../src/errors";
+import {Client} from "../src/index.node";
+import {defaultBackoff, RetryOptions} from "../src/options";
 import {getClient} from "./testbase";
-import {RetryOptions, defaultBackoff} from "../src/options";
 
 class Barrier {
   _counter: number;
@@ -38,7 +38,7 @@ class Barrier {
         waiter();
       }
     } else {
-      await new Promise<void>((accept) => {
+      await new Promise<void>(accept => {
         this._waiters.push(accept);
       });
     }
@@ -82,7 +82,7 @@ async function run2(
 }
 
 beforeAll(async () => {
-  await run(async (con) => {
+  await run(async con => {
     await con.execute(`
       CREATE TYPE ${typename} EXTENDING std::Object {
         CREATE PROPERTY name -> std::str {
@@ -97,14 +97,14 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await run(async (con) => {
+  await run(async con => {
     await con.execute(`DROP TYPE ${typename};`);
   });
 });
 
 test("retry: regular 01", async () => {
-  await run(async (con) => {
-    await con.transaction(async (tx) => {
+  await run(async con => {
+    await con.transaction(async tx => {
       await tx.execute(`
         INSERT ${typename} {
           name := 'counter1'
@@ -119,7 +119,7 @@ async function checkRetries(client: Client, client2: Client, name: string) {
   let barrier = new Barrier(2);
 
   async function transaction(client: Client): Promise<unknown> {
-    return await client.transaction(async (tx) => {
+    return await client.transaction(async tx => {
       iterations += 1;
 
       // This magic query makes the test more reliable for some
