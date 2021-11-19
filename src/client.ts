@@ -16,12 +16,14 @@
  * limitations under the License.
  */
 
+import {CodecsRegistry} from "./codecs/registry";
+import {
+  ConnectConfig,
+  NormalizedConnectConfig,
+  parseConnectArguments,
+} from "./conUtils";
 import * as errors from "./errors";
-import {ConnectConfig} from "./conUtils";
-import {parseConnectArguments, NormalizedConnectConfig} from "./conUtils";
-import {LifoQueue} from "./primitives/queues";
-
-import {retryingConnect} from "./retry";
+import {Executor, QueryArgs} from "./ifaces";
 import {
   Options,
   RetryOptions,
@@ -29,13 +31,11 @@ import {
   SimpleTransactionOptions,
   TransactionOptions,
 } from "./options";
-
-import {CodecsRegistry} from "./codecs/registry";
-
-import {QueryArgs, Executor} from "./ifaces";
-import {Transaction} from "./transaction";
 import Event from "./primitives/event";
+import {LifoQueue} from "./primitives/queues";
 import {RawConnection} from "./rawConn";
+import {retryingConnect} from "./retry";
+import {Transaction} from "./transaction";
 import {sleep} from "./utils";
 
 export class ClientConnectionHolder {
@@ -125,14 +125,27 @@ export class ClientConnectionHolder {
   async transaction<T>(
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
-    let result: T;
+    let result: T | void;
     for (let iteration = 0; iteration >= 0; ++iteration) {
       const transaction = await Transaction._startTransaction(this);
+
+      let commitFailed = false;
       try {
-        result = await action(transaction);
+        result = await Promise.race([
+          action(transaction),
+          transaction._transactionTimeout(),
+        ]);
+        try {
+          await transaction._commit();
+        } catch (err) {
+          commitFailed = true;
+          throw err;
+        }
       } catch (err) {
         try {
-          await transaction._rollback();
+          if (!commitFailed) {
+            await transaction._rollback();
+          }
         } catch (rollback_err) {
           if (!(rollback_err instanceof errors.EdgeDBError)) {
             // We ignore EdgeDBError errors on rollback, retrying
@@ -142,7 +155,10 @@ export class ClientConnectionHolder {
         }
         if (
           err instanceof errors.EdgeDBError &&
-          err.hasTag(errors.SHOULD_RETRY)
+          err.hasTag(errors.SHOULD_RETRY) &&
+          // TODO: Attempt retry on commit connection errors if we know the
+          // error occurred before query was sent to server
+          !(commitFailed && err instanceof errors.ClientConnectionError)
         ) {
           const rule = this.options.retryOptions.getRuleForException(err);
           if (iteration + 1 >= rule.attempts) {
@@ -153,14 +169,7 @@ export class ClientConnectionHolder {
         }
         throw err;
       }
-      // TODO(tailhook) sort out errors on commit, early network errors
-      // and some other errors could be retried
-      // NOTE: we can't retry on all the same errors as we don't know if
-      // commit is succeeded before the database have received it or after
-      // it have been done but network is dropped before we were able
-      // to receive a response
-      await transaction._commit();
-      return result;
+      return result as T;
     }
     throw Error("unreachable");
   }
