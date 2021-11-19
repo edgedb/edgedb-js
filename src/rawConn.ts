@@ -94,12 +94,12 @@ export class RawConnection {
   private paused: boolean;
   private connected: boolean = false;
 
-  private lastStatus: string | null;
+  protected lastStatus: string | null;
 
   private codecsRegistry: CodecsRegistry;
   private queryCodecCache: LRU<string, [number, ICodec, ICodec]>;
 
-  private serverSecret: Buffer | null;
+  protected serverSecret: Buffer | null;
   /** @internal */ serverSettings: ServerSettings;
   private serverXactStatus: TransactionStatus;
 
@@ -349,10 +349,10 @@ export class RawConnection {
   }
 
   private _parseErrorMessage(): Error {
-    const severity = this.buffer.readChar();
+    this.buffer.readChar(); // ignore severity
     const code = this.buffer.readUInt32();
     const message = this.buffer.readString();
-    const attrs = this._parseHeaders();
+    this._parseHeaders(); // ignore attrs
     const errorType = resolveErrorCode(OLD_ERROR_CODES.get(code) ?? code);
     this.buffer.finishMessage();
 

@@ -1,4 +1,4 @@
-import {Connection} from "../../ifaces";
+import {Executor} from "../../ifaces";
 import {StrictMap} from "../strictMap";
 import {typeutil} from "../util/typeutil";
 
@@ -20,7 +20,7 @@ import {typeutil} from "../util/typeutil";
 
 export type ScalarTypes = typeutil.depromisify<ReturnType<typeof getScalars>>;
 
-export const getScalars = async (cxn: Connection) => {
+export const getScalars = async (cxn: Executor) => {
   const scalarArray = await cxn.queryJSON(`with module schema
 select InheritingObject {
   id,

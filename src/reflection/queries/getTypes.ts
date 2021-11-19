@@ -1,4 +1,4 @@
-import {Connection} from "../../ifaces";
+import {Executor} from "../../ifaces";
 import {Cardinality} from "../enums";
 import {StrictMap} from "../strictMap";
 
@@ -72,7 +72,7 @@ export type Type = PrimitiveType | ObjectType;
 export type Types = StrictMap<UUID, Type>;
 
 export async function getTypes(
-  cxn: Connection,
+  cxn: Executor,
   params?: {debug?: boolean}
 ): Promise<Types> {
   const QUERY = `

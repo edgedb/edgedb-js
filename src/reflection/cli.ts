@@ -7,7 +7,7 @@ import {
   ConnectConfig,
   parseConnectArguments,
   validTlsSecurityValues,
-} from "../con_utils";
+} from "../conUtils";
 import {configFileHeader, exitWithError, generateQB} from "./generate";
 
 interface Options {

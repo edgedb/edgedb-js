@@ -28,7 +28,7 @@ export enum TransactionState {
 }
 
 export class Transaction implements Executor {
-  private _holder: ClientConnectionHolder;
+  protected _holder: ClientConnectionHolder;
   private _rawConn: RawConnection;
 
   private _state: TransactionState;

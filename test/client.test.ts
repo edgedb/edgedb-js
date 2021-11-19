@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {EdgeDBDateTime} from "src/datatypes/datetime";
+import {EdgeDBDateTime} from "../src/datatypes/datetime";
 import {parseConnectArguments} from "../src/conUtils";
 import {
   Client,
