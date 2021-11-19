@@ -214,8 +214,7 @@ export class ClientConnectionHolder {
 }
 
 class ClientPool {
-  private _closed: boolean;
-  private _closing: boolean;
+  private _closing: Event | null;
   private _queue: LifoQueue<ClientConnectionHolder>;
   private _holders: ClientConnectionHolder[];
   private _userConcurrency: number | null;
@@ -232,8 +231,7 @@ class ClientPool {
     this._holders = [];
     this._userConcurrency = options.concurrency ?? null;
     this._suggestedConcurrency = null;
-    this._closing = false;
-    this._closed = false;
+    this._closing = null;
     this._connectConfig = {...options, ...(dsn !== undefined ? {dsn} : {})};
 
     this._resizeHolderPool();
@@ -329,18 +327,12 @@ class ClientPool {
     return connection;
   }
 
-  private _checkState(): void {
-    if (this._closing) {
-      throw new errors.InterfaceError("The client is closing");
-    }
-
-    if (this._closed) {
-      throw new errors.InterfaceError("The client is closed");
-    }
-  }
-
   async acquireHolder(options: Options): Promise<ClientConnectionHolder> {
-    this._checkState();
+    if (this._closing) {
+      throw new errors.InterfaceError(
+        this._closing.done ? "The client is closed" : "The client is closing"
+      );
+    }
 
     const connectionHolder = await this._queue.get();
     try {
@@ -364,17 +356,18 @@ class ClientPool {
    * in ``close()``, the client will terminate by calling ``terminate()``.
    */
   async close(): Promise<void> {
-    // Ref. asyncio_pool aclose
-    if (this._closed) {
-      return;
+    if (this._closing) {
+      return await this._closing.wait();
     }
 
-    this._checkState();
-
-    this._closing = true;
+    this._closing = new Event();
 
     const warningTimeoutId = setTimeout(() => {
-      this._warn_on_long_close();
+      // tslint:disable-next-line: no-console
+      console.warn(
+        "Client.close() is taking over 60 seconds to complete. " +
+          "Check if you have any unreleased connections left."
+      );
     }, 60e3);
 
     try {
@@ -383,18 +376,21 @@ class ClientPool {
           connectionHolder._waitUntilReleasedAndClose()
         )
       );
-    } catch (error) {
-      this.terminate();
-      throw error;
+    } catch (err) {
+      this._terminate();
+      this._closing.setError(err);
+      throw err;
     } finally {
       clearTimeout(warningTimeoutId);
-      this._closed = true;
-      this._closing = false;
     }
+
+    this._closing.set();
   }
 
-  isClosed(): boolean {
-    return this._closed;
+  private _terminate(): void {
+    for (const connectionHolder of this._holders) {
+      connectionHolder.terminate();
+    }
   }
 
   /**
@@ -402,25 +398,20 @@ class ClientPool {
    * closed, it returns without doing anything.
    */
   terminate(): void {
-    if (this._closed) {
+    if (this._closing?.done) {
       return;
     }
 
-    this._checkState();
+    this._terminate();
 
-    for (const connectionHolder of this._holders) {
-      connectionHolder.terminate();
+    if (!this._closing) {
+      this._closing = new Event();
+      this._closing.set();
     }
-
-    this._closed = true;
   }
 
-  private _warn_on_long_close(): void {
-    // tslint:disable-next-line: no-console
-    console.warn(
-      "Client.close() is taking over 60 seconds to complete. " +
-        "Check if you have any unreleased connections left."
-    );
+  isClosed(): boolean {
+    return !!this._closing;
   }
 }
 
