@@ -32,6 +32,7 @@ import {CodecsRegistry} from "./codecs/registry";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {Set} from "./datatypes/set";
 import LRU from "./primitives/lru";
+import Event from "./primitives/event";
 import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {ObjectCodec} from "./codecs/object";
@@ -105,12 +106,9 @@ export class RawConnection {
 
   private buffer: ReadMessageBuffer;
 
-  private messageWaiterResolve: ((value: any) => void) | null;
-  private messageWaiterReject: ((error: Error) => void) | null;
+  private messageWaiter: Event | null;
 
-  private connWaiter: Promise<void>;
-  private connWaiterResolve: ((value: any) => void) | null;
-  private connWaiterReject: ((value: any) => void) | null;
+  private connWaiter: Event;
 
   protocolVersion: ProtocolVersion = PROTO_VER;
 
@@ -133,15 +131,9 @@ export class RawConnection {
     this.serverSettings = {};
     this.serverXactStatus = TransactionStatus.TRANS_UNKNOWN;
 
-    this.messageWaiterResolve = null;
-    this.messageWaiterReject = null;
+    this.messageWaiter = null;
 
-    this.connWaiterResolve = null;
-    this.connWaiterReject = null;
-    this.connWaiter = new Promise<void>((resolve, reject) => {
-      this.connWaiterResolve = resolve;
-      this.connWaiterReject = reject;
-    });
+    this.connWaiter = new Event();
 
     this.paused = false;
     this.sock = sock;
@@ -176,36 +168,23 @@ export class RawConnection {
     }
 
     this.sock.ref();
+    this.messageWaiter = new Event();
     try {
-      await new Promise<void>((resolve, reject) => {
-        this.messageWaiterResolve = resolve;
-        this.messageWaiterReject = reject;
-      });
+      await this.messageWaiter.wait();
     } finally {
       this.sock.unref();
     }
   }
 
   private _onConnect(): void {
-    if (this.connWaiterResolve) {
-      this.connWaiterResolve(true);
-      this.connWaiterReject = null;
-      this.connWaiterResolve = null;
-    }
+    this.connWaiter.set();
   }
 
   private _abortWaiters(err: Error): void {
-    if (this.connWaiterReject) {
-      this.connWaiterReject(err);
-      this.connWaiterReject = null;
-      this.connWaiterResolve = null;
+    if (!this.connWaiter.done) {
+      this.connWaiter.setError(err);
     }
-
-    if (this.messageWaiterReject) {
-      this.messageWaiterReject(err);
-      this.messageWaiterResolve = null;
-      this.messageWaiterReject = null;
-    }
+    this.messageWaiter?.setError(err);
   }
 
   private _onClose(): void {
@@ -217,7 +196,7 @@ export class RawConnection {
       `the connection has been aborted`
     );
 
-    if (this.connWaiterReject || this.messageWaiterReject) {
+    if (!this.connWaiter.done || this.messageWaiter) {
       /* This can happen, particularly, during the connect phase.
          If the connection is aborted with a client-side timeout, there can be
          a situation where the connection has actually been established,
@@ -261,8 +240,9 @@ export class RawConnection {
     try {
       pause = this.buffer.feed(data);
     } catch (e: any) {
-      if (this.messageWaiterReject) {
-        this.messageWaiterReject(e);
+      if (this.messageWaiter) {
+        this.messageWaiter.setError(e);
+        this.messageWaiter = null;
       } else {
         throw e;
       }
@@ -273,11 +253,10 @@ export class RawConnection {
       this.sock.pause();
     }
 
-    if (this.messageWaiterResolve) {
+    if (this.messageWaiter) {
       if (this.buffer.takeMessage()) {
-        this.messageWaiterResolve(true);
-        this.messageWaiterResolve = null;
-        this.messageWaiterReject = null;
+        this.messageWaiter.set();
+        this.messageWaiter = null;
       }
     }
   }
@@ -564,7 +543,7 @@ export class RawConnection {
   }
 
   private async connect(): Promise<void> {
-    await this.connWaiter;
+    await this.connWaiter.wait();
 
     if (this.sock instanceof tls.TLSSocket) {
       if (this.sock.alpnProtocol !== "edgedb-binary") {
