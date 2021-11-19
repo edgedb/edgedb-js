@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import * as bi from "../bigint";
+import * as bi from "../primitives/bigint";
 
 const KiB = 1024;
 const MiB = 1024 * KiB;

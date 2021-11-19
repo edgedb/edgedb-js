@@ -16,15 +16,14 @@
  * limitations under the License.
  */
 
-export {createClient} from "./pool";
-import {createClient} from "./pool";
+export {createClient} from "./client";
+import {createClient} from "./client";
 export default createClient;
 
-export {connect, createPool} from "./pool";
+export {RawBinaryConnection as _RawBinaryConnection} from "./rawBinaryConn";
 
-export {RawConnection as _RawConnection} from "./client";
-
-export type {Connection, Client} from "./ifaces";
+export type {Executor} from "./ifaces";
+export type {Client, ConnectOptions} from "./client";
 
 export {IsolationLevel, RetryCondition, RetryOptions} from "./options";
 export {defaultBackoff} from "./options";

@@ -1,9 +1,9 @@
 import {fs, path, exists, readFileUtf8} from "../adapter.node";
 
 import {DirBuilder, dts, r, t} from "./builders";
-import {createClient, Connection} from "../index.node";
+import {createClient, Client} from "../index.node";
 
-import {ConnectConfig} from "../con_utils";
+import {ConnectConfig} from "../conUtils";
 
 import {getCasts, Casts} from "./queries/getCasts";
 import {getScalars, ScalarTypes} from "./queries/getScalars";
@@ -49,7 +49,7 @@ export async function generateQB(params: {
   console.log(JSON.stringify(params, null, 2));
   // tslint:disable-next-line
   console.log(`Connecting to EdgeDB instance...`);
-  let cxn: Connection;
+  let cxn: Client;
   try {
     cxn = await createClient({
       ...connectionConfig,

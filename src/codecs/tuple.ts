@@ -19,7 +19,7 @@
 import {KNOWN_TYPENAMES} from "./consts";
 
 import {ICodec, Codec, uuid, IArgsCodec, CodecKind} from "./ifaces";
-import {ReadBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 
 import {
   introspectMethod,

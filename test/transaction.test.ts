@@ -17,13 +17,13 @@
  */
 
 import * as errors from "../src/errors";
-import {Connection} from "../src/ifaces";
+import {Client} from "../src/index.node";
 import {IsolationLevel, TransactionOptions} from "../src/options";
 import {getClient} from "./testbase";
 
 const typename = "TransactionTest";
 
-async function run(test: (con: Connection) => Promise<void>): Promise<void> {
+async function run(test: (con: Client) => Promise<void>): Promise<void> {
   const client = getClient();
 
   try {

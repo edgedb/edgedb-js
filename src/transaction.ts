@@ -15,302 +15,151 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  borrowError,
-  ConnectionImpl,
-  InnerConnection,
-  StandaloneConnection,
-} from "./client";
+import {ClientConnectionHolder} from "./client";
 import * as errors from "./errors";
-import {
-  ALLOW_MODIFICATIONS,
-  BorrowReason,
-  Connection,
-  Executor,
-  INNER,
-  QueryArgs,
-} from "./ifaces";
-import {IsolationLevel, TransactionOptions} from "./options";
+import {Executor, QueryArgs} from "./ifaces";
+import {RawConnection} from "./rawConn";
 
 export enum TransactionState {
-  NEW = 0,
-  STARTED = 1,
-  COMMITTED = 2,
-  ROLLEDBACK = 3,
-  FAILED = 4,
+  ACTIVE = 0,
+  COMMITTED = 1,
+  ROLLEDBACK = 2,
+  FAILED = 3,
 }
 
-export const START_TRANSACTION_IMPL = Symbol("START_TRANSACTION_IMPL");
-
 export class Transaction implements Executor {
-  [ALLOW_MODIFICATIONS]: never;
-  _connection: StandaloneConnection;
-  _inner?: InnerConnection;
-  _impl?: ConnectionImpl;
-  _deferrable: boolean;
-  _isolation: IsolationLevel;
-  _readonly: boolean;
-  _state: TransactionState;
-  _opInProgress: boolean;
+  protected _holder: ClientConnectionHolder;
+  private _rawConn: RawConnection;
 
-  constructor(
-    connection: Connection,
-    options: TransactionOptions = TransactionOptions.defaults()
-  ) {
-    if (!(connection instanceof StandaloneConnection)) {
-      throw new errors.InterfaceError(
-        "connection is of unknown type for transaction"
-      );
-    }
-    this._connection = connection as StandaloneConnection;
-    this._deferrable = options.deferrable;
-    this._isolation = options.isolation;
-    this._readonly = options.readonly;
-    this._state = TransactionState.NEW;
+  private _state: TransactionState;
+  private _opInProgress: boolean;
+
+  private constructor(holder: ClientConnectionHolder, rawConn: RawConnection) {
+    this._holder = holder;
+    this._rawConn = rawConn;
+
+    this._state = TransactionState.ACTIVE;
     this._opInProgress = false;
   }
 
-  get state(): TransactionState {
-    return this._state;
+  /** @internal */
+  static async _startTransaction(
+    holder: ClientConnectionHolder
+  ): Promise<Transaction> {
+    const rawConn = await holder._getConnection();
+
+    const options = holder.options.transactionOptions;
+    await rawConn.execute(
+      `START TRANSACTION ISOLATION ${options.isolation}, ${
+        options.readonly ? "READ ONLY" : "READ WRITE"
+      }, ${options.deferrable ? "" : "NOT "} DEFERRABLE;`,
+      true
+    );
+
+    return new Transaction(holder, rawConn);
   }
 
-  isActive(): boolean {
-    return this._state === TransactionState.STARTED;
-  }
-
-  private _checkStateBase(opname: string): void {
-    if (this._state === TransactionState.COMMITTED) {
-      throw new errors.InterfaceError(
-        `cannot ${opname}; the transaction is already committed`
-      );
-    }
-    if (this._state === TransactionState.ROLLEDBACK) {
-      throw new errors.InterfaceError(
-        `cannot ${opname}; the transaction is already rolled back`
-      );
-    }
-    if (this._state === TransactionState.FAILED) {
-      throw new errors.InterfaceError(
-        `cannot ${opname}; the transaction is in error state`
-      );
-    }
-  }
-
-  private _checkState(opname: string): void {
-    if (this._state !== TransactionState.STARTED) {
-      if (this._state === TransactionState.NEW) {
-        throw new errors.InterfaceError(
-          `cannot ${opname}; the transaction is not yet started`
-        );
-      }
-      this._checkStateBase(opname);
-    }
-  }
-
-  protected _makeStartQuery(): string {
-    this._checkStateBase("start");
-
-    if (this._state === TransactionState.STARTED) {
-      throw new errors.InterfaceError(
-        "cannot start; the transaction is already started"
-      );
-    }
-
-    const isolation = this._isolation;
-
-    let mode;
-    if (this._readonly) {
-      mode = "READ ONLY";
-    } else if (this._readonly !== undefined) {
-      mode = "READ WRITE";
-    }
-
-    let defer;
-    if (this._deferrable) {
-      defer = "DEFERRABLE";
-    } else if (this._deferrable !== undefined) {
-      defer = "NOT DEFERRABLE";
-    }
-
-    return `START TRANSACTION ISOLATION ${isolation}, ${mode}, ${defer};`;
-  }
-
-  protected _makeCommitQuery(): string {
-    this._checkState("commit");
-    return "COMMIT;";
-  }
-
-  protected _makeRollbackQuery(): string {
-    this._checkState("rollback");
-    return "ROLLBACK;";
-  }
-
-  private async _execute(
-    query: string,
-    successState: TransactionState
-  ): Promise<void> {
-    try {
-      await this.getConn().execute(query, true);
-      this._state = successState;
-    } catch (error) {
-      this._state = TransactionState.FAILED;
-      throw error;
-    }
-  }
-
-  start(): Promise<void> {
-    return this[START_TRANSACTION_IMPL]();
-  }
-
-  async [START_TRANSACTION_IMPL](
-    singleConnect: boolean = false
-  ): Promise<void> {
-    const start_query = this._makeStartQuery();
+  private async _runOp<T>(
+    opname: string,
+    op: () => Promise<T>,
+    errMessage?: string
+  ): Promise<T> {
     if (this._opInProgress) {
-      throw borrowError(BorrowReason.QUERY);
+      throw new errors.InterfaceError(
+        errMessage ??
+          "Another query is in progress. Use the query methods " +
+            "on 'Client' to run queries concurrently."
+      );
+    }
+    if (this._state !== TransactionState.ACTIVE) {
+      throw new errors.InterfaceError(
+        `cannot ${opname}; the transaction is ${
+          this._state === TransactionState.COMMITTED
+            ? "already committed"
+            : this._state === TransactionState.ROLLEDBACK
+            ? "already rolled back"
+            : "in error state"
+        }`
+      );
     }
     this._opInProgress = true;
     try {
-      const inner = this._connection[INNER];
-      if (inner.borrowedFor) {
-        throw borrowError(BorrowReason.QUERY);
-      }
-      inner.borrowedFor = BorrowReason.TRANSACTION;
-      this._inner = inner;
-      this._impl = await inner.getImpl(singleConnect);
-      await this._execute(start_query, TransactionState.STARTED);
+      return await op();
     } finally {
       this._opInProgress = false;
     }
   }
 
-  async commit(): Promise<void> {
-    if (this._opInProgress) {
-      throw borrowError(BorrowReason.QUERY);
-    }
-    this._opInProgress = true;
-    try {
-      this._inner!.borrowedFor = undefined;
-      await this._execute(this._makeCommitQuery(), TransactionState.COMMITTED);
-    } finally {
-      this._opInProgress = false;
-    }
+  /** @internal */
+  async _commit(): Promise<void> {
+    await this._runOp(
+      "commit",
+      async () => {
+        await this._rawConn.execute("COMMIT", true);
+        this._state = TransactionState.COMMITTED;
+      },
+      "A query is still in progress after transaction block has returned."
+    );
   }
 
-  async rollback(): Promise<void> {
-    if (this._opInProgress) {
-      throw borrowError(BorrowReason.QUERY);
-    }
-    this._opInProgress = true;
-    try {
-      this._inner!.borrowedFor = undefined;
-      await this._execute(
-        this._makeRollbackQuery(),
-        TransactionState.ROLLEDBACK
-      );
-    } finally {
-      this._opInProgress = false;
-    }
-  }
-  private getConn(): ConnectionImpl {
-    const conn = this._impl;
-    if (!conn) {
-      throw new errors.InterfaceError("Transaction is not started");
-    } else {
-      return conn;
-    }
+  /** @internal */
+  async _rollback(): Promise<void> {
+    await this._runOp(
+      "rollback",
+      async () => {
+        await this._rawConn.execute("ROLLBACK", true);
+        this._state = TransactionState.ROLLEDBACK;
+      },
+      "A query is still in progress after transaction block has returned."
+    );
   }
 
   async execute(query: string): Promise<void> {
-    if (this._opInProgress) {
-      throw borrowError(BorrowReason.QUERY);
-    }
-    this._opInProgress = true;
-    try {
-      await this.getConn().execute(query);
-    } finally {
-      this._opInProgress = false;
-    }
+    return this._runOp("execute", () => this._rawConn.execute(query));
   }
 
   async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
-    if (this._opInProgress) {
-      throw borrowError(BorrowReason.QUERY);
-    }
-    this._opInProgress = true;
-    try {
-      return await this.getConn().fetch(query, args, false, false);
-    } finally {
-      this._opInProgress = false;
-    }
+    return this._runOp("query", () =>
+      this._rawConn.fetch(query, args, false, false)
+    );
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    if (this._opInProgress) {
-      throw borrowError(BorrowReason.QUERY);
-    }
-    this._opInProgress = true;
-    try {
-      return await this.getConn().fetch(query, args, true, false);
-    } finally {
-      this._opInProgress = false;
-    }
+    return this._runOp("queryJSON", () =>
+      this._rawConn.fetch(query, args, true, false)
+    );
   }
 
   async querySingle<T = unknown>(
     query: string,
     args?: QueryArgs
   ): Promise<T | null> {
-    if (this._opInProgress) {
-      throw borrowError(BorrowReason.QUERY);
-    }
-    this._opInProgress = true;
-    try {
-      return await this.getConn().fetch(query, args, false, true);
-    } finally {
-      this._opInProgress = false;
-    }
+    return this._runOp("querySingle", () =>
+      this._rawConn.fetch(query, args, false, true)
+    );
   }
 
   async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
-    if (this._opInProgress) {
-      throw borrowError(BorrowReason.QUERY);
-    }
-    this._opInProgress = true;
-    try {
-      return await this.getConn().fetch(query, args, true, true);
-    } finally {
-      this._opInProgress = false;
-    }
+    return this._runOp("querySingleJSON", () =>
+      this._rawConn.fetch(query, args, true, true)
+    );
   }
 
   async queryRequiredSingle<T = unknown>(
     query: string,
     args?: QueryArgs
   ): Promise<T> {
-    if (this._opInProgress) {
-      throw borrowError(BorrowReason.QUERY);
-    }
-    this._opInProgress = true;
-    try {
-      return await this.getConn().fetch(query, args, false, true, true);
-    } finally {
-      this._opInProgress = false;
-    }
+    return this._runOp("querySingleJSON", () =>
+      this._rawConn.fetch(query, args, false, true, true)
+    );
   }
 
   async queryRequiredSingleJSON(
     query: string,
     args?: QueryArgs
   ): Promise<string> {
-    if (this._opInProgress) {
-      throw borrowError(BorrowReason.QUERY);
-    }
-    this._opInProgress = true;
-    try {
-      return await this.getConn().fetch(query, args, true, true, true);
-    } finally {
-      this._opInProgress = false;
-    }
+    return this._runOp("queryRequiredSingleJSON", () =>
+      this._rawConn.fetch(query, args, true, true, true)
+    );
   }
 }

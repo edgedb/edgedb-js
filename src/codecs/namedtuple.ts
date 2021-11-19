@@ -17,7 +17,7 @@
  */
 
 import {ICodec, Codec, uuid, IArgsCodec, CodecKind} from "./ifaces";
-import {ReadBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {EmptyTupleCodec} from "./tuple";
 import {generateType, NamedTupleConstructor} from "../datatypes/namedtuple";
 

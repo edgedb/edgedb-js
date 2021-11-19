@@ -1,4 +1,4 @@
-import {Connection} from "../../ifaces";
+import {Executor} from "../../ifaces";
 import {StrictMap} from "../strictMap";
 import {typeutil} from "../../reflection";
 
@@ -28,7 +28,7 @@ export type FunctionTypes = typeutil.depromisify<
   ReturnType<typeof getFunctions>
 >;
 
-export const getFunctions = async (cxn: Connection) => {
+export const getFunctions = async (cxn: Executor) => {
   const functionsJson = await cxn.queryJSON(`
     with module schema
     select Function {

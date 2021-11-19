@@ -2,7 +2,7 @@ import path from "path";
 import {exists, fs, readFileUtf8} from "../../src/adapter.node";
 import util from "util";
 import {exec as execCB, execSync} from "child_process";
-import {ConnectConfig} from "edgedb/dist/con_utils";
+import {ConnectConfig} from "edgedb/dist/conUtils";
 const exec = util.promisify(execCB);
 
 const QBDIR = path.resolve(__dirname, "../dbschema/qbout");

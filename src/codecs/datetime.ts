@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../buffer";
+import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
-import * as bi from "../bigint";
+import * as bi from "../primitives/bigint";
 import {
   LocalDateTime,
   LocalDate,

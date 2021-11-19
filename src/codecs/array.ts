@@ -17,7 +17,7 @@
  */
 
 import {ICodec, Codec, ScalarCodec, uuid, CodecKind} from "./ifaces";
-import {WriteBuffer, ReadBuffer} from "../buffer";
+import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
 
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;

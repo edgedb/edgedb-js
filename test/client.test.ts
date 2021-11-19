@@ -16,34 +16,33 @@
  * limitations under the License.
  */
 
-import {parseConnectArguments} from "../src/con_utils";
+import {EdgeDBDateTime} from "../src/datatypes/datetime";
+import {parseConnectArguments} from "../src/conUtils";
 import {
-  Duration,
-  EdgeDBDateTime,
-  LocalDate,
-  RelativeDuration,
-} from "../src/datatypes/datetime";
-import {Connection, Executor} from "../src/ifaces";
-import {
+  Client,
   DivisionByZeroError,
+  Duration,
   EdgeDBError,
+  Executor,
+  LocalDate,
   LocalDateTime,
   MissingRequiredError,
   NamedTuple,
   NoDataError,
+  RelativeDuration,
   ResultCardinalityMismatchError,
   Set,
   Tuple,
   _CodecsRegistry,
   _introspect,
-  _RawConnection,
+  _RawBinaryConnection,
   _ReadBuffer,
 } from "../src/index.node";
 import {getClient, getConnectOptions, isDeno} from "./testbase";
 
-function setStringCodecs(codecs: string[], conn: Connection) {
+function setStringCodecs(codecs: string[], client: Client) {
   // @ts-ignore
-  const registry = conn.impl._codecsRegistry;
+  const registry = client.pool._codecsRegistry;
   registry.setStringCodecs(
     codecs.reduce((obj, codec) => {
       obj[codec] = true;
@@ -1610,10 +1609,7 @@ test("concurrent ops", async () => {
 
 test("'implicit*' headers", async () => {
   const config = await parseConnectArguments(getConnectOptions());
-  const con = (await _RawConnection.connectWithTimeout(
-    config.connectionParams.address,
-    config
-  )) as _RawConnection;
+  const con = await _RawBinaryConnection.retryingConnectWithTimeout(config);
   try {
     const [_, outCodecData, protocolVersion] = await con.rawParse(
       `SELECT schema::Function {

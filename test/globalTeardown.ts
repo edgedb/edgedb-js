@@ -1,11 +1,11 @@
 import * as child_process from "child_process";
-import {Connection} from "../src/ifaces";
+import {Client} from "../src/index.node";
 
 export const shutdown = async (
   proc: child_process.ChildProcess,
-  conn: Connection
+  client: Client
 ) => {
-  await conn.close();
+  await client.close();
 
   await new Promise<void>((resolve, reject) => {
     const to = setTimeout(() => {

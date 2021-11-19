@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {RingBuffer, RingBufferError} from "../src/ring";
+import {RingBuffer, RingBufferError} from "../src/primitives/ring";
 
 test("basic operations", () => {
   const d = new RingBuffer<number>({capacity: 3});

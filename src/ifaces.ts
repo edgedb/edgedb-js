@@ -23,13 +23,7 @@ import {
   LocalTime,
   RelativeDuration,
 } from "./datatypes/datetime";
-import {
-  RetryOptions,
-  SimpleRetryOptions,
-  SimpleTransactionOptions,
-  TransactionOptions,
-} from "./options";
-import {Transaction} from "./transaction";
+import {ConfigMemory} from "./datatypes/memory";
 
 export type ProtocolVersion = [number, number];
 
@@ -44,19 +38,14 @@ type QueryArgPrimitive =
   | LocalDate
   | LocalTime
   | Duration
-  | RelativeDuration;
+  | RelativeDuration
+  | ConfigMemory;
 
 type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
 
 export type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
 
-export enum BorrowReason {
-  TRANSACTION = "transaction",
-  QUERY = "query",
-  CLOSE = "close",
-}
-
-export interface ReadOnlyExecutor {
+export interface Executor {
   execute(query: string): Promise<void>;
   query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]>;
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
@@ -67,79 +56,6 @@ export interface ReadOnlyExecutor {
     args?: QueryArgs
   ): Promise<T>;
   queryRequiredSingleJSON(query: string, args?: QueryArgs): Promise<string>;
-}
-
-export const INNER = Symbol("INNER");
-export const OPTIONS = Symbol("OPTIONS");
-export const ALLOW_MODIFICATIONS = Symbol("ALLOW_MODIFICATIONS");
-
-interface Modifiable {
-  // Just a marker that discards structural typing and uses nominal type
-  // I.e. it avoids:
-  //   An interface declaring no members is equivalent to its supertype.
-  [ALLOW_MODIFICATIONS]: never;
-}
-
-export type Executor = ReadOnlyExecutor & Modifiable;
-
-export interface Connection extends Executor {
-  /**
-   * @deprecated
-   */
-  rawTransaction<T>(
-    action: (transaction: Transaction) => Promise<T>
-  ): Promise<T>;
-  /**
-   * @deprecated
-   */
-  retryingTransaction<T>(
-    action: (transaction: Transaction) => Promise<T>
-  ): Promise<T>;
-
-  transaction<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
-  withTransactionOptions(
-    opt: TransactionOptions | SimpleTransactionOptions
-  ): Connection;
-  withRetryOptions(opt: RetryOptions | SimpleRetryOptions): Connection;
-  close(): Promise<void>;
-  isClosed(): boolean;
-}
-
-export interface IClientStats {
-  queueLength: number;
-  openConnections: number;
-}
-
-export interface Client extends Executor {
-  /**
-   * @deprecated
-   */
-  rawTransaction<T>(
-    action: (transaction: Transaction) => Promise<T>
-  ): Promise<T>;
-  /**
-   * @deprecated
-   */
-  retryingTransaction<T>(
-    action: (transaction: Transaction) => Promise<T>
-  ): Promise<T>;
-
-  transaction<T>(action: (transaction: Transaction) => Promise<T>): Promise<T>;
-  withTransactionOptions(
-    opt: TransactionOptions | SimpleTransactionOptions
-  ): Client;
-  withRetryOptions(opt: RetryOptions | SimpleRetryOptions): Client;
-  close(): Promise<void>;
-  isClosed(): boolean;
-
-  ensureConnected(): Promise<this>;
-
-  /**
-   * @deprecated
-   * Get information about the current state of the client.
-   */
-  getStats(): IClientStats;
-  terminate(): void;
 }
 
 export interface KnownServerSettings {

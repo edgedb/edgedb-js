@@ -4,10 +4,9 @@ import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
 import * as readline from "readline";
-import {ConnectConfig} from "../src/con_utils";
-import {Connection} from "../src/ifaces";
+import {ConnectConfig} from "../src/conUtils";
 
-import {connect} from "../src/index.node";
+import {Client, createClient} from "../src/index.node";
 
 export const getServerInfo = async (
   filename: string
@@ -174,23 +173,21 @@ export const startServer = async (
   return {config, proc};
 };
 
-export const connectToServer = async (
-  config: ConnectConfig
-): Promise<Connection> => {
-  const con = await connect(undefined, config);
+const connectToServer = async (config: ConnectConfig): Promise<Client> => {
+  const client = createClient(config);
 
   try {
-    await con.execute(`
+    await client.execute(`
       CREATE DATABASE jest;
 		`);
 
-    await con.execute(`
+    await client.execute(`
       CREATE SUPERUSER ROLE jest {
         SET password := "jestjest";
       };
 		`);
 
-    await con.execute(`
+    await client.execute(`
       CONFIGURE SYSTEM INSERT Auth {
         user := "jest",
         priority := 10,
@@ -198,11 +195,11 @@ export const connectToServer = async (
       };
     `);
   } catch (e) {
-    await con.close();
+    await client.close();
     throw e;
   }
 
-  return con;
+  return client;
 };
 
 export default async () => {

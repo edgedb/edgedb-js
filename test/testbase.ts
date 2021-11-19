@@ -16,9 +16,7 @@
  * limitations under the License.
  */
 
-import {Client} from "../src/ifaces";
-import createClient from "../src/index.node";
-import {ConnectOptions} from "../src/pool";
+import createClient, {Client, ConnectOptions} from "../src/index.node";
 
 export const isDeno =
   typeof window !== "undefined" &&
