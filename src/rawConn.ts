@@ -29,6 +29,7 @@ import * as errors from "./errors";
 import {resolveErrorCode} from "./errors/resolve";
 import {
   ParseOptions,
+  PrepareMessageHeaders,
   ProtocolVersion,
   QueryArgs,
   ServerSettings,
@@ -1297,5 +1298,31 @@ export class RawConnection {
 
     const opts = {...options, host, port};
     return tls.connect(opts);
+  }
+
+  // These methods are exposed for use by EdgeDB Studio
+  public async rawParse(
+    query: string,
+    headers?: PrepareMessageHeaders
+  ): Promise<[Buffer, Buffer, ProtocolVersion]> {
+    const result = await this._parse(query, false, false, true, {
+      headers,
+    });
+    return [result[3]!, result[4]!, this.protocolVersion];
+  }
+
+  public async rawExecute(encodedArgs: Buffer | null = null): Promise<Buffer> {
+    const result = new WriteBuffer();
+    let inCodec = EMPTY_TUPLE_CODEC;
+    if (versionGreaterThanOrEqual(this.protocolVersion, [0, 12])) {
+      inCodec = NULL_CODEC;
+    }
+    await this._executeFlow(
+      encodedArgs, // arguments
+      inCodec, // inCodec -- to encode lack of arguments.
+      EMPTY_TUPLE_CODEC, // outCodec -- does not matter, it will not be used.
+      result
+    );
+    return result.unwrap();
   }
 }

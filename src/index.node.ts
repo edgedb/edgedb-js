@@ -20,7 +20,7 @@ export {createClient} from "./client";
 import {createClient} from "./client";
 export default createClient;
 
-export {RawBinaryConnection as _RawBinaryConnection} from "./rawBinaryConn";
+export {RawConnection as _RawConnection} from "./rawConn";
 
 export type {Executor} from "./ifaces";
 export type {Client, ConnectOptions} from "./client";
