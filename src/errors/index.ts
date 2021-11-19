@@ -337,9 +337,33 @@ export class DuplicateCastDefinitionError extends DuplicateDefinitionError {
   }
 }
 
-export class QueryTimeoutError extends QueryError {
+export class SessionTimeoutError extends QueryError {
   get code(): number {
     return 0x04_06_00_00;
+  }
+}
+
+export class IdleSessionTimeoutError extends SessionTimeoutError {
+  get code(): number {
+    return 0x04_06_01_00;
+  }
+}
+
+export class QueryTimeoutError extends SessionTimeoutError {
+  get code(): number {
+    return 0x04_06_02_00;
+  }
+}
+
+export class TransactionTimeoutError extends SessionTimeoutError {
+  get code(): number {
+    return 0x04_06_0a_00;
+  }
+}
+
+export class IdleTransactionTimeoutError extends TransactionTimeoutError {
+  get code(): number {
+    return 0x04_06_0a_01;
   }
 }
 
@@ -433,6 +457,31 @@ export class AccessError extends EdgeDBError {
 export class AuthenticationError extends AccessError {
   get code(): number {
     return 0x07_01_00_00;
+  }
+}
+
+export class AvailabilityError extends EdgeDBError {
+  get code(): number {
+    return 0x08_00_00_00;
+  }
+}
+
+export class BackendUnavailableError extends AvailabilityError {
+  protected static tags = {[tags.SHOULD_RETRY]: true};
+  get code(): number {
+    return 0x08_00_00_01;
+  }
+}
+
+export class BackendError extends EdgeDBError {
+  get code(): number {
+    return 0x09_00_00_00;
+  }
+}
+
+export class UnsupportedBackendFeatureError extends BackendError {
+  get code(): number {
+    return 0x09_00_01_00;
   }
 }
 
