@@ -17,11 +17,11 @@
  */
 
 import {hrTime} from "./adapter.node";
-import * as errors from "./errors";
-import {sleep} from "./utils";
 import {CodecsRegistry} from "./codecs/registry";
 import {NormalizedConnectConfig} from "./conUtils";
+import * as errors from "./errors";
 import {RawConnection} from "./rawConn";
+import {sleep} from "./utils";
 
 export async function retryingConnect(
   config: NormalizedConnectConfig,

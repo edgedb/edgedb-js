@@ -17,34 +17,33 @@
  */
 
 import {net, tls} from "./adapter.node";
-
-import char, * as chars from "./primitives/chars";
-import {resolveErrorCode} from "./errors/resolve";
-import * as errors from "./errors";
-import {
-  ReadMessageBuffer,
-  WriteMessageBuffer,
-  ReadBuffer,
-  WriteBuffer,
-} from "./primitives/buffer";
-import {versionGreaterThan, versionGreaterThanOrEqual} from "./utils";
-import {CodecsRegistry} from "./codecs/registry";
+import {NullCodec, NULL_CODEC} from "./codecs/codecs";
 import {ICodec, uuid} from "./codecs/ifaces";
-import {Set} from "./datatypes/set";
-import LRU from "./primitives/lru";
-import Event from "./primitives/event";
-import {EMPTY_TUPLE_CODEC, EmptyTupleCodec, TupleCodec} from "./codecs/tuple";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {ObjectCodec} from "./codecs/object";
-import {NULL_CODEC, NullCodec} from "./codecs/codecs";
+import {CodecsRegistry} from "./codecs/registry";
+import {EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec} from "./codecs/tuple";
+import {Address, NormalizedConnectConfig} from "./conUtils";
+import {Set} from "./datatypes/set";
+import * as errors from "./errors";
+import {resolveErrorCode} from "./errors/resolve";
 import {
-  QueryArgs,
   ParseOptions,
   ProtocolVersion,
+  QueryArgs,
   ServerSettings,
 } from "./ifaces";
+import {
+  ReadBuffer,
+  ReadMessageBuffer,
+  WriteBuffer,
+  WriteMessageBuffer,
+} from "./primitives/buffer";
+import char, * as chars from "./primitives/chars";
+import Event from "./primitives/event";
+import LRU from "./primitives/lru";
 import * as scram from "./scram";
-import {Address, NormalizedConnectConfig} from "./conUtils";
+import {versionGreaterThan, versionGreaterThanOrEqual} from "./utils";
 
 const PROTO_VER: ProtocolVersion = [0, 13];
 const PROTO_VER_MIN: ProtocolVersion = [0, 9];
@@ -113,6 +112,7 @@ export class RawConnection {
   protocolVersion: ProtocolVersion = PROTO_VER;
 
   private _abortedWith: Error | null = null;
+  connAbortWaiter: Event;
 
   /** @internal */
   protected constructor(
@@ -134,6 +134,7 @@ export class RawConnection {
     this.messageWaiter = null;
 
     this.connWaiter = new Event();
+    this.connAbortWaiter = new Event();
 
     this.paused = false;
     this.sock = sock;
@@ -206,6 +207,13 @@ export class RawConnection {
       this._abortWaiters(newErr);
     }
 
+    if (
+      this.buffer.takeMessage() &&
+      this.buffer.getMessageType() === chars.$E
+    ) {
+      newErr.source = this._parseErrorMessage();
+    }
+
     this._abortWithError(newErr);
   }
 
@@ -227,6 +235,15 @@ export class RawConnection {
   private _abortWithError(err: Error): void {
     this._abortedWith = err;
     this._abort();
+  }
+
+  getConnAbortError(): Error {
+    return (
+      this._abortedWith ??
+      new errors.ClientConnectionClosedError(
+        `connection closed with Client.close()`
+      )
+    );
   }
 
   private _checkState(): void {
@@ -1245,6 +1262,9 @@ export class RawConnection {
       this.sock.destroy();
     }
     this.connected = false;
+    if (!this.connAbortWaiter.done) {
+      this.connAbortWaiter.set();
+    }
   }
 
   isClosed(): boolean {

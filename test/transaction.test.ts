@@ -19,6 +19,8 @@
 import * as errors from "../src/errors";
 import {Client} from "../src/index.node";
 import {IsolationLevel, TransactionOptions} from "../src/options";
+import {sleep} from "../src/utils";
+import Event from "../src/primitives/event";
 import {getClient} from "./testbase";
 
 const typename = "TransactionTest";
@@ -77,74 +79,6 @@ test("transaction: regular 01", async () => {
     );
 
     expect(items).toHaveLength(0);
-  });
-});
-
-test.skip("transaction interface errors", async () => {
-  // TODO: use execution context to fix borrowed checks
-  await run(async con => {
-    const rawTransaction = con.withRetryOptions({attempts: 1}).transaction;
-
-    async function borrow1(): Promise<void> {
-      await rawTransaction(async tx => {
-        await con.execute("SELECT 7*9");
-      });
-    }
-
-    await expect(borrow1()).rejects.toThrowError(
-      new errors.InterfaceError(
-        "Connection object is borrowed for the transaction. " +
-          "Use the methods on transaction object instead."
-      )
-    );
-
-    async function borrow2(): Promise<void> {
-      await rawTransaction(async tx => {
-        await con.query("SELECT 7*9");
-      });
-    }
-    await expect(borrow2()).rejects.toThrowError(
-      new errors.InterfaceError(
-        "Connection object is borrowed for the transaction. " +
-          "Use the methods on transaction object instead."
-      )
-    );
-
-    async function borrow3(): Promise<void> {
-      await rawTransaction(async tx => {
-        await con.querySingle("SELECT 7*9");
-      });
-    }
-    await expect(borrow3()).rejects.toThrowError(
-      new errors.InterfaceError(
-        "Connection object is borrowed for the transaction. " +
-          "Use the methods on transaction object instead."
-      )
-    );
-
-    async function borrow4(): Promise<void> {
-      await rawTransaction(async tx => {
-        await con.queryJSON("SELECT 7*9");
-      });
-    }
-    await expect(borrow4()).rejects.toThrowError(
-      new errors.InterfaceError(
-        "Connection object is borrowed for the transaction. " +
-          "Use the methods on transaction object instead."
-      )
-    );
-
-    async function borrow5(): Promise<void> {
-      await rawTransaction(async tx => {
-        await con.querySingleJSON("SELECT 7*9");
-      });
-    }
-    await expect(borrow5()).rejects.toThrowError(
-      new errors.InterfaceError(
-        "Connection object is borrowed for the transaction. " +
-          "Use the methods on transaction object instead."
-      )
-    );
   });
 });
 
@@ -214,3 +148,57 @@ test("no transaction statements", async () => {
 
   await client.close();
 });
+
+test("transaction timeout", async () => {
+  const client = getClient({concurrency: 1});
+
+  const startTime = Date.now();
+  const timedoutQueryDone = new Event();
+
+  try {
+    await client.transaction(async tx => {
+      await sleep(15_000);
+
+      try {
+        await tx.query(`select 123`);
+      } catch (err) {
+        timedoutQueryDone.setError(err);
+      }
+    });
+  } catch (err) {
+    expect(Date.now() - startTime).toBeLessThan(15_000);
+    expect(err).toBeInstanceOf(errors.IdleTransactionTimeoutError);
+  }
+
+  await expect(client.querySingle(`select 123`)).resolves.toBe(123);
+
+  await expect(timedoutQueryDone.wait()).rejects.toThrow(
+    errors.ClientConnectionClosedError
+  );
+
+  await client.close();
+}, 20_000);
+
+test("transaction deadlocking client pool", async () => {
+  const client = getClient({concurrency: 1});
+
+  const innerQueryDone = new Event();
+  let innerQueryResult: any;
+
+  await expect(
+    client.transaction(async tx => {
+      // This query will hang forever waiting on the connection holder
+      // held by the transaction, which itself will not return the holder
+      // to the pool until the query completes. This deadlock should be
+      // resolved by the transaction timeout forcing the transaction to
+      // return the holder to the pool.
+      innerQueryResult = await client.querySingle(`select 123`);
+      innerQueryDone.set();
+    })
+  ).rejects.toThrow(errors.TransactionTimeoutError);
+
+  await expect(innerQueryDone.wait()).resolves.toBe(undefined);
+  expect(innerQueryResult).toBe(123);
+
+  await client.close();
+}, 15_000);

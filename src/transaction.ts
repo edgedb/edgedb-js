@@ -48,6 +48,8 @@ export class Transaction implements Executor {
   ): Promise<Transaction> {
     const rawConn = await holder._getConnection();
 
+    await rawConn.resetState();
+
     const options = holder.options.transactionOptions;
     await rawConn.execute(
       `START TRANSACTION ISOLATION ${options.isolation}, ${
@@ -57,6 +59,21 @@ export class Transaction implements Executor {
     );
 
     return new Transaction(holder, rawConn);
+  }
+
+  /** @internal */
+  async _transactionTimeout(): Promise<void> {
+    await this._rawConn.connAbortWaiter.wait();
+
+    const abortError = this._rawConn.getConnAbortError();
+    if (
+      abortError instanceof errors.EdgeDBError &&
+      abortError.source instanceof errors.TransactionTimeoutError
+    ) {
+      throw abortError.source;
+    } else {
+      throw abortError;
+    }
   }
 
   private async _runOp<T>(
