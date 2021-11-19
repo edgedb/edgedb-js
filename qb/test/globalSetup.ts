@@ -3,18 +3,15 @@ import util from "util";
 import {execSync} from "child_process";
 
 import path from "path";
-// import child_process from "child_process";
-import {createClient} from "../../src/pool";
+import {createClient, Client} from "../../src/index.node";
 
 import {
   generateStatusFileName,
   getServerCommand,
   getWSLPath,
   startServer,
-  connectToServer,
 } from "../../test/globalSetup";
-import {Client} from "../../src/ifaces";
-import {ConnectConfig} from "../../src/con_utils";
+import {ConnectConfig} from "../../src/conUtils";
 import {shutdown} from "../../test/globalTeardown";
 
 async function applyMigrations(client: Client) {

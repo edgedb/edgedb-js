@@ -1,7 +1,10 @@
 import * as child_process from "child_process";
 import {Client} from "../src/index.node";
 
-const shutdown = async (proc: child_process.ChildProcess, client: Client) => {
+export const shutdown = async (
+  proc: child_process.ChildProcess,
+  client: Client
+) => {
   await client.close();
 
   await new Promise<void>((resolve, reject) => {
