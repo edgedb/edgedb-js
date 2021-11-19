@@ -34,7 +34,7 @@ import {CodecsRegistry} from "./codecs/registry";
 
 import {QueryArgs, Executor} from "./ifaces";
 import {Transaction} from "./transaction";
-import {Deferred} from "./primitives/deferred";
+import Event from "./primitives/event";
 import {RawConnection} from "./rawConn";
 import {sleep} from "./utils";
 
@@ -42,7 +42,7 @@ export class ClientConnectionHolder {
   private _pool: ClientPool;
   private _connection: RawConnection | null;
   private _options: Options | null;
-  private _inUse: Deferred<void> | null;
+  private _inUse: Event | null;
 
   constructor(pool: ClientPool) {
     this._pool = pool;
@@ -76,7 +76,7 @@ export class ClientConnectionHolder {
     }
 
     this._options = options;
-    this._inUse = new Deferred<void>();
+    this._inUse = new Event();
 
     return this;
   }
@@ -101,7 +101,7 @@ export class ClientConnectionHolder {
     await this._connection?.resetState();
 
     if (!this._inUse.done) {
-      await this._inUse.setResult();
+      this._inUse.set();
     }
 
     this._inUse = null;
@@ -113,7 +113,7 @@ export class ClientConnectionHolder {
   /** @internal */
   async _waitUntilReleasedAndClose(): Promise<void> {
     if (this._inUse) {
-      await this._inUse.promise;
+      await this._inUse.wait();
     }
     await this._connection?.close();
   }
@@ -249,7 +249,7 @@ class ClientPool {
   _getStats(): {openConnections: number; queueLength: number} {
     return {
       queueLength: this._queue.pending,
-      openConnections: this._holders.filter((holder) => holder.connectionOpen)
+      openConnections: this._holders.filter(holder => holder.connectionOpen)
         .length,
     };
   }
@@ -370,7 +370,7 @@ class ClientPool {
 
     try {
       await Promise.all(
-        this._holders.map((connectionHolder) =>
+        this._holders.map(connectionHolder =>
           connectionHolder._waitUntilReleasedAndClose()
         )
       );
