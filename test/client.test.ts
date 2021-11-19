@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-import {EdgeDBDateTime} from "../src/datatypes/datetime";
 import {parseConnectArguments} from "../src/conUtils";
+import {EdgeDBDateTime} from "../src/datatypes/datetime";
 import {
   Client,
   DivisionByZeroError,
@@ -35,9 +35,9 @@ import {
   Tuple,
   _CodecsRegistry,
   _introspect,
-  _RawBinaryConnection,
   _ReadBuffer,
 } from "../src/index.node";
+import {retryingConnect} from "../src/retry";
 import {getClient, getConnectOptions, isDeno} from "./testbase";
 
 function setStringCodecs(codecs: string[], client: Client) {
@@ -1609,7 +1609,8 @@ test("concurrent ops", async () => {
 
 test("'implicit*' headers", async () => {
   const config = await parseConnectArguments(getConnectOptions());
-  const con = await _RawBinaryConnection.retryingConnectWithTimeout(config);
+  const registry = new _CodecsRegistry();
+  const con = await retryingConnect(config, registry);
   try {
     const [_, outCodecData, protocolVersion] = await con.rawParse(
       `SELECT schema::Function {
