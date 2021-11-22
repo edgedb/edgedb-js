@@ -126,7 +126,7 @@ export class ClientConnectionHolder {
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     let result: T | void;
-    for (let iteration = 0; iteration >= 0; ++iteration) {
+    for (let iteration = 0; true; ++iteration) {
       const transaction = await Transaction._startTransaction(this);
 
       let commitFailed = false;
@@ -169,7 +169,38 @@ export class ClientConnectionHolder {
       }
       return result as T;
     }
-    throw Error("unreachable");
+  }
+
+  private async retryingFetch(
+    query: string,
+    args: QueryArgs | undefined,
+    asJson: boolean,
+    expectOne: boolean,
+    requiredOne?: boolean
+  ): Promise<any> {
+    let result: any;
+    for (let iteration = 0; true; ++iteration) {
+      const conn = await this._getConnection();
+      try {
+        result = await conn.fetch(query, args, asJson, expectOne, requiredOne);
+      } catch (err) {
+        if (
+          err instanceof errors.EdgeDBError &&
+          err.hasTag(errors.SHOULD_RETRY) &&
+          // query is readonly
+          conn.getQueryCapabilities(query, asJson, expectOne) === 0
+        ) {
+          const rule = this.options.retryOptions.getRuleForException(err);
+          if (iteration + 1 >= rule.attempts) {
+            throw err;
+          }
+          await sleep(rule.backoff(iteration + 1));
+          continue;
+        }
+        throw err;
+      }
+      return result;
+    }
   }
 
   async execute(query: string): Promise<void> {
@@ -178,36 +209,30 @@ export class ClientConnectionHolder {
   }
 
   async query(query: string, args?: QueryArgs): Promise<any> {
-    const conn = await this._getConnection();
-    return await conn.fetch(query, args, false, false);
+    return this.retryingFetch(query, args, false, false);
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    const conn = await this._getConnection();
-    return await conn.fetch(query, args, true, false);
+    return this.retryingFetch(query, args, true, false);
   }
 
   async querySingle(query: string, args?: QueryArgs): Promise<any> {
-    const conn = await this._getConnection();
-    return await conn.fetch(query, args, false, true);
+    return this.retryingFetch(query, args, false, true);
   }
 
   async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
-    const conn = await this._getConnection();
-    return await conn.fetch(query, args, true, true);
+    return this.retryingFetch(query, args, true, true);
   }
 
   async queryRequiredSingle(query: string, args?: QueryArgs): Promise<any> {
-    const conn = await this._getConnection();
-    return await conn.fetch(query, args, false, true, true);
+    return this.retryingFetch(query, args, false, true, true);
   }
 
   async queryRequiredSingleJSON(
     query: string,
     args?: QueryArgs
   ): Promise<string> {
-    const conn = await this._getConnection();
-    return await conn.fetch(query, args, true, true, true);
+    return this.retryingFetch(query, args, true, true, true);
   }
 }
 
