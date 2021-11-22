@@ -218,7 +218,6 @@ export namespace net {
   }
 }
 
-// TODO: deno's TLS implementation doesn't currently support ALPN.
 export namespace tls {
   export function connect(options: tls.ConnectionOptions): tls.TLSSocket {
     if (options.host == null) {
@@ -232,7 +231,6 @@ export namespace tls {
     const conn = Deno.connectTls({
       port: options.port,
       hostname: options.host,
-      // @ts-ignore
       alpnProtocols: options.ALPNProtocols,
       caCerts: typeof options.ca === "string" ? [options.ca] : options.ca,
     });
@@ -263,11 +261,8 @@ export namespace tls {
       super();
       pconn
         .then(async conn => {
-          await conn.handshake();
-          // @ts-ignore
-          this._alpnProtocol = (await conn.getAgreedAlpnProtocol()) as
-            | string
-            | null;
+          const handshake = await conn.handshake();
+          this._alpnProtocol = handshake.alpnProtocol;
           this._conn = conn;
           this._readIter = iterateReader(conn);
           this.emit("secureConnect");
