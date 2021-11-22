@@ -55,11 +55,9 @@ export class ClientConnectionHolder {
     return this._options ?? Options.defaults();
   }
 
-  async _getConnection(
-    singleConnect: boolean = false
-  ): Promise<RawConnection> {
+  async _getConnection(): Promise<RawConnection> {
     if (!this._connection || this._connection.isClosed()) {
-      this._connection = await this._pool.getNewConnection(singleConnect);
+      this._connection = await this._pool.getNewConnection();
     }
     return this._connection;
   }
@@ -90,13 +88,6 @@ export class ClientConnectionHolder {
     }
 
     this._options = null;
-    await this._release();
-  }
-
-  private async _release(): Promise<void> {
-    if (this._inUse === null) {
-      return;
-    }
 
     await this._connection?.resetState();
 
@@ -327,17 +318,9 @@ class ClientPool {
     );
   }
 
-  async getNewConnection(
-    singleConnect: boolean = false
-  ): Promise<RawConnection> {
+  async getNewConnection(): Promise<RawConnection> {
     const config = await this._getNormalizedConnectConfig();
-    const connection = singleConnect
-      ? await RawConnection.connectWithTimeout(
-          config.connectionParams.address,
-          config,
-          this._codecsRegistry
-        )
-      : await retryingConnect(config, this._codecsRegistry);
+    const connection = await retryingConnect(config, this._codecsRegistry);
     const suggestedConcurrency =
       connection.serverSettings.suggested_pool_concurrency;
     if (
