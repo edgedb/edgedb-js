@@ -28,6 +28,7 @@ import {Set} from "./datatypes/set";
 import * as errors from "./errors";
 import {resolveErrorCode} from "./errors/resolve";
 import {
+  HeaderCodes,
   ParseOptions,
   PrepareMessageHeaders,
   ProtocolVersion,
@@ -98,7 +99,7 @@ export class RawConnection {
   protected lastStatus: string | null;
 
   private codecsRegistry: CodecsRegistry;
-  private queryCodecCache: LRU<string, [number, ICodec, ICodec]>;
+  private queryCodecCache: LRU<string, [number, ICodec, ICodec, number]>;
 
   protected serverSecret: Buffer | null;
   /** @internal */ serverSettings: ServerSettings;
@@ -304,10 +305,17 @@ export class RawConnection {
     number,
     ICodec,
     ICodec,
+    number,
     Buffer,
     Buffer
   ] {
-    this._ignoreHeaders();
+    const headers = this._parseHeaders();
+    let capabilities = -1;
+    if (headers.has(HeaderCodes.capabilities)) {
+      capabilities = Number(
+        headers.get(HeaderCodes.capabilities)!.readBigInt64BE()
+      );
+    }
 
     const cardinality: char = this.buffer.readChar();
 
@@ -335,7 +343,14 @@ export class RawConnection {
       );
     }
 
-    return [cardinality, inCodec, outCodec, inTypeData, outTypeData];
+    return [
+      cardinality,
+      inCodec,
+      outCodec,
+      capabilities,
+      inTypeData,
+      outTypeData,
+    ];
   }
 
   private _parseCommandCompleteMessage(): string {
@@ -349,7 +364,7 @@ export class RawConnection {
     this.buffer.readChar(); // ignore severity
     const code = this.buffer.readUInt32();
     const message = this.buffer.readString();
-    this._parseHeaders(); // ignore attrs
+    this._ignoreHeaders(); // ignore attrs
     const errorType = resolveErrorCode(OLD_ERROR_CODES.get(code) ?? code);
     this.buffer.finishMessage();
 
@@ -787,7 +802,7 @@ export class RawConnection {
     expectOne: boolean,
     alwaysDescribe: boolean,
     options?: ParseOptions
-  ): Promise<[number, ICodec, ICodec, Buffer | null, Buffer | null]> {
+  ): Promise<[number, ICodec, ICodec, number, Buffer | null, Buffer | null]> {
     const wb = new WriteMessageBuffer();
 
     wb.beginMessage(chars.$P)
@@ -810,6 +825,7 @@ export class RawConnection {
     let outTypeId: uuid | void;
     let inCodec: ICodec | null;
     let outCodec: ICodec | null;
+    let capabilities: number = -1;
     let parsing = true;
     let error: Error | null = null;
     let inCodecData: Buffer | null = null;
@@ -824,7 +840,12 @@ export class RawConnection {
 
       switch (mtype) {
         case chars.$1: {
-          this._ignoreHeaders();
+          const headers = this._parseHeaders();
+          if (headers.has(HeaderCodes.capabilities)) {
+            capabilities = Number(
+              headers.get(HeaderCodes.capabilities)!.readBigInt64BE()
+            );
+          }
           cardinality = this.buffer.readChar();
           inTypeId = this.buffer.readUUID();
           outTypeId = this.buffer.readUUID();
@@ -881,8 +902,14 @@ export class RawConnection {
         switch (mtype) {
           case chars.$T: {
             try {
-              [cardinality, inCodec, outCodec, inCodecData, outCodecData] =
-                this._parseDescribeTypeMessage();
+              [
+                cardinality,
+                inCodec,
+                outCodec,
+                capabilities,
+                inCodecData,
+                outCodecData,
+              ] = this._parseDescribeTypeMessage();
             } catch (e: any) {
               error = e;
             }
@@ -916,7 +943,14 @@ export class RawConnection {
       );
     }
 
-    return [cardinality, inCodec, outCodec, inCodecData, outCodecData];
+    return [
+      cardinality,
+      inCodec,
+      outCodec,
+      capabilities,
+      inCodecData,
+      outCodecData,
+    ];
   }
 
   private _encodeArgs(args: QueryArgs, inCodec: ICodec): Buffer {
@@ -1045,6 +1079,7 @@ export class RawConnection {
     let error: Error | null = null;
     let parsing = true;
     let newCard: char | null = null;
+    let capabilities = -1;
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -1081,9 +1116,15 @@ export class RawConnection {
 
         case chars.$T: {
           try {
-            [newCard, inCodec, outCodec] = this._parseDescribeTypeMessage();
+            [newCard, inCodec, outCodec, capabilities] =
+              this._parseDescribeTypeMessage();
             const key = this._getQueryCacheKey(query, asJson, expectOne);
-            this.queryCodecCache.set(key, [newCard, inCodec, outCodec]);
+            this.queryCodecCache.set(key, [
+              newCard,
+              inCodec,
+              outCodec,
+              capabilities,
+            ]);
             reExec = true;
           } catch (e: any) {
             error = e;
@@ -1159,14 +1200,14 @@ export class RawConnection {
         ret
       );
     } else {
-      const [card, inCodec, outCodec] = await this._parse(
+      const [card, inCodec, outCodec, capabilities] = await this._parse(
         query,
         asJson,
         expectOne,
         false
       );
       this._validateFetchCardinality(card, asJson, requiredOne);
-      this.queryCodecCache.set(key, [card, inCodec, outCodec]);
+      this.queryCodecCache.set(key, [card, inCodec, outCodec, capabilities]);
       await this._executeFlow(args, inCodec, outCodec, ret);
     }
 
@@ -1191,6 +1232,15 @@ export class RawConnection {
         }
       }
     }
+  }
+
+  getQueryCapabilities(
+    query: string,
+    asJson: boolean,
+    expectOne: boolean
+  ): number | null {
+    const key = this._getQueryCacheKey(query, asJson, expectOne);
+    return this.queryCodecCache.get(key)?.[3] ?? null;
   }
 
   async execute(
@@ -1308,7 +1358,7 @@ export class RawConnection {
     const result = await this._parse(query, false, false, true, {
       headers,
     });
-    return [result[3]!, result[4]!, this.protocolVersion];
+    return [result[4]!, result[5]!, this.protocolVersion];
   }
 
   public async rawExecute(encodedArgs: Buffer | null = null): Promise<Buffer> {

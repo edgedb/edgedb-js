@@ -135,3 +135,81 @@ test("transaction retry on connection error after commit", async () => {
 
   await client.close();
 });
+
+test("retry readonly queries", async () => {
+  const client = getClient({concurrency: 1});
+
+  const nonRetryingClient = client.withRetryOptions({attempts: 1});
+
+  await client.ensureConnected();
+
+  // readonly queries
+
+  // complete fetch - retrying
+  currentSocket!.abortOnNextMessageType(chars.$D);
+  await expect(client.querySingle(`select 'Hello EdgeDB!'`)).resolves.toBe(
+    "Hello EdgeDB!"
+  );
+
+  // optimistic fetch
+  currentSocket!.abortOnNextMessageType(chars.$D);
+  await expect(client.querySingle(`select 'Hello EdgeDB!'`)).resolves.toBe(
+    "Hello EdgeDB!"
+  );
+
+  // optimistic fetch - non retrying
+  currentSocket!.abortOnNextMessageType(chars.$D);
+  await expect(
+    nonRetryingClient.querySingle(`select 'Hello EdgeDB!'`)
+  ).rejects.toThrow();
+
+  // last query didn't retry so manually reconnect now, so currentSocket is
+  // up to date
+  await client.ensureConnected();
+
+  // complete fetch - non retrying
+  currentSocket!.abortOnNextMessageType(chars.$D);
+  await expect(
+    nonRetryingClient.query(`select 'Hello edgedb-js!'`)
+  ).rejects.toThrow();
+
+  // non readonly queries
+
+  await client.execute(`
+    create type RetryConnErrorTest {
+      create property prop -> std::str;
+    };
+  `);
+
+  const insertQuery = `
+    insert RetryConnErrorTest {
+      prop := 'test'
+    }`;
+
+  const insertResult = await client.querySingle<any>(insertQuery);
+  expect(insertResult != null).toBe(true);
+
+  // optimistic fetch
+  currentSocket!.abortOnNextMessageType(chars.$D);
+  await expect(client.query(insertQuery)).rejects.toThrow();
+
+  // last query didn't retry so manually reconnect now, so currentSocket is
+  // up to date
+  await client.ensureConnected();
+
+  // complete fetch
+  currentSocket!.abortOnNextMessageType(chars.$D);
+  await expect(
+    client.query(`insert RetryConnErrorTest {
+      prop := 'test2'
+    }`)
+  ).rejects.toThrow();
+
+  // above inserts were aborted as data was being returned and are not
+  // readonly, so each should have only been executed once and not retried
+  expect(
+    await client.querySingle(`select count((select RetryConnErrorTest))`)
+  ).toBe(3);
+
+  await client.close();
+});

@@ -72,6 +72,7 @@ export const HeaderCodes = {
   implicitTypenames: 0xff02,
   implicitTypeids: 0xff03,
   allowCapabilities: 0xff04,
+  capabilities: 0x1001,
 };
 
 export type MessageHeaders = {
