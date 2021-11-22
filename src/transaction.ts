@@ -62,7 +62,7 @@ export class Transaction implements Executor {
   }
 
   /** @internal */
-  async _transactionTimeout(): Promise<void> {
+  async _waitForConnAbort(): Promise<void> {
     await this._rawConn.connAbortWaiter.wait();
 
     const abortError = this._rawConn.getConnAbortError();
