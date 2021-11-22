@@ -133,7 +133,7 @@ export class ClientConnectionHolder {
       try {
         result = await Promise.race([
           action(transaction),
-          transaction._transactionTimeout(),
+          transaction._waitForConnAbort(),
         ]);
         try {
           await transaction._commit();
