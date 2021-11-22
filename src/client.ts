@@ -156,8 +156,6 @@ export class ClientConnectionHolder {
         if (
           err instanceof errors.EdgeDBError &&
           err.hasTag(errors.SHOULD_RETRY) &&
-          // TODO: Attempt retry on commit connection errors if we know the
-          // error occurred before query was sent to server
           !(commitFailed && err instanceof errors.ClientConnectionError)
         ) {
           const rule = this.options.retryOptions.getRuleForException(err);
