@@ -4,7 +4,8 @@
 EdgeDB JavaScript Driver
 ========================
 
-**edgedb-js** is the official EdgeDB driver for JavaScript written in TypeScript.
+**edgedb-js** is the official EdgeDB driver for JavaScript. Written in
+TypeScript.
 
 .. rubric:: Contents
 
@@ -15,22 +16,23 @@ EdgeDB JavaScript Driver
 
 * :ref:`edgedb-js-examples`
 
-  High-level examples on how to use the edgedb-js client,
-  as well as on how to work with transactions.
+  How to instantiate a client, execute queries, and work with transactions.
+
+* :ref:`edgedb-js-querybuilder`
+
+  How to use EdgeDB's next-gen query builder with static type inference.
 
 * :ref:`edgedb-js-typescript`
 
-  An overview of how to use this library in a TypeScript environment,
-  including how to execute strongly typed queries.
+  How to add TypeScript annotations to queries.
 
 * :ref:`edgedb-js-api-reference`
 
-  APIs reference.
+  A complete API reference.
 
 * :ref:`edgedb-js-datatypes`
 
-  EdgeDB JavaScript types documentation.
-
+  How types are mapped from EdgeDB to JavaScript data structures.
 
 .. toctree::
    :maxdepth: 3
