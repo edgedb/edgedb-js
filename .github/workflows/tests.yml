@@ -29,13 +29,13 @@ jobs:
             edgedb-version: "stable"
 
     steps:
-      # - name: Setup WSL
-      #   if: ${{ matrix.os == 'windows-latest' }}
-      #   uses: vampire/setup-wsl@v1
-      #   with:
-      #     wsl-shell-user: edgedb
-      #     additional-packages: ca-certificates
-      #       curl
+      - name: Setup WSL
+        if: ${{ matrix.os == 'windows-latest' }}
+        uses: vampire/setup-wsl@v1
+        with:
+          wsl-shell-user: edgedb
+          additional-packages: ca-certificates
+            curl
 
       - uses: actions/checkout@v1
         with:
@@ -47,31 +47,32 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      # - name: Set up Deno
-      #   uses: denoland/setup-deno@v1
-      #   with:
-      #     deno-version: v1.14.x
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.14.x
 
       - name: Install dev deps
         run: |
           yarn install
+          cd qb && yarn install
 
-      # - name: Lint
-      #   run: |
-      #     yarn lint
+      - name: Lint
+        run: |
+          yarn lint
 
-      # - name: Build
-      #   run: |
-      #     yarn build
+      - name: Build
+        run: |
+          yarn build
 
-      # - name: Compile for Deno
-      #   run: |
-      #     yarn compileForDeno
+      - name: Compile for Deno
+        run: |
+          yarn compileForDeno
 
-      # - name: Install EdgeDB
-      #   uses: edgedb/setup-edgedb@v1
-      #   with:
-      #     server-version: ${{ matrix.edgedb-version }}
+      - name: Install EdgeDB
+        uses: edgedb/setup-edgedb@v1
+        with:
+          server-version: ${{ matrix.edgedb-version }}
 
       # - name: Run functional tests
       #   run: |
@@ -80,7 +81,6 @@ jobs:
       - name: Run query builder tests
         working-directory: qb
         run: |
-          yarn install
           yarn test:ci
 
   # This job exists solely to act as the test job aggregate to be

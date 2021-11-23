@@ -12,9 +12,6 @@ import {
 import {shutdown} from "../../test/globalTeardown";
 
 (async function main() {
-  await runCommand("yarn", ["--version"], {});
-  console.log(process.env);
-
   console.log("\nStarting EdgeDB test cluster...");
 
   const statusFile = generateStatusFileName("node");
