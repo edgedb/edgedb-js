@@ -81,7 +81,7 @@ export const getServerCommand = (statusFile: string): string[] => {
     "--testmode",
     "--port=auto",
     "--emit-server-status=" + statusFile,
-    "--bootstrap-command=ALTER ROLE edgedb { SET password := '' }",
+    "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }",
   ];
 
   return args;
@@ -94,7 +94,7 @@ export const startServer = async (
 ): Promise<{config: ConnectConfig; proc: child_process.ChildProcess}> => {
   let err: ((_: string) => void) | null = null;
   let stderrData: string = "";
-  console.log(cmd);
+
   const proc = child_process.spawn(cmd[0], cmd.slice(1, cmd.length), {
     env: {...process.env, ...env},
   });
@@ -162,6 +162,7 @@ export const startServer = async (
     host: "127.0.0.1",
     port: runtimeData.port,
     user: "edgedb",
+    password: "edgedbtest",
     database: "edgedb",
     tlsSecurity: "no_host_verification",
   };

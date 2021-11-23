@@ -5,17 +5,16 @@ import * as tc from "conditional-type-checks";
 import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
-let pool: Client;
+let client: Client;
 let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  pool = setup.pool;
-  data = setup.data;
+  ({client, data} = setup);
 });
 
 afterAll(async () => {
-  await teardownTests(pool);
+  await teardownTests(client);
 });
 
 test("basic select", () => {
@@ -387,7 +386,7 @@ test("infer cardinality - object type filters", () => {
 });
 
 test("fetch heroes", async () => {
-  const result = await e.select(e.Hero).run(pool);
+  const result = await e.select(e.Hero).run(client);
   expect(result.length).toEqual(3);
   expect(result.every(h => typeof h.id === "string")).toEqual(true);
 });
@@ -397,7 +396,7 @@ test("filter by id", async () => {
     .select(e.Hero, hero => ({
       filter: e.eq(hero.id, e.uuid(data.spidey.id)),
     }))
-    .run(pool);
+    .run(client);
 
   expect(result?.id).toEqual(data.spidey.id);
 });
@@ -408,7 +407,7 @@ test("limit 1", async () => {
     offset: 1,
     limit: 1,
   }));
-  const result = await query.run(pool);
+  const result = await query.run(client);
   expect(result?.id).toEqual(data.iron_man.id);
 });
 
@@ -418,7 +417,7 @@ test("limit 2", async () => {
     offset: 1,
     limit: 2,
   }));
-  const results = await query.run(pool);
+  const results = await query.run(client);
 
   expect(results.length).toEqual(2);
   expect(results).toEqual([{id: data.iron_man.id}, {id: data.spidey.id}]);
@@ -437,7 +436,7 @@ test("shapes", async () => {
     })
   );
 
-  const result = await query.run(pool); // query.run(pool);
+  const result = await query.run(client); // query.run(pool);
   expect(result).toMatchObject(data.iron_man);
   expect(result?.villains).toEqual([{id: data.thanos.id}]);
 });
@@ -469,7 +468,7 @@ test("computables", async () => {
       } | null
     >
   >(true);
-  const results = await query.run(pool);
+  const results = await query.run(client);
 
   expect(results?.id).toEqual(data.cap.id);
   expect(results?.computable).toEqual(35);
@@ -483,7 +482,7 @@ test("type intersections", async () => {
     id: true,
     // __type__: {name: true},
   }));
-  const results = await query.run(pool);
+  const results = await query.run(client);
   expect(results.every(person => typeof person.id === "string")).toEqual(true);
   // expect(
   //   results.every(person => person.__type__.name === "default::Hero")
@@ -503,7 +502,7 @@ test("backlinks", async () => {
       // __type__: {name: true},
       title: true,
     }))
-    .run(pool);
+    .run(client);
 
   const q2 = e.select(e.Hero["<characters"].$is(e.Movie), () => ({
     id: true,
@@ -511,7 +510,7 @@ test("backlinks", async () => {
     title: true,
   }));
 
-  const result2 = await q2.run(pool);
+  const result2 = await q2.run(client);
 
   expect(result1).toEqual(result2);
   expect(Array.isArray(result1)).toEqual(true);
@@ -613,7 +612,7 @@ SELECT (__scope_0_Person) {
   )
 }`);
 
-  await query.run(pool);
+  await query.run(client);
 });
 
 test("scoped expr select", async () => {
@@ -627,7 +626,7 @@ test("scoped expr select", async () => {
 
   const heros = [data.cap, data.iron_man, data.spidey];
 
-  expect((await unscopedQuery.run(pool)).sort()).toEqual(
+  expect((await unscopedQuery.run(client)).sort()).toEqual(
     // heros
     //   .flatMap(h1 => heros.map(h2 => `${h1.name} is ${h2.secret_identity}`))
     $.util
@@ -637,7 +636,7 @@ test("scoped expr select", async () => {
       .sort()
   );
 
-  expect((await scopedQuery.run(pool)).sort()).toEqual(
+  expect((await scopedQuery.run(client)).sort()).toEqual(
     heros.map(h => `${h.name} is ${h.secret_identity}`).sort()
   );
 });

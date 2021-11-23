@@ -8,6 +8,4 @@ module.exports = {
       tsConfig: "tsconfig.json",
     },
   },
-  globalSetup: "./test/globalSetup.ts",
-  globalTeardown: "./test/globalTeardown.ts",
 };

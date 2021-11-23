@@ -55,6 +55,7 @@ jobs:
       - name: Install dev deps
         run: |
           yarn install
+          cd qb && yarn install
 
       - name: Lint
         run: |
@@ -80,7 +81,7 @@ jobs:
       - name: Run query builder tests
         working-directory: qb
         run: |
-          yarn && yarn test
+          yarn test:ci
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.
