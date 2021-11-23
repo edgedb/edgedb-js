@@ -19,16 +19,19 @@
 export class LifoQueue<T> {
   private _promises: Array<Promise<T>>;
   private _resolvers: Array<(t: T) => void>;
+  private _rejecters: Array<(err: Error) => void>;
 
   constructor() {
     this._resolvers = [];
+    this._rejecters = [];
     this._promises = [];
   }
 
   private _add(): void {
     this._promises.push(
-      new Promise((resolve: (item: T) => void) => {
+      new Promise((resolve: (item: T) => void, reject) => {
         this._resolvers.push(resolve);
+        this._rejecters.push(reject);
       })
     );
   }
@@ -43,6 +46,7 @@ export class LifoQueue<T> {
       this._add();
     }
     const resolve = this._resolvers.shift();
+    this._rejecters.shift();
     if (!resolve) {
       // can never happen
       throw new Error(
@@ -67,6 +71,12 @@ export class LifoQueue<T> {
       throw new Error("promise was null or undefined when attempting to get.");
     }
     return promise;
+  }
+
+  cancelAllPending(err: Error): void {
+    for (const reject of this._rejecters) {
+      reject(err);
+    }
   }
 
   /**
