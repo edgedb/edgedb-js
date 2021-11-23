@@ -88,6 +88,7 @@ async function runCommand(
 ): Promise<void> {
   const proc = spawn(command, args, {
     stdio: ["pipe", "inherit", "inherit"],
+    shell: true,
     env: {
       ...process.env,
       ...env,
