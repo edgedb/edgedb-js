@@ -1,4 +1,5 @@
 import {spawn} from "child_process";
+import path from "path";
 
 import createClient from "../../src/index.node";
 import {ConnectConfig} from "../../src/conUtils";
@@ -43,7 +44,22 @@ import {shutdown} from "../../test/globalTeardown";
 async function applyMigrations(config: ConnectConfig) {
   console.log("\nApplying migrations...");
 
-  await runCommand("edgedb", ["migrate"], configToEnv(config));
+  if (process.platform === "win32") {
+    await runCommand("wsl", [
+      "-u",
+      "edgedb",
+      "env",
+      ...Object.entries(configToEnv(config)).map(
+        ([key, val]) => `${key}=${val}`
+      ),
+      "edgedb",
+      "migrate",
+      "--schema-dir",
+      getWSLPath(path.join(process.cwd(), "dbschema")),
+    ]);
+  } else {
+    await runCommand("edgedb", ["migrate"], configToEnv(config));
+  }
 }
 
 async function generateQB(config: ConnectConfig) {
