@@ -37,7 +37,11 @@ export const getServerInfo = async (
 };
 
 export const getWSLPath = (path: string): string => {
-  return path.replace("C:", "/mnt/c").split("\\").join("/").toLowerCase();
+  return path
+    .replace(/^([a-z]):/i, "/mnt/$1")
+    .split("\\")
+    .join("/")
+    .toLowerCase();
 };
 
 const generateTempID = (): number => {
