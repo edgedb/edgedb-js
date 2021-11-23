@@ -276,14 +276,21 @@ class ClientPool {
   }
 
   async ensureConnected(): Promise<void> {
+    if (this._closing) {
+      throw new errors.InterfaceError(
+        this._closing.done ? "The client is closed" : "The client is closing"
+      );
+    }
+
     if (this._getStats().openConnections > 0) {
       return;
     }
-    const connHolder = this._holders[0];
-    if (!connHolder) {
-      throw new Error("Client pool is empty");
+    const connHolder = await this._queue.get();
+    try {
+      await connHolder._getConnection();
+    } finally {
+      this._queue.push(connHolder);
     }
-    await connHolder._getConnection();
   }
 
   private get _concurrency(): number {
