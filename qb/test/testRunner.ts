@@ -44,9 +44,6 @@ import {shutdown} from "../../test/globalTeardown";
 async function applyMigrations(config: ConnectConfig) {
   console.log("\nApplying migrations...");
 
-  console.log(process.cwd());
-  console.log(getWSLPath(path.join(process.cwd(), "dbschema")));
-
   if (process.platform === "win32") {
     await runCommand("wsl", [
       "-u",
