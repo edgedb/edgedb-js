@@ -14,16 +14,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # node-version: ["12", "13", "14", "15", "16"]
-        # os: [ubuntu-latest]
-        # edgedb-version: ["stable"]
+        node-version: ["12", "13", "14", "15", "16"]
+        os: [ubuntu-latest]
+        edgedb-version: ["stable"]
         include:
-          # - os: ubuntu-latest
-          #   node-version: "16"
-          #   edgedb-version: "nightly"
-          # - os: macos-latest
-          #   node-version: "16"
-          #   edgedb-version: "stable"
+          - os: ubuntu-latest
+            node-version: "16"
+            edgedb-version: "nightly"
+          - os: macos-latest
+            node-version: "16"
+            edgedb-version: "stable"
           - os: windows-latest
             node-version: "16"
             edgedb-version: "stable"
@@ -74,9 +74,9 @@ jobs:
         with:
           server-version: ${{ matrix.edgedb-version }}
 
-      # - name: Run functional tests
-      #   run: |
-      #     yarn test
+      - name: Run functional tests
+        run: |
+          yarn test
 
       - name: Run query builder tests
         working-directory: qb
