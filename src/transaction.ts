@@ -54,7 +54,7 @@ export class Transaction implements Executor {
     await rawConn.execute(
       `START TRANSACTION ISOLATION ${options.isolation}, ${
         options.readonly ? "READ ONLY" : "READ WRITE"
-      }, ${options.deferrable ? "" : "NOT "} DEFERRABLE;`,
+      }, ${options.deferrable ? "" : "NOT "}DEFERRABLE;`,
       true
     );
 

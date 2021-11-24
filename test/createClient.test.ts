@@ -17,6 +17,9 @@
  */
 
 import {spawn} from "child_process";
+import {TransactionConflictError, InterfaceError} from "../src/index.node";
+import {sleep} from "../src/utils";
+import Event from "../src/primitives/event";
 import {getClient, getConnectOptions} from "./testbase";
 
 test("lazy connect + concurrency", async () => {
@@ -127,3 +130,113 @@ test("unref idle connections", async () => {
 
   expect(shutdownTime).toBeLessThan(100);
 }, 10_000);
+
+test("client close", async () => {
+  const client = getClient({concurrency: 5});
+
+  const closeTrigger = new Event();
+
+  const promises: Promise<void>[] = [];
+
+  let attemptCount = 0;
+  for (let i = 0; i < 10; i++) {
+    let localAttemptCount = 0;
+    const query = client.transaction(async tx => {
+      attemptCount++;
+      localAttemptCount++;
+      if (attemptCount === 5) {
+        closeTrigger.set();
+      }
+      await sleep(100);
+      if (localAttemptCount === 1) {
+        throw new TransactionConflictError();
+      }
+      return tx.querySingle(`select 123`);
+    });
+    promises.push(
+      i < 5
+        ? expect(query).resolves.toBe(123)
+        : expect(query).rejects.toThrow(InterfaceError)
+    );
+  }
+
+  await closeTrigger.wait();
+
+  expect(attemptCount).toBe(5);
+
+  const closePromise = client.close();
+
+  // connections are not closed immediately
+  expect(
+    // @ts-ignore
+    client.pool._getStats().openConnections
+  ).toBe(5);
+
+  let resolvedLast: string | null = null;
+  await Promise.all([
+    closePromise.then(() => (resolvedLast = "close")),
+    Promise.all(promises).then(() => (resolvedLast = "queries")),
+  ]);
+
+  expect(resolvedLast).toBe("close");
+
+  // running queries were allowed to retry after client.close()
+  expect(attemptCount).toBe(10);
+
+  // connections were closed after retries were done
+  expect(
+    // @ts-ignore
+    client.pool._getStats().openConnections
+  ).toBe(0);
+
+  await expect(client.query(`select 123`)).rejects.toThrow(
+    "The client is closed"
+  );
+});
+
+test("client terminate", async () => {
+  const client = getClient({concurrency: 5});
+
+  const closeTrigger = new Event();
+
+  const promises: Promise<void>[] = [];
+
+  let attemptCount = 0;
+  for (let i = 0; i < 10; i++) {
+    let localAttemptCount = 0;
+    const query = client.transaction(async tx => {
+      attemptCount++;
+      localAttemptCount++;
+      if (attemptCount === 5) {
+        closeTrigger.set();
+      }
+      await sleep(100);
+      if (localAttemptCount === 1) {
+        throw new TransactionConflictError();
+      }
+      return tx.querySingle(`select 123`);
+    });
+    promises.push(expect(query).rejects.toThrow(InterfaceError));
+  }
+
+  await closeTrigger.wait();
+
+  expect(attemptCount).toBe(5);
+
+  client.terminate();
+
+  // connections closed immediately
+  expect(
+    // @ts-ignore
+    client.pool._getStats().openConnections
+  ).toBe(0);
+
+  await Promise.all(promises);
+
+  // no retries were allowed after client.terminate()
+  expect(attemptCount).toBe(5);
+
+  await expect(client.query(`select 123`)).rejects.toThrow(
+    "The client is closed"
+  );
+});

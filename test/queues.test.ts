@@ -33,7 +33,7 @@ test("LifoQueue `get` awaits for items in the queue", async () => {
   expect(value).toBeGreaterThan(-1);
 });
 
-test("LifoQueue resolves items in LIFO order", async (done) => {
+test("LifoQueue resolves items in LIFO order", async done => {
   let result1 = -1;
   let result2 = -1;
   let result3 = -1;
@@ -199,7 +199,7 @@ test("LifoQueue length is the number of available items 2", async () => {
   expect(items).toEqual(expectedResult);
 });
 
-test("LifoQueue length and pending", async (done) => {
+test("LifoQueue length and pending", async done => {
   const calls: string[] = [];
   const total = 20;
   const queue = new LifoQueue<number>();
@@ -235,7 +235,7 @@ test("LifoQueue length and pending", async (done) => {
   });
 
   // note: consumers are satisfied in the same order as they arrived,
-  Promise.all(promises.slice(total, total * 2)).then((values) => {
+  Promise.all(promises.slice(total, total * 2)).then(values => {
     expect(queue.length).toBe(-total);
     expect(queue.pending).toBe(total);
 
@@ -264,4 +264,35 @@ test("LifoQueue length and pending", async (done) => {
 
     calls.push("A");
   }, 20);
+});
+
+test("LifoQueue cancelAllPending", async () => {
+  const queue = new LifoQueue<number>();
+  const promises: Array<Promise<number>> = [];
+
+  for (let i = 0; i < 20; i++) {
+    promises.push(queue.get());
+  }
+
+  expect(queue.pending).toBe(20);
+
+  for (let i = 0; i < 10; i++) {
+    queue.push(i);
+  }
+
+  expect(queue.pending).toBe(10);
+
+  const err = new Error("queue closing");
+
+  queue.cancelAllPending(err);
+
+  expect(queue.pending).toBe(0);
+
+  for (const promise of promises.slice(0, 10)) {
+    expect(typeof (await promise)).toBe("number");
+  }
+
+  for (const promise of promises.slice(10)) {
+    await expect(promise).rejects.toThrow(err);
+  }
 });

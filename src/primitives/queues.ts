@@ -74,7 +74,10 @@ export class LifoQueue<T> {
   }
 
   cancelAllPending(err: Error): void {
-    for (const reject of this._rejecters) {
+    const rejecters = this._rejecters;
+    this._rejecters = [];
+    this._resolvers = [];
+    for (const reject of rejecters) {
       reject(err);
     }
   }
