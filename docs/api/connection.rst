@@ -114,19 +114,6 @@ Client
 
         main();
 
-    .. note::
-
-       For compatibility this function also supports passing options as
-       the first argument:
-
-       .. code-block:: js
-
-          createClient({host: 'localhost', port: 5656})
-          // or
-          createClient({dsn: 'edgedb://localhost'})
-
-       But this form is deprecated and will be removed in the future.
-
 
 .. js:class:: Client
 
@@ -298,12 +285,16 @@ Client
         ): Promise<T>
 
         Execute a retryable transaction. The ``Transaction`` object passed to
-        the action function, has the same ``query*`` methods as ``Client``.
+        the action function has the same ``execute`` and ``query*`` methods
+        as ``Client``.
 
         This is the preferred method of initiating and running a database
         transaction in a robust fashion.  The ``transaction()`` method
         will attempt to re-execute the transaction body if a transient error
         occurs, such as a network error or a transaction serialization error.
+        The number of times ``transaction()`` will attempt to execute the
+        transaction, and the backoff timeout between retries can be
+        configured with :js:meth:`Client.withRetryOptions`.
 
         See :ref:`edgedb-js-api-transaction` for more details.
 
@@ -321,49 +312,6 @@ Client
 
         Note that we are executing queries on the ``tx`` object rather
         than on the original ``client``.
-
-    .. js:method:: retryingTransaction<T>( \
-            action: (tx: Transaction) => Promise<T> \
-        ): Promise<T>
-
-        .. warning::
-
-            The ``retryingTransaction`` method is deprecated, and has been
-            renamed to :js:meth:`Client.transaction\<T\>`.
-
-    .. js:method:: rawTransaction<T>( \
-            action: (tx: Transaction) => Promise<T> \
-        ): Promise<T>
-
-        .. warning::
-
-            The ``rawTransaction`` method is deprecated, instead use
-            the :js:meth:`Client.transaction\<T\>` method with a single
-            attempt: ``client.withRetryOptions({attempts: 1}).transaction(...)``
-
-        Execute a non-retryable transaction.
-
-        Contrary to ``transaction()``, ``rawTransaction()`` will not
-        attempt to re-run the nested code block in case a retryable error
-        happens.
-
-        This is a low-level API and it is advised to use the
-        ``transaction()`` method instead.
-
-        Example:
-
-        .. code-block:: js
-
-            await client.rawTransaction(async tx => {
-              const value = await tx.querySingle("select Counter.value");
-              await tx.execute(
-                "update Counter set { value := <int64>$value }",
-                {value: value + 1},
-              )
-            })
-
-        Note that we are executing queries on the ``tx`` object,
-        rather than on the original ``client``.
 
     .. js:method:: ensureConnected(): Promise<Client>
 
@@ -397,19 +345,50 @@ Client
               await client.query('select ...');
             }
 
-    .. js:method:: getStats(): ClientStats
+    .. js:method:: withRetryOptions(opts: { \
+            attempts?: number \
+            backoff?: (attempt: number) => number \
+        }): Client
 
-        Return information about the current state of the client's connection
-        pool. Information includes the number of currently open connections
-        and the number of pending queries awaiting an available connection.
+        Returns a new ``Client`` instance with the specified retry attempts
+        number and backoff time function (the time that retrying methods will
+        wait between retry attempts, in milliseconds), where options not given
+        are inherited from the current client instance.
+
+        The default number of attempts is ``3``. The default backoff
+        function returns a random time between 100 and 200ms multiplied by
+        ``2 ^ attempt number``.
+
+        .. note::
+
+            The new client instance will share the same connection pool as the
+            client it's created from, so calling the ``ensureConnected``,
+            ``close`` and ``terminate`` methods will affect all clients
+            sharing the pool.
 
         Example:
 
         .. code-block:: js
 
-            const stats = client.getStats();
-            const queueLength = stats.queueLength;
-            const openConnections = stats.openConnections;
+            import {createClient} from 'edgedb';
+
+            function main() {
+              const client = createClient();
+
+              // By default transactions will retry if they fail
+              await client.transaction(async tx => {
+                // ...
+              });
+
+              const nonRetryingClient = client.withRetryOptions({
+                attempts: 1
+              });
+
+              // This transaction will not retry
+              await nonRetryingClient.transaction(async tx => {
+                // ...
+              });
+            }
 
     .. js:method:: close(): Promise<void>
 

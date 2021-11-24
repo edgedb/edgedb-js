@@ -163,6 +163,5 @@ See also:
 
 * RFC1004_
 * :js:meth:`Client.transaction\<T\>`
-* :js:meth:`Client.rawTransaction\<T\>`
 
 .. _RFC1004: https://github.com/edgedb/rfcs/blob/master/text/1004-transactions-api.rst
