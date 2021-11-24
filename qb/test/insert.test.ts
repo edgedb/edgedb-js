@@ -4,17 +4,16 @@ import {InsertShape} from "../dbschema/edgeql/syntax/insert";
 import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
-let pool: Client;
+let client: Client;
 let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  pool = setup.pool;
-  data = setup.data;
+  ({client, data} = setup);
 });
 
 afterAll(async () => {
-  await teardownTests(pool);
+  await teardownTests(client);
 });
 
 test("insert shape check", async () => {
@@ -29,9 +28,9 @@ test("basic insert", async () => {
     // id
   });
 
-  await pool.querySingle(q1.toEdgeQL());
+  await client.querySingle(q1.toEdgeQL());
 
-  pool.execute(`DELETE Hero FILTER .name = 'Black Widow';`);
+  client.execute(`DELETE Hero FILTER .name = 'Black Widow';`);
   return;
 });
 
@@ -48,7 +47,7 @@ test("nested insert", async () => {
     nemesis: {name: true},
   }));
 
-  const result = await q2.run(pool);
+  const result = await q2.run(client);
 
   expect(result).toMatchObject({
     name: "villain",
@@ -56,8 +55,8 @@ test("nested insert", async () => {
   });
 
   // cleanup
-  await pool.execute(`delete Villain filter .name = '${result.name}';`);
-  await pool.execute(`delete Hero filter .name = '${result.nemesis.name}';`);
+  await client.execute(`delete Villain filter .name = '${result.name}';`);
+  await client.execute(`delete Hero filter .name = '${result.nemesis.name}';`);
   return;
 });
 

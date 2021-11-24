@@ -2,21 +2,20 @@ import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql";
 import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 
-let pool: edgedb.Client;
+let client: edgedb.Client;
 let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  pool = setup.pool;
-  data = setup.data;
+  ({client, data} = setup);
 });
 
 afterAll(async () => {
-  await teardownTests(pool);
+  await teardownTests(client);
 });
 
 test("detached", async () => {
-  const heroes = await e.select(e.Hero).run(pool);
+  const heroes = await e.select(e.Hero).run(client);
 
   const result = await e
     .select(e.Hero, hero => ({
@@ -25,7 +24,7 @@ test("detached", async () => {
       friends: e.select(e.detached(e.Hero)),
       filter: e.eq(hero.name, e.str("Iron Man")),
     }))
-    .run(pool);
+    .run(client);
   type result = typeof result;
   tc.assert<
     tc.IsExact<

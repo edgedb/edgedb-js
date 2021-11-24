@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "yarn pretest && NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
-    "test:dev": "EDGEDB_TEST_USE_LOCAL=true NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
+    "test:ci": "ts-node test/testRunner.ts",
     "generate": "edgedb-generate",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",
-    "build": "tsc --project tsconfig.build.json",
-    "pretest": "ts-node test/globalSetup.ts"
+    "build": "tsc --project tsconfig.build.json"
   },
   "keywords": [],
   "author": "Colin McDonnell",

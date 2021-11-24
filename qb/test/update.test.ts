@@ -3,17 +3,16 @@ import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
-let pool: edgedb.Client;
+let client: edgedb.Client;
 let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  pool = setup.pool;
-  data = setup.data;
+  ({client, data} = setup);
 });
 
 afterAll(async () => {
-  await teardownTests(pool);
+  await teardownTests(client);
 });
 
 test("update", async () => {
@@ -46,7 +45,7 @@ test("update link property", async () => {
 
   const qq1 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
-    .run(pool);
+    .run(client);
 
   expect(qq1?.characters.length).toEqual(2);
 
@@ -58,14 +57,14 @@ test("update link property", async () => {
     },
   });
   // console.log(q2.toEdgeQL());
-  await pool.execute(q2.toEdgeQL());
+  await client.execute(q2.toEdgeQL());
 
   const t2 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
-    .run(pool);
+    .run(client);
   expect(t2?.characters.length).toEqual(3);
 
-  await pool.execute(
+  await client.execute(
     theAvengers
       .update({
         characters: {
@@ -79,10 +78,10 @@ test("update link property", async () => {
 
   const t3 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
-    .run(pool);
+    .run(client);
   expect(t3?.characters.length).toEqual(2);
 
-  await pool.execute(
+  await client.execute(
     theAvengers
       .update({
         characters: e.set(e.$Villain),
@@ -92,10 +91,10 @@ test("update link property", async () => {
 
   const t4 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
-    .run(pool);
+    .run(client);
   expect(t4?.characters.length).toEqual(0);
 
-  await pool.execute(
+  await client.execute(
     theAvengers
       .update({
         characters: e.select(e.Hero, hero => ({
@@ -110,6 +109,6 @@ test("update link property", async () => {
 
   const t5 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
-    .run(pool);
+    .run(client);
   expect(t5?.characters.length).toEqual(2);
 });

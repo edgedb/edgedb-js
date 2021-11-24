@@ -46,12 +46,11 @@ export async function generateQB(params: {
   target: "ts" | "esm" | "cjs";
 }): Promise<void> {
   const {outputDir, connectionConfig, target} = params;
-  console.log(JSON.stringify(params, null, 2));
   // tslint:disable-next-line
   console.log(`Connecting to EdgeDB instance...`);
   let cxn: Client;
   try {
-    cxn = await createClient({
+    cxn = createClient({
       ...connectionConfig,
       concurrency: 5,
     });

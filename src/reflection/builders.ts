@@ -535,11 +535,14 @@ export class CodeBuilder {
 
     let prefix = "";
     if (ref.dir !== this.dir) {
-      const mod = path.basename(ref.dir, path.extname(ref.dir));
+      const mod = path.posix.basename(ref.dir, path.posix.extname(ref.dir));
       prefix = `_${mod}`;
 
-      let importPath = path.join(
-        path.relative(path.dirname(this.dir), path.dirname(ref.dir)),
+      let importPath = path.posix.join(
+        path.posix.relative(
+          path.posix.dirname(this.dir),
+          path.posix.dirname(ref.dir)
+        ),
         mod
       );
 
