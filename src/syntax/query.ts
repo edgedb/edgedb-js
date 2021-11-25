@@ -6,17 +6,7 @@ async function queryFunc(this: any, cxn: edgedb.Executor, args: any) {
     this.__cardinality__ === Cardinality.One ||
     this.__cardinality__ === Cardinality.AtMostOne
   ) {
-    let result: any;
-    try {
-      result = await cxn.querySingle(this.toEdgeQL(), args);
-    } catch (err) {
-      if (err instanceof edgedb.NoDataError) {
-        result = null;
-      } else {
-        throw err;
-      }
-    }
-    return result;
+    return cxn.querySingle(this.toEdgeQL(), args);
   } else {
     return cxn.query(this.toEdgeQL(), args);
   }
