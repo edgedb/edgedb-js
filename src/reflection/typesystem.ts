@@ -331,7 +331,9 @@ type ArrayTypeToTsType<Type extends ArrayType> = BaseTypeToTsType<
 /////////////////////////
 export type baseTupleElementsToTupleType<T extends typeutil.tupleOf<TypeSet>> =
   {
-    [k in keyof T]: T[k] extends TypeSet ? T[k]["__element__"] : never;
+    [k in keyof T]: T[k] extends TypeSet
+      ? getPrimitiveBaseType<T[k]["__element__"]>
+      : never;
   };
 export type tupleElementsToTupleType<T extends typeutil.tupleOf<TypeSet>> =
   baseTupleElementsToTupleType<T> extends BaseTypeTuple
@@ -374,11 +376,9 @@ type TupleItemsToTsType<Items extends BaseTypeTuple> = {
 /////////////////////////
 /// NAMED TUPLE TYPE
 /////////////////////////
-type literalShapeToType<T extends NamedTupleLiteralShape> = NamedTupleType<
-  {
-    [k in keyof T]: T[k]["__element__"];
-  }
->;
+type literalShapeToType<T extends NamedTupleLiteralShape> = NamedTupleType<{
+  [k in keyof T]: getPrimitiveBaseType<T[k]["__element__"]>;
+}>;
 type shapeCardinalities<Shape extends NamedTupleLiteralShape> =
   Shape[keyof Shape]["__cardinality__"];
 type inferNamedTupleCardinality<Shape extends NamedTupleLiteralShape> = [
@@ -487,6 +487,10 @@ export type pointerToTsType<El extends PropertyDesc | LinkDesc> =
 ///////////////////
 // TYPE HELPERS
 ///////////////////
+
+export type getPrimitiveBaseType<T extends BaseType> = T extends ScalarType
+  ? ScalarType<T["__name__"], T["__tstype__"]>
+  : T;
 
 export function isScalarType(type: BaseType): type is ScalarType {
   return type.__kind__ === TypeKind.scalar;

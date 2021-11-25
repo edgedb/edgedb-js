@@ -6,6 +6,7 @@ import {
   BaseType,
   cardinalityUtil,
   ExpressionKind,
+  getPrimitiveBaseType,
   NamedTupleLiteralShape,
   NamedTupleShape,
   NamedTupleType,
@@ -16,7 +17,7 @@ import {
   typeutil,
 } from "../reflection";
 import {$expressionify} from "./path";
-import {getCardsFromExprs, getPrimitiveBaseType} from "./set";
+import {getCardsFromExprs} from "./set";
 
 // ARRAY
 export function array<Element extends NonArrayType>(
@@ -28,7 +29,7 @@ export function array<
 >(
   arg: [Expr, ...Exprs]
 ): $expr_Array<
-  ArrayType<Expr["__element__"]>,
+  ArrayType<getPrimitiveBaseType<Expr["__element__"]>>,
   cardinalityUtil.multiplyCardinalitiesVariadic<
     getCardsFromExprs<[Expr, ...Exprs]>
   >

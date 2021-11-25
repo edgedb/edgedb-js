@@ -23,7 +23,7 @@ test("array literal", async () => {
   expect(strArrayType.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(strArrayType.__element__.__name__).toEqual("std::str");
 
-  const arg = e.array([e.str("asdf" as string), e.str("qwer" as string)]);
+  const arg = e.array([e.str("asdf"), e.str("qwer")]);
   type arg = $.setToTsType<typeof arg>;
   tc.assert<tc.IsExact<arg, string[]>>(true);
   expect(arg.__kind__).toEqual($.ExpressionKind.Array);
@@ -36,8 +36,8 @@ test("array literal", async () => {
   expect(result).toEqual(["asdf", "qwer"]);
 
   const multiArray = e.array([
-    e.str("asdf" as string),
-    e.set(e.str("qwer" as string), e.str("erty")),
+    e.str("asdf"),
+    e.set(e.str("qwer"), e.str("erty")),
   ]);
 
   type multiArray = $.setToTsType<typeof multiArray>;
@@ -65,7 +65,7 @@ test("tuple literal", async () => {
   expect(tupleType.__items__[1].__kind__).toEqual($.TypeKind.scalar);
   expect(tupleType.__items__[1].__name__).toEqual("std::int64");
 
-  const myTuple = e.tuple([e.str("asdf" as string), e.int64(45 as number)]);
+  const myTuple = e.tuple([e.str("asdf"), e.int64(45)]);
   type myTuple = $.setToTsType<typeof myTuple>;
   tc.assert<tc.IsExact<myTuple, [string, number]>>(true);
   expect(myTuple.__element__.__kind__).toEqual($.TypeKind.tuple);
@@ -77,8 +77,8 @@ test("tuple literal", async () => {
   expect(myTupleResult).toEqual(["asdf", 45]);
 
   const multiTuple = e.tuple([
-    e.str("asdf" as string),
-    e.set(e.str("qwer" as string), e.str("erty")),
+    e.str("asdf"),
+    e.set(e.str("qwer"), e.str("erty")),
   ]);
   type multiTuple = $.setToTsType<typeof multiTuple>;
   tc.assert<tc.IsExact<multiTuple, [[string, string], ...[string, string][]]>>(
@@ -111,8 +111,8 @@ test("namedTuple literal", async () => {
   expect(tupleType.__shape__.number.__name__).toEqual("std::int64");
 
   const named = e.namedTuple({
-    string: e.str("asdf" as string),
-    number: e.int64(1234 as number),
+    string: e.str("asdf"),
+    number: e.int64(1234),
   });
 
   type named = $.setToTsType<typeof named>;
