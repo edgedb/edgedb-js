@@ -64,9 +64,9 @@ test("positional args", () => {
   );
 
   checkFunctionExpr(
-    e.len(e.bytes("")),
+    e.len(e.bytes(Buffer.from(""))),
     "std::len",
-    [e.bytes("")],
+    [e.bytes(Buffer.from(""))],
     {},
     e.int64,
     $.Cardinality.One

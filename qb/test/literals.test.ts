@@ -6,13 +6,20 @@ test("literals", () => {
   const localdate = new edgedb.LocalDate(2021, 10, 31);
   const localdatetime = new edgedb.LocalDateTime(2021, 10, 31, 21, 45, 30);
   const localtime = new edgedb.LocalTime(15, 15, 0);
+  const relduration = new edgedb.RelativeDuration(1, 2, 3);
   const uuid = "317fee4c-0da5-45aa-9980-fedac211bfb6";
 
   expect(e.std.bigint(BigInt("9007199254740991")).toEdgeQL()).toEqual(
     `<std::bigint>9007199254740991n`
   );
   expect(e.std.bool(true).toEdgeQL()).toEqual(`<std::bool>true`);
-  expect(e.std.bytes("whatever").toEdgeQL()).toEqual(`<std::bytes>"whatever"`);
+  expect(
+    e.std.bytes(Buffer.from(`whatever\nðñòóôõö÷øùúûüýþÿ`)).toEdgeQL()
+  ).toEqual(
+    `b'whatever\\n\\xc3\\xb0\\xc3\\xb1\\xc3\\xb2\\xc3\\xb3\\xc3\\xb4\\xc3` +
+      `\\xb5\\xc3\\xb6\\xc3\\xb7\\xc3\\xb8\\xc3\\xb9\\xc3\\xba\\xc3\\xbb` +
+      `\\xc3\\xbc\\xc3\\xbd\\xc3\\xbe\\xc3\\xbf'`
+  );
   expect(
     e.std.datetime(new Date("2021-06-25T02:01:13.681Z")).toEdgeQL()
   ).toEqual(`<std::datetime>'2021-06-25T02:01:13.681Z'`);
@@ -46,10 +53,9 @@ test("literals", () => {
   expect(e.cal.local_time(localtime).toEdgeQL()).toEqual(
     `<cal::local_time>'15:15:00'`
   );
-  // not available in beta2
-  // expect(e.cal.relative_duration("1 year").toEdgeQL()).toEqual(
-  //   `<cal::relative_duration>'1 year'`
-  // );
+  expect(e.cal.relative_duration(relduration).toEdgeQL()).toEqual(
+    `<cal::relative_duration>'P1Y2M21D'`
+  );
 });
 
 test("collection type literals", () => {
