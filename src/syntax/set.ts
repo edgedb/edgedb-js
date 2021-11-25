@@ -10,7 +10,6 @@ import {
   ExpressionKind,
   mergeObjectTypes,
   ObjectType,
-  ScalarType,
   Cardinality,
 } from "../reflection";
 
@@ -115,7 +114,3 @@ export type getTypesFromObjectExprs<
 export type getCardsFromExprs<Exprs extends [TypeSet, ...TypeSet[]]> = {
   [k in keyof Exprs]: Exprs[k] extends TypeSet<any, infer Card> ? Card : never;
 };
-
-export type getPrimitiveBaseType<T extends BaseType> = T extends ScalarType
-  ? ScalarType<T["__name__"], T["__tstype__"]>
-  : T;

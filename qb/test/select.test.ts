@@ -18,9 +18,9 @@ afterAll(async () => {
 });
 
 test("basic select", () => {
-  const result = e.select(e.std.str("asdf" as string));
+  const result = e.select(e.std.str("asdf"));
   type result = $.BaseTypeToTsType<typeof result["__element__"]>;
-  tc.assert<tc.IsExact<result, string>>(true);
+  tc.assert<tc.IsExact<result, "asdf">>(true);
 });
 
 test("basic shape", () => {

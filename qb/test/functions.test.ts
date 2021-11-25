@@ -316,13 +316,10 @@ test("anytype", () => {
     $.Cardinality.One
   );
 
-  // BROKEN
-  // e.min(e.set(e.int64(1), e.str('str')))
-
   checkFunctionExpr(
-    e.array_agg(e.str("str" as string)),
+    e.array_agg(e.str("str")),
     "std::array_agg",
-    [e.str("str" as string)],
+    [e.str("str")],
     {},
     e.array(e.str),
     $.Cardinality.One
@@ -396,6 +393,9 @@ test("anytype", () => {
       e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
       e.int64(4)
     );
+
+    // @ts-expect-error
+    e.min(e.set(e.int64(1), e.str("str")));
 
     // @ts-expect-error
     e.contains(e.literal(e.array(e.float32), [1, 2, 3]), e.bigint(BigInt(2)));

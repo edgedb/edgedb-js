@@ -53,7 +53,8 @@ test("scalar set contructor", () => {
 
 test("invalid sets", () => {
   expect(() => {
-    e.set(e.Hero as any, e.int64(1243));
+    // @ts-expect-error
+    e.set(e.Hero, e.int64(1243));
   }).toThrow();
 
   // never

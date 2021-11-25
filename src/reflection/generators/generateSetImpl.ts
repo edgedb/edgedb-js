@@ -30,6 +30,7 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
   ObjectTypeSet,
   PrimitiveTypeSet,
   AnyTupleType,
+  getPrimitiveBaseType,
 } from "edgedb/dist/reflection";
 import type {
   $expr_Set,
@@ -38,7 +39,6 @@ import type {
   getTypesFromObjectExprs,
   getCardsFromExprs,
   getSharedParentPrimitiveVariadic,
-  getPrimitiveBaseType,
   LooseTypeSet,
 } from "./set";`,
   ]);

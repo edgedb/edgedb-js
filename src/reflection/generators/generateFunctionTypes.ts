@@ -185,7 +185,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
           } else {
             return anytypes.refName === paramTypeName
               ? anytypes.type
-              : `_.syntax.getPrimitiveBaseType<${anytypes.refName}${anytypes.refPath}>`;
+              : `$.getPrimitiveBaseType<${anytypes.refName}${anytypes.refPath}>`;
           }
         }
 
@@ -297,7 +297,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
                 : anytypeParams.slice(1).reduce((parent, type) => {
                     return `${anytypes.returnAnytypeWrapper}<${parent}, ${type}>`;
                   }, anytypeParams[0])
-              : `_.syntax.getPrimitiveBaseType<${anytypes.refName}${anytypes.refPath}>`
+              : `$.getPrimitiveBaseType<${anytypes.refName}${anytypes.refPath}>`
             : undefined;
           const returnType = getStringRepresentation(
             types.get(funcDef.return_type.id),
