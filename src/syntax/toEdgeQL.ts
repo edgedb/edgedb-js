@@ -1015,8 +1015,7 @@ function q(ident: string, allowReserved: boolean = false): string {
 
 function bufferToStringRep(buf: Buffer): string {
   let stringRep = "";
-  for (let i = 0; i < buf.length; i++) {
-    const byte = buf[i];
+  for (const byte of buf) {
     if (byte < 32 || byte > 126) {
       // non printable ascii
       switch (byte) {

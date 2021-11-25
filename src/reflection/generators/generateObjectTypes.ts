@@ -279,15 +279,15 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     body.addExport(ref);
     body.addRefsDefaultExport(ref, `$${name}`);
 
-    const card = singletonObjectTypes.has(type.name) ? "One" : "Many";
+    const typeCard = singletonObjectTypes.has(type.name) ? "One" : "Many";
 
     body.nl();
     body.writeln([
       dts`declare `,
       ...frag`const ${literal}`,
       // tslint:disable-next-line
-      t`: $.$expr_PathNode<$.TypeSet<${ref}, $.Cardinality.${card}>, null, true> `,
-      r`= _.syntax.$expr_PathNode($.$toSet(${ref}, $.Cardinality.${card}), null, true);`,
+      t`: $.$expr_PathNode<$.TypeSet<${ref}, $.Cardinality.${typeCard}>, null, true> `,
+      r`= _.syntax.$expr_PathNode($.$toSet(${ref}, $.Cardinality.${typeCard}), null, true);`,
     ]);
     body.nl();
 
