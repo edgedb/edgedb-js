@@ -326,6 +326,10 @@ class ClientPool {
   }
 
   async getNewConnection(): Promise<RawConnection> {
+    if (this._closing?.done) {
+      throw new errors.InterfaceError("The client is closed");
+    }
+
     const config = await this._getNormalizedConnectConfig();
     const connection = await retryingConnect(config, this._codecsRegistry);
     const suggestedConcurrency =
@@ -375,6 +379,10 @@ class ClientPool {
 
     this._closing = new Event();
 
+    this._queue.cancelAllPending(
+      new errors.InterfaceError(`The client is closing`)
+    );
+
     const warningTimeoutId = setTimeout(() => {
       // tslint:disable-next-line: no-console
       console.warn(
@@ -414,6 +422,10 @@ class ClientPool {
     if (this._closing?.done) {
       return;
     }
+
+    this._queue.cancelAllPending(
+      new errors.InterfaceError(`The client is closed`)
+    );
 
     this._terminate();
 

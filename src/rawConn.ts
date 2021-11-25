@@ -188,6 +188,7 @@ export class RawConnection {
       this.connWaiter.setError(err);
     }
     this.messageWaiter?.setError(err);
+    this.messageWaiter = null;
   }
 
   private _onClose(): void {
@@ -241,16 +242,13 @@ export class RawConnection {
 
   getConnAbortError(): Error {
     return (
-      this._abortedWith ??
-      new errors.ClientConnectionClosedError(
-        `connection closed with Client.close()`
-      )
+      this._abortedWith ?? new errors.InterfaceError(`client has been closed`)
     );
   }
 
   private _checkState(): void {
-    if (this._abortedWith != null) {
-      throw this._abortedWith;
+    if (this.isClosed()) {
+      throw this.getConnAbortError();
     }
   }
 
@@ -1299,11 +1297,16 @@ export class RawConnection {
   }
 
   async resetState(): Promise<void> {
-    if (this.serverXactStatus !== TransactionStatus.TRANS_IDLE) {
+    if (
+      this.connected &&
+      this.serverXactStatus !== TransactionStatus.TRANS_IDLE
+    ) {
       try {
-        await this.fetch(`rollback`, null, false, false);
+        await this.execute(`rollback`, true);
       } catch {
-        this.close();
+        this._abortWithError(
+          new errors.ClientConnectionClosedError("failed to reset state")
+        );
       }
     }
   }
@@ -1313,6 +1316,7 @@ export class RawConnection {
       this.sock.destroy();
     }
     this.connected = false;
+    this._abortWaiters(this.getConnAbortError());
     if (!this.connAbortWaiter.done) {
       this.connAbortWaiter.set();
     }
