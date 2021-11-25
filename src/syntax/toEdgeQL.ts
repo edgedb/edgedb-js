@@ -1,4 +1,10 @@
-import {Duration, LocalDate, LocalDateTime, LocalTime} from "edgedb";
+import {
+  Duration,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+  RelativeDuration,
+} from "edgedb";
 import {
   $expr_Array,
   $expr_NamedTuple,
@@ -943,14 +949,17 @@ function literalToEdgeQL(type: BaseType, val: any): string {
     }
   } else if (val instanceof Date) {
     stringRep = `'${val.toISOString()}'`;
-  } else if (val instanceof LocalDate) {
+  } else if (
+    val instanceof LocalDate ||
+    val instanceof LocalDateTime ||
+    val instanceof LocalTime ||
+    val instanceof Duration ||
+    val instanceof RelativeDuration
+  ) {
     stringRep = `'${val.toString()}'`;
-  } else if (val instanceof LocalDateTime) {
-    stringRep = `'${val.toString()}'`;
-  } else if (val instanceof LocalTime) {
-    stringRep = `'${val.toString()}'`;
-  } else if (val instanceof Duration) {
-    stringRep = `'${val.toString()}'`;
+  } else if (val instanceof Buffer) {
+    stringRep = bufferToStringRep(val);
+    skipCast = true;
   } else if (typeof val === "object") {
     if (isNamedTupleType(type)) {
       stringRep = `( ${Object.entries(val).map(
@@ -1002,4 +1011,37 @@ function q(ident: string, allowReserved: boolean = false): string {
   }
 
   return "`" + ident.replace(/`/g, "``") + "`";
+}
+
+function bufferToStringRep(buf: Buffer): string {
+  let stringRep = "";
+  for (let i = 0; i < buf.length; i++) {
+    const byte = buf[i];
+    if (byte < 32 || byte > 126) {
+      // non printable ascii
+      switch (byte) {
+        case 8:
+          stringRep += "\\b";
+          break;
+        case 9:
+          stringRep += "\\t";
+          break;
+        case 10:
+          stringRep += "\\n";
+          break;
+        case 12:
+          stringRep += "\\f";
+          break;
+        case 13:
+          stringRep += "\\r";
+          break;
+        default:
+          stringRep += `\\x${byte.toString(16).padStart(2, "0")}`;
+      }
+    } else {
+      stringRep +=
+        (byte === 39 || byte === 92 ? "\\" : "") + String.fromCharCode(byte);
+    }
+  }
+  return `b'${stringRep}'`;
 }
