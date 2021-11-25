@@ -8,7 +8,7 @@ import {setupTests} from "./test/setupTeardown";
 
 async function run() {
   // const asdf = e.tuple([e.str, e.int64]);
-  const pool = await setupTests();
+  const {client} = await setupTests();
 
   const backlinkQuery = await e.select(
     e.Hero["<characters"].$is(e.Movie),
@@ -19,7 +19,7 @@ async function run() {
   );
   console.log(`QUERY`);
   console.log(backlinkQuery.toEdgeQL());
-  const result = await backlinkQuery.run(pool.pool);
+  const result = await backlinkQuery.run(client);
   console.log(result);
 
   if (1 > 0) return;
@@ -28,38 +28,38 @@ async function run() {
 
   console.log(e.Hero.__element__.__pointers__.villains.properties);
 
-  console.log(await e.select(e.int16(5)).run(pool.pool));
+  console.log(await e.select(e.int16(5)).run(client));
   console.log(
     await e
       .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
-      .run(pool.pool)
+      .run(client)
   );
   console.log(
     await e
       .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
       .update({number_of_movies: e.int16(5)})
-      .run(pool.pool)
+      .run(client)
   );
   console.log(
     await e
       .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
       .delete()
-      .run(pool.pool)
+      .run(client)
   );
 
-  console.log(await e.insert(e.Hero, {name: e.str("Loki")}).run(pool.pool));
+  console.log(await e.insert(e.Hero, {name: e.str("Loki")}).run(client));
   console.log(
     await e
       .insert(e.Hero, {name: e.str("Loki")})
       .unlessConflict()
-      .run(pool.pool)
+      .run(client)
   );
 
-  console.log(await e.for(e.Hero, hero => hero.name).run(pool.pool));
+  console.log(await e.for(e.Hero, hero => hero.name).run(client));
 
   const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
 
-  console.log(await e.with([numbers], e.select(numbers)).run(pool.pool));
+  console.log(await e.with([numbers], e.select(numbers)).run(client));
 
   console.log(
     await e
@@ -76,10 +76,10 @@ async function run() {
             x: e.if_else(e.str("true"), params.optBool, e.str("false")),
           })
       )
-      .run(pool.pool, {numArr: [7], str: "test"})
+      .run(client, {numArr: [7], str: "test"})
   );
 
-  pool.pool.close();
+  client.close();
 
   e.is(e.Villain, {
     // id: true,
