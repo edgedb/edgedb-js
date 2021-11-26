@@ -933,6 +933,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
     stringRep = `${val.toString()}`;
   } else if (typeof val === "boolean") {
     stringRep = `${val.toString()}`;
+    skipCast = true;
   } else if (typeof val === "bigint") {
     stringRep = `${val.toString()}n`;
   } else if (Array.isArray(val)) {

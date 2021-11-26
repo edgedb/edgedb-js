@@ -168,6 +168,68 @@ export namespace cardinalityUtil {
     ]);
   }
 
+  // 'or' cardinalities together
+  // used in the IF ELSE operator, for expr (a IF bool ELSE b)
+  // result cardinality is 'a' cardinality *or* 'b' cardinality
+  // Cardinality  Empty       AtMostOne   One         Many        AtLeastOne
+  // Empty        0           AtMostOne   AtMostOne   Many        Many
+  // AtMostOne    AtMostOne   AtMostOne   AtMostOne   Many        Many
+  // One          AtMostOne   AtMostOne   One         Many        AtLeastOne
+  // Many         Many        Many        Many        Many        Many
+  // AtLeastOne   Many        Many        AtLeastOne  Many        AtLeastOne
+
+  export type orCardinalities<
+    C1 extends Cardinality,
+    C2 extends Cardinality
+  > = C1 extends C2
+    ? C1
+    : C1 extends Cardinality.Many
+    ? C1
+    : C1 extends Cardinality.AtMostOne
+    ? C2 extends Cardinality.Many
+      ? C2
+      : C2 extends Cardinality.AtLeastOne
+      ? Cardinality.Many
+      : C1
+    : C1 extends Cardinality.AtLeastOne
+    ? C2 extends Cardinality.One
+      ? Cardinality.AtLeastOne
+      : Cardinality.Many
+    : C1 extends Cardinality.Empty
+    ? C2 extends Cardinality.AtMostOne
+      ? Cardinality.AtMostOne
+      : C2 extends Cardinality.One
+      ? Cardinality.AtMostOne
+      : Cardinality.Many
+    : C2 extends Cardinality.Empty
+    ? Cardinality.AtMostOne
+    : C2;
+
+  export function orCardinalities(
+    c1: Cardinality,
+    c2: Cardinality
+  ): Cardinality {
+    if (c1 === c2 || c1 === Cardinality.Many) return c1;
+    if (c1 === Cardinality.AtLeastOne) {
+      if (c2 === Cardinality.One) return Cardinality.AtLeastOne;
+      return Cardinality.Many;
+    }
+    if (c1 === Cardinality.AtMostOne) {
+      if (c2 === Cardinality.Many || c2 === Cardinality.AtLeastOne) {
+        return Cardinality.Many;
+      }
+      return c1;
+    }
+    if (c1 === Cardinality.Empty) {
+      if (c2 === Cardinality.AtMostOne || c2 === Cardinality.One) {
+        return Cardinality.AtMostOne;
+      }
+      return Cardinality.Many;
+    }
+    if (c2 === Cardinality.Empty) return Cardinality.AtMostOne;
+    return c2;
+  }
+
   //          Empty  AtMostOne  One         Many        AtLeastOne
   // One      One    One        One         AtLeastOne  AtLeastOne
   // Zero     0      AtMostOne  AtMostOne   Many        Many

@@ -325,6 +325,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
             frag`$.TypeSet<${
               returnType.staticType
             }, ${generateReturnCardinality(
+              funcName,
               params,
               funcDef.return_typemod,
               hasNamedParams,
@@ -350,7 +351,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
       code.writeln([
         r`const {${
           funcDefs[0].kind ? "kind, " : ""
-        }returnType, cardinality, args: positionalArgs, namedArgs} = _.syntax.$resolveOverload(args, _.spec, [`,
+        }returnType, cardinality, args: positionalArgs, namedArgs} = _.syntax.$resolveOverload('${funcName}', args, _.spec, [`,
       ]);
       code.indented(() => {
         let overloadIndex = 0;
@@ -436,11 +437,22 @@ export function generateFuncopTypes<F extends FuncopDef>(
 // - setoftype -> always Many
 
 function generateReturnCardinality(
+  name: string,
   params: GroupedParams,
   returnTypemod: Typemod,
   hasNamedParams: boolean,
   preservesOptionality: boolean = false
 ) {
+  if (name === "std::if_else") {
+    return (
+      `$.cardinalityUtil.multiplyCardinalities<` +
+      `$.cardinalityUtil.orCardinalities<` +
+      `${params.positional[0].typeName}["__cardinality__"],` +
+      ` ${params.positional[2].typeName}["__cardinality__"]` +
+      `>, ${params.positional[1].typeName}["__cardinality__"]>`
+    );
+  }
+
   if (returnTypemod === "SetOfType") {
     return `$.Cardinality.Many`;
   }
