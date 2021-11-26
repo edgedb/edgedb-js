@@ -77,17 +77,77 @@ test("slice and index ops", () => {
 });
 
 test("if else op", () => {
-  const expr = e.if_else(
-    e.str("this"),
-    e.eq(e.int64(42), e.float32(42)),
-    e.str("that")
-  );
   checkOperatorExpr(
-    expr,
+    e.if_else(e.str("this"), e.eq(e.int64(42), e.float32(42)), e.str("that")),
     "std::IF",
     [e.str("this"), e.eq(e.int64(42), e.float32(42)), e.str("that")],
     e.str,
-    $.Cardinality.Many,
+    $.Cardinality.One,
     `("this" IF (42 = <std::float32>42) ELSE "that")`
+  );
+
+  checkOperatorExpr(
+    e.if_else(e.str("this"), e.set(e.bool), e.str("that")),
+    "std::IF",
+    [e.str("this"), e.set(e.bool), e.str("that")],
+    e.str,
+    $.Cardinality.Empty,
+    `("this" IF <std::bool>{} ELSE "that")`
+  );
+
+  checkOperatorExpr(
+    e.if_else(
+      e.str("this"),
+      e.set(e.bool(true), e.bool(false)),
+      e.str("that")
+    ),
+    "std::IF",
+    [e.str("this"), e.set(e.bool(true), e.bool(false)), e.str("that")],
+    e.str,
+    $.Cardinality.AtLeastOne,
+    `("this" IF { true, false } ELSE "that")`
+  );
+
+  checkOperatorExpr(
+    e.if_else(
+      e.str("this"),
+      e.eq(e.int64(42), e.float32(42)),
+      e.set(e.str("that"), e.str("other"))
+    ),
+    "std::IF",
+    [
+      e.str("this"),
+      e.eq(e.int64(42), e.float32(42)),
+      e.set(e.str("that"), e.str("other")),
+    ],
+    e.str,
+    $.Cardinality.AtLeastOne,
+    `("this" IF (42 = <std::float32>42) ELSE { "that", "other" })`
+  );
+
+  checkOperatorExpr(
+    e.if_else(
+      e.set(e.str),
+      e.eq(e.int64(42), e.float32(42)),
+      e.set(e.str("that"), e.str("other"))
+    ),
+    "std::IF",
+    [
+      e.set(e.str),
+      e.eq(e.int64(42), e.float32(42)),
+      e.set(e.str("that"), e.str("other")),
+    ],
+    e.str,
+    $.Cardinality.Many,
+    `(<std::str>{} IF (42 = <std::float32>42) ELSE { "that", "other" })`
+  );
+
+  checkOperatorExpr(
+    e.if_else(e.str("this"), e.eq(e.int64(42), e.float32(42)), e.set(e.str)),
+    "std::IF",
+    [e.str("this"), e.eq(e.int64(42), e.float32(42)), e.set(e.str)],
+    e.str,
+    $.Cardinality.AtMostOne,
+    `("this" IF (42 = <std::float32>42) ELSE <std::str>{})`
   );
 });

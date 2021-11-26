@@ -12,7 +12,7 @@ test("literals", () => {
   expect(e.std.bigint(BigInt("9007199254740991")).toEdgeQL()).toEqual(
     `<std::bigint>9007199254740991n`
   );
-  expect(e.std.bool(true).toEdgeQL()).toEqual(`<std::bool>true`);
+  expect(e.std.bool(true).toEdgeQL()).toEqual(`true`);
   expect(
     e.std.bytes(Buffer.from(`whatever\nðñòóôõö÷øùúûüýþÿ`)).toEdgeQL()
   ).toEqual(
