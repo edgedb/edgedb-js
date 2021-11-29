@@ -15,7 +15,6 @@ import {
   QueryableExpression,
   ScalarType,
   stripSet,
-  stripSetShape,
   TypeKind,
   TypeSet,
   typeutil,
@@ -422,7 +421,9 @@ export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   return $queryify(expr);
 }
 
-export type pointersToSelectShape<Shape extends ObjectTypePointers> = Partial<{
+export type pointersToSelectShape<
+  Shape extends ObjectTypePointers = ObjectTypePointers
+> = Partial<{
   [k in keyof Shape]: Shape[k] extends PropertyDesc
     ?
         | boolean
@@ -450,6 +451,29 @@ export type pointersToSelectShape<Shape extends ObjectTypePointers> = Partial<{
     : any;
 }> &
   SelectModifiers;
+
+type normaliseShape<
+  Shape extends pointersToSelectShape,
+  Pointers extends ObjectTypePointers
+> = {
+  [k in keyof Shape]: Shape[k] extends boolean
+    ? stripSet<Shape[k]>
+    : Shape[k] extends TypeSet
+    ? stripSet<Shape[k]>
+    : [k] extends [keyof Pointers]
+    ? Pointers[k] extends LinkDesc
+      ? Omit<
+          normaliseShape<
+            Shape[k] extends (...scope: any[]) => any
+              ? ReturnType<Shape[k]>
+              : Shape[k],
+            Pointers[k]["target"]["__pointers__"]
+          >,
+          SelectModifierNames
+        >
+      : stripSet<Shape[k]>
+    : stripSet<Shape[k]>;
+};
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
@@ -479,7 +503,10 @@ export function select<
     __element__: ObjectType<
       `${Expr["__element__"]["__name__"]}`, // _shape
       Expr["__element__"]["__pointers__"],
-      Omit<stripSetShape<Shape>, SelectModifierNames>
+      Omit<
+        normaliseShape<Shape, Expr["__element__"]["__pointers__"]>,
+        SelectModifierNames
+      >
     >;
     __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
   },
@@ -640,10 +667,13 @@ function resolveShapeElement(
       typeof (value as any).__kind__ === "undefined")
   ) {
     const childExpr = (scope as any)[key];
-    const {shape: childShape, scope: childScope} = resolveShape(
-      value as any,
-      childExpr
-    );
+    const {
+      shape: childShape,
+      scope: childScope,
+      modifiers: mods,
+    } = resolveShape(value as any, childExpr);
+
+    const {modifiers} = handleModifiers(mods, childExpr);
 
     return {
       __kind__: ExpressionKind.Select,
@@ -655,7 +685,7 @@ function resolveShapeElement(
       },
       __cardinality__: scope.__element__.__pointers__[key].cardinality,
       __expr__: childExpr,
-      __modifiers__: {},
+      __modifiers__: modifiers,
       __scope__: childScope,
     };
   } else if ((value as any)?.__kind__ === ExpressionKind.PolyShapeElement) {

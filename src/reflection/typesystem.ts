@@ -221,17 +221,15 @@ type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
   : [Element] extends [boolean]
   ? pointerToTsType<Pointer> | undefined
   : Element extends TypeSet
-  ? setToTsType<Element>
+  ? setToTsType<TypeSet<Element["__element__"], Pointer["cardinality"]>>
   : Pointer extends LinkDesc
-  ? Element extends (...scope: any[]) => any
-    ? computeObjectShape<
-        Pointer["target"]["__pointers__"] & Pointer["properties"],
-        ReturnType<Element>
-      >
-    : Element extends object
-    ? computeObjectShape<
-        Pointer["target"]["__pointers__"] & Pointer["properties"],
-        Element
+  ? Element extends object
+    ? computeTsTypeCard<
+        computeObjectShape<
+          Pointer["target"]["__pointers__"] & Pointer["properties"],
+          Element
+        >,
+        Pointer["cardinality"]
       >
     : never
   : never;
@@ -446,26 +444,29 @@ export type setToTsType<Set extends TypeSet> = computeTsType<
   Set["__cardinality__"]
 >;
 
-export type computeTsType<
-  T extends BaseType,
+type computeTsTypeCard<
+  T extends any,
   C extends Cardinality
 > = Cardinality extends C
-  ? unknown
-  : BaseType extends T
   ? unknown
   : C extends Cardinality.Empty
   ? null
   : C extends Cardinality.One
-  ? BaseTypeToTsType<T>
+  ? T
   : C extends Cardinality.AtLeastOne
-  ? [BaseTypeToTsType<T>, ...BaseTypeToTsType<T>[]]
+  ? [T, ...T[]]
   : C extends Cardinality.AtMostOne
-  ? BaseTypeToTsType<T> | null
+  ? T | null
   : C extends Cardinality.Many
-  ? BaseTypeToTsType<T>[]
+  ? T[]
   : C extends Cardinality
   ? unknown
   : never;
+
+export type computeTsType<
+  T extends BaseType,
+  C extends Cardinality
+> = BaseType extends T ? unknown : computeTsTypeCard<BaseTypeToTsType<T>, C>;
 
 export type propToTsType<Prop extends PropertyDesc> =
   Prop extends PropertyDesc<infer Type, infer Card>
