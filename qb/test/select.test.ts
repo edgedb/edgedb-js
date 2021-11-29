@@ -62,7 +62,7 @@ test("complex shape", () => {
         villains: {
           id: string;
           computed: "test";
-        };
+        }[];
         computed: "test";
       }
     >
@@ -151,9 +151,6 @@ test("polymorphism", () => {
   expect(query.__kind__).toEqual($.ExpressionKind.Select);
   expect(query.__element__.__kind__).toEqual($.TypeKind.object);
   expect(query.__element__.__name__).toEqual("default::Person");
-
-  const func = <T extends {arg: string}>(arg: T) => arg;
-  func({arg: "asdf"});
 
   type result = $.BaseTypeToTsType<typeof query["__element__"]>;
   tc.assert<
@@ -545,7 +542,7 @@ test("link properties", () => {
         characters: {
           name: string;
           "@character_name": string | null;
-        };
+        }[];
       }[]
     >
   >(true);
@@ -556,6 +553,89 @@ test("link properties", () => {
 //   const outer = e.select(e.Hero).$assertSingle().__args__[0];
 //   tc.assert<tc.IsExact<typeof inner, typeof outer>>(true);
 // });
+
+test("filters in subqueries", async () => {
+  const q1 = e.select(e.Hero, hero => ({
+    name: true,
+    villains: {
+      id: true,
+      name: true,
+    },
+    filter: e.eq(hero.name, e.str(data.spidey.name)),
+  }));
+
+  const res1 = await q1.run(client);
+
+  expect(res1).not.toBeNull();
+  expect(res1!.villains.length).toBe(1);
+
+  const q2 = e.select(e.Hero, hero => ({
+    name: true,
+    villains: v => ({
+      id: true,
+      name: true,
+      filter: e.ilike(v.name, e.str("%n%")),
+    }),
+    filter: e.eq(hero.name, e.str(data.spidey.name)),
+  }));
+
+  const res2 = await q2.run(client);
+
+  expect(res2).not.toBeNull();
+  expect(res2!.villains.length).toBe(0);
+
+  tc.assert<
+    tc.IsExact<
+      typeof res1,
+      {
+        name: string;
+        villains: {
+          id: string;
+          name: string;
+        }[];
+      } | null
+    >
+  >(true);
+
+  tc.assert<tc.IsExact<typeof res1, typeof res2>>(true);
+
+  const q3 = e.select(e.Hero, hero => ({
+    name: true,
+    villains: v => ({
+      id: true,
+      name: true,
+      filter: e.eq(v.name, e.str("Thanos")),
+    }),
+    thanos: e.select(hero.villains, v => ({
+      name: true,
+      filter: e.eq(v.name, e.str("Thanos")),
+    })),
+  }));
+
+  const res3 = await q3.run(client);
+
+  expect(Array.isArray(res3)).toBe(true);
+  const ironMan = res3.find(r => r.name === "Iron Man");
+  expect(ironMan).not.toBeUndefined();
+  expect(Array.isArray(ironMan!.villains)).toBe(true);
+  expect(Array.isArray(ironMan!.thanos)).toBe(false);
+
+  tc.assert<
+    tc.IsExact<
+      typeof res3,
+      {
+        name: string;
+        villains: {
+          id: string;
+          name: string;
+        }[];
+        thanos: {
+          name: string;
+        } | null;
+      }[]
+    >
+  >(true);
+});
 
 test("polymorphic subqueries", async () => {
   const query = e.select(e.Movie.characters, character => ({

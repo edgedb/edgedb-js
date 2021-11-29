@@ -56,7 +56,9 @@ test("nested insert", async () => {
 
   // cleanup
   await client.execute(`delete Villain filter .name = '${result.name}';`);
-  await client.execute(`delete Hero filter .name = '${result.nemesis.name}';`);
+  await client.execute(
+    `delete Hero filter .name = '${result.nemesis!.name}';`
+  );
   return;
 });
 
