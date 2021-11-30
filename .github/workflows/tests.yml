@@ -10,7 +10,26 @@ on:
       - master
 
 jobs:
+  prep:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.checkver.outputs.version }}
+    steps:
+      - name: Check if release PR.
+        uses: edgedb/action-release/validate-pr@master
+        id: checkver
+        with:
+          github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
+          missing_version_ok: yes
+          version_file: package.json
+          version_line_pattern: |
+            "version"\s*:\s*"([[:SEMVER:]])"
+
   test:
+    needs: prep
+    # Skip tests when doing a release to avoid the workflow race
+    # when the release PR gets merged by the bot.
+    if: needs.prep.outputs.version == 0
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -88,6 +107,7 @@ jobs:
   regression-tests:
     name: "Regression Tests"
     needs: [test]
+    if: needs.test.result == 'success' || needs.test.result == 'skipped'
     runs-on: ubuntu-latest
     steps:
       - run: echo OK
