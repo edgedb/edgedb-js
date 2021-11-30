@@ -135,7 +135,7 @@ test("all param types", async () => {
         int64: number;
         float32: number;
         float64: number;
-        bigint: BigInt;
+        bigint: bigint;
         bool: boolean;
         json: string;
         str: string;

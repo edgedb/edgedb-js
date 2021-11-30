@@ -11,6 +11,7 @@ import {
   mergeObjectTypes,
   ObjectType,
   Cardinality,
+  getPrimitiveBaseType,
 } from "../reflection";
 
 // "@generated/" path gets replaced during generation step
@@ -46,14 +47,12 @@ export type getSharedParentPrimitive<A, B> = A extends undefined
     : never
   : A extends NamedTupleType<infer AShape>
   ? B extends NamedTupleType<infer BShape>
-    ? NamedTupleType<
-        {
-          [k in keyof AShape & keyof BShape]: getSharedParentScalar<
-            AShape[k],
-            BShape[k]
-          >;
-        }
-      >
+    ? NamedTupleType<{
+        [k in keyof AShape & keyof BShape]: getSharedParentScalar<
+          AShape[k],
+          BShape[k]
+        >;
+      }>
     : never
   : A extends TupleType<infer AItems>
   ? B extends TupleType<infer BItems>
@@ -102,7 +101,9 @@ export type mergeObjectTypesVariadic<Types extends [any, ...any[]]> =
   _mergeObjectTypesVariadic<Types>;
 
 export type getTypesFromExprs<Exprs extends [TypeSet, ...TypeSet[]]> = {
-  [k in keyof Exprs]: Exprs[k] extends TypeSet<infer El, any> ? El : never;
+  [k in keyof Exprs]: Exprs[k] extends TypeSet<infer El, any>
+    ? getPrimitiveBaseType<El>
+    : never;
 };
 
 export type getTypesFromObjectExprs<

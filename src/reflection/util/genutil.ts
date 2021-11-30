@@ -42,7 +42,7 @@ export function toPrimitiveJsType(
       return "boolean";
 
     case "std::bigint":
-      return "BigInt";
+      return "bigint";
 
     case "std::datetime":
       return "Date";
