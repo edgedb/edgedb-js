@@ -79,6 +79,7 @@ type WithScopeExpr =
 function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
+  pointerKeys: string[] | null = null,
   keysOnly: boolean = false
 ) {
   if (shape === null) {
@@ -129,8 +130,23 @@ function shapeToEdgeQL(
       }
       const renderedExpr = renderEdgeQL(val, ctx);
 
+      // For computed properties in select shapes, inject the expected
+      // cardinality inferred by the query builder. This ensures the actual
+      // type returned by the server matches the inferred return type, or an
+      // explicit error is thrown, instead of a silent mismatch between
+      // actual and inferred type.
+      const expectedCardinality =
+        pointerKeys &&
+        !pointerKeys.includes(key) &&
+        val.hasOwnProperty("__cardinality__")
+          ? val.__cardinality__ === Cardinality.Many ||
+            val.__cardinality__ === Cardinality.AtLeastOne
+            ? "multi "
+            : "single "
+          : "";
+
       addLine(
-        `${q(key)} ${operator} (${
+        `${expectedCardinality}${q(key)} ${operator} (${
           renderedExpr.includes("\n")
             ? `\n${indent(renderedExpr, 4)}\n  `
             : renderedExpr
@@ -382,6 +398,7 @@ function renderEdgeQL(
           shapeToEdgeQL(
             (expr.__element__.__shape__ || {}) as object,
             ctx,
+            null,
             true
           )
         : "")
@@ -541,7 +558,11 @@ function renderEdgeQL(
       );
 
       lines.push(
-        shapeToEdgeQL((expr.__element__.__shape__ || {}) as object, ctx)
+        shapeToEdgeQL(
+          (expr.__element__.__shape__ || {}) as object,
+          ctx,
+          Object.keys(expr.__element__.__pointers__)
+        )
       );
 
       const modifiers = [];

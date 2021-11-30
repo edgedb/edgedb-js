@@ -433,7 +433,7 @@ test("shapes", async () => {
     })
   );
 
-  const result = await query.run(client); // query.run(pool);
+  const result = await query.run(client);
   expect(result).toMatchObject(data.iron_man);
   expect(result?.villains).toEqual([{id: data.thanos.id}]);
 });
@@ -666,7 +666,7 @@ SELECT (__scope_0_Person) {
   name,
   [IS default::Villain].nemesis,
   [IS default::Hero].secret_identity,
-  villains := (
+  multi villains := (
     WITH
       __scope_1_Villain := (__scope_0_Person[IS default::Hero].villains)
     SELECT (__scope_1_Villain) {
@@ -684,8 +684,8 @@ SELECT (__scope_0_Person) {
           ))
         SELECT (__scope_2_Hero) {
           name,
-          nameLen := (__scope_2_Hero.__withVar_3),
-          nameLen2 := (__scope_2_Hero.__withVar_3)
+          single nameLen := (__scope_2_Hero.__withVar_3),
+          single nameLen2 := (__scope_2_Hero.__withVar_3)
         }
       )
     }

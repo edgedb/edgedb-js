@@ -122,7 +122,6 @@ export function makeType<T extends BaseType>(
       return shape as any;
     });
     obj.__shape__ = {};
-    obj.__polys__ = [];
     return obj;
   } else if (type.kind === "scalar") {
     const scalarObj = ((val: any) => {
@@ -187,15 +186,13 @@ export function makeType<T extends BaseType>(
 export type mergeObjectShapes<
   A extends ObjectTypePointers,
   B extends ObjectTypePointers
-> = typeutil.flatten<
-  {
-    [k in keyof A & keyof B]: A[k] extends B[k] // possible performance issue?
-      ? B[k] extends A[k]
-        ? A[k]
-        : never
-      : never;
-  }
->;
+> = typeutil.flatten<{
+  [k in keyof A & keyof B]: A[k] extends B[k] // possible performance issue?
+    ? B[k] extends A[k]
+      ? A[k]
+      : never
+    : never;
+}>;
 
 export type mergeObjectTypes<
   A extends ObjectType | undefined,
@@ -233,7 +230,6 @@ export function $mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
       return merged;
     },
     __shape__: {},
-    // __polys__: [],
   };
   return obj as any;
 }

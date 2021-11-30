@@ -149,7 +149,6 @@ export interface ObjectType<
   __name__: Name;
   __pointers__: Pointers;
   __shape__: Shape;
-  // __polys__: Polys;
 }
 
 export type PropertyTypes =
@@ -431,11 +430,7 @@ export type BaseTypeToTsType<Type extends BaseType> = typeutil.flatten<
     : Type extends NamedTupleType
     ? NamedTupleTypeToTsType<Type>
     : Type extends ObjectType
-    ? computeObjectShape<
-        Type["__pointers__"],
-        Type["__shape__"]
-        // Type["__polys__"]
-      >
+    ? computeObjectShape<Type["__pointers__"], Type["__shape__"]>
     : never
 >;
 
