@@ -58,9 +58,9 @@ test("implicit WITH vars referencing each other", () => {
     LIMIT 10
   )
 SELECT {
-  pageResults := (__withVar_1 {id, name}),
-  nextOffset := ((__withVar_4 + std::count((__withVar_1)))),
-  hasMore := (SELECT ((std::count((__withVar_3)) > 10)))
+  multi pageResults := (__withVar_1 {id, name}),
+  single nextOffset := ((__withVar_4 + std::count((__withVar_1)))),
+  single hasMore := (SELECT ((std::count((__withVar_3)) > 10)))
 }`);
 
   type queryType = $.BaseTypeToTsType<typeof query["__element__"]>;
@@ -103,7 +103,7 @@ test("explicit WITH block in nested query", () => {
       })
       .toEdgeQL()
   ).toEqual(`SELECT {
-  nested := (
+  multi nested := (
     WITH
       __withVar_0 := ({ 1, <std::int32>2, <std::int16>3 })
     SELECT (__withVar_0)
@@ -143,8 +143,8 @@ test("explicit WITH block nested in implicit WITH block", () => {
     SELECT (__withVar_1)
   )
 SELECT {
-  numbers := (__withVar_0),
-  numbers2 := (__withVar_0)
+  multi numbers := (__withVar_0),
+  multi numbers2 := (__withVar_0)
 }`);
 });
 
@@ -169,7 +169,7 @@ test("explicit WITH block nested in explicit WITH block", () => {
     SELECT (__withVar_1)
   )
 SELECT {
-  numbers := (__withVar_0)
+  multi numbers := (__withVar_0)
 }`);
 });
 
@@ -196,7 +196,7 @@ test("explicit WITH block nested in explicit WITH block, sub expr explicitly ext
     SELECT (__withVar_1)
   )
 SELECT {
-  numbers := (__withVar_0)
+  multi numbers := (__withVar_0)
 }`);
 });
 
@@ -242,8 +242,8 @@ test("explicit WITH block nested in explicit WITH block, sub expr implicitly ext
     SELECT (__withVar_1)
   )
 SELECT {
-  number := (__withVar_2),
-  numbers := (__withVar_0)
+  single number := (__withVar_2),
+  multi numbers := (__withVar_0)
 }`);
 });
 
@@ -288,13 +288,13 @@ test("implicit WITH and explicit WITH in sub expr", () => {
     LIMIT 10
   )
 SELECT {
-  pageResults := (__withVar_3 {id, name}),
-  nextOffset := (
+  multi pageResults := (__withVar_3 {id, name}),
+  single nextOffset := (
     WITH
       __withVar_2 := ((__withVar_5 + std::count((__withVar_3))))
     SELECT (__withVar_2)
   ),
-  hasMore := (SELECT ((std::count((__withVar_4)) > 10)))
+  single hasMore := (SELECT ((std::count((__withVar_4)) > 10)))
 }`);
 });
 
@@ -318,13 +318,13 @@ test("explicit WITH nested in implicit WITH + alias implicit", () => {
       __withVar_1 := ({ 1, <std::int32>2, <std::int16>3 }),
       __withVar_2 := (__withVar_1)
     SELECT {
-      numbers := (__withVar_1),
-      numbersAlias := (__withVar_2)
+      multi numbers := (__withVar_1),
+      multi numbersAlias := (__withVar_2)
     }
   )
 SELECT {
-  numbers := (__withVar_0),
-  numbers2 := (__withVar_0)
+  single numbers := (__withVar_0),
+  single numbers2 := (__withVar_0)
 }`);
 });
 
@@ -351,13 +351,13 @@ test("explicit WITH nested in implicit WITH + alias explicit", () => {
       __withVar_1 := ({ 1, <std::int32>2, <std::int16>3 }),
       __withVar_2 := (__withVar_1)
     SELECT {
-      numbers := (__withVar_1),
-      numbersAlias := (__withVar_2)
+      multi numbers := (__withVar_1),
+      multi numbersAlias := (__withVar_2)
     }
   )
 SELECT {
-  numbers := (__withVar_0),
-  numbers2 := (__withVar_0)
+  single numbers := (__withVar_0),
+  single numbers2 := (__withVar_0)
 }`);
 });
 
@@ -412,7 +412,7 @@ test(
     SELECT ((__withVar_1 + __withVar_2))
   )
 SELECT {
-  numbers := (__withVar_0)
+  multi numbers := (__withVar_0)
 }`);
   }
 );
@@ -450,7 +450,7 @@ test(
     SELECT ((__withVar_1 + __withVar_3))
   )
 SELECT {
-  numbers := (__withVar_0)
+  multi numbers := (__withVar_0)
 }`);
   }
 );
@@ -468,8 +468,8 @@ test("query with no WITH block", () => {
   __scope_0_Hero := (DETACHED default::Person[IS default::Hero])
 SELECT (__scope_0_Hero) {
   id,
-  computable := (35),
-  all_heroes := (
+  single computable := (35),
+  multi all_heroes := (
     WITH
       __scope_1_Hero := (DETACHED default::Hero)
     SELECT (__scope_1_Hero) {
@@ -511,7 +511,7 @@ test("repeated expression referencing scoped select object", () => {
   ))
 SELECT (__scope_0_Hero) {
   name,
-  secret := (__scope_0_Hero.__withVar_1),
-  secret2 := (__scope_0_Hero.__withVar_1)
+  single secret := (__scope_0_Hero.__withVar_1),
+  single secret2 := (__scope_0_Hero.__withVar_1)
 }`);
 });

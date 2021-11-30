@@ -624,14 +624,6 @@ function resolveShape(
     ...expr,
     __cardinality__: Cardinality.One,
   } as any);
-  // const scope = makePathNode(
-  //   {
-  //     __element__: expr.__element__,
-  //     __cardinality__: Cardinality.One,
-  //   },
-  //   null,
-  //   true
-  // );
 
   const selectShape =
     typeof shapeGetter === "function" ? shapeGetter(scope) : shapeGetter;
@@ -679,8 +671,8 @@ function resolveShapeElement(
       __kind__: ExpressionKind.Select,
       __element__: {
         __kind__: TypeKind.object,
-        __name__: `${childExpr.__name__}`,
-        __pointers__: childExpr.__pointers__,
+        __name__: `${childExpr.__element__.__name__}`,
+        __pointers__: childExpr.__element__.__pointers__,
         __shape__: childShape,
       },
       __cardinality__: scope.__element__.__pointers__[key].cardinality,
