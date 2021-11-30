@@ -85,7 +85,10 @@ function applySpec(
 export function makeType<T extends BaseType>(
   spec: introspect.Types,
   id: string,
-  literal: (type: any, val: any) => any,
+  // should be (type: any, val: any) => any, but causes
+  // 'Type instantiation is excessively deep and possibly infinite' error
+  // in typescript 4.5
+  literal: any,
   anytype?: BaseType
 ): T {
   const type = spec.get(id);

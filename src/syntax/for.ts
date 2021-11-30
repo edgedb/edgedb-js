@@ -55,7 +55,7 @@ function _for<IteratorSet extends BaseTypeSet, Expr extends Expression>(
       __expr__: returnExpr,
       __forVar__: forVar,
     })
-  ) as $expr_For<IteratorSet, Expr>;
+  ) as any;
 }
 
 export {_for as for};

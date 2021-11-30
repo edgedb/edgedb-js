@@ -24,7 +24,7 @@ export function alias<Expr extends Expression>(expr: Expr): $expr_Alias<Expr> {
     __element__: expr.__element__,
     __cardinality__: expr.__cardinality__,
     __expr__: expr,
-  });
+  }) as any;
 }
 
 export type WithableExpression =
