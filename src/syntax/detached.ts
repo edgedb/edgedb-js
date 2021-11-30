@@ -9,7 +9,7 @@ export function detached<Expr extends TypeSet>(
     __cardinality__: expr.__cardinality__,
     __expr__: expr,
     __kind__: ExpressionKind.Detached,
-  });
+  }) as any;
 }
 
 export type $expr_Detached<Expr extends TypeSet = TypeSet> = Expression<{
