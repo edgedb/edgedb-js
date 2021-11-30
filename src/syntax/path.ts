@@ -18,8 +18,6 @@ import {
 
 import {$toEdgeQL} from "./toEdgeQL";
 
-import _std from "@generated/modules/std";
-
 function _$expr_PathLeaf<
   Root extends TypeSet,
   Parent extends PathParent,
@@ -137,6 +135,20 @@ function isFunc(this: any, expr: ObjectTypeSet) {
   });
 }
 
+function assert_single(expr: Expression) {
+  return $expressionify({
+    __kind__: ExpressionKind.Function,
+    __element__: expr.__element__,
+    __cardinality__: cardinalityUtil.overrideUpperBound(
+      expr.__cardinality__,
+      "One"
+    ),
+    __name__: "std::assert_single",
+    __args__: [expr],
+    __namedargs__: {},
+  }) as any;
+}
+
 export function $expressionify<T extends ExpressionRoot>(
   _expr: T
 ): Expression<T> {
@@ -144,7 +156,7 @@ export function $expressionify<T extends ExpressionRoot>(
   expr.$is = isFunc.bind(expr) as any;
   expr.toEdgeQL = $toEdgeQL.bind(expr);
   _$pathify(expr);
-  expr.$assertSingle = () => _std.assert_single(expr) as any;
+  expr.$assertSingle = () => assert_single(expr) as any;
   return Object.freeze(expr) as any;
 }
 
