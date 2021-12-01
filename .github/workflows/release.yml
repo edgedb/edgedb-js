@@ -28,26 +28,15 @@ jobs:
             "version"\s*:\s*"([[:SEMVER:]])"
 
       - name: Stop if not approved
-        if: steps.checkver.outputs.approved != 'true'
+        if: ${{ steps.checkver.outputs.version != 0 && steps.checkver.outputs.approved != 'true' }}
         run: |
           echo ::error::PR is not approved yet.
           exit 1
 
-      - name: Store release version for later use
-        env:
-          VERSION: ${{ steps.checkver.outputs.version }}
-        run: |
-          mkdir -p dist/
-          echo "${VERSION}" > dist/VERSION
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: dist
-          path: dist/
-
   build:
     needs: validate-release-request
     runs-on: ubuntu-latest
+    if: needs.validate-release-request.outputs.version != 0
 
     steps:
       - uses: actions/checkout@v2
@@ -71,8 +60,9 @@ jobs:
           path: dist/
 
   publish:
-    needs: [build]
+    needs: [validate-release-request, build]
     runs-on: ubuntu-latest
+    if: needs.validate-release-request.outputs.version != 0
 
     steps:
       - uses: actions/checkout@v2
@@ -85,13 +75,6 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Extract Release Version
-        id: relver
-        run: |
-          set -e
-          echo ::set-output name=version::$(cat dist/VERSION)
-          rm dist/VERSION
-
       - name: Merge and tag the PR
         uses: edgedb/action-release/merge@master
         with:
@@ -99,15 +82,15 @@ jobs:
           ssh_key: ${{ secrets.RELEASE_BOT_SSH_KEY }}
           gpg_key: ${{ secrets.RELEASE_BOT_GPG_KEY }}
           gpg_key_id: "5C468778062D87BF!"
-          tag_name: v${{ steps.relver.outputs.version }}
+          tag_name: v${{ needs.validate-release-request.outputs.version }}
 
       - name: Publish Github Release
         uses: elprans/gh-action-create-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.relver.outputs.version }}
-          release_name: v${{ steps.relver.outputs.version }}
+          tag_name: v${{ needs.validate-release-request.outputs.version }}
+          release_name: v${{ needs.validate-release-request.outputs.version }}
           target: ${{ github.event.pull_request.base.ref }}
           body: ${{ github.event.pull_request.body }}
           draft: true
