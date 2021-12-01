@@ -22,6 +22,7 @@ jobs:
           github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
           require_team: Release Managers
           require_approval: no
+          missing_version_ok: yes
           version_file: package.json
           version_line_pattern: |
             "version"\s*:\s*"([[:SEMVER:]])"
