@@ -2,7 +2,7 @@ import {Client, $} from "edgedb";
 
 import * as tc from "conditional-type-checks";
 
-import e from "../dbschema/edgeql";
+import e, {$infer} from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let client: Client;
@@ -524,8 +524,9 @@ test("overrides with implicit casting", () => {
   }));
 });
 
-test("link properties", () => {
-  const result = e.select(e.Movie, movie => ({
+// Skipped because of bug: https://github.com/edgedb/edgedb/issues/3245
+test.skip("link properties", async () => {
+  const query = e.select(e.Movie, movie => ({
     id: true,
     characters: char => ({
       name: true,
@@ -533,16 +534,87 @@ test("link properties", () => {
     }),
   }));
 
-  type result = $.setToTsType<typeof result>;
+  console.log(query.toEdgeQL());
+
+  const result = await query.run(client);
+
   tc.assert<
     tc.IsExact<
-      result,
+      typeof result,
       {
         id: string;
         characters: {
           name: string;
           "@character_name": string | null;
         }[];
+      }[]
+    >
+  >(true);
+});
+
+test("link properties in expressions", async () => {
+  const query = e.select(e.Movie, movie => ({
+    id: true,
+    characters: char => ({
+      name: true,
+      "@character_name": true,
+      char_name: char["@character_name"],
+      person_name: char.name,
+
+      filter: e.ilike(char["@character_name"], e.str("a%")),
+    }),
+  }));
+
+  const result = await query.run(client);
+
+  tc.assert<
+    tc.IsExact<
+      typeof result,
+      {
+        id: string;
+        characters: {
+          name: string;
+          "@character_name": string | null;
+          char_name: string | null;
+          person_name: string;
+        }[];
+      }[]
+    >
+  >(true);
+});
+
+test("polymorphic link properties in expressions", async () => {
+  const query = e.select(e.Object, obj => ({
+    id: true,
+    ...e.is(e.Movie, {
+      title: true,
+      characters: char => ({
+        name: true,
+        "@character_name": true,
+        char_name: char["@character_name"],
+        person_name: char.name,
+
+        filter: e.ilike(char["@character_name"], e.str("a%")),
+      }),
+    }),
+  }));
+
+  const result = await query.run(client);
+
+  tc.assert<
+    tc.IsExact<
+      typeof result,
+      {
+        id: string;
+        title: string | null;
+        characters:
+          | {
+              name: string;
+              "@character_name": string | null;
+              char_name: string | null;
+              person_name: string;
+            }[]
+          | null;
       }[]
     >
   >(true);
@@ -692,7 +764,32 @@ SELECT (__scope_0_Person) {
   )
 }`);
 
-  await query.run(client);
+  const res = await query.run(client);
+
+  tc.assert<
+    tc.IsExact<
+      typeof res,
+      {
+        id: string;
+        name: string;
+        nemesis: {
+          id: string;
+        } | null;
+        secret_identity: string | null;
+        villains:
+          | {
+              id: string;
+              name: string;
+              nemesis: {
+                name: string;
+                nameLen: number;
+                nameLen2: number;
+              } | null;
+            }[]
+          | null;
+      }[]
+    >
+  >(true);
 });
 
 test("scoped expr select", async () => {

@@ -63,7 +63,12 @@ export function $toSet<Root extends BaseType, Card extends Cardinality>(
 export type Expression<Set extends TypeSet = TypeSet> =
   BaseType extends Set["__element__"]
     ? Set & {toEdgeQL(): string; $is: any; $assertSingle: any}
-    : Set & ExpressionMethods<stripSet<Set>> & $pathify<Set>;
+    : Set &
+        ExpressionMethods<stripSet<Set>> &
+        $pathify<
+          Set,
+          Set extends {__parent__: any} ? Set["__parent__"] : null
+        >;
 
 export type QueryableExpression<Set extends TypeSet = TypeSet> =
   Expression<Set> & {

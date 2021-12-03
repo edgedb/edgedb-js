@@ -176,6 +176,7 @@ interface RenderCtx {
   >;
   renderWithVar?: SomeExpression;
   forVars: Map<$expr_ForVar, string>;
+  linkProps: Map<SomeExpression, string[]>;
 }
 
 const toEdgeQLCache = new WeakMap<any, string>();
@@ -204,9 +205,19 @@ export function $toEdgeQL(this: any) {
   >();
 
   const seen = new Map(walkExprCtx.seen);
+  const linkProps: RenderCtx["linkProps"] = new Map();
 
   for (const [expr, refData] of seen) {
     seen.delete(expr);
+
+    if (refData.linkProps.length) {
+      linkProps.set(
+        expr,
+        refData.linkProps.map(linkProp =>
+          linkProp.__parent__.linkName.slice(1)
+        )
+      );
+    }
 
     if (
       withVars.has(expr) ||
@@ -329,6 +340,7 @@ export function $toEdgeQL(this: any) {
     withBlocks,
     withVars,
     forVars: new Map(),
+    linkProps,
   });
   toEdgeQLCache.set(this, edgeQL);
 
@@ -407,7 +419,7 @@ function renderEdgeQL(
 
   function renderWithBlockExpr(varExpr: SomeExpression) {
     const withBlockElement = ctx.withVars.get(varExpr)!;
-    const renderedExpr = renderEdgeQL(
+    let renderedExpr = renderEdgeQL(
       withBlockElement.scopedExpr ?? varExpr,
       {
         ...ctx,
@@ -415,6 +427,15 @@ function renderEdgeQL(
       },
       !withBlockElement.scopedExpr
     );
+    if (ctx.linkProps.has(varExpr)) {
+      renderedExpr = `SELECT ${renderedExpr} {\n${ctx.linkProps
+        .get(varExpr)!
+        .map(
+          linkPropName =>
+            `  __linkprop_${linkPropName} := ${renderedExpr}@${linkPropName}`
+        )
+        .join(",\n")}\n}`;
+    }
     return `  ${withBlockElement.name} := (${
       renderedExpr.includes("\n")
         ? `\n${indent(renderedExpr, 4)}\n  `
@@ -504,12 +525,18 @@ function renderEdgeQL(
         expr.__element__.__name__
       }`;
     } else {
+      const isScopedLinkProp =
+        expr.__parent__.linkName.startsWith("@") &&
+        ctx.withVars.has(expr.__parent__.type as any);
+      const linkName = isScopedLinkProp
+        ? `__linkprop_${expr.__parent__.linkName.slice(1)}`
+        : expr.__parent__.linkName;
       return `${renderEdgeQL(
         expr.__parent__.type,
         ctx,
         false,
         noImplicitDetached
-      )}.${q(expr.__parent__.linkName)}`.trim();
+      )}${linkName.startsWith("@") ? "" : "."}${q(linkName)}`.trim();
     }
   } else if (expr.__kind__ === ExpressionKind.Literal) {
     return literalToEdgeQL(expr.__element__, expr.__value__);
@@ -729,6 +756,7 @@ interface WalkExprTreeCtx {
       childExprs: SomeExpression[];
       boundScope: WithScopeExpr | null;
       aliases: SomeExpression[];
+      linkProps: $expr_PathLeaf[];
     }
   >;
   rootScope: WithScopeExpr | null;
@@ -760,6 +788,7 @@ function walkExprTree(
       childExprs,
       boundScope: null,
       aliases: [],
+      linkProps: [],
     });
 
     switch (expr.__kind__) {
@@ -788,6 +817,13 @@ function walkExprTree(
           childExprs.push(
             ...walkExprTree(expr.__parent__.type, parentScope, ctx)
           );
+          if (
+            // is link prop
+            expr.__kind__ === ExpressionKind.PathLeaf &&
+            expr.__parent__.linkName.startsWith("@")
+          ) {
+            ctx.seen.get(expr.__parent__.type as any)?.linkProps.push(expr);
+          }
         }
         break;
       case ExpressionKind.Cast:

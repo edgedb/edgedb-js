@@ -237,31 +237,18 @@ type ComputeSelectCardinality<
   Modifiers["limit"]
 >;
 
-export type polymorphicShape<RawShape extends ObjectTypePointers> = {
-  [k in keyof RawShape]?: k extends `<${string}`
-    ? any
-    : RawShape[k] extends PropertyDesc
-    ? boolean
-    : RawShape[k] extends LinkDesc
-    ?
-        | boolean
-        | (pointersToSelectShape<RawShape[k]["target"]["__pointers__"]> &
-            pointersToSelectShape<RawShape[k]["properties"]>)
-        | ((
-            scope: $scopify<RawShape[k]["target"]>
-          ) => pointersToSelectShape<RawShape[k]["target"]["__pointers__"]> &
-            pointersToSelectShape<RawShape[k]["properties"]>)
-    : any;
-};
-
 export function is<
   Expr extends ObjectTypeExpression,
-  Shape extends polymorphicShape<Expr["__element__"]["__pointers__"]>
+  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]>,
+  NormalisedShape = normaliseShape<Shape, Expr["__element__"]["__pointers__"]>
 >(
   expr: Expr,
   shape: Shape
 ): {
-  [k in keyof Shape]: $expr_PolyShapeElement<Expr, Shape[k]>;
+  [k in keyof NormalisedShape]: $expr_PolyShapeElement<
+    Expr,
+    NormalisedShape[k]
+  >;
 } {
   const mappedShape: any = {};
   // const {shape: resolvedShape, scope} = resolveShape(shape, expr);
@@ -421,6 +408,17 @@ export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   return $queryify(expr);
 }
 
+type linkDescToLinkProps<Desc extends LinkDesc> = {
+  [k in keyof Desc["properties"] & string]: $expr_PathLeaf<
+    TypeSet<
+      Desc["properties"][k]["target"],
+      Desc["properties"][k]["cardinality"]
+    >,
+    {type: $scopify<Desc["target"]>; linkName: k},
+    Desc["properties"][k]["exclusive"]
+  >;
+};
+
 export type pointersToSelectShape<
   Shape extends ObjectTypePointers = ObjectTypePointers
 > = Partial<{
@@ -442,15 +440,16 @@ export type pointersToSelectShape<
             anonymizeObject<Shape[k]["target"]>,
             cardinalityUtil.assignable<Shape[k]["cardinality"]>
           >
-        | (pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-            pointersToSelectShape<Shape[k]["properties"]>)
-        | ((
-            scope: $scopify<Shape[k]["target"]>
+        | ((pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
+            pointersToSelectShape<Shape[k]["properties"]>) &
+            SelectModifiers)
+        | (((
+            scope: $scopify<Shape[k]["target"]> & linkDescToLinkProps<Shape[k]>
           ) => pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-            pointersToSelectShape<Shape[k]["properties"]>)
+            pointersToSelectShape<Shape[k]["properties"]>) &
+            SelectModifiers)
     : any;
-}> &
-  SelectModifiers;
+}>;
 
 type normaliseShape<
   Shape extends pointersToSelectShape,
@@ -493,7 +492,8 @@ export function select<Expr extends TypeSet>(
 ): $expr_Select<stripSet<Expr>, Expr>;
 export function select<
   Expr extends ObjectTypeExpression,
-  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]>,
+  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]> &
+    SelectModifiers,
   Modifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
@@ -692,6 +692,18 @@ function resolveShapeElement(
         polyScope
       ),
     };
+  } else if (typeof value === "boolean" && key.startsWith("@")) {
+    const linkProp = (scope as any)[key];
+    if (!linkProp) {
+      throw new Error(
+        (scope as any).__parent__
+          ? `link property '${key}' does not exist on link ${
+              (scope as any).__parent__.linkName
+            }`
+          : `cannot select link property '${key}' on an object (${scope.__element__.__name__})`
+      );
+    }
+    return value ? linkProp : false;
   } else {
     return value;
   }
