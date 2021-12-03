@@ -1,6 +1,6 @@
 import {Client, $} from "edgedb";
 // import {$} from "edgedb";
-import e from "../dbschema/edgeql";
+import e, {$infer} from "../dbschema/edgeql";
 import {tc} from "./setupTeardown";
 
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
@@ -97,6 +97,36 @@ test("tuple literal", async () => {
     ["asdf", "qwer"],
     ["asdf", "erty"],
   ]);
+
+  const singleTuple = e.tuple([e.str("asdf")]);
+  type singleTuple = $infer<typeof singleTuple>;
+  tc.assert<tc.IsExact<singleTuple, [string]>>(true);
+  expect(singleTuple.__element__.__kind__).toEqual($.TypeKind.tuple);
+  expect(singleTuple.__element__.__items__[0].__kind__).toEqual(
+    $.TypeKind.scalar
+  );
+  expect(singleTuple.__element__.__items__[0].__name__).toEqual("std::str");
+  const singleTupleResult = await client.querySingle(
+    e.select(singleTuple).toEdgeQL()
+  );
+  expect(singleTupleResult).toEqual(["asdf"]);
+
+  const heroNamesTuple = e.tuple([e.Hero.name]);
+  type heroNamesTuple = $infer<typeof heroNamesTuple>;
+  tc.assert<tc.IsExact<heroNamesTuple, [string][]>>(true);
+  expect(heroNamesTuple.__element__.__kind__).toEqual($.TypeKind.tuple);
+  expect(heroNamesTuple.__element__.__items__[0].__kind__).toEqual(
+    $.TypeKind.scalar
+  );
+  expect(heroNamesTuple.__element__.__items__[0].__name__).toEqual("std::str");
+  const heroNamesTupleResult = await e.select(heroNamesTuple).run(client);
+  expect(
+    heroNamesTupleResult.sort((a, b) => a[0].localeCompare(b[0]))
+  ).toEqual(
+    [[data.cap.name], [data.iron_man.name], [data.spidey.name]].sort((a, b) =>
+      a[0].localeCompare(b[0])
+    )
+  );
 });
 
 test("namedTuple literal", async () => {

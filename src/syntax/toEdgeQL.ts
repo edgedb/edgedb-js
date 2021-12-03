@@ -565,7 +565,7 @@ function renderEdgeQL(
     // ExpressionKind.Tuple
     return `(\n${expr.__items__
       .map(item => `  ` + renderEdgeQL(item, ctx))
-      .join(",\n")}\n)`;
+      .join(",\n")}${expr.__items__.length === 1 ? "," : ""}\n)`;
   } else if (expr.__kind__ === ExpressionKind.NamedTuple) {
     // ExpressionKind.NamedTuple
     return `(\n${Object.keys(expr.__shape__)
