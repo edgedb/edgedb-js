@@ -11,6 +11,7 @@ import {
   ObjectTypeExpression,
   ObjectTypePointers,
   ObjectTypeSet,
+  PrimitiveTypeSet,
   PropertyDesc,
   QueryableExpression,
   ScalarType,
@@ -39,7 +40,7 @@ export const EMPTY_LAST: "EMPTY LAST" = "EMPTY LAST";
 export type OrderByDirection = "ASC" | "DESC";
 export type OrderByEmpty = "EMPTY FIRST" | "EMPTY LAST";
 
-export type OrderByExpr = TypeSet<ScalarType, Cardinality>;
+export type OrderByExpr = TypeSet<ScalarType | ObjectType, Cardinality>;
 export type OrderByObjExpr = {
   expression: OrderByExpr;
   direction?: OrderByDirection;
@@ -327,12 +328,12 @@ function computeFilterCardinality(
 
 function handleModifiers(
   modifiers: SelectModifiers,
-  rootExpr: ObjectTypeExpression
+  rootExpr: TypeSet
 ): {modifiers: NormalisedSelectModifiers; cardinality: Cardinality} {
   const mods = {...modifiers};
   let card = rootExpr.__cardinality__;
 
-  if (mods.filter) {
+  if (mods.filter && rootExpr.__element__.__kind__ === TypeKind.object) {
     card = computeFilterCardinality(mods.filter, card, rootExpr);
   }
   if (mods.order) {
@@ -525,6 +526,22 @@ export function select<Expr extends ObjectTypeExpression, Set extends TypeSet>(
   },
   Expr
 >;
+export function select<
+  Expr extends PrimitiveTypeSet,
+  Modifiers extends SelectModifiers
+>(
+  expr: Expr,
+  modifiers: (expr: Expr) => Readonly<Modifiers>
+): $expr_Select<
+  {
+    __element__: Expr["__element__"];
+    __cardinality__: InferLimitCardinality<
+      Expr["__cardinality__"],
+      Modifiers["limit"]
+    >;
+  },
+  Expr
+>;
 export function select<Shape extends {[key: string]: TypeSet}>(
   shape: Shape
 ): $expr_Select<
@@ -535,9 +552,9 @@ export function select<Shape extends {[key: string]: TypeSet}>(
   typeof _std.FreeObject
 >;
 export function select(...args: any[]) {
-  const [expr, shapeGetter] =
+  const [expr, shapeGetter]: [TypeSet, (scope: any) => any] =
     typeof args[0].__element__ !== "undefined"
-      ? args
+      ? (args as any)
       : [_std.FreeObject, () => args[0]];
 
   if (!shapeGetter) {
@@ -570,14 +587,12 @@ export function select(...args: any[]) {
     }
   }
 
-  const objExpr: ObjectTypeExpression = expr as any;
-
   const {
     modifiers: mods,
     shape,
     scope,
     expr: selectExpr,
-  } = resolveShape(shapeGetter, objExpr);
+  } = resolveShape(shapeGetter, expr);
 
   if (selectExpr) {
     return $expressionify(
@@ -586,7 +601,7 @@ export function select(...args: any[]) {
         __element__: selectExpr.__element__,
         __cardinality__: cardinalityUtil.multiplyCardinalities(
           selectExpr.__cardinality__,
-          objExpr.__cardinality__
+          expr.__cardinality__
         ),
         __expr__: selectExpr,
         __modifiers__: {},
@@ -595,35 +610,42 @@ export function select(...args: any[]) {
     );
   }
 
-  const {modifiers, cardinality} = handleModifiers(mods, objExpr);
+  const {modifiers, cardinality} = handleModifiers(mods, expr);
   return $expressionify(
     $selectify({
       __kind__: ExpressionKind.Select,
-      __element__: {
-        __kind__: TypeKind.object,
-        __name__: `${objExpr.__element__.__name__}`, // _shape
-        __pointers__: objExpr.__element__.__pointers__,
-        __shape__: shape,
-      },
+      __element__:
+        expr !== scope
+          ? {
+              __kind__: TypeKind.object,
+              __name__: `${expr.__element__.__name__}`, // _shape
+              __pointers__: (expr.__element__ as ObjectType).__pointers__,
+              __shape__: shape,
+            }
+          : expr.__element__,
       __cardinality__: cardinality,
       __expr__: expr,
       __modifiers__: modifiers,
-      __scope__: expr !== _std.FreeObject ? scope : undefined,
+      __scope__:
+        expr !== scope && expr !== _std.FreeObject ? scope : undefined,
     })
   );
 }
 
 function resolveShape(
   shapeGetter: ((scope: any) => any) | any,
-  expr: ObjectTypeExpression
+  expr: TypeSet
 ): {modifiers: any; shape: any; scope: TypeSet; expr?: TypeSet} {
   const modifiers: any = {};
   const shape: any = {};
 
-  const scope = $expressionify({
-    ...expr,
-    __cardinality__: Cardinality.One,
-  } as any);
+  const scope =
+    expr.__element__.__kind__ === TypeKind.object
+      ? $expressionify({
+          ...expr,
+          __cardinality__: Cardinality.One,
+        } as any)
+      : expr;
 
   const selectShape =
     typeof shapeGetter === "function" ? shapeGetter(scope) : shapeGetter;
@@ -641,6 +663,12 @@ function resolveShape(
     ) {
       modifiers[key] = value;
     } else {
+      if (scope === expr) {
+        throw new Error(
+          `Invalid select shape key '${key}' on scalar expression, ` +
+            `only modifiers are allowed (filter, order, offset and limit)`
+        );
+      }
       shape[key] = resolveShapeElement(key, value, scope);
     }
   }

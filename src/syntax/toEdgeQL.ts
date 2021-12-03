@@ -574,8 +574,8 @@ function renderEdgeQL(
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${renderEdgeQL(expr.__expr__, ctx)}`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
+    const lines = [];
     if (isObjectType(expr.__element__)) {
-      const lines = [];
       lines.push(
         `SELECT${
           expr.__expr__.__element__.__name__ === "std::FreeObject"
@@ -591,54 +591,71 @@ function renderEdgeQL(
           Object.keys(expr.__element__.__pointers__)
         )
       );
-
-      const modifiers = [];
-
-      if (expr.__modifiers__.filter) {
-        modifiers.push(
-          `FILTER ${renderEdgeQL(expr.__modifiers__.filter, ctx)}`
-        );
-      }
-      if (expr.__modifiers__.order) {
-        modifiers.push(
-          ...expr.__modifiers__.order.map(
-            ({expression, direction, empty}, i) => {
-              return `${i === 0 ? "ORDER BY" : "  THEN"} ${renderEdgeQL(
-                expression,
-                ctx
-              )}${direction ? " " + direction : ""}${
-                empty ? " " + empty : ""
-              }`;
-            }
-          )
-        );
-      }
-      if (expr.__modifiers__.offset) {
-        modifiers.push(
-          `OFFSET ${renderEdgeQL(
-            expr.__modifiers__.offset as OffsetExpression,
-            ctx
-          )}`
-        );
-      }
-      if (expr.__modifiers__.limit) {
-        modifiers.push(
-          `LIMIT ${renderEdgeQL(
-            expr.__modifiers__.limit as LimitExpression,
-            ctx
-          )}`
-        );
-      }
-
-      return (
-        withBlock +
-        lines.join(" ") +
-        (modifiers.length ? "\n" + modifiers.join("\n") : "")
-      );
     } else {
       // non-object/non-shape select expression
-      return withBlock + `SELECT (${renderEdgeQL(expr.__expr__, ctx)})`;
+      const needsScalarVar =
+        (expr.__modifiers__.filter ||
+          expr.__modifiers__.order ||
+          expr.__modifiers__.offset ||
+          expr.__modifiers__.limit) &&
+        !ctx.withVars.has(expr.__expr__ as any);
+
+      lines.push(
+        `SELECT ${needsScalarVar ? "_ := " : ""}(${renderEdgeQL(
+          expr.__expr__,
+          ctx
+        )})`
+      );
+
+      if (needsScalarVar) {
+        ctx = {...ctx, withVars: new Map(ctx.withVars)};
+        ctx.withVars.set(expr.__expr__ as any, {
+          name: "_",
+          childExprs: new Set(),
+          scope: expr,
+        });
+      }
     }
+
+    const modifiers = [];
+
+    if (expr.__modifiers__.filter) {
+      modifiers.push(`FILTER ${renderEdgeQL(expr.__modifiers__.filter, ctx)}`);
+    }
+    if (expr.__modifiers__.order) {
+      modifiers.push(
+        ...expr.__modifiers__.order.map(
+          ({expression, direction, empty}, i) => {
+            return `${i === 0 ? "ORDER BY" : "  THEN"} ${renderEdgeQL(
+              expression,
+              ctx
+            )}${direction ? " " + direction : ""}${empty ? " " + empty : ""}`;
+          }
+        )
+      );
+    }
+    if (expr.__modifiers__.offset) {
+      modifiers.push(
+        `OFFSET ${renderEdgeQL(
+          expr.__modifiers__.offset as OffsetExpression,
+          ctx
+        )}`
+      );
+    }
+    if (expr.__modifiers__.limit) {
+      modifiers.push(
+        `LIMIT ${renderEdgeQL(
+          expr.__modifiers__.limit as LimitExpression,
+          ctx
+        )}`
+      );
+    }
+
+    return (
+      withBlock +
+      lines.join(" ") +
+      (modifiers.length ? "\n" + modifiers.join("\n") : "")
+    );
   } else if (expr.__kind__ === ExpressionKind.Update) {
     return `UPDATE (${renderEdgeQL(expr.__expr__, ctx)}) SET ${shapeToEdgeQL(
       expr.__shape__,
