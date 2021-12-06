@@ -785,7 +785,13 @@ function walkExprTree(
   ctx: WalkExprTreeCtx
 ): SomeExpression[] {
   if (!(_expr as any).__kind__) {
-    throw new Error("Invalid expression.");
+    throw new Error(
+      `Expected a valid querybuilder expression, ` +
+        `instead received ${typeof _expr}${
+          typeof _expr !== "undefined" ? `: '${_expr}'` : ""
+        }.` +
+        getErrorHint(_expr)
+    );
   }
   const expr = _expr as SomeExpression;
   if (!ctx.rootScope && parentScope) {
@@ -1118,4 +1124,49 @@ function bufferToStringRep(buf: Buffer): string {
     }
   }
   return `b'${stringRep}'`;
+}
+
+function getErrorHint(expr: any): string {
+  let literalConstructor: string | null = null;
+  switch (typeof expr) {
+    case "string":
+      literalConstructor = "e.str()";
+      break;
+    case "number":
+      literalConstructor = Number.isInteger(expr)
+        ? "e.int64()"
+        : "e.float64()";
+      break;
+    case "bigint":
+      literalConstructor = "e.bigint()";
+      break;
+    case "boolean":
+      literalConstructor = "e.bool()";
+      break;
+  }
+  switch (true) {
+    case expr instanceof Date:
+      literalConstructor = "e.datetime()";
+      break;
+    case expr instanceof Duration:
+      literalConstructor = "e.duration()";
+      break;
+    case expr instanceof LocalDate:
+      literalConstructor = "e.cal.local_date()";
+      break;
+    case expr instanceof LocalDateTime:
+      literalConstructor = "e.cal.local_datetime()";
+      break;
+    case expr instanceof LocalTime:
+      literalConstructor = "e.cal.local_time()";
+      break;
+    case expr instanceof RelativeDuration:
+      literalConstructor = "e.cal.relative_duration()";
+      break;
+  }
+
+  return literalConstructor
+    ? `\nHint: Maybe you meant to wrap the value in ` +
+        `a '${literalConstructor}' expression?`
+    : "";
 }

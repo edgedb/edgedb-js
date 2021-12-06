@@ -86,7 +86,11 @@ export function $resolveOverload(
       return resolvedOverload;
     }
   }
-  throw new Error("No matching function overload found");
+  throw new Error(
+    `No function overload found for 'e.${
+      funcName.split("::")[1]
+    }()' with args: ${args.map(arg => `${arg}`).join(", ")}`
+  );
 }
 
 function _tryOverload(
