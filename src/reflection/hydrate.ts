@@ -13,6 +13,8 @@ import {typeutil, util} from "./util/util";
 
 const typeCache = new Map<string, BaseType>();
 
+const _linkProps = Symbol();
+
 function applySpec(
   spec: introspect.Types,
   type: introspect.ObjectType,
@@ -32,52 +34,52 @@ function applySpec(
     seen.add(ptr.name);
 
     if (ptr.kind === "link") {
-      util.defineGetter(shape, ptr.name, () => {
-        return {
-          __kind__: "link",
-          cardinality: ptr.real_cardinality,
-          get target() {
-            return makeType(spec, ptr.target_id, literal);
-          },
-          get properties() {
-            const linkProperties: {[k: string]: any} = {};
-            (ptr.pointers || []).forEach(linkProp => {
-              // We only support "link properties" in EdgeDB, currently.
-              if (linkProp.kind !== "property") {
-                return;
-              }
-              // No use for them reflected, at the moment.
-              if (linkProp.name === "source" || linkProp.name === "target") {
-                return;
-              }
+      shape[ptr.name] = {
+        __kind__: "link",
+        cardinality: ptr.real_cardinality,
+        exclusive: ptr.is_exclusive,
+        writable: ptr.is_writable,
+      } as LinkDesc;
+      util.defineGetter(shape[ptr.name], "target", () =>
+        makeType(spec, ptr.target_id, literal)
+      );
+      util.defineGetter(shape[ptr.name], "properties", () => {
+        if (!shape[ptr.name][_linkProps]) {
+          const linkProperties: {[k: string]: any} = (shape[ptr.name][
+            _linkProps
+          ] = {});
+          for (const linkProp of ptr.pointers ?? []) {
+            // We only support "link properties" in EdgeDB, currently.
+            if (linkProp.kind !== "property") {
+              return;
+            }
+            // No use for them reflected, at the moment.
+            if (linkProp.name === "source" || linkProp.name === "target") {
+              return;
+            }
 
-              const linkPropObject: any = {
-                __kind__: "property",
-              };
-              linkPropObject.cardinality = linkProp.real_cardinality;
-              util.defineGetter(linkPropObject, "target", () => {
-                return makeType(spec, linkProp.target_id, literal);
-              });
-              linkProperties[linkProp.name] = linkPropObject;
+            const linkPropObject: any = {
+              __kind__: "property",
+            };
+            linkPropObject.cardinality = linkProp.real_cardinality;
+            util.defineGetter(linkPropObject, "target", () => {
+              return makeType(spec, linkProp.target_id, literal);
             });
-            return linkProperties;
-          },
-          exclusive: ptr.is_exclusive,
-          writable: ptr.is_writable,
-        } as LinkDesc;
+            linkProperties[linkProp.name] = linkPropObject;
+          }
+        }
+        return shape[ptr.name][_linkProps];
       });
     } else if (ptr.kind === "property") {
-      util.defineGetter(shape, ptr.name, () => {
-        return {
-          __kind__: "property",
-          cardinality: ptr.real_cardinality,
-          get target() {
-            return makeType(spec, ptr.target_id, literal);
-          },
-          exclusive: ptr.is_exclusive,
-          writable: ptr.is_writable,
-        } as PropertyDesc;
-      });
+      shape[ptr.name] = {
+        __kind__: "property",
+        cardinality: ptr.real_cardinality,
+        exclusive: ptr.is_exclusive,
+        writable: ptr.is_writable,
+      } as PropertyDesc;
+      util.defineGetter(shape[ptr.name], "target", () =>
+        makeType(spec, ptr.target_id, literal)
+      );
     }
   }
 }
@@ -91,11 +93,11 @@ export function makeType<T extends BaseType>(
   literal: any,
   anytype?: BaseType
 ): T {
-  const type = spec.get(id);
-
-  if (typeCache.has(type.name)) {
-    return typeCache.get(type.name) as T;
+  if (typeCache.has(id)) {
+    return typeCache.get(id) as T;
   }
+
+  const type = spec.get(id);
 
   const obj: any = {};
   obj.__name__ = type.name;
@@ -107,24 +109,25 @@ export function makeType<T extends BaseType>(
 
   if (type.kind === "object") {
     obj.__kind__ = TypeKind.object;
-    util.defineGetter(obj, "__pointers__", () => {
-      const shape: any = {};
-      const seen = new Set<string>();
-      applySpec(spec, type, shape, seen, literal);
-      const ancestors = [...type.bases];
-      for (const anc of ancestors) {
-        const ancType = spec.get(anc.id);
-        if (ancType.kind === "object" || ancType.kind === "scalar") {
-          ancestors.push(...ancType.bases);
-        }
-        if (ancType.kind !== "object") {
-          throw new Error(`Not an object: ${id}`);
-        }
-        applySpec(spec, ancType, shape, seen, literal);
+
+    const pointers: any = {};
+    const seen = new Set<string>();
+    applySpec(spec, type, pointers, seen, literal);
+    const ancestors = [...type.bases];
+    for (const anc of ancestors) {
+      const ancType = spec.get(anc.id);
+      if (ancType.kind === "object" || ancType.kind === "scalar") {
+        ancestors.push(...ancType.bases);
       }
-      return shape as any;
-    });
+      if (ancType.kind !== "object") {
+        throw new Error(`Not an object: ${id}`);
+      }
+      applySpec(spec, ancType, pointers, seen, literal);
+    }
+
+    obj.__pointers__ = pointers;
     obj.__shape__ = {};
+    typeCache.set(id, obj);
     return obj;
   } else if (type.kind === "scalar") {
     const scalarObj = ((val: any) => {
@@ -137,7 +140,7 @@ export function makeType<T extends BaseType>(
         scalarObj[val] = val;
       }
     }
-    typeCache.set(type.name, scalarObj);
+    typeCache.set(id, scalarObj);
     return scalarObj;
   } else if (type.kind === "array") {
     obj.__kind__ = TypeKind.array;
