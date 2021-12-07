@@ -281,15 +281,15 @@ function computeFilterCardinality(
   const argsExist = !!arg0 && !!arg1 && !!arg1.__cardinality__;
   const arg0IsUnique = arg0?.__exclusive__ === true;
 
-  const newCard =
-    arg1.__cardinality__ === Cardinality.One ||
-    arg1.__cardinality__ === Cardinality.AtMostOne
-      ? Cardinality.AtMostOne
-      : arg1.__cardinality__ === Cardinality.Empty
-      ? Cardinality.Empty
-      : cardinality;
-
   if (baseIsObjectExpr && filterExprIsEq && argsExist && arg0IsUnique) {
+    const newCard =
+      arg1.__cardinality__ === Cardinality.One ||
+      arg1.__cardinality__ === Cardinality.AtMostOne
+        ? Cardinality.AtMostOne
+        : arg1.__cardinality__ === Cardinality.Empty
+        ? Cardinality.Empty
+        : cardinality;
+
     if (arg0.__kind__ === ExpressionKind.PathLeaf) {
       const arg0ParentMatchesBase =
         arg0.__parent__.type.__element__.__name__ ===
