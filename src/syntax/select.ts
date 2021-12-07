@@ -29,7 +29,7 @@ import type {
 } from "../reflection/path";
 import {anonymizeObject} from "./casting";
 import type {$expr_Operator} from "./funcops";
-import {$expressionify} from "./path";
+import {$expressionify, $getScopedExpr} from "./path";
 import {$queryify} from "./query";
 import type {$expr_Update, UpdateShape} from "./update";
 
@@ -641,10 +641,7 @@ function resolveShape(
 
   const scope =
     expr.__element__.__kind__ === TypeKind.object
-      ? $expressionify({
-          ...expr,
-          __cardinality__: Cardinality.One,
-        } as any)
+      ? $getScopedExpr(expr as any)
       : expr;
 
   const selectShape =
