@@ -68,8 +68,19 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
 
   (root as any)[pathCache] = {};
 
-  for (const line of Object.entries(root.__element__.__pointers__ as any)) {
-    const [key, _ptr] = line;
+  let pointers = {
+    ...root.__element__.__pointers__,
+  };
+
+  if (root.__parent__) {
+    const {type, linkName} = root.__parent__;
+    const parentPointer = type.__element__.__pointers__[linkName];
+    if (parentPointer?.__kind__ === "link") {
+      pointers = {...pointers, ...parentPointer.properties};
+    }
+  }
+
+  for (const [key, _ptr] of Object.entries(pointers)) {
     const ptr: LinkDesc | PropertyDesc = _ptr as any;
     if ((ptr as any).__kind__ === "property") {
       Object.defineProperty(root, key, {
@@ -88,7 +99,7 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
                 linkName: key,
                 type: root,
               },
-              ptr.exclusive
+              ptr.exclusive ?? false
             ))
           );
         },

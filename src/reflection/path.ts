@@ -1,14 +1,15 @@
-import type {
-  LinkDesc,
-  PropertyDesc,
-  BaseType,
-  ObjectTypeSet,
-  TypeSet,
-  Expression,
-  ObjectTypePointers,
-  ObjectType,
-} from "./typesystem";
 import {Cardinality, ExpressionKind} from "./enums";
+import type {
+  BaseType,
+  Expression,
+  LinkDesc,
+  ObjectType,
+  ObjectTypePointers,
+  ObjectTypeSet,
+  PropertyDesc,
+  PropertyShape,
+  TypeSet,
+} from "./typesystem";
 import {cardinalityUtil} from "./util/cardinalityUtil";
 
 // get the set representing the result of a path traversal
@@ -56,8 +57,38 @@ export type $pathify<
               >
             : never
           : never;
-      }
+      } & (Parent extends PathParent
+        ? // tslint:disable-next-line
+          Parent["type"]["__element__"]["__pointers__"][Parent["linkName"]] extends LinkDesc
+          ? pathifyLinkProps<
+              // tslint:disable-next-line
+              Parent["type"]["__element__"]["__pointers__"][Parent["linkName"]]["properties"],
+              Root,
+              Parent
+            >
+          : {}
+        : {})
   : unknown; // pathify does nothing on non-object types
+
+type pathifyLinkProps<
+  Props extends PropertyShape,
+  Root extends ObjectTypeSet,
+  Parent extends PathParent | null = null
+> = {
+  [k in keyof Props & string]: Props[k] extends PropertyDesc
+    ? $expr_PathLeaf<
+        TypeSet<
+          Props[k]["target"],
+          cardinalityUtil.multiplyCardinalities<
+            Root["__cardinality__"],
+            Props[k]["cardinality"]
+          >
+        >,
+        {type: $expr_PathNode<Root, Parent>; linkName: k},
+        Props[k]["exclusive"]
+      >
+    : never;
+};
 
 export type $expr_PathNode<
   Root extends ObjectTypeSet = ObjectTypeSet,

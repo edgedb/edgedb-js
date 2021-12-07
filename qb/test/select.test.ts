@@ -2,7 +2,7 @@ import {Client, $} from "edgedb";
 
 import * as tc from "conditional-type-checks";
 
-import e from "../dbschema/edgeql";
+import e, {$infer} from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let client: Client;
@@ -420,6 +420,18 @@ test("limit 2", async () => {
   expect(results).toEqual([{id: data.iron_man.id}, {id: data.spidey.id}]);
 });
 
+test("order by self", async () => {
+  const query = e.select(e.Hero, hero => ({
+    order: hero,
+  }));
+  const result = await query.run(client);
+  expect(result).toEqual(
+    [data.cap, data.spidey, data.iron_man]
+      .map(h => ({id: h.id}))
+      .sort((a, b) => a.id.localeCompare(b.id))
+  );
+});
+
 test("shapes", async () => {
   const query = e.select(
     e
@@ -524,8 +536,9 @@ test("overrides with implicit casting", () => {
   }));
 });
 
-test("link properties", () => {
-  const result = e.select(e.Movie, movie => ({
+// Skipped because of bug: https://github.com/edgedb/edgedb/issues/3245
+test.skip("link properties", async () => {
+  const query = e.select(e.Movie, movie => ({
     id: true,
     characters: char => ({
       name: true,
@@ -533,16 +546,87 @@ test("link properties", () => {
     }),
   }));
 
-  type result = $.setToTsType<typeof result>;
+  console.log(query.toEdgeQL());
+
+  const result = await query.run(client);
+
   tc.assert<
     tc.IsExact<
-      result,
+      typeof result,
       {
         id: string;
         characters: {
           name: string;
           "@character_name": string | null;
         }[];
+      }[]
+    >
+  >(true);
+});
+
+test("link properties in expressions", async () => {
+  const query = e.select(e.Movie, movie => ({
+    id: true,
+    characters: char => ({
+      name: true,
+      "@character_name": true,
+      char_name: char["@character_name"],
+      person_name: char.name,
+
+      filter: e.ilike(char["@character_name"], e.str("a%")),
+    }),
+  }));
+
+  const result = await query.run(client);
+
+  tc.assert<
+    tc.IsExact<
+      typeof result,
+      {
+        id: string;
+        characters: {
+          name: string;
+          "@character_name": string | null;
+          char_name: string | null;
+          person_name: string;
+        }[];
+      }[]
+    >
+  >(true);
+});
+
+test("polymorphic link properties in expressions", async () => {
+  const query = e.select(e.Object, obj => ({
+    id: true,
+    ...e.is(e.Movie, {
+      title: true,
+      characters: char => ({
+        name: true,
+        "@character_name": true,
+        char_name: char["@character_name"],
+        person_name: char.name,
+
+        filter: e.ilike(char["@character_name"], e.str("a%")),
+      }),
+    }),
+  }));
+
+  const result = await query.run(client);
+
+  tc.assert<
+    tc.IsExact<
+      typeof result,
+      {
+        id: string;
+        title: string | null;
+        characters:
+          | {
+              name: string;
+              "@character_name": string | null;
+              char_name: string | null;
+              person_name: string;
+            }[]
+          | null;
       }[]
     >
   >(true);
@@ -692,7 +776,32 @@ SELECT (__scope_0_Person) {
   )
 }`);
 
-  await query.run(client);
+  const res = await query.run(client);
+
+  tc.assert<
+    tc.IsExact<
+      typeof res,
+      {
+        id: string;
+        name: string;
+        nemesis: {
+          id: string;
+        } | null;
+        secret_identity: string | null;
+        villains:
+          | {
+              id: string;
+              name: string;
+              nemesis: {
+                name: string;
+                nameLen: number;
+                nameLen2: number;
+              } | null;
+            }[]
+          | null;
+      }[]
+    >
+  >(true);
 });
 
 test("scoped expr select", async () => {
@@ -719,4 +828,46 @@ test("scoped expr select", async () => {
   expect((await scopedQuery.run(client)).sort()).toEqual(
     heros.map(h => `${h.name} is ${h.secret_identity}`).sort()
   );
+});
+
+test("modifiers on scalar selects", async () => {
+  // filter
+  const q1 = e.select(e.Hero.name, el => ({
+    filter: e.ilike(el, e.str("%man%")),
+  }));
+  const res1 = await q1.run(client);
+  tc.assert<tc.IsExact<typeof res1, string[]>>(true);
+  expect(res1.sort()).toEqual([data.iron_man.name, data.spidey.name].sort());
+
+  // order
+  const unorderedSet = e.set(
+    e.int64(2),
+    e.int64(4),
+    e.int64(1),
+    e.int64(5),
+    e.int64(3)
+  );
+
+  const q2 = e.select(unorderedSet, el => ({
+    order: el,
+  }));
+  const res2 = await q2.run(client);
+  tc.assert<tc.IsExact<typeof res2, [number, ...number[]]>>(true);
+  expect(res2).toEqual([1, 2, 3, 4, 5]);
+
+  const q3 = e.select(unorderedSet, el => ({
+    order: {expression: el, direction: e.DESC},
+  }));
+  const res3 = await q3.run(client);
+  tc.assert<tc.IsExact<typeof res3, [number, ...number[]]>>(true);
+  expect(res3).toEqual([5, 4, 3, 2, 1]);
+
+  // offset and limit
+  const q4 = e.select(unorderedSet, el => ({
+    offset: 2,
+    limit: 1,
+  }));
+  const res4 = await q4.run(client);
+  tc.assert<tc.IsExact<typeof res4, number | null>>(true);
+  expect(res4).toEqual(1);
 });
