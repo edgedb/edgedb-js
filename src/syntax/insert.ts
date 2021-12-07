@@ -15,7 +15,7 @@ import {
   QueryableExpression,
 } from "../reflection";
 import type {pointerToAssignmentExpression} from "./casting";
-import {$expressionify} from "./path";
+import {$expressionify, $getScopedExpr} from "./path";
 import {$queryify} from "./query";
 import {$expr_PathNode} from "../reflection/path";
 
@@ -31,13 +31,11 @@ export type InsertShape<Root extends ObjectTypeSet> = typeutil.stripNever<
   stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
 > extends infer Shape
   ? Shape extends ObjectTypePointers
-    ? typeutil.addQuestionMarks<
-        {
-          [k in keyof Shape]:
-            | pointerToAssignmentExpression<Shape[k]>
-            | (pointerIsOptional<Shape[k]> extends true ? undefined : never);
-        }
-      >
+    ? typeutil.addQuestionMarks<{
+        [k in keyof Shape]:
+          | pointerToAssignmentExpression<Shape[k]>
+          | (pointerIsOptional<Shape[k]> extends true ? undefined : never);
+      }>
     : never
   : never;
 
@@ -115,10 +113,7 @@ function unlessConflict(
     expr.__conflict__ = {on: null};
     return $expressionify($queryify(expr));
   } else {
-    const scopedExpr = $expressionify({
-      ...this.__expr__,
-      __cardinality__: Cardinality.One,
-    });
+    const scopedExpr = $getScopedExpr(this.__expr__);
     expr.__conflict__ = conflictGetter(scopedExpr);
     return $expressionify($queryify(expr));
   }

@@ -382,6 +382,28 @@ test("infer cardinality - object type filters", () => {
   expect(c4).toEqual($.Cardinality.AtMostOne);
 });
 
+test("non 'e.eq' filters", () => {
+  const q1 = e.select(e.Hero, hero => ({
+    filter: e.bool(true),
+  }));
+  tc.assert<tc.IsExact<typeof q1["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
+  expect(q1.__cardinality__).toEqual($.Cardinality.Many);
+
+  const q2 = e.select(e.Hero, hero => ({
+    filter: e.if_else(
+      e.bool(true),
+      e.eq(hero.name, e.str("Thanos")),
+      e.bool(false)
+    ),
+  }));
+  tc.assert<tc.IsExact<typeof q2["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
+  expect(q2.__cardinality__).toEqual($.Cardinality.Many);
+});
+
 test("fetch heroes", async () => {
   const result = await e.select(e.Hero).run(client);
   expect(result.length).toEqual(3);

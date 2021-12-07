@@ -7,6 +7,7 @@ import {
   TypeKind,
   LinkDesc,
   PropertyDesc,
+  Cardinality,
 } from "../reflection";
 import {
   PathParent,
@@ -169,6 +170,22 @@ export function $expressionify<T extends ExpressionRoot>(
   _$pathify(expr);
   expr.$assertSingle = () => assert_single(expr) as any;
   return Object.freeze(expr) as any;
+}
+
+const scopedExprCache = new WeakMap<ExpressionRoot, Expression>();
+
+export function $getScopedExpr<T extends ExpressionRoot>(
+  expr: T
+): Expression<T> {
+  let scopedExpr = scopedExprCache.get(expr);
+  if (!scopedExpr) {
+    scopedExpr = $expressionify({
+      ...expr,
+      __cardinality__: Cardinality.One,
+    });
+    scopedExprCache.set(expr, scopedExpr);
+  }
+  return scopedExpr as any;
 }
 
 export {
