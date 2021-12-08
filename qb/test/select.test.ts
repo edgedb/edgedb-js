@@ -826,6 +826,17 @@ SELECT (__scope_0_Person) {
   >(true);
 });
 
+test("polymorphic field in nested shape", async () => {
+  const query = e.select(e.Movie, movie => ({
+    title: true,
+    characters: () => ({
+      id: true,
+      name: true,
+      ...e.is(e.Hero, {secret_identity: true}),
+    }),
+  }));
+});
+
 test("scoped expr select", async () => {
   const unscopedQuery = e.select(
     e.concat(e.concat(e.Hero.name, e.str(" is ")), e.Hero.secret_identity)

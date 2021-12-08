@@ -1,4 +1,4 @@
-# The NodeJS driver for EdgeDB
+# The official Node.js client library for EdgeDB
 
 [![Build Status](https://github.com/edgedb/edgedb-js/workflows/Tests/badge.svg?event=push&branch=master)](https://github.com/edgedb/edgedb-js/actions) [![NPM](https://img.shields.io/npm/v/edgedb)](https://www.npmjs.com/package/edgedb) [![Join GitHub discussions](https://img.shields.io/badge/join-github%20discussions-green)](https://github.com/edgedb/edgedb/discussions)
 
