@@ -302,15 +302,58 @@ You can use ``e.literal`` to create literal values of constructed/custom types, 
 Types and casting
 -----------------
 
-Many of the literal functions (e.g. ``e.str``) serve a dual purpose. They can also be used to represent the *type itself*. This is important for casting (and, later, for declaring parameters).
+The literal functions (e.g. ``e.str``, ``e.int64``, etc.) serve a dual purpose. They can be used as functions to instantiate literals (``e.str("hi")``) or can be used as variables to represent the *type itself* (``e.str``).
+
+Declaring types
+^^^^^^^^^^^^^^^
 
 .. code-block:: typescript
 
-  const myQuery = e.cast(e.uuid, e.str('599236a4...'));
-  // => <uuid>"599236a4..."
+  e.str;                      // str
+  e.int64;                    // int64
+  e.array(e.bool);            // array<bool>
+  e.tuple([e.str, e.int64]);  // tuple<str, int64>
+  e.named_tuple({             // tuple<name: str, age: int64>
+    name: e.str,
+    age: e.int64
+  });
 
-  const myQuery = e.cast(e.array(e.int64), e.str('599236a4...'));
-  // => <uuid>"599236a4..."
+Casting
+^^^^^^^
+
+These types can be used to *cast* an expression to another type.
+
+.. code-block:: typescript
+
+  e.cast(e.json, e.array(e.str("Hello"), e.str("world!")));
+  // => <json>["Hello", "world!"]
+
+Parameters
+^^^^^^^^^^
+
+This is also necessary to specify the expected types of *query parameters*.
+
+.. code-block:: typescript
+
+  .. code-block:: typescript
+
+  const query = e.withParams(
+    {
+      name: e.arg(e.array(e.str)),
+      bool: e.arg(e.bool),
+      optionalStr: e.optional(e.str),
+    },
+    args =>
+      e.select(e.Person, person => ({
+        id: true,
+        optionalStr, // computable
+        filter: e.in(person.name, e.array_unpack(args.name)),
+      }))
+  );
+
+
+Custom literals
+^^^^^^^^^^^^^^^
 
 Creating sets
 -------------
