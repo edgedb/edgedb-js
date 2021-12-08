@@ -27,7 +27,7 @@ import type {
   $expr_PathNode,
   $expr_TypeIntersection,
 } from "../reflection/path";
-import reservedKeywords from "../reflection/reservedKeywords";
+import {reservedKeywords} from "../reflection/reservedKeywords";
 import type {$expr_Cast} from "./cast";
 import type {$expr_Detached} from "./detached";
 import type {$expr_For, $expr_ForVar} from "./for";

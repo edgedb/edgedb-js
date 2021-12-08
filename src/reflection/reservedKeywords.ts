@@ -1,4 +1,4 @@
-export default [
+export const reservedKeywords = [
   "__edgedbsys__",
   "__edgedbtpl__",
   "__source__",
@@ -84,5 +84,5 @@ export default [
   "variadic",
   "when",
   "window",
-  "with"
-]
+  "with",
+];
