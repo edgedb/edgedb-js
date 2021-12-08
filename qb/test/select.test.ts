@@ -4,6 +4,7 @@ import * as tc from "conditional-type-checks";
 
 import e, {$infer} from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
+import {ts} from "edgedb/dist/reflection/builders";
 
 let client: Client;
 let data: TestData;
@@ -829,12 +830,47 @@ SELECT (__scope_0_Person) {
 test("polymorphic field in nested shape", async () => {
   const query = e.select(e.Movie, movie => ({
     title: true,
-    characters: () => ({
-      id: true,
+    characters: char => ({
       name: true,
+      order: char.name,
       ...e.is(e.Hero, {secret_identity: true}),
     }),
+    filter: e.eq(movie.title, e.str("The Avengers")),
   }));
+
+  const result = await query.run(client);
+  expect(JSON.parse(JSON.stringify(result))).toEqual([
+    {
+      title: data.the_avengers.title,
+      characters: [
+        {
+          name: data.cap.name,
+          secret_identity: data.cap.secret_identity,
+        },
+        {
+          name: data.iron_man.name,
+          secret_identity: data.iron_man.secret_identity,
+        },
+        {
+          name: data.thanos.name,
+          secret_identity: null,
+        },
+      ],
+    },
+  ]);
+
+  tc.assert<
+    tc.IsExact<
+      typeof result,
+      {
+        title: string;
+        characters: {
+          name: string;
+          secret_identity: string | null;
+        }[];
+      }[]
+    >
+  >(true);
 });
 
 test("scoped expr select", async () => {

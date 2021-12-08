@@ -240,15 +240,15 @@ export type ComputeSelectCardinality<
 
 export function is<
   Expr extends ObjectTypeExpression,
-  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]>,
-  NormalisedShape = normaliseShape<Shape, Expr["__element__"]["__pointers__"]>
+  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]>
+  // NormalisedShape = normaliseShape<Shape, Expr["__element__"]["__pointers__"]>
 >(
   expr: Expr,
   shape: Shape
 ): {
-  [k in keyof NormalisedShape]: $expr_PolyShapeElement<
+  [k in Exclude<keyof Shape, SelectModifierNames>]: $expr_PolyShapeElement<
     Expr,
-    NormalisedShape[k]
+    normaliseElement<Shape[k]>
   >;
 } {
   const mappedShape: any = {};
@@ -452,28 +452,45 @@ export type pointersToSelectShape<
     : any;
 }>;
 
-export type normaliseShape<
-  Shape extends pointersToSelectShape,
-  Pointers extends ObjectTypePointers
-> = {
-  [k in keyof Shape]: Shape[k] extends boolean
-    ? stripSet<Shape[k]>
-    : Shape[k] extends TypeSet
-    ? stripSet<Shape[k]>
-    : [k] extends [keyof Pointers]
-    ? Pointers[k] extends LinkDesc
-      ? Omit<
-          normaliseShape<
-            Shape[k] extends (...scope: any[]) => any
-              ? ReturnType<Shape[k]>
-              : Shape[k],
-            Pointers[k]["target"]["__pointers__"]
-          >,
-          SelectModifierNames
-        >
-      : stripSet<Shape[k]>
-    : stripSet<Shape[k]>;
-};
+export type normaliseElement<El> = El extends boolean
+  ? El
+  : El extends TypeSet
+  ? stripSet<El>
+  : El extends (...scope: any[]) => any
+  ? normaliseShape<ReturnType<El>>
+  : El extends object
+  ? normaliseShape<stripSet<El>>
+  : stripSet<El>;
+
+export type normaliseShape<Shape extends object> = Omit<
+  {
+    [k in keyof Shape]: normaliseElement<Shape[k]>;
+  },
+  SelectModifierNames
+>;
+
+// export type normaliseShape<
+//   Shape extends pointersToSelectShape,
+//   Pointers extends ObjectTypePointers
+// > = {
+//   [k in keyof Shape]: Shape[k] extends boolean
+//     ? stripSet<Shape[k]>
+//     : Shape[k] extends TypeSet
+//     ? stripSet<Shape[k]>
+//     : [k] extends [keyof Pointers]
+//     ? Pointers[k] extends LinkDesc
+//       ? Omit<
+//           normaliseShape<
+//             Shape[k] extends (...scope: any[]) => any
+//               ? ReturnType<Shape[k]>
+//               : Shape[k],
+//             Pointers[k]["target"]["__pointers__"]
+//           >,
+//           SelectModifierNames
+//         >
+//       : stripSet<Shape[k]>
+//     : stripSet<Shape[k]>;
+// };
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
@@ -504,10 +521,7 @@ export function select<
     __element__: ObjectType<
       `${Expr["__element__"]["__name__"]}`, // _shape
       Expr["__element__"]["__pointers__"],
-      Omit<
-        normaliseShape<Shape, Expr["__element__"]["__pointers__"]>,
-        SelectModifierNames
-      >
+      Omit<normaliseShape<Shape>, SelectModifierNames>
     >;
     __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
   },
