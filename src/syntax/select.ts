@@ -213,7 +213,7 @@ export type InferFilterCardinality<
     : Base["__cardinality__"]
   : Base["__cardinality__"];
 
-type InferLimitCardinality<
+export type InferLimitCardinality<
   Card extends Cardinality,
   Limit extends LimitExpression | number | undefined
 > = Limit extends number
@@ -230,7 +230,7 @@ type InferLimitCardinality<
     : Card
   : Card;
 
-type ComputeSelectCardinality<
+export type ComputeSelectCardinality<
   Expr extends ObjectTypeExpression,
   Modifiers extends SelectModifiers
 > = InferLimitCardinality<
@@ -409,7 +409,7 @@ export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   return $queryify(expr);
 }
 
-type linkDescToLinkProps<Desc extends LinkDesc> = {
+export type linkDescToLinkProps<Desc extends LinkDesc> = {
   [k in keyof Desc["properties"] & string]: $expr_PathLeaf<
     TypeSet<
       Desc["properties"][k]["target"],
@@ -441,18 +441,18 @@ export type pointersToSelectShape<
             anonymizeObject<Shape[k]["target"]>,
             cardinalityUtil.assignable<Shape[k]["cardinality"]>
           >
-        | ((pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-            pointersToSelectShape<Shape[k]["properties"]>) &
+        | (pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
+            pointersToSelectShape<Shape[k]["properties"]> &
             SelectModifiers)
-        | (((
+        | ((
             scope: $scopify<Shape[k]["target"]> & linkDescToLinkProps<Shape[k]>
           ) => pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-            pointersToSelectShape<Shape[k]["properties"]>) &
+            pointersToSelectShape<Shape[k]["properties"]> &
             SelectModifiers)
     : any;
 }>;
 
-type normaliseShape<
+export type normaliseShape<
   Shape extends pointersToSelectShape,
   Pointers extends ObjectTypePointers
 > = {

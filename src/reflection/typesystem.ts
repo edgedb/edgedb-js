@@ -84,6 +84,13 @@ export type stripSet<T> = "__element__" extends keyof T
     : T
   : T;
 
+// export type stripSet<T> = T extends {__element__: any; __cardinality__: any}
+//   ? {
+//       __element__: T["__element__"];
+//       __cardinality__: T["__cardinality__"];
+//     }
+//   : any;
+
 export type stripSetShape<T> = {
   [k in keyof T]: stripSet<T[k]>;
 };

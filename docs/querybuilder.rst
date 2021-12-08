@@ -21,15 +21,14 @@ EdgeQL query builder represents a third path: an auto-generated API that's
 *fully typed* and exposes the *full power* of the underlying query language.
 
 
-
-
 Requirements
 ------------
 
 - Node v10+ or higher
 - If using TypeScript:
-  - v4.4+
-  - in ``tsconfig.json``:
+  - TS 4.4+
+  - ``yarn add @types/node --dev``
+  - the following compiler options in ``tsconfig.json``:
 
     .. code-block:: json
 
@@ -239,7 +238,8 @@ Enums
 
 .. code-block:: typescript
 
-  e.default.CustomEnum.green;
+  e.CustomEnum('green');
+  e.sys.VersionStage('beta');
 
 Arrays
 ^^^^^^
@@ -249,34 +249,37 @@ Arrays
   e.array([e.str(5)]); // => [5]
 
 
-As with sets, heterogeneous compatible types are valid
+EdgeQL semantics are reflected in the type signature:
 
 .. code-block:: typescript
 
   e.array([e.int16(5), e.int64(51234)]);
   // => [<int16>5, 51234]
 
+  e.array([e.int64(5), e.str("foo")]);
+  // TypeError
+
 
 Tuples
 ^^^^^^
 
-With unnamed elements:
+To declare a plain tuple:
 
 .. code-block:: typescript
 
-  e.tuple([e.str("Peter Parker"), e.int64(100)]);
-  // => ("Peter Parker", 18)
+  e.tuple([e.str("Peter Parker"), e.int64(100), e.bool(true)]);
+  // => ("Peter Parker", 18, true)
 
-
-With named elements:
+To declare a tuple with named elements:
 
 .. code-block:: typescript
 
   e.tuple({
     name: e.str("Peter Parker"),
     age: e.int64(18),
+    is_spiderman: e.bool(true)
   });
-  // => (name := "Peter Parker", age := 18)
+  // => (name := "Peter Parker", age := 18, is_spiderman := true)
 
 
 Custom literals
@@ -290,6 +293,9 @@ You can use ``e.literal`` to create literal values of constructed/custom types, 
   // => <array<std::int16>>[1, 2, 3]
 
   e.literal(e.tuple([e.str, e.bool]), ['baz', false]);
+  // => <tuple<str, bool>>("asdf", false)
+
+  e.literal(e.named_tuple([e.str, e.bool]), ['baz', false]);
   // => <tuple<str, bool>>("asdf", false)
 
 
