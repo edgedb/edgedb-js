@@ -135,7 +135,7 @@ Here's a brief Hello World example.
   async function run(){
     const myQuery = e.select(e.str("Hello world!"));
     const result = await myQuery.run(client);
-    console.log(result); // => "Hello world!"
+    console.log(result); // "Hello world!"
   }
 
 
@@ -222,16 +222,16 @@ Temporal literals
 
 
   e.duration(new edgedb.Duration(0, 0, 0, 0, 1, 2, 3));
-  // => <duration>'1 hours 2 minutes 3 seconds'
+  // <duration>'1 hours 2 minutes 3 seconds'
 
   e.cal.local_date(new edgedb.LocalDate(1776, 07, 04));
-  // => <cal::local_date>'1776-07-04';
+  // <cal::local_date>'1776-07-04';
 
   e.cal.local_time(new edgedb.LocalTime(13, 15, 0));
-  // => <cal::local_time>'13:15:00';
+  // <cal::local_time>'13:15:00';
 
   e.cal.local_datetime(new edgedb.LocalDateTime(1776, 07, 04, 13, 15, 0));
-  // => <cal::local_datetime>'1776-07-04T13:15:00';
+  // <cal::local_datetime>'1776-07-04T13:15:00';
 
 Enums
 ^^^^^
@@ -246,15 +246,16 @@ Arrays
 
 .. code-block:: typescript
 
-  e.array([e.str(5)]); // => [5]
+  e.array([e.str(5)]); // [5]
 
 
-EdgeQL semantics are reflected in the type signature:
+EdgeQL semantics are enforced by TypeScript. Arrays can't contain elements
+with incompatible types, but implicit casting works as expected.
 
 .. code-block:: typescript
 
   e.array([e.int16(5), e.int64(51234)]);
-  // => [<int16>5, 51234]
+  // [<int16>5, 51234]
 
   e.array([e.int64(5), e.str("foo")]);
   // TypeError
@@ -268,7 +269,7 @@ To declare a plain tuple:
 .. code-block:: typescript
 
   e.tuple([e.str("Peter Parker"), e.int64(100), e.bool(true)]);
-  // => ("Peter Parker", 18, true)
+  // ("Peter Parker", 18, true)
 
 To declare a tuple with named elements:
 
@@ -279,7 +280,7 @@ To declare a tuple with named elements:
     age: e.int64(18),
     is_spiderman: e.bool(true)
   });
-  // => (name := "Peter Parker", age := 18, is_spiderman := true)
+  // (name := "Peter Parker", age := 18, is_spiderman := true)
 
 
 Custom literals
@@ -290,13 +291,13 @@ You can use ``e.literal`` to create literal values of constructed/custom types, 
 .. code-block:: typescript
 
   e.literal(e.array(e.int16), [1, 2, 3]);
-  // => <array<std::int16>>[1, 2, 3]
+  // <array<std::int16>>[1, 2, 3]
 
   e.literal(e.tuple([e.str, e.bool]), ['baz', false]);
-  // => <tuple<str, bool>>("asdf", false)
+  // <tuple<str, bool>>("asdf", false)
 
   e.literal(e.named_tuple([e.str, e.bool]), ['baz', false]);
-  // => <tuple<str, bool>>("asdf", false)
+  // <tuple<str, bool>>("asdf", false)
 
 
 Types and casting
@@ -326,34 +327,21 @@ These types can be used to *cast* an expression to another type.
 .. code-block:: typescript
 
   e.cast(e.json, e.array(e.str("Hello"), e.str("world!")));
-  // => <json>["Hello", "world!"]
+  // <json>["Hello", "world!"]
 
 Parameters
 ^^^^^^^^^^
 
-This is also necessary to specify the expected types of *query parameters*.
+This is also necessary to specify the expected types of *query parameters*. This is described in greater detail in the Select section below.
 
 .. code-block:: typescript
 
-  .. code-block:: typescript
+  const query = e.withParams({ name: e.str }, params => e.select(params.name));
+  /*
+    with name := <str>$name
+    select name;
+  */
 
-  const query = e.withParams(
-    {
-      name: e.arg(e.array(e.str)),
-      bool: e.arg(e.bool),
-      optionalStr: e.optional(e.str),
-    },
-    args =>
-      e.select(e.Person, person => ({
-        id: true,
-        optionalStr, // computable
-        filter: e.in(person.name, e.array_unpack(args.name)),
-      }))
-  );
-
-
-Custom literals
-^^^^^^^^^^^^^^^
 
 Creating sets
 -------------
@@ -361,10 +349,10 @@ Creating sets
 .. code-block:: typescript
 
   e.set(e.str("asdf"), e.str("qwer"));
-  // edgeql: {'asdf', 'qwer'}
+  // {'asdf', 'qwer'}
 
-As in EdgeQL, types that are implicitly castable can be added to the same set;
-types that are incompatible cannot.
+EdgeQL semantics are enforced by TypeScript. Sets can't contain elements
+with incompatible types, but implicit casting works as expected.
 
 .. code-block:: typescript
 
@@ -372,105 +360,208 @@ types that are incompatible cannot.
   e.set(e.int64(1234), e.float32(12.34)); // set of float64
   e.set(e.str("asdf"), e.int32(12)); // TypeError
 
-For an empty set, pass a type as the first and only argument:
+Empty sets
+^^^^^^^^^^
+
+To declare an empty set, pass a type as the first and only argument:
 
 .. code-block:: typescript
 
   e.set(e.int64);
-  // => <std::int64>{}
+  // <std::int64>{}
 
 
-## Set references
+Object types and paths
+----------------------
 
-### Object set references
-
-Module-scoped set references.
+All object types in your schema are reflected into the query builder, properly
+namespaced by module.
 
 .. code-block:: typescript
 
   e.default.Hero;
   e.default.Villain;
   e.default.Movie;
-  e.myModule.MyType;
+  e.my_module.SomeType;
 
-
-### Deconstruction for convenience
-
-.. code-block:: typescript
-
-  const {Hero, Villain, Movie, Person} = e.default;
-
-
-### Property set references
+For convenience, all types in the ``default`` module are also available at the top-level.
 
 .. code-block:: typescript
 
-  Hero.name;
-  Movie.title;
+  e.Hero;
+  e.Villain;
+  e.Movie;
 
+Paths
+^^^^^
 
-### Traverse links
-
-.. code-block:: typescript
-
-  Hero.villains;
-  Movie.characters;
-
-
-### Type intersections
+As in EdgeQL, you can declare *path expressions*.
 
 .. code-block:: typescript
 
-  // Movie.characters[IS Hero]
-  Movie.characters.$is(e.Hero);
+  e.Hero.name;
+  e.Movie.title;
+  e.Movie.characters.name;
 
+Type intersections
+^^^^^^^^^^^^^^^^^^
 
-### Backward links
-
-Provide backlinks that behave just like forward links:
-
-.. code-block:: typescript
-
-  Hero["<nemesis[IS default::Villain]"];
-
-
-Also support "untyped" backlinks. By default, these return a set of `BaseObject` with cardinality `Many`. These can be refined with `$is` and `$assertSingle`.
+Use the type intersection operator to narrow the type of the set. For instance, to represent the chararacters in a movie that are of type ``Hero``:
 
 .. code-block:: typescript
 
-  e.Hero.['<nemesis'].$is(e.Villain);
+  e.Movie.characters.$is(e.Hero);
+  // Movie.characters[is Hero]
 
 
-## Casting
+Backlinks
+^^^^^^^^^
 
-All types are available at the top-level. Returns `Expression<Set<CastedType>>`. This syntax is liable to change based on the underlying representation of the type system (not finalized).
-
-.. code-block:: typescript
-
-  e.cast(e.int16, e.int32(1255)); // <int16><int32>1255;
-  e.cast(e.UUID, e.str("ab1bcd81...")); // <uuid>'ab1bcd81...';
-
-
-## Functions
-
-All operators are available as overloaded functions at the top level.
-
-## Operators
-
-Operators are implements as top-level overloaded functions using the same approach used for functions.
-
-## Select
-
-### Scalars
+All possible backlinks are auto-generated and behave just like forward links.
+However, because they contain special characters, you must use bracket syntax
+instead of simple dot notation.
 
 .. code-block:: typescript
 
-  e.select(e.int64(1243));
+  e.Hero["<nemesis[is default::Villain]"];
+  // Hero.<nemesis[is default::Villain];
+
+  e.Hero['<characters[is default::Movie]'];
+  // Hero.<characters[is default::Movie];
+
+  e.Villain['<characters[is default::Movie]'];
+  // Villain.<characters[is default::Movie];
+
+For convenience, these backlinks automatically combine the backlink operator
+and type intersection into a single key. However, the query builder also
+provides "naked" backlinks; these can be refined with the ``.$is`` type
+intersection method.
+
+.. code-block:: typescript
+
+  e.Hero['<nemesis'].$is(e.Villain);
+  // Hero.<nemesis[is Villain]
+
+
+Functions and operators
+-----------------------
+
+All functions and operators are available as functions.
+
+.. code-block:: typescript
+
+  e.str_upper(e.str("hello"));
+  // str_upper("hello")
+
+  e.plus(e.int64(2), e.int64(2));
+  // 2 + 2
+
+  const nums = e.set(e.int64(3), e.int64(5), e.int64(7))
+  e.in(e.int64(4), nums);
+  // 4 in {3, 5, 7}
+
+  e.math.mean(nums);
+  // math::mean({3, 5, 7})
+
+
+Operator table
+^^^^^^^^^^^^^^
+
+All operators are available via an alphanumeric name.
+
+.. list-table::
+
+  * - ``=``
+    - ``e.eq``
+  * - ``?=``
+    - ``e.coal_eq``
+  * - ``!=``
+    - ``e.neq``
+  * - ``?!=``
+    - ``e.coal_neq``
+  * - ``>=``
+    - ``e.gte``
+  * - ``>``
+    - ``e.gt``
+  * - ``<=``
+    - ``e.lte``
+  * - ``<``
+    - ``e.lt``
+  * - ``OR``
+    - ``e.or``
+  * - ``AND``
+    - ``e.and``
+  * - ``NOT``
+    - ``e.not``
+  * - ``+``
+    - ``e.plus``
+  * - ``-``
+    - ``e.minus``
+  * - ``*``
+    - ``e.mult``
+  * - ``/``
+    - ``e.div``
+  * - ``//``
+    - ``e.floordiv``
+  * - ``%``
+    - ``e.mod``
+  * - ``^``
+    - ``e.pow``
+  * - ``IN``
+    - ``e.in``
+  * - ``NOT IN``
+    - ``e.not_in``
+  * - ``EXISTS``
+    - ``e.exists``
+  * - ``DISTINCT``
+    - ``e.distinct``
+  * - ``UNION``
+    - ``e.union``
+  * - ``??``
+    - ``e.coalesce``
+  * - ``IF``
+    - ``e.if_else``
+  * - ``++``
+    - ``e.concat``
+  * - ``[i]``
+    - ``e.index``
+  * - ``[i:j:k]``
+    - ``e.slice``
+  * - ``[]``
+    - ``e.destructure``
+  * - ``++``
+    - ``e.concatenate``
+  * - ``LIKE``
+    - ``e.like``
+  * - ``ILIKE``
+    - ``e.ilike``
+  * - ``NOT LIKE``
+    - ``e.not_like``
+  * - ``NOT ILIKE``
+    - ``e.not_ilike``
+
+Select
+------
+
+The full power of the ``select`` statement is available as an overloaded, top-level ``e.select`` function.
+
+Scalars
+^^^^^^^
+
+.. code-block:: typescript
+
+  e.select(e.int64(1234));
+  // select 1234;
+
   e.select(a.add(e.int64(2), e.int64(2)));
+  // select 2 + 2;
+
   e.select(e.concat('aaaa', e.to_str(e.int64(111)));
+  // select 'aaaa' ++ to_str(111)
 
 
-### Free shapes
+Free shapes
+^^^^^^^^^^^
 
 .. code-block:: typescript
 
@@ -479,35 +570,50 @@ Operators are implements as top-level overloaded functions using the same approa
     number: e.int64(1234),
     heroes: e.Hero,
   });
+  /* select {
+    name := "Name",
+    number := 1234,
+    heroes := Hero
+  } */
 
 
-### Object type select
+Objects
+^^^^^^^
 
-Shape defaults to `{ id: true }`;
-
-.. code-block:: typescript
-
-  e.select(e.Hero); // select Hero { id };
-
-
-### Shapes: object syntax
-
-The scoped `hero` variable is a singleton-ified variant of the expression being SELECTed.
-Any non-scoped objects (eg. `e.Hero`) are implicitly `DETACHED`.
+As in EdgeQL, selecting an set of objects without a shape will return their IDs only.
 
 .. code-block:: typescript
 
-  e.select(e.Hero, hero => ({
-    id: 1 > 0, // optional
-    name: true,
+  const query = e.select(e.Hero); // select Hero;
+  const result = await query.run(client); // {id:string}[]
+
+Shapes: object syntax
+^^^^^^^^^^^^^^^^^^^^^
+
+Pass an object as the secong argument to specify the shape of the ``select``.
+
+.. code-block:: typescript
+
+  const query = e.select(e.Hero, {
+    id: true,
+    name: 1 > 0, // optional
     villains: {
       id: true,
       name: true,
     },
-  }));
+  });
+  const result = await query.run(client);
+  /* {
+    id?: string,
+    name: string | undefined,
+    villains: { id:string; name:string }[]
+  }[] */
 
 
-### Shapes: closure syntax
+Shapes: closure syntax
+^^^^^^^^^^^^^^^^^^^^^^
+
+It's often valuable to have a reference to the *thing being selected*. To support this, you can instead pass a function that *accepts a single argument* and *returns a shape object*. This is a powerful pattern that makes computed fields, filters, ordering, etc. very intuitive and brief.
 
 .. code-block:: typescript
 
@@ -522,16 +628,16 @@ Any non-scoped objects (eg. `e.Hero`) are implicitly `DETACHED`.
   }));
 
 
-The closure syntax also supports arbitrary expressions:
+.. The closure syntax also supports arbitrary expressions:
 
-.. code-block:: typescript
+.. .. code-block:: typescript
 
-  e.select(e.Hero, hero =>
-    e.concat(e.concat(hero.name, e.str(" is ")), hero.secret_identity)
-  );
+..   e.select(e.Hero, hero =>
+..     e.concat(e.concat(hero.name, e.str(" is ")), hero.secret_identity)
+..   );
 
 
-### Shapes: computables
+### Computeds
 
 .. code-block:: typescript
 
@@ -560,7 +666,7 @@ Computables can share a key with an actual link/properties as long as the type s
 
 ### Shapes: polymorphism
 
-`e.is` returns a shape. The values should be of type `$expr_PolyShapeElement`, which keeps a reference to the polymorphic type. Inside `toEdgeQL`, when a `$expr_PolyShapeElement` is encountered, the key should be prefixed with the appropriate type intersection: `[IS Hero].secret_identity`, etc.
+`e.is` returns a shape. The values should be of type `$expr_PolyShapeElement`, which keeps a reference to the polymorphic type. Inside `toEdgeQL`, when a `$expr_PolyShapeElement` is encountered, the key should be prefixed with the appropriate type intersection: `[is Hero].secret_identity`, etc.
 
 .. code-block:: typescript
 
@@ -667,7 +773,7 @@ Multiple ordering
 
 .. code-block:: typescript
 
-  // select Movie { characters[IS Hero]: { id }}
+  // select Movie { characters[is Hero]: { id }}
   e.select(e.Movie, movie => ({
     characters: movie.characters.$is(e.Hero),
   }));
