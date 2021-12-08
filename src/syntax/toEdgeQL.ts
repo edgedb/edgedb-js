@@ -704,7 +704,9 @@ function renderEdgeQL(
         if (operator === "[]") {
           const val = (args[1] as any).__value__;
           return `(${renderEdgeQL(args[0], ctx)}[${
-            Array.isArray(val) ? val.join(":") : val
+            Array.isArray(val)
+              ? val.join(":")
+              : literalToEdgeQL(args[1].__element__, val)
           }])`;
         }
         return `(${renderEdgeQL(args[0], ctx)} ${operator} ${renderEdgeQL(
