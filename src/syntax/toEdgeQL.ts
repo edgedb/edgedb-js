@@ -756,7 +756,15 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n)`
       expr.__cardinality__ === Cardinality.AtMostOne ? "OPTIONAL " : ""
     }${expr.__element__.__name__}>$${expr.__name__}`;
   } else if (expr.__kind__ === ExpressionKind.Detached) {
-    return `DETACHED ${renderEdgeQL(expr.__expr__, ctx)}`;
+    return `DETACHED ${renderEdgeQL(
+      expr.__expr__,
+      {
+        ...ctx,
+        renderWithVar: expr.__expr__ as any,
+      },
+      undefined,
+      true
+    )}`;
   } else {
     util.assertNever(
       expr,
