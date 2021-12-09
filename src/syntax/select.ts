@@ -509,19 +509,6 @@ https://github.com/microsoft/TypeScript/issues/26892
 https://github.com/microsoft/TypeScript/issues/47081
 
 */
-export function select<Expr extends ObjectTypeExpression, Set extends TypeSet>(
-  expr: Expr,
-  shape: (scope: $scopify<Expr["__element__"]>) => Set
-): $expr_Select<
-  {
-    __element__: Set["__element__"];
-    __cardinality__: cardinalityUtil.multiplyCardinalities<
-      Expr["__cardinality__"],
-      Set["__cardinality__"]
-    >;
-  },
-  Expr
->;
 export function select<
   Expr extends PrimitiveTypeSet,
   Modifiers extends SelectModifiers
@@ -583,28 +570,7 @@ export function select(...args: any[]) {
     }
   }
 
-  const {
-    modifiers: mods,
-    shape,
-    scope,
-    expr: selectExpr,
-  } = resolveShape(shapeGetter, expr);
-
-  if (selectExpr) {
-    return $expressionify(
-      $queryify({
-        __kind__: ExpressionKind.Select,
-        __element__: selectExpr.__element__,
-        __cardinality__: cardinalityUtil.multiplyCardinalities(
-          selectExpr.__cardinality__,
-          expr.__cardinality__
-        ),
-        __expr__: selectExpr,
-        __modifiers__: {},
-        __scope__: scope,
-      })
-    );
-  }
+  const {modifiers: mods, shape, scope} = resolveShape(shapeGetter, expr);
 
   const {modifiers, cardinality} = handleModifiers(mods, expr);
   return $expressionify(
@@ -631,7 +597,7 @@ export function select(...args: any[]) {
 function resolveShape(
   shapeGetter: ((scope: any) => any) | any,
   expr: TypeSet
-): {modifiers: any; shape: any; scope: TypeSet; expr?: TypeSet} {
+): {modifiers: any; shape: any; scope: TypeSet} {
   const modifiers: any = {};
   const shape: any = {};
 
@@ -642,10 +608,6 @@ function resolveShape(
 
   const selectShape =
     typeof shapeGetter === "function" ? shapeGetter(scope) : shapeGetter;
-
-  if (typeof selectShape.__kind__ !== "undefined") {
-    return {expr: selectShape, shape, modifiers, scope};
-  }
 
   for (const [key, value] of Object.entries(selectShape)) {
     if (
