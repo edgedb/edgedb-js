@@ -826,20 +826,16 @@ SELECT (__scope_0_Person) {
   >(true);
 });
 
-test("scoped expr select", async () => {
-  const unscopedQuery = e.select(
+test("correlated path select", async () => {
+  const query = e.select(
     e.concat(e.concat(e.Hero.name, e.str(" is ")), e.Hero.secret_identity)
   );
 
-  const scopedQuery = e.select(e.Hero, hero =>
-    e.concat(e.concat(hero.name, e.str(" is ")), hero.secret_identity)
-  );
+  const correlatedQuery = e.with([e.Hero], query);
 
   const heros = [data.cap, data.iron_man, data.spidey];
 
-  expect((await unscopedQuery.run(client)).sort()).toEqual(
-    // heros
-    //   .flatMap(h1 => heros.map(h2 => `${h1.name} is ${h2.secret_identity}`))
+  expect((await query.run(client)).sort()).toEqual(
     $.util
       .flatMap(heros, h1 =>
         heros.map(h2 => `${h1.name} is ${h2.secret_identity}`)
@@ -847,7 +843,7 @@ test("scoped expr select", async () => {
       .sort()
   );
 
-  expect((await scopedQuery.run(client)).sort()).toEqual(
+  expect((await correlatedQuery.run(client)).sort()).toEqual(
     heros.map(h => `${h.name} is ${h.secret_identity}`).sort()
   );
 });

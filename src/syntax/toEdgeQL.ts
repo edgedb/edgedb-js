@@ -221,10 +221,11 @@ export function $toEdgeQL(this: any) {
 
     if (
       withVars.has(expr) ||
-      expr.__kind__ === ExpressionKind.PathLeaf ||
-      expr.__kind__ === ExpressionKind.PathNode ||
-      expr.__kind__ === ExpressionKind.ForVar ||
-      expr.__kind__ === ExpressionKind.TypeIntersection
+      ((expr.__kind__ === ExpressionKind.PathLeaf ||
+        expr.__kind__ === ExpressionKind.PathNode ||
+        expr.__kind__ === ExpressionKind.TypeIntersection) &&
+        !refData.boundScope) ||
+      expr.__kind__ === ExpressionKind.ForVar
     ) {
       continue;
     }
