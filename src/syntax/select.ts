@@ -451,7 +451,7 @@ export type pointersToSelectShape<
             pointersToSelectShape<Shape[k]["properties"]>) &
             SelectModifiers)
     : any;
-}>;
+}> & {[k: string]: unknown};
 
 type normaliseShape<
   Shape extends pointersToSelectShape,
