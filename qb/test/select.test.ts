@@ -33,6 +33,14 @@ test("no shape", async () => {
   expect(result.every(val => !!val.id)).toEqual(true);
 });
 
+test("computed only shape", () => {
+  const query = e.select(e.Hero, hero => ({
+    upper_name: e.str_upper(hero.name),
+  }));
+
+  tc.assert<tc.IsExact<$infer<typeof query>, {upper_name: string}[]>>(true);
+});
+
 const q1 = e.select(e.Hero, () => ({
   id: true,
   secret_identity: true,
