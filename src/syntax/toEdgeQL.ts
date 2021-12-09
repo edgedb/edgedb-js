@@ -706,7 +706,11 @@ function renderEdgeQL(
           return `(${renderEdgeQL(args[0], ctx)}[${
             Array.isArray(val)
               ? val.join(":")
-              : literalToEdgeQL(args[1].__element__, val)
+              : typeof val === "number"
+              ? val
+              : typeof val === "string"
+              ? `"${val}"`
+              : val
           }])`;
         }
         return `(${renderEdgeQL(args[0], ctx)} ${operator} ${renderEdgeQL(

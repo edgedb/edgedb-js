@@ -10,10 +10,12 @@ async function run() {
   // const asdf = e.tuple([e.str, e.int64]);
   const {client} = await setupTests();
 
-  const test1 = e.select(
-    e.destructure(e.to_json(e.str('{"a": 2, "b": 5}')), e.str("a"))
-  );
-  console.log(test1.toEdgeQL());
+  // e.namedTuple({"a": e.int64(2), "b": e.str("asdf")})
+
+  // const test1 = e.select(
+  //   e.index(e.namedTuple({"a": e.int64(2), "b": e.str("asdf")}), e.str("a"))
+  // );
+  // console.log(test1.toEdgeQL());
 
   if (1 > 0) return;
 

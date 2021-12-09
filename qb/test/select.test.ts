@@ -4,7 +4,8 @@ import * as tc from "conditional-type-checks";
 
 import e, {$infer} from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
-import {ts} from "edgedb/dist/reflection/builders";
+
+import {ObjectTypeExpression} from "edgedb/dist/reflection";
 
 let client: Client;
 let data: TestData;
@@ -24,11 +25,12 @@ test("basic select", () => {
   tc.assert<tc.IsExact<result, "asdf">>(true);
 });
 
-test("basic shape", () => {
-  const result = e.select(e.default.Hero);
-  type result = $.BaseTypeToTsType<typeof result["__element__"]>;
-  tc.assert<tc.IsExact<result, {id: string}>>(true);
-  expect(result.__element__.__shape__).toEqual({id: true});
+test("no shape", async () => {
+  const query = e.select(e.default.Hero);
+  const result = await query.run(client);
+  tc.assert<tc.IsExact<typeof result, {id: string}[]>>(true);
+  expect(query.__element__.__shape__).toEqual({id: true});
+  expect(result.every(val => !!val.id)).toEqual(true);
 });
 
 const q1 = e.select(e.Hero, () => ({
@@ -634,6 +636,8 @@ test("polymorphic link properties in expressions", async () => {
     }),
   }));
 
+  query.__element__.__shape__.characters;
+
   const result = await query.run(client);
 
   tc.assert<
@@ -719,6 +723,16 @@ test("filters in subqueries", async () => {
     })),
   }));
 
+  const test = await e
+    .select(e.Hero.villains, v => ({
+      name: true,
+      filter: e.eq(v.name, e.str("Thanos")),
+    }))
+    .run(client);
+
+  const arg = q3.__element__.__shape__.thanos.__element__.__shape__;
+
+  // q3.__modifiers__.
   const res3 = await q3.run(client);
 
   expect(Array.isArray(res3)).toBe(true);
@@ -730,6 +744,19 @@ test("filters in subqueries", async () => {
   tc.assert<
     tc.IsExact<
       typeof res3,
+      /**
+       * onst res3:
+  {
+    name: string;
+    villains: {
+        id: string;
+        name: string;
+    }[];
+    thanos: {
+        name: string | undefined;
+    } | null;
+  }[]
+       */
       {
         name: string;
         villains: {
@@ -850,10 +877,6 @@ test("polymorphic field in nested shape", async () => {
         {
           name: data.iron_man.name,
           secret_identity: data.iron_man.secret_identity,
-        },
-        {
-          name: data.thanos.name,
-          secret_identity: null,
         },
       ],
     },

@@ -74,7 +74,7 @@ SELECT (INSERT Movie {
   genre := Genre.Action,
   characters := (SELECT Person FILTER .id IN char_ids)
 }) {id, title, rating, genre, characters: {id}};`,
-    {character_ids: [iron_man.id, cap.id, thanos.id]}
+    {character_ids: [iron_man.id, cap.id]}
   );
   const civil_war: Movie = await client.queryRequiredSingle(
     `SELECT (INSERT Movie {

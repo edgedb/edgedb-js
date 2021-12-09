@@ -527,8 +527,8 @@ All operators are available via an alphanumeric name.
     - ``e.index``
   * - ``[i:j:k]``
     - ``e.slice``
-  * - ``[]``
-    - ``e.destructure``
+  * - ``[key]``
+    - ``e.destructure`` (JSON element access)
   * - ``++``
     - ``e.concatenate``
   * - ``LIKE``
@@ -587,45 +587,65 @@ As in EdgeQL, selecting an set of objects without a shape will return their IDs 
   const query = e.select(e.Hero); // select Hero;
   const result = await query.run(client); // {id:string}[]
 
-Shapes: object syntax
-^^^^^^^^^^^^^^^^^^^^^
+Shapes
+^^^^^^
 
-Pass an object as the secong argument to specify the shape of the ``select``.
+To specify a shape, pass a function into the second argument.
+
+.. code-block:: typescript
+
+  const query = e.select(e.Hero, ()=>({
+    id: true,
+    name: false,
+    secret_identity: true,
+  }));
+
+  const result = await query.run(client);
+  /* {
+    id: string;
+    name: never;
+    secret_identity: string | undefined;
+  }[] */
+
+Pass ``true`` to include the field and ``false`` to explicitly exclude it. You can also pass a non-literal ``boolean`` expression, in which case the field will be made optional in the result.
+
+As in EdgeQL, you can nest shapes.
 
 .. code-block:: typescript
 
   const query = e.select(e.Hero, {
     id: true,
-    name: 1 > 0, // optional
+    name: false,
     villains: {
       id: true,
-      name: true,
-    },
+      name: true
+    }
   });
+
   const result = await query.run(client);
   /* {
-    id?: string,
-    name: string | undefined,
-    villains: { id:string; name:string }[]
+    id: string;
+    name: string;
+    villains: {
+      id: string;
+      name: string;
+    }[]
   }[] */
-
 
 Shapes: closure syntax
 ^^^^^^^^^^^^^^^^^^^^^^
 
-It's often valuable to have a reference to the *thing being selected*. To support this, you can instead pass a function that *accepts a single argument* and *returns a shape object*. This is a powerful pattern that makes computed fields, filters, ordering, etc. very intuitive and brief.
+It's often valuable to have a reference to the *thing being selected*. To support this, you can instead pass a function that *accepts a single argument* and *returns a shape object*. This is a powerful pattern that makes computed fields, filters, ordering, etc intuitive and concise.
 
 .. code-block:: typescript
 
   e.select(e.Hero, hero => ({
-    id: 1 > 0, // optional
     name: true,
     villains: villain => ({
-      id: true,
       name: true,
-      name_upper: e.str_upper(villain.name),
     }),
   }));
+
 
 
 .. The closure syntax also supports arbitrary expressions:
@@ -637,7 +657,10 @@ It's often valuable to have a reference to the *thing being selected*. To suppor
 ..   );
 
 
-### Computeds
+Computeds
+^^^^^^^^^
+
+Closure
 
 .. code-block:: typescript
 

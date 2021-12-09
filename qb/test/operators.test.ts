@@ -74,6 +74,15 @@ test("slice and index ops", () => {
     $.Cardinality.One,
     `(<array<std::bigint>>[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][2])`
   );
+
+  checkOperatorExpr(
+    e.destructure(e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")),
+    "std::[]",
+    [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
+    e.json,
+    $.Cardinality.One,
+    `(std::to_json(("{\\\"name\\\":\\\"Bob\\\"}"))["name"])`
+  );
 });
 
 test("if else op", () => {
