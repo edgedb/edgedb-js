@@ -5,6 +5,7 @@ import {
   $scopify,
   Cardinality,
   cardinalityUtil,
+  Expression,
   ExpressionKind,
   LinkDesc,
   ObjectType,
@@ -466,6 +467,8 @@ export type normaliseShape<Shape extends object> = {
   [k in Exclude<keyof Shape, SelectModifierNames>]: normaliseElement<Shape[k]>;
 };
 
+const existingScopes = new Set<Expression>();
+
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
 ): $expr_Select<
@@ -570,7 +573,13 @@ export function select(...args: any[]) {
     }
   }
 
+  const cleanScopedExprs = existingScopes.size === 0;
+
   const {modifiers: mods, shape, scope} = resolveShape(shapeGetter, expr);
+
+  if (cleanScopedExprs) {
+    existingScopes.clear();
+  }
 
   const {modifiers, cardinality} = handleModifiers(mods, expr);
   return $expressionify(
@@ -603,7 +612,7 @@ function resolveShape(
 
   const scope =
     expr.__element__.__kind__ === TypeKind.object
-      ? $getScopedExpr(expr as any)
+      ? $getScopedExpr(expr as any, existingScopes)
       : expr;
 
   const selectShape =
