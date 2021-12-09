@@ -462,35 +462,9 @@ export type normaliseElement<El> = El extends boolean
   ? normaliseShape<stripSet<El>>
   : stripSet<El>;
 
-export type normaliseShape<Shape extends object> = Omit<
-  {
-    [k in keyof Shape]: normaliseElement<Shape[k]>;
-  },
-  SelectModifierNames
->;
-
-// export type normaliseShape<
-//   Shape extends pointersToSelectShape,
-//   Pointers extends ObjectTypePointers
-// > = {
-//   [k in keyof Shape]: Shape[k] extends boolean
-//     ? stripSet<Shape[k]>
-//     : Shape[k] extends TypeSet
-//     ? stripSet<Shape[k]>
-//     : [k] extends [keyof Pointers]
-//     ? Pointers[k] extends LinkDesc
-//       ? Omit<
-//           normaliseShape<
-//             Shape[k] extends (...scope: any[]) => any
-//               ? ReturnType<Shape[k]>
-//               : Shape[k],
-//             Pointers[k]["target"]["__pointers__"]
-//           >,
-//           SelectModifierNames
-//         >
-//       : stripSet<Shape[k]>
-//     : stripSet<Shape[k]>;
-// };
+export type normaliseShape<Shape extends object> = {
+  [k in Exclude<keyof Shape, SelectModifierNames>]: normaliseElement<Shape[k]>;
+};
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
@@ -527,6 +501,14 @@ export function select<
   },
   Expr
 >;
+/*
+
+For the moment is isn't possible to implement both closure-based and plain object overloads without breaking autocomplete on one or the other. This is due to a limitation in TS:
+
+https://github.com/microsoft/TypeScript/issues/26892
+https://github.com/microsoft/TypeScript/issues/47081
+
+*/
 export function select<Expr extends ObjectTypeExpression, Set extends TypeSet>(
   expr: Expr,
   shape: (scope: $scopify<Expr["__element__"]>) => Set
