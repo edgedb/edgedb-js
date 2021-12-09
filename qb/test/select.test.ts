@@ -959,3 +959,29 @@ test("modifiers on scalar selects", async () => {
   tc.assert<tc.IsExact<typeof res4, number | null>>(true);
   expect(res4).toEqual(1);
 });
+
+test("nested matching scopes", async () => {
+  const q = e.select(e.Hero, h => ({
+    name: h.name,
+    otherHeros: e.select(e.Hero, h2 => ({
+      name: true,
+      names: e.concat(h.name, h2.name),
+      order: h2.name,
+    })),
+    order: h.name,
+  }));
+
+  const result = await q.run(client);
+
+  const heros = [data.cap, data.iron_man, data.spidey];
+
+  const expectedResult = heros.map(h => ({
+    name: h.name,
+    otherHeros: heros.map(h2 => ({
+      name: h2.name,
+      names: h.name + h2.name,
+    })),
+  }));
+
+  expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedResult));
+});

@@ -175,16 +175,21 @@ export function $expressionify<T extends ExpressionRoot>(
 const scopedExprCache = new WeakMap<ExpressionRoot, Expression>();
 
 export function $getScopedExpr<T extends ExpressionRoot>(
-  expr: T
+  expr: T,
+  existingScopes?: Set<Expression>
 ): Expression<T> {
   let scopedExpr = scopedExprCache.get(expr);
-  if (!scopedExpr) {
+  if (!scopedExpr || existingScopes?.has(scopedExpr)) {
+    const uncached = !scopedExpr;
     scopedExpr = $expressionify({
       ...expr,
       __cardinality__: Cardinality.One,
     });
-    scopedExprCache.set(expr, scopedExpr);
+    if (uncached) {
+      scopedExprCache.set(expr, scopedExpr);
+    }
   }
+  existingScopes?.add(scopedExpr);
   return scopedExpr as any;
 }
 
