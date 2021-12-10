@@ -192,6 +192,7 @@ const errorMapping: {[key: string]: string | RegExp} = {
   file_not_found: /no such file or directory/,
   invalid_tls_security:
     /^invalid 'tlsSecurity' value|'tlsSecurity' value cannot be lower than security level set by EDGEDB_CLIENT_SECURITY/,
+  exclusive_options: /^Cannot specify both .* and .*/,
 };
 
 const warningMapping: {[key: string]: string} = {
