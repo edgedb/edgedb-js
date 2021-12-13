@@ -4,7 +4,8 @@
 EdgeQL Query Builder
 ====================
 
-The EdgeDB query builder provides a way to write *fully-typed* EdgeQL queries with code. It's generated from your database schema.
+The EdgeDB query builder provides a way to write *fully-typed* EdgeQL queries
+with code. It's generated from your database schema.
 
 - It's **not an ORM**. There's no "object-relational mapping" happening here;
   that's all handled by EdgeDB itself. Instead, the query builder is a
@@ -26,11 +27,12 @@ Requirements
 
 - Node v10+ or higher
 - If using TypeScript:
+
   - TS 4.4+
   - ``yarn add @types/node --dev``
   - the following compiler options in ``tsconfig.json``:
 
-    .. code-block:: json
+    .. code-block:: javascript
 
       {
         // ...
@@ -45,7 +47,11 @@ Requirements
 Generation command
 ------------------
 
-The query builder is a *generated* by introspecting the schema of a live database, *not* your ``.esdl`` files. We recommend using `projects <ref_guide_using_projects>` to develop an EdgeDB-backed application locally. Refer to the `Client Library Connection <edgedb_client_connection>` docs for details.
+The query builder is a *generated* by introspecting the schema of a live
+database, *not* your ``.esdl`` files. We recommend using :ref:`projects
+<ref_guide_using_projects>` to develop an EdgeDB-backed application locally.
+Refer to the :ref:`Client Library Connection <edgedb_client_connection>` docs
+for details.
 
 If you haven't already, install the ``edgedb`` client library.
 
@@ -80,7 +86,9 @@ When you run this command for the first time, you may see a prompt like this:
 
   [y/n] (leave blank for "y")
 
-Checking the generated query builder into version control is not recommended. Once you confirm this prompt, a line will be added to your ``.gitignore`` to exclude the generated files from Git.
+Checking the generated query builder into version control is not recommended.
+Once you confirm this prompt, a line will be added to your ``.gitignore`` to
+exclude the generated files from Git.
 
 Flags
 ^^^^^
@@ -88,29 +96,42 @@ Flags
 The generation command is configurable in a number of ways.
 
 ``--output-dir <path>``
-  By default, the query builder is generated into ``./dbschema/edgeql-js``, as defined relative to your project root. The project root is identified by scanning up the file system for a ``package.json``.
+  By default, the query builder is generated into ``./dbschema/edgeql-js``, as
+  defined relative to your project root. The project root is identified by
+  scanning up the file system for a ``package.json``.
 
   To override this, use the ``--output`` flag to pass a desired path.
 
-  This also makes it possible to generate separate query builders for several distinct instances, which is useful if your application interfaces with multiple databases.
+  This also makes it possible to generate separate query builders for several
+  distinct instances, which is useful if your application interfaces with
+  multiple databases.
 
 ``--target <ts|cjs|esm>``
+  The generator auto-detects whether you are using TypeScript
+  (``--target ts``), JavaScript + CommonJS modules (``--target cjs``), or
+  JavaScript + ES modules (``--target esm``)using the following algorithm:
 
-  The generator auto-detects whether you are using TypeScript (``--target ts``), JavaScript + CommonJS modules (``--target cjs``), or JavaScript + ES modules (``--target esm``)using the following algorithm:
+  1. If a ``tsconfig.json`` is found in the project root, generate TypeScript
+  files.
 
-  1. If a ``tsconfig.json`` is found in the project root, generate TypeScript files.
+  2. Otherwise, if the ``package.json`` includes ``"type": "module"``,
+  generate ``.mjs`` files that uses ``import/export`` syntax. (While the
+  ``.mjs`` extension is somewhat redundant, we use it anyway, so everything
+  works correctly when a user using CommonJS modules uses the explicit
+  ``--target esm`` flag.
 
-  2. Otherwise, if the ``package.json`` includes ``"type": "module"``, generate ``.mjs`` files that uses ``import/export`` syntax. (While the ``.mjs`` extension is somewhat redundant, we use it anyway, so everything works correctly when a user using CommonJS modules uses the explicit ``--target esm`` flag.
-
-  3. Otherwise: generate ``.js`` files using CommonJS ``require/module.exports`` syntax.
+  3. Otherwise: generate ``.js`` files using CommonJS
+  ``require/module.exports`` syntax.
 
 ``--force-overwrite``
-  To avoid accidental changes, you'll be prompted to confirm whenever the ``--target`` has changed from the previous run. To avoid this prompt, pass ``--force-overwrite``.
+  To avoid accidental changes, you'll be prompted to confirm whenever the
+  ``--target`` has changed from the previous run. To avoid this prompt, pass
+  ``--force-overwrite``.
 
 ``-h/--help``
   Prints full documentation.
 
-The generator also supports all the `connection flags
+The generator also supports all the :ref:`connection flags
 <ref_cli_edgedb_connopts>` supported by the EdgeDB CLI. These aren't
 necessary when using a project or environment variables to configure a
 connection.
@@ -147,15 +168,13 @@ A few things to note:
 
 - To execute a query, use the ``.run`` method. Only top-level statements (``e.
   select``, ``e.insert``, ``e.update``, ``e.delete``, ``e.for``, ``e.with``)
-  support the `.run` method. This method has the following signature:
+  support the ``.run`` method. This method has the following signature:
 
   .. code-block:: typescript
 
     .run(client: Client | Transaction, params: Params): Promise<T>
 
-  The first argument expects a client or transaction object; see `Creating a
-  Client <edgedb-js-create-client>` for details. The second argument is for
-  *parameters*; more on that later.
+  The first argument expects a client or transaction object; see :ref:`Creating a Client <edgedb-js-create-client>` for details. The second argument is for *parameters*; more on that later.
 
 - The result of ``.run`` is strongly typed; in the example, ``result`` will
   have type ``string``.
@@ -164,7 +183,8 @@ A few things to note:
 Modules
 -------
 
-All types, functions, and operators are available on the ``e`` object and properly namespaced:
+All types, functions, and operators are available on the ``e`` object and
+properly namespaced:
 
 .. code-block:: typescript
 
@@ -176,7 +196,9 @@ All types, functions, and operators are available on the ``e`` object and proper
   e.default.User; // user-defined object type
   e.my_module.foo; // user-defined module
 
-For convenience, the contents of ``std`` and ``default`` modules are also available at the top-level. (It's common to declare your schema entirely within the ``default`` module.)
+For convenience, the contents of ``std`` and ``default`` modules are also
+available at the top-level. (It's common to declare your schema entirely
+within the ``default`` module.)
 
 .. code-block:: typescript
 
@@ -185,12 +207,16 @@ For convenience, the contents of ``std`` and ``default`` modules are also availa
   e.User;
 
 
-If there are any name conflicts (e.g. a user-defined module called ``len``), ``e.len`` will point to the user-defined module; in that scenario, you must explicitly use ``e.std.len`` to access the built-in ``len`` function.
+If there are any name conflicts (e.g. a user-defined module called ``len``),
+``e.len`` will point to the user-defined module; in that scenario, you must
+explicitly use ``e.std.len`` to access the built-in ``len`` function.
 
 Literals
 --------
 
-All literal scalar values must be created with a dedicated function call. The name of this function maps directly onto the `type names <ref_eql_type_table>` in EdgeDB's type system.
+All literal scalar values must be created with a dedicated function call. The
+name of this function maps directly onto the :ref:`type names
+<ref_eql_type_table>` in EdgeDB's type system.
 
 Primitives
 ^^^^^^^^^^
@@ -286,7 +312,8 @@ To declare a tuple with named elements:
 Custom literals
 ^^^^^^^^^^^^^^^
 
-You can use ``e.literal`` to create literal values of constructed/custom types, like nested combinations of tuples, arrays, and primitives.
+You can use ``e.literal`` to create literal values of constructed/custom
+types, like nested combinations of tuples, arrays, and primitives.
 
 .. code-block:: typescript
 
@@ -303,7 +330,10 @@ You can use ``e.literal`` to create literal values of constructed/custom types, 
 Types and casting
 -----------------
 
-The literal functions (e.g. ``e.str``, ``e.int64``, etc.) serve a dual purpose. They can be used as functions to instantiate literals (``e.str("hi")``) or can be used as variables to represent the *type itself* (``e.str``).
+The literal functions (e.g. ``e.str``, ``e.int64``, etc.) serve a dual
+purpose. They can be used as functions to instantiate literals
+(``e.str("hi")``) or can be used as variables to represent the *type itself*
+(``e.str``).
 
 Declaring types
 ^^^^^^^^^^^^^^^
@@ -332,7 +362,8 @@ These types can be used to *cast* an expression to another type.
 Parameters
 ^^^^^^^^^^
 
-This is also necessary to specify the expected types of *query parameters*. This is described in greater detail in the Select section below.
+This is also necessary to specify the expected types of *query parameters*.
+This is described in greater detail in the Select section below.
 
 .. code-block:: typescript
 
@@ -384,7 +415,8 @@ namespaced by module.
   e.default.Movie;
   e.my_module.SomeType;
 
-For convenience, all types in the ``default`` module are also available at the top-level.
+For convenience, all types in the ``default`` module are also available at the
+top-level.
 
 .. code-block:: typescript
 
@@ -406,7 +438,8 @@ As in EdgeQL, you can declare *path expressions*.
 Type intersections
 ^^^^^^^^^^^^^^^^^^
 
-Use the type intersection operator to narrow the type of the set. For instance, to represent the chararacters in a movie that are of type ``Hero``:
+Use the type intersection operator to narrow the type of the set. For
+instance, to represent the chararacters in a movie that are of type ``Hero``:
 
 .. code-block:: typescript
 
@@ -543,7 +576,8 @@ All operators are available via an alphanumeric name.
 Select
 ------
 
-The full power of the ``select`` statement is available as an overloaded, top-level ``e.select`` function.
+The full power of the ``select`` statement is available as an overloaded,
+top-level ``e.select`` function.
 
 Scalars
 ^^^^^^^
@@ -558,7 +592,6 @@ Scalars
 
   e.select(e.concat('aaaa', e.to_str(e.int64(111)));
   // select 'aaaa' ++ to_str(111)
-
 
 Free shapes
 ^^^^^^^^^^^
@@ -580,7 +613,8 @@ Free shapes
 Objects
 ^^^^^^^
 
-As in EdgeQL, selecting an set of objects without a shape will return their IDs only.
+As in EdgeQL, selecting an set of objects without a shape will return their
+IDs only.
 
 .. code-block:: typescript
 
@@ -590,126 +624,76 @@ As in EdgeQL, selecting an set of objects without a shape will return their IDs 
 Shapes
 ^^^^^^
 
-To specify a shape, pass a function into the second argument.
+To specify a shape, pass a function as the second argument. This function
+should return an object, which is analagous to an EdgeQL shape.
 
 .. code-block:: typescript
 
   const query = e.select(e.Hero, ()=>({
     id: true,
-    name: false,
+    name: true,
     secret_identity: true,
   }));
 
   const result = await query.run(client);
   /* {
     id: string;
-    name: never;
+    name: string;
     secret_identity: string | undefined;
   }[] */
 
-Pass ``true`` to include the field and ``false`` to explicitly exclude it. You can also pass a non-literal ``boolean`` expression, in which case the field will be made optional in the result.
+As you can see, the type of ``secret_identity`` is ``string | undefined`` in
+the output, as it's an optional property, whereas ``id`` and ``name`` are
+required.
 
-As in EdgeQL, you can nest shapes.
+A value of ``true`` indicates that the property should be included in the
+selection set. By contrast, a value of false explicitly exludes it. You
+can also pass a non-literal ``boolean`` expression, in which case the field
+will be made optional in the result.
+
+As in EdgeQL, shapes can be nested to fetch deeply related objects.
 
 .. code-block:: typescript
 
-  const query = e.select(e.Hero, {
-    id: true,
-    name: false,
-    villains: {
-      id: true,
-      name: true
-    }
-  });
+  const query = e.select(e.Hero, ()=>({
+    id: false,
+    name: Math.random() > 0.5
+  }));
 
   const result = await query.run(client);
   /* {
-    id: string;
-    name: string;
-    villains: {
-      id: string;
-      name: string;
-    }[]
+    id: never;
+    name: string | undefined;
   }[] */
 
-Shapes: closure syntax
-^^^^^^^^^^^^^^^^^^^^^^
 
-It's often valuable to have a reference to the *thing being selected*. To support this, you can instead pass a function that *accepts a single argument* and *returns a shape object*. This is a powerful pattern that makes computed fields, filters, ordering, etc intuitive and concise.
+Why closures?
+^^^^^^^^^^^^^
 
-.. code-block:: typescript
+In EdgeQL, a ``select`` statement introduces a new *scope*; within the clauses
+of a select statement, you can refer to fields of the *elements being
+selected* using leading dot notation.
 
-  e.select(e.Hero, hero => ({
-    name: true,
-    villains: villain => ({
-      name: true,
-    }),
-  }));
+.. code-block:: edgeql
 
+  select Hero { id, name }
+  filter .name = "Groot";
 
+Here, ``.name`` is shorthand for the ``name`` property of the selected
+``Hero`` elements. All properties/links on the ``Hero`` type can be referenced
+using this shorthand anywhere in the ``select`` expression. In other words,
+the ``select`` expression is *scoped* to the ``Hero`` type.
 
-.. The closure syntax also supports arbitrary expressions:
-
-.. .. code-block:: typescript
-
-..   e.select(e.Hero, hero =>
-..     e.concat(e.concat(hero.name, e.str(" is ")), hero.secret_identity)
-..   );
+To represent this scoping in the query builder, we use functions. This is a
+powerful pattern that makes it painless to represent filters, ordering,
+computed fields, and other expressions. Let's see it in action.
 
 
-Computeds
+Filtering
 ^^^^^^^^^
 
-Closure
-
-.. code-block:: typescript
-
-  e.select(e.Person, person => ({
-    id: true,
-    name: true,
-    uppercase_name: e.str_upper(person.name),
-    is_hero: e.is(person, e.Hero),
-  }));
-
-
-Computables can share a key with an actual link/properties as long as the type signatures agree:
-
-.. code-block:: typescript
-
-  e.select(e.Hero, hero => ({
-    id: true,
-    name: e.str_upper(hero.name),
-    villains: e.select(e.Villain, villain => ({
-      id: true,
-      name: true,
-      filter: e.eq(e.len(hero.name), e.len(villain.name)),
-    })),
-  }));
-
-
-### Shapes: polymorphism
-
-`e.is` returns a shape. The values should be of type `$expr_PolyShapeElement`, which keeps a reference to the polymorphic type. Inside `toEdgeQL`, when a `$expr_PolyShapeElement` is encountered, the key should be prefixed with the appropriate type intersection: `[is Hero].secret_identity`, etc.
-
-.. code-block:: typescript
-
-  e.select(e.Movie.characters, character => ({
-    id: true,
-    name: true,
-    ...e.is(e.Villain, () => ({id: true, nemesis: true})),
-    ...e.is(e.Hero, hero => ({
-      secret_identity: true,
-      villains: {
-        id: true,
-        name: true,
-      },
-    })),
-  }));
-
-
-`e.is(Type, ref => Shape)`: `Shape` should not allow top-level computables, as this isn't valid EdgeQL.
-
-### Basic filtering
+To add a filtering clause, just include a ``filter`` key in the returned
+params object. This should correspond to a boolean expression.
 
 .. code-block:: typescript
 
@@ -719,27 +703,32 @@ Computables can share a key with an actual link/properties as long as the type s
     filter: e.or(e.ilike(hero.name, "%Man"), e.ilike(hero.name, "The %")))
   }))
 
+Since ``filter`` is a reserved keyword in EdgeQL, there is minimal danger of
+conflicting with a property or link named ``filter``. Since the ``filter`` key
+is special, it isn't possible to include a computed property named
+``filter`` at the moment.
 
-> Filters are checked to determine whether the result set should be a singleton or not.
+All shapes can contain filter clauses, even nested ones.
 
 ### Nested filtering
 
 .. code-block:: typescript
 
   e.select(e.Hero, hero => ({
-    id: true,
     name: true,
     villains: villain => ({
-      id: true,
+      name: true
       filter: e.like(villain.name, "Mr. %"),
     }),
     filter: e.eq(hero.name, e.str("Iron Man")),
   }));
 
 
-### Ordering
+Ordering
+^^^^^^^^
 
-Simple:
+As with ``filter``, you can pass a value with the special ``order`` key. This
+key can correspond to an arbitrary expression. To simply order by a property:
 
 .. code-block:: typescript
 
@@ -747,8 +736,8 @@ Simple:
     order: hero.name,
   }));
 
-
-Advanced:
+To customize the ordering and empty-handling parameters, you can also pass an
+object into ``order``:
 
 .. code-block:: typescript
 
@@ -761,7 +750,7 @@ Advanced:
   }));
 
 
-Multiple ordering
+Or do compound ordering with an array of objects:
 
 .. code-block:: typescript
 
@@ -782,17 +771,124 @@ Multiple ordering
   }));
 
 
-### Pagination
+Pagination
+^^^^^^^^^^
+
+Use ``offset`` and ``limit`` to paginate queries. Both should correspond to
+``int64`` expressions.
 
 .. code-block:: typescript
 
   e.select(e.Hero, hero => ({
     offset: e.len(hero.name),
-    limit: 15,
+    limit: e.int16(15),
   }));
 
 
-### Type intersection
+For simplicity, both also support ``number`` literals.
+
+.. code-block:: typescript
+
+  e.select(e.Hero, hero => ({
+    offset: 20,
+    limit: 10
+  }));
+
+As in EdgeQL, passing ``limit: 1`` guarantees that the query will only return
+a single item (at most). This is reflected in the resulting type.
+
+.. code-block:: typescript
+
+  e.select(e.Hero, hero => ({
+    name: true,
+  }));
+  // {name: string}[]
+
+  e.select(e.Hero, hero => ({
+    name: true,
+    limit: 1
+  }));
+  // {name: string} | null
+
+Computeds
+^^^^^^^^^
+
+To add a computed field, just add it to the returned shape alongside the other
+elements. All reflected functions are typesafe, so the output type
+
+.. code-block:: typescript
+
+  const query = e.select(e.Hero, hero => ({
+    name: true,
+    uppercase_name: e.str_upper(hero.name),
+    name_len: e.len(hero.name),
+  }));
+
+  const result = await query.run(client);
+  /* =>
+    [
+      {
+        name:"Iron Man",
+        uppercase_name: "IRON MAN",
+        name_len: 8
+      },
+      ...
+    ]
+  */
+  // {name: string; uppercase_name: string, name_len: number}[]
+
+
+Computables can "override" an actual link/property as long as the type
+signatures agree.
+
+.. code-block:: typescript
+
+  e.select(e.Hero, hero => ({
+    name: e.str_upper(hero.name), // this works
+    secret_identity: e.int64(5), // TypeError
+
+    // you can override links too!
+    villains: e.select(e.Villain, _ => ({ name: true })),
+  }));
+
+
+Polymorphism
+^^^^^^^^^^^^
+
+EdgeQL supports polymorphic queries using the ``[IS type]`` prefix.
+
+.. code-block::
+
+  select Person {
+    name,
+    [IS Hero].secret_identity,
+    [IS Villain].nemesis: { name }
+  }
+
+In the query builder, this is represented with the ``e.is`` function.
+
+.. code-block:: typescript
+
+  e.select(e.Person, person => ({
+    name: true,
+    ...e.is(e.Hero, { secret_identity: true }),
+    ...e.is(e.Villain, { nemesis: {name: true}}),
+  }));
+
+  const result = await query.run(client);
+  /* {
+    id: string;
+    secret_identity: string | null;
+    nemesis: {
+        name: string;
+    } | null;
+  }[] */
+
+The type signature of the result reflects the fact that polymorphic fields
+like ``secret_identity`` will only occur in certain objects.
+
+Type intersection
+^^^^^^^^^^^^^^^^^
 
 .. code-block:: typescript
 
@@ -815,7 +911,8 @@ To specify shape, use subqueries:
   }));
 
 
-## Insert
+Insert
+------
 
 .. code-block:: typescript
 
@@ -827,18 +924,26 @@ To specify shape, use subqueries:
   });
 
 
-### Conflicts
+Handling conflicts
+^^^^^^^^^^^^^^^^^^
 
-Simple
+In EdgeQL, "upsert" functionality is achieved by handling **conflicts** on
+``insert`` statements with the ``unless conflict`` clause. In the query
+builder, this is possible with the ``.unlessConflict`` method (available only
+on ``insert`` expressions).
+
+In the simplest case, adding ``.unlessConflict`` (no arguments) will prevent
+EdgeDB from throwing an error if the insertion would violate an exclusivity
+contstraint. Instead, the query would return the pre-existing object.
 
 .. code-block:: typescript
 
   e.insert(e.Movie, {
-    title: "Spider-Man 2",
+    title: "Spider-Man: Homecoming",
   }).unlessConflict();
 
 
-Specify `ON`:
+To specify an ``on`` clause:
 
 .. code-block:: typescript
 
@@ -849,7 +954,7 @@ Specify `ON`:
   }));
 
 
-Specify `ON ... ELSE`
+To specify an ``on...else`` clause:
 
 .. code-block:: typescript
 
@@ -863,32 +968,45 @@ Specify `ON ... ELSE`
   }));
 
 
-## Update
+Update
+------
+
+Update queries are a represented as a ``.update()`` method on ``e.select``
+queries. This way, you ``select`` a set of objects to update first, then
+specify how they should be updated.
 
 .. code-block:: typescript
 
   // update method
-  e.select(e.Movie, movie => ({
+  e.update(e.Movie, movie => ({
     filter: e.eq(movie.title, e.str("Avengers 4")),
     // order: ...,
     // offset: ...,
-  })).update({
-    // set
-    title: e.str("Avengers: Endgame"),
+    set: {
 
-    // append
-    characters: {"+=": e.set(e.Hero, e.Villain)},
+      // reference current value
+      title: e.str_upper(movie.title),
 
-    // remove
-    characters: {
-      "-=": e.select(e.Villain, villain => ({
-        filter: e.eq(villain.name, e.str("Thanos")),
-      })),
-    },
-  });
+      // support literals
+      title: "Avengers: Endgame",
 
+      // set link
+      characters: e.union(e.Hero, e.Villain),
 
-## Delete
+      // add to link
+      characters: {"+=": e.insert(e.Hero, {name: "Gilgamesh"})},
+
+      // subtract from link
+      characters: {
+        "-=": e.select(e.Villain, villain => ({
+          filter: e.eq(villain.name, e.str("Thanos")),
+        })),
+      },
+    }
+  }))
+
+Delete
+------
 
 .. code-block:: typescript
 
@@ -901,38 +1019,54 @@ Specify `ON ... ELSE`
     .delete();
 
 
-## Detach
+Detach
+------
 
 .. code-block:: typescript
 
   const detachedHero = e.detached(e.Hero);
 
 
-## Parameters
+Parameters
+----------
 
 .. code-block:: typescript
 
-  const fetchPerson = e.withParams(
+  const fetchPerson = e.params(
     {
-      name: e.arg(e.array(e.str)),
-      bool: e.arg(e.bool),
-      optionalStr: e.optional(e.str),
+      // scalar parameters
+      bool: e.bool,
+      data: e.array(e.str),
+
+      // supports any type
+      nested: e.array(e.tuple({test: e.str})),
+
+      // optional params
+      optional: e.optional(e.str),
     },
-    args =>
+    params =>
       e.select(e.Person, person => ({
         id: true,
-        optionalStr, // computable
-        filter: e.in(person.name, e.array_unpack(args.name)),
+        maybe: params.optional, // computable
+        filter: e.in(person.name, e.array_unpack(params.name)),
       }))
   );
 
+  await fetchPerson.run(client, {
+    bool: true,
+    data: ['aaa','bbb', 'ccc,],
+    nested: [{test:"sup"}],
+    optional: null
+  })
 
-## WITH clauses
 
-During the query rendering step, the number of occurrences of each expression are tracked.
-All expressions that are referenced more than once and are not explicitly defined in a
-`WITH` block (with `e.with`), are extracted into the nearest `WITH` block that encloses
-all usages of the expression.
+``WITH`` blocks
+---------------
+
+During the query rendering step, the number of occurrences of each expression
+are tracked. All expressions that are referenced more than once and are not
+explicitly defined in a ``WITH`` block (with ``e.with``), are extracted into
+the nearest ``WITH`` block that encloses all usages of the expression.
 
 .. code-block:: typescript
 
@@ -945,6 +1079,7 @@ all usages of the expression.
   //   b := a
   // SELECT a + b
 
+This hold for expressions of arbitrary complexity.
 
 .. code-block:: typescript
 
@@ -963,9 +1098,13 @@ all usages of the expression.
   });
 
 
-To embed `WITH` statements inside queries, you can short-circuit this logic with a "dependency list". It's an error to pass an expr to multiple `e.with`s, and an error to use an expr passed to `e.with` outside of that WITH block in the query.
+To embed ``WITH`` statements inside queries, you can short-circuit this logic
+with a "dependency list". It's an error to pass an expr to multiple
+``e.with``s, and an error to use an expr passed to ``e.with`` outside of that
+WITH block in the query.
 
-We add a top level e.alias() function. This will create an alias of the expr passed to it in a WITH block.
+We add a top level e.alias() function. This will create an alias of the expr
+passed to it in a WITH block.
 
 .. code-block:: typescript
 
@@ -980,9 +1119,8 @@ We add a top level e.alias() function. This will create an alias of the expr pas
   );
 
 
-## FOR ... IN
-
-As the `Set` class (described under "Type System") has a `cardinality` property, we're able to represent singleton cardinality inside a FOR/IN loop.
+``FOR`` loops
+-------------
 
 .. code-block:: typescript
 
@@ -993,4 +1131,3 @@ As the `Set` class (described under "Type System") has a `cardinality` property,
   e.for(e.Hero, hero => {
     // do stuff
   });
-

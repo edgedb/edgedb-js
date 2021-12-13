@@ -10,7 +10,7 @@ Connection
 
 The client library must be able to establish a connection to a running EdgeDB
 instance to execute queries. Refer to the :ref:`Client Library Connection
-<c>` docs for details on configuring connections.
+<edgedb_client_connection>` docs for details on configuring connections.
 
 .. _edgedb-js-create-client:
 
