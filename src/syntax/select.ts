@@ -450,7 +450,7 @@ export type pointersToSelectShape<
             pointersToSelectShape<Shape[k]["properties"]> &
             SelectModifiers)
     : any;
-}>;
+}> & {[k: string]: unknown};
 
 export type normaliseElement<El> = El extends boolean
   ? El
