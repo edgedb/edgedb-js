@@ -146,6 +146,13 @@ function assert_single(expr: Expression) {
   }) as any;
 }
 
+function unrunnableExprHandler() {
+  throw new Error(
+    `It is not valid to call 'run()' on this expression. ` +
+      `Hint: wrap this expression in a 'select' expression to run it.`
+  );
+}
+
 export function $expressionify<T extends ExpressionRoot>(
   _expr: T
 ): Expression<T> {
@@ -154,6 +161,10 @@ export function $expressionify<T extends ExpressionRoot>(
   expr.$is = isFunc.bind(expr) as any;
   expr.toEdgeQL = $toEdgeQL.bind(expr);
   expr.$assertSingle = () => assert_single(expr) as any;
+  if (!(expr as any).run) {
+    (expr as any).run = unrunnableExprHandler;
+  }
+
   return Object.freeze(expr) as any;
 }
 
