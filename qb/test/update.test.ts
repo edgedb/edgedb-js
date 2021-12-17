@@ -16,25 +16,40 @@ afterAll(async () => {
 });
 
 test("update", async () => {
-  e.select(e.Hero).update({
-    name: e.str("asdf"),
-  });
+  e.select(e.Hero)
+    .update({
+      name: "asdf",
+    })
+    .toEdgeQL();
 
-  e.select(e.Villain).update({
-    name: e.str("asdf"),
-    nemesis: e.set(e.$Hero),
-  });
+  e.select(e.Villain)
+    .update({
+      name: e.str("asdf"),
+      nemesis: e.set(e.$Hero),
+    })
+    .toEdgeQL();
 });
 
 test("update assignable", () => {
-  e.select(e.Bag).update({
-    int32Field: e.int64(23),
-    int64Field: e.int16(12),
-    // @ts-expect-error
-    bigintField: e.float32(324),
-    // @ts-expect-error
-    float32Field: e.bigint(BigInt(1234)),
-  });
+  e.select(e.Bag)
+    .update({
+      int32Field: e.int64(23),
+      int64Field: e.int16(12),
+      // @ts-expect-error
+      bigintField: e.float32(324),
+      // @ts-expect-error
+      float32Field: e.bigint(BigInt(1234)),
+    })
+    .toEdgeQL();
+
+  e.select(e.Bag)
+    .update({
+      int32Field: 23,
+      bigintField: BigInt(324),
+      // @ts-expect-error
+      float32Field: BigInt(1234),
+    })
+    .toEdgeQL();
 });
 
 test("update link property", async () => {

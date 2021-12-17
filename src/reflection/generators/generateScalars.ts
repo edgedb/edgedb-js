@@ -166,7 +166,10 @@ export const generateScalars = (params: GeneratorParams) => {
         dts`declare `,
         t`type ${ref}λIAssignableBy = ${joinFrags(
           assignableMap.length
-            ? assignableMap.map(typeId => getRef(types.get(typeId).name))
+            ? [
+                ref,
+                ...assignableMap.map(typeId => getRef(types.get(typeId).name)),
+              ]
             : [ref],
           " | "
         )};`,

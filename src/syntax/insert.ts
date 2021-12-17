@@ -13,6 +13,7 @@ import {
   stripSet,
   TypeSet,
   QueryableExpression,
+  ScalarType,
 } from "../reflection";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
@@ -126,6 +127,40 @@ export function $insertify(
   return $queryify(expr) as any;
 }
 
+export function normaliseInsertShape(
+  root: ObjectTypeSet,
+  shape: {[key: string]: any},
+  isUpdate: boolean = false
+): {[key: string]: TypeSet} {
+  const newShape: {[key: string]: TypeSet} = {};
+  for (const [key, _val] of Object.entries(shape)) {
+    let val = _val;
+    if (isUpdate && typeof _val === "object") {
+      const valKeys = Object.keys(_val);
+      if (
+        valKeys.length === 1 &&
+        (valKeys[0] === "+=" || valKeys[0] === "-=")
+      ) {
+        val = _val[valKeys[0]];
+      }
+    }
+    if (val?.__kind__) {
+      newShape[key] = _val;
+    } else {
+      const pointer = root.__element__.__pointers__[key];
+      if (!pointer || pointer.__kind__ !== "property") {
+        throw new Error(
+          `Could not find property pointer for ${
+            isUpdate ? "update" : "insert"
+          } shape key: '${key}'`
+        );
+      }
+      newShape[key] = (pointer.target as ScalarType)(_val);
+    }
+  }
+  return newShape;
+}
+
 export function insert<Root extends $expr_PathNode>(
   root: Root,
   shape: InsertShape<Root>
@@ -135,7 +170,7 @@ export function insert<Root extends $expr_PathNode>(
     __element__: root.__element__,
     __cardinality__: Cardinality.One,
     __expr__: root,
-    __shape__: shape,
+    __shape__: normaliseInsertShape(root, shape),
   };
   (expr as any).unlessConflict = unlessConflict.bind(expr);
   return $expressionify($insertify(expr)) as any;
