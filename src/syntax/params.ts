@@ -82,14 +82,13 @@ type paramsToParamArgs<
     : never]: Params[key] extends ParamType
     ? getParamTsType<Params[key]>
     : never;
-} &
-  {
-    [key in keyof Params as Params[key] extends $expr_OptionalParam
-      ? key
-      : never]?: Params[key] extends $expr_OptionalParam
-      ? getParamTsType<Params[key]["__type__"]> | null
-      : never;
-  };
+} & {
+  [key in keyof Params as Params[key] extends $expr_OptionalParam
+    ? key
+    : never]?: Params[key] extends $expr_OptionalParam
+    ? getParamTsType<Params[key]["__type__"]> | null
+    : never;
+};
 
 export type $expr_Param<
   Name extends string | number | symbol = string,
@@ -116,7 +115,7 @@ type paramsToParamExprs<
     : never;
 };
 
-export function withParams<
+export function params<
   Params extends {
     [key: string]: ParamType | $expr_OptionalParam;
   } = {},
