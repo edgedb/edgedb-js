@@ -28,7 +28,7 @@ const indexSliceRegx = /^(-?\d+)(?:(:)(-?\d+)?)?|:(-?\d+)$/;
 let sliceTupleType: TupleType | null = null;
 
 const arrayProxyHandlers: ProxyHandler<ExpressionRoot> = {
-  get(target, prop, proxy) {
+  get(target: ExpressionRoot, prop: string | symbol, proxy: any) {
     const match = typeof prop === "string" ? prop.match(indexSliceRegx) : null;
     if (match) {
       const start = match[1];
@@ -113,7 +113,7 @@ const tuplePathsCache = new WeakMap<
 >();
 
 const tupleProxyHandlers: ProxyHandler<ExpressionRoot> = {
-  get(target, prop, proxy) {
+  get(target: ExpressionRoot, prop: string | symbol, proxy: any) {
     const tuplePaths = tuplePathsCache.get(target)!;
     const type = target.__element__;
     const item =
@@ -149,7 +149,7 @@ function $expr_TuplePath(
   return $expressionify({
     __kind__: ExpressionKind.TuplePath,
     __element__: itemType,
-    __cardinality__: parent["__cardinality__"],
+    __cardinality__: parent.__cardinality__,
     __parent__: parent,
     __index__: index,
   }) as any;

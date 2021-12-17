@@ -242,7 +242,6 @@ export type ComputeSelectCardinality<
 export function is<
   Expr extends ObjectTypeExpression,
   Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]>
-  // NormalisedShape = normaliseShape<Shape, Expr["__element__"]["__pointers__"]>
 >(
   expr: Expr,
   shape: Shape
@@ -253,7 +252,6 @@ export function is<
   >;
 } {
   const mappedShape: any = {};
-  // const {shape: resolvedShape, scope} = resolveShape(shape, expr);
   for (const [key, value] of Object.entries(shape)) {
     mappedShape[key] = {
       __kind__: ExpressionKind.PolyShapeElement,
@@ -506,7 +504,9 @@ export function select<
 >;
 /*
 
-For the moment is isn't possible to implement both closure-based and plain object overloads without breaking autocomplete on one or the other. This is due to a limitation in TS:
+For the moment is isn't possible to implement both closure-based and plain
+object overloads without breaking autocomplete on one or the other.
+This is due to a limitation in TS:
 
 https://github.com/microsoft/TypeScript/issues/26892
 https://github.com/microsoft/TypeScript/issues/47081
