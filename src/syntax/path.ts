@@ -26,7 +26,8 @@ function _$expr_PathLeaf<
 >(
   root: Root,
   parent: Parent,
-  exclusive: Exclusive
+  exclusive: Exclusive,
+  scopeRoot: TypeSet | null = null
 ): $expr_PathLeaf<Root, Parent, Exclusive> {
   return $expressionify({
     __kind__: ExpressionKind.PathLeaf,
@@ -34,6 +35,7 @@ function _$expr_PathLeaf<
     __cardinality__: root.__cardinality__,
     __parent__: parent,
     __exclusive__: exclusive,
+    __scopeRoot__: scopeRoot,
   }) as any;
 }
 
@@ -44,19 +46,52 @@ function _$expr_PathNode<
 >(
   root: Root,
   parent: Parent,
-  exclusive: Exclusive
+  exclusive: Exclusive,
+  scopeRoot: TypeSet | null = null
 ): $expr_PathNode<Root, Parent, Exclusive> {
-  const pathNode = $expressionify({
+  return $expressionify({
     __kind__: ExpressionKind.PathNode,
     __element__: root.__element__,
     __cardinality__: root.__cardinality__,
     __parent__: parent,
     __exclusive__: exclusive,
-  });
-  return pathNode as any;
+    __scopeRoot__: scopeRoot,
+  }) as any;
 }
 
-const pathCache = Symbol();
+const _pathCache = Symbol();
+const _pointers = Symbol();
+
+const pathifyProxyHandlers: ProxyHandler<any> = {
+  get: function (target, prop, proxy) {
+    const ptr = target[_pointers][prop as any] as LinkDesc | PropertyDesc;
+    if (ptr) {
+      return (
+        target[_pathCache][prop] ??
+        (target[_pathCache][prop] = (
+          (ptr.__kind__ === "property"
+            ? _$expr_PathLeaf
+            : _$expr_PathNode) as any
+        )(
+          {
+            __element__: ptr.target,
+            __cardinality__: cardinalityUtil.multiplyCardinalities(
+              target.__cardinality__,
+              ptr.cardinality
+            ),
+          },
+          {
+            linkName: prop,
+            type: proxy,
+          },
+          ptr.exclusive ?? false,
+          target.__scopeRoot__ ?? (scopeRoots.has(proxy) ? proxy : null)
+        ))
+      );
+    }
+    return target[prop];
+  },
+};
 
 function _$pathify<Root extends TypeSet, Parent extends PathParent>(
   _root: Root
@@ -66,8 +101,6 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
   }
 
   const root: $expr_PathNode<ObjectTypeSet, Parent> = _root as any;
-
-  (root as any)[pathCache] = {};
 
   let pointers = {
     ...root.__element__.__pointers__,
@@ -81,58 +114,10 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
     }
   }
 
-  for (const [key, _ptr] of Object.entries(pointers)) {
-    const ptr: LinkDesc | PropertyDesc = _ptr as any;
-    if ((ptr as any).__kind__ === "property") {
-      Object.defineProperty(root, key, {
-        get() {
-          return (
-            (root as any)[pathCache][key] ??
-            ((root as any)[pathCache][key] = _$expr_PathLeaf(
-              {
-                __element__: ptr.target,
-                __cardinality__: cardinalityUtil.multiplyCardinalities(
-                  root.__cardinality__,
-                  ptr.cardinality
-                ),
-              },
-              {
-                linkName: key,
-                type: root,
-              },
-              ptr.exclusive ?? false
-            ))
-          );
-        },
-        enumerable: true,
-      });
-    } else {
-      Object.defineProperty(root, key, {
-        get: () => {
-          return (
-            (root as any)[pathCache][key] ??
-            ((root as any)[pathCache][key] = _$expr_PathNode(
-              {
-                __element__: ptr.target,
-                __cardinality__: cardinalityUtil.multiplyCardinalities(
-                  root.__cardinality__,
-                  ptr.cardinality
-                ),
-              },
-              {
-                linkName: key,
-                type: root,
-              },
-              ptr.exclusive
-            ))
-          );
-        },
-        enumerable: true,
-      });
-    }
-  }
+  (root as any)[_pointers] = pointers;
+  (root as any)[_pathCache] = {};
 
-  return root as any;
+  return new Proxy(root, pathifyProxyHandlers);
 }
 
 function isFunc(this: any, expr: ObjectTypeSet) {
@@ -164,15 +149,16 @@ function assert_single(expr: Expression) {
 export function $expressionify<T extends ExpressionRoot>(
   _expr: T
 ): Expression<T> {
-  const expr: Expression = _expr as any;
+  const expr: Expression = _$pathify(_expr) as any;
+
   expr.$is = isFunc.bind(expr) as any;
   expr.toEdgeQL = $toEdgeQL.bind(expr);
-  _$pathify(expr);
   expr.$assertSingle = () => assert_single(expr) as any;
   return Object.freeze(expr) as any;
 }
 
 const scopedExprCache = new WeakMap<ExpressionRoot, Expression>();
+const scopeRoots = new WeakSet<Expression>();
 
 export function $getScopedExpr<T extends ExpressionRoot>(
   expr: T,
@@ -185,6 +171,7 @@ export function $getScopedExpr<T extends ExpressionRoot>(
       ...expr,
       __cardinality__: Cardinality.One,
     });
+    scopeRoots.add(scopedExpr);
     if (uncached) {
       scopedExprCache.set(expr, scopedExpr);
     }
