@@ -64,7 +64,7 @@ const _pathCache = Symbol();
 const _pointers = Symbol();
 
 const pathifyProxyHandlers: ProxyHandler<any> = {
-  get: function (target, prop, proxy) {
+  get(target: any, prop: string | symbol, proxy: any) {
     const ptr = target[_pointers][prop as any] as LinkDesc | PropertyDesc;
     if (ptr) {
       return (

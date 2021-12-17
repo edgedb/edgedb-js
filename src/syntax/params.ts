@@ -121,11 +121,11 @@ export function params<
   } = {},
   Expr extends Expression = Expression
 >(
-  params: Params,
+  paramsDef: Params,
   expr: (params: paramsToParamExprs<Params>) => Expr
 ): $expr_WithParams<Params, Expr> {
   const paramExprs: {[key: string]: $expr_Param} = {};
-  for (const [key, param] of Object.entries(params)) {
+  for (const [key, param] of Object.entries(paramsDef)) {
     paramExprs[key] = $expressionify({
       __kind__: ExpressionKind.Param,
       __element__:
