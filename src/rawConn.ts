@@ -953,7 +953,13 @@ export class RawConnection {
 
   private _encodeArgs(args: QueryArgs, inCodec: ICodec): Buffer {
     if (versionGreaterThanOrEqual(this.protocolVersion, [0, 12])) {
-      if (inCodec === NULL_CODEC && !args) {
+      if (inCodec === NULL_CODEC) {
+        if (args != null) {
+          throw new errors.QueryArgumentError(
+            `This query does not contain any query parameters, ` +
+              `but query arguments were provided to the 'query*()' method`
+          );
+        }
         return NullCodec.BUFFER;
       }
 
@@ -964,7 +970,13 @@ export class RawConnection {
       // Shouldn't ever happen.
       throw new Error("invalid input codec");
     } else {
-      if (inCodec === EMPTY_TUPLE_CODEC && !args) {
+      if (inCodec === EMPTY_TUPLE_CODEC) {
+        if (args != null) {
+          throw new errors.QueryArgumentError(
+            `This query does not contain any query parameters, ` +
+              `but query arguments were provided to the 'query*()' method`
+          );
+        }
         return EmptyTupleCodec.BUFFER;
       }
 
