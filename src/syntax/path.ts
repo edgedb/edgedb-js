@@ -16,6 +16,7 @@ import {
   $pathify,
   ExpressionRoot,
 } from "../reflection/path";
+import {_$arrayIndexify, _$tuplePathify} from "./collections";
 
 import {$toEdgeQL} from "./toEdgeQL";
 
@@ -156,7 +157,9 @@ function unrunnableExprHandler() {
 export function $expressionify<T extends ExpressionRoot>(
   _expr: T
 ): Expression<T> {
-  const expr: Expression = _$pathify(_expr) as any;
+  const expr: Expression = _$pathify(
+    _$arrayIndexify(_$tuplePathify(_expr))
+  ) as any;
 
   expr.$is = isFunc.bind(expr) as any;
   expr.toEdgeQL = $toEdgeQL.bind(expr);

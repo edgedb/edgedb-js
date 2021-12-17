@@ -152,7 +152,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
         code.writeln([
           dts`declare `,
           t`type ${functionTypeName}${
-            hasParams ? `<` : ` = _.syntax.$expr_${funcopExprKind}<`
+            hasParams ? `<` : ` = $.$expr_${funcopExprKind}<`
           }`,
         ]);
 
@@ -261,7 +261,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
             });
           });
 
-          code.writeln([t`> = _.syntax.$expr_${funcopExprKind}<`]);
+          code.writeln([t`> = $.$expr_${funcopExprKind}<`]);
           overloadsBuf.writeln([t`>(`]);
 
           // args signature

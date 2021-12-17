@@ -1,8 +1,9 @@
 import type {Executor} from "../ifaces";
 import type {$expr_TypeIntersection, $pathify, $expr_PathNode} from "./path";
 import type {$expr_Literal} from "./literal";
+import type {$expr_Operator} from "./funcops";
 import type {typeutil} from "./util/typeutil";
-import {Cardinality, ExpressionKind, TypeKind} from "./enums";
+import {Cardinality, ExpressionKind, OperatorKind, TypeKind} from "./enums";
 import {cardinalityUtil} from "./util/cardinalityUtil";
 
 //////////////////
@@ -68,7 +69,9 @@ export type Expression<Set extends TypeSet = TypeSet> =
         $pathify<
           Set,
           Set extends {__parent__: any} ? Set["__parent__"] : null
-        >;
+        > &
+        $tuplePathify<Set> &
+        $arrayIndexify<Set>;
 
 export type QueryableExpression<Set extends TypeSet = TypeSet> =
   Expression<Set> & {
@@ -304,6 +307,29 @@ export type PrimitiveTypeSet = TypeSet<PrimitiveType, Cardinality>;
 /////////////////////////
 /// ARRAYTYPE
 /////////////////////////
+
+type $arrayIndexify<Set extends TypeSet> = Set["__element__"] extends ArrayType
+  ? {
+      [index: number]: $expr_Operator<
+        "std::[]",
+        OperatorKind.Infix,
+        [Set, TypeSet],
+        TypeSet<Set["__element__"]["__element__"], Set["__cardinality__"]>
+      >;
+      [
+        index: `${number}:${number | ""}` | `${number | ""}:${number}`
+      ]: $expr_Operator<
+        "std::[]",
+        OperatorKind.Infix,
+        [Set, TypeSet<TupleType>],
+        TypeSet<
+          ArrayType<Set["__element__"]["__element__"]>,
+          Set["__cardinality__"]
+        >
+      >;
+    }
+  : unknown;
+
 export type $expr_Array<
   Type extends BaseType = BaseType,
   Card extends Cardinality = Cardinality
@@ -331,6 +357,24 @@ type ArrayTypeToTsType<Type extends ArrayType> = BaseTypeToTsType<
 /////////////////////////
 /// TUPLE TYPE
 /////////////////////////
+
+type $tuplePathify<Set extends TypeSet> = Set["__element__"] extends TupleType
+  ? addTuplePaths<Set["__element__"]["__items__"], Set["__cardinality__"]>
+  : Set["__element__"] extends NamedTupleType
+  ? addNamedTuplePaths<Set["__element__"]["__shape__"], Set["__cardinality__"]>
+  : unknown;
+
+export type $expr_TuplePath<
+  ItemType extends BaseType = BaseType,
+  ParentCard extends Cardinality = Cardinality
+> = Expression<{
+  __kind__: ExpressionKind.TuplePath;
+  __element__: ItemType;
+  __cardinality__: ParentCard;
+  __parent__: $expr_Tuple | $expr_NamedTuple | $expr_TuplePath;
+  __index__: string | number;
+}>;
+
 export type baseTupleElementsToTupleType<T extends typeutil.tupleOf<TypeSet>> =
   {
     [k in keyof T]: T[k] extends TypeSet
@@ -361,6 +405,17 @@ export type $expr_Tuple<
     tupleElementsToCardTuple<Items>
   >;
 }>;
+
+export type indexKeys<T> = T extends `${number}` ? T : never;
+
+type addTuplePaths<
+  Items extends BaseType[],
+  ParentCard extends Cardinality
+> = {
+  [k in indexKeys<keyof Items>]: Items[k] extends BaseType
+    ? $expr_TuplePath<Items[k], ParentCard>
+    : never;
+};
 
 export interface TupleType<Items extends BaseTypeTuple = BaseTypeTuple>
   extends BaseType {
@@ -396,6 +451,7 @@ type inferNamedTupleCardinality<Shape extends NamedTupleLiteralShape> = [
     ]
   ? Cardinality.One
   : Cardinality.Many;
+
 export type $expr_NamedTuple<
   Shape extends NamedTupleLiteralShape = NamedTupleLiteralShape
 > = Expression<{
@@ -404,6 +460,15 @@ export type $expr_NamedTuple<
   __cardinality__: inferNamedTupleCardinality<Shape>;
   __shape__: Shape;
 }>;
+
+type addNamedTuplePaths<
+  Shape extends NamedTupleShape,
+  ParentCard extends Cardinality
+> = {
+  [k in keyof Shape]: Shape[k] extends BaseType
+    ? $expr_TuplePath<Shape[k], ParentCard>
+    : never;
+};
 
 export type NamedTupleLiteralShape = {[k: string]: TypeSet};
 export type NamedTupleShape = {[k: string]: BaseType};
