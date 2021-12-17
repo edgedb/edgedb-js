@@ -1,6 +1,6 @@
 import {Client, $} from "edgedb";
-// import {$} from "edgedb";
 import e, {$infer} from "../dbschema/edgeql";
+import {$VersionStageλEnum} from "../dbschema/edgeql/modules/sys";
 import {tc} from "./setupTeardown";
 
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
@@ -31,9 +31,23 @@ test("array literal", async () => {
   expect(arg.__cardinality__).toEqual($.Cardinality.One);
   expect(arg.__element__.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(arg.__element__.__element__.__name__).toEqual("std::str");
-
   const result = await client.querySingle(e.select(arg).toEdgeQL());
   expect(result).toEqual(["asdf", "qwer"]);
+
+  const arg1 = arg[1];
+  tc.assert<tc.IsExact<typeof arg1["__kind__"], $.ExpressionKind.Operator>>(
+    true
+  );
+  expect(arg1.__kind__).toEqual($.ExpressionKind.Operator);
+  tc.assert<tc.IsExact<typeof arg1["__cardinality__"], $.Cardinality.One>>(
+    true
+  );
+  expect(arg1.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<tc.IsExact<typeof arg1["__element__"]["__name__"], "std::str">>(
+    true
+  );
+  expect(arg1.__element__.__name__).toEqual("std::str");
+  expect(await e.select(arg1).run(client)).toEqual("qwer");
 
   const multiArray = e.array([
     e.str("asdf"),
@@ -55,6 +69,57 @@ test("array literal", async () => {
     ["asdf", "qwer"],
     ["asdf", "erty"],
   ]);
+
+  const multi0 = multiArray[0];
+  tc.assert<
+    tc.IsExact<typeof multi0["__cardinality__"], $.Cardinality.AtLeastOne>
+  >(true);
+  expect(multi0.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  expect(await e.select(multi0).run(client)).toEqual(["asdf", "asdf"]);
+
+  // array slicing
+  const arr = e.str_split(e.str("zxcvbnm"), e.str(""));
+  const sliceResult = await e
+    .select({
+      reverseIndex: arr["-2"],
+      slice24: arr["2:4"],
+      slice2: arr["2:"],
+      slice4: arr[":4"],
+      reverseSlice2: arr["-2:"],
+      reverseSlice4: arr[":-4"],
+      reverseSlice24: arr["-4:-2"],
+    })
+    .run(client);
+  tc.assert<
+    tc.IsExact<
+      typeof sliceResult,
+      {
+        reverseIndex: string;
+        slice24: string[];
+        slice2: string[];
+        slice4: string[];
+        reverseSlice2: string[];
+        reverseSlice4: string[];
+        reverseSlice24: string[];
+      }
+    >
+  >(true);
+  expect(JSON.stringify(sliceResult)).toEqual(
+    JSON.stringify({
+      reverseIndex: "n",
+      slice24: ["c", "v"],
+      slice2: ["c", "v", "b", "n", "m"],
+      slice4: ["z", "x", "c", "v"],
+      reverseSlice2: ["n", "m"],
+      reverseSlice4: ["z", "x", "c"],
+      reverseSlice24: ["v", "b"],
+    })
+  );
+
+  // @ts-expect-error
+  arr["str"];
+  // @ts-expect-error
+  arr[":"];
 });
 
 test("tuple literal", async () => {
@@ -75,15 +140,23 @@ test("tuple literal", async () => {
   expect(myTuple.__element__.__items__[1].__name__).toEqual("std::int64");
   const myTupleResult = await client.querySingle(e.select(myTuple).toEdgeQL());
   expect(myTupleResult).toEqual(["asdf", 45]);
+  const myTuplePath0 = myTuple[0];
+  const myTuplePath1 = myTuple[1];
+  tc.assert<tc.IsExact<$infer<typeof myTuplePath0>, string>>(true);
+  tc.assert<tc.IsExact<$infer<typeof myTuplePath1>, number>>(true);
+  expect(await e.select(myTuplePath0).run(client)).toEqual("asdf");
+  expect(await e.select(myTuplePath1).run(client)).toEqual(45);
 
   const multiTuple = e.tuple([
     e.str("asdf"),
     e.set(e.str("qwer"), e.str("erty")),
   ]);
-  type multiTuple = $.setToTsType<typeof multiTuple>;
-  tc.assert<tc.IsExact<multiTuple, [[string, string], ...[string, string][]]>>(
-    true
-  );
+  tc.assert<
+    tc.IsExact<
+      $infer<typeof multiTuple>,
+      [[string, string], ...[string, string][]]
+    >
+  >(true);
   expect(multiTuple.__kind__).toEqual($.ExpressionKind.Tuple);
   expect(multiTuple.__element__.__kind__).toEqual($.TypeKind.tuple);
   expect(multiTuple.__cardinality__).toEqual($.Cardinality.AtLeastOne);
@@ -97,6 +170,18 @@ test("tuple literal", async () => {
     ["asdf", "qwer"],
     ["asdf", "erty"],
   ]);
+  const multiTuplePath = multiTuple[0];
+  tc.assert<tc.IsExact<$infer<typeof multiTuplePath>, [string, ...string[]]>>(
+    true
+  );
+  tc.assert<
+    tc.IsExact<
+      typeof multiTuplePath["__cardinality__"],
+      $.Cardinality.AtLeastOne
+    >
+  >(true);
+  expect(multiTuplePath.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  expect(await e.select(multiTuplePath).run(client)).toEqual(["asdf", "asdf"]);
 
   const singleTuple = e.tuple([e.str("asdf")]);
   type singleTuple = $infer<typeof singleTuple>;
@@ -110,6 +195,51 @@ test("tuple literal", async () => {
     e.select(singleTuple).toEdgeQL()
   );
   expect(singleTupleResult).toEqual(["asdf"]);
+
+  const nestedTuple = e.tuple([
+    e.str("a"),
+    e.tuple([e.str("b"), e.set(e.str("c"), e.str("d"))]),
+  ]);
+  type nestedTuple = $infer<typeof nestedTuple>;
+  tc.assert<
+    tc.IsExact<
+      nestedTuple,
+      [[string, [string, string]], ...[string, [string, string]][]]
+    >
+  >(true);
+  const nestedTupleResult = await e.select(nestedTuple).run(client);
+  expect(nestedTupleResult).toEqual([
+    ["a", ["b", "c"]],
+    ["a", ["b", "d"]],
+  ]);
+  const nestedTuplePathResult = await e
+    .select({
+      tup0: nestedTuple[0],
+      tup1: nestedTuple[1],
+      tup10: nestedTuple[1][0],
+      tup11: nestedTuple[1][1],
+    })
+    .run(client);
+  tc.assert<
+    tc.IsExact<
+      typeof nestedTuplePathResult,
+      {
+        tup0: [string, ...string[]];
+        tup1: [[string, string], ...[string, string][]];
+        tup10: [string, ...string[]];
+        tup11: [string, ...string[]];
+      }
+    >
+  >(true);
+  expect(JSON.parse(JSON.stringify(nestedTuplePathResult))).toEqual({
+    tup0: ["a", "a"],
+    tup1: [
+      ["b", "c"],
+      ["b", "d"],
+    ],
+    tup10: ["b", "b"],
+    tup11: ["c", "d"],
+  });
 
   const heroNamesTuple = e.tuple([e.Hero.name]);
   type heroNamesTuple = $infer<typeof heroNamesTuple>;
@@ -130,7 +260,7 @@ test("tuple literal", async () => {
 });
 
 test("namedTuple literal", async () => {
-  const tupleType = e.namedTuple({
+  const tupleType = e.tuple({
     string: e.str,
     number: e.int64,
   });
@@ -140,7 +270,7 @@ test("namedTuple literal", async () => {
   expect(tupleType.__shape__.number.__kind__).toEqual($.TypeKind.scalar);
   expect(tupleType.__shape__.number.__name__).toEqual("std::int64");
 
-  const named = e.namedTuple({
+  const named = e.tuple({
     string: e.str("asdf"),
     number: e.int64(1234),
   });
@@ -166,13 +296,64 @@ test("namedTuple literal", async () => {
   expect(JSON.stringify(namedResult)).toEqual(
     JSON.stringify({string: "asdf", number: 1234})
   );
+  const namedStr = named.string;
+  const namedNum = named.number;
+  tc.assert<tc.IsExact<$infer<typeof namedStr>, string>>(true);
+  tc.assert<tc.IsExact<$infer<typeof namedNum>, number>>(true);
+  expect(await e.select(namedStr).run(client)).toEqual("asdf");
+  expect(await e.select(namedNum).run(client)).toEqual(1234);
 
-  const emptyNamedTuple = e.namedTuple({string: e.set(e.str)});
+  const nested = e.tuple({
+    a: e.str("asdf"),
+    named: e.tuple({b: e.int64(123)}),
+    tuple: e.tuple([e.bool(true), e.set(e.str("x"), e.str("y"))]),
+  });
+  const nestedResult = await e
+    .select({
+      nested: nested,
+      nestedA: nested.a,
+      nestedNamed: nested.named,
+      nestedTuple: nested.tuple,
+      nestedTuple0: nested.tuple[0],
+      nestedTuple1: nested.tuple[1],
+    })
+    .run(client);
+  tc.assert<
+    tc.IsExact<
+      typeof nestedResult,
+      {
+        nested: {a: string; named: {b: number}; tuple: [boolean, string]}[];
+        nestedA: string[];
+        nestedNamed: {b: number}[];
+        nestedTuple: [boolean, string][];
+        nestedTuple0: boolean[];
+        nestedTuple1: string[];
+      }
+    >
+  >(true);
+  expect(JSON.stringify(nestedResult)).toEqual(
+    JSON.stringify({
+      nested: [
+        {a: "asdf", named: {b: 123}, tuple: [true, "x"]},
+        {a: "asdf", named: {b: 123}, tuple: [true, "y"]},
+      ],
+      nestedA: ["asdf", "asdf"],
+      nestedNamed: [{b: 123}, {b: 123}],
+      nestedTuple: [
+        [true, "x"],
+        [true, "y"],
+      ],
+      nestedTuple0: [true, true],
+      nestedTuple1: ["x", "y"],
+    })
+  );
+
+  const emptyNamedTuple = e.tuple({string: e.set(e.str)});
   type emptyNamedTuple = $.setToTsType<typeof emptyNamedTuple>;
   tc.assert<tc.IsExact<emptyNamedTuple, null>>(true);
   expect(emptyNamedTuple.__cardinality__).toEqual($.Cardinality.Empty);
 
-  const multiNamedTuple = e.namedTuple({
+  const multiNamedTuple = e.tuple({
     hero: e.Hero,
   });
   type multiNamedTuple = $.setToTsType<typeof multiNamedTuple>;
@@ -187,4 +368,55 @@ test("namedTuple literal", async () => {
     >
   >(true);
   expect(multiNamedTuple.__cardinality__).toEqual($.Cardinality.Many);
+});
+
+test("non literal tuples", async () => {
+  const ver = e.sys.get_version();
+  expect(ver.major.__element__.__name__).toEqual("std::int64");
+  expect(ver.major.__cardinality__).toEqual($.Cardinality.One);
+  expect(ver.stage.__element__.__name__).toEqual("sys::VersionStage");
+  expect(ver.stage.__cardinality__).toEqual($.Cardinality.One);
+  expect(ver.local.__element__.__name__).toEqual("array<std::str>");
+  expect(ver.local.__cardinality__).toEqual($.Cardinality.One);
+
+  const result = await e
+    .select({
+      ver,
+      verMajor: ver.major,
+      verStage: ver.stage,
+      verLocal: ver.local,
+      verLocal0: ver.local[0],
+    })
+    .run(client);
+
+  tc.assert<
+    tc.IsExact<
+      typeof result,
+      {
+        ver: {
+          major: number;
+          minor: number;
+          stage: $VersionStageλEnum;
+          stage_no: number;
+          local: string[];
+        };
+        verMajor: number;
+        verStage: $VersionStageλEnum;
+        verLocal: string[];
+        verLocal0: string;
+      }
+    >
+  >(true);
+
+  expect({
+    major: result.verMajor,
+    stage: result.verStage,
+    local: result.verLocal,
+    local0: result.verLocal0,
+  }).toEqual({
+    major: result.ver.major,
+    stage: result.ver.stage,
+    local: result.ver.local,
+    local0: result.ver.local[0],
+  });
 });

@@ -9,6 +9,7 @@ import {
   $expr_Array,
   $expr_NamedTuple,
   $expr_Tuple,
+  $expr_TuplePath,
   BaseType,
   Cardinality,
   ExpressionKind,
@@ -31,7 +32,7 @@ import {reservedKeywords} from "../reflection/reservedKeywords";
 import type {$expr_Cast} from "./cast";
 import type {$expr_Detached} from "./detached";
 import type {$expr_For, $expr_ForVar} from "./for";
-import type {$expr_Function, $expr_Operator} from "./funcops";
+import type {$expr_Function, $expr_Operator} from "../reflection/funcops";
 import type {$expr_Insert, $expr_InsertUnlessConflict} from "./insert";
 import type {$expr_Param, $expr_WithParams} from "./params";
 import type {
@@ -52,6 +53,7 @@ export type SomeExpression =
   | $expr_Array
   | $expr_Tuple
   | $expr_NamedTuple
+  | $expr_TuplePath
   | $expr_Cast
   | $expr_Select
   | $expr_Delete
@@ -558,20 +560,19 @@ function renderEdgeQL(
       );
     }
   } else if (expr.__kind__ === ExpressionKind.Array) {
-    // ExpressionKind.Array
     return `[\n${expr.__items__
       .map(item => `  ` + renderEdgeQL(item, ctx))
       .join(",\n")}\n]`;
   } else if (expr.__kind__ === ExpressionKind.Tuple) {
-    // ExpressionKind.Tuple
     return `(\n${expr.__items__
       .map(item => `  ` + renderEdgeQL(item, ctx))
       .join(",\n")}${expr.__items__.length === 1 ? "," : ""}\n)`;
   } else if (expr.__kind__ === ExpressionKind.NamedTuple) {
-    // ExpressionKind.NamedTuple
     return `(\n${Object.keys(expr.__shape__)
       .map(key => `  ${key} := ${renderEdgeQL(expr.__shape__[key], ctx)}`)
       .join(",\n")}\n)`;
+  } else if (expr.__kind__ === ExpressionKind.TuplePath) {
+    return `${renderEdgeQL(expr.__parent__, ctx)}.${expr.__index__}`;
   } else if (expr.__kind__ === ExpressionKind.Cast) {
     return `<${expr.__element__.__name__}>${renderEdgeQL(expr.__expr__, ctx)}`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
@@ -703,16 +704,25 @@ function renderEdgeQL(
     switch (expr.__opkind__) {
       case OperatorKind.Infix:
         if (operator === "[]") {
-          const val = (args[1] as any).__value__;
-          return `(${renderEdgeQL(args[0], ctx)}[${
-            Array.isArray(val)
-              ? val.join(":")
-              : typeof val === "number"
-              ? val
-              : typeof val === "string"
-              ? `"${val}"`
-              : val
-          }])`;
+          let index = "";
+          if ((args[1] as SomeExpression).__kind__ === ExpressionKind.Tuple) {
+            const [start, end] = (args[1] as $expr_Tuple).__items__;
+            if (start!.__cardinality__ !== Cardinality.Empty) {
+              index += renderEdgeQL(start!, ctx);
+            }
+            index += ":";
+            if (end!.__cardinality__ !== Cardinality.Empty) {
+              index += renderEdgeQL(end!, ctx);
+            }
+          } else if (
+            (args[1] as SomeExpression).__kind__ === ExpressionKind.Literal &&
+            Array.isArray((args[1] as $expr_Literal).__value__)
+          ) {
+            index = (args[1] as $expr_Literal).__value__.join(":");
+          } else {
+            index = renderEdgeQL(args[1], ctx);
+          }
+          return `(${renderEdgeQL(args[0], ctx)}[${index}])`;
         }
         return `(${renderEdgeQL(args[0], ctx)} ${operator} ${renderEdgeQL(
           args[1],
@@ -886,6 +896,9 @@ function walkExprTree(
         for (const subExpr of Object.values(expr.__shape__)) {
           childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
         }
+        break;
+      case ExpressionKind.TuplePath:
+        childExprs.push(...walkExprTree(expr.__parent__, parentScope, ctx));
         break;
       case ExpressionKind.Select: {
         const modifiers = expr.__modifiers__;
