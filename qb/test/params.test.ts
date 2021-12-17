@@ -14,7 +14,7 @@ afterAll(async () => {
 });
 
 test("simple params", () => {
-  const query = e.withParams(
+  const query = e.params(
     {
       str: e.str,
       numArr: e.array(e.int64),
@@ -50,7 +50,7 @@ test("simple params", () => {
 });
 
 test("all param types", async () => {
-  const query = e.withParams(
+  const query = e.params(
     {
       int16: e.int16,
       int32: e.int32,
