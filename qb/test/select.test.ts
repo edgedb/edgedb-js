@@ -923,3 +923,10 @@ test("nested matching scopes", async () => {
 
   expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedResult));
 });
+
+test("non runnable expressions", async () => {
+  expect(
+    // @ts-expect-error
+    () => e.concat(e.str("Hello "), e.str("World")).run(client)
+  ).toThrow(/It is not valid to call 'run\(\)' on this expression/);
+});
