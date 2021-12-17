@@ -51,6 +51,8 @@ function setStringCodecs(codecs: string[], client: Client) {
   );
 }
 
+class CancelTransaction extends Error {}
+
 test("query: basic scalars", async () => {
   const con = getClient();
   let res: any;
@@ -1219,32 +1221,38 @@ test("fetch: uuid", async () => {
 test("fetch: enum", async () => {
   const client = getClient();
 
-  await client.withRetryOptions({attempts: 1}).transaction(async tx => {
-    await tx.execute(`
+  try {
+    await client.withRetryOptions({attempts: 1}).transaction(async tx => {
+      await tx.execute(`
         CREATE SCALAR TYPE MyEnum EXTENDING enum<"A", "B">;
       `);
 
-    // await tx.query("declare savepoint s1");
-    // await tx
-    //   .querySingle("SELECT <MyEnum><str>$0", ["Z"])
-    //   .then(() => {
-    //     throw new Error("an exception was expected");
-    //   })
-    //   .catch((e) => {
-    //     expect(e.toString()).toMatch(/invalid input value for enum/);
-    //   });
-    // await tx.query("rollback to savepoint s1");
+      // await tx.query("declare savepoint s1");
+      // await tx
+      //   .querySingle("SELECT <MyEnum><str>$0", ["Z"])
+      //   .then(() => {
+      //     throw new Error("an exception was expected");
+      //   })
+      //   .catch((e) => {
+      //     expect(e.toString()).toMatch(/invalid input value for enum/);
+      //   });
+      // await tx.query("rollback to savepoint s1");
 
-    let ret = await tx.querySingle("SELECT <MyEnum><str>$0", ["A"]);
-    expect(ret).toBe("A");
+      let ret = await tx.querySingle("SELECT <MyEnum><str>$0", ["A"]);
+      expect(ret).toBe("A");
 
-    ret = await tx.querySingle("SELECT <MyEnum>$0", ["A"]);
-    expect(ret).toBe("A");
+      ret = await tx.querySingle("SELECT <MyEnum>$0", ["A"]);
+      expect(ret).toBe("A");
 
-    await tx.rollback();
-  });
-
-  await client.close();
+      throw new CancelTransaction();
+    });
+  } catch (e) {
+    if (!(e instanceof CancelTransaction)) {
+      throw e;
+    }
+  } finally {
+    await client.close();
+  }
 });
 
 test("fetch: namedtuple", async () => {
@@ -1572,8 +1580,12 @@ test("fetch/optimistic cache invalidation", async () => {
         expect(res).toBe(123);
       }
 
-      await tx.rollback();
+      throw new CancelTransaction();
     });
+  } catch (e) {
+    if (!(e instanceof CancelTransaction)) {
+      throw e;
+    }
   } finally {
     await client.close();
   }
