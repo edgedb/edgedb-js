@@ -24,3 +24,4 @@ export * as introspect from "./queries/getTypes";
 export * from "./hydrate";
 export * from "./path";
 export * from "./literal";
+export * from "./funcops";

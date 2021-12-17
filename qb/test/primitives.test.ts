@@ -14,7 +14,7 @@ test("primitive types", () => {
 test("collection types", () => {
   const arrayType = e.array(e.str);
   expect(arrayType.__name__).toEqual("array<std::str>");
-  const named = e.namedTuple({str: e.str});
+  const named = e.tuple({str: e.str});
   expect(named.__name__).toEqual("tuple<str: std::str>");
   expect(named.__shape__.str.__name__).toEqual("std::str");
   const unnamed = e.tuple([e.str, e.int64]);

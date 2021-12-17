@@ -1,7 +1,7 @@
-import type {$expr_Function} from "../dbschema/edgeql/syntax/funcops";
 import superjson from "superjson";
 import {$} from "edgedb";
 import e from "../dbschema/edgeql";
+import {$expr_Function} from "edgedb/dist/reflection";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,
@@ -37,7 +37,7 @@ test("no args", () => {
     "sys::get_version",
     [],
     {},
-    e.namedTuple({
+    e.tuple({
       major: e.int64,
       minor: e.int64,
       stage: e.sys.VersionStage,

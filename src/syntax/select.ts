@@ -29,7 +29,7 @@ import type {
   PathParent,
 } from "../reflection/path";
 import {anonymizeObject} from "./casting";
-import type {$expr_Operator} from "./funcops";
+import type {$expr_Operator} from "../reflection/funcops";
 import {$expressionify, $getScopedExpr} from "./path";
 import {$queryify} from "./query";
 import type {$expr_Update, UpdateShape} from "./update";

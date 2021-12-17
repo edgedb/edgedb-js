@@ -1,7 +1,7 @@
-import {$expr_Operator} from "../dbschema/edgeql/syntax/funcops";
 import superjson from "superjson";
 import {$} from "edgedb";
 import e from "../dbschema/edgeql";
+import {$expr_Operator} from "edgedb/dist/reflection";
 
 function checkOperatorExpr<T extends $expr_Operator>(
   expr: T,
@@ -57,7 +57,7 @@ test("slice and index ops", () => {
     [e.str("test string"), e.int32(3)],
     e.str,
     $.Cardinality.One,
-    `("test string"[3])`
+    `("test string"[<std::int32>3])`
   );
 
   checkOperatorExpr(
@@ -72,7 +72,7 @@ test("slice and index ops", () => {
     ],
     e.bigint,
     $.Cardinality.One,
-    `(<array<std::bigint>>[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][2])`
+    `(<array<std::bigint>>[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][<std::int32>2])`
   );
 
   checkOperatorExpr(

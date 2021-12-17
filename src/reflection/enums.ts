@@ -20,6 +20,7 @@ export enum ExpressionKind {
   Array = "Array",
   Tuple = "Tuple",
   NamedTuple = "NamedTuple",
+  TuplePath = "TuplePath",
   PathNode = "PathNode",
   PathLeaf = "PathLeaf",
   Literal = "Literal",
