@@ -561,7 +561,7 @@ test("fetch: named args", async () => {
         );
       })
       .catch(e => {
-        expect(e.toString()).toMatch(/unexpected named argument: "c"/);
+        expect(e.toString()).toMatch(/Unused named argument: "c"/);
       });
 
     res = await con.querySingle(`select len(<OPTIONAL str>$a ?? "aa")`, {
