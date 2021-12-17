@@ -23,9 +23,8 @@ test("insert shape check", async () => {
 
 test("basic insert", async () => {
   const q1 = e.insert(e.Hero, {
-    name: e.str("Black Widow"),
+    name: "Black Widow",
     secret_identity: e.str("Natasha Romanoff"),
-    // id
   });
 
   await client.querySingle(q1.toEdgeQL());
@@ -38,7 +37,7 @@ test("nested insert", async () => {
   const q1 = e.insert(e.Villain, {
     name: e.str("villain"),
     nemesis: e.insert(e.Hero, {
-      name: e.str("hero"),
+      name: "hero",
     }),
   });
 
@@ -74,6 +73,13 @@ test("insert type enforcement", async () => {
   e.insert(e.Villain, {
     // @ts-expect-error
     name: e.set(e.str),
+  });
+
+  e.insert(e.Hero, {
+    // @ts-expect-error
+    name: 1234,
+    // @ts-expect-error
+    number_of_movies: "Ronin",
   });
   return;
 });

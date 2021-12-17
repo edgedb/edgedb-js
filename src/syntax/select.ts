@@ -33,6 +33,7 @@ import type {$expr_Operator} from "../reflection/funcops";
 import {$expressionify, $getScopedExpr} from "./path";
 import {$queryify} from "./query";
 import type {$expr_Update, UpdateShape} from "./update";
+import {normaliseInsertShape} from "./insert";
 
 export const ASC: "ASC" = "ASC";
 export const DESC: "DESC" = "DESC";
@@ -376,7 +377,7 @@ function updateFunc(this: any, shape: any) {
       __element__: this.__element__,
       __cardinality__: this.__cardinality__,
       __expr__: this,
-      __shape__: shape,
+      __shape__: normaliseInsertShape(this, shape, true),
     })
   ) as $expr_Update;
 }
