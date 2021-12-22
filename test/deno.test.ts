@@ -20,6 +20,8 @@ import {execFile} from "child_process";
 import * as fs from "fs";
 
 test("run deno test", async () => {
+  jest.setTimeout(120_000);
+
   if (!fs.existsSync("test/deno")) {
     if (process.env.CI) {
       throw new Error("Cannot find 'test/deno' directory");
@@ -39,6 +41,7 @@ test("run deno test", async () => {
         "--allow-env",
         "--allow-read",
         "--allow-write",
+        "--unsafely-ignore-certificate-errors",
         "test/deno",
       ],
       {
@@ -58,6 +61,8 @@ test("run deno test", async () => {
 });
 
 test("deno check", async () => {
+  jest.setTimeout(60_000);
+
   if (!fs.existsSync("test/deno")) {
     if (process.env.CI) {
       throw new Error("Cannot find 'test/deno' directory");

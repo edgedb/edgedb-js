@@ -69,7 +69,9 @@ export const getServerCommand = (statusFile: string): string[] => {
   const helpCmd = [...args, "--help"];
   const help = child_process.execSync(helpCmd.join(" "));
 
-  if (help.includes("--generate-self-signed-cert")) {
+  if (help.includes("--tls-cert-mode")) {
+    args.push("--tls-cert-mode=generate_self_signed");
+  } else if (help.includes("--generate-self-signed-cert")) {
     args.push("--generate-self-signed-cert");
   }
 
