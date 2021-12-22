@@ -20,8 +20,6 @@ import {execFile} from "child_process";
 import * as fs from "fs";
 
 test("run deno test", async () => {
-  jest.setTimeout(120_000);
-
   if (!fs.existsSync("test/deno")) {
     if (process.env.CI) {
       throw new Error("Cannot find 'test/deno' directory");
@@ -45,6 +43,7 @@ test("run deno test", async () => {
       ],
       {
         env: process.env,
+        timeout: 120_000,
       },
       (error, stdout, stderr) => {
         if (error) {
@@ -59,8 +58,6 @@ test("run deno test", async () => {
 });
 
 test("deno check", async () => {
-  jest.setTimeout(60_000);
-
   if (!fs.existsSync("test/deno")) {
     if (process.env.CI) {
       throw new Error("Cannot find 'test/deno' directory");
@@ -78,6 +75,7 @@ test("deno check", async () => {
       ["eval", "--unstable", 'import * as edgedb from "./edgedb-deno/mod.ts"'],
       {
         env: process.env,
+        timeout: 60_000,
       },
       (error, stdout, stderr) => {
         if (error) {

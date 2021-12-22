@@ -81,6 +81,8 @@ export const getServerCommand = (statusFile: string): string[] => {
 
   args = [
     ...args,
+    "--bind-address=127.0.0.1",
+    "--bind-address=::1", // deno on some platforms resolves localhost to ::1
     "--temp-dir",
     "--testmode",
     "--port=auto",
