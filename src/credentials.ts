@@ -67,10 +67,24 @@ export function validateCredentials(data: any): Credentials {
     result.password = password;
   }
 
+  const caData = data.tls_ca;
+  if (caData != null) {
+    if (typeof caData !== "string") {
+      throw new Error("`tls_ca` must be string");
+    }
+    result.tlsCAData = caData;
+  }
+
   const certData = data.tls_cert_data;
   if (certData != null) {
     if (typeof certData !== "string") {
       throw new Error("`tls_cert_data` must be string");
+    }
+    if (caData != null && certData !== caData) {
+      throw new Error(
+        `both 'tls_ca' and 'tls_cert_data' are defined, ` +
+          `and are not in agreement`
+      );
     }
     result.tlsCAData = certData;
   }
