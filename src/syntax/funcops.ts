@@ -36,9 +36,7 @@ function mapLiteralToTypeSet(literals: {[key: string]: any}): {
 };
 function mapLiteralToTypeSet(literals: any[] | {[key: string]: any}) {
   if (Array.isArray(literals)) {
-    return literals.map(literal =>
-      literal != null ? literalToTypeSet(literal) : literal
-    );
+    return literals.map(lit => (lit != null ? literalToTypeSet(lit) : lit));
   }
   const obj: {[key: string]: TypeSet} = {};
   for (const key of Object.keys(literals)) {

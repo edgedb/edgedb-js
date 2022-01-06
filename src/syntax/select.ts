@@ -32,8 +32,6 @@ import {anonymizeObject} from "./casting";
 import type {$expr_Operator} from "../reflection/funcops";
 import {$expressionify, $getScopedExpr} from "./path";
 import {$queryify} from "./query";
-import type {$expr_Update, UpdateShape} from "./update";
-import {normaliseInsertShape} from "./insert";
 
 export const ASC: "ASC" = "ASC";
 export const DESC: "DESC" = "DESC";
@@ -129,7 +127,6 @@ export type $expr_Select<
 interface SelectObjectMethods<Root extends ObjectTypeSet> {
   __element__: Root["__element__"];
   __cardinality__: Root["__cardinality__"];
-  update(shape: UpdateShape<Root>): $expr_Update<Root, UpdateShape<Root>>;
   delete(): $expr_Delete<Root>;
 }
 
@@ -325,7 +322,7 @@ function computeFilterCardinality(
   return card;
 }
 
-function handleModifiers(
+export function $handleModifiers(
   modifiers: SelectModifiers,
   rootExpr: TypeSet
 ): {modifiers: NormalisedSelectModifiers; cardinality: Cardinality} {
@@ -371,18 +368,6 @@ function handleModifiers(
   return {modifiers: mods as NormalisedSelectModifiers, cardinality: card};
 }
 
-function updateFunc(this: any, shape: any) {
-  return $expressionify(
-    $queryify({
-      __kind__: ExpressionKind.Update,
-      __element__: this.__element__,
-      __cardinality__: this.__cardinality__,
-      __expr__: this,
-      __shape__: normaliseInsertShape(this, shape, true),
-    })
-  ) as $expr_Update;
-}
-
 export type $expr_Delete<Root extends ObjectTypeSet = ObjectTypeSet> =
   QueryableExpression<{
     __kind__: ExpressionKind.Delete;
@@ -404,7 +389,6 @@ function deleteFunc(this: any) {
 
 export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   Object.assign(expr, {
-    update: updateFunc.bind(expr),
     delete: deleteFunc.bind(expr),
   });
   return $queryify(expr);
@@ -467,7 +451,7 @@ export type normaliseShape<Shape extends object> = {
   [k in Exclude<keyof Shape, SelectModifierNames>]: normaliseElement<Shape[k]>;
 };
 
-const existingScopes = new Set<Expression>();
+export const $existingScopes = new Set<Expression>();
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
@@ -575,15 +559,15 @@ export function select(...args: any[]) {
     }
   }
 
-  const cleanScopedExprs = existingScopes.size === 0;
+  const cleanScopedExprs = $existingScopes.size === 0;
 
   const {modifiers: mods, shape, scope} = resolveShape(shapeGetter, expr);
 
   if (cleanScopedExprs) {
-    existingScopes.clear();
+    $existingScopes.clear();
   }
 
-  const {modifiers, cardinality} = handleModifiers(mods, expr);
+  const {modifiers, cardinality} = $handleModifiers(mods, expr);
   return $expressionify(
     $selectify({
       __kind__: ExpressionKind.Select,
@@ -614,7 +598,7 @@ function resolveShape(
 
   const scope =
     expr.__element__.__kind__ === TypeKind.object
-      ? $getScopedExpr(expr as any, existingScopes)
+      ? $getScopedExpr(expr as any, $existingScopes)
       : expr;
 
   const selectShape =
@@ -659,7 +643,7 @@ function resolveShapeElement(
       modifiers: mods,
     } = resolveShape(value as any, childExpr);
 
-    const {modifiers} = handleModifiers(mods, childExpr);
+    const {modifiers} = $handleModifiers(mods, childExpr);
 
     return {
       __kind__: ExpressionKind.Select,

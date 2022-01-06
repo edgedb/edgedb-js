@@ -41,6 +41,7 @@ export type scalarTypeWithConstructor<
   S extends ScalarType,
   ExtraTsTypes extends any = never
 > = S & {
+  // tslint:disable-next-line
   <T extends S["__tstype__"] | ExtraTsTypes>(val: T): $expr_Literal<
     ScalarType<
       S["__name__"],

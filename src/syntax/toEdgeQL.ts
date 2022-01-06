@@ -234,7 +234,8 @@ export function $toEdgeQL(this: any) {
     }
 
     if (
-      expr.__kind__ === ExpressionKind.Select &&
+      (expr.__kind__ === ExpressionKind.Select ||
+        expr.__kind__ === ExpressionKind.Update) &&
       expr.__scope__ &&
       !withVars.has(expr.__scope__ as any)
     ) {
@@ -449,7 +450,8 @@ function renderEdgeQL(
 
   let withBlock = "";
   const scopeExpr =
-    expr.__kind__ === ExpressionKind.Select &&
+    (expr.__kind__ === ExpressionKind.Select ||
+      expr.__kind__ === ExpressionKind.Update) &&
     ctx.withVars.has(expr.__scope__ as any)
       ? (expr.__scope__ as SomeExpression)
       : undefined;
@@ -660,10 +662,14 @@ function renderEdgeQL(
       (modifiers.length ? "\n" + modifiers.join("\n") : "")
     );
   } else if (expr.__kind__ === ExpressionKind.Update) {
-    return `UPDATE (${renderEdgeQL(expr.__expr__, ctx)}) SET ${shapeToEdgeQL(
-      expr.__shape__,
-      ctx
-    )}`;
+    return (
+      withBlock +
+      `UPDATE ${renderEdgeQL(expr.__scope__, ctx, false)}${
+        expr.__modifiers__.filter
+          ? `\nFILTER ${renderEdgeQL(expr.__modifiers__.filter, ctx)}\n`
+          : " "
+      }SET ${shapeToEdgeQL(expr.__shape__, ctx)}`
+    );
   } else if (expr.__kind__ === ExpressionKind.Delete) {
     return `DELETE (${renderEdgeQL(expr.__expr__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Insert) {
@@ -896,7 +902,8 @@ function walkExprTree(
       case ExpressionKind.TuplePath:
         childExprs.push(...walkExprTree(expr.__parent__, parentScope, ctx));
         break;
-      case ExpressionKind.Select: {
+      case ExpressionKind.Select:
+      case ExpressionKind.Update: {
         const modifiers = expr.__modifiers__;
         if (modifiers.filter) {
           childExprs.push(...walkExprTree(modifiers.filter, expr, ctx));
@@ -913,36 +920,36 @@ function walkExprTree(
           childExprs.push(...walkExprTree(modifiers.limit!, expr, ctx));
         }
 
-        if (isObjectType(expr.__element__)) {
-          const walkShape = (shape: object) => {
-            for (let param of Object.values(shape)) {
-              if (param.__kind__ === ExpressionKind.PolyShapeElement) {
-                param = param.__shapeElement__;
-              }
-              if (typeof param === "object") {
-                if (!!(param as any).__kind__) {
-                  childExprs.push(...walkExprTree(param as any, expr, ctx));
-                } else {
-                  walkShape(param);
+        if (expr.__kind__ === ExpressionKind.Select) {
+          if (isObjectType(expr.__element__)) {
+            const walkShape = (shape: object) => {
+              for (let param of Object.values(shape)) {
+                if (param.__kind__ === ExpressionKind.PolyShapeElement) {
+                  param = param.__shapeElement__;
+                }
+                if (typeof param === "object") {
+                  if (!!(param as any).__kind__) {
+                    childExprs.push(...walkExprTree(param as any, expr, ctx));
+                  } else {
+                    walkShape(param);
+                  }
                 }
               }
+            };
+            walkShape(expr.__element__.__shape__ ?? {});
+          }
+        } else {
+          // Update
+          const shape: any = expr.__shape__ ?? {};
+
+          for (const _element of Object.values(shape)) {
+            let element: any = _element;
+            if (!element.__element__) {
+              if (element["+="]) element = element["+="];
+              else if (element["-="]) element = element["-="];
             }
-          };
-          walkShape(expr.__element__.__shape__ ?? {});
-        }
-
-        childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
-        break;
-      }
-
-      case ExpressionKind.Update: {
-        const shape: any = expr.__shape__ ?? {};
-
-        for (const _element of Object.values(shape)) {
-          let element: any = _element;
-          if (element["+="]) element = element["+="];
-          if (element["-="]) element = element["-="];
-          childExprs.push(...walkExprTree(element as any, expr, ctx));
+            childExprs.push(...walkExprTree(element as any, expr, ctx));
+          }
         }
 
         childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
