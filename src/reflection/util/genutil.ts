@@ -21,62 +21,63 @@ export function quote(val: string): string {
   return JSON.stringify(val.toString());
 }
 
-export function toPrimitiveJsType(
-  s: introspect.ScalarType,
-  code: CodeBuilder
-): string {
-  switch (s.name) {
-    case "std::int16":
-    case "std::int32":
-    case "std::int64":
-    case "std::float32":
-    case "std::float64":
-      return "number";
+export const scalarToLiteralMapping: {
+  [key: string]: {
+    type: string;
+    literalKind?: "typeof" | "instanceof";
+    extraTypes?: string[];
+  };
+} = {
+  "std::int16": {type: "number"},
+  "std::int32": {type: "number"},
+  "std::int64": {type: "number"},
+  "std::float32": {type: "number"},
+  "std::float64": {type: "number"},
+  "std::jsnumber": {
+    type: "number",
+    literalKind: "typeof",
+    extraTypes: ["string"],
+  },
+  "std::str": {type: "string", literalKind: "typeof"},
+  "std::uuid": {type: "string"},
+  "std::json": {type: "string", extraTypes: ["any"]},
+  "std::bool": {type: "boolean", literalKind: "typeof"},
+  "std::bigint": {type: "bigint", literalKind: "typeof"},
+  "std::bytes": {type: "Buffer", literalKind: "instanceof"},
+  "std::datetime": {type: "Date", literalKind: "instanceof"},
+  "std::duration": {type: "edgedb.Duration", literalKind: "instanceof"},
+  "cal::local_datetime": {
+    type: "edgedb.LocalDateTime",
+    literalKind: "instanceof",
+  },
+  "cal::local_date": {type: "edgedb.LocalDate", literalKind: "instanceof"},
+  "cal::local_time": {type: "edgedb.LocalTime", literalKind: "instanceof"},
+  "cal::relative_duration": {
+    type: "edgedb.RelativeDuration",
+    literalKind: "instanceof",
+  },
+  "cfg::memory": {type: "edgedb.ConfigMemory", literalKind: "instanceof"},
+};
 
-    case "std::str":
-    case "std::uuid":
-    case "std::json":
-      return "string";
-
-    case "std::bool":
-      return "boolean";
-
-    case "std::bigint":
-      return "bigint";
-
-    case "std::datetime":
-      return "Date";
-
-    case "std::duration":
-      return "_.edgedb.Duration";
-    case "cal::local_datetime":
-      return "_.edgedb.LocalDateTime";
-    case "cal::local_date":
-      return "_.edgedb.LocalDate";
-    case "cal::local_time":
-      return "_.edgedb.LocalTime";
-    case "cal::relative_duration":
-      return "_.edgedb.RelativeDuration";
-    case "cfg::memory":
-      return "_.edgedb.ConfigMemory";
-
-    case "std::bytes":
-      return "Buffer";
-
-    case "std::decimal":
-    // TODO
-
-    default:
-      return "unknown";
+export const literalToScalarMapping: {
+  [key: string]: {type: string; literalKind: "typeof" | "instanceof"};
+} = {};
+for (const [scalarType, {type, literalKind}] of Object.entries(
+  scalarToLiteralMapping
+)) {
+  if (literalKind) {
+    if (literalToScalarMapping[type]) {
+      throw new Error(
+        `literal type '${type}' cannot be mapped to multiple scalar types`
+      );
+    }
+    literalToScalarMapping[type] = {type: scalarType, literalKind};
   }
 }
 
 export function toTSScalarType(
   type: introspect.PrimitiveType,
-  types: introspect.Types,
-  currentModule: string,
-  code: CodeBuilder,
-  level: number = 0
+  types: introspect.Types
 ): CodeFragment[] {
   switch (type.kind) {
     case "scalar": {
@@ -87,23 +88,18 @@ export function toTSScalarType(
       if (type.material_id) {
         return toTSScalarType(
           types.get(type.material_id) as introspect.ScalarType,
-          types,
-          currentModule,
-          code,
-          level + 1
+          types
         );
       }
 
-      return [toPrimitiveJsType(type, code)];
+      const literalType = scalarToLiteralMapping[type.name]?.type ?? "unknown";
+      return [(literalType.startsWith("edgedb.") ? "_." : "") + literalType];
     }
 
     case "array": {
       const tn = toTSScalarType(
         types.get(type.array_element_id) as introspect.PrimitiveType,
-        types,
-        currentModule,
-        code,
-        level + 1
+        types
       );
       return frag`${tn}[]`;
     }
@@ -122,10 +118,7 @@ export function toTSScalarType(
         for (const {name, target_id} of type.tuple_elements) {
           const tn = toTSScalarType(
             types.get(target_id) as introspect.PrimitiveType,
-            types,
-            currentModule,
-            code,
-            level + 1
+            types
           );
           res.push(frag`${name}: ${tn}`);
         }
@@ -136,10 +129,7 @@ export function toTSScalarType(
         for (const {target_id} of type.tuple_elements) {
           const tn = toTSScalarType(
             types.get(target_id) as introspect.PrimitiveType,
-            types,
-            currentModule,
-            code,
-            level + 1
+            types
           );
           res.push(tn);
         }

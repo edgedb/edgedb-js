@@ -8,6 +8,7 @@ export enum Cardinality {
 
 export enum TypeKind {
   scalar = "scalar",
+  castonlyscalar = "castonlyscalar",
   enum = "enum",
   object = "object",
   namedtuple = "namedtuple",

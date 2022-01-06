@@ -5,7 +5,9 @@ import {
   $expr_TuplePath,
   ArrayType,
   BaseType,
+  Cardinality,
   cardinalityUtil,
+  CastableNonArrayType,
   ExpressionKind,
   ExpressionRoot,
   getPrimitiveBaseType,
@@ -21,33 +23,40 @@ import {
 import {$expressionify} from "./path";
 import {getCardsFromExprs} from "./set";
 import _std from "@generated/modules/std";
-import {literal} from "./literal";
+import {
+  literalToScalarType,
+  literalToTypeSet,
+  mapLiteralToTypeSet,
+  orScalarLiteral,
+  scalarLiterals,
+} from "@generated/castMaps";
 
 const indexSliceRegx = /^(-?\d+)(?:(:)(-?\d+)?)?|:(-?\d+)$/;
 
-let sliceTupleType: TupleType | null = null;
-
-const arrayProxyHandlers: ProxyHandler<ExpressionRoot> = {
+const arrayLikeProxyHandlers: ProxyHandler<ExpressionRoot> = {
   get(target: ExpressionRoot, prop: string | symbol, proxy: any) {
     const match = typeof prop === "string" ? prop.match(indexSliceRegx) : null;
     if (match) {
       const start = match[1];
       const end = match[3] ?? match[4];
+      const isIndex = start && !match[2];
       return $expressionify({
         __kind__: ExpressionKind.Operator,
-        __element__: (target.__element__ as ArrayType).__element__,
+        __element__:
+          target.__element__.__kind__ === TypeKind.array && isIndex
+            ? (target.__element__ as ArrayType).__element__
+            : target.__element__,
         __cardinality__: target.__cardinality__,
-        __name__: "std::[]",
+        __name__: "[]",
         __opkind__: "Infix",
         __args__: [
           proxy,
-          start && !match[2]
-            ? _std.int64(parseInt(start, 10))
-            : literal(
-                sliceTupleType ??
-                  (sliceTupleType = tuple([_std.int64, _std.int64])),
-                [start, end] as any
-              ),
+          isIndex
+            ? literalToTypeSet(Number(start))
+            : [
+                start && literalToTypeSet(Number(start)),
+                end && literalToTypeSet(Number(end)),
+              ],
         ],
       }) as any;
     }
@@ -55,32 +64,89 @@ const arrayProxyHandlers: ProxyHandler<ExpressionRoot> = {
   },
 };
 
-export function _$arrayIndexify(expr: ExpressionRoot) {
-  if (expr.__element__.__kind__ !== TypeKind.array) {
+function arrayLikeIndex(this: ExpressionRoot, index: any) {
+  const indexTypeSet = literalToTypeSet(index);
+  return $expressionify({
+    __kind__: ExpressionKind.Operator,
+    __element__:
+      this.__element__.__kind__ === TypeKind.array
+        ? (this.__element__ as ArrayType).__element__
+        : this.__element__,
+    __cardinality__: cardinalityUtil.multiplyCardinalities(
+      this.__cardinality__,
+      indexTypeSet.__cardinality__
+    ),
+    __name__: "[]",
+    __opkind__: "Infix",
+    __args__: [this, indexTypeSet],
+  }) as any;
+}
+
+function arrayLikeSlice(this: ExpressionRoot, start: any, end: any) {
+  const startTypeSet = start && literalToTypeSet(start);
+  const endTypeSet = end && literalToTypeSet(end);
+  return $expressionify({
+    __kind__: ExpressionKind.Operator,
+    __element__: this.__element__,
+    __cardinality__: cardinalityUtil.multiplyCardinalities(
+      cardinalityUtil.multiplyCardinalities(
+        this.__cardinality__,
+        startTypeSet?.__cardinality__ ?? Cardinality.One
+      ),
+      endTypeSet?.__cardinality__ ?? Cardinality.One
+    ),
+    __name__: "[]",
+    __opkind__: "Infix",
+    __args__: [this, [startTypeSet, endTypeSet]],
+  }) as any;
+}
+
+export function _$arrayLikeIndexify(_expr: ExpressionRoot) {
+  if (
+    _expr.__element__.__kind__ === TypeKind.array ||
+    (_expr.__element__.__kind__ === TypeKind.scalar &&
+      (_expr.__element__.__name__ === "std::str" ||
+        _expr.__element__.__name__ === "std::bytes"))
+  ) {
+    const expr = new Proxy(_expr, arrayLikeProxyHandlers) as any;
+
+    expr.index = arrayLikeIndex.bind(expr);
+    expr.slice = arrayLikeSlice.bind(expr);
+
     return expr;
   }
 
-  return new Proxy(expr, arrayProxyHandlers);
+  return _expr;
 }
 
 // ARRAY
-export function array<Element extends NonArrayType>(
+export function array<Element extends CastableNonArrayType>(
   element: Element
 ): ArrayType<Element>;
 export function array<
-  Expr extends TypeSet<NonArrayType>,
-  Exprs extends TypeSet<getPrimitiveBaseType<Expr["__element__"]>>[]
+  Expr extends TypeSet<NonArrayType> | scalarLiterals,
+  Exprs extends orScalarLiteral<
+    TypeSet<
+      Expr extends TypeSet
+        ? getPrimitiveBaseType<Expr["__element__"]>
+        : getPrimitiveBaseType<literalToScalarType<Expr>>
+    >
+  >[]
 >(
   arg: [Expr, ...Exprs]
 ): $expr_Array<
-  ArrayType<getPrimitiveBaseType<Expr["__element__"]>>,
+  ArrayType<
+    Expr extends TypeSet
+      ? getPrimitiveBaseType<Expr["__element__"]>
+      : getPrimitiveBaseType<literalToScalarType<Expr>>
+  >,
   cardinalityUtil.multiplyCardinalitiesVariadic<
-    getCardsFromExprs<[Expr, ...Exprs]>
+    getCardsFromExprs<mapLiteralToTypeSet<[Expr, ...Exprs]>>
   >
 >;
 export function array(arg: any) {
   if (Array.isArray(arg)) {
-    const items = arg as TypeSet[];
+    const items = arg.map(a => literalToTypeSet(a));
     return $expressionify({
       __kind__: ExpressionKind.Array,
       __cardinality__: cardinalityUtil.multiplyCardinalitiesVariadic(
@@ -107,24 +173,17 @@ export function array(arg: any) {
 
 // TUPLE
 
-const tuplePathsCache = new WeakMap<
-  ExpressionRoot,
-  {[key: string]: $expr_TuplePath}
->();
-
 const tupleProxyHandlers: ProxyHandler<ExpressionRoot> = {
   get(target: ExpressionRoot, prop: string | symbol, proxy: any) {
-    const tuplePaths = tuplePathsCache.get(target)!;
     const type = target.__element__;
-    const item =
+    const items =
       type.__kind__ === TypeKind.tuple
-        ? (type as TupleType).__items__[prop as any]
+        ? (type as TupleType).__items__
         : type.__kind__ === TypeKind.namedtuple
-        ? (type as NamedTupleType).__shape__[prop as any]
+        ? (type as NamedTupleType).__shape__
         : null;
-    return item
-      ? tuplePaths[prop as any] ??
-          (tuplePaths[prop as any] = $expr_TuplePath(proxy, item, prop as any))
+    return items?.hasOwnProperty(prop)
+      ? $expr_TuplePath(proxy, (items as any)[prop], prop as any)
       : (target as any)[prop];
   },
 };
@@ -137,7 +196,6 @@ export function _$tuplePathify(expr: ExpressionRoot) {
     return expr;
   }
 
-  tuplePathsCache.set(expr, {});
   return new Proxy(expr, tupleProxyHandlers);
 }
 
@@ -163,86 +221,85 @@ function makeTupleType(name: string, items: BaseType[]) {
   } as any;
 }
 
+const typeKinds = new Set(Object.values(TypeKind));
+
 export function tuple<Items extends typeutil.tupleOf<BaseType>>(
   items: Items
 ): TupleType<Items>;
 export function tuple<
-  Item extends TypeSet,
-  Items extends typeutil.tupleOf<Item>
->(items: Items): $expr_Tuple<Items>;
+  Item extends TypeSet | scalarLiterals,
+  Items extends typeutil.tupleOf<TypeSet | scalarLiterals>
+>(
+  items: Items
+): $expr_Tuple<
+  Items extends typeutil.tupleOf<any> ? mapLiteralToTypeSet<Items> : never
+>;
 export function tuple<Shape extends NamedTupleShape>(
   shape: Shape
 ): NamedTupleType<Shape>;
-export function tuple<Shape extends NamedTupleLiteralShape>(
+export function tuple<Shape extends {[k: string]: TypeSet | scalarLiterals}>(
   shape: Shape
-): $expr_NamedTuple<Shape>;
+): $expr_NamedTuple<mapLiteralToTypeSet<Shape>>;
 export function tuple(input: any) {
   if (Array.isArray(input)) {
     // is tuple
-    if (input.every(item => !!item.__element__)) {
-      const items = input as TypeSet[];
-      const name = `tuple<${items
-        .map(item => item.__element__.__name__)
+    if (input.every(item => typeKinds.has(item.__kind__))) {
+      const typeItems = input as BaseType[];
+      const typeName = `tuple<${typeItems
+        .map(item => item.__name__)
         .join(", ")}>`;
-      return $expressionify({
-        __kind__: ExpressionKind.Tuple,
-        __element__: makeTupleType(
-          name,
-          items.map(item => item.__element__)
-        ),
-        __cardinality__: cardinalityUtil.multiplyCardinalitiesVariadic(
-          items.map(i => i.__cardinality__) as any
-        ),
-        __items__: items,
-      }) as any;
-    }
-    if (input.every(item => Object.values(TypeKind).includes(item.__kind__))) {
-      const items = input as BaseType[];
-      const name = `tuple<${items.map(item => item.__name__).join(", ")}>`;
-      return makeTupleType(name, items);
+      return makeTupleType(typeName, typeItems);
     }
 
-    throw new Error("Invalid tuple input.");
+    const items = input.map(item => literalToTypeSet(item));
+    const name = `tuple<${items
+      .map(item => item.__element__.__name__)
+      .join(", ")}>`;
+    return $expressionify({
+      __kind__: ExpressionKind.Tuple,
+      __element__: makeTupleType(
+        name,
+        items.map(item => item.__element__)
+      ),
+      __cardinality__: cardinalityUtil.multiplyCardinalitiesVariadic(
+        items.map(i => i.__cardinality__) as any
+      ),
+      __items__: items,
+    }) as any;
   } else {
     // is named tuple
-    if (Object.values(input).every((el: any) => !!el.__element__)) {
-      const exprShape = input as NamedTupleLiteralShape;
-      const name = `tuple<${Object.entries(exprShape)
-        .map(([key, val]) => `${key}: ${val.__element__.__name__}`)
-        .join(", ")}>`;
-      const typeShape: any = {};
-      for (const key of Object.keys(exprShape)) {
-        typeShape[key] = exprShape[key].__element__;
-      }
-      return $expressionify({
-        __kind__: ExpressionKind.NamedTuple,
-        __element__: {
-          __kind__: TypeKind.namedtuple,
-          __name__: name,
-          __shape__: typeShape,
-        } as any,
-        __cardinality__: cardinalityUtil.multiplyCardinalitiesVariadic(
-          Object.values(exprShape).map(val => val.__cardinality__) as any
-        ),
-        __shape__: exprShape,
-      }) as any;
-    }
-    if (
-      Object.values(input).every((el: any) =>
-        Object.values(TypeKind).includes(el.__kind__)
-      )
-    ) {
-      const name = `tuple<${Object.entries(input)
+    if (Object.values(input).every((el: any) => typeKinds.has(el.__kind__))) {
+      const typeName = `tuple<${Object.entries(input)
         .map(([key, val]: [string, any]) => `${key}: ${val.__name__}`)
         .join(", ")}>`;
       return {
         __kind__: TypeKind.namedtuple,
-        __name__: name,
+        __name__: typeName,
         __shape__: input,
       } as any;
     }
 
-    throw new Error("Invalid named tuple input.");
+    const exprShape: NamedTupleLiteralShape = {};
+    const typeShape: NamedTupleShape = {};
+    for (const [key, val] of Object.entries(input)) {
+      exprShape[key] = literalToTypeSet(val);
+      typeShape[key] = exprShape[key].__element__;
+    }
+    const name = `tuple<${Object.entries(exprShape)
+      .map(([key, val]) => `${key}: ${val.__element__.__name__}`)
+      .join(", ")}>`;
+    return $expressionify({
+      __kind__: ExpressionKind.NamedTuple,
+      __element__: {
+        __kind__: TypeKind.namedtuple,
+        __name__: name,
+        __shape__: typeShape,
+      } as any,
+      __cardinality__: cardinalityUtil.multiplyCardinalitiesVariadic(
+        Object.values(exprShape).map(val => val.__cardinality__) as any
+      ),
+      __shape__: exprShape,
+    }) as any;
   }
 }
 

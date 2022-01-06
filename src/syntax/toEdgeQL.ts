@@ -105,13 +105,14 @@ function shapeToEdgeQL(
     let operator = ":=";
     let polyType: SomeExpression | null = null;
 
-    if (!!val["+="]) {
-      operator = "+=";
-      val = val["+="];
-    }
-    if (!!val["-="]) {
-      operator = "-=";
-      val = val["-="];
+    if (typeof val === "object" && !val.__element__) {
+      if (!!val["+="]) {
+        operator = "+=";
+        val = val["+="];
+      } else if (!!val["-="]) {
+        operator = "-=";
+        val = val["-="];
+      }
     }
     if (val.__kind__ === ExpressionKind.PolyShapeElement) {
       polyType = val.__polyType__;
@@ -560,9 +561,9 @@ function renderEdgeQL(
       );
     }
   } else if (expr.__kind__ === ExpressionKind.Array) {
-    return `[\n${expr.__items__
-      .map(item => `  ` + renderEdgeQL(item, ctx))
-      .join(",\n")}\n]`;
+    return `[${expr.__items__
+      .map(item => renderEdgeQL(item, ctx))
+      .join(", ")}]`;
   } else if (expr.__kind__ === ExpressionKind.Tuple) {
     return `(\n${expr.__items__
       .map(item => `  ` + renderEdgeQL(item, ctx))
@@ -699,26 +700,21 @@ function renderEdgeQL(
     }
     return `${expr.__name__}(${args.join(", ")})`;
   } else if (expr.__kind__ === ExpressionKind.Operator) {
-    const operator = expr.__name__.split("::")[1];
+    const operator = expr.__name__;
     const args = expr.__args__;
     switch (expr.__opkind__) {
       case OperatorKind.Infix:
         if (operator === "[]") {
           let index = "";
-          if ((args[1] as SomeExpression).__kind__ === ExpressionKind.Tuple) {
-            const [start, end] = (args[1] as $expr_Tuple).__items__;
-            if (start!.__cardinality__ !== Cardinality.Empty) {
-              index += renderEdgeQL(start!, ctx);
+          if (Array.isArray(args[1])) {
+            const [start, end] = args[1];
+            if (start) {
+              index += renderEdgeQL(start, ctx);
             }
             index += ":";
-            if (end!.__cardinality__ !== Cardinality.Empty) {
-              index += renderEdgeQL(end!, ctx);
+            if (end) {
+              index += renderEdgeQL(end, ctx);
             }
-          } else if (
-            (args[1] as SomeExpression).__kind__ === ExpressionKind.Literal &&
-            Array.isArray((args[1] as $expr_Literal).__value__)
-          ) {
-            index = (args[1] as $expr_Literal).__value__.join(":");
           } else {
             index = renderEdgeQL(args[1], ctx);
           }
@@ -733,7 +729,7 @@ function renderEdgeQL(
       case OperatorKind.Prefix:
         return `(${operator} ${renderEdgeQL(args[0], ctx)})`;
       case OperatorKind.Ternary:
-        if (operator === "IF") {
+        if (operator === "if_else") {
           return `(${renderEdgeQL(args[0], ctx)} IF ${renderEdgeQL(
             args[1],
             ctx
@@ -983,7 +979,13 @@ function walkExprTree(
       case ExpressionKind.Operator:
       case ExpressionKind.Function:
         for (const subExpr of expr.__args__) {
-          childExprs.push(...walkExprTree(subExpr!, parentScope, ctx));
+          if (Array.isArray(subExpr)) {
+            for (const arg of subExpr) {
+              if (arg) childExprs.push(...walkExprTree(arg, parentScope, ctx));
+            }
+          } else {
+            childExprs.push(...walkExprTree(subExpr!, parentScope, ctx));
+          }
         }
         if (expr.__kind__ === ExpressionKind.Function) {
           for (const subExpr of Object.values(expr.__namedargs__)) {
@@ -1026,16 +1028,20 @@ function literalToEdgeQL(type: BaseType, val: any): string {
   let skipCast = false;
   let stringRep;
   if (typeof val === "string") {
-    if (type.__name__ === "std::str") {
+    if (type.__name__ === "std::jsnumber") {
       skipCast = true;
+      stringRep = val;
+    } else if (type.__name__ === "std::json") {
+      skipCast = true;
+      stringRep = `to_json(${JSON.stringify(val)})`;
+    } else {
+      if (type.__name__ === "std::str") {
+        skipCast = true;
+      }
+      stringRep = JSON.stringify(val);
     }
-    stringRep = JSON.stringify(val);
   } else if (typeof val === "number") {
-    const isInt = Number.isInteger(val);
-    if (
-      (type.__name__ === "std::int64" && isInt) ||
-      (type.__name__ === "std::float64" && !isInt)
-    ) {
+    if (type.__name__ === "std::jsnumber") {
       skipCast = true;
     }
     stringRep = `${val.toString()}`;
@@ -1045,6 +1051,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
   } else if (typeof val === "bigint") {
     stringRep = `${val.toString()}n`;
   } else if (Array.isArray(val)) {
+    skipCast = true;
     if (isArrayType(type)) {
       stringRep = `[${val
         .map(el => literalToEdgeQL(type.__element__ as any, el))
@@ -1075,6 +1082,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
         ([key, value]) =>
           `${key} := ${literalToEdgeQL(type.__shape__[key], value)}`
       )} )`;
+      skipCast = true;
     } else {
       throw new Error(`Invalid value for type ${type.__name__}`);
     }

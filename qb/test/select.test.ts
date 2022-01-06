@@ -5,8 +5,6 @@ import * as tc from "conditional-type-checks";
 import e, {$infer} from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
-import {ObjectTypeExpression} from "edgedb/dist/reflection";
-
 let client: Client;
 let data: TestData;
 
@@ -191,7 +189,7 @@ test("polymorphic with nested modifiers", () => {
       nemesis: hero => ({
         name: true,
         order: hero.name,
-        filter: e.eq(hero.name, hero.name),
+        filter: e.op(hero.name, "=", hero.name),
         limit: 1,
         offset: 10,
       }),
@@ -208,8 +206,8 @@ test("computables in polymorphics", () => {
       secret_identity: true,
     }),
     ...e.is(e.Villain, {
-      nemesis: {id: true, computable: e.int64(1234)},
-      computable: e.int64(1234),
+      nemesis: {id: true, computable: e.jsnumber(1234)},
+      computable: e.jsnumber(1234),
     }),
   }));
 
@@ -233,22 +231,25 @@ test("shape type name", () => {
 });
 
 test("limit inference", () => {
-  const r1 = e.select(e.Hero, () => ({name: true, limit: e.int64(1)}));
+  const r1 = e.select(e.Hero, () => ({name: true, limit: e.jsnumber(1)}));
   type c1 = typeof r1["__cardinality__"];
   tc.assert<tc.IsExact<c1, $.Cardinality.AtMostOne>>(true);
   expect(r1.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
-  const r2 = e.select(e.Hero, () => ({name: true, limit: e.int64(0)}));
+  const r2 = e.select(e.Hero, () => ({name: true, limit: e.jsnumber(0)}));
   type c2 = typeof r2["__cardinality__"];
   tc.assert<tc.IsExact<c2, $.Cardinality.Empty>>(true);
   expect(r2.__cardinality__).toEqual($.Cardinality.Empty);
 
-  const r3 = e.select(e.Hero, () => ({name: true, limit: e.int64(2)}));
+  const r3 = e.select(e.Hero, () => ({name: true, limit: e.jsnumber(2)}));
   type c3 = typeof r3["__cardinality__"];
   tc.assert<tc.IsExact<c3, $.Cardinality.Many>>(true);
   expect(r3.__cardinality__).toEqual($.Cardinality.Many);
 
-  const r4 = e.select(e.Hero, () => ({name: true, limit: e.set(e.int64(1))}));
+  const r4 = e.select(e.Hero, () => ({
+    name: true,
+    limit: e.set(e.jsnumber(1)),
+  }));
   type c4 = typeof r4["__cardinality__"];
   tc.assert<tc.IsExact<c4, $.Cardinality.AtMostOne>>(true);
   expect(r4.__cardinality__).toEqual($.Cardinality.AtMostOne);
@@ -276,19 +277,21 @@ test("limit literal inference", () => {
 test("offset", () => {
   const q = e.select(e.Hero, () => ({name: true}));
   const r1 = e.select(q, () => ({offset: 5}));
-  expect(r1.__modifiers__.offset?.__element__.__name__).toEqual("std::int64");
+  expect(r1.__modifiers__.offset?.__element__.__name__).toEqual(
+    "std::jsnumber"
+  );
 });
 
 test("infer cardinality - scalar filters", () => {
   const q = e.select(e.Hero);
-  const q2 = e.select(q, hero => ({filter: e.eq(hero.name, e.str("asdf"))}));
+  const q2 = e.select(q, hero => ({filter: e.op(hero.name, "=", "asdf")}));
   tc.assert<tc.IsExact<typeof q2["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
   );
   expect(q2.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
   const u3 = e.uuid("asdf");
-  const q3 = e.select(q, hero => ({filter: e.eq(hero.id, u3)}));
+  const q3 = e.select(q, hero => ({filter: e.op(hero.id, "=", u3)}));
   tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
   );
@@ -301,7 +304,7 @@ test("infer cardinality - scalar filters", () => {
   expect(q4.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
   const q5 = e.select(q, hero => ({
-    filter: e.eq(hero.secret_identity, e.str("asdf")),
+    filter: e.op(hero.secret_identity, "=", "asdf"),
   }));
   tc.assert<tc.IsExact<typeof q5["__cardinality__"], $.Cardinality.Many>>(
     true
@@ -309,7 +312,7 @@ test("infer cardinality - scalar filters", () => {
   expect(q5.__cardinality__).toEqual($.Cardinality.Many);
 
   const q6 = e.select(e.Villain.nemesis, nemesis => ({
-    filter: e.eq(nemesis.name, e.str("asdf")),
+    filter: e.op(nemesis.name, "=", "asdf"),
   }));
   tc.assert<tc.IsExact<typeof q6["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
@@ -318,7 +321,7 @@ test("infer cardinality - scalar filters", () => {
 
   const strs = e.set(e.str("asdf"), e.str("qwer"));
   const q7 = e.select(e.Villain, villain => ({
-    filter: e.eq(villain.name, strs),
+    filter: e.op(villain.name, "=", strs),
   }));
   tc.assert<tc.IsExact<typeof q7["__cardinality__"], $.Cardinality.Many>>(
     true
@@ -327,7 +330,7 @@ test("infer cardinality - scalar filters", () => {
 
   const expr8 = e.select(e.Villain, () => ({id: true, name: true}));
   const q8 = e.select(expr8, villain => ({
-    filter: e.eq(villain.name, e.str("asdf")),
+    filter: e.op(villain.name, "=", "asdf"),
   }));
   tc.assert<tc.IsExact<typeof q8["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
@@ -336,7 +339,7 @@ test("infer cardinality - scalar filters", () => {
 
   const expr9 = e.select(e.Villain, () => ({id: true, name: true}));
   const q9 = e.select(expr9, villain => ({
-    filter: e.eq(villain.name, e.str("asdf")),
+    filter: e.op(villain.name, "=", "asdf"),
   }));
   tc.assert<tc.IsExact<typeof q9["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
@@ -344,7 +347,7 @@ test("infer cardinality - scalar filters", () => {
   expect(q9.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
   const q10 = e.select(e.Villain, villain => ({
-    filter: e.eq(villain.name, e.set(e.str)),
+    filter: e.op(villain.name, "=", e.set(e.str)),
   }));
   tc.assert<tc.IsExact<typeof q10["__cardinality__"], $.Cardinality.Empty>>(
     true
@@ -360,7 +363,7 @@ test("infer cardinality - object type filters", () => {
   const oneHero = e.select(e.Hero, () => ({limit: 1}));
 
   const singleHero = e.select(e.Hero, hero => ({
-    filter: e.eq(hero, oneHero),
+    filter: e.op(hero, "=", oneHero),
   }));
 
   const c1 = singleHero.__cardinality__;
@@ -369,7 +372,7 @@ test("infer cardinality - object type filters", () => {
 
   const oneProfile = e.select(e.Hero, () => ({limit: 1}));
   const singleMovie = e.select(e.Movie, movie => ({
-    filter: e.eq(movie.profile, oneProfile),
+    filter: e.op(movie.profile, "=", oneProfile),
   }));
 
   const c2 = singleMovie.__cardinality__;
@@ -379,7 +382,7 @@ test("infer cardinality - object type filters", () => {
   // not a singleton
 
   const c3 = e.select(e.Villain, villain => ({
-    filter: e.eq(villain.nemesis, oneHero),
+    filter: e.op(villain.nemesis, "=", oneHero),
   })).__cardinality__;
   tc.assert<tc.IsExact<typeof c3, $.Cardinality.Many>>(true);
   expect(c3).toEqual($.Cardinality.Many);
@@ -387,7 +390,7 @@ test("infer cardinality - object type filters", () => {
   // not a singleton
   // technically a bug, but for now this behavior is expected
   const c4 = e.select(e.Villain, villain => ({
-    filter: e.eq(villain, villain),
+    filter: e.op(villain, "=", villain),
   })).__cardinality__;
   tc.assert<tc.IsExact<typeof c4, $.Cardinality.AtMostOne>>(true);
   expect(c4).toEqual($.Cardinality.AtMostOne);
@@ -403,11 +406,7 @@ test("non 'e.eq' filters", () => {
   expect(q1.__cardinality__).toEqual($.Cardinality.Many);
 
   const q2 = e.select(e.Hero, hero => ({
-    filter: e.if_else(
-      e.bool(true),
-      e.eq(hero.name, e.str("Thanos")),
-      e.bool(false)
-    ),
+    filter: e.op(true, "if", e.op(hero.name, "=", "Thanos"), "else", false),
   }));
   tc.assert<tc.IsExact<typeof q2["__cardinality__"], $.Cardinality.Many>>(
     true
@@ -424,7 +423,7 @@ test("fetch heroes", async () => {
 test("filter by id", async () => {
   const result = await e
     .select(e.Hero, hero => ({
-      filter: e.eq(hero.id, e.uuid(data.spidey.id)),
+      filter: e.op(hero.id, "=", e.uuid(data.spidey.id)),
     }))
     .run(client);
 
@@ -468,7 +467,7 @@ test("order by self", async () => {
 test("shapes", async () => {
   const query = e.select(
     e
-      .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Iron Man"))}))
+      .select(e.Hero, hero => ({filter: e.op(hero.name, "=", "Iron Man")}))
       .$assertSingle(),
     () => ({
       id: true,
@@ -490,7 +489,7 @@ test("computables", async () => {
   }));
   const query = e.select(e.Person.$is(e.Hero), hero => ({
     id: true,
-    computable: e.int64(35),
+    computable: e.jsnumber(35),
     all_heroes,
     order: hero.name,
     limit: 1,
@@ -564,7 +563,7 @@ test("backlinks", async () => {
 test("overrides with implicit casting", () => {
   e.select(e.Hero, () => ({
     id: e.uuid("asdf"),
-    number_of_movies: e.int64(1234),
+    number_of_movies: e.jsnumber(1234),
     name: e.str("adsf"),
   }));
 });
@@ -606,7 +605,7 @@ test("link properties in expressions", async () => {
       char_name: char["@character_name"],
       person_name: char.name,
 
-      filter: e.ilike(char["@character_name"], e.str("a%")),
+      filter: e.op(char["@character_name"], "ilike", "a%"),
     }),
   }));
 
@@ -639,7 +638,7 @@ test("polymorphic link properties in expressions", async () => {
         char_name: char["@character_name"],
         person_name: char.name,
 
-        filter: e.ilike(char["@character_name"], e.str("a%")),
+        filter: e.op(char["@character_name"], "ilike", "a%"),
       }),
     }),
   }));
@@ -680,7 +679,7 @@ test("filters in subqueries", async () => {
       id: true,
       name: true,
     },
-    filter: e.eq(hero.name, e.str(data.spidey.name)),
+    filter: e.op(hero.name, "=", data.spidey.name),
   }));
 
   const res1 = await q1.run(client);
@@ -693,9 +692,9 @@ test("filters in subqueries", async () => {
     villains: v => ({
       id: true,
       name: true,
-      filter: e.ilike(v.name, e.str("%n%")),
+      filter: e.op(v.name, "ilike", "%n%"),
     }),
-    filter: e.eq(hero.name, e.str(data.spidey.name)),
+    filter: e.op(hero.name, "=", data.spidey.name),
   }));
 
   const res2 = await q2.run(client);
@@ -723,18 +722,18 @@ test("filters in subqueries", async () => {
     villains: v => ({
       id: true,
       name: true,
-      filter: e.eq(v.name, e.str("Thanos")),
+      filter: e.op(v.name, "=", "Thanos"),
     }),
     thanos: e.select(hero.villains, v => ({
       name: true,
-      filter: e.eq(v.name, e.str("Thanos")),
+      filter: e.op(v.name, "=", "Thanos"),
     })),
   }));
 
   const test = await e
     .select(e.Hero.villains, v => ({
       name: true,
-      filter: e.eq(v.name, e.str("Thanos")),
+      filter: e.op(v.name, "=", "Thanos"),
     }))
     .run(client);
 
@@ -870,7 +869,7 @@ test("polymorphic field in nested shape", async () => {
       order: char.name,
       ...e.is(e.Hero, {secret_identity: true}),
     }),
-    filter: e.eq(movie.title, e.str("The Avengers")),
+    filter: e.op(movie.title, "=", "The Avengers"),
   }));
 
   const result = await query.run(client);
@@ -906,7 +905,7 @@ test("polymorphic field in nested shape", async () => {
 
 test("correlated path select", async () => {
   const query = e.select(
-    e.concat(e.concat(e.Hero.name, e.str(" is ")), e.Hero.secret_identity)
+    e.op(e.op(e.Hero.name, "++", " is "), "++", e.Hero.secret_identity)
   );
 
   const correlatedQuery = e.with([e.Hero], query);
@@ -929,7 +928,7 @@ test("correlated path select", async () => {
 test("modifiers on scalar selects", async () => {
   // filter
   const q1 = e.select(e.Hero.name, el => ({
-    filter: e.ilike(el, e.str("%man%")),
+    filter: e.op(el, "ilike", "%man%"),
   }));
   const res1 = await q1.run(client);
   tc.assert<tc.IsExact<typeof res1, string[]>>(true);
@@ -937,11 +936,11 @@ test("modifiers on scalar selects", async () => {
 
   // order
   const unorderedSet = e.set(
-    e.int64(2),
-    e.int64(4),
-    e.int64(1),
-    e.int64(5),
-    e.int64(3)
+    e.jsnumber(2),
+    e.jsnumber(4),
+    e.jsnumber(1),
+    e.jsnumber(5),
+    e.jsnumber(3)
   );
 
   const q2 = e.select(unorderedSet, el => ({
@@ -973,7 +972,7 @@ test("nested matching scopes", async () => {
     name: h.name,
     otherHeros: e.select(e.Hero, h2 => ({
       name: true,
-      names: e.concat(h.name, h2.name),
+      names: e.op(h.name, "++", h2.name),
       order: h2.name,
     })),
     order: h.name,
@@ -997,6 +996,6 @@ test("nested matching scopes", async () => {
 test("non runnable expressions", async () => {
   expect(
     // @ts-expect-error
-    () => e.concat(e.str("Hello "), e.str("World")).run(client)
+    () => e.op("Hello ", "++", "World").run(client)
   ).toThrow(/It is not valid to call 'run\(\)' on this expression/);
 });

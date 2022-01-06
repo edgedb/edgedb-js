@@ -33,10 +33,10 @@ test("update", async () => {
 test("update assignable", () => {
   e.select(e.Bag)
     .update({
-      int32Field: e.int64(23),
-      int64Field: e.int16(12),
+      int32Field: e.jsnumber(23),
+      int64Field: e.jsnumber(12),
       // @ts-expect-error
-      bigintField: e.float32(324),
+      bigintField: e.jsnumber(324),
       // @ts-expect-error
       float32Field: e.bigint(BigInt(1234)),
     })
@@ -54,7 +54,7 @@ test("update assignable", () => {
 
 test("update link property", async () => {
   const theAvengers = e.select(e.Movie, movie => ({
-    filter: e.eq(movie.title, e.str("The Avengers")),
+    filter: e.op(movie.title, "=", "The Avengers"),
     limit: 1,
   }));
 
@@ -67,7 +67,7 @@ test("update link property", async () => {
   const q2 = theAvengers.update({
     characters: {
       "+=": e.select(e.Villain, villain => ({
-        filter: e.eq(villain.name, e.str(data.thanos.name)),
+        filter: e.op(villain.name, "=", data.thanos.name),
       })),
     },
   });
@@ -84,7 +84,7 @@ test("update link property", async () => {
       .update({
         characters: {
           "-=": e.select(e.Villain, villain => ({
-            filter: e.eq(villain.name, e.str(data.thanos.name)),
+            filter: e.op(villain.name, "=", data.thanos.name),
           })),
         },
       })
@@ -113,8 +113,9 @@ test("update link property", async () => {
     theAvengers
       .update({
         characters: e.select(e.Hero, hero => ({
-          filter: e.in(
+          filter: e.op(
             hero.id,
+            "in",
             e.set(e.uuid(data.cap.id), e.uuid(data.iron_man.id))
           ),
         })),

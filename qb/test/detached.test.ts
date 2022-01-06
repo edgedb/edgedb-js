@@ -22,7 +22,7 @@ test("detached", async () => {
       id: true,
       name: true,
       friends: e.select(e.detached(e.Hero)),
-      filter: e.eq(hero.name, e.str("Iron Man")),
+      filter: e.op(hero.name, "=", "Iron Man"),
     }))
     .run(client);
   type result = typeof result;

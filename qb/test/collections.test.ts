@@ -23,7 +23,7 @@ test("array literal", async () => {
   expect(strArrayType.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(strArrayType.__element__.__name__).toEqual("std::str");
 
-  const arg = e.array([e.str("asdf"), e.str("qwer")]);
+  const arg = e.array(["asdf", e.str("qwer")]);
   type arg = $.setToTsType<typeof arg>;
   tc.assert<tc.IsExact<arg, string[]>>(true);
   expect(arg.__kind__).toEqual($.ExpressionKind.Array);
@@ -49,10 +49,7 @@ test("array literal", async () => {
   expect(arg1.__element__.__name__).toEqual("std::str");
   expect(await e.select(arg1).run(client)).toEqual("qwer");
 
-  const multiArray = e.array([
-    e.str("asdf"),
-    e.set(e.str("qwer"), e.str("erty")),
-  ]);
+  const multiArray = e.array(["asdf", e.set(e.str("qwer"), e.str("erty"))]);
 
   type multiArray = $.setToTsType<typeof multiArray>;
   tc.assert<tc.IsExact<multiArray, [string[], ...string[][]]>>(true);
@@ -123,21 +120,21 @@ test("array literal", async () => {
 });
 
 test("tuple literal", async () => {
-  const tupleType = e.tuple([e.str, e.int64]);
+  const tupleType = e.tuple([e.str, e.jsnumber]);
   expect(tupleType.__kind__).toEqual($.TypeKind.tuple);
   expect(tupleType.__items__[0].__kind__).toEqual($.TypeKind.scalar);
   expect(tupleType.__items__[0].__name__).toEqual("std::str");
   expect(tupleType.__items__[1].__kind__).toEqual($.TypeKind.scalar);
-  expect(tupleType.__items__[1].__name__).toEqual("std::int64");
+  expect(tupleType.__items__[1].__name__).toEqual("std::jsnumber");
 
-  const myTuple = e.tuple([e.str("asdf"), e.int64(45)]);
+  const myTuple = e.tuple(["asdf", 45]);
   type myTuple = $.setToTsType<typeof myTuple>;
   tc.assert<tc.IsExact<myTuple, [string, number]>>(true);
   expect(myTuple.__element__.__kind__).toEqual($.TypeKind.tuple);
   expect(myTuple.__element__.__items__[0].__kind__).toEqual($.TypeKind.scalar);
   expect(myTuple.__element__.__items__[0].__name__).toEqual("std::str");
   expect(myTuple.__element__.__items__[1].__kind__).toEqual($.TypeKind.scalar);
-  expect(myTuple.__element__.__items__[1].__name__).toEqual("std::int64");
+  expect(myTuple.__element__.__items__[1].__name__).toEqual("std::jsnumber");
   const myTupleResult = await client.querySingle(e.select(myTuple).toEdgeQL());
   expect(myTupleResult).toEqual(["asdf", 45]);
   const myTuplePath0 = myTuple[0];
@@ -147,10 +144,7 @@ test("tuple literal", async () => {
   expect(await e.select(myTuplePath0).run(client)).toEqual("asdf");
   expect(await e.select(myTuplePath1).run(client)).toEqual(45);
 
-  const multiTuple = e.tuple([
-    e.str("asdf"),
-    e.set(e.str("qwer"), e.str("erty")),
-  ]);
+  const multiTuple = e.tuple(["asdf", e.set(e.str("qwer"), e.str("erty"))]);
   tc.assert<
     tc.IsExact<
       $infer<typeof multiTuple>,
@@ -197,8 +191,8 @@ test("tuple literal", async () => {
   expect(singleTupleResult).toEqual(["asdf"]);
 
   const nestedTuple = e.tuple([
-    e.str("a"),
-    e.tuple([e.str("b"), e.set(e.str("c"), e.str("d"))]),
+    "a",
+    e.tuple(["b", e.set(e.str("c"), e.str("d"))]),
   ]);
   type nestedTuple = $infer<typeof nestedTuple>;
   tc.assert<
@@ -262,17 +256,17 @@ test("tuple literal", async () => {
 test("namedTuple literal", async () => {
   const tupleType = e.tuple({
     string: e.str,
-    number: e.int64,
+    number: e.jsnumber,
   });
   expect(tupleType.__kind__).toEqual($.TypeKind.namedtuple);
   expect(tupleType.__shape__.string.__kind__).toEqual($.TypeKind.scalar);
   expect(tupleType.__shape__.string.__name__).toEqual("std::str");
   expect(tupleType.__shape__.number.__kind__).toEqual($.TypeKind.scalar);
-  expect(tupleType.__shape__.number.__name__).toEqual("std::int64");
+  expect(tupleType.__shape__.number.__name__).toEqual("std::jsnumber");
 
   const named = e.tuple({
-    string: e.str("asdf"),
-    number: e.int64(1234),
+    string: "asdf",
+    number: 1234,
   });
 
   type named = $.setToTsType<typeof named>;
@@ -291,7 +285,7 @@ test("namedTuple literal", async () => {
   expect(named.__element__.__shape__.number.__kind__).toEqual(
     $.TypeKind.scalar
   );
-  expect(named.__element__.__shape__.number.__name__).toEqual("std::int64");
+  expect(named.__element__.__shape__.number.__name__).toEqual("std::jsnumber");
   const namedResult = await client.querySingle(e.select(named).toEdgeQL());
   expect(JSON.stringify(namedResult)).toEqual(
     JSON.stringify({string: "asdf", number: 1234})
@@ -304,9 +298,9 @@ test("namedTuple literal", async () => {
   expect(await e.select(namedNum).run(client)).toEqual(1234);
 
   const nested = e.tuple({
-    a: e.str("asdf"),
-    named: e.tuple({b: e.int64(123)}),
-    tuple: e.tuple([e.bool(true), e.set(e.str("x"), e.str("y"))]),
+    a: "asdf",
+    named: e.tuple({b: 123}),
+    tuple: e.tuple([true, e.set(e.str("x"), e.str("y"))]),
   });
   const nestedResult = await e
     .select({
@@ -372,7 +366,7 @@ test("namedTuple literal", async () => {
 
 test("non literal tuples", async () => {
   const ver = e.sys.get_version();
-  expect(ver.major.__element__.__name__).toEqual("std::int64");
+  expect(ver.major.__element__.__name__).toEqual("std::jsnumber");
   expect(ver.major.__cardinality__).toEqual($.Cardinality.One);
   expect(ver.stage.__element__.__name__).toEqual("sys::VersionStage");
   expect(ver.stage.__cardinality__).toEqual($.Cardinality.One);
