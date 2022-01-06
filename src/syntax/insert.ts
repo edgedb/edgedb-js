@@ -128,7 +128,7 @@ export function $insertify(
   return $queryify(expr) as any;
 }
 
-export function normaliseInsertShape(
+export function $normaliseInsertShape(
   root: ObjectTypeSet,
   shape: {[key: string]: any},
   isUpdate: boolean = false
@@ -173,7 +173,7 @@ export function insert<Root extends $expr_PathNode>(
     __element__: root.__element__,
     __cardinality__: Cardinality.One,
     __expr__: root,
-    __shape__: normaliseInsertShape(root, shape),
+    __shape__: $normaliseInsertShape(root, shape),
   };
   (expr as any).unlessConflict = unlessConflict.bind(expr);
   return $expressionify($insertify(expr)) as any;

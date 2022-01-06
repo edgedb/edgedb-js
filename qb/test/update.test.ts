@@ -1,7 +1,7 @@
 import * as edgedb from "edgedb";
 
 import e from "../dbschema/edgeql";
-import {setupTests, teardownTests, TestData} from "./setupTeardown";
+import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 
 let client: edgedb.Client;
 let data: TestData;
@@ -16,40 +16,63 @@ afterAll(async () => {
 });
 
 test("update", async () => {
-  e.select(e.Hero)
-    .update({
+  e.update(e.Hero, () => ({
+    set: {
       name: "asdf",
-    })
-    .toEdgeQL();
+    },
+  })).toEdgeQL();
 
-  e.select(e.Villain)
-    .update({
+  e.update(e.Villain, () => ({
+    set: {
       name: e.str("asdf"),
       nemesis: e.set(e.$Hero),
-    })
-    .toEdgeQL();
+    },
+  })).toEdgeQL();
 });
 
 test("update assignable", () => {
-  e.select(e.Bag)
-    .update({
+  e.update(e.Bag, () => ({
+    set: {
       int32Field: e.jsnumber(23),
       int64Field: e.jsnumber(12),
       // @ts-expect-error
       bigintField: e.jsnumber(324),
       // @ts-expect-error
       float32Field: e.bigint(BigInt(1234)),
-    })
-    .toEdgeQL();
+    },
+  })).toEdgeQL();
 
-  e.select(e.Bag)
-    .update({
+  e.update(e.Bag, () => ({
+    set: {
       int32Field: 23,
       bigintField: BigInt(324),
       // @ts-expect-error
       float32Field: BigInt(1234),
-    })
-    .toEdgeQL();
+    },
+  })).toEdgeQL();
+});
+
+test("scoped update", async () => {
+  const query = e.update(e.Hero, hero => ({
+    filter: e.op(hero.name, "=", data.spidey.name),
+    set: {
+      name: e.op("The Amazing ", "++", hero.name),
+    },
+  }));
+
+  const result = await query.run(client);
+  tc.assert<tc.IsExact<typeof result, {id: string} | null>>(true);
+
+  expect(result).toEqual({id: data.spidey.id});
+
+  expect(
+    await e
+      .select(e.Hero, hero => ({
+        name: true,
+        filter: e.op(hero.id, "=", e.uuid(result!.id)),
+      }))
+      .run(client)
+  ).toEqual({id: data.spidey.id, name: `The Amazing ${data.spidey.name}`});
 });
 
 test("update link property", async () => {
@@ -64,54 +87,55 @@ test("update link property", async () => {
 
   expect(qq1?.characters.length).toEqual(2);
 
-  const q2 = theAvengers.update({
-    characters: {
-      "+=": e.select(e.Villain, villain => ({
-        filter: e.op(villain.name, "=", data.thanos.name),
-      })),
+  const q2 = e.update(theAvengers, () => ({
+    set: {
+      characters: {
+        "+=": e.select(e.Villain, villain => ({
+          filter: e.op(villain.name, "=", data.thanos.name),
+        })),
+      },
     },
-  });
-  // console.log(q2.toEdgeQL());
-  await client.execute(q2.toEdgeQL());
+  }));
+  await q2.run(client);
 
   const t2 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
     .run(client);
   expect(t2?.characters.length).toEqual(3);
 
-  await client.execute(
-    theAvengers
-      .update({
+  await e
+    .update(theAvengers, () => ({
+      set: {
         characters: {
           "-=": e.select(e.Villain, villain => ({
             filter: e.op(villain.name, "=", data.thanos.name),
           })),
         },
-      })
-      .toEdgeQL()
-  );
+      },
+    }))
+    .run(client);
 
   const t3 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
     .run(client);
   expect(t3?.characters.length).toEqual(2);
 
-  await client.execute(
-    theAvengers
-      .update({
+  await e
+    .update(theAvengers, () => ({
+      set: {
         characters: e.set(e.$Villain),
-      })
-      .toEdgeQL()
-  );
+      },
+    }))
+    .run(client);
 
   const t4 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
     .run(client);
   expect(t4?.characters.length).toEqual(0);
 
-  await client.execute(
-    theAvengers
-      .update({
+  await e
+    .update(theAvengers, () => ({
+      set: {
         characters: e.select(e.Hero, hero => ({
           filter: e.op(
             hero.id,
@@ -119,9 +143,9 @@ test("update link property", async () => {
             e.set(e.uuid(data.cap.id), e.uuid(data.iron_man.id))
           ),
         })),
-      })
-      .toEdgeQL()
-  );
+      },
+    }))
+    .run(client);
 
   const t5 = await e
     .select(theAvengers, () => ({id: true, characters: true}))
