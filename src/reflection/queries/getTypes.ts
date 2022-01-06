@@ -37,8 +37,9 @@ export type ScalarType = TypeProperties<"scalar"> & {
   is_abstract: boolean;
   bases: ReadonlyArray<{id: UUID}>;
   // ancestors: ReadonlyArray<{id: UUID}>;
-  enum_values: ReadonlyArray<string>;
+  enum_values: ReadonlyArray<string> | null;
   material_id: UUID | null;
+  castOnlyType?: UUID;
 };
 
 export type ObjectType = TypeProperties<"object"> & {
@@ -70,6 +71,41 @@ export type PrimitiveType = ScalarType | ArrayType | TupleType;
 export type Type = PrimitiveType | ObjectType;
 
 export type Types = StrictMap<UUID, Type>;
+
+const JSNumberType: ScalarType = {
+  id: "00000000-0000-0000-0000-0000000001ff",
+  name: "std::jsnumber",
+  is_abstract: false,
+  kind: "scalar",
+  enum_values: null,
+  material_id: null,
+  bases: [],
+};
+
+export const nonCastableTypes = new Set([JSNumberType.id]);
+
+export const typeMapping = new Map([
+  [
+    "00000000-0000-0000-0000-000000000103", // int16
+    JSNumberType,
+  ],
+  [
+    "00000000-0000-0000-0000-000000000104", // int32
+    JSNumberType,
+  ],
+  [
+    "00000000-0000-0000-0000-000000000105", // int64
+    JSNumberType,
+  ],
+  [
+    "00000000-0000-0000-0000-000000000106", // float32
+    JSNumberType,
+  ],
+  [
+    "00000000-0000-0000-0000-000000000107", // float64
+    JSNumberType,
+  ],
+]);
 
 export async function getTypes(
   cxn: Executor,
@@ -163,6 +199,42 @@ export async function getTypes(
   const types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
   // tslint:disable-next-line
   if (params?.debug) console.log(JSON.stringify(types, null, 2));
+
+  // remap types
+  for (const type of types) {
+    switch (type.kind) {
+      case "scalar":
+        if (typeMapping.has(type.id)) {
+          type.castOnlyType = typeMapping.get(type.id)!.id;
+        }
+        if (type.material_id) {
+          type.material_id =
+            typeMapping.get(type.material_id)?.id ?? type.material_id;
+        }
+        type.bases = type.bases.map(base => ({
+          id: typeMapping.get(base.id)?.id ?? base.id,
+        }));
+        break;
+      case "array":
+        type.array_element_id =
+          typeMapping.get(type.array_element_id)?.id ?? type.array_element_id;
+        break;
+      case "tuple":
+        type.tuple_elements = type.tuple_elements.map(element => ({
+          ...element,
+          target_id:
+            typeMapping.get(element.target_id)?.id ?? element.target_id,
+        }));
+        break;
+      case "object":
+        type.pointers = type.pointers.map(pointer => ({
+          ...pointer,
+          target_id:
+            typeMapping.get(pointer.target_id)?.id ?? pointer.target_id,
+        }));
+    }
+  }
+  types.push(JSNumberType);
 
   // Now sort `types` topologically:
   return topoSort(types);

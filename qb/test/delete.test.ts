@@ -25,7 +25,7 @@ test("basic insert", async () => {
 
   const deleteBlackWidow = e
     .select(e.Hero, hero => ({
-      filter: e.eq(hero.name, e.str("Black Widow")),
+      filter: e.op(hero.name, "=", "Black Widow"),
     }))
     .delete();
   await client.querySingle(deleteBlackWidow.toEdgeQL());

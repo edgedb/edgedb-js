@@ -17,7 +17,7 @@ import {generateScalars} from "./generators/generateScalars";
 import {generateObjectTypes} from "./generators/generateObjectTypes";
 import {generateRuntimeSpec} from "./generators/generateRuntimeSpec";
 import {generateFunctionTypes} from "./generators/generateFunctionTypes";
-import {generateOperatorTypes} from "./generators/generateOperatorTypes";
+import {generateOperators} from "./generators/generateOperatorTypes";
 import {generateSetImpl} from "./generators/generateSetImpl";
 
 const DEBUG = false;
@@ -94,7 +94,7 @@ export async function generateQB(params: {
     generateScalars(generatorParams);
     generateObjectTypes(generatorParams);
     generateFunctionTypes(generatorParams);
-    generateOperatorTypes(generatorParams);
+    generateOperators(generatorParams);
     generateSetImpl(generatorParams);
 
     // generate module imports
@@ -104,6 +104,7 @@ export async function generateQB(params: {
     importsFile.addExportStarFrom("edgedb", "edgedb");
     importsFile.addExportFrom({spec: true}, "./__spec__", true);
     importsFile.addExportStarFrom("syntax", "./syntax/syntax", true);
+    importsFile.addExportStarFrom("castMaps", "./castMaps", true);
 
     /////////////////////////
     // generate index file
@@ -114,8 +115,13 @@ export async function generateQB(params: {
     index.addExportStarFrom(null, "./syntax/syntax", true);
     index.addImport({$: true}, "edgedb");
     index.addStarImport("$syntax", "./syntax/syntax", true);
+    index.addStarImport("$op", "./operators", true);
 
     const spreadModules = [
+      {
+        name: "$op",
+        keys: ["op"],
+      },
       {
         name: "$syntax",
         keys: [
@@ -171,6 +177,7 @@ export async function generateQB(params: {
       }
     }
 
+    index.nl();
     index.writeln([
       dts`declare `,
       `const ExportDefault`,

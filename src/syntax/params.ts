@@ -8,9 +8,12 @@ import {
   ArrayType,
   setToTsType,
   TypeSet,
+  unwrapCastableType,
 } from "../reflection";
 import {$expressionify} from "./path";
 import {$queryify} from "./query";
+
+type unwrappedParamType = ScalarType | ArrayType<ScalarType>;
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
   __kind__: ExpressionKind.OptionalParam;
@@ -54,11 +57,12 @@ export type $expr_WithParams<
   Params
 >;
 
-type getParamTsType<Param extends ParamType> = Param extends ScalarType
-  ? Param["__tstype__"]
-  : Param extends ArrayType
-  ? Param["__element__"]["__tstype__"][]
-  : never;
+type getParamTsType<Param extends unwrappedParamType> =
+  Param extends ScalarType
+    ? Param["__tstype__"]
+    : Param extends ArrayType
+    ? Param["__element__"]["__tstype__"][]
+    : never;
 
 type paramsToParamTypes<
   Params extends {
@@ -66,9 +70,9 @@ type paramsToParamTypes<
   }
 > = {
   [key in keyof Params]: Params[key] extends $expr_OptionalParam
-    ? getParamTsType<Params[key]["__type__"]> | null
+    ? getParamTsType<unwrapCastableType<Params[key]["__type__"]>> | null
     : Params[key] extends ParamType
-    ? getParamTsType<Params[key]>
+    ? getParamTsType<unwrapCastableType<Params[key]>>
     : never;
 };
 
@@ -80,13 +84,13 @@ type paramsToParamArgs<
   [key in keyof Params as Params[key] extends ParamType
     ? key
     : never]: Params[key] extends ParamType
-    ? getParamTsType<Params[key]>
+    ? getParamTsType<unwrapCastableType<Params[key]>>
     : never;
 } & {
   [key in keyof Params as Params[key] extends $expr_OptionalParam
     ? key
     : never]?: Params[key] extends $expr_OptionalParam
-    ? getParamTsType<Params[key]["__type__"]> | null
+    ? getParamTsType<unwrapCastableType<Params[key]["__type__"]>> | null
     : never;
 };
 
@@ -96,7 +100,7 @@ export type $expr_Param<
   Optional extends boolean = boolean
 > = Expression<{
   __kind__: ExpressionKind.Param;
-  __element__: Type;
+  __element__: unwrapCastableType<Type>;
   __cardinality__: Optional extends true
     ? Cardinality.AtMostOne
     : Cardinality.One;
@@ -137,7 +141,7 @@ export function params<
           ? Cardinality.AtMostOne
           : Cardinality.One,
       __name__: key,
-    });
+    }) as any;
   }
 
   const returnExpr = expr(paramExprs as any);

@@ -1,5 +1,6 @@
 import {Executor} from "../../ifaces";
 import {typeutil} from "../util/typeutil";
+import {typeMapping} from "./getTypes";
 
 type Cast = {
   id: string;
@@ -56,6 +57,11 @@ export const getCasts = async (cxn: Executor, params?: {debug?: boolean}) => {
   const assignmentCastsByTarget: Record<string, string[]> = {};
 
   for (const cast of allCasts) {
+    if (typeMapping.has(cast.source.id) || typeMapping.has(cast.target.id)) {
+      cast.allow_implicit = false;
+      cast.allow_assignment = false;
+    }
+
     typesById[cast.source.id] = cast.source;
     typesById[cast.target.id] = cast.target;
     types.add(cast.source.id);

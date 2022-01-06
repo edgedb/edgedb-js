@@ -24,7 +24,7 @@ test("simple params", () => {
       e.select({
         str: params.str,
         nums: e.array_unpack(params.numArr),
-        x: e.if_else(e.str("true"), params.optBool, e.str("false")),
+        x: e.op("true", "if", params.optBool, "else", "false"),
       })
   );
 
@@ -47,6 +47,16 @@ test("simple params", () => {
       }
     >
   >(true);
+});
+
+test("non castable scalars", async () => {
+  e.params(
+    {
+      // @ts-expect-error
+      num: e.jsnumber,
+    },
+    p => e.select({num: p.num})
+  );
 });
 
 test("all param types", async () => {

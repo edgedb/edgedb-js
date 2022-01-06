@@ -8,16 +8,17 @@ import {StrictMap} from "../strictMap";
 import {frag, makeValidIdent, quote} from "./genutil";
 import {util} from "./util";
 
-type AnytypeDef =
+export type AnytypeDef =
   | {kind: "castable"; type: CodeFragment[]; returnAnytypeWrapper: string}
   | {
       kind: "noncastable";
       type: CodeFragment[];
+      typeObj: introspect.Type;
       refName: string;
       refPath: string;
     };
 
-type FuncopDefOverload<F extends FuncopDef> = F & {
+export type FuncopDefOverload<F extends FuncopDef> = F & {
   overloadIndex: number;
   params: GroupedParams;
   anytypes: AnytypeDef | null;
@@ -71,6 +72,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
         anytypes: {
           kind: "noncastable" as const,
           type: [hasArrayType ? "$.NonArrayType" : "$.BaseType"],
+          typeObj: anytypeParams[0].type,
           refName: anytypeParams[0].typeName,
           refPath: findPathOfAnytype(anytypeParams[0].type.id, types),
         },

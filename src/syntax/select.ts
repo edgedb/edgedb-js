@@ -1,4 +1,4 @@
-import type {$anyint, $bool} from "@generated/modules/std";
+import type {$bool, $jsnumber} from "@generated/modules/std";
 import _std from "@generated/modules/std";
 import {
   $expr_PolyShapeElement,
@@ -55,17 +55,17 @@ export type OrderByExpression =
   | [OrderByExpr | OrderByObjExpr, ...(OrderByExpr | OrderByObjExpr)[]];
 
 export type OffsetExpression = TypeSet<
-  $anyint,
+  $jsnumber,
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
 
 export type SelectFilterExpression = TypeSet<$bool, Cardinality>;
 export type LimitOffsetExpression = TypeSet<
-  $anyint,
+  $jsnumber,
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
 export type LimitExpression = TypeSet<
-  $anyint,
+  $jsnumber,
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
 
@@ -164,7 +164,7 @@ export type InferFilterCardinality<
   ? // Base is ObjectTypeExpression &
     Base extends ObjectTypeSet // $expr_PathNode
     ? // Filter is equality
-      Filter extends $expr_Operator<"std::=", any, infer Args, any>
+      Filter extends $expr_Operator<"=", any, infer Args, any>
       ? // Filter.args[0] is PathLeaf
         Args[0] extends $expr_PathLeaf
         ? // Filter.args[0] is unique
@@ -274,8 +274,7 @@ function computeFilterCardinality(
   // Base is ObjectExpression
   const baseIsObjectExpr = base?.__element__?.__kind__ === TypeKind.object;
   const filterExprIsEq =
-    filter.__kind__ === ExpressionKind.Operator &&
-    filter.__name__ === "std::=";
+    filter.__kind__ === ExpressionKind.Operator && filter.__name__ === "=";
   const arg0: $expr_PathLeaf | $expr_PathNode = filter?.__args__?.[0];
   const arg1: TypeSet = filter?.__args__?.[1];
   const argsExist = !!arg0 && !!arg1 && !!arg1.__cardinality__;
@@ -346,12 +345,14 @@ function handleModifiers(
   }
   if (mods.offset) {
     mods.offset =
-      typeof mods.offset === "number" ? _std.int64(mods.offset) : mods.offset;
+      typeof mods.offset === "number"
+        ? _std.jsnumber(mods.offset)
+        : mods.offset;
   }
   if (mods.limit) {
     let expr = mods.limit;
     if (typeof expr === "number") {
-      expr = _std.int64(expr);
+      expr = _std.jsnumber(expr);
     } else if ((expr as any).__kind__ === ExpressionKind.Set) {
       expr = (expr as any).__exprs__[0];
     }

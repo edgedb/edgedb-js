@@ -56,7 +56,7 @@ test("named tuple tests", () => {
   expect(namedTuple.__kind__).toEqual($.TypeKind.namedtuple);
   expect(namedTuple.__shape__.x.__name__).toEqual("std::str");
   expect(namedTuple.__shape__.x.__kind__).toEqual($.TypeKind.scalar);
-  expect(namedTuple.__shape__.y.__name__).toEqual("std::int64");
+  expect(namedTuple.__shape__.y.__name__).toEqual("std::jsnumber");
 });
 
 test("unnamed tuple tests", () => {
@@ -65,7 +65,7 @@ test("unnamed tuple tests", () => {
   const unnamedTuple = BagShape.unnamedTuple.target;
   expect(unnamedTuple.__kind__).toEqual($.TypeKind.tuple);
   expect(unnamedTuple.__items__[0].__name__).toEqual("std::str");
-  expect(unnamedTuple.__items__[1].__name__).toEqual("std::int64");
+  expect(unnamedTuple.__items__[1].__name__).toEqual("std::jsnumber");
 });
 
 test("array tests", () => {

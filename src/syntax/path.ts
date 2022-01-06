@@ -16,7 +16,8 @@ import {
   $pathify,
   ExpressionRoot,
 } from "../reflection/path";
-import {_$arrayIndexify, _$tuplePathify} from "./collections";
+import {_$arrayLikeIndexify, _$tuplePathify} from "./collections";
+import {literalToTypeSet} from "@generated/castMaps";
 
 import {$toEdgeQL} from "./toEdgeQL";
 
@@ -147,6 +148,45 @@ function assert_single(expr: Expression) {
   }) as any;
 }
 
+const jsonDestructureProxyHandlers: ProxyHandler<ExpressionRoot> = {
+  get(target: ExpressionRoot, prop: string | symbol, proxy: any) {
+    if (typeof prop === "string" && prop !== "run" && !(target as any)[prop]) {
+      return jsonDestructure.call(proxy, prop);
+    }
+    return (target as any)[prop];
+  },
+};
+
+function jsonDestructure(this: ExpressionRoot, path: any) {
+  const pathTypeSet = literalToTypeSet(path);
+  return $expressionify({
+    __kind__: ExpressionKind.Operator,
+    __element__: this.__element__,
+    __cardinality__: cardinalityUtil.multiplyCardinalities(
+      this.__cardinality__,
+      pathTypeSet.__cardinality__
+    ),
+    __name__: "[]",
+    __opkind__: "Infix",
+    __args__: [this, pathTypeSet],
+  }) as any;
+}
+
+export function _$jsonDestructure(_expr: ExpressionRoot) {
+  if (
+    _expr.__element__.__kind__ === TypeKind.scalar &&
+    _expr.__element__.__name__ === "std::json"
+  ) {
+    const expr = new Proxy(_expr, jsonDestructureProxyHandlers) as any;
+
+    expr.destructure = jsonDestructure.bind(expr);
+
+    return expr;
+  }
+
+  return _expr;
+}
+
 function unrunnableExprHandler() {
   throw new Error(
     `It is not valid to call 'run()' on this expression. ` +
@@ -158,7 +198,7 @@ export function $expressionify<T extends ExpressionRoot>(
   _expr: T
 ): Expression<T> {
   const expr: Expression = _$pathify(
-    _$arrayIndexify(_$tuplePathify(_expr))
+    _$jsonDestructure(_$arrayLikeIndexify(_$tuplePathify(_expr)))
   ) as any;
 
   expr.$is = isFunc.bind(expr) as any;

@@ -14,6 +14,7 @@ import {
   TypeSet,
   QueryableExpression,
   ScalarType,
+  scalarTypeWithConstructor,
 } from "../reflection";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
@@ -155,7 +156,9 @@ export function normaliseInsertShape(
           } shape key: '${key}'`
         );
       }
-      newShape[key] = (pointer.target as ScalarType)(_val);
+      newShape[key] = (
+        pointer.target as scalarTypeWithConstructor<ScalarType>
+      )(_val);
     }
   }
   return newShape;

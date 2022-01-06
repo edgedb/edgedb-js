@@ -8,9 +8,10 @@ import {
   ArrayType,
   cardinalityUtil,
   ObjectType,
+  TypeSet,
 } from "../reflection";
 import {set} from "./set";
-import {isImplicitlyCastableTo} from "@generated/castMaps";
+import {isImplicitlyCastableTo, literalToTypeSet} from "@generated/castMaps";
 import {literal} from "./literal";
 
 interface OverloadFuncArgDef {
@@ -29,6 +30,24 @@ interface OverloadFuncDef {
   preservesOptionality?: boolean;
 }
 
+function mapLiteralToTypeSet(literals: any[]): TypeSet[];
+function mapLiteralToTypeSet(literals: {[key: string]: any}): {
+  [key: string]: TypeSet;
+};
+function mapLiteralToTypeSet(literals: any[] | {[key: string]: any}) {
+  if (Array.isArray(literals)) {
+    return literals.map(literal =>
+      literal != null ? literalToTypeSet(literal) : literal
+    );
+  }
+  const obj: {[key: string]: TypeSet} = {};
+  for (const key of Object.keys(literals)) {
+    obj[key] =
+      literals[key] != null ? literalToTypeSet(literals[key]) : literals[key];
+  }
+  return obj;
+}
+
 export function $resolveOverload(
   funcName: string,
   args: any[],
@@ -37,8 +56,11 @@ export function $resolveOverload(
 ) {
   const [positionalArgs, namedArgs] =
     typeof args[0] === "object" && typeof args[0].__kind__ === "undefined"
-      ? [args.slice(1), args[0]]
-      : [args, undefined];
+      ? [
+          mapLiteralToTypeSet(args.slice(1)),
+          mapLiteralToTypeSet(args[0] as object),
+        ]
+      : [mapLiteralToTypeSet(args), undefined];
 
   for (const def of funcDefs) {
     const resolvedOverload = _tryOverload(
@@ -53,9 +75,11 @@ export function $resolveOverload(
     }
   }
   throw new Error(
-    `No function overload found for 'e.${
-      funcName.split("::")[1]
-    }()' with args: ${args.map(arg => `${arg}`).join(", ")}`
+    `No function overload found for ${
+      funcName.includes("::")
+        ? `'e.${funcName.split("::")[1]}()'`
+        : `operator '${funcName}'`
+    } with args: ${args.map(arg => `${arg}`).join(", ")}`
   );
 }
 
@@ -183,7 +207,7 @@ function _tryOverload(
     cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
   }
 
-  if (funcName === "std::if_else") {
+  if (funcName === "if_else") {
     cardinality = cardinalityUtil.multiplyCardinalities(
       cardinalityUtil.orCardinalities(
         positionalArgs[0].__cardinality__,
@@ -219,6 +243,7 @@ function compareType(
   }
 
   if (type.kind === "scalar") {
+    arg = (arg as any).__casttype__ ?? arg;
     return {
       match:
         arg.__kind__ === TypeKind.scalar &&

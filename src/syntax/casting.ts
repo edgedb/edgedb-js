@@ -12,7 +12,11 @@ import {
   TypeSet,
   typeutil,
 } from "../reflection";
-import {scalarCastableFrom, scalarAssignableBy} from "@generated/castMaps";
+import {
+  scalarCastableFrom,
+  scalarAssignableBy,
+  orScalarLiteral,
+} from "@generated/castMaps";
 
 export type anonymizeObject<T extends ObjectType> = ObjectType<
   string,
@@ -48,17 +52,11 @@ export type assignableBy<T extends BaseType> = T extends ScalarType
     }>
   : never;
 
-export type orJSLiteral<T extends TypeSet> =
-  | T
-  | (T["__element__"] extends ScalarType
-      ? T["__element__"]["__tstype__"]
-      : unknown);
-
 export type pointerToAssignmentExpression<
   Pointer extends PropertyDesc | LinkDesc
 > = [Pointer] extends [PropertyDesc]
   ? typeutil.flatten<
-      orJSLiteral<
+      orScalarLiteral<
         TypeSet<
           assignableBy<Pointer["target"]>,
           cardinalityUtil.assignable<Pointer["cardinality"]>

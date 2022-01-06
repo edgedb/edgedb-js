@@ -15,6 +15,7 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
       Cardinality: true,
       cardinalityUtil: true,
       $mergeObjectTypes: true,
+      unwrapCastableType: true,
     },
     "edgedb/dist/reflection/index",
     true
@@ -43,6 +44,7 @@ import type {
 } from "./set";`,
   ]);
 
+  code.nl();
   code.writeln([
     dts`declare `,
     t`type getSetTypeFromExprs<
@@ -52,31 +54,32 @@ import type {
   cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
 >;`,
   ]);
+  code.nl();
 
   code.writeln([
     dts`declare `,
     t`function set<Type extends BaseType>(
   type: Type
-): $expr_Set<TypeSet<Type, Cardinality.Empty>>;
+): $expr_Set<TypeSet<unwrapCastableType<Type>, Cardinality.Empty>>;
 `,
     dts`declare `,
     t`function set<
-  Expr extends TypeSet
->(expr: Expr): $expr_Set<Expr>;`,
+  Expr extends castMaps.orScalarLiteral<TypeSet>
+>(expr: Expr): $expr_Set<castMaps.literalToTypeSet<Expr>>;`,
   ]);
 
   for (const implicitRootTypeId of implicitCastableRootTypes) {
     code.writeln([
       dts`declare `,
       t`function set<
-  Expr extends TypeSet<${
+  Expr extends castMaps.orScalarLiteral<TypeSet<${
     getStringRepresentation(types.get(implicitRootTypeId), {
       types,
       casts: casts.implicitCastFromMap,
     }).staticType
-  }>,
+  }>>,
   Exprs extends [Expr, ...Expr[]]
->(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;`,
+>(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<castMaps.mapLiteralToTypeSet<Exprs>>>;`,
     ]);
 
     code.writeln([
@@ -115,17 +118,18 @@ import type {
 `,
     dts`declare `,
     t`function set<
-  Expr extends PrimitiveTypeSet,
-  Exprs extends
-    TypeSet<getPrimitiveBaseType<Expr["__element__"]>>[]
+  Expr extends TypeSet<BaseType> | castMaps.scalarLiterals,
+  Exprs extends castMaps.orScalarLiteral<
+    TypeSet<getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>>
+  >[]
 >(
   expr: Expr,
   ...exprs: Exprs
 ): $expr_Set<
   TypeSet<
-    getPrimitiveBaseType<Expr["__element__"]>,
+    getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>,
     cardinalityUtil.mergeCardinalitiesVariadic<
-      getCardsFromExprs<[Expr, ...Exprs]>
+      getCardsFromExprs<castMaps.mapLiteralToTypeSet<[Expr, ...Exprs]>>
     >
   >
 >;`,
@@ -161,7 +165,7 @@ import type {
   }
   const exprs`,
     ts`: TypeSet[]`,
-    r` = _exprs;
+    r` = _exprs.map(expr => castMaps.literalToTypeSet(expr));
   if (exprs.every((expr) => expr.__element__.__kind__ === TypeKind.object)) {
     // merge object types;
     return $expressionify({
