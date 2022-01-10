@@ -537,12 +537,18 @@ function renderEdgeQL(
       const linkName = isScopedLinkProp
         ? `__linkprop_${expr.__parent__.linkName.slice(1)}`
         : expr.__parent__.linkName;
-      return `${renderEdgeQL(
+      const parent = renderEdgeQL(
         expr.__parent__.type,
         ctx,
         false,
         noImplicitDetached
-      )}${linkName.startsWith("@") ? "" : "."}${q(linkName)}`.trim();
+      );
+      return `${
+        (expr.__parent__.type as any).__kind__ !== ExpressionKind.PathNode &&
+        !(ctx.withVars.has(expr) && ctx.renderWithVar !== expr)
+          ? `(${parent})`
+          : parent
+      }${linkName.startsWith("@") ? "" : "."}${q(linkName)}`.trim();
     }
   } else if (expr.__kind__ === ExpressionKind.Literal) {
     return literalToEdgeQL(expr.__element__, expr.__value__);
@@ -724,7 +730,7 @@ function renderEdgeQL(
           } else {
             index = renderEdgeQL(args[1], ctx);
           }
-          return `(${renderEdgeQL(args[0], ctx)}[${index}])`;
+          return `(${renderEdgeQL(args[0], ctx)})[${index}]`;
         }
         return `(${renderEdgeQL(args[0], ctx)} ${operator} ${renderEdgeQL(
           args[1],

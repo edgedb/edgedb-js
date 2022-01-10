@@ -797,7 +797,7 @@ SELECT (__scope_0_Person) {
   [IS default::Hero].secret_identity,
   multi villains := (
     WITH
-      __scope_1_Villain := (__scope_0_Person[IS default::Hero].villains)
+      __scope_1_Villain := ((__scope_0_Person[IS default::Hero]).villains)
     SELECT (__scope_1_Villain) {
       id,
       name,
