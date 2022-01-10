@@ -132,6 +132,16 @@ import type {
       getCardsFromExprs<castMaps.mapLiteralToTypeSet<[Expr, ...Exprs]>>
     >
   >
+>;
+`,
+    dts`declare `,
+    t`function set<Expr extends TypeSet<BaseType> | castMaps.scalarLiterals>(
+  ...exprs: Expr[]
+): $expr_Set<
+  TypeSet<
+    getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>,
+    Cardinality.Many
+  >
 >;`,
   ]);
 
