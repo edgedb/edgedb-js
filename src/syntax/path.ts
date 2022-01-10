@@ -116,6 +116,18 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
     }
   }
 
+  for (const [key, val] of Object.entries(root.__element__.__shape__)) {
+    if ((val as any)?.__element__ && !pointers[key]) {
+      pointers[key] = {
+        __kind__: "property",
+        target: (val as any).__element__,
+        cardinality: (val as any).__cardinality__,
+        exclusive: false,
+        writable: false,
+      };
+    }
+  }
+
   (root as any)[_pointers] = pointers;
   (root as any)[_pathCache] = {};
 

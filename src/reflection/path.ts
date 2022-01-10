@@ -40,7 +40,7 @@ export type $pathify<
     : ObjectTypePointers extends Root["__element__"]["__pointers__"]
     ? {}
     : {
-        // & string required to avod typeError on linkName
+        // & string required to avoid typeError on linkName
         [k in keyof Root["__element__"]["__pointers__"] &
           string]: Root["__element__"]["__pointers__"][k] extends PropertyDesc
           ? $expr_PathLeaf<
@@ -67,8 +67,23 @@ export type $pathify<
               Parent
             >
           : {}
-        : {})
-  : unknown; // pathify does nothing on non-object types
+        : {}) //& {
+  : //   [k in keyof Root["__element__"]["__shape__"] &
+    //     string]: Root["__element__"]["__shape__"][k] extends TypeSet
+    //     ? $expr_PathLeaf<
+    //         TypeSet<
+    //           Root["__element__"]["__shape__"][k]["__element__"],
+    //           cardinalityUtil.multiplyCardinalities<
+    //             Root["__cardinality__"],
+    //             Root["__element__"]["__shape__"][k]["__cardinality__"]
+    //           >
+    //         >,
+    //         {type: $expr_PathNode; linkName: k},
+    //         false
+    //       >
+    //     : unknown;
+    // }
+    unknown; // pathify does nothing on non-object types
 
 type pathifyLinkProps<
   Props extends PropertyShape,

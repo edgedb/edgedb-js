@@ -989,3 +989,76 @@ test("non runnable expressions", async () => {
     () => e.op("Hello ", "++", "World").run(client)
   ).toThrow(/It is not valid to call 'run\(\)' on this expression/);
 });
+
+test("computed property path", async () => {
+  const expr = e.select({
+    computed: e.set(1, 2, 3),
+  });
+
+  // @ts-ignore
+  const query = e.select(expr.computed);
+
+  expect(await query.run(client)).toEqual([1, 2, 3]);
+});
+
+test("modifier methods", async () => {
+  // @ts-ignore
+  const q = e
+    .select(e.Hero, () => ({
+      name: true,
+    }))
+    .filter(hero => e.op(hero.name, "=", data.iron_man.name));
+
+  tc.assert<tc.IsExact<typeof q["__cardinality__"], $.Cardinality.AtMostOne>>(
+    // @ts-ignore
+    true
+  );
+  expect(q.__cardinality__).toEqual($.Cardinality.AtMostOne);
+
+  expect(await q.run(client)).toEqual({
+    id: data.iron_man.id,
+    name: data.iron_man.name,
+  });
+
+  let q2 = q;
+
+  // should allow reassignment
+  // @ts-ignore
+  q2 = q2.filter(e.bool(false));
+
+  expect(await q2.run(client)).toEqual(null);
+
+  const strs = ["c", "a", "aa", "b", "cc", "bb"];
+  let q3 = e.select(e.set(...strs), vals => ({
+    order: {expression: e.len(vals), direction: e.DESC},
+  }));
+
+  q3 = q3.order(vals => vals);
+
+  expect(await q3.run(client)).toEqual(["aa", "bb", "cc", "a", "b", "c"]);
+
+  const q4 = e
+    .select(e.Hero, hero => ({
+      order: hero.name,
+    }))
+    .limit(2);
+
+  const r4 = await q4.run(client);
+
+  expect(r4.length).toEqual(2);
+  expect(await q4.limit(1).offset(1).run(client)).toEqual(r4.slice(1, 2));
+
+  const q5 = e
+    .select(e.Hero, hero => ({
+      name: true,
+      nameLen: e.len(hero.name),
+    }))
+    // @ts-ignore
+    .order(hero => hero.nameLen);
+
+  // console.log(q5.toEdgeQL());
+
+  const r5 = await q5.run(client);
+  // const names = r5.map(hero => hero.name);
+  // expect(names).toEqual([...names].sort((a, b) => a.length - b.length));
+});
