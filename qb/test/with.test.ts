@@ -483,7 +483,7 @@ SELECT (__scope_0_Hero) {
     }
   )
 }
-ORDER BY __scope_0_Hero.name
+ORDER BY (__scope_0_Hero).name
 LIMIT 1`);
 });
 

@@ -30,7 +30,7 @@ test("slice and index ops", () => {
     [e.str("test string"), [e.jsnumber(2), e.jsnumber(5)]],
     e.str,
     $.Cardinality.One,
-    `("test string"[2:5])`
+    `("test string")[2:5]`
   );
 
   checkOperatorExpr(
@@ -39,7 +39,7 @@ test("slice and index ops", () => {
     [e.str("test string"), [e.jsnumber(2), e.jsnumber(5)]],
     e.str,
     $.Cardinality.One,
-    `("test string"[2:5])`
+    `("test string")[2:5]`
   );
 
   checkOperatorExpr(
@@ -51,7 +51,7 @@ test("slice and index ops", () => {
     ],
     e.array(e.bigint),
     $.Cardinality.One,
-    `([<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][1:2])`
+    `([<std::bigint>1n, <std::bigint>2n, <std::bigint>3n])[1:2]`
   );
 
   checkOperatorExpr(
@@ -60,7 +60,7 @@ test("slice and index ops", () => {
     [e.str("test string"), e.jsnumber(3)],
     e.str,
     $.Cardinality.One,
-    `("test string"[3])`
+    `("test string")[3]`
   );
 
   checkOperatorExpr(
@@ -69,7 +69,7 @@ test("slice and index ops", () => {
     [e.str("test string"), e.jsnumber(3)],
     e.str,
     $.Cardinality.One,
-    `("test string"[3])`
+    `("test string")[3]`
   );
 
   checkOperatorExpr(
@@ -78,7 +78,7 @@ test("slice and index ops", () => {
     [e.array([BigInt(1), BigInt(2), BigInt(3)]), e.jsnumber(2)],
     e.bigint,
     $.Cardinality.One,
-    `([<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][2])`
+    `([<std::bigint>1n, <std::bigint>2n, <std::bigint>3n])[2]`
   );
 
   checkOperatorExpr(
@@ -87,7 +87,7 @@ test("slice and index ops", () => {
     [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
     e.json,
     $.Cardinality.One,
-    `(std::to_json(("{\\\"name\\\":\\\"Bob\\\"}"))["name"])`
+    `(std::to_json(("{\\\"name\\\":\\\"Bob\\\"}")))["name"]`
   );
 
   checkOperatorExpr(
@@ -96,7 +96,7 @@ test("slice and index ops", () => {
     [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
     e.json,
     $.Cardinality.One,
-    `(std::to_json(("{\\\"name\\\":\\\"Bob\\\"}"))["name"])`
+    `(std::to_json(("{\\\"name\\\":\\\"Bob\\\"}")))["name"]`
   );
 });
 
