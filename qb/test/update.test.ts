@@ -76,10 +76,12 @@ test("scoped update", async () => {
 });
 
 test("update link property", async () => {
-  const theAvengers = e.select(e.Movie, movie => ({
-    filter: e.op(movie.title, "=", "The Avengers"),
-    limit: 1,
-  }));
+  const theAvengers = e
+    .select(e.Movie, movie => ({
+      filter: e.op(movie.title, "=", "The Avengers"),
+      limit: 1,
+    }))
+    .$assertSingle();
 
   const qq1 = await e
     .select(theAvengers, () => ({id: true, characters: true}))

@@ -98,7 +98,8 @@ test("backlinks", () => {
   expect(heroMovie.__element__.__name__).toEqual("default::Movie");
   expect(heroVillain.nemesis.__element__.__name__).toEqual("default::Hero");
   expect(
-    e.select(e.Villain, () => ({limit: 1})).nemesis.__cardinality__
+    e.select(e.Villain, () => ({limit: 1})).$assertSingle().nemesis
+      .__cardinality__
   ).toEqual($.Cardinality.AtMostOne);
 
   expect(e.Profile["<profile"].__element__.__name__).toEqual(

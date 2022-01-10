@@ -230,48 +230,31 @@ test("shape type name", () => {
   tc.assert<tc.IsExact<typeof name, "default::Hero">>(true);
 });
 
-test("limit inference", () => {
-  const r1 = e.select(e.Hero, () => ({name: true, limit: e.jsnumber(1)}));
-  type c1 = typeof r1["__cardinality__"];
-  tc.assert<tc.IsExact<c1, $.Cardinality.AtMostOne>>(true);
-  expect(r1.__cardinality__).toEqual($.Cardinality.AtMostOne);
+test("limit/offset inference", () => {
+  const testSet = e.set(1, 2, 3);
 
-  const r2 = e.select(e.Hero, () => ({name: true, limit: e.jsnumber(0)}));
-  type c2 = typeof r2["__cardinality__"];
-  tc.assert<tc.IsExact<c2, $.Cardinality.Empty>>(true);
-  expect(r2.__cardinality__).toEqual($.Cardinality.Empty);
+  tc.assert<
+    tc.IsExact<typeof testSet["__cardinality__"], $.Cardinality.AtLeastOne>
+  >(true);
+  expect(testSet.__cardinality__).toEqual($.Cardinality.AtLeastOne);
 
-  const r3 = e.select(e.Hero, () => ({name: true, limit: e.jsnumber(2)}));
-  type c3 = typeof r3["__cardinality__"];
-  tc.assert<tc.IsExact<c3, $.Cardinality.Many>>(true);
-  expect(r3.__cardinality__).toEqual($.Cardinality.Many);
+  const r0 = e.select(testSet, () => ({}));
+  tc.assert<
+    tc.IsExact<typeof r0["__cardinality__"], $.Cardinality.AtLeastOne>
+  >(true);
+  expect(r0.__cardinality__).toEqual($.Cardinality.AtLeastOne);
 
-  const r4 = e.select(e.Hero, () => ({
-    name: true,
-    limit: e.set(e.jsnumber(1)),
-  }));
-  type c4 = typeof r4["__cardinality__"];
-  tc.assert<tc.IsExact<c4, $.Cardinality.AtMostOne>>(true);
-  expect(r4.__cardinality__).toEqual($.Cardinality.AtMostOne);
-});
+  const r1 = e.select(testSet, () => ({limit: 1}));
+  tc.assert<tc.IsExact<typeof r1["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
+  expect(r1.__cardinality__).toEqual($.Cardinality.Many);
 
-test("limit literal inference", () => {
-  const r1 = e.select(e.Hero, () => ({name: true, limit: 1}));
-  type c1 = typeof r1["__cardinality__"];
-  tc.assert<tc.IsExact<c1, $.Cardinality.AtMostOne>>(true);
-  expect(r1.__cardinality__).toEqual($.Cardinality.AtMostOne);
-  // expect(r1.__modifiers__.limit.__element__.__name__).toEqual("std::int64");
-  // expect(r1.__modifiers__.limit.__value__).toEqual(1);
-
-  const r2 = e.select(e.Hero, () => ({name: true, limit: 1}));
-  type c2 = typeof r2["__cardinality__"];
-  tc.assert<tc.IsExact<c2, $.Cardinality.AtMostOne>>(true);
-  expect(r2.__cardinality__).toEqual($.Cardinality.AtMostOne);
-
-  const r3 = e.select(e.Hero, () => ({name: true, limit: 2}));
-  type c3 = typeof r3["__cardinality__"];
-  tc.assert<tc.IsExact<c3, $.Cardinality.Many>>(true);
-  expect(r3.__cardinality__).toEqual($.Cardinality.Many);
+  const r2 = e.select(testSet, () => ({offset: 1}));
+  tc.assert<tc.IsExact<typeof r2["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
+  expect(r2.__cardinality__).toEqual($.Cardinality.Many);
 });
 
 test("offset", () => {
@@ -360,7 +343,7 @@ test("infer cardinality - scalar filters", () => {
 });
 
 test("infer cardinality - object type filters", () => {
-  const oneHero = e.select(e.Hero, () => ({limit: 1}));
+  const oneHero = e.select(e.Hero, () => ({limit: 1})).$assertSingle();
 
   const singleHero = e.select(e.Hero, hero => ({
     filter: e.op(hero, "=", oneHero),
@@ -370,7 +353,7 @@ test("infer cardinality - object type filters", () => {
   tc.assert<tc.IsExact<typeof c1, $.Cardinality.AtMostOne>>(true);
   expect(c1).toEqual($.Cardinality.AtMostOne);
 
-  const oneProfile = e.select(e.Hero, () => ({limit: 1}));
+  const oneProfile = e.select(e.Hero, () => ({limit: 1})).$assertSingle();
   const singleMovie = e.select(e.Movie, movie => ({
     filter: e.op(movie.profile, "=", oneProfile),
   }));
@@ -431,12 +414,14 @@ test("filter by id", async () => {
 });
 
 test("limit 1", async () => {
-  const query = e.select(e.Hero, hero => ({
-    order: hero.name,
-    offset: 1,
-    limit: 1,
-  }));
-  const result = await query.run(client);
+  const query = e
+    .select(e.Hero, hero => ({
+      order: hero.name,
+      offset: 1,
+      limit: 1,
+    }))
+    .$assertSingle();
+  const result = await e.select(query).run(client);
   expect(result?.id).toEqual(data.iron_man.id);
 });
 
@@ -487,13 +472,16 @@ test("computables", async () => {
     // __type__: {name: true}
     id: true,
   }));
-  const query = e.select(e.Person.$is(e.Hero), hero => ({
-    id: true,
-    computable: e.jsnumber(35),
-    all_heroes,
-    order: hero.name,
-    limit: 1,
-  }));
+  const query = e.select(
+    e
+      .select(e.Person.$is(e.Hero), hero => ({order: hero.name, limit: 1}))
+      .$assertSingle(),
+    hero => ({
+      id: true,
+      computable: e.jsnumber(35),
+      all_heroes,
+    })
+  );
 
   type query = $.setToTsType<typeof query>;
   tc.assert<
@@ -958,11 +946,13 @@ test("modifiers on scalar selects", async () => {
   expect(res3).toEqual([5, 4, 3, 2, 1]);
 
   // offset and limit
-  const q4 = e.select(unorderedSet, el => ({
-    offset: 2,
-    limit: 1,
-  }));
-  const res4 = await q4.run(client);
+  const q4 = e
+    .select(unorderedSet, el => ({
+      offset: 2,
+      limit: 1,
+    }))
+    .$assertSingle();
+  const res4 = await e.select(q4).run(client);
   tc.assert<tc.IsExact<typeof res4, number | null>>(true);
   expect(res4).toEqual(1);
 });

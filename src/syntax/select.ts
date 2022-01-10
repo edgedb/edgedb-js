@@ -21,7 +21,6 @@ import {
   TypeSet,
   typeutil,
 } from "../reflection";
-import type {$expr_Literal} from "../reflection/literal";
 import type {
   $expr_PathLeaf,
   $expr_PathNode,
@@ -212,29 +211,21 @@ export type InferFilterCardinality<
     : Base["__cardinality__"]
   : Base["__cardinality__"];
 
-export type InferLimitCardinality<
+export type InferOffsetLimitCardinality<
   Card extends Cardinality,
-  Limit extends LimitExpression | number | undefined
-> = Limit extends number
-  ? Limit extends 0
-    ? Cardinality.Empty
-    : Limit extends 1
-    ? Cardinality.AtMostOne
-    : Card
-  : Limit extends LimitExpression
-  ? Limit["__element__"]["__tsconsttype__"] extends 0
-    ? Cardinality.Empty
-    : Limit["__element__"]["__tsconsttype__"] extends 1
-    ? Cardinality.AtMostOne
-    : Card
+  Modifers extends SelectModifiers
+> = Modifers["limit"] extends number | LimitExpression
+  ? cardinalityUtil.overrideLowerBound<Card, "Zero">
+  : Modifers["offset"] extends number | OffsetExpression
+  ? cardinalityUtil.overrideLowerBound<Card, "Zero">
   : Card;
 
 export type ComputeSelectCardinality<
   Expr extends ObjectTypeExpression,
   Modifiers extends SelectModifiers
-> = InferLimitCardinality<
+> = InferOffsetLimitCardinality<
   InferFilterCardinality<Expr, Modifiers["filter"]>,
-  Modifiers["limit"]
+  Modifiers
 >;
 
 export function is<
@@ -345,6 +336,7 @@ export function $handleModifiers(
       typeof mods.offset === "number"
         ? _std.jsnumber(mods.offset)
         : mods.offset;
+    card = cardinalityUtil.overrideLowerBound(card, "Zero");
   }
   if (mods.limit) {
     let expr = mods.limit;
@@ -354,15 +346,7 @@ export function $handleModifiers(
       expr = (expr as any).__exprs__[0];
     }
     mods.limit = expr;
-
-    if ((expr as any).__kind__ === ExpressionKind.Literal) {
-      const literalExpr: $expr_Literal = expr as any;
-      if (literalExpr.__value__ === 1) {
-        card = Cardinality.AtMostOne;
-      } else if (literalExpr.__value__ === 0) {
-        card = Cardinality.Empty;
-      }
-    }
+    card = cardinalityUtil.overrideLowerBound(card, "Zero");
   }
 
   return {modifiers: mods as NormalisedSelectModifiers, cardinality: card};
