@@ -118,15 +118,15 @@ export type $expr_Select<Set extends TypeSet = TypeSet> = QueryableExpression<{
   __scope__?: ObjectTypeExpression;
 }>;
 
-type SelectExprWithMethods<Expr extends $expr_Select> = Expr &
-  (Expr extends ObjectTypeSet ? SelectObjectMethods<Expr> : {}) &
+type SelectExprWithMethods<Expr extends TypeSet> = Expr &
+  (Expr extends ObjectTypeSet ? SelectObjectMethods<Expr> : unknown) &
   SelectModifierMethods<Expr>;
 
 interface SelectObjectMethods<Root extends ObjectTypeSet> {
   delete(): $expr_Delete<Root>;
 }
 
-interface SelectModifierMethods<Root extends TypeSet> {
+export type SelectModifierMethods<Root extends TypeSet> = {
   filter<Filter extends SelectFilterExpression>(
     filter:
       | Filter
@@ -186,9 +186,8 @@ interface SelectModifierMethods<Root extends TypeSet> {
       >;
     }>
   >;
-}
-
-// Base is ObjectTypeSet &
+};
+export // Base is ObjectTypeSet &
 // Filter is equality &
 // Filter.args[0] is PathLeaf
 //   Filter.args[0] is __exclusive__ &
@@ -203,7 +202,7 @@ interface SelectModifierMethods<Root extends TypeSet> {
 //     Filter.args[0].type.__element__ === Base.__element__ &
 //     Filter.args[1].__cardinality__ is AtMostOne or One
 
-export type argCardToResultCard<
+type argCardToResultCard<
   OpCard extends Cardinality,
   BaseCase extends Cardinality
 > = [OpCard] extends [Cardinality.AtMostOne | Cardinality.One]
@@ -427,7 +426,7 @@ function deleteFunc(this: any) {
       __cardinality__: this.__cardinality__,
       __expr__: this,
     })
-  ) as $expr_Delete;
+  ) as any as $expr_Delete;
 }
 
 function resolveModifierGetter(parent: any, modGetter: any) {
@@ -659,6 +658,7 @@ export function select<Shape extends {[key: string]: TypeSet}>(
     __cardinality__: Cardinality.One;
   }>
 >;
+
 export function select(...args: any[]) {
   const [expr, shapeGetter]: [TypeSet, (scope: any) => any] =
     typeof args[0].__element__ !== "undefined"

@@ -111,18 +111,20 @@ export function $toSet<Root extends BaseType, Card extends Cardinality>(
   };
 }
 
-export type Expression<Set extends TypeSet = TypeSet> =
-  BaseType extends Set["__element__"]
-    ? Set & {toEdgeQL(): string; $is: any; $assertSingle: any}
-    : Set &
+export type Expression<Set extends TypeSet = TypeSet> = Set &
+  (BaseType extends Set["__element__"] // short-circuit non-specific types
+    ? {
+        toEdgeQL(): string;
+        $is: any;
+        $assertSingle: any;
+        // warning: any;
+      }
+    : $pathify<Set> &
         ExpressionMethods<stripSet<Set>> &
-        $pathify<
-          Set,
-          Set extends {__parent__: any} ? Set["__parent__"] : null
-        > &
+        //Set extends {__parent__: any} ? Set["__parent__"] : null
         $tuplePathify<Set> &
         $arrayLikeIndexify<Set> &
-        $jsonDestructure<Set>;
+        $jsonDestructure<Set>);
 
 export type QueryableExpression<Set extends TypeSet = TypeSet> =
   Expression<Set> & {
@@ -164,11 +166,13 @@ export type $assertSingle<Expr extends TypeSet> = Expression<{
   __namedargs__: {};
 }>;
 
-export interface ExpressionMethods<Set extends TypeSet> {
-  __element__: Set["__element__"];
-  __cardinality__: Set["__cardinality__"];
+export type ExpressionMethods<Set extends TypeSet> = {
+  // __element__: Set["__element__"];
+  // __cardinality__: Set["__cardinality__"];
 
   toEdgeQL(): string;
+  // $is: any;
+  // $assertSingle: any;
   $is<T extends ObjectTypeSet>(
     ixn: T
   ): $expr_TypeIntersection<
@@ -180,8 +184,8 @@ export interface ExpressionMethods<Set extends TypeSet> {
       {id: true}
     >
   >;
-  $assertSingle(): $assertSingle<Set>;
-}
+  $assertSingle(): $assertSingle<stripSet<Set>>;
+};
 
 //////////////////
 // ENUMTYPE

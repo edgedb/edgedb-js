@@ -274,7 +274,10 @@ test("infer cardinality - scalar filters", () => {
   expect(q2.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
   const u3 = e.uuid("asdf");
-  const q3 = e.select(q, hero => ({filter: e.op(hero.id, "=", u3)}));
+  const q3 = e.select(q, hero => {
+    // hero.
+    return {filter: e.op(hero.id, "=", u3)};
+  });
   tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
   );
@@ -991,26 +994,46 @@ test("non runnable expressions", async () => {
 });
 
 test("computed property path", async () => {
+  const numbers = e.set(1, 2, 3);
   const expr = e.select({
-    computed: e.set(1, 2, 3),
+    // computed: numbers,
+    heroes: e.Hero,
   });
 
-  // @ts-ignore
-  const query = e.select(expr.computed);
+  // expr.__element__.__shape__.computed;
+  type asdf = $.pathifyShape<{
+    __element__: $.ObjectType<
+      "std::FreeObject",
+      {},
+      {
+        heroes: typeof e["Hero"];
+      }
+    >;
+    __cardinality__: $.Cardinality.One;
+  }>;
+
+  const asdf: asdf = "asdf" as any;
+  asdf.heroes;
+  // asdf.computed;
+  expr;
+
+  type qwerqwer = typeof expr["__element__"]["__shape__"]["heroes"];
+
+  const query = e.select(expr.heroes);
 
   expect(await query.run(client)).toEqual([1, 2, 3]);
 });
 
 test("modifier methods", async () => {
-  // @ts-ignore
-  const q = e
-    .select(e.Hero, () => ({
-      name: true,
-    }))
-    .filter(hero => e.op(hero.name, "=", data.iron_man.name));
+  // @nots-ignore
+  const q1 = e.select(e.Hero, () => ({
+    name: true,
+  }));
+
+  const q = q1.filter(hero => e.op(hero.name, "=", data.iron_man.name));
 
   tc.assert<tc.IsExact<typeof q["__cardinality__"], $.Cardinality.AtMostOne>>(
-    // @ts-ignore
+    // @nots-ignore
     true
   );
   expect(q.__cardinality__).toEqual($.Cardinality.AtMostOne);
@@ -1023,7 +1046,7 @@ test("modifier methods", async () => {
   let q2 = q;
 
   // should allow reassignment
-  // @ts-ignore
+  // @nots-ignore
   q2 = q2.filter(e.bool(false));
 
   expect(await q2.run(client)).toEqual(null);
@@ -1053,7 +1076,7 @@ test("modifier methods", async () => {
       name: true,
       nameLen: e.len(hero.name),
     }))
-    // @ts-ignore
+    // @nots-ignore
     .order(hero => hero.nameLen);
 
   // console.log(q5.toEdgeQL());
