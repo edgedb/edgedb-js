@@ -491,9 +491,9 @@ export function select<
 ): $expr_Select<
   {
     __element__: Expr["__element__"];
-    __cardinality__: InferLimitCardinality<
+    __cardinality__: InferOffsetLimitCardinality<
       Expr["__cardinality__"],
-      Modifiers["limit"]
+      Modifiers
     >;
   },
   Expr
