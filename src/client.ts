@@ -178,8 +178,9 @@ export class ClientConnectionHolder {
         if (
           err instanceof errors.EdgeDBError &&
           err.hasTag(errors.SHOULD_RETRY) &&
-          // query is readonly
-          conn.getQueryCapabilities(query, asJson, expectOne) === 0
+          // query is readonly or it's a transaction serialization error
+          (conn.getQueryCapabilities(query, asJson, expectOne) === 0
+           || err instanceof errors.TransactionConflictError)
         ) {
           const rule = this.options.retryOptions.getRuleForException(err);
           if (iteration + 1 >= rule.attempts) {
