@@ -186,7 +186,7 @@ export type SelectModifierMethods<Root extends TypeSet> = TypeSet extends Root
         >;
       }>;
     };
-export // Base is ObjectTypeSet &
+// Base is ObjectTypeSet &
 // Filter is equality &
 // Filter.args[0] is PathLeaf
 //   Filter.args[0] is __exclusive__ &
