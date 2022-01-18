@@ -3,24 +3,6 @@ import {$} from "edgedb";
 import type {$Movie} from "./dbschema/edgeql/modules/default";
 import type {pointersToSelectShape} from "./dbschema/edgeql/syntax/select";
 
-const products = {
-  excess: {
-    exposures: {
-      gl: 1,
-      auto: 2,
-    },
-  },
-  project: {
-    exposures: {
-      gl: 1,
-    },
-  },
-};
-
-type products = typeof products;
-type outer = keyof products;
-type innerkeys = keyof products[toplevelkeys];
-
 import e from "./dbschema/edgeql";
 import {setupTests} from "./test/setupTeardown";
 
