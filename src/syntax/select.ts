@@ -634,14 +634,17 @@ export function select<
   Modifiers extends SelectModifiers
 >(
   expr: Expr,
-  modifiers: (expr: stripSet<Expr>) => Readonly<Modifiers>
-): $expr_Select<{
-  __element__: Expr["__element__"];
-  __cardinality__: InferOffsetLimitCardinality<
-    Expr["__cardinality__"],
-    Modifiers
-  >;
-}>;
+  modifiers: (expr: Expr) => Readonly<Modifiers>
+): $expr_Select<
+  {
+    __element__: Expr["__element__"];
+    __cardinality__: InferOffsetLimitCardinality<
+      Expr["__cardinality__"],
+      Modifiers
+    >;
+  },
+  Expr
+>;
 export function select<Shape extends {[key: string]: TypeSet}>(
   shape: Shape
 ): $expr_Select<{
