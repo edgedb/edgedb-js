@@ -127,65 +127,65 @@ export type SelectObjectMethods<Root extends TypeSet> =
       : {delete(): $expr_Delete<Root>}
     : unknown;
 
-export type SelectModifierMethods<Root extends TypeSet> = TypeSet extends Root
-  ? {filter: any; order: any; limit: any; offset: any}
-  : ObjectTypeSet extends Root
-  ? {filter: any; order: any; limit: any; offset: any}
-  : {
-      filter<Filter extends SelectFilterExpression>(
-        filter:
-          | Filter
-          | ((
-              scope: Root extends ObjectTypeSet
-                ? $scopify<Root["__element__"]>
-                : stripSet<Root>
-            ) => Filter)
-      ): $expr_Select<{
-        __element__: Root["__element__"];
-        __cardinality__: InferFilterCardinality<Root, Filter>;
-      }>;
-      order(
-        order:
-          | OrderByExpression
-          | ((
-              scope: Root extends ObjectTypeSet
-                ? $scopify<Root["__element__"]>
-                : stripSet<Root>
-            ) => OrderByExpression)
-      ): $expr_Select<Root>;
-      offset(
-        offset:
-          | OffsetExpression
-          | number
-          | ((
-              scope: Root extends ObjectTypeSet
-                ? $scopify<Root["__element__"]>
-                : stripSet<Root>
-            ) => OffsetExpression | number)
-      ): $expr_Select<{
-        __element__: Root["__element__"];
-        __cardinality__: cardinalityUtil.overrideLowerBound<
-          Root["__cardinality__"],
-          "Zero"
-        >;
-      }>;
-      limit(
-        limit:
-          | LimitExpression
-          | number
-          | ((
-              scope: Root extends ObjectTypeSet
-                ? $scopify<Root["__element__"]>
-                : stripSet<Root>
-            ) => LimitExpression | number)
-      ): $expr_Select<{
-        __element__: Root["__element__"];
-        __cardinality__: cardinalityUtil.overrideLowerBound<
-          Root["__cardinality__"],
-          "Zero"
-        >;
-      }>;
-    };
+export interface SelectModifierMethods<Root extends TypeSet> {
+  //= TypeSet extends Root
+  // ? {filter: any; order: any; limit: any; offset: any}
+  // : ObjectTypeSet extends Root
+  // ? {filter: any; order: any; limit: any; offset: any}
+  // :
+  filter<Filter extends SelectFilterExpression>(
+    filter:
+      | Filter
+      | ((
+          scope: Root extends ObjectTypeSet
+            ? $scopify<Root["__element__"]>
+            : stripSet<Root>
+        ) => Filter)
+  ): this;
+  order(
+    order:
+      | OrderByExpression
+      | ((
+          scope: Root extends ObjectTypeSet
+            ? $scopify<Root["__element__"]>
+            : stripSet<Root>
+        ) => OrderByExpression)
+  ): this;
+  offset(
+    offset:
+      | OffsetExpression
+      | number
+      | ((
+          scope: Root extends ObjectTypeSet
+            ? $scopify<Root["__element__"]>
+            : stripSet<Root>
+        ) => OffsetExpression | number)
+  ): this;
+  // $expr_Select<{
+  //   __element__: Root["__element__"];
+  //   __cardinality__: cardinalityUtil.overrideLowerBound<
+  //     Root["__cardinality__"],
+  //     "Zero"
+  //   >;
+  // }>;
+  limit(
+    limit:
+      | LimitExpression
+      | number
+      | ((
+          scope: Root extends ObjectTypeSet
+            ? $scopify<Root["__element__"]>
+            : stripSet<Root>
+        ) => LimitExpression | number)
+  ): this;
+  // $expr_Select<{
+  //   __element__: Root["__element__"];
+  //   __cardinality__: cardinalityUtil.overrideLowerBound<
+  //     Root["__cardinality__"],
+  //     "Zero"
+  //   >;
+  // }>;
+}
 // Base is ObjectTypeSet &
 // Filter is equality &
 // Filter.args[0] is PathLeaf
@@ -474,11 +474,13 @@ function updateModifier(
       modifiers.filter = modifiers.filter
         ? op(modifiers.filter, "and", modExpr)
         : modExpr;
-      cardinality = computeFilterCardinality(
-        modExpr,
-        cardinality,
-        parent.__expr__
-      );
+
+      // methods no longer change cardinality
+      // cardinality = computeFilterCardinality(
+      //   modExpr,
+      //   cardinality,
+      //   parent.__expr__
+      // );
       break;
     case "order":
       const order =
@@ -492,7 +494,8 @@ function updateModifier(
     case "offset":
       modifiers.offset =
         typeof modExpr === "number" ? _std.jsnumber(modExpr) : modExpr;
-      cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
+      // methods no longer change cardinality
+      // cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
       break;
     case "limit":
       modifiers.limit =
@@ -501,7 +504,8 @@ function updateModifier(
           : (modExpr as any).__kind__ === ExpressionKind.Set
           ? (modExpr as any).__exprs__[0]
           : modExpr;
-      cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
+      // methods no longer change cardinality
+      // cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
       break;
   }
 

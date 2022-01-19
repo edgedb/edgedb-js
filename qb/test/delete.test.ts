@@ -1,4 +1,5 @@
 import * as edgedb from "edgedb";
+import {ObjectTypeSet} from "edgedb/dist/reflection";
 
 import e from "../dbschema/edgeql";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
@@ -23,11 +24,12 @@ test("basic insert", async () => {
 
   await client.querySingle(insertBlackWidow.toEdgeQL());
 
-  const deleteBlackWidow = e
-    .select(e.Hero, hero => ({
-      filter: e.op(hero.name, "=", "Black Widow"),
-    }))
-    .delete();
+  const blackWidow = e.select(e.Hero, hero => ({
+    filter: e.op(hero.name, "=", "Black Widow"),
+  }));
+
+  type asdf = typeof blackWidow extends ObjectTypeSet ? true : false;
+  const deleteBlackWidow = blackWidow.delete();
   await client.querySingle(deleteBlackWidow.toEdgeQL());
 
   return;
