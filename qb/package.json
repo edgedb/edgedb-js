@@ -10,7 +10,8 @@
     "generate": "edgedb-generate",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",
-    "build": "tsc --project tsconfig.build.json --generateTrace trace"
+    "build": "tsc --project tsconfig.build.json",
+    "build:trace": "tsc --project tsconfig.build.json --generateTrace trace"
   },
   "keywords": [],
   "author": "Colin McDonnell",
