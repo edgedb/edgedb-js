@@ -167,12 +167,8 @@ export type $assertSingle<Expr extends TypeSet> = Expression<{
 }>;
 
 export type ExpressionMethods<Set extends TypeSet> = {
-  // __element__: Set["__element__"];
-  // __cardinality__: Set["__cardinality__"];
-
   toEdgeQL(): string;
-  // $is: any;
-  // $assertSingle: any;
+
   $is<T extends ObjectTypeSet>(
     ixn: T
   ): $expr_TypeIntersection<

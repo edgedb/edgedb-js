@@ -102,7 +102,7 @@ export type pathifyShape<
                 Shape[k]["__cardinality__"]
               >
             >,
-            {type: anonymizeObjectTypeSet<Root>; linkName: k},
+            {type: Root; linkName: k},
             false
           >
         : Shape[k] extends TypeSet
@@ -114,10 +114,10 @@ export type pathifyShape<
                 Shape[k]["__cardinality__"]
               >
             >,
-            {type: anonymizeObjectTypeSet<Root>; linkName: k},
+            {type: Root; linkName: k},
             false
           >
-        : unknown;
+        : unknown; // must be unknown (not never) to avoid overriding a pointer with the same key
     };
 
 type pathifyLinkProps<

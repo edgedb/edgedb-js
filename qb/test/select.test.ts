@@ -275,7 +275,6 @@ test("infer cardinality - scalar filters", () => {
 
   const u3 = e.uuid("asdf");
   const q3 = e.select(q, hero => {
-    // hero.
     return {filter: e.op(hero.id, "=", u3)};
   });
   tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.AtMostOne>>(

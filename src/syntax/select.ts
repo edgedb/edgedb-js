@@ -128,11 +128,6 @@ export type SelectObjectMethods<Root extends TypeSet> =
     : unknown;
 
 export interface SelectModifierMethods<Root extends TypeSet> {
-  //= TypeSet extends Root
-  // ? {filter: any; order: any; limit: any; offset: any}
-  // : ObjectTypeSet extends Root
-  // ? {filter: any; order: any; limit: any; offset: any}
-  // :
   filter<Filter extends SelectFilterExpression>(
     filter:
       | Filter
@@ -425,7 +420,7 @@ function deleteFunc(this: any) {
       __cardinality__: this.__cardinality__,
       __expr__: this,
     })
-  ) as any as $expr_Delete;
+  ) as $expr_Delete;
 }
 
 function resolveModifierGetter(parent: any, modGetter: any) {
