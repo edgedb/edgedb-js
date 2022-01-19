@@ -558,8 +558,7 @@ test("overrides with implicit casting", () => {
   }));
 });
 
-// Skipped because of bug: https://github.com/edgedb/edgedb/issues/3245
-test.skip("link properties", async () => {
+test("link properties", async () => {
   const query = e.select(e.Movie, movie => ({
     id: true,
     characters: char => ({
@@ -567,8 +566,6 @@ test.skip("link properties", async () => {
       "@character_name": true,
     }),
   }));
-
-  console.log(query.toEdgeQL());
 
   const result = await query.run(client);
 
