@@ -117,7 +117,9 @@ export type pathifyShape<
             {type: Root; linkName: k},
             false
           >
-        : unknown; // must be unknown (not never) to avoid overriding a pointer with the same key
+        : // must be unknown (not never) to avoid overriding
+          // a pointer with the same key
+          unknown;
     };
 
 type pathifyLinkProps<

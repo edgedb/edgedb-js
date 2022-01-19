@@ -430,7 +430,7 @@ function resolveModifierGetter(parent: any, modGetter: any) {
       const _scope =
         parent.__scope__ ?? $getScopedExpr(parent.__expr__, $existingScopes);
       const scope = new Proxy(_scope, {
-        get(target, prop) {
+        get(target: any, prop: string) {
           if (shape[prop] && shape[prop] !== true) {
             return shape[prop];
           }
@@ -460,7 +460,7 @@ function updateModifier(
   const modifiers = {
     ...parent.__modifiers__,
   };
-  let cardinality = parent.__cardinality__;
+  const cardinality = parent.__cardinality__;
 
   const {modExpr, scope} = resolveModifierGetter(parent, modGetter);
 

@@ -121,7 +121,7 @@ export type Expression<Set extends TypeSet = TypeSet> = Set &
       }
     : $pathify<Set> &
         ExpressionMethods<stripSet<Set>> &
-        //Set extends {__parent__: any} ? Set["__parent__"] : null
+        // Set extends {__parent__: any} ? Set["__parent__"] : null
         $tuplePathify<Set> &
         $arrayLikeIndexify<Set> &
         $jsonDestructure<Set>);
