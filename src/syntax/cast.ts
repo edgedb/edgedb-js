@@ -5,12 +5,13 @@ import {
   CastableNonArrayType,
   CastableArrayType,
   unwrapCastableType,
+  TypeSet,
 } from "../reflection";
 import {$expressionify} from "./path";
 
 export function cast<
   Target extends CastableNonArrayType | CastableArrayType,
-  Expr extends Expression
+  Expr extends TypeSet
 >(target: Target, expr: Expr): $expr_Cast<Target, Expr> {
   return $expressionify({
     __element__: target,
@@ -22,7 +23,7 @@ export function cast<
 
 export type $expr_Cast<
   Target extends BaseType = BaseType,
-  Expr extends Expression = Expression
+  Expr extends TypeSet = TypeSet
 > = Expression<{
   __element__: unwrapCastableType<Target>;
   __cardinality__: Expr["__cardinality__"];

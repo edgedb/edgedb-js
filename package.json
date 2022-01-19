@@ -49,7 +49,7 @@
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
     "compileForDeno": "deno run --unstable --allow-env --allow-read --allow-write tools/compileForDeno.ts",
-    "build:dev": "nodemon -e ts -w ./src -w ./qb -x 'yarn tsc --project tsconfig.build.json --incremental'",
+    "build:dev": "nodemon -e ts -w ./src -x 'yarn tsc --project tsconfig.build.json --incremental'",
     "dev": "yarn generate && echo \"Compiling TypeScript...\" && yarn build --incremental",
     "dev:watch": "nodemon -e ts -w ./src -x 'yarn generate && echo \"Compiling TypeScript...\" && yarn build --incremental'"
   }
