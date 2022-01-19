@@ -1,14 +1,16 @@
 import * as edgedb from "edgedb";
 import {Cardinality, ExpressionRoot} from "../reflection";
+import {jsonifyComplexParams} from "./params";
 
 async function queryFunc(this: any, cxn: edgedb.Executor, args: any) {
+  const _args = jsonifyComplexParams(this, args);
   if (
     this.__cardinality__ === Cardinality.One ||
     this.__cardinality__ === Cardinality.AtMostOne
   ) {
-    return cxn.querySingle(this.toEdgeQL(), args);
+    return cxn.querySingle(this.toEdgeQL(), _args);
   } else {
-    return cxn.query(this.toEdgeQL(), args);
+    return cxn.query(this.toEdgeQL(), _args);
   }
 }
 

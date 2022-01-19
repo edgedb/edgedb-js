@@ -621,9 +621,11 @@ type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
 export type BaseTypeToTsType<Type extends BaseType> = typeutil.flatten<
   Type extends ScalarType
     ? Type["__tsconsttype__"]
+    : Type extends CastOnlyScalarType
+    ? Type["__casttype__"]["__tsconsttype__"]
     : Type extends EnumType
     ? Type["__tstype__"]
-    : Type extends ArrayType
+    : Type extends ArrayType<any>
     ? ArrayTypeToTsType<Type>
     : Type extends TupleType
     ? TupleItemsToTsType<Type["__items__"]>
@@ -732,10 +734,18 @@ export type AnyTupleType = TupleType | NamedTupleType;
 
 export type CastableArrayType = ArrayType<CastableNonArrayType>;
 
-export type ParamType = CastableScalarType | ArrayType<CastableScalarType>;
-
 export type unwrapCastableType<T> = T extends CastOnlyScalarType
   ? T["__casttype__"]
   : T extends CastableArrayType
   ? ArrayType<unwrapCastableType<T["__element__"]>>
   : T;
+
+export type ParamType =
+  | CastableScalarType
+  | ArrayType<
+      | CastableScalarType
+      | TupleType<typeutil.tupleOf<ParamType>>
+      | NamedTupleType<{[k: string]: ParamType}>
+    >
+  | TupleType<typeutil.tupleOf<ParamType>>
+  | NamedTupleType<{[k: string]: ParamType}>;

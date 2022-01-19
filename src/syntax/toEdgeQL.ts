@@ -228,7 +228,8 @@ export function $toEdgeQL(this: any) {
         expr.__kind__ === ExpressionKind.PathNode ||
         expr.__kind__ === ExpressionKind.TypeIntersection) &&
         !refData.boundScope) ||
-      expr.__kind__ === ExpressionKind.ForVar
+      expr.__kind__ === ExpressionKind.ForVar ||
+      expr.__kind__ === ExpressionKind.Param
     ) {
       continue;
     }
@@ -509,11 +510,20 @@ function renderEdgeQL(
     ].join(",\n")}\n`;
   }
 
-  if (
-    expr.__kind__ === ExpressionKind.With ||
-    expr.__kind__ === ExpressionKind.WithParams
-  ) {
+  if (expr.__kind__ === ExpressionKind.With) {
     return renderEdgeQL(expr.__expr__, ctx);
+  } else if (expr.__kind__ === ExpressionKind.WithParams) {
+    return `WITH\n${expr.__params__
+      .map(param => {
+        const optional =
+          param.__cardinality__ === Cardinality.AtMostOne ? "OPTIONAL " : "";
+        return `  __param__${param.__name__} := ${
+          param.__isComplex__
+            ? `<${param.__element__.__name__}><${optional}json>`
+            : `<${optional}${param.__element__.__name__}>`
+        }$${param.__name__}`;
+      })
+      .join(",\n")}\nSELECT (${renderEdgeQL(expr.__expr__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Alias) {
     const aliasedExprVar = ctx.withVars.get(expr.__expr__ as any);
     if (!aliasedExprVar) {
@@ -776,9 +786,7 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n)`
     }
     return forVar;
   } else if (expr.__kind__ === ExpressionKind.Param) {
-    return `<${
-      expr.__cardinality__ === Cardinality.AtMostOne ? "OPTIONAL " : ""
-    }${expr.__element__.__name__}>$${expr.__name__}`;
+    return `__param__${expr.__name__}`;
   } else if (expr.__kind__ === ExpressionKind.Detached) {
     return `DETACHED ${renderEdgeQL(
       expr.__expr__,
