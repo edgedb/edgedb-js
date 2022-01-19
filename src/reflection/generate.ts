@@ -220,6 +220,17 @@ export async function generateQB(params: {
     });
     index.writeln([r`};`]);
     index.addExport("ExportDefault", undefined, true);
+
+    // re-export some reflection types
+    index.addExportFrom({Cardinality: true}, "edgedb/dist/reflection");
+    index.writeln([
+      t`export `,
+      dts`declare `,
+      t`type Set<
+  Type extends $.BaseType,
+  Cardinality extends $.Cardinality = $.Cardinality.Many
+> = $.TypeSet<Type, Cardinality>;`,
+    ]);
   } finally {
     await cxn.close();
   }
