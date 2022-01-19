@@ -274,7 +274,9 @@ test("infer cardinality - scalar filters", () => {
   expect(q2.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
   const u3 = e.uuid("asdf");
-  const q3 = e.select(q, hero => ({filter: e.op(hero.id, "=", u3)}));
+  const q3 = e.select(q, hero => {
+    return {filter: e.op(hero.id, "=", u3)};
+  });
   tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
   );
@@ -988,4 +990,79 @@ test("non runnable expressions", async () => {
     // @ts-expect-error
     () => e.op("Hello ", "++", "World").run(client)
   ).toThrow(/It is not valid to call 'run\(\)' on this expression/);
+});
+
+test("computed property path", async () => {
+  const numbers = e.set(1, 2, 3);
+  const expr = e.select({
+    numbers,
+  });
+  const query = e.select(expr.numbers);
+
+  expect(await query.run(client)).toEqual([1, 2, 3]);
+});
+
+test("modifier methods", async () => {
+  const strs = ["c", "a", "aa", "b", "cc", "bb"];
+  let q3 = e.select(e.set(...strs), vals => ({
+    order: {expression: e.len(vals), direction: e.DESC},
+  }));
+
+  // reassignment allowed
+  q3 = q3.order(vals => vals);
+  tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
+
+  expect(await q3.run(client)).toEqual(["aa", "bb", "cc", "a", "b", "c"]);
+
+  const q4 = e
+    .select(e.Hero, hero => ({
+      order: hero.name,
+    }))
+    .limit(2);
+  const r4 = await q4.run(client);
+
+  expect(r4.length).toEqual(2);
+  expect(await q4.limit(1).offset(1).run(client)).toEqual(r4.slice(1, 2));
+
+  const q5 = e
+    .select(e.Hero, hero => ({
+      name: true,
+      nameLen: e.len(hero.name),
+    }))
+    .order(hero => hero.nameLen);
+
+  const r5 = await q5.run(client);
+});
+
+test("modifier methods", async () => {
+  let freeQuery = e.select({
+    heroes: e.Hero,
+  });
+
+  const filteredFreeQuery = freeQuery.filter(arg => e.bool(false));
+  // methods do not change change cardinality
+  tc.assert<
+    tc.IsExact<typeof filteredFreeQuery["__cardinality__"], $.Cardinality.One>
+  >(true);
+  expect(filteredFreeQuery.__cardinality__).toEqual($.Cardinality.One);
+
+  const offsetFreeQuery = freeQuery.offset(3);
+  // methods do not change change cardinality
+  tc.assert<
+    tc.IsExact<typeof offsetFreeQuery["__cardinality__"], $.Cardinality.One>
+  >(true);
+  expect(offsetFreeQuery.__cardinality__).toEqual($.Cardinality.One);
+
+  const limitFreeQuery = freeQuery.limit(1);
+  // methods do not change change cardinality
+  tc.assert<
+    tc.IsExact<typeof limitFreeQuery["__cardinality__"], $.Cardinality.One>
+  >(true);
+  expect(limitFreeQuery.__cardinality__).toEqual($.Cardinality.One);
+
+  // should allow reassignment
+  freeQuery = freeQuery.offset(1).filter(e.bool(false));
+  expect(await freeQuery.run(client)).toEqual(null);
 });

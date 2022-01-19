@@ -7,15 +7,7 @@ import e from "./dbschema/edgeql";
 import {setupTests} from "./test/setupTeardown";
 
 async function run() {
-  // const asdf = e.tuple([e.str, e.int64]);
   const {client} = await setupTests();
-
-  // e.namedTuple({"a": e.int64(2), "b": e.str("asdf")})
-
-  // const test1 = e.select(
-  //   e.index(e.namedTuple({"a": e.int64(2), "b": e.str("asdf")}), e.str("a"))
-  // );
-  // console.log(test1.toEdgeQL());
 
   if (1 > 0) return;
 
@@ -37,21 +29,24 @@ async function run() {
 
   console.log(e.Hero.__element__.__pointers__.villains.properties);
 
-  console.log(await e.select(e.int16(5)).run(client));
+  console.log(await e.select(e.jsnumber(5)).run(client));
   console.log(
     await e
-      .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
+      .select(e.Hero, hero => ({filter: e.op(hero.name, "=", e.str("Loki"))}))
       .run(client)
   );
   console.log(
     await e
-      .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
-      .update({number_of_movies: e.int16(5)})
+      .update(e.Hero, hero => ({
+        filter: e.op(hero.name, "=", e.str("Loki")),
+        set: {number_of_movies: 5},
+      }))
+      // .update({number_of_movies: e.number(5)})
       .run(client)
   );
   console.log(
     await e
-      .select(e.Hero, hero => ({filter: e.eq(hero.name, e.str("Loki"))}))
+      .select(e.Hero, hero => ({filter: e.op(hero.name, "=", e.str("Loki"))}))
       .delete()
       .run(client)
   );
@@ -66,13 +61,13 @@ async function run() {
 
   console.log(await e.for(e.Hero, hero => hero.name).run(client));
 
-  const numbers = e.set(e.int64(1), e.int32(2), e.int16(3));
+  const numbers = e.set(1, 2, 3);
 
   console.log(await e.with([numbers], e.select(numbers)).run(client));
 
   console.log(
     await e
-      .withParams(
+      .params(
         {
           str: e.str,
           numArr: e.array(e.int64),
@@ -82,7 +77,13 @@ async function run() {
           e.select({
             str: params.str,
             nums: e.array_unpack(params.numArr),
-            x: e.if_else(e.str("true"), params.optBool, e.str("false")),
+            x: e.op(
+              e.str("true"),
+              "if",
+              params.optBool,
+              "else",
+              e.str("false")
+            ),
           })
       )
       .run(client, {numArr: [7], str: "test"})
@@ -188,8 +189,8 @@ async function run() {
       secret_identity: true,
     }),
     ...e.is(e.Villain, {
-      nemesis: {id: true, computable: e.int64(1234)},
-      computable: e.int64(1234),
+      nemesis: {id: true, computable: e.jsnumber(1234)},
+      computable: e.jsnumber(1234),
     }),
   }));
   type q4 = $.setToTsType<typeof q4>;
@@ -199,7 +200,7 @@ async function run() {
     ...e.is(e.Villain, {
       // id: true,
       nemesis: {id: true},
-      computable: e.int64(1234),
+      computable: e.jsnumber(1234),
     }),
   }));
   type q5 = $.setToTsType<typeof q5>;
@@ -252,7 +253,7 @@ async function run() {
     ...e.is(e.Villain, {
       // id: true,
       nemesis: {id: true},
-      computable: e.int64(1234),
+      computable: e.jsnumber(1234),
     }),
   }));
   type q9 = $.setToTsType<typeof q9>;
