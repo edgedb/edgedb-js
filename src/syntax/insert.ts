@@ -134,10 +134,13 @@ export function $normaliseInsertShape(
   root: ObjectTypeSet,
   shape: {[key: string]: any},
   isUpdate: boolean = false
-): {[key: string]: TypeSet} {
-  const newShape: {[key: string]: TypeSet} = {};
+): {[key: string]: TypeSet | {"+=": TypeSet} | {"-=": TypeSet}} {
+  const newShape: {
+    [key: string]: TypeSet | {"+=": TypeSet} | {"-=": TypeSet};
+  } = {};
   for (const [key, _val] of Object.entries(shape)) {
     let val = _val;
+    let setModify: string | null = null;
     if (isUpdate && typeof _val === "object") {
       const valKeys = Object.keys(_val);
       if (
@@ -145,6 +148,7 @@ export function $normaliseInsertShape(
         (valKeys[0] === "+=" || valKeys[0] === "-=")
       ) {
         val = _val[valKeys[0]];
+        setModify = valKeys[0];
       }
     }
     if (val?.__kind__) {
@@ -158,9 +162,12 @@ export function $normaliseInsertShape(
           } shape key: '${key}'`
         );
       }
-      newShape[key] = (
+      const wrappedVal = (
         pointer.target as scalarTypeWithConstructor<ScalarType>
-      )(_val);
+      )(val);
+      newShape[key] = setModify
+        ? ({[setModify]: wrappedVal} as any)
+        : wrappedVal;
     }
   }
   return newShape;

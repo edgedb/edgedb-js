@@ -28,6 +28,14 @@ test("update", async () => {
       nemesis: e.set(e.$Hero),
     },
   })).toEdgeQL();
+
+  e.update(e.Bag, () => ({
+    set: {
+      stringsMulti: {
+        "+=": "new string",
+      },
+    },
+  })).toEdgeQL();
 });
 
 test("update assignable", () => {
