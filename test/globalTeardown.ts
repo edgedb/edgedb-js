@@ -35,12 +35,8 @@ export default async () => {
   console.log("Shutting down EdgeDB test cluster...");
 
   try {
-    await Promise.all([
-      // @ts-ignore
-      shutdown(global.edgedbProc, global.edgedbConn),
-      // @ts-ignore
-      shutdown(global.edgedbDenoProc, global.edgedbDenoConn),
-    ]);
+    // @ts-ignore
+    await shutdown(global.edgedbProc, global.edgedbConn);
   } finally {
     // tslint:disable-next-line
     console.log("EdgeDB test cluster is down...");

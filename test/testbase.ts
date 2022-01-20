@@ -26,11 +26,7 @@ export const isDeno =
 function _getOpts(opts: ConnectOptions): ConnectOptions {
   let config;
   try {
-    if (isDeno) {
-      config = JSON.parse(process.env._JEST_EDGEDB_DENO_CONNECT_CONFIG || "");
-    } else {
-      config = JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG || "");
-    }
+    config = JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG || "");
   } catch {
     throw new Error("EdgeDB Jest test environment is not initialized");
   }

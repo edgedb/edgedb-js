@@ -1,14 +1,15 @@
-import {process} from "https://deno.land/std@0.108.0/node/process.ts";
-import {Buffer} from "https://deno.land/std@0.108.0/node/buffer.ts";
-import * as crypto from "https://deno.land/std@0.108.0/node/crypto.ts";
+import {process} from "https://deno.land/std@0.114.0/node/process.ts";
+import {Buffer} from "https://deno.land/std@0.114.0/node/buffer.ts";
+import * as crypto from "https://deno.land/std@0.114.0/node/crypto.ts";
 import {
   Sha256,
   HmacSha256,
-} from "https://deno.land/std@0.108.0/hash/sha256.ts";
-import path from "https://deno.land/std@0.108.0/node/path.ts";
+} from "https://deno.land/std@0.114.0/hash/sha256.ts";
+import path from "https://deno.land/std@0.114.0/node/path.ts";
 import * as _fs from "https://deno.land/std@0.115.0/fs/mod.ts";
-import EventEmitter from "https://deno.land/std@0.108.0/node/events.ts";
-import util from "https://deno.land/std@0.108.0/node/util.ts";
+import EventEmitter from "https://deno.land/std@0.114.0/node/events.ts";
+import util from "https://deno.land/std@0.114.0/node/util.ts";
+import {iterateReader} from "https://deno.land/std@0.114.0/streams/conversion.ts";
 
 export {Buffer, path, process, util, crypto};
 
@@ -138,22 +139,10 @@ export namespace net {
     on(eventName: "close", listener: () => void): this;
   }
 
-  export class Socket extends EventEmitter {
-    private _conn: Deno.Conn | null = null;
-    private _readIter: AsyncIterableIterator<Uint8Array> | null = null;
-    private _paused = true;
-
-    constructor(pconn: Promise<Deno.Conn>) {
-      super();
-      pconn
-        .then(conn => {
-          this._conn = conn;
-          this._readIter = Deno.iter(conn);
-          this.emit("connect");
-          this.resume();
-        })
-        .catch(e => this.emit("error", e));
-    }
+  export class BaseSocket<T extends Deno.Conn> extends EventEmitter {
+    protected _conn: T | null = null;
+    protected _readIter: AsyncIterableIterator<Uint8Array> | null = null;
+    protected _paused = true;
 
     setNoDelay() {
       // No deno api for this
@@ -212,11 +201,26 @@ export namespace net {
       }
     }
   }
+
+  export class Socket extends BaseSocket<Deno.Conn> {
+    constructor(pconn: Promise<Deno.Conn>) {
+      super();
+      pconn
+        .then(conn => {
+          this._conn = conn;
+          this._readIter = iterateReader(conn);
+          this.emit("connect");
+          this.resume();
+        })
+        .catch(e => {
+          this.emit("error", e);
+        });
+    }
+  }
 }
 
-// TODO: deno's TLS implementation doesn't currently support ALPN.
 export namespace tls {
-  export function connect(options: tls.ConnectionOptions): net.Socket {
+  export function connect(options: tls.ConnectionOptions): tls.TLSSocket {
     if (options.host == null) {
       throw new Error("host option must be set");
     }
@@ -225,7 +229,14 @@ export namespace tls {
       throw new Error("port option must be set");
     }
 
-    return net.createConnection(options.port, options.host);
+    const conn = Deno.connectTls({
+      port: options.port,
+      hostname: options.host,
+      alpnProtocols: options.ALPNProtocols,
+      caCerts: typeof options.ca === "string" ? [options.ca] : options.ca,
+    });
+
+    return new TLSSocket(conn);
   }
 
   export function checkServerIdentity(
@@ -244,9 +255,27 @@ export namespace tls {
     rejectUnauthorized?: boolean;
   }
 
-  export class TLSSocket extends net.Socket {
-    get alpnProtocol(): string {
-      throw new Error("deno does not support ALPN");
+  export class TLSSocket extends net.BaseSocket<Deno.TlsConn> {
+    private _alpnProtocol: string | null = null;
+
+    constructor(pconn: Promise<Deno.TlsConn>) {
+      super();
+      pconn
+        .then(async conn => {
+          const handshake = await conn.handshake();
+          this._alpnProtocol = handshake.alpnProtocol;
+          this._conn = conn;
+          this._readIter = iterateReader(conn);
+          this.emit("secureConnect");
+          this.resume();
+        })
+        .catch(e => {
+          this.emit("error", e);
+        });
+    }
+
+    get alpnProtocol(): string | false {
+      return this._alpnProtocol ?? false;
     }
   }
 }

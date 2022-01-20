@@ -41,10 +41,12 @@ test("run deno test", async () => {
         "--allow-env",
         "--allow-read",
         "--allow-write",
+        "--unsafely-ignore-certificate-errors",
         "test/deno",
       ],
       {
         env: process.env,
+        timeout: 120_000,
       },
       (error, stdout, stderr) => {
         if (error) {
@@ -78,6 +80,7 @@ test("deno check", async () => {
       ["eval", "--unstable", 'import * as edgedb from "./edgedb-deno/mod.ts"'],
       {
         env: process.env,
+        timeout: 60_000,
       },
       (error, stdout, stderr) => {
         if (error) {
