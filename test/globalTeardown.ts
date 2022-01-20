@@ -12,7 +12,7 @@ export const shutdown = async (
       // tslint:disable-next-line
       console.error("!!! EdgeDB exit timeout... !!!");
       proc.kill("SIGTERM");
-    }, 20_000);
+    }, 30_000);
 
     proc.on("exit", (code: number, signal: string) => {
       clearTimeout(to);

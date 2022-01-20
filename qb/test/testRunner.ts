@@ -19,6 +19,7 @@ import {shutdown} from "../../test/globalTeardown";
 
   const args = getServerCommand(getWSLPath(statusFile));
 
+  console.log(`starting server`);
   const {proc, config} = await startServer(args, statusFile);
 
   console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);
