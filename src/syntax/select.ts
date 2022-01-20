@@ -1,4 +1,4 @@
-import type {$bool, $jsnumber} from "@generated/modules/std";
+import type {$bool, $number} from "@generated/modules/std";
 import _std from "@generated/modules/std";
 import {op} from "@generated/operators";
 import {
@@ -53,17 +53,17 @@ export type OrderByExpression =
   | [OrderByExpr | OrderByObjExpr, ...(OrderByExpr | OrderByObjExpr)[]];
 
 export type OffsetExpression = TypeSet<
-  $jsnumber,
+  $number,
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
 
 export type SelectFilterExpression = TypeSet<$bool, Cardinality>;
 export type LimitOffsetExpression = TypeSet<
-  $jsnumber,
+  $number,
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
 export type LimitExpression = TypeSet<
-  $jsnumber,
+  $number,
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
 
@@ -385,15 +385,13 @@ export function $handleModifiers(
   }
   if (mods.offset) {
     mods.offset =
-      typeof mods.offset === "number"
-        ? _std.jsnumber(mods.offset)
-        : mods.offset;
+      typeof mods.offset === "number" ? _std.number(mods.offset) : mods.offset;
     card = cardinalityUtil.overrideLowerBound(card, "Zero");
   }
   if (mods.limit) {
     let expr = mods.limit;
     if (typeof expr === "number") {
-      expr = _std.jsnumber(expr);
+      expr = _std.number(expr);
     } else if ((expr as any).__kind__ === ExpressionKind.Set) {
       expr = (expr as any).__exprs__[0];
     }
@@ -488,14 +486,14 @@ function updateModifier(
       break;
     case "offset":
       modifiers.offset =
-        typeof modExpr === "number" ? _std.jsnumber(modExpr) : modExpr;
+        typeof modExpr === "number" ? _std.number(modExpr) : modExpr;
       // methods no longer change cardinality
       // cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
       break;
     case "limit":
       modifiers.limit =
         typeof modExpr === "number"
-          ? _std.jsnumber(modExpr)
+          ? _std.number(modExpr)
           : (modExpr as any).__kind__ === ExpressionKind.Set
           ? (modExpr as any).__exprs__[0]
           : modExpr;

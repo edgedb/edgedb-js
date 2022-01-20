@@ -29,7 +29,7 @@ async function run() {
 
   console.log(e.Hero.__element__.__pointers__.villains.properties);
 
-  console.log(await e.select(e.jsnumber(5)).run(client));
+  console.log(await e.select(e.number(5)).run(client));
   console.log(
     await e
       .select(e.Hero, hero => ({filter: e.op(hero.name, "=", e.str("Loki"))}))
@@ -189,8 +189,8 @@ async function run() {
       secret_identity: true,
     }),
     ...e.is(e.Villain, {
-      nemesis: {id: true, computable: e.jsnumber(1234)},
-      computable: e.jsnumber(1234),
+      nemesis: {id: true, computable: e.number(1234)},
+      computable: e.number(1234),
     }),
   }));
   type q4 = $.setToTsType<typeof q4>;
@@ -200,7 +200,7 @@ async function run() {
     ...e.is(e.Villain, {
       // id: true,
       nemesis: {id: true},
-      computable: e.jsnumber(1234),
+      computable: e.number(1234),
     }),
   }));
   type q5 = $.setToTsType<typeof q5>;
@@ -253,7 +253,7 @@ async function run() {
     ...e.is(e.Villain, {
       // id: true,
       nemesis: {id: true},
-      computable: e.jsnumber(1234),
+      computable: e.number(1234),
     }),
   }));
   type q9 = $.setToTsType<typeof q9>;

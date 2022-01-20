@@ -27,16 +27,16 @@ test("slice and index ops", () => {
   checkOperatorExpr(
     e.str("test string")["2:5"],
     "[]",
-    [e.str("test string"), [e.jsnumber(2), e.jsnumber(5)]],
+    [e.str("test string"), [e.number(2), e.number(5)]],
     e.str,
     $.Cardinality.One,
     `("test string")[2:5]`
   );
 
   checkOperatorExpr(
-    e.str("test string").slice(e.jsnumber(2), e.jsnumber(5)),
+    e.str("test string").slice(e.number(2), e.number(5)),
     "[]",
-    [e.str("test string"), [e.jsnumber(2), e.jsnumber(5)]],
+    [e.str("test string"), [e.number(2), e.number(5)]],
     e.str,
     $.Cardinality.One,
     `("test string")[2:5]`
@@ -45,10 +45,7 @@ test("slice and index ops", () => {
   checkOperatorExpr(
     e.array([BigInt(1), BigInt(2), BigInt(3)])["1:2"],
     "[]",
-    [
-      e.array([BigInt(1), BigInt(2), BigInt(3)]),
-      [e.jsnumber(1), e.jsnumber(2)],
-    ],
+    [e.array([BigInt(1), BigInt(2), BigInt(3)]), [e.number(1), e.number(2)]],
     e.array(e.bigint),
     $.Cardinality.One,
     `([<std::bigint>1n, <std::bigint>2n, <std::bigint>3n])[1:2]`
@@ -57,16 +54,16 @@ test("slice and index ops", () => {
   checkOperatorExpr(
     e.str("test string")[3],
     "[]",
-    [e.str("test string"), e.jsnumber(3)],
+    [e.str("test string"), e.number(3)],
     e.str,
     $.Cardinality.One,
     `("test string")[3]`
   );
 
   checkOperatorExpr(
-    e.str("test string").index(e.jsnumber(3)),
+    e.str("test string").index(e.number(3)),
     "[]",
-    [e.str("test string"), e.jsnumber(3)],
+    [e.str("test string"), e.number(3)],
     e.str,
     $.Cardinality.One,
     `("test string")[3]`
@@ -75,7 +72,7 @@ test("slice and index ops", () => {
   checkOperatorExpr(
     e.array([BigInt(1), BigInt(2), BigInt(3)])[2],
     "[]",
-    [e.array([BigInt(1), BigInt(2), BigInt(3)]), e.jsnumber(2)],
+    [e.array([BigInt(1), BigInt(2), BigInt(3)]), e.number(2)],
     e.bigint,
     $.Cardinality.One,
     `([<std::bigint>1n, <std::bigint>2n, <std::bigint>3n])[2]`

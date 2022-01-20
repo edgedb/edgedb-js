@@ -33,7 +33,7 @@ export const scalarToLiteralMapping: {
   "std::int64": {type: "number"},
   "std::float32": {type: "number"},
   "std::float64": {type: "number"},
-  "std::jsnumber": {
+  "std::number": {
     type: "number",
     literalKind: "typeof",
     extraTypes: ["string"],

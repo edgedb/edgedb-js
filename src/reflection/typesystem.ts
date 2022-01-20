@@ -393,7 +393,7 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
           Set["__cardinality__"]
         >
       >;
-      index<T extends TypeSet<ScalarType<"std::jsnumber">> | number>(
+      index<T extends TypeSet<ScalarType<"std::number">> | number>(
         index: T
       ): $expr_Operator<
         "[]",
@@ -412,9 +412,9 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         >
       >;
       slice<
-        S extends TypeSet<ScalarType<"std::jsnumber">> | number,
+        S extends TypeSet<ScalarType<"std::number">> | number,
         E extends
-          | TypeSet<ScalarType<"std::jsnumber">>
+          | TypeSet<ScalarType<"std::number">>
           | number
           | undefined
           | null
@@ -438,7 +438,7 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
       >;
       slice<
         E extends
-          | TypeSet<ScalarType<"std::jsnumber">>
+          | TypeSet<ScalarType<"std::number">>
           | number
           | undefined
           | null

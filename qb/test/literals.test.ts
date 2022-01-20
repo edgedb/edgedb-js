@@ -29,11 +29,11 @@ test("literals", () => {
   expect(e.std.duration(duration).toEdgeQL()).toEqual(
     `<std::duration>'PT5H6M7.00800901S'`
   );
-  expect(e.std.jsnumber(144.1235).toEdgeQL()).toEqual(`144.1235`);
-  expect(e.std.jsnumber(1234.15).toEdgeQL()).toEqual(`1234.15`);
-  expect(e.std.jsnumber(1234.1234).toEdgeQL()).toEqual(`1234.1234`);
-  expect(e.std.jsnumber(124).toEdgeQL()).toEqual(`124`);
-  expect(e.std.jsnumber("9223372036854775807").toEdgeQL()).toEqual(
+  expect(e.std.number(144.1235).toEdgeQL()).toEqual(`144.1235`);
+  expect(e.std.number(1234.15).toEdgeQL()).toEqual(`1234.15`);
+  expect(e.std.number(1234.1234).toEdgeQL()).toEqual(`1234.1234`);
+  expect(e.std.number(124).toEdgeQL()).toEqual(`124`);
+  expect(e.std.number("9223372036854775807").toEdgeQL()).toEqual(
     `9223372036854775807`
   );
 
@@ -72,6 +72,6 @@ test("collection type literals", () => {
     str: "asdf",
   });
   expect(literalNamedTuple.toEdgeQL()).toEqual(`( str := "asdf" )`);
-  const literalTuple = e.literal(e.tuple([e.str, e.jsnumber]), ["asdf", 1234]);
+  const literalTuple = e.literal(e.tuple([e.str, e.number]), ["asdf", 1234]);
   expect(literalTuple.toEdgeQL()).toEqual(`( "asdf", 1234 )`);
 });

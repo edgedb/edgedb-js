@@ -72,9 +72,9 @@ export type Type = PrimitiveType | ObjectType;
 
 export type Types = StrictMap<UUID, Type>;
 
-const JSNumberType: ScalarType = {
+const numberType: ScalarType = {
   id: "00000000-0000-0000-0000-0000000001ff",
-  name: "std::jsnumber",
+  name: "std::number",
   is_abstract: false,
   kind: "scalar",
   enum_values: null,
@@ -82,28 +82,28 @@ const JSNumberType: ScalarType = {
   bases: [],
 };
 
-export const nonCastableTypes = new Set([JSNumberType.id]);
+export const nonCastableTypes = new Set([numberType.id]);
 
 export const typeMapping = new Map([
   [
     "00000000-0000-0000-0000-000000000103", // int16
-    JSNumberType,
+    numberType,
   ],
   [
     "00000000-0000-0000-0000-000000000104", // int32
-    JSNumberType,
+    numberType,
   ],
   [
     "00000000-0000-0000-0000-000000000105", // int64
-    JSNumberType,
+    numberType,
   ],
   [
     "00000000-0000-0000-0000-000000000106", // float32
-    JSNumberType,
+    numberType,
   ],
   [
     "00000000-0000-0000-0000-000000000107", // float64
-    JSNumberType,
+    numberType,
   ],
 ]);
 
@@ -234,7 +234,7 @@ export async function getTypes(
         }));
     }
   }
-  types.push(JSNumberType);
+  types.push(numberType);
 
   // Now sort `types` topologically:
   return topoSort(types);

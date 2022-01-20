@@ -15,7 +15,7 @@ test("empty sets", () => {
   expect(int32Set.toEdgeQL()).toEqual(`<std::int32>{}`);
   tc.assert<tc.IsExact<$infer<typeof int32Set>, null>>(true);
   tc.assert<
-    tc.IsExact<typeof int32Set["__element__"]["__name__"], "std::jsnumber">
+    tc.IsExact<typeof int32Set["__element__"]["__name__"], "std::number">
   >(true);
 });
 
@@ -23,7 +23,7 @@ test("object set contructor", () => {
   const hero = e.set(e.default.Hero);
   expect(hero.id.__element__.__name__).toEqual("std::uuid");
   expect(hero.name.__element__.__name__).toEqual("std::str");
-  expect(hero.number_of_movies.__element__.__name__).toEqual("std::jsnumber");
+  expect(hero.number_of_movies.__element__.__name__).toEqual("std::number");
 
   const person = e.set(e.default.Hero, e.default.Villain);
   expect(person.id.__element__.__name__).toEqual("std::uuid");
@@ -49,8 +49,8 @@ test("scalar set contructor", () => {
   type _f1 = $infer<typeof _f1>;
   tc.assert<tc.IsExact<_f1, "asdf">>(true);
 
-  const _f4 = e.set(e.jsnumber(42));
-  expect(_f4.__element__.__name__).toEqual("std::jsnumber");
+  const _f4 = e.set(e.number(42));
+  expect(_f4.__element__.__name__).toEqual("std::number");
   expect(_f4.__cardinality__).toEqual($.Cardinality.One);
   expect(_f4.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(_f4.toEdgeQL()).toEqual(`{ 42 }`);
@@ -66,7 +66,7 @@ test("scalar set contructor", () => {
   tc.assert<tc.IsExact<_f2, [string, ...string[]]>>(true);
 
   const _f3 = e.set(1, 2, 3);
-  expect(_f3.__element__.__name__).toEqual("std::jsnumber");
+  expect(_f3.__element__.__name__).toEqual("std::number");
   expect(_f3.__cardinality__).toEqual($.Cardinality.AtLeastOne);
   expect(_f3.toEdgeQL()).toEqual(`{ 1, 2, 3 }`);
   type _f3 = $infer<typeof _f3>;
@@ -74,7 +74,7 @@ test("scalar set contructor", () => {
 
   // implicit casting
   const _f5 = e.set(5, e.literal(e.float32, 1234.5));
-  expect(_f5.__element__.__name__).toEqual("std::jsnumber");
+  expect(_f5.__element__.__name__).toEqual("std::number");
   expect(_f5.toEdgeQL()).toEqual(`{ 5, <std::float32>1234.5 }`);
   type _f5 = $infer<typeof _f5>;
   tc.assert<tc.IsExact<_f5, [number, ...number[]]>>(true);
@@ -87,7 +87,7 @@ test("invalid sets", () => {
   }).toThrow();
 
   // @ts-expect-error
-  expect(() => e.set(e.jsnumber(5), e.bigint(BigInt(1234)))).toThrow();
+  expect(() => e.set(e.number(5), e.bigint(BigInt(1234)))).toThrow();
 
   // never
   expect(() => {

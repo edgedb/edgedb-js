@@ -144,9 +144,9 @@ test("non castable scalars", async () => {
   e.params(
     {
       // @ts-expect-error
-      num: e.jsnumber,
+      num: e.number,
       // @ts-expect-error
-      tuple: e.tuple([e.jsnumber]),
+      tuple: e.tuple([e.number]),
     },
     p => e.select({num: p.num, tuple: p.num})
   );

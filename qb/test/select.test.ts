@@ -206,8 +206,8 @@ test("computables in polymorphics", () => {
       secret_identity: true,
     }),
     ...e.is(e.Villain, {
-      nemesis: {id: true, computable: e.jsnumber(1234)},
-      computable: e.jsnumber(1234),
+      nemesis: {id: true, computable: e.number(1234)},
+      computable: e.number(1234),
     }),
   }));
 
@@ -260,9 +260,7 @@ test("limit/offset inference", () => {
 test("offset", () => {
   const q = e.select(e.Hero, () => ({name: true}));
   const r1 = e.select(q, () => ({offset: 5}));
-  expect(r1.__modifiers__.offset?.__element__.__name__).toEqual(
-    "std::jsnumber"
-  );
+  expect(r1.__modifiers__.offset?.__element__.__name__).toEqual("std::number");
 });
 
 test("infer cardinality - scalar filters", () => {
@@ -480,7 +478,7 @@ test("computables", async () => {
       .$assertSingle(),
     hero => ({
       id: true,
-      computable: e.jsnumber(35),
+      computable: e.number(35),
       all_heroes,
     })
   );
@@ -553,7 +551,7 @@ test("backlinks", async () => {
 test("overrides with implicit casting", () => {
   e.select(e.Hero, () => ({
     id: e.uuid("asdf"),
-    number_of_movies: e.jsnumber(1234),
+    number_of_movies: e.number(1234),
     name: e.str("adsf"),
   }));
 });
@@ -923,11 +921,11 @@ test("modifiers on scalar selects", async () => {
 
   // order
   const unorderedSet = e.set(
-    e.jsnumber(2),
-    e.jsnumber(4),
-    e.jsnumber(1),
-    e.jsnumber(5),
-    e.jsnumber(3)
+    e.number(2),
+    e.number(4),
+    e.number(1),
+    e.number(5),
+    e.number(3)
   );
 
   const q2 = e.select(unorderedSet, el => ({

@@ -120,12 +120,12 @@ test("array literal", async () => {
 });
 
 test("tuple literal", async () => {
-  const tupleType = e.tuple([e.str, e.jsnumber]);
+  const tupleType = e.tuple([e.str, e.number]);
   expect(tupleType.__kind__).toEqual($.TypeKind.tuple);
   expect(tupleType.__items__[0].__kind__).toEqual($.TypeKind.scalar);
   expect(tupleType.__items__[0].__name__).toEqual("std::str");
   expect(tupleType.__items__[1].__kind__).toEqual($.TypeKind.scalar);
-  expect(tupleType.__items__[1].__name__).toEqual("std::jsnumber");
+  expect(tupleType.__items__[1].__name__).toEqual("std::number");
 
   const myTuple = e.tuple(["asdf", 45]);
   type myTuple = $.setToTsType<typeof myTuple>;
@@ -134,7 +134,7 @@ test("tuple literal", async () => {
   expect(myTuple.__element__.__items__[0].__kind__).toEqual($.TypeKind.scalar);
   expect(myTuple.__element__.__items__[0].__name__).toEqual("std::str");
   expect(myTuple.__element__.__items__[1].__kind__).toEqual($.TypeKind.scalar);
-  expect(myTuple.__element__.__items__[1].__name__).toEqual("std::jsnumber");
+  expect(myTuple.__element__.__items__[1].__name__).toEqual("std::number");
   const myTupleResult = await client.querySingle(e.select(myTuple).toEdgeQL());
   expect(myTupleResult).toEqual(["asdf", 45]);
   const myTuplePath0 = myTuple[0];
@@ -256,13 +256,13 @@ test("tuple literal", async () => {
 test("namedTuple literal", async () => {
   const tupleType = e.tuple({
     string: e.str,
-    number: e.jsnumber,
+    number: e.number,
   });
   expect(tupleType.__kind__).toEqual($.TypeKind.namedtuple);
   expect(tupleType.__shape__.string.__kind__).toEqual($.TypeKind.scalar);
   expect(tupleType.__shape__.string.__name__).toEqual("std::str");
   expect(tupleType.__shape__.number.__kind__).toEqual($.TypeKind.scalar);
-  expect(tupleType.__shape__.number.__name__).toEqual("std::jsnumber");
+  expect(tupleType.__shape__.number.__name__).toEqual("std::number");
 
   const named = e.tuple({
     string: "asdf",
@@ -285,7 +285,7 @@ test("namedTuple literal", async () => {
   expect(named.__element__.__shape__.number.__kind__).toEqual(
     $.TypeKind.scalar
   );
-  expect(named.__element__.__shape__.number.__name__).toEqual("std::jsnumber");
+  expect(named.__element__.__shape__.number.__name__).toEqual("std::number");
   const namedResult = await client.querySingle(e.select(named).toEdgeQL());
   expect(JSON.stringify(namedResult)).toEqual(
     JSON.stringify({string: "asdf", number: 1234})
@@ -366,7 +366,7 @@ test("namedTuple literal", async () => {
 
 test("non literal tuples", async () => {
   const ver = e.sys.get_version();
-  expect(ver.major.__element__.__name__).toEqual("std::jsnumber");
+  expect(ver.major.__element__.__name__).toEqual("std::number");
   expect(ver.major.__cardinality__).toEqual($.Cardinality.One);
   expect(ver.stage.__element__.__name__).toEqual("sys::VersionStage");
   expect(ver.stage.__cardinality__).toEqual($.Cardinality.One);

@@ -10,8 +10,8 @@ import {
 
 declare function assert_single(input: TypeSet<BaseType>): any;
 
-declare const jsnumber: scalarTypeWithConstructor<
-  ScalarType<"std::jsnumber", number>
+declare const number: scalarTypeWithConstructor<
+  ScalarType<"std::number", number>
 >;
 
 export type $FreeObject = ObjectType<"std::FreeObject", any, null>;
@@ -23,6 +23,6 @@ declare const FreeObject: $expr_PathNode<
 
 export type $bool = ScalarType<"std::bool", boolean>;
 
-export type $jsnumber = ScalarType<"std::jsnumber", number>;
+export type $number = ScalarType<"std::number", number>;
 
-export default {assert_single, jsnumber, FreeObject};
+export default {assert_single, number, FreeObject};

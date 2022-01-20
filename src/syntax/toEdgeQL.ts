@@ -1049,7 +1049,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
   let skipCast = false;
   let stringRep;
   if (typeof val === "string") {
-    if (type.__name__ === "std::jsnumber") {
+    if (type.__name__ === "std::number") {
       skipCast = true;
       stringRep = val;
     } else if (type.__name__ === "std::json") {
@@ -1062,7 +1062,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
       stringRep = JSON.stringify(val);
     }
   } else if (typeof val === "number") {
-    if (type.__name__ === "std::jsnumber") {
+    if (type.__name__ === "std::number") {
       skipCast = true;
     }
     stringRep = `${val.toString()}`;
