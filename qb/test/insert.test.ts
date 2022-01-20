@@ -81,5 +81,12 @@ test("insert type enforcement", async () => {
     // @ts-expect-error
     number_of_movies: "Ronin",
   });
+
+  // should not error on missing required prop 'release_year'
+  // since it has a default value
+  e.insert(e.Movie, {
+    title: "test_movie",
+  });
+
   return;
 });

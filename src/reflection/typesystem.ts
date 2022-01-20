@@ -228,13 +228,15 @@ export interface PropertyDesc<
   Type extends BaseType = BaseType,
   Card extends Cardinality = Cardinality,
   Exclusive extends boolean = boolean,
-  Writable extends boolean = boolean
+  Writable extends boolean = boolean,
+  HasDefault extends boolean = boolean
 > {
   __kind__: "property";
   target: Type;
   cardinality: Card;
   exclusive: Exclusive;
   writable: Writable;
+  hasDefault: HasDefault;
 }
 
 export type $scopify<Type extends ObjectType> = $expr_PathNode<
@@ -252,7 +254,8 @@ export interface LinkDesc<
   Card extends Cardinality = Cardinality,
   LinkProps extends PropertyShape = any,
   Exclusive extends boolean = boolean,
-  Writable extends boolean = boolean
+  Writable extends boolean = boolean,
+  HasDefault extends boolean = boolean
 > {
   __kind__: "link";
   target: Type;
@@ -260,6 +263,7 @@ export interface LinkDesc<
   properties: LinkProps;
   exclusive: Exclusive;
   writable: Writable;
+  hasDefault: HasDefault;
 }
 
 export type ObjectTypePointers = {

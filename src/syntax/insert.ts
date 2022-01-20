@@ -22,10 +22,12 @@ import {$queryify} from "./query";
 import {$expr_PathNode} from "../reflection/path";
 
 type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
-  T["cardinality"] extends
-    | Cardinality.Many
-    | Cardinality.Empty
-    | Cardinality.AtMostOne
+  T["hasDefault"] extends true
+    ? true
+    : T["cardinality"] extends
+        | Cardinality.Many
+        | Cardinality.Empty
+        | Cardinality.AtMostOne
     ? true
     : false;
 

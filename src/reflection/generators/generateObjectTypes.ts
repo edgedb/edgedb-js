@@ -163,6 +163,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       key: string;
       isExclusive: boolean;
       writable: boolean;
+      hasDefault: boolean;
       kind: "link" | "property";
       lines: Line[];
     };
@@ -183,6 +184,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
           kind: ptr.kind,
           isExclusive: ptr.is_exclusive,
           writable: ptr.is_writable ?? false,
+          hasDefault: ptr.has_default ?? false,
           lines: (ptr.pointers ?? [])
             .filter(p => p.name !== "@target" && p.name !== "@source")
             .map(ptrToLine),
@@ -225,7 +227,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
             body.writeln([
               t`${quote(line.key)}: $.LinkDesc<${line.staticType}, ${
                 line.card
-              }, {}, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`,
+              }, {}, ${line.isExclusive.toString()}, ${line.writable.toString()}, ${line.hasDefault.toString()}>;`,
             ]);
           } else {
             body.writeln([
@@ -243,14 +245,14 @@ export const generateObjectTypes = (params: GeneratorParams) => {
               }
             });
             body.writeln([
-              t`}, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`,
+              t`}, ${line.isExclusive.toString()}, ${line.writable.toString()}, ${line.hasDefault.toString()}>;`,
             ]);
           }
         } else {
           body.writeln([
             t`${quote(line.key)}: $.PropertyDesc<${line.staticType}, ${
               line.card
-            }, ${line.isExclusive.toString()}, ${line.writable.toString()}>;`,
+            }, ${line.isExclusive.toString()}, ${line.writable.toString()}, ${line.hasDefault.toString()}>;`,
           ]);
         }
       }
