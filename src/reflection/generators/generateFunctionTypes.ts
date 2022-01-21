@@ -484,7 +484,11 @@ export function generateReturnCardinality(
   anytypes: AnytypeDef | null,
   preservesOptionality: boolean = false
 ) {
-  if (returnTypemod === "SetOfType" && name !== "std::if_else") {
+  if (
+    returnTypemod === "SetOfType" &&
+    name !== "std::if_else" &&
+    name !== "std::assert_exists"
+  ) {
     return `$.Cardinality.Many`;
   }
 
@@ -515,6 +519,9 @@ export function generateReturnCardinality(
       ` ${cardinalities[2].genTypeName}["__cardinality__"]` +
       `>, ${cardinalities[1].genTypeName}["__cardinality__"]>`
     );
+  }
+  if (name === "std::assert_exists") {
+    return `$.cardinalityUtil.overrideLowerBound<${cardinalities[0].genTypeName}["__cardinality__"], "One">`;
   }
 
   const paramCardinalities = cardinalities.map(param => {

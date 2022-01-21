@@ -2,6 +2,7 @@ import superjson from "superjson";
 import {$} from "edgedb";
 import e from "../dbschema/edgeql";
 import {$expr_Function} from "edgedb/dist/reflection";
+import {tc} from "./setupTeardown";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,
@@ -547,4 +548,102 @@ test("cardinality inference", () => {
     e.str,
     $.Cardinality.Many
   );
+});
+
+test("assert_*", () => {
+  const emptySet = e.set(e.str);
+  const oneSet = e.set("str");
+  const atLeastOneSet = e.set("str", "str2");
+  const atMostOneSet = {
+    ...oneSet,
+    __cardinality__: $.Cardinality.AtMostOne,
+  } as unknown as $.TypeSet<typeof e.str, $.Cardinality.AtMostOne>;
+  const manySet = {
+    ...atLeastOneSet,
+    __cardinality__: $.Cardinality.Many,
+  } as unknown as $.TypeSet<typeof e.str, $.Cardinality.Many>;
+
+  expect(emptySet.__cardinality__).toEqual($.Cardinality.Empty);
+  expect(oneSet.__cardinality__).toEqual($.Cardinality.One);
+  expect(atLeastOneSet.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  expect(atMostOneSet.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  expect(manySet.__cardinality__).toEqual($.Cardinality.Many);
+  tc.assert<
+    tc.IsExact<typeof emptySet["__cardinality__"], $.Cardinality.Empty>
+  >(true);
+  tc.assert<tc.IsExact<typeof oneSet["__cardinality__"], $.Cardinality.One>>(
+    true
+  );
+  tc.assert<
+    tc.IsExact<
+      typeof atLeastOneSet["__cardinality__"],
+      $.Cardinality.AtLeastOne
+    >
+  >(true);
+  tc.assert<
+    tc.IsExact<typeof atMostOneSet["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
+  tc.assert<tc.IsExact<typeof manySet["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
+
+  // assert_single
+  const emptySingle = e.assert_single(emptySet);
+  expect(emptySingle.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  tc.assert<
+    tc.IsExact<typeof emptySingle["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
+  const oneSingle = e.assert_single(oneSet);
+  expect(oneSingle.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<
+    tc.IsExact<typeof oneSingle["__cardinality__"], $.Cardinality.One>
+  >(true);
+  const atLeastOneSingle = e.assert_single(atLeastOneSet);
+  expect(atLeastOneSingle.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<
+    tc.IsExact<typeof atLeastOneSingle["__cardinality__"], $.Cardinality.One>
+  >(true);
+  const atMostOneSingle = e.assert_single(atMostOneSet);
+  expect(atMostOneSingle.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  tc.assert<
+    tc.IsExact<
+      typeof atMostOneSingle["__cardinality__"],
+      $.Cardinality.AtMostOne
+    >
+  >(true);
+  const manySingle = e.assert_single(manySet);
+  expect(manySingle.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  tc.assert<
+    tc.IsExact<typeof manySingle["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
+
+  // assert_exists
+  const emptyExists = e.assert_exists(emptySet);
+  expect(emptyExists.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<
+    tc.IsExact<typeof emptyExists["__cardinality__"], $.Cardinality.One>
+  >(true);
+  const oneExists = e.assert_exists(oneSet);
+  expect(oneExists.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<
+    tc.IsExact<typeof oneExists["__cardinality__"], $.Cardinality.One>
+  >(true);
+  const atLeastOneExists = e.assert_exists(atLeastOneSet);
+  expect(atLeastOneExists.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  tc.assert<
+    tc.IsExact<
+      typeof atLeastOneExists["__cardinality__"],
+      $.Cardinality.AtLeastOne
+    >
+  >(true);
+  const atMostOneExists = e.assert_exists(atMostOneSet);
+  expect(atMostOneExists.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<
+    tc.IsExact<typeof atMostOneExists["__cardinality__"], $.Cardinality.One>
+  >(true);
+  const manyExists = e.assert_exists(manySet);
+  expect(manyExists.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  tc.assert<
+    tc.IsExact<typeof manyExists["__cardinality__"], $.Cardinality.AtLeastOne>
+  >(true);
 });

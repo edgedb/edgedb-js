@@ -193,18 +193,7 @@ function _tryOverload(
     }
   }
 
-  let cardinality =
-    funcDef.returnTypemod === "SetOfType"
-      ? Cardinality.Many
-      : cardinalityUtil.multiplyCardinalitiesVariadic(paramCardinalities);
-
-  if (
-    funcDef.returnTypemod === "OptionalType" &&
-    !funcDef.preservesOptionality
-  ) {
-    cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
-  }
-
+  let cardinality: Cardinality;
   if (funcName === "if_else") {
     cardinality = cardinalityUtil.multiplyCardinalities(
       cardinalityUtil.orCardinalities(
@@ -213,6 +202,23 @@ function _tryOverload(
       ),
       positionalArgs[1].__cardinality__
     );
+  } else if (funcName === "std::assert_exists") {
+    cardinality = cardinalityUtil.overrideLowerBound(
+      positionalArgs[0].__cardinality__,
+      "One"
+    );
+  } else {
+    cardinality =
+      funcDef.returnTypemod === "SetOfType"
+        ? Cardinality.Many
+        : cardinalityUtil.multiplyCardinalitiesVariadic(paramCardinalities);
+
+    if (
+      funcDef.returnTypemod === "OptionalType" &&
+      !funcDef.preservesOptionality
+    ) {
+      cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
+    }
   }
 
   return {
