@@ -9,6 +9,7 @@ import {
   typeutil,
   ObjectTypeExpression,
   $scopify,
+  Cardinality,
 } from "../reflection";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
@@ -19,7 +20,7 @@ import {
   $existingScopes,
   $handleModifiers,
 } from "./select";
-import {$normaliseInsertShape} from "./insert";
+import {$normaliseInsertShape, pointerIsOptional} from "./insert";
 import {$queryify} from "./query";
 
 /////////////////
@@ -31,11 +32,19 @@ export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
 > extends infer Shape
   ? Shape extends ObjectTypePointers
     ? {
-        [k in keyof Shape]?: pointerToAssignmentExpression<
-          Shape[k]
-        > extends infer S
-          ? S | {"+=": S} | {"-=": S}
-          : never;
+        [k in keyof Shape]?:
+          | (pointerToAssignmentExpression<Shape[k]> extends infer S
+              ?
+                  | S
+                  | (Shape[k]["cardinality"] extends
+                      | Cardinality.Many
+                      | Cardinality.AtLeastOne
+                      ? {"+=": S} | {"-=": S}
+                      : never)
+              : never)
+          | (pointerIsOptional<Shape[k]> extends true
+              ? undefined | null
+              : never);
       }
     : never
   : never;

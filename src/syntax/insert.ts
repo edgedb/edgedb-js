@@ -18,16 +18,15 @@ import {
 } from "../reflection";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
+import {set} from "./set";
 import {$queryify} from "./query";
 import {$expr_PathNode} from "../reflection/path";
 
-type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
-  T["hasDefault"] extends true
-    ? true
-    : T["cardinality"] extends
-        | Cardinality.Many
-        | Cardinality.Empty
-        | Cardinality.AtMostOne
+export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
+  T["cardinality"] extends
+    | Cardinality.Many
+    | Cardinality.Empty
+    | Cardinality.AtMostOne
     ? true
     : false;
 
@@ -38,7 +37,10 @@ export type InsertShape<Root extends ObjectTypeSet> = typeutil.stripNever<
     ? typeutil.addQuestionMarks<{
         [k in keyof Shape]:
           | pointerToAssignmentExpression<Shape[k]>
-          | (pointerIsOptional<Shape[k]> extends true ? undefined : never);
+          | (pointerIsOptional<Shape[k]> extends true
+              ? undefined | null
+              : never)
+          | (Shape[k]["hasDefault"] extends true ? undefined : never);
       }>
     : never
   : never;
@@ -141,7 +143,7 @@ export function $normaliseInsertShape(
   for (const [key, _val] of Object.entries(shape)) {
     let val = _val;
     let setModify: string | null = null;
-    if (isUpdate && typeof _val === "object") {
+    if (isUpdate && _val != null && typeof _val === "object") {
       const valKeys = Object.keys(_val);
       if (
         valKeys.length === 1 &&
@@ -151,20 +153,21 @@ export function $normaliseInsertShape(
         setModify = valKeys[0];
       }
     }
-    if (val?.__kind__) {
+    if (val?.__kind__ || val === undefined) {
       newShape[key] = _val;
     } else {
       const pointer = root.__element__.__pointers__[key];
-      if (!pointer || pointer.__kind__ !== "property") {
+      if (!pointer || (pointer.__kind__ !== "property" && val !== null)) {
         throw new Error(
           `Could not find property pointer for ${
             isUpdate ? "update" : "insert"
           } shape key: '${key}'`
         );
       }
-      const wrappedVal = (
-        pointer.target as scalarTypeWithConstructor<ScalarType>
-      )(val);
+      const wrappedVal =
+        val === null
+          ? set(pointer.target)
+          : (pointer.target as scalarTypeWithConstructor<ScalarType>)(val);
       newShape[key] = setModify
         ? ({[setModify]: wrappedVal} as any)
         : wrappedVal;

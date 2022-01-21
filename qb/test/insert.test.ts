@@ -88,5 +88,13 @@ test("insert type enforcement", async () => {
     title: "test_movie",
   });
 
+  e.insert(e.Movie, {
+    title: "test movie",
+    rating: null,
+    profile: null,
+    // @ts-expect-error release_year is required prop
+    release_year: null,
+  }).toEdgeQL();
+
   return;
 });

@@ -58,6 +58,15 @@ test("update assignable", () => {
       float32Field: BigInt(1234),
     },
   })).toEdgeQL();
+
+  e.update(e.Movie, () => ({
+    set: {
+      rating: null,
+      profile: null,
+      // @ts-expect-error release_year is required prop
+      release_year: null,
+    },
+  })).toEdgeQL();
 });
 
 test("scoped update", async () => {
