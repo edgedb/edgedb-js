@@ -1,34 +1,50 @@
 import * as edgedb from "edgedb";
 
-import e from "../dbschema/edgeql";
-import {setupTests, teardownTests, TestData} from "./setupTeardown";
+import e, {Cardinality} from "../dbschema/edgeql";
+import {setupTests, teardownTests, tc} from "./setupTeardown";
 
 let client: edgedb.Client;
-let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client, data} = setup);
+  ({client} = setup);
 });
 
 afterAll(async () => {
   await teardownTests(client);
 });
 
-test("basic insert", async () => {
+test("basic delete", async () => {
   const insertBlackWidow = e.insert(e.Hero, {
     name: e.str("Black Widow"),
     secret_identity: e.str("Natasha Romanoff"),
   });
 
-  await client.querySingle(insertBlackWidow.toEdgeQL());
+  const insertedResult = await insertBlackWidow.run(client);
 
-  const blackWidow = e.select(e.Hero, hero => ({
+  const deleteBlackWidow = e.delete(e.Hero, hero => ({
     filter: e.op(hero.name, "=", "Black Widow"),
   }));
+  const deletedResult = await deleteBlackWidow.run(client);
 
-  const deleteBlackWidow = blackWidow.delete();
-  await client.querySingle(deleteBlackWidow.toEdgeQL());
+  expect(deletedResult).not.toEqual(null);
+  expect(deletedResult!.id).toEqual(insertedResult.id);
 
-  return;
+  const deleteWrappingSelect = e.delete(
+    e.select(e.Hero, hero => ({
+      name: true,
+      filter: e.op(hero.name, "=", "Black Widow"),
+    }))
+  );
+  const wrappingDeleteResult = await deleteWrappingSelect.run(client);
+
+  tc.assert<tc.IsExact<typeof wrappingDeleteResult, {id: string} | null>>(
+    true
+  );
+  expect(wrappingDeleteResult).toEqual(null);
+
+  const deleteAll = e.delete(e.Hero);
+  tc.assert<tc.IsExact<typeof deleteAll["__cardinality__"], Cardinality.Many>>(
+    true
+  );
 });

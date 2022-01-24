@@ -115,18 +115,10 @@ export type $expr_Select<Set extends TypeSet = TypeSet> = QueryableExpression<{
   __kind__: ExpressionKind.Select;
   __modifiers__: NormalisedSelectModifiers;
   __scope__?: ObjectTypeExpression;
-}> &
-  SelectObjectMethods<stripSet<Set>>;
+}>;
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
-// SelectModifierMethods<stripSet<Set>>;
-
-export type SelectObjectMethods<Root extends TypeSet> =
-  Root extends ObjectTypeSet
-    ? ObjectTypeSet extends Root
-      ? {delete(): any}
-      : {delete(): $expr_Delete<Root>}
-    : unknown;
+// & SelectModifierMethods<stripSet<Set>>;
 
 export interface SelectModifierMethods<Root extends TypeSet> {
   filter<Filter extends SelectFilterExpression>(
@@ -411,16 +403,34 @@ export type $expr_Delete<Root extends ObjectTypeSet = ObjectTypeSet> =
     __expr__: Root;
   }>;
 
-function deleteFunc(this: any) {
+function deleteExpr<
+  Expr extends ObjectTypeExpression,
+  Modifiers extends SelectModifiers
+>(
+  expr: Expr,
+  modifiers?: (scope: $scopify<Expr["__element__"]>) => Readonly<Modifiers>
+): $expr_Delete<{
+  __element__: ObjectType<
+    Expr["__element__"]["__name__"],
+    Expr["__element__"]["__pointers__"],
+    {id: true}
+  >;
+  __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
+}>;
+function deleteExpr(expr: any, modifiersGetter: any) {
+  const selectExpr = select(expr, modifiersGetter);
+
   return $expressionify(
     $queryify({
       __kind__: ExpressionKind.Delete,
-      __element__: this.__element__,
-      __cardinality__: this.__cardinality__,
-      __expr__: this,
+      __element__: selectExpr.__element__,
+      __cardinality__: selectExpr.__cardinality__,
+      __expr__: selectExpr,
     })
-  ) as $expr_Delete;
+  ) as any as $expr_Delete;
 }
+
+export {deleteExpr as delete};
 
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
@@ -519,11 +529,6 @@ function deleteFunc(this: any) {
 // }
 
 export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
-  if (expr.__element__.__kind__ === TypeKind.object) {
-    Object.assign(expr, {
-      delete: deleteFunc.bind(expr),
-    });
-  }
   // Object.assign(expr, {
   //   filter: (filter: any) => updateModifier(expr, "filter", filter),
   //   order: (order: any) => updateModifier(expr, "order", order),
