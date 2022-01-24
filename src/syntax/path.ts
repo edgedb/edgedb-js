@@ -18,8 +18,8 @@ import {
 } from "../reflection/path";
 import {_$arrayLikeIndexify, _$tuplePathify} from "./collections";
 import {literalToTypeSet} from "@generated/castMaps";
-
 import {$toEdgeQL} from "./toEdgeQL";
+import {$queryFunc} from "./query";
 
 function _$expr_PathLeaf<
   Root extends TypeSet,
@@ -204,13 +204,6 @@ export function _$jsonDestructure(_expr: ExpressionRoot) {
   return _expr;
 }
 
-function unrunnableExprHandler() {
-  throw new Error(
-    `It is not valid to call 'run()' on this expression. ` +
-      `Hint: wrap this expression in a 'select' expression to run it.`
-  );
-}
-
 export function $expressionify<T extends ExpressionRoot>(
   _expr: T
 ): Expression<T> {
@@ -218,12 +211,10 @@ export function $expressionify<T extends ExpressionRoot>(
     _$jsonDestructure(_$arrayLikeIndexify(_$tuplePathify(_expr)))
   ) as any;
 
+  expr.run = $queryFunc.bind(expr) as any;
   expr.$is = isFunc.bind(expr) as any;
   expr.toEdgeQL = $toEdgeQL.bind(expr);
   expr.$assertSingle = () => assert_single(expr) as any;
-  if (!(expr as any).run) {
-    (expr as any).run = unrunnableExprHandler;
-  }
 
   return Object.freeze(expr) as any;
 }

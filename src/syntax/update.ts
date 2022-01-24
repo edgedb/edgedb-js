@@ -1,5 +1,5 @@
 import {
-  QueryableExpression,
+  Expression,
   ExpressionKind,
   ObjectTypePointers,
   TypeSet,
@@ -21,7 +21,6 @@ import {
   $handleModifiers,
 } from "./select";
 import {$normaliseInsertShape, pointerIsOptional} from "./insert";
-import {$queryify} from "./query";
 
 /////////////////
 /// UPDATE
@@ -53,7 +52,7 @@ export type $expr_Update<
   Set extends TypeSet = TypeSet,
   Expr extends ObjectTypeSet = ObjectTypeSet,
   Shape extends UpdateShape<Expr> = any
-> = QueryableExpression<{
+> = Expression<{
   __kind__: ExpressionKind.Update;
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
@@ -111,15 +110,13 @@ export function update<
 
   const {modifiers, cardinality} = $handleModifiers(mods, expr);
 
-  return $expressionify(
-    $queryify({
-      __kind__: ExpressionKind.Update,
-      __element__: expr.__element__,
-      __cardinality__: cardinality,
-      __expr__: expr,
-      __shape__: $normaliseInsertShape(expr, updateShape, true),
-      __modifiers__: modifiers,
-      __scope__: scope,
-    })
-  ) as any;
+  return $expressionify({
+    __kind__: ExpressionKind.Update,
+    __element__: expr.__element__,
+    __cardinality__: cardinality,
+    __expr__: expr,
+    __shape__: $normaliseInsertShape(expr, updateShape, true),
+    __modifiers__: modifiers,
+    __scope__: scope,
+  }) as any;
 }

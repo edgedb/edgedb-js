@@ -12,14 +12,12 @@ import {
   $scopify,
   stripSet,
   TypeSet,
-  QueryableExpression,
   ScalarType,
   scalarTypeWithConstructor,
 } from "../reflection";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
 import {set} from "./set";
-import {$queryify} from "./query";
 import {$expr_PathNode} from "../reflection/path";
 
 export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
@@ -61,7 +59,7 @@ export type $expr_Insert<
   Root extends $expr_PathNode = $expr_PathNode
   // Conflict = UnlessConflict | null
   // Shape extends InsertShape<Root> = any
-> = QueryableExpression<{
+> = Expression<{
   __kind__: ExpressionKind.Insert;
   __element__: Root["__element__"];
   __cardinality__: Cardinality.One;
@@ -95,7 +93,7 @@ export type $expr_Insert<
 export type $expr_InsertUnlessConflict<
   Root extends InsertBaseExpression = InsertBaseExpression,
   Conflict extends UnlessConflict = UnlessConflict
-> = QueryableExpression<{
+> = Expression<{
   __kind__: ExpressionKind.InsertUnlessConflict;
   __element__: Root["__element__"];
   __cardinality__: Cardinality.One;
@@ -117,11 +115,11 @@ function unlessConflict(
 
   if (!conflictGetter) {
     expr.__conflict__ = {on: null};
-    return $expressionify($queryify(expr));
+    return $expressionify(expr);
   } else {
     const scopedExpr = $getScopedExpr(this.__expr__);
     expr.__conflict__ = conflictGetter(scopedExpr);
-    return $expressionify($queryify(expr));
+    return $expressionify(expr);
   }
 }
 
@@ -129,7 +127,7 @@ export function $insertify(
   expr: Omit<$expr_Insert, "unlessConflict">
 ): $expr_Insert {
   (expr as any).unlessConflict = unlessConflict.bind(expr as any);
-  return $queryify(expr) as any;
+  return expr as any;
 }
 
 export function $normaliseInsertShape(

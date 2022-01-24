@@ -11,7 +11,6 @@ import {
   BaseTypeToTsType,
 } from "../reflection";
 import {$expressionify} from "./path";
-import {$queryify} from "./query";
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
   __kind__: ExpressionKind.OptionalParam;
@@ -32,7 +31,7 @@ export type QueryableWithParamsExpression<
   Params extends {
     [key: string]: ParamType | $expr_OptionalParam;
   } = {}
-> = Expression<Set> & {
+> = Expression<Set, false> & {
   run(
     cxn: Executor,
     args: paramsToParamArgs<Params>
@@ -132,15 +131,13 @@ export function params<
 
   const returnExpr = expr(paramExprs as any);
 
-  return $expressionify(
-    $queryify({
-      __kind__: ExpressionKind.WithParams,
-      __element__: returnExpr.__element__,
-      __cardinality__: returnExpr.__cardinality__,
-      __expr__: returnExpr,
-      __params__: Object.values(paramExprs),
-    })
-  ) as any;
+  return $expressionify({
+    __kind__: ExpressionKind.WithParams,
+    __element__: returnExpr.__element__,
+    __cardinality__: returnExpr.__cardinality__,
+    __expr__: returnExpr,
+    __params__: Object.values(paramExprs),
+  }) as any;
 }
 
 function jsonStringify(type: ParamType, val: any): string {

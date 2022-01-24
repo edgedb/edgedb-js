@@ -980,11 +980,10 @@ test("nested matching scopes", async () => {
   expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedResult));
 });
 
-test("non runnable expressions", async () => {
-  expect(
-    // @ts-expect-error
-    () => e.op("Hello ", "++", "World").run(client)
-  ).toThrow(/It is not valid to call 'run\(\)' on this expression/);
+test("runnable expressions", async () => {
+  const expr = e.op("Hello ", "++", "World");
+
+  expect(await expr.run(client)).toEqual(`Hello World`);
 });
 
 test("computed property path", async () => {

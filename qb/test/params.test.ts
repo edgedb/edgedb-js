@@ -51,6 +51,11 @@ SELECT (SELECT {
       }
     >
   >(true);
+
+  expect(
+    // @ts-expect-error
+    query.run(client)
+  ).rejects.toThrowError();
 });
 
 test("complex params", async () => {

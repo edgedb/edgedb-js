@@ -5,15 +5,13 @@ import {
   Cardinality,
   ExpressionKind,
   cardinalityUtil,
-  QueryableExpression,
 } from "../reflection";
 import {$expressionify} from "./path";
-import {$queryify} from "./query";
 
 export type $expr_For<
   IterSet extends BaseTypeSet = BaseTypeSet,
   Expr extends Expression = Expression
-> = QueryableExpression<{
+> = Expression<{
   __element__: Expr["__element__"];
   __cardinality__: cardinalityUtil.multiplyCardinalities<
     IterSet["__cardinality__"],
@@ -43,19 +41,17 @@ function _for<IteratorSet extends BaseTypeSet, Expr extends Expression>(
 
   const returnExpr = expr(forVar);
 
-  return $expressionify(
-    $queryify({
-      __kind__: ExpressionKind.For,
-      __element__: returnExpr.__element__,
-      __cardinality__: cardinalityUtil.multiplyCardinalities(
-        set.__cardinality__,
-        returnExpr.__cardinality__
-      ),
-      __iterSet__: set,
-      __expr__: returnExpr,
-      __forVar__: forVar,
-    })
-  ) as any;
+  return $expressionify({
+    __kind__: ExpressionKind.For,
+    __element__: returnExpr.__element__,
+    __cardinality__: cardinalityUtil.multiplyCardinalities(
+      set.__cardinality__,
+      returnExpr.__cardinality__
+    ),
+    __iterSet__: set,
+    __expr__: returnExpr,
+    __forVar__: forVar,
+  }) as any;
 }
 
 export {_for as for};

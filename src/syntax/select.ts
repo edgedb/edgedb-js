@@ -14,7 +14,6 @@ import {
   ObjectTypeSet,
   PrimitiveTypeSet,
   PropertyDesc,
-  QueryableExpression,
   ScalarType,
   stripSet,
   TypeKind,
@@ -30,7 +29,6 @@ import type {
 import {anonymizeObject} from "./casting";
 import type {$expr_Operator} from "../reflection/funcops";
 import {$expressionify, $getScopedExpr} from "./path";
-import {$queryify} from "./query";
 
 export const ASC: "ASC" = "ASC";
 export const DESC: "DESC" = "DESC";
@@ -108,7 +106,7 @@ export type NormalisedSelectModifiers = {
 //     : Mods["offset"];
 // };
 
-export type $expr_Select<Set extends TypeSet = TypeSet> = QueryableExpression<{
+export type $expr_Select<Set extends TypeSet = TypeSet> = Expression<{
   __element__: Set["__element__"];
   __cardinality__: Set["__cardinality__"];
   __expr__: TypeSet;
@@ -396,7 +394,7 @@ export function $handleModifiers(
 }
 
 export type $expr_Delete<Root extends ObjectTypeSet = ObjectTypeSet> =
-  QueryableExpression<{
+  Expression<{
     __kind__: ExpressionKind.Delete;
     __element__: Root["__element__"];
     __cardinality__: Root["__cardinality__"];
@@ -420,14 +418,12 @@ function deleteExpr<
 function deleteExpr(expr: any, modifiersGetter: any) {
   const selectExpr = select(expr, modifiersGetter);
 
-  return $expressionify(
-    $queryify({
-      __kind__: ExpressionKind.Delete,
-      __element__: selectExpr.__element__,
-      __cardinality__: selectExpr.__cardinality__,
-      __expr__: selectExpr,
-    })
-  ) as any as $expr_Delete;
+  return $expressionify({
+    __kind__: ExpressionKind.Delete,
+    __element__: selectExpr.__element__,
+    __cardinality__: selectExpr.__cardinality__,
+    __expr__: selectExpr,
+  }) as any;
 }
 
 export {deleteExpr as delete};
@@ -535,7 +531,7 @@ export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   //   offset: (offset: any) => updateModifier(expr, "offset", offset),
   //   limit: (limit: any) => updateModifier(expr, "limit", limit),
   // });
-  return $queryify(expr);
+  return expr;
 }
 
 export type linkDescToLinkProps<Desc extends LinkDesc> = {

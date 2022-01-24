@@ -111,9 +111,13 @@ export function $toSet<Root extends BaseType, Card extends Cardinality>(
   };
 }
 
-export type Expression<Set extends TypeSet = TypeSet> = Set &
+export type Expression<
+  Set extends TypeSet = TypeSet,
+  Runnable extends boolean = true
+> = Set &
   (BaseType extends Set["__element__"] // short-circuit non-specific types
     ? {
+        run(cxn: Executor): any;
         toEdgeQL(): string;
         $is: any;
         $assertSingle: any;
@@ -121,15 +125,12 @@ export type Expression<Set extends TypeSet = TypeSet> = Set &
       }
     : $pathify<Set> &
         ExpressionMethods<stripSet<Set>> &
-        // Set extends {__parent__: any} ? Set["__parent__"] : null
+        (Runnable extends true
+          ? {run(cxn: Executor): Promise<setToTsType<Set>>}
+          : {}) &
         $tuplePathify<Set> &
         $arrayLikeIndexify<Set> &
         $jsonDestructure<Set>);
-
-export type QueryableExpression<Set extends TypeSet = TypeSet> =
-  Expression<Set> & {
-    run(cxn: Executor): Promise<setToTsType<Set>>;
-  };
 
 export type stripSet<T> = "__element__" extends keyof T
   ? "__cardinality__" extends keyof T
