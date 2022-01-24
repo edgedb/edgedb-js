@@ -436,7 +436,8 @@ export {deleteExpr as delete};
 //     if (parent.__expr__.__element__.__kind__ === TypeKind.object) {
 //       const shape = parent.__element__.__shape__;
 //       const _scope =
-//         parent.__scope__ ?? $getScopedExpr(parent.__expr__, $existingScopes);
+//         parent.__scope__ ?? $getScopedExpr(parent.__expr__,
+//           $existingScopes);
 //       const scope = new Proxy(_scope, {
 //         get(target: any, prop: string) {
 //           if (shape[prop] && shape[prop] !== true) {
@@ -498,7 +499,8 @@ export {deleteExpr as delete};
 //       modifiers.offset =
 //         typeof modExpr === "number" ? _std.number(modExpr) : modExpr;
 //       // methods no longer change cardinality
-//       // cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
+//       // cardinality = cardinalityUtil
+//            .overrideLowerBound(cardinality, "Zero");
 //       break;
 //     case "limit":
 //       modifiers.limit =
@@ -508,7 +510,8 @@ export {deleteExpr as delete};
 //           ? (modExpr as any).__exprs__[0]
 //           : modExpr;
 //       // methods no longer change cardinality
-//       // cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
+//       // cardinality = cardinalityUtil
+//            .overrideLowerBound(cardinality, "Zero");
 //       break;
 //   }
 
