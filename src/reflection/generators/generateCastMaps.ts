@@ -13,7 +13,7 @@ import {getStringRepresentation} from "./generateObjectTypes";
 const getRuntimeRef = (name: string) => getRef(name, {prefix: ""});
 
 export const generateCastMaps = (params: GeneratorParams) => {
-  const {dir, types, casts} = params;
+  const {dir, types, casts, typesByName} = params;
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps");
@@ -84,9 +84,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
     const outerCastableTo = casting(outer.id);
     staticMap.writeln([t`  A extends ${getRef(outer.name)} ?`]);
-    runtimeMap.writeln([
-      r`  if (a.__name__ === ${getRuntimeRef(outer.name)}.__name__) {`,
-    ]);
+    runtimeMap.writeln([r`  if (a.__name__ === ${quote(outer.name)}) {`]);
 
     for (const inner of materialScalars) {
       const innerCastableTo = casting(inner.id);
@@ -108,9 +106,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
       if (validCast) {
         staticMap.writeln([t`    B extends ${getRef(inner.name)} ?`]);
-        runtimeMap.writeln([
-          r`    if(b.__name__ === ${getRuntimeRef(inner.name)}.__name__) {`,
-        ]);
+        runtimeMap.writeln([r`    if(b.__name__ === ${quote(inner.name)}) {`]);
 
         if (sameType) {
           staticMap.writeln([t`    B`]);
@@ -346,6 +342,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
   f.writeln([t`  [k in keyof T]: literalToTypeSet<T[k]>;`]);
   f.writeln([t`};\n\n`]);
 
+  f.addImport({getType: true}, "./syntax/literal");
+
   f.writeln([
     r`function literalToTypeSet(type`,
     ts`: any`,
@@ -364,7 +362,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
     } else {
       f.writeln([r`  if (type instanceof ${literalType}) {`]);
     }
-    f.writeln([r`    return ${getRef(type, {prefix: ""})}(type);`]);
+    f.writeln([r`    return getType("${typesByName[type].id}")(type);`]);
     f.writeln([r`  }`]);
   }
   f.writeln([

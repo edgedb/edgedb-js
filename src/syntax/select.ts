@@ -1,5 +1,4 @@
 import type {$bool, $number} from "@generated/modules/std";
-import _std from "@generated/modules/std";
 import {
   $expr_PolyShapeElement,
   $scopify,
@@ -8,6 +7,7 @@ import {
   Expression,
   ExpressionKind,
   LinkDesc,
+  makeType,
   ObjectType,
   ObjectTypeExpression,
   ObjectTypePointers,
@@ -29,6 +29,8 @@ import type {
 import {anonymizeObject} from "./casting";
 import type {$expr_Operator} from "../reflection/funcops";
 import {$expressionify, $getScopedExpr} from "./path";
+import {getTypeByName, literal} from "./literal";
+import {spec} from "@generated/__spec__";
 
 export const ASC: "ASC" = "ASC";
 export const DESC: "DESC" = "DESC";
@@ -376,13 +378,15 @@ export function $handleModifiers(
   }
   if (mods.offset) {
     mods.offset =
-      typeof mods.offset === "number" ? _std.number(mods.offset) : mods.offset;
+      typeof mods.offset === "number"
+        ? (getTypeByName("std::number")(mods.offset) as any)
+        : mods.offset;
     card = cardinalityUtil.overrideLowerBound(card, "Zero");
   }
   if (mods.limit) {
     let expr = mods.limit;
     if (typeof expr === "number") {
-      expr = _std.number(expr);
+      expr = getTypeByName("std::number")(expr) as any;
     } else if ((expr as any).__kind__ === ExpressionKind.Set) {
       expr = (expr as any).__exprs__[0];
     }
@@ -594,6 +598,20 @@ export type normaliseShape<Shape extends object> = {
   [k in Exclude<keyof Shape, SelectModifierNames>]: normaliseElement<Shape[k]>;
 };
 
+const $FreeObject = makeType(
+  spec,
+  [...spec.values()].find(s => s.name === "std::FreeObject")!.id,
+  literal
+);
+const FreeObject = {
+  __kind__: ExpressionKind.PathNode,
+  __element__: $FreeObject,
+  __cardinality__: Cardinality.One,
+  __parent__: null,
+  __exclusive__: true,
+  __scopeRoot__: null,
+};
+
 export const $existingScopes = new Set<Expression>();
 
 export function select<Expr extends ObjectTypeExpression>(
@@ -659,7 +677,7 @@ export function select(...args: any[]) {
   const [expr, shapeGetter]: [TypeSet, (scope: any) => any] =
     typeof args[0].__element__ !== "undefined"
       ? (args as any)
-      : [_std.FreeObject, () => args[0]];
+      : [FreeObject, () => args[0]];
 
   if (!shapeGetter) {
     if (expr.__element__.__kind__ === TypeKind.object) {
@@ -716,7 +734,9 @@ export function select(...args: any[]) {
       __expr__: expr,
       __modifiers__: modifiers,
       __scope__:
-        expr !== scope && expr !== _std.FreeObject ? scope : undefined,
+        expr !== scope && expr.__element__.__name__ !== "std::FreeObject"
+          ? scope
+          : undefined,
     })
   ) as any;
 }

@@ -21,7 +21,7 @@ import {literalToTypeSet} from "@generated/castMaps";
 import {$toEdgeQL} from "./toEdgeQL";
 import {$queryFunc} from "./query";
 
-function _$expr_PathLeaf<
+function PathLeaf<
   Root extends TypeSet,
   Parent extends PathParent,
   Exclusive extends boolean = boolean
@@ -41,7 +41,7 @@ function _$expr_PathLeaf<
   }) as any;
 }
 
-function _$expr_PathNode<
+function PathNode<
   Root extends ObjectTypeSet,
   Parent extends PathParent | null,
   Exclusive extends boolean = boolean
@@ -71,9 +71,7 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
       return (
         target[_pathCache][prop] ??
         (target[_pathCache][prop] = (
-          (ptr.__kind__ === "property"
-            ? _$expr_PathLeaf
-            : _$expr_PathNode) as any
+          (ptr.__kind__ === "property" ? PathLeaf : PathNode) as any
         )(
           {
             __element__: ptr.target,
@@ -242,8 +240,4 @@ export function $getScopedExpr<T extends ExpressionRoot>(
   return scopedExpr as any;
 }
 
-export {
-  _$pathify as $pathify,
-  _$expr_PathLeaf as $expr_PathLeaf,
-  _$expr_PathNode as $expr_PathNode,
-};
+export {_$pathify as $pathify, PathLeaf as $PathLeaf, PathNode as $PathNode};

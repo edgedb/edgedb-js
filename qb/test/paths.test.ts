@@ -1,16 +1,16 @@
 import {$} from "edgedb";
 import e from "../dbschema/edgeql";
-import {$expr_PathNode} from "../dbschema/edgeql/syntax/syntax";
+import {$PathNode} from "../dbschema/edgeql/syntax/syntax";
 import {tc} from "./setupTeardown";
 
 test("path structure", () => {
   const Hero = e.default.Hero;
   type Hero = typeof Hero;
   const HeroSetSingleton = $.$toSet(e.default.$Hero, $.Cardinality.One);
-  const HeroSingleton = $expr_PathNode(HeroSetSingleton, null, false);
+  const HeroSingleton = $PathNode(HeroSetSingleton, null, false);
   type HeroSingleton = typeof HeroSingleton;
   const VillainRoot = $.$toSet(e.default.$Villain, $.Cardinality.One);
-  const Villain = $expr_PathNode(VillainRoot, null, false);
+  const Villain = $PathNode(VillainRoot, null, false);
 
   expect(Hero.name.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(Hero.name.__element__.__name__).toEqual("std::str");
@@ -46,7 +46,7 @@ test("path structure", () => {
     e.default.$Hero,
     $.Cardinality.AtLeastOne
   );
-  const AtLeastOneHero = $expr_PathNode(HeroSetAtLeastOne, null, false);
+  const AtLeastOneHero = $PathNode(HeroSetAtLeastOne, null, false);
   type AtLeastOneHero = typeof AtLeastOneHero;
   expect(AtLeastOneHero.id.__cardinality__).toEqual($.Cardinality.AtLeastOne);
   expect(AtLeastOneHero.number_of_movies.__cardinality__).toEqual(

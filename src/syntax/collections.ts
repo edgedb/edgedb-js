@@ -22,7 +22,6 @@ import {
 } from "../reflection";
 import {$expressionify} from "./path";
 import {getCardsFromExprs} from "./set";
-import _std from "@generated/modules/std";
 import {
   literalToScalarType,
   literalToTypeSet,
@@ -183,7 +182,7 @@ const tupleProxyHandlers: ProxyHandler<ExpressionRoot> = {
         ? (type as NamedTupleType).__shape__
         : null;
     return items?.hasOwnProperty(prop)
-      ? $expr_TuplePath(proxy, (items as any)[prop], prop as any)
+      ? tuplePath(proxy, (items as any)[prop], prop as any)
       : (target as any)[prop];
   },
 };
@@ -199,7 +198,7 @@ export function _$tuplePathify(expr: ExpressionRoot) {
   return new Proxy(expr, tupleProxyHandlers);
 }
 
-function $expr_TuplePath(
+function tuplePath(
   parent: $expr_Tuple | $expr_TuplePath,
   itemType: BaseType,
   index: string
