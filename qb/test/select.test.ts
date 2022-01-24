@@ -997,67 +997,70 @@ test("computed property path", async () => {
   expect(await query.run(client)).toEqual([1, 2, 3]);
 });
 
-test("modifier methods", async () => {
-  const strs = ["c", "a", "aa", "b", "cc", "bb"];
-  let q3 = e.select(e.set(...strs), vals => ({
-    order: {expression: e.len(vals), direction: e.DESC},
-  }));
+// Modifier methods removed for now, until we can fix typescript inference
+// problems / excessively deep errors
 
-  // reassignment allowed
-  q3 = q3.order(vals => vals);
-  tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.Many>>(
-    true
-  );
+// test("modifier methods", async () => {
+//   const strs = ["c", "a", "aa", "b", "cc", "bb"];
+//   let q3 = e.select(e.set(...strs), vals => ({
+//     order: {expression: e.len(vals), direction: e.DESC},
+//   }));
 
-  expect(await q3.run(client)).toEqual(["aa", "bb", "cc", "a", "b", "c"]);
+//   // reassignment allowed
+//   q3 = q3.order(vals => vals);
+//   tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.Many>>(
+//     true
+//   );
 
-  const q4 = e
-    .select(e.Hero, hero => ({
-      order: hero.name,
-    }))
-    .limit(2);
-  const r4 = await q4.run(client);
+//   expect(await q3.run(client)).toEqual(["aa", "bb", "cc", "a", "b", "c"]);
 
-  expect(r4.length).toEqual(2);
-  expect(await q4.limit(1).offset(1).run(client)).toEqual(r4.slice(1, 2));
+//   const q4 = e
+//     .select(e.Hero, hero => ({
+//       order: hero.name,
+//     }))
+//     .limit(2);
+//   const r4 = await q4.run(client);
 
-  const q5 = e
-    .select(e.Hero, hero => ({
-      name: true,
-      nameLen: e.len(hero.name),
-    }))
-    .order(hero => hero.nameLen);
+//   expect(r4.length).toEqual(2);
+//   expect(await q4.limit(1).offset(1).run(client)).toEqual(r4.slice(1, 2));
 
-  const r5 = await q5.run(client);
-});
+//   const q5 = e
+//     .select(e.Hero, hero => ({
+//       name: true,
+//       nameLen: e.len(hero.name),
+//     }))
+//     .order(hero => hero.nameLen);
 
-test("modifier methods", async () => {
-  let freeQuery = e.select({
-    heroes: e.Hero,
-  });
+//   const r5 = await q5.run(client);
+// });
 
-  const filteredFreeQuery = freeQuery.filter(arg => e.bool(false));
-  // methods do not change change cardinality
-  tc.assert<
-    tc.IsExact<typeof filteredFreeQuery["__cardinality__"], $.Cardinality.One>
-  >(true);
-  expect(filteredFreeQuery.__cardinality__).toEqual($.Cardinality.One);
+// test("modifier methods", async () => {
+//   let freeQuery = e.select({
+//     heroes: e.Hero,
+//   });
 
-  const offsetFreeQuery = freeQuery.offset(3);
-  // methods do not change change cardinality
-  tc.assert<
-    tc.IsExact<typeof offsetFreeQuery["__cardinality__"], $.Cardinality.One>
-  >(true);
-  expect(offsetFreeQuery.__cardinality__).toEqual($.Cardinality.One);
+//   const filteredFreeQuery = freeQuery.filter(arg => e.bool(false));
+//   // methods do not change change cardinality
+//   tc.assert<
+//     tc.IsExact<typeof filteredFreeQuery["__cardinality__"], $.Cardinality.One>
+//   >(true);
+//   expect(filteredFreeQuery.__cardinality__).toEqual($.Cardinality.One);
 
-  const limitFreeQuery = freeQuery.limit(1);
-  // methods do not change change cardinality
-  tc.assert<
-    tc.IsExact<typeof limitFreeQuery["__cardinality__"], $.Cardinality.One>
-  >(true);
-  expect(limitFreeQuery.__cardinality__).toEqual($.Cardinality.One);
+//   const offsetFreeQuery = freeQuery.offset(3);
+//   // methods do not change change cardinality
+//   tc.assert<
+//     tc.IsExact<typeof offsetFreeQuery["__cardinality__"], $.Cardinality.One>
+//   >(true);
+//   expect(offsetFreeQuery.__cardinality__).toEqual($.Cardinality.One);
 
-  // should allow reassignment
-  freeQuery = freeQuery.offset(1).filter(e.bool(false));
-  expect(await freeQuery.run(client)).toEqual(null);
-});
+//   const limitFreeQuery = freeQuery.limit(1);
+//   // methods do not change change cardinality
+//   tc.assert<
+//     tc.IsExact<typeof limitFreeQuery["__cardinality__"], $.Cardinality.One>
+//   >(true);
+//   expect(limitFreeQuery.__cardinality__).toEqual($.Cardinality.One);
+
+//   // should allow reassignment
+//   freeQuery = freeQuery.offset(1).filter(e.bool(false));
+//   expect(await freeQuery.run(client)).toEqual(null);
+// });

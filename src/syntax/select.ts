@@ -1,6 +1,5 @@
 import type {$bool, $number} from "@generated/modules/std";
 import _std from "@generated/modules/std";
-import {op} from "@generated/operators";
 import {
   $expr_PolyShapeElement,
   $scopify,
@@ -117,8 +116,10 @@ export type $expr_Select<Set extends TypeSet = TypeSet> = QueryableExpression<{
   __modifiers__: NormalisedSelectModifiers;
   __scope__?: ObjectTypeExpression;
 }> &
-  SelectObjectMethods<stripSet<Set>> &
-  SelectModifierMethods<stripSet<Set>>;
+  SelectObjectMethods<stripSet<Set>>;
+// Modifier methods removed for now, until we can fix typescript inference
+// problems / excessively deep errors
+// SelectModifierMethods<stripSet<Set>>;
 
 export type SelectObjectMethods<Root extends TypeSet> =
   Root extends ObjectTypeSet
@@ -421,98 +422,101 @@ function deleteFunc(this: any) {
   ) as $expr_Delete;
 }
 
-function resolveModifierGetter(parent: any, modGetter: any) {
-  if (typeof modGetter === "function" && !modGetter.__kind__) {
-    if (parent.__expr__.__element__.__kind__ === TypeKind.object) {
-      const shape = parent.__element__.__shape__;
-      const _scope =
-        parent.__scope__ ?? $getScopedExpr(parent.__expr__, $existingScopes);
-      const scope = new Proxy(_scope, {
-        get(target: any, prop: string) {
-          if (shape[prop] && shape[prop] !== true) {
-            return shape[prop];
-          }
-          return target[prop];
-        },
-      });
-      return {
-        scope: _scope,
-        modExpr: modGetter(scope),
-      };
-    } else {
-      return {
-        scope: undefined,
-        modExpr: modGetter(parent.__expr__),
-      };
-    }
-  } else {
-    return {scope: parent.__scope__, modExpr: modGetter};
-  }
-}
+// Modifier methods removed for now, until we can fix typescript inference
+// problems / excessively deep errors
 
-function updateModifier(
-  parent: any,
-  modName: "filter" | "order" | "offset" | "limit",
-  modGetter: any
-) {
-  const modifiers = {
-    ...parent.__modifiers__,
-  };
-  const cardinality = parent.__cardinality__;
+// function resolveModifierGetter(parent: any, modGetter: any) {
+//   if (typeof modGetter === "function" && !modGetter.__kind__) {
+//     if (parent.__expr__.__element__.__kind__ === TypeKind.object) {
+//       const shape = parent.__element__.__shape__;
+//       const _scope =
+//         parent.__scope__ ?? $getScopedExpr(parent.__expr__, $existingScopes);
+//       const scope = new Proxy(_scope, {
+//         get(target: any, prop: string) {
+//           if (shape[prop] && shape[prop] !== true) {
+//             return shape[prop];
+//           }
+//           return target[prop];
+//         },
+//       });
+//       return {
+//         scope: _scope,
+//         modExpr: modGetter(scope),
+//       };
+//     } else {
+//       return {
+//         scope: undefined,
+//         modExpr: modGetter(parent.__expr__),
+//       };
+//     }
+//   } else {
+//     return {scope: parent.__scope__, modExpr: modGetter};
+//   }
+// }
 
-  const {modExpr, scope} = resolveModifierGetter(parent, modGetter);
+// function updateModifier(
+//   parent: any,
+//   modName: "filter" | "order" | "offset" | "limit",
+//   modGetter: any
+// ) {
+//   const modifiers = {
+//     ...parent.__modifiers__,
+//   };
+//   const cardinality = parent.__cardinality__;
 
-  switch (modName) {
-    case "filter":
-      modifiers.filter = modifiers.filter
-        ? op(modifiers.filter, "and", modExpr)
-        : modExpr;
+//   const {modExpr, scope} = resolveModifierGetter(parent, modGetter);
 
-      // methods no longer change cardinality
-      // cardinality = computeFilterCardinality(
-      //   modExpr,
-      //   cardinality,
-      //   parent.__expr__
-      // );
-      break;
-    case "order":
-      const order =
-        typeof (modExpr as any).__element__ === "undefined"
-          ? modExpr
-          : {expression: modExpr};
-      modifiers.order = modifiers.order
-        ? [...modifiers.order, order]
-        : [order];
-      break;
-    case "offset":
-      modifiers.offset =
-        typeof modExpr === "number" ? _std.number(modExpr) : modExpr;
-      // methods no longer change cardinality
-      // cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
-      break;
-    case "limit":
-      modifiers.limit =
-        typeof modExpr === "number"
-          ? _std.number(modExpr)
-          : (modExpr as any).__kind__ === ExpressionKind.Set
-          ? (modExpr as any).__exprs__[0]
-          : modExpr;
-      // methods no longer change cardinality
-      // cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
-      break;
-  }
+//   switch (modName) {
+//     case "filter":
+//       modifiers.filter = modifiers.filter
+//         ? op(modifiers.filter, "and", modExpr)
+//         : modExpr;
 
-  return $expressionify(
-    $selectify({
-      __kind__: ExpressionKind.Select,
-      __element__: parent.__element__,
-      __cardinality__: cardinality,
-      __expr__: parent.__expr__,
-      __modifiers__: modifiers,
-      __scope__: scope,
-    })
-  );
-}
+//       // methods no longer change cardinality
+//       // cardinality = computeFilterCardinality(
+//       //   modExpr,
+//       //   cardinality,
+//       //   parent.__expr__
+//       // );
+//       break;
+//     case "order":
+//       const order =
+//         typeof (modExpr as any).__element__ === "undefined"
+//           ? modExpr
+//           : {expression: modExpr};
+//       modifiers.order = modifiers.order
+//         ? [...modifiers.order, order]
+//         : [order];
+//       break;
+//     case "offset":
+//       modifiers.offset =
+//         typeof modExpr === "number" ? _std.number(modExpr) : modExpr;
+//       // methods no longer change cardinality
+//       // cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
+//       break;
+//     case "limit":
+//       modifiers.limit =
+//         typeof modExpr === "number"
+//           ? _std.number(modExpr)
+//           : (modExpr as any).__kind__ === ExpressionKind.Set
+//           ? (modExpr as any).__exprs__[0]
+//           : modExpr;
+//       // methods no longer change cardinality
+//       // cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
+//       break;
+//   }
+
+//   return $expressionify(
+//     $selectify({
+//       __kind__: ExpressionKind.Select,
+//       __element__: parent.__element__,
+//       __cardinality__: cardinality,
+//       __expr__: parent.__expr__,
+//       __modifiers__: modifiers,
+//       __scope__: scope,
+//     })
+//   );
+// }
 
 export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   if (expr.__element__.__kind__ === TypeKind.object) {
@@ -520,12 +524,12 @@ export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
       delete: deleteFunc.bind(expr),
     });
   }
-  Object.assign(expr, {
-    filter: (filter: any) => updateModifier(expr, "filter", filter),
-    order: (order: any) => updateModifier(expr, "order", order),
-    offset: (offset: any) => updateModifier(expr, "offset", offset),
-    limit: (limit: any) => updateModifier(expr, "limit", limit),
-  });
+  // Object.assign(expr, {
+  //   filter: (filter: any) => updateModifier(expr, "filter", filter),
+  //   order: (order: any) => updateModifier(expr, "order", order),
+  //   offset: (offset: any) => updateModifier(expr, "offset", offset),
+  //   limit: (limit: any) => updateModifier(expr, "limit", limit),
+  // });
   return $queryify(expr);
 }
 
