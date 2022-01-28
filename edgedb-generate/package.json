@@ -1,0 +1,25 @@
+{
+  "name": "edgedb-generate",
+  "version": "1.0.0",
+  "description": "Issues warning when npx edgedb-generate is executed without locally installed package.",
+  "homepage": "https://edgedb.com/docs",
+  "author": "EdgeDB <info@edgedb.com>",
+  "engines": {
+    "node": ">= 10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgedb/edgedb-js.git"
+  },
+  "main": "index.js",
+  "types": "./dist/index.node.d.ts",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "edgedb-generate": "./index.js"
+  },
+  "bin": {
+    "edgedb-generate": "./index.js"
+  },
+  "keywords": []
+}
