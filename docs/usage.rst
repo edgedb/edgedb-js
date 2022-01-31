@@ -82,10 +82,48 @@ to run queries.
 
     main();
 
-TypeScript
----------------
+.. _edgedb-js-typescript:
 
-For details on usage with TypeScript, go to :ref:`edgedb-js-typescript`.
+TypeScript
+==========
+
+For TypeScript users, we recommend using the :ref:`Query Builder <edgedb-js-qb>` to write EdgeQL. It provides a TypeScript-native way to write queries and statically infers the return type of all queries.
+
+If you prefer writing EdgeQL queries as strings, the ``query`` and ``querySingle`` methods are generic. Pass a type annotation
+to these methods to receive a typed result.
+
+.. code-block:: ts
+
+    import * as edgedb from "edgedb";
+
+    interface User {
+      id: string;
+      name: string;
+      dob: edgedb.LocalDate;
+    }
+
+    async function main() {
+
+      const client = edgedb.createClient();
+
+      // Select several Users
+      let userSet = await client.query<User>(
+        `select User {id, name, dob} filter .name ilike 'B%';`
+      );
+
+      userSet[0].name; // "Bob"
+
+
+      // Select a single user
+      const bob = await client.querySingle<User>(
+        `select User {id, name, dob} filter .name = 'Bob' limit 1;`
+      );
+
+      bob.dob; // edgedb.LocalDate
+
+    }
+
+
 
 
 Type Conversion

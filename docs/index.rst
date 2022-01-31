@@ -18,18 +18,13 @@ EdgeDB JavaScript Driver
   High-level examples on how to use the edgedb-js client,
   as well as on how to work with transactions.
 
-* :ref:`edgedb-js-typescript`
+* :ref:`edgedb-js-qb`
 
-  An overview of how to use this library in a TypeScript environment,
-  including how to execute strongly typed queries.
-
-* :ref:`edgedb-js-typescript`
-
-  How to use EdgeQL's best-in-class, fully-typed query builder for TypeScript.
+  How to use EdgeDB's best-in-class, fully-typed query builder for TypeScript.
 
 * :ref:`edgedb-js-api-reference`
 
-  APIs reference.
+  A complete API reference.
 
 * :ref:`edgedb-js-datatypes`
 
@@ -42,7 +37,6 @@ EdgeDB JavaScript Driver
 
    installation
    usage
-   typescript
    querybuilder
    api/connection
    api/types

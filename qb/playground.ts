@@ -1,5 +1,5 @@
 // tslint:disable:no-console
-import {$} from "edgedb";
+import {$, LocalDateTime} from "edgedb";
 import type {$Movie} from "./dbschema/edgeql/modules/default";
 import type {pointersToSelectShape} from "./dbschema/edgeql/syntax/select";
 
@@ -8,7 +8,11 @@ import {setupTests} from "./test/setupTeardown";
 
 async function run() {
   const {client} = await setupTests();
+  const querr = e.array([1, 2, 3]);
+  const querr2 = querr[0];
+  console.log(querr.toEdgeQL());
 
+  // const lkj = e.set("asdf", e.Hero.name);
   if (1 > 0) return;
 
   const backlinkQuery = await e.select(
@@ -18,6 +22,7 @@ async function run() {
       title: true,
     })
   );
+
   console.log(`QUERY`);
   console.log(backlinkQuery.toEdgeQL());
   const result = await backlinkQuery.run(client);

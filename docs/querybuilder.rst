@@ -1,8 +1,8 @@
 .. _edgedb-js-qb:
 
 
-EdgeQL Query Builder
-====================
+Query Builder
+=============
 
 The EdgeDB query builder provides a way to write *fully-typed* EdgeQL queries
 with code. It's generated from your database schema.
@@ -25,41 +25,44 @@ EdgeQL query builder represents a third path: an auto-generated API that's
 Requirements
 ------------
 
-- Node v10+ or higher
-- If using TypeScript:
+It's possible to use the query builder with or without TypeScript. Certain requirements apply to TypeScript users only.
 
-  - TS 4.4+
-  - ``yarn add @types/node --dev``
-  - the following compiler options in ``tsconfig.json``:
+- A running EdgeDB instance. The easiest way to set up an instance is with the
+  :ref:`edgedb project init <ref_guide_using_projects>` command.
+- Node.js 10 or higher
+- The ``edgedb`` module: ``npm install edgedb``
+- [TypeScript only] TypeScript 4.4+
+- [TypeScript only] ``npm install @types/node --dev``
+- [TypeScript only] Add the following ``compilerOptions`` in ``tsconfig.json``:
 
-    .. code-block:: javascript
+  .. code-block:: javascript
 
-      {
+    // tsconfig.json
+    {
+      // ...
+      "compilerOptions": {
         // ...
-        "compilerOptions": {
-          // ...
-          "strict": true,
-          "downlevelIteration": true,
-        }
+        "strict": true,
+        "downlevelIteration": true,
       }
+    }
 
 
-Generation command
-------------------
 
-The query builder is a *generated* by introspecting the schema of a live
-database, *not* your ``.esdl`` files. We recommend using :ref:`projects
-<ref_guide_using_projects>` to develop an EdgeDB-backed application locally.
-Refer to the :ref:`Client Library Connection <edgedb_client_connection>` docs
-for details.
+Generating the query builder
+----------------------------
 
-If you haven't already, install the ``edgedb`` client library.
+To generate the query builder, execute the following command in your terminal.
 
 .. code-block:: bash
 
-  $ npm install edgedb # OR: `yarn add edgedb`
+  $ npx edgeql-js
 
-Then, generate the query builder:
+.. note::
+
+  If you use Yarn, ``yarn edgeql-js`` will also work.
+
+You should see some output that looks like this.
 
 .. code-block:: bash
 
@@ -67,10 +70,20 @@ Then, generate the query builder:
   Detected tsconfig.json, generating TypeScript files.
     To override this, use the --target flag.
     Run `npx edgedb-generate --help` for details.
-  Generating query builder into ./dbschema/edgeql
+  Generating query builder into ./dbschema/edgeql-js
   Connecting to EdgeDB instance...
   Introspecting database schema...
   Generation successful!
+
+This establishes a connection to your database, introspects the current schema, and generates a bunch of files. By default, these files are written to the ``./dbschema/edgeql-js`` directory.
+
+Connection issues
+^^^^^^^^^^^^^^^^^
+
+Seeing a connection error? This command must be able to connect to a running EdgeDB instance. If you're using EdgeDB projects, this is automatically handled for you. Otherwise, you'll need to explicitly pass connection information, just like any other CLI command. See :ref:`Client Libraries > Connection <edgedb_client_connection>` for guidance.
+
+Version control
+^^^^^^^^^^^^^^^
 
 When you run this command for the first time, you may see a prompt like this:
 
@@ -82,11 +95,10 @@ When you run this command for the first time, you may see a prompt like this:
   is NOT RECOMMENDED. Would you like to update .gitignore to ignore
   the query builder directory? The following line will be added:
 
-    dbschema/edgeql
+    dbschema/edgeql-js
 
   [y/n] (leave blank for "y")
 
-Checking the generated query builder into version control is not recommended.
 Once you confirm this prompt, a line will be added to your ``.gitignore`` to
 exclude the generated files from Git.
 
@@ -96,32 +108,25 @@ Flags
 The generation command is configurable in a number of ways.
 
 ``--output-dir <path>``
+  Sets the output directory for the generated files.
+
   By default, the query builder is generated into ``./dbschema/edgeql-js``, as
   defined relative to your project root. The project root is identified by
   scanning up the file system for a ``package.json``.
 
-  To override this, use the ``--output`` flag to pass a desired path.
-
-  This also makes it possible to generate separate query builders for several
-  distinct instances, which is useful if your application interfaces with
+  This also makes it possible to generate separate query builders corresponding
+  to different instances, which is useful if your application interfaces with
   multiple databases.
 
 ``--target <ts|cjs|esm>``
-  The generator auto-detects whether you are using TypeScript
-  (``--target ts``), JavaScript + CommonJS modules (``--target cjs``), or
-  JavaScript + ES modules (``--target esm``)using the following algorithm:
+  Whether to generate TypeScript (``--target ts``), JavaScript with ``require/module.exports`` syntax (``--target cjs``), or JavaScript with ``import/export`` syntax (``--target esm``).
 
-  1. If a ``tsconfig.json`` is found in the project root, generate TypeScript
-  files.
+  The default is determined according the the following simple algorithm:
 
-  2. Otherwise, if the ``package.json`` includes ``"type": "module"``,
-  generate ``.mjs`` files that uses ``import/export`` syntax. (While the
-  ``.mjs`` extension is somewhat redundant, we use it anyway, so everything
-  works correctly when a user using CommonJS modules uses the explicit
-  ``--target esm`` flag.
+  1. Check for a ``tsconfig.json`` in the project root. If it exists, use ``--target ts``.
+  2. Otherwise. check if ``package.json`` includes ``"type": "module"``. If so, use ``--target esm``.
+  3. Otherwise, use ``--target cjs``.
 
-  3. Otherwise: generate ``.js`` files using CommonJS
-  ``require/module.exports`` syntax.
 
 ``--force-overwrite``
   To avoid accidental changes, you'll be prompted to confirm whenever the
@@ -147,16 +152,17 @@ Here's a brief Hello World example.
 
 .. code-block:: typescript
 
-  // index.ts
-  import {createClient} from "edgedb";
+  import * as edgedb from "edgedb";
   import e from "./dbschema/edgeql-js";
 
-  const client = createClient();
+  const client = edgedb.createClient();
 
   async function run(){
-    const myQuery = e.select(e.str("Hello world!"));
+
+    const myQuery = e.select("Hello world!");
     const result = await myQuery.run(client);
     console.log(result); // "Hello world!"
+
   }
 
 
@@ -166,9 +172,10 @@ A few things to note:
   generated. By convention, the entire query builder is imported as a single,
   default import called ``e`` but you can use any variable named you like.
 
-- To execute a query, use the ``.run`` method. Only top-level statements (``e.
-  select``, ``e.insert``, ``e.update``, ``e.delete``, ``e.for``, ``e.with``)
-  support the ``.run`` method. This method has the following signature:
+- To execute an expression, call the ``.run`` method. *All expressions*
+  support the ``.run`` method.
+
+- The ``.run`` method has the following signature:
 
   .. code-block:: typescript
 
@@ -176,36 +183,44 @@ A few things to note:
 
   The first argument expects a client or transaction object; see :ref:`Creating a Client <edgedb-js-create-client>` for details. The second argument is for *parameters*; more on that later.
 
-- The result of ``.run`` is strongly typed; in the example, ``result`` will
-  have type ``string``.
-
 
 Modules
 -------
 
-All types, functions, and operators are available on the ``e`` object and
-properly namespaced:
+All *types*, *functions*, and *commands* (``select``, ``insert``, etc) are available on the ``e`` object, properly namespaced by module.
 
 .. code-block:: typescript
 
-  e.std.eq; // equality operator (=)
+  // commands
+  e.select;
+  e.insert;
+  e.update;
+  e.delete;
+
+  // types
+  e.std.str;
+  e.std.int64;
+  e.std.bool;
+  e.cal.local_datetime;
+  e.default.User; // user-defined object type
+  e.my_module.Foo; // object type in user-defined module
+
+  // functions
   e.std.len;
+  e.std.str_upper;
   e.math.floor;
   e.sys.get_version;
-  e.cal.relative_duration;
-  e.default.User; // user-defined object type
-  e.my_module.foo; // user-defined module
 
-For convenience, the contents of ``std`` and ``default`` modules are also
-available at the top-level. (It's common to declare your schema entirely
-within the ``default`` module.)
+For convenience, the contents of the ``std`` and ``default`` modules are also exposed at the top-level of ``e``.
 
 .. code-block:: typescript
 
-  e.eq;
-  e.len;
+  e.str;
+  e.int64;
+  e.bool;
   e.User;
-
+  e.len;
+  e.str_upper;
 
 If there are any name conflicts (e.g. a user-defined module called ``len``),
 ``e.len`` will point to the user-defined module; in that scenario, you must
@@ -214,49 +229,81 @@ explicitly use ``e.std.len`` to access the built-in ``len`` function.
 Literals
 --------
 
-All literal scalar values must be created with a dedicated function call. The
-name of this function maps directly onto the :ref:`type names
-<ref_eql_type_table>` in EdgeDB's type system.
+Literal values are declared using constructor functions that correspond to primitive EdgeDB datatypes.
 
-Primitives
-^^^^^^^^^^
+.. list-table::
+
+  * - **Query builder**
+    - **EdgeQL equivalent**
+  * - ``e.str("asdf")``
+    - ``"asdf"``
+  * - ``e.bool(true)``
+    - ``true``
+  * - ``e.bigint(12345n)``
+    - ``12345n``
+  * - ``e.decimal("1234.1234n")``
+    - ``1234.1234n``
+  * - ``e.uuid("599236a4-2a5e-4249-91b6-ec435d3afe20")``
+    - ``<uuid>"599236a4-2a5e-4249-91b6-ec435d3afe20"``
+  * - ``e.json({asdf: 1234})``
+    - ``<json>(asdf := 1234)``
+
+Ints and floats
+^^^^^^^^^^^^^^^
+
+For simplicity, EdgeDB's various integer and floating point datatypes (``int16``, ``int32``, ``int64``, ``float32``, and ``float64``) do not have corresponding constructor functions. Instead use the ``e.number`` constructor.
 
 .. code-block:: typescript
 
-  import * as edgedb from "edgedb";
-  import e from "./dbschema/edgeql-js";
+  e.number(5);
+  e.number(3.14);
 
-  // primitives
-  e.str("234");
-  e.int16(123);
-  e.int32(123456);
-  e.int64(123456789);
-  e.float32(1234.1234);
-  e.float64(123456.123456);
-  e.bool(true);
-  e.bigint(12345n);
-  e.decimal("1234.1234n");
-  e.uuid("599236a4-2a5e-4249-91b6-ec435d3afe20");
-  e.json(JSON.stringify({asdf: 1234}));
+
+.. note::
+
+  Because of EdgeQL's :ref:`implicit casting system <ref_implicit_casts>`, it's rarely necessary to specify an exact float or integer type. If necessary, this can be achieved with an :ref:`explicit cast <ref_qb_casting>`—more on that later.
+
 
 Temporal literals
 ^^^^^^^^^^^^^^^^^
 
+With the exception of ``datetime``, EdgeDB's temporal datatypes don't have equivalents in the JavaScript type system. As such, these constructors expect an instance of a corresponding class in the ``edgedb`` module:
+
+
+.. list-table::
+
+  * - ``e.datetime``
+    - ``Date``
+  * - ``e.duration``
+    - :js:class:`Duration`
+  * - ``e.cal.local_date``
+    - :js:class:`LocalDate`
+  * - ``e.cal.local_time``
+    - :js:class:`LocalTime`
+  * - ``e.cal.local_datetime``
+    - :js:class:`LocalDateTime`
+
+The code below demonstrates how to declare each kind of temporal literal, along with the equivalent EdgeQL.
+
 .. code-block:: typescript
 
-  e.datetime(new Date());
+  const my_date = new Date();
+  e.datetime(my_date);
 
-
-  e.duration(new edgedb.Duration(0, 0, 0, 0, 1, 2, 3));
+  const myDuration = new edgedb.Duration(0, 0, 0, 0, 1, 2, 3);
+  e.duration(myDuration);
   // <duration>'1 hours 2 minutes 3 seconds'
 
-  e.cal.local_date(new edgedb.LocalDate(1776, 07, 04));
+  const myLocalDate = new edgedb.LocalDate(1776, 07, 04);
+  e.cal.local_date(myLocalDate);
   // <cal::local_date>'1776-07-04';
 
-  e.cal.local_time(new edgedb.LocalTime(13, 15, 0));
+  const myLocalTime = new edgedb.LocalTime(13, 15, 0);
+  e.cal.local_time(myLocalTime);
   // <cal::local_time>'13:15:00';
 
-  e.cal.local_datetime(new edgedb.LocalDateTime(1776, 07, 04, 13, 15, 0));
+  const myLocalDateTime = new edgedb.LocalDateTime(1776, 07, 04, 13, 15, 0);
+  e.cal.local_datetime(myLocalDateTime);
   // <cal::local_datetime>'1776-07-04T13:15:00';
 
 Enums
@@ -272,32 +319,32 @@ Arrays
 
 .. code-block:: typescript
 
-  e.array([e.str(5)]); // [5]
+  e.array([e.str(1), e.str(2), e.str(3)]);
+  // [1, 2, 3]
 
 
-EdgeQL semantics are enforced by TypeScript. Arrays can't contain elements
-with incompatible types, but implicit casting works as expected.
+EdgeQL semantics are enforced by TypeScript, so arrays can't contain elements
+with incompatible types.
 
 .. code-block:: typescript
 
-  e.array([e.int16(5), e.int64(51234)]);
-  // [<int16>5, 51234]
+  e.array([e.number(5), e.str("foo")]);
+  // TypeError!
 
-  e.array([e.int64(5), e.str("foo")]);
-  // TypeError
+
 
 
 Tuples
 ^^^^^^
 
-To declare a plain tuple:
+Declare a tuple.
 
 .. code-block:: typescript
 
-  e.tuple([e.str("Peter Parker"), e.int64(100), e.bool(true)]);
+  e.tuple([e.str("Peter Parker"), e.number(18), e.bool(true)]);
   // ("Peter Parker", 18, true)
 
-To declare a tuple with named elements:
+Declare a named tuple.
 
 .. code-block:: typescript
 
@@ -309,28 +356,10 @@ To declare a tuple with named elements:
   // (name := "Peter Parker", age := 18, is_spiderman := true)
 
 
-Custom literals
-^^^^^^^^^^^^^^^
-
-You can use ``e.literal`` to create literal values of constructed/custom
-types, like nested combinations of tuples, arrays, and primitives.
-
-.. code-block:: typescript
-
-  e.literal(e.array(e.int16), [1, 2, 3]);
-  // <array<std::int16>>[1, 2, 3]
-
-  e.literal(e.tuple([e.str, e.bool]), ['baz', false]);
-  // <tuple<str, bool>>("asdf", false)
-
-  e.literal(e.named_tuple([e.str, e.bool]), ['baz', false]);
-  // <tuple<str, bool>>("asdf", false)
-
-
 Types and casting
 -----------------
 
-The literal functions (e.g. ``e.str``, ``e.int64``, etc.) serve a dual
+The literal functions (e.g. ``e.str``, ``e.number``, etc.) serve a dual
 purpose. They can be used as functions to instantiate literals
 (``e.str("hi")``) or can be used as variables to represent the *type itself*
 (``e.str``).
@@ -344,10 +373,38 @@ Declaring types
   e.int64;                    // int64
   e.array(e.bool);            // array<bool>
   e.tuple([e.str, e.int64]);  // tuple<str, int64>
-  e.named_tuple({             // tuple<name: str, age: int64>
+  e.tuple({             // tuple<name: str, age: int64>
     name: e.str,
     age: e.int64
   });
+
+
+Custom literals
+^^^^^^^^^^^^^^^
+
+You can use ``e.literal`` to create literals corresponding to collection
+types like tuples, arrays, and primitives. The first argument expects a type, the second expects a *value* of that type.
+
+.. code-block:: typescript
+
+  e.literal(e.str, "sup");
+  // equivalent to: e.str("sup")
+
+  e.literal(e.array(e.int16), [1, 2, 3]);
+  // <array<int16>>[1, 2, 3]
+
+  e.literal(e.tuple([e.str, e.int64]), ['baz', 9000]);
+  // <tuple<str, int64>>("Goku", 9000)
+
+  e.literal(
+    e.tuple({name: e.str, power_level: e.int64}),
+    {name: 'Goku', power_level: 9000}
+  );
+  // <tuple<str, bool>>("asdf", false)
+
+
+
+.. _ref_qb_casting:
 
 Casting
 ^^^^^^^
@@ -479,7 +536,7 @@ intersection method.
 Functions and operators
 -----------------------
 
-All functions and operators are available as functions.
+All built-in standard library functions are reflected as functions in ``e``.
 
 .. code-block:: typescript
 
@@ -720,7 +777,7 @@ All shapes can contain filter clauses, even nested ones.
       name: true
       filter: e.like(villain.name, "Mr. %"),
     }),
-    filter: e.eq(hero.name, e.str("Iron Man")),
+    filter: e.op(hero.name, '=', e.str("Iron Man")),
   }));
 
 
@@ -979,7 +1036,7 @@ specify how they should be updated.
 
   // update method
   e.update(e.Movie, movie => ({
-    filter: e.eq(movie.title, e.str("Avengers 4")),
+    filter: e.op(movie.title, '=', e.str("Avengers 4")),
     // order: ...,
     // offset: ...,
     set: {
