@@ -100,7 +100,7 @@ function arrayLikeSlice(this: ExpressionRoot, start: any, end: any) {
   }) as any;
 }
 
-export function _$arrayLikeIndexify(_expr: ExpressionRoot) {
+export function $arrayLikeIndexify(_expr: ExpressionRoot) {
   if (
     _expr.__element__.__kind__ === TypeKind.array ||
     (_expr.__element__.__kind__ === TypeKind.scalar &&
@@ -187,7 +187,7 @@ const tupleProxyHandlers: ProxyHandler<ExpressionRoot> = {
   },
 };
 
-export function _$tuplePathify(expr: ExpressionRoot) {
+export function $tuplePathify(expr: ExpressionRoot) {
   if (
     expr.__element__.__kind__ !== TypeKind.tuple &&
     expr.__element__.__kind__ !== TypeKind.namedtuple

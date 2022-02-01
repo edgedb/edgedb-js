@@ -72,7 +72,7 @@ export const generateScalars = (params: GeneratorParams) => {
         sc.nl();
 
         sc.addExport(ref);
-        sc.addRefsDefaultExport(ref, `$${_name}`);
+        // sc.addExport(ref, `$${_name}`); // dollar
       } else if (scalarType.bases.length) {
         // for std::sequence
         const bases = scalarType.bases.map(base => getRef(base.name));
@@ -88,7 +88,7 @@ export const generateScalars = (params: GeneratorParams) => {
         sc.nl();
 
         sc.addExport(ref);
-        sc.addRefsDefaultExport(ref, `$${_name}`);
+        // sc.addExport(ref, `$${_name}`); // dollar
       }
 
       continue;

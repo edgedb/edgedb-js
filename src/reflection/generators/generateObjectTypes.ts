@@ -279,7 +279,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       r`(_.spec, ${quote(type.id)}, _.syntax.literal);`,
     ]);
     body.addExport(ref);
-    body.addRefsDefaultExport(ref, `$${name}`);
+    // body.addExport(ref, `$${name}`); // dollar
 
     const typeCard = singletonObjectTypes.has(type.name) ? "One" : "Many";
 

@@ -3,6 +3,7 @@ import {Client, $} from "edgedb";
 import * as tc from "conditional-type-checks";
 
 import e, {$infer} from "../dbschema/edgeql";
+
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let client: Client;

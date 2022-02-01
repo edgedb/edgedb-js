@@ -6,6 +6,9 @@ import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 let client: edgedb.Client;
 let data: TestData;
 
+const $Hero = e.Hero.__element__;
+const $Villain = e.Villain.__element__;
+
 beforeAll(async () => {
   const setup = await setupTests();
   ({client, data} = setup);
@@ -25,7 +28,7 @@ test("update", async () => {
   e.update(e.Villain, () => ({
     set: {
       name: e.str("asdf"),
-      nemesis: e.set(e.$Hero),
+      nemesis: e.set($Hero),
     },
   })).toEdgeQL();
 
@@ -142,7 +145,7 @@ test("update link property", async () => {
   await e
     .update(theAvengers, () => ({
       set: {
-        characters: e.set(e.$Villain),
+        characters: e.set($Villain),
       },
     }))
     .run(client);

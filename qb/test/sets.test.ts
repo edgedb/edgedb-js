@@ -7,7 +7,8 @@ test("empty sets", () => {
   expect(stringSet.toEdgeQL()).toEqual(`<std::str>{}`);
   tc.assert<tc.IsExact<$infer<typeof stringSet>, null>>(true);
 
-  const heroSet = e.set(e.$Hero);
+  const $Hero = e.Hero.__element__;
+  const heroSet = e.set($Hero);
   expect(heroSet.toEdgeQL()).toEqual(`<default::Hero>{}`);
   tc.assert<tc.IsExact<$infer<typeof heroSet>, null>>(true);
 

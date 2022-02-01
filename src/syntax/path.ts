@@ -16,7 +16,7 @@ import {
   $pathify,
   ExpressionRoot,
 } from "../reflection/path";
-import {_$arrayLikeIndexify, _$tuplePathify} from "./collections";
+import {$arrayLikeIndexify, $tuplePathify} from "./collections";
 import {literalToTypeSet} from "@generated/castMaps";
 import {$toEdgeQL} from "./toEdgeQL";
 import {$queryFunc} from "./query";
@@ -187,7 +187,7 @@ function jsonDestructure(this: ExpressionRoot, path: any) {
   }) as any;
 }
 
-export function _$jsonDestructure(_expr: ExpressionRoot) {
+export function $jsonDestructure(_expr: ExpressionRoot) {
   if (
     _expr.__element__.__kind__ === TypeKind.scalar &&
     _expr.__element__.__name__ === "std::json"
@@ -206,7 +206,7 @@ export function $expressionify<T extends ExpressionRoot>(
   _expr: T
 ): Expression<T> {
   const expr: Expression = _$pathify(
-    _$jsonDestructure(_$arrayLikeIndexify(_$tuplePathify(_expr)))
+    $jsonDestructure($arrayLikeIndexify($tuplePathify(_expr)))
   ) as any;
 
   expr.run = $queryFunc.bind(expr) as any;

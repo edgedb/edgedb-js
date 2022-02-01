@@ -2,19 +2,20 @@ import {$} from "edgedb";
 import e from "../dbschema/edgeql";
 import {tc} from "./setupTeardown";
 
-const HeroType = e.default.$Hero;
+const $Hero = e.default.Hero.__element__;
+const $AnnotationSubject = e.schema.AnnotationSubject.__element__;
+const $Bag = e.default.Bag.__element__;
+const $Simple = e.default.Simple.__element__;
 
 test("property hydration", () => {
-  expect(typeof HeroType).toBe("object");
-  expect(HeroType.__name__).toBe("default::Hero");
-  expect(HeroType.__pointers__.name.__kind__).toBe("property");
-  expect(HeroType.__pointers__.name.cardinality).toBe($.Cardinality.One);
-  expect(HeroType.__pointers__.name.target).toEqual(e.std.str);
-  expect(HeroType.__pointers__.name.target.__kind__).toEqual(
-    $.TypeKind.scalar
-  );
-  expect(HeroType.__pointers__.name.exclusive).toEqual(true);
-  expect(HeroType.__pointers__.secret_identity.exclusive).toEqual(false);
+  expect(typeof $Hero).toBe("object");
+  expect($Hero.__name__).toBe("default::Hero");
+  expect($Hero.__pointers__.name.__kind__).toBe("property");
+  expect($Hero.__pointers__.name.cardinality).toBe($.Cardinality.One);
+  expect($Hero.__pointers__.name.target).toEqual(e.std.str);
+  expect($Hero.__pointers__.name.target.__kind__).toEqual($.TypeKind.scalar);
+  expect($Hero.__pointers__.name.exclusive).toEqual(true);
+  expect($Hero.__pointers__.secret_identity.exclusive).toEqual(false);
 
   expect(e.default.Movie.__element__.__pointers__.profile.exclusive).toEqual(
     true
@@ -27,18 +28,16 @@ test("property hydration", () => {
 });
 
 test("link hydration", () => {
-  expect(HeroType.__pointers__.villains.__kind__).toBe("link");
-  expect(HeroType.__pointers__.villains.target.__kind__).toBe(
-    $.TypeKind.object
-  );
-  expect(HeroType.__pointers__.villains.cardinality).toBe($.Cardinality.Many);
-  expect(HeroType.__pointers__.villains.target.__name__).toEqual(
+  expect($Hero.__pointers__.villains.__kind__).toBe("link");
+  expect($Hero.__pointers__.villains.target.__kind__).toBe($.TypeKind.object);
+  expect($Hero.__pointers__.villains.cardinality).toBe($.Cardinality.Many);
+  expect($Hero.__pointers__.villains.target.__name__).toEqual(
     "default::Villain"
   );
-  expect(HeroType.__pointers__.villains.properties).toEqual({});
+  expect($Hero.__pointers__.villains.properties).toEqual({});
 });
 
-const link = e.schema.$AnnotationSubject.__pointers__.annotations;
+const link = $AnnotationSubject.__pointers__.annotations;
 test("link properties", () => {
   expect(link.properties["@value"].target.__name__).toEqual("std::str");
   expect(link.properties["@value"].cardinality).toEqual(
@@ -49,7 +48,7 @@ test("link properties", () => {
 
 test("named tuple tests", () => {
   // named tuple tests
-  const BagShape = e.default.$Bag.__pointers__;
+  const BagShape = $Bag.__pointers__;
   expect(BagShape.namedTuple.cardinality).toEqual($.Cardinality.AtMostOne);
 
   const namedTuple = BagShape.namedTuple.target;
@@ -61,7 +60,7 @@ test("named tuple tests", () => {
 
 test("unnamed tuple tests", () => {
   // named tuple tests
-  const BagShape = e.default.$Bag.__pointers__;
+  const BagShape = $Bag.__pointers__;
   const unnamedTuple = BagShape.unnamedTuple.target;
   expect(unnamedTuple.__kind__).toEqual($.TypeKind.tuple);
   expect(unnamedTuple.__items__[0].__name__).toEqual("std::str");
@@ -70,14 +69,14 @@ test("unnamed tuple tests", () => {
 
 test("array tests", () => {
   // named tuple tests
-  const BagShape = e.default.$Bag.__pointers__;
+  const BagShape = $Bag.__pointers__;
   const arrayProp = BagShape.stringsArr.target;
   expect(arrayProp.__kind__).toEqual($.TypeKind.array);
   expect(arrayProp.__element__.__name__).toEqual("std::str");
 });
 
 test("merging tests", () => {
-  const merged = $.$mergeObjectTypes(e.default.$Bag, e.default.$Simple);
+  const merged = $.$mergeObjectTypes($Bag, $Simple);
   expect(Object.keys(merged.__pointers__).length).toEqual(4);
   expect(Object.keys(merged.__pointers__).includes("id")).toEqual(true);
   expect(Object.keys(merged.__pointers__).includes("__type__")).toEqual(true);
