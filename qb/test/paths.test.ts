@@ -124,8 +124,8 @@ test("type intersection on select", () => {
   expect(hero.number_of_movies.__element__.__name__).toEqual("std::number");
 });
 
-test("assertSingle", () => {
-  const singleHero = e.Hero.$assertSingle();
+test("assert_single", () => {
+  const singleHero = e.Hero.assert_single();
   tc.assert<
     tc.IsExact<typeof singleHero["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);

@@ -101,7 +101,7 @@ test("update link property", async () => {
       filter: e.op(movie.title, "=", "The Avengers"),
       limit: 1,
     }))
-    .$assertSingle();
+    .assert_single();
 
   const qq1 = await e
     .select(theAvengers, () => ({id: true, characters: true}))

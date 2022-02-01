@@ -408,7 +408,7 @@ test("infer cardinality - scalar filters", () => {
 });
 
 test("infer cardinality - object type filters", () => {
-  const oneHero = e.select(e.Hero, () => ({limit: 1})).$assertSingle();
+  const oneHero = e.select(e.Hero, () => ({limit: 1})).assert_single();
 
   const singleHero = e.select(e.Hero, hero => ({
     filter: e.op(hero, "=", oneHero),
@@ -418,7 +418,7 @@ test("infer cardinality - object type filters", () => {
   tc.assert<tc.IsExact<typeof c1, $.Cardinality.AtMostOne>>(true);
   expect(c1).toEqual($.Cardinality.AtMostOne);
 
-  const oneProfile = e.select(e.Hero, () => ({limit: 1})).$assertSingle();
+  const oneProfile = e.select(e.Hero, () => ({limit: 1})).assert_single();
   const singleMovie = e.select(e.Movie, movie => ({
     filter: e.op(movie.profile, "=", oneProfile),
   }));
@@ -485,7 +485,7 @@ test("limit 1", async () => {
       offset: 1,
       limit: 1,
     }))
-    .$assertSingle();
+    .assert_single();
   const result = await e.select(query).run(client);
   expect(result?.id).toEqual(data.iron_man.id);
 });
@@ -518,7 +518,7 @@ test("shapes", async () => {
   const query = e.select(
     e
       .select(e.Hero, hero => ({filter: e.op(hero.name, "=", "Iron Man")}))
-      .$assertSingle(),
+      .assert_single(),
     () => ({
       id: true,
       name: true,
@@ -540,7 +540,7 @@ test("computables", async () => {
   const query = e.select(
     e
       .select(e.Person.is(e.Hero), hero => ({order: hero.name, limit: 1}))
-      .$assertSingle(),
+      .assert_single(),
     hero => ({
       id: true,
       computable: e.number(35),
@@ -716,9 +716,9 @@ test("polymorphic link properties in expressions", async () => {
   >(true);
 });
 
-// test("assertSingle this check", () => {
+// test("assert_single this check", () => {
 //   const inner = e.select(e.Hero);
-//   const outer = e.select(e.Hero).$assertSingle().__args__[0];
+//   const outer = e.select(e.Hero).assert_single().__args__[0];
 //   tc.assert<tc.IsExact<typeof inner, typeof outer>>(true);
 // });
 
@@ -1013,7 +1013,7 @@ test("modifiers on scalar selects", async () => {
       offset: 2,
       limit: 1,
     }))
-    .$assertSingle();
+    .assert_single();
   const res4 = await e.select(q4).run(client);
   tc.assert<tc.IsExact<typeof res4, number | null>>(true);
   expect(res4).toEqual(1);

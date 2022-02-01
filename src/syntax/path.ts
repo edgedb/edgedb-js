@@ -212,7 +212,7 @@ export function $expressionify<T extends ExpressionRoot>(
   expr.run = $queryFunc.bind(expr) as any;
   expr.is = isFunc.bind(expr) as any;
   expr.toEdgeQL = $toEdgeQL.bind(expr);
-  expr.$assertSingle = () => assert_single(expr) as any;
+  expr.assert_single = () => assert_single(expr) as any;
 
   return Object.freeze(expr) as any;
 }

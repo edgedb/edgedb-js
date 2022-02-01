@@ -268,7 +268,7 @@ Provide backlinks that behave just like forward links:
 Hero["<nemesis[IS default::Villain]"];
 ```
 
-Also support "untyped" backlinks. By default, these return a set of `BaseObject` with cardinality `Many`. These can be refined with `is` and `$assertSingle`.
+Also support "untyped" backlinks. By default, these return a set of `BaseObject` with cardinality `Many`. These can be refined with `is` and `assert_single`.
 
 ```ts
 e.Hero.['<nemesis'].is(e.Villain);

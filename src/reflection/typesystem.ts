@@ -120,7 +120,7 @@ export type Expression<
         run(cxn: Executor): any;
         toEdgeQL(): string;
         is: any;
-        $assertSingle: any;
+        assert_single: any;
         // warning: any;
       }
     : $pathify<Set> &
@@ -155,7 +155,7 @@ export type stripSetShape<T> = {
 // importing the actual alias from
 // generated/modules/std didn't work.
 // returned 'any' every time
-export type $assertSingle<Expr extends TypeSet> = Expression<{
+export type assert_single<Expr extends TypeSet> = Expression<{
   __element__: Expr["__element__"];
   __cardinality__: cardinalityUtil.overrideUpperBound<
     Expr["__cardinality__"],
@@ -181,7 +181,7 @@ export type ExpressionMethods<Set extends TypeSet> = {
       {id: true}
     >
   >;
-  $assertSingle(): $assertSingle<stripSet<Set>>;
+  assert_single(): assert_single<stripSet<Set>>;
 };
 
 //////////////////
