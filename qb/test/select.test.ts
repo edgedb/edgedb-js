@@ -1,12 +1,14 @@
-import {Client, $} from "edgedb";
+import * as edgedb from "edgedb";
+import {$} from "edgedb";
 
 import * as tc from "conditional-type-checks";
 
 import e, {$infer} from "../dbschema/edgeql";
+e.bool;
 
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
-let client: Client;
+let client: edgedb.Client;
 let data: TestData;
 
 beforeAll(async () => {
@@ -22,6 +24,68 @@ test("basic select", () => {
   const result = e.select(e.std.str("asdf"));
   type result = $.BaseTypeToTsType<typeof result["__element__"]>;
   tc.assert<tc.IsExact<result, "asdf">>(true);
+});
+
+test("selecting JS data", () => {
+  const strSelect = e.select("test");
+  expect(strSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(strSelect.__element__).toBe(e.str);
+  expect(strSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const numberSelect = e.select(1234);
+  expect(numberSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(numberSelect.__element__).toBe(e.number);
+  expect(numberSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const boolSelect = e.select(false);
+  expect(boolSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(boolSelect.__element__).toBe(e.bool);
+  expect(boolSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const bigintSelect = e.select(BigInt(1234));
+  expect(bigintSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(bigintSelect.__element__).toBe(e.bigint);
+  expect(bigintSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const bufferSelect = e.select(Buffer.from([]));
+  expect(bufferSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(bufferSelect.__element__).toBe(e.bytes);
+  expect(bufferSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const dateSelect = e.select(new Date());
+  expect(dateSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(dateSelect.__element__).toBe(e.datetime);
+  expect(dateSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const durationSelect = e.select(new edgedb.Duration());
+  expect(durationSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(durationSelect.__element__).toBe(e.duration);
+  expect(durationSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const ldrSelect = e.select(new edgedb.LocalDateTime(1, 2, 3));
+  expect(ldrSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(ldrSelect.__element__).toBe(e.cal.local_datetime);
+  expect(ldrSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const ldSelect = e.select(new edgedb.LocalDate(1, 2, 3));
+  expect(ldSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(ldSelect.__element__).toBe(e.cal.local_date);
+  expect(ldSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const ltSelect = e.select(new edgedb.LocalTime(1, 2, 3));
+  expect(ltSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(ltSelect.__element__).toBe(e.cal.local_time);
+  expect(ltSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const rdSelect = e.select(new edgedb.RelativeDuration(1, 2, 3));
+  expect(rdSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(rdSelect.__element__).toBe(e.cal.relative_duration);
+  expect(rdSelect.__cardinality__).toBe($.Cardinality.One);
+
+  const memSelect = e.select(new edgedb.ConfigMemory(BigInt(1234)));
+  expect(memSelect.__kind__).toBe($.ExpressionKind.Select);
+  expect(memSelect.__element__).toBe(e.cfg.memory);
+  expect(memSelect.__cardinality__).toBe($.Cardinality.One);
 });
 
 test("no shape", async () => {

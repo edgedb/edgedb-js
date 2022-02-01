@@ -1,3 +1,11 @@
+import {
+  LocalDateTime,
+  LocalDate,
+  LocalTime,
+  Duration,
+  RelativeDuration,
+  ConfigMemory,
+} from "edgedb";
 import type {$bool, $number} from "@generated/modules/std";
 import {
   $expr_PolyShapeElement,
@@ -20,6 +28,7 @@ import {
   TypeSet,
   typeutil,
 } from "../reflection";
+
 import type {
   $expr_PathLeaf,
   $expr_PathNode,
@@ -31,6 +40,11 @@ import type {$expr_Operator} from "../reflection/funcops";
 import {$expressionify, $getScopedExpr} from "./path";
 import {getTypeByName, literal} from "./literal";
 import {spec} from "@generated/__spec__";
+import {
+  scalarLiterals,
+  literalToScalarType,
+  literalToTypeSet,
+} from "@generated/castMaps";
 
 export const ASC: "ASC" = "ASC";
 export const DESC: "DESC" = "DESC";
@@ -672,8 +686,38 @@ export function select<Shape extends {[key: string]: TypeSet}>(
   __element__: ObjectType<`std::FreeObject`, {}, Shape>; // _shape
   __cardinality__: Cardinality.One;
 }>;
-
+export function select<Expr extends scalarLiterals>(
+  expr: Expr
+): $expr_Select<{
+  __element__: literalToScalarType<Expr>;
+  __cardinality__: Cardinality.One;
+}>;
 export function select(...args: any[]) {
+  const firstArg = args[0];
+
+  if (
+    typeof firstArg !== "object" ||
+    firstArg instanceof Buffer ||
+    firstArg instanceof Date ||
+    firstArg instanceof Duration ||
+    firstArg instanceof LocalDateTime ||
+    firstArg instanceof LocalDate ||
+    firstArg instanceof LocalTime ||
+    firstArg instanceof RelativeDuration ||
+    firstArg instanceof ConfigMemory
+  ) {
+    const literal = literalToTypeSet(firstArg);
+    return $expressionify(
+      $selectify({
+        __kind__: ExpressionKind.Select,
+        __element__: literal.__element__,
+        __cardinality__: literal.__cardinality__,
+        __expr__: literal,
+        __modifiers__: {},
+      })
+    ) as any;
+  }
+
   const [expr, shapeGetter]: [TypeSet, (scope: any) => any] =
     typeof args[0].__element__ !== "undefined"
       ? (args as any)
