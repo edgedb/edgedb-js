@@ -475,7 +475,7 @@ test("computables", async () => {
   }));
   const query = e.select(
     e
-      .select(e.Person.$is(e.Hero), hero => ({order: hero.name, limit: 1}))
+      .select(e.Person.is(e.Hero), hero => ({order: hero.name, limit: 1}))
       .$assertSingle(),
     hero => ({
       id: true,
@@ -508,7 +508,7 @@ test("computables", async () => {
 });
 
 test("type intersections", async () => {
-  const query = e.select(e.Person.$is(e.Hero), () => ({
+  const query = e.select(e.Person.is(e.Hero), () => ({
     id: true,
     // __type__: {name: true},
   }));
@@ -520,7 +520,7 @@ test("type intersections", async () => {
 });
 
 test("type intersections - static", () => {
-  const result = e.select(e.Movie.characters).$is(e.Villain);
+  const result = e.select(e.Movie.characters).is(e.Villain);
   type result = $.setToTsType<typeof result>;
   tc.assert<tc.IsExact<result, {id: string}[]>>(true);
 });
@@ -534,7 +534,7 @@ test("backlinks", async () => {
     }))
     .run(client);
 
-  const q2 = e.select(e.Hero["<characters"].$is(e.Movie), () => ({
+  const q2 = e.select(e.Hero["<characters"].is(e.Movie), () => ({
     id: true,
     // __type__: {name: true},
     title: true,

@@ -456,7 +456,7 @@ SELECT {
 );
 
 test("query with no WITH block", () => {
-  const query = e.select(e.Person.$is(e.Hero), person => ({
+  const query = e.select(e.Person.is(e.Hero), person => ({
     id: true,
     computable: e.number(35),
     all_heroes: e.select(e.Hero, () => ({__type__: {name: true}})),

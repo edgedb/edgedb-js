@@ -83,7 +83,7 @@ test("path structure", () => {
 test("type intersection on path node", () => {
   const $Hero = e.Hero.__element__;
   const person = e.Person;
-  const hero = person.$is(e.Hero);
+  const hero = person.is(e.Hero);
   tc.assert<
     tc.IsExact<
       typeof hero["__element__"]["__pointers__"],
@@ -114,7 +114,7 @@ test("type intersection on path node", () => {
 
 test("type intersection on select", () => {
   const q2 = e.select(e.Person, () => ({id: true, name: true, limit: 5}));
-  const hero = q2.$is(e.Hero);
+  const hero = q2.is(e.Hero);
   expect(hero.__element__.__name__).toEqual("default::Hero");
   expect(hero.__element__.__kind__).toEqual($.TypeKind.object);
   expect(hero.__kind__).toEqual($.ExpressionKind.TypeIntersection);

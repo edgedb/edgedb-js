@@ -500,7 +500,7 @@ instance, to represent the chararacters in a movie that are of type ``Hero``:
 
 .. code-block:: typescript
 
-  e.Movie.characters.$is(e.Hero);
+  e.Movie.characters.is(e.Hero);
   // Movie.characters[is Hero]
 
 
@@ -524,12 +524,12 @@ instead of simple dot notation.
 
 For convenience, these backlinks automatically combine the backlink operator
 and type intersection into a single key. However, the query builder also
-provides "naked" backlinks; these can be refined with the ``.$is`` type
+provides "naked" backlinks; these can be refined with the ``.is`` type
 intersection method.
 
 .. code-block:: typescript
 
-  e.Hero['<nemesis'].$is(e.Villain);
+  e.Hero['<nemesis'].is(e.Villain);
   // Hero.<nemesis[is Villain]
 
 
@@ -951,7 +951,7 @@ Type intersection
 
   // select Movie { characters[is Hero]: { id }}
   e.select(e.Movie, movie => ({
-    characters: movie.characters.$is(e.Hero),
+    characters: movie.characters.is(e.Hero),
   }));
 
 
@@ -961,7 +961,7 @@ To specify shape, use subqueries:
 
   e.select(e.Movie, movie => ({
     id: true,
-    characters: e.select(movie.characters.$is(e.default.Hero), hero => ({
+    characters: e.select(movie.characters.is(e.default.Hero), hero => ({
       id: true,
       secret_identity: true,
     })),

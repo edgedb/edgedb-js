@@ -119,7 +119,7 @@ export type Expression<
     ? {
         run(cxn: Executor): any;
         toEdgeQL(): string;
-        $is: any;
+        is: any;
         $assertSingle: any;
         // warning: any;
       }
@@ -170,7 +170,7 @@ export type $assertSingle<Expr extends TypeSet> = Expression<{
 export type ExpressionMethods<Set extends TypeSet> = {
   toEdgeQL(): string;
 
-  $is<T extends ObjectTypeSet>(
+  is<T extends ObjectTypeSet>(
     ixn: T
   ): $expr_TypeIntersection<
     {__cardinality__: Set["__cardinality__"]; __element__: Set["__element__"]},

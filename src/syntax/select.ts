@@ -812,7 +812,7 @@ function resolveShapeElement(
     };
   } else if ((value as any)?.__kind__ === ExpressionKind.PolyShapeElement) {
     const polyElement = value as $expr_PolyShapeElement;
-    const polyScope = (scope as any).$is(polyElement.__polyType__);
+    const polyScope = (scope as any).is(polyElement.__polyType__);
     return {
       __kind__: ExpressionKind.PolyShapeElement,
       __polyType__: polyScope,

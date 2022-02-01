@@ -257,7 +257,7 @@ Movie.characters;
 
 ```ts
 // Movie.characters[IS Hero]
-Movie.characters.$is(e.Hero);
+Movie.characters.is(e.Hero);
 ```
 
 ### Backward links
@@ -268,10 +268,10 @@ Provide backlinks that behave just like forward links:
 Hero["<nemesis[IS default::Villain]"];
 ```
 
-Also support "untyped" backlinks. By default, these return a set of `BaseObject` with cardinality `Many`. These can be refined with `$is` and `$assertSingle`.
+Also support "untyped" backlinks. By default, these return a set of `BaseObject` with cardinality `Many`. These can be refined with `is` and `$assertSingle`.
 
 ```ts
-e.Hero.['<nemesis'].$is(e.Villain);
+e.Hero.['<nemesis'].is(e.Villain);
 ```
 
 ## Casting
@@ -485,7 +485,7 @@ e.select(e.Hero, hero => ({
 ```ts
 // select Movie { characters[IS Hero]: { id }}
 e.select(e.Movie, movie => ({
-  characters: movie.characters.$is(e.Hero),
+  characters: movie.characters.is(e.Hero),
 }));
 ```
 
@@ -494,7 +494,7 @@ To specify shape, use subqueries:
 ```ts
 e.select(e.Movie, movie => ({
   id: true,
-  characters: e.select(movie.characters.$is(e.default.Hero), hero => ({
+  characters: e.select(movie.characters.is(e.default.Hero), hero => ({
     id: true,
     secret_identity: true,
   })),

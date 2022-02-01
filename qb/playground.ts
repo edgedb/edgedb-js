@@ -16,7 +16,7 @@ async function run() {
   if (1 > 0) return;
 
   const backlinkQuery = await e.select(
-    e.Hero["<characters"].$is(e.Movie),
+    e.Hero["<characters"].is(e.Movie),
     () => ({
       id: true,
       title: true,
@@ -243,8 +243,8 @@ async function run() {
         "@character_name": true,
         name: true,
       },
-      villainChars: e.select(e.Movie.characters).$is(e.Villain),
-      heroCharNames: e.select(e.Movie.characters).$is(e.Hero).name,
+      villainChars: e.select(e.Movie.characters).is(e.Villain),
+      heroCharNames: e.select(e.Movie.characters).is(e.Hero).name,
     },
     ...e.is(e.Villain, {
       nemesis: {id: true},
