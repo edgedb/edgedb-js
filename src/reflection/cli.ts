@@ -330,11 +330,9 @@ async function canOverwrite(outputDir: string, options: Options) {
 
   let config: any = null;
   try {
-    const [header, ..._config] = (
-      await readFileUtf8(path.join(outputDir, "config.json"))
-    ).split("\n");
-    if (header === configFileHeader) {
-      config = JSON.parse(_config.join("\n"));
+    const configFile = await readFileUtf8(path.join(outputDir, "config.json"));
+    if (configFile.startsWith(configFileHeader)) {
+      config = JSON.parse(configFile.slice(configFileHeader.length));
 
       if (config.target === options.target) {
         return true;
