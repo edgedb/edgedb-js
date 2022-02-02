@@ -38,6 +38,13 @@ test("object set contructor", () => {
   expect(merged.__element__.__name__).toEqual(
     "default::Hero UNION default::Villain UNION default::Person"
   );
+
+  expect(e.set(e.select(e.Hero), e.select(e.Villain)).toEdgeQL())
+    .toEqual(`{ (SELECT (DETACHED default::Hero) {
+  id
+}), (SELECT (DETACHED default::Villain) {
+  id
+}) }`);
 });
 
 test("scalar set contructor", () => {

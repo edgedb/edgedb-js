@@ -78,6 +78,17 @@ type WithScopeExpr =
   | $expr_InsertUnlessConflict
   | $expr_For;
 
+const topLevelExprKinds = new Set([
+  ExpressionKind.Delete,
+  ExpressionKind.For,
+  ExpressionKind.Insert,
+  ExpressionKind.InsertUnlessConflict,
+  ExpressionKind.Select,
+  ExpressionKind.Update,
+  ExpressionKind.With,
+  ExpressionKind.WithParams,
+]);
+
 function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
@@ -570,7 +581,14 @@ function renderEdgeQL(
       exprs.every(ex => ex.__element__.__kind__ !== TypeKind.object)
     ) {
       if (exprs.length === 0) return `<${expr.__element__.__name__}>{}`;
-      return `{ ${exprs.map(ex => renderEdgeQL(ex, ctx)).join(", ")} }`;
+      return `{ ${exprs
+        .map(ex => {
+          const renderedExpr = renderEdgeQL(ex, ctx);
+          return topLevelExprKinds.has((ex as SomeExpression).__kind__)
+            ? `(${renderedExpr})`
+            : renderedExpr;
+        })
+        .join(", ")} }`;
     } else {
       throw new Error(
         `Invalid arguments to set constructor: ${exprs
