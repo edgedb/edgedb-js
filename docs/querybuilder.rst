@@ -871,22 +871,22 @@ All shapes can contain filter clauses, even nested ones.
 Ordering
 ^^^^^^^^
 
-As with ``filter``, you can pass a value with the special ``order`` key. This
+As with ``filter``, you can pass a value with the special ``order_by`` key. This
 key can correspond to an arbitrary expression. To simply order by a property:
 
 .. code-block:: typescript
 
   e.select(e.Hero, hero => ({
-    order: hero.name,
+    order_by: hero.name,
   }));
 
 To customize the ordering and empty-handling parameters, you can also pass an
-object into ``order``:
+object into ``order_by``:
 
 .. code-block:: typescript
 
   e.select(e.Hero, hero => ({
-    order: {
+    order_by: {
       expression: hero.name,
       direction: e.DESC,
       empty: e.EMPTY_FIRST,
@@ -900,7 +900,7 @@ Or do compound ordering with an array of objects:
 
   e.select(e.Hero, hero => ({
     name: true,
-    order: [
+    order_by: [
       {
         expression: hero.name,
         direction: e.DESC,
@@ -1124,7 +1124,7 @@ specify how they should be updated.
   // update method
   e.update(e.Movie, movie => ({
     filter: e.op(movie.title, '=', e.str("Avengers 4")),
-    // order: ...,
+    // order_by: ...,
     // offset: ...,
     set: {
 
@@ -1155,12 +1155,13 @@ Delete
 .. code-block:: typescript
 
   e.delete(e.Hero, hero => ({
-    filter: e.eq(hero.name, "Captain America"),
-    order: ...,
+    filter: ..,
+    order_by: ...,
     offset: ...,
     limit: ...
   }));
 
+The only supported keys are ``filter``, ``order_by``, ``offset``, and ``limit``.
 
 Detach
 ------
