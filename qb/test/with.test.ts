@@ -3,7 +3,7 @@ import e from "../dbschema/edgeql";
 import {tc} from "./setupTeardown";
 
 test("simple repeated expression", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   expect(e.select(e.op(numbers, "+", numbers)).toEdgeQL()).toEqual(`WITH
   __withVar_0 := ({ 1, 2, 3 })
@@ -11,7 +11,7 @@ SELECT ((__withVar_0 + __withVar_0))`);
 });
 
 test("simple expression with alias", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   expect(e.select(e.op(numbers, "+", e.alias(numbers))).toEdgeQL())
     .toEqual(`WITH
@@ -21,7 +21,7 @@ SELECT ((__withVar_0 + __withVar_1))`);
 });
 
 test("implicit WITH vars referencing each other", () => {
-  const skip = e.number(10);
+  const skip = e.int64(10);
   const remainingHeros = e.select(e.Hero, hero => ({
     order: hero.id,
     offset: skip,
@@ -81,13 +81,13 @@ SELECT {
 });
 
 test("simple repeated expression not in select expr", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   expect(() => e.op(numbers, "+", numbers).toEdgeQL()).toThrow();
 });
 
 test("explicit WITH block", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   expect(e.with([numbers], e.select(numbers)).toEdgeQL()).toEqual(`WITH
   __withVar_0 := ({ 1, 2, 3 })
@@ -95,7 +95,7 @@ SELECT (__withVar_0)`);
 });
 
 test("explicit WITH block in nested query", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   expect(
     e
@@ -113,7 +113,7 @@ test("explicit WITH block in nested query", () => {
 });
 
 test("explicit WITH in nested query, var used outside WITH block", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   expect(() =>
     e
@@ -126,7 +126,7 @@ test("explicit WITH in nested query, var used outside WITH block", () => {
 });
 
 test("explicit WITH block nested in implicit WITH block", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   const explicitWith = e.with([numbers], e.select(numbers));
 
@@ -150,7 +150,7 @@ SELECT {
 });
 
 test("explicit WITH block nested in explicit WITH block", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   const explicitWith = e.with([numbers], e.select(numbers));
 
@@ -175,8 +175,8 @@ SELECT {
 });
 
 test("explicit WITH block nested in explicit WITH block, sub expr explicitly extracted", () => {
-  const number = e.number(2);
-  const numbers = e.set(e.number(1), number, e.number(3));
+  const number = e.int64(2);
+  const numbers = e.set(e.int64(1), number, e.int64(3));
 
   const explicitWith = e.with([numbers], e.select(numbers));
 
@@ -202,8 +202,8 @@ SELECT {
 });
 
 test("explicit WITH nested in explicit WITH, expr declared in both", () => {
-  const number = e.number(2);
-  const numbers = e.set(e.number(1), number, e.number(3));
+  const number = e.int64(2);
+  const numbers = e.set(e.int64(1), number, e.int64(3));
 
   const explicitWith = e.with([numbers], e.select(numbers));
 
@@ -220,8 +220,8 @@ test("explicit WITH nested in explicit WITH, expr declared in both", () => {
 });
 
 test("explicit WITH block nested in explicit WITH block, sub expr implicitly extracted", () => {
-  const number = e.number(2);
-  const numbers = e.set(e.number(1), number, e.number(3));
+  const number = e.int64(2);
+  const numbers = e.set(e.int64(1), number, e.int64(3));
 
   const explicitWith = e.with([numbers], e.select(numbers));
 
@@ -249,7 +249,7 @@ SELECT {
 });
 
 test("implicit WITH and explicit WITH in sub expr", () => {
-  const skip = e.number(10);
+  const skip = e.int64(10);
   const remainingHeros = e.select(e.Hero, hero => ({
     order: hero.id,
     offset: skip,
@@ -300,7 +300,7 @@ SELECT {
 });
 
 test("explicit WITH nested in implicit WITH + alias implicit", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   const numbersAlias = e.alias(numbers);
 
@@ -330,7 +330,7 @@ SELECT {
 });
 
 test("explicit WITH nested in implicit WITH + alias explicit", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   const numbersAlias = e.alias(numbers);
 
@@ -363,7 +363,7 @@ SELECT {
 });
 
 test("explicit WITH nested in implicit WITH + alias outside WITH", () => {
-  const numbers = e.set(e.number(1), e.number(2), e.number(3));
+  const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   const numbersAlias = e.alias(numbers);
 
@@ -384,8 +384,8 @@ test(
   "explicit WITH block nested in explicit WITH block, " +
     "alias declared in inner WITH",
   () => {
-    const number = e.number(2);
-    const numbers = e.set(e.number(1), number, e.number(3));
+    const number = e.int64(2);
+    const numbers = e.set(e.int64(1), number, e.int64(3));
 
     const numbersAlias = e.alias(numbers);
 
@@ -421,8 +421,8 @@ test(
   "explicit WITH block nested in explicit WITH block, " +
     "alias of alias declared in inner WITH",
   () => {
-    const number = e.number(2);
-    const numbers = e.set(e.number(1), number, e.number(3));
+    const number = e.int64(2);
+    const numbers = e.set(e.int64(1), number, e.int64(3));
 
     const numbersAlias = e.alias(numbers);
     const numbersAlias2 = e.alias(numbersAlias);
@@ -458,7 +458,7 @@ SELECT {
 test("query with no WITH block", () => {
   const query = e.select(e.Person.is(e.Hero), person => ({
     id: true,
-    computable: e.number(35),
+    computable: e.int64(35),
     all_heroes: e.select(e.Hero, () => ({__type__: {name: true}})),
     order: person.name,
     limit: 1,

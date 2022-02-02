@@ -106,7 +106,7 @@ test("type intersection on path node", () => {
   // referential equality
   expect(hero.__expr__).toBe(person);
   // check that pathify works
-  expect(hero.number_of_movies.__element__.__name__).toEqual("std::number");
+  expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
   expect(hero.toEdgeQL()).toEqual(
     `DETACHED default::Person[IS default::Hero]`
   );
@@ -121,7 +121,7 @@ test("type intersection on select", () => {
   // referential equality
   expect(hero.__expr__).toBe(q2);
   // check that pathify works
-  expect(hero.number_of_movies.__element__.__name__).toEqual("std::number");
+  expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
 });
 
 test("assert_single", () => {

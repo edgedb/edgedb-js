@@ -1,11 +1,9 @@
 import * as edgedb from "edgedb";
 import {$} from "edgedb";
-
 import * as tc from "conditional-type-checks";
 
 import e, {$infer} from "../dbschema/edgeql";
-e.bool;
-
+import {number} from "../dbschema/edgeql/modules/std";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let client: edgedb.Client;
@@ -34,7 +32,7 @@ test("selecting JS data", () => {
 
   const numberSelect = e.select(1234);
   expect(numberSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(numberSelect.__element__).toBe(e.number);
+  expect(numberSelect.__element__).toBe(number);
   expect(numberSelect.__cardinality__).toBe($.Cardinality.One);
 
   const boolSelect = e.select(false);
@@ -271,8 +269,8 @@ test("computables in polymorphics", () => {
       secret_identity: true,
     }),
     ...e.is(e.Villain, {
-      nemesis: {id: true, computable: e.number(1234)},
-      computable: e.number(1234),
+      nemesis: {id: true, computable: e.int64(1234)},
+      computable: e.int64(1234),
     }),
   }));
 
@@ -543,7 +541,7 @@ test("computables", async () => {
       .assert_single(),
     hero => ({
       id: true,
-      computable: e.number(35),
+      computable: e.int64(35),
       all_heroes,
     })
   );
@@ -616,7 +614,7 @@ test("backlinks", async () => {
 test("overrides with implicit casting", () => {
   e.select(e.Hero, () => ({
     id: e.uuid("asdf"),
-    number_of_movies: e.number(1234),
+    number_of_movies: e.int64(1234),
     name: e.str("adsf"),
   }));
 });
@@ -986,11 +984,11 @@ test("modifiers on scalar selects", async () => {
 
   // order
   const unorderedSet = e.set(
-    e.number(2),
-    e.number(4),
-    e.number(1),
-    e.number(5),
-    e.number(3)
+    e.int64(2),
+    e.int64(4),
+    e.int64(1),
+    e.int64(5),
+    e.int64(3)
   );
 
   const q2 = e.select(unorderedSet, el => ({

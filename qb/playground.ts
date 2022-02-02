@@ -8,6 +8,10 @@ import {setupTests} from "./test/setupTeardown";
 
 async function run() {
   const {client} = await setupTests();
+  const num = e.int64(1234);
+  const sum = e.sum(num);
+  console.log(num);
+  console.log(sum);
 
   // const querr = e.array([1, 2, 3]);
   // const querr2 = querr[0];
@@ -36,7 +40,7 @@ async function run() {
 
   // console.log(e.Hero.__element__.__pointers__.villains.properties);
 
-  // console.log(await e.select(e.number(5)).run(client));
+  // console.log(await e.select(e.int64(5)).run(client));
   // console.log(
   //   await e
   //     .select(e.Hero, hero => ({filter: e.op(hero.name, "=", e.str("Loki"))}))
@@ -48,7 +52,7 @@ async function run() {
   //       filter: e.op(hero.name, "=", e.str("Loki")),
   //       set: {number_of_movies: 5},
   //     }))
-  //     // .update({number_of_movies: e.number(5)})
+  //     // .update({number_of_movies: e.int64(5)})
   //     .run(client)
   // );
   // console.log(
@@ -196,8 +200,8 @@ async function run() {
   //     secret_identity: true,
   //   }),
   //   ...e.is(e.Villain, {
-  //     nemesis: {id: true, computable: e.number(1234)},
-  //     computable: e.number(1234),
+  //     nemesis: {id: true, computable: e.int64(1234)},
+  //     computable: e.int64(1234),
   //   }),
   // }));
   // type q4 = $.setToTsType<typeof q4>;
@@ -207,7 +211,7 @@ async function run() {
   //   ...e.is(e.Villain, {
   //     // id: true,
   //     nemesis: {id: true},
-  //     computable: e.number(1234),
+  //     computable: e.int64(1234),
   //   }),
   // }));
   // type q5 = $.setToTsType<typeof q5>;
@@ -260,7 +264,7 @@ async function run() {
   //   ...e.is(e.Villain, {
   //     // id: true,
   //     nemesis: {id: true},
-  //     computable: e.number(1234),
+  //     computable: e.int64(1234),
   //   }),
   // }));
   // type q9 = $.setToTsType<typeof q9>;

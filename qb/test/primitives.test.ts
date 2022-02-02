@@ -8,7 +8,11 @@ import {tc} from "./setupTeardown";
 
 test("primitive types", () => {
   expect(e.int16.__name__).toEqual("std::int16");
-  // expect(e.std.).toEqual("std::int64");
+  expect(e.int32.__name__).toEqual("std::int32");
+  expect(e.int64.__name__).toEqual("std::int64");
+  expect(e.float32.__name__).toEqual("std::float32");
+  expect(e.float64.__name__).toEqual("std::float64");
+  expect(e.str.__name__).toEqual("std::str");
 });
 
 test("collection types", () => {

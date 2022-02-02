@@ -145,17 +145,17 @@ test("complex params", async () => {
   });
 });
 
-test("non castable scalars", async () => {
-  e.params(
-    {
-      // @ts-expect-error
-      num: e.number,
-      // @ts-expect-error
-      tuple: e.tuple([e.number]),
-    },
-    p => e.select({num: p.num, tuple: p.num})
-  );
-});
+// test("non castable scalars", async () => {
+//   e.params(
+//     {
+//       // @ts-expect-error
+//       num: e.int64,
+//       // @ts-expect-error
+//       tuple: e.tuple([e.int64]),
+//     },
+//     p => e.select({num: p.num, tuple: p.num})
+//   );
+// });
 
 test("all param types", async () => {
   const params = {

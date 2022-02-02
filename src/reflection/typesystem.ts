@@ -51,15 +51,34 @@ export type scalarTypeWithConstructor<
     >
   >;
 };
+// export type scalarTypeWithConstructor<
+//   Root extends ScalarType,
+//   ExtraTsTypes extends any = never,
+//   ConstructorType extends ScalarType = Root
+// > = Root & {
+//   // tslint:disable-next-line
+//   <T extends ConstructorType["__tstype__"] | ExtraTsTypes>(
+//     val: T
+//   ): $expr_Literal<
+//     ScalarType<
+//       ConstructorType["__name__"],
+//       ConstructorType["__tstype__"],
+//       ConstructorType["__castable__"],
+//       T extends ConstructorType["__tstype__"]
+//         ? T
+//         : ConstructorType["__tstype__"]
+//     >
+//   >;
+// };
 
-export interface CastOnlyScalarType<
-  Name extends string = string,
-  CastType extends ScalarType = ScalarType
-> extends BaseType {
-  __kind__: TypeKind.castonlyscalar;
-  __name__: Name;
-  __casttype__: CastType;
-}
+// export interface CastOnlyScalarType<
+//   Name extends string = string,
+//   CastType extends ScalarType = ScalarType
+// > extends BaseType {
+//   __kind__: TypeKind.castonlyscalar;
+//   __name__: Name;
+//   __casttype__: CastType;
+// }
 
 type $jsonDestructure<Set extends TypeSet> =
   Set["__element__"] extends ScalarType<"std::json">
@@ -477,7 +496,7 @@ export type $expr_Array<
 }>;
 
 export interface ArrayType<
-  Element extends NonArrayType | CastOnlyScalarType = NonArrayType,
+  Element extends NonArrayType = NonArrayType,
   Name extends string = `array<${Element["__name__"]}>`
 > extends BaseType {
   __name__: Name;
@@ -626,9 +645,10 @@ type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
 export type BaseTypeToTsType<Type extends BaseType> = typeutil.flatten<
   Type extends ScalarType
     ? Type["__tsconsttype__"]
-    : Type extends CastOnlyScalarType
-    ? Type["__casttype__"]["__tsconsttype__"]
-    : Type extends EnumType
+    : // Type extends CastOnlyScalarType
+    // ? Type["__casttype__"]["__tsconsttype__"]
+    // :
+    Type extends EnumType
     ? Type["__tstype__"]
     : Type extends ArrayType<any>
     ? ArrayTypeToTsType<Type>
@@ -717,9 +737,8 @@ export function isArrayType(type: BaseType): type is ArrayType {
   return type.__kind__ === TypeKind.array;
 }
 
-export type CastableScalarType =
-  | ScalarType<string, any, true>
-  | CastOnlyScalarType;
+export type CastableScalarType = ScalarType<string, any, true>;
+// | CastOnlyScalarType;
 
 export type NonArrayType =
   | ScalarType
@@ -739,11 +758,13 @@ export type AnyTupleType = TupleType | NamedTupleType;
 
 export type CastableArrayType = ArrayType<CastableNonArrayType>;
 
-export type unwrapCastableType<T> = T extends CastOnlyScalarType
-  ? T["__casttype__"]
-  : T extends CastableArrayType
-  ? ArrayType<unwrapCastableType<T["__element__"]>>
-  : T;
+export type unwrapCastableType<T> =
+  // T extends CastOnlyScalarType
+  //   ? T["__casttype__"]
+  //   :
+  T extends CastableArrayType
+    ? ArrayType<unwrapCastableType<T["__element__"]>>
+    : T;
 
 export type ParamType =
   | CastableScalarType

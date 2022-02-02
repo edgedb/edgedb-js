@@ -187,8 +187,8 @@ function jsonStringify(type: ParamType, val: any): string {
       .join()}}`;
   }
   if (
-    type.__kind__ === TypeKind.scalar ||
-    type.__kind__ === TypeKind.castonlyscalar
+    type.__kind__ === TypeKind.scalar
+    // || type.__kind__ === TypeKind.castonlyscalar
   ) {
     switch (type.__name__) {
       case "std::bigint":

@@ -83,7 +83,9 @@ const numberType: ScalarType = {
   bases: [],
 };
 
-export const nonCastableTypes = new Set([numberType.id]);
+export const nonCastableTypes = new Set<string>([
+  // numberType.id
+]);
 
 export const typeMapping = new Map([
   [
@@ -209,31 +211,32 @@ export async function getTypes(
         if (typeMapping.has(type.id)) {
           type.castOnlyType = typeMapping.get(type.id)!.id;
         }
-        if (type.material_id) {
-          type.material_id =
-            typeMapping.get(type.material_id)?.id ?? type.material_id;
-        }
-        type.bases = type.bases.map(base => ({
-          id: typeMapping.get(base.id)?.id ?? base.id,
-        }));
+        // if (type.material_id) {
+        //   type.material_id =
+        //     typeMapping.get(type.material_id)?.id ?? type.material_id;
+        // }
+        // type.bases = type.bases.map(base => ({
+        //   id: typeMapping.get(base.id)?.id ?? base.id,
+        // }));
         break;
       case "array":
-        type.array_element_id =
-          typeMapping.get(type.array_element_id)?.id ?? type.array_element_id;
+        // type.array_element_id =
+        //   typeMapping.get(type.array_element_id)?.id ?? type.array_element_id;
         break;
       case "tuple":
-        type.tuple_elements = type.tuple_elements.map(element => ({
-          ...element,
-          target_id:
-            typeMapping.get(element.target_id)?.id ?? element.target_id,
-        }));
+        // type.tuple_elements = type.tuple_elements.map(element => ({
+        //   ...element,
+        //   target_id:
+        //     typeMapping.get(element.target_id)?.id ?? element.target_id,
+        // }));
         break;
       case "object":
-        type.pointers = type.pointers.map(pointer => ({
-          ...pointer,
-          target_id:
-            typeMapping.get(pointer.target_id)?.id ?? pointer.target_id,
-        }));
+        // type.pointers = type.pointers.map(pointer => ({
+        //   ...pointer,
+        //   target_id:
+        //     typeMapping.get(pointer.target_id)?.id ?? pointer.target_id,
+        // }));
+        break;
     }
   }
   types.push(numberType);

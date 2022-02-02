@@ -1045,11 +1045,20 @@ function walkExprTree(
   }
 }
 
+const numericalTypes: Record<string, boolean> = {
+  "std::number": true,
+  "std::int16": true,
+  "std::int32": true,
+  "std::int64": true,
+  "std::float32": true,
+  "std::float64": true,
+};
+
 function literalToEdgeQL(type: BaseType, val: any): string {
   let skipCast = false;
   let stringRep;
   if (typeof val === "string") {
-    if (type.__name__ === "std::number") {
+    if (numericalTypes[type.__name__]) {
       skipCast = true;
       stringRep = val;
     } else if (type.__name__ === "std::json") {
@@ -1062,8 +1071,10 @@ function literalToEdgeQL(type: BaseType, val: any): string {
       stringRep = JSON.stringify(val);
     }
   } else if (typeof val === "number") {
-    if (type.__name__ === "std::number") {
+    if (numericalTypes[type.__name__]) {
       skipCast = true;
+    } else {
+      throw new Error(`Unknown numerical type: ${type.__name__}!`);
     }
     stringRep = `${val.toString()}`;
   } else if (typeof val === "boolean") {

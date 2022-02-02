@@ -44,10 +44,10 @@ test("update", async () => {
 test("update assignable", () => {
   e.update(e.Bag, () => ({
     set: {
-      int32Field: e.number(23),
-      int64Field: e.number(12),
+      int32Field: e.float32(23),
+      int64Field: e.float64(12),
       // @ts-expect-error
-      bigintField: e.number(324),
+      bigintField: e.float32(324),
       // @ts-expect-error
       float32Field: e.bigint(BigInt(1234)),
     },

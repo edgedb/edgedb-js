@@ -3,6 +3,7 @@ import {$} from "edgedb";
 import e from "../dbschema/edgeql";
 import {$expr_Function} from "edgedb/dist/reflection";
 import {tc} from "./setupTeardown";
+import {number} from "../dbschema/edgeql/modules/std";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,
@@ -19,7 +20,7 @@ function checkFunctionExpr<T extends $expr_Function>(
   expect(superjson.stringify(expr.__namedargs__)).toEqual(
     superjson.stringify(namedargs)
   );
-  expect(expr.__element__).toEqual(returnType);
+  expect(expr.__element__.__name__).toEqual(returnType.__name__);
   expect(expr.__cardinality__).toEqual(cardinality);
 }
 
@@ -39,10 +40,10 @@ test("no args", () => {
     [],
     {},
     e.tuple({
-      major: e.number,
-      minor: e.number,
+      major: e.int64,
+      minor: e.int64,
       stage: e.sys.VersionStage,
-      stage_no: e.number,
+      stage_no: e.int64,
       local: e.array(e.str),
     }),
     $.Cardinality.One
@@ -60,7 +61,7 @@ test("positional args", () => {
     "std::len",
     [e.str("test")],
     {},
-    e.number,
+    number,
     $.Cardinality.One
   );
 
@@ -69,7 +70,7 @@ test("positional args", () => {
     "std::len",
     [e.bytes(Buffer.from(""))],
     {},
-    e.number,
+    number,
     $.Cardinality.One
   );
 
@@ -78,7 +79,7 @@ test("positional args", () => {
     "std::len",
     [e.literal(e.array(e.int32), [1, 2, 3])],
     {},
-    e.number,
+    number,
     $.Cardinality.One
   );
 
@@ -88,7 +89,7 @@ test("positional args", () => {
     "std::len",
     [setOfStr],
     {},
-    e.number,
+    number,
     $.Cardinality.AtLeastOne
   );
 
@@ -98,7 +99,7 @@ test("positional args", () => {
     "std::datetime_get",
     datetime_getArgs as $.typeutil.writeable<typeof datetime_getArgs>,
     {},
-    e.number,
+    number,
     $.Cardinality.One
   );
 
@@ -111,7 +112,7 @@ test("positional args", () => {
     "std::datetime_get",
     datetime_getArgs2 as $.typeutil.writeable<typeof datetime_getArgs2>,
     {},
-    e.number,
+    number,
     $.Cardinality.AtLeastOne
   );
 
@@ -177,44 +178,44 @@ test("named args", () => {
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.to_duration({hours: e.number(5)}),
+    e.to_duration({hours: e.int64(5)}),
     "std::to_duration",
     [],
-    {hours: e.number(5)},
+    {hours: e.int64(5)},
     e.duration,
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.to_duration({hours: e.number(5), seconds: e.number(30)}),
+    e.to_duration({hours: e.int64(5), seconds: e.int64(30)}),
     "std::to_duration",
     [],
-    {hours: e.number(5), seconds: e.number(30)},
+    {hours: e.int64(5), seconds: e.int64(30)},
     e.duration,
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.to_duration({hours: e.set(e.number(5), e.number(6))}),
+    e.to_duration({hours: e.set(e.int64(5), e.int64(6))}),
     "std::to_duration",
     [],
-    {hours: e.set(e.number(5), e.number(6))},
+    {hours: e.set(e.int64(5), e.int64(6))},
     e.duration,
     $.Cardinality.AtLeastOne
   );
   checkFunctionExpr(
-    e.to_duration({hours: e.number(5)}),
+    e.to_duration({hours: e.int64(5)}),
     "std::to_duration",
     [],
-    {hours: e.number(5)},
+    {hours: e.int64(5)},
     e.duration,
     $.Cardinality.One
   );
 
   checkFunctionExpr(
-    e["💯"]({"🙀": e.number(1)}),
+    e["💯"]({"🙀": e.int64(1)}),
     "default::💯",
     [],
-    {"🙀": e.number(1)},
-    e.number,
+    {"🙀": e.int64(1)},
+    number,
     $.Cardinality.One
   );
 
@@ -309,11 +310,11 @@ test("anytype", () => {
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.min(e.set(e.number(1), e.number(2))),
+    e.min(e.set(e.int64(1), e.int64(2))),
     "std::min",
-    [e.set(e.number(1), e.number(2))],
+    [e.set(e.int64(1), e.int64(2))],
     {},
-    e.number,
+    number,
     $.Cardinality.One
   );
 
@@ -366,9 +367,9 @@ test("anytype", () => {
   );
 
   checkFunctionExpr(
-    e.contains(e.literal(e.array(e.float32), [1, 2, 3]), e.number(2)),
+    e.contains(e.literal(e.array(e.float32), [1, 2, 3]), e.int64(2)),
     "std::contains",
-    [e.literal(e.array(e.float32), [1, 2, 3]), e.number(2)],
+    [e.literal(e.array(e.float32), [1, 2, 3]), e.int64(2)],
     {},
     e.bool,
     $.Cardinality.One
@@ -378,12 +379,12 @@ test("anytype", () => {
     e.array_get(
       {default: e.bigint(BigInt(0))},
       e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.number(4)
+      e.int64(4)
     ),
     "std::array_get",
     [
       e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.number(4),
+      e.int64(4),
     ],
     {default: e.bigint(BigInt(0))},
     e.bigint,
@@ -392,17 +393,17 @@ test("anytype", () => {
 
   try {
     // @ts-expect-error
-    e.contains(e.literal(e.array(e.str), ["test", "haystack"]), e.number(1));
+    e.contains(e.literal(e.array(e.str), ["test", "haystack"]), e.int64(1));
 
     e.array_get(
       // @ts-expect-error
       {default: e.str("0")},
       e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.number(4)
+      e.int64(4)
     );
 
     // @ts-expect-error
-    e.min(e.set(e.number(1), e.str("str")));
+    e.min(e.set(e.int64(1), e.str("str")));
 
     // @ts-expect-error
     e.contains(e.literal(e.array(e.float32), [1, 2, 3]), e.bigint(BigInt(2)));
@@ -412,41 +413,41 @@ test("anytype", () => {
 test("cardinality inference", () => {
   // optional param
   checkFunctionExpr(
-    e.to_str(e.number(123), e.str("")),
+    e.to_str(e.int64(123), e.str("")),
     "std::to_str",
-    [e.number(123), e.str("")],
+    [e.int64(123), e.str("")],
     {},
     e.str,
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.to_str(e.number(123), e.set(e.str)),
+    e.to_str(e.int64(123), e.set(e.str)),
     "std::to_str",
-    [e.number(123), e.set(e.str)],
+    [e.int64(123), e.set(e.str)],
     {},
     e.str,
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.to_str(e.number(123), undefined),
+    e.to_str(e.int64(123), undefined),
     "std::to_str",
-    [e.number(123), e.set(e.str) as any],
+    [e.int64(123), e.set(e.str) as any],
     {},
     e.str,
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.to_str(e.set(e.number(123), e.number(456)), undefined),
+    e.to_str(e.set(e.int64(123), e.int64(456)), undefined),
     "std::to_str",
-    [e.set(e.number(123), e.number(456)), e.set(e.str) as any],
+    [e.set(e.int64(123), e.int64(456)), e.set(e.str) as any],
     {},
     e.str,
     $.Cardinality.AtLeastOne
   );
   checkFunctionExpr(
-    e.to_str(e.number(123)),
+    e.to_str(e.int64(123)),
     "std::to_str",
-    [e.number(123), undefined as any],
+    [e.int64(123), undefined as any],
     {},
     e.str,
     $.Cardinality.One
@@ -454,27 +455,27 @@ test("cardinality inference", () => {
 
   // setoftype param
   checkFunctionExpr(
-    e.sum(e.number(1)),
+    e.sum(e.int64(1)),
     "std::sum",
-    [e.number(1)],
+    [e.int64(1)],
     {},
-    e.number,
+    number,
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.sum(e.set(e.number(1), e.number(2))),
+    e.sum(e.set(e.int64(1), e.int64(2))),
     "std::sum",
-    [e.set(e.number(1), e.number(2))],
+    [e.set(e.int64(1), e.int64(2))],
     {},
-    e.number,
+    number,
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.sum(e.set(e.number)),
+    e.sum(e.set(e.int64)),
     "std::sum",
-    [e.set(e.number)],
+    [e.set(e.int64)],
     {},
-    e.number,
+    number,
     $.Cardinality.One
   );
 
@@ -482,21 +483,21 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.array_get(
       e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.number(1)
+      e.int64(1)
     ),
     "std::array_get",
     [
       e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.number(1),
+      e.int64(1),
     ],
     {},
     e.bigint,
     $.Cardinality.AtMostOne
   );
   checkFunctionExpr(
-    e.array_get(e.set(e.array(e.bigint)), e.number(1)),
+    e.array_get(e.set(e.array(e.bigint)), e.int64(1)),
     "std::array_get",
-    [e.set(e.array(e.bigint)), e.number(1)],
+    [e.set(e.array(e.bigint)), e.int64(1)],
     {},
     e.bigint,
     $.Cardinality.Empty
