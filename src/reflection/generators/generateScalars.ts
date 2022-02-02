@@ -147,11 +147,13 @@ export const generateScalars = (params: GeneratorParams) => {
       const extraTypes = (
         scalarToLiteralMapping[mapped.name]?.extraTypes || ["never"]
       ).join(" | ");
-      // const extraTypesUnion = extraTypes ? `, ${extraTypes.join(" | ")}` : "";
+      // const extraTypesUnion = extraTypes ?
+      //   `, ${extraTypes.join(" | ")}` : "";
       // sc.writeln([
       //   t`export `,
       //   dts`declare `,
-      //   t`type ${ref} = $.CastOnlyScalarType<"${mapped.name}", ${mappedRef}>;`,
+      //   t`type ${ref} = $.CastOnlyScalarType<"${
+      //     mapped.name}", ${mappedRef}>;`,
       // ]);
       sc.writeln([
         t`export `,
@@ -181,7 +183,8 @@ export const generateScalars = (params: GeneratorParams) => {
       const extraTypes = (
         scalarToLiteralMapping[type.name]?.extraTypes || ["never"]
       ).join(" | ");
-      // const extraTypesUnion = extraTypes ? `, ${extraTypes.join(" | ")}` : "";
+      // const extraTypesUnion = extraTypes ?
+      //   `, ${extraTypes.join(" | ")}` : "";
       sc.writeln([
         t`export `,
         dts`declare `,

@@ -706,13 +706,13 @@ export function select(...args: any[]) {
     firstArg instanceof RelativeDuration ||
     firstArg instanceof ConfigMemory
   ) {
-    const literal = literalToTypeSet(firstArg);
+    const literalExpr = literalToTypeSet(firstArg);
     return $expressionify(
       $selectify({
         __kind__: ExpressionKind.Select,
-        __element__: literal.__element__,
-        __cardinality__: literal.__cardinality__,
-        __expr__: literal,
+        __element__: literalExpr.__element__,
+        __cardinality__: literalExpr.__cardinality__,
+        __expr__: literalExpr,
         __modifiers__: {},
       })
     ) as any;

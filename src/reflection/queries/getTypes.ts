@@ -221,7 +221,8 @@ export async function getTypes(
         break;
       case "array":
         // type.array_element_id =
-        //   typeMapping.get(type.array_element_id)?.id ?? type.array_element_id;
+        //   typeMapping.get(type.array_element_id)?.id ??
+        //     type.array_element_id;
         break;
       case "tuple":
         // type.tuple_elements = type.tuple_elements.map(element => ({
