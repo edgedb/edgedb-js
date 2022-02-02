@@ -13,6 +13,18 @@ async function run() {
   console.log(num);
   console.log(sum);
 
+  e.str("asdf").slice(0, 3);
+
+  const detachedVillain = e.detached(e.Villain);
+  const villain = e.select(e.Villain, outer => ({
+    name: true,
+    shared_nemesis: e.select(detachedVillain, inner => ({
+      filter: e.op(outer.nemesis, "=", inner.nemesis),
+    })),
+  }));
+
+  e.detached;
+
   const q = e.select(e.Movie, movie => ({
     title: true,
     characters: char => ({

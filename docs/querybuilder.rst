@@ -4,36 +4,87 @@
 Query Builder
 =============
 
-The EdgeDB query builder provides a way to write *fully-typed* EdgeQL queries
-with code. It's generated from your database schema.
+The EdgeDB query builder provides a **code-first** way to write **fully-typed** EdgeQL queries with TypeScript (or JavaScript). Unlike SQL, EdgeQL can be elegantly represented using the constructs of modern programming languages, like objects, methods, and closures.
 
-- It's **not an ORM**. There's no "object-relational mapping" happening here;
-  that's all handled by EdgeDB itself. Instead, the query builder is a
-  relatively thin wrapper over EdgeQL, and gives you access the full power of
-  EdgeQL.
-- The query builder **introspects your schema** and generates a schema-aware
-  API.
-- The query syntax is just TypeScript, so **your queries are statically
-  checked**, making it easier to write valid queries the first time. And most
-  importantly: the **query results are strongly typed**!
+.. code-block:: typescript
 
-You don't need to choose between ORMs and "raw" queries anymore. The
-EdgeQL query builder represents a third path: an auto-generated API that's
-*fully typed* and exposes the *full power* of the underlying query language.
+  e.select(e.Hero, hero => ({
+    id: true,
+    secret_identity: true,
+    filter: e.op(hero.name, '=', 'Iron Man')
+  });
 
 
-Requirements
-------------
+.. FAQs
+.. ####
 
-It's possible to use the query builder with or without TypeScript. Certain requirements apply to TypeScript users only.
+Is it an ORM?
+-------------
 
-- A running EdgeDB instance. The easiest way to set up an instance is with the
-  :ref:`edgedb project init <ref_guide_using_projects>` command.
-- Node.js 10 or higher
-- The ``edgedb`` module: ``npm install edgedb``
-- [TypeScript only] TypeScript 4.4+
-- [TypeScript only] ``npm install @types/node --dev``
-- [TypeScript only] Add the following ``compilerOptions`` in ``tsconfig.json``:
+Nope. There's no "object-relational mapping" happening here—that's all handled by EdgeDB itself.
+
+The query builder itself is a comparatively thin wrapper over EdgeQL. We've designed the API such that the TypeScript representation of a query is structurally similar to the equivalent EdgeQL.
+
+.. code-block:: edgeql
+
+  select Hero {
+    id,
+    name,
+    name_uppercase := str_upper(.name)
+  }
+  filter .name = "Iron Man"
+
+.. code-block:: typescript
+
+  e.select(e.Hero, hero => ({
+    id: true,
+    name: true,
+    name_uppercase := e.str_upper(hero.name),
+    filter: e.op(hero.name, '=', 'Iron Man')
+  });
+
+More importantly, it gives you access to the **full power** of EdgeQL! The query builder can represent EdgeQL queries of arbitrary complexity.
+
+By comparison, SQL-based ORMs are limited in what they can represent. Things like computed properties, SQL's large standard library of functions, aggregations, transactions, and subqueries are rarely possible. But even for the simple stuff, we think the query builder API is more readable, compact, and intuitive than any ORM on the market.
+
+Why use the query builder?
+--------------------------
+
+**Type inference!** If you're using TypeScript, the **result type** of *all
+queries* is automatically inferred for you. For the first time, you don't
+need an ORM to write strongly typed queries.
+
+.. code-block:: typescript
+
+  const q1 = e.select(5);
+  // number
+
+  const q2 = e.select(e.Hero);
+  // {id:string}[]
+
+  const q3 = e.select(e.Hero, hero => ({
+    id: true,
+    name: true
+  }));
+  // {id:string; name: string}[]
+
+
+**Auto-completion!** You can write queries full autocompletion on EdgeQL keywords, standard library functions, and link/property names.
+
+**Typechecking!** In the vast majority of cases, the query builder won't let you construct invalid queries. This eliminates an entire class of bugs and helps you write valid queries the first time.
+
+
+How do I use it?
+----------------
+
+Minimum requirements
+^^^^^^^^^^^^^^^^^^^^
+
+It's possible to use the query builder with or without TypeScript. Some requirements apply to TypeScript users only.
+
+- Node.js 10+. Run ``node --version`` to see your current version. TypeScript users should also install Node.js typing: ``npm install @types/node``
+- TypeScript 4.4+
+- Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``:
 
   .. code-block:: javascript
 
@@ -47,20 +98,35 @@ It's possible to use the query builder with or without TypeScript. Certain requi
       }
     }
 
+Initialize a project
+^^^^^^^^^^^^^^^^^^^^
 
+Set up an :ref:`EdgeDB project <ref_guide_using_projects>` for your application. Follow the :ref:`Quickstart <ref_quickstart>` for detailed instructions on installing the CLI, initializing a project, writing a basic schema, and executing your first migration.
 
-Generating the query builder
-----------------------------
+Install the JavaScript client library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To generate the query builder, execute the following command in your terminal.
+Install the ``edgedb`` package from NPM.
+
+.. code-block:: bash
+
+  $ npm install edgedb
+  # OR
+  $ yarn add edgedb
+
+Generate the query builder
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Generate the query builder with the following command.
 
 .. code-block:: bash
 
   $ npx edgeql-js
 
+
 .. note::
 
-  If you use Yarn, ``yarn edgeql-js`` will also work.
+  For Yarn users, ``yarn edgeql-js`` will also work.
 
 You should see some output that looks like this.
 
@@ -75,21 +141,22 @@ You should see some output that looks like this.
   Introspecting database schema...
   Generation successful!
 
-This establishes a connection to your database, introspects the current schema, and generates a bunch of files. By default, these files are written to the ``./dbschema/edgeql-js`` directory.
+This command establishes a connection to your database, introspects the current schema, and generates a bunch of files. By default, these files are written to the ``./dbschema/edgeql-js`` directory.
 
-Connection issues
-^^^^^^^^^^^^^^^^^
+.. note::
 
-Seeing a connection error? This command must be able to connect to a running EdgeDB instance. If you're using EdgeDB projects, this is automatically handled for you. Otherwise, you'll need to explicitly pass connection information, just like any other CLI command. See :ref:`Client Libraries > Connection <edgedb_client_connection>` for guidance.
+  **Connection issue?**
+
+  Seeing a connection error? This command must be able to connect to a running EdgeDB instance. If you're using ``edgedb project init``, this is automatically handled for you. Otherwise, you'll need to explicitly pass connection information, just like any other CLI command. See :ref:`Client Libraries > Connection <edgedb_client_connection>` for guidance.
 
 Version control
 ^^^^^^^^^^^^^^^
 
-When you run this command for the first time, you may see a prompt like this:
+When you run this command for the first time, you'll be prompted to add the generated query builder files to your ``.gitignore``.
 
 .. code-block:: bash
 
-  $ npx edgeql-js # OR: `yarn edgeql-js`
+  $ npx edgeql-js
   ...
   Checking the generated query builder into version control
   is NOT RECOMMENDED. Would you like to update .gitignore to ignore
@@ -99,11 +166,10 @@ When you run this command for the first time, you may see a prompt like this:
 
   [y/n] (leave blank for "y")
 
-Once you confirm this prompt, a line will be added to your ``.gitignore`` to
-exclude the generated files from Git.
+Once you confirm this prompt, a line will be automatically added to your ``.gitignore`` to exclude the generated files from Git.
 
-Flags
-^^^^^
+Configuration
+^^^^^^^^^^^^^
 
 The generation command is configurable in a number of ways.
 
@@ -144,10 +210,6 @@ connection.
 Running queries
 ---------------
 
-.. important::
-
-  All examples below assume you are using TypeScript.
-
 Here's a brief Hello World example.
 
 .. code-block:: typescript
@@ -158,11 +220,9 @@ Here's a brief Hello World example.
   const client = edgedb.createClient();
 
   async function run(){
-
     const myQuery = e.select("Hello world!");
     const result = await myQuery.run(client);
     console.log(result); // "Hello world!"
-
   }
 
 
@@ -170,11 +230,9 @@ A few things to note:
 
 - The query builder is imported directly from the directory where it was
   generated. By convention, the entire query builder is imported as a single,
-  default import called ``e`` but you can use any variable named you like.
-
-- To execute an expression, call the ``.run`` method. *All expressions*
-  support the ``.run`` method.
-
+  default import called ``e`` but you can use any variable name you like.
+- Queries are executed by calling the ``.run`` method. *All
+  query builder expressions* support the ``.run`` method.
 - The ``.run`` method has the following signature:
 
   .. code-block:: typescript
@@ -222,9 +280,11 @@ For convenience, the contents of the ``std`` and ``default`` modules are also ex
   e.len;
   e.str_upper;
 
-If there are any name conflicts (e.g. a user-defined module called ``len``),
-``e.len`` will point to the user-defined module; in that scenario, you must
-explicitly use ``e.std.len`` to access the built-in ``len`` function.
+.. note::
+
+  If there are any name conflicts (e.g. a user-defined module called ``len``),
+  ``e.len`` will point to the user-defined module; in that scenario, you must
+  explicitly use ``e.std.len`` to access the built-in ``len`` function.
 
 Literals
 --------
@@ -237,6 +297,10 @@ Literal values are declared using constructor functions that correspond to primi
     - **EdgeQL equivalent**
   * - ``e.str("asdf")``
     - ``"asdf"``
+  * - ``e.int64(123)``
+    - ``1234``
+  * - ``e.float64(123.456)``
+    - ``123.456``
   * - ``e.bool(true)``
     - ``true``
   * - ``e.bigint(12345n)``
@@ -248,27 +312,11 @@ Literal values are declared using constructor functions that correspond to primi
   * - ``e.json({asdf: 1234})``
     - ``<json>(asdf := 1234)``
 
-Ints and floats
-^^^^^^^^^^^^^^^
-
-For simplicity, EdgeDB's various integer and floating point datatypes (``int16``, ``int32``, ``int64``, ``float32``, and ``float64``) do not have corresponding constructor functions. Instead use the ``e.number`` constructor.
-
-.. code-block:: typescript
-
-  e.number(5);
-  e.number(3.14);
-
-
-.. note::
-
-  Because of EdgeQL's :ref:`implicit casting system <ref_implicit_casts>`, it's rarely necessary to specify an exact float or integer type. If necessary, this can be achieved with an :ref:`explicit cast <ref_qb_casting>`—more on that later.
-
 
 Temporal literals
 ^^^^^^^^^^^^^^^^^
 
-With the exception of ``datetime``, EdgeDB's temporal datatypes don't have equivalents in the JavaScript type system. As such, these constructors expect an instance of a corresponding class in the ``edgedb`` module:
-
+With the exception of ``datetime``, EdgeDB's temporal datatypes don't have equivalents in the JavaScript type system. As such, these constructors expect an instance of a corresponding class that can be imported from the ``edgedb`` NPM package. These classes are documented on the :ref:`Datatypes <edgedb-js-datatypes>` page.
 
 .. list-table::
 
@@ -328,10 +376,8 @@ with incompatible types.
 
 .. code-block:: typescript
 
-  e.array([e.number(5), e.str("foo")]);
+  e.array([e.int64(5), e.str("foo")]);
   // TypeError!
-
-
 
 
 Tuples
@@ -341,7 +387,7 @@ Declare a tuple.
 
 .. code-block:: typescript
 
-  e.tuple([e.str("Peter Parker"), e.number(18), e.bool(true)]);
+  e.tuple([e.str("Peter Parker"), e.int64(18), e.bool(true)]);
   // ("Peter Parker", 18, true)
 
 Declare a named tuple.
@@ -359,7 +405,7 @@ Declare a named tuple.
 Types and casting
 -----------------
 
-The literal functions (e.g. ``e.str``, ``e.number``, etc.) serve a dual
+The literal functions (e.g. ``e.str``, ``e.int64``, etc.) serve a dual
 purpose. They can be used as functions to instantiate literals
 (``e.str("hi")``) or can be used as variables to represent the *type itself*
 (``e.str``).
@@ -533,8 +579,8 @@ intersection method.
   // Hero.<nemesis[is Villain]
 
 
-Functions and operators
------------------------
+Functions
+---------
 
 All built-in standard library functions are reflected as functions in ``e``.
 
@@ -554,81 +600,119 @@ All built-in standard library functions are reflected as functions in ``e``.
   // math::mean({3, 5, 7})
 
 
-Operator table
-^^^^^^^^^^^^^^
+Operators
+---------
 
-All operators are available via an alphanumeric name.
+All operators are expressed using the ``e.op`` function.
+
+**Unary operators**
+
+Unary operators operate on a single argument: ``OPERATOR <arg>``.
+
+.. code-block:: typescript
+
+  e.op('not', e.bool(true)); // not true
+  e.op('exists', e.set('hi')); // exists {'hi'}
+
+**Binary operators**
+
+Unary operators operate on two arguments: ``<arg> OPERATOR <arg>``.
+
+.. code-block:: typescript
+
+  e.op(e.str('Hello '), '++', e.str('World!'));
+  // 'Hello ' ++ 'World!'
+
+
+**Ternary operators**
+
+Unary operators operate on three arguments: ``<arg> OPERATOR <arg> OPERATOR <arg>``. Currently there's only one ternary operator: the ``if else`` construct.
+
+.. code-block:: typescript
+
+  e.op(e.str('😄'), 'if', e.bool(true), 'else', e.str('😢'));
+  // 😄 if true else 😢
+
+**Operator reference**
 
 .. list-table::
 
-  * - ``=``
-    - ``e.eq``
-  * - ``?=``
-    - ``e.coal_eq``
-  * - ``!=``
-    - ``e.neq``
-  * - ``?!=``
-    - ``e.coal_neq``
-  * - ``>=``
-    - ``e.gte``
-  * - ``>``
-    - ``e.gt``
-  * - ``<=``
-    - ``e.lte``
-  * - ``<``
-    - ``e.lt``
-  * - ``OR``
-    - ``e.or``
-  * - ``AND``
-    - ``e.and``
-  * - ``NOT``
-    - ``e.not``
-  * - ``+``
-    - ``e.plus``
-  * - ``-``
-    - ``e.minus``
-  * - ``*``
-    - ``e.mult``
-  * - ``/``
-    - ``e.div``
-  * - ``//``
-    - ``e.floordiv``
-  * - ``%``
-    - ``e.mod``
-  * - ``^``
-    - ``e.pow``
-  * - ``IN``
-    - ``e.in``
-  * - ``NOT IN``
-    - ``e.not_in``
-  * - ``EXISTS``
-    - ``e.exists``
-  * - ``DISTINCT``
-    - ``e.distinct``
-  * - ``UNION``
-    - ``e.union``
-  * - ``??``
-    - ``e.coalesce``
-  * - ``IF``
-    - ``e.if_else``
-  * - ``++``
-    - ``e.concat``
-  * - ``[i]``
-    - ``e.index``
-  * - ``[i:j:k]``
-    - ``e.slice``
-  * - ``[key]``
-    - ``e.destructure`` (JSON element access)
-  * - ``++``
-    - ``e.concatenate``
-  * - ``LIKE``
-    - ``e.like``
-  * - ``ILIKE``
-    - ``e.ilike``
-  * - ``NOT LIKE``
-    - ``e.not_like``
-  * - ``NOT ILIKE``
-    - ``e.not_ilike``
+  * - Unary operators
+    - ``"exists"`` ``"distinct"`` ``"not"``
+  * - Binary operators
+    - ``"="`` ``"?="`` ``"!="`` ``"?!="`` ``">="`` ``">"`` ``"<="`` ``"<"`` ``"or"`` ``"and"`` ``"+"`` ``"-"`` ``"*"`` ``"/"`` ``"//"`` ``"%"`` ``"^"`` ``"in"`` ``"not_in"`` ``"union"`` ``"??"`` ``"++"`` ``"like"`` ``"ilike"`` ``"not_like"`` ``"not_ilike"``
+  * - Ternary operators
+    - ``"if"/"else"``
+
+
+.. * - ``=``
+..   - ``e.eq``
+.. * - ``?=``
+..   - ``e.coal_eq``
+.. * - ``!=``
+..   - ``e.neq``
+.. * - ``?!=``
+..   - ``e.coal_neq``
+.. * - ``>=``
+..   - ``e.gte``
+.. * - ``>``
+..   - ``e.gt``
+.. * - ``<=``
+..   - ``e.lte``
+.. * - ``<``
+..   - ``e.lt``
+.. * - ``OR``
+..   - ``e.or``
+.. * - ``AND``
+..   - ``e.and``
+.. * - ``NOT``
+..   - ``e.not``
+.. * - ``+``
+..   - ``e.plus``
+.. * - ``-``
+..   - ``e.minus``
+.. * - ``*``
+..   - ``e.mult``
+.. * - ``/``
+..   - ``e.div``
+.. * - ``//``
+..   - ``e.floordiv``
+.. * - ``%``
+..   - ``e.mod``
+.. * - ``^``
+..   - ``e.pow``
+.. * - ``IN``
+..   - ``e.in``
+.. * - ``NOT IN``
+..   - ``e.not_in``
+.. * - ``EXISTS``
+..   - ``e.exists``
+.. * - ``DISTINCT``
+..   - ``e.distinct``
+.. * - ``UNION``
+..   - ``e.union``
+.. * - ``??``
+..   - ``e.coalesce``
+.. * - ``IF``
+..   - ``e.if_else``
+.. * - ``++``
+..   - ``e.concat``
+.. * - ``[i]``
+..   - ``e.index``
+.. * - ``[i:j:k]``
+..   - ``e.slice``
+.. * - ``[key]``
+..   - ``e.destructure`` (JSON element access)
+.. * - ``++``
+..   - ``e.concatenate``
+.. * - ``LIKE``
+..   - ``e.like``
+.. * - ``ILIKE``
+..   - ``e.ilike``
+.. * - ``NOT LIKE``
+..   - ``e.not_like``
+.. * - ``NOT ILIKE``
+..   - ``e.not_ilike``
 
 Select
 ------
@@ -1067,13 +1151,12 @@ Delete
 
 .. code-block:: typescript
 
-  e.select(e.Hero, hero => ({
+  e.delete(e.Hero, hero => ({
     filter: e.eq(hero.name, "Captain America"),
     order: ...,
     offset: ...,
     limit: ...
-  }))
-    .delete();
+  }));
 
 
 Detach
@@ -1081,8 +1164,13 @@ Detach
 
 .. code-block:: typescript
 
-  const detachedHero = e.detached(e.Hero);
-
+  const detachedVillain = e.detached(e.Villain);
+  const villain = e.select(e.Hero, outer => ({
+    name: true,
+    shared_nemesis: e.select(detachedVillain, inner => ({
+      filter: e.op(outer.nemesis, '=', inner.nemesis)
+    }))
+  }));
 
 Parameters
 ----------
