@@ -1,4 +1,4 @@
-import e from "../dbschema/edgeql";
+import e from "../dbschema/edgeql-js";
 
 test("simple for loop", () => {
   expect(e.for(e.set(1, 2, 3), x => e.op(e.op(x, "*", 2), "+", x)).toEdgeQL())

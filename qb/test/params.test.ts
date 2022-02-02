@@ -1,5 +1,5 @@
 import * as edgedb from "edgedb";
-import e from "../dbschema/edgeql";
+import e from "../dbschema/edgeql-js";
 import {setupTests, teardownTests, tc} from "./setupTeardown";
 
 let client: edgedb.Client;

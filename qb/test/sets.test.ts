@@ -1,6 +1,6 @@
 import {$} from "edgedb";
 import {tc} from "./setupTeardown";
-import e, {$infer} from "../dbschema/edgeql";
+import e, {$infer} from "../dbschema/edgeql-js";
 
 test("empty sets", () => {
   const stringSet = e.set(e.str);

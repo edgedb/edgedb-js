@@ -1,6 +1,6 @@
 import {$} from "edgedb";
-import e from "../dbschema/edgeql/index";
-import {$PathNode} from "../dbschema/edgeql/syntax/syntax";
+import e from "../dbschema/edgeql-js/index";
+import {$PathNode} from "../dbschema/edgeql-js/syntax/syntax";
 import {tc} from "./setupTeardown";
 
 test("path structure", () => {

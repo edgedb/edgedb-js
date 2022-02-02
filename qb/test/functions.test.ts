@@ -1,9 +1,9 @@
 import superjson from "superjson";
 import {$} from "edgedb";
-import e from "../dbschema/edgeql";
+import e from "../dbschema/edgeql-js";
 import {$expr_Function} from "edgedb/dist/reflection";
 import {tc} from "./setupTeardown";
-import {number} from "../dbschema/edgeql/modules/std";
+import {number} from "../dbschema/edgeql-js/modules/std";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,

@@ -69,7 +69,7 @@ You should see some output that looks like this.
   $ npx edgeql-js
   Detected tsconfig.json, generating TypeScript files.
     To override this, use the --target flag.
-    Run `npx edgedb-generate --help` for details.
+    Run `npx edgeql-js --help` for details.
   Generating query builder into ./dbschema/edgeql-js
   Connecting to EdgeDB instance...
   Introspecting database schema...

@@ -21,7 +21,7 @@
     "./dist/index.node.js": "./dist/index.browser.js"
   },
   "bin": {
-    "edgedb-generate": "./dist/reflection/cli.js"
+    "edgeql-js": "./dist/reflection/cli.js"
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",

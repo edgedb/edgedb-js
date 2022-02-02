@@ -10,5 +10,5 @@ your local project:
 With npm:      npm install edgedb
 With yarn:     yarn add edgedb
 
-Then run \`yarn edgedb-generate\` again.`
+Then run \`yarn edgeql-js\` again.`
 );

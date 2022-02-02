@@ -139,7 +139,7 @@ const run = async () => {
   }
 
   if (options.showHelp) {
-    console.log(`edgedb-generate
+    console.log(`edgeql-js
 
 Introspects the schema of an EdgeDB instance and generates a TypeScript/JavaScript query builder
 
@@ -205,7 +205,7 @@ OPTIONS:
     );
 
     const overrideTargetMessage = `   To override this, use the --target flag.
-   Run \`npx edgedb-generate --help\` for details.`;
+   Run \`npx edgeql-js --help\` for details.`;
 
     if (tsconfigExists) {
       options.target = "ts";
@@ -231,7 +231,7 @@ OPTIONS:
 
   const outputDir = options.outputDir
     ? path.resolve(projectRoot, options.outputDir || "")
-    : path.join(projectRoot, "dbschema", "edgeql");
+    : path.join(projectRoot, "dbschema", "edgeql-js");
 
   const relativeOutputDir = path.posix.relative(projectRoot, outputDir);
   const outputDirInProject =

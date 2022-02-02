@@ -1,5 +1,5 @@
 import * as edgedb from "edgedb";
-import e from "../dbschema/edgeql";
+import e from "../dbschema/edgeql-js";
 
 test("literals", () => {
   const duration = new edgedb.Duration(0, 0, 0, 0, 5, 6, 7, 8, 9, 10);

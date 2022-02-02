@@ -1,9 +1,9 @@
 // tslint:disable:no-console
 import * as edgedb from "edgedb";
-import type {$Movie} from "./dbschema/edgeql/modules/default";
-import type {pointersToSelectShape} from "./dbschema/edgeql/syntax/select";
+import type {$Movie} from "./dbschema/edgeql-js/modules/default";
+import type {pointersToSelectShape} from "./dbschema/edgeql-js/syntax/select";
 
-import e from "./dbschema/edgeql";
+import e from "./dbschema/edgeql-js";
 import {setupTests} from "./test/setupTeardown";
 
 async function run() {
@@ -12,6 +12,16 @@ async function run() {
   const sum = e.sum(num);
   console.log(num);
   console.log(sum);
+
+  const q = e.select(e.Movie, movie => ({
+    title: true,
+    characters: char => ({
+      name: true,
+      order: char["@character_name"],
+    }),
+    filter: e.op("Iron Man", "in", movie.characters.name),
+  }));
+  console.log(await q.run(client));
 
   // const querr = e.array([1, 2, 3]);
   // const querr2 = querr[0];

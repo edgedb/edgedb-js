@@ -1,5 +1,5 @@
 import {$} from "edgedb";
-import e from "../dbschema/edgeql";
+import e from "../dbschema/edgeql-js";
 import {tc} from "./setupTeardown";
 
 test("simple repeated expression", () => {

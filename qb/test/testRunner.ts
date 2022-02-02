@@ -67,7 +67,7 @@ async function generateQB(config: ConnectConfig) {
 
   await runCommand(
     "yarn",
-    ["edgedb-generate", "--force-overwrite"],
+    ["edgeql-js", "--force-overwrite"],
     configToEnv(config)
   );
 }

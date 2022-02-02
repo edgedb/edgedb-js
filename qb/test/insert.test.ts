@@ -1,7 +1,7 @@
 import {Client} from "edgedb";
-import {Villain} from "../dbschema/edgeql/modules/default";
-import {InsertShape} from "../dbschema/edgeql/syntax/insert";
-import e from "../dbschema/edgeql";
+import {Villain} from "../dbschema/edgeql-js/modules/default";
+import {InsertShape} from "../dbschema/edgeql-js/syntax/insert";
+import e from "../dbschema/edgeql-js";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let client: Client;

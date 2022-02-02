@@ -22,7 +22,8 @@ import {generateSetImpl} from "./generators/generateSetImpl";
 
 const DEBUG = false;
 
-export const configFileHeader = `// edgedb-js query builder - to update run 'edgedb-generate'`;
+export const configFileHeader = `// EdgeDB query builder
+// To update run \`npx edgeql-js\``;
 
 export type GeneratorParams = {
   dir: DirBuilder;

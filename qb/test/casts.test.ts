@@ -1,5 +1,5 @@
-import e from "../dbschema/edgeql";
-import {$number} from "../dbschema/edgeql/modules/std";
+import e from "../dbschema/edgeql-js";
+import {$number} from "../dbschema/edgeql-js/modules/std";
 import {tc} from "./setupTeardown";
 
 test("casting", () => {
