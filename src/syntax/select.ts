@@ -80,18 +80,18 @@ export type LimitExpression = TypeSet<
   Cardinality.Empty | Cardinality.One | Cardinality.AtMostOne
 >;
 
-export type SelectModifierNames = "filter" | "order" | "offset" | "limit";
+export type SelectModifierNames = "filter" | "order_by" | "offset" | "limit";
 
 export type SelectModifiers = {
   filter?: SelectFilterExpression;
-  order?: OrderByExpression;
+  order_by?: OrderByExpression;
   offset?: OffsetExpression | number;
   limit?: LimitExpression | number;
 };
 
 export type NormalisedSelectModifiers = {
   filter?: SelectFilterExpression;
-  order?: OrderByObjExpr[];
+  order_by?: OrderByObjExpr[];
   offset?: OffsetExpression;
   limit?: LimitExpression;
 };
@@ -111,8 +111,8 @@ export type NormalisedSelectModifiers = {
 
 // type NormaliseSelectModifiers<Mods extends SelectModifiers> = {
 //   filter: Mods["filter"];
-//   order: Mods["order"] extends OrderByExpression
-//     ? NormaliseOrderByModifier<Mods["order"]>
+//   order_by: Mods["order_by"] extends OrderByExpression
+//     ? NormaliseOrderByModifier<Mods["order_by"]>
 //     : [];
 //   offset: Mods["offset"] extends number
 //     ? $expr_Literal<ScalarType<"std::int64", number, Mods["offset"]>>
@@ -144,8 +144,8 @@ export interface SelectModifierMethods<Root extends TypeSet> {
             : stripSet<Root>
         ) => Filter)
   ): this;
-  order(
-    order:
+  order_by(
+    order_by:
       | OrderByExpression
       | ((
           scope: Root extends ObjectTypeSet
@@ -382,9 +382,11 @@ export function $handleModifiers(
   if (mods.filter && rootExpr.__element__.__kind__ === TypeKind.object) {
     card = computeFilterCardinality(mods.filter, card, rootExpr);
   }
-  if (mods.order) {
-    const orderExprs = Array.isArray(mods.order) ? mods.order : [mods.order];
-    mods.order = orderExprs.map(expr =>
+  if (mods.order_by) {
+    const orderExprs = Array.isArray(mods.order_by)
+      ? mods.order_by
+      : [mods.order_by];
+    mods.order_by = orderExprs.map(expr =>
       typeof (expr as any).__element__ === "undefined"
         ? expr
         : {expression: expr}
@@ -481,7 +483,7 @@ export {deleteExpr as delete};
 
 // function updateModifier(
 //   parent: any,
-//   modName: "filter" | "order" | "offset" | "limit",
+//   modName: "filter" | "order_by" | "offset" | "limit",
 //   modGetter: any
 // ) {
 //   const modifiers = {
@@ -504,14 +506,14 @@ export {deleteExpr as delete};
 //       //   parent.__expr__
 //       // );
 //       break;
-//     case "order":
-//       const order =
+//     case "order_by":
+//       const ordering =
 //         typeof (modExpr as any).__element__ === "undefined"
 //           ? modExpr
 //           : {expression: modExpr};
-//       modifiers.order = modifiers.order
-//         ? [...modifiers.order, order]
-//         : [order];
+//       modifiers.order_by = modifiers.order_by
+//         ? [...modifiers.order_by, ordering]
+//         : [ordering];
 //       break;
 //     case "offset":
 //       modifiers.offset =
@@ -548,7 +550,7 @@ export {deleteExpr as delete};
 export function $selectify<Expr extends ExpressionRoot>(expr: Expr) {
   // Object.assign(expr, {
   //   filter: (filter: any) => updateModifier(expr, "filter", filter),
-  //   order: (order: any) => updateModifier(expr, "order", order),
+  //   order_by: (order_by: any) => updateModifier(expr, "order_by", order_by),
   //   offset: (offset: any) => updateModifier(expr, "offset", offset),
   //   limit: (limit: any) => updateModifier(expr, "limit", limit),
   // });
@@ -803,7 +805,7 @@ function resolveShape(
   for (const [key, value] of Object.entries(selectShape)) {
     if (
       key === "filter" ||
-      key === "order" ||
+      key === "order_by" ||
       key === "offset" ||
       key === "limit"
     ) {
@@ -812,7 +814,7 @@ function resolveShape(
       if (scope === expr) {
         throw new Error(
           `Invalid select shape key '${key}' on scalar expression, ` +
-            `only modifiers are allowed (filter, order, offset and limit)`
+            `only modifiers are allowed (filter, order_by, offset and limit)`
         );
       }
       shape[key] = resolveShapeElement(key, value, scope);

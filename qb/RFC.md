@@ -435,7 +435,7 @@ Simple:
 
 ```ts
 e.select(e.Hero, hero => ({
-  order: hero.name,
+  order_by: hero.name,
 }));
 ```
 
@@ -443,7 +443,7 @@ Advanced:
 
 ```ts
 e.select(e.Hero, hero => ({
-  order: {
+  order_by: {
     expression: hero.name,
     direction: e.DESC,
     empty: e.EMPTY_FIRST,
@@ -456,7 +456,7 @@ Multiple ordering
 ```ts
 e.select(e.Hero, hero => ({
   name: true,
-  order: [
+  order_by: [
     {
       expression: hero.name,
       direction: e.DESC,
@@ -551,7 +551,7 @@ e.insert(e.Movie, {
 // update method
 e.select(e.Movie, movie => ({
   filter: e.eq(movie.title, e.str("Avengers 4")),
-  // order: ...,
+  // order_by: ...,
   // offset: ...,
 })).update({
   // set
@@ -574,7 +574,7 @@ e.select(e.Movie, movie => ({
 ```ts
 e.select(e.Hero, hero => ({
   filter: e.eq(hero.name, "Captain America"),
-  order: ...,
+  order_by: ...,
   offset: ...,
   limit: ...
 }))

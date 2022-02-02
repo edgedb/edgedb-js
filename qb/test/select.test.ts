@@ -251,7 +251,7 @@ test("polymorphic with nested modifiers", () => {
     ...e.is(e.Villain, {
       nemesis: hero => ({
         name: true,
-        order: hero.name,
+        order_by: hero.name,
         filter: e.op(hero.name, "=", hero.name),
         limit: 1,
         offset: 10,
@@ -479,7 +479,7 @@ test("filter by id", async () => {
 test("limit 1", async () => {
   const query = e
     .select(e.Hero, hero => ({
-      order: hero.name,
+      order_by: hero.name,
       offset: 1,
       limit: 1,
     }))
@@ -490,7 +490,7 @@ test("limit 1", async () => {
 
 test("limit 2", async () => {
   const query = e.select(e.Hero, hero => ({
-    order: hero.name,
+    order_by: hero.name,
     offset: 1,
     limit: 2,
   }));
@@ -502,7 +502,7 @@ test("limit 2", async () => {
 
 test("order by self", async () => {
   const query = e.select(e.Hero, hero => ({
-    order: hero,
+    order_by: hero,
   }));
   const result = await query.run(client);
   expect(result).toEqual(
@@ -537,7 +537,7 @@ test("computables", async () => {
   }));
   const query = e.select(
     e
-      .select(e.Person.is(e.Hero), hero => ({order: hero.name, limit: 1}))
+      .select(e.Person.is(e.Hero), hero => ({order_by: hero.name, limit: 1}))
       .assert_single(),
     hero => ({
       id: true,
@@ -914,7 +914,7 @@ test("polymorphic field in nested shape", async () => {
     title: true,
     characters: char => ({
       name: true,
-      order: char.name,
+      order_by: char.name,
       ...e.is(e.Hero, {secret_identity: true}),
     }),
     filter: e.op(movie.title, "=", "The Avengers"),
@@ -992,14 +992,14 @@ test("modifiers on scalar selects", async () => {
   );
 
   const q2 = e.select(unorderedSet, el => ({
-    order: el,
+    order_by: el,
   }));
   const res2 = await q2.run(client);
   tc.assert<tc.IsExact<typeof res2, [number, ...number[]]>>(true);
   expect(res2).toEqual([1, 2, 3, 4, 5]);
 
   const q3 = e.select(unorderedSet, el => ({
-    order: {expression: el, direction: e.DESC},
+    order_by: {expression: el, direction: e.DESC},
   }));
   const res3 = await q3.run(client);
   tc.assert<tc.IsExact<typeof res3, [number, ...number[]]>>(true);
@@ -1023,9 +1023,9 @@ test("nested matching scopes", async () => {
     otherHeros: e.select(e.Hero, h2 => ({
       name: true,
       names: e.op(h.name, "++", h2.name),
-      order: h2.name,
+      order_by: h2.name,
     })),
-    order: h.name,
+    order_by: h.name,
   }));
 
   const result = await q.run(client);
@@ -1065,11 +1065,11 @@ test("computed property path", async () => {
 // test("modifier methods", async () => {
 //   const strs = ["c", "a", "aa", "b", "cc", "bb"];
 //   let q3 = e.select(e.set(...strs), vals => ({
-//     order: {expression: e.len(vals), direction: e.DESC},
+//     order_by: {expression: e.len(vals), direction: e.DESC},
 //   }));
 
 //   // reassignment allowed
-//   q3 = q3.order(vals => vals);
+//   q3 = q3.order_by(vals => vals);
 //   tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.Many>>(
 //     true
 //   );
@@ -1078,7 +1078,7 @@ test("computed property path", async () => {
 
 //   const q4 = e
 //     .select(e.Hero, hero => ({
-//       order: hero.name,
+//       order_by: hero.name,
 //     }))
 //     .limit(2);
 //   const r4 = await q4.run(client);
@@ -1091,7 +1091,7 @@ test("computed property path", async () => {
 //       name: true,
 //       nameLen: e.len(hero.name),
 //     }))
-//     .order(hero => hero.nameLen);
+//     .order_by(hero => hero.nameLen);
 
 //   const r5 = await q5.run(client);
 // });

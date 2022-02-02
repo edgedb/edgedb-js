@@ -2,9 +2,9 @@
 import * as edgedb from "edgedb";
 import type {$Movie} from "./dbschema/edgeql-js/modules/default";
 import type {pointersToSelectShape} from "./dbschema/edgeql-js/syntax/select";
+import {setupTests} from "./test/setupTeardown";
 
 import e from "./dbschema/edgeql-js";
-import {setupTests} from "./test/setupTeardown";
 
 async function run() {
   const {client} = await setupTests();
@@ -23,13 +23,13 @@ async function run() {
     })),
   }));
 
-  e.detached;
+  e.set;
 
   const q = e.select(e.Movie, movie => ({
     title: true,
     characters: char => ({
       name: true,
-      order: char["@character_name"],
+      order_by: char["@character_name"],
     }),
     filter: e.op("Iron Man", "in", movie.characters.name),
   }));

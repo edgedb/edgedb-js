@@ -634,7 +634,7 @@ function renderEdgeQL(
       // non-object/non-shape select expression
       const needsScalarVar =
         (expr.__modifiers__.filter ||
-          expr.__modifiers__.order ||
+          expr.__modifiers__.order_by ||
           expr.__modifiers__.offset ||
           expr.__modifiers__.limit) &&
         !ctx.withVars.has(expr.__expr__ as any);
@@ -661,9 +661,9 @@ function renderEdgeQL(
     if (expr.__modifiers__.filter) {
       modifiers.push(`FILTER ${renderEdgeQL(expr.__modifiers__.filter, ctx)}`);
     }
-    if (expr.__modifiers__.order) {
+    if (expr.__modifiers__.order_by) {
       modifiers.push(
-        ...expr.__modifiers__.order.map(
+        ...expr.__modifiers__.order_by.map(
           ({expression, direction, empty}, i) => {
             return `${i === 0 ? "ORDER BY" : "  THEN"} ${renderEdgeQL(
               expression,
@@ -940,8 +940,8 @@ function walkExprTree(
         if (modifiers.filter) {
           childExprs.push(...walkExprTree(modifiers.filter, expr, ctx));
         }
-        if (modifiers.order) {
-          for (const orderExpr of modifiers.order) {
+        if (modifiers.order_by) {
+          for (const orderExpr of modifiers.order_by) {
             childExprs.push(...walkExprTree(orderExpr.expression, expr, ctx));
           }
         }

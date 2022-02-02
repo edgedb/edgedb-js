@@ -23,7 +23,7 @@ SELECT ((__withVar_0 + __withVar_1))`);
 test("implicit WITH vars referencing each other", () => {
   const skip = e.int64(10);
   const remainingHeros = e.select(e.Hero, hero => ({
-    order: hero.id,
+    order_by: hero.id,
     offset: skip,
   }));
   const pageResults = e.select(remainingHeros, () => ({
@@ -251,7 +251,7 @@ SELECT {
 test("implicit WITH and explicit WITH in sub expr", () => {
   const skip = e.int64(10);
   const remainingHeros = e.select(e.Hero, hero => ({
-    order: hero.id,
+    order_by: hero.id,
     offset: skip,
   }));
   const pageResults = e.select(remainingHeros, () => ({
@@ -460,7 +460,7 @@ test("query with no WITH block", () => {
     id: true,
     computable: e.int64(35),
     all_heroes: e.select(e.Hero, () => ({__type__: {name: true}})),
-    order: person.name,
+    order_by: person.name,
     limit: 1,
   }));
 
