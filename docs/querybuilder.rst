@@ -128,7 +128,7 @@ Generate the query builder with the following command.
 
   For Yarn users, ``yarn edgeql-js`` will also work.
 
-You should see some output that looks like this.
+You'll see something like this.
 
 .. code-block:: bash
 
@@ -141,7 +141,9 @@ You should see some output that looks like this.
   Introspecting database schema...
   Generation successful!
 
-This command establishes a connection to your database, introspects the current schema, and generates a bunch of files. By default, these files are written to the ``./dbschema/edgeql-js`` directory.
+This command establishes a connection to your database, introspects the current schema, and generates a bunch of files. By default, these files are written to the ``./dbschema/edgeql-js`` directory, as
+defined relative to your project root. The project root is identified by
+scanning up the file system for a ``package.json``.
 
 .. note::
 
@@ -149,10 +151,10 @@ This command establishes a connection to your database, introspects the current 
 
   Seeing a connection error? This command must be able to connect to a running EdgeDB instance. If you're using ``edgedb project init``, this is automatically handled for you. Otherwise, you'll need to explicitly pass connection information, just like any other CLI command. See :ref:`Client Libraries > Connection <edgedb_client_connection>` for guidance.
 
-Version control
-^^^^^^^^^^^^^^^
+Update ``.gitignore``
+^^^^^^^^^^^^^^^^^^^^^
 
-When you run this command for the first time, you'll be prompted to add the generated query builder files to your ``.gitignore``.
+When you generate the query builder for the first time, you'll be prompted to add the generated files to your ``.gitignore``.
 
 .. code-block:: bash
 
@@ -168,24 +170,25 @@ When you run this command for the first time, you'll be prompted to add the gene
 
 Once you confirm this prompt, a line will be automatically added to your ``.gitignore`` to exclude the generated files from Git.
 
-Configuration
-^^^^^^^^^^^^^
+Configuring ``npx edgeql-js``
+-----------------------------
 
 The generation command is configurable in a number of ways.
 
 ``--output-dir <path>``
   Sets the output directory for the generated files.
 
-  By default, the query builder is generated into ``./dbschema/edgeql-js``, as
-  defined relative to your project root. The project root is identified by
-  scanning up the file system for a ``package.json``.
-
-  This also makes it possible to generate separate query builders corresponding
-  to different instances, which is useful if your application interfaces with
-  multiple databases.
-
 ``--target <ts|cjs|esm>``
-  Whether to generate TypeScript (``--target ts``), JavaScript with ``require/module.exports`` syntax (``--target cjs``), or JavaScript with ``import/export`` syntax (``--target esm``).
+  What type of files to generate.
+
+  .. list-table::
+
+    * - ``ts``
+      - Generate TypeScript
+    * - ``cjs``
+      - Generate JavaScript with CommonJS (``require/module.exports``) syntax
+    * - ``esm``
+      - Generate JavaScript with ES Module (``import/export``) syntax
 
   The default is determined according the the following simple algorithm:
 
@@ -210,7 +213,7 @@ connection.
 Running queries
 ---------------
 
-Here's a brief Hello World example.
+Here's a brief "Hello World" example.
 
 .. code-block:: typescript
 
@@ -228,63 +231,62 @@ Here's a brief Hello World example.
 
 A few things to note:
 
-- The query builder is imported directly from the directory where it was
-  generated. By convention, the entire query builder is imported as a single,
-  default import called ``e`` but you can use any variable name you like.
-- Queries are executed by calling the ``.run`` method. *All
-  query builder expressions* support the ``.run`` method.
-- The ``.run`` method has the following signature:
-
-  .. code-block:: typescript
-
-    .run(client: Client | Transaction, params: Params): Promise<T>
-
-  The first argument expects a client or transaction object; see :ref:`Creating a Client <edgedb-js-create-client>` for details. The second argument is for *parameters*; more on that later.
-
-
-Modules
--------
-
-All *types*, *functions*, and *commands* (``select``, ``insert``, etc) are available on the ``e`` object, properly namespaced by module.
+⬇️ The query builder is imported directly from the directory where it was
+generated.
+📛 By convention, the entire query builder is imported as a single,
+default import called ``e`` but you can use any variable name you like.
+🏃‍♀️ Queries are executed by calling the ``.run`` method on the query object. The first argument to ``.run`` is a client (or transaction) instance.
 
 .. code-block:: typescript
 
-  // commands
-  e.select;
-  e.insert;
-  e.update;
-  e.delete;
+  .run(client: Client | Transaction, params: Params): Promise<T>
 
-  // types
-  e.std.str;
-  e.std.int64;
-  e.std.bool;
-  e.cal.local_datetime;
-  e.default.User; // user-defined object type
-  e.my_module.Foo; // object type in user-defined module
+See :ref:`Creating a Client <edgedb-js-create-client>` for details on creating clients. The second argument is for *parameters*—more on that later.
 
-  // functions
-  e.std.len;
-  e.std.str_upper;
-  e.math.floor;
-  e.sys.get_version;
 
-For convenience, the contents of the ``std`` and ``default`` modules are also exposed at the top-level of ``e``.
+.. Modules
+.. -------
 
-.. code-block:: typescript
+.. All *types*, *functions*, and *commands* are available on the ``e`` object, properly namespaced by module.
 
-  e.str;
-  e.int64;
-  e.bool;
-  e.User;
-  e.len;
-  e.str_upper;
+.. .. code-block:: typescript
 
-.. note::
+..   // commands
+..   e.select;
+..   e.insert;
+..   e.update;
+..   e.delete;
 
-  If there are any name conflicts (e.g. a user-defined module called ``len``),
-  ``e.len`` will point to the user-defined module; in that scenario, you must
-  explicitly use ``e.std.len`` to access the built-in ``len`` function.
+..   // types
+..   e.std.str;
+..   e.std.int64;
+..   e.std.bool;
+..   e.cal.local_datetime;
+..   e.default.User; // user-defined object type
+..   e.my_module.Foo; // object type in user-defined module
+
+..   // functions
+..   e.std.len;
+..   e.std.str_upper;
+..   e.math.floor;
+..   e.sys.get_version;
+
+.. For convenience, the contents of the ``std`` and ``default`` modules are also exposed at the top-level of ``e``.
+
+.. .. code-block:: typescript
+
+..   e.str;
+..   e.int64;
+..   e.bool;
+..   e.len;
+..   e.str_upper;
+..   e.User;
+
+.. .. note::
+
+..   If there are any name conflicts (e.g. a user-defined module called ``len``),
+..   ``e.len`` will point to the user-defined module; in that scenario, you must
+..   explicitly use ``e.std.len`` to access the built-in ``len`` function.
 
 Literals
 --------
@@ -311,6 +313,7 @@ Literal values are declared using constructor functions that correspond to primi
     - ``<uuid>"599236a4-2a5e-4249-91b6-ec435d3afe20"``
   * - ``e.json({asdf: 1234})``
     - ``<json>(asdf := 1234)``
+
 
 
 Temporal literals
