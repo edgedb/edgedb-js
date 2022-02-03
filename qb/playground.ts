@@ -9,9 +9,12 @@ import e from "./dbschema/edgeql-js";
 async function run() {
   const {client} = await setupTests();
 
-  const arg = e.json({numbers: [1, 2, 3]}).numbers[1];
-  console.log(arg.toEdgeQL());
-  console.log(await arg.run(client));
+  const query = e.json({numbers: [0, 1, 2]}).numbers[0];
+
+  console.log(query.toEdgeQL());
+  const result = await query.run(client);
+  console.log(result);
+  e.array([1, 2, 3]);
 
   // const querr = e.array([1, 2, 3]);
   // const querr2 = querr[0];
