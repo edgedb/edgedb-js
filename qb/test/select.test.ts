@@ -393,7 +393,7 @@ test("infer cardinality - scalar filters", () => {
   expect(q9.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
   const q10 = e.select(e.Villain, villain => ({
-    filter: e.op(villain.name, "=", e.set(e.str)),
+    filter: e.op(villain.name, "=", e.cast(e.str, e.set())),
   }));
   tc.assert<tc.IsExact<typeof q10["__cardinality__"], $.Cardinality.Empty>>(
     true

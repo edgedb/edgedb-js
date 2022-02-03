@@ -8,32 +8,10 @@ import e from "./dbschema/edgeql-js";
 
 async function run() {
   const {client} = await setupTests();
-  const num = e.int64(1234);
-  const sum = e.sum(num);
-  console.log(num);
-  console.log(sum);
 
-  e.str("asdf").slice(0, 3);
-
-  const detachedVillain = e.detached(e.Villain);
-  const villain = e.select(e.Villain, outer => ({
-    name: true,
-    shared_nemesis: e.select(detachedVillain, inner => ({
-      filter: e.op(outer.nemesis, "=", inner.nemesis),
-    })),
-  }));
-
-  e.set;
-
-  const q = e.select(e.Movie, movie => ({
-    title: true,
-    characters: char => ({
-      name: true,
-      order_by: char["@character_name"],
-    }),
-    filter: e.op("Iron Man", "in", movie.characters.name),
-  }));
-  console.log(await q.run(client));
+  const arg = e.json({numbers: [1, 2, 3]}).numbers[1];
+  console.log(arg.toEdgeQL());
+  console.log(await arg.run(client));
 
   // const querr = e.array([1, 2, 3]);
   // const querr2 = querr[0];

@@ -280,7 +280,7 @@ All types are available at the top-level. Returns `Expression<Set<CastedType>>`.
 
 ```ts
 e.cast(e.int16, e.int32(1255)); // <int16><int32>1255;
-e.cast(e.UUID, e.str("ab1bcd81...")); // <uuid>'ab1bcd81...';
+e.cast(e.uuid, e.str("ab1bcd81...")); // <uuid>'ab1bcd81...';
 ```
 
 ## Functions

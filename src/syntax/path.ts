@@ -166,7 +166,8 @@ const jsonDestructureProxyHandlers: ProxyHandler<ExpressionRoot> = {
       prop !== "run" &&
       (target as any)[prop] === undefined
     ) {
-      return jsonDestructure.call(proxy, prop);
+      const parsedProp = Number.isInteger(Number(prop)) ? Number(prop) : prop;
+      return jsonDestructure.call(proxy, parsedProp);
     }
     return (target as any)[prop];
   },

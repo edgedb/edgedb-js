@@ -343,7 +343,7 @@ test("namedTuple literal", async () => {
     })
   );
 
-  const emptyNamedTuple = e.tuple({string: e.set(e.str)});
+  const emptyNamedTuple = e.tuple({string: e.cast(e.str, e.set())});
   type emptyNamedTuple = $.setToTsType<typeof emptyNamedTuple>;
   tc.assert<tc.IsExact<emptyNamedTuple, null>>(true);
   expect(emptyNamedTuple.__cardinality__).toEqual($.Cardinality.Empty);

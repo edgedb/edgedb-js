@@ -33,3 +33,5 @@ export * from "./index.shared";
 
 export * as reflection from "./reflection";
 export * as $ from "./reflection";
+
+export const qer = Symbol("asdf");

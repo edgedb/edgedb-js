@@ -157,14 +157,14 @@ test("named args", () => {
   );
   checkFunctionExpr(
     e.std.re_replace(
-      {flags: e.set(e.str)},
+      {flags: e.cast(e.str, e.set())},
       e.str("pattern"),
       e.str("sub"),
       e.str("str")
     ),
     "std::re_replace",
     [e.str("pattern"), e.str("sub"), e.str("str")],
-    {flags: e.set(e.str)},
+    {flags: e.cast(e.str, e.set())},
     e.str,
     $.Cardinality.One
   );
@@ -421,9 +421,9 @@ test("cardinality inference", () => {
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.to_str(e.int64(123), e.set(e.str)),
+    e.to_str(e.int64(123), e.cast(e.str, e.set())),
     "std::to_str",
-    [e.int64(123), e.set(e.str)],
+    [e.int64(123), e.cast(e.str, e.set())],
     {},
     e.str,
     $.Cardinality.One
@@ -431,7 +431,7 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.to_str(e.int64(123), undefined),
     "std::to_str",
-    [e.int64(123), e.set(e.str) as any],
+    [e.int64(123), e.cast(e.str, e.set()) as any],
     {},
     e.str,
     $.Cardinality.One
@@ -439,7 +439,7 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.to_str(e.set(e.int64(123), e.int64(456)), undefined),
     "std::to_str",
-    [e.set(e.int64(123), e.int64(456)), e.set(e.str) as any],
+    [e.set(e.int64(123), e.int64(456)), e.cast(e.str, e.set()) as any],
     {},
     e.str,
     $.Cardinality.AtLeastOne
@@ -471,9 +471,9 @@ test("cardinality inference", () => {
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.sum(e.set(e.int64)),
+    e.sum(e.cast(e.int64, e.set())),
     "std::sum",
-    [e.set(e.int64)],
+    [e.cast(e.int64, e.set())],
     {},
     number,
     $.Cardinality.One
@@ -495,9 +495,9 @@ test("cardinality inference", () => {
     $.Cardinality.AtMostOne
   );
   checkFunctionExpr(
-    e.array_get(e.set(e.array(e.bigint)), e.int64(1)),
+    e.array_get(e.cast(e.array(e.bigint), e.set()), e.int64(1)),
     "std::array_get",
-    [e.set(e.array(e.bigint)), e.int64(1)],
+    [e.cast(e.array(e.bigint), e.set()), e.int64(1)],
     {},
     e.bigint,
     $.Cardinality.Empty
@@ -534,9 +534,9 @@ test("cardinality inference", () => {
     $.Cardinality.Many
   );
   checkFunctionExpr(
-    e.array_unpack(e.set(e.array(e.str))),
+    e.array_unpack(e.cast(e.array(e.str), e.set())),
     "std::array_unpack",
-    [e.set(e.array(e.str))],
+    [e.cast(e.array(e.str), e.set())],
     {},
     e.str,
     $.Cardinality.Many
@@ -552,7 +552,7 @@ test("cardinality inference", () => {
 });
 
 test("assert_*", () => {
-  const emptySet = e.set(e.str);
+  const emptySet = e.cast(e.str, e.set());
   const oneSet = e.set("str");
   const atLeastOneSet = e.set("str", "str2");
   const atMostOneSet = {

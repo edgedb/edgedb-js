@@ -611,6 +611,9 @@ function renderEdgeQL(
   } else if (expr.__kind__ === ExpressionKind.TuplePath) {
     return `${renderEdgeQL(expr.__parent__, ctx)}.${expr.__index__}`;
   } else if (expr.__kind__ === ExpressionKind.Cast) {
+    if (expr.__expr__ === null) {
+      return `<${expr.__element__.__name__}>{}`;
+    }
     return `<${expr.__element__.__name__}>${renderEdgeQL(expr.__expr__, ctx)}`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
     const lines = [];
@@ -758,6 +761,7 @@ function renderEdgeQL(
           } else {
             index = renderEdgeQL(args[1], ctx);
           }
+
           return `(${renderEdgeQL(args[0], ctx)})[${index}]`;
         }
         return `(${renderEdgeQL(args[0], ctx)} ${operator} ${renderEdgeQL(

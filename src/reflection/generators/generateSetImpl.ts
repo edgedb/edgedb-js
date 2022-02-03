@@ -56,12 +56,14 @@ import type {
   ]);
   code.nl();
 
+  code.writeln([dts`declare `, t`function set(): null;`]);
+
   code.writeln([
-    dts`declare `,
-    t`function set<Type extends BaseType>(
-  type: Type
-): $expr_Set<TypeSet<unwrapCastableType<Type>, Cardinality.Empty>>;
-`,
+    //     dts`declare `,
+    //     t`function set<Type extends BaseType>(
+    //   type: Type
+    // ): $expr_Set<TypeSet<unwrapCastableType<Type>, Cardinality.Empty>>;
+    // `,
     dts`declare `,
     t`function set<
   Expr extends castMaps.orScalarLiteral<TypeSet>
@@ -149,30 +151,17 @@ import type {
     r`function set(..._exprs`,
     ts`: any[]`,
     r`) {
+  // if no arg
   // if arg
   //   return empty set
   // if object set
   //   merged objects
   // if primitive
   //   return shared parent of scalars
-  if (
-    _exprs.length === 1 &&
-    Object.values(TypeKind).includes(_exprs[0].__kind__)
-  ) {
-    const element`,
-    ts`: BaseType`,
-    r` = _exprs[0]`,
-    ts` as any`,
-    r`;
-    return $expressionify({
-      __kind__: ExpressionKind.Set,
-      __element__: element,
-      __cardinality__: Cardinality.Empty,
-      __exprs__: [],
-    })`,
-    ts` as any`,
-    r`;
+  if(_exprs.length === 0){
+    return Symbol("Empty set: cast is required.");
   }
+
   const exprs`,
     ts`: TypeSet[]`,
     r` = _exprs.map(expr => castMaps.literalToTypeSet(expr));

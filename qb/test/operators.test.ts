@@ -114,9 +114,9 @@ test("if else op", () => {
   );
 
   checkOperatorExpr(
-    e.op("this", "if", e.set(e.bool), "else", "that"),
+    e.op("this", "if", e.cast(e.bool, e.set()), "else", "that"),
     "if_else",
-    [e.str("this"), e.set(e.bool), e.str("that")],
+    [e.str("this"), e.cast(e.bool, e.set()), e.str("that")],
     e.str,
     $.Cardinality.Empty,
     `("this" IF <std::bool>{} ELSE "that")`
@@ -152,7 +152,7 @@ test("if else op", () => {
 
   checkOperatorExpr(
     e.op(
-      e.set(e.str),
+      e.cast(e.str, e.set()),
       "if",
       e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
       "else",
@@ -160,7 +160,7 @@ test("if else op", () => {
     ),
     "if_else",
     [
-      e.set(e.str),
+      e.cast(e.str, e.set()),
       e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
       e.set(e.str("that"), e.str("other")),
     ],
@@ -175,10 +175,14 @@ test("if else op", () => {
       "if",
       e.op(42, "=", e.literal(e.float32, 42)),
       "else",
-      e.set(e.str)
+      e.cast(e.str, e.set())
     ),
     "if_else",
-    [e.str("this"), e.op(42, "=", e.literal(e.float32, 42)), e.set(e.str)],
+    [
+      e.str("this"),
+      e.op(42, "=", e.literal(e.float32, 42)),
+      e.cast(e.str, e.set()),
+    ],
     e.str,
     $.Cardinality.AtMostOne,
     `("this" IF (42 = 42) ELSE <std::str>{})`

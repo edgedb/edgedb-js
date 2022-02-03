@@ -3,16 +3,18 @@ import {tc} from "./setupTeardown";
 import e, {$infer} from "../dbschema/edgeql-js";
 
 test("empty sets", () => {
-  const stringSet = e.set(e.str);
+  expect(e.set()).toEqual(null);
+
+  const stringSet = e.cast(e.str, e.set());
   expect(stringSet.toEdgeQL()).toEqual(`<std::str>{}`);
   tc.assert<tc.IsExact<$infer<typeof stringSet>, null>>(true);
 
   const $Hero = e.Hero.__element__;
-  const heroSet = e.set($Hero);
+  const heroSet = e.cast($Hero, e.set());
   expect(heroSet.toEdgeQL()).toEqual(`<default::Hero>{}`);
   tc.assert<tc.IsExact<$infer<typeof heroSet>, null>>(true);
 
-  const int32Set = e.set(e.int32);
+  const int32Set = e.cast(e.int32, e.set());
   expect(int32Set.toEdgeQL()).toEqual(`<std::int32>{}`);
   tc.assert<tc.IsExact<$infer<typeof int32Set>, null>>(true);
   tc.assert<

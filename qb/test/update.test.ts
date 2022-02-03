@@ -28,7 +28,7 @@ test("update", async () => {
   e.update(e.Villain, () => ({
     set: {
       name: e.str("asdf"),
-      nemesis: e.set($Hero),
+      nemesis: e.cast($Hero, e.set()),
     },
   })).toEdgeQL();
 
@@ -145,7 +145,7 @@ test("update link property", async () => {
   await e
     .update(theAvengers, () => ({
       set: {
-        characters: e.set($Villain),
+        characters: e.cast($Villain, e.set()),
       },
     }))
     .run(client);
