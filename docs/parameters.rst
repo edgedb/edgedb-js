@@ -22,7 +22,7 @@ Passing parameter data
 
 To executing a query with parameters, pass the parameter data as the second argument to ``.run()``; this argument is *fully typed*!
 
-.. code-block::
+.. code-block:: typescript
 
   await helloQuery.run(client, { name: "Harry Styles" })
   // => "Yer a wizard, Harry Styles"
@@ -35,7 +35,7 @@ Top-level usage
 
 Note that the expression being ``run`` must be the one declared with ``e.params``; in other words, you can only use ``e.params`` at the *top level* of your query, not as an expression inside a larger query.
 
-.. code-block::
+.. code-block:: typescript
 
   const wrappedQuery = e.select(helloQuery);
 
@@ -47,7 +47,7 @@ Parameter types
 ^^^^^^^^^^^^^^^
 In EdgeQL, parameters can only be primitives or arrays of primitives. That's not true with the query builder! Parameter types can be arbitrarily complex. Under the hood, the query builder serializes the parameters to JSON and deserializes them on the server.
 
-.. code-block::
+.. code-block:: typescript
 
   const complexParams = e.params(
     {
