@@ -72,7 +72,7 @@ test("insert type enforcement", async () => {
 
   e.insert(e.Villain, {
     // @ts-expect-error
-    name: e.set(e.str),
+    name: e.cast(e.str, e.set()),
   });
 
   e.insert(e.Hero, {

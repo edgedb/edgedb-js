@@ -159,7 +159,7 @@ import type {
   // if primitive
   //   return shared parent of scalars
   if(_exprs.length === 0){
-    return Symbol("Empty set: cast is required.");
+    return null;
   }
 
   const exprs`,

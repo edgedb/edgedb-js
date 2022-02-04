@@ -28,12 +28,12 @@ Select a free object by passing an object into ``e.select``
   e.select({
     name: e.str("Name"),
     number: e.int64(1234),
-    heroes: e.Movie,
+    movies: e.Movie,
   });
   /* select {
     name := "Name",
     number := 1234,
-    heroes := Movie
+    movies := Movie
   } */
 
 Selecting objects
@@ -79,41 +79,45 @@ Note that the type of the query result is properly inferred from the shape. This
   /* {
     id: string;
     title: string;
-    runtime?: Duration | undefined;
+    runtime: Duration | undefined;
   }[] */
 
 As you can see, the type of ``runtime`` is ``Duration | undefined`` since it's
 an optional property, whereas ``id`` and ``title`` are required.
 
-A value of ``true`` indicates that the property should be included in the
-selection set. By contrast, a value of false explicitly exludes it.
+
+Passing a ``boolean`` value (as opposed to a ``true`` literal), which will make the property optional. Passing ``false`` will exclude that property.
 
 .. code-block:: typescript
 
   e.select(e.Movie, movie => ({
     id: true,
-    title: false
+    title: Math.random() > 0.5,
+    runtime: false,
   }));
 
   const result = await query.run(client);
-  // {id: string; title: never}[]
+  // {id: string; title: string | undefined; runtime: never}[]
 
-You can also pass a non-literal ``boolean`` expression, in which case the field
-will be made optional in the result.
+Nesting shapes
 
 As in EdgeQL, shapes can be nested to fetch deeply related objects.
 
 .. code-block:: typescript
 
-  const query = e.select(e.Hero, ()=>({
-    id: false,
-    name: Math.random() > 0.5
+  const query = e.select(e.Movie, () => ({
+    id: true,
+    title: true,
+    cast: {
+      name: true
+    }
   }));
 
   const result = await query.run(client);
   /* {
-    id: never;
-    name: string | undefined;
+    id: string;
+    title: string;
+    cast: { name: string }[]
   }[] */
 
 
@@ -126,16 +130,14 @@ selected* using leading dot notation.
 
 .. code-block:: edgeql
 
-  select Hero { id, name }
-  filter .name = "Groot";
+  select Movie { id, title }
+  filter .title = "The Avengers";
 
-Here, ``.name`` is shorthand for the ``name`` property of the selected
-``Hero`` elements. All properties/links on the ``Hero`` type can be referenced
-using this shorthand anywhere in the ``select`` expression. In other words,
-the ``select`` expression is *scoped* to the ``Hero`` type.
+Here, ``.title`` is shorthand for the ``title`` property of the selected
+``Movie`` elements. All properties/links on the ``Movie`` type can be referenced using this shorthand anywhere in the ``select`` expression. In other words, the ``select`` expression is *scoped* to the ``Movie`` type.
 
-To represent this scoping in the query builder, we use functions. This is a
-powerful pattern that makes it painless to represent filters, ordering,
+To represent this scoping in the query builder, we use function scoping. This
+is a powerful pattern that makes it painless to represent filters, ordering,
 computed fields, and other expressions. Let's see it in action.
 
 
@@ -150,13 +152,13 @@ params object. This should correspond to a boolean expression.
   e.select(e.Movie, movie => ({
     id: true,
     title: true,
-    filter: e.op(movie.name, 'ilike', "The Matrix%")
+    filter: e.op(movie.title, 'ilike', "The Matrix%")
   }));
   /*
     select Movie {
       id,
       title
-    } filter .name ilike "The Matrix%"
+    } filter .title ilike "The Matrix%"
   */
 
 Since ``filter`` is a reserved keyword in EdgeQL, there is minimal danger of
@@ -166,56 +168,86 @@ conflicting with a property or link named ``filter``. All shapes can contain fil
 
 .. code-block:: typescript
 
-  e.select(e.Hero, hero => ({
-    name: true,
-    villains: villain => ({
-      name: true
-      filter: e.like(villain.name, "Mr. %"),
+  e.select(e.Movie, movie => ({
+    title: true,
+    cast: actor => ({
+      name: true,
+      filter: e.op(actor.name.slice(0, 1), '=', 'A'),
     }),
-    filter: e.op(hero.name, '=', e.str("Iron Man")),
+    filter: e.op(movie.title, '=', 'Iron Man'),
   }));
 
 
 Ordering
 ^^^^^^^^
 
-As with ``filter``, you can pass a value with the special ``order_by`` key. This
-key can correspond to an arbitrary expression. To simply order by a property:
+As with ``filter``, you can pass a value with the special ``order_by`` key. To simply order by a property:
 
 .. code-block:: typescript
 
-  e.select(e.Hero, hero => ({
-    order_by: hero.name,
+  e.select(e.Movie, movie => ({
+    order_by: movie.title,
   }));
 
-To customize the ordering and empty-handling parameters, you can also pass an
-object into ``order_by``:
+The ``order`` key can correspond to an arbitrary expression.
 
 .. code-block:: typescript
 
-  e.select(e.Hero, hero => ({
+  // order by length of title
+  e.select(e.Movie, movie => ({
+    order_by: e.len(movie.title),
+  }));
+  /*
+    select Movie
+    order by len(.title)
+  */
+
+  // order by number of cast members
+  e.select(e.Movie, movie => ({
+    order_by: e.count(movie.cast),
+  }));
+  /*
+    select Movie
+    order by count(.cast)
+  */
+
+You can customize the sort direction and empty-handling behavior by passing an
+object into ``order_by``.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => ({
     order_by: {
-      expression: hero.name,
+      expression: movie.title,
       direction: e.DESC,
       empty: e.EMPTY_FIRST,
     },
   }));
+  /*
+    select Movie
+    order by .title desc empty first
+  */
 
+.. list-table::
 
-Or do compound ordering with an array of objects:
+  * - Order direction
+    - ``e.DESC`` ``e.ASC``
+  * - Empty handling
+    - ``e.EMPTY_FIRST`` ``e.EMPTY_LAST``
+
+Pass an array of objects to do multiple ordering.
 
 .. code-block:: typescript
 
-  e.select(e.Hero, hero => ({
-    name: true,
+  e.select(e.Movie, movie => ({
+    title: true,
     order_by: [
       {
-        expression: hero.name,
+        expression: movie.title,
         direction: e.DESC,
-        empty: e.EMPTY_FIRST,
       },
       {
-        expression: hero.secret_identity,
+        expression: e.count(movie.cast),
         direction: e.ASC,
         empty: e.EMPTY_LAST,
       },
@@ -226,41 +258,20 @@ Or do compound ordering with an array of objects:
 Pagination
 ^^^^^^^^^^
 
-Use ``offset`` and ``limit`` to paginate queries. Both should correspond to
+Use ``offset`` and ``limit`` to paginate queries. You can pass an expression with an integer type, or a plain JS number.
 ``int64`` expressions.
 
 .. code-block:: typescript
 
-  e.select(e.Hero, hero => ({
-    offset: e.len(hero.name),
-    limit: e.int16(15),
+  e.select(e.Movie, movie => ({
+    offset: 50,
+    limit: e.int64(10),
   }));
-
-
-For simplicity, both also support ``number`` literals.
-
-.. code-block:: typescript
-
-  e.select(e.Hero, hero => ({
-    offset: 20,
-    limit: 10
-  }));
-
-As in EdgeQL, passing ``limit: 1`` guarantees that the query will only return
-a single item (at most). This is reflected in the resulting type.
-
-.. code-block:: typescript
-
-  e.select(e.Hero, hero => ({
-    name: true,
-  }));
-  // {name: string}[]
-
-  e.select(e.Hero, hero => ({
-    name: true,
-    limit: 1
-  }));
-  // {name: string} | null
+  /*
+    select Movie
+    offset 50
+    limit 10
+  */
 
 Computeds
 ^^^^^^^^^
@@ -270,24 +281,24 @@ elements. All reflected functions are typesafe, so the output type
 
 .. code-block:: typescript
 
-  const query = e.select(e.Hero, hero => ({
-    name: true,
-    uppercase_name: e.str_upper(hero.name),
-    name_len: e.len(hero.name),
+  const query = e.select(e.Movie, movie => ({
+    title: true,
+    uppercase_title: e.str_upper(movie.title),
+    title_length: e.len(movie.title),
   }));
 
   const result = await query.run(client);
   /* =>
     [
       {
-        name:"Iron Man",
-        uppercase_name: "IRON MAN",
-        name_len: 8
+        title:"Iron Man",
+        uppercase_title: "IRON MAN",
+        title_length: 8
       },
       ...
     ]
   */
-  // {name: string; uppercase_name: string, name_len: number}[]
+  // {name: string; uppercase_title: string, title_length: number}[]
 
 
 Computables can "override" an actual link/property as long as the type
@@ -295,82 +306,88 @@ signatures agree.
 
 .. code-block:: typescript
 
-  e.select(e.Hero, hero => ({
-    name: e.str_upper(hero.name), // this works
-    secret_identity: e.int64(5), // TypeError
+  e.select(e.Movie, movie => ({
+    title: e.str_upper(movie.title), // this works
+    runtime: e.int64(55), // TypeError
 
-    // you can override links too!
-    villains: e.select(e.Villain, _ => ({ name: true })),
+    // you can override links too
+    cast: e.Person,
   }));
 
 
 Polymorphism
 ^^^^^^^^^^^^
 
-EdgeQL supports polymorphic queries using the ``[IS type]`` prefix.
+EdgeQL supports polymorphic queries using the ``[is type]`` prefix.
 
 .. code-block:: edgeql
 
-  select Person {
-    name,
-    [IS Hero].secret_identity,
-    [IS Villain].nemesis: { name }
+  select Content {
+    title,
+    [is Movie].runtime,
+    [is TVShow].num_episodes
   }
 
 In the query builder, this is represented with the ``e.is`` function.
 
 .. code-block:: typescript
 
-  e.select(e.Person, person => ({
-    name: true,
-    ...e.is(e.Hero, { secret_identity: true }),
-    ...e.is(e.Villain, { nemesis: {name: true}}),
+  e.select(e.Content, content => ({
+    title: true,
+    ...e.is(e.Movie, { runtime: true }),
+    ...e.is(e.TVShow, { num_episodes: true }),
   }));
 
   const result = await query.run(client);
   /* {
-    id: string;
-    secret_identity: string | null;
-    nemesis: {
-        name: string;
-    } | null;
+    title: string;
+    runtime: Duration | null;
+    num_episodes: number | null;
   }[] */
 
-The type signature of the result reflects the fact that polymorphic fields
-like ``secret_identity`` will only occur in certain objects.
+The ``runtime`` and ``num_episodes`` properties are nullable to reflect the fact that they will only occur in certain objects.
 
-Type intersection
-^^^^^^^^^^^^^^^^^
+.. Type intersection
+.. ^^^^^^^^^^^^^^^^^
+
+.. .. code-block:: typescript
+
+..   e.select(e.Person, person => ({
+..     acted_in_movies: person.acted_in.is(e.Movie),
+..     acted_in_shows: person.acted_in.is(e.TVShow),
+..   }));
+..   /*
+..     select Person {
+..       movies : cast[is Hero]: { id }
+..     }
+..   */
+
+
+.. To specify shape, use subqueries:
+
+.. .. code-block:: typescript
+
+..   e.select(e.Movie, movie => ({
+..     id: true,
+..     characters: e.select(movie.characters.is(e.default.Hero), hero => ({
+..       id: true,
+..       secret_identity: true,
+..     })),
+..   }));
+
+Detached
+^^^^^^^^
 
 .. code-block:: typescript
 
-  e.select(e.Movie, movie => ({
-    characters: movie.characters.is(e.Hero),
-  }));
-  // select Movie { characters[is Hero]: { id }}
-
-
-To specify shape, use subqueries:
-
-.. code-block:: typescript
-
-  e.select(e.Movie, movie => ({
-    id: true,
-    characters: e.select(movie.characters.is(e.default.Hero), hero => ({
-      id: true,
-      secret_identity: true,
-    })),
-  }));
-
-Detach
-^^^^^^
-
-.. code-block:: typescript
-
-  const detachedVillain = e.detached(e.Villain);
-  const villain = e.select(e.Hero, outer => ({
+  const query = e.select(e.Person, (outer) => ({
     name: true,
-    shared_nemesis: e.select(detachedVillain, inner => ({
-      filter: e.op(outer.nemesis, '=', inner.nemesis)
-    }))
+    castmates: e.select(detachedPerson, (inner) => ({
+      name: true,
+      filter: e.op(
+        e.op(outer.acted_in, 'in', inner.acted_in),
+        'and',
+        e.op(outer, '!=', inner) // don't include self
+      ),
+    })),
   }));

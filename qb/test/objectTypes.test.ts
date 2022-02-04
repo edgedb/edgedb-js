@@ -88,11 +88,11 @@ test("merging tests", () => {
 });
 
 test("backlinks", () => {
-  const heroMovie = e.Hero["<characters[is default::Movie]"];
+  const heroMovie = e.Hero["<characters[is Movie]"];
 
-  const heroVillain = e.Hero["<nemesis[is default::Villain]"];
+  const heroVillain = e.Hero["<nemesis[is Villain]"];
   expect(heroMovie.toEdgeQL()).toEqual(
-    `DETACHED default::Hero.<characters[is default::Movie]`
+    `DETACHED default::Hero.<characters[is Movie]`
   );
   expect(heroMovie.__element__.__name__).toEqual("default::Movie");
   expect(heroVillain.nemesis.__element__.__name__).toEqual("default::Hero");
@@ -113,7 +113,7 @@ test("backlinks", () => {
   expect(merged.__pointers__["<characters"].target.__name__).toEqual(
     "std::BaseObject"
   );
-  expect(
-    merged.__pointers__["<characters[is default::Movie]"].target.__name__
-  ).toEqual("default::Movie");
+  expect(merged.__pointers__["<characters[is Movie]"].target.__name__).toEqual(
+    "default::Movie"
+  );
 });

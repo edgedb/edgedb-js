@@ -10,7 +10,7 @@ import {
   ObjectType,
   TypeSet,
 } from "../reflection";
-import {set} from "./set";
+import {cast} from "./cast";
 import {isImplicitlyCastableTo, literalToTypeSet} from "@generated/castMaps";
 import {literal} from "./literal";
 
@@ -150,7 +150,7 @@ function _tryOverload(
       if (i < args.length) {
         // arg is explicitly undefined, inject empty set
         const argType = makeType<any>(typeSpec, argDef.typeId, literal);
-        positionalArgs.push(set(argType));
+        positionalArgs.push(cast(argType, null));
       }
     } else {
       const {match, anytype} = compareType(

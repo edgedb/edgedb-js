@@ -521,6 +521,7 @@ function renderEdgeQL(
     ].join(",\n")}\n`;
   }
 
+  // console.log(expr.__kind__);
   if (expr.__kind__ === ExpressionKind.With) {
     return renderEdgeQL(expr.__expr__, ctx);
   } else if (expr.__kind__ === ExpressionKind.WithParams) {
@@ -913,6 +914,7 @@ function walkExprTree(
         }
         break;
       case ExpressionKind.Cast:
+        if (expr.__expr__ === null) break;
         childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
         break;
       case ExpressionKind.Set:

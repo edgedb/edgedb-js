@@ -3,13 +3,28 @@
 Insert
 ------
 
+Insert new data with ``e.insert``:
+
+.. cast: e.select(e.Person, person => ({
+..   filter: e.op(person.name, 'in', e.set("Tom Holland", "Zendaya")),
+.. })),
+
 .. code-block:: typescript
 
+  const runtime = new edgedb.Duration(0,0,0,0,2,28);
   e.insert(e.Movie, {
-    title: "Spider-Man 2",
-    characters: e.select(e.Person, person => ({
-      filter: e.in(person.name, e.set("Spider-Man", "Doc Ock")),
-    })),
+    title: e.str("Spider-Man: No Way Home"),
+    runtime: e.duration(runtime),
+  });
+
+For convenience, the second argument ``e.insert`` function can also accept plain JS data.
+
+.. code-block:: typescript
+
+  const runtime = new edgedb.Duration(0,0,0,0,2,28);
+  e.insert(e.Movie, {
+    title: "Spider-Man: No Way Home",
+    runtime: runtime,
   });
 
 
@@ -27,8 +42,10 @@ contstraint. Instead, the query would return the pre-existing object.
 
 .. code-block:: typescript
 
+  const runtime = new edgedb.Duration(0,0,0,0,2,28);
   e.insert(e.Movie, {
-    title: "Spider-Man: Homecoming",
+    title: "Spider-Man: No Way Home",
+    runtime: runtime
   }).unlessConflict();
 
 
@@ -36,8 +53,10 @@ To specify an ``on`` clause:
 
 .. code-block:: typescript
 
+  const runtime = new edgedb.Duration(0,0,0,0,2,28);
   e.insert(e.Movie, {
-    title: "Spider-Man 2",
+    title: "Spider-Man: No Way Home",
+    runtime: runtime
   }).unlessConflict(movie => ({
     on: movie.title, // can be any expression
   }));
@@ -47,12 +66,16 @@ To specify an ``on...else`` clause:
 
 .. code-block:: typescript
 
+  const runtime = new edgedb.Duration(0,0,0,0,2,28);
   e.insert(e.Movie, {
-    title: "Spider-Man 2",
+    title: "Spider-Man: Homecoming",
+    runtime: runtime
   }).unlessConflict(movie => ({
     on: movie.title,
-    else: e.select(movie).update({
-      title: "Spider-Man 2",
-    }),
+    else: e.update(movie, () => ({
+      set: {
+        runtime: runtime
+      }
+    })),
   }));
 

@@ -168,8 +168,14 @@ export async function getTypes(
         } filter .name != '@source' and .name != '@target',
       } FILTER @is_owned,
       backlinks := (SELECT DETACHED Link FILTER .target = Type) {
-        real_cardinality := "AtMostOne" IF EXISTS (select .constraints filter .name = 'std::exclusive') ELSE "Many",
-        name := '<' ++ .name ++ '[is ' ++ std::assert_exists(.source.name) ++ ']',
+        real_cardinality := "AtMostOne"
+          IF
+          EXISTS (select .constraints filter .name = 'std::exclusive')
+          ELSE
+          "Many",
+        name := '<' ++ .name ++ '[is ' ++ std::assert_exists(
+          .source.name if .source.name[:9] != 'default::' else .source.name[9:]
+        ) ++ ']',
         stub := .name,
         target_id := .source.id,
         kind := 'link',

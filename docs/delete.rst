@@ -3,9 +3,11 @@
 Delete
 ------
 
+Delete objects with ``e.delete``.
+
 .. code-block:: typescript
 
-  e.delete(e.Hero, hero => ({
+  e.delete(e.Movie, movie => ({
     filter: ..,
     order_by: ...,
     offset: ...,
@@ -13,6 +15,3 @@ Delete
   }));
 
 The only supported keys are ``filter``, ``order_by``, ``offset``, and ``limit``.
-
-
-

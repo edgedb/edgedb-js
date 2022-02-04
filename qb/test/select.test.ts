@@ -589,7 +589,7 @@ test("type intersections - static", () => {
 
 test("backlinks", async () => {
   const result1 = await e
-    .select(e.Hero["<characters[is default::Movie]"], () => ({
+    .select(e.Hero["<characters[is Movie]"], () => ({
       id: true,
       // __type__: {name: true},
       title: true,

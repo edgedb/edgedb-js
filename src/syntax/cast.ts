@@ -34,5 +34,5 @@ export type $expr_Cast<
   __element__: unwrapCastableType<Target>;
   __cardinality__: Expr["__cardinality__"];
   __kind__: ExpressionKind.Cast;
-  __expr__: Expr;
+  __expr__: Expr | null;
 }>;

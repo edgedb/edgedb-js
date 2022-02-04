@@ -9,32 +9,9 @@ import e from "./dbschema/edgeql-js";
 async function run() {
   const {client} = await setupTests();
 
-  const query = e.params(
-    {
-      title: e.str,
-      runtime: e.duration,
-      cast: e.array(
-        e.tuple({
-          name: e.str,
-          character_name: e.str,
-        })
-      ),
-    },
-    params => e.select(params)
-    // e.insert(e.Movie, {
-    //   title: e.str,
-    //   runtime
-    // })
-  );
+  const query = e.to_str(e.int64(123), undefined);
   console.log(query.toEdgeQL());
-  const result = await query.run(client, {
-    title: "Dune",
-    runtime: new edgedb.Duration(0, 0, 0, 0, 2, 35),
-    cast: [
-      {name: "Timmy", character_name: "Paul"},
-      {name: "JMo", character_name: "Idaho"},
-    ],
-  });
+  const result = await query.run(client);
   console.log(result);
 
   // const querr = e.array([1, 2, 3]);
@@ -134,7 +111,7 @@ async function run() {
   //     id: true,
   //     secret_identity: true,
   //     number_of_movies: true,
-  //     "<nemesis[IS default::Villain]": {
+  //     "<nemesis[is Villain]": {
   //       name: true,
   //     },
   //     order: hero.name,
@@ -176,7 +153,7 @@ async function run() {
 
   // const q = e.select(e.Hero, hero => ({
   //   id: true,
-  //   "<nemesis[IS default::Villain]": {
+  //   "<nemesis[is Villain]": {
   //     id: true,
   //   },
   // }));
@@ -267,7 +244,7 @@ async function run() {
   // const q8 = e.select(e.Hero, hero => ({
   //   id: true,
   //   q: q7,
-  //   "<characters[IS default::Movie]": {
+  //   "<characters[is Movie]": {
   //     title: true,
   //     characters: {
   //       "@character_name": true,

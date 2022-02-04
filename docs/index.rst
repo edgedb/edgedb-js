@@ -13,7 +13,6 @@ EdgeDB TypeScript/JS Client
    expressions
    literals
    types
-   sets
    funcops
    parameters
    objects

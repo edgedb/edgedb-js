@@ -265,7 +265,7 @@ Movie.characters.is(e.Hero);
 Provide backlinks that behave just like forward links:
 
 ```ts
-Hero["<nemesis[IS default::Villain]"];
+Hero["<nemesis[is Villain]"];
 ```
 
 Also support "untyped" backlinks. By default, these return a set of `BaseObject` with cardinality `Many`. These can be refined with `is` and `assert_single`.

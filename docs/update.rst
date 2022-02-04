@@ -3,36 +3,100 @@
 Update
 ------
 
-Update queries are a represented as a ``.update()`` method on ``e.select``
-queries. This way, you ``select`` a set of objects to update first, then
-specify how they should be updated.
+Update objects with the ``e.update`` function.
 
 .. code-block:: typescript
 
-  // update method
   e.update(e.Movie, movie => ({
     filter: e.op(movie.title, '=', e.str("Avengers 4")),
-    // order_by: ...,
-    // offset: ...,
     set: {
-
-      // reference current value
-      title: e.str_upper(movie.title),
-
-      // support literals
-      title: "Avengers: Endgame",
-
-      // set link
-      characters: e.union(e.Hero, e.Villain),
-
-      // add to link
-      characters: {"+=": e.insert(e.Hero, {name: "Gilgamesh"})},
-
-      // subtract from link
-      characters: {
-        "-=": e.select(e.Villain, villain => ({
-          filter: e.eq(villain.name, e.str("Thanos")),
-        })),
-      },
+      title: "Avengers: Endgame"
     }
   }))
+
+
+The parameter object supports the full set of clauses for filtering, ordering, and pagination.
+
+.. code-block:: typescript
+
+  e.update(e.Movie, movie => ({
+    filter: ...,
+    order_by: ...,
+    offset: ...,
+    limit: ...,
+    set: {
+      // ...
+    }
+  }))
+
+
+You can reference the current value of the object's properties.
+
+.. code-block:: typescript
+
+  e.update(e.Movie, movie => ({
+    filter: e.op(movie.title[0], '=', ' '),
+    set: {
+      title: e.str_trim(movie.title)
+    }
+  }))
+
+
+Updating links
+^^^^^^^^^^^^^^
+
+EdgeQL supports some convenient syntax for appending to, subtracting from, and overwriting links.
+
+.. code-block:: edgeql
+
+  update Movie set {
+    # overwrite
+    cast := Person,
+
+    # add to link
+    cast += Person,
+
+    # subtract from link
+    cast -= Person
+  }
+
+In the query builder this is represented with the following syntax.
+
+**Overwrite a link**
+
+.. code-block:: typescript
+
+  const castMembers = e.select(e.Person, ...);
+  e.update(e.Movie, movie => ({
+    filter: e.op(movie.title, '=', 'The Eternals'),
+    set: {
+      cast: castMembers,
+    }
+  }))
+
+**Add to a link**
+
+.. code-block:: typescript
+
+  const castMembers = e.select(e.Person, ...);
+  e.update(e.Movie, movie => ({
+    filter: e.op(movie.title, '=', 'The Eternals'),
+    set: {
+      cast: { "+=": castMembers },
+    }
+  }))
+
+
+**Subtract from a link**
+
+.. code-block:: typescript
+
+  const castMembers = e.select(e.Person, ...);
+  e.update(e.Movie, movie => ({
+    filter: e.op(movie.title, '=', 'The Eternals'),
+    set: {
+      characters: { "-=": castMembers },
+    }
+  }))
+
+

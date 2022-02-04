@@ -17,7 +17,7 @@ import {
 } from "../reflection";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
-import {set} from "./set";
+import {cast} from "./cast";
 import {$expr_PathNode} from "../reflection/path";
 
 export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
@@ -164,7 +164,7 @@ export function $normaliseInsertShape(
       }
       const wrappedVal =
         val === null
-          ? set(pointer.target)
+          ? cast(pointer.target, null)
           : (pointer.target as scalarTypeWithConstructor<ScalarType>)(val);
       newShape[key] = setModify
         ? ({[setModify]: wrappedVal} as any)

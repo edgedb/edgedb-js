@@ -100,7 +100,7 @@ CREATE MIGRATION m1qxdmnjre6ij6fj5u7qyvwkzcdgg33qygdldy6ntl6o24ls7yq5xa
       CREATE LINK nemesis -> default::Hero;
   };
   ALTER TYPE default::Hero {
-      CREATE MULTI LINK villains := (.<nemesis[IS default::Villain]);
+      CREATE MULTI LINK villains := (.<nemesis[is Villain]);
   };
   CREATE TYPE default::MovieShape;
 };
