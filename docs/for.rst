@@ -10,6 +10,6 @@ For loops
     // do stuff
   });
 
-  e.for(e.Hero, hero => {
+  e.for(e.Movie, movie => {
     // do stuff
   });

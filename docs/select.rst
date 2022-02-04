@@ -347,33 +347,6 @@ In the query builder, this is represented with the ``e.is`` function.
 
 The ``runtime`` and ``num_episodes`` properties are nullable to reflect the fact that they will only occur in certain objects.
 
-.. Type intersection
-.. ^^^^^^^^^^^^^^^^^
-
-.. .. code-block:: typescript
-
-..   e.select(e.Person, person => ({
-..     acted_in_movies: person.acted_in.is(e.Movie),
-..     acted_in_shows: person.acted_in.is(e.TVShow),
-..   }));
-..   /*
-..     select Person {
-..       movies : cast[is Hero]: { id }
-..     }
-..   */
-
-
-.. To specify shape, use subqueries:
-
-.. .. code-block:: typescript
-
-..   e.select(e.Movie, movie => ({
-..     id: true,
-..     characters: e.select(movie.characters.is(e.default.Hero), hero => ({
-..       id: true,
-..       secret_identity: true,
-..     })),
-..   }));
 
 Detached
 ^^^^^^^^

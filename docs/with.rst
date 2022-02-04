@@ -25,19 +25,20 @@ This hold for expressions of arbitrary complexity.
 
 .. code-block:: typescript
 
-  const newHero = e.insert(e.Hero, {
-    name: "Batman",
+  const newActor = e.insert(e.Person, {
+    name: "Colin Farrell"
   });
 
-  const newVillain = e.insert(e.Villain, {
-    name: "Dr. Evil",
-    nemesis: newHero,
+  const newMovie = e.insert(e.Movie, {
+    title: "The Batman",
+    cast: newActor
   });
 
-  return e.select(newVillain, {
+  const query = e.select(newMovie, ()=>({
     id: true,
-    name: true,
-  });
+    title: true,
+    cast: { name: true }
+  }));
 
 
 To embed ``WITH`` statements inside queries, you can short-circuit this logic
@@ -45,18 +46,20 @@ with a "dependency list". It's an error to pass an expr to multiple
 ``e.with``s, and an error to use an expr passed to ``e.with`` outside of that
 WITH block in the query.
 
-We add a top level e.alias() function. This will create an alias of the expr
-passed to it in a WITH block.
 
 .. code-block:: typescript
 
-  return e.select(
-    e.with(
-      [newHero, newVillain], // list "dependencies";
-      e.select(newVillain, {
+  const newActor = e.insert(e.Person, {
+    name: "Colin Farrell"
+  });
+
+  e.insert(e.Movie, {
+    cast: e.with([newActor], // list "dependencies";
+      e.select(newActor, ()=>({
         id: true,
-        name: true,
-      })
+        title: true,
+      }))
     )
-  );
+  })
+
 
