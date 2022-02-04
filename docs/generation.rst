@@ -1,7 +1,7 @@
 .. _edgedb-js-generation:
 
-Generating the query builder
-============================
+Generation
+==========
 
 The query builder is *auto-generated* from your database schema.
 
@@ -51,11 +51,6 @@ Generate the query builder with the following command.
   $ npx edgeql-js           # npm users
   $ yarn edgeql-js          # yarn users
 
-
-.. note::
-
-  For Yarn users, ``yarn edgeql-js`` will also work.
-
 You'll see something like this.
 
 .. code-block:: bash
@@ -69,20 +64,21 @@ You'll see something like this.
   Introspecting database schema...
   Generation successful!
 
-This command establishes a connection to your database, introspects the current schema, and generates a bunch of files. By default, these files are written to the ``./dbschema/edgeql-js`` directory, as
+The ``npx edgeql-js`` establishes a connection to your database, introspects the current schema, and generates a bunch of files. By default, these files are written to the ``./dbschema/edgeql-js`` directory, as
 defined relative to your project root. The project root is identified by
 scanning up the file system for a ``package.json``.
+
 
 .. note::
 
   **Connection issue?**
 
-  Seeing a connection error? This command must be able to connect to a running EdgeDB instance. If you're using ``edgedb project init``, this is automatically handled for you. Otherwise, you'll need to explicitly pass connection information, just like any other CLI command. See :ref:`Client Libraries > Connection <edgedb_client_connection>` for guidance.
+  This command must be able to connect to a running EdgeDB instance. If you're using ``edgedb project init``, this is automatically handled for you. Otherwise, you'll need to explicitly pass connection information, just like any other CLI command. See :ref:`Client Libraries > Connection <edgedb_client_connection>` for guidance.
 
-Update ``.gitignore``
-^^^^^^^^^^^^^^^^^^^^^
+Version control
+^^^^^^^^^^^^^^^
 
-When you generate the query builder for the first time, you'll be prompted to add the generated files to your ``.gitignore``.
+The first time you run the command, you'll be prompted to add the generated files to your ``.gitignore``. Confirm this prompt, and a line will be automatically added to your ``.gitignore`` to exclude the generated files from Git.
 
 .. code-block:: bash
 
@@ -96,7 +92,29 @@ When you generate the query builder for the first time, you'll be prompted to ad
 
   [y/n] (leave blank for "y")
 
-Once you confirm this prompt, a line will be automatically added to your ``.gitignore`` to exclude the generated files from Git.
+
+Importing
+^^^^^^^^^
+
+Once the query builder is generated, it's ready to use! Just import it and start building queries. Below is a full "Hello world" example.
+
+.. code-block:: typescript
+
+  import * as edgedb from "edgedb";
+  import e from "./dbschema/edgeql-js";
+
+  const client = edgedb.createClient();
+
+  async function run(){
+    // declare a simple query
+    const myQuery = e.str("Hello world!");
+
+    // execute the expression
+    const result = await myQuery.run(client);
+
+    // print the result
+    console.log(result); // "Hello world!"
+  }
 
 Configuring ``npx edgeql-js``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

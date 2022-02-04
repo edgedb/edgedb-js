@@ -3,40 +3,74 @@
 Parameters
 ----------
 
+You can pass strongly-typed parameters into your query with ``e.params``.
+
 .. code-block:: typescript
 
-  const query = e.withParams({ name: e.str }, params => e.select(params.name));
-  /*
-    with name := <str>$name
-    select name;
+  const helloQuery = e.params({ title: e.str }, params =>
+    e.op(params.name)
+  );
+  /*  with name := <str>$name
+      select name;
   */
 
 
-.. code-block:: typescript
+The first argument is an object defining the parameter names and their corresponding types. The second argument is a closure that returns an expression; use the ``params`` argument to construct the rest of your query.
 
-  const fetchPerson = e.params(
+Passing parameter data
+^^^^^^^^^^^^^^^^^^^^^^
+
+To executing a query with parameters, pass the parameter data as the second argument to ``.run()``; this argument is *fully typed*!
+
+.. code-block::
+
+  await helloQuery.run(client, { name: "Harry Styles" })
+  // => "Yer a wizard, Harry Styles"
+
+  await query.run(client, { name: 16 })
+  // => TypeError: number is not assignable to string
+
+Top-level usage
+^^^^^^^^^^^^^^^
+
+Note that the expression being ``run`` must be the one declared with ``e.params``; in other words, you can only use ``e.params`` at the *top level* of your query, not as an expression inside a larger query.
+
+.. code-block::
+
+  const wrappedQuery = e.select(helloQuery);
+
+  await e.select(helloQuery).run(client, {name: "Harry Styles"});
+  // TypeError
+
+
+Parameter types
+^^^^^^^^^^^^^^^
+In EdgeQL, parameters can only be primitives or arrays of primitives. That's not true with the query builder! Parameter types can be arbitrarily complex. Under the hood, the query builder serializes the parameters to JSON and deserializes them on the server.
+
+.. code-block::
+
+  const complexParams = e.params(
     {
-      // scalar parameters
-      bool: e.bool,
-      data: e.array(e.str),
-
-      // supports any type
-      nested: e.array(e.tuple({test: e.str})),
-
-      // optional params
-      optional: e.optional(e.str),
+      title: e.str,
+      runtime: e.duration,
+      cast: e.array(
+        e.tuple({
+          name: e.str,
+          character_name: e.str,
+        })
+      ),
     },
-    params =>
-      e.select(e.Person, person => ({
-        id: true,
-        maybe: params.optional, // computable
-        filter: e.in(person.name, e.array_unpack(params.name)),
-      }))
+    params => e.insert(e.Movie, {
+      // ...
+    })
   );
 
-  await fetchPerson.run(client, {
-    bool: true,
-    data: ['aaa','bbb', 'ccc,],
-    nested: [{test:"sup"}],
-    optional: null
+  await insertMovie.run(client, {
+    title: "Dune",
+    runtime: new edgedb.Duration(0, 0, 0, 0, 2, 35),
+    cast: [
+      {name: "Timmy", character_name: "Paul"},
+      {name: "JMo", character_name: "Idaho"},
+    ]
   })
+

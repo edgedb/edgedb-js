@@ -1,7 +1,10 @@
 .. _edgedb-js-funcops:
 
-Functions
----------
+Functions and operators
+-----------------------
+
+Function syntax
+^^^^^^^^^^^^^^^
 
 All built-in standard library functions are reflected as functions in ``e``.
 
@@ -21,10 +24,11 @@ All built-in standard library functions are reflected as functions in ``e``.
   // math::mean({3, 5, 7})
 
 
-Operators
----------
 
-All operators are expressed using the ``e.op`` function.
+Operator syntax
+^^^^^^^^^^^^^^^
+
+By comparison, operators do *not* each have a corresponding function on the ``e`` object. Instead, use the ``e.op`` function.
 
 **Unary operators**
 
@@ -32,8 +36,8 @@ Unary operators operate on a single argument: ``OPERATOR <arg>``.
 
 .. code-block:: typescript
 
-  e.op('not', e.bool(true)); // not true
-  e.op('exists', e.set('hi')); // exists {'hi'}
+  e.op('not', e.bool(true));      // not true
+  e.op('exists', e.set('hi'));    // exists {'hi'}
 
 **Binary operators**
 
@@ -58,13 +62,12 @@ Unary operators operate on three arguments: ``<arg> OPERATOR <arg> OPERATOR <arg
 
 .. list-table::
 
-  * - Unary operators
+  * - Prefix operators
     - ``"exists"`` ``"distinct"`` ``"not"``
-  * - Binary operators
-    - ``"="`` ``"?="`` ``"!="`` ``"?!="`` ``">="`` ``">"`` ``"<="`` ``"<"`` ``"or"`` ``"and"`` ``"+"`` ``"-"`` ``"*"`` ``"/"`` ``"//"`` ``"%"`` ``"^"`` ``"in"`` ``"not_in"`` ``"union"`` ``"??"`` ``"++"`` ``"like"`` ``"ilike"`` ``"not_like"`` ``"not_ilike"``
+  * - Infix operators
+    - ``"="`` ``"?="`` ``"!="`` ``"?!="`` ``">="`` ``">"`` ``"<="`` ``"<"`` ``"or"`` ``"and"`` ``"+"`` ``"-"`` ``"*"`` ``"/"`` ``"//"`` ``"%"`` ``"^"`` ``"in"`` ``"not in"`` ``"union"`` ``"??"`` ``"++"`` ``"like"`` ``"ilike"`` ``"not like"`` ``"not ilike"``
   * - Ternary operators
     - ``"if"/"else"``
-
 
 .. * - ``=``
 ..   - ``e.eq``

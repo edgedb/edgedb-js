@@ -12,10 +12,11 @@ EdgeDB TypeScript/JS Client
    generation
    expressions
    literals
-   sets_and_paths
-   types_and_casting
-   parameters
+   types
+   sets
    funcops
+   parameters
+   objects
    select
    insert
    update
@@ -78,7 +79,7 @@ The EdgeDB query builder provides a **code-first** way to write **fully-typed** 
   const client = edgedb.createClient();
 
   async function run(){
-    const query = e.select("Hello world!");
+    const query = e.str("Hello world!");
     const result = await query.run(client)
     console.log(result); // "Hello world!"
   }
