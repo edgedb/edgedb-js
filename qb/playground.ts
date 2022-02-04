@@ -9,12 +9,33 @@ import e from "./dbschema/edgeql-js";
 async function run() {
   const {client} = await setupTests();
 
-  const query = e.json({numbers: [0, 1, 2]}).numbers[0];
-
+  const query = e.params(
+    {
+      title: e.str,
+      runtime: e.duration,
+      cast: e.array(
+        e.tuple({
+          name: e.str,
+          character_name: e.str,
+        })
+      ),
+    },
+    params => e.select(params)
+    // e.insert(e.Movie, {
+    //   title: e.str,
+    //   runtime
+    // })
+  );
   console.log(query.toEdgeQL());
-  const result = await query.run(client);
+  const result = await query.run(client, {
+    title: "Dune",
+    runtime: new edgedb.Duration(0, 0, 0, 0, 2, 35),
+    cast: [
+      {name: "Timmy", character_name: "Paul"},
+      {name: "JMo", character_name: "Idaho"},
+    ],
+  });
   console.log(result);
-  e.array([1, 2, 3]);
 
   // const querr = e.array([1, 2, 3]);
   // const querr2 = querr[0];

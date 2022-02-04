@@ -38,7 +38,7 @@ import type {
 import {anonymizeObject} from "./casting";
 import type {$expr_Operator} from "../reflection/funcops";
 import {$expressionify, $getScopedExpr} from "./path";
-import {getTypeByName, literal} from "./literal";
+import {$getTypeByName, literal} from "./literal";
 import {spec} from "@generated/__spec__";
 import {
   scalarLiterals,
@@ -395,14 +395,14 @@ export function $handleModifiers(
   if (mods.offset) {
     mods.offset =
       typeof mods.offset === "number"
-        ? (getTypeByName("std::number")(mods.offset) as any)
+        ? ($getTypeByName("std::number")(mods.offset) as any)
         : mods.offset;
     card = cardinalityUtil.overrideLowerBound(card, "Zero");
   }
   if (mods.limit) {
     let expr = mods.limit;
     if (typeof expr === "number") {
-      expr = getTypeByName("std::number")(expr) as any;
+      expr = $getTypeByName("std::number")(expr) as any;
     } else if ((expr as any).__kind__ === ExpressionKind.Set) {
       expr = (expr as any).__exprs__[0];
     }

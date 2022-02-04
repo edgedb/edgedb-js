@@ -19,7 +19,7 @@ test("path structure", () => {
   expect(Hero.name.__cardinality__).toEqual($.Cardinality.Many);
   expect(HeroSingleton.name.__cardinality__).toEqual($.Cardinality.One);
 
-  expect(Villain["<villains[IS default::Hero]"].__element__.__name__).toEqual(
+  expect(Villain["<villains[is default::Hero]"].__element__.__name__).toEqual(
     "default::Hero"
   );
 

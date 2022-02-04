@@ -402,7 +402,7 @@ test("infer cardinality - scalar filters", () => {
 
   // test cardinality inference on object equality
   // e.select(e.Profile).filter(e.eq(e.Profile
-  // ["<profile[IS default::Movie]"], e.select(e.Profile).limit(1)));
+  // ["<profile[is default::Movie]"], e.select(e.Profile).limit(1)));
 });
 
 test("infer cardinality - object type filters", () => {
@@ -589,7 +589,7 @@ test("type intersections - static", () => {
 
 test("backlinks", async () => {
   const result1 = await e
-    .select(e.Hero["<characters[IS default::Movie]"], () => ({
+    .select(e.Hero["<characters[is default::Movie]"], () => ({
       id: true,
       // __type__: {name: true},
       title: true,

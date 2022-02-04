@@ -27,11 +27,11 @@ const nameMapping = new Map([
   ["std::number", "00000000-0000-0000-0000-0000000001ff"],
 ]);
 
-export function getType(id: string): (val: any) => $expr_Literal<ScalarType> {
+export function $getType(id: string): (val: any) => $expr_Literal<ScalarType> {
   return makeType(spec, id, literal) as any;
 }
 
-export function getTypeByName(
+export function $getTypeByName(
   name: string
 ): (val: any) => $expr_Literal<ScalarType> {
   return makeType(spec, nameMapping.get(name)!, literal) as any;
