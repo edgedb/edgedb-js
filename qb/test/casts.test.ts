@@ -7,5 +7,5 @@ test("casting", () => {
   tc.assert<
     tc.IsExact<typeof primitiveCast["__element__"], typeof e["float64"]>
   >(true);
-  expect(primitiveCast.toEdgeQL()).toEqual(`<std::float32>3.14`);
+  expect(primitiveCast.toEdgeQL()).toEqual(`<std::float32>(3.14)`);
 });

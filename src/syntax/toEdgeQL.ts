@@ -615,7 +615,7 @@ function renderEdgeQL(
     if (expr.__expr__ === null) {
       return `<${expr.__element__.__name__}>{}`;
     }
-    return `<${expr.__element__.__name__}>${renderEdgeQL(expr.__expr__, ctx)}`;
+    return `<${expr.__element__.__name__}>(${renderEdgeQL(expr.__expr__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
     const lines = [];
     if (isObjectType(expr.__element__)) {
