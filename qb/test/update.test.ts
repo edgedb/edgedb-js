@@ -76,7 +76,8 @@ test("scoped update", async () => {
   const query = e.update(e.Hero, hero => ({
     filter: e.op(hero.name, "=", data.spidey.name),
     set: {
-      name: e.op("The Amazing ", "++", hero.name),
+      // name: e.op("The Amazing ", "++", hero.name),
+      name: "asdf",
     },
   }));
 

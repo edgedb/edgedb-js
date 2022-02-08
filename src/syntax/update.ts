@@ -26,6 +26,20 @@ import {$normaliseInsertShape, pointerIsOptional} from "./insert";
 /// UPDATE
 /////////////////
 
+export type $expr_Update<
+  Set extends TypeSet = TypeSet,
+  Expr extends ObjectTypeSet = ObjectTypeSet,
+  Shape extends UpdateShape<Expr> = any
+> = Expression<{
+  __kind__: ExpressionKind.Update;
+  __element__: Set["__element__"];
+  __cardinality__: Set["__cardinality__"];
+  __expr__: Expr;
+  __shape__: Shape;
+  __modifiers__: NormalisedSelectModifiers;
+  __scope__: ObjectTypeExpression;
+}>;
+
 export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
   stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
 > extends infer Shape
@@ -48,36 +62,27 @@ export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
     : never
   : never;
 
-export type $expr_Update<
-  Set extends TypeSet = TypeSet,
-  Expr extends ObjectTypeSet = ObjectTypeSet,
-  Shape extends UpdateShape<Expr> = any
-> = Expression<{
-  __kind__: ExpressionKind.Update;
-  __element__: Set["__element__"];
-  __cardinality__: Set["__cardinality__"];
-  __expr__: Expr;
-  __shape__: Shape;
-  __modifiers__: NormalisedSelectModifiers;
-  __scope__: ObjectTypeExpression;
-}>;
-
 export function update<
   Expr extends ObjectTypeExpression,
-  SetShape extends UpdateShape<Expr>,
-  Modifiers extends Pick<SelectModifiers, "filter">
+  Shape extends {
+    filter?: SelectModifiers["filter"];
+    order_by?: SelectModifiers["order_by"];
+    limit?: SelectModifiers["limit"];
+    offset?: SelectModifiers["offset"];
+    set: UpdateShape<Expr>;
+  }
+  // SetShape extends UpdateShape<Expr>,
+  // Modifiers extends Pick<SelectModifiers, "filter">
 >(
   expr: Expr,
-  shape: (
-    scope: $scopify<Expr["__element__"]>
-  ) => Readonly<{set: SetShape} & Modifiers>
+  shape: (scope: $scopify<Expr["__element__"]>) => Readonly<Shape>
 ): $expr_Update<
   {
     __element__: Expr["__element__"];
-    __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
+    __cardinality__: ComputeSelectCardinality<Expr, Shape>;
   },
   Expr,
-  SetShape
+  Shape["set"]
 > {
   const cleanScopedExprs = $existingScopes.size === 0;
 
