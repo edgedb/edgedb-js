@@ -4,18 +4,22 @@
 Driver
 ======
 
-The driver implements the core functionality required to establish a connection to your database and execute queries.
+The driver implements the core functionality required to establish a
+connection to your database and execute queries.
 
 .. _edgedb-js-create-client:
 
 Creating clients
 ----------------
 
-A *client* represents a connection to your database and provides methods for executing queries.
+A *client* represents a connection to your database and provides methods for
+executing queries.
 
 .. note::
 
-  In actuality, the client maintains an *pool* of connections under the hood. When your server is under load, queries will be run in parallel across many connections, instead of being bottlenecked by a single connection.
+  In actuality, the client maintains an *pool* of connections under the hood.
+  When your server is under load, queries will be run in parallel across many
+  connections, instead of being bottlenecked by a single connection.
 
 To create a client:
 
@@ -25,10 +29,23 @@ To create a client:
 
     const client = edgedb.createClient();
 
+
+If you're using TypeScript or have ES modules enabled, you can use
+``import`` syntax instead:
+
+.. code-block:: js
+
+    impoart * as edgedb from "edgedb";
+
+    const client = edgedb.createClient();
+
+
 Configuring the connection
 --------------------------
 
-Notice we didn't pass any arguments into ``createClient``. That's intentional; we recommend using EdgeDB projects or environment variables to configure your database connections. See the :ref:`Client Library Connection
+Notice we didn't pass any arguments into ``createClient``. That's intentional;
+we recommend using EdgeDB projects or environment variables to configure your
+database connections. See the :ref:`Client Library Connection
 <edgedb_client_connection>` docs for details on configuring connections.
 
 Running queries
@@ -61,7 +78,10 @@ In TypeScript, you can supply a type hint to receive a strongly typed result.
 Type conversion
 ---------------
 
-The driver converts EdgeDB types into a corresponding JavaScript data structure. Some EdgeDB types like ``duration`` don't have a corresponding type in the JavaScript type system, so we've implemented classes like :js:class:`Duration` to represent them.
+The driver converts EdgeDB types into a corresponding JavaScript data
+structure. Some EdgeDB types like ``duration`` don't have a corresponding type
+in the JavaScript type system, so we've implemented classes like
+:js:class:`Duration` to represent them.
 
 .. list-table::
 
@@ -109,7 +129,8 @@ The driver converts EdgeDB types into a corresponding JavaScript data structure.
     - :js:class:`ConfigMemory`
 
 
-To learn more about the driver's built-in type classes, refer to the reference documentation.
+To learn more about the driver's built-in type classes, refer to the reference
+documentation.
 
 - :js:class:`LocalDate`
 - :js:class:`LocalTime`
@@ -128,12 +149,15 @@ To learn more about the driver's built-in type classes, refer to the reference d
 Enforcing cardinality
 ---------------------
 
-There are additional methods for running queries that have an *expected cardinality*. This is a useful way to tell the driver how many elements you expect the query to return.
+There are additional methods for running queries that have an *expected
+cardinality*. This is a useful way to tell the driver how many elements you
+expect the query to return.
 
 ``.query`` method
 ^^^^^^^^^^^^^^^^^
 
-The ``query`` method places no constraints on cardinality. It returns an array, no matter what.
+The ``query`` method places no constraints on cardinality. It returns an
+array, no matter what.
 
 .. code-block:: js
 
@@ -144,7 +168,9 @@ The ``query`` method places no constraints on cardinality. It returns an array, 
 ``.querySingle`` method
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Use ``querySingle`` if you expect your query to return *zero or one* elements. Unlike ``query``, it either returns a single element or ``null``. Note that if you're selecting an array, tuple, or
+Use ``querySingle`` if you expect your query to return *zero or one* elements.
+Unlike ``query``, it either returns a single element or ``null``. Note that if
+you're selecting an array, tuple, or
 
 .. code-block:: js
 
@@ -177,7 +203,8 @@ The TypeScript signatures of these methods reflects their behavior.
 JSON results
 ------------
 
-There are dedicated methods for running queries and retrieving results as a serialized JSON string. This serialization happens inside the database.
+There are dedicated methods for running queries and retrieving results as a
+serialized JSON string. This serialization happens inside the database.
 
 .. code-block:: js
 
@@ -193,7 +220,9 @@ There are dedicated methods for running queries and retrieving results as a seri
 Non-returning queries
 ---------------------
 
-To execute a query without retrieving a result, use the ``.execute`` method. This is especially useful for mutations, where there's often no need for the query to return a value.
+To execute a query without retrieving a result, use the ``.execute`` method.
+This is especially useful for mutations, where there's often no need for the
+query to return a value.
 
 .. code-block:: js
 
@@ -204,7 +233,8 @@ To execute a query without retrieving a result, use the ``.execute`` method. Thi
 Parameters
 ----------
 
-If your query contains parameters (e.g. ``$foo``), you can pass in values as the second argument. This is true for all ``query*`` methods and ``execute``.
+If your query contains parameters (e.g. ``$foo``), you can pass in values as
+the second argument. This is true for all ``query*`` methods and ``execute``.
 
 .. code-block:: js
 
@@ -217,14 +247,18 @@ If your query contains parameters (e.g. ``$foo``), you can pass in values as the
   console.log(result);
   // {id: "047c5893..."}
 
-Remember that :ref:`parameters <ref_eql_params>` can only be *scalars* or *arrays of scalars*.
+Remember that :ref:`parameters <ref_eql_params>` can only be *scalars* or
+*arrays of scalars*.
 
 Checking connection status
 --------------------------
 
-The client maintains a dynamically sized *pool* of connections under the hood. These connections are initialized *lazily*, so no connection will be established until the first time you execute a query.
+The client maintains a dynamically sized *pool* of connections under the hood.
+These connections are initialized *lazily*, so no connection will be
+established until the first time you execute a query.
 
-If you want to explicitly ensure that the client is connected without running a query, use the ``.ensureConnected()`` method.
+If you want to explicitly ensure that the client is connected without running
+a query, use the ``.ensureConnected()`` method.
 
 .. code-block:: js
 
@@ -308,4 +342,8 @@ shouldn't have side effects or run for a significant amount of time.
 Next up
 -------
 
-If you're using plain JavaScript, the driver API will likely meet your needs. If you're a TypeScript user and want autocompletion and type inference, head over to the :ref:`Query Builder docs <edgedb-js-qb>`.
+If you're a TypeScript user and want autocompletion and type inference, head
+over to the :ref:`Query Builder docs <edgedb-js-qb>`. If you're using plain
+JavaScript that likes writing queries with composable code-first syntax, you
+should check out the query builder too! If you're content writing queries as
+strings, the vanilla driver API will meet your needs.

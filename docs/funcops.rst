@@ -28,7 +28,8 @@ All built-in standard library functions are reflected as functions in ``e``.
 Operator syntax
 ^^^^^^^^^^^^^^^
 
-By comparison, operators do *not* each have a corresponding function on the ``e`` object. Instead, use the ``e.op`` function.
+By comparison, operators do *not* each have a corresponding function on the
+``e`` object. Instead, use the ``e.op`` function.
 
 **Unary operators**
 
@@ -51,7 +52,9 @@ Unary operators operate on two arguments: ``<arg> OPERATOR <arg>``.
 
 **Ternary operators**
 
-Unary operators operate on three arguments: ``<arg> OPERATOR <arg> OPERATOR <arg>``. Currently there's only one ternary operator: the ``if else`` construct.
+Unary operators operate on three arguments: ``<arg> OPERATOR <arg> OPERATOR
+<arg>``. Currently there's only one ternary operator: the ``if else``
+construct.
 
 .. code-block:: typescript
 
@@ -65,7 +68,10 @@ Unary operators operate on three arguments: ``<arg> OPERATOR <arg> OPERATOR <arg
   * - Prefix operators
     - ``"exists"`` ``"distinct"`` ``"not"``
   * - Infix operators
-    - ``"="`` ``"?="`` ``"!="`` ``"?!="`` ``">="`` ``">"`` ``"<="`` ``"<"`` ``"or"`` ``"and"`` ``"+"`` ``"-"`` ``"*"`` ``"/"`` ``"//"`` ``"%"`` ``"^"`` ``"in"`` ``"not in"`` ``"union"`` ``"??"`` ``"++"`` ``"like"`` ``"ilike"`` ``"not like"`` ``"not ilike"``
+    - ``"="`` ``"?="`` ``"!="`` ``"?!="`` ``">="`` ``">"`` ``"<="`` ``"<"``
+      ``"or"`` ``"and"`` ``"+"`` ``"-"`` ``"*"`` ``"/"`` ``"//"`` ``"%"``
+      ``"^"`` ``"in"`` ``"not in"`` ``"union"`` ``"??"`` ``"++"`` ``"like"``
+      ``"ilike"`` ``"not like"`` ``"not ilike"``
   * - Ternary operators
     - ``"if"/"else"``
 

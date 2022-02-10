@@ -17,7 +17,8 @@ Insert new data with ``e.insert``:
     runtime: e.duration(runtime),
   });
 
-For convenience, the second argument ``e.insert`` function can also accept plain JS data.
+For convenience, the second argument ``e.insert`` function can also accept
+plain JS data.
 
 .. code-block:: typescript
 

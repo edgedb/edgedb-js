@@ -4,14 +4,18 @@
 Literals
 --------
 
-The query builder provides a set of "helper functions" that convert JavaScript literals into *expressions* that can be used in queries. For the most part, these helper functions correspond to the *name* of the type.
+The query builder provides a set of "helper functions" that convert JavaScript
+literals into *expressions* that can be used in queries. For the most part,
+these helper functions correspond to the *name* of the type.
 
 
 
 Primitives
 ^^^^^^^^^^
 
-Primitive literal expressions are created using constructor functions that correspond to EdgeDB datatypes. Each expression below is accompanied by the EdgeQL it produces.
+Primitive literal expressions are created using constructor functions that
+correspond to EdgeDB datatypes. Each expression below is accompanied by the
+EdgeQL it produces.
 
 .. code-block:: typescript
 
@@ -29,7 +33,8 @@ Primitive literal expressions are created using constructor functions that corre
 Strings
 ^^^^^^^
 
-String expressions have some special functionality: they support indexing and slicing, as in EdgeQL.
+String expressions have some special functionality: they support indexing and
+slicing, as in EdgeQL.
 
 .. code-block:: typescript
 
@@ -40,7 +45,8 @@ String expressions have some special functionality: they support indexing and sl
   myString[':5'];     //  "hello world"[:5]
   myString['2:'];     //  "hello world"[:5]
 
-There are also equivalent ``.index`` and ``.slice`` methods that can accept integer expressions as arguments.
+There are also equivalent ``.index`` and ``.slice`` methods that can accept
+integer expressions as arguments.
 
 .. code-block:: typescript
 
@@ -69,16 +75,22 @@ All enum types are represented as functions.
 Dates and times
 ^^^^^^^^^^^^^^^
 
-To create an instance of ``datetime``, pass a JavaScript ``Date`` object into ``e.datetime``:
+To create an instance of ``datetime``, pass a JavaScript ``Date`` object into
+``e.datetime``:
 
 .. code-block:: typescript
 
   e.datetime(new Date('1999-01-01')))
   // <datetime>'1999-01-01T00:00:00.000Z'
 
-EdgeDB's other temporal datatypes don't have equivalents in the JavaScript type system: ``duration``, ``cal::local_date``, ``cal::local_time``, and ``cal::local_datetime``.
+EdgeDB's other temporal datatypes don't have equivalents in the JavaScript
+type system: ``duration``, ``cal::local_date``, ``cal::local_time``, and
+``cal::local_datetime``.
 
-To resolve this, each of these datatypes can be represented with an instance of a corresponding class, as defined in ``edgedb`` module. The driver uses these classes to represent these values in query results; they are documented on the :ref:`Driver <edgedb-js-datatypes>` page.
+To resolve this, each of these datatypes can be represented with an instance
+of a corresponding class, as defined in ``edgedb`` module. The driver uses
+these classes to represent these values in query results; they are documented
+on the :ref:`Driver <edgedb-js-datatypes>` page.
 
 .. list-table::
 
@@ -91,7 +103,8 @@ To resolve this, each of these datatypes can be represented with an instance of 
   * - ``e.cal.local_datetime``
     - :js:class:`LocalDateTime`
 
-The code below demonstrates how to declare each kind of temporal literal, along with the equivalent EdgeQL.
+The code below demonstrates how to declare each kind of temporal literal,
+along with the equivalent EdgeQL.
 
 .. code-block:: typescript
 
@@ -110,7 +123,9 @@ The code below demonstrates how to declare each kind of temporal literal, along 
   e.cal.local_datetime(myLocalDateTime);
 
 
-You can also declare these literals by casting an appropriately formatted ``str`` expression, as in EdgeQL. Casting :ref:`is documented <ref_qb_casting>` in more detail later in the docs.
+You can also declare these literals by casting an appropriately formatted
+``str`` expression, as in EdgeQL. Casting :ref:`is documented
+<ref_qb_casting>` in more detail later in the docs.
 
 .. code-block:: typescript
 
@@ -130,11 +145,15 @@ You can also declare these literals by casting an appropriately formatted ``str`
 JSON
 ^^^^
 
-JSON literals are created with the ``e.json`` function. You can pass in any data structure of EdgeDB-encodable data.
+JSON literals are created with the ``e.json`` function. You can pass in any
+data structure of EdgeDB-encodable data.
 
 .. note::
 
-  What does "EdgeDB-encodable" mean? It means any JavaScript data structure with an equivalent in EdgeDB: strings, number, booleans, arrays, objects, ``bigint``s, ``Buffer``s, ``Date``s, and instances of EdgeDB's built-in classes: ``Duration``, ``LocalDate`` ``LocalTime``, and ``LocalDateTime``.
+  What does "EdgeDB-encodable" mean? It means any JavaScript data structure
+  with an equivalent in EdgeDB: strings, number, booleans, arrays, objects,
+  ``bigint``s, ``Buffer``s, ``Date``s, and instances of EdgeDB's built-in
+  classes: ``Duration``, ``LocalDate`` ``LocalTime``, and ``LocalDateTime``.
 
 .. code-block:: typescript
 
@@ -148,7 +167,8 @@ JSON literals are created with the ``e.json`` function. You can pass in any data
     duration: new edgedb.Duration(1, 3, 3)
   })
 
-JSON expressions support indexing, as in EdgeQL. The returned expression also has a ``json`` type.
+JSON expressions support indexing, as in EdgeQL. The returned expression also
+has a ``json`` type.
 
 .. code-block:: typescript
 
@@ -186,7 +206,8 @@ with incompatible types.
   e.array([e.int64(5), e.str("foo")]);
   // TypeError!
 
-For convenence, the ``e.array`` can also accept arrays of plain JavaScript data as well.
+For convenence, the ``e.array`` can also accept arrays of plain JavaScript
+data as well.
 
 .. code-block:: typescript
 
@@ -210,7 +231,8 @@ Array expressions also support indexing and slicing operations.
   myArray['1:3'];
   // ['a', 'b', 'c', 'd', 'e'][1:3]
 
-There are also equivalent ``.index`` and ``.slice`` methods that can accept other expressions as arguments.
+There are also equivalent ``.index`` and ``.slice`` methods that can accept
+other expressions as arguments.
 
 .. code-block:: typescript
 
@@ -226,7 +248,8 @@ There are also equivalent ``.index`` and ``.slice`` methods that can accept othe
 Tuples
 ^^^^^^
 
-Declare tuples with ``e.tuple``. Pass in an array to declare a "regular" (unnamed) tuple; pass in an object to declare a named tuple.
+Declare tuples with ``e.tuple``. Pass in an array to declare a "regular"
+(unnamed) tuple; pass in an object to declare a named tuple.
 
 .. code-block:: typescript
 
@@ -270,7 +293,8 @@ Declare sets with ``e.set``.
   e.set(e.str("asdf"), e.str("qwer"));
   // {'asdf', 'qwer'}
 
-As in EdgeQL, sets can't contain elements with incompatible types. These semantics are enforced by TypeScript.
+As in EdgeQL, sets can't contain elements with incompatible types. These
+semantics are enforced by TypeScript.
 
 .. code-block:: typescript
 
@@ -280,7 +304,8 @@ As in EdgeQL, sets can't contain elements with incompatible types. These semanti
 Empty sets
 ^^^^^^^^^^
 
-To declare an empty set, cast an empty set to the desired type. As in EdgeQL, empty sets are not allowed without a cast.
+To declare an empty set, cast an empty set to the desired type. As in EdgeQL,
+empty sets are not allowed without a cast.
 
 .. code-block:: typescript
 

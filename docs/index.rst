@@ -46,7 +46,9 @@ There are two components of this library: the *driver* and the *query builder*.
 The driver
 ==========
 
-The driver implements the core functionality required to establish a connection to your database and execute queries. It's recommended for JavaScript users.
+The driver implements the core functionality required to establish a
+connection to your database and execute queries. If you prefer writing queries
+as strings, the driver API is all you need.
 
 .. code-block:: javascript
 
@@ -60,7 +62,8 @@ The driver implements the core functionality required to establish a connection 
     console.log(result); // "Hello world!"
   }
 
-If you're not using TypeScript, you can skip straight to :ref:`the Driver docs <edgedb-js-examples>`.
+If you're not using TypeScript, you can skip straight to :ref:`the Driver docs
+<edgedb-js-examples>`.
 
 
 .. _edgedb-js-qb:
@@ -68,7 +71,9 @@ If you're not using TypeScript, you can skip straight to :ref:`the Driver docs <
 The query builder
 =================
 
-The EdgeDB query builder provides a **code-first** way to write **fully-typed** EdgeQL queries with TypeScript. We recommend it for TypeScript users—it's awesome.
+The EdgeDB query builder provides a **code-first** way to write
+**fully-typed** EdgeQL queries with TypeScript. We recommend it for TypeScript
+users—it's awesome.
 
 .. code-block:: typescript
 
@@ -83,7 +88,8 @@ The EdgeDB query builder provides a **code-first** way to write **fully-typed** 
     console.log(result); // "Hello world!"
   }
 
-As you can see, you still use the ``edgedb`` module to instantiate a client, but you use the auto-generated query builder to write and execute your queries.
+As you can see, you still use the ``edgedb`` module to instantiate a client,
+but you use the auto-generated query builder to write and execute your queries.
 
 Why use the query builder?
 --------------------------
@@ -109,17 +115,23 @@ need an ORM to write strongly typed queries.
   // {id:string; name: string}[]
 
 
-*Auto-completion!* You can write queries full autocompletion on EdgeQL keywords, standard library functions, and link/property names.
+*Auto-completion!* You can write queries full autocompletion on EdgeQL
+keywords, standard library functions, and link/property names.
 
-*Type checking!* In the vast majority of cases, the query builder won't let you construct invalid queries. This eliminates an entire class of bugs and helps you write valid queries the first time.
+*Type checking!* In the vast majority of cases, the query builder won't let
+you construct invalid queries. This eliminates an entire class of bugs and
+helps you write valid queries the first time.
 
 
 Is it an ORM?
 -------------
 
-Nope. There's no "object-relational mapping" happening here—that's all handled by EdgeDB itself.
+Nope. There's no "object-relational mapping" happening here—that's all handled
+by EdgeDB itself.
 
-The query builder itself is a comparatively thin wrapper over EdgeQL. We've designed the API such that the TypeScript representation of a query is structurally similar to the equivalent EdgeQL.
+The query builder itself is a comparatively thin wrapper over EdgeQL. We've
+designed the API such that the TypeScript representation of a query is
+structurally similar to the equivalent EdgeQL.
 
 .. code-block:: edgeql
 
@@ -139,11 +151,19 @@ The query builder itself is a comparatively thin wrapper over EdgeQL. We've desi
     filter: e.op(movie.title, '=', 'Iron Man')
   });
 
-More importantly, it gives you access to the **full power** of EdgeQL! The query builder can represent EdgeQL queries of arbitrary complexity.
+More importantly, it gives you access to the **full power** of EdgeQL! The
+query builder can represent EdgeQL queries of arbitrary complexity.
 
-By comparison, SQL-based ORMs are limited in what they can represent. Things like computed properties, SQL's large standard library of functions, aggregations, transactions, and subqueries are rarely possible. But even for the simple stuff, we think the query builder API is more readable, compact, and intuitive than any ORM on the market.
+By comparison, SQL-based ORMs are limited in what they can represent. Things
+like computed properties, SQL's large standard library of functions,
+aggregations, transactions, and subqueries are rarely possible. But even for
+the simple stuff, we think the query builder API is more readable, compact,
+and intuitive than any ORM on the market.
 
 How do I get started?
 ---------------------
 
-The query builder not an alternative to the driver; the driver API is still needed to initialize a database client. We recommend reading the :ref:`Driver docs <edgedb-js-examples>` first, then continuing on to the :ref:`Query builder <edgedb-js-generation>` docs.
+The query builder not an alternative to the driver; the driver API is still
+needed to initialize a database client. We recommend reading the :ref:`Driver
+docs <edgedb-js-examples>` first, then continuing on to the :ref:`Query
+builder <edgedb-js-generation>` docs.

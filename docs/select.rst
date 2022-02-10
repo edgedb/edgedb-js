@@ -3,12 +3,16 @@
 Select
 ------
 
-The full power of the EdgeQL ``select`` statement is available as a top-level ``e.select`` function. All queries on this page assume the Netflix schema described on the :ref:`Objects page <edgedb-js-objects>`.
+The full power of the EdgeQL ``select`` statement is available as a top-level
+``e.select`` function. All queries on this page assume the Netflix schema
+described on the :ref:`Objects page <edgedb-js-objects>`.
 
 Selecting scalars
 ^^^^^^^^^^^^^^^^^
 
-Any scalar expression be passed into ``e.select``, though it's often unnecessary, since expressions are ``run``able without being wrapped by ``e.select``.
+Any scalar expression be passed into ``e.select``, though it's often
+unnecessary, since expressions are ``run``able without being wrapped by
+``e.select``.
 
 .. code-block:: typescript
 
@@ -54,7 +58,8 @@ Shapes
 ^^^^^^
 
 To specify a shape, pass a function as the second argument. This function
-should return an object that specifies which properties to include in the result. This corresponds to a *shape* in EdgeQL.
+should return an object that specifies which properties to include in the
+result. This roughly corresponds to a *shape* in EdgeQL.
 
 .. code-block:: typescript
 
@@ -71,7 +76,8 @@ should return an object that specifies which properties to include in the result
     }
   */
 
-Note that the type of the query result is properly inferred from the shape. This is true for all queries on this page.
+Note that the type of the query result is properly inferred from the shape.
+This is true for all queries on this page.
 
 .. code-block:: typescript
 
@@ -86,7 +92,8 @@ As you can see, the type of ``runtime`` is ``Duration | undefined`` since it's
 an optional property, whereas ``id`` and ``title`` are required.
 
 
-Passing a ``boolean`` value (as opposed to a ``true`` literal), which will make the property optional. Passing ``false`` will exclude that property.
+Passing a ``boolean`` value (as opposed to a ``true`` literal), which will
+make the property optional. Passing ``false`` will exclude that property.
 
 .. code-block:: typescript
 
@@ -134,7 +141,9 @@ selected* using leading dot notation.
   filter .title = "The Avengers";
 
 Here, ``.title`` is shorthand for the ``title`` property of the selected
-``Movie`` elements. All properties/links on the ``Movie`` type can be referenced using this shorthand anywhere in the ``select`` expression. In other words, the ``select`` expression is *scoped* to the ``Movie`` type.
+``Movie`` elements. All properties/links on the ``Movie`` type can be
+referenced using this shorthand anywhere in the ``select`` expression. In
+other words, the ``select`` expression is *scoped* to the ``Movie`` type.
 
 To represent this scoping in the query builder, we use function scoping. This
 is a powerful pattern that makes it painless to represent filters, ordering,
@@ -162,7 +171,8 @@ params object. This should correspond to a boolean expression.
   */
 
 Since ``filter`` is a reserved keyword in EdgeQL, there is minimal danger of
-conflicting with a property or link named ``filter``. All shapes can contain filter clauses, even nested ones.
+conflicting with a property or link named ``filter``. All shapes can contain
+filter clauses, even nested ones.
 
 ### Nested filtering
 
@@ -181,7 +191,8 @@ conflicting with a property or link named ``filter``. All shapes can contain fil
 Ordering
 ^^^^^^^^
 
-As with ``filter``, you can pass a value with the special ``order_by`` key. To simply order by a property:
+As with ``filter``, you can pass a value with the special ``order_by`` key. To
+simply order by a property:
 
 .. code-block:: typescript
 
@@ -258,8 +269,8 @@ Pass an array of objects to do multiple ordering.
 Pagination
 ^^^^^^^^^^
 
-Use ``offset`` and ``limit`` to paginate queries. You can pass an expression with an integer type, or a plain JS number.
-``int64`` expressions.
+Use ``offset`` and ``limit`` to paginate queries. You can pass an expression
+with an integer type or a plain JS number.
 
 .. code-block:: typescript
 
@@ -345,7 +356,8 @@ In the query builder, this is represented with the ``e.is`` function.
     num_episodes: number | null;
   }[] */
 
-The ``runtime`` and ``num_episodes`` properties are nullable to reflect the fact that they will only occur in certain objects.
+The ``runtime`` and ``num_episodes`` properties are nullable to reflect the
+fact that they will only occur in certain objects.
 
 
 Detached

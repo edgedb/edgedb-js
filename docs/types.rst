@@ -4,7 +4,8 @@
 Types
 -----
 
-The properties of ``e`` that corresond to types—``e.str``, ``e.int64``, etc— serve a dual purpose.
+The properties of ``e`` that corresond to types—``e.str``, ``e.int64``, etc—
+serve a dual purpose.
 
 - They can be used as functions to instantiate literals: ``e.str("hi")``.
 - They are also used to represent the *type itself* for certain type
@@ -13,7 +14,8 @@ The properties of ``e`` that corresond to types—``e.str``, ``e.int64``, etc—
 Reflected types
 ^^^^^^^^^^^^^^^
 
-The entire type system of EdgeDB is reflected in the ``e`` object, including scalar types, object types, and enums.
+The entire type system of EdgeDB is reflected in the ``e`` object, including
+scalar types, object types, and enums.
 
 .. code-block:: typescript
 
@@ -79,7 +81,8 @@ Custom literals
 ^^^^^^^^^^^^^^^
 
 You can use ``e.literal`` to create literals corresponding to collection
-types like tuples, arrays, and primitives. The first argument expects a type, the second expects a *value* of that type.
+types like tuples, arrays, and primitives. The first argument expects a type,
+the second expects a *value* of that type.
 
 .. code-block:: typescript
 
@@ -115,4 +118,5 @@ Pass strongly-typed parameters into your query with ``e.params``.
   // => "Yer a wizard, Harry"
 
 
-The full documentation on using parameters is :ref:`here <edgedb-js-parameters>`.
+The full documentation on using parameters is :ref:`here
+<edgedb-js-parameters>`.

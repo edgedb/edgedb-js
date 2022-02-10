@@ -4,14 +4,17 @@ Expressions
 -----------
 
 
-The query builder is exact what it sounds like: a way to declare EdgeQL queries with code. By convention, it's imported from the directory where it was
+The query builder is exact what it sounds like: a way to declare EdgeQL
+queries with code. By convention, it's imported from the directory where it was
 generated as a single, default import called ``e``.
 
 .. code-block:: typescript
 
   import e from "./dbschema/edgeql-js";
 
-The ``e`` variable provides everything you need to build any EdgeQL query. All EdgeQL commands, standard library functions, and types are available as properties on ``e``.
+The ``e`` variable provides everything you need to build any EdgeQL query. All
+EdgeQL commands, standard library functions, and types are available as
+properties on ``e``.
 
 .. code-block:: typescript
 
@@ -36,9 +39,14 @@ The ``e`` variable provides everything you need to build any EdgeQL query. All E
   e.count;
   e.math.stddev;
 
-These building blocks are used to define *expressions*. Everything you create using the query builder is an expression. Expressions have a few things in common.
+These building blocks are used to define *expressions*. Everything you create
+using the query builder is an expression. Expressions have a few things in
+common.
 
-**Expressions produce EdgeQL.** Below is a number of expressions and the EdgeQL they produce. (The actual EdgeQL the create may look slightly different, but it's equivalent.) You can extract an EdgeQL representation of any expression calling the ``.toEdgeQL()`` method.
+**Expressions produce EdgeQL.** Below is a number of expressions and the
+EdgeQL they produce. (The actual EdgeQL the create may look slightly
+different, but it's equivalent.) You can extract an EdgeQL representation of
+any expression calling the ``.toEdgeQL()`` method.
 
 .. code-block:: typescript
 
@@ -58,7 +66,8 @@ These building blocks are used to define *expressions*. Everything you create us
   // select Movie { id, title }
 
 
-**Expressions are runnable.** Expressions can be executed with the ``.run`` method.
+**Expressions are runnable.** Expressions can be executed with the ``.run``
+method.
 
 .. code-block:: typescript
 
@@ -69,14 +78,21 @@ These building blocks are used to define *expressions*. Everything you create us
   const result = await myQuery.run(client)
   // => "Hello world"
 
-Note that the ``.run`` method accepts an instance of :js:class:`Client` (or ``Transaction``) as it's first argument. See :ref:`Creating a Client <edgedb-js-create-client>` for details on creating clients. The second argument is for passing :ref:`$parameters <edgedb-js-parameters>`, more on that later.
+Note that the ``.run`` method accepts an instance of :js:class:`Client` (or
+``Transaction``) as it's first argument. See :ref:`Creating a Client
+<edgedb-js-create-client>` for details on creating clients. The second
+argument is for passing :ref:`$parameters <edgedb-js-parameters>`, more on
+that later.
 
 .. code-block:: typescript
 
   .run(client: Client | Transaction, params: Params): Promise<T>
 
 
-**Expressions have a type and a cardinality**. Just like sets in EdgeQL, all expressions are associated with a type and a cardinality. The query builder is extremely good at *inferring* these. You can see the values of these with the special ``__element__`` and ``__cardinality__`` properties.
+**Expressions have a type and a cardinality**. Just like sets in EdgeQL, all
+expressions are associated with a type and a cardinality. The query builder is
+extremely good at *inferring* these. You can see the values of these with the
+special ``__element__`` and ``__cardinality__`` properties.
 
 .. code-block:: typescript
 

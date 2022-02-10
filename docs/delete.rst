@@ -14,4 +14,5 @@ Delete objects with ``e.delete``.
     limit: ...
   }));
 
-The only supported keys are ``filter``, ``order_by``, ``offset``, and ``limit``.
+The only supported keys are ``filter``, ``order_by``, ``offset``, and
+``limit``.

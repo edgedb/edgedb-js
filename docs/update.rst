@@ -15,7 +15,8 @@ Update objects with the ``e.update`` function.
   }))
 
 
-The parameter object supports the full set of clauses for filtering, ordering, and pagination.
+The parameter object supports the full set of clauses for filtering, ordering,
+and pagination.
 
 .. code-block:: typescript
 
@@ -45,7 +46,8 @@ You can reference the current value of the object's properties.
 Updating links
 ^^^^^^^^^^^^^^
 
-EdgeQL supports some convenient syntax for appending to, subtracting from, and overwriting links.
+EdgeQL supports some convenient syntax for appending to, subtracting from, and
+overwriting links.
 
 .. code-block:: edgeql
 

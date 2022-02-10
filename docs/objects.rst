@@ -49,7 +49,8 @@ namespaced by module.
   e.default.TVShow;
   e.my_module.SomeType;
 
-For convenience, the contents of the ``default`` module are also available at the top-level of ``e``.
+For convenience, the contents of the ``default`` module are also available at
+the top-level of ``e``.
 
 .. code-block:: typescript
 
@@ -94,7 +95,8 @@ Type intersections
 ^^^^^^^^^^^^^^^^^^
 
 Use the type intersection operator to narrow the type of a set of objects. For
-instance, to represent the elements of an Account's watchlist that are of type ``TVShow``:
+instance, to represent the elements of an Account's watchlist that are of type
+``TVShow``:
 
 .. code-block:: typescript
 
@@ -105,7 +107,9 @@ instance, to represent the elements of an Account's watchlist that are of type `
 Backlinks
 ^^^^^^^^^
 
-All possible backlinks are auto-generated and can be auto-completed by TypeScript. They behave just like forward links. However, because they contain special characters, you must use bracket syntax instead of simple dot notation.
+All possible backlinks are auto-generated and can be auto-completed by
+TypeScript. They behave just like forward links. However, because they contain
+special characters, you must use bracket syntax instead of simple dot notation.
 
 .. code-block:: typescript
 

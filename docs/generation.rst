@@ -8,9 +8,11 @@ The query builder is *auto-generated* from your database schema.
 Minimum requirements
 ^^^^^^^^^^^^^^^^^^^^
 
-It's possible to use the query builder with or without TypeScript. Some requirements apply to TypeScript users only.
+It's possible to use the query builder with or without TypeScript. Some
+requirements apply to TypeScript users only.
 
-- Node.js 10+. Run ``node --version`` to see your current version. TypeScript users should also install Node.js typing: ``npm install @types/node``
+- Node.js 10+. Run ``node --version`` to see your current version. TypeScript
+  users should also install Node.js typing: ``npm install @types/node``
 - TypeScript 4.4+
 - Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``:
 
@@ -29,7 +31,10 @@ It's possible to use the query builder with or without TypeScript. Some requirem
 Initialize a project
 ^^^^^^^^^^^^^^^^^^^^
 
-Set up an :ref:`EdgeDB project <ref_guide_using_projects>` for your application. Follow the :ref:`Quickstart <ref_quickstart>` for detailed instructions on installing the CLI, initializing a project, writing a basic schema, and executing your first migration.
+Set up an :ref:`EdgeDB project <ref_guide_using_projects>` for your
+application. Follow the :ref:`Quickstart <ref_quickstart>` for detailed
+instructions on installing the CLI, initializing a project, writing a basic
+schema, and executing your first migration.
 
 Install the JavaScript client library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -64,21 +69,30 @@ You'll see something like this.
   Introspecting database schema...
   Generation successful!
 
-The ``npx edgeql-js`` establishes a connection to your database, introspects the current schema, and generates a bunch of files. By default, these files are written to the ``./dbschema/edgeql-js`` directory, as
-defined relative to your project root. The project root is identified by
-scanning up the file system for a ``package.json``.
+The ``npx edgeql-js`` establishes a connection to your database, introspects
+the current schema, and generates a bunch of files. By default, these files
+are written to the ``./dbschema/edgeql-js`` directory, as defined relative to
+your project root. The project root is identified by scanning up the file
+system for a ``package.json``.
 
 
 .. note::
 
   **Connection issue?**
 
-  This command must be able to connect to a running EdgeDB instance. If you're using ``edgedb project init``, this is automatically handled for you. Otherwise, you'll need to explicitly pass connection information, just like any other CLI command. See :ref:`Client Libraries > Connection <edgedb_client_connection>` for guidance.
+  This command must be able to connect to a running EdgeDB instance. If you're
+  using ``edgedb project init``, this is automatically handled for you.
+  Otherwise, you'll need to explicitly pass connection information, just like
+  any other CLI command. See :ref:`Client Libraries > Connection
+  <edgedb_client_connection>` for guidance.
 
 Version control
 ^^^^^^^^^^^^^^^
 
-The first time you run the command, you'll be prompted to add the generated files to your ``.gitignore``. Confirm this prompt, and a line will be automatically added to your ``.gitignore`` to exclude the generated files from Git.
+The first time you run the command, you'll be prompted to add the generated
+files to your ``.gitignore``. Confirm this prompt, and a line will be
+automatically added to your ``.gitignore`` to exclude the generated files from
+Git.
 
 .. code-block:: bash
 
@@ -96,7 +110,8 @@ The first time you run the command, you'll be prompted to add the generated file
 Importing
 ^^^^^^^^^
 
-Once the query builder is generated, it's ready to use! Just import it and start building queries. Below is a full "Hello world" example.
+Once the query builder is generated, it's ready to use! Just import it and
+start building queries. Below is a full "Hello world" example.
 
 .. code-block:: typescript
 
@@ -138,8 +153,10 @@ The generation command is configurable in a number of ways.
 
   The default is determined according the the following simple algorithm:
 
-  1. Check for a ``tsconfig.json`` in the project root. If it exists, use ``--target ts``.
-  2. Otherwise. check if ``package.json`` includes ``"type": "module"``. If so, use ``--target esm``.
+  1. Check for a ``tsconfig.json`` in the project root. If it exists, use
+     ``--target ts``.
+  2. Otherwise. check if ``package.json`` includes ``"type": "module"``. If
+     so, use ``--target esm``.
   3. Otherwise, use ``--target cjs``.
 
 
