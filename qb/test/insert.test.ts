@@ -1,7 +1,7 @@
 import {Client} from "edgedb";
-import {Villain} from "../dbschema/edgeql/modules/default";
-import {InsertShape} from "../dbschema/edgeql/syntax/insert";
-import e from "../dbschema/edgeql";
+import {Villain} from "../dbschema/edgeql-js/modules/default";
+import {InsertShape} from "../dbschema/edgeql-js/syntax/insert";
+import e from "../dbschema/edgeql-js";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let client: Client;
@@ -23,9 +23,8 @@ test("insert shape check", async () => {
 
 test("basic insert", async () => {
   const q1 = e.insert(e.Hero, {
-    name: e.str("Black Widow"),
+    name: "Black Widow",
     secret_identity: e.str("Natasha Romanoff"),
-    // id
   });
 
   await client.querySingle(q1.toEdgeQL());
@@ -38,7 +37,7 @@ test("nested insert", async () => {
   const q1 = e.insert(e.Villain, {
     name: e.str("villain"),
     nemesis: e.insert(e.Hero, {
-      name: e.str("hero"),
+      name: "hero",
     }),
   });
 
@@ -73,7 +72,29 @@ test("insert type enforcement", async () => {
 
   e.insert(e.Villain, {
     // @ts-expect-error
-    name: e.set(e.str),
+    name: e.cast(e.str, e.set()),
   });
+
+  e.insert(e.Hero, {
+    // @ts-expect-error
+    name: 1234,
+    // @ts-expect-error
+    number_of_movies: "Ronin",
+  });
+
+  // should not error on missing required prop 'release_year'
+  // since it has a default value
+  e.insert(e.Movie, {
+    title: "test_movie",
+  });
+
+  e.insert(e.Movie, {
+    title: "test movie",
+    rating: null,
+    profile: null,
+    // @ts-expect-error release_year is required prop
+    release_year: null,
+  }).toEdgeQL();
+
   return;
 });

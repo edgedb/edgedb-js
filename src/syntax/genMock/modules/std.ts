@@ -5,11 +5,14 @@ import {
   ObjectType,
   $expr_PathNode,
   Cardinality,
+  scalarTypeWithConstructor,
 } from "../../../reflection";
 
 declare function assert_single(input: TypeSet<BaseType>): any;
 
-declare const int64: ScalarType<"std::int64", number>;
+declare const number: scalarTypeWithConstructor<
+  ScalarType<"std::number", number>
+>;
 
 export type $FreeObject = ObjectType<"std::FreeObject", any, null>;
 declare const FreeObject: $expr_PathNode<
@@ -20,11 +23,6 @@ declare const FreeObject: $expr_PathNode<
 
 export type $bool = ScalarType<"std::bool", boolean>;
 
-type $int16 = ScalarType<"std::int16", number>;
-type $int32 = ScalarType<"std::int32", number>;
-type $int64 = ScalarType<"std::int64", number>;
-type $bigint = ScalarType<"std::bigint", BigInt>;
+export type $number = ScalarType<"std::number", number>;
 
-export type $anyint = $int16 | $int32 | $int64 | $bigint;
-
-export default {assert_single, int64, FreeObject};
+export default {assert_single, number, FreeObject};

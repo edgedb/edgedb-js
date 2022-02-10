@@ -41,9 +41,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
 
   encodeArgs(args: any): Buffer {
     if (args == null) {
-      throw new Error(
-        "a named arguments was expected, got a null value instead"
-      );
+      throw new Error("One or more named arguments expected, received null");
     }
 
     const keys = Object.keys(args);
@@ -55,7 +53,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     if (keys.length > codecsLen) {
       const extraKeys = keys.filter(key => !namesSet.has(key));
       throw new Error(
-        `unexpected named argument${
+        `Unused named argument${
           extraKeys.length === 1 ? "" : "s"
         }: "${extraKeys.join('", "')}"`
       );

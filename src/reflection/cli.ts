@@ -10,6 +10,9 @@ import {
 } from "../conUtils";
 import {configFileHeader, exitWithError, generateQB} from "./generate";
 
+const rmdir =
+  Number(process.versions.node.split(".")[0]) >= 16 ? fs.rm : fs.rmdir;
+
 interface Options {
   showHelp?: boolean;
   target?: "ts" | "esm" | "cjs";
@@ -136,7 +139,7 @@ const run = async () => {
   }
 
   if (options.showHelp) {
-    console.log(`edgedb-generate
+    console.log(`edgeql-js
 
 Introspects the schema of an EdgeDB instance and generates a TypeScript/JavaScript query builder
 
@@ -202,7 +205,7 @@ OPTIONS:
     );
 
     const overrideTargetMessage = `   To override this, use the --target flag.
-   Run \`npx edgedb-generate --help\` for details.`;
+   Run \`npx edgeql-js --help\` for details.`;
 
     if (tsconfigExists) {
       options.target = "ts";
@@ -228,7 +231,7 @@ OPTIONS:
 
   const outputDir = options.outputDir
     ? path.resolve(projectRoot, options.outputDir || "")
-    : path.join(projectRoot, "dbschema", "edgeql");
+    : path.join(projectRoot, "dbschema", "edgeql-js");
 
   const relativeOutputDir = path.posix.relative(projectRoot, outputDir);
   const outputDirInProject =
@@ -249,7 +252,7 @@ OPTIONS:
 
   if (await exists(outputDir)) {
     if (await canOverwrite(outputDir, options)) {
-      await fs.rmdir(outputDir, {recursive: true});
+      await rmdir(outputDir, {recursive: true});
     }
   } else {
     // output dir doesn't exist, so assume first run
@@ -327,11 +330,9 @@ async function canOverwrite(outputDir: string, options: Options) {
 
   let config: any = null;
   try {
-    const [header, ..._config] = (
-      await readFileUtf8(path.join(outputDir, "config.json"))
-    ).split("\n");
-    if (header === configFileHeader) {
-      config = JSON.parse(_config.join("\n"));
+    const configFile = await readFileUtf8(path.join(outputDir, "config.json"));
+    if (configFile.startsWith(configFileHeader)) {
+      config = JSON.parse(configFile.slice(configFileHeader.length));
 
       if (config.target === options.target) {
         return true;

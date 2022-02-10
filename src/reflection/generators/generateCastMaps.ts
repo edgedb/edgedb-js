@@ -1,16 +1,23 @@
 import {CodeBuffer, dts, r, t, ts} from "../builders";
 import type {GeneratorParams} from "../generate";
-import {getRef, joinFrags, quote} from "../util/genutil";
+import {
+  getRef,
+  joinFrags,
+  literalToScalarMapping,
+  quote,
+  scalarToLiteralMapping,
+} from "../util/genutil";
 import {util} from "../util/util";
 import {getStringRepresentation} from "./generateObjectTypes";
 
 const getRuntimeRef = (name: string) => getRef(name, {prefix: ""});
 
 export const generateCastMaps = (params: GeneratorParams) => {
-  const {dir, types, casts} = params;
+  const {dir, types, casts, typesByName} = params;
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps");
+  f.addStarImport("edgedb", "edgedb");
   f.addImport({$: true}, "edgedb", false, ["ts", "dts"]);
 
   const reverseTopo = Array.from(types)
@@ -77,9 +84,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
     const outerCastableTo = casting(outer.id);
     staticMap.writeln([t`  A extends ${getRef(outer.name)} ?`]);
-    runtimeMap.writeln([
-      r`  if (a.__name__ === ${getRuntimeRef(outer.name)}.__name__) {`,
-    ]);
+    runtimeMap.writeln([r`  if (a.__name__ === ${quote(outer.name)}) {`]);
 
     for (const inner of materialScalars) {
       const innerCastableTo = casting(inner.id);
@@ -101,9 +106,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
       if (validCast) {
         staticMap.writeln([t`    B extends ${getRef(inner.name)} ?`]);
-        runtimeMap.writeln([
-          r`    if(b.__name__ === ${getRuntimeRef(inner.name)}.__name__) {`,
-        ]);
+        runtimeMap.writeln([r`    if(b.__name__ === ${quote(inner.name)}) {`]);
 
         if (sameType) {
           staticMap.writeln([t`    B`]);
@@ -169,6 +172,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
     )}`,
     r` {`,
   ]);
+  f.writeln([r`  a = (a`, t` as any`, r`).__casttype__ ?? a;`]);
+  f.writeln([r`  b = (b`, t` as any`, r`).__casttype__ ?? b;`]);
   f.addExport("getSharedParentScalar");
   f.writeBuf(runtimeMap);
 
@@ -251,7 +256,118 @@ export const generateCastMaps = (params: GeneratorParams) => {
   const _a = implicitCastMap.get(from),
         _b = _a != null ? _a.has(to) : null;
   return _b != null ? _b : false;
-};\n`,
+};\n\n`,
   ]);
   f.addExport("isImplicitlyCastableTo");
+
+  // scalar literals mapping //
+
+  f.writeln([
+    t`export `,
+    dts`declare `,
+    t`type scalarLiterals =\n  | ${Object.keys(literalToScalarMapping).join(
+      "\n  | "
+    )};\n\n`,
+  ]);
+
+  f.writeln([
+    dts`declare`,
+    t`type getTsType<T extends $.BaseType> = T extends $.ScalarType`,
+  ]);
+  f.writeln([
+    t`  ? T extends ${joinFrags(
+      [...types.values()]
+        .filter(type => {
+          return (
+            type.kind === "scalar" &&
+            !type.is_abstract &&
+            !type.enum_values &&
+            !type.material_id &&
+            !type.castOnlyType &&
+            (!scalarToLiteralMapping[type.name] ||
+              !scalarToLiteralMapping[type.name].literalKind)
+          );
+        })
+        .map(scalar => getRef(scalar.name)),
+      " | "
+    )}`,
+  ]);
+  f.writeln([t`    ? never`]);
+  f.writeln([t`    : T["__tstype__"]`]);
+  f.writeln([t`  : never;`]);
+  f.writeln([
+    t`export `,
+    dts`declare `,
+    t`type orScalarLiteral<T extends $.TypeSet> =`,
+  ]);
+  f.writeln([t`  | T`]);
+  f.writeln([
+    t`  | ($.BaseTypeSet extends T ? scalarLiterals : getTsType<T["__element__"]>);\n\n`,
+  ]);
+
+  f.writeln([
+    t`export `,
+    dts`declare `,
+    t`type scalarWithConstType<
+  T extends $.ScalarType,
+  TsConstType
+> = $.ScalarType<
+  T["__name__"],
+  T["__tstype__"],
+  T["__castable__"],
+  TsConstType
+>;`,
+  ]);
+
+  f.writeln([
+    t`export `,
+    dts`declare `,
+    t`type literalToScalarType<T extends any> =`,
+  ]);
+  for (const [literal, {type}] of Object.entries(literalToScalarMapping)) {
+    f.writeln([
+      t`  T extends ${literal} ? scalarWithConstType<${getRef(type)}, T> :`,
+    ]);
+  }
+  f.writeln([t`  $.BaseType;\n\n`]);
+
+  f.writeln([
+    dts`declare `,
+    t`type literalToTypeSet<T extends any> = T extends $.TypeSet`,
+  ]);
+  f.writeln([t`  ? T`]);
+  f.writeln([t`  : $.$expr_Literal<literalToScalarType<T>>;\n\n`]);
+
+  f.writeln([t`export `, dts`declare `, t`type mapLiteralToTypeSet<T> = {`]);
+  f.writeln([t`  [k in keyof T]: literalToTypeSet<T[k]>;`]);
+  f.writeln([t`};\n\n`]);
+
+  f.addImport({$getType: true}, "./syntax/literal");
+
+  f.writeln([
+    r`function literalToTypeSet(type`,
+    ts`: any`,
+    r`)`,
+    ts`: $.TypeSet`,
+    r` {`,
+  ]);
+  f.writeln([r`  if (type?.__element__) {`]);
+  f.writeln([r`    return type;`]);
+  f.writeln([r`  }`]);
+  for (const [literalType, {literalKind, type}] of Object.entries(
+    literalToScalarMapping
+  )) {
+    if (literalKind === "typeof") {
+      f.writeln([r`  if (typeof type === "${literalType}") {`]);
+    } else {
+      f.writeln([r`  if (type instanceof ${literalType}) {`]);
+    }
+    f.writeln([r`    return $getType("${typesByName[type].id}")(type);`]);
+    f.writeln([r`  }`]);
+  }
+  f.writeln([
+    r`  throw new Error(\`Cannot convert literal '\${type}' into scalar type\`);`,
+  ]);
+  f.writeln([r`}`]);
+  f.addExport("literalToTypeSet");
 };

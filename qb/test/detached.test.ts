@@ -1,5 +1,5 @@
 import * as edgedb from "edgedb";
-import e from "../dbschema/edgeql";
+import e from "../dbschema/edgeql-js";
 import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 
 let client: edgedb.Client;
@@ -22,7 +22,7 @@ test("detached", async () => {
       id: true,
       name: true,
       friends: e.select(e.detached(e.Hero)),
-      filter: e.eq(hero.name, e.str("Iron Man")),
+      filter: e.op(hero.name, "=", "Iron Man"),
     }))
     .run(client);
   type result = typeof result;

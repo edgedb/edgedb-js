@@ -12,14 +12,15 @@ import {
   $scopify,
   stripSet,
   TypeSet,
-  QueryableExpression,
+  ScalarType,
+  scalarTypeWithConstructor,
 } from "../reflection";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
-import {$queryify} from "./query";
+import {cast} from "./cast";
 import {$expr_PathNode} from "../reflection/path";
 
-type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
+export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
   T["cardinality"] extends
     | Cardinality.Many
     | Cardinality.Empty
@@ -34,7 +35,10 @@ export type InsertShape<Root extends ObjectTypeSet> = typeutil.stripNever<
     ? typeutil.addQuestionMarks<{
         [k in keyof Shape]:
           | pointerToAssignmentExpression<Shape[k]>
-          | (pointerIsOptional<Shape[k]> extends true ? undefined : never);
+          | (pointerIsOptional<Shape[k]> extends true
+              ? undefined | null
+              : never)
+          | (Shape[k]["hasDefault"] extends true ? undefined : never);
       }>
     : never
   : never;
@@ -55,7 +59,7 @@ export type $expr_Insert<
   Root extends $expr_PathNode = $expr_PathNode
   // Conflict = UnlessConflict | null
   // Shape extends InsertShape<Root> = any
-> = QueryableExpression<{
+> = Expression<{
   __kind__: ExpressionKind.Insert;
   __element__: Root["__element__"];
   __cardinality__: Cardinality.One;
@@ -89,7 +93,7 @@ export type $expr_Insert<
 export type $expr_InsertUnlessConflict<
   Root extends InsertBaseExpression = InsertBaseExpression,
   Conflict extends UnlessConflict = UnlessConflict
-> = QueryableExpression<{
+> = Expression<{
   __kind__: ExpressionKind.InsertUnlessConflict;
   __element__: Root["__element__"];
   __cardinality__: Cardinality.One;
@@ -111,11 +115,11 @@ function unlessConflict(
 
   if (!conflictGetter) {
     expr.__conflict__ = {on: null};
-    return $expressionify($queryify(expr));
+    return $expressionify(expr);
   } else {
     const scopedExpr = $getScopedExpr(this.__expr__);
     expr.__conflict__ = conflictGetter(scopedExpr);
-    return $expressionify($queryify(expr));
+    return $expressionify(expr);
   }
 }
 
@@ -123,7 +127,51 @@ export function $insertify(
   expr: Omit<$expr_Insert, "unlessConflict">
 ): $expr_Insert {
   (expr as any).unlessConflict = unlessConflict.bind(expr as any);
-  return $queryify(expr) as any;
+  return expr as any;
+}
+
+export function $normaliseInsertShape(
+  root: ObjectTypeSet,
+  shape: {[key: string]: any},
+  isUpdate: boolean = false
+): {[key: string]: TypeSet | {"+=": TypeSet} | {"-=": TypeSet}} {
+  const newShape: {
+    [key: string]: TypeSet | {"+=": TypeSet} | {"-=": TypeSet};
+  } = {};
+  for (const [key, _val] of Object.entries(shape)) {
+    let val = _val;
+    let setModify: string | null = null;
+    if (isUpdate && _val != null && typeof _val === "object") {
+      const valKeys = Object.keys(_val);
+      if (
+        valKeys.length === 1 &&
+        (valKeys[0] === "+=" || valKeys[0] === "-=")
+      ) {
+        val = _val[valKeys[0]];
+        setModify = valKeys[0];
+      }
+    }
+    if (val?.__kind__ || val === undefined) {
+      newShape[key] = _val;
+    } else {
+      const pointer = root.__element__.__pointers__[key];
+      if (!pointer || (pointer.__kind__ !== "property" && val !== null)) {
+        throw new Error(
+          `Could not find property pointer for ${
+            isUpdate ? "update" : "insert"
+          } shape key: '${key}'`
+        );
+      }
+      const wrappedVal =
+        val === null
+          ? cast(pointer.target, null)
+          : (pointer.target as scalarTypeWithConstructor<ScalarType>)(val);
+      newShape[key] = setModify
+        ? ({[setModify]: wrappedVal} as any)
+        : wrappedVal;
+    }
+  }
+  return newShape;
 }
 
 export function insert<Root extends $expr_PathNode>(
@@ -135,7 +183,7 @@ export function insert<Root extends $expr_PathNode>(
     __element__: root.__element__,
     __cardinality__: Cardinality.One,
     __expr__: root,
-    __shape__: shape,
+    __shape__: $normaliseInsertShape(root, shape),
   };
   (expr as any).unlessConflict = unlessConflict.bind(expr);
   return $expressionify($insertify(expr)) as any;

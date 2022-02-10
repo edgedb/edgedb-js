@@ -1,23 +1,25 @@
 import {$} from "edgedb";
-import e from "../dbschema/edgeql";
-import {$expr_PathNode} from "../dbschema/edgeql/syntax/syntax";
+import e from "../dbschema/edgeql-js/index";
+import {$PathNode} from "../dbschema/edgeql-js/syntax/syntax";
 import {tc} from "./setupTeardown";
 
 test("path structure", () => {
   const Hero = e.default.Hero;
   type Hero = typeof Hero;
-  const HeroSetSingleton = $.$toSet(e.default.$Hero, $.Cardinality.One);
-  const HeroSingleton = $expr_PathNode(HeroSetSingleton, null, false);
+  const $Hero = e.Hero.__element__;
+  const $Villain = e.Villain.__element__;
+  const HeroSetSingleton = $.$toSet($Hero, $.Cardinality.One);
+  const HeroSingleton = $PathNode(HeroSetSingleton, null, false);
   type HeroSingleton = typeof HeroSingleton;
-  const VillainRoot = $.$toSet(e.default.$Villain, $.Cardinality.One);
-  const Villain = $expr_PathNode(VillainRoot, null, false);
+  const VillainRoot = $.$toSet($Villain, $.Cardinality.One);
+  const Villain = $PathNode(VillainRoot, null, false);
 
   expect(Hero.name.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(Hero.name.__element__.__name__).toEqual("std::str");
   expect(Hero.name.__cardinality__).toEqual($.Cardinality.Many);
   expect(HeroSingleton.name.__cardinality__).toEqual($.Cardinality.One);
 
-  expect(Villain["<villains[IS default::Hero]"].__element__.__name__).toEqual(
+  expect(Villain["<villains[is Hero]"].__element__.__name__).toEqual(
     "default::Hero"
   );
 
@@ -42,11 +44,8 @@ test("path structure", () => {
 
   // AtMostOneHero.name
   // test cardinality merging
-  const HeroSetAtLeastOne = $.$toSet(
-    e.default.$Hero,
-    $.Cardinality.AtLeastOne
-  );
-  const AtLeastOneHero = $expr_PathNode(HeroSetAtLeastOne, null, false);
+  const HeroSetAtLeastOne = $.$toSet($Hero, $.Cardinality.AtLeastOne);
+  const AtLeastOneHero = $PathNode(HeroSetAtLeastOne, null, false);
   type AtLeastOneHero = typeof AtLeastOneHero;
   expect(AtLeastOneHero.id.__cardinality__).toEqual($.Cardinality.AtLeastOne);
   expect(AtLeastOneHero.number_of_movies.__cardinality__).toEqual(
@@ -82,18 +81,19 @@ test("path structure", () => {
 });
 
 test("type intersection on path node", () => {
+  const $Hero = e.Hero.__element__;
   const person = e.Person;
-  const hero = person.$is(e.Hero);
+  const hero = person.is(e.Hero);
   tc.assert<
     tc.IsExact<
       typeof hero["__element__"]["__pointers__"],
-      typeof e.$Hero["__pointers__"]
+      typeof $Hero["__pointers__"]
     >
   >(true);
   tc.assert<
     tc.IsExact<
       typeof hero["__element__"]["__name__"],
-      typeof e.$Hero["__name__"]
+      typeof $Hero["__name__"]
     >
   >(true);
   tc.assert<tc.IsExact<typeof hero["__element__"]["__shape__"], {id: true}>>(
@@ -114,7 +114,7 @@ test("type intersection on path node", () => {
 
 test("type intersection on select", () => {
   const q2 = e.select(e.Person, () => ({id: true, name: true, limit: 5}));
-  const hero = q2.$is(e.Hero);
+  const hero = q2.is(e.Hero);
   expect(hero.__element__.__name__).toEqual("default::Hero");
   expect(hero.__element__.__kind__).toEqual($.TypeKind.object);
   expect(hero.__kind__).toEqual($.ExpressionKind.TypeIntersection);
@@ -124,8 +124,8 @@ test("type intersection on select", () => {
   expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
 });
 
-test("assertSingle", () => {
-  const singleHero = e.Hero.$assertSingle();
+test("assert_single", () => {
+  const singleHero = e.Hero.assert_single();
   tc.assert<
     tc.IsExact<typeof singleHero["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);

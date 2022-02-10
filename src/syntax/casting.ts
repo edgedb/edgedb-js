@@ -10,8 +10,13 @@ import {
   ScalarType,
   TupleType,
   TypeSet,
+  typeutil,
 } from "../reflection";
-import {scalarCastableFrom, scalarAssignableBy} from "@generated/castMaps";
+import {
+  scalarCastableFrom,
+  scalarAssignableBy,
+  orScalarLiteral,
+} from "@generated/castMaps";
 
 export type anonymizeObject<T extends ObjectType> = ObjectType<
   string,
@@ -42,20 +47,22 @@ export type assignableBy<T extends BaseType> = T extends ScalarType
   : T extends TupleType
   ? TupleType<assignableTuple<T["__items__"]>>
   : T extends NamedTupleType
-  ? NamedTupleType<
-      {
-        [k in keyof T["__shape__"]]: assignableBy<T["__shape__"][k]>;
-      }
-    >
+  ? NamedTupleType<{
+      [k in keyof T["__shape__"]]: assignableBy<T["__shape__"][k]>;
+    }>
   : never;
 
 export type pointerToAssignmentExpression<
   Pointer extends PropertyDesc | LinkDesc
 > = [Pointer] extends [PropertyDesc]
-  ? {
-      __element__: assignableBy<Pointer["target"]>;
-      __cardinality__: cardinalityUtil.assignable<Pointer["cardinality"]>;
-    }
+  ? typeutil.flatten<
+      orScalarLiteral<
+        TypeSet<
+          assignableBy<Pointer["target"]>,
+          cardinalityUtil.assignable<Pointer["cardinality"]>
+        >
+      >
+    >
   : [Pointer] extends [LinkDesc]
   ? TypeSet<
       ObjectType<
@@ -90,11 +97,9 @@ export type castableFrom<T extends BaseType> = T extends ScalarType
   : T extends TupleType
   ? TupleType<castableTuple<T["__items__"]>>
   : T extends NamedTupleType
-  ? NamedTupleType<
-      {
-        [k in keyof T["__shape__"]]: castableFrom<T["__shape__"][k]>;
-      }
-    >
+  ? NamedTupleType<{
+      [k in keyof T["__shape__"]]: castableFrom<T["__shape__"][k]>;
+    }>
   : never;
 
 export type pointerToCastableExpression<

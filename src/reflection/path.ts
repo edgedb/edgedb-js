@@ -1,3 +1,4 @@
+import {typeutil} from ".";
 import {Cardinality, ExpressionKind} from "./enums";
 import type {
   BaseType,
@@ -37,38 +38,89 @@ export type $pathify<
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
     ? {} // Root is literally ObjectTypeSet
-    : ObjectTypePointers extends Root["__element__"]["__pointers__"]
-    ? {}
-    : {
-        // & string required to avod typeError on linkName
-        [k in keyof Root["__element__"]["__pointers__"] &
-          string]: Root["__element__"]["__pointers__"][k] extends PropertyDesc
-          ? $expr_PathLeaf<
+    : pathifyPointers<Root> &
+        pathifyShape<Root> &
+        (Parent extends PathParent
+          ? // tslint:disable-next-line
+            Parent["type"]["__element__"]["__pointers__"][Parent["linkName"]] extends LinkDesc
+            ? pathifyLinkProps<
+                // tslint:disable-next-line
+                Parent["type"]["__element__"]["__pointers__"][Parent["linkName"]]["properties"],
+                Root,
+                Parent
+              >
+            : {}
+          : {})
+  : unknown; // pathify does nothing on non-object types
+
+export type pathifyPointers<
+  Root extends ObjectTypeSet
+  // Parent extends PathParent | null = null
+> = ObjectTypePointers extends Root["__element__"]["__pointers__"]
+  ? unknown
+  : {
+      // & string required to avoid typeError on linkName
+      [k in keyof Root["__element__"]["__pointers__"] &
+        string]: Root["__element__"]["__pointers__"][k] extends PropertyDesc
+        ? $expr_PathLeaf<
+            getChildOfObjectTypeSet<Root, k>,
+            {type: anonymizeObjectTypeSet<Root>; linkName: k},
+            Root["__element__"]["__pointers__"][k]["exclusive"]
+          >
+        : Root["__element__"]["__pointers__"][k] extends LinkDesc
+        ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
+          ? $expr_PathNode<
               getChildOfObjectTypeSet<Root, k>,
-              {type: $expr_PathNode<Root, Parent>; linkName: k},
+              {type: anonymizeObjectTypeSet<Root>; linkName: k},
               Root["__element__"]["__pointers__"][k]["exclusive"]
             >
-          : Root["__element__"]["__pointers__"][k] extends LinkDesc
-          ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
-            ? $expr_PathNode<
-                getChildOfObjectTypeSet<Root, k>,
-                {type: $expr_PathNode<Root, Parent>; linkName: k},
-                Root["__element__"]["__pointers__"][k]["exclusive"]
+          : unknown
+        : unknown;
+    };
+
+type anonymizeObjectTypeSet<T extends ObjectTypeSet> = typeutil.flatten<{
+  __element__: ObjectType<
+    T["__element__"]["__name__"],
+    T["__element__"]["__pointers__"],
+    {id: true}
+  >;
+  __cardinality__: T["__cardinality__"];
+}>;
+
+export type pathifyShape<
+  Root extends ObjectTypeSet,
+  Shape extends {[k: string]: any} = Root["__element__"]["__shape__"]
+> = string extends keyof Shape
+  ? {}
+  : {
+      [k in keyof Shape & string]: Shape[k] extends ObjectTypeSet
+        ? $expr_PathNode<
+            TypeSet<
+              Shape[k]["__element__"],
+              cardinalityUtil.multiplyCardinalities<
+                Root["__cardinality__"],
+                Shape[k]["__cardinality__"]
               >
-            : never
-          : never;
-      } & (Parent extends PathParent
-        ? // tslint:disable-next-line
-          Parent["type"]["__element__"]["__pointers__"][Parent["linkName"]] extends LinkDesc
-          ? pathifyLinkProps<
-              // tslint:disable-next-line
-              Parent["type"]["__element__"]["__pointers__"][Parent["linkName"]]["properties"],
-              Root,
-              Parent
-            >
-          : {}
-        : {})
-  : unknown; // pathify does nothing on non-object types
+            >,
+            {type: Root; linkName: k},
+            false
+          >
+        : Shape[k] extends TypeSet
+        ? $expr_PathLeaf<
+            TypeSet<
+              Shape[k]["__element__"],
+              cardinalityUtil.multiplyCardinalities<
+                Root["__cardinality__"],
+                Shape[k]["__cardinality__"]
+              >
+            >,
+            {type: Root; linkName: k},
+            false
+          >
+        : // must be unknown (not never) to avoid overriding
+          // a pointer with the same key
+          unknown;
+    };
 
 type pathifyLinkProps<
   Props extends PropertyShape,
@@ -87,7 +139,7 @@ type pathifyLinkProps<
         {type: $expr_PathNode<Root, Parent>; linkName: k},
         Props[k]["exclusive"]
       >
-    : never;
+    : unknown;
 };
 
 export type $expr_PathNode<

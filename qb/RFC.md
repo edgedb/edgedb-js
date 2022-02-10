@@ -257,7 +257,7 @@ Movie.characters;
 
 ```ts
 // Movie.characters[IS Hero]
-Movie.characters.$is(e.Hero);
+Movie.characters.is(e.Hero);
 ```
 
 ### Backward links
@@ -265,13 +265,13 @@ Movie.characters.$is(e.Hero);
 Provide backlinks that behave just like forward links:
 
 ```ts
-Hero["<nemesis[IS default::Villain]"];
+Hero["<nemesis[is Villain]"];
 ```
 
-Also support "untyped" backlinks. By default, these return a set of `BaseObject` with cardinality `Many`. These can be refined with `$is` and `$assertSingle`.
+Also support "untyped" backlinks. By default, these return a set of `BaseObject` with cardinality `Many`. These can be refined with `is` and `assert_single`.
 
 ```ts
-e.Hero.['<nemesis'].$is(e.Villain);
+e.Hero.['<nemesis'].is(e.Villain);
 ```
 
 ## Casting
@@ -280,7 +280,7 @@ All types are available at the top-level. Returns `Expression<Set<CastedType>>`.
 
 ```ts
 e.cast(e.int16, e.int32(1255)); // <int16><int32>1255;
-e.cast(e.UUID, e.str("ab1bcd81...")); // <uuid>'ab1bcd81...';
+e.cast(e.uuid, e.str("ab1bcd81...")); // <uuid>'ab1bcd81...';
 ```
 
 ## Functions
@@ -435,7 +435,7 @@ Simple:
 
 ```ts
 e.select(e.Hero, hero => ({
-  order: hero.name,
+  order_by: hero.name,
 }));
 ```
 
@@ -443,7 +443,7 @@ Advanced:
 
 ```ts
 e.select(e.Hero, hero => ({
-  order: {
+  order_by: {
     expression: hero.name,
     direction: e.DESC,
     empty: e.EMPTY_FIRST,
@@ -456,7 +456,7 @@ Multiple ordering
 ```ts
 e.select(e.Hero, hero => ({
   name: true,
-  order: [
+  order_by: [
     {
       expression: hero.name,
       direction: e.DESC,
@@ -485,7 +485,7 @@ e.select(e.Hero, hero => ({
 ```ts
 // select Movie { characters[IS Hero]: { id }}
 e.select(e.Movie, movie => ({
-  characters: movie.characters.$is(e.Hero),
+  characters: movie.characters.is(e.Hero),
 }));
 ```
 
@@ -494,7 +494,7 @@ To specify shape, use subqueries:
 ```ts
 e.select(e.Movie, movie => ({
   id: true,
-  characters: e.select(movie.characters.$is(e.default.Hero), hero => ({
+  characters: e.select(movie.characters.is(e.default.Hero), hero => ({
     id: true,
     secret_identity: true,
   })),
@@ -551,7 +551,7 @@ e.insert(e.Movie, {
 // update method
 e.select(e.Movie, movie => ({
   filter: e.eq(movie.title, e.str("Avengers 4")),
-  // order: ...,
+  // order_by: ...,
   // offset: ...,
 })).update({
   // set
@@ -574,7 +574,7 @@ e.select(e.Movie, movie => ({
 ```ts
 e.select(e.Hero, hero => ({
   filter: e.eq(hero.name, "Captain America"),
-  order: ...,
+  order_by: ...,
   offset: ...,
   limit: ...
 }))

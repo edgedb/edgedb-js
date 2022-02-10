@@ -1,7 +1,9 @@
-import type {$expr_Function} from "../dbschema/edgeql/syntax/funcops";
 import superjson from "superjson";
 import {$} from "edgedb";
-import e from "../dbschema/edgeql";
+import e from "../dbschema/edgeql-js";
+import {$expr_Function} from "edgedb/dist/reflection";
+import {tc} from "./setupTeardown";
+import {number} from "../dbschema/edgeql-js/modules/std";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,
@@ -18,7 +20,7 @@ function checkFunctionExpr<T extends $expr_Function>(
   expect(superjson.stringify(expr.__namedargs__)).toEqual(
     superjson.stringify(namedargs)
   );
-  expect(expr.__element__).toEqual(returnType);
+  expect(expr.__element__.__name__).toEqual(returnType.__name__);
   expect(expr.__cardinality__).toEqual(cardinality);
 }
 
@@ -37,7 +39,7 @@ test("no args", () => {
     "sys::get_version",
     [],
     {},
-    e.namedTuple({
+    e.tuple({
       major: e.int64,
       minor: e.int64,
       stage: e.sys.VersionStage,
@@ -59,7 +61,7 @@ test("positional args", () => {
     "std::len",
     [e.str("test")],
     {},
-    e.int64,
+    number,
     $.Cardinality.One
   );
 
@@ -68,7 +70,7 @@ test("positional args", () => {
     "std::len",
     [e.bytes(Buffer.from(""))],
     {},
-    e.int64,
+    number,
     $.Cardinality.One
   );
 
@@ -77,7 +79,7 @@ test("positional args", () => {
     "std::len",
     [e.literal(e.array(e.int32), [1, 2, 3])],
     {},
-    e.int64,
+    number,
     $.Cardinality.One
   );
 
@@ -87,7 +89,7 @@ test("positional args", () => {
     "std::len",
     [setOfStr],
     {},
-    e.int64,
+    number,
     $.Cardinality.AtLeastOne
   );
 
@@ -97,7 +99,7 @@ test("positional args", () => {
     "std::datetime_get",
     datetime_getArgs as $.typeutil.writeable<typeof datetime_getArgs>,
     {},
-    e.float64,
+    number,
     $.Cardinality.One
   );
 
@@ -110,7 +112,7 @@ test("positional args", () => {
     "std::datetime_get",
     datetime_getArgs2 as $.typeutil.writeable<typeof datetime_getArgs2>,
     {},
-    e.float64,
+    number,
     $.Cardinality.AtLeastOne
   );
 
@@ -155,14 +157,14 @@ test("named args", () => {
   );
   checkFunctionExpr(
     e.std.re_replace(
-      {flags: e.set(e.str)},
+      {flags: e.cast(e.str, e.set())},
       e.str("pattern"),
       e.str("sub"),
       e.str("str")
     ),
     "std::re_replace",
     [e.str("pattern"), e.str("sub"), e.str("str")],
-    {flags: e.set(e.str)},
+    {flags: e.cast(e.str, e.set())},
     e.str,
     $.Cardinality.One
   );
@@ -184,26 +186,26 @@ test("named args", () => {
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.to_duration({hours: e.int64(5), seconds: e.float64(30)}),
+    e.to_duration({hours: e.int64(5), seconds: e.int64(30)}),
     "std::to_duration",
     [],
-    {hours: e.int64(5), seconds: e.float64(30)},
+    {hours: e.int64(5), seconds: e.int64(30)},
     e.duration,
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.to_duration({hours: e.set(e.int64(5), e.int16(6))}),
+    e.to_duration({hours: e.set(e.int64(5), e.int64(6))}),
     "std::to_duration",
     [],
-    {hours: e.set(e.int64(5), e.int16(6))},
+    {hours: e.set(e.int64(5), e.int64(6))},
     e.duration,
     $.Cardinality.AtLeastOne
   );
   checkFunctionExpr(
-    e.to_duration({hours: e.int16(5)}),
+    e.to_duration({hours: e.int64(5)}),
     "std::to_duration",
     [],
-    {hours: e.int16(5)},
+    {hours: e.int64(5)},
     e.duration,
     $.Cardinality.One
   );
@@ -213,7 +215,7 @@ test("named args", () => {
     "default::💯",
     [],
     {"🙀": e.int64(1)},
-    e.int64,
+    number,
     $.Cardinality.One
   );
 
@@ -312,7 +314,7 @@ test("anytype", () => {
     "std::min",
     [e.set(e.int64(1), e.int64(2))],
     {},
-    e.int64,
+    number,
     $.Cardinality.One
   );
 
@@ -350,9 +352,15 @@ test("anytype", () => {
   );
 
   checkFunctionExpr(
-    e.contains(e.literal(e.array(e.int16), [1, 2, 3]), e.bigint(BigInt(2))),
+    e.contains(
+      e.literal(e.array(e.int16), [1, 2, 3]),
+      e.cast(e.int64, e.bigint(BigInt(2)))
+    ),
     "std::contains",
-    [e.literal(e.array(e.int16), [1, 2, 3]), e.bigint(BigInt(2))],
+    [
+      e.literal(e.array(e.int16), [1, 2, 3]),
+      e.cast(e.int64, e.bigint(BigInt(2))),
+    ],
     {},
     e.bool,
     $.Cardinality.One
@@ -413,9 +421,9 @@ test("cardinality inference", () => {
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.to_str(e.int64(123), e.set(e.str)),
+    e.to_str(e.int64(123), e.cast(e.str, e.set())),
     "std::to_str",
-    [e.int64(123), e.set(e.str)],
+    [e.int64(123), e.cast(e.str, e.set())],
     {},
     e.str,
     $.Cardinality.One
@@ -423,7 +431,7 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.to_str(e.int64(123), undefined),
     "std::to_str",
-    [e.int64(123), e.set(e.str) as any as undefined],
+    [e.int64(123), e.cast(e.str, e.set()) as any],
     {},
     e.str,
     $.Cardinality.One
@@ -431,7 +439,7 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.to_str(e.set(e.int64(123), e.int64(456)), undefined),
     "std::to_str",
-    [e.set(e.int64(123), e.int64(456)), e.set(e.str) as any as undefined],
+    [e.set(e.int64(123), e.int64(456)), e.cast(e.str, e.set()) as any],
     {},
     e.str,
     $.Cardinality.AtLeastOne
@@ -439,7 +447,7 @@ test("cardinality inference", () => {
   checkFunctionExpr(
     e.to_str(e.int64(123)),
     "std::to_str",
-    [e.int64(123), undefined],
+    [e.int64(123), undefined as any],
     {},
     e.str,
     $.Cardinality.One
@@ -451,7 +459,7 @@ test("cardinality inference", () => {
     "std::sum",
     [e.int64(1)],
     {},
-    e.int64,
+    number,
     $.Cardinality.One
   );
   checkFunctionExpr(
@@ -459,15 +467,15 @@ test("cardinality inference", () => {
     "std::sum",
     [e.set(e.int64(1), e.int64(2))],
     {},
-    e.int64,
+    number,
     $.Cardinality.One
   );
   checkFunctionExpr(
-    e.sum(e.set(e.int64)),
+    e.sum(e.cast(e.int64, e.set())),
     "std::sum",
-    [e.set(e.int64)],
+    [e.cast(e.int64, e.set())],
     {},
-    e.int64,
+    number,
     $.Cardinality.One
   );
 
@@ -487,9 +495,9 @@ test("cardinality inference", () => {
     $.Cardinality.AtMostOne
   );
   checkFunctionExpr(
-    e.array_get(e.set(e.array(e.bigint)), e.int64(1)),
+    e.array_get(e.cast(e.array(e.bigint), e.set()), e.int64(1)),
     "std::array_get",
-    [e.set(e.array(e.bigint)), e.int64(1)],
+    [e.cast(e.array(e.bigint), e.set()), e.int64(1)],
     {},
     e.bigint,
     $.Cardinality.Empty
@@ -526,9 +534,9 @@ test("cardinality inference", () => {
     $.Cardinality.Many
   );
   checkFunctionExpr(
-    e.array_unpack(e.set(e.array(e.str))),
+    e.array_unpack(e.cast(e.array(e.str), e.set())),
     "std::array_unpack",
-    [e.set(e.array(e.str))],
+    [e.cast(e.array(e.str), e.set())],
     {},
     e.str,
     $.Cardinality.Many
@@ -541,4 +549,102 @@ test("cardinality inference", () => {
     e.str,
     $.Cardinality.Many
   );
+});
+
+test("assert_*", () => {
+  const emptySet = e.cast(e.str, e.set());
+  const oneSet = e.set("str");
+  const atLeastOneSet = e.set("str", "str2");
+  const atMostOneSet = {
+    ...oneSet,
+    __cardinality__: $.Cardinality.AtMostOne,
+  } as unknown as $.TypeSet<typeof e.str, $.Cardinality.AtMostOne>;
+  const manySet = {
+    ...atLeastOneSet,
+    __cardinality__: $.Cardinality.Many,
+  } as unknown as $.TypeSet<typeof e.str, $.Cardinality.Many>;
+
+  expect(emptySet.__cardinality__).toEqual($.Cardinality.Empty);
+  expect(oneSet.__cardinality__).toEqual($.Cardinality.One);
+  expect(atLeastOneSet.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  expect(atMostOneSet.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  expect(manySet.__cardinality__).toEqual($.Cardinality.Many);
+  tc.assert<
+    tc.IsExact<typeof emptySet["__cardinality__"], $.Cardinality.Empty>
+  >(true);
+  tc.assert<tc.IsExact<typeof oneSet["__cardinality__"], $.Cardinality.One>>(
+    true
+  );
+  tc.assert<
+    tc.IsExact<
+      typeof atLeastOneSet["__cardinality__"],
+      $.Cardinality.AtLeastOne
+    >
+  >(true);
+  tc.assert<
+    tc.IsExact<typeof atMostOneSet["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
+  tc.assert<tc.IsExact<typeof manySet["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
+
+  // assert_single
+  const emptySingle = e.assert_single(emptySet);
+  expect(emptySingle.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  tc.assert<
+    tc.IsExact<typeof emptySingle["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
+  const oneSingle = e.assert_single(oneSet);
+  expect(oneSingle.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<
+    tc.IsExact<typeof oneSingle["__cardinality__"], $.Cardinality.One>
+  >(true);
+  const atLeastOneSingle = e.assert_single(atLeastOneSet);
+  expect(atLeastOneSingle.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<
+    tc.IsExact<typeof atLeastOneSingle["__cardinality__"], $.Cardinality.One>
+  >(true);
+  const atMostOneSingle = e.assert_single(atMostOneSet);
+  expect(atMostOneSingle.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  tc.assert<
+    tc.IsExact<
+      typeof atMostOneSingle["__cardinality__"],
+      $.Cardinality.AtMostOne
+    >
+  >(true);
+  const manySingle = e.assert_single(manySet);
+  expect(manySingle.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  tc.assert<
+    tc.IsExact<typeof manySingle["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
+
+  // assert_exists
+  const emptyExists = e.assert_exists(emptySet);
+  expect(emptyExists.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<
+    tc.IsExact<typeof emptyExists["__cardinality__"], $.Cardinality.One>
+  >(true);
+  const oneExists = e.assert_exists(oneSet);
+  expect(oneExists.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<
+    tc.IsExact<typeof oneExists["__cardinality__"], $.Cardinality.One>
+  >(true);
+  const atLeastOneExists = e.assert_exists(atLeastOneSet);
+  expect(atLeastOneExists.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  tc.assert<
+    tc.IsExact<
+      typeof atLeastOneExists["__cardinality__"],
+      $.Cardinality.AtLeastOne
+    >
+  >(true);
+  const atMostOneExists = e.assert_exists(atMostOneSet);
+  expect(atMostOneExists.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<
+    tc.IsExact<typeof atMostOneExists["__cardinality__"], $.Cardinality.One>
+  >(true);
+  const manyExists = e.assert_exists(manySet);
+  expect(manyExists.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  tc.assert<
+    tc.IsExact<typeof manyExists["__cardinality__"], $.Cardinality.AtLeastOne>
+  >(true);
 });

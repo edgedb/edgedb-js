@@ -21,6 +21,10 @@ const prettier = require("prettier");
 
   await fs.writeFile(
     path.join(__dirname, "../src/reflection/reservedKeywords.ts"),
-    `export default ${JSON.stringify(reservedKeywords, null, 2)}\n`
+    `export const reservedKeywords = ${JSON.stringify(
+      reservedKeywords,
+      null,
+      2
+    )}\n`
   );
 })();

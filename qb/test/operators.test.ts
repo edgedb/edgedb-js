@@ -1,12 +1,12 @@
-import {$expr_Operator} from "../dbschema/edgeql/syntax/funcops";
 import superjson from "superjson";
 import {$} from "edgedb";
-import e from "../dbschema/edgeql";
+import e from "../dbschema/edgeql-js";
+import {$expr_Operator} from "edgedb/dist/reflection";
 
 function checkOperatorExpr<T extends $expr_Operator>(
   expr: T,
   name: T["__name__"],
-  args: T["__args__"],
+  args: any[],
   returnType: T["__element__"],
   cardinality: T["__cardinality__"],
   edgeql?: string
@@ -25,83 +25,106 @@ function checkOperatorExpr<T extends $expr_Operator>(
 
 test("slice and index ops", () => {
   checkOperatorExpr(
-    e.slice(
-      e.str("test string"),
-      e.literal(e.tuple([e.int64, e.int32]), [2, 5])
-    ),
-    "std::[]",
-    [e.str("test string"), e.literal(e.tuple([e.int64, e.int32]), [2, 5])],
+    e.str("test string")["2:5"],
+    "[]",
+    [e.str("test string"), [e.int64(2), e.int64(5)]],
     e.str,
     $.Cardinality.One,
-    `("test string"[2:5])`
+    `("test string")[2:5]`
   );
 
   checkOperatorExpr(
-    e.slice(
-      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.literal(e.tuple([e.int64, e.int32]), [1, 2])
-    ),
-    "std::[]",
-    [
-      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.literal(e.tuple([e.int64, e.int32]), [1, 2]),
-    ],
+    e.str("test string").slice(e.int64(2), e.int64(5)),
+    "[]",
+    [e.str("test string"), [e.int64(2), e.int64(5)]],
+    e.str,
+    $.Cardinality.One,
+    `("test string")[2:5]`
+  );
+
+  checkOperatorExpr(
+    e.array([BigInt(1), BigInt(2), BigInt(3)])["1:2"],
+    "[]",
+    [e.array([BigInt(1), BigInt(2), BigInt(3)]), [e.int64(1), e.int64(2)]],
     e.array(e.bigint),
     $.Cardinality.One,
-    `(<array<std::bigint>>[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][1:2])`
+    `([<std::bigint>1n, <std::bigint>2n, <std::bigint>3n])[1:2]`
   );
 
   checkOperatorExpr(
-    e.index(e.str("test string"), e.int32(3)),
-    "std::[]",
-    [e.str("test string"), e.int32(3)],
+    e.str("test string")[3],
+    "[]",
+    [e.str("test string"), e.int64(3)],
     e.str,
     $.Cardinality.One,
-    `("test string"[3])`
+    `("test string")[3]`
   );
 
   checkOperatorExpr(
-    e.index(
-      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.int32(2)
-    ),
-    "std::[]",
-    [
-      e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.int32(2),
-    ],
+    e.str("test string").index(e.int64(3)),
+    "[]",
+    [e.str("test string"), e.int64(3)],
+    e.str,
+    $.Cardinality.One,
+    `("test string")[3]`
+  );
+
+  checkOperatorExpr(
+    e.array([BigInt(1), BigInt(2), BigInt(3)])[2],
+    "[]",
+    [e.array([BigInt(1), BigInt(2), BigInt(3)]), e.int64(2)],
     e.bigint,
     $.Cardinality.One,
-    `(<array<std::bigint>>[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][2])`
+    `([<std::bigint>1n, <std::bigint>2n, <std::bigint>3n])[2]`
+  );
+
+  checkOperatorExpr(
+    e.to_json(e.str(`{"name":"Bob"}`)).name,
+    "[]",
+    [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
+    e.json,
+    $.Cardinality.One,
+    `(std::to_json(("{\\\"name\\\":\\\"Bob\\\"}")))["name"]`
+  );
+
+  checkOperatorExpr(
+    e.to_json(e.str(`{"name":"Bob"}`)).destructure(e.str("name")),
+    "[]",
+    [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
+    e.json,
+    $.Cardinality.One,
+    `(std::to_json(("{\\\"name\\\":\\\"Bob\\\"}")))["name"]`
   );
 });
 
 test("if else op", () => {
   checkOperatorExpr(
-    e.if_else(e.str("this"), e.eq(e.int64(42), e.float32(42)), e.str("that")),
-    "std::IF",
-    [e.str("this"), e.eq(e.int64(42), e.float32(42)), e.str("that")],
+    e.op(
+      "this",
+      "if",
+      e.op(42, "=", e.literal(e.float32, 42)),
+      "else",
+      e.str("that")
+    ),
+    "if_else",
+    [e.str("this"), e.op(42, "=", e.literal(e.float32, 42)), e.str("that")],
     e.str,
     $.Cardinality.One,
-    `("this" IF (42 = <std::float32>42) ELSE "that")`
+    `("this" IF (42 = 42) ELSE "that")`
   );
 
   checkOperatorExpr(
-    e.if_else(e.str("this"), e.set(e.bool), e.str("that")),
-    "std::IF",
-    [e.str("this"), e.set(e.bool), e.str("that")],
+    e.op("this", "if", e.cast(e.bool, e.set()), "else", "that"),
+    "if_else",
+    [e.str("this"), e.cast(e.bool, e.set()), e.str("that")],
     e.str,
     $.Cardinality.Empty,
     `("this" IF <std::bool>{} ELSE "that")`
   );
 
   checkOperatorExpr(
-    e.if_else(
-      e.str("this"),
-      e.set(e.bool(true), e.bool(false)),
-      e.str("that")
-    ),
-    "std::IF",
+    e.op("this", "if", e.set(e.bool(true), e.bool(false)), "else", "that"),
+    "if_else",
     [e.str("this"), e.set(e.bool(true), e.bool(false)), e.str("that")],
     e.str,
     $.Cardinality.AtLeastOne,
@@ -109,45 +132,59 @@ test("if else op", () => {
   );
 
   checkOperatorExpr(
-    e.if_else(
+    e.op(
       e.str("this"),
-      e.eq(e.int64(42), e.float32(42)),
+      "if",
+      e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
+      "else",
       e.set(e.str("that"), e.str("other"))
     ),
-    "std::IF",
+    "if_else",
     [
       e.str("this"),
-      e.eq(e.int64(42), e.float32(42)),
+      e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
       e.set(e.str("that"), e.str("other")),
     ],
     e.str,
     $.Cardinality.AtLeastOne,
-    `("this" IF (42 = <std::float32>42) ELSE { "that", "other" })`
+    `("this" IF (42 = 42) ELSE { "that", "other" })`
   );
 
   checkOperatorExpr(
-    e.if_else(
-      e.set(e.str),
-      e.eq(e.int64(42), e.float32(42)),
+    e.op(
+      e.cast(e.str, e.set()),
+      "if",
+      e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
+      "else",
       e.set(e.str("that"), e.str("other"))
     ),
-    "std::IF",
+    "if_else",
     [
-      e.set(e.str),
-      e.eq(e.int64(42), e.float32(42)),
+      e.cast(e.str, e.set()),
+      e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
       e.set(e.str("that"), e.str("other")),
     ],
     e.str,
     $.Cardinality.Many,
-    `(<std::str>{} IF (42 = <std::float32>42) ELSE { "that", "other" })`
+    `(<std::str>{} IF (42 = 42) ELSE { "that", "other" })`
   );
 
   checkOperatorExpr(
-    e.if_else(e.str("this"), e.eq(e.int64(42), e.float32(42)), e.set(e.str)),
-    "std::IF",
-    [e.str("this"), e.eq(e.int64(42), e.float32(42)), e.set(e.str)],
+    e.op(
+      "this",
+      "if",
+      e.op(42, "=", e.literal(e.float32, 42)),
+      "else",
+      e.cast(e.str, e.set())
+    ),
+    "if_else",
+    [
+      e.str("this"),
+      e.op(42, "=", e.literal(e.float32, 42)),
+      e.cast(e.str, e.set()),
+    ],
     e.str,
     $.Cardinality.AtMostOne,
-    `("this" IF (42 = <std::float32>42) ELSE <std::str>{})`
+    `("this" IF (42 = 42) ELSE <std::str>{})`
   );
 });

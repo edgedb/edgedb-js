@@ -8,6 +8,7 @@ export enum Cardinality {
 
 export enum TypeKind {
   scalar = "scalar",
+  // castonlyscalar = "castonlyscalar",
   enum = "enum",
   object = "object",
   namedtuple = "namedtuple",
@@ -20,6 +21,7 @@ export enum ExpressionKind {
   Array = "Array",
   Tuple = "Tuple",
   NamedTuple = "NamedTuple",
+  TuplePath = "TuplePath",
   PathNode = "PathNode",
   PathLeaf = "PathLeaf",
   Literal = "Literal",

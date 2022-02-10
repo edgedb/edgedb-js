@@ -1,5 +1,5 @@
 import * as edgedb from "edgedb";
-import e from "../dbschema/edgeql";
+import e from "../dbschema/edgeql-js";
 
 test("literals", () => {
   const duration = new edgedb.Duration(0, 0, 0, 0, 5, 6, 7, 8, 9, 10);
@@ -29,14 +29,21 @@ test("literals", () => {
   expect(e.std.duration(duration).toEdgeQL()).toEqual(
     `<std::duration>'PT5H6M7.00800901S'`
   );
-  expect(e.std.float32(144.1235).toEdgeQL()).toEqual(`<std::float32>144.1235`);
-  expect(e.std.float64(1234.15).toEdgeQL()).toEqual(`1234.15`);
-  expect(e.std.int16(1234.1234).toEdgeQL()).toEqual(`<std::int16>1234.1234`);
-  expect(e.std.int32(124).toEdgeQL()).toEqual(`<std::int32>124`);
+  expect(e.std.int16(144.1235).toEdgeQL()).toEqual(`144.1235`);
+  expect(e.std.int64(1234.15).toEdgeQL()).toEqual(`1234.15`);
+  expect(e.std.float64(1234.1234).toEdgeQL()).toEqual(`1234.1234`);
+  expect(e.std.float64(124).toEdgeQL()).toEqual(`124`);
+  expect(e.std.int16("9223372036854775807").toEdgeQL()).toEqual(
+    `9223372036854775807`
+  );
 
-  expect(e.std.int64(1234).toEdgeQL()).toEqual(`1234`);
-  expect(e.std.int32(1234).toEdgeQL()).toEqual(`<std::int32>1234`);
-  expect(e.std.json('"asdf"').toEdgeQL()).toEqual(`<std::json>"\\"asdf\\""`);
+  expect(e.std.json("asdf").toEdgeQL()).toEqual(`to_json("\\"asdf\\"")`);
+  expect(
+    e.std.json({a: 123, b: "some string", c: [true, false]}).toEdgeQL()
+  ).toEqual(
+    `to_json("{\\"a\\":123,\\"b\\":\\"some string\\",\\"c\\":[true,false]}")`
+  );
+
   expect(e.std.str(`asdfaf`).toEdgeQL()).toEqual(`"asdfaf"`);
   expect(e.std.str(`string " with ' all \` quotes`).toEdgeQL()).toEqual(
     `"string \\" with ' all \` quotes"`
@@ -60,15 +67,11 @@ test("literals", () => {
 
 test("collection type literals", () => {
   const literalArray = e.literal(e.array(e.str), ["adsf"]);
-  expect(literalArray.toEdgeQL()).toEqual(`<array<std::str>>["adsf"]`);
-  const literalNamedTuple = e.literal(e.namedTuple({str: e.str}), {
+  expect(literalArray.toEdgeQL()).toEqual(`["adsf"]`);
+  const literalNamedTuple = e.literal(e.tuple({str: e.str}), {
     str: "asdf",
   });
-  expect(literalNamedTuple.toEdgeQL()).toEqual(
-    `<tuple<str: std::str>>( str := "asdf" )`
-  );
+  expect(literalNamedTuple.toEdgeQL()).toEqual(`( str := "asdf" )`);
   const literalTuple = e.literal(e.tuple([e.str, e.int64]), ["asdf", 1234]);
-  expect(literalTuple.toEdgeQL()).toEqual(
-    `<tuple<std::str, std::int64>>( "asdf", 1234 )`
-  );
+  expect(literalTuple.toEdgeQL()).toEqual(`( "asdf", 1234 )`);
 });

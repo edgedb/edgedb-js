@@ -1,8 +1,9 @@
 import type {Executor} from "../ifaces";
 import type {$expr_TypeIntersection, $pathify, $expr_PathNode} from "./path";
 import type {$expr_Literal} from "./literal";
+import type {$expr_Operator} from "./funcops";
 import type {typeutil} from "./util/typeutil";
-import {Cardinality, ExpressionKind, TypeKind} from "./enums";
+import {Cardinality, ExpressionKind, OperatorKind, TypeKind} from "./enums";
 import {cardinalityUtil} from "./util/cardinalityUtil";
 
 //////////////////
@@ -26,16 +27,85 @@ export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
 export interface ScalarType<
   Name extends string = string,
   TsType extends any = any,
+  Castable extends boolean = boolean,
   TsConstType extends TsType = TsType
 > extends BaseType {
   __kind__: TypeKind.scalar;
   __tstype__: TsType;
   __tsconsttype__: TsConstType;
+  __castable__: Castable;
   __name__: Name;
-  <T extends TsType = TsType>(val: T): $expr_Literal<
-    ScalarType<Name, TsType, T>
-  >;
 }
+
+export type scalarTypeWithConstructor<
+  S extends ScalarType,
+  ExtraTsTypes extends any = never
+> = S & {
+  // tslint:disable-next-line
+  <T extends S["__tstype__"] | ExtraTsTypes>(val: T): $expr_Literal<
+    ScalarType<
+      S["__name__"],
+      S["__tstype__"],
+      S["__castable__"],
+      T extends S["__tstype__"] ? T : S["__tstype__"]
+    >
+  >;
+};
+// export type scalarTypeWithConstructor<
+//   Root extends ScalarType,
+//   ExtraTsTypes extends any = never,
+//   ConstructorType extends ScalarType = Root
+// > = Root & {
+//   // tslint:disable-next-line
+//   <T extends ConstructorType["__tstype__"] | ExtraTsTypes>(
+//     val: T
+//   ): $expr_Literal<
+//     ScalarType<
+//       ConstructorType["__name__"],
+//       ConstructorType["__tstype__"],
+//       ConstructorType["__castable__"],
+//       T extends ConstructorType["__tstype__"]
+//         ? T
+//         : ConstructorType["__tstype__"]
+//     >
+//   >;
+// };
+
+// export interface CastOnlyScalarType<
+//   Name extends string = string,
+//   CastType extends ScalarType = ScalarType
+// > extends BaseType {
+//   __kind__: TypeKind.castonlyscalar;
+//   __name__: Name;
+//   __casttype__: CastType;
+// }
+
+type $jsonDestructure<Set extends TypeSet> =
+  Set["__element__"] extends ScalarType<"std::json">
+    ? {
+        [path: string]: $expr_Operator<
+          "[]",
+          OperatorKind.Infix,
+          [Set, TypeSet],
+          TypeSet<Set["__element__"], Set["__cardinality__"]>
+        >;
+      } & {
+        destructure<T extends TypeSet<ScalarType<"std::str">> | string>(
+          path: T
+        ): $expr_Operator<
+          "[]",
+          OperatorKind.Infix,
+          [Set, TypeSet],
+          TypeSet<
+            Set["__element__"],
+            cardinalityUtil.multiplyCardinalities<
+              Set["__cardinality__"],
+              T extends TypeSet ? T["__cardinality__"] : Cardinality.One
+            >
+          >
+        >;
+      }
+    : unknown;
 
 ////////////////////
 // SETS AND EXPRESSIONS
@@ -60,20 +130,26 @@ export function $toSet<Root extends BaseType, Card extends Cardinality>(
   };
 }
 
-export type Expression<Set extends TypeSet = TypeSet> =
-  BaseType extends Set["__element__"]
-    ? Set & {toEdgeQL(): string; $is: any; $assertSingle: any}
-    : Set &
+export type Expression<
+  Set extends TypeSet = TypeSet,
+  Runnable extends boolean = true
+> = Set &
+  (BaseType extends Set["__element__"] // short-circuit non-specific types
+    ? {
+        run(cxn: Executor): any;
+        toEdgeQL(): string;
+        is: any;
+        assert_single: any;
+        // warning: any;
+      }
+    : $pathify<Set> &
         ExpressionMethods<stripSet<Set>> &
-        $pathify<
-          Set,
-          Set extends {__parent__: any} ? Set["__parent__"] : null
-        >;
-
-export type QueryableExpression<Set extends TypeSet = TypeSet> =
-  Expression<Set> & {
-    run(cxn: Executor): Promise<setToTsType<Set>>;
-  };
+        (Runnable extends true
+          ? {run(cxn: Executor): Promise<setToTsType<Set>>}
+          : {}) &
+        $tuplePathify<Set> &
+        $arrayLikeIndexify<Set> &
+        $jsonDestructure<Set>);
 
 export type stripSet<T> = "__element__" extends keyof T
   ? "__cardinality__" extends keyof T
@@ -84,6 +160,13 @@ export type stripSet<T> = "__element__" extends keyof T
     : T
   : T;
 
+// export type stripSet<T> = T extends {__element__: any; __cardinality__: any}
+//   ? {
+//       __element__: T["__element__"];
+//       __cardinality__: T["__cardinality__"];
+//     }
+//   : any;
+
 export type stripSetShape<T> = {
   [k in keyof T]: stripSet<T[k]>;
 };
@@ -91,7 +174,7 @@ export type stripSetShape<T> = {
 // importing the actual alias from
 // generated/modules/std didn't work.
 // returned 'any' every time
-export type $assertSingle<Expr extends TypeSet> = Expression<{
+export type assert_single<Expr extends TypeSet> = Expression<{
   __element__: Expr["__element__"];
   __cardinality__: cardinalityUtil.overrideUpperBound<
     Expr["__cardinality__"],
@@ -103,12 +186,10 @@ export type $assertSingle<Expr extends TypeSet> = Expression<{
   __namedargs__: {};
 }>;
 
-export interface ExpressionMethods<Set extends TypeSet> {
-  __element__: Set["__element__"];
-  __cardinality__: Set["__cardinality__"];
-
+export type ExpressionMethods<Set extends TypeSet> = {
   toEdgeQL(): string;
-  $is<T extends ObjectTypeSet>(
+
+  is<T extends ObjectTypeSet>(
     ixn: T
   ): $expr_TypeIntersection<
     {__cardinality__: Set["__cardinality__"]; __element__: Set["__element__"]},
@@ -119,8 +200,8 @@ export interface ExpressionMethods<Set extends TypeSet> {
       {id: true}
     >
   >;
-  $assertSingle(): $assertSingle<Set>;
-}
+  assert_single(): assert_single<stripSet<Set>>;
+};
 
 //////////////////
 // ENUMTYPE
@@ -167,13 +248,15 @@ export interface PropertyDesc<
   Type extends BaseType = BaseType,
   Card extends Cardinality = Cardinality,
   Exclusive extends boolean = boolean,
-  Writable extends boolean = boolean
+  Writable extends boolean = boolean,
+  HasDefault extends boolean = boolean
 > {
   __kind__: "property";
   target: Type;
   cardinality: Card;
   exclusive: Exclusive;
   writable: Writable;
+  hasDefault: HasDefault;
 }
 
 export type $scopify<Type extends ObjectType> = $expr_PathNode<
@@ -191,7 +274,8 @@ export interface LinkDesc<
   Card extends Cardinality = Cardinality,
   LinkProps extends PropertyShape = any,
   Exclusive extends boolean = boolean,
-  Writable extends boolean = boolean
+  Writable extends boolean = boolean,
+  HasDefault extends boolean = boolean
 > {
   __kind__: "link";
   target: Type;
@@ -199,6 +283,7 @@ export interface LinkDesc<
   properties: LinkProps;
   exclusive: Exclusive;
   writable: Writable;
+  hasDefault: HasDefault;
 }
 
 export type ObjectTypePointers = {
@@ -304,13 +389,108 @@ export type PrimitiveTypeSet = TypeSet<PrimitiveType, Cardinality>;
 /////////////////////////
 /// ARRAYTYPE
 /////////////////////////
+
+type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
+  | ArrayType
+  | ScalarType<"std::str">
+  | ScalarType<"std::bytes">
+  ? {
+      [index: number]: $expr_Operator<
+        "[]",
+        OperatorKind.Infix,
+        [Set, TypeSet],
+        TypeSet<
+          getPrimitiveBaseType<
+            Set["__element__"] extends ArrayType
+              ? Set["__element__"]["__element__"]
+              : Set["__element__"]
+          >,
+          Set["__cardinality__"]
+        >
+      >;
+      [slice: `${number}:${number | ""}` | `:${number}`]: $expr_Operator<
+        "[]",
+        OperatorKind.Infix,
+        [Set, TypeSet],
+        TypeSet<
+          getPrimitiveBaseType<Set["__element__"]>,
+          Set["__cardinality__"]
+        >
+      >;
+      index<T extends TypeSet<ScalarType<"std::number">> | number>(
+        index: T
+      ): $expr_Operator<
+        "[]",
+        OperatorKind.Infix,
+        [Set, TypeSet],
+        TypeSet<
+          getPrimitiveBaseType<
+            Set["__element__"] extends ArrayType
+              ? Set["__element__"]["__element__"]
+              : Set["__element__"]
+          >,
+          cardinalityUtil.multiplyCardinalities<
+            Set["__cardinality__"],
+            T extends TypeSet ? T["__cardinality__"] : Cardinality.One
+          >
+        >
+      >;
+      slice<
+        S extends TypeSet<ScalarType<"std::number">> | number,
+        E extends
+          | TypeSet<ScalarType<"std::number">>
+          | number
+          | undefined
+          | null
+      >(
+        start: S,
+        end: E
+      ): $expr_Operator<
+        "[]",
+        OperatorKind.Infix,
+        [Set, TypeSet],
+        TypeSet<
+          getPrimitiveBaseType<Set["__element__"]>,
+          cardinalityUtil.multiplyCardinalities<
+            cardinalityUtil.multiplyCardinalities<
+              Set["__cardinality__"],
+              S extends TypeSet ? S["__cardinality__"] : Cardinality.One
+            >,
+            E extends TypeSet ? E["__cardinality__"] : Cardinality.One
+          >
+        >
+      >;
+      slice<
+        E extends
+          | TypeSet<ScalarType<"std::number">>
+          | number
+          | undefined
+          | null
+      >(
+        start: undefined | null,
+        end: E
+      ): $expr_Operator<
+        "[]",
+        OperatorKind.Infix,
+        [Set, TypeSet],
+        TypeSet<
+          getPrimitiveBaseType<Set["__element__"]>,
+          cardinalityUtil.multiplyCardinalities<
+            Set["__cardinality__"],
+            E extends TypeSet ? E["__cardinality__"] : Cardinality.One
+          >
+        >
+      >;
+    }
+  : unknown;
+
 export type $expr_Array<
-  Type extends BaseType = BaseType,
+  Type extends ArrayType = ArrayType,
   Card extends Cardinality = Cardinality
   // Items extends typeutil.tupleOf<TypeSet<Type>>
 > = Expression<{
   __kind__: ExpressionKind.Array;
-  __items__: typeutil.tupleOf<TypeSet<Type>>;
+  __items__: typeutil.tupleOf<TypeSet<Type["__element__"]>>;
   __element__: Type;
   __cardinality__: Card;
 }>;
@@ -331,6 +511,24 @@ type ArrayTypeToTsType<Type extends ArrayType> = BaseTypeToTsType<
 /////////////////////////
 /// TUPLE TYPE
 /////////////////////////
+
+type $tuplePathify<Set extends TypeSet> = Set["__element__"] extends TupleType
+  ? addTuplePaths<Set["__element__"]["__items__"], Set["__cardinality__"]>
+  : Set["__element__"] extends NamedTupleType
+  ? addNamedTuplePaths<Set["__element__"]["__shape__"], Set["__cardinality__"]>
+  : unknown;
+
+export type $expr_TuplePath<
+  ItemType extends BaseType = BaseType,
+  ParentCard extends Cardinality = Cardinality
+> = Expression<{
+  __kind__: ExpressionKind.TuplePath;
+  __element__: ItemType;
+  __cardinality__: ParentCard;
+  __parent__: $expr_Tuple | $expr_NamedTuple | $expr_TuplePath;
+  __index__: string | number;
+}>;
+
 export type baseTupleElementsToTupleType<T extends typeutil.tupleOf<TypeSet>> =
   {
     [k in keyof T]: T[k] extends TypeSet
@@ -361,6 +559,17 @@ export type $expr_Tuple<
     tupleElementsToCardTuple<Items>
   >;
 }>;
+
+export type indexKeys<T> = T extends `${number}` ? T : never;
+
+type addTuplePaths<
+  Items extends BaseType[],
+  ParentCard extends Cardinality
+> = {
+  [k in indexKeys<keyof Items>]: Items[k] extends BaseType
+    ? $expr_TuplePath<Items[k], ParentCard>
+    : never;
+};
 
 export interface TupleType<Items extends BaseTypeTuple = BaseTypeTuple>
   extends BaseType {
@@ -396,6 +605,7 @@ type inferNamedTupleCardinality<Shape extends NamedTupleLiteralShape> = [
     ]
   ? Cardinality.One
   : Cardinality.Many;
+
 export type $expr_NamedTuple<
   Shape extends NamedTupleLiteralShape = NamedTupleLiteralShape
 > = Expression<{
@@ -404,6 +614,15 @@ export type $expr_NamedTuple<
   __cardinality__: inferNamedTupleCardinality<Shape>;
   __shape__: Shape;
 }>;
+
+type addNamedTuplePaths<
+  Shape extends NamedTupleShape,
+  ParentCard extends Cardinality
+> = {
+  [k in keyof Shape]: Shape[k] extends BaseType
+    ? $expr_TuplePath<Shape[k], ParentCard>
+    : never;
+};
 
 export type NamedTupleLiteralShape = {[k: string]: TypeSet};
 export type NamedTupleShape = {[k: string]: BaseType};
@@ -426,9 +645,12 @@ type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
 export type BaseTypeToTsType<Type extends BaseType> = typeutil.flatten<
   Type extends ScalarType
     ? Type["__tsconsttype__"]
-    : Type extends EnumType
+    : // Type extends CastOnlyScalarType
+    // ? Type["__casttype__"]["__tsconsttype__"]
+    // :
+    Type extends EnumType
     ? Type["__tstype__"]
-    : Type extends ArrayType
+    : Type extends ArrayType<any>
     ? ArrayTypeToTsType<Type>
     : Type extends TupleType
     ? TupleItemsToTsType<Type["__items__"]>
@@ -444,7 +666,7 @@ export type setToTsType<Set extends TypeSet> = computeTsType<
   Set["__cardinality__"]
 >;
 
-type computeTsTypeCard<
+export type computeTsTypeCard<
   T extends any,
   C extends Cardinality
 > = Cardinality extends C
@@ -490,8 +712,11 @@ export type pointerToTsType<El extends PropertyDesc | LinkDesc> =
 ///////////////////
 
 export type getPrimitiveBaseType<T extends BaseType> = T extends ScalarType
-  ? ScalarType<T["__name__"], T["__tstype__"]>
+  ? ScalarType<T["__name__"], T["__tstype__"], T["__castable__"]>
   : T;
+
+export type getPrimitiveNonArrayBaseType<T extends BaseType> =
+  T extends NonArrayType ? getPrimitiveBaseType<T> : never;
 
 export function isScalarType(type: BaseType): type is ScalarType {
   return type.__kind__ === TypeKind.scalar;
@@ -512,6 +737,9 @@ export function isArrayType(type: BaseType): type is ArrayType {
   return type.__kind__ === TypeKind.array;
 }
 
+export type CastableScalarType = ScalarType<string, any, true>;
+// | CastOnlyScalarType;
+
 export type NonArrayType =
   | ScalarType
   | EnumType
@@ -519,6 +747,31 @@ export type NonArrayType =
   | TupleType
   | NamedTupleType;
 
+export type CastableNonArrayType =
+  | CastableScalarType
+  | EnumType
+  | ObjectType
+  | TupleType
+  | NamedTupleType;
+
 export type AnyTupleType = TupleType | NamedTupleType;
 
-export type ParamType = ScalarType | ArrayType<ScalarType>;
+export type CastableArrayType = ArrayType<CastableNonArrayType>;
+
+export type unwrapCastableType<T> =
+  // T extends CastOnlyScalarType
+  //   ? T["__casttype__"]
+  //   :
+  T extends CastableArrayType
+    ? ArrayType<unwrapCastableType<T["__element__"]>>
+    : T;
+
+export type ParamType =
+  | CastableScalarType
+  | ArrayType<
+      | CastableScalarType
+      | TupleType<typeutil.tupleOf<ParamType>>
+      | NamedTupleType<{[k: string]: ParamType}>
+    >
+  | TupleType<typeutil.tupleOf<ParamType>>
+  | NamedTupleType<{[k: string]: ParamType}>;

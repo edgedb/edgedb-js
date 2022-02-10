@@ -114,9 +114,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
 export class LocalDateCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof LocalDate)) {
-      throw new Error(
-        `a LocalDateTime instance was expected, got "${object}"`
-      );
+      throw new Error(`a LocalDate instance was expected, got "${object}"`);
     }
     buf.writeInt32(4);
     buf.writeInt32(LocalDateToOrdinal(object) - DATESHIFT_ORD);

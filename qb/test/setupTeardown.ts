@@ -72,7 +72,7 @@ SELECT (INSERT Movie {
   title := "The Avengers",
   rating := 10,
   genre := Genre.Action,
-  characters := (SELECT Hero FILTER .id IN char_ids)
+  characters := (SELECT Person FILTER .id IN char_ids)
 }) {id, title, rating, genre, characters: {id}};`,
     {character_ids: [iron_man.id, cap.id]}
   );

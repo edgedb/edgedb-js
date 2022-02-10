@@ -6,9 +6,11 @@ import {
   toIdent,
   quote,
   toTSScalarType,
+  scalarToLiteralMapping,
 } from "../util/genutil";
 import {dts, js, r, t, ts} from "../builders";
 import type {GeneratorParams} from "../generate";
+import {nonCastableTypes, typeMapping} from "../queries/getTypes";
 
 export const generateScalars = (params: GeneratorParams) => {
   const {dir, types, casts, scalars} = params;
@@ -46,8 +48,14 @@ export const generateScalars = (params: GeneratorParams) => {
 
       if (scalarType.children.length) {
         // is abstract
-        const children = scalarType.children.map(desc =>
-          desc.name === "std::anyenum" ? "$.EnumType" : getRef(desc.name)
+        const children = [
+          ...new Set(
+            scalarType.children.map(
+              desc => (typeMapping.get(desc.id) ?? desc).name
+            )
+          ),
+        ].map(descName =>
+          descName === "std::anyenum" ? "$.EnumType" : getRef(descName)
         );
         sc.writeln([
           dts`declare `,
@@ -64,7 +72,7 @@ export const generateScalars = (params: GeneratorParams) => {
         sc.nl();
 
         sc.addExport(ref);
-        sc.addRefsDefaultExport(ref, `$${_name}`);
+        // sc.addExport(ref, `$${_name}`); // dollar
       } else if (scalarType.bases.length) {
         // for std::sequence
         const bases = scalarType.bases.map(base => getRef(base.name));
@@ -80,7 +88,7 @@ export const generateScalars = (params: GeneratorParams) => {
         sc.nl();
 
         sc.addExport(ref);
-        sc.addRefsDefaultExport(ref, `$${_name}`);
+        // sc.addExport(ref, `$${_name}`); // dollar
       }
 
       continue;
@@ -97,7 +105,7 @@ export const generateScalars = (params: GeneratorParams) => {
         `{`,
       ]);
       sc.indented(() => {
-        for (const val of type.enum_values) {
+        for (const val of type.enum_values!) {
           sc.writeln([toIdent(val), t` = `, js`: `, quote(val), `,`]);
         }
       });
@@ -127,21 +135,73 @@ export const generateScalars = (params: GeneratorParams) => {
     }
 
     // generate non-enum non-abstract scalar
+    const tsType = toTSScalarType(type, types);
+    // const tsType = toTSScalarType(type, types);
+    // const extraTypes = scalarToLiteralMapping[type.name]?.extraTypes;
+    // const extraTypesUnion = extraTypes ? `, ${extraTypes.join(" | ")}` : "";
 
-    const tsType = toTSScalarType(type, types, mod, sc);
-    sc.writeln([
-      t`export `,
-      dts`declare `,
-      t`type ${ref} = $.ScalarType<"${type.name}", ${tsType}>;`,
-    ]);
-    sc.writeln([
-      dts`declare `,
-      ...frag`const ${literal}`,
-      t`: ${ref}`,
-      r` = $.makeType`,
-      ts`<${ref}>`,
-      r`(_.spec, "${type.id}", _.syntax.literal);`,
-    ]);
+    if (type.castOnlyType) {
+      const mapped = types.get(type.castOnlyType);
+      const mappedRef = getRef(mapped.name);
+
+      const extraTypes = (
+        scalarToLiteralMapping[mapped.name]?.extraTypes || ["never"]
+      ).join(" | ");
+      // const extraTypesUnion = extraTypes ?
+      //   `, ${extraTypes.join(" | ")}` : "";
+      // sc.writeln([
+      //   t`export `,
+      //   dts`declare `,
+      //   t`type ${ref} = $.CastOnlyScalarType<"${
+      //     mapped.name}", ${mappedRef}>;`,
+      // ]);
+      sc.writeln([
+        t`export `,
+        dts`declare `,
+        t`type ${ref} = $.ScalarType<"${mapped.name}", ${tsType}, ${
+          nonCastableTypes.has(type.id) ? "false" : "true"
+        }>;`,
+      ]);
+
+      // sc.writeln([
+      //   dts`declare `,
+      //   ...frag`const ${literal}`,
+      //   t`: ${mappedRef}`,
+      //   r` = $.makeType`,
+      //   ts`<${mappedRef}>`,
+      //   r`(_.spec, "${mapped.id}", _.syntax.literal);`,
+      // ]);
+      sc.writeln([
+        dts`declare `,
+        ...frag`const ${literal}`,
+        t`: $.scalarTypeWithConstructor<${mappedRef}, ${extraTypes}>`,
+        r` = $.makeType`,
+        ts`<$.scalarTypeWithConstructor<${mappedRef}, ${extraTypes}>>`,
+        r`(_.spec, "${type.id}", _.syntax.literal);`,
+      ]);
+    } else {
+      const extraTypes = (
+        scalarToLiteralMapping[type.name]?.extraTypes || ["never"]
+      ).join(" | ");
+      // const extraTypesUnion = extraTypes ?
+      //   `, ${extraTypes.join(" | ")}` : "";
+      sc.writeln([
+        t`export `,
+        dts`declare `,
+        t`type ${ref} = $.ScalarType<"${type.name}", ${tsType}, ${
+          nonCastableTypes.has(type.id) ? "false" : "true"
+        }>;`,
+      ]);
+
+      sc.writeln([
+        dts`declare `,
+        ...frag`const ${literal}`,
+        t`: $.scalarTypeWithConstructor<${ref}, ${extraTypes}>`,
+        r` = $.makeType`,
+        ts`<$.scalarTypeWithConstructor<${ref}, ${extraTypes}>>`,
+        r`(_.spec, "${type.id}", _.syntax.literal);`,
+      ]);
+    }
 
     if (casts.implicitCastFromMap[type.id]?.length) {
       sc.writeln([
@@ -166,7 +226,10 @@ export const generateScalars = (params: GeneratorParams) => {
         dts`declare `,
         t`type ${ref}λIAssignableBy = ${joinFrags(
           assignableMap.length
-            ? assignableMap.map(typeId => getRef(types.get(typeId).name))
+            ? [
+                ref,
+                ...assignableMap.map(typeId => getRef(types.get(typeId).name)),
+              ]
             : [ref],
           " | "
         )};`,
@@ -174,7 +237,7 @@ export const generateScalars = (params: GeneratorParams) => {
     }
 
     sc.addExport(literal);
-    sc.addRefsDefaultExport(literal, _name);
+    if (_name !== "number") sc.addRefsDefaultExport(literal, _name);
 
     sc.nl();
   }

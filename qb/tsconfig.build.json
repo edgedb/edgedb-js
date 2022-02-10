@@ -4,6 +4,7 @@
     "outDir": "dist",
   },
   "include": [
-    "dbschema/edgeql",
+    "dbschema/edgeql-js",
+    "test"
   ],
 }

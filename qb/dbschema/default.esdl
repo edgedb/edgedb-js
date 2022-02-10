@@ -25,6 +25,9 @@ module default {
     property genre -> Genre;
     property rating -> float64;
     required property title -> str;
+    required property release_year -> int16 {
+      default := <int16>datetime_get(datetime_current(), 'year');
+    }
     multi link characters extending movie_character -> Person;
     link profile -> Profile {
       constraint exclusive;

@@ -25,7 +25,7 @@ The files inside `qb` import from the _built_ files in `edgedb-js/src`. So run `
 $ yarn build
 ```
 
-The run `yarn generate` anywhere inside `edgedb-js` or `edgedb-js/qb`. Files are generated into `qb/dbschema/edgeql`.
+The run `yarn generate` anywhere inside `edgedb-js` or `edgedb-js/qb`. Files are generated into `qb/dbschema/edgeql-js`.
 
 ```
 yarn generate
@@ -58,12 +58,12 @@ yarn test
 - `src/syntax`: All top-level syntactic structures are declared in this directory: literals, `set`, `cast`, `select`, etc. The contents of this directory are copied into the generated query builder. For all code inside `src/syntax`:
   - To import something from `src/reflection`, use the `"reflection"` path alias.
   - To import something from the generated code, use the `"@reflection/*"` alias.
-  - This is important, becauase these imports are rewritten with a simple find/replace when the `syntax` files are copied over into `qb/dbschema/edgeql`. See `generate.ts` for details.
+  - This is important, becauase these imports are rewritten with a simple find/replace when the `syntax` files are copied over into `qb/dbschema/edgeql-js`. See `generate.ts` for details.
 - `qb`: A directory added to make query builder development easier. It is an EdgeDB project containing a sample schema.
   - `qb/run.ts`: The script that generates the query builder. Delegates to generate.ts.
   - `qb/generate.ts`: The script that generates the query builder.
   - `qb/tests`: Directory containing QB tests.
-  - `qb/dbschema/edgeql`: The query builder is generated into this directory. This path is hard-coded in `run.ts`.
-  - `qb/dbschema/edgeql/modules/{MODULE_NAME}`: The contents of each module is generated into an appropriately named file.
-  - `qb/dbschema/edgeql/syntax`: Modified versions of the files in `src/syntax/*` are generated into this File
-  - `qb/dbschema/edgeql/__spec__.ts`: A "dehydrated" representation of all types in the database, including all metadata and inheritance info. These types are "hydrated" by the `makeType` function in `src/reflection/hydrate.ts`, which produces a statically typed
+  - `qb/dbschema/edgeql-js`: The query builder is generated into this directory. This path is hard-coded in `run.ts`.
+  - `qb/dbschema/edgeql-js/modules/{MODULE_NAME}`: The contents of each module is generated into an appropriately named file.
+  - `qb/dbschema/edgeql-js/syntax`: Modified versions of the files in `src/syntax/*` are generated into this File
+  - `qb/dbschema/edgeql-js/__spec__.ts`: A "dehydrated" representation of all types in the database, including all metadata and inheritance info. These types are "hydrated" by the `makeType` function in `src/reflection/hydrate.ts`, which produces a statically typed

@@ -1,6 +1,7 @@
 import {Executor} from "../../ifaces";
 import {StrictMap} from "../strictMap";
 import {typeutil} from "../../reflection";
+import {typeMapping} from "./getTypes";
 
 export type Typemod = "SetOfType" | "OptionalType" | "SingletonType";
 
@@ -53,17 +54,70 @@ export const getFunctions = async (cxn: Executor) => {
 
   const functions = new StrictMap<string, FunctionDef[]>();
 
+  const seenFuncDefHashes = new Set<string>();
+
   for (const func of JSON.parse(functionsJson)) {
     const {name} = func;
     if (!functions.has(name)) {
       functions.set(name, []);
     }
 
-    functions.get(name).push({
+    const funcDef: FunctionDef = {
       ...func,
       description: func.annotations[0]?.["@value"],
-    });
+    };
+
+    replaceNumberTypes(funcDef);
+
+    const hash = hashFuncDef(funcDef);
+
+    if (!seenFuncDefHashes.has(hash)) {
+      functions.get(name).push(funcDef);
+      seenFuncDefHashes.add(hash);
+    }
   }
 
   return functions;
 };
+
+export function replaceNumberTypes(def: {
+  return_type: FunctionDef["return_type"];
+  params: Param[];
+}): void {
+  if (typeMapping.has(def.return_type.id)) {
+    const type = typeMapping.get(def.return_type.id)!;
+    def.return_type = {
+      id: type.id,
+      name: type.name,
+    };
+  }
+
+  for (const param of def.params) {
+    if (typeMapping.has(param.type.id)) {
+      const type = typeMapping.get(param.type.id)!;
+      param.type = {
+        id: type.id,
+        name: type.name,
+      };
+    }
+  }
+}
+
+function hashFuncDef(def: FunctionDef): string {
+  return JSON.stringify({
+    name: def.name,
+    return_type: def.return_type.id,
+    return_typemod: def.return_typemod,
+    params: def.params
+      .map(param =>
+        JSON.stringify({
+          kind: param.kind,
+          type: param.type.id,
+          typemod: param.typemod,
+          hasDefault: !!param.hasDefault,
+        })
+      )
+      .sort(),
+    preserves_optionality: def.preserves_optionality,
+  });
+}
