@@ -39,7 +39,7 @@ To get started, install the ``edgedb`` module from NPM.
     # using npm
     $ npm install edgedb
     # using Yarn
-    $ npm install edgedb
+    $ yarn add edgedb
 
 There are two components of this library: the *driver* and the *query builder*.
 
