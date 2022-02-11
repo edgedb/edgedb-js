@@ -114,7 +114,7 @@ export async function generateQB(params: {
     index.addExportStarFrom(null, "./castMaps", true);
     index.addExportStarFrom(null, "./syntax/syntax", true);
     index.addImport({$: true}, "edgedb");
-    index.addExportFrom({createClient: true}, "edgedb", true);
+    index.addExportFrom({createClient: true}, "edgedb");
     index.addStarImport("$syntax", "./syntax/syntax", true);
     index.addStarImport("$op", "./operators", true);
 
