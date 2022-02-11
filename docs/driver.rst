@@ -35,7 +35,7 @@ If you're using TypeScript or have ES modules enabled, you can use
 
 .. code-block:: js
 
-    impoart * as edgedb from "edgedb";
+    import * as edgedb from "edgedb";
 
     const client = edgedb.createClient();
 
