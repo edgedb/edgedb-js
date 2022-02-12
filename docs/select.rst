@@ -11,7 +11,7 @@ Selecting scalars
 ^^^^^^^^^^^^^^^^^
 
 Any scalar expression be passed into ``e.select``, though it's often
-unnecessary, since expressions are ``run``able without being wrapped by
+unnecessary, since expressions are ``run``\ able without being wrapped by
 ``e.select``.
 
 .. code-block:: typescript
