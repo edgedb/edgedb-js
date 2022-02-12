@@ -42,8 +42,8 @@ slicing, as in EdgeQL.
 
   myString[5];         //  "hello world"[5]
   myString['2:5'];     //  "hello world"[0:5]
-  myString[':5'];     //  "hello world"[:5]
-  myString['2:'];     //  "hello world"[:5]
+  myString[':5'];      //  "hello world"[:5]
+  myString['2:'];      //  "hello world"[:5]
 
 There are also equivalent ``.index`` and ``.slice`` methods that can accept
 integer expressions as arguments.
@@ -152,8 +152,9 @@ data structure of EdgeDB-encodable data.
 
   What does "EdgeDB-encodable" mean? It means any JavaScript data structure
   with an equivalent in EdgeDB: strings, number, booleans, arrays, objects,
-  ``bigint``s, ``Buffer``s, ``Date``s, and instances of EdgeDB's built-in
-  classes: ``Duration``, ``LocalDate`` ``LocalTime``, and ``LocalDateTime``.
+  ``bigint``\ s, ``Buffer``\ s, ``Date``\ s, and instances of EdgeDB's
+  built-in classes: ``Duration``, ``LocalDate`` ``LocalTime``, and
+  ``LocalDateTime``.
 
 .. code-block:: typescript
 

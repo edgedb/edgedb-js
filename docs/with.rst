@@ -43,7 +43,7 @@ This hold for expressions of arbitrary complexity.
 
 To embed ``WITH`` statements inside queries, you can short-circuit this logic
 with a "dependency list". It's an error to pass an expr to multiple
-``e.with``s, and an error to use an expr passed to ``e.with`` outside of that
+``e.with``\ s, and an error to use an expr passed to ``e.with`` outside of that
 WITH block in the query.
 
 
