@@ -436,7 +436,7 @@ function renderEdgeQL(
 
   function renderWithBlockExpr(
     varExpr: SomeExpression,
-    noImplicitDetached?: boolean
+    _noImplicitDetached?: boolean
   ) {
     const withBlockElement = ctx.withVars.get(varExpr)!;
     let renderedExpr = renderEdgeQL(
@@ -446,7 +446,7 @@ function renderEdgeQL(
         renderWithVar: varExpr,
       },
       !withBlockElement.scopedExpr,
-      noImplicitDetached
+      _noImplicitDetached
     );
     if (ctx.linkProps.has(expr)) {
       renderedExpr = `SELECT ${renderedExpr} {\n${ctx.linkProps
