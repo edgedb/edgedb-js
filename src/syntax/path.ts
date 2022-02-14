@@ -231,6 +231,7 @@ export function $getScopedExpr<T extends ExpressionRoot>(
     scopedExpr = $expressionify({
       ...expr,
       __cardinality__: Cardinality.One,
+      __scopedFrom__: expr,
     });
     scopeRoots.add(scopedExpr);
     if (uncached) {
