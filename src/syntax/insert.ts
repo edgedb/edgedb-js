@@ -18,7 +18,9 @@ import {
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
 import {cast} from "./cast";
+import {$getTypeByName} from "./literal";
 import {$expr_PathNode} from "../reflection/path";
+import type {$Object} from "@generated/modules/std";
 
 export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
   T["cardinality"] extends
@@ -95,8 +97,14 @@ export type $expr_InsertUnlessConflict<
   Conflict extends UnlessConflict = UnlessConflict
 > = Expression<{
   __kind__: ExpressionKind.InsertUnlessConflict;
-  __element__: Root["__element__"];
-  __cardinality__: Cardinality.One;
+  __element__: Conflict["else"] extends TypeSet
+    ? Conflict["else"]["__element__"]["__name__"] extends Root["__element__"]["__name__"]
+      ? Root["__element__"]
+      : $Object
+    : Root["__element__"];
+  __cardinality__: Conflict["else"] extends TypeSet
+    ? Conflict["else"]["__cardinality__"]
+    : Cardinality.AtMostOne;
   __expr__: Root;
   __conflict__: Conflict;
 }>;
@@ -108,7 +116,7 @@ function unlessConflict(
   const expr: any = {
     __kind__: ExpressionKind.InsertUnlessConflict,
     __element__: this.__element__,
-    __cardinality__: Cardinality.One,
+    __cardinality__: Cardinality.AtMostOne,
     __expr__: this,
     // __conflict__: Conflict;
   };
@@ -118,7 +126,14 @@ function unlessConflict(
     return $expressionify(expr);
   } else {
     const scopedExpr = $getScopedExpr(this.__expr__);
-    expr.__conflict__ = conflictGetter(scopedExpr);
+    const conflict = conflictGetter(scopedExpr);
+    expr.__conflict__ = conflict;
+    if (conflict.else) {
+      expr.__cardinality__ = conflict.else.__cardinality__;
+      if (this.__element__.__name__ !== conflict.else.__element__.__name__) {
+        expr.__element__ = $getTypeByName("std::Object");
+      }
+    }
     return $expressionify(expr);
   }
 }

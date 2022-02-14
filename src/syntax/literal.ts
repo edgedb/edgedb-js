@@ -23,7 +23,8 @@ export function literal<T extends BaseType>(
   }) as any;
 }
 
-const nameMapping = new Map([
+const nameMapping = new Map<string, string>([
+  ...([...spec.values()].map(type => [type.name, type.id]) as any),
   ["std::number", "00000000-0000-0000-0000-0000000001ff"],
 ]);
 

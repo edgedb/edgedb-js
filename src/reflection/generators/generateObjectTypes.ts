@@ -265,6 +265,10 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       t`type ${ref} = $.ObjectType<${quote(type.name)}, ${ref}λShape, null>;`,
     ]);
 
+    if (type.name === "std::Object") {
+      body.writeln([t`export `, dts`declare `, t`type $Object = ${ref}`]);
+    }
+
     /////////
     // generate runtime type
     /////////

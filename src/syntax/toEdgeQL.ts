@@ -434,7 +434,10 @@ function renderEdgeQL(
     );
   }
 
-  function renderWithBlockExpr(varExpr: SomeExpression) {
+  function renderWithBlockExpr(
+    varExpr: SomeExpression,
+    noImplicitDetached?: boolean
+  ) {
     const withBlockElement = ctx.withVars.get(varExpr)!;
     let renderedExpr = renderEdgeQL(
       withBlockElement.scopedExpr ?? varExpr,
@@ -442,7 +445,8 @@ function renderEdgeQL(
         ...ctx,
         renderWithVar: varExpr,
       },
-      !withBlockElement.scopedExpr
+      !withBlockElement.scopedExpr,
+      noImplicitDetached
     );
     if (ctx.linkProps.has(expr)) {
       renderedExpr = `SELECT ${renderedExpr} {\n${ctx.linkProps
@@ -487,7 +491,9 @@ function renderEdgeQL(
       if (scopedBlockVars.length) {
         const scopeName = scopeVar.name;
         scopeVar.name = scopeName + "_expr";
-        scopedWithBlock.push(renderWithBlockExpr(scopeExpr));
+        scopedWithBlock.push(
+          renderWithBlockExpr(scopeExpr, noImplicitDetached)
+        );
 
         scopeVar.name = scopeName + "_inner";
         scopedWithBlock.push(
@@ -512,7 +518,9 @@ function renderEdgeQL(
           blockVar.name = `${scopeName}.${blockVar.name}`;
         }
       } else {
-        scopedWithBlock.push(renderWithBlockExpr(scopeExpr!));
+        scopedWithBlock.push(
+          renderWithBlockExpr(scopeExpr!, noImplicitDetached)
+        );
       }
     }
     withBlock = `WITH\n${[
@@ -615,7 +623,10 @@ function renderEdgeQL(
     if (expr.__expr__ === null) {
       return `<${expr.__element__.__name__}>{}`;
     }
-    return `<${expr.__element__.__name__}>(${renderEdgeQL(expr.__expr__, ctx)})`;
+    return `<${expr.__element__.__name__}>(${renderEdgeQL(
+      expr.__expr__,
+      ctx
+    )})`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
     const lines = [];
     if (isObjectType(expr.__element__)) {
@@ -709,7 +720,12 @@ function renderEdgeQL(
       }SET ${shapeToEdgeQL(expr.__shape__, ctx)}`
     );
   } else if (expr.__kind__ === ExpressionKind.Delete) {
-    return `DELETE (${renderEdgeQL(expr.__expr__, ctx)})`;
+    return `DELETE (${renderEdgeQL(
+      expr.__expr__,
+      ctx,
+      undefined,
+      noImplicitDetached
+    )})`;
   } else if (expr.__kind__ === ExpressionKind.Insert) {
     return `INSERT ${renderEdgeQL(
       expr.__expr__,
