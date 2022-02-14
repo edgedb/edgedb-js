@@ -285,11 +285,13 @@ class BuilderImportsExports {
     moduleKind,
     refs,
     helpers,
+    forceDefaultExport = false,
   }: {
     mode: Mode;
     moduleKind: ModuleKind;
     refs: Map<string, {internalName: string; dir: string}>;
     helpers: Set<keyof typeof importExportHelpers>;
+    forceDefaultExport?: boolean;
   }) {
     const exports: string[] = [];
     const exportsFrom: string[] = [];
@@ -430,7 +432,7 @@ class BuilderImportsExports {
         );
       }
     }
-    if (refsDefault.length) {
+    if (refsDefault.length || forceDefaultExport) {
       if (mode === "ts" || mode === "dts") {
         exports.push(
           `${
@@ -560,7 +562,15 @@ export class CodeBuilder {
     );
   }
 
-  render({mode, moduleKind}: {mode: Mode; moduleKind?: ModuleKind}): string {
+  render({
+    mode,
+    moduleKind,
+    forceDefaultExport,
+  }: {
+    mode: Mode;
+    moduleKind?: ModuleKind;
+    forceDefaultExport?: boolean;
+  }): string {
     moduleKind ??= mode === "js" ? "cjs" : "esm";
 
     const importsExports = this.importsExports.clone();
@@ -598,6 +608,7 @@ export class CodeBuilder {
       moduleKind,
       refs: this.dirBuilder._refs,
       helpers,
+      forceDefaultExport,
     });
 
     body += "\n\n" + exports;
@@ -695,14 +706,22 @@ export class DirBuilder {
         await fs.mkdir(destDir, {recursive: true});
       }
 
+      const forceDefaultExport = fn.startsWith("modules/");
+
       if (mode === "ts") {
-        await fs.writeFile(dest + ".ts", builder.render({mode: "ts"}));
+        await fs.writeFile(
+          dest + ".ts",
+          builder.render({mode: "ts", forceDefaultExport})
+        );
       } else if (mode === "js+dts") {
         await fs.writeFile(
           dest + (moduleKind === "esm" ? ".mjs" : ".js"),
-          builder.render({mode: "js", moduleKind})
+          builder.render({mode: "js", moduleKind, forceDefaultExport})
         );
-        await fs.writeFile(dest + ".d.ts", builder.render({mode: "dts"}));
+        await fs.writeFile(
+          dest + ".d.ts",
+          builder.render({mode: "dts", forceDefaultExport})
+        );
       }
     }
   }
