@@ -271,7 +271,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   ]);
 
   f.writeln([
-    dts`declare`,
+    dts`declare `,
     t`type getTsType<T extends $.BaseType> = T extends $.ScalarType`,
   ]);
   f.writeln([
