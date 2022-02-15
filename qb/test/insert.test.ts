@@ -183,3 +183,10 @@ test("insert type enforcement", async () => {
 
   return;
 });
+
+test("optional sequence fields", async () => {
+  const query = e.insert(e.Bag, {
+    stringsMulti: "asdf",
+  });
+  await query.run(client);
+});

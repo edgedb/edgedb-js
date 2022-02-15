@@ -13,6 +13,7 @@ export type Pointer = {
   is_exclusive: boolean;
   is_writable: boolean;
   has_default: boolean;
+  is_seq: boolean;
   pointers: ReadonlyArray<Pointer> | null;
 };
 
@@ -158,7 +159,7 @@ export async function getTypes(
         kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property',
         is_exclusive := exists (select .constraints filter .name = 'std::exclusive'),
         is_writable := len(.computed_fields) = 0 AND .readonly = false,
-        has_default := EXISTS .default,
+        has_default := EXISTS .default or ("std::sequence" in .target[IS ScalarType].ancestors.name),
         [IS Link].pointers: {
           real_cardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
           name := '@' ++ .name,
