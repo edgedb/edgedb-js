@@ -97,10 +97,10 @@ special ``__element__`` and ``__cardinality__`` properties.
 .. code-block:: typescript
 
   const q1 = e.str("Hello");
-  q1.__element__:       // e.str
-  q1.__cardinality__:   // "One"
+  q1.__element__;       // e.str
+  q1.__cardinality__;   // "One"
 
   const q2 = e.Movie;
-  q2.__element__:       // e.Movie
-  q2.__cardinality__:   // "Many"
+  q2.__element__;       // e.Movie
+  q2.__cardinality__;   // "Many"
 

@@ -26,7 +26,7 @@ scalar types, object types, and enums.
   e.int64;
   e.float32;
   e.float64;
-  e.bigin;
+  e.bigint;
   e.decimal;
   e.datetime;
   e.duration;

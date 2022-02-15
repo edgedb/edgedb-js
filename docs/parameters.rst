@@ -7,8 +7,8 @@ You can pass strongly-typed parameters into your query with ``e.params``.
 
 .. code-block:: typescript
 
-  const helloQuery = e.params({ title: e.str }, params =>
-    e.op(params.name)
+  const helloQuery = e.params({name: e.str}, (params) =>
+    e.op('Yer a wizard, ', '++', params.name)
   );
   /*  with name := <str>$name
       select name;
@@ -30,22 +30,20 @@ argument to ``.run()``; this argument is *fully typed*!
   await helloQuery.run(client, { name: "Harry Styles" })
   // => "Yer a wizard, Harry Styles"
 
-  await query.run(client, { name: 16 })
+  await helloQuery.run(client, { name: 16 })
   // => TypeError: number is not assignable to string
 
 Top-level usage
 ^^^^^^^^^^^^^^^
 
-Note that the expression being ``run`` must be the one declared with
-``e.params``; in other words, you can only use ``e.params`` at the *top level*
-of your query, not as an expression inside a larger query.
+Note that you must call ``.run`` on the result of ``e.params``; in other
+words, you can only use ``e.params`` at the *top level* of your query, not as
+an expression inside a larger query.
 
 .. code-block:: typescript
 
-  const wrappedQuery = e.select(helloQuery);
-
-  await e.select(helloQuery).run(client, {name: "Harry Styles"});
-  // TypeError
+  const wrappedQuery = e.select(helloQuery); // ❌
+  wrappedQuery.run(client, {name: "Harry Styles"}); // TypeError
 
 
 Parameter types
@@ -57,28 +55,25 @@ deserializes them on the server.
 
 .. code-block:: typescript
 
-  const complexParams = e.params(
+  const insertMovie = e.params(
     {
       title: e.str,
-      runtime: e.duration,
-      cast: e.array(
+      release_year: e.int64,
+      actors: e.array(
         e.tuple({
           name: e.str,
-          character_name: e.str,
         })
       ),
     },
-    params => e.insert(e.Movie, {
-      // ...
-    })
+    (params) =>
+      e.insert(e.Movie, {
+        title: params.title,
+      })
   );
 
   await insertMovie.run(client, {
-    title: "Dune",
-    runtime: new edgedb.Duration(0, 0, 0, 0, 2, 35),
-    cast: [
-      {name: "Timmy", character_name: "Paul"},
-      {name: "JMo", character_name: "Idaho"},
-    ]
-  })
+    title: 'Dune',
+    release_year: 2021,
+    actors: [{name: 'Timmy'}, {name: 'JMo'}],
+  });
 

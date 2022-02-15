@@ -19,7 +19,7 @@ unnecessary, since expressions are ``run``\ able without being wrapped by
   e.select(e.str('Hello world'));
   // select 1234;
 
-  e.select(a.op(e.int64(2), '+', e.int64(2)));
+  e.select(e.op(e.int64(2), '+', e.int64(2)));
   // select 2 + 2;
 
 Selecting free objects
@@ -115,7 +115,7 @@ As in EdgeQL, shapes can be nested to fetch deeply related objects.
   const query = e.select(e.Movie, () => ({
     id: true,
     title: true,
-    cast: {
+    actors: {
       name: true
     }
   }));
@@ -124,7 +124,7 @@ As in EdgeQL, shapes can be nested to fetch deeply related objects.
   /* {
     id: string;
     title: string;
-    cast: { name: string }[]
+    actors: { name: string }[]
   }[] */
 
 
@@ -180,7 +180,7 @@ filter clauses, even nested ones.
 
   e.select(e.Movie, movie => ({
     title: true,
-    cast: actor => ({
+    actors: actor => ({
       name: true,
       filter: e.op(actor.name.slice(0, 1), '=', 'A'),
     }),
@@ -215,11 +215,11 @@ The ``order`` key can correspond to an arbitrary expression.
 
   // order by number of cast members
   e.select(e.Movie, movie => ({
-    order_by: e.count(movie.cast),
+    order_by: e.count(movie.actors),
   }));
   /*
     select Movie
-    order by count(.cast)
+    order by count(.actors)
   */
 
 You can customize the sort direction and empty-handling behavior by passing an
@@ -258,7 +258,7 @@ Pass an array of objects to do multiple ordering.
         direction: e.DESC,
       },
       {
-        expression: e.count(movie.cast),
+        expression: e.count(movie.actors),
         direction: e.ASC,
         empty: e.EMPTY_LAST,
       },
@@ -322,7 +322,7 @@ signatures agree.
     runtime: e.int64(55), // TypeError
 
     // you can override links too
-    cast: e.Person,
+    actors: e.Person,
   }));
 
 
@@ -336,7 +336,7 @@ EdgeQL supports polymorphic queries using the ``[is type]`` prefix.
   select Content {
     title,
     [is Movie].runtime,
-    [is TVShow].num_episodes
+    [is Show].num_episodes
   }
 
 In the query builder, this is represented with the ``e.is`` function.
@@ -346,7 +346,7 @@ In the query builder, this is represented with the ``e.is`` function.
   e.select(e.Content, content => ({
     title: true,
     ...e.is(e.Movie, { runtime: true }),
-    ...e.is(e.TVShow, { num_episodes: true }),
+    ...e.is(e.Show, { num_episodes: true }),
   }));
 
   const result = await query.run(client);
@@ -363,16 +363,24 @@ fact that they will only occur in certain objects.
 Detached
 ^^^^^^^^
 
+Sometimes you need to "detach" a set reference from the current scope. (Read the `reference docs <https://www.edgedb.com/docs/reference/edgeql/with#detached>`_ for details.) You can achieve this in the query builder with the top-level ``e.detached`` function.
+
 .. code-block:: typescript
 
   const query = e.select(e.Person, (outer) => ({
     name: true,
-    castmates: e.select(detachedPerson, (inner) => ({
+    castmates: e.select(e.detached(e.Person), (inner) => ({
       name: true,
-      filter: e.op(
-        e.op(outer.acted_in, 'in', inner.acted_in),
-        'and',
-        e.op(outer, '!=', inner) // don't include self
-      ),
+      filter: e.op(outer.acted_in, 'in', inner.acted_in)
     })),
   }));
+  /*
+    with outer := Person
+    select Person {
+      name,
+      castmates := (
+        select detached Person { name }
+        filter .acted_in in Person.acted_in
+      )
+    }
+  */

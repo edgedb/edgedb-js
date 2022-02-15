@@ -68,11 +68,11 @@ In the query builder this is represented with the following syntax.
 
 .. code-block:: typescript
 
-  const castMembers = e.select(e.Person, ...);
+  const actors = e.select(e.Person, ...);
   e.update(e.Movie, movie => ({
     filter: e.op(movie.title, '=', 'The Eternals'),
     set: {
-      cast: castMembers,
+      actors: actors,
     }
   }))
 
@@ -80,11 +80,11 @@ In the query builder this is represented with the following syntax.
 
 .. code-block:: typescript
 
-  const castMembers = e.select(e.Person, ...);
+  const actors = e.select(e.Person, ...);
   e.update(e.Movie, movie => ({
     filter: e.op(movie.title, '=', 'The Eternals'),
     set: {
-      cast: { "+=": castMembers },
+      actors: { "+=": actors },
     }
   }))
 
@@ -93,11 +93,11 @@ In the query builder this is represented with the following syntax.
 
 .. code-block:: typescript
 
-  const castMembers = e.select(e.Person, ...);
+  const actors = e.select(e.Person, ...);
   e.update(e.Movie, movie => ({
     filter: e.op(movie.title, '=', 'The Eternals'),
     set: {
-      characters: { "-=": castMembers },
+      actors: { "-=": actors },
     }
   }))
 

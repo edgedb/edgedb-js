@@ -15,7 +15,7 @@ the nearest ``WITH`` block that encloses all usages of the expression.
   const a = e.set(e.int64(1), e.int64(2), e.int64(3));
   const b = e.alias(a);
 
-  e.select(e.plus(a, b)).toEdgeQL();
+  e.select(e.op(a, '+', b)).toEdgeQL();
   // WITH
   //   a := {1, 2, 3},
   //   b := a
@@ -25,20 +25,27 @@ This hold for expressions of arbitrary complexity.
 
 .. code-block:: typescript
 
-  const newActor = e.insert(e.Person, {
+  const robert = e.insert(e.Person, {
+    name: "Robert Pattinson"
+  });
+  const colin = e.insert(e.Person, {
     name: "Colin Farrell"
   });
-
   const newMovie = e.insert(e.Movie, {
     title: "The Batman",
-    cast: newActor
+    actors: e.set(colin, robert)
   });
 
-  const query = e.select(newMovie, ()=>({
-    id: true,
-    title: true,
-    cast: { name: true }
-  }));
+  /*
+  with
+    robert := (insert Person {  name := "Robert Pattinson"}),
+    colin := (insert Person {  name := "Colin Farrell"}),
+  insert Movie {
+    title := "The Batman",
+    actors := {robert, colin}
+  }
+  */
+
 
 
 To embed ``WITH`` statements inside queries, you can short-circuit this logic
@@ -49,17 +56,29 @@ WITH block in the query.
 
 .. code-block:: typescript
 
-  const newActor = e.insert(e.Person, {
+  const robert = e.insert(e.Person, {
+    name: "Robert Pattinson"
+  });
+  const colin = e.insert(e.Person, {
     name: "Colin Farrell"
   });
-
-  e.insert(e.Movie, {
-    cast: e.with([newActor], // list "dependencies";
-      e.select(newActor, ()=>({
-        id: true,
-        title: true,
-      }))
+  const newMovie = e.insert(e.Movie, {
+    actors: e.with([robert, colin], // list "dependencies";
+      e.set(robert, colin)
     )
   })
+
+  /*
+  insert Movie {
+    title := "The Batman",
+    actors := (
+      with
+        robert := (insert Person {  name := "Robert Pattinson"}),
+        colin := (insert Person {  name := "Colin Farrell"})
+      select {robert, colin}
+    )
+  }
+  */
+
 
 
