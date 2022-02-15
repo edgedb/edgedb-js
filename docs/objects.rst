@@ -9,20 +9,13 @@ All queries on this page assume the following schema.
 .. code-block:: sdl
 
   module default {
-    type Account {
-      required property username -> str {
-        constraint exclusive;
-      };
-      multi link watchlist -> Media;
-    }
-
     type Person {
       required property name -> str;
     }
 
     abstract type Media {
-      required property title -> str;
-      multi link cast -> Person {
+      required property title -> str {constraint exclusive};
+      multi link actors -> Person {
         property character_name -> str;
       };
     }
@@ -31,7 +24,7 @@ All queries on this page assume the following schema.
       property runtime -> duration;
     }
 
-    type TVShow extending Media {
+    type Show extending Media {
       property number_of_seasons -> int64;
     }
   }
@@ -46,7 +39,7 @@ namespaced by module.
 
   e.default.Person;
   e.default.Movie;
-  e.default.TVShow;
+  e.default.Show;
   e.my_module.SomeType;
 
 For convenience, the contents of the ``default`` module are also available at
@@ -56,7 +49,7 @@ the top-level of ``e``.
 
   e.Person;
   e.Movie;
-  e.TVShow;
+  e.Show;
 
 .. As in EdgeQL, type names like ``Movie`` serve two purposes.
 
@@ -72,7 +65,7 @@ EdgeQL-style *paths* are supported on object type references.
 
   e.Person.name;              // Person.name
   e.Movie.title;              // Movie.title
-  e.TVShow.cast.name;          // Movie.cast.name
+  e.Show.actors.name;          // Movie.actors.name
 
 Paths can be constructed from any object expression, not just the root types.
 
@@ -81,8 +74,8 @@ Paths can be constructed from any object expression, not just the root types.
   e.select(e.Person).name;
   // (select Person).name
 
-  e.op(e.Movie, 'union', e.TVShow).cast;
-  // (Movie union TVShow).cast
+  e.op(e.Movie, 'union', e.Show).actors;
+  // (Movie union Show).actors
 
   const ironMan = e.insert(e.Movie, {
     title: "Iron Man"
@@ -96,12 +89,12 @@ Type intersections
 
 Use the type intersection operator to narrow the type of a set of objects. For
 instance, to represent the elements of an Account's watchlist that are of type
-``TVShow``:
+``Show``:
 
 .. code-block:: typescript
 
-  e.Person.acted_in.is(e.TVShow);
-  // Person.acted_in[is TVShow]
+  e.Person.acted_in.is(e.Show);
+  // Person.acted_in[is Show]
 
 
 Backlinks
@@ -113,8 +106,8 @@ special characters, you must use bracket syntax instead of simple dot notation.
 
 .. code-block:: typescript
 
-  e.Person["<directed[is Movie]"]
-  // Person.<directed[is Movie]
+  e.Person["<director[is Movie]"]
+  // Person.<director[is Movie]
 
 For convenience, these backlinks automatically combine the backlink operator
 and type intersection into a single key. However, the query builder also
@@ -123,5 +116,5 @@ intersection method.
 
 .. code-block:: typescript
 
-  e.Person['<directed'].is(e.Movie);
-  // Person.<directed[is Movie]
+  e.Person['<director'].is(e.Movie);
+  // Person.<director[is Movie]

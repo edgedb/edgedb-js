@@ -36,10 +36,8 @@ To get started, install the ``edgedb`` module from NPM.
 
 .. code-block:: bash
 
-    # using npm
-    $ npm install edgedb
-    # using Yarn
-    $ yarn add edgedb
+    $ npm install edgedb      # npm users
+    $ yarn add edgedb         # yarn users
 
 There are two components of this library: the *driver* and the *query builder*.
 
@@ -147,9 +145,9 @@ structurally similar to the equivalent EdgeQL.
   e.select(e.Movie, movie => ({
     id: true,
     title: true,
-    uppercase_title := e.str_upper(movie.title),
+    uppercase_title: e.str_upper(movie.title),
     filter: e.op(movie.title, '=', 'Iron Man')
-  });
+  }));
 
 More importantly, it gives you access to the **full power** of EdgeQL! The
 query builder can represent EdgeQL queries of arbitrary complexity.

@@ -399,10 +399,6 @@ test("infer cardinality - scalar filters", () => {
     true
   );
   expect(q10.__cardinality__).toEqual($.Cardinality.Empty);
-
-  // test cardinality inference on object equality
-  // e.select(e.Profile).filter(e.eq(e.Profile
-  // ["<profile[is default::Movie]"], e.select(e.Profile).limit(1)));
 });
 
 test("infer cardinality - object type filters", () => {

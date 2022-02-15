@@ -13,11 +13,11 @@ All built-in standard library functions are reflected as functions in ``e``.
   e.str_upper(e.str("hello"));
   // str_upper("hello")
 
-  e.plus(e.int64(2), e.int64(2));
+  e.op(e.int64(2), '+', e.int64(2));
   // 2 + 2
 
   const nums = e.set(e.int64(3), e.int64(5), e.int64(7))
-  e.in(e.int64(4), nums);
+  e.op(e.int64(4), 'in', nums);
   // 4 in {3, 5, 7}
 
   e.math.mean(nums);
@@ -74,72 +74,3 @@ construct.
       ``"ilike"`` ``"not like"`` ``"not ilike"``
   * - Ternary operators
     - ``"if"/"else"``
-
-.. * - ``=``
-..   - ``e.eq``
-.. * - ``?=``
-..   - ``e.coal_eq``
-.. * - ``!=``
-..   - ``e.neq``
-.. * - ``?!=``
-..   - ``e.coal_neq``
-.. * - ``>=``
-..   - ``e.gte``
-.. * - ``>``
-..   - ``e.gt``
-.. * - ``<=``
-..   - ``e.lte``
-.. * - ``<``
-..   - ``e.lt``
-.. * - ``OR``
-..   - ``e.or``
-.. * - ``AND``
-..   - ``e.and``
-.. * - ``NOT``
-..   - ``e.not``
-.. * - ``+``
-..   - ``e.plus``
-.. * - ``-``
-..   - ``e.minus``
-.. * - ``*``
-..   - ``e.mult``
-.. * - ``/``
-..   - ``e.div``
-.. * - ``//``
-..   - ``e.floordiv``
-.. * - ``%``
-..   - ``e.mod``
-.. * - ``^``
-..   - ``e.pow``
-.. * - ``IN``
-..   - ``e.in``
-.. * - ``NOT IN``
-..   - ``e.not_in``
-.. * - ``EXISTS``
-..   - ``e.exists``
-.. * - ``DISTINCT``
-..   - ``e.distinct``
-.. * - ``UNION``
-..   - ``e.union``
-.. * - ``??``
-..   - ``e.coalesce``
-.. * - ``IF``
-..   - ``e.if_else``
-.. * - ``++``
-..   - ``e.concat``
-.. * - ``[i]``
-..   - ``e.index``
-.. * - ``[i:j:k]``
-..   - ``e.slice``
-.. * - ``[key]``
-..   - ``e.destructure`` (JSON element access)
-.. * - ``++``
-..   - ``e.concatenate``
-.. * - ``LIKE``
-..   - ``e.like``
-.. * - ``ILIKE``
-..   - ``e.ilike``
-.. * - ``NOT LIKE``
-..   - ``e.not_like``
-.. * - ``NOT ILIKE``
-..   - ``e.not_ilike``

@@ -80,7 +80,7 @@ To create an instance of ``datetime``, pass a JavaScript ``Date`` object into
 
 .. code-block:: typescript
 
-  e.datetime(new Date('1999-01-01')))
+  e.datetime(new Date('1999-01-01'));
   // <datetime>'1999-01-01T00:00:00.000Z'
 
 EdgeDB's other temporal datatypes don't have equivalents in the JavaScript
@@ -113,13 +113,13 @@ along with the equivalent EdgeQL.
   const myDuration = new edgedb.Duration(0, 0, 0, 0, 1, 2, 3);
   e.duration(myDuration);
 
-  const myLocalDate = new edgedb.LocalDate(1776, 07, 04);
+  const myLocalDate = new edgedb.LocalDate(1776, 7, 4);
   e.cal.local_date(myLocalDate);
 
   const myLocalTime = new edgedb.LocalTime(13, 15, 0);
   e.cal.local_time(myLocalTime);
 
-  const myLocalDateTime = new edgedb.LocalDateTime(1776, 07, 04, 13, 15, 0);
+  const myLocalDateTime = new edgedb.LocalDateTime(1776, 7, 4, 13, 15, 0);
   e.cal.local_datetime(myLocalDateTime);
 
 
@@ -273,8 +273,6 @@ Tuple expressions support indexing.
     e.int64(18)
   ]);
   spidey[0];                 // => ("Peter Parker", 18)[0]
-  spidey.index(0);           // => ("Peter Parker", 18)[0]
-  spidey.index(e.int64(0));  // => ("Peter Parker", 18)[0]
 
   // Named tuples
   const spidey = e.tuple({
@@ -299,7 +297,7 @@ semantics are enforced by TypeScript.
 
 .. code-block:: typescript
 
-  e.set(e.int64(1234), e.str(1234));
+  e.set(e.int64(1234), e.str('sup'));
   // TypeError
 
 Empty sets
