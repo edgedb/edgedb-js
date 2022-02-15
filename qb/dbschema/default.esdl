@@ -24,7 +24,9 @@ module default {
   type Movie {
     property genre -> Genre;
     property rating -> float64;
-    required property title -> str;
+    required property title -> str {
+      constraint exclusive;
+    };
     required property release_year -> int16 {
       default := <int16>datetime_get(datetime_current(), 'year');
     }

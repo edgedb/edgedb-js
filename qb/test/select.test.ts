@@ -921,21 +921,19 @@ test("polymorphic field in nested shape", async () => {
   }));
 
   const result = await query.run(client);
-  expect(JSON.parse(JSON.stringify(result))).toEqual([
-    {
-      title: data.the_avengers.title,
-      characters: [
-        {
-          name: data.cap.name,
-          secret_identity: data.cap.secret_identity,
-        },
-        {
-          name: data.iron_man.name,
-          secret_identity: data.iron_man.secret_identity,
-        },
-      ],
-    },
-  ]);
+  expect(JSON.parse(JSON.stringify(result))).toEqual({
+    title: data.the_avengers.title,
+    characters: [
+      {
+        name: data.cap.name,
+        secret_identity: data.cap.secret_identity,
+      },
+      {
+        name: data.iron_man.name,
+        secret_identity: data.iron_man.secret_identity,
+      },
+    ],
+  });
 
   tc.assert<
     tc.IsExact<
@@ -946,7 +944,7 @@ test("polymorphic field in nested shape", async () => {
           name: string;
           secret_identity: string | null;
         }[];
-      }[]
+      } | null
     >
   >(true);
 });
