@@ -119,7 +119,6 @@ export const generateObjectTypes = (params: GeneratorParams) => {
   const {dir, types} = params;
 
   for (const type of types.values()) {
-    console.log(JSON.stringify(type, null, 2));
     if (type.kind !== "object") {
       continue;
     }
