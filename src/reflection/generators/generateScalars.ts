@@ -74,7 +74,7 @@ export const generateScalars = (params: GeneratorParams) => {
         sc.addExport(ref);
         // sc.addExport(ref, `$${_name}`); // dollar
       } else if (scalarType.bases.length) {
-        // for std::sequence
+        // for std::sequence1
         const bases = scalarType.bases.map(base => getRef(base.name));
         sc.writeln([t`interface ${ref} extends ${joinFrags(bases, ", ")} {}`]);
         sc.writeln([

@@ -50,6 +50,8 @@ module default {
     property age -> int64;
   }
 
+  scalar type bag_seq extending sequence;
+
   type Bag extending HasName, HasAge {
     property secret_identity -> str;
     property genre -> Genre;
@@ -72,6 +74,7 @@ module default {
     property namedTuple -> tuple<x: str, y: int64>;
     property unnamedTuple -> tuple<str, int64>;
     property enumArr -> array<Genre>;
+    property seqField -> bag_seq;
   }
 
   type Simple extending HasName, HasAge {}

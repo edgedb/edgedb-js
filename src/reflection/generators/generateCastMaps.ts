@@ -302,8 +302,16 @@ export const generateCastMaps = (params: GeneratorParams) => {
   ]);
   f.writeln([t`  | T`]);
   f.writeln([
-    t`  | ($.BaseTypeSet extends T ? scalarLiterals : getTsType<T["__element__"]>);\n\n`,
+    t`  | ($.BaseTypeSet extends T`,
+    t`      ? scalarLiterals`,
+    t`      : $.Cardinality extends T["__cardinality__"]`,
+    t`        ? getTsType<T["__element__"]>`,
+    t`        : $.computeTsTypeCard<`,
+    t`            getTsType<T["__element__"]>,`,
+    t`            T["__cardinality__"]`,
+    t`          >);`,
   ]);
+  //  ? scalarLiterals : getTsType<T["__element__"]>);\n\n
 
   f.writeln([
     t`export `,
