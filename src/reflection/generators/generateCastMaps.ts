@@ -172,8 +172,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
     )}`,
     r` {`,
   ]);
-  f.writeln([r`  a = (a`, t` as any`, r`).__casttype__ ?? a;`]);
-  f.writeln([r`  b = (b`, t` as any`, r`).__casttype__ ?? b;`]);
+  f.writeln([r`  a = (a`, ts` as any`, r`).__casttype__ ?? a;`]);
+  f.writeln([r`  b = (b`, ts` as any`, r`).__casttype__ ?? b;`]);
   f.addExport("getSharedParentScalar");
   f.writeBuf(runtimeMap);
 
