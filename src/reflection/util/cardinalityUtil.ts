@@ -314,10 +314,15 @@ export namespace cardinalityUtil {
     }
   }
 
-  export type optionalParamCardinality<P extends TypeSet | undefined> =
-    P extends TypeSet
-      ? overrideLowerBound<P["__cardinality__"], "One">
-      : Cardinality.One;
+  export type optionalParamCardinality<P extends TypeSet | undefined> = [
+    P
+  ] extends [TypeSet]
+    ? // default to one
+      // fixes multiplyCardinalities bug for func with optional args
+      [Cardinality] extends [P["__cardinality__"]]
+      ? Cardinality.One
+      : overrideLowerBound<P["__cardinality__"], "One">
+    : Cardinality.One;
 
   export type paramArrayCardinality<T> = {
     [K in keyof T]: T[K] extends TypeSet ? T[K]["__cardinality__"] : never;
