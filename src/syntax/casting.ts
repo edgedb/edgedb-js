@@ -3,20 +3,19 @@ import {
   BaseType,
   BaseTypeTuple,
   cardinalityUtil,
+  computeTsType,
+  EnumType,
   LinkDesc,
   NamedTupleType,
   ObjectType,
+  ObjectTypeSet,
+  PrimitiveTypeSet,
   PropertyDesc,
   ScalarType,
   TupleType,
   TypeSet,
-  typeutil,
 } from "../reflection";
-import {
-  scalarCastableFrom,
-  scalarAssignableBy,
-  orScalarLiteral,
-} from "@generated/castMaps";
+import {scalarCastableFrom, scalarAssignableBy} from "@generated/castMaps";
 
 export type anonymizeObject<T extends ObjectType> = ObjectType<
   string,
@@ -42,6 +41,8 @@ export type assignableBy<T extends BaseType> = T extends ScalarType
   ? scalarAssignableBy<T>
   : T extends ObjectType
   ? anonymizeObject<T>
+  : T extends EnumType
+  ? T
   : T extends ArrayType
   ? ArrayType<assignableBy<T["__element__"]>>
   : T extends TupleType
@@ -54,23 +55,27 @@ export type assignableBy<T extends BaseType> = T extends ScalarType
 
 export type pointerToAssignmentExpression<
   Pointer extends PropertyDesc | LinkDesc
-> = [Pointer] extends [PropertyDesc]
-  ? typeutil.flatten<
-      orScalarLiteral<
-        TypeSet<
-          assignableBy<Pointer["target"]>,
-          cardinalityUtil.assignable<Pointer["cardinality"]>
+> = setToAssignmentExpression<
+  TypeSet<Pointer["target"], Pointer["cardinality"]>
+>;
+
+export type setToAssignmentExpression<Set extends TypeSet> = [Set] extends [
+  PrimitiveTypeSet
+]
+  ?
+      | TypeSet<
+          assignableBy<Set["__element__"]>,
+          cardinalityUtil.assignable<Set["__cardinality__"]>
         >
-      >
-    >
-  : [Pointer] extends [LinkDesc]
+      | computeTsType<Set["__element__"], Set["__cardinality__"]>
+  : [Set] extends [ObjectTypeSet]
   ? TypeSet<
       ObjectType<
         // anonymize the object type
         string,
-        Pointer["target"]["__pointers__"]
+        Set["__element__"]["__pointers__"]
       >,
-      cardinalityUtil.assignable<Pointer["cardinality"]>
+      cardinalityUtil.assignable<Set["__cardinality__"]>
     >
   : never;
 

@@ -35,7 +35,7 @@ test("update", async () => {
   e.update(e.Bag, () => ({
     set: {
       stringsMulti: {
-        "+=": "new string",
+        "+=": ["new string"] as ["new string"],
       },
     },
   })).toEdgeQL();
