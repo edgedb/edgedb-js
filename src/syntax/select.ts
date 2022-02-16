@@ -738,7 +738,7 @@ export function select(...args: any[]) {
             __kind__: TypeKind.object,
             __name__: `${objectExpr.__element__.__name__}`, // _shape
             __pointers__: objectExpr.__element__.__pointers__,
-            __shape__: null,
+            __shape__: objectExpr.__element__.__shape__,
           } as any,
           __cardinality__: objectExpr.__cardinality__,
           __expr__: objectExpr,

@@ -14,9 +14,9 @@ async function run() {
       },
     }))
     .assert_single();
-  console.log(query.toEdgeQL());
   const asdf = await query.run(client);
-  console.log(JSON.stringify(await query.run(client), null, 2));
+  console.log(query.toEdgeQL());
+  console.log(JSON.stringify(asdf, null, 2));
 }
 
 run();
