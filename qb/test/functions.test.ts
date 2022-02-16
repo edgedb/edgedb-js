@@ -1,9 +1,10 @@
 import superjson from "superjson";
 import {$} from "edgedb";
-import e from "../dbschema/edgeql-js";
+import e, {literalToTypeSet} from "../dbschema/edgeql-js";
 import {$expr_Function} from "edgedb/dist/reflection";
 import {tc} from "./setupTeardown";
-import {number} from "../dbschema/edgeql-js/modules/std";
+import {$str, number} from "../dbschema/edgeql-js/modules/std";
+import * as castMaps from "../dbschema/edgeql-js/castMaps";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,
@@ -648,4 +649,12 @@ test("assert_*", () => {
   tc.assert<
     tc.IsExact<typeof manyExists["__cardinality__"], $.Cardinality.AtLeastOne>
   >(true);
+});
+
+test("persist Cardinality.One", async () => {
+  const query = e.str_trim(e.str("test string"));
+  expect(query.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<tc.IsExact<typeof query["__cardinality__"], $.Cardinality.One>>(
+    true
+  );
 });

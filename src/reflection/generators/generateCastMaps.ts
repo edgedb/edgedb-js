@@ -1,4 +1,4 @@
-import {CodeBuffer, dts, r, t, ts} from "../builders";
+import {CodeBuffer, dts, r, t, ts, all} from "../builders";
 import type {GeneratorParams} from "../generate";
 import {
   getRef,
@@ -353,10 +353,12 @@ export const generateCastMaps = (params: GeneratorParams) => {
   f.addImport({$getType: true}, "./syntax/literal");
 
   f.writeln([
-    r`function literalToTypeSet(type`,
-    ts`: any`,
-    r`)`,
-    ts`: $.TypeSet`,
+    dts`declare `,
+    all`function literalToTypeSet(type`,
+    t`: any`,
+    all`)`,
+    t`: $.TypeSet`,
+    dts`;`,
     r` {`,
   ]);
   f.writeln([r`  if (type?.__element__) {`]);

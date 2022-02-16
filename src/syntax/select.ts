@@ -27,6 +27,7 @@ import {
   TypeKind,
   TypeSet,
   typeutil,
+  BaseType,
 } from "../reflection";
 
 import type {
@@ -628,7 +629,9 @@ const FreeObject = {
   __scopeRoot__: null,
 };
 
-export const $existingScopes = new Set<Expression>();
+export const $existingScopes = new Set<
+  Expression<TypeSet<BaseType, Cardinality>>
+>();
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
