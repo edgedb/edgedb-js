@@ -46,15 +46,16 @@ export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
   ? Shape extends ObjectTypePointers
     ? {
         [k in keyof Shape]?:
-          | (pointerToAssignmentExpression<Shape[k]> extends infer S
-              ?
-                  | S
-                  | (Shape[k]["cardinality"] extends
-                      | Cardinality.Many
-                      | Cardinality.AtLeastOne
-                      ? {"+=": S} | {"-=": S}
-                      : never)
-              : never)
+          | (
+              | pointerToAssignmentExpression<Shape[k]>
+              | (Shape[k]["cardinality"] extends
+                  | Cardinality.Many
+                  | Cardinality.AtLeastOne
+                  ?
+                      | {"+=": pointerToAssignmentExpression<Shape[k], true>}
+                      | {"-=": pointerToAssignmentExpression<Shape[k], true>}
+                  : never)
+            )
           | (pointerIsOptional<Shape[k]> extends true
               ? undefined | null
               : never);

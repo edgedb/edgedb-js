@@ -186,7 +186,7 @@ test("insert type enforcement", async () => {
 
 test("optional sequence fields", async () => {
   const query = e.insert(e.Bag, {
-    stringsMulti: ["asdf"],
+    stringsMulti: "asdf",
   });
   await query.run(client);
 });
@@ -209,5 +209,10 @@ test("complex raw data in inserts", async () => {
     stringsMulti: strings,
     stringsArr: strings,
     stringMultiArr: [strings],
+  });
+
+  e.insert(e.Bag, {
+    // @ts-expect-error
+    stringsMulti: strings,
   });
 });

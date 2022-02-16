@@ -2,8 +2,9 @@ import {
   ArrayType,
   BaseType,
   BaseTypeTuple,
+  BaseTypeToTsType,
   cardinalityUtil,
-  computeTsType,
+  Cardinality,
   EnumType,
   LinkDesc,
   NamedTupleType,
@@ -54,20 +55,23 @@ export type assignableBy<T extends BaseType> = T extends ScalarType
   : never;
 
 export type pointerToAssignmentExpression<
-  Pointer extends PropertyDesc | LinkDesc
+  Pointer extends PropertyDesc | LinkDesc,
+  IsSetModifier extends boolean = false
 > = setToAssignmentExpression<
-  TypeSet<Pointer["target"], Pointer["cardinality"]>
+  TypeSet<Pointer["target"], Pointer["cardinality"]>,
+  IsSetModifier
 >;
 
-export type setToAssignmentExpression<Set extends TypeSet> = [Set] extends [
-  PrimitiveTypeSet
-]
+export type setToAssignmentExpression<
+  Set extends TypeSet,
+  IsSetModifier extends boolean
+> = [Set] extends [PrimitiveTypeSet]
   ?
       | TypeSet<
           assignableBy<Set["__element__"]>,
           cardinalityUtil.assignable<Set["__cardinality__"]>
         >
-      | computeTsType<Set["__element__"], Set["__cardinality__"]>
+      | getAssignmentLiteral<Set, IsSetModifier>
   : [Set] extends [ObjectTypeSet]
   ? TypeSet<
       ObjectType<
@@ -77,6 +81,21 @@ export type setToAssignmentExpression<Set extends TypeSet> = [Set] extends [
       >,
       cardinalityUtil.assignable<Set["__cardinality__"]>
     >
+  : never;
+
+type getAssignmentLiteral<
+  Set extends PrimitiveTypeSet,
+  IsSetModifier extends boolean
+> = BaseTypeToTsType<Set["__element__"]> extends infer TsType
+  ?
+      | TsType
+      | (Set["__cardinality__"] extends Cardinality.Many
+          ? TsType[]
+          : Set["__cardinality__"] extends Cardinality.AtLeastOne
+          ? IsSetModifier extends true
+            ? TsType[]
+            : [TsType, ...TsType[]]
+          : never)
   : never;
 
 ////////////////
