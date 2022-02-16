@@ -98,6 +98,7 @@ function shapeToEdgeQL(
   if (shape === null) {
     return ``;
   }
+
   const lines: string[] = [];
   const addLine = (line: string) =>
     lines.push(`${keysOnly ? "" : "  "}${line}`);

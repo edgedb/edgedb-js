@@ -5,16 +5,17 @@ import e from "./dbschema/edgeql-js";
 
 async function run() {
   const {client} = await setupTests();
-
-  const query = e.select(e.Movie, movie => {
-    return {
+  const query = e
+    .select(e.Movie, movie => ({
+      filter: e.op(movie.title, "=", "The Avengers"),
       title: true,
-      genre: true,
-      filter: e.op(movie.genre, "=", e.Genre.Action),
-    };
-  });
+      characters: {
+        name: true,
+      },
+    }))
+    .assert_single();
   console.log(query.toEdgeQL());
-  e.Genre.Horror;
+  const asdf = await query.run(client);
   console.log(JSON.stringify(await query.run(client), null, 2));
 }
 
