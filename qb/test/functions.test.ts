@@ -84,6 +84,7 @@ test("positional args", () => {
   );
 
   const setOfStr = e.set(e.str("test"), e.str("test2"));
+
   checkFunctionExpr(
     e.len(setOfStr),
     "std::len",

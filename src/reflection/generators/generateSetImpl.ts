@@ -20,7 +20,7 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
     "edgedb/dist/reflection/index",
     true
   );
-  code.addStarImport("castMaps", "../castMaps", true, ["ts", "js"]);
+  code.addStarImport("castMaps", "../castMaps", true, ["ts", "js", "dts"]);
   code.addImport({$expressionify: true}, "./path", true, ["ts", "js"]);
 
   code.writeln([
