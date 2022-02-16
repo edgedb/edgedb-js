@@ -41,12 +41,9 @@ test("object set contructor", () => {
     "default::Hero UNION default::Villain UNION default::Person"
   );
 
-  expect(e.set(e.select(e.Hero), e.select(e.Villain)).toEdgeQL())
-    .toEqual(`{ (SELECT (DETACHED default::Hero) {
-  id
-}), (SELECT (DETACHED default::Villain) {
-  id
-}) }`);
+  expect(e.set(e.select(e.Hero), e.select(e.Villain)).toEdgeQL()).toEqual(
+    `{ (SELECT (DETACHED default::Hero)), (SELECT (DETACHED default::Villain)) }`
+  );
 });
 
 test("scalar set contructor", () => {
