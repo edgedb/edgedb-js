@@ -6,6 +6,11 @@ import {setupTests} from "./test/setupTeardown";
 
 import e from "./dbschema/edgeql-js";
 
+export function someFunc(arg: string) {
+  return arg.length;
+}
+export type someFunc = {asdf: number};
+
 async function run() {
   const {client} = await setupTests();
 }

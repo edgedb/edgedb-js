@@ -38,6 +38,7 @@ export const f =
 export const ts = f("ts");
 export const js = f("js");
 export const r = f("ts", "js");
+export const all = f("ts", "js", "dts");
 export const dts = f("dts");
 export const t = f("ts", "dts");
 
