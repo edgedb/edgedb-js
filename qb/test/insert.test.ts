@@ -190,3 +190,29 @@ test("optional sequence fields", async () => {
   });
   await query.run(client);
 });
+
+test("complex raw data in inserts", async () => {
+  const strings = ["aaa", "bbb"];
+  const query = e.insert(e.Bag, {
+    stringsArr: strings,
+    stringsMulti: strings as ["aaa", "bbb"],
+    stringMultiArr: [strings],
+  });
+  const final = e.select(query, () => ({
+    id: true,
+    stringsMulti: true,
+    stringsArr: true,
+    stringMultiArr: true,
+  }));
+  const result = await final.run(client);
+  expect(result).toMatchObject({
+    stringsMulti: strings,
+    stringsArr: strings,
+    stringMultiArr: [strings],
+  });
+
+  e.insert(e.Bag, {
+    // @ts-expect-error
+    stringsMulti: strings,
+  });
+});

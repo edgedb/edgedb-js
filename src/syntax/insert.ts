@@ -12,12 +12,12 @@ import {
   $scopify,
   stripSet,
   TypeSet,
-  ScalarType,
-  scalarTypeWithConstructor,
 } from "../reflection";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
 import {cast} from "./cast";
+import {set} from "./set";
+import {literal} from "./literal";
 import {$getTypeByName} from "./literal";
 import {$expr_PathNode} from "../reflection/path";
 import type {$Object} from "@generated/modules/std";
@@ -177,10 +177,15 @@ export function $normaliseInsertShape(
           } shape key: '${key}'`
         );
       }
+      const isMulti =
+        pointer.cardinality === Cardinality.AtLeastOne ||
+        pointer.cardinality === Cardinality.Many;
       const wrappedVal =
         val === null
           ? cast(pointer.target, null)
-          : (pointer.target as scalarTypeWithConstructor<ScalarType>)(val);
+          : isMulti && Array.isArray(val)
+          ? set(...val.map(v => (literal as any)(pointer.target, v)))
+          : (literal as any)(pointer.target, val);
       newShape[key] = setModify
         ? ({[setModify]: wrappedVal} as any)
         : wrappedVal;

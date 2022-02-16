@@ -35,6 +35,14 @@ test("update", async () => {
   e.update(e.Bag, () => ({
     set: {
       stringsMulti: {
+        "+=": ["new string"],
+      },
+    },
+  })).toEdgeQL();
+
+  e.update(e.Bag, () => ({
+    set: {
+      stringsMulti: {
         "+=": "new string",
       },
     },
