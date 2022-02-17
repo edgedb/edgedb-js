@@ -62,14 +62,14 @@ integer expressions as arguments.
 Enums
 ^^^^^
 
-All enum types are represented as functions.
+Enum literals are available as properties defined on the enum type.
 
 .. code-block:: typescript
 
-  e.Colors('green');
+  e.Colors.green;
   // Colors.green;
 
-  e.sys.VersionStage('beta');
+  e.sys.VersionStage.beta;
   // sys::VersionStage.beta
 
 Dates and times
