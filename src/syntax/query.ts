@@ -23,8 +23,6 @@ export async function $queryFunc(this: any, cxn: edgedb.Executor, args: any) {
       wrappedExprCache.set(this, select(this)).get(this);
   const _args = jsonifyComplexParams(expr, args);
 
-  console.log(`QUERY`);
-  console.log(expr.toEdgeQL());
   if (
     expr.__cardinality__ === Cardinality.One ||
     expr.__cardinality__ === Cardinality.AtMostOne
