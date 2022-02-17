@@ -14,6 +14,7 @@ async function run() {
     };
   });
   console.log(query.toEdgeQL());
+  e.Genre.Horror;
   console.log(JSON.stringify(await query.run(client), null, 2));
 }
 

@@ -206,11 +206,9 @@ export type ExpressionMethods<Set extends TypeSet> = {
 //////////////////
 // ENUMTYPE
 //////////////////
-
 export interface EnumType<
   Name extends string = string,
-  TsType extends any = any,
-  Vals extends any = any
+  TsType extends any = any
 > extends BaseType {
   __kind__: TypeKind.enum;
   __tstype__: TsType;
