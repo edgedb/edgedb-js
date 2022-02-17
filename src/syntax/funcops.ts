@@ -72,6 +72,7 @@ export function $resolveOverload(
       return resolvedOverload;
     }
   }
+
   throw new Error(
     `No function overload found for ${
       funcName.includes("::")
@@ -246,11 +247,15 @@ function compareType(
     return {match: true, anytype: arg};
   }
 
+  if (type.name === "std::anyenum") {
+    return {match: arg.__kind__ === TypeKind.enum};
+  }
+
   if (type.kind === "scalar") {
     arg = (arg as any).__casttype__ ?? arg;
     return {
       match:
-        arg.__kind__ === TypeKind.scalar &&
+        (arg.__kind__ === TypeKind.scalar || arg.__kind__ === TypeKind.enum) &&
         (arg.__name__ === type.name ||
           isImplicitlyCastableTo(arg.__name__, type.name)),
     };
