@@ -90,7 +90,9 @@ test("no shape", async () => {
   const query = e.select(e.default.Hero);
   const result = await query.run(client);
   tc.assert<tc.IsExact<typeof result, {id: string}[]>>(true);
-  expect(query.__element__.__shape__).toEqual({id: true});
+  expect(query.__element__.__shape__).toEqual(
+    e.default.Hero.__element__.__shape__
+  );
   expect(result.every(val => !!val.id)).toEqual(true);
 });
 
@@ -180,16 +182,12 @@ test("compositionality", () => {
   // selecting a select statement should
   // default to { id }
   const no_shape = e.select(q1);
+
   type no_shape = $.BaseTypeToTsType<typeof no_shape["__element__"]>;
-  tc.assert<
-    tc.IsExact<
-      no_shape,
-      {
-        id: string;
-      }
-    >
-  >(true);
-  expect(no_shape.__element__.__shape__).toEqual({id: true});
+  type q1 = $.BaseTypeToTsType<typeof q1["__element__"]>;
+  tc.assert<tc.IsExact<no_shape, q1>>(true);
+  expect(no_shape.__element__.__shape__).toEqual(q1.__element__.__shape__);
+  // expect(no_shape.__element__.__shape__).toEqual({id: true});
 
   // allow override shape
   const override_shape = e.select(q1, () => ({

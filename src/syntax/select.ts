@@ -639,7 +639,7 @@ export function select<Expr extends ObjectTypeExpression>(
   __element__: ObjectType<
     `${Expr["__element__"]["__name__"]}`, // _shape
     Expr["__element__"]["__pointers__"],
-    {id: true}
+    Expr["__element__"]["__shape__"] // {id: true}
   >;
   __cardinality__: Expr["__cardinality__"];
 }>;
@@ -738,7 +738,7 @@ export function select(...args: any[]) {
             __kind__: TypeKind.object,
             __name__: `${objectExpr.__element__.__name__}`, // _shape
             __pointers__: objectExpr.__element__.__pointers__,
-            __shape__: {id: true},
+            __shape__: objectExpr.__element__.__shape__,
           } as any,
           __cardinality__: objectExpr.__cardinality__,
           __expr__: objectExpr,

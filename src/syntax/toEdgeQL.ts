@@ -17,6 +17,7 @@ import {
   isNamedTupleType,
   isObjectType,
   isTupleType,
+  ObjectTypeSet,
   OperatorKind,
   TypeKind,
   TypeSet,
@@ -98,6 +99,7 @@ function shapeToEdgeQL(
   if (shape === null) {
     return ``;
   }
+
   const lines: string[] = [];
   const addLine = (line: string) =>
     lines.push(`${keysOnly ? "" : "  "}${line}`);
@@ -139,7 +141,17 @@ function shapeToEdgeQL(
       }
     } else if (val.hasOwnProperty("__kind__")) {
       if (keysOnly) {
-        addLine(q(key));
+        addLine(
+          q(key) +
+            (isObjectType(val.__element__)
+              ? `: ${shapeToEdgeQL(
+                  val.__element__.__shape__,
+                  ctx,
+                  null,
+                  true
+                )}`
+              : "")
+        );
         continue;
       }
       const renderedExpr = renderEdgeQL(val, ctx);
@@ -638,13 +650,18 @@ function renderEdgeQL(
         }`
       );
 
-      lines.push(
-        shapeToEdgeQL(
-          (expr.__element__.__shape__ || {}) as object,
-          ctx,
-          Object.keys(expr.__element__.__pointers__)
-        )
-      );
+      if (
+        expr.__element__.__shape__ !==
+        (expr.__expr__ as ObjectTypeSet).__element__.__shape__
+      ) {
+        lines.push(
+          shapeToEdgeQL(
+            (expr.__element__.__shape__ || {}) as object,
+            ctx,
+            Object.keys(expr.__element__.__pointers__)
+          )
+        );
+      }
     } else {
       // non-object/non-shape select expression
       const needsScalarVar =
@@ -981,7 +998,13 @@ function walkExprTree(
         }
 
         if (expr.__kind__ === ExpressionKind.Select) {
-          if (isObjectType(expr.__element__)) {
+          if (
+            isObjectType(expr.__element__) &&
+            // Don't walk shape if select is just wrapping an object type expr
+            // that has it's own shape
+            expr.__element__.__shape__ !==
+              (expr.__expr__ as ObjectTypeSet).__element__.__shape__
+          ) {
             const walkShape = (shape: object) => {
               for (let param of Object.values(shape)) {
                 if (param.__kind__ === ExpressionKind.PolyShapeElement) {
