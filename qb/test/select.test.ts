@@ -1053,6 +1053,16 @@ test("computed property path", async () => {
   expect(await query.run(client)).toEqual([1, 2, 3]);
 });
 
+test("select with enums", async () => {
+  const query = e.select(e.Movie, movie => ({
+    title: true,
+    genre: true,
+    filter: e.op(movie.genre, "=", e.Genre.Action),
+  }));
+  const result = await query.run(client);
+  expect(result.length).toEqual(2);
+});
+
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
 

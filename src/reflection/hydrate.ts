@@ -130,33 +130,37 @@ export function makeType<T extends BaseType>(
     typeCache.set(id, obj);
     return obj;
   } else if (type.kind === "scalar") {
-    const scalarObj = type.is_abstract /// || type.castOnlyType
+    const scalarObj = type.is_abstract
+      ? {}
+      : type.enum_values
       ? {}
       : type.name === "std::json"
       ? (((val: any) => {
           return literal(scalarObj, JSON.stringify(val));
         }) as any)
       : (((val: any) => {
-          return literal(
-            // type.castOnlyType
-            //   ? makeType(spec, type.castOnlyType, literal)
-            //   :
-            scalarObj,
-            val
-          );
+          return literal(scalarObj, val);
         }) as any);
-    scalarObj.__kind__ = type.enum_values
-      ? TypeKind.enum
-      : // type.castOnlyType
-        // ? TypeKind.castonlyscalar
-        // :
-        TypeKind.scalar;
-    scalarObj.__name__ = type.name;
+
     if (type.enum_values) {
+      scalarObj.__kind__ = TypeKind.enum;
       for (const val of type.enum_values) {
-        scalarObj[val] = val;
+        Object.defineProperty(scalarObj, val, {
+          get: function () {
+            return literal(scalarObj, val);
+          },
+        });
       }
+      // if (type.enum_values) {
+      //   for (const val of type.enum_values) {
+      //     scalarObj[val] = val;
+      //   }
+      // }
+    } else {
+      scalarObj.__kind__ = TypeKind.scalar;
     }
+    scalarObj.__name__ = type.name;
+
     if (type.castOnlyType) {
       scalarObj.__casttype__ = makeType(spec, type.castOnlyType, literal);
     }

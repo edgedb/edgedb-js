@@ -215,7 +215,7 @@ export interface EnumType<
   __kind__: TypeKind.enum;
   __tstype__: TsType;
   __name__: Name;
-  (val: TsType | Vals): $expr_Literal<this>;
+  // (val: TsType | Vals): $expr_Literal<this>;
 }
 
 //////////////////

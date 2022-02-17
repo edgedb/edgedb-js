@@ -115,9 +115,14 @@ export const generateScalars = (params: GeneratorParams) => {
       sc.writeln([
         t`export `,
         dts`declare `,
-        t`type ${ref} = typeof ${ref}λEnum & $.EnumType<${quote(
+        t`type ${ref} = {`,
+        ...type.enum_values.map(
+          val => t`  ${toIdent(val)}: $.$expr_Literal<${ref}>; `
+        ),
+        t`} & `,
+        t`$.EnumType<${quote(
           type.name
-        )}, ${ref}λEnum, \`\${${ref}λEnum}\`>;`,
+        )}, \`\${${ref}λEnum}\`, \`\${${ref}λEnum}\`>;`,
       ]);
       sc.writeln([
         dts`declare `,

@@ -1,5 +1,7 @@
 import * as edgedb from "edgedb";
-import e from "../dbschema/edgeql-js";
+import {TypeKind} from "edgedb/dist/reflection";
+import e, {Cardinality} from "../dbschema/edgeql-js";
+import {tc} from "./setupTeardown";
 
 test("literals", () => {
   const duration = new edgedb.Duration(0, 0, 0, 0, 5, 6, 7, 8, 9, 10);
@@ -74,4 +76,12 @@ test("collection type literals", () => {
   expect(literalNamedTuple.toEdgeQL()).toEqual(`( str := "asdf" )`);
   const literalTuple = e.literal(e.tuple([e.str, e.int64]), ["asdf", 1234]);
   expect(literalTuple.toEdgeQL()).toEqual(`( "asdf", 1234 )`);
+});
+
+test("enum literals", () => {
+  const horror = e.Genre.Horror;
+  expect(e.Genre.Horror.__element__.__kind__).toEqual(TypeKind.enum);
+  expect(horror.__element__).toEqual(e.Genre);
+  expect(horror.__cardinality__).toEqual(Cardinality.One);
+  e.literal(e.Genre, "Horror");
 });

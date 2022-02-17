@@ -391,12 +391,12 @@ test("non literal tuples", async () => {
         ver: {
           major: number;
           minor: number;
-          stage: $VersionStageλEnum;
+          stage: `${$VersionStageλEnum}`;
           stage_no: number;
           local: string[];
         };
         verMajor: number;
-        verStage: $VersionStageλEnum;
+        verStage: `${$VersionStageλEnum}`;
         verLocal: string[];
         verLocal0: string;
       }
