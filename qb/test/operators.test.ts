@@ -1,7 +1,20 @@
 import superjson from "superjson";
-import {$} from "edgedb";
+import {$, Client} from "edgedb";
 import e from "../dbschema/edgeql-js";
 import {$expr_Operator} from "edgedb/dist/reflection";
+import {TestData, setupTests, teardownTests} from "./setupTeardown";
+
+let client: Client;
+let data: TestData;
+
+beforeAll(async () => {
+  const setup = await setupTests();
+  ({client, data} = setup);
+});
+
+afterAll(async () => {
+  await teardownTests(client);
+});
 
 function checkOperatorExpr<T extends $expr_Operator>(
   expr: T,
@@ -30,7 +43,7 @@ test("slice and index ops", () => {
     [e.str("test string"), [e.int64(2), e.int64(5)]],
     e.str,
     $.Cardinality.One,
-    `("test string")[2:5]`
+    `"test string"[2:5]`
   );
 
   checkOperatorExpr(
@@ -39,7 +52,7 @@ test("slice and index ops", () => {
     [e.str("test string"), [e.int64(2), e.int64(5)]],
     e.str,
     $.Cardinality.One,
-    `("test string")[2:5]`
+    `"test string"[2:5]`
   );
 
   checkOperatorExpr(
@@ -48,7 +61,7 @@ test("slice and index ops", () => {
     [e.array([BigInt(1), BigInt(2), BigInt(3)]), [e.int64(1), e.int64(2)]],
     e.array(e.bigint),
     $.Cardinality.One,
-    `([<std::bigint>1n, <std::bigint>2n, <std::bigint>3n])[1:2]`
+    `[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][1:2]`
   );
 
   checkOperatorExpr(
@@ -57,7 +70,7 @@ test("slice and index ops", () => {
     [e.str("test string"), e.int64(3)],
     e.str,
     $.Cardinality.One,
-    `("test string")[3]`
+    `"test string"[3]`
   );
 
   checkOperatorExpr(
@@ -66,7 +79,7 @@ test("slice and index ops", () => {
     [e.str("test string"), e.int64(3)],
     e.str,
     $.Cardinality.One,
-    `("test string")[3]`
+    `"test string"[3]`
   );
 
   checkOperatorExpr(
@@ -75,7 +88,7 @@ test("slice and index ops", () => {
     [e.array([BigInt(1), BigInt(2), BigInt(3)]), e.int64(2)],
     e.bigint,
     $.Cardinality.One,
-    `([<std::bigint>1n, <std::bigint>2n, <std::bigint>3n])[2]`
+    `[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][2]`
   );
 
   checkOperatorExpr(
@@ -84,7 +97,7 @@ test("slice and index ops", () => {
     [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
     e.json,
     $.Cardinality.One,
-    `(std::to_json(("{\\\"name\\\":\\\"Bob\\\"}")))["name"]`
+    `std::to_json("{\\\"name\\\":\\\"Bob\\\"}")["name"]`
   );
 
   checkOperatorExpr(
@@ -93,7 +106,7 @@ test("slice and index ops", () => {
     [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
     e.json,
     $.Cardinality.One,
-    `(std::to_json(("{\\\"name\\\":\\\"Bob\\\"}")))["name"]`
+    `std::to_json("{\\\"name\\\":\\\"Bob\\\"}")["name"]`
   );
 });
 
@@ -110,7 +123,7 @@ test("if else op", () => {
     [e.str("this"), e.op(42, "=", e.literal(e.float32, 42)), e.str("that")],
     e.str,
     $.Cardinality.One,
-    `("this" IF (42 = 42) ELSE "that")`
+    `"this" IF (42 = 42) ELSE "that"`
   );
 
   checkOperatorExpr(
@@ -119,7 +132,7 @@ test("if else op", () => {
     [e.str("this"), e.cast(e.bool, e.set()), e.str("that")],
     e.str,
     $.Cardinality.Empty,
-    `("this" IF <std::bool>{} ELSE "that")`
+    `"this" IF <std::bool>{} ELSE "that"`
   );
 
   checkOperatorExpr(
@@ -128,7 +141,7 @@ test("if else op", () => {
     [e.str("this"), e.set(e.bool(true), e.bool(false)), e.str("that")],
     e.str,
     $.Cardinality.AtLeastOne,
-    `("this" IF { true, false } ELSE "that")`
+    `"this" IF { true, false } ELSE "that"`
   );
 
   checkOperatorExpr(
@@ -147,7 +160,7 @@ test("if else op", () => {
     ],
     e.str,
     $.Cardinality.AtLeastOne,
-    `("this" IF (42 = 42) ELSE { "that", "other" })`
+    `"this" IF (42 = 42) ELSE { "that", "other" }`
   );
 
   checkOperatorExpr(
@@ -166,7 +179,7 @@ test("if else op", () => {
     ],
     e.str,
     $.Cardinality.Many,
-    `(<std::str>{} IF (42 = 42) ELSE { "that", "other" })`
+    `<std::str>{} IF (42 = 42) ELSE { "that", "other" }`
   );
 
   checkOperatorExpr(
@@ -185,6 +198,19 @@ test("if else op", () => {
     ],
     e.str,
     $.Cardinality.AtMostOne,
-    `("this" IF (42 = 42) ELSE <std::str>{})`
+    `"this" IF (42 = 42) ELSE <std::str>{}`
   );
+});
+
+test("non-literal args", async () => {
+  const loki = e.select(e.Hero, hero => ({
+    filter: e.op(hero.name, "=", "Loki"),
+  }));
+  const thanos = e.select(e.Villain, villain => ({
+    filter: e.op(villain.name, "=", "Thanos"),
+  }));
+
+  const expr = e.op(loki, "??", thanos);
+
+  expect(expr.run(client)).resolves.not.toThrow();
 });

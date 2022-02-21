@@ -843,32 +843,32 @@ test("polymorphic subqueries", async () => {
   }));
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_Person := (DETACHED default::Movie.characters)
-SELECT (__scope_0_Person) {
+  __scope_0_Person := DETACHED default::Movie.characters
+SELECT __scope_0_Person {
   id,
   name,
   [IS default::Villain].nemesis,
   [IS default::Hero].secret_identity,
   multi villains := (
     WITH
-      __scope_1_Villain := ((__scope_0_Person[IS default::Hero]).villains)
-    SELECT (__scope_1_Villain) {
+      __scope_1_Villain := __scope_0_Person[IS default::Hero].villains
+    SELECT __scope_1_Villain {
       id,
       name,
       nemesis := (
         WITH
-          __scope_2_Hero_expr := (__scope_1_Villain.nemesis),
+          __scope_2_Hero_expr := __scope_1_Villain.nemesis,
           __scope_2_Hero := (FOR __scope_2_Hero_inner IN {__scope_2_Hero_expr} UNION (
             WITH
-              __withVar_3 := (std::len((__scope_2_Hero_inner.name)))
+              __withVar_3 := std::len(__scope_2_Hero_inner.name)
             SELECT __scope_2_Hero_inner {
               __withVar_3 := __withVar_3
             }
           ))
-        SELECT (__scope_2_Hero) {
+        SELECT __scope_2_Hero {
           name,
-          single nameLen := (__scope_2_Hero.__withVar_3),
-          single nameLen2 := (__scope_2_Hero.__withVar_3)
+          single nameLen := __scope_2_Hero.__withVar_3,
+          single nameLen2 := __scope_2_Hero.__withVar_3
         }
       )
     }

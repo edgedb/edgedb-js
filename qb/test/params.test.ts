@@ -33,9 +33,9 @@ test("simple params", () => {
   __param__numArr := <array<std::int64>>$numArr,
   __param__optBool := <OPTIONAL std::bool>$optBool
 SELECT (SELECT {
-  single str := (__param__str),
-  multi nums := (std::array_unpack((__param__numArr))),
-  single x := (("true" IF __param__optBool ELSE "false"))
+  single str := __param__str,
+  multi nums := std::array_unpack(__param__numArr),
+  single x := ("true" IF __param__optBool ELSE "false")
 })`);
 
   expect(() => e.select(query).toEdgeQL()).toThrow();
