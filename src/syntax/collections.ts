@@ -21,7 +21,7 @@ import {
   typeutil,
 } from "../reflection";
 import {$expressionify} from "./path";
-import {getCardsFromExprs} from "./set";
+import type {getCardsFromExprs} from "./set";
 import {
   literalToScalarType,
   literalToTypeSet,

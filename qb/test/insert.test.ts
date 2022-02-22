@@ -1,6 +1,6 @@
-import {Client} from "edgedb";
-import {Villain} from "../dbschema/edgeql-js/modules/default";
-import {InsertShape} from "../dbschema/edgeql-js/syntax/insert";
+import type {Client} from "edgedb";
+import type {Villain} from "../dbschema/edgeql-js/modules/default";
+import type {InsertShape} from "../dbschema/edgeql-js/syntax/insert";
 import e, {Cardinality} from "../dbschema/edgeql-js";
 import {setupTests, teardownTests, TestData, tc} from "./setupTeardown";
 

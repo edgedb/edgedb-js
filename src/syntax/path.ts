@@ -9,7 +9,7 @@ import {
   PropertyDesc,
   Cardinality,
 } from "../reflection";
-import {
+import type {
   PathParent,
   $expr_PathLeaf,
   $expr_PathNode,

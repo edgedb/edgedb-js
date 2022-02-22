@@ -1,7 +1,7 @@
 import superjson from "superjson";
 import {$} from "edgedb";
 import e, {literalToTypeSet} from "../dbschema/edgeql-js";
-import {$expr_Function} from "edgedb/dist/reflection";
+import type {$expr_Function} from "edgedb/dist/reflection";
 import {tc} from "./setupTeardown";
 import {$str, number} from "../dbschema/edgeql-js/modules/std";
 import * as castMaps from "../dbschema/edgeql-js/castMaps";
