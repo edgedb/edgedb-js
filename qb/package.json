@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
-    "test:ci": "ts-node test/testRunner.ts",
+    "test:ci": "ts-node --project ../tsconfig.json test/testRunner.ts",
     "generate": "edgeql-js",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",
