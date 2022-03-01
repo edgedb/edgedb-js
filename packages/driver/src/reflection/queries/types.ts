@@ -133,7 +133,10 @@ export async function _types(
 
     SELECT Type {
       id,
-      name,
+      name :=
+        array_join(array_agg([IS ObjectType].union_of.name), ' | ')
+        IF EXISTS [IS ObjectType].union_of
+        ELSE .name,
       is_abstract := .abstract,
 
       kind := 'object' IF Type IS ObjectType ELSE
@@ -183,7 +186,11 @@ export async function _types(
       ) {
         target := (.subject[is schema::Property].name ?? .subject[is schema::Link].name ?? .subjectexpr)
       } filter .name = 'std::exclusive'),
-      backlinks := (SELECT DETACHED Link FILTER .target = Type) {
+      backlinks := (
+         SELECT DETACHED Link
+         FILTER .target = Type
+           AND NOT EXISTS .source[IS ObjectType].union_of
+        ) {
         card := "AtMostOne"
           IF
           EXISTS (select .constraints filter .name = 'std::exclusive')
@@ -268,7 +275,7 @@ export async function _types(
         }
 
         const rawExclusives: {target: string}[] = type.exclusives as any;
-        const exclusives: typeof type["exclusives"] = [];
+        const exclusives: (typeof type)["exclusives"] = [];
         for (const ex of rawExclusives) {
           const target = ex.target;
           if (target in ptrs) {

@@ -129,6 +129,18 @@ module default {
 
   type Simple extending HasName, HasAge {}
 
+  type X {
+    property a -> str;
+    property b -> int32;
+  }
+  type Y {
+    property a -> str;
+    property c -> bool;
+  }
+  type Z {
+    link xy -> X | Y;
+  }
+
   # Unicode handling
   # https://github.com/edgedb/edgedb/blob/master/tests/schemas/dump02_default.esdl
 
