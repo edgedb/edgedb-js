@@ -335,29 +335,6 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       };
     };
 
-    const getUnionCommonPointers = () => {
-      const unionTypes = type.union_of.map(({id}) => {
-        const t = types.get(id);
-        if (t.kind !== "object") {
-          throw new Error(
-            `type '${t.name}' of union '${type.name}' is not an object type`
-          );
-        }
-        return t;
-      });
-      const commonPointers: introspect.Pointer[] = [];
-      const [first, ...rest] = unionTypes;
-      const restPointerNames = rest.map(
-        t => new Set(t.pointers.map(p => p.name))
-      );
-      for (const pointer of first.pointers) {
-        if (restPointerNames.every(names => names.has(pointer.name))) {
-          commonPointers.push(pointer);
-        }
-      }
-      return commonPointers;
-    };
-
     // unique
     // const BaseObject = params.typesByName["std::BaseObject"];
     // const uniqueStubs = [...new Set(type.backlinks.map((bl) => bl.stub))];
@@ -371,11 +348,11 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     //     pointers: null,
     //   };
     // });
-    const lines = (
-      isUnionType
-        ? getUnionCommonPointers()
-        : [...type.pointers, ...type.backlinks, ...type.backlink_stubs]
-    ).map(ptrToLine);
+    const lines = [
+      ...type.pointers,
+      ...type.backlinks,
+      ...type.backlink_stubs,
+    ].map(ptrToLine);
 
     // generate shape type
     const fieldNames = new Set(lines.map(l => l.key));

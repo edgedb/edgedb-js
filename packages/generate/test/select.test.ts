@@ -1349,6 +1349,26 @@ test("filter_single card mismatch", async () => {
 //   await query.run(client);
 // })
 
+test("type union links", async () => {
+  const query = e.select(e.Z, z => ({
+    xy: {
+      a: true,
+      ...e.is(e.X, {
+        b: true
+      })
+    }
+  }));
+
+  const result = await query.run(client);
+
+  tc.assert<
+    tc.IsExact<
+      typeof result,
+      {xy: {a: string | null; b: number | null} | null}[]
+    >
+  >(true);
+});
+
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
 
