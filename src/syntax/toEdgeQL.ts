@@ -640,7 +640,7 @@ function renderEdgeQL(
       ctx
     )})`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
-    const lines = [];
+    const lines: string[] = [];
     if (isObjectType(expr.__element__)) {
       lines.push(
         `SELECT${
@@ -688,7 +688,7 @@ function renderEdgeQL(
       }
     }
 
-    const modifiers = [];
+    const modifiers: string[] = [];
 
     if (expr.__modifiers__.filter) {
       modifiers.push(`FILTER ${renderEdgeQL(expr.__modifiers__.filter, ctx)}`);
