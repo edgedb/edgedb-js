@@ -79,7 +79,12 @@ export type setToAssignmentExpression<
         string,
         Set["__element__"]["__pointers__"]
       >,
-      cardinalityUtil.assignable<Set["__cardinality__"]>
+      cardinalityUtil.assignable<
+        // Allow expressions with AtMostOne or Many cardinality in
+        // insert/update shape even when link is required since EdgeDB will
+        // assert cardinality at runtime
+        cardinalityUtil.overrideLowerBound<Set["__cardinality__"], "Zero">
+      >
     >
   : never;
 

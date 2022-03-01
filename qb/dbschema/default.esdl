@@ -40,6 +40,11 @@ module default {
     property plot_summary -> str;
   }
 
+  type User {
+    required property username -> str;
+    required link favourite_movie -> Movie;
+  }
+
   type MovieShape {
   }
 

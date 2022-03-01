@@ -181,6 +181,13 @@ test("insert type enforcement", async () => {
     release_year: null,
   }).toEdgeQL();
 
+  e.insert(e.User, {
+    username: "spidey",
+    favourite_movie: e.select(e.Movie, movie => ({
+      filter: e.op(movie.title, "=", "The Avengers"),
+    })),
+  });
+
   return;
 });
 
