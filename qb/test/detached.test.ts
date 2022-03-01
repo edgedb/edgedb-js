@@ -1,4 +1,4 @@
-import * as edgedb from "edgedb";
+import type * as edgedb from "edgedb";
 import e from "../dbschema/edgeql-js";
 import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 

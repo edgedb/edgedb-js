@@ -1,7 +1,7 @@
 import {Client, $} from "edgedb";
 import e, {$infer} from "../dbschema/edgeql-js";
 
-import {$VersionStageλEnum} from "../dbschema/edgeql-js/modules/sys";
+import type {$VersionStageλEnum} from "../dbschema/edgeql-js/modules/sys";
 import {tc} from "./setupTeardown";
 
 import {setupTests, teardownTests, TestData} from "./setupTeardown";

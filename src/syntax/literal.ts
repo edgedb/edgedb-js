@@ -7,7 +7,7 @@ import {
   makeType,
   ScalarType,
 } from "../reflection";
-import {$expr_Literal} from "../reflection/literal";
+import type {$expr_Literal} from "../reflection/literal";
 import {$expressionify} from "./path";
 import {spec} from "@generated/__spec__";
 

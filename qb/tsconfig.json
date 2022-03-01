@@ -13,6 +13,10 @@
     "baseUrl": ".",
     "declaration": true,
     "preserveSymlinks": true,
+    // Svelte doesn't correctly compile if imports of the generated /modules
+    // aren't imported as 'import type' in other parts of the generated
+    // querybuilder, so set this option to ensure we always do that
+    "importsNotUsedAsValues": "error",
     "paths": {}
   },
   "include": [

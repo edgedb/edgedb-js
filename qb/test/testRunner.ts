@@ -2,7 +2,7 @@ import {spawn} from "child_process";
 import path from "path";
 
 import createClient from "../../src/index.node";
-import {ConnectConfig} from "../../src/conUtils";
+import type {ConnectConfig} from "../../src/conUtils";
 import {
   generateStatusFileName,
   getServerCommand,

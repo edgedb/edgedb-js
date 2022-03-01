@@ -1,8 +1,8 @@
 import {Expression, ExpressionKind, TypeSet} from "../reflection";
-import {$expr_Select} from "./select";
-import {$expr_For} from "./for";
-import {$expr_Insert} from "./insert";
-import {$expr_Update} from "./update";
+import type {$expr_Select} from "./select";
+import type {$expr_For} from "./for";
+import type {$expr_Insert} from "./insert";
+import type {$expr_Update} from "./update";
 import {$expressionify} from "./path";
 
 export type $expr_Alias<Expr extends TypeSet = TypeSet> = Expression<{

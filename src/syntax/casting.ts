@@ -1,4 +1,4 @@
-import {
+import type {
   ArrayType,
   BaseType,
   BaseTypeTuple,
@@ -16,7 +16,10 @@ import {
   TupleType,
   TypeSet,
 } from "../reflection";
-import {scalarCastableFrom, scalarAssignableBy} from "@generated/castMaps";
+import type {
+  scalarCastableFrom,
+  scalarAssignableBy,
+} from "@generated/castMaps";
 
 export type anonymizeObject<T extends ObjectType> = ObjectType<
   string,

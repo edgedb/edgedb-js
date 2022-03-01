@@ -36,7 +36,7 @@ import type {
   ExpressionRoot,
   PathParent,
 } from "../reflection/path";
-import {anonymizeObject} from "./casting";
+import type {anonymizeObject} from "./casting";
 import type {$expr_Operator} from "../reflection/funcops";
 import {$expressionify, $getScopedExpr} from "./path";
 import {$getTypeByName, literal} from "./literal";

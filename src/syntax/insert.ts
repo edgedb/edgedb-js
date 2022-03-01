@@ -19,7 +19,7 @@ import {cast} from "./cast";
 import {set} from "./set";
 import {literal} from "./literal";
 import {$getTypeByName} from "./literal";
-import {$expr_PathNode} from "../reflection/path";
+import type {$expr_PathNode} from "../reflection/path";
 import type {$Object} from "@generated/modules/std";
 
 export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =

@@ -1,4 +1,4 @@
-import {$} from "edgedb";
+import type {$} from "edgedb";
 import e from "../dbschema/edgeql-js";
 import {tc} from "./setupTeardown";
 

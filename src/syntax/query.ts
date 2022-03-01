@@ -1,4 +1,4 @@
-import * as edgedb from "edgedb";
+import type * as edgedb from "edgedb";
 import {Cardinality, ExpressionKind} from "../reflection";
 import {jsonifyComplexParams} from "./params";
 import {select} from "./select";

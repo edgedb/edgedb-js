@@ -18,7 +18,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
   const f = dir.getPath("castMaps");
   f.addStarImport("edgedb", "edgedb");
-  f.addImport({$: true}, "edgedb", false, ["ts", "dts"]);
+  f.addImport({$: true}, "edgedb", false, ["ts", "dts"], true);
 
   const reverseTopo = Array.from(types)
     .reverse() // reverse topological order

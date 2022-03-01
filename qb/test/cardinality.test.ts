@@ -1,4 +1,4 @@
-import {$} from "edgedb";
+import type {$} from "edgedb";
 import {tc} from "./setupTeardown";
 
 test("multiply$.Cardinality", () => {

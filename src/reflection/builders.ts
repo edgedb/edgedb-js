@@ -80,7 +80,12 @@ export class CodeBuffer {
   }
 }
 
-type Import = {fromPath: string; modes?: Set<Mode>; allowFileExt?: boolean} & (
+type Import = {
+  fromPath: string;
+  modes?: Set<Mode>;
+  allowFileExt?: boolean;
+  typeOnly: boolean;
+} & (
   | {type: "default"; name: string}
   | {type: "star"; name: string}
   | {type: "partial"; names: {[key: string]: string | boolean}}
@@ -118,7 +123,8 @@ class BuilderImportsExports {
     names: {[key: string]: string | boolean},
     fromPath: string,
     allowFileExt: boolean = false,
-    modes?: Mode[]
+    modes?: Mode[],
+    typeOnly: boolean = false
   ) {
     this.imports.add({
       type: "partial",
@@ -126,6 +132,7 @@ class BuilderImportsExports {
       names,
       allowFileExt,
       modes: modes && new Set(modes),
+      typeOnly,
     });
   }
 
@@ -133,7 +140,8 @@ class BuilderImportsExports {
     name: string,
     fromPath: string,
     allowFileExt: boolean = false,
-    modes?: Mode[]
+    modes?: Mode[],
+    typeOnly: boolean = false
   ) {
     this.imports.add({
       type: "default",
@@ -141,6 +149,7 @@ class BuilderImportsExports {
       name,
       allowFileExt,
       modes: modes && new Set(modes),
+      typeOnly,
     });
   }
 
@@ -148,7 +157,8 @@ class BuilderImportsExports {
     name: string,
     fromPath: string,
     allowFileExt: boolean = false,
-    modes?: Mode[]
+    modes?: Mode[],
+    typeOnly: boolean = false
   ) {
     this.imports.add({
       type: "star",
@@ -156,6 +166,7 @@ class BuilderImportsExports {
       name,
       allowFileExt,
       modes: modes && new Set(modes),
+      typeOnly,
     });
   }
 
@@ -223,7 +234,10 @@ class BuilderImportsExports {
   }) {
     const imports = new Set<string>();
     for (const imp of this.imports) {
-      if (imp.modes && !imp.modes.has(mode)) {
+      if (
+        (imp.modes && !imp.modes.has(mode)) ||
+        (imp.typeOnly && mode === "js")
+      ) {
         continue;
       }
 
@@ -239,7 +253,9 @@ class BuilderImportsExports {
           if (moduleKind === "cjs") helpers.add("importDefault");
           imports.add(
             moduleKind === "esm"
-              ? `import ${imp.name} from "${imp.fromPath}${esmFileExt}";`
+              ? `import${imp.typeOnly ? " type" : ""} ${imp.name} from "${
+                  imp.fromPath
+                }${esmFileExt}";`
               : `const ${imp.name} = __importDefault(require("${imp.fromPath}")).default;`
           );
           break;
@@ -252,7 +268,9 @@ class BuilderImportsExports {
           }
           imports.add(
             moduleKind === "esm"
-              ? `import * as ${imp.name} from "${imp.fromPath}${esmFileExt}";`
+              ? `import${imp.typeOnly ? " type" : ""} * as ${imp.name} from "${
+                  imp.fromPath
+                }${esmFileExt}";`
               : `const ${imp.name} = __importStar(require("${imp.fromPath}"));`
           );
           break;
@@ -271,7 +289,9 @@ class BuilderImportsExports {
             .join(", ");
           imports.add(
             moduleKind === "esm"
-              ? `import { ${names} } from "${imp.fromPath}${esmFileExt}";`
+              ? `import${imp.typeOnly ? " type" : ""} { ${names} } from "${
+                  imp.fromPath
+                }${esmFileExt}";`
               : `const { ${names} } = require("${imp.fromPath}");`
           );
           break;
@@ -553,7 +573,7 @@ export class CodeBuilder {
         importPath = "./" + importPath;
       }
 
-      importsExports.addStarImport(prefix, importPath, true);
+      importsExports.addStarImport(prefix, importPath, true, undefined, true);
     }
 
     return (

@@ -1,7 +1,7 @@
 import superjson from "superjson";
 import {$, Client} from "edgedb";
 import e from "../dbschema/edgeql-js";
-import {$expr_Operator} from "edgedb/dist/reflection";
+import type {$expr_Operator} from "edgedb/dist/reflection";
 import {TestData, setupTests, teardownTests} from "./setupTeardown";
 
 let client: Client;

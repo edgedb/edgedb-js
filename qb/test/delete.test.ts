@@ -1,4 +1,4 @@
-import * as edgedb from "edgedb";
+import type * as edgedb from "edgedb";
 
 import e, {Cardinality} from "../dbschema/edgeql-js";
 import {setupTests, teardownTests, tc} from "./setupTeardown";
