@@ -79,17 +79,6 @@ type WithScopeExpr =
   | $expr_InsertUnlessConflict
   | $expr_For;
 
-const topLevelExprKinds = new Set([
-  ExpressionKind.Delete,
-  ExpressionKind.For,
-  ExpressionKind.Insert,
-  ExpressionKind.InsertUnlessConflict,
-  ExpressionKind.Select,
-  ExpressionKind.Update,
-  ExpressionKind.With,
-  ExpressionKind.WithParams,
-]);
-
 function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
@@ -172,11 +161,17 @@ function shapeToEdgeQL(
           : "";
 
       addLine(
-        `${expectedCardinality}${q(key)} ${operator} (${
+        `${expectedCardinality}${q(key)} ${operator} ${
           renderedExpr.includes("\n")
-            ? `\n${indent(renderedExpr, 4)}\n  `
+            ? `(\n${indent(
+                renderedExpr[0] === "(" &&
+                  renderedExpr[renderedExpr.length - 1] === ")"
+                  ? renderedExpr.slice(1, -1)
+                  : renderedExpr,
+                4
+              )}\n  )`
             : renderedExpr
-        })`
+        }`
       );
     } else {
       throw new Error("Invalid shape.");
@@ -365,12 +360,23 @@ export function $toEdgeQL(this: any) {
     }
   }
 
-  const edgeQL = renderEdgeQL(this, {
+  let edgeQL = renderEdgeQL(this, {
     withBlocks,
     withVars,
     forVars: new Map(),
     linkProps,
   });
+  if (
+    edgeQL.startsWith("(") &&
+    edgeQL.endsWith(")") &&
+    !(
+      this.__kind__ === ExpressionKind.Tuple ||
+      this.__kind__ === ExpressionKind.NamedTuple ||
+      this.__kind__ === ExpressionKind.Literal
+    )
+  ) {
+    edgeQL = edgeQL.slice(1, -1);
+  }
   toEdgeQLCache.set(this, edgeQL);
 
   return edgeQL;
@@ -430,20 +436,16 @@ function renderEdgeQL(
 
   const withVar = ctx.withVars.get(expr);
   if (withVar && ctx.renderWithVar !== expr) {
-    return (
-      withVar.name +
-      (renderShape &&
+    return renderShape &&
       expr.__kind__ === ExpressionKind.Select &&
       isObjectType(expr.__element__)
-        ? " " +
-          shapeToEdgeQL(
-            (expr.__element__.__shape__ || {}) as object,
-            ctx,
-            null,
-            true
-          )
-        : "")
-    );
+      ? `(${withVar.name} ${shapeToEdgeQL(
+          (expr.__element__.__shape__ || {}) as object,
+          ctx,
+          null,
+          true
+        )})`
+      : withVar.name;
   }
 
   function renderWithBlockExpr(
@@ -461,19 +463,25 @@ function renderEdgeQL(
       _noImplicitDetached
     );
     if (ctx.linkProps.has(expr)) {
-      renderedExpr = `SELECT ${renderedExpr} {\n${ctx.linkProps
+      renderedExpr = `(SELECT ${renderedExpr} {\n${ctx.linkProps
         .get(expr)!
         .map(
           linkPropName =>
             `  __linkprop_${linkPropName} := ${renderedExpr}@${linkPropName}`
         )
-        .join(",\n")}\n}`;
+        .join(",\n")}\n})`;
     }
-    return `  ${withBlockElement.name} := (${
+    return `  ${withBlockElement.name} := ${
       renderedExpr.includes("\n")
-        ? `\n${indent(renderedExpr, 4)}\n  `
+        ? `(\n${indent(
+            renderedExpr[0] === "(" &&
+              renderedExpr[renderedExpr.length - 1] === ")"
+              ? renderedExpr.slice(1, -1)
+              : renderedExpr,
+            4
+          )}\n  )`
         : renderedExpr
-    })`;
+    }`;
   }
 
   let withBlock = "";
@@ -545,7 +553,7 @@ function renderEdgeQL(
   if (expr.__kind__ === ExpressionKind.With) {
     return renderEdgeQL(expr.__expr__, ctx);
   } else if (expr.__kind__ === ExpressionKind.WithParams) {
-    return `WITH\n${expr.__params__
+    return `(WITH\n${expr.__params__
       .map(param => {
         const optional =
           param.__cardinality__ === Cardinality.AtMostOne ? "OPTIONAL " : "";
@@ -555,7 +563,7 @@ function renderEdgeQL(
             : `<${optional}${param.__element__.__name__}>`
         }$${param.__name__}`;
       })
-      .join(",\n")}\nSELECT (${renderEdgeQL(expr.__expr__, ctx)})`;
+      .join(",\n")}\nSELECT ${renderEdgeQL(expr.__expr__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Alias) {
     const aliasedExprVar = ctx.withVars.get(expr.__expr__ as any);
     if (!aliasedExprVar) {
@@ -585,12 +593,7 @@ function renderEdgeQL(
         false,
         noImplicitDetached
       );
-      return `${
-        (expr.__parent__.type as any).__kind__ !== ExpressionKind.PathNode &&
-        !(ctx.withVars.has(expr) && ctx.renderWithVar !== expr)
-          ? `(${parent})`
-          : parent
-      }${linkName.startsWith("@") ? "" : "."}${q(linkName)}`.trim();
+      return `${parent}${linkName.startsWith("@") ? "" : "."}${q(linkName)}`;
     }
   } else if (expr.__kind__ === ExpressionKind.Literal) {
     return literalToEdgeQL(expr.__element__, expr.__value__);
@@ -602,18 +605,11 @@ function renderEdgeQL(
       exprs.every(ex => ex.__element__.__kind__ !== TypeKind.object)
     ) {
       if (exprs.length === 0) return `<${expr.__element__.__name__}>{}`;
-      return `{ ${exprs
-        .map(ex => {
-          const renderedExpr = renderEdgeQL(ex, ctx);
-          return topLevelExprKinds.has((ex as SomeExpression).__kind__)
-            ? `(${renderedExpr})`
-            : renderedExpr;
-        })
-        .join(", ")} }`;
+      return `{ ${exprs.map(ex => renderEdgeQL(ex, ctx)).join(", ")} }`;
     } else {
       throw new Error(
         `Invalid arguments to set constructor: ${exprs
-          .map(ex => expr.__element__.__name__)
+          .map(ex => ex.__element__.__name__)
           .join(", ")}`
       );
     }
@@ -646,7 +642,7 @@ function renderEdgeQL(
         `SELECT${
           expr.__expr__.__element__.__name__ === "std::FreeObject"
             ? ""
-            : ` (${renderEdgeQL(expr.__scope__ ?? expr.__expr__, ctx, false)})`
+            : ` ${renderEdgeQL(expr.__scope__ ?? expr.__expr__, ctx, false)}`
         }`
       );
 
@@ -672,10 +668,10 @@ function renderEdgeQL(
         !ctx.withVars.has(expr.__expr__ as any);
 
       lines.push(
-        `SELECT ${needsScalarVar ? "_ := " : ""}(${renderEdgeQL(
+        `SELECT ${needsScalarVar ? "_ := " : ""}${renderEdgeQL(
           expr.__expr__,
           ctx
-        )})`
+        )}`
       );
 
       if (needsScalarVar) {
@@ -723,33 +719,32 @@ function renderEdgeQL(
     }
 
     return (
+      "(" +
       withBlock +
       lines.join(" ") +
-      (modifiers.length ? "\n" + modifiers.join("\n") : "")
+      (modifiers.length ? "\n" + modifiers.join("\n") : "") +
+      ")"
     );
   } else if (expr.__kind__ === ExpressionKind.Update) {
-    return (
-      withBlock +
-      `UPDATE ${renderEdgeQL(expr.__scope__, ctx, false)}${
-        expr.__modifiers__.filter
-          ? `\nFILTER ${renderEdgeQL(expr.__modifiers__.filter, ctx)}\n`
-          : " "
-      }SET ${shapeToEdgeQL(expr.__shape__, ctx)}`
-    );
+    return `(${withBlock}UPDATE ${renderEdgeQL(expr.__scope__, ctx, false)}${
+      expr.__modifiers__.filter
+        ? `\nFILTER ${renderEdgeQL(expr.__modifiers__.filter, ctx)}\n`
+        : " "
+    }SET ${shapeToEdgeQL(expr.__shape__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Delete) {
-    return `DELETE (${renderEdgeQL(
+    return `(DELETE ${renderEdgeQL(
       expr.__expr__,
       ctx,
       undefined,
       noImplicitDetached
     )})`;
   } else if (expr.__kind__ === ExpressionKind.Insert) {
-    return `INSERT ${renderEdgeQL(
+    return `(INSERT ${renderEdgeQL(
       expr.__expr__,
       ctx,
       false,
       true
-    )} ${shapeToEdgeQL(expr.__shape__, ctx)}`;
+    )} ${shapeToEdgeQL(expr.__shape__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.InsertUnlessConflict) {
     const $on = expr.__conflict__.on;
     const $else = expr.__conflict__.else;
@@ -765,15 +760,14 @@ function renderEdgeQL(
     if ($else) {
       clause.push(`\nELSE (${renderEdgeQL($else, ctx, true, true)})`);
     }
-    return `${renderEdgeQL(expr.__expr__, ctx, false, true)} ${clause.join(
-      ""
-    )}`;
+    return `(${renderEdgeQL(expr.__expr__, ctx, false, true).slice(
+      1,
+      -1
+    )} ${clause.join("")})`;
   } else if (expr.__kind__ === ExpressionKind.Function) {
-    const args = expr.__args__.map(
-      arg => `(${renderEdgeQL(arg!, ctx, false)})`
-    );
+    const args = expr.__args__.map(arg => `${renderEdgeQL(arg!, ctx, false)}`);
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
-      args.push(`${q(key)} := (${renderEdgeQL(arg, ctx, false)})`);
+      args.push(`${q(key)} := ${renderEdgeQL(arg, ctx, false)}`);
     }
     return `${expr.__name__}(${args.join(", ")})`;
   } else if (expr.__kind__ === ExpressionKind.Operator) {
@@ -796,7 +790,7 @@ function renderEdgeQL(
             index = renderEdgeQL(args[1], ctx);
           }
 
-          return `(${renderEdgeQL(args[0], ctx)})[${index}]`;
+          return `${renderEdgeQL(args[0], ctx)}[${index}]`;
         }
         return `(${renderEdgeQL(args[0], ctx)} ${operator} ${renderEdgeQL(
           args[1],
@@ -827,14 +821,10 @@ function renderEdgeQL(
     }]`;
   } else if (expr.__kind__ === ExpressionKind.For) {
     ctx.forVars.set(expr.__forVar__, `__forVar__${ctx.forVars.size}`);
-    return (
-      withBlock +
-      `FOR ${ctx.forVars.get(expr.__forVar__)} IN {${renderEdgeQL(
-        expr.__iterSet__,
-        ctx
-      )}}
-UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n)`
-    );
+    return `(${withBlock}FOR ${ctx.forVars.get(
+      expr.__forVar__
+    )} IN {${renderEdgeQL(expr.__iterSet__, ctx)}}
+UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n))`;
   } else if (expr.__kind__ === ExpressionKind.ForVar) {
     const forVar = ctx.forVars.get(expr);
     if (!forVar) {
@@ -844,7 +834,7 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n)`
   } else if (expr.__kind__ === ExpressionKind.Param) {
     return `__param__${expr.__name__}`;
   } else if (expr.__kind__ === ExpressionKind.Detached) {
-    return `DETACHED ${renderEdgeQL(
+    return `(DETACHED ${renderEdgeQL(
       expr.__expr__,
       {
         ...ctx,
@@ -852,7 +842,7 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n)`
       },
       undefined,
       true
-    )}`;
+    )})`;
   } else {
     util.assertNever(
       expr,
@@ -1160,7 +1150,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
     } else if (isTupleType(type)) {
       stringRep = `( ${val
         .map((el, j) => literalToEdgeQL(type.__items__[j] as any, el))
-        .join(", ")} )`;
+        .join(", ")}${type.__items__.length === 1 ? "," : ""} )`;
     } else {
       throw new Error(`Invalid value for type ${type.__name__}`);
     }

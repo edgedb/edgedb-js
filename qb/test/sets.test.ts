@@ -42,7 +42,7 @@ test("object set contructor", () => {
   );
 
   expect(e.set(e.select(e.Hero), e.select(e.Villain)).toEdgeQL()).toEqual(
-    `{ (SELECT (DETACHED default::Hero)), (SELECT (DETACHED default::Villain)) }`
+    `{ (SELECT DETACHED default::Hero), (SELECT DETACHED default::Villain) }`
   );
 });
 

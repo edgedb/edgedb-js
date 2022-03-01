@@ -6,8 +6,8 @@ test("simple repeated expression", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   expect(e.select(e.op(numbers, "+", numbers)).toEdgeQL()).toEqual(`WITH
-  __withVar_0 := ({ 1, 2, 3 })
-SELECT ((__withVar_0 + __withVar_0))`);
+  __withVar_0 := { 1, 2, 3 }
+SELECT (__withVar_0 + __withVar_0)`);
 });
 
 test("simple expression with alias", () => {
@@ -15,9 +15,9 @@ test("simple expression with alias", () => {
 
   expect(e.select(e.op(numbers, "+", e.alias(numbers))).toEdgeQL())
     .toEqual(`WITH
-  __withVar_0 := ({ 1, 2, 3 }),
-  __withVar_1 := (__withVar_0)
-SELECT ((__withVar_0 + __withVar_1))`);
+  __withVar_0 := { 1, 2, 3 },
+  __withVar_1 := __withVar_0
+SELECT (__withVar_0 + __withVar_1)`);
 });
 
 test("implicit WITH vars referencing each other", () => {
@@ -39,11 +39,11 @@ test("implicit WITH vars referencing each other", () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __withVar_4 := (10),
+  __withVar_4 := 10,
   __withVar_3 := (
     WITH
-      __scope_2_Hero := (DETACHED default::Hero)
-    SELECT (__scope_2_Hero) {
+      __scope_2_Hero := DETACHED default::Hero
+    SELECT __scope_2_Hero {
       id
     }
     ORDER BY __scope_2_Hero.id
@@ -51,8 +51,8 @@ test("implicit WITH vars referencing each other", () => {
   ),
   __withVar_1 := (
     WITH
-      __scope_0_Hero := (__withVar_3)
-    SELECT (__scope_0_Hero) {
+      __scope_0_Hero := __withVar_3
+    SELECT __scope_0_Hero {
       id,
       name
     }
@@ -60,8 +60,8 @@ test("implicit WITH vars referencing each other", () => {
   )
 SELECT {
   multi pageResults := (__withVar_1 {id, name}),
-  single nextOffset := ((__withVar_4 + std::count((__withVar_1)))),
-  single hasMore := (SELECT ((std::count((__withVar_3)) > 10)))
+  single nextOffset := (__withVar_4 + std::count(__withVar_1)),
+  single hasMore := (SELECT (std::count(__withVar_3) > 10))
 }`);
 
   type queryType = $.BaseTypeToTsType<typeof query["__element__"]>;
@@ -90,8 +90,8 @@ test("explicit WITH block", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   expect(e.with([numbers], e.select(numbers)).toEdgeQL()).toEqual(`WITH
-  __withVar_0 := ({ 1, 2, 3 })
-SELECT (__withVar_0)`);
+  __withVar_0 := { 1, 2, 3 }
+SELECT __withVar_0`);
 });
 
 test("explicit WITH block in nested query", () => {
@@ -106,8 +106,8 @@ test("explicit WITH block in nested query", () => {
   ).toEqual(`SELECT {
   multi nested := (
     WITH
-      __withVar_0 := ({ 1, 2, 3 })
-    SELECT (__withVar_0)
+      __withVar_0 := { 1, 2, 3 }
+    SELECT __withVar_0
   )
 }`);
 });
@@ -140,12 +140,12 @@ test("explicit WITH block nested in implicit WITH block", () => {
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ 1, 2, 3 })
-    SELECT (__withVar_1)
+      __withVar_1 := { 1, 2, 3 }
+    SELECT __withVar_1
   )
 SELECT {
-  multi numbers := (__withVar_0),
-  multi numbers2 := (__withVar_0)
+  multi numbers := __withVar_0,
+  multi numbers2 := __withVar_0
 }`);
 });
 
@@ -166,11 +166,11 @@ test("explicit WITH block nested in explicit WITH block", () => {
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ 1, 2, 3 })
-    SELECT (__withVar_1)
+      __withVar_1 := { 1, 2, 3 }
+    SELECT __withVar_1
   )
 SELECT {
-  multi numbers := (__withVar_0)
+  multi numbers := __withVar_0
 }`);
 });
 
@@ -190,14 +190,14 @@ test("explicit WITH block nested in explicit WITH block, sub expr explicitly ext
       )
       .toEdgeQL()
   ).toEqual(`WITH
-  __withVar_2 := (2),
+  __withVar_2 := 2,
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ 1, __withVar_2, 3 })
-    SELECT (__withVar_1)
+      __withVar_1 := { 1, __withVar_2, 3 }
+    SELECT __withVar_1
   )
 SELECT {
-  multi numbers := (__withVar_0)
+  multi numbers := __withVar_0
 }`);
 });
 
@@ -236,15 +236,15 @@ test("explicit WITH block nested in explicit WITH block, sub expr implicitly ext
       )
       .toEdgeQL()
   ).toEqual(`WITH
-  __withVar_2 := (2),
+  __withVar_2 := 2,
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ 1, __withVar_2, 3 })
-    SELECT (__withVar_1)
+      __withVar_1 := { 1, __withVar_2, 3 }
+    SELECT __withVar_1
   )
 SELECT {
-  single number := (__withVar_2),
-  multi numbers := (__withVar_0)
+  single number := __withVar_2,
+  multi numbers := __withVar_0
 }`);
 });
 
@@ -269,11 +269,11 @@ test("implicit WITH and explicit WITH in sub expr", () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __withVar_5 := (10),
+  __withVar_5 := 10,
   __withVar_4 := (
     WITH
-      __scope_1_Hero := (DETACHED default::Hero)
-    SELECT (__scope_1_Hero) {
+      __scope_1_Hero := DETACHED default::Hero
+    SELECT __scope_1_Hero {
       id
     }
     ORDER BY __scope_1_Hero.id
@@ -281,8 +281,8 @@ test("implicit WITH and explicit WITH in sub expr", () => {
   ),
   __withVar_3 := (
     WITH
-      __scope_0_Hero := (__withVar_4)
-    SELECT (__scope_0_Hero) {
+      __scope_0_Hero := __withVar_4
+    SELECT __scope_0_Hero {
       id,
       name
     }
@@ -292,10 +292,10 @@ SELECT {
   multi pageResults := (__withVar_3 {id, name}),
   single nextOffset := (
     WITH
-      __withVar_2 := ((__withVar_5 + std::count((__withVar_3))))
-    SELECT (__withVar_2)
+      __withVar_2 := (__withVar_5 + std::count(__withVar_3))
+    SELECT __withVar_2
   ),
-  single hasMore := (SELECT ((std::count((__withVar_4)) > 10)))
+  single hasMore := (SELECT (std::count(__withVar_4) > 10))
 }`);
 });
 
@@ -316,16 +316,16 @@ test("explicit WITH nested in implicit WITH + alias implicit", () => {
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ 1, 2, 3 }),
-      __withVar_2 := (__withVar_1)
+      __withVar_1 := { 1, 2, 3 },
+      __withVar_2 := __withVar_1
     SELECT {
-      multi numbers := (__withVar_1),
-      multi numbersAlias := (__withVar_2)
+      multi numbers := __withVar_1,
+      multi numbersAlias := __withVar_2
     }
   )
 SELECT {
-  single numbers := (__withVar_0),
-  single numbers2 := (__withVar_0)
+  single numbers := __withVar_0,
+  single numbers2 := __withVar_0
 }`);
 });
 
@@ -349,16 +349,16 @@ test("explicit WITH nested in implicit WITH + alias explicit", () => {
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := ({ 1, 2, 3 }),
-      __withVar_2 := (__withVar_1)
+      __withVar_1 := { 1, 2, 3 },
+      __withVar_2 := __withVar_1
     SELECT {
-      multi numbers := (__withVar_1),
-      multi numbersAlias := (__withVar_2)
+      multi numbers := __withVar_1,
+      multi numbersAlias := __withVar_2
     }
   )
 SELECT {
-  single numbers := (__withVar_0),
-  single numbers2 := (__withVar_0)
+  single numbers := __withVar_0,
+  single numbers2 := __withVar_0
 }`);
 });
 
@@ -405,14 +405,14 @@ test(
         )
         .toEdgeQL()
     ).toEqual(`WITH
-  __withVar_1 := ({ 1, 2, 3 }),
+  __withVar_1 := { 1, 2, 3 },
   __withVar_0 := (
     WITH
-      __withVar_2 := (__withVar_1)
-    SELECT ((__withVar_1 + __withVar_2))
+      __withVar_2 := __withVar_1
+    SELECT (__withVar_1 + __withVar_2)
   )
 SELECT {
-  multi numbers := (__withVar_0)
+  multi numbers := __withVar_0
 }`);
   }
 );
@@ -442,15 +442,15 @@ test(
         )
         .toEdgeQL()
     ).toEqual(`WITH
-  __withVar_1 := ({ 1, 2, 3 }),
-  __withVar_2 := (__withVar_1),
+  __withVar_1 := { 1, 2, 3 },
+  __withVar_2 := __withVar_1,
   __withVar_0 := (
     WITH
-      __withVar_3 := (__withVar_2)
-    SELECT ((__withVar_1 + __withVar_3))
+      __withVar_3 := __withVar_2
+    SELECT (__withVar_1 + __withVar_3)
   )
 SELECT {
-  multi numbers := (__withVar_0)
+  multi numbers := __withVar_0
 }`);
   }
 );
@@ -465,25 +465,25 @@ test("query with no WITH block", () => {
   }));
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_Hero := (DETACHED default::Person[IS default::Hero])
-SELECT (__scope_0_Hero) {
+  __scope_0_Hero := DETACHED default::Person[IS default::Hero]
+SELECT __scope_0_Hero {
   id,
-  single computable := (35),
+  single computable := 35,
   multi all_heroes := (
     WITH
-      __scope_1_Hero := (DETACHED default::Hero)
-    SELECT (__scope_1_Hero) {
+      __scope_1_Hero := DETACHED default::Hero
+    SELECT __scope_1_Hero {
       __type__ := (
         WITH
-          __scope_2_Type := (__scope_1_Hero.__type__)
-        SELECT (__scope_2_Type) {
+          __scope_2_Type := __scope_1_Hero.__type__
+        SELECT __scope_2_Type {
           name
         }
       )
     }
   )
 }
-ORDER BY (__scope_0_Hero).name
+ORDER BY __scope_0_Hero.name
 LIMIT 1`);
 });
 
@@ -502,17 +502,17 @@ test("repeated expression referencing scoped select object", () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_Hero_expr := (DETACHED default::Hero),
+  __scope_0_Hero_expr := DETACHED default::Hero,
   __scope_0_Hero := (FOR __scope_0_Hero_inner IN {__scope_0_Hero_expr} UNION (
     WITH
-      __withVar_1 := (((__scope_0_Hero_inner.name ++ " is ") ++ __scope_0_Hero_inner.secret_identity))
+      __withVar_1 := ((__scope_0_Hero_inner.name ++ " is ") ++ __scope_0_Hero_inner.secret_identity)
     SELECT __scope_0_Hero_inner {
       __withVar_1 := __withVar_1
     }
   ))
-SELECT (__scope_0_Hero) {
+SELECT __scope_0_Hero {
   name,
-  single secret := (__scope_0_Hero.__withVar_1),
-  single secret2 := (__scope_0_Hero.__withVar_1)
+  single secret := __scope_0_Hero.__withVar_1,
+  single secret2 := __scope_0_Hero.__withVar_1
 }`);
 });
