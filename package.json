@@ -1,6 +1,6 @@
 {
   "name": "edgedb",
-  "version": "0.19.8",
+  "version": "0.19.9",
   "description": "The official Node.js client library for EdgeDB",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
