@@ -129,7 +129,10 @@ export const generateObjectTypes = (params: GeneratorParams) => {
 
   const plainTypesCode = dir.getPath("types");
   plainTypesCode.addStarImport("edgedb", "edgedb", false, undefined, true);
-  const plainTypeModules = new Map<string, Map<string, string>>();
+  const plainTypeModules = new Map<
+    string,
+    {internalName: string; types: Map<string, string>}
+  >();
 
   for (const type of types.values()) {
     if (type.kind !== "object") {
@@ -155,8 +158,22 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     /////////
 
     const getTypeName = (typeName: string, id: string): string => {
-      const {mod, name} = splitName(typeName);
-      return `${mod}$$${makeValidIdent({name, id, skipKeywordCheck: true})}`;
+      const {mod: tMod, name: tName} = splitName(typeName);
+      if (!plainTypeModules.has(tMod)) {
+        plainTypeModules.set(tMod, {
+          internalName: makeValidIdent({
+            id: `${plainTypeModules.size}`,
+            name: tMod,
+            skipKeywordCheck: true,
+          }),
+          types: new Map(),
+        });
+      }
+      return `${plainTypeModules.get(tMod)!.internalName}$$${makeValidIdent({
+        name: tName,
+        id,
+        skipKeywordCheck: true,
+      })}`;
     };
 
     const getTSType = (pointer: introspect.Pointer): string => {
@@ -201,10 +218,9 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       }\n`,
     ]);
 
-    if (!plainTypeModules.has(mod)) {
-      plainTypeModules.set(mod, new Map());
-    }
-    plainTypeModules.get(mod)!.set(name, getTypeName(type.name, type.id));
+    plainTypeModules
+      .get(mod)!
+      .types.set(name, getTypeName(type.name, type.id));
 
     /////////
     // generate interface
@@ -360,13 +376,15 @@ export const generateObjectTypes = (params: GeneratorParams) => {
   }
 
   const plainTypesExportBuf = new CodeBuffer();
-  for (const [moduleName, moduleTypes] of plainTypeModules) {
+  for (const [moduleName, module] of plainTypeModules) {
     plainTypesCode.writeln([
-      t`interface ${moduleName}$$ {\n${[...moduleTypes.entries()]
+      t`interface ${module.internalName}$$ {\n${[...module.types.entries()]
         .map(([name, typeName]) => `  ${quote(name)}: ${typeName};`)
         .join("\n")}\n}`,
     ]);
-    plainTypesExportBuf.writeln([t`  ${quote(moduleName)}: ${moduleName}$$;`]);
+    plainTypesExportBuf.writeln([
+      t`  ${quote(moduleName)}: ${module.internalName}$$;`,
+    ]);
   }
   plainTypesCode.writeln([t`export interface types {`]);
   plainTypesCode.writeBuf(plainTypesExportBuf);

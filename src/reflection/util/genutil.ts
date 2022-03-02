@@ -78,7 +78,10 @@ for (const [scalarType, {type, literalKind}] of Object.entries(
 export function toTSScalarType(
   type: introspect.PrimitiveType,
   types: introspect.Types,
-  opts = {unionEnums: false, edgedbDatatypePrefix: "_."}
+  opts: {unionEnums: boolean; edgedbDatatypePrefix: string} = {
+    unionEnums: false,
+    edgedbDatatypePrefix: "_.",
+  }
 ): CodeFragment[] {
   switch (type.kind) {
     case "scalar": {
