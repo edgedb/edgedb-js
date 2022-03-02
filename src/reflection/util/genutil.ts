@@ -77,29 +77,38 @@ for (const [scalarType, {type, literalKind}] of Object.entries(
 
 export function toTSScalarType(
   type: introspect.PrimitiveType,
-  types: introspect.Types
+  types: introspect.Types,
+  opts = {unionEnums: false, edgedbDatatypePrefix: "_."}
 ): CodeFragment[] {
   switch (type.kind) {
     case "scalar": {
       if (type.enum_values && type.enum_values.length) {
+        if (opts.unionEnums) {
+          return [`(${type.enum_values.map(quote).join(" | ")})`];
+        }
         return [getRef(type.name, {prefix: ""})];
       }
 
       if (type.material_id) {
         return toTSScalarType(
           types.get(type.material_id) as introspect.ScalarType,
-          types
+          types,
+          opts
         );
       }
 
       const literalType = scalarToLiteralMapping[type.name]?.type ?? "unknown";
-      return [(literalType.startsWith("edgedb.") ? "_." : "") + literalType];
+      return [
+        (literalType.startsWith("edgedb.") ? opts.edgedbDatatypePrefix : "") +
+          literalType,
+      ];
     }
 
     case "array": {
       const tn = toTSScalarType(
         types.get(type.array_element_id) as introspect.PrimitiveType,
-        types
+        types,
+        opts
       );
       return frag`${tn}[]`;
     }
@@ -118,22 +127,24 @@ export function toTSScalarType(
         for (const {name, target_id} of type.tuple_elements) {
           const tn = toTSScalarType(
             types.get(target_id) as introspect.PrimitiveType,
-            types
+            types,
+            opts
           );
           res.push(frag`${name}: ${tn}`);
         }
-        return frag`{${joinFrags(res, ",")}}`;
+        return frag`{${joinFrags(res, ", ")}}`;
       } else {
         // an ordinary tuple
         const res = [];
         for (const {target_id} of type.tuple_elements) {
           const tn = toTSScalarType(
             types.get(target_id) as introspect.PrimitiveType,
-            types
+            types,
+            opts
           );
           res.push(tn);
         }
-        return frag`[${joinFrags(res, ",")}]`;
+        return frag`[${joinFrags(res, ", ")}]`;
       }
     }
 

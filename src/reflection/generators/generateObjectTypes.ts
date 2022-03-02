@@ -1,7 +1,16 @@
-import {CodeFragment, dts, r, t, ts} from "../builders";
+import {CodeBuffer, CodeFragment, dts, r, t, ts} from "../builders";
+import {Cardinality} from "../enums";
 import type {GeneratorParams} from "../generate";
 import * as introspect from "../queries/getTypes";
-import {frag, getRef, joinFrags, quote, splitName} from "../util/genutil";
+import {
+  frag,
+  getRef,
+  joinFrags,
+  makeValidIdent,
+  quote,
+  splitName,
+  toTSScalarType,
+} from "../util/genutil";
 
 const singletonObjectTypes = new Set(["std::FreeObject"]);
 
@@ -118,6 +127,10 @@ export const getStringRepresentation: (
 export const generateObjectTypes = (params: GeneratorParams) => {
   const {dir, types} = params;
 
+  const plainTypesCode = dir.getPath("types");
+  plainTypesCode.addStarImport("edgedb", "edgedb", false, undefined, true);
+  const plainTypeModules = new Map<string, Map<string, string>>();
+
   for (const type of types.values()) {
     if (type.kind !== "object") {
       continue;
@@ -137,24 +150,67 @@ export const generateObjectTypes = (params: GeneratorParams) => {
 
     const ref = getRef(type.name);
 
-    // const {name: pathName} = splitName(type.name);
-    // const typeName = displayName(type.name);
+    /////////
+    // generate plain type
+    /////////
 
-    // get bases
-    // const bases: string[] = [];
-    // for (const {id: baseId} of type.bases) {
-    //   const baseName = getScopedDisplayName(
-    //     mod,
-    //     body
-    //   )(types.get(baseId).name);
-    //   bases.push(baseName);
-    // }
+    const getTypeName = (typeName: string, id: string): string => {
+      const {mod, name} = splitName(typeName);
+      return `${mod}$$${makeValidIdent({name, id, skipKeywordCheck: true})}`;
+    };
 
-    const bases = type.bases.map(base => getRef(types.get(base.id).name));
+    const getTSType = (pointer: introspect.Pointer): string => {
+      const targetType = types.get(pointer.target_id);
+      if (pointer.kind === "link") {
+        return getTypeName(targetType.name, targetType.id);
+      } else {
+        return toTSScalarType(targetType as introspect.PrimitiveType, types, {
+          unionEnums: true,
+          edgedbDatatypePrefix: "",
+        }).join("");
+      }
+    };
+
+    plainTypesCode.writeln([
+      t`interface ${getTypeName(type.name, type.id)}${
+        type.bases.length
+          ? ` extends ${type.bases
+              .map(({id}) => {
+                const baseType = types.get(id);
+                return getTypeName(baseType.name, baseType.id);
+              })
+              .join(", ")}`
+          : ""
+      } ${
+        type.pointers.length
+          ? `{\n${type.pointers
+              .map(pointer => {
+                return `  ${quote(pointer.name)}: ${getTSType(pointer)}${
+                  pointer.real_cardinality === Cardinality.Many ||
+                  pointer.real_cardinality === Cardinality.AtLeastOne
+                    ? "[]"
+                    : ""
+                }${
+                  pointer.real_cardinality === Cardinality.AtMostOne
+                    ? " | null"
+                    : ""
+                };`;
+              })
+              .join("\n")}\n}`
+          : "{}"
+      }\n`,
+    ]);
+
+    if (!plainTypeModules.has(mod)) {
+      plainTypeModules.set(mod, new Map());
+    }
+    plainTypeModules.get(mod)!.set(name, getTypeName(type.name, type.id));
 
     /////////
     // generate interface
     /////////
+
+    const bases = type.bases.map(base => getRef(types.get(base.id).name));
 
     type Line = {
       card: string;
@@ -302,4 +358,17 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     body.addExport(literal);
     body.addRefsDefaultExport(literal, name);
   }
+
+  const plainTypesExportBuf = new CodeBuffer();
+  for (const [moduleName, moduleTypes] of plainTypeModules) {
+    plainTypesCode.writeln([
+      t`interface ${moduleName}$$ {\n${[...moduleTypes.entries()]
+        .map(([name, typeName]) => `  ${quote(name)}: ${typeName};`)
+        .join("\n")}\n}`,
+    ]);
+    plainTypesExportBuf.writeln([t`  ${quote(moduleName)}: ${moduleName}$$;`]);
+  }
+  plainTypesCode.writeln([t`export interface types {`]);
+  plainTypesCode.writeBuf(plainTypesExportBuf);
+  plainTypesCode.writeln([t`}`]);
 };
