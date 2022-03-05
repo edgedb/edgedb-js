@@ -123,7 +123,9 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
         target: (val as any).__element__,
         cardinality: (val as any).__cardinality__,
         exclusive: false,
-        writable: false,
+        // writable: false,
+        computed: true,
+        readonly: true,
         hasDefault: false,
       };
     }

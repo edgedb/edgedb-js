@@ -5,7 +5,7 @@ import {
   TypeSet,
   ObjectTypeSet,
   stripBacklinks,
-  stripNonWritables,
+  stripNonUpdateables,
   typeutil,
   ObjectTypeExpression,
   $scopify,
@@ -41,7 +41,7 @@ export type $expr_Update<
 }>;
 
 export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
-  stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
+  stripNonUpdateables<stripBacklinks<Root["__element__"]["__pointers__"]>>
 > extends infer Shape
   ? Shape extends ObjectTypePointers
     ? {

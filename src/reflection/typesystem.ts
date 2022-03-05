@@ -246,14 +246,16 @@ export interface PropertyDesc<
   Type extends BaseType = BaseType,
   Card extends Cardinality = Cardinality,
   Exclusive extends boolean = boolean,
-  Writable extends boolean = boolean,
+  Computed extends boolean = boolean,
+  Readonly extends boolean = boolean,
   HasDefault extends boolean = boolean
 > {
   __kind__: "property";
   target: Type;
   cardinality: Card;
   exclusive: Exclusive;
-  writable: Writable;
+  computed: Computed;
+  readonly: Readonly;
   hasDefault: HasDefault;
 }
 
@@ -272,7 +274,8 @@ export interface LinkDesc<
   Card extends Cardinality = Cardinality,
   LinkProps extends PropertyShape = any,
   Exclusive extends boolean = boolean,
-  Writable extends boolean = boolean,
+  Computed extends boolean = boolean,
+  Readonly extends boolean = boolean,
   HasDefault extends boolean = boolean
 > {
   __kind__: "link";
@@ -280,7 +283,8 @@ export interface LinkDesc<
   cardinality: Card;
   properties: LinkProps;
   exclusive: Exclusive;
-  writable: Writable;
+  computed: Computed;
+  readonly: Readonly;
   hasDefault: HasDefault;
 }
 
@@ -295,8 +299,26 @@ export type stripBacklinks<T extends ObjectTypePointers> = {
 export type omitBacklinks<T extends string | number | symbol> =
   T extends `<${string}` ? never : T extends string ? T : never;
 
-export type stripNonWritables<T extends ObjectTypePointers> = {
-  [k in keyof T]: [T[k]["writable"]] extends [true] ? T[k] : never;
+export type stripNonUpdateables<T extends ObjectTypePointers> = {
+  [k in keyof T]: [T[k]["computed"]] extends [true]
+    ? never
+    : [T[k]["readonly"]] extends [true]
+    ? never
+    : k extends "__type__"
+    ? never
+    : k extends "id"
+    ? never
+    : T[k];
+};
+
+export type stripNonInsertables<T extends ObjectTypePointers> = {
+  [k in keyof T]: [T[k]["computed"]] extends [true]
+    ? never
+    : [k] extends ["__type__"]
+    ? never
+    : [k] extends ["id"]
+    ? never
+    : T[k];
 };
 
 type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
