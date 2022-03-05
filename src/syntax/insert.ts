@@ -31,6 +31,7 @@ export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
     : false;
 
 export type InsertShape<Root extends ObjectTypeSet> =
+  // short-circuit infinitely deep
   $expr_PathNode extends Root
     ? never
     : typeutil.stripNever<
