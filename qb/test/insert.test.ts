@@ -241,3 +241,10 @@ test("insert readonly prop", async () => {
     plot_summary: "Stuff happens.",
   });
 });
+
+test("exclude readonly props", () => {
+  type insertProfileShape = InsertShape<typeof e["Profile"]>;
+  tc.assert<tc.IsExact<keyof insertProfileShape, "plot_summary" | "slug">>(
+    true
+  );
+});
