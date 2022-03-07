@@ -1,20 +1,25 @@
 // tslint:disable:no-console
 import * as edgedb from "edgedb";
 import {setupTests} from "./test/setupTeardown";
-import e from "./dbschema/edgeql-js";
+import e, {InsertShape} from "./dbschema/edgeql-js";
+import {MovieShape} from "./dbschema/edgeql-js/modules/default";
 
 async function run() {
   const {client} = await setupTests();
-  const query = e
-    .select(e.Movie, movie => ({
-      filter: e.op(movie.title, "=", "The Avengers"),
-      title: true,
-      characters: {
-        name: true,
-      },
-    }))
-    .assert_single();
-  const result = await query.run(client);
+
+  const iq = e.insert(e.Profile, {
+    slug: "movieslug",
+    plot_summary: "Stuff happens.",
+  });
+
+  const qq = e.select(iq, () => ({
+    slug: true,
+    plot_summary: true,
+  }));
+
+  console.log(qq.toEdgeQL());
+
+  const result = await qq.run(client);
   console.log(JSON.stringify(result, null, 2));
 }
 

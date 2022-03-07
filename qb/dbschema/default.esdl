@@ -38,6 +38,9 @@ module default {
 
   type Profile {
     property plot_summary -> str;
+    property slug -> str {
+      readonly := true;
+    }
   }
 
   type User {

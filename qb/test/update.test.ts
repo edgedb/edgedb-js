@@ -1,6 +1,6 @@
 import type * as edgedb from "edgedb";
 
-import e from "../dbschema/edgeql-js";
+import e, {UpdateShape} from "../dbschema/edgeql-js";
 import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 
 let client: edgedb.Client;
@@ -181,4 +181,9 @@ test("update link property", async () => {
     .select(theAvengers, () => ({id: true, characters: true}))
     .run(client);
   expect(t5?.characters.length).toEqual(2);
+});
+
+test("exclude readonly props", () => {
+  type updateProfileShape = UpdateShape<typeof e["Profile"]>;
+  tc.assert<tc.IsExact<keyof updateProfileShape, "plot_summary">>(true);
 });

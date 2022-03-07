@@ -7,7 +7,7 @@ import {
   ObjectTypePointers,
   PropertyDesc,
   stripBacklinks,
-  stripNonWritables,
+  stripNonInsertables,
   typeutil,
   $scopify,
   stripSet,
@@ -30,20 +30,26 @@ export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
     ? true
     : false;
 
-export type InsertShape<Root extends ObjectTypeSet> = typeutil.stripNever<
-  stripNonWritables<stripBacklinks<Root["__element__"]["__pointers__"]>>
-> extends infer Shape
-  ? Shape extends ObjectTypePointers
-    ? typeutil.addQuestionMarks<{
-        [k in keyof Shape]:
-          | pointerToAssignmentExpression<Shape[k]>
-          | (pointerIsOptional<Shape[k]> extends true
-              ? undefined | null
-              : never)
-          | (Shape[k]["hasDefault"] extends true ? undefined : never);
-      }>
-    : never
-  : never;
+export type InsertShape<Root extends ObjectTypeSet> =
+  // short-circuit infinitely deep
+  $expr_PathNode extends Root
+    ? never
+    : typeutil.stripNever<
+        stripNonInsertables<
+          stripBacklinks<Root["__element__"]["__pointers__"]>
+        >
+      > extends infer Shape
+    ? Shape extends ObjectTypePointers
+      ? typeutil.addQuestionMarks<{
+          [k in keyof Shape]:
+            | pointerToAssignmentExpression<Shape[k]>
+            | (pointerIsOptional<Shape[k]> extends true
+                ? undefined | null
+                : never)
+            | (Shape[k]["hasDefault"] extends true ? undefined : never);
+        }>
+      : never
+    : never;
 
 interface UnlessConflict {
   on: TypeSet | null;

@@ -223,3 +223,28 @@ test("complex raw data in inserts", async () => {
     stringsMulti: strings,
   });
 });
+
+test("insert readonly prop", async () => {
+  const iq = e.insert(e.Profile, {
+    slug: "movieslug",
+    plot_summary: "Stuff happens.",
+  });
+
+  const qq = e.select(iq, () => ({
+    slug: true,
+    plot_summary: true,
+  }));
+
+  const result = await qq.run(client);
+  expect(result).toMatchObject({
+    slug: "movieslug",
+    plot_summary: "Stuff happens.",
+  });
+});
+
+test("exclude readonly props", () => {
+  type insertProfileShape = InsertShape<typeof e["Profile"]>;
+  tc.assert<tc.IsExact<keyof insertProfileShape, "plot_summary" | "slug">>(
+    true
+  );
+});

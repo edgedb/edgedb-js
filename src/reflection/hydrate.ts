@@ -38,7 +38,8 @@ function applySpec(
         __kind__: "link",
         cardinality: ptr.real_cardinality,
         exclusive: ptr.is_exclusive,
-        writable: ptr.is_writable,
+        computed: ptr.is_computed,
+        readonly: ptr.is_readonly,
       } as LinkDesc;
       util.defineGetter(shape[ptr.name], "target", () =>
         makeType(spec, ptr.target_id, literal)
@@ -75,7 +76,8 @@ function applySpec(
         __kind__: "property",
         cardinality: ptr.real_cardinality,
         exclusive: ptr.is_exclusive,
-        writable: ptr.is_writable,
+        computed: ptr.is_computed,
+        readonly: ptr.is_readonly,
       } as PropertyDesc;
       util.defineGetter(shape[ptr.name], "target", () =>
         makeType(spec, ptr.target_id, literal)
