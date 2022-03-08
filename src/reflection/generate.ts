@@ -223,7 +223,11 @@ export async function generateQB(params: {
     index.addExport("ExportDefault", undefined, true);
 
     // re-export some reflection types
-    index.addExportFrom({Cardinality: true}, "edgedb/dist/reflection");
+    index.addExportFrom(
+      {Cardinality: true},
+      "edgedb/dist/reflection/index",
+      true
+    );
     index.writeln([
       t`export `,
       dts`declare `,

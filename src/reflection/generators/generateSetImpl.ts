@@ -15,7 +15,6 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
       Cardinality: true,
       cardinalityUtil: true,
       $mergeObjectTypes: true,
-      unwrapCastableType: true,
     },
     "edgedb/dist/reflection/index",
     true
@@ -59,11 +58,6 @@ import type {
   code.writeln([dts`declare `, t`function set(): null;`]);
 
   code.writeln([
-    //     dts`declare `,
-    //     t`function set<Type extends BaseType>(
-    //   type: Type
-    // ): $expr_Set<TypeSet<unwrapCastableType<Type>, Cardinality.Empty>>;
-    // `,
     dts`declare `,
     t`function set<
   Expr extends castMaps.orScalarLiteral<TypeSet>

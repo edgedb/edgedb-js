@@ -2,7 +2,10 @@
 import * as edgedb from "edgedb";
 import {setupTests} from "./test/setupTeardown";
 import e, {InsertShape} from "./dbschema/edgeql-js";
-import {MovieShape} from "./dbschema/edgeql-js/modules/default";
+
+export namespace $default {
+  export const sadf = "asdf";
+}
 
 async function run() {
   const {client} = await setupTests();
