@@ -78,16 +78,18 @@ for (const [scalarType, {type, literalKind}] of Object.entries(
 export function toTSScalarType(
   type: introspect.PrimitiveType,
   types: introspect.Types,
-  opts: {unionEnums: boolean; edgedbDatatypePrefix: string} = {
-    unionEnums: false,
+  opts: {
+    getUnionRef?: (type: introspect.Type) => string;
+    edgedbDatatypePrefix: string;
+  } = {
     edgedbDatatypePrefix: "_.",
   }
 ): CodeFragment[] {
   switch (type.kind) {
     case "scalar": {
       if (type.enum_values && type.enum_values.length) {
-        if (opts.unionEnums) {
-          return [`(${type.enum_values.map(quote).join(" | ")})`];
+        if (opts.getUnionRef) {
+          return [opts.getUnionRef(type)];
         }
         return [getRef(type.name, {prefix: ""})];
       }
@@ -270,7 +272,7 @@ export function joinFrags(
   return joined.slice(0, -1);
 }
 
-const reservedIdents = new Set([
+export const reservedIdents = new Set([
   "do",
   "if",
   "in",

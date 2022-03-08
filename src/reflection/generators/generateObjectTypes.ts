@@ -6,8 +6,8 @@ import {
   frag,
   getRef,
   joinFrags,
-  makeValidIdent,
   quote,
+  reservedIdents,
   splitName,
   toTSScalarType,
 } from "../util/genutil";
@@ -124,6 +124,17 @@ export const getStringRepresentation: (
   }
 };
 
+const makePlainIdent = (name: string): string => {
+  if (reservedIdents.has(name)) {
+    return `$${name}`;
+  }
+  const replaced = name.replace(
+    /[^A-Za-z0-9_]/g,
+    match => "0x" + match.codePointAt(0)!.toString(16)
+  );
+  return replaced !== name ? `$${replaced}` : name;
+};
+
 export const generateObjectTypes = (params: GeneratorParams) => {
   const {dir, types} = params;
 
@@ -131,11 +142,59 @@ export const generateObjectTypes = (params: GeneratorParams) => {
   plainTypesCode.addStarImport("edgedb", "edgedb", false, undefined, true);
   const plainTypeModules = new Map<
     string,
-    {internalName: string; types: Map<string, string>}
+    {internalName: string; buf: CodeBuffer; types: Map<string, string>}
   >();
+
+  const getPlainTypeModule = (
+    typeName: string
+  ): {
+    tMod: string;
+    tName: string;
+    module: {
+      internalName: string;
+      buf: CodeBuffer;
+      types: Map<string, string>;
+    };
+  } => {
+    const {mod: tMod, name: tName} = splitName(typeName);
+    if (!plainTypeModules.has(tMod)) {
+      plainTypeModules.set(tMod, {
+        internalName: makePlainIdent(tMod),
+        buf: new CodeBuffer(),
+        types: new Map(),
+      });
+    }
+    return {tMod, tName, module: plainTypeModules.get(tMod)!};
+  };
+
+  const _getTypeName =
+    (mod: string) =>
+    (typeName: string, withModule: boolean = false): string => {
+      const {tMod, tName, module} = getPlainTypeModule(typeName);
+      return (
+        ((mod !== tMod || withModule) && tMod !== "default"
+          ? `${module.internalName}.`
+          : "") + `${makePlainIdent(tName)}`
+      );
+    };
 
   for (const type of types.values()) {
     if (type.kind !== "object") {
+      if (type.kind === "scalar" && type.enum_values?.length) {
+        // generate plain enum type
+        const {mod, name} = splitName(type.name);
+        const getTypeName = _getTypeName(mod);
+
+        const {module} = getPlainTypeModule(type.name);
+        module.types.set(name, getTypeName(type.name, true));
+        module.buf.writeln(
+          [t`export enum ${getTypeName(type.name)} {`],
+          ...type.enum_values.map(val => [
+            t`  ${makePlainIdent(val)} = ${quote(val)},`,
+          ]),
+          [t`}`]
+        );
+      }
       continue;
     }
     if (
@@ -157,44 +216,30 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     // generate plain type
     /////////
 
-    const getTypeName = (typeName: string, id: string): string => {
-      const {mod: tMod, name: tName} = splitName(typeName);
-      if (!plainTypeModules.has(tMod)) {
-        plainTypeModules.set(tMod, {
-          internalName: makeValidIdent({
-            id: `${plainTypeModules.size}`,
-            name: tMod,
-            skipKeywordCheck: true,
-          }),
-          types: new Map(),
-        });
-      }
-      return `${plainTypeModules.get(tMod)!.internalName}$$${makeValidIdent({
-        name: tName,
-        id,
-        skipKeywordCheck: true,
-      })}`;
-    };
+    const getTypeName = _getTypeName(mod);
 
     const getTSType = (pointer: introspect.Pointer): string => {
       const targetType = types.get(pointer.target_id);
       if (pointer.kind === "link") {
-        return getTypeName(targetType.name, targetType.id);
+        return getTypeName(targetType.name);
       } else {
         return toTSScalarType(targetType as introspect.PrimitiveType, types, {
-          unionEnums: true,
+          getUnionRef: type => getTypeName(type.name),
           edgedbDatatypePrefix: "",
         }).join("");
       }
     };
 
-    plainTypesCode.writeln([
-      t`interface ${getTypeName(type.name, type.id)}${
+    const {module: plainTypeModule} = getPlainTypeModule(type.name);
+
+    plainTypeModule.types.set(name, getTypeName(type.name, true));
+    plainTypeModule.buf.writeln([
+      t`export interface ${getTypeName(type.name)}${
         type.bases.length
           ? ` extends ${type.bases
               .map(({id}) => {
                 const baseType = types.get(id);
-                return getTypeName(baseType.name, baseType.id);
+                return getTypeName(baseType.name);
               })
               .join(", ")}`
           : ""
@@ -202,25 +247,21 @@ export const generateObjectTypes = (params: GeneratorParams) => {
         type.pointers.length
           ? `{\n${type.pointers
               .map(pointer => {
-                return `  ${quote(pointer.name)}: ${getTSType(pointer)}${
+                const isOptional =
+                  pointer.real_cardinality === Cardinality.AtMostOne;
+                return `  ${quote(pointer.name)}${
+                  isOptional ? "?" : ""
+                }: ${getTSType(pointer)}${
                   pointer.real_cardinality === Cardinality.Many ||
                   pointer.real_cardinality === Cardinality.AtLeastOne
                     ? "[]"
                     : ""
-                }${
-                  pointer.real_cardinality === Cardinality.AtMostOne
-                    ? " | null"
-                    : ""
-                };`;
+                }${isOptional ? " | null" : ""};`;
               })
               .join("\n")}\n}`
           : "{}"
       }\n`,
     ]);
-
-    plainTypeModules
-      .get(mod)!
-      .types.set(name, getTypeName(type.name, type.id));
 
     /////////
     // generate interface
@@ -375,15 +416,21 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     body.addRefsDefaultExport(literal, name);
   }
 
+  // plain types export
   const plainTypesExportBuf = new CodeBuffer();
   for (const [moduleName, module] of plainTypeModules) {
-    plainTypesCode.writeln([
-      t`interface ${module.internalName}$$ {\n${[...module.types.entries()]
-        .map(([name, typeName]) => `  ${quote(name)}: ${typeName};`)
-        .join("\n")}\n}`,
-    ]);
+    if (moduleName === "default") {
+      plainTypesCode.writeBuf(module.buf);
+    } else {
+      plainTypesCode.writeln([t`export namespace ${module.internalName} {`]);
+      plainTypesCode.indented(() => plainTypesCode.writeBuf(module.buf));
+      plainTypesCode.writeln([t`}`]);
+    }
+
     plainTypesExportBuf.writeln([
-      t`  ${quote(moduleName)}: ${module.internalName}$$;`,
+      t`  ${quote(moduleName)}: {\n${[...module.types.entries()]
+        .map(([name, typeName]) => `    ${quote(name)}: ${typeName};`)
+        .join("\n")}\n  };`,
     ]);
   }
   plainTypesCode.writeln([t`export interface types {`]);
