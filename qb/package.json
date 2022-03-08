@@ -5,10 +5,8 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "test": "yarn test:ts && yarn test:esm && yarn test:cjs",
-    "test:ts": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
     "test:esm": "node test/esm.test.mjs",
-    "test:cjs": "node test/esm.test.mjs",
     "test:ci": "ts-node --project ../tsconfig.json test/testRunner.ts",
     "generate": "edgeql-js",
     "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
@@ -25,7 +23,7 @@
   "devDependencies": {
     "conditional-type-checks": "^1.0.5",
     "edgedb": "^0.14.0",
-    "jest": "latest",
+    "jest": "27.0.5",
     "superjson": "^1.7.5",
     "ts-jest": "^27.0.3",
     "ts-node": "^10.0.0",
