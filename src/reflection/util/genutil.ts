@@ -79,7 +79,7 @@ export function toTSScalarType(
   type: introspect.PrimitiveType,
   types: introspect.Types,
   opts: {
-    getUnionRef?: (type: introspect.Type) => string;
+    getEnumRef?: (type: introspect.Type) => string;
     edgedbDatatypePrefix: string;
   } = {
     edgedbDatatypePrefix: "_.",
@@ -88,8 +88,8 @@ export function toTSScalarType(
   switch (type.kind) {
     case "scalar": {
       if (type.enum_values && type.enum_values.length) {
-        if (opts.getUnionRef) {
-          return [opts.getUnionRef(type)];
+        if (opts.getEnumRef) {
+          return [opts.getEnumRef(type)];
         }
         return [getRef(type.name, {prefix: ""})];
       }

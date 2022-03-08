@@ -182,13 +182,13 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     if (type.kind !== "object") {
       if (type.kind === "scalar" && type.enum_values?.length) {
         // generate plain enum type
-        const {mod, name} = splitName(type.name);
-        const getTypeName = _getTypeName(mod);
+        const {mod: enumMod, name: enumName} = splitName(type.name);
+        const getEnumTypeName = _getTypeName(enumMod);
 
         const {module} = getPlainTypeModule(type.name);
-        module.types.set(name, getTypeName(type.name, true));
+        module.types.set(enumName, getEnumTypeName(type.name, true));
         module.buf.writeln(
-          [t`export enum ${getTypeName(type.name)} {`],
+          [t`export enum ${getEnumTypeName(type.name)} {`],
           ...type.enum_values.map(val => [
             t`  ${makePlainIdent(val)} = ${quote(val)},`,
           ]),
@@ -224,7 +224,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
         return getTypeName(targetType.name);
       } else {
         return toTSScalarType(targetType as introspect.PrimitiveType, types, {
-          getUnionRef: type => getTypeName(type.name),
+          getEnumRef: enumType => getTypeName(enumType.name),
           edgedbDatatypePrefix: "",
         }).join("");
       }
