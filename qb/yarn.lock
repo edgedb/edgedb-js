@@ -683,7 +683,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jest/core@npm:^27.5.1":
+"@jest/core@npm:^27.0.5, @jest/core@npm:^27.5.1":
   version: 27.5.1
   resolution: "@jest/core@npm:27.5.1"
   dependencies:
@@ -2537,7 +2537,7 @@ fsevents@^2.3.2:
   languageName: node
   linkType: hard
 
-"jest-cli@npm:^27.5.1":
+"jest-cli@npm:^27.0.5":
   version: 27.5.1
   resolution: "jest-cli@npm:27.5.1"
   dependencies:
@@ -2984,13 +2984,13 @@ fsevents@^2.3.2:
   languageName: node
   linkType: hard
 
-"jest@npm:latest":
-  version: 27.5.1
-  resolution: "jest@npm:27.5.1"
+"jest@npm:27.0.5":
+  version: 27.0.5
+  resolution: "jest@npm:27.0.5"
   dependencies:
-    "@jest/core": ^27.5.1
+    "@jest/core": ^27.0.5
     import-local: ^3.0.2
-    jest-cli: ^27.5.1
+    jest-cli: ^27.0.5
   peerDependencies:
     node-notifier: ^8.0.1 || ^9.0.0 || ^10.0.0
   peerDependenciesMeta:
@@ -2998,7 +2998,7 @@ fsevents@^2.3.2:
       optional: true
   bin:
     jest: bin/jest.js
-  checksum: 96f1d69042b3c6dfc695f2a4e4b0db38af6fb78582ad1a02beaa57cfcd77cbd31567d7d865c1c85709b7c3e176eefa3b2035ffecd646005f15d8ef528eccf205
+  checksum: a84650eb452d2dba2784a5deb4d3a232106304345c28d088cd96936def59954d4cddb15f2848e29ee11e4cceb2d0d2d446f0c4e33c27f010a2d11480ef2a691f
   languageName: node
   linkType: hard
 
@@ -3672,7 +3672,7 @@ fsevents@^2.3.2:
     "@types/node": ^15.12.2
     conditional-type-checks: ^1.0.5
     edgedb: ^0.14.0
-    jest: latest
+    jest: 27.0.5
     superjson: ^1.7.5
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
