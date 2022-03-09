@@ -178,7 +178,8 @@ connection.
 Naming conflicts
 ^^^^^^^^^^^^^^^^
 
-Certain link/property names will create conflicts with parts of the query builder API. Avoid using the following names in your schema.
+Certain link/property names will create conflicts with parts of the query
+builder API. Avoid using the following names in your schema.
 
 - ``filter``
 - ``order_by``
