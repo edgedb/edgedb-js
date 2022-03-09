@@ -1,14 +1,10 @@
 name: Release
-
 on:
-  pull_request:
+  push:
     branches:
       - "master"
-      - "ci"
-      - "[0-9]+.[0-9x]+*"
     paths:
       - "package.json"
-
 jobs:
   validate-release-request:
     runs-on: ubuntu-latest
@@ -21,23 +17,16 @@ jobs:
         with:
           github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
           require_team: Release Managers
-          require_approval: no
+          require_approval: no  # approval not required for publish
           missing_version_ok: yes
           version_file: package.json
           version_line_pattern: |
             "version"\s*:\s*"([[:SEMVER:]])"
 
-      - name: Stop if not approved
-        if: ${{ steps.checkver.outputs.version != 0 && steps.checkver.outputs.approved != 'true' }}
-        run: |
-          echo ::error::PR is not approved yet.
-          exit 1
-
-  build:
+  build_and_publish:
     needs: validate-release-request
     runs-on: ubuntu-latest
     if: needs.validate-release-request.outputs.version != 0
-
     steps:
       - uses: actions/checkout@v2
         with:
@@ -53,27 +42,6 @@ jobs:
         run: |
           yarn install
           yarn build
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: dist
-          path: dist/
-
-  publish:
-    needs: [validate-release-request, build]
-    runs-on: ubuntu-latest
-    if: needs.validate-release-request.outputs.version != 0
-
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 5
-          submodules: false
-
-      - uses: actions/download-artifact@v2
-        with:
-          name: dist
-          path: dist/
 
       - name: Merge and tag the PR
         uses: edgedb/action-release/merge@master
@@ -100,4 +68,4 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-          npm publish
+          npm publish --dry-run
