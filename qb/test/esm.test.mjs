@@ -18,6 +18,7 @@ const CMD = [
 
 async function run() {
   try {
+    console.log(process.version);
     if (parseInt(process.version.slice(1)) < 14) {
       console.log(`Node.js version is <14. Skipping ESM test.`);
       return;

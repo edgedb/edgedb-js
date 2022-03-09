@@ -100,7 +100,7 @@ jobs:
           yarn test
 
       - name: Run query builder tests
-        if: ${{ steps.release.outputs.version == 0 && matrix.node-version >= 12 }}
+        if: ${{ steps.release.outputs.version == 0 && matrix.node-version >= 14 }}
         working-directory: qb
         run: |
           yarn test:ci
