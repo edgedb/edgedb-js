@@ -170,9 +170,11 @@ params object. This should correspond to a boolean expression.
     } filter .title ilike "The Matrix%"
   */
 
-Since ``filter`` is a reserved keyword in EdgeQL, there is minimal danger of
-conflicting with a property or link named ``filter``. All shapes can contain
-filter clauses, even nested ones.
+.. note::
+
+  Since ``filter`` is a :ref:`reserved keyword <ref_eql_lexical_names>` in
+  EdgeDB, there is minimal danger of conflicting with a property or link named
+  ``filter``. All shapes can contain filter clauses, even nested ones.
 
 ### Nested filtering
 
@@ -200,7 +202,15 @@ simply order by a property:
     order_by: movie.title,
   }));
 
-The ``order`` key can correspond to an arbitrary expression.
+
+
+.. note::
+
+  Unlike ``filter``, ``order_by`` is *not* a reserved word in EdgeDB. Using
+  ``order_by`` as a link or property name will create a naming conflict and
+  likely cause bugs.
+
+The ``order_by`` key can correspond to an arbitrary expression.
 
 .. code-block:: typescript
 
