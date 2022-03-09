@@ -172,8 +172,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
     )}`,
     r` {`,
   ]);
-  f.writeln([r`  a = (a`, ts` as any`, r`).__casttype__ ?? a;`]);
-  f.writeln([r`  b = (b`, ts` as any`, r`).__casttype__ ?? b;`]);
+  f.writeln([r`  a = (a`, ts` as any`, r`).__casttype__ || a;`]);
+  f.writeln([r`  b = (b`, ts` as any`, r`).__casttype__ || b;`]);
   f.addExport("getSharedParentScalar");
   f.writeBuf(runtimeMap);
 
@@ -350,7 +350,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   f.writeln([t`  [k in keyof T]: literalToTypeSet<T[k]>;`]);
   f.writeln([t`};\n\n`]);
 
-  f.addImport({$getType: true}, "./syntax/literal");
+  f.addImport({$getType: true}, "./syntax/literal", true);
 
   f.writeln([
     dts`declare `,
@@ -361,7 +361,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
     dts`;`,
     r` {`,
   ]);
-  f.writeln([r`  if (type?.__element__) {`]);
+  f.writeln([r`  if (type && type.__element__) {`]);
   f.writeln([r`    return type;`]);
   f.writeln([r`  }`]);
   for (const [literalType, {literalKind, type}] of Object.entries(

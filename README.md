@@ -5,7 +5,7 @@
 **edgedb** is the official [EdgeDB](https://github.com/edgedb/edgedb) driver
 for JavaScript and TypeScript.
 
-The library requires NodeJS 10 or later.
+The library requires Node.js 12+.
 
 ## Installation
 

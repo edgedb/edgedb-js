@@ -1,26 +1,20 @@
 // tslint:disable:no-console
 import * as edgedb from "edgedb";
 import {setupTests} from "./test/setupTeardown";
-import e, {InsertShape} from "./dbschema/edgeql-js";
-import {MovieShape} from "./dbschema/edgeql-js/modules/default";
+import e from "./dbschema/edgeql-js";
 
 async function run() {
   const {client} = await setupTests();
 
-  const iq = e.insert(e.Profile, {
-    slug: "movieslug",
-    plot_summary: "Stuff happens.",
+  const query = await e.insert(e.Movie, {
+    title: 'Title" ++ ", injected := (delete Movie)',
   });
 
-  const qq = e.select(iq, () => ({
-    slug: true,
-    plot_summary: true,
-  }));
+  console.log(query.__shape__.title);
 
-  console.log(qq.toEdgeQL());
-
-  const result = await qq.run(client);
-  console.log(JSON.stringify(result, null, 2));
+  console.log(query.toEdgeQL());
+  // const result = await query.run(client);
+  // console.log(JSON.stringify(result, null, 2));
 }
 
 run();
