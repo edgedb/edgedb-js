@@ -46,7 +46,7 @@ common.
 **Expressions produce EdgeQL.** Below is a number of expressions and the
 EdgeQL they produce. (The actual EdgeQL the create may look slightly
 different, but it's equivalent.) You can extract an EdgeQL representation of
-any expression calling the ``.to_edgeql()`` method.
+any expression calling the ``.toEdgeQL()`` method.
 
 .. code-block:: typescript
 
