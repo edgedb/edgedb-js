@@ -2,6 +2,10 @@ export class EdgeDBError extends Error {
   source?: Error;
   protected static tags: object = {};
 
+  get name(): string {
+    return this.constructor.name;
+  }
+
   hasTag(tag: symbol): boolean {
     // Can't index by symbol, except when using <any>:
     //   https://github.com/microsoft/TypeScript/issues/1863
