@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node-version: ["12", "13", "14", "15", "16"]
+        node-version: ["10", "12", "14", "16", "17"]
         os: [ubuntu-latest]
         edgedb-version: ["stable"]
         include:
@@ -100,7 +100,7 @@ jobs:
           yarn test
 
       - name: Run query builder tests
-        if: steps.release.outputs.version == 0
+        if: ${{ steps.release.outputs.version == 0 && matrix.node-version >= 12 }}
         working-directory: qb
         run: |
           yarn test:ci

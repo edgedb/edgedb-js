@@ -11,8 +11,8 @@ Minimum requirements
 It's possible to use the query builder with or without TypeScript. Some
 requirements apply to TypeScript users only.
 
-- Node.js 10+. Run ``node --version`` to see your current version. TypeScript
-  users should also install Node.js typing: ``npm install @types/node``
+- Node.js 12+. Run ``node --version`` to see your current version. TypeScript
+  users should also install Node.js typing: ``npm install @types/node``.
 - TypeScript 4.4+
 - Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``:
 
@@ -106,12 +106,36 @@ Git.
 
   [y/n] (leave blank for "y")
 
+For consistency, we recommend omitting the generated files from version
+control and re-generating them as part of your deployment process. However,
+there may be circumstances where checking the generated files into version
+control is desirable, e.g. if you are building Docker images that must contain
+the full source code of your application.
 
 Importing
 ^^^^^^^^^
 
 Once the query builder is generated, it's ready to use! Just import it and
-start building queries. Below is a full "Hello world" example.
+start building queries.
+
+.. code-block:: typescript
+
+  // TypeScript or transpiled JS
+  import e from "./dbschema/edgeql-js";
+
+  // JavaScript (CommonJS)
+  const e = require("./dbschema/edgeql-js");
+
+  // JavaScript (ES modules)
+  import e from "./dbschema/edgeql-js/index.mjs";
+
+.. note::
+
+  If you're using ES modules, remember that imports require a file extension.
+  The rest of the documentation assumes you are using TypeScript-style
+  (extensionless) ``import`` syntax.
+
+Here's a full "Hello world" example.
 
 .. code-block:: typescript
 
@@ -140,25 +164,7 @@ The generation command is configurable in a number of ways.
   Sets the output directory for the generated files.
 
 ``--target <ts|cjs|esm>``
-  What type of files to generate.
-
-  .. list-table::
-
-    * - ``ts``
-      - Generate TypeScript
-    * - ``cjs``
-      - Generate JavaScript with CommonJS (``require/module.exports``) syntax
-    * - ``esm``
-      - Generate JavaScript with ES Module (``import/export``) syntax
-
-  The default is determined according the the following simple algorithm:
-
-  1. Check for a ``tsconfig.json`` in the project root. If it exists, use
-     ``--target ts``.
-  2. Otherwise. check if ``package.json`` includes ``"type": "module"``. If
-     so, use ``--target esm``.
-  3. Otherwise, use ``--target cjs``.
-
+  What type of files to generate. Documented above.
 
 ``--force-overwrite``
   To avoid accidental changes, you'll be prompted to confirm whenever the
