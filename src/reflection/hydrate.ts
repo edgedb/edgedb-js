@@ -146,6 +146,7 @@ export function makeType<T extends BaseType>(
 
     if (type.enum_values) {
       scalarObj.__kind__ = TypeKind.enum;
+      scalarObj.__values__ = type.enum_values;
       for (const val of type.enum_values) {
         Object.defineProperty(scalarObj, val, {
           get() {

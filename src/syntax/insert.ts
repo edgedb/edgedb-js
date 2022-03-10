@@ -30,7 +30,11 @@ export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
     ? true
     : false;
 
-export type InsertShape<Root extends ObjectTypeSet> =
+export type InsertShape<Root extends ObjectTypeSet> = typeutil.flatten<
+  RawInsertShape<Root>
+>;
+
+export type RawInsertShape<Root extends ObjectTypeSet> =
   // short-circuit infinitely deep
   $expr_PathNode extends Root
     ? never

@@ -106,3 +106,10 @@ test("invalid sets", () => {
     e.set(e.bool(true), e.bigint(BigInt(14)));
   }).toThrow();
 });
+
+test("enums", () => {
+  const query = e.set(e.Genre.Action, e.Genre.Horror);
+  expect(query.toEdgeQL()).toEqual(
+    `{ default::Genre.Action, default::Genre.Horror }`
+  );
+});

@@ -12,6 +12,7 @@ import {
   $expr_TuplePath,
   BaseType,
   Cardinality,
+  EnumType,
   ExpressionKind,
   isArrayType,
   isNamedTupleType,
@@ -1123,6 +1124,17 @@ function literalToEdgeQL(type: BaseType, val: any): string {
     } else if (type.__name__ === "std::json") {
       skipCast = true;
       stringRep = `to_json(${JSON.stringify(val)})`;
+    } else if (type.__kind__ === TypeKind.enum) {
+      skipCast = true;
+      const vals = (type as EnumType).__values__;
+      if (vals.includes(val)) {
+        skipCast = true;
+        stringRep = `${type.__name__}.${val}`;
+      } else {
+        throw new Error(
+          `Invalid value for type ${type.__name__}: "${JSON.stringify(val)}"`
+        );
+      }
     } else {
       if (type.__name__ === "std::str") {
         skipCast = true;

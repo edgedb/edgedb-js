@@ -9,3 +9,9 @@ test("casting", () => {
   >(true);
   expect(primitiveCast.toEdgeQL()).toEqual(`<std::float32>(3.14)`);
 });
+
+test("enums", () => {
+  expect(e.cast(e.Genre, e.str("Horror")).toEdgeQL()).toEqual(
+    `<default::Genre>("Horror")`
+  );
+});

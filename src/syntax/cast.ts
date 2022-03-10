@@ -18,6 +18,10 @@ export function cast<
   Target extends CastableNonArrayType | CastableArrayType,
   Expr extends TypeSet
 >(target: Target, expr: Expr): $expr_Cast<Target, Expr>;
+export function cast<
+  Target extends CastableNonArrayType | CastableArrayType,
+  Expr extends TypeSet
+>(target: Target, expr: Expr): $expr_Cast<Target, Expr>;
 export function cast(target: BaseType, expr: any) {
   return $expressionify({
     __element__: target,
