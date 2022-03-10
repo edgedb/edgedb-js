@@ -40,20 +40,22 @@ jobs:
         run: |
           echo "Version in package.json has not changed. Skipping."
 
-      - name: "Build Changelog"
-        id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@{latest-release}
+      - name: Generate Changelog
+        uses: Bullrich/generate-release-changelog@2.0.0
+        id: changelog
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
 
-      - name: Publish Github Release
+      - name: Create Release
         if: steps.publish.outputs.type != 'none'
-        uses: elprans/gh-action-create-release@master
+        id: create_release
+        uses: actions/create-release@latest
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
           tag_name: v${{ steps.publish.outputs.version }}
           release_name: v${{ steps.publish.outputs.version }}
-          target: ${{ github.event.push.ref }}
-          body: "${{ steps.build_changelog.outputs.changelog }}"
+          body: |
+            ${{ steps.Changelog.outputs.changelog }}
           draft: true
+          prerelease: false
