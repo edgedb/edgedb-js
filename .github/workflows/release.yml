@@ -42,16 +42,6 @@ jobs:
         run: |
           echo "Version in package.json has not changed. Skipping."
 
-      - name: Merge and tag the PR
-        if: steps.publish.outputs.type != 'none'
-        uses: edgedb/action-release/merge@master
-        with:
-          github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
-          ssh_key: ${{ secrets.RELEASE_BOT_SSH_KEY }}
-          gpg_key: ${{ secrets.RELEASE_BOT_GPG_KEY }}
-          gpg_key_id: "5C468778062D87BF!"
-          tag_name: v${{ needs.validate-release-request.outputs.version }}
-
       - name: Publish Github Release
         if: steps.publish.outputs.type != 'none'
         uses: elprans/gh-action-create-release@master
