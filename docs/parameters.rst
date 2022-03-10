@@ -42,12 +42,43 @@ an expression inside a larger query.
 
 .. code-block:: typescript
 
-  const wrappedQuery = e.select(helloQuery); // ❌
-  wrappedQuery.run(client, {name: "Harry Styles"}); // TypeError
+  // ❌ TypeError
+  const wrappedQuery = e.select(helloQuery);
+  wrappedQuery.run(client, {name: "Harry Styles"});
 
 
-Parameter types
-^^^^^^^^^^^^^^^
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+A type can be made optional with the ``e.optional`` function.
+
+.. code-block:: typescript
+
+  const query = e.params(
+    {
+      title: e.str,
+      duration: e.optional(e.duration),
+    },
+    (params) => {
+      return e.insert(e.Movie, {
+        title: params.title,
+        duration: params.duration,
+      });
+    }
+  );
+
+  // works with duration
+  const result = await query.run(client, {
+    title: 'The Eternals',
+    duration: new Duration(0, 2, 3)
+  });
+
+  // or without duration
+  const result = await query.run(client, {title: 'The Eternals'});
+
+Complex types
+^^^^^^^^^^^^^
+
 In EdgeQL, parameters can only be primitives or arrays of primitives. That's
 not true with the query builder! Parameter types can be arbitrarily complex.
 Under the hood, the query builder serializes the parameters to JSON and

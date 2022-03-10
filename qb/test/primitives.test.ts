@@ -1,9 +1,5 @@
-import e, {
-  $Array,
-  $NamedTuple,
-  $Tuple,
-  getSharedParentPrimitiveVariadic,
-} from "../dbschema/edgeql-js";
+import e from "../dbschema/edgeql-js";
+import type {getSharedParentPrimitiveVariadic} from "../dbschema/edgeql-js/syntax/syntax";
 import {tc} from "./setupTeardown";
 
 test("primitive types", () => {

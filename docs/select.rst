@@ -336,6 +336,8 @@ signatures agree.
   }));
 
 
+.. _ref_qb_polymorphism:
+
 Polymorphism
 ^^^^^^^^^^^^
 
@@ -346,7 +348,7 @@ EdgeQL supports polymorphic queries using the ``[is type]`` prefix.
   select Content {
     title,
     [is Movie].runtime,
-    [is Show].num_episodes
+    [is TVShow].num_seasons
   }
 
 In the query builder, this is represented with the ``e.is`` function.
@@ -356,17 +358,17 @@ In the query builder, this is represented with the ``e.is`` function.
   e.select(e.Content, content => ({
     title: true,
     ...e.is(e.Movie, { runtime: true }),
-    ...e.is(e.Show, { num_episodes: true }),
+    ...e.is(e.TVShow, { num_seasons: true }),
   }));
 
   const result = await query.run(client);
   /* {
     title: string;
     runtime: Duration | null;
-    num_episodes: number | null;
+    num_seasons: number | null;
   }[] */
 
-The ``runtime`` and ``num_episodes`` properties are nullable to reflect the
+The ``runtime`` and ``num_seasons`` properties are nullable to reflect the
 fact that they will only occur in certain objects.
 
 

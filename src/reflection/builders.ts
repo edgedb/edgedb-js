@@ -66,8 +66,16 @@ export class CodeBuffer {
   }
 
   writeln(...lines: AnyCodeFrag[][]): void {
+    const indent = "  ".repeat(this.indent);
+    const indentFrag = (frag: AnyCodeFrag): AnyCodeFrag =>
+      typeof frag === "string"
+        ? frag.replace(/\n(?!$)/g, "\n" + indent)
+        : ((frag.type === "frag"
+            ? {...frag, content: frag.content.map(indentFrag)}
+            : frag) as any);
+
     lines.forEach(line => {
-      this.buf.push(["  ".repeat(this.indent), ...line]);
+      this.buf.push([indent, ...line.map(indentFrag)]);
     });
   }
 
@@ -104,6 +112,7 @@ type Export = {modes?: Set<Mode>} & (
       names: {[key: string]: string | boolean};
       fromPath: string;
       allowFileExt?: boolean;
+      typeOnly: boolean;
     }
   | {
       type: "starFrom";
@@ -197,7 +206,8 @@ class BuilderImportsExports {
     names: {[key: string]: string | boolean},
     fromPath: string,
     allowFileExt: boolean = false,
-    modes?: Mode[]
+    modes?: Mode[],
+    typeOnly: boolean = false
   ) {
     this.exports.add({
       type: "from",
@@ -205,6 +215,7 @@ class BuilderImportsExports {
       fromPath,
       allowFileExt,
       modes: modes && new Set(modes),
+      typeOnly,
     });
   }
 
@@ -364,7 +375,9 @@ class BuilderImportsExports {
         case "from":
           if (moduleKind === "esm") {
             exportsFrom.push(
-              `export { ${Object.entries(exp.names)
+              `export ${exp.typeOnly ? "type " : ""}{ ${Object.entries(
+                exp.names
+              )
                 .map(([key, val]) => {
                   if (typeof val === "boolean" && !val) return null;
                   return key + (typeof val === "string" ? `as ${val}` : "");

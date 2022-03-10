@@ -17,6 +17,17 @@ export function toIdent(name: string): string {
   return name.replace(/([^a-zA-Z0-9_]+)/g, "_");
 }
 
+export const makePlainIdent = (name: string): string => {
+  if (reservedIdents.has(name)) {
+    return `$${name}`;
+  }
+  const replaced = name.replace(
+    /[^A-Za-z0-9_]/g,
+    match => "0x" + match.codePointAt(0)!.toString(16)
+  );
+  return replaced !== name ? `$${replaced}` : name;
+};
+
 export function quote(val: string): string {
   return JSON.stringify(val.toString());
 }
@@ -77,29 +88,43 @@ for (const [scalarType, {type, literalKind}] of Object.entries(
 
 export function toTSScalarType(
   type: introspect.PrimitiveType,
-  types: introspect.Types
+  types: introspect.Types,
+  opts: {
+    getEnumRef?: (type: introspect.Type) => string;
+    edgedbDatatypePrefix: string;
+  } = {
+    edgedbDatatypePrefix: "_.",
+  }
 ): CodeFragment[] {
   switch (type.kind) {
     case "scalar": {
       if (type.enum_values && type.enum_values.length) {
+        if (opts.getEnumRef) {
+          return [opts.getEnumRef(type)];
+        }
         return [getRef(type.name, {prefix: ""})];
       }
 
       if (type.material_id) {
         return toTSScalarType(
           types.get(type.material_id) as introspect.ScalarType,
-          types
+          types,
+          opts
         );
       }
 
       const literalType = scalarToLiteralMapping[type.name]?.type ?? "unknown";
-      return [(literalType.startsWith("edgedb.") ? "_." : "") + literalType];
+      return [
+        (literalType.startsWith("edgedb.") ? opts.edgedbDatatypePrefix : "") +
+          literalType,
+      ];
     }
 
     case "array": {
       const tn = toTSScalarType(
         types.get(type.array_element_id) as introspect.PrimitiveType,
-        types
+        types,
+        opts
       );
       return frag`${tn}[]`;
     }
@@ -118,22 +143,24 @@ export function toTSScalarType(
         for (const {name, target_id} of type.tuple_elements) {
           const tn = toTSScalarType(
             types.get(target_id) as introspect.PrimitiveType,
-            types
+            types,
+            opts
           );
           res.push(frag`${name}: ${tn}`);
         }
-        return frag`{${joinFrags(res, ",")}}`;
+        return frag`{${joinFrags(res, ", ")}}`;
       } else {
         // an ordinary tuple
         const res = [];
         for (const {target_id} of type.tuple_elements) {
           const tn = toTSScalarType(
             types.get(target_id) as introspect.PrimitiveType,
-            types
+            types,
+            opts
           );
           res.push(tn);
         }
-        return frag`[${joinFrags(res, ",")}]`;
+        return frag`[${joinFrags(res, ", ")}]`;
       }
     }
 
@@ -256,7 +283,7 @@ export function joinFrags(
   return joined.slice(0, -1);
 }
 
-const reservedIdents = new Set([
+export const reservedIdents = new Set([
   "do",
   "if",
   "in",

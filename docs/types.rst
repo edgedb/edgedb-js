@@ -4,18 +4,8 @@
 Types
 -----
 
-The properties of ``e`` that corresond to types—``e.str``, ``e.int64``, etc—
-serve a dual purpose.
-
-- They can be used as functions to instantiate literals: ``e.str("hi")``.
-- They are also used to represent the *type itself* for certain type
-  operations like *casting* and *declaring parameters*.
-
-Reflected types
-^^^^^^^^^^^^^^^
-
 The entire type system of EdgeDB is reflected in the ``e`` object, including
-scalar types, object types, and enums.
+scalar types, object types, and enums. These types are used in queries for thinks like *casting* and *declaring parameters*.
 
 .. code-block:: typescript
 
@@ -40,11 +30,7 @@ scalar types, object types, and enums.
   e.Movie;    // user-defined object type
   e.Genre;    // user-defined enum
 
-
-Collection types
-^^^^^^^^^^^^^^^^
-
-Construct array and tuple types.
+You can construct array and tuple types, as in EdgeQL.
 
 .. code-block:: typescript
 
@@ -76,6 +62,11 @@ These types can be used to *cast* one expression to another type.
   e.cast(e.duration, e.str('127 hours'));
   // <duration>'127 hours'
 
+.. note::
+
+  Scalar types like ``e.str`` serve a dual purpose. They can be used as
+  functions to instantiate literals (``e.str("hi")``) or used as variables
+  (``e.cast(e.str, e.int64(123))``).
 
 Custom literals
 ^^^^^^^^^^^^^^^
@@ -120,3 +111,20 @@ Pass strongly-typed parameters into your query with ``e.params``.
 
 The full documentation on using parameters is :ref:`here
 <edgedb-js-parameters>`.
+
+
+Polymorphism
+^^^^^^^^^^^^
+
+Types are also used to write polymorphic queries. For full documentation on
+this, see :ref:`Polymorphism <ref_qb_polymorphism>` in the ``e.select``
+documentation.
+
+.. code-block:: typescript
+
+  e.select(e.Content, content => ({
+    title: true,
+    ...e.is(e.Movie, { runtime: true }),
+    ...e.is(e.TVShow, { num_seasons: true }),
+  }));
+

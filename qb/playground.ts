@@ -1,20 +1,27 @@
 // tslint:disable:no-console
-import * as edgedb from "edgedb";
+import type * as edgedb from "edgedb";
 import {setupTests} from "./test/setupTeardown";
-import e from "./dbschema/edgeql-js";
+// import e, {$infer} from "./dbschema/edgeql-js";
+// import {Movie} from "./dbschema/edgeql-js/types";
+import e, * as types from "./dbschema/edgeql-js";
 
 async function run() {
   const {client} = await setupTests();
+  const query = e.params(
+    {
+      title: e.str,
+      release_year: e.optional(e.int64),
+    },
+    params => {
+      return e.insert(e.Movie, {
+        title: params.title,
+        release_year: params.release_year,
+      });
+    }
+  );
 
-  const query = await e.insert(e.Movie, {
-    title: 'Title" ++ ", injected := (delete Movie)',
-  });
-
-  console.log(query.__shape__.title);
-
-  console.log(query.toEdgeQL());
-  // const result = await query.run(client);
-  // console.log(JSON.stringify(result, null, 2));
+  const result = await query.run(client, {title: "The Eternals"});
+  console.log(JSON.stringify(result, null, 2));
 }
 
 run();
