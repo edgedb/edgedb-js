@@ -43,7 +43,10 @@ These building blocks are used to define *expressions*. Everything you create
 using the query builder is an expression. Expressions have a few things in
 common.
 
-**Expressions produce EdgeQL.** Below is a number of expressions and the
+Expressions produce EdgeQL
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Below is a number of expressions and the
 EdgeQL they produce. (The actual EdgeQL the create may look slightly
 different, but it's equivalent.) You can extract an EdgeQL representation of
 any expression calling the ``.toEdgeQL()`` method.
@@ -66,8 +69,10 @@ any expression calling the ``.toEdgeQL()`` method.
   // select Movie { id, title }
 
 
-**Expressions are runnable.** Expressions can be executed with the ``.run``
-method.
+Expressions are runnable
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Expressions can be executed with the ``.run`` method.
 
 .. code-block:: typescript
 
@@ -89,10 +94,12 @@ that later.
   .run(client: Client | Transaction, params: Params): Promise<T>
 
 
-**Expressions have a type and a cardinality**. Just like sets in EdgeQL, all
-expressions are associated with a type and a cardinality. The query builder is
-extremely good at *inferring* these. You can see the values of these with the
-special ``__element__`` and ``__cardinality__`` properties.
+Expressions have a type and a cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Just like expressions in EdgeQL, all expressions are associated with a type
+and a cardinality. The query builder is extremely good at *inferring* these.
+You can see the values of these with the special ``__element__`` and
+``__cardinality__`` properties.
 
 .. code-block:: typescript
 
@@ -104,3 +111,14 @@ special ``__element__`` and ``__cardinality__`` properties.
   q2.__element__;       // e.Movie
   q2.__cardinality__;   // "Many"
 
+
+The inferred type of *any* expression can be extracted with the ``$infer``
+helper.
+
+.. code-block:: typescript
+
+  import e, {$infer} from "./dbschema/edgeql-js";
+
+  const query = e.select(e.Movie, () => ({ id: true, title: true }));
+  type result = $infer<typeof query>;
+  // {id: string; title: string}[]

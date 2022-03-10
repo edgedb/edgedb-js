@@ -13,19 +13,19 @@ All queries on this page assume the following schema.
       required property name -> str;
     }
 
-    abstract type Media {
+    abstract type Content {
       required property title -> str {constraint exclusive};
       multi link actors -> Person {
         property character_name -> str;
       };
     }
 
-    type Movie extending Media {
+    type Movie extending Content {
       property runtime -> duration;
     }
 
-    type Show extending Media {
-      property number_of_seasons -> int64;
+    type TVShow extending Content {
+      property num_seasons -> int64;
     }
   }
 
@@ -39,7 +39,7 @@ namespaced by module.
 
   e.default.Person;
   e.default.Movie;
-  e.default.Show;
+  e.default.TVShow;
   e.my_module.SomeType;
 
 For convenience, the contents of the ``default`` module are also available at
@@ -49,7 +49,7 @@ the top-level of ``e``.
 
   e.Person;
   e.Movie;
-  e.Show;
+  e.TVShow;
 
 .. As in EdgeQL, type names like ``Movie`` serve two purposes.
 
@@ -65,7 +65,7 @@ EdgeQL-style *paths* are supported on object type references.
 
   e.Person.name;              // Person.name
   e.Movie.title;              // Movie.title
-  e.Show.actors.name;          // Movie.actors.name
+  e.TVShow.actors.name;          // Movie.actors.name
 
 Paths can be constructed from any object expression, not just the root types.
 
@@ -74,8 +74,8 @@ Paths can be constructed from any object expression, not just the root types.
   e.select(e.Person).name;
   // (select Person).name
 
-  e.op(e.Movie, 'union', e.Show).actors;
-  // (Movie union Show).actors
+  e.op(e.Movie, 'union', e.TVShow).actors;
+  // (Movie union TVShow).actors
 
   const ironMan = e.insert(e.Movie, {
     title: "Iron Man"
@@ -89,12 +89,12 @@ Type intersections
 
 Use the type intersection operator to narrow the type of a set of objects. For
 instance, to represent the elements of an Account's watchlist that are of type
-``Show``:
+``TVShow``:
 
 .. code-block:: typescript
 
-  e.Person.acted_in.is(e.Show);
-  // Person.acted_in[is Show]
+  e.Person.acted_in.is(e.TVShow);
+  // Person.acted_in[is TVShow]
 
 
 Backlinks
