@@ -29,10 +29,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
   /////////////////////////////////////
 
   const materialScalars = reverseTopo.filter(
-    type =>
-      type.kind === "scalar" &&
-      !type.is_abstract &&
-      (!type.enum_values || !type.enum_values.length)
+    type => type.kind === "scalar" && !type.is_abstract
+    // && (!type.enum_values || !type.enum_values.length)
   );
 
   const casting = (id: string) => {

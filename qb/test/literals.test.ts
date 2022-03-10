@@ -83,5 +83,14 @@ test("enum literals", () => {
   expect(e.Genre.Horror.__element__.__kind__).toEqual(TypeKind.enum);
   expect(horror.__element__).toEqual(e.Genre);
   expect(horror.__cardinality__).toEqual(Cardinality.One);
-  e.literal(e.Genre, "Horror");
+  expect(e.literal(e.Genre, "Horror").toEdgeQL()).toEqual(
+    `default::Genre.Horror`
+  );
+
+  expect(e.Genre.__values__).toContain("Horror");
+
+  expect(() => (e.Genre as any).NotAGenre.toEdgeQL()).toThrow();
+  expect(() =>
+    e.literal(e.Genre, "NotAGenre" as "Horror").toEdgeQL()
+  ).toThrow();
 });

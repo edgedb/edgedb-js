@@ -22,17 +22,17 @@ test("insert shape check", async () => {
 });
 
 test("basic insert", async () => {
-  const q1 = e.insert(e.Hero, {
-    name: "Black Widow",
-    secret_identity: e.str("Natasha Romanoff"),
+  const q1 = e.insert(e.Movie, {
+    title: "Black Widow",
+    genre: e.Genre.Action,
+    rating: 5,
   });
 
   expect(q1.__cardinality__).toEqual(Cardinality.One);
   tc.assert<tc.IsExact<typeof q1["__cardinality__"], Cardinality.One>>(true);
 
-  await client.querySingle(q1.toEdgeQL());
-
-  await client.execute(`DELETE Hero FILTER .name = 'Black Widow';`);
+  await q1.run(client);
+  await client.execute(`DELETE Movie FILTER .title = 'Black Widow';`);
 });
 
 test("unless conflict", async () => {
