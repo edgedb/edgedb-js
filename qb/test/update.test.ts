@@ -1,6 +1,7 @@
 import type * as edgedb from "edgedb";
 
-import e, {UpdateShape} from "../dbschema/edgeql-js";
+import e from "../dbschema/edgeql-js";
+import type {UpdateShape} from "../dbschema/edgeql-js/syntax/update";
 import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 
 let client: edgedb.Client;

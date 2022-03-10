@@ -1,10 +1,9 @@
 import superjson from "superjson";
 import {$} from "edgedb";
-import e, {literalToTypeSet} from "../dbschema/edgeql-js";
+import e from "../dbschema/edgeql-js";
 import type {$expr_Function} from "edgedb/dist/reflection";
 import {tc} from "./setupTeardown";
-import {$str, number} from "../dbschema/edgeql-js/modules/std";
-import * as castMaps from "../dbschema/edgeql-js/castMaps";
+import {number} from "../dbschema/edgeql-js/modules/std";
 
 function checkFunctionExpr<T extends $expr_Function>(
   expr: T,
