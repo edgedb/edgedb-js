@@ -88,4 +88,9 @@ test("enum literals", () => {
   );
 
   expect(e.Genre.__values__).toContain("Horror");
+
+  expect(() => (e.Genre as any).NotAGenre.toEdgeQL()).toThrow();
+  expect(() =>
+    e.literal(e.Genre, "NotAGenre" as "Horror").toEdgeQL()
+  ).toThrow();
 });

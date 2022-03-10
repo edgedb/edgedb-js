@@ -175,7 +175,7 @@ function shapeToEdgeQL(
         }`
       );
     } else {
-      throw new Error("Invalid shape.");
+      throw new Error(`Invalid shape element at "${key}".`);
     }
   }
 
@@ -1132,7 +1132,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
         stringRep = `${type.__name__}.${val}`;
       } else {
         throw new Error(
-          `Invalid value for type ${type.__name__}: "${JSON.stringify(val)}"`
+          `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`
         );
       }
     } else {
@@ -1164,7 +1164,9 @@ function literalToEdgeQL(type: BaseType, val: any): string {
         .map((el, j) => literalToEdgeQL(type.__items__[j] as any, el))
         .join(", ")}${type.__items__.length === 1 ? "," : ""} )`;
     } else {
-      throw new Error(`Invalid value for type ${type.__name__}`);
+      throw new Error(
+        `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`
+      );
     }
   } else if (val instanceof Date) {
     stringRep = `'${val.toISOString()}'`;
@@ -1187,10 +1189,14 @@ function literalToEdgeQL(type: BaseType, val: any): string {
       )} )`;
       skipCast = true;
     } else {
-      throw new Error(`Invalid value for type ${type.__name__}`);
+      throw new Error(
+        `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`
+      );
     }
   } else {
-    throw new Error(`Invalid value for type ${type.__name__}`);
+    throw new Error(
+      `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`
+    );
   }
   if (skipCast) {
     return stringRep;
