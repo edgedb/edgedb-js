@@ -86,6 +86,7 @@ system for a ``package.json``.
   any other CLI command. See :ref:`Client Libraries > Connection
   <edgedb_client_connection>` for guidance.
 
+
 Version control
 ^^^^^^^^^^^^^^^
 
@@ -178,3 +179,20 @@ The generator also supports all the :ref:`connection flags
 <ref_cli_edgedb_connopts>` supported by the EdgeDB CLI. These aren't
 necessary when using a project or environment variables to configure a
 connection.
+
+
+Naming conflicts
+^^^^^^^^^^^^^^^^
+
+Certain link/property names will create conflicts with parts of the query
+builder API. Avoid using the following names in your schema.
+
+- ``filter``
+- ``order_by``
+- ``limit``
+- ``offset``
+- ``run``
+- ``is``
+- ``index``
+- ``slice``
+- ``destructure``
