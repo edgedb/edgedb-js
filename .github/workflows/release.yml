@@ -6,27 +6,9 @@ on:
     paths:
       - "package.json"
 jobs:
-  validate-release-request:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.checkver.outputs.version }}
-    steps:
-      - name: Validate release PR
-        uses: edgedb/action-release/validate-pr@master
-        id: checkver
-        with:
-          github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
-          require_team: Release Managers
-          require_approval: no  # approval not required for publish
-          missing_version_ok: yes
-          version_file: package.json
-          version_line_pattern: |
-            "version"\s*:\s*"([[:SEMVER:]])"
 
   build_and_publish:
-    needs: validate-release-request
     runs-on: ubuntu-latest
-    if: needs.validate-release-request.outputs.version != 0
     steps:
       - uses: actions/checkout@v2
         with:
@@ -43,7 +25,25 @@ jobs:
           yarn install
           yarn build
 
+      - id: publish
+        name: Publish to NPM
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          dry-run: true
+
+      - name: If Publish
+        if: steps.publish.outputs.type != 'none'
+        run: |
+          echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
+
+      - name: If Version Unchanged
+        if: steps.publish.outputs.type == 'none'
+        run: |
+          echo "Version in package.json has not changed. Skipping."
+
       - name: Merge and tag the PR
+        if: steps.publish.outputs.type != 'none'
         uses: edgedb/action-release/merge@master
         with:
           github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
@@ -53,6 +53,7 @@ jobs:
           tag_name: v${{ needs.validate-release-request.outputs.version }}
 
       - name: Publish Github Release
+        if: steps.publish.outputs.type != 'none'
         uses: elprans/gh-action-create-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -62,10 +63,3 @@ jobs:
           target: ${{ github.event.pull_request.base.ref }}
           body: ${{ github.event.pull_request.body }}
           draft: true
-
-      - name: Publish to NPM
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-          npm publish --dry-run
