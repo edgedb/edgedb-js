@@ -196,3 +196,58 @@ builder API. Avoid using the following names in your schema.
 - ``index``
 - ``slice``
 - ``destructure``
+
+
+Generated interfaces
+^^^^^^^^^^^^^^^^^^^^
+
+While the ``e`` object is all that's required to build queries,
+``npx edgeql-js`` also generates TypeScript ``interfaces`` representing your
+current schema. These are not needed to construct queries, but are generated
+as a convenience.
+
+.. code-block:: typescript
+
+  import e, {Person, Movie} from "./dbschema/edgeql-js";
+
+
+Given this EdgeDB schema:
+
+.. code-block:: sdl
+
+  module default {
+    scalar type Genre extending enum<Horror, Comedy, Drama>;
+    type Person {
+      required property name -> str;
+    }
+    type Movie {
+      required property title -> str;
+      property genre -> Genre;
+      multi link actors -> Person;
+    }
+  }
+
+The following interfaces will be generated (simplified for clarify):
+
+.. code-block:: typescript
+
+  enum Genre {
+    Horror = "Horror",
+    Comedy = "Comedy",
+    Drama = "Drama"
+  }
+
+  interface Person {
+    id: string;
+    name: string;
+  }
+
+  interface Movie {
+    id: string;
+    title: string;
+    genre?: Genre | null;
+    actors: Person[];
+  }
+
+Any types declared in a non-``default`` module  will be generated into an
+accordingly named ``namespace``.

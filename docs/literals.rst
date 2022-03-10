@@ -146,15 +146,18 @@ JSON
 ^^^^
 
 JSON literals are created with the ``e.json`` function. You can pass in any
-data structure of EdgeDB-encodable data.
+EdgeDB-compatible data structure.
 
 .. note::
 
-  What does "EdgeDB-encodable" mean? It means any JavaScript data structure
-  with an equivalent in EdgeDB: strings, number, booleans, arrays, objects,
-  ``bigint``\ s, ``Buffer``\ s, ``Date``\ s, and instances of EdgeDB's
-  built-in classes: ``Duration``, ``LocalDate`` ``LocalTime``, and
-  ``LocalDateTime``.
+  What does "EdgeDB-compatible" mean? It means any JavaScript data structure
+  with an equivalent in EdgeDB: strings, number, booleans, ``bigint``\ s,
+  ``Buffer``\ s, ``Date``\ s, and instances of EdgeDB's built-in classes:
+  (``Duration``, ``LocalDate`` ``LocalTime``, and
+  ``LocalDateTime``), and any array or object of these types. Other JavaScript
+  data structures like symbols, instances of custom classes, sets, maps, and
+  `typed arrays <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed_arrays>`_
+  are not supported.
 
 .. code-block:: typescript
 
