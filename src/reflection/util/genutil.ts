@@ -17,6 +17,17 @@ export function toIdent(name: string): string {
   return name.replace(/([^a-zA-Z0-9_]+)/g, "_");
 }
 
+export const makePlainIdent = (name: string): string => {
+  if (reservedIdents.has(name)) {
+    return `$${name}`;
+  }
+  const replaced = name.replace(
+    /[^A-Za-z0-9_]/g,
+    match => "0x" + match.codePointAt(0)!.toString(16)
+  );
+  return replaced !== name ? `$${replaced}` : name;
+};
+
 export function quote(val: string): string {
   return JSON.stringify(val.toString());
 }

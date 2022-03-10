@@ -6,8 +6,8 @@ import {
   frag,
   getRef,
   joinFrags,
+  makePlainIdent,
   quote,
-  reservedIdents,
   splitName,
   toTSScalarType,
 } from "../util/genutil";
@@ -122,17 +122,6 @@ export const getStringRepresentation: (
   } else {
     throw new Error("Invalid type");
   }
-};
-
-const makePlainIdent = (name: string): string => {
-  if (reservedIdents.has(name)) {
-    return `$${name}`;
-  }
-  const replaced = name.replace(
-    /[^A-Za-z0-9_]/g,
-    match => "0x" + match.codePointAt(0)!.toString(16)
-  );
-  return replaced !== name ? `$${replaced}` : name;
 };
 
 export const generateObjectTypes = (params: GeneratorParams) => {
@@ -418,6 +407,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
 
   // plain types export
   const plainTypesExportBuf = new CodeBuffer();
+  console.log(plainTypeModules);
   for (const [moduleName, module] of plainTypeModules) {
     if (moduleName === "default") {
       plainTypesCode.writeBuf(module.buf);
