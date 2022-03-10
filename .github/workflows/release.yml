@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - "master"
-    paths:
-      - "package.json"
 jobs:
 
   build_and_publish:
@@ -47,8 +45,8 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@{latest-release}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish Github Release
-        needs: build_changelog
         if: steps.publish.outputs.type != 'none'
         uses: elprans/gh-action-create-release@master
         env:
