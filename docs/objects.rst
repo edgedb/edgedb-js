@@ -54,7 +54,7 @@ the top-level of ``e``.
 .. As in EdgeQL, type names like ``Movie`` serve two purposes.
 
 .. - They can be used to represent the set of all Movie objects: ``select Movie``.
-.. - They can be used to represent the Movie *type* in operations like type intersections: ``select Media[is Movie]``
+.. - They can be used to represent the Movie *type* in operations like type intersections: ``select Content[is Movie]``
 
 Paths
 ^^^^^
