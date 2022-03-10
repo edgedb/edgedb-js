@@ -48,8 +48,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ needs.validate-release-request.outputs.version }}
-          release_name: v${{ needs.validate-release-request.outputs.version }}
-          target: ${{ github.event.pull_request.base.ref }}
-          body: ${{ github.event.pull_request.body }}
+          tag_name: v${{ steps.publish.outputs.type }}
+          release_name: v${{ steps.publish.outputs.type }}
+          target: ${{ github.event.push.ref }}
+          body: "Full changelog: ${{ github.event.push.compare }}"
           draft: true
