@@ -42,14 +42,20 @@ jobs:
         run: |
           echo "Version in package.json has not changed. Skipping."
 
+      - name: "Build Changelog"
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@{latest-release}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish Github Release
+        needs: build_changelog
         if: steps.publish.outputs.type != 'none'
         uses: elprans/gh-action-create-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.publish.outputs.type }}
-          release_name: v${{ steps.publish.outputs.type }}
+          tag_name: v${{ steps.publish.outputs.version }}
+          release_name: v${{ steps.publish.outputs.version }}
           target: ${{ github.event.push.ref }}
-          body: "Full changelog: ${{ github.event.push.compare }}"
+          body: "${{ steps.build_changelog.outputs.changelog }}"
           draft: true
