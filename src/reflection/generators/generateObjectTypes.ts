@@ -407,7 +407,6 @@ export const generateObjectTypes = (params: GeneratorParams) => {
 
   // plain types export
   const plainTypesExportBuf = new CodeBuffer();
-  console.log(plainTypeModules);
   for (const [moduleName, module] of plainTypeModules) {
     if (moduleName === "default") {
       plainTypesCode.writeBuf(module.buf);
