@@ -620,11 +620,21 @@ function renderEdgeQL(
       .join(", ")}]`;
   } else if (expr.__kind__ === ExpressionKind.Tuple) {
     return `(\n${expr.__items__
-      .map(item => `  ` + renderEdgeQL(item, ctx))
+      .map(
+        item => `  ` + renderEdgeQL(item, ctx, renderShape, noImplicitDetached)
+      )
       .join(",\n")}${expr.__items__.length === 1 ? "," : ""}\n)`;
   } else if (expr.__kind__ === ExpressionKind.NamedTuple) {
     return `(\n${Object.keys(expr.__shape__)
-      .map(key => `  ${key} := ${renderEdgeQL(expr.__shape__[key], ctx)}`)
+      .map(
+        key =>
+          `  ${key} := ${renderEdgeQL(
+            expr.__shape__[key],
+            ctx,
+            renderShape,
+            noImplicitDetached
+          )}`
+      )
       .join(",\n")}\n)`;
   } else if (expr.__kind__ === ExpressionKind.TuplePath) {
     return `${renderEdgeQL(expr.__parent__, ctx)}.${expr.__index__}`;
