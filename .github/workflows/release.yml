@@ -1,12 +1,5 @@
 # .github/release.yml
 
-changelog:
-  categories:
-    - title: Changes
-      labels:
-        - "*"
-
-
 name: Release
 on:
   push:
@@ -53,11 +46,11 @@ jobs:
         run: |
           echo "Version in package.json has not changed. Skipping."
 
-      - name: Generate Changelog
-        uses: Bullrich/generate-release-changelog@2.0.0
-        id: changelog
-        env:
-          REPO: ${{ github.repository }}
+      # - name: Generate Changelog
+      #   uses: Bullrich/generate-release-changelog@2.0.0
+      #   id: changelog
+      #   env:
+      #     REPO: ${{ github.repository }}
 
       - name: Create Release
         if: steps.publish.outputs.type != 'none'
@@ -69,7 +62,5 @@ jobs:
           tag_name: v${{ steps.publish.outputs.version }}
           release_name: v${{ steps.publish.outputs.version }}
           commitish: ${{ github.ref }}
-          body: |
-            ${{ steps.Changelog.outputs.changelog }}
           draft: true
           prerelease: false
