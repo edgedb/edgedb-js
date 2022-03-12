@@ -24,25 +24,24 @@ All built-in standard library functions are reflected as functions in ``e``.
   // math::mean({3, 5, 7})
 
 
+Prefix operators
+^^^^^^^^^^^^^^^^
 
-Operator syntax
-^^^^^^^^^^^^^^^
+Unlike functions, operators do *not* correspond to a top-level function on the
+``e`` object. Instead, they are expressed with the ``e.op`` function.
 
-By comparison, operators do *not* each have a corresponding function on the
-``e`` object. Instead, use the ``e.op`` function.
-
-**Unary operators**
-
-Unary operators operate on a single argument: ``OPERATOR <arg>``.
+Prefix operators operate on a single argument: ``OPERATOR <arg>``.
 
 .. code-block:: typescript
 
   e.op('not', e.bool(true));      // not true
   e.op('exists', e.set('hi'));    // exists {'hi'}
+  e.op('distinct', e.set('hi', 'hi'));    // distinct {'hi', 'hi'}
 
-**Binary operators**
+Infix operators
+^^^^^^^^^^^^^^^
 
-Unary operators operate on two arguments: ``<arg> OPERATOR <arg>``.
+Infix operators operate on two arguments: ``<arg> OPERATOR <arg>``.
 
 .. code-block:: typescript
 
@@ -50,18 +49,20 @@ Unary operators operate on two arguments: ``<arg> OPERATOR <arg>``.
   // 'Hello ' ++ 'World!'
 
 
-**Ternary operators**
+Ternary operators
+^^^^^^^^^^^^^^^^^
 
-Unary operators operate on three arguments: ``<arg> OPERATOR <arg> OPERATOR
+Ternary operators operate on three arguments: ``<arg> OPERATOR <arg> OPERATOR
 <arg>``. Currently there's only one ternary operator: the ``if else``
-construct.
+statement.
 
 .. code-block:: typescript
 
   e.op(e.str('😄'), 'if', e.bool(true), 'else', e.str('😢'));
   // 😄 if true else 😢
 
-**Operator reference**
+Operator reference
+^^^^^^^^^^^^^^^^^^
 
 .. list-table::
 

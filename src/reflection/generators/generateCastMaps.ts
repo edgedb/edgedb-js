@@ -348,7 +348,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   f.writeln([t`  [k in keyof T]: literalToTypeSet<T[k]>;`]);
   f.writeln([t`};\n\n`]);
 
-  f.addImport({$getType: true}, "./syntax/literal", true);
+  f.addStarImport("literal", "./syntax/literal", true);
 
   f.writeln([
     dts`declare `,
@@ -370,7 +370,9 @@ export const generateCastMaps = (params: GeneratorParams) => {
     } else {
       f.writeln([r`  if (type instanceof ${literalType}) {`]);
     }
-    f.writeln([r`    return $getType("${typesByName[type].id}")(type);`]);
+    f.writeln([
+      r`    return literal.$getType("${typesByName[type].id}")(type);`,
+    ]);
     f.writeln([r`  }`]);
   }
   f.writeln([

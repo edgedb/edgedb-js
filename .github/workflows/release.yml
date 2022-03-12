@@ -1,16 +1,21 @@
+# .github/release.yml
+
 name: Release
 on:
   push:
     branches:
       - "master"
-jobs:
+      - "ci"
+    paths:
+      - package.json
 
+jobs:
   build_and_publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 50
+          fetch-depth: 0
           submodules: true
 
       - name: Set up Node
@@ -28,7 +33,7 @@ jobs:
         uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_TOKEN }}
-          dry-run: false
+          dry-run: true
 
       - name: If Publish
         if: steps.publish.outputs.type != 'none'
@@ -40,23 +45,37 @@ jobs:
         run: |
           echo "Version in package.json has not changed. Skipping."
 
-      - name: Generate Changelog
-        uses: Bullrich/generate-release-changelog@2.0.0
-        id: changelog
+      - name: Write Changelog Config
+        run: |
+          echo '{"categories": [], "template": "## Commits:\n\n${{ '${{UNCATEGORIZED}}' }}", "pr_template": ${{ '"- ${{MERGE_SHA}} ${{TITLE}}"' }} }' > changelog_config.json
+          cat changelog_config.json
+
+      - name: Changelog Vars
+        run: |
+          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      - name: Build Changelog
+        id: github_release
+        uses: mikepenz/release-changelog-builder-action@v2.9.0
         env:
-          REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          fromTag: "${{ env.last_tag }}"
+          toTag: ${{ github.ref }}
+          commitMode: true
+          configuration: changelog_config.json
 
       - name: Create Release
         if: steps.publish.outputs.type != 'none'
         id: create_release
         uses: actions/create-release@latest
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ steps.publish.outputs.version }}
           release_name: v${{ steps.publish.outputs.version }}
           commitish: ${{ github.ref }}
-          body: |
-            ${{ steps.Changelog.outputs.changelog }}
-          draft: false
+          body: ${{steps.github_release.outputs.changelog}}
+          draft: true
           prerelease: false
