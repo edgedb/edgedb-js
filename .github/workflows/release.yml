@@ -7,8 +7,8 @@ on:
       - "master"
       - "ci"
       - "circular-dep"
-    paths:
-      - package.json
+    # paths:
+    #   - package.json
 jobs:
 
   build_and_publish:
