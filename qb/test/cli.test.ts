@@ -44,7 +44,7 @@ test("basic generate", async () => {
 
   // test generated code
   const e = require(cjsIndex).default;
-  const result = await e.str("Hello world!").run(client);
+  const result = await e.select(e.str("Hello world!")).run(client);
   expect(result).toEqual("Hello world!");
 
   // console.log(`Done. Removing ${QBDIR}...`);
