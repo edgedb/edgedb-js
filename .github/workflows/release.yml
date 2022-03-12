@@ -51,6 +51,11 @@ jobs:
       #   id: changelog
       #   env:
       #     REPO: ${{ github.repository }}
+      - name: Build Changelog
+        id: github_release
+        uses: mikepenz/release-changelog-builder-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         if: steps.publish.outputs.type != 'none'
@@ -62,5 +67,6 @@ jobs:
           tag_name: v${{ steps.publish.outputs.version }}
           release_name: v${{ steps.publish.outputs.version }}
           commitish: ${{ github.ref }}
+          body: ${{steps.github_release.outputs.changelog}}
           draft: true
           prerelease: false
