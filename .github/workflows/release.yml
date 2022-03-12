@@ -46,26 +46,25 @@ jobs:
       #   run: |
       #     echo "Version in package.json has not changed. Skipping."
 
-      - name: Build Changelog
-        id: github_release
-        uses: mikepenz/release-changelog-builder-action@v2.9.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Changelog Vars
         run: |
-          echo "Changelog generated for ${{steps.github_release.outputs.fromTag}} -> ${{steps.github_release.outputs.toTag}}"
-          # echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-          # echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
-          echo "lasttag: $(git describe --tags --abbrev=0)"
-          echo "currcommit: $(git rev-parse HEAD)"
-          echo "${{ github.ref }}"
+          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Changelog Printvars
         run: |
           echo "${{ env.last_tag }}"
           echo "${{ env.curr_commit }}"
+          echo "${{ github.ref }}"
 
+      - name: Build Changelog
+        id: github_release
+        uses: mikepenz/release-changelog-builder-action@v2.9.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          fromTag: "${{ env.last_tag }}"
+          toTag: ${{ github.ref }}
 
       - name: Create Release
         if: steps.publish.outputs.type != 'none'
