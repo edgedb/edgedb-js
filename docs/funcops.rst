@@ -52,21 +52,17 @@ Infix operators operate on two arguments: ``<arg> OPERATOR <arg>``.
 Ternary operators
 ^^^^^^^^^^^^^^^^^
 
-Ternart operators operate on three arguments: ``<arg> OPERATOR <arg> OPERATOR
-<arg>``.
-
-If statements
-#############
-
-Currently there's only one ternary operator: the ``if else``
-construct.
+Ternary operators operate on three arguments: ``<arg> OPERATOR <arg> OPERATOR
+<arg>``. Currently there's only one ternary operator: the ``if else``
+statement.
 
 .. code-block:: typescript
 
   e.op(e.str('😄'), 'if', e.bool(true), 'else', e.str('😢'));
   // 😄 if true else 😢
 
-**Operator reference**
+Operator reference
+^^^^^^^^^^^^^^^^^^
 
 .. list-table::
 
