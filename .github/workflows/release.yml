@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 50
+          fetch-depth: 0
           submodules: true
 
       - name: Set up Node
@@ -24,27 +24,27 @@ jobs:
         with:
           node-version: 16
 
-      - name: Install deps and build
-        run: |
-          yarn install
-          yarn build
+      # - name: Install deps and build
+      #   run: |
+      #     yarn install
+      #     yarn build
 
-      - id: publish
-        name: Publish to NPM
-        uses: JS-DevTools/npm-publish@v1
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
-          dry-run: true
+      # - id: publish
+      #   name: Publish to NPM
+      #   uses: JS-DevTools/npm-publish@v1
+      #   with:
+      #     token: ${{ secrets.NPM_TOKEN }}
+      #     dry-run: true
 
-      - name: If Publish
-        if: steps.publish.outputs.type != 'none'
-        run: |
-          echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
+      # - name: If Publish
+      #   if: steps.publish.outputs.type != 'none'
+      #   run: |
+      #     echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
 
-      - name: If Version Unchanged
-        if: steps.publish.outputs.type == 'none'
-        run: |
-          echo "Version in package.json has not changed. Skipping."
+      # - name: If Version Unchanged
+      #   if: steps.publish.outputs.type == 'none'
+      #   run: |
+      #     echo "Version in package.json has not changed. Skipping."
 
       - name: Build Changelog
         id: github_release
@@ -55,10 +55,10 @@ jobs:
       - name: Changelog Vars
         run: |
           echo "Changelog generated for ${{steps.github_release.outputs.fromTag}} -> ${{steps.github_release.outputs.toTag}}"
-          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-          echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          # echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          # echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
           echo "lasttag: $(git describe --tags --abbrev=0)"
-          echo "currcommit: ${git rev-parse HEAD}"
+          echo "currcommit: $(git rev-parse HEAD)"
           echo "${{ github.ref }}"
 
       - name: Changelog Printvars
