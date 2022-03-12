@@ -51,6 +51,11 @@ jobs:
           echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
           echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
+      - name: Write Changelog Config
+        run: |
+          echo '{"categories": [], "template": "## Commits:\n\n${{UNCATEGORIZED}}" }' > changelog_config.json
+          cat changelog_config.json
+
       - name: Changelog Printvars
         run: |
           echo "${{ env.last_tag }}"
@@ -66,6 +71,7 @@ jobs:
           fromTag: "${{ env.last_tag }}"
           toTag: ${{ github.ref }}
           commitMode: true
+          configuration: changelog_config.json
 
       - name: Create Release
         if: steps.publish.outputs.type != 'none'
