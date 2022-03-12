@@ -58,9 +58,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Debug changelog
-        steps:
-          - echo "${{steps.github_release.outputs.fromTag}}"
-          - echo "${{steps.github_release.outputs.toTag}}"
+        run: |
+          echo "${{steps.github_release.outputs.fromTag}}"
+          echo "${{steps.github_release.outputs.toTag}}"
+
       - name: Create Release
         if: steps.publish.outputs.type != 'none'
         id: create_release
