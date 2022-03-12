@@ -24,43 +24,48 @@ jobs:
         with:
           node-version: 16
 
-      # - name: Install deps and build
-      #   run: |
-      #     yarn install
-      #     yarn build
+      - name: Install deps and build
+        run: |
+          yarn install
+          yarn build
 
-      # - id: publish
-      #   name: Publish to NPM
-      #   uses: JS-DevTools/npm-publish@v1
-      #   with:
-      #     token: ${{ secrets.NPM_TOKEN }}
-      #     dry-run: true
+      - id: publish
+        name: Publish to NPM
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          dry-run: true
 
-      # - name: If Publish
-      #   if: steps.publish.outputs.type != 'none'
-      #   run: |
-      #     echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
+      - name: If Publish
+        if: steps.publish.outputs.type != 'none'
+        run: |
+          echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
 
-      # - name: If Version Unchanged
-      #   if: steps.publish.outputs.type == 'none'
-      #   run: |
-      #     echo "Version in package.json has not changed. Skipping."
+      - name: If Version Unchanged
+        if: steps.publish.outputs.type == 'none'
+        run: |
+          echo "Version in package.json has not changed. Skipping."
 
-      # - name: Generate Changelog
-      #   uses: Bullrich/generate-release-changelog@2.0.0
-      #   id: changelog
-      #   env:
-      #     REPO: ${{ github.repository }}
       - name: Build Changelog
         id: github_release
         uses: mikepenz/release-changelog-builder-action@v2.9.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug changelog
+      - name: Changelog Vars
         run: |
-          echo "${{steps.github_release.outputs.fromTag}}"
-          echo "${{steps.github_release.outputs.toTag}}"
+          echo "Changelog generated for ${{steps.github_release.outputs.fromTag}} -> ${{steps.github_release.outputs.toTag}}"
+          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          echo "lasttag: $(git describe --tags --abbrev=0)"
+          echo "currcommit: ${git rev-parse HEAD}"
+          echo "${{ github.ref }}"
+
+      - name: Changelog Printvars
+        run: |
+          echo "${{ env.last_tag }}"
+          echo "${{ env.curr_commit }}"
+
 
       - name: Create Release
         if: steps.publish.outputs.type != 'none'
