@@ -53,7 +53,7 @@ jobs:
 
       - name: Write Changelog Config
         run: |
-          echo '{"categories": [], "template": "## Commits:\n\n${{ '${{UNCATEGORIZED}}' }}" }' > changelog_config.json
+          echo '{"categories": [], "template": "## Commits:\n\n${{ '${{UNCATEGORIZED}}', "pr_template": ${{ '"- ${{MERGE_SHA}} ${{TITLE}}"' }} }}" }' > changelog_config.json
           cat changelog_config.json
 
       - name: Changelog Printvars
