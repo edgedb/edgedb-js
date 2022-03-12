@@ -65,6 +65,7 @@ jobs:
         with:
           fromTag: "${{ env.last_tag }}"
           toTag: ${{ github.ref }}
+          commitMode: true
 
       - name: Create Release
         if: steps.publish.outputs.type != 'none'
