@@ -6,11 +6,10 @@ on:
     branches:
       - "master"
       - "ci"
-      - "circular-dep"
-    # paths:
-    #   - package.json
-jobs:
+    paths:
+      - package.json
 
+jobs:
   build_and_publish:
     runs-on: ubuntu-latest
     steps:
@@ -24,43 +23,37 @@ jobs:
         with:
           node-version: 16
 
-      # - name: Install deps and build
-      #   run: |
-      #     yarn install
-      #     yarn build
-
-      # - id: publish
-      #   name: Publish to NPM
-      #   uses: JS-DevTools/npm-publish@v1
-      #   with:
-      #     token: ${{ secrets.NPM_TOKEN }}
-      #     dry-run: true
-
-      # - name: If Publish
-      #   if: steps.publish.outputs.type != 'none'
-      #   run: |
-      #     echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
-
-      # - name: If Version Unchanged
-      #   if: steps.publish.outputs.type == 'none'
-      #   run: |
-      #     echo "Version in package.json has not changed. Skipping."
-
-      - name: Changelog Vars
+      - name: Install deps and build
         run: |
-          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-          echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          yarn install
+          yarn build
+
+      - id: publish
+        name: Publish to NPM
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          dry-run: true
+
+      - name: If Publish
+        if: steps.publish.outputs.type != 'none'
+        run: |
+          echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
+
+      - name: If Version Unchanged
+        if: steps.publish.outputs.type == 'none'
+        run: |
+          echo "Version in package.json has not changed. Skipping."
 
       - name: Write Changelog Config
         run: |
           echo '{"categories": [], "template": "## Commits:\n\n${{ '${{UNCATEGORIZED}}' }}", "pr_template": ${{ '"- ${{MERGE_SHA}} ${{TITLE}}"' }} }' > changelog_config.json
           cat changelog_config.json
 
-      - name: Changelog Printvars
+      - name: Changelog Vars
         run: |
-          echo "${{ env.last_tag }}"
-          echo "${{ env.curr_commit }}"
-          echo "${{ github.ref }}"
+          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Build Changelog
         id: github_release
@@ -78,7 +71,7 @@ jobs:
         id: create_release
         uses: actions/create-release@latest
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ steps.publish.outputs.version }}
           release_name: v${{ steps.publish.outputs.version }}
