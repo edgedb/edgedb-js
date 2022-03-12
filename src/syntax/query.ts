@@ -1,6 +1,6 @@
 import type * as edgedb from "edgedb";
 import {Cardinality, ExpressionKind} from "../reflection";
-import {jsonifyComplexParams} from "./params";
+import {jsonifyComplexParams} from "./json";
 import {select} from "./select";
 
 const runnableExpressionKinds = new Set([

@@ -16,8 +16,8 @@ import type {
   $pathify,
   ExpressionRoot,
 } from "../reflection/path";
-import {$arrayLikeIndexify, $tuplePathify} from "./collections";
 import {literalToTypeSet} from "@generated/castMaps";
+import {$arrayLikeIndexify, $tuplePathify} from "./collections";
 import {$toEdgeQL} from "./toEdgeQL";
 import {$queryFunc} from "./query";
 
