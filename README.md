@@ -132,22 +132,7 @@ await client.querySingle(
 
 ## Query builder
 
-Instead of writing queries as strings, you can use this package to generate a
-_query builder_. The query builder lets you write queries in a code-first way
-and automatically infers the return type of your queries.
-
-To generate the query builder, install the `edgedb`, initialize a project (if
-you haven't already), then run the following command:
-
-```sh
-$ npx edgeql-js
-```
-
-This will generate an EdgeQL query builder into the `"./dbschema/edgeql-js`
-directory, as defined relative to your project root.
-
-For details on using the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/01_js/generation). Below is a simple
-`select` query as an example.
+Instead of writing queries as strings, you can use this package to generate a _query builder_. The query builder lets you write queries in a code-first way and automatically infers the return type of your queries.
 
 ```ts
 import {createClient} from "edgedb";
@@ -166,14 +151,7 @@ const result = await query.run(client);
 result.actors[0].name; // => Timothee Chalamet
 ```
 
-You can also fetch the results as a JSON-serialized string with `.runJSON`.
-This serialization happens inside the database and is much faster than calling
-`JSON.stringify` yourself.
-
-```ts
-const result = await query.runJSON(client);
-// => '{"actors": [{"name": "Timothee Chalamet", ...}]}'
-```
+For details on using the query builder, refer to the full [Query builder docs](https://www.edgedb.com/docs/clients/01_js/querybuilder).
 
 ## Contribute
 
