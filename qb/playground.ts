@@ -6,6 +6,15 @@ import {setupTests} from "./test/setupTeardown";
 import e, * as types from "./dbschema/edgeql-js/index";
 
 async function run() {
+  const asd = {
+    "3": "asdf",
+    qwer: "sdf",
+  } as const;
+
+  function infer<T>() {}
+
+  console.log(asd[3]);
+
   const {client} = await setupTests();
   const query = e
     .insert(e.Movie, {
