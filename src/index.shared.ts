@@ -49,3 +49,5 @@ export type _ICodec = codecs.ICodec;
 
 import {plugJSBI} from "./primitives/bigint";
 export const _plugJSBI = plugJSBI;
+
+export const _edgedbJsVersion = "0.0.0";
