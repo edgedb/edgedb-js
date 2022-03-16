@@ -215,7 +215,7 @@ typically more performant than running ``JSON.stringify`` yourself.
   await client.querySingleJSON(`select <int64>{};`);
   // "null"
 
-  await client.queryRequiredSingleJSON2(`select 3.14;`);
+  await client.queryRequiredSingleJSON(`select 3.14;`);
   // "3.14"
 
 Non-returning queries
