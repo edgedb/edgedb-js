@@ -1,11 +1,8 @@
 import path from "path";
-import {fileURLToPath} from "url";
-import fs from "fs";
 import {execSync} from "child_process";
 import {createClient} from "edgedb";
 
-const __dirname = fileURLToPath(import.meta.url);
-const QBDIR = path.resolve(__dirname, "../../dbschema/qbout");
+const QBDIR = "../dbschema/qbout";
 
 const client = createClient();
 
@@ -24,7 +21,7 @@ async function run() {
       return;
     }
     execSync(CMD.join(" "));
-    const indexFilePath = path.resolve(QBDIR, "index.mjs");
+    const indexFilePath = path.posix.join(QBDIR, "index.mjs");
     const {default: e} = await import(indexFilePath);
     const result = await e.str("Hello world!").run(client);
     if (result !== "Hello world!") throw new Error();
