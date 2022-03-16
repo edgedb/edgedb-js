@@ -27,9 +27,9 @@ jobs:
           - os: macos-latest
             node-version: "16"
             edgedb-version: "stable"
-          # - os: windows-latest
-          #   node-version: "16"
-          #   edgedb-version: "stable"
+          - os: windows-2019
+            node-version: "16"
+            edgedb-version: "stable"
 
     steps:
       - uses: actions/checkout@v1
