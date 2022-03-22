@@ -208,13 +208,13 @@ serialized JSON string. This serialization happens inside the database.
 
 .. code-block:: js
 
-  await client.query(`select {1, 2, 3};`);
+  await client.queryJSON(`select {1, 2, 3};`);
   // "[1, 2, 3]"
 
-  await client.querySingle(`select <int64>{};`);
+  await client.querySingleJSON(`select <int64>{};`);
   // "null"
 
-  await client.queryRequiredSingle(`select 3.14;`);
+  await client.queryRequiredSingleJSON(`select 3.14;`);
   // "3.14"
 
 Non-returning queries
