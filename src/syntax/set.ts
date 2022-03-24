@@ -21,10 +21,11 @@ import {TypeKind, $mergeObjectTypes} from "../reflection";
 import * as castMaps from "../castMaps";
 
 export function getSharedParent(a: SomeType, b: SomeType): SomeType {
-  if (a.__kind__ !== b.__kind__)
+  if (a.__kind__ !== b.__kind__) {
     throw new Error(
       `Incompatible array types: ${a.__name__} and ${b.__name__}`
     );
+  }
   if (a.__kind__ === TypeKind.scalar && b.__kind__ === TypeKind.scalar) {
     return castMaps.getSharedParentScalar(a, b);
   } else if (
@@ -74,7 +75,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
     }
     try {
       const items: {[k: string]: BaseType} = {};
-      for (const i in a.__shape__) {
+      for (const [i] of Object.entries(a.__shape__)) {
         if (!a.__shape__[i] || !b.__shape__[i]) {
           throw new Error();
         }
