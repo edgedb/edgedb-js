@@ -204,7 +204,8 @@ JSON results
 ------------
 
 There are dedicated methods for running queries and retrieving results as a
-serialized JSON string. This serialization happens inside the database.
+serialized JSON string. This serialization happens inside the database and is
+typically more performant than running ``JSON.stringify`` yourself.
 
 .. code-block:: js
 

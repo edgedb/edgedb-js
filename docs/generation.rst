@@ -3,7 +3,7 @@
 Generation
 ==========
 
-The query builder is *auto-generated* from your database schema.
+The query builder is *auto-generated* by introspecting the schema of your database.
 
 Minimum requirements
 ^^^^^^^^^^^^^^^^^^^^
@@ -31,10 +31,11 @@ requirements apply to TypeScript users only.
 Initialize a project
 ^^^^^^^^^^^^^^^^^^^^
 
-Set up an :ref:`EdgeDB project <ref_guide_using_projects>` for your
-application. Follow the :ref:`Quickstart <ref_quickstart>` for detailed
-instructions on installing the CLI, initializing a project, writing a basic
-schema, and executing your first migration.
+When developing locally, we recommend initializing an :ref:`EdgeDB project
+<ref_guide_using_projects>` for your application. Follow the :ref:`Quickstart
+<ref_quickstart>` for detailed instructions on installing the CLI,
+initializing a project, writing a basic schema, and executing your first
+migration.
 
 Install the JavaScript client library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -56,7 +57,8 @@ Generate the query builder with the following command.
   $ npx edgeql-js           # npm users
   $ yarn edgeql-js          # yarn users
 
-You'll see something like this.
+You'll see something similar to this. (The first line will differ depending on
+whether you are using TypeScript or plain JavaScript.)
 
 .. code-block:: bash
 
@@ -69,12 +71,22 @@ You'll see something like this.
   Introspecting database schema...
   Generation successful!
 
-The ``npx edgeql-js`` establishes a connection to your database, introspects
-the current schema, and generates a bunch of files. By default, these files
-are written to the ``./dbschema/edgeql-js`` directory, as defined relative to
-your project root. The project root is identified by scanning up the file
-system for a ``package.json``.
+**Important**. The ``npx edgeql-js`` establishes a connection to your database, introspects the current schema, and generates a bunch of files. It does **not** simply read your local ``.esdl`` files. You must create and apply migrations to your development database before running ``npx edgeql-js``.
 
+.. note::
+
+  It is not possible to generate the query builder without establishing a
+  connection to an active EdgeDB instance. Remember that object types can
+  contain computed fields that correspond to arbitrary EdgeQL queries. It
+  isn't possible to determine the type and cardinality of these queries
+  without implementing a full EdgeQL parser and static analyzer in JavaScript,
+  which is not on our roadmap (to put it lightly). As such, we rely on the
+  existence of an active EdgeDB instance containing the target schema.
+
+By default, ``npx edgeql-js`` generated files into the
+``./dbschema/edgeql-js`` directory, as defined relative to your project root.
+The project root is identified by scanning up the file system for a
+``package.json``.
 
 .. note::
 
