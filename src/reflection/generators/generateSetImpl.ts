@@ -42,6 +42,7 @@ import type {
   LooseTypeSet,
 } from "./set";`,
   ]);
+  code.addImport({getSharedParent: true}, "./set", true, ["ts", "js"]);
 
   code.nl();
   code.writeln([
@@ -159,50 +160,24 @@ import type {
   const exprs`,
     ts`: TypeSet[]`,
     r` = _exprs.map(expr => castMaps.literalToTypeSet(expr));
-  if (exprs.every((expr) => expr.__element__.__kind__ === TypeKind.object)) {
-    // merge object types;
-    return $expressionify({
-      __kind__: ExpressionKind.Set,
-      __element__: exprs
-        .map((expr) => expr.__element__`,
+
+  return $expressionify({
+    __kind__: ExpressionKind.Set,
+    __element__: exprs
+      .map(expr => expr.__element__`,
     ts` as any`,
-    r`)
-        .reduce($mergeObjectTypes),
-      __cardinality__: cardinalityUtil.mergeCardinalitiesVariadic(
-        exprs.map((expr) => expr.__cardinality__)`,
+    `)
+      .reduce(getSharedParent),
+    __cardinality__: cardinalityUtil.mergeCardinalitiesVariadic(
+      exprs.map(expr => expr.__cardinality__)`,
     ts` as any`,
-    r`
-      ),
-      __exprs__: exprs,
-    })`,
+    `
+    ),
+    __exprs__: exprs,
+  })`,
     ts` as any`,
-    r`;
-  }
-  if (exprs.every((expr) => expr.__element__.__kind__ !== TypeKind.object)) {
-    return $expressionify({
-      __kind__: ExpressionKind.Set,
-      __element__: exprs
-        .map((expr) => expr.__element__`,
-    ts` as any`,
-    r`)
-        .reduce(castMaps.getSharedParentScalar),
-      __cardinality__: cardinalityUtil.mergeCardinalitiesVariadic(
-        exprs.map((expr) => expr.__cardinality__)`,
-    ts` as any`,
-    r`
-      ),
-      __exprs__: exprs,
-    })`,
-    ts` as any`,
-    r`;
-  }
-  throw new Error(
-    \`Invalid arguments to set constructor: \${(_exprs`,
-    ts` as TypeSet[]`,
-    r`)
-      .map((expr) => expr.__element__.__name__)
-      .join(", ")}\`
-  );
+    `;
+
 }`,
   ]);
 

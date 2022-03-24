@@ -243,6 +243,14 @@ export type PropertyTypes =
   | TupleType
   | NamedTupleType;
 
+export type SomeType =
+  | ScalarType
+  | EnumType
+  | ArrayType
+  | TupleType
+  | ObjectType
+  | NamedTupleType;
+
 export interface PropertyDesc<
   Type extends BaseType = BaseType,
   Card extends Cardinality = Cardinality,

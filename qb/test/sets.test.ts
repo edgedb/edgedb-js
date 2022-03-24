@@ -1,6 +1,20 @@
-import {$} from "edgedb";
+import {$, Client} from "edgedb";
 import {tc} from "./setupTeardown";
 import e, {$infer} from "../dbschema/edgeql-js";
+import {setupTests, teardownTests, TestData} from "./setupTeardown";
+import {TypeKind} from "edgedb/dist/reflection";
+
+let client: Client;
+let data: TestData;
+
+beforeAll(async () => {
+  const setup = await setupTests();
+  ({client, data} = setup);
+});
+
+afterAll(async () => {
+  await teardownTests(client);
+});
 
 test("empty sets", () => {
   expect(e.set()).toEqual(null);
@@ -112,4 +126,53 @@ test("enums", () => {
   expect(query.toEdgeQL()).toEqual(
     `{ default::Genre.Action, default::Genre.Horror }`
   );
+
+  expect(() => e.set(e.Genre.Action, e.sys.VersionStage.dev as any)).toThrow();
+});
+
+test("tuples", async () => {
+  const q1 = e.set(
+    e.tuple([1, "asdf", e.int16(214)]),
+    e.tuple([3, "asdf", e.int64(5)])
+  );
+  expect(q1.__element__.__kind__).toEqual(TypeKind.tuple);
+  expect(q1.__element__.__items__[0].__name__).toEqual("std::number");
+  expect(q1.__element__.__items__[1].__name__).toEqual("std::str");
+  expect(await q1.run(client)).toMatchObject([
+    [1, "asdf", 214],
+    [3, "asdf", 5],
+  ]);
+
+  expect(() => e.set(e.tuple([1]), e.tuple([1, 2]))).toThrow();
+  expect(() => e.set(e.tuple([1]), e.tuple(["asdf"]))).toThrow();
+});
+
+test("named tuples", async () => {
+  const q1 = e.set(
+    e.tuple({a: 1, b: "asdf", c: e.int16(214)}),
+    e.tuple({a: 3, b: "asdf", c: e.int64(5)})
+  );
+  expect(q1.__element__.__kind__).toEqual(TypeKind.namedtuple);
+  expect(await q1.run(client)).toMatchObject([
+    {a: 1, b: "asdf", c: 214},
+    {a: 3, b: "asdf", c: 5},
+  ]);
+
+  expect(() => e.set(e.tuple({a: 1}), e.tuple({a: "asfd"}))).toThrow();
+  expect(() => e.set(e.tuple({a: 1}), e.tuple({a: "asfd", b: "qwer"})));
+  expect(() =>
+    e.set(e.tuple({a: "asfd", b: "qwer"}), e.tuple({a: 1}))
+  ).toThrow();
+  expect(() => e.set(e.tuple({a: 1}), e.tuple({b: "asfd"}))).toThrow();
+});
+
+test("array", async () => {
+  const q1 = e.set(e.array([e.int16(5), e.int64(67)]), e.array([6]));
+  expect(q1.__element__.__kind__).toEqual(TypeKind.array);
+
+  expect(await q1.run(client)).toEqual([[5, 67], [6]]);
+
+  expect(() =>
+    e.set(e.array([e.int16(5)]), e.array(["asdf"]) as any)
+  ).toThrow();
 });
