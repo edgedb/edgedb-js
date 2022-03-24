@@ -16,22 +16,16 @@ async function run() {
   console.log(asd[3]);
 
   const {client} = await setupTests();
-  const query = e
-    .insert(e.Movie, {
-      title: "The Avengers",
-      rating: 11,
-    })
-    .unlessConflict(movie => ({
-      on: e.tuple([movie.title, movie.profile, movie.id]),
-      else: e.update(movie, () => ({
-        set: {
-          rating: 11,
-        },
-      })),
-    }));
+  const query = e.set(
+    e.tuple({a: 1, b: "asdf", c: e.int16(214)}),
+    e.tuple({a: 3, b: "asdf", c: e.int64(5)})
+  );
+
   console.log(query.toEdgeQL());
   const result = await query.run(client);
   console.log(result);
+
+  // e.literal(e.tuple({a: e.int16}), )
 }
 
 run();

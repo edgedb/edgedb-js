@@ -7,6 +7,7 @@ import {
   ObjectTypePointers,
   LinkDesc,
   PropertyDesc,
+  TupleType,
 } from "./typesystem";
 
 import {typeutil, util} from "./util/util";
@@ -265,4 +266,14 @@ export function $mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
     __shape__: {},
   };
   return obj as any;
+}
+
+export function $mergeTupleTypes<A extends TupleType, B extends TupleType>(
+  a: A,
+  b: B
+): TupleType {
+  if (a.__items__.length !== b.__items__.length) {
+    throw new Error("Incompatible tuple types; lengths differ.");
+  }
+  return {} as TupleType;
 }
