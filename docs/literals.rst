@@ -41,9 +41,9 @@ slicing, as in EdgeQL.
   const myString = e.str("hello world");
 
   myString[5];         //  "hello world"[5]
-  myString['2:5'];     //  "hello world"[0:5]
+  myString['2:5'];     //  "hello world"[2:5]
   myString[':5'];      //  "hello world"[:5]
-  myString['2:'];      //  "hello world"[:5]
+  myString['2:'];      //  "hello world"[2:]
 
 There are also equivalent ``.index`` and ``.slice`` methods that can accept
 integer expressions as arguments.
