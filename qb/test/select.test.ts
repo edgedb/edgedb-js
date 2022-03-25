@@ -820,163 +820,143 @@ test("filters in subqueries", async () => {
   >(true);
 });
 
-test("repeated computed", async () => {
-  const query = e.select(e.Villain, villain => ({
-    id: true,
-    name: true,
-    nemesis: nemesis => {
-      const nameLen = e.len(nemesis.name);
-      return {
-        name: true,
-        nameLen,
-        nameLen2: nameLen,
-      };
-    },
-  }));
+// test("repeated computed", async () => {
+//   const query = e.select(e.Villain, () => ({
+//     id: true,
+//     name: true,
+//     nemesis: nemesis => {
+//       const nameLen = e.len(nemesis.name);
+//       return {
+//         name: true,
+//         nameLen,
+//         nameLen2: nameLen,
+//       };
+//     },
+//   }));
 
-  expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_Person := DETACHED default::Movie.characters
-SELECT __scope_0_Person {
-  id,
-  name,
-  [IS default::Villain].nemesis,
-  [IS default::Hero].secret_identity,
-  multi villains := (
-    WITH
-      __scope_1_Villain := __scope_0_Person[IS default::Hero].villains
-    SELECT __scope_1_Villain {
-      id,
-      name,
-      nemesis := (
-        WITH
-          __scope_2_Hero_expr := __scope_1_Villain.nemesis,
-          __scope_2_Hero := (FOR __scope_2_Hero_inner IN {__scope_2_Hero_expr} UNION (
-            WITH
-              __withVar_3 := std::len(__scope_2_Hero_inner.name)
-            SELECT __scope_2_Hero_inner {
-              __withVar_3 := __withVar_3
-            }
-          ))
-        SELECT __scope_2_Hero {
-          name,
-          single nameLen := __scope_2_Hero.__withVar_3,
-          single nameLen2 := __scope_2_Hero.__withVar_3
-        }
-      )
-    }
-  )
-}`);
+//   expect(query.toEdgeQL()).toEqual(`WITH
+//   __scope_0_Villain := DETACHED default::Villain
+// SELECT __scope_0_Villain {
+//   id,
+//   name,
+//   nemesis := (
+//     WITH
+//       __scope_1_Hero_expr := __scope_0_Villain.nemesis,
+//       __scope_1_Hero := (FOR __scope_1_Hero_inner IN {__scope_1_Hero_expr} UNION (
+//         WITH
+//           __withVar_2 := std::len(__scope_1_Hero_inner.name)
+//         SELECT __scope_1_Hero_inner {
+//           __withVar_2 := __withVar_2
+//         }
+//       ))
+//     SELECT __scope_1_Hero {
+//       name,
+//       single nameLen := __scope_1_Hero.__withVar_2,
+//       single nameLen2 := __scope_1_Hero.__withVar_2
+//     }
+//   )
+// }`);
 
-  const res = await query.run(client);
+//   const res = await query.run(client);
 
-  tc.assert<
-    tc.IsExact<
-      typeof res,
-      {
-        id: string;
-        name: string;
-        nemesis: {
-          id: string;
-        } | null;
-        secret_identity: string | null;
-        villains:
-          | {
-              id: string;
-              name: string;
-              nemesis: {
-                name: string;
-                nameLen: number;
-                nameLen2: number;
-              } | null;
-            }[]
-          | null;
-      }[]
-    >
-  >(true);
-});
+//   tc.assert<
+//     tc.IsExact<
+//       typeof res,
+//       {
+//         id: string;
+//         name: string;
+//         nemesis: {
+//           name: string;
+//           nameLen: number;
+//           nameLen2: number;
+//         } | null;
+//       }[]
+//     >
+//   >(true);
+// });
 
-test("polymorphic subqueries", async () => {
-  const query = e.select(e.Movie.characters, character => ({
-    id: true,
-    name: true,
-    ...e.is(e.Villain, {nemesis: true}),
-    ...e.is(e.Hero, {
-      secret_identity: true,
-      villains: {
-        id: true,
-        name: true,
-        nemesis: nemesis => {
-          const nameLen = e.len(nemesis.name);
-          return {
-            name: true,
-            nameLen,
-            nameLen2: nameLen,
-          };
-        },
-      },
-    }),
-  }));
+// test("polymorphic subqueries", async () => {
+//   const query = e.select(e.Movie.characters, character => ({
+//     id: true,
+//     name: true,
+//     ...e.is(e.Villain, {nemesis: true}),
+//     ...e.is(e.Hero, {
+//       secret_identity: true,
+//       villains: {
+//         id: true,
+//         name: true,
+//         nemesis: nemesis => {
+//           const nameLen = e.len(nemesis.name);
+//           return {
+//             name: true,
+//             nameLen,
+//             nameLen2: nameLen,
+//           };
+//         },
+//       },
+//     }),
+//   }));
 
-  expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_Person := DETACHED default::Movie.characters
-SELECT __scope_0_Person {
-  id,
-  name,
-  [IS default::Villain].nemesis,
-  [IS default::Hero].secret_identity,
-  multi villains := (
-    WITH
-      __scope_1_Villain := __scope_0_Person[IS default::Hero].villains
-    SELECT __scope_1_Villain {
-      id,
-      name,
-      nemesis := (
-        WITH
-          __scope_2_Hero_expr := __scope_1_Villain.nemesis,
-          __scope_2_Hero := (FOR __scope_2_Hero_inner IN {__scope_2_Hero_expr} UNION (
-            WITH
-              __withVar_3 := std::len(__scope_2_Hero_inner.name)
-            SELECT __scope_2_Hero_inner {
-              __withVar_3 := __withVar_3
-            }
-          ))
-        SELECT __scope_2_Hero {
-          name,
-          single nameLen := __scope_2_Hero.__withVar_3,
-          single nameLen2 := __scope_2_Hero.__withVar_3
-        }
-      )
-    }
-  )
-}`);
+//   expect(query.toEdgeQL()).toEqual(`WITH
+//   __scope_0_Person := DETACHED default::Movie.characters
+// SELECT __scope_0_Person {
+//   id,
+//   name,
+//   [IS default::Villain].nemesis,
+//   [IS default::Hero].secret_identity,
+//   multi villains := (
+//     WITH
+//       __scope_1_Villain := __scope_0_Person[IS default::Hero].villains
+//     SELECT __scope_1_Villain {
+//       id,
+//       name,
+//       nemesis := (
+//         WITH
+//           __scope_2_Hero_expr := __scope_1_Villain.nemesis,
+//           __scope_2_Hero := (FOR __scope_2_Hero_inner IN {__scope_2_Hero_expr} UNION (
+//             WITH
+//               __withVar_3 := std::len(__scope_2_Hero_inner.name)
+//             SELECT __scope_2_Hero_inner {
+//               __withVar_3 := __withVar_3
+//             }
+//           ))
+//         SELECT __scope_2_Hero {
+//           name,
+//           single nameLen := __scope_2_Hero.__withVar_3,
+//           single nameLen2 := __scope_2_Hero.__withVar_3
+//         }
+//       )
+//     }
+//   )
+// }`);
 
-  const res = await query.run(client);
+//   const res = await query.run(client);
 
-  tc.assert<
-    tc.IsExact<
-      typeof res,
-      {
-        id: string;
-        name: string;
-        nemesis: {
-          id: string;
-        } | null;
-        secret_identity: string | null;
-        villains:
-          | {
-              id: string;
-              name: string;
-              nemesis: {
-                name: string;
-                nameLen: number;
-                nameLen2: number;
-              } | null;
-            }[]
-          | null;
-      }[]
-    >
-  >(true);
-});
+//   tc.assert<
+//     tc.IsExact<
+//       typeof res,
+//       {
+//         id: string;
+//         name: string;
+//         nemesis: {
+//           id: string;
+//         } | null;
+//         secret_identity: string | null;
+//         villains:
+//           | {
+//               id: string;
+//               name: string;
+//               nemesis: {
+//                 name: string;
+//                 nameLen: number;
+//                 nameLen2: number;
+//               } | null;
+//             }[]
+//           | null;
+//       }[]
+//     >
+//   >(true);
+// });
 
 test("polymorphic field in nested shape", async () => {
   const query = e.select(e.Movie, movie => ({

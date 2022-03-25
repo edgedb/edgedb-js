@@ -5,6 +5,7 @@ module default {
   abstract link movie_character {
     property character_name -> str;
   }
+
   abstract type Person {
     required property name -> str {
       constraint exclusive;
