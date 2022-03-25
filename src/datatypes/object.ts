@@ -41,8 +41,9 @@ export function generateType(
     let name: FieldName = names[i];
     if (flags[i] & EDGE_POINTER_IS_LINKPROP) {
       name = `@${name}`;
-    } // else if (flags[i] & EDGE_POINTER_IS_IMPLICIT) {
-    // name = Symbol.for(name);
+    }
+    // else if (flags[i] & EDGE_POINTER_IS_IMPLICIT) {
+    //   name = Symbol.for(name);
     // }
 
     newNames[i] = name;
@@ -79,10 +80,10 @@ export function generateType(
       enumerable: false,
       writable: false,
       configurable: false,
-      value: {
+      value: () => ({
         kind: "object",
         fields: introFields,
-      },
+      }),
     });
     Object.defineProperty(obj, inspect.custom, {
       enumerable: false,

@@ -49,10 +49,10 @@ export function generateType(names: string[]): NamedTupleConstructor {
       enumerable: false,
       writable: false,
       configurable: false,
-      value: {
-        kind: "object",
+      value: () => ({
+        kind: "namedtuple",
         fields: introFields,
-      },
+      }),
     });
     Object.defineProperty(obj, inspect.custom, {
       enumerable: false,

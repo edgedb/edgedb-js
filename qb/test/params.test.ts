@@ -129,7 +129,8 @@ test("complex params", async () => {
       tags: [...p.tags],
     })),
   }).toEqual({
-    id: (result as any).id,
+    // implicit IDs no longer enumerable
+    // id: (result as any).id,
     str: "test string",
     nums: [1, 2, 3],
     x: null,
@@ -206,8 +207,6 @@ test("all param types", async () => {
   const result = await query.run(client, args);
 
   expect(result).toEqual({
-    // @ts-ignore
-    id: result.id,
     ...args,
   });
 

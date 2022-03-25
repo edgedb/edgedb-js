@@ -1075,7 +1075,7 @@ test("fetch: object", async () => {
     expect(_introspect(res.params[0])).toEqual({
       kind: "object",
       fields: [
-        {name: Symbol.for("id"), implicit: true, linkprop: false},
+        {name: "id", implicit: true, linkprop: false},
         {name: "kind", implicit: false, linkprop: false},
         {name: "num", implicit: false, linkprop: false},
         {name: "@foo", implicit: false, linkprop: true},
