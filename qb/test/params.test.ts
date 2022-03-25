@@ -250,5 +250,7 @@ test("all param types", async () => {
     tuple: args,
   });
 
-  expect([...(complexResult.tuple as any)]).toEqual(Object.values(args));
+  expect(Object.values(complexResult.tuple as any)).toEqual(
+    Object.values(args)
+  );
 });

@@ -19,7 +19,6 @@
 import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
 import {ArrayCodec} from "./array";
-import {Set} from "../datatypes/set";
 
 export class SetCodec extends Codec implements ICodec {
   private subCodec: ICodec;
@@ -48,7 +47,7 @@ export class SetCodec extends Codec implements ICodec {
     buf.discard(4); // reserved
 
     if (ndims === 0) {
-      return new Set(0);
+      return [];
     }
     if (ndims !== 1) {
       throw new Error(`expected 1-dimensional array of records of arrays`);
@@ -58,7 +57,7 @@ export class SetCodec extends Codec implements ICodec {
 
     buf.discard(4); // ignore the lower bound info
 
-    const result = new Set(len);
+    const result = new Array(len);
     const elemBuf = ReadBuffer.alloc();
     const subCodec = this.subCodec;
 
@@ -95,7 +94,7 @@ export class SetCodec extends Codec implements ICodec {
     buf.discard(4); // reserved
 
     if (ndims === 0) {
-      return new Set(0);
+      return [];
     }
     if (ndims !== 1) {
       throw new Error(`invalid set dimensinality: ${ndims}`);
@@ -105,7 +104,7 @@ export class SetCodec extends Codec implements ICodec {
 
     buf.discard(4); // ignore the lower bound info
 
-    const result = new Set(len);
+    const result = new Array(len);
     const elemBuf = ReadBuffer.alloc();
     const subCodec = this.subCodec;
 

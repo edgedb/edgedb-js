@@ -27,14 +27,10 @@ import {
   LocalDate,
   LocalDateTime,
   MissingRequiredError,
-  NamedTuple,
   NoDataError,
   RelativeDuration,
   ResultCardinalityMismatchError,
-  Set,
-  Tuple,
   _CodecsRegistry,
-  _introspect,
   _ReadBuffer,
 } from "../src/index.node";
 import {retryingConnect} from "../src/retry";
@@ -1013,9 +1009,6 @@ test("fetch: tuple", async () => {
     res = await con.query("select ()");
     expect(res).toEqual([[]]);
 
-    expect(_introspect(res)).toEqual({kind: "set"});
-    expect(_introspect(res[0])).toEqual({kind: "tuple"});
-
     res = await con.querySingle("select (1,)");
     expect(res).toEqual([1]);
 
@@ -1027,7 +1020,7 @@ test("fetch: tuple", async () => {
       [1, "abc"],
       [2, "bcd"],
     ]);
-    const t0: Tuple = res[0];
+    const t0: Array<any> = res[0];
 
     // Test that the exported type informs TypeScript that
     // it can be iterated over.
@@ -1042,14 +1035,6 @@ test("fetch: tuple", async () => {
     expect(t0[1]).toBe("abc");
     expect(t0.length).toBe(2);
     expect(JSON.stringify(t0)).toBe('[1,"abc"]');
-
-    if (!isDeno) {
-      // @ts-ignore
-      const insp = require("util").inspect(t0);
-      expect(
-        insp === "Tuple [ 1, 'abc' ]" || insp === "Tuple(2) [ 1, 'abc' ]"
-      ).toBeTruthy();
-    }
   } finally {
     await con.close();
   }
@@ -1073,35 +1058,26 @@ test("fetch: object", async () => {
       limit 1
     `);
 
-    expect(_introspect(res.params[0])).toEqual({
-      kind: "object",
-      fields: [
-        {name: "id", implicit: true, linkprop: false},
-        {name: "kind", implicit: false, linkprop: false},
-        {name: "num", implicit: false, linkprop: false},
-        {name: "@foo", implicit: false, linkprop: true},
-      ],
-    });
-
     expect(JSON.stringify(res)).toEqual(
       JSON.stringify({
         name: "std::str_repeat",
         params: [
-          {kind: "PositionalParam", num: 0, "@foo": 42},
-          {kind: "PositionalParam", num: 1, "@foo": 42},
+          {
+            kind: "PositionalParam",
+            num: 0,
+            "@foo": 42,
+          },
+          {
+            kind: "PositionalParam",
+            num: 1,
+            "@foo": 42,
+          },
         ],
       })
     );
 
     expect(res.params[0].num).toBe(0);
     expect(res.params[1].num).toBe(1);
-
-    if (!isDeno) {
-      // @ts-ignore
-      expect(require("util").inspect(res.params[0])).toBe(
-        "Object [ kind := 'PositionalParam', num := 0, @foo := 42 ]"
-      );
-    }
 
     expect(res.params.length).toBe(2);
 
@@ -1134,20 +1110,10 @@ test("fetch: set of arrays", async () => {
       limit 1
     `);
 
-    expect(_introspect(res)).toEqual({
-      kind: "object",
-      fields: [
-        {name: "id", implicit: false, linkprop: false},
-        {name: "sets", implicit: false, linkprop: false},
-      ],
-    });
 
     res = res.sets;
-    expect(_introspect(res)).toEqual({kind: "set"});
-    expect(_introspect(res[0])).toEqual({kind: "array"});
     expect(res).toEqual([[1, 2], [1]]);
     expect(res.length).toBe(2);
-    expect(res instanceof Set).toBeTruthy();
     expect(res instanceof Array).toBeTruthy();
     expect(res[1] instanceof Set).toBeFalsy();
     expect(res[1] instanceof Array).toBeTruthy();
@@ -1158,9 +1124,7 @@ test("fetch: set of arrays", async () => {
 
     expect(res).toEqual([[1, 2], [1]]);
     expect(res.length).toBe(2);
-    expect(res instanceof Set).toBeTruthy();
     expect(res instanceof Array).toBeTruthy();
-    expect(res[1] instanceof Set).toBeFalsy();
     expect(res[1] instanceof Array).toBeTruthy();
   } finally {
     await con.close();
@@ -1185,7 +1149,7 @@ test("fetch: object implicit fields", async () => {
       limit 1
     `);
 
-    expect(JSON.stringify(res)).toMatch(/"id":"([\w\d]{32})"/);
+    expect(JSON.stringify(res)).toBe(`{"id":"${res.id}"}`);
 
     res = await con.querySingle(`
       select schema::Function {
@@ -1260,42 +1224,17 @@ test("fetch: namedtuple", async () => {
   let res: any;
   try {
     res = await con.querySingle("select (a := 1)");
-    expect(Array.from(res)).toEqual([1]);
+    expect(JSON.stringify(res)).toEqual(`{"a":1}`);
+    expect(res["a"]).toEqual(1);
 
-    expect(_introspect(res)).toEqual({
-      kind: "namedtuple",
-      fields: [{name: "a"}],
-    });
+    res = await con.querySingle("select (a := 1, b:= 'abc')");
+    expect(res["a"]).toEqual(1);
+    expect(res["b"]).toEqual("abc");
+    expect(JSON.stringify(res)).toEqual(`{"a":1,"b":"abc"}`);
 
-    res = await con.query("select (a := 1, b:= 'abc')");
-    expect(Array.from(res[0])).toEqual([1, "abc"]);
-
-    res = await con.querySingle("select (a := 'aaa', b := true, c := 123)");
-    expect(Array.from(res)).toEqual(["aaa", true, 123]);
-    const t0: NamedTuple = res;
-
-    // Test that the exported type informs TypeScript that
-    // it can be iterated over.
-    const t0vals = [];
-    for (const i of t0) {
-      t0vals.push(i);
-    }
-    expect(t0vals).toEqual(["aaa", true, 123]);
-
-    expect(t0 instanceof Array).toBeTruthy();
-    expect(t0[0]).toBe("aaa");
-    expect(t0[1]).toBe(true);
-    expect(t0[2]).toBe(123);
-    expect(t0.a).toBe("aaa");
-    expect(t0.b).toBe(true);
-    expect(t0.c).toBe(123);
-    expect(t0.length).toBe(3);
-    expect(JSON.stringify(t0)).toBe('{"a":"aaa","b":true,"c":123}');
     if (!isDeno) {
       // @ts-ignore
-      expect(require("util").inspect(t0)).toBe(
-        "NamedTuple [ a := 'aaa', b := true, c := 123 ]"
-      );
+      expect(require("util").inspect(res)).toBe("{ a: 1, b: 'abc' }");
     }
   } finally {
     await con.close();
@@ -1333,7 +1272,6 @@ test("querySingle: arrays", async () => {
   try {
     res = await con.querySingle("select [12312312, -1, 123, 0, 1]");
     expect(res).toEqual([12312312, -1, 123, 0, 1]);
-    expect(_introspect(res)).toEqual({kind: "array"});
 
     res = await con.querySingle("select ['aaa']");
     expect(res).toEqual(["aaa"]);
@@ -1642,7 +1580,7 @@ test("'implicit*' headers", async () => {
     const registry = new _CodecsRegistry();
     const codec = registry.buildCodec(outCodecData, protocolVersion);
 
-    const result = new Set();
+    const result = new Array();
     const buf = new _ReadBuffer(resultData);
     const codecReadBuf = _ReadBuffer.alloc();
     while (buf.length > 0) {
@@ -1660,7 +1598,7 @@ test("'implicit*' headers", async () => {
     }
 
     expect(result).toHaveLength(5);
-    expect(result[0].__tname__).toBe("schema::Function");
+    expect(result[0]["__tname__"]).toBe("schema::Function");
   } finally {
     await con.close();
   }

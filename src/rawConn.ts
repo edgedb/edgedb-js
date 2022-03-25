@@ -24,7 +24,6 @@ import {ObjectCodec} from "./codecs/object";
 import {CodecsRegistry} from "./codecs/registry";
 import {EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec} from "./codecs/tuple";
 import {Address, NormalizedConnectConfig} from "./conUtils";
-import {Set} from "./datatypes/set";
 import * as errors from "./errors";
 import {resolveErrorCode} from "./errors/resolve";
 import {
@@ -390,7 +389,10 @@ export class RawConnection {
     this.buffer.finishMessage();
   }
 
-  private _parseDataMessages(codec: ICodec, result: Set | WriteBuffer): void {
+  private _parseDataMessages(
+    codec: ICodec,
+    result: Array<any> | WriteBuffer
+  ): void {
     const frb = ReadBuffer.alloc();
     const $D = chars.$D;
     const buffer = this.buffer;
@@ -805,6 +807,7 @@ export class RawConnection {
 
     wb.beginMessage(chars.$P)
       .writeHeaders({
+        explicitObjectids: "true",
         ...(options?.headers ?? {}),
         allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
       })
@@ -996,7 +999,7 @@ export class RawConnection {
     args: QueryArgs | Buffer,
     inCodec: ICodec,
     outCodec: ICodec,
-    result: Set | WriteBuffer
+    result: Array<any> | WriteBuffer
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
@@ -1069,11 +1072,14 @@ export class RawConnection {
     inCodec: ICodec,
     outCodec: ICodec,
     query: string,
-    result: Set
+    result: Array<any>
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
-    wb.writeHeaders({allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES});
+    wb.writeHeaders({
+      allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+      explicitObjectids: "true",
+    });
     wb.writeChar(asJson ? chars.$j : chars.$b);
     wb.writeChar(expectOne ? chars.$o : chars.$m);
     wb.writeString(query);
@@ -1194,7 +1200,7 @@ export class RawConnection {
     this._checkState();
 
     const key = this._getQueryCacheKey(query, asJson, expectOne);
-    const ret = new Set();
+    const ret = new Array();
 
     if (this.queryCodecCache.has(key)) {
       const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
