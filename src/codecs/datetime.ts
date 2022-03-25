@@ -169,7 +169,9 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     for (const field of unencodableDurationFields) {
       if (object[field] !== 0) {
         throw new Error(
-          `Cannot encode a 'Duration' with a non-zero number of ${field}`
+          `Cannot encode a 'Duration' with a non-zero number of ${String(
+            field
+          )}`
         );
       }
     }

@@ -19,8 +19,12 @@
 import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ONE, AT_LEAST_ONE} from "./consts";
-import {generateType, ObjectConstructor} from "../datatypes/object";
-import type {FieldName} from "../datatypes/introspect";
+import {
+  FieldsByName,
+  generateType,
+  ObjectConstructor,
+} from "../datatypes/object";
+import {FieldName} from "../datatypes/introspect";
 
 export class ObjectCodec extends Codec implements ICodec {
   private codecs: ICodec[];
@@ -28,7 +32,7 @@ export class ObjectCodec extends Codec implements ICodec {
   private namesSet: Set<FieldName>;
   private cardinalities: number[];
   private newObjectFunc: ObjectConstructor;
-
+  private fieldsByName: FieldsByName;
   constructor(
     tid: uuid,
     codecs: ICodec[],
@@ -40,7 +44,11 @@ export class ObjectCodec extends Codec implements ICodec {
 
     this.codecs = codecs;
 
-    [this.names, this.newObjectFunc] = generateType(names, flags);
+    [this.names, this.newObjectFunc, this.fieldsByName] = generateType(
+      names,
+      flags
+    );
+
     this.namesSet = new Set(this.names);
     this.cardinalities = cards;
   }
@@ -163,17 +171,26 @@ export class ObjectCodec extends Codec implements ICodec {
 
     const elemBuf = ReadBuffer.alloc();
     const result: any = this.newObjectFunc();
+
     for (let i = 0; i < els; i++) {
       buf.discard(4); // reserved
       const elemLen = buf.readInt32();
       const name = names[i];
+      const field = this.fieldsByName[name];
       let val = null;
       if (elemLen !== -1) {
         buf.sliceInto(elemBuf, elemLen);
         val = codecs[i].decode(elemBuf);
         elemBuf.finish();
       }
-      result[name] = val;
+      if (field.implicit) {
+        Object.defineProperty(result, name, {
+          enumerable: false,
+          value: val,
+        });
+      } else {
+        result[name] = val;
+      }
     }
 
     return result;

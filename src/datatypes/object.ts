@@ -28,55 +28,70 @@ export type ObjectConstructor = () => object;
 export const EDGE_POINTER_IS_IMPLICIT = 1 << 0;
 export const EDGE_POINTER_IS_LINKPROP = 1 << 1;
 
+export type FieldsByName = {[k: string | symbol]: ObjectFieldInfo};
+
 export function generateType(
   names: string[],
   flags: number[]
-): [FieldName[], ObjectConstructor] {
+): [FieldName[], ObjectConstructor, FieldsByName] {
   const newNames: FieldName[] = new Array(names.length);
   const introFields: ObjectFieldInfo[] = [];
+  const fieldsByName: {[k: string | symbol]: ObjectFieldInfo} = {};
   for (let i = 0; i < names.length; i++) {
     let name: FieldName = names[i];
     if (flags[i] & EDGE_POINTER_IS_LINKPROP) {
       name = `@${name}`;
-    } else if (flags[i] & EDGE_POINTER_IS_IMPLICIT) {
-      name = Symbol.for(name);
-    }
+    } // else if (flags[i] & EDGE_POINTER_IS_IMPLICIT) {
+    // name = Symbol.for(name);
+    // }
 
     newNames[i] = name;
-    introFields.push({
+    const fieldInfo = {
       name,
       implicit: !!(flags[i] & EDGE_POINTER_IS_IMPLICIT),
       linkprop: !!(flags[i] & EDGE_POINTER_IS_LINKPROP),
-    });
+    };
+    fieldsByName[name] = fieldInfo;
+    introFields.push(fieldInfo);
   }
 
-  const constructor = () => {
-    return {
-      [introspectMethod]() {
-        return {
-          kind: "object",
-          fields: introFields,
-        };
-      },
+  function _inspect(_depth: any, options: any): any {
+    // Construct a temporary object to run the inspect code on.
+    // This way we can hide the '[introspectMethod]' and other
+    // custom fields/methods from the user as they can be
+    // confusing. The logged output will look as if this is
+    // a plain JS object.
+    const toPrint: any = {};
+    for (let i = 0; i < newNames.length; i++) {
+      const name = newNames[i];
+      if (flags[i] & EDGE_POINTER_IS_IMPLICIT) {
+        continue;
+      }
+      // @ts-ignore
+      toPrint[name] = (this as any)[name];
+    }
+    return inspect(toPrint, options);
+  }
 
-      [inspect.custom](_depth: any, options: any) {
-        // Construct a temporary object to run the inspect code on.
-        // This way we can hide the '[introspectMethod]' and other
-        // custom fields/methods from the user as they can be
-        // confusing. The logged output will look as if this is
-        // a plain JS object.
-        const toPrint: any = {};
-        for (let i = 0; i < newNames.length; i++) {
-          const name = newNames[i];
-          if (flags[i] & EDGE_POINTER_IS_IMPLICIT) {
-            continue;
-          }
-          toPrint[name] = (this as any)[name];
-        }
-        return inspect(toPrint, options);
+  const constructor: any = () => {
+    const obj = {};
+    Object.defineProperty(obj, introspectMethod, {
+      enumerable: false,
+      writable: false,
+      configurable: false,
+      value: {
+        kind: "object",
+        fields: introFields,
       },
-    };
+    });
+    Object.defineProperty(obj, inspect.custom, {
+      enumerable: false,
+      writable: false,
+      configurable: false,
+      value: _inspect.bind(obj),
+    });
+    return obj;
   };
 
-  return [newNames, constructor];
+  return [newNames, constructor, fieldsByName];
 }

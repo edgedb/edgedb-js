@@ -93,7 +93,11 @@ test("no shape", async () => {
   expect(query.__element__.__shape__).toEqual(
     e.default.Hero.__element__.__shape__
   );
-  expect(result.every(val => !!val.id)).toEqual(true);
+  expect(
+    result.every(val => {
+      return !!val.id;
+    })
+  ).toEqual(true);
 });
 
 test("computed only shape", () => {

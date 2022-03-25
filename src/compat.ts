@@ -29,15 +29,16 @@ import {ymd2ord, ord2ymd} from "./datatypes/dateutil";
    can compile unchanged for the browser environment.
 */
 
+// type custom = unique symbol;
 interface Inspect {
   (...args: any): null;
-  custom: symbol;
+  readonly custom: unique symbol;
 }
 
 let inspect: Inspect = (() => {
   const f = () => null;
   f.custom = Symbol();
-  return f;
+  return f as any;
 })();
 
 // @ts-ignore
@@ -66,7 +67,7 @@ export function decodeInt64ToString(buf: Buffer): string {
   let negative = false;
   if (inp[0] & 0x80) {
     // A negative integer; invert all bits.
-    inp = inp.map((x) => x ^ 0xff);
+    inp = inp.map(x => x ^ 0xff);
     // Account for the two's compliment's `1`.
     inp[inp.length - 1]++;
 

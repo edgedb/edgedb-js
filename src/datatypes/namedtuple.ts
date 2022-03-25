@@ -29,27 +29,38 @@ export function generateType(names: string[]): NamedTupleConstructor {
     introFields.push({name});
   }
 
-  return () => {
-    return {
-      [introspectMethod]() {
-        return {
-          kind: "namedtuple",
-          fields: introFields,
-        };
-      },
+  function _inspect(_depth: any, options: any) {
+    // Construct a temporary object to run the inspect code on.
+    // This way we can hide the '[introspectMethod]' and other
+    // custom fields/methods from the user as they can be
+    // confusing. The logged output will look as if this is
+    // a plain JS object.
+    const toPrint: any = {};
+    for (const name of names) {
+      // @ts-ignore
+      toPrint[name] = (this as any)[name];
+    }
+    return inspect(toPrint, options);
+  }
 
-      [inspect.custom](_depth: any, options: any) {
-        // Construct a temporary object to run the inspect code on.
-        // This way we can hide the '[introspectMethod]' and other
-        // custom fields/methods from the user as they can be
-        // confusing. The logged output will look as if this is
-        // a plain JS object.
-        const toPrint: any = {};
-        for (const name of names) {
-          toPrint[name] = this[name];
-        }
-        return inspect(toPrint, options);
+  return () => {
+    const obj: any = {};
+    Object.defineProperty(obj, introspectMethod, {
+      enumerable: false,
+      writable: false,
+      configurable: false,
+      value: {
+        kind: "object",
+        fields: introFields,
       },
-    };
+    });
+    Object.defineProperty(obj, inspect.custom, {
+      enumerable: false,
+      writable: false,
+      configurable: false,
+      value: _inspect.bind(obj),
+    });
+
+    return obj;
   };
 }
