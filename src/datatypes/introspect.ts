@@ -1,11 +1,13 @@
 export const introspectMethod = Symbol("edgedb.introspect");
 
+export type FieldName = string | symbol;
+
 export interface FieldInfo {
-  name: string;
+  name: FieldName;
 }
 
 export interface ObjectFieldInfo {
-  name: string;
+  name: FieldName;
   implicit: boolean;
   linkprop: boolean;
 }

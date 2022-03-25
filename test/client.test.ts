@@ -1075,7 +1075,7 @@ test("fetch: object", async () => {
     expect(_introspect(res.params[0])).toEqual({
       kind: "object",
       fields: [
-        {name: "id", implicit: true, linkprop: false},
+        {name: Symbol.for("id"), implicit: true, linkprop: false},
         {name: "kind", implicit: false, linkprop: false},
         {name: "num", implicit: false, linkprop: false},
         {name: "@foo", implicit: false, linkprop: true},
@@ -1086,8 +1086,16 @@ test("fetch: object", async () => {
       JSON.stringify({
         name: "std::str_repeat",
         params: [
-          {kind: "PositionalParam", num: 0, "@foo": 42},
-          {kind: "PositionalParam", num: 1, "@foo": 42},
+          {
+            kind: "PositionalParam",
+            num: 0,
+            "@foo": 42,
+          },
+          {
+            kind: "PositionalParam",
+            num: 1,
+            "@foo": 42,
+          },
         ],
       })
     );
@@ -1097,8 +1105,8 @@ test("fetch: object", async () => {
 
     if (!isDeno) {
       // @ts-ignore
-      expect(require("util").inspect(res.params[0])).toBe(
-        "Object [ kind := 'PositionalParam', num := 0, @foo := 42 ]"
+      expect(require("util").inspect(res.params[0], {breakLength: 1000})).toBe(
+        `{ kind: 'PositionalParam', num: 0, '@foo': 42 }`
       );
     }
 
@@ -1184,7 +1192,7 @@ test("fetch: object implicit fields", async () => {
       limit 1
     `);
 
-    expect(JSON.stringify(res)).toMatch(/"id":"([\w\d]{32})"/);
+    expect(JSON.stringify(res)).toBe("{}");
 
     res = await con.querySingle(`
       select schema::Function {
@@ -1268,15 +1276,13 @@ test("fetch: namedtuple", async () => {
     });
 
     res = await con.querySingle("select (a := 1, b:= 'abc')");
-    expect(res['a']).toEqual(1);
-    expect(res['b']).toEqual('abc');
+    expect(res["a"]).toEqual(1);
+    expect(res["b"]).toEqual("abc");
     expect(JSON.stringify(res)).toEqual(`{"a":1,"b":"abc"}`);
 
     if (!isDeno) {
       // @ts-ignore
-      expect(require("util").inspect(res)).toBe(
-        "{ a: 1, b: 'abc' }"
-      );
+      expect(require("util").inspect(res)).toBe("{ a: 1, b: 'abc' }");
     }
   } finally {
     await con.close();
@@ -1641,7 +1647,7 @@ test("'implicit*' headers", async () => {
     }
 
     expect(result).toHaveLength(5);
-    expect(result[0].__tname__).toBe("schema::Function");
+    expect(result[0][Symbol.for("__tname__")]).toBe("schema::Function");
   } finally {
     await con.close();
   }

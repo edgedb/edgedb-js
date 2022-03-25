@@ -25,17 +25,17 @@ export type NamedTupleConstructor = () => any;
 
 export function generateType(names: string[]): NamedTupleConstructor {
   const introFields: FieldInfo[] = [];
-  for (let i = 0; i < names.length; i++) {
-    introFields.push({name: names[i]});
+  for (const name of names) {
+    introFields.push({name});
   }
 
-  return function() {
+  return () => {
     return {
       [introspectMethod]() {
         return {
-          kind: 'namedtuple',
-          fields: introFields
-        }
+          kind: "namedtuple",
+          fields: introFields,
+        };
       },
 
       [inspect.custom](_depth: any, options: any) {
@@ -50,6 +50,6 @@ export function generateType(names: string[]): NamedTupleConstructor {
         }
         return inspect(toPrint, options);
       },
-    }
-  }
+    };
+  };
 }

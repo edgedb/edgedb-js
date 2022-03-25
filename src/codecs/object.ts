@@ -19,18 +19,15 @@
 import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ONE, AT_LEAST_ONE} from "./consts";
-import {
-  generateType,
-  ObjectConstructor,
-  EDGE_POINTER_IS_LINKPROP,
-} from "../datatypes/object";
+import {generateType, ObjectConstructor} from "../datatypes/object";
+import type {FieldName} from "../datatypes/introspect";
 
 export class ObjectCodec extends Codec implements ICodec {
   private codecs: ICodec[];
-  private names: string[];
-  private namesSet: Set<string>;
+  private names: FieldName[];
+  private namesSet: Set<FieldName>;
   private cardinalities: number[];
-  private objectType: ObjectConstructor;
+  private newObjectFunc: ObjectConstructor;
 
   constructor(
     tid: uuid,
@@ -43,18 +40,9 @@ export class ObjectCodec extends Codec implements ICodec {
 
     this.codecs = codecs;
 
-    const newNames: string[] = new Array(names.length);
-    for (let i = 0; i < names.length; i++) {
-      if (flags[i] & EDGE_POINTER_IS_LINKPROP) {
-        newNames[i] = `@${names[i]}`;
-      } else {
-        newNames[i] = names[i];
-      }
-    }
-    this.names = newNames;
-    this.namesSet = new Set(newNames);
+    [this.names, this.newObjectFunc] = generateType(names, flags);
+    this.namesSet = new Set(this.names);
     this.cardinalities = cards;
-    this.objectType = generateType(newNames, flags);
   }
 
   encode(_buf: WriteBuffer, _object: any): void {
@@ -92,7 +80,9 @@ export class ObjectCodec extends Codec implements ICodec {
         const card = this.cardinalities[i];
         if (card === ONE || card === AT_LEAST_ONE) {
           throw new Error(
-            `argument ${this.names[i]} is required, but received ${arg}`
+            `argument ${String(
+              this.names[i]
+            )} is required, but received ${arg}`
           );
         }
         elemData.writeInt32(-1);
@@ -140,7 +130,9 @@ export class ObjectCodec extends Codec implements ICodec {
         const card = this.cardinalities[i];
         if (card === ONE || card === AT_LEAST_ONE) {
           throw new Error(
-            `argument ${this.names[i]} is required, but received ${val}`
+            `argument ${String(
+              this.names[i]
+            )} is required, but received ${val}`
           );
         }
         elemData.writeInt32(-1);
@@ -161,7 +153,6 @@ export class ObjectCodec extends Codec implements ICodec {
   decode(buf: ReadBuffer): any {
     const codecs = this.codecs;
     const names = this.names;
-    const objType = this.objectType;
 
     const els = buf.readUInt32();
     if (els !== codecs.length) {
@@ -171,7 +162,7 @@ export class ObjectCodec extends Codec implements ICodec {
     }
 
     const elemBuf = ReadBuffer.alloc();
-    const result: any = new objType();
+    const result: any = this.newObjectFunc();
     for (let i = 0; i < els; i++) {
       buf.discard(4); // reserved
       const elemLen = buf.readInt32();
@@ -190,10 +181,6 @@ export class ObjectCodec extends Codec implements ICodec {
 
   getSubcodecs(): ICodec[] {
     return Array.from(this.codecs);
-  }
-
-  getSubcodecsNames(): string[] {
-    return Array.from(this.names);
   }
 
   getKind(): CodecKind {
