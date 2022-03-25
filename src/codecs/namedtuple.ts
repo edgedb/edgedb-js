@@ -19,11 +19,9 @@
 import {ICodec, Codec, uuid, IArgsCodec, CodecKind} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {EmptyTupleCodec} from "./tuple";
-import {generateType, NamedTupleConstructor} from "../datatypes/namedtuple";
 
 export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
   private subCodecs: ICodec[];
-  private tupleCls: NamedTupleConstructor;
   private names: string[];
   private namesSet: Set<string>;
 
@@ -32,7 +30,6 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     this.subCodecs = codecs;
     this.names = names;
     this.namesSet = new Set(names);
-    this.tupleCls = generateType(names);
   }
 
   encode(_buf: WriteBuffer, _object: any): void {
@@ -88,7 +85,6 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
   decode(buf: ReadBuffer): any {
     const els = buf.readUInt32();
     const subCodecs = this.subCodecs;
-    const cls = this.tupleCls;
     if (els !== subCodecs.length) {
       throw new Error(
         `cannot decode NamedTuple: expected ` +
@@ -97,7 +93,8 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     }
 
     const elemBuf = ReadBuffer.alloc();
-    const result = new cls(els);
+    const names = this.names;
+    const result: any = {};
     for (let i = 0; i < els; i++) {
       buf.discard(4); // reserved
       const elemLen = buf.readInt32();
@@ -107,7 +104,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
         val = subCodecs[i].decode(elemBuf);
         elemBuf.finish();
       }
-      result[i] = val;
+      result[names[i]] = val;
     }
 
     return result;
