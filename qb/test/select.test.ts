@@ -20,7 +20,7 @@ afterAll(async () => {
 
 test("basic select", () => {
   const result = e.select(e.std.str("asdf"));
-  type result = $.BaseTypeToTsType<typeof result["__element__"]>;
+  type result = $infer<typeof result>;
   tc.assert<tc.IsExact<result, "asdf">>(true);
 });
 
@@ -815,6 +815,81 @@ test("filters in subqueries", async () => {
         thanos: {
           name: string;
         } | null;
+      }[]
+    >
+  >(true);
+});
+
+test("repeated computed", async () => {
+  const query = e.select(e.Villain, villain => ({
+    id: true,
+    name: true,
+    nemesis: nemesis => {
+      const nameLen = e.len(nemesis.name);
+      return {
+        name: true,
+        nameLen,
+        nameLen2: nameLen,
+      };
+    },
+  }));
+
+  expect(query.toEdgeQL()).toEqual(`WITH
+  __scope_0_Person := DETACHED default::Movie.characters
+SELECT __scope_0_Person {
+  id,
+  name,
+  [IS default::Villain].nemesis,
+  [IS default::Hero].secret_identity,
+  multi villains := (
+    WITH
+      __scope_1_Villain := __scope_0_Person[IS default::Hero].villains
+    SELECT __scope_1_Villain {
+      id,
+      name,
+      nemesis := (
+        WITH
+          __scope_2_Hero_expr := __scope_1_Villain.nemesis,
+          __scope_2_Hero := (FOR __scope_2_Hero_inner IN {__scope_2_Hero_expr} UNION (
+            WITH
+              __withVar_3 := std::len(__scope_2_Hero_inner.name)
+            SELECT __scope_2_Hero_inner {
+              __withVar_3 := __withVar_3
+            }
+          ))
+        SELECT __scope_2_Hero {
+          name,
+          single nameLen := __scope_2_Hero.__withVar_3,
+          single nameLen2 := __scope_2_Hero.__withVar_3
+        }
+      )
+    }
+  )
+}`);
+
+  const res = await query.run(client);
+
+  tc.assert<
+    tc.IsExact<
+      typeof res,
+      {
+        id: string;
+        name: string;
+        nemesis: {
+          id: string;
+        } | null;
+        secret_identity: string | null;
+        villains:
+          | {
+              id: string;
+              name: string;
+              nemesis: {
+                name: string;
+                nameLen: number;
+                nameLen2: number;
+              } | null;
+            }[]
+          | null;
       }[]
     >
   >(true);

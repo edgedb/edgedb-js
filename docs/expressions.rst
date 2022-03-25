@@ -3,7 +3,6 @@
 Expressions
 -----------
 
-
 The query builder is exact what it sounds like: a way to declare EdgeQL
 queries with code. By convention, it's imported from the directory where it was
 generated as a single, default import called ``e``.
@@ -43,6 +42,7 @@ These building blocks are used to define *expressions*. Everything you create
 using the query builder is an expression. Expressions have a few things in
 common.
 
+
 Expressions produce EdgeQL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -68,6 +68,18 @@ any expression calling the ``.toEdgeQL()`` method.
   e.select(e.Movie, () => ({ id: true, title: true })).toEdgeQL();
   // select Movie { id, title }
 
+Type inference
+^^^^^^^^^^^^^^
+
+The query builder *automatically infers* the TypeScript type that best represents the result of a given expression. This inferred type can be extracted with the ``$infer`` helper.
+
+.. code-block:: typescript
+
+  import e, {$infer} from "./dbschema/edgeql-js";
+
+  const query = e.select(e.Movie, () => ({ id: true, title: true }));
+  type result = $infer<typeof query>;
+  // {id: string; title: string}[]
 
 Expressions are runnable
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -79,9 +91,13 @@ Expressions can be executed with the ``.run`` method.
   import * as edgedb from "edgedb";
 
   const client = edgedb.createClient();
-  const myQuery = e.str("Hello world")
+  const myQuery = e.select(e.Movie, () => ({
+    id: true,
+    title: true
+  }));
+
   const result = await myQuery.run(client)
-  // => "Hello world"
+  // => [{ id: "abc...", title: "The Avengers" }, ...]
 
 Note that the ``.run`` method accepts an instance of :js:class:`Client` (or
 ``Transaction``) as it's first argument. See :ref:`Creating a Client
@@ -94,31 +110,15 @@ that later.
   .run(client: Client | Transaction, params: Params): Promise<T>
 
 
-Expressions have a type and a cardinality
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Just like expressions in EdgeQL, all expressions are associated with a type
-and a cardinality. The query builder is extremely good at *inferring* these.
-You can see the values of these with the special ``__element__`` and
-``__cardinality__`` properties.
+**JSON serialization**
+
+You can also use the ``runJSON`` method to retrieve the query results as a serialized JSON-formatted *string*. This serialization happens inside the database and is much faster than calling ``JSON.stringify``.
 
 .. code-block:: typescript
 
-  const q1 = e.str("Hello");
-  q1.__element__;       // e.str
-  q1.__cardinality__;   // "One"
-
-  const q2 = e.Movie;
-  q2.__element__;       // e.Movie
-  q2.__cardinality__;   // "Many"
-
-
-The inferred type of *any* expression can be extracted with the ``$infer``
-helper.
-
-.. code-block:: typescript
-
-  import e, {$infer} from "./dbschema/edgeql-js";
-
-  const query = e.select(e.Movie, () => ({ id: true, title: true }));
-  type result = $infer<typeof query>;
-  // {id: string; title: string}[]
+  const myQuery = e.select(e.Movie, () => ({
+    id: true,
+    title: true
+  }));
+  const result = await myQuery.runJSON(client);
+  // => '[{ "id": "abc...", "title": "The Avengers" }, ...]'

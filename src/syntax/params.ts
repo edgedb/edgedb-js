@@ -36,6 +36,7 @@ export type QueryableWithParamsExpression<
     cxn: Executor,
     args: paramsToParamArgs<Params>
   ): Promise<setToTsType<Set>>;
+  runJSON(cxn: Executor, args: paramsToParamArgs<Params>): Promise<string>;
 };
 
 export type $expr_WithParams<

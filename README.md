@@ -166,6 +166,15 @@ const result = await query.run(client);
 result.actors[0].name; // => Timothee Chalamet
 ```
 
+You can also fetch the results as a JSON-serialized string with `.runJSON`.
+This serialization happens inside the database and is much faster than calling
+`JSON.stringify` yourself.
+
+```ts
+const result = await query.runJSON(client);
+// => '{"actors": [{"name": "Timothee Chalamet", ...}]}'
+```
+
 ## Contribute
 
 Contributing to this library requires a local installation of EdgeDB. Install
