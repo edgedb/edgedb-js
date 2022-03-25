@@ -27,7 +27,6 @@ import {
   LocalDate,
   LocalDateTime,
   MissingRequiredError,
-  NamedTuple,
   NoDataError,
   RelativeDuration,
   ResultCardinalityMismatchError,
@@ -1260,41 +1259,23 @@ test("fetch: namedtuple", async () => {
   let res: any;
   try {
     res = await con.querySingle("select (a := 1)");
-    expect(Array.from(res)).toEqual([1]);
+    expect(JSON.stringify(res)).toEqual(`{"a":1}`);
+    expect(res["a"]).toEqual(1);
 
     expect(_introspect(res)).toEqual({
       kind: "namedtuple",
       fields: [{name: "a"}],
     });
 
-    res = await con.query("select (a := 1, b:= 'abc')");
-    expect(Array.from(res[0])).toEqual([1, "abc"]);
+    res = await con.querySingle("select (a := 1, b:= 'abc')");
+    expect(res['a']).toEqual(1);
+    expect(res['b']).toEqual('abc');
+    expect(JSON.stringify(res)).toEqual(`{"a":1,"b":"abc"}`);
 
-    res = await con.querySingle("select (a := 'aaa', b := true, c := 123)");
-    expect(Array.from(res)).toEqual(["aaa", true, 123]);
-    const t0: NamedTuple = res;
-
-    // Test that the exported type informs TypeScript that
-    // it can be iterated over.
-    const t0vals = [];
-    for (const i of t0) {
-      t0vals.push(i);
-    }
-    expect(t0vals).toEqual(["aaa", true, 123]);
-
-    expect(t0 instanceof Array).toBeTruthy();
-    expect(t0[0]).toBe("aaa");
-    expect(t0[1]).toBe(true);
-    expect(t0[2]).toBe(123);
-    expect(t0.a).toBe("aaa");
-    expect(t0.b).toBe(true);
-    expect(t0.c).toBe(123);
-    expect(t0.length).toBe(3);
-    expect(JSON.stringify(t0)).toBe('{"a":"aaa","b":true,"c":123}');
     if (!isDeno) {
       // @ts-ignore
-      expect(require("util").inspect(t0)).toBe(
-        "NamedTuple [ a := 'aaa', b := true, c := 123 ]"
+      expect(require("util").inspect(res)).toBe(
+        "{ a: 1, b: 'abc' }"
       );
     }
   } finally {
