@@ -137,6 +137,7 @@ export type Expression<
   (BaseType extends Set["__element__"] // short-circuit non-specific types
     ? {
         run(cxn: Executor): any;
+        runJSON(cxn: Executor): any;
         toEdgeQL(): string;
         is: any;
         assert_single: any;
@@ -145,7 +146,10 @@ export type Expression<
     : $pathify<Set> &
         ExpressionMethods<stripSet<Set>> &
         (Runnable extends true
-          ? {run(cxn: Executor): Promise<setToTsType<Set>>}
+          ? {
+              run(cxn: Executor): Promise<setToTsType<Set>>;
+              runJSON(cxn: Executor): Promise<string>;
+            }
           : {}) &
         $tuplePathify<Set> &
         $arrayLikeIndexify<Set> &

@@ -19,7 +19,7 @@ import type {
 import {literalToTypeSet} from "@generated/castMaps";
 import {$arrayLikeIndexify, $tuplePathify} from "./collections";
 import {$toEdgeQL} from "./toEdgeQL";
-import {$queryFunc} from "./query";
+import {$queryFunc, $queryFuncJSON} from "./query";
 
 function PathLeaf<
   Root extends TypeSet,
@@ -215,6 +215,7 @@ export function $expressionify<T extends ExpressionRoot>(
   ) as any;
 
   expr.run = $queryFunc.bind(expr) as any;
+  expr.runJSON = $queryFuncJSON.bind(expr) as any;
   expr.is = isFunc.bind(expr) as any;
   expr.toEdgeQL = $toEdgeQL.bind(expr);
   expr.assert_single = () => assert_single(expr) as any;

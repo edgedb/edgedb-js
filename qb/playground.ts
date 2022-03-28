@@ -6,26 +6,23 @@ import {setupTests} from "./test/setupTeardown";
 import e, * as types from "./dbschema/edgeql-js/index";
 
 async function run() {
-  const asd = {
-    "3": "asdf",
-    qwer: "sdf",
-  } as const;
-
-  function infer<T>() {}
-
-  console.log(asd[3]);
-
   const {client} = await setupTests();
-  const query = e.set(
-    e.tuple({a: 1, b: "asdf", c: e.int16(214)}),
-    e.tuple({a: 3, b: "asdf", c: e.int64(5)})
-  );
+  const query = e.select(e.Villain, () => ({
+    id: true,
+    name: true,
+    nemesis: nemesis => {
+      const nameLen = e.len(nemesis.name);
+      return {
+        name: true,
+        nameLen,
+        nameLen2: nameLen,
+      };
+    },
+  }));
 
   console.log(query.toEdgeQL());
   const result = await query.run(client);
   console.log(result);
-
-  // e.literal(e.tuple({a: e.int16}), )
 }
 
 run();

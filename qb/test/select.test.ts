@@ -20,7 +20,7 @@ afterAll(async () => {
 
 test("basic select", () => {
   const result = e.select(e.std.str("asdf"));
-  type result = $.BaseTypeToTsType<typeof result["__element__"]>;
+  type result = $infer<typeof result>;
   tc.assert<tc.IsExact<result, "asdf">>(true);
 });
 
@@ -814,6 +814,61 @@ test("filters in subqueries", async () => {
         }[];
         thanos: {
           name: string;
+        } | null;
+      }[]
+    >
+  >(true);
+});
+
+test("repeated computed", async () => {
+  const query = e.select(e.Villain, () => ({
+    id: true,
+    name: true,
+    nemesis: nemesis => {
+      const nameLen = e.len(nemesis.name);
+      return {
+        name: true,
+        nameLen,
+        nameLen2: nameLen,
+      };
+    },
+  }));
+
+  expect(query.toEdgeQL()).toEqual(`WITH
+  __scope_0_Villain := DETACHED default::Villain
+SELECT __scope_0_Villain {
+  id,
+  name,
+  nemesis := (
+    WITH
+      __scope_1_Hero_expr := __scope_0_Villain.nemesis,
+      __scope_1_Hero := (FOR __scope_1_Hero_inner IN {__scope_1_Hero_expr} UNION (
+        WITH
+          __withVar_2 := std::len(__scope_1_Hero_inner.name)
+        SELECT __scope_1_Hero_inner {
+          __withVar_2 := __withVar_2
+        }
+      ))
+    SELECT __scope_1_Hero {
+      name,
+      single nameLen := __scope_1_Hero.__withVar_2,
+      single nameLen2 := __scope_1_Hero.__withVar_2
+    }
+  )
+}`);
+
+  const res = await query.run(client);
+
+  tc.assert<
+    tc.IsExact<
+      typeof res,
+      {
+        id: string;
+        name: string;
+        nemesis: {
+          name: string;
+          nameLen: number;
+          nameLen2: number;
         } | null;
       }[]
     >
