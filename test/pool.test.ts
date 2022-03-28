@@ -20,13 +20,14 @@ import {getClient} from "./testbase";
 
 test("pool.query: basic scalars", async () => {
   const pool = getClient();
+  let res: any;
 
   try {
-    let res = await pool.query("select {'a', 'bc'}");
+    res = await pool.query("select {'a', 'bc'}");
     expect(res).toEqual(["a", "bc"]);
 
-    res = await pool.query(
-      `select {
+    res = await pool.querySingle(
+      `select [
           -1,
           1,
           0,
@@ -38,7 +39,7 @@ test("pool.query: basic scalars", async () => {
           -346456723423,
           2251799813685125,
           -2251799813685125
-        };
+        ];
         `
     );
     expect(res).toEqual([

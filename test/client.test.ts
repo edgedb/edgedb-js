@@ -56,8 +56,8 @@ test("query: basic scalars", async () => {
     res = await con.query("select {'a', 'bc'}");
     expect(res).toEqual(["a", "bc"]);
 
-    res = await con.query(
-      `select {
+    res = await con.querySingle(
+      `select [
         -1,
         1,
         0,
@@ -69,7 +69,7 @@ test("query: basic scalars", async () => {
         -346456723423,
         2251799813685125,
         -2251799813685125
-      };
+      ];
       `
     );
     expect(res).toEqual([
