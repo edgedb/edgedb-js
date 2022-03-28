@@ -46,7 +46,7 @@ import LRU from "./primitives/lru";
 import * as scram from "./scram";
 import {versionGreaterThan, versionGreaterThanOrEqual} from "./utils";
 
-const PROTO_VER: ProtocolVersion = [0, 13];
+const PROTO_VER: ProtocolVersion = [0, 14];
 const PROTO_VER_MIN: ProtocolVersion = [0, 9];
 
 enum AuthenticationStatuses {
@@ -804,6 +804,9 @@ export class RawConnection {
     options?: ParseOptions
   ): Promise<[number, ICodec, ICodec, number, Buffer | null, Buffer | null]> {
     const wb = new WriteMessageBuffer();
+    const parseSendsTypeData = versionGreaterThanOrEqual(
+      this.protocolVersion, [0, 14]
+    );
 
     wb.beginMessage(chars.$P)
       .writeHeaders({
@@ -848,8 +851,17 @@ export class RawConnection {
             );
           }
           cardinality = this.buffer.readChar();
-          inTypeId = this.buffer.readUUID();
-          outTypeId = this.buffer.readUUID();
+
+          if (parseSendsTypeData) {
+            inTypeId = this.buffer.readUUID();
+            inCodecData = this.buffer.readLenPrefixedBuffer();
+            outTypeId = this.buffer.readUUID();
+            outCodecData = this.buffer.readLenPrefixedBuffer();
+          } else {
+            inTypeId = this.buffer.readUUID();
+            outTypeId = this.buffer.readUUID();
+          }
+
           this.buffer.finishMessage();
           break;
         }
@@ -881,7 +893,30 @@ export class RawConnection {
     inCodec = this.codecsRegistry.getCodec(inTypeId);
     outCodec = this.codecsRegistry.getCodec(outTypeId);
 
-    if (inCodec == null || outCodec == null || alwaysDescribe) {
+    if (inCodec == null && inCodecData != null) {
+      inCodec = this.codecsRegistry.buildCodec(
+        inCodecData,
+        this.protocolVersion
+      );
+    }
+
+    if (outCodec == null && outCodecData != null) {
+      outCodec = this.codecsRegistry.buildCodec(
+        outCodecData,
+        this.protocolVersion
+      );
+    }
+
+    if (
+      inCodec == null ||
+      outCodec == null ||
+      (alwaysDescribe && !parseSendsTypeData)
+    ) {
+      if (parseSendsTypeData) {
+        // unreachable
+        throw new Error('in/out codecs were not sent');
+      }
+
       wb.reset();
       wb.beginMessage(chars.$D)
         .writeInt16(0) // no headers
