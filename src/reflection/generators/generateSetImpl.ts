@@ -166,17 +166,17 @@ import type {
     __element__: exprs
       .map(expr => expr.__element__`,
     ts` as any`,
-    `)
+    r`)
       .reduce(getSharedParent),
     __cardinality__: cardinalityUtil.mergeCardinalitiesVariadic(
       exprs.map(expr => expr.__cardinality__)`,
     ts` as any`,
-    `
+    r`
     ),
     __exprs__: exprs,
   })`,
     ts` as any`,
-    `;
+    r`;
 
 }`,
   ]);
