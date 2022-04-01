@@ -179,8 +179,8 @@ export class ClientConnectionHolder {
           err instanceof errors.EdgeDBError &&
           err.hasTag(errors.SHOULD_RETRY) &&
           // query is readonly or it's a transaction serialization error
-          (conn.getQueryCapabilities(query, asJson, expectOne) === 0
-           || err instanceof errors.TransactionConflictError)
+          (conn.getQueryCapabilities(query, asJson, expectOne) === 0 ||
+            err instanceof errors.TransactionConflictError)
         ) {
           const rule = this.options.retryOptions.getRuleForException(err);
           if (iteration + 1 >= rule.attempts) {
@@ -333,6 +333,7 @@ class ClientPool {
 
     const config = await this._getNormalizedConnectConfig();
     const connection = await retryingConnect(config, this._codecsRegistry);
+
     const suggestedConcurrency =
       connection.serverSettings.suggested_pool_concurrency;
     if (
