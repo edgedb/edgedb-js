@@ -5,7 +5,6 @@ import {StrictMap} from "../strictMap";
 export type UUID = string;
 
 export type Pointer = {
-  // cardinality: "One" | "Many";
   real_cardinality: Cardinality;
   kind: "link" | "property";
   name: string;
@@ -14,7 +13,6 @@ export type Pointer = {
   is_computed: boolean;
   is_readonly: boolean;
   has_default: boolean;
-  is_seq: boolean;
   pointers: ReadonlyArray<Pointer> | null;
 };
 
@@ -38,6 +36,7 @@ export type TypeProperties<T extends TypeKind> = {
 
 export type ScalarType = TypeProperties<"scalar"> & {
   is_abstract: boolean;
+  is_seq: boolean;
   bases: ReadonlyArray<{id: UUID}>;
   // ancestors: ReadonlyArray<{id: UUID}>;
   enum_values: ReadonlyArray<string> | null;
@@ -75,20 +74,20 @@ export type Type = PrimitiveType | ObjectType;
 
 export type Types = StrictMap<UUID, Type>;
 
+export const nonCastableTypes = new Set<string>([
+  // numberType.id
+]);
+
 const numberType: ScalarType = {
   id: "00000000-0000-0000-0000-0000000001ff",
   name: "std::number",
   is_abstract: false,
+  is_seq: false,
   kind: "scalar",
   enum_values: null,
   material_id: null,
   bases: [],
 };
-
-export const nonCastableTypes = new Set<string>([
-  // numberType.id
-]);
-
 export const typeMapping = new Map([
   [
     "00000000-0000-0000-0000-000000000103", // int16
@@ -139,7 +138,7 @@ export async function getTypes(
               'unknown',
 
       [IS ScalarType].enum_values,
-
+      is_seq := 'std::sequence' in [IS ScalarType].ancestors.name,
       # for sequence (abstract type that has non-abstract ancestor)
       single material_id := (
         SELECT x := Type[IS ScalarType].ancestors
@@ -220,6 +219,9 @@ export async function getTypes(
       case "scalar":
         if (typeMapping.has(type.id)) {
           type.castOnlyType = typeMapping.get(type.id)!.id;
+        }
+        if (type.is_seq) {
+          type.castOnlyType = numberType.id;
         }
         // if (type.material_id) {
         //   type.material_id =

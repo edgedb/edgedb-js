@@ -1116,6 +1116,10 @@ test("select with enums", async () => {
   expect(result.length).toEqual(2);
 });
 
+test("filter by sequence", async () => {
+  await e.op(e.Bag.seqField, "=", 1).run(client);
+});
+
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
 
