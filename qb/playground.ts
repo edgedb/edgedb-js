@@ -7,7 +7,7 @@ import e, * as types from "./dbschema/edgeql-js/index";
 
 async function run() {
   const {client} = await setupTests();
-  const query = e.op(e.Bag.seqField, "=", 1234);
+  const query = e.select("Hello world!");
   console.log(query.toEdgeQL());
   const result = await query.run(client);
   console.log(result);
