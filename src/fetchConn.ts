@@ -26,7 +26,7 @@ import * as chars from "./primitives/chars";
 if (typeof fetch === "undefined") {
   // Pre 17.5 NodeJS environment.
   // @ts-ignore
-  var fetch = require("node-fetch"); // tslint:disable-line
+  globalThis.fetch = require("node-fetch"); // tslint:disable-line
 }
 
 interface FetchConfig {
