@@ -114,7 +114,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     return Array.from(this.subCodecs);
   }
 
-  getSubcodecsNames(): string[] {
+  getNames(): string[] {
     return Array.from(this.names);
   }
 

@@ -20,11 +20,18 @@ import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ONE, AT_LEAST_ONE} from "./consts";
 
+const EDGE_POINTER_IS_IMPLICIT = 1 << 0;
 const EDGE_POINTER_IS_LINKPROP = 1 << 1;
+
+export interface ObjectFieldInfo {
+  name: string;
+  implicit: boolean;
+  linkprop: boolean;
+}
 
 export class ObjectCodec extends Codec implements ICodec {
   private codecs: ICodec[];
-  private names: string[];
+  private fields: ObjectFieldInfo[];
   private namesSet: Set<string>;
   private cardinalities: number[];
 
@@ -39,17 +46,20 @@ export class ObjectCodec extends Codec implements ICodec {
 
     this.codecs = codecs;
 
-    const newNames: string[] = new Array(names.length);
-    for (let i = 0; i < names.length; i++) {
-      if (flags[i] & EDGE_POINTER_IS_LINKPROP) {
-        newNames[i] = `@${names[i]}`;
-      } else {
-        newNames[i] = names[i];
-      }
-    }
-    this.names = newNames;
-    this.namesSet = new Set(newNames);
+    this.fields = new Array(names.length);
+    this.namesSet = new Set();
     this.cardinalities = cards;
+
+    for (let i = 0; i < names.length; i++) {
+      const isLinkprop = !!(flags[i] & EDGE_POINTER_IS_LINKPROP);
+      const name = isLinkprop ? `@${names[i]}` : names[i];
+      this.fields[i] = {
+        name,
+        implicit: !!(flags[i] & EDGE_POINTER_IS_IMPLICIT),
+        linkprop: isLinkprop,
+      };
+      this.namesSet.add(name);
+    }
   }
 
   encode(_buf: WriteBuffer, _object: any): void {
@@ -57,7 +67,7 @@ export class ObjectCodec extends Codec implements ICodec {
   }
 
   encodeArgs(args: any): Buffer {
-    if (this.names[0] === "0") {
+    if (this.fields[0].name === "0") {
       return this._encodePositionalArgs(args);
     }
     return this._encodeNamedArgs(args);
@@ -87,7 +97,7 @@ export class ObjectCodec extends Codec implements ICodec {
         const card = this.cardinalities[i];
         if (card === ONE || card === AT_LEAST_ONE) {
           throw new Error(
-            `argument ${this.names[i]} is required, but received ${arg}`
+            `argument ${this.fields[i].name} is required, but received ${arg}`
           );
         }
         elemData.writeInt32(-1);
@@ -111,7 +121,7 @@ export class ObjectCodec extends Codec implements ICodec {
     }
 
     const keys = Object.keys(args);
-    const names = this.names;
+    const fields = this.fields;
     const namesSet = this.namesSet;
     const codecs = this.codecs;
     const codecsLen = codecs.length;
@@ -127,7 +137,7 @@ export class ObjectCodec extends Codec implements ICodec {
 
     const elemData = new WriteBuffer();
     for (let i = 0; i < codecsLen; i++) {
-      const key = names[i];
+      const key = fields[i].name;
       const val = args[key];
 
       elemData.writeInt32(0); // reserved bytes
@@ -135,7 +145,7 @@ export class ObjectCodec extends Codec implements ICodec {
         const card = this.cardinalities[i];
         if (card === ONE || card === AT_LEAST_ONE) {
           throw new Error(
-            `argument ${this.names[i]} is required, but received ${val}`
+            `argument ${this.fields[i].name} is required, but received ${val}`
           );
         }
         elemData.writeInt32(-1);
@@ -155,7 +165,7 @@ export class ObjectCodec extends Codec implements ICodec {
 
   decode(buf: ReadBuffer): any {
     const codecs = this.codecs;
-    const names = this.names;
+    const fields = this.fields;
 
     const els = buf.readUInt32();
     if (els !== codecs.length) {
@@ -169,7 +179,7 @@ export class ObjectCodec extends Codec implements ICodec {
     for (let i = 0; i < els; i++) {
       buf.discard(4); // reserved
       const elemLen = buf.readInt32();
-      const name = names[i];
+      const name = fields[i].name;
       let val = null;
       if (elemLen !== -1) {
         buf.sliceInto(elemBuf, elemLen);
@@ -186,8 +196,8 @@ export class ObjectCodec extends Codec implements ICodec {
     return Array.from(this.codecs);
   }
 
-  getSubcodecsNames(): string[] {
-    return Array.from(this.names);
+  getFields(): ObjectFieldInfo[] {
+    return Array.from(this.fields);
   }
 
   getKind(): CodecKind {

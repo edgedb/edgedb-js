@@ -1110,7 +1110,6 @@ test("fetch: set of arrays", async () => {
       limit 1
     `);
 
-
     res = res.sets;
     expect(res).toEqual([[1, 2], [1]]);
     expect(res.length).toBe(2);
@@ -1566,19 +1565,15 @@ test("'implicit*' headers", async () => {
   const registry = new _CodecsRegistry();
   const con = await retryingConnect(config, registry);
   try {
-    const [_, outCodecData, protocolVersion] = await con.rawParse(
-      `SELECT schema::Function {
+    const query = `SELECT schema::Function {
         name
-      }`,
-      {
-        implicitTypenames: "true",
-        implicitLimit: "5",
-      }
-    );
-    const resultData = await con.rawExecute();
-
-    const registry = new _CodecsRegistry();
-    const codec = registry.buildCodec(outCodecData, protocolVersion);
+      }`;
+    const headers = {
+      implicitTypenames: "true",
+      implicitLimit: "5",
+    } as const;
+    const [_, outCodec] = await con.rawParse(query, headers);
+    const resultData = await con.rawExecute(query, outCodec, headers);
 
     const result = new Array();
     const buf = new _ReadBuffer(resultData);
@@ -1593,7 +1588,7 @@ test("'implicit*' headers", async () => {
 
       buf.sliceInto(codecReadBuf, len - 4);
       codecReadBuf.discard(6);
-      const val = codec.decode(codecReadBuf);
+      const val = outCodec.decode(codecReadBuf);
       result.push(val);
     }
 
