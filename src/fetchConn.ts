@@ -18,7 +18,7 @@
 
 import {CodecsRegistry} from "./codecs/registry";
 import {Address} from "./conUtils";
-import {BaseRawConnection} from "./baseConn";
+import {PROTO_VER, BaseRawConnection} from "./baseConn";
 import Event from "./primitives/event";
 import * as chars from "./primitives/chars";
 
@@ -34,9 +34,13 @@ interface FetchConfig {
   database: string;
 }
 
-export class FetchConnection extends BaseRawConnection {
-  private config: FetchConfig;
-  private addr: string;
+const PROTO_MIME = (
+  `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`
+)
+
+class BaseFetchConnection extends BaseRawConnection {
+  protected config: FetchConfig;
+  protected addr: string;
 
   constructor(
     config: FetchConfig,
@@ -44,11 +48,11 @@ export class FetchConnection extends BaseRawConnection {
   ) {
     super(registry);
     this.config = config;
+    this.addr = this._buildAddr();
+  }
 
-    this.addr = `${
-      typeof this.config.address === "string" ?
-        config.address : `http://${config.address[0]}:${config.address[1]}`
-    }/admin/protocol/${config.database}`;
+  protected _buildAddr(): string {
+    this.throwNotImplemented('_buildAddr');
   }
 
   protected async _waitForMessage(): Promise<void> {
@@ -85,7 +89,7 @@ export class FetchConnection extends BaseRawConnection {
       const resp: any = await fetch(this.addr, {
         method: "post",
         body: data,
-        headers: {"Content-Type": "application/x.edgedb"},
+        headers: {"Content-Type": PROTO_MIME},
       });
 
       if (!resp.ok) {
@@ -126,10 +130,21 @@ export class FetchConnection extends BaseRawConnection {
   static create(
     config: FetchConfig,
     registry: CodecsRegistry
-  ): FetchConnection {
-    const conn = new FetchConnection(config, registry);
+  ): BaseFetchConnection {
+    const conn = new this(config, registry);
     conn.connected = true;
     conn.alwaysUseOptimisticFlow = true;
     return conn;
+  }
+}
+
+export class AdminFetchConnection extends BaseFetchConnection {
+  protected _buildAddr(): string {
+    const config = this.config;
+
+    return `${
+      typeof config.address === "string" ?
+        config.address : `http://${config.address[0]}:${config.address[1]}`
+    }/db/${config.database}/admin_binary_http`;
   }
 }
