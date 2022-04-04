@@ -82,6 +82,7 @@ const OLD_ERROR_CODES = new Map([
 export class BaseRawConnection {
   protected connected: boolean = false;
   protected alwaysUseOptimisticFlow: boolean = false; // XXX
+  protected exposeErrorAttributes: boolean = false;
 
   protected lastStatus: string | null;
 
@@ -243,11 +244,17 @@ export class BaseRawConnection {
     this.buffer.readChar(); // ignore severity
     const code = this.buffer.readUInt32();
     const message = this.buffer.readString();
-    this._ignoreHeaders(); // ignore attrs
+
     const errorType = resolveErrorCode(OLD_ERROR_CODES.get(code) ?? code);
+    const err = new errorType(message);
+
+    if (this.exposeErrorAttributes) {
+      (err as any).attrs = this._parseHeaders();
+    } else {
+      this._ignoreHeaders(); // ignore attrs
+    }
     this.buffer.finishMessage();
 
-    const err = new errorType(message);
     return err;
   }
 
