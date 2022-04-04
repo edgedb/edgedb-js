@@ -59,8 +59,8 @@ as strings, the driver API is all you need.
     const result = await client.query(query)
     console.log(result); // "Hello world!"
   }
-  
-  run()
+
+  run();
 
 If you're not using TypeScript, you can skip straight to :ref:`the Driver docs
 <edgedb-js-examples>`.
@@ -87,7 +87,7 @@ users—it's awesome.
     const result = await query.run(client)
     console.log(result); // "Hello world!"
   }
-    
+
   run()
 
 As you can see, you still use the ``edgedb`` module to instantiate a client,
@@ -104,7 +104,7 @@ need an ORM to write strongly typed queries.
 
   const client = edgedb.createClient();
 
-  const q1 = await e.str("Hello" + "world!").run(client);
+  const q1 = await e.select("Hello world!").run(client);
   // string
 
   const q2 = await e.set(1, 2, 3).run(client);
