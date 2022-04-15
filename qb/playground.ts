@@ -6,8 +6,14 @@ import {setupTests} from "./test/setupTeardown";
 import e, * as types from "./dbschema/edgeql-js/index";
 
 async function run() {
-  const {client} = await setupTests();
-  const query = e.select("Hello world!");
+  const {client, data} = await setupTests();
+  const query = e.update(e.Movie, movie => ({
+    filter: e.op(movie.id, "=", e.uuid(data.the_avengers.id)),
+    set: {
+      title: "The Avngrrs",
+    },
+  }));
+
   console.log(query.toEdgeQL());
   const result = await query.run(client);
   console.log(result);

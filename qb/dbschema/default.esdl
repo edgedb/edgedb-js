@@ -1,3 +1,4 @@
+
 module default {
 
   scalar type Genre extending enum<Horror, Action, RomCom>;
