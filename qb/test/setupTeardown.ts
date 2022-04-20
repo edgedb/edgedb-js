@@ -26,6 +26,8 @@ interface Movie {
   id: string;
   title: string;
   genre: string;
+  rating: number | null;
+  release_year: number;
   characters: {id: string}[];
 }
 
@@ -73,7 +75,7 @@ SELECT (INSERT Movie {
   rating := 10,
   genre := Genre.Action,
   characters := (SELECT Person FILTER .id IN char_ids)
-}) {id, title, rating, genre, characters: {id}};`,
+}) {id, title, rating, genre, release_year, characters: {id}};`,
     {character_ids: [iron_man.id, cap.id]}
   );
   const civil_war: Movie = await client.queryRequiredSingle(
@@ -82,7 +84,7 @@ SELECT (INSERT Movie {
   rating := 10,
   genre := Genre.Action,
   characters := (SELECT Hero)
-}) {id, title, rating, genre, characters: {id}};`
+}) {id, title, rating, genre, release_year, characters: {id}};`
   );
 
   return {

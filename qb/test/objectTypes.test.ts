@@ -117,3 +117,27 @@ test("backlinks", () => {
     "default::Movie"
   );
 });
+
+test("select *", () => {
+  const movieStar = e.Movie["*"];
+
+  expect(movieStar).toEqual({
+    id: true,
+    title: true,
+    genre: true,
+    rating: true,
+    release_year: true,
+  });
+  tc.assert<
+    tc.IsExact<
+      typeof movieStar,
+      {
+        id: true;
+        title: true;
+        genre: true;
+        rating: true;
+        release_year: true;
+      }
+    >
+  >(true);
+});

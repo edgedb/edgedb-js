@@ -51,14 +51,26 @@ function PathNode<
   exclusive: Exclusive,
   scopeRoot: TypeSet | null = null
 ): $expr_PathNode<Root, Parent, Exclusive> {
-  return $expressionify({
+  const obj = {
     __kind__: ExpressionKind.PathNode,
     __element__: root.__element__,
     __cardinality__: root.__cardinality__,
     __parent__: parent,
     __exclusive__: exclusive,
     __scopeRoot__: scopeRoot,
-  }) as any;
+  };
+
+  const shape: any = {};
+  Object.entries(obj.__element__.__pointers__).map(([key, ptr]) => {
+    if (ptr.__kind__ === "property") {
+      shape[key] = true;
+    }
+  });
+  Object.defineProperty(obj, "*", {
+    writable: false,
+    value: shape,
+  });
+  return $expressionify(obj) as any;
 }
 
 const _pathCache = Symbol();
