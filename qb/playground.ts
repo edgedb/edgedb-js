@@ -7,11 +7,9 @@ import e, * as types from "./dbschema/edgeql-js/index";
 
 async function run() {
   const {client, data} = await setupTests();
-  const query = e.update(e.Movie, movie => ({
-    filter: e.op(movie.id, "=", e.uuid(data.the_avengers.id)),
-    set: {
-      title: "The Avngrrs",
-    },
+  console.log(e.Movie["*"]);
+  const query = e.select(e.Movie, movie => ({
+    ...e.Movie["*"],
   }));
 
   console.log(query.toEdgeQL());

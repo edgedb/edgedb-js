@@ -1120,6 +1120,20 @@ test("filter by sequence", async () => {
   await e.op(e.Bag.seqField, "=", 1).run(client);
 });
 
+test("select *", async () => {
+  const allFields = await e
+    .select(e.Movie, movie => ({
+      ...e.Movie["*"],
+      filter: e.op(movie.title, "=", data.the_avengers.title),
+    }))
+    .run(client);
+
+  expect(allFields).toEqual({
+    ...data.the_avengers,
+    characters: undefined,
+  });
+});
+
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
 
