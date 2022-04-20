@@ -1,14 +1,14 @@
 .. _edgedb-js-select:
 
 Select
-------
+======
 
 The full power of the EdgeQL ``select`` statement is available as a top-level
 ``e.select`` function. All queries on this page assume the Netflix schema
 described on the :ref:`Objects page <edgedb-js-objects>`.
 
 Selecting scalars
-^^^^^^^^^^^^^^^^^
+-----------------
 
 Any scalar expression be passed into ``e.select``, though it's often
 unnecessary, since expressions are ``run``\ able without being wrapped by
@@ -23,7 +23,7 @@ unnecessary, since expressions are ``run``\ able without being wrapped by
   // select 2 + 2;
 
 Selecting free objects
-^^^^^^^^^^^^^^^^^^^^^^
+----------------------
 
 Select a free object by passing an object into ``e.select``
 
@@ -41,7 +41,7 @@ Select a free object by passing an object into ``e.select``
   } */
 
 Selecting objects
-^^^^^^^^^^^^^^^^^
+-----------------
 
 As in EdgeQL, selecting an set of objects without a shape will return their
 ``id`` property only. This is reflected in the TypeScript type of the result.
@@ -91,7 +91,6 @@ This is true for all queries on this page.
 As you can see, the type of ``runtime`` is ``Duration | undefined`` since it's
 an optional property, whereas ``id`` and ``title`` are required.
 
-
 Passing a ``boolean`` value (as opposed to a ``true`` literal), which will
 make the property optional. Passing ``false`` will exclude that property.
 
@@ -106,7 +105,31 @@ make the property optional. Passing ``false`` will exclude that property.
   const result = await query.run(client);
   // {id: string; title: string | undefined; runtime: never}[]
 
+Selecting all properties
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+For convenience, the query builder provides a shorthand for selecting all
+properties of a given object.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => ({
+    ...e.Movie['*']
+  }));
+
+  const result = await query.run(client);
+  // {id: string; title: string; runtime: Date}[]
+
+This ``*`` property is just a strongly-typed, plain object:
+
+.. code-block::
+
+  e.Movie['*'];
+  // => {id: true, title: true, runtime: true}
+
+
 Nesting shapes
+^^^^^^^^^^^^^^
 
 As in EdgeQL, shapes can be nested to fetch deeply related objects.
 
@@ -129,7 +152,7 @@ As in EdgeQL, shapes can be nested to fetch deeply related objects.
 
 
 Why closures?
-^^^^^^^^^^^^^
+-------------
 
 In EdgeQL, a ``select`` statement introduces a new *scope*; within the clauses
 of a select statement, you can refer to fields of the *elements being
@@ -151,7 +174,7 @@ computed fields, and other expressions. Let's see it in action.
 
 
 Filtering
-^^^^^^^^^
+---------
 
 To add a filtering clause, just include a ``filter`` key in the returned
 params object. This should correspond to a boolean expression.
@@ -176,7 +199,8 @@ params object. This should correspond to a boolean expression.
   EdgeDB, there is minimal danger of conflicting with a property or link named
   ``filter``. All shapes can contain filter clauses, even nested ones.
 
-### Nested filtering
+Filters on links
+----------------
 
 .. code-block:: typescript
 
@@ -191,7 +215,7 @@ params object. This should correspond to a boolean expression.
 
 
 Ordering
-^^^^^^^^
+--------
 
 As with ``filter``, you can pass a value with the special ``order_by`` key. To
 simply order by a property:
@@ -201,8 +225,6 @@ simply order by a property:
   e.select(e.Movie, movie => ({
     order_by: movie.title,
   }));
-
-
 
 .. note::
 
@@ -277,7 +299,7 @@ Pass an array of objects to do multiple ordering.
 
 
 Pagination
-^^^^^^^^^^
+----------
 
 Use ``offset`` and ``limit`` to paginate queries. You can pass an expression
 with an integer type or a plain JS number.
@@ -295,7 +317,7 @@ with an integer type or a plain JS number.
   */
 
 Computeds
-^^^^^^^^^
+---------
 
 To add a computed field, just add it to the returned shape alongside the other
 elements. All reflected functions are typesafe, so the output type
@@ -339,7 +361,7 @@ signatures agree.
 .. _ref_qb_polymorphism:
 
 Polymorphism
-^^^^^^^^^^^^
+------------
 
 EdgeQL supports polymorphic queries using the ``[is type]`` prefix.
 
@@ -373,7 +395,7 @@ fact that they will only occur in certain objects.
 
 
 Detached
-^^^^^^^^
+--------
 
 Sometimes you need to "detach" a set reference from the current scope. (Read the `reference docs <https://www.edgedb.com/docs/reference/edgeql/with#detached>`_ for details.) You can achieve this in the query builder with the top-level ``e.detached`` function.
 
