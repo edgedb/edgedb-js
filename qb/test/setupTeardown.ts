@@ -107,6 +107,7 @@ async function cleanupData(client: Client) {
   await client.execute(`DELETE Łukasz`);
   await client.execute(`DELETE Bag;`);
   await client.execute(`DELETE Simple;`);
+  await client.execute(`DELETE User;`);
   await client.execute(`DELETE Movie;`);
   await client.execute(`DELETE Villain;`);
   await client.execute(`DELETE Hero;`);

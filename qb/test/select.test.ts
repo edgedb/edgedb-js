@@ -1158,6 +1158,17 @@ test("select *", async () => {
   });
 });
 
+test("select required multi link", async () => {
+  const query = e.select(e.User, () => ({
+    username: true,
+    favourite_movies: {
+      title: true,
+    },
+  }));
+
+  await query.run(client);
+});
+
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
 

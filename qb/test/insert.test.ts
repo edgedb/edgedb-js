@@ -183,7 +183,7 @@ test("insert type enforcement", async () => {
 
   e.insert(e.User, {
     username: "spidey",
-    favourite_movie: e.select(e.Movie, movie => ({
+    favourite_movies: e.select(e.Movie, movie => ({
       filter: e.op(movie.title, "=", "The Avengers"),
     })),
   });
