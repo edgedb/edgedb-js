@@ -1,6 +1,6 @@
 .. _edgedb-js-funcops:
 
-Functions and operators
+Functions and Operators
 -----------------------
 
 Function syntax
@@ -38,6 +38,11 @@ Prefix operators operate on a single argument: ``OPERATOR <arg>``.
   e.op('exists', e.set('hi'));    // exists {'hi'}
   e.op('distinct', e.set('hi', 'hi'));    // distinct {'hi', 'hi'}
 
+.. list-table::
+
+  * - ``"exists"`` ``"distinct"`` ``"not"``
+
+
 Infix operators
 ^^^^^^^^^^^^^^^
 
@@ -47,6 +52,13 @@ Infix operators operate on two arguments: ``<arg> OPERATOR <arg>``.
 
   e.op(e.str('Hello '), '++', e.str('World!'));
   // 'Hello ' ++ 'World!'
+
+.. list-table::
+
+  * - ``"="`` ``"?="`` ``"!="`` ``"?!="`` ``">="`` ``">"`` ``"<="`` ``"<"``
+      ``"or"`` ``"and"`` ``"+"`` ``"-"`` ``"*"`` ``"/"`` ``"//"`` ``"%"``
+      ``"^"`` ``"in"`` ``"not in"`` ``"union"`` ``"??"`` ``"++"`` ``"like"``
+      ``"ilike"`` ``"not like"`` ``"not ilike"``
 
 
 Ternary operators
@@ -61,17 +73,3 @@ statement.
   e.op(e.str('😄'), 'if', e.bool(true), 'else', e.str('😢'));
   // 😄 if true else 😢
 
-Operator reference
-^^^^^^^^^^^^^^^^^^
-
-.. list-table::
-
-  * - Prefix operators
-    - ``"exists"`` ``"distinct"`` ``"not"``
-  * - Infix operators
-    - ``"="`` ``"?="`` ``"!="`` ``"?!="`` ``">="`` ``">"`` ``"<="`` ``"<"``
-      ``"or"`` ``"and"`` ``"+"`` ``"-"`` ``"*"`` ``"/"`` ``"//"`` ``"%"``
-      ``"^"`` ``"in"`` ``"not in"`` ``"union"`` ``"??"`` ``"++"`` ``"like"``
-      ``"ilike"`` ``"not like"`` ``"not ilike"``
-  * - Ternary operators
-    - ``"if"/"else"``

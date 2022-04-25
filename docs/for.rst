@@ -1,7 +1,7 @@
 .. _edgedb-js-for:
 
 
-For loops
+For Loops
 ---------
 
 .. code-block:: typescript

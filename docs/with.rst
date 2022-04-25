@@ -1,9 +1,7 @@
 .. _edgedb-js-with:
 
-With blocks
+With Blocks
 -----------
-
-:edb-alt-title: With blocks
 
 During the query rendering step, the number of occurrences of each expression
 are tracked. All expressions that are referenced more than once and are not
