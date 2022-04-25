@@ -603,6 +603,30 @@ test("backlinks", async () => {
   expect(
     [data.the_avengers.title, data.civil_war.title].includes(result1[0].title)
   ).toEqual(true);
+
+  const q3 = e.select(e.Hero, hero => ({
+    "<characters[is Movie]": {
+      title: true,
+    },
+    starredIn: e.select(hero["<characters[is Movie]"], () => ({
+      title: true,
+    })),
+  }));
+
+  const res3 = await q3.run(client);
+  tc.assert<
+    tc.IsExact<
+      typeof res3,
+      {
+        "<characters[is Movie]": {title: string}[];
+        starredIn: {title: string}[];
+      }[]
+    >
+  >(true);
+
+  for (const hero of res3) {
+    expect(hero["<characters[is Movie]"]).toEqual(hero.starredIn);
+  }
 });
 
 test("overrides with implicit casting", () => {
