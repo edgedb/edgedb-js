@@ -18,6 +18,7 @@ import {
   isNamedTupleType,
   isObjectType,
   isTupleType,
+  ObjectTypePointers,
   ObjectTypeSet,
   OperatorKind,
   TypeKind,
@@ -83,7 +84,7 @@ type WithScopeExpr =
 function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
-  pointerKeys: string[] | null = null,
+  pointers: ObjectTypePointers | null = null,
   keysOnly: boolean = false
 ) {
   if (shape === null) {
@@ -152,17 +153,21 @@ function shapeToEdgeQL(
       // explicit error is thrown, instead of a silent mismatch between
       // actual and inferred type.
       const expectedCardinality =
-        pointerKeys &&
-        !pointerKeys.includes(key) &&
-        val.hasOwnProperty("__cardinality__")
+        pointers && !pointers[key] && val.hasOwnProperty("__cardinality__")
           ? val.__cardinality__ === Cardinality.Many ||
             val.__cardinality__ === Cardinality.AtLeastOne
             ? "multi "
             : "single "
           : "";
 
+      // If selecting a required multi link, wrap expr in 'assert_exists'
+      const wrapAssertExists =
+        pointers?.[key]?.cardinality === Cardinality.AtLeastOne;
+
       addLine(
         `${expectedCardinality}${q(key, false)} ${operator} ${
+          wrapAssertExists ? "assert_exists(" : ""
+        }${
           renderedExpr.includes("\n")
             ? `(\n${indent(
                 renderedExpr[0] === "(" &&
@@ -172,7 +177,7 @@ function shapeToEdgeQL(
                 4
               )}\n  )`
             : renderedExpr
-        }`
+        }${wrapAssertExists ? ")" : ""}`
       );
     } else {
       throw new Error(`Invalid shape element at "${key}".`);
@@ -665,7 +670,7 @@ function renderEdgeQL(
           shapeToEdgeQL(
             (expr.__element__.__shape__ || {}) as object,
             ctx,
-            Object.keys(expr.__element__.__pointers__)
+            expr.__element__.__pointers__
           )
         );
       }

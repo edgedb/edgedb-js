@@ -47,7 +47,7 @@ module default {
 
   type User {
     required property username -> str;
-    required link favourite_movie -> Movie;
+    required multi link favourite_movies -> Movie;
   }
 
   type MovieShape {
