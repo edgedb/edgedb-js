@@ -132,7 +132,7 @@ function shapeToEdgeQL(
     } else if (val.hasOwnProperty("__kind__")) {
       if (keysOnly) {
         addLine(
-          q(key) +
+          q(key, false) +
             (isObjectType(val.__element__)
               ? `: ${shapeToEdgeQL(
                   val.__element__.__shape__,
@@ -162,7 +162,7 @@ function shapeToEdgeQL(
           : "";
 
       addLine(
-        `${expectedCardinality}${q(key)} ${operator} ${
+        `${expectedCardinality}${q(key, false)} ${operator} ${
           renderedExpr.includes("\n")
             ? `(\n${indent(
                 renderedExpr[0] === "(" &&
@@ -1223,27 +1223,26 @@ function indent(str: string, depth: number) {
 
 // backtick quote identifiers if needed
 // https://github.com/edgedb/edgedb/blob/master/edb/edgeql/quote.py
-function q(ident: string, allowReserved: boolean = false): string {
+function q(ident: string, allowBacklinks: boolean = true): string {
   if (
     !ident ||
     ident.startsWith("@") ||
-    ident.includes("::") ||
-    ident.startsWith("<") // backlink
+    (allowBacklinks && (ident.startsWith("<") || ident.includes("::")))
   ) {
     return ident;
   }
 
   const isAlphaNum = /^([^\W\d]\w*|([1-9]\d*|0))$/.test(ident);
+  if (isAlphaNum) {
+    const lident = ident.toLowerCase();
+    const isReserved =
+      lident !== "__type__" &&
+      lident !== "__std__" &&
+      reservedKeywords.includes(lident);
 
-  const lident = ident.toLowerCase();
-
-  const isReserved =
-    lident !== "__type__" &&
-    lident !== "__std__" &&
-    reservedKeywords.includes(lident);
-
-  if (isAlphaNum && (allowReserved || !isReserved)) {
-    return ident;
+    if (!isReserved) {
+      return ident;
+    }
   }
 
   return "`" + ident.replace(/`/g, "``") + "`";
