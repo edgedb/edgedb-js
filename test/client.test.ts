@@ -17,7 +17,6 @@
  */
 
 import {parseConnectArguments} from "../src/conUtils";
-import {EdgeDBDateTime} from "../src/datatypes/datetime";
 import {
   Client,
   DivisionByZeroError,
@@ -36,6 +35,7 @@ import {
 } from "../src/index.node";
 import {retryingConnect} from "../src/retry";
 import {AdminFetchConnection} from "../src/fetchConn";
+import {CustomCodecSpec} from "../src/codecs/registry";
 import {
   getAvailableFeatures,
   getClient,
@@ -43,10 +43,10 @@ import {
   isDeno,
 } from "./testbase";
 
-function setStringCodecs(codecs: string[], client: Client) {
+function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
   // @ts-ignore
   const registry = client.pool._codecsRegistry;
-  registry.setStringCodecs(
+  registry.setCustomCodecs(
     codecs.reduce((obj, codec) => {
       obj[codec] = true;
       return obj;
@@ -215,7 +215,7 @@ test("fetch: bigint", async () => {
 
 test("fetch: decimal as string", async () => {
   const con = getClient();
-  setStringCodecs(["decimal"], con);
+  setCustomCodecs(["decimalString"], con);
 
   const vals = [
     "0.001",
@@ -330,16 +330,18 @@ test("fetch: decimal as string", async () => {
     const fetched = await con.querySingle<any>(
       `
       WITH
-        inp := <array<str>>$0,
-        dec := <array<decimal>>inp,
+        inp := <array<decimal>>$0,
+        inpStr := <array<str>>$1,
+        str := <array<str>>inp,
       SELECT
-        (<array<str>>dec, dec)
+        (inp, str, <array<decimal>>inpStr)
     `,
-      [vals]
+      [vals, vals]
     );
 
     expect(fetched[0].length).toBe(vals.length);
     for (let i = 0; i < fetched[0].length; i++) {
+      expect(fetched[0][i]).toBe(fetched[2][i]);
       expect(fetched[0][i]).toBe(fetched[1][i]);
     }
   } finally {
@@ -347,9 +349,9 @@ test("fetch: decimal as string", async () => {
   }
 });
 
-test("fetch: int64 as string", async () => {
+test("fetch: int64 as bigint", async () => {
   const con = getClient();
-  setStringCodecs(["int64"], con);
+  setCustomCodecs(["int64Bigint"], con);
 
   const vals = [
     "0",
@@ -369,102 +371,19 @@ test("fetch: int64 as string", async () => {
     const fetched = await con.querySingle<any>(
       `
       WITH
-        inp := <array<str>>$0,
-        dec := <array<int64>>inp,
+        inp := <array<int64>>$0,
+        inpStr := <array<str>>$1,
+        str := <array<str>>inp,
       SELECT
-        (<array<str>>dec, dec)
+        (inp, str, <array<int64>>inpStr)
     `,
-      [vals]
+      [vals.map(v => BigInt(v)), vals]
     );
 
     expect(fetched[0].length).toBe(vals.length);
     for (let i = 0; i < fetched[0].length; i++) {
-      expect(fetched[0][i]).toBe(fetched[1][i]);
-    }
-  } finally {
-    await con.close();
-  }
-});
-
-test("fetch: bigint as string", async () => {
-  const con = getClient();
-  setStringCodecs(["bigint"], con);
-
-  const vals = [
-    "0",
-    "-0",
-    "1",
-    "-1",
-    "11",
-    "-11",
-    "11001200000031231238172638172637981268371628312300000000",
-    "-11001231231238172638172637981268371628312300",
-  ];
-
-  try {
-    const fetched = await con.querySingle<any>(
-      `
-      WITH
-        inp := <array<str>>$0,
-        dec := <array<bigint>>inp,
-      SELECT
-        (<array<str>>dec, dec)
-    `,
-      [vals]
-    );
-
-    expect(fetched[0].length).toBe(vals.length);
-    for (let i = 0; i < fetched[0].length; i++) {
-      expect(fetched[0][i]).toBe(fetched[1][i]);
-    }
-  } finally {
-    await con.close();
-  }
-});
-
-function edgeDBDateTimeToStr(dt: EdgeDBDateTime): string {
-  return `${Math.abs(dt.year)}-${dt.month}-${dt.day}T${dt.hour}:${dt.minute}:${
-    dt.second
-  }.${dt.microsecond.toString().padStart(6, "0")} ${
-    dt.year < 0 ? "BC" : "AD"
-  }`;
-}
-
-test("fetch: datetime as string", async () => {
-  const con = getClient();
-  setStringCodecs(["local_datetime", "datetime"], con);
-
-  const maxDate = 253402300799;
-  const minDate = -62135596800;
-
-  const vals = [maxDate, minDate];
-
-  for (let i = 0; i < 1000; i++) {
-    vals.push(Math.random() * (maxDate - minDate) + minDate);
-  }
-
-  try {
-    const fetched = await con.querySingle<any>(
-      `
-      WITH
-        fmt := 'FMYYYY-FMMM-FMDDTFMHH24:FMMI:FMSS.US AD',
-        inp := array_unpack(<array<float64>>$0),
-        datetimes := to_datetime(inp),
-        local_datetimes := cal::to_local_datetime(datetimes, 'UTC'),
-      SELECT (
-        array_agg(to_str(datetimes, fmt)),
-        array_agg(datetimes),
-        array_agg(to_str(local_datetimes, fmt)),
-        array_agg(local_datetimes)
-      )
-      `,
-      [vals]
-    );
-
-    expect(fetched[0].length).toBe(vals.length);
-    for (let i = 0; i < fetched[0].length; i++) {
-      expect(edgeDBDateTimeToStr(fetched[1][i])).toBe(fetched[0][i]);
-      expect(edgeDBDateTimeToStr(fetched[3][i])).toBe(fetched[2][i]);
+      expect(fetched[0][i]).toBe(fetched[2][i]);
+      expect(fetched[0][i].toString()).toBe(fetched[1][i]);
     }
   } finally {
     await con.close();

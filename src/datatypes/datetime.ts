@@ -27,8 +27,6 @@ import {
   isLeapYear,
 } from "./dateutil";
 
-export type {EdgeDBDateTime} from "../compat";
-
 export const DATE_PRIVATE = Symbol.for("edgedb.datetime");
 
 export class LocalTime {

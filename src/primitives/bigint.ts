@@ -2,6 +2,7 @@
 
 interface JSBI {
   BigInt(from: number | string | boolean | object): JSBI;
+  isBigInt(x: JSBI): boolean;
 
   toNumber(x: JSBI): number;
 
@@ -50,6 +51,7 @@ export function plugJSBI(jsbi: any): void {
   JSBI = jsbi as JSBI;
 }
 
+let _isBigInt;
 let _make;
 let _add;
 let _div;
@@ -62,6 +64,8 @@ let _lt;
 let _remainder;
 
 if (hasNativeBigInt) {
+  _isBigInt = (val: BigIntLike): boolean => typeof val === "bigint";
+
   _make = (val: string | number): BigIntLike => BigInt(val);
 
   _add = (op1: BigIntLike, op2: BigIntLike): BigIntLike =>
@@ -91,6 +95,11 @@ if (hasNativeBigInt) {
   _remainder = (op1: BigIntLike, op2: BigIntLike): BigIntLike =>
     ((op1 as bigint) % (op2 as bigint)) as BigIntLike;
 } else {
+  _isBigInt = (val: BigIntLike): boolean => {
+    const j: any = ensureJSBI();
+    return val instanceof j;
+  };
+
   _make = (val: string | number): BigIntLike => {
     const j = ensureJSBI();
     return j.BigInt(val);
@@ -150,6 +159,7 @@ function ensureJSBI(): JSBI {
   return JSBI;
 }
 
+export const isBigInt = _isBigInt;
 export const make = _make;
 export const add = _add;
 export const sub = _sub;
