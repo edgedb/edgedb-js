@@ -9,6 +9,8 @@ import {
   Cardinality,
 } from "../reflection";
 import {$expressionify} from "./path";
+import type {orScalarLiteral} from "@generated/castMaps";
+import {literalToTypeSet} from "@generated/castMaps";
 
 export function cast<Target extends CastableNonArrayType | CastableArrayType>(
   target: Target,
@@ -17,16 +19,14 @@ export function cast<Target extends CastableNonArrayType | CastableArrayType>(
 export function cast<
   Target extends CastableNonArrayType | CastableArrayType,
   Expr extends TypeSet
->(target: Target, expr: Expr): $expr_Cast<Target, Expr>;
-export function cast<
-  Target extends CastableNonArrayType | CastableArrayType,
-  Expr extends TypeSet
->(target: Target, expr: Expr): $expr_Cast<Target, Expr>;
+>(target: Target, expr: orScalarLiteral<Expr>): $expr_Cast<Target, Expr>;
 export function cast(target: BaseType, expr: any) {
+  const cleanedExpr = expr === null ? null : literalToTypeSet(expr);
   return $expressionify({
     __element__: target,
-    __cardinality__: expr === null ? Cardinality.Empty : expr.__cardinality__,
-    __expr__: expr,
+    __cardinality__:
+      cleanedExpr === null ? Cardinality.Empty : cleanedExpr.__cardinality__,
+    __expr__: cleanedExpr,
     __kind__: ExpressionKind.Cast,
   }) as any;
 }

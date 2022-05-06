@@ -1144,6 +1144,11 @@ test("filter by sequence", async () => {
   await e.op(e.Bag.seqField, "=", 1).run(client);
 });
 
+test("Date type", async () => {
+  const dates = await e.select(e.Bag.datetimeField).run(client);
+  tc.assert<tc.IsExact<typeof dates, Date[]>>(true);
+});
+
 test("select *", async () => {
   const allFields = await e
     .select(e.Movie, movie => ({

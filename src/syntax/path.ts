@@ -177,11 +177,7 @@ function assert_single(expr: Expression) {
 
 const jsonDestructureProxyHandlers: ProxyHandler<ExpressionRoot> = {
   get(target: ExpressionRoot, prop: string | symbol, proxy: any) {
-    if (
-      typeof prop === "string" &&
-      prop !== "run" &&
-      (target as any)[prop] === undefined
-    ) {
+    if (typeof prop === "string" && !(prop in target)) {
       const parsedProp = Number.isInteger(Number(prop)) ? Number(prop) : prop;
       return jsonDestructure.call(proxy, parsedProp);
     }

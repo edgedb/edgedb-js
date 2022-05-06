@@ -15,3 +15,7 @@ test("enums", () => {
     `<default::Genre>("Horror")`
   );
 });
+
+test("scalar literals", () => {
+  expect(e.cast(e.json, "hello").toEdgeQL()).toEqual(`<std::json>("hello")`);
+});
