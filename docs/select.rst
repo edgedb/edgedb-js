@@ -66,13 +66,13 @@ result. This roughly corresponds to a *shape* in EdgeQL.
   const query = e.select(e.Movie, ()=>({
     id: true,
     title: true,
-    runtime: true,
+    release_year: true,
   }));
   /*
     select Movie {
       id,
       title,
-      runtime
+      release_year
     }
   */
 
@@ -85,11 +85,11 @@ This is true for all queries on this page.
   /* {
     id: string;
     title: string;
-    runtime: Duration | undefined;
+    release_year: number | undefined;
   }[] */
 
-As you can see, the type of ``runtime`` is ``Duration | undefined`` since it's
-an optional property, whereas ``id`` and ``title`` are required.
+As you can see, the type of ``release_year`` is ``number | undefined`` since
+it's an optional property, whereas ``id`` and ``title`` are required.
 
 Passing a ``boolean`` value (as opposed to a ``true`` literal), which will
 make the property optional. Passing ``false`` will exclude that property.
@@ -99,11 +99,11 @@ make the property optional. Passing ``false`` will exclude that property.
   e.select(e.Movie, movie => ({
     id: true,
     title: Math.random() > 0.5,
-    runtime: false,
+    release_year: false,
   }));
 
   const result = await query.run(client);
-  // {id: string; title: string | undefined; runtime: never}[]
+  // {id: string; title: string | undefined; release_year: never}[]
 
 Selecting all properties
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -118,14 +118,14 @@ properties of a given object.
   }));
 
   const result = await query.run(client);
-  // {id: string; title: string; runtime: Date}[]
+  // {id: string; title: string; release_year: number | null}[]
 
 This ``*`` property is just a strongly-typed, plain object:
 
 .. code-block::
 
   e.Movie['*'];
-  // => {id: true, title: true, runtime: true}
+  // => {id: true, title: true, release_year: true}
 
 
 Nesting shapes
@@ -351,7 +351,7 @@ signatures agree.
 
   e.select(e.Movie, movie => ({
     title: e.str_upper(movie.title), // this works
-    runtime: e.int64(55), // TypeError
+    release_year: e.str("2012"), // TypeError
 
     // you can override links too
     actors: e.Person,
@@ -369,7 +369,7 @@ EdgeQL supports polymorphic queries using the ``[is type]`` prefix.
 
   select Content {
     title,
-    [is Movie].runtime,
+    [is Movie].release_year,
     [is TVShow].num_seasons
   }
 
@@ -379,18 +379,18 @@ In the query builder, this is represented with the ``e.is`` function.
 
   e.select(e.Content, content => ({
     title: true,
-    ...e.is(e.Movie, { runtime: true }),
+    ...e.is(e.Movie, { release_year: true }),
     ...e.is(e.TVShow, { num_seasons: true }),
   }));
 
   const result = await query.run(client);
   /* {
     title: string;
-    runtime: Duration | null;
+    release_year: number | null;
     num_seasons: number | null;
   }[] */
 
-The ``runtime`` and ``num_seasons`` properties are nullable to reflect the
+The ``release_year`` and ``num_seasons`` properties are nullable to reflect the
 fact that they will only occur in certain objects.
 
 

@@ -124,7 +124,7 @@ documentation.
 
   e.select(e.Content, content => ({
     title: true,
-    ...e.is(e.Movie, { runtime: true }),
+    ...e.is(e.Movie, { release_year: true }),
     ...e.is(e.TVShow, { num_seasons: true }),
   }));
 
