@@ -25,6 +25,7 @@
     "edgeql-js": "./dist/reflection/cli.js"
   },
   "devDependencies": {
+    "@js-temporal/polyfill": "^0.4.1",
     "@types/jest": "^24.0.11",
     "@types/node": "14",
     "get-stdin": "^7.0.0",
@@ -32,7 +33,6 @@
     "node-fetch": "2.6.7",
     "nodemon": "^2.0.13",
     "prettier": "^2.3.2",
-    "proposal-temporal": "^0.7.0",
     "ts-jest": "^26.5.2",
     "ts-node": "^10.0.0",
     "tslint": "^5.20.1",

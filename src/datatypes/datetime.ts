@@ -29,6 +29,14 @@ import {
 
 export const DATE_PRIVATE = Symbol.for("edgedb.datetime");
 
+function toNumber(val: any): number {
+  const n = Number(val);
+  if (Number.isNaN(n)) {
+    return 0;
+  }
+  return n;
+}
+
 export class LocalTime {
   private readonly _hour: number;
   private readonly _minute: number;
@@ -45,12 +53,12 @@ export class LocalTime {
     isoMicrosecond: number = 0,
     isoNanosecond: number = 0
   ) {
-    isoHour = Math.floor(isoHour);
-    isoMinute = Math.floor(isoMinute);
-    isoSecond = Math.floor(isoSecond);
-    isoMillisecond = Math.floor(isoMillisecond);
-    isoMicrosecond = Math.floor(isoMicrosecond);
-    isoNanosecond = Math.floor(isoNanosecond);
+    isoHour = Math.floor(toNumber(isoHour));
+    isoMinute = Math.floor(toNumber(isoMinute));
+    isoSecond = Math.floor(toNumber(isoSecond));
+    isoMillisecond = Math.floor(toNumber(isoMillisecond));
+    isoMicrosecond = Math.floor(toNumber(isoMicrosecond));
+    isoNanosecond = Math.floor(toNumber(isoNanosecond));
 
     if (isoHour < 0 || isoHour > 23) {
       throw new RangeError(
@@ -147,9 +155,9 @@ export class LocalDate {
   private readonly _date: Date;
 
   constructor(isoYear: number, isoMonth: number, isoDay: number) {
-    isoYear = Math.trunc(isoYear);
-    isoMonth = Math.floor(isoMonth);
-    isoDay = Math.floor(isoDay);
+    isoYear = Math.trunc(toNumber(isoYear));
+    isoMonth = Math.floor(toNumber(isoMonth));
+    isoDay = Math.floor(toNumber(isoDay));
 
     if (isoYear < -271820 || isoYear > 275759) {
       throw new RangeError(
@@ -309,6 +317,33 @@ export class LocalDateTime extends LocalDate {
   }
 }
 
+function assertInteger(val: number): number {
+  if (!Number.isInteger(val)) {
+    throw new RangeError(`unsupported fractional value ${val}`);
+  }
+  return val;
+}
+
+interface DurationLike {
+  years?: number;
+  months?: number;
+  weeks?: number;
+  days?: number;
+  hours?: number;
+  minutes?: number;
+  seconds?: number;
+  milliseconds?: number;
+  microseconds?: number;
+  nanoseconds?: number;
+}
+
+const durationRegex = new RegExp(
+  `^(\\-|\\+)?P(?:(\\d+)Y)?(?:(\\d+)M)?(?:(\\d+)W)?(?:(\\d+)D)?` +
+    `(T(?:(\\d+)(\\.\\d{1,10})?H)?(?:(\\d+)(\\.\\d{1,10})?M)?` +
+    `(?:(\\d+)(\\.\\d{1,9})?S)?)?$`,
+  "i"
+);
+
 export class Duration {
   private readonly _years: number;
   private readonly _months: number;
@@ -334,16 +369,16 @@ export class Duration {
     microseconds: number = 0,
     nanoseconds: number = 0
   ) {
-    years = Math.trunc(years);
-    months = Math.trunc(months);
-    weeks = Math.trunc(weeks);
-    days = Math.trunc(days);
-    hours = Math.trunc(hours);
-    minutes = Math.trunc(minutes);
-    seconds = Math.trunc(seconds);
-    milliseconds = Math.trunc(milliseconds);
-    microseconds = Math.trunc(microseconds);
-    nanoseconds = Math.trunc(nanoseconds);
+    years = assertInteger(toNumber(years));
+    months = assertInteger(toNumber(months));
+    weeks = assertInteger(toNumber(weeks));
+    days = assertInteger(toNumber(days));
+    hours = assertInteger(toNumber(hours));
+    minutes = assertInteger(toNumber(minutes));
+    seconds = assertInteger(toNumber(seconds));
+    milliseconds = assertInteger(toNumber(milliseconds));
+    microseconds = assertInteger(toNumber(microseconds));
+    nanoseconds = assertInteger(toNumber(nanoseconds));
 
     const fields = [
       years,
@@ -487,6 +522,115 @@ export class Duration {
 
   valueOf(): any {
     throw new TypeError("Not possible to compare TemporalDuration");
+  }
+
+  static from(item: string | Duration | DurationLike): Duration {
+    let result: DurationLike;
+    if (item instanceof Duration) {
+      result = item;
+    }
+
+    if (typeof item === "object") {
+      if (
+        item.years === undefined &&
+        item.months === undefined &&
+        item.weeks === undefined &&
+        item.days === undefined &&
+        item.hours === undefined &&
+        item.minutes === undefined &&
+        item.seconds === undefined &&
+        item.milliseconds === undefined &&
+        item.microseconds === undefined &&
+        item.nanoseconds === undefined
+      ) {
+        throw new TypeError(`invalid duration-like`);
+      }
+      result = item;
+    } else {
+      const str = String(item);
+      const matches = str.match(durationRegex);
+      if (!matches) {
+        throw new RangeError(`invalid duration: ${str}`);
+      }
+      const [
+        _duration,
+        _sign,
+        years,
+        months,
+        weeks,
+        days,
+        _time,
+        hours,
+        fHours,
+        minutes,
+        fMinutes,
+        seconds,
+        fSeconds,
+      ] = matches;
+      if (_duration.length < 3 || _time.length === 1) {
+        throw new RangeError(`invalid duration: ${str}`);
+      }
+      const sign = _sign === "-" ? -1 : 1;
+      result = {};
+      if (years) {
+        result.years = sign * Number(years);
+      }
+      if (months) {
+        result.months = sign * Number(months);
+      }
+      if (weeks) {
+        result.weeks = sign * Number(weeks);
+      }
+      if (days) {
+        result.days = sign * Number(days);
+      }
+      if (hours) {
+        result.hours = sign * Number(hours);
+      }
+      if (fHours) {
+        if (minutes || fMinutes || seconds || fSeconds) {
+          throw new RangeError("only the smallest unit can be fractional");
+        }
+        result.minutes = Number(fHours) * 60;
+      } else {
+        result.minutes = toNumber(minutes);
+      }
+      if (fMinutes) {
+        if (seconds || fSeconds) {
+          throw new RangeError("only the smallest unit can be fractional");
+        }
+        result.seconds = Number(fMinutes) * 60;
+      } else if (seconds) {
+        result.seconds = Number(seconds);
+      } else {
+        result.seconds = (result.minutes % 1) * 60;
+      }
+      if (fSeconds) {
+        result.milliseconds = Number(fSeconds) * 1000;
+      } else {
+        result.milliseconds = (result.seconds % 1) * 1000;
+      }
+      result.microseconds = (result.milliseconds % 1) * 1000;
+      result.nanoseconds = sign * Math.floor((result.microseconds % 1) * 1000);
+
+      result.minutes = sign * Math.floor(result.minutes);
+      result.seconds = sign * Math.floor(result.seconds);
+      result.milliseconds = sign * Math.floor(result.milliseconds);
+      result.microseconds = sign * Math.floor(result.microseconds);
+    }
+
+    return new Duration(
+      result.years,
+      result.months,
+      result.weeks,
+      result.days,
+      result.hours,
+      result.minutes,
+      result.seconds,
+      result.milliseconds,
+      result.microseconds,
+      result.nanoseconds
+    );
   }
 
   [inspect.custom](_depth: number, _options: any): string {
