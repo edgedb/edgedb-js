@@ -83,14 +83,19 @@ users and JavaScript users who prefer writing queries as code.
 
   import e from "./dbschema/edgeql-js"; // auto-generated code
 
-  const query = e.select(e.Movie, ()=>({
+  const query = e.select(e.Movie, (movie)=>({
     id: true,
     title: true,
-    actors: { name: true }
+    actors: { name: true },
+    filter: e.op(movie.title, '=', 'Dune')
   }));
 
-  const result = await query.run(client)
+  const result = await query.run(client);
   // { id: string; title: string; actors: {name: string}[] }[]
+
+  console.log(result.actors[0].name);
+  // => Timothee Chalamet
+
 
 
 .. note:: Is it an ORM?
