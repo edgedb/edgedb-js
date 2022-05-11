@@ -85,6 +85,7 @@ module default {
     property unnamedTuple -> tuple<str, int64>;
     property enumArr -> array<Genre>;
     property seqField -> bag_seq;
+    property jsonField -> json;
   }
 
   type Simple extending HasName, HasAge {}

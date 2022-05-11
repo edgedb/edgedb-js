@@ -675,24 +675,24 @@ type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
 /// TSTYPE COMPUTATION
 /////////////////////
 
-export type BaseTypeToTsType<Type extends BaseType> = typeutil.flatten<
-  Type extends ScalarType
-    ? Type["__tsconsttype__"]
-    : // Type extends CastOnlyScalarType
-    // ? Type["__casttype__"]["__tsconsttype__"]
-    // :
-    Type extends EnumType
-    ? Type["__tstype__"]
-    : Type extends ArrayType<any>
-    ? ArrayTypeToTsType<Type>
-    : Type extends TupleType
-    ? TupleItemsToTsType<Type["__items__"]>
-    : Type extends NamedTupleType
-    ? NamedTupleTypeToTsType<Type>
-    : Type extends ObjectType
-    ? computeObjectShape<Type["__pointers__"], Type["__shape__"]>
-    : never
->;
+export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
+  ? Type["__tsconsttype__"]
+  : // Type extends CastOnlyScalarType
+  // ? Type["__casttype__"]["__tsconsttype__"]
+  // :
+  Type extends EnumType
+  ? Type["__tstype__"]
+  : Type extends ArrayType<any>
+  ? ArrayTypeToTsType<Type>
+  : Type extends TupleType
+  ? TupleItemsToTsType<Type["__items__"]>
+  : Type extends NamedTupleType
+  ? NamedTupleTypeToTsType<Type>
+  : Type extends ObjectType
+  ? typeutil.flatten<
+      computeObjectShape<Type["__pointers__"], Type["__shape__"]>
+    >
+  : never;
 
 export type setToTsType<Set extends TypeSet> = computeTsType<
   Set["__element__"],
