@@ -244,7 +244,74 @@ test("insert readonly prop", async () => {
 
 test("exclude readonly props", () => {
   type insertProfileShape = InsertShape<typeof e["Profile"]>;
-  tc.assert<tc.IsExact<keyof insertProfileShape, "plot_summary" | "slug">>(
-    true
-  );
+  tc.assert<
+    "plot_summary" | "slug" extends keyof insertProfileShape ? true : false
+  >(true);
+});
+
+test("insert link prop in nested select", async () => {
+  const inserted = e.insert(e.Movie, {
+    title: "Iron Man 3",
+    release_year: 2013,
+    characters: e.select(e.Hero, hero => ({
+      filter: e.op(hero.name, "=", "Iron Man"),
+      "@character_name": e.str("Tony Stark"),
+    })),
+  });
+
+  const selected = e.select(inserted, () => ({
+    characters: {
+      name: true,
+      "@character_name": true,
+    },
+  }));
+
+  const result = await selected.run(client);
+  expect(result.characters[0]["@character_name"]).toEqual("Tony Stark");
+  expect(result.characters[0].name).toEqual("Iron Man");
+});
+
+test("insert link prop in nested insert", async () => {
+  const inserted = e.insert(e.Movie, {
+    title: "Iron Man 2",
+    release_year: 2010,
+    characters: e.insert(e.Villain, {
+      name: "Whiplash",
+      "@character_name": e.str("Ivan Vanko"),
+    }),
+  });
+
+  const selected = e.select(inserted, () => ({
+    characters: {
+      name: true,
+      "@character_name": true,
+    },
+  }));
+
+  const result = await selected.run(client);
+  expect(result.characters[0]["@character_name"]).toEqual("Ivan Vanko");
+  expect(result.characters[0].name).toEqual("Whiplash");
+});
+
+test("no plain data as link prop", async () => {
+  expect(() =>
+    e.insert(e.Movie, {
+      title: "Guardians",
+      release_year: 2014,
+      characters: e.insert(e.Hero, {
+        name: "Star-Lord",
+        "@character_name": "Peter Quill",
+      }),
+    })
+  ).toThrow();
+});
+
+test("undefined in insert", async () => {
+  const result = await e
+    .insert(e.Movie, {
+      title: "The Eternals",
+      release_year: undefined,
+    })
+    .run(client);
+  expect(result.id).toBeDefined();
 });

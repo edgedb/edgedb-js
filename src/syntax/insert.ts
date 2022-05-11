@@ -21,6 +21,7 @@ import {literal} from "./literal";
 import {$getTypeByName} from "./literal";
 import type {$expr_PathNode} from "../reflection/path";
 import type {$Object} from "@generated/modules/std";
+import type {scalarLiterals} from "@generated/castMaps";
 
 export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
   T["cardinality"] extends
@@ -51,7 +52,7 @@ export type RawInsertShape<Root extends ObjectTypeSet> =
                 ? undefined | null
                 : never)
             | (Shape[k]["hasDefault"] extends true ? undefined : never);
-        }>
+        }> & {[k in `@${string}`]: TypeSet | scalarLiterals}
       : never
     : never;
 
@@ -176,30 +177,59 @@ export function $normaliseInsertShape(
         setModify = valKeys[0];
       }
     }
-    if (val?.__kind__ || val === undefined) {
-      newShape[key] = _val;
-    } else {
-      const pointer = root.__element__.__pointers__[key];
-      if (!pointer || (pointer.__kind__ !== "property" && val !== null)) {
-        throw new Error(
-          `Could not find property pointer for ${
-            isUpdate ? "update" : "insert"
-          } shape key: '${key}'`
-        );
-      }
-      const isMulti =
-        pointer.cardinality === Cardinality.AtLeastOne ||
-        pointer.cardinality === Cardinality.Many;
-      const wrappedVal =
-        val === null
-          ? cast(pointer.target, null)
-          : isMulti && Array.isArray(val)
-          ? set(...val.map(v => (literal as any)(pointer.target, v)))
-          : (literal as any)(pointer.target, val);
-      newShape[key] = setModify
-        ? ({[setModify]: wrappedVal} as any)
-        : wrappedVal;
+
+    const pointer = root.__element__.__pointers__[key];
+
+    // no pointer, not a link property
+    const isLinkProp = key[0] === "@";
+    if (!pointer && !isLinkProp) {
+      throw new Error(
+        `Could not find property pointer for ${
+          isUpdate ? "update" : "insert"
+        } shape key: '${key}'`
+      );
     }
+
+    // skip undefined vals
+    if (val === undefined) continue;
+
+    // is val is expression, assign to newShape
+    if (val?.__kind__) {
+      newShape[key] = _val;
+      continue;
+    }
+
+    // handle link props
+    // after this guard, pointer definitely is defined
+    if (isLinkProp) {
+      throw new Error(
+        `Cannot assign plain data to link property '${key}'. Provide an expression instead.`
+      );
+    }
+
+    // trying to assign plain data to a link
+    if (pointer.__kind__ !== "property" && val !== null) {
+      throw new Error(
+        `Must provide subquery when assigning to link '${key}' in ${
+          isUpdate ? "update" : "insert"
+        } query.`
+      );
+    }
+
+    // val is plain data
+    // key corresponds to pointer or starts with "@"
+    const isMulti =
+      pointer.cardinality === Cardinality.AtLeastOne ||
+      pointer.cardinality === Cardinality.Many;
+    const wrappedVal =
+      val === null
+        ? cast(pointer.target, null)
+        : isMulti && Array.isArray(val)
+        ? set(...val.map(v => (literal as any)(pointer.target, v)))
+        : (literal as any)(pointer.target, val);
+    newShape[key] = setModify
+      ? ({[setModify]: wrappedVal} as any)
+      : wrappedVal;
   }
   return newShape;
 }
