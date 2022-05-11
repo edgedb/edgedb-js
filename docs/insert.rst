@@ -29,13 +29,39 @@ plain JS data.
 Link properties
 ^^^^^^^^^^^^^^^
 
-As in EdgeQL, link properties are inserted inside the shape of a subquery:
+As in EdgeQL, link properties are inserted inside the shape of a subquery.
 
 .. code-block:: typescript
 
-  e.insert(e.Movie, {
+  const query = e.insert(e.Movie, {
     title: "Iron Man",
-    release_year: 2021,
+    actors: e.select(e.Person, person => ({
+      filter: e.op(person.name, '=', "Robert Downey Jr."),
+      "@character_name": e.str("Tony Stark")
+
+      // link props must correspond to expressions
+      "@character_name": "Tony Stark"  // invalid
+    ))
+  });
+
+
+.. note::
+
+  For technical reasons, link properties must correspond to query
+  builder expressions, not plain JS data.
+
+Similarly you can directly include link properties inside nested ``e.insert``
+queries:
+
+.. code-block:: typescript
+
+  const query = e.insert(e.Movie, {
+    title: "Iron Man",
+    release_year: 2008,
+    actors: e.insert(e.Person, {
+      name: "Robert Downey Jr.",
+      "@character_name": e.str("Tony Start")
+    }),
   });
 
 Handling conflicts
