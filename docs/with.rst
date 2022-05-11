@@ -1,25 +1,23 @@
 .. _edgedb-js-with:
 
-With blocks
+With Blocks
 -----------
 
-:edb-alt-title: With blocks
-
 During the query rendering step, the number of occurrences of each expression
-are tracked. All expressions that are referenced more than once and are not
-explicitly defined in a ``WITH`` block (with ``e.with``), are extracted into
-the nearest ``WITH`` block that encloses all usages of the expression.
+are tracked. If an expression occurs more than once it is automatically
+extracted into a ``with`` block.
 
 .. code-block:: typescript
 
-  const a = e.set(e.int64(1), e.int64(2), e.int64(3));
-  const b = e.alias(a);
+  const x = e.int64(3);
+  const y = e.select(e.op(x, '^', x));
 
-  e.select(e.op(a, '+', b)).toEdgeQL();
-  // WITH
-  //   a := {1, 2, 3},
-  //   b := a
-  // SELECT a + b
+  y.toEdgeQL();
+  // WITH x := 3
+  // SELECT x ^ 3
+
+  const result = await y.run(client);
+  // => 27
 
 This hold for expressions of arbitrary complexity.
 
@@ -46,12 +44,9 @@ This hold for expressions of arbitrary complexity.
   }
   */
 
-
-
-To embed ``WITH`` statements inside queries, you can short-circuit this logic
-with a "dependency list". It's an error to pass an expr to multiple
-``e.with``\ s, and an error to use an expr passed to ``e.with`` outside of that
-WITH block in the query.
+Note that ``robert`` and ``colin`` were pulled out into a top-level with
+block. To force these variables to occur in an internal ``with`` block, you
+can short-circuit this logic with ``e.with``.
 
 
 .. code-block:: typescript
@@ -63,7 +58,7 @@ WITH block in the query.
     name: "Colin Farrell"
   });
   const newMovie = e.insert(e.Movie, {
-    actors: e.with([robert, colin], // list "dependencies";
+    actors: e.with([robert, colin], // list "dependencies"
       e.set(robert, colin)
     )
   })
@@ -81,4 +76,25 @@ WITH block in the query.
   */
 
 
+.. note::
+
+  It's an error to pass an expression into multiple
+  ``e.with``\ s, or use an expression passed to ``e.with`` outside of that
+  block.
+
+To explicitly create a detached "alias" of another expression, use ``e.alias``.
+
+.. code-block:: typescript
+
+  const a = e.set(1, 2, 3);
+  const b = e.alias(a);
+
+  const query = e.select(e.op(a, '*', b))
+  // WITH
+  //   a := {1, 2, 3},
+  //   b := a
+  // SELECT a + b
+
+  const result = await query.run(client);
+  // => [1, 2, 3, 2, 4, 6, 3, 6, 9]
 

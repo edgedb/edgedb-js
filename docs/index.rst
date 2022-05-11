@@ -9,6 +9,7 @@ EdgeDB TypeScript/JS Client
    :hidden:
 
    driver
+   querybuilder
    generation
    expressions
    literals
@@ -39,7 +40,10 @@ To get started, install the ``edgedb`` module from NPM.
     $ npm install edgedb      # npm users
     $ yarn add edgedb         # yarn users
 
-There are two components of this library: the *driver* and the *query builder*.
+There are two components of this library:
+
+- Use the *driver* establishes a connection to your database and executes queries.
+- Use the *query builder* to write queries in a code-first, typesafe way (if you wish)
 
 The driver
 ==========
@@ -73,99 +77,41 @@ The query builder
 
 The EdgeDB query builder provides a **code-first** way to write
 **fully-typed** EdgeQL queries with TypeScript. We recommend it for TypeScript
-users—it's awesome.
+users and JavaScript users who prefer writing queries as code.
 
 .. code-block:: typescript
 
-  import edgedb from "edgedb";
   import e from "./dbschema/edgeql-js"; // auto-generated code
 
-  const client = edgedb.createClient();
-
-  async function run(){
-    const query = e.str("Hello world!");
-    const result = await query.run(client)
-    console.log(result); // "Hello world!"
-  }
-
-  run()
-
-As you can see, you still use the ``edgedb`` module to instantiate a client,
-but you use the auto-generated query builder to write and execute your queries.
-
-Why use the query builder?
---------------------------
-
-*Type inference!* If you're using TypeScript, the result type of *all
-queries* is automatically inferred for you. For the first time, you don't
-need an ORM to write strongly typed queries.
-
-.. code-block:: typescript
-
-  const client = edgedb.createClient();
-
-  const q1 = await e.select("Hello world!").run(client);
-  // string
-
-  const q2 = await e.set(1, 2, 3).run(client);
-  // number[]
-
-  const q3 = e.select(e.Movie, () => ({
-    id: true,
-    name: true
-  }));
-  // {id:string; name: string}[]
-
-
-*Auto-completion!* You can write queries full autocompletion on EdgeQL
-keywords, standard library functions, and link/property names.
-
-*Type checking!* In the vast majority of cases, the query builder won't let
-you construct invalid queries. This eliminates an entire class of bugs and
-helps you write valid queries the first time.
-
-
-Is it an ORM?
--------------
-
-Nope. There's no "object-relational mapping" happening here—that's all handled
-by EdgeDB itself.
-
-The query builder itself is a comparatively thin wrapper over EdgeQL. We've
-designed the API such that the TypeScript representation of a query is
-structurally similar to the equivalent EdgeQL.
-
-.. code-block:: edgeql
-
-  select Movie {
-    id,
-    title,
-    uppercase_title := str_upper(.title)
-  }
-  filter .title = "Iron Man"
-
-.. code-block:: typescript
-
-  e.select(e.Movie, movie => ({
+  const query = e.select(e.Movie, (movie)=>({
     id: true,
     title: true,
-    uppercase_title: e.str_upper(movie.title),
-    filter: e.op(movie.title, '=', 'Iron Man')
+    actors: { name: true },
+    filter: e.op(movie.title, '=', 'Dune')
   }));
 
-More importantly, it gives you access to the **full power** of EdgeQL! The
-query builder can represent EdgeQL queries of arbitrary complexity.
+  const result = await query.run(client);
+  // { id: string; title: string; actors: {name: string}[] }[]
 
-By comparison, SQL-based ORMs are limited in what they can represent. Things
-like computed properties, SQL's large standard library of functions,
-aggregations, transactions, and subqueries are rarely possible. But even for
-the simple stuff, we think the query builder API is more readable, compact,
-and intuitive than any ORM on the market.
+  console.log(result.actors[0].name);
+  // => Timothee Chalamet
+
+
+
+.. note:: Is it an ORM?
+
+  No—it's better! Like any modern TypeScript ORM, the query builder gives you
+  full typesafety and autocompletion, but without the power and `performance <https://github.com/edgedb/imdbench>`_
+  tradeoffs. You have access to the **full power** of EdgeQL and can write
+  EdgeQL queries of arbitrary complexity. And since EdgeDB compiles each
+  EdgeQL query into a single, highly-optimized SQL query, your queries stay
+  fast, even when they're complex.
+
 
 How do I get started?
 ---------------------
 
-The query builder not an alternative to the driver; the driver API is still
-needed to initialize a database client. We recommend reading the :ref:`Driver
-docs <edgedb-js-examples>` first, then continuing on to the :ref:`Query
-builder <edgedb-js-generation>` docs.
+We recommend reading the :ref:`Driver docs <edgedb-js-examples>` first. If you
+are happy writing your EdgeQL as plain strings, then that's all you need! If
+you're a TypeScript user, or simply prefer writing queries in a code-first
+way, continue on to the :ref:`Query builder <edgedb-js-generation>` docs.

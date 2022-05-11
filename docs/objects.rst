@@ -1,7 +1,7 @@
 .. _edgedb-js-objects:
 
 
-Objects and paths
+Objects and Paths
 =================
 
 All queries on this page assume the following schema.

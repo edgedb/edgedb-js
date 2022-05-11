@@ -245,7 +245,7 @@ The ``order_by`` key can correspond to an arbitrary expression.
     order by len(.title)
   */
 
-  // order by number of cast members
+  // order by number of actors
   e.select(e.Movie, movie => ({
     order_by: e.count(movie.actors),
   }));

@@ -53,13 +53,13 @@ overwriting links.
 
   update Movie set {
     # overwrite
-    cast := Person,
+    actors := Person,
 
     # add to link
-    cast += Person,
+    actors += Person,
 
     # subtract from link
-    cast -= Person
+    actors -= Person
   }
 
 In the query builder this is represented with the following syntax.
