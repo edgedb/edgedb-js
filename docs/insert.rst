@@ -19,9 +19,24 @@ plain JS data.
 
   e.insert(e.Movie, {
     title: "Spider-Man: No Way Home",
-    release_year: 2021,
+    actors: e.select(e.Person, person => ({
+      filter: e.op(person.name, "=", "Robert Downey Jr."),
+      '@character_name': e.str("Iron Man")
+    }))
   });
 
+
+Link properties
+^^^^^^^^^^^^^^^
+
+As in EdgeQL, link properties are inserted inside the shape of a subquery:
+
+.. code-block:: typescript
+
+  e.insert(e.Movie, {
+    title: "Iron Man",
+    release_year: 2021,
+  });
 
 Handling conflicts
 ^^^^^^^^^^^^^^^^^^

@@ -21,7 +21,7 @@ All queries on this page assume the following schema.
     }
 
     type Movie extending Content {
-      property runtime -> duration;
+      property release_year -> int64;
     }
 
     type TVShow extending Content {
