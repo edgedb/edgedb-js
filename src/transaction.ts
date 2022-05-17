@@ -166,7 +166,7 @@ export class Transaction implements Executor {
     query: string,
     args?: QueryArgs
   ): Promise<T> {
-    return this._runOp("querySingleJSON", () =>
+    return this._runOp("queryRequiredSingle", () =>
       this._rawConn.fetch(query, args, false, true, true)
     );
   }
