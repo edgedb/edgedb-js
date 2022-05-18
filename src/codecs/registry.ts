@@ -24,6 +24,7 @@ import {NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES} from "./consts";
 import {EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec} from "./tuple";
 import * as numerics from "./numerics";
 import * as numbers from "./numbers";
+import * as datecodecs from "./datetime";
 import {ArrayCodec} from "./array";
 import {NamedTupleCodec} from "./namedtuple";
 import {EnumCodec} from "./enum";
@@ -45,12 +46,14 @@ const CTYPE_ARRAY = 6;
 const CTYPE_ENUM = 7;
 
 export interface CustomCodecSpec {
-  decimalString?: boolean;
-  int64Bigint?: boolean;
+  decimal_string?: boolean;
+  int64_bigint?: boolean;
+  datetime_localDatetime?: boolean;
 }
 
 const DECIMAL_TYPEID = KNOWN_TYPENAMES.get("std::decimal")!;
 const INT64_TYPEID = KNOWN_TYPENAMES.get("std::int64")!;
+const DATETIME_TYPEID = KNOWN_TYPENAMES.get("std::datetime")!;
 
 export class CodecsRegistry {
   private codecsBuildCache: LRU<uuid, ICodec>;
@@ -63,10 +66,14 @@ export class CodecsRegistry {
     this.customScalarCodecs = new Map();
   }
 
-  setCustomCodecs({decimalString, int64Bigint}: CustomCodecSpec = {}): void {
+  setCustomCodecs({
+    decimal_string,
+    int64_bigint,
+    datetime_localDatetime,
+  }: CustomCodecSpec = {}): void {
     // This is a private API and it will change in the future.
 
-    if (decimalString) {
+    if (decimal_string) {
       this.customScalarCodecs.set(
         DECIMAL_TYPEID,
         new numerics.DecimalStringCodec(DECIMAL_TYPEID)
@@ -75,13 +82,22 @@ export class CodecsRegistry {
       this.customScalarCodecs.delete(DECIMAL_TYPEID);
     }
 
-    if (int64Bigint) {
+    if (int64_bigint) {
       this.customScalarCodecs.set(
         INT64_TYPEID,
         new numbers.Int64BigintCodec(INT64_TYPEID)
       );
     } else {
       this.customScalarCodecs.delete(INT64_TYPEID);
+    }
+
+    if (datetime_localDatetime) {
+      this.customScalarCodecs.set(
+        DATETIME_TYPEID,
+        new datecodecs.LocalDateTimeCodec(DATETIME_TYPEID)
+      );
+    } else {
+      this.customScalarCodecs.delete(DATETIME_TYPEID);
     }
   }
 

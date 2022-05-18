@@ -215,7 +215,7 @@ test("fetch: bigint", async () => {
 
 test("fetch: decimal as string", async () => {
   const con = getClient();
-  setCustomCodecs(["decimalString"], con);
+  setCustomCodecs(["decimal_string"], con);
 
   const vals = [
     "0.001",
@@ -351,7 +351,7 @@ test("fetch: decimal as string", async () => {
 
 test("fetch: int64 as bigint", async () => {
   const con = getClient();
-  setCustomCodecs(["int64Bigint"], con);
+  setCustomCodecs(["int64_bigint"], con);
 
   const vals = [
     "0",
