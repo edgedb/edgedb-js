@@ -715,7 +715,7 @@ test("fetch: duration", async () => {
 if (!isDeno) {
   test("fetch: duration fuzz", async () => {
     // @ts-ignore
-    const Temporal = require("proposal-temporal").Temporal;
+    const Temporal = require("@js-temporal/polyfill").Temporal;
 
     jest.setTimeout(10_000);
     const randint = (min: number, max: number) => {
@@ -729,7 +729,7 @@ if (!isDeno) {
       new Duration(0, 0, 0, 0, 0, 0, 0, -1),
       new Duration(0, 0, 0, 0, 0, 0, 0, 1),
       new Duration(0, 0, 0, 0, 0, 0, 0, -1),
-      new Duration(0, 0, 0, 0, 0, 0, 0, -752043.296),
+      new Duration(0, 0, 0, 0, 0, 0, 0, -752043),
       new Duration(0, 0, 0, 0, 0, 0, 0, 3542924),
       new Duration(0, 0, 0, 0, 0, 0, 0, 86400000),
       new Duration(0, 0, 0, 0, 0, 0, 0, -86400000),
