@@ -17,7 +17,7 @@ import {shutdown} from "../../test/globalTeardown";
   const statusFile = generateStatusFileName("node");
   console.log("Node status file:", statusFile);
 
-  const args = getServerCommand(getWSLPath(statusFile));
+  const {args} = getServerCommand(getWSLPath(statusFile));
 
   const {proc, config} = await startServer(args, statusFile);
 

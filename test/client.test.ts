@@ -36,7 +36,12 @@ import {
 } from "../src/index.node";
 import {retryingConnect} from "../src/retry";
 import {AdminFetchConnection} from "../src/fetchConn";
-import {getClient, getConnectOptions, isDeno} from "./testbase";
+import {
+  getAvailableFeatures,
+  getClient,
+  getConnectOptions,
+  isDeno,
+} from "./testbase";
 
 function setStringCodecs(codecs: string[], client: Client) {
   // @ts-ignore
@@ -1606,30 +1611,32 @@ test("'implicit*' headers", async () => {
   }
 });
 
-test("binary protocol over http", async () => {
-  const codecsRegistry = new _CodecsRegistry();
-  const config = await parseConnectArguments(getConnectOptions());
-  const fetchConn = AdminFetchConnection.create(
-    {
-      address: config.connectionParams.address,
-      database: config.connectionParams.database,
-    },
-    codecsRegistry
-  );
+if (!isDeno && getAvailableFeatures().has("admin-ui")) {
+  test("binary protocol over http", async () => {
+    const codecsRegistry = new _CodecsRegistry();
+    const config = await parseConnectArguments(getConnectOptions());
+    const fetchConn = AdminFetchConnection.create(
+      {
+        address: config.connectionParams.address,
+        database: config.connectionParams.database,
+      },
+      codecsRegistry
+    );
 
-  const query = `SELECT schema::Function {
+    const query = `SELECT schema::Function {
     name
   }`;
-  const headers = {
-    implicitTypenames: "true",
-    implicitLimit: "5",
-  } as const;
+    const headers = {
+      implicitTypenames: "true",
+      implicitLimit: "5",
+    } as const;
 
-  const [_, outCodec] = await fetchConn.rawParse(query, headers);
-  const resultData = await fetchConn.rawExecute(query, outCodec, headers);
+    const [_, outCodec] = await fetchConn.rawParse(query, headers);
+    const resultData = await fetchConn.rawExecute(query, outCodec, headers);
 
-  const result = _decodeResultBuffer(outCodec, resultData);
+    const result = _decodeResultBuffer(outCodec, resultData);
 
-  expect(result).toHaveLength(5);
-  expect(result[0]["__tname__"]).toBe("schema::Function");
-});
+    expect(result).toHaveLength(5);
+    expect(result[0]["__tname__"]).toBe("schema::Function");
+  });
+}

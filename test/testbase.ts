@@ -47,3 +47,7 @@ export function getConnectOptions(): ConnectOptions {
 export function getClient(opts: ConnectOptions = {}): Client {
   return createClient(_getOpts(opts));
 }
+
+export function getAvailableFeatures(): Set<string> {
+  return new Set(JSON.parse(process.env._JEST_EDGEDB_AVAILABLE_FEATURES!));
+}
