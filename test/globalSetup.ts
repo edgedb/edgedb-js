@@ -81,6 +81,10 @@ export const getServerCommand = (statusFile: string): string[] => {
     args.push("--auto-shutdown");
   }
 
+  if (help.includes("--admin-ui")) {
+    args.push("--admin-ui=enabled");
+  }
+
   args = [
     ...args,
     "--bind-address=127.0.0.1",

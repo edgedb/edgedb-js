@@ -32,8 +32,10 @@ import {
   ResultCardinalityMismatchError,
   _CodecsRegistry,
   _ReadBuffer,
+  _ICodec,
 } from "../src/index.node";
 import {retryingConnect} from "../src/retry";
+import {AdminFetchConnection} from "../src/fetchConn";
 import {getClient, getConnectOptions, isDeno} from "./testbase";
 
 function setStringCodecs(codecs: string[], client: Client) {
@@ -1560,6 +1562,26 @@ test("concurrent ops", async () => {
   }
 });
 
+function _decodeResultBuffer(outCodec: _ICodec, resultData: Buffer) {
+  const result = new Array();
+  const buf = new _ReadBuffer(resultData);
+  const codecReadBuf = _ReadBuffer.alloc();
+  while (buf.length > 0) {
+    const msgType = buf.readUInt8();
+    const len = buf.readUInt32();
+
+    if (msgType !== 68 || len <= 4) {
+      throw new Error("invalid data packet");
+    }
+
+    buf.sliceInto(codecReadBuf, len - 4);
+    codecReadBuf.discard(6);
+    const val = outCodec.decode(codecReadBuf);
+    result.push(val);
+  }
+  return result;
+}
+
 test("'implicit*' headers", async () => {
   const config = await parseConnectArguments(getConnectOptions());
   const registry = new _CodecsRegistry();
@@ -1575,26 +1597,39 @@ test("'implicit*' headers", async () => {
     const [_, outCodec] = await con.rawParse(query, headers);
     const resultData = await con.rawExecute(query, outCodec, headers);
 
-    const result = new Array();
-    const buf = new _ReadBuffer(resultData);
-    const codecReadBuf = _ReadBuffer.alloc();
-    while (buf.length > 0) {
-      const msgType = buf.readUInt8();
-      const len = buf.readUInt32();
-
-      if (msgType !== 68 || len <= 4) {
-        throw new Error("invalid data packet");
-      }
-
-      buf.sliceInto(codecReadBuf, len - 4);
-      codecReadBuf.discard(6);
-      const val = outCodec.decode(codecReadBuf);
-      result.push(val);
-    }
+    const result = _decodeResultBuffer(outCodec, resultData);
 
     expect(result).toHaveLength(5);
     expect(result[0]["__tname__"]).toBe("schema::Function");
   } finally {
     await con.close();
   }
+});
+
+test("binary protocol over http", async () => {
+  const codecsRegistry = new _CodecsRegistry();
+  const config = await parseConnectArguments(getConnectOptions());
+  const fetchConn = AdminFetchConnection.create(
+    {
+      address: config.connectionParams.address,
+      database: config.connectionParams.database,
+    },
+    codecsRegistry
+  );
+
+  const query = `SELECT schema::Function {
+    name
+  }`;
+  const headers = {
+    implicitTypenames: "true",
+    implicitLimit: "5",
+  } as const;
+
+  const [_, outCodec] = await fetchConn.rawParse(query, headers);
+  const resultData = await fetchConn.rawExecute(query, outCodec, headers);
+
+  const result = _decodeResultBuffer(outCodec, resultData);
+
+  expect(result).toHaveLength(5);
+  expect(result[0]["__tname__"]).toBe("schema::Function");
 });
