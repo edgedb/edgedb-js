@@ -20,7 +20,7 @@ EdgeQL it produces.
 .. code-block:: typescript
 
   e.str("asdf")            // "asdf"
-  e.int64(123)             // 1234
+  e.int64(123)             // 123
   e.float64(123.456)       // 123.456
   e.bool(true)             // true
   e.bigint(12345n)         // 12345n
