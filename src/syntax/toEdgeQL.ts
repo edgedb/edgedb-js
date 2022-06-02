@@ -47,6 +47,7 @@ import type {
 import type {$expr_Set} from "./set";
 import type {$expr_Update} from "./update";
 import type {$expr_Alias, $expr_With} from "./with";
+import type {$expr_Group} from "./group";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -72,133 +73,28 @@ export type SomeExpression =
   | $expr_With
   | $expr_WithParams
   | $expr_Param
-  | $expr_Detached;
+  | $expr_Detached
+  | $expr_Group;
 
 type WithScopeExpr =
   | $expr_Select
   | $expr_Update
   | $expr_Insert
   | $expr_InsertUnlessConflict
-  | $expr_For;
-
-function shapeToEdgeQL(
-  shape: object | null,
-  ctx: RenderCtx,
-  pointers: ObjectTypePointers | null = null,
-  keysOnly: boolean = false
-) {
-  if (shape === null) {
-    return ``;
-  }
-
-  const lines: string[] = [];
-  const addLine = (line: string) =>
-    lines.push(`${keysOnly ? "" : "  "}${line}`);
-
-  const seen = new Set();
-
-  for (const key in shape) {
-    if (!shape.hasOwnProperty(key)) continue;
-    if (seen.has(key)) {
-      // tslint:disable-next-line
-      console.warn(`Invalid: duplicate key "${key}"`);
-      continue;
-    }
-    seen.add(key);
-    let val = (shape as any)[key];
-    let operator = ":=";
-    let polyType: SomeExpression | null = null;
-
-    if (typeof val === "object" && !val.__element__) {
-      if (!!val["+="]) {
-        operator = "+=";
-        val = val["+="];
-      } else if (!!val["-="]) {
-        operator = "-=";
-        val = val["-="];
-      }
-    }
-    if (val.__kind__ === ExpressionKind.PolyShapeElement) {
-      polyType = val.__polyType__;
-      val = val.__shapeElement__;
-    }
-    const polyIntersection = polyType
-      ? `[IS ${polyType.__element__.__name__}].`
-      : "";
-
-    if (typeof val === "boolean") {
-      if (val) {
-        addLine(`${polyIntersection}${q(key)}`);
-      }
-    } else if (val.hasOwnProperty("__kind__")) {
-      if (keysOnly) {
-        addLine(
-          q(key, false) +
-            (isObjectType(val.__element__)
-              ? `: ${shapeToEdgeQL(
-                  val.__element__.__shape__,
-                  ctx,
-                  null,
-                  true
-                )}`
-              : "")
-        );
-        continue;
-      }
-      const renderedExpr = renderEdgeQL(val, ctx);
-
-      // For computed properties in select shapes, inject the expected
-      // cardinality inferred by the query builder. This ensures the actual
-      // type returned by the server matches the inferred return type, or an
-      // explicit error is thrown, instead of a silent mismatch between
-      // actual and inferred type.
-      const expectedCardinality =
-        pointers && !pointers[key] && val.hasOwnProperty("__cardinality__")
-          ? val.__cardinality__ === Cardinality.Many ||
-            val.__cardinality__ === Cardinality.AtLeastOne
-            ? "multi "
-            : "single "
-          : "";
-
-      // If selecting a required multi link, wrap expr in 'assert_exists'
-      const wrapAssertExists =
-        pointers?.[key]?.cardinality === Cardinality.AtLeastOne;
-
-      addLine(
-        `${expectedCardinality}${q(key, false)} ${operator} ${
-          wrapAssertExists ? "assert_exists(" : ""
-        }${
-          renderedExpr.includes("\n")
-            ? `(\n${indent(
-                renderedExpr[0] === "(" &&
-                  renderedExpr[renderedExpr.length - 1] === ")"
-                  ? renderedExpr.slice(1, -1)
-                  : renderedExpr,
-                4
-              )}\n  )`
-            : renderedExpr
-        }${wrapAssertExists ? ")" : ""}`
-      );
-    } else {
-      throw new Error(`Invalid shape element at "${key}".`);
-    }
-  }
-
-  if (lines.length === 0) {
-    addLine("id");
-  }
-  return keysOnly ? `{${lines.join(", ")}}` : `{\n${lines.join(",\n")}\n}`;
-}
+  | $expr_For
+  | $expr_Group;
 
 interface RenderCtx {
+  // mapping withable expr to list of with vars
   withBlocks: Map<WithScopeExpr, Set<SomeExpression>>;
+  // metadata about each with var
   withVars: Map<
     SomeExpression,
     {
       name: string;
       scope: WithScopeExpr;
       childExprs: Set<SomeExpression>;
-      scopedExpr?: SomeExpression;
+      scopedExpr?: SomeExpression; // scope vars only
     }
   >;
   renderWithVar?: SomeExpression;
@@ -220,23 +116,19 @@ export function $toEdgeQL(this: any) {
 
   walkExprTree(this, null, walkExprCtx);
 
-  const withBlocks = new Map<WithScopeExpr, Set<SomeExpression>>();
-  const withVars = new Map<
-    SomeExpression,
-    {
-      name: string;
-      scope: WithScopeExpr;
-      childExprs: Set<SomeExpression>;
-      scopedExpr?: SomeExpression;
-    }
-  >();
-
+  // get variables by block
+  const withBlocks: RenderCtx["withBlocks"] = new Map();
+  // get per-variable metadata
+  const withVars: RenderCtx["withVars"] = new Map();
   const seen = new Map(walkExprCtx.seen);
   const linkProps: RenderCtx["linkProps"] = new Map();
 
+  // iterate over all expressions
   for (const [expr, refData] of seen) {
+    // delete from seen after visitinng
     seen.delete(expr);
 
+    // convert referenced link props to simple string array
     if (refData.linkProps.length) {
       linkProps.set(
         expr,
@@ -246,27 +138,41 @@ export function $toEdgeQL(this: any) {
       );
     }
 
+    // already extracted
+    if (withVars.has(expr)) {
+      continue;
+    }
+
+    // ignore unbound leaves, nodes, and intersections
     if (
-      withVars.has(expr) ||
-      ((expr.__kind__ === ExpressionKind.PathLeaf ||
+      !refData.boundScope &&
+      (expr.__kind__ === ExpressionKind.PathLeaf ||
         expr.__kind__ === ExpressionKind.PathNode ||
-        expr.__kind__ === ExpressionKind.TypeIntersection) &&
-        !refData.boundScope) ||
+        expr.__kind__ === ExpressionKind.TypeIntersection)
+    ) {
+      continue;
+    }
+
+    // forvars and params should not be hoisted
+    if (
       expr.__kind__ === ExpressionKind.ForVar ||
       expr.__kind__ === ExpressionKind.Param
     ) {
       continue;
     }
 
+    // pull out scope variables
+    // from select, update, and group expressions
     if (
       (expr.__kind__ === ExpressionKind.Select ||
-        expr.__kind__ === ExpressionKind.Update) &&
+        expr.__kind__ === ExpressionKind.Update ||
+        expr.__kind__ === ExpressionKind.Group) &&
       expr.__scope__ &&
+      // with var not previously registered
       !withVars.has(expr.__scope__ as any)
     ) {
       const withBlock = expr;
       const scopeVar = expr.__scope__ as SomeExpression;
-
       const scopeVarName = `__scope_${withVars.size}_${
         scopeVar.__element__.__name__.split("::")[1]
       }`;
@@ -282,34 +188,46 @@ export function $toEdgeQL(this: any) {
       });
     }
 
+    // expression should be extracted to with block if
+    // - bound with e.with
+    // - refcount > 1
+    // - aliased with e.alias
     if (
-      refData.boundScope ||
       refData.refCount > 1 ||
+      refData.boundScope ||
       refData.aliases.length > 0
     ) {
+      // first, check if expr is bound to scope
       let withBlock = refData.boundScope;
 
+      // filter nulls
       const parentScopes = [...refData.parentScopes].filter(
         scope => scope !== null
       ) as WithScopeExpr[];
+
+      // if expression is unbound
       if (!withBlock) {
+        // if parent scopes haven't all been resolved,
+        // re-add current expr to `seen` to be resolved later
         if (parentScopes.some(parentScope => seen.has(parentScope))) {
-          // parent scopes haven't all been resolved yet, re-add current
-          // expr to seen list to resolve later
           seen.set(expr, refData);
           continue;
         }
 
+        // set withBlock to top-level parent scope
         const resolvedParentScopes = parentScopes.map(
           parentScope => withVars.get(parentScope)?.scope ?? parentScope
         );
         withBlock =
           resolvedParentScopes.find(parentScope => {
+            // loop over parent scopes
+            // get list of children exprs for each parent
             const childExprs = new Set(
               walkExprCtx.seen.get(parentScope)!.childExprs
             );
+            // return true for scope that contains all other scopes
             return resolvedParentScopes.every(
-              scope => scope === parentScope || childExprs.has(scope)
+              scope => childExprs.has(scope) || scope === parentScope
             );
           }) ?? walkExprCtx.rootScope;
       }
@@ -339,18 +257,18 @@ export function $toEdgeQL(this: any) {
         if (scope === null || !validScopes.has(scope)) {
           throw new Error(
             refData.boundScope
-              ? `Expr or it's aliases used outside of declared 'WITH' block scope`
+              ? `Expr or its aliases used outside of declared 'WITH' block scope`
               : `Cannot extract repeated or aliased expression into 'WITH' block, ` +
-                `expression or it's aliases appear outside root scope`
+                `expression or its aliases appear outside root scope`
           );
         }
       }
 
       for (const withVar of [expr, ...refData.aliases]) {
+        // withVar is an alias already explicitly bound
+        // to an inner WITH block
         const withVarBoundScope = walkExprCtx.seen.get(withVar)!.boundScope;
         if (withVarBoundScope && withVarBoundScope !== refData.boundScope) {
-          // withVar is an alias already explicitly bound
-          // to an inner WITH block
           continue;
         }
 
@@ -388,45 +306,274 @@ export function $toEdgeQL(this: any) {
   return edgeQL;
 }
 
-function topoSortWithVars(
-  vars: Set<SomeExpression>,
-  ctx: RenderCtx
+interface WalkExprTreeCtx {
+  seen: Map<
+    SomeExpression,
+    {
+      refCount: number;
+      // tracks all withable ancestors
+      parentScopes: Set<WithScopeExpr | null>;
+      // tracks all child exprs
+      childExprs: SomeExpression[];
+      // tracks bound scope from e.with
+      boundScope: WithScopeExpr | null;
+      // tracks aliases from e.alias
+      aliases: SomeExpression[];
+      linkProps: $expr_PathLeaf[];
+    }
+  >;
+  rootScope: WithScopeExpr | null;
+}
+
+// walks entire expression tree
+// populates
+function walkExprTree(
+  _expr: TypeSet,
+  parentScope: WithScopeExpr | null,
+  ctx: WalkExprTreeCtx
 ): SomeExpression[] {
-  if (!vars.size) {
-    return [];
+  if (!(_expr as any).__kind__) {
+    throw new Error(
+      `Expected a valid querybuilder expression, ` +
+        `instead received ${typeof _expr}${
+          typeof _expr !== "undefined" ? `: '${_expr}'` : ""
+        }.` +
+        getErrorHint(_expr)
+    );
   }
 
-  const sorted: SomeExpression[] = [];
+  const expr = _expr as SomeExpression;
 
-  const unvisited = new Set(vars);
-  const visiting = new Set<SomeExpression>();
-
-  for (const withVar of unvisited) {
-    visit(withVar);
+  // set root scope
+  if (!ctx.rootScope && parentScope) {
+    ctx.rootScope = parentScope;
+  }
+  const seenExpr = ctx.seen.get(expr);
+  if (seenExpr) {
+    seenExpr.refCount += 1;
+    if (seenExpr.refCount > 1) {
+      console.log(`###########\nSEEN ${seenExpr.refCount} times`);
+      console.log(expr);
+    }
+    seenExpr.parentScopes.add(parentScope);
+    return [expr, ...seenExpr.childExprs];
   }
 
-  function visit(withVar: SomeExpression): void {
-    if (!unvisited.has(withVar)) {
-      return;
-    }
-    if (visiting.has(withVar)) {
-      throw new Error(`'WITH' variables contain a cyclic dependency`);
-    }
+  const childExprs: SomeExpression[] = [];
+  ctx.seen.set(expr, {
+    refCount: 1,
+    parentScopes: new Set([parentScope]),
+    childExprs,
+    boundScope: null,
+    aliases: [],
+    linkProps: [],
+  });
 
-    visiting.add(withVar);
-
-    for (const child of ctx.withVars.get(withVar)!.childExprs) {
-      if (vars.has(child)) {
-        visit(child);
+  switch (expr.__kind__) {
+    case ExpressionKind.Alias:
+      childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
+      ctx.seen.get(expr.__expr__ as any)!.aliases.push(expr);
+      break;
+    case ExpressionKind.With:
+      childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
+      for (const refExpr of expr.__refs__) {
+        walkExprTree(refExpr, expr.__expr__, ctx);
+        const seenRef = ctx.seen.get(refExpr as any)!;
+        if (seenRef.boundScope) {
+          throw new Error(`Expression bound to multiple 'WITH' blocks`);
+        }
+        seenRef.boundScope = expr.__expr__;
       }
+      break;
+    case ExpressionKind.Literal:
+    case ExpressionKind.ForVar:
+    case ExpressionKind.Param:
+      break;
+    case ExpressionKind.PathLeaf:
+    case ExpressionKind.PathNode:
+      if (expr.__parent__) {
+        if ((expr.__parent__.type as any).__scopedFrom__) {
+          // if parent is scoped expr then don't walk expr
+          // since it will already be walked by enclosing select/update
+          childExprs.push(expr.__parent__.type as any);
+        } else {
+          childExprs.push(
+            ...walkExprTree(expr.__parent__.type, parentScope, ctx)
+          );
+        }
+        if (
+          // is link prop
+          expr.__kind__ === ExpressionKind.PathLeaf &&
+          expr.__parent__.linkName.startsWith("@")
+        ) {
+          ctx.seen.get(parentScope!)?.linkProps.push(expr);
+        }
+      }
+      break;
+    case ExpressionKind.Cast:
+      if (expr.__expr__ === null) break;
+      childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
+      break;
+    case ExpressionKind.Set:
+      for (const subExpr of expr.__exprs__) {
+        childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
+      }
+      break;
+    case ExpressionKind.Array:
+      for (const subExpr of expr.__items__) {
+        childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
+      }
+      break;
+    case ExpressionKind.Tuple:
+      for (const subExpr of expr.__items__) {
+        childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
+      }
+      break;
+    case ExpressionKind.NamedTuple:
+      for (const subExpr of Object.values(expr.__shape__)) {
+        childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
+      }
+      break;
+    case ExpressionKind.TuplePath:
+      childExprs.push(...walkExprTree(expr.__parent__, parentScope, ctx));
+      break;
+    case ExpressionKind.Select:
+    case ExpressionKind.Update: {
+      const modifiers = expr.__modifiers__;
+      if (modifiers.filter) {
+        childExprs.push(...walkExprTree(modifiers.filter, expr, ctx));
+      }
+      if (modifiers.order_by) {
+        for (const orderExpr of modifiers.order_by) {
+          childExprs.push(...walkExprTree(orderExpr.expression, expr, ctx));
+        }
+      }
+      if (modifiers.offset) {
+        childExprs.push(...walkExprTree(modifiers.offset!, expr, ctx));
+      }
+      if (modifiers.limit) {
+        childExprs.push(...walkExprTree(modifiers.limit!, expr, ctx));
+      }
+
+      if (expr.__kind__ === ExpressionKind.Select) {
+        if (
+          isObjectType(expr.__element__) &&
+          // Don't walk shape if select is just wrapping an object type expr
+          // that has it's own shape
+          expr.__element__.__shape__ !==
+            (expr.__expr__ as ObjectTypeSet).__element__.__shape__
+        ) {
+          const walkShape = (shape: object) => {
+            for (let param of Object.values(shape)) {
+              if (param.__kind__ === ExpressionKind.PolyShapeElement) {
+                param = param.__shapeElement__;
+              }
+              if (typeof param === "object") {
+                if (!!(param as any).__kind__) {
+                  childExprs.push(...walkExprTree(param as any, expr, ctx));
+                } else {
+                  walkShape(param);
+                }
+              }
+            }
+          };
+          walkShape(expr.__element__.__shape__ ?? {});
+        }
+      } else {
+        // Update
+        const shape: any = expr.__shape__ ?? {};
+
+        for (const _element of Object.values(shape)) {
+          let element: any = _element;
+          if (!element.__element__) {
+            if (element["+="]) element = element["+="];
+            else if (element["-="]) element = element["-="];
+          }
+          childExprs.push(...walkExprTree(element as any, expr, ctx));
+        }
+      }
+
+      childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
+      break;
     }
+    case ExpressionKind.Delete: {
+      childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
+      break;
+    }
+    case ExpressionKind.Insert: {
+      const shape: any = expr.__shape__ ?? {};
 
-    visiting.delete(withVar);
-    unvisited.delete(withVar);
+      for (const element of Object.values(shape)) {
+        childExprs.push(...walkExprTree(element as any, expr, ctx));
+      }
 
-    sorted.push(withVar);
+      childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
+      break;
+    }
+    case ExpressionKind.InsertUnlessConflict: {
+      if (expr.__conflict__.on) {
+        childExprs.push(...walkExprTree(expr.__conflict__.on, expr, ctx));
+      }
+      if (expr.__conflict__.else) {
+        childExprs.push(...walkExprTree(expr.__conflict__.else, expr, ctx));
+      }
+
+      childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
+      break;
+    }
+    case ExpressionKind.Group: {
+      childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
+      for (const grouping of Object.values(expr.__groupings__)) {
+        childExprs.push(...walkExprTree(grouping, expr, ctx));
+      }
+      break;
+    }
+    case ExpressionKind.TypeIntersection:
+      childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
+      break;
+    case ExpressionKind.Operator:
+    case ExpressionKind.Function:
+      for (const subExpr of expr.__args__) {
+        if (Array.isArray(subExpr)) {
+          for (const arg of subExpr) {
+            if (arg) childExprs.push(...walkExprTree(arg, parentScope, ctx));
+          }
+        } else {
+          childExprs.push(...walkExprTree(subExpr!, parentScope, ctx));
+        }
+      }
+      if (expr.__kind__ === ExpressionKind.Function) {
+        for (const subExpr of Object.values(expr.__namedargs__)) {
+          childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
+        }
+      }
+      break;
+    case ExpressionKind.For: {
+      childExprs.push(...walkExprTree(expr.__iterSet__ as any, expr, ctx));
+      childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
+      break;
+    }
+    case ExpressionKind.WithParams: {
+      if (parentScope !== null) {
+        throw new Error(
+          `'withParams' does not support being used as a nested expression`
+        );
+      }
+      childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
+      break;
+    }
+    case ExpressionKind.Detached: {
+      childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
+      break;
+    }
+    default:
+      util.assertNever(
+        expr,
+        new Error(`Unrecognized expression kind: "${(expr as any).__kind__}"`)
+      );
   }
-  return sorted;
+
+  return [expr, ...childExprs];
 }
 
 function renderEdgeQL(
@@ -454,6 +601,7 @@ function renderEdgeQL(
       : withVar.name;
   }
 
+  // render with block expression
   function renderWithBlockExpr(
     varExpr: SomeExpression,
     _noImplicitDetached?: boolean
@@ -465,8 +613,8 @@ function renderEdgeQL(
         ...ctx,
         renderWithVar: varExpr,
       },
-      !withBlockElement.scopedExpr,
-      _noImplicitDetached
+      !withBlockElement.scopedExpr, // render shape if no scopedExpr exists
+      _noImplicitDetached //
     );
     if (ctx.linkProps.has(expr)) {
       renderedExpr = `(SELECT ${renderedExpr} {\n${ctx.linkProps
@@ -491,13 +639,18 @@ function renderEdgeQL(
   }
 
   let withBlock = "";
+
+  // extract scope expression from select/update if exists
   const scopeExpr =
     (expr.__kind__ === ExpressionKind.Select ||
       expr.__kind__ === ExpressionKind.Update) &&
     ctx.withVars.has(expr.__scope__ as any)
       ? (expr.__scope__ as SomeExpression)
       : undefined;
+
+  // generate with block if needed
   if (ctx.withBlocks.has(expr as any) || scopeExpr) {
+    // sort associated vars
     let blockVars = topoSortWithVars(
       ctx.withBlocks.get(expr as any) ?? new Set(),
       ctx
@@ -505,22 +658,35 @@ function renderEdgeQL(
 
     const scopedWithBlock: string[] = [];
     if (scopeExpr) {
+      // get scope variable
       const scopeVar = ctx.withVars.get(scopeExpr)!;
 
+      // get list of with vars that reference scope
       const scopedBlockVars = blockVars.filter(blockVarExpr =>
         ctx.withVars.get(blockVarExpr)?.childExprs.has(scopeExpr)
       );
+      // filter blockvars to only include vars that don't reference scope
       blockVars = blockVars.filter(
         blockVar => !scopedBlockVars.includes(blockVar)
       );
 
-      if (scopedBlockVars.length) {
+      // when rendering `with` variables that reference current scope
+      // they are extracted into computed properties defining in a for loop
+      if (!scopedBlockVars.length) {
+        scopedWithBlock.push(
+          renderWithBlockExpr(scopeExpr, noImplicitDetached)
+        );
+      } else {
         const scopeName = scopeVar.name;
+
+        // render a reference to scoped path (e.g. ".nemesis")
         scopeVar.name = scopeName + "_expr";
         scopedWithBlock.push(
           renderWithBlockExpr(scopeExpr, noImplicitDetached)
         );
 
+        // render a for loop containing all scoped block vars
+        // as computed properties
         scopeVar.name = scopeName + "_inner";
         scopedWithBlock.push(
           `  ${scopeName} := (FOR ${scopeVar.name} IN {${
@@ -538,24 +704,23 @@ function renderEdgeQL(
             .join(",\n")}\n    }\n  ))`
         );
 
+        // change var name back to original value
         scopeVar.name = scopeName;
+
+        // reassign name for all scoped block vars
         for (const blockVarExpr of scopedBlockVars) {
           const blockVar = ctx.withVars.get(blockVarExpr)!;
           blockVar.name = `${scopeName}.${blockVar.name}`;
         }
-      } else {
-        scopedWithBlock.push(
-          renderWithBlockExpr(scopeExpr!, noImplicitDetached)
-        );
       }
     }
+
     withBlock = `WITH\n${[
       ...blockVars.map(blockVar => renderWithBlockExpr(blockVar)),
       ...scopedWithBlock,
     ].join(",\n")}\n`;
   }
 
-  // console.log(expr.__kind__);
   if (expr.__kind__ === ExpressionKind.With) {
     return renderEdgeQL(expr.__expr__, ctx);
   } else if (expr.__kind__ === ExpressionKind.WithParams) {
@@ -780,6 +945,26 @@ function renderEdgeQL(
       1,
       -1
     )} ${clause.join("")})`;
+  } else if (expr.__kind__ === ExpressionKind.Group) {
+    // iterate over groupings
+    // render all referenced variables in `using`
+    // pass names into by
+
+    // make sure all grouping exprs are assigned to `group` expression
+    // render scope var in with block
+    // render all other exprs in `using`
+    console.log(`GROUP`);
+    console.log(withBlock);
+    const clause = [];
+    clause.push(withBlock);
+    clause.push(`(GROUP ${renderEdgeQL(expr.__scope__, ctx)}`);
+    clause.push(
+      `USING ${Object.keys(expr.__groupings__)
+        .map(gk => `${gk} := ${gk}`)
+        .join(", ")}`
+    );
+    clause.push();
+    return `(${clause.join("\n")})`;
   } else if (expr.__kind__ === ExpressionKind.Function) {
     const args = expr.__args__.map(arg => `${renderEdgeQL(arg!, ctx, false)}`);
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
@@ -867,257 +1052,154 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n))`;
   }
 }
 
-interface WalkExprTreeCtx {
-  seen: Map<
-    SomeExpression,
-    {
-      refCount: number;
-      parentScopes: Set<WithScopeExpr | null>;
-      childExprs: SomeExpression[];
-      boundScope: WithScopeExpr | null;
-      aliases: SomeExpression[];
-      linkProps: $expr_PathLeaf[];
+function shapeToEdgeQL(
+  shape: object | null,
+  ctx: RenderCtx,
+  pointers: ObjectTypePointers | null = null,
+  keysOnly: boolean = false
+) {
+  if (shape === null) {
+    return ``;
+  }
+
+  const lines: string[] = [];
+  const addLine = (line: string) =>
+    lines.push(`${keysOnly ? "" : "  "}${line}`);
+
+  const seen = new Set();
+
+  for (const key in shape) {
+    if (!shape.hasOwnProperty(key)) continue;
+    if (seen.has(key)) {
+      // tslint:disable-next-line
+      console.warn(`Invalid: duplicate key "${key}"`);
+      continue;
     }
-  >;
-  rootScope: WithScopeExpr | null;
+    seen.add(key);
+    let val = (shape as any)[key];
+    let operator = ":=";
+    let polyType: SomeExpression | null = null;
+
+    if (typeof val === "object" && !val.__element__) {
+      if (!!val["+="]) {
+        operator = "+=";
+        val = val["+="];
+      } else if (!!val["-="]) {
+        operator = "-=";
+        val = val["-="];
+      }
+    }
+    if (val.__kind__ === ExpressionKind.PolyShapeElement) {
+      polyType = val.__polyType__;
+      val = val.__shapeElement__;
+    }
+    const polyIntersection = polyType
+      ? `[IS ${polyType.__element__.__name__}].`
+      : "";
+
+    if (typeof val === "boolean") {
+      if (val) {
+        addLine(`${polyIntersection}${q(key)}`);
+      }
+    } else if (val.hasOwnProperty("__kind__")) {
+      if (keysOnly) {
+        addLine(
+          q(key, false) +
+            (isObjectType(val.__element__)
+              ? `: ${shapeToEdgeQL(
+                  val.__element__.__shape__,
+                  ctx,
+                  null,
+                  true
+                )}`
+              : "")
+        );
+        continue;
+      }
+      const renderedExpr = renderEdgeQL(val, ctx);
+
+      // For computed properties in select shapes, inject the expected
+      // cardinality inferred by the query builder. This ensures the actual
+      // type returned by the server matches the inferred return type, or an
+      // explicit error is thrown, instead of a silent mismatch between
+      // actual and inferred type.
+      const expectedCardinality =
+        pointers && !pointers[key] && val.hasOwnProperty("__cardinality__")
+          ? val.__cardinality__ === Cardinality.Many ||
+            val.__cardinality__ === Cardinality.AtLeastOne
+            ? "multi "
+            : "single "
+          : "";
+
+      // If selecting a required multi link, wrap expr in 'assert_exists'
+      const wrapAssertExists =
+        pointers?.[key]?.cardinality === Cardinality.AtLeastOne;
+
+      addLine(
+        `${expectedCardinality}${q(key, false)} ${operator} ${
+          wrapAssertExists ? "assert_exists(" : ""
+        }${
+          renderedExpr.includes("\n")
+            ? `(\n${indent(
+                renderedExpr[0] === "(" &&
+                  renderedExpr[renderedExpr.length - 1] === ")"
+                  ? renderedExpr.slice(1, -1)
+                  : renderedExpr,
+                4
+              )}\n  )`
+            : renderedExpr
+        }${wrapAssertExists ? ")" : ""}`
+      );
+    } else {
+      throw new Error(`Invalid shape element at "${key}".`);
+    }
+  }
+
+  if (lines.length === 0) {
+    addLine("id");
+  }
+  return keysOnly ? `{${lines.join(", ")}}` : `{\n${lines.join(",\n")}\n}`;
 }
 
-function walkExprTree(
-  _expr: TypeSet,
-  parentScope: WithScopeExpr | null,
-  ctx: WalkExprTreeCtx
+function topoSortWithVars(
+  vars: Set<SomeExpression>,
+  ctx: RenderCtx
 ): SomeExpression[] {
-  if (!(_expr as any).__kind__) {
-    throw new Error(
-      `Expected a valid querybuilder expression, ` +
-        `instead received ${typeof _expr}${
-          typeof _expr !== "undefined" ? `: '${_expr}'` : ""
-        }.` +
-        getErrorHint(_expr)
-    );
+  if (!vars.size) {
+    return [];
   }
-  const expr = _expr as SomeExpression;
-  if (!ctx.rootScope && parentScope) {
-    ctx.rootScope = parentScope;
+
+  const sorted: SomeExpression[] = [];
+
+  const unvisited = new Set(vars);
+  const visiting = new Set<SomeExpression>();
+
+  for (const withVar of unvisited) {
+    visit(withVar);
   }
-  const seenExpr = ctx.seen.get(expr);
-  if (seenExpr) {
-    seenExpr.refCount += 1;
-    seenExpr.parentScopes.add(parentScope);
 
-    return [expr, ...seenExpr.childExprs];
-  } else {
-    const childExprs: SomeExpression[] = [];
-    ctx.seen.set(expr, {
-      refCount: 1,
-      parentScopes: new Set([parentScope]),
-      childExprs,
-      boundScope: null,
-      aliases: [],
-      linkProps: [],
-    });
-
-    switch (expr.__kind__) {
-      case ExpressionKind.Alias:
-        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
-        ctx.seen.get(expr.__expr__ as any)!.aliases.push(expr);
-        break;
-      case ExpressionKind.With:
-        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
-        for (const refExpr of expr.__refs__) {
-          walkExprTree(refExpr, expr.__expr__, ctx);
-          const seenRef = ctx.seen.get(refExpr as any)!;
-          if (seenRef.boundScope) {
-            throw new Error(`Expression bound to multiple 'WITH' blocks`);
-          }
-          seenRef.boundScope = expr.__expr__;
-        }
-        break;
-      case ExpressionKind.Literal:
-      case ExpressionKind.ForVar:
-      case ExpressionKind.Param:
-        break;
-      case ExpressionKind.PathLeaf:
-      case ExpressionKind.PathNode:
-        if (expr.__parent__) {
-          if ((expr.__parent__.type as any).__scopedFrom__) {
-            // if parent is scoped expr then don't walk expr
-            // since it will already be walked by enclosing select/update
-            childExprs.push(expr.__parent__.type as any);
-          } else {
-            childExprs.push(
-              ...walkExprTree(expr.__parent__.type, parentScope, ctx)
-            );
-          }
-          if (
-            // is link prop
-            expr.__kind__ === ExpressionKind.PathLeaf &&
-            expr.__parent__.linkName.startsWith("@")
-          ) {
-            ctx.seen.get(parentScope!)?.linkProps.push(expr);
-          }
-        }
-        break;
-      case ExpressionKind.Cast:
-        if (expr.__expr__ === null) break;
-        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
-        break;
-      case ExpressionKind.Set:
-        for (const subExpr of expr.__exprs__) {
-          childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
-        }
-        break;
-      case ExpressionKind.Array:
-        for (const subExpr of expr.__items__) {
-          childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
-        }
-        break;
-      case ExpressionKind.Tuple:
-        for (const subExpr of expr.__items__) {
-          childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
-        }
-        break;
-      case ExpressionKind.NamedTuple:
-        for (const subExpr of Object.values(expr.__shape__)) {
-          childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
-        }
-        break;
-      case ExpressionKind.TuplePath:
-        childExprs.push(...walkExprTree(expr.__parent__, parentScope, ctx));
-        break;
-      case ExpressionKind.Select:
-      case ExpressionKind.Update: {
-        const modifiers = expr.__modifiers__;
-        if (modifiers.filter) {
-          childExprs.push(...walkExprTree(modifiers.filter, expr, ctx));
-        }
-        if (modifiers.order_by) {
-          for (const orderExpr of modifiers.order_by) {
-            childExprs.push(...walkExprTree(orderExpr.expression, expr, ctx));
-          }
-        }
-        if (modifiers.offset) {
-          childExprs.push(...walkExprTree(modifiers.offset!, expr, ctx));
-        }
-        if (modifiers.limit) {
-          childExprs.push(...walkExprTree(modifiers.limit!, expr, ctx));
-        }
-
-        if (expr.__kind__ === ExpressionKind.Select) {
-          if (
-            isObjectType(expr.__element__) &&
-            // Don't walk shape if select is just wrapping an object type expr
-            // that has it's own shape
-            expr.__element__.__shape__ !==
-              (expr.__expr__ as ObjectTypeSet).__element__.__shape__
-          ) {
-            const walkShape = (shape: object) => {
-              for (let param of Object.values(shape)) {
-                if (param.__kind__ === ExpressionKind.PolyShapeElement) {
-                  param = param.__shapeElement__;
-                }
-                if (typeof param === "object") {
-                  if (!!(param as any).__kind__) {
-                    childExprs.push(...walkExprTree(param as any, expr, ctx));
-                  } else {
-                    walkShape(param);
-                  }
-                }
-              }
-            };
-            walkShape(expr.__element__.__shape__ ?? {});
-          }
-        } else {
-          // Update
-          const shape: any = expr.__shape__ ?? {};
-
-          for (const _element of Object.values(shape)) {
-            let element: any = _element;
-            if (!element.__element__) {
-              if (element["+="]) element = element["+="];
-              else if (element["-="]) element = element["-="];
-            }
-            childExprs.push(...walkExprTree(element as any, expr, ctx));
-          }
-        }
-
-        childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
-        break;
-      }
-      case ExpressionKind.Delete: {
-        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
-        break;
-      }
-      case ExpressionKind.Insert: {
-        const shape: any = expr.__shape__ ?? {};
-
-        for (const element of Object.values(shape)) {
-          childExprs.push(...walkExprTree(element as any, expr, ctx));
-        }
-
-        childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
-        break;
-      }
-      case ExpressionKind.InsertUnlessConflict: {
-        if (expr.__conflict__.on) {
-          childExprs.push(...walkExprTree(expr.__conflict__.on, expr, ctx));
-        }
-        if (expr.__conflict__.else) {
-          childExprs.push(...walkExprTree(expr.__conflict__.else, expr, ctx));
-        }
-
-        childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
-        break;
-      }
-      case ExpressionKind.TypeIntersection:
-        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
-        break;
-      case ExpressionKind.Operator:
-      case ExpressionKind.Function:
-        for (const subExpr of expr.__args__) {
-          if (Array.isArray(subExpr)) {
-            for (const arg of subExpr) {
-              if (arg) childExprs.push(...walkExprTree(arg, parentScope, ctx));
-            }
-          } else {
-            childExprs.push(...walkExprTree(subExpr!, parentScope, ctx));
-          }
-        }
-        if (expr.__kind__ === ExpressionKind.Function) {
-          for (const subExpr of Object.values(expr.__namedargs__)) {
-            childExprs.push(...walkExprTree(subExpr, parentScope, ctx));
-          }
-        }
-        break;
-      case ExpressionKind.For: {
-        childExprs.push(...walkExprTree(expr.__iterSet__ as any, expr, ctx));
-        childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
-        break;
-      }
-      case ExpressionKind.WithParams: {
-        if (parentScope !== null) {
-          throw new Error(
-            `'withParams' does not support being used as a nested expression`
-          );
-        }
-        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
-        break;
-      }
-      case ExpressionKind.Detached: {
-        childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
-        break;
-      }
-      default:
-        util.assertNever(
-          expr,
-          new Error(
-            `Unrecognized expression kind: "${(expr as any).__kind__}"`
-          )
-        );
+  function visit(withVar: SomeExpression): void {
+    if (!unvisited.has(withVar)) {
+      return;
+    }
+    if (visiting.has(withVar)) {
+      throw new Error(`'WITH' variables contain a cyclic dependency`);
     }
 
-    return [expr, ...childExprs];
+    visiting.add(withVar);
+
+    for (const child of ctx.withVars.get(withVar)!.childExprs) {
+      if (vars.has(child)) {
+        visit(child);
+      }
+    }
+
+    visiting.delete(withVar);
+    unvisited.delete(withVar);
+
+    sorted.push(withVar);
   }
+  return sorted;
 }
 
 const numericalTypes: Record<string, boolean> = {

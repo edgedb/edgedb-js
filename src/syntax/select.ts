@@ -837,6 +837,7 @@ function resolveShapeElement(
     (typeof value === "object" &&
       typeof (value as any).__kind__ === "undefined")
   ) {
+    // get child node expression
     const childExpr = (scope as any)[key];
     const {
       shape: childShape,

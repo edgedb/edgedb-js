@@ -29,6 +29,7 @@ export interface test_Profile extends BaseObject {
   slug?: string | null;
 }
 
+const asd: Movie = "asdf" as any as test_Movie;
 test("check generated interfaces", () => {
   // TODO: re-enable test when 2.0 is stable
   // tc.assert<tc.IsExact<Movie, test_Movie>>(true);
