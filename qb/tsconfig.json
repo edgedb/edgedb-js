@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "lib": [
+      "ES2020"
+    ],
     "target": "es2017", // "es5"
     "module": "commonjs",
     "esModuleInterop": true,

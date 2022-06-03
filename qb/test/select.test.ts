@@ -3,9 +3,7 @@ import {$} from "edgedb";
 import * as tc from "conditional-type-checks";
 
 import e, {$infer} from "../dbschema/edgeql-js";
-import {number} from "../dbschema/edgeql-js/modules/std";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
-
 let client: edgedb.Client;
 let data: TestData;
 
@@ -32,7 +30,7 @@ test("selecting JS data", () => {
 
   const numberSelect = e.select(1234);
   expect(numberSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(numberSelect.__element__).toBe(number);
+  expect(numberSelect.__element__.__name__).toBe(`std::number`);
   expect(numberSelect.__cardinality__).toBe($.Cardinality.One);
 
   const boolSelect = e.select(false);

@@ -9,7 +9,7 @@
     "test:esm": "node test/esm.test.mjs",
     "test:ci": "ts-node --project ../tsconfig.json test/testRunner.ts",
     "generate": "edgeql-js",
-    "play": "ts-node playground.ts --project tsconfig.json --trace-warnings",
+    "play": "esr playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",
     "build": "tsc --project tsconfig.build.json",
     "build:trace": "tsc --project tsconfig.build.json --generateTrace trace"
@@ -23,6 +23,8 @@
   "devDependencies": {
     "conditional-type-checks": "^1.0.5",
     "edgedb": "^0.14.0",
+    "esbuild": "^0.14.42",
+    "esbuild-runner": "^2.2.1",
     "jest": "^27.0.5",
     "superjson": "^1.7.5",
     "ts-jest": "^27.0.3",

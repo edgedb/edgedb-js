@@ -5,22 +5,29 @@ import e from "./dbschema/edgeql-js";
 
 async function run() {
   const {client, data} = await setupTests();
-  const query = e.select(e.Movie, movie => {
-    const titlelen = e.len(movie.title);
+
+  const query = e.group(e.Movie, movie => {
+    const title = movie.title;
+    const len = e.len(movie.title);
+    const ccc = e.op(len, "+", 4);
+
     return {
-      titlelen,
-      movies: e.select(e.Movie, m2 => {
-        return {
-          t2: titlelen,
-          t1: titlelen,
-          filter: e.op(movie.title, "=", m2.title),
-        };
-      }),
+      ccc,
+      ccc2: ccc,
+      len,
+      len2: len,
     };
   });
+  // const query = e.select({
+  //   grp,
+  //   grp2: grp,
+  // });
+  console.log(`\n#############\n### QUERY ###\n#############`);
   console.log(query.toEdgeQL());
   const result = await query.run(client);
-  console.log(result);
+
+  console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
+  console.log(JSON.stringify(result, null, 2));
 }
 
 run();

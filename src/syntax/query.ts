@@ -9,6 +9,7 @@ const runnableExpressionKinds = new Set([
   ExpressionKind.Insert,
   ExpressionKind.InsertUnlessConflict,
   ExpressionKind.Delete,
+  ExpressionKind.Group,
   ExpressionKind.For,
   ExpressionKind.With,
   ExpressionKind.WithParams,
@@ -21,6 +22,7 @@ export async function $queryFunc(this: any, cxn: edgedb.Executor, args: any) {
     ? this
     : wrappedExprCache.get(this) ??
       wrappedExprCache.set(this, select(this)).get(this);
+
   const _args = jsonifyComplexParams(expr, args);
 
   if (

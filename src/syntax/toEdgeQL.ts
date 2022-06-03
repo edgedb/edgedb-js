@@ -47,7 +47,7 @@ import type {
 import type {$expr_Set} from "./set";
 import type {$expr_Update} from "./update";
 import type {$expr_Alias, $expr_With} from "./with";
-import type {$expr_Group} from "./group";
+import type {$expr_Group, GroupingSet} from "./group";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -144,6 +144,7 @@ export function $toEdgeQL(this: any) {
     }
 
     // ignore unbound leaves, nodes, and intersections
+    // these should be rendered as is
     if (
       !refData.boundScope &&
       (expr.__kind__ === ExpressionKind.PathLeaf ||
@@ -348,13 +349,18 @@ function walkExprTree(
   if (!ctx.rootScope && parentScope) {
     ctx.rootScope = parentScope;
   }
+
+  // return without walking if expression has been seen
   const seenExpr = ctx.seen.get(expr);
   if (seenExpr) {
     seenExpr.refCount += 1;
-    if (seenExpr.refCount > 1) {
-      console.log(`###########\nSEEN ${seenExpr.refCount} times`);
-      console.log(expr);
-    }
+    // if (seenExpr.refCount > 1) {
+    // console.log(`###########\nSEEN ${seenExpr.refCount} times`);
+    // console.log(expr.__kind__);
+    // console.log(expr.__element__.__name__);
+    // const arg = (expr as any)?.__parent__ || (expr as any)?.__name__;
+    // if (arg) console.log(arg);
+    // }
     seenExpr.parentScopes.add(parentScope);
     return [expr, ...seenExpr.childExprs];
   }
@@ -522,10 +528,18 @@ function walkExprTree(
       break;
     }
     case ExpressionKind.Group: {
-      childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
-      for (const grouping of Object.values(expr.__groupings__)) {
-        childExprs.push(...walkExprTree(grouping, expr, ctx));
+      const groupingSet = expr.__grouping__ as any as GroupingSet;
+      for (const [_k, groupExpr] of groupingSet.__exprs__) {
+        // this prevents recurring grouping elements from being walked twice
+        // this way, these won't get pulled into with blocks,
+        // which is good because they need to be rendered in `using`
+        const seen: Set<any> = new Set();
+        if (!seen.has(expr)) {
+          childExprs.push(...walkExprTree(groupExpr, expr, ctx));
+          seen.add(expr);
+        }
       }
+      childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
       break;
     }
     case ExpressionKind.TypeIntersection:
@@ -587,6 +601,8 @@ function renderEdgeQL(
   }
   const expr = _expr as SomeExpression;
 
+  // if expression is in a with block
+  // render its name
   const withVar = ctx.withVars.get(expr);
   if (withVar && ctx.renderWithVar !== expr) {
     return renderShape &&
@@ -614,7 +630,7 @@ function renderEdgeQL(
         renderWithVar: varExpr,
       },
       !withBlockElement.scopedExpr, // render shape if no scopedExpr exists
-      _noImplicitDetached //
+      _noImplicitDetached
     );
     if (ctx.linkProps.has(expr)) {
       renderedExpr = `(SELECT ${renderedExpr} {\n${ctx.linkProps
@@ -638,65 +654,78 @@ function renderEdgeQL(
     }`;
   }
 
-  let withBlock = "";
+  const unscopedWithBlock: string[] = [];
+  // let scopeExpression: SomeExpression | null = null
+  const scopedWithBlock: string[] = [];
+  // let
 
   // extract scope expression from select/update if exists
   const scopeExpr =
     (expr.__kind__ === ExpressionKind.Select ||
-      expr.__kind__ === ExpressionKind.Update) &&
+      expr.__kind__ === ExpressionKind.Update ||
+      expr.__kind__ === ExpressionKind.Group) &&
     ctx.withVars.has(expr.__scope__ as any)
       ? (expr.__scope__ as SomeExpression)
       : undefined;
+  const scopeExprVar: string[] = [];
 
   // generate with block if needed
   if (ctx.withBlocks.has(expr as any) || scopeExpr) {
     // sort associated vars
-    let blockVars = topoSortWithVars(
+    const sortedBlockVars = topoSortWithVars(
       ctx.withBlocks.get(expr as any) ?? new Set(),
       ctx
     );
 
-    const scopedWithBlock: string[] = [];
-    if (scopeExpr) {
+    // const scopedWithBlock: string[] = [];
+    if (!scopeExpr) {
+      unscopedWithBlock.push(
+        ...sortedBlockVars.map(blockVar => renderWithBlockExpr(blockVar))
+      );
+    } else {
       // get scope variable
       const scopeVar = ctx.withVars.get(scopeExpr)!;
 
       // get list of with vars that reference scope
-      const scopedBlockVars = blockVars.filter(blockVarExpr =>
+      const scopedVars = sortedBlockVars.filter(blockVarExpr =>
         ctx.withVars.get(blockVarExpr)?.childExprs.has(scopeExpr)
       );
       // filter blockvars to only include vars that don't reference scope
-      blockVars = blockVars.filter(
-        blockVar => !scopedBlockVars.includes(blockVar)
+      unscopedWithBlock.push(
+        ...sortedBlockVars
+          .filter(blockVar => !scopedVars.includes(blockVar))
+          .map(blockVar => renderWithBlockExpr(blockVar))
       );
 
       // when rendering `with` variables that reference current scope
       // they are extracted into computed properties defining in a for loop
-      if (!scopedBlockVars.length) {
-        scopedWithBlock.push(
-          renderWithBlockExpr(scopeExpr, noImplicitDetached)
-        );
+      if (!scopedVars.length) {
+        scopeExprVar.push(renderWithBlockExpr(scopeExpr, noImplicitDetached));
+        // scopedWithBlock.push(
+        //   renderWithBlockExpr(scopeExpr, noImplicitDetached)
+        // );
       } else {
         const scopeName = scopeVar.name;
 
         // render a reference to scoped path (e.g. ".nemesis")
         scopeVar.name = scopeName + "_expr";
-        scopedWithBlock.push(
-          renderWithBlockExpr(scopeExpr, noImplicitDetached)
-        );
+        scopeExprVar.push(renderWithBlockExpr(scopeExpr, noImplicitDetached));
+        // scopedWithBlock.push(
+        //   renderWithBlockExpr(scopeExpr, noImplicitDetached)
+        // );
 
         // render a for loop containing all scoped block vars
         // as computed properties
         scopeVar.name = scopeName + "_inner";
-        scopedWithBlock.push(
+        scopeExprVar.push(
           `  ${scopeName} := (FOR ${scopeVar.name} IN {${
             scopeName + "_expr"
           }} UNION (\n    WITH\n${indent(
-            scopedBlockVars
+            scopedVars
               .map(blockVar => renderWithBlockExpr(blockVar))
               .join(",\n"),
             4
-          )}\n    SELECT ${scopeVar.name} {\n${scopedBlockVars
+          )}\n    SELECT ${scopeVar.name} {\n${scopedVars
             .map(blockVar => {
               const name = ctx.withVars.get(blockVar)!.name;
               return `      ${name} := ${name}`;
@@ -708,18 +737,22 @@ function renderEdgeQL(
         scopeVar.name = scopeName;
 
         // reassign name for all scoped block vars
-        for (const blockVarExpr of scopedBlockVars) {
+        for (const blockVarExpr of scopedVars) {
           const blockVar = ctx.withVars.get(blockVarExpr)!;
           blockVar.name = `${scopeName}.${blockVar.name}`;
         }
       }
     }
-
-    withBlock = `WITH\n${[
-      ...blockVars.map(blockVar => renderWithBlockExpr(blockVar)),
-      ...scopedWithBlock,
-    ].join(",\n")}\n`;
   }
+
+  const withBlockElements = [
+    ...unscopedWithBlock,
+    ...scopeExprVar,
+    ...scopedWithBlock,
+  ];
+  const withBlock = withBlockElements.length
+    ? `WITH\n${withBlockElements.join(",\n")}\n`
+    : "";
 
   if (expr.__kind__ === ExpressionKind.With) {
     return renderEdgeQL(expr.__expr__, ctx);
@@ -946,24 +979,59 @@ function renderEdgeQL(
       -1
     )} ${clause.join("")})`;
   } else if (expr.__kind__ === ExpressionKind.Group) {
-    // iterate over groupings
-    // render all referenced variables in `using`
-    // pass names into by
+    function isGroupingSet(arg: any): arg is GroupingSet {
+      return arg.__kind__ === "groupingset";
+    }
 
-    // make sure all grouping exprs are assigned to `group` expression
-    // render scope var in with block
-    // render all other exprs in `using`
-    console.log(`GROUP`);
-    console.log(withBlock);
+    const groupingSet = expr.__grouping__ as any as GroupingSet;
     const clause = [];
-    clause.push(withBlock);
-    clause.push(`(GROUP ${renderEdgeQL(expr.__scope__, ctx)}`);
+
+    // render scope var and any unscoped withVars in with block
     clause.push(
-      `USING ${Object.keys(expr.__groupings__)
-        .map(gk => `${gk} := ${gk}`)
-        .join(", ")}`
+      `WITH\n${[
+        ...unscopedWithBlock,
+        ...scopeExprVar,
+        // ...scopedWithBlock,
+      ].join(",\n")}`
     );
-    clause.push();
+
+    clause.push(`GROUP ${renderEdgeQL(expr.__scope__, ctx)}`);
+
+    // render scoped withvars in using
+    const combinedBlock = [
+      ...scopedWithBlock,
+      // this is deduplicated in e.group
+      ...groupingSet.__exprs__.map(
+        ([k, v]) => `  ${k} := ${renderEdgeQL(v, ctx)}`
+      ),
+    ];
+    clause.push(`USING\n${combinedBlock.join(",\n")}`);
+
+    // recursive renderer
+    function renderGroupingSet(set: GroupingSet): string {
+      const contents = Object.entries(set.__elements__)
+        .map(([k, v]) => {
+          return isGroupingSet(v) ? renderGroupingSet(v) : k;
+        })
+        .join(", ");
+      if (set.__settype__ === "tuple") {
+        return `(${contents})`;
+      } else if (set.__settype__ === "set") {
+        return `{${contents}}`;
+      } else if (set.__settype__ === "cube") {
+        return `cube(${contents})`;
+      } else if (set.__settype__ === "rollup") {
+        return `rollup(${contents})`;
+      } else {
+        throw new Error(`Unrecognized set type: "${set.__settype__}"`);
+      }
+    }
+
+    let by = renderGroupingSet(groupingSet).trim();
+    if (by[0] === "(" && by[by.length - 1] === ")") {
+      by = by.slice(1, by.length - 1);
+    }
+    clause.push(`BY ` + by);
     return `(${clause.join("\n")})`;
   } else if (expr.__kind__ === ExpressionKind.Function) {
     const args = expr.__args__.map(arg => `${renderEdgeQL(arg!, ctx, false)}`);
