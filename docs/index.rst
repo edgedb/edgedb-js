@@ -91,7 +91,8 @@ users and JavaScript users who prefer writing queries as code.
   }));
 
   const result = await query.run(client);
-  // { id: string; title: string; actors: {name: string}[] }[]
+  // { id: string; title: string; actors: {name: string}[] }
+  // property `title` is exclusive
 
   console.log(result.actors[0].name);
   // => Timothee Chalamet
