@@ -55,7 +55,10 @@ export const generateStatusFileName = (tag: string): string => {
   );
 };
 
-export const getServerCommand = (statusFile: string): string[] => {
+export const getServerCommand = (
+  statusFile: string
+): {args: string[]; availableFeatures: string[]} => {
+  const availableFeatures: string[] = [];
   let srvcmd = "edgedb-server";
   if (process.env.EDGEDB_SERVER_BIN) {
     srvcmd = process.env.EDGEDB_SERVER_BIN;
@@ -81,6 +84,12 @@ export const getServerCommand = (statusFile: string): string[] => {
     args.push("--auto-shutdown");
   }
 
+  if (help.includes("--admin-ui")) {
+    args.push("--admin-ui=enabled");
+    args.push("--http-endpoint-security=optional");
+    availableFeatures.push("admin-ui");
+  }
+
   args = [
     ...args,
     "--bind-address=127.0.0.1",
@@ -92,7 +101,7 @@ export const getServerCommand = (statusFile: string): string[] => {
     "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }",
   ];
 
-  return args;
+  return {args, availableFeatures};
 };
 
 export const startServer = async (
@@ -218,13 +227,15 @@ export default async () => {
   const statusFile = generateStatusFileName("node");
   console.log("Node status file:", statusFile);
 
-  const args = getServerCommand(getWSLPath(statusFile));
+  const {args, availableFeatures} = getServerCommand(getWSLPath(statusFile));
 
   const {proc, config} = await startServer(args, statusFile);
   // @ts-ignore
   global.edgedbProc = proc;
 
   process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(config);
+  process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
+    JSON.stringify(availableFeatures);
 
   // @ts-ignore
   global.edgedbConn = await connectToServer(config);

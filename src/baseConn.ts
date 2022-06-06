@@ -43,7 +43,7 @@ import char, * as chars from "./primitives/chars";
 import Event from "./primitives/event";
 import LRU from "./primitives/lru";
 
-export const PROTO_VER: ProtocolVersion = [0, 14];
+export const PROTO_VER: ProtocolVersion = [1, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];
 
 enum TransactionStatus {
@@ -102,11 +102,10 @@ export class BaseRawConnection {
   protected _abortedWith: Error | null = null;
 
   protocolVersion: ProtocolVersion = PROTO_VER;
+  isLegacyProtocol = false;
 
   /** @internal */
-  protected constructor(
-    registry: CodecsRegistry
-  ) {
+  protected constructor(registry: CodecsRegistry) {
     this.buffer = new ReadMessageBuffer();
 
     this.codecsRegistry = registry;
@@ -128,11 +127,11 @@ export class BaseRawConnection {
   }
 
   protected async _waitForMessage(): Promise<void> {
-    this.throwNotImplemented('_waitForMessage');
+    this.throwNotImplemented("_waitForMessage");
   }
 
   protected _sendData(data: Buffer): void {
-    this.throwNotImplemented('_sendData');
+    this.throwNotImplemented("_sendData");
   }
 
   getConnAbortError(): Error {
@@ -391,10 +390,11 @@ export class BaseRawConnection {
         allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
       })
       .writeChar(asJson ? chars.$j : chars.$b)
-      .writeChar(expectOne ? chars.$o : chars.$m)
-      .writeString("") // statement name
-      .writeString(query)
-      .endMessage();
+      .writeChar(expectOne ? chars.$o : chars.$m);
+    if (this.isLegacyProtocol) {
+      wb.writeString(""); // statement name
+    }
+    wb.writeString(query).endMessage();
 
     wb.writeSync();
 
@@ -775,7 +775,21 @@ export class BaseRawConnection {
 
     if (reExec) {
       this._validateFetchCardinality(newCard!, asJson, requiredOne);
-      return await this._executeFlow(args, inCodec, outCodec, result);
+      if (this.isLegacyProtocol) {
+        return await this._executeFlow(args, inCodec, outCodec, result);
+      } else {
+        return await this._optimisticExecuteFlow(
+          args,
+          asJson,
+          expectOne,
+          requiredOne,
+          inCodec,
+          outCodec,
+          query,
+          result,
+          options
+        );
+      }
     }
   }
 
@@ -835,7 +849,7 @@ export class BaseRawConnection {
       );
       this._validateFetchCardinality(card, asJson, requiredOne);
       this.queryCodecCache.set(key, [card, inCodec, outCodec, capabilities]);
-      if (this.alwaysUseOptimisticFlow) {
+      if (this.alwaysUseOptimisticFlow || !this.isLegacyProtocol) {
         await this._optimisticExecuteFlow(
           args,
           asJson,
