@@ -8,6 +8,13 @@ import {setupTests, teardownTests, TestData} from "./setupTeardown";
 let client: edgedb.Client;
 let data: TestData;
 
+const version_lt = async (cutoff: number) => {
+  const version = await client.queryRequiredSingle<{major: number}>(
+    `select sys::get_version()`
+  );
+  return version.major < cutoff;
+};
+
 beforeAll(async () => {
   const setup = await setupTests();
   ({client, data} = setup);
@@ -18,6 +25,7 @@ afterAll(async () => {
 });
 
 test("basic group", async () => {
+  if (await version_lt(2)) return;
   const query = e.group(e.Movie, movie => {
     const release_year = movie.release_year;
     return {
@@ -53,6 +61,7 @@ test("basic group", async () => {
 });
 
 test("multiple keys", async () => {
+  if (await version_lt(2)) return;
   const query = e.group(e.Movie, movie => {
     const title = movie.title;
     const ry = movie.release_year;
@@ -98,6 +107,7 @@ test("multiple keys", async () => {
 });
 
 test("extracted key", async () => {
+  if (await version_lt(2)) return;
   const query = e.group(e.Movie, movie => {
     const title = e.len(movie.title);
 
@@ -131,6 +141,7 @@ BY title1, title2, title3`);
 });
 
 test("grouping set", async () => {
+  if (await version_lt(2)) return;
   const query = e.group(e.Movie, movie => {
     const title = movie.title;
 
@@ -155,6 +166,7 @@ test("grouping set", async () => {
 });
 
 test("grouping tuples", async () => {
+  if (await version_lt(2)) return;
   const query = e.group(e.Movie, movie => {
     return {
       ...e.group.tuple({
@@ -177,6 +189,7 @@ test("grouping tuples", async () => {
 });
 
 test("cube", async () => {
+  if (await version_lt(2)) return;
   const query = e.group(e.Movie, movie => {
     return {
       ...e.group.cube({
@@ -193,6 +206,7 @@ test("cube", async () => {
 });
 
 test("rollup", async () => {
+  if (await version_lt(2)) return;
   const query = e.group(e.Movie, movie => {
     return {
       ...e.group.rollup({
@@ -222,6 +236,7 @@ test("rollup", async () => {
 });
 
 test("key override error", async () => {
+  if (await version_lt(2)) return;
   expect(() =>
     e.group(e.Movie, movie => {
       return {
@@ -238,6 +253,7 @@ test("key override error", async () => {
 
 // clause ordering in `using`
 test("key override error", async () => {
+  if (await version_lt(2)) return;
   // reused elements should get pulled out into with
   // and ordered topologically
   const query = e.group(e.Movie, movie => {
