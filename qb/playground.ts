@@ -7,21 +7,14 @@ async function run() {
   const {client, data} = await setupTests();
 
   const query = e.group(e.Movie, movie => {
-    const title = movie.title;
-    const len = e.len(movie.title);
-    const ccc = e.op(len, "+", 4);
+    const title = e.len(movie.title);
 
     return {
-      ccc,
-      ccc2: ccc,
-      len,
-      len2: len,
+      title1: title,
+      title2: title,
+      title3: title,
     };
   });
-  // const query = e.select({
-  //   grp,
-  //   grp2: grp,
-  // });
   console.log(`\n#############\n### QUERY ###\n#############`);
   console.log(query.toEdgeQL());
   const result = await query.run(client);

@@ -119,19 +119,13 @@ test("extracted key", async () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_Movie_expr := DETACHED default::Movie,
-  __scope_0_Movie := (FOR __scope_0_Movie_inner IN {__scope_0_Movie_expr} UNION (
-    WITH
-      __withVar_1 := std::len(__scope_0_Movie_inner.title)
-    SELECT __scope_0_Movie_inner {
-      __withVar_1 := __withVar_1
-    }
-  ))
+  __scope_0_Movie := DETACHED default::Movie
 GROUP __scope_0_Movie
 USING
-  title1 := __scope_0_Movie.__withVar_1,
-  title2 := __scope_0_Movie.__withVar_1,
-  title3 := __scope_0_Movie.__withVar_1
+  __withVar_1 := std::len(__scope_0_Movie.title),
+  title1 := __withVar_1,
+  title2 := __withVar_1,
+  title3 := __withVar_1
 BY title1, title2, title3`);
 
   const result = await query.run(client);

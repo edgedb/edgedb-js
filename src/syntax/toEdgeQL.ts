@@ -654,11 +654,6 @@ function renderEdgeQL(
     }`;
   }
 
-  const unscopedWithBlock: string[] = [];
-  // let scopeExpression: SomeExpression | null = null
-  const scopedWithBlock: string[] = [];
-  // let
-
   // extract scope expression from select/update if exists
   const scopeExpr =
     (expr.__kind__ === ExpressionKind.Select ||
@@ -667,7 +662,10 @@ function renderEdgeQL(
     ctx.withVars.has(expr.__scope__ as any)
       ? (expr.__scope__ as SomeExpression)
       : undefined;
+
   const scopeExprVar: string[] = [];
+  const unscopedWithBlock: string[] = [];
+  const scopedWithBlock: string[] = [];
 
   // generate with block if needed
   if (ctx.withBlocks.has(expr as any) || scopeExpr) {
@@ -680,6 +678,14 @@ function renderEdgeQL(
     // const scopedWithBlock: string[] = [];
     if (!scopeExpr) {
       unscopedWithBlock.push(
+        ...sortedBlockVars.map(blockVar => renderWithBlockExpr(blockVar))
+      );
+    } else if (expr.__kind__ === ExpressionKind.Group) {
+      // add all vars into scoped with block
+      // this is rendered inside the `using` clause later
+      // no need for the with/for trick
+      scopeExprVar.push(renderWithBlockExpr(scopeExpr, noImplicitDetached));
+      scopedWithBlock.push(
         ...sortedBlockVars.map(blockVar => renderWithBlockExpr(blockVar))
       );
     } else {
@@ -701,9 +707,6 @@ function renderEdgeQL(
       // they are extracted into computed properties defining in a for loop
       if (!scopedVars.length) {
         scopeExprVar.push(renderWithBlockExpr(scopeExpr, noImplicitDetached));
-        // scopedWithBlock.push(
-        //   renderWithBlockExpr(scopeExpr, noImplicitDetached)
-        // );
       } else {
         const scopeName = scopeVar.name;
 
