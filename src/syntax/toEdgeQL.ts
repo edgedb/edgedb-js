@@ -612,7 +612,7 @@ function renderEdgeQL(
           (expr.__element__.__shape__ || {}) as object,
           ctx,
           null,
-          true
+          true // render shape only
         )})`
       : withVar.name;
   }
@@ -953,7 +953,12 @@ function renderEdgeQL(
       expr.__modifiers__.filter
         ? `\nFILTER ${renderEdgeQL(expr.__modifiers__.filter, ctx)}\n`
         : " "
-    }SET ${shapeToEdgeQL(expr.__shape__, ctx)})`;
+    }SET ${shapeToEdgeQL(
+      expr.__shape__,
+      ctx
+      // (expr.__element__ as any)?.__pointers__,
+      // true
+    )})`;
   } else if (expr.__kind__ === ExpressionKind.Delete) {
     return `(DELETE ${renderEdgeQL(
       expr.__expr__,
@@ -1147,6 +1152,7 @@ function shapeToEdgeQL(
   const seen = new Set();
 
   for (const key in shape) {
+    console.log(`\nKEY: ${key}`);
     if (!shape.hasOwnProperty(key)) continue;
     if (seen.has(key)) {
       // tslint:disable-next-line
@@ -1182,67 +1188,71 @@ function shapeToEdgeQL(
     // actual and inferred type.
     const ptr = pointers?.[key];
     const expectedCardinality =
-      ptr && val.hasOwnProperty("__cardinality__")
+      pointers && !ptr && val.hasOwnProperty("__cardinality__")
         ? val.__cardinality__ === Cardinality.Many ||
           val.__cardinality__ === Cardinality.AtLeastOne
           ? "multi "
           : "single "
         : "";
 
-    // If selecting a required multi link, wrap expr in 'assert_exists'
+    // if selecting a required multi link, wrap expr in 'assert_exists'
     const wrapAssertExists =
       pointers?.[key]?.cardinality === Cardinality.AtLeastOne;
 
-    console.log(`SHAPE KEY: ${key}`);
     console.log(val);
     if (typeof val === "boolean") {
       if (val) {
         addLine(`${polyIntersection}${q(key)}`);
       }
-    } else if (val.hasOwnProperty("__kind__")) {
-      // is computed
-      if (keysOnly) {
-        addLine(
-          q(key, false) +
-            (isObjectType(val.__element__)
-              ? `: ${shapeToEdgeQL(
-                  val.__element__.__shape__,
-                  ctx,
-                  null,
-                  true
-                )}`
-              : "")
-        );
-        continue;
-      }
-      const renderedExpr = renderEdgeQL(val, ctx);
+      continue;
+    }
 
+    if (typeof val !== "object") {
+      throw new Error(`Invalid shape element at "${key}".`);
+    }
+
+    const valIsExpression = val.hasOwnProperty("__kind__");
+
+    // is subshape
+    if (!valIsExpression) {
       addLine(
-        `${expectedCardinality}${q(key, false)} ${operator} ${
-          wrapAssertExists ? "assert_exists(" : ""
-        }${
-          renderedExpr.includes("\n")
-            ? `(\n${indent(
-                renderedExpr[0] === "(" &&
-                  renderedExpr[renderedExpr.length - 1] === ")"
-                  ? renderedExpr.slice(1, -1)
-                  : renderedExpr,
-                4
-              )}\n  )`
-            : renderedExpr
-        }${wrapAssertExists ? ")" : ""}`
-      );
-    } else if (typeof val === "object") {
-      // is subshape
-      addLine(
-        `${q(key, false)}: ${indent(
-          shapeToEdgeQL(val, ctx, ptr?.target, true),
+        `${polyIntersection}${q(key, false)}: ${indent(
+          shapeToEdgeQL(val, ctx, ptr?.target),
           2
         ).trim()}`
       );
-    } else {
-      throw new Error(`Invalid shape element at "${key}".`);
+      continue;
     }
+
+    // val is expression
+
+    // is computed
+    if (keysOnly) {
+      addLine(
+        q(key, false) +
+          (isObjectType(val.__element__)
+            ? `: ${shapeToEdgeQL(val.__element__.__shape__, ctx, null, true)}`
+            : "")
+      );
+      continue;
+    }
+    const renderedExpr = renderEdgeQL(val, ctx);
+
+    addLine(
+      `${expectedCardinality}${q(key, false)} ${operator} ${
+        wrapAssertExists ? "assert_exists(" : ""
+      }${
+        renderedExpr.includes("\n")
+          ? `(\n${indent(
+              renderedExpr[0] === "(" &&
+                renderedExpr[renderedExpr.length - 1] === ")"
+                ? renderedExpr.slice(1, -1)
+                : renderedExpr,
+              4
+            )}\n  )`
+          : renderedExpr
+      }${wrapAssertExists ? ")" : ""}`
+    );
   }
 
   if (lines.length === 0) {

@@ -2,6 +2,7 @@
 
 import {setupTests} from "./test/setupTeardown";
 import e from "./dbschema/edgeql-js";
+import {insert} from "dist";
 // import type {objectTypeToSelectShape} from "dbschema/edgeql-js/syntax/select";
 
 async function run() {
@@ -16,27 +17,26 @@ async function run() {
   //     upper: e.str_upper(arg.outer.inner),
   //   },
   // }));
-  const query = e.params(
-    {
-      str: e.str,
-      numArr: e.array(e.int64),
-      optBool: e.optional(e.bool),
+
+  const inserted = e.insert(e.Movie, {
+    title: "Iron Man 3",
+    release_year: 2013,
+    characters: e.select(e.Hero, hero => ({
+      filter: e.op(hero.name, "=", "Iron Man"),
+      "@character_name": e.str("Tony Stark"),
+    })),
+  });
+
+  const query = e.select(inserted, () => ({
+    characters: {
+      name: true,
+      "@character_name": true,
     },
-    params =>
-      e.select({
-        str: params.str,
-        nums: e.array_unpack(params.numArr),
-        x: e.op("true", "if", params.optBool, "else", "false"),
-      })
-  );
+  }));
 
   console.log(`\n#############\n### QUERY ###\n#############`);
   console.log(query.toEdgeQL());
-  const result = await query.run(client, {
-    str: "asdf",
-    numArr: [123, 435],
-    optBool: false,
-  });
+  const result = await query.run(client);
 
   console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
   console.log(JSON.stringify(result, null, 2));

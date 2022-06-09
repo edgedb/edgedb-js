@@ -244,14 +244,17 @@ export function $getScopedExpr<T extends ExpressionRoot>(
 ): Expression<T> {
   let scopedExpr = scopedExprCache.get(expr);
   if (!scopedExpr || existingScopes?.has(scopedExpr)) {
-    scopedExpr =
-      expr.__cardinality__ === Cardinality.One
-        ? (expr as any as Expression<TypeSet<BaseType, Cardinality>>)
-        : $expressionify({
-            ...expr,
-            __cardinality__: Cardinality.One,
-            __scopedFrom__: expr,
-          });
+    // free objects should not be scopified
+    const isFreeObject =
+      expr.__cardinality__ === Cardinality.One &&
+      expr.__element__.__name__ === "std::FreeObject";
+    scopedExpr = isFreeObject
+      ? (expr as any as Expression<TypeSet<BaseType, Cardinality>>)
+      : $expressionify({
+          ...expr,
+          __cardinality__: Cardinality.One,
+          __scopedFrom__: expr,
+        });
     scopeRoots.add(scopedExpr);
     const uncached = !scopedExpr;
     if (uncached) {

@@ -52,12 +52,14 @@ test("basic group", async () => {
 
   expect(result).toMatchObject([
     {
-      key: {release_year: data.civil_war.release_year},
+      grouping: ["release_year"],
+    },
+    {
       grouping: ["release_year"],
     },
   ]);
-  expect(result.length).toEqual(1);
-  expect(result[0].elements.length).toEqual(2);
+  expect(result.length).toEqual(2);
+  expect(result[0].elements.length).toEqual(1);
 });
 
 test("multiple keys", async () => {
@@ -197,7 +199,7 @@ test("cube", async () => {
 
   const result = await query.run(client);
   expect(query.toEdgeQL().includes(`BY cube(title, len, year)`)).toEqual(true);
-  expect(result.length).toEqual(14);
+  expect(result.length).toEqual(15);
 });
 
 test("rollup", async () => {
@@ -271,7 +273,7 @@ test("composition", async () => {
   const group = e.group(e.Movie, movie => ({
     ry: movie.release_year,
   }));
-  const result = e.select(group, () => ({
+  const query = e.select(group, () => ({
     key: {ry: true},
     grouping: true,
     elements: {
@@ -279,6 +281,7 @@ test("composition", async () => {
       release_year: true,
     },
   }));
+  const result = await query.run(client);
 
   expect(result).toMatchObject([
     {

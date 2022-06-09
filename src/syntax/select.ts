@@ -803,7 +803,7 @@ export function select(...args: any[]) {
     $selectify({
       __kind__: ExpressionKind.Select,
       __element__:
-        expr.__element__.__kind__ === TypeKind.object
+        expr !== scope
           ? {
               __kind__: TypeKind.object,
               __name__: `${expr.__element__.__name__}`, // _shape
