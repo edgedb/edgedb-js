@@ -8,6 +8,8 @@ import {
   BaseType,
   $scopify,
   makeType,
+  PropertyDesc,
+  // LinkDesc,
 } from "../reflection";
 import {$expressionify, $getScopedExpr} from "./path";
 // @ts-ignore
@@ -84,8 +86,47 @@ export type $expr_Group<
 > = Expression<{
   __element__: ObjectType<
     "std::FreeObject",
-    $FreeObjectλShape,
+    $FreeObjectλShape & {
+      // adding free shape elements into __pointers__
+      // because select shapes don't work on __shape__
+      // grouping: PropertyDesc<
+      //   $str,
+      //   Cardinality.Many,
+      //   false,
+      //   false,
+      //   false,
+      //   false
+      // >;
+      // key: LinkDesc<
+      //   ObjectType<
+      //     "std::FreeObject",
+      //     {
+      //       [k in keyof Grps]: Grps[k]["__element__"] extends ObjectType
+      //         ? never
+      //         : PropertyDesc<Grps[k]["__element__"], Cardinality.AtMostOne>;
+      //     }
+      //   >,
+      //   Cardinality.One,
+      //   {},
+      //   false,
+      //   false,
+      //   false,
+      //   false
+      // >;
+      // elements: LinkDesc<
+      //   Expr["__element__"],
+      //   Cardinality.Many,
+      //   {},
+      //   false,
+      //   false,
+      //   false,
+      //   false
+      // >;
+    },
     {
+      // grouping: true;
+      // key: {[k in keyof Grps]: true};
+      // elements: {id: true};
       grouping: TypeSet<$str, Cardinality.Many>;
       key: Expression<{
         __element__: ObjectType<
@@ -131,12 +172,26 @@ const groupFunc: groupFunc = (expr, getter) => {
   const key = Object.keys(groupSet)[0];
   const grouping = groupSet[key] as any as GroupingSet;
   const keyShape: any = {};
+  const keyPointers: any = {};
+  const keyShapeElement: any = {};
 
   for (const [k, e] of grouping.__exprs__) {
     keyShape[k] = $expressionify({
       __element__: e.__element__,
       __cardinality__: Cardinality.AtMostOne,
     } as any);
+    keyPointers[k] = {
+      __kind__: "property",
+      target: e.__element__,
+      cardinality: Cardinality.AtMostOne,
+      exclusive: false,
+      computed: false,
+      readonly: false,
+      hasDefault: false,
+    } as PropertyDesc;
+    keyShapeElement[k] = true;
+    console.log(keyPointers);
+    console.log(keyShapeElement);
   }
 
   const $FreeObject = makeType(
@@ -154,6 +209,49 @@ const groupFunc: groupFunc = (expr, getter) => {
   return $expressionify({
     __element__: {
       ...$FreeObject,
+      // __name__: "std::GroupResult",
+      // __pointers__: {
+      //   ...($FreeObject as any).__pointers__,
+      //   __name__: "std::GroupResult",
+      //   grouping: {
+      //     __kind__: "property",
+      //     target: str,
+      //     cardinality: Cardinality.Many,
+      //     exclusive: false,
+      //     computed: false,
+      //     readonly: false,
+      //     hasDefault: false,
+      //   } as PropertyDesc,
+      //   key: {
+      //     __kind__: "link",
+      //     target: {
+      //       ...$FreeObject,
+      //       __name__: "std::GroupResult",
+      //       __pointers__: {
+      //         ...($FreeObject as any).__pointers__,
+      //         ...keyPointers,
+      //       },
+      //       __shape__: keyShape,
+      //     },
+      //     properties: {},
+      //     cardinality: Cardinality.One,
+      //     exclusive: false,
+      //     computed: false,
+      //     readonly: false,
+      //     hasDefault: false,
+      //   } as LinkDesc,
+
+      //   elements: {
+      //     __kind__: "link",
+      //     target: expr.__element__,
+      //     cardinality: Cardinality.Many,
+      //     properties: {},
+      //     exclusive: false,
+      //     computed: false,
+      //     readonly: false,
+      //     hasDefault: false,
+      //   } as LinkDesc,
+      // },
       __shape__: {
         grouping: $expressionify({
           __element__: str,
@@ -172,7 +270,13 @@ const groupFunc: groupFunc = (expr, getter) => {
         } as any),
       },
     },
+
     __cardinality__: Cardinality.Many,
+    __shape__: {
+      grouping: true,
+      key: keyShapeElement,
+      elements: {id: true},
+    },
     __expr__: expr,
     __grouping__: grouping,
     __kind__: ExpressionKind.Group,

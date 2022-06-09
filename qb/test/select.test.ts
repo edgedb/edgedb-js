@@ -215,6 +215,7 @@ test("polymorphism", () => {
       nemesis: {name: true},
     }),
   }));
+  // query.__element__.
 
   expect(query.__kind__).toEqual($.ExpressionKind.Select);
   expect(query.__element__.__kind__).toEqual($.TypeKind.object);

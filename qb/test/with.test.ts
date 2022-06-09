@@ -498,8 +498,8 @@ SELECT __scope_0_Hero {
     SELECT __scope_1_Hero {
       __type__ := (
         WITH
-          __scope_2_ObjectType := __scope_1_Hero.__type__
-        SELECT __scope_2_ObjectType {
+          __scope_2_Type := __scope_1_Hero.__type__
+        SELECT __scope_2_Type {
           name
         }
       )

@@ -108,6 +108,7 @@ test("multiple keys", async () => {
 
 test("extracted key", async () => {
   if (await version_lt(2)) return;
+
   const query = e.group(e.Movie, movie => {
     const title = e.len(movie.title);
 
@@ -264,4 +265,37 @@ test("key override error", async () => {
   });
   const result = await query.run(client);
   expect(result[0].grouping).toEqual(["ccc", "ccc2", "len", "len2"]);
+});
+
+test("composition", async () => {
+  const group = e.group(e.Movie, movie => ({
+    ry: movie.release_year,
+  }));
+  const result = e.select(group, () => ({
+    key: {ry: true},
+    grouping: true,
+    elements: {
+      title: true,
+      release_year: true,
+    },
+  }));
+
+  expect(result).toMatchObject([
+    {
+      key: {
+        ry: 2022,
+      },
+      grouping: ["ry"],
+      elements: [
+        {
+          title: "The Avengers",
+          release_year: 2022,
+        },
+        {
+          title: "Captain America: Civil War",
+          release_year: 2022,
+        },
+      ],
+    },
+  ]);
 });

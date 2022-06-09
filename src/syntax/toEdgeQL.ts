@@ -18,7 +18,7 @@ import {
   isNamedTupleType,
   isObjectType,
   isTupleType,
-  ObjectTypePointers,
+  ObjectType,
   ObjectTypeSet,
   OperatorKind,
   TypeKind,
@@ -855,11 +855,17 @@ function renderEdgeQL(
   } else if (expr.__kind__ === ExpressionKind.Select) {
     const lines: string[] = [];
     if (isObjectType(expr.__element__)) {
+      const selectionTarget = renderEdgeQL(
+        expr.__scope__ ?? expr.__expr__,
+        ctx,
+        false
+      );
+
       lines.push(
         `SELECT${
-          expr.__expr__.__element__.__name__ === "std::FreeObject"
+          selectionTarget === "DETACHED std::FreeObject"
             ? ""
-            : ` ${renderEdgeQL(expr.__scope__ ?? expr.__expr__, ctx, false)}`
+            : ` ${selectionTarget}`
         }`
       );
 
@@ -871,7 +877,7 @@ function renderEdgeQL(
           shapeToEdgeQL(
             (expr.__element__.__shape__ || {}) as object,
             ctx,
-            expr.__element__.__pointers__
+            expr.__element__
           )
         );
       }
@@ -1126,9 +1132,10 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n))`;
 function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
-  pointers: ObjectTypePointers | null = null,
+  type: ObjectType | null = null,
   keysOnly: boolean = false
 ) {
+  const pointers = type?.__pointers__ || null;
   if (shape === null) {
     return ``;
   }
@@ -1168,11 +1175,32 @@ function shapeToEdgeQL(
       ? `[IS ${polyType.__element__.__name__}].`
       : "";
 
+    // For computed properties in select shapes, inject the expected
+    // cardinality inferred by the query builder. This ensures the actual
+    // type returned by the server matches the inferred return type, or an
+    // explicit error is thrown, instead of a silent mismatch between
+    // actual and inferred type.
+    const ptr = pointers?.[key];
+    const expectedCardinality =
+      ptr && val.hasOwnProperty("__cardinality__")
+        ? val.__cardinality__ === Cardinality.Many ||
+          val.__cardinality__ === Cardinality.AtLeastOne
+          ? "multi "
+          : "single "
+        : "";
+
+    // If selecting a required multi link, wrap expr in 'assert_exists'
+    const wrapAssertExists =
+      pointers?.[key]?.cardinality === Cardinality.AtLeastOne;
+
+    console.log(`SHAPE KEY: ${key}`);
+    console.log(val);
     if (typeof val === "boolean") {
       if (val) {
         addLine(`${polyIntersection}${q(key)}`);
       }
     } else if (val.hasOwnProperty("__kind__")) {
+      // is computed
       if (keysOnly) {
         addLine(
           q(key, false) +
@@ -1189,23 +1217,6 @@ function shapeToEdgeQL(
       }
       const renderedExpr = renderEdgeQL(val, ctx);
 
-      // For computed properties in select shapes, inject the expected
-      // cardinality inferred by the query builder. This ensures the actual
-      // type returned by the server matches the inferred return type, or an
-      // explicit error is thrown, instead of a silent mismatch between
-      // actual and inferred type.
-      const expectedCardinality =
-        pointers && !pointers[key] && val.hasOwnProperty("__cardinality__")
-          ? val.__cardinality__ === Cardinality.Many ||
-            val.__cardinality__ === Cardinality.AtLeastOne
-            ? "multi "
-            : "single "
-          : "";
-
-      // If selecting a required multi link, wrap expr in 'assert_exists'
-      const wrapAssertExists =
-        pointers?.[key]?.cardinality === Cardinality.AtLeastOne;
-
       addLine(
         `${expectedCardinality}${q(key, false)} ${operator} ${
           wrapAssertExists ? "assert_exists(" : ""
@@ -1220,6 +1231,14 @@ function shapeToEdgeQL(
               )}\n  )`
             : renderedExpr
         }${wrapAssertExists ? ")" : ""}`
+      );
+    } else if (typeof val === "object") {
+      // is subshape
+      addLine(
+        `${q(key, false)}: ${indent(
+          shapeToEdgeQL(val, ctx, ptr?.target, true),
+          2
+        ).trim()}`
       );
     } else {
       throw new Error(`Invalid shape element at "${key}".`);

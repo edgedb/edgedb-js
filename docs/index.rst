@@ -23,6 +23,7 @@ EdgeDB TypeScript/JS Client
    delete
    with
    for
+   group
    reference
 
 This is the official EdgeDB client library for JavaScript and TypeScript. It's
