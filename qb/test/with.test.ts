@@ -496,13 +496,7 @@ SELECT __scope_0_Hero {
     WITH
       __scope_1_Hero := DETACHED default::Hero
     SELECT __scope_1_Hero {
-      __type__ := (
-        WITH
-          __scope_2_Type := __scope_1_Hero.__type__
-        SELECT __scope_2_Type {
-          name
-        }
-      )
+      __type__: {name}
     }
   )
 }

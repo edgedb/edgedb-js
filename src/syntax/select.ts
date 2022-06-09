@@ -720,7 +720,30 @@ export function select<
 export function select<Shape extends {[key: string]: TypeSet}>(
   shape: Shape
 ): $expr_Select<{
-  __element__: ObjectType<`std::FreeObject`, {}, Shape>; // _shape
+  __element__: ObjectType<
+    `std::FreeObject`,
+    {
+      [k in keyof Shape]: Shape[k]["__element__"] extends ObjectType
+        ? LinkDesc<
+            Shape[k]["__element__"],
+            Shape[k]["__cardinality__"],
+            {},
+            false,
+            true,
+            true,
+            false
+          >
+        : PropertyDesc<
+            Shape[k]["__element__"],
+            Shape[k]["__cardinality__"],
+            false,
+            true,
+            true,
+            false
+          >;
+    },
+    Shape
+  >; // _shape
   __cardinality__: Cardinality.One;
 }>;
 export function select<Expr extends scalarLiterals>(
@@ -803,7 +826,7 @@ export function select(...args: any[]) {
     $selectify({
       __kind__: ExpressionKind.Select,
       __element__:
-        expr !== scope
+        expr.__element__.__kind__ === TypeKind.object
           ? {
               __kind__: TypeKind.object,
               __name__: `${expr.__element__.__name__}`, // _shape
@@ -870,10 +893,14 @@ function resolveShapeElement(
 ): any {
   // if value is a nested closure
   // or a nested shape object
-  if (
+  const isSubshape =
     typeof value === "object" &&
-    typeof (value as any).__kind__ === "undefined"
-  ) {
+    typeof (value as any).__kind__ === "undefined";
+  const isClosure =
+    typeof value === "function" &&
+    scope.__element__.__pointers__[key]?.__kind__ === "link";
+  if (isSubshape) {
+    // return value;
     const childExpr = (scope as any)[key];
     const {
       shape: childShape,
@@ -882,10 +909,7 @@ function resolveShapeElement(
     } = resolveShape(value as any, childExpr);
     return childShape;
   }
-  if (
-    typeof value === "function"
-    // && scope.__element__.__pointers__[key]?.__kind__ === "link"
-  ) {
+  if (isClosure) {
     // get child node expression
     // this relies on Proxy-based getters
     const childExpr = (scope as any)[key];
@@ -903,7 +927,6 @@ function resolveShapeElement(
     // extracts normalized modifiers
     const {modifiers} = $handleModifiers(mods, childExpr);
 
-    //
     return {
       __kind__: ExpressionKind.Select,
       __element__: {
@@ -921,6 +944,7 @@ function resolveShapeElement(
     };
   } else if ((value as any)?.__kind__ === ExpressionKind.PolyShapeElement) {
     const polyElement = value as $expr_PolyShapeElement;
+
     const polyScope = (scope as any).is(polyElement.__polyType__);
     return {
       __kind__: ExpressionKind.PolyShapeElement,

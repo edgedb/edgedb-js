@@ -8,7 +8,6 @@ import {insert} from "dist";
 async function run() {
   const {client, data} = await setupTests();
   // type asdf = objectTypeToSelectShape<typeof e["Movie"]["__element__"]>;
-
   // const group = e.select({outer: e.select({inner: e.str("asdf")})});
   // const query = e.select(group, arg => ({
   //   qwer: arg.outer.inner[0],
@@ -17,21 +16,38 @@ async function run() {
   //     upper: e.str_upper(arg.outer.inner),
   //   },
   // }));
+  // const group = e.group(e.Movie, movie => ({
+  //   ry: movie.release_year,
+  // }));
 
-  const inserted = e.insert(e.Movie, {
-    title: "Iron Man 3",
-    release_year: 2013,
-    characters: e.select(e.Hero, hero => ({
-      filter: e.op(hero.name, "=", "Iron Man"),
-      "@character_name": e.str("Tony Stark"),
-    })),
-  });
+  // const query = e.select(group, () => ({
+  //   grouping: true,
+  //   key: {ry: true},
+  //   elements: {
+  //     title: true,
+  //     release_year: true,
+  //   },
+  // }));
 
-  const query = e.select(inserted, () => ({
-    characters: {
-      name: true,
-      "@character_name": true,
-    },
+  const query = e.select(e.Movie.characters, character => ({
+    id: true,
+    name: true,
+    ...e.is(e.Villain, {nemesis: true}),
+    ...e.is(e.Hero, {
+      secret_identity: true,
+      villains: {
+        id: true,
+        name: true,
+        nemesis: nemesis => {
+          const nameLen = e.len(nemesis.name);
+          return {
+            name: true,
+            nameLen,
+            nameLen2: nameLen,
+          };
+        },
+      },
+    }),
   }));
 
   console.log(`\n#############\n### QUERY ###\n#############`);

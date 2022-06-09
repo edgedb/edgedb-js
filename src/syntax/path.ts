@@ -132,19 +132,18 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
   )) {
     if (pointers[key]) continue;
     const valType: BaseType = (val as any)?.__element__;
+    if (!valType) continue;
 
-    if (valType) {
-      pointers[key] = {
-        __kind__: valType.__kind__ === TypeKind.object ? "link" : "property",
-        properties: {},
-        target: (val as any).__element__,
-        cardinality: (val as any).__cardinality__,
-        exclusive: false,
-        computed: true,
-        readonly: true,
-        hasDefault: false,
-      };
-    }
+    pointers[key] = {
+      __kind__: valType.__kind__ === TypeKind.object ? "link" : "property",
+      properties: {},
+      target: (val as any).__element__,
+      cardinality: (val as any).__cardinality__,
+      exclusive: false,
+      computed: true,
+      readonly: true,
+      hasDefault: false,
+    };
   }
 
   (root as any)[_pointers] = pointers;
@@ -248,13 +247,16 @@ export function $getScopedExpr<T extends ExpressionRoot>(
     const isFreeObject =
       expr.__cardinality__ === Cardinality.One &&
       expr.__element__.__name__ === "std::FreeObject";
-    scopedExpr = isFreeObject
-      ? (expr as any as Expression<TypeSet<BaseType, Cardinality>>)
-      : $expressionify({
-          ...expr,
-          __cardinality__: Cardinality.One,
-          __scopedFrom__: expr,
-        });
+
+    const isInsert = expr.__kind__ === ExpressionKind.Insert;
+    scopedExpr =
+      isFreeObject || isInsert
+        ? (expr as any as Expression<TypeSet<BaseType, Cardinality>>)
+        : $expressionify({
+            ...expr,
+            __cardinality__: Cardinality.One,
+            __scopedFrom__: expr,
+          });
     scopeRoots.add(scopedExpr);
     const uncached = !scopedExpr;
     if (uncached) {

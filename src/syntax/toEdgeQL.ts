@@ -1152,7 +1152,6 @@ function shapeToEdgeQL(
   const seen = new Set();
 
   for (const key in shape) {
-    console.log(`\nKEY: ${key}`);
     if (!shape.hasOwnProperty(key)) continue;
     if (seen.has(key)) {
       // tslint:disable-next-line
@@ -1199,7 +1198,6 @@ function shapeToEdgeQL(
     const wrapAssertExists =
       pointers?.[key]?.cardinality === Cardinality.AtLeastOne;
 
-    console.log(val);
     if (typeof val === "boolean") {
       if (val) {
         addLine(`${polyIntersection}${q(key)}`);

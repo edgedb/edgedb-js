@@ -9,6 +9,7 @@ import {
   $scopify,
   makeType,
   PropertyDesc,
+  LinkDesc,
   // LinkDesc,
 } from "../reflection";
 import {$expressionify, $getScopedExpr} from "./path";
@@ -89,39 +90,32 @@ export type $expr_Group<
     $FreeObjectλShape & {
       // adding free shape elements into __pointers__
       // because select shapes don't work on __shape__
-      // grouping: PropertyDesc<
-      //   $str,
-      //   Cardinality.Many,
-      //   false,
-      //   false,
-      //   false,
-      //   false
-      // >;
-      // key: LinkDesc<
-      //   ObjectType<
-      //     "std::FreeObject",
-      //     {
-      //       [k in keyof Grps]: Grps[k]["__element__"] extends ObjectType
-      //         ? never
-      //         : PropertyDesc<Grps[k]["__element__"], Cardinality.AtMostOne>;
-      //     }
-      //   >,
-      //   Cardinality.One,
-      //   {},
-      //   false,
-      //   false,
-      //   false,
-      //   false
-      // >;
-      // elements: LinkDesc<
-      //   Expr["__element__"],
-      //   Cardinality.Many,
-      //   {},
-      //   false,
-      //   false,
-      //   false,
-      //   false
-      // >;
+      grouping: PropertyDesc<$str, Cardinality.Many, false, true, true, false>;
+      key: LinkDesc<
+        ObjectType<
+          "std::FreeObject",
+          {
+            [k in keyof Grps]: Grps[k]["__element__"] extends ObjectType
+              ? never
+              : PropertyDesc<Grps[k]["__element__"], Cardinality.AtMostOne>;
+          }
+        >,
+        Cardinality.One,
+        {},
+        false,
+        true,
+        true,
+        false
+      >;
+      elements: LinkDesc<
+        Expr["__element__"],
+        Cardinality.Many,
+        {},
+        false,
+        true,
+        true,
+        false
+      >;
     },
     {
       // grouping: true;
