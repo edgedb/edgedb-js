@@ -206,7 +206,7 @@ const connectToServer = async (config: ConnectConfig): Promise<Client> => {
 		`);
 
     await client.execute(`
-      CONFIGURE SYSTEM INSERT Auth {
+      CONFIGURE INSTANCE INSERT Auth {
         user := "jest",
         priority := 10,
         method := (INSERT SCRAM),
