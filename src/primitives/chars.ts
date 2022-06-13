@@ -27,6 +27,7 @@ export default char;
 export const $0: char = ord("0");
 export const $1: char = ord("1");
 
+export const $A: char = ord("A");
 export const $C: char = ord("C");
 export const $D: char = ord("D");
 export const $E: char = ord("E");
@@ -34,6 +35,7 @@ export const $H: char = ord("H");
 export const $I: char = ord("I");
 export const $K: char = ord("K");
 export const $L: char = ord("L");
+export const $M: char = ord("M");
 export const $O: char = ord("O");
 export const $P: char = ord("P");
 export const $Q: char = ord("Q");

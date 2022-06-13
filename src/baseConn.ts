@@ -26,7 +26,9 @@ import {versionGreaterThanOrEqual} from "./utils";
 import * as errors from "./errors";
 import {resolveErrorCode} from "./errors/resolve";
 import {
+  Cardinality,
   HeaderCodes,
+  OutputFormat,
   ParseOptions,
   PrepareMessageHeaders,
   ProtocolVersion,
@@ -42,6 +44,7 @@ import {
 import char, * as chars from "./primitives/chars";
 import Event from "./primitives/event";
 import LRU from "./primitives/lru";
+import {Session} from "./options";
 
 export const PROTO_VER: ProtocolVersion = [1, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];
@@ -103,6 +106,11 @@ export class BaseRawConnection {
 
   protocolVersion: ProtocolVersion = PROTO_VER;
   isLegacyProtocol = false;
+
+  // protected stateTypeId = NULL_CODEC_ID;
+  protected stateCodec: ICodec = NULL_CODEC;
+  protected state: Buffer | null = null;
+  protected userState: Session | null = null;
 
   /** @internal */
   protected constructor(registry: CodecsRegistry) {
@@ -235,6 +243,13 @@ export class BaseRawConnection {
   protected _parseCommandCompleteMessage(): string {
     this._ignoreHeaders();
     const status = this.buffer.readString();
+    if (!this.isLegacyProtocol) {
+      this.buffer.readUUID(); // state type id
+      if (this.buffer.readInt16() !== 1) {
+        throw new Error(`expected 1`);
+      }
+      this.buffer.readLenPrefixedBuffer();
+    }
     this.buffer.finishMessage();
     return status;
   }
@@ -304,13 +319,14 @@ export class BaseRawConnection {
 
   private _parseServerSettings(name: string, value: Buffer): void {
     switch (name) {
-      case "suggested_pool_concurrency":
+      case "suggested_pool_concurrency": {
         this.serverSettings.suggested_pool_concurrency = parseInt(
           value.toString("utf8"),
           10
         );
         break;
-      case "system_config":
+      }
+      case "system_config": {
         const buf = new ReadBuffer(value);
         const typedescLen = buf.readInt32() - 16;
         const typedescId = buf.readUUID();
@@ -330,6 +346,22 @@ export class BaseRawConnection {
 
         this.serverSettings.system_config = data;
         break;
+      }
+      case "session_state_description": {
+        const buf = new ReadBuffer(value);
+        const typedescId = buf.readUUID();
+        const typedesc = buf.readBuffer(buf.readInt32());
+
+        let codec = this.codecsRegistry.getCodec(typedescId);
+        if (codec === null) {
+          codec = this.codecsRegistry.buildCodec(
+            typedesc,
+            this.protocolVersion
+          );
+        }
+        this.stateCodec = codec;
+        break;
+      }
       default:
         this.serverSettings[name] = value;
         break;
@@ -370,9 +402,29 @@ export class BaseRawConnection {
     }
   }
 
-  async _parse(
+  _setState(userState: Session) {
+    if (this.userState === userState) {
+      return;
+    }
+    if (userState === null) {
+      this.state = null;
+    } else {
+      if (this.stateCodec === NULL_CODEC) {
+        throw new Error(
+          `cannot encode session state, ` +
+            `did not receive state codec from server`
+        );
+      }
+      const buf = new WriteBuffer();
+      this.stateCodec.encode(buf, userState._serialise());
+      this.state = buf.unwrap();
+    }
+    this.userState = userState;
+  }
+
+  async _legacyParse(
     query: string,
-    asJson: boolean,
+    outputFormat: OutputFormat,
     expectOne: boolean,
     alwaysDescribe: boolean,
     options?: ParseOptions
@@ -389,13 +441,24 @@ export class BaseRawConnection {
         ...(options?.headers ?? {}),
         allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
       })
-      .writeChar(asJson ? chars.$j : chars.$b)
-      .writeChar(expectOne ? chars.$o : chars.$m);
+      .writeChar(outputFormat)
+      .writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
     if (this.isLegacyProtocol) {
       wb.writeString(""); // statement name
     }
-    wb.writeString(query).endMessage();
+    wb.writeString(query);
 
+    if (!this.isLegacyProtocol) {
+      wb.writeBuffer(this.stateCodec.tidBuffer);
+      wb.writeInt16(1);
+      if (this.state === null) {
+        wb.writeInt32(0);
+      } else {
+        wb.writeBuffer(this.state);
+      }
+    }
+
+    wb.endMessage();
     wb.writeSync();
 
     this._sendData(wb.unwrap());
@@ -606,7 +669,7 @@ export class BaseRawConnection {
     }
   }
 
-  async _executeFlow(
+  async _legacyExecuteFlow(
     args: QueryArgs,
     inCodec: ICodec,
     outCodec: ICodec,
@@ -673,30 +736,51 @@ export class BaseRawConnection {
     }
   }
 
-  private async _optimisticExecuteFlow(
-    args: QueryArgs,
-    asJson: boolean,
-    expectOne: boolean,
-    requiredOne: boolean,
-    inCodec: ICodec,
-    outCodec: ICodec,
+  private async _executeFlow(
     query: string,
+    args: QueryArgs,
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality,
+    inCodec: ICodec | null,
+    outCodec: ICodec | null,
     result: Array<any> | WriteBuffer,
+    privilegedMode: boolean = false,
     options?: ParseOptions
   ): Promise<void> {
+    const expectOne =
+      expectedCardinality === Cardinality.ONE ||
+      expectedCardinality === Cardinality.AT_MOST_ONE;
+
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
     wb.writeHeaders({
       explicitObjectids: "true",
       ...(options?.headers ?? {}),
-      allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+      allowCapabilities: privilegedMode
+        ? undefined
+        : NO_TRANSACTION_CAPABILITIES_BYTES,
     });
-    wb.writeChar(asJson ? chars.$j : chars.$b);
-    wb.writeChar(expectOne ? chars.$o : chars.$m);
+    wb.writeChar(outputFormat);
+    wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
     wb.writeString(query);
-    wb.writeBuffer(inCodec.tidBuffer);
-    wb.writeBuffer(outCodec.tidBuffer);
-    wb.writeBuffer(this._encodeArgs(args, inCodec));
+
+    if (!this.isLegacyProtocol) {
+      wb.writeBuffer(this.stateCodec.tidBuffer);
+      wb.writeInt16(1);
+      if (this.state === null) {
+        wb.writeInt32(0);
+      } else {
+        wb.writeBuffer(this.state);
+      }
+    }
+
+    wb.writeBuffer(inCodec?.tidBuffer ?? NULL_CODEC.tidBuffer);
+    wb.writeBuffer(outCodec?.tidBuffer ?? NULL_CODEC.tidBuffer);
+    if (inCodec) {
+      wb.writeBuffer(this._encodeArgs(args, inCodec));
+    } else {
+      wb.writeInt32(0);
+    }
     wb.endMessage();
     wb.writeSync();
 
@@ -719,7 +803,7 @@ export class BaseRawConnection {
         case chars.$D: {
           if (error == null) {
             try {
-              this._parseDataMessages(outCodec, result);
+              this._parseDataMessages(outCodec!, result);
             } catch (e: any) {
               error = e;
               this.buffer.finishMessage();
@@ -745,7 +829,7 @@ export class BaseRawConnection {
           try {
             [newCard, inCodec, outCodec, capabilities] =
               this._parseDescribeTypeMessage();
-            const key = this._getQueryCacheKey(query, asJson, expectOne);
+            const key = this._getQueryCacheKey(query, outputFormat, expectOne);
             this.queryCodecCache.set(key, [
               newCard,
               inCodec,
@@ -774,42 +858,46 @@ export class BaseRawConnection {
     }
 
     if (reExec) {
-      this._validateFetchCardinality(newCard!, asJson, requiredOne);
-      if (this.isLegacyProtocol) {
-        return await this._executeFlow(args, inCodec, outCodec, result);
-      } else {
-        return await this._optimisticExecuteFlow(
-          args,
-          asJson,
-          expectOne,
-          requiredOne,
-          inCodec,
-          outCodec,
-          query,
-          result,
-          options
-        );
-      }
+      this._validateFetchCardinality(
+        newCard!,
+        outputFormat,
+        expectedCardinality
+      );
+
+      return await this._executeFlow(
+        query,
+        args,
+        outputFormat,
+        expectedCardinality,
+        inCodec,
+        outCodec,
+        result,
+        privilegedMode,
+        options
+      );
     }
   }
 
   private _getQueryCacheKey(
     query: string,
-    asJson: boolean,
+    outputFormat: OutputFormat,
     expectOne: boolean
   ): string {
-    return [asJson, expectOne, query.length, query].join(";");
+    return [outputFormat, expectOne, query.length, query].join(";");
   }
 
   private _validateFetchCardinality(
-    card: char,
-    asJson: boolean,
-    requiredOne: boolean
+    card: Cardinality,
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality
   ): void {
-    if (requiredOne && card === chars.$n) {
+    if (
+      expectedCardinality === Cardinality.ONE &&
+      card === Cardinality.NO_RESULT
+    ) {
       throw new errors.NoDataError(
         `query executed via queryRequiredSingle${
-          asJson ? "JSON" : ""
+          outputFormat === OutputFormat.JSON ? "JSON" : ""
         }() returned no data`
       );
     }
@@ -818,50 +906,63 @@ export class BaseRawConnection {
   async fetch(
     query: string,
     args: QueryArgs = null,
-    asJson: boolean,
-    expectOne: boolean,
-    requiredOne: boolean = false
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality,
+    privilegedMode: boolean = false
   ): Promise<any> {
+    if (this.isLegacyProtocol && outputFormat === OutputFormat.NONE) {
+      return this.legacyExecute(query, privilegedMode);
+    }
+
     this._checkState();
 
-    const key = this._getQueryCacheKey(query, asJson, expectOne);
-    const ret = new Array();
+    const requiredOne = expectedCardinality === Cardinality.ONE;
+    const expectOne =
+      requiredOne || expectedCardinality === Cardinality.AT_MOST_ONE;
+    const asJson = outputFormat === OutputFormat.JSON;
 
-    if (this.queryCodecCache.has(key)) {
-      const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
-      this._validateFetchCardinality(card, asJson, requiredOne);
-      await this._optimisticExecuteFlow(
-        args,
-        asJson,
-        expectOne,
-        requiredOne,
-        inCodec,
-        outCodec,
+    const key = this._getQueryCacheKey(query, outputFormat, expectOne);
+    const ret: any[] = [];
+
+    if (!this.isLegacyProtocol) {
+      const [card, inCodec, outCodec] = this.queryCodecCache.get(key) ?? [];
+      if (card) {
+        this._validateFetchCardinality(
+          card,
+          outputFormat,
+          expectedCardinality
+        );
+      }
+      await this._executeFlow(
         query,
-        ret
+        args,
+        outputFormat,
+        expectedCardinality,
+        inCodec ?? null,
+        outCodec ?? null,
+        ret,
+        privilegedMode
       );
     } else {
-      const [card, inCodec, outCodec, capabilities] = await this._parse(
-        query,
-        asJson,
-        expectOne,
-        false
-      );
-      this._validateFetchCardinality(card, asJson, requiredOne);
-      this.queryCodecCache.set(key, [card, inCodec, outCodec, capabilities]);
-      if (this.alwaysUseOptimisticFlow || !this.isLegacyProtocol) {
-        await this._optimisticExecuteFlow(
-          args,
-          asJson,
-          expectOne,
-          requiredOne,
-          inCodec,
-          outCodec,
-          query,
-          ret
+      if (this.queryCodecCache.has(key)) {
+        const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
+        this._validateFetchCardinality(
+          card,
+          outputFormat,
+          expectedCardinality
         );
+        await this._legacyExecuteFlow(args, inCodec, outCodec, ret);
       } else {
-        await this._executeFlow(args, inCodec, outCodec, ret);
+        const [card, inCodec, outCodec, capabilities] =
+          await this._legacyParse(query, outputFormat, expectOne, false);
+        this._validateFetchCardinality(
+          card,
+          outputFormat,
+          expectedCardinality
+        );
+        this.queryCodecCache.set(key, [card, inCodec, outCodec, capabilities]);
+
+        await this._legacyExecuteFlow(args, inCodec, outCodec, ret);
       }
     }
 
@@ -890,14 +991,19 @@ export class BaseRawConnection {
 
   getQueryCapabilities(
     query: string,
-    asJson: boolean,
-    expectOne: boolean
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality
   ): number | null {
-    const key = this._getQueryCacheKey(query, asJson, expectOne);
+    const key = this._getQueryCacheKey(
+      query,
+      outputFormat,
+      expectedCardinality === Cardinality.ONE ||
+        expectedCardinality === Cardinality.AT_MOST_ONE
+    );
     return this.queryCodecCache.get(key)?.[3] ?? null;
   }
 
-  async execute(
+  async legacyExecute(
     query: string,
     allowTransactionCommands: boolean = false
   ): Promise<void> {
@@ -958,7 +1064,13 @@ export class BaseRawConnection {
       this.serverXactStatus !== TransactionStatus.TRANS_IDLE
     ) {
       try {
-        await this.execute(`rollback`, true);
+        await this.fetch(
+          `rollback`,
+          undefined,
+          OutputFormat.NONE,
+          Cardinality.NO_RESULT,
+          true
+        );
       } catch {
         this._abortWithError(
           new errors.ClientConnectionClosedError("failed to reset state")
@@ -988,9 +1100,15 @@ export class BaseRawConnection {
     query: string,
     headers?: PrepareMessageHeaders
   ): Promise<[ICodec, ICodec, Buffer, Buffer, ProtocolVersion]> {
-    const result = await this._parse(query, false, false, true, {
-      headers,
-    });
+    const result = await this._legacyParse(
+      query,
+      OutputFormat.BINARY,
+      false,
+      true,
+      {
+        headers,
+      }
+    );
     return [
       result[1],
       result[2],
@@ -1013,21 +1131,17 @@ export class BaseRawConnection {
       (versionGreaterThanOrEqual(this.protocolVersion, [0, 12])
         ? NULL_CODEC
         : EMPTY_TUPLE_CODEC);
-    await this._optimisticExecuteFlow(
+    await this._executeFlow(
+      query,
       args,
-      false,
-      false,
-      false,
+      OutputFormat.BINARY,
+      Cardinality.MANY,
       inCodec,
       outCodec,
-      query,
       result,
+      false,
       {headers}
     );
     return result.unwrap();
-  }
-
-  public async rawExecuteScript(script: string): Promise<void> {
-    await this.execute(script, true);
   }
 }
