@@ -32,6 +32,7 @@ import {ObjectCodec} from "./object";
 import {SetCodec} from "./set";
 import {ProtocolVersion} from "../ifaces";
 import {versionGreaterThanOrEqual} from "../utils";
+import {SparseObjectCodec} from "./sparseObject";
 
 const CODECS_CACHE_SIZE = 1000;
 const CODECS_BUILD_CACHE_SIZE = 200;
@@ -44,6 +45,7 @@ const CTYPE_TUPLE = 4;
 const CTYPE_NAMEDTUPLE = 5;
 const CTYPE_ARRAY = 6;
 const CTYPE_ENUM = 7;
+const CTYPE_INPUT_SHAPE = 8;
 
 export interface CustomCodecSpec {
   decimal_string?: boolean;
@@ -231,6 +233,15 @@ export class CodecsRegistry {
           break;
         }
 
+        case CTYPE_INPUT_SHAPE: {
+          const els = frb.readUInt16();
+          for (let i = 0; i < els; i++) {
+            const elm_length = frb.readUInt32();
+            frb.discard(elm_length + 2);
+          }
+          break;
+        }
+
         default: {
           if (t >= 0x7f && t <= 0xff) {
             const ann_length = frb.readUInt32();
@@ -408,6 +419,43 @@ export class CodecsRegistry {
           frb.discard(frb.readUInt32());
         }
         res = new EnumCodec(tid);
+        break;
+      }
+
+      case CTYPE_INPUT_SHAPE: {
+        const els = frb.readUInt16();
+        const codecs: ICodec[] = new Array(els);
+        const names: string[] = new Array(els);
+        // const flags: number[] = new Array(els);
+        // const cards: number[] = new Array(els);
+
+        for (let i = 0; i < els; i++) {
+          // let flag: number;
+          // let card: number;
+          // if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
+          //   flag = frb.readUInt32();
+          //   card = frb.readUInt8(); // cardinality
+          // } else {
+          //   flag = frb.readUInt8();
+          //   card = 0;
+          // }
+
+          const strLen = frb.readUInt32();
+          const name = frb.readBuffer(strLen).toString("utf8");
+
+          const pos = frb.readUInt16();
+          const subCodec = cl[pos];
+          if (subCodec == null) {
+            throw new Error("could not build object codec: missing subcodec");
+          }
+
+          codecs[i] = subCodec;
+          names[i] = name;
+          // flags[i] = flag;
+          // cards[i] = card;
+        }
+
+        res = new SparseObjectCodec(tid, codecs, names);
         break;
       }
     }

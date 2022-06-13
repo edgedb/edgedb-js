@@ -23,10 +23,11 @@ import {
   parseConnectArguments,
 } from "./conUtils";
 import * as errors from "./errors";
-import {Executor, QueryArgs} from "./ifaces";
+import {Cardinality, Executor, OutputFormat, QueryArgs} from "./ifaces";
 import {
   Options,
   RetryOptions,
+  Session,
   SimpleRetryOptions,
   SimpleTransactionOptions,
   TransactionOptions,
@@ -59,6 +60,7 @@ export class ClientConnectionHolder {
     if (!this._connection || this._connection.isClosed()) {
       this._connection = await this._pool.getNewConnection();
     }
+    this._connection._setState(this.options.session);
     return this._connection;
   }
 
@@ -165,21 +167,29 @@ export class ClientConnectionHolder {
   private async retryingFetch(
     query: string,
     args: QueryArgs | undefined,
-    asJson: boolean,
-    expectOne: boolean,
-    requiredOne?: boolean
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality
   ): Promise<any> {
     let result: any;
     for (let iteration = 0; true; ++iteration) {
       const conn = await this._getConnection();
       try {
-        result = await conn.fetch(query, args, asJson, expectOne, requiredOne);
+        result = await conn.fetch(
+          query,
+          args,
+          outputFormat,
+          expectedCardinality
+        );
       } catch (err) {
         if (
           err instanceof errors.EdgeDBError &&
           err.hasTag(errors.SHOULD_RETRY) &&
           // query is readonly or it's a transaction serialization error
-          (conn.getQueryCapabilities(query, asJson, expectOne) === 0 ||
+          (conn.getQueryCapabilities(
+            query,
+            outputFormat,
+            expectedCardinality
+          ) === 0 ||
             err instanceof errors.TransactionConflictError)
         ) {
           const rule = this.options.retryOptions.getRuleForException(err);
@@ -195,36 +205,65 @@ export class ClientConnectionHolder {
     }
   }
 
-  async execute(query: string): Promise<void> {
-    const conn = await this._getConnection();
-    return await conn.execute(query);
+  async execute(query: string, args?: QueryArgs): Promise<void> {
+    return this.retryingFetch(
+      query,
+      args,
+      OutputFormat.NONE,
+      Cardinality.NO_RESULT
+    );
   }
 
   async query(query: string, args?: QueryArgs): Promise<any> {
-    return this.retryingFetch(query, args, false, false);
+    return this.retryingFetch(
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.MANY
+    );
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return this.retryingFetch(query, args, true, false);
+    return this.retryingFetch(
+      query,
+      args,
+      OutputFormat.JSON,
+      Cardinality.MANY
+    );
   }
 
   async querySingle(query: string, args?: QueryArgs): Promise<any> {
-    return this.retryingFetch(query, args, false, true);
+    return this.retryingFetch(
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.AT_MOST_ONE
+    );
   }
 
   async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
-    return this.retryingFetch(query, args, true, true);
+    return this.retryingFetch(
+      query,
+      args,
+      OutputFormat.JSON,
+      Cardinality.AT_MOST_ONE
+    );
   }
 
   async queryRequiredSingle(query: string, args?: QueryArgs): Promise<any> {
-    return this.retryingFetch(query, args, false, true, true);
+    return this.retryingFetch(
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.ONE
+    );
   }
 
   async queryRequiredSingleJSON(
     query: string,
     args?: QueryArgs
   ): Promise<string> {
-    return this.retryingFetch(query, args, true, true, true);
+    return this.retryingFetch(query, args, OutputFormat.JSON, Cardinality.ONE);
   }
 }
 
@@ -470,6 +509,31 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withRetryOptions(opts));
   }
 
+  withSession(session: Session): Client {
+    return new Client(this.pool, this.options.withSession(session));
+  }
+
+  withAliases(aliases: {[key: string]: string}) {
+    return new Client(
+      this.pool,
+      this.options.withSession(this.options.session.withAliases(aliases))
+    );
+  }
+
+  withConfigs(configs: {[key: string]: string}): Client {
+    return new Client(
+      this.pool,
+      this.options.withSession(this.options.session.withConfigs(configs))
+    );
+  }
+
+  withGlobals(globals: {[key: string]: string}): Client {
+    return new Client(
+      this.pool,
+      this.options.withSession(this.options.session.withGlobals(globals))
+    );
+  }
+
   async ensureConnected(): Promise<this> {
     await this.pool.ensureConnected();
     return this;
@@ -498,7 +562,7 @@ export class Client implements Executor {
     }
   }
 
-  async execute(query: string): Promise<void> {
+  async execute(query: string, args?: QueryArgs): Promise<void> {
     const holder = await this.pool.acquireHolder(this.options);
     try {
       return await holder.execute(query);

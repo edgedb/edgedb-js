@@ -104,26 +104,94 @@ export class TransactionOptions {
   }
 }
 
+export interface SessionOptions {
+  module?: string;
+  aliases?: Record<string, string>;
+  configs?: Record<string, any>;
+  globals?: Record<string, any>;
+}
+
+export class Session {
+  readonly module: string;
+  readonly aliases: Record<string, string>;
+  readonly configs: Record<string, any>;
+  readonly globals: Record<string, any>;
+
+  constructor({
+    module = "default",
+    aliases = {},
+    configs = {},
+    globals = {},
+  }: SessionOptions = {}) {
+    this.module = module;
+    this.aliases = aliases;
+    this.configs = configs;
+    this.globals = globals;
+  }
+
+  withAliases({module, ...aliases}: {[key: string]: string}): Session {
+    return new Session({
+      ...this,
+      module: module ?? this.module,
+      aliases: {...this.aliases, ...aliases},
+    });
+  }
+
+  withConfigs(configs: {[key: string]: string}): Session {
+    return new Session({
+      ...this,
+      configs: {...this.configs, ...configs},
+    });
+  }
+
+  withGlobals(globals: {[key: string]: string}): Session {
+    return new Session({
+      ...this,
+      globals: {...this.globals, ...globals},
+    });
+  }
+
+  _serialise() {
+    return {
+      module: this.module,
+      aliases: Object.entries(this.aliases),
+      config: this.configs,
+      globals: Object.entries(this.globals).reduce((globals, [key, val]) => {
+        globals[key.includes("::") ? key : `${this.module}::${key}`] = val;
+        return globals;
+      }, {} as {[key: string]: any}),
+    };
+  }
+
+  static defaults(): Session {
+    return new Session();
+  }
+}
+
 export class Options {
   readonly retryOptions: RetryOptions;
   readonly transactionOptions: TransactionOptions;
+  readonly session: Session;
 
   constructor({
     retryOptions = RetryOptions.defaults(),
     transactionOptions = TransactionOptions.defaults(),
+    session = Session.defaults(),
   }: {
     retryOptions?: RetryOptions;
     transactionOptions?: TransactionOptions;
+    session?: Session;
   } = {}) {
     this.retryOptions = retryOptions;
     this.transactionOptions = transactionOptions;
+    this.session = session;
   }
 
   withTransactionOptions(
     opt: TransactionOptions | SimpleTransactionOptions
   ): Options {
     return new Options({
-      retryOptions: this.retryOptions,
+      ...this,
       transactionOptions:
         opt instanceof TransactionOptions ? opt : new TransactionOptions(opt),
     });
@@ -131,11 +199,18 @@ export class Options {
 
   withRetryOptions(opt: RetryOptions | SimpleRetryOptions): Options {
     return new Options({
-      transactionOptions: this.transactionOptions,
+      ...this,
       retryOptions:
         opt instanceof RetryOptions
           ? opt
           : new RetryOptions(opt.attempts, opt.backoff),
+    });
+  }
+
+  withSession(opt: Session): Options {
+    return new Options({
+      ...this,
+      session: opt,
     });
   }
 

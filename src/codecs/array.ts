@@ -18,6 +18,7 @@
 
 import {ICodec, Codec, ScalarCodec, uuid, CodecKind} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
+import {TupleCodec} from "./tuple";
 
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;
@@ -30,7 +31,12 @@ export class ArrayCodec extends Codec implements ICodec {
   }
 
   encode(buf: WriteBuffer, obj: any): void {
-    if (!(this.subCodec instanceof ScalarCodec)) {
+    if (
+      !(
+        this.subCodec instanceof ScalarCodec ||
+        this.subCodec instanceof TupleCodec
+      )
+    ) {
       throw new Error("only arrays of scalars are supported");
     }
 
