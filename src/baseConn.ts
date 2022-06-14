@@ -726,6 +726,118 @@ export class BaseRawConnection {
     }
   }
 
+  private async _legacyOptimisticExecuteFlow(
+    query: string,
+    args: QueryArgs,
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality,
+    inCodec: ICodec,
+    outCodec: ICodec,
+    result: Array<any> | WriteBuffer
+  ): Promise<void> {
+    const expectOne =
+      expectedCardinality === Cardinality.ONE ||
+      expectedCardinality === Cardinality.AT_MOST_ONE;
+
+    const wb = new WriteMessageBuffer();
+    wb.beginMessage(chars.$O);
+    wb.writeHeaders({
+      explicitObjectids: "true",
+      allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+    });
+    wb.writeChar(outputFormat);
+    wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
+    wb.writeString(query);
+    wb.writeBuffer(inCodec.tidBuffer);
+    wb.writeBuffer(outCodec.tidBuffer);
+    wb.writeBuffer(this._encodeArgs(args, inCodec));
+    wb.endMessage();
+    wb.writeSync();
+
+    this._sendData(wb.unwrap());
+
+    let reExec = false;
+    let error: Error | null = null;
+    let parsing = true;
+    let newCard: Cardinality | null = null;
+    let capabilities = -1;
+
+    while (parsing) {
+      if (!this.buffer.takeMessage()) {
+        await this._waitForMessage();
+      }
+
+      const mtype = this.buffer.getMessageType();
+
+      switch (mtype) {
+        case chars.$D: {
+          if (error == null) {
+            try {
+              this._parseDataMessages(outCodec, result);
+            } catch (e: any) {
+              error = e;
+              this.buffer.finishMessage();
+            }
+          } else {
+            this.buffer.discardMessage();
+          }
+          break;
+        }
+
+        case chars.$C: {
+          this.lastStatus = this._parseCommandCompleteMessage();
+          break;
+        }
+
+        case chars.$Z: {
+          this._parseSyncMessage();
+          parsing = false;
+          break;
+        }
+
+        case chars.$T: {
+          try {
+            [newCard, inCodec, outCodec, capabilities] =
+              this._parseDescribeTypeMessage();
+            const key = this._getQueryCacheKey(query, outputFormat, expectOne);
+            this.queryCodecCache.set(key, [
+              newCard,
+              inCodec,
+              outCodec,
+              capabilities,
+            ]);
+            reExec = true;
+          } catch (e: any) {
+            error = e;
+          }
+          break;
+        }
+
+        case chars.$E: {
+          error = this._parseErrorMessage();
+          break;
+        }
+
+        default:
+          this._fallthrough();
+      }
+    }
+
+    if (error != null) {
+      throw error;
+    }
+
+    if (reExec) {
+      this._validateFetchCardinality(
+        newCard!,
+        outputFormat,
+        expectedCardinality
+      );
+
+      return await this._legacyExecuteFlow(args, inCodec, outCodec, result);
+    }
+  }
+
   private async _executeFlow(
     query: string,
     args: QueryArgs,
@@ -960,7 +1072,15 @@ export class BaseRawConnection {
           outputFormat,
           expectedCardinality
         );
-        await this._legacyExecuteFlow(args, inCodec, outCodec, ret);
+        await this._legacyOptimisticExecuteFlow(
+          query,
+          args,
+          outputFormat,
+          expectedCardinality,
+          inCodec,
+          outCodec,
+          ret
+        );
       } else {
         const [card, inCodec, outCodec, capabilities] =
           await this._legacyParse(query, outputFormat, expectOne);
