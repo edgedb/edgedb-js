@@ -151,6 +151,7 @@ export class Session {
     });
   }
 
+  /** @internal */
   _serialise() {
     return {
       module: this.module,
@@ -168,15 +169,22 @@ export class Session {
   }
 }
 
+const defaultSession = Session.defaults();
+
 export class Options {
   readonly retryOptions: RetryOptions;
   readonly transactionOptions: TransactionOptions;
-  readonly session: Session;
+
+  /** @internal */ readonly _session: Session | null;
+
+  get session() {
+    return this._session ?? defaultSession;
+  }
 
   constructor({
     retryOptions = RetryOptions.defaults(),
     transactionOptions = TransactionOptions.defaults(),
-    session = Session.defaults(),
+    session,
   }: {
     retryOptions?: RetryOptions;
     transactionOptions?: TransactionOptions;
@@ -184,7 +192,7 @@ export class Options {
   } = {}) {
     this.retryOptions = retryOptions;
     this.transactionOptions = transactionOptions;
-    this.session = session;
+    this._session = session ?? null;
   }
 
   withTransactionOptions(

@@ -60,7 +60,7 @@ export class ClientConnectionHolder {
     if (!this._connection || this._connection.isClosed()) {
       this._connection = await this._pool.getNewConnection();
     }
-    this._connection._setState(this.options.session);
+    this._connection._setState(this.options._session);
     return this._connection;
   }
 

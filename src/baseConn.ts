@@ -402,13 +402,19 @@ export class BaseRawConnection {
     }
   }
 
-  _setState(userState: Session) {
+  _setState(userState: Session | null) {
     if (this.userState === userState) {
       return;
     }
     if (userState === null) {
       this.state = null;
     } else {
+      if (this.isLegacyProtocol) {
+        throw new errors.InterfaceError(
+          `setting session state is not supported in this version of ` +
+            `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`
+        );
+      }
       if (this.stateCodec === NULL_CODEC) {
         throw new Error(
           `cannot encode session state, ` +
