@@ -350,7 +350,7 @@ export class ReadMessageBuffer {
 
   private curMessageType: char;
   private curMessageLen: number;
-  private curMessageLenUnread: number;
+  curMessageLenUnread: number;
   private curMessageReady: boolean;
 
   constructor() {

@@ -41,7 +41,7 @@ import {
   WriteBuffer,
   WriteMessageBuffer,
 } from "./primitives/buffer";
-import char, * as chars from "./primitives/chars";
+import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
 import LRU from "./primitives/lru";
 import {Session} from "./options";
@@ -84,7 +84,6 @@ const OLD_ERROR_CODES = new Map([
 
 export class BaseRawConnection {
   protected connected: boolean = false;
-  protected alwaysUseOptimisticFlow: boolean = false; // XXX
   protected exposeErrorAttributes: boolean = false;
 
   protected lastStatus: string | null;
@@ -189,7 +188,7 @@ export class BaseRawConnection {
   }
 
   private _parseDescribeTypeMessage(): [
-    number,
+    Cardinality,
     ICodec,
     ICodec,
     number,
@@ -204,7 +203,7 @@ export class BaseRawConnection {
       );
     }
 
-    const cardinality: char = this.buffer.readChar();
+    const cardinality: Cardinality = this.buffer.readChar();
 
     const inTypeId = this.buffer.readUUID();
     const inTypeData = this.buffer.readLenPrefixedBuffer();
@@ -243,12 +242,13 @@ export class BaseRawConnection {
   protected _parseCommandCompleteMessage(): string {
     this._ignoreHeaders();
     const status = this.buffer.readString();
-    if (!this.isLegacyProtocol) {
+    // TODO: Check if this is correct??
+    if (!this.isLegacyProtocol && this.buffer.curMessageLenUnread) {
       this.buffer.readUUID(); // state type id
       if (this.buffer.readInt16() !== 1) {
         throw new Error(`expected 1`);
       }
-      this.buffer.readLenPrefixedBuffer();
+      this.buffer.readLenPrefixedBuffer(); // state
     }
     this.buffer.finishMessage();
     return status;
@@ -426,7 +426,6 @@ export class BaseRawConnection {
     query: string,
     outputFormat: OutputFormat,
     expectOne: boolean,
-    alwaysDescribe: boolean,
     options?: ParseOptions
   ): Promise<[number, ICodec, ICodec, number, Buffer | null, Buffer | null]> {
     const wb = new WriteMessageBuffer();
@@ -443,20 +442,9 @@ export class BaseRawConnection {
       })
       .writeChar(outputFormat)
       .writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
-    if (this.isLegacyProtocol) {
-      wb.writeString(""); // statement name
-    }
-    wb.writeString(query);
+    wb.writeString(""); // statement name
 
-    if (!this.isLegacyProtocol) {
-      wb.writeBuffer(this.stateCodec.tidBuffer);
-      wb.writeInt16(1);
-      if (this.state === null) {
-        wb.writeInt32(0);
-      } else {
-        wb.writeBuffer(this.state);
-      }
-    }
+    wb.writeString(query);
 
     wb.endMessage();
     wb.writeSync();
@@ -546,11 +534,7 @@ export class BaseRawConnection {
       );
     }
 
-    if (
-      inCodec == null ||
-      outCodec == null ||
-      (alwaysDescribe && !parseSendsTypeData)
-    ) {
+    if (inCodec == null || outCodec == null || !parseSendsTypeData) {
       if (parseSendsTypeData) {
         // unreachable
         throw new Error("in/out codecs were not sent");
@@ -745,8 +729,11 @@ export class BaseRawConnection {
     outCodec: ICodec | null,
     result: Array<any> | WriteBuffer,
     privilegedMode: boolean = false,
+    parseOnly: boolean = false,
     options?: ParseOptions
-  ): Promise<void> {
+  ): Promise<
+    [Cardinality, ICodec, ICodec, number, Buffer | null, Buffer | null] | void
+  > {
     const expectOne =
       expectedCardinality === Cardinality.ONE ||
       expectedCardinality === Cardinality.AT_MOST_ONE;
@@ -764,14 +751,12 @@ export class BaseRawConnection {
     wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
     wb.writeString(query);
 
-    if (!this.isLegacyProtocol) {
-      wb.writeBuffer(this.stateCodec.tidBuffer);
-      wb.writeInt16(1);
-      if (this.state === null) {
-        wb.writeInt32(0);
-      } else {
-        wb.writeBuffer(this.state);
-      }
+    wb.writeBuffer(this.stateCodec.tidBuffer);
+    wb.writeInt16(1);
+    if (this.state === null) {
+      wb.writeInt32(0);
+    } else {
+      wb.writeBuffer(this.state);
     }
 
     wb.writeBuffer(inCodec?.tidBuffer ?? NULL_CODEC.tidBuffer);
@@ -789,8 +774,10 @@ export class BaseRawConnection {
     let reExec = false;
     let error: Error | null = null;
     let parsing = true;
-    let newCard: char | null = null;
+    let newCard: Cardinality | null = null;
     let capabilities = -1;
+    let inCodecBuf: Buffer | null = null;
+    let outCodecBuf: Buffer | null = null;
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -827,8 +814,14 @@ export class BaseRawConnection {
 
         case chars.$T: {
           try {
-            [newCard, inCodec, outCodec, capabilities] =
-              this._parseDescribeTypeMessage();
+            [
+              newCard,
+              inCodec,
+              outCodec,
+              capabilities,
+              inCodecBuf,
+              outCodecBuf,
+            ] = this._parseDescribeTypeMessage();
             const key = this._getQueryCacheKey(query, outputFormat, expectOne);
             this.queryCodecCache.set(key, [
               newCard,
@@ -857,7 +850,16 @@ export class BaseRawConnection {
       throw error;
     }
 
-    if (reExec) {
+    if (parseOnly) {
+      return [
+        newCard!,
+        inCodec!,
+        outCodec!,
+        capabilities,
+        inCodecBuf,
+        outCodecBuf,
+      ];
+    } else if (reExec) {
       this._validateFetchCardinality(
         newCard!,
         outputFormat,
@@ -873,6 +875,7 @@ export class BaseRawConnection {
         outCodec,
         result,
         privilegedMode,
+        false,
         options
       );
     }
@@ -954,7 +957,7 @@ export class BaseRawConnection {
         await this._legacyExecuteFlow(args, inCodec, outCodec, ret);
       } else {
         const [card, inCodec, outCodec, capabilities] =
-          await this._legacyParse(query, outputFormat, expectOne, false);
+          await this._legacyParse(query, outputFormat, expectOne);
         this._validateFetchCardinality(
           card,
           outputFormat,
@@ -1100,15 +1103,20 @@ export class BaseRawConnection {
     query: string,
     headers?: PrepareMessageHeaders
   ): Promise<[ICodec, ICodec, Buffer, Buffer, ProtocolVersion]> {
-    const result = await this._legacyParse(
+    const result = (await this._executeFlow(
       query,
+      null,
       OutputFormat.BINARY,
+      Cardinality.MANY,
+      null,
+      null,
+      [],
       false,
       true,
       {
         headers,
       }
-    );
+    ))!;
     return [
       result[1],
       result[2],
@@ -1139,6 +1147,7 @@ export class BaseRawConnection {
       inCodec,
       outCodec,
       result,
+      false,
       false,
       {headers}
     );
