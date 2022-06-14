@@ -18,41 +18,16 @@
 
 import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
-// import {ONE, AT_LEAST_ONE} from "./consts";
-
-// export interface ObjectFieldInfo {
-//   name: string;
-// }
 
 export class SparseObjectCodec extends Codec implements ICodec {
   private codecs: ICodec[];
   private names: string[];
-  // private fields: ObjectFieldInfo[];
-  // private namesSet: Set<string>;
-  // private cardinalities: number[];
 
-  constructor(
-    tid: uuid,
-    codecs: ICodec[],
-    names: string[]
-    // flags: number[],
-    // cards: number[]
-  ) {
+  constructor(tid: uuid, codecs: ICodec[], names: string[]) {
     super(tid);
 
     this.codecs = codecs;
     this.names = names;
-
-    // this.fields = new Array(names.length);
-    // this.namesSet = new Set();
-    // this.cardinalities = cards;
-
-    // for (let i = 0; i < names.length; i++) {
-    //   this.fields[i] = {
-    //     name: names[i],
-    //   };
-    // this.namesSet.add(name);
-    // }
   }
 
   encode(buf: WriteBuffer, object: any): void {
@@ -103,10 +78,6 @@ export class SparseObjectCodec extends Codec implements ICodec {
   getSubcodecs(): ICodec[] {
     return Array.from(this.codecs);
   }
-
-  // // getFields(): ObjectFieldInfo[] {
-  // //   return Array.from(this.fields);
-  // // }
 
   getKind(): CodecKind {
     return "sparse_object";

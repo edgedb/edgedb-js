@@ -34,25 +34,20 @@ interface FetchConfig {
   database: string;
 }
 
-const PROTO_MIME = (
-  `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`
-)
+const PROTO_MIME = `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`;
 
 class BaseFetchConnection extends BaseRawConnection {
   protected config: FetchConfig;
   protected addr: string;
 
-  constructor(
-    config: FetchConfig,
-    registry: CodecsRegistry
-  ) {
+  constructor(config: FetchConfig, registry: CodecsRegistry) {
     super(registry);
     this.config = config;
     this.addr = this._buildAddr();
   }
 
   protected _buildAddr(): string {
-    this.throwNotImplemented('_buildAddr');
+    this.throwNotImplemented("_buildAddr");
   }
 
   protected async _waitForMessage(): Promise<void> {
@@ -74,7 +69,8 @@ class BaseFetchConnection extends BaseRawConnection {
       const mtype = this.buffer.getMessageType();
       throw new Error(
         `sending request before reading all data of the previous one: ` +
-        `${chars.chr(mtype)}`);
+          `${chars.chr(mtype)}`
+      );
     }
 
     if (this.messageWaiter != null && !this.messageWaiter.done) {
@@ -110,11 +106,11 @@ class BaseFetchConnection extends BaseRawConnection {
 
       if (pause) {
         // unreachable
-        throw new Error('too much data received');
+        throw new Error("too much data received");
       }
 
       if (!this.buffer.takeMessage()) {
-        throw new Error('no binary protocol messages in the response');
+        throw new Error("no binary protocol messages in the response");
       }
 
       this.messageWaiter.set();
@@ -133,7 +129,6 @@ class BaseFetchConnection extends BaseRawConnection {
   ): BaseFetchConnection {
     const conn = new this(config, registry);
     conn.connected = true;
-    conn.alwaysUseOptimisticFlow = true;
     conn.exposeErrorAttributes = true;
     return conn;
   }
@@ -144,8 +139,9 @@ export class AdminFetchConnection extends BaseFetchConnection {
     const config = this.config;
 
     return `${
-      typeof config.address === "string" ?
-        config.address : `http://${config.address[0]}:${config.address[1]}`
+      typeof config.address === "string"
+        ? config.address
+        : `http://${config.address[0]}:${config.address[1]}`
     }/db/${config.database}/admin_binary_http`;
   }
 }

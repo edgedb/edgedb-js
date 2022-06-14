@@ -173,13 +173,16 @@ export class CodecsRegistry {
           break;
         }
 
-        case CTYPE_SHAPE: {
+        case CTYPE_SHAPE:
+        case CTYPE_INPUT_SHAPE: {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
-            if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
-              frb.discard(5); // 4 (flags) + 1 (cardinality)
-            } else {
-              frb.discard(1); // flags
+            if (t === CTYPE_SHAPE) {
+              if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
+                frb.discard(5); // 4 (flags) + 1 (cardinality)
+              } else {
+                frb.discard(1); // flags
+              }
             }
 
             const elm_length = frb.readUInt32();
@@ -233,15 +236,6 @@ export class CodecsRegistry {
           break;
         }
 
-        case CTYPE_INPUT_SHAPE: {
-          const els = frb.readUInt16();
-          for (let i = 0; i < els; i++) {
-            const elm_length = frb.readUInt32();
-            frb.discard(elm_length + 2);
-          }
-          break;
-        }
-
         default: {
           if (t >= 0x7f && t <= 0xff) {
             const ann_length = frb.readUInt32();
@@ -290,7 +284,8 @@ export class CodecsRegistry {
         break;
       }
 
-      case CTYPE_SHAPE: {
+      case CTYPE_SHAPE:
+      case CTYPE_INPUT_SHAPE: {
         const els = frb.readUInt16();
         const codecs: ICodec[] = new Array(els);
         const names: string[] = new Array(els);
@@ -300,12 +295,14 @@ export class CodecsRegistry {
         for (let i = 0; i < els; i++) {
           let flag: number;
           let card: number;
-          if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
-            flag = frb.readUInt32();
-            card = frb.readUInt8(); // cardinality
-          } else {
-            flag = frb.readUInt8();
-            card = 0;
+          if (t === CTYPE_SHAPE) {
+            if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
+              flag = frb.readUInt32();
+              card = frb.readUInt8(); // cardinality
+            } else {
+              flag = frb.readUInt8();
+              card = 0;
+            }
           }
 
           const strLen = frb.readUInt32();
@@ -319,11 +316,14 @@ export class CodecsRegistry {
 
           codecs[i] = subCodec;
           names[i] = name;
-          flags[i] = flag;
-          cards[i] = card;
+          flags[i] = flag!;
+          cards[i] = card!;
         }
 
-        res = new ObjectCodec(tid, codecs, names, flags, cards);
+        res =
+          t === CTYPE_INPUT_SHAPE
+            ? new SparseObjectCodec(tid, codecs, names)
+            : new ObjectCodec(tid, codecs, names, flags, cards);
         break;
       }
 
@@ -419,43 +419,6 @@ export class CodecsRegistry {
           frb.discard(frb.readUInt32());
         }
         res = new EnumCodec(tid);
-        break;
-      }
-
-      case CTYPE_INPUT_SHAPE: {
-        const els = frb.readUInt16();
-        const codecs: ICodec[] = new Array(els);
-        const names: string[] = new Array(els);
-        // const flags: number[] = new Array(els);
-        // const cards: number[] = new Array(els);
-
-        for (let i = 0; i < els; i++) {
-          // let flag: number;
-          // let card: number;
-          // if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
-          //   flag = frb.readUInt32();
-          //   card = frb.readUInt8(); // cardinality
-          // } else {
-          //   flag = frb.readUInt8();
-          //   card = 0;
-          // }
-
-          const strLen = frb.readUInt32();
-          const name = frb.readBuffer(strLen).toString("utf8");
-
-          const pos = frb.readUInt16();
-          const subCodec = cl[pos];
-          if (subCodec == null) {
-            throw new Error("could not build object codec: missing subcodec");
-          }
-
-          codecs[i] = subCodec;
-          names[i] = name;
-          // flags[i] = flag;
-          // cards[i] = card;
-        }
-
-        res = new SparseObjectCodec(tid, codecs, names);
         break;
       }
     }
