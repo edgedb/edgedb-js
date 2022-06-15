@@ -25,13 +25,15 @@ export async function $queryFunc(this: any, cxn: edgedb.Executor, args: any) {
 
   const _args = jsonifyComplexParams(expr, args);
 
+  const query = expr.toEdgeQL();
+
   if (
     expr.__cardinality__ === Cardinality.One ||
     expr.__cardinality__ === Cardinality.AtMostOne
   ) {
-    return cxn.querySingle(expr.toEdgeQL(), _args);
+    return cxn.querySingle(query, _args);
   } else {
-    return cxn.query(expr.toEdgeQL(), _args);
+    return cxn.query(query, _args);
   }
 }
 

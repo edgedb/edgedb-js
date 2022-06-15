@@ -76,6 +76,8 @@ export type SomeExpression =
   | $expr_Detached
   | $expr_Group;
 
+declare var asdf: $expr_Group;
+
 type WithScopeExpr =
   | $expr_Select
   | $expr_Update
@@ -163,7 +165,8 @@ export function $toEdgeQL(this: any) {
     }
 
     // pull out scope variables
-    // from select, update, and group expressions
+    // from select, update, and group expressions.
+    // these are always rendered in with blocks
     if (
       (expr.__kind__ === ExpressionKind.Select ||
         expr.__kind__ === ExpressionKind.Update ||
@@ -345,6 +348,22 @@ function walkExprTree(
 
   const expr = _expr as SomeExpression;
 
+  function walkShape(shape: object) {
+    for (let param of Object.values(shape)) {
+      if (param.__kind__ === ExpressionKind.PolyShapeElement) {
+        param = param.__shapeElement__;
+      }
+      if (typeof param === "object") {
+        if (!!(param as any).__kind__) {
+          // param is expression
+          childExprs.push(...walkExprTree(param as any, expr as any, ctx));
+        } else {
+          walkShape(param);
+        }
+      }
+    }
+  }
+
   // set root scope
   if (!ctx.rootScope && parentScope) {
     ctx.rootScope = parentScope;
@@ -464,25 +483,11 @@ function walkExprTree(
       if (expr.__kind__ === ExpressionKind.Select) {
         if (
           isObjectType(expr.__element__) &&
-          // Don't walk shape if select is just wrapping an object type expr
-          // that has it's own shape
+          // don't walk shape twice if select expr justs wrap another object
+          // type expr with the same shape
           expr.__element__.__shape__ !==
             (expr.__expr__ as ObjectTypeSet).__element__.__shape__
         ) {
-          const walkShape = (shape: object) => {
-            for (let param of Object.values(shape)) {
-              if (param.__kind__ === ExpressionKind.PolyShapeElement) {
-                param = param.__shapeElement__;
-              }
-              if (typeof param === "object") {
-                if (!!(param as any).__kind__) {
-                  childExprs.push(...walkExprTree(param as any, expr, ctx));
-                } else {
-                  walkShape(param);
-                }
-              }
-            }
-          };
           walkShape(expr.__element__.__shape__ ?? {});
         }
       } else {
@@ -528,7 +533,8 @@ function walkExprTree(
       break;
     }
     case ExpressionKind.Group: {
-      const groupingSet = expr.__grouping__ as any as GroupingSet;
+      const groupingSet = expr.__modifiers__.by as any as GroupingSet;
+      // const groupingSet = expr.__grouping__ as any as GroupingSet;
       for (const [_k, groupExpr] of groupingSet.__exprs__) {
         // this prevents recurring grouping elements from being walked twice
         // this way, these won't get pulled into with blocks,
@@ -539,6 +545,11 @@ function walkExprTree(
           seen.add(expr);
         }
       }
+
+      if (!expr.__element__.__shape__.elements.__element__.__shape__) {
+        throw new Error("Missing shape in GROUP statement");
+      }
+      walkShape(expr.__element__.__shape__.elements.__element__.__shape__);
       childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
       break;
     }
@@ -604,6 +615,7 @@ function renderEdgeQL(
   // if expression is in a with block
   // render its name
   const withVar = ctx.withVars.get(expr);
+
   if (withVar && ctx.renderWithVar !== expr) {
     return renderShape &&
       expr.__kind__ === ExpressionKind.Select &&
@@ -675,20 +687,22 @@ function renderEdgeQL(
       ctx
     );
 
-    // const scopedWithBlock: string[] = [];
     if (!scopeExpr) {
+      // if no scope expression exists, all variables are unscoped
       unscopedWithBlock.push(
         ...sortedBlockVars.map(blockVar => renderWithBlockExpr(blockVar))
       );
-    } else if (expr.__kind__ === ExpressionKind.Group) {
-      // add all vars into scoped with block
-      // this is rendered inside the `using` clause later
-      // no need for the with/for trick
-      scopeExprVar.push(renderWithBlockExpr(scopeExpr, noImplicitDetached));
-      scopedWithBlock.push(
-        ...sortedBlockVars.map(blockVar => renderWithBlockExpr(blockVar))
-      );
-    } else {
+    }
+    // else if (expr.__kind__ === ExpressionKind.Group) {
+    //   // add all vars into scoped with block
+    //   // this is rendered inside the `using` clause later
+    //   // no need for the with/for trick
+    //   scopeExprVar.push(renderWithBlockExpr(scopeExpr, noImplicitDetached));
+    //   scopedWithBlock.push(
+    //     ...sortedBlockVars.map(blockVar => renderWithBlockExpr(blockVar))
+    //   );
+    // }
+    else {
       // get scope variable
       const scopeVar = ctx.withVars.get(scopeExpr)!;
 
@@ -997,29 +1011,25 @@ function renderEdgeQL(
       return arg.__kind__ === "groupingset";
     }
 
-    const groupingSet = expr.__grouping__ as any as GroupingSet;
-    const clause = [];
+    const groupingSet = expr.__modifiers__.by as any as GroupingSet;
+    const elementsShape =
+      expr.__element__.__shape__.elements.__element__.__shape__;
 
-    // render scope var and any unscoped withVars in with block
-    clause.push(
-      `WITH\n${[
-        ...unscopedWithBlock,
-        ...scopeExprVar,
-        // ...scopedWithBlock,
-      ].join(",\n")}`
-    );
+    const selectStatement: string[] = [];
+    const groupStatement: string[] = [];
 
-    clause.push(`GROUP ${renderEdgeQL(expr.__scope__, ctx)}`);
+    const groupTarget = renderEdgeQL(expr.__scope__, ctx);
+    groupStatement.push(`GROUP ${groupTarget}`);
 
     // render scoped withvars in using
     const combinedBlock = [
-      ...scopedWithBlock,
+      // ...scopedWithBlock,
       // this is deduplicated in e.group
       ...groupingSet.__exprs__.map(
         ([k, v]) => `  ${k} := ${renderEdgeQL(v, ctx)}`
       ),
     ];
-    clause.push(`USING\n${combinedBlock.join(",\n")}`);
+    groupStatement.push(`USING\n${combinedBlock.join(",\n")}`);
 
     // recursive renderer
     function renderGroupingSet(set: GroupingSet): string {
@@ -1045,8 +1055,43 @@ function renderEdgeQL(
     if (by[0] === "(" && by[by.length - 1] === ")") {
       by = by.slice(1, by.length - 1);
     }
-    clause.push(`BY ` + by);
-    return `(${clause.join("\n")})`;
+    groupStatement.push(`BY ` + by);
+
+    // clause.push(withBlock.trim());
+
+    // render scope var and any unscoped withVars in with block
+    const selectTarget = `${groupTarget}_groups`;
+    selectStatement.push(
+      `WITH\n${[
+        ...unscopedWithBlock,
+        ...scopeExprVar,
+        // ...scopedWithBlock,
+      ].join(",\n")},
+  ${selectTarget} := (
+${indent(groupStatement.join("\n"), 4)}
+)`
+    );
+
+    // rename scope var to fix all scope references that
+    // occur in the `elements` subshape
+    const scopeVar = ctx.withVars.get(expr.__scope__ as any);
+
+    // replace references to __scope__ with
+    // .elements reference
+    const elementsShapeQuery = indent(
+      shapeToEdgeQL(elementsShape as object, {...ctx}, expr.__element__),
+      2
+    )
+      .trim()
+      .split(scopeVar!.name + ".")
+      .join(`${selectTarget}.elements.`);
+
+    selectStatement.push(`SELECT ${selectTarget} {
+  key: {${groupingSet.__exprs__.map(e => e[0]).join(", ")}},
+  grouping,
+  elements: ${elementsShapeQuery}
+}`);
+    return `(${selectStatement.join("\n")})`;
   } else if (expr.__kind__ === ExpressionKind.Function) {
     const args = expr.__args__.map(arg => `${renderEdgeQL(arg!, ctx, false)}`);
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
@@ -1141,6 +1186,7 @@ function shapeToEdgeQL(
   keysOnly: boolean = false
 ) {
   const pointers = type?.__pointers__ || null;
+  const isFreeObject = type?.__name__ === "std::FreeObject";
   if (shape === null) {
     return ``;
   }
@@ -1185,9 +1231,12 @@ function shapeToEdgeQL(
     // type returned by the server matches the inferred return type, or an
     // explicit error is thrown, instead of a silent mismatch between
     // actual and inferred type.
+    // Add annotations on FreeObjects, despite the existence of a pointer.
     const ptr = pointers?.[key];
+    const addCardinalityAnnotations = pointers && (!ptr || isFreeObject);
+
     const expectedCardinality =
-      pointers && !ptr && val.hasOwnProperty("__cardinality__")
+      addCardinalityAnnotations && val.hasOwnProperty("__cardinality__")
         ? val.__cardinality__ === Cardinality.Many ||
           val.__cardinality__ === Cardinality.AtLeastOne
           ? "multi "
@@ -1195,8 +1244,7 @@ function shapeToEdgeQL(
         : "";
 
     // if selecting a required multi link, wrap expr in 'assert_exists'
-    const wrapAssertExists =
-      pointers?.[key]?.cardinality === Cardinality.AtLeastOne;
+    const wrapAssertExists = ptr?.cardinality === Cardinality.AtLeastOne;
 
     if (typeof val === "boolean") {
       if (val) {

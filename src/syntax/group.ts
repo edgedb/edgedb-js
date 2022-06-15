@@ -1,28 +1,34 @@
-import {
-  Cardinality,
+import type {
   Expression,
-  ExpressionKind,
   ObjectType,
   ObjectTypeSet,
   TypeSet,
   BaseType,
   $scopify,
-  makeType,
   PropertyDesc,
   LinkDesc,
+  // stripSet,
   // LinkDesc,
 } from "../reflection";
+import {Cardinality, ExpressionKind, TypeKind, makeType} from "../reflection";
 import {$expressionify, $getScopedExpr} from "./path";
 // @ts-ignore
 import type {$FreeObjectλShape, $str} from "@generated/modules/std";
 import {spec} from "@generated/__spec__";
 import {literal} from "./literal";
+import {resolveShapeElement} from "./select";
+import type {
+  normaliseShape,
+  // normaliseElement,
+  objectTypeToSelectShape,
+} from "./select";
 
 type SingletonSet = Expression<
   TypeSet<BaseType, Cardinality.One | Cardinality.AtMostOne>
 >;
 type SimpleGroupElements = {[k: string]: SingletonSet};
-export type NestedGroupElements = {
+type GroupModifiers = {by: SimpleGroupElements};
+type NestedGroupElements = {
   [k: string]: SingletonSet | GroupingSet;
 };
 
@@ -83,21 +89,26 @@ const setFuncs = {set, tuple, rollup, cube};
 
 export type $expr_Group<
   Expr extends ObjectTypeSet = ObjectTypeSet,
-  Grps extends SimpleGroupElements = SimpleGroupElements
+  Mods extends GroupModifiers = GroupModifiers,
+  Shape extends object = {id: true}
 > = Expression<{
   __element__: ObjectType<
     "std::FreeObject",
     $FreeObjectλShape & {
       // adding free shape elements into __pointers__
-      // because select shapes don't work on __shape__
+      // because objectTypeToSelectShape doesn't allow shapes on computeds
+      // and setToTsType can't handle that currently
       grouping: PropertyDesc<$str, Cardinality.Many, false, true, true, false>;
       key: LinkDesc<
         ObjectType<
           "std::FreeObject",
           {
-            [k in keyof Grps]: Grps[k]["__element__"] extends ObjectType
+            [k in keyof Mods["by"]]: Mods["by"][k]["__element__"] extends ObjectType
               ? never
-              : PropertyDesc<Grps[k]["__element__"], Cardinality.AtMostOne>;
+              : PropertyDesc<
+                  Mods["by"][k]["__element__"],
+                  Cardinality.AtMostOne
+                >;
           }
         >,
         Cardinality.One,
@@ -119,7 +130,7 @@ export type $expr_Group<
     },
     {
       // grouping: true;
-      // key: {[k in keyof Grps]: true};
+      // key: {[k in keyof Mods['by']]: true};
       // elements: {id: true};
       grouping: TypeSet<$str, Cardinality.Many>;
       key: Expression<{
@@ -127,8 +138,8 @@ export type $expr_Group<
           "std::FreeObject",
           $FreeObjectλShape,
           {
-            [k in keyof Grps]: Expression<{
-              __element__: Grps[k]["__element__"];
+            [k in keyof Mods["by"]]: Expression<{
+              __element__: Mods["by"][k]["__element__"];
               __cardinality__: Cardinality.AtMostOne;
             }>;
           }
@@ -136,31 +147,48 @@ export type $expr_Group<
         __cardinality__: Cardinality.One;
       }>;
       elements: Expression<{
-        __element__: Expr["__element__"];
+        __element__: ObjectType<
+          Expr["__element__"]["__name__"],
+          Expr["__element__"]["__pointers__"],
+          // Omit<normaliseShape<Shape>, "by">
+          normaliseShape<Shape, "by">
+        >;
         __cardinality__: Cardinality.Many;
       }>;
     }
   >;
   __cardinality__: Cardinality.Many;
   // bit of a lie, this is a GroupingSet at runtime
-  __grouping__: Grps;
+  __modifiers__: Mods;
   __kind__: ExpressionKind.Group;
   __expr__: Expr;
   __scope__: ObjectTypeSet;
 }>;
 
+// type modifierKeys = "by";
+type noUndefined<T> = T extends undefined ? never : T;
 type groupFunc = <
   Expr extends ObjectTypeSet,
-  Getter extends (arg: $scopify<Expr["__element__"]>) => SimpleGroupElements
+  // Shape extends GroupModifiers
+  // Grps extends SimpleGroupElements,
+  Shape extends {by?: SimpleGroupElements} & objectTypeToSelectShape<
+    Expr["__element__"]
+  >
+  // Mods extends GroupModifiers = {by: Shape["by"]}
 >(
   expr: Expr,
-  getter: Getter
-) => $expr_Group<Expr, ReturnType<Getter>>;
+  getter: (arg: $scopify<Expr["__element__"]>) => Readonly<Shape>
+) => $expr_Group<
+  Expr,
+  {by: noUndefined<Shape["by"]>},
+  normaliseShape<Shape, "by">
+>;
 
 const groupFunc: groupFunc = (expr, getter) => {
-  const scope = $getScopedExpr(expr as any);
-  const rawGroupings = getter(scope);
-  const groupSet = tuple(rawGroupings);
+  const {shape, scope, modifiers} = resolveShape(getter, expr);
+  // const scope = $getScopedExpr(expr as any);
+  // const rawGroupings = getter(scope);
+  const groupSet = tuple(modifiers.by);
 
   // only one key in object returned from makeGroupingSet
   const key = Object.keys(groupSet)[0];
@@ -184,8 +212,6 @@ const groupFunc: groupFunc = (expr, getter) => {
       hasDefault: false,
     } as PropertyDesc;
     keyShapeElement[k] = true;
-    console.log(keyPointers);
-    console.log(keyShapeElement);
   }
 
   const $FreeObject = makeType(
@@ -203,49 +229,49 @@ const groupFunc: groupFunc = (expr, getter) => {
   return $expressionify({
     __element__: {
       ...$FreeObject,
-      // __name__: "std::GroupResult",
-      // __pointers__: {
-      //   ...($FreeObject as any).__pointers__,
-      //   __name__: "std::GroupResult",
-      //   grouping: {
-      //     __kind__: "property",
-      //     target: str,
-      //     cardinality: Cardinality.Many,
-      //     exclusive: false,
-      //     computed: false,
-      //     readonly: false,
-      //     hasDefault: false,
-      //   } as PropertyDesc,
-      //   key: {
-      //     __kind__: "link",
-      //     target: {
-      //       ...$FreeObject,
-      //       __name__: "std::GroupResult",
-      //       __pointers__: {
-      //         ...($FreeObject as any).__pointers__,
-      //         ...keyPointers,
-      //       },
-      //       __shape__: keyShape,
-      //     },
-      //     properties: {},
-      //     cardinality: Cardinality.One,
-      //     exclusive: false,
-      //     computed: false,
-      //     readonly: false,
-      //     hasDefault: false,
-      //   } as LinkDesc,
+      __name__: "std::FreeObject",
+      __pointers__: {
+        ...($FreeObject as any).__pointers__,
+        __name__: "std::FreeObject",
+        grouping: {
+          __kind__: "property",
+          target: str,
+          cardinality: Cardinality.Many,
+          exclusive: false,
+          computed: false,
+          readonly: false,
+          hasDefault: false,
+        } as PropertyDesc,
+        key: {
+          __kind__: "link",
+          target: {
+            ...$FreeObject,
+            __name__: "std::FreeObject",
+            __pointers__: {
+              ...($FreeObject as any).__pointers__,
+              ...keyPointers,
+            },
+            __shape__: keyShape,
+          },
+          properties: {},
+          cardinality: Cardinality.One,
+          exclusive: false,
+          computed: false,
+          readonly: false,
+          hasDefault: false,
+        } as LinkDesc,
 
-      //   elements: {
-      //     __kind__: "link",
-      //     target: expr.__element__,
-      //     cardinality: Cardinality.Many,
-      //     properties: {},
-      //     exclusive: false,
-      //     computed: false,
-      //     readonly: false,
-      //     hasDefault: false,
-      //   } as LinkDesc,
-      // },
+        elements: {
+          __kind__: "link",
+          target: expr.__element__,
+          cardinality: Cardinality.Many,
+          properties: {},
+          exclusive: false,
+          computed: false,
+          readonly: false,
+          hasDefault: false,
+        } as LinkDesc,
+      },
       __shape__: {
         grouping: $expressionify({
           __element__: str,
@@ -259,24 +285,57 @@ const groupFunc: groupFunc = (expr, getter) => {
           __cardinality__: Cardinality.One,
         } as any),
         elements: $expressionify({
-          __element__: expr.__element__,
+          __element__: {...expr.__element__, __shape__: shape} as any,
           __cardinality__: Cardinality.Many,
         } as any),
       },
     },
 
     __cardinality__: Cardinality.Many,
-    __shape__: {
-      grouping: true,
-      key: keyShapeElement,
-      elements: {id: true},
-    },
     __expr__: expr,
-    __grouping__: grouping,
+    __modifiers__: {by: grouping},
     __kind__: ExpressionKind.Group,
     __scope__: scope,
   }) as any;
 };
 Object.assign(groupFunc, setFuncs);
 
+function resolveShape(
+  shapeGetter: ((scope: any) => any) | any,
+  expr: TypeSet
+): {modifiers: {by: SimpleGroupElements}; shape: any; scope: TypeSet} {
+  const modifiers: {by: SimpleGroupElements} = {} as any;
+  const shape: any = {};
+
+  // get scoped object if expression is objecttypeset
+  const scope = $getScopedExpr(expr as any) as ObjectTypeSet;
+
+  // execute getter with scope
+  const selectShape =
+    typeof shapeGetter === "function" ? shapeGetter(scope) : shapeGetter;
+
+  for (const [key, value] of Object.entries(selectShape)) {
+    // handle modifier keys
+    if (key === "by") {
+      modifiers[key] = value as any;
+    } else {
+      // for scalar expressions, scope === expr
+      // shape keys are not allowed
+      if (expr.__element__.__kind__ !== TypeKind.object) {
+        throw new Error(
+          `Invalid select shape key '${key}' on scalar expression, ` +
+            `only modifiers are allowed (filter, order_by, offset and limit)`
+        );
+      }
+      shape[key] = resolveShapeElement(key, value, scope);
+    }
+  }
+  if (Object.keys(shape).length === 0) {
+    shape.id = true;
+  }
+  if (!modifiers.by) {
+    throw new Error("Must provide a `by` key in `e.group`");
+  }
+  return {shape, modifiers, scope};
+}
 export const group: typeof setFuncs & groupFunc = groupFunc as any;

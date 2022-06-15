@@ -104,11 +104,11 @@ test("explicit WITH block in nested query", () => {
       })
       .toEdgeQL()
   ).toEqual(`SELECT {
-  multi nested := (
+  multi nested := assert_exists((
     WITH
       __withVar_0 := { 1, 2, 3 }
     SELECT __withVar_0
-  )
+  ))
 }`);
 });
 
@@ -144,8 +144,8 @@ test("explicit WITH block nested in implicit WITH block", () => {
     SELECT __withVar_1
   )
 SELECT {
-  multi numbers := __withVar_0,
-  multi numbers2 := __withVar_0
+  multi numbers := assert_exists(__withVar_0),
+  multi numbers2 := assert_exists(__withVar_0)
 }`);
 });
 
@@ -170,7 +170,7 @@ test("explicit WITH block nested in explicit WITH block", () => {
     SELECT __withVar_1
   )
 SELECT {
-  multi numbers := __withVar_0
+  multi numbers := assert_exists(__withVar_0)
 }`);
 });
 
@@ -197,7 +197,7 @@ test("explicit WITH block nested in explicit WITH block, sub expr explicitly ext
     SELECT __withVar_1
   )
 SELECT {
-  multi numbers := __withVar_0
+  multi numbers := assert_exists(__withVar_0)
 }`);
 });
 
@@ -244,7 +244,7 @@ test("explicit WITH block nested in explicit WITH block, sub expr implicitly ext
   )
 SELECT {
   single number := __withVar_2,
-  multi numbers := __withVar_0
+  multi numbers := assert_exists(__withVar_0)
 }`);
 });
 
@@ -319,8 +319,8 @@ test("explicit WITH nested in implicit WITH + alias implicit", () => {
       __withVar_1 := { 1, 2, 3 },
       __withVar_2 := __withVar_1
     SELECT {
-      multi numbers := __withVar_1,
-      multi numbersAlias := __withVar_2
+      multi numbers := assert_exists(__withVar_1),
+      multi numbersAlias := assert_exists(__withVar_2)
     }
   )
 SELECT {
@@ -352,8 +352,8 @@ test("explicit WITH nested in implicit WITH + alias explicit", () => {
       __withVar_1 := { 1, 2, 3 },
       __withVar_2 := __withVar_1
     SELECT {
-      multi numbers := __withVar_1,
-      multi numbersAlias := __withVar_2
+      multi numbers := assert_exists(__withVar_1),
+      multi numbersAlias := assert_exists(__withVar_2)
     }
   )
 SELECT {
@@ -412,7 +412,7 @@ test(
     SELECT (__withVar_1 + __withVar_2)
   )
 SELECT {
-  multi numbers := __withVar_0
+  multi numbers := assert_exists(__withVar_0)
 }`);
   }
 );
@@ -450,7 +450,7 @@ test(
     SELECT (__withVar_1 + __withVar_3)
   )
 SELECT {
-  multi numbers := __withVar_0
+  multi numbers := assert_exists(__withVar_0)
 }`);
   }
 );
@@ -496,7 +496,13 @@ SELECT __scope_0_Hero {
     WITH
       __scope_1_Hero := DETACHED default::Hero
     SELECT __scope_1_Hero {
-      __type__: {name}
+      __type__ := (
+        WITH
+          __scope_2_ObjectType := __scope_1_Hero.__type__
+        SELECT __scope_2_ObjectType {
+          name
+        }
+      )
     }
   )
 }
