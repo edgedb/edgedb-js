@@ -103,6 +103,7 @@ export type $expr_Group<
         ObjectType<
           "std::FreeObject",
           {
+            // tslint:disable-next-line
             [k in keyof Mods["by"]]: Mods["by"][k]["__element__"] extends ObjectType
               ? never
               : PropertyDesc<

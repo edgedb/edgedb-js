@@ -789,10 +789,13 @@ export function select(...args: any[]) {
     ) as any;
   }
 
-  let [expr, shapeGetter]: [TypeSet, (scope: any) => any] =
+  const exprPair: [TypeSet, (scope: any) => any] =
     typeof args[0].__element__ !== "undefined"
       ? (args as any)
       : [FreeObject, () => args[0]];
+
+  let expr = exprPair[0];
+  const shapeGetter = exprPair[1];
   if (expr === FreeObject) {
     const freeObjectPtrs: ObjectTypePointers = {};
     for (const [k, v] of Object.entries(args[0]) as [string, TypeSet][]) {
