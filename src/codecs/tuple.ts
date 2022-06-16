@@ -29,8 +29,43 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     this.subCodecs = codecs;
   }
 
-  encode(_buf: WriteBuffer, _object: any): void {
-    throw new Error("Tuples cannot be passed in query arguments");
+  encode(buf: WriteBuffer, object: any): void {
+    if (!Array.isArray(object)) {
+      throw new Error(`an array was expected, got ${object}`);
+    }
+
+    const codecs = this.subCodecs;
+    const codecsLen = codecs.length;
+
+    if (object.length !== codecsLen) {
+      throw new Error(
+        `expected ${codecsLen} tuple item${codecsLen === 1 ? "" : "s"}, got ${
+          object.length
+        }`
+      );
+    }
+
+    if (!codecsLen) {
+      buf.writeBuffer(EmptyTupleCodec.BUFFER);
+    }
+
+    const elemData = new WriteBuffer();
+    for (let i = 0; i < codecsLen; i++) {
+      const elem = object[i];
+      elemData.writeInt32(0); // reserved bytes
+      if (elem == null) {
+        elemData.writeInt32(-1);
+      } else {
+        const codec = codecs[i];
+        codec.encode(elemData, elem);
+      }
+    }
+
+    const elemBuf = elemData.unwrap();
+
+    buf.writeInt32(4 + elemBuf.length);
+    buf.writeInt32(codecsLen);
+    buf.writeBuffer(elemBuf);
   }
 
   encodeArgs(args: any): Buffer {
@@ -38,9 +73,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
       throw new Error("an array of arguments was expected");
     }
 
-    const codecs = this.subCodecs;
-    const codecsLen = codecs.length;
-
+    const codecsLen = this.subCodecs.length;
     if (args.length !== codecsLen) {
       throw new Error(
         `expected ${codecsLen} argument${codecsLen === 1 ? "" : "s"}, got ${
@@ -49,27 +82,8 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
       );
     }
 
-    if (!codecsLen) {
-      return EmptyTupleCodec.BUFFER;
-    }
-
-    const elemData = new WriteBuffer();
-    for (let i = 0; i < codecsLen; i++) {
-      const arg = args[i];
-      elemData.writeInt32(0); // reserved bytes
-      if (arg == null) {
-        elemData.writeInt32(-1);
-      } else {
-        const codec = codecs[i];
-        codec.encode(elemData, arg);
-      }
-    }
-
-    const elemBuf = elemData.unwrap();
     const buf = new WriteBuffer();
-    buf.writeInt32(4 + elemBuf.length);
-    buf.writeInt32(codecsLen);
-    buf.writeBuffer(elemBuf);
+    this.encode(buf, args);
     return buf.unwrap();
   }
 

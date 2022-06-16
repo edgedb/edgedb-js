@@ -38,7 +38,11 @@ export class SparseObjectCodec extends Codec implements ICodec {
       if (val != null) {
         const i = this.names.indexOf(key);
         if (i === -1) {
-          throw new Error();
+          throw new Error(
+            `invalid key '${key}', valid keys are ${this.names
+              .map(n => `'${n}'`)
+              .join(", ")}`
+          );
         }
         objLen += 1;
         elemBuf.writeInt32(i);

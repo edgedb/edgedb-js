@@ -60,7 +60,7 @@ export class ClientConnectionHolder {
     if (!this._connection || this._connection.isClosed()) {
       this._connection = await this._pool.getNewConnection();
     }
-    this._connection._setState(this.options._session);
+    this._connection._setState(this.options.session);
     return this._connection;
   }
 
@@ -513,21 +513,21 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withSession(session));
   }
 
-  withAliases(aliases: {[key: string]: string}) {
+  withAliases(aliases: {[name: string]: string}) {
     return new Client(
       this.pool,
       this.options.withSession(this.options.session.withAliases(aliases))
     );
   }
 
-  withConfigs(configs: {[key: string]: string}): Client {
+  withConfigs(configs: {[name: string]: any}): Client {
     return new Client(
       this.pool,
       this.options.withSession(this.options.session.withConfigs(configs))
     );
   }
 
-  withGlobals(globals: {[key: string]: string}): Client {
+  withGlobals(globals: {[name: string]: any}): Client {
     return new Client(
       this.pool,
       this.options.withSession(this.options.session.withGlobals(globals))
@@ -565,7 +565,7 @@ export class Client implements Executor {
   async execute(query: string, args?: QueryArgs): Promise<void> {
     const holder = await this.pool.acquireHolder(this.options);
     try {
-      return await holder.execute(query);
+      return await holder.execute(query, args);
     } finally {
       await holder.release();
     }

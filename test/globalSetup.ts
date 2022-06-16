@@ -7,6 +7,7 @@ import * as readline from "readline";
 import {ConnectConfig} from "../src/conUtils";
 
 import {Client, createClient} from "../src/index.node";
+import type {EdgeDBVersion} from "./testbase";
 
 export const getServerInfo = async (
   filename: string
@@ -191,9 +192,12 @@ export const startServer = async (
   return {config, proc};
 };
 
-const connectToServer = async (config: ConnectConfig): Promise<Client> => {
+const connectToServer = async (
+  config: ConnectConfig
+): Promise<{client: Client; version: EdgeDBVersion}> => {
   const client = createClient(config);
 
+  let version: EdgeDBVersion;
   try {
     await client.execute(`
       CREATE DATABASE jest;
@@ -212,12 +216,14 @@ const connectToServer = async (config: ConnectConfig): Promise<Client> => {
         method := (INSERT SCRAM),
       };
     `);
+
+    version = await client.queryRequiredSingle(`select sys::get_version()`);
   } catch (e) {
     await client.close();
     throw e;
   }
 
-  return client;
+  return {client, version};
 };
 
 export default async () => {
@@ -237,8 +243,11 @@ export default async () => {
   process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
     JSON.stringify(availableFeatures);
 
+  const {client, version} = await connectToServer(config);
+
   // @ts-ignore
-  global.edgedbConn = await connectToServer(config);
+  global.edgedbConn = client;
+  process.env._JEST_EDGEDB_VERSION = JSON.stringify(version);
 
   // tslint:disable-next-line
   console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);
