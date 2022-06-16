@@ -29,6 +29,7 @@ import {
   NoDataError,
   RelativeDuration,
   ResultCardinalityMismatchError,
+  QueryArgumentError,
   _CodecsRegistry,
   _ReadBuffer,
   _ICodec,
@@ -40,6 +41,7 @@ import {
   getAvailableFeatures,
   getClient,
   getConnectOptions,
+  getEdgeDBVersion,
   isDeno,
 } from "./testbase";
 
@@ -608,46 +610,6 @@ test("fetch: cal::local_time", async () => {
 });
 
 test("fetch: duration", async () => {
-  function formatLegacyDuration(duration: Duration): string {
-    function fmt(timePart: number, len: number = 3): string {
-      return Math.abs(timePart).toString().padStart(len, "0");
-    }
-
-    let dateParts = "P";
-    const days = duration.days + 7 * duration.weeks;
-    if (duration.years) {
-      dateParts += `${duration.years}Y`;
-    }
-    if (duration.months) {
-      dateParts += `${duration.months}M`;
-    }
-    if (days) {
-      dateParts += `${days}D`;
-    }
-
-    let timeParts = "";
-    if (duration.hours) {
-      timeParts += `${duration.hours}H`;
-    }
-    if (duration.minutes) {
-      timeParts += `${duration.minutes}M`;
-    }
-    if (duration.seconds || duration.milliseconds || duration.microseconds) {
-      timeParts += `${duration.seconds}`;
-      if (duration.milliseconds || duration.microseconds) {
-        timeParts += `.${fmt(duration.milliseconds)}${fmt(
-          duration.microseconds
-        )}`;
-      }
-      timeParts += "S";
-    }
-
-    if (timeParts) {
-      dateParts += `T${timeParts}`;
-    }
-
-    return dateParts;
-  }
   function normaliseIsoDuration(duration: string) {
     if (duration.includes("-")) {
       return `-${duration.replace(/-/g, "")}`;
@@ -658,12 +620,6 @@ test("fetch: duration", async () => {
   const con = getClient();
   let res: any;
   try {
-    const ver = await con.querySingle<any>("select sys::get_version()");
-    const isoFormat =
-      ver.major > 1 ||
-      ver.minor > 0 ||
-      (ver.stage === "beta" && ver.stage_no >= 3);
-
     for (const time of [
       "24 hours",
       "68464977 seconds 74 milliseconds 11 microseconds",
@@ -675,11 +631,8 @@ test("fetch: duration", async () => {
         `,
         {time}
       );
-      if (isoFormat) {
-        expect(res[0].toString()).toBe(normaliseIsoDuration(res[1]));
-      } else {
-        expect(formatLegacyDuration(res[0])).toBe(res[1]);
-      }
+
+      expect(res[0].toString()).toBe(normaliseIsoDuration(res[1]));
 
       const res2 = await con.querySingle<any>(
         `
@@ -1401,6 +1354,123 @@ test("execute", async () => {
   }
 });
 
+test("scripts and args", async () => {
+  const client = getClient();
+
+  await client.execute(`create type ScriptTest {
+    create property name -> str;
+  };`);
+
+  try {
+    if (getEdgeDBVersion().major >= 2) {
+      expect(
+        await client.execute(
+          `
+          insert ScriptTest {
+            name := 'test'
+          }
+          `,
+          {name: "test"}
+        )
+      ).rejects.toThrowError(QueryArgumentError);
+
+      expect(
+        await client.execute(`
+          select 1 + 2;
+
+          insert ScriptTest {
+            name := 'test0'
+          };`)
+      ).toEqual(undefined);
+
+      expect(await client.query(`select ScriptTest {name}`)).toEqual([
+        {name: "test0"},
+      ]);
+
+      await expect(
+        client.execute(
+          `
+          insert ScriptTest {
+            name := <str>$name
+          };
+
+          insert ScriptTest {
+            name := 'test' ++ <str>count(detached ScriptTest)
+          };`
+        )
+      ).rejects.toThrowError(QueryArgumentError);
+
+      await expect(
+        client.execute(
+          `
+          insert ScriptTest {
+            name := <str>$name
+          };
+
+          insert ScriptTest {
+            name := 'test' ++ <str>count(detached ScriptTest)
+          };`,
+          {name: "test1"}
+        )
+      ).resolves.toEqual(undefined);
+
+      expect(await client.query(`select ScriptTest {name}`)).toEqual([
+        {name: "test0"},
+        {name: "test1"},
+        {name: "test2"},
+      ]);
+
+      expect(
+        await client.query(
+          `
+          insert ScriptTest {
+            name := <str>$name
+          };
+
+          insert ScriptTest {
+            name := 'test' ++ <str>count(detached ScriptTest)
+          };
+
+          select ScriptTest.name;`,
+          {name: "test3"}
+        )
+      ).toEqual(["test0", "test1", "test2", "test3", "test4"]);
+    } else {
+      await expect(
+        client.execute(
+          `insert ScriptTest {
+        name := <str>$name
+      }`,
+          {name: "test"}
+        )
+      ).rejects.toThrowError(
+        /arguments in execute\(\) is not supported in this version of EdgeDB/
+      );
+
+      await expect(
+        client.execute(
+          `insert ScriptTest {
+        name := 'test'
+      }`,
+          {name: "test"}
+        )
+      ).rejects.toThrowError(
+        /arguments in execute\(\) is not supported in this version of EdgeDB/
+      );
+
+      await expect(
+        client.query(`
+          select 1 + 2;
+          select 2 + 3;
+        `)
+      ).rejects.toThrowError();
+    }
+  } finally {
+    await client.execute(`drop type ScriptTest;`);
+    client.close();
+  }
+});
+
 test("fetch/optimistic cache invalidation", async () => {
   const typename = "CacheInv_01";
   const query = `SELECT ${typename}.prop1 LIMIT 1`;
@@ -1506,29 +1576,33 @@ function _decodeResultBuffer(outCodec: _ICodec, resultData: Buffer) {
   return result;
 }
 
-test("'implicit*' headers", async () => {
-  const config = await parseConnectArguments(getConnectOptions());
-  const registry = new _CodecsRegistry();
-  const con = await retryingConnect(config, registry);
-  try {
-    const query = `SELECT schema::Function {
+// 'raw' methods are only used by edgedb studio, so only need to work with
+// EdgeDB 2.0 or greater
+if (getEdgeDBVersion().major >= 2) {
+  test("'implicit*' headers", async () => {
+    const config = await parseConnectArguments(getConnectOptions());
+    const registry = new _CodecsRegistry();
+    const con = await retryingConnect(config, registry);
+    try {
+      const query = `SELECT schema::Function {
         name
       }`;
-    const headers = {
-      implicitTypenames: "true",
-      implicitLimit: "5",
-    } as const;
-    const [_, outCodec] = await con.rawParse(query, headers);
-    const resultData = await con.rawExecute(query, outCodec, headers);
+      const headers = {
+        implicitTypenames: "true",
+        implicitLimit: "5",
+      } as const;
+      const [_, outCodec] = await con.rawParse(query, headers);
+      const resultData = await con.rawExecute(query, outCodec, headers);
 
-    const result = _decodeResultBuffer(outCodec, resultData);
+      const result = _decodeResultBuffer(outCodec, resultData);
 
-    expect(result).toHaveLength(5);
-    expect(result[0]["__tname__"]).toBe("schema::Function");
-  } finally {
-    await con.close();
-  }
-});
+      expect(result).toHaveLength(5);
+      expect(result[0]["__tname__"]).toBe("schema::Function");
+    } finally {
+      await con.close();
+    }
+  });
+}
 
 if (!isDeno && getAvailableFeatures().has("admin-ui")) {
   test("binary protocol over http", async () => {

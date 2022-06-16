@@ -129,7 +129,7 @@ export class Session {
     this.globals = globals;
   }
 
-  withAliases({module, ...aliases}: {[key: string]: string}): Session {
+  withAliases({module, ...aliases}: {[name: string]: string}): Session {
     return new Session({
       ...this,
       module: module ?? this.module,
@@ -137,14 +137,14 @@ export class Session {
     });
   }
 
-  withConfigs(configs: {[key: string]: string}): Session {
+  withConfigs(configs: {[name: string]: any}): Session {
     return new Session({
       ...this,
       configs: {...this.configs, ...configs},
     });
   }
 
-  withGlobals(globals: {[key: string]: string}): Session {
+  withGlobals(globals: {[name: string]: any}): Session {
     return new Session({
       ...this,
       globals: {...this.globals, ...globals},
@@ -165,26 +165,21 @@ export class Session {
   }
 
   static defaults(): Session {
-    return new Session();
+    return defaultSession;
   }
 }
 
-const defaultSession = Session.defaults();
+const defaultSession = new Session();
 
 export class Options {
   readonly retryOptions: RetryOptions;
   readonly transactionOptions: TransactionOptions;
-
-  /** @internal */ readonly _session: Session | null;
-
-  get session() {
-    return this._session ?? defaultSession;
-  }
+  readonly session: Session;
 
   constructor({
     retryOptions = RetryOptions.defaults(),
     transactionOptions = TransactionOptions.defaults(),
-    session,
+    session = Session.defaults(),
   }: {
     retryOptions?: RetryOptions;
     transactionOptions?: TransactionOptions;
@@ -192,7 +187,7 @@ export class Options {
   } = {}) {
     this.retryOptions = retryOptions;
     this.transactionOptions = transactionOptions;
-    this._session = session ?? null;
+    this.session = session;
   }
 
   withTransactionOptions(

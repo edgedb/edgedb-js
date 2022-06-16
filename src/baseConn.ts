@@ -402,19 +402,19 @@ export class BaseRawConnection {
     }
   }
 
-  _setState(userState: Session | null) {
+  _setState(userState: Session) {
     if (this.userState === userState) {
       return;
     }
-    if (userState === null) {
-      this.state = null;
-    } else {
+
+    if (userState !== Session.defaults()) {
       if (this.isLegacyProtocol) {
         throw new errors.InterfaceError(
           `setting session state is not supported in this version of ` +
             `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`
         );
       }
+
       if (this.stateCodec === NULL_CODEC) {
         throw new Error(
           `cannot encode session state, ` +
@@ -424,6 +424,8 @@ export class BaseRawConnection {
       const buf = new WriteBuffer();
       this.stateCodec.encode(buf, userState._serialise());
       this.state = buf.unwrap();
+    } else {
+      this.state = null;
     }
     this.userState = userState;
   }
@@ -872,7 +874,12 @@ export class BaseRawConnection {
     wb.writeBuffer(this.stateCodec.tidBuffer);
     wb.writeInt16(1);
     if (this.state === null) {
-      wb.writeInt32(0);
+      // wb.writeInt32(0);
+      // TODO: remove this once server bug is fixed
+      const buf = new WriteBuffer();
+      this.stateCodec.encode(buf, Session.defaults()._serialise());
+      wb.writeBuffer(buf.unwrap());
+      //
     } else {
       wb.writeBuffer(this.state);
     }
@@ -965,7 +972,13 @@ export class BaseRawConnection {
     }
 
     if (error != null) {
-      throw error;
+      // TODO: handle this properly when 'CommandCompleteWithConsequence' is
+      // implemented in server
+      if (error.message === "StateSerializationError") {
+        this.close();
+      } else {
+        throw error;
+      }
     }
 
     if (parseOnly) {
@@ -1032,6 +1045,12 @@ export class BaseRawConnection {
     privilegedMode: boolean = false
   ): Promise<any> {
     if (this.isLegacyProtocol && outputFormat === OutputFormat.NONE) {
+      if (args != null) {
+        throw new errors.InterfaceError(
+          `arguments in execute() is not supported in this version of ` +
+            `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`
+        );
+      }
       return this.legacyExecute(query, privilegedMode);
     }
 
@@ -1095,6 +1114,9 @@ export class BaseRawConnection {
       }
     }
 
+    if (outputFormat === OutputFormat.NONE) {
+      return;
+    }
     if (expectOne) {
       if (requiredOne && !ret.length) {
         throw new errors.NoDataError("query returned no data");
