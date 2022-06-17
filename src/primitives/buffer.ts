@@ -20,7 +20,7 @@ import char, * as chars from "./chars";
 import {RingBuffer} from "./ring";
 import * as bi from "./bigint";
 import * as compat from "../compat";
-import {MessageHeaders, HeaderCodes} from "../ifaces";
+import {LegacyHeaderCodes} from "../ifaces";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE: number = 4096;
@@ -207,7 +207,9 @@ export class WriteMessageBuffer {
     return this;
   }
 
-  writeHeaders(headers: MessageHeaders | null): this {
+  writeLegacyHeaders(
+    headers: {[key in keyof typeof LegacyHeaderCodes]?: string | Buffer} | null
+  ): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeHeaders: no current message");
     }
@@ -218,10 +220,10 @@ export class WriteMessageBuffer {
 
     const entries = Object.entries(headers).filter(
       ([_, value]) => value !== undefined
-    ) as Array<[keyof typeof HeaderCodes, string | Buffer]>;
+    ) as Array<[keyof typeof LegacyHeaderCodes, string | Buffer]>;
     this.buffer.writeUInt16(entries.length);
     for (const [code, value] of entries) {
-      this.buffer.writeUInt16(HeaderCodes[code]);
+      this.buffer.writeUInt16(LegacyHeaderCodes[code]);
       if (Buffer.isBuffer(value)) {
         this.buffer.writeUInt32(value.byteLength);
         this.buffer.writeBuffer(value);
@@ -289,6 +291,23 @@ export class WriteMessageBuffer {
       throw new BufferError("cannot writeInt32: no current message");
     }
     this.buffer.writeUInt32(i);
+    return this;
+  }
+
+  writeBigInt64(i: bi.BigIntLike): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeChar: no current message");
+    }
+    this.buffer.writeBigInt64(i);
+    return this;
+  }
+
+  writeFlags(h: number, l: number): this {
+    if (this.messagePos < 0) {
+      throw new BufferError("cannot writeChar: no current message");
+    }
+    this.buffer.writeInt32(h);
+    this.buffer.writeInt32(l);
     return this;
   }
 
@@ -585,6 +604,23 @@ export class ReadMessageBuffer {
     const buf = this._readBuffer(4);
     this.curMessageLenUnread -= 4;
     return buf.readUInt32BE(0);
+  }
+
+  readBigInt64(): bigint {
+    this.checkOverread(8);
+    const buf0 = this.ensureFirstBuf();
+
+    if (this.pos0 + 8 <= this.len0) {
+      const ret = buf0.readBigInt64BE(this.pos0);
+      this.pos0 += 8;
+      this.curMessageLenUnread -= 8;
+      this.len -= 8;
+      return ret;
+    }
+
+    const buf = this._readBuffer(8);
+    this.curMessageLenUnread -= 8;
+    return buf.readBigInt64BE(0);
   }
 
   readString(): string {

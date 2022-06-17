@@ -1587,12 +1587,12 @@ if (getEdgeDBVersion().major >= 2) {
       const query = `SELECT schema::Function {
         name
       }`;
-      const headers = {
-        implicitTypenames: "true",
-        implicitLimit: "5",
+      const options = {
+        implicitTypenames: true,
+        implicitLimit: BigInt(5),
       } as const;
-      const [_, outCodec] = await con.rawParse(query, headers);
-      const resultData = await con.rawExecute(query, outCodec, headers);
+      const [_, outCodec] = await con.rawParse(query, options);
+      const resultData = await con.rawExecute(query, outCodec, options);
 
       const result = _decodeResultBuffer(outCodec, resultData);
 
@@ -1619,13 +1619,13 @@ if (!isDeno && getAvailableFeatures().has("admin-ui")) {
     const query = `SELECT schema::Function {
     name
   }`;
-    const headers = {
-      implicitTypenames: "true",
-      implicitLimit: "5",
+    const options = {
+      implicitTypenames: true,
+      implicitLimit: BigInt(5),
     } as const;
 
-    const [_, outCodec] = await fetchConn.rawParse(query, headers);
-    const resultData = await fetchConn.rawExecute(query, outCodec, headers);
+    const [_, outCodec] = await fetchConn.rawParse(query, options);
+    const resultData = await fetchConn.rawExecute(query, outCodec, options);
 
     const result = _decodeResultBuffer(outCodec, resultData);
 
