@@ -3,11 +3,19 @@
 Group
 =====
 
-The ``group`` statement provides a powerful mechanism for categorizing a set of objects (e.g., movies) into *groups*. You can group by properties, expressions, or combinatations thereof.
+.. note::
+
+  The ``group`` statement is only available in EdgeDB 2.0 or later.
+
+The ``group`` statement provides a powerful mechanism for categorizing a set
+of objects (e.g., movies) into *groups*. You can group by properties,
+expressions, or combinatations thereof.
 
 .. note::
 
-  This page does not aim to describe how the ``group`` statement works, merely the syntax for writing ``e.group`` statements with the query builder. For a full reference on ``group``
+  This page does not aim to describe how the ``group`` statement works, merely
+  the syntax for writing ``e.group`` statements with the query builder. For a
+  full reference on ``group``, refer to the :ref:`EdgeQL docs <ref_edgeql>`.
 
 Simple grouping
 ---------------
@@ -44,7 +52,10 @@ Sort a set of objects by a simple property.
     group Movie
     by .release_year
 
-Add a shape that will be applied to ``elements``. The ``by`` key is a special key, similar to ``filter``, etc. in ``e.select``. All other keys are interpreted as *shape elements* and support the same functionality as ``e.select`` (nested shapes, computeds, etc.).
+Add a shape that will be applied to ``elements``. The ``by`` key is a special
+key, similar to ``filter``, etc. in ``e.select``. All other keys are
+interpreted as *shape elements* and support the same functionality as
+``e.select`` (nested shapes, computeds, etc.).
 
 .. tabs::
 
@@ -196,7 +207,8 @@ Using a combination of tuples and grouping sets.
 
 
 
-The ``group`` statement provides a syntactic sugar for defining certain common grouping sets: ``cube`` and ``rollup``. Here's a quick primer on how they work:
+The ``group`` statement provides a syntactic sugar for defining certain common
+grouping sets: ``cube`` and ``rollup``. Here's a quick primer on how they work:
 
 .. code-block::
 
@@ -208,7 +220,8 @@ The ``group`` statement provides a syntactic sugar for defining certain common g
   is equivalent to
   {(), (a), (b), (a, b)}
 
-To use these in the query builder use the ``e.group.cube`` and ``e.group.rollup`` functions.
+To use these in the query builder use the ``e.group.cube`` and
+``e.group.rollup`` functions.
 
 
 .. tabs::
