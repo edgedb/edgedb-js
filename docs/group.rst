@@ -14,8 +14,8 @@ expressions, or combinatations thereof.
 .. note::
 
   This page does not aim to describe how the ``group`` statement works, merely
-  the syntax for writing ``e.group`` statements with the query builder. For a
-  full reference on ``group``, refer to the :ref:`EdgeQL docs <ref_edgeql>`.
+  the syntax for writing ``e.group`` statements with the query builder. For
+  full documentation, refer to :ref:`EdgeQL > Group <ref_eql_group>`.
 
 Simple grouping
 ---------------
