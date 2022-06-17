@@ -464,6 +464,32 @@ test("query with no WITH block", () => {
     limit: 1,
   }));
 
+  /*
+
+  WITH
+  __scope_0_Hero := DETACHED default::Person[IS default::Hero]
+SELECT __scope_0_Hero {
+  id,
+  single computable := 35,
+  multi all_heroes := (
+    WITH
+      __scope_1_Hero := DETACHED default::Hero
+    SELECT __scope_1_Hero {
+      __type__ := (
+        WITH
+          __scope_2_ObjectType := __scope_1_Hero.__type__
+        SELECT __scope_2_ObjectType {
+          name
+        }
+      )
+    }
+  )
+}
+ORDER BY __scope_0_Hero.name
+LIMIT 1
+
+   */
+
   // TODO: undo this change when 2.0 is stable
   expect([
     `WITH
@@ -498,8 +524,8 @@ SELECT __scope_0_Hero {
     SELECT __scope_1_Hero {
       __type__ := (
         WITH
-          __scope_2_ObjectType := __scope_1_Hero.__type__
-        SELECT __scope_2_ObjectType {
+          __scope_2_Type := __scope_1_Hero.__type__
+        SELECT __scope_2_Type {
           name
         }
       )

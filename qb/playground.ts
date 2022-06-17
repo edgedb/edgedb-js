@@ -7,17 +7,13 @@ import {insert} from "dist";
 
 async function run() {
   const {client, data} = await setupTests();
-  const query = e.group(e.Movie, movie => {
-    const release_year = movie.release_year;
-    return {
-      release_year: true,
-      title: true,
-      characters: {name: true},
-      by: {
-        release_year,
-      },
-    };
-  });
+  const query = e.select(e.Person.is(e.Hero), person => ({
+    id: true,
+    computable: e.int64(35),
+    all_heroes: e.select(e.Hero, () => ({__type__: {name: true}})),
+    order_by: person.name,
+    limit: 1,
+  }));
 
   console.log(`\n#############\n### QUERY ###\n#############`);
   console.log(query.toEdgeQL());
