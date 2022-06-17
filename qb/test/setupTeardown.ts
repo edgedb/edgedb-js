@@ -74,6 +74,7 @@ SELECT (INSERT Movie {
   title := "The Avengers",
   rating := 10,
   genre := Genre.Action,
+  release_year := 2012,
   characters := (SELECT Person FILTER .id IN char_ids)
 }) {id, title, rating, genre, release_year, characters: {id}};`,
     {character_ids: [iron_man.id, cap.id]}
@@ -81,6 +82,7 @@ SELECT (INSERT Movie {
   const civil_war: Movie = await client.queryRequiredSingle(
     `SELECT (INSERT Movie {
   title := "Captain America: Civil War",
+  release_year := 2016,
   rating := 10,
   genre := Genre.Action,
   characters := (SELECT Hero)

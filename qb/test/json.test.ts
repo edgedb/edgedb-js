@@ -1,9 +1,7 @@
 import type * as edgedb from "edgedb";
-import {$} from "edgedb";
 import * as tc from "conditional-type-checks";
 
-import e, {$infer} from "../dbschema/edgeql-js";
-import {number} from "../dbschema/edgeql-js/modules/std";
+import e from "../dbschema/edgeql-js";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
 
 let client: edgedb.Client;

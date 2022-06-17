@@ -297,6 +297,46 @@ Delete objects
   const result = await query.run(client);
   // Array<{id: string}>
 
+Compose queries
+^^^^^^^^^^^^^^^
+
+All query expressions are fully composable; this is one of the major differentiators between this query builder and a typical ORM. For instance, we can ``select`` an ``insert`` query in order to fetch properties of the object we just inserted.
+
+.. code-block:: typescript
+
+  const newMovie = e.insert(e.Movie, {
+    title: "Iron Man",
+    release_year: 2008
+  });
+
+  const query = e.select(newMovie, ()=>({
+    title: true,
+    release_year: true,
+    num_actors: e.count(newMovie.actors)
+  }));
+
+  const result = await query.run(client);
+  // {title: string; release_year: number; num_actors: number}
+
+Or we can use subqueries inside mutations.
+
+.. code-block:: typescript
+
+  // select Doctor Strange
+  const drStrange = e.select(e.Movie, movie => ({
+    filter: e.op(movie.title, '=', "Doctor Strange")
+  }));
+
+  // select actors
+  const actors = e.select(e.Person, person => ({
+    filter: e.op(person.name, 'in', e.set('Benedict Cumberbatch', 'Rachel McAdams'))
+  }));
+
+  // add actors to cast of drStrange
+  const query = e.update(drStrange, ()=>({
+    actors: { "+=": actors }
+  }));
+
 Query parameters
 ^^^^^^^^^^^^^^^^
 

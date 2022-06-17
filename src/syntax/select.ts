@@ -290,7 +290,7 @@ export type ComputeSelectCardinality<
 
 export function is<
   Expr extends ObjectTypeExpression,
-  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]>
+  Shape extends objectTypeToSelectShape<Expr["__element__"]>
 >(
   expr: Expr,
   shape: Shape
@@ -569,37 +569,78 @@ export type linkDescToLinkProps<Desc extends LinkDesc> = {
   >;
 };
 
-export type pointersToSelectShape<
-  Shape extends ObjectTypePointers = ObjectTypePointers
-> = Partial<{
-  [k in keyof Shape]: Shape[k] extends PropertyDesc
-    ?
-        | boolean
-        | TypeSet<
-            // causes excessively deep error:
-            // castableFrom<Shape[k]["target"]>
-            Shape[k]["target"],
-            cardinalityUtil.assignable<Shape[k]["cardinality"]>
-          >
-    : // | pointerToCastableExpression<Shape[k]>
-    Shape[k] extends LinkDesc
-    ?
-        | boolean
-        // | pointerToCastableExpression<Shape[k]>
-        | TypeSet<
-            anonymizeObject<Shape[k]["target"]>,
-            cardinalityUtil.assignable<Shape[k]["cardinality"]>
-          >
-        | (pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-            pointersToSelectShape<Shape[k]["properties"]> &
-            SelectModifiers)
-        | ((
-            scope: $scopify<Shape[k]["target"]> & linkDescToLinkProps<Shape[k]>
-          ) => pointersToSelectShape<Shape[k]["target"]["__pointers__"]> &
-            pointersToSelectShape<Shape[k]["properties"]> &
-            SelectModifiers)
-    : any;
-}> & {[k: string]: unknown};
+export type pointersToObjectType<P extends ObjectTypePointers> = ObjectType<
+  string,
+  P,
+  {}
+>;
+export type linkDescToSelectElement<L extends LinkDesc> =
+  | boolean
+  // | pointerToCastableExpression<Shape[k]>
+  | TypeSet<
+      anonymizeObject<L["target"]>,
+      cardinalityUtil.assignable<L["cardinality"]>
+    >
+  | (objectTypeToSelectShape<L["target"]> &
+      objectTypeToSelectShape<pointersToObjectType<L["properties"]>> &
+      SelectModifiers)
+  | ((
+      scope: $scopify<L["target"]> & linkDescToLinkProps<L>
+    ) => objectTypeToSelectShape<L["target"]> &
+      objectTypeToSelectShape<pointersToObjectType<L["properties"]>> &
+      SelectModifiers);
+
+// object types -> pointers
+// pointers -> links
+// links -> target object type
+// links -> link properties
+export type objectTypeToSelectShape<T extends ObjectType = ObjectType> =
+  // ObjectType extends T
+  //   ? {[k: string]: unknown}
+  //   :
+  Partial<{
+    [k in keyof T["__pointers__"]]: T["__pointers__"][k] extends PropertyDesc
+      ?
+          | boolean
+          | TypeSet<
+              T["__pointers__"][k]["target"],
+              cardinalityUtil.assignable<T["__pointers__"][k]["cardinality"]>
+            >
+      : T["__pointers__"][k] extends LinkDesc
+      ? linkDescToSelectElement<T["__pointers__"][k]>
+      : any;
+  }> & {[k: string]: unknown};
+
+// incorporate __shape__ (computeds) on selection shapes
+// this works but a major rewrite of setToTsType is required
+// to incorporate __shape__-based selection shapes into
+// result type inference
+// & [k in keyof T["__shape__"]]:
+//    string | number | symbol extends k //   Partial<{ // &
+//       ? unknown
+//       : T["__shape__"][k] extends infer U
+//       ? U extends ObjectTypeSet
+//         ?
+//             | boolean
+//             | TypeSet<
+//                 anonymizeObject<U["__element__"]>,
+//                 cardinalityUtil.assignable<U["__cardinality__"]>
+//               >
+//             | objectTypeToSelectShape<U["__element__"]>
+//             | ((
+//                 scope: $scopify<U["__element__"]>
+//               ) => objectTypeToSelectShape<U["__element__"]> &
+//                 SelectModifiers)
+//         : U extends TypeSet
+//         ?
+//             | boolean
+//             | TypeSet<
+//                 U["__element__"],
+//                 cardinalityUtil.assignable<U["__cardinality__"]>
+//               >
+//         : unknown
+//       : unknown;
+//   }>
 
 export type normaliseElement<El> = El extends boolean
   ? El
@@ -611,8 +652,11 @@ export type normaliseElement<El> = El extends boolean
   ? normaliseShape<stripSet<El>>
   : stripSet<El>;
 
-export type normaliseShape<Shape extends object> = {
-  [k in Exclude<keyof Shape, SelectModifierNames>]: normaliseElement<Shape[k]>;
+export type normaliseShape<
+  Shape extends object,
+  Strip = SelectModifierNames
+> = {
+  [k in Exclude<keyof Shape, Strip>]: normaliseElement<Shape[k]>;
 };
 
 const $FreeObject = makeType(
@@ -620,14 +664,14 @@ const $FreeObject = makeType(
   [...spec.values()].find(s => s.name === "std::FreeObject")!.id,
   literal
 );
-const FreeObject = {
+const FreeObject: $expr_PathNode = {
   __kind__: ExpressionKind.PathNode,
-  __element__: $FreeObject,
+  __element__: $FreeObject as any,
   __cardinality__: Cardinality.One,
   __parent__: null,
   __exclusive__: true,
   __scopeRoot__: null,
-};
+} as any;
 
 export const $existingScopes = new Set<
   Expression<TypeSet<BaseType, Cardinality>>
@@ -648,8 +692,7 @@ export function select<Expr extends TypeSet>(
 ): $expr_Select<stripSet<Expr>>;
 export function select<
   Expr extends ObjectTypeExpression,
-  Shape extends pointersToSelectShape<Expr["__element__"]["__pointers__"]> &
-    SelectModifiers,
+  Shape extends objectTypeToSelectShape<Expr["__element__"]> & SelectModifiers,
   Modifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
@@ -688,7 +731,30 @@ export function select<
 export function select<Shape extends {[key: string]: TypeSet}>(
   shape: Shape
 ): $expr_Select<{
-  __element__: ObjectType<`std::FreeObject`, {}, Shape>; // _shape
+  __element__: ObjectType<
+    `std::FreeObject`,
+    {
+      [k in keyof Shape]: Shape[k]["__element__"] extends ObjectType
+        ? LinkDesc<
+            Shape[k]["__element__"],
+            Shape[k]["__cardinality__"],
+            {},
+            false,
+            true,
+            true,
+            false
+          >
+        : PropertyDesc<
+            Shape[k]["__element__"],
+            Shape[k]["__cardinality__"],
+            false,
+            true,
+            true,
+            false
+          >;
+    },
+    Shape
+  >; // _shape
   __cardinality__: Cardinality.One;
 }>;
 export function select<Expr extends scalarLiterals>(
@@ -723,11 +789,40 @@ export function select(...args: any[]) {
     ) as any;
   }
 
-  const [expr, shapeGetter]: [TypeSet, (scope: any) => any] =
+  const exprPair: [TypeSet, (scope: any) => any] =
     typeof args[0].__element__ !== "undefined"
       ? (args as any)
       : [FreeObject, () => args[0]];
 
+  let expr = exprPair[0];
+  const shapeGetter = exprPair[1];
+  if (expr === FreeObject) {
+    const freeObjectPtrs: ObjectTypePointers = {};
+    for (const [k, v] of Object.entries(args[0]) as [string, TypeSet][]) {
+      freeObjectPtrs[k] = {
+        __kind__:
+          v.__element__.__kind__ === TypeKind.object ? "link" : "property",
+        target: v.__element__,
+
+        cardinality: v.__cardinality__,
+        exclusive: false,
+        computed: true,
+        readonly: true,
+        hasDefault: false,
+        properties: {},
+      };
+    }
+    expr = {
+      ...FreeObject,
+      __element__: {
+        ...FreeObject.__element__,
+        __pointers__: {
+          ...FreeObject.__element__.__pointers__,
+          ...freeObjectPtrs,
+        },
+      } as any,
+    };
+  }
   if (!shapeGetter) {
     if (expr.__element__.__kind__ === TypeKind.object) {
       const objectExpr: ObjectTypeSet = expr as any;
@@ -771,7 +866,7 @@ export function select(...args: any[]) {
     $selectify({
       __kind__: ExpressionKind.Select,
       __element__:
-        expr !== scope
+        expr.__element__.__kind__ === TypeKind.object
           ? {
               __kind__: TypeKind.object,
               __name__: `${expr.__element__.__name__}`, // _shape
@@ -783,7 +878,7 @@ export function select(...args: any[]) {
       __expr__: expr,
       __modifiers__: modifiers,
       __scope__:
-        expr !== scope && expr.__element__.__name__ !== "std::FreeObject"
+        expr !== scope // && expr.__element__.__name__ !== "std::FreeObject"
           ? scope
           : undefined,
     })
@@ -797,15 +892,18 @@ function resolveShape(
   const modifiers: any = {};
   const shape: any = {};
 
+  // get scoped object if expression is objecttypeset
   const scope =
     expr.__element__.__kind__ === TypeKind.object
       ? $getScopedExpr(expr as any, $existingScopes)
       : expr;
 
+  // execute getter with scope
   const selectShape =
     typeof shapeGetter === "function" ? shapeGetter(scope) : shapeGetter;
 
   for (const [key, value] of Object.entries(selectShape)) {
+    // handle modifier keys
     if (
       key === "filter" ||
       key === "order_by" ||
@@ -814,7 +912,9 @@ function resolveShape(
     ) {
       modifiers[key] = value;
     } else {
-      if (scope === expr) {
+      // for scalar expressions, scope === expr
+      // shape keys are not allowed
+      if (expr.__element__.__kind__ !== TypeKind.object) {
         throw new Error(
           `Invalid select shape key '${key}' on scalar expression, ` +
             `only modifiers are allowed (filter, order_by, offset and limit)`
@@ -826,24 +926,45 @@ function resolveShape(
   return {shape, modifiers, scope};
 }
 
-function resolveShapeElement(
+export function resolveShapeElement(
   key: any,
   value: any,
   scope: ObjectTypeExpression
 ): any {
-  if (
-    (typeof value === "function" &&
-      scope.__element__.__pointers__[key]?.__kind__ === "link") ||
-    (typeof value === "object" &&
-      typeof (value as any).__kind__ === "undefined")
-  ) {
+  // if value is a nested closure
+  // or a nested shape object
+  const isSubshape =
+    typeof value === "object" &&
+    typeof (value as any).__kind__ === "undefined";
+  const isClosure =
+    typeof value === "function" &&
+    scope.__element__.__pointers__[key]?.__kind__ === "link";
+  // if (isSubshape) {
+  //   // return value;
+  //   const childExpr = (scope as any)[key];
+  //   const {
+  //     shape: childShape,
+  //     // scope: childScope,
+  //     // modifiers: mods,
+  //   } = resolveShape(value as any, childExpr);
+  //   return childShape;
+  // }
+  if (isSubshape || isClosure) {
+    // get child node expression
+    // this relies on Proxy-based getters
     const childExpr = (scope as any)[key];
+    if (!childExpr) {
+      throw new Error(
+        `Invalid shape element "${key}" for type ${scope.__element__.__name__}`
+      );
+    }
     const {
       shape: childShape,
       scope: childScope,
       modifiers: mods,
     } = resolveShape(value as any, childExpr);
 
+    // extracts normalized modifiers
     const {modifiers} = $handleModifiers(mods, childExpr);
 
     return {
@@ -854,13 +975,16 @@ function resolveShapeElement(
         __pointers__: childExpr.__element__.__pointers__,
         __shape__: childShape,
       },
-      __cardinality__: scope.__element__.__pointers__[key].cardinality,
+      __cardinality__:
+        scope.__element__.__pointers__?.[key]?.cardinality ||
+        scope.__element__.__shape__?.[key]?.__cardinality__,
       __expr__: childExpr,
       __modifiers__: modifiers,
-      __scope__: childScope,
+      __scope__: childExpr !== childScope ? childScope : undefined,
     };
   } else if ((value as any)?.__kind__ === ExpressionKind.PolyShapeElement) {
     const polyElement = value as $expr_PolyShapeElement;
+
     const polyScope = (scope as any).is(polyElement.__polyType__);
     return {
       __kind__: ExpressionKind.PolyShapeElement,

@@ -8,6 +8,7 @@ import {
   LinkDesc,
   PropertyDesc,
   Cardinality,
+  BaseType,
 } from "../reflection";
 import type {
   PathParent,
@@ -129,18 +130,20 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
   for (const [key, val] of Object.entries(
     root.__element__.__shape__ || {id: true}
   )) {
-    if ((val as any)?.__element__ && !pointers[key]) {
-      pointers[key] = {
-        __kind__: "property",
-        target: (val as any).__element__,
-        cardinality: (val as any).__cardinality__,
-        exclusive: false,
-        // writable: false,
-        computed: true,
-        readonly: true,
-        hasDefault: false,
-      };
-    }
+    if (pointers[key]) continue;
+    const valType: BaseType = (val as any)?.__element__;
+    if (!valType) continue;
+
+    pointers[key] = {
+      __kind__: valType.__kind__ === TypeKind.object ? "link" : "property",
+      properties: {},
+      target: (val as any).__element__,
+      cardinality: (val as any).__cardinality__,
+      exclusive: false,
+      computed: true,
+      readonly: true,
+      hasDefault: false,
+    };
   }
 
   (root as any)[_pointers] = pointers;
@@ -240,13 +243,22 @@ export function $getScopedExpr<T extends ExpressionRoot>(
 ): Expression<T> {
   let scopedExpr = scopedExprCache.get(expr);
   if (!scopedExpr || existingScopes?.has(scopedExpr)) {
-    const uncached = !scopedExpr;
-    scopedExpr = $expressionify({
-      ...expr,
-      __cardinality__: Cardinality.One,
-      __scopedFrom__: expr,
-    });
+    // free objects should not be scopified
+    const isFreeObject =
+      expr.__cardinality__ === Cardinality.One &&
+      expr.__element__.__name__ === "std::FreeObject";
+
+    const isInsert = expr.__kind__ === ExpressionKind.Insert;
+    scopedExpr =
+      isFreeObject || isInsert
+        ? (expr as any as Expression<TypeSet<BaseType, Cardinality>>)
+        : $expressionify({
+            ...expr,
+            __cardinality__: Cardinality.One,
+            __scopedFrom__: expr,
+          });
     scopeRoots.add(scopedExpr);
+    const uncached = !scopedExpr;
     if (uncached) {
       scopedExprCache.set(expr, scopedExpr);
     }

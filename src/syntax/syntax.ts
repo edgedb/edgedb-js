@@ -7,6 +7,7 @@ export * from "./cast";
 export * from "./select";
 export * from "./update";
 export * from "./insert";
+export * from "./group";
 export * from "./collections";
 export * from "./funcops";
 export * from "./for";

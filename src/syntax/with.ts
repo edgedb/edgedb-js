@@ -3,6 +3,7 @@ import type {$expr_Select} from "./select";
 import type {$expr_For} from "./for";
 import type {$expr_Insert} from "./insert";
 import type {$expr_Update} from "./update";
+import type {$expr_Group} from "./group";
 import {$expressionify} from "./path";
 
 export type $expr_Alias<Expr extends TypeSet = TypeSet> = Expression<{
@@ -25,7 +26,8 @@ export type WithableExpression =
   | $expr_Select
   | $expr_For
   | $expr_Insert
-  | $expr_Update;
+  | $expr_Update
+  | $expr_Group;
 
 export type $expr_With<
   Refs extends TypeSet[] = TypeSet[],
