@@ -29,12 +29,24 @@ import {
 
 export const DATE_PRIVATE = Symbol.for("edgedb.datetime");
 
+// Converts value to number, or if value is NaN returns 0
+// as defined in temporal spec:
+// https://tc39.es/proposal-temporal/#sec-temporal-tointegerwithoutrounding
+// Note: Split into two functions, since some places in the spec throw on
+// non-integers and others use rounding
 function toNumber(val: any): number {
   const n = Number(val);
   if (Number.isNaN(n)) {
     return 0;
   }
   return n;
+}
+
+function assertInteger(val: number): number {
+  if (!Number.isInteger(val)) {
+    throw new RangeError(`unsupported fractional value ${val}`);
+  }
+  return val;
 }
 
 export class LocalTime {
@@ -315,13 +327,6 @@ export class LocalDateTime extends LocalDate {
   [inspect.custom](_depth: number, _options: any): string {
     return `LocalDateTime [ ${this.toString()} ]`;
   }
-}
-
-function assertInteger(val: number): number {
-  if (!Number.isInteger(val)) {
-    throw new RangeError(`unsupported fractional value ${val}`);
-  }
-  return val;
 }
 
 interface DurationLike {
