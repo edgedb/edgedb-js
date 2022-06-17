@@ -82,7 +82,7 @@ export type ServerSettings = KnownServerSettings & {
   [key: string]: Buffer;
 };
 
-export const HeaderCodes = {
+export const LegacyHeaderCodes = {
   implicitLimit: 0xff01,
   implicitTypenames: 0xff02,
   implicitTypeids: 0xff03,
@@ -91,17 +91,9 @@ export const HeaderCodes = {
   explicitObjectids: 0xff05,
 };
 
-export type MessageHeaders = {
-  [key in keyof typeof HeaderCodes]?: string | Buffer;
-};
-
-export interface PrepareMessageHeaders {
-  implicitLimit?: string;
-  implicitTypenames?: "true";
-  implicitTypeids?: "true";
-  explicitObjectids?: "false";
-}
-
-export interface ParseOptions {
-  headers?: PrepareMessageHeaders;
+export interface QueryOptions {
+  implicitLimit?: bigint;
+  implicitTypenames?: boolean;
+  implicitTypeids?: boolean;
+  explicitObjectids?: boolean;
 }

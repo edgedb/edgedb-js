@@ -180,7 +180,7 @@ if (getEdgeDBVersion().major >= 2) {
   test("legacy protocol", async () => {
     const client = getClient();
 
-    expect(
+    await expect(
       client
         .withGlobals({userId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
         .query("select 1")
@@ -188,13 +188,13 @@ if (getEdgeDBVersion().major >= 2) {
       /setting session state is not supported in this version of EdgeDB/
     );
 
-    expect(
+    await expect(
       client.withAliases({module: "sys"}).query("select 1")
     ).rejects.toThrowError(
       /setting session state is not supported in this version of EdgeDB/
     );
 
-    expect(
+    await expect(
       client
         .withConfigs({
           // TODO: use Duration.from

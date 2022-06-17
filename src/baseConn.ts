@@ -27,10 +27,9 @@ import * as errors from "./errors";
 import {resolveErrorCode} from "./errors/resolve";
 import {
   Cardinality,
-  HeaderCodes,
+  LegacyHeaderCodes,
   OutputFormat,
-  ParseOptions,
-  PrepareMessageHeaders,
+  QueryOptions,
   ProtocolVersion,
   QueryArgs,
   ServerSettings,
@@ -58,24 +57,26 @@ enum TransactionStatus {
 }
 
 enum Capabilities {
+  NONE = 0,
   MODIFICATONS = 0b00001, // query is not read-only
   SESSION_CONFIG = 0b00010, // query contains session config change
   TRANSACTION = 0b00100, // query contains start/commit/rollback of
   // transaction or savepoint manipulation
   DDL = 0b01000, // query contains DDL
   PERSISTENT_CONFIG = 0b10000, // server or database config change
+  ALL = 0xffff_ffff,
 }
 
-const NO_TRANSACTION_CAPABILITIES_BYTES = Buffer.from([
-  255,
-  255,
-  255,
-  255,
-  255,
-  255,
-  255,
-  255 & ~Capabilities.TRANSACTION & ~Capabilities.SESSION_CONFIG,
-]);
+const RESTRICTED_CAPABILITIES =
+  Capabilities.ALL & ~Capabilities.TRANSACTION & ~Capabilities.SESSION_CONFIG;
+
+const RESTRICTED_CAPABILITIES_BYTES = Buffer.alloc(8, 0xff);
+RESTRICTED_CAPABILITIES_BYTES.writeInt32BE(RESTRICTED_CAPABILITIES, 4);
+
+enum CompilationFlag {
+  INJECT_OUTPUT_TYPE_IDS = 1 << 0,
+  INJECT_OUTPUT_TYPE_NAMES = 1 << 1,
+}
 
 const OLD_ERROR_CODES = new Map([
   [0x05_03_00_01, 0x05_03_01_01], // TransactionSerializationError #2431
@@ -195,12 +196,16 @@ export class BaseRawConnection {
     Buffer,
     Buffer
   ] {
-    const headers = this._parseHeaders();
     let capabilities = -1;
-    if (headers.has(HeaderCodes.capabilities)) {
-      capabilities = Number(
-        headers.get(HeaderCodes.capabilities)!.readBigInt64BE()
-      );
+    if (this.isLegacyProtocol) {
+      const headers = this._parseHeaders();
+      if (headers.has(LegacyHeaderCodes.capabilities)) {
+        capabilities = Number(
+          headers.get(LegacyHeaderCodes.capabilities)!.readBigInt64BE()
+        );
+      }
+    } else {
+      capabilities = Number(this.buffer.readBigInt64);
     }
 
     const cardinality: Cardinality = this.buffer.readChar();
@@ -433,8 +438,7 @@ export class BaseRawConnection {
   async _legacyParse(
     query: string,
     outputFormat: OutputFormat,
-    expectOne: boolean,
-    options?: ParseOptions
+    expectOne: boolean
   ): Promise<[number, ICodec, ICodec, number, Buffer | null, Buffer | null]> {
     const wb = new WriteMessageBuffer();
     const parseSendsTypeData = versionGreaterThanOrEqual(
@@ -443,10 +447,9 @@ export class BaseRawConnection {
     );
 
     wb.beginMessage(chars.$P)
-      .writeHeaders({
+      .writeLegacyHeaders({
         explicitObjectids: "true",
-        ...(options?.headers ?? {}),
-        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+        allowCapabilities: RESTRICTED_CAPABILITIES_BYTES,
       })
       .writeChar(outputFormat)
       .writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
@@ -480,9 +483,9 @@ export class BaseRawConnection {
       switch (mtype) {
         case chars.$1: {
           const headers = this._parseHeaders();
-          if (headers.has(HeaderCodes.capabilities)) {
+          if (headers.has(LegacyHeaderCodes.capabilities)) {
             capabilities = Number(
-              headers.get(HeaderCodes.capabilities)!.readBigInt64BE()
+              headers.get(LegacyHeaderCodes.capabilities)!.readBigInt64BE()
             );
           }
           cardinality = this.buffer.readChar();
@@ -669,7 +672,7 @@ export class BaseRawConnection {
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
-      .writeHeaders({allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES})
+      .writeLegacyHeaders({allowCapabilities: RESTRICTED_CAPABILITIES_BYTES})
       .writeString("") // statement name
       .writeBuffer(this._encodeArgs(args, inCodec))
       .endMessage()
@@ -743,9 +746,9 @@ export class BaseRawConnection {
 
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
-    wb.writeHeaders({
+    wb.writeLegacyHeaders({
       explicitObjectids: "true",
-      allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+      allowCapabilities: RESTRICTED_CAPABILITIES_BYTES,
     });
     wb.writeChar(outputFormat);
     wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
@@ -850,7 +853,7 @@ export class BaseRawConnection {
     result: Array<any> | WriteBuffer,
     privilegedMode: boolean = false,
     parseOnly: boolean = false,
-    options?: ParseOptions
+    options?: QueryOptions
   ): Promise<
     [Cardinality, ICodec, ICodec, number, Buffer | null, Buffer | null] | void
   > {
@@ -860,13 +863,25 @@ export class BaseRawConnection {
 
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
-    wb.writeHeaders({
-      explicitObjectids: "true",
-      ...(options?.headers ?? {}),
-      allowCapabilities: privilegedMode
-        ? undefined
-        : NO_TRANSACTION_CAPABILITIES_BYTES,
-    });
+    wb.writeUInt16(0); // no headers
+    wb.writeFlags(
+      0xffff_ffff,
+      privilegedMode ? Capabilities.ALL : RESTRICTED_CAPABILITIES
+    );
+    wb.writeFlags(
+      0,
+      0 |
+        (options?.explicitObjectids
+          ? 0 // TODO: find the compiler flag
+          : 0) |
+        (options?.implicitTypeids
+          ? CompilationFlag.INJECT_OUTPUT_TYPE_IDS
+          : 0) |
+        (options?.implicitTypenames
+          ? CompilationFlag.INJECT_OUTPUT_TYPE_NAMES
+          : 0)
+    );
+    wb.writeBigInt64(options?.implicitLimit ?? BigInt(0));
     wb.writeChar(outputFormat);
     wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
     wb.writeString(query);
@@ -1162,9 +1177,9 @@ export class BaseRawConnection {
 
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$Q)
-      .writeHeaders({
+      .writeLegacyHeaders({
         allowCapabilities: !allowTransactionCommands
-          ? NO_TRANSACTION_CAPABILITIES_BYTES
+          ? RESTRICTED_CAPABILITIES_BYTES
           : undefined,
       })
       .writeString(query) // statement name
@@ -1249,7 +1264,7 @@ export class BaseRawConnection {
   // These methods are exposed for use by EdgeDB Studio
   public async rawParse(
     query: string,
-    headers?: PrepareMessageHeaders
+    options?: QueryOptions
   ): Promise<[ICodec, ICodec, Buffer, Buffer, ProtocolVersion]> {
     const result = (await this._executeFlow(
       query,
@@ -1261,9 +1276,7 @@ export class BaseRawConnection {
       [],
       false,
       true,
-      {
-        headers,
-      }
+      options
     ))!;
     return [
       result[1],
@@ -1277,7 +1290,7 @@ export class BaseRawConnection {
   public async rawExecute(
     query: string,
     outCodec: ICodec,
-    headers?: PrepareMessageHeaders,
+    options?: QueryOptions,
     inCodec?: ICodec,
     args: QueryArgs = null
   ): Promise<Buffer> {
@@ -1297,7 +1310,7 @@ export class BaseRawConnection {
       result,
       false,
       false,
-      {headers}
+      options
     );
     return result.unwrap();
   }
