@@ -31,8 +31,9 @@ export async function getGlobals(cxn: Executor): Promise<Globals> {
       id,
       name,
       target_id := .target.id,
-      real_cardinality := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
-        name,
+      real_cardinality := ("One" IF .required ELSE "AtMostOne")
+        IF <str>.cardinality = "One" ELSE
+        ("AtLeastOne" IF .required ELSE "Many"),
       has_default := exists .default,
     }
     ORDER BY .name;

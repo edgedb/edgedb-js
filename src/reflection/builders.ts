@@ -37,9 +37,9 @@ export const f =
 
 export const ts = f("ts");
 export const js = f("js");
+export const dts = f("dts");
 export const r = f("ts", "js");
 export const all = f("ts", "js", "dts");
-export const dts = f("dts");
 export const t = f("ts", "dts");
 
 type AnyCodeFrag = CodeFragment | Frag;
@@ -532,14 +532,17 @@ export class CodeBuilder {
       .map(exp => (exp as any).as);
   }
 
-  registerRef(fqn: string, id: string) {
-    if (this.dirBuilder._refs.has(fqn)) {
-      throw new Error(`ref name: ${fqn} already registered`);
+  registerRef(name: string, suffix?: string) {
+    console.log(`register: ${name}`);
+    if (this.dirBuilder._refs.has(name)) {
+      throw new Error(`ref name: ${name} already registered`);
     }
 
-    this.dirBuilder._refs.set(fqn, {
+    this.dirBuilder._refs.set(name, {
       dir: this.dir,
-      internalName: genutil.getInternalName({id, fqn}),
+      internalName: suffix
+        ? genutil.getInternalName({id: suffix, fqn: name})
+        : name,
     });
   }
 

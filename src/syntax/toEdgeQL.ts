@@ -48,6 +48,7 @@ import type {$expr_Set} from "./set";
 import type {$expr_Update} from "./update";
 import type {$expr_Alias, $expr_With} from "./with";
 import type {$expr_Group, GroupingSet} from "./group";
+import {$expr_Global} from "./globals";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -74,9 +75,8 @@ export type SomeExpression =
   | $expr_WithParams
   | $expr_Param
   | $expr_Detached
-  | $expr_Group;
-
-declare var asdf: $expr_Group;
+  | $expr_Group
+  | $expr_Global;
 
 type WithScopeExpr =
   | $expr_Select
@@ -591,6 +591,8 @@ function walkExprTree(
       childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
       break;
     }
+    case ExpressionKind.Global:
+      break;
     default:
       util.assertNever(
         expr,
@@ -1171,6 +1173,8 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n))`;
       undefined,
       true
     )})`;
+  } else if (expr.__kind__ === ExpressionKind.Global) {
+    return `(GLOBAL ${expr.__name__})`;
   } else {
     util.assertNever(
       expr,
