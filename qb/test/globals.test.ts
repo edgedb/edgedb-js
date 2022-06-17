@@ -18,6 +18,6 @@ afterAll(async () => {
   await teardownTests(client);
 });
 
-test("globals", () => {
-  version_lt;
+test("globals", async () => {
+  if (await version_lt(2)) return;
 });
