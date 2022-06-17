@@ -20,7 +20,7 @@ export function makeGlobal<
 }
 
 export type $expr_Global<
-  Name extends string,
+  Name extends string = string,
   Type extends BaseType = BaseType,
   Card extends Cardinality = Cardinality
 > = Expression<{
