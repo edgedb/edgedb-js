@@ -25,7 +25,11 @@ export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
           const targetType = types.get(g.target_id);
           const targetTypeRep = getStringRepresentation(targetType, {types});
           return [
-            t`  ${name}: _.syntax.$expr_Global<"${g.name}", ${targetTypeRep.staticType}, $.Cardinality.${g.real_cardinality}>`,
+            t`  ${name}: _.syntax.$expr_Global<
+              "${g.name}",
+              ${targetTypeRep.staticType},
+              $.Cardinality.${g.real_cardinality}
+              >`,
             t`,`,
           ];
         })
@@ -36,7 +40,10 @@ export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
         .flatMap(g => {
           const {name} = splitName(g.name);
           return [
-            r`  ${name}: _.syntax.makeGlobal("${g.name}", $.makeType(_.spec, "${g.target_id}", _.syntax.literal), $.Cardinality.${g.real_cardinality})`,
+            r`  ${name}: _.syntax.makeGlobal(
+              "${g.name}",
+              $.makeType(_.spec, "${g.target_id}", _.syntax.literal),
+              $.Cardinality.${g.real_cardinality})`,
             ts` as any`,
             r`,`,
           ];
