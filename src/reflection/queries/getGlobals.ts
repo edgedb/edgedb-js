@@ -31,7 +31,7 @@ export async function getGlobals(cxn: Executor): Promise<Globals> {
       id,
       name,
       target_id := .target.id,
-      real_cardinality := ("One" IF .required ELSE "AtMostOne")
+      real_cardinality := ("One" IF .required ELSE "One" IF EXISTS .default ELSE "AtMostOne")
         IF <str>.cardinality = "One" ELSE
         ("AtLeastOne" IF .required ELSE "Many"),
       has_default := exists .default,
@@ -43,7 +43,6 @@ export async function getGlobals(cxn: Executor): Promise<Globals> {
   for (const g of globals) {
     globalsMap.set(g.id, g);
   }
-  console.log(JSON.stringify(globals, null, 2));
 
   return globalsMap;
 }

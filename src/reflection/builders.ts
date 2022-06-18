@@ -533,7 +533,6 @@ export class CodeBuilder {
   }
 
   registerRef(name: string, suffix?: string) {
-    console.log(`register: ${name}`);
     if (this.dirBuilder._refs.has(name)) {
       throw new Error(`ref name: ${name} already registered`);
     }

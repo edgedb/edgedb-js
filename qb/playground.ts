@@ -5,14 +5,7 @@ import type {TypeSet} from "edgedb/dist/reflection";
 
 async function run() {
   const {client, data} = await setupTests();
-  const query = e.insert(e.Movie, {
-    title: `${Math.random()}`,
-    release_year: 2021,
-    characters: e.insert(e.Hero, {
-      name: "Killian",
-      "@character_name": "Robert Downey Jr.",
-    }),
-  });
+  const query = e.select(e.global.uuid_global);
 
   console.log(query.toEdgeQL());
   const result = await query.run(client);

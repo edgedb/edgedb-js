@@ -48,7 +48,7 @@ import type {$expr_Set} from "./set";
 import type {$expr_Update} from "./update";
 import type {$expr_Alias, $expr_With} from "./with";
 import type {$expr_Group, GroupingSet} from "./group";
-import {$expr_Global} from "./globals";
+import type {$expr_Global} from "./globals";
 
 export type SomeExpression =
   | $expr_PathNode
