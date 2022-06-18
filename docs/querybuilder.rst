@@ -147,7 +147,6 @@ current timestamp (as computed by the database).
   $ npx esbuild-runner script.ts
   2022-05-10T03:11:27.205Z
 
-
 .. _edgedb-js-execution:
 
 Expressions

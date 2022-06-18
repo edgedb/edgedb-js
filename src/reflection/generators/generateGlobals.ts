@@ -1,38 +1,9 @@
 import type {GeneratorParams} from "../generate";
-import {
-  frag,
-  getRef,
-  // getRef,
-  // getRef, quote,
-  splitName,
-} from "../util/genutil";
-import {
-  // CodeBuffer,
-  // CodeBuilder,
-  // CodeFragment,
-  // DirBuilder,
-  dts,
-  r,
-  t,
-  ts,
-  // all,
-} from "../builders";
+import {frag, getRef, splitName} from "../util/genutil";
+import {dts, r, t, ts} from "../builders";
 
-// import {Param, Typemod} from "../queries/getFunctions";
 import {getStringRepresentation} from "./generateObjectTypes";
 import {GlobalType} from "../queries/getGlobals";
-// import {introspect, StrictMap} from "../../reflection";
-// import {
-//   getTypesSpecificity,
-//   sortFuncopOverloads,
-//   getImplicitCastableRootTypes,
-//   expandFuncopAnytypeOverloads,
-//   GroupedParams,
-//   findPathOfAnytype,
-//   AnytypeDef,
-//   FuncopDefOverload,
-// } from "../util/functionUtils";
-// import {Casts} from "../queries/getCasts";
 
 export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
   const globalsByMod: {[k: string]: GlobalType[]} = {};
@@ -58,7 +29,7 @@ export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
             t`,`,
           ];
         })
-        .slice(0, -1), // slice last comma,
+        .slice(0, -1), // slice last comma
       t`}`,
       r` = {`,
       ...gs
@@ -68,35 +39,11 @@ export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
             r`  ${name}: _.syntax.makeGlobal("${g.name}", $.makeType(_.spec, "${g.target_id}", _.syntax.literal), $.Cardinality.${g.real_cardinality})`,
             ts` as any`,
             r`,`,
-            // all`;`,
           ];
         })
         .slice(0, -1), // slice last comma
       r`};`,
     ]);
-
-    /**
-     *
-     * const global_name: $.$expr_Global<"global_name", Type, Card> = $.makeGlobal("global_name", type, card);
-     */
-    // code.writeln([
-    //   dts`declare `,
-    //   r`const ${ref} = ${joinFrags(children, " | ")};`,
-    // ]);
-    // code.writeln([
-    //   r`declare `,
-    //   t`type ${ref} = ${joinFrags(children, " | ")};`,
-    // ]);
-
-    // const targetTypeName = `${name}_type`;
-    // const targetType = types.get(g.target_id);
-    // const targetTypeRep = getStringRepresentation(targetType, {types});
-    // code.writeln([
-    //   r`const ${targetTypeName} = $.makeType(_.spec, "${g.target_id}", _.syntax.literal);`,
-    // ]);
-    // code.writeln([`const globals = {`])
-
-    // code.writeln([dts`declare `, ...frag`const $global`, t`: {}`]);
 
     code.nl();
     code.registerRef(`$${mod}__globals`);
