@@ -434,8 +434,8 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         [Set, TypeSet],
         TypeSet<
           getPrimitiveBaseType<
-            Set["__element__"] extends ArrayType
-              ? Set["__element__"]["__element__"]
+            Set["__element__"] extends ArrayType<infer El>
+              ? El
               : Set["__element__"]
           >,
           Set["__cardinality__"]
@@ -458,8 +458,8 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         [Set, TypeSet],
         TypeSet<
           getPrimitiveBaseType<
-            Set["__element__"] extends ArrayType
-              ? Set["__element__"]["__element__"]
+            Set["__element__"] extends ArrayType<infer El>
+              ? El
               : Set["__element__"]
           >,
           cardinalityUtil.multiplyCardinalities<
