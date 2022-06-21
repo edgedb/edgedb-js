@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {NullCodec, NULL_CODEC} from "./codecs/codecs";
+import {NullCodec, NULL_CODEC, UNKNOWN_CODEC} from "./codecs/codecs";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {ObjectCodec} from "./codecs/object";
@@ -67,15 +67,19 @@ enum Capabilities {
   ALL = 0xffff_ffff,
 }
 
-const RESTRICTED_CAPABILITIES =
-  Capabilities.ALL & ~Capabilities.TRANSACTION & ~Capabilities.SESSION_CONFIG;
+const RESTRICTED_CAPABILITIES = (
+  Capabilities.ALL
+  & ~Capabilities.TRANSACTION
+  & ~Capabilities.SESSION_CONFIG
+) >>> 0;
 
 const RESTRICTED_CAPABILITIES_BYTES = Buffer.alloc(8, 0xff);
-RESTRICTED_CAPABILITIES_BYTES.writeInt32BE(RESTRICTED_CAPABILITIES, 4);
+RESTRICTED_CAPABILITIES_BYTES.writeUInt32BE(RESTRICTED_CAPABILITIES, 4);
 
 enum CompilationFlag {
   INJECT_OUTPUT_TYPE_IDS = 1 << 0,
   INJECT_OUTPUT_TYPE_NAMES = 1 << 1,
+  INJECT_OUTPUT_OBJECT_IDS = 1 << 2,
 }
 
 const OLD_ERROR_CODES = new Map([
@@ -205,7 +209,8 @@ export class BaseRawConnection {
         );
       }
     } else {
-      capabilities = Number(this.buffer.readBigInt64);
+      this._ignoreHeaders();
+      capabilities = Number(this.buffer.readBigInt64());
     }
 
     const cardinality: Cardinality = this.buffer.readChar();
@@ -246,15 +251,16 @@ export class BaseRawConnection {
 
   protected _parseCommandCompleteMessage(): string {
     this._ignoreHeaders();
+    this.buffer.readBigInt64()
     const status = this.buffer.readString();
     // TODO: Check if this is correct??
-    if (!this.isLegacyProtocol && this.buffer.curMessageLenUnread) {
-      this.buffer.readUUID(); // state type id
-      if (this.buffer.readInt16() !== 1) {
-        throw new Error(`expected 1`);
-      }
-      this.buffer.readLenPrefixedBuffer(); // state
-    }
+    // if (!this.isLegacyProtocol && this.buffer.curMessageLenUnread) {
+    //   this.buffer.readUUID(); // state type id
+    //   if (this.buffer.readInt16() !== 1) {
+    //     throw new Error(`expected 1`);
+    //   }
+    //   this.buffer.readLenPrefixedBuffer(); // state
+    // }
     this.buffer.finishMessage();
     return status;
   }
@@ -872,7 +878,7 @@ export class BaseRawConnection {
       0,
       0 |
         (options?.explicitObjectids
-          ? 0 // TODO: find the compiler flag
+          ? CompilationFlag.INJECT_OUTPUT_OBJECT_IDS
           : 0) |
         (options?.implicitTypeids
           ? CompilationFlag.INJECT_OUTPUT_TYPE_IDS
@@ -886,26 +892,47 @@ export class BaseRawConnection {
     wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
     wb.writeString(query);
 
-    wb.writeBuffer(this.stateCodec.tidBuffer);
-    wb.writeInt16(1);
-    if (this.state === null) {
-      // wb.writeInt32(0);
-      // TODO: remove this once server bug is fixed
-      const buf = new WriteBuffer();
-      this.stateCodec.encode(buf, Session.defaults()._serialise());
-      wb.writeBuffer(buf.unwrap());
-      //
+    // wb.writeBuffer(this.stateCodec.tidBuffer);
+    // wb.writeInt16(1);
+    // if (this.state === null) {
+    //   wb.writeInt32(0);
+    // } else {
+    //   wb.writeBuffer(this.state);
+    // }
+    let origInCodecTid: Buffer;
+
+    if (!inCodec) {
+      if (!args || Object.keys(args).length === 0) {
+        // No arguments, no problem in not knowing the input codec.
+        origInCodecTid = NULL_CODEC.tidBuffer;
+      } else {
+        // Args present, need server to describe how to encode.
+        origInCodecTid = UNKNOWN_CODEC.tidBuffer;
+      }
     } else {
-      wb.writeBuffer(this.state);
+      origInCodecTid = inCodec.tidBuffer;
     }
 
-    wb.writeBuffer(inCodec?.tidBuffer ?? NULL_CODEC.tidBuffer);
-    wb.writeBuffer(outCodec?.tidBuffer ?? NULL_CODEC.tidBuffer);
+    wb.writeBuffer(origInCodecTid);
+
+    if (!outCodec) {
+      if (expectedCardinality === Cardinality.NO_RESULT) {
+        // Not expecting to decode output data.
+        wb.writeBuffer(NULL_CODEC.tidBuffer);
+      } else {
+        // Output present, need server to describe how to decode.
+        wb.writeBuffer(UNKNOWN_CODEC.tidBuffer);
+      }
+    } else {
+      wb.writeBuffer(outCodec.tidBuffer);
+    }
+
     if (inCodec) {
       wb.writeBuffer(this._encodeArgs(args, inCodec));
     } else {
       wb.writeInt32(0);
     }
+
     wb.endMessage();
     wb.writeSync();
 

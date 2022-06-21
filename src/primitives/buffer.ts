@@ -306,8 +306,8 @@ export class WriteMessageBuffer {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeChar: no current message");
     }
-    this.buffer.writeInt32(h);
-    this.buffer.writeInt32(l);
+    this.buffer.writeUInt32(h);
+    this.buffer.writeUInt32(l);
     return this;
   }
 
@@ -498,11 +498,11 @@ export class ReadMessageBuffer {
   }
 
   private _readBuffer(size: number): Buffer {
-    const buf0 = this.ensureFirstBuf();
-
     if (size === 0) {
       return EMPTY_BUFFER;
     }
+
+    const buf0 = this.ensureFirstBuf();
 
     if (this.pos0 + size <= this.len0) {
       // If the requested *size* fits in the first buffer
