@@ -91,6 +91,18 @@ export const getServerCommand = (
     availableFeatures.push("admin-ui");
   }
 
+  if (help.includes("--jws-public-key-file")) {
+    args.push(
+      "--jws-public-key-file",
+      path.join(__dirname, "keys", "public.pem"),
+    );
+
+    args.push(
+      "--jwe-private-key-file",
+      path.join(__dirname, "keys", "private.pem"),
+    );
+  }
+
   args = [
     ...args,
     "--bind-address=127.0.0.1",
@@ -99,6 +111,7 @@ export const getServerCommand = (
     "--testmode",
     "--port=auto",
     "--emit-server-status=" + statusFile,
+    "--security=strict",
     "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }",
   ];
 
