@@ -38,7 +38,7 @@
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
     "tslint-plugin-prettier": "^2.3.0",
-    "typescript": "^4.5.2"
+    "typescript": "latest"
   },
   "scripts": {
     "build": "yarn build:cjs && yarn build:esm && yarn copy:syntax",

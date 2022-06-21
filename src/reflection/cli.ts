@@ -157,10 +157,11 @@ CONNECTION OPTIONS:
     --tls-security <insecure | no_host_verification | strict | default>
 
 OPTIONS:
-    --target [ts,esm,cjs]
+    --target [ts,esm,cjs,mts]
 
-        ts     Generate TypeScript files
-        esm    Generate JavaScript with ES Module syntax
+        ts     Generate TypeScript files (.ts)
+        mts    Generate TypeScript files (.mts) with ESM syntax
+        esm    Generate JavaScript with ESM syntax
         cjs    Generate JavaScript with CommonJS syntax
 
     --output-dir <output-dir>

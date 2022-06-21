@@ -17,7 +17,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps");
-  f.addStarImport("edgedb", "edgedb");
+  f.addImportStar("edgedb", "edgedb");
   f.addImport({$: true}, "edgedb", false, ["ts", "dts"], true);
 
   const reverseTopo = Array.from(types)
@@ -348,7 +348,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   f.writeln([t`  [k in keyof T]: literalToTypeSet<T[k]>;`]);
   f.writeln([t`};\n\n`]);
 
-  f.addStarImport("literal", "./syntax/literal", true);
+  f.addImportStar("literal", "./syntax/literal", true);
 
   f.writeln([
     dts`declare `,

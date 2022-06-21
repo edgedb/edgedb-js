@@ -145,7 +145,7 @@ class BuilderImportsExports {
     });
   }
 
-  addDefaultImport(
+  addImportDefault(
     name: string,
     fromPath: string,
     allowFileExt: boolean = false,
@@ -162,7 +162,7 @@ class BuilderImportsExports {
     });
   }
 
-  addStarImport(
+  addImportStar(
     name: string,
     fromPath: string,
     allowFileExt: boolean = false,
@@ -512,10 +512,10 @@ export class CodeBuilder {
   constructor(private dirBuilder: DirBuilder, private dir: string) {}
 
   addImport = this.importsExports.addImport.bind(this.importsExports);
-  addDefaultImport = this.importsExports.addDefaultImport.bind(
+  addImportDefault = this.importsExports.addImportDefault.bind(
     this.importsExports
   );
-  addStarImport = this.importsExports.addStarImport.bind(this.importsExports);
+  addImportStar = this.importsExports.addImportStar.bind(this.importsExports);
 
   addExport = this.importsExports.addExport.bind(this.importsExports);
   addRefsDefaultExport = this.importsExports.addRefsDefaultExport.bind(
@@ -588,7 +588,7 @@ export class CodeBuilder {
         importPath = "./" + importPath;
       }
 
-      importsExports.addStarImport(prefix, importPath, true, undefined, true);
+      importsExports.addImportStar(prefix, importPath, true, undefined, true);
     }
 
     return (
@@ -709,7 +709,7 @@ export class DirBuilder {
     const mod = this.getPath(`modules/${this._modules.get(moduleName)}`);
 
     mod.addImport({$: true}, "edgedb");
-    mod.addStarImport("_", "../imports", true);
+    mod.addImportStar("_", "../imports", true);
 
     return mod;
   }
@@ -762,3 +762,6 @@ export class DirBuilder {
     }
   }
 }
+
+const arg = new DirBuilder();
+arg.getModule("asdf").addImport;

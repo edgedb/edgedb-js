@@ -66,7 +66,7 @@ export function generateOperators({
   const code = dir.getPath("operators");
 
   code.addImport({$: true}, "edgedb");
-  code.addStarImport("_", "./imports", true);
+  code.addImportStar("_", "./imports", true);
 
   const overloadsBuf = new CodeBuffer();
 

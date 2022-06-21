@@ -46,7 +46,7 @@ export function exitWithError(message: string): never {
 export async function generateQB(params: {
   outputDir: string;
   connectionConfig: ConnectConfig;
-  target: "ts" | "esm" | "cjs";
+  target: "ts" | "esm" | "cjs" | "mts";
 }): Promise<void> {
   const {outputDir, connectionConfig, target} = params;
   // tslint:disable-next-line
@@ -123,8 +123,8 @@ export async function generateQB(params: {
     index.addExportStarFrom(null, "./types", true, ["ts", "dts"]);
     index.addImport({$: true, _edgedbJsVersion: true}, "edgedb");
     index.addExportFrom({createClient: true}, "edgedb");
-    index.addStarImport("$syntax", "./syntax/syntax", true);
-    index.addStarImport("$op", "./operators", true);
+    index.addImportStar("$syntax", "./syntax/syntax", true);
+    index.addImportStar("$op", "./operators", true);
 
     index.writeln([
       r`\nif (_edgedbJsVersion !== "${_edgedbJsVersion}") {
@@ -228,7 +228,7 @@ export async function generateQB(params: {
         if (dir.getModule(moduleName).isEmpty()) {
           continue;
         }
-        index.addDefaultImport(
+        index.addImportDefault(
           `_${internalName}`,
           `./modules/${internalName}`,
           true

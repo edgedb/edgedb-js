@@ -128,7 +128,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
   const {dir, types} = params;
 
   const plainTypesCode = dir.getPath("types");
-  plainTypesCode.addStarImport("edgedb", "edgedb", false, undefined, true);
+  plainTypesCode.addImportStar("edgedb", "edgedb", false, undefined, true);
   const plainTypeModules = new Map<
     string,
     {internalName: string; buf: CodeBuffer; types: Map<string, string>}
