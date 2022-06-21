@@ -7,7 +7,6 @@ import {
   BaseType,
   Cardinality,
   cardinalityUtil,
-  CastableNonArrayType,
   ExpressionKind,
   ExpressionRoot,
   getPrimitiveBaseType,
@@ -119,7 +118,7 @@ export function $arrayLikeIndexify(_expr: ExpressionRoot) {
 }
 
 // ARRAY
-export function array<Element extends CastableNonArrayType>(
+export function array<Element extends NonArrayType>(
   element: Element
 ): ArrayType<Element>;
 export function array<

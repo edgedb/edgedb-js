@@ -281,7 +281,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
             !type.is_abstract &&
             !type.enum_values &&
             !type.material_id &&
-            !type.castOnlyType &&
+            !type.castType &&
             (!scalarToLiteralMapping[type.name] ||
               !scalarToLiteralMapping[type.name].literalKind)
           );

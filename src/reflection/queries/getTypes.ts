@@ -41,7 +41,7 @@ export type ScalarType = TypeProperties<"scalar"> & {
   // ancestors: ReadonlyArray<{id: UUID}>;
   enum_values: ReadonlyArray<string> | null;
   material_id: UUID | null;
-  castOnlyType?: UUID;
+  castType?: UUID;
 };
 
 export type ObjectType = TypeProperties<"object"> & {
@@ -74,9 +74,9 @@ export type Type = PrimitiveType | ObjectType;
 
 export type Types = StrictMap<UUID, Type>;
 
-export const nonCastableTypes = new Set<string>([
-  // numberType.id
-]);
+// export const nonCastableTypes = new Set<string>([
+// numberType.id
+// ]);
 
 const numberType: ScalarType = {
   id: "00000000-0000-0000-0000-0000000001ff",
@@ -218,10 +218,10 @@ export async function getTypes(
     switch (type.kind) {
       case "scalar":
         if (typeMapping.has(type.id)) {
-          type.castOnlyType = typeMapping.get(type.id)!.id;
+          type.castType = typeMapping.get(type.id)!.id;
         }
         if (type.is_seq) {
-          type.castOnlyType = numberType.id;
+          type.castType = numberType.id;
         }
         // if (type.material_id) {
         //   type.material_id =
