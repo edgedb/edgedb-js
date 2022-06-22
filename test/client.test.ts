@@ -1363,8 +1363,8 @@ test("scripts and args", async () => {
 
   try {
     if (getEdgeDBVersion().major >= 2) {
-      expect(
-        await client.execute(
+      await expect(
+        client.execute(
           `
           insert ScriptTest {
             name := 'test'
