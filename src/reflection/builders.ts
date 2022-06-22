@@ -1,13 +1,9 @@
-// import * as path from "path";
-// import * as fs from "fs";
 import {fs, path, exists} from "../adapter.node";
 import {StrictMap} from "./strictMap";
 import * as genutil from "./util/genutil";
 import {importExportHelpers} from "./importExportHelpers";
-// import { Target } from "./generate";
 
 type Mode = "ts" | "js" | "dts";
-// mts is same as esm but uses .js extensions on imports
 type ModuleKind = "esm" | "cjs";
 
 export interface IdentRef {

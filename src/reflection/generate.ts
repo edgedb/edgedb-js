@@ -48,7 +48,6 @@ export async function generateQB(params: {
   outputDir: string;
   connectionConfig: ConnectConfig;
   target: Target;
-  // "cts" | "mjs" | "cjs" | "mts"
 }): Promise<void> {
   const {outputDir, connectionConfig, target} = params;
   // tslint:disable-next-line
@@ -271,26 +270,13 @@ export async function generateQB(params: {
     await cxn.close();
   }
 
-  // .ts
-  // .mjs
-  // .mts
-  // .d.mts + .mjs
-  // .d.ts + .js
-  // whether to render ts or js+dts
-  // file extension for generated files
-  // extension for imports
   if (target === "ts") {
-    await dir.write(
-      outputDir,
-      {
-        mode: "ts",
-        moduleKind: "esm",
-        fileExtension: ".ts",
-        moduleExtension: "",
-      }
-      // target === "ts" || target === "mts" ? "ts" : "js+dts",
-      // {moduleKind: target === "cjs" ? "cjs" : "esm"}
-    );
+    await dir.write(outputDir, {
+      mode: "ts",
+      moduleKind: "esm",
+      fileExtension: ".ts",
+      moduleExtension: "",
+    });
   } else if (target === "mts") {
     await dir.write(outputDir, {
       mode: "ts",
@@ -325,11 +311,6 @@ export async function generateQB(params: {
       moduleExtension: "",
     });
   }
-  // await dir.write(
-  //   outputDir,
-  //   target === "ts" || target === "mts" ? "ts" : "js+dts",
-  //   {moduleKind: target === "cjs" ? "cjs" : "esm"}
-  // );
 
   // write syntax files
   const syntaxDir = path.join(__dirname, "..", "syntax");
@@ -362,10 +343,6 @@ export async function generateQB(params: {
     const filePath = path.join(syntaxDir, fileName);
     let contents = await readFileUtf8(filePath);
 
-    // rewrite scoped import paths
-    // for cjs files, simple rewrite
-    // for esm, add .mjs extension
-    // for mjs add .mjs extension
     if (contents.indexOf(`"edgedb/dist/reflection"`) !== -1) {
       throw new Error("No directory imports allowed in `syntax` files.");
     }
@@ -380,8 +357,6 @@ export async function generateQB(params: {
         `require("edgedb/dist/reflection$2${pkgExt}")`
       )
       .replaceAll(/require\("@generated\/(.*)"\)/g, `require("../$1")`)
-      // } else {
-      // contents = contents
       .replaceAll(
         /from "(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?([a-z]*)"/g,
         `from "edgedb/dist/reflection$2${pkgExt}"`

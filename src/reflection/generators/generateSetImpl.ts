@@ -24,20 +24,6 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
     modes: ["ts", "js"],
   });
 
-  // code.addImport(
-  //   {
-  //     $: true,
-  //     // ArrayType: true,
-  //     // TypeSet: true,
-  //     // BaseType: true,
-  //     // ObjectTypeSet: true,
-  //     // PrimitiveTypeSet: true,
-  //     // AnyTupleType: true,
-  //     // getPrimitiveBaseType: true,
-  //   },
-  //   "edgedb",
-  //   {typeOnly: true}
-  // );
   code.addImport(
     {
       $expr_Set: true,
@@ -51,26 +37,7 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
     "./set",
     {allowFileExt: true, typeOnly: true}
   );
-  //   code.writeln([
-  //     t`import type {
-  //   ArrayType,
-  //   TypeSet,
-  //   BaseType,
-  //   ObjectTypeSet,
-  //   PrimitiveTypeSet,
-  //   AnyTupleType,
-  //   getPrimitiveBaseType,
-  // } from "edgedb/dist/reflection";
-  // import type {
-  //   $expr_Set,
-  //   mergeObjectTypesVariadic,
-  //   getTypesFromExprs,
-  //   getTypesFromObjectExprs,
-  //   getCardsFromExprs,
-  //   getSharedParentPrimitiveVariadic,
-  //   LooseTypeSet,
-  // } from "./set";`,
-  //   ]);
+
   code.addImport({getSharedParent: true}, "./set", {
     allowFileExt: true,
     modes: ["ts", "js"],

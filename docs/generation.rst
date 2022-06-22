@@ -1,3 +1,4 @@
+
 .. _edgedb-js-generation:
 
 Generation
@@ -75,12 +76,12 @@ whether you are using TypeScript or plain JavaScript.)
 
 .. note::
 
-  It is not possible to generate the query builder without establishing a
+  Generating the query builder requires establishing a
   connection to an active EdgeDB instance. Remember that object types can
   contain computed fields that correspond to arbitrary EdgeQL queries. It
   isn't possible to determine the type and cardinality of these queries
   without implementing a full EdgeQL parser and static analyzer in JavaScript,
-  which is not on our roadmap (to put it lightly). As such, we rely on the
+  which is not on our roadmap (to put it lightly!). As such, we rely on the
   existence of an active EdgeDB instance containing the target schema.
 
 By default, ``npx edgeql-js`` generated files into the
@@ -98,6 +99,25 @@ The project root is identified by scanning up the file system for a
   any other CLI command. See :ref:`Client Libraries > Connection
   <edgedb_client_connection>` for guidance.
 
+
+.. _edgedb_qb_target:
+
+Targets
+^^^^^^^
+
+The generation command guesses what kind of files it should generate by looking at your environment. You can override this with the ``--target`` flag.
+
+.. list-table::
+
+  * - ``--target ts``
+    - Generate TypeScript files (.ts)
+  * - ``--target mts``
+    - Generate TypeScript files (.mts) with extensioned ESM imports
+  * - ``--target esm``
+    - Generate ``.js`` with ESM syntax and ``.d.ts`` declaration files
+  * - ``--target cjs``
+    - Generate JavaScript with CommonJS syntax and and ``.d.ts`` declaration
+      files
 
 Version control
 ^^^^^^^^^^^^^^^
@@ -133,8 +153,11 @@ start building queries.
 
 .. code-block:: typescript
 
-  // TypeScript or transpiled JS
+  // TypeScript
   import e from "./dbschema/edgeql-js";
+
+  // TypeScript with ESM
+
 
   // JavaScript (CommonJS)
   const e = require("./dbschema/edgeql-js");
@@ -176,7 +199,7 @@ The generation command is configurable in a number of ways.
 ``--output-dir <path>``
   Sets the output directory for the generated files.
 
-``--target <ts|cjs|esm>``
+``--target <ts|cjs|esm|mts>``
   What type of files to generate. Documented above.
 
 ``--force-overwrite``

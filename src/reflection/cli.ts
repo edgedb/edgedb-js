@@ -13,25 +13,6 @@ import {configFileHeader, exitWithError, generateQB} from "./generate";
 const rmdir =
   Number(process.versions.node.split(".")[0]) >= 16 ? fs.rm : fs.rmdir;
 
-// commonjs vs extensionless ESM vs true ESM
-// ts vs js vs cjs vs mjs vs cts vs mts
-/*
-- pre-compilation
-  - no: generate typescript
-    - extensionless imports?
-      - yes
-      - no
-        - file extension
-          - .ts
-          - .mts
-  - yes: generate javascript and declaration files
-    - modules: cjs vs esm
-      - CJS with `module.exports`
-        - file extension: `.js` vs `.cjs`
-      - ESM (import/export)
-        - extension: `.js` vs `.mjs`
-*/
-
 interface Options {
   showHelp?: boolean;
   target?: "ts" | "esm" | "cjs" | "mts";
