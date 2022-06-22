@@ -177,6 +177,7 @@ test("all param types", async () => {
     local_time: e.cal.local_time,
     local_datetime: e.cal.local_datetime,
     relative_duration: e.cal.relative_duration,
+    date_duration: e.cal.date_duration,
     memory: e.cfg.memory,
   };
 
@@ -200,6 +201,7 @@ test("all param types", async () => {
     local_time: new edgedb.LocalTime(12, 34),
     local_datetime: new edgedb.LocalDateTime(2021, 11, 25, 1, 2, 3),
     relative_duration: new edgedb.RelativeDuration(1, 2, 3),
+    date_duration: new edgedb.DateDuration(1, 2, 3, 4),
     memory: new edgedb.ConfigMemory(BigInt(125952)),
   };
 
@@ -234,6 +236,7 @@ test("all param types", async () => {
         local_time: edgedb.LocalTime;
         local_datetime: edgedb.LocalDateTime;
         relative_duration: edgedb.RelativeDuration;
+        date_duration: edgedb.DateDuration;
         memory: edgedb.ConfigMemory;
       }
     >

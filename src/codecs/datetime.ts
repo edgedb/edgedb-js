@@ -27,6 +27,7 @@ import {
   RelativeDuration,
   LocalDateFromOrdinal,
   LocalDateToOrdinal,
+  DateDuration,
 } from "../datatypes/datetime";
 import {ymd2ord} from "../datatypes/dateutil";
 
@@ -280,5 +281,34 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
       ms * sign,
       us * sign
     );
+  }
+}
+
+export class DateDurationCodec extends ScalarCodec implements ICodec {
+  encode(buf: WriteBuffer, object: any): void {
+    if (!(object instanceof DateDuration)) {
+      throw new Error(`
+        a DateDuration instance was expected, got "${object}"
+      `);
+    }
+
+    buf.writeInt32(16);
+    buf.writeInt64(0);
+    buf.writeInt32(object.days + 7 * object.weeks);
+    buf.writeInt32(object.months + 12 * object.years);
+  }
+
+  decode(buf: ReadBuffer): any {
+    buf.discard(8);
+    let days = buf.readInt32();
+    let months = buf.readInt32();
+
+    const weeks = Math.trunc(days / 7);
+    days = Math.trunc(days % 7);
+
+    const years = Math.trunc(months / 12);
+    months = Math.trunc(months % 12);
+
+    return new DateDuration(years, months, weeks, days);
   }
 }

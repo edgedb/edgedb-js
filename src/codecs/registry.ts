@@ -272,7 +272,7 @@ export class CodecsRegistry {
             throw new Error(`no JS codec for ${KNOWN_TYPES.get(tid)}`);
           }
 
-          throw new Error(`node JS codec for the type with ID ${tid}`);
+          throw new Error(`no JS codec for the type with ID ${tid}`);
         }
         if (!(res instanceof ScalarCodec)) {
           throw new Error(

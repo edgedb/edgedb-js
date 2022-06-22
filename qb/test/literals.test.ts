@@ -8,6 +8,7 @@ test("literals", () => {
   const localdatetime = new edgedb.LocalDateTime(2021, 10, 31, 21, 45, 30);
   const localtime = new edgedb.LocalTime(15, 15, 0);
   const relduration = new edgedb.RelativeDuration(1, 2, 3);
+  const dateduration = new edgedb.DateDuration(1, 2, 3, 4);
   const uuid = "317fee4c-0da5-45aa-9980-fedac211bfb6";
 
   expect(e.std.bigint(BigInt("9007199254740991")).toEdgeQL()).toEqual(
@@ -63,6 +64,9 @@ test("literals", () => {
   );
   expect(e.cal.relative_duration(relduration).toEdgeQL()).toEqual(
     `<cal::relative_duration>'P1Y2M21D'`
+  );
+  expect(e.cal.date_duration(dateduration).toEdgeQL()).toEqual(
+    `<cal::date_duration>'P1Y2M25D'`
   );
 });
 

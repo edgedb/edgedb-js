@@ -24,6 +24,7 @@ export {
   LocalTime,
   Duration,
   RelativeDuration,
+  DateDuration,
 } from "./datatypes/datetime";
 
 export {ConfigMemory} from "./datatypes/memory";
