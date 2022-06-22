@@ -1588,7 +1588,7 @@ if (getEdgeDBVersion().major >= 2) {
         name
       }`;
       const options = {
-        implicitTypenames: true,
+        injectTypenames: true,
         implicitLimit: BigInt(5),
       } as const;
       const [_, outCodec] = await con.rawParse(query, options);
@@ -1620,7 +1620,7 @@ if (!isDeno && getAvailableFeatures().has("admin-ui")) {
     name
   }`;
     const options = {
-      implicitTypenames: true,
+      injectTypenames: true,
       implicitLimit: BigInt(5),
     } as const;
 

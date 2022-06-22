@@ -93,7 +93,7 @@ export const LegacyHeaderCodes = {
 
 export interface QueryOptions {
   implicitLimit?: bigint;
-  implicitTypenames?: boolean;
-  implicitTypeids?: boolean;
-  explicitObjectids?: boolean;
+  injectTypenames?: boolean;
+  injectTypeids?: boolean;
+  injectObjectids?: boolean;
 }
