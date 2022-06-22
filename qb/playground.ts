@@ -1,7 +1,6 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
-import e, {$infer} from "./dbschema/edgeql-js/index";
-import type {TypeSet} from "edgedb/dist/reflection";
+import e from "./dbschema/edgeql-js";
 
 async function run() {
   const {client, data} = await setupTests();

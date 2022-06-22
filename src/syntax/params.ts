@@ -6,7 +6,6 @@ import {
   Cardinality,
   setToTsType,
   TypeSet,
-  unwrapCastableType,
   TypeKind,
   BaseTypeToTsType,
 } from "../reflection";
@@ -79,7 +78,7 @@ export type $expr_Param<
   Optional extends boolean = boolean
 > = Expression<{
   __kind__: ExpressionKind.Param;
-  __element__: unwrapCastableType<Type>;
+  __element__: Type;
   __cardinality__: Optional extends true
     ? Cardinality.AtMostOne
     : Cardinality.One;

@@ -133,7 +133,7 @@ export const generateScalars = (params: GeneratorParams) => {
 
       sc.nl();
       sc.addExport(literal);
-      sc.addRefsDefaultExport(literal, _name);
+      sc.addToDefaultExport(literal, _name);
       continue;
     }
 
@@ -236,7 +236,7 @@ export const generateScalars = (params: GeneratorParams) => {
     }
 
     sc.addExport(literal);
-    if (_name !== "number") sc.addRefsDefaultExport(literal, _name);
+    if (_name !== "number") sc.addToDefaultExport(literal, _name);
 
     sc.nl();
   }

@@ -3,7 +3,6 @@ import {
   ExpressionKind,
   BaseType,
   BaseTypeToTsType,
-  unwrapCastableType,
   makeType,
   ScalarType,
 } from "../reflection";
@@ -13,8 +12,8 @@ import {spec} from "@generated/__spec__";
 
 export function literal<T extends BaseType>(
   type: T,
-  value: BaseTypeToTsType<unwrapCastableType<T>>
-): $expr_Literal<unwrapCastableType<T>> {
+  value: BaseTypeToTsType<T>
+): $expr_Literal<T> {
   return $expressionify({
     __element__: type,
     __cardinality__: Cardinality.One,

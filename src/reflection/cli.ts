@@ -13,9 +13,28 @@ import {configFileHeader, exitWithError, generateQB} from "./generate";
 const rmdir =
   Number(process.versions.node.split(".")[0]) >= 16 ? fs.rm : fs.rmdir;
 
+// commonjs vs extensionless ESM vs true ESM
+// ts vs js vs cjs vs mjs vs cts vs mts
+/*
+- pre-compilation
+  - no: generate typescript
+    - extensionless imports?
+      - yes
+      - no
+        - file extension
+          - .ts
+          - .mts
+  - yes: generate javascript and declaration files
+    - modules: cjs vs esm
+      - CJS with `module.exports`
+        - file extension: `.js` vs `.cjs`
+      - ESM (import/export)
+        - extension: `.js` vs `.mjs`
+*/
+
 interface Options {
   showHelp?: boolean;
-  target?: "ts" | "esm" | "cjs";
+  target?: "ts" | "esm" | "cjs" | "mts";
   outputDir?: string;
   promptPassword?: boolean;
   passwordFromStdin?: boolean;
@@ -201,20 +220,37 @@ OPTIONS:
   // }
 
   if (!options.target) {
-    const tsconfigExists = await exists(
-      path.join(projectRoot, "tsconfig.json")
-    );
+    const tsConfigPath = path.join(projectRoot, "tsconfig.json");
+    const tsConfigExists = await exists(tsConfigPath);
 
     const overrideTargetMessage = `   To override this, use the --target flag.
    Run \`npx edgeql-js --help\` for details.`;
+    const packageJson = JSON.parse(
+      await readFileUtf8(path.join(projectRoot, "package.json"))
+    );
 
-    if (tsconfigExists) {
-      options.target = "ts";
-      console.log(`Detected tsconfig.json, generating TypeScript files.`);
+    // doesn't work with `extends`
+    // switch to more robust solution after splitting
+    // @edgedb/generate into separate package
+
+    if (tsConfigExists) {
+      const tsConfig = tsConfigExists
+        ? (await readFileUtf8(tsConfigPath)).toLowerCase()
+        : "{}";
+
+      const supportsESM: boolean =
+        tsConfig.includes(`"module": "nodenext"`) ||
+        tsConfig.includes(`"module": "node12"`);
+      if (supportsESM && packageJson?.type === "module") {
+        options.target = "mts";
+        console.log(
+          `Detected tsconfig.json with ES module support, generating .mts files with ESM imports.`
+        );
+      } else {
+        options.target = "ts";
+        console.log(`Detected tsconfig.json, generating TypeScript files.`);
+      }
     } else {
-      const packageJson = JSON.parse(
-        await readFileUtf8(path.join(projectRoot, "package.json"))
-      );
       if (packageJson?.type === "module") {
         options.target = "esm";
         console.log(

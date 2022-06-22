@@ -10,17 +10,19 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
 
   code.addImport(
     {
-      TypeKind: true,
-      ExpressionKind: true,
-      Cardinality: true,
-      cardinalityUtil: true,
-      $mergeObjectTypes: true,
+      $: true,
     },
-    "edgedb/dist/reflection/index",
-    true
+    "edgedb",
+    {allowFileExt: false}
   );
-  code.addImportStar("castMaps", "../castMaps", true, ["ts", "js", "dts"]);
-  code.addImport({$expressionify: true}, "./path", true, ["ts", "js"]);
+  code.addImportStar("castMaps", "../castMaps", {
+    allowFileExt: true,
+    modes: ["ts", "js", "dts"],
+  });
+  code.addImport({$expressionify: true}, "./path", {
+    allowFileExt: true,
+    modes: ["ts", "js"],
+  });
 
   code.writeln([
     t`import type {
@@ -42,7 +44,10 @@ import type {
   LooseTypeSet,
 } from "./set";`,
   ]);
-  code.addImport({getSharedParent: true}, "./set", true, ["ts", "js"]);
+  code.addImport({getSharedParent: true}, "./set", {
+    allowFileExt: true,
+    modes: ["ts", "js"],
+  });
 
   code.nl();
   code.writeln([
@@ -51,7 +56,7 @@ import type {
   Exprs extends [TypeSet, ...TypeSet[]]
 > = LooseTypeSet<
   getSharedParentPrimitiveVariadic<getTypesFromExprs<Exprs>>,
-  cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
+  $.cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
 >;`,
   ]);
   code.nl();
@@ -103,7 +108,7 @@ import type {
 ): $expr_Set<
   LooseTypeSet<
     mergeObjectTypesVariadic<getTypesFromObjectExprs<Exprs>>,
-    cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
+    $.cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
   >
 >;
 `,
@@ -125,7 +130,7 @@ import type {
 ): $expr_Set<
   TypeSet<
     getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>,
-    cardinalityUtil.mergeCardinalitiesVariadic<
+    $.cardinalityUtil.mergeCardinalitiesVariadic<
       getCardsFromExprs<castMaps.mapLiteralToTypeSet<[Expr, ...Exprs]>>
     >
   >
@@ -137,7 +142,7 @@ import type {
 ): $expr_Set<
   TypeSet<
     getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>,
-    Cardinality.Many
+    $.Cardinality.Many
   >
 >;`,
   ]);
@@ -162,13 +167,13 @@ import type {
     r` = _exprs.map(expr => castMaps.literalToTypeSet(expr));
 
   return $expressionify({
-    __kind__: ExpressionKind.Set,
+    __kind__: $.ExpressionKind.Set,
     __element__: exprs
       .map(expr => expr.__element__`,
     ts` as any`,
     r`)
       .reduce(getSharedParent),
-    __cardinality__: cardinalityUtil.mergeCardinalitiesVariadic(
+    __cardinality__: $.cardinalityUtil.mergeCardinalitiesVariadic(
       exprs.map(expr => expr.__cardinality__)`,
     ts` as any`,
     r`

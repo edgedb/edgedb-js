@@ -47,6 +47,7 @@ export async function generateQB(params: {
   outputDir: string;
   connectionConfig: ConnectConfig;
   target: "ts" | "esm" | "cjs" | "mts";
+  // "cts" | "mjs" | "cjs" | "mts"
 }): Promise<void> {
   const {outputDir, connectionConfig, target} = params;
   // tslint:disable-next-line
@@ -108,23 +109,36 @@ export async function generateQB(params: {
 
     const importsFile = dir.getPath("imports");
 
-    importsFile.addExportStarFrom("edgedb", "edgedb");
-    importsFile.addExportFrom({spec: true}, "./__spec__", true);
-    importsFile.addExportStarFrom("syntax", "./syntax/syntax", true);
-    importsFile.addExportStarFrom("castMaps", "./castMaps", true);
+    importsFile.addExportStar("edgedb", {as: "edgedb"});
+    importsFile.addExportFrom({spec: true}, "./__spec__", {
+      allowFileExt: true,
+    });
+    importsFile.addExportStar("./syntax/syntax", {
+      allowFileExt: true,
+      as: "syntax",
+    });
+    importsFile.addExportStar("./castMaps", {
+      allowFileExt: true,
+      as: "castMaps",
+    });
 
     /////////////////////////
     // generate index file
     /////////////////////////
 
     const index = dir.getPath("index");
-    // index.addExportStarFrom(null, "./castMaps", true);
-    index.addExportStarFrom(null, "./syntax/external", true);
-    index.addExportStarFrom(null, "./types", true, ["ts", "dts"]);
+    // index.addExportStar(null, "./castMaps", true);
+    index.addExportStar("./syntax/external", {
+      allowFileExt: true,
+    });
+    index.addExportStar("./types", {
+      allowFileExt: true,
+      modes: ["ts", "dts"],
+    });
     index.addImport({$: true, _edgedbJsVersion: true}, "edgedb");
     index.addExportFrom({createClient: true}, "edgedb");
-    index.addImportStar("$syntax", "./syntax/syntax", true);
-    index.addImportStar("$op", "./operators", true);
+    index.addImportStar("$syntax", "./syntax/syntax", {allowFileExt: true});
+    index.addImportStar("$op", "./operators", {allowFileExt: true});
 
     index.writeln([
       r`\nif (_edgedbJsVersion !== "${_edgedbJsVersion}") {
@@ -231,21 +245,18 @@ export async function generateQB(params: {
         index.addImportDefault(
           `_${internalName}`,
           `./modules/${internalName}`,
-          true
+          {allowFileExt: true}
         );
 
         index.writeln([r`${genutil.quote(moduleName)}: _${internalName},`]);
       }
     });
     index.writeln([r`};`]);
-    index.addExport("ExportDefault", undefined, true);
+    index.addExportDefault("ExportDefault");
 
     // re-export some reflection types
-    index.addExportFrom(
-      {Cardinality: true},
-      "edgedb/dist/reflection/index",
-      true
-    );
+    index.writeln([`const Cardinality = $.Cardinality;`]);
+    index.addExport("Cardinality");
     index.writeln([
       t`export `,
       dts`declare `,
@@ -260,7 +271,7 @@ export async function generateQB(params: {
 
   await dir.write(
     outputDir,
-    target === "ts" ? "ts" : "js+dts",
+    target === "ts" || target === "mts" ? "ts" : "js+dts",
     target === "cjs" ? "cjs" : "esm"
   );
 

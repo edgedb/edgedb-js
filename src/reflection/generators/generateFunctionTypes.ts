@@ -116,7 +116,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
     const code = dir.getModule(mod);
 
     code.registerRef(funcName, funcDefs[0].id);
-    code.addRefsDefaultExport(getRef(funcName, {prefix: ""}), name);
+    code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);
 
     const overloadsBuf = new CodeBuffer();
 
