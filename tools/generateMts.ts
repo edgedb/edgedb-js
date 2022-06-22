@@ -21,7 +21,7 @@ async function run() {
       "syntax",
       _file.replace(".ts", ".mts")
     );
-    console.log(`writing ${mtsPath}`);
+
     await fs.writeFile(mtsPath, mtsModified, "utf-8");
   }
 
