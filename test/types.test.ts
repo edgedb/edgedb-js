@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {Temporal} from "proposal-temporal";
+import {Temporal} from "@js-temporal/polyfill";
 import {
   Duration,
   LocalDate,
@@ -145,11 +145,12 @@ test("types: Duration", async () => {
 
     const args = Array(10)
       .fill(0)
-      .map(
-        () =>
+      .map(() =>
+        Math.round(
           Math.random() *
-          (i < 100 ? Number.MAX_VALUE : Number.MAX_SAFE_INTEGER) *
-          sign
+            (i < 100 ? Number.MAX_VALUE : Number.MAX_SAFE_INTEGER) *
+            sign
+        )
       );
 
     const duration = new Duration(...args);
@@ -168,5 +169,49 @@ test("types: Duration", async () => {
     expect(duration.sign).toBe(temporalDuration.sign);
     expect(duration.blank).toBe(temporalDuration.blank);
     expect(duration.toString()).toBe(temporalDuration.toString());
+  }
+
+  expect(() => Duration.from({})).toThrow(TypeError);
+  expect(() => Temporal.Duration.from({})).toThrow(TypeError);
+  for (const durationStr of [
+    "",
+    "P",
+    "PT",
+    "P3WT",
+    "P3.5D",
+    "P1.2Y",
+    "P2.3M",
+    "P3.4W",
+    "PT1.2H3M",
+    "PT1.2H3S",
+    "PT1.2M5.6S",
+    "PT-5M",
+  ]) {
+    expect(() => Duration.from(durationStr)).toThrow(RangeError);
+    expect(() => Temporal.Duration.from(durationStr)).toThrow(RangeError);
+  }
+
+  for (const durationLike of [
+    "PT0S",
+    "Pt3.4H",
+    "-pT5.2345M",
+    "PT123.45678S",
+    "P1Y2M3W4DT5h6m7s",
+    "-P1Y2M3W4DT5h6m7s",
+  ]) {
+    const duration = Duration.from(durationLike);
+    const temporalDuration = Temporal.Duration.from(durationLike);
+
+    expect(duration.years).toBe(temporalDuration.years);
+    expect(duration.months).toBe(temporalDuration.months);
+    expect(duration.weeks).toBe(temporalDuration.weeks);
+    expect(duration.days).toBe(temporalDuration.days);
+    expect(duration.hours).toBe(temporalDuration.hours);
+    expect(duration.minutes).toBe(temporalDuration.minutes);
+    expect(duration.seconds).toBe(temporalDuration.seconds);
+    expect(duration.milliseconds).toBe(temporalDuration.milliseconds);
+    expect(duration.microseconds).toBe(temporalDuration.microseconds);
+    expect(duration.nanoseconds).toBe(temporalDuration.nanoseconds);
+    expect(duration.sign).toBe(temporalDuration.sign);
   }
 });

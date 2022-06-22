@@ -68,19 +68,41 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
   }
 }
 
-export class BigIntStringCodec extends ScalarCodec implements ICodec {
-  encode(_buf: WriteBuffer, _object: BigInt): void {
-    throw new Error("not implemented");
-  }
-
-  decode(buf: ReadBuffer): any {
-    return decodeBigIntToString(buf);
-  }
-}
-
 export class DecimalStringCodec extends ScalarCodec implements ICodec {
-  encode(_buf: WriteBuffer, _object: BigInt): void {
-    throw new Error("not implemented");
+  encode(buf: WriteBuffer, object: any): void {
+    if (typeof object !== "string") {
+      throw new Error(`a string was expected, got "${object}"`);
+    }
+
+    const match = object.match(
+      /^(-?)([0-9]+)(?:\.([0-9]+))?(?:[eE]([-+]?[0-9]+))?$/
+    );
+
+    if (!match) {
+      throw new Error(`invalid decimal string "${object}"`);
+    }
+
+    const [_, sign, int, _frac, _exp] = match;
+
+    const frac = _frac ?? "";
+    const exp = _exp ? parseInt(_exp, 10) : 0;
+
+    const sdigits =
+      int.padStart(Math.ceil(int.length / 4) * 4, "0") +
+      frac.padEnd(Math.ceil(frac.length / 4) * 4, "0");
+    const digits: number[] = [];
+    for (let i = 0, len = sdigits.length; i < len; i += 4) {
+      digits.push(parseInt(sdigits.slice(i, i + 4), 10));
+    }
+
+    buf.writeUInt32(8 + digits.length * 2); // len
+    buf.writeUInt16(digits.length); // ndigits
+    buf.writeInt16(Math.ceil((int.length + exp) / 4) - 1); // weight
+    buf.writeUInt16(sign === "-" ? NUMERIC_NEG : NUMERIC_POS); // sign
+    buf.writeUInt16(Math.max(frac.length - exp, 0)); // dscale
+    for (let i = 0, len = digits.length; i < len; i++) {
+      buf.writeUInt16(digits[i]);
+    }
   }
 
   decode(buf: ReadBuffer): any {

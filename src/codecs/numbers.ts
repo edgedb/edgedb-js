@@ -17,8 +17,8 @@
  */
 
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
+import * as bi from "../primitives/bigint";
 import {ICodec, ScalarCodec} from "./ifaces";
-import {decodeInt64ToString} from "../compat";
 
 export class Int64Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
@@ -34,13 +34,17 @@ export class Int64Codec extends ScalarCodec implements ICodec {
   }
 }
 
-export class Int64StringCodec extends ScalarCodec implements ICodec {
-  encode(_buf: WriteBuffer, _object: any): void {
-    throw new Error("not implemented");
+export class Int64BigintCodec extends ScalarCodec implements ICodec {
+  encode(buf: WriteBuffer, object: any): void {
+    if (!bi.isBigInt(object)) {
+      throw new Error(`a bigint was expected, got "${object}"`);
+    }
+    buf.writeInt32(8);
+    buf.writeBigInt64(object);
   }
 
   decode(buf: ReadBuffer): any {
-    return decodeInt64ToString(buf.readBuffer(8));
+    return buf.readBigInt64();
   }
 }
 
