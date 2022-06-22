@@ -56,7 +56,7 @@ enum TransactionStatus {
   TRANS_UNKNOWN = 4, // cannot determine status
 }
 
-enum Capabilities {
+export enum Capabilities {
   NONE = 0,
   MODIFICATONS = 0b00001, // query is not read-only
   SESSION_CONFIG = 0b00010, // query contains session config change
@@ -251,7 +251,7 @@ export class BaseRawConnection {
 
   protected _parseCommandCompleteMessage(): string {
     this._ignoreHeaders();
-    this.buffer.readBigInt64()
+    this.buffer.readBigInt64();
     const status = this.buffer.readString();
     // TODO: Check if this is correct??
     // if (!this.isLegacyProtocol && this.buffer.curMessageLenUnread) {
@@ -877,13 +877,11 @@ export class BaseRawConnection {
     wb.writeFlags(
       0,
       0 |
-        (options?.explicitObjectids
+        (options?.injectObjectids
           ? CompilationFlag.INJECT_OUTPUT_OBJECT_IDS
           : 0) |
-        (options?.implicitTypeids
-          ? CompilationFlag.INJECT_OUTPUT_TYPE_IDS
-          : 0) |
-        (options?.implicitTypenames
+        (options?.injectTypeids ? CompilationFlag.INJECT_OUTPUT_TYPE_IDS : 0) |
+        (options?.injectTypenames
           ? CompilationFlag.INJECT_OUTPUT_TYPE_NAMES
           : 0)
     );
@@ -1292,7 +1290,7 @@ export class BaseRawConnection {
   public async rawParse(
     query: string,
     options?: QueryOptions
-  ): Promise<[ICodec, ICodec, Buffer, Buffer, ProtocolVersion]> {
+  ): Promise<[ICodec, ICodec, Buffer, Buffer, ProtocolVersion, number]> {
     const result = (await this._executeFlow(
       query,
       null,
@@ -1311,6 +1309,7 @@ export class BaseRawConnection {
       result[4]!,
       result[5]!,
       this.protocolVersion,
+      result[3],
     ];
   }
 
@@ -1322,17 +1321,12 @@ export class BaseRawConnection {
     args: QueryArgs = null
   ): Promise<Buffer> {
     const result = new WriteBuffer();
-    inCodec =
-      inCodec ??
-      (versionGreaterThanOrEqual(this.protocolVersion, [0, 12])
-        ? NULL_CODEC
-        : EMPTY_TUPLE_CODEC);
     await this._executeFlow(
       query,
       args,
       OutputFormat.BINARY,
       Cardinality.MANY,
-      inCodec,
+      inCodec ?? NULL_CODEC,
       outCodec,
       result,
       false,
