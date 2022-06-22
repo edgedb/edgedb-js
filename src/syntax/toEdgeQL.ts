@@ -24,7 +24,7 @@ import {
   TypeKind,
   TypeSet,
   util,
-} from "../reflection";
+} from "../reflection/index";
 import type {$expr_Literal} from "../reflection/literal";
 import type {
   $expr_PathLeaf,

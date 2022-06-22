@@ -1,6 +1,7 @@
 import type * as edgedb from "edgedb";
 
-import e, {Cardinality} from "../dbschema/edgeql-js";
+import e from "../dbschema/edgeql-js";
+import type {Cardinality} from "../dbschema/edgeql-js";
 import {setupTests, teardownTests, tc} from "./setupTeardown";
 
 let client: edgedb.Client;
@@ -44,7 +45,7 @@ test("basic delete", async () => {
   expect(wrappingDeleteResult).toEqual(null);
 
   const deleteAll = e.delete(e.Hero);
-  tc.assert<tc.IsExact<typeof deleteAll["__cardinality__"], Cardinality.Many>>(
-    true
-  );
+  tc.assert<
+    tc.IsExact<typeof deleteAll["__cardinality__"], edgedb.$.Cardinality.Many>
+  >(true);
 });

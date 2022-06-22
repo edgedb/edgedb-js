@@ -15,7 +15,7 @@ import type {
   ScalarType,
   TupleType,
   TypeSet,
-} from "../reflection";
+} from "../reflection/index";
 import type {
   scalarCastableFrom,
   scalarAssignableBy,

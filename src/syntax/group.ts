@@ -9,8 +9,13 @@ import type {
   LinkDesc,
   // stripSet,
   // LinkDesc,
-} from "../reflection";
-import {Cardinality, ExpressionKind, TypeKind, makeType} from "../reflection";
+} from "../reflection/index";
+import {
+  Cardinality,
+  ExpressionKind,
+  TypeKind,
+  makeType,
+} from "../reflection/index";
 import {$expressionify, $getScopedExpr} from "./path";
 // @ts-ignore
 import type {$FreeObjectλShape, $str} from "@generated/modules/std";

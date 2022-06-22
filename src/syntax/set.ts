@@ -13,8 +13,8 @@ import type {
   Cardinality,
   getPrimitiveBaseType,
   SomeType,
-} from "../reflection";
-import {TypeKind, $mergeObjectTypes} from "../reflection";
+} from "../reflection/index";
+import {TypeKind, $mergeObjectTypes} from "../reflection/index";
 
 // "@generated/" path gets replaced during generation step
 // @ts-ignore

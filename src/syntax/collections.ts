@@ -18,7 +18,7 @@ import {
   TypeKind,
   TypeSet,
   typeutil,
-} from "../reflection";
+} from "../reflection/index";
 import {$expressionify} from "./path";
 import type {getCardsFromExprs} from "./set";
 import {
@@ -305,4 +305,4 @@ export type {
   ArrayType as $Array,
   NamedTupleType as $NamedTuple,
   TupleType as $Tuple,
-} from "../reflection";
+} from "../reflection/index";

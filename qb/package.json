@@ -1,26 +1,18 @@
 {
-  "name": "query-builder",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "private": true,
   "scripts": {
     "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
-    "test:esm": "node test/esm.test.mjs",
+    "test:esm": "yarn generate --target esm --output-dir esm/edgeql-js && cd esm && node test.js",
+    "test:mts": "yarn generate --target mts --output-dir mts/edgeql-js && cd mts && yarn build && node dist/test.js",
     "test:ci": "ts-node --project ../tsconfig.json test/testRunner.ts",
     "generate": "edgeql-js",
     "play": "esr playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",
-    "build": "tsc --project tsconfig.build.json",
+    "build": "rm -rf dist && tsc --project tsconfig.build.json",
     "build:trace": "tsc --project tsconfig.build.json --generateTrace trace"
   },
-  "keywords": [],
-  "author": "Colin McDonnell",
-  "license": "ISC",
-  "dependencies": {
-    "@types/node": "^15.12.2"
-  },
   "devDependencies": {
+    "@types/node": "^18.0.0",
     "conditional-type-checks": "^1.0.5",
     "edgedb": "^0.14.0",
     "esbuild": "^0.14.42",
@@ -28,8 +20,8 @@
     "jest": "^27.0.5",
     "superjson": "^1.7.5",
     "ts-jest": "^27.0.3",
-    "ts-node": "^10.0.0",
-    "typescript": "^4.7.4"
+    "ts-node": "latest",
+    "typescript": "^4.5"
   },
   "resolutions": {
     "edgedb": "portal:.."

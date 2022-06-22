@@ -8,7 +8,7 @@ import {
   TypeSet,
   TypeKind,
   BaseTypeToTsType,
-} from "../reflection";
+} from "../reflection/index";
 import {$expressionify} from "./path";
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {

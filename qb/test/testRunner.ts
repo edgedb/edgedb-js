@@ -27,9 +27,7 @@ import {shutdown} from "../../test/globalTeardown";
 
   try {
     await applyMigrations(config);
-
     await generateQB(config);
-
     await runTests(config);
   } catch (err) {
     console.error(err);
@@ -70,12 +68,40 @@ async function generateQB(config: ConnectConfig) {
     ["edgeql-js", "--force-overwrite"],
     configToEnv(config)
   );
+
+  // await runCommand(
+  //   "yarn",
+  //   [
+  //     "edgeql-js",
+  //     "--force-overwrite",
+  //     "--target",
+  //     "mts",
+  //     "--output-dir",
+  //     "mts/edgeql-js",
+  //   ],
+  //   configToEnv(config)
+  // );
+
+  // await runCommand(
+  //   "yarn",
+  //   [
+  //     "edgeql-js",
+  //     "--force-overwrite",
+  //     "--target",
+  //     "esm",
+  //     "--output-dir",
+  //     "mts/edgeql-js",
+  //   ],
+  //   configToEnv(config)
+  // );
 }
 
 async function runTests(config: ConnectConfig) {
   console.log(`\nRunning tests...`);
 
   await runCommand("yarn", ["test"], configToEnv(config));
+  await runCommand("yarn", ["test:esm"], configToEnv(config));
+  await runCommand("yarn", ["test:mts"], configToEnv(config));
 }
 
 async function runCommand(

@@ -135,7 +135,7 @@ const run = async () => {
         break;
       case "--target":
         const target = getVal();
-        if (!target || !["ts", "esm", "cjs"].includes(target)) {
+        if (!target || !["ts", "esm", "cjs", "mts"].includes(target)) {
           exitWithError(
             `Invalid target "${target ?? ""}", expected "ts", "esm" or "cjs"`
           );
@@ -179,7 +179,7 @@ OPTIONS:
     --target [ts,esm,cjs,mts]
 
         ts     Generate TypeScript files (.ts)
-        mts    Generate TypeScript files (.mts) with ESM syntax
+        mts    Generate TypeScript files (.mts) with extensioned ESM imports
         esm    Generate JavaScript with ESM syntax
         cjs    Generate JavaScript with CommonJS syntax
 

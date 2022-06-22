@@ -43,10 +43,11 @@ export function exitWithError(message: string): never {
   process.exit(1);
 }
 
+export type Target = "ts" | "esm" | "cjs" | "mts";
 export async function generateQB(params: {
   outputDir: string;
   connectionConfig: ConnectConfig;
-  target: "ts" | "esm" | "cjs" | "mts";
+  target: Target;
   // "cts" | "mjs" | "cjs" | "mts"
 }): Promise<void> {
   const {outputDir, connectionConfig, target} = params;
@@ -255,7 +256,8 @@ export async function generateQB(params: {
     index.addExportDefault("ExportDefault");
 
     // re-export some reflection types
-    index.writeln([`const Cardinality = $.Cardinality;`]);
+    index.writeln([r`const Cardinality = $.Cardinality;`]);
+    index.writeln([dts`declare `, t`type Cardinality = $.Cardinality;`]);
     index.addExport("Cardinality");
     index.writeln([
       t`export `,
@@ -269,11 +271,65 @@ export async function generateQB(params: {
     await cxn.close();
   }
 
-  await dir.write(
-    outputDir,
-    target === "ts" || target === "mts" ? "ts" : "js+dts",
-    target === "cjs" ? "cjs" : "esm"
-  );
+  // .ts
+  // .mjs
+  // .mts
+  // .d.mts + .mjs
+  // .d.ts + .js
+  // whether to render ts or js+dts
+  // file extension for generated files
+  // extension for imports
+  if (target === "ts") {
+    await dir.write(
+      outputDir,
+      {
+        mode: "ts",
+        moduleKind: "esm",
+        fileExtension: ".ts",
+        moduleExtension: "",
+      }
+      // target === "ts" || target === "mts" ? "ts" : "js+dts",
+      // {moduleKind: target === "cjs" ? "cjs" : "esm"}
+    );
+  } else if (target === "mts") {
+    await dir.write(outputDir, {
+      mode: "ts",
+      moduleKind: "esm",
+      fileExtension: ".mts",
+      moduleExtension: ".mjs",
+    });
+  } else if (target === "cjs") {
+    await dir.write(outputDir, {
+      mode: "js",
+      moduleKind: "cjs",
+      fileExtension: ".js",
+      moduleExtension: "",
+    });
+    await dir.write(outputDir, {
+      mode: "dts",
+      moduleKind: "esm",
+      fileExtension: ".d.ts",
+      moduleExtension: "",
+    });
+  } else if (target === "esm") {
+    await dir.write(outputDir, {
+      mode: "js",
+      moduleKind: "esm",
+      fileExtension: ".mjs",
+      moduleExtension: ".mjs",
+    });
+    await dir.write(outputDir, {
+      mode: "dts",
+      moduleKind: "esm",
+      fileExtension: ".d.ts",
+      moduleExtension: "",
+    });
+  }
+  // await dir.write(
+  //   outputDir,
+  //   target === "ts" || target === "mts" ? "ts" : "js+dts",
+  //   {moduleKind: target === "cjs" ? "cjs" : "esm"}
+  // );
 
   // write syntax files
   const syntaxDir = path.join(__dirname, "..", "syntax");
@@ -288,13 +344,16 @@ export async function generateQB(params: {
       ? "js"
       : fileName.endsWith(".mjs")
       ? "esm"
+      : fileName.endsWith(".mts")
+      ? "mts"
+      : fileName.endsWith(".d.ts")
+      ? "dts"
       : fileName.endsWith(".ts")
-      ? fileName.endsWith(".d.ts")
-        ? "dts"
-        : "ts"
+      ? "ts"
       : null;
     if (
       (target === "ts" && filetype !== "ts") ||
+      (target === "mts" && filetype !== "mts") ||
       (target === "esm" && !(filetype === "esm" || filetype === "dts")) ||
       (target === "cjs" && !(filetype === "js" || filetype === "dts"))
     ) {
@@ -304,29 +363,36 @@ export async function generateQB(params: {
     let contents = await readFileUtf8(filePath);
 
     // rewrite scoped import paths
-    if (filetype === "js") {
-      contents = contents
-        .replace(
-          /require\("(..\/)?reflection(.*)"\)/g,
-          `require("edgedb/dist/reflection$2")`
-        )
-        .replace(/require\("@generated\//g, `require("../`);
-    } else {
-      contents = contents
-        .replace(
-          /from "(..\/)?reflection(.*)"/g,
-          `from "edgedb/dist/reflection$2${filetype === "esm" ? ".js" : ""}"`
-        )
-        .replace(/from "@generated\//g, `from "../`);
+    // for cjs files, simple rewrite
+    // for esm, add .mjs extension
+    // for mjs add .mjs extension
+    if (contents.indexOf(`"edgedb/dist/reflection"`) !== -1) {
+      throw new Error("No directory imports allowed in `syntax` files.");
+    }
 
-      if (filetype === "esm") {
-        contents = contents
-          .replace(
-            /from "edgedb\/dist\/reflection\.js"/g,
-            `from "edgedb/dist/reflection/index.js"`
-          )
-          .replace(/from "(\.?\.\/.+)"/g, `from "$1.mjs"`);
-      }
+    const localExt =
+      filetype === "esm" ? ".mjs" : target === "mts" ? ".mjs" : "";
+    const pkgExt = filetype === "esm" ? ".js" : target === "mts" ? ".js" : "";
+
+    contents = contents
+      .replaceAll(
+        /require\("(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?(.*)"\)/g,
+        `require("edgedb/dist/reflection$2${pkgExt}")`
+      )
+      .replaceAll(/require\("@generated\/(.*)"\)/g, `require("../$1")`)
+      // } else {
+      // contents = contents
+      .replaceAll(
+        /from "(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?([a-z]*)"/g,
+        `from "edgedb/dist/reflection$2${pkgExt}"`
+      )
+      .replaceAll(/from "@generated\/(.*)";/g, `from "../$1";`);
+
+    if (localExt) {
+      contents = contents.replaceAll(
+        /from "(\.?\.\/.+)"/g,
+        `from "$1${localExt}"`
+      );
     }
 
     const outputPath = path.join(syntaxOutDir, fileName);

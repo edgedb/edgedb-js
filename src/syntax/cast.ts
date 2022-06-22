@@ -4,7 +4,7 @@ import {
   BaseType,
   TypeSet,
   Cardinality,
-} from "../reflection";
+} from "../reflection/index";
 import {$expressionify} from "./path";
 import type {orScalarLiteral} from "@generated/castMaps";
 import {literalToTypeSet} from "@generated/castMaps";

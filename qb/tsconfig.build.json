@@ -2,9 +2,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
+    "module": "NodeNext"
   },
   "include": [
     "dbschema/edgeql-js",
-    "test"
+    "test/setupTeardown.ts",
+    "playground.ts"
   ],
 }

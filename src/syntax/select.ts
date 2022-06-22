@@ -28,7 +28,7 @@ import {
   TypeSet,
   typeutil,
   BaseType,
-} from "../reflection";
+} from "../reflection/index";
 
 import type {
   $expr_PathLeaf,

@@ -1,4 +1,4 @@
-import {Expression, ExpressionKind, TypeSet} from "../reflection";
+import {Expression, ExpressionKind, TypeSet} from "../reflection/index";
 import type {$expr_Select} from "./select";
 import type {$expr_For} from "./for";
 import type {$expr_Insert} from "./insert";
