@@ -248,12 +248,6 @@ class BuilderImportsExports {
   }) {
     const imports = new Set<string>();
     for (const imp of this.imports) {
-      // if (imp.allowFileExt === false && imp.fromPath.startsWith(".")) {
-      //   console.log(`no-extension import with dot in path: ${imp.fromPath}`);
-      // }
-      // if (imp.allowFileExt === true && !imp.fromPath.startsWith(".")) {
-      //   console.log(`extension import without dot in path: ${imp.fromPath}`);
-      // }
       if (imp.modes && !imp.modes.has(mode)) continue;
       if (imp.typeOnly && mode === "js") continue;
 
@@ -267,7 +261,8 @@ class BuilderImportsExports {
               ? `import${imp.typeOnly ? " type" : ""} ${imp.name} from "${
                   imp.fromPath
                 }${ext}";`
-              : `const ${imp.name} = __importDefault(require("${imp.fromPath}")).default;`
+              : `const ${imp.name} = __importDefault(
+                require("${imp.fromPath}")).default;`
           );
           break;
         case "star":
@@ -750,7 +745,6 @@ export class DirBuilder {
       moduleExtension: string;
     }
   ): Promise<void> {
-    // const {mode, moduleKind, fileE} = params.moduleKind;
     const dir = path.normalize(to);
     for (const [fn, builder] of this._map.entries()) {
       if (builder.isEmpty()) {
@@ -775,32 +769,6 @@ export class DirBuilder {
           forceDefaultExport,
         })
       );
-
-      // if (params.mode === "ts") {
-      //   await fs.writeFile(
-      //     dest + (params.fileExtension || ".ts"),
-      //     builder.render({
-      //       mode: "ts",
-      //       moduleExtension: params.moduleExtension,
-      //       forceDefaultExport,
-      //     })
-      //   );
-      // }
-      // if (params.mode === "js") {
-      //   await fs.writeFile(
-      //     dest + (moduleKind === "esm" ? ".mjs" : ".js"),
-      //     builder.render({mode: "js", moduleKind, forceDefaultExport})
-      //   );
-      // }
-      // if (params.mode === "dts") {
-      //   await fs.writeFile(
-      //     dest + (params.fileExtension || ".d.ts"),
-      //     builder.render({mode: "dts", forceDefaultExport})
-      //   );
-      // }
     }
   }
 }
-
-const arg = new DirBuilder();
-arg.getModule("asdf").addImport;
