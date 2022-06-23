@@ -352,19 +352,19 @@ export async function generateQB(params: {
     const pkgExt = filetype === "esm" ? ".js" : target === "mts" ? ".js" : "";
 
     contents = contents
-      .replaceAll(
+      .replace(
         /require\("(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?(.*)"\)/g,
         `require("edgedb/dist/reflection$2${pkgExt}")`
       )
-      .replaceAll(/require\("@generated\/(.*)"\)/g, `require("../$1")`)
-      .replaceAll(
+      .replace(/require\("@generated\/(.*)"\)/g, `require("../$1")`)
+      .replace(
         /from "(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?([a-z]*)"/g,
         `from "edgedb/dist/reflection$2${pkgExt}"`
       )
-      .replaceAll(/from "@generated\/(.*)";/g, `from "../$1";`);
+      .replace(/from "@generated\/(.*)";/g, `from "../$1";`);
 
     if (localExt) {
-      contents = contents.replaceAll(
+      contents = contents.replace(
         /from "(\.?\.\/.+)"/g,
         `from "$1${localExt}"`
       );
