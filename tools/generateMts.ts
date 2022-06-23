@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
-import fs from "fs/promises";
+import _fs from "fs";
 import path from "path";
+
+const fs = _fs.promises;
 
 async function run() {
   const syntaxPath = path.join(__dirname, "..", "src", "syntax");
