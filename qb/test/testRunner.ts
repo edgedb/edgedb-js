@@ -99,9 +99,9 @@ async function generateQB(config: ConnectConfig) {
 async function runTests(config: ConnectConfig) {
   console.log(`\nRunning tests...`);
 
-  await runCommand("yarn", ["test"], configToEnv(config));
   await runCommand("yarn", ["test:esm"], configToEnv(config));
   await runCommand("yarn", ["test:mts"], configToEnv(config));
+  await runCommand("yarn", ["test"], configToEnv(config));
 }
 
 async function runCommand(
