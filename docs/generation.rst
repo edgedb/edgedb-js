@@ -105,7 +105,9 @@ The project root is identified by scanning up the file system for a
 Targets
 ^^^^^^^
 
-The generation command guesses what kind of files it should generate by looking at your environment. You can override this with the ``--target`` flag.
+The generation command looks at your environment and guesses what kind of
+files to generate (``.ts`` vs ``.js + .d.ts``) and what module system to use
+(CommonJS vs ES modules). You can override this with the ``--target`` flag.
 
 .. list-table::
 
