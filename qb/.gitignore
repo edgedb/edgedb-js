@@ -2,3 +2,4 @@ trace
 trace/*
 mts/edgeql-js
 esm/edgeql-js
+dbschema/edgeql-js
