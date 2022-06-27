@@ -32,6 +32,8 @@ if (typeof fetch === "undefined") {
 interface FetchConfig {
   address: Address | string;
   database: string;
+  user?: string;
+  token?: string;
 }
 
 const PROTO_MIME = `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`;
@@ -82,10 +84,20 @@ class BaseFetchConnection extends BaseRawConnection {
     this.messageWaiter = new Event();
 
     try {
+      const headers: {[index: string]: string} = {"Content-Type": PROTO_MIME};
+
+      if (this.config.user !== undefined) {
+        headers["X-EdgeDB-User"] = this.config.user;
+      }
+
+      if (this.config.token !== undefined) {
+        headers["Authorization"] = `Bearer ${this.config.token}`;
+      }
+
       const resp: any = await fetch(this.addr, {
         method: "post",
         body: data,
-        headers: {"Content-Type": PROTO_MIME},
+        headers: headers,
       });
 
       if (!resp.ok) {

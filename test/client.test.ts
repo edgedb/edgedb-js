@@ -1606,19 +1606,23 @@ if (getEdgeDBVersion().major >= 2) {
 
 if (!isDeno && getAvailableFeatures().has("admin-ui")) {
   test("binary protocol over http", async () => {
+    //@ts-ignore
+    const tokenFile = require("path").join(__dirname, "keys", "jwt");
+    //@ts-ignore
+    const token = require("fs").readFileSync(tokenFile);
     const codecsRegistry = new _CodecsRegistry();
     const config = await parseConnectArguments(getConnectOptions());
     const fetchConn = AdminFetchConnection.create(
       {
         address: config.connectionParams.address,
         database: config.connectionParams.database,
+        user: config.connectionParams.user,
+        token: token.toString().trim(),
       },
       codecsRegistry
     );
 
-    const query = `SELECT schema::Function {
-    name
-  }`;
+    const query = `SELECT schema::Function { name }`;
     const options = {
       injectTypenames: true,
       implicitLimit: BigInt(5),
