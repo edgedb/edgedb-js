@@ -170,7 +170,8 @@ array, no matter what.
 
 Use ``querySingle`` if you expect your query to return *zero or one* elements.
 Unlike ``query``, it either returns a single element or ``null``. Note that if
-you're selecting an array, tuple, or
+you're selecting an array, tuple, or set, the returned 'single' element will be
+an array.
 
 .. code-block:: js
 
@@ -192,6 +193,8 @@ Use ``queryRequiredSingle`` for queries that return *exactly one* element.
 The TypeScript signatures of these methods reflects their behavior.
 
 .. code-block:: typescript
+  await client.query<number>(`select 2 + 2;`);
+  // number[]
 
   await client.querySingle<number>(`select 2 + 2;`);
   // number | null
@@ -250,6 +253,32 @@ the second argument. This is true for all ``query*`` methods and ``execute``.
 
 Remember that :ref:`parameters <ref_eql_params>` can only be *scalars* or
 *arrays of scalars*.
+
+Scripts
+-------
+
+Both ``execute`` and the ``query*`` methods support scripts (queries
+containing multiple statements). The statements are run in an implicit
+transaction, so the whole script remains atomic. For the ``query*`` methods
+only the result of the final statement in the script will be returned.
+
+.. code-block:: js
+
+  const result = await client.query(`
+    insert Movie {
+      title := <str>$title
+    };
+    insert Person {
+      name := <str>$name
+    };
+  `, {
+    title: "Thor: Ragnarok",
+    name: "Anson Mount"
+  });
+  // [{id: "5dd2557b..."}]
+
+For more fine grained control of atomic exectution of multiple statements, use
+the ``transaction()`` API.
 
 Checking connection status
 --------------------------

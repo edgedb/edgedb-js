@@ -145,13 +145,14 @@ Client
         If a query argument is defined as ``optional``, the key/value can be
         either omitted from the *args* object or be a ``null`` value.
 
-    .. js:method:: execute(query: string): Promise<void>
+    .. js:method:: execute(query: string, args?: QueryArgs): Promise<void>
 
         Execute an EdgeQL command (or commands).
 
         :param query: Query text.
 
-        This commands takes no arguments.
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-async-optargs>`.
 
         Example:
 
@@ -343,6 +344,55 @@ Client
 
               await client.query('select ...');
             }
+
+    .. js:method:: withGlobals(globals: {[name: string]: any}): Client
+
+        Returns a new ``Client`` instance with the specified global values.
+        The ``globals`` argument object is merged with any existing globals
+        defined on the current client instance.
+
+        Equivalent to using the ``set global`` command.
+
+        Example:
+
+        .. code-block:: js
+
+            const user = await client.withGlobals({
+              userId: '...'
+            }).querySingle(`
+              select User {name} filter .id = global userId
+            `);
+
+    .. js:method:: withAliases(aliases: {[name: string]: string}): Client
+
+        Returns a new ``Client`` instance with the specified aliases.
+        The ``aliases`` argument object is merged with any existing aliases
+        defined on the current client instance.
+
+        If the alias ``name`` is ``module`` this is equivalent to using
+        the ``set module`` command, otherwise it is equivalent to the
+        ``set alias`` command.
+
+        Example:
+
+        .. code-block:: js
+
+            const user = await client.withAliases({
+              module: 'sys'
+            }).querySingle(`
+              select get_version_as_str()
+            `);
+            // "2.0"
+
+    .. js:method:: withConfigs(configs: {[name: string]: any}): Client
+
+        Returns a new ``Client`` instance with the specified client session
+        configuration. The ``configs`` argument object is merged with any
+        existing session config defined on the current client instance.
+
+        Equivalent to using the ``configure session`` command. For available
+        configuration parameters refer to the
+        :ref:`Config documentation <ref_std_cfg>`.
 
     .. js:method:: withRetryOptions(opts: { \
             attempts?: number \
