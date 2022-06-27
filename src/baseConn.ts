@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {NullCodec, NULL_CODEC, UNKNOWN_CODEC} from "./codecs/codecs";
+import {NullCodec, NULL_CODEC} from "./codecs/codecs";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {ObjectCodec} from "./codecs/object";
@@ -67,11 +67,11 @@ export enum Capabilities {
   ALL = 0xffff_ffff,
 }
 
-const RESTRICTED_CAPABILITIES = (
-  Capabilities.ALL
-  & ~Capabilities.TRANSACTION
-  & ~Capabilities.SESSION_CONFIG
-) >>> 0;
+const RESTRICTED_CAPABILITIES =
+  (Capabilities.ALL &
+    ~Capabilities.TRANSACTION &
+    ~Capabilities.SESSION_CONFIG) >>>
+  0;
 
 const RESTRICTED_CAPABILITIES_BYTES = Buffer.alloc(8, 0xff);
 RESTRICTED_CAPABILITIES_BYTES.writeUInt32BE(RESTRICTED_CAPABILITIES, 4);
@@ -810,7 +810,11 @@ export class BaseRawConnection {
           try {
             [newCard, inCodec, outCodec, capabilities] =
               this._parseDescribeTypeMessage();
-            const key = this._getQueryCacheKey(query, outputFormat, expectOne);
+            const key = this._getQueryCacheKey(
+              query,
+              outputFormat,
+              expectedCardinality
+            );
             this.queryCodecCache.set(key, [
               newCard,
               inCodec,
@@ -849,27 +853,14 @@ export class BaseRawConnection {
     }
   }
 
-  private async _executeFlow(
+  private _encodeParseParams(
+    wb: WriteMessageBuffer,
     query: string,
-    args: QueryArgs,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
-    inCodec: ICodec | null,
-    outCodec: ICodec | null,
-    result: Array<any> | WriteBuffer,
-    privilegedMode: boolean = false,
-    parseOnly: boolean = false,
-    options?: QueryOptions
-  ): Promise<
-    [Cardinality, ICodec, ICodec, number, Buffer | null, Buffer | null] | void
-  > {
-    const expectOne =
-      expectedCardinality === Cardinality.ONE ||
-      expectedCardinality === Cardinality.AT_MOST_ONE;
-
-    const wb = new WriteMessageBuffer();
-    wb.beginMessage(chars.$O);
-    wb.writeUInt16(0); // no headers
+    privilegedMode: boolean,
+    options: QueryOptions | undefined
+  ) {
     wb.writeFlags(
       0xffff_ffff,
       privilegedMode ? Capabilities.ALL : RESTRICTED_CAPABILITIES
@@ -887,8 +878,138 @@ export class BaseRawConnection {
     );
     wb.writeBigInt64(options?.implicitLimit ?? BigInt(0));
     wb.writeChar(outputFormat);
-    wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
+    wb.writeChar(
+      expectedCardinality === Cardinality.ONE ||
+        expectedCardinality === Cardinality.AT_MOST_ONE
+        ? Cardinality.AT_MOST_ONE
+        : Cardinality.MANY
+    );
     wb.writeString(query);
+  }
+
+  private async _parse(
+    query: string,
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality,
+    privilegedMode: boolean = false,
+    options?: QueryOptions
+  ): Promise<
+    [Cardinality, ICodec, ICodec, number, Buffer | null, Buffer | null]
+  > {
+    const wb = new WriteMessageBuffer();
+    wb.beginMessage(chars.$P);
+    wb.writeUInt16(0); // no headers
+
+    this._encodeParseParams(
+      wb,
+      query,
+      outputFormat,
+      expectedCardinality,
+      privilegedMode,
+      options
+    );
+
+    wb.endMessage();
+    wb.writeSync();
+
+    this._sendData(wb.unwrap());
+
+    let parsing = true;
+    let error: Error | null = null;
+    let newCard: Cardinality | null = null;
+    let capabilities = -1;
+    let inCodec: ICodec | null = null;
+    let outCodec: ICodec | null = null;
+    let inCodecBuf: Buffer | null = null;
+    let outCodecBuf: Buffer | null = null;
+
+    while (parsing) {
+      if (!this.buffer.takeMessage()) {
+        await this._waitForMessage();
+      }
+
+      const mtype = this.buffer.getMessageType();
+
+      switch (mtype) {
+        case chars.$T: {
+          try {
+            [
+              newCard,
+              inCodec,
+              outCodec,
+              capabilities,
+              inCodecBuf,
+              outCodecBuf,
+            ] = this._parseDescribeTypeMessage();
+            const key = this._getQueryCacheKey(
+              query,
+              outputFormat,
+              expectedCardinality
+            );
+            this.queryCodecCache.set(key, [
+              newCard,
+              inCodec,
+              outCodec,
+              capabilities,
+            ]);
+          } catch (e: any) {
+            error = e;
+          }
+          break;
+        }
+        case chars.$E: {
+          error = this._parseErrorMessage();
+          break;
+        }
+
+        case chars.$Z: {
+          this._parseSyncMessage();
+          parsing = false;
+          break;
+        }
+
+        default:
+          this._fallthrough();
+      }
+    }
+
+    if (error !== null) {
+      throw error;
+    }
+
+    return [
+      newCard!,
+      inCodec!,
+      outCodec!,
+      capabilities,
+      inCodecBuf,
+      outCodecBuf,
+    ];
+  }
+
+  private async _executeFlow(
+    query: string,
+    args: QueryArgs,
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality,
+    inCodec: ICodec,
+    outCodec: ICodec,
+    result: Array<any> | WriteBuffer,
+    privilegedMode: boolean = false,
+    options?: QueryOptions
+  ): Promise<void> {
+    const wb = new WriteMessageBuffer();
+    wb.beginMessage(chars.$O);
+    wb.writeUInt16(0); // no headers
+
+    this._encodeParseParams(
+      wb,
+      query,
+      outputFormat,
+      expectedCardinality,
+      privilegedMode,
+      options
+    );
 
     // wb.writeBuffer(this.stateCodec.tidBuffer);
     // wb.writeInt16(1);
@@ -897,33 +1018,9 @@ export class BaseRawConnection {
     // } else {
     //   wb.writeBuffer(this.state);
     // }
-    let origInCodecTid: Buffer;
 
-    if (!inCodec) {
-      if (!args || Object.keys(args).length === 0) {
-        // No arguments, no problem in not knowing the input codec.
-        origInCodecTid = NULL_CODEC.tidBuffer;
-      } else {
-        // Args present, need server to describe how to encode.
-        origInCodecTid = UNKNOWN_CODEC.tidBuffer;
-      }
-    } else {
-      origInCodecTid = inCodec.tidBuffer;
-    }
-
-    wb.writeBuffer(origInCodecTid);
-
-    if (!outCodec) {
-      if (expectedCardinality === Cardinality.NO_RESULT) {
-        // Not expecting to decode output data.
-        wb.writeBuffer(NULL_CODEC.tidBuffer);
-      } else {
-        // Output present, need server to describe how to decode.
-        wb.writeBuffer(UNKNOWN_CODEC.tidBuffer);
-      }
-    } else {
-      wb.writeBuffer(outCodec.tidBuffer);
-    }
+    wb.writeBuffer(inCodec.tidBuffer);
+    wb.writeBuffer(outCodec.tidBuffer);
 
     if (inCodec) {
       wb.writeBuffer(this._encodeArgs(args, inCodec));
@@ -936,13 +1033,8 @@ export class BaseRawConnection {
 
     this._sendData(wb.unwrap());
 
-    let reExec = false;
     let error: Error | null = null;
     let parsing = true;
-    let newCard: Cardinality | null = null;
-    let capabilities = -1;
-    let inCodecBuf: Buffer | null = null;
-    let outCodecBuf: Buffer | null = null;
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -979,22 +1071,20 @@ export class BaseRawConnection {
 
         case chars.$T: {
           try {
-            [
-              newCard,
-              inCodec,
-              outCodec,
-              capabilities,
-              inCodecBuf,
-              outCodecBuf,
-            ] = this._parseDescribeTypeMessage();
-            const key = this._getQueryCacheKey(query, outputFormat, expectOne);
+            const [newCard, newInCodec, newOutCodec, capabilities] =
+              this._parseDescribeTypeMessage();
+            const key = this._getQueryCacheKey(
+              query,
+              outputFormat,
+              expectedCardinality
+            );
             this.queryCodecCache.set(key, [
               newCard,
-              inCodec,
-              outCodec,
+              newInCodec,
+              newOutCodec,
               capabilities,
             ]);
-            reExec = true;
+            outCodec = newOutCodec;
           } catch (e: any) {
             error = e;
           }
@@ -1020,43 +1110,16 @@ export class BaseRawConnection {
         throw error;
       }
     }
-
-    if (parseOnly) {
-      return [
-        newCard!,
-        inCodec!,
-        outCodec!,
-        capabilities,
-        inCodecBuf,
-        outCodecBuf,
-      ];
-    } else if (reExec) {
-      this._validateFetchCardinality(
-        newCard!,
-        outputFormat,
-        expectedCardinality
-      );
-
-      return await this._executeFlow(
-        query,
-        args,
-        outputFormat,
-        expectedCardinality,
-        inCodec,
-        outCodec,
-        result,
-        privilegedMode,
-        false,
-        options
-      );
-    }
   }
 
   private _getQueryCacheKey(
     query: string,
     outputFormat: OutputFormat,
-    expectOne: boolean
+    expectedCardinality: Cardinality
   ): string {
+    const expectOne =
+      expectedCardinality === Cardinality.ONE ||
+      expectedCardinality === Cardinality.AT_MOST_ONE;
     return [outputFormat, expectOne, query.length, query].join(";");
   }
 
@@ -1101,11 +1164,16 @@ export class BaseRawConnection {
       requiredOne || expectedCardinality === Cardinality.AT_MOST_ONE;
     const asJson = outputFormat === OutputFormat.JSON;
 
-    const key = this._getQueryCacheKey(query, outputFormat, expectOne);
+    const key = this._getQueryCacheKey(
+      query,
+      outputFormat,
+      expectedCardinality
+    );
     const ret: any[] = [];
 
     if (!this.isLegacyProtocol) {
-      const [card, inCodec, outCodec] = this.queryCodecCache.get(key) ?? [];
+      let [card, inCodec, outCodec] = this.queryCodecCache.get(key) ?? [];
+
       if (card) {
         this._validateFetchCardinality(
           card,
@@ -1113,16 +1181,52 @@ export class BaseRawConnection {
           expectedCardinality
         );
       }
-      await this._executeFlow(
-        query,
-        args,
-        outputFormat,
-        expectedCardinality,
-        inCodec ?? null,
-        outCodec ?? null,
-        ret,
-        privilegedMode
-      );
+
+      let needsParse = !inCodec && args !== null;
+      if (!needsParse) {
+        try {
+          await this._executeFlow(
+            query,
+            args,
+            outputFormat,
+            expectedCardinality,
+            inCodec ?? NULL_CODEC,
+            outCodec ?? NULL_CODEC,
+            ret,
+            privilegedMode
+          );
+        } catch (e) {
+          if (e instanceof errors.ParameterTypeMismatchError) {
+            needsParse = true;
+          } else {
+            throw e;
+          }
+        }
+      }
+
+      if (needsParse) {
+        [card, inCodec, outCodec] = await this._parse(
+          query,
+          outputFormat,
+          expectedCardinality,
+          privilegedMode
+        );
+        this._validateFetchCardinality(
+          card,
+          outputFormat,
+          expectedCardinality
+        );
+        await this._executeFlow(
+          query,
+          args,
+          outputFormat,
+          expectedCardinality,
+          inCodec,
+          outCodec,
+          ret,
+          privilegedMode
+        );
+      }
     } else {
       if (this.queryCodecCache.has(key)) {
         const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
@@ -1188,8 +1292,7 @@ export class BaseRawConnection {
     const key = this._getQueryCacheKey(
       query,
       outputFormat,
-      expectedCardinality === Cardinality.ONE ||
-        expectedCardinality === Cardinality.AT_MOST_ONE
+      expectedCardinality
     );
     return this.queryCodecCache.get(key)?.[3] ?? null;
   }
@@ -1291,16 +1394,11 @@ export class BaseRawConnection {
     query: string,
     options?: QueryOptions
   ): Promise<[ICodec, ICodec, Buffer, Buffer, ProtocolVersion, number]> {
-    const result = (await this._executeFlow(
+    const result = (await this._parse(
       query,
-      null,
       OutputFormat.BINARY,
       Cardinality.MANY,
-      null,
-      null,
-      [],
       false,
-      true,
       options
     ))!;
     return [
@@ -1315,7 +1413,7 @@ export class BaseRawConnection {
 
   public async rawExecute(
     query: string,
-    outCodec: ICodec,
+    outCodec?: ICodec,
     options?: QueryOptions,
     inCodec?: ICodec,
     args: QueryArgs = null
@@ -1324,12 +1422,11 @@ export class BaseRawConnection {
     await this._executeFlow(
       query,
       args,
-      OutputFormat.BINARY,
+      outCodec ? OutputFormat.BINARY : OutputFormat.NONE,
       Cardinality.MANY,
       inCodec ?? NULL_CODEC,
-      outCodec,
+      outCodec ?? NULL_CODEC,
       result,
-      false,
       false,
       options
     );

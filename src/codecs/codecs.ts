@@ -41,7 +41,7 @@ import {
 } from "./datetime";
 import {ConfigMemoryCodec} from "./memory";
 
-import {KNOWN_TYPENAMES, NULL_CODEC_ID, UNKNOWN_CODEC_ID} from "./consts";
+import {KNOWN_TYPENAMES, NULL_CODEC_ID} from "./consts";
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -69,8 +69,6 @@ export class NullCodec extends Codec implements ICodec {
 export const SCALAR_CODECS = new Map<uuid, ICodec>();
 
 export const NULL_CODEC = new NullCodec(NULL_CODEC_ID);
-
-export const UNKNOWN_CODEC = new NullCodec(UNKNOWN_CODEC_ID);
 
 ///////////////////////////////////////////////////////////////////////////////
 
