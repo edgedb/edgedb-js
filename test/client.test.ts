@@ -16,9 +16,6 @@
  * limitations under the License.
  */
 
-import * as fs from "fs";
-import * as path from "path";
-
 import {parseConnectArguments} from "../src/conUtils";
 import {
   Client,
@@ -1609,8 +1606,10 @@ if (getEdgeDBVersion().major >= 2) {
 
 if (!isDeno && getAvailableFeatures().has("admin-ui")) {
   test("binary protocol over http", async () => {
-    const tokenFile = path.join(__dirname, "keys", "jwt");
-    const token = fs.readFileSync(tokenFile);
+    //@ts-ignore
+    const tokenFile = require("path").join(__dirname, "keys", "jwt");
+    //@ts-ignore
+    const token = require("fs").readFileSync(tokenFile);
     const codecsRegistry = new _CodecsRegistry();
     const config = await parseConnectArguments(getConnectOptions());
     const fetchConn = AdminFetchConnection.create(
