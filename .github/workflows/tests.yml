@@ -21,9 +21,9 @@ jobs:
         os: [ubuntu-latest]
         edgedb-version: ["stable"]
         include:
-          # - os: ubuntu-latest
-          #   node-version: "16"
-          #   edgedb-version: "nightly"
+          - os: ubuntu-latest
+            node-version: "16"
+            edgedb-version: "nightly"
           - os: macos-latest
             node-version: "16"
             edgedb-version: "stable"

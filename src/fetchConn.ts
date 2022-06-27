@@ -91,13 +91,13 @@ class BaseFetchConnection extends BaseRawConnection {
       }
 
       if (this.config.token !== undefined) {
-        headers["Authorization"] = `Bearer ${this.config.token}`;
+        headers.Authorization = `Bearer ${this.config.token}`;
       }
 
       const resp: any = await fetch(this.addr, {
         method: "post",
         body: data,
-        headers: headers,
+        headers,
       });
 
       if (!resp.ok) {
