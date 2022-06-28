@@ -250,9 +250,12 @@ export class BaseRawConnection {
 
   protected _parseCommandCompleteMessage(): string {
     this._ignoreHeaders();
-    this.buffer.readBigInt64();
-    const status = this.buffer.readString();
-    if (!this.isLegacyProtocol) {
+    let status: string;
+    if (this.isLegacyProtocol) {
+      status = this.buffer.readString();
+    } else {
+      this.buffer.readBigInt64();
+      status = this.buffer.readString();
       this.buffer.readUUID(); // state type id
       this.buffer.readLenPrefixedBuffer(); // state
     }
