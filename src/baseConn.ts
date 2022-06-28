@@ -111,7 +111,6 @@ export class BaseRawConnection {
   protocolVersion: ProtocolVersion = PROTO_VER;
   isLegacyProtocol = false;
 
-  // protected stateTypeId = NULL_CODEC_ID;
   protected stateCodec: ICodec = NULL_CODEC;
   protected state: Buffer | null = null;
   protected userState: Session | null = null;
@@ -253,14 +252,10 @@ export class BaseRawConnection {
     this._ignoreHeaders();
     this.buffer.readBigInt64();
     const status = this.buffer.readString();
-    // TODO: Check if this is correct??
-    // if (!this.isLegacyProtocol && this.buffer.curMessageLenUnread) {
-    //   this.buffer.readUUID(); // state type id
-    //   if (this.buffer.readInt16() !== 1) {
-    //     throw new Error(`expected 1`);
-    //   }
-    //   this.buffer.readLenPrefixedBuffer(); // state
-    // }
+    if (!this.isLegacyProtocol) {
+      this.buffer.readUUID(); // state type id
+      this.buffer.readLenPrefixedBuffer(); // state
+    }
     this.buffer.finishMessage();
     return status;
   }
@@ -358,7 +353,7 @@ export class BaseRawConnection {
         this.serverSettings.system_config = data;
         break;
       }
-      case "session_state_description": {
+      case "state_description": {
         const buf = new ReadBuffer(value);
         const typedescId = buf.readUUID();
         const typedesc = buf.readBuffer(buf.readInt32());
@@ -885,6 +880,14 @@ export class BaseRawConnection {
         : Cardinality.MANY
     );
     wb.writeString(query);
+
+    if (this.state === null) {
+      wb.writeBuffer(NULL_CODEC.tidBuffer);
+      wb.writeInt32(0);
+    } else {
+      wb.writeBuffer(this.stateCodec.tidBuffer);
+      wb.writeBuffer(this.state);
+    }
   }
 
   private async _parse(
@@ -1010,14 +1013,6 @@ export class BaseRawConnection {
       privilegedMode,
       options
     );
-
-    // wb.writeBuffer(this.stateCodec.tidBuffer);
-    // wb.writeInt16(1);
-    // if (this.state === null) {
-    //   wb.writeInt32(0);
-    // } else {
-    //   wb.writeBuffer(this.state);
-    // }
 
     wb.writeBuffer(inCodec.tidBuffer);
     wb.writeBuffer(outCodec.tidBuffer);

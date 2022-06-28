@@ -32,6 +32,7 @@ errorMapping.set(0x03_01_00_02, errors.TypeSpecNotFoundError);
 errorMapping.set(0x03_01_00_03, errors.UnexpectedMessageError);
 errorMapping.set(0x03_02_00_00, errors.InputDataError);
 errorMapping.set(0x03_02_01_00, errors.ParameterTypeMismatchError);
+errorMapping.set(0x03_02_02_00, errors.StateMismatchError);
 errorMapping.set(0x03_03_00_00, errors.ResultCardinalityMismatchError);
 errorMapping.set(0x03_04_00_00, errors.CapabilityError);
 errorMapping.set(0x03_04_01_00, errors.UnsupportedCapabilityError);

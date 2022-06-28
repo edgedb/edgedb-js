@@ -177,12 +177,10 @@ export class CodecsRegistry {
         case CTYPE_INPUT_SHAPE: {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
-            if (t === CTYPE_SHAPE) {
-              if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
-                frb.discard(5); // 4 (flags) + 1 (cardinality)
-              } else {
-                frb.discard(1); // flags
-              }
+            if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
+              frb.discard(5); // 4 (flags) + 1 (cardinality)
+            } else {
+              frb.discard(1); // flags
             }
 
             const elm_length = frb.readUInt32();
@@ -295,14 +293,12 @@ export class CodecsRegistry {
         for (let i = 0; i < els; i++) {
           let flag: number;
           let card: number;
-          if (t === CTYPE_SHAPE) {
-            if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
-              flag = frb.readUInt32();
-              card = frb.readUInt8(); // cardinality
-            } else {
-              flag = frb.readUInt8();
-              card = 0;
-            }
+          if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
+            flag = frb.readUInt32();
+            card = frb.readUInt8(); // cardinality
+          } else {
+            flag = frb.readUInt8();
+            card = 0;
           }
 
           const strLen = frb.readUInt32();

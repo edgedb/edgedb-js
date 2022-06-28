@@ -89,17 +89,17 @@ export const getServerCommand = (
     args.push("--admin-ui=enabled");
     args.push("--http-endpoint-security=optional");
     availableFeatures.push("admin-ui");
-  }
+    // }
 
-  if (help.includes("--jws-public-key-file")) {
+    // if (help.includes("--jws-public-key-file")) {
     args.push(
       "--jws-public-key-file",
-      path.join(__dirname, "keys", "public.pem"),
+      path.join(__dirname, "keys", "public.pem")
     );
 
     args.push(
       "--jwe-private-key-file",
-      path.join(__dirname, "keys", "private.pem"),
+      path.join(__dirname, "keys", "private.pem")
     );
   }
 

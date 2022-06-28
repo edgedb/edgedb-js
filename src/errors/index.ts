@@ -79,6 +79,12 @@ export class ParameterTypeMismatchError extends InputDataError {
   }
 }
 
+export class StateMismatchError extends InputDataError {
+  get code(): number {
+    return 0x03_02_02_00;
+  }
+}
+
 export class ResultCardinalityMismatchError extends ProtocolError {
   get code(): number {
     return 0x03_03_00_00;

@@ -65,20 +65,19 @@ if (getEdgeDBVersion().major >= 2) {
         }`)
       ).toEqual({userId: null, currentTags: null});
 
-      // TODO: uncomment once server bug is fixed
       // check session state gets merged
-      // expect(
-      //   await clientWithUserId.withGlobals({
-      //     userId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      //     currentTags: ["a", "b", "c"],
-      //   }).querySingle(`select {
-      //     userId := global userId,
-      //     currentTags := global currentTags,
-      //   }`)
-      // ).toEqual({
-      //   userId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      //   currentTags: ["a", "b", "c"],
-      // });
+      expect(
+        await clientWithUserId.withGlobals({
+          userId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          currentTags: ["a", "b", "c"],
+        }).querySingle(`select {
+          userId := global userId,
+          currentTags := global currentTags,
+        }`)
+      ).toEqual({
+        userId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        currentTags: ["a", "b", "c"],
+      });
 
       await expect(
         client.withGlobals({unknownGlobal: 123}).query("select 1")
@@ -122,8 +121,7 @@ if (getEdgeDBVersion().major >= 2) {
       (
         await client
           .withConfigs({
-            // TODO: use Duration.from
-            query_execution_timeout: new Duration(0, 0, 0, 0, 0, 0, 30),
+            query_execution_timeout: Duration.from("PT30S"),
           })
           .queryRequiredSingle<Duration>(
             `select assert_single(cfg::Config.query_execution_timeout)`
@@ -197,8 +195,7 @@ if (getEdgeDBVersion().major >= 2) {
     await expect(
       client
         .withConfigs({
-          // TODO: use Duration.from
-          query_execution_timeout: new Duration(0, 0, 0, 0, 0, 0, 30),
+          query_execution_timeout: Duration.from("PT30S"),
         })
         .query("select 1")
     ).rejects.toThrowError(

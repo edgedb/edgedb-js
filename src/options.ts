@@ -153,15 +153,25 @@ export class Session {
 
   /** @internal */
   _serialise() {
-    return {
-      module: this.module,
-      aliases: Object.entries(this.aliases),
-      config: this.configs,
-      globals: Object.entries(this.globals).reduce((globals, [key, val]) => {
+    const state: any = {};
+    if (this.module !== "default") {
+      state.module = this.module;
+    }
+    const _aliases = Object.entries(this.aliases);
+    if (_aliases.length) {
+      state.aliases = _aliases;
+    }
+    if (Object.keys(this.configs).length) {
+      state.config = this.configs;
+    }
+    const _globals = Object.entries(this.globals);
+    if (_globals.length) {
+      state.globals = _globals.reduce((globals, [key, val]) => {
         globals[key.includes("::") ? key : `${this.module}::${key}`] = val;
         return globals;
-      }, {} as {[key: string]: any}),
-    };
+      }, {} as {[key: string]: any});
+    }
+    return state;
   }
 
   static defaults(): Session {
