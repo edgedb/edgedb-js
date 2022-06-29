@@ -3,7 +3,7 @@ import {
   ExpressionKind,
   BaseType,
   Cardinality,
-} from "../reflection";
+} from "../reflection/index";
 import {$expressionify} from "./path";
 
 export function makeGlobal<
