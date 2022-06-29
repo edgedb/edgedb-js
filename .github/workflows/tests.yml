@@ -55,8 +55,8 @@ jobs:
         with:
           deno-version: v1.17.x
 
-      - uses: bahmutov/npm-install@v1
-      - uses: bahmutov/npm-install@v1
+      - uses: bahmutov/npm-install@1.8.16
+      - uses: bahmutov/npm-install@1.8.16
         with:
           working-directory: qb
 
