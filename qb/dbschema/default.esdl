@@ -2,6 +2,25 @@
 module default {
 
   scalar type Genre extending enum<Horror, Action, RomCom>;
+  global uuid_global -> uuid;
+  global num_global -> int64;
+  global arr_global -> array<str>;
+  global tuple_global -> tuple<str, int64>;
+  global named_tuple_global -> tuple<name: str, age: int64>;
+  global str_global -> str;
+  global str_global_with_default -> str {
+    default := "hi mom";
+  };
+  multi global str_multi := {'hi', 'mom'};
+  required global str_required -> str {
+    default := 'hi mom';
+  };
+  required multi global str_required_multi := {'hi', 'mom'};
+
+  scalar type global_seq extending sequence;
+  global seq_global -> global_seq;
+
+
 
   abstract link movie_character {
     property character_name -> str;
@@ -145,3 +164,7 @@ module `💯💯💯` {
       SELECT <default::`🚀🚀🚀`>(`🤞` ++ 'Ł🙀')
     );
 };
+
+module extra {
+  global user_id -> uuid;
+}

@@ -210,7 +210,7 @@ with incompatible types.
   e.array([e.int64(5), e.str("foo")]);
   // TypeError!
 
-For convenence, the ``e.array`` can also accept arrays of plain JavaScript
+For convenience, the ``e.array`` can also accept arrays of plain JavaScript
 data as well.
 
 .. code-block:: typescript

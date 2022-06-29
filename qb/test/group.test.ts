@@ -8,7 +8,7 @@ import {setupTests, teardownTests, TestData} from "./setupTeardown";
 let client: edgedb.Client;
 let data: TestData;
 
-const version_lt = async (cutoff: number) => {
+export const version_lt = async (cutoff: number) => {
   const version = await client.queryRequiredSingle<{major: number}>(
     `select sys::get_version()`
   );

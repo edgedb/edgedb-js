@@ -11,7 +11,6 @@ EdgeDB TypeScript/JS Client
    driver
    querybuilder
    generation
-   expressions
    literals
    types
    funcops

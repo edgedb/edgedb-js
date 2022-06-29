@@ -42,6 +42,7 @@ export enum ExpressionKind {
   Param = "Param",
   OptionalParam = "OptionalParam",
   Detached = "Detached",
+  Global = "Global",
   PolyShapeElement = "PolyShapeElement",
   Group = "Group",
 }

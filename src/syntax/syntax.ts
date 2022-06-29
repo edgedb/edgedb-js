@@ -13,6 +13,7 @@ export * from "./funcops";
 export * from "./for";
 export * from "./with";
 export * from "./params";
+export * from "./globals";
 export * from "./detached";
 export * from "./toEdgeQL";
 
