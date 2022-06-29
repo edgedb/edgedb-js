@@ -15,7 +15,7 @@ const rmdir =
 
 interface Options {
   showHelp?: boolean;
-  target?: "ts" | "esm" | "cjs";
+  target?: "ts" | "esm" | "cjs" | "mts";
   outputDir?: string;
   promptPassword?: boolean;
   passwordFromStdin?: boolean;
@@ -116,7 +116,7 @@ const run = async () => {
         break;
       case "--target":
         const target = getVal();
-        if (!target || !["ts", "esm", "cjs"].includes(target)) {
+        if (!target || !["ts", "esm", "cjs", "mts"].includes(target)) {
           exitWithError(
             `Invalid target "${target ?? ""}", expected "ts", "esm" or "cjs"`
           );
@@ -157,10 +157,11 @@ CONNECTION OPTIONS:
     --tls-security <insecure | no_host_verification | strict | default>
 
 OPTIONS:
-    --target [ts,esm,cjs]
+    --target [ts,esm,cjs,mts]
 
-        ts     Generate TypeScript files
-        esm    Generate JavaScript with ES Module syntax
+        ts     Generate TypeScript files (.ts)
+        mts    Generate TypeScript files (.mts) with extensioned ESM imports
+        esm    Generate JavaScript with ESM syntax
         cjs    Generate JavaScript with CommonJS syntax
 
     --output-dir <output-dir>
@@ -200,20 +201,37 @@ OPTIONS:
   // }
 
   if (!options.target) {
-    const tsconfigExists = await exists(
-      path.join(projectRoot, "tsconfig.json")
-    );
+    const tsConfigPath = path.join(projectRoot, "tsconfig.json");
+    const tsConfigExists = await exists(tsConfigPath);
 
     const overrideTargetMessage = `   To override this, use the --target flag.
    Run \`npx edgeql-js --help\` for details.`;
+    const packageJson = JSON.parse(
+      await readFileUtf8(path.join(projectRoot, "package.json"))
+    );
 
-    if (tsconfigExists) {
-      options.target = "ts";
-      console.log(`Detected tsconfig.json, generating TypeScript files.`);
+    // doesn't work with `extends`
+    // switch to more robust solution after splitting
+    // @edgedb/generate into separate package
+
+    if (tsConfigExists) {
+      const tsConfig = tsConfigExists
+        ? (await readFileUtf8(tsConfigPath)).toLowerCase()
+        : "{}";
+
+      const supportsESM: boolean =
+        tsConfig.includes(`"module": "nodenext"`) ||
+        tsConfig.includes(`"module": "node12"`);
+      if (supportsESM && packageJson?.type === "module") {
+        options.target = "mts";
+        console.log(
+          `Detected tsconfig.json with ES module support, generating .mts files with ESM imports.`
+        );
+      } else {
+        options.target = "ts";
+        console.log(`Detected tsconfig.json, generating TypeScript files.`);
+      }
     } else {
-      const packageJson = JSON.parse(
-        await readFileUtf8(path.join(projectRoot, "package.json"))
-      );
       if (packageJson?.type === "module") {
         options.target = "esm";
         console.log(

@@ -751,7 +751,7 @@ async function parseDSNIntoConfig(
   }
 
   const searchParams = new Map<string, string>();
-  for (const [key, value] of parsed.searchParams) {
+  for (const [key, value] of parsed.searchParams as any) {
     if (searchParams.has(key)) {
       throw new Error(`invalid DSN: duplicate query parameter '${key}'`);
     }

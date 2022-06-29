@@ -27,13 +27,11 @@ export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
 export interface ScalarType<
   Name extends string = string,
   TsType extends any = any,
-  Castable extends boolean = boolean,
   TsConstType extends TsType = TsType
 > extends BaseType {
   __kind__: TypeKind.scalar;
   __tstype__: TsType;
   __tsconsttype__: TsConstType;
-  __castable__: Castable;
   __name__: Name;
 }
 
@@ -46,39 +44,10 @@ export type scalarTypeWithConstructor<
     ScalarType<
       S["__name__"],
       S["__tstype__"],
-      S["__castable__"],
       T extends S["__tstype__"] ? T : S["__tstype__"]
     >
   >;
 };
-// export type scalarTypeWithConstructor<
-//   Root extends ScalarType,
-//   ExtraTsTypes extends any = never,
-//   ConstructorType extends ScalarType = Root
-// > = Root & {
-//   // tslint:disable-next-line
-//   <T extends ConstructorType["__tstype__"] | ExtraTsTypes>(
-//     val: T
-//   ): $expr_Literal<
-//     ScalarType<
-//       ConstructorType["__name__"],
-//       ConstructorType["__tstype__"],
-//       ConstructorType["__castable__"],
-//       T extends ConstructorType["__tstype__"]
-//         ? T
-//         : ConstructorType["__tstype__"]
-//     >
-//   >;
-// };
-
-// export interface CastOnlyScalarType<
-//   Name extends string = string,
-//   CastType extends ScalarType = ScalarType
-// > extends BaseType {
-//   __kind__: TypeKind.castonlyscalar;
-//   __name__: Name;
-//   __casttype__: CastType;
-// }
 
 type $jsonDestructure<Set extends TypeSet> =
   Set["__element__"] extends ScalarType<"std::json">
@@ -434,8 +403,8 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         [Set, TypeSet],
         TypeSet<
           getPrimitiveBaseType<
-            Set["__element__"] extends ArrayType
-              ? Set["__element__"]["__element__"]
+            Set["__element__"] extends ArrayType<infer El>
+              ? El
               : Set["__element__"]
           >,
           Set["__cardinality__"]
@@ -458,8 +427,8 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         [Set, TypeSet],
         TypeSet<
           getPrimitiveBaseType<
-            Set["__element__"] extends ArrayType
-              ? Set["__element__"]["__element__"]
+            Set["__element__"] extends ArrayType<infer El>
+              ? El
               : Set["__element__"]
           >,
           cardinalityUtil.multiplyCardinalities<
@@ -677,10 +646,7 @@ type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
 
 export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
   ? Type["__tsconsttype__"]
-  : // Type extends CastOnlyScalarType
-  // ? Type["__casttype__"]["__tsconsttype__"]
-  // :
-  Type extends EnumType
+  : Type extends EnumType
   ? Type["__tstype__"]
   : Type extends ArrayType<any>
   ? ArrayTypeToTsType<Type>
@@ -745,7 +711,7 @@ export type pointerToTsType<El extends PropertyDesc | LinkDesc> =
 ///////////////////
 
 export type getPrimitiveBaseType<T extends BaseType> = T extends ScalarType
-  ? ScalarType<T["__name__"], T["__tstype__"], T["__castable__"]>
+  ? ScalarType<T["__name__"], T["__tstype__"]>
   : T;
 
 export type getPrimitiveNonArrayBaseType<T extends BaseType> =
@@ -770,9 +736,6 @@ export function isArrayType(type: BaseType): type is ArrayType {
   return type.__kind__ === TypeKind.array;
 }
 
-export type CastableScalarType = ScalarType<string, any, true>;
-// | CastOnlyScalarType;
-
 export type NonArrayType =
   | ScalarType
   | EnumType
@@ -780,29 +743,12 @@ export type NonArrayType =
   | TupleType
   | NamedTupleType;
 
-export type CastableNonArrayType =
-  | CastableScalarType
-  | EnumType
-  | ObjectType
-  | TupleType
-  | NamedTupleType;
-
 export type AnyTupleType = TupleType | NamedTupleType;
 
-export type CastableArrayType = ArrayType<CastableNonArrayType>;
-
-export type unwrapCastableType<T> =
-  // T extends CastOnlyScalarType
-  //   ? T["__casttype__"]
-  //   :
-  T extends CastableArrayType
-    ? ArrayType<unwrapCastableType<T["__element__"]>>
-    : T;
-
 export type ParamType =
-  | CastableScalarType
+  | ScalarType
   | ArrayType<
-      | CastableScalarType
+      | ScalarType
       | TupleType<typeutil.tupleOf<ParamType>>
       | NamedTupleType<{[k: string]: ParamType}>
     >

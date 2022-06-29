@@ -10,48 +10,47 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
 
   code.addImport(
     {
-      TypeKind: true,
-      ExpressionKind: true,
-      Cardinality: true,
-      cardinalityUtil: true,
-      $mergeObjectTypes: true,
+      $: true,
     },
-    "edgedb/dist/reflection/index",
-    true
+    "edgedb",
+    {allowFileExt: false}
   );
-  code.addStarImport("castMaps", "../castMaps", true, ["ts", "js", "dts"]);
-  code.addImport({$expressionify: true}, "./path", true, ["ts", "js"]);
+  code.addImportStar("castMaps", "../castMaps", {
+    allowFileExt: true,
+    modes: ["ts", "js", "dts"],
+  });
+  code.addImport({$expressionify: true}, "./path", {
+    allowFileExt: true,
+    modes: ["ts", "js"],
+  });
 
-  code.writeln([
-    t`import type {
-  ArrayType,
-  TypeSet,
-  BaseType,
-  ObjectTypeSet,
-  PrimitiveTypeSet,
-  AnyTupleType,
-  getPrimitiveBaseType,
-} from "edgedb/dist/reflection";
-import type {
-  $expr_Set,
-  mergeObjectTypesVariadic,
-  getTypesFromExprs,
-  getTypesFromObjectExprs,
-  getCardsFromExprs,
-  getSharedParentPrimitiveVariadic,
-  LooseTypeSet,
-} from "./set";`,
-  ]);
-  code.addImport({getSharedParent: true}, "./set", true, ["ts", "js"]);
+  code.addImport(
+    {
+      $expr_Set: true,
+      mergeObjectTypesVariadic: true,
+      getTypesFromExprs: true,
+      getTypesFromObjectExprs: true,
+      getCardsFromExprs: true,
+      getSharedParentPrimitiveVariadic: true,
+      LooseTypeSet: true,
+    },
+    "./set",
+    {allowFileExt: true, typeOnly: true}
+  );
+
+  code.addImport({getSharedParent: true}, "./set", {
+    allowFileExt: true,
+    modes: ["ts", "js"],
+  });
 
   code.nl();
   code.writeln([
     dts`declare `,
     t`type getSetTypeFromExprs<
-  Exprs extends [TypeSet, ...TypeSet[]]
+  Exprs extends [$.TypeSet, ...$.TypeSet[]]
 > = LooseTypeSet<
   getSharedParentPrimitiveVariadic<getTypesFromExprs<Exprs>>,
-  cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
+  $.cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
 >;`,
   ]);
   code.nl();
@@ -61,7 +60,7 @@ import type {
   code.writeln([
     dts`declare `,
     t`function set<
-  Expr extends castMaps.orScalarLiteral<TypeSet>
+  Expr extends castMaps.orScalarLiteral<$.TypeSet>
 >(expr: Expr): $expr_Set<castMaps.literalToTypeSet<Expr>>;`,
   ]);
 
@@ -69,7 +68,7 @@ import type {
     code.writeln([
       dts`declare `,
       t`function set<
-  Expr extends castMaps.orScalarLiteral<TypeSet<${
+  Expr extends castMaps.orScalarLiteral<$.TypeSet<${
     getStringRepresentation(types.get(implicitRootTypeId), {
       types,
       casts: casts.implicitCastFromMap,
@@ -82,7 +81,7 @@ import type {
     code.writeln([
       dts`declare `,
       t`function set<
-  Expr extends TypeSet<ArrayType<${
+  Expr extends $.TypeSet<$.ArrayType<${
     getStringRepresentation(types.get(implicitRootTypeId), {
       types,
       casts: casts.implicitCastFromMap,
@@ -96,48 +95,48 @@ import type {
   code.writeln([
     dts`declare `,
     t`function set<
-  Expr extends ObjectTypeSet,
+  Expr extends $.ObjectTypeSet,
   Exprs extends [Expr, ...Expr[]]
 >(
   ...exprs: Exprs
 ): $expr_Set<
   LooseTypeSet<
     mergeObjectTypesVariadic<getTypesFromObjectExprs<Exprs>>,
-    cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
+    $.cardinalityUtil.mergeCardinalitiesVariadic<getCardsFromExprs<Exprs>>
   >
 >;
 `,
     dts`declare `,
     t`function set<
-  Expr extends TypeSet<AnyTupleType>,
+  Expr extends $.TypeSet<$.AnyTupleType>,
   Exprs extends [Expr, ...Expr[]]
 >(...exprs: Exprs): $expr_Set<getSetTypeFromExprs<Exprs>>;
 `,
     dts`declare `,
     t`function set<
-  Expr extends TypeSet<BaseType> | castMaps.scalarLiterals,
+  Expr extends $.TypeSet<$.BaseType> | castMaps.scalarLiterals,
   Exprs extends castMaps.orScalarLiteral<
-    TypeSet<getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>>
+    $.TypeSet<$.getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>>
   >[]
 >(
   expr: Expr,
   ...exprs: Exprs
 ): $expr_Set<
-  TypeSet<
-    getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>,
-    cardinalityUtil.mergeCardinalitiesVariadic<
+  $.TypeSet<
+    $.getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>,
+    $.cardinalityUtil.mergeCardinalitiesVariadic<
       getCardsFromExprs<castMaps.mapLiteralToTypeSet<[Expr, ...Exprs]>>
     >
   >
 >;
 `,
     dts`declare `,
-    t`function set<Expr extends TypeSet<BaseType> | castMaps.scalarLiterals>(
+    t`function set<Expr extends $.TypeSet<$.BaseType> | castMaps.scalarLiterals>(
   ...exprs: Expr[]
 ): $expr_Set<
-  TypeSet<
-    getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>,
-    Cardinality.Many
+  $.TypeSet<
+    $.getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>,
+    $.Cardinality.Many
   >
 >;`,
   ]);
@@ -158,17 +157,17 @@ import type {
   }
 
   const exprs`,
-    ts`: TypeSet[]`,
+    ts`: $.TypeSet[]`,
     r` = _exprs.map(expr => castMaps.literalToTypeSet(expr));
 
   return $expressionify({
-    __kind__: ExpressionKind.Set,
+    __kind__: $.ExpressionKind.Set,
     __element__: exprs
       .map(expr => expr.__element__`,
     ts` as any`,
     r`)
       .reduce(getSharedParent),
-    __cardinality__: cardinalityUtil.mergeCardinalitiesVariadic(
+    __cardinality__: $.cardinalityUtil.mergeCardinalitiesVariadic(
       exprs.map(expr => expr.__cardinality__)`,
     ts` as any`,
     r`

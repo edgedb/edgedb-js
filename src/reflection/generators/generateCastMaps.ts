@@ -17,8 +17,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps");
-  f.addStarImport("edgedb", "edgedb");
-  f.addImport({$: true}, "edgedb", false, ["ts", "dts"], true);
+  f.addImportStar("edgedb", "edgedb");
+  f.addImport({$: true}, "edgedb", {modes: ["ts", "dts"], typeOnly: true});
 
   const reverseTopo = Array.from(types)
     .reverse() // reverse topological order
@@ -281,7 +281,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
             !type.is_abstract &&
             !type.enum_values &&
             !type.material_id &&
-            !type.castOnlyType &&
+            !type.castType &&
             (!scalarToLiteralMapping[type.name] ||
               !scalarToLiteralMapping[type.name].literalKind)
           );
@@ -320,7 +320,6 @@ export const generateCastMaps = (params: GeneratorParams) => {
 > = $.ScalarType<
   T["__name__"],
   T["__tstype__"],
-  T["__castable__"],
   TsConstType
 >;`,
   ]);
@@ -348,7 +347,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   f.writeln([t`  [k in keyof T]: literalToTypeSet<T[k]>;`]);
   f.writeln([t`};\n\n`]);
 
-  f.addStarImport("literal", "./syntax/literal", true);
+  f.addImportStar("literal", "./syntax/literal", {allowFileExt: true});
 
   f.writeln([
     dts`declare `,

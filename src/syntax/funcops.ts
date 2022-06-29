@@ -9,7 +9,7 @@ import {
   cardinalityUtil,
   ObjectType,
   TypeSet,
-} from "../reflection";
+} from "../reflection/index";
 import {cast} from "./cast";
 import {isImplicitlyCastableTo, literalToTypeSet} from "@generated/castMaps";
 import {literal} from "./literal";

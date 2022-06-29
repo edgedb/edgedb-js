@@ -6,10 +6,9 @@ import {
   Cardinality,
   setToTsType,
   TypeSet,
-  unwrapCastableType,
   TypeKind,
   BaseTypeToTsType,
-} from "../reflection";
+} from "../reflection/index";
 import {$expressionify} from "./path";
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
@@ -79,7 +78,7 @@ export type $expr_Param<
   Optional extends boolean = boolean
 > = Expression<{
   __kind__: ExpressionKind.Param;
-  __element__: unwrapCastableType<Type>;
+  __element__: Type;
   __cardinality__: Optional extends true
     ? Cardinality.AtMostOne
     : Cardinality.One;

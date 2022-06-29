@@ -12,7 +12,7 @@ import {
   $scopify,
   stripSet,
   TypeSet,
-} from "../reflection";
+} from "../reflection/index";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
 import {cast} from "./cast";

@@ -1,5 +1,3 @@
-// import * as path from "path";
-// import * as fs from "fs";
 import {fs, path, exists} from "../adapter.node";
 import {StrictMap} from "./strictMap";
 import * as genutil from "./util/genutil";
@@ -90,8 +88,8 @@ export class CodeBuffer {
 
 type Import = {
   fromPath: string;
-  modes?: Set<Mode>;
-  allowFileExt?: boolean;
+  modes: Set<Mode>;
+  allowFileExt: boolean;
   typeOnly: boolean;
 } & (
   | {type: "default"; name: string}
@@ -99,7 +97,7 @@ type Import = {
   | {type: "partial"; names: {[key: string]: string | boolean}}
 );
 
-type Export = {modes?: Set<Mode>} & (
+type Export = {modes: Set<Mode>} & (
   | {
       type: "named";
       name: string | IdentRef | (string | IdentRef)[];
@@ -122,6 +120,14 @@ type Export = {modes?: Set<Mode>} & (
     }
 );
 
+type ImportParams = {
+  allowFileExt?: boolean;
+  modes?: Mode[];
+  typeOnly?: boolean;
+};
+type ExportParams = {modes?: Mode[]};
+
+const allModes: Set<Mode> = new Set(["dts", "js", "ts"]);
 class BuilderImportsExports {
   constructor(
     public imports: Set<Import> = new Set<Import>(),
@@ -131,106 +137,101 @@ class BuilderImportsExports {
   addImport(
     names: {[key: string]: string | boolean},
     fromPath: string,
-    allowFileExt: boolean = false,
-    modes?: Mode[],
-    typeOnly: boolean = false
+    params: ImportParams = {}
   ) {
     this.imports.add({
       type: "partial",
       fromPath,
       names,
-      allowFileExt,
-      modes: modes && new Set(modes),
-      typeOnly,
+      allowFileExt: params.allowFileExt ?? false,
+      modes: params.modes ? new Set(params.modes) : allModes,
+      typeOnly: params.typeOnly ?? false,
     });
   }
 
-  addDefaultImport(
-    name: string,
-    fromPath: string,
-    allowFileExt: boolean = false,
-    modes?: Mode[],
-    typeOnly: boolean = false
-  ) {
+  addImportDefault(name: string, fromPath: string, params: ImportParams = {}) {
     this.imports.add({
       type: "default",
       fromPath,
       name,
-      allowFileExt,
-      modes: modes && new Set(modes),
-      typeOnly,
+      allowFileExt: params.allowFileExt ?? false,
+      modes: params.modes ? new Set(params.modes) : allModes,
+      typeOnly: params.typeOnly ?? false,
     });
   }
 
-  addStarImport(
-    name: string,
-    fromPath: string,
-    allowFileExt: boolean = false,
-    modes?: Mode[],
-    typeOnly: boolean = false
-  ) {
+  addImportStar(name: string, fromPath: string, params: ImportParams = {}) {
     this.imports.add({
       type: "star",
       fromPath,
       name,
-      allowFileExt,
-      modes: modes && new Set(modes),
-      typeOnly,
+      allowFileExt: params.allowFileExt ?? false,
+      modes: params.modes ? new Set(params.modes) : allModes,
+      typeOnly: params.typeOnly ?? false,
     });
   }
 
   addExport(
     name: string | IdentRef | (string | IdentRef)[],
-    as?: string,
-    isDefault: boolean = false,
-    modes?: Mode[]
+    // as?: string,
+    // isDefault: boolean = false,
+    params: ExportParams & {as?: string} = {}
   ) {
     this.exports.add({
       type: "named",
       name,
-      as,
-      isDefault,
-      modes: modes && new Set(modes),
+      as: params.as,
+      isDefault: false,
+      modes: params.modes ? new Set(params.modes) : allModes,
     });
   }
 
-  addRefsDefaultExport(ref: IdentRef, as: string) {
+  addExportDefault(
+    name: string | IdentRef | (string | IdentRef)[],
+    params: ExportParams = {}
+  ) {
+    this.exports.add({
+      type: "named",
+      name,
+      isDefault: true,
+      modes: params.modes ? new Set(params.modes) : allModes,
+    });
+  }
+
+  addToDefaultExport(ref: IdentRef, as: string) {
     this.exports.add({
       type: "refsDefault",
       ref,
       as,
+      modes: allModes,
     });
   }
 
   addExportFrom(
     names: {[key: string]: string | boolean},
     fromPath: string,
-    allowFileExt: boolean = false,
-    modes?: Mode[],
-    typeOnly: boolean = false
+    params: ImportParams = {}
   ) {
     this.exports.add({
       type: "from",
       names,
       fromPath,
-      allowFileExt,
-      modes: modes && new Set(modes),
-      typeOnly,
+      allowFileExt: params.allowFileExt ?? false,
+      modes: params.modes ? new Set(params.modes) : allModes,
+      typeOnly: params.typeOnly ?? false,
     });
   }
 
-  addExportStarFrom(
-    name: string | null,
+  addExportStar(
     fromPath: string,
-    allowFileExt: boolean = false,
-    modes?: Mode[]
+    params: Omit<ImportParams, "typeOnly"> & {as?: string} = {}
   ) {
     this.exports.add({
       type: "starFrom",
-      name,
+      name: params.as || null,
       fromPath,
-      allowFileExt,
-      modes: modes && new Set(modes),
+      allowFileExt: params.allowFileExt ?? false,
+      modes: params.modes ? new Set(params.modes) : allModes,
     });
   }
 
@@ -238,26 +239,19 @@ class BuilderImportsExports {
     mode,
     moduleKind,
     helpers,
+    extension,
   }: {
     mode: Mode;
     moduleKind: ModuleKind;
     helpers: Set<keyof typeof importExportHelpers>;
+    extension?: string;
   }) {
     const imports = new Set<string>();
     for (const imp of this.imports) {
-      if (
-        (imp.modes && !imp.modes.has(mode)) ||
-        (imp.typeOnly && mode === "js")
-      ) {
-        continue;
-      }
+      if (imp.modes && !imp.modes.has(mode)) continue;
+      if (imp.typeOnly && mode === "js") continue;
 
-      const esmFileExt =
-        imp.allowFileExt && mode === "js"
-          ? imp.fromPath.startsWith(".")
-            ? ".mjs"
-            : ".js"
-          : "";
+      const ext = imp.fromPath.startsWith(".") ? extension : "";
 
       switch (imp.type) {
         case "default":
@@ -266,8 +260,9 @@ class BuilderImportsExports {
             moduleKind === "esm"
               ? `import${imp.typeOnly ? " type" : ""} ${imp.name} from "${
                   imp.fromPath
-                }${esmFileExt}";`
-              : `const ${imp.name} = __importDefault(require("${imp.fromPath}")).default;`
+                }${ext}";`
+              : `const ${imp.name} = __importDefault(
+                require("${imp.fromPath}")).default;`
           );
           break;
         case "star":
@@ -281,7 +276,7 @@ class BuilderImportsExports {
             moduleKind === "esm"
               ? `import${imp.typeOnly ? " type" : ""} * as ${imp.name} from "${
                   imp.fromPath
-                }${esmFileExt}";`
+                }${ext}";`
               : `const ${imp.name} = __importStar(require("${imp.fromPath}"));`
           );
           break;
@@ -302,7 +297,7 @@ class BuilderImportsExports {
             moduleKind === "esm"
               ? `import${imp.typeOnly ? " type" : ""} { ${names} } from "${
                   imp.fromPath
-                }${esmFileExt}";`
+                }${ext}";`
               : `const { ${names} } = require("${imp.fromPath}");`
           );
           break;
@@ -317,6 +312,7 @@ class BuilderImportsExports {
     moduleKind,
     refs,
     helpers,
+    extension,
     forceDefaultExport = false,
   }: {
     mode: Mode;
@@ -324,11 +320,13 @@ class BuilderImportsExports {
     refs: Map<string, {internalName: string; dir: string}>;
     helpers: Set<keyof typeof importExportHelpers>;
     forceDefaultExport?: boolean;
+    extension: string;
   }) {
     const exports: string[] = [];
     const exportsFrom: string[] = [];
     const exportList: string[] = [];
     const refsDefault: {ref: string; as: string}[] = [];
+
     let hasDefaultExport = false;
     for (const exp of this.exports) {
       if (exp.modes && !exp.modes.has(mode)) {
@@ -384,11 +382,12 @@ class BuilderImportsExports {
                 })
                 .filter(val => val !== null)
                 .join(", ")} } from "${exp.fromPath}${
-                exp.allowFileExt && mode === "js"
-                  ? exp.fromPath.startsWith(".")
-                    ? ".mjs"
-                    : ".js"
-                  : ""
+                // exp.allowFileExt && mode === "js"
+                //   ? exp.fromPath.startsWith(".")
+                //     ? ".mjs"
+                //     : ".js"
+                //   : ""
+                exp.fromPath.startsWith(".") ? extension : ""
               }";`
             );
           } else {
@@ -415,11 +414,12 @@ class BuilderImportsExports {
               `export * ${exp.name !== null ? `as ${exp.name} ` : ""}from "${
                 exp.fromPath
               }${
-                exp.allowFileExt && mode === "js"
-                  ? exp.fromPath.startsWith(".")
-                    ? ".mjs"
-                    : ".js"
-                  : ""
+                exp.fromPath.startsWith(".") ? extension : ""
+                // exp.allowFileExt && mode === "js"
+                //   ? exp.fromPath.startsWith(".")
+                //     ? ".mjs"
+                //     : ".js"
+                //   : ""
               }";`
             );
           } else {
@@ -512,19 +512,20 @@ export class CodeBuilder {
   constructor(private dirBuilder: DirBuilder, private dir: string) {}
 
   addImport = this.importsExports.addImport.bind(this.importsExports);
-  addDefaultImport = this.importsExports.addDefaultImport.bind(
+  addImportDefault = this.importsExports.addImportDefault.bind(
     this.importsExports
   );
-  addStarImport = this.importsExports.addStarImport.bind(this.importsExports);
+  addImportStar = this.importsExports.addImportStar.bind(this.importsExports);
 
   addExport = this.importsExports.addExport.bind(this.importsExports);
-  addRefsDefaultExport = this.importsExports.addRefsDefaultExport.bind(
+  addExportDefault = this.importsExports.addExportDefault.bind(
+    this.importsExports
+  );
+  addToDefaultExport = this.importsExports.addToDefaultExport.bind(
     this.importsExports
   );
   addExportFrom = this.importsExports.addExportFrom.bind(this.importsExports);
-  addExportStarFrom = this.importsExports.addExportStarFrom.bind(
-    this.importsExports
-  );
+  addExportStar = this.importsExports.addExportStar.bind(this.importsExports);
 
   getDefaultExportKeys(): string[] {
     return [...this.importsExports.exports]
@@ -588,7 +589,10 @@ export class CodeBuilder {
         importPath = "./" + importPath;
       }
 
-      importsExports.addStarImport(prefix, importPath, true, undefined, true);
+      importsExports.addImportStar(prefix, importPath, {
+        allowFileExt: true,
+        typeOnly: true,
+      });
     }
 
     return (
@@ -602,10 +606,12 @@ export class CodeBuilder {
     mode,
     moduleKind,
     forceDefaultExport,
+    moduleExtension,
   }: {
     mode: Mode;
-    moduleKind?: ModuleKind;
+    moduleKind: ModuleKind;
     forceDefaultExport?: boolean;
+    moduleExtension: string;
   }): string {
     moduleKind ??= mode === "js" ? "cjs" : "esm";
 
@@ -645,6 +651,7 @@ export class CodeBuilder {
       refs: this.dirBuilder._refs,
       helpers,
       forceDefaultExport,
+      extension: moduleExtension,
     });
 
     body += "\n\n" + exports;
@@ -655,7 +662,12 @@ export class CodeBuilder {
 Object.defineProperty(exports, "__esModule", { value: true });\n`
         : "";
 
-    const imports = importsExports.renderImports({mode, moduleKind, helpers});
+    const imports = importsExports.renderImports({
+      mode,
+      moduleKind,
+      helpers,
+      extension: moduleExtension,
+    });
 
     if (helpers.size) {
       head += [...helpers.values()]
@@ -709,7 +721,7 @@ export class DirBuilder {
     const mod = this.getPath(`modules/${this._modules.get(moduleName)}`);
 
     mod.addImport({$: true}, "edgedb");
-    mod.addStarImport("_", "../imports", true);
+    mod.addImportStar("_", "../imports", {allowFileExt: true});
 
     return mod;
   }
@@ -726,8 +738,12 @@ export class DirBuilder {
 
   async write(
     to: string,
-    mode: "ts" | "js+dts",
-    moduleKind: ModuleKind
+    params: {
+      mode: "ts" | "js" | "dts";
+      moduleKind: ModuleKind;
+      fileExtension: string;
+      moduleExtension: string;
+    }
   ): Promise<void> {
     const dir = path.normalize(to);
     for (const [fn, builder] of this._map.entries()) {
@@ -744,21 +760,15 @@ export class DirBuilder {
 
       const forceDefaultExport = fn.startsWith("modules/");
 
-      if (mode === "ts") {
-        await fs.writeFile(
-          dest + ".ts",
-          builder.render({mode: "ts", forceDefaultExport})
-        );
-      } else if (mode === "js+dts") {
-        await fs.writeFile(
-          dest + (moduleKind === "esm" ? ".mjs" : ".js"),
-          builder.render({mode: "js", moduleKind, forceDefaultExport})
-        );
-        await fs.writeFile(
-          dest + ".d.ts",
-          builder.render({mode: "dts", forceDefaultExport})
-        );
-      }
+      await fs.writeFile(
+        dest + params.fileExtension,
+        builder.render({
+          mode: params.mode,
+          moduleKind: params.moduleKind,
+          moduleExtension: params.moduleExtension,
+          forceDefaultExport,
+        })
+      );
     }
   }
 }

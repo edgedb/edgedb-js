@@ -21,9 +21,9 @@ jobs:
         os: [ubuntu-latest]
         edgedb-version: ["stable"]
         include:
-          - os: ubuntu-latest
-            node-version: "16"
-            edgedb-version: "nightly"
+          # - os: ubuntu-latest
+          #   node-version: "16"
+          #   edgedb-version: "nightly"
           - os: macos-latest
             node-version: "16"
             edgedb-version: "stable"
@@ -55,10 +55,15 @@ jobs:
         with:
           deno-version: v1.17.x
 
-      - name: Install dev deps
-        run: |
-          yarn install
-          cd qb && yarn install
+      - uses: bahmutov/npm-install@v1
+      - uses: bahmutov/npm-install@v1
+        with:
+          working-directory: qb
+
+      # - name: Install dev deps
+      #   run: |
+      #     yarn install
+      #     cd qb && yarn install
 
       - name: Lint
         run: |
@@ -77,15 +82,16 @@ jobs:
         with:
           server-version: ${{ matrix.edgedb-version }}
 
-      - name: Run functional tests
-        run: |
-          yarn test
-
       - name: Run query builder tests
         if: ${{ matrix.node-version >= 14 && matrix.edgedb-version == 'nightly' }}  # change to stable once 2.0 lands
         working-directory: qb
         run: |
           yarn test:ci
+
+      - name: Run functional tests
+        run: |
+          yarn test
+
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.

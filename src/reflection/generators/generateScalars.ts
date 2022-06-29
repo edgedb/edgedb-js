@@ -10,7 +10,7 @@ import {
 } from "../util/genutil";
 import {dts, js, r, t, ts} from "../builders";
 import type {GeneratorParams} from "../generate";
-import {nonCastableTypes, typeMapping} from "../queries/getTypes";
+import {typeMapping} from "../queries/getTypes";
 
 export const generateScalars = (params: GeneratorParams) => {
   const {dir, types, casts, scalars} = params;
@@ -133,7 +133,7 @@ export const generateScalars = (params: GeneratorParams) => {
 
       sc.nl();
       sc.addExport(literal);
-      sc.addRefsDefaultExport(literal, _name);
+      sc.addToDefaultExport(literal, _name);
       continue;
     }
 
@@ -143,8 +143,8 @@ export const generateScalars = (params: GeneratorParams) => {
     // const extraTypes = scalarToLiteralMapping[type.name]?.extraTypes;
     // const extraTypesUnion = extraTypes ? `, ${extraTypes.join(" | ")}` : "";
 
-    if (type.castOnlyType) {
-      const mapped = types.get(type.castOnlyType);
+    if (type.castType) {
+      const mapped = types.get(type.castType);
       const mappedRef = getRef(mapped.name);
 
       const extraTypes = (
@@ -161,9 +161,7 @@ export const generateScalars = (params: GeneratorParams) => {
       sc.writeln([
         t`export `,
         dts`declare `,
-        t`type ${ref} = $.ScalarType<"${mapped.name}", ${tsType}, ${
-          nonCastableTypes.has(type.id) ? "false" : "true"
-        }>;`,
+        t`type ${ref} = $.ScalarType<"${mapped.name}", ${tsType}>;`,
       ]);
 
       // sc.writeln([
@@ -191,9 +189,7 @@ export const generateScalars = (params: GeneratorParams) => {
       sc.writeln([
         t`export `,
         dts`declare `,
-        t`type ${ref} = $.ScalarType<"${type.name}", ${tsType}, ${
-          nonCastableTypes.has(type.id) ? "false" : "true"
-        }>;`,
+        t`type ${ref} = $.ScalarType<"${type.name}", ${tsType}>;`,
       ]);
 
       sc.writeln([
@@ -240,7 +236,7 @@ export const generateScalars = (params: GeneratorParams) => {
     }
 
     sc.addExport(literal);
-    if (_name !== "number") sc.addRefsDefaultExport(literal, _name);
+    if (_name !== "number") sc.addToDefaultExport(literal, _name);
 
     sc.nl();
   }

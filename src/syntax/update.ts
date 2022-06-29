@@ -10,7 +10,7 @@ import {
   ObjectTypeExpression,
   $scopify,
   Cardinality,
-} from "../reflection";
+} from "../reflection/index";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
 import {

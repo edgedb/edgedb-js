@@ -7,7 +7,6 @@ import {
   BaseType,
   Cardinality,
   cardinalityUtil,
-  CastableNonArrayType,
   ExpressionKind,
   ExpressionRoot,
   getPrimitiveBaseType,
@@ -19,7 +18,7 @@ import {
   TypeKind,
   TypeSet,
   typeutil,
-} from "../reflection";
+} from "../reflection/index";
 import {$expressionify} from "./path";
 import type {getCardsFromExprs} from "./set";
 import {
@@ -119,7 +118,7 @@ export function $arrayLikeIndexify(_expr: ExpressionRoot) {
 }
 
 // ARRAY
-export function array<Element extends CastableNonArrayType>(
+export function array<Element extends NonArrayType>(
   element: Element
 ): ArrayType<Element>;
 export function array<
@@ -306,4 +305,4 @@ export type {
   ArrayType as $Array,
   NamedTupleType as $NamedTuple,
   TupleType as $Tuple,
-} from "../reflection";
+} from "../reflection/index";

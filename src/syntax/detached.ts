@@ -1,4 +1,4 @@
-import {Expression, ExpressionKind, TypeSet} from "../reflection";
+import {Expression, ExpressionKind, TypeSet} from "../reflection/index";
 import {$expressionify} from "./path";
 
 export function detached<Expr extends TypeSet>(

@@ -9,7 +9,7 @@ import {
   PropertyDesc,
   Cardinality,
   BaseType,
-} from "../reflection";
+} from "../reflection/index";
 import type {
   PathParent,
   $expr_PathLeaf,

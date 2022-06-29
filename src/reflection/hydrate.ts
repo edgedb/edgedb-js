@@ -165,8 +165,8 @@ export function makeType<T extends BaseType>(
     }
     scalarObj.__name__ = type.name;
 
-    if (type.castOnlyType) {
-      scalarObj.__casttype__ = makeType(spec, type.castOnlyType, literal);
+    if (type.castType) {
+      scalarObj.__casttype__ = makeType(spec, type.castType, literal);
     }
     typeCache.set(id, scalarObj);
     return scalarObj;

@@ -1,2 +1,2 @@
 [edgedb]
-server-version = "nightly"
+# server-version = "nightly"

@@ -1,7 +1,9 @@
 import type {Client} from "edgedb";
 import type {Villain} from "../dbschema/edgeql-js/modules/default";
 import type {InsertShape} from "../dbschema/edgeql-js/syntax/insert";
-import e, {Cardinality} from "../dbschema/edgeql-js";
+import e from "../dbschema/edgeql-js";
+import {$} from "edgedb";
+
 import {setupTests, teardownTests, TestData, tc} from "./setupTeardown";
 
 let client: Client;
@@ -28,8 +30,8 @@ test("basic insert", async () => {
     rating: 5,
   });
 
-  expect(q1.__cardinality__).toEqual(Cardinality.One);
-  tc.assert<tc.IsExact<typeof q1["__cardinality__"], Cardinality.One>>(true);
+  expect(q1.__cardinality__).toEqual($.Cardinality.One);
+  tc.assert<tc.IsExact<typeof q1["__cardinality__"], $.Cardinality.One>>(true);
 
   await q1.run(client);
   await client.execute(`DELETE Movie FILTER .title = 'Black Widow';`);
@@ -43,8 +45,8 @@ test("unless conflict", async () => {
     })
     .unlessConflict();
 
-  expect(q0.__cardinality__).toEqual(Cardinality.AtMostOne);
-  tc.assert<tc.IsExact<typeof q0["__cardinality__"], Cardinality.AtMostOne>>(
+  expect(q0.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  tc.assert<tc.IsExact<typeof q0["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
   );
 
@@ -57,8 +59,8 @@ test("unless conflict", async () => {
       on: movie.title,
     }));
 
-  expect(q1.__cardinality__).toEqual(Cardinality.AtMostOne);
-  tc.assert<tc.IsExact<typeof q1["__cardinality__"], Cardinality.AtMostOne>>(
+  expect(q1.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  tc.assert<tc.IsExact<typeof q1["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
   );
 
@@ -106,8 +108,10 @@ test("unless conflict", async () => {
       else: e.select(e.Hero, () => ({name: true})),
     }));
 
-  expect(q3.__cardinality__).toEqual(Cardinality.Many);
-  tc.assert<tc.IsExact<typeof q3["__cardinality__"], Cardinality.Many>>(true);
+  expect(q3.__cardinality__).toEqual($.Cardinality.Many);
+  tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
   expect(q3.__element__.__name__).toEqual("std::Object");
   tc.assert<tc.IsExact<typeof q3["__element__"]["__name__"], "std::Object">>(
     true

@@ -66,19 +66,29 @@ Use ``npx`` to generate the query builder.
 
   $ npx edgeql-js
 
-This detects whether you're using JavaScript or TypeScript and generates the
-appropriate files into the ``dbschema/edgeql-js`` directory. For this
-tutorial, we'll assume you're using TypeScript.
+This detects whether you're using TypeScript or JavaScript and generates the
+appropriate files into the ``dbschema/edgeql-js`` directory. Refer to the
+:ref:`Targets <edgedb_qb_target>` section to learn how to customize this.
 
 .. note::
 
-  The first time you generate the query builder you'll be prompted to add the
-  generated files to your ``.gitignore``. If you confirm this prompt, we'll
-  add the the line automatically.
+  If you're seeing a connection error or another issue, refer to the
+  :ref:`Generation <edgedb-js-generation>` docs for more complete
+  documentation, then return to this tutorial.
 
-If you're having trouble with this step, refer to the :ref:`Generation
-<edgedb-js-generation>` docs for more information, then return to this
-tutorial.
+The first time you generate the query builder you'll be prompted to add the
+generated files to your ``.gitignore``. Confirm this prompt to
+add the the line automatically.
+
+$ npx edgeql-js
+  ...
+  Checking the generated query builder into version control
+  is NOT RECOMMENDED. Would you like to update .gitignore to ignore
+  the query builder directory? The following line will be added:
+
+    dbschema/edgeql-js
+
+  [y/n] (leave blank for "y")
 
 
 Import the query builder
@@ -429,7 +439,10 @@ Delete objects
 Compose queries
 ^^^^^^^^^^^^^^^
 
-All query expressions are fully composable; this is one of the major differentiators between this query builder and a typical ORM. For instance, we can ``select`` an ``insert`` query in order to fetch properties of the object we just inserted.
+All query expressions are fully composable; this is one of the major
+differentiators between this query builder and a typical ORM. For instance, we
+can ``select`` an ``insert`` query in order to fetch properties of the object
+we just inserted.
 
 .. code-block:: typescript
 

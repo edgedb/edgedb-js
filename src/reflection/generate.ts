@@ -43,10 +43,11 @@ export function exitWithError(message: string): never {
   process.exit(1);
 }
 
+export type Target = "ts" | "esm" | "cjs" | "mts";
 export async function generateQB(params: {
   outputDir: string;
   connectionConfig: ConnectConfig;
-  target: "ts" | "esm" | "cjs";
+  target: Target;
 }): Promise<void> {
   const {outputDir, connectionConfig, target} = params;
   // tslint:disable-next-line
@@ -108,23 +109,36 @@ export async function generateQB(params: {
 
     const importsFile = dir.getPath("imports");
 
-    importsFile.addExportStarFrom("edgedb", "edgedb");
-    importsFile.addExportFrom({spec: true}, "./__spec__", true);
-    importsFile.addExportStarFrom("syntax", "./syntax/syntax", true);
-    importsFile.addExportStarFrom("castMaps", "./castMaps", true);
+    importsFile.addExportStar("edgedb", {as: "edgedb"});
+    importsFile.addExportFrom({spec: true}, "./__spec__", {
+      allowFileExt: true,
+    });
+    importsFile.addExportStar("./syntax/syntax", {
+      allowFileExt: true,
+      as: "syntax",
+    });
+    importsFile.addExportStar("./castMaps", {
+      allowFileExt: true,
+      as: "castMaps",
+    });
 
     /////////////////////////
     // generate index file
     /////////////////////////
 
     const index = dir.getPath("index");
-    // index.addExportStarFrom(null, "./castMaps", true);
-    index.addExportStarFrom(null, "./syntax/external", true);
-    index.addExportStarFrom(null, "./types", true, ["ts", "dts"]);
+    // index.addExportStar(null, "./castMaps", true);
+    index.addExportStar("./syntax/external", {
+      allowFileExt: true,
+    });
+    index.addExportStar("./types", {
+      allowFileExt: true,
+      modes: ["ts", "dts"],
+    });
     index.addImport({$: true, _edgedbJsVersion: true}, "edgedb");
     index.addExportFrom({createClient: true}, "edgedb");
-    index.addStarImport("$syntax", "./syntax/syntax", true);
-    index.addStarImport("$op", "./operators", true);
+    index.addImportStar("$syntax", "./syntax/syntax", {allowFileExt: true});
+    index.addImportStar("$op", "./operators", {allowFileExt: true});
 
     index.writeln([
       r`\nif (_edgedbJsVersion !== "${_edgedbJsVersion}") {
@@ -228,24 +242,22 @@ export async function generateQB(params: {
         if (dir.getModule(moduleName).isEmpty()) {
           continue;
         }
-        index.addDefaultImport(
+        index.addImportDefault(
           `_${internalName}`,
           `./modules/${internalName}`,
-          true
+          {allowFileExt: true}
         );
 
         index.writeln([r`${genutil.quote(moduleName)}: _${internalName},`]);
       }
     });
     index.writeln([r`};`]);
-    index.addExport("ExportDefault", undefined, true);
+    index.addExportDefault("ExportDefault");
 
     // re-export some reflection types
-    index.addExportFrom(
-      {Cardinality: true},
-      "edgedb/dist/reflection/index",
-      true
-    );
+    index.writeln([r`const Cardinality = $.Cardinality;`]);
+    index.writeln([dts`declare `, t`type Cardinality = $.Cardinality;`]);
+    index.addExport("Cardinality");
     index.writeln([
       t`export `,
       dts`declare `,
@@ -258,11 +270,47 @@ export async function generateQB(params: {
     await cxn.close();
   }
 
-  await dir.write(
-    outputDir,
-    target === "ts" ? "ts" : "js+dts",
-    target === "cjs" ? "cjs" : "esm"
-  );
+  if (target === "ts") {
+    await dir.write(outputDir, {
+      mode: "ts",
+      moduleKind: "esm",
+      fileExtension: ".ts",
+      moduleExtension: "",
+    });
+  } else if (target === "mts") {
+    await dir.write(outputDir, {
+      mode: "ts",
+      moduleKind: "esm",
+      fileExtension: ".mts",
+      moduleExtension: ".mjs",
+    });
+  } else if (target === "cjs") {
+    await dir.write(outputDir, {
+      mode: "js",
+      moduleKind: "cjs",
+      fileExtension: ".js",
+      moduleExtension: "",
+    });
+    await dir.write(outputDir, {
+      mode: "dts",
+      moduleKind: "esm",
+      fileExtension: ".d.ts",
+      moduleExtension: "",
+    });
+  } else if (target === "esm") {
+    await dir.write(outputDir, {
+      mode: "js",
+      moduleKind: "esm",
+      fileExtension: ".mjs",
+      moduleExtension: ".mjs",
+    });
+    await dir.write(outputDir, {
+      mode: "dts",
+      moduleKind: "esm",
+      fileExtension: ".d.ts",
+      moduleExtension: "",
+    });
+  }
 
   // write syntax files
   const syntaxDir = path.join(__dirname, "..", "syntax");
@@ -277,13 +325,16 @@ export async function generateQB(params: {
       ? "js"
       : fileName.endsWith(".mjs")
       ? "esm"
+      : fileName.endsWith(".mts")
+      ? "mts"
+      : fileName.endsWith(".d.ts")
+      ? "dts"
       : fileName.endsWith(".ts")
-      ? fileName.endsWith(".d.ts")
-        ? "dts"
-        : "ts"
+      ? "ts"
       : null;
     if (
       (target === "ts" && filetype !== "ts") ||
+      (target === "mts" && filetype !== "mts") ||
       (target === "esm" && !(filetype === "esm" || filetype === "dts")) ||
       (target === "cjs" && !(filetype === "js" || filetype === "dts"))
     ) {
@@ -292,30 +343,31 @@ export async function generateQB(params: {
     const filePath = path.join(syntaxDir, fileName);
     let contents = await readFileUtf8(filePath);
 
-    // rewrite scoped import paths
-    if (filetype === "js") {
-      contents = contents
-        .replace(
-          /require\("(..\/)?reflection(.*)"\)/g,
-          `require("edgedb/dist/reflection$2")`
-        )
-        .replace(/require\("@generated\//g, `require("../`);
-    } else {
-      contents = contents
-        .replace(
-          /from "(..\/)?reflection(.*)"/g,
-          `from "edgedb/dist/reflection$2${filetype === "esm" ? ".js" : ""}"`
-        )
-        .replace(/from "@generated\//g, `from "../`);
+    if (contents.indexOf(`"edgedb/dist/reflection"`) !== -1) {
+      throw new Error("No directory imports allowed in `syntax` files.");
+    }
 
-      if (filetype === "esm") {
-        contents = contents
-          .replace(
-            /from "edgedb\/dist\/reflection\.js"/g,
-            `from "edgedb/dist/reflection/index.js"`
-          )
-          .replace(/from "(\.?\.\/.+)"/g, `from "$1.mjs"`);
-      }
+    const localExt =
+      filetype === "esm" ? ".mjs" : target === "mts" ? ".mjs" : "";
+    const pkgExt = filetype === "esm" ? ".js" : target === "mts" ? ".js" : "";
+
+    contents = contents
+      .replace(
+        /require\("(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?(.*)"\)/g,
+        `require("edgedb/dist/reflection$2${pkgExt}")`
+      )
+      .replace(/require\("@generated\/(.*)"\)/g, `require("../$1")`)
+      .replace(
+        /from "(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?([a-z]*)"/g,
+        `from "edgedb/dist/reflection$2${pkgExt}"`
+      )
+      .replace(/from "@generated\/(.*)";/g, `from "../$1";`);
+
+    if (localExt) {
+      contents = contents.replace(
+        /from "(\.?\.\/.+)"/g,
+        `from "$1${localExt}"`
+      );
     }
 
     const outputPath = path.join(syntaxOutDir, fileName);
