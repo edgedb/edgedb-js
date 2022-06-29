@@ -344,7 +344,7 @@ elements. All reflected functions are typesafe, so the output type
   // {name: string; uppercase_title: string, title_length: number}[]
 
 
-Computables can "override" an actual link/property as long as the type
+Computed fields can "override" an actual link/property as long as the type
 signatures agree.
 
 .. code-block:: typescript

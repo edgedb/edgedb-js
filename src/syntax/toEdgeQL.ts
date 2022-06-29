@@ -1378,13 +1378,13 @@ const numericalTypes: Record<string, boolean> = {
 function literalToEdgeQL(type: BaseType, val: any): string {
   let skipCast = false;
   let stringRep;
-  if (typeof val === "string") {
+  if (type.__name__ === "std::json") {
+    skipCast = true;
+    stringRep = `to_json($$${JSON.stringify(val)}$$)`;
+  } else if (typeof val === "string") {
     if (numericalTypes[type.__name__]) {
       skipCast = true;
       stringRep = val;
-    } else if (type.__name__ === "std::json") {
-      skipCast = true;
-      stringRep = `to_json(${JSON.stringify(val)})`;
     } else if (type.__kind__ === TypeKind.enum) {
       skipCast = true;
       const vals = (type as EnumType).__values__;

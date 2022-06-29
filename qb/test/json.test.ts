@@ -39,3 +39,44 @@ test("select one", async () => {
   tc.assert<tc.IsExact<typeof result, string>>(true);
   expect(result).toEqual('{"title" : "The Avengers"}');
 });
+
+test("json properties", async () => {
+  const jsonData = {arg: {nested: ["hello", 1234, true, null]}};
+  const inserted = await e
+    .insert(e.Bag, {
+      stringsMulti: ["asdf"],
+      jsonField: jsonData,
+    })
+    .run(client);
+
+  const selected = await e
+    .select(e.Bag, bag => ({
+      filter: e.op(bag.id, "=", e.uuid(inserted.id)),
+      id: true,
+      jsonField: true,
+    }))
+    .run(client);
+  tc.assert<
+    tc.IsExact<typeof selected, {id: string; jsonField: unknown} | null>
+  >(true);
+  expect(selected?.jsonField).toMatchObject(jsonData);
+});
+
+test("json param", async () => {
+  const jsonData = {arg: {nested: ["hello", 1234, true, null]}};
+  const result = await e
+    .params({data: e.json}, params =>
+      e.select({
+        data: params.data,
+      })
+    )
+    .run(client, {data: jsonData});
+  expect(result.data).toMatchObject(jsonData);
+});
+
+test("json read/write equivalents", async () => {
+  const data = [5, "asdf", {sup: 3}, ["asdf", 1234, false, null]];
+  for (const datum of data) {
+    expect(await e.json(datum).run(client)).toEqual(datum);
+  }
+});

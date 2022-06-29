@@ -95,7 +95,7 @@ test("complex params", async () => {
         optBool?: boolean | null;
         tuple: [string, number, boolean[]];
         namedTuple: {a: number; b: bigint[]; c: string};
-        jsonTuple: [string];
+        jsonTuple: [unknown];
         people: {name: string; age: number; tags: string[]}[];
       }
     >
@@ -106,7 +106,7 @@ test("complex params", async () => {
     numArr: [1, 2, 3],
     tuple: ["str", 123, [true, false]],
     namedTuple: {a: 123, b: [BigInt(4), BigInt(5)], c: "str"},
-    jsonTuple: [`{"a": 123, "b": ["c", "d"]}`],
+    jsonTuple: [{a: 123, b: ["c", "d"]}],
     people: [
       {name: "person a", age: 23, tags: ["a", "b"]},
       {name: "person b", age: 45, tags: ["b", "c"]},
@@ -137,7 +137,7 @@ test("complex params", async () => {
     tupleArrSlice: [false],
     namedTuple: {a: 123, b: [BigInt(4), BigInt(5)], c: "str"},
     namedTupleA: 123,
-    jsonTuple: [`{"a": 123, "b": ["c", "d"]}`],
+    jsonTuple: [{a: 123, b: ["c", "d"]}],
     people: [
       {name: "person a", age: 23, tags: ["a", "b"]},
       {name: "person b", age: 45, tags: ["b", "c"]},

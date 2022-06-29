@@ -39,7 +39,7 @@ test("literals", () => {
     `9223372036854775807`
   );
 
-  expect(e.std.json("asdf").toEdgeQL()).toEqual(`to_json("\\"asdf\\"")`);
+  expect(e.std.json("asdf").toEdgeQL()).toEqual(`to_json($$"asdf"$$)`);
   expect(
     e.std.json({a: 123, b: "some string", c: [true, false]}).toEdgeQL()
   ).toEqual(

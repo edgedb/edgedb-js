@@ -41,11 +41,25 @@ export enum Cardinality {
   MANY = chars.$m,
   AT_LEAST_ONE = chars.$M,
 }
+type SerializablePrimitives =
+  | string
+  | number
+  | boolean
+  | null
+  | {toJSON(): any}
+  | undefined
+  | ((...args: any[]) => any)
+  | symbol;
+type Serializable =
+  | SerializablePrimitives
+  | {[key: string | number | symbol]: Serializable}
+  | Serializable[];
 
 type QueryArgPrimitive =
   | number
   | string
   | boolean
+  | Serializable
   | BigInt
   | Buffer
   | Date

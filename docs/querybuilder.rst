@@ -511,6 +511,8 @@ Query parameters
   EdgeQL query with the query builder.
 
 
+.. _ref_edgedbjs_globals:
+
 Globals
 ^^^^^^^
 
