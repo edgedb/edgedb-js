@@ -86,7 +86,7 @@ $ npx edgeql-js
   is NOT RECOMMENDED. Would you like to update .gitignore to ignore
   the query builder directory? The following line will be added:
 
-    dbschema/edgeql-js
+  dbschema/edgeql-js
 
   [y/n] (leave blank for "y")
 
