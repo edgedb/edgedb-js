@@ -33,6 +33,7 @@ import {
   _CodecsRegistry,
   _ReadBuffer,
   _ICodec,
+  Session,
 } from "../src/index.node";
 import {retryingConnect} from "../src/retry";
 import {AdminFetchConnection} from "../src/fetchConn";
@@ -1584,15 +1585,16 @@ if (getEdgeDBVersion().major >= 2) {
     const registry = new _CodecsRegistry();
     const con = await retryingConnect(config, registry);
     try {
-      const query = `SELECT schema::Function {
+      const query = `SELECT Function {
         name
       }`;
+      const state = new Session({module: "schema"});
       const options = {
         injectTypenames: true,
         implicitLimit: BigInt(5),
       } as const;
-      const [_, outCodec] = await con.rawParse(query, options);
-      const resultData = await con.rawExecute(query, outCodec, options);
+      const [_, outCodec] = await con.rawParse(query, state, options);
+      const resultData = await con.rawExecute(query, state, outCodec, options);
 
       const result = _decodeResultBuffer(outCodec, resultData);
 
@@ -1622,14 +1624,20 @@ if (!isDeno && getAvailableFeatures().has("admin-ui")) {
       codecsRegistry
     );
 
-    const query = `SELECT schema::Function { name }`;
+    const query = `SELECT Function { name }`;
+    const state = new Session({module: "schema"});
     const options = {
       injectTypenames: true,
       implicitLimit: BigInt(5),
     } as const;
 
-    const [_, outCodec] = await fetchConn.rawParse(query, options);
-    const resultData = await fetchConn.rawExecute(query, outCodec, options);
+    const [_, outCodec] = await fetchConn.rawParse(query, state, options);
+    const resultData = await fetchConn.rawExecute(
+      query,
+      state,
+      outCodec,
+      options
+    );
 
     const result = _decodeResultBuffer(outCodec, resultData);
 

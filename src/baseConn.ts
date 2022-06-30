@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {NullCodec, NULL_CODEC} from "./codecs/codecs";
+import {INVALID_CODEC, NullCodec, NULL_CODEC} from "./codecs/codecs";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {ObjectCodec} from "./codecs/object";
@@ -111,9 +111,8 @@ export class BaseRawConnection {
   protocolVersion: ProtocolVersion = PROTO_VER;
   isLegacyProtocol = false;
 
-  protected stateCodec: ICodec = NULL_CODEC;
-  protected state: Buffer | null = null;
-  protected userState: Session | null = null;
+  protected stateCodec: ICodec = INVALID_CODEC;
+  protected stateCache: [Session, Buffer] | null = null;
 
   /** @internal */
   protected constructor(registry: CodecsRegistry) {
@@ -356,25 +355,23 @@ export class BaseRawConnection {
         this.serverSettings.system_config = data;
         break;
       }
-      case "state_description": {
-        const buf = new ReadBuffer(value);
-        const typedescId = buf.readUUID();
-        const typedesc = buf.readBuffer(buf.readInt32());
-
-        let codec = this.codecsRegistry.getCodec(typedescId);
-        if (codec === null) {
-          codec = this.codecsRegistry.buildCodec(
-            typedesc,
-            this.protocolVersion
-          );
-        }
-        this.stateCodec = codec;
-        break;
-      }
       default:
         this.serverSettings[name] = value;
         break;
     }
+  }
+
+  private _parseDescribeStateMessage() {
+    const typedescId = this.buffer.readUUID();
+    const typedesc = this.buffer.readBuffer(this.buffer.readInt32());
+
+    let codec = this.codecsRegistry.getCodec(typedescId);
+    if (codec === null) {
+      codec = this.codecsRegistry.buildCodec(typedesc, this.protocolVersion);
+    }
+    this.stateCodec = codec;
+    this.stateCache = null;
+    this.buffer.finishMessage();
   }
 
   protected _fallthrough(): void {
@@ -409,34 +406,6 @@ export class BaseRawConnection {
           `unexpected message type ${mtype} ("${chars.chr(mtype)}")`
         );
     }
-  }
-
-  _setState(userState: Session) {
-    if (this.userState === userState) {
-      return;
-    }
-
-    if (userState !== Session.defaults()) {
-      if (this.isLegacyProtocol) {
-        throw new errors.InterfaceError(
-          `setting session state is not supported in this version of ` +
-            `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`
-        );
-      }
-
-      if (this.stateCodec === NULL_CODEC) {
-        throw new Error(
-          `cannot encode session state, ` +
-            `did not receive state codec from server`
-        );
-      }
-      const buf = new WriteBuffer();
-      this.stateCodec.encode(buf, userState._serialise());
-      this.state = buf.unwrap();
-    } else {
-      this.state = null;
-    }
-    this.userState = userState;
   }
 
   async _legacyParse(
@@ -856,6 +825,7 @@ export class BaseRawConnection {
     query: string,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
+    state: Session,
     privilegedMode: boolean,
     options: QueryOptions | undefined
   ) {
@@ -884,12 +854,21 @@ export class BaseRawConnection {
     );
     wb.writeString(query);
 
-    if (this.state === null) {
+    if (state === Session.defaults()) {
       wb.writeBuffer(NULL_CODEC.tidBuffer);
       wb.writeInt32(0);
     } else {
       wb.writeBuffer(this.stateCodec.tidBuffer);
-      wb.writeBuffer(this.state);
+      if (this.stateCodec === INVALID_CODEC) {
+        wb.writeInt32(0);
+      } else {
+        if (this.stateCache?.[0] !== state) {
+          const buf = new WriteBuffer();
+          this.stateCodec.encode(buf, state._serialise());
+          this.stateCache = [state, buf.unwrap()];
+        }
+        wb.writeBuffer(this.stateCache![1]);
+      }
     }
   }
 
@@ -897,6 +876,7 @@ export class BaseRawConnection {
     query: string,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
+    state: Session,
     privilegedMode: boolean = false,
     options?: QueryOptions
   ): Promise<
@@ -911,6 +891,7 @@ export class BaseRawConnection {
       query,
       outputFormat,
       expectedCardinality,
+      state,
       privilegedMode,
       options
     );
@@ -963,6 +944,12 @@ export class BaseRawConnection {
           }
           break;
         }
+
+        case chars.$s: {
+          this._parseDescribeStateMessage();
+          break;
+        }
+
         case chars.$E: {
           error = this._parseErrorMessage();
           break;
@@ -980,6 +967,16 @@ export class BaseRawConnection {
     }
 
     if (error !== null) {
+      if (error instanceof errors.StateMismatchError) {
+        return this._parse(
+          query,
+          outputFormat,
+          expectedCardinality,
+          state,
+          privilegedMode,
+          options
+        );
+      }
       throw error;
     }
 
@@ -998,6 +995,7 @@ export class BaseRawConnection {
     args: QueryArgs,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
+    state: Session,
     inCodec: ICodec,
     outCodec: ICodec,
     result: Array<any> | WriteBuffer,
@@ -1013,6 +1011,7 @@ export class BaseRawConnection {
       query,
       outputFormat,
       expectedCardinality,
+      state,
       privilegedMode,
       options
     );
@@ -1089,6 +1088,11 @@ export class BaseRawConnection {
           break;
         }
 
+        case chars.$s: {
+          this._parseDescribeStateMessage();
+          break;
+        }
+
         case chars.$E: {
           error = this._parseErrorMessage();
           break;
@@ -1100,13 +1104,21 @@ export class BaseRawConnection {
     }
 
     if (error != null) {
-      // TODO: handle this properly when 'CommandCompleteWithConsequence' is
-      // implemented in server
-      if (error.message === "StateSerializationError") {
-        this.close();
-      } else {
-        throw error;
+      if (error instanceof errors.StateMismatchError) {
+        return this._executeFlow(
+          query,
+          args,
+          outputFormat,
+          expectedCardinality,
+          state,
+          inCodec,
+          outCodec,
+          result,
+          privilegedMode,
+          options
+        );
       }
+      throw error;
     }
   }
 
@@ -1143,6 +1155,7 @@ export class BaseRawConnection {
     args: QueryArgs = null,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
+    state: Session,
     privilegedMode: boolean = false
   ): Promise<any> {
     if (this.isLegacyProtocol && outputFormat === OutputFormat.NONE) {
@@ -1180,33 +1193,15 @@ export class BaseRawConnection {
         );
       }
 
-      let needsParse = !inCodec && args !== null;
-      if (!needsParse) {
-        try {
-          await this._executeFlow(
-            query,
-            args,
-            outputFormat,
-            expectedCardinality,
-            inCodec ?? NULL_CODEC,
-            outCodec ?? NULL_CODEC,
-            ret,
-            privilegedMode
-          );
-        } catch (e) {
-          if (e instanceof errors.ParameterTypeMismatchError) {
-            needsParse = true;
-          } else {
-            throw e;
-          }
-        }
-      }
-
-      if (needsParse) {
+      if (
+        (!inCodec && args !== null) ||
+        (this.stateCodec === INVALID_CODEC && state !== Session.defaults())
+      ) {
         [card, inCodec, outCodec] = await this._parse(
           query,
           outputFormat,
           expectedCardinality,
+          state,
           privilegedMode
         );
         this._validateFetchCardinality(
@@ -1214,18 +1209,46 @@ export class BaseRawConnection {
           outputFormat,
           expectedCardinality
         );
+      }
+
+      try {
         await this._executeFlow(
           query,
           args,
           outputFormat,
           expectedCardinality,
-          inCodec,
-          outCodec,
+          state,
+          inCodec ?? NULL_CODEC,
+          outCodec ?? NULL_CODEC,
           ret,
           privilegedMode
         );
+      } catch (e) {
+        if (e instanceof errors.ParameterTypeMismatchError) {
+          [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
+          await this._executeFlow(
+            query,
+            args,
+            outputFormat,
+            expectedCardinality,
+            state,
+            inCodec ?? NULL_CODEC,
+            outCodec ?? NULL_CODEC,
+            ret,
+            privilegedMode
+          );
+        } else {
+          throw e;
+        }
       }
     } else {
+      if (state !== Session.defaults()) {
+        throw new errors.InterfaceError(
+          `setting session state is not supported in this version of ` +
+            `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`
+        );
+      }
+
       if (this.queryCodecCache.has(key)) {
         const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
         this._validateFetchCardinality(
@@ -1361,6 +1384,7 @@ export class BaseRawConnection {
           undefined,
           OutputFormat.NONE,
           Cardinality.NO_RESULT,
+          Session.defaults(),
           true
         );
       } catch {
@@ -1390,12 +1414,14 @@ export class BaseRawConnection {
   // These methods are exposed for use by EdgeDB Studio
   public async rawParse(
     query: string,
+    state: Session,
     options?: QueryOptions
   ): Promise<[ICodec, ICodec, Buffer, Buffer, ProtocolVersion, number]> {
     const result = (await this._parse(
       query,
       OutputFormat.BINARY,
       Cardinality.MANY,
+      state,
       false,
       options
     ))!;
@@ -1411,6 +1437,7 @@ export class BaseRawConnection {
 
   public async rawExecute(
     query: string,
+    state: Session,
     outCodec?: ICodec,
     options?: QueryOptions,
     inCodec?: ICodec,
@@ -1422,6 +1449,7 @@ export class BaseRawConnection {
       args,
       outCodec ? OutputFormat.BINARY : OutputFormat.NONE,
       Cardinality.MANY,
+      state,
       inCodec ?? NULL_CODEC,
       outCodec ?? NULL_CODEC,
       result,

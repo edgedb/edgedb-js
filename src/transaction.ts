@@ -58,6 +58,7 @@ export class Transaction implements Executor {
       undefined,
       OutputFormat.NONE,
       Cardinality.NO_RESULT,
+      holder.options.session,
       true
     );
 
@@ -120,6 +121,7 @@ export class Transaction implements Executor {
           undefined,
           OutputFormat.NONE,
           Cardinality.NO_RESULT,
+          this._holder.options.session,
           true
         );
         this._state = TransactionState.COMMITTED;
@@ -138,6 +140,7 @@ export class Transaction implements Executor {
           undefined,
           OutputFormat.NONE,
           Cardinality.NO_RESULT,
+          this._holder.options.session,
           true
         );
         this._state = TransactionState.ROLLEDBACK;
@@ -152,20 +155,33 @@ export class Transaction implements Executor {
         query,
         args,
         OutputFormat.NONE,
-        Cardinality.NO_RESULT
+        Cardinality.NO_RESULT,
+        this._holder.options.session
       )
     );
   }
 
   async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
     return this._runOp("query", () =>
-      this._rawConn.fetch(query, args, OutputFormat.BINARY, Cardinality.MANY)
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.BINARY,
+        Cardinality.MANY,
+        this._holder.options.session
+      )
     );
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
     return this._runOp("queryJSON", () =>
-      this._rawConn.fetch(query, args, OutputFormat.JSON, Cardinality.MANY)
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.JSON,
+        Cardinality.MANY,
+        this._holder.options.session
+      )
     );
   }
 
@@ -178,7 +194,8 @@ export class Transaction implements Executor {
         query,
         args,
         OutputFormat.BINARY,
-        Cardinality.AT_MOST_ONE
+        Cardinality.AT_MOST_ONE,
+        this._holder.options.session
       )
     );
   }
@@ -189,7 +206,8 @@ export class Transaction implements Executor {
         query,
         args,
         OutputFormat.JSON,
-        Cardinality.AT_MOST_ONE
+        Cardinality.AT_MOST_ONE,
+        this._holder.options.session
       )
     );
   }
@@ -199,7 +217,13 @@ export class Transaction implements Executor {
     args?: QueryArgs
   ): Promise<T> {
     return this._runOp("queryRequiredSingle", () =>
-      this._rawConn.fetch(query, args, OutputFormat.BINARY, Cardinality.ONE)
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.BINARY,
+        Cardinality.ONE,
+        this._holder.options.session
+      )
     );
   }
 
@@ -208,7 +232,13 @@ export class Transaction implements Executor {
     args?: QueryArgs
   ): Promise<string> {
     return this._runOp("queryRequiredSingleJSON", () =>
-      this._rawConn.fetch(query, args, OutputFormat.JSON, Cardinality.ONE)
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.JSON,
+        Cardinality.ONE,
+        this._holder.options.session
+      )
     );
   }
 }

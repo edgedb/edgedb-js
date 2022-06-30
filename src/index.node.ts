@@ -25,7 +25,12 @@ export {RawConnection as _RawConnection} from "./rawConn";
 export type {Executor} from "./ifaces";
 export type {Client, ConnectOptions} from "./client";
 
-export {IsolationLevel, RetryCondition, RetryOptions} from "./options";
+export {
+  IsolationLevel,
+  RetryCondition,
+  RetryOptions,
+  Session,
+} from "./options";
 export {defaultBackoff} from "./options";
 export type {BackoffFunction} from "./options";
 

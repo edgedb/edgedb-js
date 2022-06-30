@@ -54,6 +54,7 @@ export const $n: char = ord("n");
 export const $o: char = ord("o");
 export const $p: char = ord("p");
 export const $r: char = ord("r");
+export const $s: char = ord("s");
 export const $v: char = ord("v");
 
 export function ord(str: string): char {

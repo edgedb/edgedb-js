@@ -19,6 +19,7 @@
 type uuid = string;
 
 export const NULL_CODEC_ID = "00000000000000000000000000000000";
+export const INVALID_CODEC_ID = "ffffffffffffffffffffffffffffffff";
 
 export const KNOWN_TYPES = new Map<uuid, string>([
   ["00000000000000000000000000000001", "anytype"],
