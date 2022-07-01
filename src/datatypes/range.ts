@@ -16,11 +16,22 @@
  * limitations under the License.
  */
 
-export class Range {
+import {LocalDate, LocalDateTime} from "./datetime";
+
+export class Range<T extends number | Date | LocalDate | LocalDateTime> {
   constructor(
-    public readonly lower: any,
-    public readonly upper: any,
+    public readonly lower: T,
+    public readonly upper: T,
     public readonly incLower: boolean = true,
     public readonly incUpper: boolean = false
   ) {}
+
+  toJSON() {
+    return {
+      lower: this.lower,
+      upper: this.upper,
+      inc_lower: this.incLower,
+      inc_upper: this.incUpper,
+    };
+  }
 }
