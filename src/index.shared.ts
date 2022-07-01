@@ -25,8 +25,8 @@ export {
   Duration,
   RelativeDuration,
 } from "./datatypes/datetime";
-
 export {ConfigMemory} from "./datatypes/memory";
+export {Range} from "./datatypes/range";
 
 export type {Executor} from "./ifaces";
 

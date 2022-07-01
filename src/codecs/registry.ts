@@ -30,6 +30,7 @@ import {NamedTupleCodec} from "./namedtuple";
 import {EnumCodec} from "./enum";
 import {ObjectCodec} from "./object";
 import {SetCodec} from "./set";
+import {RangeCodec} from "./range";
 import {ProtocolVersion} from "../ifaces";
 import {versionGreaterThanOrEqual} from "../utils";
 import {SparseObjectCodec} from "./sparseObject";
@@ -46,6 +47,7 @@ const CTYPE_NAMEDTUPLE = 5;
 const CTYPE_ARRAY = 6;
 const CTYPE_ENUM = 7;
 const CTYPE_INPUT_SHAPE = 8;
+const CTYPE_RANGE = 9;
 
 export interface CustomCodecSpec {
   decimal_string?: boolean;
@@ -193,6 +195,7 @@ export class CodecsRegistry {
           break;
         }
 
+        case CTYPE_RANGE:
         case CTYPE_SCALAR: {
           frb.discard(2);
           break;
@@ -415,6 +418,16 @@ export class CodecsRegistry {
           frb.discard(frb.readUInt32());
         }
         res = new EnumCodec(tid);
+        break;
+      }
+
+      case CTYPE_RANGE: {
+        const pos = frb.readUInt16();
+        const subCodec = cl[pos];
+        if (subCodec == null) {
+          throw new Error("could not build range codec: missing subcodec");
+        }
+        res = new RangeCodec(tid, subCodec);
         break;
       }
     }
