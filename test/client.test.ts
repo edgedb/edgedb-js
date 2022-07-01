@@ -25,6 +25,7 @@ import {
   Executor,
   LocalDate,
   LocalDateTime,
+  Range,
   MissingRequiredError,
   NoDataError,
   RelativeDuration,
@@ -882,6 +883,106 @@ test("fetch: ConfigMemory", async () => {
     await client.close();
   }
 });
+
+if (getEdgeDBVersion().major >= 2) {
+  function expandRangeEQL(lower: string, upper: string) {
+    return [
+      [false, false],
+      [true, false],
+      [false, true],
+      [true, true],
+    ]
+      .map(
+        ([incl, incu]) =>
+          `range(${lower}, ${upper}, inc_lower := ${incl}, inc_upper := ${incu})`
+      )
+      .join(",\n");
+  }
+
+  function expandRangeJS(lower: any, upper: any) {
+    return [
+      new Range(lower, upper, false, false),
+      new Range(lower, upper, true, false),
+      new Range(lower, upper, false, true),
+      new Range(lower, upper, true, true),
+    ];
+  }
+
+  test.only("fetch: ranges", async () => {
+    const client = await getClient();
+
+    try {
+      const res = await client.querySingle<any>(`
+        select {
+          ints := (${expandRangeEQL("123", "456")}),
+          floats := (${expandRangeEQL("123.456", "456.789")}),
+          datetimes := (${expandRangeEQL(
+            "<datetime>'2022-07-01T16:00:00+00'",
+            "<datetime>'2022-07-01T16:30:00+00'"
+          )}),
+          local_dates := (${expandRangeEQL(
+            "<cal::local_date>'2022-07-01'",
+            "<cal::local_date>'2022-07-14'"
+          )}),
+          local_datetimes := (${expandRangeEQL(
+            "<cal::local_datetime>'2022-07-01T12:00:00'",
+            "<cal::local_datetime>'2022-07-14T12:00:00'"
+          )}),
+        }
+      `);
+      expect(res).toEqual({
+        ints: [
+          new Range(124, 456),
+          new Range(123, 456),
+          new Range(124, 457),
+          new Range(123, 457),
+        ],
+        floats: expandRangeJS(123.456, 456.789),
+        datetimes: expandRangeJS(
+          new Date("2022-07-01T16:00:00Z"),
+          new Date("2022-07-01T16:30:00Z")
+        ),
+        local_dates: [
+          new Range(new LocalDate(2022, 7, 2), new LocalDate(2022, 7, 14)),
+          new Range(new LocalDate(2022, 7, 1), new LocalDate(2022, 7, 14)),
+          new Range(new LocalDate(2022, 7, 2), new LocalDate(2022, 7, 15)),
+          new Range(new LocalDate(2022, 7, 1), new LocalDate(2022, 7, 15)),
+        ],
+        local_datetimes: expandRangeJS(
+          new LocalDateTime(2022, 7, 1, 12),
+          new LocalDateTime(2022, 7, 14, 12)
+        ),
+      });
+
+      expect(
+        await client.querySingle(
+          `select all({
+            [${expandRangeEQL("123", "456")}] = <array<range<int64>>>$ints,
+            [${expandRangeEQL(
+              "123.456",
+              "456.789"
+            )}] = <array<range<float64>>>$floats,
+            [${expandRangeEQL(
+              "<datetime>'2022-07-01T16:00:00+00'",
+              "<datetime>'2022-07-01T16:30:00+00'"
+            )}] = <array<range<datetime>>>$datetimes,
+            [${expandRangeEQL(
+              "<cal::local_date>'2022-07-01'",
+              "<cal::local_date>'2022-07-14'"
+            )}] = <array<range<cal::local_date>>>$local_dates,
+            [${expandRangeEQL(
+              "<cal::local_datetime>'2022-07-01T12:00:00'",
+              "<cal::local_datetime>'2022-07-14T12:00:00'"
+            )}] = <array<range<cal::local_datetime>>>$local_datetimes,
+          })`,
+          res
+        )
+      ).toBe(true);
+    } finally {
+      await client.close();
+    }
+  });
+}
 
 test("fetch: tuple", async () => {
   const con = getClient();

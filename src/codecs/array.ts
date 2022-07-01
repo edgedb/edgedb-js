@@ -19,6 +19,7 @@
 import {ICodec, Codec, ScalarCodec, uuid, CodecKind} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
 import {TupleCodec} from "./tuple";
+import {RangeCodec} from "./range";
 
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;
@@ -34,7 +35,8 @@ export class ArrayCodec extends Codec implements ICodec {
     if (
       !(
         this.subCodec instanceof ScalarCodec ||
-        this.subCodec instanceof TupleCodec
+        this.subCodec instanceof TupleCodec ||
+        this.subCodec instanceof RangeCodec
       )
     ) {
       throw new Error("only arrays of scalars are supported");
