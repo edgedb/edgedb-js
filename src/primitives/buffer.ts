@@ -120,6 +120,13 @@ export class WriteBuffer {
     return this;
   }
 
+  writeUInt8(i: number): this {
+    this.ensureAlloced(1);
+    this.buffer.writeUInt8(i, this.pos);
+    this.pos += 1;
+    return this;
+  }
+
   writeUInt16(i: number): this {
     this.ensureAlloced(2);
     this.buffer.writeUInt16BE(i, this.pos);

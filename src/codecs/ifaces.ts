@@ -28,7 +28,8 @@ export type CodecKind =
   | "object"
   | "set"
   | "scalar"
-  | "sparse_object";
+  | "sparse_object"
+  | "range";
 
 export interface ICodec {
   readonly tid: uuid;
