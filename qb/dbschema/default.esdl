@@ -105,6 +105,7 @@ module default {
     property enumArr -> array<Genre>;
     property seqField -> bag_seq;
     property jsonField -> json;
+    property rangeField -> range<int64>;
   }
 
   type Simple extending HasName, HasAge {}

@@ -15,6 +15,7 @@ import type {
   ScalarType,
   TupleType,
   TypeSet,
+  RangeType,
 } from "../reflection/index";
 import type {
   scalarCastableFrom,
@@ -55,6 +56,12 @@ export type assignableBy<T extends BaseType> = T extends ScalarType
   ? NamedTupleType<{
       [k in keyof T["__shape__"]]: assignableBy<T["__shape__"][k]>;
     }>
+  : T extends RangeType
+  ? RangeType<
+      scalarAssignableBy<T["__element__"]> extends ScalarType
+        ? scalarAssignableBy<T["__element__"]>
+        : never
+    >
   : never;
 
 export type pointerToAssignmentExpression<

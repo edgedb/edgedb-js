@@ -5,7 +5,7 @@ import {getStringRepresentation} from "../generators/generateObjectTypes";
 import {Casts} from "../queries/getCasts";
 import {Param} from "../queries/getFunctions";
 import {StrictMap} from "../strictMap";
-import {frag, makeValidIdent, quote} from "./genutil";
+import {frag, getRef, makeValidIdent, quote} from "./genutil";
 import {util} from "./util";
 
 export type AnytypeDef =
@@ -37,6 +37,27 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
       params: groupParams(funcDef.params, types),
       anytypes: null,
     };
+
+    // create an anytype overload for 'range<anypoint>' so 'anypoint'
+    // gets inferred to the same type in return type
+    const anypointParams = [
+      ...overload.params.positional,
+      ...overload.params.named,
+    ].filter(param => param.type.name.includes("anypoint"));
+    if (anypointParams.length) {
+      return [
+        {
+          ...overload,
+          anytypes: {
+            kind: "noncastable" as const,
+            type: [getRef("std::anypoint")],
+            typeObj: anypointParams[0].type,
+            refName: anypointParams[0].typeName,
+            refPath: findPathOfAnytype(anypointParams[0].type.id, types),
+          },
+        },
+      ];
+    }
 
     // Each overload with 'anytype' params is expanded into several overloads:
     // - overload for each implicitly castable root type union
@@ -184,7 +205,7 @@ function _findPathOfAnytype(
 ): string | null {
   const type = types.get(typeId);
 
-  if (type.name === "anytype") {
+  if (type.name === "anytype" || type.name === "anypoint") {
     return '["__element__"]';
   }
   if (type.kind === "array") {
@@ -200,6 +221,8 @@ function _findPathOfAnytype(
         return `[${isNamed ? quote(name) : name}]${elPath}`;
       }
     }
+  } else if (type.kind === "range") {
+    return `["__element__"]["__element__"]`;
   }
 
   return null;
