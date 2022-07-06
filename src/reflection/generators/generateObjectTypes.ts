@@ -39,6 +39,12 @@ export const getStringRepresentation: (
       runtimeType: [],
     };
   }
+  if (type.name === "std::anypoint") {
+    return {
+      staticType: frag`${params.anytype ?? getRef("std::anypoint")}`,
+      runtimeType: [],
+    };
+  }
   if (type.name === "std::anyenum") {
     return {
       staticType: [`$.EnumType`],
@@ -119,6 +125,17 @@ export const getStringRepresentation: (
         )}])`,
       };
     }
+  } else if (type.kind === "range") {
+    return {
+      staticType: frag`$.RangeType<${
+        getStringRepresentation(types.get(type.range_element_id), params)
+          .staticType
+      }>`,
+      runtimeType: frag`$.RangeType(${
+        getStringRepresentation(types.get(type.range_element_id), params)
+          .runtimeType
+      })`,
+    };
   } else {
     throw new Error("Invalid type");
   }

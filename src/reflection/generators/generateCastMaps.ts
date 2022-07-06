@@ -265,7 +265,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
     dts`declare `,
     t`type scalarLiterals =\n  | ${Object.keys(literalToScalarMapping).join(
       "\n  | "
-    )};\n\n`,
+    )}\n  | edgedb.Range<any>;\n\n`,
   ]);
 
   f.writeln([
@@ -292,6 +292,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
   ]);
   f.writeln([t`    ? never`]);
   f.writeln([t`    : T["__tstype__"]`]);
+  f.writeln([t`  : T extends $.RangeType`]);
+  f.writeln([t`  ? edgedb.Range<T['__element__']['__tstype__']>`]);
   f.writeln([t`  : never;`]);
   f.writeln([
     t`export `,
@@ -334,6 +336,9 @@ export const generateCastMaps = (params: GeneratorParams) => {
       t`  T extends ${literal} ? scalarWithConstType<${getRef(type)}, T> :`,
     ]);
   }
+  f.writeln([
+    t`  T extends edgedb.Range<infer E> ? $.RangeType<literalToScalarType<E>> :`,
+  ]);
   f.writeln([t`  $.BaseType;\n\n`]);
 
   f.writeln([
