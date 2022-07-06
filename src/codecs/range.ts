@@ -20,9 +20,12 @@ import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
 import {Range} from "../datatypes/range";
 
-enum Inc {
-  LOWER = 1 << 1,
-  UPPER = 1 << 2,
+enum RangeFlags {
+  EMPTY = 1 << 0,
+  INC_LOWER = 1 << 1,
+  INC_UPPER = 1 << 2,
+  EMPTY_LOWER = 1 << 3,
+  EMPTY_UPPER = 1 << 4,
 }
 
 export class RangeCodec extends Codec implements ICodec {
@@ -41,14 +44,23 @@ export class RangeCodec extends Codec implements ICodec {
     const subCodec = this.subCodec;
     const elemData = new WriteBuffer();
 
-    subCodec.encode(elemData, obj.lower);
-    subCodec.encode(elemData, obj.upper);
+    if (obj.lower !== null) {
+      subCodec.encode(elemData, obj.lower);
+    }
+    if (obj.upper !== null) {
+      subCodec.encode(elemData, obj.upper);
+    }
 
     const elemBuf = elemData.unwrap();
 
     buf.writeInt32(1 + elemBuf.length);
     buf.writeUInt8(
-      (obj.incLower ? Inc.LOWER : 0) | (obj.incUpper ? Inc.UPPER : 0)
+      obj.isEmpty
+        ? RangeFlags.EMPTY
+        : (obj.incLower ? RangeFlags.INC_LOWER : 0) |
+            (obj.incUpper ? RangeFlags.INC_UPPER : 0) |
+            (obj.lower === null ? RangeFlags.EMPTY_LOWER : 0) |
+            (obj.upper === null ? RangeFlags.EMPTY_UPPER : 0)
     );
     buf.writeBuffer(elemBuf);
   }
@@ -56,22 +68,33 @@ export class RangeCodec extends Codec implements ICodec {
   decode(buf: ReadBuffer): any {
     const flags = buf.readUInt8();
 
+    if (flags & RangeFlags.EMPTY) {
+      return Range.empty();
+    }
+
     const elemBuf = ReadBuffer.alloc();
     const subCodec = this.subCodec;
 
-    buf.sliceInto(elemBuf, buf.readInt32());
-    const lower = subCodec.decode(elemBuf);
-    elemBuf.finish();
+    let lower: any = null;
+    let upper: any = null;
 
-    buf.sliceInto(elemBuf, buf.readInt32());
-    const upper = subCodec.decode(elemBuf);
-    elemBuf.finish();
+    if (!(flags & RangeFlags.EMPTY_LOWER)) {
+      buf.sliceInto(elemBuf, buf.readInt32());
+      lower = subCodec.decode(elemBuf);
+      elemBuf.finish();
+    }
+
+    if (!(flags & RangeFlags.EMPTY_UPPER)) {
+      buf.sliceInto(elemBuf, buf.readInt32());
+      upper = subCodec.decode(elemBuf);
+      elemBuf.finish();
+    }
 
     return new Range(
       lower,
       upper,
-      !!(flags & Inc.LOWER),
-      !!(flags & Inc.UPPER)
+      !!(flags & RangeFlags.INC_LOWER),
+      !!(flags & RangeFlags.INC_UPPER)
     );
   }
 
