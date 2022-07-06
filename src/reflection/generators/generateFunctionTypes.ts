@@ -1,6 +1,7 @@
 import type {GeneratorParams} from "../generate";
 import {frag, getRef, quote, splitName} from "../util/genutil";
 import {
+  all,
   CodeBuffer,
   CodeBuilder,
   CodeFragment,
@@ -104,19 +105,28 @@ export function generateFuncopTypes<F extends FuncopDef>(
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
 
   for (const [funcName, _funcDefs] of funcops.entries()) {
+    const {mod, name} = splitName(funcName);
+
+    const code = dir.getModule(mod);
+
+    code.registerRef(funcName, _funcDefs[0].id);
+    code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);
+
+    // edgeql stdlib has a constructor function with the same name as the
+    // literal constructor and type constuctor for 'range', so replace
+    // generated function with implementation from ./syntax
+    if (funcName === "std::range") {
+      code.writeln([dts`declare `, all`const range = _.syntax.$range;`]);
+      code.nl();
+      continue;
+    }
+
     const funcDefs = expandFuncopAnytypeOverloads(
       sortFuncopOverloads<F>(_funcDefs, typeSpecificities),
       types,
       casts,
       implicitCastableRootTypes
     );
-
-    const {mod, name} = splitName(funcName);
-
-    const code = dir.getModule(mod);
-
-    code.registerRef(funcName, funcDefs[0].id);
-    code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);
 
     const overloadsBuf = new CodeBuffer();
 
@@ -185,7 +195,10 @@ export function generateFuncopTypes<F extends FuncopDef>(
         ) {
           if (!anytypes) return undefined;
           if (anytypes.kind === "castable") {
-            if (paramType.name.includes("anytype")) {
+            if (
+              paramType.name.includes("anytype") ||
+              paramType.name.includes("anypoint")
+            ) {
               const path = findPathOfAnytype(paramType.id, types);
               anytypeParams.push(
                 optional

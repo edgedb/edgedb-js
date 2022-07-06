@@ -16,5 +16,6 @@ export * from "./params";
 export * from "./globals";
 export * from "./detached";
 export * from "./toEdgeQL";
+export * from "./range";
 
 export type $infer<A extends TypeSet> = setToTsType<A>;

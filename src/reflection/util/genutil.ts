@@ -164,6 +164,15 @@ export function toTSScalarType(
       }
     }
 
+    case "range": {
+      const tn = toTSScalarType(
+        types.get(type.range_element_id) as introspect.PrimitiveType,
+        types,
+        opts
+      );
+      return frag`${opts.edgedbDatatypePrefix}Range<${tn}>`;
+    }
+
     default:
       util.assertNever(type);
   }

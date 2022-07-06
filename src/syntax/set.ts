@@ -99,7 +99,10 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
     }
   } else if (a.__kind__ === TypeKind.array && b.__kind__ === TypeKind.array) {
     try {
-      const mergedEl: any = getSharedParent(a.__element__, b.__element__);
+      const mergedEl: any = getSharedParent(
+        a.__element__ as any,
+        b.__element__ as any
+      );
       return {
         __kind__: TypeKind.array,
         __name__: a.__name__,

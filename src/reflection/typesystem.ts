@@ -5,6 +5,7 @@ import type {$expr_Operator} from "./funcops";
 import type {typeutil} from "./util/typeutil";
 import {Cardinality, ExpressionKind, OperatorKind, TypeKind} from "./enums";
 import {cardinalityUtil} from "./util/cardinalityUtil";
+import type {Range} from "../datatypes/range";
 
 //////////////////
 // BASETYPE
@@ -222,7 +223,8 @@ export type SomeType =
   | ArrayType
   | TupleType
   | ObjectType
-  | NamedTupleType;
+  | NamedTupleType
+  | RangeType;
 
 export interface PropertyDesc<
   Type extends BaseType = BaseType,
@@ -384,7 +386,8 @@ export type PrimitiveType =
   | EnumType
   | TupleType
   | NamedTupleType
-  | ArrayType;
+  | ArrayType
+  | RangeType;
 
 export type PrimitiveTypeSet = TypeSet<PrimitiveType, Cardinality>;
 
@@ -498,7 +501,7 @@ export type $expr_Array<
 }>;
 
 export interface ArrayType<
-  Element extends NonArrayType = NonArrayType,
+  Element extends BaseType = BaseType,
   Name extends string = `array<${Element["__name__"]}>`
 > extends BaseType {
   __name__: Name;
@@ -640,6 +643,19 @@ type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
   [k in keyof Type["__shape__"]]: BaseTypeToTsType<Type["__shape__"][k]>;
 };
 
+/////////////////////////
+/// RANGE TYPE
+/////////////////////////
+
+export interface RangeType<
+  Element extends ScalarType = ScalarType,
+  Name extends string = `range<${Element["__name__"]}>`
+> extends BaseType {
+  __name__: Name;
+  __kind__: TypeKind.range;
+  __element__: Element;
+}
+
 /////////////////////
 /// TSTYPE COMPUTATION
 /////////////////////
@@ -650,6 +666,8 @@ export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
   ? Type["__tstype__"]
   : Type extends ArrayType<any>
   ? ArrayTypeToTsType<Type>
+  : Type extends RangeType
+  ? Range<Type["__element__"]["__tsconsttype__"]>
   : Type extends TupleType
   ? TupleItemsToTsType<Type["__items__"]>
   : Type extends NamedTupleType
@@ -741,7 +759,8 @@ export type NonArrayType =
   | EnumType
   | ObjectType
   | TupleType
-  | NamedTupleType;
+  | NamedTupleType
+  | RangeType;
 
 export type AnyTupleType = TupleType | NamedTupleType;
 
@@ -751,6 +770,8 @@ export type ParamType =
       | ScalarType
       | TupleType<typeutil.tupleOf<ParamType>>
       | NamedTupleType<{[k: string]: ParamType}>
+      | RangeType
     >
   | TupleType<typeutil.tupleOf<ParamType>>
-  | NamedTupleType<{[k: string]: ParamType}>;
+  | NamedTupleType<{[k: string]: ParamType}>
+  | RangeType;

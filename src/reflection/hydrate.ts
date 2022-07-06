@@ -96,19 +96,19 @@ export function makeType<T extends BaseType>(
   literal: any,
   anytype?: BaseType
 ): T {
+  const type = spec.get(id);
+
+  if (type.name === "anytype" || type.name === "std::anypoint") {
+    if (anytype) return anytype as unknown as T;
+    throw new Error("anytype not provided");
+  }
+
   if (typeCache.has(id)) {
     return typeCache.get(id) as T;
   }
 
-  const type = spec.get(id);
-
   const obj: any = {};
   obj.__name__ = type.name;
-
-  if (type.name === "anytype") {
-    if (anytype) return anytype as unknown as T;
-    throw new Error("anytype not provided");
-  }
 
   if (type.kind === "object") {
     obj.__kind__ = TypeKind.object;
@@ -213,6 +213,15 @@ export function makeType<T extends BaseType>(
       });
       return obj;
     }
+  } else if (type.kind === "range") {
+    obj.__kind__ = TypeKind.range;
+    util.defineGetter(obj, "__element__", () => {
+      return makeType(spec, type.range_element_id, literal, anytype);
+    });
+    util.defineGetter(obj, "__name__", () => {
+      return `range<${obj.__element__.__name__}>`;
+    });
+    return obj;
   } else {
     throw new Error("Invalid type.");
   }

@@ -4,6 +4,7 @@ import {
   LocalDateTime,
   LocalTime,
   RelativeDuration,
+  Range,
 } from "edgedb";
 import {
   $expr_Array,
@@ -21,6 +22,7 @@ import {
   ObjectType,
   ObjectTypeSet,
   OperatorKind,
+  RangeType,
   TypeKind,
   TypeSet,
   util,
@@ -861,13 +863,14 @@ function renderEdgeQL(
   } else if (expr.__kind__ === ExpressionKind.TuplePath) {
     return `${renderEdgeQL(expr.__parent__, ctx)}.${expr.__index__}`;
   } else if (expr.__kind__ === ExpressionKind.Cast) {
+    const typeName =
+      expr.__element__.__name__ === "std::number"
+        ? "std::float64"
+        : expr.__element__.__name__;
     if (expr.__expr__ === null) {
-      return `<${expr.__element__.__name__}>{}`;
+      return `<${typeName}>{}`;
     }
-    return `<${expr.__element__.__name__}>(${renderEdgeQL(
-      expr.__expr__,
-      ctx
-    )})`;
+    return `<${typeName}>(${renderEdgeQL(expr.__expr__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
     const lines: string[] = [];
     if (isObjectType(expr.__element__)) {
@@ -1428,6 +1431,19 @@ function literalToEdgeQL(type: BaseType, val: any): string {
   } else if (val instanceof Buffer) {
     stringRep = bufferToStringRep(val);
     skipCast = true;
+  } else if (val instanceof Range) {
+    const elType = (type as RangeType).__element__;
+    const elTypeName =
+      elType.__name__ === "std::number" ? "std::float64" : elType.__name__;
+    return `std::range(${
+      val.lower === null
+        ? `<${elTypeName}>{}`
+        : literalToEdgeQL(elType, val.lower)
+    }, ${
+      val.upper === null
+        ? `<${elTypeName}>{}`
+        : literalToEdgeQL(elType, val.upper)
+    }, inc_lower := ${val.incLower}, inc_upper := ${val.incUpper})`;
   } else if (typeof val === "object") {
     if (isNamedTupleType(type)) {
       stringRep = `( ${Object.entries(val).map(
