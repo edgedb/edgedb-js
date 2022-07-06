@@ -386,6 +386,11 @@ export class BaseRawConnection {
         break;
       }
 
+      case chars.$s: {
+        this._parseDescribeStateMessage();
+        break;
+      }
+
       case chars.$L: {
         const severity = this.buffer.readChar();
         const code = this.buffer.readUInt32();
@@ -945,11 +950,6 @@ export class BaseRawConnection {
           break;
         }
 
-        case chars.$s: {
-          this._parseDescribeStateMessage();
-          break;
-        }
-
         case chars.$E: {
           error = this._parseErrorMessage();
           break;
@@ -1085,11 +1085,6 @@ export class BaseRawConnection {
           } catch (e: any) {
             error = e;
           }
-          break;
-        }
-
-        case chars.$s: {
-          this._parseDescribeStateMessage();
           break;
         }
 
