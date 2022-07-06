@@ -16,22 +16,48 @@
  * limitations under the License.
  */
 
-import {LocalDate, LocalDateTime} from "./datetime";
+import {Duration, LocalDate, LocalDateTime} from "./datetime";
 
-export class Range<T extends number | Date | LocalDate | LocalDateTime> {
+export class Range<
+  T extends number | Date | LocalDate | LocalDateTime | Duration
+> {
+  private _isEmpty = false;
+
   constructor(
-    public readonly lower: T,
-    public readonly upper: T,
-    public readonly incLower: boolean = true,
-    public readonly incUpper: boolean = false
+    private readonly _lower: T | null,
+    private readonly _upper: T | null,
+    private readonly _incLower: boolean = true,
+    private readonly _incUpper: boolean = false
   ) {}
+
+  get lower() {
+    return this._lower;
+  }
+  get upper() {
+    return this._upper;
+  }
+  get incLower() {
+    return this._incLower;
+  }
+  get incUpper() {
+    return this._incUpper;
+  }
+  get isEmpty() {
+    return this._isEmpty;
+  }
+
+  static empty() {
+    const range = new Range(null, null);
+    range._isEmpty = true;
+    return range;
+  }
 
   toJSON() {
     return {
-      lower: this.lower,
-      upper: this.upper,
-      inc_lower: this.incLower,
-      inc_upper: this.incUpper,
+      lower: this._lower,
+      upper: this._upper,
+      inc_lower: this._incLower,
+      inc_upper: this._incUpper,
     };
   }
 }
