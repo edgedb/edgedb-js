@@ -508,18 +508,12 @@ export function generateReturnCardinality(
   const cardinalities = [
     ...params.positional.map(p => ({
       ...p,
-      genTypeName: allowsLiterals(p.type, anytypes)
-        ? `_.castMaps.${
-            p.kind === "VariadicParam" ? "mapL" : "l"
-          }iteralToTypeSet<${p.typeName}>`
-        : p.typeName,
+      genTypeName: p.typeName,
     })),
     ...(hasNamedParams
       ? params.named.map(p => ({
           ...p,
-          genTypeName: allowsLiterals(p.type, anytypes)
-            ? `_.castMaps.literalToTypeSet<NamedArgs[${quote(p.name)}]>`
-            : `NamedArgs[${quote(p.name)}]`,
+          genTypeName: `NamedArgs[${quote(p.name)}]`,
         }))
       : []),
   ];
@@ -528,34 +522,38 @@ export function generateReturnCardinality(
     return (
       `$.cardinalityUtil.multiplyCardinalities<` +
       `$.cardinalityUtil.orCardinalities<` +
-      `${cardinalities[0].genTypeName}["__cardinality__"],` +
-      ` ${cardinalities[2].genTypeName}["__cardinality__"]` +
-      `>, ${cardinalities[1].genTypeName}["__cardinality__"]>`
+      `$.cardinalityUtil.paramCardinality<${cardinalities[0].genTypeName}>,` +
+      ` $.cardinalityUtil.paramCardinality<${cardinalities[2].genTypeName}>` +
+      `>, $.cardinalityUtil.paramCardinality<${cardinalities[1].genTypeName}>>`
     );
   }
   if (name === "std::assert_exists") {
-    return `$.cardinalityUtil.overrideLowerBound<${cardinalities[0].genTypeName}["__cardinality__"], "One">`;
+    return (
+      `$.cardinalityUtil.overrideLowerBound<` +
+      `$.cardinalityUtil.paramCardinality<${cardinalities[0].genTypeName}>, "One">`
+    );
   }
 
   const paramCardinalities = cardinalities.map(param => {
     if (param.typemod === "SetOfType") {
       if (preservesOptionality) {
-        return `$.cardinalityUtil.overrideUpperBound<${param.genTypeName}["__cardinality__"], "One">`;
+        return (
+          `$.cardinalityUtil.overrideUpperBound<` +
+          `$.cardinalityUtil.paramCardinality<${param.genTypeName}>, "One">`
+        );
       } else {
         return `$.Cardinality.One`;
       }
     }
 
-    if (param.typemod === "OptionalType" || param.hasDefault) {
-      const _alias = `$.cardinalityUtil.optionalParamCardinality`;
-      return `${_alias}<${param.genTypeName}>`;
-    }
+    const prefix =
+      param.typemod === "OptionalType" || param.hasDefault
+        ? "$.cardinalityUtil.optionalParamCardinality"
+        : param.kind === "VariadicParam"
+        ? "$.cardinalityUtil.paramArrayCardinality"
+        : "$.cardinalityUtil.paramCardinality";
 
-    if (param.kind === "VariadicParam") {
-      return `$.cardinalityUtil.multiplyCardinalitiesVariadic<$.cardinalityUtil.paramArrayCardinality<${param.genTypeName}>>`;
-    }
-
-    return `${param.genTypeName}["__cardinality__"]`;
+    return `${prefix}<${param.genTypeName}>`;
   });
 
   const cardinality = paramCardinalities.length

@@ -81,20 +81,14 @@ function range<
       cardinalityUtil.multiplyCardinalities<
         cardinalityUtil.multiplyCardinalities<
           cardinalityUtil.multiplyCardinalities<
-            cardinalityUtil.optionalParamCardinality<literalToTypeSet<P1>>,
-            cardinalityUtil.optionalParamCardinality<literalToTypeSet<P2>>
+            cardinalityUtil.optionalParamCardinality<P1>,
+            cardinalityUtil.optionalParamCardinality<P2>
           >,
-          cardinalityUtil.optionalParamCardinality<
-            literalToTypeSet<NamedArgs["inc_lower"]>
-          >
+          cardinalityUtil.optionalParamCardinality<NamedArgs["inc_lower"]>
         >,
-        cardinalityUtil.optionalParamCardinality<
-          literalToTypeSet<NamedArgs["inc_upper"]>
-        >
+        cardinalityUtil.optionalParamCardinality<NamedArgs["inc_upper"]>
       >,
-      cardinalityUtil.optionalParamCardinality<
-        literalToTypeSet<NamedArgs["empty"]>
-      >
+      cardinalityUtil.optionalParamCardinality<NamedArgs["empty"]>
     >
   >
 >;
@@ -125,8 +119,8 @@ function range<
         : $anypoint
     >,
     cardinalityUtil.multiplyCardinalities<
-      cardinalityUtil.optionalParamCardinality<literalToTypeSet<P1>>,
-      cardinalityUtil.optionalParamCardinality<literalToTypeSet<P2>>
+      cardinalityUtil.optionalParamCardinality<P1>,
+      cardinalityUtil.optionalParamCardinality<P2>
     >
   >
 >;
