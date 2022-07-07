@@ -174,7 +174,7 @@ export function toTSScalarType(
         types,
         opts
       );
-      return frag`${opts.edgedbDatatypePrefix}Range<${tn}>`;
+      return frag`${opts.edgedbDatatypePrefix}edgedb.Range<${tn}>`;
     }
 
     default:
