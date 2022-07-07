@@ -522,14 +522,28 @@ function walkExprTree(
       break;
     }
     case ExpressionKind.InsertUnlessConflict: {
+      // InsertUnlessConflict doesn't create a new scope, the parent scope of
+      // child expressions is the wrapped Insert expr
       if (expr.__conflict__.on) {
-        childExprs.push(...walkExprTree(expr.__conflict__.on, expr, ctx));
+        childExprs.push(
+          ...walkExprTree(
+            expr.__conflict__.on,
+            expr.__expr__ as $expr_Insert,
+            ctx
+          )
+        );
       }
       if (expr.__conflict__.else) {
-        childExprs.push(...walkExprTree(expr.__conflict__.else, expr, ctx));
+        childExprs.push(
+          ...walkExprTree(
+            expr.__conflict__.else,
+            expr.__expr__ as $expr_Insert,
+            ctx
+          )
+        );
       }
 
-      childExprs.push(...walkExprTree(expr.__expr__, expr, ctx));
+      childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
       break;
     }
     case ExpressionKind.Group: {
@@ -976,14 +990,14 @@ function renderEdgeQL(
       // true
     )})`;
   } else if (expr.__kind__ === ExpressionKind.Delete) {
-    return `(DELETE ${renderEdgeQL(
+    return `(${withBlock}DELETE ${renderEdgeQL(
       expr.__expr__,
       ctx,
       undefined,
       noImplicitDetached
     )})`;
   } else if (expr.__kind__ === ExpressionKind.Insert) {
-    return `(INSERT ${renderEdgeQL(
+    return `(${withBlock}INSERT ${renderEdgeQL(
       expr.__expr__,
       ctx,
       false,
