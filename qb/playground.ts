@@ -1,13 +1,19 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
-import e from "./dbschema/edgeql-js";
+import {edgeql, ident} from "../src/tag";
 
 async function run() {
   const {client, data} = await setupTests();
-  const query = e.select(e.global.uuid_global);
 
-  console.log(query.toEdgeQL());
-  const result = await query.run(client);
+  const query = edgeql`insert ${ident("User")} {
+    name := ${"whatever"},
+    bigint := ${BigInt(1234)},
+    num := ${1239487134},
+    numarr := ${[1239487134, 1234, 1234]},
+    json := ${{outer: [{inner: 1341234}]}}
+  }`.query;
+
+  const result = await client.query(query.query, query.parameters);
 
   console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
   console.log(JSON.stringify(result, null, 2));
