@@ -908,7 +908,7 @@ if (getEdgeDBVersion().major >= 2) {
     ];
   }
 
-  test.only("fetch: ranges", async () => {
+  test("fetch: ranges", async () => {
     const client = await getClient();
 
     try {
