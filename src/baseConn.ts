@@ -277,6 +277,10 @@ export class BaseRawConnection {
     }
     this.buffer.finishMessage();
 
+    if (err instanceof errors.AuthenticationError) {
+      throw err;
+    }
+
     return err;
   }
 

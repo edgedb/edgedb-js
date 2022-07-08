@@ -34,6 +34,7 @@ import {
   _ReadBuffer,
   _ICodec,
   Session,
+  AuthenticationError,
 } from "../src/index.node";
 import {retryingConnect} from "../src/retry";
 import {AdminFetchConnection} from "../src/fetchConn";
@@ -1643,5 +1644,23 @@ if (!isDeno && getAvailableFeatures().has("admin-ui")) {
 
     expect(result).toHaveLength(5);
     expect(result[0]["__tname__"]).toBe("schema::Function");
+  });
+
+  test("binary protocol over http failing auth", async () => {
+    const codecsRegistry = new _CodecsRegistry();
+    const config = await parseConnectArguments(getConnectOptions());
+    const fetchConn = AdminFetchConnection.create(
+      {
+        address: config.connectionParams.address,
+        database: config.connectionParams.database,
+        user: config.connectionParams.user,
+        token: "invalid token",
+      },
+      codecsRegistry
+    );
+
+    await expect(
+      fetchConn.rawParse(`select 1`, Session.defaults())
+    ).rejects.toThrowError(AuthenticationError);
   });
 }
