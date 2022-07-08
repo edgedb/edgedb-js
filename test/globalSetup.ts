@@ -86,13 +86,11 @@ export const getServerCommand = (
   }
 
   if (help.includes("--admin-ui")) {
-    args.push("--admin-ui=enabled");
     args.push("--http-endpoint-security=optional");
-    availableFeatures.push("admin-ui");
-
     args.push("--jws-key-file", path.join(__dirname, "keys", "public.pem"));
-
     args.push("--jwe-key-file", path.join(__dirname, "keys", "private.pem"));
+
+    availableFeatures.push("binary-over-http");
   }
 
   args = [

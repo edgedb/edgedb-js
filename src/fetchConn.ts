@@ -146,7 +146,7 @@ class BaseFetchConnection extends BaseRawConnection {
   }
 }
 
-export class AdminFetchConnection extends BaseFetchConnection {
+export class AdminUIFetchConnection extends BaseFetchConnection {
   protected _buildAddr(): string {
     const config = this.config;
 
@@ -154,6 +154,6 @@ export class AdminFetchConnection extends BaseFetchConnection {
       typeof config.address === "string"
         ? config.address
         : `http://${config.address[0]}:${config.address[1]}`
-    }/db/${config.database}/admin_binary_http`;
+    }/db/${config.database}`;
   }
 }

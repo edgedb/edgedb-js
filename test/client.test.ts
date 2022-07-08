@@ -37,7 +37,7 @@ import {
   AuthenticationError,
 } from "../src/index.node";
 import {retryingConnect} from "../src/retry";
-import {AdminFetchConnection} from "../src/fetchConn";
+import {AdminUIFetchConnection} from "../src/fetchConn";
 import {CustomCodecSpec} from "../src/codecs/registry";
 import {
   getAvailableFeatures,
@@ -1607,7 +1607,7 @@ if (getEdgeDBVersion().major >= 2) {
   });
 }
 
-if (!isDeno && getAvailableFeatures().has("admin-ui")) {
+if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
   test("binary protocol over http", async () => {
     //@ts-ignore
     const tokenFile = require("path").join(__dirname, "keys", "jwt");
@@ -1615,7 +1615,7 @@ if (!isDeno && getAvailableFeatures().has("admin-ui")) {
     const token = require("fs").readFileSync(tokenFile, "utf8").trim();
     const codecsRegistry = new _CodecsRegistry();
     const config = await parseConnectArguments(getConnectOptions());
-    const fetchConn = AdminFetchConnection.create(
+    const fetchConn = AdminUIFetchConnection.create(
       {
         address: config.connectionParams.address,
         database: config.connectionParams.database,
@@ -1649,7 +1649,7 @@ if (!isDeno && getAvailableFeatures().has("admin-ui")) {
   test("binary protocol over http failing auth", async () => {
     const codecsRegistry = new _CodecsRegistry();
     const config = await parseConnectArguments(getConnectOptions());
-    const fetchConn = AdminFetchConnection.create(
+    const fetchConn = AdminUIFetchConnection.create(
       {
         address: config.connectionParams.address,
         database: config.connectionParams.database,
