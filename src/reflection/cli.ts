@@ -8,14 +8,14 @@ import {
   parseConnectArguments,
   validTlsSecurityValues,
 } from "../conUtils";
-import {configFileHeader, exitWithError, generateQB} from "./generate";
+import {configFileHeader, exitWithError, generateQB, Target} from "./generate";
 
 // const rmdir =
 //   Number(process.versions.node.split(".")[0]) >= 16 ? fs.rm : fs.rmdir;
 
 interface Options {
   showHelp?: boolean;
-  target?: "ts" | "esm" | "cjs" | "mts";
+  target?: Target;
   outputDir?: string;
   promptPassword?: boolean;
   passwordFromStdin?: boolean;
@@ -116,9 +116,9 @@ const run = async () => {
         break;
       case "--target":
         const target = getVal();
-        if (!target || !["ts", "esm", "cjs", "mts"].includes(target)) {
+        if (!target || !["ts", "esm", "cjs", "mts", "deno"].includes(target)) {
           exitWithError(
-            `Invalid target "${target ?? ""}", expected "ts", "esm" or "cjs"`
+            `Invalid target "${target ?? ""}", expected "deno", "mts", "ts", "esm" or "cjs"`
           );
         }
         options.target = target as any;
