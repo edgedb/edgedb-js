@@ -32,6 +32,7 @@ export type GeneratorParams = {
   scalars: ScalarTypes;
   functions: FunctionTypes;
   operators: OperatorTypes;
+  isDeno: boolean;
 };
 
 export function exitWithError(message: string): never {
@@ -43,7 +44,7 @@ export function exitWithError(message: string): never {
 export async function generateQB(params: {
   outputDir: string;
   connectionConfig: ConnectConfig;
-  target: "ts" | "esm" | "cjs";
+  target: "ts" | "esm" | "cjs" | "deno";
 }): Promise<void> {
   const {outputDir, connectionConfig, target} = params;
   // tslint:disable-next-line
@@ -88,6 +89,7 @@ export async function generateQB(params: {
       scalars,
       functions,
       operators,
+      isDeno: target === "deno",
     };
     generateRuntimeSpec(generatorParams);
     generateCastMaps(generatorParams);
@@ -101,7 +103,10 @@ export async function generateQB(params: {
 
     const importsFile = dir.getPath("imports");
 
-    importsFile.addExportStarFrom("edgedb", "edgedb");
+    const edgedb =
+      target === "deno" ? "https://deno.land/x/edgedb/mod.ts" : "edgedb";
+
+    importsFile.addExportStarFrom("edgedb", edgedb);
     importsFile.addExportFrom({spec: true}, "./__spec__", true);
     importsFile.addExportStarFrom("syntax", "./syntax/syntax", true);
     importsFile.addExportStarFrom("castMaps", "./castMaps", true);
@@ -114,8 +119,8 @@ export async function generateQB(params: {
     // index.addExportStarFrom(null, "./castMaps", true);
     index.addExportStarFrom(null, "./syntax/external", true);
     index.addExportStarFrom(null, "./types", true, ["ts", "dts"]);
-    index.addImport({$: true, _edgedbJsVersion: true}, "edgedb");
-    index.addExportFrom({createClient: true}, "edgedb");
+    index.addImport({$: true, _edgedbJsVersion: true}, edgedb);
+    index.addExportFrom({createClient: true}, edgedb);
     index.addStarImport("$syntax", "./syntax/syntax", true);
     index.addStarImport("$op", "./operators", true);
 
@@ -160,9 +165,9 @@ export async function generateQB(params: {
       },
       {
         name: "_default",
-        module: dir.getModule("default"),
+        module: dir.getModule("default", target === "deno"),
       },
-      {name: "_std", module: dir.getModule("std")},
+      {name: "_std", module: dir.getModule("std", target === "deno")},
     ];
     const excludedKeys = new Set<string>(dir._modules.keys());
 
@@ -197,7 +202,7 @@ export async function generateQB(params: {
     ]);
     index.indented(() => {
       for (const [moduleName, internalName] of dir._modules) {
-        if (dir.getModule(moduleName).isEmpty()) continue;
+        if (dir.getModule(moduleName, target === "deno").isEmpty()) continue;
         index.writeln([
           t`${genutil.quote(moduleName)}: typeof _${internalName};`,
         ]);
@@ -218,7 +223,7 @@ export async function generateQB(params: {
       }
 
       for (const [moduleName, internalName] of dir._modules) {
-        if (dir.getModule(moduleName).isEmpty()) {
+        if (dir.getModule(moduleName, target === "deno").isEmpty()) {
           continue;
         }
         index.addDefaultImport(
@@ -233,12 +238,14 @@ export async function generateQB(params: {
     index.writeln([r`};`]);
     index.addExport("ExportDefault", undefined, true);
 
+    const fromPath =
+      target === "deno"
+        ? "https://deno.land/x/edgedb/_src/reflection/index.ts"
+        : "edgedb/dist/reflection/index";
+
     // re-export some reflection types
-    index.addExportFrom(
-      {Cardinality: true},
-      "edgedb/dist/reflection/index",
-      true
-    );
+    // set path ext to false since it is handled by above
+    index.addExportFrom({Cardinality: true}, fromPath, false);
     index.writeln([
       t`export `,
       dts`declare `,
@@ -251,11 +258,10 @@ export async function generateQB(params: {
     await cxn.close();
   }
 
-  await dir.write(
-    outputDir,
-    target === "ts" ? "ts" : "js+dts",
-    target === "cjs" ? "cjs" : "esm"
-  );
+  const mode = target === "ts" || target === "deno" ? "ts" : "js+dts";
+  const moduleKind = target === "deno" || target !== "cjs" ? "esm" : "cjs";
+
+  await dir.write(outputDir, mode, moduleKind);
 
   // write syntax files
   const syntaxDir = path.join(__dirname, "..", "syntax");
@@ -276,6 +282,7 @@ export async function generateQB(params: {
         : "ts"
       : null;
     if (
+      (target === "deno" && filetype !== "ts") ||
       (target === "ts" && filetype !== "ts") ||
       (target === "esm" && !(filetype === "esm" || filetype === "dts")) ||
       (target === "cjs" && !(filetype === "js" || filetype === "dts"))
@@ -308,6 +315,30 @@ export async function generateQB(params: {
             `from "edgedb/dist/reflection/index.js"`
           )
           .replace(/from "(\.?\.\/.+)"/g, `from "$1.mjs"`);
+      } else if (target === "deno") {
+        const prefix = `from "https://deno.land/x/edgedb/_src/reflectio`;
+        contents = contents
+          .replace(
+            /from "edgedb\/dist\/reflectio(.+)"/g,
+            (match: string, group: string, _offset: number) => {
+              // be explicit about index files
+              if (match === `from "edgedb/dist/reflection"`) {
+                return `${prefix}n/index.ts"`;
+              }
+              return `${prefix}${group}.ts"`;
+            }
+          )
+          .replace(
+            /from "edgedb"/,
+            `from "https://deno.land/x/edgedb/mod.ts"`
+          )
+          .replace(
+            /from "((?!\.ts).+)"/g,
+            //fix remainder of imports which do not have extension
+            (_match: string, group: string) => {
+              return `from "${group}${group.includes(".ts") ? "" : ".ts"}"`;
+            }
+          );
       }
     }
 

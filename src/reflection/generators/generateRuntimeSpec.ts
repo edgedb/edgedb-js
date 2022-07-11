@@ -3,9 +3,10 @@ import type {GeneratorParams} from "../generate";
 
 export const generateRuntimeSpec = (params: GeneratorParams) => {
   const {dir, types} = params;
+  const edgedb = params.isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb"
 
   const spec = dir.getPath("__spec__");
-  spec.addImport({$: true}, "edgedb");
+  spec.addImport({$: true}, edgedb);
   spec.writeln([
     dts`declare `,
     `const spec`,

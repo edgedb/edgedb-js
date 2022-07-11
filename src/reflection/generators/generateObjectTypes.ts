@@ -125,7 +125,7 @@ export const getStringRepresentation: (
 };
 
 export const generateObjectTypes = (params: GeneratorParams) => {
-  const {dir, types} = params;
+  const {dir, types, isDeno} = params;
 
   const plainTypesCode = dir.getPath("types");
   plainTypesCode.addStarImport("edgedb", "edgedb", false, undefined, true);
@@ -195,7 +195,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
 
     const {mod, name} = splitName(type.name);
 
-    const body = dir.getModule(mod);
+    const body = dir.getModule(mod, isDeno);
 
     body.registerRef(type.name, type.id);
 

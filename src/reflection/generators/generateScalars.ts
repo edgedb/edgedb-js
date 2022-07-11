@@ -13,7 +13,7 @@ import type {GeneratorParams} from "../generate";
 import {nonCastableTypes, typeMapping} from "../queries/getTypes";
 
 export const generateScalars = (params: GeneratorParams) => {
-  const {dir, types, casts, scalars} = params;
+  const {dir, types, casts, scalars, isDeno} = params;
   for (const type of types.values()) {
     if (type.kind !== "scalar") {
       continue;
@@ -21,7 +21,7 @@ export const generateScalars = (params: GeneratorParams) => {
 
     const {mod, name: _name} = splitName(type.name);
 
-    const sc = dir.getModule(mod);
+    const sc = dir.getModule(mod, isDeno);
 
     sc.registerRef(type.name, type.id);
 

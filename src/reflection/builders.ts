@@ -122,6 +122,13 @@ type Export = {modes?: Set<Mode>} & (
     }
 );
 
+function getExt(mode: Mode, moduleKind: ModuleKind, path: string) {
+  if (mode === "ts" && moduleKind === "esm") {
+    return ".ts"
+  } 
+  return path.startsWith(".") ? ".mjs" : `.js`
+}
+
 class BuilderImportsExports {
   constructor(
     public imports: Set<Import> = new Set<Import>(),
@@ -252,12 +259,8 @@ class BuilderImportsExports {
         continue;
       }
 
-      const esmFileExt =
-        imp.allowFileExt && mode === "js"
-          ? imp.fromPath.startsWith(".")
-            ? ".mjs"
-            : ".js"
-          : "";
+
+      const esmFileExt = imp.allowFileExt ? getExt(mode, moduleKind, imp.fromPath) : ""
 
       switch (imp.type) {
         case "default":
@@ -325,6 +328,7 @@ class BuilderImportsExports {
     helpers: Set<keyof typeof importExportHelpers>;
     forceDefaultExport?: boolean;
   }) {
+
     const exports: string[] = [];
     const exportsFrom: string[] = [];
     const exportList: string[] = [];
@@ -374,6 +378,7 @@ class BuilderImportsExports {
           break;
         case "from":
           if (moduleKind === "esm") {
+            const ending = exp.allowFileExt ? getExt(mode, moduleKind, exp.fromPath) : ""
             exportsFrom.push(
               `export ${exp.typeOnly ? "type " : ""}{ ${Object.entries(
                 exp.names
@@ -383,13 +388,7 @@ class BuilderImportsExports {
                   return key + (typeof val === "string" ? `as ${val}` : "");
                 })
                 .filter(val => val !== null)
-                .join(", ")} } from "${exp.fromPath}${
-                exp.allowFileExt && mode === "js"
-                  ? exp.fromPath.startsWith(".")
-                    ? ".mjs"
-                    : ".js"
-                  : ""
-              }";`
+                .join(", ")} } from "${exp.fromPath}${ending}";`
             );
           } else {
             const modName = exp.fromPath.replace(/[^a-z]/gi, "") + "_1";
@@ -411,16 +410,11 @@ class BuilderImportsExports {
           break;
         case "starFrom":
           if (moduleKind === "esm") {
+            const ending = exp.allowFileExt ? getExt(mode, moduleKind, exp.fromPath) : ""
             exportsFrom.push(
               `export * ${exp.name !== null ? `as ${exp.name} ` : ""}from "${
                 exp.fromPath
-              }${
-                exp.allowFileExt && mode === "js"
-                  ? exp.fromPath.startsWith(".")
-                    ? ".mjs"
-                    : ".js"
-                  : ""
-              }";`
+              }${ending}";`
             );
           } else {
             if (exp.name !== null) {
@@ -602,11 +596,9 @@ export class CodeBuilder {
     forceDefaultExport,
   }: {
     mode: Mode;
-    moduleKind?: ModuleKind;
+    moduleKind: ModuleKind;
     forceDefaultExport?: boolean;
   }): string {
-    moduleKind ??= mode === "js" ? "cjs" : "esm";
-
     const importsExports = this.importsExports.clone();
 
     let body = "";
@@ -693,7 +685,8 @@ export class DirBuilder {
     return this._map.get(fn);
   }
 
-  getModule(moduleName: string): CodeBuilder {
+  getModule(moduleName: string, isDeno: boolean): CodeBuilder {
+    console.log({ isDeno })
     if (!this._modules.has(moduleName)) {
       const internalName = genutil.makeValidIdent({
         name: moduleName,
@@ -705,8 +698,9 @@ export class DirBuilder {
     }
 
     const mod = this.getPath(`modules/${this._modules.get(moduleName)}`);
+    const edgedb = isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb"
 
-    mod.addImport({$: true}, "edgedb");
+    mod.addImport({$: true}, edgedb);
     mod.addStarImport("_", "../imports", true);
 
     return mod;
@@ -745,7 +739,7 @@ export class DirBuilder {
       if (mode === "ts") {
         await fs.writeFile(
           dest + ".ts",
-          builder.render({mode: "ts", forceDefaultExport})
+          builder.render({mode: "ts", moduleKind, forceDefaultExport})
         );
       } else if (mode === "js+dts") {
         await fs.writeFile(
@@ -754,7 +748,7 @@ export class DirBuilder {
         );
         await fs.writeFile(
           dest + ".d.ts",
-          builder.render({mode: "dts", forceDefaultExport})
+          builder.render({mode: "dts", moduleKind, forceDefaultExport})
         );
       }
     }

@@ -3,27 +3,7 @@ import {GeneratorParams} from "../generate";
 import {getImplicitCastableRootTypes} from "../util/functionUtils";
 import {getStringRepresentation} from "./generateObjectTypes";
 
-export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
-  const code = dir.getPath("syntax/setImpl");
-
-  const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
-
-  code.addImport(
-    {
-      TypeKind: true,
-      ExpressionKind: true,
-      Cardinality: true,
-      cardinalityUtil: true,
-      $mergeObjectTypes: true,
-    },
-    "edgedb/dist/reflection/index",
-    true
-  );
-  code.addStarImport("castMaps", "../castMaps", true, ["ts", "js", "dts"]);
-  code.addImport({$expressionify: true}, "./path", true, ["ts", "js"]);
-
-  code.writeln([
-    t`import type {
+const nodeLiteral = () => t`import type {
   ArrayType,
   TypeSet,
   BaseType,
@@ -40,8 +20,56 @@ import type {
   getCardsFromExprs,
   getSharedParentPrimitiveVariadic,
   LooseTypeSet,
-} from "./set";`,
-  ]);
+} from "./set";`;
+
+const denoLiteral = () => t`import type {
+  ArrayType,
+  TypeSet,
+  BaseType,
+  ObjectTypeSet,
+  PrimitiveTypeSet,
+  AnyTupleType,
+  getPrimitiveBaseType,
+} from "https://deno.land/x/edgedb/_src/reflection/index.ts";
+import type {
+  $expr_Set,
+  mergeObjectTypesVariadic,
+  getTypesFromExprs,
+  getTypesFromObjectExprs,
+  getCardsFromExprs,
+  getSharedParentPrimitiveVariadic,
+  LooseTypeSet,
+} from "./set.ts";`;
+
+export const generateSetImpl = ({
+  dir,
+  types,
+  casts,
+  isDeno,
+}: GeneratorParams) => {
+  const code = dir.getPath("syntax/setImpl");
+
+  const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
+
+  const fromPath = isDeno
+    ? "https://deno.land/x/edgedb/_src/reflection/index"
+    : "edgedb/dist/reflection/index";
+
+  code.addImport(
+    {
+      TypeKind: true,
+      ExpressionKind: true,
+      Cardinality: true,
+      cardinalityUtil: true,
+      $mergeObjectTypes: true,
+    },
+    fromPath,
+    true
+  );
+  code.addStarImport("castMaps", "../castMaps", true, ["ts", "js", "dts"]);
+  code.addImport({$expressionify: true}, "./path", true, ["ts", "js"]);
+
+  code.writeln([isDeno ? denoLiteral() : nodeLiteral()]);
   code.addImport({getSharedParent: true}, "./set", true, ["ts", "js"]);
 
   code.nl();
