@@ -1,26 +1,87 @@
 #!/usr/bin/env node
 
 // tslint:disable no-console
-import {path, fs, readFileUtf8, exists, input} from "../adapter.node";
+import { path, fs, readFileUtf8, exists, input } from "../adapter.node";
 
 import {
   ConnectConfig,
   parseConnectArguments,
   validTlsSecurityValues,
 } from "../conUtils";
-import {configFileHeader, exitWithError, generateQB} from "./generate";
+import { configFileHeader, exitWithError, generateQB } from "./generate";
 
-const rmdir =
-  Number(process.versions.node.split(".")[0]) >= 16 ? fs.rm : fs.rmdir;
+
+let rmdir = Number(process.versions.node.split(".")[0]) >= 16 ? fs.rm : fs.rmdir;
+
+async function estimateCompilationTarget(projectRoot: string, rootFileType: string): Promise<Target> {
+
+  const overrideTargetMessage = `   To override this, use the --target flag.
+   Run \`npx edgeql-js --help\` for details.`;
+  console.log(overrideTargetMessage);
+
+  if (await exists(path.join(projectRoot, "deno.jsonc"))) {
+    console.log("Detected deno runtime, generating Typescript esm files")
+    return "deno"
+  }
+
+  const tsconfigExists = await exists(
+    path.join(projectRoot, "tsconfig.json")
+  );
+
+
+  if (tsconfigExists) {
+    console.log(`Detected tsconfig.json, generating TypeScript files.`);
+    return "ts"
+  } else {
+    const packageJson = JSON.parse(
+      await readFileUtf8(path.join(projectRoot, rootFileType))
+    );
+    if (packageJson?.type === "module") {
+      console.log(
+        `Detected "type": "module" in ${rootFileType}, generating .js files with ES module syntax.`
+      );
+      return "esm"
+    } else {
+      console.log(
+        `Detected package.json. Generating .js files with CommonJS module syntax.`
+      );
+      return "cjs"
+    }
+  }
+}
+
+type Target = "ts" | "esm" | "cjs" | "deno"
 
 interface Options {
   showHelp?: boolean;
-  target?: "ts" | "esm" | "cjs";
+  target?: Target;
   outputDir?: string;
   promptPassword?: boolean;
   passwordFromStdin?: boolean;
   forceOverwrite?: boolean;
   updateIgnoreFile?: boolean;
+}
+
+/**
+ * Function which attempts to detect the project root dir and type
+ * Will exit the program with an error if none is found
+ */
+async function getProjectRoot(): Promise<{ projectRoot: string; rootFileType: "package.json" | "deno.jsonc" }> {
+  let currentDir = process.cwd();
+  const systemRoot = path.parse(currentDir).root;
+
+  while (currentDir !== systemRoot) {
+    if (await exists(path.join(currentDir, "package.json"))) {
+      return { projectRoot: currentDir, rootFileType: "package.json" }
+    } else if (await exists(path.join(currentDir, "deno.jsonc"))) {
+      return { projectRoot: currentDir, rootFileType: "deno.jsonc" }
+    }
+
+    currentDir = path.join(currentDir, "..");
+  }
+  throw exitWithError(
+    `Error: no package.json or deno.json found. Make sure you're inside your project directory.`
+  );
 }
 
 const run = async () => {
@@ -116,9 +177,9 @@ const run = async () => {
         break;
       case "--target":
         const target = getVal();
-        if (!target || !["ts", "esm", "cjs"].includes(target)) {
+        if (!target || !["ts", "esm", "cjs", "deno"].includes(target)) {
           exitWithError(
-            `Invalid target "${target ?? ""}", expected "ts", "esm" or "cjs"`
+            `Invalid target "${target ?? ""}", expected "deno, "ts", "esm" or "cjs"`
           );
         }
         options.target = target as any;
@@ -171,23 +232,7 @@ OPTIONS:
   }
 
   // find project root
-  let projectRoot: string = "";
-  let currentDir = process.cwd();
-  const systemRoot = path.parse(currentDir).root;
-
-  while (currentDir !== systemRoot) {
-    if (await exists(path.join(currentDir, "package.json"))) {
-      projectRoot = currentDir;
-      break;
-    }
-
-    currentDir = path.join(currentDir, "..");
-  }
-  if (!projectRoot) {
-    exitWithError(
-      "Error: no package.json found. Make sure you're inside your project directory."
-    );
-  }
+  const { projectRoot, rootFileType } = await getProjectRoot()
 
   // check for locally install edgedb
   // const edgedbPath = path.join(rootDir, "node_modules", "edgedb");
@@ -200,33 +245,7 @@ OPTIONS:
   // }
 
   if (!options.target) {
-    const tsconfigExists = await exists(
-      path.join(projectRoot, "tsconfig.json")
-    );
-
-    const overrideTargetMessage = `   To override this, use the --target flag.
-   Run \`npx edgeql-js --help\` for details.`;
-
-    if (tsconfigExists) {
-      options.target = "ts";
-      console.log(`Detected tsconfig.json, generating TypeScript files.`);
-    } else {
-      const packageJson = JSON.parse(
-        await readFileUtf8(path.join(projectRoot, "package.json"))
-      );
-      if (packageJson?.type === "module") {
-        options.target = "esm";
-        console.log(
-          `Detected "type": "module" in package.json, generating .js files with ES module syntax.`
-        );
-      } else {
-        console.log(
-          `Detected package.json. Generating .js files with CommonJS module syntax.`
-        );
-        options.target = "cjs";
-      }
-    }
-    console.log(overrideTargetMessage);
+    options.target = await estimateCompilationTarget(projectRoot, rootFileType)
   }
 
   const outputDir = options.outputDir
@@ -243,16 +262,15 @@ OPTIONS:
     : outputDir;
 
   console.log(
-    `Generating query builder into ${
-      path.isAbsolute(prettyOutputDir)
-        ? `\n   ${prettyOutputDir}`
-        : `${prettyOutputDir}`
+    `Generating query builder into ${path.isAbsolute(prettyOutputDir)
+      ? `\n   ${prettyOutputDir}`
+      : `${prettyOutputDir}`
     }`
   );
 
   if (await exists(outputDir)) {
     if (await canOverwrite(outputDir, options)) {
-      await rmdir(outputDir, {recursive: true});
+      await rmdir(outputDir, { recursive: true });
     }
   } else {
     // output dir doesn't exist, so assume first run
@@ -272,7 +290,7 @@ OPTIONS:
     connectionConfig.password = await readPasswordFromStdin();
   }
 
-  await generateQB({outputDir, connectionConfig, target: options.target!});
+  await generateQB({ outputDir, connectionConfig, target: options.target! });
 
   console.log(`Generation successful!`);
 
@@ -288,7 +306,7 @@ project to exclude these files.`
     let gitIgnoreFile: string | null = null;
     try {
       gitIgnoreFile = await readFileUtf8(gitIgnorePath);
-    } catch {}
+    } catch { }
 
     const vcsLine = path.posix.relative(projectRoot, outputDir);
 
@@ -338,7 +356,7 @@ async function canOverwrite(outputDir: string, options: Options) {
         return true;
       }
     }
-  } catch {}
+  } catch { }
 
   const error = config
     ? `A query builder with a different config already exists in that location.`
@@ -373,8 +391,7 @@ async function promptEnum<Val extends string, Default extends Val>(
   defaultVal?: Default
 ): Promise<Val> {
   let response = await input(
-    `${question}[${vals.join("/")}]${
-      defaultVal !== undefined ? ` (leave blank for "${defaultVal}")` : ""
+    `${question}[${vals.join("/")}]${defaultVal !== undefined ? ` (leave blank for "${defaultVal}")` : ""
     }\n> `
   );
   response = response.trim().toLowerCase();
@@ -392,11 +409,11 @@ async function promptForPassword(username: string) {
   if (!isTTY()) {
     exitWithError(
       `Cannot use --password option in non-interactive mode. ` +
-        `To read password from stdin use the --password-from-stdin option.`
+      `To read password from stdin use the --password-from-stdin option.`
     );
   }
 
-  return await input(`Password for '${username}': `, {silent: true});
+  return await input(`Password for '${username}': `, { silent: true });
 }
 
 function readPasswordFromStdin() {
