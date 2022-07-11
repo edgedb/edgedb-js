@@ -93,6 +93,15 @@ export namespace fs {
     return _fs.ensureDir(path);
   }
 
+  export async function readdir(path: string): Promise<string[]> {
+    // deno uses async iterables while node expects an array
+    const output: string[] = []
+    for await (const dir of Deno.readDir(path.replace("file:/", "/"))) {
+      output.push(dir)
+    }
+    return output
+  }
+
   export function writeFile(path: string, contents: string): Promise<void> {
     return Deno.writeTextFile(path, contents);
   }
