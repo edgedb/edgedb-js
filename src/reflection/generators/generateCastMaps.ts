@@ -17,8 +17,9 @@ export const generateCastMaps = (params: GeneratorParams) => {
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps");
-  f.addImportStar("edgedb", "edgedb");
-  f.addImport({$: true}, "edgedb", {modes: ["ts", "dts"], typeOnly: true});
+  const edgedb = params.isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb"
+  f.addImportStar("edgedb", edgedb);
+  f.addImport({$: true}, edgedb, {modes: ["ts", "dts"], typeOnly: true});
 
   const reverseTopo = Array.from(types)
     .reverse() // reverse topological order

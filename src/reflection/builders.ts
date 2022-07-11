@@ -707,7 +707,7 @@ export class DirBuilder {
     return this._map.get(fn);
   }
 
-  getModule(moduleName: string): CodeBuilder {
+  getModule(moduleName: string, isDeno: boolean): CodeBuilder {
     if (!this._modules.has(moduleName)) {
       const internalName = genutil.makeValidIdent({
         name: moduleName,
@@ -719,8 +719,9 @@ export class DirBuilder {
     }
 
     const mod = this.getPath(`modules/${this._modules.get(moduleName)}`);
+    const edgedb = isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb"
 
-    mod.addImport({$: true}, "edgedb");
+    mod.addImport({$: true}, edgedb);
     mod.addImportStar("_", "../imports", {allowFileExt: true});
 
     return mod;

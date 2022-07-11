@@ -21,7 +21,7 @@ export const generateScalars = (params: GeneratorParams) => {
 
     const {mod, name: _name} = splitName(type.name);
 
-    const sc = dir.getModule(mod);
+    const sc = dir.getModule(mod, params.isDeno);
 
     sc.registerRef(type.name, type.id);
 
