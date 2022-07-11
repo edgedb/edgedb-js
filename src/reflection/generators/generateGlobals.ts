@@ -5,7 +5,7 @@ import {dts, r, t, ts} from "../builders";
 import {getStringRepresentation} from "./generateObjectTypes";
 import {GlobalType} from "../queries/getGlobals";
 
-export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
+export const generateGlobals = ({dir, globals, types, isDeno}: GeneratorParams) => {
   const globalsByMod: {[k: string]: GlobalType[]} = {};
   for (const [_id, g] of globals.entries()) {
     const {mod} = splitName(g.name);
@@ -14,7 +14,7 @@ export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
   }
 
   for (const [mod, gs] of Object.entries(globalsByMod)) {
-    const code = dir.getModule(mod);
+    const code = dir.getModule(mod, isDeno);
     code.writeln([
       dts`declare `,
       ...frag`const $${mod}__globals`,

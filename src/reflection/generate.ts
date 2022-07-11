@@ -44,6 +44,7 @@ export type GeneratorParams = {
   functions: FunctionTypes;
   globals: Globals;
   operators: OperatorTypes;
+  isDeno: boolean;
 };
 
 export function exitWithError(message: string): never {
@@ -53,7 +54,7 @@ export function exitWithError(message: string): never {
   throw new Error();
 }
 
-export type Target = "ts" | "esm" | "cjs" | "mts";
+export type Target = "ts" | "esm" | "cjs" | "mts" | "deno";
 export type Version = {
   major: number;
   minor: number;
@@ -112,6 +113,7 @@ export async function generateQB(params: {
       functions,
       globals,
       operators,
+      isDeno: target === "deno",
     };
     generateRuntimeSpec(generatorParams);
     generateCastMaps(generatorParams);
@@ -125,8 +127,10 @@ export async function generateQB(params: {
     // generate module imports
 
     const importsFile = dir.getPath("imports");
+    const edgedb =
+      target === "deno" ? "https://deno.land/x/edgedb/mod.ts" : "edgedb";
 
-    importsFile.addExportStar("edgedb", {as: "edgedb"});
+    importsFile.addExportStar(edgedb, {as: "edgedb"});
     importsFile.addExportFrom({spec: true}, "./__spec__", {
       allowFileExt: true,
     });
@@ -152,8 +156,9 @@ export async function generateQB(params: {
       allowFileExt: true,
       modes: ["ts", "dts", "js"],
     });
-    index.addImport({$: true, _edgedbJsVersion: true}, "edgedb");
-    index.addExportFrom({createClient: true}, "edgedb");
+
+    index.addImport({$: true, _edgedbJsVersion: true}, edgedb);
+    index.addExportFrom({createClient: true}, edgedb);
     index.addImportStar("$syntax", "./syntax/syntax", {allowFileExt: true});
     index.addImportStar("$op", "./operators", {allowFileExt: true});
 
@@ -198,9 +203,9 @@ export async function generateQB(params: {
       },
       {
         name: "_default",
-        module: dir.getModule("default"),
+        module: dir.getModule("default", target === "deno"),
       },
-      {name: "_std", module: dir.getModule("std")},
+      {name: "_std", module: dir.getModule("std", target === "deno")},
     ];
     const excludedKeys = new Set<string>(dir._modules.keys());
 
@@ -235,7 +240,7 @@ export async function generateQB(params: {
     ]);
     index.indented(() => {
       for (const [moduleName, internalName] of dir._modules) {
-        if (dir.getModule(moduleName).isEmpty()) continue;
+        if (dir.getModule(moduleName, target === "deno").isEmpty()) continue;
         index.writeln([
           t`${genutil.quote(moduleName)}: typeof _${internalName};`,
         ]);
@@ -256,7 +261,7 @@ export async function generateQB(params: {
       }
 
       for (const [moduleName, internalName] of dir._modules) {
-        if (dir.getModule(moduleName).isEmpty()) {
+        if (dir.getModule(moduleName, target === "deno").isEmpty()) {
           continue;
         }
         index.addImportDefault(
@@ -336,6 +341,14 @@ export async function generateQB(params: {
       moduleExtension: "",
       written,
     });
+  } else if (target === "deno") {
+    await dir.write(outputDir, {
+      mode: "ts",
+      moduleKind: "esm",
+      fileExtension: ".ts",
+      moduleExtension: ".ts",
+      written,
+    });
   }
 
   const syntaxDir = path.join(srcDir(), "syntax");
@@ -358,6 +371,7 @@ export async function generateQB(params: {
       ? "ts"
       : null;
     if (
+      (target === "deno" && filetype !== "ts") ||
       (target === "ts" && filetype !== "ts") ||
       (target === "mts" && filetype !== "mts") ||
       (target === "esm" && !(filetype === "esm" || filetype === "dts")) ||
@@ -394,6 +408,32 @@ export async function generateQB(params: {
         `from "$1${localExt}"`
       );
     }
+
+    if (target === "deno") {
+      // replace imports with urls
+      contents = contents
+        .replace(/from "edgedb\/dist(.+)"/g, (_match, group: string) => {
+          const end = group.includes(".ts") ? "" : ".ts";
+          return `from "https://deno.land/x/edgedb/_src${group}${end}"`;
+        })
+        .replace(/from "edgedb"/g, () => {
+          return `from "https://deno.land/x/edgedb/mod.ts"`;
+        })
+        // add extensions to relative imports
+        .replace(
+          /from "([\.\/]+)(.+)"/g,
+          (_match, group1: string, group2: string) => {
+            const end = group2.includes(".ts") ? "" : ".ts";
+            const output = `from "${group1}${group2}${end}"`;
+            return output;
+          }
+        );
+      // shim the buffer in syntax/select
+      if (fileName === "select.ts") {
+        contents = `import { Buffer } from "https://deno.land/std@0.147.0/node/buffer.ts";\n${contents}`;
+      }
+    }
+    fileName === "index.ts" && console.log(contents);
 
     const outputPath = path.join(syntaxOutDir, fileName);
     written.add(outputPath);

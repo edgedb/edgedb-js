@@ -32,6 +32,7 @@ export const generateFunctionTypes = ({
   functions,
   types,
   casts,
+  isDeno,
 }: GeneratorParams) => {
   generateFuncopTypes(
     dir,
@@ -55,7 +56,8 @@ export const generateFunctionTypes = ({
       code.writeln([r`__name__: ${quote(funcName)},`]);
       code.writeln([r`__args__: positionalArgs,`]);
       code.writeln([r`__namedargs__: namedArgs,`]);
-    }
+    },
+    isDeno
   );
 };
 
@@ -99,15 +101,15 @@ export function generateFuncopTypes<F extends FuncopDef>(
     code: CodeBuilder,
     funcopName: string,
     funcopDefs: F[]
-  ) => void
+  ) => void,
+  isDeno: boolean
 ) {
   const typeSpecificities = getTypesSpecificity(types, casts);
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
 
   for (const [funcName, _funcDefs] of funcops.entries()) {
     const {mod, name} = splitName(funcName);
-
-    const code = dir.getModule(mod);
+    const code = dir.getModule(mod, isDeno);
 
     code.registerRef(funcName, _funcDefs[0].id);
     code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);
@@ -127,6 +129,9 @@ export function generateFuncopTypes<F extends FuncopDef>(
       casts,
       implicitCastableRootTypes
     );
+
+    code.registerRef(funcName, funcDefs[0].id);
+    code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);
 
     const overloadsBuf = new CodeBuffer();
 

@@ -3,16 +3,18 @@ import {GeneratorParams} from "../generate";
 import {getImplicitCastableRootTypes} from "../util/functionUtils";
 import {getStringRepresentation} from "./generateObjectTypes";
 
-export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
+export const generateSetImpl = ({dir, types, casts, isDeno}: GeneratorParams) => {
   const code = dir.getPath("syntax/setImpl");
 
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
+  const edgedb =
+    isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb";
 
   code.addImport(
     {
       $: true,
     },
-    "edgedb",
+    edgedb,
     {allowFileExt: false}
   );
   code.addImportStar("castMaps", "../castMaps", {
