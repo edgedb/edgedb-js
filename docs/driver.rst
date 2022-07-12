@@ -259,8 +259,9 @@ Scripts
 
 Both ``execute`` and the ``query*`` methods support scripts (queries
 containing multiple statements). The statements are run in an implicit
-transaction, so the whole script remains atomic. For the ``query*`` methods
-only the result of the final statement in the script will be returned.
+transaction (unless already in an explicit transaction), so the whole script
+remains atomic. For the ``query*`` methods only the result of the final
+statement in the script will be returned.
 
 .. code-block:: js
 
