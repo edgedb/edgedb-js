@@ -67,14 +67,20 @@ export enum Capabilities {
   ALL = 0xffff_ffff,
 }
 
+const NO_TRANSACTION_CAPABILITIES =
+  (Capabilities.ALL & ~Capabilities.TRANSACTION) >>> 0;
+
+const NO_TRANSACTION_CAPABILITIES_BYTES = Buffer.alloc(8, 0xff);
+NO_TRANSACTION_CAPABILITIES_BYTES.writeUInt32BE(
+  NO_TRANSACTION_CAPABILITIES,
+  4
+);
+
 const RESTRICTED_CAPABILITIES =
   (Capabilities.ALL &
     ~Capabilities.TRANSACTION &
     ~Capabilities.SESSION_CONFIG) >>>
   0;
-
-const RESTRICTED_CAPABILITIES_BYTES = Buffer.alloc(8, 0xff);
-RESTRICTED_CAPABILITIES_BYTES.writeUInt32BE(RESTRICTED_CAPABILITIES, 4);
 
 enum CompilationFlag {
   INJECT_OUTPUT_TYPE_IDS = 1 << 0,
@@ -431,7 +437,7 @@ export class BaseRawConnection {
     wb.beginMessage(chars.$P)
       .writeLegacyHeaders({
         explicitObjectids: "true",
-        allowCapabilities: RESTRICTED_CAPABILITIES_BYTES,
+        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
       })
       .writeChar(outputFormat)
       .writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
@@ -654,7 +660,9 @@ export class BaseRawConnection {
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
-      .writeLegacyHeaders({allowCapabilities: RESTRICTED_CAPABILITIES_BYTES})
+      .writeLegacyHeaders({
+        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+      })
       .writeString("") // statement name
       .writeBuffer(this._encodeArgs(args, inCodec))
       .endMessage()
@@ -730,7 +738,7 @@ export class BaseRawConnection {
     wb.beginMessage(chars.$O);
     wb.writeLegacyHeaders({
       explicitObjectids: "true",
-      allowCapabilities: RESTRICTED_CAPABILITIES_BYTES,
+      allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
     });
     wb.writeChar(outputFormat);
     wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
@@ -1327,7 +1335,7 @@ export class BaseRawConnection {
     wb.beginMessage(chars.$Q)
       .writeLegacyHeaders({
         allowCapabilities: !allowTransactionCommands
-          ? RESTRICTED_CAPABILITIES_BYTES
+          ? NO_TRANSACTION_CAPABILITIES_BYTES
           : undefined,
       })
       .writeString(query) // statement name
