@@ -387,6 +387,11 @@ export class RawConnection extends BaseRawConnection {
           throw this._parseErrorMessage();
         }
 
+        case chars.$s: {
+          this._parseDescribeStateMessage();
+          break;
+        }
+
         case chars.$Z: {
           this._parseSyncMessage();
 

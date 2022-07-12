@@ -371,7 +371,7 @@ export class BaseRawConnection {
     }
   }
 
-  private _parseDescribeStateMessage() {
+  protected _parseDescribeStateMessage() {
     const typedescId = this.buffer.readUUID();
     const typedesc = this.buffer.readBuffer(this.buffer.readInt32());
 
@@ -393,11 +393,6 @@ export class BaseRawConnection {
         const value = this.buffer.readLenPrefixedBuffer();
         this._parseServerSettings(name, value);
         this.buffer.finishMessage();
-        break;
-      }
-
-      case chars.$s: {
-        this._parseDescribeStateMessage();
         break;
       }
 
@@ -967,6 +962,11 @@ export class BaseRawConnection {
           break;
         }
 
+        case chars.$s: {
+          this._parseDescribeStateMessage();
+          break;
+        }
+
         case chars.$Z: {
           this._parseSyncMessage();
           parsing = false;
@@ -1097,6 +1097,11 @@ export class BaseRawConnection {
           } catch (e: any) {
             error = e;
           }
+          break;
+        }
+
+        case chars.$s: {
+          this._parseDescribeStateMessage();
           break;
         }
 
