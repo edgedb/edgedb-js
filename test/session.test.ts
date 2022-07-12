@@ -14,7 +14,7 @@ if (getEdgeDBVersion().major >= 2) {
     );
 
     await expect(
-      client.withAliases({module: "sys"}).query(`select get_version()`)
+      client.withModuleAliases({module: "sys"}).query(`select get_version()`)
     ).resolves.not.toThrow();
 
     // make sure session state was reset
@@ -91,7 +91,7 @@ if (getEdgeDBVersion().major >= 2) {
 
       expect(
         await client
-          .withAliases({module: "custom"})
+          .withModuleAliases({module: "custom"})
           .withGlobals({test: "abc"})
           .querySingle(`select global custom::test`)
       ).toEqual("abc");
@@ -106,7 +106,7 @@ if (getEdgeDBVersion().major >= 2) {
     }
   }, 10000);
 
-  test("withConfigs", async () => {
+  test("withConfig", async () => {
     const client = getClient({concurrency: 1});
 
     expect(
@@ -120,7 +120,7 @@ if (getEdgeDBVersion().major >= 2) {
     expect(
       (
         await client
-          .withConfigs({
+          .withConfig({
             query_execution_timeout: Duration.from("PT30S"),
           })
           .queryRequiredSingle<Duration>(
@@ -187,14 +187,14 @@ if (getEdgeDBVersion().major >= 2) {
     );
 
     await expect(
-      client.withAliases({module: "sys"}).query("select 1")
+      client.withModuleAliases({module: "sys"}).query("select 1")
     ).rejects.toThrowError(
       /setting session state is not supported in this version of EdgeDB/
     );
 
     await expect(
       client
-        .withConfigs({
+        .withConfig({
           query_execution_timeout: Duration.from("PT30S"),
         })
         .query("select 1")

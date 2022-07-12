@@ -106,41 +106,41 @@ export class TransactionOptions {
 
 export interface SessionOptions {
   module?: string;
-  aliases?: Record<string, string>;
-  configs?: Record<string, any>;
+  moduleAliases?: Record<string, string>;
+  config?: Record<string, any>;
   globals?: Record<string, any>;
 }
 
 export class Session {
   readonly module: string;
-  readonly aliases: Record<string, string>;
-  readonly configs: Record<string, any>;
+  readonly moduleAliases: Record<string, string>;
+  readonly config: Record<string, any>;
   readonly globals: Record<string, any>;
 
   constructor({
     module = "default",
-    aliases = {},
-    configs = {},
+    moduleAliases = {},
+    config = {},
     globals = {},
   }: SessionOptions = {}) {
     this.module = module;
-    this.aliases = aliases;
-    this.configs = configs;
+    this.moduleAliases = moduleAliases;
+    this.config = config;
     this.globals = globals;
   }
 
-  withAliases({module, ...aliases}: {[name: string]: string}): Session {
+  withModuleAliases({module, ...aliases}: {[name: string]: string}): Session {
     return new Session({
       ...this,
       module: module ?? this.module,
-      aliases: {...this.aliases, ...aliases},
+      moduleAliases: {...this.moduleAliases, ...aliases},
     });
   }
 
-  withConfigs(configs: {[name: string]: any}): Session {
+  withConfig(config: {[name: string]: any}): Session {
     return new Session({
       ...this,
-      configs: {...this.configs, ...configs},
+      config: {...this.config, ...config},
     });
   }
 
@@ -157,12 +157,12 @@ export class Session {
     if (this.module !== "default") {
       state.module = this.module;
     }
-    const _aliases = Object.entries(this.aliases);
+    const _aliases = Object.entries(this.moduleAliases);
     if (_aliases.length) {
       state.aliases = _aliases;
     }
-    if (Object.keys(this.configs).length) {
-      state.config = this.configs;
+    if (Object.keys(this.config).length) {
+      state.config = this.config;
     }
     const _globals = Object.entries(this.globals);
     if (_globals.length) {

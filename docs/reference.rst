@@ -363,11 +363,11 @@ Client
               select User {name} filter .id = global userId
             `);
 
-    .. js:method:: withAliases(aliases: {[name: string]: string}): Client
+    .. js:method:: withModuleAliases(aliases: {[name: string]: string}): Client
 
-        Returns a new ``Client`` instance with the specified aliases.
-        The ``aliases`` argument object is merged with any existing aliases
-        defined on the current client instance.
+        Returns a new ``Client`` instance with the specified module aliases.
+        The ``aliases`` argument object is merged with any existing module
+        aliases defined on the current client instance.
 
         If the alias ``name`` is ``module`` this is equivalent to using
         the ``set module`` command, otherwise it is equivalent to the
@@ -377,17 +377,17 @@ Client
 
         .. code-block:: js
 
-            const user = await client.withAliases({
+            const user = await client.withModuleAliases({
               module: 'sys'
             }).querySingle(`
               select get_version_as_str()
             `);
             // "2.0"
 
-    .. js:method:: withConfigs(configs: {[name: string]: any}): Client
+    .. js:method:: withConfig(config: {[name: string]: any}): Client
 
         Returns a new ``Client`` instance with the specified client session
-        configuration. The ``configs`` argument object is merged with any
+        configuration. The ``config`` argument object is merged with any
         existing session config defined on the current client instance.
 
         Equivalent to using the ``configure session`` command. For available

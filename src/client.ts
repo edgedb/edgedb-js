@@ -513,17 +513,17 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withSession(session));
   }
 
-  withAliases(aliases: {[name: string]: string}) {
+  withModuleAliases(aliases: {[name: string]: string}) {
     return new Client(
       this.pool,
-      this.options.withSession(this.options.session.withAliases(aliases))
+      this.options.withSession(this.options.session.withModuleAliases(aliases))
     );
   }
 
-  withConfigs(configs: {[name: string]: any}): Client {
+  withConfig(config: {[name: string]: any}): Client {
     return new Client(
       this.pool,
-      this.options.withSession(this.options.session.withConfigs(configs))
+      this.options.withSession(this.options.session.withConfig(config))
     );
   }
 
