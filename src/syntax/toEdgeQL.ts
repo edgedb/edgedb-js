@@ -972,12 +972,7 @@ function renderEdgeQL(
       expr.__modifiers__.filter
         ? `\nFILTER ${renderEdgeQL(expr.__modifiers__.filter, ctx)}\n`
         : " "
-    }SET ${shapeToEdgeQL(
-      expr.__shape__,
-      ctx
-      // (expr.__element__ as any)?.__pointers__,
-      // true
-    )})`;
+    }SET ${shapeToEdgeQL(expr.__shape__, ctx, null, false, false)})`;
   } else if (expr.__kind__ === ExpressionKind.Delete) {
     return `(DELETE ${renderEdgeQL(
       expr.__expr__,
@@ -991,7 +986,7 @@ function renderEdgeQL(
       ctx,
       false,
       true
-    )} ${shapeToEdgeQL(expr.__shape__, ctx)})`;
+    )} ${shapeToEdgeQL(expr.__shape__, ctx, null, false, false)})`;
   } else if (expr.__kind__ === ExpressionKind.InsertUnlessConflict) {
     const $on = expr.__conflict__.on;
     const $else = expr.__conflict__.else;
@@ -1190,7 +1185,8 @@ function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
   type: ObjectType | null = null,
-  keysOnly: boolean = false
+  keysOnly: boolean = false,
+  injectImplicitId = true
 ) {
   const pointers = type?.__pointers__ || null;
   const isFreeObject = type?.__name__ === "std::FreeObject";
@@ -1308,7 +1304,7 @@ function shapeToEdgeQL(
     );
   }
 
-  if (lines.length === 0) {
+  if (lines.length === 0 && injectImplicitId) {
     addLine("id");
   }
   return keysOnly ? `{${lines.join(", ")}}` : `{\n${lines.join(",\n")}\n}`;

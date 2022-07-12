@@ -208,18 +208,21 @@ test("complex raw data in inserts", async () => {
     stringsArr: strings,
     stringsMulti: strings as ["aaa", "bbb"],
     stringMultiArr: [strings],
+    boolField: true,
   });
   const final = e.select(query, () => ({
     id: true,
     stringsMulti: true,
     stringsArr: true,
     stringMultiArr: true,
+    boolField: true,
   }));
   const result = await final.run(client);
   expect(result).toMatchObject({
     stringsMulti: strings,
     stringsArr: strings,
     stringMultiArr: [strings],
+    boolField: true,
   });
 
   e.insert(e.Bag, {
@@ -318,4 +321,21 @@ test("undefined in insert", async () => {
     })
     .run(client);
   expect(result.id).toBeDefined();
+});
+
+test("invalid insert", async () => {
+  expect(() =>
+    e
+      // @ts-ignore
+      .insert(e.Movie, () => ({
+        title: "Invalid",
+      }))
+      .toEdgeQL()
+  ).toThrowError();
+});
+
+test("empty shape insert", async () => {
+  const res = await e.insert(e.Profile, {}).run(client);
+
+  expect(Object.keys(res)).toEqual(["id"]);
 });
