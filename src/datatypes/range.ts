@@ -53,11 +53,13 @@ export class Range<
   }
 
   toJSON() {
-    return {
-      lower: this._lower,
-      upper: this._upper,
-      inc_lower: this._incLower,
-      inc_upper: this._incUpper,
-    };
+    return this.isEmpty
+      ? {empty: true}
+      : {
+          lower: this._lower,
+          upper: this._upper,
+          inc_lower: this._incLower,
+          inc_upper: this._incUpper,
+        };
   }
 }
