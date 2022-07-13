@@ -777,7 +777,7 @@ test("fetch: relative_duration", async () => {
   }
 });
 
-test.only("fetch: date_duration", async () => {
+test("fetch: date_duration", async () => {
   const con = getClient();
   let res: any;
   try {
