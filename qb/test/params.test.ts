@@ -284,19 +284,4 @@ test("v2 param types", async () => {
       }
     >
   >(true);
-
-  const complexQuery = e.params(
-    {
-      tuple: e.tuple(params),
-    },
-    p => e.select(p)
-  );
-
-  const complexResult = await complexQuery.run(client, {
-    tuple: args,
-  });
-
-  expect(Object.values(complexResult.tuple as any)).toEqual(
-    Object.values(args)
-  );
 });

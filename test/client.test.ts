@@ -781,7 +781,10 @@ test("fetch: relative_duration", async () => {
 
 test("fetch: date_duration", async () => {
   const con = getClient();
-  if (await version_lt(con, 2)) return;
+  const isV1 = await version_lt(con, 2);
+  if (isV1) {
+    return true;
+  }
   let res: any;
   try {
     for (const time of [
@@ -813,6 +816,7 @@ test("fetch: date_duration", async () => {
   } finally {
     await con.close();
   }
+  return true;
 });
 
 if (!isDeno) {
