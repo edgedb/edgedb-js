@@ -81,6 +81,9 @@ test("range primitives", async () => {
     `std::range(<std::float64>{}, 8)`
   );
 
+  expect(() => e.range(new edgedb.Range(null, null))).toThrow();
+  expect(() => e.range(edgedb.Range.empty())).toThrow();
+
   const res = await e
     .select({
       range: e.range(range),
