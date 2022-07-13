@@ -53,13 +53,21 @@ export function $resolveOverload(
   typeSpec: introspect.Types,
   funcDefs: OverloadFuncDef[]
 ) {
-  const [positionalArgs, namedArgs] =
-    typeof args[0] === "object" && typeof args[0].__kind__ === "undefined"
-      ? [
-          mapLiteralToTypeSet(args.slice(1)),
-          mapLiteralToTypeSet(args[0] as object),
-        ]
-      : [mapLiteralToTypeSet(args), undefined];
+  const positionalArgs: (TypeSet | undefined)[] = [];
+  let namedArgs: {[key: string]: TypeSet} | undefined = undefined;
+  if (args.length) {
+    if (args[0] !== undefined) {
+      try {
+        positionalArgs.push(literalToTypeSet(args[0]));
+      } catch {
+        // first arg is not a expr or literal type, so assume named args object
+        namedArgs = mapLiteralToTypeSet(args[0] as object);
+      }
+    } else {
+      positionalArgs.push(undefined);
+    }
+    positionalArgs.push(...mapLiteralToTypeSet(args.slice(1)));
+  }
 
   for (const def of funcDefs) {
     const resolvedOverload = _tryOverload(
