@@ -80,7 +80,9 @@ The first time you generate the query builder you'll be prompted to add the
 generated files to your ``.gitignore``. Confirm this prompt to
 add the the line automatically.
 
-$ npx edgeql-js
+.. code-block:: bash
+
+  $ npx edgeql-js
   ...
   Checking the generated query builder into version control
   is NOT RECOMMENDED. Would you like to update .gitignore to ignore
@@ -93,8 +95,8 @@ $ npx edgeql-js
 
 Import the query builder
 ^^^^^^^^^^^^^^^^^^^^^^^^
-Create a TypeScript file called ``script.ts`` (the name doesn't matter) and
-import the query builder like so:
+
+Create a TypeScript file called ``script.ts`` (the name doesn't matter) and import the query builder. We recommend importing the query builder as a single default import called ``e``.
 
 .. code-block:: typescript
 
@@ -490,10 +492,10 @@ Query parameters
     title: e.str,
     release_year: e.int64,
   },
-  (params) => {
+  ($) => {
     return e.insert(e.Movie, {
-      title: params.title,
-      release_year: params.release_year,
+      title: $.title,
+      release_year: $.release_year,
     }))
   };
 
@@ -514,7 +516,7 @@ Globals
 
 Reference global variables.
 
-.. code-block::
+.. code-block:: typescript
 
   e.global.user_id;
   e.default.global.user_id;  // same as above
