@@ -4,8 +4,12 @@ import * as tc from "conditional-type-checks";
 
 import e, {$infer} from "../dbschema/edgeql-js";
 
-import {setupTests, teardownTests, TestData} from "./setupTeardown";
-import {version_lt} from "./group.test";
+import {
+  setupTests,
+  teardownTests,
+  TestData,
+  version_lt,
+} from "./setupTeardown";
 
 let client: edgedb.Client;
 let data: TestData;
@@ -20,7 +24,7 @@ afterAll(async () => {
 });
 
 test("globals", async () => {
-  if (await version_lt(2)) return;
+  if (await version_lt(client, 2)) return;
   expect(e.select(e.global.uuid_global).toEdgeQL()).toEqual(
     `SELECT (GLOBAL default::uuid_global)`
   );

@@ -25,6 +25,13 @@ export interface EdgeDBVersion {
   stage_no: number;
 }
 
+export const version_lt = async (client: Client, cutoff: number) => {
+  const version = await client.queryRequiredSingle<{major: number}>(
+    `select sys::get_version()`
+  );
+  return version.major < cutoff;
+};
+
 export const isDeno =
   typeof window !== "undefined" &&
   // @ts-ignore

@@ -37,8 +37,8 @@ export const getServerInfo = async (
   return JSON.parse(line.replace("READY=", ""));
 };
 
-export const getWSLPath = (path: string): string => {
-  return path
+export const getWSLPath = (wslPath: string): string => {
+  return wslPath
     .replace(/^([a-z]):/i, "/mnt/$1")
     .split("\\")
     .join("/")
@@ -150,7 +150,7 @@ export const startServer = async (
   });
 
   let runtimeData;
-  for (let i = 0; i < 250; i++) {
+  for (let i = 0; i < 1000; i++) {
     runtimeData = await getServerInfo(statusFile);
 
     if (runtimeData == null) {

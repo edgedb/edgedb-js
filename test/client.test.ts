@@ -37,6 +37,7 @@ import {
   Session,
   AuthenticationError,
 } from "../src/index.node";
+
 import {retryingConnect} from "../src/retry";
 import {AdminUIFetchConnection} from "../src/fetchConn";
 import {CustomCodecSpec} from "../src/codecs/registry";
@@ -46,6 +47,7 @@ import {
   getConnectOptions,
   getEdgeDBVersion,
   isDeno,
+  version_lt,
 } from "./testbase";
 
 function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
@@ -779,6 +781,7 @@ test("fetch: relative_duration", async () => {
 
 test("fetch: date_duration", async () => {
   const con = getClient();
+  if (await version_lt(con, 2)) return;
   let res: any;
   try {
     for (const time of [

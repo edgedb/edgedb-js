@@ -120,3 +120,10 @@ export async function teardownTests(client: Client) {
 
   await client.close();
 }
+
+export const version_lt = async (client: Client, cutoff: number) => {
+  const version = await client.queryRequiredSingle<{major: number}>(
+    `select sys::get_version()`
+  );
+  return version.major < cutoff;
+};

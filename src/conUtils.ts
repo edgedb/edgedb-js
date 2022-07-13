@@ -433,7 +433,7 @@ function validateHost(host: string): string {
   return host;
 }
 
-function parseDuration(duration: string | number | Duration): number {
+export function parseDuration(duration: string | number | Duration): number {
   if (typeof duration === "number") {
     if (duration < 0) {
       throw new Error("invalid waitUntilAvailable duration, must be >= 0");

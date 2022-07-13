@@ -5,13 +5,6 @@ import {setupTests, tc, teardownTests} from "./setupTeardown";
 
 let client: edgedb.Client;
 
-export const version_lt = async (cutoff: number) => {
-  const version = await client.queryRequiredSingle<{major: number}>(
-    `select sys::get_version()`
-  );
-  return version.major < cutoff;
-};
-
 beforeAll(async () => {
   const setup = await setupTests();
   ({client} = setup);
