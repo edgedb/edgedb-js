@@ -60,7 +60,7 @@ export const getServerCommand = (
   statusFile: string
 ): {args: string[]; availableFeatures: string[]} => {
   const availableFeatures: string[] = [];
-  let srvcmd = "edgedb-server";
+  let srvcmd = `edgedb-server`;
   if (process.env.EDGEDB_SERVER_BIN) {
     srvcmd = process.env.EDGEDB_SERVER_BIN;
   }
@@ -122,6 +122,7 @@ export const startServer = async (
 
   if (process.env.EDGEDB_DEBUG_SERVER) {
     proc.stdout.on("data", data => {
+      console.log(data);
       process.stdout.write(data.toString());
     });
   }

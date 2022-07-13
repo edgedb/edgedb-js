@@ -82,11 +82,11 @@ jobs:
         with:
           server-version: ${{ matrix.edgedb-version }}
 
-      # - name: Run query builder tests
-      #   if: ${{ matrix.node-version >= 14 && matrix.edgedb-version == 'nightly' }}  # change to stable once 2.0 lands
-      #   working-directory: qb
-      #   run: |
-      #     yarn test:ci
+      - name: Run query builder tests
+        if: ${{ matrix.node-version >= 14 && matrix.edgedb-version == 'nightly' }}  # change to stable once 2.0 lands
+        working-directory: qb
+        run: |
+          yarn test:ci
 
       - name: Run functional tests
         run: |

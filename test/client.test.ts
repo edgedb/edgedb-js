@@ -47,7 +47,6 @@ import {
   getConnectOptions,
   getEdgeDBVersion,
   isDeno,
-  version_lt,
 } from "./testbase";
 
 function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
@@ -779,46 +778,6 @@ test("fetch: relative_duration", async () => {
   }
 });
 
-test("fetch: date_duration", async () => {
-  const con = getClient();
-  const isV1 = await version_lt(con, 2);
-  if (isV1) {
-    return true;
-  }
-  let res: any;
-  try {
-    for (const time of [
-      "1 day",
-      "-752043 days",
-      "20 years 5 days",
-      "3 months",
-      "7 weeks",
-    ]) {
-      res = await con.querySingle(
-        `
-          select (
-            <cal::date_duration><str>$time,
-            <str><cal::date_duration><str>$time,
-          );
-        `,
-        {time}
-      );
-      expect(res[0].toString()).toBe(res[1]);
-
-      const res2: any = await con.querySingle(
-        `
-        select <cal::date_duration>$time;
-        `,
-        {time: res[0]}
-      );
-      expect(res2.toString()).toBe(res[0].toString());
-    }
-  } finally {
-    await con.close();
-  }
-  return true;
-});
-
 if (!isDeno) {
   test("fetch: relative_duration fuzz", async () => {
     jest.setTimeout(10_000);
@@ -1023,6 +982,42 @@ if (getEdgeDBVersion().major >= 2) {
     } finally {
       await client.close();
     }
+  });
+
+  test("fetch: date_duration", async () => {
+    const con = getClient();
+    let res: any;
+    try {
+      for (const time of [
+        "1 day",
+        "-752043 days",
+        "20 years 5 days",
+        "3 months",
+        "7 weeks",
+      ]) {
+        res = await con.querySingle(
+          `
+          select (
+            <cal::date_duration><str>$time,
+            <str><cal::date_duration><str>$time,
+          );
+        `,
+          {time}
+        );
+        expect(res[0].toString()).toBe(res[1]);
+
+        const res2: any = await con.querySingle(
+          `
+        select <cal::date_duration>$time;
+        `,
+          {time: res[0]}
+        );
+        expect(res2.toString()).toBe(res[0].toString());
+      }
+    } finally {
+      await con.close();
+    }
+    return;
   });
 }
 
