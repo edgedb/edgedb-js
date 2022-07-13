@@ -95,6 +95,8 @@ in the JavaScript type system, so we've implemented classes like
     - ``Array``
   * - Named tuples ``tuple<foo: x, bar: y, ...>``
     - ``object``
+  * - Ranges ``range<x>``
+    - :js:class:`Range`
   * - Enums
     - ``string``
   * - ``Object``
@@ -137,6 +139,7 @@ documentation.
 - :js:class:`LocalDateTime`
 - :js:class:`Duration`
 - :js:class:`ConfigMemory`
+- :js:class:`Range`
 
 
 .. .. note::
@@ -193,6 +196,7 @@ Use ``queryRequiredSingle`` for queries that return *exactly one* element.
 The TypeScript signatures of these methods reflects their behavior.
 
 .. code-block:: typescript
+
   await client.query<number>(`select 2 + 2;`);
   // number[]
 

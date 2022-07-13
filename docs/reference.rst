@@ -487,6 +487,8 @@ The table below shows the correspondence between EdgeDB and JavaScript types.
 | ``anytuple``            | ``Array`` or                                     |
 |                         | ``Array``-like ``object``                        |
 +-------------------------+--------------------------------------------------+
+| ``range<anytype>``      | :js:class:`Range`                                |
++-------------------------+--------------------------------------------------+
 | ``anyenum``             | ``string``                                       |
 +-------------------------+--------------------------------------------------+
 | ``Object``              | ``object``                                       |
@@ -688,6 +690,7 @@ where the elements are accessible either by their names or indexes.
     }
 
     main();
+
 
 Local Date
 ==========
@@ -1024,6 +1027,60 @@ Memory
 
         Get the string representation of the memory value. Format is the same
         as returned by string casting a ``cfg::memory`` value in EdgeDB.
+
+Range
+=====
+
+.. js:class:: Range(\
+        lower: T | null, \
+        upper: T | null, \
+        incLower: boolean = true, \
+        incUpper: boolean = false \
+    )
+
+    A JavaScript representation of an EdgeDB ``std::range`` value. This is a generic TypeScript class with the following type signature.
+
+    .. code-block:: typescript
+
+        class Range<
+            T extends number | Date | LocalDate | LocalDateTime | Duration
+        >{
+            // ...
+        }
+
+    .. js:attribute:: lower: T
+
+        The lower bound of the range value.
+
+    .. js:attribute:: upper: T
+
+        The upper bound of the range value.
+
+    .. js:attribute:: incLower: boolean
+
+        Whether the lower bound is inclusive.
+
+    .. js:attribute:: incUpper: boolean
+
+        Whether the upper bound is inclusive.
+
+    .. js:attribute:: empty: boolean
+
+        Whether the range is empty.
+
+    .. js:method:: toJSON(): number
+
+        Returns a JSON-encodable representation of the range.
+
+    .. js:method:: empty(): Range
+
+        A static method to declare an empty range (no bounds).
+
+        .. code-block:: typescript
+
+            Range.empty();
+
+
 
 
 .. _BigInt:

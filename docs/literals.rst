@@ -315,6 +315,48 @@ empty sets are not allowed without a cast.
   // <std::int64>{}
 
 
+Range literals
+^^^^^^^^^^^^^^
+
+As in EdgeQL, declare range literals with the built-in ``range`` function.
+
+.. code-block:: typescript
+
+  const myRange = e.range(0, 8);
+
+  myRange.toEdgeQL();
+  // => std::range(0, 8);
+
+Ranges can be created for all numerical types, as well as ``datetime``, ``local_datetime``, and ``local_date``.
+
+.. code-block:: typescript
+
+  e.range(e.decimal('100'), e.decimal('200'));
+  e.range(Date.parse("1970-01-01"), Date.parse("2022-01-01"));
+  e.range(new LocalDate(1970, 1, 1), new LocalDate(2022, 1, 1));
+
+Supply named parameters as the first argument.
+
+.. code-block:: typescript
+
+  e.range({inc_lower: true, inc_upper: true, empty: true}, 0, 8);
+  // => std::range(0, 8, true, true);
+
+JavaScript doesn't have a native way to represent range values. Any range value returned from a query will be encoded as an instance of the :js:class:`Range` class, which is exported from the ``edgedb`` package.
+
+.. code-block:: typescript
+
+  const query = e.range(0, 8);
+  const result = await query.run(client);
+  // => Range<number>;
+
+  console.log(result.lower);       // 0
+  console.log(result.upper);       // 8
+  console.log(result.isEmpty);     // false
+  console.log(result.incLower);    // true
+  console.log(result.incUpper);    // false
+
+
 .. Modules
 .. -------
 

@@ -129,7 +129,7 @@ files to your ``.gitignore``. Confirm this prompt, and a line will be
 automatically added to your ``.gitignore`` to exclude the generated files from
 Git.
 
-.. code-block:: bash
+.. code-block::
 
   $ npx edgeql-js
   ...
@@ -150,8 +150,7 @@ the full source code of your application.
 Importing
 ^^^^^^^^^
 
-Once the query builder is generated, it's ready to use! Just import it and
-start building queries.
+Once the query builder is generated, it's ready to use! We recommend importing the query builder as a single default import called ``e``.
 
 .. code-block:: typescript
 
