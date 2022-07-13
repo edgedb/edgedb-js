@@ -776,6 +776,41 @@ test("fetch: relative_duration", async () => {
   }
 });
 
+test.only("fetch: date_duration", async () => {
+  const con = getClient();
+  let res: any;
+  try {
+    for (const time of [
+      "1 day",
+      "-752043 days",
+      "20 years 5 days",
+      "3 months",
+      "7 weeks",
+    ]) {
+      res = await con.querySingle(
+        `
+          select (
+            <cal::date_duration><str>$time,
+            <str><cal::date_duration><str>$time,
+          );
+        `,
+        {time}
+      );
+      expect(res[0].toString()).toBe(res[1]);
+
+      const res2: any = await con.querySingle(
+        `
+        select <cal::date_duration>$time;
+        `,
+        {time: res[0]}
+      );
+      expect(res2.toString()).toBe(res[0].toString());
+    }
+  } finally {
+    await con.close();
+  }
+});
+
 if (!isDeno) {
   test("fetch: relative_duration fuzz", async () => {
     jest.setTimeout(10_000);

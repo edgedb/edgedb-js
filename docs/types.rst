@@ -26,6 +26,7 @@ scalar types, object types, and enums. These types are used in queries for think
   e.cal.local_date;
   e.cal.local_time;
   e.cal.relative_duration;
+  e.cal.date_duration;
 
   e.Movie;    // user-defined object type
   e.Genre;    // user-defined enum

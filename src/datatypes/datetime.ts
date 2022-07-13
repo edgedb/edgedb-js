@@ -750,3 +750,62 @@ export class RelativeDuration {
     throw new TypeError("Not possible to compare RelativeDuration");
   }
 }
+
+export class DateDuration {
+  private readonly _years: number;
+  private readonly _months: number;
+  private readonly _weeks: number;
+  private readonly _days: number;
+
+  constructor(
+    years: number = 0,
+    months: number = 0,
+    weeks: number = 0,
+    days: number = 0
+  ) {
+    this._years = Math.trunc(years) || 0;
+    this._months = Math.trunc(months) || 0;
+    this._weeks = Math.trunc(weeks) || 0;
+    this._days = Math.trunc(days) || 0;
+  }
+  get years(): number {
+    return this._years;
+  }
+  get months(): number {
+    return this._months;
+  }
+  get weeks(): number {
+    return this._weeks;
+  }
+  get days(): number {
+    return this._days;
+  }
+
+  toString(): string {
+    let str = "P";
+    if (this._years) {
+      str += `${this._years}Y`;
+    }
+    if (this._months) {
+      str += `${this._months}M`;
+    }
+    const days = this._days + 7 * this._weeks;
+    if (days) {
+      str += `${days}D`;
+    }
+
+    if (str === "P") {
+      return "PT0S";
+    }
+
+    return str;
+  }
+
+  toJSON(): string {
+    return this.toString();
+  }
+
+  valueOf(): any {
+    throw new TypeError("Not possible to compare DateDuration");
+  }
+}

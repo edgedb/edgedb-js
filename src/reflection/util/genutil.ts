@@ -67,6 +67,10 @@ export const scalarToLiteralMapping: {
     type: "edgedb.RelativeDuration",
     literalKind: "instanceof",
   },
+  "cal::date_duration": {
+    type: "edgedb.DateDuration",
+    literalKind: "instanceof",
+  },
   "cfg::memory": {type: "edgedb.ConfigMemory", literalKind: "instanceof"},
 };
 

@@ -4,6 +4,7 @@ import {
   LocalDateTime,
   LocalTime,
   RelativeDuration,
+  DateDuration,
 } from "edgedb";
 import {
   $expr_Array,
@@ -1422,7 +1423,8 @@ function literalToEdgeQL(type: BaseType, val: any): string {
     val instanceof LocalDateTime ||
     val instanceof LocalTime ||
     val instanceof Duration ||
-    val instanceof RelativeDuration
+    val instanceof RelativeDuration ||
+    val instanceof DateDuration
   ) {
     stringRep = `'${val.toString()}'`;
   } else if (val instanceof Buffer) {
