@@ -54,7 +54,7 @@ export function $resolveOverload(
   funcDefs: OverloadFuncDef[]
 ) {
   const positionalArgs: (TypeSet | undefined)[] = [];
-  let namedArgs: {[key: string]: TypeSet} | undefined = undefined;
+  let namedArgs: {[key: string]: TypeSet} | undefined;
   if (args.length) {
     if (args[0] !== undefined) {
       try {

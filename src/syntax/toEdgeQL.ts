@@ -1187,7 +1187,7 @@ function shapeToEdgeQL(
   ctx: RenderCtx,
   type: ObjectType | null = null,
   keysOnly: boolean = false,
-  injectImplicitId = true
+  injectImplicitId: boolean = true
 ) {
   const pointers = type?.__pointers__ || null;
   const isFreeObject = type?.__name__ === "std::FreeObject";

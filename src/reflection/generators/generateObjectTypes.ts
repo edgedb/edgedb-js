@@ -344,10 +344,10 @@ export const generateObjectTypes = (params: GeneratorParams) => {
             ]
               .filter(field => fieldNames.has(field.name))
               .map(field => quote(field.name));
-            const ref = getRef(baseType.name);
+            const baseRef = getRef(baseType.name);
             return overloadedFields.length
-              ? frag`Omit<${ref}λShape, ${overloadedFields.join(" | ")}>`
-              : frag`${ref}λShape`;
+              ? frag`Omit<${baseRef}λShape, ${overloadedFields.join(" | ")}>`
+              : frag`${baseRef}λShape`;
           }),
           " & "
         )} & `
