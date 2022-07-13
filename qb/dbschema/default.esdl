@@ -69,6 +69,12 @@ module default {
     required multi link favourite_movies -> Movie;
   }
 
+  type AdminUser extending User {
+    overloaded required property username -> str {
+      constraint exclusive;
+    }
+  }
+
   type MovieShape {
   }
 
