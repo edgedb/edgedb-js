@@ -25,6 +25,8 @@ import {
   validateCredentials,
 } from "./credentials";
 import * as platform from "./platform";
+import {Duration, parseHumanDurationString} from "./datatypes/datetime";
+import {checkValidEdgeDBDuration} from "./codecs/datetime";
 
 export type Address = [string, number];
 
@@ -50,7 +52,6 @@ interface PartiallyNormalizedConfig {
 
 export interface NormalizedConnectConfig extends PartiallyNormalizedConfig {
   connectTimeout?: number;
-  waitUntilAvailable: number;
   logging: boolean;
 }
 
@@ -69,7 +70,7 @@ export interface ConnectConfig {
   tlsSecurity?: TlsSecurity;
 
   timeout?: number;
-  waitUntilAvailable?: number;
+  waitUntilAvailable?: Duration | number;
   logging?: boolean;
 }
 
@@ -81,7 +82,6 @@ export async function parseConnectArguments(
   return {
     ...(await parseConnectDsnAndArgs(opts, projectDir)),
     connectTimeout: opts.timeout,
-    waitUntilAvailable: opts.waitUntilAvailable ?? 30_000,
     logging: opts.logging ?? true,
   };
 }
@@ -93,7 +93,8 @@ type ConnectConfigParams =
   | "user"
   | "password"
   | "tlsCAData"
-  | "tlsSecurity";
+  | "tlsSecurity"
+  | "waitUntilAvailable";
 
 export class ResolvedConnectConfig {
   _host: string | null = null;
@@ -117,6 +118,9 @@ export class ResolvedConnectConfig {
   _tlsSecurity: TlsSecurity | null = null;
   _tlsSecuritySource: string | null = null;
 
+  _waitUntilAvailable: number | null = null;
+  _waitUntilAvailableSource: string | null = null;
+
   serverSettings: {[key: string]: string} = {};
 
   constructor() {
@@ -128,6 +132,7 @@ export class ResolvedConnectConfig {
     this.setTlsCAData = this.setTlsCAData.bind(this);
     this.setTlsCAFile = this.setTlsCAFile.bind(this);
     this.setTlsSecurity = this.setTlsSecurity.bind(this);
+    this.setWaitUntilAvailable = this.setWaitUntilAvailable.bind(this);
   }
 
   _setParam<Param extends ConnectConfigParams, Value extends any>(
@@ -255,6 +260,18 @@ export class ResolvedConnectConfig {
     );
   }
 
+  setWaitUntilAvailable(
+    duration: string | number | Duration | null,
+    source: string
+  ): boolean {
+    return this._setParam(
+      "waitUntilAvailable",
+      duration,
+      source,
+      parseDuration
+    );
+  }
+
   addServerSettings(settings: {[key: string]: string}): void {
     this.serverSettings = {
       ...settings,
@@ -324,6 +341,10 @@ export class ResolvedConnectConfig {
     return this._tlsOptions;
   }
 
+  get waitUntilAvailable(): number {
+    return this._waitUntilAvailable ?? 30_000;
+  }
+
   explainConfig(): string {
     const output: string[] = [
       `Parameter          Value                                    Source`,
@@ -372,6 +393,12 @@ export class ResolvedConnectConfig {
       this._tlsSecurity,
       this._tlsSecuritySource
     );
+    outputLine(
+      "waitUntilAvailable",
+      this.waitUntilAvailable,
+      this._waitUntilAvailable,
+      this._waitUntilAvailableSource
+    );
 
     return output.join("\n");
   }
@@ -406,6 +433,40 @@ function validateHost(host: string): string {
   return host;
 }
 
+function parseDuration(duration: string | number | Duration): number {
+  if (typeof duration === "number") {
+    if (duration < 0) {
+      throw new Error("invalid waitUntilAvailable duration, must be >= 0");
+    }
+    return duration;
+  }
+  if (typeof duration === "string") {
+    if (duration.startsWith("P")) {
+      duration = Duration.from(duration);
+    } else {
+      return parseHumanDurationString(duration);
+    }
+  }
+  if (duration instanceof Duration) {
+    const invalidField = checkValidEdgeDBDuration(duration);
+    if (invalidField) {
+      throw new Error(
+        `invalid waitUntilAvailable duration, cannot have a '${invalidField}' value`
+      );
+    }
+    if (duration.sign < 0) {
+      throw new Error("invalid waitUntilAvailable duration, must be >= 0");
+    }
+    return (
+      duration.milliseconds +
+      duration.seconds * 1000 +
+      duration.minutes * 60_000 +
+      duration.hours * 3_600_000
+    );
+  }
+  throw new Error(`invalid duration`);
+}
+
 async function parseConnectDsnAndArgs(
   config: ConnectConfig,
   projectDir: string | null
@@ -436,6 +497,7 @@ async function parseConnectDsnAndArgs(
       tlsCAFile: config.tlsCAFile,
       tlsSecurity: config.tlsSecurity,
       serverSettings: config.serverSettings,
+      waitUntilAvailable: config.waitUntilAvailable,
     },
     {
       dsn: `'dsnOrInstanceName' option (parsed as dsn)`,
@@ -451,6 +513,7 @@ async function parseConnectDsnAndArgs(
       tlsCAFile: `'tlsCAFile' option`,
       tlsSecurity: `'tlsSecurity' option`,
       serverSettings: `'serverSettings' option`,
+      waitUntilAvailable: `'waitUntilAvailable' option`,
     },
     `Cannot have more than one of the following connection options: ` +
       `'dsnOrInstanceName', 'credentials', 'credentialsFile' or 'host'/'port'`
@@ -485,6 +548,7 @@ async function parseConnectDsnAndArgs(
           tlsCA: process.env.EDGEDB_TLS_CA,
           tlsCAFile: process.env.EDGEDB_TLS_CA_FILE,
           tlsSecurity: process.env.EDGEDB_CLIENT_TLS_SECURITY,
+          waitUntilAvailable: process.env.EDGEDB_WAIT_UNTIL_AVAILABLE,
         },
         {
           dsn: `'EDGEDB_DSN' environment variable`,
@@ -499,6 +563,7 @@ async function parseConnectDsnAndArgs(
           tlsCA: `'EDGEDB_TLS_CA' environment variable`,
           tlsCAFile: `'EDGEDB_TLS_CA_FILE' environment variable`,
           tlsSecurity: `'EDGEDB_CLIENT_TLS_SECURITY' environment variable`,
+          waitUntilAvailable: `'EDGEDB_WAIT_UNTIL_AVAILABLE' environment variable`,
         },
         `Cannot have more than one of the following connection environment variables: ` +
           `'EDGEDB_DSN', 'EDGEDB_INSTANCE', 'EDGEDB_CREDENTIALS', ` +
@@ -599,6 +664,7 @@ interface ResolveConfigOptionsConfig {
   tlsCAFile: string;
   tlsSecurity: string;
   serverSettings: {[key: string]: string};
+  waitUntilAvailable: number | string | Duration;
 }
 
 async function resolveConfigOptions<
@@ -638,6 +704,11 @@ async function resolveConfigOptions<
     resolvedConfig.setTlsSecurity(
       config.tlsSecurity ?? null,
       sources.tlsSecurity!
+    ) || anyOptionsUsed;
+  anyOptionsUsed =
+    resolvedConfig.setWaitUntilAvailable(
+      config.waitUntilAvailable ?? null,
+      sources.waitUntilAvailable!
     ) || anyOptionsUsed;
   resolvedConfig.addServerSettings(config.serverSettings ?? {});
 
@@ -847,6 +918,13 @@ async function parseDSNIntoConfig(
     null,
     config._tlsSecurity,
     config.setTlsSecurity
+  );
+
+  await handleDSNPart(
+    "wait_until_available",
+    null,
+    config._waitUntilAvailable,
+    config.setWaitUntilAvailable
   );
 
   const serverSettings: any = {};

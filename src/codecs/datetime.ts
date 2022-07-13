@@ -151,17 +151,25 @@ const unencodableDurationFields: Array<keyof Duration> = [
   "days",
 ];
 
+export function checkValidEdgeDBDuration(duration: Duration): null | string {
+  for (const field of unencodableDurationFields) {
+    if (duration[field] !== 0) {
+      return field;
+    }
+  }
+  return null;
+}
+
 export class DurationCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof Duration)) {
       throw new Error(`a Duration instance was expected, got "${object}"`);
     }
-    for (const field of unencodableDurationFields) {
-      if (object[field] !== 0) {
-        throw new Error(
-          `Cannot encode a 'Duration' with a non-zero number of ${field}`
-        );
-      }
+    const invalidField = checkValidEdgeDBDuration(object);
+    if (invalidField) {
+      throw new Error(
+        `Cannot encode a 'Duration' with a non-zero number of ${invalidField}`
+      );
     }
 
     let us = bi.make(object.microseconds);
