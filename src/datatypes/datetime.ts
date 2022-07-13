@@ -809,3 +809,41 @@ export class DateDuration {
     throw new TypeError("Not possible to compare DateDuration");
   }
 }
+
+const humanDurationPrefixes: {[key: string]: number} = {
+  h: 3_600_000,
+  hou: 3_600_000,
+  m: 60_000,
+  min: 60_000,
+  s: 1000,
+  sec: 1000,
+  ms: 1,
+  mil: 1,
+};
+
+export function parseHumanDurationString(durationStr: string): number {
+  const regex =
+    /(\d+|\d+\.\d+|\.\d+)\s*(hours?|minutes?|seconds?|milliseconds?|ms|h|m|s)\s*/g;
+
+  let duration = 0;
+  const seen = new Set<number>();
+  let match = regex.exec(durationStr);
+  let lastIndex = 0;
+  while (match) {
+    if (match.index !== lastIndex) {
+      throw new Error(`invalid duration "${durationStr}"`);
+    }
+    const mult = humanDurationPrefixes[match[2].slice(0, 3)]!;
+    if (seen.has(mult)) {
+      throw new Error(`invalid duration "${durationStr}"`);
+    }
+    duration += Number(match[1]) * mult;
+    seen.add(mult);
+    lastIndex = regex.lastIndex;
+    match = regex.exec(durationStr);
+  }
+  if (lastIndex !== durationStr.length) {
+    throw new Error(`invalid duration "${durationStr}"`);
+  }
+  return duration;
+}

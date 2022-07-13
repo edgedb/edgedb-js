@@ -30,7 +30,9 @@ export async function retryingConnect(
   registry: CodecsRegistry
 ): Promise<RawConnection> {
   const maxTime =
-    config.waitUntilAvailable === 0 ? 0 : hrTime() + config.waitUntilAvailable;
+    config.connectionParams.waitUntilAvailable === 0
+      ? 0
+      : hrTime() + config.connectionParams.waitUntilAvailable;
   while (true) {
     try {
       return await RawConnection.connectWithTimeout(
@@ -52,7 +54,7 @@ export async function retryingConnect(
             lastLoggingAt = now;
             const logMsg = [
               `A client connection error occurred; reconnecting because ` +
-                `of "waitUntilAvailable=${config.waitUntilAvailable}".`,
+                `of "waitUntilAvailable=${config.connectionParams.waitUntilAvailable}".`,
               e,
             ];
 
