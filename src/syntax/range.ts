@@ -128,6 +128,14 @@ function range(...args: any[]): any {
   if (args.length === 1) {
     const arg = args[0];
     if (arg instanceof Range) {
+      if (arg.lower === null && arg.upper === null) {
+        throw new Error(
+          `Can't create literal expression from unbounded range. Try this instead:\n\n  e.range(e.cast(e.int64, e.set()), e.cast(e.int64, e.set()))`
+        );
+      }
+      if (arg.isEmpty) {
+        throw new Error(`Can't create literal expression from empty range.`);
+      }
       return literal(
         range(literalToTypeSet(arg.lower ?? arg.upper).__element__ as any),
         arg
