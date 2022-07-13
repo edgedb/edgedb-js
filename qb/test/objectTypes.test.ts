@@ -1,5 +1,7 @@
 import {$} from "edgedb";
+import type {PropertyDesc} from "edgedb/dist/reflection";
 import e from "../dbschema/edgeql-js";
+import type {$str} from "dbschema/edgeql-js/modules/std";
 import {tc} from "./setupTeardown";
 
 const $Hero = e.default.Hero.__element__;
@@ -44,6 +46,15 @@ test("link properties", () => {
     $.Cardinality.AtMostOne
   );
   expect(link.properties["@value"].__kind__).toEqual("property");
+});
+
+test("overloaded properties", () => {
+  tc.assert<
+    tc.IsExact<
+      typeof e.AdminUser["__element__"]["__pointers__"]["username"],
+      PropertyDesc<$str, $.Cardinality.One, true, false, false, false>
+    >
+  >(true);
 });
 
 test("named tuple tests", () => {

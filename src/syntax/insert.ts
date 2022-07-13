@@ -250,6 +250,16 @@ export function insert<Root extends $expr_PathNode>(
   root: Root,
   shape: InsertShape<Root>
 ): $expr_Insert<Root> {
+  if (typeof shape !== "object") {
+    throw new Error(
+      `invalid insert shape.${
+        typeof shape === "function"
+          ? " Hint: Insert shape is expected to be an object, " +
+            "not a function returning a shape object."
+          : ""
+      }`
+    );
+  }
   const expr: any = {
     __kind__: ExpressionKind.Insert,
     __element__: root.__element__,

@@ -189,3 +189,9 @@ test("exclude readonly props", () => {
   type updateProfileShape = UpdateShape<typeof e["Profile"]>;
   tc.assert<tc.IsExact<keyof updateProfileShape, "plot_summary">>(true);
 });
+
+test("empty update", async () => {
+  expect(
+    e.update(e.Movie, () => ({set: {}})).run(client)
+  ).resolves.not.toThrow();
+});

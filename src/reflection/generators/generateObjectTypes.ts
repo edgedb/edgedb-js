@@ -275,8 +275,6 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     // generate interface
     /////////
 
-    const bases = type.bases.map(base => getRef(types.get(base.id).name));
-
     type Line = {
       card: string;
       staticType: CodeFragment[];
@@ -334,10 +332,26 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     ].map(ptrToLine);
 
     // generate shape type
-    const baseTypesUnion = bases.length
-      ? frag`${joinFrags(bases, "λShape & ")}λShape & `
-      : // ? `${bases.map((b) => `${b}λShape`).join(" & ")} & `
-        ``;
+    const fieldNames = new Set(lines.map(l => l.key));
+    const baseTypesUnion = type.bases.length
+      ? frag`${joinFrags(
+          type.bases.map(base => {
+            const baseType = types.get(base.id) as introspect.ObjectType;
+            const overloadedFields = [
+              ...baseType.pointers,
+              ...baseType.backlinks,
+              ...baseType.backlink_stubs,
+            ]
+              .filter(field => fieldNames.has(field.name))
+              .map(field => quote(field.name));
+            const ref = getRef(baseType.name);
+            return overloadedFields.length
+              ? frag`Omit<${ref}λShape, ${overloadedFields.join(" | ")}>`
+              : frag`${ref}λShape`;
+          }),
+          " & "
+        )} & `
+      : ``;
     body.writeln([
       t`export `,
       dts`declare `,
