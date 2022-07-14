@@ -21,6 +21,7 @@ import {Address} from "./conUtils";
 import {PROTO_VER, BaseRawConnection} from "./baseConn";
 import Event from "./primitives/event";
 import * as chars from "./primitives/chars";
+import {InternalClientError, ProtocolError} from "./errors";
 
 // @ts-ignore
 if (typeof fetch === "undefined") {
@@ -58,7 +59,7 @@ class BaseFetchConnection extends BaseRawConnection {
     }
 
     if (this.messageWaiter == null || this.messageWaiter.done) {
-      throw new Error(
+      throw new InternalClientError(
         `message waiter was not initialized before waiting for response`
       );
     }
@@ -69,14 +70,14 @@ class BaseFetchConnection extends BaseRawConnection {
   protected async __sendData(data: Buffer): Promise<void> {
     if (this.buffer.takeMessage()) {
       const mtype = this.buffer.getMessageType();
-      throw new Error(
+      throw new InternalClientError(
         `sending request before reading all data of the previous one: ` +
           `${chars.chr(mtype)}`
       );
     }
 
     if (this.messageWaiter != null && !this.messageWaiter.done) {
-      throw new Error(
+      throw new InternalClientError(
         `sending request before waiting for completion of the previous one`
       );
     }
@@ -101,7 +102,7 @@ class BaseFetchConnection extends BaseRawConnection {
       });
 
       if (!resp.ok) {
-        throw new Error(
+        throw new ProtocolError(
           `fetch failed with status code ${resp.status}: ${resp.statusText}`
         );
       }
@@ -118,11 +119,11 @@ class BaseFetchConnection extends BaseRawConnection {
 
       if (pause) {
         // unreachable
-        throw new Error("too much data received");
+        throw new ProtocolError("too much data received");
       }
 
       if (!this.buffer.takeMessage()) {
-        throw new Error("no binary protocol messages in the response");
+        throw new ProtocolError("no binary protocol messages in the response");
       }
 
       this.messageWaiter.set();

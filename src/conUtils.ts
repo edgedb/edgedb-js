@@ -27,6 +27,7 @@ import {
 import * as platform from "./platform";
 import {Duration, parseHumanDurationString} from "./datatypes/datetime";
 import {checkValidEdgeDBDuration} from "./codecs/datetime";
+import {InterfaceError} from "./errors";
 
 export type Address = [string, number];
 
@@ -181,7 +182,7 @@ export class ResolvedConnectConfig {
   setDatabase(database: string | null, source: string): boolean {
     return this._setParam("database", database, source, (db: string) => {
       if (db === "") {
-        throw new Error(`invalid database name: '${db}'`);
+        throw new InterfaceError(`invalid database name: '${db}'`);
       }
       return db;
     });
@@ -190,7 +191,7 @@ export class ResolvedConnectConfig {
   setUser(user: string | null, source: string): boolean {
     return this._setParam("user", user, source, (_user: string) => {
       if (_user === "") {
-        throw new Error(`invalid user name: '${_user}'`);
+        throw new InterfaceError(`invalid user name: '${_user}'`);
       }
       return _user;
     });
@@ -217,7 +218,7 @@ export class ResolvedConnectConfig {
       source,
       (_tlsSecurity: string) => {
         if (!validTlsSecurityValues.includes(_tlsSecurity as any)) {
-          throw new Error(
+          throw new InterfaceError(
             `invalid 'tlsSecurity' value: '${_tlsSecurity}', ` +
               `must be one of ${validTlsSecurityValues
                 .map(val => `'${val}'`)
@@ -231,7 +232,7 @@ export class ResolvedConnectConfig {
               clientSecurity
             )
           ) {
-            throw new Error(
+            throw new InterfaceError(
               `invalid EDGEDB_CLIENT_SECURITY value: '${clientSecurity}', ` +
                 `must be one of 'default', 'insecure_dev_mode' or 'strict'`
             );
@@ -245,7 +246,7 @@ export class ResolvedConnectConfig {
               _tlsSecurity === "insecure" ||
               _tlsSecurity === "no_host_verification"
             ) {
-              throw new Error(
+              throw new InterfaceError(
                 `'tlsSecurity' value (${_tlsSecurity}) conflicts with ` +
                   `EDGEDB_CLIENT_SECURITY value (${clientSecurity}), ` +
                   `'tlsSecurity' value cannot be lower than security level ` +
@@ -408,27 +409,27 @@ function parseValidatePort(port: string | number): number {
   let parsedPort: number;
   if (typeof port === "string") {
     if (!/^\d*$/.test(port)) {
-      throw new Error(`invalid port: ${port}`);
+      throw new InterfaceError(`invalid port: ${port}`);
     }
     parsedPort = parseInt(port, 10);
     if (Number.isNaN(parsedPort)) {
-      throw new Error(`invalid port: ${port}`);
+      throw new InterfaceError(`invalid port: ${port}`);
     }
   } else {
     parsedPort = port;
   }
   if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
-    throw new Error(`invalid port: ${port}`);
+    throw new InterfaceError(`invalid port: ${port}`);
   }
   return parsedPort;
 }
 
 function validateHost(host: string): string {
   if (host.includes("/")) {
-    throw new Error(`unix socket paths not supported`);
+    throw new InterfaceError(`unix socket paths not supported`);
   }
   if (!host.length || host.includes(",")) {
-    throw new Error(`invalid host: '${host}'`);
+    throw new InterfaceError(`invalid host: '${host}'`);
   }
   return host;
 }
@@ -436,7 +437,9 @@ function validateHost(host: string): string {
 export function parseDuration(duration: string | number | Duration): number {
   if (typeof duration === "number") {
     if (duration < 0) {
-      throw new Error("invalid waitUntilAvailable duration, must be >= 0");
+      throw new InterfaceError(
+        "invalid waitUntilAvailable duration, must be >= 0"
+      );
     }
     return duration;
   }
@@ -450,12 +453,14 @@ export function parseDuration(duration: string | number | Duration): number {
   if (duration instanceof Duration) {
     const invalidField = checkValidEdgeDBDuration(duration);
     if (invalidField) {
-      throw new Error(
+      throw new InterfaceError(
         `invalid waitUntilAvailable duration, cannot have a '${invalidField}' value`
       );
     }
     if (duration.sign < 0) {
-      throw new Error("invalid waitUntilAvailable duration, must be >= 0");
+      throw new InterfaceError(
+        "invalid waitUntilAvailable duration, must be >= 0"
+      );
     }
     return (
       duration.milliseconds +
@@ -464,7 +469,7 @@ export function parseDuration(duration: string | number | Duration): number {
       duration.hours * 3_600_000
     );
   }
-  throw new Error(`invalid duration`);
+  throw new InterfaceError(`invalid duration`);
 }
 
 async function parseConnectDsnAndArgs(
@@ -678,7 +683,7 @@ async function resolveConfigOptions<
   let anyOptionsUsed = false;
 
   if (config.tlsCA != null && config.tlsCAFile != null) {
-    throw new Error(
+    throw new InterfaceError(
       `Cannot specify both ${sources.tlsCA} and ${sources.tlsCAFile}`
     );
   }
@@ -721,7 +726,7 @@ async function resolveConfigOptions<
   ].filter(param => param !== undefined).length;
 
   if (compoundParamsCount > 1) {
-    throw new Error(compoundParamsError);
+    throw new InterfaceError(compoundParamsError);
   }
 
   if (compoundParamsCount === 1) {
@@ -757,7 +762,7 @@ async function resolveConfigOptions<
         let credentialsFile = config.credentialsFile;
         if (credentialsFile === undefined) {
           if (!/^[A-Za-z_][A-Za-z_0-9]*$/.test(config.instanceName!)) {
-            throw new Error(
+            throw new InterfaceError(
               `invalid DSN or instance name: '${config.instanceName}'`
             );
           }
@@ -811,11 +816,11 @@ async function parseDSNIntoConfig(
       throw new Error();
     }
   } catch (_) {
-    throw new Error(`invalid DSN or instance name: '${_dsnString}'`);
+    throw new InterfaceError(`invalid DSN or instance name: '${_dsnString}'`);
   }
 
   if (parsed.protocol !== "edgedb:") {
-    throw new Error(
+    throw new InterfaceError(
       `invalid DSN: scheme is expected to be ` +
         `'edgedb', got '${parsed.protocol.slice(0, -1)}'`
     );
@@ -824,7 +829,9 @@ async function parseDSNIntoConfig(
   const searchParams = new Map<string, string>();
   for (const [key, value] of parsed.searchParams as any) {
     if (searchParams.has(key)) {
-      throw new Error(`invalid DSN: duplicate query parameter '${key}'`);
+      throw new InterfaceError(
+        `invalid DSN: duplicate query parameter '${key}'`
+      );
     }
     searchParams.set(key, value);
   }
@@ -844,7 +851,7 @@ async function parseDSNIntoConfig(
         searchParams.get(`${paramName}_file`),
       ].filter(param => param != null).length > 1
     ) {
-      throw new Error(
+      throw new InterfaceError(
         `invalid DSN: more than one of ${
           value !== null ? `'${paramName}', ` : ""
         }'?${paramName}=', ` +
@@ -860,7 +867,7 @@ async function parseDSNIntoConfig(
         if (env != null) {
           param = process.env[env] ?? null;
           if (param === null) {
-            throw new Error(
+            throw new InterfaceError(
               `'${paramName}_env' environment variable '${env}' doesn't exist`
             );
           }

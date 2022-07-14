@@ -69,7 +69,7 @@ export class ClientConnectionHolder {
 
   async acquire(options: Options): Promise<ClientConnectionHolder> {
     if (this._inUse) {
-      throw new Error(
+      throw new errors.InternalClientError(
         "ClientConnectionHolder cannot be acquired, already in use"
       );
     }
@@ -298,7 +298,7 @@ class ClientPool {
         !Number.isInteger(opts.concurrency) ||
         opts.concurrency < 0)
     ) {
-      throw new Error(
+      throw new errors.InterfaceError(
         `invalid 'concurrency' value: ` +
           `expected integer greater than 0 (got ${JSON.stringify(
             opts.concurrency

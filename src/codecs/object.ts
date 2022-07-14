@@ -24,6 +24,7 @@ import {
   MissingArgumentError,
   QueryArgumentError,
   UnknownArgumentError,
+  ProtocolError,
 } from "../errors";
 
 const EDGE_POINTER_IS_IMPLICIT = 1 << 0;
@@ -177,7 +178,7 @@ export class ObjectCodec extends Codec implements ICodec {
 
     const els = buf.readUInt32();
     if (els !== codecs.length) {
-      throw new Error(
+      throw new ProtocolError(
         `cannot decode Object: expected ${codecs.length} elements, got ${els}`
       );
     }

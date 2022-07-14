@@ -1,6 +1,7 @@
 import {readFileUtf8} from "./adapter.node";
 import {TlsSecurity, validTlsSecurityValues} from "./conUtils";
 import * as platform from "./platform";
+import {InterfaceError} from "./errors";
 
 export interface Credentials {
   host?: string;
@@ -23,22 +24,22 @@ export async function readCredentialsFile(file: string): Promise<Credentials> {
     const data: string = await readFileUtf8(file);
     return validateCredentials(JSON.parse(data));
   } catch (e) {
-    throw new Error(`cannot read credentials file ${file}: ${e}`);
+    throw new InterfaceError(`cannot read credentials file ${file}: ${e}`);
   }
 }
 
 export function validateCredentials(data: any): Credentials {
   const port = data.port;
   if (port != null && (typeof port !== "number" || port < 1 || port > 65535)) {
-    throw new Error("invalid `port` value");
+    throw new InterfaceError("invalid `port` value");
   }
 
   const user = data.user;
   if (user == null) {
-    throw new Error("`user` key is required");
+    throw new InterfaceError("`user` key is required");
   }
   if (typeof user !== "string") {
-    throw new Error("`user` must be string");
+    throw new InterfaceError("`user` must be string");
   }
 
   const result: Credentials = {user, port};
@@ -46,7 +47,7 @@ export function validateCredentials(data: any): Credentials {
   const host = data.host;
   if (host != null) {
     if (typeof host !== "string") {
-      throw new Error("`host` must be string");
+      throw new InterfaceError("`host` must be string");
     }
     result.host = host;
   }
@@ -54,7 +55,7 @@ export function validateCredentials(data: any): Credentials {
   const database = data.database;
   if (database != null) {
     if (typeof database !== "string") {
-      throw new Error("`database` must be string");
+      throw new InterfaceError("`database` must be string");
     }
     result.database = database;
   }
@@ -62,7 +63,7 @@ export function validateCredentials(data: any): Credentials {
   const password = data.password;
   if (password != null) {
     if (typeof password !== "string") {
-      throw new Error("`password` must be string");
+      throw new InterfaceError("`password` must be string");
     }
     result.password = password;
   }
@@ -70,7 +71,7 @@ export function validateCredentials(data: any): Credentials {
   const caData = data.tls_ca;
   if (caData != null) {
     if (typeof caData !== "string") {
-      throw new Error("`tls_ca` must be string");
+      throw new InterfaceError("`tls_ca` must be string");
     }
     result.tlsCAData = caData;
   }
@@ -78,10 +79,10 @@ export function validateCredentials(data: any): Credentials {
   const certData = data.tls_cert_data;
   if (certData != null) {
     if (typeof certData !== "string") {
-      throw new Error("`tls_cert_data` must be string");
+      throw new InterfaceError("`tls_cert_data` must be string");
     }
     if (caData != null && certData !== caData) {
-      throw new Error(
+      throw new InterfaceError(
         `both 'tls_ca' and 'tls_cert_data' are defined, ` +
           `and are not in agreement`
       );
@@ -95,7 +96,7 @@ export function validateCredentials(data: any): Credentials {
     if (typeof verifyHostname === "boolean") {
       verifyHostname = verifyHostname ? "strict" : "no_host_verification";
     } else {
-      throw new Error("`tls_verify_hostname` must be boolean");
+      throw new InterfaceError("`tls_verify_hostname` must be boolean");
     }
   }
   if (
@@ -103,7 +104,7 @@ export function validateCredentials(data: any): Credentials {
     (typeof tlsSecurity !== "string" ||
       !validTlsSecurityValues.includes(tlsSecurity as any))
   ) {
-    throw new Error(
+    throw new InterfaceError(
       `\`tls_security\` must be one of ${validTlsSecurityValues
         .map(val => `"${val}"`)
         .join(", ")}`
@@ -115,7 +116,7 @@ export function validateCredentials(data: any): Credentials {
     verifyHostname !== tlsSecurity &&
     !(verifyHostname === "no_host_verification" && tlsSecurity === "insecure")
   ) {
-    throw new Error(
+    throw new InterfaceError(
       `both 'tls_security' and 'tls_verify_hostname' are defined, ` +
         `and are not in agreement`
     );

@@ -18,12 +18,17 @@
 
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
+import {InvalidArgumentError, ProtocolError} from "../errors";
 
 const NUMERIC_POS = 0x0000;
 const NUMERIC_NEG = 0x4000;
 
 export class BigIntCodec extends ScalarCodec implements ICodec {
-  encode(buf: WriteBuffer, object: BigInt): void {
+  encode(buf: WriteBuffer, object: any): void {
+    if (typeof object !== "bigint") {
+      throw new InvalidArgumentError(`a bigint was expected, got "${object}"`);
+    }
+
     const NBASE = BigInt("10000");
     const ZERO = BigInt("0");
 
@@ -71,7 +76,7 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
 export class DecimalStringCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "string") {
-      throw new Error(`a string was expected, got "${object}"`);
+      throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }
 
     const match = object.match(
@@ -79,7 +84,7 @@ export class DecimalStringCodec extends ScalarCodec implements ICodec {
     );
 
     if (!match) {
-      throw new Error(`invalid decimal string "${object}"`);
+      throw new InvalidArgumentError(`invalid decimal string "${object}"`);
     }
 
     const [_, sign, int, _frac, _exp] = match;
@@ -124,11 +129,11 @@ function decodeBigIntToString(buf: ReadBuffer): string {
       result += "-";
       break;
     default:
-      throw new Error("bad bigint sign data");
+      throw new ProtocolError("bad bigint sign data");
   }
 
   if (dscale !== 0) {
-    throw new Error("bigint data has fractional part");
+    throw new ProtocolError("bigint data has fractional part");
   }
 
   if (ndigits === 0) {
@@ -166,7 +171,7 @@ function decodeDecimalToString(buf: ReadBuffer): string {
       result += "-";
       break;
     default:
-      throw new Error("bad decimal sign data");
+      throw new ProtocolError("bad decimal sign data");
   }
 
   let d = 0;
