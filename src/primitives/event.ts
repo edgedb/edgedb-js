@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+import {InternalClientError} from "../errors";
+
 type Resolver<T> = (value: T | PromiseLike<T>) => void;
 type Rejector = (reason: any) => void;
 
@@ -33,7 +35,7 @@ export default class Event {
   then(...args: any[]): any {
     // The mere presense of this method will trip TS if one awaits on
     // an Event object directly.
-    throw new Error(
+    throw new InternalClientError(
       "Event objects cannot be awaited on directly; use Event.wait()"
     );
   }
@@ -44,14 +46,14 @@ export default class Event {
 
   set(): void {
     if (this._done) {
-      throw new Error("emit(): the Event is already set");
+      throw new InternalClientError("emit(): the Event is already set");
     }
     this._resolve(true);
   }
 
   setError(reason: any): void {
     if (this._done) {
-      throw new Error("emitError(): the Event is already set");
+      throw new InternalClientError("emitError(): the Event is already set");
     }
     this._reject(reason);
   }
@@ -76,7 +78,9 @@ export default class Event {
 
     if (!futReject || !futResolve) {
       // Impossible per the spec.
-      throw new Error("Promise executor was not called synchronously");
+      throw new InternalClientError(
+        "Promise executor was not called synchronously"
+      );
     }
 
     this._reject = futReject;

@@ -416,7 +416,7 @@ export class ReadMessageBuffer {
     this.len += buf.length;
     const isFull = this.bufs.full;
     if (isFull && this.curMessageType !== 0) {
-      throw new Error("query result is too big: buffer overflow");
+      throw new BufferError("query result is too big: buffer overflow");
     }
     return isFull;
   }
@@ -886,7 +886,7 @@ export class ReadBuffer {
     const blo = bi.make(lo >>> 0);
     const num = bi.add(bi.mul(bhi, bi.make(0x100000000)), blo);
 
-    throw new Error(
+    throw new BufferError(
       `integer overflow: cannot unpack <std::int64>'${num.toString()}' ` +
         `into JavaScript Number type without losing precision`
     );

@@ -18,6 +18,7 @@
 
 import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
+import {UnknownArgumentError} from "../errors";
 
 export class SparseObjectCodec extends Codec implements ICodec {
   private codecs: ICodec[];
@@ -38,7 +39,7 @@ export class SparseObjectCodec extends Codec implements ICodec {
       if (val !== undefined) {
         const i = this.names.indexOf(key);
         if (i === -1) {
-          throw new Error(
+          throw new UnknownArgumentError(
             this.names.length
               ? `invalid global '${key}', valid globals are ${this.names
                   .map(n => `'${n}'`)

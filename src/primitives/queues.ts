@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+import {InternalClientError} from "../errors";
+
 export class LifoQueue<T> {
   private _promises: Array<Promise<T>>;
   private _resolvers: Array<(t: T) => void>;
@@ -49,7 +51,7 @@ export class LifoQueue<T> {
     this._rejecters.shift();
     if (!resolve) {
       // can never happen
-      throw new Error(
+      throw new InternalClientError(
         "resolve function was null or undefined when attempting to push."
       );
     }
@@ -68,7 +70,9 @@ export class LifoQueue<T> {
     const promise = this._promises.pop();
     if (!promise) {
       // can never happen
-      throw new Error("promise was null or undefined when attempting to get.");
+      throw new InternalClientError(
+        "promise was null or undefined when attempting to get."
+      );
     }
     return promise;
   }

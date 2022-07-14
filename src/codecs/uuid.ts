@@ -18,6 +18,7 @@
 
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
+import {InvalidArgumentError} from "../errors";
 
 function UUIDBufferFromString(uuid: string): Buffer {
   let uuidClean = uuid;
@@ -42,7 +43,9 @@ export class UUIDCodec extends ScalarCodec implements ICodec {
       buf.writeInt32(16);
       buf.writeBuffer(ubuf);
     } else {
-      throw new Error(`cannot encode UUID "${object}": invalid type`);
+      throw new InvalidArgumentError(
+        `cannot encode UUID "${object}": invalid type`
+      );
     }
   }
 

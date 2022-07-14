@@ -19,6 +19,7 @@
 import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
 import {Range} from "../datatypes/range";
+import {InvalidArgumentError} from "../errors";
 
 enum RangeFlags {
   EMPTY = 1 << 0,
@@ -38,7 +39,7 @@ export class RangeCodec extends Codec implements ICodec {
 
   encode(buf: WriteBuffer, obj: any): void {
     if (!(obj instanceof Range)) {
-      throw new Error("a Range was expected");
+      throw new InvalidArgumentError("a Range was expected");
     }
 
     const subCodec = this.subCodec;

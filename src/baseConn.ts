@@ -139,7 +139,9 @@ export class BaseRawConnection {
   }
 
   protected throwNotImplemented(method: string): never {
-    throw new Error(`method ${method} is not implemented`);
+    throw new errors.InternalClientError(
+      `method ${method} is not implemented`
+    );
   }
 
   protected async _waitForMessage(): Promise<void> {
@@ -412,7 +414,7 @@ export class BaseRawConnection {
 
       default:
         // TODO: terminate connection
-        throw new Error(
+        throw new errors.UnexpectedMessageError(
           `unexpected message type ${mtype} ("${chars.chr(mtype)}")`
         );
     }
@@ -508,7 +510,9 @@ export class BaseRawConnection {
     }
 
     if (inTypeId == null || outTypeId == null) {
-      throw new Error("did not receive in/out type ids in Parse response");
+      throw new errors.ProtocolError(
+        "did not receive in/out type ids in Parse response"
+      );
     }
 
     inCodec = this.codecsRegistry.getCodec(inTypeId);
@@ -531,7 +535,7 @@ export class BaseRawConnection {
     if (inCodec == null || outCodec == null || !parseSendsTypeData) {
       if (parseSendsTypeData) {
         // unreachable
-        throw new Error("in/out codecs were not sent");
+        throw new errors.ProtocolError("in/out codecs were not sent");
       }
 
       wb.reset();
@@ -591,7 +595,7 @@ export class BaseRawConnection {
     }
 
     if (cardinality == null || outCodec == null || inCodec == null) {
-      throw new Error(
+      throw new errors.ProtocolError(
         "failed to receive type information in response to a Parse message"
       );
     }
@@ -623,7 +627,7 @@ export class BaseRawConnection {
       }
 
       // Shouldn't ever happen.
-      throw new Error("invalid input codec");
+      throw new errors.ProtocolError("invalid input codec");
     } else {
       if (inCodec === EMPTY_TUPLE_CODEC) {
         if (args != null) {
@@ -643,7 +647,7 @@ export class BaseRawConnection {
       }
 
       // Shouldn't ever happen.
-      throw new Error("invalid input codec");
+      throw new errors.ProtocolError("invalid input codec");
     }
   }
 

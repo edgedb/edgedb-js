@@ -19,11 +19,12 @@
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import * as bi from "../primitives/bigint";
 import {ICodec, ScalarCodec} from "./ifaces";
+import {InvalidArgumentError} from "../errors";
 
 export class Int64Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
-      throw new Error(`a number was expected, got "${object}"`);
+      throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
     buf.writeInt32(8);
     buf.writeInt64(object);
@@ -37,7 +38,7 @@ export class Int64Codec extends ScalarCodec implements ICodec {
 export class Int64BigintCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!bi.isBigInt(object)) {
-      throw new Error(`a bigint was expected, got "${object}"`);
+      throw new InvalidArgumentError(`a bigint was expected, got "${object}"`);
     }
     buf.writeInt32(8);
     buf.writeBigInt64(object);
@@ -51,7 +52,7 @@ export class Int64BigintCodec extends ScalarCodec implements ICodec {
 export class Int32Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
-      throw new Error(`a number was expected, got "${object}"`);
+      throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
     buf.writeInt32(4);
     buf.writeInt32(<number>object);
@@ -65,7 +66,7 @@ export class Int32Codec extends ScalarCodec implements ICodec {
 export class Int16Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
-      throw new Error(`a number was expected, got "${object}"`);
+      throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
     buf.writeInt32(2);
     buf.writeInt16(<number>object);
@@ -79,7 +80,7 @@ export class Int16Codec extends ScalarCodec implements ICodec {
 export class Float32Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
-      throw new Error(`a number was expected, got "${object}"`);
+      throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
     buf.writeInt32(4);
     buf.writeFloat32(<number>object);
@@ -93,7 +94,7 @@ export class Float32Codec extends ScalarCodec implements ICodec {
 export class Float64Codec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
-      throw new Error(`a number was expected, got "${object}"`);
+      throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
     buf.writeInt32(8);
     buf.writeFloat64(<number>object);

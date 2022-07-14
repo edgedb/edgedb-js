@@ -19,11 +19,14 @@
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
 import {ConfigMemory} from "../datatypes/memory";
+import {InvalidArgumentError} from "../errors";
 
 export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof ConfigMemory)) {
-      throw new Error(`a ConfigMemory instance was expected, got "${object}"`);
+      throw new InvalidArgumentError(
+        `a ConfigMemory instance was expected, got "${object}"`
+      );
     }
     buf.writeInt32(8);
     buf.writeBigInt64(
