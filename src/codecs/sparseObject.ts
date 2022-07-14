@@ -35,18 +35,24 @@ export class SparseObjectCodec extends Codec implements ICodec {
 
     let objLen = 0;
     for (const [key, val] of Object.entries(object)) {
-      if (val != null) {
+      if (val !== undefined) {
         const i = this.names.indexOf(key);
         if (i === -1) {
           throw new Error(
-            `invalid key '${key}', valid keys are ${this.names
-              .map(n => `'${n}'`)
-              .join(", ")}`
+            this.names.length
+              ? `invalid global '${key}', valid globals are ${this.names
+                  .map(n => `'${n}'`)
+                  .join(", ")}`
+              : `invalid global '${key}', no valid globals exist`
           );
         }
         objLen += 1;
         elemBuf.writeInt32(i);
-        this.codecs[i].encode(elemBuf, val);
+        if (val === null) {
+          elemBuf.writeInt32(-1);
+        } else {
+          this.codecs[i].encode(elemBuf, val);
+        }
       }
     }
     const elemData = elemBuf.unwrap();

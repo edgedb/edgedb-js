@@ -31,6 +31,12 @@ if (getEdgeDBVersion().major >= 2) {
     await client.execute(`
       create global userId -> uuid;
       create global currentTags -> array<str>;
+      create required global reqTest -> str {
+        set default := 'default value';
+      };
+      create global defaultTest -> str {
+        set default := 'default value';
+      };
       create module custom;
       create global custom::test -> str;
     `);
@@ -79,15 +85,31 @@ if (getEdgeDBVersion().major >= 2) {
         currentTags: ["a", "b", "c"],
       });
 
+      expect(
+        await client.querySingle(`select (global reqTest, global defaultTest)`)
+      ).toEqual(["default value", "default value"]);
+      expect(
+        await client
+          .withGlobals({reqTest: "abc", defaultTest: "def"})
+          .querySingle(`select (global reqTest, global defaultTest)`)
+      ).toEqual(["abc", "def"]);
+      expect(
+        await client
+          .withGlobals({
+            defaultTest: null,
+          })
+          .querySingle(`select global defaultTest`)
+      ).toEqual(null);
+
       await expect(
         client.withGlobals({unknownGlobal: 123}).query("select 1")
-      ).rejects.toThrowError(/invalid key 'default::unknownGlobal'/);
+      ).rejects.toThrowError(/invalid global 'default::unknownGlobal'/);
 
       expect(
         client
           .withGlobals({test: "abc"})
           .querySingle(`select global custom::test`)
-      ).rejects.toThrowError(/invalid key 'default::test'/);
+      ).rejects.toThrowError(/invalid global 'default::test'/);
 
       expect(
         await client
