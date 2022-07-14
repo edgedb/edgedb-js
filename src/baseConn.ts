@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {NullCodec, NULL_CODEC} from "./codecs/codecs";
+import {INVALID_CODEC, NullCodec, NULL_CODEC} from "./codecs/codecs";
 import {ICodec, uuid} from "./codecs/ifaces";
 import {NamedTupleCodec} from "./codecs/namedtuple";
 import {ObjectCodec} from "./codecs/object";
@@ -26,9 +26,10 @@ import {versionGreaterThanOrEqual} from "./utils";
 import * as errors from "./errors";
 import {resolveErrorCode} from "./errors/resolve";
 import {
-  HeaderCodes,
-  ParseOptions,
-  PrepareMessageHeaders,
+  Cardinality,
+  LegacyHeaderCodes,
+  OutputFormat,
+  QueryOptions,
   ProtocolVersion,
   QueryArgs,
   ServerSettings,
@@ -39,9 +40,10 @@ import {
   WriteBuffer,
   WriteMessageBuffer,
 } from "./primitives/buffer";
-import char, * as chars from "./primitives/chars";
+import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
 import LRU from "./primitives/lru";
+import {Session} from "./options";
 
 export const PROTO_VER: ProtocolVersion = [1, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];
@@ -54,25 +56,37 @@ enum TransactionStatus {
   TRANS_UNKNOWN = 4, // cannot determine status
 }
 
-enum Capabilities {
+export enum Capabilities {
+  NONE = 0,
   MODIFICATONS = 0b00001, // query is not read-only
   SESSION_CONFIG = 0b00010, // query contains session config change
   TRANSACTION = 0b00100, // query contains start/commit/rollback of
   // transaction or savepoint manipulation
   DDL = 0b01000, // query contains DDL
   PERSISTENT_CONFIG = 0b10000, // server or database config change
+  ALL = 0xffff_ffff,
 }
 
-const NO_TRANSACTION_CAPABILITIES_BYTES = Buffer.from([
-  255,
-  255,
-  255,
-  255,
-  255,
-  255,
-  255,
-  255 & ~Capabilities.TRANSACTION & ~Capabilities.SESSION_CONFIG,
-]);
+const NO_TRANSACTION_CAPABILITIES =
+  (Capabilities.ALL & ~Capabilities.TRANSACTION) >>> 0;
+
+const NO_TRANSACTION_CAPABILITIES_BYTES = Buffer.alloc(8, 0xff);
+NO_TRANSACTION_CAPABILITIES_BYTES.writeUInt32BE(
+  NO_TRANSACTION_CAPABILITIES,
+  4
+);
+
+const RESTRICTED_CAPABILITIES =
+  (Capabilities.ALL &
+    ~Capabilities.TRANSACTION &
+    ~Capabilities.SESSION_CONFIG) >>>
+  0;
+
+enum CompilationFlag {
+  INJECT_OUTPUT_TYPE_IDS = 1 << 0,
+  INJECT_OUTPUT_TYPE_NAMES = 1 << 1,
+  INJECT_OUTPUT_OBJECT_IDS = 1 << 2,
+}
 
 const OLD_ERROR_CODES = new Map([
   [0x05_03_00_01, 0x05_03_01_01], // TransactionSerializationError #2431
@@ -81,7 +95,6 @@ const OLD_ERROR_CODES = new Map([
 
 export class BaseRawConnection {
   protected connected: boolean = false;
-  protected alwaysUseOptimisticFlow: boolean = false; // XXX
   protected exposeErrorAttributes: boolean = false;
 
   protected lastStatus: string | null;
@@ -104,6 +117,9 @@ export class BaseRawConnection {
   protocolVersion: ProtocolVersion = PROTO_VER;
   isLegacyProtocol = false;
 
+  protected stateCodec: ICodec = INVALID_CODEC;
+  protected stateCache: [Session, Buffer] | null = null;
+
   /** @internal */
   protected constructor(registry: CodecsRegistry) {
     this.buffer = new ReadMessageBuffer();
@@ -123,7 +139,9 @@ export class BaseRawConnection {
   }
 
   protected throwNotImplemented(method: string): never {
-    throw new Error(`method ${method} is not implemented`);
+    throw new errors.InternalClientError(
+      `method ${method} is not implemented`
+    );
   }
 
   protected async _waitForMessage(): Promise<void> {
@@ -181,22 +199,27 @@ export class BaseRawConnection {
   }
 
   private _parseDescribeTypeMessage(): [
-    number,
+    Cardinality,
     ICodec,
     ICodec,
     number,
     Buffer,
     Buffer
   ] {
-    const headers = this._parseHeaders();
     let capabilities = -1;
-    if (headers.has(HeaderCodes.capabilities)) {
-      capabilities = Number(
-        headers.get(HeaderCodes.capabilities)!.readBigInt64BE()
-      );
+    if (this.isLegacyProtocol) {
+      const headers = this._parseHeaders();
+      if (headers.has(LegacyHeaderCodes.capabilities)) {
+        capabilities = Number(
+          headers.get(LegacyHeaderCodes.capabilities)!.readBigInt64BE()
+        );
+      }
+    } else {
+      this._ignoreHeaders();
+      capabilities = Number(this.buffer.readBigInt64());
     }
 
-    const cardinality: char = this.buffer.readChar();
+    const cardinality: Cardinality = this.buffer.readChar();
 
     const inTypeId = this.buffer.readUUID();
     const inTypeData = this.buffer.readLenPrefixedBuffer();
@@ -234,7 +257,15 @@ export class BaseRawConnection {
 
   protected _parseCommandCompleteMessage(): string {
     this._ignoreHeaders();
-    const status = this.buffer.readString();
+    let status: string;
+    if (this.isLegacyProtocol) {
+      status = this.buffer.readString();
+    } else {
+      this.buffer.readBigInt64();
+      status = this.buffer.readString();
+      this.buffer.readUUID(); // state type id
+      this.buffer.readLenPrefixedBuffer(); // state
+    }
     this.buffer.finishMessage();
     return status;
   }
@@ -253,6 +284,10 @@ export class BaseRawConnection {
       this._ignoreHeaders(); // ignore attrs
     }
     this.buffer.finishMessage();
+
+    if (err instanceof errors.AuthenticationError) {
+      throw err;
+    }
 
     return err;
   }
@@ -304,13 +339,14 @@ export class BaseRawConnection {
 
   private _parseServerSettings(name: string, value: Buffer): void {
     switch (name) {
-      case "suggested_pool_concurrency":
+      case "suggested_pool_concurrency": {
         this.serverSettings.suggested_pool_concurrency = parseInt(
           value.toString("utf8"),
           10
         );
         break;
-      case "system_config":
+      }
+      case "system_config": {
         const buf = new ReadBuffer(value);
         const typedescLen = buf.readInt32() - 16;
         const typedescId = buf.readUUID();
@@ -330,10 +366,24 @@ export class BaseRawConnection {
 
         this.serverSettings.system_config = data;
         break;
+      }
       default:
         this.serverSettings[name] = value;
         break;
     }
+  }
+
+  protected _parseDescribeStateMessage() {
+    const typedescId = this.buffer.readUUID();
+    const typedesc = this.buffer.readBuffer(this.buffer.readInt32());
+
+    let codec = this.codecsRegistry.getCodec(typedescId);
+    if (codec === null) {
+      codec = this.codecsRegistry.buildCodec(typedesc, this.protocolVersion);
+    }
+    this.stateCodec = codec;
+    this.stateCache = null;
+    this.buffer.finishMessage();
   }
 
   protected _fallthrough(): void {
@@ -364,18 +414,16 @@ export class BaseRawConnection {
 
       default:
         // TODO: terminate connection
-        throw new Error(
+        throw new errors.UnexpectedMessageError(
           `unexpected message type ${mtype} ("${chars.chr(mtype)}")`
         );
     }
   }
 
-  async _parse(
+  async _legacyParse(
     query: string,
-    asJson: boolean,
-    expectOne: boolean,
-    alwaysDescribe: boolean,
-    options?: ParseOptions
+    outputFormat: OutputFormat,
+    expectOne: boolean
   ): Promise<[number, ICodec, ICodec, number, Buffer | null, Buffer | null]> {
     const wb = new WriteMessageBuffer();
     const parseSendsTypeData = versionGreaterThanOrEqual(
@@ -384,18 +432,17 @@ export class BaseRawConnection {
     );
 
     wb.beginMessage(chars.$P)
-      .writeHeaders({
+      .writeLegacyHeaders({
         explicitObjectids: "true",
-        ...(options?.headers ?? {}),
         allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
       })
-      .writeChar(asJson ? chars.$j : chars.$b)
-      .writeChar(expectOne ? chars.$o : chars.$m);
-    if (this.isLegacyProtocol) {
-      wb.writeString(""); // statement name
-    }
-    wb.writeString(query).endMessage();
+      .writeChar(outputFormat)
+      .writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
+    wb.writeString(""); // statement name
 
+    wb.writeString(query);
+
+    wb.endMessage();
     wb.writeSync();
 
     this._sendData(wb.unwrap());
@@ -421,9 +468,9 @@ export class BaseRawConnection {
       switch (mtype) {
         case chars.$1: {
           const headers = this._parseHeaders();
-          if (headers.has(HeaderCodes.capabilities)) {
+          if (headers.has(LegacyHeaderCodes.capabilities)) {
             capabilities = Number(
-              headers.get(HeaderCodes.capabilities)!.readBigInt64BE()
+              headers.get(LegacyHeaderCodes.capabilities)!.readBigInt64BE()
             );
           }
           cardinality = this.buffer.readChar();
@@ -463,7 +510,9 @@ export class BaseRawConnection {
     }
 
     if (inTypeId == null || outTypeId == null) {
-      throw new Error("did not receive in/out type ids in Parse response");
+      throw new errors.ProtocolError(
+        "did not receive in/out type ids in Parse response"
+      );
     }
 
     inCodec = this.codecsRegistry.getCodec(inTypeId);
@@ -483,14 +532,10 @@ export class BaseRawConnection {
       );
     }
 
-    if (
-      inCodec == null ||
-      outCodec == null ||
-      (alwaysDescribe && !parseSendsTypeData)
-    ) {
+    if (inCodec == null || outCodec == null || !parseSendsTypeData) {
       if (parseSendsTypeData) {
         // unreachable
-        throw new Error("in/out codecs were not sent");
+        throw new errors.ProtocolError("in/out codecs were not sent");
       }
 
       wb.reset();
@@ -550,7 +595,7 @@ export class BaseRawConnection {
     }
 
     if (cardinality == null || outCodec == null || inCodec == null) {
-      throw new Error(
+      throw new errors.ProtocolError(
         "failed to receive type information in response to a Parse message"
       );
     }
@@ -582,7 +627,7 @@ export class BaseRawConnection {
       }
 
       // Shouldn't ever happen.
-      throw new Error("invalid input codec");
+      throw new errors.ProtocolError("invalid input codec");
     } else {
       if (inCodec === EMPTY_TUPLE_CODEC) {
         if (args != null) {
@@ -602,11 +647,11 @@ export class BaseRawConnection {
       }
 
       // Shouldn't ever happen.
-      throw new Error("invalid input codec");
+      throw new errors.ProtocolError("invalid input codec");
     }
   }
 
-  async _executeFlow(
+  async _legacyExecuteFlow(
     args: QueryArgs,
     inCodec: ICodec,
     outCodec: ICodec,
@@ -614,7 +659,9 @@ export class BaseRawConnection {
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
-      .writeHeaders({allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES})
+      .writeLegacyHeaders({
+        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+      })
       .writeString("") // statement name
       .writeBuffer(this._encodeArgs(args, inCodec))
       .endMessage()
@@ -673,26 +720,27 @@ export class BaseRawConnection {
     }
   }
 
-  private async _optimisticExecuteFlow(
+  private async _legacyOptimisticExecuteFlow(
+    query: string,
     args: QueryArgs,
-    asJson: boolean,
-    expectOne: boolean,
-    requiredOne: boolean,
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality,
     inCodec: ICodec,
     outCodec: ICodec,
-    query: string,
-    result: Array<any> | WriteBuffer,
-    options?: ParseOptions
+    result: Array<any> | WriteBuffer
   ): Promise<void> {
+    const expectOne =
+      expectedCardinality === Cardinality.ONE ||
+      expectedCardinality === Cardinality.AT_MOST_ONE;
+
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
-    wb.writeHeaders({
+    wb.writeLegacyHeaders({
       explicitObjectids: "true",
-      ...(options?.headers ?? {}),
       allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
     });
-    wb.writeChar(asJson ? chars.$j : chars.$b);
-    wb.writeChar(expectOne ? chars.$o : chars.$m);
+    wb.writeChar(outputFormat);
+    wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
     wb.writeString(query);
     wb.writeBuffer(inCodec.tidBuffer);
     wb.writeBuffer(outCodec.tidBuffer);
@@ -705,7 +753,7 @@ export class BaseRawConnection {
     let reExec = false;
     let error: Error | null = null;
     let parsing = true;
-    let newCard: char | null = null;
+    let newCard: Cardinality | null = null;
     let capabilities = -1;
 
     while (parsing) {
@@ -745,7 +793,11 @@ export class BaseRawConnection {
           try {
             [newCard, inCodec, outCodec, capabilities] =
               this._parseDescribeTypeMessage();
-            const key = this._getQueryCacheKey(query, asJson, expectOne);
+            const key = this._getQueryCacheKey(
+              query,
+              outputFormat,
+              expectedCardinality
+            );
             this.queryCodecCache.set(key, [
               newCard,
               inCodec,
@@ -774,42 +826,341 @@ export class BaseRawConnection {
     }
 
     if (reExec) {
-      this._validateFetchCardinality(newCard!, asJson, requiredOne);
-      if (this.isLegacyProtocol) {
-        return await this._executeFlow(args, inCodec, outCodec, result);
+      this._validateFetchCardinality(
+        newCard!,
+        outputFormat,
+        expectedCardinality
+      );
+
+      return await this._legacyExecuteFlow(args, inCodec, outCodec, result);
+    }
+  }
+
+  private _encodeParseParams(
+    wb: WriteMessageBuffer,
+    query: string,
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality,
+    state: Session,
+    privilegedMode: boolean,
+    options: QueryOptions | undefined
+  ) {
+    wb.writeFlags(
+      0xffff_ffff,
+      privilegedMode ? Capabilities.ALL : RESTRICTED_CAPABILITIES
+    );
+    wb.writeFlags(
+      0,
+      0 |
+        (options?.injectObjectids
+          ? CompilationFlag.INJECT_OUTPUT_OBJECT_IDS
+          : 0) |
+        (options?.injectTypeids ? CompilationFlag.INJECT_OUTPUT_TYPE_IDS : 0) |
+        (options?.injectTypenames
+          ? CompilationFlag.INJECT_OUTPUT_TYPE_NAMES
+          : 0)
+    );
+    wb.writeBigInt64(options?.implicitLimit ?? BigInt(0));
+    wb.writeChar(outputFormat);
+    wb.writeChar(
+      expectedCardinality === Cardinality.ONE ||
+        expectedCardinality === Cardinality.AT_MOST_ONE
+        ? Cardinality.AT_MOST_ONE
+        : Cardinality.MANY
+    );
+    wb.writeString(query);
+
+    if (state === Session.defaults()) {
+      wb.writeBuffer(NULL_CODEC.tidBuffer);
+      wb.writeInt32(0);
+    } else {
+      wb.writeBuffer(this.stateCodec.tidBuffer);
+      if (this.stateCodec === INVALID_CODEC) {
+        wb.writeInt32(0);
       } else {
-        return await this._optimisticExecuteFlow(
-          args,
-          asJson,
-          expectOne,
-          requiredOne,
-          inCodec,
-          outCodec,
+        if (this.stateCache?.[0] !== state) {
+          const buf = new WriteBuffer();
+          this.stateCodec.encode(buf, state._serialise());
+          this.stateCache = [state, buf.unwrap()];
+        }
+        wb.writeBuffer(this.stateCache![1]);
+      }
+    }
+  }
+
+  private async _parse(
+    query: string,
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality,
+    state: Session,
+    privilegedMode: boolean = false,
+    options?: QueryOptions
+  ): Promise<
+    [Cardinality, ICodec, ICodec, number, Buffer | null, Buffer | null]
+  > {
+    const wb = new WriteMessageBuffer();
+    wb.beginMessage(chars.$P);
+    wb.writeUInt16(0); // no headers
+
+    this._encodeParseParams(
+      wb,
+      query,
+      outputFormat,
+      expectedCardinality,
+      state,
+      privilegedMode,
+      options
+    );
+
+    wb.endMessage();
+    wb.writeSync();
+
+    this._sendData(wb.unwrap());
+
+    let parsing = true;
+    let error: Error | null = null;
+    let newCard: Cardinality | null = null;
+    let capabilities = -1;
+    let inCodec: ICodec | null = null;
+    let outCodec: ICodec | null = null;
+    let inCodecBuf: Buffer | null = null;
+    let outCodecBuf: Buffer | null = null;
+
+    while (parsing) {
+      if (!this.buffer.takeMessage()) {
+        await this._waitForMessage();
+      }
+
+      const mtype = this.buffer.getMessageType();
+
+      switch (mtype) {
+        case chars.$T: {
+          try {
+            [
+              newCard,
+              inCodec,
+              outCodec,
+              capabilities,
+              inCodecBuf,
+              outCodecBuf,
+            ] = this._parseDescribeTypeMessage();
+            const key = this._getQueryCacheKey(
+              query,
+              outputFormat,
+              expectedCardinality
+            );
+            this.queryCodecCache.set(key, [
+              newCard,
+              inCodec,
+              outCodec,
+              capabilities,
+            ]);
+          } catch (e: any) {
+            error = e;
+          }
+          break;
+        }
+
+        case chars.$E: {
+          error = this._parseErrorMessage();
+          break;
+        }
+
+        case chars.$s: {
+          this._parseDescribeStateMessage();
+          break;
+        }
+
+        case chars.$Z: {
+          this._parseSyncMessage();
+          parsing = false;
+          break;
+        }
+
+        default:
+          this._fallthrough();
+      }
+    }
+
+    if (error !== null) {
+      if (error instanceof errors.StateMismatchError) {
+        return this._parse(
           query,
-          result,
+          outputFormat,
+          expectedCardinality,
+          state,
+          privilegedMode,
           options
         );
       }
+      throw error;
+    }
+
+    return [
+      newCard!,
+      inCodec!,
+      outCodec!,
+      capabilities,
+      inCodecBuf,
+      outCodecBuf,
+    ];
+  }
+
+  private async _executeFlow(
+    query: string,
+    args: QueryArgs,
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality,
+    state: Session,
+    inCodec: ICodec,
+    outCodec: ICodec,
+    result: Array<any> | WriteBuffer,
+    privilegedMode: boolean = false,
+    options?: QueryOptions
+  ): Promise<void> {
+    const wb = new WriteMessageBuffer();
+    wb.beginMessage(chars.$O);
+    wb.writeUInt16(0); // no headers
+
+    this._encodeParseParams(
+      wb,
+      query,
+      outputFormat,
+      expectedCardinality,
+      state,
+      privilegedMode,
+      options
+    );
+
+    wb.writeBuffer(inCodec.tidBuffer);
+    wb.writeBuffer(outCodec.tidBuffer);
+
+    if (inCodec) {
+      wb.writeBuffer(this._encodeArgs(args, inCodec));
+    } else {
+      wb.writeInt32(0);
+    }
+
+    wb.endMessage();
+    wb.writeSync();
+
+    this._sendData(wb.unwrap());
+
+    let error: Error | null = null;
+    let parsing = true;
+
+    while (parsing) {
+      if (!this.buffer.takeMessage()) {
+        await this._waitForMessage();
+      }
+
+      const mtype = this.buffer.getMessageType();
+
+      switch (mtype) {
+        case chars.$D: {
+          if (error == null) {
+            try {
+              this._parseDataMessages(outCodec!, result);
+            } catch (e: any) {
+              error = e;
+              this.buffer.finishMessage();
+            }
+          } else {
+            this.buffer.discardMessage();
+          }
+          break;
+        }
+
+        case chars.$C: {
+          this.lastStatus = this._parseCommandCompleteMessage();
+          break;
+        }
+
+        case chars.$Z: {
+          this._parseSyncMessage();
+          parsing = false;
+          break;
+        }
+
+        case chars.$T: {
+          try {
+            const [newCard, newInCodec, newOutCodec, capabilities] =
+              this._parseDescribeTypeMessage();
+            const key = this._getQueryCacheKey(
+              query,
+              outputFormat,
+              expectedCardinality
+            );
+            this.queryCodecCache.set(key, [
+              newCard,
+              newInCodec,
+              newOutCodec,
+              capabilities,
+            ]);
+            outCodec = newOutCodec;
+          } catch (e: any) {
+            error = e;
+          }
+          break;
+        }
+
+        case chars.$s: {
+          this._parseDescribeStateMessage();
+          break;
+        }
+
+        case chars.$E: {
+          error = this._parseErrorMessage();
+          break;
+        }
+
+        default:
+          this._fallthrough();
+      }
+    }
+
+    if (error != null) {
+      if (error instanceof errors.StateMismatchError) {
+        return this._executeFlow(
+          query,
+          args,
+          outputFormat,
+          expectedCardinality,
+          state,
+          inCodec,
+          outCodec,
+          result,
+          privilegedMode,
+          options
+        );
+      }
+      throw error;
     }
   }
 
   private _getQueryCacheKey(
     query: string,
-    asJson: boolean,
-    expectOne: boolean
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality
   ): string {
-    return [asJson, expectOne, query.length, query].join(";");
+    const expectOne =
+      expectedCardinality === Cardinality.ONE ||
+      expectedCardinality === Cardinality.AT_MOST_ONE;
+    return [outputFormat, expectOne, query.length, query].join(";");
   }
 
   private _validateFetchCardinality(
-    card: char,
-    asJson: boolean,
-    requiredOne: boolean
+    card: Cardinality,
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality
   ): void {
-    if (requiredOne && card === chars.$n) {
+    if (
+      expectedCardinality === Cardinality.ONE &&
+      card === Cardinality.NO_RESULT
+    ) {
       throw new errors.NoDataError(
         `query executed via queryRequiredSingle${
-          asJson ? "JSON" : ""
+          outputFormat === OutputFormat.JSON ? "JSON" : ""
         }() returned no data`
       );
     }
@@ -818,53 +1169,135 @@ export class BaseRawConnection {
   async fetch(
     query: string,
     args: QueryArgs = null,
-    asJson: boolean,
-    expectOne: boolean,
-    requiredOne: boolean = false
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality,
+    state: Session,
+    privilegedMode: boolean = false
   ): Promise<any> {
+    if (this.isLegacyProtocol && outputFormat === OutputFormat.NONE) {
+      if (args != null) {
+        throw new errors.InterfaceError(
+          `arguments in execute() is not supported in this version of ` +
+            `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`
+        );
+      }
+      return this.legacyExecute(query, privilegedMode);
+    }
+
     this._checkState();
 
-    const key = this._getQueryCacheKey(query, asJson, expectOne);
-    const ret = new Array();
+    const requiredOne = expectedCardinality === Cardinality.ONE;
+    const expectOne =
+      requiredOne || expectedCardinality === Cardinality.AT_MOST_ONE;
+    const asJson = outputFormat === OutputFormat.JSON;
 
-    if (this.queryCodecCache.has(key)) {
-      const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
-      this._validateFetchCardinality(card, asJson, requiredOne);
-      await this._optimisticExecuteFlow(
-        args,
-        asJson,
-        expectOne,
-        requiredOne,
-        inCodec,
-        outCodec,
-        query,
-        ret
-      );
-    } else {
-      const [card, inCodec, outCodec, capabilities] = await this._parse(
-        query,
-        asJson,
-        expectOne,
-        false
-      );
-      this._validateFetchCardinality(card, asJson, requiredOne);
-      this.queryCodecCache.set(key, [card, inCodec, outCodec, capabilities]);
-      if (this.alwaysUseOptimisticFlow || !this.isLegacyProtocol) {
-        await this._optimisticExecuteFlow(
+    const key = this._getQueryCacheKey(
+      query,
+      outputFormat,
+      expectedCardinality
+    );
+    const ret: any[] = [];
+
+    if (!this.isLegacyProtocol) {
+      let [card, inCodec, outCodec] = this.queryCodecCache.get(key) ?? [];
+
+      if (card) {
+        this._validateFetchCardinality(
+          card,
+          outputFormat,
+          expectedCardinality
+        );
+      }
+
+      if (
+        (!inCodec && args !== null) ||
+        (this.stateCodec === INVALID_CODEC && state !== Session.defaults())
+      ) {
+        [card, inCodec, outCodec] = await this._parse(
+          query,
+          outputFormat,
+          expectedCardinality,
+          state,
+          privilegedMode
+        );
+        this._validateFetchCardinality(
+          card,
+          outputFormat,
+          expectedCardinality
+        );
+      }
+
+      try {
+        await this._executeFlow(
+          query,
           args,
-          asJson,
-          expectOne,
-          requiredOne,
+          outputFormat,
+          expectedCardinality,
+          state,
+          inCodec ?? NULL_CODEC,
+          outCodec ?? NULL_CODEC,
+          ret,
+          privilegedMode
+        );
+      } catch (e) {
+        if (e instanceof errors.ParameterTypeMismatchError) {
+          [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
+          await this._executeFlow(
+            query,
+            args,
+            outputFormat,
+            expectedCardinality,
+            state,
+            inCodec ?? NULL_CODEC,
+            outCodec ?? NULL_CODEC,
+            ret,
+            privilegedMode
+          );
+        } else {
+          throw e;
+        }
+      }
+    } else {
+      if (state !== Session.defaults()) {
+        throw new errors.InterfaceError(
+          `setting session state is not supported in this version of ` +
+            `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`
+        );
+      }
+
+      if (this.queryCodecCache.has(key)) {
+        const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
+        this._validateFetchCardinality(
+          card,
+          outputFormat,
+          expectedCardinality
+        );
+        await this._legacyOptimisticExecuteFlow(
+          query,
+          args,
+          outputFormat,
+          expectedCardinality,
           inCodec,
           outCodec,
-          query,
           ret
         );
       } else {
-        await this._executeFlow(args, inCodec, outCodec, ret);
+        const [card, inCodec, outCodec, capabilities] =
+          await this._legacyParse(query, outputFormat, expectOne);
+        this._validateFetchCardinality(
+          card,
+          outputFormat,
+          expectedCardinality
+        );
+        this.queryCodecCache.set(key, [card, inCodec, outCodec, capabilities]);
+
+        await this._legacyExecuteFlow(args, inCodec, outCodec, ret);
       }
     }
 
+    if (outputFormat === OutputFormat.NONE) {
+      return;
+    }
     if (expectOne) {
       if (requiredOne && !ret.length) {
         throw new errors.NoDataError("query returned no data");
@@ -890,14 +1323,18 @@ export class BaseRawConnection {
 
   getQueryCapabilities(
     query: string,
-    asJson: boolean,
-    expectOne: boolean
+    outputFormat: OutputFormat,
+    expectedCardinality: Cardinality
   ): number | null {
-    const key = this._getQueryCacheKey(query, asJson, expectOne);
+    const key = this._getQueryCacheKey(
+      query,
+      outputFormat,
+      expectedCardinality
+    );
     return this.queryCodecCache.get(key)?.[3] ?? null;
   }
 
-  async execute(
+  async legacyExecute(
     query: string,
     allowTransactionCommands: boolean = false
   ): Promise<void> {
@@ -905,7 +1342,7 @@ export class BaseRawConnection {
 
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$Q)
-      .writeHeaders({
+      .writeLegacyHeaders({
         allowCapabilities: !allowTransactionCommands
           ? NO_TRANSACTION_CAPABILITIES_BYTES
           : undefined,
@@ -958,7 +1395,14 @@ export class BaseRawConnection {
       this.serverXactStatus !== TransactionStatus.TRANS_IDLE
     ) {
       try {
-        await this.execute(`rollback`, true);
+        await this.fetch(
+          `rollback`,
+          undefined,
+          OutputFormat.NONE,
+          Cardinality.NO_RESULT,
+          Session.defaults(),
+          true
+        );
       } catch {
         this._abortWithError(
           new errors.ClientConnectionClosedError("failed to reset state")
@@ -986,48 +1430,48 @@ export class BaseRawConnection {
   // These methods are exposed for use by EdgeDB Studio
   public async rawParse(
     query: string,
-    headers?: PrepareMessageHeaders
-  ): Promise<[ICodec, ICodec, Buffer, Buffer, ProtocolVersion]> {
-    const result = await this._parse(query, false, false, true, {
-      headers,
-    });
+    state: Session,
+    options?: QueryOptions
+  ): Promise<[ICodec, ICodec, Buffer, Buffer, ProtocolVersion, number]> {
+    const result = (await this._parse(
+      query,
+      OutputFormat.BINARY,
+      Cardinality.MANY,
+      state,
+      false,
+      options
+    ))!;
     return [
       result[1],
       result[2],
       result[4]!,
       result[5]!,
       this.protocolVersion,
+      result[3],
     ];
   }
 
   public async rawExecute(
     query: string,
-    outCodec: ICodec,
-    headers?: PrepareMessageHeaders,
+    state: Session,
+    outCodec?: ICodec,
+    options?: QueryOptions,
     inCodec?: ICodec,
     args: QueryArgs = null
   ): Promise<Buffer> {
     const result = new WriteBuffer();
-    inCodec =
-      inCodec ??
-      (versionGreaterThanOrEqual(this.protocolVersion, [0, 12])
-        ? NULL_CODEC
-        : EMPTY_TUPLE_CODEC);
-    await this._optimisticExecuteFlow(
-      args,
-      false,
-      false,
-      false,
-      inCodec,
-      outCodec,
+    await this._executeFlow(
       query,
+      args,
+      outCodec ? OutputFormat.BINARY : OutputFormat.NONE,
+      Cardinality.MANY,
+      state,
+      inCodec ?? NULL_CODEC,
+      outCodec ?? NULL_CODEC,
       result,
-      {headers}
+      false,
+      options
     );
     return result.unwrap();
-  }
-
-  public async rawExecuteScript(script: string): Promise<void> {
-    await this.execute(script, true);
   }
 }

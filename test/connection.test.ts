@@ -75,8 +75,12 @@ jest.mock("os", () => {
 import * as fs from "fs";
 import * as crypto from "crypto";
 import {join as pathJoin} from "path";
-import {Client} from "../src/index.node";
-import {parseConnectArguments, stashPath} from "../src/conUtils";
+import {Client, Duration} from "../src/index.node";
+import {
+  parseConnectArguments,
+  parseDuration,
+  stashPath,
+} from "../src/conUtils";
 import {getClient} from "./testbase";
 import * as errors from "../src/errors";
 import * as platform from "../src/platform";
@@ -207,6 +211,7 @@ interface ConnectionResult {
   tlsCAData: string | null;
   tlsSecurity: boolean;
   serverSettings: {[key: string]: string};
+  waitUntilAvailable: string;
 }
 
 type ConnectionTestCase = {
@@ -250,6 +255,14 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
       {env, fs, captureWarnings: !!testcase.warnings},
       async () => {
         const {connectionParams} = await parseConnectArguments(opts);
+        let waitMilli = connectionParams.waitUntilAvailable;
+        const waitHours = Math.floor(waitMilli / 3_600_000);
+        waitMilli -= waitHours * 3_600_000;
+        const waitMinutes = Math.floor(waitMilli / 60_000);
+        waitMilli -= waitMinutes * 60_000;
+        const waitSeconds = Math.floor(waitMilli / 1000);
+        waitMilli -= waitSeconds * 1000;
+
         expect({
           address: connectionParams.address,
           database: connectionParams.database,
@@ -258,7 +271,24 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
           tlsCAData: connectionParams.tlsOptions.ca ?? null,
           tlsSecurity: connectionParams.tlsSecurity,
           serverSettings: connectionParams.serverSettings,
-        }).toEqual(testcase.result);
+          waitUntilAvailable: parseDuration(
+            new Duration(
+              0,
+              0,
+              0,
+              0,
+              waitHours,
+              waitMinutes,
+              waitSeconds,
+              waitMilli
+            )
+          ),
+        }).toEqual({
+          ...testcase.result,
+          waitUntilAvailable: parseDuration(
+            testcase.result.waitUntilAvailable
+          ),
+        });
       }
     );
     if (testcase.warnings) {

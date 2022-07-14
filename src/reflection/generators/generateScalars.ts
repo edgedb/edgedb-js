@@ -61,17 +61,9 @@ export const generateScalars = (params: GeneratorParams) => {
           dts`declare `,
           t`type ${ref} = ${joinFrags(children, " | ")};`,
         ]);
-        sc.writeln([
-          dts`declare `,
-          ...frag`const ${ref}`,
-          t`: ${ref}`,
-          r` = $.makeType`,
-          ts`<${ref}>`,
-          r`(_.spec, "${type.id}", _.syntax.literal);`,
-        ]);
         sc.nl();
 
-        sc.addExport(ref);
+        sc.addExport(ref, {typeOnly: true});
         // sc.addExport(ref, `$${_name}`); // dollar
       } else if (scalarType.bases.length) {
         // for std::sequence1

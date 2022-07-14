@@ -30,8 +30,11 @@ import {NamedTupleCodec} from "./namedtuple";
 import {EnumCodec} from "./enum";
 import {ObjectCodec} from "./object";
 import {SetCodec} from "./set";
+import {RangeCodec} from "./range";
 import {ProtocolVersion} from "../ifaces";
 import {versionGreaterThanOrEqual} from "../utils";
+import {SparseObjectCodec} from "./sparseObject";
+import {ProtocolError, InternalClientError} from "../errors";
 
 const CODECS_CACHE_SIZE = 1000;
 const CODECS_BUILD_CACHE_SIZE = 200;
@@ -44,6 +47,8 @@ const CTYPE_TUPLE = 4;
 const CTYPE_NAMEDTUPLE = 5;
 const CTYPE_ARRAY = 6;
 const CTYPE_ENUM = 7;
+const CTYPE_INPUT_SHAPE = 8;
+const CTYPE_RANGE = 9;
 
 export interface CustomCodecSpec {
   decimal_string?: boolean;
@@ -142,7 +147,7 @@ export class CodecsRegistry {
     }
 
     if (!codecsList.length) {
-      throw new Error("could not build a codec");
+      throw new InternalClientError("could not build a codec");
     }
 
     return codecsList[codecsList.length - 1];
@@ -171,7 +176,8 @@ export class CodecsRegistry {
           break;
         }
 
-        case CTYPE_SHAPE: {
+        case CTYPE_SHAPE:
+        case CTYPE_INPUT_SHAPE: {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
             if (versionGreaterThanOrEqual(protocolVersion, [0, 11])) {
@@ -190,6 +196,7 @@ export class CodecsRegistry {
           break;
         }
 
+        case CTYPE_RANGE:
         case CTYPE_SCALAR: {
           frb.discard(2);
           break;
@@ -214,7 +221,7 @@ export class CodecsRegistry {
           frb.discard(2);
           const els = frb.readUInt16();
           if (els !== 1) {
-            throw new Error(
+            throw new ProtocolError(
               "cannot handle arrays with more than one dimension"
             );
           }
@@ -246,7 +253,7 @@ export class CodecsRegistry {
             }
             return null;
           } else {
-            throw new Error(
+            throw new InternalClientError(
               `no codec implementation for EdgeDB data class ${t}`
             );
           }
@@ -266,20 +273,25 @@ export class CodecsRegistry {
         res = SCALAR_CODECS.get(tid);
         if (!res) {
           if (KNOWN_TYPES.has(tid)) {
-            throw new Error(`no JS codec for ${KNOWN_TYPES.get(tid)}`);
+            throw new InternalClientError(
+              `no JS codec for ${KNOWN_TYPES.get(tid)}`
+            );
           }
 
-          throw new Error(`node JS codec for the type with ID ${tid}`);
+          throw new InternalClientError(
+            `no JS codec for the type with ID ${tid}`
+          );
         }
         if (!(res instanceof ScalarCodec)) {
-          throw new Error(
-            "could not build scalar codec: base scalar has a non-scalar codec"
+          throw new ProtocolError(
+            "could not build scalar codec: base scalar is a non-scalar codec"
           );
         }
         break;
       }
 
-      case CTYPE_SHAPE: {
+      case CTYPE_SHAPE:
+      case CTYPE_INPUT_SHAPE: {
         const els = frb.readUInt16();
         const codecs: ICodec[] = new Array(els);
         const names: string[] = new Array(els);
@@ -303,16 +315,21 @@ export class CodecsRegistry {
           const pos = frb.readUInt16();
           const subCodec = cl[pos];
           if (subCodec == null) {
-            throw new Error("could not build object codec: missing subcodec");
+            throw new ProtocolError(
+              "could not build object codec: missing subcodec"
+            );
           }
 
           codecs[i] = subCodec;
           names[i] = name;
-          flags[i] = flag;
-          cards[i] = card;
+          flags[i] = flag!;
+          cards[i] = card!;
         }
 
-        res = new ObjectCodec(tid, codecs, names, flags, cards);
+        res =
+          t === CTYPE_INPUT_SHAPE
+            ? new SparseObjectCodec(tid, codecs, names)
+            : new ObjectCodec(tid, codecs, names, flags, cards);
         break;
       }
 
@@ -320,7 +337,9 @@ export class CodecsRegistry {
         const pos = frb.readUInt16();
         const subCodec = cl[pos];
         if (subCodec == null) {
-          throw new Error("could not build set codec: missing subcodec");
+          throw new ProtocolError(
+            "could not build set codec: missing subcodec"
+          );
         }
         res = new SetCodec(tid, subCodec);
         break;
@@ -330,12 +349,12 @@ export class CodecsRegistry {
         const pos = frb.readUInt16();
         res = cl[pos];
         if (res == null) {
-          throw new Error(
+          throw new ProtocolError(
             "could not build scalar codec: missing a codec for base scalar"
           );
         }
         if (!(res instanceof ScalarCodec)) {
-          throw new Error(
+          throw new ProtocolError(
             "could not build scalar codec: base scalar has a non-scalar codec"
           );
         }
@@ -347,12 +366,16 @@ export class CodecsRegistry {
         const pos = frb.readUInt16();
         const els = frb.readUInt16();
         if (els !== 1) {
-          throw new Error("cannot handle arrays with more than one dimension");
+          throw new ProtocolError(
+            "cannot handle arrays with more than one dimension"
+          );
         }
         const dimLen = frb.readInt32();
         const subCodec = cl[pos];
         if (subCodec == null) {
-          throw new Error("could not build array codec: missing subcodec");
+          throw new ProtocolError(
+            "could not build array codec: missing subcodec"
+          );
         }
         res = new ArrayCodec(tid, subCodec, dimLen);
         break;
@@ -368,7 +391,9 @@ export class CodecsRegistry {
             const pos = frb.readUInt16();
             const subCodec = cl[pos];
             if (subCodec == null) {
-              throw new Error("could not build tuple codec: missing subcodec");
+              throw new ProtocolError(
+                "could not build tuple codec: missing subcodec"
+              );
             }
             codecs[i] = subCodec;
           }
@@ -388,7 +413,7 @@ export class CodecsRegistry {
           const pos = frb.readUInt16();
           const subCodec = cl[pos];
           if (subCodec == null) {
-            throw new Error(
+            throw new ProtocolError(
               "could not build namedtuple codec: missing subcodec"
             );
           }
@@ -410,15 +435,29 @@ export class CodecsRegistry {
         res = new EnumCodec(tid);
         break;
       }
+
+      case CTYPE_RANGE: {
+        const pos = frb.readUInt16();
+        const subCodec = cl[pos];
+        if (subCodec == null) {
+          throw new ProtocolError(
+            "could not build range codec: missing subcodec"
+          );
+        }
+        res = new RangeCodec(tid, subCodec);
+        break;
+      }
     }
 
     if (res == null) {
       if (KNOWN_TYPES.has(tid)) {
-        throw new Error(
+        throw new InternalClientError(
           `could not build a codec for ${KNOWN_TYPES.get(tid)} type`
         );
       } else {
-        throw new Error(`could not build a codec for ${tid} type`);
+        throw new InternalClientError(
+          `could not build a codec for ${tid} type`
+        );
       }
     }
 

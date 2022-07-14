@@ -27,7 +27,9 @@ export type CodecKind =
   | "namedtuple"
   | "object"
   | "set"
-  | "scalar";
+  | "scalar"
+  | "sparse_object"
+  | "range";
 
 export interface ICodec {
   readonly tid: uuid;

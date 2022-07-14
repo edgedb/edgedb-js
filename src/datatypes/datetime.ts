@@ -750,3 +750,100 @@ export class RelativeDuration {
     throw new TypeError("Not possible to compare RelativeDuration");
   }
 }
+
+export class DateDuration {
+  private readonly _years: number;
+  private readonly _months: number;
+  private readonly _weeks: number;
+  private readonly _days: number;
+
+  constructor(
+    years: number = 0,
+    months: number = 0,
+    weeks: number = 0,
+    days: number = 0
+  ) {
+    this._years = Math.trunc(years) || 0;
+    this._months = Math.trunc(months) || 0;
+    this._weeks = Math.trunc(weeks) || 0;
+    this._days = Math.trunc(days) || 0;
+  }
+  get years(): number {
+    return this._years;
+  }
+  get months(): number {
+    return this._months;
+  }
+  get weeks(): number {
+    return this._weeks;
+  }
+  get days(): number {
+    return this._days;
+  }
+
+  toString(): string {
+    let str = "P";
+    if (this._years) {
+      str += `${this._years}Y`;
+    }
+    if (this._months) {
+      str += `${this._months}M`;
+    }
+    const days = this._days + 7 * this._weeks;
+    if (days) {
+      str += `${days}D`;
+    }
+
+    if (str === "P") {
+      return "PT0S";
+    }
+
+    return str;
+  }
+
+  toJSON(): string {
+    return this.toString();
+  }
+
+  valueOf(): any {
+    throw new TypeError("Not possible to compare DateDuration");
+  }
+}
+
+const humanDurationPrefixes: {[key: string]: number} = {
+  h: 3_600_000,
+  hou: 3_600_000,
+  m: 60_000,
+  min: 60_000,
+  s: 1000,
+  sec: 1000,
+  ms: 1,
+  mil: 1,
+};
+
+export function parseHumanDurationString(durationStr: string): number {
+  const regex =
+    /(\d+|\d+\.\d+|\.\d+)\s*(hours?|minutes?|seconds?|milliseconds?|ms|h|m|s)\s*/g;
+
+  let duration = 0;
+  const seen = new Set<number>();
+  let match = regex.exec(durationStr);
+  let lastIndex = 0;
+  while (match) {
+    if (match.index !== lastIndex) {
+      throw new Error(`invalid duration "${durationStr}"`);
+    }
+    const mult = humanDurationPrefixes[match[2].slice(0, 3)]!;
+    if (seen.has(mult)) {
+      throw new Error(`invalid duration "${durationStr}"`);
+    }
+    duration += Number(match[1]) * mult;
+    seen.add(mult);
+    lastIndex = regex.lastIndex;
+    match = regex.exec(durationStr);
+  }
+  if (lastIndex !== durationStr.length) {
+    throw new Error(`invalid duration "${durationStr}"`);
+  }
+  return duration;
+}

@@ -145,13 +145,14 @@ Client
         If a query argument is defined as ``optional``, the key/value can be
         either omitted from the *args* object or be a ``null`` value.
 
-    .. js:method:: execute(query: string): Promise<void>
+    .. js:method:: execute(query: string, args?: QueryArgs): Promise<void>
 
         Execute an EdgeQL command (or commands).
 
         :param query: Query text.
 
-        This commands takes no arguments.
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-async-optargs>`.
 
         Example:
 
@@ -344,6 +345,55 @@ Client
               await client.query('select ...');
             }
 
+    .. js:method:: withGlobals(globals: {[name: string]: any}): Client
+
+        Returns a new ``Client`` instance with the specified global values.
+        The ``globals`` argument object is merged with any existing globals
+        defined on the current client instance.
+
+        Equivalent to using the ``set global`` command.
+
+        Example:
+
+        .. code-block:: js
+
+            const user = await client.withGlobals({
+              userId: '...'
+            }).querySingle(`
+              select User {name} filter .id = global userId
+            `);
+
+    .. js:method:: withModuleAliases(aliases: {[name: string]: string}): Client
+
+        Returns a new ``Client`` instance with the specified module aliases.
+        The ``aliases`` argument object is merged with any existing module
+        aliases defined on the current client instance.
+
+        If the alias ``name`` is ``module`` this is equivalent to using
+        the ``set module`` command, otherwise it is equivalent to the
+        ``set alias`` command.
+
+        Example:
+
+        .. code-block:: js
+
+            const user = await client.withModuleAliases({
+              module: 'sys'
+            }).querySingle(`
+              select get_version_as_str()
+            `);
+            // "2.0"
+
+    .. js:method:: withConfig(config: {[name: string]: any}): Client
+
+        Returns a new ``Client`` instance with the specified client session
+        configuration. The ``config`` argument object is merged with any
+        existing session config defined on the current client instance.
+
+        Equivalent to using the ``configure session`` command. For available
+        configuration parameters refer to the
+        :ref:`Config documentation <ref_std_cfg>`.
+
     .. js:method:: withRetryOptions(opts: { \
             attempts?: number \
             backoff?: (attempt: number) => number \
@@ -436,6 +486,8 @@ The table below shows the correspondence between EdgeDB and JavaScript types.
 +-------------------------+--------------------------------------------------+
 | ``anytuple``            | ``Array`` or                                     |
 |                         | ``Array``-like ``object``                        |
++-------------------------+--------------------------------------------------+
+| ``range<anytype>``      | :js:class:`Range`                                |
 +-------------------------+--------------------------------------------------+
 | ``anyenum``             | ``string``                                       |
 +-------------------------+--------------------------------------------------+
@@ -638,6 +690,7 @@ where the elements are accessible either by their names or indexes.
     }
 
     main();
+
 
 Local Date
 ==========
@@ -974,6 +1027,60 @@ Memory
 
         Get the string representation of the memory value. Format is the same
         as returned by string casting a ``cfg::memory`` value in EdgeDB.
+
+Range
+=====
+
+.. js:class:: Range(\
+        lower: T | null, \
+        upper: T | null, \
+        incLower: boolean = true, \
+        incUpper: boolean = false \
+    )
+
+    A JavaScript representation of an EdgeDB ``std::range`` value. This is a generic TypeScript class with the following type signature.
+
+    .. code-block:: typescript
+
+        class Range<
+            T extends number | Date | LocalDate | LocalDateTime | Duration
+        >{
+            // ...
+        }
+
+    .. js:attribute:: lower: T
+
+        The lower bound of the range value.
+
+    .. js:attribute:: upper: T
+
+        The upper bound of the range value.
+
+    .. js:attribute:: incLower: boolean
+
+        Whether the lower bound is inclusive.
+
+    .. js:attribute:: incUpper: boolean
+
+        Whether the upper bound is inclusive.
+
+    .. js:attribute:: empty: boolean
+
+        Whether the range is empty.
+
+    .. js:method:: toJSON(): number
+
+        Returns a JSON-encodable representation of the range.
+
+    .. js:method:: empty(): Range
+
+        A static method to declare an empty range (no bounds).
+
+        .. code-block:: typescript
+
+            Range.empty();
+
+
 
 
 .. _BigInt:

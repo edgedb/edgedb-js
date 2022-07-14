@@ -18,11 +18,12 @@
 
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
+import {InvalidArgumentError} from "../errors";
 
 export class StrCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "string") {
-      throw new Error(`a string was expected, got "${object}"`);
+      throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }
 
     const val = <string>object;

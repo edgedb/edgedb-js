@@ -19,6 +19,7 @@
 import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
 import {ArrayCodec} from "./array";
+import {InvalidArgumentError, ProtocolError} from "../errors";
 
 export class SetCodec extends Codec implements ICodec {
   private subCodec: ICodec;
@@ -29,7 +30,7 @@ export class SetCodec extends Codec implements ICodec {
   }
 
   encode(_buf: WriteBuffer, _obj: any): void {
-    throw new Error("Sets cannot be passed in query arguments");
+    throw new InvalidArgumentError("Sets cannot be passed in query arguments");
   }
 
   decode(buf: ReadBuffer): any {
@@ -50,7 +51,9 @@ export class SetCodec extends Codec implements ICodec {
       return [];
     }
     if (ndims !== 1) {
-      throw new Error(`expected 1-dimensional array of records of arrays`);
+      throw new ProtocolError(
+        `expected 1-dimensional array of records of arrays`
+      );
     }
 
     const len = buf.readUInt32();
@@ -66,7 +69,7 @@ export class SetCodec extends Codec implements ICodec {
 
       const recSize = buf.readUInt32();
       if (recSize !== 1) {
-        throw new Error(
+        throw new ProtocolError(
           "expected a record with a single element as an array set " +
             "element envelope"
         );
@@ -76,7 +79,7 @@ export class SetCodec extends Codec implements ICodec {
 
       const elemLen = buf.readInt32();
       if (elemLen === -1) {
-        throw new Error("unexpected NULL value in array set element");
+        throw new ProtocolError("unexpected NULL value in array set element");
       }
 
       buf.sliceInto(elemBuf, elemLen);
@@ -97,7 +100,7 @@ export class SetCodec extends Codec implements ICodec {
       return [];
     }
     if (ndims !== 1) {
-      throw new Error(`invalid set dimensinality: ${ndims}`);
+      throw new ProtocolError(`invalid set dimensinality: ${ndims}`);
     }
 
     const len = buf.readUInt32();

@@ -17,7 +17,7 @@
  */
 import {ClientConnectionHolder} from "./client";
 import * as errors from "./errors";
-import {Executor, QueryArgs} from "./ifaces";
+import {Cardinality, Executor, OutputFormat, QueryArgs} from "./ifaces";
 import {RawConnection} from "./rawConn";
 
 export enum TransactionState {
@@ -51,10 +51,14 @@ export class Transaction implements Executor {
     await rawConn.resetState();
 
     const options = holder.options.transactionOptions;
-    await rawConn.execute(
+    await rawConn.fetch(
       `START TRANSACTION ISOLATION ${options.isolation}, ${
         options.readonly ? "READ ONLY" : "READ WRITE"
       }, ${options.deferrable ? "" : "NOT "}DEFERRABLE;`,
+      undefined,
+      OutputFormat.NONE,
+      Cardinality.NO_RESULT,
+      holder.options.session,
       true
     );
 
@@ -112,7 +116,14 @@ export class Transaction implements Executor {
     await this._runOp(
       "commit",
       async () => {
-        await this._rawConn.execute("COMMIT", true);
+        await this._rawConn.fetch(
+          "COMMIT",
+          undefined,
+          OutputFormat.NONE,
+          Cardinality.NO_RESULT,
+          this._holder.options.session,
+          true
+        );
         this._state = TransactionState.COMMITTED;
       },
       "A query is still in progress after transaction block has returned."
@@ -124,26 +135,53 @@ export class Transaction implements Executor {
     await this._runOp(
       "rollback",
       async () => {
-        await this._rawConn.execute("ROLLBACK", true);
+        await this._rawConn.fetch(
+          "ROLLBACK",
+          undefined,
+          OutputFormat.NONE,
+          Cardinality.NO_RESULT,
+          this._holder.options.session,
+          true
+        );
         this._state = TransactionState.ROLLEDBACK;
       },
       "A query is still in progress after transaction block has returned."
     );
   }
 
-  async execute(query: string): Promise<void> {
-    return this._runOp("execute", () => this._rawConn.execute(query));
+  async execute(query: string, args?: QueryArgs): Promise<void> {
+    return this._runOp("execute", () =>
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.NONE,
+        Cardinality.NO_RESULT,
+        this._holder.options.session
+      )
+    );
   }
 
   async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
     return this._runOp("query", () =>
-      this._rawConn.fetch(query, args, false, false)
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.BINARY,
+        Cardinality.MANY,
+        this._holder.options.session
+      )
     );
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
     return this._runOp("queryJSON", () =>
-      this._rawConn.fetch(query, args, true, false)
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.JSON,
+        Cardinality.MANY,
+        this._holder.options.session
+      )
     );
   }
 
@@ -152,13 +190,25 @@ export class Transaction implements Executor {
     args?: QueryArgs
   ): Promise<T | null> {
     return this._runOp("querySingle", () =>
-      this._rawConn.fetch(query, args, false, true)
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.BINARY,
+        Cardinality.AT_MOST_ONE,
+        this._holder.options.session
+      )
     );
   }
 
   async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
     return this._runOp("querySingleJSON", () =>
-      this._rawConn.fetch(query, args, true, true)
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.JSON,
+        Cardinality.AT_MOST_ONE,
+        this._holder.options.session
+      )
     );
   }
 
@@ -167,7 +217,13 @@ export class Transaction implements Executor {
     args?: QueryArgs
   ): Promise<T> {
     return this._runOp("queryRequiredSingle", () =>
-      this._rawConn.fetch(query, args, false, true, true)
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.BINARY,
+        Cardinality.ONE,
+        this._holder.options.session
+      )
     );
   }
 
@@ -176,7 +232,13 @@ export class Transaction implements Executor {
     args?: QueryArgs
   ): Promise<string> {
     return this._runOp("queryRequiredSingleJSON", () =>
-      this._rawConn.fetch(query, args, true, true, true)
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.JSON,
+        Cardinality.ONE,
+        this._holder.options.session
+      )
     );
   }
 }

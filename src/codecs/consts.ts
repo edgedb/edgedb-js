@@ -19,6 +19,7 @@
 type uuid = string;
 
 export const NULL_CODEC_ID = "00000000000000000000000000000000";
+export const INVALID_CODEC_ID = "ffffffffffffffffffffffffffffffff";
 
 export const KNOWN_TYPES = new Map<uuid, string>([
   ["00000000000000000000000000000001", "anytype"],
@@ -43,6 +44,7 @@ export const KNOWN_TYPES = new Map<uuid, string>([
   ["0000000000000000000000000000010f", "std::json"],
   ["00000000000000000000000000000110", "std::bigint"],
   ["00000000000000000000000000000111", "cal::relative_duration"],
+  ["00000000000000000000000000000112", "cal::date_duration"],
   ["00000000000000000000000000000130", "cfg::memory"],
 ]);
 

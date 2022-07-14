@@ -1,6 +1,6 @@
 import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql-js";
-import {setupTests, teardownTests, tc} from "./setupTeardown";
+import {setupTests, teardownTests, tc, version_lt} from "./setupTeardown";
 
 let client: edgedb.Client;
 
@@ -177,6 +177,7 @@ test("all param types", async () => {
     local_time: e.cal.local_time,
     local_datetime: e.cal.local_datetime,
     relative_duration: e.cal.relative_duration,
+    date_duration: e.cal.date_duration,
     memory: e.cfg.memory,
   };
 
@@ -200,6 +201,7 @@ test("all param types", async () => {
     local_time: new edgedb.LocalTime(12, 34),
     local_datetime: new edgedb.LocalDateTime(2021, 11, 25, 1, 2, 3),
     relative_duration: new edgedb.RelativeDuration(1, 2, 3),
+    date_duration: new edgedb.DateDuration(1, 2, 3, 4),
     memory: new edgedb.ConfigMemory(BigInt(125952)),
   };
 
@@ -211,10 +213,8 @@ test("all param types", async () => {
     ...args,
   });
 
-  type IsEqual<A, B> = B extends A ? true : false;
-
   tc.assert<
-    IsEqual<
+    tc.IsExact<
       typeof result,
       {
         int16: number;
@@ -234,6 +234,7 @@ test("all param types", async () => {
         local_time: edgedb.LocalTime;
         local_datetime: edgedb.LocalDateTime;
         relative_duration: edgedb.RelativeDuration;
+        date_duration: edgedb.DateDuration;
         memory: edgedb.ConfigMemory;
       }
     >
@@ -253,4 +254,34 @@ test("all param types", async () => {
   expect(Object.values(complexResult.tuple as any)).toEqual(
     Object.values(args)
   );
+});
+
+test("v2 param types", async () => {
+  if (await version_lt(client, 2)) return;
+  const params = {
+    date_duration: e.cal.date_duration,
+  };
+
+  const query = e.params(params, p => e.select(p));
+
+  const args = {
+    date_duration: new edgedb.DateDuration(1, 2, 3, 4),
+  };
+
+  const result = await query.run(client, args);
+
+  expect(result).toEqual({
+    // @ts-ignore
+    id: result.id,
+    ...args,
+  });
+
+  tc.assert<
+    tc.IsExact<
+      typeof result,
+      {
+        date_duration: edgedb.DateDuration;
+      }
+    >
+  >(true);
 });

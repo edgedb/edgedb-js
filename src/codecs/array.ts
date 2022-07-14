@@ -18,6 +18,9 @@
 
 import {ICodec, Codec, ScalarCodec, uuid, CodecKind} from "./ifaces";
 import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
+import {TupleCodec} from "./tuple";
+import {RangeCodec} from "./range";
+import {InvalidArgumentError, ProtocolError} from "../errors";
 
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;
@@ -30,12 +33,18 @@ export class ArrayCodec extends Codec implements ICodec {
   }
 
   encode(buf: WriteBuffer, obj: any): void {
-    if (!(this.subCodec instanceof ScalarCodec)) {
-      throw new Error("only arrays of scalars are supported");
+    if (
+      !(
+        this.subCodec instanceof ScalarCodec ||
+        this.subCodec instanceof TupleCodec ||
+        this.subCodec instanceof RangeCodec
+      )
+    ) {
+      throw new InvalidArgumentError("only arrays of scalars are supported");
     }
 
     if (!Array.isArray(obj) && !isTypedArray(obj)) {
-      throw new Error("an array was expected");
+      throw new InvalidArgumentError("an array was expected");
     }
 
     const subCodec = this.subCodec;
@@ -44,7 +53,7 @@ export class ArrayCodec extends Codec implements ICodec {
 
     if (objLen > 0x7fffffff) {
       // objLen > MAXINT32
-      throw new Error("too many elements in array");
+      throw new InvalidArgumentError("too many elements in array");
     }
 
     for (let i = 0; i < objLen; i++) {
@@ -78,12 +87,12 @@ export class ArrayCodec extends Codec implements ICodec {
       return [];
     }
     if (ndims !== 1) {
-      throw new Error("only 1-dimensional arrays are supported");
+      throw new ProtocolError("only 1-dimensional arrays are supported");
     }
 
     const len = buf.readUInt32();
     if (this.len !== -1 && len !== this.len) {
-      throw new Error(
+      throw new ProtocolError(
         `invalid array size: received ${len}, expected ${this.len}`
       );
     }

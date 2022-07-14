@@ -4,6 +4,8 @@ import {
   LocalDateTime,
   LocalTime,
   RelativeDuration,
+  DateDuration,
+  Range,
 } from "edgedb";
 import {
   $expr_Array,
@@ -21,6 +23,7 @@ import {
   ObjectType,
   ObjectTypeSet,
   OperatorKind,
+  RangeType,
   TypeKind,
   TypeSet,
   util,
@@ -875,13 +878,14 @@ function renderEdgeQL(
   } else if (expr.__kind__ === ExpressionKind.TuplePath) {
     return `${renderEdgeQL(expr.__parent__, ctx)}.${expr.__index__}`;
   } else if (expr.__kind__ === ExpressionKind.Cast) {
+    const typeName =
+      expr.__element__.__name__ === "std::number"
+        ? "std::float64"
+        : expr.__element__.__name__;
     if (expr.__expr__ === null) {
-      return `<${expr.__element__.__name__}>{}`;
+      return `<${typeName}>{}`;
     }
-    return `<${expr.__element__.__name__}>(${renderEdgeQL(
-      expr.__expr__,
-      ctx
-    )})`;
+    return `<${typeName}>(${renderEdgeQL(expr.__expr__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
     const lines: string[] = [];
     if (isObjectType(expr.__element__)) {
@@ -983,12 +987,7 @@ function renderEdgeQL(
       expr.__modifiers__.filter
         ? `\nFILTER ${renderEdgeQL(expr.__modifiers__.filter, ctx)}\n`
         : " "
-    }SET ${shapeToEdgeQL(
-      expr.__shape__,
-      ctx
-      // (expr.__element__ as any)?.__pointers__,
-      // true
-    )})`;
+    }SET ${shapeToEdgeQL(expr.__shape__, ctx, null, false, false)})`;
   } else if (expr.__kind__ === ExpressionKind.Delete) {
     return `(${withBlock}DELETE ${renderEdgeQL(
       expr.__expr__,
@@ -1002,7 +1001,7 @@ function renderEdgeQL(
       ctx,
       false,
       true
-    )} ${shapeToEdgeQL(expr.__shape__, ctx)})`;
+    )} ${shapeToEdgeQL(expr.__shape__, ctx, null, false, false)})`;
   } else if (expr.__kind__ === ExpressionKind.InsertUnlessConflict) {
     const $on = expr.__conflict__.on;
     const $else = expr.__conflict__.else;
@@ -1201,7 +1200,8 @@ function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
   type: ObjectType | null = null,
-  keysOnly: boolean = false
+  keysOnly: boolean = false,
+  injectImplicitId: boolean = true
 ) {
   const pointers = type?.__pointers__ || null;
   const isFreeObject = type?.__name__ === "std::FreeObject";
@@ -1319,7 +1319,7 @@ function shapeToEdgeQL(
     );
   }
 
-  if (lines.length === 0) {
+  if (lines.length === 0 && injectImplicitId) {
     addLine("id");
   }
   return keysOnly ? `{${lines.join(", ")}}` : `{\n${lines.join(",\n")}\n}`;
@@ -1436,12 +1436,26 @@ function literalToEdgeQL(type: BaseType, val: any): string {
     val instanceof LocalDateTime ||
     val instanceof LocalTime ||
     val instanceof Duration ||
-    val instanceof RelativeDuration
+    val instanceof RelativeDuration ||
+    val instanceof DateDuration
   ) {
     stringRep = `'${val.toString()}'`;
   } else if (val instanceof Buffer) {
     stringRep = bufferToStringRep(val);
     skipCast = true;
+  } else if (val instanceof Range) {
+    const elType = (type as RangeType).__element__;
+    const elTypeName =
+      elType.__name__ === "std::number" ? "std::float64" : elType.__name__;
+    return `std::range(${
+      val.lower === null
+        ? `<${elTypeName}>{}`
+        : literalToEdgeQL(elType, val.lower)
+    }, ${
+      val.upper === null
+        ? `<${elTypeName}>{}`
+        : literalToEdgeQL(elType, val.upper)
+    }, inc_lower := ${val.incLower}, inc_upper := ${val.incUpper})`;
   } else if (typeof val === "object") {
     if (isNamedTupleType(type)) {
       stringRep = `( ${Object.entries(val).map(

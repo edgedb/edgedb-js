@@ -17,6 +17,7 @@
  */
 
 import {randomBytes, H, HMAC} from "./adapter.node";
+import {ProtocolError} from "./errors";
 
 export {H, HMAC};
 
@@ -52,40 +53,40 @@ export function parseServerFirstMessage(
   const attrs = msg.split(",");
 
   if (attrs.length < 3) {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
 
   const nonceAttr = attrs[0];
   if (!nonceAttr || nonceAttr[0] !== "r") {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
   const nonceB64 = nonceAttr.split("=", 2)[1];
   if (!nonceB64) {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
   const nonce = Buffer.from(nonceB64, "base64");
 
   const saltAttr = attrs[1];
   if (!saltAttr || saltAttr[0] !== "s") {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
   const saltB64 = saltAttr.split("=", 2)[1];
   if (!saltB64) {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
   const salt = Buffer.from(saltB64, "base64");
 
   const iterAttr = attrs[2];
   if (!iterAttr || iterAttr[0] !== "i") {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
   const iter = iterAttr.split("=", 2)[1];
   if (!iter || !iter.match(/^[0-9]*$/)) {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
   const iterCount = parseInt(iter, 10);
   if (iterCount <= 0) {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
 
   return [nonce, salt, iterCount];
@@ -95,16 +96,16 @@ export function parseServerFinalMessage(msg: string): Buffer {
   const attrs = msg.split(",");
 
   if (attrs.length < 1) {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
 
   const nonceAttr = attrs[0];
   if (!nonceAttr || nonceAttr[0] !== "v") {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
   const signatureB64 = nonceAttr.split("=", 2)[1];
   if (!signatureB64) {
-    throw new Error("malformed SCRAM message");
+    throw new ProtocolError("malformed SCRAM message");
   }
   const sig = Buffer.from(signatureB64, "base64");
   return sig;
@@ -168,7 +169,7 @@ export function getServerKey(saltedPassword: Buffer): Buffer {
 export function XOR(a: Buffer, b: Buffer): Buffer {
   const len = a.length;
   if (len !== b.length) {
-    throw new Error("scram.XOR: buffers are of different lengths");
+    throw new ProtocolError("scram.XOR: buffers are of different lengths");
   }
   const res = Buffer.allocUnsafe(len);
   for (let i = 0; i < len; i++) {

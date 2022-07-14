@@ -25,21 +25,27 @@ import {
   Executor,
   LocalDate,
   LocalDateTime,
+  Range,
   MissingRequiredError,
   NoDataError,
   RelativeDuration,
   ResultCardinalityMismatchError,
+  QueryArgumentError,
   _CodecsRegistry,
   _ReadBuffer,
   _ICodec,
+  Session,
+  AuthenticationError,
 } from "../src/index.node";
+
 import {retryingConnect} from "../src/retry";
-import {AdminFetchConnection} from "../src/fetchConn";
+import {AdminUIFetchConnection} from "../src/fetchConn";
 import {CustomCodecSpec} from "../src/codecs/registry";
 import {
   getAvailableFeatures,
   getClient,
   getConnectOptions,
+  getEdgeDBVersion,
   isDeno,
 } from "./testbase";
 
@@ -608,46 +614,6 @@ test("fetch: cal::local_time", async () => {
 });
 
 test("fetch: duration", async () => {
-  function formatLegacyDuration(duration: Duration): string {
-    function fmt(timePart: number, len: number = 3): string {
-      return Math.abs(timePart).toString().padStart(len, "0");
-    }
-
-    let dateParts = "P";
-    const days = duration.days + 7 * duration.weeks;
-    if (duration.years) {
-      dateParts += `${duration.years}Y`;
-    }
-    if (duration.months) {
-      dateParts += `${duration.months}M`;
-    }
-    if (days) {
-      dateParts += `${days}D`;
-    }
-
-    let timeParts = "";
-    if (duration.hours) {
-      timeParts += `${duration.hours}H`;
-    }
-    if (duration.minutes) {
-      timeParts += `${duration.minutes}M`;
-    }
-    if (duration.seconds || duration.milliseconds || duration.microseconds) {
-      timeParts += `${duration.seconds}`;
-      if (duration.milliseconds || duration.microseconds) {
-        timeParts += `.${fmt(duration.milliseconds)}${fmt(
-          duration.microseconds
-        )}`;
-      }
-      timeParts += "S";
-    }
-
-    if (timeParts) {
-      dateParts += `T${timeParts}`;
-    }
-
-    return dateParts;
-  }
   function normaliseIsoDuration(duration: string) {
     if (duration.includes("-")) {
       return `-${duration.replace(/-/g, "")}`;
@@ -658,12 +624,6 @@ test("fetch: duration", async () => {
   const con = getClient();
   let res: any;
   try {
-    const ver = await con.querySingle<any>("select sys::get_version()");
-    const isoFormat =
-      ver.major > 1 ||
-      ver.minor > 0 ||
-      (ver.stage === "beta" && ver.stage_no >= 3);
-
     for (const time of [
       "24 hours",
       "68464977 seconds 74 milliseconds 11 microseconds",
@@ -675,11 +635,8 @@ test("fetch: duration", async () => {
         `,
         {time}
       );
-      if (isoFormat) {
-        expect(res[0].toString()).toBe(normaliseIsoDuration(res[1]));
-      } else {
-        expect(formatLegacyDuration(res[0])).toBe(res[1]);
-      }
+
+      expect(res[0].toString()).toBe(normaliseIsoDuration(res[1]));
 
       const res2 = await con.querySingle<any>(
         `
@@ -927,6 +884,142 @@ test("fetch: ConfigMemory", async () => {
     await client.close();
   }
 });
+
+if (getEdgeDBVersion().major >= 2) {
+  function expandRangeEQL(lower: string, upper: string) {
+    return [
+      [false, false],
+      [true, false],
+      [false, true],
+      [true, true],
+    ]
+      .map(
+        ([incl, incu]) =>
+          `range(${lower}, ${upper}, inc_lower := ${incl}, inc_upper := ${incu})`
+      )
+      .join(",\n");
+  }
+
+  function expandRangeJS(lower: any, upper: any) {
+    return [
+      new Range(lower, upper, false, false),
+      new Range(lower, upper, true, false),
+      new Range(lower, upper, false, true),
+      new Range(lower, upper, true, true),
+    ];
+  }
+
+  test("fetch: ranges", async () => {
+    const client = await getClient();
+
+    try {
+      const res = await client.querySingle<any>(`
+        select {
+          ints := (${expandRangeEQL("123", "456")}),
+          floats := (${expandRangeEQL("123.456", "456.789")}),
+          datetimes := (${expandRangeEQL(
+            "<datetime>'2022-07-01T16:00:00+00'",
+            "<datetime>'2022-07-01T16:30:00+00'"
+          )}),
+          local_dates := (${expandRangeEQL(
+            "<cal::local_date>'2022-07-01'",
+            "<cal::local_date>'2022-07-14'"
+          )}),
+          local_datetimes := (${expandRangeEQL(
+            "<cal::local_datetime>'2022-07-01T12:00:00'",
+            "<cal::local_datetime>'2022-07-14T12:00:00'"
+          )}),
+        }
+      `);
+      expect(res).toEqual({
+        ints: [
+          new Range(124, 456),
+          new Range(123, 456),
+          new Range(124, 457),
+          new Range(123, 457),
+        ],
+        floats: expandRangeJS(123.456, 456.789),
+        datetimes: expandRangeJS(
+          new Date("2022-07-01T16:00:00Z"),
+          new Date("2022-07-01T16:30:00Z")
+        ),
+        local_dates: [
+          new Range(new LocalDate(2022, 7, 2), new LocalDate(2022, 7, 14)),
+          new Range(new LocalDate(2022, 7, 1), new LocalDate(2022, 7, 14)),
+          new Range(new LocalDate(2022, 7, 2), new LocalDate(2022, 7, 15)),
+          new Range(new LocalDate(2022, 7, 1), new LocalDate(2022, 7, 15)),
+        ],
+        local_datetimes: expandRangeJS(
+          new LocalDateTime(2022, 7, 1, 12),
+          new LocalDateTime(2022, 7, 14, 12)
+        ),
+      });
+
+      expect(
+        await client.querySingle(
+          `select all({
+            [${expandRangeEQL("123", "456")}] = <array<range<int64>>>$ints,
+            [${expandRangeEQL(
+              "123.456",
+              "456.789"
+            )}] = <array<range<float64>>>$floats,
+            [${expandRangeEQL(
+              "<datetime>'2022-07-01T16:00:00+00'",
+              "<datetime>'2022-07-01T16:30:00+00'"
+            )}] = <array<range<datetime>>>$datetimes,
+            [${expandRangeEQL(
+              "<cal::local_date>'2022-07-01'",
+              "<cal::local_date>'2022-07-14'"
+            )}] = <array<range<cal::local_date>>>$local_dates,
+            [${expandRangeEQL(
+              "<cal::local_datetime>'2022-07-01T12:00:00'",
+              "<cal::local_datetime>'2022-07-14T12:00:00'"
+            )}] = <array<range<cal::local_datetime>>>$local_datetimes,
+          })`,
+          res
+        )
+      ).toBe(true);
+    } finally {
+      await client.close();
+    }
+  });
+
+  test("fetch: date_duration", async () => {
+    const con = getClient();
+    let res: any;
+    try {
+      for (const time of [
+        "1 day",
+        "-752043 days",
+        "20 years 5 days",
+        "3 months",
+        "7 weeks",
+      ]) {
+        res = await con.querySingle(
+          `
+          select (
+            <cal::date_duration><str>$time,
+            <str><cal::date_duration><str>$time,
+          );
+        `,
+          {time}
+        );
+        expect(res[0].toString()).toBe(res[1]);
+
+        const res2: any = await con.querySingle(
+          `
+        select <cal::date_duration>$time;
+        `,
+          {time: res[0]}
+        );
+        expect(res2.toString()).toBe(res[0].toString());
+      }
+    } finally {
+      await con.close();
+    }
+    return;
+  });
+}
 
 test("fetch: tuple", async () => {
   const con = getClient();
@@ -1401,6 +1494,123 @@ test("execute", async () => {
   }
 });
 
+test("scripts and args", async () => {
+  const client = getClient();
+
+  await client.execute(`create type ScriptTest {
+    create property name -> str;
+  };`);
+
+  try {
+    if (getEdgeDBVersion().major >= 2) {
+      await expect(
+        client.execute(
+          `
+          insert ScriptTest {
+            name := 'test'
+          }
+          `,
+          {name: "test"}
+        )
+      ).rejects.toThrowError(QueryArgumentError);
+
+      expect(
+        await client.execute(`
+          select 1 + 2;
+
+          insert ScriptTest {
+            name := 'test0'
+          };`)
+      ).toEqual(undefined);
+
+      expect(await client.query(`select ScriptTest {name}`)).toEqual([
+        {name: "test0"},
+      ]);
+
+      await expect(
+        client.execute(
+          `
+          insert ScriptTest {
+            name := <str>$name
+          };
+
+          insert ScriptTest {
+            name := 'test' ++ <str>count(detached ScriptTest)
+          };`
+        )
+      ).rejects.toThrowError(QueryArgumentError);
+
+      await expect(
+        client.execute(
+          `
+          insert ScriptTest {
+            name := <str>$name
+          };
+
+          insert ScriptTest {
+            name := 'test' ++ <str>count(detached ScriptTest)
+          };`,
+          {name: "test1"}
+        )
+      ).resolves.toEqual(undefined);
+
+      expect(await client.query(`select ScriptTest {name}`)).toEqual([
+        {name: "test0"},
+        {name: "test1"},
+        {name: "test2"},
+      ]);
+
+      // expect(
+      //   await client.query(
+      //     `
+      //     insert ScriptTest {
+      //       name := <str>$name
+      //     };
+
+      //     insert ScriptTest {
+      //       name := 'test' ++ <str>count(detached ScriptTest)
+      //     };
+
+      //     select ScriptTest.name;`,
+      //     {name: "test3"}
+      //   )
+      // ).toEqual(["test0", "test1", "test2", "test3", "test4"]);
+    } else {
+      await expect(
+        client.execute(
+          `insert ScriptTest {
+        name := <str>$name
+      }`,
+          {name: "test"}
+        )
+      ).rejects.toThrowError(
+        /arguments in execute\(\) is not supported in this version of EdgeDB/
+      );
+
+      await expect(
+        client.execute(
+          `insert ScriptTest {
+        name := 'test'
+      }`,
+          {name: "test"}
+        )
+      ).rejects.toThrowError(
+        /arguments in execute\(\) is not supported in this version of EdgeDB/
+      );
+
+      await expect(
+        client.query(`
+          select 1 + 2;
+          select 2 + 3;
+        `)
+      ).rejects.toThrowError();
+    }
+  } finally {
+    await client.execute(`drop type ScriptTest;`);
+    client.close();
+  }
+});
+
 test("fetch/optimistic cache invalidation", async () => {
   const typename = "CacheInv_01";
   const query = `SELECT ${typename}.prop1 LIMIT 1`;
@@ -1506,56 +1716,89 @@ function _decodeResultBuffer(outCodec: _ICodec, resultData: Buffer) {
   return result;
 }
 
-test("'implicit*' headers", async () => {
-  const config = await parseConnectArguments(getConnectOptions());
-  const registry = new _CodecsRegistry();
-  const con = await retryingConnect(config, registry);
-  try {
-    const query = `SELECT schema::Function {
+// 'raw' methods are only used by edgedb studio, so only need to work with
+// EdgeDB 2.0 or greater
+if (getEdgeDBVersion().major >= 2) {
+  test("'implicit*' headers", async () => {
+    const config = await parseConnectArguments(getConnectOptions());
+    const registry = new _CodecsRegistry();
+    const con = await retryingConnect(config, registry);
+    try {
+      const query = `SELECT Function {
         name
       }`;
-    const headers = {
-      implicitTypenames: "true",
-      implicitLimit: "5",
-    } as const;
-    const [_, outCodec] = await con.rawParse(query, headers);
-    const resultData = await con.rawExecute(query, outCodec, headers);
+      const state = new Session({module: "schema"});
+      const options = {
+        injectTypenames: true,
+        implicitLimit: BigInt(5),
+      } as const;
+      const [_, outCodec] = await con.rawParse(query, state, options);
+      const resultData = await con.rawExecute(query, state, outCodec, options);
 
-    const result = _decodeResultBuffer(outCodec, resultData);
+      const result = _decodeResultBuffer(outCodec, resultData);
 
-    expect(result).toHaveLength(5);
-    expect(result[0]["__tname__"]).toBe("schema::Function");
-  } finally {
-    await con.close();
-  }
-});
+      expect(result).toHaveLength(5);
+      expect(result[0]["__tname__"]).toBe("schema::Function");
+    } finally {
+      await con.close();
+    }
+  });
+}
 
-if (!isDeno && getAvailableFeatures().has("admin-ui")) {
+if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
   test("binary protocol over http", async () => {
+    //@ts-ignore
+    const tokenFile = require("path").join(__dirname, "keys", "jwt");
+    //@ts-ignore
+    const token = require("fs").readFileSync(tokenFile, "utf8").trim();
     const codecsRegistry = new _CodecsRegistry();
     const config = await parseConnectArguments(getConnectOptions());
-    const fetchConn = AdminFetchConnection.create(
+    const fetchConn = AdminUIFetchConnection.create(
       {
         address: config.connectionParams.address,
         database: config.connectionParams.database,
+        user: config.connectionParams.user,
+        token: token,
       },
       codecsRegistry
     );
 
-    const query = `SELECT schema::Function {
-    name
-  }`;
-    const headers = {
-      implicitTypenames: "true",
-      implicitLimit: "5",
+    const query = `SELECT Function { name }`;
+    const state = new Session({module: "schema"});
+    const options = {
+      injectTypenames: true,
+      implicitLimit: BigInt(5),
     } as const;
 
-    const [_, outCodec] = await fetchConn.rawParse(query, headers);
-    const resultData = await fetchConn.rawExecute(query, outCodec, headers);
+    const [_, outCodec] = await fetchConn.rawParse(query, state, options);
+    const resultData = await fetchConn.rawExecute(
+      query,
+      state,
+      outCodec,
+      options
+    );
 
     const result = _decodeResultBuffer(outCodec, resultData);
 
     expect(result).toHaveLength(5);
     expect(result[0]["__tname__"]).toBe("schema::Function");
+  });
+
+  test("binary protocol over http failing auth", async () => {
+    const codecsRegistry = new _CodecsRegistry();
+    const config = await parseConnectArguments(getConnectOptions());
+    const fetchConn = AdminUIFetchConnection.create(
+      {
+        address: config.connectionParams.address,
+        database: config.connectionParams.database,
+        user: config.connectionParams.user,
+        token: "invalid token",
+      },
+      codecsRegistry
+    );
+
+    await expect(
+      fetchConn.rawParse(`select 1`, Session.defaults())
+    ).rejects.toThrowError(AuthenticationError);
   });
 }

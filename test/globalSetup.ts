@@ -7,6 +7,7 @@ import * as readline from "readline";
 import {ConnectConfig} from "../src/conUtils";
 
 import {Client, createClient} from "../src/index.node";
+import type {EdgeDBVersion} from "./testbase";
 
 export const getServerInfo = async (
   filename: string
@@ -36,8 +37,8 @@ export const getServerInfo = async (
   return JSON.parse(line.replace("READY=", ""));
 };
 
-export const getWSLPath = (path: string): string => {
-  return path
+export const getWSLPath = (wslPath: string): string => {
+  return wslPath
     .replace(/^([a-z]):/i, "/mnt/$1")
     .split("\\")
     .join("/")
@@ -59,7 +60,7 @@ export const getServerCommand = (
   statusFile: string
 ): {args: string[]; availableFeatures: string[]} => {
   const availableFeatures: string[] = [];
-  let srvcmd = "edgedb-server";
+  let srvcmd = `edgedb-server`;
   if (process.env.EDGEDB_SERVER_BIN) {
     srvcmd = process.env.EDGEDB_SERVER_BIN;
   }
@@ -85,9 +86,11 @@ export const getServerCommand = (
   }
 
   if (help.includes("--admin-ui")) {
-    args.push("--admin-ui=enabled");
     args.push("--http-endpoint-security=optional");
-    availableFeatures.push("admin-ui");
+    args.push("--jws-key-file", path.join(__dirname, "keys", "public.pem"));
+    args.push("--jwe-key-file", path.join(__dirname, "keys", "private.pem"));
+
+    availableFeatures.push("binary-over-http");
   }
 
   args = [
@@ -98,6 +101,7 @@ export const getServerCommand = (
     "--testmode",
     "--port=auto",
     "--emit-server-status=" + statusFile,
+    "--security=strict",
     "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }",
   ];
 
@@ -118,6 +122,7 @@ export const startServer = async (
 
   if (process.env.EDGEDB_DEBUG_SERVER) {
     proc.stdout.on("data", data => {
+      console.log(data);
       process.stdout.write(data.toString());
     });
   }
@@ -146,7 +151,7 @@ export const startServer = async (
   });
 
   let runtimeData;
-  for (let i = 0; i < 250; i++) {
+  for (let i = 0; i < 1000; i++) {
     runtimeData = await getServerInfo(statusFile);
 
     if (runtimeData == null) {
@@ -191,9 +196,12 @@ export const startServer = async (
   return {config, proc};
 };
 
-const connectToServer = async (config: ConnectConfig): Promise<Client> => {
+const connectToServer = async (
+  config: ConnectConfig
+): Promise<{client: Client; version: EdgeDBVersion}> => {
   const client = createClient(config);
 
+  let version: EdgeDBVersion;
   try {
     await client.execute(`
       CREATE DATABASE jest;
@@ -212,12 +220,14 @@ const connectToServer = async (config: ConnectConfig): Promise<Client> => {
         method := (INSERT SCRAM),
       };
     `);
+
+    version = await client.queryRequiredSingle(`select sys::get_version()`);
   } catch (e) {
     await client.close();
     throw e;
   }
 
-  return client;
+  return {client, version};
 };
 
 export default async () => {
@@ -237,8 +247,11 @@ export default async () => {
   process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
     JSON.stringify(availableFeatures);
 
+  const {client, version} = await connectToServer(config);
+
   // @ts-ignore
-  global.edgedbConn = await connectToServer(config);
+  global.edgedbConn = client;
+  process.env._JEST_EDGEDB_VERSION = JSON.stringify(version);
 
   // tslint:disable-next-line
   console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);

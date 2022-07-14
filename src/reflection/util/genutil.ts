@@ -67,6 +67,10 @@ export const scalarToLiteralMapping: {
     type: "edgedb.RelativeDuration",
     literalKind: "instanceof",
   },
+  "cal::date_duration": {
+    type: "edgedb.DateDuration",
+    literalKind: "instanceof",
+  },
   "cfg::memory": {type: "edgedb.ConfigMemory", literalKind: "instanceof"},
 };
 
@@ -162,6 +166,15 @@ export function toTSScalarType(
         }
         return frag`[${joinFrags(res, ", ")}]`;
       }
+    }
+
+    case "range": {
+      const tn = toTSScalarType(
+        types.get(type.range_element_id) as introspect.PrimitiveType,
+        types,
+        opts
+      );
+      return frag`${opts.edgedbDatatypePrefix}edgedb.Range<${tn}>`;
     }
 
     default:

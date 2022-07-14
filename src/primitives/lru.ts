@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+import {InternalClientError} from "../errors";
+
 class Node<K, V> {
   public key: K;
   public value: V;
@@ -164,7 +166,7 @@ export default class LRU<K, V> {
       // This check will be handy in tests
       // to ensure that our deque is in sync
       // with the map.
-      throw new Error("deque & map disagree on elements count");
+      throw new InternalClientError("deque & map disagree on elements count");
     }
     return len;
   }
