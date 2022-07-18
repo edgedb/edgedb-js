@@ -5,6 +5,7 @@
     "test:esm": "yarn generate --target esm --output-dir esm/edgeql-js && cd esm && node test.js",
     "test:mts": "yarn generate --target mts --output-dir mts/edgeql-js && cd mts && yarn build && node dist/test.js",
     "test:ci": "ts-node --project ../tsconfig.json test/testRunner.ts",
+    "test:qb:v1": "ts-node --project ../tsconfig.json test/testQBv1.ts",
     "generate": "edgeql-js",
     "play": "esr playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",

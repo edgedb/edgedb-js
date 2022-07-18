@@ -4,7 +4,6 @@ import {
   shutdown,
   applyMigrations,
   generateQB,
-  runTests,
   generateStatusFileName,
   getServerCommand,
   getWSLPath,
@@ -13,10 +12,8 @@ import {
 
 (async function main() {
   console.log("\nStarting EdgeDB test cluster...");
-
   const statusFile = generateStatusFileName("node");
   console.log("Node status file:", statusFile);
-
   const {args} = getServerCommand(getWSLPath(statusFile));
 
   const {proc, config} = await startServer(args, statusFile);
@@ -26,9 +23,13 @@ import {
   const managementConn = await createClient(config).ensureConnected();
 
   try {
-    await applyMigrations(config);
+    await applyMigrations(config, {
+      flags: [
+        "--to-revision",
+        "m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq",
+      ],
+    });
     await generateQB(config);
-    await runTests(config);
   } catch (err) {
     console.error(err);
     process.exit(1);

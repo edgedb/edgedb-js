@@ -332,6 +332,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
     t`type literalToScalarType<T extends any> =`,
   ]);
   for (const [literal, {type}] of Object.entries(literalToScalarMapping)) {
+    // skip date_duration on v1 instances
+    if (!typesByName[type]) continue;
     f.writeln([
       t`  T extends ${literal} ? scalarWithConstType<${getRef(type)}, T> :`,
     ]);
@@ -369,14 +371,18 @@ export const generateCastMaps = (params: GeneratorParams) => {
   for (const [literalType, {literalKind, type}] of Object.entries(
     literalToScalarMapping
   )) {
+    const fullType = typesByName[type];
+    // cal::date_duration won't be defined on v1 instances
+    if (!fullType) continue;
+
     if (literalKind === "typeof") {
       f.writeln([r`  if (typeof type === "${literalType}") {`]);
     } else {
       f.writeln([r`  if (type instanceof ${literalType}) {`]);
     }
-    f.writeln([
-      r`    return literal.$getType("${typesByName[type].id}")(type);`,
-    ]);
+
+    f.writeln([r`    return literal.$getType("${fullType.id}")(type);`]);
+
     f.writeln([r`  }`]);
   }
   f.writeln([

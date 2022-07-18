@@ -10,7 +10,7 @@ import {getScalars, ScalarTypes} from "./queries/getScalars";
 import {FunctionTypes, getFunctions} from "./queries/getFunctions";
 import {getOperators, OperatorTypes} from "./queries/getOperators";
 import {getGlobals, Globals} from "./queries/getGlobals";
-import * as introspect from "./queries/getTypes";
+import {getTypes, Types, Type} from "./queries/getTypes";
 import * as genutil from "./util/genutil";
 
 import {generateCastMaps} from "./generators/generateCastMaps";
@@ -28,8 +28,8 @@ export const configFileHeader = `// EdgeDB query builder. To update, run \`npx e
 
 export type GeneratorParams = {
   dir: DirBuilder;
-  types: introspect.Types;
-  typesByName: Record<string, introspect.Type>;
+  types: Types;
+  typesByName: Record<string, Type>;
   casts: Casts;
   scalars: ScalarTypes;
   functions: FunctionTypes;
@@ -44,6 +44,10 @@ export function exitWithError(message: string): never {
 }
 
 export type Target = "ts" | "esm" | "cjs" | "mts";
+export type Version = {
+  major: number;
+  minor: number;
+};
 export async function generateQB(params: {
   outputDir: string;
   connectionConfig: ConnectConfig;
@@ -67,18 +71,20 @@ export async function generateQB(params: {
   try {
     // tslint:disable-next-line
     console.log(`Introspecting database schema...`);
-
+    const version = await cxn.queryRequiredSingle<Version>(
+      `select sys::get_version();`
+    );
     const [types, scalars, casts, functions, operators, globals] =
       await Promise.all([
-        introspect.getTypes(cxn, {debug: DEBUG}),
-        getScalars(cxn),
-        getCasts(cxn, {debug: DEBUG}),
-        getFunctions(cxn),
-        getOperators(cxn),
-        getGlobals(cxn),
+        getTypes(cxn, {debug: DEBUG, version}),
+        getScalars(cxn, {version}),
+        getCasts(cxn, {debug: DEBUG, version}),
+        getFunctions(cxn, {version}),
+        getOperators(cxn, {version}),
+        getGlobals(cxn, {version}),
       ]);
 
-    const typesByName: Record<string, introspect.Type> = {};
+    const typesByName: Record<string, Type> = {};
     for (const type of types.values()) {
       typesByName[type.name] = type;
 
