@@ -1582,6 +1582,9 @@ function getErrorHint(expr: any): string {
     case expr instanceof RelativeDuration:
       literalConstructor = "e.cal.relative_duration()";
       break;
+    case expr instanceof DateDuration:
+      literalConstructor = "e.cal.date_duration()";
+      break;
   }
 
   return literalConstructor

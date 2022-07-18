@@ -84,20 +84,20 @@ test("json read/write equivalents", async () => {
 test("serialize data classes", async () => {
   const datum = [
     new Date("2022-07-18T21:42:46.569Z"),
-    new edgedb.DateDuration(1),
     new edgedb.LocalDate(2020, 1, 1),
     new edgedb.LocalDateTime(2020, 1, 1),
     new edgedb.LocalTime(2, 22),
     new edgedb.Duration(3),
     new edgedb.RelativeDuration(3),
+    new edgedb.DateDuration(1),
   ];
   expect(await e.json(datum).run(client)).toEqual([
     "2022-07-18T21:42:46.569Z",
-    "P1Y",
     "2020-01-01",
     "2020-01-01T00:00:00",
     "02:22:00",
     "P3Y",
     "P3Y",
+    "P1Y",
   ]);
 });

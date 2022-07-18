@@ -18,11 +18,12 @@
 
 import * as chars from "./primitives/chars";
 import {
-  Duration,
   LocalDate,
   LocalDateTime,
   LocalTime,
+  Duration,
   RelativeDuration,
+  DateDuration,
 } from "./datatypes/datetime";
 import {ConfigMemory} from "./datatypes/memory";
 
@@ -68,6 +69,7 @@ type QueryArgPrimitive =
   | LocalTime
   | Duration
   | RelativeDuration
+  | DateDuration
   | ConfigMemory;
 
 type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
