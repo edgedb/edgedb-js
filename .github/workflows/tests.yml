@@ -95,7 +95,7 @@ jobs:
         if: ${{ matrix.node-version >= 14 && matrix.edgedb-version == '1.4' }}
         working-directory: qb
         run: |
-          yarn test:ci v1
+          yarn test:qb:v1
 
       - name: Run functional tests
         run: |
