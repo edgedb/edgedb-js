@@ -224,7 +224,7 @@ test("all param types", async () => {
         float64: number;
         bigint: bigint;
         bool: boolean;
-        json: string;
+        json: unknown;
         str: string;
         bytes: Buffer;
         uuid: string;
