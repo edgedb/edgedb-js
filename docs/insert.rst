@@ -118,7 +118,7 @@ Bulk inserts
 
 It's common to  use for loops to perform bulk inserts. The raw data is passed in as a JSON parameter, converted to a set of ``json`` objects, then mapped into
 
-.. code-block::
+.. code-block:: typescript
 
   const query = e.params({items: e.json}, (params) => {
     return e.for(e.json_array_unpack(params.items), (item) => {
