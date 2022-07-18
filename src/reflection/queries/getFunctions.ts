@@ -70,7 +70,6 @@ export const getFunctions = async (
       ...func,
       description: func.annotations[0]?.["@value"],
     };
-    console.log(funcDef);
 
     replaceNumberTypes(funcDef);
 

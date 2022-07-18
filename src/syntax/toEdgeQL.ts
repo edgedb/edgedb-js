@@ -799,9 +799,9 @@ function renderEdgeQL(
           param.__cardinality__ === Cardinality.AtMostOne ? "OPTIONAL " : "";
         return `  __param__${param.__name__} := ${
           param.__isComplex__
-            ? `<${param.__element__.__name__}><${optional}json>`
-            : `<${optional}${param.__element__.__name__}>`
-        }$${param.__name__}`;
+            ? `<${param.__element__.__name__}>to_json(<${optional}str>$${param.__name__})`
+            : `<${optional}${param.__element__.__name__}>$${param.__name__}`
+        }`;
       })
       .join(",\n")}\nSELECT ${renderEdgeQL(expr.__expr__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Alias) {

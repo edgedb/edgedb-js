@@ -55,7 +55,7 @@ function jsonStringify(type: ParamType, val: any): string {
       case "std::bigint":
         return val.toString();
       case "std::json":
-        return val;
+        return JSON.stringify(val);
       case "std::bytes":
         return `"${val.toString("base64")}"`;
       case "cfg::memory":

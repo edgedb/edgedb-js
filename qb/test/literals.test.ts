@@ -42,9 +42,7 @@ test("literals", () => {
   expect(e.std.json("asdf").toEdgeQL()).toEqual(`to_json($$"asdf"$$)`);
   expect(
     e.std.json({a: 123, b: "some string", c: [true, false]}).toEdgeQL()
-  ).toEqual(
-    `to_json("{\\"a\\":123,\\"b\\":\\"some string\\",\\"c\\":[true,false]}")`
-  );
+  ).toEqual('to_json($${"a":123,"b":"some string","c":[true,false]}$$)');
 
   expect(e.std.str(`asdfaf`).toEdgeQL()).toEqual(`"asdfaf"`);
   expect(e.std.str(`string " with ' all \` quotes`).toEdgeQL()).toEqual(

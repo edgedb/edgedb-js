@@ -107,19 +107,21 @@ test("multiple keys", async () => {
 
   expect(result.length).toEqual(2);
   expect(result[0].elements.length).toEqual(1);
-  expect(result).toMatchObject([
-    {
-      key: {title: data.civil_war.title, ry: data.civil_war.release_year},
-      grouping: ["title", "ry"],
+  expect(
+    result.filter(val => val.key.title === data.civil_war.title)[0]
+  ).toMatchObject({
+    key: {title: data.civil_war.title, ry: data.civil_war.release_year},
+    grouping: ["title", "ry"],
+  });
+  expect(
+    result.filter(val => val.key.title === data.the_avengers.title)[0]
+  ).toMatchObject({
+    key: {
+      title: data.the_avengers.title,
+      ry: data.the_avengers.release_year,
     },
-    {
-      key: {
-        title: data.the_avengers.title,
-        ry: data.the_avengers.release_year,
-      },
-      grouping: ["title", "ry"],
-    },
-  ]);
+    grouping: ["title", "ry"],
+  });
 });
 
 test("extracted key with shape", async () => {

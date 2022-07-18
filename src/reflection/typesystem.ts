@@ -36,14 +36,6 @@ export interface ScalarType<
   __name__: Name;
 }
 
-type str = {
-  __name__: "std::str";
-  __tstype__: string;
-};
-const str: str = {
-  __name__: "std::str",
-} as str;
-
 export type scalarTypeWithConstructor<
   S extends ScalarType,
   ExtraTsTypes extends any = never
