@@ -75,7 +75,7 @@ test("json param", async () => {
 });
 
 test("json read/write equivalents", async () => {
-  const data = [5, "asdf", {sup: 3}, ["asdf", 1234, false, null]];
+  const data = [5, "asdf", {sup: [3]}, ["asdf", 1234, false, null]];
   for (const datum of data) {
     expect(await e.json(datum).run(client)).toEqual(datum);
   }
