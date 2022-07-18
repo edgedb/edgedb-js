@@ -1160,7 +1160,9 @@ test("fetch: object implicit fields", async () => {
       limit 1
     `);
 
-    expect(JSON.stringify(res)).toMatch(/^\{"id":"([\w\d]{32})"\}$/);
+    expect(JSON.stringify(res)).toMatch(
+      /^\{"id":"([a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}|00000000-0000-0000-0000-000000000000)"\}$/
+    );
 
     res = await con.querySingle(`
       select schema::Function
@@ -1189,7 +1191,8 @@ test("fetch: uuid", async () => {
   try {
     res = await con.querySingle("SELECT schema::ObjectType.id LIMIT 1");
     expect(typeof res).toBe("string");
-    expect(res.length).toBe(32);
+    expect(res.length).toBe(36);
+    expect(res.replace(/\-/g, "").length).toBe(32);
 
     res = await con.querySingle(
       "SELECT <uuid>'759637d8-6635-11e9-b9d4-098002d459d5'"

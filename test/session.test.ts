@@ -59,7 +59,7 @@ if (getEdgeDBVersion().major >= 2) {
           currentTags := global currentTags,
         }`)
       ).toEqual({
-        userId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        userId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
         currentTags: null,
       });
 
@@ -81,7 +81,7 @@ if (getEdgeDBVersion().major >= 2) {
           currentTags := global currentTags,
         }`)
       ).toEqual({
-        userId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        userId: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
         currentTags: ["a", "b", "c"],
       });
 
