@@ -1194,7 +1194,7 @@ test("fetch: uuid", async () => {
     res = await con.querySingle(
       "SELECT <uuid>'759637d8-6635-11e9-b9d4-098002d459d5'"
     );
-    expect(res).toBe("759637d8663511e9b9d4098002d459d5");
+    expect(res).toBe("759637d8-6635-11e9-b9d4-098002d459d5");
   } finally {
     await con.close();
   }
