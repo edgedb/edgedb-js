@@ -429,7 +429,7 @@ test("fetch: positional args", async () => {
       }
     }
 
-    res = await con.querySingle(`select <json>$0`, ["[1,2]"]);
+    res = await con.querySingle(`select <json>$0`, [[1, 2]]);
     expect(res).toEqual([1, 2]);
 
     res = await con.querySingle(`select <str>$0`, ["[1,2]"]);
