@@ -148,20 +148,19 @@ JSON
 JSON literals are created with the ``e.json`` function. You can pass in any
 EdgeDB-compatible data structure.
 
-.. note::
 
-  What does "EdgeDB-compatible" mean? It means any JavaScript data structure
-  with an equivalent in EdgeDB: strings, number, booleans, ``bigint``\ s,
-  ``Buffer``\ s, ``Date``\ s, and instances of EdgeDB's built-in classes:
-  (``Duration``, ``LocalDate`` ``LocalTime``, and
-  ``LocalDateTime``), and any array or object of these types. Other JavaScript
-  data structures like symbols, instances of custom classes, sets, maps, and
-  `typed arrays <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed_arrays>`_
-  are not supported.
+What does "EdgeDB-compatible" mean? It means any JavaScript data structure
+with an equivalent in EdgeDB: strings, number, booleans, ``bigint``\ s,
+``Buffer``\ s, ``Date``\ s, and instances of EdgeDB's built-in classes:
+(``LocalDate`` ``LocalTime``, ``LocalDateTime``, ``DateDuration``,
+``Duration``, and ``RelativeDuration``), and any array or object of these
+types. Other JavaScript data structures like symbols, instances of custom
+classes, sets, maps, and `typed arrays <https://developer.mozilla.org/en-US/
+docs/Web/JavaScript/Typed_arrays>`_ are not supported.
 
 .. code-block:: typescript
 
-  e.json({ name: "Billie" })
+  const query = e.json({ name: "Billie" })
   // to_json('{"name": "Billie"}')
 
   const data = e.json({
@@ -176,10 +175,11 @@ has a ``json`` type.
 
 .. code-block:: typescript
 
-  const myJSON = e.json({ numbers: [0,1,2] });
-  // to_json('{"numbers":[0,1,2]}')
+  const query = e.json({ numbers: [0,1,2] });
 
-  myJSON.numbers[0];
+  query.toEdgeQL(); // to_json((numbers := [0,1,2]))
+
+  query.numbers[0].toEdgeQL();
   // to_json('{"numbers":[0,1,2]}')['numbers'][0]
 
 .. Keep in mind that JSON expressions are represented as strings when returned from a query.
@@ -191,6 +191,13 @@ has a ``json`` type.
 ..     numbers: [1,2,3]
 ..   }).run(client)
 ..   // => '{"name": "Billie", "numbers": [1, 2, 3]}';
+
+The inferred type associated with a ``json`` expression is ``unknown``.
+
+.. code-block:: typescript
+
+  const result = await query.run(client)
+  // unknown
 
 Arrays
 ^^^^^^
