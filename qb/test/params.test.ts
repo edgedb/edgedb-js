@@ -194,7 +194,7 @@ test("all param types", async () => {
     json: '{"name": "test"}',
     str: "test str",
     bytes: Buffer.from("buffer"),
-    uuid: "d476ccc23e7b11ecaf130f07004006ce",
+    uuid: "d476ccc2-3e7b-11ec-af13-0f07004006ce",
     datetime: new Date(),
     duration: new edgedb.Duration(0, 0, 0, 0, 1),
     local_date: new edgedb.LocalDate(2021, 11, 25),
