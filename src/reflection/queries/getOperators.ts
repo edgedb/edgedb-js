@@ -4,7 +4,7 @@ import {StrictMap} from "../strictMap";
 import {Param, replaceNumberTypes, Typemod} from "./getFunctions";
 import {genutil, typeutil} from "../util/util";
 import {OperatorKind} from "../enums";
-import {Version} from "../generate";
+import type {Version} from "../generate";
 
 export type {Typemod};
 

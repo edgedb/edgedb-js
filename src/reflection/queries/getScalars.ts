@@ -1,5 +1,5 @@
 import {Executor} from "../../ifaces";
-import {Version} from "../generate";
+import type {Version} from "../generate";
 import {StrictMap} from "../strictMap";
 import {typeutil} from "../util/typeutil";
 

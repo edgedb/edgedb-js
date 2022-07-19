@@ -2,7 +2,7 @@ import {Executor} from "../../ifaces";
 import {StrictMap} from "../strictMap";
 import {typeutil} from "../../reflection";
 import {typeMapping} from "./getTypes";
-import {Version} from "../generate";
+import type {Version} from "../generate";
 
 export type Typemod = "SetOfType" | "OptionalType" | "SingletonType";
 

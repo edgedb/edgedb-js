@@ -1,6 +1,6 @@
 import {Executor} from "../../ifaces";
 import {Cardinality} from "../enums";
-import {Version} from "../generate";
+import type {Version} from "../generate";
 import {StrictMap} from "../strictMap";
 
 export type UUID = string;
