@@ -24,6 +24,9 @@ jobs:
           - os: ubuntu-latest
             node-version: "16"
             edgedb-version: "nightly"
+          - os: ubuntu-latest
+            node-version: "16"
+            edgedb-version: "1.4"
           - os: macos-latest
             node-version: "16"
             edgedb-version: "stable"
@@ -87,6 +90,12 @@ jobs:
         working-directory: qb
         run: |
           yarn test:ci
+
+      - name: Test qb generation on v1
+        if: ${{ matrix.node-version >= 14 && matrix.edgedb-version == '1.4' }}
+        working-directory: qb
+        run: |
+          yarn test:v1
 
       - name: Run functional tests
         run: |

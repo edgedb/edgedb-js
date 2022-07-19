@@ -1,5 +1,6 @@
 import {Executor} from "../../ifaces";
 import {Cardinality} from "../enums";
+import type {Version} from "../generate";
 import {StrictMap} from "../strictMap";
 
 export type UUID = string;
@@ -124,8 +125,9 @@ export const typeMapping = new Map([
 
 export async function getTypes(
   cxn: Executor,
-  params?: {debug?: boolean}
+  params: {debug?: boolean; version: Version}
 ): Promise<Types> {
+  const v2Plus = params.version.major >= 2;
   const QUERY = `
     WITH
       MODULE schema,
@@ -146,7 +148,7 @@ export async function getTypes(
               'scalar' IF Type IS ScalarType ELSE
               'array' IF Type IS Array ELSE
               'tuple' IF Type IS Tuple ELSE
-              'range' IF Type IS Range ELSE
+              ${v2Plus ? `'range' IF Type IS Range ELSE` : ``}
               'unknown',
 
       [IS ScalarType].enum_values,
@@ -217,8 +219,7 @@ export async function getTypes(
         target_id := .type.id,
         name
       } ORDER BY @index ASC),
-
-      range_element_id := [IS Range].element_type.id,
+      ${v2Plus ? `range_element_id := [IS Range].element_type.id,` : ``}
     }
     ORDER BY .name;
   `;

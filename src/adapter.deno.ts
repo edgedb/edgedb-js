@@ -17,6 +17,14 @@ export function readFileUtf8(path: string): Promise<string> {
   return Deno.readTextFile(path);
 }
 
+export async function readDir(pathString: string) {
+  const files: string[] = [];
+  for await (const entry of Deno.readDir(pathString)) {
+    files.push(entry.name);
+  }
+  return files;
+}
+
 export async function exists(fn: string | URL): Promise<boolean> {
   fn = fn instanceof URL ? path.fromFileUrl(fn) : fn;
   try {
@@ -278,4 +286,12 @@ export namespace tls {
       return this._alpnProtocol ?? false;
     }
   }
+}
+
+export function exit(code?: number) {
+  Deno.exit(code);
+}
+
+export function srcDir() {
+  return new URL(".", import.meta.url).pathname;
 }

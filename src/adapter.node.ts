@@ -13,6 +13,10 @@ export async function readFileUtf8(fn: string): Promise<string> {
   return fs.readFile(fn, {encoding: "utf8"});
 }
 
+export async function readDir(pathString: string) {
+  return fs.readdir(pathString);
+}
+
 export async function exists(filepath: string): Promise<boolean> {
   try {
     await fs.access(filepath);
@@ -85,4 +89,12 @@ export const homeDir = os.homedir;
 export function hrTime(): number {
   const [s, ns] = process.hrtime();
   return s * 1000 + ns / 1_000_000;
+}
+
+export function exit(code?: number) {
+  process.exit(code);
+}
+
+export function srcDir() {
+  return __dirname;
 }
