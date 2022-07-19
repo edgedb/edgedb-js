@@ -86,7 +86,7 @@ jobs:
           server-version: ${{ matrix.edgedb-version }}
 
       - name: Run query builder tests
-        if: ${{ matrix.node-version >= 14 }}
+        if: ${{ matrix.node-version >= 14 && matrix.edgedb-version != '1.4'}}
         working-directory: qb
         run: |
           yarn test:ci
