@@ -8,6 +8,7 @@
     "test:v1": "ts-node --project ../tsconfig.json test/testQBv1.ts",
     "setup:v1": "edgedb project init --no-migrations && edgedb migrate --to-revision m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq",
     "generate": "edgeql-js",
+    "setup:v1": "edgedb project init --no-migrations && edgedb migrate --to-revision m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq",
     "play": "esr playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -e ts -w . -x ts-node playground.ts --project tsconfig.json --trace-warnings",
     "build": "rm -rf dist && tsc --project tsconfig.build.json",

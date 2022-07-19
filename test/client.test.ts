@@ -112,7 +112,7 @@ test("query: basic scalars", async () => {
     expect(res).toEqual(Buffer.from("abcdef", "utf8"));
 
     res = await con.querySingle("select <json>[1, 2, 3]");
-    expect(res).toBe("[1, 2, 3]");
+    expect(res).toEqual([1, 2, 3]);
   } finally {
     await con.close();
   }
@@ -430,7 +430,7 @@ test("fetch: positional args", async () => {
     }
 
     res = await con.querySingle(`select <json>$0`, ["[1,2]"]);
-    expect(res).toBe("[1, 2]");
+    expect(res).toEqual([1, 2]);
 
     res = await con.querySingle(`select <str>$0`, ["[1,2]"]);
     expect(res).toBe("[1,2]");
