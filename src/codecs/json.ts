@@ -52,3 +52,24 @@ export class JSONCodec extends ScalarCodec implements ICodec {
     return JSON.parse(buf.consumeAsString());
   }
 }
+
+export class JSONStringCodec extends ScalarCodec implements ICodec {
+  encode(buf: WriteBuffer, object: any): void {
+    if (typeof object !== "string") {
+      throw new InvalidArgumentError(`a string was expected, got "${object}"`);
+    }
+
+    const strbuf = Buffer.from(object, "utf8");
+    buf.writeInt32(strbuf.length + 1);
+    buf.writeChar(1); // JSON format version
+    buf.writeBuffer(strbuf);
+  }
+
+  decode(buf: ReadBuffer): any {
+    const format = buf.readUInt8();
+    if (format !== 1) {
+      throw new ProtocolError(`unexpected JSON format ${format}`);
+    }
+    return buf.consumeAsString();
+  }
+}
