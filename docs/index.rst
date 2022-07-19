@@ -29,6 +29,8 @@ This is the official EdgeDB client library for JavaScript and TypeScript. It's
 the easiest way to connect to your database and execute queries from a Node.js
 or Deno backend.
 
+
+
 .. _edgedb-js-installation:
 
 **Installation**
@@ -42,8 +44,108 @@ To get started, install the ``edgedb`` module from NPM.
 
 There are two components of this library:
 
-- Use the *driver* establishes a connection to your database and executes queries.
-- Use the *query builder* to write queries in a code-first, typesafe way (if you wish)
+- Use the *driver* to establish a connection to your database and execute EdgeQL queries (written as strings).
+- Use the *query builder* to write queries in a code-first, typesafe way. Recommended for TypeScript users.
+
+
+Migration to 2.0
+================
+
+We recently released ``v0.21``, which supports the latest EdgeDB 2.0 features.
+
+Breaking changes
+----------------
+
+- All ``uuid`` properties are now decoded to include hyphens. Previously hyphens were elided for performance reasons; this issue has since been resolved.
+
+  .. code-block:: typescript
+
+    client.querySingle(`select uuid_generate_v1mc();`);
+    // "ce13b17a-7fcd-42b3-b5e3-eb28d1b953f6"
+
+
+- All ``json`` properties and parameters are now parsed/stringified internally by the client. Previously:
+
+  .. code-block:: typescript
+
+    const result = await client.querySingle(
+      `select to_json('{"hello": "world"}');`
+    );
+    result; // '{"hello": "world"}'
+    typeof result; // string
+
+
+  Now:
+
+  .. code-block:: typescript
+
+    const result = await client.querySingle(
+      `select to_json('{"hello": "world"}');`
+    );
+    result; // {hello: "world"}
+    typeof result; // object
+    result.hello; // "world"
+
+
+New features
+------------
+
+- Added the ``.withGlobals`` method the ``Client`` for setting :ref:`global variables <ref_datamodel_globals>`
+
+  .. code-block:: typescript
+
+    import {createClient} from "edgedb";
+    const client = createClient().withGlobals({
+      current_user: getUserIdFromCookie(),
+    });
+
+    client.query(`select User { email } filter .id = global current_user;`);
+
+
+- Support for globals in the query builder
+
+  .. code-block:: typescript
+
+    const query = e.select(e.User, user => ({
+      email: true,
+      filter: e.op(user.id, '=', e.global.current_user)
+    }));
+
+    await query.run(client);
+
+- Support for the ``group`` statement. :ref:`Documentation
+  <ref_datamodel_globals>`
+
+  .. code-block:: typescript
+
+    e.group(e.Movie, movie => {
+      return {
+        title: true,
+        actors: {name: true},
+        num_actors: e.count(movie.characters),
+        by: {release_year: movie.release_year},
+      };
+    });
+    /* [
+      {
+        key: {release_year: 2008},
+        grouping: ["release_year"],
+        elements: [{
+          title: "Iron Man",
+          actors: [...],
+          num_actors: 5
+        }, {
+          title: "The Incredible Hulk",
+          actors: [...],
+          num_actors: 3
+        }]
+      },
+      // ...
+    ] */
+
+
+- Support for :ref:`range types <ref_datamodel_ranges>` and :eql:type:`cal::date_duration` values.
+
 
 The driver
 ==========
