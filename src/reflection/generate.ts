@@ -1,4 +1,12 @@
-import {fs, path, exists, readFileUtf8} from "../adapter.node";
+import {
+  fs,
+  path,
+  exists,
+  readFileUtf8,
+  exit,
+  srcDir,
+  readDir,
+} from "../adapter.node";
 
 import {DirBuilder, dts, r, t} from "./builders";
 import {createClient, Client, _edgedbJsVersion} from "../index.node";
@@ -40,7 +48,8 @@ export type GeneratorParams = {
 export function exitWithError(message: string): never {
   // tslint:disable-next-line
   console.error(message);
-  process.exit(1);
+  exit(1);
+  throw new Error();
 }
 
 export type Target = "ts" | "esm" | "cjs" | "mts";
@@ -318,14 +327,13 @@ export async function generateQB(params: {
     });
   }
 
-  // write syntax files
-  const syntaxDir = path.join(__dirname, "..", "syntax");
+  const syntaxDir = path.join(srcDir(), "syntax");
   const syntaxOutDir = path.join(outputDir, "syntax");
   if (!(await exists(syntaxOutDir))) {
     await fs.mkdir(syntaxOutDir);
   }
 
-  const syntaxFiles = await fs.readdir(syntaxDir);
+  const syntaxFiles = await readDir(syntaxDir);
   for (const fileName of syntaxFiles) {
     const filetype = fileName.endsWith(".js")
       ? "js"
