@@ -39,9 +39,16 @@ If you're just getting started with EdgeDB, we recommend going through the
 you through the process of installing EdgeDB, creating a simple schema, and
 writing some simple queries.
 
-### Changelog: v0.21
+### Migrating to EdgeDB 2.0
 
-We recently released `v0.21`, which supports the latest EdgeDB 2.0 features.
+We recently released `v0.21.0` of the `edgedb` module on NPM and deno.land/x,
+which supports the latest EdgeDB 2.0 features and protocol. It is
+backwards-compatible with v1 instances as well, so we recommend all users
+upgrade.
+
+```bash
+npm install edgedb@latest
+```
 
 #### Breaking changes
 
@@ -75,7 +82,7 @@ We recently released `v0.21`, which supports the latest EdgeDB 2.0 features.
 
 #### New features
 
-- Added the `.withGlobals` method the `Client` for setting [global variables](/docs/datamodel/globals).
+- Added the `.withGlobals` method the `Client` for setting [global variables](/docs/datamodel/globals)
 
   ```ts
   import {createClient} from "edgedb";
@@ -126,7 +133,7 @@ We recently released `v0.21`, which supports the latest EdgeDB 2.0 features.
   ] */
   ```
 
-- Support for [range types](/docs/datamodel/primitives#ranges) and [`DateDuration`](/docs/stdlib/datetime#type::cal::date_duration) values.
+- Support for [range types](/docs/datamodel/primitives#ranges) and [`DateDuration`](/docs/stdlib/datetime#type::cal::date_duration) values
 
 ### Requirements
 

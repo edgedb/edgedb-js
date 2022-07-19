@@ -44,19 +44,30 @@ To get started, install the ``edgedb`` module from NPM.
 
 There are two components of this library:
 
-- Use the *driver* to establish a connection to your database and execute EdgeQL queries (written as strings).
-- Use the *query builder* to write queries in a code-first, typesafe way. Recommended for TypeScript users.
+- Use the *driver* to establish a connection to your database and execute
+  EdgeQL queries (written as strings).
+- Use the *query builder* to write queries in a code-first, typesafe way.
+  Recommended for TypeScript users.
 
 
 Migration to 2.0
 ================
 
-We recently released ``v0.21``, which supports the latest EdgeDB 2.0 features.
+We recently released ``v0.21.0`` of the ``edgedb`` module on NPM and
+``deno.land/x``, which supports the latest EdgeDB 2.0 features and protocol.
+It is also backwards-compatible with v1 instances as well, so we recommend
+all users upgrade.
+
+```bash
+npm install edgedb@latest
+```
 
 Breaking changes
 ----------------
 
-- All ``uuid`` properties are now decoded to include hyphens. Previously hyphens were elided for performance reasons; this issue has since been resolved.
+- All ``uuid`` properties are now decoded to include hyphens. Previously
+  hyphens were elided for performance reasons; this issue has since been
+  resolved.
 
   .. code-block:: typescript
 
@@ -64,7 +75,8 @@ Breaking changes
     // "ce13b17a-7fcd-42b3-b5e3-eb28d1b953f6"
 
 
-- All ``json`` properties and parameters are now parsed/stringified internally by the client. Previously:
+- All ``json`` properties and parameters are now parsed/stringified internally
+  by the client. Previously:
 
   .. code-block:: typescript
 
@@ -90,7 +102,8 @@ Breaking changes
 New features
 ------------
 
-- Added the ``.withGlobals`` method the ``Client`` for setting :ref:`global variables <ref_datamodel_globals>`
+- Added the ``.withGlobals`` method the ``Client`` for setting :ref:`global
+  variables <ref_datamodel_globals>`
 
   .. code-block:: typescript
 
@@ -144,7 +157,8 @@ New features
     ] */
 
 
-- Support for :ref:`range types <ref_datamodel_ranges>` and :eql:type:`cal::date_duration` values.
+- Support for :ref:`range types <ref_datamodel_ranges>` and
+  :eql:type:`cal::date_duration` values.
 
 
 The driver
@@ -204,7 +218,8 @@ users and JavaScript users who prefer writing queries as code.
 .. note:: Is it an ORM?
 
   No—it's better! Like any modern TypeScript ORM, the query builder gives you
-  full typesafety and autocompletion, but without the power and `performance <https://github.com/edgedb/imdbench>`_
+  full typesafety and autocompletion, but without the power and `performance
+  <https://github.com/edgedb/imdbench>`_
   tradeoffs. You have access to the **full power** of EdgeQL and can write
   EdgeQL queries of arbitrary complexity. And since EdgeDB compiles each
   EdgeQL query into a single, highly-optimized SQL query, your queries stay
