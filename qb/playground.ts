@@ -46,9 +46,8 @@ for (let i = 0; i < 256; ++i) {
   byteToHex.push((i + 0x100).toString(16).slice(1));
 }
 
-export function parseWithByteToHex(buffer: Buffer) {
-  const arr = new Uint8Array(buffer);
-
+export function parseWithByteToHex(buf: Buffer) {
+  const arr = new Uint8Array(buf);
   return (
     byteToHex[arr[0]] +
     byteToHex[arr[1]] +
@@ -73,8 +72,42 @@ export function parseWithByteToHex(buffer: Buffer) {
   ).toLowerCase();
 }
 
+export function parseWithByteToHex2(arr: Buffer) {
+  return (
+    byteToHex[arr[0]] +
+    byteToHex[arr[1]] +
+    byteToHex[arr[2]] +
+    byteToHex[arr[3]] +
+    "-" +
+    byteToHex[arr[4]] +
+    byteToHex[arr[5]] +
+    "-" +
+    byteToHex[arr[6]] +
+    byteToHex[arr[7]] +
+    "-" +
+    byteToHex[arr[8]] +
+    byteToHex[arr[9]] +
+    "-" +
+    byteToHex[arr[10]] +
+    byteToHex[arr[11]] +
+    byteToHex[arr[12]] +
+    byteToHex[arr[13]] +
+    byteToHex[arr[14]] +
+    byteToHex[arr[15]]
+  );
+}
+
 async function run() {
-  const RUNS = 1000000;
+  const d = await setupTests();
+  const res = await d.client.queryRequiredSingle<string>(
+    `SELECT uuid_generate_v1mc();`
+  );
+  const uuidRegex =
+    /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/;
+  console.log(`is uuid`);
+  console.log(uuidRegex.test(res));
+
+  const RUNS = 1;
   console.time("without-dashes");
   for (let i = 0; i < RUNS; i++) {
     const testBuffer = new ReadBuffer(
@@ -114,11 +147,20 @@ async function run() {
   console.time("with-dashes-bytetohex");
   for (let i = 0; i < RUNS; i++) {
     const testBuffer = new ReadBuffer(
-      Buffer.from("a42599e903dc48e3abb7501b7f8543f5", "hex")
+      Buffer.from("A42599e903dc48e3abb7501b7f8543f5", "hex")
     );
     parseWithByteToHex(testBuffer.readBuffer(16));
   }
   console.timeEnd("with-dashes-bytetohex");
+
+  console.time("with-dashes-bytetohex2");
+  for (let i = 0; i < RUNS; i++) {
+    const testBuffer = new ReadBuffer(
+      Buffer.from("A42599E903dc48e3aBB7501b7f8543f5", "hex")
+    );
+    parseWithByteToHex2(testBuffer.readBuffer(16));
+  }
+  console.timeEnd("with-dashes-bytetohex2");
 }
 
 run();

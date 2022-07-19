@@ -1198,6 +1198,13 @@ test("fetch: uuid", async () => {
       "SELECT <uuid>'759637d8-6635-11e9-b9d4-098002d459d5'"
     );
     expect(res).toBe("759637d8-6635-11e9-b9d4-098002d459d5");
+
+    res = await con.queryRequiredSingle<string>(
+      `SELECT uuid_generate_v1mc();`
+    );
+    const uuidRegex =
+      /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/;
+    expect(uuidRegex.test(res)).toEqual(true);
   } finally {
     await con.close();
   }

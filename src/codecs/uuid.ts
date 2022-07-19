@@ -40,31 +40,29 @@ const byteToHex: string[] = [];
 for (let i = 0; i < 256; ++i) {
   byteToHex.push((i + 0x100).toString(16).slice(1));
 }
-export function bytesToHex(buffer: Buffer) {
-  const arr = new Uint8Array(buffer);
-
+export function bytesToHex(buf: Buffer) {
   return (
-    byteToHex[arr[0]] +
-    byteToHex[arr[1]] +
-    byteToHex[arr[2]] +
-    byteToHex[arr[3]] +
+    byteToHex[buf[0]] +
+    byteToHex[buf[1]] +
+    byteToHex[buf[2]] +
+    byteToHex[buf[3]] +
     "-" +
-    byteToHex[arr[4]] +
-    byteToHex[arr[5]] +
+    byteToHex[buf[4]] +
+    byteToHex[buf[5]] +
     "-" +
-    byteToHex[arr[6]] +
-    byteToHex[arr[7]] +
+    byteToHex[buf[6]] +
+    byteToHex[buf[7]] +
     "-" +
-    byteToHex[arr[8]] +
-    byteToHex[arr[9]] +
+    byteToHex[buf[8]] +
+    byteToHex[buf[9]] +
     "-" +
-    byteToHex[arr[10]] +
-    byteToHex[arr[11]] +
-    byteToHex[arr[12]] +
-    byteToHex[arr[13]] +
-    byteToHex[arr[14]] +
-    byteToHex[arr[15]]
-  ).toLowerCase();
+    byteToHex[buf[10]] +
+    byteToHex[buf[11]] +
+    byteToHex[buf[12]] +
+    byteToHex[buf[13]] +
+    byteToHex[buf[14]] +
+    byteToHex[buf[15]]
+  );
 }
 
 export class UUIDCodec extends ScalarCodec implements ICodec {
