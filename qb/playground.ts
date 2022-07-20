@@ -7,12 +7,15 @@ import e from "./dbschema/edgeql-js";
 async function run() {
   const {client} = await setupTests();
 
-  const rd = new edgedb.LocalDate(1, 1, 1);
-  console.log(rd.toJSON());
-
-  const range = new edgedb.LocalDate(1, 1, 1);
-  console.log(range.toJSON());
-
+  console.log(
+    await client.query(
+      `
+  select <str>$val;
+  select <int64>$num;
+`,
+      {val: "asdf", num: 1234}
+    )
+  );
   const query = e.str("Hello world");
   const result = await query.run(client);
   console.log(query.toEdgeQL());

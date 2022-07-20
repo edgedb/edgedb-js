@@ -1,4 +1,4 @@
-.. _edgedb-js-examples:
+.. _edgedb-js-driver:
 
 
 Driver
