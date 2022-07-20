@@ -106,6 +106,10 @@ on the :ref:`Driver <edgedb-js-datatypes>` page.
     - :js:class:`LocalTime`
   * - ``e.cal.local_datetime``
     - :js:class:`LocalDateTime`
+  * - ``e.cal.local_datetime``
+    - :js:class:`LocalDateTime`
+  * - ``e.cal.local_datetime``
+    - :js:class:`LocalDateTime`
 
 The code below demonstrates how to declare each kind of temporal literal,
 along with the equivalent EdgeQL.

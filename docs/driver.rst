@@ -95,8 +95,6 @@ in the JavaScript type system, so we've implemented classes like
     - ``Array``
   * - Named tuples ``tuple<foo: x, bar: y, ...>``
     - ``object``
-  * - Ranges ``range<x>``
-    - :js:class:`Range`
   * - Enums
     - ``string``
   * - ``Object``
@@ -121,6 +119,10 @@ in the JavaScript type system, so we've implemented classes like
     - ``Date``
   * - ``duration``
     - :js:class:`Duration`
+  * - ``e.cal.relative_duration``
+    - :js:class:`RelativeDuration`
+  * - ``e.cal.date_duration``
+    - :js:class:`DateDuration`
   * - ``cal::local_date``
     - :js:class:`LocalDate`
   * - ``cal::local_time``
@@ -129,15 +131,19 @@ in the JavaScript type system, so we've implemented classes like
     - :js:class:`LocalDateTime`
   * - ``cfg::memory``
     - :js:class:`ConfigMemory`
+  * - Ranges ``range<x>``
+    - :js:class:`Range`
 
 
 To learn more about the driver's built-in type classes, refer to the reference
 documentation.
 
+- :js:class:`Duration`
+- :js:class:`RelativeDuration`
+- :js:class:`DateDuration`
 - :js:class:`LocalDate`
 - :js:class:`LocalTime`
 - :js:class:`LocalDateTime`
-- :js:class:`Duration`
 - :js:class:`ConfigMemory`
 - :js:class:`Range`
 
