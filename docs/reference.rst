@@ -206,7 +206,7 @@ Client
 
     .. js:method:: queryJSON(query: string, args?: QueryArgs): Promise<string>
 
-        Run a query and return the results as JSON.
+        Run a query and return the results as a JSON-encoded string.
 
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
@@ -230,7 +230,7 @@ Client
         ): Promise<string>
 
         Run an optional singleton-returning query and return its element
-        in JSON.
+        as a JSON-encoded string.
 
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
@@ -257,7 +257,8 @@ Client
             args?: QueryArgs \
         ): Promise<string>
 
-        Run a singleton-returning query and return its element in JSON.
+        Run a singleton-returning query and return its element as a
+        JSON-encoded string.
 
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
@@ -519,7 +520,7 @@ The table below shows the correspondence between EdgeDB and JavaScript types.
 +-------------------------+--------------------------------------------------+
 | ``decimal``             | n/a                                              |
 +-------------------------+--------------------------------------------------+
-| ``json``                | ``string``                                       |
+| ``json``                | ``unknown``                                      |
 +-------------------------+--------------------------------------------------+
 | ``uuid``                | ``edgedb.UUID``                                  |
 +-------------------------+--------------------------------------------------+

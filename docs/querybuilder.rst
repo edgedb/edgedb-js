@@ -264,7 +264,9 @@ that later.
 
 **JSON serialization**
 
-You can also use the ``runJSON`` method to retrieve the query results as a serialized JSON-formatted *string*. This serialization happens inside the database and is much faster than calling ``JSON.stringify``.
+You can also use the ``runJSON`` method to retrieve the query results as a
+serialized JSON-formatted *string*. This serialization happens inside the
+database and is much faster than calling ``JSON.stringify`` yourself.
 
 .. code-block:: typescript
 
@@ -510,6 +512,8 @@ Query parameters
   Continue reading for more complete documentation on how to express any
   EdgeQL query with the query builder.
 
+
+.. _ref_edgedbjs_globals:
 
 Globals
 ^^^^^^^

@@ -137,11 +137,11 @@ export function makeType<T extends BaseType>(
       ? {}
       : type.enum_values
       ? {}
-      : type.name === "std::json"
-      ? (((val: any) => {
-          return literal(scalarObj, JSON.stringify(val));
-        }) as any)
-      : (((val: any) => {
+      : // : type.name === "std::json"
+        // ? (((val: any) => {
+        //     return literal(scalarObj, JSON.stringify(val));
+        //   }) as any)
+        (((val: any) => {
           return literal(scalarObj, val);
         }) as any);
 

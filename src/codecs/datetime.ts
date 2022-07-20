@@ -25,9 +25,9 @@ import {
   LocalTime,
   Duration,
   RelativeDuration,
+  DateDuration,
   LocalDateFromOrdinal,
   LocalDateToOrdinal,
-  DateDuration,
 } from "../datatypes/datetime";
 import {ymd2ord} from "../datatypes/dateutil";
 import {InvalidArgumentError, ProtocolError} from "../errors";

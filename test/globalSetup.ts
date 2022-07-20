@@ -15,8 +15,10 @@ export default async () => {
   console.log("Node status file:", statusFile);
 
   const {args, availableFeatures} = getServerCommand(getWSLPath(statusFile));
-
+  console.log(args);
+  console.log(`Starting server...`);
   const {proc, config} = await startServer(args, statusFile);
+
   // @ts-ignore
   global.edgedbProc = proc;
 

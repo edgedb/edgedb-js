@@ -799,9 +799,9 @@ function renderEdgeQL(
           param.__cardinality__ === Cardinality.AtMostOne ? "OPTIONAL " : "";
         return `  __param__${param.__name__} := ${
           param.__isComplex__
-            ? `<${param.__element__.__name__}><${optional}json>`
-            : `<${optional}${param.__element__.__name__}>`
-        }$${param.__name__}`;
+            ? `<${param.__element__.__name__}>to_json(<${optional}str>$${param.__name__})`
+            : `<${optional}${param.__element__.__name__}>$${param.__name__}`
+        }`;
       })
       .join(",\n")}\nSELECT ${renderEdgeQL(expr.__expr__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Alias) {
@@ -1378,13 +1378,13 @@ const numericalTypes: Record<string, boolean> = {
 function literalToEdgeQL(type: BaseType, val: any): string {
   let skipCast = false;
   let stringRep;
-  if (typeof val === "string") {
+  if (type.__name__ === "std::json") {
+    skipCast = true;
+    stringRep = `to_json($$${JSON.stringify(val)}$$)`;
+  } else if (typeof val === "string") {
     if (numericalTypes[type.__name__]) {
       skipCast = true;
       stringRep = val;
-    } else if (type.__name__ === "std::json") {
-      skipCast = true;
-      stringRep = `to_json(${JSON.stringify(val)})`;
     } else if (type.__kind__ === TypeKind.enum) {
       skipCast = true;
       const vals = (type as EnumType).__values__;
@@ -1581,6 +1581,9 @@ function getErrorHint(expr: any): string {
       break;
     case expr instanceof RelativeDuration:
       literalConstructor = "e.cal.relative_duration()";
+      break;
+    case expr instanceof DateDuration:
+      literalConstructor = "e.cal.date_duration()";
       break;
   }
 
