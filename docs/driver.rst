@@ -238,6 +238,25 @@ query to return a value.
     title := "Avengers: Endgame"
   };`);
 
+With EdgeDB 2.0 or later, you can execute a "script" consisting of multiple
+semicolon-separated statements in a single ``.execute`` call.
+
+.. code-block:: js
+
+  await client.execute(`
+    insert Person { name := "Robert Downey Jr." };
+    insert Person { name := "Scarlett Johansson" };
+    insert Movie {
+      title := <str>$title,
+      actors := (
+        select Person filter .name in {
+          "Robert Downey Jr.",
+          "Scarlett Johansson"
+        }
+      )
+    }
+  `, { title: "Iron Man 2" });
+
 Parameters
 ----------
 
