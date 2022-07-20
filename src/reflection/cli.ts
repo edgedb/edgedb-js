@@ -118,7 +118,9 @@ const run = async () => {
         const target = getVal();
         if (!target || !["ts", "esm", "cjs", "mts", "deno"].includes(target)) {
           exitWithError(
-            `Invalid target "${target ?? ""}", expected "deno", "mts", "ts", "esm" or "cjs"`
+            `Invalid target "${
+              target ?? ""
+            }", expected "deno", "mts", "ts", "esm" or "cjs"`
           );
         }
         options.target = target as any;
