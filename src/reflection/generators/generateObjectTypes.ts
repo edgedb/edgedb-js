@@ -128,7 +128,9 @@ export const generateObjectTypes = (params: GeneratorParams) => {
   const {dir, types} = params;
 
   const plainTypesCode = dir.getPath("types");
-  const edgedb = params.isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb"
+  const edgedb = params.isDeno
+    ? "https://deno.land/x/edgedb/mod.ts"
+    : "edgedb";
   plainTypesCode.addImportStar("edgedb", edgedb, {
     typeOnly: true,
   });

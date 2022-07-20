@@ -96,7 +96,7 @@ export async function generateQB(params: {
       functions,
       globals,
       operators,
-      isDeno: target === "deno"
+      isDeno: target === "deno",
     };
     generateRuntimeSpec(generatorParams);
     generateCastMaps(generatorParams);
@@ -110,7 +110,8 @@ export async function generateQB(params: {
     // generate module imports
 
     const importsFile = dir.getPath("imports");
-    const edgedb = target === "deno" ? "https://deno.land/x/edgedb/mod.ts" : "edgedb"
+    const edgedb =
+      target === "deno" ? "https://deno.land/x/edgedb/mod.ts" : "edgedb";
 
     importsFile.addExportStar(edgedb, {as: "edgedb"});
     importsFile.addExportFrom({spec: true}, "./__spec__", {
@@ -392,19 +393,21 @@ export async function generateQB(params: {
         .replace(/from "edgedb"/g, () => {
           return `from "https://deno.land/x/edgedb/mod.ts"`;
         })
-      // add extensions to relative imports
-        .replace(/from "([\.\/]+)(.+)"/g, (_match, group1: string, group2: string) => {
-          const end = group2.includes(".ts") ? "" : ".ts";
-          const output = `from "${group1}${group2}${end}"`;
-          return output
-        });
+        // add extensions to relative imports
+        .replace(
+          /from "([\.\/]+)(.+)"/g,
+          (_match, group1: string, group2: string) => {
+            const end = group2.includes(".ts") ? "" : ".ts";
+            const output = `from "${group1}${group2}${end}"`;
+            return output;
+          }
+        );
       // shim the buffer in syntax/select
       if (fileName === "select.ts") {
-        contents = `import { Buffer } from "https://deno.land/std@0.147.0/node/buffer.ts";\n${contents}`
+        contents = `import { Buffer } from "https://deno.land/std@0.147.0/node/buffer.ts";\n${contents}`;
       }
     }
-    fileName === "index.ts" && console.log(contents)
-
+    fileName === "index.ts" && console.log(contents);
 
     const outputPath = path.join(syntaxOutDir, fileName);
     await fs.writeFile(outputPath, contents);

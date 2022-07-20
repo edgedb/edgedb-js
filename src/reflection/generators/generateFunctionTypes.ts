@@ -31,7 +31,7 @@ export const generateFunctionTypes = ({
   functions,
   types,
   casts,
-  isDeno
+  isDeno,
 }: GeneratorParams) => {
   generateFuncopTypes(
     dir,

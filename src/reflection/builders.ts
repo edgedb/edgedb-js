@@ -719,7 +719,7 @@ export class DirBuilder {
     }
 
     const mod = this.getPath(`modules/${this._modules.get(moduleName)}`);
-    const edgedb = isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb"
+    const edgedb = isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb";
 
     mod.addImport({$: true}, edgedb);
     mod.addImportStar("_", "../imports", {allowFileExt: true});

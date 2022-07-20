@@ -22,7 +22,7 @@ export function generateOperatorFunctions({
   operators,
   types,
   casts,
-  isDeno
+  isDeno,
 }: GeneratorParams) {
   generateFuncopTypes(
     dir,
@@ -62,12 +62,12 @@ export function generateOperators({
   operators,
   types,
   casts,
-  isDeno
+  isDeno,
 }: GeneratorParams) {
   const typeSpecificities = getTypesSpecificity(types, casts);
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
   const code = dir.getPath("operators");
-  const edgedb = isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb"
+  const edgedb = isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb";
 
   code.addImport({$: true}, edgedb);
   code.addImportStar("_", "./imports", {allowFileExt: true});

@@ -5,7 +5,12 @@ import {dts, r, t, ts} from "../builders";
 import {getStringRepresentation} from "./generateObjectTypes";
 import {GlobalType} from "../queries/getGlobals";
 
-export const generateGlobals = ({dir, globals, types, isDeno}: GeneratorParams) => {
+export const generateGlobals = ({
+  dir,
+  globals,
+  types,
+  isDeno,
+}: GeneratorParams) => {
   const globalsByMod: {[k: string]: GlobalType[]} = {};
   for (const [_id, g] of globals.entries()) {
     const {mod} = splitName(g.name);

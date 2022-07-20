@@ -17,7 +17,9 @@ export const generateCastMaps = (params: GeneratorParams) => {
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps");
-  const edgedb = params.isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb"
+  const edgedb = params.isDeno
+    ? "https://deno.land/x/edgedb/mod.ts"
+    : "edgedb";
   f.addImportStar("edgedb", edgedb);
   f.addImport({$: true}, edgedb, {modes: ["ts", "dts"], typeOnly: true});
 
