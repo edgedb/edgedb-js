@@ -58,9 +58,10 @@ We recently released ``v0.21.0`` of the ``edgedb`` module on NPM and
 It is also backwards-compatible with v1 instances as well, so we recommend
 all users upgrade.
 
-```bash
-npm install edgedb@latest
-```
+.. code-block:: bash
+
+  npm install edgedb@latest
+
 
 Breaking changes
 ----------------
