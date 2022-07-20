@@ -84,8 +84,8 @@ To create an instance of ``datetime``, pass a JavaScript ``Date`` object into
   // <datetime>'1999-01-01T00:00:00.000Z'
 
 EdgeDB's other temporal datatypes don't have equivalents in the JavaScript
-type system: ``duration``, ``cal::local_date``, ``cal::local_time``, and
-``cal::local_datetime``.
+type system: ``duration``, ``cal::relative_duration``, ``cal::date_duration``,
+``cal::local_date``, ``cal::local_time``, and ``cal::local_datetime``,
 
 To resolve this, each of these datatypes can be represented with an instance
 of a corresponding class, as defined in ``edgedb`` module. The driver uses
@@ -96,6 +96,10 @@ on the :ref:`Driver <edgedb-js-datatypes>` page.
 
   * - ``e.duration``
     - :js:class:`Duration`
+  * - ``e.cal.relative_duration``
+    - :js:class:`RelativeDuration`
+  * - ``e.cal.date_duration``
+    - :js:class:`DateDuration`
   * - ``e.cal.local_date``
     - :js:class:`LocalDate`
   * - ``e.cal.local_time``

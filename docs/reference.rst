@@ -478,54 +478,56 @@ types and vice versa.
 
 The table below shows the correspondence between EdgeDB and JavaScript types.
 
-+-------------------------+--------------------------------------------------+
-| EdgeDB Type             |  JavaScript Type                                 |
-+=========================+==================================================+
-| ``Set``                 | ``Array``                                        |
-+-------------------------+--------------------------------------------------+
-| ``array<anytype>``      | ``Array``                                        |
-+-------------------------+--------------------------------------------------+
-| ``anytuple``            | ``Array`` or                                     |
-|                         | ``Array``-like ``object``                        |
-+-------------------------+--------------------------------------------------+
-| ``range<anytype>``      | :js:class:`Range`                                |
-+-------------------------+--------------------------------------------------+
-| ``anyenum``             | ``string``                                       |
-+-------------------------+--------------------------------------------------+
-| ``Object``              | ``object``                                       |
-+-------------------------+--------------------------------------------------+
-| ``bool``                | ``boolean``                                      |
-+-------------------------+--------------------------------------------------+
-| ``bytes``               | ``Buffer``                                       |
-+-------------------------+--------------------------------------------------+
-| ``str``                 | ``string``                                       |
-+-------------------------+--------------------------------------------------+
-| ``cal::local_date``     | :js:class:`LocalDate`                            |
-+-------------------------+--------------------------------------------------+
-| ``cal::local_time``     | :js:class:`LocalTime`                            |
-+-------------------------+--------------------------------------------------+
-| ``cal::local_datetime`` | :js:class:`LocalDateTime`                        |
-+-------------------------+--------------------------------------------------+
-| ``datetime``            | ``Date``                                         |
-+-------------------------+--------------------------------------------------+
-| ``duration``            | :js:class:`Duration`                             |
-+-------------------------+--------------------------------------------------+
-| ``float32``,            | ``number``                                       |
-| ``float64``             |                                                  |
-| ``int16``,              |                                                  |
-| ``int32``,              |                                                  |
-| ``int64``               |                                                  |
-+-------------------------+--------------------------------------------------+
-| ``bigint``              | BigInt_                                          |
-+-------------------------+--------------------------------------------------+
-| ``decimal``             | n/a                                              |
-+-------------------------+--------------------------------------------------+
-| ``json``                | ``unknown``                                      |
-+-------------------------+--------------------------------------------------+
-| ``uuid``                | ``edgedb.UUID``                                  |
-+-------------------------+--------------------------------------------------+
-| ``cfg::memory``         | :js:class:`ConfigMemory`                         |
-+-------------------------+--------------------------------------------------+
+
+.. list-table::
+
+  * - **EdgeDB Type**
+    - **JavaScript Type**
+  * - ``multi`` set
+    - ``Array``
+  * - ``array<anytype>``
+    - ``Array``
+  * - ``anytuple``
+    - ``Array``
+  * - ``anyenum``
+    - ``string``
+  * - ``Object``
+    - ``object``
+  * - ``bool``
+    - ``boolean``
+  * - ``bytes``
+    - ``Buffer``
+  * - ``str``
+    - ``string``
+  * - ``float32``,  ``float64``, ``int16``, ``int32``, ``int64``
+    - ``number``
+  * - ``bigint``
+    - ``BigInt``
+  * - ``decimal``
+    - n/a
+  * - ``json``
+    - ``unknown``
+  * - ``uuid``
+    - ``string``
+  * - ``datetime``
+    - ``Date``
+  * - ``cal::local_date``
+    - :js:class:`LocalDate`
+  * - ``cal::local_time``
+    - :js:class:`LocalTime`
+  * - ``cal::local_datetime``
+    - :js:class:`LocalDateTime`
+  * - ``duration``
+    - :js:class:`Duration`
+  * - ``cal::relative_duration``
+    - :js:class:`RelativeDuration`
+  * - ``cal::date_duration``
+    - :js:class:`DateDuration`
+  * - ``range<anytype>``
+    - :js:class:`Range`
+  * - ``cfg::memory``
+    - :js:class:`ConfigMemory`
+
 
 .. note::
 
@@ -542,29 +544,6 @@ The table below shows the correspondence between EdgeDB and JavaScript types.
     degradation is acceptable or a cast to ``str`` for an exact decimal
     representation.
 
-
-.. _edgedb-js-types-set:
-
-Sets
-====
-
-.. js:class:: Set() extends Array
-
-    Under the hood, the result of the ``.query`` method is an instance of
-    ``edgedb.Set``. This class represents a set of values returned by a query.
-    If the query contained an explicit ``ORDER BY`` clause, the values will be
-    ordered, otherwise no specific ordering is guaranteed.
-
-    This type also allows to differentiate between a set of values and an
-    explicit array.
-
-    .. code-block:: js
-
-        const result = await client.query(`select {0, 1, 2}`);
-        result instanceof edgedb.Set; // true
-        result[0]; // 0
-        result[1]; // 1
-        result[2]; // 2
 
 Arrays
 ======
