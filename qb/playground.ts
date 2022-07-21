@@ -7,6 +7,15 @@ import e from "./dbschema/edgeql-js";
 async function run() {
   const {client} = await setupTests();
 
+  console.log(
+    await client.query(
+      `
+  select <str>$val;
+  select <int64>$num;
+`,
+      {val: "asdf", num: 1234}
+    )
+  );
   const query = e.str("Hello world");
   const result = await query.run(client);
   console.log(query.toEdgeQL());

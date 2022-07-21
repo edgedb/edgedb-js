@@ -1,3 +1,5 @@
+.. _edgedb-js-qb:
+
 =============
 Query Builder
 =============
@@ -30,6 +32,29 @@ keywords, standard library functions, and link/property names.
 *Type checking!* In the vast majority of cases, the query builder won't let
 you construct invalid queries. This eliminates an entire class of bugs and
 helps you write valid queries the first time.
+
+Requirements
+------------
+
+It's possible to use the query builder with or without TypeScript. Some
+requirements apply to TypeScript users only.
+
+- Node.js 14+. Run ``node --version`` to see your current version. TypeScript
+  users should also install Node.js typing: ``npm install @types/node``.
+- TypeScript 4.4+
+- Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``:
+
+  .. code-block:: javascript
+
+    // tsconfig.json
+    {
+      // ...
+      "compilerOptions": {
+        // ...
+        "strict": true,
+        "downlevelIteration": true,
+      }
+    }
 
 
 Getting started
@@ -525,3 +550,4 @@ Reference global variables.
   e.global.user_id;
   e.default.global.user_id;  // same as above
   e.my_module.global.some_value;
+

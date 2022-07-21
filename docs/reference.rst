@@ -478,54 +478,56 @@ types and vice versa.
 
 The table below shows the correspondence between EdgeDB and JavaScript types.
 
-+-------------------------+--------------------------------------------------+
-| EdgeDB Type             |  JavaScript Type                                 |
-+=========================+==================================================+
-| ``Set``                 | ``Array``                                        |
-+-------------------------+--------------------------------------------------+
-| ``array<anytype>``      | ``Array``                                        |
-+-------------------------+--------------------------------------------------+
-| ``anytuple``            | ``Array`` or                                     |
-|                         | ``Array``-like ``object``                        |
-+-------------------------+--------------------------------------------------+
-| ``range<anytype>``      | :js:class:`Range`                                |
-+-------------------------+--------------------------------------------------+
-| ``anyenum``             | ``string``                                       |
-+-------------------------+--------------------------------------------------+
-| ``Object``              | ``object``                                       |
-+-------------------------+--------------------------------------------------+
-| ``bool``                | ``boolean``                                      |
-+-------------------------+--------------------------------------------------+
-| ``bytes``               | ``Buffer``                                       |
-+-------------------------+--------------------------------------------------+
-| ``str``                 | ``string``                                       |
-+-------------------------+--------------------------------------------------+
-| ``cal::local_date``     | :js:class:`LocalDate`                            |
-+-------------------------+--------------------------------------------------+
-| ``cal::local_time``     | :js:class:`LocalTime`                            |
-+-------------------------+--------------------------------------------------+
-| ``cal::local_datetime`` | :js:class:`LocalDateTime`                        |
-+-------------------------+--------------------------------------------------+
-| ``datetime``            | ``Date``                                         |
-+-------------------------+--------------------------------------------------+
-| ``duration``            | :js:class:`Duration`                             |
-+-------------------------+--------------------------------------------------+
-| ``float32``,            | ``number``                                       |
-| ``float64``             |                                                  |
-| ``int16``,              |                                                  |
-| ``int32``,              |                                                  |
-| ``int64``               |                                                  |
-+-------------------------+--------------------------------------------------+
-| ``bigint``              | BigInt_                                          |
-+-------------------------+--------------------------------------------------+
-| ``decimal``             | n/a                                              |
-+-------------------------+--------------------------------------------------+
-| ``json``                | ``unknown``                                      |
-+-------------------------+--------------------------------------------------+
-| ``uuid``                | ``edgedb.UUID``                                  |
-+-------------------------+--------------------------------------------------+
-| ``cfg::memory``         | :js:class:`ConfigMemory`                         |
-+-------------------------+--------------------------------------------------+
+
+.. list-table::
+
+  * - **EdgeDB Type**
+    - **JavaScript Type**
+  * - ``multi`` set
+    - ``Array``
+  * - ``array<anytype>``
+    - ``Array``
+  * - ``anytuple``
+    - ``Array``
+  * - ``anyenum``
+    - ``string``
+  * - ``Object``
+    - ``object``
+  * - ``bool``
+    - ``boolean``
+  * - ``bytes``
+    - ``Buffer``
+  * - ``str``
+    - ``string``
+  * - ``float32``,  ``float64``, ``int16``, ``int32``, ``int64``
+    - ``number``
+  * - ``bigint``
+    - ``BigInt``
+  * - ``decimal``
+    - n/a
+  * - ``json``
+    - ``unknown``
+  * - ``uuid``
+    - ``string``
+  * - ``datetime``
+    - ``Date``
+  * - ``cal::local_date``
+    - :js:class:`LocalDate`
+  * - ``cal::local_time``
+    - :js:class:`LocalTime`
+  * - ``cal::local_datetime``
+    - :js:class:`LocalDateTime`
+  * - ``duration``
+    - :js:class:`Duration`
+  * - ``cal::relative_duration``
+    - :js:class:`RelativeDuration`
+  * - ``cal::date_duration``
+    - :js:class:`DateDuration`
+  * - ``range<anytype>``
+    - :js:class:`Range`
+  * - ``cfg::memory``
+    - :js:class:`ConfigMemory`
+
 
 .. note::
 
@@ -542,29 +544,6 @@ The table below shows the correspondence between EdgeDB and JavaScript types.
     degradation is acceptable or a cast to ``str`` for an exact decimal
     representation.
 
-
-.. _edgedb-js-types-set:
-
-Sets
-====
-
-.. js:class:: Set() extends Array
-
-    Under the hood, the result of the ``.query`` method is an instance of
-    ``edgedb.Set``. This class represents a set of values returned by a query.
-    If the query contained an explicit ``ORDER BY`` clause, the values will be
-    ordered, otherwise no specific ordering is guaranteed.
-
-    This type also allows to differentiate between a set of values and an
-    explicit array.
-
-    .. code-block:: js
-
-        const result = await client.query(`select {0, 1, 2}`);
-        result instanceof edgedb.Set; // true
-        result[0]; // 0
-        result[1]; // 1
-        result[2]; // 2
 
 Arrays
 ======
@@ -824,7 +803,7 @@ Local Time
         Get the string representation of the ``local_time`` in the ``HH:MM:SS``
         24-hour format.
 
-    .. js:method:: toJSON(): number
+    .. js:method:: toJSON(): string
 
         Same as :js:meth:`~LocalTime.toString`.
 
@@ -859,7 +838,7 @@ Local Date and Time
         Get the string representation of the ``local_datetime`` in the
         ``YYYY-MM-DDTHH:MM:SS`` 24-hour format.
 
-    .. js:method:: toJSON(): number
+    .. js:method:: toJSON(): string
 
         Same as :js:meth:`~LocalDateTime.toString`.
 
@@ -883,8 +862,9 @@ Duration
         microseconds: number = 0, \
         nanoseconds: number = 0)
 
-    A JavaScript representation of an EdgeDB ``duration`` value. Implements
-    a subset of the `TC39 Temporal Proposal`_ ``Duration`` type.
+    A JavaScript representation of an EdgeDB ``duration`` value. This class
+    attempts to conform to the `TC39 Temporal Proposal`_ ``Duration`` type as
+    closely as possible.
 
     No arguments may be infinite and all must have the same sign.
     Any non-integer arguments will be rounded towards zero.
@@ -981,53 +961,193 @@ Duration
         Always throws an Error. ``Duration`` objects are not comparable.
 
 
+RelativeDuration
+================
+
+.. js:class:: RelativeDuration(\
+        years: number = 0, \
+        months: number = 0, \
+        weeks: number = 0, \
+        days: number = 0, \
+        hours: number = 0, \
+        minutes: number = 0, \
+        seconds: number = 0, \
+        milliseconds: number = 0, \
+        microseconds: number = 0)
+
+  A JavaScript representation of an EdgeDB
+  :eql:type:`cal::relative_duration` value. This type represents a
+  non-definite span of time such as "2 years 3 days". This cannot be
+  represented as a :eql:type:`duration` because a year has no absolute
+  duration; for instance, leap years are longer than non-leap years.
+
+  This class attempts to conform to the `TC39 Temporal Proposal`_
+  ``Duration`` type as closely as possible.
+
+  Internally, a ``cal::relative_duration`` value is represented as an
+  integer number of months, days, and seconds. During encoding, other units
+  will be normalized to these three. Sub-second units like ``microseconds``
+  will be ignored.
+
+  .. js:attribute:: years: number
+
+      The number of years in the relative duration.
+
+  .. js:attribute:: months: number
+
+      The number of months in the relative duration.
+
+  .. js:attribute:: weeks: number
+
+      The number of weeks in the relative duration.
+
+  .. js:attribute:: days: number
+
+      The number of days in the relative duration.
+
+  .. js:attribute:: hours: number
+
+      The number of hours in the relative duration.
+
+  .. js:attribute:: minutes: number
+
+      The number of minutes in the relative duration.
+
+  .. js:attribute:: seconds: number
+
+      The number of seconds in the relative duration.
+
+  .. js:attribute:: milliseconds: number
+
+      The number of milliseconds in the relative duration.
+
+  .. js:attribute:: microseconds: number
+
+      The number of microseconds in the relative duration.
+
+  .. js:method:: toString(): string
+
+      Get the string representation of the duration in `ISO 8601 duration`_
+      format.
+
+  .. js:method:: toJSON(): string
+
+      Same as :js:meth:`~Duration.toString`.
+
+  .. js:method:: valueOf(): never
+
+      Always throws an Error. ``RelativeDuration`` objects are not
+      comparable.
+
+
+DateDuration
+============
+
+.. js:class:: DateDuration( \
+      years: number = 0, \
+      months: number = 0, \
+      weeks: number = 0, \
+      days: number = 0, \
+    )
+
+  A JavaScript representation of an EdgeDB
+  :eql:type:`cal::date_duration` value. This type represents a
+  non-definite span of time consisting of an integer number of *months* and
+  *days*.
+
+  This type is primarily intended to simplify logic involving
+  :eql:type:`cal::local_date` values.
+
+  .. code-block:: edgeql-repl
+
+    db> select <cal::date_duration>'5 days';
+    {<cal::date_duration>'P5D'}
+    db> select <cal::local_date>'2022-06-25' + <cal::date_duration>'5 days';
+    {<cal::local_date>'2022-06-30'}
+    db> select <cal::local_date>'2022-06-30' - <cal::local_date>'2022-06-25';
+    {<cal::date_duration>'P5D'}
+
+  Internally, a ``cal::relative_duration`` value is represented as an
+  integer number of months and days. During encoding, other units will be
+  normalized to these two.
+
+  .. js:attribute:: years: number
+
+      The number of years in the relative duration.
+
+  .. js:attribute:: months: number
+
+      The number of months in the relative duration.
+
+  .. js:attribute:: weeks: number
+
+      The number of weeks in the relative duration.
+
+  .. js:attribute:: days: number
+
+      The number of days in the relative duration.
+
+  .. js:method:: toString(): string
+
+      Get the string representation of the duration in `ISO 8601 duration`_
+      format.
+
+  .. js:method:: toJSON(): string
+
+      Same as :js:meth:`~Duration.toString`.
+
+  .. js:method:: valueOf(): never
+
+      Always throws an Error. ``DateDuration`` objects are not comparable.
+
+
 Memory
 ======
 
 .. js:class:: ConfigMemory(bytes: BigInt)
 
-    A JavaScript representation of an EdgeDB ``cfg::memory`` value.
+  A JavaScript representation of an EdgeDB ``cfg::memory`` value.
 
-    .. js:attribute:: bytes: number
+  .. js:attribute:: bytes: number
 
-        The memory value in bytes (B).
+      The memory value in bytes (B).
 
-        .. note::
+      .. note::
 
-            The EdgeDB ``cfg::memory`` represents a number of bytes stored as
-            an ``int64``. Since JS the ``number`` type is a ``float64``, values
-            above ``~8191TiB`` will lose precision when represented as a JS
-            ``number``. To keep full precision use the ``bytesBigInt``
-            property.
+          The EdgeDB ``cfg::memory`` represents a number of bytes stored as
+          an ``int64``. Since JS the ``number`` type is a ``float64``, values
+          above ``~8191TiB`` will lose precision when represented as a JS
+          ``number``. To keep full precision use the ``bytesBigInt``
+          property.
 
-    .. js::attribute:: bytesBigInt: BigInt
+  .. js::attribute:: bytesBigInt: BigInt
 
-        The memory value in bytes represented as a ``BigInt``.
+      The memory value in bytes represented as a ``BigInt``.
 
-    .. js:attribute:: kibibytes: number
+  .. js:attribute:: kibibytes: number
 
-        The memory value in kibibytes (KiB).
+      The memory value in kibibytes (KiB).
 
-    .. js:attribute:: mebibytes: number
+  .. js:attribute:: mebibytes: number
 
-        The memory value in mebibytes (MiB).
+      The memory value in mebibytes (MiB).
 
-    .. js:attribute:: gibibytes: number
+  .. js:attribute:: gibibytes: number
 
-        The memory value in gibibytes (GiB).
+      The memory value in gibibytes (GiB).
 
-    .. js:attribute:: tebibytes: number
+  .. js:attribute:: tebibytes: number
 
-        The memory value in tebibytes (TiB).
+      The memory value in tebibytes (TiB).
 
-    .. js:attribute:: pebibytes: number
+  .. js:attribute:: pebibytes: number
 
-        The memory value in pebibytes (PiB).
+      The memory value in pebibytes (PiB).
 
-    .. js:method:: toString(): string
+  .. js:method:: toString(): string
 
-        Get the string representation of the memory value. Format is the same
-        as returned by string casting a ``cfg::memory`` value in EdgeDB.
+      Get the string representation of the memory value. Format is the same
+      as returned by string casting a ``cfg::memory`` value in EdgeDB.
 
 Range
 =====
@@ -1039,47 +1159,53 @@ Range
         incUpper: boolean = false \
     )
 
-    A JavaScript representation of an EdgeDB ``std::range`` value. This is a generic TypeScript class with the following type signature.
+  A JavaScript representation of an EdgeDB ``std::range`` value. This is a generic TypeScript class with the following type signature.
 
-    .. code-block:: typescript
+  .. code-block:: typescript
 
-        class Range<
-            T extends number | Date | LocalDate | LocalDateTime | Duration
-        >{
-            // ...
-        }
+      class Range<
+          T extends number | Date | LocalDate | LocalDateTime | Duration
+      >{
+          // ...
+      }
 
-    .. js:attribute:: lower: T
+  .. js:attribute:: lower: T
 
-        The lower bound of the range value.
+      The lower bound of the range value.
 
-    .. js:attribute:: upper: T
+  .. js:attribute:: upper: T
 
-        The upper bound of the range value.
+      The upper bound of the range value.
 
-    .. js:attribute:: incLower: boolean
+  .. js:attribute:: incLower: boolean
 
-        Whether the lower bound is inclusive.
+      Whether the lower bound is inclusive.
 
-    .. js:attribute:: incUpper: boolean
+  .. js:attribute:: incUpper: boolean
 
-        Whether the upper bound is inclusive.
+      Whether the upper bound is inclusive.
 
-    .. js:attribute:: empty: boolean
+  .. js:attribute:: empty: boolean
 
-        Whether the range is empty.
+      Whether the range is empty.
 
-    .. js:method:: toJSON(): number
+  .. js:method:: toJSON(): { \
+        lower: T | null; \
+        upper: T | null; \
+        inc_lower: boolean; \
+        inc_upper: boolean; \
+        empty?: undefined; \
+      }
 
-        Returns a JSON-encodable representation of the range.
+      Returns a JSON-encodable representation of the range.
 
-    .. js:method:: empty(): Range
+  .. js:method:: empty(): Range
 
-        A static method to declare an empty range (no bounds).
+      A static method to declare an empty range (no bounds).
 
-        .. code-block:: typescript
+      .. code-block:: typescript
 
-            Range.empty();
+          Range.empty();
 
 
 

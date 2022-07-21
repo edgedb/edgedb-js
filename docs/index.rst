@@ -8,6 +8,7 @@ EdgeDB TypeScript/JS Client
    :maxdepth: 3
    :hidden:
 
+   migration_2_x
    driver
    querybuilder
    generation
@@ -29,138 +30,48 @@ This is the official EdgeDB client library for JavaScript and TypeScript. It's
 the easiest way to connect to your database and execute queries from a Node.js
 or Deno backend.
 
+.. note::
+
+  We recently released ``v0.21.0`` of the ``edgedb`` module on NPM and
+  ``deno.land/x``, which supports the latest EdgeDB 2.0 features and protocol.
+  It is also backwards-compatible with v1 instances as well, so we recommend
+  all users upgrade. Read the :ref:`mini-changelog <edgedb-js-v2>` for details.
+
+There are two components of this library:
+
+- Use the :ref:`Driver API <edgedb-js-intro-driver>` to establish a connection
+  to your database and execute EdgeQL queries (written as strings).
+- Use the :ref:`Query Builder API <edgedb-js-intro-qb>` to write queries in a
+  code-first, typesafe way. Recommended for TypeScript users.
 
 
 .. _edgedb-js-installation:
 
+**Requirements**
+
+*Node.js users*
+
+- [Node only] Node.js 14+. Run ``node --version`` to see your current version
+- [Deno only] Deno v1.17+. Run ``deno --version`` to see your current version
+- [TypeScript only] Node.js type declarations: ``npm install @types/node``
+- [TypeScript only] ``"strict": true`` in ``tsconfig.json`` ``compilerOptions``
+
 **Installation**
 
-To get started, install the ``edgedb`` module from NPM.
+*Node users*: Install the ``edgedb`` module from NPM.
 
 .. code-block:: bash
 
     $ npm install edgedb      # npm users
     $ yarn add edgedb         # yarn users
 
-There are two components of this library:
+Deno users: Import from ``deno.land/x/edgedb``:
 
-- Use the *driver* to establish a connection to your database and execute
-  EdgeQL queries (written as strings).
-- Use the *query builder* to write queries in a code-first, typesafe way.
-  Recommended for TypeScript users.
+.. code-block::
 
+  import * as edgedb from "https://deno.land/x/edgedb/mod.ts"
 
-Migration to 2.0
-================
-
-We recently released ``v0.21.0`` of the ``edgedb`` module on NPM and
-``deno.land/x``, which supports the latest EdgeDB 2.0 features and protocol.
-It is also backwards-compatible with v1 instances as well, so we recommend
-all users upgrade.
-
-.. code-block:: bash
-
-  npm install edgedb@latest
-
-
-Breaking changes
-----------------
-
-- All ``uuid`` properties are now decoded to include hyphens. Previously
-  hyphens were elided for performance reasons; this issue has since been
-  resolved.
-
-  .. code-block:: typescript
-
-    client.querySingle(`select uuid_generate_v1mc();`);
-    // "ce13b17a-7fcd-42b3-b5e3-eb28d1b953f6"
-
-
-- All ``json`` properties and parameters are now parsed/stringified internally
-  by the client. Previously:
-
-  .. code-block:: typescript
-
-    const result = await client.querySingle(
-      `select to_json('{"hello": "world"}');`
-    );
-    result; // '{"hello": "world"}'
-    typeof result; // string
-
-
-  Now:
-
-  .. code-block:: typescript
-
-    const result = await client.querySingle(
-      `select to_json('{"hello": "world"}');`
-    );
-    result; // {hello: "world"}
-    typeof result; // object
-    result.hello; // "world"
-
-
-New features
-------------
-
-- Added the ``.withGlobals`` method the ``Client`` for setting :ref:`global
-  variables <ref_datamodel_globals>`
-
-  .. code-block:: typescript
-
-    import {createClient} from "edgedb";
-    const client = createClient().withGlobals({
-      current_user: getUserIdFromCookie(),
-    });
-
-    client.query(`select User { email } filter .id = global current_user;`);
-
-
-- Support for globals in the query builder
-
-  .. code-block:: typescript
-
-    const query = e.select(e.User, user => ({
-      email: true,
-      filter: e.op(user.id, '=', e.global.current_user)
-    }));
-
-    await query.run(client);
-
-- Support for the ``group`` statement. :ref:`Documentation
-  <ref_datamodel_globals>`
-
-  .. code-block:: typescript
-
-    e.group(e.Movie, movie => {
-      return {
-        title: true,
-        actors: {name: true},
-        num_actors: e.count(movie.characters),
-        by: {release_year: movie.release_year},
-      };
-    });
-    /* [
-      {
-        key: {release_year: 2008},
-        grouping: ["release_year"],
-        elements: [{
-          title: "Iron Man",
-          actors: [...],
-          num_actors: 5
-        }, {
-          title: "The Incredible Hulk",
-          actors: [...],
-          num_actors: 3
-        }]
-      },
-      // ...
-    ] */
-
-
-- Support for :ref:`range types <ref_datamodel_ranges>` and
-  :eql:type:`cal::date_duration` values.
-
+.. _edgedb-js-intro-driver:
 
 The driver
 ==========
@@ -184,10 +95,10 @@ as strings, the driver API is all you need.
   run();
 
 If you're not using TypeScript, you can skip straight to :ref:`the Driver docs
-<edgedb-js-examples>`.
+<edgedb-js-driver>`.
 
 
-.. _edgedb-js-qb:
+.. _edgedb-js-intro-qb:
 
 The query builder
 =================
@@ -230,7 +141,7 @@ users and JavaScript users who prefer writing queries as code.
 How do I get started?
 ---------------------
 
-We recommend reading the :ref:`Driver docs <edgedb-js-examples>` first. If you
+We recommend reading the :ref:`Driver docs <edgedb-js-driver>` first. If you
 are happy writing your EdgeQL as plain strings, then that's all you need! If
 you're a TypeScript user, or simply prefer writing queries in a code-first
 way, continue on to the :ref:`Query builder <edgedb-js-generation>` docs.
