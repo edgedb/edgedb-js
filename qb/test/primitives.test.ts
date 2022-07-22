@@ -59,7 +59,7 @@ test("range primitives", async () => {
     `std::range(3, 8, inc_lower := true, inc_upper := false)`
   );
   expect(e.std.range(lowerRange).toEdgeQL()).toEqual(
-    `std::range(3, <std::float64>{}, inc_lower := true, inc_upper := false)`
+    `std::range(3, <std::int64>{}, inc_lower := true, inc_upper := false)`
   );
   expect(e.std.range(upperRange).toEdgeQL()).toEqual(
     `std::range(<std::float64>{}, 8, inc_lower := true, inc_upper := false)`

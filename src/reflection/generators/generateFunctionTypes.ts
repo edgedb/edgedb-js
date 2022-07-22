@@ -500,7 +500,10 @@ export function generateReturnCardinality(
   if (
     returnTypemod === "SetOfType" &&
     name !== "std::if_else" &&
-    name !== "std::assert_exists"
+    name !== "std::assert_exists" &&
+    name !== "std::union" &&
+    name !== "std::coalesce" &&
+    name !== "std::distinct"
   ) {
     return `$.Cardinality.Many`;
   }
@@ -517,6 +520,24 @@ export function generateReturnCardinality(
         }))
       : []),
   ];
+
+  if (name === "std::union") {
+    return `$.cardinalityUtil.mergeCardinalities<
+        $.cardinalityUtil.paramCardinality<${cardinalities[0].genTypeName}>,
+        $.cardinalityUtil.paramCardinality<${cardinalities[1].genTypeName}>
+      >`;
+  }
+
+  if (name === "std::coalesce") {
+    return `$.cardinalityUtil.orCardinalities<
+        $.cardinalityUtil.paramCardinality<${cardinalities[0].genTypeName}>,
+        $.cardinalityUtil.paramCardinality<${cardinalities[1].genTypeName}>
+      >`;
+  }
+
+  if (name === "std::distinct") {
+    return `$.cardinalityUtil.paramCardinality<${cardinalities[0].genTypeName}>`;
+  }
 
   if (name === "std::if_else") {
     return (

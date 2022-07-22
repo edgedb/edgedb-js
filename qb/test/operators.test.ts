@@ -214,3 +214,21 @@ test("non-literal args", async () => {
 
   expect(expr.run(client)).resolves.not.toThrow();
 });
+
+test("cardinalities for set of operators", async () => {
+  const t1 = e.op(e.cast(e.str, e.set()), "??", "default");
+  expect(t1.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  expect(await t1.run(client)).toEqual("default");
+
+  const t2 = e.op(e.cast(e.str, e.set()), "union", "default");
+  expect(t2.__cardinality__).toEqual($.Cardinality.One);
+  expect(await t1.run(client)).toEqual("default");
+
+  const t3 = e.op("one", "union", "two");
+  expect(t3.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  expect(await t3.run(client)).toEqual(["one", "two"]);
+
+  const t4 = e.op("distinct", "default");
+  expect(t4.__cardinality__).toEqual($.Cardinality.One);
+  expect(await t4.run(client)).toEqual("default");
+});
