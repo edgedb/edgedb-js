@@ -7,7 +7,7 @@ import {LocalDateTime, Range} from "edgedb";
 async function run() {
   const {client} = await setupTests();
 
-  const query = e.str("hello");
+  const query = e.cast(e.int64, e.set());
 
   console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
   console.log(query.toEdgeQL());
