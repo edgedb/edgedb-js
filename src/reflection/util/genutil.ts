@@ -41,7 +41,7 @@ export const scalarToLiteralMapping: {
 } = {
   "std::int16": {type: "number"},
   "std::int32": {type: "number"},
-  "std::int64": {type: "number"},
+  "std::int64": {type: "number", extraTypes: ["string"]},
   "std::float32": {type: "number"},
   "std::float64": {type: "number"},
   "std::number": {
@@ -55,23 +55,46 @@ export const scalarToLiteralMapping: {
   "std::bool": {type: "boolean", literalKind: "typeof"},
   "std::bigint": {type: "bigint", literalKind: "typeof"},
   "std::bytes": {type: "Buffer", literalKind: "instanceof"},
-  "std::datetime": {type: "Date", literalKind: "instanceof"},
-  "std::duration": {type: "edgedb.Duration", literalKind: "instanceof"},
+  "std::datetime": {
+    type: "Date",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
+  "std::duration": {
+    type: "edgedb.Duration",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
   "cal::local_datetime": {
     type: "edgedb.LocalDateTime",
     literalKind: "instanceof",
+    extraTypes: ["string"],
   },
-  "cal::local_date": {type: "edgedb.LocalDate", literalKind: "instanceof"},
-  "cal::local_time": {type: "edgedb.LocalTime", literalKind: "instanceof"},
+  "cal::local_date": {
+    type: "edgedb.LocalDate",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
+  "cal::local_time": {
+    type: "edgedb.LocalTime",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
   "cal::relative_duration": {
     type: "edgedb.RelativeDuration",
     literalKind: "instanceof",
+    extraTypes: ["string"],
   },
   "cal::date_duration": {
     type: "edgedb.DateDuration",
     literalKind: "instanceof",
+    extraTypes: ["string"],
   },
-  "cfg::memory": {type: "edgedb.ConfigMemory", literalKind: "instanceof"},
+  "cfg::memory": {
+    type: "edgedb.ConfigMemory",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
 };
 
 export const literalToScalarMapping: {

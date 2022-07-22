@@ -1,6 +1,7 @@
 import * as edgedb from "edgedb";
 import {TypeKind} from "edgedb/dist/reflection";
 import e from "../dbschema/edgeql-js";
+import {setupTests, version_lt} from "./setupTeardown";
 
 test("literals", () => {
   const duration = new edgedb.Duration(0, 0, 0, 0, 5, 6, 7, 8, 9, 10);
@@ -94,4 +95,22 @@ test("enum literals", () => {
   expect(() =>
     e.literal(e.Genre, "NotAGenre" as "Horror").toEdgeQL()
   ).toThrow();
+});
+
+test("constructing with strings", async () => {
+  const {client} = await setupTests();
+  if (await version_lt(client, 2)) return;
+
+  const dateString = new Date().toISOString();
+  expect(
+    await (await e.datetime(dateString).run(client)).toISOString()
+  ).toEqual(dateString);
+
+  await e.int64("12341234").run(client);
+  await e.cal.local_datetime("1999-03-31T15:17:00").run(client);
+  await e.cal.local_date("1999-03-31").run(client);
+  await e.cal.local_time("15:17:00").run(client);
+  await e.duration("5 hours").run(client);
+  await e.cal.relative_duration("4 weeks 5 hours").run(client);
+  await e.cal.date_duration("4 months 5 days").run(client);
 });

@@ -176,12 +176,12 @@ to provide an API that is as close as possible to EdgeQL itself. So
 query is then executed with the ``.run()`` method which accepts a *client* as
 it's first input.
 
-Run that script with the ``esbuild-runner`` like so. It should print the
+Run that script with the ``tsx`` like so. It should print the
 current timestamp (as computed by the database).
 
 .. code-block:: bash
 
-  $ npx esbuild-runner script.ts
+  $ npx tsx script.ts
   2022-05-10T03:11:27.205Z
 
 .. _edgedb-js-execution:
