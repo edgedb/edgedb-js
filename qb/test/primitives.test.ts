@@ -110,7 +110,7 @@ test("range primitives", async () => {
   tc.assert<
     tc.IsExact<typeof getLower["__element__"]["__name__"], "std::number">
   >(true);
-  expect(getLower.__element__.__name__).toEqual("std::int64");
+  expect(getLower.__element__.__name__).toEqual("std::number");
 
   const q2 = e.params(
     {

@@ -87,7 +87,7 @@ export function $resolveOverload(
       funcName.includes("::")
         ? `'e.${funcName.split("::")[1]}()'`
         : `operator '${funcName}'`
-    } with args: ${args.map(arg => `${arg}`).join(", ")}`
+    } with args: ${JSON.stringify(args)}`
   );
 }
 

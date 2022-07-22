@@ -1445,8 +1445,12 @@ function literalToEdgeQL(type: BaseType, val: any): string {
     skipCast = true;
   } else if (val instanceof Range) {
     const elType = (type as RangeType).__element__;
+
+    // actual type will be inferred from
+    // defined value
     const elTypeName =
-      elType.__name__ === "std::number" ? "std::float64" : elType.__name__;
+      elType.__name__ === "std::number" ? "std::int64" : elType.__name__;
+
     return `std::range(${
       val.lower === null
         ? `<${elTypeName}>{}`

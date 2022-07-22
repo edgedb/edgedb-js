@@ -100,6 +100,7 @@ const numberType: ScalarType = {
   material_id: null,
   bases: [],
 };
+
 export const typeMapping = new Map([
   [
     "00000000-0000-0000-0000-000000000103", // int16
@@ -245,6 +246,10 @@ export async function getTypes(
         // type.bases = type.bases.map(base => ({
         //   id: typeMapping.get(base.id)?.id ?? base.id,
         // }));
+        break;
+      case "range":
+        type.range_element_id =
+          typeMapping.get(type.range_element_id)?.id ?? type.range_element_id;
         break;
       case "array":
         // type.array_element_id =
