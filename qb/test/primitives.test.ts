@@ -59,10 +59,10 @@ test("range primitives", async () => {
     `std::range(3, 8, inc_lower := true, inc_upper := false)`
   );
   expect(e.std.range(lowerRange).toEdgeQL()).toEqual(
-    `std::range(3, <std::float64>{}, inc_lower := true, inc_upper := false)`
+    `std::range(3, <std::int64>{}, inc_lower := true, inc_upper := false)`
   );
   expect(e.std.range(upperRange).toEdgeQL()).toEqual(
-    `std::range(<std::float64>{}, 8, inc_lower := true, inc_upper := false)`
+    `std::range(<std::int64>{}, 8, inc_lower := true, inc_upper := false)`
   );
   expect(e.std.range(dateRange).toEdgeQL()).toEqual(
     `std::range(<std::datetime>'2022-07-05T14:00:00.000Z', <std::datetime>'2022-07-05T16:00:00.000Z', inc_lower := true, inc_upper := false)`
@@ -110,7 +110,7 @@ test("range primitives", async () => {
   tc.assert<
     tc.IsExact<typeof getLower["__element__"]["__name__"], "std::number">
   >(true);
-  expect(getLower.__element__.__name__).toEqual("std::int64");
+  expect(getLower.__element__.__name__).toEqual("std::number");
 
   const q2 = e.params(
     {

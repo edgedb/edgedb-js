@@ -29,7 +29,8 @@ export async function $queryFunc(this: any, cxn: edgedb.Executor, args: any) {
 
   if (
     expr.__cardinality__ === Cardinality.One ||
-    expr.__cardinality__ === Cardinality.AtMostOne
+    expr.__cardinality__ === Cardinality.AtMostOne ||
+    expr.__cardinality__ === Cardinality.Empty
   ) {
     return cxn.querySingle(query, _args);
   } else {

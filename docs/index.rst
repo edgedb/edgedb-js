@@ -8,7 +8,6 @@ EdgeDB TypeScript/JS Client
    :maxdepth: 3
    :hidden:
 
-   migration_2_x
    driver
    querybuilder
    generation
@@ -35,7 +34,8 @@ or Deno backend.
   We recently released ``v0.21.0`` of the ``edgedb`` module on NPM and
   ``deno.land/x``, which supports the latest EdgeDB 2.0 features and protocol.
   It is also backwards-compatible with v1 instances as well, so we recommend
-  all users upgrade. Read the :ref:`mini-changelog <edgedb-js-v2>` for details.
+  all users upgrade. Read the `release notes
+  <https://github.com/edgedb/edgedb-js/releases/tag/v0.21.0>`_ for details.
 
 There are two components of this library:
 

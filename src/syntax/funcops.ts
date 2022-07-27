@@ -87,7 +87,7 @@ export function $resolveOverload(
       funcName.includes("::")
         ? `'e.${funcName.split("::")[1]}()'`
         : `operator '${funcName}'`
-    } with args: ${args.map(arg => `${arg}`).join(", ")}`
+    } with args: ${JSON.stringify(args)}`
   );
 }
 
@@ -233,6 +233,18 @@ function _tryOverload(
       positionalArgs[0].__cardinality__,
       "One"
     );
+  } else if (funcName === "union") {
+    cardinality = cardinalityUtil.mergeCardinalities(
+      positionalArgs[0].__cardinality__,
+      positionalArgs[1].__cardinality__
+    );
+  } else if (funcName === "??") {
+    cardinality = cardinalityUtil.orCardinalities(
+      positionalArgs[0].__cardinality__,
+      positionalArgs[1].__cardinality__
+    );
+  } else if (funcName === "distinct") {
+    cardinality = positionalArgs[0].__cardinality__;
   } else {
     cardinality =
       funcDef.returnTypemod === "SetOfType"
