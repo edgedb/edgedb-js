@@ -62,7 +62,7 @@ test("range primitives", async () => {
     `std::range(3, <std::int64>{}, inc_lower := true, inc_upper := false)`
   );
   expect(e.std.range(upperRange).toEdgeQL()).toEqual(
-    `std::range(<std::float64>{}, 8, inc_lower := true, inc_upper := false)`
+    `std::range(<std::int64>{}, 8, inc_lower := true, inc_upper := false)`
   );
   expect(e.std.range(dateRange).toEdgeQL()).toEqual(
     `std::range(<std::datetime>'2022-07-05T14:00:00.000Z', <std::datetime>'2022-07-05T16:00:00.000Z', inc_lower := true, inc_upper := false)`
