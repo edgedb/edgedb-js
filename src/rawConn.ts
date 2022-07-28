@@ -346,7 +346,7 @@ export class RawConnection extends BaseRawConnection {
             versionGreaterThan(proposed, PROTO_VER) ||
             versionGreaterThan(PROTO_VER_MIN, proposed)
           ) {
-            throw new Error(
+            throw new errors.UnsupportedProtocolVersionError(
               `the server requested an unsupported version of ` +
                 `the protocol ${hi}.${lo}`
             );
@@ -368,7 +368,7 @@ export class RawConnection extends BaseRawConnection {
           } else if (status === AuthenticationStatuses.AUTH_SASL) {
             await this._authSasl();
           } else {
-            throw new Error(
+            throw new errors.ProtocolError(
               `unsupported authentication method requested by the ` +
                 `server: ${status}`
             );
@@ -387,6 +387,11 @@ export class RawConnection extends BaseRawConnection {
           throw this._parseErrorMessage();
         }
 
+        case chars.$s: {
+          this._parseDescribeStateMessage();
+          break;
+        }
+
         case chars.$Z: {
           this._parseSyncMessage();
 
@@ -397,7 +402,7 @@ export class RawConnection extends BaseRawConnection {
             versionGreaterThanOrEqual(this.protocolVersion, [0, 11])
           ) {
             const [major, minor] = this.protocolVersion;
-            throw new Error(
+            throw new errors.ProtocolError(
               `the protocol version requires TLS: ${major}.${minor}`
             );
           }
@@ -415,7 +420,7 @@ export class RawConnection extends BaseRawConnection {
   private async _authSasl(): Promise<void> {
     const numMethods = this.buffer.readInt32();
     if (numMethods <= 0) {
-      throw new Error(
+      throw new errors.ProtocolError(
         "the server requested SASL authentication but did not offer any methods"
       );
     }
@@ -433,7 +438,7 @@ export class RawConnection extends BaseRawConnection {
     this.buffer.finishMessage();
 
     if (!foundScram256) {
-      throw new Error(
+      throw new errors.ProtocolError(
         `the server offered the following SASL authentication ` +
           `methods: ${methods.join(", ")}, neither are supported.`
       );
@@ -455,7 +460,7 @@ export class RawConnection extends BaseRawConnection {
     await this._ensureMessage(chars.$R, "SASLContinue");
     let status = this.buffer.readInt32();
     if (status !== AuthenticationStatuses.AUTH_SASL_CONTINUE) {
-      throw new Error(
+      throw new errors.ProtocolError(
         `expected SASLContinue from the server, received ${status}`
       );
     }
@@ -481,7 +486,7 @@ export class RawConnection extends BaseRawConnection {
     await this._ensureMessage(chars.$R, "SASLFinal");
     status = this.buffer.readInt32();
     if (status !== AuthenticationStatuses.AUTH_SASL_FINAL) {
-      throw new Error(
+      throw new errors.ProtocolError(
         `expected SASLFinal from the server, received ${status}`
       );
     }
@@ -492,7 +497,7 @@ export class RawConnection extends BaseRawConnection {
     const serverSig = scram.parseServerFinalMessage(serverFinal);
 
     if (!serverSig.equals(expectedServerSig)) {
-      throw new Error("server SCRAM proof does not match");
+      throw new errors.ProtocolError("server SCRAM proof does not match");
     }
   }
 
@@ -515,7 +520,7 @@ export class RawConnection extends BaseRawConnection {
       }
 
       default: {
-        throw new Error(
+        throw new errors.UnexpectedMessageError(
           `expected ${err} from the server, received ${chars.chr(mtype)}`
         );
       }

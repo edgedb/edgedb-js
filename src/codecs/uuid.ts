@@ -18,6 +18,7 @@
 
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
+import {InvalidArgumentError} from "../errors";
 
 function UUIDBufferFromString(uuid: string): Buffer {
   let uuidClean = uuid;
@@ -34,19 +35,50 @@ function UUIDBufferFromString(uuid: string): Buffer {
   return buf;
 }
 
+const byteToHex: string[] = [];
+
+for (let i = 0; i < 256; ++i) {
+  byteToHex.push((i + 0x100).toString(16).slice(1));
+}
+export function bytesToHex(buf: Buffer) {
+  return (
+    byteToHex[buf[0]] +
+    byteToHex[buf[1]] +
+    byteToHex[buf[2]] +
+    byteToHex[buf[3]] +
+    "-" +
+    byteToHex[buf[4]] +
+    byteToHex[buf[5]] +
+    "-" +
+    byteToHex[buf[6]] +
+    byteToHex[buf[7]] +
+    "-" +
+    byteToHex[buf[8]] +
+    byteToHex[buf[9]] +
+    "-" +
+    byteToHex[buf[10]] +
+    byteToHex[buf[11]] +
+    byteToHex[buf[12]] +
+    byteToHex[buf[13]] +
+    byteToHex[buf[14]] +
+    byteToHex[buf[15]]
+  );
+}
+
 export class UUIDCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object === "string") {
-      const val = <string>object;
-      const ubuf = UUIDBufferFromString(val);
+      const ubuf = UUIDBufferFromString(object);
       buf.writeInt32(16);
       buf.writeBuffer(ubuf);
     } else {
-      throw new Error(`cannot encode UUID "${object}": invalid type`);
+      throw new InvalidArgumentError(
+        `cannot encode UUID "${object}": invalid type`
+      );
     }
   }
 
   decode(buf: ReadBuffer): any {
-    return buf.readBuffer(16).toString("hex");
+    return bytesToHex(buf.readBuffer(16));
   }
 }

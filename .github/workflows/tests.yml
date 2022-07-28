@@ -21,15 +21,18 @@ jobs:
         os: [ubuntu-latest]
         edgedb-version: ["stable"]
         include:
-          # - os: ubuntu-latest
-          #   node-version: "16"
-          #   edgedb-version: "nightly"
+          - os: ubuntu-latest
+            node-version: "16"
+            edgedb-version: "nightly"
+          - os: ubuntu-latest
+            node-version: "16"
+            edgedb-version: "1.4"
           - os: macos-latest
             node-version: "16"
             edgedb-version: "stable"
-          - os: windows-2019
-            node-version: "16"
-            edgedb-version: "stable"
+          # - os: windows-2019
+          #   node-version: "16"
+          #   edgedb-version: "stable"
 
     steps:
       - uses: actions/checkout@v1
@@ -83,15 +86,20 @@ jobs:
           server-version: ${{ matrix.edgedb-version }}
 
       - name: Run query builder tests
-        if: ${{ matrix.node-version >= 14 && matrix.edgedb-version == 'nightly' }}  # change to stable once 2.0 lands
+        if: ${{ matrix.node-version >= 14 && matrix.edgedb-version != '1.4'}}
         working-directory: qb
         run: |
           yarn test:ci
 
+      - name: Test qb generation on v1
+        if: ${{ matrix.node-version >= 14 && matrix.edgedb-version == '1.4' }}
+        working-directory: qb
+        run: |
+          yarn test:v1
+
       - name: Run functional tests
         run: |
           yarn test
-
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.

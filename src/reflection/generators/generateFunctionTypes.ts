@@ -1,6 +1,7 @@
 import type {GeneratorParams} from "../generate";
 import {frag, getRef, quote, splitName} from "../util/genutil";
 import {
+  all,
   CodeBuffer,
   CodeBuilder,
   CodeFragment,
@@ -107,6 +108,22 @@ export function generateFuncopTypes<F extends FuncopDef>(
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
 
   for (const [funcName, _funcDefs] of funcops.entries()) {
+    const {mod, name} = splitName(funcName);
+
+    const code = dir.getModule(mod);
+
+    code.registerRef(funcName, _funcDefs[0].id);
+    code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);
+
+    // edgeql stdlib has a constructor function with the same name as the
+    // literal constructor and type constuctor for 'range', so replace
+    // generated function with implementation from ./syntax
+    if (funcName === "std::range") {
+      code.writeln([dts`declare `, all`const range = _.syntax.$range;`]);
+      code.nl();
+      continue;
+    }
+
     const funcDefs = expandFuncopAnytypeOverloads(
       sortFuncopOverloads<F>(_funcDefs, typeSpecificities),
       types,
@@ -114,12 +131,14 @@ export function generateFuncopTypes<F extends FuncopDef>(
       implicitCastableRootTypes
     );
 
+
     const {mod, name} = splitName(funcName);
 
     const code = dir.getModule(mod, isDeno);
 
     code.registerRef(funcName, funcDefs[0].id);
     code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);
+
 
     const overloadsBuf = new CodeBuffer();
 
@@ -188,7 +207,10 @@ export function generateFuncopTypes<F extends FuncopDef>(
         ) {
           if (!anytypes) return undefined;
           if (anytypes.kind === "castable") {
-            if (paramType.name.includes("anytype")) {
+            if (
+              paramType.name.includes("anytype") ||
+              paramType.name.includes("anypoint")
+            ) {
               const path = findPathOfAnytype(paramType.id, types);
               anytypeParams.push(
                 optional
@@ -490,7 +512,10 @@ export function generateReturnCardinality(
   if (
     returnTypemod === "SetOfType" &&
     name !== "std::if_else" &&
-    name !== "std::assert_exists"
+    name !== "std::assert_exists" &&
+    name !== "std::union" &&
+    name !== "std::coalesce" &&
+    name !== "std::distinct"
   ) {
     return `$.Cardinality.Many`;
   }
@@ -498,54 +523,70 @@ export function generateReturnCardinality(
   const cardinalities = [
     ...params.positional.map(p => ({
       ...p,
-      genTypeName: allowsLiterals(p.type, anytypes)
-        ? `_.castMaps.${
-            p.kind === "VariadicParam" ? "mapL" : "l"
-          }iteralToTypeSet<${p.typeName}>`
-        : p.typeName,
+      genTypeName: p.typeName,
     })),
     ...(hasNamedParams
       ? params.named.map(p => ({
           ...p,
-          genTypeName: allowsLiterals(p.type, anytypes)
-            ? `_.castMaps.literalToTypeSet<NamedArgs[${quote(p.name)}]>`
-            : `NamedArgs[${quote(p.name)}]`,
+          genTypeName: `NamedArgs[${quote(p.name)}]`,
         }))
       : []),
   ];
+
+  if (name === "std::union") {
+    return `$.cardinalityUtil.mergeCardinalities<
+        $.cardinalityUtil.paramCardinality<${cardinalities[0].genTypeName}>,
+        $.cardinalityUtil.paramCardinality<${cardinalities[1].genTypeName}>
+      >`;
+  }
+
+  if (name === "std::coalesce") {
+    return `$.cardinalityUtil.orCardinalities<
+        $.cardinalityUtil.paramCardinality<${cardinalities[0].genTypeName}>,
+        $.cardinalityUtil.paramCardinality<${cardinalities[1].genTypeName}>
+      >`;
+  }
+
+  if (name === "std::distinct") {
+    return `$.cardinalityUtil.paramCardinality<${cardinalities[0].genTypeName}>`;
+  }
 
   if (name === "std::if_else") {
     return (
       `$.cardinalityUtil.multiplyCardinalities<` +
       `$.cardinalityUtil.orCardinalities<` +
-      `${cardinalities[0].genTypeName}["__cardinality__"],` +
-      ` ${cardinalities[2].genTypeName}["__cardinality__"]` +
-      `>, ${cardinalities[1].genTypeName}["__cardinality__"]>`
+      `$.cardinalityUtil.paramCardinality<${cardinalities[0].genTypeName}>,` +
+      ` $.cardinalityUtil.paramCardinality<${cardinalities[2].genTypeName}>` +
+      `>, $.cardinalityUtil.paramCardinality<${cardinalities[1].genTypeName}>>`
     );
   }
   if (name === "std::assert_exists") {
-    return `$.cardinalityUtil.overrideLowerBound<${cardinalities[0].genTypeName}["__cardinality__"], "One">`;
+    return (
+      `$.cardinalityUtil.overrideLowerBound<` +
+      `$.cardinalityUtil.paramCardinality<${cardinalities[0].genTypeName}>, "One">`
+    );
   }
 
   const paramCardinalities = cardinalities.map(param => {
     if (param.typemod === "SetOfType") {
       if (preservesOptionality) {
-        return `$.cardinalityUtil.overrideUpperBound<${param.genTypeName}["__cardinality__"], "One">`;
+        return (
+          `$.cardinalityUtil.overrideUpperBound<` +
+          `$.cardinalityUtil.paramCardinality<${param.genTypeName}>, "One">`
+        );
       } else {
         return `$.Cardinality.One`;
       }
     }
 
-    if (param.typemod === "OptionalType" || param.hasDefault) {
-      const _alias = `$.cardinalityUtil.optionalParamCardinality`;
-      return `${_alias}<${param.genTypeName}>`;
-    }
+    const prefix =
+      param.typemod === "OptionalType" || param.hasDefault
+        ? "$.cardinalityUtil.optionalParamCardinality"
+        : param.kind === "VariadicParam"
+        ? "$.cardinalityUtil.paramArrayCardinality"
+        : "$.cardinalityUtil.paramCardinality";
 
-    if (param.kind === "VariadicParam") {
-      return `$.cardinalityUtil.multiplyCardinalitiesVariadic<$.cardinalityUtil.paramArrayCardinality<${param.genTypeName}>>`;
-    }
-
-    return `${param.genTypeName}["__cardinality__"]`;
+    return `${prefix}<${param.genTypeName}>`;
   });
 
   const cardinality = paramCardinalities.length

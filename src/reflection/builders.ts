@@ -103,6 +103,7 @@ type Export = {modes: Set<Mode>} & (
       name: string | IdentRef | (string | IdentRef)[];
       as?: string;
       isDefault: boolean;
+      typeOnly: boolean;
     }
   | {type: "refsDefault"; ref: IdentRef; as: string}
   | {
@@ -175,7 +176,7 @@ class BuilderImportsExports {
     name: string | IdentRef | (string | IdentRef)[],
     // as?: string,
     // isDefault: boolean = false,
-    params: ExportParams & {as?: string} = {}
+    params: ExportParams & {as?: string; typeOnly?: boolean} = {}
   ) {
     this.exports.add({
       type: "named",
@@ -183,6 +184,7 @@ class BuilderImportsExports {
       as: params.as,
       isDefault: false,
       modes: params.modes ? new Set(params.modes) : allModes,
+      typeOnly: params.typeOnly ?? false,
     });
   }
 
@@ -195,6 +197,7 @@ class BuilderImportsExports {
       name,
       isDefault: true,
       modes: params.modes ? new Set(params.modes) : allModes,
+      typeOnly: false,
     });
   }
 
@@ -325,6 +328,7 @@ class BuilderImportsExports {
     const exports: string[] = [];
     const exportsFrom: string[] = [];
     const exportList: string[] = [];
+    const exportTypes: string[] = [];
     const refsDefault: {ref: string; as: string}[] = [];
 
     let hasDefaultExport = false;
@@ -362,10 +366,10 @@ class BuilderImportsExports {
             hasDefaultExport = true;
           } else {
             if (moduleKind === "esm") {
-              exportList.push(
+              (exp.typeOnly ? exportTypes : exportList).push(
                 `${name}${exp.as != null ? ` as ${exp.as}` : ""}`
               );
-            } else {
+            } else if (!exp.typeOnly) {
               exportList.push(`${exp.as != null ? exp.as : name}: ${name}`);
             }
           }
@@ -465,6 +469,9 @@ class BuilderImportsExports {
           `Object.assign(exports, { ${exportList.join(", ")} });\n`
         );
       }
+    }
+    if (exportTypes.length && mode !== "js") {
+      exports.push(`export type { ${exportTypes.join(", ")} };\n`);
     }
     if (refsDefault.length || forceDefaultExport) {
       if (mode === "ts" || mode === "dts") {

@@ -1,33 +1,9 @@
-
 .. _edgedb-js-generation:
 
 Generation
 ==========
 
 The query builder is *auto-generated* by introspecting the schema of your database.
-
-Minimum requirements
-^^^^^^^^^^^^^^^^^^^^
-
-It's possible to use the query builder with or without TypeScript. Some
-requirements apply to TypeScript users only.
-
-- Node.js 12+. Run ``node --version`` to see your current version. TypeScript
-  users should also install Node.js typing: ``npm install @types/node``.
-- TypeScript 4.4+
-- Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``:
-
-  .. code-block:: javascript
-
-    // tsconfig.json
-    {
-      // ...
-      "compilerOptions": {
-        // ...
-        "strict": true,
-        "downlevelIteration": true,
-      }
-    }
 
 Initialize a project
 ^^^^^^^^^^^^^^^^^^^^
@@ -129,7 +105,7 @@ files to your ``.gitignore``. Confirm this prompt, and a line will be
 automatically added to your ``.gitignore`` to exclude the generated files from
 Git.
 
-.. code-block:: bash
+.. code-block::
 
   $ npx edgeql-js
   ...
@@ -150,8 +126,7 @@ the full source code of your application.
 Importing
 ^^^^^^^^^
 
-Once the query builder is generated, it's ready to use! Just import it and
-start building queries.
+Once the query builder is generated, it's ready to use! We recommend importing the query builder as a single default import called ``e``.
 
 .. code-block:: typescript
 

@@ -40,11 +40,17 @@ jest.mock("tls", () => {
         event === "data"
           ? (...args: any[]) => {
               const data = args[0] as Buffer;
-              const messageType = data[0];
-              if (messageType === this.abortOnMessageType) {
-                this.destroy();
-              } else {
-                listener(...args);
+              let i = 0;
+              while (i < data.length) {
+                const messageType = data[i];
+                if (messageType === this.abortOnMessageType) {
+                  this.destroy();
+                  break;
+                } else {
+                  const len = data.readUInt32BE(i + 1) + 1;
+                  listener(data.slice(i, i + len), ...args.slice(1));
+                  i += len;
+                }
               }
             }
           : listener;

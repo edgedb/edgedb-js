@@ -16,7 +16,7 @@ afterAll(async () => {
   await teardownTests(client);
 });
 
-test("empty sets", () => {
+test("empty sets", async () => {
   expect(e.set()).toEqual(null);
 
   const stringSet = e.cast(e.str, e.set());
@@ -34,6 +34,8 @@ test("empty sets", () => {
   tc.assert<
     tc.IsExact<typeof int32Set["__element__"]["__name__"], "std::number">
   >(true);
+
+  expect(await e.cast(e.int64, e.set()).run(client)).toEqual(null);
 });
 
 test("object set contructor", () => {

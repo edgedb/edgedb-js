@@ -5,6 +5,7 @@ import {
   Duration,
   RelativeDuration,
   ConfigMemory,
+  DateDuration,
 } from "edgedb";
 import type {$bool, $number} from "@generated/modules/std";
 import {
@@ -775,6 +776,7 @@ export function select(...args: any[]) {
     firstArg instanceof LocalDate ||
     firstArg instanceof LocalTime ||
     firstArg instanceof RelativeDuration ||
+    firstArg instanceof DateDuration ||
     firstArg instanceof ConfigMemory
   ) {
     const literalExpr = literalToTypeSet(firstArg);

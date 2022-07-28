@@ -19,6 +19,13 @@
 import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
 import {ONE, AT_LEAST_ONE} from "./consts";
+import {
+  InvalidArgumentError,
+  MissingArgumentError,
+  QueryArgumentError,
+  UnknownArgumentError,
+  ProtocolError,
+} from "../errors";
 
 const EDGE_POINTER_IS_IMPLICIT = 1 << 0;
 const EDGE_POINTER_IS_LINKPROP = 1 << 1;
@@ -63,7 +70,7 @@ export class ObjectCodec extends Codec implements ICodec {
   }
 
   encode(_buf: WriteBuffer, _object: any): void {
-    throw new Error("Objects cannot be passed as arguments");
+    throw new InvalidArgumentError("Objects cannot be passed as arguments");
   }
 
   encodeArgs(args: any): Buffer {
@@ -75,14 +82,14 @@ export class ObjectCodec extends Codec implements ICodec {
 
   _encodePositionalArgs(args: any): Buffer {
     if (!Array.isArray(args)) {
-      throw new Error("an array of arguments was expected");
+      throw new InvalidArgumentError("an array of arguments was expected");
     }
 
     const codecs = this.codecs;
     const codecsLen = codecs.length;
 
     if (args.length !== codecsLen) {
-      throw new Error(
+      throw new QueryArgumentError(
         `expected ${codecsLen} argument${codecsLen === 1 ? "" : "s"}, got ${
           args.length
         }`
@@ -96,7 +103,7 @@ export class ObjectCodec extends Codec implements ICodec {
       if (arg == null) {
         const card = this.cardinalities[i];
         if (card === ONE || card === AT_LEAST_ONE) {
-          throw new Error(
+          throw new MissingArgumentError(
             `argument ${this.fields[i].name} is required, but received ${arg}`
           );
         }
@@ -117,7 +124,9 @@ export class ObjectCodec extends Codec implements ICodec {
 
   _encodeNamedArgs(args: any): Buffer {
     if (args == null) {
-      throw new Error("One or more named arguments expected, received null");
+      throw new MissingArgumentError(
+        "One or more named arguments expected, received null"
+      );
     }
 
     const keys = Object.keys(args);
@@ -128,7 +137,7 @@ export class ObjectCodec extends Codec implements ICodec {
 
     if (keys.length > codecsLen) {
       const extraKeys = keys.filter(key => !namesSet.has(key));
-      throw new Error(
+      throw new UnknownArgumentError(
         `Unused named argument${
           extraKeys.length === 1 ? "" : "s"
         }: "${extraKeys.join('", "')}"`
@@ -144,7 +153,7 @@ export class ObjectCodec extends Codec implements ICodec {
       if (val == null) {
         const card = this.cardinalities[i];
         if (card === ONE || card === AT_LEAST_ONE) {
-          throw new Error(
+          throw new MissingArgumentError(
             `argument ${this.fields[i].name} is required, but received ${val}`
           );
         }
@@ -169,7 +178,7 @@ export class ObjectCodec extends Codec implements ICodec {
 
     const els = buf.readUInt32();
     if (els !== codecs.length) {
-      throw new Error(
+      throw new ProtocolError(
         `cannot decode Object: expected ${codecs.length} elements, got ${els}`
       );
     }

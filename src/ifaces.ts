@@ -16,21 +16,51 @@
  * limitations under the License.
  */
 
+import * as chars from "./primitives/chars";
 import {
-  Duration,
   LocalDate,
   LocalDateTime,
   LocalTime,
+  Duration,
   RelativeDuration,
+  DateDuration,
 } from "./datatypes/datetime";
 import {ConfigMemory} from "./datatypes/memory";
 
 export type ProtocolVersion = [number, number];
 
+export enum OutputFormat {
+  BINARY = chars.$b,
+  JSON = chars.$j,
+  NONE = chars.$n,
+}
+
+export enum Cardinality {
+  NO_RESULT = chars.$n,
+  AT_MOST_ONE = chars.$o,
+  ONE = chars.$A,
+  MANY = chars.$m,
+  AT_LEAST_ONE = chars.$M,
+}
+type SerializablePrimitives =
+  | string
+  | number
+  | boolean
+  | null
+  | {toJSON(): any}
+  | undefined
+  | ((...args: any[]) => any)
+  | symbol;
+type Serializable =
+  | SerializablePrimitives
+  | {[key: string | number | symbol]: Serializable}
+  | Serializable[];
+
 type QueryArgPrimitive =
   | number
   | string
   | boolean
+  | Serializable
   | BigInt
   | Buffer
   | Date
@@ -39,6 +69,7 @@ type QueryArgPrimitive =
   | LocalTime
   | Duration
   | RelativeDuration
+  | DateDuration
   | ConfigMemory;
 
 type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
@@ -46,7 +77,7 @@ type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
 export type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
 
 export interface Executor {
-  execute(query: string): Promise<void>;
+  execute(query: string, args?: QueryArgs): Promise<void>;
   query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]>;
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
   querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T | null>;
@@ -67,7 +98,7 @@ export type ServerSettings = KnownServerSettings & {
   [key: string]: Buffer;
 };
 
-export const HeaderCodes = {
+export const LegacyHeaderCodes = {
   implicitLimit: 0xff01,
   implicitTypenames: 0xff02,
   implicitTypeids: 0xff03,
@@ -76,17 +107,9 @@ export const HeaderCodes = {
   explicitObjectids: 0xff05,
 };
 
-export type MessageHeaders = {
-  [key in keyof typeof HeaderCodes]?: string | Buffer;
-};
-
-export interface PrepareMessageHeaders {
-  implicitLimit?: string;
-  implicitTypenames?: "true";
-  implicitTypeids?: "true";
-  explicitObjectids?: "false";
-}
-
-export interface ParseOptions {
-  headers?: PrepareMessageHeaders;
+export interface QueryOptions {
+  implicitLimit?: bigint;
+  injectTypenames?: boolean;
+  injectTypeids?: boolean;
+  injectObjectids?: boolean;
 }

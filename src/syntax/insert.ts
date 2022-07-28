@@ -12,6 +12,7 @@ import {
   $scopify,
   stripSet,
   TypeSet,
+  TypeKind,
 } from "../reflection/index";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
@@ -195,7 +196,18 @@ export function $normaliseInsertShape(
 
     // is val is expression, assign to newShape
     if (val?.__kind__) {
-      newShape[key] = _val;
+      // ranges can contain null values, so if the type is 'std::number'
+      // we need to set the type to the exact number type of the pointer
+      // so null casts are correct
+      if (
+        val.__kind__ === ExpressionKind.Literal &&
+        val.__element__.__kind__ === TypeKind.range &&
+        val.__element__.__element__.__name__ === "std::number"
+      ) {
+        newShape[key] = (literal as any)(pointer.target, val.__value__);
+      } else {
+        newShape[key] = _val;
+      }
       continue;
     }
 
@@ -221,6 +233,10 @@ export function $normaliseInsertShape(
     const isMulti =
       pointer.cardinality === Cardinality.AtLeastOne ||
       pointer.cardinality === Cardinality.Many;
+    if (pointer.__kind__ === "property") {
+      if (pointer.target.__name__ === "std::json") {
+      }
+    }
     const wrappedVal =
       val === null
         ? cast(pointer.target, null)
@@ -238,6 +254,16 @@ export function insert<Root extends $expr_PathNode>(
   root: Root,
   shape: InsertShape<Root>
 ): $expr_Insert<Root> {
+  if (typeof shape !== "object") {
+    throw new Error(
+      `invalid insert shape.${
+        typeof shape === "function"
+          ? " Hint: Insert shape is expected to be an object, " +
+            "not a function returning a shape object."
+          : ""
+      }`
+    );
+  }
   const expr: any = {
     __kind__: ExpressionKind.Insert,
     __element__: root.__element__,

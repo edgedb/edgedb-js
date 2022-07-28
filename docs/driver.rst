@@ -1,4 +1,4 @@
-.. _edgedb-js-examples:
+.. _edgedb-js-driver:
 
 
 Driver
@@ -119,6 +119,10 @@ in the JavaScript type system, so we've implemented classes like
     - ``Date``
   * - ``duration``
     - :js:class:`Duration`
+  * - ``e.cal.relative_duration``
+    - :js:class:`RelativeDuration`
+  * - ``e.cal.date_duration``
+    - :js:class:`DateDuration`
   * - ``cal::local_date``
     - :js:class:`LocalDate`
   * - ``cal::local_time``
@@ -127,16 +131,21 @@ in the JavaScript type system, so we've implemented classes like
     - :js:class:`LocalDateTime`
   * - ``cfg::memory``
     - :js:class:`ConfigMemory`
+  * - Ranges ``range<x>``
+    - :js:class:`Range`
 
 
 To learn more about the driver's built-in type classes, refer to the reference
 documentation.
 
+- :js:class:`Duration`
+- :js:class:`RelativeDuration`
+- :js:class:`DateDuration`
 - :js:class:`LocalDate`
 - :js:class:`LocalTime`
 - :js:class:`LocalDateTime`
-- :js:class:`Duration`
 - :js:class:`ConfigMemory`
+- :js:class:`Range`
 
 
 .. .. note::
@@ -170,7 +179,8 @@ array, no matter what.
 
 Use ``querySingle`` if you expect your query to return *zero or one* elements.
 Unlike ``query``, it either returns a single element or ``null``. Note that if
-you're selecting an array, tuple, or
+you're selecting an array, tuple, or set, the returned 'single' element will be
+an array.
 
 .. code-block:: js
 
@@ -193,6 +203,9 @@ The TypeScript signatures of these methods reflects their behavior.
 
 .. code-block:: typescript
 
+  await client.query<number>(`select 2 + 2;`);
+  // number[]
+
   await client.querySingle<number>(`select 2 + 2;`);
   // number | null
 
@@ -203,9 +216,9 @@ The TypeScript signatures of these methods reflects their behavior.
 JSON results
 ------------
 
-There are dedicated methods for running queries and retrieving results as a
-serialized JSON string. This serialization happens inside the database and is
-typically more performant than running ``JSON.stringify`` yourself.
+Client provide additional methods for running queries and retrieving results
+as a *serialized JSON string*. This serialization happens inside the database
+and is typically more performant than running ``JSON.stringify`` yourself.
 
 .. code-block:: js
 
@@ -231,6 +244,25 @@ query to return a value.
     title := "Avengers: Endgame"
   };`);
 
+With EdgeDB 2.0 or later, you can execute a "script" consisting of multiple
+semicolon-separated statements in a single ``.execute`` call.
+
+.. code-block:: js
+
+  await client.execute(`
+    insert Person { name := "Robert Downey Jr." };
+    insert Person { name := "Scarlett Johansson" };
+    insert Movie {
+      title := <str>$title,
+      actors := (
+        select Person filter .name in {
+          "Robert Downey Jr.",
+          "Scarlett Johansson"
+        }
+      )
+    }
+  `, { title: "Iron Man 2" });
+
 Parameters
 ----------
 
@@ -250,6 +282,33 @@ the second argument. This is true for all ``query*`` methods and ``execute``.
 
 Remember that :ref:`parameters <ref_eql_params>` can only be *scalars* or
 *arrays of scalars*.
+
+Scripts
+-------
+
+Both ``execute`` and the ``query*`` methods support scripts (queries
+containing multiple statements). The statements are run in an implicit
+transaction (unless already in an explicit transaction), so the whole script
+remains atomic. For the ``query*`` methods only the result of the final
+statement in the script will be returned.
+
+.. code-block:: js
+
+  const result = await client.query(`
+    insert Movie {
+      title := <str>$title
+    };
+    insert Person {
+      name := <str>$name
+    };
+  `, {
+    title: "Thor: Ragnarok",
+    name: "Anson Mount"
+  });
+  // [{id: "5dd2557b..."}]
+
+For more fine grained control of atomic exectution of multiple statements, use
+the ``transaction()`` API.
 
 Checking connection status
 --------------------------

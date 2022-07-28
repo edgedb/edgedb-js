@@ -1,15 +1,15 @@
-import {spawn} from "child_process";
-import path from "path";
-
 import createClient from "../../src/index.node";
-import type {ConnectConfig} from "../../src/conUtils";
+
 import {
+  shutdown,
+  applyMigrations,
+  generateQB,
+  runTests,
   generateStatusFileName,
   getServerCommand,
   getWSLPath,
   startServer,
-} from "../../test/globalSetup";
-import {shutdown} from "../../test/globalTeardown";
+} from "../../test/testUtil";
 
 (async function main() {
   console.log("\nStarting EdgeDB test cluster...");
@@ -38,114 +38,3 @@ import {shutdown} from "../../test/globalTeardown";
     console.log("EdgeDB test cluster is down...");
   }
 })();
-
-async function applyMigrations(config: ConnectConfig) {
-  console.log("\nApplying migrations...");
-
-  if (process.platform === "win32") {
-    await runCommand("wsl", [
-      "-u",
-      "edgedb",
-      "env",
-      ...Object.entries(configToEnv(config)).map(
-        ([key, val]) => `${key}=${val}`
-      ),
-      "edgedb",
-      "migrate",
-      "--schema-dir",
-      getWSLPath(path.join(process.cwd(), "dbschema")),
-    ]);
-  } else {
-    await runCommand("edgedb", ["migrate"], configToEnv(config));
-  }
-}
-
-async function generateQB(config: ConnectConfig) {
-  console.log(`\nGenerating query builder...`);
-
-  await runCommand(
-    "yarn",
-    ["edgeql-js", "--force-overwrite"],
-    configToEnv(config)
-  );
-
-  // await runCommand(
-  //   "yarn",
-  //   [
-  //     "edgeql-js",
-  //     "--force-overwrite",
-  //     "--target",
-  //     "mts",
-  //     "--output-dir",
-  //     "mts/edgeql-js",
-  //   ],
-  //   configToEnv(config)
-  // );
-
-  // await runCommand(
-  //   "yarn",
-  //   [
-  //     "edgeql-js",
-  //     "--force-overwrite",
-  //     "--target",
-  //     "esm",
-  //     "--output-dir",
-  //     "mts/edgeql-js",
-  //   ],
-  //   configToEnv(config)
-  // );
-}
-
-async function runTests(config: ConnectConfig) {
-  console.log(`\nRunning tests...`);
-
-  await runCommand("yarn", ["test:esm"], configToEnv(config));
-  await runCommand("yarn", ["test:mts"], configToEnv(config));
-  await runCommand("yarn", ["test"], configToEnv(config));
-}
-
-async function runCommand(
-  command: string,
-  args: string[] = [],
-  env?: {[key: string]: string | undefined}
-): Promise<void> {
-  const proc = spawn(command, args, {
-    stdio: ["pipe", "inherit", "inherit"],
-    shell: true,
-    env: {
-      ...process.env,
-      ...env,
-    },
-  });
-
-  return new Promise<void>((resolve, reject) => {
-    proc.once("exit", code => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(
-          `Command '${command} ${args.join(" ")}' exited with code: ${code}`
-        );
-      }
-    });
-    proc.once("error", err => {
-      proc.removeAllListeners("exit");
-      reject(err);
-    });
-  });
-}
-
-function configToEnv(config: ConnectConfig): {
-  [key: string]: string | undefined;
-} {
-  return {
-    EDGEDB_HOST: config.host,
-    EDGEDB_PORT: config.port?.toString(),
-    EDGEDB_DATABASE: config.database,
-    EDGEDB_USER: config.user,
-    EDGEDB_PASSWORD: config.password,
-    // EDGEDB_TLS_CA_FILE: config.tlsCAFile,
-    // EDGEDB_CLIENT_TLS_SECURITY: config.tlsSecurity,
-    EDGEDB_CLIENT_SECURITY: "insecure_dev_mode",
-  };
-}

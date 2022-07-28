@@ -1,3 +1,5 @@
+.. _edgedb-js-qb:
+
 =============
 Query Builder
 =============
@@ -30,6 +32,29 @@ keywords, standard library functions, and link/property names.
 *Type checking!* In the vast majority of cases, the query builder won't let
 you construct invalid queries. This eliminates an entire class of bugs and
 helps you write valid queries the first time.
+
+Requirements
+------------
+
+It's possible to use the query builder with or without TypeScript. Some
+requirements apply to TypeScript users only.
+
+- Node.js 14+. Run ``node --version`` to see your current version. TypeScript
+  users should also install Node.js typing: ``npm install @types/node``.
+- TypeScript 4.4+
+- Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``:
+
+  .. code-block:: javascript
+
+    // tsconfig.json
+    {
+      // ...
+      "compilerOptions": {
+        // ...
+        "strict": true,
+        "downlevelIteration": true,
+      }
+    }
 
 
 Getting started
@@ -80,7 +105,9 @@ The first time you generate the query builder you'll be prompted to add the
 generated files to your ``.gitignore``. Confirm this prompt to
 add the the line automatically.
 
-$ npx edgeql-js
+.. code-block:: bash
+
+  $ npx edgeql-js
   ...
   Checking the generated query builder into version control
   is NOT RECOMMENDED. Would you like to update .gitignore to ignore
@@ -93,8 +120,8 @@ $ npx edgeql-js
 
 Import the query builder
 ^^^^^^^^^^^^^^^^^^^^^^^^
-Create a TypeScript file called ``script.ts`` (the name doesn't matter) and
-import the query builder like so:
+
+Create a TypeScript file called ``script.ts`` (the name doesn't matter) and import the query builder. We recommend importing the query builder as a single default import called ``e``.
 
 .. code-block:: typescript
 
@@ -147,14 +174,14 @@ We use the ``e`` object to construct queries. The goal of the query builder is
 to provide an API that is as close as possible to EdgeQL itself. So
 ``select datetime_current()`` becomes ``e.select(e.datetime_current()``. This
 query is then executed with the ``.run()`` method which accepts a *client* as
-it's first input.
+its first input.
 
-Run that script with the ``esbuild-runner`` like so. It should print the
+Run that script with the ``tsx`` like so. It should print the
 current timestamp (as computed by the database).
 
 .. code-block:: bash
 
-  $ npx esbuild-runner script.ts
+  $ npx tsx script.ts
   2022-05-10T03:11:27.205Z
 
 .. _edgedb-js-execution:
@@ -262,7 +289,9 @@ that later.
 
 **JSON serialization**
 
-You can also use the ``runJSON`` method to retrieve the query results as a serialized JSON-formatted *string*. This serialization happens inside the database and is much faster than calling ``JSON.stringify``.
+You can also use the ``runJSON`` method to retrieve the query results as a
+serialized JSON-formatted *string*. This serialization happens inside the
+database and is much faster than calling ``JSON.stringify`` yourself.
 
 .. code-block:: typescript
 
@@ -490,10 +519,10 @@ Query parameters
     title: e.str,
     release_year: e.int64,
   },
-  (params) => {
+  ($) => {
     return e.insert(e.Movie, {
-      title: params.title,
-      release_year: params.release_year,
+      title: $.title,
+      release_year: $.release_year,
     }))
   };
 
@@ -509,13 +538,16 @@ Query parameters
   EdgeQL query with the query builder.
 
 
+.. _ref_edgedbjs_globals:
+
 Globals
 ^^^^^^^
 
 Reference global variables.
 
-.. code-block::
+.. code-block:: typescript
 
   e.global.user_id;
   e.default.global.user_id;  // same as above
   e.my_module.global.some_value;
+

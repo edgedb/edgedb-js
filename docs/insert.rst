@@ -116,9 +116,11 @@ To specify an ``on...else`` clause:
 Bulk inserts
 ^^^^^^^^^^^^
 
-It's common to  use for loops to perform bulk inserts. The raw data is passed in as a JSON parameter, converted to a set of ``json`` objects, then mapped into
+It's common to  use for loops to perform bulk inserts. The raw data is passed
+in as a ``json`` parameter, converted to a set of ``json`` objects with
+``json_array_unpack``, then passed into a ``for`` loop for insertion.
 
-.. code-block::
+.. code-block:: typescript
 
   const query = e.params({items: e.json}, (params) => {
     return e.for(e.json_array_unpack(params.items), (item) => {
@@ -130,9 +132,9 @@ It's common to  use for loops to perform bulk inserts. The raw data is passed in
   });
 
   const result = await query.run(client, {
-    items: JSON.stringify([
+    items: [
       {title: 'Deadpool', release_year: 2016},
       {title: 'Deadpool 2', release_year: 2018},
       {title: 'Deadpool 3', release_year: null},
-    ]),
+    ]
   });

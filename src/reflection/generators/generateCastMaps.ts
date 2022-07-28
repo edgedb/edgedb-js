@@ -268,7 +268,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
     dts`declare `,
     t`type scalarLiterals =\n  | ${Object.keys(literalToScalarMapping).join(
       "\n  | "
-    )};\n\n`,
+    )}\n  | edgedb.Range<any>;\n\n`,
   ]);
 
   f.writeln([
@@ -295,6 +295,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
   ]);
   f.writeln([t`    ? never`]);
   f.writeln([t`    : T["__tstype__"]`]);
+  f.writeln([t`  : T extends $.RangeType`]);
+  f.writeln([t`  ? edgedb.Range<T['__element__']['__tstype__']>`]);
   f.writeln([t`  : never;`]);
   f.writeln([
     t`export `,
@@ -333,10 +335,15 @@ export const generateCastMaps = (params: GeneratorParams) => {
     t`type literalToScalarType<T extends any> =`,
   ]);
   for (const [literal, {type}] of Object.entries(literalToScalarMapping)) {
+    // skip date_duration on v1 instances
+    if (!typesByName[type]) continue;
     f.writeln([
       t`  T extends ${literal} ? scalarWithConstType<${getRef(type)}, T> :`,
     ]);
   }
+  f.writeln([
+    t`  T extends edgedb.Range<infer E> ? $.RangeType<literalToScalarType<E>> :`,
+  ]);
   f.writeln([t`  $.BaseType;\n\n`]);
 
   f.writeln([
@@ -367,14 +374,18 @@ export const generateCastMaps = (params: GeneratorParams) => {
   for (const [literalType, {literalKind, type}] of Object.entries(
     literalToScalarMapping
   )) {
+    const fullType = typesByName[type];
+    // cal::date_duration won't be defined on v1 instances
+    if (!fullType) continue;
+
     if (literalKind === "typeof") {
       f.writeln([r`  if (typeof type === "${literalType}") {`]);
     } else {
       f.writeln([r`  if (type instanceof ${literalType}) {`]);
     }
-    f.writeln([
-      r`    return literal.$getType("${typesByName[type].id}")(type);`,
-    ]);
+
+    f.writeln([r`    return literal.$getType("${fullType.id}")(type);`]);
+
     f.writeln([r`  }`]);
   }
   f.writeln([

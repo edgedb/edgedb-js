@@ -39,6 +39,12 @@ export const getStringRepresentation: (
       runtimeType: [],
     };
   }
+  if (type.name === "std::anypoint") {
+    return {
+      staticType: frag`${params.anytype ?? getRef("std::anypoint")}`,
+      runtimeType: [],
+    };
+  }
   if (type.name === "std::anyenum") {
     return {
       staticType: [`$.EnumType`],
@@ -119,6 +125,17 @@ export const getStringRepresentation: (
         )}])`,
       };
     }
+  } else if (type.kind === "range") {
+    return {
+      staticType: frag`$.RangeType<${
+        getStringRepresentation(types.get(type.range_element_id), params)
+          .staticType
+      }>`,
+      runtimeType: frag`$.RangeType(${
+        getStringRepresentation(types.get(type.range_element_id), params)
+          .runtimeType
+      })`,
+    };
   } else {
     throw new Error("Invalid type");
   }
@@ -261,8 +278,6 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     // generate interface
     /////////
 
-    const bases = type.bases.map(base => getRef(types.get(base.id).name));
-
     type Line = {
       card: string;
       staticType: CodeFragment[];
@@ -320,10 +335,26 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     ].map(ptrToLine);
 
     // generate shape type
-    const baseTypesUnion = bases.length
-      ? frag`${joinFrags(bases, "λShape & ")}λShape & `
-      : // ? `${bases.map((b) => `${b}λShape`).join(" & ")} & `
-        ``;
+    const fieldNames = new Set(lines.map(l => l.key));
+    const baseTypesUnion = type.bases.length
+      ? frag`${joinFrags(
+          type.bases.map(base => {
+            const baseType = types.get(base.id) as introspect.ObjectType;
+            const overloadedFields = [
+              ...baseType.pointers,
+              ...baseType.backlinks,
+              ...baseType.backlink_stubs,
+            ]
+              .filter(field => fieldNames.has(field.name))
+              .map(field => quote(field.name));
+            const baseRef = getRef(baseType.name);
+            return overloadedFields.length
+              ? frag`Omit<${baseRef}λShape, ${overloadedFields.join(" | ")}>`
+              : frag`${baseRef}λShape`;
+          }),
+          " & "
+        )} & `
+      : ``;
     body.writeln([
       t`export `,
       dts`declare `,

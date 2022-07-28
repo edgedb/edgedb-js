@@ -9,6 +9,7 @@ import {
   cardinalityUtil,
   ObjectType,
   TypeSet,
+  RangeType,
 } from "../reflection/index";
 import {cast} from "./cast";
 import {isImplicitlyCastableTo, literalToTypeSet} from "@generated/castMaps";
@@ -52,13 +53,21 @@ export function $resolveOverload(
   typeSpec: introspect.Types,
   funcDefs: OverloadFuncDef[]
 ) {
-  const [positionalArgs, namedArgs] =
-    typeof args[0] === "object" && typeof args[0].__kind__ === "undefined"
-      ? [
-          mapLiteralToTypeSet(args.slice(1)),
-          mapLiteralToTypeSet(args[0] as object),
-        ]
-      : [mapLiteralToTypeSet(args), undefined];
+  const positionalArgs: (TypeSet | undefined)[] = [];
+  let namedArgs: {[key: string]: TypeSet} | undefined;
+  if (args.length) {
+    if (args[0] !== undefined) {
+      try {
+        positionalArgs.push(literalToTypeSet(args[0]));
+      } catch {
+        // first arg is not a expr or literal type, so assume named args object
+        namedArgs = mapLiteralToTypeSet(args[0] as object);
+      }
+    } else {
+      positionalArgs.push(undefined);
+    }
+    positionalArgs.push(...mapLiteralToTypeSet(args.slice(1)));
+  }
 
   for (const def of funcDefs) {
     const resolvedOverload = _tryOverload(
@@ -78,9 +87,11 @@ export function $resolveOverload(
       funcName.includes("::")
         ? `'e.${funcName.split("::")[1]}()'`
         : `operator '${funcName}'`
-    } with args: ${args.map(arg => `${arg}`).join(", ")}`
+    } with args: ${JSON.stringify(args)}`
   );
 }
+
+const ANYTYPE_ARG = Symbol();
 
 function _tryOverload(
   funcName: string,
@@ -135,9 +146,10 @@ function _tryOverload(
     }
   }
 
-  const positionalArgs: BaseTypeSet[] = [];
+  let positionalArgs: BaseTypeSet[] = [];
 
   let returnAnytype: BaseType | undefined;
+  let needsAnytypeReplacement = false;
 
   for (let i = 0; i < funcDef.args.length; i++) {
     const argDef = funcDef.args[i];
@@ -150,8 +162,21 @@ function _tryOverload(
 
       if (i < args.length) {
         // arg is explicitly undefined, inject empty set
-        const argType = makeType<any>(typeSpec, argDef.typeId, literal);
-        positionalArgs.push(cast(argType, null));
+        const argTypeName = typeSpec.get(argDef.typeId).name;
+        if (
+          argTypeName.includes("anytype") ||
+          argTypeName.includes("std::anypoint")
+        ) {
+          if (!returnAnytype) {
+            positionalArgs.push(ANYTYPE_ARG as any);
+            needsAnytypeReplacement = true;
+          } else {
+            positionalArgs.push(cast(returnAnytype, null));
+          }
+        } else {
+          const argType = makeType<any>(typeSpec, argDef.typeId, literal);
+          positionalArgs.push(cast(argType, null));
+        }
       }
     } else {
       const {match, anytype} = compareType(
@@ -208,6 +233,18 @@ function _tryOverload(
       positionalArgs[0].__cardinality__,
       "One"
     );
+  } else if (funcName === "union") {
+    cardinality = cardinalityUtil.mergeCardinalities(
+      positionalArgs[0].__cardinality__,
+      positionalArgs[1].__cardinality__
+    );
+  } else if (funcName === "??") {
+    cardinality = cardinalityUtil.orCardinalities(
+      positionalArgs[0].__cardinality__,
+      positionalArgs[1].__cardinality__
+    );
+  } else if (funcName === "distinct") {
+    cardinality = positionalArgs[0].__cardinality__;
   } else {
     cardinality =
       funcDef.returnTypemod === "SetOfType"
@@ -220,6 +257,15 @@ function _tryOverload(
     ) {
       cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
     }
+  }
+
+  if (needsAnytypeReplacement) {
+    if (!returnAnytype) {
+      throw new Error(`could not resolve anytype for ${funcName}`);
+    }
+    positionalArgs = positionalArgs.map(arg =>
+      (arg as any) === ANYTYPE_ARG ? cast(returnAnytype!, null) : arg
+    );
   }
 
   return {
@@ -236,6 +282,36 @@ function _tryOverload(
   };
 }
 
+const nameRemapping: {[key: string]: string} = {
+  "std::int16": "std::number",
+  "std::int32": "std::number",
+  "std::int64": "std::number",
+  "std::float32": "std::number",
+  "std::float64": "std::number",
+};
+const descendantCache = new Map<string, string[]>();
+function getDescendantNames(typeSpec: introspect.Types, typeId: string) {
+  if (descendantCache.has(typeId)) {
+    return descendantCache.get(typeId)!;
+  }
+  const descendants: string[] = [
+    ...new Set(
+      [...typeSpec.values()]
+        .filter(
+          type =>
+            type.kind === "scalar" && type.bases.some(({id}) => id === typeId)
+        )
+        .flatMap(type =>
+          type.is_abstract
+            ? getDescendantNames(typeSpec, type.id)
+            : [nameRemapping[type.name], type.name]
+        )
+    ),
+  ];
+  descendantCache.set(typeId, descendants);
+  return descendants;
+}
+
 function compareType(
   typeSpec: introspect.Types,
   typeId: string,
@@ -245,6 +321,13 @@ function compareType(
 
   if (type.name === "anytype") {
     return {match: true, anytype: arg};
+  }
+
+  if (type.name === "std::anypoint") {
+    const descendants = getDescendantNames(typeSpec, typeId);
+    if (descendants.includes(arg.__name__)) {
+      return {match: true, anytype: arg};
+    }
   }
 
   if (type.name === "std::anyenum") {
@@ -266,6 +349,15 @@ function compareType(
         typeSpec,
         type.array_element_id,
         (arg as any as ArrayType).__element__ as BaseType
+      );
+    }
+  }
+  if (type.kind === "range") {
+    if (arg.__kind__ === TypeKind.range) {
+      return compareType(
+        typeSpec,
+        type.range_element_id,
+        (arg as any as RangeType).__element__ as BaseType
       );
     }
   }

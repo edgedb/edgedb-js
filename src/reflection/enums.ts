@@ -14,6 +14,7 @@ export enum TypeKind {
   namedtuple = "namedtuple",
   tuple = "tuple",
   array = "array",
+  range = "range",
 }
 
 export enum ExpressionKind {

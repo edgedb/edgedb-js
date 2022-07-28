@@ -69,6 +69,12 @@ module default {
     required multi link favourite_movies -> Movie;
   }
 
+  type AdminUser extending User {
+    overloaded required property username -> str {
+      constraint exclusive;
+    }
+  }
+
   type MovieShape {
   }
 
@@ -105,6 +111,7 @@ module default {
     property enumArr -> array<Genre>;
     property seqField -> bag_seq;
     property jsonField -> json;
+    property rangeField -> range<int64>;
   }
 
   type Simple extending HasName, HasAge {}

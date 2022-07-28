@@ -22,7 +22,7 @@ export function literal<T extends BaseType>(
   }) as any;
 }
 
-const nameMapping = new Map<string, string>([
+export const $nameMapping = new Map<string, string>([
   ...([...spec.values()].map(type => [type.name, type.id]) as any),
   ["std::number", "00000000-0000-0000-0000-0000000001ff"],
 ]);
@@ -34,5 +34,5 @@ export function $getType(id: string): (val: any) => $expr_Literal<ScalarType> {
 export function $getTypeByName(
   name: string
 ): (val: any) => $expr_Literal<ScalarType> {
-  return makeType(spec, nameMapping.get(name)!, literal) as any;
+  return makeType(spec, $nameMapping.get(name)!, literal) as any;
 }

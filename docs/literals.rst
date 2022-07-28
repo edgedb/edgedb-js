@@ -84,8 +84,8 @@ To create an instance of ``datetime``, pass a JavaScript ``Date`` object into
   // <datetime>'1999-01-01T00:00:00.000Z'
 
 EdgeDB's other temporal datatypes don't have equivalents in the JavaScript
-type system: ``duration``, ``cal::local_date``, ``cal::local_time``, and
-``cal::local_datetime``.
+type system: ``duration``, ``cal::relative_duration``, ``cal::date_duration``,
+``cal::local_date``, ``cal::local_time``, and ``cal::local_datetime``,
 
 To resolve this, each of these datatypes can be represented with an instance
 of a corresponding class, as defined in ``edgedb`` module. The driver uses
@@ -96,10 +96,18 @@ on the :ref:`Driver <edgedb-js-datatypes>` page.
 
   * - ``e.duration``
     - :js:class:`Duration`
+  * - ``e.cal.relative_duration``
+    - :js:class:`RelativeDuration`
+  * - ``e.cal.date_duration``
+    - :js:class:`DateDuration`
   * - ``e.cal.local_date``
     - :js:class:`LocalDate`
   * - ``e.cal.local_time``
     - :js:class:`LocalTime`
+  * - ``e.cal.local_datetime``
+    - :js:class:`LocalDateTime`
+  * - ``e.cal.local_datetime``
+    - :js:class:`LocalDateTime`
   * - ``e.cal.local_datetime``
     - :js:class:`LocalDateTime`
 
@@ -148,20 +156,19 @@ JSON
 JSON literals are created with the ``e.json`` function. You can pass in any
 EdgeDB-compatible data structure.
 
-.. note::
 
-  What does "EdgeDB-compatible" mean? It means any JavaScript data structure
-  with an equivalent in EdgeDB: strings, number, booleans, ``bigint``\ s,
-  ``Buffer``\ s, ``Date``\ s, and instances of EdgeDB's built-in classes:
-  (``Duration``, ``LocalDate`` ``LocalTime``, and
-  ``LocalDateTime``), and any array or object of these types. Other JavaScript
-  data structures like symbols, instances of custom classes, sets, maps, and
-  `typed arrays <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed_arrays>`_
-  are not supported.
+What does "EdgeDB-compatible" mean? It means any JavaScript data structure
+with an equivalent in EdgeDB: strings, number, booleans, ``bigint``\ s,
+``Buffer``\ s, ``Date``\ s, and instances of EdgeDB's built-in classes:
+(``LocalDate`` ``LocalTime``, ``LocalDateTime``, ``DateDuration``,
+``Duration``, and ``RelativeDuration``), and any array or object of these
+types. Other JavaScript data structures like symbols, instances of custom
+classes, sets, maps, and `typed arrays <https://developer.mozilla.org/en-US/
+docs/Web/JavaScript/Typed_arrays>`_ are not supported.
 
 .. code-block:: typescript
 
-  e.json({ name: "Billie" })
+  const query = e.json({ name: "Billie" })
   // to_json('{"name": "Billie"}')
 
   const data = e.json({
@@ -176,10 +183,11 @@ has a ``json`` type.
 
 .. code-block:: typescript
 
-  const myJSON = e.json({ numbers: [0,1,2] });
-  // to_json('{"numbers":[0,1,2]}')
+  const query = e.json({ numbers: [0,1,2] });
 
-  myJSON.numbers[0];
+  query.toEdgeQL(); // to_json((numbers := [0,1,2]))
+
+  query.numbers[0].toEdgeQL();
   // to_json('{"numbers":[0,1,2]}')['numbers'][0]
 
 .. Keep in mind that JSON expressions are represented as strings when returned from a query.
@@ -191,6 +199,13 @@ has a ``json`` type.
 ..     numbers: [1,2,3]
 ..   }).run(client)
 ..   // => '{"name": "Billie", "numbers": [1, 2, 3]}';
+
+The inferred type associated with a ``json`` expression is ``unknown``.
+
+.. code-block:: typescript
+
+  const result = await query.run(client)
+  // unknown
 
 Arrays
 ^^^^^^
@@ -313,6 +328,48 @@ empty sets are not allowed without a cast.
 
   e.cast(e.int64, e.set());
   // <std::int64>{}
+
+
+Range literals
+^^^^^^^^^^^^^^
+
+As in EdgeQL, declare range literals with the built-in ``range`` function.
+
+.. code-block:: typescript
+
+  const myRange = e.range(0, 8);
+
+  myRange.toEdgeQL();
+  // => std::range(0, 8);
+
+Ranges can be created for all numerical types, as well as ``datetime``, ``local_datetime``, and ``local_date``.
+
+.. code-block:: typescript
+
+  e.range(e.decimal('100'), e.decimal('200'));
+  e.range(Date.parse("1970-01-01"), Date.parse("2022-01-01"));
+  e.range(new LocalDate(1970, 1, 1), new LocalDate(2022, 1, 1));
+
+Supply named parameters as the first argument.
+
+.. code-block:: typescript
+
+  e.range({inc_lower: true, inc_upper: true, empty: true}, 0, 8);
+  // => std::range(0, 8, true, true);
+
+JavaScript doesn't have a native way to represent range values. Any range value returned from a query will be encoded as an instance of the :js:class:`Range` class, which is exported from the ``edgedb`` package.
+
+.. code-block:: typescript
+
+  const query = e.range(0, 8);
+  const result = await query.run(client);
+  // => Range<number>;
+
+  console.log(result.lower);       // 0
+  console.log(result.upper);       // 8
+  console.log(result.isEmpty);     // false
+  console.log(result.incLower);    // true
+  console.log(result.incUpper);    // false
 
 
 .. Modules

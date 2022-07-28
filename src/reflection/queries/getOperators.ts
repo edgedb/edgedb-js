@@ -4,6 +4,7 @@ import {StrictMap} from "../strictMap";
 import {Param, replaceNumberTypes, Typemod} from "./getFunctions";
 import {genutil, typeutil} from "../util/util";
 import {OperatorKind} from "../enums";
+import type {Version} from "../generate";
 
 export type {Typemod};
 
@@ -22,7 +23,10 @@ export type OperatorTypes = typeutil.depromisify<
   ReturnType<typeof getOperators>
 >;
 
-export const getOperators = async (cxn: Executor) => {
+export const getOperators = async (
+  cxn: Executor,
+  _params: {version: Version}
+) => {
   const operatorsJson = await cxn.queryJSON(`
     with module schema
     select Operator {

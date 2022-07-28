@@ -73,6 +73,18 @@ export class InputDataError extends ProtocolError {
   }
 }
 
+export class ParameterTypeMismatchError extends InputDataError {
+  get code(): number {
+    return 0x03_02_01_00;
+  }
+}
+
+export class StateMismatchError extends InputDataError {
+  get code(): number {
+    return 0x03_02_02_00;
+  }
+}
+
 export class ResultCardinalityMismatchError extends ProtocolError {
   get code(): number {
     return 0x03_03_00_00;
@@ -391,6 +403,12 @@ export class NumericOutOfRangeError extends InvalidValueError {
   }
 }
 
+export class AccessPolicyError extends InvalidValueError {
+  get code(): number {
+    return 0x05_01_00_03;
+  }
+}
+
 export class IntegrityError extends ExecutionError {
   get code(): number {
     return 0x05_02_00_00;
@@ -578,5 +596,11 @@ export class InvalidArgumentError extends QueryArgumentError {
 export class NoDataError extends ClientError {
   get code(): number {
     return 0xff_03_00_00;
+  }
+}
+
+export class InternalClientError extends ClientError {
+  get code(): number {
+    return 0xff_04_00_00;
   }
 }

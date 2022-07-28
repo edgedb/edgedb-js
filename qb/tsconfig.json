@@ -32,5 +32,6 @@
   },
   "include": [
     ".",
+    "../test/testUtil.ts",
   ],
 }

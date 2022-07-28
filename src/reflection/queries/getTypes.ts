@@ -1,5 +1,6 @@
 import {Executor} from "../../ifaces";
 import {Cardinality} from "../enums";
+import type {Version} from "../generate";
 import {StrictMap} from "../strictMap";
 
 export type UUID = string;
@@ -26,7 +27,13 @@ export type Backlink = Pointer & {
   stub: string;
 };
 
-export type TypeKind = "object" | "scalar" | "array" | "tuple" | "unknown";
+export type TypeKind =
+  | "object"
+  | "scalar"
+  | "array"
+  | "tuple"
+  | "range"
+  | "unknown";
 
 export type TypeProperties<T extends TypeKind> = {
   kind: T;
@@ -68,7 +75,12 @@ export type TupleType = TypeProperties<"tuple"> & {
   is_abstract: boolean;
 };
 
-export type PrimitiveType = ScalarType | ArrayType | TupleType;
+export type RangeType = TypeProperties<"range"> & {
+  range_element_id: UUID;
+  is_abstract: boolean;
+};
+
+export type PrimitiveType = ScalarType | ArrayType | TupleType | RangeType;
 
 export type Type = PrimitiveType | ObjectType;
 
@@ -88,6 +100,7 @@ const numberType: ScalarType = {
   material_id: null,
   bases: [],
 };
+
 export const typeMapping = new Map([
   [
     "00000000-0000-0000-0000-000000000103", // int16
@@ -113,8 +126,9 @@ export const typeMapping = new Map([
 
 export async function getTypes(
   cxn: Executor,
-  params?: {debug?: boolean}
+  params: {debug?: boolean; version: Version}
 ): Promise<Types> {
+  const v2Plus = params.version.major >= 2;
   const QUERY = `
     WITH
       MODULE schema,
@@ -129,12 +143,13 @@ export async function getTypes(
     SELECT Type {
       id,
       name,
-      is_abstract,
+      is_abstract := .abstract,
 
       kind := 'object' IF Type IS ObjectType ELSE
               'scalar' IF Type IS ScalarType ELSE
               'array' IF Type IS Array ELSE
               'tuple' IF Type IS Tuple ELSE
+              ${v2Plus ? `'range' IF Type IS Range ELSE` : ``}
               'unknown',
 
       [IS ScalarType].enum_values,
@@ -205,6 +220,7 @@ export async function getTypes(
         target_id := .type.id,
         name
       } ORDER BY @index ASC),
+      ${v2Plus ? `range_element_id := [IS Range].element_type.id,` : ``}
     }
     ORDER BY .name;
   `;
@@ -230,6 +246,10 @@ export async function getTypes(
         // type.bases = type.bases.map(base => ({
         //   id: typeMapping.get(base.id)?.id ?? base.id,
         // }));
+        break;
+      case "range":
+        type.range_element_id =
+          typeMapping.get(type.range_element_id)?.id ?? type.range_element_id;
         break;
       case "array":
         // type.array_element_id =

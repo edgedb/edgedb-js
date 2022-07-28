@@ -104,26 +104,107 @@ export class TransactionOptions {
   }
 }
 
+export interface SessionOptions {
+  module?: string;
+  moduleAliases?: Record<string, string>;
+  config?: Record<string, any>;
+  globals?: Record<string, any>;
+}
+
+export class Session {
+  readonly module: string;
+  readonly moduleAliases: Record<string, string>;
+  readonly config: Record<string, any>;
+  readonly globals: Record<string, any>;
+
+  constructor({
+    module = "default",
+    moduleAliases = {},
+    config = {},
+    globals = {},
+  }: SessionOptions = {}) {
+    this.module = module;
+    this.moduleAliases = moduleAliases;
+    this.config = config;
+    this.globals = globals;
+  }
+
+  withModuleAliases({module, ...aliases}: {[name: string]: string}): Session {
+    return new Session({
+      ...this,
+      module: module ?? this.module,
+      moduleAliases: {...this.moduleAliases, ...aliases},
+    });
+  }
+
+  withConfig(config: {[name: string]: any}): Session {
+    return new Session({
+      ...this,
+      config: {...this.config, ...config},
+    });
+  }
+
+  withGlobals(globals: {[name: string]: any}): Session {
+    return new Session({
+      ...this,
+      globals: {...this.globals, ...globals},
+    });
+  }
+
+  /** @internal */
+  _serialise() {
+    const state: any = {};
+    if (this.module !== "default") {
+      state.module = this.module;
+    }
+    const _aliases = Object.entries(this.moduleAliases);
+    if (_aliases.length) {
+      state.aliases = _aliases;
+    }
+    if (Object.keys(this.config).length) {
+      state.config = this.config;
+    }
+    const _globals = Object.entries(this.globals);
+    if (_globals.length) {
+      state.globals = _globals.reduce((globals, [key, val]) => {
+        globals[key.includes("::") ? key : `${this.module}::${key}`] = val;
+        return globals;
+      }, {} as {[key: string]: any});
+    }
+    return state;
+  }
+
+  static defaults(): Session {
+    return defaultSession;
+  }
+}
+
+const defaultSession = new Session();
+
 export class Options {
   readonly retryOptions: RetryOptions;
   readonly transactionOptions: TransactionOptions;
+  readonly session: Session;
 
   constructor({
     retryOptions = RetryOptions.defaults(),
     transactionOptions = TransactionOptions.defaults(),
+    session = Session.defaults(),
   }: {
     retryOptions?: RetryOptions;
     transactionOptions?: TransactionOptions;
+    session?: Session;
   } = {}) {
     this.retryOptions = retryOptions;
     this.transactionOptions = transactionOptions;
+    this.session = session;
   }
 
   withTransactionOptions(
     opt: TransactionOptions | SimpleTransactionOptions
   ): Options {
     return new Options({
-      retryOptions: this.retryOptions,
+      ...this,
       transactionOptions:
         opt instanceof TransactionOptions ? opt : new TransactionOptions(opt),
     });
@@ -131,11 +212,18 @@ export class Options {
 
   withRetryOptions(opt: RetryOptions | SimpleRetryOptions): Options {
     return new Options({
-      transactionOptions: this.transactionOptions,
+      ...this,
       retryOptions:
         opt instanceof RetryOptions
           ? opt
           : new RetryOptions(opt.attempts, opt.backoff),
+    });
+  }
+
+  withSession(opt: Session): Options {
+    return new Options({
+      ...this,
+      session: opt,
     });
   }
 

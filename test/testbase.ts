@@ -18,6 +18,13 @@
 
 import createClient, {Client, ConnectOptions} from "../src/index.node";
 
+export interface EdgeDBVersion {
+  major: number;
+  minor: number;
+  stage: string;
+  stage_no: number;
+}
+
 export const isDeno =
   typeof window !== "undefined" &&
   // @ts-ignore
@@ -50,4 +57,8 @@ export function getClient(opts: ConnectOptions = {}): Client {
 
 export function getAvailableFeatures(): Set<string> {
   return new Set(JSON.parse(process.env._JEST_EDGEDB_AVAILABLE_FEATURES!));
+}
+
+export function getEdgeDBVersion(): EdgeDBVersion {
+  return JSON.parse(process.env._JEST_EDGEDB_VERSION!);
 }
