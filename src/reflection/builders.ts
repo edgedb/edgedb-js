@@ -731,6 +731,10 @@ export class DirBuilder {
     mod.addImport({$: true}, edgedb);
     mod.addImportStar("_", "../imports", {allowFileExt: true});
 
+    if (moduleName === "std") {
+      mod.addImport({ Buffer: true }, "https://deno.land/std@0.114.0/node/buffer.ts");
+    }
+
     return mod;
   }
 
