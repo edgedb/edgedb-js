@@ -7,11 +7,12 @@ import {
 } from "https://deno.land/std@0.114.0/hash/sha256.ts";
 import path from "https://deno.land/std@0.114.0/node/path.ts";
 import * as _fs from "https://deno.land/std@0.115.0/fs/mod.ts";
+import * as fs from 'https://deno.land/std@0.115.0/node/fs/promises.ts';
 import EventEmitter from "https://deno.land/std@0.114.0/node/events.ts";
 import util from "https://deno.land/std@0.114.0/node/util.ts";
 import {iterateReader} from "https://deno.land/std@0.114.0/streams/conversion.ts";
 
-export {Buffer, path, process, util, crypto};
+export {Buffer, path, process, util, crypto, fs};
 
 export function readFileUtf8(path: string): Promise<string> {
   return Deno.readTextFile(path);
@@ -66,42 +67,6 @@ export function homeDir(): string {
 
 export function hrTime(): number {
   return performance.now();
-}
-
-// TODO: replace this with
-//       `import * as fs from "https://deno.land/std@0.95.0/node/fs.ts";`
-//       when the 'fs' compat module does not require '--unstable' flag.
-export namespace fs {
-  export function realpath(path: string): Promise<string> {
-    return Deno.realPath(path);
-  }
-
-  export function stat(path: string): Promise<Deno.FileInfo> {
-    return Deno.stat(path);
-  }
-
-  export function rmdir(
-    path: string,
-    params?: {recursive?: boolean}
-  ): Promise<void> {
-    return Deno.remove(path, params);
-  }
-  export function mkdir(
-    path: string,
-    _params?: {recursive?: boolean}
-  ): Promise<void> {
-    return _fs.ensureDir(path);
-  }
-
-  export function writeFile(path: string, contents: string): Promise<void> {
-    return Deno.writeTextFile(path, contents);
-  }
-  export function writeFileSync(path: string, contents: string): void {
-    return Deno.writeTextFileSync(path, contents);
-  }
-  export function appendFile(path: string, contents: string): Promise<void> {
-    return Deno.writeTextFile(path, contents, {append: true});
-  }
 }
 
 export async function input(message = "", _params?: {silent?: boolean}) {

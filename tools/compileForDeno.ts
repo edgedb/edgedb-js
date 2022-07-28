@@ -17,6 +17,9 @@ run({
   sourceDir: "./src",
   destDir: "./edgedb-deno",
   destEntriesToClean: ["_src", "mod.ts"],
+  sourceFilter: (path) => {
+    return !/\/syntax\//.test(path);
+  },
   pathRewriteRules: [
     { match: /^src\/index.node.ts$/, replace: "mod.ts" },
     { match: /^src\//, replace: "_src/" },
@@ -27,7 +30,25 @@ run({
       from: "src/globals.deno.ts",
     },
   ],
-});
+}).then(() => run({
+  sourceDir: "./src/syntax",
+  destDir: "./edgedb-deno",
+  pathRewriteRules: [
+    { match: /^src\//, replace: "_src/" },
+  ],
+  importRewriteRules: [
+    { match: /^edgedb$/, replace: "https://deno.land/x/edgedb/mod.ts" },
+    { match: /^\.\.\//, replace: "../" },
+    { match: /^@generated\//, replace: "../" },
+    { match: /^\.\/setImpl/, replace: "./setImpl.ts" } // this file will be implemented after codegen
+  ],
+  injectImports: [
+    {
+      imports: ["process"],
+      from: "src/globals.deno.ts",
+    },
+  ],
+}));
 
 const denoTestFiles = new Set([
   "test/testbase.ts",
@@ -104,14 +125,11 @@ async function run({
 
   for await (const entry of walk(sourceDir, { includeDirs: false })) {
     const sourcePath = normalisePath(entry.path);
-    if (entry.path.includes("syntax")) {
+    if (sourceFilter && !sourceFilter(sourcePath)) {
       console.log(`skipping ${entry.path}`);
       continue;
     }
-
-    if (!sourceFilter || sourceFilter(sourcePath)) {
-      sourceFilePathMap.set(sourcePath, resolveDestPath(sourcePath));
-    }
+    sourceFilePathMap.set(sourcePath, resolveDestPath(sourcePath));
   }
 
   for (const [sourcePath, destPath] of sourceFilePathMap) {
@@ -212,6 +230,9 @@ async function run({
     if (destPath.includes("index.shared.ts")) {
       contents = await replaceVersionNumber(contents);
     }
+    if (/__dirname/g.test(contents)) {
+      contents = contents.replaceAll(/__dirname/g, "new URL('.', import.meta.url).pathname")
+    }
 
     await Deno.writeTextFile(destPath, contents);
   }
@@ -225,10 +246,12 @@ async function run({
   }
 
   function resolveImportPath(importPath: string, sourcePath: string) {
-    // First check importRewriteRules
+   // First check importRewriteRules
     for (const rule of importRewriteRules) {
       if (rule.match.test(importPath)) {
-        return importPath.replace(rule.match, rule.replace as string);
+        const path = importPath.replace(rule.match, rule.replace as string);
+        if (!path.endsWith('.ts')) return path + '.ts';
+        return path;
       }
     }
 
