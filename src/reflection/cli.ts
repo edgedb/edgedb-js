@@ -178,18 +178,25 @@ OPTIONS:
   let currentDir = process.cwd();
   const systemRoot = path.parse(currentDir).root;
 
-  while (currentDir !== systemRoot) {
-    if (await exists(path.join(currentDir, "package.json"))) {
-      projectRoot = currentDir;
-      break;
-    }
+  // cannot find projectRoot with package.json in deno.
+  // case 1. use deno.json
+  // case 2. use edgedb.toml for finding projectRoot
+  if (options.target === 'deno') {
+    projectRoot = currentDir;
+  } else {
+    while (currentDir !== systemRoot) {
+      if (await exists(path.join(currentDir, "package.json"))) {
+        projectRoot = currentDir;
+        break;
+      }
 
-    currentDir = path.join(currentDir, "..");
-  }
-  if (!projectRoot) {
-    exitWithError(
-      "Error: no package.json found. Make sure you're inside your project directory."
-    );
+      currentDir = path.join(currentDir, "..");
+    }
+    if (!projectRoot) {
+      exitWithError(
+        "Error: no package.json found. Make sure you're inside your project directory."
+      );
+    }
   }
 
   // check for locally install edgedb
