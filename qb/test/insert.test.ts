@@ -4,7 +4,13 @@ import type {InsertShape} from "../dbschema/edgeql-js/syntax/insert";
 import e from "../dbschema/edgeql-js";
 import {$} from "edgedb";
 
-import {setupTests, teardownTests, TestData, tc} from "./setupTeardown";
+import {
+  setupTests,
+  teardownTests,
+  TestData,
+  tc,
+  version_lt,
+} from "./setupTeardown";
 
 let client: Client;
 let data: TestData;
@@ -338,4 +344,24 @@ test("empty shape insert", async () => {
   const res = await e.insert(e.Profile, {}).run(client);
 
   expect(Object.keys(res)).toEqual(["id"]);
+});
+
+test("insert custom ID", async () => {
+  if (await version_lt(client, 2)) return;
+  await e
+    .insert(e.Hero, {
+      id: "00000000-0000-0000-0000-000000000000",
+      name: "asdf",
+    })
+    .run(client);
+
+  await e
+    .delete(e.Hero, hero => ({
+      filter: e.op(
+        hero.id,
+        "=",
+        e.uuid("00000000-0000-0000-0000-000000000000")
+      ),
+    }))
+    .run(client);
 });

@@ -300,8 +300,6 @@ export type stripNonInsertables<T extends ObjectTypePointers> = {
     ? never
     : [k] extends ["__type__"]
     ? never
-    : [k] extends ["id"]
-    ? never
     : T[k];
 };
 
