@@ -33,7 +33,8 @@ interface Movie {
 
 export async function setupTests() {
   const client = createClient();
-
+  await client.execute(`configure current database
+  set allow_user_specified_id := true;`);
   await cleanupData(client);
 
   const iron_man: Hero =
