@@ -53,7 +53,6 @@ export function exitWithError(message: string): never {
   throw new Error();
 }
 
-
 export type Target = "ts" | "esm" | "cjs" | "mts" | "deno";
 
 export type Version = {
