@@ -181,7 +181,7 @@ OPTIONS:
   // cannot find projectRoot with package.json in deno.
   // case 1. use deno.json
   // case 2. use edgedb.toml for finding projectRoot
-  if (options.target === 'deno') {
+  if (options.target === "deno") {
     projectRoot = currentDir;
   } else {
     while (currentDir !== systemRoot) {

@@ -732,7 +732,10 @@ export class DirBuilder {
     mod.addImportStar("_", "../imports", {allowFileExt: true});
 
     if (moduleName === "std") {
-      mod.addImport({ Buffer: true }, "https://deno.land/std@0.114.0/node/buffer.ts");
+      mod.addImport(
+        {Buffer: true},
+        "https://deno.land/std@0.114.0/node/buffer.ts"
+      );
     }
 
     return mod;
