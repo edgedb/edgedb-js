@@ -53,7 +53,6 @@ export function exitWithError(message: string): never {
   throw new Error();
 }
 
-
 export type Target = "ts" | "esm" | "cjs" | "mts" | "deno";
 
 export type Version = {
@@ -420,7 +419,6 @@ export async function generateQB(params: {
           }
         );
     }
-    fileName === "index.ts" && console.log(contents);
 
     const outputPath = path.join(syntaxOutDir, fileName);
     await fs.writeFile(outputPath, contents);

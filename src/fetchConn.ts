@@ -155,7 +155,6 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
       typeof config.address === "string"
         ? config.address
         : `http://${config.address[0]}:${config.address[1]}`
-
     }/db/${config.database}`;
   }
 }
