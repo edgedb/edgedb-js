@@ -109,6 +109,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
 
   for (const [funcName, _funcDefs] of funcops.entries()) {
     const {mod, name} = splitName(funcName);
+
     const code = dir.getModule(mod, isDeno);
 
     code.registerRef(funcName, _funcDefs[0].id);
@@ -131,6 +132,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
     );
 
     code.registerRef(funcName, funcDefs[0].id);
+
     code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);
 
     const overloadsBuf = new CodeBuffer();
