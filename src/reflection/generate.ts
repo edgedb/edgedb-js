@@ -419,7 +419,6 @@ export async function generateQB(params: {
           }
         );
     }
-    fileName === "index.ts" && console.log(contents);
 
     const outputPath = path.join(syntaxOutDir, fileName);
     await fs.writeFile(outputPath, contents);
