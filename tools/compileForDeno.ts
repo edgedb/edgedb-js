@@ -44,8 +44,8 @@ run({
   ],
   injectImports: [
     {
-      imports: ["process"],
-      from: "src/globals.deno.ts",
+      imports: ["Buffer"],
+      from: "https://deno.land/std@0.114.0/node/buffer.ts",
     },
   ],
 }));
@@ -182,11 +182,13 @@ async function run({
         if (neededImports.length) {
           const importDecls = neededImports.map((neededImport) => {
             const imports = neededImport.imports.join(", ");
-            const importPath = resolveImportPath(
-              relative(dirname(sourcePath), neededImport.from),
-              sourcePath,
-            );
-
+            // no need to resolve path if it is import from url
+            const importPath = neededImport.from.startsWith("https://")
+              ? neededImport.from
+              : resolveImportPath(
+                relative(dirname(sourcePath), neededImport.from),
+                sourcePath,
+              );
             return `import {${imports}} from "${importPath}";`;
           });
 

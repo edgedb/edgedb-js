@@ -419,10 +419,6 @@ export async function generateQB(params: {
             return output;
           }
         );
-      // shim the buffer in syntax/select
-      if (fileName === "select.ts") {
-        contents = `import { Buffer } from "https://deno.land/std@0.147.0/node/buffer.ts";\n${contents}`;
-      }
     }
     fileName === "index.ts" && console.log(contents);
 
