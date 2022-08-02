@@ -131,9 +131,6 @@ export function generateFuncopTypes<F extends FuncopDef>(
       implicitCastableRootTypes
     );
 
-    code.registerRef(funcName, funcDefs[0].id);
-    code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);
-
     const overloadsBuf = new CodeBuffer();
 
     let overloadDefIndex = 1;
