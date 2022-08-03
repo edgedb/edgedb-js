@@ -148,7 +148,7 @@ export async function generateQB(params: {
     });
     index.addExportStar("./types", {
       allowFileExt: true,
-      modes: ["ts", "dts"],
+      modes: ["ts", "dts", "js"],
     });
     index.addImport({$: true, _edgedbJsVersion: true}, "edgedb");
     index.addExportFrom({createClient: true}, "edgedb");
