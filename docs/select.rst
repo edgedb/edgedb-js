@@ -212,6 +212,21 @@ Filters on links
     }),
     filter: e.op(movie.title, '=', 'Iron Man'),
   }));
+  
+  
+Filters on link properties
+----------------
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => ({
+    title: true,
+    actors: actor => ({
+      name: true,
+      filter: e.op(actor['@character_name'], 'ilike', 'Tony Stark'),
+    }),
+    filter: e.op(movie.title, '=', 'Iron Man'),
+  }));
 
 
 Ordering
