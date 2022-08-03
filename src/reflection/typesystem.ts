@@ -764,6 +764,7 @@ export type AnyTupleType = TupleType | NamedTupleType;
 
 export type ParamType =
   | ScalarType
+  | EnumType
   | ArrayType<
       | ScalarType
       | TupleType<typeutil.tupleOf<ParamType>>
