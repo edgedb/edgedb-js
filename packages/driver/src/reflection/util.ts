@@ -8,7 +8,10 @@ export namespace util {
     const parts = name.split("::");
     return {
       mod: parts.slice(0, -1).join("::"),
-      name: parts[parts.length - 1]
+      name: name
+        .split(" | ")
+        .map(n => n.split("::").pop()!)
+        .join(" | ")
     };
   }
 

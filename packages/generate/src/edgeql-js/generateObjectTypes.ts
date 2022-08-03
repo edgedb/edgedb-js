@@ -263,9 +263,11 @@ export const generateObjectTypes = (params: GeneratorParams) => {
 
     // const {module: plainTypeModule} = getPlainTypeModule(type.name);
 
-    // plainTypeModule.types.set(name, getTypeName(type.name, true));
+    // if (!isUnionType) {
+    //   plainTypeModule.types.set(name, getTypeName(type.name, true));
+    // }
     // plainTypeModule.buf.writeln([
-    //   t`export interface ${getTypeName(type.name)}${
+    //   t`${!isUnionType ? "export " : ""}interface ${getTypeName(type.name)}${
     //     type.bases.length
     //       ? ` extends ${type.bases
     //           .map(({id}) => {
@@ -278,19 +280,20 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     //     type.pointers.length
     //       ? `{\n${type.pointers
     //           .map(pointer => {
-    //             const isOptional = pointer.card === $.Cardinality.AtMostOne;
+    //             const isOptional =
+    //               pointer.real_cardinality === Cardinality.AtMostOne;
     //             return `  ${quote(pointer.name)}${
     //               isOptional ? "?" : ""
     //             }: ${getTSType(pointer)}${
-    //               pointer.card === $.Cardinality.Many ||
-    //               pointer.card === $.Cardinality.AtLeastOne
+    //               pointer.real_cardinality === Cardinality.Many ||
+    //               pointer.real_cardinality === Cardinality.AtLeastOne
     //                 ? "[]"
     //                 : ""
     //             }${isOptional ? " | null" : ""};`;
     //           })
     //           .join("\n")}\n}`
     //       : "{}"
-    //   }\n`
+    //   }\n`,
     // ]);
 
     /////////
