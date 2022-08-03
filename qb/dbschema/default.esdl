@@ -36,7 +36,7 @@ module default {
     link nemesis -> Hero;
   }
 
-  type Hero extending Person {
+type Hero extending Person {
     property secret_identity -> str;
     property number_of_movies -> int64;
     multi link villains := .<nemesis[IS Villain];

@@ -1,4 +1,4 @@
-import {CodeBuffer, CodeFragment, dts, r, t, ts} from "../builders";
+import {CodeBuffer, CodeFragment, dts, js, r, t, ts} from "../builders";
 import {Cardinality} from "../enums";
 import type {GeneratorParams} from "../generate";
 import * as introspect from "../queries/getTypes";
@@ -202,6 +202,27 @@ export const generateObjectTypes = (params: GeneratorParams) => {
           ]),
           [t`}`]
         );
+
+        if (enumMod === "default") {
+          module.buf.writeln(
+            [js`const ${getEnumTypeName(type.name)} = {`],
+            ...type.enum_values.map(val => [
+              js`  ${makePlainIdent(val)}: ${quote(val)},`,
+            ]),
+            [js`}`]
+          );
+          plainTypesCode.addExport(getEnumTypeName(type.name), {
+            modes: ["js"],
+          });
+        } else {
+          module.buf.writeln(
+            [js`"${getEnumTypeName(type.name)}": {`],
+            ...type.enum_values.map(val => [
+              js`  ${makePlainIdent(val)}: ${quote(val)},`,
+            ]),
+            [js`},`]
+          );
+        }
       }
       continue;
     }
@@ -445,8 +466,11 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       plainTypesCode.writeBuf(module.buf);
     } else {
       plainTypesCode.writeln([t`export namespace ${module.internalName} {`]);
+      plainTypesCode.writeln([js`const ${module.internalName} = {`]);
       plainTypesCode.indented(() => plainTypesCode.writeBuf(module.buf));
       plainTypesCode.writeln([t`}`]);
+      plainTypesCode.writeln([js`}`]);
+      plainTypesCode.addExport(module.internalName, {modes: ["js"]});
     }
 
     plainTypesExportBuf.writeln([

@@ -2,20 +2,20 @@
 
 import {setupTests} from "./test/setupTeardown";
 import e from "./dbschema/edgeql-js";
+import {Genre, sys, schema} from "./dbschema/edgeql-js";
 
 async function run() {
   const {client} = await setupTests();
   console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
 
-  const insertHero = e.insert(e.Hero, {
-    id: "00000000-0000-0000-0000-000000000000",
-    name: "asdf",
-  });
-  console.log(insertHero.toEdgeQL());
-  await insertHero.run(client);
+  console.log(Genre);
+  console.log(sys.VersionStage.beta);
+  console.log(schema.Cardinality.One);
 
-  const query = e.delete(e.Hero, hero => ({
-    filter: e.op(hero.id, "=", e.uuid("00000000-0000-0000-0000-000000000000")),
+  // console.log(Genre.Action);
+  // console.log(Genre.RomCom);
+  const query = e.select(e.Hero, hero => ({
+    filter: e.op(hero.name, "=", "Iron Man"),
   }));
   console.log(query.toEdgeQL());
   const result = await query.run(client);
