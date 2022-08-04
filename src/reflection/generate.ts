@@ -57,6 +57,22 @@ export type Version = {
   major: number;
   minor: number;
 };
+
+async function readDirRecursive(dir: string): Promise<string[]> {
+  try {
+    await fs.access(dir);
+  } catch (err) {
+    return [];
+  }
+  const dirents = await fs.readdir(dir, {withFileTypes: true});
+  const files = await Promise.all(
+    dirents.map(dirent => {
+      const res = path.resolve(dir, dirent.name);
+      return dirent.isDirectory() ? readDirRecursive(res) : res;
+    })
+  );
+  return Array.prototype.concat(...files);
+}
 export async function generateQB(params: {
   outputDir: string;
   connectionConfig: ConnectConfig;
@@ -285,12 +301,16 @@ export async function generateQB(params: {
     await cxn.close();
   }
 
+  const initialFiles = new Set(await readDirRecursive(outputDir));
+  const written = new Set<string>();
+
   if (target === "ts") {
     await dir.write(outputDir, {
       mode: "ts",
       moduleKind: "esm",
       fileExtension: ".ts",
       moduleExtension: "",
+      written,
     });
   } else if (target === "mts") {
     await dir.write(outputDir, {
@@ -298,6 +318,7 @@ export async function generateQB(params: {
       moduleKind: "esm",
       fileExtension: ".mts",
       moduleExtension: ".mjs",
+      written,
     });
   } else if (target === "cjs") {
     await dir.write(outputDir, {
@@ -305,12 +326,14 @@ export async function generateQB(params: {
       moduleKind: "cjs",
       fileExtension: ".js",
       moduleExtension: "",
+      written,
     });
     await dir.write(outputDir, {
       mode: "dts",
       moduleKind: "esm",
       fileExtension: ".d.ts",
       moduleExtension: "",
+      written,
     });
   } else if (target === "esm") {
     await dir.write(outputDir, {
@@ -318,12 +341,14 @@ export async function generateQB(params: {
       moduleKind: "esm",
       fileExtension: ".mjs",
       moduleExtension: ".mjs",
+      written,
     });
     await dir.write(outputDir, {
       mode: "dts",
       moduleKind: "esm",
       fileExtension: ".d.ts",
       moduleExtension: "",
+      written,
     });
   }
 
@@ -385,11 +410,25 @@ export async function generateQB(params: {
     }
 
     const outputPath = path.join(syntaxOutDir, fileName);
-    await fs.writeFile(outputPath, contents);
+    written.add(outputPath);
+    const oldContents = await readFileUtf8(outputPath);
+    if (oldContents !== contents) {
+      await fs.writeFile(outputPath, contents);
+    }
   }
 
+  const configPath = path.join(outputDir, "config.json");
   await fs.writeFile(
-    path.join(outputDir, "config.json"),
+    configPath,
     `${configFileHeader}\n${JSON.stringify({target})}\n`
   );
+  written.add(configPath);
+
+  // delete all vestigial files
+  for (const file of initialFiles) {
+    if (written.has(file)) {
+      continue;
+    }
+    await fs.rm(file);
+  }
 }

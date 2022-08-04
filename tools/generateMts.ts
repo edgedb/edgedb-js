@@ -15,7 +15,8 @@ async function run() {
 
     // generete .mts
     const mtsContents = await fs.readFile(file, "utf8");
-    const mtsModified = mtsContents; //.replace(importRegex, `from ".$1.mjs";`);
+    const mtsModified = mtsContents;
+    // .replace(importRegex, `from ".$1.mjs";`);
     const mtsPath = path.join(
       __dirname,
       "..",
