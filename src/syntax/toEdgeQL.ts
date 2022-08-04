@@ -1022,10 +1022,6 @@ function renderEdgeQL(
       -1
     )} ${clause.join("")})`;
   } else if (expr.__kind__ === ExpressionKind.Group) {
-    function isGroupingSet(arg: any): arg is GroupingSet {
-      return arg.__kind__ === "groupingset";
-    }
-
     const groupingSet = expr.__modifiers__.by as any as GroupingSet;
     const elementsShape =
       expr.__element__.__shape__.elements.__element__.__shape__;
@@ -1045,26 +1041,6 @@ function renderEdgeQL(
       ),
     ];
     groupStatement.push(`USING\n${combinedBlock.join(",\n")}`);
-
-    // recursive renderer
-    function renderGroupingSet(set: GroupingSet): string {
-      const contents = Object.entries(set.__elements__)
-        .map(([k, v]) => {
-          return isGroupingSet(v) ? renderGroupingSet(v) : k;
-        })
-        .join(", ");
-      if (set.__settype__ === "tuple") {
-        return `(${contents})`;
-      } else if (set.__settype__ === "set") {
-        return `{${contents}}`;
-      } else if (set.__settype__ === "cube") {
-        return `cube(${contents})`;
-      } else if (set.__settype__ === "rollup") {
-        return `rollup(${contents})`;
-      } else {
-        throw new Error(`Unrecognized set type: "${set.__settype__}"`);
-      }
-    }
 
     let by = renderGroupingSet(groupingSet).trim();
     if (by[0] === "(" && by[by.length - 1] === ")") {
@@ -1193,6 +1169,30 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n))`;
       expr,
       new Error(`Unrecognized expression kind: "${(expr as any).__kind__}"`)
     );
+  }
+}
+
+function isGroupingSet(arg: any): arg is GroupingSet {
+  return arg.__kind__ === "groupingset";
+}
+
+// recursive renderer
+function renderGroupingSet(set: GroupingSet): string {
+  const contents = Object.entries(set.__elements__)
+    .map(([k, v]) => {
+      return isGroupingSet(v) ? renderGroupingSet(v) : k;
+    })
+    .join(", ");
+  if (set.__settype__ === "tuple") {
+    return `(${contents})`;
+  } else if (set.__settype__ === "set") {
+    return `{${contents}}`;
+  } else if (set.__settype__ === "cube") {
+    return `cube(${contents})`;
+  } else if (set.__settype__ === "rollup") {
+    return `rollup(${contents})`;
+  } else {
+    throw new Error(`Unrecognized set type: "${set.__settype__}"`);
   }
 }
 

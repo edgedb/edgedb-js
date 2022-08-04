@@ -11,7 +11,7 @@
       "es2021",
       "esnext",
     ],
-    "target": "ES2017",
+    "target": "es5",
     "module": "commonjs",
     "esModuleInterop": true,
     "moduleResolution": "node",

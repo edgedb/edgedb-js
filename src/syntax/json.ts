@@ -64,6 +64,9 @@ function jsonStringify(type: ParamType, val: any): string {
         return JSON.stringify(val);
     }
   }
+  if (type.__kind__ === TypeKind.enum) {
+    return JSON.stringify(val);
+  }
   throw new Error(`Invalid param type: ${(type as any).__kind__}`);
 }
 
