@@ -182,7 +182,17 @@ OPTIONS:
   // case 1. use deno.json
   // case 2. use edgedb.toml for finding projectRoot
   if (options.target === "deno") {
-    projectRoot = currentDir;
+    // projectRoot = currentDir;
+    const {getRoot} = await import(
+      "https://deno.land/x/find_root@v0.2.1/mod.ts"
+    );
+    const hasDenoJson = await getRoot("deno.json", currentDir);
+    if (hasDenoJson.isErr()) {
+      exitWithError(
+        "Error: no deno.json found. Make sure you're inside your project directory."
+      );
+    }
+    currentDir = hasDenoJson.value.inDir;
   } else {
     while (currentDir !== systemRoot) {
       if (await exists(path.join(currentDir, "package.json"))) {
