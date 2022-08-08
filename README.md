@@ -19,7 +19,7 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://www.edgedb.com">Website</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://www.edgedb.com/docs/clients/01_js/index">Docs</a>
+  <a href="https://www.edgedb.com/docs/clients/js/index">Docs</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://discord.gg/umUueND6ag">Discord</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
@@ -152,7 +152,7 @@ yarn add edgedb         # yarn users
 ## Basic usage
 
 > The examples below demonstrate only the most fundamental use cases for this
-> library. **[Go to the complete documentation site. >](https://www.edgedb.com/docs/clients/01_js/index)**
+> library. **[Go to the complete documentation site. >](https://www.edgedb.com/docs/clients/js/index)**
 
 ### Create a client
 
@@ -242,7 +242,7 @@ $ npx edgeql-js
 This will generate an EdgeQL query builder into the `"./dbschema/edgeql-js`
 directory, as defined relative to your project root.
 
-For details on using the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/01_js/generation). Below is a simple
+For details on using the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/js/generation). Below is a simple
 `select` query as an example.
 
 ```ts
@@ -263,7 +263,7 @@ result.actors[0].name; // => Timothee Chalamet
 ```
 
 For details on using the query builder, refer to the full [Query builder docs]
-(https://www.edgedb.com/docs/clients/01_js/querybuilder).
+(https://www.edgedb.com/docs/clients/js/querybuilder).
 
 ## Contribute
 
