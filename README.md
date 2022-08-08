@@ -137,9 +137,9 @@ npm install edgedb@latest
 ### Requirements
 
 - Node.js 12+
-- _TypeScript only_
-  - TypeScript 4.4+
-  - `yarn add @types/node`
+- For TypeScript users:
+  - TypeScript 4.4+ is required
+  - `yarn add @types/node --dev`
 
 ### Installation
 
