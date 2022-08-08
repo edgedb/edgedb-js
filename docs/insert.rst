@@ -12,7 +12,7 @@ Insert new data with ``e.insert``.
     release_year: e.int64(2021)
   });
 
-For convenience, the second argument ``e.insert`` function can also accept
+For convenience, the second argument of ``e.insert`` function can also accept
 plain JS data.
 
 .. code-block:: typescript
