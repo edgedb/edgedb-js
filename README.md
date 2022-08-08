@@ -238,7 +238,7 @@ you haven't already), then run the following command:
 $ npx edgeql-js
 ```
 
-This will generate an EdgeQL query builder into the `"./dbschema/edgeql-js`
+This will generate an EdgeQL query builder into the `./dbschema/edgeql-js`
 directory, as defined relative to your project root.
 
 For details on using the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/js/generation). Below is a simple
