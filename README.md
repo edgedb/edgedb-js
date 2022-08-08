@@ -254,8 +254,8 @@ const query = e.select(e.Movie, movie => ({
   id: true,
   title: true,
   actors: { name: true },
-  num_actors: e.count(movie.actors)
-  filter: e.op(movie.title, '=', 'Dune')
+  num_actors: e.count(movie.actors),
+  filter: e.op(movie.title, '=', 'Dune'),
 }));
 
 const result = await query.run(client);
