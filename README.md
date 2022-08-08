@@ -231,10 +231,10 @@ Instead of writing queries as strings, you can use this package to generate a
 _query builder_. The query builder lets you write queries in a code-first way
 and automatically infers the return type of your queries.
 
-To generate the query builder, install the `edgedb`, initialize a project (if
+To generate the query builder, install the `edgedb` package, initialize a project (if
 you haven't already), then run the following command:
 
-```sh
+```bash
 $ npx edgeql-js
 ```
 
