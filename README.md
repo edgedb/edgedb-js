@@ -107,14 +107,13 @@ npm install edgedb@latest
 - Support for the `group` statement. [Docs](https://www.edgedb.com/docs/clients/js/group)
 
   ```ts
-  e.group(e.Movie, movie => {
-    return {
+  e.group(e.Movie, movie => ({
       title: true,
       actors: {name: true},
       num_actors: e.count(movie.characters),
       by: {release_year: movie.release_year},
     };
-  });
+  }));
   /* [
     {
       key: {release_year: 2008},
