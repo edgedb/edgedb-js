@@ -82,7 +82,7 @@ npm install edgedb@latest
 
 #### New features
 
-- Added the `.withGlobals` method the `Client` for setting [global variables](/docs/datamodel/globals)
+- Added the `.withGlobals` method the `Client` for setting [global variables](https://www.edgedb.com/docs/datamodel/globals)
 
   ```ts
   import {createClient} from "edgedb";
@@ -104,7 +104,7 @@ npm install edgedb@latest
   await query.run(client);
   ```
 
-- Support for the `group` statement. [Docs](/docs/clients/js/group)
+- Support for the `group` statement. [Docs](https://www.edgedb.com/docs/clients/js/group)
 
   ```ts
   e.group(e.Movie, movie => {
@@ -133,7 +133,7 @@ npm install edgedb@latest
   ] */
   ```
 
-- Support for [range types](/docs/datamodel/primitives#ranges) and [`DateDuration`](/docs/stdlib/datetime#type::cal::date_duration) values
+- Support for [range types](https://www.edgedb.com/docs/datamodel/primitives#ranges-new) and [`DateDuration`](https://www.edgedb.com/docs/stdlib/datetime#type::cal::date_duration) values
 
 ### Requirements
 
