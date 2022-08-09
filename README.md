@@ -104,7 +104,7 @@ npm install edgedb@latest
   await query.run(client);
   ```
 
-- Support for the `group` statement. [Docs](https://www.edgedb.com/docs/clients/js/group)
+- Support for the [group statement](https://www.edgedb.com/docs/clients/js/group)
 
   ```ts
   e.group(e.Movie, movie => ({
