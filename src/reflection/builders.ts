@@ -780,15 +780,7 @@ export class DirBuilder {
       });
       params.written.add(filePath);
       if (oldContents !== newContents) {
-        await fs.writeFile(
-          filePath,
-          builder.render({
-            mode: params.mode,
-            moduleKind: params.moduleKind,
-            moduleExtension: params.moduleExtension,
-            forceDefaultExport,
-          })
-        );
+        await fs.writeFile(filePath, newContents);
       }
     }
   }
