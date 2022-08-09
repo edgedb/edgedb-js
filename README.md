@@ -82,7 +82,7 @@ npm install edgedb@latest
 
 #### New features
 
-- Added the `.withGlobals` method to the `Client` for setting [global variables](https://www.edgedb.com/docs/datamodel/globals)
+- Added the `.withGlobals` method to the `Client` for setting [global variables](https://www.edgedb.com/docs/datamodel/globals).
 
   ```ts
   import {createClient} from "edgedb";
@@ -93,7 +93,7 @@ npm install edgedb@latest
   client.query(`select User { email } filter .id = global current_user;`);
   ```
 
-- Support for globals in the query builder
+- Support for globals in the query builder.
 
   ```ts
   const query = e.select(e.User, user => ({
@@ -104,7 +104,7 @@ npm install edgedb@latest
   await query.run(client);
   ```
 
-- Support for the [group statement](https://www.edgedb.com/docs/clients/js/group)
+- Support for the [group statement](https://www.edgedb.com/docs/clients/js/group).
 
   ```ts
   e.group(e.Movie, movie => ({
@@ -131,7 +131,7 @@ npm install edgedb@latest
   ] */
   ```
 
-- Support for [range types](https://www.edgedb.com/docs/datamodel/primitives#ranges-new) and [`DateDuration`](https://www.edgedb.com/docs/stdlib/datetime#type::cal::date_duration) values
+- Support for [range types](https://www.edgedb.com/docs/datamodel/primitives#ranges-new) and [`DateDuration`](https://www.edgedb.com/docs/stdlib/datetime#type::cal::date_duration) values.
 
 ### Requirements
 
