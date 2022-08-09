@@ -112,7 +112,6 @@ npm install edgedb@latest
       actors: {name: true},
       num_actors: e.count(movie.characters),
       by: {release_year: movie.release_year},
-    };
   }));
   /* [
     {
