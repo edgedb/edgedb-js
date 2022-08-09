@@ -260,8 +260,7 @@ const result = await query.run(client);
 result.actors[0].name; // => Timothee Chalamet
 ```
 
-For details on using the query builder, refer to the full [Query builder docs]
-(https://www.edgedb.com/docs/clients/js/querybuilder).
+For details on using the query builder, refer to the full [query builder docs](https://www.edgedb.com/docs/clients/js/querybuilder).
 
 ## Contribute
 
