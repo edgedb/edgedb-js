@@ -82,7 +82,7 @@ npm install edgedb@latest
 
 #### New features
 
-- Added the `.withGlobals` method the `Client` for setting [global variables](https://www.edgedb.com/docs/datamodel/globals)
+- Added the `.withGlobals` method to the `Client` for setting [global variables](https://www.edgedb.com/docs/datamodel/globals)
 
   ```ts
   import {createClient} from "edgedb";
