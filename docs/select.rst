@@ -212,10 +212,10 @@ Filters on links
     }),
     filter: e.op(movie.title, '=', 'Iron Man'),
   }));
-  
-  
+
+
 Filters on link properties
-----------------
+--------------------------
 
 .. code-block:: typescript
 
