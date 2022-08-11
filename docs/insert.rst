@@ -74,7 +74,7 @@ on ``insert`` expressions).
 
 In the simplest case, adding ``.unlessConflict`` (no arguments) will prevent
 EdgeDB from throwing an error if the insertion would violate an exclusivity
-contstraint. Instead, the query would return the pre-existing object.
+contstraint. Instead, the query returns an empty set (``null``).
 
 .. code-block:: typescript
 
@@ -82,9 +82,10 @@ contstraint. Instead, the query would return the pre-existing object.
     title: "Spider-Man: No Way Home",
     release_year: 2021
   }).unlessConflict();
+  // => null
 
 
-To specify an ``on`` clause:
+Provide an ``on`` clause to "catch" conflicts only on a specific property/link.
 
 .. code-block:: typescript
 
@@ -96,7 +97,21 @@ To specify an ``on`` clause:
   }));
 
 
-To specify an ``on...else`` clause:
+You can also provide an ``else`` expression which will be executed and returned in case of a conflict. You must specify an ``on`` clause in order to use ``else``.
+
+The following query simply returns the pre-existing (conflicting) object.
+
+.. code-block:: typescript
+
+  e.insert(e.Movie, {
+    title: "Spider-Man: Homecoming",
+    release_year: 2021
+  }).unlessConflict(movie => ({
+    on: movie.title,
+    else: movie
+  }));
+
+Or you can perform an upsert operation with an ``e.update`` in the ``else``.
 
 .. code-block:: typescript
 
