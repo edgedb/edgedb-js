@@ -82,7 +82,7 @@ npm install edgedb@latest
 
 #### New features
 
-- Added the `.withGlobals` method the `Client` for setting [global variables](https://www.edgedb.com/docs/datamodel/globals)
+- Added the `.withGlobals` method to the `Client` for setting [global variables](https://www.edgedb.com/docs/datamodel/globals).
 
   ```ts
   import {createClient} from "edgedb";
@@ -93,7 +93,7 @@ npm install edgedb@latest
   client.query(`select User { email } filter .id = global current_user;`);
   ```
 
-- Support for globals in the query builder
+- Support for globals in the query builder.
 
   ```ts
   const query = e.select(e.User, user => ({
@@ -104,7 +104,7 @@ npm install edgedb@latest
   await query.run(client);
   ```
 
-- Support for the `group` statement. [Docs](https://www.edgedb.com/docs/clients/js/group)
+- Support for the [group statement](https://www.edgedb.com/docs/clients/js/group).
 
   ```ts
   e.group(e.Movie, movie => ({
@@ -112,7 +112,6 @@ npm install edgedb@latest
       actors: {name: true},
       num_actors: e.count(movie.characters),
       by: {release_year: movie.release_year},
-    };
   }));
   /* [
     {
@@ -132,7 +131,7 @@ npm install edgedb@latest
   ] */
   ```
 
-- Support for [range types](https://www.edgedb.com/docs/datamodel/primitives#ranges-new) and [`DateDuration`](https://www.edgedb.com/docs/stdlib/datetime#type::cal::date_duration) values
+- Support for [range types](https://www.edgedb.com/docs/datamodel/primitives#ranges-new) and [`DateDuration`](https://www.edgedb.com/docs/stdlib/datetime#type::cal::date_duration) values.
 
 ### Requirements
 
@@ -241,7 +240,7 @@ $ npx edgeql-js
 This will generate an EdgeQL query builder into the `./dbschema/edgeql-js`
 directory, as defined relative to your project root.
 
-For details on using the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/js/generation). Below is a simple
+For details on generating the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/js/generation). Below is a simple
 `select` query as an example.
 
 ```ts
@@ -261,8 +260,7 @@ const result = await query.run(client);
 result.actors[0].name; // => Timothee Chalamet
 ```
 
-For details on using the query builder, refer to the full [Query builder docs]
-(https://www.edgedb.com/docs/clients/js/querybuilder).
+For details on using the query builder, refer to the full [query builder docs](https://www.edgedb.com/docs/clients/js/querybuilder).
 
 ## Contribute
 
