@@ -109,9 +109,9 @@ jobs:
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.
-  regression-tests:
-    name: "Regression Tests"
-    needs: [test]
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo OK
+  # regression-tests:
+  #   name: "Regression Tests"
+  #   needs: [test]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: echo OK
