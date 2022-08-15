@@ -575,6 +575,12 @@ export type pointersToObjectType<P extends ObjectTypePointers> = ObjectType<
   P,
   {}
 >;
+
+type linkDescToShape<L extends LinkDesc> = objectTypeToSelectShape<
+  L["target"]
+> &
+  objectTypeToSelectShape<pointersToObjectType<L["properties"]>> &
+  SelectModifiers;
 export type linkDescToSelectElement<L extends LinkDesc> =
   | boolean
   // | pointerToCastableExpression<Shape[k]>
@@ -582,14 +588,10 @@ export type linkDescToSelectElement<L extends LinkDesc> =
       anonymizeObject<L["target"]>,
       cardinalityUtil.assignable<L["cardinality"]>
     >
-  | (objectTypeToSelectShape<L["target"]> &
-      objectTypeToSelectShape<pointersToObjectType<L["properties"]>> &
-      SelectModifiers)
+  | linkDescToShape<L>
   | ((
       scope: $scopify<L["target"]> & linkDescToLinkProps<L>
-    ) => objectTypeToSelectShape<L["target"]> &
-      objectTypeToSelectShape<pointersToObjectType<L["properties"]>> &
-      SelectModifiers);
+    ) => linkDescToShape<L>);
 
 // object types -> pointers
 // pointers -> links
