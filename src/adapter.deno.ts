@@ -14,18 +14,28 @@ import {iterateReader} from "https://deno.land/std@0.114.0/streams/conversion.ts
 
 export {Buffer, path, process, util, crypto};
 
-export function readFileUtf8(path: string): Promise<string> {
-  return Deno.readTextFile(path);
+export async function readFileUtf8(path: string): Promise<string> {
+  try {
+    return await Deno.readTextFile(path);
+  } catch (_err: unknown) {
+    return Promise.resolve("");
+  }
 }
 
-export async function readDir(pathString: string) {
-  const files: string[] = [];
-  for await (const entry of Deno.readDir(pathString)) {
-    files.push(entry.name);
+export async function readDir(path: string) {
+  try {
+    const files: string[] = [];
+    for await (const entry of Deno.readDir(path)) {
+      files.push(entry.name);
+    }
+    return files;
+  } catch {
+    return [];
   }
-  return files;
 }
+
 export async function walk(path: string) {
+  await _fs.ensureDir(path);
   const entries = _fs.walk(path);
   const files: string[] = [];
   for await (const e of entries) {
