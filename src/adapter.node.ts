@@ -21,6 +21,22 @@ export async function readDir(pathString: string) {
   return fs.readdir(pathString);
 }
 
+export async function walk(dir: string): Promise<string[]> {
+  try {
+    await fs.access(dir);
+  } catch (err) {
+    return [];
+  }
+  const dirents = await fs.readdir(dir, {withFileTypes: true});
+  const files = await Promise.all(
+    dirents.map(dirent => {
+      const res = path.resolve(dir, dirent.name);
+      return dirent.isDirectory() ? walk(res) : res;
+    })
+  );
+  return Array.prototype.concat(...files);
+}
+
 export async function exists(filepath: string): Promise<boolean> {
   try {
     await fs.access(filepath);

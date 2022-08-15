@@ -6,6 +6,7 @@ import {
   exit,
   srcDir,
   readDir,
+  walk,
 } from "../adapter.node";
 
 import {DirBuilder, dts, r, t} from "./builders";
@@ -58,21 +59,6 @@ export type Version = {
   minor: number;
 };
 
-async function readDirRecursive(dir: string): Promise<string[]> {
-  try {
-    await fs.access(dir);
-  } catch (err) {
-    return [];
-  }
-  const dirents = await fs.readdir(dir, {withFileTypes: true});
-  const files = await Promise.all(
-    dirents.map(dirent => {
-      const res = path.resolve(dir, dirent.name);
-      return dirent.isDirectory() ? readDirRecursive(res) : res;
-    })
-  );
-  return Array.prototype.concat(...files);
-}
 export async function generateQB(params: {
   outputDir: string;
   connectionConfig: ConnectConfig;
@@ -301,7 +287,7 @@ export async function generateQB(params: {
     await cxn.close();
   }
 
-  const initialFiles = new Set(await readDirRecursive(outputDir));
+  const initialFiles = new Set(await walk(outputDir));
   const written = new Set<string>();
 
   if (target === "ts") {

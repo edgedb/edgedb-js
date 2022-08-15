@@ -25,6 +25,16 @@ export async function readDir(pathString: string) {
   }
   return files;
 }
+export async function walk(path: string) {
+  const entries = _fs.walk(path);
+  const files: string[] = [];
+  for await (const e of entries) {
+    if (e.isFile) {
+      files.push(e.path);
+    }
+  }
+  return files;
+}
 
 export async function exists(fn: string | URL): Promise<boolean> {
   fn = fn instanceof URL ? path.fromFileUrl(fn) : fn;
@@ -80,16 +90,33 @@ export function hrTime(): number {
 // TODO: replace this with
 //       `import * as fs from "https://deno.land/std@0.95.0/node/fs.ts";`
 //       when the 'fs' compat module does not require '--unstable' flag.
+
+async function toArray(iter: AsyncIterable<unknown>) {
+  const arr = [];
+  for await (const i of iter) arr.push(i);
+  return arr;
+}
+
+// deno-lint-ignore-file
 export namespace fs {
   export function realpath(path: string): Promise<string> {
     return Deno.realPath(path);
+  }
+
+  export async function access(path: string) {
+    return Deno.stat(path);
+  }
+
+  export async function readdir(path: string) {
+    const dirContents = Deno.readDir(path);
+    return toArray(dirContents);
   }
 
   export function stat(path: string): Promise<Deno.FileInfo> {
     return Deno.stat(path);
   }
 
-  export function rmdir(
+  export function rm(
     path: string,
     params?: {recursive?: boolean}
   ): Promise<void> {
