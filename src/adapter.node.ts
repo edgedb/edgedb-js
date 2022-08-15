@@ -10,11 +10,7 @@ import {Writable} from "stream";
 export {path, net, crypto, fs, tls};
 
 export async function readFileUtf8(fn: string): Promise<string> {
-  try {
-    return await fs.readFile(fn, {encoding: "utf8"});
-  } catch (err) {
-    return "";
-  }
+  return await fs.readFile(fn, {encoding: "utf8"});
 }
 
 export async function readDir(pathString: string) {

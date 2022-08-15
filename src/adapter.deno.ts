@@ -15,11 +15,7 @@ import {iterateReader} from "https://deno.land/std@0.114.0/streams/conversion.ts
 export {Buffer, path, process, util, crypto};
 
 export async function readFileUtf8(path: string): Promise<string> {
-  try {
-    return await Deno.readTextFile(path);
-  } catch (_err: unknown) {
-    return Promise.resolve("");
-  }
+  return await Deno.readTextFile(path);
 }
 
 export async function readDir(path: string) {

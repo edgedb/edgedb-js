@@ -771,7 +771,10 @@ export class DirBuilder {
 
       const filePath = dest + params.fileExtension;
 
-      const oldContents = await readFileUtf8(filePath);
+      let oldContents = "";
+      try {
+        oldContents = await readFileUtf8(filePath);
+      } catch {}
       const newContents = builder.render({
         mode: params.mode,
         moduleKind: params.moduleKind,

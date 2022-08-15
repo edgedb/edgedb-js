@@ -247,6 +247,7 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
     if (!error) {
       throw new Error(`Unknown error type: ${testcase.error.type}`);
     }
+    console.log(testcase);
     await expect(() =>
       envWrap({env, fs}, () => parseConnectArguments(opts))
     ).rejects.toThrow(error);

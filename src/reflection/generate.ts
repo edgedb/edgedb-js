@@ -397,7 +397,10 @@ export async function generateQB(params: {
 
     const outputPath = path.join(syntaxOutDir, fileName);
     written.add(outputPath);
-    const oldContents = await readFileUtf8(outputPath);
+    let oldContents = "";
+    try {
+      oldContents = await readFileUtf8(outputPath);
+    } catch {}
     if (oldContents !== contents) {
       await fs.writeFile(outputPath, contents);
     }
