@@ -1173,6 +1173,25 @@ test("select required multi link", async () => {
   await query.run(client);
 });
 
+test("filter on link prop", async () => {
+  const query = e.select(e.Movie, movie => ({
+    title: true,
+    characters: c => ({
+      name: true,
+      "@character_name": true,
+      filter: e.op(c["@character_name"], "=", "Tony Stark"),
+    }),
+  }));
+  await query.run(client);
+});
+
+test("filter on link prop in nested path", async () => {
+  const query = e.select(e.Movie, movie => ({
+    filter: e.op("Iron Man", "in", movie.characters["@character_name"]),
+    title: true,
+  }));
+  await query.run(client);
+});
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
 
