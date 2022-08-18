@@ -1006,17 +1006,17 @@ export function resolveShapeElement(
       ),
     };
   } else if (typeof value === "boolean" && key.startsWith("@")) {
-    // const linkProp = (scope as any)[key];
-    // if (!linkProp) {
-    //   throw new Error(
-    //     (scope as any).__parent__
-    //       ? `link property '${key}' does not exist on link ${
-    //           (scope as any).__parent__.linkName
-    //         }`
-    //       : `cannot select link property '${key}' on an object (${scope.__element__.__name__})`
-    //   );
-    // }
-    return value ? value : false;
+    const linkProp = (scope as any)[key];
+    if (!linkProp) {
+      throw new Error(
+        (scope as any).__parent__
+          ? `link property '${key}' does not exist on link ${
+              (scope as any).__parent__.linkName
+            }`
+          : `cannot select link property '${key}' on an object (${scope.__element__.__name__})`
+      );
+    }
+    return value ? linkProp : false;
   } else {
     return value;
   }

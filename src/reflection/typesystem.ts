@@ -243,18 +243,11 @@ export interface PropertyDesc<
   hasDefault: HasDefault;
 }
 
-// export type $scopify<Root extends ObjectTypeSet> = $expr_PathNode<>
 export type $scopify<Type extends ObjectType> = $expr_PathNode<
   TypeSet<Type, Cardinality.One>,
   null,
   true // exclusivity
->; // & {[k in keyof Root & `@${string}`]: Root[k]};
-
-// export type $scopify<Type extends ObjectType> = $expr_PathNode<
-//   TypeSet<Type, Cardinality.One>,
-//   null,
-//   true // exclusivity
-// >;
+>;
 
 export type PropertyShape = {
   [k: string]: PropertyDesc;
