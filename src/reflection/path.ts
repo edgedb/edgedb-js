@@ -35,36 +35,36 @@ export interface PathParent<
   linkName: L;
 }
 
+export type $linkPropify<Root extends ObjectTypeSet> = Root extends {
+  __parent__: PathParent<infer Parent, infer L>;
+}
+  ? // tslint:disable-next-line
+    Parent["__element__"]["__pointers__"][L] extends LinkDesc<
+      any,
+      any,
+      infer LinkProps,
+      any,
+      any,
+      any,
+      any
+    >
+    ? pathifyLinkProps<
+        // tslint:disable-next-line
+        LinkProps,
+        Root,
+        PathParent<Parent, L>
+      >
+    : {}
+  : unknown;
+
 export type $pathify<
   Root extends TypeSet
   // Parent extends PathParent | null = null
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
-    ? {__err: "generic"} // Root is literally ObjectTypeSet
-    : pathifyPointers<Root> &
-        pathifyShape<Root> &
-        (Root extends {
-          __parent__: PathParent<infer Parent, infer L>;
-        }
-          ? // tslint:disable-next-line
-            Parent["__element__"]["__pointers__"][L] extends LinkDesc<
-              any,
-              any,
-              infer LinkProps,
-              any,
-              any,
-              any,
-              any
-            >
-            ? pathifyLinkProps<
-                // tslint:disable-next-line
-                LinkProps,
-                Root,
-                PathParent<Parent, L>
-              >
-            : {__err: "no link desc"}
-          : {__debug: Root})
-  : {__err: "non object"}; // pathify does nothing on non-object types
+    ? {} // Root is literally ObjectTypeSet
+    : pathifyPointers<Root> & pathifyShape<Root> & $linkPropify<Root>
+  : {}; // pathify does nothing on non-object types
 
 export type pathifyPointers<
   Root extends ObjectTypeSet

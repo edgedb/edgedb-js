@@ -423,18 +423,24 @@ function walkExprTree(
         if ((expr.__parent__.type as any).__scopedFrom__) {
           // if parent is scoped expr then don't walk expr
           // since it will already be walked by enclosing select/update
+
           childExprs.push(expr.__parent__.type as any);
         } else {
           childExprs.push(
             ...walkExprTree(expr.__parent__.type, parentScope, ctx)
           );
         }
+
         if (
           // is link prop
           expr.__kind__ === ExpressionKind.PathLeaf &&
           expr.__parent__.linkName.startsWith("@")
         ) {
-          ctx.seen.get(parentScope!)?.linkProps.push(expr);
+          // don't hoist a linkprop that isn't scoped from parentScope
+          const parentScopeVar = (parentScope as any).__scope__;
+          if (parentScopeVar === expr.__parent__.type) {
+            ctx.seen.get(parentScope!)?.linkProps.push(expr);
+          }
         }
       }
       break;
@@ -663,12 +669,22 @@ function renderEdgeQL(
       !withBlockElement.scopedExpr, // render shape if no scopedExpr exists
       _noImplicitDetached
     );
+    const renderedExprNoDetached = renderEdgeQL(
+      withBlockElement.scopedExpr ?? varExpr,
+      {
+        ...ctx,
+        renderWithVar: varExpr,
+      },
+      !withBlockElement.scopedExpr, // render shape if no scopedExpr exists
+      true
+    );
+
     if (ctx.linkProps.has(expr)) {
       renderedExpr = `(SELECT ${renderedExpr} {\n${ctx.linkProps
         .get(expr)!
         .map(
           linkPropName =>
-            `  __linkprop_${linkPropName} := ${renderedExpr}@${linkPropName}`
+            `  __linkprop_${linkPropName} := ${renderedExprNoDetached}@${linkPropName}`
         )
         .join(",\n")}\n})`;
     }
@@ -1265,6 +1281,15 @@ function shapeToEdgeQL(
     const wrapAssertExists = ptr?.cardinality === Cardinality.AtLeastOne;
 
     if (typeof val === "boolean") {
+      if (
+        !pointers?.[key] &&
+        key[0] !== "@" &&
+        type &&
+        type?.__name__ !== "std::FreeObject" &&
+        !polyIntersection
+      ) {
+        throw new Error(`Field "${key}" does not exist in ${type?.__name__}`);
+      }
       if (val) {
         addLine(`${polyIntersection}${q(key)}`);
       }

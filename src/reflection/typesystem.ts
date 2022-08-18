@@ -1,5 +1,5 @@
 import type {Executor} from "../ifaces";
-import type {$expr_TypeIntersection, $pathify, $expr_PathNode} from "./path";
+import type {$expr_PathNode, $expr_TypeIntersection, $pathify} from "./path";
 import type {$expr_Literal} from "./literal";
 import type {$expr_Operator} from "./funcops";
 import type {typeutil} from "./util/typeutil";
@@ -243,11 +243,18 @@ export interface PropertyDesc<
   hasDefault: HasDefault;
 }
 
+// export type $scopify<Root extends ObjectTypeSet> = $expr_PathNode<>
 export type $scopify<Type extends ObjectType> = $expr_PathNode<
   TypeSet<Type, Cardinality.One>,
   null,
   true // exclusivity
->;
+>; // & {[k in keyof Root & `@${string}`]: Root[k]};
+
+// export type $scopify<Type extends ObjectType> = $expr_PathNode<
+//   TypeSet<Type, Cardinality.One>,
+//   null,
+//   true // exclusivity
+// >;
 
 export type PropertyShape = {
   [k: string]: PropertyDesc;
