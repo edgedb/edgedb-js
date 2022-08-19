@@ -162,9 +162,10 @@ OPTIONS:
     --target [ts,esm,cjs,mts]
 
         ts     Generate TypeScript files (.ts)
-        mts    Generate TypeScript files (.mts) with extensioned ESM imports
+        mts    Generate TypeScript files (.mts) with ESM imports
         esm    Generate JavaScript with ESM syntax
         cjs    Generate JavaScript with CommonJS syntax
+        deno   Generate TypeScript files (.ts) with Deno-style (*.ts) imports
 
     --output-dir <output-dir>
     --force-overwrite
@@ -181,33 +182,34 @@ OPTIONS:
   // cannot find projectRoot with package.json in deno.
   // case 1. use deno.json
   // case 2. use edgedb.toml for finding projectRoot
-  if (options.target === "deno") {
-    // projectRoot = currentDir;
-    const {getRoot} = await import(
-      "https://deno.land/x/find_root@v0.2.1/mod.ts"
-    );
-    const hasDenoJson = await getRoot("deno.json", currentDir);
-    if (hasDenoJson.isErr()) {
-      exitWithError(
-        "Error: no deno.json found. Make sure you're inside your project directory."
-      );
+  // if (options.target === "deno") {
+  //   // projectRoot = currentDir;
+  //   const {getRoot} = await import(
+  //     "https://deno.land/x/find_root@v0.2.1/mod.ts"
+  //   );
+  //   const hasDenoJson = await getRoot("deno.json", currentDir);
+  //   if (hasDenoJson.isErr()) {
+  //     exitWithError(
+  //       "Error: no deno.json found. Make sure you're inside your
+  // project directory."
+  //     );
+  //   }
+  //   currentDir = hasDenoJson.value.inDir;
+  // } else {
+  while (currentDir !== systemRoot) {
+    if (await exists(path.join(currentDir, "edgedb.toml"))) {
+      projectRoot = currentDir;
+      break;
     }
-    currentDir = hasDenoJson.value.inDir;
-  } else {
-    while (currentDir !== systemRoot) {
-      if (await exists(path.join(currentDir, "package.json"))) {
-        projectRoot = currentDir;
-        break;
-      }
 
-      currentDir = path.join(currentDir, "..");
-    }
-    if (!projectRoot) {
-      exitWithError(
-        "Error: no package.json found. Make sure you're inside your project directory."
-      );
-    }
+    currentDir = path.join(currentDir, "..");
   }
+  if (!projectRoot) {
+    exitWithError(
+      "Error: no edgedb.toml found. Make sure you're inside your project directory."
+    );
+  }
+  // }
 
   // check for locally install edgedb
   // const edgedbPath = path.join(rootDir, "node_modules", "edgedb");
@@ -222,6 +224,8 @@ OPTIONS:
   if (!options.target) {
     const tsConfigPath = path.join(projectRoot, "tsconfig.json");
     const tsConfigExists = await exists(tsConfigPath);
+    const denoConfigPath = path.join(projectRoot, "deno.json");
+    const denoJsonExists = await exists(denoConfigPath);
 
     const overrideTargetMessage = `   To override this, use the --target flag.
    Run \`npx edgeql-js --help\` for details.`;
@@ -233,7 +237,12 @@ OPTIONS:
     // switch to more robust solution after splitting
     // @edgedb/generate into separate package
 
-    if (tsConfigExists) {
+    if (denoJsonExists) {
+      options.target = "deno";
+      console.log(
+        `Detected deno.json, generating TypeScript files with Deno-style imports.`
+      );
+    } else if (tsConfigExists) {
       const tsConfig = tsConfigExists
         ? (await readFileUtf8(tsConfigPath)).toLowerCase()
         : "{}";
