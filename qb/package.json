@@ -4,6 +4,7 @@
     "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
     "test:esm": "yarn generate --target esm --output-dir esm/edgeql-js && cd esm && node test.js",
     "test:mts": "yarn generate --target mts --output-dir mts/edgeql-js && cd mts && yarn build && node dist/test.js",
+    "test:deno": "deno run --allow-read --allow-env --allow-write --allow-net --unstable ../edgedb-deno/_src/reflection/cli.ts --target deno --output-dir deno/edgeql-js && cd deno && deno run build && node dist/test.js",
     "test:ci": "tsx test/testRunner.ts",
     "test:v1": "tsx test/testQBv1.ts",
     "setup:v1": "edgedb project init --no-migrations && edgedb migrate --to-revision m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq",

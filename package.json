@@ -55,6 +55,6 @@
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
     "compileForDeno": "deno run --unstable --allow-env --allow-read --allow-write tools/compileForDeno.ts",
     "dev": "yarn tsc --project tsconfig.build.json --incremental && yarn copy:syntax && cd qb && yarn generate",
-    "dev:watch": "nodemon -e ts -w ./src -x 'yarn dev'"
+    "dev:watch": "nodemon -e ts -w ./src -x 'yarn dev && yarn compileForDeno'"
   }
 }
