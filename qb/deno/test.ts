@@ -20,9 +20,8 @@ async function run() {
     console.log(`Success: --target mts`);
   } catch (err) {
     console.log(err);
-    process.exit(1);
+    Deno.exit();
   }
 }
-
 run();
 export {};

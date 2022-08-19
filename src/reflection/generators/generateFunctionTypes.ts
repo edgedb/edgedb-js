@@ -32,7 +32,6 @@ export const generateFunctionTypes = ({
   functions,
   types,
   casts,
-  isDeno,
 }: GeneratorParams) => {
   generateFuncopTypes(
     dir,
@@ -56,8 +55,7 @@ export const generateFunctionTypes = ({
       code.writeln([r`__name__: ${quote(funcName)},`]);
       code.writeln([r`__args__: positionalArgs,`]);
       code.writeln([r`__namedargs__: namedArgs,`]);
-    },
-    isDeno
+    }
   );
 };
 
@@ -101,8 +99,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
     code: CodeBuilder,
     funcopName: string,
     funcopDefs: F[]
-  ) => void,
-  isDeno: boolean
+  ) => void
 ) {
   const typeSpecificities = getTypesSpecificity(types, casts);
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
@@ -110,7 +107,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
   for (const [funcName, _funcDefs] of funcops.entries()) {
     const {mod, name} = splitName(funcName);
 
-    const code = dir.getModule(mod, isDeno);
+    const code = dir.getModule(mod);
 
     code.registerRef(funcName, _funcDefs[0].id);
     code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);

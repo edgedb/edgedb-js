@@ -44,7 +44,6 @@ export type GeneratorParams = {
   functions: FunctionTypes;
   globals: Globals;
   operators: OperatorTypes;
-  isDeno: boolean;
 };
 
 export function exitWithError(message: string): never {
@@ -113,7 +112,6 @@ export async function generateQB(params: {
       functions,
       globals,
       operators,
-      isDeno: target === "deno",
     };
     generateRuntimeSpec(generatorParams);
     generateCastMaps(generatorParams);
@@ -127,8 +125,7 @@ export async function generateQB(params: {
     // generate module imports
 
     const importsFile = dir.getPath("imports");
-    const edgedb =
-      target === "deno" ? "https://deno.land/x/edgedb/mod.ts" : "edgedb";
+    const edgedb = "edgedb";
 
     importsFile.addExportStar(edgedb, {as: "edgedb"});
     importsFile.addExportFrom({spec: true}, "./__spec__", {
@@ -203,9 +200,9 @@ export async function generateQB(params: {
       },
       {
         name: "_default",
-        module: dir.getModule("default", target === "deno"),
+        module: dir.getModule("default"),
       },
-      {name: "_std", module: dir.getModule("std", target === "deno")},
+      {name: "_std", module: dir.getModule("std")},
     ];
     const excludedKeys = new Set<string>(dir._modules.keys());
 
@@ -240,7 +237,7 @@ export async function generateQB(params: {
     ]);
     index.indented(() => {
       for (const [moduleName, internalName] of dir._modules) {
-        if (dir.getModule(moduleName, target === "deno").isEmpty()) continue;
+        if (dir.getModule(moduleName).isEmpty()) continue;
         index.writeln([
           t`${genutil.quote(moduleName)}: typeof _${internalName};`,
         ]);
@@ -261,7 +258,7 @@ export async function generateQB(params: {
       }
 
       for (const [moduleName, internalName] of dir._modules) {
-        if (dir.getModule(moduleName, target === "deno").isEmpty()) {
+        if (dir.getModule(moduleName).isEmpty()) {
           continue;
         }
         index.addImportDefault(
@@ -285,8 +282,8 @@ export async function generateQB(params: {
       dts`declare `,
       t`type Set<
   Type extends $.BaseType,
-  Cardinality extends $.Cardinality = $.Cardinality.Many
-> = $.TypeSet<Type, Cardinality>;`,
+  Card extends $.Cardinality = $.Cardinality.Many
+> = $.TypeSet<Type, Card>;`,
     ]);
   } finally {
     await cxn.close();
@@ -386,49 +383,84 @@ export async function generateQB(params: {
       throw new Error("No directory imports allowed in `syntax` files.");
     }
 
-    const localExt =
-      filetype === "esm" ? ".mjs" : target === "mts" ? ".mjs" : "";
-    const pkgExt = filetype === "esm" ? ".js" : target === "mts" ? ".js" : "";
+    const localExtMap: Record<Target, string> = {
+      esm: ".mjs",
+      mts: ".mjs",
+      deno: "", // uses pre-transpiles files
+      cjs: "",
+      ts: "",
+    };
+    const localExt = localExtMap[target];
+    const pkgExtMap: Record<Target, string> = {
+      esm: ".js",
+      mts: ".js",
+      deno: "", // uses pre-transpiles files
+      cjs: "",
+      ts: "",
+    };
+    const pkgExt = pkgExtMap[target];
 
-    contents = contents
-      .replace(
-        /require\("(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?(.*)"\)/g,
-        `require("edgedb/dist/reflection$2${pkgExt}")`
-      )
-      .replace(/require\("@generated\/(.*)"\)/g, `require("../$1")`)
-      .replace(
-        /from "(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?([a-z]*)"/g,
-        `from "edgedb/dist/reflection$2${pkgExt}"`
-      )
-      .replace(/from "@generated\/(.*)";/g, `from "../$1";`);
+    // console.log(filePath);
 
-    if (localExt) {
-      contents = contents.replace(
-        /from "(\.?\.\/.+)"/g,
-        `from "$1${localExt}"`
-      );
-    }
-
+    // contents = contents
+    //   .replace(
+    //     /"\.\.\/reflection([a-zA-Z0-9\_\/]*)\.?(.*)"/g,
+    //     target === "deno"
+    //       ? `"edgedb/_src/reflection$1${pkgExt}"`
+    //       : `"edgedb/dist/reflection$1${pkgExt}"`
+    //   )
+    //   .replace(/"@generated\/(.*)"/g, `"../$1"`);
+    // .replace(
+    //   /require\("(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?(.*)"\)/g,
+    //   `require("edgedb/dist/reflection$2${pkgExt}")`
+    // )
+    // .replace(/require\("@generated\/(.*)"\)/g, `require("../$1")`)
+    // .replace(
+    //   /from "(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?([a-z]*)"/g,
+    //   `from "edgedb/dist/reflection$2${pkgExt}"`
+    // )
+    // .replace(/from "@generated\/(.*)";/g, `from "../$1";`);
     if (target === "deno") {
-      // replace imports with urls
       contents = contents
-        .replace(/from "edgedb\/dist(.+)"/g, (_match, group: string) => {
-          const end = group.includes(".ts") ? "" : ".ts";
-          return `from "https://deno.land/x/edgedb/_src${group}${end}"`;
-        })
-        .replace(/from "edgedb"/g, () => {
-          return `from "https://deno.land/x/edgedb/mod.ts"`;
-        })
-        // add extensions to relative imports
         .replace(
-          /from "([\.\/]+)(.+)"/g,
-          (_match, group1: string, group2: string) => {
-            const end = group2.includes(".ts") ? "" : ".ts";
-            const output = `from "${group1}${group2}${end}"`;
-            return output;
-          }
-        );
+          /"\.\.\/reflection([a-zA-Z0-9\.\_\/]*)"/g,
+          `"edgedb/_src/reflection$1"`
+        )
+        .replace(/"@generated\/(.*)"/g, `"../$1"`);
     }
+    if (pkgExt) {
+      contents = contents
+        .replace(
+          /"\.\.\/reflection([a-zA-Z0-9\_\/]*)\.?(.*)"/g,
+          `"edgedb/dist/reflection$1${pkgExt}"`
+        )
+        .replace(/"@generated\/(.*)"/g, `"../$1"`);
+    }
+    if (localExt) {
+      // console.log(contents.matchAll(/from "(\.?\.\/.+)"/g));
+      contents = contents.replace(/"(\.?\.\/.+)"/g, `"$1${localExt}"`);
+    }
+
+    // if (target === "deno") {
+    //   // replace imports with urls
+    //   contents = contents
+    //     .replace(/from "edgedb\/dist(.+)"/g, (_match, group: string) => {
+    //       const end = group.includes(".ts") ? "" : ".ts";
+    //       return `from "https://deno.land/x/edgedb/_src${group}${end}"`;
+    //     })
+    //     .replace(/from "edgedb"/g, () => {
+    //       return `from "https://deno.land/x/edgedb/mod.ts"`;
+    //     })
+    //     // add extensions to relative imports
+    //     .replace(
+    //       /from "([\.\/]+)(.+)"/g,
+    //       (_match, group1: string, group2: string) => {
+    //         const end = group2.includes(".ts") ? "" : ".ts";
+    //         const output = `from "${group1}${group2}${end}"`;
+    //         return output;
+    //       }
+    //     );
+    // }
 
     const outputPath = path.join(syntaxOutDir, fileName);
     written.add(outputPath);

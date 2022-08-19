@@ -17,12 +17,14 @@ export const generateCastMaps = (params: GeneratorParams) => {
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps");
-  const edgedb = params.isDeno
-    ? "https://deno.land/x/edgedb/mod.ts"
-    : "edgedb";
+  const edgedb = "edgedb";
   f.addImportStar("edgedb", edgedb);
   f.addImport({$: true}, edgedb, {modes: ["ts", "dts"], typeOnly: true});
-  if (params.isDeno) {
+
+  // if is Deno
+  // @ts-ignore
+  const isDeno = typeof Deno !== "undefined";
+  if (isDeno) {
     f.addImport(
       {Buffer: true},
       "https://deno.land/std@0.114.0/node/buffer.ts",

@@ -3,16 +3,11 @@ import {GeneratorParams} from "../generate";
 import {getImplicitCastableRootTypes} from "../util/functionUtils";
 import {getStringRepresentation} from "./generateObjectTypes";
 
-export const generateSetImpl = ({
-  dir,
-  types,
-  casts,
-  isDeno,
-}: GeneratorParams) => {
+export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
   const code = dir.getPath("syntax/setImpl");
 
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
-  const edgedb = isDeno ? "https://deno.land/x/edgedb/mod.ts" : "edgedb";
+  const edgedb = "edgedb";
 
   code.addImport(
     {

@@ -174,10 +174,18 @@ OPTIONS:
     process.exit();
   }
 
-  // find project root
-  let projectRoot: string = "";
-  let currentDir = process.cwd();
-  const systemRoot = path.parse(currentDir).root;
+  // }
+
+  // check for locally install edgedb
+  // const edgedbPath = path.join(rootDir, "node_modules", "edgedb");
+  // if (!fs.existsSync(edgedbPath)) {
+  //   console.error(
+  //     `Error: 'edgedb' package is not yet installed locally.
+  //  Run `npm install edgedb` before generating the query builder.`
+  //   );
+  //   process.exit();
+  // }
+  let projectRoot: string | null = null;
 
   // cannot find projectRoot with package.json in deno.
   // case 1. use deno.json
@@ -196,6 +204,8 @@ OPTIONS:
   //   }
   //   currentDir = hasDenoJson.value.inDir;
   // } else {
+  let currentDir = process.cwd();
+  const systemRoot = path.parse(currentDir).root;
   while (currentDir !== systemRoot) {
     if (await exists(path.join(currentDir, "edgedb.toml"))) {
       projectRoot = currentDir;
@@ -204,24 +214,15 @@ OPTIONS:
 
     currentDir = path.join(currentDir, "..");
   }
-  if (!projectRoot) {
-    exitWithError(
-      "Error: no edgedb.toml found. Make sure you're inside your project directory."
-    );
-  }
-  // }
-
-  // check for locally install edgedb
-  // const edgedbPath = path.join(rootDir, "node_modules", "edgedb");
-  // if (!fs.existsSync(edgedbPath)) {
-  //   console.error(
-  //     `Error: 'edgedb' package is not yet installed locally.
-  //  Run `npm install edgedb` before generating the query builder.`
-  //   );
-  //   process.exit();
-  // }
 
   if (!options.target) {
+    if (!projectRoot) {
+      throw new Error(
+        `Failed to detect project root. Run this command inside an EdgeDB
+        project directory or specify the desired target language with \`--target\``
+      );
+    }
+
     const tsConfigPath = path.join(projectRoot, "tsconfig.json");
     const tsConfigExists = await exists(tsConfigPath);
     const denoConfigPath = path.join(projectRoot, "deno.json");
@@ -275,26 +276,41 @@ OPTIONS:
     console.log(overrideTargetMessage);
   }
 
-  const outputDir = options.outputDir
-    ? path.resolve(projectRoot, options.outputDir || "")
-    : path.join(projectRoot, "dbschema", "edgeql-js");
+  let outputDir: string;
+  if (options.outputDir) {
+    outputDir = path.join(process.cwd(), options.outputDir || "");
+  } else if (projectRoot) {
+    outputDir = path.join(projectRoot, "dbschema", "edgeql-js");
+  } else {
+    throw new Error(
+      `No edgedb.toml found. Initialize an EdgeDB project with\n\`edgedb project init\` or specify an output directory with \`--output-dir\``
+    );
+  }
 
-  const relativeOutputDir = path.posix.relative(projectRoot, outputDir);
-  const outputDirInProject =
-    !!relativeOutputDir &&
-    !path.isAbsolute(relativeOutputDir) &&
-    !relativeOutputDir.startsWith("..");
-  const prettyOutputDir = outputDirInProject
-    ? `./${relativeOutputDir}`
-    : outputDir;
+  let outputDirIsInProject = false;
+  if (projectRoot) {
+    const relativeOutputDir = path.posix.relative(projectRoot, outputDir);
+    outputDirIsInProject =
+      !!relativeOutputDir &&
+      !path.isAbsolute(relativeOutputDir) &&
+      !relativeOutputDir.startsWith("..");
+    const prettyOutputDir = outputDirIsInProject
+      ? `./${relativeOutputDir}`
+      : outputDir;
 
-  console.log(
-    `Generating query builder into ${
-      path.isAbsolute(prettyOutputDir)
-        ? `\n   ${prettyOutputDir}`
-        : `${prettyOutputDir}`
-    }`
-  );
+    console.log(
+      `Generating query builder into ${
+        path.isAbsolute(prettyOutputDir)
+          ? `\n   ${prettyOutputDir}`
+          : `${prettyOutputDir}`
+      }`
+    );
+  } else {
+    console.log(`outputDir!`);
+    console.log(outputDir);
+    console.log(process.cwd());
+    console.log(`Generating query builder into \n   ${outputDir}`);
+  }
 
   if (await exists(outputDir)) {
     if (await canOverwrite(outputDir, options)) {
@@ -318,11 +334,12 @@ OPTIONS:
     connectionConfig.password = await readPasswordFromStdin();
   }
 
+  console.log({outputDir, connectionConfig, target: options.target!});
   await generateQB({outputDir, connectionConfig, target: options.target!});
 
   console.log(`Generation successful!`);
 
-  if (!outputDirInProject) {
+  if (!outputDirIsInProject || !projectRoot) {
     console.log(
       `\nChecking the generated query builder into version control
 is not recommended. Consider updating the .gitignore of your

@@ -4,7 +4,7 @@
     "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
     "test:esm": "yarn generate --target esm --output-dir esm/edgeql-js && cd esm && node test.js",
     "test:mts": "yarn generate --target mts --output-dir mts/edgeql-js && cd mts && yarn build && node dist/test.js",
-    "test:deno": "deno run --allow-read --allow-env --allow-write --allow-net --unstable ../edgedb-deno/_src/reflection/cli.ts --target deno --output-dir deno/edgeql-js && cd deno && deno run build && node dist/test.js",
+    "test:deno": "deno run --allow-read --allow-env --allow-write --allow-net --unstable ../edgedb-deno/_src/reflection/cli.ts --target deno --output-dir deno/edgeql-js && cd deno && deno task play",
     "test:ci": "tsx test/testRunner.ts",
     "test:v1": "tsx test/testQBv1.ts",
     "setup:v1": "edgedb project init --no-migrations && edgedb migrate --to-revision m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq",
@@ -12,7 +12,8 @@
     "play": "tsx playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -w playground.ts -x 'tsx playground.ts'",
     "build": "rm -rf dist && tsc --project tsconfig.build.json",
-    "build:trace": "tsc --project tsconfig.build.json --generateTrace trace"
+    "build:trace": "tsc --project tsconfig.build.json --generateTrace trace",
+    "currdir": "node cwd.js"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

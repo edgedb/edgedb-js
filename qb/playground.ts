@@ -2,7 +2,6 @@
 
 import {setupTests} from "./test/setupTeardown";
 import e from "./dbschema/edgeql-js";
-import type {PathParent} from "../src/reflection";
 
 async function run() {
   const {client} = await setupTests();
