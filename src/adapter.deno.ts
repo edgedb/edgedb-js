@@ -5,6 +5,7 @@ import {
   Sha256,
   HmacSha256,
 } from "https://deno.land/std@0.114.0/hash/sha256.ts";
+
 import path from "https://deno.land/std@0.114.0/node/path.ts";
 import * as _fs from "https://deno.land/std@0.115.0/fs/mod.ts";
 import EventEmitter from "https://deno.land/std@0.114.0/node/events.ts";
@@ -13,14 +14,30 @@ import {iterateReader} from "https://deno.land/std@0.114.0/streams/conversion.ts
 
 export {Buffer, path, process, util, crypto};
 
-export function readFileUtf8(path: string): Promise<string> {
-  return Deno.readTextFile(path);
+export async function readFileUtf8(path: string): Promise<string> {
+  return await Deno.readTextFile(path);
 }
 
-export async function readDir(pathString: string) {
+export async function readDir(path: string) {
+  try {
+    const files: string[] = [];
+    for await (const entry of Deno.readDir(path)) {
+      files.push(entry.name);
+    }
+    return files;
+  } catch {
+    return [];
+  }
+}
+
+export async function walk(path: string) {
+  await _fs.ensureDir(path);
+  const entries = _fs.walk(path);
   const files: string[] = [];
-  for await (const entry of Deno.readDir(pathString)) {
-    files.push(entry.name);
+  for await (const e of entries) {
+    if (e.isFile) {
+      files.push(e.path);
+    }
   }
   return files;
 }
@@ -79,16 +96,33 @@ export function hrTime(): number {
 // TODO: replace this with
 //       `import * as fs from "https://deno.land/std@0.95.0/node/fs.ts";`
 //       when the 'fs' compat module does not require '--unstable' flag.
+
+async function toArray(iter: AsyncIterable<unknown>) {
+  const arr = [];
+  for await (const i of iter) arr.push(i);
+  return arr;
+}
+
+// deno-lint-ignore-file
 export namespace fs {
   export function realpath(path: string): Promise<string> {
     return Deno.realPath(path);
+  }
+
+  export async function access(path: string) {
+    return Deno.stat(path);
+  }
+
+  export async function readdir(path: string) {
+    const dirContents = Deno.readDir(path);
+    return toArray(dirContents);
   }
 
   export function stat(path: string): Promise<Deno.FileInfo> {
     return Deno.stat(path);
   }
 
-  export function rmdir(
+  export function rm(
     path: string,
     params?: {recursive?: boolean}
   ): Promise<void> {

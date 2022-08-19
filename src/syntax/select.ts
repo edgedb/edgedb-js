@@ -34,6 +34,7 @@ import {
 import type {
   $expr_PathLeaf,
   $expr_PathNode,
+  $linkPropify,
   ExpressionRoot,
   PathParent,
 } from "../reflection/path";
@@ -238,7 +239,7 @@ export type InferFilterCardinality<
               >
             : Base["__cardinality__"]
           : Base["__cardinality__"]
-        : Args[0] extends $expr_PathNode
+        : Args[0] extends $expr_PathNode<any, any, any>
         ? Args[0]["__exclusive__"] extends true
           ? //   Filter.args[0].parent.__element__ === Base.__element__
             Args[0]["__parent__"] extends null
@@ -565,7 +566,10 @@ export type linkDescToLinkProps<Desc extends LinkDesc> = {
       Desc["properties"][k]["target"],
       Desc["properties"][k]["cardinality"]
     >,
-    {type: $scopify<Desc["target"]>; linkName: k},
+    {
+      type: $scopify<Desc["target"]>;
+      linkName: k;
+    },
     Desc["properties"][k]["exclusive"]
   >;
 };
@@ -575,6 +579,12 @@ export type pointersToObjectType<P extends ObjectTypePointers> = ObjectType<
   P,
   {}
 >;
+
+type linkDescToShape<L extends LinkDesc> = objectTypeToSelectShape<
+  L["target"]
+> &
+  objectTypeToSelectShape<pointersToObjectType<L["properties"]>> &
+  SelectModifiers;
 export type linkDescToSelectElement<L extends LinkDesc> =
   | boolean
   // | pointerToCastableExpression<Shape[k]>
@@ -582,14 +592,10 @@ export type linkDescToSelectElement<L extends LinkDesc> =
       anonymizeObject<L["target"]>,
       cardinalityUtil.assignable<L["cardinality"]>
     >
-  | (objectTypeToSelectShape<L["target"]> &
-      objectTypeToSelectShape<pointersToObjectType<L["properties"]>> &
-      SelectModifiers)
+  | linkDescToShape<L>
   | ((
       scope: $scopify<L["target"]> & linkDescToLinkProps<L>
-    ) => objectTypeToSelectShape<L["target"]> &
-      objectTypeToSelectShape<pointersToObjectType<L["properties"]>> &
-      SelectModifiers);
+    ) => linkDescToShape<L>);
 
 // object types -> pointers
 // pointers -> links
@@ -697,7 +703,9 @@ export function select<
   Modifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
-  shape: (scope: $scopify<Expr["__element__"]>) => Readonly<Shape>
+  shape: (
+    scope: $scopify<Expr["__element__"]> & $linkPropify<Expr>
+  ) => Readonly<Shape>
 ): $expr_Select<{
   __element__: ObjectType<
     `${Expr["__element__"]["__name__"]}`, // _shape

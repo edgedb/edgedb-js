@@ -108,10 +108,10 @@ npm install edgedb@latest
 
   ```ts
   e.group(e.Movie, movie => ({
-      title: true,
-      actors: {name: true},
-      num_actors: e.count(movie.characters),
-      by: {release_year: movie.release_year},
+    title: true,
+    actors: {name: true},
+    num_actors: e.count(movie.characters),
+    by: {release_year: movie.release_year},
   }));
   /* [
     {
@@ -131,7 +131,7 @@ npm install edgedb@latest
   ] */
   ```
 
-- Support for [range types](https://www.edgedb.com/docs/datamodel/primitives#ranges-new) and [`DateDuration`](https://www.edgedb.com/docs/stdlib/datetime#type::cal::date_duration) values.
+- Support for [range types](https://www.edgedb.com/docs/datamodel/primitives#ranges) and [`DateDuration`](https://www.edgedb.com/docs/stdlib/datetime#type::cal::date_duration) values.
 
 ### Requirements
 
@@ -251,9 +251,9 @@ const client = createClient();
 const query = e.select(e.Movie, movie => ({
   id: true,
   title: true,
-  actors: { name: true },
+  actors: {name: true},
   num_actors: e.count(movie.actors),
-  filter: e.op(movie.title, '=', 'Dune'),
+  filter: e.op(movie.title, "=", "Dune"),
 }));
 
 const result = await query.run(client);

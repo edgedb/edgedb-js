@@ -10,8 +10,8 @@ import {
 } from "../conUtils";
 import {configFileHeader, exitWithError, generateQB} from "./generate";
 
-const rmdir =
-  Number(process.versions.node.split(".")[0]) >= 16 ? fs.rm : fs.rmdir;
+// const rmdir =
+//   Number(process.versions.node.split(".")[0]) >= 16 ? fs.rm : fs.rmdir;
 
 interface Options {
   showHelp?: boolean;
@@ -270,7 +270,7 @@ OPTIONS:
 
   if (await exists(outputDir)) {
     if (await canOverwrite(outputDir, options)) {
-      await rmdir(outputDir, {recursive: true});
+      // await rmdir(outputDir, {recursive: true});
     }
   } else {
     // output dir doesn't exist, so assume first run

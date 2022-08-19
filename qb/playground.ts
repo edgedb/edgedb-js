@@ -2,24 +2,21 @@
 
 import {setupTests} from "./test/setupTeardown";
 import e from "./dbschema/edgeql-js";
-import {Genre, sys, schema} from "./dbschema/edgeql-js";
+import type {PathParent} from "../src/reflection";
 
 async function run() {
   const {client} = await setupTests();
   console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
 
-  console.log(Genre);
-  console.log(sys.VersionStage.beta);
-  console.log(schema.Cardinality.One);
-
-  // console.log(Genre.Action);
-  // console.log(Genre.RomCom);
-  const query = e.select(e.Hero, hero => ({
-    filter: e.op(hero.name, "=", "Iron Man"),
+  const query = e.select(e.Person, person => ({
+    movies: e.select(person["<characters[is Movie]"], m => ({
+      title: true,
+      "@character_name": true,
+    })),
   }));
   console.log(query.toEdgeQL());
   const result = await query.run(client);
-  console.log(result);
+  console.log(JSON.stringify(result, null, 2));
 }
 
 run();

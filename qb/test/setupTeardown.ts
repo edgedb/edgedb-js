@@ -70,15 +70,22 @@ export async function setupTests() {
   );
 
   const the_avengers: Movie = await client.queryRequiredSingle(
-    `WITH char_ids := array_unpack(<array<uuid>>$character_ids)
+    `WITH
+      ironman_id := <uuid>$ironman_id,
+      cap_id := <uuid>$cap_id
 SELECT (INSERT Movie {
   title := "The Avengers",
   rating := 10,
   genre := Genre.Action,
   release_year := 2012,
-  characters := (SELECT Person FILTER .id IN char_ids)
+  characters := distinct (for char in {
+    ('Tony Stark', ironman_id),
+    ('Steve Rogers', cap_id)
+  } union (
+    SELECT Person { @character_name := char.0 } FILTER .id = char.1
+  ))
 }) {id, title, rating, genre, release_year, characters: {id}};`,
-    {character_ids: [iron_man.id, cap.id]}
+    {ironman_id: iron_man.id, cap_id: cap.id}
   );
   const civil_war: Movie = await client.queryRequiredSingle(
     `SELECT (INSERT Movie {

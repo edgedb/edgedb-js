@@ -108,7 +108,7 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
 
 function _$pathify<Root extends TypeSet, Parent extends PathParent>(
   _root: Root
-): $pathify<Root, Parent> {
+): $pathify<Root> {
   if (_root.__element__.__kind__ !== TypeKind.object) {
     return _root as any;
   }

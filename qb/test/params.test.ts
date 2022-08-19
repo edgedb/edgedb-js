@@ -46,7 +46,7 @@ SELECT (SELECT {
       paramsType,
       {
         str: string;
-        numArr: number[];
+        numArr: readonly number[];
         optBool?: boolean | null;
       }
     >
@@ -86,17 +86,18 @@ test("complex params", async () => {
   );
 
   type paramsType = Parameters<typeof query.run>[1];
+
   tc.assert<
     tc.IsExact<
       paramsType,
       {
         str: string;
-        numArr: number[];
+        numArr: readonly number[];
         optBool?: boolean | null;
-        tuple: [string, number, boolean[]];
-        namedTuple: {a: number; b: bigint[]; c: string};
-        jsonTuple: [unknown];
-        people: {name: string; age: number; tags: string[]}[];
+        tuple: readonly [string, number, boolean[]];
+        namedTuple: Readonly<{a: number; b: bigint[]; c: string}>;
+        jsonTuple: readonly [unknown];
+        people: Readonly<{name: string; age: number; tags: string[]}[]>;
       }
     >
   >(true);
@@ -172,6 +173,7 @@ test("all param types", async () => {
     bytes: e.bytes,
     uuid: e.uuid,
     datetime: e.datetime,
+    genre: e.Genre,
     duration: e.duration,
     local_date: e.cal.local_date,
     local_time: e.cal.local_time,
@@ -196,6 +198,8 @@ test("all param types", async () => {
     bytes: Buffer.from("buffer"),
     uuid: "d476ccc2-3e7b-11ec-af13-0f07004006ce",
     datetime: new Date(),
+    genre: "Action" as const,
+
     duration: new edgedb.Duration(0, 0, 0, 0, 1),
     local_date: new edgedb.LocalDate(2021, 11, 25),
     local_time: new edgedb.LocalTime(12, 34),
@@ -229,6 +233,7 @@ test("all param types", async () => {
         bytes: Buffer;
         uuid: string;
         datetime: Date;
+        genre: "Horror" | "Action" | "RomCom";
         duration: edgedb.Duration;
         local_date: edgedb.LocalDate;
         local_time: edgedb.LocalTime;

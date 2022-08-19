@@ -1,4 +1,4 @@
-import {fs, path, exists} from "../adapter.node";
+import {fs, path, exists, readFileUtf8} from "../adapter.node";
 import {StrictMap} from "./strictMap";
 import * as genutil from "./util/genutil";
 import {importExportHelpers} from "./importExportHelpers";
@@ -750,9 +750,11 @@ export class DirBuilder {
       moduleKind: ModuleKind;
       fileExtension: string;
       moduleExtension: string;
+      written: Set<string>;
     }
   ): Promise<void> {
     const dir = path.normalize(to);
+
     for (const [fn, builder] of this._map.entries()) {
       if (builder.isEmpty()) {
         continue;
@@ -767,15 +769,22 @@ export class DirBuilder {
 
       const forceDefaultExport = fn.startsWith("modules/");
 
-      await fs.writeFile(
-        dest + params.fileExtension,
-        builder.render({
-          mode: params.mode,
-          moduleKind: params.moduleKind,
-          moduleExtension: params.moduleExtension,
-          forceDefaultExport,
-        })
-      );
+      const filePath = dest + params.fileExtension;
+
+      let oldContents = "";
+      try {
+        oldContents = await readFileUtf8(filePath);
+      } catch {}
+      const newContents = builder.render({
+        mode: params.mode,
+        moduleKind: params.moduleKind,
+        moduleExtension: params.moduleExtension,
+        forceDefaultExport,
+      });
+      params.written.add(filePath);
+      if (oldContents !== newContents) {
+        await fs.writeFile(filePath, newContents);
+      }
     }
   }
 }

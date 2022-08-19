@@ -423,18 +423,24 @@ function walkExprTree(
         if ((expr.__parent__.type as any).__scopedFrom__) {
           // if parent is scoped expr then don't walk expr
           // since it will already be walked by enclosing select/update
+
           childExprs.push(expr.__parent__.type as any);
         } else {
           childExprs.push(
             ...walkExprTree(expr.__parent__.type, parentScope, ctx)
           );
         }
+
         if (
           // is link prop
           expr.__kind__ === ExpressionKind.PathLeaf &&
           expr.__parent__.linkName.startsWith("@")
         ) {
-          ctx.seen.get(parentScope!)?.linkProps.push(expr);
+          // don't hoist a linkprop that isn't scoped from parentScope
+          const parentScopeVar = (parentScope as any).__scope__;
+          if (parentScopeVar === expr.__parent__.type) {
+            ctx.seen.get(parentScope!)?.linkProps.push(expr);
+          }
         }
       }
       break;
@@ -663,12 +669,22 @@ function renderEdgeQL(
       !withBlockElement.scopedExpr, // render shape if no scopedExpr exists
       _noImplicitDetached
     );
+    const renderedExprNoDetached = renderEdgeQL(
+      withBlockElement.scopedExpr ?? varExpr,
+      {
+        ...ctx,
+        renderWithVar: varExpr,
+      },
+      !withBlockElement.scopedExpr, // render shape if no scopedExpr exists
+      true
+    );
+
     if (ctx.linkProps.has(expr)) {
       renderedExpr = `(SELECT ${renderedExpr} {\n${ctx.linkProps
         .get(expr)!
         .map(
           linkPropName =>
-            `  __linkprop_${linkPropName} := ${renderedExpr}@${linkPropName}`
+            `  __linkprop_${linkPropName} := ${renderedExprNoDetached}@${linkPropName}`
         )
         .join(",\n")}\n})`;
     }
@@ -1022,10 +1038,6 @@ function renderEdgeQL(
       -1
     )} ${clause.join("")})`;
   } else if (expr.__kind__ === ExpressionKind.Group) {
-    function isGroupingSet(arg: any): arg is GroupingSet {
-      return arg.__kind__ === "groupingset";
-    }
-
     const groupingSet = expr.__modifiers__.by as any as GroupingSet;
     const elementsShape =
       expr.__element__.__shape__.elements.__element__.__shape__;
@@ -1045,26 +1057,6 @@ function renderEdgeQL(
       ),
     ];
     groupStatement.push(`USING\n${combinedBlock.join(",\n")}`);
-
-    // recursive renderer
-    function renderGroupingSet(set: GroupingSet): string {
-      const contents = Object.entries(set.__elements__)
-        .map(([k, v]) => {
-          return isGroupingSet(v) ? renderGroupingSet(v) : k;
-        })
-        .join(", ");
-      if (set.__settype__ === "tuple") {
-        return `(${contents})`;
-      } else if (set.__settype__ === "set") {
-        return `{${contents}}`;
-      } else if (set.__settype__ === "cube") {
-        return `cube(${contents})`;
-      } else if (set.__settype__ === "rollup") {
-        return `rollup(${contents})`;
-      } else {
-        throw new Error(`Unrecognized set type: "${set.__settype__}"`);
-      }
-    }
 
     let by = renderGroupingSet(groupingSet).trim();
     if (by[0] === "(" && by[by.length - 1] === ")") {
@@ -1196,6 +1188,30 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n))`;
   }
 }
 
+function isGroupingSet(arg: any): arg is GroupingSet {
+  return arg.__kind__ === "groupingset";
+}
+
+// recursive renderer
+function renderGroupingSet(set: GroupingSet): string {
+  const contents = Object.entries(set.__elements__)
+    .map(([k, v]) => {
+      return isGroupingSet(v) ? renderGroupingSet(v) : k;
+    })
+    .join(", ");
+  if (set.__settype__ === "tuple") {
+    return `(${contents})`;
+  } else if (set.__settype__ === "set") {
+    return `{${contents}}`;
+  } else if (set.__settype__ === "cube") {
+    return `cube(${contents})`;
+  } else if (set.__settype__ === "rollup") {
+    return `rollup(${contents})`;
+  } else {
+    throw new Error(`Unrecognized set type: "${set.__settype__}"`);
+  }
+}
+
 function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
@@ -1265,6 +1281,15 @@ function shapeToEdgeQL(
     const wrapAssertExists = ptr?.cardinality === Cardinality.AtLeastOne;
 
     if (typeof val === "boolean") {
+      if (
+        !pointers?.[key] &&
+        key[0] !== "@" &&
+        type &&
+        type?.__name__ !== "std::FreeObject" &&
+        !polyIntersection
+      ) {
+        throw new Error(`Field "${key}" does not exist in ${type?.__name__}`);
+      }
       if (val) {
         addLine(`${polyIntersection}${q(key)}`);
       }

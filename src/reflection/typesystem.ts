@@ -1,5 +1,5 @@
 import type {Executor} from "../ifaces";
-import type {$expr_TypeIntersection, $pathify, $expr_PathNode} from "./path";
+import type {$expr_PathNode, $expr_TypeIntersection, $pathify} from "./path";
 import type {$expr_Literal} from "./literal";
 import type {$expr_Operator} from "./funcops";
 import type {typeutil} from "./util/typeutil";
@@ -764,6 +764,7 @@ export type AnyTupleType = TupleType | NamedTupleType;
 
 export type ParamType =
   | ScalarType
+  | EnumType
   | ArrayType<
       | ScalarType
       | TupleType<typeutil.tupleOf<ParamType>>

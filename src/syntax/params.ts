@@ -62,13 +62,13 @@ type paramsToParamArgs<
   [key in keyof Params as Params[key] extends ParamType
     ? key
     : never]: Params[key] extends ParamType
-    ? BaseTypeToTsType<Params[key]>
+    ? Readonly<BaseTypeToTsType<Params[key]>>
     : never;
 } & {
   [key in keyof Params as Params[key] extends $expr_OptionalParam
     ? key
     : never]?: Params[key] extends $expr_OptionalParam
-    ? BaseTypeToTsType<Params[key]["__type__"]> | null
+    ? Readonly<BaseTypeToTsType<Params[key]["__type__"]> | null>
     : never;
 };
 
