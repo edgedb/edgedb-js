@@ -3,14 +3,9 @@ import {exists} from "../../src/adapter.node";
 import {execSync} from "child_process";
 
 const QBDIR = path.resolve(__dirname, "..");
-const GEN_CMD = () => [
-  `yarn generate`,
-  // `--output-dir ${path}`,
-  `--force-overwrite`,
-];
 
 test("basic generate", async () => {
-  execSync(GEN_CMD().join(" "), {stdio: "inherit"});
+  execSync(`yarn generate --force-overwrite`, {stdio: "inherit"});
   const qbIndex = path.resolve(QBDIR, "dbschema", "edgeql-js", "index.ts");
   expect(await exists(qbIndex)).toEqual(true);
 

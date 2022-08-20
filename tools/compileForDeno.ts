@@ -1,11 +1,11 @@
-import { ensureDir, walk } from "https://deno.land/std@0.114.0/fs/mod.ts";
+import {ensureDir, walk} from "https://deno.land/std@0.114.0/fs/mod.ts";
 import {
   basename,
   dirname,
   join,
   relative,
 } from "https://deno.land/std@0.114.0/path/posix.ts";
-import { createRequire } from "https://deno.land/std@0.114.0/node/module.ts";
+import {createRequire} from "https://deno.land/std@0.114.0/node/module.ts";
 
 const require = createRequire(import.meta.url);
 
@@ -17,12 +17,12 @@ run({
   sourceDir: "./src",
   destDir: "./edgedb-deno",
   destEntriesToClean: ["_src", "mod.ts"],
-  sourceFilter: (path) => {
+  sourceFilter: path => {
     return !/\/syntax\//.test(path);
   },
   pathRewriteRules: [
-    { match: /^src\/index.node.ts$/, replace: "mod.ts" },
-    { match: /^src\//, replace: "_src/" },
+    {match: /^src\/index.node.ts$/, replace: "mod.ts"},
+    {match: /^src\//, replace: "_src/"},
   ],
   injectImports: [
     {
@@ -30,25 +30,25 @@ run({
       from: "src/globals.deno.ts",
     },
   ],
-}).then(() => run({
-  sourceDir: "./src/syntax",
-  destDir: "./edgedb-deno",
-  pathRewriteRules: [
-    { match: /^src\//, replace: "_src/" },
-  ],
-  importRewriteRules: [
-    { match: /^edgedb$/, replace: "https://deno.land/x/edgedb/mod.ts" },
-    { match: /^\.\.\//, replace: "../" },
-    { match: /^@generated\//, replace: "../" },
-    { match: /^\.\/setImpl/, replace: "./setImpl.ts" } // this file will be implemented after codegen
-  ],
-  injectImports: [
-    {
-      imports: ["Buffer"],
-      from: "https://deno.land/std@0.114.0/node/buffer.ts",
-    },
-  ],
-}));
+}).then(() =>
+  run({
+    sourceDir: "./src/syntax",
+    destDir: "./edgedb-deno",
+    pathRewriteRules: [{match: /^src\//, replace: "_src/"}],
+    importRewriteRules: [
+      {match: /^edgedb$/, replace: "https://deno.land/x/edgedb/mod.ts"},
+      {match: /^\.\.\//, replace: "../"},
+      {match: /^@generated\//, replace: "../"},
+      {match: /^\.\/setImpl/, replace: "./setImpl.ts"}, // this file will be implemented after codegen
+    ],
+    injectImports: [
+      {
+        imports: ["Buffer"],
+        from: "https://deno.land/std@0.114.0/node/buffer.ts",
+      },
+    ],
+  })
+);
 
 const denoTestFiles = new Set([
   "test/testbase.ts",
@@ -59,10 +59,10 @@ const denoTestFiles = new Set([
 run({
   sourceDir: "./test",
   destDir: "./test/deno",
-  sourceFilter: (path) => {
+  sourceFilter: path => {
     return denoTestFiles.has(path);
   },
-  pathRewriteRules: [{ match: /^test\//, replace: "" }],
+  pathRewriteRules: [{match: /^test\//, replace: ""}],
   importRewriteRules: [
     {
       match: /^\.\.\/src\/index.node$/,
@@ -74,7 +74,7 @@ run({
     },
     {
       match: /^\.\.\/src\/.+/,
-      replace: (match) =>
+      replace: match =>
         `${match.replace(/^\.\.\/src\//, "../../edgedb-deno/_src/")}${
           match.endsWith(".ts") ? "" : ".ts"
         }`,
@@ -104,26 +104,26 @@ async function run({
   sourceDir: string;
   destDir: string;
   destEntriesToClean?: string[];
-  pathRewriteRules?: { match: RegExp; replace: string }[];
+  pathRewriteRules?: {match: RegExp; replace: string}[];
   importRewriteRules?: {
     match: RegExp;
     replace: string | ((match: string) => string);
   }[];
-  injectImports?: { imports: string[]; from: string }[];
+  injectImports?: {imports: string[]; from: string}[];
   sourceFilter?: (path: string) => boolean;
 }) {
   const destClean = new Set(destEntriesToClean);
   try {
     for await (const entry of Deno.readDir(destDir)) {
       if (!destEntriesToClean || destClean.has(entry.name)) {
-        await Deno.remove(join(destDir, entry.name), { recursive: true });
+        await Deno.remove(join(destDir, entry.name), {recursive: true});
       }
     }
   } catch {}
 
   const sourceFilePathMap = new Map<string, string>();
 
-  for await (const entry of walk(sourceDir, { includeDirs: false })) {
+  for await (const entry of walk(sourceDir, {includeDirs: false})) {
     const sourcePath = normalisePath(entry.path);
     if (sourceFilter && !sourceFilter(sourcePath)) {
       console.log(`skipping ${entry.path}`);
@@ -153,7 +153,7 @@ async function run({
       file,
       ts.ScriptTarget.Latest,
       false,
-      ts.ScriptKind.TS,
+      ts.ScriptKind.TS
     );
 
     const rewrittenFile: string[] = [];
@@ -164,8 +164,8 @@ async function run({
         isFirstNode = false;
 
         const neededImports = injectImports.reduce(
-          (neededImports, { imports, from }) => {
-            const usedImports = imports.filter((importName) =>
+          (neededImports, {imports, from}) => {
+            const usedImports = imports.filter(importName =>
               parsedSource.identifiers?.has(importName)
             );
             if (usedImports.length) {
@@ -176,26 +176,26 @@ async function run({
             }
             return neededImports;
           },
-          [] as { imports: string[]; from: string }[],
+          [] as {imports: string[]; from: string}[]
         );
 
         if (neededImports.length) {
-          const importDecls = neededImports.map((neededImport) => {
+          const importDecls = neededImports.map(neededImport => {
             const imports = neededImport.imports.join(", ");
             // no need to resolve path if it is import from url
             const importPath = neededImport.from.startsWith("https://")
               ? neededImport.from
               : resolveImportPath(
-                relative(dirname(sourcePath), neededImport.from),
-                sourcePath,
-              );
+                  relative(dirname(sourcePath), neededImport.from),
+                  sourcePath
+                );
             return `import {${imports}} from "${importPath}";`;
           });
 
           const importDecl = importDecls.join("\n") + "\n\n";
 
-          const injectPos = node.getLeadingTriviaWidth?.(parsedSource) ??
-            node.pos;
+          const injectPos =
+            node.getLeadingTriviaWidth?.(parsedSource) ?? node.pos;
           rewrittenFile.push(file.slice(cursor, injectPos));
           rewrittenFile.push(importDecl);
           cursor = injectPos;
@@ -220,7 +220,7 @@ async function run({
         if (resolvedImportPath.endsWith("/adapter.node.ts")) {
           resolvedImportPath = resolvedImportPath.replace(
             "/adapter.node.ts",
-            "/adapter.deno.ts",
+            "/adapter.deno.ts"
           );
         }
 
@@ -233,7 +233,10 @@ async function run({
       contents = await replaceVersionNumber(contents);
     }
     if (/__dirname/g.test(contents)) {
-      contents = contents.replaceAll(/__dirname/g, "new URL('.', import.meta.url).pathname")
+      contents = contents.replaceAll(
+        /__dirname/g,
+        "new URL('.', import.meta.url).pathname"
+      );
     }
 
     await Deno.writeTextFile(destPath, contents);
@@ -248,11 +251,11 @@ async function run({
   }
 
   function resolveImportPath(importPath: string, sourcePath: string) {
-   // First check importRewriteRules
+    // First check importRewriteRules
     for (const rule of importRewriteRules) {
       if (rule.match.test(importPath)) {
         const path = importPath.replace(rule.match, rule.replace as string);
-        if (!path.endsWith('.ts')) return path + '.ts';
+        if (!path.endsWith(".ts")) return path + ".ts";
         return path;
       }
     }
@@ -269,7 +272,7 @@ async function run({
 
         if (!sourceFilePathMap.has(resolvedPath)) {
           throw new Error(
-            `Cannot find imported file '${importPath}' in '${sourcePath}'`,
+            `Cannot find imported file '${importPath}' in '${sourcePath}'`
           );
         }
       }
@@ -277,7 +280,7 @@ async function run({
 
     const relImportPath = relative(
       dirname(sourceFilePathMap.get(sourcePath)!),
-      sourceFilePathMap.get(resolvedPath)!,
+      sourceFilePathMap.get(resolvedPath)!
     );
     return relImportPath.startsWith("../")
       ? relImportPath
@@ -289,13 +292,13 @@ async function replaceVersionNumber(contents: string) {
   // update the version string literal
   const packagePath = new URL("../package.json", import.meta.url);
   const packageText = await Deno.readTextFile(packagePath);
-  const { version } = JSON.parse(packageText);
+  const {version} = JSON.parse(packageText);
 
   const updated = contents.replace(
     /_edgedbJsVersion = "(.+)"/g,
     (match: string, group: string) => {
       return match.replace(group, version);
-    },
+    }
   );
   return updated;
 }

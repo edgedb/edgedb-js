@@ -220,8 +220,8 @@ OPTIONS:
   if (!options.target) {
     if (!projectRoot) {
       throw new Error(
-        `Failed to detect project root. Run this command inside an EdgeDB
-        project directory or specify the desired target language with \`--target\``
+        `Failed to detect project root.
+Run this command inside an EdgeDB project directory or specify the desired target language with \`--target\``
       );
     }
 
@@ -280,7 +280,9 @@ OPTIONS:
 
   let outputDir: string;
   if (options.outputDir) {
-    outputDir = path.join(process.cwd(), options.outputDir || "");
+    outputDir = path.isAbsolute(options.outputDir)
+      ? options.outputDir
+      : path.join(process.cwd(), options.outputDir);
   } else if (projectRoot) {
     outputDir = path.join(projectRoot, "dbschema", "edgeql-js");
   } else {
@@ -295,7 +297,7 @@ OPTIONS:
     const relativeOutputDir = path.posix.relative(projectRoot, outputDir);
     outputDirIsInProject =
       !!relativeOutputDir &&
-      !path.isAbsolute(relativeOutputDir) &&
+      !path.isAbsolute(outputDir) &&
       !relativeOutputDir.startsWith("..");
     prettyOutputDir = outputDirIsInProject
       ? `./${relativeOutputDir}`
@@ -333,8 +335,8 @@ OPTIONS:
 
   if (!outputDirIsInProject || !projectRoot) {
     console.log(
-      `\nChecking the generated query builder into version control
-is not recommended. Consider updating the .gitignore of your
+      `\nChecking the generated files into version control is
+not recommended. Consider updating the .gitignore of your
 project to exclude these files.`
     );
   } else if (options.updateIgnoreFile) {

@@ -13,8 +13,7 @@
     "play": "tsx playground.ts --project tsconfig.json --trace-warnings",
     "play:dev": "nodemon -w playground.ts -x 'tsx playground.ts'",
     "build": "rm -rf dist && tsc --project tsconfig.build.json",
-    "build:trace": "tsc --project tsconfig.build.json --generateTrace trace",
-    "currdir": "node cwd.js"
+    "build:trace": "tsc --project tsconfig.build.json --generateTrace trace"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

@@ -41,10 +41,10 @@
     "typescript": "^4.4"
   },
   "scripts": {
-    "build": "yarn build:cjs && yarn build:esm && tsx ./tools/generateMts.ts",
+    "build": "yarn build:cjs && yarn build:esm",
     "build:esm": "tsc --project tsconfig.build-esm.json",
     "build:cjs": "tsc --project tsconfig.build.json",
-    "copy:syntax": "./tools/copySyntaxToDist.sh",
+    "copy:syntax": "tsx ./tools/generateMts.ts && ./tools/copySyntaxToDist.sh",
     "test": "jest --detectOpenHandles",
     "test:all": "yarn test && yarn test:qb",
     "test:qb": "cd qb && yarn test",
