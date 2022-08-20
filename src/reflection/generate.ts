@@ -66,7 +66,7 @@ export async function generateQB(params: {
 }): Promise<void> {
   const {outputDir, connectionConfig, target} = params;
   // tslint:disable-next-line
-  console.log(`Connecting to EdgeDB instance...`);
+  // console.log(`Connecting to EdgeDB instance...`);
   let cxn: Client;
   try {
     cxn = createClient({
@@ -427,8 +427,7 @@ export async function generateQB(params: {
           `"edgedb/_src/reflection$1"`
         )
         .replace(/"@generated\/(.*)"/g, `"../$1"`);
-    }
-    if (pkgExt) {
+    } else {
       contents = contents
         .replace(
           /"\.\.\/reflection([a-zA-Z0-9\_\/]*)\.?(.*)"/g,
@@ -436,6 +435,7 @@ export async function generateQB(params: {
         )
         .replace(/"@generated\/(.*)"/g, `"../$1"`);
     }
+
     if (localExt) {
       // console.log(contents.matchAll(/from "(\.?\.\/.+)"/g));
       contents = contents.replace(/"(\.?\.\/.+)"/g, `"$1${localExt}"`);

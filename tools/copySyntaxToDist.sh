@@ -1,4 +1,5 @@
 #!/bin/bash
+
 for f in dist/__esm/syntax/*.js; do
     mv -- "$f" "${f%.js}.mjs"
 done

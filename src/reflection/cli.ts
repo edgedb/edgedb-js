@@ -204,6 +204,8 @@ OPTIONS:
   //   }
   //   currentDir = hasDenoJson.value.inDir;
   // } else {
+
+  console.log(`Generating query builder...`);
   let currentDir = process.cwd();
   const systemRoot = path.parse(currentDir).root;
   while (currentDir !== systemRoot) {
@@ -228,8 +230,6 @@ OPTIONS:
     const denoConfigPath = path.join(projectRoot, "deno.json");
     const denoJsonExists = await exists(denoConfigPath);
 
-    const overrideTargetMessage = `   To override this, use the --target flag.
-   Run \`npx edgeql-js --help\` for details.`;
     const packageJson = JSON.parse(
       await readFileUtf8(path.join(projectRoot, "package.json"))
     );
@@ -273,6 +273,8 @@ OPTIONS:
         options.target = "cjs";
       }
     }
+    const overrideTargetMessage = `   To override this, use the --target flag.
+   Run \`npx edgeql-js --help\` for full options.`;
     console.log(overrideTargetMessage);
   }
 
@@ -288,28 +290,18 @@ OPTIONS:
   }
 
   let outputDirIsInProject = false;
+  let prettyOutputDir;
   if (projectRoot) {
     const relativeOutputDir = path.posix.relative(projectRoot, outputDir);
     outputDirIsInProject =
       !!relativeOutputDir &&
       !path.isAbsolute(relativeOutputDir) &&
       !relativeOutputDir.startsWith("..");
-    const prettyOutputDir = outputDirIsInProject
+    prettyOutputDir = outputDirIsInProject
       ? `./${relativeOutputDir}`
       : outputDir;
-
-    console.log(
-      `Generating query builder into ${
-        path.isAbsolute(prettyOutputDir)
-          ? `\n   ${prettyOutputDir}`
-          : `${prettyOutputDir}`
-      }`
-    );
   } else {
-    console.log(`outputDir!`);
-    console.log(outputDir);
-    console.log(process.cwd());
-    console.log(`Generating query builder into \n   ${outputDir}`);
+    prettyOutputDir = outputDir;
   }
 
   if (await exists(outputDir)) {
@@ -334,10 +326,10 @@ OPTIONS:
     connectionConfig.password = await readPasswordFromStdin();
   }
 
-  console.log({outputDir, connectionConfig, target: options.target!});
   await generateQB({outputDir, connectionConfig, target: options.target!});
 
-  console.log(`Generation successful!`);
+  console.log(`Writing files to ${prettyOutputDir}`);
+  console.log(`Generation complete! 🤘`);
 
   if (!outputDirIsInProject || !projectRoot) {
     console.log(

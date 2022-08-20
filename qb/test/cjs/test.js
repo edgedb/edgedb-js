@@ -1,8 +1,8 @@
 // tslint:disable:no-console
 
 // import {setupTests} from "./test/setupTeardown";
-import {createClient} from "edgedb";
-import e from "./edgeql-js/index.ts";
+const {createClient} = require("edgedb");
+const e = require("./edgeql-js").default;
 
 async function run() {
   try {
@@ -17,11 +17,11 @@ async function run() {
       throw new Error();
     }
 
-    console.log(`Success: --target mts`);
+    console.log(`Success: --target cjs`);
   } catch (err) {
     console.log(err);
-    Deno.exit();
+    process.exit(1);
   }
 }
+
 run();
-export {};

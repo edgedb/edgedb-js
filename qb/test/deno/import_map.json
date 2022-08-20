@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "edgedb": "https://deno.land/x/edgedb/mod.ts",
+    "edgedb/": "https://deno.land/x/edgedb/"
+  }
+}

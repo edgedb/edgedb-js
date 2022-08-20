@@ -41,20 +41,21 @@
     "typescript": "^4.4"
   },
   "scripts": {
-    "build": "yarn build:cjs && yarn build:esm && yarn copy:syntax",
+    "build": "yarn build:cjs && yarn build:esm && tsx ./tools/generateMts.ts",
     "build:esm": "tsc --project tsconfig.build-esm.json",
     "build:cjs": "tsc --project tsconfig.build.json",
-    "copy:syntax": "tsx ./tools/generateMts.ts && ./tools/copySyntaxToDist.sh",
+    "copy:syntax": "./tools/copySyntaxToDist.sh",
     "test": "jest --detectOpenHandles",
     "test:all": "yarn test && yarn test:qb",
     "test:qb": "cd qb && yarn test",
     "test:esm": "yarn dev --target esm --output-dir esm/edgeql-js && cd qb/esm && node test.js",
     "test:mts": "yarn dev --target mts --output-dir mts/edgeql-js && cd qb/mts && yarn build && node dist/test.js",
+    "test:deno": "cd qb && yarn test:deno",
     "lint": "tslint 'src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
     "compileForDeno": "deno run --unstable --allow-env --allow-read --allow-write tools/compileForDeno.ts",
-    "dev": "yarn tsc --project tsconfig.build.json --incremental && yarn copy:syntax",
-    "dev:watch": "nodemon -e ts -w ./src -x 'yarn dev && yarn compileForDeno'"
+    "dev": "yarn tsc --project tsconfig.build.json --incremental && yarn copy:syntax && yarn compileForDeno",
+    "watch": "nodemon -e ts -w ./src -x"
   }
 }
