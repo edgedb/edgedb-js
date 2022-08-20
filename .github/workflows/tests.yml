@@ -62,7 +62,7 @@ jobs:
       - name: Set up Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.17.x
+          deno-version: v1.24.x
 
       - uses: bahmutov/npm-install@v1.8.15
       - uses: bahmutov/npm-install@v1.8.15
