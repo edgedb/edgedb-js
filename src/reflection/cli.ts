@@ -296,8 +296,8 @@ Run this command inside an EdgeDB project directory or specify the desired targe
   if (projectRoot) {
     const relativeOutputDir = path.posix.relative(projectRoot, outputDir);
     outputDirIsInProject =
-      !!relativeOutputDir &&
-      !path.isAbsolute(outputDir) &&
+      // !!relativeOutputDir &&
+      // !path.isAbsolute(options.outputDir) &&
       !relativeOutputDir.startsWith("..");
     prettyOutputDir = outputDirIsInProject
       ? `./${relativeOutputDir}`
