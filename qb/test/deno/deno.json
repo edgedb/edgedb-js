@@ -16,6 +16,6 @@
   },
   "importMap": "./import_map.json",
   "tasks": {
-    "play": "deno run --unstable --allow-net --allow-read --allow-env test.ts"
+    "play": "deno run --unstable --allow-net --allow-read --allow-env --unsafely-ignore-certificate-errors=localhost test.ts"
   }
 }

@@ -329,11 +329,7 @@ export async function runTests(config: ConnectConfig) {
   console.log(`\nRunning tests...`);
 
   console.log(config);
-  // await runCommand(
-  //   "yarn",
-  //   ["test:deno"],
-  //   configToEnv({...config, host: "127.0.0.1"})
-  // );
+  await runCommand("yarn", ["test:deno"], configToEnv(config));
   await runCommand("yarn", ["test:cjs"], configToEnv(config));
   await runCommand("yarn", ["test:esm"], configToEnv(config));
   await runCommand("yarn", ["test:mts"], configToEnv(config));

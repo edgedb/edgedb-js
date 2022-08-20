@@ -112,6 +112,7 @@ async function run({
   injectImports?: {imports: string[]; from: string}[];
   sourceFilter?: (path: string) => boolean;
 }) {
+  console.log(`Denoifying ${sourceDir}...`);
   const destClean = new Set(destEntriesToClean);
   try {
     for await (const entry of Deno.readDir(destDir)) {
@@ -126,7 +127,6 @@ async function run({
   for await (const entry of walk(sourceDir, {includeDirs: false})) {
     const sourcePath = normalisePath(entry.path);
     if (sourceFilter && !sourceFilter(sourcePath)) {
-      console.log(`skipping ${entry.path}`);
       continue;
     }
     sourceFilePathMap.set(sourcePath, resolveDestPath(sourcePath));
