@@ -98,7 +98,7 @@ run({
     return Deno.writeTextFile(
       "./edgedb-deno/generate.ts",
       `
-export * from "./_src/reflection/cli/ts";
+export * from "./_src/reflection/cli.ts";
     `
     );
   });
