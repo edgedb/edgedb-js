@@ -53,7 +53,7 @@ export function exitWithError(message: string): never {
   throw new Error();
 }
 
-export type Target = "ts" | "esm" | "cjs" | "mts";
+export type Target = "ts" | "esm" | "cjs" | "mts" | "deno";
 export type Version = {
   major: number;
   minor: number;
@@ -66,7 +66,7 @@ export async function generateQB(params: {
 }): Promise<void> {
   const {outputDir, connectionConfig, target} = params;
   // tslint:disable-next-line
-  console.log(`Connecting to EdgeDB instance...`);
+  // console.log(`Connecting to EdgeDB instance...`);
   let cxn: Client;
   try {
     cxn = createClient({
@@ -125,8 +125,9 @@ export async function generateQB(params: {
     // generate module imports
 
     const importsFile = dir.getPath("imports");
+    const edgedb = "edgedb";
 
-    importsFile.addExportStar("edgedb", {as: "edgedb"});
+    importsFile.addExportStar(edgedb, {as: "edgedb"});
     importsFile.addExportFrom({spec: true}, "./__spec__", {
       allowFileExt: true,
     });
@@ -152,8 +153,9 @@ export async function generateQB(params: {
       allowFileExt: true,
       modes: ["ts", "dts", "js"],
     });
-    index.addImport({$: true, _edgedbJsVersion: true}, "edgedb");
-    index.addExportFrom({createClient: true}, "edgedb");
+
+    index.addImport({$: true, _edgedbJsVersion: true}, edgedb);
+    index.addExportFrom({createClient: true}, edgedb);
     index.addImportStar("$syntax", "./syntax/syntax", {allowFileExt: true});
     index.addImportStar("$op", "./operators", {allowFileExt: true});
 
@@ -280,8 +282,8 @@ export async function generateQB(params: {
       dts`declare `,
       t`type Set<
   Type extends $.BaseType,
-  Cardinality extends $.Cardinality = $.Cardinality.Many
-> = $.TypeSet<Type, Cardinality>;`,
+  Card extends $.Cardinality = $.Cardinality.Many
+> = $.TypeSet<Type, Card>;`,
     ]);
   } finally {
     await cxn.close();
@@ -336,6 +338,14 @@ export async function generateQB(params: {
       moduleExtension: "",
       written,
     });
+  } else if (target === "deno") {
+    await dir.write(outputDir, {
+      mode: "ts",
+      moduleKind: "esm",
+      fileExtension: ".ts",
+      moduleExtension: ".ts",
+      written,
+    });
   }
 
   const syntaxDir = path.join(srcDir(), "syntax");
@@ -358,6 +368,7 @@ export async function generateQB(params: {
       ? "ts"
       : null;
     if (
+      (target === "deno" && filetype !== "ts") ||
       (target === "ts" && filetype !== "ts") ||
       (target === "mts" && filetype !== "mts") ||
       (target === "esm" && !(filetype === "esm" || filetype === "dts")) ||
@@ -372,28 +383,84 @@ export async function generateQB(params: {
       throw new Error("No directory imports allowed in `syntax` files.");
     }
 
-    const localExt =
-      filetype === "esm" ? ".mjs" : target === "mts" ? ".mjs" : "";
-    const pkgExt = filetype === "esm" ? ".js" : target === "mts" ? ".js" : "";
+    const localExtMap: Record<Target, string> = {
+      esm: ".mjs",
+      mts: ".mjs",
+      deno: "", // uses pre-transpiles files
+      cjs: "",
+      ts: "",
+    };
+    const localExt = localExtMap[target];
+    const pkgExtMap: Record<Target, string> = {
+      esm: ".js",
+      mts: ".js",
+      deno: "", // uses pre-transpiles files
+      cjs: "",
+      ts: "",
+    };
+    const pkgExt = pkgExtMap[target];
 
-    contents = contents
-      .replace(
-        /require\("(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?(.*)"\)/g,
-        `require("edgedb/dist/reflection$2${pkgExt}")`
-      )
-      .replace(/require\("@generated\/(.*)"\)/g, `require("../$1")`)
-      .replace(
-        /from "(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?([a-z]*)"/g,
-        `from "edgedb/dist/reflection$2${pkgExt}"`
-      )
-      .replace(/from "@generated\/(.*)";/g, `from "../$1";`);
+    // console.log(filePath);
+
+    // contents = contents
+    //   .replace(
+    //     /"\.\.\/reflection([a-zA-Z0-9\_\/]*)\.?(.*)"/g,
+    //     target === "deno"
+    //       ? `"edgedb/_src/reflection$1${pkgExt}"`
+    //       : `"edgedb/dist/reflection$1${pkgExt}"`
+    //   )
+    //   .replace(/"@generated\/(.*)"/g, `"../$1"`);
+    // .replace(
+    //   /require\("(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?(.*)"\)/g,
+    //   `require("edgedb/dist/reflection$2${pkgExt}")`
+    // )
+    // .replace(/require\("@generated\/(.*)"\)/g, `require("../$1")`)
+    // .replace(
+    //   /from "(..\/)?reflection([a-zA-Z0-9\_\/]*)\.?([a-z]*)"/g,
+    //   `from "edgedb/dist/reflection$2${pkgExt}"`
+    // )
+    // .replace(/from "@generated\/(.*)";/g, `from "../$1";`);
+    if (target === "deno") {
+      contents = contents
+        .replace(
+          /"\.\.\/reflection([a-zA-Z0-9\.\_\/]*)"/g,
+          `"edgedb/_src/reflection$1"`
+        )
+        .replace(/"@generated\/(.*)"/g, `"../$1"`);
+    } else {
+      contents = contents
+        .replace(
+          /"\.\.\/reflection([a-zA-Z0-9\_\/]*)\.?(.*)"/g,
+          `"edgedb/dist/reflection$1${pkgExt}"`
+        )
+        .replace(/"@generated\/(.*)"/g, `"../$1"`);
+    }
 
     if (localExt) {
-      contents = contents.replace(
-        /from "(\.?\.\/.+)"/g,
-        `from "$1${localExt}"`
-      );
+      // console.log(contents.matchAll(/from "(\.?\.\/.+)"/g));
+      contents = contents.replace(/"(\.?\.\/.+)"/g, `"$1${localExt}"`);
     }
+
+    // if (target === "deno") {
+    //   // replace imports with urls
+    //   contents = contents
+    //     .replace(/from "edgedb\/dist(.+)"/g, (_match, group: string) => {
+    //       const end = group.includes(".ts") ? "" : ".ts";
+    //       return `from "https://deno.land/x/edgedb/_src${group}${end}"`;
+    //     })
+    //     .replace(/from "edgedb"/g, () => {
+    //       return `from "https://deno.land/x/edgedb/mod.ts"`;
+    //     })
+    //     // add extensions to relative imports
+    //     .replace(
+    //       /from "([\.\/]+)(.+)"/g,
+    //       (_match, group1: string, group2: string) => {
+    //         const end = group2.includes(".ts") ? "" : ".ts";
+    //         const output = `from "${group1}${group2}${end}"`;
+    //         return output;
+    //       }
+    //     );
+    // }
 
     const outputPath = path.join(syntaxOutDir, fileName);
     written.add(outputPath);

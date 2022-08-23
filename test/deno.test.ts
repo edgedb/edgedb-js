@@ -26,7 +26,7 @@ test("run deno test", async () => {
     if (process.env.CI) {
       throw new Error("Cannot find 'test/deno' directory");
     } else {
-      console.warn("skipping deno tests; run `yarn `compileForDeno`");
+      console.warn("skipping deno tests; run `yarn build:deno`");
       return;
     }
   }
@@ -67,7 +67,7 @@ test("deno check", async () => {
     if (process.env.CI) {
       throw new Error("Cannot find 'test/deno' directory");
     } else {
-      console.warn("skipping deno tests; run `yarn compileForDeno`");
+      console.warn("skipping deno tests; run `yarn build:deno`");
       return;
     }
   }

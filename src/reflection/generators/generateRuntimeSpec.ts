@@ -5,7 +5,8 @@ export const generateRuntimeSpec = (params: GeneratorParams) => {
   const {dir, types} = params;
 
   const spec = dir.getPath("__spec__");
-  spec.addImport({$: true}, "edgedb");
+  const edgedb = "edgedb";
+  spec.addImport({$: true}, edgedb);
   spec.writeln([
     dts`declare `,
     `const spec`,

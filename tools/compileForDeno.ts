@@ -1,9 +1,9 @@
-import {walk, ensureDir} from "https://deno.land/std@0.114.0/fs/mod.ts";
+import {ensureDir, walk} from "https://deno.land/std@0.114.0/fs/mod.ts";
 import {
+  basename,
+  dirname,
   join,
   relative,
-  dirname,
-  basename,
 } from "https://deno.land/std@0.114.0/path/posix.ts";
 import {createRequire} from "https://deno.land/std@0.114.0/node/module.ts";
 
@@ -13,10 +13,19 @@ const ts = require("typescript");
 
 const normalisePath = (path: string) => path.replace(/\\/g, "/");
 
+const denoTestFiles = new Set([
+  "test/testbase.ts",
+  "test/client.test.ts",
+  "test/credentials.test.ts",
+]);
+
 run({
   sourceDir: "./src",
   destDir: "./edgedb-deno",
   destEntriesToClean: ["_src", "mod.ts"],
+  sourceFilter: path => {
+    return !/\/syntax\//.test(path);
+  },
   pathRewriteRules: [
     {match: /^src\/index.node.ts$/, replace: "mod.ts"},
     {match: /^src\//, replace: "_src/"},
@@ -27,49 +36,72 @@ run({
       from: "src/globals.deno.ts",
     },
   ],
-});
-
-const denoTestFiles = new Set([
-  "test/testbase.ts",
-  "test/client.test.ts",
-  "test/credentials.test.ts",
-]);
-
-run({
-  sourceDir: "./test",
-  destDir: "./test/deno",
-  sourceFilter: path => {
-    return denoTestFiles.has(path);
-  },
-  pathRewriteRules: [{match: /^test\//, replace: ""}],
-  importRewriteRules: [
-    {
-      match: /^\.\.\/src\/index.node$/,
-      replace: "../../edgedb-deno/mod.ts",
-    },
-    {
-      match: /^globals.deno.ts$/,
-      replace: "../globals.deno.ts",
-    },
-    {
-      match: /^\.\.\/src\/.+/,
-      replace: match =>
-        `${match.replace(/^\.\.\/src\//, "../../edgedb-deno/_src/")}${
-          match.endsWith(".ts") ? "" : ".ts"
-        }`,
-    },
-  ],
-  injectImports: [
-    {
-      imports: ["Buffer", "process"],
-      from: "src/globals.deno.ts",
-    },
-    {
-      imports: ["test", "expect", "jest"],
-      from: "test/globals.deno.ts",
-    },
-  ],
-});
+})
+  .then(() =>
+    run({
+      sourceDir: "./src/syntax",
+      destDir: "./edgedb-deno",
+      pathRewriteRules: [{match: /^src\//, replace: "_src/"}],
+      importRewriteRules: [
+        {match: /^edgedb$/, replace: "https://deno.land/x/edgedb/mod.ts"},
+        {match: /^\.\.\//, replace: "../"},
+        {match: /^@generated\//, replace: "../"},
+        {match: /^\.\/setImpl/, replace: "./setImpl.ts"},
+        // this file will be implemented after codegen
+      ],
+      injectImports: [
+        {
+          imports: ["Buffer"],
+          from: "https://deno.land/std@0.114.0/node/buffer.ts",
+        },
+      ],
+    })
+  )
+  .then(() =>
+    run({
+      sourceDir: "./test",
+      destDir: "./test/deno",
+      sourceFilter: path => {
+        return denoTestFiles.has(path);
+      },
+      pathRewriteRules: [{match: /^test\//, replace: ""}],
+      importRewriteRules: [
+        {
+          match: /^\.\.\/src\/index.node$/,
+          replace: "../../edgedb-deno/mod.ts",
+        },
+        {
+          match: /^globals.deno.ts$/,
+          replace: "../globals.deno.ts",
+        },
+        {
+          match: /^\.\.\/src\/.+/,
+          replace: match =>
+            `${match.replace(/^\.\.\/src\//, "../../edgedb-deno/_src/")}${
+              match.endsWith(".ts") ? "" : ".ts"
+            }`,
+        },
+      ],
+      injectImports: [
+        {
+          imports: ["Buffer", "process"],
+          from: "src/globals.deno.ts",
+        },
+        {
+          imports: ["test", "expect", "jest"],
+          from: "test/globals.deno.ts",
+        },
+      ],
+    })
+  )
+  .then(() => {
+    return Deno.writeTextFile(
+      "./edgedb-deno/generate.ts",
+      `
+export * from "./_src/reflection/cli.ts";
+    `
+    );
+  });
 
 async function run({
   sourceDir,
@@ -91,6 +123,7 @@ async function run({
   injectImports?: {imports: string[]; from: string}[];
   sourceFilter?: (path: string) => boolean;
 }) {
+  console.log(`Denoifying ${sourceDir}...`);
   const destClean = new Set(destEntriesToClean);
   try {
     for await (const entry of Deno.readDir(destDir)) {
@@ -104,14 +137,10 @@ async function run({
 
   for await (const entry of walk(sourceDir, {includeDirs: false})) {
     const sourcePath = normalisePath(entry.path);
-    if (entry.path.includes("syntax")) {
-      console.log(`skipping ${entry.path}`);
+    if (sourceFilter && !sourceFilter(sourcePath)) {
       continue;
     }
-
-    if (!sourceFilter || sourceFilter(sourcePath)) {
-      sourceFilePathMap.set(sourcePath, resolveDestPath(sourcePath));
-    }
+    sourceFilePathMap.set(sourcePath, resolveDestPath(sourcePath));
   }
 
   for (const [sourcePath, destPath] of sourceFilePathMap) {
@@ -164,11 +193,13 @@ async function run({
         if (neededImports.length) {
           const importDecls = neededImports.map(neededImport => {
             const imports = neededImport.imports.join(", ");
-            const importPath = resolveImportPath(
-              relative(dirname(sourcePath), neededImport.from),
-              sourcePath
-            );
-
+            // no need to resolve path if it is import from url
+            const importPath = neededImport.from.startsWith("https://")
+              ? neededImport.from
+              : resolveImportPath(
+                  relative(dirname(sourcePath), neededImport.from),
+                  sourcePath
+                );
             return `import {${imports}} from "${importPath}";`;
           });
 
@@ -204,12 +235,23 @@ async function run({
           );
         }
 
+        console.log(`Resolve: ${resolvedImportPath}`);
         rewrittenFile.push(resolvedImportPath);
       }
     });
     rewrittenFile.push(file.slice(cursor));
+    let contents = rewrittenFile.join("");
+    if (destPath.includes("index.shared.ts")) {
+      contents = await replaceVersionNumber(contents);
+    }
+    if (/__dirname/g.test(contents)) {
+      contents = contents.replaceAll(
+        /__dirname/g,
+        "new URL('.', import.meta.url).pathname"
+      );
+    }
 
-    await Deno.writeTextFile(destPath, rewrittenFile.join(""));
+    await Deno.writeTextFile(destPath, contents);
   }
 
   function resolveDestPath(sourcePath: string) {
@@ -224,7 +266,9 @@ async function run({
     // First check importRewriteRules
     for (const rule of importRewriteRules) {
       if (rule.match.test(importPath)) {
-        return importPath.replace(rule.match, rule.replace as string);
+        const path = importPath.replace(rule.match, rule.replace as string);
+        if (!path.endsWith(".ts")) return path + ".ts";
+        return path;
       }
     }
 
@@ -254,4 +298,19 @@ async function run({
       ? relImportPath
       : "./" + relImportPath;
   }
+}
+
+async function replaceVersionNumber(contents: string) {
+  // update the version string literal
+  const packagePath = new URL("../package.json", import.meta.url);
+  const packageText = await Deno.readTextFile(packagePath);
+  const {version} = JSON.parse(packageText);
+
+  const updated = contents.replace(
+    /_edgedbJsVersion = "(.+)"/g,
+    (match: string, group: string) => {
+      return match.replace(group, version);
+    }
+  );
+  return updated;
 }

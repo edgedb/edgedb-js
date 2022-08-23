@@ -41,20 +41,22 @@
     "typescript": "^4.4"
   },
   "scripts": {
-    "build": "yarn build:cjs && yarn build:esm && yarn copy:syntax",
+    "build": "yarn build:cjs && yarn build:esm && yarn build:mts && yarn copy:syntax",
     "build:esm": "tsc --project tsconfig.build-esm.json",
     "build:cjs": "tsc --project tsconfig.build.json",
+    "build:mts": "tsx ./tools/generateMts.ts",
+    "build:deno": "deno run --unstable --allow-env --allow-read --allow-write tools/compileForDeno.ts",
     "copy:syntax": "tsx ./tools/generateMts.ts && ./tools/copySyntaxToDist.sh",
     "test": "jest --detectOpenHandles",
-    "test:all": "yarn test && yarn test:qb",
     "test:qb": "cd qb && yarn test",
-    "test:esm": "yarn dev --target esm --output-dir esm/edgeql-js && cd qb/esm && node test.js",
-    "test:mts": "yarn dev --target mts --output-dir mts/edgeql-js && cd qb/mts && yarn build && node dist/test.js",
+    "test:esm": "cd qb && yarn test:esm",
+    "test:cjs": "cd qb && yarn test:cjs",
+    "test:mts": "cd qb && yarn test:mts",
+    "test:deno": "cd qb && yarn test:deno",
     "lint": "tslint 'src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
-    "compileForDeno": "deno run --unstable --allow-env --allow-read --allow-write tools/compileForDeno.ts",
-    "dev": "yarn tsc --project tsconfig.build.json --incremental && yarn copy:syntax && cd qb && yarn generate",
-    "dev:watch": "nodemon -e ts -w ./src -x 'yarn dev'"
+    "dev": "yarn tsc --project tsconfig.build.json --incremental && yarn build:mts && yarn copy:syntax && yarn build:deno",
+    "watch": "nodemon -e ts -w ./src -x"
   }
 }

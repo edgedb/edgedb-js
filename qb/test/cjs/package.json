@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "resolutions": {
+    "edgedb": "portal:../.."
+  }
+}

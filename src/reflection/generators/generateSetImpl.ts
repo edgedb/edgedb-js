@@ -7,12 +7,13 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
   const code = dir.getPath("syntax/setImpl");
 
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
+  const edgedb = "edgedb";
 
   code.addImport(
     {
       $: true,
     },
-    "edgedb",
+    edgedb,
     {allowFileExt: false}
   );
   code.addImportStar("castMaps", "../castMaps", {

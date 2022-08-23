@@ -8,11 +8,12 @@ import {
 
 import path from "https://deno.land/std@0.114.0/node/path.ts";
 import * as _fs from "https://deno.land/std@0.115.0/fs/mod.ts";
+import * as fs from "https://deno.land/std@0.115.0/node/fs/promises.ts";
 import EventEmitter from "https://deno.land/std@0.114.0/node/events.ts";
 import util from "https://deno.land/std@0.114.0/node/util.ts";
 import {iterateReader} from "https://deno.land/std@0.114.0/streams/conversion.ts";
 
-export {Buffer, path, process, util, crypto};
+export {Buffer, path, process, util, crypto, fs};
 
 export async function readFileUtf8(path: string): Promise<string> {
   return await Deno.readTextFile(path);
@@ -104,47 +105,47 @@ async function toArray(iter: AsyncIterable<unknown>) {
 }
 
 // deno-lint-ignore-file
-export namespace fs {
-  export function realpath(path: string): Promise<string> {
-    return Deno.realPath(path);
-  }
+// export namespace fs {
+//   export function realpath(path: string): Promise<string> {
+//     return Deno.realPath(path);
+//   }
 
-  export async function access(path: string) {
-    return Deno.stat(path);
-  }
+//   export async function access(path: string) {
+//     return Deno.stat(path);
+//   }
 
-  export async function readdir(path: string) {
-    const dirContents = Deno.readDir(path);
-    return toArray(dirContents);
-  }
+//   export async function readdir(path: string) {
+//     const dirContents = Deno.readDir(path);
+//     return toArray(dirContents);
+//   }
 
-  export function stat(path: string): Promise<Deno.FileInfo> {
-    return Deno.stat(path);
-  }
+//   export function stat(path: string): Promise<Deno.FileInfo> {
+//     return Deno.stat(path);
+//   }
 
-  export function rm(
-    path: string,
-    params?: {recursive?: boolean}
-  ): Promise<void> {
-    return Deno.remove(path, params);
-  }
-  export function mkdir(
-    path: string,
-    _params?: {recursive?: boolean}
-  ): Promise<void> {
-    return _fs.ensureDir(path);
-  }
+//   export function rm(
+//     path: string,
+//     params?: {recursive?: boolean}
+//   ): Promise<void> {
+//     return Deno.remove(path, params);
+//   }
+//   export function mkdir(
+//     path: string,
+//     _params?: {recursive?: boolean}
+//   ): Promise<void> {
+//     return _fs.ensureDir(path);
+//   }
 
-  export function writeFile(path: string, contents: string): Promise<void> {
-    return Deno.writeTextFile(path, contents);
-  }
-  export function writeFileSync(path: string, contents: string): void {
-    return Deno.writeTextFileSync(path, contents);
-  }
-  export function appendFile(path: string, contents: string): Promise<void> {
-    return Deno.writeTextFile(path, contents, {append: true});
-  }
-}
+//   export function writeFile(path: string, contents: string): Promise<void> {
+//     return Deno.writeTextFile(path, contents);
+//   }
+//   export function writeFileSync(path: string, contents: string): void {
+//     return Deno.writeTextFileSync(path, contents);
+//   }
+//   export function appendFile(path: string, contents: string): Promise<void> {
+//     return Deno.writeTextFile(path, contents, {append: true});
+//   }
+// }
 
 export async function input(message = "", _params?: {silent?: boolean}) {
   const buf = new Uint8Array(1024);

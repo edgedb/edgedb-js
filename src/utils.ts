@@ -29,7 +29,7 @@ export function getUniqueId(prefix: string = ""): string {
 }
 
 export function sleep(durationMillis: number): Promise<void> {
-  return new Promise((accept) => {
+  return new Promise(accept => {
     setTimeout(() => accept(), durationMillis);
   });
 }

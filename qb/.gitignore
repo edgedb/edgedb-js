@@ -1,5 +1,7 @@
 trace
 trace/*
-mts/edgeql-js
-esm/edgeql-js
+test/mts/edgeql-js
+test/esm/edgeql-js
+test/deno/edgeql-js
+test/cjs/edgeql-js
 dbschema/edgeql-js

@@ -64,8 +64,9 @@ export function generateOperators({
   const typeSpecificities = getTypesSpecificity(types, casts);
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
   const code = dir.getPath("operators");
+  const edgedb = "edgedb";
 
-  code.addImport({$: true}, "edgedb");
+  code.addImport({$: true}, edgedb);
   code.addImportStar("_", "./imports", {allowFileExt: true});
 
   const overloadsBuf = new CodeBuffer();

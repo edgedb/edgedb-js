@@ -30,6 +30,5 @@ export namespace typeutil {
 
   export type addQuestionMarks<T extends object> = {
     [k in optionalKeys<T>]?: T[k];
-  } &
-    {[k in requiredKeys<T>]: T[k]};
+  } & {[k in requiredKeys<T>]: T[k]};
 }
