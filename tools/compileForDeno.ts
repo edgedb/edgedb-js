@@ -13,6 +13,12 @@ const ts = require("typescript");
 
 const normalisePath = (path: string) => path.replace(/\\/g, "/");
 
+const denoTestFiles = new Set([
+  "test/testbase.ts",
+  "test/client.test.ts",
+  "test/credentials.test.ts",
+]);
+
 run({
   sourceDir: "./src",
   destDir: "./edgedb-deno",
@@ -30,67 +36,72 @@ run({
       from: "src/globals.deno.ts",
     },
   ],
-}).then(() =>
-  run({
-    sourceDir: "./src/syntax",
-    destDir: "./edgedb-deno",
-    pathRewriteRules: [{match: /^src\//, replace: "_src/"}],
-    importRewriteRules: [
-      {match: /^edgedb$/, replace: "https://deno.land/x/edgedb/mod.ts"},
-      {match: /^\.\.\//, replace: "../"},
-      {match: /^@generated\//, replace: "../"},
-      {match: /^\.\/setImpl/, replace: "./setImpl.ts"}, // this file will be implemented after codegen
-    ],
-    injectImports: [
-      {
-        imports: ["Buffer"],
-        from: "https://deno.land/std@0.114.0/node/buffer.ts",
+})
+  .then(() =>
+    run({
+      sourceDir: "./src/syntax",
+      destDir: "./edgedb-deno",
+      pathRewriteRules: [{match: /^src\//, replace: "_src/"}],
+      importRewriteRules: [
+        {match: /^edgedb$/, replace: "https://deno.land/x/edgedb/mod.ts"},
+        {match: /^\.\.\//, replace: "../"},
+        {match: /^@generated\//, replace: "../"},
+        {match: /^\.\/setImpl/, replace: "./setImpl.ts"},
+        // this file will be implemented after codegen
+      ],
+      injectImports: [
+        {
+          imports: ["Buffer"],
+          from: "https://deno.land/std@0.114.0/node/buffer.ts",
+        },
+      ],
+    })
+  )
+  .then(() =>
+    run({
+      sourceDir: "./test",
+      destDir: "./test/deno",
+      sourceFilter: path => {
+        return denoTestFiles.has(path);
       },
-    ],
-  })
-);
-
-const denoTestFiles = new Set([
-  "test/testbase.ts",
-  "test/client.test.ts",
-  "test/credentials.test.ts",
-]);
-
-run({
-  sourceDir: "./test",
-  destDir: "./test/deno",
-  sourceFilter: path => {
-    return denoTestFiles.has(path);
-  },
-  pathRewriteRules: [{match: /^test\//, replace: ""}],
-  importRewriteRules: [
-    {
-      match: /^\.\.\/src\/index.node$/,
-      replace: "../../edgedb-deno/mod.ts",
-    },
-    {
-      match: /^globals.deno.ts$/,
-      replace: "../globals.deno.ts",
-    },
-    {
-      match: /^\.\.\/src\/.+/,
-      replace: match =>
-        `${match.replace(/^\.\.\/src\//, "../../edgedb-deno/_src/")}${
-          match.endsWith(".ts") ? "" : ".ts"
-        }`,
-    },
-  ],
-  injectImports: [
-    {
-      imports: ["Buffer", "process"],
-      from: "src/globals.deno.ts",
-    },
-    {
-      imports: ["test", "expect", "jest"],
-      from: "test/globals.deno.ts",
-    },
-  ],
-});
+      pathRewriteRules: [{match: /^test\//, replace: ""}],
+      importRewriteRules: [
+        {
+          match: /^\.\.\/src\/index.node$/,
+          replace: "../../edgedb-deno/mod.ts",
+        },
+        {
+          match: /^globals.deno.ts$/,
+          replace: "../globals.deno.ts",
+        },
+        {
+          match: /^\.\.\/src\/.+/,
+          replace: match =>
+            `${match.replace(/^\.\.\/src\//, "../../edgedb-deno/_src/")}${
+              match.endsWith(".ts") ? "" : ".ts"
+            }`,
+        },
+      ],
+      injectImports: [
+        {
+          imports: ["Buffer", "process"],
+          from: "src/globals.deno.ts",
+        },
+        {
+          imports: ["test", "expect", "jest"],
+          from: "test/globals.deno.ts",
+        },
+      ],
+    })
+  )
+  .then(() => {
+    return Deno.writeTextFile(
+      "./edgedb-deno/generate.ts",
+      `
+export * from "./_src/reflection/cli/ts";
+    `
+    );
+  });
 
 async function run({
   sourceDir,
@@ -224,6 +235,7 @@ async function run({
           );
         }
 
+        console.log(`Resolve: ${resolvedImportPath}`);
         rewrittenFile.push(resolvedImportPath);
       }
     });
