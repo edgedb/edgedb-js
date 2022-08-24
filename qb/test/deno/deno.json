@@ -16,6 +16,7 @@
   },
   "importMap": "./import_map.json",
   "tasks": {
-    "play": "deno run --unstable --allow-net --allow-read --allow-env --unsafely-ignore-certificate-errors=localhost test.ts"
+    "play": "deno run --unstable --allow-net --allow-read --allow-env --unsafely-ignore-certificate-errors=localhost test.ts",
+    "generate": "deno run --unstable -A ../../../edgedb-deno/generate.ts"
   }
 }

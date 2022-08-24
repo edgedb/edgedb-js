@@ -230,9 +230,11 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     const denoConfigPath = path.join(projectRoot, "deno.json");
     const denoJsonExists = await exists(denoConfigPath);
 
-    const packageJson = JSON.parse(
-      await readFileUtf8(path.join(projectRoot, "package.json"))
-    );
+    let packageJson: {type: string} | null = null;
+    const pkgJsonPath = path.join(projectRoot, "package.json");
+    if (await exists(pkgJsonPath)) {
+      packageJson = JSON.parse(await readFileUtf8(pkgJsonPath));
+    }
 
     // doesn't work with `extends`
     // switch to more robust solution after splitting
