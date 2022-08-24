@@ -1440,7 +1440,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
   } else if (typeof val === "bigint") {
     stringRep = `${val.toString()}n`;
   } else if (Array.isArray(val)) {
-    skipCast = true;
+    skipCast = val.length !== 0;
     if (isArrayType(type)) {
       stringRep = `[${val
         .map(el => literalToEdgeQL(type.__element__ as any, el))

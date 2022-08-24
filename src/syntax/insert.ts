@@ -237,11 +237,14 @@ export function $normaliseInsertShape(
       if (pointer.target.__name__ === "std::json") {
       }
     }
+
     const wrappedVal =
       val === null
         ? cast(pointer.target, null)
         : isMulti && Array.isArray(val)
-        ? set(...val.map(v => (literal as any)(pointer.target, v)))
+        ? val.length === 0
+          ? cast(pointer.target, null)
+          : set(...val.map(v => (literal as any)(pointer.target, v)))
         : (literal as any)(pointer.target, val);
     newShape[key] = setModify
       ? ({[setModify]: wrappedVal} as any)
