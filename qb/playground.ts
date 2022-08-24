@@ -7,11 +7,8 @@ async function run() {
   const {client} = await setupTests();
   console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
 
-  const query = e.insert(e.Bag, {
-    stringsMulti: ["asdf"],
-    stringMultiArr: [],
-    stringsArr: [],
-  });
+  // const query = e.for(e.Bag, bag => {});
+  const query = e.str("asdf");
   console.log(query.toEdgeQL());
   const result = await query.run(client);
   console.log(JSON.stringify(result, null, 2));
