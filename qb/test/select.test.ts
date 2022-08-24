@@ -1192,6 +1192,18 @@ test("filter on link prop in nested path", async () => {
   }));
   await query.run(client);
 });
+
+// EdgeQL limitation
+// test("link prop on backlink", async()=>{
+//   const query = e.select(e.Person, person => ({
+//     movies: e.select(person["<characters[is Movie]"], m => ({
+//       title: true,
+//       "@character_name": true,
+//     })),
+//   }));
+//   await query.run(client);
+// })
+
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
 

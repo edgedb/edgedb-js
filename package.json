@@ -57,6 +57,6 @@
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
     "dev": "yarn tsc --project tsconfig.build.json --incremental && yarn build:mts && yarn copy:syntax && yarn build:deno",
-    "watch": "nodemon -e ts -w ./src -x"
+    "watch": "nodemon -e ts -w ./src -w ./qb/playground.ts -x"
   }
 }

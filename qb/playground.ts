@@ -7,12 +7,11 @@ async function run() {
   const {client} = await setupTests();
   console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
 
-  const query = e.select(e.Person, person => ({
-    movies: e.select(person["<characters[is Movie]"], m => ({
-      title: true,
-      "@character_name": true,
-    })),
-  }));
+  const query = e.insert(e.Bag, {
+    stringsMulti: ["asdf"],
+    stringMultiArr: [],
+    stringsArr: [],
+  });
   console.log(query.toEdgeQL());
   const result = await query.run(client);
   console.log(JSON.stringify(result, null, 2));

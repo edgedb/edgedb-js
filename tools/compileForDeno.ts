@@ -235,7 +235,6 @@ async function run({
           );
         }
 
-        console.log(`Resolve: ${resolvedImportPath}`);
         rewrittenFile.push(resolvedImportPath);
       }
     });
