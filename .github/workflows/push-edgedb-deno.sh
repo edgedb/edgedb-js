@@ -1,6 +1,7 @@
 pwd
 git config user.name edgedb-ci
 git config user.email releases@edgedb.com
+git remote add origin git@github.com:edgedb/edgedb-deno.git
 git add . -f
 
 if ! git diff --cached --exit-code > /dev/null;
