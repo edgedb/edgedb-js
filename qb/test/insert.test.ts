@@ -372,7 +372,5 @@ test("empty arrays for array and multi properties", async () => {
     stringMultiArr: [],
     stringsArr: [],
   });
-  console.log(query.toEdgeQL());
   const result = await query.run(client);
-  console.log(JSON.stringify(result, null, 2));
 });

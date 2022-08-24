@@ -121,6 +121,7 @@ async function cleanupData(client: Client) {
   await client.execute(`DELETE Movie;`);
   await client.execute(`DELETE Villain;`);
   await client.execute(`DELETE Hero;`);
+  await client.execute(`DELETE Profile;`);
 }
 
 export async function teardownTests(client: Client) {
