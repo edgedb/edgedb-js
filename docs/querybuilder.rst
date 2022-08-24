@@ -19,8 +19,7 @@ users, or anyone who prefers writing queries with code.
   const result = await query.run(client)
   // { id: string; title: string; actors: {name: string}[] }[]
 
-Why use the query builder?
---------------------------
+*Why use the query builder?*
 
 *Type inference!* If you're using TypeScript, the result type of *all
 queries* is automatically inferred for you. For the first time, you don't
@@ -36,32 +35,31 @@ helps you write valid queries the first time.
 Requirements
 ------------
 
-It's possible to use the query builder with or without TypeScript. Some
+The query builder works for both JavaScript and TypeScript users, and supports both Node.js and Deno. It's possible to use the query builder with or without TypeScript. Some
 requirements apply to TypeScript users only.
 
-- Node.js 14+. Run ``node --version`` to see your current version. TypeScript
-  users should also install Node.js typing: ``npm install @types/node``.
-- TypeScript 4.4+
-- Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``:
+- Node: ``v14+``. Run ``node --version`` to see your current version.
+- Deno: ``v0.20+``.
+- TypeScript: ``v4.4+``.
 
-  .. code-block:: javascript
+  - Node users: install Node.js types with ``npm install @types/node``.
+  - Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``
 
-    // tsconfig.json
-    {
-      // ...
-      "compilerOptions": {
+    .. code-block:: javascript
+
+      // tsconfig.json
+      {
         // ...
-        "strict": true,
-        "downlevelIteration": true,
+        "compilerOptions": {
+          // ...
+          "strict": true,
+          "downlevelIteration": true,
+        }
       }
-    }
 
 
-Getting started
----------------
-
-Initialize a project
-^^^^^^^^^^^^^^^^^^^^
+Quickstart
+----------
 
 If you haven't already, initialize a project, write your schema, and create/
 apply a migration. Follow the :ref:`Quickstart <ref_quickstart>` for a guided
@@ -85,11 +83,17 @@ The rest of this walkthrough uses the following simple Movie schema:
 Generate the query builder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use ``npx`` to generate the query builder.
+With Node.js, use ``npx`` to generate the query builder.
 
 .. code-block:: bash
 
   $ npx edgeql-js
+
+With Deno, use ``deno run``. *Deno user must also create an import map, see "Deno usage" below.*
+
+.. code-block:: bash
+
+  $ deno run https://deno.land/x/edgedb/generate.ts
 
 This detects whether you're using TypeScript or JavaScript and generates the
 appropriate files into the ``dbschema/edgeql-js`` directory. Refer to the
@@ -117,6 +121,41 @@ add the the line automatically.
 
   [y/n] (leave blank for "y")
 
+**Deno usage**
+
+The query builder generates code that depends on the ``edgedb`` module. The generated code imports using a plain module name (``import {createClient} from "edgedb"``). You must configure an import map to tell Deno how to resolve this import.
+
+In your ``deno.json``
+
+.. code-block:: json
+
+  {
+    // ...
+    "importMap": "./import_map.json"
+  }
+
+Then create ``import_map.json`` with the following contents. Both lines must be present.
+
+.. code-block:: json
+
+  {
+    "imports": {
+      "edgedb": "https://deno.land/x/edgedb/mod.ts",
+      "edgedb/": "https://deno.land/x/edgedb/"
+    }
+  }
+
+Optionally, you can specify a version:
+
+.. code-block:: json
+
+  {
+    "imports": {
+      "edgedb": "https://deno.land/x/edgedb@v0.22.0/mod.ts",
+      "edgedb/": "https://deno.land/x/edgedb@v0.22.0/"
+    }
+  }
+
 
 Import the query builder
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -128,12 +167,14 @@ Create a TypeScript file called ``script.ts`` (the name doesn't matter) and impo
   // script.ts
   import e from "./dbschema/edgeql-js";
 
+
 Create a client
 ^^^^^^^^^^^^^^^
 
 The query builder is only used to *write* queries, not execute them. To
 execute queries, we still need a *client* that manages the actual connection
-to our EdgeDB instance.
+to our EdgeDB instance. See the :ref:`Driver <edgedb-js-driver>` docs for full
+details.
 
 .. code-block:: typescript-diff
 
@@ -145,7 +186,7 @@ to our EdgeDB instance.
 
 
 If you've initialized a project, there's no need to provide connection
-information to ``createClient``—it will connect to your project-linked
+information to ``createClient``; it will connect to your project-linked
 instance by default. You can override this by setting the value of the
 ``EDGEDB_DSN`` environment variable; refer to the :ref:`Connection docs
 <edgedb_client_connection>` for more information.
@@ -186,95 +227,36 @@ current timestamp (as computed by the database).
 
 .. _edgedb-js-execution:
 
-Expressions
------------
 
-The ``e`` variable provides everything you need to build any EdgeQL query. All
-EdgeQL commands, standard library functions, and types are available as
-properties on ``e``.
+Executing expressions
+---------------------
 
-.. code-block:: typescript
+Throughout the documentation, we use the term "expression" a lot. This is a
+catch-all term that refers to *any query or query fragment* you define with
+the query builder. They all conform to an interface called ``Expression`` with
+some common functionality.
 
-  import e from "./dbschema/edgeql-js";
-
-  // commands
-  e.select;
-  e.insert;
-  e.update;
-  e.delete;
-
-  // types
-  e.str;
-  e.bool;
-  e.cal.local_date;
-  e.Movie;
-
-  // functions
-  e.str_upper;
-  e.len;
-  e.count;
-  e.math.stddev;
-
-These building blocks are used to define *expressions*. Everything you create
-using the query builder is an expression. Expressions have a few things in
-common.
-
-Expressions produce EdgeQL
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-You can extract an EdgeQL representation of any expression calling the
-``.toEdgeQL()`` method. Below is a number of expressions and the EdgeQL they
-produce. (The actual EdgeQL the create may look slightly different, but it's
-equivalent.)
-
-.. code-block:: typescript
-
-  e.str("Hello world!").toEdgeQL();
-  // "Hello world"
-
-  e.set(1, 2, 3).toEdgeQL();
-  // {1, 2, 3}
-
-  e.count(e.Movie).toEdgeQL();
-  // count(Movie)
-
-  e.insert(e.Movie, { title: "Iron Man "}).toEdgeQL();
-  // insert Movie { title := "Iron Man" }
-
-  e.select(e.Movie, () => ({ id: true, title: true })).toEdgeQL();
-  // select Movie { id, title }
-
-Type inference
-^^^^^^^^^^^^^^
-
-The query builder *automatically infers* the TypeScript type that best represents the result of a given expression. This inferred type can be extracted with the ``$infer`` helper.
-
-.. code-block:: typescript
-
-  import e, {$infer} from "./dbschema/edgeql-js";
-
-  const query = e.select(e.Movie, () => ({ id: true, title: true }));
-  type result = $infer<typeof query>;
-  // {id: string; title: string}[]
-
-Expressions are runnable
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Expressions can be executed with the ``.run()`` method, which accepts a
-``client``.
+Most importantly, any expression can be executed with the ``.run()`` method,
+which accepts a ``Client`` instead as the first argument. The result is
+``Promise<T>``, where ``T`` is the inferred type of the query.
 
 .. code-block:: typescript
 
   import * as edgedb from "edgedb";
 
   const client = edgedb.createClient();
-  const myQuery = e.select(e.Movie, () => ({
-    id: true,
-    title: true
-  }));
 
-  const result = await myQuery.run(client)
-  // => [{ id: "abc...", title: "The Avengers" }, ...]
+  await e.str("hello world").run(client);
+  // => "hello world"
+
+  e.set(e.int64(1), e.int64(2), e.int64(3));
+  // => [1, 2, 3]
+
+  e.select(e.Movie, ()=>({
+    title: true,
+    actors: { name: true }
+  }));
+  // => [{ title: "The Avengers", actors: [...]}]
 
 Note that the ``.run`` method accepts an instance of :js:class:`Client` (or
 ``Transaction``) as it's first argument. See :ref:`Creating a Client
@@ -287,21 +269,42 @@ that later.
   .run(client: Client | Transaction, params: Params): Promise<T>
 
 
-**JSON serialization**
+Converting to EdgeQL
+--------------------
 
-You can also use the ``runJSON`` method to retrieve the query results as a
-serialized JSON-formatted *string*. This serialization happens inside the
-database and is much faster than calling ``JSON.stringify`` yourself.
+You can extract an EdgeQL representation of any expression calling the
+``.toEdgeQL()`` method. Below is a number of expressions and the EdgeQL they
+produce. (The actual EdgeQL the create may look slightly different, but it's
+equivalent.)
 
 .. code-block:: typescript
 
-  const myQuery = e.select(e.Movie, () => ({
-    id: true,
-    title: true
-  }));
-  const result = await myQuery.runJSON(client);
-  // => '[{ "id": "abc...", "title": "The Avengers" }, ...]'
+  e.str("hello world");
+  // => select "hello world"
 
+  e.set(e.int64(1), e.int64(2), e.int64(3));
+  // => select {1, 2, 3}
+
+  e.select(e.Movie, ()=>({
+    title: true,
+    actors: { name: true }
+  }));
+  // => select Movie { title, actors: { name }}
+
+Extracting the inferred type
+----------------------------
+
+The query builder *automatically infers* the TypeScript type that best
+represents the result of a given expression. This inferred type can be
+extracted with the ``$infer`` helper.
+
+.. code-block:: typescript
+
+  import e, {$infer} from "./dbschema/edgeql-js";
+
+  const query = e.select(e.Movie, () => ({ id: true, title: true }));
+  type result = $infer<typeof query>;
+  // {id: string; title: string}[]
 
 Cheatsheet
 ----------
