@@ -1,4 +1,4 @@
-cd edgedb-deno
+pwd
 git config user.name edgedb-ci
 git config user.email releases@edgedb.com
 git add . -f
