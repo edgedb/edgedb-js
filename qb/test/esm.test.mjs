@@ -25,11 +25,9 @@ async function run() {
     const {default: e} = await import(indexFilePath);
     const result = await e.str("Hello world!").run(client);
     if (result !== "Hello world!") throw new Error();
-    // fs.rmdirSync(QBDIR, {recursive: true});
     console.log(`ESM tests successful.`);
   } catch (err) {
     console.log(err);
-    // fs.rmdirSync(QBDIR, {recursive: true});
     process.exit(1);
   }
 }

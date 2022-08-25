@@ -167,7 +167,9 @@ async function run() {
         "reflection",
         "syntax.ts"
       ),
-      `export const syntax = ${JSON.stringify({deno: denoFiles})}`
+      `export const syntax: {[k: string]: {path: string; content: string}[]} = ${JSON.stringify(
+        {deno: denoFiles}
+      )}`
     );
   }
 

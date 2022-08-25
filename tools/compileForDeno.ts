@@ -18,7 +18,7 @@ const denoTestFiles = new Set([
   "test/credentials.test.ts",
 ]);
 
-run({
+await run({
   sourceDir: "./src",
   destDir: "./edgedb-deno",
   destEntriesToClean: ["_src", "mod.ts"],

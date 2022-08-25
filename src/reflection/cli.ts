@@ -10,9 +10,6 @@ import {
 } from "../conUtils";
 import {configFileHeader, exitWithError, generateQB, Target} from "./generate";
 
-// const rmdir =
-//   Number(process.versions.node.split(".")[0]) >= 16 ? fs.rm : fs.rmdir;
-
 interface Options {
   showHelp?: boolean;
   target?: Target;
