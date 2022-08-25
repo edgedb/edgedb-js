@@ -36,27 +36,27 @@ run({
     },
   ],
 })
-  .then(() =>
-    run({
-      sourceDir: "./src/syntax",
-      destDir: "./edgedb-deno",
-      destEntriesToClean: ["_src", "mod.ts"],
-      pathRewriteRules: [{match: /^src\//, replace: "_src/"}],
-      importRewriteRules: [
-        {match: /^edgedb$/, replace: "https://deno.land/x/edgedb/mod.ts"},
-        {match: /^\.\.\//, replace: "../"},
-        {match: /^@generated\//, replace: "../"},
-        {match: /^\.\/setImpl/, replace: "./setImpl.ts"},
-        // this file will be implemented after codegen
-      ],
-      injectImports: [
-        {
-          imports: ["Buffer"],
-          from: "https://deno.land/std@0.114.0/node/buffer.ts",
-        },
-      ],
-    })
-  )
+  // .then(() =>
+  //   run({
+  //     sourceDir: "./src/syntax",
+  //     destDir: "./edgedb-deno",
+  //     destEntriesToClean: ["_src", "mod.ts"],
+  //     pathRewriteRules: [{match: /^src\//, replace: "_src/"}],
+  //     importRewriteRules: [
+  //       {match: /^edgedb$/, replace: "https://deno.land/x/edgedb/mod.ts"},
+  //       {match: /^\.\.\//, replace: "../"},
+  //       {match: /^@generated\//, replace: "../"},
+  //       {match: /^\.\/setImpl/, replace: "./setImpl.ts"},
+  //       // this file will be implemented after codegen
+  //     ],
+  //     injectImports: [
+  //       {
+  //         imports: ["Buffer"],
+  //         from: "https://deno.land/std@0.114.0/node/buffer.ts",
+  //       },
+  //     ],
+  //   })
+  // )
   .then(async () =>
     run({
       sourceDir: "./test",
@@ -128,7 +128,6 @@ async function run({
   try {
     for await (const entry of Deno.readDir(destDir)) {
       if (!destEntriesToClean || destClean.has(entry.name)) {
-        console.log(`Removing ${join(destDir, entry.name)}`);
         await Deno.remove(join(destDir, entry.name), {recursive: true});
       }
     }
@@ -149,7 +148,6 @@ async function run({
   }
 
   async function compileFileForDeno(sourcePath: string, destPath: string) {
-    console.log(`Compiling ${sourcePath}`);
     const file = await Deno.readTextFile(sourcePath);
     await ensureDir(dirname(destPath));
 
