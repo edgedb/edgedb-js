@@ -64,15 +64,15 @@ jobs:
         with:
           deno-version: v1.24.x
 
-      - uses: bahmutov/npm-install@v1.8.15
-      - uses: bahmutov/npm-install@v1.8.15
-        with:
-          working-directory: qb
+      # - uses: bahmutov/npm-install@v1.8.15
+      # - uses: bahmutov/npm-install@v1.8.15
+      #   with:
+      #     working-directory: qb
 
-      # - name: Install dev deps
-      #   run: |
-      #     yarn install
-      #     cd qb && yarn install
+      - name: Install dev deps
+        run: |
+          yarn install
+          cd qb && yarn install
 
       - name: Lint
         run: |
