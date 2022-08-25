@@ -82,9 +82,9 @@ jobs:
         run: |
           yarn build
 
-      - name: Compile for Deno
-        run: |
-          yarn build:deno
+      # - name: Compile for Deno
+      #   run: |
+      #     yarn build:deno
 
       - name: Install EdgeDB
         uses: edgedb/setup-edgedb@v1
