@@ -81,7 +81,7 @@ async function run() {
     ...(await readGlob({
       pattern: "*.js",
       cwd: esmSyntax,
-      pathTx: p => p.replaceAll(/\.js/g, ".mjs"),
+      pathTx: p => p.replace(/\.js/g, ".mjs"),
       contentTx: content =>
         content
           .replace(reReflection, `"edgedb/dist/reflection$1.js"`)
@@ -96,7 +96,7 @@ async function run() {
   const mtsFiles = await readGlob({
     pattern: "*.ts",
     cwd: srcSyntax,
-    pathTx: p => p.replaceAll(/\.ts/g, ".mts"),
+    pathTx: p => p.replace(/\.ts/g, ".mts"),
     contentTx: content =>
       content
         .replace(reReflection, `"edgedb/dist/reflection$1.js"`)
