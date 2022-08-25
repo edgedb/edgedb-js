@@ -23,6 +23,11 @@ jobs:
         with:
           node-version: 16
 
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.24.x
+
       - name: Install deps and build
         run: |
           yarn install

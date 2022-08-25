@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// tslint:disable:no-console
+
 import _fs from "fs";
 import path from "path";
 import {globby} from "globby";
