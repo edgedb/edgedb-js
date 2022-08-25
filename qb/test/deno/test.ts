@@ -2,6 +2,7 @@
 
 // import {setupTests} from "./test/setupTeardown";
 import {createClient} from "edgedb";
+
 import e from "./edgeql-js/index.ts";
 
 try {

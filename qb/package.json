@@ -2,10 +2,11 @@
   "private": true,
   "scripts": {
     "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
+    "test:all": "yarn test:esm && yarn test:cjs && yarn test:mts && yarn test:deno",
     "test:esm": "yarn generate --target esm --output-dir test/esm/edgeql-js && cd test/esm && node test.js",
     "test:cjs": "yarn generate --target cjs --output-dir test/cjs/edgeql-js && cd test/cjs && node test.js",
     "test:mts": "yarn generate --target mts --output-dir test/mts/edgeql-js && cd test/mts && yarn build && node dist/test.js",
-    "test:deno": "deno run --allow-read --allow-env --allow-write --allow-net --unstable --unsafely-ignore-certificate-errors=localhost ../edgedb-deno/generate.ts --target deno --output-dir test/deno/edgeql-js && cd test/deno && deno task play",
+    "test:deno": "cd test/deno && deno task generate && deno task play",
     "test:ci": "tsx test/testRunner.ts",
     "test:v1": "tsx test/testQBv1.ts",
     "setup:v1": "edgedb project init --no-migrations && edgedb migrate --to-revision m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq",
