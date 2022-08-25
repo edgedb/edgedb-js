@@ -4,6 +4,10 @@ import _fs from "fs";
 import path from "path";
 import {globby} from "globby";
 
+const args = process.argv;
+const denoOnly = args[2] === "--deno";
+const nodeOnly = args[2] === "--node";
+
 const fs = _fs.promises;
 
 const DEBUG = false;
@@ -133,36 +137,39 @@ async function run() {
     }
   }
 
-  const FILES: {[k: string]: Array<unknown>} = {
-    deno: denoFiles,
-    cjs: cjsFiles,
-    esm: esmFiles,
-    mts: mtsFiles,
-    ts: tsFiles,
-  };
+  if (!denoOnly) {
+    const FILES: {[k: string]: Array<unknown>} = {
+      deno: denoFiles,
+      cjs: cjsFiles,
+      esm: esmFiles,
+      mts: mtsFiles,
+      ts: tsFiles,
+    };
 
-  if (!FILES.deno.length) console.warn("No syntax files found for deno");
-  if (!FILES.cjs.length) console.warn("No syntax files found for cjs");
-  if (!FILES.esm.length) console.warn("No syntax files found for esm");
-  if (!FILES.mts.length) console.warn("No syntax files found for mts");
-  if (!FILES.ts.length) console.warn("No syntax files found for ts");
+    if (!FILES.deno.length) console.warn("No syntax files found for deno");
+    if (!FILES.cjs.length) console.warn("No syntax files found for cjs");
+    if (!FILES.esm.length) console.warn("No syntax files found for esm");
+    if (!FILES.mts.length) console.warn("No syntax files found for mts");
+    if (!FILES.ts.length) console.warn("No syntax files found for ts");
+    await fs.writeFile(
+      path.join(__dirname, "..", "dist", "reflection", "syntax.js"),
+      `module.exports.syntax = ${JSON.stringify(FILES)}`
+    );
+  }
 
-  await fs.writeFile(
-    path.join(__dirname, "..", "dist", "reflection", "syntax.js"),
-    `module.exports.syntax = ${JSON.stringify(FILES)}`
-  );
-
-  await fs.writeFile(
-    path.join(
-      __dirname,
-      "..",
-      "edgedb-deno",
-      "_src",
-      "reflection",
-      "syntax.ts"
-    ),
-    `export const syntax = ${JSON.stringify({deno: denoFiles})}`
-  );
+  if (!nodeOnly) {
+    await fs.writeFile(
+      path.join(
+        __dirname,
+        "..",
+        "edgedb-deno",
+        "_src",
+        "reflection",
+        "syntax.ts"
+      ),
+      `export const syntax = ${JSON.stringify({deno: denoFiles})}`
+    );
+  }
 
   console.log(`Generated syntax files.`);
 }
