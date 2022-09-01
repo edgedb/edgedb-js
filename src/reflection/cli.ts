@@ -156,7 +156,7 @@ CONNECTION OPTIONS:
     --tls-security <insecure | no_host_verification | strict | default>
 
 OPTIONS:
-    --target [ts,esm,cjs,mts]
+    --target [ts,mts,esm,cjs,deno]
 
         ts     Generate TypeScript files (.ts)
         mts    Generate TypeScript files (.mts) with ESM imports
