@@ -92,6 +92,8 @@ export type SelectModifiers = {
   limit?: LimitExpression | number;
 };
 
+export type UnknownSelectModifiers = {[k in keyof SelectModifiers]: unknown};
+
 export type NormalisedSelectModifiers = {
   filter?: SelectFilterExpression;
   order_by?: OrderByObjExpr[];
@@ -217,7 +219,7 @@ type argCardToResultCard<
 
 export type InferFilterCardinality<
   Base extends TypeSet,
-  Filter extends TypeSet | undefined
+  Filter
 > = Filter extends TypeSet
   ? // Base is ObjectTypeExpression &
     Base extends ObjectTypeSet // $expr_PathNode
@@ -275,7 +277,7 @@ export type InferFilterCardinality<
 
 export type InferOffsetLimitCardinality<
   Card extends Cardinality,
-  Modifers extends SelectModifiers
+  Modifers extends UnknownSelectModifiers
 > = Modifers["limit"] extends number | LimitExpression
   ? cardinalityUtil.overrideLowerBound<Card, "Zero">
   : Modifers["offset"] extends number | OffsetExpression
@@ -284,7 +286,7 @@ export type InferOffsetLimitCardinality<
 
 export type ComputeSelectCardinality<
   Expr extends ObjectTypeExpression,
-  Modifiers extends SelectModifiers
+  Modifiers extends UnknownSelectModifiers
 > = InferOffsetLimitCardinality<
   InferFilterCardinality<Expr, Modifiers["filter"]>,
   Modifiers
@@ -700,7 +702,7 @@ export function select<Expr extends TypeSet>(
 export function select<
   Expr extends ObjectTypeExpression,
   Shape extends objectTypeToSelectShape<Expr["__element__"]> & SelectModifiers,
-  Modifiers = Pick<Shape, SelectModifierNames>
+  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
   shape: (
