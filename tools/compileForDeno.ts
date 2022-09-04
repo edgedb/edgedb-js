@@ -73,14 +73,14 @@ await run({
       ],
     })
   )
-  .then(async () =>
-    Deno.writeTextFile(
+  .then(async () => {
+    await Deno.writeTextFile(
       "./edgedb-deno/generate.ts",
       `
 export * from "./_src/reflection/cli.ts";
     `
-    )
-  );
+    );
+  });
 
 async function run({
   sourceDir,

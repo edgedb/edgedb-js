@@ -46,7 +46,6 @@ async function readGlob(params: {
 
 async function run() {
   // DTS
-
   const dtsFiles = await readGlob({
     pattern: "*.d.ts",
     cwd: distSyntax,
@@ -177,4 +176,5 @@ async function run() {
 
   console.log(`Generated syntax files.`);
 }
+
 run();
