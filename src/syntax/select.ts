@@ -706,7 +706,12 @@ export function select<
 >(
   expr: Expr,
   shape: (
-    scope: $scopify<Expr["__element__"]> & $linkPropify<Expr>
+    scope: $scopify<Expr["__element__"]> &
+      $linkPropify<{
+        [k in keyof Expr]: k extends "__cardinality__"
+          ? Cardinality.One
+          : Expr[k];
+      }>
   ) => Readonly<Shape>
 ): $expr_Select<{
   __element__: ObjectType<
