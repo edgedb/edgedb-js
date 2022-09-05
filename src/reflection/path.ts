@@ -48,12 +48,7 @@ export type $linkPropify<Root extends ObjectTypeSet> = Root extends {
       any,
       any
     >
-    ? pathifyLinkProps<
-        // tslint:disable-next-line
-        LinkProps,
-        Root,
-        PathParent<Parent, L>
-      >
+    ? pathifyLinkProps<LinkProps, Root, PathParent<Parent, L>>
     : {}
   : unknown;
 

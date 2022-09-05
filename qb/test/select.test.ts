@@ -1193,6 +1193,20 @@ test("filter on link prop in nested path", async () => {
   await query.run(client);
 });
 
+test("cardinality of linkprop in scopified object", async () => {
+  const query = e.select(e.Movie.characters, c => {
+    expect(c["@character_name"].__cardinality__).toEqual(
+      $.Cardinality.AtMostOne
+    );
+    return {
+      name: true,
+      // doesn't work yet
+      // ["@character_name"]: true,
+    };
+  });
+  await query.run(client);
+});
+
 // EdgeQL limitation
 // test("link prop on backlink", async()=>{
 //   const query = e.select(e.Person, person => ({

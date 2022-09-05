@@ -8,11 +8,14 @@ async function run() {
   console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
 
   // const query = e.for(e.Bag, bag => {});
-  const query = e.select(e.Movie, movie => ({
-    id: true,
-    title: true,
-    filter: e.op(movie.genre, "=", e.Genre.Action),
-  }));
+
+  const query = e.select(e.Movie.characters, c => {
+    console.log(c["@character_name"].__cardinality__);
+    return {
+      name: true,
+      // ["@character_name"]: true,
+    };
+  });
   console.log(query.toEdgeQL());
   const result = await query.run(client);
   console.log(JSON.stringify(result, null, 2));
