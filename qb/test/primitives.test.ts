@@ -158,3 +158,8 @@ test("range primitives", async () => {
 
   await e.delete(e.Bag).run(client);
 });
+
+test("enum value with space", async () => {
+  const result = await e.Genre.Science_Fiction.run(client);
+  expect(result).toEqual("Science Fiction");
+});

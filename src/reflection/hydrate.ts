@@ -9,6 +9,7 @@ import {
   PropertyDesc,
   TupleType,
 } from "./typesystem";
+import {toIdent} from "./util/genutil";
 
 import {typeutil, util} from "./util/util";
 
@@ -149,7 +150,7 @@ export function makeType<T extends BaseType>(
       scalarObj.__kind__ = TypeKind.enum;
       scalarObj.__values__ = type.enum_values;
       for (const val of type.enum_values) {
-        Object.defineProperty(scalarObj, val, {
+        Object.defineProperty(scalarObj, toIdent(val), {
           get() {
             return literal(scalarObj, val);
           },
