@@ -1415,7 +1415,11 @@ function literalToEdgeQL(type: BaseType, val: any): string {
       const vals = (type as EnumType).__values__;
       if (vals.includes(val)) {
         skipCast = true;
-        stringRep = `${type.__name__}.${val}`;
+        if (val.includes(" ")) {
+          stringRep = `<${type.__name__}>"${val}"`;
+        } else {
+          stringRep = `${type.__name__}.${val}`;
+        }
       } else {
         throw new Error(
           `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`

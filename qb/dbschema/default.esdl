@@ -1,7 +1,7 @@
 
 module default {
 
-  scalar type Genre extending enum<Horror, Action, RomCom>;
+  scalar type Genre extending enum<"Horror", "Action", "RomCom", "Science Fiction">;
   global uuid_global -> uuid;
   global num_global -> int64;
   global arr_global -> array<str>;

@@ -233,7 +233,7 @@ test("all param types", async () => {
         bytes: Buffer;
         uuid: string;
         datetime: Date;
-        genre: "Horror" | "Action" | "RomCom";
+        genre: "Horror" | "Action" | "RomCom" | "Science Fiction";
         duration: edgedb.Duration;
         local_date: edgedb.LocalDate;
         local_time: edgedb.LocalTime;
