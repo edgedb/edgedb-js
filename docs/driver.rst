@@ -189,7 +189,7 @@ The TypeScript signatures of these methods reflects their behavior.
 Type conversion
 ---------------
 
-The driver converts EdgeDB types into a corresponding JavaScript data
+The client converts EdgeDB types into a corresponding JavaScript data
 structure. Some EdgeDB types like ``duration`` don't have a corresponding type
 in the JavaScript type system, so we've implemented classes like
 :js:class:`Duration` to represent them.
@@ -246,7 +246,7 @@ in the JavaScript type system, so we've implemented classes like
     - :js:class:`Range`
 
 
-To learn more about the driver's built-in type classes, refer to the reference
+To learn more about the client's built-in type classes, refer to the reference
 documentation.
 
 - :js:class:`Duration`
@@ -459,4 +459,4 @@ If you're a TypeScript user and want autocompletion and type inference, head
 over to the :ref:`Query Builder docs <edgedb-js-qb>`. If you're using plain
 JavaScript that likes writing queries with composable code-first syntax, you
 should check out the query builder too! If you're content writing queries as
-strings, the vanilla driver API will meet your needs.
+strings, the vanilla Client API will meet your needs.
