@@ -1,6 +1,6 @@
 import {Client, $} from "edgedb";
-import e, {$infer} from "../dbschema/edgeql-js";
-import type {$VersionStageλEnum} from "../dbschema/edgeql-js/modules/sys";
+import e, {$infer, sys} from "../dbschema/edgeql-js";
+// import type {$VersionStageλEnum} from "../dbschema/edgeql-js/modules/sys";
 import {tc} from "./setupTeardown";
 
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
@@ -390,12 +390,12 @@ test("non literal tuples", async () => {
         ver: {
           major: number;
           minor: number;
-          stage: `${$VersionStageλEnum}`;
+          stage: `${sys.VersionStage}`;
           stage_no: number;
           local: string[];
         };
         verMajor: number;
-        verStage: `${$VersionStageλEnum}`;
+        verStage: `${sys.VersionStage}`;
         verLocal: string[];
         verLocal0: string;
       }

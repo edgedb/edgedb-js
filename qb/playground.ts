@@ -2,6 +2,7 @@
 import {setupTests} from "./test/setupTeardown";
 import e from "./dbschema/edgeql-js";
 import {createClient, Duration, IsolationLevel} from "edgedb";
+import type {typeutil} from "edgedb/dist/reflection";
 
 async function run() {
   await setupTests();
@@ -30,7 +31,7 @@ async function run() {
       readonly: false,
     });
 
-  const query = e.Genre.Horror;
+  const query = e.datetime(new Date());
 
   console.log(query.toEdgeQL());
   const result = await query.run(client);

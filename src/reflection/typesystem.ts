@@ -662,13 +662,13 @@ export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
   : Type extends EnumType
   ? Type["__tstype__"]
   : Type extends ArrayType<any>
-  ? ArrayTypeToTsType<Type>
+  ? typeutil.flatten<ArrayTypeToTsType<Type>>
   : Type extends RangeType
   ? Range<Type["__element__"]["__tsconsttype__"]>
   : Type extends TupleType
   ? TupleItemsToTsType<Type["__items__"]>
   : Type extends NamedTupleType
-  ? NamedTupleTypeToTsType<Type>
+  ? typeutil.flatten<NamedTupleTypeToTsType<Type>>
   : Type extends ObjectType
   ? typeutil.flatten<
       computeObjectShape<Type["__pointers__"], Type["__shape__"]>
