@@ -71,14 +71,15 @@ value specified below is the *default value* for that setting.
 
 .. code-block:: typescript
 
-  const baseClient = createClient();
+  import {createClient, Duration, IsolationLevel} from "edgedb";
 
+  const baseClient = createClient();
   const client = baseClient
     .withConfig({
       // 10 seconds
-      session_idle_transaction_timeout: new Duration(0, 0, 0, 0, 0, 0, 10),
-      // value of 0 === no timeout
-      query_execution_timeout: new Duration(0, 0, 0, 0, 0, 0, 0),
+      session_idle_transaction_timeout: Duration.from({seconds: 10}),
+      // 0 seconds === no timeout
+      query_execution_timeout: Duration.from({seconds: 0}),
       allow_bare_ddl: "NeverAllow",
       allow_user_specified_id: false,
       apply_access_policies: true,
@@ -93,7 +94,7 @@ value specified below is the *default value* for that setting.
     .withTransactionOptions({
       isolation: IsolationLevel.Serializable, // only supported value
       deferrable: false,
-      readonly: false
+      readonly: false,
     });
 
 Running queries

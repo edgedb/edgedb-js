@@ -36,7 +36,6 @@ import {
   _ICodec,
   Session,
   AuthenticationError,
-  IsolationLevel,
 } from "../src/index.node";
 
 import {retryingConnect} from "../src/retry";
