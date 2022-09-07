@@ -40,13 +40,52 @@ If you're using TypeScript or have ES modules enabled, you can use
     const client = edgedb.createClient();
 
 
-Configuring the connection
---------------------------
+Connections
+^^^^^^^^^^^
 
-Notice we didn't pass any arguments into ``createClient``. That's intentional;
-we recommend using EdgeDB projects or environment variables to configure your
-database connections. See the :ref:`Client Library Connection
-<edgedb_client_connection>` docs for details on configuring connections.
+Notice we didn't pass any arguments into ``createClient``. That's intentional.
+
+**In development**, we recommend using ``edgedb project init`` to create an instance and link it to your project directory. As long as you're inside this directory, ``createClient()`` with auto-detect the project and connect to the associated instance automatically.
+
+**In production** you should use environment variables to provide connection information to ``createClient``. See the :ref:`Client Library Connection
+<edgedb_client_connection>` docs for details.
+
+Configuring clients
+^^^^^^^^^^^^^^^^^^^
+
+Clients can be configured using a set of *immutable* methods that start with ``with``.
+
+.. note::
+
+  These methods return a *new Client instance* that *shares a connection pool* with the original client! This is important. Each call to ``createClient`` instantiates a new connection pool. Using
+
+The code example below demonstrates all available configuration settings. The value specified below is the *default value* for that setting.
+.. code-block:: typescript
+
+  const baseClient = createClient();
+
+  const client = baseClient
+    .withConfig({
+      // 10 seconds
+      session_idle_transaction_timeout: new Duration(0, 0, 0, 0, 0, 0, 10),
+      // value of 0 === no timeout
+      query_execution_timeout: new Duration(0, 0, 0, 0, 0, 0, 0),
+      allow_bare_ddl: "NeverAllow",  // allow schema-modifying queries
+      allow_user_specified_id: true,
+      apply_access_policies: true,
+    })
+    .withRetryOptions({
+      attempts: 3,
+      backoff: (attemptNo: number) => {
+        // exponential backoff
+        return 2 ** attemptNo * 100 + Math.random() * 100;
+      },
+    })
+    .withTransactionOptions({
+      deferrable: true,
+      isolation: IsolationLevel.Serializable,
+      readonly: true,
+    });
 
 Running queries
 ---------------

@@ -688,8 +688,7 @@ export const $existingScopes = new Set<
 
 export function shape<
   Expr extends ObjectTypeExpression,
-  Shape extends objectTypeToSelectShape<Expr["__element__"]> & SelectModifiers,
-  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
+  Shape extends objectTypeToSelectShape<Expr["__element__"]> & SelectModifiers
 >(
   expr: Expr,
   shape: (
@@ -700,8 +699,8 @@ export function shape<
           : Expr[k];
       }>
   ) => Readonly<Shape>
-): Readonly<Shape>;
-export function shape(_a: unknown, b: unknown) {
+): (scope: unknown) => Readonly<Shape>;
+export function shape(_a: unknown, b: (...args: any) => any) {
   return b;
 }
 
