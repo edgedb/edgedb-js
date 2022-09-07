@@ -8,7 +8,7 @@ import {
   toTSScalarType,
   scalarToLiteralMapping,
 } from "../util/genutil";
-import {dts, js, r, t, ts} from "../builders";
+import {dts, r, t, ts} from "../builders";
 import type {GeneratorParams} from "../generate";
 import {typeMapping} from "../queries/getTypes";
 
@@ -89,22 +89,6 @@ export const generateScalars = (params: GeneratorParams) => {
     // generate enum
     if (type.enum_values && type.enum_values.length) {
       sc.writeln([
-        dts`declare `,
-        t`enum `,
-        js`const `,
-        ...frag`${ref}λEnum `,
-        js`= `,
-        `{`,
-      ]);
-      sc.indented(() => {
-        for (const val of type.enum_values!) {
-          sc.writeln([toIdent(val), t` = `, js`: `, quote(val), `,`]);
-        }
-      });
-      sc.writeln([`}`]);
-      sc.addExport(frag`${ref}λEnum`);
-
-      sc.writeln([
         t`export `,
         dts`declare `,
         t`type ${ref} = {\n`,
@@ -112,7 +96,9 @@ export const generateScalars = (params: GeneratorParams) => {
           val => t`  ${toIdent(val)}: $.$expr_Literal<${ref}>;\n`
         ),
         t`} & `,
-        t`$.EnumType<${quote(type.name)}, \`\${${ref}λEnum}\`>;`,
+        t`$.EnumType<${quote(type.name)}, [${type.enum_values
+          .map(val => quote(val))
+          .join(", ")}]>;`,
       ]);
       sc.writeln([
         dts`declare `,

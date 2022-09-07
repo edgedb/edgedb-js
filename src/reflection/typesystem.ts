@@ -182,13 +182,12 @@ export type ExpressionMethods<Set extends TypeSet> = {
 //////////////////
 export interface EnumType<
   Name extends string = string,
-  TsType extends any = any
+  Values extends [string, ...string[]] = [string, ...string[]]
 > extends BaseType {
   __kind__: TypeKind.enum;
-  __tstype__: TsType;
+  __tstype__: Values[number];
   __name__: Name;
-  __values__: string[];
-  // (val: TsType | Vals): $expr_Literal<this>;
+  __values__: Values;
 }
 
 //////////////////
