@@ -51,8 +51,8 @@ directory, ``createClient()`` with auto-detect the project and connect to the
 associated instance automatically.
 
 **In production** you should use environment variables to provide connection
-information to ``createClient``. See the :ref:`Client Library Connection
-<edgedb_client_connection>` docs for details.
+information to ``createClient``. See the :ref:`Connection parameters
+<ref_reference_connection>` docs for details.
 
 Configuring clients
 ^^^^^^^^^^^^^^^^^^^
