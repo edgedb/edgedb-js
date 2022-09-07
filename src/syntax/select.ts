@@ -686,12 +686,12 @@ export const $existingScopes = new Set<
   Expression<TypeSet<BaseType, Cardinality>>
 >();
 
-export function shape<
+function $shape<
   Expr extends ObjectTypeExpression,
   Shape extends objectTypeToSelectShape<Expr["__element__"]> & SelectModifiers
 >(
   expr: Expr,
-  shape: (
+  _shape: (
     scope: $scopify<Expr["__element__"]> &
       $linkPropify<{
         [k in keyof Expr]: k extends "__cardinality__"
@@ -700,9 +700,10 @@ export function shape<
       }>
   ) => Readonly<Shape>
 ): (scope: unknown) => Readonly<Shape>;
-export function shape(_a: unknown, b: (...args: any) => any) {
+function $shape(_a: unknown, b: (...args: any) => any) {
   return b;
 }
+export {$shape as shape};
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr

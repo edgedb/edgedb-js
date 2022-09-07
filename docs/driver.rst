@@ -64,7 +64,7 @@ Clients can be configured using a set of *immutable* methods that start with
 
   These methods return a *new Client instance* that *shares a connection pool*
   with the original client! This is important. Each call to ``createClient``
-  instantiates a new connection pool. Using
+  instantiates a new connection pool.
 
 The code example below demonstrates all available configuration settings. The
 value specified below is the *default value* for that setting.
@@ -79,7 +79,7 @@ value specified below is the *default value* for that setting.
       session_idle_transaction_timeout: new Duration(0, 0, 0, 0, 0, 0, 10),
       // value of 0 === no timeout
       query_execution_timeout: new Duration(0, 0, 0, 0, 0, 0, 0),
-      allow_bare_ddl: "NeverAllow",  // allow schema-modifying queries
+      allow_bare_ddl: "NeverAllow",
       allow_user_specified_id: true,
       apply_access_policies: true,
     })
@@ -141,7 +141,7 @@ constraints on cardinality.
 If you know your query will only return a single element, you can tell EdgeDB
 to expect a *singleton result* by using the ``.querySingle`` method. This is
 intended for queries that return *zero or one* elements. If the query returns
-\a set with more than one elements, the ``Client`` will throw a runtime error.
+a set with more than one elements, the ``Client`` will throw a runtime error.
 
 .. note::
 
