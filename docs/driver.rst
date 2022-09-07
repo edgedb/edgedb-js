@@ -80,7 +80,7 @@ value specified below is the *default value* for that setting.
       // value of 0 === no timeout
       query_execution_timeout: new Duration(0, 0, 0, 0, 0, 0, 0),
       allow_bare_ddl: "NeverAllow",
-      allow_user_specified_id: true,
+      allow_user_specified_id: false,
       apply_access_policies: true,
     })
     .withRetryOptions({
@@ -91,9 +91,9 @@ value specified below is the *default value* for that setting.
       },
     })
     .withTransactionOptions({
-      deferrable: true,
-      isolation: IsolationLevel.Serializable,
-      readonly: true,
+      isolation: IsolationLevel.Serializable, // only supported value
+      deferrable: false,
+      readonly: false
     });
 
 Running queries
