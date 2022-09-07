@@ -1815,6 +1815,9 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
 }
 
 test("configuration methods", async () => {
+  const v = await getEdgeDBVersion();
+  if (v.major < 2) return;
+
   const baseClient = getClient();
 
   const client = baseClient
