@@ -36,6 +36,7 @@ import {
   _ICodec,
   Session,
   AuthenticationError,
+  IsolationLevel,
 } from "../src/index.node";
 
 import {retryingConnect} from "../src/retry";
@@ -1812,3 +1813,32 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     ).rejects.toThrowError(AuthenticationError);
   });
 }
+
+test("configuration methods", async () => {
+  const baseClient = getClient();
+
+  const client = baseClient
+    .withConfig({
+      // 10 seconds
+      session_idle_transaction_timeout: new Duration(0, 0, 0, 0, 0, 0, 10),
+      // value of 0 === no timeout
+      query_execution_timeout: new Duration(0, 0, 0, 0, 0, 0, 0),
+      allow_bare_ddl: "NeverAllow",
+      allow_user_specified_id: false,
+      apply_access_policies: true,
+    })
+    .withRetryOptions({
+      attempts: 3,
+      backoff: (attemptNo: number) => {
+        // exponential backoff
+        return 2 ** attemptNo * 100 + Math.random() * 100;
+      },
+    })
+    .withTransactionOptions({
+      isolation: IsolationLevel.Serializable, // only supported value
+      deferrable: false,
+      readonly: false,
+    });
+
+  await client.query(`select 2`);
+});
