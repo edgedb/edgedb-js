@@ -1,7 +1,8 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
-import e, {Genre} from "./dbschema/edgeql-js";
+import e from "./dbschema/edgeql-js";
 import {createClient, Duration, IsolationLevel} from "edgedb";
+import type {typeutil} from "edgedb/dist/reflection";
 
 async function run() {
   await setupTests();
@@ -30,10 +31,7 @@ async function run() {
       readonly: false,
     });
 
-  const query = e.select(e.Movie, m => ({
-    release_year: true,
-    filter: e.op(m.title, "=", "The Avengers"),
-  }));
+  const query = e.datetime(new Date());
 
   console.log(query.toEdgeQL());
   const result = await query.run(client);
