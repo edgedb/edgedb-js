@@ -486,7 +486,7 @@ export interface ClientOptions {
   concurrency?: number;
 }
 
-interface SimpleConfig {
+type SimpleConfig = Partial<{
   session_idle_transaction_timeout: Duration;
   query_execution_timeout: Duration;
   allow_bare_ddl: "AlwaysAllow" | "NeverAllow";
@@ -494,7 +494,7 @@ interface SimpleConfig {
   allow_user_specified_id: boolean;
   apply_access_policies: boolean;
   [k: string]: unknown;
-}
+}>;
 
 export class Client implements Executor {
   private pool: ClientPool;
