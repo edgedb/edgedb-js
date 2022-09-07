@@ -70,7 +70,7 @@ A type can be made optional with the ``e.optional`` function.
   // works with duration
   const result = await query.run(client, {
     title: 'The Eternals',
-    duration: new Duration(0, 2, 3)
+    duration: Duration.from({hours: 2, minutes: 3})
   });
 
   // or without duration

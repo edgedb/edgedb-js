@@ -1,6 +1,6 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
-import e from "./dbschema/edgeql-js";
+import e, {Genre} from "./dbschema/edgeql-js";
 import {createClient, Duration, IsolationLevel} from "edgedb";
 
 async function run() {
