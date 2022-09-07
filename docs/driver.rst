@@ -1,10 +1,10 @@
 .. _edgedb-js-driver:
 
 
-Driver
-======
+Clients
+=======
 
-The driver implements the core functionality required to establish a
+The ``Client`` class implements the basic functionality required to establish a
 connection to your database and execute queries.
 
 .. _edgedb-js-create-client:
@@ -45,21 +45,30 @@ Connections
 
 Notice we didn't pass any arguments into ``createClient``. That's intentional.
 
-**In development**, we recommend using ``edgedb project init`` to create an instance and link it to your project directory. As long as you're inside this directory, ``createClient()`` with auto-detect the project and connect to the associated instance automatically.
+**In development**, we recommend using ``edgedb project init`` to create an
+instance and link it to your project directory. As long as you're inside this
+directory, ``createClient()`` with auto-detect the project and connect to the
+associated instance automatically.
 
-**In production** you should use environment variables to provide connection information to ``createClient``. See the :ref:`Client Library Connection
+**In production** you should use environment variables to provide connection
+information to ``createClient``. See the :ref:`Client Library Connection
 <edgedb_client_connection>` docs for details.
 
 Configuring clients
 ^^^^^^^^^^^^^^^^^^^
 
-Clients can be configured using a set of *immutable* methods that start with ``with``.
+Clients can be configured using a set of *immutable* methods that start with
+``with``.
 
 .. note::
 
-  These methods return a *new Client instance* that *shares a connection pool* with the original client! This is important. Each call to ``createClient`` instantiates a new connection pool. Using
+  These methods return a *new Client instance* that *shares a connection pool*
+  with the original client! This is important. Each call to ``createClient``
+  instantiates a new connection pool. Using
 
-The code example below demonstrates all available configuration settings. The value specified below is the *default value* for that setting.
+The code example below demonstrates all available configuration settings. The
+value specified below is the *default value* for that setting.
+
 .. code-block:: typescript
 
   const baseClient = createClient();
@@ -112,6 +121,69 @@ In TypeScript, you can supply a type hint to receive a strongly typed result.
 
   const result = await client.query<number>(`select 2 + 2;`);
   // number[]
+
+``.query`` method
+^^^^^^^^^^^^^^^^^
+
+The ``.query`` method always returns an array of results. It places no
+constraints on cardinality.
+
+.. code-block:: js
+
+  await client.query(`select 2 + 2;`); // [4]
+  await client.query(`select [1, 2, 3];`); // [[1, 2, 3]]
+  await client.query(`select <int64>{};`); // []
+  await client.query(`select {1, 2, 3};`); // [1, 2, 3]
+
+``.querySingle`` method
+^^^^^^^^^^^^^^^^^^^^^^^
+
+If you know your query will only return a single element, you can tell EdgeDB
+to expect a *singleton result* by using the ``.querySingle`` method. This is
+intended for queries that return *zero or one* elements. If the query returns
+\a set with more than one elements, the ``Client`` will throw a runtime error.
+
+.. note::
+
+  Note that if you're selecting an array or tuple, the returned value may
+  still be an array.
+
+.. code-block:: js
+
+  await client.querySingle(`select 2 + 2;`); // [4]
+  await client.querySingle(`select [1, 2, 3];`); // [1, 2, 3]
+  await client.querySingle(`select <int64>{};`); // null
+  await client.querySingle(`select {1, 2, 3};`); // Error
+
+``.queryRequiredSingle`` method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use ``queryRequiredSingle`` for queries that return *exactly one* element. If
+the query returns an empty set or a set with multiple elements, the ``Client``
+will throw a runtime error.
+
+.. code-block:: js
+
+  await client.queryRequiredSingle(`select 2 + 2;`); // 4
+  await client.queryRequiredSingle(`select [1, 2, 3];`); // [1, 2, 3]
+  await client.queryRequiredSingle(`select <int64>{};`); // Error
+  await client.queryRequiredSingle(`select {1, 2, 3};`); // Error
+
+TypeScript
+^^^^^^^^^^
+
+The TypeScript signatures of these methods reflects their behavior.
+
+.. code-block:: typescript
+
+  await client.query<number>(`select 2 + 2;`);
+  // number[]
+
+  await client.querySingle<number>(`select 2 + 2;`);
+  // number | null
+
+  await client.queryRequiredSingle<number>(`select 2 + 2;`);
+  // number
 
 
 Type conversion
@@ -192,64 +264,6 @@ documentation.
 ..   **A message for query builder users**
 
 ..   Everything below this point isn't necessary/applicable for query builder users. Continue to the :ref:`Query Builder <edgedb-js-qb>` docs.
-
-
-Enforcing cardinality
----------------------
-
-There are additional methods for running queries that have an *expected
-cardinality*. This is a useful way to tell the driver how many elements you
-expect the query to return.
-
-``.query`` method
-^^^^^^^^^^^^^^^^^
-
-The ``query`` method places no constraints on cardinality. It returns an
-array, no matter what.
-
-.. code-block:: js
-
-  await client.query(`select 2 + 2;`); // [4]
-  await client.query(`select <int64>{};`); // []
-  await client.query(`select {1, 2, 3};`); // [1, 2, 3]
-
-``.querySingle`` method
-^^^^^^^^^^^^^^^^^^^^^^^
-
-Use ``querySingle`` if you expect your query to return *zero or one* elements.
-Unlike ``query``, it either returns a single element or ``null``. Note that if
-you're selecting an array, tuple, or set, the returned 'single' element will be
-an array.
-
-.. code-block:: js
-
-  await client.querySingle(`select 2 + 2;`); // [4]
-  await client.querySingle(`select <int64>{};`); // null
-  await client.querySingle(`select {1, 2, 3};`); // Error
-
-``.queryRequiredSingle`` method
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Use ``queryRequiredSingle`` for queries that return *exactly one* element.
-
-.. code-block:: js
-
-  await client.queryRequiredSingle(`select 2 + 2;`); // 4
-  await client.queryRequiredSingle(`select <int64>{};`); // Error
-  await client.queryRequiredSingle(`select {1, 2, 3};`); // Error
-
-The TypeScript signatures of these methods reflects their behavior.
-
-.. code-block:: typescript
-
-  await client.query<number>(`select 2 + 2;`);
-  // number[]
-
-  await client.querySingle<number>(`select 2 + 2;`);
-  // number | null
-
-  await client.queryRequiredSingle<number>(`select 2 + 2;`);
-  // number
 
 
 JSON results
