@@ -1207,6 +1207,23 @@ test("cardinality of linkprop in scopified object", async () => {
   await query.run(client);
 });
 
+test("portable shape", async () => {
+  const baseShape = e.shape(e.Movie, movie => ({
+    ...movie["*"],
+  }));
+  const query = e.select(e.Movie, m => {
+    return {
+      ...baseShape(m),
+      characters: {name: true},
+      filter: e.op(m.title, "=", "The Avengers"),
+    };
+  });
+
+  const result = await query.run(client);
+  expect(result?.rating).toBeDefined();
+  expect(result?.characters).toBeDefined();
+});
+
 // EdgeQL limitation
 // test("link prop on backlink", async()=>{
 //   const query = e.select(e.Person, person => ({

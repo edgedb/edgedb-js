@@ -473,7 +473,7 @@ Client
 Type conversion
 ===============
 
-The driver automatically converts EdgeDB types to the corresponding JavaScript
+The client automatically converts EdgeDB types to the corresponding JavaScript
 types and vice versa.
 
 The table below shows the correspondence between EdgeDB and JavaScript types.

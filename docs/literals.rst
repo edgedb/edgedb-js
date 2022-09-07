@@ -88,9 +88,9 @@ type system: ``duration``, ``cal::relative_duration``, ``cal::date_duration``,
 ``cal::local_date``, ``cal::local_time``, and ``cal::local_datetime``,
 
 To resolve this, each of these datatypes can be represented with an instance
-of a corresponding class, as defined in ``edgedb`` module. The driver uses
+of a corresponding class, as defined in ``edgedb`` module. Clients use
 these classes to represent these values in query results; they are documented
-on the :ref:`Driver <edgedb-js-datatypes>` page.
+on the :ref:`Client API <edgedb-js-datatypes>` docs.
 
 .. list-table::
 

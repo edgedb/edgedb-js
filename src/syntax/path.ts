@@ -256,6 +256,7 @@ export function $getScopedExpr<T extends ExpressionRoot>(
             ...expr,
             __cardinality__: Cardinality.One,
             __scopedFrom__: expr,
+            "*": (expr as any)["*"],
           });
     scopeRoots.add(scopedExpr);
     const uncached = !scopedExpr;

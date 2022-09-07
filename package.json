@@ -1,6 +1,6 @@
 {
   "name": "edgedb",
-  "version": "0.22.4",
+  "version": "0.22.5",
   "description": "The official Node.js client library for EdgeDB",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
@@ -59,6 +59,7 @@
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/gen_errors.js",
     "dev": "yarn tsc --project tsconfig.build.json --incremental && yarn build:deno && yarn syntax:make",
+    "generate": "cd qb && yarn generate && cd ..",
     "watch": "nodemon -e ts -w ./src -w ./qb/playground.ts -x"
   },
   "packageManager": "yarn@3.2.3"

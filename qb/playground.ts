@@ -1,20 +1,43 @@
 // tslint:disable:no-console
-
 import {setupTests} from "./test/setupTeardown";
-import e from "./dbschema/edgeql-js";
+import e, {Genre} from "./dbschema/edgeql-js";
+import {createClient, Duration, IsolationLevel} from "edgedb";
 
 async function run() {
-  const {client} = await setupTests();
-  console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
+  await setupTests();
 
-  // const query = e.for(e.Bag, bag => {});
+  const baseClient = createClient();
+  const client = baseClient
+    .withConfig({
+      // 10 seconds
+      session_idle_transaction_timeout: Duration.from({seconds: 10}),
+      // 0 seconds === no timeout
+      query_execution_timeout: Duration.from({seconds: 0}),
+      allow_bare_ddl: "NeverAllow",
+      allow_user_specified_id: false,
+      apply_access_policies: true,
+    })
+    .withRetryOptions({
+      attempts: 3,
+      backoff: (attemptNo: number) => {
+        // exponential backoff
+        return 2 ** attemptNo * 100 + Math.random() * 100;
+      },
+    })
+    .withTransactionOptions({
+      isolation: IsolationLevel.Serializable, // only supported value
+      deferrable: false,
+      readonly: false,
+    });
 
-  console.log(e.Genre.Science_Fiction);
-  const query = e.Genre.Science_Fiction;
+  const query = e.select(e.Movie, m => ({
+    release_year: true,
+    filter: e.op(m.title, "=", "The Avengers"),
+  }));
 
   console.log(query.toEdgeQL());
   const result = await query.run(client);
-  console.log(JSON.stringify(result, null, 2));
+  console.log(result);
 }
 
 run();

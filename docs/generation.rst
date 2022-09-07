@@ -208,6 +208,7 @@ builder API. Avoid using the following names in your schema.
 - ``index``
 - ``slice``
 - ``destructure``
+- ``shape``
 
 
 Generated interfaces

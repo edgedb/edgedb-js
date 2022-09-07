@@ -173,8 +173,8 @@ Create a client
 
 The query builder is only used to *write* queries, not execute them. To
 execute queries, we still need a *client* that manages the actual connection
-to our EdgeDB instance. See the :ref:`Driver <edgedb-js-driver>` docs for full
-details.
+to our EdgeDB instance. See the :ref:`Client API <edgedb-js-driver>` docs for
+full details.
 
 .. code-block:: typescript-diff
 

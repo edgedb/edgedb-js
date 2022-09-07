@@ -22,23 +22,6 @@ unnecessary, since expressions are ``run``\ able without being wrapped by
   e.select(e.op(e.int64(2), '+', e.int64(2)));
   // select 2 + 2;
 
-Selecting free objects
-----------------------
-
-Select a free object by passing an object into ``e.select``
-
-.. code-block:: typescript
-
-  e.select({
-    name: e.str("Name"),
-    number: e.int64(1234),
-    movies: e.Movie,
-  });
-  /* select {
-    name := "Name",
-    number := 1234,
-    movies := Movie
-  } */
 
 Selecting objects
 -----------------
@@ -150,6 +133,32 @@ As in EdgeQL, shapes can be nested to fetch deeply related objects.
     actors: { name: string }[]
   }[] */
 
+
+Portable shapes
+^^^^^^^^^^^^^^^
+
+You can use ``e.shape`` to define a "portable shape" that can be defined
+independently and used in multiple queries.
+
+.. code-block:: typescript
+
+  const baseShape = e.shape(e.Movie, (m) => ({
+    title: true,
+    num_actors: e.count(m)
+  }));
+
+  const query = e.select(e.Movie, m => ({
+    ...baseShape(m),
+    release_year: true,
+    filter: e.op(m.title, '=', 'The Avengers')
+  }))
+
+.. note::
+
+  Note that the result of ``e.shape`` is a *function*. When you use the shape
+  in your final queries, be sure to pass in the *scope variable* (e.g. ``m``
+  in the example above). This is required for the query builder to correctly
+  resolve the query.
 
 Why closures?
 -------------
@@ -433,3 +442,21 @@ Sometimes you need to "detach" a set reference from the current scope. (Read the
       )
     }
   */
+
+Selecting free objects
+----------------------
+
+Select a free object by passing an object into ``e.select``
+
+.. code-block:: typescript
+
+  e.select({
+    name: e.str("Name"),
+    number: e.int64(1234),
+    movies: e.Movie,
+  });
+  /* select {
+    name := "Name",
+    number := 1234,
+    movies := Movie
+  } */

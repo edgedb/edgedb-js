@@ -39,7 +39,7 @@ or Deno backend.
 
 There are two components of this library:
 
-- Use the :ref:`Driver API <edgedb-js-intro-driver>` to establish a connection
+- Use the :ref:`Client API <edgedb-js-intro-driver>` to establish a connection
   to your database and execute EdgeQL queries (written as strings).
 - Use the :ref:`Query Builder API <edgedb-js-intro-qb>` to write queries in a
   code-first, typesafe way. Recommended for TypeScript users.
@@ -73,12 +73,12 @@ Deno users: Import from ``deno.land/x/edgedb``:
 
 .. _edgedb-js-intro-driver:
 
-The driver
-==========
+The ``Client`` API
+==================
 
-The driver implements the core functionality required to establish a
+The ``Client`` class implements the core functionality required to establish a
 connection to your database and execute queries. If you prefer writing queries
-as strings, the driver API is all you need.
+as strings, the Client API is all you need.
 
 .. code-block:: javascript
 
@@ -94,7 +94,7 @@ as strings, the driver API is all you need.
 
   run();
 
-If you're not using TypeScript, you can skip straight to :ref:`the Driver docs
+If you're not using TypeScript, you can skip straight to :ref:`the Client docs
 <edgedb-js-driver>`.
 
 
@@ -141,7 +141,7 @@ users and JavaScript users who prefer writing queries as code.
 How do I get started?
 ---------------------
 
-We recommend reading the :ref:`Driver docs <edgedb-js-driver>` first. If you
+We recommend reading the :ref:`Client docs <edgedb-js-driver>` first. If you
 are happy writing your EdgeQL as plain strings, then that's all you need! If
 you're a TypeScript user, or simply prefer writing queries in a code-first
 way, continue on to the :ref:`Query builder <edgedb-js-generation>` docs.
