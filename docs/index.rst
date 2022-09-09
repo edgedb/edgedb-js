@@ -49,12 +49,17 @@ There are two components of this library:
 
 **Requirements**
 
-*Node.js users*
+*Node.js*
+  Node.js 14+. Run ``node --version`` to see your current version.
 
-- [Node only] Node.js 14+. Run ``node --version`` to see your current version
-- [Deno only] Deno v1.17+. Run ``deno --version`` to see your current version
-- [TypeScript only] Node.js type declarations: ``npm install @types/node``
-- [TypeScript only] ``"strict": true`` in ``tsconfig.json`` ``compilerOptions``
+*Deno*
+  Deno v1.17+. Run ``deno --version`` to see your current version.
+
+*TypeScript*
+  - TypeScript v4.4+
+  - Node.js type declarations: ``npm install @types/node``
+  - Compiler options: ``"strict": true`` and ``"downlevelIteration": true`` in
+    ``tsconfig.json``
 
 **Installation**
 
@@ -65,7 +70,7 @@ There are two components of this library:
     $ npm install edgedb      # npm users
     $ yarn add edgedb         # yarn users
 
-Deno users: Import from ``deno.land/x/edgedb``:
+*Deno users*: Import from ``deno.land/x/edgedb``:
 
 .. code-block::
 
