@@ -2,5 +2,8 @@
   "private": true,
   "resolutions": {
     "edgedb": "portal:../.."
+  },
+  "devDependencies": {
+    "tsx": "^3.9.0"
   }
 }

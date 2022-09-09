@@ -49,6 +49,10 @@ async function run() {
   const dtsFiles = await readGlob({
     pattern: "*.d.ts",
     cwd: distSyntax,
+    contentTx: content =>
+      content
+        .replace(reReflection, `"edgedb/dist/reflection$1"`)
+        .replace(reGenerated, `"../$1"`),
   });
 
   // TS
@@ -140,6 +144,7 @@ async function run() {
 
   if (!denoOnly) {
     const FILES: {[k: string]: Array<unknown>} = {
+      dts: dtsFiles,
       deno: denoFiles,
       cjs: cjsFiles,
       esm: esmFiles,
@@ -147,6 +152,7 @@ async function run() {
       ts: tsFiles,
     };
 
+    if (!FILES.dts.length) console.warn("No syntax files found for dts");
     if (!FILES.deno.length) console.warn("No syntax files found for deno");
     if (!FILES.cjs.length) console.warn("No syntax files found for cjs");
     if (!FILES.esm.length) console.warn("No syntax files found for esm");
