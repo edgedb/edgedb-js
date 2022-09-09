@@ -45,11 +45,13 @@ export class RawConnection extends BaseRawConnection {
   protected constructor(
     sock: net.Socket,
     config: NormalizedConnectConfig,
-    registry: CodecsRegistry
+    registry: CodecsRegistry,
+    exposeErrorAttrs: boolean = false
   ) {
     super(registry);
 
     this.config = config;
+    this.exposeErrorAttributes = exposeErrorAttrs;
 
     this.paused = false;
     this.sock = sock;
@@ -208,13 +210,14 @@ export class RawConnection extends BaseRawConnection {
     addr: Address,
     config: NormalizedConnectConfig,
     registry: CodecsRegistry,
+    exposeErrorAttrs: boolean,
     useTls: boolean = true
   ): Promise<RawConnection> {
     const sock = this.newSock(
       addr,
       useTls ? config.connectionParams.tlsOptions : undefined
     );
-    const conn = new this(sock, config, registry);
+    const conn = new this(sock, config, registry, exposeErrorAttrs);
     const connPromise = conn.connect();
     let timeoutCb = null;
     let timeoutHappened = false;
@@ -255,7 +258,13 @@ export class RawConnection extends BaseRawConnection {
               // connecting over tls failed
               // try to connect using clear text
               try {
-                return this.connectWithTimeout(addr, config, registry, false);
+                return this.connectWithTimeout(
+                  addr,
+                  config,
+                  registry,
+                  exposeErrorAttrs,
+                  false
+                );
               } catch {
                 // pass
               }

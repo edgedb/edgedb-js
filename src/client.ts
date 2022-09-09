@@ -276,8 +276,13 @@ export class ClientPool {
   private _suggestedConcurrency: number | null;
   private _connectConfig: ConnectConfig;
   private _codecsRegistry: CodecsRegistry;
+  private _exposeErrorAttrs: boolean;
 
-  constructor(dsn?: string, options: ConnectOptions = {}) {
+  constructor(
+    dsn?: string,
+    options: ConnectOptions = {},
+    exposeErrorAttrs = false
+  ) {
     this.validateClientOptions(options);
 
     this._codecsRegistry = new CodecsRegistry();
@@ -288,6 +293,7 @@ export class ClientPool {
     this._suggestedConcurrency = null;
     this._closing = null;
     this._connectConfig = {...options, ...(dsn !== undefined ? {dsn} : {})};
+    this._exposeErrorAttrs = exposeErrorAttrs;
 
     this._resizeHolderPool();
   }
@@ -372,7 +378,11 @@ export class ClientPool {
     }
 
     const config = await this._getNormalizedConnectConfig();
-    const connection = await retryingConnect(config, this._codecsRegistry);
+    const connection = await retryingConnect(
+      config,
+      this._codecsRegistry,
+      this._exposeErrorAttrs
+    );
 
     const suggestedConcurrency =
       connection.serverSettings.suggested_pool_concurrency;

@@ -27,7 +27,8 @@ let lastLoggingAt = 0;
 
 export async function retryingConnect(
   config: NormalizedConnectConfig,
-  registry: CodecsRegistry
+  registry: CodecsRegistry,
+  exposeErrorAttrs: boolean
 ): Promise<RawConnection> {
   const maxTime =
     config.connectionParams.waitUntilAvailable === 0
@@ -38,7 +39,8 @@ export async function retryingConnect(
       return await RawConnection.connectWithTimeout(
         config.connectionParams.address,
         config,
-        registry
+        registry,
+        exposeErrorAttrs
       );
     } catch (e) {
       if (e instanceof errors.ClientConnectionError) {

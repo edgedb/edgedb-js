@@ -1732,7 +1732,7 @@ if (getEdgeDBVersion().major >= 2) {
   test("'implicit*' headers", async () => {
     const config = await parseConnectArguments(getConnectOptions());
     const registry = new _CodecsRegistry();
-    const con = await retryingConnect(config, registry);
+    const con = await retryingConnect(config, registry, false);
     try {
       const query = `SELECT Function {
         name

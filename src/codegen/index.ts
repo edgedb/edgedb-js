@@ -12,19 +12,28 @@ import {TupleCodec} from "src/codecs/tuple";
 import {Cardinality, OutputFormat} from "src/ifaces";
 import {Options, Session} from "src/options";
 import {ClientPool} from "../client";
+import {prettyPrintError} from "./prettyPrintError";
 
 (async function main() {
   const query = await fs.readFile("./src/codegen/getMoviesStarring.edgeql", {
     encoding: "utf8",
   });
 
-  const pool = new ClientPool(undefined, {
-    concurrency: 5,
-    dsn: "_localdev",
-    database: "_example",
-  });
+  const pool = new ClientPool(
+    undefined,
+    {
+      concurrency: 5,
+      dsn: "_localdev",
+      database: "_example",
+    },
+    true
+  );
 
-  generateQueryType(pool, query);
+  try {
+    await generateQueryType(pool, query);
+  } catch (err) {
+    console.log(err);
+  }
 })();
 
 async function generateQueryType(
@@ -44,8 +53,7 @@ async function generateQueryType(
       false
     );
   } catch (err) {
-    throw err;
-    // throw prettyPrintError(err, query);
+    throw prettyPrintError(err, query);
   } finally {
     await holder.release();
   }
