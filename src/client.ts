@@ -268,7 +268,7 @@ export class ClientConnectionHolder {
   }
 }
 
-class ClientPool {
+export class ClientPool {
   private _closing: Event | null;
   private _queue: LifoQueue<ClientConnectionHolder>;
   private _holders: ClientConnectionHolder[];

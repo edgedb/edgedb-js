@@ -21,6 +21,8 @@ import {ICodec, ScalarCodec} from "./ifaces";
 import {InvalidArgumentError} from "../errors";
 
 export class StrCodec extends ScalarCodec implements ICodec {
+  tsType = "string";
+
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "string") {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);

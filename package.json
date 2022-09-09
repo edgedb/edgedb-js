@@ -42,6 +42,7 @@
     "typescript": "^4.4"
   },
   "scripts": {
+    "codegen": "tsx src/codegen/index.ts --project tsconfig.json --trace-warnings",
     "build": "echo 'Building edgedb-js...' && yarn build:cjs && yarn build:esm && yarn build:deno && yarn syntax:make && yarn syntax:clean && yarn set-version",
     "build:esm": "tsc --project tsconfig.build-esm.json",
     "build:cjs": "tsc --project tsconfig.build.json",

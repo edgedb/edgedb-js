@@ -93,6 +93,15 @@ const OLD_ERROR_CODES = new Map([
   [0x05_03_00_02, 0x05_03_01_02], // TransactionDeadlockError      #2431
 ]);
 
+export type ParseResult = [
+  Cardinality,
+  ICodec,
+  ICodec,
+  number,
+  Buffer | null,
+  Buffer | null
+];
+
 export class BaseRawConnection {
   protected connected: boolean = false;
   protected exposeErrorAttributes: boolean = false;
@@ -888,16 +897,14 @@ export class BaseRawConnection {
     }
   }
 
-  private async _parse(
+  async _parse(
     query: string,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
     state: Session,
     privilegedMode: boolean = false,
     options?: QueryOptions
-  ): Promise<
-    [Cardinality, ICodec, ICodec, number, Buffer | null, Buffer | null]
-  > {
+  ): Promise<ParseResult> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$P);
     wb.writeUInt16(0); // no headers
