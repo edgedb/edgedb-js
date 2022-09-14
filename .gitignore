@@ -1,6 +1,5 @@
 dist
-/edgedb-deno
-/test/deno
+packages/edgedb-deno
 /.bench
 /.vscode
 node_modules
