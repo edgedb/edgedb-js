@@ -32,12 +32,12 @@ test("run deno test", async () => {
         "--allow-read",
         "--allow-write",
         "--unsafely-ignore-certificate-errors",
-        "test",
+        "test"
       ],
       {
         env: process.env,
         timeout: 120_000,
-        cwd: "../edgedb-deno",
+        cwd: "../deno"
       },
       (error, stdout, stderr) => {
         if (error) {
@@ -62,7 +62,7 @@ test("deno check", async () => {
       {
         env: process.env,
         timeout: 60_000,
-        cwd: "../edgedb-deno",
+        cwd: "../deno"
       },
       (error, _stdout, stderr) => {
         if (error) {
