@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declarationDir": "./dist",
+    "outDir": "./dist",
+    // "baseUrl": ".",
+    // "typeRoots": [
+    //   "./node_modules/@types"
+    // ],
+    "paths": {
+      "edgedb": [
+        "./src/index.node"
+      ],
+      "@generated/*": [
+        "./src/syntax/genMock/*"
+      ],
+    }
+  },
+  "include": [
+    "src",
+  ],
+  "exclude": [
+    "**/*.deno.ts",
+    "test/deno/*",
+    "dist",
+    "qb",
+  ]
+}
