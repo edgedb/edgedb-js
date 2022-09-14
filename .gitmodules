@@ -1,0 +1,3 @@
+[submodule "packages/driver/test/shared-client-testcases"]
+	path = packages/driver/test/shared-client-testcases
+	url = git@github.com:edgedb/shared-client-testcases.git
