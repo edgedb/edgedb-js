@@ -1,6 +1,0 @@
-[submodule "test/shared-client-testcases"]
-	path = test/shared-client-testcases
-	url = https://github.com/edgedb/shared-client-testcases.git
-[submodule "packages/edgedb-js/test/shared-client-testcases"]
-	path = packages/edgedb-js/test/shared-client-testcases
-	url = git@github.com:edgedb/shared-client-testcases.git
