@@ -36,52 +36,51 @@ await run({
       from: "src/globals.deno.ts"
     }
   ]
-})
-  .then(async () =>
-    run({
-      sourceDir: "./test",
-      destDir: "../deno/test",
-      sourceFilter: path => {
-        return denoTestFiles.has(path);
+}).then(async () =>
+  run({
+    sourceDir: "./test",
+    destDir: "../deno/test",
+    sourceFilter: path => {
+      return denoTestFiles.has(path);
+    },
+    pathRewriteRules: [{match: /^test\//, replace: ""}],
+    importRewriteRules: [
+      {
+        match: /^\.\.\/src\/index.node$/,
+        replace: "../mod.ts"
       },
-      pathRewriteRules: [{match: /^test\//, replace: ""}],
-      importRewriteRules: [
-        {
-          match: /^\.\.\/src\/index.node$/,
-          replace: "../mod.ts"
-        },
-        {
-          match: /^globals.deno.ts$/,
-          replace: "../globals.deno.ts"
-        },
-        {
-          match: /^\.\.\/src\/.+/,
-          replace: match =>
-            `${match.replace(/^\.\.\/src\//, "../_src/")}${
-              match.endsWith(".ts") ? "" : ".ts"
-            }`
-        }
-      ],
-      injectImports: [
-        {
-          imports: ["Buffer", "process", "test", "expect", "jest"],
-          from: "src/globals.deno.ts"
-        }
-        // {
-        //   imports: ["test", "expect", "jest"],
-        //   from: "test/globals.deno.ts",
-        // },
-      ]
-    })
-  )
-  .then(async () => {
-    await Deno.writeTextFile(
-      "../deno/generate.ts",
-      `
-export * from "./_src/reflection/cli.ts";
-    `
-    );
-  });
+      {
+        match: /^globals.deno.ts$/,
+        replace: "../globals.deno.ts"
+      },
+      {
+        match: /^\.\.\/src\/.+/,
+        replace: match =>
+          `${match.replace(/^\.\.\/src\//, "../_src/")}${
+            match.endsWith(".ts") ? "" : ".ts"
+          }`
+      }
+    ],
+    injectImports: [
+      {
+        imports: ["Buffer", "process", "test", "expect", "jest"],
+        from: "src/globals.deno.ts"
+      }
+      // {
+      //   imports: ["test", "expect", "jest"],
+      //   from: "test/globals.deno.ts",
+      // },
+    ]
+  })
+);
+//   .then(async () => {
+//     await Deno.writeTextFile(
+//       "../deno/generate.ts",
+//       `
+// export * from "./_src/reflection/cli.ts";
+//     `
+//     );
+//   });
 
 async function run({
   sourceDir,

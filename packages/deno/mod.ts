@@ -15,26 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export {createClient} from "./_src/client.ts";
 import {createClient} from "./_src/client.ts";
+export {createClient} from "./_src/client.ts";
 export default createClient;
 
-export {RawConnection as _RawConnection} from "./_src/rawConn.ts";
+import * as adapter from "./_src/adapter.deno.ts";
+export {adapter};
 
+export {RawConnection as _RawConnection} from "./_src/rawConn.ts";
 export type {Executor} from "./_src/ifaces.ts";
 export type {Client, ConnectOptions} from "./_src/client.ts";
-
 export {
   IsolationLevel,
   RetryCondition,
   RetryOptions,
-  Session,
+  Session
 } from "./_src/options.ts";
 export {defaultBackoff} from "./_src/options.ts";
 export type {BackoffFunction} from "./_src/options.ts";
 
 export * from "./_src/index.shared.ts";
-
-export * as reflection from "./_src/reflection/index.ts";
 export * as $ from "./_src/reflection/index.ts";

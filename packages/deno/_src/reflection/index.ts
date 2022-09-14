@@ -17,11 +17,15 @@
  */
 
 export * from "./enums.ts";
-export * from "./util/util.ts";
+export * from "./util.ts";
+export * from "./typeutil.ts";
+export * from "./cardinality.ts";
+export * from "./util.ts";
 export * from "./typesystem.ts";
 export * from "./strictMap.ts";
-export * as introspect from "./queries/getTypes.ts";
 export * from "./hydrate.ts";
 export * from "./path.ts";
 export * from "./literal.ts";
 export * from "./funcops.ts";
+export * from "./syntax.ts";
+export * as introspect from "./queries.ts";

@@ -15,26 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export {createClient} from "./client";
 import {createClient} from "./client";
+export {createClient} from "./client";
 export default createClient;
 
-export {RawConnection as _RawConnection} from "./rawConn";
+import * as adapter from "./adapter.node";
+export {adapter};
 
+export {RawConnection as _RawConnection} from "./rawConn";
 export type {Executor} from "./ifaces";
 export type {Client, ConnectOptions} from "./client";
-
 export {
   IsolationLevel,
   RetryCondition,
   RetryOptions,
-  Session,
+  Session
 } from "./options";
 export {defaultBackoff} from "./options";
 export type {BackoffFunction} from "./options";
 
 export * from "./index.shared";
-
-export * as reflection from "./reflection";
 export * as $ from "./reflection";

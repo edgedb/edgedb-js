@@ -5,14 +5,14 @@ import {
   Duration,
   RelativeDuration,
   ConfigMemory,
-  DateDuration,
+  DateDuration
 } from "edgedb";
 import type {$bool, $number} from "@generated/modules/std";
 import {
   $expr_PolyShapeElement,
   $scopify,
   Cardinality,
-  cardinalityUtil,
+  cardutil,
   Expression,
   ExpressionKind,
   LinkDesc,
@@ -28,7 +28,7 @@ import {
   TypeKind,
   TypeSet,
   typeutil,
-  BaseType,
+  BaseType
 } from "../reflection/index";
 
 import type {
@@ -36,7 +36,7 @@ import type {
   $expr_PathNode,
   $linkPropify,
   ExpressionRoot,
-  PathParent,
+  PathParent
 } from "../reflection/path";
 import type {anonymizeObject} from "./casting";
 import type {$expr_Operator} from "../reflection/funcops";
@@ -46,7 +46,7 @@ import {spec} from "@generated/__spec__";
 import {
   scalarLiterals,
   literalToScalarType,
-  literalToTypeSet,
+  literalToTypeSet
 } from "@generated/castMaps";
 
 export const ASC: "ASC" = "ASC";
@@ -170,7 +170,7 @@ export interface SelectModifierMethods<Root extends TypeSet> {
   ): this;
   // $expr_Select<{
   //   __element__: Root["__element__"];
-  //   __cardinality__: cardinalityUtil.overrideLowerBound<
+  //   __cardinality__: cardutil.overrideLowerBound<
   //     Root["__cardinality__"],
   //     "Zero"
   //   >;
@@ -187,7 +187,7 @@ export interface SelectModifierMethods<Root extends TypeSet> {
   ): this;
   // $expr_Select<{
   //   __element__: Root["__element__"];
-  //   __cardinality__: cardinalityUtil.overrideLowerBound<
+  //   __cardinality__: cardutil.overrideLowerBound<
   //     Root["__cardinality__"],
   //     "Zero"
   //   >;
@@ -279,9 +279,9 @@ export type InferOffsetLimitCardinality<
   Card extends Cardinality,
   Modifers extends UnknownSelectModifiers
 > = Modifers["limit"] extends number | LimitExpression
-  ? cardinalityUtil.overrideLowerBound<Card, "Zero">
+  ? cardutil.overrideLowerBound<Card, "Zero">
   : Modifers["offset"] extends number | OffsetExpression
-  ? cardinalityUtil.overrideLowerBound<Card, "Zero">
+  ? cardutil.overrideLowerBound<Card, "Zero">
   : Card;
 
 export type ComputeSelectCardinality<
@@ -309,7 +309,7 @@ export function is<
     mappedShape[key] = {
       __kind__: ExpressionKind.PolyShapeElement,
       __polyType__: expr,
-      __shapeElement__: value,
+      __shapeElement__: value
     };
   }
   return mappedShape;
@@ -402,7 +402,7 @@ export function $handleModifiers(
       typeof mods.offset === "number"
         ? ($getTypeByName("std::number")(mods.offset) as any)
         : mods.offset;
-    card = cardinalityUtil.overrideLowerBound(card, "Zero");
+    card = cardutil.overrideLowerBound(card, "Zero");
   }
   if (mods.limit) {
     let expr = mods.limit;
@@ -412,7 +412,7 @@ export function $handleModifiers(
       expr = (expr as any).__exprs__[0];
     }
     mods.limit = expr;
-    card = cardinalityUtil.overrideLowerBound(card, "Zero");
+    card = cardutil.overrideLowerBound(card, "Zero");
   }
 
   return {modifiers: mods as NormalisedSelectModifiers, cardinality: card};
@@ -447,7 +447,7 @@ function deleteExpr(expr: any, modifiersGetter: any) {
     __kind__: ExpressionKind.Delete,
     __element__: selectExpr.__element__,
     __cardinality__: selectExpr.__cardinality__,
-    __expr__: selectExpr,
+    __expr__: selectExpr
   }) as any;
 }
 
@@ -524,7 +524,7 @@ export {deleteExpr as delete};
 //       modifiers.offset =
 //         typeof modExpr === "number" ? _std.number(modExpr) : modExpr;
 //       // methods no longer change cardinality
-//       // cardinality = cardinalityUtil
+//       // cardinality = cardutil
 //            .overrideLowerBound(cardinality, "Zero");
 //       break;
 //     case "limit":
@@ -535,7 +535,7 @@ export {deleteExpr as delete};
 //           ? (modExpr as any).__exprs__[0]
 //           : modExpr;
 //       // methods no longer change cardinality
-//       // cardinality = cardinalityUtil
+//       // cardinality = cardutil
 //            .overrideLowerBound(cardinality, "Zero");
 //       break;
 //   }
@@ -592,7 +592,7 @@ export type linkDescToSelectElement<L extends LinkDesc> =
   // | pointerToCastableExpression<Shape[k]>
   | TypeSet<
       anonymizeObject<L["target"]>,
-      cardinalityUtil.assignable<L["cardinality"]>
+      cardutil.assignable<L["cardinality"]>
     >
   | linkDescToShape<L>
   | ((
@@ -613,7 +613,7 @@ export type objectTypeToSelectShape<T extends ObjectType = ObjectType> =
           | boolean
           | TypeSet<
               T["__pointers__"][k]["target"],
-              cardinalityUtil.assignable<T["__pointers__"][k]["cardinality"]>
+              cardutil.assignable<T["__pointers__"][k]["cardinality"]>
             >
       : T["__pointers__"][k] extends LinkDesc
       ? linkDescToSelectElement<T["__pointers__"][k]>
@@ -633,7 +633,7 @@ export type objectTypeToSelectShape<T extends ObjectType = ObjectType> =
 //             | boolean
 //             | TypeSet<
 //                 anonymizeObject<U["__element__"]>,
-//                 cardinalityUtil.assignable<U["__cardinality__"]>
+//                 cardutil.assignable<U["__cardinality__"]>
 //               >
 //             | objectTypeToSelectShape<U["__element__"]>
 //             | ((
@@ -645,7 +645,7 @@ export type objectTypeToSelectShape<T extends ObjectType = ObjectType> =
 //             | boolean
 //             | TypeSet<
 //                 U["__element__"],
-//                 cardinalityUtil.assignable<U["__cardinality__"]>
+//                 cardutil.assignable<U["__cardinality__"]>
 //               >
 //         : unknown
 //       : unknown;
@@ -679,7 +679,7 @@ const FreeObject: $expr_PathNode = {
   __cardinality__: Cardinality.One,
   __parent__: null,
   __exclusive__: true,
-  __scopeRoot__: null,
+  __scopeRoot__: null
 } as any;
 
 export const $existingScopes = new Set<
@@ -820,7 +820,7 @@ export function select(...args: any[]) {
         __element__: literalExpr.__element__,
         __cardinality__: literalExpr.__cardinality__,
         __expr__: literalExpr,
-        __modifiers__: {},
+        __modifiers__: {}
       })
     ) as any;
   }
@@ -845,7 +845,7 @@ export function select(...args: any[]) {
         computed: true,
         readonly: true,
         hasDefault: false,
-        properties: {},
+        properties: {}
       };
     }
     expr = {
@@ -854,9 +854,9 @@ export function select(...args: any[]) {
         ...FreeObject.__element__,
         __pointers__: {
           ...FreeObject.__element__.__pointers__,
-          ...freeObjectPtrs,
-        },
-      } as any,
+          ...freeObjectPtrs
+        }
+      } as any
     };
   }
   if (!shapeGetter) {
@@ -869,11 +869,11 @@ export function select(...args: any[]) {
             __kind__: TypeKind.object,
             __name__: `${objectExpr.__element__.__name__}`, // _shape
             __pointers__: objectExpr.__element__.__pointers__,
-            __shape__: objectExpr.__element__.__shape__,
+            __shape__: objectExpr.__element__.__shape__
           } as any,
           __cardinality__: objectExpr.__cardinality__,
           __expr__: objectExpr,
-          __modifiers__: {},
+          __modifiers__: {}
         })
       ) as any;
     } else {
@@ -883,7 +883,7 @@ export function select(...args: any[]) {
           __element__: expr.__element__,
           __cardinality__: expr.__cardinality__,
           __expr__: expr,
-          __modifiers__: {},
+          __modifiers__: {}
         })
       ) as any;
     }
@@ -907,7 +907,7 @@ export function select(...args: any[]) {
               __kind__: TypeKind.object,
               __name__: `${expr.__element__.__name__}`, // _shape
               __pointers__: (expr.__element__ as ObjectType).__pointers__,
-              __shape__: shape,
+              __shape__: shape
             }
           : expr.__element__,
       __cardinality__: cardinality,
@@ -916,7 +916,7 @@ export function select(...args: any[]) {
       __scope__:
         expr !== scope // && expr.__element__.__name__ !== "std::FreeObject"
           ? scope
-          : undefined,
+          : undefined
     })
   ) as any;
 }
@@ -997,7 +997,7 @@ export function resolveShapeElement(
     const {
       shape: childShape,
       scope: childScope,
-      modifiers: mods,
+      modifiers: mods
     } = resolveShape(value as any, childExpr);
 
     // extracts normalized modifiers
@@ -1009,14 +1009,14 @@ export function resolveShapeElement(
         __kind__: TypeKind.object,
         __name__: `${childExpr.__element__.__name__}`,
         __pointers__: childExpr.__element__.__pointers__,
-        __shape__: childShape,
+        __shape__: childShape
       },
       __cardinality__:
         scope.__element__.__pointers__?.[key]?.cardinality ||
         scope.__element__.__shape__?.[key]?.__cardinality__,
       __expr__: childExpr,
       __modifiers__: modifiers,
-      __scope__: childExpr !== childScope ? childScope : undefined,
+      __scope__: childExpr !== childScope ? childScope : undefined
     };
   } else if ((value as any)?.__kind__ === ExpressionKind.PolyShapeElement) {
     const polyElement = value as $expr_PolyShapeElement;
@@ -1029,7 +1029,7 @@ export function resolveShapeElement(
         key,
         polyElement.__shapeElement__,
         polyScope
-      ),
+      )
     };
   } else if (typeof value === "boolean" && key.startsWith("@")) {
     const linkProp = (scope as any)[key];

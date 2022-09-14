@@ -1,30 +1,16 @@
 {
-  "extends": [
-    "tslint:recommended",
-    "tslint-config-prettier"
-  ],
-  "rulesDirectory": [
-    "tslint-plugin-prettier"
-  ],
+  "extends": ["tslint:recommended", "tslint-config-prettier"],
+  "rulesDirectory": ["tslint-plugin-prettier"],
   "rules": {
     "max-line-length": {
-      "options": [
-        79
-      ]
+      "options": [79]
     },
     "new-parens": true,
     "no-arg": true,
-    "curly": [
-      true,
-      "ignore-same-line"
-    ],
-    "no-unused-variable": true,
+    "curly": [true, "ignore-same-line"],
     "no-namespace": false,
     "no-conditional-assignment": true,
-    "no-consecutive-blank-lines": [
-      true,
-      2
-    ],
+    "no-consecutive-blank-lines": [true, 2],
     "no-angle-bracket-type-assertion": false,
     "interface-over-type-literal": false,
     "interface-name": false,
@@ -43,11 +29,7 @@
     "no-empty": false,
     "arrow-parens": false,
     "no-string-literal": false,
-    "typedef": [
-      true,
-      "property-declaration",
-      "parameter"
-    ],
+    "typedef": [true, "property-declaration", "parameter"],
     "whitespace": [
       true,
       "check-branch",
@@ -61,11 +43,6 @@
     }
   },
   "linterOptions": {
-    "exclude": [
-      "**/*.deno.ts",
-      "**/generated/**",
-      "test/**",
-      "qb/test/**"
-    ]
+    "exclude": ["**/*.deno.ts", "**/generated/**", "test/**", "qb/test/**"]
   }
 }

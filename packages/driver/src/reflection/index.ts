@@ -17,11 +17,15 @@
  */
 
 export * from "./enums";
-export * from "./util/util";
+export * from "./util";
+export * from "./typeutil";
+export * from "./cardinality";
+export * from "./util";
 export * from "./typesystem";
 export * from "./strictMap";
-export * as introspect from "./queries/getTypes";
 export * from "./hydrate";
 export * from "./path";
 export * from "./literal";
 export * from "./funcops";
+export * from "./syntax";
+export * as introspect from "./queries";

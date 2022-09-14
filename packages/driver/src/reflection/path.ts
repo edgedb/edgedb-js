@@ -8,10 +8,10 @@ import type {
   ObjectTypeSet,
   PropertyDesc,
   PropertyShape,
-  TypeSet,
+  TypeSet
 } from "./typesystem";
-import {typeutil} from ".";
-import {cardinalityUtil} from "./util/cardinalityUtil";
+import {typeutil} from "./typeutil";
+import {cardutil} from "./cardinality";
 
 // get the set representing the result of a path traversal
 // including cardinality merging
@@ -20,7 +20,7 @@ type getChildOfObjectTypeSet<
   ChildKey extends keyof Root["__element__"]["__pointers__"]
 > = TypeSet<
   Root["__element__"]["__pointers__"][ChildKey]["target"],
-  cardinalityUtil.multiplyCardinalities<
+  cardutil.multiplyCardinalities<
     Root["__cardinality__"],
     Root["__element__"]["__pointers__"][ChildKey]["cardinality"]
   >
@@ -105,7 +105,7 @@ export type pathifyShape<
         ? $expr_PathNode<
             TypeSet<
               Shape[k]["__element__"],
-              cardinalityUtil.multiplyCardinalities<
+              cardutil.multiplyCardinalities<
                 Root["__cardinality__"],
                 Shape[k]["__cardinality__"]
               >
@@ -117,7 +117,7 @@ export type pathifyShape<
         ? $expr_PathLeaf<
             TypeSet<
               Shape[k]["__element__"],
-              cardinalityUtil.multiplyCardinalities<
+              cardutil.multiplyCardinalities<
                 Root["__cardinality__"],
                 Shape[k]["__cardinality__"]
               >
@@ -139,7 +139,7 @@ type pathifyLinkProps<
     ? $expr_PathLeaf<
         TypeSet<
           Props[k]["target"],
-          cardinalityUtil.multiplyCardinalities<
+          cardutil.multiplyCardinalities<
             Root["__cardinality__"],
             Props[k]["cardinality"]
           >
