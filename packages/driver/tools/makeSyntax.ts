@@ -39,7 +39,7 @@ async function readGlob(params: {
       const finalContent = contentTx ? contentTx(content) : content;
       return {
         path: finalPath,
-        content: finalContent,
+        content: finalContent
       };
     })
   );
@@ -50,7 +50,7 @@ async function run() {
   // DTS
   const dtsFiles = await readGlob({
     pattern: "*.d.ts",
-    cwd: distSyntax,
+    cwd: distSyntax
   });
 
   // TS
@@ -61,7 +61,7 @@ async function run() {
     contentTx: content =>
       content
         .replace(reReflection, `"edgedb/dist/reflection$1"`)
-        .replace(reGenerated, `"../$1"`),
+        .replace(reGenerated, `"../$1"`)
   });
 
   // CJS
@@ -73,9 +73,9 @@ async function run() {
       contentTx: content =>
         content
           .replace(reReflection, `"edgedb/dist/reflection$1.js"`)
-          .replace(reGenerated, `"../$1"`),
+          .replace(reGenerated, `"../$1"`)
     })),
-    ...dtsFiles,
+    ...dtsFiles
   ];
 
   // ESM
@@ -89,9 +89,9 @@ async function run() {
         content
           .replace(reReflection, `"edgedb/dist/reflection$1.js"`)
           .replace(reGenerated, `"../$1"`)
-          .replace(reRelativeImports, `"$1.mjs"`),
+          .replace(reRelativeImports, `"$1.mjs"`)
     })),
-    ...dtsFiles,
+    ...dtsFiles
   ];
 
   // MTS
@@ -104,7 +104,7 @@ async function run() {
       content
         .replace(reReflection, `"edgedb/dist/reflection$1.js"`)
         .replace(reGenerated, `"../$1"`)
-        .replace(reRelativeImports, `"$1.mjs"`),
+        .replace(reRelativeImports, `"$1.mjs"`)
   });
 
   // DENO
@@ -122,7 +122,7 @@ async function run() {
         )
         .replace(/"@generated\/(.*)"/g, `"../$1"`)
         .replace(reRelativeImports, `"$1.ts"`);
-    },
+    }
   });
 
   if (DEBUG) {
@@ -146,7 +146,7 @@ async function run() {
       cjs: cjsFiles,
       esm: esmFiles,
       mts: mtsFiles,
-      ts: tsFiles,
+      ts: tsFiles
     };
 
     if (!FILES.deno.length) console.warn("No syntax files found for deno");
@@ -166,7 +166,7 @@ async function run() {
         __dirname,
         "..",
         "..",
-        "edgedb-deno",
+        "deno",
         "_src",
         "reflection",
         "syntax.ts"

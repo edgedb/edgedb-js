@@ -3,7 +3,7 @@ import {
   basename,
   dirname,
   join,
-  relative,
+  relative
 } from "https://deno.land/std@0.114.0/path/posix.ts";
 import {createRequire} from "https://deno.land/std@0.114.0/node/module.ts";
 
@@ -16,31 +16,31 @@ const denoTestFiles = new Set([
   "test/testbase.ts",
   "test/client.test.ts",
   "test/credentials.test.ts",
-  "test/credentials1.json",
+  "test/credentials1.json"
 ]);
 
 await run({
   sourceDir: "./src",
-  destDir: "../edgedb-deno",
+  destDir: "../deno",
   destEntriesToClean: ["_src", "mod.ts"],
   sourceFilter: path => {
     return !/\/syntax\//.test(path);
   },
   pathRewriteRules: [
     {match: /^src\/index.node.ts$/, replace: "mod.ts"},
-    {match: /^src\//, replace: "_src/"},
+    {match: /^src\//, replace: "_src/"}
   ],
   injectImports: [
     {
       imports: ["Buffer", "process"],
-      from: "src/globals.deno.ts",
-    },
-  ],
+      from: "src/globals.deno.ts"
+    }
+  ]
 })
   .then(async () =>
     run({
       sourceDir: "./test",
-      destDir: "../edgedb-deno/test",
+      destDir: "../deno/test",
       sourceFilter: path => {
         return denoTestFiles.has(path);
       },
@@ -48,35 +48,35 @@ await run({
       importRewriteRules: [
         {
           match: /^\.\.\/src\/index.node$/,
-          replace: "../mod.ts",
+          replace: "../mod.ts"
         },
         {
           match: /^globals.deno.ts$/,
-          replace: "../globals.deno.ts",
+          replace: "../globals.deno.ts"
         },
         {
           match: /^\.\.\/src\/.+/,
           replace: match =>
             `${match.replace(/^\.\.\/src\//, "../_src/")}${
               match.endsWith(".ts") ? "" : ".ts"
-            }`,
-        },
+            }`
+        }
       ],
       injectImports: [
         {
           imports: ["Buffer", "process", "test", "expect", "jest"],
-          from: "src/globals.deno.ts",
-        },
+          from: "src/globals.deno.ts"
+        }
         // {
         //   imports: ["test", "expect", "jest"],
         //   from: "test/globals.deno.ts",
         // },
-      ],
+      ]
     })
   )
   .then(async () => {
     await Deno.writeTextFile(
-      "../edgedb-deno/generate.ts",
+      "../deno/generate.ts",
       `
 export * from "./_src/reflection/cli.ts";
     `
@@ -90,7 +90,7 @@ async function run({
   pathRewriteRules = [],
   importRewriteRules = [],
   injectImports = [],
-  sourceFilter,
+  sourceFilter
 }: {
   sourceDir: string;
   destDir: string;
@@ -162,7 +162,7 @@ async function run({
             if (usedImports.length) {
               neededImports.push({
                 imports: usedImports,
-                from,
+                from
               });
             }
             return neededImports;

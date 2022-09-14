@@ -3593,9 +3593,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"edgedb@workspace:packages/edgedb-js":
+"edgedb@workspace:packages/driver":
   version: 0.0.0-use.local
-  resolution: "edgedb@workspace:packages/edgedb-js"
+  resolution: "edgedb@workspace:packages/driver"
   dependencies:
     "@js-temporal/polyfill": ^0.4.1
     "@types/jest": ^24.0.11
