@@ -10,7 +10,7 @@
       "es2019",
       "es2020",
       "es2021",
-      "esnext",
+      "esnext"
     ],
     "module": "commonjs",
     "moduleResolution": "node",
@@ -27,23 +27,6 @@
     "downlevelIteration": true,
     "noUnusedLocals": true,
     "useDefineForClassFields": true,
-    "resolveJsonModule": true,
-    // "paths": {
-    //   "edgedb": [
-    //     "./src/index.node"
-    //   ],
-    //   "@generated/*": [
-    //     "./qb/dbschema/edgeql-js/*"
-    //   ],
-    // }
-  },
-  // "include": [
-  //   "."
-  // ],
-  // "exclude": [
-  //   "**/*.deno.ts",
-  //   "packages/edgedb-js/test/deno/*",
-  //   "dist",
-  //   "qb",
-  // ]
+    "resolveJsonModule": true
+  }
 }

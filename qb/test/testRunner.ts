@@ -8,7 +8,7 @@ import {
   generateStatusFileName,
   getServerCommand,
   getWSLPath,
-  startServer,
+  startServer
 } from "../../test/testUtil";
 
 (async function main() {
