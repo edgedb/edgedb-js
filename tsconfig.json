@@ -19,8 +19,6 @@
     "noImplicitThis": true,
     "strict": true,
     "removeComments": true,
-    "declarationDir": "./dist",
-    "outDir": "./dist",
     "stripInternal": true,
     "isolatedModules": true,
     "esModuleInterop": true,
@@ -28,28 +26,24 @@
     "noFallthroughCasesInSwitch": true,
     "downlevelIteration": true,
     "noUnusedLocals": true,
-    "baseUrl": ".",
-    "typeRoots": [
-      "./node_modules/@types"
-    ],
     "useDefineForClassFields": true,
     "resolveJsonModule": true,
-    "paths": {
-      "edgedb": [
-        "./src/index.node"
-      ],
-      "@generated/*": [
-        "./qb/dbschema/edgeql-js/*"
-      ],
-    }
+    // "paths": {
+    //   "edgedb": [
+    //     "./src/index.node"
+    //   ],
+    //   "@generated/*": [
+    //     "./qb/dbschema/edgeql-js/*"
+    //   ],
+    // }
   },
-  "include": [
-    "."
-  ],
-  "exclude": [
-    "**/*.deno.ts",
-    "test/deno/*",
-    "dist",
-    "qb",
-  ]
+  // "include": [
+  //   "."
+  // ],
+  // "exclude": [
+  //   "**/*.deno.ts",
+  //   "packages/edgedb-js/test/deno/*",
+  //   "dist",
+  //   "qb",
+  // ]
 }
