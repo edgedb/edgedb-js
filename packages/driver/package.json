@@ -42,7 +42,7 @@
     "test:mts": "cd qb && yarn test:mts",
     "test:deno": "cd qb && yarn test:deno",
     "set-version": "./tools/setPackageVersion.sh",
-    "lint": "tslint 'src/**/*.ts'",
+    "lint": "tslint 'packages/*/src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/genErrors.js",
     "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno && yarn syntax:make",
