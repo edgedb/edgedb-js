@@ -18,11 +18,14 @@
   },
   "include": [
     "src",
+    // "../generate/src/generate.ts",
+    // "../generate/src/util/functionUtils.ts",
+    // "../generate/src/util/genutil.ts",
   ],
   "exclude": [
     "**/*.deno.ts",
-    "test/deno/*",
+    // "test/deno/*",
     "dist",
-    "qb",
+    // "qb",
   ]
 }

@@ -1,5 +1,5 @@
 import {TypeKind} from "./enums.ts";
-import * as introspect from "./queries/getTypes.ts";
+import * as introspect from "./queries/types.ts";
 
 import {
   BaseType,
@@ -7,11 +7,11 @@ import {
   ObjectTypePointers,
   LinkDesc,
   PropertyDesc,
-  TupleType,
+  TupleType
 } from "./typesystem.ts";
-import {toIdent} from "./util/genutil.ts";
 
-import {typeutil, util} from "./util/util.ts";
+import {util} from "./util.ts";
+import {typeutil} from "./typeutil.ts";
 
 const typeCache = new Map<string, BaseType>();
 
@@ -27,7 +27,7 @@ function applySpec(
   const allPointers = [
     ...type.pointers,
     ...type.backlinks,
-    ...type.backlink_stubs,
+    ...type.backlink_stubs
   ];
   for (const ptr of allPointers) {
     if (seen.has(ptr.name)) {
@@ -41,7 +41,7 @@ function applySpec(
         cardinality: ptr.real_cardinality,
         exclusive: ptr.is_exclusive,
         computed: ptr.is_computed,
-        readonly: ptr.is_readonly,
+        readonly: ptr.is_readonly
       } as LinkDesc;
       util.defineGetter(shape[ptr.name], "target", () =>
         makeType(spec, ptr.target_id, literal)
@@ -62,7 +62,7 @@ function applySpec(
             }
 
             const linkPropObject: any = {
-              __kind__: "property",
+              __kind__: "property"
             };
             linkPropObject.cardinality = linkProp.real_cardinality;
             util.defineGetter(linkPropObject, "target", () => {
@@ -79,7 +79,7 @@ function applySpec(
         cardinality: ptr.real_cardinality,
         exclusive: ptr.is_exclusive,
         computed: ptr.is_computed,
-        readonly: ptr.is_readonly,
+        readonly: ptr.is_readonly
       } as PropertyDesc;
       util.defineGetter(shape[ptr.name], "target", () =>
         makeType(spec, ptr.target_id, literal)
@@ -150,10 +150,10 @@ export function makeType<T extends BaseType>(
       scalarObj.__kind__ = TypeKind.enum;
       scalarObj.__values__ = type.enum_values;
       for (const val of type.enum_values) {
-        Object.defineProperty(scalarObj, toIdent(val), {
+        Object.defineProperty(scalarObj, util.toIdent(val), {
           get() {
             return literal(scalarObj, val);
-          },
+          }
         });
       }
       // if (type.enum_values) {
@@ -273,7 +273,7 @@ export function $mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
       }
       return merged;
     },
-    __shape__: {},
+    __shape__: {}
   };
   return obj as any;
 }

@@ -3,7 +3,7 @@ import type {
   BaseType,
   BaseTypeTuple,
   BaseTypeToTsType,
-  cardinalityUtil,
+  cardutil,
   Cardinality,
   EnumType,
   LinkDesc,
@@ -15,11 +15,11 @@ import type {
   ScalarType,
   TupleType,
   TypeSet,
-  RangeType,
+  RangeType
 } from "../reflection/index";
 import type {
   scalarCastableFrom,
-  scalarAssignableBy,
+  scalarAssignableBy
 } from "@generated/castMaps";
 
 export type anonymizeObject<T extends ObjectType> = ObjectType<
@@ -79,7 +79,7 @@ export type setToAssignmentExpression<
   ?
       | TypeSet<
           assignableBy<Set["__element__"]>,
-          cardinalityUtil.assignable<Set["__cardinality__"]>
+          cardutil.assignable<Set["__cardinality__"]>
         >
       | getAssignmentLiteral<Set, IsSetModifier>
   : [Set] extends [ObjectTypeSet]
@@ -89,11 +89,11 @@ export type setToAssignmentExpression<
         string,
         Set["__element__"]["__pointers__"]
       >,
-      cardinalityUtil.assignable<
+      cardutil.assignable<
         // Allow expressions with AtMostOne or Many cardinality in
         // insert/update shape even when link is required since EdgeDB will
         // assert cardinality at runtime
-        cardinalityUtil.overrideLowerBound<Set["__cardinality__"], "Zero">
+        cardutil.overrideLowerBound<Set["__cardinality__"], "Zero">
       >
     >
   : never;
@@ -146,7 +146,7 @@ export type pointerToCastableExpression<
 > = [Pointer] extends [PropertyDesc]
   ? {
       __element__: castableFrom<Pointer["target"]>;
-      __cardinality__: cardinalityUtil.assignable<Pointer["cardinality"]>;
+      __cardinality__: cardutil.assignable<Pointer["cardinality"]>;
     }
   : [Pointer] extends [LinkDesc]
   ? TypeSet<
@@ -155,6 +155,6 @@ export type pointerToCastableExpression<
         string,
         Pointer["target"]["__pointers__"]
       >,
-      cardinalityUtil.assignable<Pointer["cardinality"]>
+      cardutil.assignable<Pointer["cardinality"]>
     >
   : never;

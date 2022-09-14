@@ -6,10 +6,10 @@ import {
   makeType,
   TypeKind,
   ArrayType,
-  cardinalityUtil,
+  cardutil,
   ObjectType,
   TypeSet,
-  RangeType,
+  RangeType
 } from "../reflection/index";
 import {cast} from "./cast";
 import {isImplicitlyCastableTo, literalToTypeSet} from "@generated/castMaps";
@@ -121,7 +121,7 @@ function _tryOverload(
   }
 
   const paramCardinalities: [Cardinality, ...Cardinality[]] = [
-    Cardinality.One,
+    Cardinality.One
   ];
 
   if (namedArgs) {
@@ -137,10 +137,10 @@ function _tryOverload(
       paramCardinalities.push(
         argDef.setoftype
           ? funcDef.preservesOptionality
-            ? cardinalityUtil.overrideUpperBound(value.__cardinality__, "One")
+            ? cardutil.overrideUpperBound(value.__cardinality__, "One")
             : Cardinality.One
           : argDef.optional
-          ? cardinalityUtil.overrideLowerBound(value.__cardinality__, "One")
+          ? cardutil.overrideLowerBound(value.__cardinality__, "One")
           : value.__cardinality__
       );
     }
@@ -198,12 +198,12 @@ function _tryOverload(
       if (argDef.setoftype) {
         paramCardinalities.push(
           funcDef.preservesOptionality
-            ? cardinalityUtil.overrideUpperBound(arg.__cardinality__, "One")
+            ? cardutil.overrideUpperBound(arg.__cardinality__, "One")
             : Cardinality.One
         );
       } else {
         const card = argDef.variadic
-          ? cardinalityUtil.multiplyCardinalitiesVariadic(
+          ? cardutil.multiplyCardinalitiesVariadic(
               (args.slice(i) as BaseTypeSet[]).map(
                 el => el.__cardinality__
               ) as [Cardinality, ...Cardinality[]]
@@ -211,9 +211,7 @@ function _tryOverload(
           : arg.__cardinality__;
 
         paramCardinalities.push(
-          argDef.optional
-            ? cardinalityUtil.overrideLowerBound(card, "One")
-            : card
+          argDef.optional ? cardutil.overrideLowerBound(card, "One") : card
         );
       }
     }
@@ -221,25 +219,25 @@ function _tryOverload(
 
   let cardinality: Cardinality;
   if (funcName === "if_else") {
-    cardinality = cardinalityUtil.multiplyCardinalities(
-      cardinalityUtil.orCardinalities(
+    cardinality = cardutil.multiplyCardinalities(
+      cardutil.orCardinalities(
         positionalArgs[0].__cardinality__,
         positionalArgs[2].__cardinality__
       ),
       positionalArgs[1].__cardinality__
     );
   } else if (funcName === "std::assert_exists") {
-    cardinality = cardinalityUtil.overrideLowerBound(
+    cardinality = cardutil.overrideLowerBound(
       positionalArgs[0].__cardinality__,
       "One"
     );
   } else if (funcName === "union") {
-    cardinality = cardinalityUtil.mergeCardinalities(
+    cardinality = cardutil.mergeCardinalities(
       positionalArgs[0].__cardinality__,
       positionalArgs[1].__cardinality__
     );
   } else if (funcName === "??") {
-    cardinality = cardinalityUtil.orCardinalities(
+    cardinality = cardutil.orCardinalities(
       positionalArgs[0].__cardinality__,
       positionalArgs[1].__cardinality__
     );
@@ -249,13 +247,13 @@ function _tryOverload(
     cardinality =
       funcDef.returnTypemod === "SetOfType"
         ? Cardinality.Many
-        : cardinalityUtil.multiplyCardinalitiesVariadic(paramCardinalities);
+        : cardutil.multiplyCardinalitiesVariadic(paramCardinalities);
 
     if (
       funcDef.returnTypemod === "OptionalType" &&
       !funcDef.preservesOptionality
     ) {
-      cardinality = cardinalityUtil.overrideLowerBound(cardinality, "Zero");
+      cardinality = cardutil.overrideLowerBound(cardinality, "Zero");
     }
   }
 
@@ -278,7 +276,7 @@ function _tryOverload(
     ),
     cardinality,
     args: positionalArgs,
-    namedArgs: namedArgs ?? {},
+    namedArgs: namedArgs ?? {}
   };
 }
 
@@ -287,7 +285,7 @@ const nameRemapping: {[key: string]: string} = {
   "std::int32": "std::number",
   "std::int64": "std::number",
   "std::float32": "std::number",
-  "std::float64": "std::number",
+  "std::float64": "std::number"
 };
 const descendantCache = new Map<string, string[]>();
 function getDescendantNames(typeSpec: introspect.Types, typeId: string) {
@@ -306,7 +304,7 @@ function getDescendantNames(typeSpec: introspect.Types, typeId: string) {
             ? getDescendantNames(typeSpec, type.id)
             : [nameRemapping[type.name], type.name]
         )
-    ),
+    )
   ];
   descendantCache.set(typeId, descendants);
   return descendants;
@@ -340,7 +338,7 @@ function compareType(
       match:
         (arg.__kind__ === TypeKind.scalar || arg.__kind__ === TypeKind.enum) &&
         (arg.__name__ === type.name ||
-          isImplicitlyCastableTo(arg.__name__, type.name)),
+          isImplicitlyCastableTo(arg.__name__, type.name))
     };
   }
   if (type.kind === "array") {
@@ -382,7 +380,7 @@ function compareType(
     }
 
     return {
-      match,
+      match
     };
   }
   if (type.kind === "tuple") {

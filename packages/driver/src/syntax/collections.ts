@@ -6,7 +6,7 @@ import {
   ArrayType,
   BaseType,
   Cardinality,
-  cardinalityUtil,
+  cardutil,
   ExpressionKind,
   ExpressionRoot,
   getPrimitiveBaseType,
@@ -17,7 +17,7 @@ import {
   TupleType,
   TypeKind,
   TypeSet,
-  typeutil,
+  typeutil
 } from "../reflection/index";
 import {$expressionify} from "./path";
 import type {getCardsFromExprs} from "./set";
@@ -26,7 +26,7 @@ import {
   literalToTypeSet,
   mapLiteralToTypeSet,
   orScalarLiteral,
-  scalarLiterals,
+  scalarLiterals
 } from "@generated/castMaps";
 
 const indexSliceRegx = /^(-?\d+)(?:(:)(-?\d+)?)?|:(-?\d+)$/;
@@ -53,13 +53,13 @@ const arrayLikeProxyHandlers: ProxyHandler<ExpressionRoot> = {
             ? literalToTypeSet(Number(start))
             : [
                 start && literalToTypeSet(Number(start)),
-                end && literalToTypeSet(Number(end)),
-              ],
-        ],
+                end && literalToTypeSet(Number(end))
+              ]
+        ]
       }) as any;
     }
     return (target as any)[prop];
-  },
+  }
 };
 
 function arrayLikeIndex(this: ExpressionRoot, index: any) {
@@ -70,13 +70,13 @@ function arrayLikeIndex(this: ExpressionRoot, index: any) {
       this.__element__.__kind__ === TypeKind.array
         ? (this.__element__ as ArrayType).__element__
         : this.__element__,
-    __cardinality__: cardinalityUtil.multiplyCardinalities(
+    __cardinality__: cardutil.multiplyCardinalities(
       this.__cardinality__,
       indexTypeSet.__cardinality__
     ),
     __name__: "[]",
     __opkind__: "Infix",
-    __args__: [this, indexTypeSet],
+    __args__: [this, indexTypeSet]
   }) as any;
 }
 
@@ -86,8 +86,8 @@ function arrayLikeSlice(this: ExpressionRoot, start: any, end: any) {
   return $expressionify({
     __kind__: ExpressionKind.Operator,
     __element__: this.__element__,
-    __cardinality__: cardinalityUtil.multiplyCardinalities(
-      cardinalityUtil.multiplyCardinalities(
+    __cardinality__: cardutil.multiplyCardinalities(
+      cardutil.multiplyCardinalities(
         this.__cardinality__,
         startTypeSet?.__cardinality__ ?? Cardinality.One
       ),
@@ -95,7 +95,7 @@ function arrayLikeSlice(this: ExpressionRoot, start: any, end: any) {
     ),
     __name__: "[]",
     __opkind__: "Infix",
-    __args__: [this, [startTypeSet, endTypeSet]],
+    __args__: [this, [startTypeSet, endTypeSet]]
   }) as any;
 }
 
@@ -138,7 +138,7 @@ export function array<
       ? getPrimitiveBaseType<Expr["__element__"]>
       : getPrimitiveBaseType<literalToScalarType<Expr>>
   >,
-  cardinalityUtil.multiplyCardinalitiesVariadic<
+  cardutil.multiplyCardinalitiesVariadic<
     getCardsFromExprs<mapLiteralToTypeSet<[Expr, ...Exprs]>>
   >
 >;
@@ -147,22 +147,22 @@ export function array(arg: any) {
     const items = arg.map(a => literalToTypeSet(a));
     return $expressionify({
       __kind__: ExpressionKind.Array,
-      __cardinality__: cardinalityUtil.multiplyCardinalitiesVariadic(
+      __cardinality__: cardutil.multiplyCardinalitiesVariadic(
         items.map(item => item.__cardinality__) as any
       ),
       __element__: {
         __kind__: TypeKind.array,
         __name__: `array<${items[0].__element__.__name__}>`,
-        __element__: items[0].__element__,
+        __element__: items[0].__element__
       } as any,
-      __items__: items,
+      __items__: items
     });
   }
   if (arg.__kind__) {
     return {
       __kind__: TypeKind.array,
       __name__: `array<${arg.__name__}>`,
-      __element__: arg,
+      __element__: arg
     } as any;
   }
 
@@ -183,7 +183,7 @@ const tupleProxyHandlers: ProxyHandler<ExpressionRoot> = {
     return items?.hasOwnProperty(prop)
       ? tuplePath(proxy, (items as any)[prop], prop as any)
       : (target as any)[prop];
-  },
+  }
 };
 
 export function $tuplePathify(expr: ExpressionRoot) {
@@ -207,7 +207,7 @@ function tuplePath(
     __element__: itemType,
     __cardinality__: parent.__cardinality__,
     __parent__: parent,
-    __index__: index,
+    __index__: index
   }) as any;
 }
 
@@ -215,7 +215,7 @@ function makeTupleType(name: string, items: BaseType[]) {
   return {
     __kind__: TypeKind.tuple,
     __name__: name,
-    __items__: items,
+    __items__: items
   } as any;
 }
 
@@ -259,10 +259,10 @@ export function tuple(input: any) {
         name,
         items.map(item => item.__element__)
       ),
-      __cardinality__: cardinalityUtil.multiplyCardinalitiesVariadic(
+      __cardinality__: cardutil.multiplyCardinalitiesVariadic(
         items.map(i => i.__cardinality__) as any
       ),
-      __items__: items,
+      __items__: items
     }) as any;
   } else {
     // is named tuple
@@ -273,7 +273,7 @@ export function tuple(input: any) {
       return {
         __kind__: TypeKind.namedtuple,
         __name__: typeName,
-        __shape__: input,
+        __shape__: input
       } as any;
     }
 
@@ -291,12 +291,12 @@ export function tuple(input: any) {
       __element__: {
         __kind__: TypeKind.namedtuple,
         __name__: name,
-        __shape__: typeShape,
+        __shape__: typeShape
       } as any,
-      __cardinality__: cardinalityUtil.multiplyCardinalitiesVariadic(
+      __cardinality__: cardutil.multiplyCardinalitiesVariadic(
         Object.values(exprShape).map(val => val.__cardinality__) as any
       ),
-      __shape__: exprShape,
+      __shape__: exprShape
     }) as any;
   }
 }
@@ -304,5 +304,5 @@ export function tuple(input: any) {
 export type {
   ArrayType as $Array,
   NamedTupleType as $NamedTuple,
-  TupleType as $Tuple,
+  TupleType as $Tuple
 } from "../reflection/index";

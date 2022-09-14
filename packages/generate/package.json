@@ -1,0 +1,32 @@
+{
+  "name": "@edgedb/generate",
+  "version": "0.23.0",
+  "scripts": {
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
+    "test:all": "yarn test:esm && yarn test:cjs && yarn test:mts && yarn test:deno",
+    "test:esm": "yarn generate --target esm --output-dir test/esm/edgeql-js && cd test/esm && node test.js",
+    "test:cjs": "yarn generate --target cjs --output-dir test/cjs/edgeql-js && cd test/cjs && node test.js",
+    "test:mts": "yarn generate --target mts --output-dir test/mts/edgeql-js && cd test/mts && yarn build && node dist/test.js",
+    "test:deno": "cd test/deno && deno task generate && deno task play",
+    "test:ci": "tsx test/testRunner.ts",
+    "test:v1": "tsx test/testQBv1.ts",
+    "setup:v1": "edgedb project init --no-migrations && edgedb migrate --to-revision m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq",
+    "play": "tsx playground.ts --project tsconfig.json --trace-warnings",
+    "play:dev": "nodemon -w playground.ts -x 'tsx playground.ts'",
+    "build": "rm -rf dist && tsc --project tsconfig.build.json",
+    "build:trace": "tsc --project tsconfig.build.json --generateTrace trace",
+    "@edgedb/generate": "./dist/cli.js"
+  },
+  "bin": "./dist/cli.js",
+  "dependencies": {
+    "edgedb": "^0.23.0"
+  },
+  "peerDependencies": {
+    "edgedb": "^0.23.0"
+  },
+  "devDependencies": {
+    "conditional-type-checks": "^1.0.5",
+    "superjson": "^1.7.5",
+    "typescript": "^4.8"
+  }
+}

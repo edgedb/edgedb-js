@@ -1,5 +1,5 @@
 import {
-  cardinalityUtil,
+  cardutil,
   ObjectTypeSet,
   TypeSet,
   Expression,
@@ -8,14 +8,14 @@ import {
   LinkDesc,
   PropertyDesc,
   Cardinality,
-  BaseType,
+  BaseType
 } from "../reflection/index";
 import type {
   PathParent,
   $expr_PathLeaf,
   $expr_PathNode,
   $pathify,
-  ExpressionRoot,
+  ExpressionRoot
 } from "../reflection/path";
 import {literalToTypeSet} from "@generated/castMaps";
 import {$arrayLikeIndexify, $tuplePathify} from "./collections";
@@ -38,7 +38,7 @@ function PathLeaf<
     __cardinality__: root.__cardinality__,
     __parent__: parent,
     __exclusive__: exclusive,
-    __scopeRoot__: scopeRoot,
+    __scopeRoot__: scopeRoot
   }) as any;
 }
 
@@ -58,7 +58,7 @@ function PathNode<
     __cardinality__: root.__cardinality__,
     __parent__: parent,
     __exclusive__: exclusive,
-    __scopeRoot__: scopeRoot,
+    __scopeRoot__: scopeRoot
   };
 
   const shape: any = {};
@@ -69,7 +69,7 @@ function PathNode<
   });
   Object.defineProperty(obj, "*", {
     writable: false,
-    value: shape,
+    value: shape
   });
   return $expressionify(obj) as any;
 }
@@ -88,14 +88,14 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
         )(
           {
             __element__: ptr.target,
-            __cardinality__: cardinalityUtil.multiplyCardinalities(
+            __cardinality__: cardutil.multiplyCardinalities(
               target.__cardinality__,
               ptr.cardinality
-            ),
+            )
           },
           {
             linkName: prop,
-            type: proxy,
+            type: proxy
           },
           ptr.exclusive ?? false,
           target.__scopeRoot__ ?? (scopeRoots.has(proxy) ? proxy : null)
@@ -103,7 +103,7 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
       );
     }
     return target[prop];
-  },
+  }
 };
 
 function _$pathify<Root extends TypeSet, Parent extends PathParent>(
@@ -116,7 +116,7 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
   const root: $expr_PathNode<ObjectTypeSet, Parent> = _root as any;
 
   let pointers = {
-    ...root.__element__.__pointers__,
+    ...root.__element__.__pointers__
   };
 
   if (root.__parent__) {
@@ -142,7 +142,7 @@ function _$pathify<Root extends TypeSet, Parent extends PathParent>(
       exclusive: false,
       computed: true,
       readonly: true,
-      hasDefault: false,
+      hasDefault: false
     };
   }
 
@@ -158,9 +158,9 @@ function isFunc(this: any, expr: ObjectTypeSet) {
     __cardinality__: this.__cardinality__,
     __element__: {
       ...expr.__element__,
-      __shape__: {id: true},
+      __shape__: {id: true}
     } as any,
-    __expr__: this,
+    __expr__: this
   });
 }
 
@@ -168,13 +168,10 @@ function assert_single(expr: Expression) {
   return $expressionify({
     __kind__: ExpressionKind.Function,
     __element__: expr.__element__,
-    __cardinality__: cardinalityUtil.overrideUpperBound(
-      expr.__cardinality__,
-      "One"
-    ),
+    __cardinality__: cardutil.overrideUpperBound(expr.__cardinality__, "One"),
     __name__: "std::assert_single",
     __args__: [expr],
-    __namedargs__: {},
+    __namedargs__: {}
   }) as any;
 }
 
@@ -185,7 +182,7 @@ const jsonDestructureProxyHandlers: ProxyHandler<ExpressionRoot> = {
       return jsonDestructure.call(proxy, parsedProp);
     }
     return (target as any)[prop];
-  },
+  }
 };
 
 function jsonDestructure(this: ExpressionRoot, path: any) {
@@ -193,13 +190,13 @@ function jsonDestructure(this: ExpressionRoot, path: any) {
   return $expressionify({
     __kind__: ExpressionKind.Operator,
     __element__: this.__element__,
-    __cardinality__: cardinalityUtil.multiplyCardinalities(
+    __cardinality__: cardutil.multiplyCardinalities(
       this.__cardinality__,
       pathTypeSet.__cardinality__
     ),
     __name__: "[]",
     __opkind__: "Infix",
-    __args__: [this, pathTypeSet],
+    __args__: [this, pathTypeSet]
   }) as any;
 }
 
@@ -256,7 +253,7 @@ export function $getScopedExpr<T extends ExpressionRoot>(
             ...expr,
             __cardinality__: Cardinality.One,
             __scopedFrom__: expr,
-            "*": (expr as any)["*"],
+            "*": (expr as any)["*"]
           });
     scopeRoots.add(scopedExpr);
     const uncached = !scopedExpr;

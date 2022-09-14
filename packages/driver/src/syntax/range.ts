@@ -7,9 +7,9 @@ import {
   getPrimitiveBaseType,
   TypeSet,
   $expr_Function,
-  cardinalityUtil,
+  cardutil,
   BaseType,
-  ExpressionKind,
+  ExpressionKind
 } from "../reflection/index";
 
 import type {
@@ -17,13 +17,13 @@ import type {
   $decimal,
   $datetime,
   $duration,
-  $bool,
+  $bool
 } from "@generated/modules/std";
 import type {$local_date, $local_datetime} from "@generated/modules/cal";
 import type {
   literalToScalarType,
   mapLiteralToTypeSet,
-  orScalarLiteral,
+  orScalarLiteral
 } from "@generated/castMaps";
 import {literalToTypeSet} from "@generated/castMaps";
 import {spec} from "@generated/__spec__";
@@ -77,18 +77,18 @@ function range<
         ? literalToScalarType<P2>
         : $anypoint
     >,
-    cardinalityUtil.multiplyCardinalities<
-      cardinalityUtil.multiplyCardinalities<
-        cardinalityUtil.multiplyCardinalities<
-          cardinalityUtil.multiplyCardinalities<
-            cardinalityUtil.optionalParamCardinality<P1>,
-            cardinalityUtil.optionalParamCardinality<P2>
+    cardutil.multiplyCardinalities<
+      cardutil.multiplyCardinalities<
+        cardutil.multiplyCardinalities<
+          cardutil.multiplyCardinalities<
+            cardutil.optionalParamCardinality<P1>,
+            cardutil.optionalParamCardinality<P2>
           >,
-          cardinalityUtil.optionalParamCardinality<NamedArgs["inc_lower"]>
+          cardutil.optionalParamCardinality<NamedArgs["inc_lower"]>
         >,
-        cardinalityUtil.optionalParamCardinality<NamedArgs["inc_upper"]>
+        cardutil.optionalParamCardinality<NamedArgs["inc_upper"]>
       >,
-      cardinalityUtil.optionalParamCardinality<NamedArgs["empty"]>
+      cardutil.optionalParamCardinality<NamedArgs["empty"]>
     >
   >
 >;
@@ -118,9 +118,9 @@ function range<
         ? literalToScalarType<P2>
         : $anypoint
     >,
-    cardinalityUtil.multiplyCardinalities<
-      cardinalityUtil.optionalParamCardinality<P1>,
-      cardinalityUtil.optionalParamCardinality<P2>
+    cardutil.multiplyCardinalities<
+      cardutil.optionalParamCardinality<P1>,
+      cardutil.optionalParamCardinality<P2>
     >
   >
 >;
@@ -145,7 +145,7 @@ function range(...args: any[]): any {
       return {
         __kind__: TypeKind.range,
         __name__: `range<${arg.__name__}>`,
-        __element__: arg,
+        __element__: arg
       } as any;
     }
   }
@@ -153,7 +153,7 @@ function range(...args: any[]): any {
     returnType,
     cardinality,
     args: positionalArgs,
-    namedArgs,
+    namedArgs
   } = $resolveOverload("std::range", args, spec, [
     {
       args: [
@@ -161,37 +161,37 @@ function range(...args: any[]): any {
           typeId: $nameMapping.get("std::anypoint")!,
           optional: true,
           setoftype: false,
-          variadic: false,
+          variadic: false
         },
         {
           typeId: $nameMapping.get("std::anypoint")!,
           optional: true,
           setoftype: false,
-          variadic: false,
-        },
+          variadic: false
+        }
       ],
       namedArgs: {
         inc_lower: {
           typeId: $nameMapping.get("std::bool")!,
           optional: true,
           setoftype: false,
-          variadic: false,
+          variadic: false
         },
         inc_upper: {
           typeId: $nameMapping.get("std::bool")!,
           optional: true,
           setoftype: false,
-          variadic: false,
+          variadic: false
         },
         empty: {
           typeId: $nameMapping.get("std::bool")!,
           optional: true,
           setoftype: false,
-          variadic: false,
-        },
+          variadic: false
+        }
       },
-      returnTypeId: $nameMapping.get("range<std::anypoint>")!,
-    },
+      returnTypeId: $nameMapping.get("range<std::anypoint>")!
+    }
   ]);
   return $expressionify({
     __kind__: ExpressionKind.Function,
@@ -199,7 +199,7 @@ function range(...args: any[]): any {
     __cardinality__: cardinality,
     __name__: "std::range",
     __args__: positionalArgs,
-    __namedargs__: namedArgs,
+    __namedargs__: namedArgs
   }) as any;
 }
 
