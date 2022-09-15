@@ -1,6 +1,7 @@
 import type {CodeBuilder, CodeFragment, IdentRef} from "./builders";
-import type * as introspect from "edgedb/dist/reflection/queries/getTypes";
-import {util} from "edgedb/dist/reflection/util/util";
+import type * as introspect from "edgedb/dist/reflection/queries/types";
+import {util} from "edgedb/dist/reflection/util";
+export {$} from "edgedb";
 
 export function splitName(name: string) {
   if (!name.includes("::")) throw new Error(`Invalid FQN ${name}`);

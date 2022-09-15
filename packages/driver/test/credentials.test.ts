@@ -6,7 +6,7 @@ test("readCredentialsFile", async () => {
     database: "test3n",
     password: "lZTBy1RVCfOpBAOwSCwIyBIR",
     port: 10702,
-    user: "test3n",
+    user: "test3n"
   });
 });
 

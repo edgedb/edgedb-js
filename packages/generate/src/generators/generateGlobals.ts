@@ -3,7 +3,7 @@ import {frag, getRef, splitName} from "../genutil";
 import {dts, r, t, ts} from "../builders";
 
 import {getStringRepresentation} from "./generateObjectTypes";
-import type {$} from "edgedb";
+import type {$} from "../genutil";
 
 export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
   const globalsByMod: {[k: string]: $.introspect.GlobalType[]} = {};

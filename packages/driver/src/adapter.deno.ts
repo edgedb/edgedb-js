@@ -3,7 +3,7 @@ import {Buffer} from "https://deno.land/std@0.114.0/node/buffer.ts";
 import * as crypto from "https://deno.land/std@0.114.0/node/crypto.ts";
 import {
   Sha256,
-  HmacSha256,
+  HmacSha256
 } from "https://deno.land/std@0.114.0/hash/sha256.ts";
 
 import path from "https://deno.land/std@0.114.0/node/path.ts";
@@ -276,7 +276,7 @@ export namespace tls {
       port: options.port,
       hostname: options.host,
       alpnProtocols: options.ALPNProtocols,
-      caCerts: typeof options.ca === "string" ? [options.ca] : options.ca,
+      caCerts: typeof options.ca === "string" ? [options.ca] : options.ca
     });
 
     return new TLSSocket(conn);

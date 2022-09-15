@@ -23,7 +23,7 @@ interface Options {
 const {path, fs, readFileUtf8, exists, input} = adapter;
 
 const run = async () => {
-  const args = process.argv.slice(2);
+  const args = adapter.process.argv.slice(2);
 
   const connectionConfig: ConnectConfig = {};
   const options: Options = {};
@@ -170,7 +170,7 @@ OPTIONS:
     --force-overwrite
         If 'output-dir' already exists, will overwrite without confirmation
 `);
-    process.exit();
+    adapter.process.exit();
   }
 
   // }
@@ -182,7 +182,7 @@ OPTIONS:
   //     `Error: 'edgedb' package is not yet installed locally.
   //  Run `npm install edgedb` before generating the query builder.`
   //   );
-  //   process.exit();
+  //   adapter.process.exit();
   // }
   let projectRoot: string | null = null;
 
@@ -205,7 +205,7 @@ OPTIONS:
   // } else {
 
   console.log(`Generating query builder...`);
-  let currentDir = process.cwd();
+  let currentDir = adapter.process.cwd();
   const systemRoot = path.parse(currentDir).root;
   while (currentDir !== systemRoot) {
     if (await exists(path.join(currentDir, "edgedb.toml"))) {
@@ -283,7 +283,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
   if (options.outputDir) {
     outputDir = path.isAbsolute(options.outputDir)
       ? options.outputDir
-      : path.join(process.cwd(), options.outputDir);
+      : path.join(adapter.process.cwd(), options.outputDir);
   } else if (projectRoot) {
     outputDir = path.join(projectRoot, "dbschema", "edgeql-js");
   } else {
@@ -376,7 +376,7 @@ the query builder directory? The following line will be added:
     }
   }
 
-  process.exit();
+  adapter.process.exit();
 };
 
 run();
@@ -413,7 +413,7 @@ async function canOverwrite(outputDir: string, options: Options) {
 }
 
 function isTTY() {
-  return process.stdin.isTTY && process.stdout.isTTY;
+  return adapter.process.stdin.isTTY && adapter.process.stdout.isTTY;
 }
 
 async function promptBoolean(prompt: string, defaultVal?: boolean) {
@@ -458,13 +458,13 @@ async function promptForPassword(username: string) {
 }
 
 function readPasswordFromStdin() {
-  if (process.stdin.isTTY) {
+  if (adapter.process.stdin.isTTY) {
     exitWithError(`Cannot read password from stdin: stdin is a TTY.`);
   }
 
   return new Promise<string>(resolve => {
     let data = "";
-    process.stdin.on("data", chunk => (data += chunk));
-    process.stdin.on("end", () => resolve(data.trimEnd()));
+    adapter.process.stdin.on("data", chunk => (data += chunk));
+    adapter.process.stdin.on("end", () => resolve(data.trimEnd()));
   });
 }

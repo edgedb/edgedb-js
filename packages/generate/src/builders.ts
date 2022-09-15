@@ -1,8 +1,9 @@
-import {fs, path, exists, readFileUtf8} from "edgedb/dist/adapter.node";
+import {adapter} from "edgedb";
 import {StrictMap} from "edgedb/dist/reflection/strictMap";
 import * as genutil from "./genutil";
 import {importExportHelpers} from "./importExportHelpers";
 
+const {fs, path, exists, readFileUtf8} = adapter;
 type Mode = "ts" | "js" | "dts";
 type ModuleKind = "esm" | "cjs";
 

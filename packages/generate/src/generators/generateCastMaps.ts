@@ -7,7 +7,7 @@ import {
   quote,
   scalarToLiteralMapping
 } from "../genutil";
-import {util} from "edgedb/dist/reflection";
+import {$} from "../genutil";
 import {getStringRepresentation} from "./generateObjectTypes";
 
 const getRuntimeRef = (name: string) => getRef(name, {prefix: ""});
@@ -47,8 +47,8 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
   const casting = (id: string) => {
     const type = types.get(id);
-    const castable = util.deduplicate([
-      ...util.getFromArrayMap(implicitCastMap, type.id)
+    const castable = $.util.deduplicate([
+      ...$.util.getFromArrayMap(implicitCastMap, type.id)
     ]);
     return castable;
   };

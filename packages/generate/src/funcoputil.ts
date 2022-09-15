@@ -2,11 +2,7 @@ import {$} from "edgedb";
 import type {CodeFragment} from "./builders";
 import type {FuncopDef} from "./generators/generateFunctionTypes";
 import {getStringRepresentation} from "./generators/generateObjectTypes";
-// import type {Casts} from "edgedb/dist/reflection/queries/getCasts";
-// import type {Param} from "edgdb/dist/reflection/queries/getFunctions";
-// import {StrictMap} from "edgdb/dist/reflection/strictMap";
 import {frag, getRef, makeValidIdent, quote} from "./genutil";
-// import {util} from "edgdb/dist/reflection/util/util";
 
 export type AnytypeDef =
   | {kind: "castable"; type: CodeFragment[]; returnAnytypeWrapper: string}
