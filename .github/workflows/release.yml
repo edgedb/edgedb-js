@@ -4,9 +4,9 @@ name: release
 on:
   push:
     branches:
-      - "master"
-      - "ci"
-      - "edgeql-2"
+      - master
+      - ci
+      - edgeql-2
     paths:
       - package.json
 
