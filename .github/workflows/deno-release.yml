@@ -31,11 +31,18 @@ jobs:
 
       - name: Install dev deps
         run: |
-          yarn install
+          yarn
 
       - name: Get version from package.json
         id: package-version
         uses: martinbeentjes/npm-get-version-action@v1.1.0
+        with:
+          path: packages/driver
+
+
+      - name: Write version to file
+        run: |
+          echo "${{ steps.package-version.outputs.current-version }}"
 
       # - name: Write version to file
       #   run: |
@@ -44,7 +51,7 @@ jobs:
 
       - name: Compile for Deno
         run: |
-          yarn build:deno
+          yarn workspace edgedb build:deno
 
       - name: Push to edgedb-deno
         run: ./.github/workflows/push-edgedb-deno.sh

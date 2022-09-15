@@ -7,8 +7,6 @@ on:
       - master
       - ci
       - edgeql-2
-    paths:
-      - package.json
 
 jobs:
   build_and_publish:
@@ -73,16 +71,16 @@ jobs:
           commitMode: true
           configuration: changelog_config.json
 
-      - name: Create Release
-        if: steps.publish.outputs.type != 'none'
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.publish.outputs.version }}
-          release_name: v${{ steps.publish.outputs.version }}
-          commitish: ${{ github.ref }}
-          body: ${{steps.github_release.outputs.changelog}}
-          draft: true
-          prerelease: false
+      # - name: Create Release
+      #   if: steps.publish.outputs.type != 'none'
+      #   id: create_release
+      #   uses: actions/create-release@latest
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: v${{ steps.publish.outputs.version }}
+      #     release_name: v${{ steps.publish.outputs.version }}
+      #     commitish: ${{ github.ref }}
+      #     body: ${{steps.github_release.outputs.changelog}}
+      #     draft: true
+      #     prerelease: false
