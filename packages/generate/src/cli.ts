@@ -23,7 +23,16 @@ interface Options {
 const {path, fs, readFileUtf8, exists, input} = adapter;
 
 const run = async () => {
-  const args = adapter.process.argv.slice(2);
+  const [generator, ...args] = adapter.process.argv.slice(2);
+  console.log(generator);
+  if (!generator || generator[0] === "-") {
+    throw new Error(
+      `Specify a generator: \`npx @edgedb/generate [generator]\``
+    );
+  }
+  if (!["edgeql-js", "queries"].includes(generator)) {
+    throw new Error(`Invalid generator: "${generator}"`);
+  }
 
   const connectionConfig: ConnectConfig = {};
   const options: Options = {};
@@ -140,9 +149,16 @@ const run = async () => {
   }
 
   if (options.showHelp) {
-    console.log(`edgeql-js
+    console.log(`@edgedb/generate
 
-Introspects the schema of an EdgeDB instance and generates a TypeScript/JavaScript query builder
+Official EdgeDB code generators for TypeScript/JavaScript
+
+USAGE
+    npx @edgedb/generate [COMMAND] [OPTIONS]
+
+COMMANDS:
+    edgeql-js       Generate query builder
+    queries         Generate typed functions from .edgeql files
 
 CONNECTION OPTIONS:
     -I, --instance <instance>
@@ -275,7 +291,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
       }
     }
     const overrideTargetMessage = `   To override this, use the --target flag.
-   Run \`npx edgeql-js --help\` for full options.`;
+   Run \`npx @edgedb/generate --help\` for full options.`;
     console.log(overrideTargetMessage);
   }
 

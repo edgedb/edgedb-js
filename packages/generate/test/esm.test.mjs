@@ -7,10 +7,10 @@ const QBDIR = "../dbschema/qbout";
 const client = createClient();
 
 const CMD = [
-  `yarn generate`,
+  `yarn @edgedb/generate`,
   `--output-dir ./dbschema/qbout`,
   `--force-overwrite`,
-  "--target esm",
+  "--target esm"
 ];
 
 async function run() {

@@ -5,15 +5,9 @@ on:
     branches:
       - master
       - ci
-    # paths-ignore:
-    #   - "README.md"
-    #   - "docs/**"
   pull_request:
     branches:
       - master
-    # paths-ignore:
-    #   - "README.md"
-    #   - "docs/**"
 
 jobs:
   test:
@@ -71,8 +65,7 @@ jobs:
 
       - name: Install dev deps
         run: |
-          yarn install
-          cd qb && yarn install
+          yarn
 
       - name: Lint
         run: |
@@ -80,7 +73,7 @@ jobs:
 
       - name: Build
         run: |
-          yarn build
+          yarn workspaces run build
 
       # - name: Compile for Deno
       #   run: |
@@ -93,19 +86,17 @@ jobs:
 
       - name: Run query builder tests
         if: ${{ matrix.node-version >= 14 && matrix.edgedb-version != '1.4'}}
-        working-directory: qb
         run: |
-          yarn test:ci
+          yarn workspace @edgedb/generate test
 
-      - name: Test qb generation on v1
+      - name: Test QB generation on v1
         if: ${{ matrix.node-version >= 14 && matrix.edgedb-version == '1.4' }}
-        working-directory: qb
         run: |
-          yarn test:v1
+          yarn workspace @edgedb/generate test:v1
 
       - name: Run functional tests
         run: |
-          yarn test
+          yarn workspace edgedb test
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.

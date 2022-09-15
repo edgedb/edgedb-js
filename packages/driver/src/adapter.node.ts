@@ -28,7 +28,7 @@ export async function walk(dir: string): Promise<string[]> {
   const files = await Promise.all(
     dirents.map(dirent => {
       const res = path.resolve(dir, dirent.name);
-      return dirent.isDirectory() ? walk(res) : res;
+      return dirent.isDirectory() ? walk(res) : [res];
     })
   );
   return Array.prototype.concat(...files);

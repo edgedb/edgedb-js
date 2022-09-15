@@ -27,28 +27,34 @@ Install the ``edgedb`` package from NPM.
 Generate the query builder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Generate the query builder with the following command.
+To generate the query builder, first install the EdgeDB code generator package as a dev dependency.
 
 .. code-block:: bash
 
-  $ npx edgeql-js           # npm users
-  $ yarn edgeql-js          # yarn users
+  $ npm install -D @edgedb/generate     # npm users
+  $ yarn add --dev @edgedb/generate     # yarn users
+
+Then run the following ``npx`` command
+
+.. code-block:: bash
+
+  $ npx @edgedb/generate edgeql-js      # npm users
 
 You'll see something similar to this. (The first line will differ depending on
 whether you are using TypeScript or plain JavaScript.)
 
 .. code-block:: bash
 
-  $ npx edgeql-js
+  $ npx @edgedb/generate edgeql-js
   Detected tsconfig.json, generating TypeScript files.
     To override this, use the --target flag.
-    Run `npx edgeql-js --help` for details.
+    Run `npx @edgedb/generate --help` for details.
   Generating query builder into ./dbschema/edgeql-js
   Connecting to EdgeDB instance...
   Introspecting database schema...
   Generation successful!
 
-**Important**. The ``npx edgeql-js`` establishes a connection to your database, introspects the current schema, and generates a bunch of files. It does **not** simply read your local ``.esdl`` files. You must create and apply migrations to your development database before running ``npx edgeql-js``.
+**Important**. The ``npx @edgedb/generate edgeql-js`` establishes a connection to your database, introspects the current schema, and generates a bunch of files. It does **not** simply read your local ``.esdl`` files. You must create and apply migrations to your development database before running ``npx @edgedb/generate``.
 
 .. note::
 
