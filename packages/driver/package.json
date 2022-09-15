@@ -26,7 +26,7 @@
     "get-stdin": "^7.0.0",
     "globby": "^13.1.2",
     "node-fetch": "2.6.7",
-    "typescript": "^4.4"
+    "typescript": "~4.4"
   },
   "scripts": {
     "build": "echo 'Building edgedb-js...' && yarn build:cjs && yarn build:esm && yarn build:deno && yarn syntax:make && yarn syntax:clean && yarn set-version",
@@ -36,17 +36,10 @@
     "syntax:make": "tsx ./tools/makeSyntax.ts",
     "syntax:clean": "tsx ./tools/cleanSyntax.ts",
     "test": "jest --detectOpenHandles",
-    "test:qb": "cd qb && yarn test",
-    "test:esm": "cd qb && yarn test:esm",
-    "test:cjs": "cd qb && yarn test:cjs",
-    "test:mts": "cd qb && yarn test:mts",
-    "test:deno": "cd qb && yarn test:deno",
     "set-version": "./tools/setPackageVersion.sh",
     "lint": "tslint 'packages/*/src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/genErrors.js",
-    "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno && yarn syntax:make",
-    "generate": "cd qb && yarn generate && cd ..",
-    "watch": "nodemon -e ts -w ./src -w ./qb/playground.ts -x"
+    "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno && yarn syntax:make"
   }
 }

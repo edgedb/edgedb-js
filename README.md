@@ -87,7 +87,7 @@ npm install edgedb@latest
   ```ts
   import {createClient} from "edgedb";
   const client = createClient().withGlobals({
-    current_user: getUserIdFromCookie(),
+    current_user: getUserIdFromCookie()
   });
 
   client.query(`select User { email } filter .id = global current_user;`);
@@ -98,7 +98,7 @@ npm install edgedb@latest
   ```ts
   const query = e.select(e.User, user => ({
     email: true,
-    filter: e.op(user.id, "=", e.global.current_user),
+    filter: e.op(user.id, "=", e.global.current_user)
   }));
 
   await query.run(client);
@@ -111,7 +111,7 @@ npm install edgedb@latest
     title: true,
     actors: {name: true},
     num_actors: e.count(movie.characters),
-    by: {release_year: movie.release_year},
+    by: {release_year: movie.release_year}
   }));
   /* [
     {
@@ -234,7 +234,7 @@ To generate the query builder, install the `edgedb` package, initialize a projec
 you haven't already), then run the following command:
 
 ```bash
-$ npx edgeql-js
+$ npx @edgedb/generate edgeql-js
 ```
 
 This will generate an EdgeQL query builder into the `./dbschema/edgeql-js`
@@ -253,7 +253,7 @@ const query = e.select(e.Movie, movie => ({
   title: true,
   actors: {name: true},
   num_actors: e.count(movie.actors),
-  filter: e.op(movie.title, "=", "Dune"),
+  filter: e.op(movie.title, "=", "Dune")
 }));
 
 const result = await query.run(client);

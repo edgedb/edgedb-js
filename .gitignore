@@ -7,7 +7,6 @@ node_modules
 !.yarn/releases
 
 /coverage
-/yarn-error.log
+**/yarn-error.log
 .DS_Store
 .vscode
-qb/dbschema/edgeql-js

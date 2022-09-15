@@ -6,6 +6,7 @@ on:
     branches:
       - "master"
       - "ci"
+      - "edgeql-2"
     paths:
       - package.json
 
@@ -30,15 +31,16 @@ jobs:
 
       - name: Install deps and build
         run: |
-          yarn install
-          yarn build
+          yarn
+          yarn workspaces run build
 
       - id: publish
         name: Publish to NPM
         uses: JS-DevTools/npm-publish@v1
         with:
+          package: packages/driver/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          dry-run: false
+          dry-run: true
 
       - name: If Publish
         if: steps.publish.outputs.type != 'none'
@@ -82,5 +84,5 @@ jobs:
           release_name: v${{ steps.publish.outputs.version }}
           commitish: ${{ github.ref }}
           body: ${{steps.github_release.outputs.changelog}}
-          draft: false
+          draft: true
           prerelease: false
