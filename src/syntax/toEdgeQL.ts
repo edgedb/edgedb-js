@@ -180,9 +180,9 @@ export function $toEdgeQL(this: any) {
     ) {
       const withBlock = expr;
       const scopeVar = expr.__scope__ as SomeExpression;
-      const scopeVarName = `__scope_${withVars.size}_${
-        scopeVar.__element__.__name__.split("::")[1]
-      }`;
+      const scopeVarName = `__scope_${
+        withVars.size
+      }_${scopeVar.__element__.__name__.replace(/[^A-Za-z]/g, "")}`;
 
       withVars.set(scopeVar, {
         name: scopeVarName,
