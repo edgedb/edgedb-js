@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - ci
+      - edgeql-2
   pull_request:
     branches:
       - master
