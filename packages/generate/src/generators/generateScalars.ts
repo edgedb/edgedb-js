@@ -10,7 +10,7 @@ import {
 } from "../genutil";
 import {dts, r, t, ts} from "../builders";
 import type {GeneratorParams} from "../generate";
-import {$} from "edgedb";
+import {$} from "../genutil";
 
 export const generateScalars = (params: GeneratorParams) => {
   const {dir, types, casts, scalars} = params;

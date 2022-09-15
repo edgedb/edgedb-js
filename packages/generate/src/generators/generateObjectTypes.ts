@@ -1,7 +1,7 @@
 import {CodeBuffer, CodeFragment, dts, js, r, t, ts} from "../builders";
 // import {Cardinality} from "edgedb/dist/reflection";
 import type {GeneratorParams} from "../generate";
-import {$} from "edgedb";
+import {$} from "../genutil";
 import {
   frag,
   getRef,

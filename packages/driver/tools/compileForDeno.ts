@@ -36,51 +36,87 @@ await run({
       from: "src/globals.deno.ts"
     }
   ]
-}).then(async () =>
-  run({
-    sourceDir: "./test",
-    destDir: "../deno/test",
-    sourceFilter: path => {
-      return denoTestFiles.has(path);
-    },
-    pathRewriteRules: [{match: /^test\//, replace: ""}],
-    importRewriteRules: [
-      {
-        match: /^\.\.\/src\/index.node$/,
-        replace: "../mod.ts"
+})
+  .then(async () =>
+    run({
+      sourceDir: "./test",
+      destDir: "../deno/test",
+      sourceFilter: path => {
+        return denoTestFiles.has(path);
       },
-      {
-        match: /^globals.deno.ts$/,
-        replace: "../globals.deno.ts"
-      },
-      {
-        match: /^\.\.\/src\/.+/,
-        replace: match =>
-          `${match.replace(/^\.\.\/src\//, "../_src/")}${
-            match.endsWith(".ts") ? "" : ".ts"
-          }`
-      }
-    ],
-    injectImports: [
-      {
-        imports: ["Buffer", "process", "test", "expect", "jest"],
-        from: "src/globals.deno.ts"
-      }
-      // {
-      //   imports: ["test", "expect", "jest"],
-      //   from: "test/globals.deno.ts",
-      // },
-    ]
-  })
-);
-//   .then(async () => {
-//     await Deno.writeTextFile(
-//       "../deno/generate.ts",
-//       `
-// export * from "./_src/reflection/cli.ts";
-//     `
-//     );
-//   });
+      pathRewriteRules: [{match: /^test\//, replace: ""}],
+      importRewriteRules: [
+        {
+          match: /^\.\.\/src\/index.node$/,
+          replace: "../mod.ts"
+        },
+        {
+          match: /^globals.deno.ts$/,
+          replace: "../globals.deno.ts"
+        },
+        {
+          match: /^\.\.\/src\/.+/,
+          replace: match =>
+            `${match.replace(/^\.\.\/src\//, "../_src/")}${
+              match.endsWith(".ts") ? "" : ".ts"
+            }`
+        }
+      ],
+      injectImports: [
+        {
+          imports: ["Buffer", "process", "test", "expect", "jest"],
+          from: "src/globals.deno.ts"
+        }
+        // {
+        //   imports: ["test", "expect", "jest"],
+        //   from: "test/globals.deno.ts",
+        // },
+      ]
+    })
+  )
+  .then(() =>
+    run({
+      sourceDir: "../generate/src",
+      destDir: "../deno/_generate",
+      // sourceFilter: path => !/src\/generators/.test(path),
+      pathRewriteRules: [{match: /\.\.\/generate\/src\//, replace: "./"}],
+      importRewriteRules: [
+        {
+          match: /^edgedb\/dist\//,
+          replace: (match, path) => {
+            return path?.includes("src/generators")
+              ? match.replace(/^edgedb\/dist\//, "../../_src/")
+              : match.replace(/^edgedb\/dist\//, "../_src/");
+          }
+        },
+        {
+          match: /^edgedb$/,
+          replace: "../mod.ts"
+        },
+        {
+          match: /^\.\.\/\.\.\/src\/.+/,
+          replace: match =>
+            `${match.replace(/^\.\.\/\.\.\/src\//, "../_src/")}${
+              match.endsWith(".ts") ? "" : ".ts"
+            }`
+        }
+      ]
+      // injectImports: [
+      //   {
+      //     imports: ["Buffer", "process"],
+      //     from: "src/globals.deno.ts"
+      //   }
+      // ]
+    })
+  )
+  .then(async () => {
+    await Deno.writeTextFile(
+      "../deno/generate.ts",
+      `
+export * from "./_generate/cli.ts";
+    `
+    );
+  });
 
 async function run({
   sourceDir,
@@ -97,7 +133,7 @@ async function run({
   pathRewriteRules?: {match: RegExp; replace: string}[];
   importRewriteRules?: {
     match: RegExp;
-    replace: string | ((match: string) => string);
+    replace: string | ((match: string, sourcePath?: string) => string);
   }[];
   injectImports?: {imports: string[]; from: string}[];
   sourceFilter?: (path: string) => boolean;
@@ -244,7 +280,11 @@ async function run({
     // First check importRewriteRules
     for (const rule of importRewriteRules) {
       if (rule.match.test(importPath)) {
-        const path = importPath.replace(rule.match, rule.replace as string);
+        const path = importPath.replace(rule.match, match =>
+          typeof rule.replace === "function"
+            ? rule.replace(match, sourcePath)
+            : rule.replace
+        );
         if (!path.endsWith(".ts")) return path + ".ts";
         return path;
       }
@@ -252,6 +292,7 @@ async function run({
 
     // then resolve normally
     let resolvedPath = join(dirname(sourcePath), importPath);
+
     if (!sourceFilePathMap.has(resolvedPath)) {
       // If importPath doesn't exist, first try appending '.ts'
       resolvedPath = join(dirname(sourcePath), importPath + ".ts");

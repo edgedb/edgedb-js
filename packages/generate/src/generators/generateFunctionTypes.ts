@@ -12,12 +12,8 @@ import {
   ts
 } from "../builders";
 
-import type {
-  Param,
-  Typemod
-} from "edgedb/dist/reflection/queries/getFunctions";
 import {getStringRepresentation} from "./generateObjectTypes";
-import type {introspect, StrictMap} from "edgedb/dist/reflection";
+import type {$} from "../genutil";
 import {
   getTypesSpecificity,
   sortFuncopOverloads,
@@ -28,7 +24,6 @@ import {
   AnytypeDef,
   FuncopDefOverload
 } from "../funcoputil";
-import type {Casts} from "edgedb/dist/reflection/queries/getCasts";
 
 export const generateFunctionTypes = ({
   dir,
@@ -63,7 +58,7 @@ export const generateFunctionTypes = ({
 };
 
 export function allowsLiterals(
-  type: introspect.Type,
+  type: $.introspect.Type,
   anytypes: AnytypeDef | null
 ): boolean {
   return (
@@ -78,16 +73,16 @@ export interface FuncopDef {
   kind?: string;
   description?: string;
   return_type: {id: string; name: string};
-  return_typemod: Typemod;
-  params: Param[];
+  return_typemod: $.introspect.Typemod;
+  params: $.introspect.Param[];
   preserves_optionality?: boolean;
 }
 
 export function generateFuncopTypes<F extends FuncopDef>(
   dir: DirBuilder,
-  types: introspect.Types,
-  casts: Casts,
-  funcops: StrictMap<string, F[]>,
+  types: $.introspect.Types,
+  casts: $.introspect.Casts,
+  funcops: $.StrictMap<string, F[]>,
   funcopExprKind: string,
   typeDefSuffix: string,
   optionalUndefined: boolean,
@@ -193,7 +188,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
 
         function getParamAnytype(
           paramTypeName: string,
-          paramType: introspect.Type,
+          paramType: $.introspect.Type,
           optional: boolean
         ) {
           if (!anytypes) return undefined;
@@ -495,7 +490,7 @@ export function generateFuncopDef(funcopDef: FuncopDefOverload<FuncopDef>) {
 export function generateReturnCardinality(
   name: string,
   params: GroupedParams,
-  returnTypemod: Typemod,
+  returnTypemod: $.introspect.Typemod,
   hasNamedParams: boolean,
   anytypes: AnytypeDef | null,
   preservesOptionality: boolean = false

@@ -6,8 +6,9 @@ import * as net from "net";
 import * as tls from "tls";
 import * as readline from "readline";
 import {Writable} from "stream";
+import process from "node:process";
 
-export {path, net, crypto, fs, tls};
+export {path, net, crypto, fs, tls, process};
 
 export async function readFileUtf8(fn: string): Promise<string> {
   return await fs.readFile(fn, {encoding: "utf8"});
@@ -57,12 +58,12 @@ export function input(
         ) {
           if (!silent) process.stdout.write(chunk, encoding);
           callback();
-        },
+        }
       })
     : process.stdout;
   const rl = readline.createInterface({
     input: process.stdin,
-    output,
+    output
   });
 
   return new Promise((resolve, rej) => {

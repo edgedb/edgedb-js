@@ -3,7 +3,5 @@ export const syntax: {[k: string]: {path: string; content: string}[]} = {
   cjs: [],
   esm: [],
   mts: [],
-  ts: [],
+  ts: []
 };
-
-throw new Error();
