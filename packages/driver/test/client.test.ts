@@ -35,7 +35,7 @@ import {
   _ReadBuffer,
   _ICodec,
   Session,
-  AuthenticationError,
+  AuthenticationError
 } from "../src/index.node";
 
 import {retryingConnect} from "../src/retry";
@@ -46,7 +46,7 @@ import {
   getClient,
   getConnectOptions,
   getEdgeDBVersion,
-  isDeno,
+  isDeno
 } from "./testbase";
 
 function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
@@ -87,7 +87,7 @@ test("query: basic scalars", async () => {
     );
     expect(res).toEqual([
       -1, 1, 0, 15, 281474976710656, 22, -11111, 346456723423, -346456723423,
-      2251799813685125, -2251799813685125,
+      2251799813685125, -2251799813685125
     ]);
 
     res = await con.query("select <int32>{-1, 0, 1, 10, 2147483647};");
@@ -189,7 +189,7 @@ test("fetch: bigint", async () => {
       BigInt("999"),
       BigInt("1011"),
       BigInt("1009"),
-      BigInt("1709"),
+      BigInt("1709")
     ];
 
     // Generate random bigints
@@ -329,7 +329,7 @@ test("fetch: decimal as string", async () => {
     "-0.000010000",
     "-0.0000100000",
     "-0.00001000000",
-    "1" + "0".repeat(117) + "." + "0".repeat(161),
+    "1" + "0".repeat(117) + "." + "0".repeat(161)
   ];
 
   try {
@@ -370,7 +370,7 @@ test("fetch: int64 as bigint", async () => {
     "-1100000",
     "113",
     "1152921504594725865",
-    "-1152921504594725865",
+    "-1152921504594725865"
   ];
 
   try {
@@ -403,21 +403,21 @@ test("fetch: positional args", async () => {
     const intCases: Array<[string[], number[]]> = [
       [
         ["int16", "int32", "int64"],
-        [1, 1111],
+        [1, 1111]
       ],
       [
         ["int16", "int32", "int64"],
-        [100, -101],
+        [100, -101]
       ],
       [
         ["int16", "int32", "int64"],
-        [10011, 0],
+        [10011, 0]
       ],
       [["int64"], [17592186032104, -4398037227340]],
       [
         ["float32", "float64"],
-        [10011, 12312],
-      ],
+        [10011, 12312]
+      ]
     ];
     for (const [types, values] of intCases) {
       for (const type of types) {
@@ -458,7 +458,7 @@ test("fetch: positional args", async () => {
     );
 
     res = await con.querySingle(`select len(<array<int64>>$0)`, [
-      [1, 2, 3, 4, 5],
+      [1, 2, 3, 4, 5]
     ]);
     expect(res).toEqual(5);
   } finally {
@@ -475,7 +475,7 @@ test("fetch: named args", async () => {
 
     res = await con.querySingle(`select <str>$a ++ <str>$b`, {
       b: "abc",
-      a: "123",
+      a: "123"
     });
     expect(res).toBe("123abc");
 
@@ -483,7 +483,7 @@ test("fetch: named args", async () => {
       .querySingle(`select <str>$a ++ <str>$b`, {
         b: "abc",
         a: "123",
-        c: "def",
+        c: "def"
       })
       .then(() => {
         throw new Error(
@@ -495,7 +495,7 @@ test("fetch: named args", async () => {
       });
 
     res = await con.querySingle(`select len(<OPTIONAL str>$a ?? "aa")`, {
-      a: null,
+      a: null
     });
     expect(res).toBe(2);
   } finally {
@@ -590,7 +590,7 @@ test("fetch: cal::local_time", async () => {
       "11:12:13",
       "00:01:11.34",
       "00:00:00",
-      "23:59:59.999",
+      "23:59:59.999"
     ]) {
       res = await con.querySingle(
         `
@@ -627,7 +627,7 @@ test("fetch: duration", async () => {
     for (const time of [
       "24 hours",
       "68464977 seconds 74 milliseconds 11 microseconds",
-      "-752043.296 milliseconds",
+      "-752043.296 milliseconds"
     ]) {
       res = await con.querySingle(
         `
@@ -651,7 +651,7 @@ test("fetch: duration", async () => {
       new Duration(1),
       new Duration(0, -1),
       new Duration(0, 0, 1, 0),
-      new Duration(0, 0, 0, -1),
+      new Duration(0, 0, 0, -1)
     ]) {
       await con
         .querySingle(`select <duration>$time`, {time})
@@ -670,11 +670,10 @@ test("fetch: duration", async () => {
 });
 
 if (!isDeno) {
+  jest.setTimeout(10_000);
   test("fetch: duration fuzz", async () => {
     // @ts-ignore
     const Temporal = require("@js-temporal/polyfill").Temporal;
-
-    jest.setTimeout(10_000);
     const randint = (min: number, max: number) => {
       const x = Math.round(Math.random() * (max - min) + min);
       return x === -0 ? 0 : x;
@@ -689,7 +688,7 @@ if (!isDeno) {
       new Duration(0, 0, 0, 0, 0, 0, 0, -752043),
       new Duration(0, 0, 0, 0, 0, 0, 0, 3542924),
       new Duration(0, 0, 0, 0, 0, 0, 0, 86400000),
-      new Duration(0, 0, 0, 0, 0, 0, 0, -86400000),
+      new Duration(0, 0, 0, 0, 0, 0, 0, -86400000)
     ];
 
     // Fuzz it!
@@ -722,7 +721,7 @@ if (!isDeno) {
       for (let i = 0; i < durs.length; i++) {
         const roundedDur = Temporal.Duration.from(durs[i]).round({
           largestUnit: "hours",
-          smallestUnit: "microseconds",
+          smallestUnit: "microseconds"
         });
         expect(roundedDur.years).toBe(dursFromDb[i].years);
         expect(roundedDur.months).toBe(dursFromDb[i].months);
@@ -752,7 +751,7 @@ test("fetch: relative_duration", async () => {
       "-752043.296 milliseconds",
       "20 years 5 days 10 seconds",
       "3 months",
-      "7 weeks 9 microseconds",
+      "7 weeks 9 microseconds"
     ]) {
       res = await con.querySingle(
         `
@@ -779,8 +778,8 @@ test("fetch: relative_duration", async () => {
 });
 
 if (!isDeno) {
+  jest.setTimeout(10_000);
   test("fetch: relative_duration fuzz", async () => {
-    jest.setTimeout(10_000);
     const randint = (min: number, max: number) => {
       const x = Math.round(Math.random() * (max - min) + min);
       return x === -0 ? 0 : x;
@@ -795,7 +794,7 @@ if (!isDeno) {
       new RelativeDuration(0, 0, 0, 0, 0, -12, -32, -43.296),
       new RelativeDuration(0, 0, 0, 0, 0, 59, 2, 924),
       new RelativeDuration(0, 0, 0, 0, 24, 0, 0, 0),
-      new RelativeDuration(0, 0, 0, 0, -24, 0, 0, 0),
+      new RelativeDuration(0, 0, 0, 0, -24, 0, 0, 0)
     ];
 
     // Fuzz it!
@@ -859,7 +858,7 @@ test("fetch: ConfigMemory", async () => {
       "9MiB",
       "102938GiB",
       "108TiB",
-      "42PiB",
+      "42PiB"
     ]) {
       res = await client.querySingle(
         `
@@ -891,7 +890,7 @@ if (getEdgeDBVersion().major >= 2) {
       [false, false],
       [true, false],
       [false, true],
-      [true, true],
+      [true, true]
     ]
       .map(
         ([incl, incu]) =>
@@ -905,7 +904,7 @@ if (getEdgeDBVersion().major >= 2) {
       new Range(lower, upper, false, false),
       new Range(lower, upper, true, false),
       new Range(lower, upper, false, true),
-      new Range(lower, upper, true, true),
+      new Range(lower, upper, true, true)
     ];
   }
 
@@ -936,7 +935,7 @@ if (getEdgeDBVersion().major >= 2) {
           new Range(124, 456),
           new Range(123, 456),
           new Range(124, 457),
-          new Range(123, 457),
+          new Range(123, 457)
         ],
         floats: expandRangeJS(123.456, 456.789),
         datetimes: expandRangeJS(
@@ -947,12 +946,12 @@ if (getEdgeDBVersion().major >= 2) {
           new Range(new LocalDate(2022, 7, 2), new LocalDate(2022, 7, 14)),
           new Range(new LocalDate(2022, 7, 1), new LocalDate(2022, 7, 14)),
           new Range(new LocalDate(2022, 7, 2), new LocalDate(2022, 7, 15)),
-          new Range(new LocalDate(2022, 7, 1), new LocalDate(2022, 7, 15)),
+          new Range(new LocalDate(2022, 7, 1), new LocalDate(2022, 7, 15))
         ],
         local_datetimes: expandRangeJS(
           new LocalDateTime(2022, 7, 1, 12),
           new LocalDateTime(2022, 7, 14, 12)
-        ),
+        )
       });
 
       expect(
@@ -993,7 +992,7 @@ if (getEdgeDBVersion().major >= 2) {
         "-752043 days",
         "20 years 5 days",
         "3 months",
-        "7 weeks",
+        "7 weeks"
       ]) {
         res = await con.querySingle(
           `
@@ -1037,7 +1036,7 @@ test("fetch: tuple", async () => {
     res = await con.query("select {(1, 'abc'), (2, 'bcd')}");
     expect(res).toEqual([
       [1, "abc"],
-      [2, "bcd"],
+      [2, "bcd"]
     ]);
     const t0: Array<any> = res[0];
 
@@ -1084,14 +1083,14 @@ test("fetch: object", async () => {
           {
             kind: "PositionalParam",
             num: 0,
-            "@foo": 42,
+            "@foo": 42
           },
           {
             kind: "PositionalParam",
             num: 1,
-            "@foo": 42,
-          },
-        ],
+            "@foo": 42
+          }
+        ]
       })
     );
 
@@ -1317,9 +1316,9 @@ test("querySingle: arrays", async () => {
   }
 });
 
-test("fetch: long strings", async () => {
-  jest.setTimeout(60_000);
+jest.setTimeout(60_000);
 
+test("fetch: long strings", async () => {
   // This test is meant to stress test the ring buffer.
 
   const con = getClient();
@@ -1414,7 +1413,7 @@ test("query(Required)Single cardinality", async () => {
     querySingleTests,
     queryRequiredSingleTests,
     querySingleJSONTests,
-    queryRequiredSingleJSONTests,
+    queryRequiredSingleJSONTests
   ]) {
     await tests(client);
     try {
@@ -1534,7 +1533,7 @@ test("scripts and args", async () => {
       ).toEqual(undefined);
 
       expect(await client.query(`select ScriptTest {name}`)).toEqual([
-        {name: "test0"},
+        {name: "test0"}
       ]);
 
       await expect(
@@ -1567,7 +1566,7 @@ test("scripts and args", async () => {
       expect(await client.query(`select ScriptTest {name}`)).toEqual([
         {name: "test0"},
         {name: "test1"},
-        {name: "test2"},
+        {name: "test2"}
       ]);
 
       // expect(
@@ -1740,7 +1739,7 @@ if (getEdgeDBVersion().major >= 2) {
       const state = new Session({module: "schema"});
       const options = {
         injectTypenames: true,
-        implicitLimit: BigInt(5),
+        implicitLimit: BigInt(5)
       } as const;
       const [_, outCodec] = await con.rawParse(query, state, options);
       const resultData = await con.rawExecute(query, state, outCodec, options);
@@ -1768,7 +1767,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
         address: config.connectionParams.address,
         database: config.connectionParams.database,
         user: config.connectionParams.user,
-        token: token,
+        token: token
       },
       codecsRegistry
     );
@@ -1777,7 +1776,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     const state = new Session({module: "schema"});
     const options = {
       injectTypenames: true,
-      implicitLimit: BigInt(5),
+      implicitLimit: BigInt(5)
     } as const;
 
     const [_, outCodec] = await fetchConn.rawParse(query, state, options);
@@ -1802,7 +1801,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
         address: config.connectionParams.address,
         database: config.connectionParams.database,
         user: config.connectionParams.user,
-        token: "invalid token",
+        token: "invalid token"
       },
       codecsRegistry
     );

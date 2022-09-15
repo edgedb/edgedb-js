@@ -87,7 +87,7 @@ With Node.js, use ``npx`` to generate the query builder.
 
 .. code-block:: bash
 
-  $ npx edgeql-js
+  $ npx @edgedb/generate edgeql-js
 
 With Deno, use ``deno run``. *Deno user must also create an import map, see "Deno usage" below.*
 
@@ -111,7 +111,7 @@ add the the line automatically.
 
 .. code-block:: bash
 
-  $ npx edgeql-js
+  $ npx @edgedb/generate edgeql-js
   ...
   Checking the generated query builder into version control
   is NOT RECOMMENDED. Would you like to update .gitignore to ignore
