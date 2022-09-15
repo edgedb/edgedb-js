@@ -66,7 +66,7 @@ whether you are using TypeScript or plain JavaScript.)
   which is not on our roadmap (to put it lightly!). As such, we rely on the
   existence of an active EdgeDB instance containing the target schema.
 
-By default, ``npx edgeql-js`` generated files into the
+By default, ``npx @edgedb/generate edgeql-js`` generated files into the
 ``./dbschema/edgeql-js`` directory, as defined relative to your project root.
 The project root is identified by scanning up the file system for a
 ``package.json``.
@@ -113,7 +113,7 @@ Git.
 
 .. code-block::
 
-  $ npx edgeql-js
+  $ npx @edgedb/generate edgeql-js
   ...
   Checking the generated query builder into version control
   is NOT RECOMMENDED. Would you like to update .gitignore to ignore
@@ -174,8 +174,8 @@ Here's a full "Hello world" example.
     console.log(result); // "Hello world!"
   }
 
-Configuring ``npx edgeql-js``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Configuring ``npx @edgedb/generate``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The generation command is configurable in a number of ways.
 
@@ -221,9 +221,9 @@ Generated interfaces
 ^^^^^^^^^^^^^^^^^^^^
 
 While the ``e`` object is all that's required to build queries,
-``npx edgeql-js`` also generates TypeScript ``interfaces`` representing your
-current schema. These are not needed to construct queries, but are generated
-as a convenience.
+``npx @edgedb/generate edgeql-js`` also generates TypeScript ``interfaces``
+representing your current schema. These are not needed to construct queries,
+but are generated as a convenience.
 
 .. code-block:: typescript
 

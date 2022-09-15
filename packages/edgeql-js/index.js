@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 
 console.log(
-  `Failure: "edgedb" module is not installed.
+  `Failure: The \`npx edgeql-js\` command is no longer supported.
 
-To generate the EdgeDB query builder, you must have
-the \`edgedb\` module installed as a dependency in
-your local project:
+To generate the EdgeDB query builder, install \`@edgedb/generate\`
+as a dev dependency in your local project:
 
-With npm:      npm install edgedb
-With yarn:     yarn add edgedb
+  $ npm install -D @edgedb/generate     (npm)
+  $ yarn add -dev @edgedb/generate      (yarn)
 
-Then run \`npx edgeql-js\` again.`
+Then run the following command.
+
+  $ npx @edgedb/generate edgeql-js
+`
 );
