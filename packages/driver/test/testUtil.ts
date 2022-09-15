@@ -103,7 +103,7 @@ export const getServerCommand = (
     "--port=auto",
     "--emit-server-status=" + statusFile,
     "--security=strict",
-    "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }",
+    "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }"
   ];
 
   return {args, availableFeatures};
@@ -118,7 +118,7 @@ export const startServer = async (
   let stderrData: string = "";
 
   const proc = child_process.spawn(cmd[0], cmd.slice(1, cmd.length), {
-    env: {...process.env, ...env},
+    env: {...process.env, ...env}
   });
 
   if (process.env.EDGEDB_DEBUG_SERVER) {
@@ -130,6 +130,7 @@ export const startServer = async (
 
   proc.stderr.on("data", data => {
     if (process.env.EDGEDB_DEBUG_SERVER) {
+      console.log(data.toString());
       process.stderr.write(data.toString());
     } else {
       // only collect until we detect the start
@@ -187,7 +188,7 @@ export const startServer = async (
     user: "edgedb",
     password: "edgedbtest",
     database: "edgedb",
-    tlsSecurity: "no_host_verification",
+    tlsSecurity: "no_host_verification"
   };
 
   if (typeof runtimeData.tls_cert_file === "string") {
@@ -278,7 +279,7 @@ export async function applyMigrations(
       "migrate",
       ...(params?.flags || []),
       "--schema-dir",
-      getWSLPath(path.join(process.cwd(), "dbschema")),
+      getWSLPath(path.join(process.cwd(), "dbschema"))
     ]);
   } else {
     await runCommand(
@@ -318,8 +319,8 @@ export async function runCommand(
     shell: true,
     env: {
       ...process.env,
-      ...env,
-    },
+      ...env
+    }
   });
 
   return new Promise<void>((resolve, reject) => {
@@ -350,6 +351,6 @@ export function configToEnv(config: ConnectConfig): {
     EDGEDB_PASSWORD: config.password,
     // EDGEDB_TLS_CA_FILE: config.tlsCAFile,
     // EDGEDB_CLIENT_TLS_SECURITY: config.tlsSecurity,
-    EDGEDB_CLIENT_SECURITY: "insecure_dev_mode",
+    EDGEDB_CLIENT_SECURITY: "insecure_dev_mode"
   };
 }

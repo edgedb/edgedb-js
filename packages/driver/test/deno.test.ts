@@ -18,11 +18,10 @@
 
 import {execFile} from "child_process";
 
+jest.setTimeout(120000);
 test("run deno test", async () => {
-  jest.setTimeout(120_000);
-
   return await new Promise<void>((resolve, reject) => {
-    execFile(
+    return execFile(
       "deno",
       [
         "test",
@@ -40,11 +39,11 @@ test("run deno test", async () => {
         cwd: "../deno"
       },
       (error, stdout, stderr) => {
+        console.log(stdout);
         if (error) {
           console.error(stderr);
           reject(error);
         }
-        console.log(stdout);
         resolve();
       }
     );
@@ -52,9 +51,8 @@ test("run deno test", async () => {
 });
 
 test("deno check", async () => {
-  jest.setTimeout(60_000);
   return await new Promise<void>((resolve, reject) => {
-    execFile(
+    return execFile(
       "deno",
       // TODO: remove unstable flag when deno stdlib node/process module
       // doesn't need it
