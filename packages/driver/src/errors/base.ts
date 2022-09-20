@@ -85,10 +85,10 @@ export function prettyPrintError(attrs: Map<number, Buffer>, query: string) {
 
   errMessage += "|".padStart(lineNoWidth + 3) + "\n";
 
-  for (var i = lineStart; i < lineEnd + 1; i++) {
+  for (let i = lineStart; i < lineEnd + 1; i++) {
     const line = queryLines[i - 1];
-    const start = i == lineStart ? colStart : 0;
-    const end = i == lineEnd ? colEnd : line.length;
+    const start = i === lineStart ? colStart : 0;
+    const end = i === lineEnd ? colEnd : line.length;
     errMessage += ` ${i.toString().padStart(lineNoWidth)} | ${line}\n`;
     errMessage += `${"|".padStart(lineNoWidth + 3)} ${""
       .padStart(end - start, "^")
