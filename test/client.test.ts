@@ -36,6 +36,7 @@ import {
   _ICodec,
   Session,
   AuthenticationError,
+  InvalidReferenceError,
 } from "../src/index.node";
 
 import {retryingConnect} from "../src/retry";
@@ -1704,6 +1705,31 @@ test("concurrent ops", async () => {
   } finally {
     await pool.close();
   }
+});
+
+test("pretty error message", async () => {
+  const client = getClient();
+
+  let err: Error | null = null;
+  try {
+    client.query(`select {
+  ver := sys::get_version(),
+  unknown := .abc,
+};`);
+  } catch (e) {
+    err = e as Error;
+  } finally {
+    await client.close();
+  }
+
+  expect(err).toBeInstanceOf(InvalidReferenceError);
+  expect(err?.toString()).toBe(
+    `InvalidReferenceError: object type 'std::FreeObject' has no link or property 'abc'
+   |
+ 3 |   unknown := .abc,
+   |              ^^^^
+`
+  );
 });
 
 function _decodeResultBuffer(outCodec: _ICodec, resultData: Buffer) {

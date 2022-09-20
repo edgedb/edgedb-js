@@ -142,7 +142,6 @@ class BaseFetchConnection extends BaseRawConnection {
   ): BaseFetchConnection {
     const conn = new this(config, registry);
     conn.connected = true;
-    conn.exposeErrorAttributes = true;
     return conn;
   }
 }

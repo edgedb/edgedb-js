@@ -95,7 +95,6 @@ const OLD_ERROR_CODES = new Map([
 
 export class BaseRawConnection {
   protected connected: boolean = false;
-  protected exposeErrorAttributes: boolean = false;
 
   protected lastStatus: string | null;
 
@@ -278,11 +277,8 @@ export class BaseRawConnection {
     const errorType = resolveErrorCode(OLD_ERROR_CODES.get(code) ?? code);
     const err = new errorType(message);
 
-    if (this.exposeErrorAttributes) {
-      (err as any).attrs = this._parseHeaders();
-    } else {
-      this._ignoreHeaders(); // ignore attrs
-    }
+    (err as any)._attrs = this._parseHeaders();
+
     this.buffer.finishMessage();
 
     if (err instanceof errors.AuthenticationError) {
@@ -491,6 +487,7 @@ export class BaseRawConnection {
 
         case chars.$E: {
           error = this._parseErrorMessage();
+          (error as any)._query = query;
           break;
         }
 
@@ -575,6 +572,7 @@ export class BaseRawConnection {
 
           case chars.$E: {
             error = this._parseErrorMessage();
+            (error as any)._query = query;
             break;
           }
 
@@ -813,6 +811,7 @@ export class BaseRawConnection {
 
         case chars.$E: {
           error = this._parseErrorMessage();
+          (error as any)._query = query;
           break;
         }
 
@@ -963,6 +962,7 @@ export class BaseRawConnection {
 
         case chars.$E: {
           error = this._parseErrorMessage();
+          (error as any)._query = query;
           break;
         }
 
@@ -1111,6 +1111,7 @@ export class BaseRawConnection {
 
         case chars.$E: {
           error = this._parseErrorMessage();
+          (error as any)._query = query;
           break;
         }
 
@@ -1376,6 +1377,7 @@ export class BaseRawConnection {
 
         case chars.$E: {
           error = this._parseErrorMessage();
+          (error as any)._query = query;
           break;
         }
 
