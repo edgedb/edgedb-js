@@ -1045,7 +1045,7 @@ function renderEdgeQL(
     const selectStatement: string[] = [];
     const groupStatement: string[] = [];
 
-    const groupTarget = renderEdgeQL(expr.__scope__, ctx);
+    const groupTarget = renderEdgeQL(expr.__scope__, ctx, false);
     groupStatement.push(`GROUP ${groupTarget}`);
 
     // render scoped withvars in using
