@@ -8,34 +8,37 @@ import {
   parseConnectArguments,
   validTlsSecurityValues
 } from "edgedb/dist/conUtils";
-import {configFileHeader, exitWithError, generateQB, Target} from "./generate";
+import {
+  CommandOptions,
+  promptForPassword,
+  readPasswordFromStdin
+} from "./commandutil";
+import {generateQueryBuilder} from "./edgeql-js";
+import {exitWithError, Target} from "./generate";
+import {generateQueryFiles} from "./queries";
 
-interface Options {
-  showHelp?: boolean;
-  target?: Target;
-  outputDir?: string;
-  promptPassword?: boolean;
-  passwordFromStdin?: boolean;
-  forceOverwrite?: boolean;
-  updateIgnoreFile?: boolean;
+const {path, readFileUtf8, exists, input} = adapter;
+
+enum Generator {
+  QueryBuilder = "edgeql-js",
+  Queries = "queries"
 }
 
-const {path, fs, readFileUtf8, exists, input} = adapter;
-
 const run = async () => {
-  const [generator, ...args] = adapter.process.argv.slice(2);
-  console.log(generator);
+  const args = adapter.process.argv.slice(2);
+  const generator: Generator = args.shift() as any;
+
   if (!generator || generator[0] === "-") {
     throw new Error(
       `Specify a generator: \`npx @edgedb/generate [generator]\``
     );
   }
-  if (!["edgeql-js", "queries"].includes(generator)) {
+  if (!Object.values(Generator).includes(generator)) {
     throw new Error(`Invalid generator: "${generator}"`);
   }
 
   const connectionConfig: ConnectConfig = {};
-  const options: Options = {};
+  const options: CommandOptions = {};
 
   while (args.length) {
     let flag = args.shift()!;
@@ -133,8 +136,21 @@ const run = async () => {
         }
         options.target = target as any;
         break;
+      case "--out":
       case "--output-dir":
-        options.outputDir = getVal();
+        options.out = getVal();
+        break;
+      case "--file":
+        if (generator !== Generator.Queries) {
+          exitWithError(`Unknown option: ${flag}`);
+        }
+        options.file = true;
+        break;
+      case "--watch":
+        if (generator !== Generator.Queries) {
+          exitWithError(`Unknown option: ${flag}`);
+        }
+        options.watch = true;
         break;
       case "--force-overwrite":
         options.forceOverwrite = true;
@@ -182,9 +198,9 @@ OPTIONS:
         cjs    Generate JavaScript with CommonJS syntax
         deno   Generate TypeScript files (.ts) with Deno-style (*.ts) imports
 
-    --output-dir <output-dir>
+    --out <path>
     --force-overwrite
-        If 'output-dir' already exists, will overwrite without confirmation
+        Overwrite <path> contents without confirmation
 `);
     adapter.process.exit();
   }
@@ -219,8 +235,15 @@ OPTIONS:
   //   }
   //   currentDir = hasDenoJson.value.inDir;
   // } else {
+  switch (generator) {
+    case Generator.QueryBuilder:
+      console.log(`Generating query builder...`);
+      break;
+    case Generator.Queries:
+      console.log(`Generating functions from .edgeql files...`);
+      break;
+  }
 
-  console.log(`Generating query builder...`);
   let currentDir = adapter.process.cwd();
   const systemRoot = path.parse(currentDir).root;
   while (currentDir !== systemRoot) {
@@ -228,7 +251,6 @@ OPTIONS:
       projectRoot = currentDir;
       break;
     }
-
     currentDir = path.join(currentDir, "..");
   }
 
@@ -295,43 +317,6 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     console.log(overrideTargetMessage);
   }
 
-  let outputDir: string;
-  if (options.outputDir) {
-    outputDir = path.isAbsolute(options.outputDir)
-      ? options.outputDir
-      : path.join(adapter.process.cwd(), options.outputDir);
-  } else if (projectRoot) {
-    outputDir = path.join(projectRoot, "dbschema", "edgeql-js");
-  } else {
-    throw new Error(
-      `No edgedb.toml found. Initialize an EdgeDB project with\n\`edgedb project init\` or specify an output directory with \`--output-dir\``
-    );
-  }
-
-  let outputDirIsInProject = false;
-  let prettyOutputDir;
-  if (projectRoot) {
-    const relativeOutputDir = path.posix.relative(projectRoot, outputDir);
-    outputDirIsInProject =
-      // !!relativeOutputDir &&
-      // !path.isAbsolute(options.outputDir) &&
-      !relativeOutputDir.startsWith("..");
-    prettyOutputDir = outputDirIsInProject
-      ? `./${relativeOutputDir}`
-      : outputDir;
-  } else {
-    prettyOutputDir = outputDir;
-  }
-
-  if (await exists(outputDir)) {
-    if (await canOverwrite(outputDir, options)) {
-      // await rmdir(outputDir, {recursive: true});
-    }
-  } else {
-    // output dir doesn't exist, so assume first run
-    options.updateIgnoreFile = true;
-  }
-
   if (options.promptPassword) {
     const username = (
       await parseConnectArguments({
@@ -345,142 +330,23 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     connectionConfig.password = await readPasswordFromStdin();
   }
 
-  await generateQB({outputDir, connectionConfig, target: options.target!});
-
-  console.log(`Writing files to ${prettyOutputDir}`);
-  console.log(`Generation complete! 🤘`);
-
-  if (!outputDirIsInProject || !projectRoot) {
-    console.log(
-      `\nChecking the generated files into version control is
-not recommended. Consider updating the .gitignore of your
-project to exclude these files.`
-    );
-  } else if (options.updateIgnoreFile) {
-    const gitIgnorePath = path.join(projectRoot, ".gitignore");
-
-    let gitIgnoreFile: string | null = null;
-    try {
-      gitIgnoreFile = await readFileUtf8(gitIgnorePath);
-    } catch {}
-
-    const vcsLine = path.posix.relative(projectRoot, outputDir);
-
-    if (
-      gitIgnoreFile === null ||
-      !RegExp(`^${vcsLine}$`, "m").test(gitIgnoreFile) // not already ignored
-    ) {
-      if (
-        await promptBoolean(
-          gitIgnoreFile === null
-            ? `Checking the generated query builder into version control
-is NOT RECOMMENDED. Would you like to create a .gitignore file to ignore
-the query builder directory? `
-            : `Checking the generated query builder into version control
-is NOT RECOMMENDED. Would you like to update .gitignore to ignore
-the query builder directory? The following line will be added:
-
-  ${vcsLine}\n\n`,
-          true
-        )
-      ) {
-        await fs.appendFile(
-          gitIgnorePath,
-          `${gitIgnoreFile === null ? "" : "\n"}${vcsLine}\n`
-        );
-      }
-    }
+  switch (generator) {
+    case Generator.QueryBuilder:
+      await generateQueryBuilder({
+        options,
+        connectionConfig,
+        root: projectRoot
+      });
+      adapter.process.exit();
+      break;
+    case Generator.Queries:
+      const watcher = await generateQueryFiles({
+        options,
+        connectionConfig,
+        root: projectRoot
+      });
+      break;
   }
-
-  adapter.process.exit();
 };
 
 run();
-
-async function canOverwrite(outputDir: string, options: Options) {
-  if (options.forceOverwrite) {
-    return true;
-  }
-
-  let config: any = null;
-  try {
-    const configFile = await readFileUtf8(path.join(outputDir, "config.json"));
-    if (configFile.startsWith(configFileHeader)) {
-      config = JSON.parse(configFile.slice(configFileHeader.length));
-
-      if (config.target === options.target) {
-        return true;
-      }
-    }
-  } catch {}
-
-  const error = config
-    ? `A query builder with a different config already exists in that location.`
-    : `Output directory '${outputDir}' already exists.`;
-
-  if (
-    isTTY() &&
-    (await promptBoolean(`${error}\nDo you want to overwrite? `, true))
-  ) {
-    return true;
-  }
-
-  return exitWithError(`Error: ${error}`);
-}
-
-function isTTY() {
-  return adapter.process.stdin.isTTY && adapter.process.stdout.isTTY;
-}
-
-async function promptBoolean(prompt: string, defaultVal?: boolean) {
-  const response = await promptEnum(
-    prompt,
-    ["y", "n"],
-    defaultVal !== undefined ? (defaultVal ? "y" : "n") : undefined
-  );
-  return response === "y";
-}
-
-async function promptEnum<Val extends string, Default extends Val>(
-  question: string,
-  vals: Val[],
-  defaultVal?: Default
-): Promise<Val> {
-  let response = await input(
-    `${question}[${vals.join("/")}]${
-      defaultVal !== undefined ? ` (leave blank for "${defaultVal}")` : ""
-    }\n> `
-  );
-  response = response.trim().toLowerCase();
-
-  if (vals.includes(response as any)) {
-    return response as Val;
-  } else if (!response && defaultVal !== undefined) {
-    return defaultVal as Val;
-  } else {
-    exitWithError(`Unknown value: '${response}'`);
-  }
-}
-
-async function promptForPassword(username: string) {
-  if (!isTTY()) {
-    exitWithError(
-      `Cannot use --password option in non-interactive mode. ` +
-        `To read password from stdin use the --password-from-stdin option.`
-    );
-  }
-
-  return await input(`Password for '${username}': `, {silent: true});
-}
-
-function readPasswordFromStdin() {
-  if (adapter.process.stdin.isTTY) {
-    exitWithError(`Cannot read password from stdin: stdin is a TTY.`);
-  }
-
-  return new Promise<string>(resolve => {
-    let data = "";
-    adapter.process.stdin.on("data", chunk => (data += chunk));
-    adapter.process.stdin.on("end", () => resolve(data.trimEnd()));
-  });
-}

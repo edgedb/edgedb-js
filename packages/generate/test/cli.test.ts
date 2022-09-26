@@ -10,10 +10,4 @@ test("basic generate", async () => {
   });
   const qbIndex = path.resolve(QBDIR, "dbschema", "edgeql-js", "index.ts");
   expect(await adapter.exists(qbIndex)).toEqual(true);
-
-  // test all targets
-  // execSync(`yarn test:esm`, {stdio: "inherit"});
-  // execSync(`yarn test:cjs`, {stdio: "inherit"});
-  // execSync(`yarn test:mts`, {stdio: "inherit"});
-  // execSync(`yarn test:deno`, {stdio: "inherit"});
 }, 60000);

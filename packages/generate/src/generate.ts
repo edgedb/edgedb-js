@@ -5,14 +5,14 @@ import type {ConnectConfig} from "edgedb/dist/conUtils";
 
 import * as genutil from "./genutil";
 
-import {generateCastMaps} from "./generators/generateCastMaps";
-import {generateScalars} from "./generators/generateScalars";
-import {generateObjectTypes} from "./generators/generateObjectTypes";
-import {generateRuntimeSpec} from "./generators/generateRuntimeSpec";
-import {generateFunctionTypes} from "./generators/generateFunctionTypes";
-import {generateOperators} from "./generators/generateOperatorTypes";
-import {generateGlobals} from "./generators/generateGlobals";
-import {generateSetImpl} from "./generators/generateSetImpl";
+import {generateCastMaps} from "./edgeql-js/generateCastMaps";
+import {generateScalars} from "./edgeql-js/generateScalars";
+import {generateObjectTypes} from "./edgeql-js/generateObjectTypes";
+import {generateRuntimeSpec} from "./edgeql-js/generateRuntimeSpec";
+import {generateFunctionTypes} from "./edgeql-js/generateFunctionTypes";
+import {generateOperators} from "./edgeql-js/generateOperatorTypes";
+import {generateGlobals} from "./edgeql-js/generateGlobals";
+import {generateSetImpl} from "./edgeql-js/generateSetImpl";
 
 const {fs, path, exists, readFileUtf8, exit, walk} = adapter;
 const DEBUG = false;

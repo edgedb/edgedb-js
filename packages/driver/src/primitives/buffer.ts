@@ -970,6 +970,12 @@ export class ReadBuffer {
     return res;
   }
 
+  readString(): string {
+    const len = this.readInt32();
+    const buf = this.readBuffer(len);
+    return buf.toString("utf-8");
+  }
+
   consumeAsBuffer(): Buffer {
     const res = this.buffer.slice(this.pos, this.len);
     this.pos = this.len;

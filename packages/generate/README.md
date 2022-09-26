@@ -16,14 +16,14 @@ yarn workspaces run build
 
 3. Generate query builder
 
-Run `yarn generate` from `packages/generate` to generate the query builder. Files are generated into `packages/generate/dbschema/edgeql-js`.
+Run `yarn generate edgeql-js` from `packages/generate` to generate the query builder. Files are generated into `packages/generate/dbschema/edgeql-js`.
 
 ```
 $ cd packages/generate
-$ yarn generate
+$ yarn generate edgeql-js
 
 // watch mode
-yarn generate:dev
+yarn watch 'yarn generate edgeql-js'
 ```
 
 4. Scratchpad: `packages/generate/playground.ts`

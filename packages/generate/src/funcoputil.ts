@@ -1,7 +1,7 @@
 import {$} from "edgedb";
 import type {CodeFragment} from "./builders";
-import type {FuncopDef} from "./generators/generateFunctionTypes";
-import {getStringRepresentation} from "./generators/generateObjectTypes";
+import type {FuncopDef} from "./edgeql-js/generateFunctionTypes";
+import {getStringRepresentation} from "./edgeql-js/generateObjectTypes";
 import {frag, getRef, makeValidIdent, quote} from "./genutil";
 
 export type AnytypeDef =

@@ -31,14 +31,19 @@ export async function readDir(path: string) {
   }
 }
 
-export async function walk(path: string) {
+export async function walk(
+  path: string,
+  params?: {match?: RegExp[]; skip?: RegExp[]}
+) {
+  const {match, skip} = params || {};
   await _fs.ensureDir(path);
-  const entries = _fs.walk(path);
+  const entries = _fs.walk(path, {match, skip});
   const files: string[] = [];
   for await (const e of entries) {
-    if (e.isFile) {
-      files.push(e.path);
+    if (!e.isFile) {
+      continue;
     }
+    files.push(e.path);
   }
   return files;
 }

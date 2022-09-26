@@ -18,19 +18,42 @@ export async function readDir(pathString: string) {
   return fs.readdir(pathString);
 }
 
-export async function walk(dir: string): Promise<string[]> {
+export async function walk(
+  dir: string,
+  params?: {match?: RegExp[]; skip?: RegExp[]}
+): Promise<string[]> {
+  const {match, skip} = params || {};
+  console.log("WALKING");
   try {
     await fs.access(dir);
   } catch (err) {
+    console.log(err);
     return [];
   }
   const dirents = await fs.readdir(dir, {withFileTypes: true});
   const files = await Promise.all(
     dirents.map(dirent => {
-      const res = path.resolve(dir, dirent.name);
-      return dirent.isDirectory() ? walk(res) : [res];
+      const fspath = path.resolve(dir, dirent.name);
+      if (match) {
+        // no matches
+        if (!match.some(re => re.test(fspath))) {
+          console.log(`match found!`);
+          return [];
+        }
+      }
+      if (skip) {
+        if (skip.some(re => re.test(fspath))) {
+          console.log(`skipping`);
+          return [];
+        }
+      }
+      if (dirent.isDirectory() && !["node_modules"].includes(dirent.name))
+        return walk(fspath, params);
+
+      return [fspath];
     })
   );
+  console.log(JSON.stringify(files, null, 2));
   return Array.prototype.concat(...files);
 }
 
