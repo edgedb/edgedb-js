@@ -74,6 +74,58 @@ test("basic group", async () => {
   expect(result[1].elements[0].characters[0].name).toBeDefined();
 });
 
+test("group nested select", async () => {
+  if (await version_lt(client, 2)) return;
+  const query = e.group(
+    e.select(e.Movie, m => ({
+      filter: e.op(m.release_year, ">", 2015),
+    })),
+    movie => {
+      const release_year = movie.release_year;
+      return {
+        release_year: true,
+        title: true,
+        characters: {name: true},
+        by: {
+          release_year,
+        },
+      };
+    }
+  );
+
+  type query = $infer<typeof query>;
+  const result = await query.run(client);
+  tc.assert<
+    tc.IsExact<
+      query,
+      {
+        grouping: string[];
+        key: {
+          release_year: number | null;
+        };
+        elements: {
+          release_year: number;
+          title: string;
+          characters: {
+            name: string;
+          }[];
+        }[];
+      }[]
+    >
+  >(true);
+
+  expect(result).toMatchObject([
+    {
+      grouping: ["release_year"],
+    },
+  ]);
+  expect(result.length).toEqual(1);
+  expect(result[0].elements.length).toEqual(1);
+  expect(result[0].elements[0].title).toBeDefined();
+  expect(result[0].elements[0].release_year).toBeDefined();
+  expect(result[0].elements[0].characters[0].name).toBeDefined();
+});
+
 test("multiple keys", async () => {
   if (await version_lt(client, 2)) return;
   const query = e.group(e.Movie, movie => {
