@@ -197,38 +197,38 @@ test("extracted key with shape", async () => {
   // TODO: switch back after https://github.com/edgedb/edgedb/issues/3967
   // is fixed
   //   expect(query.toEdgeQL()).toEqual(`WITH
-  //   __scope_0_Movie := DETACHED default::Movie
-  // GROUP __scope_0_Movie
+  //   __scope_0_defaultMovie := DETACHED default::Movie
+  // GROUP __scope_0_defaultMovie
   // USING
-  //   __withVar_1 := std::len(__scope_0_Movie.title),
+  //   __withVar_1 := std::len(__scope_0_defaultMovie.title),
   //   title1 := __withVar_1,
   //   title2 := __withVar_1,
   //   title3 := __withVar_1
   // BY title1, title2, title3`);
   expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_Movie_expr := DETACHED default::Movie,
-  __scope_0_Movie := (FOR __scope_0_Movie_inner IN {__scope_0_Movie_expr} UNION (
+  __scope_0_defaultMovie_expr := DETACHED default::Movie,
+  __scope_0_defaultMovie := (FOR __scope_0_defaultMovie_inner IN {__scope_0_defaultMovie_expr} UNION (
     WITH
-      __withVar_1 := std::len(__scope_0_Movie_inner.title)
-    SELECT __scope_0_Movie_inner {
+      __withVar_1 := std::len(__scope_0_defaultMovie_inner.title)
+    SELECT __scope_0_defaultMovie_inner {
       __withVar_1 := __withVar_1
     }
   )),
-  __scope_0_Movie_groups := (
-    GROUP __scope_0_Movie
+  __scope_0_defaultMovie_groups := (
+    GROUP __scope_0_defaultMovie
     USING
-      title1 := __scope_0_Movie.__withVar_1,
-      title2 := __scope_0_Movie.__withVar_1,
-      title3 := __scope_0_Movie.__withVar_1
+      title1 := __scope_0_defaultMovie.__withVar_1,
+      title2 := __scope_0_defaultMovie.__withVar_1,
+      title3 := __scope_0_defaultMovie.__withVar_1
     BY title1, title2, title3
 )
-SELECT __scope_0_Movie_groups {
+SELECT __scope_0_defaultMovie_groups {
   key: {title1, title2, title3},
   grouping,
   elements: {
     title,
     release_year,
-    single len := __scope_0_Movie_groups.elements.__withVar_1
+    single len := __scope_0_defaultMovie_groups.elements.__withVar_1
   }
 }`);
 
