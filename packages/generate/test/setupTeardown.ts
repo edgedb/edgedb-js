@@ -9,6 +9,7 @@ export {tc};
 // insert thanos
 // insert doc ock
 // insert "The Avengers"
+
 type depromisify<T> = T extends Promise<infer U> ? U : T;
 export type TestData = depromisify<ReturnType<typeof setupTests>>["data"];
 
@@ -105,9 +106,9 @@ SELECT (INSERT Movie {
       thanos,
       docOck,
       the_avengers,
-      civil_war,
+      civil_war
     },
-    client,
+    client
   };
 }
 

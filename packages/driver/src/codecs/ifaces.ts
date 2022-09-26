@@ -88,6 +88,9 @@ export abstract class ScalarCodec extends Codec {
     return "scalar";
   }
 
+  readonly tsType: string = "unknown";
+  readonly importedType: boolean = false;
+
   getKnownTypeName(): string {
     if (this.typeName) {
       return this.typeName;

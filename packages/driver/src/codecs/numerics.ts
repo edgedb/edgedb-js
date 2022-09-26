@@ -24,6 +24,8 @@ const NUMERIC_POS = 0x0000;
 const NUMERIC_NEG = 0x4000;
 
 export class BigIntCodec extends ScalarCodec implements ICodec {
+  tsType = "bigint";
+
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "bigint") {
       throw new InvalidArgumentError(`a bigint was expected, got "${object}"`);

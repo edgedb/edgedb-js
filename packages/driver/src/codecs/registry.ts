@@ -78,7 +78,7 @@ export class CodecsRegistry {
     decimal_string,
     int64_bigint,
     datetime_localDatetime,
-    json_string,
+    json_string
   }: CustomCodecSpec = {}): void {
     // This is a private API and it will change in the future.
 
@@ -442,10 +442,11 @@ export class CodecsRegistry {
            simple strings.
         */
         const els = frb.readUInt16();
+        const values: string[] = [];
         for (let i = 0; i < els; i++) {
-          frb.discard(frb.readUInt32());
+          values.push(frb.readString());
         }
-        res = new EnumCodec(tid);
+        res = new EnumCodec(tid, null, values);
         break;
       }
 

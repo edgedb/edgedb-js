@@ -32,13 +32,13 @@ import {
   QueryOptions,
   ProtocolVersion,
   QueryArgs,
-  ServerSettings,
+  ServerSettings
 } from "./ifaces";
 import {
   ReadBuffer,
   ReadMessageBuffer,
   WriteBuffer,
-  WriteMessageBuffer,
+  WriteMessageBuffer
 } from "./primitives/buffer";
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
@@ -53,7 +53,7 @@ enum TransactionStatus {
   TRANS_ACTIVE = 1, // command in progress
   TRANS_INTRANS = 2, // idle, within transaction block
   TRANS_INERROR = 3, // idle, within failed transaction
-  TRANS_UNKNOWN = 4, // cannot determine status
+  TRANS_UNKNOWN = 4 // cannot determine status
 }
 
 export enum Capabilities {
@@ -64,7 +64,7 @@ export enum Capabilities {
   // transaction or savepoint manipulation
   DDL = 0b01000, // query contains DDL
   PERSISTENT_CONFIG = 0b10000, // server or database config change
-  ALL = 0xffff_ffff,
+  ALL = 0xffff_ffff
 }
 
 const NO_TRANSACTION_CAPABILITIES =
@@ -85,13 +85,22 @@ const RESTRICTED_CAPABILITIES =
 enum CompilationFlag {
   INJECT_OUTPUT_TYPE_IDS = 1 << 0,
   INJECT_OUTPUT_TYPE_NAMES = 1 << 1,
-  INJECT_OUTPUT_OBJECT_IDS = 1 << 2,
+  INJECT_OUTPUT_OBJECT_IDS = 1 << 2
 }
 
 const OLD_ERROR_CODES = new Map([
   [0x05_03_00_01, 0x05_03_01_01], // TransactionSerializationError #2431
-  [0x05_03_00_02, 0x05_03_01_02], // TransactionDeadlockError      #2431
+  [0x05_03_00_02, 0x05_03_01_02] // TransactionDeadlockError      #2431
 ]);
+
+export type ParseResult = [
+  Cardinality,
+  ICodec,
+  ICodec,
+  number,
+  Buffer | null,
+  Buffer | null
+];
 
 export class BaseRawConnection {
   protected connected: boolean = false;
@@ -251,7 +260,7 @@ export class BaseRawConnection {
       outCodec,
       capabilities,
       inTypeData,
-      outTypeData,
+      outTypeData
     ];
   }
 
@@ -434,7 +443,7 @@ export class BaseRawConnection {
     wb.beginMessage(chars.$P)
       .writeLegacyHeaders({
         explicitObjectids: "true",
-        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES
       })
       .writeChar(outputFormat)
       .writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
@@ -565,7 +574,7 @@ export class BaseRawConnection {
                 outCodec,
                 capabilities,
                 inCodecData,
-                outCodecData,
+                outCodecData
               ] = this._parseDescribeTypeMessage();
             } catch (e: any) {
               error = e;
@@ -606,7 +615,7 @@ export class BaseRawConnection {
       outCodec,
       capabilities,
       inCodecData,
-      outCodecData,
+      outCodecData
     ];
   }
 
@@ -660,7 +669,7 @@ export class BaseRawConnection {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
       .writeLegacyHeaders({
-        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES
       })
       .writeString("") // statement name
       .writeBuffer(this._encodeArgs(args, inCodec))
@@ -737,7 +746,7 @@ export class BaseRawConnection {
     wb.beginMessage(chars.$O);
     wb.writeLegacyHeaders({
       explicitObjectids: "true",
-      allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
+      allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES
     });
     wb.writeChar(outputFormat);
     wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
@@ -802,7 +811,7 @@ export class BaseRawConnection {
               newCard,
               inCodec,
               outCodec,
-              capabilities,
+              capabilities
             ]);
             reExec = true;
           } catch (e: any) {
@@ -888,16 +897,14 @@ export class BaseRawConnection {
     }
   }
 
-  private async _parse(
+  async _parse(
     query: string,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
     state: Session,
     privilegedMode: boolean = false,
     options?: QueryOptions
-  ): Promise<
-    [Cardinality, ICodec, ICodec, number, Buffer | null, Buffer | null]
-  > {
+  ): Promise<ParseResult> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$P);
     wb.writeUInt16(0); // no headers
@@ -942,7 +949,7 @@ export class BaseRawConnection {
               outCodec,
               capabilities,
               inCodecBuf,
-              outCodecBuf,
+              outCodecBuf
             ] = this._parseDescribeTypeMessage();
             const key = this._getQueryCacheKey(
               query,
@@ -953,7 +960,7 @@ export class BaseRawConnection {
               newCard,
               inCodec,
               outCodec,
-              capabilities,
+              capabilities
             ]);
           } catch (e: any) {
             error = e;
@@ -1002,7 +1009,7 @@ export class BaseRawConnection {
       outCodec!,
       capabilities,
       inCodecBuf,
-      outCodecBuf,
+      outCodecBuf
     ];
   }
 
@@ -1095,7 +1102,7 @@ export class BaseRawConnection {
               newCard,
               newInCodec,
               newOutCodec,
-              capabilities,
+              capabilities
             ]);
             outCodec = newOutCodec;
           } catch (e: any) {
@@ -1345,7 +1352,7 @@ export class BaseRawConnection {
       .writeLegacyHeaders({
         allowCapabilities: !allowTransactionCommands
           ? NO_TRANSACTION_CAPABILITIES_BYTES
-          : undefined,
+          : undefined
       })
       .writeString(query) // statement name
       .endMessage();
@@ -1447,7 +1454,7 @@ export class BaseRawConnection {
       result[4]!,
       result[5]!,
       this.protocolVersion,
-      result[3],
+      result[3]
     ];
   }
 

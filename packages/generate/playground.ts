@@ -1,17 +1,19 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
-import e from "./dbschema/edgeql-js";
-import {createClient, Duration, IsolationLevel} from "edgedb";
+// import e from "./dbschema/edgeql-js";
+import {createClient, adapter} from "edgedb";
 
 async function run() {
-  await setupTests();
+  const test = await adapter.walk(".", {regex: /\.edgeql$/});
+  console.log(test);
+  //   await setupTests();
 
-  const client = createClient();
-  const query = e.datetime(new Date());
+  //   const client = createClient();
+  //   const query = e.datetime(new Date());
 
-  console.log(query.toEdgeQL());
-  const result = await query.run(client);
-  console.log(result);
+  //   console.log(query.toEdgeQL());
+  //   const result = await query.run(client);
+  //   console.log(result);
 }
 
 run();
