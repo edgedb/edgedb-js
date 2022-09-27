@@ -281,7 +281,7 @@ export class ClientPool {
   constructor(
     dsn?: string,
     options: ConnectOptions = {},
-    exposeErrorAttrs = false
+    exposeErrorAttrs: boolean = false
   ) {
     this.validateClientOptions(options);
 

@@ -51,14 +51,14 @@ export async function generateQueryType(
   const args = walkCodec(inCodec, {
     indent: "",
     optionalNulls: true,
-    imports: imports
+    imports
   });
 
   const out = generateSetType(
     walkCodec(outCodec, {
       indent: "",
       optionalNulls: false,
-      imports: imports
+      imports
     }),
     cardinality
   );
