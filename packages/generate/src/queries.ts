@@ -1,12 +1,12 @@
-import {createClient, Client} from "edgedb";
+import {createClient, adapter} from "edgedb";
 import type {ConnectConfig} from "edgedb/dist/conUtils";
 import type {CommandOptions} from "./commandutil";
 import {generateQueryType} from "./queries/codecToType";
 import type {QueryType} from "./queries/codecToType";
-import {adapter} from "edgedb";
 // import chokidar from "chokidar";
 // import globby from "globby";
 import type {Target} from "./generate";
+import {Cardinality} from "edgedb/dist/ifaces";
 
 export async function generateQueryFiles(params: {
   root: string | null;
@@ -29,7 +29,7 @@ currently supported.`);
 `
     );
   } else {
-    console.log(`Found edgedb.toml`);
+    console.log(`Found edgedb.toml.`);
     console.log("   " + params.root);
   }
   const client = createClient({
@@ -43,21 +43,30 @@ currently supported.`);
   // generate one query per file
 
   const matches = await getMatches(root);
-  console.log(JSON.stringify(matches, null, 2));
+
   for (const path of matches) {
+    const prettyPath = "./" + adapter.path.posix.relative(root, path);
+    console.log(`Generating query file for ${prettyPath}`);
     const query = await adapter.readFileUtf8(path);
-    console.log(query);
     const types = await generateQueryType(client, query);
-    console.log(types);
+    console.log(JSON.stringify(types, null, 2));
+    for (const [k, v] of Object.entries(types) as any) {
+      console.log(`${k}\n${v}`);
+    }
     const files = await generateFiles({
       target: params.options.target!,
       path,
       types
     });
     for (const file of files) {
-      console.log(`writing ${file.path}...`);
+      console.log(`Writing ${file.path}...`);
+      await adapter.fs.writeFile(
+        file.path,
+        `${file.imports}\n\n${file.contents}`
+      );
     }
   }
+  console.log("Done.");
 
   // if (!params.options.watch) {
   //   const matches = await getMatches(root);
@@ -89,26 +98,23 @@ currently supported.`);
 }
 
 async function getMatches(root: string) {
-  return adapter.walk(root, {regex: /\.edgeql$/});
+  return adapter.walk(root, {
+    match: [/\.edgeql$/],
+    skip: [/node_modules/, /dbschema\/migrations/]
+  });
   // return globby.globby("**/*.edgeql", {
   //   cwd: root,
   //   followSymbolicLinks: true
   // });
 }
 
-const targetToExtension: {[k in Target]: string} = {
-  cjs: ".js",
-  deno: ".ts",
-  esm: ".mjs",
-  mts: ".mts",
-  ts: `.ts`
-};
-
-function argsify(args: {[k: string]: string}) {
-  return `{${Object.keys(args)
-    .map(k => `  ${k}: ${args[k]}`)
-    .join(",\n")}\n}`;
-}
+// const targetToExtension: {[k in Target]: string} = {
+//   cjs: ".js",
+//   deno: ".ts",
+//   esm: ".mjs",
+//   mts: ".mts",
+//   ts: `.ts`
+// };
 
 function generateFiles(params: {
   target: Target;
@@ -116,27 +122,33 @@ function generateFiles(params: {
   types: QueryType;
 }): {path: string; contents: string; imports: string}[] {
   const queryFileName = adapter.path.basename(params.path);
+  // client.query; Cardinality.MANY;Cardinality.AT_LEAST_ONE;
+  // client.querySingle; Cardinality.AT_MOST_ONE
+  // client.queryRequiredSingle; Cardinality.ONE;
+  const method =
+    params.types.cardinality === Cardinality.ONE
+      ? "queryRequiredSingle"
+      : params.types.cardinality === Cardinality.AT_MOST_ONE
+      ? "querySingle"
+      : "query";
   const functionName = queryFileName.replace(".edgeql", "");
   console.log(`func: ${functionName}`);
 
-  const tsImpl = `
-async function ${functionName}(client: edgedb.Client, params: ${argsify(
-    params.types.args
-  )}){
-  return client.query(\`${params.types.query.replace("`", "`")}\`, args)
-}
-    `;
+  const tsImports = `import type {${["Client", ...params.types.imports].join(
+    ", "
+  )}} from "edgedb";`;
 
-  const jsImpl = `
-async function ${functionName}(client, args){
-  return client.query(\`${params.types.query.replace("`", "`")}\`, args);
-}
-    `;
-
-  const dtsImpl = `
-export async function ${functionName}(client: edgedb.Client, params: ${argsify(
+  const tsImpl = `async function ${functionName}(client: Client, args: ${
     params.types.args
-  )}): ${params.types.out};`;
+  }): Promise<${params.types.out}> {
+  return client.${method}(\`${params.types.query.replace("`", "`")}\`, args)
+}`;
+
+  const jsImpl = `async function ${functionName}(client, args){
+  return client.${method}(\`${params.types.query.replace("`", "`")}\`, args);
+}`;
+
+  const dtsImpl = `function ${functionName}(client: Client, params: ${params.types.args}): Promise<${params.types.out}>;`;
 
   switch (params.target) {
     case "cjs":
@@ -148,8 +160,8 @@ export async function ${functionName}(client: edgedb.Client, params: ${argsify(
         },
         {
           path: `${params.path}.d.ts`,
-          contents: dtsImpl,
-          imports: `import type {Client} from "edgedb";`
+          contents: `export ${dtsImpl}`,
+          imports: tsImports
         }
       ];
 
@@ -158,7 +170,7 @@ export async function ${functionName}(client: edgedb.Client, params: ${argsify(
         {
           path: `${params.path}.ts`,
           contents: `export ${tsImpl}`,
-          imports: `import type {Client} from "edgedb";`
+          imports: tsImports
         }
       ];
     case "esm":
@@ -170,8 +182,8 @@ export async function ${functionName}(client: edgedb.Client, params: ${argsify(
         },
         {
           path: `${params.path}.d.ts`,
-          contents: dtsImpl,
-          imports: `import type {Client} from "edgedb";`
+          contents: `export ${dtsImpl}`,
+          imports: tsImports
         }
       ];
     case "mts":
@@ -179,7 +191,7 @@ export async function ${functionName}(client: edgedb.Client, params: ${argsify(
         {
           path: `${params.path}.mts`,
           contents: `export ${tsImpl}`,
-          imports: `import type {Client} from "edgedb";`
+          imports: tsImports
         }
       ];
     case "ts":
@@ -187,7 +199,7 @@ export async function ${functionName}(client: edgedb.Client, params: ${argsify(
         {
           path: `${params.path}.ts`,
           contents: `export ${tsImpl}`,
-          imports: `import type {Client} from "edgedb";`
+          imports: tsImports
         }
       ];
   }

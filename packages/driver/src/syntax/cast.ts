@@ -3,7 +3,7 @@ import {
   ExpressionKind,
   BaseType,
   TypeSet,
-  Cardinality,
+  Cardinality
 } from "../reflection/index";
 import {$expressionify} from "./path";
 import type {orScalarLiteral} from "@generated/castMaps";
@@ -24,7 +24,7 @@ export function cast(target: BaseType, expr: any) {
     __cardinality__:
       cleanedExpr === null ? Cardinality.Empty : cleanedExpr.__cardinality__,
     __expr__: cleanedExpr,
-    __kind__: ExpressionKind.Cast,
+    __kind__: ExpressionKind.Cast
   }) as any;
 }
 

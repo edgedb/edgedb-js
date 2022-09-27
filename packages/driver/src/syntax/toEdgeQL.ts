@@ -5,7 +5,7 @@ import {
   LocalTime,
   RelativeDuration,
   DateDuration,
-  Range,
+  Range
 } from "edgedb";
 import {
   $expr_Array,
@@ -26,13 +26,13 @@ import {
   RangeType,
   TypeKind,
   TypeSet,
-  util,
+  util
 } from "../reflection/index";
 import type {$expr_Literal} from "../reflection/literal";
 import type {
   $expr_PathLeaf,
   $expr_PathNode,
-  $expr_TypeIntersection,
+  $expr_TypeIntersection
 } from "../reflection/path";
 import {reservedKeywords} from "../reflection/reservedKeywords";
 import type {$expr_Cast} from "./cast";
@@ -45,7 +45,7 @@ import type {
   $expr_Delete,
   $expr_Select,
   LimitExpression,
-  OffsetExpression,
+  OffsetExpression
 } from "./select";
 import type {$expr_Set} from "./set";
 import type {$expr_Update} from "./update";
@@ -116,7 +116,7 @@ export function $toEdgeQL(this: any) {
 
   const walkExprCtx: WalkExprTreeCtx = {
     seen: new Map(),
-    rootScope: null,
+    rootScope: null
   };
 
   walkExprTree(this, null, walkExprCtx);
@@ -180,9 +180,9 @@ export function $toEdgeQL(this: any) {
     ) {
       const withBlock = expr;
       const scopeVar = expr.__scope__ as SomeExpression;
-      const scopeVarName = `__scope_${withVars.size}_${
-        scopeVar.__element__.__name__.split("::")[1]
-      }`;
+      const scopeVarName = `__scope_${
+        withVars.size
+      }_${scopeVar.__element__.__name__.replace(/[^A-Za-z]/g, "")}`;
 
       withVars.set(scopeVar, {
         name: scopeVarName,
@@ -191,7 +191,7 @@ export function $toEdgeQL(this: any) {
         scopedExpr:
           expr.__element__.__kind__ === TypeKind.object
             ? (expr.__expr__ as any)
-            : undefined,
+            : undefined
       });
     }
 
@@ -253,13 +253,13 @@ export function $toEdgeQL(this: any) {
       // check all references and aliases are within this block
       const validScopes = new Set([
         withBlock,
-        ...walkExprCtx.seen.get(withBlock)!.childExprs,
+        ...walkExprCtx.seen.get(withBlock)!.childExprs
       ]);
       for (const scope of [
         ...refData.parentScopes,
         ...util.flatMap(refData.aliases, alias => [
-          ...walkExprCtx.seen.get(alias)!.parentScopes,
-        ]),
+          ...walkExprCtx.seen.get(alias)!.parentScopes
+        ])
       ]) {
         if (scope === null || !validScopes.has(scope)) {
           throw new Error(
@@ -285,7 +285,7 @@ export function $toEdgeQL(this: any) {
         withVars.set(withVar, {
           name: withVarName,
           scope: withBlock,
-          childExprs: new Set(walkExprCtx.seen.get(withVar)!.childExprs),
+          childExprs: new Set(walkExprCtx.seen.get(withVar)!.childExprs)
         });
       }
     }
@@ -295,7 +295,7 @@ export function $toEdgeQL(this: any) {
     withBlocks,
     withVars,
     forVars: new Map(),
-    linkProps,
+    linkProps
   });
   if (
     edgeQL.startsWith("(") &&
@@ -394,7 +394,7 @@ function walkExprTree(
     childExprs,
     boundScope: null,
     aliases: [],
-    linkProps: [],
+    linkProps: []
   });
 
   switch (expr.__kind__) {
@@ -664,7 +664,7 @@ function renderEdgeQL(
       withBlockElement.scopedExpr ?? varExpr,
       {
         ...ctx,
-        renderWithVar: varExpr,
+        renderWithVar: varExpr
       },
       !withBlockElement.scopedExpr, // render shape if no scopedExpr exists
       _noImplicitDetached
@@ -673,7 +673,7 @@ function renderEdgeQL(
       withBlockElement.scopedExpr ?? varExpr,
       {
         ...ctx,
-        renderWithVar: varExpr,
+        renderWithVar: varExpr
       },
       !withBlockElement.scopedExpr, // render shape if no scopedExpr exists
       true
@@ -800,7 +800,7 @@ function renderEdgeQL(
   const withBlockElements = [
     ...unscopedWithBlock,
     ...scopeExprVar,
-    ...scopedWithBlock,
+    ...scopedWithBlock
   ];
   const withBlock = withBlockElements.length
     ? `WITH\n${withBlockElements.join(",\n")}\n`
@@ -952,7 +952,7 @@ function renderEdgeQL(
         ctx.withVars.set(expr.__expr__ as any, {
           name: "_",
           childExprs: new Set(),
-          scope: expr,
+          scope: expr
         });
       }
     }
@@ -1045,7 +1045,7 @@ function renderEdgeQL(
     const selectStatement: string[] = [];
     const groupStatement: string[] = [];
 
-    const groupTarget = renderEdgeQL(expr.__scope__, ctx);
+    const groupTarget = renderEdgeQL(expr.__scope__, ctx, false);
     groupStatement.push(`GROUP ${groupTarget}`);
 
     // render scoped withvars in using
@@ -1054,7 +1054,7 @@ function renderEdgeQL(
       // this is deduplicated in e.group
       ...groupingSet.__exprs__.map(
         ([k, v]) => `  ${k} := ${renderEdgeQL(v, ctx)}`
-      ),
+      )
     ];
     groupStatement.push(`USING\n${combinedBlock.join(",\n")}`);
 
@@ -1071,7 +1071,7 @@ function renderEdgeQL(
     selectStatement.push(
       `WITH\n${[
         ...unscopedWithBlock,
-        ...scopeExprVar,
+        ...scopeExprVar
         // ...scopedWithBlock,
       ].join(",\n")},
   ${selectTarget} := (
@@ -1173,7 +1173,7 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n))`;
       expr.__expr__,
       {
         ...ctx,
-        renderWithVar: expr.__expr__ as any,
+        renderWithVar: expr.__expr__ as any
       },
       undefined,
       true
@@ -1397,7 +1397,7 @@ const numericalTypes: Record<string, boolean> = {
   "std::int32": true,
   "std::int64": true,
   "std::float32": true,
-  "std::float64": true,
+  "std::float64": true
 };
 
 function literalToEdgeQL(type: BaseType, val: any): string {

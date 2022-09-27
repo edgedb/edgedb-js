@@ -24,35 +24,35 @@ test("implicit WITH vars referencing each other", () => {
   const skip = e.int64(10);
   const remainingHeros = e.select(e.Hero, hero => ({
     order_by: hero.id,
-    offset: skip,
+    offset: skip
   }));
   const pageResults = e.select(remainingHeros, () => ({
     id: true,
     name: true,
-    limit: 10,
+    limit: 10
   }));
 
   const query = e.select({
     pageResults,
     nextOffset: e.op(skip, "+", e.count(pageResults)),
-    hasMore: e.select(e.op(e.count(remainingHeros), ">", 10)),
+    hasMore: e.select(e.op(e.count(remainingHeros), ">", 10))
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
   __withVar_4 := 10,
   __withVar_3 := (
     WITH
-      __scope_2_Hero := DETACHED default::Hero
-    SELECT __scope_2_Hero {
+      __scope_2_defaultHero := DETACHED default::Hero
+    SELECT __scope_2_defaultHero {
       id
     }
-    ORDER BY __scope_2_Hero.id
+    ORDER BY __scope_2_defaultHero.id
     OFFSET __withVar_4
   ),
   __withVar_1 := (
     WITH
-      __scope_0_Hero := __withVar_3
-    SELECT __scope_0_Hero {
+      __scope_0_defaultHero := __withVar_3
+    SELECT __scope_0_defaultHero {
       id,
       name
     }
@@ -100,7 +100,7 @@ test("explicit WITH block in nested query", () => {
   expect(
     e
       .select({
-        nested: e.with([numbers], e.select(numbers)),
+        nested: e.with([numbers], e.select(numbers))
       })
       .toEdgeQL()
   ).toEqual(`SELECT {
@@ -119,7 +119,7 @@ test("explicit WITH in nested query, var used outside WITH block", () => {
     e
       .select({
         numbers,
-        nested: e.with([numbers], e.select(numbers)),
+        nested: e.with([numbers], e.select(numbers))
       })
       .toEdgeQL()
   ).toThrow();
@@ -134,7 +134,7 @@ test("explicit WITH block nested in implicit WITH block", () => {
     e
       .select({
         numbers: explicitWith,
-        numbers2: explicitWith,
+        numbers2: explicitWith
       })
       .toEdgeQL()
   ).toEqual(`WITH
@@ -159,7 +159,7 @@ test("explicit WITH block nested in explicit WITH block", () => {
       .with(
         [explicitWith],
         e.select({
-          numbers: explicitWith,
+          numbers: explicitWith
         })
       )
       .toEdgeQL()
@@ -185,7 +185,7 @@ test("explicit WITH block nested in explicit WITH block, sub expr explicitly ext
       .with(
         [explicitWith, number],
         e.select({
-          numbers: explicitWith,
+          numbers: explicitWith
         })
       )
       .toEdgeQL()
@@ -212,7 +212,7 @@ test("explicit WITH nested in explicit WITH, expr declared in both", () => {
       .with(
         [explicitWith, numbers],
         e.select({
-          numbers: explicitWith,
+          numbers: explicitWith
         })
       )
       .toEdgeQL()
@@ -231,7 +231,7 @@ test("explicit WITH block nested in explicit WITH block, sub expr implicitly ext
         [explicitWith],
         e.select({
           number,
-          numbers: explicitWith,
+          numbers: explicitWith
         })
       )
       .toEdgeQL()
@@ -252,12 +252,12 @@ test("implicit WITH and explicit WITH in sub expr", () => {
   const skip = e.int64(10);
   const remainingHeros = e.select(e.Hero, hero => ({
     order_by: hero.id,
-    offset: skip,
+    offset: skip
   }));
   const pageResults = e.select(remainingHeros, () => ({
     id: true,
     name: true,
-    limit: 10,
+    limit: 10
   }));
 
   const nextOffset = e.op(skip, "+", e.count(pageResults));
@@ -265,24 +265,24 @@ test("implicit WITH and explicit WITH in sub expr", () => {
   const query = e.select({
     pageResults,
     nextOffset: e.with([nextOffset], e.select(nextOffset)),
-    hasMore: e.select(e.op(e.count(remainingHeros), ">", 10)),
+    hasMore: e.select(e.op(e.count(remainingHeros), ">", 10))
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
   __withVar_5 := 10,
   __withVar_4 := (
     WITH
-      __scope_1_Hero := DETACHED default::Hero
-    SELECT __scope_1_Hero {
+      __scope_1_defaultHero := DETACHED default::Hero
+    SELECT __scope_1_defaultHero {
       id
     }
-    ORDER BY __scope_1_Hero.id
+    ORDER BY __scope_1_defaultHero.id
     OFFSET __withVar_5
   ),
   __withVar_3 := (
     WITH
-      __scope_0_Hero := __withVar_4
-    SELECT __scope_0_Hero {
+      __scope_0_defaultHero := __withVar_4
+    SELECT __scope_0_defaultHero {
       id,
       name
     }
@@ -310,7 +310,7 @@ test("explicit WITH nested in implicit WITH + alias implicit", () => {
     e
       .select({
         numbers: explicitWith,
-        numbers2: explicitWith,
+        numbers2: explicitWith
       })
       .toEdgeQL()
   ).toEqual(`WITH
@@ -343,7 +343,7 @@ test("explicit WITH nested in implicit WITH + alias explicit", () => {
     e
       .select({
         numbers: explicitWith,
-        numbers2: explicitWith,
+        numbers2: explicitWith
       })
       .toEdgeQL()
   ).toEqual(`WITH
@@ -374,7 +374,7 @@ test("explicit WITH nested in implicit WITH + alias outside WITH", () => {
       .select({
         numbers: explicitWith,
         numbers2: explicitWith,
-        numbersAlias,
+        numbersAlias
       })
       .toEdgeQL()
   ).toThrow();
@@ -400,7 +400,7 @@ test(
         .with(
           [explicitWith, numbers],
           e.select({
-            numbers: explicitWith,
+            numbers: explicitWith
           })
         )
         .toEdgeQL()
@@ -437,7 +437,7 @@ test(
         .with(
           [explicitWith, numbers],
           e.select({
-            numbers: explicitWith,
+            numbers: explicitWith
           })
         )
         .toEdgeQL()
@@ -461,80 +461,32 @@ test("query with no WITH block", () => {
     computable: e.int64(35),
     all_heroes: e.select(e.Hero, () => ({__type__: {name: true}})),
     order_by: person.name,
-    limit: 1,
+    limit: 1
   }));
 
-  /*
-
-  WITH
-  __scope_0_Hero := DETACHED default::Person[IS default::Hero]
-SELECT __scope_0_Hero {
-  id,
-  single computable := 35,
-  multi all_heroes := (
-    WITH
-      __scope_1_Hero := DETACHED default::Hero
-    SELECT __scope_1_Hero {
-      __type__ := (
-        WITH
-          __scope_2_ObjectType := __scope_1_Hero.__type__
-        SELECT __scope_2_ObjectType {
-          name
-        }
-      )
-    }
-  )
-}
-ORDER BY __scope_0_Hero.name
-LIMIT 1
-
-   */
-
-  // TODO: undo this change when 2.0 is stable
-  expect([
+  expect(query.toEdgeQL()).toEqual(
     `WITH
-  __scope_0_Hero := DETACHED default::Person[IS default::Hero]
-SELECT __scope_0_Hero {
+  __scope_0_defaultHero := DETACHED default::Person[IS default::Hero]
+SELECT __scope_0_defaultHero {
   id,
   single computable := 35,
   multi all_heroes := (
     WITH
-      __scope_1_Hero := DETACHED default::Hero
-    SELECT __scope_1_Hero {
+      __scope_1_defaultHero := DETACHED default::Hero
+    SELECT __scope_1_defaultHero {
       __type__ := (
         WITH
-          __scope_2_ObjectType := __scope_1_Hero.__type__
-        SELECT __scope_2_ObjectType {
+          __scope_2_schemaObjectType := __scope_1_defaultHero.__type__
+        SELECT __scope_2_schemaObjectType {
           name
         }
       )
     }
   )
 }
-ORDER BY __scope_0_Hero.name
-LIMIT 1`,
-    `WITH
-  __scope_0_Hero := DETACHED default::Person[IS default::Hero]
-SELECT __scope_0_Hero {
-  id,
-  single computable := 35,
-  multi all_heroes := (
-    WITH
-      __scope_1_Hero := DETACHED default::Hero
-    SELECT __scope_1_Hero {
-      __type__ := (
-        WITH
-          __scope_2_Type := __scope_1_Hero.__type__
-        SELECT __scope_2_Type {
-          name
-        }
-      )
-    }
-  )
-}
-ORDER BY __scope_0_Hero.name
-LIMIT 1`,
-  ]).toContain(query.toEdgeQL());
+ORDER BY __scope_0_defaultHero.name
+LIMIT 1`
+  );
 });
 
 test("repeated expression referencing scoped select object", () => {
@@ -547,22 +499,22 @@ test("repeated expression referencing scoped select object", () => {
     return {
       name: true,
       secret,
-      secret2: secret,
+      secret2: secret
     };
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_Hero_expr := DETACHED default::Hero,
-  __scope_0_Hero := (FOR __scope_0_Hero_inner IN {__scope_0_Hero_expr} UNION (
+  __scope_0_defaultHero_expr := DETACHED default::Hero,
+  __scope_0_defaultHero := (FOR __scope_0_defaultHero_inner IN {__scope_0_defaultHero_expr} UNION (
     WITH
-      __withVar_1 := ((__scope_0_Hero_inner.name ++ " is ") ++ __scope_0_Hero_inner.secret_identity)
-    SELECT __scope_0_Hero_inner {
+      __withVar_1 := ((__scope_0_defaultHero_inner.name ++ " is ") ++ __scope_0_defaultHero_inner.secret_identity)
+    SELECT __scope_0_defaultHero_inner {
       __withVar_1 := __withVar_1
     }
   ))
-SELECT __scope_0_Hero {
+SELECT __scope_0_defaultHero {
   name,
-  single secret := __scope_0_Hero.__withVar_1,
-  single secret2 := __scope_0_Hero.__withVar_1
+  single secret := __scope_0_defaultHero.__withVar_1,
+  single secret2 := __scope_0_defaultHero.__withVar_1
 }`);
 });

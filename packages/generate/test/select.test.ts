@@ -816,7 +816,7 @@ test("filters in subqueries", async () => {
   tc.assert<
     tc.IsExact<
       typeof res3,
-      /*
+      /**
        * onst res3:
   {
     name: string;
@@ -858,24 +858,24 @@ test("repeated computed", async () => {
   }));
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_Villain := DETACHED default::Villain
-SELECT __scope_0_Villain {
+  __scope_0_defaultVillain := DETACHED default::Villain
+SELECT __scope_0_defaultVillain {
   id,
   name,
   nemesis := (
     WITH
-      __scope_1_Hero_expr := __scope_0_Villain.nemesis,
-      __scope_1_Hero := (FOR __scope_1_Hero_inner IN {__scope_1_Hero_expr} UNION (
+      __scope_1_defaultHero_expr := __scope_0_defaultVillain.nemesis,
+      __scope_1_defaultHero := (FOR __scope_1_defaultHero_inner IN {__scope_1_defaultHero_expr} UNION (
         WITH
-          __withVar_2 := std::len(__scope_1_Hero_inner.name)
-        SELECT __scope_1_Hero_inner {
+          __withVar_2 := std::len(__scope_1_defaultHero_inner.name)
+        SELECT __scope_1_defaultHero_inner {
           __withVar_2 := __withVar_2
         }
       ))
-    SELECT __scope_1_Hero {
+    SELECT __scope_1_defaultHero {
       name,
-      single nameLen := __scope_1_Hero.__withVar_2,
-      single nameLen2 := __scope_1_Hero.__withVar_2
+      single nameLen := __scope_1_defaultHero.__withVar_2,
+      single nameLen2 := __scope_1_defaultHero.__withVar_2
     }
   )
 }`);
@@ -921,32 +921,32 @@ test("polymorphic subqueries", async () => {
   }));
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_Person := DETACHED default::Movie.characters
-SELECT __scope_0_Person {
+  __scope_0_defaultPerson := DETACHED default::Movie.characters
+SELECT __scope_0_defaultPerson {
   id,
   name,
   [IS default::Villain].nemesis,
   [IS default::Hero].secret_identity,
   multi villains := (
     WITH
-      __scope_1_Villain := __scope_0_Person[IS default::Hero].villains
-    SELECT __scope_1_Villain {
+      __scope_1_defaultVillain := __scope_0_defaultPerson[IS default::Hero].villains
+    SELECT __scope_1_defaultVillain {
       id,
       name,
       nemesis := (
         WITH
-          __scope_2_Hero_expr := __scope_1_Villain.nemesis,
-          __scope_2_Hero := (FOR __scope_2_Hero_inner IN {__scope_2_Hero_expr} UNION (
+          __scope_2_defaultHero_expr := __scope_1_defaultVillain.nemesis,
+          __scope_2_defaultHero := (FOR __scope_2_defaultHero_inner IN {__scope_2_defaultHero_expr} UNION (
             WITH
-              __withVar_3 := std::len(__scope_2_Hero_inner.name)
-            SELECT __scope_2_Hero_inner {
+              __withVar_3 := std::len(__scope_2_defaultHero_inner.name)
+            SELECT __scope_2_defaultHero_inner {
               __withVar_3 := __withVar_3
             }
           ))
-        SELECT __scope_2_Hero {
+        SELECT __scope_2_defaultHero {
           name,
-          single nameLen := __scope_2_Hero.__withVar_3,
-          single nameLen2 := __scope_2_Hero.__withVar_3
+          single nameLen := __scope_2_defaultHero.__withVar_3,
+          single nameLen2 := __scope_2_defaultHero.__withVar_3
         }
       )
     }

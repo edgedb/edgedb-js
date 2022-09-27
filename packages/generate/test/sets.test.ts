@@ -38,7 +38,7 @@ test("empty sets", async () => {
   expect(await e.cast(e.int64, e.set()).run(client)).toEqual(null);
 });
 
-test("object set contructor", () => {
+test("object set contructor", async () => {
   const hero = e.set(e.default.Hero);
   expect(hero.id.__element__.__name__).toEqual("std::uuid");
   expect(hero.name.__element__.__name__).toEqual("std::str");
@@ -60,6 +60,26 @@ test("object set contructor", () => {
   expect(e.set(e.select(e.Hero), e.select(e.Villain)).toEdgeQL()).toEqual(
     `{ (SELECT DETACHED default::Hero), (SELECT DETACHED default::Villain) }`
   );
+
+  expect(
+    await e
+      .select(e.set(e.select(e.Hero), e.select(e.Villain)), obj => ({
+        name: true,
+        filter: e.op(obj.name, "=", "Thanos")
+      }))
+      .assert_single()
+      .run(client)
+  ).toEqual({name: "Thanos"});
+
+  expect(
+    await e
+      .select(e.set(e.Hero, e.Villain), obj => ({
+        name: true,
+        filter: e.op(obj.name, "=", "Thanos")
+      }))
+      .assert_single()
+      .run(client)
+  ).toEqual({name: "Thanos"});
 });
 
 test("scalar set contructor", () => {
@@ -142,7 +162,7 @@ test("tuples", async () => {
   expect(q1.__element__.__items__[1].__name__).toEqual("std::str");
   expect(await q1.run(client)).toMatchObject([
     [1, "asdf", 214],
-    [3, "asdf", 5],
+    [3, "asdf", 5]
   ]);
 
   expect(() => e.set(e.tuple([1]), e.tuple([1, 2]))).toThrow();
@@ -157,7 +177,7 @@ test("named tuples", async () => {
   expect(q1.__element__.__kind__).toEqual(TypeKind.namedtuple);
   expect(await q1.run(client)).toMatchObject([
     {a: 1, b: "asdf", c: 214},
-    {a: 3, b: "asdf", c: 5},
+    {a: 3, b: "asdf", c: 5}
   ]);
 
   expect(() => e.set(e.tuple({a: 1}), e.tuple({a: "asfd"}))).toThrow();

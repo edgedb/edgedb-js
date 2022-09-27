@@ -16,8 +16,6 @@
     "build": "rm -rf dist && tsc --project tsconfig.build.json && chmod +x dist/cli.js",
     "build:fast": "npx esbuild --tsconfig=tsconfig.build.json --outdir=dist  --platform=node --format=cjs src/**/*.ts src/*.ts",
     "watch": "nodemon --ignore dist --ignore dbschema/edgeql-js -x ",
-    "build:trace": "tsc --project tsconfig.build.json --generateTrace trace",
-    "@edgedb/generate": "./dist/cli.js",
     "gen": "./dist/cli.js"
   },
   "bin": "./dist/cli.js",
