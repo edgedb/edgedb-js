@@ -7,7 +7,7 @@ const QBDIR = "../dbschema/qbout";
 const client = createClient();
 
 const CMD = [
-  `yarn @edgedb/generate`,
+  `yarn gen edgeql-js`,
   `--output-dir ./dbschema/qbout`,
   `--force-overwrite`,
   "--target esm"
