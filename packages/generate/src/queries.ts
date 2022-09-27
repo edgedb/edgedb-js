@@ -2,8 +2,8 @@
 import {createClient, adapter} from "edgedb";
 import type {ConnectConfig} from "edgedb/dist/conUtils";
 import type {CommandOptions} from "./commandutil";
-import {generateQueryType} from "./queries/codecToType";
-import type {QueryType} from "./queries/codecToType";
+import {generateQueryType} from "./codecToType";
+import type {QueryType} from "./codecToType";
 // import chokidar from "chokidar";
 // import globby from "globby";
 import type {Target} from "./generate";
