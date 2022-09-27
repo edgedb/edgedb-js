@@ -295,7 +295,7 @@ export async function generateQB(config: ConnectConfig) {
 
   await runCommand(
     "yarn",
-    ["@edgedb/generate", "edgeql-js", "--force-overwrite"],
+    ["gen", "edgeql-js", "--force-overwrite"],
     configToEnv(config)
   );
 }
