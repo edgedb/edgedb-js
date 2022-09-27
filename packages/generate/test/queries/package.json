@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "yarn test:ts && yarn test:mts && yarn test:cjs && yarn test:esm && yarn test:deno",
+    "test:ts": "npx tsc --project tsconfig.build.json && node dist/test.js",
+    "test:mts": "npx tsx test.mts.ts",
+    "test:cjs": "node test.cjs",
+    "test:esm": "node test.mjs",
+    "test:deno": "deno run --allow-all --unstable --unsafely-ignore-certificate-errors=localhost test.deno.ts"
+  }
+}

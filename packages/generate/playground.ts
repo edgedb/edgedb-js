@@ -1,11 +1,13 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
-// import e from "./dbschema/edgeql-js";
-import {createClient, adapter} from "edgedb";
+import {getMoviesStarring} from "./test/queries/getMoviesStarring.edgeql";
 
 async function run() {
-  const test = await adapter.walk(".", {match: [/\.edgeql$/]});
-  console.log(test);
+  const {client} = await setupTests();
+
+  const movies = await getMoviesStarring(client, {name: "Robert Downey Jr."});
+  console.log(JSON.stringify(movies, null, 2));
+
   //   await setupTests();
 
   //   const client = createClient();

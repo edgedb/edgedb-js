@@ -8,6 +8,7 @@
     "test:cjs": "yarn gen edgeql-js --target cjs --output-dir test/cjs/edgeql-js && cd test/cjs && node test.js",
     "test:mts": "yarn gen edgeql-js --target mts --output-dir test/mts/edgeql-js && cd test/mts && yarn build && node dist/test.js",
     "test:deno": "cd test/deno && deno task generate && deno task play",
+    "test:queries": "yarn gen queries --target ts && yarn gen queries --target mts && yarn gen queries --target esm && yarn gen queries --target deno && yarn gen queries --target cjs && cd test/queries && yarn test",
     "test:ci": "tsx test/testRunner.ts",
     "test:v1": "tsx test/testQBv1.ts",
     "setup:v1": "edgedb project init --no-migrations && edgedb migrate --to-revision m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq",
@@ -18,7 +19,9 @@
     "watch": "nodemon --ignore dist --ignore dbschema/edgeql-js -x ",
     "gen": "./dist/cli.js"
   },
-  "bin": "./dist/cli.js",
+  "bin": {
+    "generate": "dist/cli.js"
+  },
   "peerDependencies": {
     "edgedb": "^0.23.0"
   },
@@ -31,5 +34,13 @@
   },
   "dependencies": {
     "chokidar": "^3.5.3"
-  }
+  },
+  "description": "## Project setup",
+  "main": "jest.config.js",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [],
+  "author": "Colin McDonnell",
+  "license": "ISC"
 }
