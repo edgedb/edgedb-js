@@ -50,24 +50,20 @@ currently supported.`);
     console.log(`Generating query file for ${prettyPath}`);
     const query = await adapter.readFileUtf8(path);
     const types = await generateQueryType(client, query);
-    console.log(JSON.stringify(types, null, 2));
-    for (const [k, v] of Object.entries(types) as any) {
-      console.log(`${k}\n${v}`);
-    }
+
     const files = await generateFiles({
       target: params.options.target!,
       path,
       types
     });
     for (const file of files) {
-      console.log(`Writing ${file.path}...`);
+      // console.log(`Writing ${file.path}...`);
       await adapter.fs.writeFile(
         file.path,
         `${file.imports}\n\n${file.contents}`
       );
     }
   }
-  console.log("Done.");
 
   // if (!params.options.watch) {
   //   const matches = await getMatches(root);
@@ -133,7 +129,6 @@ function generateFiles(params: {
       ? "querySingle"
       : "query";
   const functionName = queryFileName.replace(".edgeql", "");
-  console.log(`func: ${functionName}`);
 
   const tsImports = `import type {${["Client", ...params.types.imports].join(
     ", "
