@@ -54,10 +54,11 @@ export async function exists(fn: string | URL): Promise<boolean> {
     await Deno.lstat(fn);
     return true;
   } catch (err) {
-    if (err instanceof Deno.errors.NotFound) {
-      return false;
-    }
-    throw err;
+    return false;
+    // if (err instanceof Deno.errors.NotFound) {
+    //   return false;
+    // }
+    // throw err;
   }
 }
 
