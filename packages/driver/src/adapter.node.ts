@@ -22,8 +22,8 @@ export async function walk(
   dir: string,
   params?: {match?: RegExp[]; skip?: RegExp[]}
 ): Promise<string[]> {
-  const {match, skip} = params || {};
-  console.log("WALKING");
+  const {match, skip = []} = params || {};
+
   try {
     await fs.access(dir);
   } catch (err) {
@@ -34,26 +34,26 @@ export async function walk(
   const files = await Promise.all(
     dirents.map(dirent => {
       const fspath = path.resolve(dir, dirent.name);
-      if (match) {
-        // no matches
-        if (!match.some(re => re.test(fspath))) {
-          console.log(`match found!`);
-          return [];
-        }
-      }
       if (skip) {
+        // at least one skip pattern matches
         if (skip.some(re => re.test(fspath))) {
-          console.log(`skipping`);
           return [];
         }
       }
-      if (dirent.isDirectory() && !["node_modules"].includes(dirent.name))
+      if (dirent.isDirectory()) {
         return walk(fspath, params);
+      }
+      if (match) {
+        // at least one match pattern matches
+        if (!match.some(re => re.test(fspath))) {
+          return [];
+        }
+      }
 
       return [fspath];
     })
   );
-  console.log(JSON.stringify(files, null, 2));
+
   return Array.prototype.concat(...files);
 }
 

@@ -15,10 +15,11 @@ import type {ClientPool} from "edgedb/dist/client";
 import {prettyPrintError} from "./prettyPrint";
 
 export type QueryType = {
-  args: {[k: string]: string};
+  args: string;
   out: string;
   cardinality: Cardinality;
   query: string;
+  imports: Set<string>;
 };
 export async function generateQueryType(
   client: Client,
@@ -27,12 +28,9 @@ export async function generateQueryType(
   let parseResult: ParseResult;
   const pool: ClientPool = (client as any).pool;
 
-  console.log(`getting holder...`);
   const holder = await pool.acquireHolder(Options.defaults());
   try {
-    console.log(`getting connection...`);
     const cxn = await holder._getConnection();
-    console.log(`parsing query...`);
     parseResult = await cxn._parse(
       query,
       OutputFormat.BINARY,
@@ -49,30 +47,28 @@ export async function generateQueryType(
   const cardinality = parseResult[0];
   const inCodec = parseResult[1];
   const outCodec = parseResult[2];
-
   const imports = new Set<string>();
+  const args = walkCodec(inCodec, {
+    indent: "",
+    optionalNulls: true,
+    imports: imports
+  });
 
-  console.log(Cardinality[cardinality]);
-  console.log(
-    walkCodec(inCodec, {indent: "", optionalNulls: true, imports: imports})
+  const out = generateSetType(
+    walkCodec(outCodec, {
+      indent: "",
+      optionalNulls: false,
+      imports: imports
+    }),
+    cardinality
   );
-  console.log(
-    generateSetType(
-      walkCodec(outCodec, {
-        indent: "",
-        optionalNulls: false,
-        imports: imports
-      }),
-      cardinality
-    )
-  );
-  console.log(imports);
 
   return {
-    out: "string",
-    args: {test: "string"},
-    cardinality: Cardinality.ONE,
-    query: "select <str>$test;"
+    out,
+    args,
+    cardinality,
+    query,
+    imports
   };
 }
 

@@ -10,4 +10,4 @@ select Movie {
   version := sys::get_version(),
   range := range(123, 456),
   local_date := <cal::local_date>'2022-09-08',
-} filter .actors.name = <optional str>$name;
+} filter .characters.name = <optional str>$name;

@@ -4,7 +4,7 @@ import {setupTests} from "./test/setupTeardown";
 import {createClient, adapter} from "edgedb";
 
 async function run() {
-  const test = await adapter.walk(".", {regex: /\.edgeql$/});
+  const test = await adapter.walk(".", {match: [/\.edgeql$/]});
   console.log(test);
   //   await setupTests();
 

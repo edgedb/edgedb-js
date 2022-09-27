@@ -40,6 +40,7 @@
     "lint": "tslint 'packages/*/src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node tools/genErrors.js",
+    "watch": "nodemon -e js,ts,tsx --ignore dist -x ",
     "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno && yarn syntax:make"
   }
 }
