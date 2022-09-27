@@ -1,3 +1,4 @@
+// tslint:disable
 import {createClient, adapter} from "edgedb";
 import type {ConnectConfig} from "edgedb/dist/conUtils";
 import type {CommandOptions} from "./commandutil";
