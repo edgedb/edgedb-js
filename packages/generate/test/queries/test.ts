@@ -1,8 +1,7 @@
-import {createClient} from "edgedb";
 import {getMoviesStarring} from "./getMoviesStarring.edgeql";
-
+import {setupTests} from "../setupTeardown";
 async function run() {
-  const client = createClient();
+  const {client} = await setupTests();
   const movies = await getMoviesStarring(client, {name: "Iron Man"});
 
   if (movies.length === 2) {

@@ -1,11 +1,11 @@
 import {createClient} from "edgedb";
-import {getMoviesStarring} from "./getMoviesStarring.edgeql.ts";
+import {freeShape} from "./freeShape.edgeql.ts";
 
 async function run() {
-  const client = createClient();
-  const movies = await getMoviesStarring(client, {name: "Iron Man"});
+  const client = await createClient();
+  const movies = await freeShape(client, {data: "sup"});
 
-  if (movies.length === 2) {
+  if (movies.data === "sup") {
     console.log(`Success: --deno`);
     Deno.exit();
   } else {

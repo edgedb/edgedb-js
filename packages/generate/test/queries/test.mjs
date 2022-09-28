@@ -1,11 +1,11 @@
 import {createClient} from "edgedb";
-import {getMoviesStarring} from "./getMoviesStarring.edgeql.mjs";
+import {freeShape} from "./freeShape.edgeql.mjs";
 
 async function run() {
-  const client = createClient();
-  const movies = await getMoviesStarring(client, {name: "Iron Man"});
+  const client = await createClient();
+  const movies = await freeShape(client, {data: "hi mom"});
 
-  if (movies.length === 2) {
+  if (movies.data === "hi mom") {
     console.log(`Success: --esm`);
   } else {
     throw new Error("Failure: --esm");
