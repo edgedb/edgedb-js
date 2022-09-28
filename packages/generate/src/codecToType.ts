@@ -39,7 +39,7 @@ export async function generateQueryType(
       false
     );
   } catch (err) {
-    throw prettyPrintError(err, query);
+    throw new Error(prettyPrintError(err, query));
   } finally {
     await holder.release();
   }

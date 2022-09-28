@@ -1,12 +1,12 @@
 const {createClient} = require("edgedb");
-const {getMoviesStarring} = require("./getMoviesStarring.edgeql.js");
+const {freeShape} = require("./freeShape.edgeql.js");
 
 async function run() {
-  const client = createClient();
-  const movies = await getMoviesStarring(client, {name: "Iron Man"});
+  const client = await createClient();
+  const movies = await freeShape(client, {data: "hello world"});
 
-  if (movies.length === 2) {
-    console.log(`Success: --cjs`);
+  if (movies.data === "hello world") {
+    console.log(`Success: --target cjs`);
   } else {
     throw new Error("Failure: --cjs");
   }
