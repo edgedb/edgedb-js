@@ -3,6 +3,7 @@
 // import {setupTests} from "./test/setupTeardown";
 import {createClient} from "edgedb";
 import e from "./edgeql-js/index.mjs";
+import {freeShape} from "./queries.mjs";
 
 async function run() {
   try {
@@ -15,6 +16,12 @@ async function run() {
     const result = await query.run(client);
     if (result.msg !== "Hello world" || result.num !== 35) {
       throw new Error();
+    }
+
+    const shapeData = await freeShape(client, {data: "Iron Man"});
+
+    if (shapeData.data !== "Iron Man") {
+      throw new Error("Failure: --mts");
     }
 
     console.log(`Success: --target mts`);

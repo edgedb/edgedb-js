@@ -144,7 +144,12 @@ const run = async () => {
         if (generator !== Generator.Queries) {
           exitWithError(`Unknown option: ${flag}`);
         }
-        options.file = true;
+        if (args.length > 0 && args[0][0] !== "-") {
+          options.file = getVal();
+        } else {
+          options.file = "dbschema/queries";
+        }
+
         break;
       case "--watch":
         if (generator !== Generator.Queries) {
@@ -340,7 +345,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
       adapter.process.exit();
       break;
     case Generator.Queries:
-      const watcher = await generateQueryFiles({
+      await generateQueryFiles({
         options,
         connectionConfig,
         root: projectRoot

@@ -8,7 +8,7 @@ export interface CommandOptions {
   showHelp?: boolean;
   target?: Target;
   out?: string;
-  file?: boolean;
+  file?: string;
   watch?: boolean;
   promptPassword?: boolean;
   passwordFromStdin?: boolean;

@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {"allowJs": false},
-  "include": [],
-  "files": [
-    "test.ts", "getMoviesStarring.edgeql.ts"
-  ],
-}
