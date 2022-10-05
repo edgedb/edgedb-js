@@ -302,7 +302,6 @@ export async function generateQB(config: ConnectConfig) {
 
 export async function runTests(config: ConnectConfig) {
   console.log(`\nRunning tests...`);
-  await runCommand("yarn", ["test:queries"], configToEnv(config));
   await runCommand("yarn", ["test:deno"], configToEnv(config));
   await runCommand("yarn", ["test:cjs"], configToEnv(config));
   await runCommand("yarn", ["test:esm"], configToEnv(config));
