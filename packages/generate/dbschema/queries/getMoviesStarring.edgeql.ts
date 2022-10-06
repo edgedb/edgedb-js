@@ -1,4 +1,4 @@
-[object Object]
+import type {Client, Range, LocalDate} from "edgedb";
 
 export async function getMoviesStarring(client: Client, args: {
   "name"?: string | null;

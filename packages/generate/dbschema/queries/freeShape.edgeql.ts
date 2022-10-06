@@ -1,4 +1,4 @@
-[object Object]
+import type {Client} from "edgedb";
 
 export async function freeShape(client: Client, args: {
   "data": string;
