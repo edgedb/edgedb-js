@@ -77,9 +77,9 @@ currently supported.`);
       }
     }
     console.log(
-      `Generating file${
+      `Generating query file${
         Object.keys(filesByExtension).length > 1 ? "s" : ""
-      } for queries...`
+      }...`
     );
     for (const [extension, file] of Object.entries(filesByExtension)) {
       const filePath = adapter.path.join(
