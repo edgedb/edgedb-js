@@ -19,7 +19,7 @@
     "watch": "nodemon --ignore dist --ignore dbschema/edgeql-js -x ",
     "generate": "./dist/cli.js",
     "test": "yarn test:ts && yarn test:esm && yarn test:cjs && yarn test:mts && yarn test:deno",
-    "test:ts": "NODE_OPTIONS=\"--experimental-vm-modules\" yarn generate edgeql-js && jest --detectOpenHandles --forceExit",
+    "test:ts": "NODE_OPTIONS=\"--experimental-vm-modules\" yarn generate edgeql-js && yarn generate queries --file && jest --detectOpenHandles --forceExit",
     "test:esm": "yarn generate queries --target esm --file test/esm/queries && yarn generate edgeql-js --target esm --output-dir test/esm/edgeql-js && cd test/esm && node test.js",
     "test:cjs": "yarn generate queries --target cjs --file test/cjs/queries && yarn generate edgeql-js --target cjs --output-dir test/cjs/edgeql-js && cd test/cjs && node test.js",
     "test:mts": "yarn generate queries --target mts --file test/mts/queries && yarn generate edgeql-js --target mts --output-dir test/mts/edgeql-js && cd test/mts && yarn build && node dist/test.js",

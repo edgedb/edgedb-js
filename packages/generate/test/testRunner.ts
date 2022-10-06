@@ -3,12 +3,13 @@ import createClient from "../../driver/src/index.node";
 import {
   shutdown,
   applyMigrations,
-  generateQB,
   runTests,
   generateStatusFileName,
   getServerCommand,
   getWSLPath,
   startServer
+  // generateQB,
+  // generateQueries
 } from "../../driver/test/testUtil";
 
 (async function main() {
@@ -27,7 +28,8 @@ import {
 
   try {
     await applyMigrations(config);
-    await generateQB(config);
+    // await generateQB(config);
+    // await generateQueries(config);
     await runTests(config);
   } catch (err) {
     console.error(err);
