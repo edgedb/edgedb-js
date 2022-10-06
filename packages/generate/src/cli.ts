@@ -34,7 +34,9 @@ const run = async () => {
     );
   }
   if (!Object.values(Generator).includes(generator)) {
-    throw new Error(`Invalid generator: "${generator}"`);
+    throw new Error(
+      `Invalid generator: "${generator}"\nAvailable generators:\n\n   edgeql-js (query builder)\n\n   queries (query files)`
+    );
   }
 
   const connectionConfig: ConnectConfig = {};
@@ -152,12 +154,10 @@ const run = async () => {
 
         break;
       case "--watch":
-        if (generator !== Generator.Queries) {
-          exitWithError(
-            `Watch mode is not supported for generator "${generator}"`
-          );
-        }
         options.watch = true;
+        exitWithError(
+          `Watch mode is not supported for generator "${generator}"`
+        );
         break;
       case "--force-overwrite":
         options.forceOverwrite = true;

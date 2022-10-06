@@ -80,6 +80,7 @@ await run({
       destDir: "../deno/_generate",
       // sourceFilter: path => !/src\/generators/.test(path),
       pathRewriteRules: [{match: /\.\.\/generate\/src\//, replace: "./"}],
+
       importRewriteRules: [
         {
           match: /^edgedb\/dist\//,
@@ -93,6 +94,15 @@ await run({
           match: /^edgedb$/,
           replace: "../mod.ts"
         },
+        {
+          match: /^chokidar$/,
+          replace: "https://deno.land/x/chokidar@3.4.3-deno/index.js"
+        },
+        {
+          match: /^\.\/watcher$/,
+          replace: "https://deno.land/x/chokidar@3.4.3-deno/index.js"
+        },
+
         {
           match: /^\.\.\/\.\.\/src\/.+/,
           replace: match =>

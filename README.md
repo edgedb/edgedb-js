@@ -39,103 +39,9 @@ If you're just getting started with EdgeDB, we recommend going through the
 you through the process of installing EdgeDB, creating a simple schema, and
 writing some simple queries.
 
-### Migrating to EdgeDB 2.0
-
-We recently released `v0.21.0` of the `edgedb` module on NPM and deno.land/x,
-which supports the latest EdgeDB 2.0 features and protocol. It is
-backwards-compatible with v1 instances as well, so we recommend all users
-upgrade.
-
-```bash
-npm install edgedb@latest
-```
-
-#### Breaking changes
-
-- All `uuid` properties are now decoded to include hyphens. Previously hyphens were elided for performance reasons; this issue has since been resolved.
-
-  ```ts
-  client.querySingle(`select uuid_generate_v1mc();`);
-  // "ce13b17a-7fcd-42b3-b5e3-eb28d1b953f6"
-  ```
-
-- All `json` properties and parameters are now parsed/stringified internally by the client. Previously:
-
-  ```ts
-  const result = await client.querySingle(
-    `select to_json('{"hello": "world"}');`
-  );
-  result; // '{"hello": "world"}'
-  typeof result; // string
-  ```
-
-  Now:
-
-  ```ts
-  const result = await client.querySingle(
-    `select to_json('{"hello": "world"}');`
-  );
-  result; // {hello: "world"}
-  typeof result; // object
-  result.hello; // "world"
-  ```
-
-#### New features
-
-- Added the `.withGlobals` method to the `Client` for setting [global variables](https://www.edgedb.com/docs/datamodel/globals).
-
-  ```ts
-  import {createClient} from "edgedb";
-  const client = createClient().withGlobals({
-    current_user: getUserIdFromCookie()
-  });
-
-  client.query(`select User { email } filter .id = global current_user;`);
-  ```
-
-- Support for globals in the query builder.
-
-  ```ts
-  const query = e.select(e.User, user => ({
-    email: true,
-    filter: e.op(user.id, "=", e.global.current_user)
-  }));
-
-  await query.run(client);
-  ```
-
-- Support for the [group statement](https://www.edgedb.com/docs/clients/js/group).
-
-  ```ts
-  e.group(e.Movie, movie => ({
-    title: true,
-    actors: {name: true},
-    num_actors: e.count(movie.characters),
-    by: {release_year: movie.release_year}
-  }));
-  /* [
-    {
-      key: {release_year: 2008},
-      grouping: ["release_year"],
-      elements: [{
-        title: "Iron Man",
-        actors: [...],
-        num_actors: 5
-      }, {
-        title: "The Incredible Hulk",
-        actors: [...],
-        num_actors: 3
-      }]
-    },
-    // ...
-  ] */
-  ```
-
-- Support for [range types](https://www.edgedb.com/docs/datamodel/primitives#ranges) and [`DateDuration`](https://www.edgedb.com/docs/stdlib/datetime#type::cal::date_duration) values.
-
 ### Requirements
 
-- Node.js 12+
+- Node.js 14+
 - For TypeScript users:
   - TypeScript 4.4+ is required
   - `yarn add @types/node --dev`
@@ -146,6 +52,8 @@ npm install edgedb@latest
 npm install edgedb      # npm users
 yarn add edgedb         # yarn users
 ```
+
+> EdgeDB 2.x requires `v0.21.0` or later
 
 ## Basic usage
 

@@ -4,7 +4,6 @@ import type {ConnectConfig} from "edgedb/dist/conUtils";
 import type {CommandOptions} from "./commandutil";
 import {generateQueryType} from "./codecToType";
 import type {QueryType} from "./codecToType";
-import chokidar from "chokidar";
 import type {Target} from "./generate";
 import {Cardinality} from "edgedb/dist/ifaces";
 
@@ -39,8 +38,6 @@ currently supported.`);
     ...params.connectionConfig,
     concurrency: 5
   });
-
-  // watch mode: start watcher
 
   // file mode: introspect all queries and generate one file
   // generate one query per file
@@ -131,27 +128,6 @@ currently supported.`);
     return;
   }
 
-  // TODO: implement watcher!!
-  console.log(`Waiting for file changes...`);
-  const watcher = chokidar.watch(["**/*.edgeql"], {
-    cwd: root,
-    ignoreInitial: true
-  });
-
-  const modifiers: any = {
-    add: "New query file detected. Generating...",
-    change: "Change detected. Regenerating..."
-    // unlink: "Deleted: "
-  };
-  return watcher.on("all", async (evt, path) => {
-    if (["add", "change"].includes(evt)) {
-      const modifier = modifiers[evt as string];
-      console.log(`${modifier}`);
-      await generateFilesForQuery(path);
-    }
-    //  else if (evt === "unlink") {}
-  });
-
   // find all *.edgeql files
   // for query in queries:
   //   generate output file
@@ -163,7 +139,7 @@ function stringifyImports(imports: {[k: string]: boolean}) {
 
 async function getMatches(root: string) {
   return adapter.walk(root, {
-    match: [/\.edgeql$/],
+    match: [/[^\/]\.edgeql$/],
     skip: [/node_modules/, /dbschema\/migrations/]
   });
   // return globby.globby("**/*.edgeql", {
