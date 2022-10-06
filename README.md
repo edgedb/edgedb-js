@@ -55,6 +55,13 @@ yarn add edgedb         # yarn users
 
 > EdgeDB 2.x requires `v0.21.0` or later
 
+## Packages
+
+- `packages/driver`: The `edgedb` client library.
+- `packages/generate`: The `@edgedb/generate` package. Implements code generators, including `edgeql-js` and `queries`.
+- `packages/deno`: The directory where the auto-generated `deno.land/x/edgedb` package is generated into. Both the driver and codegen tools are generated into this module.
+- `packages/edgeql-js`: A skeleton package that prints an informative error message when `npx edgeql-js` is executed without `edgedb` installed.
+
 ## Basic usage
 
 > The examples below demonstrate only the most fundamental use cases for this
@@ -132,14 +139,64 @@ await client.querySingle(
 ); // => { title: "Dune" }
 ```
 
-## Query builder
+## Generators
 
-Instead of writing queries as strings, you can use this package to generate a
-_query builder_. The query builder lets you write queries in a code-first way
-and automatically infers the return type of your queries.
+Install the `@edgedb/generate` package as a dev dependency to take advantage of EdgeDB's built-in code generators.
 
-To generate the query builder, install the `edgedb` package, initialize a project (if
-you haven't already), then run the following command:
+```bash
+npm install @edgedb/generate  --save-dev      # npm users
+yarn add @edgedb/generate --dev               # yarn users
+```
+
+Then run a generator with the following command:
+
+```bash
+$ npx @edgedb/generate <generator> [FLAGS]
+```
+
+The following `<generator>`s are currently supported:
+
+- `queries`: Generate typed functions from `*.edgeql` files
+- `edgeql-js`: Generate the query builder
+
+### `queries`
+
+Run the following command to generate a source file for each `*.edgeql` system in your project.
+
+```bash
+$ npx @edgedb/generate queries
+```
+
+Assume you have a file called `getUser.edgeql` in your project directory.
+
+```
+// getUser.edgeql
+select User {
+  name,
+  email
+}
+filter .email = <str>$email;
+```
+
+This generator will generate a `getUser.edgeql.ts` file alongside it that exports a function called `getUser`.
+
+```
+import {createClient} from "edgedb";
+import {myQuery} from "./myQuery.edgeql";
+
+const client = createClient();
+
+const user = await myQuery(client, {name: "Timmy"});
+user; // {name: string; email: string}
+```
+
+The first argument is a `Client`, the second is the set of _parameters_. Both the parameters and the returned value are fully typed.
+
+### `edgeql-js` (query builder)
+
+The query builder lets you write queries in a code-first way. It automatically infers the return type of your queries.
+
+To generate the query builder, install the `edgedb` package, initialize a project (if you haven't already), then run the following command:
 
 ```bash
 $ npx @edgedb/generate edgeql-js
@@ -148,8 +205,7 @@ $ npx @edgedb/generate edgeql-js
 This will generate an EdgeQL query builder into the `./dbschema/edgeql-js`
 directory, as defined relative to your project root.
 
-For details on generating the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/js/generation). Below is a simple
-`select` query as an example.
+For details on generating the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/js/generation). Below is a simple `select` query as an example.
 
 ```ts
 import {createClient} from "edgedb";
@@ -179,11 +235,11 @@ EdgeDB from [here](https://www.edgedb.com/download) or
 ```bash
 $ git clone git@github.com:edgedb/edgedb-js.git
 $ cd edgedb-js
-$ yarn              # install dependencies
-$ yarn build        # compile TypeScript
-$ yarn tests        # run tests
+$ yarn                           # install dependencies
+$ yarn workspaces run build      # build all packages
+$ yarn workspaces run test       # run tests for all packages
 ```
 
 ## License
 
-edgedb-js is developed and distributed under the Apache 2.0 license.
+`edgedb-js` is developed and distributed under the Apache 2.0 license.

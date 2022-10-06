@@ -1,6 +1,6 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
-import {getMoviesStarring} from "./test/queries/getMoviesStarring.edgeql";
+import {getMoviesStarring} from "./dbschema/queries";
 
 async function run() {
   const {client} = await setupTests();

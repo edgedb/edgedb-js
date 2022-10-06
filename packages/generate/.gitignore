@@ -6,6 +6,5 @@ test/deno/edgeql-js
 test/cjs/edgeql-js
 dbschema/edgeql-js
 dbschema/queries.ts
-dbschema/queries/*.edgeql.*
-test/queries/*.edgeql.*
+**/*.edgeql.*
 test/*/queries.*

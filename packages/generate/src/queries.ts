@@ -134,6 +134,7 @@ currently supported.`);
 }
 
 function stringifyImports(imports: {[k: string]: boolean}) {
+  if (Object.keys(imports).length === 0) return "";
   return `import type {${Object.keys(imports).join(", ")}} from "edgedb";`;
 }
 

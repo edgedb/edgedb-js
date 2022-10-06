@@ -5,7 +5,7 @@ import {execSync} from "child_process";
 const QBDIR = path.resolve(__dirname, "..");
 
 test("basic generate", async () => {
-  execSync(`yarn gen edgeql-js --force-overwrite`, {
+  execSync(`yarn generate edgeql-js --force-overwrite`, {
     stdio: "inherit"
   });
   const qbIndex = path.resolve(QBDIR, "dbschema", "edgeql-js", "index.ts");

@@ -6,7 +6,7 @@ import * as net from "net";
 import * as tls from "tls";
 import * as readline from "readline";
 import {Writable} from "stream";
-import process from "node:process";
+import process from "process";
 
 export {path, net, crypto, fs, tls, process};
 
