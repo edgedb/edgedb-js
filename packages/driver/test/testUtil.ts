@@ -300,6 +300,15 @@ export async function generateQB(config: ConnectConfig) {
   );
 }
 
+export async function generateQueries(config: ConnectConfig) {
+  console.log(`\nGenerating queries...`);
+  await runCommand(
+    "yarn",
+    ["generate", "queries", "--file"],
+    configToEnv(config)
+  );
+}
+
 export async function runTests(config: ConnectConfig) {
   console.log(`\nRunning tests...`);
   await runCommand("yarn", ["test"], configToEnv(config));

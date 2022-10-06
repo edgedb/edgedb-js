@@ -34,5 +34,6 @@ export async function getMoviesStarring(client: Client, args: {
   range := range(123, 456),
   local_date := <cal::local_date>'2022-09-08',
 } filter .characters.name = <optional str>$name;
+
 `, args)
 }
