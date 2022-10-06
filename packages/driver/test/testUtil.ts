@@ -295,7 +295,7 @@ export async function generateQB(config: ConnectConfig) {
 
   await runCommand(
     "yarn",
-    ["gen", "edgeql-js", "--force-overwrite"],
+    ["generate", "edgeql-js", "--force-overwrite"],
     configToEnv(config)
   );
 }
@@ -303,10 +303,6 @@ export async function generateQB(config: ConnectConfig) {
 export async function runTests(config: ConnectConfig) {
   console.log(`\nRunning tests...`);
   await runCommand("yarn", ["test"], configToEnv(config));
-  await runCommand("yarn", ["test:deno"], configToEnv(config));
-  await runCommand("yarn", ["test:cjs"], configToEnv(config));
-  await runCommand("yarn", ["test:esm"], configToEnv(config));
-  await runCommand("yarn", ["test:mts"], configToEnv(config));
 }
 
 export async function runCommand(

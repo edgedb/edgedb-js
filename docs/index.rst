@@ -9,7 +9,7 @@ EdgeDB TypeScript/JS Client
    :hidden:
 
    driver
-   generators
+   generation
    queries
    querybuilder
    literals
