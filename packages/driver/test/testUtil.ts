@@ -302,11 +302,11 @@ export async function generateQB(config: ConnectConfig) {
 
 export async function runTests(config: ConnectConfig) {
   console.log(`\nRunning tests...`);
+  await runCommand("yarn", ["test"], configToEnv(config));
   await runCommand("yarn", ["test:deno"], configToEnv(config));
   await runCommand("yarn", ["test:cjs"], configToEnv(config));
   await runCommand("yarn", ["test:esm"], configToEnv(config));
   await runCommand("yarn", ["test:mts"], configToEnv(config));
-  await runCommand("yarn", ["test"], configToEnv(config));
 }
 
 export async function runCommand(

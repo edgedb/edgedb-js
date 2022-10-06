@@ -9,8 +9,9 @@ EdgeDB TypeScript/JS Client
    :hidden:
 
    driver
+   generators
+   queries
    querybuilder
-   generation
    literals
    types
    funcops
@@ -149,4 +150,4 @@ How do I get started?
 We recommend reading the :ref:`Client docs <edgedb-js-driver>` first. If you
 are happy writing your EdgeQL as plain strings, then that's all you need! If
 you're a TypeScript user, or simply prefer writing queries in a code-first
-way, continue on to the :ref:`Query builder <edgedb-js-generation>` docs.
+way, continue on to the :ref:`Query builder <edgedb-js-qb>` docs.

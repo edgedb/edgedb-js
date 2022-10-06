@@ -19,7 +19,8 @@ users, or anyone who prefers writing queries with code.
   const result = await query.run(client)
   // { id: string; title: string; actors: {name: string}[] }[]
 
-*Why use the query builder?*
+Why use the query builder?
+--------------------------
 
 *Type inference!* If you're using TypeScript, the result type of *all
 queries* is automatically inferred for you. For the first time, you don't
@@ -32,36 +33,11 @@ keywords, standard library functions, and link/property names.
 you construct invalid queries. This eliminates an entire class of bugs and
 helps you write valid queries the first time.
 
-Requirements
-------------
-
-The query builder works for both JavaScript and TypeScript users, and supports both Node.js and Deno. It's possible to use the query builder with or without TypeScript. Some
-requirements apply to TypeScript users only.
-
-- Node: ``v14+``. Run ``node --version`` to see your current version.
-- Deno: ``v0.20+``.
-- TypeScript: ``v4.4+``.
-
-  - Node users: install Node.js types with ``npm install @types/node``.
-  - Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``
-
-    .. code-block:: javascript
-
-      // tsconfig.json
-      {
-        // ...
-        "compilerOptions": {
-          // ...
-          "strict": true,
-          "downlevelIteration": true,
-        }
-      }
-
 
 Quickstart
 ----------
 
-If you haven't already, initialize a project, write your schema, and create/
+If you haven't already, initialize a project, write a schema, and create/
 apply a migration. Follow the :ref:`Quickstart <ref_quickstart>` for a guided
 walkthrough of this process.
 
@@ -89,11 +65,11 @@ With Node.js, use ``npx`` to generate the query builder.
 
   $ npx @edgedb/generate edgeql-js
 
-With Deno, use ``deno run``. *Deno user must also create an import map, see "Deno usage" below.*
+With Deno, use ``deno run``. *Deno user must also create an import map, see "Usage with Deno" below.*
 
 .. code-block:: bash
 
-  $ deno run https://deno.land/x/edgedb/generate.ts
+  $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts edgeql-js
 
 This detects whether you're using TypeScript or JavaScript and generates the
 appropriate files into the ``dbschema/edgeql-js`` directory. Refer to the
@@ -102,26 +78,11 @@ appropriate files into the ``dbschema/edgeql-js`` directory. Refer to the
 .. note::
 
   If you're seeing a connection error or another issue, refer to the
-  :ref:`Generation <edgedb-js-generation>` docs for more complete
+  :ref:`Generation <edgedb-js-generators>` docs for more complete
   documentation, then return to this tutorial.
 
-The first time you generate the query builder you'll be prompted to add the
-generated files to your ``.gitignore``. Confirm this prompt to
-add the the line automatically.
 
-.. code-block:: bash
-
-  $ npx @edgedb/generate edgeql-js
-  ...
-  Checking the generated query builder into version control
-  is NOT RECOMMENDED. Would you like to update .gitignore to ignore
-  the query builder directory? The following line will be added:
-
-  dbschema/edgeql-js
-
-  [y/n] (leave blank for "y")
-
-**Deno usage**
+**Usage with Deno**
 
 The query builder generates code that depends on the ``edgedb`` module. The generated code imports using a plain module name (``import {createClient} from "edgedb"``). You must configure an import map to tell Deno how to resolve this import.
 
@@ -145,58 +106,65 @@ Then create ``import_map.json`` with the following contents. Both lines must be 
     }
   }
 
-Optionally, you can specify a version:
+Version control
+^^^^^^^^^^^^^^^
 
-.. code-block:: json
+The first time you run generator, you'll be prompted to add the generated
+files to your ``.gitignore``. Confirm this prompt to automatically add a line
+to your ``.gitignore`` that excludes the generated files.
 
-  {
-    "imports": {
-      "edgedb": "https://deno.land/x/edgedb@v0.22.0/mod.ts",
-      "edgedb/": "https://deno.land/x/edgedb@v0.22.0/"
-    }
-  }
+.. code-block::
+
+  $ npx @edgedb/generate edgeql-js
+  ...
+  Checking the generated query builder into version control
+  is NOT RECOMMENDED. Would you like to update .gitignore to ignore
+  the query builder directory? The following line will be added:
+
+  dbschema/edgeql-js
+
+  [y/n] (leave blank for "y")
+
+For consistency, we recommend omitting the generated files from version
+control and re-generating them as part of your deployment process. However,
+there may be circumstances where checking the generated files into version
+control is desirable, e.g. if you are building Docker images that must contain
+the full source code of your application.
 
 
-Import the query builder
-^^^^^^^^^^^^^^^^^^^^^^^^
+Importing
+^^^^^^^^^
 
-Create a TypeScript file called ``script.ts`` (the name doesn't matter) and import the query builder. We recommend importing the query builder as a single default import called ``e``.
+Once the query builder is generated, it's ready to use! We recommend importing the query builder as a single default import called ``e``.
 
 .. code-block:: typescript
 
-  // script.ts
+  // Node.js + TypeScript
   import e from "./dbschema/edgeql-js";
 
+  // TypeScript with ESM
+  import e from "./dbschema/edgeql-js/index.mjs";
 
-Create a client
-^^^^^^^^^^^^^^^
+  // JavaScript (ES modules)
+  import e from "./dbschema/edgeql-js/index.mjs";
 
-The query builder is only used to *write* queries, not execute them. To
-execute queries, we still need a *client* that manages the actual connection
-to our EdgeDB instance. See the :ref:`Client API <edgedb-js-driver>` docs for
-full details.
+  // Deno
+  import e from "./dbschema/edgeql-js/index.ts";
 
-.. code-block:: typescript-diff
+  // JavaScript (CommonJS)
+  const e = require("./dbschema/edgeql-js");
 
-    // script.ts
-  + import {createClient} from "edgedb";
-    import e from "./dbschema/edgeql-js";
+.. note::
 
-  + const client = createClient();
-
-
-If you've initialized a project, there's no need to provide connection
-information to ``createClient``; it will connect to your project-linked
-instance by default. You can override this by setting the value of the
-``EDGEDB_DSN`` environment variable; refer to the :ref:`Connection docs
-<edgedb_client_connection>` for more information.
+  If you're using ES modules, remember that imports require a file extension.
+  The rest of the documentation uses Node.js + TypeScript syntax.
 
 Write a query
 ^^^^^^^^^^^^^
 
-Now we have everything we need to write our first query!
+Now we have everything we need to write and execute our first query!
 
-.. code-block:: typescript-diff
+.. code-block:: typescript
 
     // script.ts
     import {createClient} from "edgedb";
@@ -204,16 +172,16 @@ Now we have everything we need to write our first query!
 
     const client = createClient();
 
-  + async function run() {
-  +   const query = e.select(e.datetime_current());
-  +   const result = await query.run(client);
-  +   console.log(result);
-  + }
-  + run();
+    async function run() {
+      const query = e.select(e.datetime_current());
+      const result = await query.run(client);
+      console.log(result);
+    }
+    run();
 
 We use the ``e`` object to construct queries. The goal of the query builder is
 to provide an API that is as close as possible to EdgeQL itself. So
-``select datetime_current()`` becomes ``e.select(e.datetime_current()``. This
+``select datetime_current()`` becomes ``e.select(e.datetime_current())``. This
 query is then executed with the ``.run()`` method which accepts a *client* as
 its first input.
 
@@ -225,11 +193,32 @@ current timestamp (as computed by the database).
   $ npx tsx script.ts
   2022-05-10T03:11:27.205Z
 
+Configuration
+-------------
+
+The generation command is configurable in a number of ways.
+
+``--output-dir <path>``
+  Sets the output directory for the generated files.
+
+``--target <ts|cjs|esm|mts>``
+  What type of files to generate. Documented above.
+
+``--force-overwrite``
+  To avoid accidental changes, you'll be prompted to confirm whenever the
+  ``--target`` has changed from the previous run. To avoid this prompt, pass
+  ``--force-overwrite``.
+
+The generator also supports all the :ref:`connection flags
+<ref_cli_edgedb_connopts>` supported by the EdgeDB CLI. These aren't
+necessary when using a project or environment variables to configure a
+connection.
+
+
 .. _edgedb-js-execution:
 
-
-Executing expressions
----------------------
+Expressions
+-----------
 
 Throughout the documentation, we use the term "expression" a lot. This is a
 catch-all term that refers to *any query or query fragment* you define with
@@ -305,6 +294,60 @@ extracted with the ``$infer`` helper.
   const query = e.select(e.Movie, () => ({ id: true, title: true }));
   type result = $infer<typeof query>;
   // {id: string; title: string}[]
+
+Interfaces
+----------
+
+While the ``e`` object is all that's required to build queries,
+``npx @edgedb/generate edgeql-js`` also generates TypeScript ``interfaces``
+representing your current schema. These are not needed to construct queries,
+but are generated as a convenience.
+
+.. code-block:: typescript
+
+  import e, {Person, Movie} from "./dbschema/edgeql-js";
+
+
+Given this EdgeDB schema:
+
+.. code-block:: sdl
+
+  module default {
+    scalar type Genre extending enum<Horror, Comedy, Drama>;
+    type Person {
+      required property name -> str;
+    }
+    type Movie {
+      required property title -> str;
+      property genre -> Genre;
+      multi link actors -> Person;
+    }
+  }
+
+The following interfaces will be generated (simplified for clarify):
+
+.. code-block:: typescript
+
+  enum Genre {
+    Horror = "Horror",
+    Comedy = "Comedy",
+    Drama = "Drama"
+  }
+
+  interface Person {
+    id: string;
+    name: string;
+  }
+
+  interface Movie {
+    id: string;
+    title: string;
+    genre?: Genre | null;
+    actors: Person[];
+  }
+
+Any types declared in a non-``default`` module  will be generated into an
+accordingly named ``namespace``.
 
 Cheatsheet
 ----------
@@ -510,7 +553,6 @@ Or we can use subqueries inside mutations.
   const query = e.update(drStrange, ()=>({
     actors: { "+=": actors }
   }));
-
 
 
 Query parameters

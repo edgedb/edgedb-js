@@ -19,6 +19,6 @@
   "scripts": {
     "lint": "tslint 'packages/*/src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
-    "generate": "yarn workspace @edgedb/generate generate edgeql-js"
+    "generate": "yarn workspace @edgedb/generate generate"
   }
 }

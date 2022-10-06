@@ -28,19 +28,25 @@ const run = async () => {
   const args = adapter.process.argv.slice(2);
   const generator: Generator = args.shift() as any;
 
-  if (!generator || generator[0] === "-") {
-    throw new Error(
-      `Specify a generator: \`npx @edgedb/generate [generator]\``
-    );
-  }
-  if (!Object.values(Generator).includes(generator)) {
-    throw new Error(
-      `Invalid generator: "${generator}"\nAvailable generators:\n\n   edgeql-js (query builder)\n\n   queries (query files)`
-    );
-  }
-
   const connectionConfig: ConnectConfig = {};
   const options: CommandOptions = {};
+
+  if ((generator as any) === "-h" || (generator as any) === "--help") {
+    printHelp();
+    adapter.process.exit();
+  }
+  if (!generator || generator[0] === "-") {
+    console.error(
+      `Error: No generator specified.\n  \`npx @edgedb/generate [generator]\`\nAvailable generators:\n - edgeql-js (query builder)\n - queries (query files)`
+    );
+    adapter.exit();
+  }
+  if (!Object.values(Generator).includes(generator)) {
+    console.error(
+      `Error: Invalid generator "${generator}". Available generators:\n - edgeql-js (query builder)\n - queries (query files)`
+    );
+    adapter.exit();
+  }
 
   while (args.length) {
     let flag = args.shift()!;
@@ -63,7 +69,8 @@ const run = async () => {
         return v;
       }
       if (args.length === 0) {
-        exitWithError(`No value provided for ${flag} option`);
+        console.error(`Error: No value provided for ${flag} option`);
+        adapter.exit();
       }
       return args.shift();
     };
@@ -172,43 +179,7 @@ const run = async () => {
   }
 
   if (options.showHelp) {
-    console.log(`@edgedb/generate
-
-Official EdgeDB code generators for TypeScript/JavaScript
-
-USAGE
-    npx @edgedb/generate [COMMAND] [OPTIONS]
-
-COMMANDS:
-    edgeql-js       Generate query builder
-    queries         Generate typed functions from .edgeql files
-
-CONNECTION OPTIONS:
-    -I, --instance <instance>
-    --dsn <dsn>
-    --credentials-file <path/to/credentials.json>
-    -H, --host <host>
-    -P, --port <port>
-    -d, --database <database>
-    -u, --user <user>
-    --password
-    --password-from-stdin
-    --tls-ca-file <path/to/certificate>
-    --tls-security <insecure | no_host_verification | strict | default>
-
-OPTIONS:
-    --target [ts,mts,esm,cjs,deno]
-
-        ts     Generate TypeScript files (.ts)
-        mts    Generate TypeScript files (.mts) with ESM imports
-        esm    Generate JavaScript with ESM syntax
-        cjs    Generate JavaScript with CommonJS syntax
-        deno   Generate TypeScript files (.ts) with Deno-style (*.ts) imports
-
-    --out <path>
-    --force-overwrite
-        Overwrite <path> contents without confirmation
-`);
+    printHelp();
     adapter.process.exit();
   }
 
@@ -356,4 +327,43 @@ Run this command inside an EdgeDB project directory or specify the desired targe
   }
 };
 
+function printHelp() {
+  console.log(`@edgedb/generate
+
+Official EdgeDB code generators for TypeScript/JavaScript
+
+USAGE
+    npx @edgedb/generate [COMMAND] [OPTIONS]
+
+COMMANDS:
+    edgeql-js       Generate query builder
+    queries         Generate typed functions from .edgeql files
+
+CONNECTION OPTIONS:
+    -I, --instance <instance>
+    --dsn <dsn>
+    --credentials-file <path/to/credentials.json>
+    -H, --host <host>
+    -P, --port <port>
+    -d, --database <database>
+    -u, --user <user>
+    --password
+    --password-from-stdin
+    --tls-ca-file <path/to/certificate>
+    --tls-security <insecure | no_host_verification | strict | default>
+
+OPTIONS:
+    --target [ts,mts,esm,cjs,deno]
+
+        ts     Generate TypeScript files (.ts)
+        mts    Generate TypeScript files (.mts) with ESM imports
+        esm    Generate JavaScript with ESM syntax
+        cjs    Generate JavaScript with CommonJS syntax
+        deno   Generate TypeScript files (.ts) with Deno-style (*.ts) imports
+
+    --out <path>
+    --force-overwrite
+        Overwrite <path> contents without confirmation
+`);
+}
 run();

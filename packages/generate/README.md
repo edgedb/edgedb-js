@@ -1,50 +1,56 @@
-# Query builder
+# Generators
 
 ## Project setup
 
-1. Set up
+From the root directory:
 
 ```
 yarn
+yarn workspaces run build  # build all packages
 ```
 
-2. Build all project
+Navigate into `packages/generate`.
+
+Build `@edgedb/generate`
 
 ```
-yarn workspaces run build
+yarn build
 ```
 
-3. Generate query builder
-
-Run `yarn generate edgeql-js` from `packages/generate` to generate the query builder. Files are generated into `packages/generate/dbschema/edgeql-js`.
+Build without typechecking (uses `esbuild`)
 
 ```
-$ cd packages/generate
-$ yarn generate edgeql-js
-
-// watch mode
-yarn watch 'yarn generate edgeql-js'
+yarn build:fast
 ```
 
-4. Scratchpad: `packages/generate/playground.ts`
-
-Run `yarn play` inside `packages/generate` to execute `packages/generate/playground.ts` (or `yarn play:dev` for watch mode). This is an easy way to test things in development.
-
-⚠️ All imports from `"edgedb"` resolve to the local build version of the driver in `packages/driver/dist`. This imports the _built_ library, not the so you need to re-run `yarn build` inside `packages/driver` for changes to be reflected in your playground code. Run `yarn dev` watcher inside `packages/driver` to rebuild the project anytime you make a change.
-
-5. Tests
-
-To run `yarn test` inside each project.
+Run a generator:
 
 ```
-yarn workspaces run test
+yarn generate edgeql-js    # query builder
+yarn generate queries      # query files
 ```
 
-## Packages
+Execute `playground.ts` (uses `tsx`). Useful for testing things quickly in development.
 
-- `packages/driver`: The `edgedb` NPM package. Implements the client library.
-  - `./src/reflection`: Most introspection and type logic is implemented in `edgedb-js/src/reflection`
-  - `./src/syntax`: All top-level syntactic structures are declared in this directory: literals, `set`, `cast`, `select`, etc. The contents of this directory are copied into the generated query builder. For all code inside `src/syntax`:
-- `packages/generate`: The `@edgedb/generate` NPM package. Implements code generation tools (query builder, `*.edgeql`, etc)
-- `packages/deno`: The directory where the auto-generated `deno.land/x/edgedb` package is generated into. Both the driver and codegen tools are generated into this module.
-- `packages/edgeql-js`: This is a package that prints an informative error message when `npx edgeql-js` is executed without `edgedb` installed.
+```
+yarn play
+```
+
+> ⚠️ All imports from `"edgedb"` resolve to the local build version of the driver in `packages/driver/dist`. This imports the _built_ library, not the so you need to re-run `yarn workspace edgedb build` for changes to be reflected in your playground code. Run `yarn dev` watcher inside `packages/driver` to rebuild the project anytime you make a change.
+
+Run commands in watch mode. Useful when in development. The following command rebuilds the package and executes the playground whenever a file change is detected.
+
+```
+yarn watch 'yarn build:fast && yarn play`
+```
+
+Run tests. All `test:*` scripts are self-contained, in that they execute any prerequisite generation steps before running any tests.
+
+```
+yarn test         # runs all tests (listed below)
+yarn test:ts
+yarn test:esm
+yarn test:cjs
+yarn test:mts
+yarn test:deno
+```
