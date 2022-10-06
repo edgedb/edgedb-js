@@ -1,6 +1,17 @@
 {
   "name": "@edgedb/generate",
   "version": "0.23.0",
+  "description": "EdgeDB code generators for TS/JavaScript",
+  "homepage": "https://edgedb.com/docs",
+  "author": "EdgeDB <info@edgedb.com>",
+  "engines": {
+    "node": ">= 12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgedb/edgedb-js.git"
+  },
+  "license": "Apache-2.0",
   "scripts": {
     "play": "tsx playground.ts",
     "build": "rm -rf dist && tsc --project tsconfig.build.json && chmod +x dist/cli.js",
@@ -32,13 +43,5 @@
   },
   "dependencies": {
     "chokidar": "^3.5.3"
-  },
-  "description": "## Project setup",
-  "main": "jest.config.js",
-  "directories": {
-    "test": "test"
-  },
-  "keywords": [],
-  "author": "Colin McDonnell",
-  "license": "ISC"
+  }
 }

@@ -14,6 +14,10 @@ export async function readFileUtf8(fn: string): Promise<string> {
   return await fs.readFile(fn, {encoding: "utf8"});
 }
 
+export function watch(dir: string) {
+  return fs.watch(dir, {recursive: true});
+}
+
 export async function readDir(pathString: string) {
   return fs.readdir(pathString);
 }
