@@ -1,7 +1,7 @@
 import {
   Duration,
   DisabledCapabilityError,
-  InvalidReferenceError,
+  InvalidReferenceError
 } from "../src/index.node";
 import {getClient, getEdgeDBVersion} from "./testbase";
 
@@ -50,7 +50,7 @@ if (getEdgeDBVersion().major >= 2) {
       ).toEqual({userId: null, currentTags: null});
 
       const clientWithUserId = client.withGlobals({
-        userId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        userId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       });
 
       expect(
@@ -60,7 +60,7 @@ if (getEdgeDBVersion().major >= 2) {
         }`)
       ).toEqual({
         userId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-        currentTags: null,
+        currentTags: null
       });
 
       // make sure session state is reset
@@ -75,14 +75,14 @@ if (getEdgeDBVersion().major >= 2) {
       expect(
         await clientWithUserId.withGlobals({
           userId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-          currentTags: ["a", "b", "c"],
+          currentTags: ["a", "b", "c"]
         }).querySingle(`select {
           userId := global userId,
           currentTags := global currentTags,
         }`)
       ).toEqual({
         userId: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-        currentTags: ["a", "b", "c"],
+        currentTags: ["a", "b", "c"]
       });
 
       expect(
@@ -96,7 +96,7 @@ if (getEdgeDBVersion().major >= 2) {
       expect(
         await client
           .withGlobals({
-            defaultTest: null,
+            defaultTest: null
           })
           .querySingle(`select global defaultTest`)
       ).toEqual(null);
@@ -143,7 +143,7 @@ if (getEdgeDBVersion().major >= 2) {
       (
         await client
           .withConfig({
-            query_execution_timeout: Duration.from("PT30S"),
+            query_execution_timeout: Duration.from("PT30S")
           })
           .queryRequiredSingle<Duration>(
             `select assert_single(cfg::Config.query_execution_timeout)`
@@ -217,7 +217,7 @@ if (getEdgeDBVersion().major >= 2) {
     await expect(
       client
         .withConfig({
-          query_execution_timeout: Duration.from("PT30S"),
+          query_execution_timeout: Duration.from("PT30S")
         })
         .query("select 1")
     ).rejects.toThrowError(

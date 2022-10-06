@@ -153,7 +153,9 @@ const run = async () => {
         break;
       case "--watch":
         if (generator !== Generator.Queries) {
-          exitWithError(`Unknown option: ${flag}`);
+          exitWithError(
+            `Watch mode is not supported for generator "${generator}"`
+          );
         }
         options.watch = true;
         break;
