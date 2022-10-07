@@ -9,14 +9,18 @@ import {
 } from "edgedb";
 import type {$bool, $number} from "@generated/modules/std";
 import {
-  $expr_PolyShapeElement,
-  $scopify,
   Cardinality,
   cardutil,
-  Expression,
   ExpressionKind,
-  LinkDesc,
   makeType,
+  TypeKind,
+  typeutil
+} from "../reflection/index";
+import {
+  $expr_PolyShapeElement,
+  $scopify,
+  Expression,
+  LinkDesc,
   ObjectType,
   ObjectTypeExpression,
   ObjectTypePointers,
@@ -25,11 +29,9 @@ import {
   PropertyDesc,
   ScalarType,
   stripSet,
-  TypeKind,
   TypeSet,
-  typeutil,
   BaseType
-} from "../reflection/index";
+} from "./typesystem";
 
 import type {
   $expr_PathLeaf,
@@ -37,9 +39,9 @@ import type {
   $linkPropify,
   ExpressionRoot,
   PathParent
-} from "../reflection/path";
+} from "./path";
 import type {anonymizeObject} from "./casting";
-import type {$expr_Operator} from "../reflection/funcops";
+import type {$expr_Operator} from "./funcops";
 import {$expressionify, $getScopedExpr} from "./path";
 import {$getTypeByName, literal} from "./literal";
 import {spec} from "@generated/__spec__";

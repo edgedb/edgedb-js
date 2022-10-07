@@ -1,4 +1,4 @@
-import type {TypeSet, setToTsType} from "../reflection/index";
+import type {TypeSet, setToTsType} from "./typesystem";
 
 export * from "./literal";
 export * from "./path";

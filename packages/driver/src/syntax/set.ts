@@ -1,4 +1,9 @@
 import type {
+  ExpressionKind,
+  mergeObjectTypes,
+  Cardinality
+} from "../reflection/index";
+import {
   ArrayType,
   BaseTypeTuple,
   BaseType,
@@ -7,13 +12,10 @@ import type {
   TypeSet,
   TupleType,
   Expression,
-  ExpressionKind,
-  mergeObjectTypes,
   ObjectType,
-  Cardinality,
   getPrimitiveBaseType,
-  SomeType,
-} from "../reflection/index";
+  SomeType
+} from "./typesystem";
 import {TypeKind, $mergeObjectTypes} from "../reflection/index";
 
 // "@generated/" path gets replaced during generation step
@@ -53,7 +55,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
       return {
         __kind__: TypeKind.tuple,
         __name__: `tuple<${items.map(item => item.__name__).join(", ")}>`,
-        __items__: items as BaseTypeTuple,
+        __items__: items as BaseTypeTuple
       };
     } catch (err) {
       throw new Error(
@@ -90,7 +92,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
         __name__: `tuple<${Object.entries(items)
           .map(([key, val]: [string, any]) => `${key}: ${val.__name__}`)
           .join(", ")}>`,
-        __shape__: items,
+        __shape__: items
       };
     } catch (err) {
       throw new Error(
@@ -106,7 +108,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
       return {
         __kind__: TypeKind.array,
         __name__: a.__name__,
-        __element__: mergedEl,
+        __element__: mergedEl
       } as ArrayType;
     } catch (err) {
       throw new Error(

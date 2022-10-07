@@ -1,5 +1,5 @@
 import {Cardinality} from "./enums";
-import type {TypeSet} from "./typesystem";
+import type {TypeSet} from "../syntax/typesystem";
 
 // Computing cardinality of path
 // From base set cadinality and pointer cardinality

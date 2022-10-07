@@ -8,7 +8,7 @@ import {
   LinkDesc,
   PropertyDesc,
   TupleType
-} from "./typesystem";
+} from "../syntax/typesystem";
 
 import {util} from "./util";
 import {typeutil} from "./typeutil";

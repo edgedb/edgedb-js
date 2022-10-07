@@ -1,4 +1,5 @@
-import {Expression, ExpressionKind, TypeSet} from "../reflection/index";
+import {ExpressionKind} from "../reflection/index";
+import {Expression, TypeSet} from "./typesystem";
 import {$expressionify} from "./path";
 
 export function detached<Expr extends TypeSet>(
@@ -8,7 +9,7 @@ export function detached<Expr extends TypeSet>(
     __element__: expr.__element__,
     __cardinality__: expr.__cardinality__,
     __expr__: expr,
-    __kind__: ExpressionKind.Detached,
+    __kind__: ExpressionKind.Detached
   }) as any;
 }
 

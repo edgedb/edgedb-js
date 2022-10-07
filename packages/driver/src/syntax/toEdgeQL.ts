@@ -8,37 +8,39 @@ import {
   Range
 } from "edgedb";
 import {
+  Cardinality,
+  ExpressionKind,
+  OperatorKind,
+  TypeKind,
+  util
+} from "../reflection/index";
+import {
   $expr_Array,
   $expr_NamedTuple,
   $expr_Tuple,
   $expr_TuplePath,
   BaseType,
-  Cardinality,
   EnumType,
-  ExpressionKind,
   isArrayType,
   isNamedTupleType,
   isObjectType,
   isTupleType,
   ObjectType,
   ObjectTypeSet,
-  OperatorKind,
   RangeType,
-  TypeKind,
-  TypeSet,
-  util
-} from "../reflection/index";
-import type {$expr_Literal} from "../reflection/literal";
+  TypeSet
+} from "./typesystem";
+import type {$expr_Literal} from "./literal";
 import type {
   $expr_PathLeaf,
   $expr_PathNode,
   $expr_TypeIntersection
-} from "../reflection/path";
+} from "./path";
 import {reservedKeywords} from "../reflection/reservedKeywords";
 import type {$expr_Cast} from "./cast";
 import type {$expr_Detached} from "./detached";
 import type {$expr_For, $expr_ForVar} from "./for";
-import type {$expr_Function, $expr_Operator} from "../reflection/funcops";
+import type {$expr_Function, $expr_Operator} from "./funcops";
 import type {$expr_Insert, $expr_InsertUnlessConflict} from "./insert";
 import type {$expr_Param, $expr_WithParams} from "./params";
 import type {

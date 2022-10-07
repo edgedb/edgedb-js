@@ -1,9 +1,5 @@
-import {
-  Expression,
-  ExpressionKind,
-  BaseType,
-  Cardinality,
-} from "../reflection/index";
+import {ExpressionKind, Cardinality} from "../reflection/index";
+import {Expression, BaseType} from "./typesystem";
 import {$expressionify} from "./path";
 
 export function makeGlobal<
@@ -15,7 +11,7 @@ export function makeGlobal<
     __name__: name,
     __element__: type,
     __cardinality__: card,
-    __kind__: ExpressionKind.Global,
+    __kind__: ExpressionKind.Global
   });
 }
 

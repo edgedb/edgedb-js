@@ -1,11 +1,5 @@
-import {
-  Expression,
-  BaseType,
-  BaseTypeSet,
-  Cardinality,
-  ExpressionKind,
-  cardutil
-} from "../reflection/index";
+import {Cardinality, ExpressionKind, cardutil} from "../reflection/index";
+import {Expression, BaseType, BaseTypeSet} from "./typesystem";
 import {$expressionify} from "./path";
 
 export type $expr_For<

@@ -1,16 +1,14 @@
+import {ExpressionKind, typeutil, Cardinality} from "../reflection/index";
 import {
   Expression,
-  ExpressionKind,
   ObjectTypePointers,
   TypeSet,
   ObjectTypeSet,
   stripBacklinks,
   stripNonUpdateables,
-  typeutil,
   ObjectTypeExpression,
-  $scopify,
-  Cardinality,
-} from "../reflection/index";
+  $scopify
+} from "./typesystem";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
 import {
@@ -18,7 +16,7 @@ import {
   NormalisedSelectModifiers,
   ComputeSelectCardinality,
   $existingScopes,
-  $handleModifiers,
+  $handleModifiers
 } from "./select";
 import {$normaliseInsertShape, pointerIsOptional} from "./insert";
 
@@ -123,6 +121,6 @@ export function update<
     __expr__: expr,
     __shape__: $normaliseInsertShape(expr, updateShape, true),
     __modifiers__: modifiers,
-    __scope__: scope,
+    __scope__: scope
   }) as any;
 }

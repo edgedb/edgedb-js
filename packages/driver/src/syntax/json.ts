@@ -1,4 +1,5 @@
-import {ExpressionKind, ParamType, TypeKind} from "../reflection/index";
+import {ExpressionKind, TypeKind} from "../reflection/index";
+import {ParamType} from "./typesystem";
 import type {$expr_WithParams} from "./params";
 
 function jsonStringify(type: ParamType, val: any): string {

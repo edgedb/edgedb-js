@@ -1,16 +1,13 @@
 import type {LocalDate, LocalDateTime, Duration} from "edgedb";
 import {Range} from "edgedb";
+import {TypeKind, cardutil, ExpressionKind} from "../reflection/index";
 import {
   RangeType,
-  $expr_Literal,
-  TypeKind,
   getPrimitiveBaseType,
   TypeSet,
-  $expr_Function,
-  cardutil,
-  BaseType,
-  ExpressionKind
-} from "../reflection/index";
+  BaseType
+} from "./typesystem";
+import {$expr_Literal} from "./literal";
 
 import type {
   $number,
@@ -28,7 +25,7 @@ import type {
 import {literalToTypeSet} from "@generated/castMaps";
 import {spec} from "@generated/__spec__";
 import {literal, $nameMapping} from "./literal";
-import {$resolveOverload} from "./funcops";
+import {$expr_Function, $resolveOverload} from "./funcops";
 import {$expressionify} from "./path";
 
 type $anypoint =
