@@ -2,9 +2,14 @@ import type {Executor} from "../ifaces";
 import type {$expr_PathNode, $expr_TypeIntersection, $pathify} from "./path";
 import type {$expr_Literal} from "./literal";
 import type {$expr_Operator} from "./funcops";
-import type {typeutil} from "./typeutil";
-import {Cardinality, ExpressionKind, OperatorKind, TypeKind} from "./enums";
-import {cardutil} from "./cardinality";
+import type {typeutil} from "../reflection/typeutil";
+import {
+  Cardinality,
+  ExpressionKind,
+  OperatorKind,
+  TypeKind
+} from "../reflection/enums";
+import {cardutil} from "../reflection/cardinality";
 import type {Range} from "../datatypes/range";
 
 //////////////////

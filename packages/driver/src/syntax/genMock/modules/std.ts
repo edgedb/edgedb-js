@@ -4,11 +4,11 @@ import {
   TypeSet,
   ScalarType,
   ObjectType,
-  $expr_PathNode,
-  Cardinality,
-  scalarTypeWithConstructor,
-} from "../../../reflection";
+  scalarTypeWithConstructor
+} from "../../typesystem";
 
+import type {$expr_PathNode} from "../../path";
+import {Cardinality} from "../../../reflection";
 declare function assert_single(input: TypeSet<BaseType>): any;
 
 declare const number: scalarTypeWithConstructor<

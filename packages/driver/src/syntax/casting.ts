@@ -1,10 +1,9 @@
-import type {
+import type {cardutil, Cardinality} from "../reflection/index";
+import {
   ArrayType,
   BaseType,
   BaseTypeTuple,
   BaseTypeToTsType,
-  cardutil,
-  Cardinality,
   EnumType,
   LinkDesc,
   NamedTupleType,
@@ -16,7 +15,8 @@ import type {
   TupleType,
   TypeSet,
   RangeType
-} from "../reflection/index";
+} from "./typesystem";
+
 import type {
   scalarCastableFrom,
   scalarAssignableBy

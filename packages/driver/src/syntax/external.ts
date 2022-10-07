@@ -1,4 +1,4 @@
-import type {TypeSet, setToTsType} from "../reflection/index";
+import type {TypeSet, setToTsType} from "./typesystem";
 
 export {literal} from "./literal";
 export {} from "./path";
@@ -11,7 +11,7 @@ export {
   EMPTY_LAST,
   is,
   delete,
-  select,
+  select
 } from "./select";
 export {update} from "./update";
 export {insert} from "./insert";

@@ -1,4 +1,5 @@
-import {Expression, ExpressionKind, TypeSet} from "../reflection/index";
+import {ExpressionKind} from "../reflection/index";
+import {Expression, TypeSet} from "./typesystem";
 import type {$expr_Select} from "./select";
 import type {$expr_For} from "./for";
 import type {$expr_Insert} from "./insert";
@@ -18,7 +19,7 @@ export function alias<Expr extends Expression>(expr: Expr): $expr_Alias<Expr> {
     __kind__: ExpressionKind.Alias,
     __element__: expr.__element__,
     __cardinality__: expr.__cardinality__,
-    __expr__: expr,
+    __expr__: expr
   }) as any;
 }
 
@@ -49,7 +50,7 @@ function _with<Refs extends Expression[], Expr extends WithableExpression>(
     __element__: expr.__element__,
     __cardinality__: expr.__cardinality__,
     __refs__: refs,
-    __expr__: expr as any,
+    __expr__: expr as any
   }) as any;
 }
 

@@ -6,15 +6,13 @@ import type {
   BaseType,
   $scopify,
   PropertyDesc,
-  LinkDesc,
-  // stripSet,
-  // LinkDesc,
-} from "../reflection/index";
+  LinkDesc
+} from "./typesystem";
 import {
   Cardinality,
   ExpressionKind,
   TypeKind,
-  makeType,
+  makeType
 } from "../reflection/index";
 import {$expressionify, $getScopedExpr} from "./path";
 // @ts-ignore
@@ -25,7 +23,7 @@ import {resolveShapeElement} from "./select";
 import type {
   normaliseShape,
   // normaliseElement,
-  objectTypeToSelectShape,
+  objectTypeToSelectShape
 } from "./select";
 
 type SingletonSet = Expression<
@@ -81,8 +79,8 @@ const makeGroupingSet =
         __kind__: "groupingset",
         __settype__: prefix,
         __elements__: grps,
-        __exprs__: filtered,
-      } as GroupingSet,
+        __exprs__: filtered
+      } as GroupingSet
     } as any;
   };
 const set = makeGroupingSet("set");
@@ -206,7 +204,7 @@ const groupFunc: groupFunc = (expr, getter) => {
   for (const [k, e] of grouping.__exprs__) {
     keyShape[k] = $expressionify({
       __element__: e.__element__,
-      __cardinality__: Cardinality.AtMostOne,
+      __cardinality__: Cardinality.AtMostOne
     } as any);
     keyPointers[k] = {
       __kind__: "property",
@@ -215,7 +213,7 @@ const groupFunc: groupFunc = (expr, getter) => {
       exclusive: false,
       computed: false,
       readonly: false,
-      hasDefault: false,
+      hasDefault: false
     } as PropertyDesc;
     keyShapeElement[k] = true;
   }
@@ -246,7 +244,7 @@ const groupFunc: groupFunc = (expr, getter) => {
           exclusive: false,
           computed: false,
           readonly: false,
-          hasDefault: false,
+          hasDefault: false
         } as PropertyDesc,
         key: {
           __kind__: "link",
@@ -255,16 +253,16 @@ const groupFunc: groupFunc = (expr, getter) => {
             __name__: "std::FreeObject",
             __pointers__: {
               ...($FreeObject as any).__pointers__,
-              ...keyPointers,
+              ...keyPointers
             },
-            __shape__: keyShape,
+            __shape__: keyShape
           },
           properties: {},
           cardinality: Cardinality.One,
           exclusive: false,
           computed: false,
           readonly: false,
-          hasDefault: false,
+          hasDefault: false
         } as LinkDesc,
 
         elements: {
@@ -275,33 +273,33 @@ const groupFunc: groupFunc = (expr, getter) => {
           exclusive: false,
           computed: false,
           readonly: false,
-          hasDefault: false,
-        } as LinkDesc,
+          hasDefault: false
+        } as LinkDesc
       },
       __shape__: {
         grouping: $expressionify({
           __element__: str,
-          __cardinality__: Cardinality.Many,
+          __cardinality__: Cardinality.Many
         } as any),
         key: $expressionify({
           __element__: {
             ...$FreeObject,
-            __shape__: keyShape,
+            __shape__: keyShape
           },
-          __cardinality__: Cardinality.One,
+          __cardinality__: Cardinality.One
         } as any),
         elements: $expressionify({
           __element__: {...expr.__element__, __shape__: shape} as any,
-          __cardinality__: Cardinality.Many,
-        } as any),
-      },
+          __cardinality__: Cardinality.Many
+        } as any)
+      }
     },
 
     __cardinality__: Cardinality.Many,
     __expr__: expr,
     __modifiers__: {by: grouping},
     __kind__: ExpressionKind.Group,
-    __scope__: scope,
+    __scope__: scope
   }) as any;
 };
 Object.assign(groupFunc, setFuncs);

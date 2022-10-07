@@ -1,14 +1,13 @@
 import type {Executor} from "edgedb";
+import {ExpressionKind, Cardinality, TypeKind} from "../reflection/index";
 import {
   Expression,
-  ExpressionKind,
   ParamType,
-  Cardinality,
   setToTsType,
   TypeSet,
-  TypeKind,
-  BaseTypeToTsType,
-} from "../reflection/index";
+  BaseTypeToTsType
+} from "./typesystem";
+
 import {$expressionify} from "./path";
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
@@ -21,7 +20,7 @@ export function optional<Type extends ParamType>(
 ): $expr_OptionalParam<Type> {
   return {
     __kind__: ExpressionKind.OptionalParam,
-    __type__: type,
+    __type__: type
   };
 }
 
@@ -125,7 +124,7 @@ export function params<
           ? Cardinality.AtMostOne
           : Cardinality.One,
       __name__: key,
-      __isComplex__: isComplex,
+      __isComplex__: isComplex
     }) as any;
   }
 
@@ -136,6 +135,6 @@ export function params<
     __element__: returnExpr.__element__,
     __cardinality__: returnExpr.__cardinality__,
     __expr__: returnExpr,
-    __params__: Object.values(paramExprs),
+    __params__: Object.values(paramExprs)
   }) as any;
 }

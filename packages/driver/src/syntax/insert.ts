@@ -1,26 +1,28 @@
 import {
   Cardinality,
-  Expression,
   ExpressionKind,
+  typeutil,
+  TypeKind
+} from "../reflection/index";
+import {
+  Expression,
   LinkDesc,
   ObjectTypeSet,
   ObjectTypePointers,
   PropertyDesc,
   stripBacklinks,
   stripNonInsertables,
-  typeutil,
   $scopify,
   stripSet,
-  TypeSet,
-  TypeKind,
-} from "../reflection/index";
+  TypeSet
+} from "./typesystem";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
 import {cast} from "./cast";
 import {set} from "./set";
 import {literal} from "./literal";
 import {$getTypeByName} from "./literal";
-import type {$expr_PathNode} from "../reflection/path";
+import type {$expr_PathNode} from "./path";
 import type {$Object} from "@generated/modules/std";
 import type {scalarLiterals} from "@generated/castMaps";
 
@@ -129,7 +131,7 @@ function unlessConflict(
     __kind__: ExpressionKind.InsertUnlessConflict,
     __element__: this.__element__,
     __cardinality__: Cardinality.AtMostOne,
-    __expr__: this,
+    __expr__: this
     // __conflict__: Conflict;
   };
 
@@ -272,7 +274,7 @@ export function insert<Root extends $expr_PathNode>(
     __element__: root.__element__,
     __cardinality__: Cardinality.One,
     __expr__: root,
-    __shape__: $normaliseInsertShape(root, shape),
+    __shape__: $normaliseInsertShape(root, shape)
   };
   (expr as any).unlessConflict = unlessConflict.bind(expr);
   return $expressionify($insertify(expr)) as any;

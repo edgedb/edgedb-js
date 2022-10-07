@@ -1,25 +1,27 @@
 import {
+  Cardinality,
+  cardutil,
+  ExpressionKind,
+  TypeKind,
+  typeutil
+} from "../reflection/index";
+import {
   $expr_Array,
   $expr_NamedTuple,
   $expr_Tuple,
   $expr_TuplePath,
   ArrayType,
   BaseType,
-  Cardinality,
-  cardutil,
-  ExpressionKind,
-  ExpressionRoot,
   getPrimitiveBaseType,
   NamedTupleLiteralShape,
   NamedTupleShape,
   NamedTupleType,
   NonArrayType,
   TupleType,
-  TypeKind,
-  TypeSet,
-  typeutil
-} from "../reflection/index";
-import {$expressionify} from "./path";
+  TypeSet
+} from "./typesystem";
+
+import {$expressionify, ExpressionRoot} from "./path";
 import type {getCardsFromExprs} from "./set";
 import {
   literalToScalarType,
@@ -301,8 +303,8 @@ export function tuple(input: any) {
   }
 }
 
-export type {
-  ArrayType as $Array,
-  NamedTupleType as $NamedTuple,
-  TupleType as $Tuple
-} from "../reflection/index";
+// export type {
+//   ArrayType as $Array,
+//   NamedTupleType as $NamedTuple,
+//   TupleType as $Tuple
+// } from "../reflection/index";

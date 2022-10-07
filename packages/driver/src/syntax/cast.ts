@@ -1,10 +1,5 @@
-import {
-  Expression,
-  ExpressionKind,
-  BaseType,
-  TypeSet,
-  Cardinality
-} from "../reflection/index";
+import {ExpressionKind, Cardinality} from "../reflection/index";
+import {Expression, BaseType, TypeSet} from "./typesystem";
 import {$expressionify} from "./path";
 import type {orScalarLiteral} from "@generated/castMaps";
 import {literalToTypeSet} from "@generated/castMaps";
