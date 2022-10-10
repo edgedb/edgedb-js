@@ -14,7 +14,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "play": "tsx playground.ts",
-    "build": "rm -rf dist && yarn build:cjs && yarn build:esm && yarn build:deno && chmod +x dist/cli.js && yarn syntax:make",
+    "build": "rm -rf dist && yarn build:cjs && yarn build:esm && yarn build:deno && chmod +x dist/cli.js && yarn syntax:make && yarn syntax:clean",
     "build:cjs": "tsc --project tsconfig.build.json",
     "build:esm": "tsc --project tsconfig.esm.json",
     "syntax:make": "tsx makeSyntax.ts",
