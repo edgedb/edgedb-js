@@ -18,7 +18,6 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
   const f = dir.getPath("castMaps");
   f.addImportStar("edgedb", "edgedb");
-  // f.addImport({$: true}, edgedb, {modes: ["ts", "dts"], typeOnly: true});
   f.addImportStar("$", "./reflection", {
     modes: ["ts", "dts"],
     allowFileExt: true,

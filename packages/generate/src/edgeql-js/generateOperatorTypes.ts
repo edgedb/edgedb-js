@@ -65,7 +65,6 @@ export function generateOperators({
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
   const code = dir.getPath("operators");
 
-  // code.addImport({$: true}, edgedb);
   code.addImportStar("$", "./reflection", {allowFileExt: true});
   code.addImportStar("_", "./imports", {allowFileExt: true});
 
