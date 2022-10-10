@@ -8,7 +8,6 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
 
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
 
-  // code.addImport({$: true}, edgedb, {allowFileExt: false});
   code.addImportStar("$", "./reflection", {allowFileExt: true});
   code.addImportStar("castMaps", "./castMaps", {
     allowFileExt: true,

@@ -18,8 +18,6 @@ const srcSyntax = path.join(__dirname, "src", "syntax");
 const distSyntax = path.join(__dirname, "dist", "syntax");
 const esmSyntax = path.join(__dirname, "dist", "__esm", "syntax");
 
-// const reReflection = /"\.\.\/reflection([a-zA-Z0-9\_\/]*)\.?(.*)"/g;
-// const reGenerated = /"@generated\/(.*)"/g;
 const reDriver = /"edgedb\/dist([a-zA-Z0-9\_\/]*)"/g;
 const reRelativeImports = /"(\.?\.\/.+)"/g;
 
@@ -55,13 +53,10 @@ async function run() {
   });
 
   // TS
-
   const tsFiles = await readGlob({
     pattern: "*.ts",
     cwd: srcSyntax,
     contentTx: content => content
-    // .replace(reReflection, `"edgedb/dist/reflection$1"`)
-    // .replace(reGenerated, `"../$1"`)
   });
 
   // CJS
@@ -70,25 +65,18 @@ async function run() {
     ...(await readGlob({
       pattern: "*.js",
       cwd: distSyntax,
-      contentTx: content =>
-        content
-          // .replace(reReflection, `"edgedb/dist/reflection$1.js"`)
-          .replace(reDriver, `"edgedb/dist$1.js"`)
-      // .replace(reGenerated, `"../$1"`)
+      contentTx: content => content.replace(reDriver, `"edgedb/dist$1.js"`)
     })),
     ...dtsFiles
   ];
 
   // ESM
-
   const justESM = await readGlob({
     pattern: "*.js",
     cwd: esmSyntax,
     pathTx: p => p.replace(/\.js/g, ".mjs"),
     contentTx: content =>
       content
-        // .replace(reReflection, `"edgedb/dist/reflection$1.js"`)
-        // .replace(reGenerated, `"../$1"`)
         .replace(reDriver, `"edgedb/dist$1.js"`)
         .replace(reRelativeImports, `"$1.mjs"`)
   });
@@ -104,9 +92,7 @@ async function run() {
     pathTx: p => p.replace(/\.ts/g, ".mts"),
     contentTx: content =>
       content
-        // .replace(reReflection, `"edgedb/dist/reflection$1.js"`)
         .replace(reDriver, `"edgedb/dist$1.js"`)
-        // .replace(reGenerated, `"../$1"`)
         .replace(reRelativeImports, `"$1.mjs"`)
   });
 
@@ -118,17 +104,9 @@ async function run() {
       if (content.indexOf("Buffer") !== -1) {
         content = `import {Buffer} from "https://deno.land/std@0.114.0/node/buffer.ts";\n\n${content}`;
       }
-      return (
-        content
-          // .replace(reReflection, `"edgedb/dist/reflection$1.ts"`)
-          .replace(reDriver, `"edgedb/_src$1.ts"`)
-          // .replace(
-          //   /"\.\.\/reflection([a-zA-Z0-9\.\_\/]*)"/g,
-          //   `"edgedb/_src/reflection$1.ts"`
-          // )
-          .replace(/"@generated\/(.*)"/g, `"../$1"`)
-          .replace(reRelativeImports, `"$1.ts"`)
-      );
+      return content
+        .replace(reDriver, `"edgedb/_src$1.ts"`)
+        .replace(reRelativeImports, `"$1.ts"`);
     }
   });
 
