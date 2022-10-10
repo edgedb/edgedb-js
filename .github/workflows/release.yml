@@ -6,7 +6,6 @@ on:
     branches:
       - master
       - ci
-      - edgeql-2
 
 jobs:
   build_and_publish:

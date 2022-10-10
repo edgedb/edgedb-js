@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - edgeql-2
 
 jobs:
   release:
