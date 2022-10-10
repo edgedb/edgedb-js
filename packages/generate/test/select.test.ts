@@ -1,5 +1,5 @@
 import * as edgedb from "edgedb";
-import {$} from "edgedb";
+import * as $ from "../src/syntax/reflection";
 import * as tc from "conditional-type-checks";
 
 import e, {$infer} from "../dbschema/edgeql-js";

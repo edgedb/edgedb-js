@@ -1,7 +1,7 @@
 import type * as edgedb from "edgedb";
 
 import e from "../dbschema/edgeql-js";
-import type {UpdateShape} from "../dbschema/edgeql-js/syntax/update";
+import type {UpdateShape} from "../dbschema/edgeql-js/syntax";
 import {setupTests, tc, teardownTests, TestData} from "./setupTeardown";
 
 let client: edgedb.Client;
@@ -22,31 +22,31 @@ afterAll(async () => {
 test("update", async () => {
   e.update(e.Hero, () => ({
     set: {
-      name: "asdf",
-    },
+      name: "asdf"
+    }
   })).toEdgeQL();
 
   e.update(e.Villain, () => ({
     set: {
       name: e.str("asdf"),
-      nemesis: e.cast($Hero, e.set()),
-    },
+      nemesis: e.cast($Hero, e.set())
+    }
   })).toEdgeQL();
 
   e.update(e.Bag, () => ({
     set: {
       stringsMulti: {
-        "+=": ["new string"],
-      },
-    },
+        "+=": ["new string"]
+      }
+    }
   })).toEdgeQL();
 
   e.update(e.Bag, () => ({
     set: {
       stringsMulti: {
-        "+=": "new string",
-      },
-    },
+        "+=": "new string"
+      }
+    }
   })).toEdgeQL();
 });
 
@@ -58,8 +58,8 @@ test("update assignable", () => {
       // @ts-expect-error
       bigintField: e.float32(324),
       // @ts-expect-error
-      float32Field: e.bigint(BigInt(1234)),
-    },
+      float32Field: e.bigint(BigInt(1234))
+    }
   })).toEdgeQL();
 
   e.update(e.Bag, () => ({
@@ -67,8 +67,8 @@ test("update assignable", () => {
       int32Field: 23,
       bigintField: BigInt(324),
       // @ts-expect-error
-      float32Field: BigInt(1234),
-    },
+      float32Field: BigInt(1234)
+    }
   })).toEdgeQL();
 
   e.update(e.Movie, () => ({
@@ -76,8 +76,8 @@ test("update assignable", () => {
       rating: null,
       profile: null,
       // @ts-expect-error release_year is required prop
-      release_year: null,
-    },
+      release_year: null
+    }
   })).toEdgeQL();
 });
 
@@ -109,7 +109,7 @@ test("update link property", async () => {
   const theAvengers = e
     .select(e.Movie, movie => ({
       filter: e.op(movie.title, "=", "The Avengers"),
-      limit: 1,
+      limit: 1
     }))
     .assert_single();
 
@@ -123,10 +123,10 @@ test("update link property", async () => {
     set: {
       characters: {
         "+=": e.select(e.Villain, villain => ({
-          filter: e.op(villain.name, "=", data.thanos.name),
-        })),
-      },
-    },
+          filter: e.op(villain.name, "=", data.thanos.name)
+        }))
+      }
+    }
   }));
   await q2.run(client);
 
@@ -140,10 +140,10 @@ test("update link property", async () => {
       set: {
         characters: {
           "-=": e.select(e.Villain, villain => ({
-            filter: e.op(villain.name, "=", data.thanos.name),
-          })),
-        },
-      },
+            filter: e.op(villain.name, "=", data.thanos.name)
+          }))
+        }
+      }
     }))
     .run(client);
 
@@ -155,8 +155,8 @@ test("update link property", async () => {
   await e
     .update(theAvengers, () => ({
       set: {
-        characters: e.cast($Villain, e.set()),
-      },
+        characters: e.cast($Villain, e.set())
+      }
     }))
     .run(client);
 
@@ -173,9 +173,9 @@ test("update link property", async () => {
             hero.id,
             "in",
             e.set(e.uuid(data.cap.id), e.uuid(data.iron_man.id))
-          ),
-        })),
-      },
+          )
+        }))
+      }
     }))
     .run(client);
 

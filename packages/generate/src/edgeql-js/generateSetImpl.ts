@@ -4,19 +4,13 @@ import {getImplicitCastableRootTypes} from "../funcoputil";
 import {getStringRepresentation} from "./generateObjectTypes";
 
 export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
-  const code = dir.getPath("syntax/setImpl");
+  const code = dir.getPath("setImpl");
 
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
-  const edgedb = "edgedb";
 
-  code.addImport(
-    {
-      $: true
-    },
-    edgedb,
-    {allowFileExt: false}
-  );
-  code.addImportStar("castMaps", "../castMaps", {
+  // code.addImport({$: true}, edgedb, {allowFileExt: false});
+  code.addImportStar("$", "./reflection", {allowFileExt: true});
+  code.addImportStar("castMaps", "./castMaps", {
     allowFileExt: true,
     modes: ["ts", "js", "dts"]
   });

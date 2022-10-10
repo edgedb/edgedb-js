@@ -24,23 +24,18 @@
   "devDependencies": {
     "@js-temporal/polyfill": "^0.4.1",
     "get-stdin": "^7.0.0",
-    "globby": "^13.1.2",
     "node-fetch": "2.6.7",
     "typescript": "~4.4"
   },
   "scripts": {
-    "build": "echo 'Building edgedb-js...' && yarn build:cjs && yarn build:esm && yarn build:deno && yarn syntax:make && yarn syntax:clean && yarn set-version",
-    "build:esm": "tsc --project tsconfig.esm.json",
+    "build": "echo 'Building edgedb-js...' && yarn build:cjs && yarn build:deno",
     "build:cjs": "tsc --project tsconfig.json",
-    "build:deno": "deno run --unstable --allow-all tools/compileForDeno.ts && yarn syntax:make --deno",
-    "syntax:make": "tsx ./tools/makeSyntax.ts",
-    "syntax:clean": "tsx ./tools/cleanSyntax.ts",
+    "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
     "test": "jest --detectOpenHandles",
-    "set-version": "./tools/setPackageVersion.sh",
     "lint": "tslint 'packages/*/src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
-    "gen-errors": "edb gen-errors-json --client | node tools/genErrors.js",
+    "gen-errors": "edb gen-errors-json --client | node genErrors.js",
     "watch": "nodemon -e js,ts,tsx --ignore dist -x ",
-    "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno && yarn syntax:make"
+    "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno"
   }
 }

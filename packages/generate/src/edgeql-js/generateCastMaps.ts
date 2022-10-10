@@ -17,9 +17,13 @@ export const generateCastMaps = (params: GeneratorParams) => {
   const {implicitCastMap} = casts;
 
   const f = dir.getPath("castMaps");
-  const edgedb = "edgedb";
-  f.addImportStar("edgedb", edgedb);
-  f.addImport({$: true}, edgedb, {modes: ["ts", "dts"], typeOnly: true});
+  f.addImportStar("edgedb", "edgedb");
+  // f.addImport({$: true}, edgedb, {modes: ["ts", "dts"], typeOnly: true});
+  f.addImportStar("$", "./reflection", {
+    modes: ["ts", "dts"],
+    allowFileExt: true,
+    typeOnly: true
+  });
 
   // if is Deno
   // @ts-ignore
@@ -366,7 +370,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   f.writeln([t`  [k in keyof T]: literalToTypeSet<T[k]>;`]);
   f.writeln([t`};\n\n`]);
 
-  f.addImportStar("literal", "./syntax/literal", {allowFileExt: true});
+  f.addImportStar("literal", "./literal", {allowFileExt: true});
 
   f.writeln([
     dts`declare `,

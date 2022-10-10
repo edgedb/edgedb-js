@@ -1,4 +1,4 @@
-import type {$} from "edgedb";
+import type * as $ from "../src/syntax/reflection";
 import e from "../dbschema/edgeql-js";
 import {tc} from "./setupTeardown";
 

@@ -1,16 +1,17 @@
 import type {$} from "edgedb";
+import type {cardutil} from "../src/syntax/cardinality";
 import {tc} from "./setupTeardown";
 
 test("multiply$.Cardinality", () => {
   tc.assert<
     tc.IsExact<
-      $.cardutil.multiplyCardinalities<$.Cardinality.One, $.Cardinality.One>,
+      cardutil.multiplyCardinalities<$.Cardinality.One, $.Cardinality.One>,
       $.Cardinality.One
     >
   >(true);
   tc.assert<
     tc.IsExact<
-      $.cardutil.multiplyCardinalities<
+      cardutil.multiplyCardinalities<
         $.Cardinality.AtLeastOne,
         $.Cardinality.Many
       >,
@@ -19,7 +20,7 @@ test("multiply$.Cardinality", () => {
   >(true);
   tc.assert<
     tc.IsExact<
-      $.cardutil.multiplyCardinalities<
+      cardutil.multiplyCardinalities<
         $.Cardinality.AtLeastOne,
         $.Cardinality.AtLeastOne
       >,
@@ -28,7 +29,7 @@ test("multiply$.Cardinality", () => {
   >(true);
   tc.assert<
     tc.IsExact<
-      $.cardutil.multiplyCardinalities<
+      cardutil.multiplyCardinalities<
         $.Cardinality.AtMostOne,
         $.Cardinality.AtMostOne
       >,
@@ -37,10 +38,7 @@ test("multiply$.Cardinality", () => {
   >(true);
   tc.assert<
     tc.IsExact<
-      $.cardutil.multiplyCardinalities<
-        $.Cardinality.Empty,
-        $.Cardinality.Many
-      >,
+      cardutil.multiplyCardinalities<$.Cardinality.Empty, $.Cardinality.Many>,
       $.Cardinality.Empty
     >
   >(true);
@@ -49,17 +47,14 @@ test("multiply$.Cardinality", () => {
 test("merge$.Cardinality", () => {
   tc.assert<
     tc.IsExact<
-      $.cardutil.mergeCardinalities<
-        $.Cardinality.AtMostOne,
-        $.Cardinality.One
-      >,
+      cardutil.mergeCardinalities<$.Cardinality.AtMostOne, $.Cardinality.One>,
       $.Cardinality.AtLeastOne
     >
   >(true);
 
   tc.assert<
     tc.IsExact<
-      $.cardutil.mergeCardinalities<
+      cardutil.mergeCardinalities<
         $.Cardinality.AtMostOne,
         $.Cardinality.AtMostOne
       >,
@@ -69,14 +64,14 @@ test("merge$.Cardinality", () => {
 
   tc.assert<
     tc.IsExact<
-      $.cardutil.mergeCardinalities<$.Cardinality.One, $.Cardinality.One>,
+      cardutil.mergeCardinalities<$.Cardinality.One, $.Cardinality.One>,
       $.Cardinality.AtLeastOne
     >
   >(true);
 
   tc.assert<
     tc.IsExact<
-      $.cardutil.mergeCardinalities<
+      cardutil.mergeCardinalities<
         $.Cardinality.Empty,
         $.Cardinality.AtLeastOne
       >,
@@ -86,14 +81,14 @@ test("merge$.Cardinality", () => {
 
   tc.assert<
     tc.IsExact<
-      $.cardutil.mergeCardinalities<$.Cardinality.One, $.Cardinality.Many>,
+      cardutil.mergeCardinalities<$.Cardinality.One, $.Cardinality.Many>,
       $.Cardinality.AtLeastOne
     >
   >(true);
 
   tc.assert<
     tc.IsExact<
-      $.cardutil.mergeCardinalitiesVariadic<
+      cardutil.mergeCardinalitiesVariadic<
         [$.Cardinality.One, $.Cardinality.Empty, $.Cardinality.AtMostOne]
       >,
       $.Cardinality.AtLeastOne

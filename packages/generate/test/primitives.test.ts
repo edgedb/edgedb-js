@@ -1,6 +1,6 @@
 import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql-js";
-import type {getSharedParentPrimitiveVariadic} from "../dbschema/edgeql-js/syntax/syntax";
+import type {getSharedParentPrimitiveVariadic} from "../dbschema/edgeql-js/syntax";
 import {setupTests, tc, teardownTests} from "./setupTeardown";
 
 let client: edgedb.Client;
@@ -82,7 +82,7 @@ test("range primitives", async () => {
       range: e.range(range),
       lowerRange: e.range(lowerRange),
       upperRange: e.range(upperRange),
-      dateRange: e.range(dateRange),
+      dateRange: e.range(dateRange)
     })
     .run(client);
 
@@ -102,7 +102,7 @@ test("range primitives", async () => {
     range: range,
     lowerRange: lowerRange,
     upperRange: new edgedb.Range(null, 8, false),
-    dateRange: dateRange,
+    dateRange: dateRange
   });
 
   const getLower = e.range_get_lower(e.Bag.rangeField);
@@ -115,12 +115,12 @@ test("range primitives", async () => {
   const q2 = e.params(
     {
       range: e.range(e.int32),
-      rangeArray: e.array(e.range(e.datetime)),
+      rangeArray: e.array(e.range(e.datetime))
     },
     $ =>
       e.select({
         range: $.range,
-        rangeArray: $.rangeArray,
+        rangeArray: $.rangeArray
       })
   );
 
@@ -138,15 +138,15 @@ test("range primitives", async () => {
   await e
     .insert(e.Bag, {
       stringsMulti: "test",
-      rangeField: range,
+      rangeField: range
     })
     .run(client);
 
   await e
     .update(e.Bag, () => ({
       set: {
-        rangeField: e.range(lowerRange),
-      },
+        rangeField: e.range(lowerRange)
+      }
     }))
     .run(client);
 

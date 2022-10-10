@@ -1,6 +1,6 @@
 import type {Client} from "edgedb";
 import type {Villain} from "../dbschema/edgeql-js/modules/default";
-import type {InsertShape} from "../dbschema/edgeql-js/syntax/insert";
+import type {InsertShape} from "../dbschema/edgeql-js/insert";
 import e from "../dbschema/edgeql-js";
 import {$} from "edgedb";
 

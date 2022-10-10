@@ -5,7 +5,6 @@ import {Param, replaceNumberTypes, Typemod} from "./functions";
 import {util} from "../util";
 import {typeutil} from "../typeutil";
 import {OperatorKind} from "../enums";
-import type {Version} from "./queryTypes";
 
 export type {Typemod};
 
@@ -24,10 +23,7 @@ export type OperatorTypes = typeutil.depromisify<
   ReturnType<typeof getOperators>
 >;
 
-export const getOperators = async (
-  cxn: Executor,
-  _params: {version: Version}
-) => {
+export const getOperators = async (cxn: Executor) => {
   const operatorsJson = await cxn.queryJSON(`
     with module schema
     select Operator {

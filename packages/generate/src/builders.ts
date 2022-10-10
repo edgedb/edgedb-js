@@ -727,9 +727,8 @@ export class DirBuilder {
     }
 
     const mod = this.getPath(`modules/${this._modules.get(moduleName)}`);
-    const edgedb = "edgedb";
 
-    mod.addImport({$: true}, edgedb);
+    mod.addImportStar("$", "../reflection", {allowFileExt: true});
     mod.addImportStar("_", "../imports", {allowFileExt: true});
 
     // @ts-ignore
