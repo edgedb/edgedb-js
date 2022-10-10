@@ -3,7 +3,7 @@ export enum Cardinality {
   One = "One",
   Many = "Many",
   AtLeastOne = "AtLeastOne",
-  Empty = "Empty",
+  Empty = "Empty"
 }
 
 export enum TypeKind {
@@ -14,7 +14,7 @@ export enum TypeKind {
   namedtuple = "namedtuple",
   tuple = "tuple",
   array = "array",
-  range = "range",
+  range = "range"
 }
 
 export enum ExpressionKind {
@@ -45,19 +45,19 @@ export enum ExpressionKind {
   Detached = "Detached",
   Global = "Global",
   PolyShapeElement = "PolyShapeElement",
-  Group = "Group",
+  Group = "Group"
 }
 
 export enum SelectModifierKind {
   filter = "filter",
   order_by = "order_by",
   offset = "offset",
-  limit = "limit",
+  limit = "limit"
 }
 
 export enum OperatorKind {
   Infix = "Infix",
   Postfix = "Postfix",
   Prefix = "Prefix",
-  Ternary = "Ternary",
+  Ternary = "Ternary"
 }

@@ -1,4 +1,5 @@
-import {Client, $} from "edgedb";
+import type {Client} from "edgedb";
+import * as $ from "../src/syntax/reflection";
 import e, {$infer, sys} from "../dbschema/edgeql-js";
 import {tc} from "./setupTeardown";
 
@@ -23,6 +24,7 @@ test("array literal", async () => {
   expect(strArrayType.__element__.__name__).toEqual("std::str");
 
   const arg = e.array(["asdf", e.str("qwer")]);
+
   type arg = $.setToTsType<typeof arg>;
   tc.assert<tc.IsExact<arg, string[]>>(true);
   expect(arg.__kind__).toEqual($.ExpressionKind.Array);
@@ -63,7 +65,7 @@ test("array literal", async () => {
   const multiArrayResult = await client.query(e.select(multiArray).toEdgeQL());
   expect(multiArrayResult).toEqual([
     ["asdf", "qwer"],
-    ["asdf", "erty"],
+    ["asdf", "erty"]
   ]);
 
   const multi0 = multiArray[0];
@@ -83,7 +85,7 @@ test("array literal", async () => {
       slice4: arr[":4"],
       reverseSlice2: arr["-2:"],
       reverseSlice4: arr[":-4"],
-      reverseSlice24: arr["-4:-2"],
+      reverseSlice24: arr["-4:-2"]
     })
     .run(client);
   tc.assert<
@@ -108,7 +110,7 @@ test("array literal", async () => {
       slice4: ["z", "x", "c", "v"],
       reverseSlice2: ["n", "m"],
       reverseSlice4: ["z", "x", "c"],
-      reverseSlice24: ["v", "b"],
+      reverseSlice24: ["v", "b"]
     })
   );
 
@@ -161,7 +163,7 @@ test("tuple literal", async () => {
   const multiTupleResult = await client.query(e.select(multiTuple).toEdgeQL());
   expect(multiTupleResult).toEqual([
     ["asdf", "qwer"],
-    ["asdf", "erty"],
+    ["asdf", "erty"]
   ]);
   const multiTuplePath = multiTuple[0];
   tc.assert<tc.IsExact<$infer<typeof multiTuplePath>, [string, ...string[]]>>(
@@ -191,7 +193,7 @@ test("tuple literal", async () => {
 
   const nestedTuple = e.tuple([
     "a",
-    e.tuple(["b", e.set(e.str("c"), e.str("d"))]),
+    e.tuple(["b", e.set(e.str("c"), e.str("d"))])
   ]);
   type nestedTuple = $infer<typeof nestedTuple>;
   tc.assert<
@@ -203,14 +205,14 @@ test("tuple literal", async () => {
   const nestedTupleResult = await e.select(nestedTuple).run(client);
   expect(nestedTupleResult).toEqual([
     ["a", ["b", "c"]],
-    ["a", ["b", "d"]],
+    ["a", ["b", "d"]]
   ]);
   const nestedTuplePathResult = await e
     .select({
       tup0: nestedTuple[0],
       tup1: nestedTuple[1],
       tup10: nestedTuple[1][0],
-      tup11: nestedTuple[1][1],
+      tup11: nestedTuple[1][1]
     })
     .run(client);
   tc.assert<
@@ -228,10 +230,10 @@ test("tuple literal", async () => {
     tup0: ["a", "a"],
     tup1: [
       ["b", "c"],
-      ["b", "d"],
+      ["b", "d"]
     ],
     tup10: ["b", "b"],
-    tup11: ["c", "d"],
+    tup11: ["c", "d"]
   });
 
   const heroNamesTuple = e.tuple([e.Hero.name]);
@@ -255,7 +257,7 @@ test("tuple literal", async () => {
 test("namedTuple literal", async () => {
   const tupleType = e.tuple({
     string: e.str,
-    number: e.int64,
+    number: e.int64
   });
   expect(tupleType.__kind__).toEqual($.TypeKind.namedtuple);
   expect(tupleType.__shape__.string.__kind__).toEqual($.TypeKind.scalar);
@@ -265,7 +267,7 @@ test("namedTuple literal", async () => {
 
   const named = e.tuple({
     string: "asdf",
-    number: 1234,
+    number: 1234
   });
 
   type named = $.setToTsType<typeof named>;
@@ -299,7 +301,7 @@ test("namedTuple literal", async () => {
   const nested = e.tuple({
     a: "asdf",
     named: e.tuple({b: 123}),
-    tuple: e.tuple([true, e.set(e.str("x"), e.str("y"))]),
+    tuple: e.tuple([true, e.set(e.str("x"), e.str("y"))])
   });
   const nestedResult = await e
     .select({
@@ -308,7 +310,7 @@ test("namedTuple literal", async () => {
       nestedNamed: nested.named,
       nestedTuple: nested.tuple,
       nestedTuple0: nested.tuple[0],
-      nestedTuple1: nested.tuple[1],
+      nestedTuple1: nested.tuple[1]
     })
     .run(client);
   tc.assert<
@@ -328,16 +330,16 @@ test("namedTuple literal", async () => {
     JSON.stringify({
       nested: [
         {a: "asdf", named: {b: 123}, tuple: [true, "x"]},
-        {a: "asdf", named: {b: 123}, tuple: [true, "y"]},
+        {a: "asdf", named: {b: 123}, tuple: [true, "y"]}
       ],
       nestedA: ["asdf", "asdf"],
       nestedNamed: [{b: 123}, {b: 123}],
       nestedTuple: [
         [true, "x"],
-        [true, "y"],
+        [true, "y"]
       ],
       nestedTuple0: [true, true],
-      nestedTuple1: ["x", "y"],
+      nestedTuple1: ["x", "y"]
     })
   );
 
@@ -347,7 +349,7 @@ test("namedTuple literal", async () => {
   expect(emptyNamedTuple.__cardinality__).toEqual($.Cardinality.Empty);
 
   const multiNamedTuple = e.tuple({
-    hero: e.Hero,
+    hero: e.Hero
   });
   type multiNamedTuple = $.setToTsType<typeof multiNamedTuple>;
   tc.assert<
@@ -378,7 +380,7 @@ test("non literal tuples", async () => {
       verMajor: ver.major,
       verStage: ver.stage,
       verLocal: ver.local,
-      verLocal0: ver.local[0],
+      verLocal0: ver.local[0]
     })
     .run(client);
 
@@ -405,11 +407,11 @@ test("non literal tuples", async () => {
     major: result.verMajor,
     stage: result.verStage,
     local: result.verLocal,
-    local0: result.verLocal0,
+    local0: result.verLocal0
   }).toEqual({
     major: result.ver.major,
     stage: result.ver.stage,
     local: result.ver.local,
-    local0: result.ver.local[0],
+    local0: result.ver.local[0]
   });
 });

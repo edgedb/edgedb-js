@@ -1,7 +1,8 @@
 import superjson from "superjson";
-import {$, Client} from "edgedb";
+import type {Client} from "edgedb";
 import e from "../dbschema/edgeql-js";
-import type {$expr_Operator} from "edgedb/dist/reflection";
+import * as $ from "../src/syntax/reflection";
+
 import {TestData, setupTests, teardownTests} from "./setupTeardown";
 
 let client: Client;
@@ -16,7 +17,7 @@ afterAll(async () => {
   await teardownTests(client);
 });
 
-function checkOperatorExpr<T extends $expr_Operator>(
+function checkOperatorExpr<T extends $.$expr_Operator>(
   expr: T,
   name: T["__name__"],
   args: any[],
@@ -156,7 +157,7 @@ test("if else op", () => {
     [
       e.str("this"),
       e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
-      e.set(e.str("that"), e.str("other")),
+      e.set(e.str("that"), e.str("other"))
     ],
     e.str,
     $.Cardinality.AtLeastOne,
@@ -175,7 +176,7 @@ test("if else op", () => {
     [
       e.cast(e.str, e.set()),
       e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
-      e.set(e.str("that"), e.str("other")),
+      e.set(e.str("that"), e.str("other"))
     ],
     e.str,
     $.Cardinality.Many,
@@ -194,7 +195,7 @@ test("if else op", () => {
     [
       e.str("this"),
       e.op(42, "=", e.literal(e.float32, 42)),
-      e.cast(e.str, e.set()),
+      e.cast(e.str, e.set())
     ],
     e.str,
     $.Cardinality.AtMostOne,
@@ -204,10 +205,10 @@ test("if else op", () => {
 
 test("non-literal args", async () => {
   const loki = e.select(e.Hero, hero => ({
-    filter: e.op(hero.name, "=", "Loki"),
+    filter: e.op(hero.name, "=", "Loki")
   }));
   const thanos = e.select(e.Villain, villain => ({
-    filter: e.op(villain.name, "=", "Thanos"),
+    filter: e.op(villain.name, "=", "Thanos")
   }));
 
   const expr = e.op(loki, "??", thanos);

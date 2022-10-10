@@ -1,7 +1,7 @@
 import superjson from "superjson";
-import {$} from "edgedb";
+import * as $ from "../src/syntax/reflection";
 import e from "../dbschema/edgeql-js";
-import type {$expr_Function} from "edgedb/dist/reflection";
+import type {$expr_Function} from "../src/syntax/funcops";
 import {tc} from "./setupTeardown";
 import {number} from "../dbschema/edgeql-js/modules/std";
 
@@ -44,7 +44,7 @@ test("no args", () => {
       minor: e.int64,
       stage: e.sys.VersionStage,
       stage_no: e.int64,
-      local: e.array(e.str),
+      local: e.array(e.str)
     }),
     $.Cardinality.One
   );
@@ -106,7 +106,7 @@ test("positional args", () => {
 
   const datetime_getArgs2 = [
     e.datetime(new Date()),
-    e.set(e.str("day"), e.str("month"), e.str("year")),
+    e.set(e.str("day"), e.str("month"), e.str("year"))
   ] as const;
   checkFunctionExpr(
     e.datetime_get(...datetime_getArgs2),
@@ -345,7 +345,7 @@ test("anytype", () => {
     "std::contains",
     [
       e.literal(e.array(e.str), ["test", "haystack"]),
-      e.set(e.str("needle"), e.str("haystack")),
+      e.set(e.str("needle"), e.str("haystack"))
     ],
     {},
     e.bool,
@@ -360,7 +360,7 @@ test("anytype", () => {
     "std::contains",
     [
       e.literal(e.array(e.int16), [1, 2, 3]),
-      e.cast(e.int64, e.bigint(BigInt(2))),
+      e.cast(e.int64, e.bigint(BigInt(2)))
     ],
     {},
     e.bool,
@@ -385,7 +385,7 @@ test("anytype", () => {
     "std::array_get",
     [
       e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.int64(4),
+      e.int64(4)
     ],
     {default: e.bigint(BigInt(0))},
     e.bigint,
@@ -489,7 +489,7 @@ test("cardinality inference", () => {
     "std::array_get",
     [
       e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-      e.int64(1),
+      e.int64(1)
     ],
     {},
     e.bigint,
@@ -558,11 +558,11 @@ test("assert_*", () => {
   const atLeastOneSet = e.set("str", "str2");
   const atMostOneSet = {
     ...oneSet,
-    __cardinality__: $.Cardinality.AtMostOne,
+    __cardinality__: $.Cardinality.AtMostOne
   } as unknown as $.TypeSet<typeof e.str, $.Cardinality.AtMostOne>;
   const manySet = {
     ...atLeastOneSet,
-    __cardinality__: $.Cardinality.Many,
+    __cardinality__: $.Cardinality.Many
   } as unknown as $.TypeSet<typeof e.str, $.Cardinality.Many>;
 
   expect(emptySet.__cardinality__).toEqual($.Cardinality.Empty);

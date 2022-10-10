@@ -11,10 +11,15 @@
     // aren't imported as 'import type' in other parts of the generated
     // querybuilder, so set this option to ensure we always do that
     "importsNotUsedAsValues": "error",
+    // "paths": {
+    //   "./*": [
+    //     "./src/syntax/genMock/*"
+    //   ],
+    // }
   },
   "include": [
     "src",
     "test",
     "playground.ts"
-  ]
+  ],
 }

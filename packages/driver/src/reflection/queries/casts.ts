@@ -1,5 +1,4 @@
 import {Executor} from "../../ifaces";
-import type {Version} from "./queryTypes";
 import type {typeutil} from "../typeutil";
 import {typeMapping} from "./types";
 
@@ -31,10 +30,7 @@ const reachableFrom: (
 
 export type Casts = typeutil.depromisify<ReturnType<typeof getCasts>>;
 
-export const getCasts = async (
-  cxn: Executor,
-  params: {version: Version; debug?: boolean}
-) => {
+export const getCasts = async (cxn: Executor, params?: {debug?: boolean}) => {
   const allCastsRaw = await cxn.queryJSON(`WITH MODULE schema
         SELECT Cast {
             id,

@@ -1,5 +1,5 @@
-import {$} from "edgedb";
-import type {PropertyDesc} from "edgedb/dist/reflection";
+import * as $ from "../src/syntax/reflection";
+import type {PropertyDesc} from "../src/syntax/typesystem";
 import e from "../dbschema/edgeql-js";
 import type {$str} from "../dbschema/edgeql-js/modules/std";
 import {tc} from "./setupTeardown";
