@@ -1,8 +1,8 @@
 .. _edgedb-js-queries:
 
-===========
-Query Files
-===========
+================
+Query Files #New
+================
 
 The ``queries`` generator scans your project for ``*.edgeql`` files and generates functions that allow you to execute these queries in a typesafe way.
 
@@ -157,8 +157,6 @@ A single file will be generated that exports two functions, ``getUser`` and ``ge
       └── getUser.edgeql
       └── getMovies.edgeql
 
-
-To use these functions in your code:
 
 We can now use this function in our code.
 

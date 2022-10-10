@@ -1,7 +1,7 @@
 {
   "name": "edgeql-js",
   "version": "1.0.0",
-  "description": "Issues warning when npx edgeql-js is executed without locally installed package.",
+  "description": "Issues warning when `npx edgeql-js` is executed without locally installed package.",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
   "engines": {
