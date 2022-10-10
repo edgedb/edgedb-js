@@ -3,7 +3,7 @@
 // import {setupTests} from "./test/setupTeardown";
 import {createClient} from "edgedb";
 import e from "./edgeql-js/index.mjs";
-import {freeShape} from "./queries.mjs";
+import {freeShape, scalarQuery} from "./queries.mjs";
 
 async function run() {
   try {
@@ -18,6 +18,7 @@ async function run() {
       throw new Error();
     }
 
+    await scalarQuery(client);
     const shapeData = await freeShape(client, {data: "Iron Man"});
 
     if (shapeData.data !== "Iron Man") {

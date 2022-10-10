@@ -1,6 +1,6 @@
 {
   "name": "@edgedb/generate",
-  "version": "0.0.1",
+  "version": "0.0.2-alpha.1",
   "description": "EdgeDB code generators for TS/JavaScript",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
@@ -12,6 +12,25 @@
     "url": "https://github.com/edgedb/edgedb-js.git"
   },
   "license": "Apache-2.0",
+  "sideEffects": false,
+  "files": [
+    "/dist"
+  ],
+  "bin": "dist/cli.js",
+  "peerDependencies": {
+    "edgedb": "^1.0.0-alpha.0"
+  },
+  "devDependencies": {
+    "conditional-type-checks": "^1.0.5",
+    "edgedb": "~1.0.0-alpha.0",
+    "esbuild": "^0.15.7",
+    "globby": "^13.1.2",
+    "superjson": "^1.7.5",
+    "typescript": "~4.8"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3"
+  },
   "scripts": {
     "play": "tsx playground.ts",
     "build": "rm -rf dist && yarn build:cjs && yarn build:esm && yarn build:deno && chmod +x dist/cli.js && yarn syntax:make && yarn syntax:clean",
@@ -32,20 +51,5 @@
     "test:ci": "tsx test/testRunner.ts",
     "test:v1": "tsx test/testQBv1.ts",
     "setup:v1": "edgedb project init --no-migrations && edgedb migrate --to-revision m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq"
-  },
-  "bin": "dist/cli.js",
-  "peerDependencies": {
-    "edgedb": "^0.23.0"
-  },
-  "devDependencies": {
-    "conditional-type-checks": "^1.0.5",
-    "edgedb": "~0.23.0",
-    "esbuild": "^0.15.7",
-    "globby": "^13.1.2",
-    "superjson": "^1.7.5",
-    "typescript": "~4.8"
-  },
-  "dependencies": {
-    "chokidar": "^3.5.3"
   }
 }

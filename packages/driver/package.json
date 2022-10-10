@@ -1,6 +1,6 @@
 {
   "name": "edgedb",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-alpha.1",
   "description": "The official Node.js client library for EdgeDB",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
@@ -31,7 +31,7 @@
     "typescript": "~4.4"
   },
   "scripts": {
-    "build": "echo 'Building edgedb-js...' && yarn build:cjs && yarn build:deno",
+    "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",
     "build:cjs": "tsc --project tsconfig.json",
     "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
     "test": "jest --detectOpenHandles",
