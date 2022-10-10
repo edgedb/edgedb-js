@@ -184,17 +184,26 @@ function generateFiles(params: {
   }
   const tsImports = {Client: true, ...imports};
 
-  const tsImpl = `async function ${functionName}(client: Client, args: ${
-    params.types.args
+  const hasArgs = params.types.args && params.types.args !== "null";
+  const tsImpl = `async function ${functionName}(client: Client${
+    hasArgs ? `, args: ${params.types.args}` : ""
   }): Promise<${params.types.out}> {
-  return client.${method}(\`${params.types.query.replace("`", "`")}\`, args)
+  return client.${method}(\`${params.types.query.replace("`", "`")}\`${
+    hasArgs ? `, args` : ""
+  });
 }`;
 
-  const jsImpl = `async function ${functionName}(client, args){
-  return client.${method}(\`${params.types.query.replace("`", "`")}\`, args);
+  const jsImpl = `async function ${functionName}(client${
+    hasArgs ? `, args` : ""
+  }) {
+  return client.${method}(\`${params.types.query.replace("`", "`")}\`${
+    hasArgs ? `, args` : ""
+  });
 }`;
 
-  const dtsImpl = `function ${functionName}(client: Client, params: ${params.types.args}): Promise<${params.types.out}>;`;
+  const dtsImpl = `function ${functionName}(client: Client${
+    hasArgs ? `, args: ${params.types.args}` : ""
+  }): Promise<${params.types.out}>;`;
 
   switch (params.target) {
     case "cjs":

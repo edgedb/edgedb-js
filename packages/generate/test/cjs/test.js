@@ -1,7 +1,7 @@
 // tslint:disable:no-console
 const {createClient} = require("edgedb");
 const e = require("./edgeql-js").default;
-const {freeShape} = require("./queries");
+const {freeShape, scalarQuery} = require("./queries");
 
 async function run() {
   try {
@@ -15,7 +15,7 @@ async function run() {
     if (result.msg !== "Hello world" || result.num !== 35) {
       throw new Error();
     }
-
+    await scalarQuery(client);
     const movies = await freeShape(client, {data: "hello world"});
 
     if (movies.data !== "hello world") {

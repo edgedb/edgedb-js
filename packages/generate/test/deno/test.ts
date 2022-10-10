@@ -4,7 +4,7 @@
 import {createClient} from "edgedb";
 
 import e from "./edgeql-js/index.ts";
-import {freeShape} from "./queries.ts";
+import {freeShape, scalarQuery} from "./queries.ts";
 
 try {
   const client = createClient();
@@ -18,6 +18,7 @@ try {
     throw new Error();
   }
 
+  await scalarQuery(client);
   const movies = await freeShape(client, {data: "sup"});
   if (movies.data !== "sup") {
     throw new Error("Failure: --deno");

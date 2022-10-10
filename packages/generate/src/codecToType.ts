@@ -6,6 +6,7 @@ import {ICodec, ScalarCodec} from "edgedb/dist/codecs/ifaces";
 import {NamedTupleCodec} from "edgedb/dist/codecs/namedtuple";
 import {ObjectCodec} from "edgedb/dist/codecs/object";
 import {RangeCodec} from "edgedb/dist/codecs/range";
+import {NullCodec} from "edgedb/dist/codecs/codecs";
 import {SetCodec} from "edgedb/dist/codecs/set";
 import {TupleCodec} from "edgedb/dist/codecs/tuple";
 import {Cardinality, OutputFormat} from "edgedb/dist/ifaces";
@@ -92,6 +93,9 @@ function walkCodec(
   codec: ICodec,
   ctx: {indent: string; optionalNulls: boolean; imports: Set<string>}
 ): string {
+  if (codec instanceof NullCodec) {
+    return "null";
+  }
   if (codec instanceof ScalarCodec) {
     if (codec instanceof EnumCodec) {
       return codec.values.map(val => JSON.stringify(val)).join(" | ");
@@ -144,5 +148,5 @@ function walkCodec(
     ctx.imports.add("Range");
     return `Range<${subCodec.tsType}>`;
   }
-  throw Error(`unexpected codec kind: ${codec.getKind()}`);
+  throw Error(`Unexpected codec kind: ${codec.getKind()}`);
 }
