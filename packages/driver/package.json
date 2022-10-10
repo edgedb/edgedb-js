@@ -21,6 +21,9 @@
   "browser": {
     "./dist/index.node.js": "./dist/index.browser.js"
   },
+  "bin": {
+    "edgeql-js": "./dist/cli.js"
+  },
   "devDependencies": {
     "@js-temporal/polyfill": "^0.4.1",
     "get-stdin": "^7.0.0",

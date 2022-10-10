@@ -17,7 +17,7 @@ import {generateSetImpl} from "./edgeql-js/generateSetImpl";
 const {fs, path, exists, readFileUtf8, exit, walk} = adapter;
 const DEBUG = false;
 
-export const configFileHeader = `// EdgeDB query builder. To update, run \`npx edgeql-js\``;
+export const configFileHeader = `// EdgeDB query builder. To update, run \`npx @edgedb/generate edgeql-js\``;
 
 export type GeneratorParams = {
   dir: DirBuilder;
