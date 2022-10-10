@@ -71,18 +71,19 @@ async function run() {
   ];
 
   // ESM
-  const justESM = await readGlob({
-    pattern: "*.js",
-    cwd: esmSyntax,
-    pathTx: p => p.replace(/\.js/g, ".mjs"),
-    contentTx: content =>
-      content
-        .replace(reDriver, `"edgedb/dist$1.js"`)
-        .replace(reRelativeImports, `"$1.mjs"`)
-  });
-  console.log(`Found ${justESM.length} ESM files`);
 
-  const esmFiles = [...justESM, ...dtsFiles];
+  const esmFiles = [
+    ...(await readGlob({
+      pattern: "*.js",
+      cwd: esmSyntax,
+      pathTx: p => p.replace(/\.js/g, ".mjs"),
+      contentTx: content =>
+        content
+          .replace(reDriver, `"edgedb/dist$1.js"`)
+          .replace(reRelativeImports, `"$1.mjs"`)
+    })),
+    ...dtsFiles
+  ];
 
   // MTS
 

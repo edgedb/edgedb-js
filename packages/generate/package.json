@@ -1,6 +1,6 @@
 {
   "name": "@edgedb/generate",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "EdgeDB code generators for TS/JavaScript",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
@@ -33,9 +33,7 @@
     "test:v1": "tsx test/testQBv1.ts",
     "setup:v1": "edgedb project init --no-migrations && edgedb migrate --to-revision m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq"
   },
-  "bin": {
-    "generate": "dist/cli.js"
-  },
+  "bin": "dist/cli.js",
   "peerDependencies": {
     "edgedb": "^0.23.0"
   },
