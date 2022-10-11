@@ -78,13 +78,13 @@ project to exclude these files.`
         await promptBoolean(
           gitIgnoreFile === null
             ? `Checking the generated query builder into version control
-is NOT RECOMMENDED. Would you like to create a .gitignore file to ignore
+is not recommended. Would you like to create a .gitignore file to ignore
 the query builder directory? `
             : `Checking the generated query builder into version control
-is NOT RECOMMENDED. Would you like to update .gitignore to ignore
+is not recommended. Would you like to update .gitignore to ignore
 the query builder directory? The following line will be added:
 
-  ${vcsLine}\n\n`,
+   ${vcsLine}\n\n`,
           true
         )
       ) {

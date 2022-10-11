@@ -118,10 +118,10 @@ to your ``.gitignore`` that excludes the generated files.
   $ npx @edgedb/generate edgeql-js
   ...
   Checking the generated query builder into version control
-  is NOT RECOMMENDED. Would you like to update .gitignore to ignore
+  is not recommended. Would you like to update .gitignore to ignore
   the query builder directory? The following line will be added:
 
-  dbschema/edgeql-js
+     dbschema/edgeql-js
 
   [y/n] (leave blank for "y")
 
