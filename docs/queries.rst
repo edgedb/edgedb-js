@@ -164,7 +164,7 @@ A single file will be generated that exports two functions, ``getUser`` and ``ge
       └── getMovies.edgeql
 
 
-We can now use this function in our code.
+We can now use these functions in our code.
 
 .. code-block:: typescript
 

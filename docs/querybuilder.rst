@@ -104,7 +104,7 @@ The query builder generates code that depends on the ``edgedb`` module. The gene
 Version control
 ^^^^^^^^^^^^^^^
 
-The first time you run generator, you'll be prompted to add the generated
+The first time you run the generator, you'll be prompted to add the generated
 files to your ``.gitignore``. Confirm this prompt to automatically add a line
 to your ``.gitignore`` that excludes the generated files.
 

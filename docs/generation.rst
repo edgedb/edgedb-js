@@ -74,7 +74,7 @@ Run a generator with the following command.
 
 .. code-block:: bash
 
-  $ npx edgedb generate <generator> [options]
+  $ npx @edgedb/generate <generator> [options]
 
 
 **Deno**
