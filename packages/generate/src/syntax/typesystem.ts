@@ -7,7 +7,7 @@ import type {
   Cardinality,
   ExpressionKind
 } from "edgedb/dist/reflection/index";
-import {OperatorKind, TypeKind} from "edgedb/dist/reflection/index";
+import {TypeKind} from "edgedb/dist/reflection/index";
 import type {cardutil} from "./cardinality";
 import type {Range} from "edgedb";
 

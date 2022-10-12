@@ -72,6 +72,7 @@ export function update<
   Expr extends ObjectTypeExpression,
   Shape extends {
     filter?: SelectModifiers["filter"];
+    filter_single?: SelectModifiers["filter"];
     order_by?: SelectModifiers["order_by"];
     limit?: SelectModifiers["limit"];
     offset?: SelectModifiers["offset"];
@@ -105,7 +106,7 @@ export function update<
   const mods: any = {};
   let updateShape: any | null;
   for (const [key, val] of Object.entries(resolvedShape)) {
-    if (key === "filter") {
+    if (key === "filter" || key === "filter_single") {
       mods[key] = val;
     } else if (key === "set") {
       updateShape = val;

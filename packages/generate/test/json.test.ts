@@ -37,7 +37,7 @@ test("select one", async () => {
 
   const result = await query.runJSON(client);
   tc.assert<tc.IsExact<typeof result, string>>(true);
-  expect(result).toEqual('{"title" : "The Avengers"}');
+  expect(result).toEqual('[{"title" : "The Avengers"}]');
 });
 
 test("json properties", async () => {

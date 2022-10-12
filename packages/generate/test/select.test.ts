@@ -1158,10 +1158,12 @@ test("select *", async () => {
     }))
     .run(client);
 
-  expect(allFields).toEqual({
-    ...data.the_avengers,
-    characters: undefined
-  });
+  expect(allFields).toEqual([
+    {
+      ...data.the_avengers,
+      characters: undefined
+    }
+  ]);
 });
 
 test("select required multi link", async () => {

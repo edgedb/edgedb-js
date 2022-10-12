@@ -145,7 +145,7 @@ export function generateOperators({
         }
       }
 
-      let hasLiterals = false;
+      // let hasLiterals = false;
       overloadsBuf.indented(() => {
         for (const param of params.positional) {
           const anytype = getParamAnytype(param.typeName, param.type);
@@ -160,7 +160,7 @@ export function generateOperators({
 
           if (allowsLiterals(param.type, anytypes)) {
             type = frag`_.castMaps.orScalarLiteral<${type}>`;
-            hasLiterals = true;
+            // hasLiterals = true;
           }
 
           overloadsBuf.writeln([t`${param.typeName} extends ${type},`]);
@@ -199,9 +199,9 @@ export function generateOperators({
         }
       });
 
-      const paramTypeNames = params.positional
-        .map(param => param.typeName)
-        .join(", ");
+      // const paramTypeNames = params.positional
+      //   .map(param => param.typeName)
+      //   .join(", ");
 
       const returnAnytype = anytypes
         ? anytypes.kind === "castable"

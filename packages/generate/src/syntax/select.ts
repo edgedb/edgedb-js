@@ -12,7 +12,6 @@ import type {$bool, $number} from "./modules/std";
 import {
   Cardinality,
   ExpressionKind,
-  OperatorKind,
   TypeKind
 } from "edgedb/dist/reflection/index";
 import {makeType} from "./hydrate";
@@ -39,21 +38,17 @@ import type {
   $expr_PathLeaf,
   $expr_PathNode,
   $linkPropify,
-  ExpressionRoot,
-  PathParent
+  ExpressionRoot
 } from "./path";
 import type {anonymizeObject} from "./casting";
-import type {$expr_Operator} from "./funcops";
 import {$expressionify, $getScopedExpr} from "./path";
 import {$getTypeByName, literal} from "./literal";
 import {spec} from "./__spec__";
 import {
   scalarLiterals,
   literalToScalarType,
-  literalToTypeSet,
-  orScalarLiteral
+  literalToTypeSet
 } from "./castMaps";
-import type {typeutil} from "edgedb/src/reflection";
 
 export const ASC: "ASC" = "ASC";
 export const DESC: "DESC" = "DESC";
@@ -91,31 +86,31 @@ export type LimitExpression = TypeSet<
 
 export type SelectModifierNames =
   | "filter"
+  | "filter_single"
   | "order_by"
   | "offset"
-  | "limit"
-  | "filter_single";
+  | "limit";
 
-export type SelectModifiers<T extends ObjectType = ObjectType> = {
+// export type SelectModifiers<T extends ObjectType = ObjectType> = {
+export type SelectModifiers = {
   filter?: SelectFilterExpression;
-  filter_single?:
-    | SelectFilterExpression
-    | (ObjectType extends T
-        ? unknown
-        : typeutil.stripNever<{
-            [k in keyof T["__pointers__"]]: T["__pointers__"][k] extends PropertyDesc<
-              infer T,
-              infer C,
-              infer E
-            >
-              ? E extends true
-                ? orScalarLiteral<{
-                    __element__: T;
-                    __cardinality__: C;
-                  }>
-                : never
-              : never;
-          }>);
+  filter_single?: SelectFilterExpression;
+  // | (ObjectType extends T
+  //     ? unknown
+  //     : typeutil.stripNever<{
+  //         [k in keyof T["__pointers__"]]: T["__pointers__"][k] extends PropertyDesc<
+  //           infer T,
+  //           infer C,
+  //           infer E
+  //         >
+  //           ? E extends true
+  //             ? orScalarLiteral<{
+  //                 __element__: T;
+  //                 __cardinality__: C;
+  //               }>
+  //             : never
+  //           : never;
+  //       }>);
   order_by?: OrderByExpression;
   offset?: OffsetExpression | number;
   limit?: LimitExpression | number;
@@ -325,11 +320,9 @@ export type ComputeSelectCardinality<
   Expr extends ObjectTypeExpression,
   Modifiers extends UnknownSelectModifiers
 > = InferOffsetLimitCardinality<
-  "filter_single" extends keyof Modifiers
-    ? undefined extends Modifiers["filter_single"]
-      ? Expr["__cardinality__"]
-      : cardutil.overrideUpperBound<Expr["__cardinality__"], "One">
-    : Expr["__cardinality__"],
+  undefined extends Modifiers["filter_single"]
+    ? Expr["__cardinality__"]
+    : cardutil.overrideUpperBound<Expr["__cardinality__"], "One">,
   Modifiers
 >;
 
@@ -422,81 +415,83 @@ export function $handleModifiers(
   modifiers: SelectModifiers,
   params: {root: TypeSet; scope: TypeSet}
 ): {modifiers: NormalisedSelectModifiers; cardinality: Cardinality} {
-  const {root, scope} = params;
+  const {root} = params;
   const mods: NormalisedSelectModifiers = {
     singleton: "filter_single" in modifiers
   };
 
   let card = root.__cardinality__;
 
-  if (mods.filter && root.__element__.__kind__ === TypeKind.object) {
-    if (modifiers.filter_single) {
-      card = Cardinality.AtMostOne;
-    }
+  if (modifiers.filter) {
+    mods.filter = modifiers.filter;
     // card = computeFilterCardinality(mods.filter, card, rootExpr);
   }
 
   if (modifiers.filter_single) {
-    const fs: any = modifiers.filter_single;
-    if (fs.__element__) {
-      mods.filter = modifiers.filter_single as any;
-    } else {
-      const exprs = Object.keys(fs).map(
-        key =>
-          $expressionify({
-            __element__: {
-              __name__: "std::bool",
-              __kind__: TypeKind.scalar
-            } as any,
-            __cardinality__: Cardinality.One,
-            __kind__: ExpressionKind.Operator,
-            __opkind__: OperatorKind.Infix,
-            __name__: "=",
-            __args__: [(scope as any)[key], literalToTypeSet(fs[key])]
-          }) as $expr_Operator
-      );
-      if (exprs.length === 1) {
-        mods.filter = exprs[0] as any;
-      } else {
-        mods.filter = exprs.reduce((a, b) => {
-          return $expressionify({
-            __element__: {
-              __name__: "std::bool",
-              __kind__: TypeKind.scalar
-            } as any,
-            __cardinality__: Cardinality.One,
-            __kind__: ExpressionKind.Operator,
-            __opkind__: OperatorKind.Infix,
-            __name__: "and",
-            __args__: [a, b]
-          }) as $expr_Operator;
-        }) as any;
-      }
-    }
+    card = Cardinality.AtMostOne;
+    mods.filter = modifiers.filter_single;
+    // const fs: any = modifiers.filter_single;
+    // if (fs.__element__) {
+    //   mods.filter = modifiers.filter_single as any;
+    // } else {
+    //   const exprs = Object.keys(fs).map(
+    //     key =>
+    //       $expressionify({
+    //         __element__: {
+    //           __name__: "std::bool",
+    //           __kind__: TypeKind.scalar
+    //         } as any,
+    //         __cardinality__: Cardinality.One,
+    //         __kind__: ExpressionKind.Operator,
+    //         __opkind__: OperatorKind.Infix,
+    //         __name__: "=",
+    //         __args__: [(scope as any)[key], literalToTypeSet(fs[key])]
+    //       }) as $expr_Operator
+    //   );
+    //   if (exprs.length === 1) {
+    //     mods.filter = exprs[0] as any;
+    //   } else {
+    //     mods.filter = exprs.reduce((a, b) => {
+    //       return $expressionify({
+    //         __element__: {
+    //           __name__: "std::bool",
+    //           __kind__: TypeKind.scalar
+    //         } as any,
+    //         __cardinality__: Cardinality.One,
+    //         __kind__: ExpressionKind.Operator,
+    //         __opkind__: OperatorKind.Infix,
+    //         __name__: "and",
+    //         __args__: [a, b]
+    //       }) as $expr_Operator;
+    //     }) as any;
+    //   }
+    // }
   }
-  if (mods.order_by) {
-    const orderExprs = Array.isArray(mods.order_by)
-      ? mods.order_by
-      : [mods.order_by];
+  if (modifiers.order_by) {
+    const orderExprs = Array.isArray(modifiers.order_by)
+      ? modifiers.order_by
+      : [modifiers.order_by];
     mods.order_by = orderExprs.map(expr =>
       typeof (expr as any).__element__ === "undefined"
         ? expr
         : {expression: expr}
     ) as any;
   }
-  if (mods.offset) {
+  if (modifiers.offset) {
     mods.offset =
-      typeof mods.offset === "number"
-        ? ($getTypeByName("std::number")(mods.offset) as any)
-        : mods.offset;
+      typeof modifiers.offset === "number"
+        ? ($getTypeByName("std::number")(modifiers.offset) as any)
+        : modifiers.offset;
     card = cardutil.overrideLowerBound(card, "Zero");
   }
-  if (mods.limit) {
-    let expr = mods.limit;
-    if (typeof expr === "number") {
-      expr = $getTypeByName("std::number")(expr) as any;
-    } else if ((expr as any).__kind__ === ExpressionKind.Set) {
-      expr = (expr as any).__exprs__[0];
+  if (modifiers.limit) {
+    let expr: LimitExpression;
+    if (typeof modifiers.limit === "number") {
+      expr = $getTypeByName("std::number")(modifiers.limit) as any;
+    } else if ((modifiers.limit as any).__kind__ === ExpressionKind.Set) {
+      expr = (modifiers.limit as any).__exprs__[0];
+    } else {
+      throw new Error("Invalid value for `limit` modifier");
     }
     mods.limit = expr;
     card = cardutil.overrideLowerBound(card, "Zero");
@@ -775,8 +770,7 @@ export const $existingScopes = new Set<
 
 function $shape<
   Expr extends ObjectTypeExpression,
-  Shape extends objectTypeToSelectShape<Expr["__element__"]> &
-    SelectModifiers<Expr["__element__"]>
+  Shape extends objectTypeToSelectShape<Expr["__element__"]> & SelectModifiers //<Expr["__element__"]>
 >(
   expr: Expr,
   _shape: (
@@ -808,7 +802,8 @@ export function select<Expr extends TypeSet>(
 ): $expr_Select<stripSet<Expr>>;
 export function select<
   Expr extends ObjectTypeExpression,
-  Shape extends objectTypeToSelectShape<Expr["__element__"]> & SelectModifiers
+  Shape extends objectTypeToSelectShape<Expr["__element__"]> & SelectModifiers, //<Expr['__element__']>,,
+  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
   shape: (
@@ -825,7 +820,7 @@ export function select<
     Expr["__element__"]["__pointers__"],
     Omit<normaliseShape<Shape>, SelectModifierNames>
   >;
-  __cardinality__: ComputeSelectCardinality<Expr, Shape>;
+  __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
 }>;
 /*
 
@@ -1029,6 +1024,7 @@ function resolveShape(
     // handle modifier keys
     if (
       key === "filter" ||
+      key === "filter_single" ||
       key === "order_by" ||
       key === "offset" ||
       key === "limit"
@@ -1088,7 +1084,10 @@ export function resolveShapeElement(
     } = resolveShape(value as any, childExpr);
 
     // extracts normalized modifiers
-    const {modifiers} = $handleModifiers(mods, childExpr);
+    const {modifiers} = $handleModifiers(mods, {
+      root: childExpr,
+      scope: childScope
+    });
 
     return {
       __kind__: ExpressionKind.Select,

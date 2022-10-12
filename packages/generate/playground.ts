@@ -5,13 +5,12 @@ import e from "./dbschema/edgeql-js";
 async function run() {
   const {client} = await setupTests();
 
-  const movies = await e.select(e.Movie, movie => ({
-    title: true,
-    characters: {name: true},
-    filter_single: e.op(movie.title, "=", "The Matrix")
+  const query = e.select(e.Hero.name, el => ({
+    filter: e.op(el, "ilike", "%man%")
   }));
+  console.log(query.toEdgeQL());
 
-  const result = await movies.run(client);
+  const result = await query.run(client);
   console.log(result);
 }
 
