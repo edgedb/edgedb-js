@@ -7,11 +7,11 @@ import {literalToTypeSet} from "./castMaps";
 export function cast<Target extends BaseType>(
   target: Target,
   arg: null
-): $expr_Cast<Target, TypeSet<Target, Cardinality.Empty>>;
+): $expr_Cast<Target, Cardinality.Empty>;
 export function cast<Target extends BaseType, Expr extends TypeSet>(
   target: Target,
   expr: orScalarLiteral<Expr>
-): $expr_Cast<Target, Expr>;
+): $expr_Cast<Target, Expr["__cardinality__"]>;
 export function cast(target: BaseType, expr: any) {
   const cleanedExpr = expr === null ? null : literalToTypeSet(expr);
   return $expressionify({
@@ -25,10 +25,10 @@ export function cast(target: BaseType, expr: any) {
 
 export type $expr_Cast<
   Target extends BaseType = BaseType,
-  Expr extends TypeSet = TypeSet
+  Card extends Cardinality = Cardinality
 > = Expression<{
   __element__: Target;
-  __cardinality__: Expr["__cardinality__"];
+  __cardinality__: Card;
   __kind__: ExpressionKind.Cast;
-  __expr__: Expr | null;
+  __expr__: TypeSet | null;
 }>;

@@ -26,7 +26,7 @@ export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
           const targetTypeRep = getStringRepresentation(targetType, {types});
           return [
             t`  ${name}: _.syntax.$expr_Global<
-              "${g.name}",
+              // "${g.name}",
               ${targetTypeRep.staticType},
               $.Cardinality.${g.real_cardinality}
               >`,

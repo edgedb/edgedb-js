@@ -33,11 +33,11 @@ export function generateOperatorFunctions({
     false,
     (code, opDef, args, namedArgs, returnType) => {
       // Name
-      code.writeln([t`${quote(opDef.originalName)},`]);
+      // code.writeln([t`${quote(opDef.originalName)},`]);
       // OperatorKind
-      code.writeln([t`$.OperatorKind.${opDef.operator_kind},`]);
+      // code.writeln([t`$.OperatorKind.${opDef.operator_kind},`]);
       // Args
-      code.writeln([t`${args}`]);
+      // code.writeln([t`${args}`]);
       // ReturnType
       code.writeln([t`${returnType}`]);
     },
@@ -228,15 +228,15 @@ export function generateOperators({
 
       overloadsBuf.writeln([t`): $.$expr_Operator<`]);
       overloadsBuf.indented(() => {
-        overloadsBuf.writeln([t`${quote(opSymbol)},`]);
-        overloadsBuf.writeln([t`$.OperatorKind.${opDef.operator_kind},`]);
-        overloadsBuf.writeln([
-          t`${
-            hasLiterals
-              ? `_.castMaps.mapLiteralToTypeSet<[${paramTypeNames}]>`
-              : `[${paramTypeNames}]`
-          },`
-        ]);
+        // overloadsBuf.writeln([t`${quote(opSymbol)},`]);
+        // overloadsBuf.writeln([t`$.OperatorKind.${opDef.operator_kind},`]);
+        // overloadsBuf.writeln([
+        //   t`${
+        //     hasLiterals
+        //       ? `_.castMaps.mapLiteralToTypeSet<[${paramTypeNames}]>`
+        //       : `[${paramTypeNames}]`
+        //   },`
+        // ]);
         overloadsBuf.writeln([
           t`$.TypeSet<${returnType.staticType}, ${generateReturnCardinality(
             opName,

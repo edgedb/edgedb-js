@@ -55,6 +55,7 @@ type Hero extending Person {
     link profile -> Profile {
       constraint exclusive;
     }
+    index on (.title, .release_year);
   }
 
   type Profile {

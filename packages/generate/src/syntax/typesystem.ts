@@ -58,18 +58,18 @@ type $jsonDestructure<Set extends TypeSet> =
   Set["__element__"] extends ScalarType<"std::json">
     ? {
         [path: string]: $expr_Operator<
-          "[]",
-          OperatorKind.Infix,
-          [Set, TypeSet],
+          // "[]",
+          // OperatorKind.Infix,
+          // [Set, TypeSet],
           TypeSet<Set["__element__"], Set["__cardinality__"]>
         >;
       } & {
         destructure<T extends TypeSet<ScalarType<"std::str">> | string>(
           path: T
         ): $expr_Operator<
-          "[]",
-          OperatorKind.Infix,
-          [Set, TypeSet],
+          // "[]",
+          // OperatorKind.Infix,
+          // [Set, TypeSet],
           TypeSet<
             Set["__element__"],
             cardutil.multiplyCardinalities<
@@ -167,7 +167,7 @@ export type ExpressionMethods<Set extends TypeSet> = {
   is<T extends ObjectTypeSet>(
     ixn: T
   ): $expr_TypeIntersection<
-    {__cardinality__: Set["__cardinality__"]; __element__: Set["__element__"]},
+    Set["__cardinality__"],
     // might cause performance issues
     ObjectType<
       T["__element__"]["__name__"],
@@ -202,12 +202,14 @@ export interface ObjectType<
   Name extends string = string,
   Pointers extends ObjectTypePointers = ObjectTypePointers,
   Shape extends object | null = any
+  // Exclusives extends {[k: string]: TypeSet}[] = {[k: string]: TypeSet}[]
   // Polys extends Poly[] = any[]
 > extends BaseType {
   __kind__: TypeKind.object;
   __name__: Name;
   __pointers__: Pointers;
   __shape__: Shape;
+  // __exclusives__: Exclusives;
 }
 
 export type PropertyTypes =
@@ -244,9 +246,9 @@ export interface PropertyDesc<
 }
 
 export type $scopify<Type extends ObjectType> = $expr_PathNode<
-  TypeSet<Type, Cardinality.One>,
-  null,
-  true // exclusivity
+  TypeSet<Type, Cardinality.One>
+  // null,
+  // true // exclusivity
 >;
 
 export type PropertyShape = {
@@ -399,9 +401,9 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
   | ScalarType<"std::bytes">
   ? {
       [index: number]: $expr_Operator<
-        "[]",
-        OperatorKind.Infix,
-        [Set, TypeSet],
+        // "[]",
+        // OperatorKind.Infix,
+        // [Set, TypeSet],
         TypeSet<
           getPrimitiveBaseType<
             Set["__element__"] extends ArrayType<infer El>
@@ -412,9 +414,9 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         >
       >;
       [slice: `${number}:${number | ""}` | `:${number}`]: $expr_Operator<
-        "[]",
-        OperatorKind.Infix,
-        [Set, TypeSet],
+        // "[]",
+        // OperatorKind.Infix,
+        // [Set, TypeSet],
         TypeSet<
           getPrimitiveBaseType<Set["__element__"]>,
           Set["__cardinality__"]
@@ -423,9 +425,9 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
       index<T extends TypeSet<ScalarType<"std::number">> | number>(
         index: T
       ): $expr_Operator<
-        "[]",
-        OperatorKind.Infix,
-        [Set, TypeSet],
+        // "[]",
+        // OperatorKind.Infix,
+        // [Set, TypeSet],
         TypeSet<
           getPrimitiveBaseType<
             Set["__element__"] extends ArrayType<infer El>
@@ -449,9 +451,9 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         start: S,
         end: E
       ): $expr_Operator<
-        "[]",
-        OperatorKind.Infix,
-        [Set, TypeSet],
+        // "[]",
+        // OperatorKind.Infix,
+        // [Set, TypeSet],
         TypeSet<
           getPrimitiveBaseType<Set["__element__"]>,
           cardutil.multiplyCardinalities<
@@ -473,9 +475,9 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         start: undefined | null,
         end: E
       ): $expr_Operator<
-        "[]",
-        OperatorKind.Infix,
-        [Set, TypeSet],
+        // "[]",
+        // OperatorKind.Infix,
+        // [Set, TypeSet],
         TypeSet<
           getPrimitiveBaseType<Set["__element__"]>,
           cardutil.multiplyCardinalities<
@@ -556,7 +558,7 @@ export type $expr_Tuple<
   Items extends typeutil.tupleOf<TypeSet> = typeutil.tupleOf<TypeSet>
 > = Expression<{
   __kind__: ExpressionKind.Tuple;
-  __items__: Items;
+  __items__: typeutil.tupleOf<TypeSet>;
   __element__: tupleElementsToTupleType<Items>;
   __cardinality__: cardutil.multiplyCardinalitiesVariadic<
     tupleElementsToCardTuple<Items>

@@ -65,9 +65,9 @@ function range<
   lower?: P1,
   upper?: P2
 ): $expr_Function<
-  "std::range",
-  mapLiteralToTypeSet<[P1, P2]>,
-  mapLiteralToTypeSet<NamedArgs>,
+  // "std::range",
+  // mapLiteralToTypeSet<[P1, P2]>,
+  // mapLiteralToTypeSet<NamedArgs>,
   TypeSet<
     RangeType<
       literalToScalarType<P1> extends $anypoint
@@ -106,9 +106,9 @@ function range<
   lower?: P1,
   upper?: P2
 ): $expr_Function<
-  "std::range",
-  mapLiteralToTypeSet<[P1, P2]>,
-  {},
+  // "std::range",
+  // mapLiteralToTypeSet<[P1, P2]>,
+  // {},
   TypeSet<
     RangeType<
       literalToScalarType<P1> extends $anypoint

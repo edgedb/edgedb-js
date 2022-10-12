@@ -92,15 +92,15 @@ export type pathifyPointers<
         string]: Root["__element__"]["__pointers__"][k] extends PropertyDesc
         ? $expr_PathLeaf<
             getChildOfObjectTypeSet<Root, k>,
-            {type: anonymizeObjectTypeSet<Root>; linkName: k},
-            Root["__element__"]["__pointers__"][k]["exclusive"]
+            {type: anonymizeObjectTypeSet<Root>; linkName: k}
+            // Root["__element__"]["__pointers__"][k]["exclusive"]
           >
         : Root["__element__"]["__pointers__"][k] extends LinkDesc
         ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
           ? $expr_PathNode<
               getChildOfObjectTypeSet<Root, k>,
-              {type: anonymizeObjectTypeSet<Root>; linkName: k},
-              Root["__element__"]["__pointers__"][k]["exclusive"]
+              {type: anonymizeObjectTypeSet<Root>; linkName: k}
+              // Root["__element__"]["__pointers__"][k]["exclusive"]
             >
           : unknown
         : unknown;
@@ -130,8 +130,8 @@ export type pathifyShape<
                 Shape[k]["__cardinality__"]
               >
             >,
-            {type: Root; linkName: k},
-            false
+            {type: Root; linkName: k}
+            // false
           >
         : Shape[k] extends TypeSet
         ? $expr_PathLeaf<
@@ -142,8 +142,8 @@ export type pathifyShape<
                 Shape[k]["__cardinality__"]
               >
             >,
-            {type: Root; linkName: k},
-            false
+            {type: Root; linkName: k}
+            // false
           >
         : // must be unknown (not never) to avoid overriding
           // a pointer with the same key
@@ -164,8 +164,9 @@ type pathifyLinkProps<
             Props[k]["cardinality"]
           >
         >,
-        {type: $expr_PathNode<Root, Parent>; linkName: k},
-        Props[k]["exclusive"]
+        {type: $expr_PathNode<Root, Parent>; linkName: k}
+        // {type: $expr_PathNode<Root>; linkName: k},
+        // Props[k]["exclusive"]
       >
     : unknown;
 };
@@ -180,37 +181,37 @@ export type getPropsShape<T extends ObjectType> = typeutil.flatten<
 
 export type $expr_PathNode<
   Root extends ObjectTypeSet = ObjectTypeSet,
-  Parent extends PathParent | null = PathParent | null,
-  Exclusive extends boolean = boolean
+  Parent extends PathParent | null = PathParent | null
+  // Exclusive extends boolean = boolean
 > = Expression<{
   __element__: Root["__element__"];
   __cardinality__: Root["__cardinality__"];
   __parent__: Parent;
   __kind__: ExpressionKind.PathNode;
-  __exclusive__: Exclusive;
+  // __exclusive__: boolean;
   "*": getPropsShape<Root["__element__"]>;
 }>;
 
 export type $expr_TypeIntersection<
-  Expr extends TypeSet = TypeSet,
+  Card extends Cardinality = Cardinality,
   Intersection extends ObjectType = ObjectType
 > = Expression<{
   __element__: Intersection;
-  __cardinality__: Expr["__cardinality__"];
+  __cardinality__: Card;
   __kind__: ExpressionKind.TypeIntersection;
-  __expr__: Expr;
+  __expr__: TypeSet;
 }>;
 
 export type $expr_PathLeaf<
   Root extends TypeSet = TypeSet,
-  Parent extends PathParent = PathParent,
-  Exclusive extends boolean = boolean
+  Parent extends PathParent = PathParent
+  // Exclusive extends boolean = boolean
 > = Expression<{
   __element__: Root["__element__"];
   __cardinality__: Root["__cardinality__"];
   __kind__: ExpressionKind.PathLeaf;
   __parent__: Parent;
-  __exclusive__: Exclusive;
+  // __exclusive__: boolean;
 }>;
 
 export type ExpressionRoot = {
@@ -228,33 +229,33 @@ function PathLeaf<
   parent: Parent,
   exclusive: Exclusive,
   scopeRoot: TypeSet | null = null
-): $expr_PathLeaf<Root, Parent, Exclusive> {
+): $expr_PathLeaf<Root, Parent> {
   return $expressionify({
     __kind__: ExpressionKind.PathLeaf,
     __element__: root.__element__,
     __cardinality__: root.__cardinality__,
     __parent__: parent,
-    __exclusive__: exclusive,
+    // __exclusive__: exclusive,
     __scopeRoot__: scopeRoot
   }) as any;
 }
 
 function PathNode<
   Root extends ObjectTypeSet,
-  Parent extends PathParent | null,
-  Exclusive extends boolean = boolean
+  Parent extends PathParent | null
+  // Exclusive extends boolean = boolean
 >(
   root: Root,
   parent: Parent,
-  exclusive: Exclusive,
+  // exclusive: boolean,
   scopeRoot: TypeSet | null = null
-): $expr_PathNode<Root, Parent, Exclusive> {
+): $expr_PathNode<Root, Parent> {
   const obj = {
     __kind__: ExpressionKind.PathNode,
     __element__: root.__element__,
     __cardinality__: root.__cardinality__,
     __parent__: parent,
-    __exclusive__: exclusive,
+    // __exclusive__: exclusive,
     __scopeRoot__: scopeRoot
   };
 
@@ -310,7 +311,7 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
     return _root as any;
   }
 
-  const root: $expr_PathNode<ObjectTypeSet, Parent> = _root as any;
+  const root: $expr_PathNode<ObjectTypeSet> = _root as any;
 
   let pointers = {
     ...root.__element__.__pointers__

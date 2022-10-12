@@ -19,7 +19,7 @@ afterAll(async () => {
 test("basic select", async () => {
   const query = e.select(e.Movie, movie => ({
     title: true,
-    order_by: movie.title,
+    order_by: movie.title
   }));
 
   const result = await query.runJSON(client);
@@ -32,7 +32,7 @@ test("basic select", async () => {
 test("select one", async () => {
   const query = e.select(e.Movie, movie => ({
     title: true,
-    filter: e.op(movie.title, "=", "The Avengers"),
+    filter: e.op(movie.title, "=", "The Avengers")
   }));
 
   const result = await query.runJSON(client);
@@ -45,15 +45,15 @@ test("json properties", async () => {
   const inserted = await e
     .insert(e.Bag, {
       stringsMulti: ["asdf"],
-      jsonField: jsonData,
+      jsonField: jsonData
     })
     .run(client);
 
   const selected = await e
     .select(e.Bag, bag => ({
-      filter: e.op(bag.id, "=", e.uuid(inserted.id)),
+      filter_single: e.op(bag.id, "=", e.uuid(inserted.id)),
       id: true,
-      jsonField: true,
+      jsonField: true
     }))
     .run(client);
   tc.assert<
@@ -67,7 +67,7 @@ test("json param", async () => {
   const result = await e
     .params({data: e.json}, params =>
       e.select({
-        data: params.data,
+        data: params.data
       })
     )
     .run(client, {data: jsonData});
@@ -89,7 +89,7 @@ test("serialize data classes", async () => {
     new edgedb.LocalTime(2, 22),
     new edgedb.Duration(3),
     new edgedb.RelativeDuration(3),
-    new edgedb.DateDuration(1),
+    new edgedb.DateDuration(1)
   ];
   expect(await e.json(datum).run(client)).toEqual([
     "2022-07-18T21:42:46.569Z",
@@ -98,6 +98,6 @@ test("serialize data classes", async () => {
     "02:22:00",
     "P3Y",
     "P3Y",
-    "P1Y",
+    "P1Y"
   ]);
 });

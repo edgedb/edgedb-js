@@ -325,7 +325,9 @@ test("offset", () => {
 
 test("infer cardinality - scalar filters", () => {
   const q = e.select(e.Hero);
-  const q2 = e.select(q, hero => ({filter: e.op(hero.name, "=", "asdf")}));
+  const q2 = e.select(q, hero => ({
+    filter_single: e.op(hero.name, "=", "asdf")
+  }));
   tc.assert<tc.IsExact<typeof q2["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
   );
@@ -333,7 +335,7 @@ test("infer cardinality - scalar filters", () => {
 
   const u3 = e.uuid("asdf");
   const q3 = e.select(q, hero => {
-    return {filter: e.op(hero.id, "=", u3)};
+    return {filter_single: e.op(hero.id, "=", u3)};
   });
   tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
@@ -355,7 +357,7 @@ test("infer cardinality - scalar filters", () => {
   expect(q5.__cardinality__).toEqual($.Cardinality.Many);
 
   const q6 = e.select(e.Villain.nemesis, nemesis => ({
-    filter: e.op(nemesis.name, "=", "asdf")
+    filter_single: e.op(nemesis.name, "=", "asdf")
   }));
   tc.assert<tc.IsExact<typeof q6["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
@@ -373,7 +375,7 @@ test("infer cardinality - scalar filters", () => {
 
   const expr8 = e.select(e.Villain, () => ({id: true, name: true}));
   const q8 = e.select(expr8, villain => ({
-    filter: e.op(villain.name, "=", "asdf")
+    filter_single: e.op(villain.name, "=", "asdf")
   }));
   tc.assert<tc.IsExact<typeof q8["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
@@ -382,27 +384,27 @@ test("infer cardinality - scalar filters", () => {
 
   const expr9 = e.select(e.Villain, () => ({id: true, name: true}));
   const q9 = e.select(expr9, villain => ({
-    filter: e.op(villain.name, "=", "asdf")
+    filter_single: e.op(villain.name, "=", "asdf")
   }));
   tc.assert<tc.IsExact<typeof q9["__cardinality__"], $.Cardinality.AtMostOne>>(
     true
   );
   expect(q9.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
-  const q10 = e.select(e.Villain, villain => ({
-    filter: e.op(villain.name, "=", e.cast(e.str, e.set()))
-  }));
-  tc.assert<tc.IsExact<typeof q10["__cardinality__"], $.Cardinality.Empty>>(
-    true
-  );
-  expect(q10.__cardinality__).toEqual($.Cardinality.Empty);
+  // const q10 = e.select(e.Villain, villain => ({
+  //   filter_single: e.op(villain.name, "=", e.cast(e.str, e.set()))
+  // }));
+  // tc.assert<tc.IsExact<typeof q10["__cardinality__"], $.Cardinality.Empty>>(
+  //   true
+  // );
+  // expect(q10.__cardinality__).toEqual($.Cardinality.Empty);
 });
 
 test("infer cardinality - object type filters", () => {
   const oneHero = e.select(e.Hero, () => ({limit: 1})).assert_single();
 
   const singleHero = e.select(e.Hero, hero => ({
-    filter: e.op(hero, "=", oneHero)
+    filter_single: e.op(hero, "=", oneHero)
   }));
 
   const c1 = singleHero.__cardinality__;
@@ -411,7 +413,7 @@ test("infer cardinality - object type filters", () => {
 
   const oneProfile = e.select(e.Hero, () => ({limit: 1})).assert_single();
   const singleMovie = e.select(e.Movie, movie => ({
-    filter: e.op(movie.profile, "=", oneProfile)
+    filter_single: e.op(movie.profile, "=", oneProfile)
   }));
 
   const c2 = singleMovie.__cardinality__;
@@ -429,7 +431,7 @@ test("infer cardinality - object type filters", () => {
   // not a singleton
   // technically a bug, but for now this behavior is expected
   const c4 = e.select(e.Villain, villain => ({
-    filter: e.op(villain, "=", villain)
+    filter_single: e.op(villain, "=", villain)
   })).__cardinality__;
   tc.assert<tc.IsExact<typeof c4, $.Cardinality.AtMostOne>>(true);
   expect(c4).toEqual($.Cardinality.AtMostOne);
@@ -462,7 +464,7 @@ test("fetch heroes", async () => {
 test("filter by id", async () => {
   const result = await e
     .select(e.Hero, hero => ({
-      filter: e.op(hero.id, "=", e.uuid(data.spidey.id))
+      filter_single: e.op(hero.id, "=", e.uuid(data.spidey.id))
     }))
     .run(client);
 
@@ -744,7 +746,7 @@ test("filters in subqueries", async () => {
       id: true,
       name: true
     },
-    filter: e.op(hero.name, "=", data.spidey.name)
+    filter_single: e.op(hero.name, "=", data.spidey.name)
   }));
 
   const res1 = await q1.run(client);
@@ -759,7 +761,7 @@ test("filters in subqueries", async () => {
       name: true,
       filter: e.op(v.name, "ilike", "%n%")
     }),
-    filter: e.op(hero.name, "=", data.spidey.name)
+    filter_single: e.op(hero.name, "=", data.spidey.name)
   }));
 
   const res2 = await q2.run(client);
@@ -791,7 +793,7 @@ test("filters in subqueries", async () => {
     }),
     thanos: e.select(hero.villains, v => ({
       name: true,
-      filter: e.op(v.name, "=", "Thanos")
+      filter_single: e.op(v.name, "=", "Thanos")
     }))
   }));
 
@@ -989,7 +991,7 @@ test("polymorphic field in nested shape", async () => {
       order_by: char.name,
       ...e.is(e.Hero, {secret_identity: true})
     }),
-    filter: e.op(movie.title, "=", "The Avengers")
+    filter_single: e.op(movie.title, "=", "The Avengers")
   }));
 
   const result = await query.run(client);
@@ -1215,7 +1217,7 @@ test("portable shape", async () => {
     return {
       ...baseShape(m),
       characters: {name: true},
-      filter: e.op(m.title, "=", "The Avengers")
+      filter_single: e.op(m.title, "=", "The Avengers")
     };
   });
 

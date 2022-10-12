@@ -14,7 +14,8 @@ import type {
   stripNonInsertables,
   $scopify,
   stripSet,
-  TypeSet
+  TypeSet,
+  ObjectType
 } from "./typesystem";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
@@ -34,18 +35,16 @@ export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
     ? true
     : false;
 
-export type InsertShape<Root extends ObjectTypeSet> = typeutil.flatten<
-  RawInsertShape<Root>
+export type InsertShape<El extends ObjectType> = typeutil.flatten<
+  RawInsertShape<El>
 >;
 
-export type RawInsertShape<Root extends ObjectTypeSet> =
+export type RawInsertShape<El extends ObjectType> =
   // short-circuit infinitely deep
-  $expr_PathNode extends Root
+  ObjectType extends El
     ? never
     : typeutil.stripNever<
-        stripNonInsertables<
-          stripBacklinks<Root["__element__"]["__pointers__"]>
-        >
+        stripNonInsertables<stripBacklinks<El["__pointers__"]>>
       > extends infer Shape
     ? Shape extends ObjectTypePointers
       ? typeutil.addQuestionMarks<{
@@ -72,54 +71,58 @@ type InsertBaseExpression<Root extends TypeSet = TypeSet> = {
   __shape__: any;
 };
 export type $expr_Insert<
-  Root extends $expr_PathNode = $expr_PathNode
+  // Root extends $expr_PathNode = $expr_PathNode
+  El extends ObjectType = ObjectType
   // Conflict = UnlessConflict | null
   // Shape extends InsertShape<Root> = any
 > = Expression<{
   __kind__: ExpressionKind.Insert;
-  __element__: Root["__element__"];
+  __element__: El;
   __cardinality__: Cardinality.One;
-  __expr__: Root;
-  __shape__: InsertShape<Root>;
+  __expr__: $expr_PathNode;
+  __shape__: InsertShape<El>;
 
   unlessConflict(): $expr_InsertUnlessConflict<
-    Expression<{
-      __kind__: ExpressionKind.Insert;
-      __element__: Root["__element__"];
-      __cardinality__: Cardinality.One;
-      __expr__: Root;
-      __shape__: InsertShape<Root>;
-    }>,
+    El,
+    // Expression<{
+    //   __kind__: ExpressionKind.Insert;
+    //   __element__: El;
+    //   __cardinality__: Cardinality.One;
+    //   __expr__: $expr_PathNode;
+    //   __shape__: InsertShape<El>;
+    // }>,
     {on: null}
   >;
   unlessConflict<Conflict extends UnlessConflict>(
-    conflictGetter: (scope: $scopify<Root["__element__"]>) => Conflict
+    conflictGetter: (scope: $scopify<El>) => Conflict
   ): $expr_InsertUnlessConflict<
-    Expression<{
-      __kind__: ExpressionKind.Insert;
-      __element__: Root["__element__"];
-      __cardinality__: Cardinality.One;
-      __expr__: Root;
-      __shape__: InsertShape<Root>;
-    }>,
+    El,
+    // Expression<{
+    //   __kind__: ExpressionKind.Insert;
+    //   __element__: El;
+    //   __cardinality__: Cardinality.One;
+    //   __expr__: $expr_PathNode;
+    //   __shape__: InsertShape<El>;
+    // }>,
     Conflict
   >;
 }>;
 
 export type $expr_InsertUnlessConflict<
-  Root extends InsertBaseExpression = InsertBaseExpression,
+  El extends ObjectType = ObjectType,
+  // Root extends InsertBaseExpression = InsertBaseExpression,
   Conflict extends UnlessConflict = UnlessConflict
 > = Expression<{
   __kind__: ExpressionKind.InsertUnlessConflict;
   __element__: Conflict["else"] extends TypeSet
-    ? Conflict["else"]["__element__"]["__name__"] extends Root["__element__"]["__name__"]
-      ? Root["__element__"]
+    ? Conflict["else"]["__element__"]["__name__"] extends El["__name__"]
+      ? El
       : $Object
-    : Root["__element__"];
+    : El;
   __cardinality__: Conflict["else"] extends TypeSet
     ? Conflict["else"]["__cardinality__"]
     : Cardinality.AtMostOne;
-  __expr__: Root;
+  __expr__: InsertBaseExpression;
   __conflict__: Conflict;
 }>;
 
@@ -257,8 +260,8 @@ export function $normaliseInsertShape(
 
 export function insert<Root extends $expr_PathNode>(
   root: Root,
-  shape: InsertShape<Root>
-): $expr_Insert<Root> {
+  shape: InsertShape<Root["__element__"]>
+): $expr_Insert<Root["__element__"]> {
   if (typeof shape !== "object") {
     throw new Error(
       `invalid insert shape.${

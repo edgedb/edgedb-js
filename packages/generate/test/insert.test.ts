@@ -25,7 +25,7 @@ afterAll(async () => {
 });
 
 test("insert shape check", async () => {
-  type insertVillainShape = InsertShape<typeof Villain>;
+  type insertVillainShape = InsertShape<typeof Villain["__element__"]>;
   const c1: insertVillainShape = {name: e.str("adf")};
 });
 
@@ -256,7 +256,7 @@ test("insert readonly prop", async () => {
 });
 
 test("exclude readonly props", () => {
-  type insertProfileShape = InsertShape<typeof e["Profile"]>;
+  type insertProfileShape = InsertShape<typeof e["Profile"]["__element__"]>;
   tc.assert<
     "plot_summary" | "slug" extends keyof insertProfileShape ? true : false
   >(true);
