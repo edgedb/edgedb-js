@@ -198,18 +198,21 @@ export interface EnumType<
 export type ObjectTypeSet = TypeSet<ObjectType, Cardinality>;
 export type ObjectTypeExpression = TypeSet<ObjectType, Cardinality>;
 
+export type ExclusiveTuple = typeutil.tupleOf<{
+  [k: string]: TypeSet;
+}>;
 export interface ObjectType<
   Name extends string = string,
   Pointers extends ObjectTypePointers = ObjectTypePointers,
-  Shape extends object | null = any
-  // Exclusives extends {[k: string]: TypeSet}[] = {[k: string]: TypeSet}[]
+  Shape extends object | null = any,
+  Exclusives extends ExclusiveTuple = ExclusiveTuple
   // Polys extends Poly[] = any[]
 > extends BaseType {
   __kind__: TypeKind.object;
   __name__: Name;
   __pointers__: Pointers;
   __shape__: Shape;
-  // __exclusives__: Exclusives;
+  __exclusives__: Exclusives;
 }
 
 export type PropertyTypes =
@@ -659,6 +662,11 @@ export interface RangeType<
 /////////////////////
 /// TSTYPE COMPUTATION
 /////////////////////
+export type orLiteralValue<Set extends TypeSet> =
+  | Set
+  | (Set["__element__"] extends ObjectType
+      ? never
+      : computeTsType<Set["__element__"], Set["__cardinality__"]>);
 
 export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
   ? Type["__tsconsttype__"]

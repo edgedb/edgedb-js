@@ -28,7 +28,7 @@ export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
             t`  ${name}: _.syntax.$expr_Global<
               // "${g.name}",
               ${targetTypeRep.staticType},
-              $.Cardinality.${g.real_cardinality}
+              $.Cardinality.${g.card}
               >`,
             t`,`
           ];
@@ -43,7 +43,7 @@ export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
             r`  ${name}: _.syntax.makeGlobal(
               "${g.name}",
               $.makeType(_.spec, "${g.target_id}", _.syntax.literal),
-              $.Cardinality.${g.real_cardinality})`,
+              $.Cardinality.${g.card})`,
             ts` as any`,
             r`,`
           ];

@@ -37,7 +37,7 @@ function applySpec(
     if (ptr.kind === "link") {
       shape[ptr.name] = {
         __kind__: "link",
-        cardinality: ptr.real_cardinality,
+        cardinality: ptr.card,
         exclusive: ptr.is_exclusive,
         computed: ptr.is_computed,
         readonly: ptr.is_readonly
@@ -63,7 +63,7 @@ function applySpec(
             const linkPropObject: any = {
               __kind__: "property"
             };
-            linkPropObject.cardinality = linkProp.real_cardinality;
+            linkPropObject.cardinality = linkProp.card;
             util.defineGetter(linkPropObject, "target", () => {
               return makeType(spec, linkProp.target_id, literal);
             });
@@ -75,7 +75,7 @@ function applySpec(
     } else if (ptr.kind === "property") {
       shape[ptr.name] = {
         __kind__: "property",
-        cardinality: ptr.real_cardinality,
+        cardinality: ptr.card,
         exclusive: ptr.is_exclusive,
         computed: ptr.is_computed,
         readonly: ptr.is_readonly
@@ -165,8 +165,8 @@ export function makeType<T extends BaseType>(
     }
     scalarObj.__name__ = type.name;
 
-    if (type.castType) {
-      scalarObj.__casttype__ = makeType(spec, type.castType, literal);
+    if (type.cast_type) {
+      scalarObj.__casttype__ = makeType(spec, type.cast_type, literal);
     }
     typeCache.set(id, scalarObj);
     return scalarObj;

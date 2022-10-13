@@ -47,7 +47,7 @@ currently supported.`);
   console.log(`Connecting to database...`);
   await client.ensureConnected();
 
-  console.log(`Searching for .edgeql files...`);
+  console.log(`Analyzing .edgeql files...`);
 
   // generate all queries in single file
   if (params.options.file) {

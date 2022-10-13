@@ -187,7 +187,9 @@ test("update link property", async () => {
 
 test("exclude readonly props", () => {
   type updateProfileShape = UpdateShape<typeof e["Profile"]>;
-  tc.assert<tc.IsExact<keyof updateProfileShape, "plot_summary">>(true);
+  tc.assert<
+    tc.IsExact<keyof updateProfileShape, "plot_summary" | "a" | "b" | "c">
+  >(true);
 });
 
 test("empty update", async () => {

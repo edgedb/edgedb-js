@@ -464,7 +464,17 @@ test("fetch heroes", async () => {
 test("filter by id", async () => {
   const result = await e
     .select(e.Hero, hero => ({
-      filter_single: e.op(hero.id, "=", e.uuid(data.spidey.id))
+      filter_single: {id: data.spidey.id}
+    }))
+    .run(client);
+
+  expect(result?.id).toEqual(data.spidey.id);
+});
+
+test("filter by id expr", async () => {
+  const result = await e
+    .select(e.Hero, hero => ({
+      filter_single: {id: e.uuid(data.spidey.id)}
     }))
     .run(client);
 
@@ -1226,6 +1236,63 @@ test("portable shape", async () => {
   const result = await query.run(client);
   expect(result?.rating).toBeDefined();
   expect(result?.characters).toBeDefined();
+});
+
+test("filter_single id", async () => {
+  const query = e.select(e.Movie, () => ({
+    title: true,
+    filter_single: {title: "The Avengers"}
+  }));
+  const result = await query.run(client);
+  expect(result?.title).toEqual("The Avengers");
+});
+
+test("filter_single exclusive prop", async () => {
+  const query = e.select(e.Movie, () => ({
+    title: true,
+    filter_single: {title: "The Avengers"}
+  }));
+  const result = await query.run(client);
+  expect(result?.title).toEqual("The Avengers");
+});
+
+test("filter_single composite", async () => {
+  const query = e.select(e.Movie, () => ({
+    title: true,
+    filter_single: {title: "The Avengers", release_year: 2012}
+  }));
+  const result = await query.run(client);
+  expect(result?.title).toEqual("The Avengers");
+});
+
+test("filter_single composite truple", async () => {
+  const query = e.select(e.Profile, () => ({
+    slug: true,
+    filter_single: {
+      a: "adsf",
+      b: "adsf",
+      c: "adsf"
+    }
+  }));
+
+  await query.run(client);
+});
+
+test("filter_single expect error", async () => {
+  // @ts-expect-error
+  e.select(e.Movie, () => ({
+    title: true,
+    filter_single: {genre: e.Genre.Horror}
+  }));
+});
+
+test("filter_single card mismatch", async () => {
+  const query = e.select(e.Movie, () => ({
+    title: true,
+    filter_single: {genre: e.Genre.Horror} as any
+  }));
+
+  expect(query.run(client)).rejects.toThrow();
 });
 
 // EdgeQL limitation

@@ -403,7 +403,7 @@ function compareType(
         const ptrTarget = typeSpec.get(ptr.target_id);
         if (
           ptrTarget.name !== argPtr.target.__name__ ||
-          ptr.real_cardinality !== argPtr.cardinality
+          ptr.card !== argPtr.cardinality
         ) {
           match = false;
         }

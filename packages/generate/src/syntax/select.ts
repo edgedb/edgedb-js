@@ -12,7 +12,9 @@ import type {$bool, $number} from "./modules/std";
 import {
   Cardinality,
   ExpressionKind,
-  TypeKind
+  TypeKind,
+  OperatorKind,
+  typeutil
 } from "edgedb/dist/reflection/index";
 import {makeType} from "./hydrate";
 
@@ -31,7 +33,9 @@ import type {
   ScalarType,
   stripSet,
   TypeSet,
-  BaseType
+  BaseType,
+  ExclusiveTuple,
+  orLiteralValue
 } from "./typesystem";
 
 import type {
@@ -49,6 +53,8 @@ import {
   literalToScalarType,
   literalToTypeSet
 } from "./castMaps";
+import type {$expr_Operator} from "./funcops";
+import {cast} from "./cast";
 
 export const ASC: "ASC" = "ASC";
 export const DESC: "DESC" = "DESC";
@@ -91,10 +97,49 @@ export type SelectModifierNames =
   | "offset"
   | "limit";
 
-// export type SelectModifiers<T extends ObjectType = ObjectType> = {
-export type SelectModifiers = {
+export type exclusivesToFilterSingle<E extends ExclusiveTuple> =
+  ExclusiveTuple extends E
+    ? never
+    : E extends []
+    ? never
+    : {
+        [j in keyof E]: {
+          [k in keyof E[j]]: orLiteralValue<E[j][k]>;
+          // asdf: T["__exclusives__"][0].asdf
+        };
+      }[number];
+export type SelectModifiers<T extends ObjectType = ObjectType> = {
+  // export type SelectModifiers = {
   filter?: SelectFilterExpression;
-  filter_single?: SelectFilterExpression;
+  filter_single?: // | Partial<
+  //     typeutil.stripNever<{
+  //       [k in keyof T["__pointers__"]]: T["__pointers__"][k] extends PropertyDesc
+  //         ? orScalarLiteral<{
+  //             __element__: T["__pointers__"][k]["target"];
+  //             __cardinality__: T["__pointers__"][k]["cardinality"];
+  //           }>
+  //         : never;
+  //     }>
+  //   >
+
+  // | (ObjectType extends T
+  //       ? unknown
+  //       : typeutil.stripNever<{
+  //           [k in keyof T["__pointers__"]]: T["__pointers__"][k] extends PropertyDesc<
+  //             infer T,
+  //             infer C,
+  //             infer E
+  //           >
+  //             ? E extends true
+  //               ? orScalarLiteral<{
+  //                   __element__: T;
+  //                   __cardinality__: C;
+  //                 }>
+  //               : never
+  //             : never;
+  //         }>)
+  exclusivesToFilterSingle<T["__exclusives__"]> | SelectFilterExpression;
+
   // | (ObjectType extends T
   //     ? unknown
   //     : typeutil.stripNever<{
@@ -415,9 +460,9 @@ export function $handleModifiers(
   modifiers: SelectModifiers,
   params: {root: TypeSet; scope: TypeSet}
 ): {modifiers: NormalisedSelectModifiers; cardinality: Cardinality} {
-  const {root} = params;
+  const {root, scope} = params;
   const mods: NormalisedSelectModifiers = {
-    singleton: "filter_single" in modifiers
+    singleton: !!modifiers["filter_single"]
   };
 
   let card = root.__cardinality__;
@@ -428,44 +473,54 @@ export function $handleModifiers(
   }
 
   if (modifiers.filter_single) {
+    if (root.__element__.__kind__ !== TypeKind.object) {
+      throw new Error("filter_single can only be used with object types");
+    }
     card = Cardinality.AtMostOne;
-    mods.filter = modifiers.filter_single;
-    // const fs: any = modifiers.filter_single;
-    // if (fs.__element__) {
-    //   mods.filter = modifiers.filter_single as any;
-    // } else {
-    //   const exprs = Object.keys(fs).map(
-    //     key =>
-    //       $expressionify({
-    //         __element__: {
-    //           __name__: "std::bool",
-    //           __kind__: TypeKind.scalar
-    //         } as any,
-    //         __cardinality__: Cardinality.One,
-    //         __kind__: ExpressionKind.Operator,
-    //         __opkind__: OperatorKind.Infix,
-    //         __name__: "=",
-    //         __args__: [(scope as any)[key], literalToTypeSet(fs[key])]
-    //       }) as $expr_Operator
-    //   );
-    //   if (exprs.length === 1) {
-    //     mods.filter = exprs[0] as any;
-    //   } else {
-    //     mods.filter = exprs.reduce((a, b) => {
-    //       return $expressionify({
-    //         __element__: {
-    //           __name__: "std::bool",
-    //           __kind__: TypeKind.scalar
-    //         } as any,
-    //         __cardinality__: Cardinality.One,
-    //         __kind__: ExpressionKind.Operator,
-    //         __opkind__: OperatorKind.Infix,
-    //         __name__: "and",
-    //         __args__: [a, b]
-    //       }) as $expr_Operator;
-    //     }) as any;
-    //   }
-    // }
+    // mods.filter = modifiers.filter_single;
+    const fs: any = modifiers.filter_single;
+    if (fs.__element__) {
+      mods.filter = modifiers.filter_single as any;
+    } else {
+      const exprs = Object.keys(fs).map(key => {
+        const val = fs[key].__element__
+          ? fs[key]
+          : (literal as any)(
+              (root.__element__ as any as ObjectType)["__pointers__"][key][
+                "target"
+              ],
+              fs[key]
+            );
+        return $expressionify({
+          __element__: {
+            __name__: "std::bool",
+            __kind__: TypeKind.scalar
+          } as any,
+          __cardinality__: Cardinality.One,
+          __kind__: ExpressionKind.Operator,
+          __opkind__: OperatorKind.Infix,
+          __name__: "=",
+          __args__: [(scope as any)[key], val]
+        }) as $expr_Operator;
+      });
+      if (exprs.length === 1) {
+        mods.filter = exprs[0] as any;
+      } else {
+        mods.filter = exprs.reduce((a, b) => {
+          return $expressionify({
+            __element__: {
+              __name__: "std::bool",
+              __kind__: TypeKind.scalar
+            } as any,
+            __cardinality__: Cardinality.One,
+            __kind__: ExpressionKind.Operator,
+            __opkind__: OperatorKind.Infix,
+            __name__: "and",
+            __args__: [a, b]
+          }) as $expr_Operator;
+        }) as any;
+      }
+    }
   }
   if (modifiers.order_by) {
     const orderExprs = Array.isArray(modifiers.order_by)
@@ -770,7 +825,8 @@ export const $existingScopes = new Set<
 
 function $shape<
   Expr extends ObjectTypeExpression,
-  Shape extends objectTypeToSelectShape<Expr["__element__"]> & SelectModifiers //<Expr["__element__"]>
+  Shape extends objectTypeToSelectShape<Expr["__element__"]> &
+    SelectModifiers<Expr["__element__"]> //<Expr["__element__"]>
 >(
   expr: Expr,
   _shape: (
@@ -802,7 +858,8 @@ export function select<Expr extends TypeSet>(
 ): $expr_Select<stripSet<Expr>>;
 export function select<
   Expr extends ObjectTypeExpression,
-  Shape extends objectTypeToSelectShape<Expr["__element__"]> & SelectModifiers, //<Expr['__element__']>,,
+  Shape extends objectTypeToSelectShape<Expr["__element__"]> &
+    SelectModifiers<Expr["__element__"]>,
   Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
@@ -832,6 +889,7 @@ https://github.com/microsoft/TypeScript/issues/26892
 https://github.com/microsoft/TypeScript/issues/47081
 
 */
+
 export function select<
   Expr extends PrimitiveTypeSet,
   Modifiers extends SelectModifiers
