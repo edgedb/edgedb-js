@@ -4,18 +4,17 @@ import type {Expression, BaseType, BaseTypeSet} from "./typesystem";
 import {$expressionify} from "./path";
 
 export type $expr_For<
-  IterSet extends BaseTypeSet = BaseTypeSet,
-  Expr extends Expression = Expression
+  El extends BaseType = BaseType,
+  Card extends Cardinality = Cardinality
+  // IterSet extends BaseTypeSet = BaseTypeSet,
+  // Expr extends BaseTypeSet = BaseTypeSet
 > = Expression<{
-  __element__: Expr["__element__"];
-  __cardinality__: cardutil.multiplyCardinalities<
-    IterSet["__cardinality__"],
-    Expr["__cardinality__"]
-  >;
+  __element__: El;
+  __cardinality__: Card;
   __kind__: ExpressionKind.For;
-  __iterSet__: IterSet;
+  __iterSet__: BaseTypeSet;
   __forVar__: $expr_ForVar;
-  __expr__: Expr;
+  __expr__: BaseTypeSet;
 }>;
 
 export type $expr_ForVar<Type extends BaseType = BaseType> = Expression<{
@@ -24,10 +23,16 @@ export type $expr_ForVar<Type extends BaseType = BaseType> = Expression<{
   __kind__: ExpressionKind.ForVar;
 }>;
 
-function _for<IteratorSet extends BaseTypeSet, Expr extends Expression>(
+function _for<IteratorSet extends BaseTypeSet, Expr extends BaseTypeSet>(
   set: IteratorSet,
   expr: (variable: $expr_ForVar<IteratorSet["__element__"]>) => Expr
-): $expr_For<IteratorSet, Expr> {
+): $expr_For<
+  Expr["__element__"],
+  cardutil.multiplyCardinalities<
+    IteratorSet["__cardinality__"],
+    Expr["__cardinality__"]
+  >
+> {
   const forVar = $expressionify({
     __kind__: ExpressionKind.ForVar,
     __element__: set.__element__,

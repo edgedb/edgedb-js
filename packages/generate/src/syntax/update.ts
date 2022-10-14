@@ -11,6 +11,7 @@ import type {
   stripBacklinks,
   stripNonUpdateables,
   ObjectTypeExpression,
+  ObjectType,
   $scopify
 } from "./typesystem";
 import type {pointerToAssignmentExpression} from "./casting";
@@ -29,15 +30,17 @@ import {$normaliseInsertShape, pointerIsOptional} from "./insert";
 /////////////////
 
 export type $expr_Update<
-  Set extends TypeSet = TypeSet,
-  Expr extends ObjectTypeSet = ObjectTypeSet,
-  Shape extends UpdateShape<Expr> = any
+  El extends ObjectType = ObjectType,
+  Card extends Cardinality = Cardinality
+  // Set extends TypeSet = TypeSet,
+  // Expr extends ObjectTypeSet = ObjectTypeSet,
+  // Shape extends UpdateShape<ObjectTypeSet> = any
 > = Expression<{
   __kind__: ExpressionKind.Update;
-  __element__: Set["__element__"];
-  __cardinality__: Set["__cardinality__"];
-  __expr__: Expr;
-  __shape__: Shape;
+  __element__: El;
+  __cardinality__: Card;
+  __expr__: TypeSet;
+  __shape__: any;
   __modifiers__: NormalisedSelectModifiers;
   __scope__: ObjectTypeExpression;
 }>;
@@ -69,6 +72,7 @@ export function update<
   Expr extends ObjectTypeExpression,
   Shape extends {
     filter?: SelectModifiers["filter"];
+    filter_single?: SelectModifiers["filter"];
     order_by?: SelectModifiers["order_by"];
     limit?: SelectModifiers["limit"];
     offset?: SelectModifiers["offset"];
@@ -80,12 +84,14 @@ export function update<
   expr: Expr,
   shape: (scope: $scopify<Expr["__element__"]>) => Readonly<Shape>
 ): $expr_Update<
-  {
-    __element__: Expr["__element__"];
-    __cardinality__: ComputeSelectCardinality<Expr, Shape>;
-  },
-  Expr,
-  Shape["set"]
+  // {
+  //   __element__: Expr["__element__"];
+  //   __cardinality__: ComputeSelectCardinality<Expr, Shape>;
+  // },
+  Expr["__element__"],
+  ComputeSelectCardinality<Expr, Shape>
+  // Expr,
+  // Shape["set"]
 > {
   const cleanScopedExprs = $existingScopes.size === 0;
 
@@ -100,7 +106,7 @@ export function update<
   const mods: any = {};
   let updateShape: any | null;
   for (const [key, val] of Object.entries(resolvedShape)) {
-    if (key === "filter") {
+    if (key === "filter" || key === "filter_single") {
       mods[key] = val;
     } else if (key === "set") {
       updateShape = val;
@@ -116,7 +122,7 @@ export function update<
     throw new Error(`Update shape must contain 'set' shape`);
   }
 
-  const {modifiers, cardinality} = $handleModifiers(mods, expr);
+  const {modifiers, cardinality} = $handleModifiers(mods, {root: expr, scope});
 
   return $expressionify({
     __kind__: ExpressionKind.Update,

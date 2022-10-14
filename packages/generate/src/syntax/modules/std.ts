@@ -19,9 +19,9 @@ export type $Object = ObjectType<"std::Object", any, null>;
 
 export type $FreeObject = ObjectType<"std::FreeObject", any, null>;
 declare const FreeObject: $expr_PathNode<
-  TypeSet<$FreeObject, Cardinality.Many>,
-  null,
-  true
+  TypeSet<$FreeObject, Cardinality.Many>
+  // null,
+  // true
 >;
 
 export type $bool = ScalarType<"std::bool", boolean>;

@@ -17,33 +17,33 @@ import {literal} from "./literal";
 import type {ExpressionKind, OperatorKind} from "edgedb/dist/reflection/index";
 
 export type $expr_Function<
-  Name extends string = string,
-  Args extends (BaseTypeSet | undefined)[] = (BaseTypeSet | undefined)[],
-  NamedArgs extends {[key: string]: BaseTypeSet} = {
-    [key: string]: BaseTypeSet;
-  },
+  // Name extends string = string,
+  // Args extends (BaseTypeSet | undefined)[] = (BaseTypeSet | undefined)[],
+  // NamedArgs extends {[key: string]: BaseTypeSet} = {
+  //   [key: string]: BaseTypeSet;
+  // },
   ReturnType extends BaseTypeSet = BaseTypeSet
 > = Expression<{
   __element__: ReturnType["__element__"];
   __cardinality__: ReturnType["__cardinality__"];
   __kind__: ExpressionKind.Function;
-  __name__: Name;
-  __args__: Args;
-  __namedargs__: NamedArgs;
+  __name__: string;
+  __args__: (BaseTypeSet | undefined)[];
+  __namedargs__: {[key: string]: BaseTypeSet};
 }>;
 
 export type $expr_Operator<
-  Name extends string = string,
-  OpKind extends OperatorKind = OperatorKind,
-  Args extends TypeSet[] = TypeSet[],
+  // Name extends string = string,
+  // OpKind extends OperatorKind = OperatorKind,
+  // Args extends TypeSet[] = TypeSet[],
   ReturnType extends TypeSet = TypeSet
 > = Expression<{
   __element__: ReturnType["__element__"];
   __cardinality__: ReturnType["__cardinality__"];
   __kind__: ExpressionKind.Operator;
-  __name__: Name;
-  __opkind__: OpKind;
-  __args__: Args;
+  __name__: string;
+  __opkind__: OperatorKind;
+  __args__: TypeSet[];
 }>;
 
 interface OverloadFuncArgDef {
@@ -403,7 +403,7 @@ function compareType(
         const ptrTarget = typeSpec.get(ptr.target_id);
         if (
           ptrTarget.name !== argPtr.target.__name__ ||
-          ptr.real_cardinality !== argPtr.cardinality
+          ptr.card !== argPtr.cardinality
         ) {
           match = false;
         }

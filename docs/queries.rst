@@ -48,9 +48,15 @@ Consider the following file tree.
 
 The following command will run the ``queries`` generator.
 
-.. code-block:: bash
+.. tabs::
 
-  $ npx @edgedb/generate queries
+  .. code-tab:: bash#Node.js
+
+    $ npx @edgedb/generate queries
+
+  .. code-tab:: bash#Deno
+
+    $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts queries
 
 The generator will detect the project root by looking for an ``edgedb.toml``, then scan the directory for ``*.edgeql`` files. In this case, there's onlny one: ``queries/getUser.edgeql``.
 
@@ -172,13 +178,13 @@ We can now use this function in our code.
     user_id: "00000000-0000-0000-0000-000000000000"
   });
 
-To override the file path and name, you can optionally pass a value to the ``--file`` flag.
+To override the file path and name, you can optionally pass a value to the ``--file`` flag. Note that you should *exclude the extension*.
 
 .. code-block:: bash
 
   $ npx @edgedb/generate queries --file path/to/myqueries
 
-Note that you should *exclude the extension*. The file extension is determined by the generator ``--target`` and will be automatically appended to the provided path.
+The file extension is determined by the generator ``--target`` and will be automatically appended to the provided path. Extensionless "absolute" paths will work; relative paths will be resolved relative to the current working directory.
 
 This will result in the following file tree.
 
@@ -204,4 +210,3 @@ To exclude the generated files, add the following lines to your ``.gitignore`` f
 
   **/*.edgeql.ts
   dbschema/queries.*
-

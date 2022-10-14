@@ -9,7 +9,7 @@ import {
   scalarToLiteralMapping
 } from "../genutil";
 import {dts, r, t, ts} from "../builders";
-import type {GeneratorParams} from "../generate";
+import type {GeneratorParams} from "../genutil";
 import {$} from "../genutil";
 
 export const generateScalars = (params: GeneratorParams) => {
@@ -121,8 +121,8 @@ export const generateScalars = (params: GeneratorParams) => {
     // const extraTypes = scalarToLiteralMapping[type.name]?.extraTypes;
     // const extraTypesUnion = extraTypes ? `, ${extraTypes.join(" | ")}` : "";
 
-    if (type.castType) {
-      const mapped = types.get(type.castType);
+    if (type.cast_type) {
+      const mapped = types.get(type.cast_type);
       const mappedRef = getRef(mapped.name);
 
       const extraTypes = (

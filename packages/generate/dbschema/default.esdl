@@ -55,13 +55,21 @@ type Hero extending Person {
     link profile -> Profile {
       constraint exclusive;
     }
+    constraint exclusive on ((.title, .release_year));
   }
+
 
   type Profile {
     property plot_summary -> str;
     property slug -> str {
       readonly := true;
     }
+    property a -> str;
+    property b -> str;
+    property c -> str;
+
+    constraint exclusive on ((  .plot_summary,    .slug  ));
+    constraint exclusive on (((.a,.b,.c)));
   }
 
   type User {

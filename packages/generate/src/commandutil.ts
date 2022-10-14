@@ -2,7 +2,7 @@
 
 // tslint:disable no-console
 import {adapter} from "edgedb";
-import {exitWithError, Target} from "./generate";
+import {exitWithError, Target} from "./genutil";
 
 export interface CommandOptions {
   showHelp?: boolean;

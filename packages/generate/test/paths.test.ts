@@ -9,10 +9,10 @@ test("path structure", () => {
   const $Hero = e.Hero.__element__;
   const $Villain = e.Villain.__element__;
   const HeroSetSingleton = $.$toSet($Hero, $.Cardinality.One);
-  const HeroSingleton = $PathNode(HeroSetSingleton, null, false);
+  const HeroSingleton = $PathNode(HeroSetSingleton, null);
   type HeroSingleton = typeof HeroSingleton;
   const VillainRoot = $.$toSet($Villain, $.Cardinality.One);
-  const Villain = $PathNode(VillainRoot, null, false);
+  const Villain = $PathNode(VillainRoot, null);
 
   expect(Hero.name.__element__.__kind__).toEqual($.TypeKind.scalar);
   expect(Hero.name.__element__.__name__).toEqual("std::str");
@@ -45,7 +45,7 @@ test("path structure", () => {
   // AtMostOneHero.name
   // test cardinality merging
   const HeroSetAtLeastOne = $.$toSet($Hero, $.Cardinality.AtLeastOne);
-  const AtLeastOneHero = $PathNode(HeroSetAtLeastOne, null, false);
+  const AtLeastOneHero = $PathNode(HeroSetAtLeastOne, null);
   type AtLeastOneHero = typeof AtLeastOneHero;
   expect(AtLeastOneHero.id.__cardinality__).toEqual($.Cardinality.AtLeastOne);
   expect(AtLeastOneHero.number_of_movies.__cardinality__).toEqual(
@@ -74,8 +74,9 @@ test("path structure", () => {
   expect(Herotype.annotations.__type__.computed_fields.toEdgeQL()).toEqual(
     "DETACHED default::Hero.__type__.__type__.__type__.annotations.__type__.computed_fields"
   );
-  expect(Hero.villains.__parent__.linkName).toEqual("villains");
-  expect(Hero.villains.__parent__.type.__element__.__name__).toEqual(
+  expect(Hero.villains.__parent__).not.toBeNull();
+  expect(Hero.villains.__parent__?.linkName).toEqual("villains");
+  expect(Hero.villains.__parent__?.type.__element__.__name__).toEqual(
     "default::Hero"
   );
 });

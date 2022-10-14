@@ -9,6 +9,7 @@ There are currently two generators available.
 
 - ``queries``: Scans your project for ``*.edgeql`` files and generates a file containing a strongly-typed function alongside each. Alternatively you can use ``--file`` mode to generate a single file containing all the query functions.
 - ``edgeql-js``: Introspects your database schema and generates a query builder.
+- ``interfaces``: Introspects your database schema and generates a set of equivalent TypeScript interfaces.
 
 
 Requirements
@@ -87,6 +88,7 @@ The value of ``<generator>`` should be one of the following.
 
 - ``queries``: This generator scans your project for ``*.edgeql`` files and generates a file containing a strongly-typed function alongside each. Alternatively you can use ``--file`` mode to generate a single file containing all the "query functions".
 - ``edgeql-js``: This generator introspects your database schema and generates a query builder.
+- ``interfaces``: This generator introspects your database schema and generates TypeScript interfaces for each object type.
 
 Connection
 ^^^^^^^^^^

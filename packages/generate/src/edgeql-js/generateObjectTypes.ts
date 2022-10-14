@@ -1,5 +1,5 @@
 import {CodeBuffer, CodeFragment, dts, js, r, t, ts} from "../builders";
-import type {GeneratorParams} from "../generate";
+import type {GeneratorParams} from "../genutil";
 import {$} from "../genutil";
 import {
   frag,
@@ -279,13 +279,12 @@ export const generateObjectTypes = (params: GeneratorParams) => {
         type.pointers.length
           ? `{\n${type.pointers
               .map(pointer => {
-                const isOptional =
-                  pointer.real_cardinality === $.Cardinality.AtMostOne;
+                const isOptional = pointer.card === $.Cardinality.AtMostOne;
                 return `  ${quote(pointer.name)}${
                   isOptional ? "?" : ""
                 }: ${getTSType(pointer)}${
-                  pointer.real_cardinality === $.Cardinality.Many ||
-                  pointer.real_cardinality === $.Cardinality.AtLeastOne
+                  pointer.card === $.Cardinality.Many ||
+                  pointer.card === $.Cardinality.AtLeastOne
                     ? "[]"
                     : ""
                 }${isOptional ? " | null" : ""};`;
@@ -315,7 +314,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     const ptrToLine: (
       ptr: $.introspect.Pointer | $.introspect.Backlink
     ) => Line = ptr => {
-      const card = `$.Cardinality.${ptr.real_cardinality}`;
+      const card = `$.Cardinality.${ptr.card}`;
       const target = types.get(ptr.target_id);
       const {staticType, runtimeType} = getStringRepresentation(target, {
         types
@@ -342,7 +341,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     // const uniqueStubs = [...new Set(type.backlinks.map((bl) => bl.stub))];
     // const stubLines = uniqueStubs.map((stub): $.introspect.Pointer => {
     //   return {
-    //     real_cardinality: Cardinality.Many,
+    //     card: Cardinality.Many,
     //     kind: "link",
     //     name: `<${stub}`,
     //     target_id: BaseObject.id,
@@ -424,8 +423,34 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     // instantiate ObjectType subtype from shape
     body.writeln([
       dts`declare `,
-      t`type ${ref} = $.ObjectType<${quote(type.name)}, ${ref}λShape, null>;`
+      t`type ${ref} = $.ObjectType<${quote(type.name)}, ${ref}λShape, null, [`
     ]);
+
+    const bases = type.bases
+      .map(b => types.get(b.id))
+      .map(t => getRef(t.name));
+    body.indented(() => {
+      for (const b of bases) {
+        body.writeln([t`...${b}['__exclusives__'],`]);
+      }
+    });
+
+    // const ref = getRef(type.name);
+    for (const ex of type.exclusives) {
+      body.writeln([
+        t`  {`,
+        ...Object.keys(ex).map(key => {
+          const target = types.get(ex[key].target_id);
+          const {staticType} = getStringRepresentation(target, {types});
+          const card = `$.Cardinality.${ex[key].card}`;
+          return t`${key}: {__element__: ${staticType}, __cardinality__: ${card}},`;
+        }),
+        t`},`
+      ]);
+      // body.writeln([t`\n  {${lines.join(", ")}}`]);
+    }
+
+    body.writeln([t`]>;`]);
 
     if (type.name === "std::Object") {
       body.writeln([t`export `, dts`declare `, t`type $Object = ${ref}`]);
@@ -454,8 +479,8 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       dts`declare `,
       ...frag`const ${literal}`,
       // tslint:disable-next-line
-      t`: $.$expr_PathNode<$.TypeSet<${ref}, $.Cardinality.${typeCard}>, null, true> `,
-      r`= _.syntax.$PathNode($.$toSet(${ref}, $.Cardinality.${typeCard}), null, true);`
+      t`: $.$expr_PathNode<$.TypeSet<${ref}, $.Cardinality.${typeCard}>, null> `,
+      r`= _.syntax.$PathNode($.$toSet(${ref}, $.Cardinality.${typeCard}), null);`
     ]);
     body.nl();
 

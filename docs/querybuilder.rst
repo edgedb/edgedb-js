@@ -59,21 +59,19 @@ The rest of this walkthrough uses the following simple Movie schema:
 Generate the query builder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-With Node.js, use ``npx`` to generate the query builder.
+Run the following command to generate the query builder.
 
-.. code-block:: bash
+.. tabs::
 
-  $ npx @edgedb/generate edgeql-js
+  .. code-tab:: bash#Node.js
 
-With Deno, use ``deno run``. *Deno user must also create an import map, see "Usage with Deno" below.*
+    $ npx @edgedb/generate edgeql-js
 
-.. code-block:: bash
+  .. code-tab:: bash#Deno
 
-  $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts edgeql-js
+    $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts edgeql-js
 
-This detects whether you're using TypeScript or JavaScript and generates the
-appropriate files into the ``dbschema/edgeql-js`` directory. Refer to the
-:ref:`Targets <edgedb_qb_target>` section to learn how to customize this.
+The generator detects whether you're using TypeScript or JavaScript and generates the appropriate files into the ``dbschema/edgeql-js`` directory. Refer to the :ref:`Targets <edgedb_qb_target>` section to learn how to customize this.
 
 .. note::
 
@@ -81,30 +79,27 @@ appropriate files into the ``dbschema/edgeql-js`` directory. Refer to the
   :ref:`Generation <edgedb-js-generators>` docs for more complete
   documentation, then return to this tutorial.
 
-
 **Usage with Deno**
 
-The query builder generates code that depends on the ``edgedb`` module. The generated code imports using a plain module name (``import {createClient} from "edgedb"``). You must configure an import map to tell Deno how to resolve this import.
+The query builder generates code that depends on the ``edgedb`` module. The generated code uses Node-style import paths (``import {createClient} from "edgedb"``). For Deno to resolve these properly, you must configure an import map. In your ``deno.json``
 
-In your ``deno.json``
+.. tabs::
 
-.. code-block:: json
+  .. code-tab:: json#deno.json
 
-  {
-    // ...
-    "importMap": "./import_map.json"
-  }
-
-Then create ``import_map.json`` with the following contents. Both lines must be present.
-
-.. code-block:: json
-
-  {
-    "imports": {
-      "edgedb": "https://deno.land/x/edgedb/mod.ts",
-      "edgedb/": "https://deno.land/x/edgedb/"
+    {
+      // ...
+      "importMap": "./importMap.json"
     }
-  }
+
+  .. code-tab:: json#importMap.json
+
+    {
+      "imports": {
+        "edgedb": "https://deno.land/x/edgedb/mod.ts",
+        "edgedb/": "https://deno.land/x/edgedb/"
+      }
+    }
 
 Version control
 ^^^^^^^^^^^^^^^
@@ -113,15 +108,15 @@ The first time you run generator, you'll be prompted to add the generated
 files to your ``.gitignore``. Confirm this prompt to automatically add a line
 to your ``.gitignore`` that excludes the generated files.
 
-.. code-block::
+.. code-block:: bash
 
   $ npx @edgedb/generate edgeql-js
   ...
   Checking the generated query builder into version control
-  is NOT RECOMMENDED. Would you like to update .gitignore to ignore
+  is not recommended. Would you like to update .gitignore to ignore
   the query builder directory? The following line will be added:
 
-  dbschema/edgeql-js
+     dbschema/edgeql-js
 
   [y/n] (leave blank for "y")
 
@@ -295,60 +290,6 @@ extracted with the ``$infer`` helper.
   type result = $infer<typeof query>;
   // {id: string; title: string}[]
 
-Interfaces
-----------
-
-While the ``e`` object is all that's required to build queries,
-``npx @edgedb/generate edgeql-js`` also generates TypeScript ``interfaces``
-representing your current schema. These are not needed to construct queries,
-but are generated as a convenience.
-
-.. code-block:: typescript
-
-  import e, {Person, Movie} from "./dbschema/edgeql-js";
-
-
-Given this EdgeDB schema:
-
-.. code-block:: sdl
-
-  module default {
-    scalar type Genre extending enum<Horror, Comedy, Drama>;
-    type Person {
-      required property name -> str;
-    }
-    type Movie {
-      required property title -> str;
-      property genre -> Genre;
-      multi link actors -> Person;
-    }
-  }
-
-The following interfaces will be generated (simplified for clarify):
-
-.. code-block:: typescript
-
-  enum Genre {
-    Horror = "Horror",
-    Comedy = "Comedy",
-    Drama = "Drama"
-  }
-
-  interface Person {
-    id: string;
-    name: string;
-  }
-
-  interface Movie {
-    id: string;
-    title: string;
-    genre?: Genre | null;
-    actors: Person[];
-  }
-
-Any types declared in a non-``default`` module  will be generated into an
-accordingly named ``namespace``.
-
 Cheatsheet
 ----------
 
@@ -518,6 +459,7 @@ All query expressions are fully composable; this is one of the major
 differentiators between this query builder and a typical ORM. For instance, we
 can ``select`` an ``insert`` query in order to fetch properties of the object
 we just inserted.
+
 
 .. code-block:: typescript
 

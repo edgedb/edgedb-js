@@ -1,21 +1,24 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
-import {getMoviesStarring} from "./dbschema/queries";
+import e from "./dbschema/edgeql-js";
+import type {Movie, helper} from "./dbschema/interfaces";
 
 async function run() {
-  const {client} = await setupTests();
+  const {client, data} = await setupTests();
+  // type lkj  = types.Movie extends object ? true : false;
+  type asdf = helper.Links<Movie>;
 
-  const movies = await getMoviesStarring(client, {name: "Robert Downey Jr."});
-  console.log(JSON.stringify(movies, null, 2));
+  const query = e.select(e.Movie, m => ({
+    filter_single: {
+      id: m.id
+    }
+  }));
 
-  //   await setupTests();
+  console.log(query.toEdgeQL());
 
-  //   const client = createClient();
-  //   const query = e.datetime(new Date());
+  const result = await query.run(client);
 
-  //   console.log(query.toEdgeQL());
-  //   const result = await query.run(client);
-  //   console.log(result);
+  console.log(result);
 }
 
 run();

@@ -18,13 +18,13 @@ afterAll(async () => {
 test("basic delete", async () => {
   const insertBlackWidow = e.insert(e.Hero, {
     name: e.str("Black Widow"),
-    secret_identity: e.str("Natasha Romanoff"),
+    secret_identity: e.str("Natasha Romanoff")
   });
 
   const insertedResult = await insertBlackWidow.run(client);
 
   const deleteBlackWidow = e.delete(e.Hero, hero => ({
-    filter: e.op(hero.name, "=", "Black Widow"),
+    filter_single: e.op(hero.name, "=", "Black Widow")
   }));
   const deletedResult = await deleteBlackWidow.run(client);
 
@@ -34,7 +34,7 @@ test("basic delete", async () => {
   const deleteWrappingSelect = e.delete(
     e.select(e.Hero, hero => ({
       name: true,
-      filter: e.op(hero.name, "=", "Black Widow"),
+      filter_single: e.op(hero.name, "=", "Black Widow")
     }))
   );
   const wrappingDeleteResult = await deleteWrappingSelect.run(client);
