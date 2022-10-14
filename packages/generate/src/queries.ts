@@ -4,7 +4,7 @@ import type {ConnectConfig} from "edgedb/dist/conUtils";
 import type {CommandOptions} from "./commandutil";
 import {generateQueryType} from "./codecToType";
 import type {QueryType} from "./codecToType";
-import type {Target} from "./generate";
+import type {Target} from "./genutil";
 import {Cardinality} from "edgedb/dist/ifaces";
 
 // generate per-file queries
@@ -47,7 +47,7 @@ currently supported.`);
   console.log(`Connecting to database...`);
   await client.ensureConnected();
 
-  console.log(`Searching for .edgeql files...`);
+  console.log(`Analyzing .edgeql files...`);
 
   // generate all queries in single file
   if (params.options.file) {
@@ -82,11 +82,16 @@ currently supported.`);
       }...`
     );
     for (const [extension, file] of Object.entries(filesByExtension)) {
-      const filePath = adapter.path.join(
-        root,
-        params.options.file + extension
-      );
-      const prettyPath = "./" + adapter.path.posix.relative(root, filePath);
+      const filePath =
+        (adapter.path.isAbsolute(params.options.file)
+          ? params.options.file
+          : adapter.path.join(
+              adapter.process.cwd(), // all paths computed relative to cwd
+              params.options.file
+            )) + extension;
+      const prettyPath = adapter.path.isAbsolute(params.options.file)
+        ? params.options.file + extension
+        : "./" + adapter.path.posix.relative(root, filePath);
       console.log(`   ${prettyPath}`);
       await adapter.fs.writeFile(
         filePath,

@@ -22,7 +22,7 @@ test("detached", async () => {
       id: true,
       name: true,
       friends: e.select(e.detached(e.Hero)),
-      filter: e.op(hero.name, "=", "Iron Man"),
+      filter_single: e.op(hero.name, "=", "Iron Man")
     }))
     .run(client);
   type result = typeof result;
@@ -38,7 +38,7 @@ test("detached", async () => {
   >(true);
   expect(result).toMatchObject({
     id: data.iron_man.id,
-    name: data.iron_man.name,
+    name: data.iron_man.name
   });
   expect(result?.friends).toEqual(heroes);
 });

@@ -1,5 +1,5 @@
 import {CodeBuffer, dts, r, t, ts, all} from "../builders";
-import type {GeneratorParams} from "../generate";
+import type {GeneratorParams} from "../genutil";
 import {
   getRef,
   joinFrags,
@@ -296,7 +296,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
             !type.is_abstract &&
             !type.enum_values &&
             !type.material_id &&
-            !type.castType &&
+            !type.cast_type &&
             (!scalarToLiteralMapping[type.name] ||
               !scalarToLiteralMapping[type.name].literalKind)
           );

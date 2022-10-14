@@ -22,11 +22,11 @@ test("property hydration", () => {
   expect(e.default.Movie.__element__.__pointers__.profile.exclusive).toEqual(
     true
   );
-  expect(e.default.Movie.profile.__exclusive__).toEqual(true);
+  // expect(e.default.Movie.profile.__exclusive__).toEqual(true);
   expect(
     e.default.Movie.__element__.__pointers__.characters.exclusive
   ).toEqual(false);
-  expect(e.default.Movie.characters.__exclusive__).toEqual(false);
+  // expect(e.default.Movie.characters.__exclusive__).toEqual(false);
 });
 
 test("link hydration", () => {

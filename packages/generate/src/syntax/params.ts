@@ -45,7 +45,7 @@ export type $expr_WithParams<
   Params extends {
     [key: string]: ParamType | $expr_OptionalParam;
   } = {},
-  Expr extends Expression = Expression
+  Expr extends TypeSet = TypeSet
 > = QueryableWithParamsExpression<
   {
     __kind__: ExpressionKind.WithParams;

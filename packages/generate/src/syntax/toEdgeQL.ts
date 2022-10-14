@@ -993,12 +993,16 @@ function renderEdgeQL(
       );
     }
 
+    // without assert_single, the query will return a more informative
+    // CardinalityMismatchError when the query returns more than one result
     return (
+      // (expr.__modifiers__.singleton ? `select assert_single((` : ``) +
       "(" +
       withBlock +
       lines.join(" ") +
       (modifiers.length ? "\n" + modifiers.join("\n") : "") +
       ")"
+      // + (expr.__modifiers__.singleton ? `))` : ``)
     );
   } else if (expr.__kind__ === ExpressionKind.Update) {
     return `(${withBlock}UPDATE ${renderEdgeQL(expr.__scope__, ctx, false)}${

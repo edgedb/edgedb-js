@@ -8,7 +8,7 @@ export type GlobalType = {
   name: string;
   has_default: boolean;
   target_id: UUID;
-  real_cardinality: Cardinality;
+  card: Cardinality;
 };
 
 export type Globals = StrictMap<UUID, GlobalType>;
@@ -29,7 +29,7 @@ export async function getGlobals(cxn: Executor): Promise<Globals> {
       id,
       name,
       target_id := .target.id,
-      real_cardinality := ("One" IF .required ELSE "One" IF EXISTS .default ELSE "AtMostOne")
+      card := ("One" IF .required ELSE "One" IF EXISTS .default ELSE "AtMostOne")
         IF <str>.cardinality = "One" ELSE
         ("AtLeastOne" IF .required ELSE "Many"),
       has_default := exists .default,
