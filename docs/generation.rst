@@ -13,9 +13,7 @@ The ``@edgedb/generate`` package provides a set of code generation tools that ar
 
 **Third party generators**
 
-.. note::
-
-  If you implement a code generator, submit a PR and we'll list it here! The ``edgedb`` package exports a ``$`` namespace containing some utilities for introspecting the schema and analyzing queries. (We use these same tools to implement the official generators.)
+If you implement a code generator, submit a PR and we'll list it here! The ``edgedb`` package exports a ``$`` namespace containing some utilities for introspecting the schema and analyzing queries. We use these same tools to implement the official generators.
 
 Requirements
 ^^^^^^^^^^^^
@@ -29,25 +27,31 @@ To get started with generators, first initialize an :ref:`EdgeDB project
 
 The query builder works for both JavaScript and TypeScript users, and supports both Node.js and Deno. It's possible to use the query builder with or without TypeScript. Some requirements apply to TypeScript users only.
 
-- *Node users*: ``Node v14+``. Run ``node --version`` to see your current version.
-- *Deno users*: ``Deno v0.20+``.
-- *TypeScript users*:
+**Node.js**
+- ``Node.js v14+``. Run ``node --version`` to see your current version.
 
-  - ``TypeScript v4.4+``.
-  - *Node users*: Install Node.js types with ``npm install @types/node``.
-  - Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``
+**Deno**
 
-    .. code-block:: javascript
+- ``Deno v0.20+``.
 
-      // tsconfig.json
-      {
-        // ...
-        "compilerOptions": {
-          // ...
-          "strict": true,
-          "downlevelIteration": true,
-        }
-      }
+**TypeScript**
+
+- ``TypeScript v4.4+``.
+- *For Node.js users*: ``npm install @types/node -D``.
+- Strict mode: ``"strict": true``
+- Downlevel iteration (query builder only): ``"downlevelIteration": true``
+
+.. code-block:: javascript
+
+  // tsconfig.json
+  {
+    // ...
+    "compilerOptions": {
+      // ...
+      "strict": true,
+      "downlevelIteration": true,
+    }
+  }
 
 Installation
 ^^^^^^^^^^^^
