@@ -58,7 +58,7 @@ The following command will run the ``queries`` generator.
 
     $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts queries
 
-The generator will detect the project root by looking for an ``edgedb.toml``, then scan the directory for ``*.edgeql`` files. In this case, there's onlny one: ``queries/getUser.edgeql``.
+The generator will detect the project root by looking for an ``edgedb.toml``, then scan the directory for ``*.edgeql`` files. In this case, there's only one: ``queries/getUser.edgeql``.
 
 .. code-block:: text
 

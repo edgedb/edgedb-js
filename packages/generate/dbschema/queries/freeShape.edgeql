@@ -1,5 +1,6 @@
 select {
   name := "arg",
   points := 1234n,
-  data := <str>$data
+  data := <str>$data,
+  required multi arg := {'asdf'}
 };
