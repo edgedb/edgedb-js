@@ -4,7 +4,7 @@ import type {ConnectConfig} from "edgedb/dist/conUtils";
 import type {CommandOptions} from "./commandutil";
 import {generateQueryType} from "./codecToType";
 import type {QueryType} from "./codecToType";
-import type {Target} from "./generate";
+import type {Target} from "./genutil";
 import {Cardinality} from "edgedb/dist/ifaces";
 
 // generate per-file queries

@@ -1,25 +1,16 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
 import e from "./dbschema/edgeql-js";
-import type {SelectModifiers} from "./src/syntax/select";
-
-// import type {SelectModifiers} from "./src/syntax/select";
-
-type test = {arg: string} | {qwer: string; arg: string};
-
-function infer<T extends test>(arg: T) {
-  return arg;
-}
+import type {Movie, helper} from "./dbschema/interfaces";
 
 async function run() {
-  // type asdeeef = SelectModifiers<
-  //   typeof e["Movie"]["__element__"]
-  // >["filter_single"];
   const {client, data} = await setupTests();
+  // type lkj  = types.Movie extends object ? true : false;
+  type asdf = helper.Links<Movie>;
 
-  const query = e.select(e.Movie, () => ({
+  const query = e.select(e.Movie, m => ({
     filter_single: {
-      id: data.the_avengers.id
+      id: m.id
     }
   }));
 

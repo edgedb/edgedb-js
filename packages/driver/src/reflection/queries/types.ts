@@ -113,8 +113,9 @@ export const typeMapping = new Map([
 
 export async function getTypes(
   cxn: Executor,
-  params: {debug?: boolean}
+  params?: {debug?: boolean}
 ): Promise<Types> {
+  const debug = params?.debug === true;
   const version = await cxn.queryRequiredSingle<number>(
     `select sys::get_version().major;`
   );
@@ -224,7 +225,7 @@ export async function getTypes(
 
   const types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
   // tslint:disable-next-line
-  if (params?.debug) console.log(JSON.stringify(types, null, 2));
+  if (debug) console.log(JSON.stringify(types, null, 2));
 
   // remap types
   for (const type of types) {

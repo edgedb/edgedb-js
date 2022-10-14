@@ -13,8 +13,7 @@ import {
   Cardinality,
   ExpressionKind,
   TypeKind,
-  OperatorKind,
-  typeutil
+  OperatorKind
 } from "edgedb/dist/reflection/index";
 import {makeType} from "./hydrate";
 
@@ -54,7 +53,6 @@ import {
   literalToTypeSet
 } from "./castMaps";
 import type {$expr_Operator} from "./funcops";
-import {cast} from "./cast";
 
 export const ASC: "ASC" = "ASC";
 export const DESC: "DESC" = "DESC";

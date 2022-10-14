@@ -11,6 +11,7 @@ EdgeDB TypeScript/JS Client
    driver
    generation
    queries
+   interfaces
    querybuilder
    literals
    types

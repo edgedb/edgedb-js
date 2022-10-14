@@ -1,4 +1,4 @@
-import type {GeneratorParams} from "../generate";
+import type {GeneratorParams} from "../genutil";
 import {frag, getRef, quote, splitName} from "../genutil";
 import {
   all,
@@ -13,7 +13,7 @@ import {
 } from "../builders";
 
 import {getStringRepresentation} from "./generateObjectTypes";
-import type {$} from "../genutil";
+import type {$} from "edgedb";
 import {
   getTypesSpecificity,
   sortFuncopOverloads,

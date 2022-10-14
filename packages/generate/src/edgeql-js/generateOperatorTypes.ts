@@ -1,5 +1,5 @@
 import {CodeBuffer, dts, r, t, ts} from "../builders";
-import type {GeneratorParams} from "../generate";
+import type {GeneratorParams} from "../genutil";
 import {frag, quote, splitName} from "../genutil";
 import {
   allowsLiterals,
@@ -14,7 +14,7 @@ import {
   expandFuncopAnytypeOverloads,
   findPathOfAnytype
 } from "../funcoputil";
-import {$} from "../genutil";
+import {$} from "edgedb";
 import {getStringRepresentation} from "./generateObjectTypes";
 
 export function generateOperatorFunctions({

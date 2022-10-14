@@ -1,5 +1,5 @@
 import {CodeBuffer, dts, r, t, ts, all} from "../builders";
-import type {GeneratorParams} from "../generate";
+import type {GeneratorParams} from "../genutil";
 import {
   getRef,
   joinFrags,
@@ -7,7 +7,7 @@ import {
   quote,
   scalarToLiteralMapping
 } from "../genutil";
-import {$} from "../genutil";
+import {$} from "edgedb";
 import {getStringRepresentation} from "./generateObjectTypes";
 
 const getRuntimeRef = (name: string) => getRef(name, {prefix: ""});

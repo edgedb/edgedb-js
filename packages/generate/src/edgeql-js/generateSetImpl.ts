@@ -1,5 +1,5 @@
 import {dts, r, t, ts} from "../builders";
-import type {GeneratorParams} from "../generate";
+import type {GeneratorParams} from "../genutil";
 import {getImplicitCastableRootTypes} from "../funcoputil";
 import {getStringRepresentation} from "./generateObjectTypes";
 
