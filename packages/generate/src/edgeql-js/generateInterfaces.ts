@@ -1,13 +1,7 @@
 import {CodeBuffer, js, t} from "../builders";
 import type {GeneratorParams} from "../genutil";
 import {$} from "../genutil";
-import {
-  getRef,
-  makePlainIdent,
-  quote,
-  splitName,
-  toTSScalarType
-} from "../genutil";
+import {makePlainIdent, quote, splitName, toTSScalarType} from "../genutil";
 
 export type GenerateInterfacesParams = Pick<GeneratorParams, "dir" | "types">;
 

@@ -1,6 +1,6 @@
 {
   "name": "@edgedb/generate",
-  "version": "0.0.2-alpha.1",
+  "version": "0.0.2-alpha.2",
   "description": "EdgeDB code generators for TS/JavaScript",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "conditional-type-checks": "^1.0.5",
-    "edgedb": "~1.0.0-alpha.0",
+    "edgedb": "~1.0.0-alpha.2",
     "esbuild": "^0.15.7",
     "globby": "^13.1.2",
     "superjson": "^1.7.5",

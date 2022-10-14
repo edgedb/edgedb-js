@@ -5,12 +5,17 @@ Generators
 
 The ``@edgedb/generate`` package provides a set of code generation tools that are useful when developing an EdgeDB-backed applications with TypeScript/JavaScript.
 
-There are currently two generators available.
+**Official generators**
 
 - ``queries``: Scans your project for ``*.edgeql`` files and generates a file containing a strongly-typed function alongside each. Alternatively you can use ``--file`` mode to generate a single file containing all the query functions.
 - ``edgeql-js``: Introspects your database schema and generates a query builder.
 - ``interfaces``: Introspects your database schema and generates a set of equivalent TypeScript interfaces.
 
+**Third party generators**
+
+.. note::
+
+  If you implement a code generator, submit a PR and we'll list it here! The ``edgedb`` package exports a ``$`` namespace containing some utilities for introspecting the schema and analyzing queries. (We use these same tools to implement the official generators.)
 
 Requirements
 ^^^^^^^^^^^^

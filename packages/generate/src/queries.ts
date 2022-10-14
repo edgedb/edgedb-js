@@ -1,9 +1,9 @@
 // tslint:disable
-import {createClient, adapter} from "edgedb";
+import {createClient, adapter, $} from "edgedb";
 import type {ConnectConfig} from "edgedb/dist/conUtils";
 import type {CommandOptions} from "./commandutil";
-import {generateQueryType} from "./codecToType";
-import type {QueryType} from "./codecToType";
+// import {$} from "./codecToType";
+// import type {QueryType} from "./codecToType";
 import type {Target} from "./genutil";
 import {Cardinality} from "edgedb/dist/ifaces";
 
@@ -58,7 +58,7 @@ currently supported.`);
       const prettyPath = "./" + adapter.path.posix.relative(root, path);
       console.log(`   ${prettyPath}`);
       const query = await adapter.readFileUtf8(path);
-      const types = await generateQueryType(client, query);
+      const types = await $.analyzeQuery(client, query);
       const files = await generateFiles({
         target: params.options.target!,
         path,
@@ -105,7 +105,7 @@ currently supported.`);
   async function generateFilesForQuery(path: string) {
     const query = await adapter.readFileUtf8(path);
     if (!query) return;
-    const types = await generateQueryType(client, query);
+    const types = await $.analyzeQuery(client, query);
     const files = await generateFiles({
       target: params.options.target!,
       path,
@@ -161,6 +161,8 @@ async function getMatches(root: string) {
 //   mts: ".mts",
 //   ts: `.ts`
 // };
+
+type QueryType = Awaited<ReturnType<typeof $["analyzeQuery"]>>;
 
 function generateFiles(params: {
   target: Target;

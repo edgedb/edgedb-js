@@ -3,15 +3,18 @@ import {StrictMap} from "../strictMap";
 import type {typeutil} from "../typeutil";
 import {typeMapping} from "./types";
 
-export type Typemod = "SetOfType" | "OptionalType" | "SingletonType";
+export type FuncopTypemod = "SetOfType" | "OptionalType" | "SingletonType";
 
-export type ParamKind = "VariadicParam" | "NamedOnlyParam" | "PositionalParam";
+export type FunctionParamKind =
+  | "VariadicParam"
+  | "NamedOnlyParam"
+  | "PositionalParam";
 
-export interface Param {
+export interface FuncopParam {
   name: string;
   type: {id: string; name: string};
-  kind: ParamKind;
-  typemod: Typemod;
+  kind: FunctionParamKind;
+  typemod: FuncopTypemod;
   hasDefault?: boolean;
 }
 
@@ -20,16 +23,14 @@ export interface FunctionDef {
   name: string;
   description?: string;
   return_type: {id: string; name: string};
-  return_typemod: Typemod;
-  params: Param[];
+  return_typemod: FuncopTypemod;
+  params: FuncopParam[];
   preserves_optionality: boolean;
 }
 
-export type FunctionTypes = typeutil.depromisify<
-  ReturnType<typeof getFunctions>
->;
+export type FunctionTypes = typeutil.depromisify<ReturnType<typeof functions>>;
 
-export const getFunctions = async (cxn: Executor) => {
+export const functions = async (cxn: Executor) => {
   const functionsJson = await cxn.queryJSON(`
     with module schema
     select Function {
@@ -82,7 +83,7 @@ export const getFunctions = async (cxn: Executor) => {
 
 export function replaceNumberTypes(def: {
   return_type: FunctionDef["return_type"];
-  params: Param[];
+  params: FuncopParam[];
 }): void {
   if (typeMapping.has(def.return_type.id)) {
     const type = typeMapping.get(def.return_type.id)!;

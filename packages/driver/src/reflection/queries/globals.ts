@@ -3,7 +3,7 @@ import {Cardinality} from "../enums";
 import type {UUID} from "./queryTypes";
 import {StrictMap} from "../strictMap";
 
-export type GlobalType = {
+export type Global = {
   id: UUID;
   name: string;
   has_default: boolean;
@@ -11,9 +11,9 @@ export type GlobalType = {
   card: Cardinality;
 };
 
-export type Globals = StrictMap<UUID, GlobalType>;
+export type Globals = StrictMap<UUID, Global>;
 
-export async function getGlobals(cxn: Executor): Promise<Globals> {
+export async function globals(cxn: Executor): Promise<Globals> {
   const globalsMap = new Map();
   const version = await cxn.queryRequiredSingle<number>(
     `select sys::get_version().major;`
@@ -37,7 +37,7 @@ export async function getGlobals(cxn: Executor): Promise<Globals> {
     ORDER BY .name;
   `;
 
-  const globals: GlobalType[] = JSON.parse(await cxn.queryJSON(QUERY));
+  const globals: Global[] = JSON.parse(await cxn.queryJSON(QUERY));
   for (const g of globals) {
     globalsMap.set(g.id, g);
   }

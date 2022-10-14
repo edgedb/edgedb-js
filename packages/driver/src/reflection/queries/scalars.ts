@@ -18,9 +18,9 @@ import type {typeutil} from "../typeutil";
     generate declarationd
  */
 
-export type ScalarTypes = typeutil.depromisify<ReturnType<typeof getScalars>>;
+export type ScalarTypes = typeutil.depromisify<ReturnType<typeof scalars>>;
 
-export const getScalars = async (cxn: Executor) => {
+export const scalars = async (cxn: Executor) => {
   const scalarArray = await cxn.queryJSON(`with module schema
 select InheritingObject {
   id,

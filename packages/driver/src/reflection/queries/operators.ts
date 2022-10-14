@@ -1,12 +1,12 @@
 import {Executor} from "../../ifaces";
 import {StrictMap} from "../strictMap";
 
-import {Param, replaceNumberTypes, Typemod} from "./functions";
+import {FuncopParam, replaceNumberTypes, FuncopTypemod} from "./functions";
 import {util} from "../util";
 import {typeutil} from "../typeutil";
 import {OperatorKind} from "../enums";
 
-export type {Typemod};
+export type {FuncopTypemod};
 
 export interface OperatorDef {
   id: string;
@@ -15,15 +15,13 @@ export interface OperatorDef {
   operator_kind: OperatorKind;
   description?: string;
   return_type: {id: string; name: string};
-  return_typemod: Typemod;
-  params: Param[];
+  return_typemod: FuncopTypemod;
+  params: FuncopParam[];
 }
 
-export type OperatorTypes = typeutil.depromisify<
-  ReturnType<typeof getOperators>
->;
+export type OperatorTypes = typeutil.depromisify<ReturnType<typeof operators>>;
 
-export const getOperators = async (cxn: Executor) => {
+export const operators = async (cxn: Executor) => {
   const operatorsJson = await cxn.queryJSON(`
     with module schema
     select Operator {

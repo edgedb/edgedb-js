@@ -1,28 +1,21 @@
 import {adapter} from "edgedb";
-// import {configFileHeader, exitWithError, runQBGenerator} from "./generate";
-import {isTTY, CommandOptions, promptBoolean} from "./commandutil";
 import type {ConnectConfig} from "edgedb/dist/conUtils";
-
-// const {path, fs, readFileUtf8, exists} = adapter;
-
-import {DirBuilder, dts, r, t} from "./builders";
-import {createClient, Client, $} from "edgedb";
+import {CommandOptions, isTTY, promptBoolean} from "./commandutil";
+import {$, Client, createClient} from "edgedb";
+import {DirBuilder} from "./builders";
 import {syntax} from "./FILES";
 
-import * as genutil from "./genutil";
-
 import {generateCastMaps} from "./edgeql-js/generateCastMaps";
-import {generateScalars} from "./edgeql-js/generateScalars";
-import {generateObjectTypes} from "./edgeql-js/generateObjectTypes";
-import {generateRuntimeSpec} from "./edgeql-js/generateRuntimeSpec";
 import {generateFunctionTypes} from "./edgeql-js/generateFunctionTypes";
-import {generateOperators} from "./edgeql-js/generateOperatorTypes";
 import {generateGlobals} from "./edgeql-js/generateGlobals";
-import {generateSetImpl} from "./edgeql-js/generateSetImpl";
 import {generateIndex} from "./edgeql-js/generateIndex";
+import {generateObjectTypes} from "./edgeql-js/generateObjectTypes";
+import {generateOperators} from "./edgeql-js/generateOperatorTypes";
+import {generateRuntimeSpec} from "./edgeql-js/generateRuntimeSpec";
+import {generateScalars} from "./edgeql-js/generateScalars";
+import {generateSetImpl} from "./edgeql-js/generateSetImpl";
 
 const {path, fs, readFileUtf8, exists, exit, walk} = adapter;
-const DEBUG = false;
 export const configFileHeader = `// EdgeDB query builder. To update, run \`npx @edgedb/generate edgeql-js\``;
 
 export type GeneratorParams = {
@@ -113,12 +106,12 @@ export async function generateQueryBuilder(params: {
 
     const [types, scalars, casts, functions, operators, globals] =
       await Promise.all([
-        $.introspect.getTypes(cxn, {debug: DEBUG}),
-        $.introspect.getScalars(cxn),
-        $.introspect.getCasts(cxn, {debug: DEBUG}),
-        $.introspect.getFunctions(cxn),
-        $.introspect.getOperators(cxn),
-        $.introspect.getGlobals(cxn)
+        $.introspect.types(cxn),
+        $.introspect.scalars(cxn),
+        $.introspect.casts(cxn),
+        $.introspect.functions(cxn),
+        $.introspect.operators(cxn),
+        $.introspect.globals(cxn)
       ]);
 
     const typesByName: Record<string, $.introspect.Type> = {};

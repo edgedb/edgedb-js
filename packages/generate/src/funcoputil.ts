@@ -150,7 +150,10 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
   });
 }
 
-function groupParams(params: $.introspect.Param[], types: $.introspect.Types) {
+function groupParams(
+  params: $.introspect.FuncopParam[],
+  types: $.introspect.Types
+) {
   return {
     positional: params
       .filter(
@@ -231,8 +234,8 @@ export function sortFuncopOverloads<F extends FuncopDef>(
   return [...overloads].sort((a, b) => {
     let i = 0;
     while (true) {
-      let paramA: $.introspect.Param | null = a.params[i] ?? null;
-      let paramB: $.introspect.Param | null = b.params[i] ?? null;
+      let paramA: $.introspect.FuncopParam | null = a.params[i] ?? null;
+      let paramB: $.introspect.FuncopParam | null = b.params[i] ?? null;
 
       if (paramA?.kind === "NamedOnlyParam") paramA = null;
       if (paramB?.kind === "NamedOnlyParam") paramB = null;

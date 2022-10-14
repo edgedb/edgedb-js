@@ -6,7 +6,6 @@ import path from "path";
 
 const fs = _fs.promises;
 
-console.log(`__dirname: ${__dirname}`);
 const distSyntax = path.join(__dirname, "dist", "syntax");
 const esmSyntax = path.join(__dirname, "dist", "__esm");
 
