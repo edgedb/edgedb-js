@@ -6,8 +6,8 @@ on:
       - master
       - ci
   pull_request:
-    branches:
-      - master
+    # branches:
+    #   - master
 
 jobs:
   test:
