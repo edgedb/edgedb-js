@@ -1,11 +1,11 @@
-import {process} from "https://deno.land/std@0.114.0/node/process.ts";
-import {Sha1} from "https://deno.land/std@0.114.0/hash/sha1.ts";
+import {process} from "https://deno.land/std@0.159.0/node/process.ts";
+import {Sha1} from "https://deno.land/std@0.159.0/hash/sha1.ts";
 
-import path from "https://deno.land/std@0.114.0/node/path.ts";
-import * as _fs from "https://deno.land/std@0.114.0/fs/mod.ts";
-import * as fs from "https://deno.land/std@0.114.0/node/fs/promises.ts";
-import EventEmitter from "https://deno.land/std@0.114.0/node/events.ts";
-import util from "https://deno.land/std@0.114.0/node/util.ts";
+import path from "https://deno.land/std@0.159.0/node/path.ts";
+import * as _fs from "https://deno.land/std@0.159.0/fs/mod.ts";
+import * as fs from "https://deno.land/std@0.159.0/node/fs/promises.ts";
+import EventEmitter from "https://deno.land/std@0.159.0/node/events.ts";
+import util from "https://deno.land/std@0.159.0/node/util.ts";
 
 export {path, process, util, fs};
 
@@ -76,7 +76,7 @@ export function homeDir(): string {
 }
 
 // TODO: replace this with
-//       `import * as fs from "https://deno.land/std@0.95.0/node/fs.ts";`
+//       `import * as fs from "https://deno.land/std@0.159.0/node/fs.ts";`
 //       when the 'fs' compat module does not require '--unstable' flag.
 
 async function toArray(iter: AsyncIterable<unknown>) {

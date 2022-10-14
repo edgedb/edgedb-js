@@ -1,7 +1,7 @@
 import {
   Sha256,
   HmacSha256
-} from "https://deno.land/std@0.114.0/hash/sha256.ts";
+} from "https://deno.land/std@0.159.0/hash/sha256.ts";
 
 export async function randomBytes(size: number): Promise<Uint8Array> {
   const buf = new Uint8Array(size);
