@@ -82,7 +82,7 @@ function generateSetType(type: string, cardinality: Cardinality): string {
     case Cardinality.AT_MOST_ONE:
       return `${type} | null`;
     case Cardinality.AT_LEAST_ONE:
-      return `[${type}, ...${type}[]]`;
+      return `[(${type}), ...(${type})[]]`;
   }
   throw Error(`unexpected cardinality: ${cardinality}`);
 }
