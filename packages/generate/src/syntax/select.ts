@@ -563,7 +563,7 @@ export type $expr_Delete<Root extends ObjectTypeSet = ObjectTypeSet> =
 
 function deleteExpr<
   Expr extends ObjectTypeExpression,
-  Modifiers extends SelectModifiers
+  Modifiers extends SelectModifiers<Expr["__element__"]>
 >(
   expr: Expr,
   modifiers?: (scope: $scopify<Expr["__element__"]>) => Readonly<Modifiers>

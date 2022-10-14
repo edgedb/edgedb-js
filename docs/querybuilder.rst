@@ -474,29 +474,6 @@ Note that the filter expression above uses ``e.op`` function, which is how to us
   e.op(e.str('😄'), 'if', e.bool(true), 'else', e.str('😢'));
   // '😄' if true else '😢'
 
-Select a single object
-^^^^^^^^^^^^^^^^^^^^^^
-
-Filter by a property with an *exclusive constraint* to fetch a particular
-object.
-
-.. code-block:: typescript
-
-  const query = e.select(e.Movie, (movie) => ({
-    id: true,
-    title: true,
-    release_year: true,
-
-    // filter .id = '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'
-    filter: e.op(movie.id, '=', '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'),
-  }));
-
-  const result = await query.run(client);
-  // {id: string; title: string; release_year: number | null}
-
-Note that ``result`` is now a single object, not a list of objects. The query
-builder detects when you are filtering on a property with an exclusive
-constraint.
 
 Update objects
 ^^^^^^^^^^^^^^
