@@ -7,6 +7,7 @@ import type {
 import type * as introspect from "edgedb/dist/reflection/queries/types";
 import {util} from "edgedb/dist/reflection/index";
 
+export {$} from "edgedb";
 import type {$} from "edgedb";
 import {adapter} from "edgedb";
 

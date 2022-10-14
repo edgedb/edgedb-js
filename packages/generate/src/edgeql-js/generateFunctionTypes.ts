@@ -13,7 +13,7 @@ import {
 } from "../builders";
 
 import {getStringRepresentation} from "./generateObjectTypes";
-import type {$} from "edgedb";
+import type {$} from "../genutil";
 import {
   getTypesSpecificity,
   sortFuncopOverloads,

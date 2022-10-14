@@ -14,7 +14,7 @@ import {
   expandFuncopAnytypeOverloads,
   findPathOfAnytype
 } from "../funcoputil";
-import {$} from "edgedb";
+import {$} from "../genutil";
 import {getStringRepresentation} from "./generateObjectTypes";
 
 export function generateOperatorFunctions({

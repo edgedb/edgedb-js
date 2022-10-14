@@ -7,7 +7,7 @@ import {
   quote,
   scalarToLiteralMapping
 } from "../genutil";
-import {$} from "edgedb";
+import {$} from "../genutil";
 import {getStringRepresentation} from "./generateObjectTypes";
 
 const getRuntimeRef = (name: string) => getRef(name, {prefix: ""});

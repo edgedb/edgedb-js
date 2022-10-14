@@ -74,7 +74,7 @@ There are two components of this library:
 
 *Deno users*: Import from ``deno.land/x/edgedb``:
 
-.. code-block::
+.. code-block:: typescript
 
   import * as edgedb from "https://deno.land/x/edgedb/mod.ts"
 

@@ -49,10 +49,15 @@ Assume your database contains the following EdgeDB schema.
 
 The following command will run the ``queries`` generator.
 
-.. code-block:: bash
+.. tabs::
 
-  $ npx @edgedb/generate queries
+  .. code-tab:: bash#Node.js
 
+    $ npx @edgedb/generate interfaces
+
+  .. code-tab:: bash#Deno
+
+    $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts interfaces
 
 This will introspect your schema and generate TypeScript interfaces that correspond to each object type. By default, these interfaces will be written to a single file called ``interfaces.ts`` into the ``dbschema`` directory in your project root. The file will contain the following contents (roughly):
 
@@ -74,6 +79,7 @@ This will introspect your schema and generate TypeScript interfaces that corresp
 
 Any types declared in a non-``default`` module  will be generated into an
 accordingly named ``namespace``.
+
 
 Customize file path
 ~~~~~~~~~~~~~~~~~~~

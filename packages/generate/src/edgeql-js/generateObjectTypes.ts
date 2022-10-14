@@ -1,6 +1,6 @@
 import {CodeBuffer, CodeFragment, dts, js, r, t, ts} from "../builders";
 import type {GeneratorParams} from "../genutil";
-import {$} from "edgedb";
+import {$} from "../genutil";
 import {
   frag,
   getRef,

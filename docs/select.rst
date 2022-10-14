@@ -105,7 +105,7 @@ properties of a given object.
 
 This ``*`` property is just a strongly-typed, plain object:
 
-.. code-block::
+.. code-block:: typescript
 
   e.Movie['*'];
   // => {id: true, title: true, release_year: true}

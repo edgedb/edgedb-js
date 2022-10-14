@@ -1,6 +1,6 @@
 import {CodeBuffer, js, t} from "../builders";
 import type {GeneratorParams} from "../genutil";
-import {$} from "edgedb";
+import {$} from "../genutil";
 import {
   getRef,
   makePlainIdent,
