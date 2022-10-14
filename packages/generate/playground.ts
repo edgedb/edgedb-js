@@ -1,17 +1,11 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
 import e from "./dbschema/edgeql-js";
-import type {Movie, helper} from "./dbschema/interfaces";
 
 async function run() {
-  const {client, data} = await setupTests();
-  // type lkj  = types.Movie extends object ? true : false;
-  type asdf = helper.Links<Movie>;
-
+  const {client} = await setupTests();
   const query = e.select(e.Movie, m => ({
-    filter_single: {
-      id: m.id
-    }
+    rating: true
   }));
 
   console.log(query.toEdgeQL());

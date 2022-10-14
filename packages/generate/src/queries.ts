@@ -194,7 +194,7 @@ function generateFiles(params: {
   const hasArgs = params.types.args && params.types.args !== "null";
   const tsImpl = `async function ${functionName}(client: Client${
     hasArgs ? `, args: ${params.types.args}` : ""
-  }): Promise<${params.types.out}> {
+  }): Promise<${params.types.result}> {
   return client.${method}(\`${params.types.query.replace("`", "`")}\`${
     hasArgs ? `, args` : ""
   });
@@ -210,7 +210,7 @@ function generateFiles(params: {
 
   const dtsImpl = `function ${functionName}(client: Client${
     hasArgs ? `, args: ${params.types.args}` : ""
-  }): Promise<${params.types.out}>;`;
+  }): Promise<${params.types.result}>;`;
 
   switch (params.target) {
     case "cjs":
