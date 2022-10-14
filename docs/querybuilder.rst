@@ -341,11 +341,13 @@ special ``*`` property:
   }));
 
   const result = await query.run(client);
-  /* Array{
+  /* Array<{
     id: string;
     title: string;
     release_year: number | null;  # optional property
   }> */
+
+
 
 Nested shapes
 ^^^^^^^^^^^^^
@@ -363,10 +365,80 @@ Nested shapes
   const result = await query.run(client);
   // Array<{id: string; title: string, actors: Array<{name: string}>}>
 
-Filtering, ordering, and pagination
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Filtering
+^^^^^^^^^
 
-The special keys ``filter``, ``order_by``, ``limit``, and ``offset``
+Pass a boolean expression as the special key ``filter`` to filter the results.
+
+.. code-block:: typescript
+
+  const query = e.select(e.Movie, (movie) => ({
+    id: true,
+    title: true,
+    // special "filter" key
+    filter: e.op(movie.release_year, ">", 1999)
+  }));
+
+  const result = await query.run(client);
+  // Array<{id: string; title: number}>
+
+Since ``filter`` is a reserved keyword in EdgeQL, the special ``filter`` key can live alongside your property keys without a risk of collision.
+
+.. note::
+
+  The ``e.op`` function is used to express EdgeQL operators. It is documented in more detail below and on the :ref:`Functions and operators <edgedb-js-funcops>` page.
+
+Select a single object
+^^^^^^^^^^^^^^^^^^^^^^
+
+To select a particular object, use the ``filter_single`` key. This tells the query builder to expect a singleton result.
+
+.. code-block:: typescript
+
+  const query = e.select(e.Movie, (movie) => ({
+    id: true,
+    title: true,
+    release_year: true,
+
+    filter_single: e.op(movie.id, '=', '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'),
+  }));
+
+  const result = await query.run(client);
+  // {id: string; title: string; release_year: number | null}
+
+For convenience ``filter_single`` also supports a simplified syntax that eliminates the need for ``e.op``:
+
+.. code-block:: typescript
+
+  e.select(e.Movie, (movie) => ({
+    id: true,
+    title: true,
+    release_year: true,
+
+    filter_single: {id: '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'},
+  }));
+
+This also works if an object type has a composite exclusive constraint:
+
+.. code-block:: typescript
+
+  /*
+    type Movie {
+      ...
+      constraint exclusive on (.title, .release_year);
+    }
+  */
+
+  e.select(e.Movie, (movie) => ({
+    title: true,
+    filter_single: {title: 'The Avengers', release_year: 2012},
+  }));
+
+
+Ordering and pagination
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The special keys ``order_by``, ``limit``, and ``offset``
 correspond to equivalent EdgeQL clauses.
 
 .. code-block:: typescript
@@ -374,14 +446,14 @@ correspond to equivalent EdgeQL clauses.
   const query = e.select(e.Movie, (movie) => ({
     id: true,
     title: true,
-    filter: e.op(movie.release_year, ">", 1999),
+
     order_by: movie.title,
     limit: 10,
     offset: 10
   }));
 
   const result = await query.run(client);
-  // Array<{id: string; title: number}>
+  // {id: true; title: true}[]
 
 Operators
 ^^^^^^^^^
