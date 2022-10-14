@@ -23,7 +23,7 @@ import {
   InvalidArgumentError,
   MissingArgumentError,
   UnknownArgumentError,
-  ProtocolError,
+  ProtocolError
 } from "../errors";
 
 export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
@@ -44,7 +44,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     );
   }
 
-  encodeArgs(args: any): Buffer {
+  encodeArgs(args: any): Uint8Array {
     if (args == null) {
       throw new MissingArgumentError(
         "One or more named arguments expected, received null"

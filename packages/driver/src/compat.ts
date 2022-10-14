@@ -20,34 +20,7 @@
    browser and NodeJS environments.
 */
 
-/* We customize the `console.log()` rendering of some EdgeDB objects
-   in NodeJS. In browsers, however, it's not possible to customize that,
-   so we're just creating a shell of "util.inspect" so that NodeJS code
-   can compile unchanged for the browser environment.
-*/
-
-interface Inspect {
-  (...args: any): null;
-  custom: symbol;
-}
-
-let inspect: Inspect = (() => {
-  const f = () => null;
-  f.custom = Symbol();
-  return f;
-})();
-
-// @ts-ignore
-if (typeof window === "undefined" && typeof Deno === "undefined") {
-  // NodeJS environment.
-  // @ts-ignore
-  const utilMod = require("util"); // tslint:disable-line
-  inspect = utilMod.inspect;
-}
-
-export {inspect};
-
-export function decodeInt64ToString(buf: Buffer): string {
+export function decodeInt64ToString(buf: Uint8Array): string {
   /* Render int64 binary into a decimal string.
 
      Avoid using BigInts (not all platforms support them) or number

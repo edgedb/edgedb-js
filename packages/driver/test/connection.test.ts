@@ -76,11 +76,8 @@ import * as fs from "fs";
 import * as crypto from "crypto";
 import {join as pathJoin} from "path";
 import {Client, Duration} from "../src/index.node";
-import {
-  parseConnectArguments,
-  parseDuration,
-  stashPath
-} from "../src/conUtils";
+import {parseDuration} from "../src/conUtils";
+import {parseConnectArguments, findStashPath} from "../src/conUtils.server";
 import {getClient} from "./testbase";
 import * as errors from "../src/errors";
 import * as platform from "../src/platform";
@@ -269,7 +266,7 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
           database: connectionParams.database,
           user: connectionParams.user,
           password: connectionParams.password ?? null,
-          tlsCAData: connectionParams.tlsOptions.ca ?? null,
+          tlsCAData: connectionParams._tlsCAData,
           tlsSecurity: connectionParams.tlsSecurity,
           serverSettings: connectionParams.serverSettings,
           waitUntilAvailable: parseDuration(
@@ -360,7 +357,7 @@ test("project path hashing", async () => {
       await envWrap(
         {env: testcase.env ?? {}, fs: {homedir: testcase.homeDir}},
         async () =>
-          expect(await stashPath(testcase.project)).toBe(testcase.result)
+          expect(await findStashPath(testcase.project)).toBe(testcase.result)
       );
     }
   }
@@ -525,7 +522,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
           database: connectionParams.database,
           user: connectionParams.user,
           password: connectionParams.password ?? null,
-          tlsCAData: connectionParams.tlsOptions.ca ?? null,
+          tlsCAData: connectionParams._tlsCAData,
           tlsSecurity: connectionParams.tlsSecurity,
           serverSettings: connectionParams.serverSettings
         }).toEqual(testcase.result);

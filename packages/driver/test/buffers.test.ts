@@ -16,7 +16,11 @@
  * limitations under the License.
  */
 
-import {BufferError, WriteMessageBuffer} from "../src/primitives/buffer";
+import {
+  BufferError,
+  WriteMessageBuffer,
+  encodeB64
+} from "../src/primitives/buffer";
 import * as chars from "../src/primitives/chars";
 
 test("matches edgedb-python packing", () => {
@@ -31,8 +35,8 @@ test("matches edgedb-python packing", () => {
     .writeString("bbbbbbbbb")
     .endMessage();
 
-  const buf: Buffer = w.unwrap();
-  expect(buf.toString("base64")).toBe(
+  const buf = w.unwrap();
+  expect(encodeB64(buf)).toBe(
     "RQAAABAACgAAAAZhYWFhYWFQAAAAFQAPQkEAAAAJYmJiYmJiYmJi"
   );
 });

@@ -33,8 +33,10 @@ async function readGlob(params: {
   return await Promise.all(
     matches.map(async match => {
       const absolute = path.posix.join(cwd, match);
+      console.log(`path: `, absolute);
       const content = await fs.readFile(absolute, "utf8");
       const finalPath = pathTx ? pathTx(match) : match;
+
       const finalContent = contentTx ? contentTx(content) : content;
       return {
         path: finalPath,
@@ -104,6 +106,9 @@ async function run() {
     contentTx: content => {
       if (content.indexOf("Buffer") !== -1) {
         content = `import {Buffer} from "https://deno.land/std@0.114.0/node/buffer.ts";\n\n${content}`;
+        console.log(`adding import`);
+      } else {
+        console.log(`no import needed`);
       }
       return content
         .replace(reDriver, `"edgedb/_src$1.ts"`)

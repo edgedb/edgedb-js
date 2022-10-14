@@ -3,11 +3,8 @@
 // tslint:disable no-console
 import {adapter} from "edgedb";
 
-import {
-  ConnectConfig,
-  parseConnectArguments,
-  validTlsSecurityValues
-} from "edgedb/dist/conUtils";
+import {ConnectConfig, validTlsSecurityValues} from "edgedb/dist/conUtils";
+import {parseConnectArguments} from "edgedb/dist/conUtils.server";
 import {
   CommandOptions,
   promptForPassword,

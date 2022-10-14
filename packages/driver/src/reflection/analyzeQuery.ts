@@ -11,7 +11,7 @@ import {SetCodec} from "../codecs/set";
 import {TupleCodec} from "../codecs/tuple";
 import {Cardinality, OutputFormat} from "../ifaces";
 import {Options, Session} from "../options";
-import type {Client, ClientPool} from "../client";
+import type {Client, BaseClientPool} from "../baseClient";
 import {prettyPrintError} from "../prettyPrint";
 
 type QueryType = {
@@ -27,7 +27,7 @@ export async function analyzeQuery(
   query: string
 ): Promise<QueryType> {
   let parseResult: ParseResult;
-  const pool: ClientPool = (client as any).pool;
+  const pool: BaseClientPool = (client as any).pool;
 
   const holder = await pool.acquireHolder(Options.defaults());
   try {

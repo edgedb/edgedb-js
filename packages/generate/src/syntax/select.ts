@@ -941,7 +941,7 @@ export function select(...args: any[]) {
 
   if (
     typeof firstArg !== "object" ||
-    firstArg instanceof Buffer ||
+    firstArg instanceof Uint8Array ||
     firstArg instanceof Date ||
     firstArg instanceof Duration ||
     firstArg instanceof LocalDateTime ||

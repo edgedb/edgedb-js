@@ -226,7 +226,7 @@ in the JavaScript type system, so we've implemented classes like
   * - ``decimal``
     - N/A (not supported)
   * - ``bytes``
-    - ``Buffer``
+    - ``Uint8Array``
   * - ``datetime``
     - ``Date``
   * - ``duration``

@@ -1475,7 +1475,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
     val instanceof DateDuration
   ) {
     stringRep = `'${val.toString()}'`;
-  } else if (val instanceof Buffer) {
+  } else if (val instanceof Uint8Array) {
     stringRep = bufferToStringRep(val);
     skipCast = true;
   } else if (val instanceof Range) {
@@ -1552,7 +1552,7 @@ function q(ident: string, allowBacklinks: boolean = true): string {
   return "`" + ident.replace(/`/g, "``") + "`";
 }
 
-function bufferToStringRep(buf: Buffer): string {
+function bufferToStringRep(buf: Uint8Array): string {
   let stringRep = "";
   for (const byte of buf) {
     if (byte < 32 || byte > 126) {

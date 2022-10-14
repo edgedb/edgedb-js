@@ -16,5 +16,10 @@
  * limitations under the License.
  */
 
+import {createClient} from "./browserClient";
+export default createClient;
+
+export {createClient, createHttpClient} from "./browserClient";
+
 /* Private exports */
 export * from "./index.shared";

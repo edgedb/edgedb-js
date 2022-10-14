@@ -144,6 +144,12 @@ export async function run({
             "/adapter.deno.ts"
           );
         }
+        if (resolvedImportPath.endsWith("/adapter.shared.node.ts")) {
+          resolvedImportPath = resolvedImportPath.replace(
+            "/adapter.shared.node.ts",
+            "/adapter.shared.deno.ts"
+          );
+        }
 
         rewrittenFile.push(resolvedImportPath);
       }

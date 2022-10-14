@@ -19,7 +19,11 @@
 import {net, tls} from "./adapter.node";
 import {PROTO_VER, PROTO_VER_MIN, BaseRawConnection} from "./baseConn";
 import {CodecsRegistry} from "./codecs/registry";
-import {Address, NormalizedConnectConfig} from "./conUtils";
+import {
+  Address,
+  NormalizedConnectConfig,
+  ResolvedConnectConfig
+} from "./conUtils";
 import {versionGreaterThan, versionGreaterThanOrEqual} from "./utils";
 import {ProtocolVersion} from "./ifaces";
 import {WriteMessageBuffer} from "./primitives/buffer";
@@ -33,6 +37,49 @@ enum AuthenticationStatuses {
   AUTH_SASL = 10,
   AUTH_SASL_CONTINUE = 11,
   AUTH_SASL_FINAL = 12
+}
+
+const _tlsOptions = new WeakMap<
+  ResolvedConnectConfig,
+  tls.ConnectionOptions
+>();
+function getTlsOptions(config: ResolvedConnectConfig): tls.ConnectionOptions {
+  if (_tlsOptions.has(config)) {
+    return _tlsOptions.get(config)!;
+  }
+
+  const tlsSecurity = config.tlsSecurity;
+
+  const tlsOptions: tls.ConnectionOptions = {
+    ALPNProtocols: ["edgedb-binary"],
+    rejectUnauthorized: tlsSecurity !== "insecure"
+  };
+
+  _tlsOptions.set(config, tlsOptions);
+
+  if (config._tlsCAData !== null) {
+    // this option replaces the system CA certificates with the one provided.
+    tlsOptions.ca = config._tlsCAData;
+  }
+
+  if (tlsSecurity === "no_host_verification") {
+    tlsOptions.checkServerIdentity = (hostname: string, cert: any) => {
+      const err = tls.checkServerIdentity(hostname, cert);
+
+      if (err === undefined) {
+        return undefined;
+      }
+
+      // ignore failed hostname check
+      if (err.message.startsWith("Hostname/IP does not match certificate")) {
+        return undefined;
+      }
+
+      return err;
+    };
+  }
+
+  return tlsOptions;
 }
 
 export class RawConnection extends BaseRawConnection {
@@ -121,7 +168,7 @@ export class RawConnection extends BaseRawConnection {
     }
   }
 
-  private _onData(data: Buffer): void {
+  private _onData(data: Uint8Array): void {
     let pause = false;
     try {
       pause = this.buffer.feed(data);
@@ -166,7 +213,7 @@ export class RawConnection extends BaseRawConnection {
     }
   }
 
-  protected _sendData(data: Buffer): void {
+  protected _sendData(data: Uint8Array): void {
     this.sock.write(data);
   }
 
@@ -210,14 +257,13 @@ export class RawConnection extends BaseRawConnection {
     addr: Address,
     config: NormalizedConnectConfig,
     registry: CodecsRegistry,
-    exposeErrorAttrs: boolean,
     useTls: boolean = true
   ): Promise<RawConnection> {
     const sock = this.newSock(
       addr,
-      useTls ? config.connectionParams.tlsOptions : undefined
+      useTls ? getTlsOptions(config.connectionParams) : undefined
     );
-    const conn = new this(sock, config, registry, exposeErrorAttrs);
+    const conn = new this(sock, config, registry);
     const connPromise = conn.connect();
     let timeoutCb = null;
     let timeoutHappened = false;
@@ -258,13 +304,7 @@ export class RawConnection extends BaseRawConnection {
               // connecting over tls failed
               // try to connect using clear text
               try {
-                return this.connectWithTimeout(
-                  addr,
-                  config,
-                  registry,
-                  exposeErrorAttrs,
-                  false
-                );
+                return this.connectWithTimeout(addr, config, registry, false);
               } catch {
                 // pass
               }
@@ -437,7 +477,7 @@ export class RawConnection extends BaseRawConnection {
     const methods = [];
     let foundScram256 = false;
     for (let _ = 0; _ < numMethods; _++) {
-      const method = this.buffer.readLenPrefixedBuffer().toString("utf8");
+      const method = this.buffer.readString();
       if (method === "SCRAM-SHA-256") {
         foundScram256 = true;
       }
@@ -480,14 +520,15 @@ export class RawConnection extends BaseRawConnection {
     const [serverNonce, salt, itercount] =
       scram.parseServerFirstMessage(serverFirst);
 
-    const [clientFinal, expectedServerSig] = scram.buildClientFinalMessage(
-      this.config.connectionParams.password || "",
-      salt,
-      itercount,
-      clientFirstBare,
-      serverFirst,
-      serverNonce
-    );
+    const [clientFinal, expectedServerSig] =
+      await scram.buildClientFinalMessage(
+        this.config.connectionParams.password || "",
+        salt,
+        itercount,
+        clientFirstBare,
+        serverFirst,
+        serverNonce
+      );
 
     wb.reset().beginMessage(chars.$r).writeString(clientFinal).endMessage();
     this.sock.write(wb.unwrap());
@@ -505,7 +546,7 @@ export class RawConnection extends BaseRawConnection {
 
     const serverSig = scram.parseServerFinalMessage(serverFinal);
 
-    if (!serverSig.equals(expectedServerSig)) {
+    if (!scram.bufferEquals(serverSig, expectedServerSig)) {
       throw new errors.ProtocolError("server SCRAM proof does not match");
     }
   }

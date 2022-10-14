@@ -21,11 +21,13 @@ import {ICodec, ScalarCodec} from "./ifaces";
 import {InvalidArgumentError} from "../errors";
 
 export class BytesCodec extends ScalarCodec implements ICodec {
-  tsType = "Buffer";
+  tsType = "Uint8Array";
 
   encode(buf: WriteBuffer, object: any): void {
-    if (!(object instanceof Buffer)) {
-      throw new InvalidArgumentError(`a Buffer was expected, got "${object}"`);
+    if (!(object instanceof Uint8Array)) {
+      throw new InvalidArgumentError(
+        `a Uint8Array or Buffer was expected, got "${object}"`
+      );
     }
 
     buf.writeInt32(object.length);

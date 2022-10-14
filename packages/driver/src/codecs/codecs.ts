@@ -24,7 +24,7 @@ import {
   Int32Codec,
   Int64Codec,
   Float32Codec,
-  Float64Codec,
+  Float64Codec
 } from "./numbers";
 import {BigIntCodec} from "./numerics";
 import {StrCodec} from "./text";
@@ -38,7 +38,7 @@ import {
   LocalTimeCodec,
   DurationCodec,
   RelativeDurationCodec,
-  DateDurationCodec,
+  DateDurationCodec
 } from "./datetime";
 import {ConfigMemoryCodec} from "./memory";
 import {InternalClientError} from "../errors";
@@ -48,7 +48,7 @@ import {INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID} from "./consts";
 ///////////////////////////////////////////////////////////////////////////////
 
 export class NullCodec extends Codec implements ICodec {
-  static BUFFER: Buffer = new WriteBuffer().writeInt32(0).unwrap();
+  static BUFFER: Uint8Array = new WriteBuffer().writeInt32(0).unwrap();
   encode(_buf: WriteBuffer, _object: any): void {
     throw new InternalClientError("null codec cannot used to encode data");
   }

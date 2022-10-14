@@ -20,7 +20,7 @@ await run({
   ],
   injectImports: [
     {
-      imports: ["Buffer", "process"],
+      imports: ["process"],
       from: "src/globals.deno.ts"
     }
   ]
@@ -28,7 +28,7 @@ await run({
   run({
     sourceDir: "./test",
     destDir: "../deno/test",
-    sourceFilter: path => {
+    sourceFilter: (path: any) => {
       return denoTestFiles.has(path);
     },
     pathRewriteRules: [{match: /^test\//, replace: ""}],
@@ -51,7 +51,7 @@ await run({
     ],
     injectImports: [
       {
-        imports: ["Buffer", "process", "test", "expect", "jest"],
+        imports: ["process", "test", "expect", "jest"],
         from: "src/globals.deno.ts"
       }
       // {

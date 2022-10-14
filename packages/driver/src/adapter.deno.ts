@@ -1,22 +1,16 @@
 import {process} from "https://deno.land/std@0.114.0/node/process.ts";
-import {Buffer} from "https://deno.land/std@0.114.0/node/buffer.ts";
-import * as crypto from "https://deno.land/std@0.114.0/node/crypto.ts";
-import {
-  Sha256,
-  HmacSha256
-} from "https://deno.land/std@0.114.0/hash/sha256.ts";
+import {Sha1} from "https://deno.land/std@0.114.0/hash/sha1.ts";
 
 import path from "https://deno.land/std@0.114.0/node/path.ts";
-import * as _fs from "https://deno.land/std@0.115.0/fs/mod.ts";
-import * as fs from "https://deno.land/std@0.115.0/node/fs/promises.ts";
+import * as _fs from "https://deno.land/std@0.114.0/fs/mod.ts";
+import * as fs from "https://deno.land/std@0.114.0/node/fs/promises.ts";
 import EventEmitter from "https://deno.land/std@0.114.0/node/events.ts";
 import util from "https://deno.land/std@0.114.0/node/util.ts";
-import {iterateReader} from "https://deno.land/std@0.114.0/streams/conversion.ts";
 
-export {Buffer, path, process, util, crypto, fs};
+export {path, process, util, fs};
 
-export async function readFileUtf8(path: string): Promise<string> {
-  return await Deno.readTextFile(path);
+export async function readFileUtf8(...pathParts: string[]): Promise<string> {
+  return await Deno.readTextFile(path.join(...pathParts));
 }
 
 export async function readDir(path: string) {
@@ -62,25 +56,10 @@ export async function exists(fn: string | URL): Promise<boolean> {
   }
 }
 
-export async function randomBytes(size: number): Promise<Buffer> {
-  const buf = new Uint8Array(size);
-  const rand = globalThis.crypto.getRandomValues(buf);
-
-  return Buffer.from(rand);
-}
-
-export function H(msg: Buffer): Buffer {
-  const sign = new Sha256();
+export function hashSHA1toHex(msg: string): string {
+  const sign = new Sha1();
   sign.update(msg);
-  return Buffer.from(sign.arrayBuffer());
-}
-
-export function HMAC(key: Buffer, ...msgs: Buffer[]): Buffer {
-  const hm = new HmacSha256(key);
-  for (const msg of msgs) {
-    hm.update(msg);
-  }
-  return Buffer.from(hm.arrayBuffer());
+  return sign.hex();
 }
 
 export function homeDir(): string {
@@ -94,10 +73,6 @@ export function homeDir(): string {
     return path.join(homeDrive, homePath);
   }
   throw new Error("Unable to determine home path");
-}
-
-export function hrTime(): number {
-  return performance.now();
 }
 
 // TODO: replace this with
@@ -184,13 +159,13 @@ export namespace net {
   export declare interface Socket {
     on(eventName: "error", listener: (e: any) => void): this;
     on(eventName: "connect", listener: () => void): this;
-    on(eventName: "data", listener: (data: Buffer) => void): this;
+    on(eventName: "data", listener: (data: Uint8Array) => void): this;
     on(eventName: "close", listener: () => void): this;
   }
 
   export class BaseSocket<T extends Deno.Conn> extends EventEmitter {
     protected _conn: T | null = null;
-    protected _readIter: AsyncIterableIterator<Uint8Array> | null = null;
+    protected _reader: Deno.Reader | null = null;
     protected _paused = true;
 
     setNoDelay() {
@@ -215,16 +190,18 @@ export namespace net {
 
     async resume() {
       this._paused = false;
-      while (!this._paused && this._readIter) {
+      while (!this._paused && this._reader) {
         try {
-          const next = await this._readIter.next();
-          this.emit("data", Buffer.from(next.value));
+          const buf = new Uint8Array(16 * 1024);
+          const bytes = await this._reader.read(buf);
 
-          if (next.done) {
+          if (bytes !== null) {
+            this.emit("data", buf.subarray(0, bytes));
+          } else {
             // I'm assuming when the reader has ended
             // the connection is closed
             this._conn = null;
-            this._readIter = null;
+            this._reader = null;
             this.emit("close");
           }
         } catch (e) {
@@ -233,7 +210,7 @@ export namespace net {
       }
     }
 
-    async write(data: Buffer) {
+    async write(data: Uint8Array) {
       try {
         await this._conn?.write(data);
       } catch (e) {
@@ -244,7 +221,7 @@ export namespace net {
     destroy(error?: Error) {
       this._conn?.close();
       this._conn = null;
-      this._readIter = null;
+      this._reader = null;
       if (error) {
         throw error;
       }
@@ -257,7 +234,7 @@ export namespace net {
       pconn
         .then(conn => {
           this._conn = conn;
-          this._readIter = iterateReader(conn);
+          this._reader = conn;
           this.emit("connect");
           this.resume();
         })
@@ -314,7 +291,7 @@ export namespace tls {
           const handshake = await conn.handshake();
           this._alpnProtocol = handshake.alpnProtocol;
           this._conn = conn;
-          this._readIter = iterateReader(conn);
+          this._reader = conn;
           this.emit("secureConnect");
           this.resume();
         })
