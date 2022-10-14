@@ -122,7 +122,7 @@ users and JavaScript users who prefer writing queries as code.
     id: true,
     title: true,
     actors: { name: true },
-    filter: e.op(movie.title, '=', 'Dune')
+    filter_single: {title: 'Dune'}
   }));
 
   const result = await query.run(client);

@@ -8,7 +8,7 @@ Update objects with the ``e.update`` function.
 .. code-block:: typescript
 
   e.update(e.Movie, movie => ({
-    filter: e.op(movie.title, '=', e.str("Avengers 4")),
+    filter_single: {title: "Avengers 4"},
     set: {
       title: "Avengers: Endgame"
     }
@@ -22,6 +22,7 @@ and pagination.
 
   e.update(e.Movie, movie => ({
     filter: ...,
+    filter_single: ...,
     order_by: ...,
     offset: ...,
     limit: ...,
@@ -70,7 +71,7 @@ In the query builder this is represented with the following syntax.
 
   const actors = e.select(e.Person, ...);
   e.update(e.Movie, movie => ({
-    filter: e.op(movie.title, '=', 'The Eternals'),
+    filter_single: {title: 'The Eternals'},
     set: {
       actors: actors,
     }
@@ -82,7 +83,7 @@ In the query builder this is represented with the following syntax.
 
   const actors = e.select(e.Person, ...);
   e.update(e.Movie, movie => ({
-    filter: e.op(movie.title, '=', 'The Eternals'),
+    filter_single: {title: 'The Eternals'},
     set: {
       actors: { "+=": actors },
     }
@@ -95,7 +96,7 @@ In the query builder this is represented with the following syntax.
 
   const actors = e.select(e.Person, ...);
   e.update(e.Movie, movie => ({
-    filter: e.op(movie.title, '=', 'The Eternals'),
+    filter_single: {title: 'The Eternals'},
     set: {
       actors: { "-=": actors },
     }

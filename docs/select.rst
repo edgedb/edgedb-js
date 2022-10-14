@@ -149,7 +149,6 @@ You can also pass an arbitrary boolean expression to ``filter_single`` if you pr
     id: true,
     title: true,
     release_year: true,
-
     filter_single: e.op(movie.id, '=', '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'),
   }));
 
@@ -195,7 +194,7 @@ independently and used in multiple queries.
   const query = e.select(e.Movie, m => ({
     ...baseShape(m),
     release_year: true,
-    filter: e.op(m.title, '=', 'The Avengers')
+    filter_single: {title: 'The Avengers'}
   }))
 
 .. note::
@@ -264,7 +263,7 @@ Filters on links
       name: true,
       filter: e.op(actor.name.slice(0, 1), '=', 'A'),
     }),
-    filter: e.op(movie.title, '=', 'Iron Man'),
+    filter_single: {title: 'Iron Man'}
   }));
 
 
@@ -279,7 +278,7 @@ Filters on link properties
       name: true,
       filter: e.op(actor['@character_name'], 'ilike', 'Tony Stark'),
     }),
-    filter: e.op(movie.title, '=', 'Iron Man'),
+    filter_single: {title: 'Iron Man'}
   }));
 
 

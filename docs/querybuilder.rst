@@ -400,7 +400,7 @@ To select a particular object, use the ``filter_single`` key. This tells the que
     title: true,
     release_year: true,
 
-    filter_single: e.op(movie.id, '=', '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'),
+    filter_single: {id, '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'},
   }));
 
   const result = await query.run(client);
@@ -481,7 +481,7 @@ Update objects
 .. code-block:: typescript
 
   const query = e.update(e.Movie, (movie) => ({
-    filter: e.op(movie.title, '=', 'Doctor Strange 2'),
+    filter_single: {title: 'Doctor Strange 2'},
     set: {
       title: 'Doctor Strange in the Multiverse of Madness',
     },
@@ -532,7 +532,7 @@ Or we can use subqueries inside mutations.
 
   // select Doctor Strange
   const drStrange = e.select(e.Movie, movie => ({
-    filter: e.op(movie.title, '=', "Doctor Strange")
+    filter_single: {title: "Doctor Strange"}
   }));
 
   // select actors
