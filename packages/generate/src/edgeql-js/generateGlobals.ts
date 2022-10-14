@@ -6,7 +6,7 @@ import {getStringRepresentation} from "./generateObjectTypes";
 import type {$} from "../genutil";
 
 export const generateGlobals = ({dir, globals, types}: GeneratorParams) => {
-  const globalsByMod: {[k: string]: $.introspect.GlobalType[]} = {};
+  const globalsByMod: {[k: string]: $.introspect.Global[]} = {};
   for (const [_id, g] of globals.entries()) {
     const {mod} = splitName(g.name);
     globalsByMod[mod] = globalsByMod[mod] || [];

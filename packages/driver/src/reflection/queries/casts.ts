@@ -28,9 +28,9 @@ const reachableFrom: (
   return [...reachable];
 };
 
-export type Casts = typeutil.depromisify<ReturnType<typeof getCasts>>;
+export type Casts = typeutil.depromisify<ReturnType<typeof casts>>;
 
-export const getCasts = async (cxn: Executor, params?: {debug?: boolean}) => {
+export const casts = async (cxn: Executor, params?: {debug?: boolean}) => {
   const allCastsRaw = await cxn.queryJSON(`WITH MODULE schema
         SELECT Cast {
             id,

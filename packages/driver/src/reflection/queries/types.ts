@@ -111,7 +111,7 @@ export const typeMapping = new Map([
   ]
 ]);
 
-export async function getTypes(
+export async function types(
   cxn: Executor,
   params?: {debug?: boolean}
 ): Promise<Types> {

@@ -6,11 +6,13 @@ export async function freeShape(client: Client, args: {
   "name": string;
   "points": bigint;
   "data": string;
+  "arg": [(string), ...(string)[]];
 }> {
   return client.queryRequiredSingle(`select {
   name := "arg",
   points := 1234n,
-  data := <str>$data
+  data := <str>$data,
+  required multi arg := {'asdf'}
 };
-`, args)
+`, args);
 }

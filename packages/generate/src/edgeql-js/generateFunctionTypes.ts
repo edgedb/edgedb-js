@@ -73,8 +73,8 @@ export interface FuncopDef {
   kind?: string;
   description?: string;
   return_type: {id: string; name: string};
-  return_typemod: $.introspect.Typemod;
-  params: $.introspect.Param[];
+  return_typemod: $.introspect.FuncopTypemod;
+  params: $.introspect.FuncopParam[];
   preserves_optionality?: boolean;
 }
 
@@ -490,7 +490,7 @@ export function generateFuncopDef(funcopDef: FuncopDefOverload<FuncopDef>) {
 export function generateReturnCardinality(
   name: string,
   params: GroupedParams,
-  returnTypemod: $.introspect.Typemod,
+  returnTypemod: $.introspect.FuncopTypemod,
   hasNamedParams: boolean,
   anytypes: AnytypeDef | null,
   preservesOptionality: boolean = false

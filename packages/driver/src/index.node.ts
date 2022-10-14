@@ -36,3 +36,4 @@ export type {BackoffFunction} from "./options";
 
 export * from "./index.shared";
 export * as $ from "./reflection";
+export {prettyPrintError} from "./prettyPrint";

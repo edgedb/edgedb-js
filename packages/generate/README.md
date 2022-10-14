@@ -1,15 +1,65 @@
-# Generators
+# `@edgedb/generate`: Code generation tools for EdgeDB
 
-## Project setup
+The `@edgedb/generate` package implements a set of code generation tools that are useful when developing an EdgeDB-backed applications with TypeScript/JavaScript.
 
-From the root directory:
+✨ [View Documentation >>](https://www.edgedb.com/docs/clients/js/generation)
+
+## Installation
+
+> If you're using Deno, you can skip this step.
+
+Install the `edgedb` package.
+
+```bash
+$ npm install edgedb       # npm users
+$ yarn add edgedb          # yarn users
+```
+
+Then install `@edgedb/generate` as a dev dependency.
+
+```bash
+$ npm install @edgedb/generate --save-dev      # npm users
+$ yarn add @edgedb/generate --dev              # yarn users
+```
+
+## Run a generator
+
+Run a generator with the following command.
+
+**Node.js**
+
+```bash
+$ npx @edgedb/generate <generator> [options]
+```
+
+**Deno**
+
+```bash
+$ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts <generator> [options]
+```
+
+The value of `<generator>` should be one of the following.
+
+- `queries`: This generator scans your project for `*.edgeql` files and generates a file containing a strongly-typed function for each.
+- `edgeql-js`: This generator introspects your database schema and generates a query builder.
+- `interfaces`: This generator introspects your database schema and generates TypeScript interfaces for each object type.
+
+## Third-party generators
+
+✨ If you build a code generator for EdgeDB, ping us or open a PR and we'll list it here! ✨
+
+The `edgedb` package exports a set of utilities to introspect the schema and analyze queries. We use these tools to implement our
+
+## Contributing
+
+If you want to implement a code generator, please open an issue first. This package only contains first-party generators with widespread appeal. From the root directory:
 
 ```
 yarn
 yarn workspaces run build  # build all packages
 ```
 
-Navigate into `packages/generate`.
+Navigate into `packages/generate`:
 
 Build `@edgedb/generate`
 
@@ -17,7 +67,7 @@ Build `@edgedb/generate`
 yarn build
 ```
 
-Build without typechecking (uses `esbuild`)
+Build without typechecking (uses `esbuild`):
 
 ```
 yarn build:fast
@@ -26,11 +76,11 @@ yarn build:fast
 Run a generator:
 
 ```
-yarn generate edgeql-js    # query builder
-yarn generate queries      # query files
+npx @edgedb/generate edgeql-js    # query builder
+npx @edgedb/generate queries      # query files
 ```
 
-Execute `playground.ts` (uses `tsx`). Useful for testing things quickly in development.
+Execute `playground.ts` (uses `tsx`). Useful for testing things quickly in development:
 
 ```
 yarn play

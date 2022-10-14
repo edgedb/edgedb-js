@@ -1,5 +1,5 @@
 import type {CommandOptions} from "./commandutil";
-import {exitWithError, writeDirWithTarget} from "./genutil";
+import {exitWithError} from "./genutil";
 
 import {$, adapter, Client, createClient} from "edgedb";
 import {DirBuilder} from "./builders";
@@ -55,7 +55,7 @@ export async function runInterfacesGenerator(params: {
 
   // tslint:disable-next-line
   console.log(`Introspecting database schema...`);
-  const types = await $.introspect.getTypes(cxn);
+  const types = await $.introspect.types(cxn);
   const generatorParams = {
     dir,
     types
