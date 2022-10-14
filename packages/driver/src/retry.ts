@@ -16,36 +16,40 @@
  * limitations under the License.
  */
 
-import {hrTime} from "./adapter.node";
+import {BaseRawConnection} from "./baseConn";
 import {CodecsRegistry} from "./codecs/registry";
-import {NormalizedConnectConfig} from "./conUtils";
+import {Address, NormalizedConnectConfig} from "./conUtils";
 import * as errors from "./errors";
-import {RawConnection} from "./rawConn";
 import {sleep} from "./utils";
+
+export type ConnectWithTimeout = (
+  addr: Address,
+  config: NormalizedConnectConfig,
+  registry: CodecsRegistry
+) => Promise<BaseRawConnection>;
 
 let lastLoggingAt = 0;
 
 export async function retryingConnect(
+  connectWithTimeout: ConnectWithTimeout,
   config: NormalizedConnectConfig,
-  registry: CodecsRegistry,
-  exposeErrorAttrs: boolean
-): Promise<RawConnection> {
+  registry: CodecsRegistry
+): Promise<BaseRawConnection> {
   const maxTime =
     config.connectionParams.waitUntilAvailable === 0
       ? 0
-      : hrTime() + config.connectionParams.waitUntilAvailable;
+      : Date.now() + config.connectionParams.waitUntilAvailable;
   while (true) {
     try {
-      return await RawConnection.connectWithTimeout(
+      return await connectWithTimeout(
         config.connectionParams.address,
         config,
-        registry,
-        exposeErrorAttrs
+        registry
       );
     } catch (e) {
       if (e instanceof errors.ClientConnectionError) {
         if (e.hasTag(errors.SHOULD_RECONNECT)) {
-          const now = hrTime();
+          const now = Date.now();
           if (now > maxTime) {
             throw e;
           }

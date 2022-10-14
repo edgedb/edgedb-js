@@ -1,11 +1,11 @@
-import {ensureDir, walk} from "https://deno.land/std@0.114.0/fs/mod.ts";
+import {ensureDir, walk} from "https://deno.land/std@0.159.0/fs/mod.ts";
 import {
   basename,
   dirname,
   join,
   relative
-} from "https://deno.land/std@0.114.0/path/posix.ts";
-import {createRequire} from "https://deno.land/std@0.114.0/node/module.ts";
+} from "https://deno.land/std@0.159.0/path/posix.ts";
+import {createRequire} from "https://deno.land/std@0.159.0/node/module.ts";
 
 const require = createRequire(import.meta.url);
 
@@ -142,6 +142,12 @@ export async function run({
           resolvedImportPath = resolvedImportPath.replace(
             "/adapter.node.ts",
             "/adapter.deno.ts"
+          );
+        }
+        if (resolvedImportPath.endsWith("/adapter.shared.node.ts")) {
+          resolvedImportPath = resolvedImportPath.replace(
+            "/adapter.shared.node.ts",
+            "/adapter.shared.deno.ts"
           );
         }
 

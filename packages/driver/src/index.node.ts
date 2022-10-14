@@ -15,16 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {createClient} from "./client";
-export {createClient} from "./client";
+
+import {createClient} from "./nodeClient";
 export default createClient;
+
+export {createClient, createHttpClient} from "./nodeClient";
 
 import * as adapter from "./adapter.node";
 export {adapter};
 
 export {RawConnection as _RawConnection} from "./rawConn";
 export type {Executor} from "./ifaces";
-export type {Client, ConnectOptions} from "./client";
+export type {Client, ConnectOptions} from "./baseClient";
 export {
   IsolationLevel,
   RetryCondition,

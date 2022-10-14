@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import {inspect} from "../compat";
 import * as bi from "../primitives/bigint";
 
 import {
@@ -24,7 +23,7 @@ import {
   ymd2ord,
   ord2ymd,
   daysBeforeMonth,
-  isLeapYear,
+  isLeapYear
 } from "./dateutil";
 
 export const DATE_PRIVATE = Symbol.for("edgedb.datetime");
@@ -157,10 +156,6 @@ export class LocalTime {
   valueOf(): any {
     throw new TypeError("Not possible to compare LocalTime");
   }
-
-  [inspect.custom](_depth: number, _options: any): string {
-    return `LocalTime [ ${this.toString()} ]`;
-  }
 }
 
 export class LocalDate {
@@ -254,10 +249,6 @@ export class LocalDate {
   valueOf(): any {
     throw new TypeError("Not possible to compare LocalDate");
   }
-
-  [inspect.custom](_depth: number, _options: any): string {
-    return `LocalDate [ ${this.toString()} ]`;
-  }
 }
 
 export function LocalDateToOrdinal(localdate: LocalDate): number {
@@ -322,10 +313,6 @@ export class LocalDateTime extends LocalDate {
 
   valueOf(): any {
     throw new TypeError("Not possible to compare LocalDateTime");
-  }
-
-  [inspect.custom](_depth: number, _options: any): string {
-    return `LocalDateTime [ ${this.toString()} ]`;
   }
 }
 
@@ -395,7 +382,7 @@ export class Duration {
       seconds,
       milliseconds,
       microseconds,
-      nanoseconds,
+      nanoseconds
     ];
 
     let sign = 0;
@@ -570,7 +557,7 @@ export class Duration {
         minutes,
         fMinutes,
         seconds,
-        fSeconds,
+        fSeconds
       ] = matches;
       if (_duration.length < 3 || _time.length === 1) {
         throw new RangeError(`invalid duration: ${str}`);
@@ -636,10 +623,6 @@ export class Duration {
       result.microseconds,
       result.nanoseconds
     );
-  }
-
-  [inspect.custom](_depth: number, _options: any): string {
-    return `Duration [ ${this.toString()} ]`;
   }
 }
 
@@ -818,7 +801,7 @@ const humanDurationPrefixes: {[key: string]: number} = {
   s: 1000,
   sec: 1000,
   ms: 1,
-  mil: 1,
+  mil: 1
 };
 
 export function parseHumanDurationString(durationStr: string): number {

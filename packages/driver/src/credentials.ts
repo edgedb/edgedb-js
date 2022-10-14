@@ -1,6 +1,5 @@
-import {readFileUtf8} from "./adapter.node";
-import {TlsSecurity, validTlsSecurityValues} from "./conUtils";
-import * as platform from "./platform";
+import {ServerUtils, TlsSecurity, validTlsSecurityValues} from "./conUtils";
+
 import {InterfaceError} from "./errors";
 
 export interface Credentials {
@@ -14,14 +13,18 @@ export interface Credentials {
 }
 
 export async function getCredentialsPath(
-  instanceName: string
+  instanceName: string,
+  serverUtils: ServerUtils
 ): Promise<string> {
-  return platform.searchConfigDir("credentials", instanceName + ".json");
+  return serverUtils.searchConfigDir("credentials", instanceName + ".json");
 }
 
-export async function readCredentialsFile(file: string): Promise<Credentials> {
+export async function readCredentialsFile(
+  file: string,
+  serverUtils: ServerUtils
+): Promise<Credentials> {
   try {
-    const data: string = await readFileUtf8(file);
+    const data: string = await serverUtils.readFileUtf8(file);
     return validateCredentials(JSON.parse(data));
   } catch (e) {
     throw new InterfaceError(`cannot read credentials file ${file}: ${e}`);

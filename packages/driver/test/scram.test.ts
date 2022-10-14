@@ -35,27 +35,30 @@ test("scram: RFC example", async () => {
 
   const authMessage = `${client_first},${server_first},${client_final}`;
 
-  const saltedPassword = scram.getSaltedPassword(
+  const saltedPassword = await scram.getSaltedPassword(
     Buffer.from(scram.saslprep(password), "utf-8"),
     Buffer.from(salt, "base64"),
     iterations
   );
 
-  const clientKey = scram.getClientKey(saltedPassword);
-  const serverKey = scram.getServerKey(saltedPassword);
-  const storedKey = scram.H(clientKey);
+  const clientKey = await scram.getClientKey(saltedPassword);
+  const serverKey = await scram.getServerKey(saltedPassword);
+  const storedKey = await scram.H(clientKey);
 
-  const clientSignature = scram.HMAC(
+  const clientSignature = await scram.HMAC(
     storedKey,
     Buffer.from(authMessage, "utf8")
   );
   const clientProof = scram.XOR(clientKey, clientSignature);
-  const serverProof = scram.HMAC(serverKey, Buffer.from(authMessage, "utf8"));
+  const serverProof = await scram.HMAC(
+    serverKey,
+    Buffer.from(authMessage, "utf8")
+  );
 
-  expect(clientProof.toString("base64")).toBe(
+  expect(Buffer.from(clientProof).toString("base64")).toBe(
     "dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
   );
-  expect(serverProof.toString("base64")).toBe(
+  expect(Buffer.from(serverProof).toString("base64")).toBe(
     "6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4="
   );
 });

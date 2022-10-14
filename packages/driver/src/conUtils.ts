@@ -16,15 +16,13 @@
  * limitations under the License.
  */
 
-import {path, crypto, fs, readFileUtf8, tls, exists} from "./adapter.node";
 import * as errors from "./errors";
 import {
   Credentials,
   getCredentialsPath,
   readCredentialsFile,
-  validateCredentials,
+  validateCredentials
 } from "./credentials";
-import * as platform from "./platform";
 import {Duration, parseHumanDurationString} from "./datatypes/datetime";
 import {checkValidEdgeDBDuration} from "./codecs/datetime";
 import {InterfaceError} from "./errors";
@@ -35,7 +33,7 @@ export const validTlsSecurityValues = [
   "insecure",
   "no_host_verification",
   "strict",
-  "default",
+  "default"
 ] as const;
 
 export type TlsSecurity = typeof validTlsSecurityValues[number];
@@ -75,15 +73,26 @@ export interface ConnectConfig {
   logging?: boolean;
 }
 
-export async function parseConnectArguments(
-  opts: ConnectConfig = {}
-): Promise<NormalizedConnectConfig> {
-  const projectDir = await findProjectDir();
+export interface ServerUtils {
+  findProjectDir: () => Promise<string | null>;
+  findStashPath: (projectDir: string) => Promise<string>;
+  readFileUtf8: (...path: string[]) => Promise<string>;
+  searchConfigDir: (...configPath: string[]) => Promise<string>;
+}
 
-  return {
-    ...(await parseConnectDsnAndArgs(opts, projectDir)),
-    connectTimeout: opts.timeout,
-    logging: opts.logging ?? true,
+export type ConnectArgumentsParser = (
+  opts: ConnectConfig
+) => Promise<NormalizedConnectConfig>;
+
+export function getConnectArgumentsParser(
+  utils: ServerUtils | null
+): ConnectArgumentsParser {
+  return async (opts: ConnectConfig) => {
+    return {
+      ...(await parseConnectDsnAndArgs(opts, utils)),
+      connectTimeout: opts.timeout,
+      logging: opts.logging ?? true
+    };
   };
 }
 
@@ -205,9 +214,13 @@ export class ResolvedConnectConfig {
     return this._setParam("tlsCAData", caData, source);
   }
 
-  setTlsCAFile(caFile: string | null, source: string): Promise<boolean> {
+  setTlsCAFile(
+    caFile: string | null,
+    source: string,
+    readFile: (fn: string) => Promise<string>
+  ): Promise<boolean> {
     return this._setParamAsync("tlsCAData", caFile, source, caFilePath =>
-      readFileUtf8(caFilePath)
+      readFile(caFilePath)
     );
   }
 
@@ -276,7 +289,7 @@ export class ResolvedConnectConfig {
   addServerSettings(settings: {[key: string]: string}): void {
     this.serverSettings = {
       ...settings,
-      ...this.serverSettings,
+      ...this.serverSettings
     };
   }
 
@@ -304,44 +317,6 @@ export class ResolvedConnectConfig {
       : "strict";
   }
 
-  private _tlsOptions?: tls.ConnectionOptions;
-  get tlsOptions(): tls.ConnectionOptions {
-    if (this._tlsOptions) {
-      return this._tlsOptions;
-    }
-
-    const tlsSecurity = this.tlsSecurity;
-
-    this._tlsOptions = {
-      ALPNProtocols: ["edgedb-binary"],
-      rejectUnauthorized: tlsSecurity !== "insecure",
-    };
-
-    if (this._tlsCAData !== null) {
-      // this option replaces the system CA certificates with the one provided.
-      this._tlsOptions.ca = this._tlsCAData;
-    }
-
-    if (tlsSecurity === "no_host_verification") {
-      this._tlsOptions.checkServerIdentity = (hostname: string, cert: any) => {
-        const err = tls.checkServerIdentity(hostname, cert);
-
-        if (err === undefined) {
-          return undefined;
-        }
-
-        // ignore failed hostname check
-        if (err.message.startsWith("Hostname/IP does not match certificate")) {
-          return undefined;
-        }
-
-        return err;
-      };
-    }
-
-    return this._tlsOptions;
-  }
-
   get waitUntilAvailable(): number {
     return this._waitUntilAvailable ?? 30_000;
   }
@@ -349,7 +324,7 @@ export class ResolvedConnectConfig {
   explainConfig(): string {
     const output: string[] = [
       `Parameter          Value                                    Source`,
-      `---------          -----                                    ------`,
+      `---------          -----                                    ------`
     ];
 
     const outputLine = (param: string, val: any, rawVal: any, source: any) => {
@@ -474,11 +449,12 @@ export function parseDuration(duration: string | number | Duration): number {
 
 async function parseConnectDsnAndArgs(
   config: ConnectConfig,
-  projectDir: string | null
+  serverUtils: ServerUtils | null
 ): Promise<PartiallyNormalizedConfig> {
   const resolvedConfig = new ResolvedConnectConfig();
   let fromEnv = false;
   let fromProject = false;
+  const projectDir = await serverUtils?.findProjectDir();
 
   const [dsn, instanceName]: [string | undefined, string | undefined] =
     config.dsn && /^[a-z]+:\/\//i.test(config.dsn)
@@ -502,7 +478,7 @@ async function parseConnectDsnAndArgs(
       tlsCAFile: config.tlsCAFile,
       tlsSecurity: config.tlsSecurity,
       serverSettings: config.serverSettings,
-      waitUntilAvailable: config.waitUntilAvailable,
+      waitUntilAvailable: config.waitUntilAvailable
     },
     {
       dsn: `'dsnOrInstanceName' option (parsed as dsn)`,
@@ -518,10 +494,11 @@ async function parseConnectDsnAndArgs(
       tlsCAFile: `'tlsCAFile' option`,
       tlsSecurity: `'tlsSecurity' option`,
       serverSettings: `'serverSettings' option`,
-      waitUntilAvailable: `'waitUntilAvailable' option`,
+      waitUntilAvailable: `'waitUntilAvailable' option`
     },
     `Cannot have more than one of the following connection options: ` +
-      `'dsnOrInstanceName', 'credentials', 'credentialsFile' or 'host'/'port'`
+      `'dsnOrInstanceName', 'credentials', 'credentialsFile' or 'host'/'port'`,
+    serverUtils
   );
 
   if (!hasCompoundOptions) {
@@ -553,7 +530,7 @@ async function parseConnectDsnAndArgs(
           tlsCA: process.env.EDGEDB_TLS_CA,
           tlsCAFile: process.env.EDGEDB_TLS_CA_FILE,
           tlsSecurity: process.env.EDGEDB_CLIENT_TLS_SECURITY,
-          waitUntilAvailable: process.env.EDGEDB_WAIT_UNTIL_AVAILABLE,
+          waitUntilAvailable: process.env.EDGEDB_WAIT_UNTIL_AVAILABLE
         },
         {
           dsn: `'EDGEDB_DSN' environment variable`,
@@ -568,26 +545,35 @@ async function parseConnectDsnAndArgs(
           tlsCA: `'EDGEDB_TLS_CA' environment variable`,
           tlsCAFile: `'EDGEDB_TLS_CA_FILE' environment variable`,
           tlsSecurity: `'EDGEDB_CLIENT_TLS_SECURITY' environment variable`,
-          waitUntilAvailable: `'EDGEDB_WAIT_UNTIL_AVAILABLE' environment variable`,
+          waitUntilAvailable: `'EDGEDB_WAIT_UNTIL_AVAILABLE' environment variable`
         },
         `Cannot have more than one of the following connection environment variables: ` +
           `'EDGEDB_DSN', 'EDGEDB_INSTANCE', 'EDGEDB_CREDENTIALS', ` +
-          `'EDGEDB_CREDENTIALS_FILE' or 'EDGEDB_HOST'`
+          `'EDGEDB_CREDENTIALS_FILE' or 'EDGEDB_HOST'`,
+        serverUtils
       ));
   }
 
   if (!hasCompoundOptions) {
     // resolve config from project
+    if (!serverUtils) {
+      throw new errors.ClientConnectionError(
+        "no connection options specified either by arguments to `createClient` API " +
+          "or environment variables; also cannot resolve from edgedb.toml in browser " +
+          "(or edge runtime) environment"
+      );
+    }
     if (!projectDir) {
       throw new errors.ClientConnectionError(
         "no 'edgedb.toml' found and no connection options specified" +
-          " either via arguments to `connect()` API or via environment" +
+          " either via arguments to `createClient()` API or via environment" +
           " variables EDGEDB_HOST, EDGEDB_INSTANCE, EDGEDB_DSN, " +
           "EDGEDB_CREDENTIALS or EDGEDB_CREDENTIALS_FILE"
       );
     }
-    const stashDir = await stashPath(projectDir);
-    const instName = await readFileUtf8(path.join(stashDir, "instance-name"))
+    const stashDir = await serverUtils.findStashPath(projectDir);
+    const instName = await serverUtils
+      .readFileUtf8(stashDir, "instance-name")
       .then(name => name.trim())
       .catch(() => null);
 
@@ -596,7 +582,8 @@ async function parseConnectDsnAndArgs(
         resolvedConfig,
         {instanceName: instName},
         {instanceName: `project linked instance ('${instName}')`},
-        ""
+        "",
+        serverUtils
       );
       fromProject = true;
     } else {
@@ -613,46 +600,8 @@ async function parseConnectDsnAndArgs(
     connectionParams: resolvedConfig,
     inProject: !!projectDir,
     fromEnv,
-    fromProject,
+    fromProject
   };
-}
-
-export async function stashPath(projectDir: string): Promise<string> {
-  let projectPath = await fs.realpath(projectDir);
-  if (platform.isWindows && !projectPath.startsWith("\\\\")) {
-    projectPath = "\\\\?\\" + projectPath;
-  }
-
-  const hash = crypto.createHash("sha1").update(projectPath).digest("hex");
-  const baseName = path.basename(projectPath);
-  const dirName = baseName + "-" + hash;
-
-  return platform.searchConfigDir("projects", dirName);
-}
-
-const projectDirCache = new Map<string, string | null>();
-
-async function findProjectDir(): Promise<string | null> {
-  const workingDir = process.cwd();
-
-  if (projectDirCache.has(workingDir)) {
-    return projectDirCache.get(workingDir)!;
-  }
-
-  let dir = workingDir;
-  const cwdDev = (await fs.stat(dir)).dev;
-  while (true) {
-    if (await exists(path.join(dir, "edgedb.toml"))) {
-      projectDirCache.set(workingDir, dir);
-      return dir;
-    }
-    const parentDir = path.join(dir, "..");
-    if (parentDir === dir || (await fs.stat(parentDir)).dev !== cwdDev) {
-      projectDirCache.set(workingDir, null);
-      return null;
-    }
-    dir = parentDir;
-  }
 }
 
 interface ResolveConfigOptionsConfig {
@@ -678,9 +627,18 @@ async function resolveConfigOptions<
   resolvedConfig: ResolvedConnectConfig,
   config: Config,
   sources: {[key in keyof Config]: string},
-  compoundParamsError: string
+  compoundParamsError: string,
+  serverUtils: ServerUtils | null
 ): Promise<{hasCompoundOptions: boolean; anyOptionsUsed: boolean}> {
   let anyOptionsUsed = false;
+
+  const readFile =
+    serverUtils?.readFileUtf8 ??
+    ((fn: string): Promise<string> => {
+      throw new InterfaceError(
+        `cannot read file "${fn}" in browser (or edgedb runtime) environment`
+      );
+    });
 
   if (config.tlsCA != null && config.tlsCAFile != null) {
     throw new InterfaceError(
@@ -703,7 +661,8 @@ async function resolveConfigOptions<
   anyOptionsUsed =
     (await resolvedConfig.setTlsCAFile(
       config.tlsCAFile ?? null,
-      sources.tlsCAFile!
+      sources.tlsCAFile!,
+      readFile
     )) || anyOptionsUsed;
   anyOptionsUsed =
     resolvedConfig.setTlsSecurity(
@@ -722,7 +681,7 @@ async function resolveConfigOptions<
     config.instanceName,
     config.credentials,
     config.credentialsFile,
-    config.host ?? config.port,
+    config.host ?? config.port
   ].filter(param => param !== undefined).length;
 
   if (compoundParamsCount > 1) {
@@ -750,7 +709,8 @@ async function resolveConfigOptions<
           ? sources.dsn!
           : config.host !== undefined
           ? sources.host!
-          : sources.port!
+          : sources.port!,
+        readFile
       );
     } else {
       let creds: Credentials;
@@ -759,6 +719,15 @@ async function resolveConfigOptions<
         creds = validateCredentials(JSON.parse(config.credentials));
         source = sources.credentials!;
       } else {
+        if (!serverUtils) {
+          throw new InterfaceError(
+            `cannot ${
+              config.credentialsFile
+                ? `read credentials file "${config.credentialsFile}"`
+                : `resolve instance name "${config.instanceName}"`
+            } in browser (or edge runtime) environment`
+          );
+        }
         let credentialsFile = config.credentialsFile;
         if (credentialsFile === undefined) {
           if (!/^[A-Za-z_][A-Za-z_0-9]*$/.test(config.instanceName!)) {
@@ -766,12 +735,15 @@ async function resolveConfigOptions<
               `invalid DSN or instance name: '${config.instanceName}'`
             );
           }
-          credentialsFile = await getCredentialsPath(config.instanceName!);
+          credentialsFile = await getCredentialsPath(
+            config.instanceName!,
+            serverUtils
+          );
           source = sources.instanceName!;
         } else {
           source = sources.credentialsFile!;
         }
-        creds = await readCredentialsFile(credentialsFile);
+        creds = await readCredentialsFile(credentialsFile, serverUtils);
       }
 
       resolvedConfig.setHost(creds.host ?? null, source);
@@ -791,7 +763,8 @@ async function resolveConfigOptions<
 async function parseDSNIntoConfig(
   _dsnString: string,
   config: ResolvedConnectConfig,
-  source: string
+  source: string,
+  readFile: (fn: string) => Promise<string>
 ): Promise<void> {
   // URL api does not support ipv6 zone ids, so extract zone id before parsing
   // https://url.spec.whatwg.org/#host-representation
@@ -848,7 +821,7 @@ async function parseDSNIntoConfig(
         value || null,
         searchParams.get(paramName),
         searchParams.get(`${paramName}_env`),
-        searchParams.get(`${paramName}_file`),
+        searchParams.get(`${paramName}_file`)
       ].filter(param => param != null).length > 1
     ) {
       throw new InterfaceError(
@@ -877,7 +850,7 @@ async function parseDSNIntoConfig(
       if (param === null) {
         const file = searchParams.get(`${paramName}_file`);
         if (file != null) {
-          param = await readFileUtf8(file);
+          param = await readFile(file);
           paramSource += ` (${paramName}_file: ${file})`;
         }
       }

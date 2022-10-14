@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
+import {ReadBuffer, WriteBuffer, utf8Encoder} from "../primitives/buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
 import {InvalidArgumentError} from "../errors";
 
@@ -29,7 +29,7 @@ export class StrCodec extends ScalarCodec implements ICodec {
     }
 
     const val = <string>object;
-    const strbuf = Buffer.from(val, "utf8");
+    const strbuf = utf8Encoder.encode(val);
     buf.writeInt32(strbuf.length);
     buf.writeBuffer(strbuf);
   }

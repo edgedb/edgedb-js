@@ -30,23 +30,57 @@ const BUFFER_INC_SIZE: number = 4096;
  */
 const BUFFER_RING_CAPACITY: number = 2048;
 
-const EMPTY_BUFFER = Buffer.allocUnsafe(0);
+const EMPTY_BUFFER = new Uint8Array(0);
 
-// @ts-ignore
-// tslint:disable-next-line
-const isNode12: boolean = !!Buffer["readBigInt64BE"];
+export const utf8Encoder = new TextEncoder();
+export const utf8Decoder = new TextDecoder("utf8");
+
+let decodeB64: (b64: string) => Uint8Array;
+let encodeB64: (data: Uint8Array) => string;
+
+if (typeof btoa === "undefined") {
+  decodeB64 = function (b64: string): Uint8Array {
+    // @ts-ignore
+    return Buffer.from(b64, "base64");
+  };
+  encodeB64 = function (data: Uint8Array): string {
+    // @ts-ignore
+    return Buffer.from(data).toString("base64");
+  };
+} else {
+  decodeB64 = function (b64: string): Uint8Array {
+    const binaryString = atob(b64);
+    const size = binaryString.length;
+    const bytes = new Uint8Array(size);
+    for (let i = 0; i < size; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  };
+  encodeB64 = function (data: Uint8Array): string {
+    let binaryString = String.fromCharCode(...data);
+    return btoa(binaryString);
+  };
+}
+
+export {decodeB64, encodeB64};
+
+const useBigInt64Fallback =
+  typeof DataView.prototype.getBigInt64 === "undefined";
 
 export class BufferError extends Error {}
 
 export class WriteBuffer {
-  public buffer: Buffer;
+  private _rawBuffer: Uint8Array;
+  public buffer: DataView;
   private size: number;
   private pos: number;
 
   constructor() {
     this.size = BUFFER_INC_SIZE;
     this.pos = 0;
-    this.buffer = Buffer.allocUnsafe(this.size);
+    this._rawBuffer = new Uint8Array(this.size);
+    this.buffer = new DataView(this._rawBuffer.buffer);
   }
 
   get position(): number {
@@ -66,86 +100,89 @@ export class WriteBuffer {
 
   private __realloc(newSize: number): void {
     newSize += BUFFER_INC_SIZE;
-    const newBuffer = Buffer.allocUnsafe(newSize);
-    this.buffer.copy(newBuffer, 0, 0, this.pos);
-    this.buffer = newBuffer;
+    const newBuffer = new Uint8Array(newSize);
+    newBuffer.set(this._rawBuffer);
+    this._rawBuffer = newBuffer;
+    this.buffer = new DataView(this._rawBuffer.buffer);
     this.size = newSize;
   }
 
   writeChar(ch: char): this {
     this.ensureAlloced(1);
-    this.buffer.writeUInt8(ch, this.pos);
+    this.buffer.setUint8(this.pos, ch);
     this.pos++;
     return this;
   }
 
   writeString(s: string): this {
-    return this.writeBytes(Buffer.from(s, "utf-8"));
+    return this.writeBytes(utf8Encoder.encode(s));
   }
 
-  writeBytes(buf: Buffer): this {
+  writeBytes(buf: Uint8Array): this {
     this.ensureAlloced(buf.length + 4);
-    this.buffer.writeInt32BE(buf.length, this.pos);
+    this.buffer.setInt32(this.pos, buf.length);
     this.pos += 4;
-    buf.copy(this.buffer, this.pos, 0, buf.length);
+    this._rawBuffer.set(buf, this.pos);
     this.pos += buf.length;
     return this;
   }
 
   writeInt16(i: number): this {
     this.ensureAlloced(2);
-    this.buffer.writeInt16BE(i, this.pos);
+    this.buffer.setInt16(this.pos, i);
     this.pos += 2;
     return this;
   }
 
   writeInt32(i: number): this {
     this.ensureAlloced(4);
-    this.buffer.writeInt32BE(i, this.pos);
+    this.buffer.setInt32(this.pos, i);
     this.pos += 4;
     return this;
   }
 
   writeFloat32(i: number): this {
     this.ensureAlloced(4);
-    this.buffer.writeFloatBE(i, this.pos);
+    this.buffer.setFloat32(this.pos, i);
     this.pos += 4;
     return this;
   }
 
   writeFloat64(i: number): this {
     this.ensureAlloced(8);
-    this.buffer.writeDoubleBE(i, this.pos);
+    this.buffer.setFloat64(this.pos, i);
     this.pos += 8;
     return this;
   }
 
   writeUInt8(i: number): this {
     this.ensureAlloced(1);
-    this.buffer.writeUInt8(i, this.pos);
+    this.buffer.setUint8(this.pos, i);
     this.pos += 1;
     return this;
   }
 
   writeUInt16(i: number): this {
     this.ensureAlloced(2);
-    this.buffer.writeUInt16BE(i, this.pos);
+    this.buffer.setUint16(this.pos, i);
     this.pos += 2;
     return this;
   }
 
   writeUInt32(i: number): this {
     this.ensureAlloced(4);
-    this.buffer.writeUInt32BE(i, this.pos);
+    this.buffer.setUint32(this.pos, i);
     this.pos += 4;
     return this;
   }
 
   writeInt64(i: number): this {
+    this.ensureAlloced(8);
     const hi = Math.floor(i / 0x100000000);
     const lo = i - hi * 0x100000000;
-    this.writeInt32(hi);
-    this.writeUInt32(lo);
+    this.buffer.setInt32(this.pos, hi);
+    this.buffer.setUint32(this.pos + 4, lo);
+    this.pos += 8;
     return this;
   }
 
@@ -161,16 +198,16 @@ export class WriteBuffer {
     return this;
   }
 
-  writeBuffer(buf: Buffer): this {
+  writeBuffer(buf: Uint8Array): this {
     const len = buf.length;
     this.ensureAlloced(len);
-    buf.copy(this.buffer, this.pos, 0, len);
+    this._rawBuffer.set(buf, this.pos);
     this.pos += len;
     return this;
   }
 
-  unwrap(): Buffer {
-    return this.buffer.slice(0, this.pos);
+  unwrap(): Uint8Array {
+    return this._rawBuffer.subarray(0, this.pos);
   }
 }
 
@@ -206,16 +243,18 @@ export class WriteMessageBuffer {
       throw new BufferError("cannot end the message: no current message");
     }
 
-    this.buffer.buffer.writeInt32BE(
-      this.buffer.position - this.messagePos - 1,
-      this.messagePos + 1
+    this.buffer.buffer.setInt32(
+      this.messagePos + 1,
+      this.buffer.position - this.messagePos - 1
     );
     this.messagePos = -1;
     return this;
   }
 
   writeLegacyHeaders(
-    headers: {[key in keyof typeof LegacyHeaderCodes]?: string | Buffer} | null
+    headers:
+      | {[key in keyof typeof LegacyHeaderCodes]?: string | Uint8Array}
+      | null
   ): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeHeaders: no current message");
@@ -227,18 +266,18 @@ export class WriteMessageBuffer {
 
     const entries = Object.entries(headers).filter(
       ([_, value]) => value !== undefined
-    ) as Array<[keyof typeof LegacyHeaderCodes, string | Buffer]>;
+    ) as Array<[keyof typeof LegacyHeaderCodes, string | Uint8Array]>;
     this.buffer.writeUInt16(entries.length);
     for (const [code, value] of entries) {
       this.buffer.writeUInt16(LegacyHeaderCodes[code]);
-      if (Buffer.isBuffer(value)) {
+      if (value instanceof Uint8Array) {
         this.buffer.writeUInt32(value.byteLength);
         this.buffer.writeBuffer(value);
       } else if (typeof value === "string") {
         this.buffer.writeString(value);
       } else {
         throw new BufferError(
-          "cannot write header: value is not a Buffer or string"
+          "cannot write header: value is not a Uint8Array or string"
         );
       }
     }
@@ -261,7 +300,7 @@ export class WriteMessageBuffer {
     return this;
   }
 
-  writeBytes(val: Buffer): this {
+  writeBytes(val: Uint8Array): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeBytes: no current message");
     }
@@ -318,7 +357,7 @@ export class WriteMessageBuffer {
     return this;
   }
 
-  writeBuffer(buf: Buffer): this {
+  writeBuffer(buf: Uint8Array): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeBuffer: no current message");
     }
@@ -346,7 +385,7 @@ export class WriteMessageBuffer {
     return this;
   }
 
-  unwrap(): Buffer {
+  unwrap(): Uint8Array {
     if (this.messagePos >= 0) {
       throw new BufferError(
         "cannot unwrap: an unfinished message is in the buffer"
@@ -366,11 +405,24 @@ const FLUSH_MESSAGE = new WriteMessageBuffer()
   .endMessage()
   .unwrap();
 
+const byteToHex: string[] = [];
+for (let i = 0; i < 256; ++i) {
+  byteToHex.push((i + 0x100).toString(16).slice(1));
+}
+
+export function uuidToBuffer(uuid: string) {
+  const buf = new Uint8Array(16);
+  for (let i = 0; i < 16; i++) {
+    buf[i] = parseInt(uuid.slice(i * 2, i * 2 + 2), 16);
+  }
+  return buf;
+}
+
 export class ReadMessageBuffer {
-  private bufs: RingBuffer<Buffer>;
+  private bufs: RingBuffer<Uint8Array>;
   private len: number;
 
-  private buf0: Buffer | null;
+  private buf0: DataView | null;
   private pos0: number;
   private len0: number;
 
@@ -380,7 +432,7 @@ export class ReadMessageBuffer {
   private curMessageReady: boolean;
 
   constructor() {
-    this.bufs = new RingBuffer<Buffer>({capacity: BUFFER_RING_CAPACITY});
+    this.bufs = new RingBuffer<Uint8Array>({capacity: BUFFER_RING_CAPACITY});
     this.buf0 = null;
     this.pos0 = 0;
     this.len0 = 0;
@@ -396,13 +448,13 @@ export class ReadMessageBuffer {
     return this.len;
   }
 
-  feed(buf: Buffer): boolean {
+  feed(buf: Uint8Array): boolean {
     if (
       this.buf0 == null ||
       (this.pos0 === this.len0 && this.bufs.length === 0)
     ) {
-      this.buf0 = buf;
-      this.len0 = buf.length;
+      this.buf0 = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+      this.len0 = buf.byteLength;
       this.pos0 = 0;
       this.len = this.len0;
       return false;
@@ -411,9 +463,9 @@ export class ReadMessageBuffer {
     }
   }
 
-  private feedEnqueue(buf: Buffer): boolean {
+  private feedEnqueue(buf: Uint8Array): boolean {
     this.bufs.enq(buf);
-    this.len += buf.length;
+    this.len += buf.byteLength;
     const isFull = this.bufs.full;
     if (isFull && this.curMessageType !== 0) {
       throw new BufferError("query result is too big: buffer overflow");
@@ -421,12 +473,12 @@ export class ReadMessageBuffer {
     return isFull;
   }
 
-  private ensureFirstBuf(): Buffer {
+  private ensureFirstBuf(): DataView {
     if (this.pos0 === this.len0) {
       this.__nextBuf();
     }
     const buf0 = this.buf0;
-    if (buf0 == null || buf0.length < 1) {
+    if (buf0 == null || buf0.byteLength < 1) {
       throw new BufferError("empty buffer");
     }
     return buf0;
@@ -446,9 +498,13 @@ export class ReadMessageBuffer {
       throw new BufferError("buffer overread");
     }
 
-    this.buf0 = nextBuf;
+    this.buf0 = new DataView(
+      nextBuf.buffer,
+      nextBuf.byteOffset,
+      nextBuf.byteLength
+    );
     this.pos0 = 0;
-    this.len0 = nextBuf.length;
+    this.len0 = nextBuf.byteLength;
   }
 
   private discardBuffer(size: number): void {
@@ -477,15 +533,18 @@ export class ReadMessageBuffer {
     this.curMessageType = 0;
   }
 
-  private __readBufferCopy(buf0: Buffer, size: number): Buffer {
-    const ret = Buffer.allocUnsafe(size);
+  private __readBufferCopy(buf0: DataView, size: number): Uint8Array {
+    const ret = new Uint8Array(size);
     let retPos = 0;
 
     while (true) {
       if (this.pos0 + size > this.len0) {
         const nread = this.len0 - this.pos0;
 
-        buf0.copy(ret, retPos, this.pos0, this.len0);
+        ret.set(
+          new Uint8Array(buf0.buffer, buf0.byteOffset + this.pos0, nread),
+          retPos
+        );
         retPos += nread;
 
         this.pos0 = this.len0;
@@ -494,7 +553,10 @@ export class ReadMessageBuffer {
 
         buf0 = this.ensureFirstBuf();
       } else {
-        buf0.copy(ret, retPos, this.pos0, this.pos0 + size);
+        ret.set(
+          new Uint8Array(buf0.buffer, buf0.byteOffset + this.pos0, size),
+          retPos
+        );
         this.pos0 += size;
         this.len -= size;
         break;
@@ -504,7 +566,7 @@ export class ReadMessageBuffer {
     return ret;
   }
 
-  private _readBuffer(size: number): Buffer {
+  private _readBuffer(size: number): Uint8Array {
     if (size === 0) {
       return EMPTY_BUFFER;
     }
@@ -514,7 +576,11 @@ export class ReadMessageBuffer {
     if (this.pos0 + size <= this.len0) {
       // If the requested *size* fits in the first buffer
       // do a slice operation.
-      const ret = buf0.slice(this.pos0, this.pos0 + size);
+      const ret = new Uint8Array(
+        buf0.buffer,
+        buf0.byteOffset + this.pos0,
+        size
+      );
       this.pos0 += size;
       this.len -= size;
       return ret;
@@ -523,7 +589,7 @@ export class ReadMessageBuffer {
     return this.__readBufferCopy(buf0, size);
   }
 
-  readBuffer(size: number): Buffer {
+  readBuffer(size: number): Uint8Array {
     this.checkOverread(size);
     const buf = this._readBuffer(size);
     this.curMessageLenUnread -= size;
@@ -532,13 +598,30 @@ export class ReadMessageBuffer {
 
   readUUID(): string {
     const buf = this.readBuffer(16);
-    return buf.toString("hex");
+    return (
+      byteToHex[buf[0]] +
+      byteToHex[buf[1]] +
+      byteToHex[buf[2]] +
+      byteToHex[buf[3]] +
+      byteToHex[buf[4]] +
+      byteToHex[buf[5]] +
+      byteToHex[buf[6]] +
+      byteToHex[buf[7]] +
+      byteToHex[buf[8]] +
+      byteToHex[buf[9]] +
+      byteToHex[buf[10]] +
+      byteToHex[buf[11]] +
+      byteToHex[buf[12]] +
+      byteToHex[buf[13]] +
+      byteToHex[buf[14]] +
+      byteToHex[buf[15]]
+    );
   }
 
   readChar(): char {
     this.checkOverread(1);
     const buf0 = this.ensureFirstBuf();
-    const ret = buf0.readUInt8(this.pos0);
+    const ret = buf0.getUint8(this.pos0);
     this.pos0++;
     this.curMessageLenUnread--;
     this.len--;
@@ -550,7 +633,7 @@ export class ReadMessageBuffer {
     const buf0 = this.ensureFirstBuf();
 
     if (this.pos0 + 2 <= this.len0) {
-      const ret = buf0.readInt16BE(this.pos0);
+      const ret = buf0.getInt16(this.pos0);
       this.pos0 += 2;
       this.curMessageLenUnread -= 2;
       this.len -= 2;
@@ -559,7 +642,9 @@ export class ReadMessageBuffer {
 
     const buf = this._readBuffer(2);
     this.curMessageLenUnread -= 2;
-    return buf.readInt16BE(0);
+    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getInt16(
+      0
+    );
   }
 
   readInt32(): number {
@@ -567,7 +652,7 @@ export class ReadMessageBuffer {
     const buf0 = this.ensureFirstBuf();
 
     if (this.pos0 + 4 <= this.len0) {
-      const ret = buf0.readInt32BE(this.pos0);
+      const ret = buf0.getInt32(this.pos0);
       this.pos0 += 4;
       this.curMessageLenUnread -= 4;
       this.len -= 4;
@@ -576,7 +661,9 @@ export class ReadMessageBuffer {
 
     const buf = this._readBuffer(4);
     this.curMessageLenUnread -= 4;
-    return buf.readInt32BE(0);
+    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getInt32(
+      0
+    );
   }
 
   readUInt16(): number {
@@ -584,7 +671,7 @@ export class ReadMessageBuffer {
     const buf0 = this.ensureFirstBuf();
 
     if (this.pos0 + 2 <= this.len0) {
-      const ret = buf0.readUInt16BE(this.pos0);
+      const ret = buf0.getUint16(this.pos0);
       this.pos0 += 2;
       this.curMessageLenUnread -= 2;
       this.len -= 2;
@@ -593,7 +680,9 @@ export class ReadMessageBuffer {
 
     const buf = this._readBuffer(2);
     this.curMessageLenUnread -= 2;
-    return buf.readUInt16BE(0);
+    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getUint16(
+      0
+    );
   }
 
   readUInt32(): number {
@@ -601,7 +690,7 @@ export class ReadMessageBuffer {
     const buf0 = this.ensureFirstBuf();
 
     if (this.pos0 + 4 <= this.len0) {
-      const ret = buf0.readUInt32BE(this.pos0);
+      const ret = buf0.getUint32(this.pos0);
       this.pos0 += 4;
       this.curMessageLenUnread -= 4;
       this.len -= 4;
@@ -610,7 +699,9 @@ export class ReadMessageBuffer {
 
     const buf = this._readBuffer(4);
     this.curMessageLenUnread -= 4;
-    return buf.readUInt32BE(0);
+    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getUint32(
+      0
+    );
   }
 
   readBigInt64(): bigint {
@@ -618,7 +709,7 @@ export class ReadMessageBuffer {
     const buf0 = this.ensureFirstBuf();
 
     if (this.pos0 + 8 <= this.len0) {
-      const ret = buf0.readBigInt64BE(this.pos0);
+      const ret = buf0.getBigInt64(this.pos0);
       this.pos0 += 8;
       this.curMessageLenUnread -= 8;
       this.len -= 8;
@@ -627,16 +718,20 @@ export class ReadMessageBuffer {
 
     const buf = this._readBuffer(8);
     this.curMessageLenUnread -= 8;
-    return buf.readBigInt64BE(0);
+    return new DataView(
+      buf.buffer,
+      buf.byteOffset,
+      buf.byteLength
+    ).getBigInt64(0);
   }
 
   readString(): string {
     const len = this.readInt32();
     const buf = this.readBuffer(len);
-    return buf.toString("utf-8");
+    return utf8Decoder.decode(buf);
   }
 
-  readLenPrefixedBuffer(): Buffer {
+  readLenPrefixedBuffer(): Uint8Array {
     const len = this.readInt32();
     return this.readBuffer(len);
   }
@@ -651,7 +746,7 @@ export class ReadMessageBuffer {
         return false;
       }
       const buf0 = this.ensureFirstBuf();
-      this.curMessageType = buf0.readUInt8(this.pos0);
+      this.curMessageType = buf0.getUint8(this.pos0);
       this.pos0++;
       this.len--;
     }
@@ -662,12 +757,16 @@ export class ReadMessageBuffer {
       }
       const buf0 = this.ensureFirstBuf();
       if (this.pos0 + 4 <= this.len0) {
-        this.curMessageLen = buf0.readInt32BE(this.pos0);
+        this.curMessageLen = buf0.getInt32(this.pos0);
         this.pos0 += 4;
         this.len -= 4;
       } else {
         const buf = this._readBuffer(4);
-        this.curMessageLen = buf.readInt32BE(0);
+        this.curMessageLen = new DataView(
+          buf.buffer,
+          buf.byteOffset,
+          buf.byteLength
+        ).getInt32(0);
       }
 
       this.curMessageLenUnread = this.curMessageLen - 4;
@@ -692,7 +791,7 @@ export class ReadMessageBuffer {
 
     if (this.len >= 1) {
       const buf0 = this.ensureFirstBuf();
-      const unreadMessageType = buf0.readUInt8(this.pos0);
+      const unreadMessageType = buf0.getUint8(this.pos0);
       return mtype === unreadMessageType && this.takeMessage();
     }
 
@@ -719,12 +818,12 @@ export class ReadMessageBuffer {
     this._finishMessage();
   }
 
-  consumeMessage(): Buffer {
+  consumeMessage(): Uint8Array {
     if (!this.curMessageReady) {
       throw new BufferError("no message to consume");
     }
 
-    let buf: Buffer;
+    let buf: Uint8Array;
     if (this.curMessageLenUnread > 0) {
       buf = this._readBuffer(this.curMessageLenUnread);
       this.curMessageLenUnread = 0;
@@ -743,9 +842,15 @@ export class ReadMessageBuffer {
 
     if (this.curMessageLenUnread > 0) {
       if (this.pos0 + this.curMessageLenUnread <= this.len0) {
-        const len = this.pos0 + this.curMessageLenUnread;
-        ReadBuffer.slice(frb, this.buf0!, this.pos0, len);
-        this.pos0 = len;
+        ReadBuffer.init(
+          frb,
+          new Uint8Array(
+            this.buf0!.buffer,
+            this.buf0!.byteOffset + this.pos0,
+            this.curMessageLenUnread
+          )
+        );
+        this.pos0 += this.curMessageLenUnread;
         this.len -= this.curMessageLenUnread;
       } else {
         const buf = this._readBuffer(this.curMessageLenUnread);
@@ -778,12 +883,14 @@ export class ReadMessageBuffer {
 }
 
 export class ReadBuffer {
-  private buffer: Buffer;
+  private _rawBuffer: Uint8Array;
+  private buffer: DataView;
   private pos: number;
   private len: number;
 
-  constructor(buf: Buffer) {
-    this.buffer = buf;
+  constructor(buf: Uint8Array) {
+    this._rawBuffer = buf;
+    this.buffer = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
     this.len = buf.length;
     this.pos = 0;
   }
@@ -813,7 +920,7 @@ export class ReadBuffer {
     if (this.pos + 1 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const num = this.buffer.readUInt8(this.pos);
+    const num = this.buffer.getUint8(this.pos);
     this.pos++;
     return num;
   }
@@ -822,7 +929,7 @@ export class ReadBuffer {
     if (this.pos + 2 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const num = this.buffer.readUInt16BE(this.pos);
+    const num = this.buffer.getUint16(this.pos);
     this.pos += 2;
     return num;
   }
@@ -831,7 +938,7 @@ export class ReadBuffer {
     if (this.pos + 1 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const num = this.buffer.readInt8(this.pos);
+    const num = this.buffer.getInt8(this.pos);
     this.pos++;
     return num;
   }
@@ -840,7 +947,7 @@ export class ReadBuffer {
     if (this.pos + 2 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const num = this.buffer.readInt16BE(this.pos);
+    const num = this.buffer.getInt16(this.pos);
     this.pos += 2;
     return num;
   }
@@ -849,7 +956,7 @@ export class ReadBuffer {
     if (this.pos + 4 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const num = this.buffer.readInt32BE(this.pos);
+    const num = this.buffer.getInt32(this.pos);
     this.pos += 4;
     return num;
   }
@@ -858,7 +965,7 @@ export class ReadBuffer {
     if (this.pos + 4 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const num = this.buffer.readFloatBE(this.pos);
+    const num = this.buffer.getFloat32(this.pos);
     this.pos += 4;
     return num;
   }
@@ -867,7 +974,7 @@ export class ReadBuffer {
     if (this.pos + 8 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const num = this.buffer.readDoubleBE(this.pos);
+    const num = this.buffer.getFloat64(this.pos);
     this.pos += 8;
     return num;
   }
@@ -876,7 +983,7 @@ export class ReadBuffer {
     if (this.pos + 4 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const num = this.buffer.readUInt32BE(this.pos);
+    const num = this.buffer.getUint32(this.pos);
     this.pos += 4;
     return num;
   }
@@ -897,8 +1004,8 @@ export class ReadBuffer {
       throw new BufferError("buffer overread");
     }
 
-    const hi = this.buffer.readInt32BE(this.pos);
-    const lo = this.buffer.readInt32BE(this.pos + 4);
+    const hi = this.buffer.getInt32(this.pos);
+    const lo = this.buffer.getInt32(this.pos + 4);
     this.pos += 8;
 
     if (hi === 0) {
@@ -912,8 +1019,8 @@ export class ReadBuffer {
 
   readBigInt64Fallback(): bi.BigIntLike {
     if (bi.hasNativeBigInt) {
-      const hi = this.buffer.readUInt32BE(this.pos);
-      const lo = this.buffer.readUInt32BE(this.pos + 4);
+      const hi = this.buffer.getUint32(this.pos);
+      const lo = this.buffer.getUint32(this.pos + 4);
       this.pos += 8;
 
       let res = (BigInt(hi) << BigInt(32)) + BigInt(lo);
@@ -932,8 +1039,8 @@ export class ReadBuffer {
     if (this.pos + 8 > this.len) {
       throw new BufferError("buffer overread");
     }
-    if (isNode12) {
-      const ret = this.buffer.readBigInt64BE(this.pos);
+    if (!useBigInt64Fallback) {
+      const ret = this.buffer.getBigInt64(this.pos);
       this.pos += 8;
       return ret;
     } else {
@@ -941,22 +1048,50 @@ export class ReadBuffer {
     }
   }
 
-  readBuffer(size: number): Buffer {
+  readBuffer(size: number): Uint8Array {
     if (this.pos + size > this.len) {
       throw new BufferError("buffer overread");
     }
-    const buf = this.buffer.slice(this.pos, this.pos + size);
+    const buf = this._rawBuffer.subarray(this.pos, this.pos + size);
     this.pos += size;
     return buf;
   }
 
-  readUUID(): string {
+  readUUID(dash = ""): string {
     if (this.pos + 16 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const buf = this.buffer.slice(this.pos, this.pos + 16);
+    const buf = this._rawBuffer;
+    const pos = this.pos;
+    const uuid =
+      byteToHex[buf[pos + 0]] +
+      byteToHex[buf[pos + 1]] +
+      byteToHex[buf[pos + 2]] +
+      byteToHex[buf[pos + 3]] +
+      dash +
+      byteToHex[buf[pos + 4]] +
+      byteToHex[buf[pos + 5]] +
+      dash +
+      byteToHex[buf[pos + 6]] +
+      byteToHex[buf[pos + 7]] +
+      dash +
+      byteToHex[buf[pos + 8]] +
+      byteToHex[buf[pos + 9]] +
+      dash +
+      byteToHex[buf[pos + 10]] +
+      byteToHex[buf[pos + 11]] +
+      byteToHex[buf[pos + 12]] +
+      byteToHex[buf[pos + 13]] +
+      byteToHex[buf[pos + 14]] +
+      byteToHex[buf[pos + 15]];
     this.pos += 16;
-    return buf.toString("hex");
+    return uuid;
+  }
+
+  readString(): string {
+    const len = this.readUInt32();
+    const buf = this.readBuffer(len);
+    return utf8Decoder.decode(buf);
   }
 
   consumeAsString(): string {
@@ -965,19 +1100,15 @@ export class ReadBuffer {
       return "";
     }
 
-    const res = this.buffer.toString("utf8", this.pos, this.len);
+    const res = utf8Decoder.decode(
+      this._rawBuffer.subarray(this.pos, this.len)
+    );
     this.pos = this.len;
     return res;
   }
 
-  readString(): string {
-    const len = this.readInt32();
-    const buf = this.readBuffer(len);
-    return buf.toString("utf-8");
-  }
-
-  consumeAsBuffer(): Buffer {
-    const res = this.buffer.slice(this.pos, this.len);
+  consumeAsBuffer(): Uint8Array {
+    const res = this._rawBuffer.subarray(this.pos, this.len);
     this.pos = this.len;
     return res;
   }
@@ -986,27 +1117,22 @@ export class ReadBuffer {
     if (this.pos + size > this.len) {
       throw new BufferError("buffer overread");
     }
+    frb._rawBuffer = this._rawBuffer;
     frb.buffer = this.buffer;
     frb.pos = this.pos;
     frb.len = this.pos + size;
     this.pos += size;
   }
 
-  static init(frb: ReadBuffer, buffer: Buffer): void {
-    frb.buffer = buffer;
+  static init(frb: ReadBuffer, buffer: Uint8Array): void {
+    frb._rawBuffer = buffer;
+    frb.buffer = new DataView(
+      buffer.buffer,
+      buffer.byteOffset,
+      buffer.byteLength
+    );
     frb.pos = 0;
-    frb.len = buffer.length;
-  }
-
-  static slice(
-    frb: ReadBuffer,
-    buffer: Buffer,
-    pos: number,
-    len: number
-  ): void {
-    frb.buffer = buffer;
-    frb.pos = pos;
-    frb.len = len;
+    frb.len = buffer.byteLength;
   }
 
   static alloc(): ReadBuffer {

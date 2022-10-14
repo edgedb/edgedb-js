@@ -111,7 +111,9 @@ function timeScriptShutdown(script: string, timeout = 5_000) {
 
 test("unref idle connections", async () => {
   const shutdownTime = await timeScriptShutdown(
-    `const {createClient} = require('./dist/index.node');
+    `delete global.crypto;
+
+    const {createClient} = require('./dist/index.node');
 
 (async () => {
   const client = createClient(${JSON.stringify(getConnectOptions())});
@@ -175,7 +177,7 @@ test("client close", async () => {
   let resolvedLast: string | null = null;
   await Promise.all([
     closePromise.then(() => (resolvedLast = "close")),
-    Promise.all(promises).then(() => (resolvedLast = "queries")),
+    Promise.all(promises).then(() => (resolvedLast = "queries"))
   ]);
 
   expect(resolvedLast).toBe("close");
