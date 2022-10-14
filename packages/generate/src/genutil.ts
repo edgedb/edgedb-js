@@ -63,7 +63,7 @@ export const scalarToLiteralMapping: {
   "std::json": {type: "unknown"},
   "std::bool": {type: "boolean", literalKind: "typeof"},
   "std::bigint": {type: "bigint", literalKind: "typeof"},
-  "std::bytes": {type: "Buffer", literalKind: "instanceof"},
+  "std::bytes": {type: "Uint8Array", literalKind: "instanceof"},
   "std::datetime": {
     type: "Date",
     literalKind: "instanceof",

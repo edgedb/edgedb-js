@@ -1,3 +1,5 @@
+import {utf8Decoder} from "./primitives/buffer";
+
 enum ErrorAttr {
   hint = 1,
   details = 2,
@@ -15,9 +17,9 @@ enum ErrorAttr {
 }
 
 function tryParseInt(val: any) {
-  if (Buffer.isBuffer(val)) {
+  if (val instanceof Uint8Array) {
     try {
-      return parseInt(val.toString("utf8"), 10);
+      return parseInt(utf8Decoder.decode(val), 10);
     } catch {}
   }
   return null;

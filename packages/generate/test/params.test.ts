@@ -18,13 +18,13 @@ test("simple params", () => {
     {
       str: e.str,
       numArr: e.array(e.int64),
-      optBool: e.optional(e.bool),
+      optBool: e.optional(e.bool)
     },
     params =>
       e.select({
         str: params.str,
         nums: e.array_unpack(params.numArr),
-        x: e.op("true", "if", params.optBool, "else", "false"),
+        x: e.op("true", "if", params.optBool, "else", "false")
       })
   );
 
@@ -69,7 +69,7 @@ test("complex params", async () => {
       jsonTuple: e.tuple([e.json]),
       people: e.array(
         e.tuple({name: e.str, age: e.int64, tags: e.array(e.str)})
-      ),
+      )
     },
     params =>
       e.select({
@@ -81,7 +81,7 @@ test("complex params", async () => {
         namedTuple: params.namedTuple,
         namedTupleA: params.namedTuple.a,
         jsonTuple: params.jsonTuple,
-        people: params.people,
+        people: params.people
       })
   );
 
@@ -110,8 +110,8 @@ test("complex params", async () => {
     jsonTuple: [{a: 123, b: ["c", "d"]}],
     people: [
       {name: "person a", age: 23, tags: ["a", "b"]},
-      {name: "person b", age: 45, tags: ["b", "c"]},
-    ],
+      {name: "person b", age: 45, tags: ["b", "c"]}
+    ]
   });
 
   expect({
@@ -121,14 +121,14 @@ test("complex params", async () => {
     namedTuple: {
       a: result.namedTuple.a,
       b: result.namedTuple.b,
-      c: result.namedTuple.c,
+      c: result.namedTuple.c
     },
     jsonTuple: [...result.jsonTuple],
     people: result.people.map(p => ({
       name: p.name,
       age: p.age,
-      tags: [...p.tags],
-    })),
+      tags: [...p.tags]
+    }))
   }).toEqual({
     id: (result as any).id,
     str: "test string",
@@ -141,8 +141,8 @@ test("complex params", async () => {
     jsonTuple: [{a: 123, b: ["c", "d"]}],
     people: [
       {name: "person a", age: 23, tags: ["a", "b"]},
-      {name: "person b", age: 45, tags: ["b", "c"]},
-    ],
+      {name: "person b", age: 45, tags: ["b", "c"]}
+    ]
   });
 });
 
@@ -180,7 +180,7 @@ test("all param types", async () => {
     local_datetime: e.cal.local_datetime,
     relative_duration: e.cal.relative_duration,
     date_duration: e.cal.date_duration,
-    memory: e.cfg.memory,
+    memory: e.cfg.memory
   };
 
   const query = e.params(params, p => e.select(p));
@@ -195,7 +195,7 @@ test("all param types", async () => {
     bool: true,
     json: '{"name": "test"}',
     str: "test str",
-    bytes: Buffer.from("buffer"),
+    bytes: new TextEncoder().encode("buffer"),
     uuid: "d476ccc2-3e7b-11ec-af13-0f07004006ce",
     datetime: new Date(),
     genre: "Action" as const,
@@ -206,7 +206,7 @@ test("all param types", async () => {
     local_datetime: new edgedb.LocalDateTime(2021, 11, 25, 1, 2, 3),
     relative_duration: new edgedb.RelativeDuration(1, 2, 3),
     date_duration: new edgedb.DateDuration(1, 2, 3, 4),
-    memory: new edgedb.ConfigMemory(BigInt(125952)),
+    memory: new edgedb.ConfigMemory(BigInt(125952))
   };
 
   const result = await query.run(client, args);
@@ -214,7 +214,7 @@ test("all param types", async () => {
   expect(result).toEqual({
     // @ts-ignore
     id: result.id,
-    ...args,
+    ...args
   });
 
   tc.assert<
@@ -230,7 +230,7 @@ test("all param types", async () => {
         bool: boolean;
         json: unknown;
         str: string;
-        bytes: Buffer;
+        bytes: Uint8Array;
         uuid: string;
         datetime: Date;
         genre: "Horror" | "Action" | "RomCom" | "Science Fiction";
@@ -247,13 +247,13 @@ test("all param types", async () => {
 
   const complexQuery = e.params(
     {
-      tuple: e.tuple(params),
+      tuple: e.tuple(params)
     },
     p => e.select(p)
   );
 
   const complexResult = await complexQuery.run(client, {
-    tuple: args,
+    tuple: args
   });
 
   expect(Object.values(complexResult.tuple as any)).toEqual(
@@ -264,13 +264,13 @@ test("all param types", async () => {
 test("v2 param types", async () => {
   if (await version_lt(client, 2)) return;
   const params = {
-    date_duration: e.cal.date_duration,
+    date_duration: e.cal.date_duration
   };
 
   const query = e.params(params, p => e.select(p));
 
   const args = {
-    date_duration: new edgedb.DateDuration(1, 2, 3, 4),
+    date_duration: new edgedb.DateDuration(1, 2, 3, 4)
   };
 
   const result = await query.run(client, args);
@@ -278,7 +278,7 @@ test("v2 param types", async () => {
   expect(result).toEqual({
     // @ts-ignore
     id: result.id,
-    ...args,
+    ...args
   });
 
   tc.assert<

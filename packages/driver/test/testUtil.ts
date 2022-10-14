@@ -10,13 +10,15 @@ import type {ConnectConfig} from "../src/conUtils";
 import {Client, createClient} from "../src/index.node";
 import type {EdgeDBVersion} from "./testbase";
 
-export const getServerInfo = async (
-  filename: string
-): Promise<{
+interface ServerInfo {
   port: number;
   socket_dir: string;
   tls_cert_file?: string;
-} | null> => {
+}
+
+export const getServerInfo = async (
+  filename: string
+): Promise<ServerInfo | null> => {
   if (!fs.existsSync(filename)) {
     return null;
   }
@@ -36,6 +38,25 @@ export const getServerInfo = async (
   }
 
   return JSON.parse(line.replace("READY=", ""));
+};
+
+const awaitServerInfo = async (statusFile: string) => {
+  let serverInfo: ServerInfo | null = null;
+  for (let i = 0; i < 1000; i++) {
+    serverInfo = await getServerInfo(statusFile);
+
+    if (serverInfo == null) {
+      await new Promise(resolve => setTimeout(resolve, 1_000));
+    } else {
+      break;
+    }
+  }
+
+  if (serverInfo == null) {
+    throw new Error("could not open server status file " + statusFile);
+  }
+
+  return serverInfo;
 };
 
 export const getWSLPath = (wslPath: string): string => {
@@ -88,8 +109,9 @@ export const getServerCommand = (
 
   if (help.includes("--admin-ui")) {
     args.push("--http-endpoint-security=optional");
-    args.push("--jws-key-file", path.join(__dirname, "keys", "public.pem"));
-    args.push("--jwe-key-file", path.join(__dirname, "keys", "private.pem"));
+    // args.push("--jws-key-file", path.join(__dirname, "keys", "public.pem"));
+    // args.push("--jwe-key-file", path.join(__dirname, "keys", "private.pem"));
+    args.push("--jose-key-mode=generate");
 
     availableFeatures.push("binary-over-http");
   }
@@ -109,93 +131,87 @@ export const getServerCommand = (
   return {args, availableFeatures};
 };
 
+interface ServerInst {
+  config: ConnectConfig;
+  proc: child_process.ChildProcess;
+}
+
 export const startServer = async (
   cmd: string[],
   statusFile: string,
   env: {[key: string]: string} = {}
-): Promise<{config: ConnectConfig; proc: child_process.ChildProcess}> => {
-  let err: ((_: string) => void) | null = null;
-  let stderrData: string = "";
-
-  const proc = child_process.spawn(cmd[0], cmd.slice(1, cmd.length), {
+): Promise<ServerInst> => {
+  if (process.env.EDGEDB_DEBUG_SERVER) {
+    console.log(`running command: ${cmd.join(" ")}`);
+  }
+  const proc = child_process.spawn(cmd[0], cmd.slice(1), {
     env: {...process.env, ...env}
   });
 
-  if (process.env.EDGEDB_DEBUG_SERVER) {
-    proc.stdout.on("data", data => {
-      console.log(data.toString());
-      process.stdout.write(data.toString());
-    });
-  }
-
-  proc.stderr.on("data", data => {
+  try {
     if (process.env.EDGEDB_DEBUG_SERVER) {
-      console.log(data.toString());
-      process.stderr.write(data.toString());
-    } else {
-      // only collect until we detect the start
-      if (err) {
+      proc.stdout.on("data", data => {
+        process.stdout.write(data.toString());
+      });
+    }
+
+    let stderrData: string = "";
+    proc.stderr.on("data", data => {
+      if (process.env.EDGEDB_DEBUG_SERVER) {
+        process.stderr.write(data.toString());
+      } else {
         stderrData += data;
       }
-    }
-  });
+    });
 
-  proc.on("exit", (code, signal) => {
-    if (err) {
-      // only catch early exit
-      console.log("--- EdgeDB output start ---");
-      console.log(stderrData);
-      console.log("--- EdgeDB output end ---");
-      err(
-        `EdgeDB exited prematurely with ` + `code ${code} or signal ${signal}`
+    const runtimeData = await Promise.race([
+      awaitServerInfo(statusFile),
+      new Promise<never>((_, reject) => {
+        proc.addListener("exit", (code, signal) => {
+          if (stderrData) {
+            console.log("--- EdgeDB output start ---");
+            console.log(stderrData);
+            console.log("--- EdgeDB output end ---");
+          }
+          reject(
+            `EdgeDB exited prematurely with ` +
+              `code ${code} or signal ${signal}`
+          );
+        });
+      })
+    ]);
+    proc.removeAllListeners("exit");
+
+    if (runtimeData.tls_cert_file && process.platform === "win32") {
+      const tmpFile = path.join(
+        os.tmpdir(),
+        `edbtlscert-${generateTempID()}.pem`
       );
+      const cmd = `wsl -u edgedb cp ${runtimeData.tls_cert_file} ${getWSLPath(
+        tmpFile
+      )}`;
+      child_process.execSync(cmd);
+      runtimeData.tls_cert_file = tmpFile;
     }
-  });
 
-  let runtimeData;
-  for (let i = 0; i < 1000; i++) {
-    runtimeData = await getServerInfo(statusFile);
+    const config: ConnectConfig = {
+      host: "localhost",
+      port: runtimeData.port,
+      user: "edgedb",
+      password: "edgedbtest",
+      database: "edgedb",
+      tlsSecurity: "no_host_verification"
+    };
 
-    if (runtimeData == null) {
-      await new Promise(resolve => setTimeout(resolve, 1_000));
-    } else {
-      break;
+    if (typeof runtimeData.tls_cert_file === "string") {
+      config.tlsCAFile = runtimeData.tls_cert_file;
     }
-  }
 
-  if (runtimeData == null) {
+    return {config, proc};
+  } catch (err) {
     proc.kill();
-    throw new Error("could not open server status file " + statusFile);
-  } else {
-    err = null;
+    throw err;
   }
-
-  if (runtimeData.tls_cert_file && process.platform === "win32") {
-    const tmpFile = path.join(
-      os.tmpdir(),
-      `edbtlscert-${generateTempID()}.pem`
-    );
-    const cmd = `wsl -u edgedb cp ${runtimeData.tls_cert_file} ${getWSLPath(
-      tmpFile
-    )}`;
-    child_process.execSync(cmd);
-    runtimeData.tls_cert_file = tmpFile;
-  }
-
-  const config: ConnectConfig = {
-    host: "localhost",
-    port: runtimeData.port,
-    user: "edgedb",
-    password: "edgedbtest",
-    database: "edgedb",
-    tlsSecurity: "no_host_verification"
-  };
-
-  if (typeof runtimeData.tls_cert_file === "string") {
-    config.tlsCAFile = runtimeData.tls_cert_file;
-  }
-
-  return {config, proc};
 };
 
 export const connectToServer = async (

@@ -1,17 +1,18 @@
 import * as crypto from "crypto";
 import {promises as fs} from "fs";
-import * as path from "path";
-import * as os from "os";
 import * as net from "net";
+import * as os from "os";
+import * as path from "path";
 import * as tls from "tls";
+
+import process from "process";
 import * as readline from "readline";
 import {Writable} from "stream";
-import process from "process";
 
-export {path, net, crypto, fs, tls, process};
+export {path, net, fs, tls, process};
 
-export async function readFileUtf8(fn: string): Promise<string> {
-  return await fs.readFile(fn, {encoding: "utf8"});
+export async function readFileUtf8(...pathParts: string[]): Promise<string> {
+  return await fs.readFile(path.join(...pathParts), {encoding: "utf8"});
 }
 
 export function watch(dir: string) {
@@ -20,6 +21,10 @@ export function watch(dir: string) {
 
 export async function readDir(pathString: string) {
   return fs.readdir(pathString);
+}
+
+export function hashSHA1toHex(msg: string): string {
+  return crypto.createHash("sha1").update(msg).digest("hex");
 }
 
 export async function walk(
@@ -101,38 +106,7 @@ export function input(
   });
 }
 
-export async function randomBytes(size: number): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    crypto.randomBytes(size, (err, buf) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(buf);
-      }
-    });
-  });
-}
-
-export function H(msg: Buffer): Buffer {
-  const sign = crypto.createHash("sha256");
-  sign.update(msg);
-  return sign.digest();
-}
-
-export function HMAC(key: Buffer, ...msgs: Buffer[]): Buffer {
-  const hm = crypto.createHmac("sha256", key);
-  for (const msg of msgs) {
-    hm.update(msg);
-  }
-  return hm.digest();
-}
-
 export const homeDir = os.homedir;
-
-export function hrTime(): number {
-  const [s, ns] = process.hrtime();
-  return s * 1000 + ns / 1_000_000;
-}
 
 export function exit(code?: number) {
   process.exit(code);

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
+import {ReadBuffer, WriteBuffer, uuidToBuffer} from "../primitives/buffer";
 import {KNOWN_TYPES} from "./consts";
 
 export type uuid = string;
@@ -33,7 +33,7 @@ export type CodecKind =
 
 export interface ICodec {
   readonly tid: uuid;
-  readonly tidBuffer: Buffer;
+  readonly tidBuffer: Uint8Array;
 
   encode(buf: WriteBuffer, object: any): void;
   decode(buf: ReadBuffer): any;
@@ -44,16 +44,16 @@ export interface ICodec {
 }
 
 export interface IArgsCodec {
-  encodeArgs(args: any): Buffer;
+  encodeArgs(args: any): Uint8Array;
 }
 
 export abstract class Codec {
   readonly tid: uuid;
-  readonly tidBuffer: Buffer;
+  readonly tidBuffer: Uint8Array;
 
   constructor(tid: uuid) {
     this.tid = tid;
-    this.tidBuffer = Buffer.from(tid, "hex");
+    this.tidBuffer = uuidToBuffer(tid);
   }
 
   getKnownTypeName(): string {

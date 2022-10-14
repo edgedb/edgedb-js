@@ -496,7 +496,7 @@ The table below shows the correspondence between EdgeDB and JavaScript types.
   * - ``bool``
     - ``boolean``
   * - ``bytes``
-    - ``Buffer``
+    - ``Uint8Array``
   * - ``str``
     - ``string``
   * - ``float32``,  ``float64``, ``int16``, ``int32``, ``int64``

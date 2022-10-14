@@ -27,8 +27,13 @@
   "devDependencies": {
     "@js-temporal/polyfill": "^0.4.1",
     "get-stdin": "^7.0.0",
+    "globby": "^13.1.2",
+    "jest": "*",
+    "jest-environment-jsdom": "^29.1.2",
     "node-fetch": "2.6.7",
-    "typescript": "~4.4"
+    "ts-jest": "*",
+    "tsx": "*",
+    "typescript": "~4.5"
   },
   "scripts": {
     "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",

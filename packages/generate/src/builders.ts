@@ -731,15 +731,6 @@ export class DirBuilder {
     mod.addImportStar("$", "../reflection", {allowFileExt: true});
     mod.addImportStar("_", "../imports", {allowFileExt: true});
 
-    // @ts-ignore
-    const isDeno = typeof Deno !== "undefined";
-    if (moduleName === "std" && isDeno) {
-      mod.addImport(
-        {Buffer: true},
-        "https://deno.land/std@0.114.0/node/buffer.ts"
-      );
-    }
-
     return mod;
   }
 

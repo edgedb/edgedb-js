@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
+import {ReadBuffer, uuidToBuffer, WriteBuffer} from "../primitives/buffer";
 import {ICodec, ScalarCodec} from "./ifaces";
 import {InvalidArgumentError} from "../errors";
 
-function UUIDBufferFromString(uuid: string): Buffer {
+function UUIDBufferFromString(uuid: string): Uint8Array {
   let uuidClean = uuid;
   if (uuidClean.length !== 32) {
     uuidClean = uuidClean.replace(/\-/g, "");
@@ -28,41 +28,11 @@ function UUIDBufferFromString(uuid: string): Buffer {
       throw new TypeError(`invalid UUID "${uuid}"`);
     }
   }
-  const buf = Buffer.from(uuidClean, "hex");
-  if (buf.length !== 16) {
+  try {
+    return uuidToBuffer(uuidClean);
+  } catch {
     throw new TypeError(`invalid UUID "${uuid}"`);
   }
-  return buf;
-}
-
-const byteToHex: string[] = [];
-
-for (let i = 0; i < 256; ++i) {
-  byteToHex.push((i + 0x100).toString(16).slice(1));
-}
-export function bytesToHex(buf: Buffer) {
-  return (
-    byteToHex[buf[0]] +
-    byteToHex[buf[1]] +
-    byteToHex[buf[2]] +
-    byteToHex[buf[3]] +
-    "-" +
-    byteToHex[buf[4]] +
-    byteToHex[buf[5]] +
-    "-" +
-    byteToHex[buf[6]] +
-    byteToHex[buf[7]] +
-    "-" +
-    byteToHex[buf[8]] +
-    byteToHex[buf[9]] +
-    "-" +
-    byteToHex[buf[10]] +
-    byteToHex[buf[11]] +
-    byteToHex[buf[12]] +
-    byteToHex[buf[13]] +
-    byteToHex[buf[14]] +
-    byteToHex[buf[15]]
-  );
 }
 
 export class UUIDCodec extends ScalarCodec implements ICodec {
@@ -81,6 +51,6 @@ export class UUIDCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer): any {
-    return bytesToHex(buf.readBuffer(16));
+    return buf.readUUID("-");
   }
 }

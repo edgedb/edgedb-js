@@ -75,14 +75,14 @@ export class ObjectCodec extends Codec implements ICodec {
     throw new InvalidArgumentError("Objects cannot be passed as arguments");
   }
 
-  encodeArgs(args: any): Buffer {
+  encodeArgs(args: any): Uint8Array {
     if (this.fields[0].name === "0") {
       return this._encodePositionalArgs(args);
     }
     return this._encodeNamedArgs(args);
   }
 
-  _encodePositionalArgs(args: any): Buffer {
+  _encodePositionalArgs(args: any): Uint8Array {
     if (!Array.isArray(args)) {
       throw new InvalidArgumentError("an array of arguments was expected");
     }
@@ -124,7 +124,7 @@ export class ObjectCodec extends Codec implements ICodec {
     return buf.unwrap();
   }
 
-  _encodeNamedArgs(args: any): Buffer {
+  _encodeNamedArgs(args: any): Uint8Array {
     if (args == null) {
       throw new MissingArgumentError(
         "One or more named arguments expected, received null"
