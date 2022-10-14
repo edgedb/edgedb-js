@@ -39,7 +39,7 @@ const run = async () => {
   }
   if (!generator || generator[0] === "-") {
     console.error(
-      `Error: No generator specified.\n  \`npx @edgedb/generate [generator]\`\nAvailable generators:\n - edgeql-js (query builder)\n - queries (query files)`
+      `Error: No generator specified.\n  \`npx @edgedb/generate <generator>\`\nAvailable generators:\n - edgeql-js (query builder)\n - queries (query files)`
     );
     adapter.exit();
   }

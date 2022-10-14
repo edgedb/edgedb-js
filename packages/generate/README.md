@@ -48,7 +48,19 @@ The value of `<generator>` should be one of the following.
 
 ✨ If you build a code generator for EdgeDB, ping us or open a PR and we'll list it here! ✨
 
-The `edgedb` package exports a set of utilities to introspect the schema and analyze queries. We use these tools to implement our
+The `edgedb` package exports a set of utilities to introspect the schema and analyze queries. We use this same set of tools to implement the first-party generators.
+
+```ts
+import {createClient, $} from "edgedb";
+
+const client = createClient();
+
+const types = await $.introspect.types(client);
+// Map<string, Type>
+
+const queryData = await $.analyzeQuery(client, `select 2 + 2`);
+// {args: string; result: string; ...}
+```
 
 ## Contributing
 
