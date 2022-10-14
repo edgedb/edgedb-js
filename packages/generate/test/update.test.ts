@@ -197,3 +197,12 @@ test("empty update", async () => {
     e.update(e.Movie, () => ({set: {}})).run(client)
   ).resolves.not.toThrow();
 });
+
+test("update with filter_single", async () => {
+  await e
+    .update(e.Movie, () => ({
+      filter_single: {id: data.the_avengers.id},
+      set: {}
+    }))
+    .run(client);
+});

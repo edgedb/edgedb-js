@@ -49,3 +49,11 @@ test("basic delete", async () => {
     tc.IsExact<typeof deleteAll["__cardinality__"], edgedb.$.Cardinality.Many>
   >(true);
 });
+
+test("delete with filter_single", async () => {
+  await e
+    .delete(e.Movie, () => ({
+      filter_single: {id: "00000000-0000-0000-0000-000000000000"}
+    }))
+    .run(client);
+});

@@ -72,7 +72,7 @@ export function update<
   Expr extends ObjectTypeExpression,
   Shape extends {
     filter?: SelectModifiers["filter"];
-    filter_single?: SelectModifiers["filter"];
+    filter_single?: SelectModifiers<Expr["__element__"]>["filter_single"];
     order_by?: SelectModifiers["order_by"];
     limit?: SelectModifiers["limit"];
     offset?: SelectModifiers["offset"];
