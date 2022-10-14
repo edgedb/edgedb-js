@@ -6,8 +6,9 @@ on:
       - master
       - ci
   pull_request:
-    # branches:
-    #   - master
+    branches:
+      - master
+      - edgeql-2
 
 jobs:
   test:
