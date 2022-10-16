@@ -89,6 +89,7 @@ export interface Bag extends HasName, HasAge {
   "seqField"?: number | null;
   "jsonField"?: unknown | null;
   "rangeField"?: edgedb.Range<number> | null;
+  "arrTupleField"?: [string, number][] | null;
 }
 export type Genre = "Horror" | "Action" | "RomCom" | "Science Fiction";
 export interface Person extends std.$Object {

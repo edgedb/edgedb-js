@@ -69,10 +69,9 @@ export async function runInterfacesGenerator(params: {
     moduleKind: "esm",
     moduleExtension: ""
   });
-  console.log(`outFile`);
-  console.log(outFile);
 
-  console.log(`Writing file to ${prettyOutputDir}`);
+  console.log(`Writing interfaces file...`);
+  console.log("   " + prettyOutputDir);
   await adapter.fs.writeFile(outFile, rendered);
 
   console.log(`Generation complete! 🤘`);
