@@ -400,7 +400,7 @@ To select a particular object, use the ``filter_single`` key. This tells the que
     title: true,
     release_year: true,
 
-    filter_single: {id, '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'},
+    filter_single: {id: '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'},
   }));
 
   const result = await query.run(client);

@@ -119,6 +119,7 @@ type Hero extending Person {
     property enumArr -> array<Genre>;
     property seqField -> bag_seq;
     property jsonField -> json;
+    property arrTupleField -> array<tuple<str, int64>>;
     property rangeField -> range<int64>;
   }
 

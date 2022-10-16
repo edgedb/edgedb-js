@@ -36,7 +36,9 @@ export async function HTTPSCRAMAuth(
     username
   );
 
-  const serverFirstRes = await fetch(authUrl, {
+  // @ts-ignore
+  const FETCH = typeof fetch === "undefined" ? require("node-fetch") : fetch;
+  const serverFirstRes = await FETCH(authUrl, {
     headers: {
       Authorization: `SCRAM-SHA-256 data=${utf8ToB64(clientFirst)}`
     }
@@ -70,7 +72,7 @@ export async function HTTPSCRAMAuth(
     serverNonce
   );
 
-  const serverFinalRes = await fetch(authUrl, {
+  const serverFinalRes = await FETCH(authUrl, {
     headers: {
       Authorization: `SCRAM-SHA-256 sid=${sid}, data=${utf8ToB64(clientFinal)}`
     }

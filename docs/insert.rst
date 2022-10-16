@@ -36,7 +36,7 @@ As in EdgeQL, link properties are inserted inside the shape of a subquery.
   const query = e.insert(e.Movie, {
     title: "Iron Man",
     actors: e.select(e.Person, person => ({
-      filter_single: {name, "Robert Downey Jr."},
+      filter_single: {name: "Robert Downey Jr."},
       "@character_name": e.str("Tony Stark")
 
       // link props must correspond to expressions

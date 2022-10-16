@@ -47,6 +47,16 @@ const run = async () => {
     adapter.exit();
   }
 
+  switch (generator) {
+    case Generator.QueryBuilder:
+      break;
+    case Generator.Queries:
+      break;
+    case Generator.Interfaces:
+      options.target = "ts";
+      break;
+  }
+
   while (args.length) {
     let flag = args.shift()!;
     let val: string | null = null;

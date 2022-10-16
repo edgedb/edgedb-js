@@ -9,7 +9,7 @@ Delete objects with ``e.delete``.
 
   e.delete(e.Movie, movie => ({
     filter: e.op(movie.release_year, ">", 2000),
-    filter_single: { id: "abc..."},
+    filter_single: { id: "abc..." },
     order_by: movie.title,
     offset: 10,
     limit: 10
