@@ -14,8 +14,12 @@ if (typeof fetch === "undefined") {
   globalThis.fetch = require("node-fetch"); // tslint:disable-line
 }
 
-// @ts-ignore
-crypto.subtle = require("crypto").webcrypto.subtle;
+const nodeVersion = parseInt(process.version.slice(1).split(".")[0], 10);
+
+if (nodeVersion >= 15) {
+  // @ts-ignore
+  crypto.subtle = require("crypto").webcrypto.subtle;
+}
 
 let version: EdgeDBVersion;
 beforeAll(async () => {
@@ -83,27 +87,30 @@ const connectOpts = {
   tlsSecurity: "insecure"
 };
 
-test("createClient fails", () => {
-  if (version!.major < 2) return;
-  expect(() => createClient()).toThrowError(EdgeDBError);
-});
+// Skip tests on node < 15, since webcrypto api not available
+if (nodeVersion >= 15) {
+  test("createClient fails", () => {
+    if (version!.major < 2) return;
+    expect(() => createClient()).toThrowError(EdgeDBError);
+  });
 
-test("createHttpClient no options", async () => {
-  if (version!.major < 2) return;
-  const client = createHttpClient();
+  test("createHttpClient no options", async () => {
+    if (version!.major < 2) return;
+    const client = createHttpClient();
 
-  await expect(client.ensureConnected()).rejects.toThrowError(
-    /no connection options specified/
-  );
-});
+    await expect(client.ensureConnected()).rejects.toThrowError(
+      /no connection options specified/
+    );
+  });
 
-test("basic queries", async () => {
-  if (version!.major < 2) return;
-  const client = createHttpClient(connectOpts);
+  test("basic queries", async () => {
+    if (version!.major < 2) return;
+    const client = createHttpClient(connectOpts);
 
-  expect(
-    await client.querySingle(`select 'Querying from the ' ++ <str>$env`, {
-      env: "browser"
-    })
-  ).toEqual("Querying from the browser");
-});
+    expect(
+      await client.querySingle(`select 'Querying from the ' ++ <str>$env`, {
+        env: "browser"
+      })
+    ).toEqual("Querying from the browser");
+  });
+}
