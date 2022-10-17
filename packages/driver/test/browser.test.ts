@@ -19,7 +19,7 @@ crypto.subtle = require("crypto").webcrypto.subtle;
 
 let version: EdgeDBVersion;
 beforeAll(async () => {
-  // version = await getEdgeDBVersion();
+  version = await getEdgeDBVersion();
   for (const nodeModule of [
     "assert",
     "async_hooks",
