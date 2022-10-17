@@ -5,14 +5,14 @@
     "outDir": "./dist/__esm",
     "declaration": false,
     "declarationDir": null,
-    "paths": {
-      "edgedb": [
-        "./src/index.node"
-      ],
-      "@generated/*": [
-        "./src/syntax/genMock/*"
-      ],
-    }
+    // "paths": {
+    //   "edgedb": [
+    //     "./src/index.node"
+    //   ],
+    //   "@generated/*": [
+    //     "./src/syntax/genMock/*"
+    //   ],
+    // }
   },
   "include": [
     "src/syntax",

@@ -1,3 +1,5 @@
+// tslint:disable:no-console
+
 import {adapter} from "edgedb";
 import type {ConnectConfig} from "edgedb/dist/conUtils";
 import {CommandOptions, isTTY, promptBoolean} from "./commandutil";
@@ -16,6 +18,8 @@ import {generateScalars} from "./edgeql-js/generateScalars";
 import {generateSetImpl} from "./edgeql-js/generateSetImpl";
 
 const {path, fs, readFileUtf8, exists, exit, walk} = adapter;
+
+// tslint:disable-next-line
 export const configFileHeader = `// EdgeDB query builder. To update, run \`npx @edgedb/generate edgeql-js\``;
 
 export type GeneratorParams = {
@@ -258,7 +262,6 @@ export async function generateQueryBuilder(params: {
     }
     await fs.rm(file);
   }
-  // await runQBGenerator({outputDir, connectionConfig, target: options.target!});
 
   console.log(`Writing files to ${prettyOutputDir}`);
   console.log(`Generation complete! 🤘`);

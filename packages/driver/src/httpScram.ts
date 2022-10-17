@@ -44,6 +44,7 @@ export async function HTTPSCRAMAuth(
     }
   });
   if (serverFirstRes.status === 403) {
+    // tslint:disable-next-line:no-console
     console.log(serverFirstRes);
     throw new Error(`Server doesn't support HTTP SCRAM authentication`);
   }
@@ -108,7 +109,11 @@ export async function HTTPSCRAMAuth(
   return authToken;
 }
 
-function parseHeaders(headers: Headers, headerName: string, checkAlgo = true) {
+function parseHeaders(
+  headers: Headers,
+  headerName: string,
+  checkAlgo: boolean = true
+) {
   const header = headers.get(headerName);
   if (!header) {
     throw new ProtocolError(`response doesn't contain '${headerName}' header`);

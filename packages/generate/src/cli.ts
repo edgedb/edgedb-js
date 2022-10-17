@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// tslint:disable no-console
+// tslint:disable:no-console
 import {adapter} from "edgedb";
 
 import {ConnectConfig, validTlsSecurityValues} from "edgedb/dist/conUtils";

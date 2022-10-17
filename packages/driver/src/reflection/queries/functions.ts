@@ -53,14 +53,14 @@ export const functions = async (cxn: Executor) => {
     } filter .internal = false
   `);
 
-  const functions = new StrictMap<string, FunctionDef[]>();
+  const functionMap = new StrictMap<string, FunctionDef[]>();
 
   const seenFuncDefHashes = new Set<string>();
 
   for (const func of JSON.parse(functionsJson)) {
     const {name} = func;
-    if (!functions.has(name)) {
-      functions.set(name, []);
+    if (!functionMap.has(name)) {
+      functionMap.set(name, []);
     }
 
     const funcDef: FunctionDef = {
@@ -73,12 +73,12 @@ export const functions = async (cxn: Executor) => {
     const hash = hashFuncDef(funcDef);
 
     if (!seenFuncDefHashes.has(hash)) {
-      functions.get(name).push(funcDef);
+      functionMap.get(name).push(funcDef);
       seenFuncDefHashes.add(hash);
     }
   }
 
-  return functions;
+  return functionMap;
 };
 
 export function replaceNumberTypes(def: {

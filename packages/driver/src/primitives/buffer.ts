@@ -39,16 +39,16 @@ let decodeB64: (b64: string) => Uint8Array;
 let encodeB64: (data: Uint8Array) => string;
 
 if (typeof btoa === "undefined") {
-  decodeB64 = function (b64: string): Uint8Array {
+  decodeB64 = (b64: string): Uint8Array => {
     // @ts-ignore
     return Buffer.from(b64, "base64");
   };
-  encodeB64 = function (data: Uint8Array): string {
+  encodeB64 = (data: Uint8Array): string => {
     // @ts-ignore
     return Buffer.from(data).toString("base64");
   };
 } else {
-  decodeB64 = function (b64: string): Uint8Array {
+  decodeB64 = (b64: string): Uint8Array => {
     const binaryString = atob(b64);
     const size = binaryString.length;
     const bytes = new Uint8Array(size);
@@ -57,8 +57,8 @@ if (typeof btoa === "undefined") {
     }
     return bytes;
   };
-  encodeB64 = function (data: Uint8Array): string {
-    let binaryString = String.fromCharCode(...data);
+  encodeB64 = (data: Uint8Array): string => {
+    const binaryString = String.fromCharCode(...data);
     return btoa(binaryString);
   };
 }
@@ -1057,7 +1057,7 @@ export class ReadBuffer {
     return buf;
   }
 
-  readUUID(dash = ""): string {
+  readUUID(dash: string = ""): string {
     if (this.pos + 16 > this.len) {
       throw new BufferError("buffer overread");
     }

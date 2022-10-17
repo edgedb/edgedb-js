@@ -1,3 +1,4 @@
+// tslint:disable:no-console
 import type {CommandOptions} from "./commandutil";
 import {exitWithError} from "./genutil";
 

@@ -2,7 +2,7 @@
 import {setupTests} from "./test/setupTeardown";
 import e from "./dbschema/edgeql-js";
 
-import {$, Client} from "edgedb";
+import type {Client} from "edgedb";
 export async function getMovie(
   client: Client,
   params: {title: string}

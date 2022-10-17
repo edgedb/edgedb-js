@@ -3,18 +3,19 @@
   "compilerOptions": {
     "declarationDir": "./dist",
     "outDir": "./dist",
+    "downlevelIteration": true
     // "baseUrl": ".",
     // "typeRoots": [
     //   "./node_modules/@types"
     // ],
-    "paths": {
-      "edgedb": [
-        "./src/index.node"
-      ],
-      "@generated/*": [
-        "./src/syntax/genMock/*"
-      ],
-    }
+    // "paths": {
+    //   "edgedb": [
+    //     "./src/index.node"
+    //   ],
+    //   "@generated/*": [
+    //     "./src/syntax/genMock/*"
+    //   ],
+    // }
   },
   "include": [
     "src",

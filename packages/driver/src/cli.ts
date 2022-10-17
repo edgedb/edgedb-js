@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-
+// tslint:disable:no-console
 console.log(
   `Failure: The \`npx edgeql-js\` command is no longer supported.
 
@@ -17,4 +17,4 @@ Then run the following command to generate the query builder.
 `
 );
 
-export {}
+export {};

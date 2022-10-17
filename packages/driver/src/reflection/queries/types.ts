@@ -111,7 +111,7 @@ export const typeMapping = new Map([
   ]
 ]);
 
-export async function types(
+export async function _types(
   cxn: Executor,
   params?: {debug?: boolean}
 ): Promise<Types> {
@@ -365,3 +365,5 @@ export function topoSort(types: Type[]) {
 
   return sorted;
 }
+
+export {_types as types};

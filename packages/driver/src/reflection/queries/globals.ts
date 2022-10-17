@@ -37,8 +37,8 @@ export async function globals(cxn: Executor): Promise<Globals> {
     ORDER BY .name;
   `;
 
-  const globals: Global[] = JSON.parse(await cxn.queryJSON(QUERY));
-  for (const g of globals) {
+  const allGlobals: Global[] = JSON.parse(await cxn.queryJSON(QUERY));
+  for (const g of allGlobals) {
     globalsMap.set(g.id, g);
   }
 

@@ -111,7 +111,8 @@ export type SelectModifiers<T extends ObjectType = ObjectType> = {
   filter?: SelectFilterExpression;
   filter_single?: // | Partial<
   //     typeutil.stripNever<{
-  //       [k in keyof T["__pointers__"]]: T["__pointers__"][k] extends PropertyDesc
+  //       [k in keyof T["__pointers__"]]: T["__pointers__"][k]
+  // extends PropertyDesc
   //         ? orScalarLiteral<{
   //             __element__: T["__pointers__"][k]["target"];
   //             __cardinality__: T["__pointers__"][k]["cardinality"];
@@ -123,7 +124,8 @@ export type SelectModifiers<T extends ObjectType = ObjectType> = {
   // | (ObjectType extends T
   //       ? unknown
   //       : typeutil.stripNever<{
-  //           [k in keyof T["__pointers__"]]: T["__pointers__"][k] extends PropertyDesc<
+  //           [k in keyof T["__pointers__"]]: T["__pointers__"][k]
+  // extends PropertyDesc<
   //             infer T,
   //             infer C,
   //             infer E
@@ -141,7 +143,8 @@ export type SelectModifiers<T extends ObjectType = ObjectType> = {
   // | (ObjectType extends T
   //     ? unknown
   //     : typeutil.stripNever<{
-  //         [k in keyof T["__pointers__"]]: T["__pointers__"][k] extends PropertyDesc<
+  //         [k in keyof T["__pointers__"]]: T["__pointers__"][k]
+  // extends PropertyDesc<
   //           infer T,
   //           infer C,
   //           infer E
@@ -824,7 +827,7 @@ export const $existingScopes = new Set<
 function $shape<
   Expr extends ObjectTypeExpression,
   Shape extends objectTypeToSelectShape<Expr["__element__"]> &
-    SelectModifiers<Expr["__element__"]> //<Expr["__element__"]>
+    SelectModifiers<Expr["__element__"]> // <Expr["__element__"]>
 >(
   expr: Expr,
   _shape: (

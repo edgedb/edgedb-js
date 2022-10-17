@@ -19,9 +19,11 @@ export interface OperatorDef {
   params: FuncopParam[];
 }
 
-export type OperatorTypes = typeutil.depromisify<ReturnType<typeof operators>>;
+export type OperatorTypes = typeutil.depromisify<
+  ReturnType<typeof _operators>
+>;
 
-export const operators = async (cxn: Executor) => {
+const _operators = async (cxn: Executor) => {
   const operatorsJson = await cxn.queryJSON(`
     with module schema
     select Operator {
@@ -106,3 +108,5 @@ function hashOpDef(def: OperatorDef): string {
     operator_kind: def.operator_kind
   });
 }
+
+export {_operators as operators};

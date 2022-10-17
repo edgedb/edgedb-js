@@ -428,7 +428,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
 
     const bases = type.bases
       .map(b => types.get(b.id))
-      .map(t => getRef(t.name));
+      .map(b => getRef(b.name));
     body.indented(() => {
       for (const b of bases) {
         body.writeln([t`...${b}['__exclusives__'],`]);
