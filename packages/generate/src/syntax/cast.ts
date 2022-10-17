@@ -11,7 +11,12 @@ export function cast<Target extends BaseType>(
 export function cast<Target extends BaseType, Expr extends TypeSet>(
   target: Target,
   expr: orScalarLiteral<Expr>
-): $expr_Cast<Target, Expr["__cardinality__"]>;
+): $expr_Cast<
+  Target,
+  Cardinality extends Expr["__cardinality__"]
+    ? Cardinality.One
+    : Expr["__cardinality__"]
+>;
 export function cast(target: BaseType, expr: any) {
   const cleanedExpr = expr === null ? null : literalToTypeSet(expr);
   return $expressionify({

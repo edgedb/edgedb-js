@@ -13,27 +13,13 @@ export async function getMovie(
   );
 }
 
+// enum Genre {
+//   Action = "Action"
+// }
 async function run() {
   const {client} = await setupTests();
 
-  const types = await $.introspect.types(client);
-  for (const type of types.values()) {
-    if (type.kind === "object" && type.name === "default::Bag") {
-      for (const ptr of type.pointers) {
-        const ptrType = types.get(ptr.target_id);
-        console.log(`-----------`);
-        console.log(ptr.name, ptrType.name);
-        if (ptrType.kind === "array") {
-          console.log(ptrType);
-        }
-      }
-    }
-  }
-
-  const query = e.delete(e.Movie, movie => ({
-    filter_single: {id: "00000000-0000-0000-0000-000000000000"},
-    asdf: e.op(movie.title, "=", "1234")
-  }));
+  const query = e.cast(e.Genre, e.str("Horror"));
 
   console.log(query.toEdgeQL());
 

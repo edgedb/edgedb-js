@@ -1,5 +1,17 @@
 import e from "../dbschema/edgeql-js";
-import {tc} from "./setupTeardown";
+import {setupTests, tc, TestData, teardownTests} from "./setupTeardown";
+import type {Client} from "edgedb";
+let client: Client;
+let data: TestData;
+
+beforeAll(async () => {
+  const setup = await setupTests();
+  ({client, data} = setup);
+});
+
+afterAll(async () => {
+  await teardownTests(client);
+});
 
 test("casting", () => {
   const primitiveCast = e.cast(e.float32, e.float64(3.14));
@@ -9,10 +21,12 @@ test("casting", () => {
   expect(primitiveCast.toEdgeQL()).toEqual(`<std::float32>(3.14)`);
 });
 
-test("enums", () => {
+test("enums", async () => {
   expect(e.cast(e.Genre, e.str("Horror")).toEdgeQL()).toEqual(
     `<default::Genre>("Horror")`
   );
+  const result = await e.cast(e.Genre, e.str("Horror")).run(client);
+  expect(result).toEqual("Horror");
 });
 
 test("scalar literals", () => {
