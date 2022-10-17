@@ -5,6 +5,7 @@
 const {TextEncoder, TextDecoder} = require("util");
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
+import {EdgeDBVersion, getEdgeDBVersion} from "./testbase";
 
 // @ts-ignore
 if (typeof fetch === "undefined") {
@@ -16,51 +17,55 @@ if (typeof fetch === "undefined") {
 // @ts-ignore
 crypto.subtle = require("crypto").webcrypto.subtle;
 
-for (const nodeModule of [
-  "assert",
-  "async_hooks",
-  "buffer",
-  "child_process",
-  "cluster",
-  "console",
-  "constants",
-  "crypto",
-  "dgram",
-  "dns",
-  "domain",
-  "events",
-  "fs",
-  "http",
-  "http2",
-  "https",
-  "inspector",
-  "module",
-  "net",
-  "os",
-  "path",
-  "perf_hooks",
-  "process",
-  "punycode",
-  "querystring",
-  "readline",
-  "repl",
-  "stream",
-  "string_decoder",
-  "timers",
-  "tls",
-  "trace_events",
-  "tty",
-  "url",
-  "util",
-  "v8",
-  "vm",
-  "worker_threads",
-  "zlib"
-]) {
-  jest.mock(nodeModule, () => {
-    throw new Error(`Cannot use node module '${nodeModule}' in browser`);
-  });
-}
+let version: EdgeDBVersion;
+beforeAll(async () => {
+  // version = await getEdgeDBVersion();
+  for (const nodeModule of [
+    "assert",
+    "async_hooks",
+    "buffer",
+    "child_process",
+    "cluster",
+    "console",
+    "constants",
+    "crypto",
+    "dgram",
+    "dns",
+    "domain",
+    "events",
+    "fs",
+    "http",
+    "http2",
+    "https",
+    "inspector",
+    "module",
+    "net",
+    "os",
+    "path",
+    "perf_hooks",
+    "process",
+    "punycode",
+    "querystring",
+    "readline",
+    "repl",
+    "stream",
+    "string_decoder",
+    "timers",
+    "tls",
+    "trace_events",
+    "tty",
+    "url",
+    "util",
+    "v8",
+    "vm",
+    "worker_threads",
+    "zlib"
+  ]) {
+    jest.mock(nodeModule, () => {
+      throw new Error(`Cannot use node module '${nodeModule}' in browser`);
+    });
+  }
+});
 
 import {
   createClient,
@@ -79,10 +84,12 @@ const connectOpts = {
 };
 
 test("createClient fails", () => {
+  if (version!.major < 2) return;
   expect(() => createClient()).toThrowError(EdgeDBError);
 });
 
 test("createHttpClient no options", async () => {
+  if (version!.major < 2) return;
   const client = createHttpClient();
 
   await expect(client.ensureConnected()).rejects.toThrowError(
@@ -91,6 +98,7 @@ test("createHttpClient no options", async () => {
 });
 
 test("basic queries", async () => {
+  if (version!.major < 2) return;
   const client = createHttpClient(connectOpts);
 
   expect(
