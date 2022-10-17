@@ -113,4 +113,8 @@ if (nodeVersion >= 15) {
       })
     ).toEqual("Querying from the browser");
   });
+} else {
+  test.skip("skipping browser test", () => {
+    // dummy test to satisfy jest
+  });
 }
