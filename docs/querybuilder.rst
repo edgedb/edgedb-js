@@ -431,8 +431,8 @@ object.
     title: true,
     release_year: true,
 
-    // filter .id = <uuid>'2053a8b4-49b1-437a-84c8-e1b0291ccd9f'
-    filter: e.op(movie.id, '=', e.uuid('2053a8b4-49b1-437a-84c8-e1b0291ccd9f')),
+    // filter .id = '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'
+    filter: e.op(movie.id, '=', '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'),
   }));
 
   const result = await query.run(client);

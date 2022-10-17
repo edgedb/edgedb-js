@@ -38,7 +38,7 @@ test("empty sets", async () => {
   expect(await e.cast(e.int64, e.set()).run(client)).toEqual(null);
 });
 
-test("object set contructor", async () => {
+test("object set contructor", () => {
   const hero = e.set(e.default.Hero);
   expect(hero.id.__element__.__name__).toEqual("std::uuid");
   expect(hero.name.__element__.__name__).toEqual("std::str");
@@ -60,26 +60,6 @@ test("object set contructor", async () => {
   expect(e.set(e.select(e.Hero), e.select(e.Villain)).toEdgeQL()).toEqual(
     `{ (SELECT DETACHED default::Hero), (SELECT DETACHED default::Villain) }`
   );
-
-  expect(
-    await e
-      .select(e.set(e.select(e.Hero), e.select(e.Villain)), obj => ({
-        name: true,
-        filter: e.op(obj.name, "=", "Thanos"),
-      }))
-      .assert_single()
-      .run(client)
-  ).toEqual({name: "Thanos"});
-
-  expect(
-    await e
-      .select(e.set(e.Hero, e.Villain), obj => ({
-        name: true,
-        filter: e.op(obj.name, "=", "Thanos"),
-      }))
-      .assert_single()
-      .run(client)
-  ).toEqual({name: "Thanos"});
 });
 
 test("scalar set contructor", () => {

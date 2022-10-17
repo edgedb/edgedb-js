@@ -42,17 +42,17 @@ test("implicit WITH vars referencing each other", () => {
   __withVar_4 := 10,
   __withVar_3 := (
     WITH
-      __scope_2_defaultHero := DETACHED default::Hero
-    SELECT __scope_2_defaultHero {
+      __scope_2_Hero := DETACHED default::Hero
+    SELECT __scope_2_Hero {
       id
     }
-    ORDER BY __scope_2_defaultHero.id
+    ORDER BY __scope_2_Hero.id
     OFFSET __withVar_4
   ),
   __withVar_1 := (
     WITH
-      __scope_0_defaultHero := __withVar_3
-    SELECT __scope_0_defaultHero {
+      __scope_0_Hero := __withVar_3
+    SELECT __scope_0_Hero {
       id,
       name
     }
@@ -272,17 +272,17 @@ test("implicit WITH and explicit WITH in sub expr", () => {
   __withVar_5 := 10,
   __withVar_4 := (
     WITH
-      __scope_1_defaultHero := DETACHED default::Hero
-    SELECT __scope_1_defaultHero {
+      __scope_1_Hero := DETACHED default::Hero
+    SELECT __scope_1_Hero {
       id
     }
-    ORDER BY __scope_1_defaultHero.id
+    ORDER BY __scope_1_Hero.id
     OFFSET __withVar_5
   ),
   __withVar_3 := (
     WITH
-      __scope_0_defaultHero := __withVar_4
-    SELECT __scope_0_defaultHero {
+      __scope_0_Hero := __withVar_4
+    SELECT __scope_0_Hero {
       id,
       name
     }
@@ -464,29 +464,77 @@ test("query with no WITH block", () => {
     limit: 1,
   }));
 
-  expect(query.toEdgeQL()).toEqual(
-    `WITH
-  __scope_0_defaultHero := DETACHED default::Person[IS default::Hero]
-SELECT __scope_0_defaultHero {
+  /*
+
+  WITH
+  __scope_0_Hero := DETACHED default::Person[IS default::Hero]
+SELECT __scope_0_Hero {
   id,
   single computable := 35,
   multi all_heroes := (
     WITH
-      __scope_1_defaultHero := DETACHED default::Hero
-    SELECT __scope_1_defaultHero {
+      __scope_1_Hero := DETACHED default::Hero
+    SELECT __scope_1_Hero {
       __type__ := (
         WITH
-          __scope_2_schemaObjectType := __scope_1_defaultHero.__type__
-        SELECT __scope_2_schemaObjectType {
+          __scope_2_ObjectType := __scope_1_Hero.__type__
+        SELECT __scope_2_ObjectType {
           name
         }
       )
     }
   )
 }
-ORDER BY __scope_0_defaultHero.name
-LIMIT 1`
-  );
+ORDER BY __scope_0_Hero.name
+LIMIT 1
+
+   */
+
+  // TODO: undo this change when 2.0 is stable
+  expect([
+    `WITH
+  __scope_0_Hero := DETACHED default::Person[IS default::Hero]
+SELECT __scope_0_Hero {
+  id,
+  single computable := 35,
+  multi all_heroes := (
+    WITH
+      __scope_1_Hero := DETACHED default::Hero
+    SELECT __scope_1_Hero {
+      __type__ := (
+        WITH
+          __scope_2_ObjectType := __scope_1_Hero.__type__
+        SELECT __scope_2_ObjectType {
+          name
+        }
+      )
+    }
+  )
+}
+ORDER BY __scope_0_Hero.name
+LIMIT 1`,
+    `WITH
+  __scope_0_Hero := DETACHED default::Person[IS default::Hero]
+SELECT __scope_0_Hero {
+  id,
+  single computable := 35,
+  multi all_heroes := (
+    WITH
+      __scope_1_Hero := DETACHED default::Hero
+    SELECT __scope_1_Hero {
+      __type__ := (
+        WITH
+          __scope_2_Type := __scope_1_Hero.__type__
+        SELECT __scope_2_Type {
+          name
+        }
+      )
+    }
+  )
+}
+ORDER BY __scope_0_Hero.name
+LIMIT 1`,
+  ]).toContain(query.toEdgeQL());
 });
 
 test("repeated expression referencing scoped select object", () => {
@@ -504,17 +552,17 @@ test("repeated expression referencing scoped select object", () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __scope_0_defaultHero_expr := DETACHED default::Hero,
-  __scope_0_defaultHero := (FOR __scope_0_defaultHero_inner IN {__scope_0_defaultHero_expr} UNION (
+  __scope_0_Hero_expr := DETACHED default::Hero,
+  __scope_0_Hero := (FOR __scope_0_Hero_inner IN {__scope_0_Hero_expr} UNION (
     WITH
-      __withVar_1 := ((__scope_0_defaultHero_inner.name ++ " is ") ++ __scope_0_defaultHero_inner.secret_identity)
-    SELECT __scope_0_defaultHero_inner {
+      __withVar_1 := ((__scope_0_Hero_inner.name ++ " is ") ++ __scope_0_Hero_inner.secret_identity)
+    SELECT __scope_0_Hero_inner {
       __withVar_1 := __withVar_1
     }
   ))
-SELECT __scope_0_defaultHero {
+SELECT __scope_0_Hero {
   name,
-  single secret := __scope_0_defaultHero.__withVar_1,
-  single secret2 := __scope_0_defaultHero.__withVar_1
+  single secret := __scope_0_Hero.__withVar_1,
+  single secret2 := __scope_0_Hero.__withVar_1
 }`);
 });

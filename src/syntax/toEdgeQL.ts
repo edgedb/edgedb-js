@@ -180,9 +180,9 @@ export function $toEdgeQL(this: any) {
     ) {
       const withBlock = expr;
       const scopeVar = expr.__scope__ as SomeExpression;
-      const scopeVarName = `__scope_${
-        withVars.size
-      }_${scopeVar.__element__.__name__.replace(/[^A-Za-z]/g, "")}`;
+      const scopeVarName = `__scope_${withVars.size}_${
+        scopeVar.__element__.__name__.split("::")[1]
+      }`;
 
       withVars.set(scopeVar, {
         name: scopeVarName,
@@ -1045,7 +1045,7 @@ function renderEdgeQL(
     const selectStatement: string[] = [];
     const groupStatement: string[] = [];
 
-    const groupTarget = renderEdgeQL(expr.__scope__, ctx, false);
+    const groupTarget = renderEdgeQL(expr.__scope__, ctx);
     groupStatement.push(`GROUP ${groupTarget}`);
 
     // render scoped withvars in using
