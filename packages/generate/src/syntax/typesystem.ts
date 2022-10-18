@@ -61,7 +61,10 @@ type $jsonDestructure<Set extends TypeSet> =
           // "[]",
           // OperatorKind.Infix,
           // [Set, TypeSet],
-          TypeSet<Set["__element__"], Set["__cardinality__"]>
+          // TypeSet<
+          Set["__element__"],
+          Set["__cardinality__"]
+          // >
         >;
       } & {
         destructure<T extends TypeSet<ScalarType<"std::str">> | string>(
@@ -70,13 +73,13 @@ type $jsonDestructure<Set extends TypeSet> =
           // "[]",
           // OperatorKind.Infix,
           // [Set, TypeSet],
-          TypeSet<
-            Set["__element__"],
-            cardutil.multiplyCardinalities<
-              Set["__cardinality__"],
-              T extends TypeSet ? T["__cardinality__"] : Cardinality.One
-            >
+          // TypeSet<
+          Set["__element__"],
+          cardutil.multiplyCardinalities<
+            Set["__cardinality__"],
+            T extends TypeSet ? T["__cardinality__"] : Cardinality.One
           >
+          // >
         >;
       }
     : unknown;
@@ -152,12 +155,15 @@ export type stripSetShape<T> = {
 // importing the actual alias from
 // generated/modules/std didn't work.
 // returned 'any' every time
-export type assert_single<Expr extends TypeSet> = Expression<{
-  __element__: Expr["__element__"];
-  __cardinality__: cardutil.overrideUpperBound<Expr["__cardinality__"], "One">;
+export type assert_single<
+  El extends BaseType,
+  Card extends Cardinality
+> = Expression<{
+  __element__: El; //["__element__"];
+  __cardinality__: Card; // cardutil.overrideUpperBound<Expr["__cardinality__"], "One">;
   __kind__: ExpressionKind.Function;
   __name__: "std::assert_single";
-  __args__: [TypeSet]; // discard wrapped expression
+  __args__: TypeSet[]; // discard wrapped expression
   __namedargs__: {};
 }>;
 
@@ -175,7 +181,11 @@ export type ExpressionMethods<Set extends TypeSet> = {
       {id: true}
     >
   >;
-  assert_single(): assert_single<stripSet<Set>>;
+  assert_single(): assert_single<
+    Set["__element__"],
+    Cardinality.AtMostOne
+    // cardutil.overrideUpperBound<Set["__cardinality__"], "One">
+  >;
 };
 
 //////////////////
@@ -407,23 +417,23 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         // "[]",
         // OperatorKind.Infix,
         // [Set, TypeSet],
-        TypeSet<
-          getPrimitiveBaseType<
-            Set["__element__"] extends ArrayType<infer El>
-              ? El
-              : Set["__element__"]
-          >,
-          Set["__cardinality__"]
-        >
+        // TypeSet<
+        getPrimitiveBaseType<
+          Set["__element__"] extends ArrayType<infer El>
+            ? El
+            : Set["__element__"]
+        >,
+        Set["__cardinality__"]
+        // >
       >;
       [slice: `${number}:${number | ""}` | `:${number}`]: $expr_Operator<
         // "[]",
         // OperatorKind.Infix,
         // [Set, TypeSet],
-        TypeSet<
-          getPrimitiveBaseType<Set["__element__"]>,
-          Set["__cardinality__"]
-        >
+        // TypeSet<
+        getPrimitiveBaseType<Set["__element__"]>,
+        Set["__cardinality__"]
+        // >
       >;
       index<T extends TypeSet<ScalarType<"std::number">> | number>(
         index: T
@@ -431,17 +441,17 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         // "[]",
         // OperatorKind.Infix,
         // [Set, TypeSet],
-        TypeSet<
-          getPrimitiveBaseType<
-            Set["__element__"] extends ArrayType<infer El>
-              ? El
-              : Set["__element__"]
-          >,
-          cardutil.multiplyCardinalities<
-            Set["__cardinality__"],
-            T extends TypeSet ? T["__cardinality__"] : Cardinality.One
-          >
+        // TypeSet<
+        getPrimitiveBaseType<
+          Set["__element__"] extends ArrayType<infer El>
+            ? El
+            : Set["__element__"]
+        >,
+        cardutil.multiplyCardinalities<
+          Set["__cardinality__"],
+          T extends TypeSet ? T["__cardinality__"] : Cardinality.One
         >
+        // >
       >;
       slice<
         S extends TypeSet<ScalarType<"std::number">> | number,
@@ -457,16 +467,16 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         // "[]",
         // OperatorKind.Infix,
         // [Set, TypeSet],
-        TypeSet<
-          getPrimitiveBaseType<Set["__element__"]>,
+        // TypeSet<
+        getPrimitiveBaseType<Set["__element__"]>,
+        cardutil.multiplyCardinalities<
           cardutil.multiplyCardinalities<
-            cardutil.multiplyCardinalities<
-              Set["__cardinality__"],
-              S extends TypeSet ? S["__cardinality__"] : Cardinality.One
-            >,
-            E extends TypeSet ? E["__cardinality__"] : Cardinality.One
-          >
+            Set["__cardinality__"],
+            S extends TypeSet ? S["__cardinality__"] : Cardinality.One
+          >,
+          E extends TypeSet<any, infer C> ? C : Cardinality.One
         >
+        // >
       >;
       slice<
         E extends
@@ -481,13 +491,13 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         // "[]",
         // OperatorKind.Infix,
         // [Set, TypeSet],
-        TypeSet<
-          getPrimitiveBaseType<Set["__element__"]>,
-          cardutil.multiplyCardinalities<
-            Set["__cardinality__"],
-            E extends TypeSet ? E["__cardinality__"] : Cardinality.One
-          >
+        // TypeSet<
+        getPrimitiveBaseType<Set["__element__"]>,
+        cardutil.multiplyCardinalities<
+          Set["__cardinality__"],
+          E extends TypeSet<any, infer C> ? C : Cardinality.One
         >
+        // >
       >;
     }
   : unknown;

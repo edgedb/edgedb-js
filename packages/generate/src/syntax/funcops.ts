@@ -36,10 +36,12 @@ export type $expr_Operator<
   // Name extends string = string,
   // OpKind extends OperatorKind = OperatorKind,
   // Args extends TypeSet[] = TypeSet[],
-  ReturnType extends TypeSet = TypeSet
+  // ReturnType extends TypeSet = TypeSet,
+  El extends BaseType = BaseType,
+  Card extends Cardinality = Cardinality
 > = Expression<{
-  __element__: ReturnType["__element__"];
-  __cardinality__: ReturnType["__cardinality__"];
+  __element__: El;
+  __cardinality__: Card;
   __kind__: ExpressionKind.Operator;
   __name__: string;
   __opkind__: OperatorKind;

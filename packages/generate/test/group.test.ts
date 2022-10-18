@@ -35,7 +35,7 @@ test("basic group", async () => {
       }
     };
   });
-  query.__element__.__shape__.elements.__element__.__shape__;
+  // query.__element__.__shape__.elements.__element__.__shape__;
   query.__modifiers__.by;
 
   type query = $infer<typeof query>;

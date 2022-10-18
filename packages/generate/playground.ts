@@ -1,25 +1,40 @@
 // tslint:disable:no-console
 import {setupTests} from "./test/setupTeardown";
 import e from "./dbschema/edgeql-js";
+import {createClient} from "edgedb";
 
-import type {Client} from "edgedb";
-export async function getMovie(
-  client: Client,
-  params: {title: string}
-): Promise<{title: string} | null> {
-  return client.querySingle(
-    `select Movie { title } filter .title = <str>$title;`,
-    params
-  );
-}
+const client = createClient();
 
-// enum Genre {
-//   Action = "Action"
-// }
+// e.select(
+//   e.group(e.Movie, movie => ({
+//     by: {
+//       localeId: movie.,
+//       translated: e.op("exists", translation.content)
+//     }
+//   })),
+//   group => ({
+//     translated: group.key.translated,
+//     localeId: group.key.localeId,
+//     count: e.count(group.elements)
+//   })
+// );
+
+const groups = e.group(e.Movie, movie => ({
+  by: {
+    localeId: movie.genre
+    // translated: e.op("exists", movie.title)
+  }
+}));
+
+groups.__expr__.__cardinality__;
+
 async function run() {
   const {client} = await setupTests();
-
-  const query = e.cast(e.Genre, e.str("Horror"));
+  const query = e.select(groups, grp => ({
+    key: grp.key,
+    grouping: grp.grouping,
+    count: e.count(grp.elements)
+  }));
 
   console.log(query.toEdgeQL());
 

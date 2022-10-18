@@ -238,13 +238,13 @@ export function generateOperators({
         //   },`
         // ]);
         overloadsBuf.writeln([
-          t`$.TypeSet<${returnType.staticType}, ${generateReturnCardinality(
+          t`${returnType.staticType}, ${generateReturnCardinality(
             opName,
             params,
             opDef.return_typemod,
             false,
             anytypes
-          )}>`
+          )}`
         ]);
       });
       overloadsBuf.writeln([t`>;`]);

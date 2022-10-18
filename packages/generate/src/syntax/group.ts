@@ -135,8 +135,8 @@ export type $expr_Group<
     },
     {
       // grouping: true;
-      // key: {[k in keyof Mods['by']]: true};
-      // elements: {id: true};
+      // key: {[k in keyof Mods["by"]]: true};
+      // elements: normaliseShape<Shape, "by">;
       grouping: TypeSet<$str, Cardinality.Many>;
       key: Expression<{
         __element__: ObjectType<
@@ -166,7 +166,7 @@ export type $expr_Group<
   // bit of a lie, this is a GroupingSet at runtime
   __modifiers__: Mods;
   __kind__: ExpressionKind.Group;
-  __expr__: Expr;
+  __expr__: ObjectTypeSet;
   __scope__: ObjectTypeSet;
 }>;
 
