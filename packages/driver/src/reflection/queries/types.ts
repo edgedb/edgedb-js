@@ -11,6 +11,7 @@ export type Pointer = {
   is_exclusive: boolean;
   is_computed: boolean;
   is_readonly: boolean;
+  is_required: boolean;
   has_default: boolean;
   pointers: ReadonlyArray<Pointer> | null;
 };
@@ -166,6 +167,7 @@ export async function _types(
         is_exclusive := exists (select .constraints filter .name = 'std::exclusive'),
         is_computed := len(.computed_fields) != 0,
         is_readonly := .readonly,
+        is_required := .required,
         has_default := EXISTS .default or ("std::sequence" in .target[IS ScalarType].ancestors.name),
         [IS Link].pointers: {
           card := ("One" IF .required ELSE "AtMostOne") IF <str>.cardinality = "One" ELSE ("AtLeastOne" IF .required ELSE "Many"),
@@ -173,7 +175,8 @@ export async function _types(
           target_id := .target.id,
           kind := 'link' IF .__type__.name = 'schema::Link' ELSE 'property',
           is_computed := len(.computed_fields) != 0,
-          is_readonly := .readonly
+          is_readonly := .readonly,
+          is_required := .required
         } filter .name != '@source' and .name != '@target',
       } FILTER @is_owned,
       exclusives := assert_distinct((
