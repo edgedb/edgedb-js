@@ -380,16 +380,14 @@ export function generateFuncopTypes<F extends FuncopDef>(
                 : "{}"
             },`,
             // return type
-            frag`$.TypeSet<${
-              returnType.staticType
-            }, ${generateReturnCardinality(
+            frag`${returnType.staticType}, ${generateReturnCardinality(
               funcName,
               params,
               funcDef.return_typemod,
               hasNamedParams,
               anytypes,
               funcDef.preserves_optionality
-            )}>`
+            )}`
           );
         });
 

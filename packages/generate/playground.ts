@@ -7,7 +7,11 @@ const client = createClient();
 
 async function run() {
   const {client} = await setupTests();
-  const query = e.select("asdf");
+
+  const query = e.select(e.Movie, () => ({
+    title: true,
+    __type__: {id: true, name: true}
+  }));
 
   console.log(query.toEdgeQL());
 

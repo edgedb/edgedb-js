@@ -64,28 +64,28 @@ function range<
   // "std::range",
   // mapLiteralToTypeSet<[P1, P2]>,
   // mapLiteralToTypeSet<NamedArgs>,
-  TypeSet<
-    RangeType<
-      literalToScalarType<P1> extends $anypoint
-        ? literalToScalarType<P1>
-        : literalToScalarType<P2> extends $anypoint
-        ? literalToScalarType<P2>
-        : $anypoint
-    >,
+  // TypeSet<
+  RangeType<
+    literalToScalarType<P1> extends $anypoint
+      ? literalToScalarType<P1>
+      : literalToScalarType<P2> extends $anypoint
+      ? literalToScalarType<P2>
+      : $anypoint
+  >,
+  cardutil.multiplyCardinalities<
     cardutil.multiplyCardinalities<
       cardutil.multiplyCardinalities<
         cardutil.multiplyCardinalities<
-          cardutil.multiplyCardinalities<
-            cardutil.optionalParamCardinality<P1>,
-            cardutil.optionalParamCardinality<P2>
-          >,
-          cardutil.optionalParamCardinality<NamedArgs["inc_lower"]>
+          cardutil.optionalParamCardinality<P1>,
+          cardutil.optionalParamCardinality<P2>
         >,
-        cardutil.optionalParamCardinality<NamedArgs["inc_upper"]>
+        cardutil.optionalParamCardinality<NamedArgs["inc_lower"]>
       >,
-      cardutil.optionalParamCardinality<NamedArgs["empty"]>
-    >
+      cardutil.optionalParamCardinality<NamedArgs["inc_upper"]>
+    >,
+    cardutil.optionalParamCardinality<NamedArgs["empty"]>
   >
+  // >
 >;
 function range<
   P1 extends orScalarLiteral<TypeSet<$anypoint>> | undefined,
@@ -105,19 +105,19 @@ function range<
   // "std::range",
   // mapLiteralToTypeSet<[P1, P2]>,
   // {},
-  TypeSet<
-    RangeType<
-      literalToScalarType<P1> extends $anypoint
-        ? literalToScalarType<P1>
-        : literalToScalarType<P2> extends $anypoint
-        ? literalToScalarType<P2>
-        : $anypoint
-    >,
-    cardutil.multiplyCardinalities<
-      cardutil.optionalParamCardinality<P1>,
-      cardutil.optionalParamCardinality<P2>
-    >
+  // TypeSet<
+  RangeType<
+    literalToScalarType<P1> extends $anypoint
+      ? literalToScalarType<P1>
+      : literalToScalarType<P2> extends $anypoint
+      ? literalToScalarType<P2>
+      : $anypoint
+  >,
+  cardutil.multiplyCardinalities<
+    cardutil.optionalParamCardinality<P1>,
+    cardutil.optionalParamCardinality<P2>
   >
+  // >
 >;
 function range(...args: any[]): any {
   if (args.length === 1) {

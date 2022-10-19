@@ -494,7 +494,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
   //   if (moduleName === "default") {
   //     plainTypesCode.writeBuf(module.buf);
   //   } else {
-  //     plainTypesCode.writeln([t`export namespace ${module.internalName} {`]);
+  //  plainTypesCode.writeln([t`export namespace ${module.internalName} {`]);
   //     plainTypesCode.writeln([js`const ${module.internalName} = {`]);
   //     plainTypesCode.indented(() => plainTypesCode.writeBuf(module.buf));
   //     plainTypesCode.writeln([t`}`]);

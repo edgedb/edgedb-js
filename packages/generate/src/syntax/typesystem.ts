@@ -159,8 +159,10 @@ export type assert_single<
   El extends BaseType,
   Card extends Cardinality
 > = Expression<{
-  __element__: El; //["__element__"];
-  __cardinality__: Card; // cardutil.overrideUpperBound<Expr["__cardinality__"], "One">;
+  __element__: El; // ["__element__"];
+  __cardinality__: Card; // cardutil.overrideUpperBound<
+  // Expr["__cardinality__"], "One"
+  // >;
   __kind__: ExpressionKind.Function;
   __name__: "std::assert_single";
   __args__: TypeSet[]; // discard wrapped expression
