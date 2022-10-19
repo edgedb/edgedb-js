@@ -12,10 +12,10 @@ export function generateIndex(params: GeneratorParams) {
   index.addExportStar("./external", {
     allowFileExt: true
   });
-  index.addExportStar("./types", {
-    allowFileExt: true,
-    modes: ["ts", "dts", "js"]
-  });
+  // index.addExportStar("./types", {
+  //   allowFileExt: true,
+  //   modes: ["ts", "dts", "js"]
+  // });
 
   index.addImportStar("$", "./reflection");
   index.addExportFrom({createClient: true}, "edgedb");

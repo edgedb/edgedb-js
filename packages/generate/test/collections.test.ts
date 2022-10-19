@@ -1,6 +1,7 @@
 import type {Client} from "edgedb";
 import * as $ from "../src/syntax/reflection";
-import e, {$infer, sys} from "../dbschema/edgeql-js";
+import e, {$infer} from "../dbschema/edgeql-js";
+import type {sys} from "../dbschema/interfaces";
 import {tc} from "./setupTeardown";
 
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
