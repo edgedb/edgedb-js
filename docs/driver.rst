@@ -151,7 +151,7 @@ a set with more than one elements, the ``Client`` will throw a runtime error.
 
 .. code-block:: js
 
-  await client.querySingle(`select 2 + 2;`); // [4]
+  await client.querySingle(`select 2 + 2;`); // 4
   await client.querySingle(`select [1, 2, 3];`); // [1, 2, 3]
   await client.querySingle(`select <int64>{};`); // null
   await client.querySingle(`select {1, 2, 3};`); // Error
