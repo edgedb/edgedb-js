@@ -31,6 +31,8 @@
 <br />
 <br />
 
+> We released the `v1.0.0` version of this library on Oct 20, 2022. There are a number of new features and breaking changes, especially regarding the query builder workflow. Refer to the [release notes](https://github.com/edgedb/edgedb-js/releases) for full information.
+
 This is the official [EdgeDB](https://github.com/edgedb/edgedb) client library
 for JavaScript and TypeScript.
 
