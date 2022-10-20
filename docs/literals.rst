@@ -27,7 +27,7 @@ EdgeQL it produces.
   e.decimal("1234.1234n")  // 1234.1234n
   e.uuid("599236a4...")    // <uuid>"599236a4..."
 
-  e.bytes(Buffer.from('binary data'));
+  e.bytes(Uint8Array.from('binary data'));
   // b'binary data'
 
 Strings
@@ -159,7 +159,7 @@ EdgeDB-compatible data structure.
 
 What does "EdgeDB-compatible" mean? It means any JavaScript data structure
 with an equivalent in EdgeDB: strings, number, booleans, ``bigint``\ s,
-``Buffer``\ s, ``Date``\ s, and instances of EdgeDB's built-in classes:
+``Uint8Array``\ s, ``Date``\ s, and instances of EdgeDB's built-in classes:
 (``LocalDate`` ``LocalTime``, ``LocalDateTime``, ``DateDuration``,
 ``Duration``, and ``RelativeDuration``), and any array or object of these
 types. Other JavaScript data structures like symbols, instances of custom

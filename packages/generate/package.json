@@ -1,0 +1,57 @@
+{
+  "name": "@edgedb/generate",
+  "version": "0.0.2-beta.3",
+  "description": "EdgeDB code generators for TS/JavaScript",
+  "homepage": "https://edgedb.com/docs",
+  "author": "EdgeDB <info@edgedb.com>",
+  "engines": {
+    "node": ">= 12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgedb/edgedb-js.git"
+  },
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "files": [
+    "/dist"
+  ],
+  "bin": "dist/cli.js",
+  "peerDependencies": {
+    "edgedb": "^1.0.0-alpha.0"
+  },
+  "devDependencies": {
+    "conditional-type-checks": "^1.0.5",
+    "edgedb": "~1.0.0-alpha.2",
+    "esbuild": "^0.15.7",
+    "globby": "^13.1.2",
+    "superjson": "^1.7.5",
+    "typescript": "~4.8",
+    "jest": "*",
+    "ts-jest": "*"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3"
+  },
+  "scripts": {
+    "play": "tsx playground.ts",
+    "build": "rm -rf dist && yarn build:cjs && yarn build:esm && yarn build:deno && chmod +x dist/cli.js && yarn syntax:make && yarn syntax:clean",
+    "build:cjs": "tsc --project tsconfig.build.json",
+    "build:esm": "tsc --project tsconfig.esm.json",
+    "syntax:make": "tsx makeSyntax.ts",
+    "syntax:clean": "tsx cleanSyntax.ts",
+    "build:deno": "deno run --unstable --allow-all ./buildDeno.ts && yarn syntax:make --deno",
+    "build:fast": "npx esbuild --tsconfig=tsconfig.build.json --outdir=dist --platform=node --format=cjs src/**/*.ts src/*.ts && yarn syntax:make",
+    "watch": "nodemon --ignore dist --ignore dbschema/edgeql-js -x ",
+    "generate": "./dist/cli.js",
+    "test": "yarn test:ts && yarn test:esm && yarn test:cjs && yarn test:mts && yarn test:deno",
+    "test:ts": "NODE_OPTIONS=\"--experimental-vm-modules\" yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit",
+    "test:esm": "yarn generate queries --target esm --file test/esm/queries && yarn generate edgeql-js --target esm --output-dir test/esm/edgeql-js && cd test/esm && node test.js",
+    "test:cjs": "yarn generate queries --target cjs --file test/cjs/queries && yarn generate edgeql-js --target cjs --output-dir test/cjs/edgeql-js && cd test/cjs && node test.js",
+    "test:mts": "yarn generate queries --target mts --file test/mts/queries && yarn generate edgeql-js --target mts --output-dir test/mts/edgeql-js && cd test/mts && yarn build && node dist/test.js",
+    "test:deno": "cd test/deno && deno task edgeql-js && deno task queries && deno task play",
+    "test:ci": "tsx test/testRunner.ts",
+    "test:v1": "tsx test/testQBv1.ts",
+    "setup:v1": "edgedb project init --no-migrations && edgedb migrate --to-revision m135rscrsthtlntxhacevxtvytgwf2vjyqfwvnwod5jihwpzp2zgyq"
+  }
+}

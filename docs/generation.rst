@@ -1,266 +1,150 @@
-.. _edgedb-js-generation:
+.. _edgedb-js-generators:
 
-Generation
+Generators
 ==========
 
-The query builder is *auto-generated* by introspecting the schema of your database.
+The ``@edgedb/generate`` package provides a set of code generation tools that are useful when developing an EdgeDB-backed applications with TypeScript/JavaScript.
 
-Initialize a project
-^^^^^^^^^^^^^^^^^^^^
+**Official generators**
 
-When developing locally, we recommend initializing an :ref:`EdgeDB project
-<ref_guide_using_projects>` for your application. Follow the :ref:`Quickstart
-<ref_quickstart>` for detailed instructions on installing the CLI,
-initializing a project, writing a basic schema, and executing your first
-migration.
+- ``queries``: Scans your project for ``*.edgeql`` files and generates a file containing a strongly-typed function alongside each. Alternatively you can use ``--file`` mode to generate a single file containing all the query functions.
+- ``edgeql-js``: Introspects your database schema and generates a query builder.
+- ``interfaces``: Introspects your database schema and generates a set of equivalent TypeScript interfaces.
 
-Install the JavaScript client library
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Third party generators**
 
-Install the ``edgedb`` package from NPM.
+If you implement a code generator, submit a PR and we'll list it here! The ``edgedb`` package exports a ``$`` namespace containing some utilities for introspecting the schema and analyzing queries. We use these same tools to implement the official generators.
+
+Requirements
+^^^^^^^^^^^^
+
+To get started with generators, first initialize an :ref:`EdgeDB project
+<ref_guide_using_projects>` in the root of your application. Generators will look for an ``edgedb.toml`` file to determine the root of your application.
+
+.. note::
+
+  Follow the :ref:`Quickstart <ref_quickstart>` for detailed instructions on installing the CLI, initializing a project, writing a basic schema, and executing your first migration.
+
+The query builder works for both JavaScript and TypeScript users, and supports both Node.js and Deno. It's possible to use the query builder with or without TypeScript. Some requirements apply to TypeScript users only.
+
+**Node.js**
+- ``Node.js v14+``. Run ``node --version`` to see your current version.
+
+**Deno**
+
+- ``Deno v0.20+``.
+
+**TypeScript**
+
+- ``TypeScript v4.4+``.
+- *For Node.js users*: ``npm install @types/node -D``.
+- Strict mode: ``"strict": true``
+- Downlevel iteration (query builder only): ``"downlevelIteration": true``
+
+.. code-block:: javascript
+
+  // tsconfig.json
+  {
+    // ...
+    "compilerOptions": {
+      // ...
+      "strict": true,
+      "downlevelIteration": true,
+    }
+  }
+
+Installation
+^^^^^^^^^^^^
+
+.. note::
+
+  If you're using Deno, you can skip this step.
+
+Install the ``edgedb`` package.
 
 .. code-block:: bash
 
   $ npm install edgedb       # npm users
   $ yarn add edgedb          # yarn users
 
-Generate the query builder
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Generate the query builder with the following command.
+Then install ``@edgedb/generate`` as a dev dependency.
 
 .. code-block:: bash
 
-  $ npx edgeql-js           # npm users
-  $ yarn edgeql-js          # yarn users
+  $ npm install @edgedb/generate --save-dev      # npm users
+  $ yarn add @edgedb/generate --dev              # yarn users
 
-You'll see something similar to this. (The first line will differ depending on
-whether you are using TypeScript or plain JavaScript.)
+Running a generator
+^^^^^^^^^^^^^^^^^^^
+
+Run a generator with the following command.
+
+**Node.js**
 
 .. code-block:: bash
 
-  $ npx edgeql-js
-  Detected tsconfig.json, generating TypeScript files.
-    To override this, use the --target flag.
-    Run `npx edgeql-js --help` for details.
-  Generating query builder into ./dbschema/edgeql-js
-  Connecting to EdgeDB instance...
-  Introspecting database schema...
-  Generation successful!
+  $ npx @edgedb/generate <generator> [options]
 
-**Important**. The ``npx edgeql-js`` establishes a connection to your database, introspects the current schema, and generates a bunch of files. It does **not** simply read your local ``.esdl`` files. You must create and apply migrations to your development database before running ``npx edgeql-js``.
 
-.. note::
+**Deno**
 
-  Generating the query builder requires establishing a
-  connection to an active EdgeDB instance. Remember that object types can
-  contain computed fields that correspond to arbitrary EdgeQL queries. It
-  isn't possible to determine the type and cardinality of these queries
-  without implementing a full EdgeQL parser and static analyzer in JavaScript,
-  which is not on our roadmap (to put it lightly!). As such, we rely on the
-  existence of an active EdgeDB instance containing the target schema.
+.. code-block:: bash
 
-By default, ``npx edgeql-js`` generated files into the
-``./dbschema/edgeql-js`` directory, as defined relative to your project root.
-The project root is identified by scanning up the file system for a
-``package.json``.
+  $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts <generator> [options]
+
+
+The value of ``<generator>`` should be one of the following.
+
+- ``queries``: This generator scans your project for ``*.edgeql`` files and generates a file containing a strongly-typed function alongside each. Alternatively you can use ``--file`` mode to generate a single file containing all the "query functions".
+- ``edgeql-js``: This generator introspects your database schema and generates a query builder.
+- ``interfaces``: This generator introspects your database schema and generates TypeScript interfaces for each object type.
+
+Connection
+^^^^^^^^^^
+
+Generating the query builder requires a
+connection to an active EdgeDB database. It does **not** simply read your local ``.esdl`` schema files. Generators rely on the database to introspect the schema and analyze queries. Doing so without a database connection would require implementing a full EdgeQL parser and static analyzer in JavaScript—which we don't intend to do anytime soon.
 
 .. note::
 
-  **Connection issue?**
+  Make sure your development database is up-to-date with your latest schema before running a generator!
 
-  This command must be able to connect to a running EdgeDB instance. If you're
-  using ``edgedb project init``, this is automatically handled for you.
-  Otherwise, you'll need to explicitly pass connection information, just like
-  any other CLI command. See :ref:`Client Libraries > Connection
-  <edgedb_client_connection>` for guidance.
-
+If you're using ``edgedb project init``, this is automatically handled for you. Otherwise, you'll need to explicitly pass connection information via environment variables or CLI flags, just like any other CLI command. See :ref:`Client Libraries > Connection <edgedb_client_connection>` for guidance.
 
 .. _edgedb_qb_target:
 
 Targets
 ^^^^^^^
 
-The generation command looks at your environment and guesses what kind of
+All generators look at your environment and guess what kind of
 files to generate (``.ts`` vs ``.js + .d.ts``) and what module system to use
 (CommonJS vs ES modules). You can override this with the ``--target`` flag.
 
 .. list-table::
 
   * - ``--target ts``
-    - Generate TypeScript files (.ts)
+    - Generate TypeScript files (``.ts``)
   * - ``--target mts``
-    - Generate TypeScript files (.mts) with extensioned ESM imports
+    - Generate TypeScript files (``.mts``) with extensioned ESM imports
   * - ``--target esm``
     - Generate ``.js`` with ESM syntax and ``.d.ts`` declaration files
   * - ``--target cjs``
     - Generate JavaScript with CommonJS syntax and and ``.d.ts`` declaration
       files
+  * - ``--target deno``
+    - Generate TypeScript files with Deno-style ESM imports
 
-Version control
-^^^^^^^^^^^^^^^
+Help
+^^^^
 
-The first time you run the command, you'll be prompted to add the generated
-files to your ``.gitignore``. Confirm this prompt, and a line will be
-automatically added to your ``.gitignore`` to exclude the generated files from
-Git.
+To see helptext for the ``@edgedb/generate`` command, run the following.
 
-.. code-block::
+.. code-block:: bash
 
-  $ npx edgeql-js
-  ...
-  Checking the generated query builder into version control
-  is NOT RECOMMENDED. Would you like to update .gitignore to ignore
-  the query builder directory? The following line will be added:
-
-  dbschema/edgeql-js
-
-  [y/n] (leave blank for "y")
-
-For consistency, we recommend omitting the generated files from version
-control and re-generating them as part of your deployment process. However,
-there may be circumstances where checking the generated files into version
-control is desirable, e.g. if you are building Docker images that must contain
-the full source code of your application.
-
-Importing
-^^^^^^^^^
-
-Once the query builder is generated, it's ready to use! We recommend importing the query builder as a single default import called ``e``.
-
-.. code-block:: typescript
-
-  // TypeScript
-  import e from "./dbschema/edgeql-js";
-
-  // TypeScript with ESM
+  $ npx @edgedb/generate --help
 
 
-  // JavaScript (CommonJS)
-  const e = require("./dbschema/edgeql-js");
+Or read the full documentation for each generator:
 
-  // JavaScript (ES modules)
-  import e from "./dbschema/edgeql-js/index.mjs";
-
-.. note::
-
-  If you're using ES modules, remember that imports require a file extension.
-  The rest of the documentation assumes you are using TypeScript-style
-  (extensionless) ``import`` syntax.
-
-Here's a full "Hello world" example.
-
-.. code-block:: typescript
-
-  import * as edgedb from "edgedb";
-  import e from "./dbschema/edgeql-js";
-
-  const client = edgedb.createClient();
-
-  async function run(){
-    // declare a simple query
-    const myQuery = e.str("Hello world!");
-
-    // execute the expression
-    const result = await myQuery.run(client);
-
-    // print the result
-    console.log(result); // "Hello world!"
-  }
-
-Configuring ``npx edgeql-js``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The generation command is configurable in a number of ways.
-
-``--output-dir <path>``
-  Sets the output directory for the generated files.
-
-``--target <ts|cjs|esm|mts>``
-  What type of files to generate. Documented above.
-
-``--force-overwrite``
-  To avoid accidental changes, you'll be prompted to confirm whenever the
-  ``--target`` has changed from the previous run. To avoid this prompt, pass
-  ``--force-overwrite``.
-
-``-h/--help``
-  Prints full documentation.
-
-The generator also supports all the :ref:`connection flags
-<ref_cli_edgedb_connopts>` supported by the EdgeDB CLI. These aren't
-necessary when using a project or environment variables to configure a
-connection.
-
-
-Naming conflicts
-^^^^^^^^^^^^^^^^
-
-Certain link/property names will create conflicts with parts of the query
-builder API. Avoid using the following names in your schema.
-
-- ``filter``
-- ``order_by``
-- ``limit``
-- ``offset``
-- ``run``
-- ``is``
-- ``index``
-- ``slice``
-- ``destructure``
-- ``shape``
-
-
-Generated interfaces
-^^^^^^^^^^^^^^^^^^^^
-
-While the ``e`` object is all that's required to build queries,
-``npx edgeql-js`` also generates TypeScript ``interfaces`` representing your
-current schema. These are not needed to construct queries, but are generated
-as a convenience.
-
-.. code-block:: typescript
-
-  import e, {Person, Movie} from "./dbschema/edgeql-js";
-
-
-Given this EdgeDB schema:
-
-.. code-block:: sdl
-
-  module default {
-    scalar type Genre extending enum<Horror, Comedy, Drama>;
-    type Person {
-      required property name -> str;
-    }
-    type Movie {
-      required property title -> str;
-      property genre -> Genre;
-      multi link actors -> Person;
-    }
-  }
-
-The following interfaces will be generated (simplified for clarify):
-
-.. code-block:: typescript
-
-  enum Genre {
-    Horror = "Horror",
-    Comedy = "Comedy",
-    Drama = "Drama"
-  }
-
-  interface Person {
-    id: string;
-    name: string;
-  }
-
-  interface Movie {
-    id: string;
-    title: string;
-    genre?: Genre | null;
-    actors: Person[];
-  }
-
-Any types declared in a non-``default`` module  will be generated into an
-accordingly named ``namespace``.
+- :ref:`Query files <edgedb-js-queries>`
+- :ref:`Query builder <edgedb-js-qb>`

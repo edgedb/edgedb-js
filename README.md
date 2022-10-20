@@ -39,103 +39,9 @@ If you're just getting started with EdgeDB, we recommend going through the
 you through the process of installing EdgeDB, creating a simple schema, and
 writing some simple queries.
 
-### Migrating to EdgeDB 2.0
-
-We recently released `v0.21.0` of the `edgedb` module on NPM and deno.land/x,
-which supports the latest EdgeDB 2.0 features and protocol. It is
-backwards-compatible with v1 instances as well, so we recommend all users
-upgrade.
-
-```bash
-npm install edgedb@latest
-```
-
-#### Breaking changes
-
-- All `uuid` properties are now decoded to include hyphens. Previously hyphens were elided for performance reasons; this issue has since been resolved.
-
-  ```ts
-  client.querySingle(`select uuid_generate_v1mc();`);
-  // "ce13b17a-7fcd-42b3-b5e3-eb28d1b953f6"
-  ```
-
-- All `json` properties and parameters are now parsed/stringified internally by the client. Previously:
-
-  ```ts
-  const result = await client.querySingle(
-    `select to_json('{"hello": "world"}');`
-  );
-  result; // '{"hello": "world"}'
-  typeof result; // string
-  ```
-
-  Now:
-
-  ```ts
-  const result = await client.querySingle(
-    `select to_json('{"hello": "world"}');`
-  );
-  result; // {hello: "world"}
-  typeof result; // object
-  result.hello; // "world"
-  ```
-
-#### New features
-
-- Added the `.withGlobals` method to the `Client` for setting [global variables](https://www.edgedb.com/docs/datamodel/globals).
-
-  ```ts
-  import {createClient} from "edgedb";
-  const client = createClient().withGlobals({
-    current_user: getUserIdFromCookie(),
-  });
-
-  client.query(`select User { email } filter .id = global current_user;`);
-  ```
-
-- Support for globals in the query builder.
-
-  ```ts
-  const query = e.select(e.User, user => ({
-    email: true,
-    filter: e.op(user.id, "=", e.global.current_user),
-  }));
-
-  await query.run(client);
-  ```
-
-- Support for the [group statement](https://www.edgedb.com/docs/clients/js/group).
-
-  ```ts
-  e.group(e.Movie, movie => ({
-    title: true,
-    actors: {name: true},
-    num_actors: e.count(movie.characters),
-    by: {release_year: movie.release_year},
-  }));
-  /* [
-    {
-      key: {release_year: 2008},
-      grouping: ["release_year"],
-      elements: [{
-        title: "Iron Man",
-        actors: [...],
-        num_actors: 5
-      }, {
-        title: "The Incredible Hulk",
-        actors: [...],
-        num_actors: 3
-      }]
-    },
-    // ...
-  ] */
-  ```
-
-- Support for [range types](https://www.edgedb.com/docs/datamodel/primitives#ranges) and [`DateDuration`](https://www.edgedb.com/docs/stdlib/datetime#type::cal::date_duration) values.
-
 ### Requirements
 
-- Node.js 12+
+- Node.js 14+
 - For TypeScript users:
   - TypeScript 4.4+ is required
   - `yarn add @types/node --dev`
@@ -146,6 +52,15 @@ npm install edgedb@latest
 npm install edgedb      # npm users
 yarn add edgedb         # yarn users
 ```
+
+> EdgeDB 2.x requires `v0.21.0` or later
+
+## Packages
+
+- `packages/driver`: The `edgedb` client library.
+- `packages/generate`: The `@edgedb/generate` package. Implements code generators, including `edgeql-js` and `queries`.
+- `packages/deno`: The directory where the auto-generated `deno.land/x/edgedb` package is generated into. Both the driver and codegen tools are generated into this module.
+- `packages/edgeql-js`: A skeleton package that prints an informative error message when `npx edgeql-js` is executed without `edgedb` installed.
 
 ## Basic usage
 
@@ -224,24 +139,73 @@ await client.querySingle(
 ); // => { title: "Dune" }
 ```
 
-## Query builder
+## Generators
 
-Instead of writing queries as strings, you can use this package to generate a
-_query builder_. The query builder lets you write queries in a code-first way
-and automatically infers the return type of your queries.
-
-To generate the query builder, install the `edgedb` package, initialize a project (if
-you haven't already), then run the following command:
+Install the `@edgedb/generate` package as a dev dependency to take advantage of EdgeDB's built-in code generators.
 
 ```bash
-$ npx edgeql-js
+npm install @edgedb/generate  --save-dev      # npm users
+yarn add @edgedb/generate --dev               # yarn users
+```
+
+Then run a generator with the following command:
+
+```bash
+$ npx @edgedb/generate <generator> [FLAGS]
+```
+
+The following `<generator>`s are currently supported:
+
+- `queries`: Generate typed functions from `*.edgeql` files
+- `edgeql-js`: Generate the query builder
+
+### `queries`
+
+Run the following command to generate a source file for each `*.edgeql` system in your project.
+
+```bash
+$ npx @edgedb/generate queries
+```
+
+Assume you have a file called `getUser.edgeql` in your project directory.
+
+```
+// getUser.edgeql
+select User {
+  name,
+  email
+}
+filter .email = <str>$email;
+```
+
+This generator will generate a `getUser.edgeql.ts` file alongside it that exports a function called `getUser`.
+
+```
+import {createClient} from "edgedb";
+import {myQuery} from "./myQuery.edgeql";
+
+const client = createClient();
+
+const user = await myQuery(client, {name: "Timmy"});
+user; // {name: string; email: string}
+```
+
+The first argument is a `Client`, the second is the set of _parameters_. Both the parameters and the returned value are fully typed.
+
+### `edgeql-js` (query builder)
+
+The query builder lets you write queries in a code-first way. It automatically infers the return type of your queries.
+
+To generate the query builder, install the `edgedb` package, initialize a project (if you haven't already), then run the following command:
+
+```bash
+$ npx @edgedb/generate edgeql-js
 ```
 
 This will generate an EdgeQL query builder into the `./dbschema/edgeql-js`
 directory, as defined relative to your project root.
 
-For details on generating the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/js/generation). Below is a simple
-`select` query as an example.
+For details on generating the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/js/generation). Below is a simple `select` query as an example.
 
 ```ts
 import {createClient} from "edgedb";
@@ -253,7 +217,7 @@ const query = e.select(e.Movie, movie => ({
   title: true,
   actors: {name: true},
   num_actors: e.count(movie.actors),
-  filter: e.op(movie.title, "=", "Dune"),
+  filter_single: e.op(movie.title, "=", "Dune")
 }));
 
 const result = await query.run(client);
@@ -271,11 +235,11 @@ EdgeDB from [here](https://www.edgedb.com/download) or
 ```bash
 $ git clone git@github.com:edgedb/edgedb-js.git
 $ cd edgedb-js
-$ yarn              # install dependencies
-$ yarn build        # compile TypeScript
-$ yarn tests        # run tests
+$ yarn                           # install dependencies
+$ yarn workspaces run build      # build all packages
+$ yarn workspaces run test       # run tests for all packages
 ```
 
 ## License
 
-edgedb-js is developed and distributed under the Apache 2.0 license.
+`edgedb-js` is developed and distributed under the Apache 2.0 license.

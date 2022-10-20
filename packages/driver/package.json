@@ -1,0 +1,49 @@
+{
+  "name": "edgedb",
+  "version": "1.0.0-beta.2",
+  "description": "The official Node.js client library for EdgeDB",
+  "homepage": "https://edgedb.com/docs",
+  "author": "EdgeDB <info@edgedb.com>",
+  "engines": {
+    "node": ">= 12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgedb/edgedb-js.git"
+  },
+  "main": "./dist/index.node.js",
+  "types": "./dist/index.node.d.ts",
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "files": [
+    "/dist"
+  ],
+  "browser": {
+    "./dist/index.node.js": "./dist/index.browser.js"
+  },
+  "bin": {
+    "edgeql-js": "./dist/cli.js"
+  },
+  "devDependencies": {
+    "@js-temporal/polyfill": "^0.4.1",
+    "get-stdin": "^7.0.0",
+    "globby": "^13.1.2",
+    "jest": "*",
+    "jest-environment-jsdom": "^29.1.2",
+    "node-fetch": "2.6.7",
+    "ts-jest": "*",
+    "tsx": "*",
+    "typescript": "~4.5"
+  },
+  "scripts": {
+    "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",
+    "build:cjs": "tsc --project tsconfig.json",
+    "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
+    "test": "jest --detectOpenHandles",
+    "lint": "tslint 'packages/*/src/**/*.ts'",
+    "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
+    "gen-errors": "edb gen-errors-json --client | node genErrors.js",
+    "watch": "nodemon -e js,ts,tsx --ignore dist -x ",
+    "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno"
+  }
+}

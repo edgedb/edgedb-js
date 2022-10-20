@@ -68,10 +68,10 @@ This is true for all queries on this page.
   /* {
     id: string;
     title: string;
-    release_year: number | undefined;
+    release_year: number | null;
   }[] */
 
-As you can see, the type of ``release_year`` is ``number | undefined`` since
+As you can see, the type of ``release_year`` is ``number | null`` since
 it's an optional property, whereas ``id`` and ``title`` are required.
 
 Passing a ``boolean`` value (as opposed to a ``true`` literal), which will
@@ -105,11 +105,55 @@ properties of a given object.
 
 This ``*`` property is just a strongly-typed, plain object:
 
-.. code-block::
+.. code-block:: typescript
 
   e.Movie['*'];
   // => {id: true, title: true, release_year: true}
 
+Select a single object
+^^^^^^^^^^^^^^^^^^^^^^
+
+To select a particular object, use the ``filter_single`` key. This tells the query builder to expect a singleton result.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, (movie) => ({
+    id: true,
+    title: true,
+    release_year: true,
+
+    filter_single: {id: '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'},
+  }));
+
+This also works if an object type has a composite exclusive constraint:
+
+.. code-block:: typescript
+
+  /*
+    type Movie {
+      ...
+      constraint exclusive on (.title, .release_year);
+    }
+  */
+
+  e.select(e.Movie, (movie) => ({
+    title: true,
+    filter_single: {title: 'The Avengers', release_year: 2012},
+  }));
+
+You can also pass an arbitrary boolean expression to ``filter_single`` if you prefer.
+
+.. code-block:: typescript
+
+  const query = e.select(e.Movie, (movie) => ({
+    id: true,
+    title: true,
+    release_year: true,
+    filter_single: e.op(movie.id, '=', '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'),
+  }));
+
+  const result = await query.run(client);
+  // {id: string; title: string; release_year: number | null}
 
 Nesting shapes
 ^^^^^^^^^^^^^^
@@ -150,7 +194,7 @@ independently and used in multiple queries.
   const query = e.select(e.Movie, m => ({
     ...baseShape(m),
     release_year: true,
-    filter: e.op(m.title, '=', 'The Avengers')
+    filter_single: {title: 'The Avengers'}
   }))
 
 .. note::
@@ -219,7 +263,7 @@ Filters on links
       name: true,
       filter: e.op(actor.name.slice(0, 1), '=', 'A'),
     }),
-    filter: e.op(movie.title, '=', 'Iron Man'),
+    filter_single: {title: 'Iron Man'}
   }));
 
 
@@ -234,7 +278,7 @@ Filters on link properties
       name: true,
       filter: e.op(actor['@character_name'], 'ilike', 'Tony Stark'),
     }),
-    filter: e.op(movie.title, '=', 'Iron Man'),
+    filter_single: {title: 'Iron Man'}
   }));
 
 

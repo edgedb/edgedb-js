@@ -4,10 +4,8 @@ name: release
 on:
   push:
     branches:
-      - "master"
-      - "ci"
-    paths:
-      - package.json
+      - master
+      - ci
 
 jobs:
   build_and_publish:
@@ -18,69 +16,70 @@ jobs:
           fetch-depth: 0
           submodules: true
 
-      - name: Set up Node
-        uses: actions/setup-node@v1
-        with:
-          node-version: 16
+      # - name: Set up Node
+      #   uses: actions/setup-node@v1
+      #   with:
+      #     node-version: 16
 
-      - name: Set up Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.24.x
+      # - name: Set up Deno
+      #   uses: denoland/setup-deno@v1
+      #   with:
+      #     deno-version: v1.24.x
 
-      - name: Install deps and build
-        run: |
-          yarn install
-          yarn build
+      # - name: Install deps and build
+      #   run: |
+      #     yarn
+      #     yarn workspaces run build
 
-      - id: publish
-        name: Publish to NPM
-        uses: JS-DevTools/npm-publish@v1
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
-          dry-run: false
+      # - id: publish
+      #   name: Publish to NPM
+      #   uses: JS-DevTools/npm-publish@v1
+      #   with:
+      #     package: packages/driver/package.json
+      #     token: ${{ secrets.NPM_TOKEN }}
+      #     dry-run: false
 
-      - name: If Publish
-        if: steps.publish.outputs.type != 'none'
-        run: |
-          echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
+      # - name: If Publish
+      #   if: steps.publish.outputs.type != 'none'
+      #   run: |
+      #     echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
 
-      - name: If Version Unchanged
-        if: steps.publish.outputs.type == 'none'
-        run: |
-          echo "Version in package.json has not changed. Skipping."
+      # - name: If Version Unchanged
+      #   if: steps.publish.outputs.type == 'none'
+      #   run: |
+      #     echo "Version in package.json has not changed. Skipping."
 
-      - name: Write Changelog Config
-        run: |
-          echo '{"categories": [], "template": "## Commits:\n\n${{ '${{UNCATEGORIZED}}' }}", "pr_template": ${{ '"- ${{MERGE_SHA}} ${{TITLE}}"' }} }' > changelog_config.json
-          cat changelog_config.json
+      # - name: Write Changelog Config
+      #   run: |
+      #     echo '{"categories": [], "template": "## Commits:\n\n${{ '${{UNCATEGORIZED}}' }}", "pr_template": ${{ '"- ${{MERGE_SHA}} ${{TITLE}}"' }} }' > changelog_config.json
+      #     cat changelog_config.json
 
-      - name: Changelog Vars
-        run: |
-          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-          echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
+      # - name: Changelog Vars
+      #   run: |
+      #     echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+      #     echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
-      - name: Build Changelog
-        id: github_release
-        uses: mikepenz/release-changelog-builder-action@v2.9.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: "${{ env.last_tag }}"
-          toTag: ${{ github.ref }}
-          commitMode: true
-          configuration: changelog_config.json
+      # - name: Build Changelog
+      #   id: github_release
+      #   uses: mikepenz/release-changelog-builder-action@v2.9.0
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     fromTag: "${{ env.last_tag }}"
+      #     toTag: ${{ github.ref }}
+      #     commitMode: true
+      #     configuration: changelog_config.json
 
-      - name: Create Release
-        if: steps.publish.outputs.type != 'none'
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.publish.outputs.version }}
-          release_name: v${{ steps.publish.outputs.version }}
-          commitish: ${{ github.ref }}
-          body: ${{steps.github_release.outputs.changelog}}
-          draft: false
-          prerelease: false
+      # - name: Create Release
+      #   if: steps.publish.outputs.type != 'none'
+      #   id: create_release
+      #   uses: actions/create-release@latest
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: v${{ steps.publish.outputs.version }}
+      #     release_name: v${{ steps.publish.outputs.version }}
+      #     commitish: ${{ github.ref }}
+      #     body: ${{steps.github_release.outputs.changelog}}
+      #     draft: true
+      #     prerelease: false

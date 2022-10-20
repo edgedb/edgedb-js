@@ -19,7 +19,8 @@ users, or anyone who prefers writing queries with code.
   const result = await query.run(client)
   // { id: string; title: string; actors: {name: string}[] }[]
 
-*Why use the query builder?*
+Why use the query builder?
+--------------------------
 
 *Type inference!* If you're using TypeScript, the result type of *all
 queries* is automatically inferred for you. For the first time, you don't
@@ -32,36 +33,11 @@ keywords, standard library functions, and link/property names.
 you construct invalid queries. This eliminates an entire class of bugs and
 helps you write valid queries the first time.
 
-Requirements
-------------
-
-The query builder works for both JavaScript and TypeScript users, and supports both Node.js and Deno. It's possible to use the query builder with or without TypeScript. Some
-requirements apply to TypeScript users only.
-
-- Node: ``v14+``. Run ``node --version`` to see your current version.
-- Deno: ``v0.20+``.
-- TypeScript: ``v4.4+``.
-
-  - Node users: install Node.js types with ``npm install @types/node``.
-  - Make sure the following ``compilerOptions`` exist in your ``tsconfig.json``
-
-    .. code-block:: javascript
-
-      // tsconfig.json
-      {
-        // ...
-        "compilerOptions": {
-          // ...
-          "strict": true,
-          "downlevelIteration": true,
-        }
-      }
-
 
 Quickstart
 ----------
 
-If you haven't already, initialize a project, write your schema, and create/
+If you haven't already, initialize a project, write a schema, and create/
 apply a migration. Follow the :ref:`Quickstart <ref_quickstart>` for a guided
 walkthrough of this process.
 
@@ -83,120 +59,107 @@ The rest of this walkthrough uses the following simple Movie schema:
 Generate the query builder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-With Node.js, use ``npx`` to generate the query builder.
+Run the following command to generate the query builder.
 
-.. code-block:: bash
+.. tabs::
 
-  $ npx edgeql-js
+  .. code-tab:: bash#Node.js
 
-With Deno, use ``deno run``. *Deno user must also create an import map, see "Deno usage" below.*
+    $ npx @edgedb/generate edgeql-js
 
-.. code-block:: bash
+  .. code-tab:: bash#Deno
 
-  $ deno run https://deno.land/x/edgedb/generate.ts
+    $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts edgeql-js
 
-This detects whether you're using TypeScript or JavaScript and generates the
-appropriate files into the ``dbschema/edgeql-js`` directory. Refer to the
-:ref:`Targets <edgedb_qb_target>` section to learn how to customize this.
+The generator detects whether you're using TypeScript or JavaScript and generates the appropriate files into the ``dbschema/edgeql-js`` directory. Refer to the :ref:`Targets <edgedb_qb_target>` section to learn how to customize this.
 
 .. note::
 
   If you're seeing a connection error or another issue, refer to the
-  :ref:`Generation <edgedb-js-generation>` docs for more complete
+  :ref:`Generation <edgedb-js-generators>` docs for more complete
   documentation, then return to this tutorial.
 
-The first time you generate the query builder you'll be prompted to add the
-generated files to your ``.gitignore``. Confirm this prompt to
-add the the line automatically.
+**Usage with Deno**
+
+The query builder generates code that depends on the ``edgedb`` module. The generated code uses Node-style import paths (``import {createClient} from "edgedb"``). For Deno to resolve these properly, you must configure an import map. In your ``deno.json``
+
+.. tabs::
+
+  .. code-tab:: json#deno.json
+
+    {
+      // ...
+      "importMap": "./importMap.json"
+    }
+
+  .. code-tab:: json#importMap.json
+
+    {
+      "imports": {
+        "edgedb": "https://deno.land/x/edgedb/mod.ts",
+        "edgedb/": "https://deno.land/x/edgedb/"
+      }
+    }
+
+Version control
+^^^^^^^^^^^^^^^
+
+The first time you run the generator, you'll be prompted to add the generated
+files to your ``.gitignore``. Confirm this prompt to automatically add a line
+to your ``.gitignore`` that excludes the generated files.
 
 .. code-block:: bash
 
-  $ npx edgeql-js
+  $ npx @edgedb/generate edgeql-js
   ...
   Checking the generated query builder into version control
-  is NOT RECOMMENDED. Would you like to update .gitignore to ignore
+  is not recommended. Would you like to update .gitignore to ignore
   the query builder directory? The following line will be added:
 
-  dbschema/edgeql-js
+     dbschema/edgeql-js
 
   [y/n] (leave blank for "y")
 
-**Deno usage**
-
-The query builder generates code that depends on the ``edgedb`` module. The generated code imports using a plain module name (``import {createClient} from "edgedb"``). You must configure an import map to tell Deno how to resolve this import.
-
-In your ``deno.json``
-
-.. code-block:: json
-
-  {
-    // ...
-    "importMap": "./import_map.json"
-  }
-
-Then create ``import_map.json`` with the following contents. Both lines must be present.
-
-.. code-block:: json
-
-  {
-    "imports": {
-      "edgedb": "https://deno.land/x/edgedb/mod.ts",
-      "edgedb/": "https://deno.land/x/edgedb/"
-    }
-  }
-
-Optionally, you can specify a version:
-
-.. code-block:: json
-
-  {
-    "imports": {
-      "edgedb": "https://deno.land/x/edgedb@v0.22.0/mod.ts",
-      "edgedb/": "https://deno.land/x/edgedb@v0.22.0/"
-    }
-  }
+For consistency, we recommend omitting the generated files from version
+control and re-generating them as part of your deployment process. However,
+there may be circumstances where checking the generated files into version
+control is desirable, e.g. if you are building Docker images that must contain
+the full source code of your application.
 
 
-Import the query builder
-^^^^^^^^^^^^^^^^^^^^^^^^
+Importing
+^^^^^^^^^
 
-Create a TypeScript file called ``script.ts`` (the name doesn't matter) and import the query builder. We recommend importing the query builder as a single default import called ``e``.
+Once the query builder is generated, it's ready to use! We recommend importing the query builder as a single default import called ``e``.
 
 .. code-block:: typescript
 
-  // script.ts
+  // Node.js + TypeScript
   import e from "./dbschema/edgeql-js";
 
+  // TypeScript with ESM
+  import e from "./dbschema/edgeql-js/index.mjs";
 
-Create a client
-^^^^^^^^^^^^^^^
+  // JavaScript (ES modules)
+  import e from "./dbschema/edgeql-js/index.mjs";
 
-The query builder is only used to *write* queries, not execute them. To
-execute queries, we still need a *client* that manages the actual connection
-to our EdgeDB instance. See the :ref:`Client API <edgedb-js-driver>` docs for
-full details.
+  // Deno
+  import e from "./dbschema/edgeql-js/index.ts";
 
-.. code-block:: typescript-diff
+  // JavaScript (CommonJS)
+  const e = require("./dbschema/edgeql-js");
 
-    // script.ts
-  + import {createClient} from "edgedb";
-    import e from "./dbschema/edgeql-js";
+.. note::
 
-  + const client = createClient();
-
-
-If you've initialized a project, there's no need to provide connection
-information to ``createClient``; it will connect to your project-linked
-instance by default. You can override this by setting the value of the
-``EDGEDB_DSN`` environment variable; refer to the :ref:`Connection docs
-<edgedb_client_connection>` for more information.
+  If you're using ES modules, remember that imports require a file extension.
+  The rest of the documentation uses Node.js + TypeScript syntax.
 
 Write a query
 ^^^^^^^^^^^^^
 
-Now we have everything we need to write our first query!
+Now we have everything we need to write and execute our first query!
 
-.. code-block:: typescript-diff
+.. code-block:: typescript
 
     // script.ts
     import {createClient} from "edgedb";
@@ -204,16 +167,16 @@ Now we have everything we need to write our first query!
 
     const client = createClient();
 
-  + async function run() {
-  +   const query = e.select(e.datetime_current());
-  +   const result = await query.run(client);
-  +   console.log(result);
-  + }
-  + run();
+    async function run() {
+      const query = e.select(e.datetime_current());
+      const result = await query.run(client);
+      console.log(result);
+    }
+    run();
 
 We use the ``e`` object to construct queries. The goal of the query builder is
 to provide an API that is as close as possible to EdgeQL itself. So
-``select datetime_current()`` becomes ``e.select(e.datetime_current()``. This
+``select datetime_current()`` becomes ``e.select(e.datetime_current())``. This
 query is then executed with the ``.run()`` method which accepts a *client* as
 its first input.
 
@@ -225,11 +188,32 @@ current timestamp (as computed by the database).
   $ npx tsx script.ts
   2022-05-10T03:11:27.205Z
 
+Configuration
+-------------
+
+The generation command is configurable in a number of ways.
+
+``--output-dir <path>``
+  Sets the output directory for the generated files.
+
+``--target <ts|cjs|esm|mts>``
+  What type of files to generate. Documented above.
+
+``--force-overwrite``
+  To avoid accidental changes, you'll be prompted to confirm whenever the
+  ``--target`` has changed from the previous run. To avoid this prompt, pass
+  ``--force-overwrite``.
+
+The generator also supports all the :ref:`connection flags
+<ref_cli_edgedb_connopts>` supported by the EdgeDB CLI. These aren't
+necessary when using a project or environment variables to configure a
+connection.
+
+
 .. _edgedb-js-execution:
 
-
-Executing expressions
----------------------
+Expressions
+-----------
 
 Throughout the documentation, we use the term "expression" a lot. This is a
 catch-all term that refers to *any query or query fragment* you define with
@@ -357,11 +341,13 @@ special ``*`` property:
   }));
 
   const result = await query.run(client);
-  /* Array{
+  /* Array<{
     id: string;
     title: string;
     release_year: number | null;  # optional property
   }> */
+
+
 
 Nested shapes
 ^^^^^^^^^^^^^
@@ -379,10 +365,80 @@ Nested shapes
   const result = await query.run(client);
   // Array<{id: string; title: string, actors: Array<{name: string}>}>
 
-Filtering, ordering, and pagination
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Filtering
+^^^^^^^^^
 
-The special keys ``filter``, ``order_by``, ``limit``, and ``offset``
+Pass a boolean expression as the special key ``filter`` to filter the results.
+
+.. code-block:: typescript
+
+  const query = e.select(e.Movie, (movie) => ({
+    id: true,
+    title: true,
+    // special "filter" key
+    filter: e.op(movie.release_year, ">", 1999)
+  }));
+
+  const result = await query.run(client);
+  // Array<{id: string; title: number}>
+
+Since ``filter`` is a reserved keyword in EdgeQL, the special ``filter`` key can live alongside your property keys without a risk of collision.
+
+.. note::
+
+  The ``e.op`` function is used to express EdgeQL operators. It is documented in more detail below and on the :ref:`Functions and operators <edgedb-js-funcops>` page.
+
+Select a single object
+^^^^^^^^^^^^^^^^^^^^^^
+
+To select a particular object, use the ``filter_single`` key. This tells the query builder to expect a singleton result.
+
+.. code-block:: typescript
+
+  const query = e.select(e.Movie, (movie) => ({
+    id: true,
+    title: true,
+    release_year: true,
+
+    filter_single: {id: '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'},
+  }));
+
+  const result = await query.run(client);
+  // {id: string; title: string; release_year: number | null}
+
+For convenience ``filter_single`` also supports a simplified syntax that eliminates the need for ``e.op``:
+
+.. code-block:: typescript
+
+  e.select(e.Movie, (movie) => ({
+    id: true,
+    title: true,
+    release_year: true,
+
+    filter_single: {id: '2053a8b4-49b1-437a-84c8-e1b0291ccd9f'},
+  }));
+
+This also works if an object type has a composite exclusive constraint:
+
+.. code-block:: typescript
+
+  /*
+    type Movie {
+      ...
+      constraint exclusive on (.title, .release_year);
+    }
+  */
+
+  e.select(e.Movie, (movie) => ({
+    title: true,
+    filter_single: {title: 'The Avengers', release_year: 2012},
+  }));
+
+
+Ordering and pagination
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The special keys ``order_by``, ``limit``, and ``offset``
 correspond to equivalent EdgeQL clauses.
 
 .. code-block:: typescript
@@ -390,14 +446,14 @@ correspond to equivalent EdgeQL clauses.
   const query = e.select(e.Movie, (movie) => ({
     id: true,
     title: true,
-    filter: e.op(movie.release_year, ">", 1999),
+
     order_by: movie.title,
     limit: 10,
     offset: 10
   }));
 
   const result = await query.run(client);
-  // Array<{id: string; title: number}>
+  // {id: true; title: true}[]
 
 Operators
 ^^^^^^^^^
@@ -418,29 +474,6 @@ Note that the filter expression above uses ``e.op`` function, which is how to us
   e.op(e.str('😄'), 'if', e.bool(true), 'else', e.str('😢'));
   // '😄' if true else '😢'
 
-Select a single object
-^^^^^^^^^^^^^^^^^^^^^^
-
-Filter by a property with an *exclusive constraint* to fetch a particular
-object.
-
-.. code-block:: typescript
-
-  const query = e.select(e.Movie, (movie) => ({
-    id: true,
-    title: true,
-    release_year: true,
-
-    // filter .id = <uuid>'2053a8b4-49b1-437a-84c8-e1b0291ccd9f'
-    filter: e.op(movie.id, '=', e.uuid('2053a8b4-49b1-437a-84c8-e1b0291ccd9f')),
-  }));
-
-  const result = await query.run(client);
-  // {id: string; title: string; release_year: number | null}
-
-Note that ``result`` is now a single object, not a list of objects. The query
-builder detects when you are filtering on a property with an exclusive
-constraint.
 
 Update objects
 ^^^^^^^^^^^^^^
@@ -448,7 +481,7 @@ Update objects
 .. code-block:: typescript
 
   const query = e.update(e.Movie, (movie) => ({
-    filter: e.op(movie.title, '=', 'Doctor Strange 2'),
+    filter_single: {title: 'Doctor Strange 2'},
     set: {
       title: 'Doctor Strange in the Multiverse of Madness',
     },
@@ -476,6 +509,7 @@ differentiators between this query builder and a typical ORM. For instance, we
 can ``select`` an ``insert`` query in order to fetch properties of the object
 we just inserted.
 
+
 .. code-block:: typescript
 
   const newMovie = e.insert(e.Movie, {
@@ -498,7 +532,7 @@ Or we can use subqueries inside mutations.
 
   // select Doctor Strange
   const drStrange = e.select(e.Movie, movie => ({
-    filter: e.op(movie.title, '=', "Doctor Strange")
+    filter_single: {title: "Doctor Strange"}
   }));
 
   // select actors
@@ -510,7 +544,6 @@ Or we can use subqueries inside mutations.
   const query = e.update(drStrange, ()=>({
     actors: { "+=": actors }
   }));
-
 
 
 Query parameters

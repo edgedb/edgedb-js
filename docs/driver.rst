@@ -1,8 +1,8 @@
 .. _edgedb-js-driver:
 
 
-Clients
-=======
+Client
+======
 
 The ``Client`` class implements the basic functionality required to establish a
 connection to your database and execute queries.
@@ -226,7 +226,7 @@ in the JavaScript type system, so we've implemented classes like
   * - ``decimal``
     - N/A (not supported)
   * - ``bytes``
-    - ``Buffer``
+    - ``Uint8Array``
   * - ``datetime``
     - ``Date``
   * - ``duration``

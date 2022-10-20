@@ -9,8 +9,10 @@ EdgeDB TypeScript/JS Client
    :hidden:
 
    driver
-   querybuilder
    generation
+   queries
+   interfaces
+   querybuilder
    literals
    types
    funcops
@@ -72,7 +74,7 @@ There are two components of this library:
 
 *Deno users*: Import from ``deno.land/x/edgedb``:
 
-.. code-block::
+.. code-block:: typescript
 
   import * as edgedb from "https://deno.land/x/edgedb/mod.ts"
 
@@ -120,7 +122,7 @@ users and JavaScript users who prefer writing queries as code.
     id: true,
     title: true,
     actors: { name: true },
-    filter: e.op(movie.title, '=', 'Dune')
+    filter_single: {title: 'Dune'}
   }));
 
   const result = await query.run(client);
@@ -149,4 +151,4 @@ How do I get started?
 We recommend reading the :ref:`Client docs <edgedb-js-driver>` first. If you
 are happy writing your EdgeQL as plain strings, then that's all you need! If
 you're a TypeScript user, or simply prefer writing queries in a code-first
-way, continue on to the :ref:`Query builder <edgedb-js-generation>` docs.
+way, continue on to the :ref:`Query builder <edgedb-js-qb>` docs.

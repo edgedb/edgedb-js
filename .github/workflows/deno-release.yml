@@ -18,7 +18,7 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
           repository: edgedb/edgedb-deno
-          path: edgedb-deno
+          path: packages/deno
 
       - uses: actions/setup-node@v2
         with:
@@ -30,20 +30,28 @@ jobs:
 
       - name: Install dev deps
         run: |
-          yarn install
+          yarn
 
       - name: Get version from package.json
         id: package-version
         uses: martinbeentjes/npm-get-version-action@v1.1.0
+        with:
+          path: packages/driver
+
 
       - name: Write version to file
         run: |
           echo "${{ steps.package-version.outputs.current-version }}"
-          echo "${{ steps.package-version.outputs.current-version}}" > edgedb-deno/version.txt
+
+      # Uncomment to trigger edgedb-deno releases
+      # - name: Write version to file
+      #   run: |
+      #     echo "${{ steps.package-version.outputs.current-version }}"
+      #     echo "${{ steps.package-version.outputs.current-version}}" > packages/deno/version.txt
 
       - name: Compile for Deno
         run: |
-          yarn build:deno
+          yarn workspace edgedb build:deno
 
       - name: Push to edgedb-deno
         run: ./.github/workflows/push-edgedb-deno.sh
