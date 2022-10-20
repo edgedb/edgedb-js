@@ -166,7 +166,6 @@ test("insert type enforcement", async () => {
   e.insert(e.Villain, {});
 
   e.insert(e.Villain, {
-    // @ts-expect-error
     name: e.cast(e.str, e.set())
   });
 

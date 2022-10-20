@@ -77,7 +77,10 @@ export type setToAssignmentExpression<
   ?
       | TypeSet<
           assignableBy<Set["__element__"]>,
-          cardutil.assignable<Set["__cardinality__"]>
+          cardutil.assignable<
+            // Set["__cardinality__"]
+            cardutil.overrideLowerBound<Set["__cardinality__"], "Zero">
+          >
         >
       | getAssignmentLiteral<Set, IsSetModifier>
   : [Set] extends [ObjectTypeSet]

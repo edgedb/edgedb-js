@@ -185,6 +185,19 @@ test("update link property", async () => {
   expect(t5?.characters.length).toEqual(2);
 });
 
+test("optional prop update", async () => {
+  const query = e.params({title: e.optional(e.str)}, params => {
+    return e.update(e.Movie, m => ({
+      filter_single: {title: "not a real title"},
+      set: {
+        // Error here
+        title: params.title
+      }
+    }));
+  });
+  await query.run(client, {title: "still not real"});
+});
+
 test("exclude readonly props", () => {
   type updateProfileShape = UpdateShape<typeof e["Profile"]>;
   tc.assert<
