@@ -42,7 +42,6 @@ There are two components of this library:
 - Use the :ref:`Query Builder API <edgedb-js-intro-qb>` to write queries in a
   code-first, typesafe way. Recommended for TypeScript users.
 
-
 .. _edgedb-js-installation:
 
 **Requirements**
