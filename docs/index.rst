@@ -33,11 +33,7 @@ or Deno backend.
 
 .. note::
 
-  We recently released ``v0.21.0`` of the ``edgedb`` module on NPM and
-  ``deno.land/x``, which supports the latest EdgeDB 2.0 features and protocol.
-  It is also backwards-compatible with v1 instances as well, so we recommend
-  all users upgrade. Read the `release notes
-  <https://github.com/edgedb/edgedb-js/releases/tag/v0.21.0>`_ for details.
+  We recently released ``v1.0.0`` of the ``edgedb`` module on NPM. This is a major version release and comes with breaking changes and major new features. Notably, the workflow for generating the query builder has changed significantly. Refer to the `release notes <https://github.com/edgedb/edgedb-js/releases>`_ for details.
 
 There are two components of this library:
 
