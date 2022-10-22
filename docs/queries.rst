@@ -121,9 +121,6 @@ We can now use this function in our code.
   user.name; // string
   user.email; // string
 
-  const result = await query.run(client)
-  // { id: string; title: string; actors: {name: string}[] }[]
-
 
 Single-file mode
 ----------------
