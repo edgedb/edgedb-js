@@ -63,11 +63,13 @@ Run the following command to generate the query builder.
 
 .. tabs::
 
-  .. code-tab:: bash#Node.js
+  .. code-tab:: bash
+    :caption: Node.js
 
     $ npx @edgedb/generate edgeql-js
 
-  .. code-tab:: bash#Deno
+  .. code-tab:: bash
+    :caption: Deno
 
     $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts edgeql-js
 
@@ -85,14 +87,16 @@ The query builder generates code that depends on the ``edgedb`` module. The gene
 
 .. tabs::
 
-  .. code-tab:: json#deno.json
+  .. code-tab:: json
+    :caption: deno.json
 
     {
       // ...
       "importMap": "./importMap.json"
     }
 
-  .. code-tab:: json#importMap.json
+  .. code-tab:: json
+    :caption: importMap.json
 
     {
       "imports": {

@@ -51,11 +51,13 @@ The following command will run the ``queries`` generator.
 
 .. tabs::
 
-  .. code-tab:: bash#Node.js
+  .. code-tab:: bash
+    :caption: Node.js
 
     $ npx @edgedb/generate interfaces
 
-  .. code-tab:: bash#Deno
+  .. code-tab:: bash
+    :caption: Deno
 
     $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts interfaces
 
