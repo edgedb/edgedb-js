@@ -428,7 +428,7 @@ export async function writeDirWithTarget(
     await dir.write(outputDir, {
       mode: "dts",
       moduleKind: "esm",
-      fileExtension: ".d.ts",
+      fileExtension: ".d.mts",
       moduleExtension: "",
       written
     });
