@@ -23,6 +23,12 @@ enum Generator {
   Interfaces = "interfaces"
 }
 
+const availableGeneratorsHelp = `
+Available generators:
+ - edgeql-js (query builder)
+ - queries (query files)
+ - interfaces`;
+
 const run = async () => {
   const args = adapter.process.argv.slice(2);
   const generator: Generator = args.shift() as any;
@@ -36,13 +42,13 @@ const run = async () => {
   }
   if (!generator || generator[0] === "-") {
     console.error(
-      `Error: No generator specified.\n  \`npx @edgedb/generate <generator>\`\nAvailable generators:\n - edgeql-js (query builder)\n - queries (query files)`
+      `Error: No generator specified.\n  \`npx @edgedb/generate <generator>\`${availableGeneratorsHelp}`
     );
     adapter.exit();
   }
   if (!Object.values(Generator).includes(generator)) {
     console.error(
-      `Error: Invalid generator "${generator}". Available generators:\n - edgeql-js (query builder)\n - queries (query files)`
+      `Error: Invalid generator "${generator}".${availableGeneratorsHelp}`
     );
     adapter.exit();
   }

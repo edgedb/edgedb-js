@@ -13,6 +13,5 @@ export async function freeShape(client: Client, args: {
   points := 1234n,
   data := <str>$data,
   required multi arg := {'asdf'}
-};
-`, args);
+};`, args);
 }
