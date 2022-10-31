@@ -92,13 +92,11 @@ export class RawConnection extends BaseRawConnection {
   protected constructor(
     sock: net.Socket,
     config: NormalizedConnectConfig,
-    registry: CodecsRegistry,
-    exposeErrorAttrs: boolean = false
+    registry: CodecsRegistry
   ) {
     super(registry);
 
     this.config = config;
-    this.exposeErrorAttributes = exposeErrorAttrs;
 
     this.paused = false;
     this.sock = sock;

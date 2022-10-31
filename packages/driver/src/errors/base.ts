@@ -1,16 +1,24 @@
+import {utf8Decoder} from "../primitives/buffer";
+
 export class EdgeDBError extends Error {
   source?: Error;
   protected static tags: object = {};
   private _message: string;
   private _query?: string;
-  private _attrs?: Map<number, Buffer>;
+  private _attrs?: Map<number, Uint8Array>;
 
-  constructor(message?: string, options?: ErrorOptions) {
+  constructor(
+    message?: string,
+    options?: {
+      cause?: unknown;
+    }
+  ) {
+    // @ts-ignore
     super(undefined, options);
     Object.defineProperties(this, {
       _message: {enumerable: false},
       _query: {enumerable: false},
-      _attrs: {enumerable: false},
+      _attrs: {enumerable: false}
     });
     this._message = message ?? "";
   }
@@ -51,19 +59,22 @@ enum ErrorAttr {
   columnEnd = -9,
   utf16ColumnEnd = -8,
   characterStart = -7,
-  characterEnd = -6,
+  characterEnd = -6
 }
 
 function tryParseInt(val: any) {
-  if (Buffer.isBuffer(val)) {
+  if (val instanceof Uint8Array) {
     try {
-      return parseInt(val.toString("utf8"), 10);
+      return parseInt(utf8Decoder.decode(val), 10);
     } catch {}
   }
   return null;
 }
 
-export function prettyPrintError(attrs: Map<number, Buffer>, query: string) {
+export function prettyPrintError(
+  attrs: Map<number, Uint8Array>,
+  query: string
+) {
   const lineStart = tryParseInt(attrs.get(ErrorAttr.lineStart));
   const lineEnd = tryParseInt(attrs.get(ErrorAttr.lineEnd));
   const colStart = tryParseInt(attrs.get(ErrorAttr.utf16ColumnStart));
@@ -95,7 +106,7 @@ export function prettyPrintError(attrs: Map<number, Buffer>, query: string) {
       .padStart(end)}\n`;
   }
   if (attrs.has(ErrorAttr.hint)) {
-    errMessage += `Hint: ${attrs.get(ErrorAttr.hint)?.toString("utf8")}\n`;
+    errMessage += `Hint: ${utf8Decoder.decode(attrs.get(ErrorAttr.hint))}\n`;
   }
 
   return errMessage;

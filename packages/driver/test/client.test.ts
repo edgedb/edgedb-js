@@ -1712,7 +1712,7 @@ test("pretty error message", async () => {
 
   let err: Error | null = null;
   try {
-    client.query(`select {
+    await client.query(`select {
   ver := sys::get_version(),
   unknown := .abc,
 };`);
