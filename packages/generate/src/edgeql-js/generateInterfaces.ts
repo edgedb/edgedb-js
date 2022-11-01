@@ -187,11 +187,11 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
 
 export namespace helper {
   export type propertyKeys<T> = {
-    [k in keyof T]: NonNullable<T[k]> extends object ? never : k;
+    [k in keyof T]: NonNullable<T[k]> extends Date ? k : NonNullable<T[k]> extends object ? never : k;
   }[keyof T];
 
   export type linkKeys<T> = {
-    [k in keyof T]: NonNullable<T[k]> extends object ? k : never;
+    [k in keyof T]: NonNullable<T[k]> extends Date ? never : NonNullable<T[k]> extends object ? k : never;
   }[keyof T];
 
   export type Props<T> = Pick<T, propertyKeys<T>>;
