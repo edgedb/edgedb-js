@@ -13,8 +13,8 @@ extracted into a ``with`` block.
   const y = e.select(e.op(x, '^', x));
 
   y.toEdgeQL();
-  // WITH x := 3
-  // SELECT x ^ 3
+  // with x := 3
+  // select x ^ x
 
   const result = await y.run(client);
   // => 27
@@ -59,7 +59,7 @@ can short-circuit this logic with ``e.with``.
   });
   const newMovie = e.insert(e.Movie, {
     actors: e.with([robert, colin], // list "dependencies"
-      e.set(robert, colin)
+      e.select(e.set(robert, colin))
     )
   })
 
