@@ -38,6 +38,11 @@ currently supported.`);
   // generate one query per file
 
   const matches = await getMatches(root);
+  if (matches.length === 0) {
+    console.log(`No .edgeql files found in project`);
+    adapter.exit();
+    return;
+  }
 
   console.log(`Connecting to database...`);
   await client.ensureConnected();
@@ -159,12 +164,8 @@ function stringifyImports(imports: {[k: string]: boolean}) {
 async function getMatches(root: string) {
   return adapter.walk(root, {
     match: [/[^\/]\.edgeql$/],
-    skip: [/node_modules/, /dbschema\/migrations/]
+    skip: [/node_modules/, RegExp(`dbschema\\${adapter.path.sep}migrations`)]
   });
-  // return globby.globby("**/*.edgeql", {
-  //   cwd: root,
-  //   followSymbolicLinks: true
-  // });
 }
 
 // const targetToExtension: {[k in Target]: string} = {
