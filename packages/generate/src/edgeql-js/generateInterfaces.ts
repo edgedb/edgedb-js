@@ -186,12 +186,14 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
     t`
 
 export namespace helper {
+  type LinkType = std.BaseObject | std.BaseObject[];
+
   export type propertyKeys<T> = {
-    [k in keyof T]: NonNullable<T[k]> extends object ? never : k;
+    [k in keyof T]: NonNullable<T[k]> extends LinkType ? never : k;
   }[keyof T];
 
   export type linkKeys<T> = {
-    [k in keyof T]: NonNullable<T[k]> extends object ? k : never;
+    [k in keyof T]: NonNullable<T[k]> extends LinkType ? k : never;
   }[keyof T];
 
   export type Props<T> = Pick<T, propertyKeys<T>>;
