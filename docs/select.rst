@@ -155,6 +155,28 @@ You can also pass an arbitrary boolean expression to ``filter_single`` if you pr
   const result = await query.run(client);
   // {id: string; title: string; release_year: number | null}
 
+
+Select many objects by ID
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: typescript
+
+  const query = e.params({ ids: e.array(e.uuid) }, ({ ids }) =>
+    e.select(e.Movie, (movie) => ({
+      id: true,
+      title: true,
+      release_year: true,
+      filter: e.op(movie.id, 'in', e.array_unpack(ids)),
+    }))
+  
+  const result = await query.run(client, {
+    ids: [
+      '2053a8b4-49b1-437a-84c8-e1b0291ccd9f',
+      '2053a8b4-49b1-437a-84c8-af5d3f383484',
+    ],
+  })
+  // {id: string; title: string; release_year: number | null}[]
+
 Nesting shapes
 ^^^^^^^^^^^^^^
 
