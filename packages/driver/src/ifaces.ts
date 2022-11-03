@@ -17,15 +17,6 @@
  */
 
 import * as chars from "./primitives/chars";
-import {
-  LocalDate,
-  LocalDateTime,
-  LocalTime,
-  Duration,
-  RelativeDuration,
-  DateDuration
-} from "./datatypes/datetime";
-import {ConfigMemory} from "./datatypes/memory";
 
 export type ProtocolVersion = [number, number];
 
@@ -42,39 +33,8 @@ export enum Cardinality {
   MANY = chars.$m,
   AT_LEAST_ONE = chars.$M
 }
-type SerializablePrimitives =
-  | string
-  | number
-  | boolean
-  | null
-  | {toJSON(): any}
-  | undefined
-  | ((...args: any[]) => any)
-  | symbol;
-type Serializable =
-  | SerializablePrimitives
-  | {[key: string | number | symbol]: Serializable}
-  | Serializable[];
 
-type QueryArgPrimitive =
-  | number
-  | string
-  | boolean
-  | Serializable
-  | BigInt
-  | Uint8Array
-  | Date
-  | LocalDateTime
-  | LocalDate
-  | LocalTime
-  | Duration
-  | RelativeDuration
-  | DateDuration
-  | ConfigMemory;
-
-type QueryArg = QueryArgPrimitive | QueryArgPrimitive[] | null;
-
-export type QueryArgs = {[_: string]: QueryArg} | QueryArg[] | null;
+export type QueryArgs = {[_: string]: unknown} | unknown[] | null;
 
 export interface Executor {
   execute(query: string, args?: QueryArgs): Promise<void>;
