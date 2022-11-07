@@ -174,6 +174,22 @@ Now we have everything we need to write and execute our first query!
     }
     run();
 
+We can also run queries built with the querybuilder in a transaction.
+
+.. code-block:: typescript
+
+    // script.ts
+    import {createClient} from "edgedb";
+    import e from "./dbschema/edgeql-js";
+
+    const client = createClient();
+
+    const query = e.select(e.datetime_current());
+    client.transaction(async tx => {
+      const result = await query.run(tx);
+      console.log(result);
+    });
+
 We use the ``e`` object to construct queries. The goal of the query builder is
 to provide an API that is as close as possible to EdgeQL itself. So
 ``select datetime_current()`` becomes ``e.select(e.datetime_current())``. This
