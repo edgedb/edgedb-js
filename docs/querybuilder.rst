@@ -193,8 +193,8 @@ We can also run queries built with the querybuilder in a transaction.
 We use the ``e`` object to construct queries. The goal of the query builder is
 to provide an API that is as close as possible to EdgeQL itself. So
 ``select datetime_current()`` becomes ``e.select(e.datetime_current())``. This
-query is then executed with the ``.run()`` method which accepts a *client* as
-its first input.
+query is then executed with the ``.run()`` method which accepts a *client* or a
+*transaction* as its first input.
 
 Run that script with the ``tsx`` like so. It should print the
 current timestamp (as computed by the database).
