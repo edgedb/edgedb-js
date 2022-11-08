@@ -195,6 +195,7 @@ We can also run the same query as above, built with the query builder, in a
 transaction.
 
 .. code-block:: typescript
+
     const query = e.select(e.datetime_current());
     client.transaction(async tx => {
       const result = await query.run(tx);
