@@ -59,12 +59,13 @@ enum TransactionStatus {
 
 export enum Capabilities {
   NONE = 0,
-  MODIFICATONS = 0b00001, // query is not read-only
-  SESSION_CONFIG = 0b00010, // query contains session config change
-  TRANSACTION = 0b00100, // query contains start/commit/rollback of
+  MODIFICATONS = 1 << 0, // query is not read-only
+  SESSION_CONFIG = 1 << 1, // query contains session config change
+  TRANSACTION = 1 << 2, // query contains start/commit/rollback of
   // transaction or savepoint manipulation
-  DDL = 0b01000, // query contains DDL
-  PERSISTENT_CONFIG = 0b10000, // server or database config change
+  DDL = 1 << 3, // query contains DDL
+  PERSISTENT_CONFIG = 1 << 4, // server or database config change
+  SET_GLOBAL = 1 << 5,
   ALL = 0xffff_ffff
 }
 
@@ -80,7 +81,8 @@ new DataView(NO_TRANSACTION_CAPABILITIES_BYTES.buffer).setUint32(
 const RESTRICTED_CAPABILITIES =
   (Capabilities.ALL &
     ~Capabilities.TRANSACTION &
-    ~Capabilities.SESSION_CONFIG) >>>
+    ~Capabilities.SESSION_CONFIG &
+    ~Capabilities.SET_GLOBAL) >>>
   0;
 
 enum CompilationFlag {
