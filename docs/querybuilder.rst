@@ -181,8 +181,8 @@ Now we have everything we need to write and execute our first query!
 We use the ``e`` object to construct queries. The goal of the query builder is
 to provide an API that is as close as possible to EdgeQL itself. So
 ``select datetime_current()`` becomes ``e.select(e.datetime_current())``. This
-query is then executed with the ``.run()`` method which accepts a *client* as
-its first input.
+query is then executed with the ``.run()`` method which accepts a *client* or a
+*transaction* as its first input.
 
 Run that script with the ``tsx`` like so. It should print the
 current timestamp (as computed by the database).
@@ -191,6 +191,20 @@ current timestamp (as computed by the database).
 
   $ npx tsx script.ts
   2022-05-10T03:11:27.205Z
+
+In a transaction
+^^^^^^^^^^^^^^^^
+
+We can also run the same query as above, built with the query builder, in a
+transaction.
+
+.. code-block:: typescript
+
+    const query = e.select(e.datetime_current());
+    client.transaction(async tx => {
+      const result = await query.run(tx);
+      console.log(result);
+    });
 
 Configuration
 -------------
