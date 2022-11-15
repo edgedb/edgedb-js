@@ -1407,14 +1407,15 @@ const numericalTypes: Record<string, boolean> = {
 };
 
 function literalToEdgeQL(type: BaseType, val: any): string {
+  const typename = (type as any).__casttype__?.__name__ ?? type.__name__;
   let skipCast = false;
   let stringRep;
-  if (type.__name__ === "std::json") {
+  if (typename === "std::json") {
     skipCast = true;
     stringRep = `to_json($$${JSON.stringify(val)}$$)`;
   } else if (typeof val === "string") {
-    if (numericalTypes[type.__name__]) {
-      skipCast = true;
+    if (numericalTypes[typename]) {
+      skipCast = typename === type.__name__;
       stringRep = val;
     } else if (type.__kind__ === TypeKind.enum) {
       skipCast = true;
@@ -1432,14 +1433,14 @@ function literalToEdgeQL(type: BaseType, val: any): string {
         );
       }
     } else {
-      if (type.__name__ === "std::str") {
+      if (typename === "std::str") {
         skipCast = true;
       }
       stringRep = JSON.stringify(val);
     }
   } else if (typeof val === "number") {
-    if (numericalTypes[type.__name__]) {
-      skipCast = true;
+    if (numericalTypes[typename]) {
+      skipCast = typename === type.__name__;
     } else {
       throw new Error(`Unknown numerical type: ${type.__name__}!`);
     }

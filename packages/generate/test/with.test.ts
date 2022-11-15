@@ -6,7 +6,7 @@ test("simple repeated expression", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   expect(e.select(e.op(numbers, "+", numbers)).toEdgeQL()).toEqual(`WITH
-  __withVar_0 := { 1, 2, 3 }
+  __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 }
 SELECT (__withVar_0 + __withVar_0)`);
 });
 
@@ -15,7 +15,7 @@ test("simple expression with alias", () => {
 
   expect(e.select(e.op(numbers, "+", e.alias(numbers))).toEdgeQL())
     .toEqual(`WITH
-  __withVar_0 := { 1, 2, 3 },
+  __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 },
   __withVar_1 := __withVar_0
 SELECT (__withVar_0 + __withVar_1)`);
 });
@@ -39,7 +39,7 @@ test("implicit WITH vars referencing each other", () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __withVar_4 := 10,
+  __withVar_4 := <std::int64>10,
   __withVar_3 := (
     WITH
       __scope_2_defaultHero := DETACHED default::Hero
@@ -90,7 +90,7 @@ test("explicit WITH block", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
   expect(e.with([numbers], e.select(numbers)).toEdgeQL()).toEqual(`WITH
-  __withVar_0 := { 1, 2, 3 }
+  __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 }
 SELECT __withVar_0`);
 });
 
@@ -106,7 +106,7 @@ test("explicit WITH block in nested query", () => {
   ).toEqual(`SELECT {
   multi nested := assert_exists((
     WITH
-      __withVar_0 := { 1, 2, 3 }
+      __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 }
     SELECT __withVar_0
   ))
 }`);
@@ -140,7 +140,7 @@ test("explicit WITH block nested in implicit WITH block", () => {
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := { 1, 2, 3 }
+      __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 }
     SELECT __withVar_1
   )
 SELECT {
@@ -166,7 +166,7 @@ test("explicit WITH block nested in explicit WITH block", () => {
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := { 1, 2, 3 }
+      __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 }
     SELECT __withVar_1
   )
 SELECT {
@@ -190,10 +190,10 @@ test("explicit WITH block nested in explicit WITH block, sub expr explicitly ext
       )
       .toEdgeQL()
   ).toEqual(`WITH
-  __withVar_2 := 2,
+  __withVar_2 := <std::int64>2,
   __withVar_0 := (
     WITH
-      __withVar_1 := { 1, __withVar_2, 3 }
+      __withVar_1 := { <std::int64>1, __withVar_2, <std::int64>3 }
     SELECT __withVar_1
   )
 SELECT {
@@ -236,10 +236,10 @@ test("explicit WITH block nested in explicit WITH block, sub expr implicitly ext
       )
       .toEdgeQL()
   ).toEqual(`WITH
-  __withVar_2 := 2,
+  __withVar_2 := <std::int64>2,
   __withVar_0 := (
     WITH
-      __withVar_1 := { 1, __withVar_2, 3 }
+      __withVar_1 := { <std::int64>1, __withVar_2, <std::int64>3 }
     SELECT __withVar_1
   )
 SELECT {
@@ -269,7 +269,7 @@ test("implicit WITH and explicit WITH in sub expr", () => {
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
-  __withVar_5 := 10,
+  __withVar_5 := <std::int64>10,
   __withVar_4 := (
     WITH
       __scope_1_defaultHero := DETACHED default::Hero
@@ -316,7 +316,7 @@ test("explicit WITH nested in implicit WITH + alias implicit", () => {
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := { 1, 2, 3 },
+      __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 },
       __withVar_2 := __withVar_1
     SELECT {
       multi numbers := assert_exists(__withVar_1),
@@ -349,7 +349,7 @@ test("explicit WITH nested in implicit WITH + alias explicit", () => {
   ).toEqual(`WITH
   __withVar_0 := (
     WITH
-      __withVar_1 := { 1, 2, 3 },
+      __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 },
       __withVar_2 := __withVar_1
     SELECT {
       multi numbers := assert_exists(__withVar_1),
@@ -405,7 +405,7 @@ test(
         )
         .toEdgeQL()
     ).toEqual(`WITH
-  __withVar_1 := { 1, 2, 3 },
+  __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 },
   __withVar_0 := (
     WITH
       __withVar_2 := __withVar_1
@@ -442,7 +442,7 @@ test(
         )
         .toEdgeQL()
     ).toEqual(`WITH
-  __withVar_1 := { 1, 2, 3 },
+  __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 },
   __withVar_2 := __withVar_1,
   __withVar_0 := (
     WITH
@@ -469,7 +469,7 @@ test("query with no WITH block", () => {
   __scope_0_defaultHero := DETACHED default::Person[IS default::Hero]
 SELECT __scope_0_defaultHero {
   id,
-  single computable := 35,
+  single computable := <std::int64>35,
   multi all_heroes := (
     WITH
       __scope_1_defaultHero := DETACHED default::Hero

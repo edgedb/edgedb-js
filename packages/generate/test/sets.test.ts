@@ -96,7 +96,7 @@ test("scalar set contructor", () => {
   expect(_f4.__element__.__name__).toEqual("std::int32");
   expect(_f4.__cardinality__).toEqual($.Cardinality.One);
   expect(_f4.__element__.__kind__).toEqual($.TypeKind.scalar);
-  expect(_f4.toEdgeQL()).toEqual(`{ 42 }`);
+  expect(_f4.toEdgeQL()).toEqual(`{ <std::int32>42 }`);
   type _f4 = $infer<typeof _f4>;
   tc.assert<tc.IsExact<_f4, 42>>(true);
 
@@ -118,7 +118,7 @@ test("scalar set contructor", () => {
   // implicit casting
   const _f5 = e.set(5, e.literal(e.float32, 1234.5));
   expect(_f5.__element__.__name__).toEqual("std::number");
-  expect(_f5.toEdgeQL()).toEqual(`{ 5, 1234.5 }`);
+  expect(_f5.toEdgeQL()).toEqual(`{ 5, <std::float32>1234.5 }`);
   type _f5 = $infer<typeof _f5>;
   tc.assert<tc.IsExact<_f5, [number, ...number[]]>>(true);
 });

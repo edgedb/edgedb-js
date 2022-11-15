@@ -36,10 +36,14 @@ module default {
     link nemesis -> Hero;
   }
 
-type Hero extending Person {
+  type Hero extending Person {
     property secret_identity -> str;
     property number_of_movies -> int64;
     multi link villains := .<nemesis[IS Villain];
+  }
+
+  scalar type year extending int16 {
+    constraint min_value(1878);
   }
 
   type Movie {
@@ -48,7 +52,7 @@ type Hero extending Person {
     required property title -> str {
       constraint exclusive;
     };
-    required property release_year -> int16 {
+    required property release_year -> year {
       default := <int16>datetime_get(datetime_current(), 'year');
     }
     multi link characters extending movie_character -> Person;
