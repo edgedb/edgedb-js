@@ -285,6 +285,48 @@ test("computables in polymorphics", () => {
   >(true);
 });
 
+test("parent type props in polymorphic", () => {
+  const q = e.select(e.Person, () => ({
+    ...e.is(e.Hero, {
+      // name is prop of Person
+      name: true,
+      secret_identity: true
+    }),
+    ...e.is(e.Villain, {nemesis: {name: true}})
+  }));
+
+  tc.assert<
+    tc.IsExact<
+      $infer<typeof q>,
+      {
+        name: string | null;
+        secret_identity: string | null;
+        nemesis: {name: string} | null;
+      }[]
+    >
+  >(true);
+});
+
+test("* in polymorphic", async () => {
+  const q = e.select(e.Person, () => ({
+    ...e.is(e.Hero, e.Hero["*"])
+  }));
+
+  // 'id' is filtered out since it is not valid in a polymorphic expr
+  tc.assert<
+    tc.IsExact<
+      $infer<typeof q>,
+      {
+        name: string | null;
+        number_of_movies: number | null;
+        secret_identity: string | null;
+      }[]
+    >
+  >(true);
+
+  await q.run(client);
+});
+
 test("shape type name", () => {
   const name = e.select(e.Hero).__element__.__name__;
   tc.assert<tc.IsExact<typeof name, "default::Hero">>(true);

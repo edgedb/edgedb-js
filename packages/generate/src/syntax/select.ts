@@ -379,13 +379,14 @@ export function is<
   expr: Expr,
   shape: Shape
 ): {
-  [k in Exclude<keyof Shape, SelectModifierNames>]: $expr_PolyShapeElement<
-    Expr,
-    normaliseElement<Shape[k]>
-  >;
+  [k in Exclude<
+    keyof Shape,
+    SelectModifierNames | "id"
+  >]: $expr_PolyShapeElement<Expr, normaliseElement<Shape[k]>>;
 } {
   const mappedShape: any = {};
   for (const [key, value] of Object.entries(shape)) {
+    if (key === "id") continue;
     mappedShape[key] = {
       __kind__: ExpressionKind.PolyShapeElement,
       __polyType__: expr,
@@ -753,6 +754,7 @@ export type objectTypeToSelectShape<T extends ObjectType = ObjectType> =
               T["__pointers__"][k]["target"],
               cardutil.assignable<T["__pointers__"][k]["cardinality"]>
             >
+          | $expr_PolyShapeElement
       : T["__pointers__"][k] extends LinkDesc
       ? linkDescToSelectElement<T["__pointers__"][k]>
       : any;
