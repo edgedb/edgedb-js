@@ -483,6 +483,12 @@ In the query builder, this is represented with the ``e.is`` function.
 The ``release_year`` and ``num_seasons`` properties are nullable to reflect the
 fact that they will only occur in certain objects.
 
+.. note::
+
+  In EdgeQL it is not valid to select the ``id`` property in a polymorphic
+  field. So for convenience when using the ``['*']`` all properties shorthand
+  with ``e.is``, the ``id`` property will be filtered out of the polymorphic
+  shape object.
 
 Detached
 --------
