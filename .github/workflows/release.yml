@@ -35,6 +35,9 @@ jobs:
 
       # Driver
 
+      - name: Copy readme
+        run: cp README.md packages/driver/README.md
+
       - id: publish_driver
         name: Publish 'edgedb' to NPM
         uses: JS-DevTools/npm-publish@v1
@@ -102,7 +105,7 @@ jobs:
             }
 
       - name: Create 'edgedb' Release
-        # if: steps.publish_driver.outputs.type != 'none'
+        if: steps.publish_driver.outputs.type != 'none'
         uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -138,7 +141,7 @@ jobs:
             }
 
       - name: Create '@edgedb/generate' Release
-        # if: steps.publish_generate.outputs.type != 'none'
+        if: steps.publish_generate.outputs.type != 'none'
         uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
