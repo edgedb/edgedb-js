@@ -32,13 +32,16 @@ test("literals", () => {
   expect(e.std.duration(duration).toEdgeQL()).toEqual(
     `<std::duration>'PT5H6M7.00800901S'`
   );
-  expect(e.std.int16(144.1235).toEdgeQL()).toEqual(`144.1235`);
-  expect(e.std.int64(1234.15).toEdgeQL()).toEqual(`1234.15`);
-  expect(e.std.float64(1234.1234).toEdgeQL()).toEqual(`1234.1234`);
-  expect(e.std.float64(124).toEdgeQL()).toEqual(`124`);
-  expect(e.std.int16("9223372036854775807").toEdgeQL()).toEqual(
-    `9223372036854775807`
+  expect(e.std.int16(144.1235).toEdgeQL()).toEqual(`<std::int16>144.1235`);
+  expect(e.std.int64(1234.15).toEdgeQL()).toEqual(`<std::int64>1234.15`);
+  expect(e.std.float64(1234.1234).toEdgeQL()).toEqual(
+    `<std::float64>1234.1234`
   );
+  expect(e.std.float64(124).toEdgeQL()).toEqual(`<std::float64>124`);
+  expect(e.std.int16("9223372036854775807").toEdgeQL()).toEqual(
+    `<std::int16>9223372036854775807`
+  );
+  expect(e.year("1234").toEdgeQL()).toEqual(`<default::year>1234`);
 
   expect(e.std.json("asdf").toEdgeQL()).toEqual(`to_json($$"asdf"$$)`);
   expect(
@@ -73,11 +76,11 @@ test("collection type literals", () => {
   const literalArray = e.literal(e.array(e.str), ["adsf"]);
   expect(literalArray.toEdgeQL()).toEqual(`["adsf"]`);
   const literalNamedTuple = e.literal(e.tuple({str: e.str}), {
-    str: "asdf",
+    str: "asdf"
   });
   expect(literalNamedTuple.toEdgeQL()).toEqual(`( str := "asdf" )`);
   const literalTuple = e.literal(e.tuple([e.str, e.int64]), ["asdf", 1234]);
-  expect(literalTuple.toEdgeQL()).toEqual(`( "asdf", 1234 )`);
+  expect(literalTuple.toEdgeQL()).toEqual(`( "asdf", <std::int64>1234 )`);
 });
 
 test("enum literals", () => {
