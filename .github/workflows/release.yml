@@ -5,7 +5,9 @@ on:
   push:
     branches:
       - master
-      - ci
+  pull_request:
+    branches:
+      - master
 
 jobs:
   build_and_publish:
@@ -16,38 +18,60 @@ jobs:
           fetch-depth: 0
           submodules: true
 
-      # - name: Set up Node
-      #   uses: actions/setup-node@v1
-      #   with:
-      #     node-version: 16
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
 
-      # - name: Set up Deno
-      #   uses: denoland/setup-deno@v1
-      #   with:
-      #     deno-version: v1.24.x
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.24.x
 
-      # - name: Install deps and build
-      #   run: |
-      #     yarn
-      #     yarn workspaces run build
+      - name: Install deps and build
+        run: |
+          yarn
+          yarn workspaces run build
 
-      # - id: publish
-      #   name: Publish to NPM
-      #   uses: JS-DevTools/npm-publish@v1
-      #   with:
-      #     package: packages/driver/package.json
-      #     token: ${{ secrets.NPM_TOKEN }}
-      #     dry-run: false
+      # driver
 
-      # - name: If Publish
-      #   if: steps.publish.outputs.type != 'none'
-      #   run: |
-      #     echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
+      - id: publish_driver
+        name: Publish 'edgedb' to NPM
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          package: packages/driver/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          dry-run: true
 
-      # - name: If Version Unchanged
-      #   if: steps.publish.outputs.type == 'none'
-      #   run: |
-      #     echo "Version in package.json has not changed. Skipping."
+      - name: If publish 'edgedb'
+        if: steps.publish_driver.outputs.type != 'none'
+        run: |
+          echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
+
+      - name: If 'edgedb' version unchanged
+        if: steps.publish_driver.outputs.type == 'none'
+        run: |
+          echo "Version in package.json has not changed. Skipping."
+
+      # generate
+
+      - id: publish_generate
+        name: Publish '@edgedb/generate' to NPM
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          package: packages/generate/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          dry-run: true
+
+      - name: If publish '@edgedb/generate'
+        if: steps.publish_generate.outputs.type != 'none'
+        run: |
+          echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
+
+      - name: If '@edgedb/generate' version unchanged
+        if: steps.publish_generate.outputs.type == 'none'
+        run: |
+          echo "Version in package.json has not changed. Skipping."
 
       # - name: Write Changelog Config
       #   run: |
