@@ -103,7 +103,6 @@ jobs:
 
       - name: Create 'edgedb' Release
         # if: steps.publish_driver.outputs.type != 'none'
-        id: create_release
         uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -140,7 +139,6 @@ jobs:
 
       - name: Create '@edgedb/generate' Release
         # if: steps.publish_generate.outputs.type != 'none'
-        id: create_release
         uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
