@@ -77,6 +77,7 @@ jobs:
 
       - name: Changelog Vars
         run: |
+          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
           echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Build 'edgedb' Changelog
@@ -85,6 +86,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          fromTag: "${{ env.last_tag }}"
           toTag: ${{ github.ref }}
           commitMode: true
           configurationJson: |
@@ -92,13 +94,6 @@ jobs:
               "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
               "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
               "categories": [],
-              "tag_resolver": {
-                "method": "semver",
-                "filter": {
-                  "pattern": "v(.+)",
-                  "flags": "gu"
-                }
-              }
             }
 
       - name: Create 'edgedb' Release
@@ -121,6 +116,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          fromTag: "${{ env.last_tag }}"
           toTag: ${{ github.ref }}
           commitMode: true
           configurationJson: |
@@ -128,13 +124,6 @@ jobs:
               "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
               "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
               "categories": [],
-              "tag_resolver": {
-                "method": "semver",
-                "filter": {
-                  "pattern": "generate-v(.+)",
-                  "flags": "gu"
-                }
-              }
             }
 
       - name: Create '@edgedb/generate' Release
