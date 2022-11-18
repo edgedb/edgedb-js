@@ -20,7 +20,7 @@ Include the code that is causing the error:
 **Expected behavior**
 A clear and concise description of what you expected to happen. If applicable, add screenshots to help explain your problem.
 
-**Versions
+**Versions (please complete the following information):**
 - OS (e.g. iOS):
 - EdgeDB version (e.g. `2.0`):
 - EdgeDB CLI version (e.g. `2.0`):
