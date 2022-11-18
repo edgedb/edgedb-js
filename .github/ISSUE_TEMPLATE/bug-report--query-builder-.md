@@ -31,6 +31,8 @@ Copy/paste the error, or drag/drop a screenshot displaying the error message. If
 
 
 **Versions (please complete the following information):**
- - OS: [e.g. macOS Ventura]
- - EdgeDB version [e.g. 2.0]
- - `edgedb-js` version [e.g. `0.20.10`]
+- OS (e.g. iOS):
+- EdgeDB version (e.g. `2.0`):
+- EdgeDB CLI version (e.g. `2.0`):
+- `edgedb-js` version (e.g. `0.20.10`;):
+- Node/Deno version ():
