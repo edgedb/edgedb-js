@@ -32,7 +32,7 @@ Copy/paste the error, or drag/drop a screenshot displaying the error message. If
 **Versions (please complete the following information):**
 
 <!--
-For EdgeDB version: Run `edgedb query 'select sys::get_version_as_str()'` from your project directory or query `select sys::get_version_as_str();`
+For EdgeDB Version: run `edgedb query 'select sys::get_version_as_str()'` from your project directory (or run `select sys::get_version_as_str();` in the EdgeDB interactive shell).
 For EdgeDB CLI version: Run `edgedb --version` from anywhere
 For `edgedb-js` version: Run `npm list edgedb --depth=0` from your project directory
 For Node/Deno version: Run `node --version` or `deno --version`
