@@ -130,15 +130,18 @@ test("backlinks", () => {
 });
 
 test("select *", () => {
-  const movieStar = e.Movie["*"];
-
-  expect(movieStar).toEqual({
+  const movieStarShape = {
     id: true,
     title: true,
     genre: true,
     rating: true,
     release_year: true
-  });
+  };
+
+  // on root object
+  const movieStar = e.Movie["*"];
+
+  expect(movieStar).toEqual(movieStarShape);
   tc.assert<
     tc.IsExact<
       typeof movieStar,
@@ -151,4 +154,33 @@ test("select *", () => {
       }
     >
   >(true);
+
+  // on select scope
+  e.select(e.Movie, movie => {
+    expect(movie["*"]).toEqual(movieStarShape);
+
+    return {};
+  });
+
+  // on wrapped select scope
+  e.select(
+    e.select(e.Movie, () => ({})),
+    movie => {
+      expect(movie["*"]).toEqual(movieStarShape);
+
+      return {};
+    }
+  );
+
+  // on polymorphic select scope
+  e.select(e.Person.is(e.Hero), hero => {
+    expect(hero["*"]).toEqual({
+      id: true,
+      name: true,
+      secret_identity: true,
+      number_of_movies: true
+    });
+
+    return {};
+  });
 });
