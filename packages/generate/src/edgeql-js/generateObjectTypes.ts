@@ -442,7 +442,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
         ...Object.keys(ex).map(key => {
           const target = types.get(ex[key].target_id);
           const {staticType} = getStringRepresentation(target, {types});
-          const card = `$.Cardinality.${ex[key].card}`;
+          const card = `$.Cardinality.One | $.Cardinality.AtMostOne `;
           return t`${key}: {__element__: ${staticType}, __cardinality__: ${card}},`;
         }),
         t`},`
