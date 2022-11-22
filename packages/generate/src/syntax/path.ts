@@ -240,6 +240,16 @@ function PathLeaf<
   }) as any;
 }
 
+function getStarShapeFromPointers(pointers: ObjectTypePointers) {
+  const shape: any = {};
+  for (const [key, ptr] of Object.entries(pointers)) {
+    if (ptr.__kind__ === "property") {
+      shape[key] = true;
+    }
+  }
+  return shape;
+}
+
 function PathNode<
   Root extends ObjectTypeSet,
   Parent extends PathParent | null
@@ -259,15 +269,9 @@ function PathNode<
     __scopeRoot__: scopeRoot
   };
 
-  const shape: any = {};
-  Object.entries(obj.__element__.__pointers__).map(([key, ptr]) => {
-    if (ptr.__kind__ === "property") {
-      shape[key] = true;
-    }
-  });
   Object.defineProperty(obj, "*", {
     writable: false,
-    value: shape
+    value: getStarShapeFromPointers(obj.__element__.__pointers__)
   });
   return $expressionify(obj) as any;
 }
@@ -451,7 +455,13 @@ export function $getScopedExpr<T extends ExpressionRoot>(
             ...expr,
             __cardinality__: Cardinality.One,
             __scopedFrom__: expr,
-            "*": (expr as any)["*"]
+            ...(expr.__element__.__kind__ === TypeKind.object
+              ? {
+                  "*": getStarShapeFromPointers(
+                    (expr.__element__ as ObjectType).__pointers__
+                  )
+                }
+              : {})
           });
     scopeRoots.add(scopedExpr);
     const uncached = !scopedExpr;
