@@ -777,15 +777,18 @@ export class DirBuilder {
       try {
         oldContents = await readFileUtf8(filePath);
       } catch {}
-      const newContents = builder.render({
-        mode: params.mode,
-        moduleKind: params.moduleKind,
-        moduleExtension: params.moduleExtension,
-        forceDefaultExport
-      });
+
+      const newContents =
+        headerComment +
+        builder.render({
+          mode: params.mode,
+          moduleKind: params.moduleKind,
+          moduleExtension: params.moduleExtension,
+          forceDefaultExport
+        });
       params.written.add(filePath);
       if (oldContents !== newContents) {
-        await fs.writeFile(filePath, headerComment + newContents);
+        await fs.writeFile(filePath, newContents);
       }
     }
   }

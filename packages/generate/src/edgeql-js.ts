@@ -192,12 +192,15 @@ export async function generateQueryBuilder(params: {
   for (const f of syntaxFiles) {
     const outputPath = path.join(syntaxOutDir, f.path);
     written.add(outputPath);
+
     let oldContents = "";
     try {
       oldContents = await readFileUtf8(outputPath);
     } catch {}
-    if (oldContents !== f.content) {
-      await fs.writeFile(outputPath, headerComment + f.content);
+
+    const newContents = headerComment + f.content;
+    if (oldContents !== newContents) {
+      await fs.writeFile(outputPath, newContents);
     }
   }
 
