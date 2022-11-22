@@ -74,3 +74,7 @@ export function readPasswordFromStdin() {
     adapter.process.stdin.on("end", () => resolve(data.trimEnd()));
   });
 }
+
+export function getPackageVersion(): string {
+  return "__@edgedb/generate__VERSION_PLACEHOLDER__";
+}
