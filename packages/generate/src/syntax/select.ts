@@ -102,8 +102,12 @@ export type exclusivesToFilterSingle<E extends ExclusiveTuple> =
     ? never
     : {
         [j in keyof E]: {
-          [k in keyof E[j]]: orLiteralValue<E[j][k]>;
-          // asdf: T["__exclusives__"][0].asdf
+          [k in keyof E[j]]: E[j][k] extends ObjectTypeSet
+            ? TypeSet<
+                anonymizeObject<E[j][k]["__element__"]>,
+                E[j][k]["__cardinality__"]
+              >
+            : orLiteralValue<E[j][k]>;
         };
       }[number];
 export type SelectModifiers<T extends ObjectType = ObjectType> = {
