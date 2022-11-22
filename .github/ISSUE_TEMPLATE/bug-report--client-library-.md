@@ -28,7 +28,7 @@ For `edgedb-js` version: Run `npm list edgedb --depth=0` from your project direc
 For Node/Deno version: Run `node --version` or `deno --version`
 -->
 
-- OS (e.g. iOS):
+- OS:
 - EdgeDB version (e.g. `2.0`):
 - EdgeDB CLI version (e.g. `2.0`):
 - `edgedb-js` version (e.g. `0.20.10`;):
