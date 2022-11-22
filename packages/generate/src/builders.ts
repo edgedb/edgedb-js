@@ -752,7 +752,8 @@ export class DirBuilder {
       fileExtension: string;
       moduleExtension: string;
       written: Set<string>;
-    }
+    },
+    headerComment: string = ""
   ): Promise<void> {
     const dir = path.normalize(to);
 
@@ -784,7 +785,7 @@ export class DirBuilder {
       });
       params.written.add(filePath);
       if (oldContents !== newContents) {
-        await fs.writeFile(filePath, newContents);
+        await fs.writeFile(filePath, headerComment + newContents);
       }
     }
   }
