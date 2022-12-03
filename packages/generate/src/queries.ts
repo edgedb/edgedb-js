@@ -208,10 +208,10 @@ function generateFiles(params: {
   for (const i of params.types.imports) {
     imports[i] = true;
   }
-  const tsImports = {Client: true, ...imports};
+  const tsImports = {Executor: true, ...imports};
 
   const hasArgs = params.types.args && params.types.args !== "null";
-  const tsImpl = `async function ${functionName}(client: Client${
+  const tsImpl = `async function ${functionName}(client: Executor${
     hasArgs ? `, args: ${params.types.args}` : ""
   }): Promise<${params.types.result}> {
   return client.${method}(\`${params.types.query
@@ -227,7 +227,7 @@ function generateFiles(params: {
   });
 }`;
 
-  const dtsImpl = `function ${functionName}(client: Client${
+  const dtsImpl = `function ${functionName}(client: Executor${
     hasArgs ? `, args: ${params.types.args}` : ""
   }): Promise<${params.types.result}>;`;
 
