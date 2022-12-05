@@ -291,10 +291,15 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     // switch to more robust solution after splitting
     // @edgedb/generate into separate package
 
-    if (denoJsonExists) {
+    // @ts-ignore
+    const isDenoRuntime = typeof Deno !== "undefined";
+
+    if (isDenoRuntime || denoJsonExists) {
       options.target = "deno";
       console.log(
-        `Detected deno.json, generating TypeScript files with Deno-style imports.`
+        `Detected ${
+          isDenoRuntime ? "Deno runtime" : "deno.json"
+        }, generating TypeScript files with Deno-style imports.`
       );
     } else if (tsConfigExists) {
       const tsConfig = tsConfigExists
