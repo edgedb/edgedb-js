@@ -753,7 +753,7 @@ export type getPrimitiveBaseType<T extends BaseType> = T extends ScalarType
   : T;
 
 export type getPrimitiveNonArrayBaseType<T extends BaseType> =
-  T extends NonArrayType ? getPrimitiveBaseType<T> : never;
+  T extends ArrayType ? never : getPrimitiveBaseType<T>;
 
 export function isScalarType(type: BaseType): type is ScalarType {
   return type.__kind__ === TypeKind.scalar;
