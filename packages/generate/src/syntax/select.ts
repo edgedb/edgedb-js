@@ -549,10 +549,18 @@ export function $handleModifiers(
     let expr: LimitExpression;
     if (typeof modifiers.limit === "number") {
       expr = $getTypeByName("std::number")(modifiers.limit) as any;
-    } else if ((modifiers.limit as any).__kind__ === ExpressionKind.Set) {
-      expr = (modifiers.limit as any).__exprs__[0];
     } else {
-      throw new Error("Invalid value for `limit` modifier");
+      const type =
+        (modifiers.limit.__element__ as any).__casttype__ ??
+        modifiers.limit.__element__;
+      if (
+        type.__kind__ === TypeKind.scalar &&
+        type.__name__ === "std::number"
+      ) {
+        expr = modifiers.limit;
+      } else {
+        throw new Error("Invalid value for `limit` modifier");
+      }
     }
     mods.limit = expr;
     card = cardutil.overrideLowerBound(card, "Zero");
