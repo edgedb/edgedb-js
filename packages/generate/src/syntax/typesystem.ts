@@ -172,11 +172,14 @@ export type ExpressionMethods<Set extends TypeSet> = {
       T["__element__"]["__name__"],
       T["__element__"]["__pointers__"],
       { id: true },
-      T["__element__"]["__exclusives__"]
+      T["__element__"]["__exclusives__"],
+      T["__element__"]["__polyTypenames__"]
     >
   >;
   assert_single(): assert_single<
-    Set["__element__"],
+    ObjectType extends Set["__element__"]
+      ? ObjectType<string, ObjectTypePointers, null>
+      : Set["__element__"],
     Cardinality.AtMostOne
     // cardutil.overrideUpperBound<Set["__cardinality__"], "One">
   >;
@@ -210,13 +213,14 @@ export interface ObjectType<
   Pointers extends ObjectTypePointers = ObjectTypePointers,
   Shape extends object | null = any,
   Exclusives extends ExclusiveTuple = ExclusiveTuple,
-  // Polys extends Poly[] = any[]
+  PolyTypenames extends string = string,
 > extends BaseType {
   __kind__: TypeKind.object;
   __name__: Name;
   __pointers__: Pointers;
   __shape__: Shape;
   __exclusives__: Exclusives;
+  __polyTypenames__: PolyTypenames;
 }
 
 export type PropertyTypes =
@@ -313,9 +317,11 @@ export type stripNonInsertables<T extends ObjectTypePointers> = {
       : T[k];
 };
 
-type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
+type shapeElementToTs<
+  Pointer extends PropertyDesc | LinkDesc,
   Element,
-] extends [true]
+  ParentTypeName extends string | null = null,
+> = [Element] extends [true]
   ? pointerToTsType<Pointer>
   : [Element] extends [false]
     ? never
@@ -326,9 +332,17 @@ type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
         : Pointer extends LinkDesc
           ? Element extends object
             ? computeTsTypeCard<
-                computeObjectShape<
-                  Pointer["target"]["__pointers__"] & Pointer["properties"],
-                  Element
+                typeutil.flatten<
+                  ([ParentTypeName] extends [string]
+                    ? Element extends { name: true }
+                      ? { name: ParentTypeName }
+                      : {}
+                    : {}) &
+                    computeObjectShape<
+                      Pointer["target"]["__pointers__"] & Pointer["properties"],
+                      Element,
+                      Pointer["target"]["__polyTypenames__"]
+                    >
                 >,
                 Pointer["cardinality"]
               >
@@ -360,33 +374,66 @@ export type $expr_PolyShapeElement<
 export type computeObjectShape<
   Pointers extends ObjectTypePointers,
   Shape,
-> = typeutil.flatten<
-  keyof Shape extends never
-    ? { id: string }
-    : typeutil.stripNever<{
-        [k in keyof Shape]: Shape[k] extends $expr_PolyShapeElement<
+  TypeName extends string,
+> = keyof Shape extends never
+  ? { id: string }
+  : typeutil.flatten<{
+      [k in keyof Shape as Shape[k] extends $expr_PolyShapeElement
+        ? never
+        : k]: [k] extends [keyof Pointers]
+        ? shapeElementToTs<
+            Pointers[k],
+            Shape[k],
+            k extends "__type__" ? TypeName : null
+          >
+        : Shape[k] extends TypeSet
+          ? setToTsType<Shape[k]>
+          : never;
+    }> &
+      ({
+        [k in keyof Shape as Shape[k] extends $expr_PolyShapeElement
+          ? k
+          : never]: Shape[k];
+      } extends infer PolyEls
+        ? keyof PolyEls extends never
+          ? {}
+          : getPolyElTypes<PolyEls[keyof PolyEls]> extends infer PolyTypeName
+            ?
+                | (Exclude<TypeName, PolyTypeName> extends never
+                    ? never
+                    : {
+                        __typename: Exclude<TypeName, PolyTypeName>;
+                      })
+                | computePolyElShape<PolyEls, PolyTypeName>
+            : never
+        : never);
+
+type computePolyElShape<PolyEls, PolyTypeName> = typeutil.flatten<
+  PolyTypeName extends string
+    ? { __typename: PolyTypeName } & {
+        [k in keyof PolyEls as PolyEls[k] extends $expr_PolyShapeElement
+          ? PolyTypeName extends PolyEls[k]["__polyType__"]["__element__"]["__polyTypenames__"]
+            ? k
+            : never
+          : never]: PolyEls[k] extends $expr_PolyShapeElement<
           infer PolyType,
           infer ShapeEl
         >
           ? [k] extends [keyof PolyType["__element__"]["__pointers__"]]
             ? shapeElementToTs<
                 PolyType["__element__"]["__pointers__"][k],
-                ShapeEl
-              > | null
+                ShapeEl,
+                k extends "__type__" ? PolyTypeName : null
+              >
             : never
-          : Shape[k] extends TypeSet
-            ? [k] extends [keyof Pointers]
-              ? Shape[k]["__cardinality__"] extends cardutil.assignable<
-                  Pointers[k]["cardinality"]
-                >
-                ? setToTsType<Shape[k]>
-                : never
-              : setToTsType<Shape[k]>
-            : [k] extends [keyof Pointers]
-              ? shapeElementToTs<Pointers[k], Shape[k]>
-              : never;
-      }>
+          : never;
+      }
+    : never
 >;
+
+type getPolyElTypes<El> = El extends $expr_PolyShapeElement
+  ? El["__polyType__"]["__element__"]["__polyTypenames__"]
+  : never;
 
 export type PrimitiveType =
   | ScalarType
@@ -723,7 +770,11 @@ export type BaseTypeToTsType<
               : Type extends NamedTupleType
                 ? NamedTupleTypeToTsType<Type, isParam>
                 : Type extends ObjectType
-                  ? computeObjectShape<Type["__pointers__"], Type["__shape__"]>
+                  ? computeObjectShape<
+                      Type["__pointers__"],
+                      Type["__shape__"],
+                      Type["__polyTypenames__"]
+                    >
                   : never;
 
 export type setToTsType<Set> =

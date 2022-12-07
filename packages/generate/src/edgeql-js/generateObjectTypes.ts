@@ -175,6 +175,18 @@ export const getStringRepresentation: (
 export const generateObjectTypes = (params: GeneratorParams) => {
   const { dir, types } = params;
 
+  const descendents = new Map<string, Set<string>>();
+  for (const type of types.values()) {
+    if (type.kind === "object" && !type.is_abstract) {
+      for (const base of type.bases) {
+        if (!descendents.has(base.id)) {
+          descendents.set(base.id, new Set());
+        }
+        descendents.get(base.id)!.add(type.name);
+      }
+    }
+  }
+
   for (const type of types.values()) {
     if (type.kind !== "object") {
       continue;
@@ -336,7 +348,16 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       ]);
     }
 
-    body.writeln([t`]>;`]);
+    body.writeln([
+      t`], ${
+        [
+          ...(!type.is_abstract ? [type.name] : []),
+          ...(descendents.get(type.id)?.values() ?? []),
+        ]
+          .map((typename) => quote(typename))
+          .join(" | ") || "never"
+      }>;`,
+    ]);
 
     if (type.name === "std::Object") {
       body.writeln([t`export `, dts`declare `, t`type $Object = ${ref}`]);
