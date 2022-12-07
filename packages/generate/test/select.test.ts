@@ -162,12 +162,12 @@ test("deep shape", () => {
       {
         id: string;
         __type__: {
-          name: string;
+          name: "default::Hero";
           __type__: {
             id: string;
             __type__: {
               id: string;
-              name: string;
+              name: "schema::ObjectType";
             };
           };
         };
@@ -228,11 +228,18 @@ test("polymorphism", () => {
       {
         id: string;
         name: string;
-        nemesis: {
-          name: string;
-        } | null;
-        secret_identity: string | null;
-      }
+      } & (
+        | {
+            __typename: "default::Hero";
+            secret_identity: string | null;
+          }
+        | {
+            __typename: "default::Villain";
+            nemesis: {
+              name: string;
+            } | null;
+          }
+      )
     >
   >(true);
 });
@@ -275,12 +282,16 @@ test("computables in polymorphics", () => {
   tc.assert<
     tc.IsExact<
       q,
-      {
+      ({
         id: string;
-        secret_identity: string | null;
-        nemesis: {id: string; computable: 1234} | null;
-        computable: never;
-      }[]
+      } & (
+        | {__typename: "default::Hero"; secret_identity: string | null}
+        | {
+            __typename: "default::Villain";
+            nemesis: {id: string; computable: 1234} | null;
+            computable: never;
+          }
+      ))[]
     >
   >(true);
 });
@@ -298,11 +309,17 @@ test("parent type props in polymorphic", () => {
   tc.assert<
     tc.IsExact<
       $infer<typeof q>,
-      {
-        name: string | null;
-        secret_identity: string | null;
-        nemesis: {name: string} | null;
-      }[]
+      (
+        | {
+            __typename: "default::Hero";
+            name: string;
+            secret_identity: string | null;
+          }
+        | {
+            __typename: "default::Villain";
+            nemesis: {name: string} | null;
+          }
+      )[]
     >
   >(true);
 });
@@ -316,11 +333,15 @@ test("* in polymorphic", async () => {
   tc.assert<
     tc.IsExact<
       $infer<typeof q>,
-      {
-        name: string | null;
-        number_of_movies: number | null;
-        secret_identity: string | null;
-      }[]
+      (
+        | {__typename: "default::Villain"}
+        | {
+            __typename: "default::Hero";
+            name: string;
+            number_of_movies: number | null;
+            secret_identity: string | null;
+          }
+      )[]
     >
   >(true);
 
@@ -769,18 +790,30 @@ test("polymorphic link properties in expressions", async () => {
   tc.assert<
     tc.IsExact<
       typeof result,
-      {
+      ({
         id: string;
-        title: string | null;
-        characters:
-          | {
-              name: string;
-              "@character_name": string | null;
-              char_name: string | null;
-              person_name: string;
-            }[]
-          | null;
-      }[]
+      } & (
+        | {
+            __typename:
+              | "default::A"
+              | "default::User"
+              | "default::MovieShape"
+              | "default::Profile"
+              | "default::S p a M"
+              | "default::Łukasz";
+          }
+        | {
+            __typename: "default::Movie";
+            title: string;
+            characters:
+              | {
+                  name: string;
+                  "@character_name": string | null;
+                  char_name: string | null;
+                  person_name: string;
+                }[];
+          }
+      ))[]
     >
   >(true);
 });
@@ -1004,7 +1037,8 @@ SELECT __scope_0_defaultPerson {
         }
       )
     }
-  )
+  ),
+  __typename := .__type__.name
 }`);
 
   const res = await query.run(client);
@@ -1012,15 +1046,18 @@ SELECT __scope_0_defaultPerson {
   tc.assert<
     tc.IsExact<
       typeof res,
-      {
+      ({
         id: string;
         name: string;
-        nemesis: {
-          id: string;
-        } | null;
-        secret_identity: string | null;
-        villains:
-          | {
+      } & (
+        | {
+            __typename: "default::Villain";
+            nemesis: {id: string} | null;
+          }
+        | {
+            __typename: "default::Hero";
+            secret_identity: string | null;
+            villains: {
               id: string;
               name: string;
               nemesis: {
@@ -1028,9 +1065,9 @@ SELECT __scope_0_defaultPerson {
                 nameLen: number;
                 nameLen2: number;
               } | null;
-            }[]
-          | null;
-      }[]
+            }[];
+          }
+      ))[]
     >
   >(true);
 });
@@ -1051,10 +1088,12 @@ test("polymorphic field in nested shape", async () => {
     title: data.the_avengers.title,
     characters: [
       {
+        __typename: "default::Hero",
         name: data.cap.name,
         secret_identity: data.cap.secret_identity
       },
       {
+        __typename: "default::Hero",
         name: data.iron_man.name,
         secret_identity: data.iron_man.secret_identity
       }
@@ -1066,10 +1105,15 @@ test("polymorphic field in nested shape", async () => {
       typeof result,
       {
         title: string;
-        characters: {
+        characters: ({
           name: string;
-          secret_identity: string | null;
-        }[];
+        } & (
+          | {__typename: "default::Villain"}
+          | {
+              __typename: "default::Hero";
+              secret_identity: string | null;
+            }
+        ))[];
       } | null
     >
   >(true);

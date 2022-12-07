@@ -28,7 +28,8 @@ import type {
   ObjectTypeSet,
   PropertyDesc,
   PropertyShape,
-  TypeSet
+  TypeSet,
+  ScalarType
 } from "./typesystem";
 // import {typeutil} from "./typeutil";
 // import {cardutil} from "./cardinality";
@@ -39,7 +40,11 @@ type getChildOfObjectTypeSet<
   Root extends ObjectTypeSet,
   ChildKey extends keyof Root["__element__"]["__pointers__"]
 > = TypeSet<
-  Root["__element__"]["__pointers__"][ChildKey]["target"],
+  ChildKey extends "name"
+    ? Root extends {__typename__: string}
+      ? ScalarType<"std::str", string, Root["__typename__"]>
+      : Root["__element__"]["__pointers__"][ChildKey]["target"]
+    : Root["__element__"]["__pointers__"][ChildKey]["target"],
   cardutil.multiplyCardinalities<
     Root["__cardinality__"],
     Root["__element__"]["__pointers__"][ChildKey]["cardinality"]
@@ -93,14 +98,15 @@ export type pathifyPointers<
         ? $expr_PathLeaf<
             getChildOfObjectTypeSet<Root, k>,
             {type: anonymizeObjectTypeSet<Root>; linkName: k}
-            // Root["__element__"]["__pointers__"][k]["exclusive"]
           >
         : Root["__element__"]["__pointers__"][k] extends LinkDesc
         ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
           ? $expr_PathNode<
               getChildOfObjectTypeSet<Root, k>,
-              {type: anonymizeObjectTypeSet<Root>; linkName: k}
-              // Root["__element__"]["__pointers__"][k]["exclusive"]
+              {type: anonymizeObjectTypeSet<Root>; linkName: k},
+              k extends "__type__"
+                ? Root["__element__"]["__polyTypenames__"]
+                : null
             >
           : unknown
         : unknown;
@@ -181,13 +187,15 @@ export type getPropsShape<T extends ObjectType> = typeutil.flatten<
 
 export type $expr_PathNode<
   Root extends ObjectTypeSet = ObjectTypeSet,
-  Parent extends PathParent | null = PathParent | null
+  Parent extends PathParent | null = PathParent | null,
+  TypeName extends string | null = null
   // Exclusive extends boolean = boolean
 > = Expression<{
   __element__: Root["__element__"];
   __cardinality__: Root["__cardinality__"];
   __parent__: Parent;
   __kind__: ExpressionKind.PathNode;
+  __typename__: TypeName;
   // __exclusive__: boolean;
   "*": getPropsShape<Root["__element__"]>;
 }>;

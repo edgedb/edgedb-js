@@ -180,11 +180,15 @@ export type ExpressionMethods<Set extends TypeSet> = {
     ObjectType<
       T["__element__"]["__name__"],
       T["__element__"]["__pointers__"],
-      {id: true}
+      {id: true},
+      T["__element__"]["__exclusives__"],
+      T["__element__"]["__polyTypenames__"]
     >
   >;
   assert_single(): assert_single<
-    Set["__element__"],
+    ObjectType extends Set["__element__"]
+      ? ObjectType<string, ObjectTypePointers, null>
+      : Set["__element__"],
     Cardinality.AtMostOne
     // cardutil.overrideUpperBound<Set["__cardinality__"], "One">
   >;
@@ -217,14 +221,15 @@ export interface ObjectType<
   Name extends string = string,
   Pointers extends ObjectTypePointers = ObjectTypePointers,
   Shape extends object | null = any,
-  Exclusives extends ExclusiveTuple = ExclusiveTuple
-  // Polys extends Poly[] = any[]
+  Exclusives extends ExclusiveTuple = ExclusiveTuple,
+  PolyTypenames extends string = string
 > extends BaseType {
   __kind__: TypeKind.object;
   __name__: Name;
   __pointers__: Pointers;
   __shape__: Shape;
   __exclusives__: Exclusives;
+  __polyTypenames__: PolyTypenames;
 }
 
 export type PropertyTypes =
@@ -320,9 +325,11 @@ export type stripNonInsertables<T extends ObjectTypePointers> = {
     : T[k];
 };
 
-type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
-  Element
-] extends [true]
+type shapeElementToTs<
+  Pointer extends PropertyDesc | LinkDesc,
+  Element,
+  ParentTypeName extends string | null = null
+> = [Element] extends [true]
   ? pointerToTsType<Pointer>
   : [Element] extends [false]
   ? never
@@ -333,9 +340,17 @@ type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
   : Pointer extends LinkDesc
   ? Element extends object
     ? computeTsTypeCard<
-        computeObjectShape<
-          Pointer["target"]["__pointers__"] & Pointer["properties"],
-          Element
+        typeutil.flatten<
+          ([ParentTypeName] extends [string]
+            ? Element extends {name: true}
+              ? {name: ParentTypeName}
+              : {}
+            : {}) &
+            computeObjectShape<
+              Pointer["target"]["__pointers__"] & Pointer["properties"],
+              Element,
+              Pointer["target"]["__polyTypenames__"]
+            >
         >,
         Pointer["cardinality"]
       >
@@ -366,28 +381,67 @@ export type $expr_PolyShapeElement<
 
 export type computeObjectShape<
   Pointers extends ObjectTypePointers,
-  Shape
-> = typeutil.flatten<
-  keyof Shape extends never
-    ? {id: string}
-    : {
-        [k in keyof Shape]: Shape[k] extends $expr_PolyShapeElement<
-          infer PolyType,
-          infer ShapeEl
-        >
-          ? [k] extends [keyof PolyType["__element__"]["__pointers__"]]
-            ? shapeElementToTs<
-                PolyType["__element__"]["__pointers__"][k],
-                ShapeEl
-              > | null
-            : never
-          : [k] extends [keyof Pointers]
-          ? shapeElementToTs<Pointers[k], Shape[k]>
-          : Shape[k] extends TypeSet
-          ? setToTsType<Shape[k]>
-          : never;
-      }
->;
+  Shape,
+  TypeName extends string
+> = keyof Shape extends never
+  ? {id: string}
+  : typeutil.flatten<{
+      [k in keyof Shape as Shape[k] extends $expr_PolyShapeElement
+        ? never
+        : k]: [k] extends [keyof Pointers]
+        ? shapeElementToTs<
+            Pointers[k],
+            Shape[k],
+            k extends "__type__" ? TypeName : null
+          >
+        : Shape[k] extends TypeSet
+        ? setToTsType<Shape[k]>
+        : never;
+    }> &
+      ({
+        [k in keyof Shape as Shape[k] extends $expr_PolyShapeElement
+          ? k
+          : never]: Shape[k];
+      } extends infer PolyEls
+        ? keyof PolyEls extends never
+          ? {}
+          : getPolyElTypes<PolyEls[keyof PolyEls]> extends infer PolyTypeName
+          ?
+              | (Exclude<TypeName, PolyTypeName> extends never
+                  ? never
+                  : {
+                      __typename: Exclude<TypeName, PolyTypeName>;
+                    })
+              | typeutil.flatten<
+                  PolyTypeName extends string
+                    ? {__typename: PolyTypeName} & {
+                        [k in keyof PolyEls as PolyEls[k] extends $expr_PolyShapeElement
+                          ? PolyTypeName extends PolyEls[k]["__polyType__"]["__element__"]["__polyTypenames__"]
+                            ? k
+                            : never
+                          : never]: PolyEls[k] extends $expr_PolyShapeElement<
+                          infer PolyType,
+                          infer ShapeEl
+                        >
+                          ? [k] extends [
+                              keyof PolyType["__element__"]["__pointers__"]
+                            ]
+                            ? shapeElementToTs<
+                                PolyType["__element__"]["__pointers__"][k],
+                                ShapeEl,
+                                k extends "__type__" ? PolyTypeName : null
+                              >
+                            : never
+                          : never;
+                      }
+                    : never
+                >
+          : never
+        : never);
+
+type getPolyElTypes<El> = El extends $expr_PolyShapeElement
+  ? El["__polyType__"]["__element__"]["__polyTypenames__"]
+  : never;
 
 export type pointerToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
   El extends PropertyDesc
@@ -693,10 +747,14 @@ export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
   : Type extends NamedTupleType
   ? typeutil.flatten<NamedTupleTypeToTsType<Type>>
   : Type extends ObjectType
-  ? typeutil.flatten<
-      computeObjectShape<Type["__pointers__"], Type["__shape__"]>
+  ? //typeutil.flatten<
+    computeObjectShape<
+      Type["__pointers__"],
+      Type["__shape__"],
+      Type["__polyTypenames__"]
     >
-  : never;
+  : //>
+    never;
 
 export type setToTsType<Set extends TypeSet> = computeTsType<
   Set["__element__"],
@@ -753,7 +811,7 @@ export type getPrimitiveBaseType<T extends BaseType> = T extends ScalarType
   : T;
 
 export type getPrimitiveNonArrayBaseType<T extends BaseType> =
-  T extends NonArrayType ? getPrimitiveBaseType<T> : never;
+  T extends ArrayType ? never : getPrimitiveBaseType<T>;
 
 export function isScalarType(type: BaseType): type is ScalarType {
   return type.__kind__ === TypeKind.scalar;
