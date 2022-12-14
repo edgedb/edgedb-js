@@ -1,6 +1,6 @@
 {
   "name": "@edgedb/generate",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "EdgeDB code generators for TS/JavaScript",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
