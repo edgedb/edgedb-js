@@ -3,7 +3,6 @@ import {
   getRef,
   frag,
   joinFrags,
-  toIdent,
   quote,
   toTSScalarType,
   scalarToLiteralMapping
@@ -93,7 +92,7 @@ export const generateScalars = (params: GeneratorParams) => {
         dts`declare `,
         t`type ${ref} = {\n`,
         ...type.enum_values.map(
-          val => t`  ${toIdent(val)}: $.$expr_Literal<${ref}>;\n`
+          val => t`  ${quote(val)}: $.$expr_Literal<${ref}>;\n`
         ),
         t`} & `,
         t`$.EnumType<${quote(type.name)}, [${type.enum_values
