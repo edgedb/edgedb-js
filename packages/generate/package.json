@@ -26,7 +26,7 @@
     "esbuild": "^0.15.7",
     "globby": "^13.1.2",
     "superjson": "^1.7.5",
-    "typescript": "~4.8",
+    "typescript": "^4.9",
     "jest": "*",
     "ts-jest": "*"
   },
