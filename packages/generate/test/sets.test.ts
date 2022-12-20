@@ -198,3 +198,62 @@ test("array", async () => {
     e.set(e.array([e.int16(5)]), e.array(["asdf"]) as any)
   ).toThrow();
 });
+
+test("set from array", () => {
+  const uuids = ["abc", e.uuid("def"), "ghi"];
+
+  // @ts-expect-error
+  expect(() => e.set(...uuids)).toThrow();
+
+  const s1 = e.set(e.uuid, uuids);
+
+  tc.assert<tc.IsExact<typeof s1["__element__"]["__name__"], "std::uuid">>(
+    true
+  );
+  tc.assert<tc.IsExact<typeof s1["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
+  expect(s1["__element__"]["__name__"]).toEqual("std::uuid");
+  expect(s1["__cardinality__"]).toEqual($.Cardinality.Many);
+  expect(s1.toEdgeQL()).toEqual(
+    `{ <std::uuid>"abc", <std::uuid>"def", <std::uuid>"ghi" }`
+  );
+
+  const strs = ["abc", "def"] as const;
+  const s2 = e.set(...strs);
+  tc.assert<tc.IsExact<typeof s2["__element__"]["__name__"], "std::str">>(
+    true
+  );
+  tc.assert<
+    tc.IsExact<typeof s2["__cardinality__"], $.Cardinality.AtLeastOne>
+  >(true);
+  expect(s2["__element__"]["__name__"]).toEqual("std::str");
+  expect(s2["__cardinality__"]).toEqual($.Cardinality.AtLeastOne);
+
+  const emptyNums = [] as number[];
+  const s3 = e.set(e.int32, emptyNums);
+  tc.assert<tc.IsExact<typeof s3["__element__"]["__name__"], "std::number">>(
+    true
+  );
+  tc.assert<tc.IsExact<typeof s3["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
+  expect(s3["__element__"]["__name__"]).toEqual("std::int32");
+  expect(s3["__cardinality__"]).toEqual($.Cardinality.Many);
+  expect(s3.toEdgeQL()).toEqual(`<std::int32>{}`);
+
+  const bools = [true];
+
+  // @ts-expect-error
+  e.set(e.int32, bools);
+
+  const s4 = e.set(e.bool, bools);
+  tc.assert<tc.IsExact<typeof s4["__element__"]["__name__"], "std::bool">>(
+    true
+  );
+  tc.assert<tc.IsExact<typeof s4["__cardinality__"], $.Cardinality.Many>>(
+    true
+  );
+  expect(s4["__element__"]["__name__"]).toEqual("std::bool");
+  expect(s4["__cardinality__"]).toEqual($.Cardinality.Many);
+});
