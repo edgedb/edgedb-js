@@ -986,7 +986,7 @@ async function parseCloudInstanceNameIntoConfig(
         (stashPath &&
           (await serverUtils
             .readFileUtf8(stashPath, "cloud-profile")
-            .then(profile => profile.trim())
+            .then(name => name.trim())
             .catch(() => null))) ??
         "default";
 

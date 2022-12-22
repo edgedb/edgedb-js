@@ -1,5 +1,5 @@
 // Copied from python binascii.crc_hqx implementation:
-// https://github.com/python/cpython/blob/e0b4d966a8d1867c4b535b043e08288ca49b3548/Modules/binascii.c
+// https://github.com/python/cpython/blob/main/Modules/binascii.c
 
 const crctabHqx = new Uint16Array([
   0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
@@ -38,9 +38,9 @@ const crctabHqx = new Uint16Array([
 
 export function crcHqx(data: Uint8Array, crc: number): number {
   crc &= 0xffff;
-  let len = data.length;
+  const len = data.length;
 
-  var i = 0;
+  let i = 0;
   while (i < len) {
     crc = ((crc << 8) & 0xff00) ^ crctabHqx[(crc >> 8) ^ data[i++]];
   }

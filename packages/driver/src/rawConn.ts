@@ -371,7 +371,7 @@ export class RawConnection extends BaseRawConnection {
     }
 
     handshake.writeInt16(Object.keys(params).length);
-    for (var [key, value] of Object.entries(params)) {
+    for (const [key, value] of Object.entries(params)) {
       handshake.writeString(key).writeString(value);
     }
 
