@@ -362,6 +362,19 @@ export class RawConnection extends BaseRawConnection {
       .writeInt16(this.protocolVersion[0])
       .writeInt16(this.protocolVersion[1]);
 
+    const params: {[key: string]: string} = {
+      user: this.config.connectionParams.user,
+      database: this.config.connectionParams.database
+    };
+    if (this.config.connectionParams.secretKey != null) {
+      params["token"] = this.config.connectionParams.secretKey;
+    }
+
+    handshake.writeInt16(Object.keys(params).length);
+    for (var [key, value] of Object.entries(params)) {
+      handshake.writeString(key).writeString(value);
+    }
+
     handshake.writeInt16(2);
     handshake.writeString("user");
     handshake.writeString(this.config.connectionParams.user);
