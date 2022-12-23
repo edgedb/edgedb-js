@@ -375,12 +375,6 @@ export class RawConnection extends BaseRawConnection {
       handshake.writeString(key).writeString(value);
     }
 
-    handshake.writeInt16(2);
-    handshake.writeString("user");
-    handshake.writeString(this.config.connectionParams.user);
-    handshake.writeString("database");
-    handshake.writeString(this.config.connectionParams.database);
-
     // No extensions requested
     handshake.writeInt16(0);
     handshake.endMessage();
