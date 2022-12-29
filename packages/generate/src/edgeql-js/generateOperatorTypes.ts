@@ -300,23 +300,23 @@ export function generateOperators({
     if (typeof args[0] === "string" && overloadDefs.Prefix[args[0]]) {
       op = args[0];
       params = [args[1]];
-      defs = overloadDefs.Prefix[op];
+      defs = overloadDefs.Prefix[op]!;
     } else if (typeof args[1] === "string" && overloadDefs.Postfix[args[1]]) {
       op = args[1];
       params = [args[0]];
-      defs = overloadDefs.Postfix[op];
+      defs = overloadDefs.Postfix[op]!;
     }
   } else if (args.length === 3) {
     if (typeof args[1] === "string") {
       op = args[1];
       params = [args[0], args[2]];
-      defs = overloadDefs.Infix[op];
+      defs = overloadDefs.Infix[op]!;
     }
   } else if (args.length === 5) {
     if (typeof args[1] === "string" && typeof args[3] === "string") {
       op = \`\${args[1]}_\${args[3]}\`;
       params = [args[0], args[2], args[4]];
-      defs = overloadDefs.Ternary[op];
+      defs = overloadDefs.Ternary[op]!;
     }
   }
 

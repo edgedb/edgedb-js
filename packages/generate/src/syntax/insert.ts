@@ -209,7 +209,7 @@ export function $normaliseInsertShape(
         val.__element__.__kind__ === TypeKind.range &&
         val.__element__.__element__.__name__ === "std::number"
       ) {
-        newShape[key] = (literal as any)(pointer.target, val.__value__);
+        newShape[key] = (literal as any)(pointer?.target, val.__value__);
       } else {
         newShape[key] = _val;
       }
@@ -222,6 +222,10 @@ export function $normaliseInsertShape(
       throw new Error(
         `Cannot assign plain data to link property '${key}'. Provide an expression instead.`
       );
+    }
+    // Workaround to tell TypeScript pointer definitely is defined
+    if (!pointer) {
+      throw new Error('Code will never reach here, but TypeScript cannot determine',);
     }
 
     // trying to assign plain data to a link

@@ -154,8 +154,8 @@ export function array(arg: any) {
       ),
       __element__: {
         __kind__: TypeKind.array,
-        __name__: `array<${items[0].__element__.__name__}>`,
-        __element__: items[0].__element__
+        __name__: `array<${items[0]!.__element__.__name__}>`,
+        __element__: items[0]!.__element__
       } as any,
       __items__: items
     });
@@ -282,8 +282,9 @@ export function tuple(input: any) {
     const exprShape: NamedTupleLiteralShape = {};
     const typeShape: NamedTupleShape = {};
     for (const [key, val] of Object.entries(input)) {
-      exprShape[key] = literalToTypeSet(val);
-      typeShape[key] = exprShape[key].__element__;
+      const typeSet = literalToTypeSet(val)
+      exprShape[key] = typeSet;
+      typeShape[key] = typeSet.__element__;
     }
     const name = `tuple<${Object.entries(exprShape)
       .map(([key, val]) => `${key}: ${val.__element__.__name__}`)

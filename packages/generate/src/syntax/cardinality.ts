@@ -160,7 +160,7 @@ export namespace cardutil {
   >(cards: Cards): mergeCardinalitiesVariadic<Cards> {
     if (cards.length === 0) throw new Error("Empty tuple not allowed");
     if (cards.length === 1) return cards[0] as any;
-    const [first, second, ...rest] = cards;
+    const [first, second, ...rest] = cards as unknown as [Cardinality, Cardinality, ...Cardinality[]];
     if (cards.length === 2) return mergeCardinalities(first, second) as any;
     return mergeCardinalitiesVariadic([
       mergeCardinalities(first, second),

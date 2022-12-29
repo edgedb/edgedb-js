@@ -492,7 +492,7 @@ export function $handleModifiers(
         const val = fs[key].__element__
           ? fs[key]
           : (literal as any)(
-              (root.__element__ as any as ObjectType)["__pointers__"][key][
+              (root.__element__ as any as ObjectType)["__pointers__"][key]![
                 "target"
               ],
               fs[key]

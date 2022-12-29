@@ -187,7 +187,7 @@ function _tryOverload(
   let needsAnytypeReplacement = false;
 
   for (let i = 0; i < funcDef.args.length; i++) {
-    const argDef = funcDef.args[i];
+    const argDef = funcDef.args[i]!;
     const arg = args[i];
 
     if (arg === undefined) {
@@ -256,28 +256,28 @@ function _tryOverload(
   if (funcName === "if_else") {
     cardinality = cardutil.multiplyCardinalities(
       cardutil.orCardinalities(
-        positionalArgs[0].__cardinality__,
-        positionalArgs[2].__cardinality__
+        positionalArgs[0]!.__cardinality__,
+        positionalArgs[2]!.__cardinality__
       ),
-      positionalArgs[1].__cardinality__
+      positionalArgs[1]!.__cardinality__
     );
   } else if (funcName === "std::assert_exists") {
     cardinality = cardutil.overrideLowerBound(
-      positionalArgs[0].__cardinality__,
+      positionalArgs[0]!.__cardinality__,
       "One"
     );
   } else if (funcName === "union") {
     cardinality = cardutil.mergeCardinalities(
-      positionalArgs[0].__cardinality__,
-      positionalArgs[1].__cardinality__
+      positionalArgs[0]!.__cardinality__,
+      positionalArgs[1]!.__cardinality__
     );
   } else if (funcName === "??") {
     cardinality = cardutil.orCardinalities(
-      positionalArgs[0].__cardinality__,
-      positionalArgs[1].__cardinality__
+      positionalArgs[0]!.__cardinality__,
+      positionalArgs[1]!.__cardinality__
     );
   } else if (funcName === "distinct") {
-    cardinality = positionalArgs[0].__cardinality__;
+    cardinality = positionalArgs[0]!.__cardinality__;
   } else {
     cardinality =
       funcDef.returnTypemod === "SetOfType"
@@ -337,7 +337,7 @@ function getDescendantNames(typeSpec: introspect.Types, typeId: string) {
         .flatMap(type =>
           type.is_abstract
             ? getDescendantNames(typeSpec, type.id)
-            : [nameRemapping[type.name], type.name]
+            : [nameRemapping[type.name]!, type.name]
         )
     )
   ];
@@ -403,7 +403,7 @@ function compareType(
     // shape comparison
     for (const ptr of type.pointers) {
       if (objectArg.__pointers__[ptr.name]) {
-        const argPtr = objectArg.__pointers__[ptr.name];
+        const argPtr = objectArg.__pointers__[ptr.name]!;
         const ptrTarget = typeSpec.get(ptr.target_id);
         if (
           ptrTarget.name !== argPtr.target.__name__ ||
@@ -431,13 +431,13 @@ function compareType(
       if (keys.length === type.tuple_elements.length) {
         let anytype: BaseType | undefined;
         for (let i = 0; i < keys.length; i++) {
-          if (keys[i] !== type.tuple_elements[i].name) {
+          if (keys[i] !== type.tuple_elements[i]!.name) {
             return {match: false};
           }
           const {match: m, anytype: a} = compareType(
             typeSpec,
-            type.tuple_elements[i].target_id,
-            (items as any)[keys[i]]
+            type.tuple_elements[i]!.target_id,
+            (items as any)[keys[i]!]
           );
           if (!m) {
             return {match: false};
