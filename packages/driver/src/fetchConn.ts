@@ -133,6 +133,8 @@ class BaseFetchConnection extends BaseRawConnection {
       this.messageWaiter.set();
     } catch (e) {
       this.messageWaiter.setError(e);
+    } finally {
+      this.messageWaiter = null;
     }
   }
 
