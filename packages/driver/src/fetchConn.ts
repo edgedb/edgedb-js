@@ -145,7 +145,10 @@ class BaseFetchConnection extends BaseRawConnection {
     registry: CodecsRegistry
   ): BaseFetchConnection {
     const conn = new this(config, registry);
+
     conn.connected = true;
+    conn.connWaiter.set();
+
     return conn;
   }
 }
@@ -200,6 +203,7 @@ export class FetchConnection extends BaseFetchConnection {
     );
 
     conn.connected = true;
+    conn.connWaiter.set();
 
     return conn;
   }
