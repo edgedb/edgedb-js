@@ -175,7 +175,7 @@ export function makeType<T extends BaseType>(
     });
     return obj;
   } else if (type.kind === "tuple") {
-    if (type.tuple_elements[0].name === "0") {
+    if (type.tuple_elements[0]!.name === "0") {
       // unnamed tuple
       obj.__kind__ = TypeKind.tuple;
 
@@ -259,7 +259,7 @@ export function $mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
       for (const [akey, aitem] of Object.entries(a.__pointers__)) {
         if (!b.__pointers__[akey]) continue;
 
-        const bitem = b.__pointers__[akey];
+        const bitem = b.__pointers__[akey]!;
         if (aitem.cardinality !== bitem.cardinality) continue;
         // names must reflect full type
         if (aitem.target.__name__ !== bitem.target.__name__) continue;

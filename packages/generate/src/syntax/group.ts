@@ -196,7 +196,7 @@ const groupFunc: groupFunc = (expr, getter) => {
   const groupSet = tuple(modifiers.by);
 
   // only one key in object returned from makeGroupingSet
-  const key = Object.keys(groupSet)[0];
+  const key = Object.keys(groupSet)[0]!;
   const grouping = groupSet[key] as any as GroupingSet;
   const keyShape: any = {};
   const keyPointers: any = {};

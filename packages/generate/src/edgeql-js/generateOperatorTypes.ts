@@ -294,7 +294,7 @@ export function generateOperators({
       ts`: any[]`,
       r` = [];
   let defs`,
-      ts`: any[] | null`,
+      ts`: any[] | null | undefined`,
       r` = null;
   if (args.length === 2) {
     if (typeof args[0] === "string" && overloadDefs.Prefix[args[0]]) {

@@ -22,7 +22,7 @@ function jsonStringify(type: ParamType, val: any): string {
       );
     }
     return `[${val
-      .map((item, i) => jsonStringify(type.__items__[i], item))
+      .map((item, i) => jsonStringify(type.__items__[i]!, item))
       .join()}]`;
   }
   if (type.__kind__ === TypeKind.namedtuple) {
@@ -45,7 +45,7 @@ function jsonStringify(type: ParamType, val: any): string {
             ).join()}`
           );
         }
-        return `"${key}": ${jsonStringify(type.__shape__[key], item)}`;
+        return `"${key}": ${jsonStringify(type.__shape__[key]!, item)}`;
       })
       .join()}}`;
   }
