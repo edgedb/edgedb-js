@@ -172,7 +172,8 @@ const run = async () => {
           generator === Generator.Queries
         ) {
           exitWithError(
-            `--output-dir is not supported for generator "${generator}"`
+            `--output-dir is not supported for generator "${generator}"` +
+              `, consider using the --file option instead`
           );
         }
         options.out = getVal();
@@ -188,7 +189,8 @@ const run = async () => {
           }
         } else {
           exitWithError(
-            `Flag --file not supported for generator "${generator}"`
+            `Flag --file not supported for generator "${generator}"` +
+              `, consider using the --output-dir option instead`
           );
         }
 
@@ -411,7 +413,12 @@ OPTIONS:
         cjs    Generate JavaScript with CommonJS syntax
         deno   Generate TypeScript files (.ts) with Deno-style (*.ts) imports
 
-    --out <path>
+    --out, --output-dir <path>
+        Change the output directory the querybuilder files are generated into
+        (Only valid for 'edgeql-js' generator)
+    --file <path>
+        Change the output filepath of the 'queries' and 'interfaces' generators
+        When used with the 'queries' generator, also changes output to single-file mode
     --force-overwrite
         Overwrite <path> contents without confirmation
 `);
