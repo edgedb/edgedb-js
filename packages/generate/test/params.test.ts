@@ -290,3 +290,11 @@ test("v2 param types", async () => {
     >
   >(true);
 });
+
+test("non-runnable return expression", () => {
+  const reusedExpr = e.set(1, 2, 3);
+
+  const query = e.params({}, $ => e.set(reusedExpr, reusedExpr));
+
+  expect(() => query.toEdgeQL()).not.toThrow();
+});

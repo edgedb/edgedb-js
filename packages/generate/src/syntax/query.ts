@@ -3,7 +3,7 @@ import {Cardinality, ExpressionKind} from "edgedb/dist/reflection/index";
 import {jsonifyComplexParams} from "./json";
 import {select} from "./select";
 
-const runnableExpressionKinds = new Set([
+export const runnableExpressionKinds = new Set([
   ExpressionKind.Select,
   ExpressionKind.Update,
   ExpressionKind.Insert,

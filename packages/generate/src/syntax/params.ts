@@ -11,8 +11,9 @@ import type {
   TypeSet,
   BaseTypeToTsType
 } from "./typesystem";
-
 import {$expressionify} from "./path";
+import {runnableExpressionKinds} from "./query";
+import {select} from "./select";
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
   __kind__: ExpressionKind.OptionalParam;
@@ -132,7 +133,11 @@ export function params<
     }) as any;
   }
 
-  const returnExpr = expr(paramExprs as any);
+  let returnExpr = expr(paramExprs as any);
+
+  if (!runnableExpressionKinds.has((returnExpr as any).__kind__)) {
+    returnExpr = select(returnExpr) as any;
+  }
 
   return $expressionify({
     __kind__: ExpressionKind.WithParams,
