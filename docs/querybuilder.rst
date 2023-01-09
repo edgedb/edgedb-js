@@ -192,6 +192,8 @@ current timestamp (as computed by the database).
   $ npx tsx script.ts
   2022-05-10T03:11:27.205Z
 
+.. _edgedb-js-qb-transaction:
+
 In a transaction
 ^^^^^^^^^^^^^^^^
 
