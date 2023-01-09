@@ -97,7 +97,8 @@ Provide an ``on`` clause to "catch" conflicts only on a specific property/link.
   }));
 
 
-You can also provide an ``else`` expression which will be executed and returned in case of a conflict. You must specify an ``on`` clause in order to use ``else``.
+You can also provide an ``else`` expression which will be executed and returned
+in case of a conflict. You must specify an ``on`` clause in order to use ``else``.
 
 The following query simply returns the pre-existing (conflicting) object.
 
