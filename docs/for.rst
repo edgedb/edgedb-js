@@ -326,3 +326,26 @@ nested ``set`` object.
       ],
     });
 
+e.for vs JS for or .forEach
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You may be tempted to use JavaScript's ``for`` or the JavaScript array's
+``.forEach`` method to avoid having to massage your data into a set for
+consumption by ``e.for``. This approach comes at a cost of performance.
+
+If you use ``for`` or ``.forEach`` to iterate over a standard JavaScript data
+structure and run separate queries for each item in your iterable, you're doing
+just that: running separate queries for each item in your iterable. By
+iterating inside your query using ``e.for``, you're guaranteed everything will
+happen in a single query.
+
+In addition to the performance implications, a single query means that either
+everything succeeds or everything fails. You will never end up with only some
+of your data inserted. This ensures your data integrity is maintained. You
+could achieve this yourself by wrapping your batch queryies with :ref:`a
+transaction <edgedb-js-qb-transaction>`, but a single query is already atomic
+without any additional work on your part.
+
+Using ``e.for`` to run a single query is generally the best approach. When
+dealing with extremely large datasets, it may become more practical to batch
+queries and run them individually.
