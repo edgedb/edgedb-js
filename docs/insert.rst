@@ -132,7 +132,7 @@ Or you can perform an upsert operation with an ``e.update`` in the ``else``.
 Bulk inserts
 ^^^^^^^^^^^^
 
-It's common to  use for loops to perform bulk inserts. The raw data is passed
+It's common to use for loops to perform bulk inserts. The raw data is passed
 in as a ``json`` parameter, converted to a set of ``json`` objects with
 ``json_array_unpack``, then passed into a ``for`` loop for insertion.
 
