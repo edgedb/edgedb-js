@@ -41,7 +41,7 @@ in as a ``json`` parameter, converted to a set of ``json`` objects with
   });
 
 Note that any optional properties values must be explicitly set to ``null``.
-They cannot be set to ``undefined`` or ommitted; doing so will cause a runtime
+They cannot be set to ``undefined`` or omitted; doing so will cause a runtime
 error.
 
 Here's a more complex example, demonstrating how to complete a nested insert
