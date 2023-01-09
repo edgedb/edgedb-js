@@ -4,7 +4,7 @@
 For Loops
 ---------
 
-For loops let you iterate over any set of values. The
+``for`` loops let you iterate over any set of values.
 
 .. code-block:: typescript
 
@@ -17,8 +17,8 @@ For loops let you iterate over any set of values. The
 Bulk inserts
 ^^^^^^^^^^^^
 
-It's common to use for loops to perform bulk inserts. The raw data is passed
-in as a ``json`` parameter, converted to a set of ``json`` objects with
+It's common to use ``for`` loops to perform bulk inserts. The raw data is
+passed in as a ``json`` parameter, converted to a set of ``json`` objects with
 ``json_array_unpack``, then passed into a ``for`` loop for insertion.
 
 .. code-block:: typescript
