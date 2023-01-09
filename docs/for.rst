@@ -140,11 +140,13 @@ down.
               name: character.name,
               portrayed_by: character.portrayed_by,
               movies: e.assert_distinct(
-                e.for(e.array_unpack(character.movies), (movieTitle) => {
-                  return e.select(movies, () => ({
-                    filter_single: { title: movieTitle },
-                  }));
-                })
+                e.select(movies, (movie) => ({
+                  filter: e.op(
+                    movie.title,
+                    'in',
+                    e.array_unpack(character.movies)
+                  )
+                }))
               ),
             });
           })
@@ -250,12 +252,14 @@ pro-actively eliminates any conflicts we might have had among this data.
           name: character.name,
           portrayed_by: character.portrayed_by,
           movies: e.assert_distinct(
-            e.for(e.array_unpack(character.movies), (movieTitle) => {
-              return e.select(movies, () => ({
-                filter_single: { title: movieTitle },
-              }));
-            })
-          ),
+            e.select(movies, (movie) => ({
+              filter: e.op(
+                movie.title,
+                'in',
+                e.array_unpack(character.movies)
+              )
+            }))
+          )
         });
       })
     );
@@ -273,11 +277,9 @@ The rest of the query is relatively straightforward. We unpack
 over the characters. For each character, we build an ``insert`` query with
 their ``name`` and ``portrayed_by`` values.
 
-For the character's ``movies``, we again call ``array_unpack`` to get
-``character.movies`` as a set which we iterate over with ``e.for``, selecting
-each movie from the ``movies`` insert query we wrote previously by using
-``filter_single`` comparing the movie's ``title`` against the title in the
-character's ``movies`` array, which we have named ``movieTitle``.
+For the character's ``movies``, we ``select`` everything in the
+``movies`` insert query we wrote previously, filtering for those with titles
+that match values in the ``character.movies`` array.
 
 All that's left is to run the query, passing the data to the query's ``run``
 method!
