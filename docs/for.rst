@@ -121,10 +121,10 @@ down.
             "distinct",
             e.array_unpack(e.array_unpack(params.characters).movies)
           ),
-          (movie) => {
+          (movieTitle) => {
             return (
               e.insert(e.Movie, {
-                title: movie,
+                title: movieTitle,
               })
               .unlessConflict((movie) => ({
                 on: movie.title,
