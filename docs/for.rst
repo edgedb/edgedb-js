@@ -14,6 +14,8 @@ For Loops
   const result = query.run(client);
   // [2, 4, 8, 16]
 
+.. _edgedb-js-for-bulk-inserts:
+
 Bulk inserts
 ^^^^^^^^^^^^
 
@@ -284,6 +286,8 @@ that match values in the ``character.movies`` array.
 
 All that's left is to run the query, passing the data to the query's ``run``
 method!
+
+.. _edgedb-js-for-bulk-updates:
 
 Bulk updates
 ^^^^^^^^^^^^
