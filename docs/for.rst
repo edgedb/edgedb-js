@@ -200,7 +200,8 @@ this would then require us to cast all the values inside the JSON like
 
 By doing it this way — typing ``characters`` with ``e.array`` and the character
 objects as named tuples by passing an object to ``e.tuple`` — all the data in
-the array will be properly cast for us.
+the array will be properly cast for us. It will also better type check the data
+you pass to the query's ``run`` method.
 
 .. code-block:: typescript
 
