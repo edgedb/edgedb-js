@@ -132,5 +132,5 @@ Or you can perform an upsert operation with an ``e.update`` in the ``else``.
 Bulk inserts
 ^^^^^^^^^^^^
 
-You can use a :ref:`foor loop <edgedb-js-for>` to perform :ref:`bulk inserts
+You can use a :ref:`for loop <edgedb-js-for>` to perform :ref:`bulk inserts
 <edgedb-js-for-bulk-inserts>`.
