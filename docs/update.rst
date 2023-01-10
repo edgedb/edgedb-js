@@ -102,4 +102,8 @@ In the query builder this is represented with the following syntax.
     }
   }))
 
+Bulk updates
+^^^^^^^^^^^^
 
+You can use a :ref:`for loop <edgedb-js-for>` to perform :ref:`bulk updates
+<edgedb-js-for-bulk-inserts>`.
