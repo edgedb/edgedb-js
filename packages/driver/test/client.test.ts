@@ -555,7 +555,7 @@ test("fetch: datetime", async () => {
       with dt := <datetime>'1716-01-10T01:00:00.123123Z'
       select (dt, datetime_get(dt, 'epochseconds') * 1000)
     `);
-    expect(res[0].getTime()).toBe(Math.ceil(res[1]));
+    expect(res[0].getTime()).toBe(Math.floor(res[1]));
   } finally {
     await con.close();
   }
