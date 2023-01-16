@@ -166,7 +166,7 @@ test("all param types", async () => {
     float32: e.float32,
     float64: e.float64,
     bigint: e.bigint,
-    // decimal not supported by edgedb-js
+    decimal: e.decimal,
     bool: e.bool,
     json: e.json,
     str: e.str,
@@ -192,6 +192,7 @@ test("all param types", async () => {
     float32: 4,
     float64: 5,
     bigint: BigInt(6),
+    decimal: "123.4567890123456789",
     bool: true,
     json: '{"name": "test"}',
     str: "test str",
@@ -227,6 +228,7 @@ test("all param types", async () => {
         float32: number;
         float64: number;
         bigint: bigint;
+        decimal: string;
         bool: boolean;
         json: unknown;
         str: string;

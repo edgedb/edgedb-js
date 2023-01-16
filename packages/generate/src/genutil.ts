@@ -58,6 +58,7 @@ export const scalarToLiteralMapping: {
     literalKind: "typeof",
     extraTypes: ["string"]
   },
+  "std::decimal": {type: "string"},
   "std::str": {type: "string", literalKind: "typeof"},
   "std::uuid": {type: "string"},
   "std::json": {type: "unknown"},

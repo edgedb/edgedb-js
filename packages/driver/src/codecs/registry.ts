@@ -22,7 +22,6 @@ import {ICodec, uuid, ScalarCodec} from "./ifaces";
 import {NULL_CODEC, SCALAR_CODECS} from "./codecs";
 import {NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES} from "./consts";
 import {EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec} from "./tuple";
-import * as numerics from "./numerics";
 import * as numbers from "./numbers";
 import * as datecodecs from "./datetime";
 import {JSONStringCodec} from "./json";
@@ -52,13 +51,11 @@ const CTYPE_INPUT_SHAPE = 8;
 const CTYPE_RANGE = 9;
 
 export interface CustomCodecSpec {
-  decimal_string?: boolean;
   int64_bigint?: boolean;
   datetime_localDatetime?: boolean;
   json_string?: boolean;
 }
 
-const DECIMAL_TYPEID = KNOWN_TYPENAMES.get("std::decimal")!;
 const INT64_TYPEID = KNOWN_TYPENAMES.get("std::int64")!;
 const DATETIME_TYPEID = KNOWN_TYPENAMES.get("std::datetime")!;
 const JSON_TYPEID = KNOWN_TYPENAMES.get("std::json")!;
@@ -75,21 +72,11 @@ export class CodecsRegistry {
   }
 
   setCustomCodecs({
-    decimal_string,
     int64_bigint,
     datetime_localDatetime,
     json_string
   }: CustomCodecSpec = {}): void {
     // This is a private API and it will change in the future.
-
-    if (decimal_string) {
-      this.customScalarCodecs.set(
-        DECIMAL_TYPEID,
-        new numerics.DecimalStringCodec(DECIMAL_TYPEID)
-      );
-    } else {
-      this.customScalarCodecs.delete(DECIMAL_TYPEID);
-    }
 
     if (int64_bigint) {
       this.customScalarCodecs.set(
