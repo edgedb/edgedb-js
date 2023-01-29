@@ -1832,6 +1832,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
       {
         address: config.connectionParams.address,
         database: config.connectionParams.database,
+        tlsSecurity: "insecure",
         user: config.connectionParams.user,
         token: "invalid token"
       },
