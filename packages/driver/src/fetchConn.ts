@@ -34,6 +34,7 @@ import {HTTPSCRAMAuth} from "./httpScram";
 interface FetchConfig {
   address: Address | string;
   database: string;
+  tlsSecurity?: string;
   user?: string;
   token?: string;
 }
@@ -159,11 +160,15 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
   protected _buildAddr(): string {
     const config = this.config;
 
-    return `${
-      typeof config.address === "string"
-        ? config.address
-        : `http://${config.address[0]}:${config.address[1]}`
-    }/db/${config.database}`;
+    if (typeof config.address === "string") {
+      return `${config.address}/db/${config.database}`;
+    }
+
+    const { address, tlsSecurity, database } = config;
+
+    const protocol = tlsSecurity === "insecure" ? "http" : "https";
+    const baseUrl = `${protocol}://${address[0]}:${address[1]}`;
+    return `${baseUrl}/db/${database}`;
   }
 }
 
@@ -173,11 +178,15 @@ export class FetchConnection extends BaseFetchConnection {
   protected _buildAddr(): string {
     const config = this.config;
 
-    return `${
-      typeof config.address === "string"
-        ? config.address
-        : `http://${config.address[0]}:${config.address[1]}`
-    }/db/${config.database}`;
+    if (typeof config.address === "string") {
+      return `${config.address}/db/${config.database}`;
+    }
+
+    const {address, tlsSecurity, database} = config;
+
+    const protocol = tlsSecurity === "insecure" ? "http" : "https";
+    const baseUrl = `${protocol}://${address[0]}:${address[1]}`;
+    return `${baseUrl}/db/${database}`;
   }
 
   static async connectWithTimeout(
@@ -185,18 +194,21 @@ export class FetchConnection extends BaseFetchConnection {
     config: NormalizedConnectConfig,
     registry: CodecsRegistry
   ): Promise<FetchConnection> {
+    const {
+      connectionParams: {tlsSecurity, user, password = ""}
+    } = config;
+
     if (!_tokens.has(config)) {
-      const token = await HTTPSCRAMAuth(
-        `http://${addr[0]}:${addr[1]}`,
-        config.connectionParams.user,
-        config.connectionParams.password ?? ""
-      );
+      const protocol = tlsSecurity === "insecure" ? "http" : "https";
+      const baseUrl = `${protocol}://${addr[0]}:${addr[1]}`;
+      const token = await HTTPSCRAMAuth(baseUrl, user, password);
       _tokens.set(config, token);
     }
 
     const conn = new FetchConnection(
       {
         address: addr,
+        tlsSecurity,
         database: config.connectionParams.database,
         user: config.connectionParams.user,
         token: _tokens.get(config)!
