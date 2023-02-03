@@ -15,7 +15,8 @@ import type {
   $scopify,
   stripSet,
   TypeSet,
-  ObjectType
+  ObjectType,
+  NamedTupleType
 } from "./typesystem";
 import type {pointerToAssignmentExpression} from "./casting";
 import {$expressionify, $getScopedExpr} from "./path";
@@ -170,7 +171,14 @@ export function $normaliseInsertShape(
   const newShape: {
     [key: string]: TypeSet | {"+=": TypeSet} | {"-=": TypeSet};
   } = {};
-  for (const [key, _val] of Object.entries(shape)) {
+
+  const _shape: [string, any][] =
+    shape.__element__?.__kind__ === TypeKind.namedtuple
+      ? Object.keys((shape.__element__ as NamedTupleType).__shape__).map(
+          key => [key, shape[key]]
+        )
+      : Object.entries(shape);
+  for (const [key, _val] of _shape) {
     let val = _val;
     let setModify: string | null = null;
     if (isUpdate && _val != null && typeof _val === "object") {
@@ -225,7 +233,9 @@ export function $normaliseInsertShape(
     }
     // Workaround to tell TypeScript pointer definitely is defined
     if (!pointer) {
-      throw new Error('Code will never reach here, but TypeScript cannot determine',);
+      throw new Error(
+        "Code will never reach here, but TypeScript cannot determine"
+      );
     }
 
     // trying to assign plain data to a link
