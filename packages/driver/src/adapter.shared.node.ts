@@ -2,7 +2,7 @@ let randomBytes: (size: number) => Promise<Uint8Array>;
 let H: (msg: Uint8Array) => Promise<Uint8Array>;
 let HMAC: (key: Uint8Array, msg: Uint8Array) => Promise<Uint8Array>;
 
-if (typeof crypto === "undefined") {
+if (typeof crypto?.subtle === "undefined") {
   // tslint:disable-next-line:no-var-requires
   const nodeCrypto = require("crypto");
 
