@@ -1,4 +1,6 @@
 import e from "../dbschema/edgeql-js";
+import type {$Movie} from "../dbschema/edgeql-js/modules/default";
+
 import {setupTests, tc, TestData, teardownTests} from "./setupTeardown";
 import type {Client} from "edgedb";
 let client: Client;
@@ -33,4 +35,12 @@ test("enums", async () => {
 
 test("scalar literals", () => {
   expect(e.cast(e.json, "hello").toEdgeQL()).toEqual(`<std::json>("hello")`);
+});
+
+test("object type empty set", () => {
+  const expr = e.cast(e.Movie, e.set());
+
+  expect(expr.toEdgeQL()).toEqual(`<default::Movie>{}`);
+
+  tc.assert<tc.IsExact<typeof expr["__element__"], $Movie>>(true);
 });
