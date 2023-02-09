@@ -47,7 +47,7 @@ Assume your database contains the following EdgeDB schema.
     }
   }
 
-The following command will run the ``queries`` generator.
+The following command will run the ``interfaces`` generator.
 
 .. tabs::
 
