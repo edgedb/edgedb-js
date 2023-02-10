@@ -106,7 +106,7 @@ type Export = {modes: Set<Mode>} & (
       isDefault: boolean;
       typeOnly: boolean;
     }
-  | {type: "refsDefault"; ref: IdentRef; as: string}
+  | {type: "refsDefault"; ref: IdentRef | string; as: string}
   | {
       type: "from";
       names: {[key: string]: string | boolean};
@@ -202,7 +202,7 @@ class BuilderImportsExports {
     });
   }
 
-  addToDefaultExport(ref: IdentRef, as: string) {
+  addToDefaultExport(ref: IdentRef | string, as: string) {
     this.exports.add({
       type: "refsDefault",
       ref,
@@ -449,16 +449,23 @@ class BuilderImportsExports {
             throw new Error("multiple default exports");
           }
 
-          const ref = refs.get(exp.ref.name);
+          if (typeof exp.ref === "string") {
+            refsDefault.push({
+              ref: exp.ref,
+              as: exp.as
+            });
+          } else {
+            const ref = refs.get(exp.ref.name);
 
-          if (!ref) {
-            throw new Error(`Cannot find ref: ${exp.ref.name}`);
+            if (!ref) {
+              throw new Error(`Cannot find ref: ${exp.ref.name}`);
+            }
+
+            refsDefault.push({
+              ref: (exp.ref.opts?.prefix ?? "") + ref.internalName,
+              as: exp.as
+            });
           }
-
-          refsDefault.push({
-            ref: (exp.ref.opts?.prefix ?? "") + ref.internalName,
-            as: exp.as
-          });
       }
     }
 
@@ -706,7 +713,7 @@ let moduleCounter = 0;
 export class DirBuilder {
   private _map = new StrictMap<string, CodeBuilder>();
   _refs = new Map<string, {internalName: string; dir: string}>();
-  _modules = new Map<string, string>();
+  _modules = new Map<string, string[]>();
 
   getPath(fn: string): CodeBuilder {
     if (!this._map.has(fn)) {
@@ -717,19 +724,35 @@ export class DirBuilder {
 
   getModule(moduleName: string): CodeBuilder {
     if (!this._modules.has(moduleName)) {
-      const internalName = genutil.makeValidIdent({
-        name: moduleName,
-        id: `${moduleCounter++}`,
-        skipKeywordCheck: true
-      });
+      let partialName = "";
+      let partialPath: string[] = [];
 
-      this._modules.set(moduleName, internalName);
+      for (const part of moduleName.split("::")) {
+        partialName += (partialName && "::") + part;
+
+        const existingMod = this._modules.get(partialName);
+        if (!existingMod) {
+          partialPath.push(
+            genutil.makeValidIdent({
+              name: part,
+              id: `${moduleCounter++}`,
+              skipKeywordCheck: true
+            })
+          );
+
+          this._modules.set(partialName, [...partialPath]);
+        } else {
+          partialPath = [...existingMod];
+        }
+      }
     }
 
-    const mod = this.getPath(`modules/${this._modules.get(moduleName)}`);
+    const modPath = this._modules.get(moduleName)!;
+    const mod = this.getPath(`modules/${modPath.join("/")}`);
 
-    mod.addImportStar("$", "../reflection", {allowFileExt: true});
-    mod.addImportStar("_", "../imports", {allowFileExt: true});
+    const root = Array(modPath.length).fill("..").join("/");
+    mod.addImportStar("$", `${root}/reflection`, {allowFileExt: true});
+    mod.addImportStar("_", `${root}/imports`, {allowFileExt: true});
 
     return mod;
   }
@@ -770,6 +793,22 @@ export class DirBuilder {
       }
 
       const forceDefaultExport = fn.startsWith("modules/");
+
+      if (forceDefaultExport) {
+        const moduleDepth = fn.split("/").length;
+        const nestedModules = [...this._modules.entries()].filter(
+          ([_, _modPath]) => {
+            if (_modPath.length != moduleDepth) return false;
+            const modPath = `modules/${_modPath.join("/")}`;
+            return modPath !== fn && modPath.startsWith(fn);
+          }
+        );
+        for (const [name, path] of nestedModules) {
+          const modName = `_module__${path[path.length - 1]}`;
+          builder.addImportDefault(modName, `./${path.slice(-2).join("/")}`);
+          builder.addToDefaultExport(modName, name.split("::").pop()!);
+        }
+      }
 
       const filePath = dest + params.fileExtension;
 

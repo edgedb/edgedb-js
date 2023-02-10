@@ -57,7 +57,11 @@ export function generateIndex(params: GeneratorParams) {
     },
     {name: "_std", module: dir.getModule("std")}
   ];
-  const excludedKeys = new Set<string>(dir._modules.keys());
+
+  const topLevelModules = new Map(
+    [...dir._modules.entries()].filter(([_, path]) => path.length === 1)
+  );
+  const excludedKeys = new Set<string>(topLevelModules.keys());
 
   const spreadTypes: string[] = [];
   for (let {name, keys, module} of spreadModules) {
@@ -89,7 +93,7 @@ export function generateIndex(params: GeneratorParams) {
     t`: ${spreadTypes.reverse().join(" & \n  ")} & {`
   ]);
   index.indented(() => {
-    for (const [moduleName, internalName] of dir._modules) {
+    for (const [moduleName, internalName] of topLevelModules) {
       if (dir.getModule(moduleName).isEmpty()) continue;
       index.writeln([
         t`${genutil.quote(moduleName)}: typeof _${internalName};`
@@ -110,7 +114,7 @@ export function generateIndex(params: GeneratorParams) {
       ]);
     }
 
-    for (const [moduleName, internalName] of dir._modules) {
+    for (const [moduleName, internalName] of topLevelModules) {
       if (dir.getModule(moduleName).isEmpty()) {
         continue;
       }
