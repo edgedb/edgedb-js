@@ -64,6 +64,14 @@ export class CodeBuffer {
     }
   }
 
+  increaseIndent(): void {
+    this.indent++;
+  }
+
+  decreaseIndent(): void {
+    this.indent--;
+  }
+
   writeln(...lines: AnyCodeFrag[][]): void {
     const indent = "  ".repeat(this.indent);
     const indentFrag = (frag: AnyCodeFrag): AnyCodeFrag =>
@@ -567,6 +575,14 @@ export class CodeBuilder {
 
   indented(nested: () => void): void {
     this.buf.indented(nested);
+  }
+
+  increaseIndent(): void {
+    this.buf.increaseIndent();
+  }
+
+  decreaseIndent(): void {
+    this.buf.decreaseIndent();
   }
 
   writeln(...lines: AnyCodeFrag[][]): void {
