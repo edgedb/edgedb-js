@@ -504,6 +504,231 @@ test("fetch: named args", async () => {
   }
 });
 
+test("fetch: tuples in args", async () => {
+  const client = getClient();
+  try {
+    const tests: {[key: string]: any[]} = {
+      // Basic tuples
+      "tuple<str, bool>": [
+        ["x", true],
+        ["y", false]
+      ],
+      "optional tuple<str, bool>": [["x", true], null],
+      // Some pointlessly nested tuples
+      "tuple<tuple<str, bool>>": [[["x", true]]],
+      "tuple<tuple<str, bool>, int64>": [[["x", true], 1]],
+      // Basic array examples
+      "array<tuple<int64, str>>": [
+        [],
+        [[0, "zero"]],
+        [
+          [0, "zero"],
+          [1, "one"]
+        ]
+      ],
+      "optional array<tuple<int64, str>>": [
+        null,
+        [],
+        [[0, "zero"]],
+        [
+          [0, "zero"],
+          [1, "one"]
+        ]
+      ],
+      "array<tuple<str, array<int64>>>": [
+        [],
+        [["x", []]],
+        [["x", [1]]],
+        [
+          ["x", []],
+          ["y", []],
+          ["z", []]
+        ],
+        [
+          ["x", [1]],
+          ["y", []],
+          ["z", []]
+        ],
+        [
+          ["x", []],
+          ["y", [1]],
+          ["z", []]
+        ],
+        [
+          ["x", []],
+          ["y", []],
+          ["z", [1]]
+        ],
+        [
+          ["x", []],
+          ["y", [1, 2]],
+          ["z", [1, 2, 3]]
+        ]
+      ],
+      // Arrays of pointlessly nested tuples
+      "array<tuple<tuple<str, bool>, int64>>": [
+        [],
+        [[["x", true], 1]],
+        [
+          [["x", true], 1],
+          [["z", false], 2]
+        ]
+      ],
+      "array<tuple<tuple<array<str>, bool>, int64>>": [
+        [],
+        [[[[], true], 1]],
+        [
+          [[["x", "y", "z"], true], 1],
+          [[["z"], false], 2]
+        ]
+      ],
+      // Named tuples
+      "tuple<a: str, b: bool>": [{a: "x", b: true}],
+      "optional tuple<a: str, b: bool>": [{a: "x", b: true}, null],
+      "tuple<x: tuple<a: str, b: bool>>": [
+        {
+          x: {a: "x", b: true}
+        }
+      ],
+      "tuple<x: tuple<a: str, b: bool>, y: int64>": [
+        {
+          x: {a: "x", b: true},
+          y: 1
+        }
+      ],
+      "array<tuple<a: int64, b: str>>": [
+        [],
+        [{a: 0, b: "zero"}],
+        [
+          {a: 0, b: "zero"},
+          {a: 1, b: "one"}
+        ]
+      ],
+      "optional array<tuple<a: int64, b: str>>": [
+        null,
+        [],
+        [{a: 0, b: "zero"}],
+        [
+          {a: 0, b: "zero"},
+          {a: 1, b: "one"}
+        ]
+      ],
+      "array<tuple<a: str, b: array<int64>>>": [
+        [],
+        [{a: "x", b: []}],
+        [
+          {
+            a: "x",
+            b: [1]
+          }
+        ],
+        [
+          {a: "x", b: []},
+          {a: "y", b: []},
+          {a: "z", b: []}
+        ],
+        [
+          {
+            a: "x",
+            b: [1]
+          },
+          {a: "y", b: []},
+          {a: "z", b: []}
+        ],
+        [
+          {a: "x", b: []},
+          {
+            a: "y",
+            b: [1]
+          },
+          {a: "z", b: []}
+        ],
+        [
+          {a: "x", b: []},
+          {a: "y", b: []},
+          {
+            a: "z",
+            b: [1]
+          }
+        ],
+        [
+          {a: "x", b: []},
+          {
+            a: "y",
+            b: [1, 2]
+          },
+          {
+            a: "z",
+            b: [1, 2, 3]
+          }
+        ]
+      ]
+    };
+
+    for (let [cast, inputs] of Object.entries(tests)) {
+      for (let input of inputs) {
+        expect(
+          await client.querySingle(`select <${cast}>$0`, [input])
+        ).toEqual(input);
+      }
+    }
+
+    await expect(
+      client.query(`select <tuple<str, int64>>$test`, {
+        test: ["str", 123, 456]
+      })
+    ).rejects.toThrow(/expected 2 tuple items, got 3/);
+
+    await expect(
+      client.query(`select <tuple<str, int64>>$test`, {
+        test: ["str", "123"]
+      })
+    ).rejects.toThrow(
+      /invalid element at index 1 in tuple: a number was expected, got "123"/
+    );
+
+    await expect(
+      client.query(`select <tuple<str, int64>>$test`, {
+        test: ["str", null]
+      })
+    ).rejects.toThrow(/element at index 1 in tuple cannot be 'null'/);
+
+    await expect(
+      client.query(`select <tuple<a: str, b: int64>>$test`, {
+        test: ["str", 123]
+      })
+    ).rejects.toThrow(/an object was expected, got "str,123"/);
+
+    await expect(
+      client.query(`select <tuple<str, int64>>$test`, {
+        test: {a: "str", b: 123}
+      })
+    ).rejects.toThrow(/an array was expected, got "\[object Object\]"/);
+
+    await expect(
+      client.query(`select <tuple<a: str, b: int64>>$test`, {
+        test: {a: "str", b: 123, c: 456}
+      })
+    ).rejects.toThrow(/expected 2 elements in named tuple, got 3/);
+
+    await expect(
+      client.query(`select <tuple<a: str, b: int64>>$test`, {
+        test: {a: "str", b: "123"}
+      })
+    ).rejects.toThrow(
+      /invalid element 'b' in named tuple: a number was expected, got "123"/
+    );
+
+    await expect(
+      client.query(`select <tuple<a: str, b: int64>>$test`, {
+        test: {a: "str", b: null}
+      })
+    ).rejects.toThrow(/element 'b' in named tuple cannot be 'null'/);
+  } finally {
+    await client.close();
+  }
+});
+
 test("fetch: int overflow", async () => {
   const con = getClient();
   let res: any;

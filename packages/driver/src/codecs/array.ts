@@ -21,6 +21,7 @@ import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
 import {TupleCodec} from "./tuple";
 import {RangeCodec} from "./range";
 import {InvalidArgumentError, ProtocolError} from "../errors";
+import {NamedTupleCodec} from "./namedtuple";
 
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;
@@ -37,10 +38,13 @@ export class ArrayCodec extends Codec implements ICodec {
       !(
         this.subCodec instanceof ScalarCodec ||
         this.subCodec instanceof TupleCodec ||
+        this.subCodec instanceof NamedTupleCodec ||
         this.subCodec instanceof RangeCodec
       )
     ) {
-      throw new InvalidArgumentError("only arrays of scalars are supported");
+      throw new InvalidArgumentError(
+        "only arrays of scalars or tuples are supported"
+      );
     }
 
     if (!Array.isArray(obj) && !isTypedArray(obj)) {
