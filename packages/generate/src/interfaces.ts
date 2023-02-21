@@ -42,9 +42,9 @@ export async function runInterfacesGenerator(params: {
     prettyOutputDir = outFile;
   }
 
-  let cxn: Client;
+  let client: Client;
   try {
-    cxn = createClient({
+    client = createClient({
       ...connectionConfig,
       concurrency: 5
     });
@@ -56,7 +56,13 @@ export async function runInterfacesGenerator(params: {
 
   // tslint:disable-next-line
   console.log(`Introspecting database schema...`);
-  const types = await $.introspect.types(cxn);
+  let types: $.introspect.Types;
+  try {
+    types = await $.introspect.types(client);
+  } finally {
+    client.close();
+  }
+
   const generatorParams = {
     dir,
     types
