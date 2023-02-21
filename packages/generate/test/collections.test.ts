@@ -1,10 +1,12 @@
 import type {Client} from "edgedb";
 import * as $ from "../src/syntax/reflection";
-import e, {$infer} from "../dbschema/edgeql-js";
+import e, {$infer, objectTypeToTupleType} from "../dbschema/edgeql-js";
 import type {sys} from "../dbschema/interfaces";
 import {tc} from "./setupTeardown";
 
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
+import type {$Genre, $year} from "../dbschema/edgeql-js/modules/default";
+import type {$float64, $str, $uuid} from "../dbschema/edgeql-js/modules/std";
 
 let client: Client;
 let data: TestData;
@@ -415,4 +417,38 @@ test("non literal tuples", async () => {
     local: result.ver.local,
     local0: result.ver.local[0]
   });
+});
+
+test("objectTypeToTupleType helper", () => {
+  const movieTuple = objectTypeToTupleType(e.Movie);
+
+  expect(movieTuple["__kind__"]).toBe("namedtuple");
+  expect(movieTuple["__name__"]).toBe(
+    "tuple<genre: default::Genre, rating: std::float64, title: std::str, release_year: default::year>"
+  );
+
+  tc.assert<
+    tc.IsExact<
+      typeof movieTuple["__shape__"],
+      {genre: $Genre; rating: $float64; title: $str; release_year: $year}
+    >
+  >(true);
+
+  const movieTupleWithFields = objectTypeToTupleType(e.Movie, [
+    "id",
+    "title",
+    "release_year"
+  ]);
+
+  expect(movieTupleWithFields["__kind__"]).toBe("namedtuple");
+  expect(movieTupleWithFields["__name__"]).toBe(
+    "tuple<title: std::str, release_year: default::year, id: std::uuid>"
+  );
+
+  tc.assert<
+    tc.IsExact<
+      typeof movieTupleWithFields["__shape__"],
+      {id: $uuid; title: $str; release_year: $year}
+    >
+  >(true);
 });
