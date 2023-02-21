@@ -9,7 +9,7 @@ import {
   teardownTests,
   TestData,
   tc,
-  version_lt
+  testIfVersionGTE
 } from "./setupTeardown";
 
 let client: Client;
@@ -345,8 +345,7 @@ test("empty shape insert", async () => {
   expect(Object.keys(res)).toEqual(["id"]);
 });
 
-test("insert custom ID", async () => {
-  if (await version_lt(client, 2)) return;
+testIfVersionGTE(2)("insert custom ID", async () => {
   await e
     .insert(e.Hero, {
       id: "00000000-0000-0000-0000-000000000000",

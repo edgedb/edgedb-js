@@ -8,7 +8,7 @@ import {
   setupTests,
   teardownTests,
   TestData,
-  version_lt,
+  testIfVersionGTE
 } from "./setupTeardown";
 
 let client: edgedb.Client;
@@ -23,8 +23,7 @@ afterAll(async () => {
   await teardownTests(client);
 });
 
-test("globals", async () => {
-  if (await version_lt(client, 2)) return;
+testIfVersionGTE(2)("globals", async () => {
   expect(e.select(e.global.uuid_global).toEdgeQL()).toEqual(
     `SELECT (GLOBAL default::uuid_global)`
   );

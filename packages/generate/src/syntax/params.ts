@@ -14,6 +14,7 @@ import type {
 import {$expressionify} from "./path";
 import {runnableExpressionKinds} from "./query";
 import {select} from "./select";
+import {complexParamKinds} from "./__spec__";
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
   __kind__: ExpressionKind.OptionalParam;
@@ -101,8 +102,6 @@ type paramsToParamExprs<
     ? $expr_Param<key, Params[key], false>
     : never;
 };
-
-const complexParamKinds = new Set([TypeKind.tuple, TypeKind.namedtuple]);
 
 export function params<
   Params extends {

@@ -40,6 +40,7 @@ export type GeneratorParams = {
   functions: $.introspect.FunctionTypes;
   globals: $.introspect.Globals;
   operators: $.introspect.OperatorTypes;
+  edgedbVersion: Version;
 };
 
 export function exitWithError(message: string): never {
@@ -117,14 +118,15 @@ export async function generateQueryBuilder(params: {
     // tslint:disable-next-line
     console.log(`Introspecting database schema...`);
 
-    const [types, scalars, casts, functions, operators, globals] =
+    const [types, scalars, casts, functions, operators, globals, version] =
       await Promise.all([
         $.introspect.types(cxn),
         $.introspect.scalars(cxn),
         $.introspect.casts(cxn),
         $.introspect.functions(cxn),
         $.introspect.operators(cxn),
-        $.introspect.globals(cxn)
+        $.introspect.globals(cxn),
+        cxn.queryRequiredSingle<Version>(`select sys::get_version()`)
       ]);
 
     const typesByName: Record<string, $.introspect.Type> = {};
@@ -143,7 +145,8 @@ export async function generateQueryBuilder(params: {
       scalars,
       functions,
       globals,
-      operators
+      operators,
+      edgedbVersion: version
     };
     generateRuntimeSpec(generatorParams);
     generateCastMaps(generatorParams);
