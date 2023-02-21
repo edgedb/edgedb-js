@@ -5,7 +5,7 @@
 const {TextEncoder, TextDecoder} = require("util");
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
-import {EdgeDBVersion, getEdgeDBVersion} from "./testbase";
+import {getEdgeDBVersion} from "./testbase";
 
 // @ts-ignore
 if (typeof fetch === "undefined") {
@@ -21,9 +21,9 @@ if (nodeVersion >= 15) {
   crypto.subtle = require("crypto").webcrypto.subtle;
 }
 
-let version: EdgeDBVersion;
+const version = getEdgeDBVersion();
+
 beforeAll(async () => {
-  version = await getEdgeDBVersion();
   for (const nodeModule of [
     "assert",
     "async_hooks",
@@ -90,12 +90,12 @@ const connectOpts = {
 // Skip tests on node < 15, since webcrypto api not available
 if (nodeVersion >= 15) {
   test("createClient fails", () => {
-    if (version!.major < 2) return;
+    if (version.major < 2) return;
     expect(() => createClient()).toThrowError(EdgeDBError);
   });
 
   test("createHttpClient no options", async () => {
-    if (version!.major < 2) return;
+    if (version.major < 2) return;
     const client = createHttpClient();
 
     await expect(client.ensureConnected()).rejects.toThrowError(
@@ -104,7 +104,7 @@ if (nodeVersion >= 15) {
   });
 
   test("basic queries", async () => {
-    if (version!.major < 2) return;
+    if (version.major < 2) return;
     const client = createHttpClient(connectOpts);
 
     expect(
