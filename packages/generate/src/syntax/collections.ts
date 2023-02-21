@@ -347,15 +347,15 @@ export function $objectTypeToTupleType(...args: any[]): any {
     string[] | undefined
   ];
   const shape = Object.entries(objExpr.__element__.__pointers__).reduce(
-    (shape, [key, val]) => {
+    (_shape, [key, val]) => {
       if (
         fields?.length
           ? fields.includes(key)
           : key !== "id" && val.__kind__ === "property" && !val.computed
       ) {
-        shape[key] = val.target;
+        _shape[key] = val.target;
       }
-      return shape;
+      return _shape;
     },
     {} as NamedTupleShape
   );
