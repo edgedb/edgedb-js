@@ -1,11 +1,14 @@
-import {process} from "https://deno.land/std@0.159.0/node/process.ts";
-import {Sha1} from "https://deno.land/std@0.159.0/hash/sha1.ts";
+import {process} from "https://deno.land/std@0.177.0/node/process.ts";
+import {
+  crypto,
+  toHashString
+} from "https://deno.land/std@0.177.0/crypto/mod.ts";
 
-import path from "https://deno.land/std@0.159.0/node/path.ts";
-import * as _fs from "https://deno.land/std@0.159.0/fs/mod.ts";
-import * as fs from "https://deno.land/std@0.159.0/node/fs/promises.ts";
-import EventEmitter from "https://deno.land/std@0.159.0/node/events.ts";
-import util from "https://deno.land/std@0.159.0/node/util.ts";
+import path from "https://deno.land/std@0.177.0/node/path.ts";
+import * as _fs from "https://deno.land/std@0.177.0/fs/mod.ts";
+import * as fs from "https://deno.land/std@0.177.0/node/fs/promises.ts";
+import EventEmitter from "https://deno.land/std@0.177.0/node/events.ts";
+import util from "https://deno.land/std@0.177.0/node/util.ts";
 
 export {path, process, util, fs};
 
@@ -57,9 +60,10 @@ export async function exists(fn: string | URL): Promise<boolean> {
 }
 
 export function hashSHA1toHex(msg: string): string {
-  const sign = new Sha1();
-  sign.update(msg);
-  return sign.hex();
+  return toHashString(
+    crypto.subtle.digestSync("SHA-1", new TextEncoder().encode(msg)),
+    "hex"
+  );
 }
 
 export function homeDir(): string {
