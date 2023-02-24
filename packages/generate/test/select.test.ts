@@ -4,6 +4,7 @@ import * as tc from "conditional-type-checks";
 
 import e, {$infer} from "../dbschema/edgeql-js";
 import {setupTests, teardownTests, TestData} from "./setupTeardown";
+import {CardinalityViolationError} from "edgedb";
 let client: edgedb.Client;
 let data: TestData;
 
@@ -1329,12 +1330,12 @@ test("filter_single expect error", async () => {
 });
 
 test("filter_single card mismatch", async () => {
-  const query = e.select(e.Movie, () => ({
+  const query = e.select(e.Movie, movie => ({
     title: true,
-    filter_single: {genre: e.Genre.Horror} as any
+    filter_single: e.op(movie.genre, "=", e.Genre.Action)
   }));
 
-  expect(query.run(client)).rejects.toThrow();
+  await expect(query.run(client)).rejects.toThrow(CardinalityViolationError);
 });
 
 // EdgeQL limitation

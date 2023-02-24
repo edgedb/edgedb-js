@@ -37,7 +37,8 @@ import type {
   orLiteralValue
 } from "./typesystem";
 
-import type {
+import {
+  $assert_single,
   $expr_PathLeaf,
   $expr_PathNode,
   $linkPropify,
@@ -465,13 +466,18 @@ export function is<
 export function $handleModifiers(
   modifiers: SelectModifiers,
   params: {root: TypeSet; scope: TypeSet}
-): {modifiers: NormalisedSelectModifiers; cardinality: Cardinality} {
+): {
+  modifiers: NormalisedSelectModifiers;
+  cardinality: Cardinality;
+  needsAssertSingle: boolean;
+} {
   const {root, scope} = params;
   const mods: NormalisedSelectModifiers = {
     singleton: !!modifiers["filter_single"]
   };
 
   let card = root.__cardinality__;
+  let needsAssertSingle = false;
 
   if (modifiers.filter) {
     mods.filter = modifiers.filter;
@@ -487,6 +493,7 @@ export function $handleModifiers(
     const fs: any = modifiers.filter_single;
     if (fs.__element__) {
       mods.filter = modifiers.filter_single as any;
+      needsAssertSingle = true;
     } else {
       const exprs = Object.keys(fs).map(key => {
         const val = fs[key].__element__
@@ -566,7 +573,11 @@ export function $handleModifiers(
     card = cardutil.overrideLowerBound(card, "Zero");
   }
 
-  return {modifiers: mods as NormalisedSelectModifiers, cardinality: card};
+  return {
+    modifiers: mods as NormalisedSelectModifiers,
+    cardinality: card,
+    needsAssertSingle
+  };
 }
 
 export type $expr_Delete<Root extends ObjectTypeSet = ObjectTypeSet> =
@@ -1052,28 +1063,30 @@ export function select(...args: any[]) {
     $existingScopes.clear();
   }
 
-  const {modifiers, cardinality} = $handleModifiers(mods, {root: expr, scope});
-  return $expressionify(
-    $selectify({
-      __kind__: ExpressionKind.Select,
-      __element__:
-        expr.__element__.__kind__ === TypeKind.object
-          ? {
-              __kind__: TypeKind.object,
-              __name__: `${expr.__element__.__name__}`, // _shape
-              __pointers__: (expr.__element__ as ObjectType).__pointers__,
-              __shape__: shape
-            }
-          : expr.__element__,
-      __cardinality__: cardinality,
-      __expr__: expr,
-      __modifiers__: modifiers,
-      __scope__:
-        expr !== scope // && expr.__element__.__name__ !== "std::FreeObject"
-          ? scope
-          : undefined
-    })
-  ) as any;
+  const {modifiers, cardinality, needsAssertSingle} = $handleModifiers(mods, {
+    root: expr,
+    scope
+  });
+  const selectExpr = $selectify({
+    __kind__: ExpressionKind.Select,
+    __element__:
+      expr.__element__.__kind__ === TypeKind.object
+        ? {
+            __kind__: TypeKind.object,
+            __name__: `${expr.__element__.__name__}`, // _shape
+            __pointers__: (expr.__element__ as ObjectType).__pointers__,
+            __shape__: shape
+          }
+        : expr.__element__,
+    __cardinality__: cardinality,
+    __expr__: expr,
+    __modifiers__: modifiers,
+    __scope__: expr !== scope ? scope : undefined
+  }) as any;
+
+  return needsAssertSingle
+    ? $assert_single(selectExpr)
+    : $expressionify(selectExpr);
 }
 
 function resolveShape(
@@ -1157,12 +1170,12 @@ export function resolveShapeElement(
     } = resolveShape(value as any, childExpr);
 
     // extracts normalized modifiers
-    const {modifiers} = $handleModifiers(mods, {
+    const {modifiers, needsAssertSingle} = $handleModifiers(mods, {
       root: childExpr,
       scope: childScope
     });
 
-    return {
+    const selectExpr = {
       __kind__: ExpressionKind.Select,
       __element__: {
         __kind__: TypeKind.object,
@@ -1177,6 +1190,7 @@ export function resolveShapeElement(
       __modifiers__: modifiers,
       __scope__: childExpr !== childScope ? childScope : undefined
     };
+    return needsAssertSingle ? $assert_single(selectExpr as any) : selectExpr;
   } else if ((value as any)?.__kind__ === ExpressionKind.PolyShapeElement) {
     const polyElement = value as $expr_PolyShapeElement;
 

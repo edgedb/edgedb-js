@@ -366,7 +366,7 @@ function isFunc(this: any, expr: ObjectTypeSet) {
   });
 }
 
-function assert_single(expr: Expression) {
+export function $assert_single(expr: Expression) {
   return $expressionify({
     __kind__: ExpressionKind.Function,
     __element__: expr.__element__,
@@ -428,7 +428,7 @@ export function $expressionify<T extends ExpressionRoot>(
   expr.runJSON = $queryFuncJSON.bind(expr) as any;
   expr.is = isFunc.bind(expr) as any;
   expr.toEdgeQL = $toEdgeQL.bind(expr);
-  expr.assert_single = () => assert_single(expr) as any;
+  expr.assert_single = () => $assert_single(expr) as any;
 
   return Object.freeze(expr) as any;
 }
