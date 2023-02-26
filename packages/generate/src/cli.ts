@@ -149,6 +149,9 @@ const run = async () => {
         }
         connectionConfig.tlsSecurity = tlsSec;
         break;
+      case "--use-http-client":
+        options.useHttpClient = true;
+        break;
       case "--target":
         if (generator === Generator.Interfaces) {
           exitWithError(

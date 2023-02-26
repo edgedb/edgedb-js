@@ -8,7 +8,7 @@ import {
   isTTY,
   promptBoolean
 } from "./commandutil";
-import {$, Client, createClient} from "edgedb";
+import {$, Client, createClient, createHttpClient} from "edgedb";
 import {DirBuilder} from "./builders";
 import {syntax} from "./FILES";
 
@@ -103,7 +103,10 @@ export async function generateQueryBuilder(params: {
   const target = options.target!;
   let cxn: Client;
   try {
-    cxn = createClient({
+    const cxnCreatorFn = options.useHttpClient
+      ? createHttpClient
+      : createClient;
+    cxn = cxnCreatorFn({
       ...connectionConfig,
       concurrency: 5
     });

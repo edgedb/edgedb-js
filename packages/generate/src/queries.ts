@@ -1,4 +1,4 @@
-import {$, adapter, createClient} from "edgedb";
+import {$, adapter, createClient, createHttpClient} from "edgedb";
 import type {ConnectConfig} from "edgedb/dist/conUtils";
 import {Cardinality} from "edgedb/dist/ifaces";
 import {CommandOptions, getPackageVersion} from "./commandutil";
@@ -29,7 +29,11 @@ currently supported.`);
     console.log(`Detected project root via edgedb.toml:`);
     console.log("   " + params.root);
   }
-  const client = createClient({
+
+  const cxnCreatorFn = params.options.useHttpClient
+    ? createHttpClient
+    : createClient;
+  const client = cxnCreatorFn({
     ...params.connectionConfig,
     concurrency: 5
   });
