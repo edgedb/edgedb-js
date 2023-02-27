@@ -1,10 +1,22 @@
-import {path, fs, readFileUtf8, exists, hashSHA1toHex} from "./adapter.node";
+import {
+  path,
+  fs,
+  readFileUtf8,
+  exists,
+  hashSHA1toHex,
+  hasFSReadPermission
+} from "./adapter.node";
 import * as platform from "./platform";
 import {getConnectArgumentsParser} from "./conUtils";
 
 const projectDirCache = new Map<string, string | null>();
 
-async function findProjectDir(): Promise<string | null> {
+async function findProjectDir(
+  required: boolean = true
+): Promise<string | null> {
+  if (!required && !hasFSReadPermission()) {
+    return null;
+  }
   const workingDir = process.cwd();
 
   if (projectDirCache.has(workingDir)) {

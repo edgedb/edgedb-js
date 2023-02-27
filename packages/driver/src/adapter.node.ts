@@ -15,6 +15,10 @@ export async function readFileUtf8(...pathParts: string[]): Promise<string> {
   return await fs.readFile(path.join(...pathParts), {encoding: "utf8"});
 }
 
+export function hasFSReadPermission(): boolean {
+  return true;
+}
+
 export function watch(dir: string) {
   return fs.watch(dir, {recursive: true});
 }

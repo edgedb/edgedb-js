@@ -542,7 +542,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
           serverSettings: connectionParams.serverSettings
         }).toEqual(testcase.result);
         expect(logging).toEqual(testcase.logging);
-        expect(inProject).toEqual(testcase.inProject);
+        expect(await inProject()).toEqual(testcase.inProject);
         expect(fromProject).toEqual(testcase.fromProject);
         expect(fromEnv).toEqual(testcase.fromEnv);
       }
