@@ -373,3 +373,25 @@ test("empty arrays for array and multi properties", async () => {
   });
   const result = await query.run(client);
 });
+
+test("insert named tuple as shape", async () => {
+  const query = e.params(
+    {
+      profiles: e.array(
+        e.tuple({
+          a: e.str,
+          b: e.str,
+          c: e.str
+        })
+      )
+    },
+    params =>
+      e.for(e.array_unpack(params.profiles), profile =>
+        e.insert(e.Profile, profile)
+      )
+  );
+
+  const result = await query.run(client, {
+    profiles: [{a: "a", b: "b", c: "c"}]
+  });
+});
