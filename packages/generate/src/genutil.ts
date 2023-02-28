@@ -11,13 +11,7 @@ export {$} from "edgedb";
 import type {$} from "edgedb";
 import {adapter} from "edgedb";
 
-export function splitName(name: string) {
-  if (!name.includes("::")) throw new Error(`Invalid FQN ${name}`);
-  return {
-    mod: name.split("::")[0],
-    name: name.split("::")[1]
-  };
-}
+export const splitName = util.splitName;
 
 export function toIdent(name: string): string {
   if (name.includes("::")) {
