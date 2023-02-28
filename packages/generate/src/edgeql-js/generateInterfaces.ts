@@ -166,7 +166,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
   const plainTypesExportBuf = new CodeBuffer();
 
   const writeModuleExports = (module: ModuleData) => {
-    let wrapInNamespace = !(module.isRoot && module.name === "default");
+    const wrapInNamespace = !(module.isRoot && module.name === "default");
     if (wrapInNamespace) {
       plainTypesCode.writeln([t`export namespace ${module.internalName} {`]);
       plainTypesCode.writeln([js`const ${module.internalName} = {`]);

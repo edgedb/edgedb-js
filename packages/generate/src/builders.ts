@@ -814,14 +814,17 @@ export class DirBuilder {
         const moduleDepth = fn.split("/").length;
         const nestedModules = [...this._modules.entries()].filter(
           ([_, _modPath]) => {
-            if (_modPath.length != moduleDepth) return false;
+            if (_modPath.length !== moduleDepth) return false;
             const modPath = `modules/${_modPath.join("/")}`;
             return modPath !== fn && modPath.startsWith(fn);
           }
         );
-        for (const [name, path] of nestedModules) {
-          const modName = `_module__${path[path.length - 1]}`;
-          builder.addImportDefault(modName, `./${path.slice(-2).join("/")}`);
+        for (const [name, modPath] of nestedModules) {
+          const modName = `_module__${modPath[modPath.length - 1]}`;
+          builder.addImportDefault(
+            modName,
+            `./${modPath.slice(-2).join("/")}`
+          );
           builder.addToDefaultExport(modName, name.split("::").pop()!);
         }
       }
