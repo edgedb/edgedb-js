@@ -13,7 +13,7 @@ Insert new data with ``e.insert``.
   });
 
 For convenience, the second argument of ``e.insert`` function can also accept
-plain JS data.
+plain JS data or a named tuple.
 
 .. code-block:: typescript
 
@@ -24,6 +24,18 @@ plain JS data.
       '@character_name': e.str("Iron Man")
     }))
   });
+
+
+.. code-block:: typescript
+
+  e.params({
+    movie: e.tuple({
+      title: e.str,
+      release_year: e.int64
+    })
+  }, $ =>
+    e.insert(e.Movie, $.movie)
+  );
 
 
 Link properties

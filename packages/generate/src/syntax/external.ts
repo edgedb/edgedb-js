@@ -15,7 +15,11 @@ export {
 } from "./select";
 export {update} from "./update";
 export {insert} from "./insert";
-export {array, tuple} from "./collections";
+export {
+  array,
+  tuple,
+  $objectTypeToTupleType as objectTypeToTupleType
+} from "./collections";
 export {} from "./funcops";
 export {for} from "./for";
 export {alias, with} from "./with";

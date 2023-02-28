@@ -33,7 +33,7 @@
     "node-fetch": "2.6.7",
     "ts-jest": "*",
     "tsx": "*",
-    "typescript": "~4.5"
+    "typescript": "^4.9"
   },
   "scripts": {
     "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",

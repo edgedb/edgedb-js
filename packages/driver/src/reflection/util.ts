@@ -5,9 +5,10 @@ export namespace util {
 
   export function splitName(name: string) {
     if (!name.includes("::")) throw new Error(`Invalid FQN ${name}`);
+    const parts = name.split("::");
     return {
-      mod: name.split("::")[0],
-      name: name.split("::")[1]
+      mod: parts.slice(0, -1).join("::"),
+      name: parts[parts.length - 1]
     };
   }
 

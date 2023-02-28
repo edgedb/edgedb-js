@@ -15,7 +15,7 @@ import type {
   $scopify
 } from "./typesystem";
 import type {pointerToAssignmentExpression} from "./casting";
-import {$expressionify, $getScopedExpr} from "./path";
+import {$expressionify, $getScopedExpr, $assert_single} from "./path";
 import {
   SelectModifiers,
   NormalisedSelectModifiers,
@@ -73,9 +73,6 @@ export function update<
   Shape extends {
     filter?: SelectModifiers["filter"];
     filter_single?: SelectModifiers<Expr["__element__"]>["filter_single"];
-    order_by?: SelectModifiers["order_by"];
-    limit?: SelectModifiers["limit"];
-    offset?: SelectModifiers["offset"];
     set: UpdateShape<Expr>;
   }
   // SetShape extends UpdateShape<Expr>,
@@ -83,16 +80,7 @@ export function update<
 >(
   expr: Expr,
   shape: (scope: $scopify<Expr["__element__"]>) => Readonly<Shape>
-): $expr_Update<
-  // {
-  //   __element__: Expr["__element__"];
-  //   __cardinality__: ComputeSelectCardinality<Expr, Shape>;
-  // },
-  Expr["__element__"],
-  ComputeSelectCardinality<Expr, Shape>
-  // Expr,
-  // Shape["set"]
-> {
+): $expr_Update<Expr["__element__"], ComputeSelectCardinality<Expr, Shape>> {
   const cleanScopedExprs = $existingScopes.size === 0;
 
   const scope = $getScopedExpr(expr as any, $existingScopes);
@@ -112,7 +100,7 @@ export function update<
       updateShape = val;
     } else {
       throw new Error(
-        `Invalid update shape key '${key}', only 'filter', ` +
+        `Invalid update shape key '${key}', only 'filter', 'filter_single', ` +
           `and 'set' are allowed`
       );
     }
@@ -122,9 +110,12 @@ export function update<
     throw new Error(`Update shape must contain 'set' shape`);
   }
 
-  const {modifiers, cardinality} = $handleModifiers(mods, {root: expr, scope});
+  const {modifiers, cardinality, needsAssertSingle} = $handleModifiers(mods, {
+    root: expr,
+    scope
+  });
 
-  return $expressionify({
+  const updateExpr = {
     __kind__: ExpressionKind.Update,
     __element__: expr.__element__,
     __cardinality__: cardinality,
@@ -132,5 +123,9 @@ export function update<
     __shape__: $normaliseInsertShape(expr, updateShape, true),
     __modifiers__: modifiers,
     __scope__: scope
-  }) as any;
+  } as any;
+
+  return needsAssertSingle
+    ? $assert_single(updateExpr)
+    : $expressionify(updateExpr);
 }

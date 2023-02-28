@@ -17,6 +17,9 @@ import type {
   NamedTupleShape,
   NamedTupleType,
   NonArrayType,
+  ObjectTypeExpression,
+  ObjectTypePointers,
+  PropertyDesc,
   TupleType,
   TypeSet
 } from "./typesystem";
@@ -282,7 +285,7 @@ export function tuple(input: any) {
     const exprShape: NamedTupleLiteralShape = {};
     const typeShape: NamedTupleShape = {};
     for (const [key, val] of Object.entries(input)) {
-      const typeSet = literalToTypeSet(val)
+      const typeSet = literalToTypeSet(val);
       exprShape[key] = typeSet;
       typeShape[key] = typeSet.__element__;
     }
@@ -304,8 +307,57 @@ export function tuple(input: any) {
   }
 }
 
-// export type {
-//   ArrayType as $Array,
-//   NamedTupleType as $NamedTuple,
-//   TupleType as $Tuple
-// } from "edgedb/dist/reflection/index";
+type PropertyNamesFromPointers<Pointers extends ObjectTypePointers> = {
+  [k in keyof Pointers as Pointers[k] extends PropertyDesc
+    ? Pointers[k]["computed"] extends true
+      ? never
+      : k
+    : never]: Pointers[k];
+};
+
+export function $objectTypeToTupleType<Expr extends ObjectTypeExpression>(
+  objectType: Expr
+): PropertyNamesFromPointers<
+  Expr["__element__"]["__pointers__"]
+> extends infer Pointers
+  ? Pointers extends ObjectTypePointers
+    ? NamedTupleType<{
+        [k in keyof Pointers as k extends "id"
+          ? never
+          : k]: Pointers[k]["target"];
+      }>
+    : never
+  : never;
+export function $objectTypeToTupleType<
+  Expr extends ObjectTypeExpression,
+  Fields extends keyof PropertyNamesFromPointers<
+    Expr["__element__"]["__pointers__"]
+  >
+>(
+  objectType: Expr,
+  includeFields: Fields[]
+): NamedTupleType<{
+  [k in Fields]: Expr["__element__"]["__pointers__"][k] extends PropertyDesc
+    ? Expr["__element__"]["__pointers__"][k]["target"]
+    : never;
+}>;
+export function $objectTypeToTupleType(...args: any[]): any {
+  const [objExpr, fields] = args as [
+    ObjectTypeExpression,
+    string[] | undefined
+  ];
+  const shape = Object.entries(objExpr.__element__.__pointers__).reduce(
+    (_shape, [key, val]) => {
+      if (
+        fields?.length
+          ? fields.includes(key)
+          : key !== "id" && val.__kind__ === "property" && !val.computed
+      ) {
+        _shape[key] = val.target;
+      }
+      return _shape;
+    },
+    {} as NamedTupleShape
+  );
+  return tuple(shape);
+}

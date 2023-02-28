@@ -598,12 +598,16 @@ export class Duration {
         result.seconds = (result.minutes % 1) * 60;
       }
       if (fSeconds) {
-        result.milliseconds = Number(fSeconds) * 1000;
+        const ns = fSeconds.slice(1).padEnd(9, "0");
+        result.milliseconds = Number(ns.slice(0, 3));
+        result.microseconds = Number(ns.slice(3, 6));
+        result.nanoseconds = sign * Number(ns.slice(6));
       } else {
         result.milliseconds = (result.seconds % 1) * 1000;
+        result.microseconds = (result.milliseconds % 1) * 1000;
+        result.nanoseconds =
+          sign * Math.floor((result.microseconds % 1) * 1000);
       }
-      result.microseconds = (result.milliseconds % 1) * 1000;
-      result.nanoseconds = sign * Math.floor((result.microseconds % 1) * 1000);
 
       result.minutes = sign * Math.floor(result.minutes);
       result.seconds = sign * Math.floor(result.seconds);

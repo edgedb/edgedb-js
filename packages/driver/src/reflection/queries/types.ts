@@ -189,9 +189,7 @@ export async function _types(
           EXISTS (select .constraints filter .name = 'std::exclusive')
           ELSE
           "Many",
-        name := '<' ++ .name ++ '[is ' ++ std::assert_exists(
-          .source.name if .source.name[:9] != 'default::' else .source.name[9:]
-        ) ++ ']',
+        name := '<' ++ .name ++ '[is ' ++ assert_exists(.source.name) ++ ']',
         stub := .name,
         target_id := .source.id,
         kind := 'link',
@@ -229,6 +227,20 @@ export async function _types(
 
   // remap types
   for (const type of types) {
+    if (Array.isArray((type as ObjectType).backlinks)) {
+      for (const backlink of (type as ObjectType).backlinks) {
+        const isName = backlink.name.match(/\[is (.+)\]/)![1];
+        if (
+          isName.split("::").length === 2 &&
+          isName.startsWith("default::")
+        ) {
+          backlink.name = backlink.name.replace(
+            /\[is (.+)\]/,
+            `[is ${isName.slice(9)}]`
+          );
+        }
+      }
+    }
     switch (type.kind) {
       case "scalar":
         if (typeMapping.has(type.id)) {

@@ -56,8 +56,11 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer): any {
-    const us = buf.readBigInt64();
-    const ms = Number(us) / 1000.0;
+    const us = Number(buf.readBigInt64());
+    let ms = Math.round(us / 1000);
+    if (Math.abs(us % 1000) === 500 && Math.abs(ms) % 2 === 1) {
+      ms -= 1;
+    }
     return new Date(ms + TIMESHIFT);
   }
 }
@@ -75,7 +78,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
 
     // tslint:disable-next-line:no-string-literal
     const ms = bi.make(object["_date"].getTime() - TIMESHIFT);
-    const us = bi.add(
+    let us = bi.add(
       bi.mul(ms, bi.make(1000)),
       bi.make(
         object.hour * 3_600_000_000 +
@@ -85,6 +88,13 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
           object.microsecond
       )
     );
+
+    if (
+      (object.nanosecond === 500 && Math.abs(object.microsecond) % 2 === 1) ||
+      object.nanosecond > 500
+    ) {
+      us = bi.add(us, bi.make(1));
+    }
 
     buf.writeInt32(8);
     buf.writeBigInt64(us as bigint);
@@ -137,13 +147,22 @@ export class LocalTimeCodec extends ScalarCodec implements ICodec {
         `a LocalTime instance was expected, got "${object}"`
       );
     }
-    buf.writeInt32(8);
-    const us =
+
+    let us =
       object.hour * 3_600_000_000 +
       object.minute * 60_000_000 +
       object.second * 1_000_000 +
       object.millisecond * 1000 +
       object.microsecond;
+
+    if (
+      (object.nanosecond === 500 && us % 2 === 1) ||
+      object.nanosecond > 500
+    ) {
+      us += 1;
+    }
+
+    buf.writeInt32(8);
     buf.writeInt64(us);
   }
 
@@ -192,11 +211,35 @@ export class DurationCodec extends ScalarCodec implements ICodec {
       );
     }
 
-    let us = bi.make(object.microseconds);
-    us = bi.add(us, bi.mul(bi.make(object.milliseconds), bi.make(1_000)));
-    us = bi.add(us, bi.mul(bi.make(object.seconds), bi.make(1_000_000)));
-    us = bi.add(us, bi.mul(bi.make(object.minutes), bi.make(60_000_000)));
-    us = bi.add(us, bi.mul(bi.make(object.hours), bi.make(3_600_000_000)));
+    let us = bi.make(Math.abs(object.microseconds));
+    us = bi.add(
+      us,
+      bi.mul(bi.make(Math.abs(object.milliseconds)), bi.make(1_000))
+    );
+    us = bi.add(
+      us,
+      bi.mul(bi.make(Math.abs(object.seconds)), bi.make(1_000_000))
+    );
+    us = bi.add(
+      us,
+      bi.mul(bi.make(Math.abs(object.minutes)), bi.make(60_000_000))
+    );
+    us = bi.add(
+      us,
+      bi.mul(bi.make(Math.abs(object.hours)), bi.make(3_600_000_000))
+    );
+
+    if (
+      (Math.abs(object.nanoseconds) === 500 &&
+        Math.abs(object.microseconds) % 2 === 1) ||
+      Math.abs(object.nanoseconds) > 500
+    ) {
+      us = bi.add(us, bi.make(1));
+    }
+
+    if (object.sign < 0) {
+      us = bi.mul(us, bi.make(-1));
+    }
 
     buf.writeInt32(16);
     buf.writeBigInt64(us as bigint);
