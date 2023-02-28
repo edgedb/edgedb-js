@@ -107,6 +107,7 @@ type ConnectConfigParams =
   | "user"
   | "password"
   | "secretKey"
+  | "cloudProfile"
   | "tlsCAData"
   | "tlsSecurity"
   | "waitUntilAvailable";
@@ -129,6 +130,9 @@ export class ResolvedConnectConfig {
 
   _secretKey: string | null = null;
   _secretKeySource: string | null = null;
+
+  _cloudProfile: string | null = null;
+  _cloudProfileSource: string | null = null;
 
   _tlsCAData: string | null = null;
   _tlsCADataSource: string | null = null;
@@ -221,6 +225,10 @@ export class ResolvedConnectConfig {
 
   setSecretKey(secretKey: string | null, source: string): boolean {
     return this._setParam("secretKey", secretKey, source);
+  }
+
+  setCloudProfile(cloudProfile: string | null, source: string): boolean {
+    return this._setParam("cloudProfile", cloudProfile, source);
   }
 
   setTlsCAData(caData: string | null, source: string): boolean {
@@ -324,6 +332,10 @@ export class ResolvedConnectConfig {
 
   get secretKey(): string | undefined {
     return this._secretKey ?? undefined;
+  }
+
+  get cloudProfile(): string {
+    return this._cloudProfile ?? "default";
   }
 
   get tlsSecurity(): Exclude<TlsSecurity, "default"> {
@@ -552,6 +564,7 @@ async function parseConnectDsnAndArgs(
           user: process.env.EDGEDB_USER,
           password: process.env.EDGEDB_PASSWORD,
           secretKey: process.env.EDGEDB_SECRET_KEY,
+          cloudProfile: process.env.EDGEDB_CLOUD_PROFILE,
           tlsCA: process.env.EDGEDB_TLS_CA,
           tlsCAFile: process.env.EDGEDB_TLS_CA_FILE,
           tlsSecurity: process.env.EDGEDB_CLIENT_TLS_SECURITY,
@@ -568,6 +581,7 @@ async function parseConnectDsnAndArgs(
           user: `'EDGEDB_USER' environment variable`,
           password: `'EDGEDB_PASSWORD' environment variable`,
           secretKey: `'EDGEDB_SECRET_KEY' environment variable`,
+          cloudProfile: `'EDGEDB_CLOUD_PROFILE' environment variable`,
           tlsCA: `'EDGEDB_TLS_CA' environment variable`,
           tlsCAFile: `'EDGEDB_TLS_CA_FILE' environment variable`,
           tlsSecurity: `'EDGEDB_CLIENT_TLS_SECURITY' environment variable`,
@@ -604,13 +618,19 @@ async function parseConnectDsnAndArgs(
       .catch(() => null);
 
     if (instName !== null) {
+      const cloudProfile = await serverUtils
+        .readFileUtf8(stashDir, "cloud-profile")
+        .then(name => name.trim())
+        .catch(() => undefined);
       await resolveConfigOptions(
         resolvedConfig,
-        {instanceName: instName},
-        {instanceName: `project linked instance ('${instName}')`},
+        {instanceName: instName, cloudProfile: cloudProfile},
+        {
+          instanceName: `project linked instance ('${instName}')`,
+          cloudProfile: `project defined cloud instance ('${cloudProfile}')`
+        },
         "",
-        serverUtils,
-        stashDir
+        serverUtils
       );
       fromProject = true;
     } else {
@@ -642,6 +662,7 @@ interface ResolveConfigOptionsConfig {
   user: string;
   password: string;
   secretKey: string;
+  cloudProfile: string;
   tlsCA: string;
   tlsCAFile: string;
   tlsSecurity: string;
@@ -656,8 +677,7 @@ async function resolveConfigOptions<
   config: Config,
   sources: {[key in keyof Config]: string},
   compoundParamsError: string,
-  serverUtils: ServerUtils | null,
-  stashDir?: string
+  serverUtils: ServerUtils | null
 ): Promise<{hasCompoundOptions: boolean; anyOptionsUsed: boolean}> {
   let anyOptionsUsed = false;
 
@@ -688,6 +708,11 @@ async function resolveConfigOptions<
     resolvedConfig.setSecretKey(
       config.secretKey ?? null,
       sources.secretKey!
+    ) || anyOptionsUsed;
+  anyOptionsUsed =
+    resolvedConfig.setCloudProfile(
+      config.cloudProfile ?? null,
+      sources.cloudProfile!
     ) || anyOptionsUsed;
   anyOptionsUsed =
     resolvedConfig.setTlsCAData(config.tlsCA ?? null, sources.tlsCA!) ||
@@ -774,8 +799,7 @@ async function resolveConfigOptions<
               resolvedConfig,
               config.instanceName!,
               sources.instanceName!,
-              serverUtils,
-              stashDir
+              serverUtils
             );
             return {hasCompoundOptions: true, anyOptionsUsed: true};
           }
@@ -969,8 +993,7 @@ async function parseCloudInstanceNameIntoConfig(
   config: ResolvedConnectConfig,
   cloudInstanceName: string,
   source: string,
-  serverUtils: ServerUtils | null,
-  stashPath: string | undefined
+  serverUtils: ServerUtils | null
 ): Promise<void> {
   let secretKey = config.secretKey;
   if (secretKey == null) {
@@ -981,15 +1004,7 @@ async function parseCloudInstanceNameIntoConfig(
         );
       }
 
-      const profile =
-        process.env.EDGEDB_CLOUD_PROFILE ??
-        (stashPath &&
-          (await serverUtils
-            .readFileUtf8(stashPath, "cloud-profile")
-            .then(name => name.trim())
-            .catch(() => null))) ??
-        "default";
-
+      const profile = config.cloudProfile;
       const profilePath = await serverUtils.searchConfigDir(
         "cloud-credentials",
         `${profile}.json`
@@ -1023,11 +1038,11 @@ async function parseCloudInstanceNameIntoConfig(
         "Invalid secret key: payload does not contain 'iss' value"
       );
     }
-    const dnsBucket = (
-      crcHqx(utf8Encoder.encode(cloudInstanceName), 0) % 9900
-    ).toString(16);
+    const dnsBucket = (crcHqx(utf8Encoder.encode(cloudInstanceName), 0) % 100)
+      .toString(10)
+      .padStart(2, "0");
     const [org, instanceName] = cloudInstanceName.split("/");
-    const host = `${instanceName}.${org}.c-${dnsBucket}.i.${dnsZone}`;
+    const host = `${instanceName}--${org}.c-${dnsBucket}.i.${dnsZone}`;
     config.setHost(host, `resolved from 'secretKey' and ${source}`);
   } catch (e) {
     if (e instanceof errors.EdgeDBError) {
