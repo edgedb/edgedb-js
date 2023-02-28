@@ -2,7 +2,7 @@
 import {CommandOptions, getPackageVersion} from "./commandutil";
 import {exitWithError} from "./genutil";
 
-import {$, adapter, Client, createClient} from "edgedb";
+import {$, adapter, Client, createClient, createHttpClient} from "edgedb";
 import {DirBuilder} from "./builders";
 
 import type {ConnectConfig} from "edgedb/dist/conUtils";
@@ -44,7 +44,10 @@ export async function runInterfacesGenerator(params: {
 
   let client: Client;
   try {
-    client = createClient({
+    const cxnCreatorFn = options.useHttpClient
+      ? createHttpClient
+      : createClient;
+    client = cxnCreatorFn({
       ...connectionConfig,
       concurrency: 5
     });

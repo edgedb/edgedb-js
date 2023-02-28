@@ -14,6 +14,7 @@ export interface CommandOptions {
   passwordFromStdin?: boolean;
   forceOverwrite?: boolean;
   updateIgnoreFile?: boolean;
+  useHttpClient?: boolean;
 }
 
 const {input} = adapter;
