@@ -624,7 +624,7 @@ async function parseConnectDsnAndArgs(
         .catch(() => undefined);
       await resolveConfigOptions(
         resolvedConfig,
-        {instanceName: instName, cloudProfile: cloudProfile},
+        {instanceName: instName, cloudProfile},
         {
           instanceName: `project linked instance ('${instName}')`,
           cloudProfile: `project defined cloud instance ('${cloudProfile}')`
