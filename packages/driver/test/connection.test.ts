@@ -130,8 +130,9 @@ async function envWrap(
               projectPathHash(content["project-path"])
             );
             files[filepath] = "";
-            files[pathJoin(filepath, "instance-name")] =
-              content["instance-name"];
+            for (const [name, file] of Object.entries(content)) {
+              files[pathJoin(filepath, name)] = file;
+            }
           }
           return files;
         },
@@ -193,7 +194,10 @@ const errorMapping: {[key: string]: string | RegExp} = {
   file_not_found: /no such file or directory/,
   invalid_tls_security:
     /^invalid 'tlsSecurity' value|'tlsSecurity' value cannot be lower than security level set by EDGEDB_CLIENT_SECURITY/,
-  exclusive_options: /^Cannot specify both .* and .*/
+  exclusive_options: /^Cannot specify both .* and .*/,
+  secret_key_not_found:
+    /^Cannot connect to cloud instances without a secret key/,
+  invalid_secret_key: /^Invalid secret key/
 };
 
 const warningMapping: {[key: string]: string} = {
@@ -228,7 +232,7 @@ type ConnectionTestCase = {
 } & ({result: ConnectionResult} | {error: {type: string}});
 
 async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
-  const {env = {}, opts = {}, fs, platform} = testcase;
+  const {env = {}, opts: _opts = {}, fs, platform} = testcase;
   if (
     fs &&
     ((!platform &&
@@ -238,6 +242,8 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
   ) {
     return;
   }
+
+  const opts = {..._opts, instanceName: _opts.instance};
 
   if ("error" in testcase) {
     const error = errorMapping[testcase.error.type];
@@ -252,39 +258,48 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
     const warnings = await envWrap(
       {env, fs, captureWarnings: !!testcase.warnings},
       async () => {
-        const {connectionParams} = await parseConnectArguments(opts);
-        let waitMilli = connectionParams.waitUntilAvailable;
-        const waitHours = Math.floor(waitMilli / 3_600_000);
-        waitMilli -= waitHours * 3_600_000;
-        const waitMinutes = Math.floor(waitMilli / 60_000);
-        waitMilli -= waitMinutes * 60_000;
-        const waitSeconds = Math.floor(waitMilli / 1000);
-        waitMilli -= waitSeconds * 1000;
+        try {
+          const {connectionParams} = await parseConnectArguments(opts);
 
-        expect({
-          address: connectionParams.address,
-          database: connectionParams.database,
-          user: connectionParams.user,
-          password: connectionParams.password ?? null,
-          tlsCAData: connectionParams._tlsCAData,
-          tlsSecurity: connectionParams.tlsSecurity,
-          serverSettings: connectionParams.serverSettings,
-          waitUntilAvailable: parseDuration(
-            new Duration(
-              0,
-              0,
-              0,
-              0,
-              waitHours,
-              waitMinutes,
-              waitSeconds,
-              waitMilli
+          let waitMilli = connectionParams.waitUntilAvailable;
+          const waitHours = Math.floor(waitMilli / 3_600_000);
+          waitMilli -= waitHours * 3_600_000;
+          const waitMinutes = Math.floor(waitMilli / 60_000);
+          waitMilli -= waitMinutes * 60_000;
+          const waitSeconds = Math.floor(waitMilli / 1000);
+          waitMilli -= waitSeconds * 1000;
+
+          expect({
+            address: connectionParams.address,
+            database: connectionParams.database,
+            user: connectionParams.user,
+            password: connectionParams.password ?? null,
+            secretKey: connectionParams.secretKey ?? null,
+            tlsCAData: connectionParams._tlsCAData,
+            tlsSecurity: connectionParams.tlsSecurity,
+            serverSettings: connectionParams.serverSettings,
+            waitUntilAvailable: parseDuration(
+              new Duration(
+                0,
+                0,
+                0,
+                0,
+                waitHours,
+                waitMinutes,
+                waitSeconds,
+                waitMilli
+              )
             )
-          )
-        }).toEqual({
-          ...testcase.result,
-          waitUntilAvailable: parseDuration(testcase.result.waitUntilAvailable)
-        });
+          }).toEqual({
+            ...testcase.result,
+            waitUntilAvailable: parseDuration(
+              testcase.result.waitUntilAvailable
+            )
+          });
+        } catch (e) {
+          console.log(testcase);
+          throw e;
+        }
       }
     );
     if (testcase.warnings) {
