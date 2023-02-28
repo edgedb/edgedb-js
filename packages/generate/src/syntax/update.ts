@@ -73,9 +73,6 @@ export function update<
   Shape extends {
     filter?: SelectModifiers["filter"];
     filter_single?: SelectModifiers<Expr["__element__"]>["filter_single"];
-    order_by?: SelectModifiers["order_by"];
-    limit?: SelectModifiers["limit"];
-    offset?: SelectModifiers["offset"];
     set: UpdateShape<Expr>;
   }
   // SetShape extends UpdateShape<Expr>,
@@ -112,7 +109,7 @@ export function update<
       updateShape = val;
     } else {
       throw new Error(
-        `Invalid update shape key '${key}', only 'filter', ` +
+        `Invalid update shape key '${key}', only 'filter', 'filter_single', ` +
           `and 'set' are allowed`
       );
     }

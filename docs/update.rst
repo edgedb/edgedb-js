@@ -15,23 +15,6 @@ Update objects with the ``e.update`` function.
   }))
 
 
-The parameter object supports the full set of clauses for filtering, ordering,
-and pagination.
-
-.. code-block:: typescript
-
-  e.update(e.Movie, movie => ({
-    filter: ...,
-    filter_single: ...,
-    order_by: ...,
-    offset: ...,
-    limit: ...,
-    set: {
-      // ...
-    }
-  }))
-
-
 You can reference the current value of the object's properties.
 
 .. code-block:: typescript
