@@ -815,11 +815,17 @@ function renderEdgeQL(
       .map(param => {
         const optional =
           param.__cardinality__ === Cardinality.AtMostOne ? "OPTIONAL " : "";
-        return `  __param__${param.__name__} := ${
-          param.__isComplex__
-            ? `<${param.__element__.__name__}>to_json(<${optional}str>$${param.__name__})`
-            : `<${optional}${param.__element__.__name__}>$${param.__name__}`
-        }`;
+        let paramExpr: string;
+        if (param.__isComplex__) {
+          let cast = param.__element__.__name__;
+          cast = cast.includes("std::decimal")
+            ? `<${cast}><${cast.replace(/std::decimal/g, "std::str")}>`
+            : `<${cast}>`;
+          paramExpr = `${cast}to_json(<${optional}str>$${param.__name__})`;
+        } else {
+          paramExpr = `<${optional}${param.__element__.__name__}>$${param.__name__}`;
+        }
+        return `  __param__${param.__name__} := ${paramExpr}`;
       })
       .join(",\n")}\nSELECT ${renderEdgeQL(expr.__expr__, ctx)})`;
   } else if (expr.__kind__ === ExpressionKind.Alias) {

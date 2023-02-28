@@ -223,7 +223,6 @@ test("fetch: bigint", async () => {
 
 test("fetch: decimal as string", async () => {
   const con = getClient();
-  setCustomCodecs(["decimal_string"], con);
 
   const vals = [
     "0.001",
@@ -1672,25 +1671,6 @@ test("fetch/optimistic cache invalidation", async () => {
     }
   } finally {
     await client.close();
-  }
-});
-
-test("fetch no codec", async () => {
-  const con = getClient();
-  try {
-    await con
-      .querySingle("select <decimal>1")
-      .then(() => {
-        throw new Error("an exception was expected");
-      })
-      .catch(e => {
-        expect(e.toString()).toMatch(/no JS codec for std::decimal/);
-      });
-    await con.querySingle("select 123").then(res => {
-      expect(res).toEqual(123);
-    });
-  } finally {
-    await con.close();
   }
 });
 
