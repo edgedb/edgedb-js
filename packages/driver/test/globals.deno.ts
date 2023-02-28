@@ -3,10 +3,10 @@ import {
   addMatchers
 } from "https://deno.land/x/expect/mod.ts";
 import {MatchResult} from "https://deno.land/x/expect/matchers.ts";
-import {bold, green, red} from "https://deno.land/std@0.159.0/fmt/colors.ts";
+import {bold, green, red} from "https://deno.land/std@0.177.0/fmt/colors.ts";
 
-export {Buffer} from "https://deno.land/std@0.159.0/node/buffer.ts";
-export {process} from "https://deno.land/std@0.159.0/node/process.ts";
+export {Buffer} from "https://deno.land/std@0.177.0/node/buffer.ts";
+export {process} from "https://deno.land/std@0.177.0/node/process.ts";
 
 const ACTUAL = red(bold("actual"));
 const EXPECTED = green(bold("expected"));
