@@ -95,7 +95,7 @@ function walkCodec(
   }
   if (codec instanceof ScalarCodec) {
     if (codec instanceof EnumCodec) {
-      return codec.values.map(val => JSON.stringify(val)).join(" | ");
+      return `(${codec.values.map(val => JSON.stringify(val)).join(" | ")})`;
     }
     if (codec.importedType) {
       ctx.imports.add(codec.tsType);
