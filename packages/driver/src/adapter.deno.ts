@@ -16,6 +16,10 @@ export async function readFileUtf8(...pathParts: string[]): Promise<string> {
   return await Deno.readTextFile(path.join(...pathParts));
 }
 
+export function hasFSReadPermission(): boolean {
+  return Deno.permissions.querySync({name: "read"}).state === "granted";
+}
+
 export async function readDir(path: string) {
   try {
     const files: string[] = [];

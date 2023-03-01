@@ -59,3 +59,10 @@ if (typeof crypto === "undefined") {
 }
 
 export {randomBytes, H, HMAC};
+
+export function getEnv(
+  envName: string,
+  required: boolean = false
+): string | undefined {
+  return process.env[envName];
+}

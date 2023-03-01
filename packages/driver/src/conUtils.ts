@@ -23,6 +23,7 @@ import {
   readCredentialsFile,
   validateCredentials
 } from "./credentials";
+import {getEnv} from "./adapter.shared.node";
 import {Duration, parseHumanDurationString} from "./datatypes/datetime";
 import {checkValidEdgeDBDuration} from "./codecs/datetime";
 import {InterfaceError} from "./errors";
@@ -44,7 +45,7 @@ interface PartiallyNormalizedConfig {
   connectionParams: ResolvedConnectConfig;
 
   // true if the program is run in a directory with `edgedb.toml`
-  inProject: boolean;
+  inProject: () => Promise<boolean>;
   // true if the connection params were initialized from a project
   fromProject: boolean;
   // true if any of the connection params were sourced from environment
@@ -78,7 +79,7 @@ export interface ConnectConfig {
 }
 
 export interface ServerUtils {
-  findProjectDir: () => Promise<string | null>;
+  findProjectDir: (required?: boolean) => Promise<string | null>;
   findStashPath: (projectDir: string) => Promise<string>;
   readFileUtf8: (...path: string[]) => Promise<string>;
   searchConfigDir: (...configPath: string[]) => Promise<string>;
@@ -259,7 +260,7 @@ export class ResolvedConnectConfig {
                 .join(", ")}`
           );
         }
-        const clientSecurity = process.env.EDGEDB_CLIENT_SECURITY;
+        const clientSecurity = getEnv("EDGEDB_CLIENT_SECURITY");
         if (clientSecurity !== undefined) {
           if (
             !["default", "insecure_dev_mode", "strict"].includes(
@@ -483,7 +484,6 @@ async function parseConnectDsnAndArgs(
   const resolvedConfig = new ResolvedConnectConfig();
   let fromEnv = false;
   let fromProject = false;
-  const projectDir = await serverUtils?.findProjectDir();
 
   const [dsn, instanceName]: [string | undefined, string | undefined] =
     config.instanceName == null &&
@@ -540,7 +540,7 @@ async function parseConnectDsnAndArgs(
   if (!hasCompoundOptions) {
     // resolve config from env vars
 
-    let port: string | undefined = process.env.EDGEDB_PORT;
+    let port: string | undefined = getEnv("EDGEDB_PORT");
     if (resolvedConfig._port === null && port?.startsWith("tcp://")) {
       // EDGEDB_PORT is set by 'docker --link' so ignore and warn
       // tslint:disable-next-line: no-console
@@ -554,21 +554,21 @@ async function parseConnectDsnAndArgs(
       await resolveConfigOptions(
         resolvedConfig,
         {
-          dsn: process.env.EDGEDB_DSN,
-          instanceName: process.env.EDGEDB_INSTANCE,
-          credentials: process.env.EDGEDB_CREDENTIALS,
-          credentialsFile: process.env.EDGEDB_CREDENTIALS_FILE,
-          host: process.env.EDGEDB_HOST,
+          dsn: getEnv("EDGEDB_DSN"),
+          instanceName: getEnv("EDGEDB_INSTANCE"),
+          credentials: getEnv("EDGEDB_CREDENTIALS"),
+          credentialsFile: getEnv("EDGEDB_CREDENTIALS_FILE"),
+          host: getEnv("EDGEDB_HOST"),
           port,
-          database: process.env.EDGEDB_DATABASE,
-          user: process.env.EDGEDB_USER,
-          password: process.env.EDGEDB_PASSWORD,
-          secretKey: process.env.EDGEDB_SECRET_KEY,
-          cloudProfile: process.env.EDGEDB_CLOUD_PROFILE,
-          tlsCA: process.env.EDGEDB_TLS_CA,
-          tlsCAFile: process.env.EDGEDB_TLS_CA_FILE,
-          tlsSecurity: process.env.EDGEDB_CLIENT_TLS_SECURITY,
-          waitUntilAvailable: process.env.EDGEDB_WAIT_UNTIL_AVAILABLE
+          database: getEnv("EDGEDB_DATABASE"),
+          user: getEnv("EDGEDB_USER"),
+          password: getEnv("EDGEDB_PASSWORD"),
+          secretKey: getEnv("EDGEDB_SECRET_KEY"),
+          cloudProfile: getEnv("EDGEDB_CLOUD_PROFILE"),
+          tlsCA: getEnv("EDGEDB_TLS_CA"),
+          tlsCAFile: getEnv("EDGEDB_TLS_CA_FILE"),
+          tlsSecurity: getEnv("EDGEDB_CLIENT_TLS_SECURITY"),
+          waitUntilAvailable: getEnv("EDGEDB_WAIT_UNTIL_AVAILABLE")
         },
         {
           dsn: `'EDGEDB_DSN' environment variable`,
@@ -603,6 +603,7 @@ async function parseConnectDsnAndArgs(
           "(or edge runtime) environment"
       );
     }
+    const projectDir = await serverUtils?.findProjectDir();
     if (!projectDir) {
       throw new errors.ClientConnectionError(
         "no 'edgedb.toml' found and no connection options specified" +
@@ -645,7 +646,7 @@ async function parseConnectDsnAndArgs(
 
   return {
     connectionParams: resolvedConfig,
-    inProject: !!projectDir,
+    inProject: async () => (await serverUtils?.findProjectDir(false)) != null,
     fromEnv,
     fromProject
   };
@@ -906,7 +907,7 @@ async function parseDSNIntoConfig(
       if (param === null) {
         const env = searchParams.get(`${paramName}_env`);
         if (env != null) {
-          param = process.env[env] ?? null;
+          param = getEnv(env, true) ?? null;
           if (param === null) {
             throw new InterfaceError(
               `'${paramName}_env' environment variable '${env}' doesn't exist`

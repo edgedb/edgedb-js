@@ -64,7 +64,11 @@ export async function retryingConnect(
               e
             ];
 
-            if (config.inProject && !config.fromProject && !config.fromEnv) {
+            if (
+              !config.fromProject &&
+              !config.fromEnv &&
+              (await config.inProject())
+            ) {
               logMsg.push(
                 `\n\n\n` +
                   `Hint: it looks like the program is running from a ` +
