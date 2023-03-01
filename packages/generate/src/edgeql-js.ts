@@ -156,6 +156,13 @@ export async function generateQueryBuilder(params: {
     generateOperators(generatorParams);
     generateSetImpl(generatorParams);
     generateGlobals(generatorParams);
+
+    // TODO: Fix 'fts' module generation properly, for now we just disable
+    // output of this module
+    dir._modules.delete("fts");
+    dir._map.delete("modules/fts");
+    // -----------------
+
     generateIndex(generatorParams);
 
     // generate module imports
