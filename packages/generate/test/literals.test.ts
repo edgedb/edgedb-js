@@ -1,7 +1,7 @@
 import * as edgedb from "edgedb";
 import {TypeKind} from "edgedb/dist/reflection";
 import e from "../dbschema/edgeql-js";
-import {setupTests, version_lt} from "./setupTeardown";
+import {setupTests, testIfVersionGTE} from "./setupTeardown";
 
 test("literals", () => {
   const duration = new edgedb.Duration(0, 0, 0, 0, 5, 6, 7, 8, 9, 10);
@@ -100,9 +100,8 @@ test("enum literals", () => {
   ).toThrow();
 });
 
-test("constructing with strings", async () => {
+testIfVersionGTE(2)("constructing with strings", async () => {
   const {client} = await setupTests();
-  if (await version_lt(client, 2)) return;
 
   const dateString = new Date().toISOString();
   expect(

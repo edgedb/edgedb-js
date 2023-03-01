@@ -423,9 +423,13 @@ test("objectTypeToTupleType helper", () => {
   const movieTuple = objectTypeToTupleType(e.Movie);
 
   expect(movieTuple["__kind__"]).toBe("namedtuple");
-  expect(movieTuple["__name__"]).toBe(
-    "tuple<genre: default::Genre, rating: std::float64, title: std::str, release_year: default::year>"
-  );
+  expect(movieTuple["__name__"].slice(0, 6)).toBe("tuple<");
+  expect(movieTuple["__name__"].slice(6, -1).split(", ").sort()).toEqual([
+    "genre: default::Genre",
+    "rating: std::float64",
+    "release_year: default::year",
+    "title: std::str"
+  ]);
 
   tc.assert<
     tc.IsExact<
@@ -441,9 +445,14 @@ test("objectTypeToTupleType helper", () => {
   ]);
 
   expect(movieTupleWithFields["__kind__"]).toBe("namedtuple");
-  expect(movieTupleWithFields["__name__"]).toBe(
-    "tuple<title: std::str, release_year: default::year, id: std::uuid>"
-  );
+  expect(movieTupleWithFields["__name__"].slice(0, 6)).toBe("tuple<");
+  expect(
+    movieTupleWithFields["__name__"].slice(6, -1).split(", ").sort()
+  ).toEqual([
+    "id: std::uuid",
+    "release_year: default::year",
+    "title: std::str"
+  ]);
 
   tc.assert<
     tc.IsExact<

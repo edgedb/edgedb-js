@@ -23,7 +23,8 @@ import {
   InvalidArgumentError,
   MissingArgumentError,
   UnknownArgumentError,
-  ProtocolError
+  ProtocolError,
+  QueryArgumentError
 } from "../errors";
 
 export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
@@ -38,10 +39,52 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     this.namesSet = new Set(names);
   }
 
-  encode(_buf: WriteBuffer, _object: any): void {
-    throw new InvalidArgumentError(
-      "Named tuples cannot be passed in query arguments"
-    );
+  encode(buf: WriteBuffer, object: any): void {
+    if (typeof object !== "object" || Array.isArray(object)) {
+      throw new InvalidArgumentError(
+        `an object was expected, got "${object}"`
+      );
+    }
+
+    const codecsLen = this.subCodecs.length;
+
+    if (Object.keys(object).length !== codecsLen) {
+      throw new QueryArgumentError(
+        `expected ${codecsLen} element${
+          codecsLen === 1 ? "" : "s"
+        } in named tuple, got ${Object.keys(object).length}`
+      );
+    }
+
+    const elemData = new WriteBuffer();
+    for (let i = 0; i < codecsLen; i++) {
+      const key = this.names[i];
+      const val = object[key];
+
+      if (val == null) {
+        throw new MissingArgumentError(
+          `element '${key}' in named tuple cannot be 'null'`
+        );
+      } else {
+        elemData.writeInt32(0); // reserved
+        try {
+          this.subCodecs[i].encode(elemData, val);
+        } catch (e) {
+          if (e instanceof QueryArgumentError) {
+            throw new InvalidArgumentError(
+              `invalid element '${key}' in named tuple: ${e.message}`
+            );
+          } else {
+            throw e;
+          }
+        }
+      }
+    }
+
+    const elemBuf = elemData.unwrap();
+    buf.writeInt32(4 + elemBuf.length);
+    buf.writeInt32(codecsLen);
+    buf.writeBuffer(elemBuf);
   }
 
   encodeArgs(args: any): Uint8Array {

@@ -20,7 +20,12 @@ import {KNOWN_TYPENAMES} from "./consts";
 
 import {ICodec, Codec, uuid, IArgsCodec, CodecKind} from "./ifaces";
 import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
-import {InvalidArgumentError, ProtocolError} from "../errors";
+import {
+  InvalidArgumentError,
+  MissingArgumentError,
+  ProtocolError,
+  QueryArgumentError
+} from "../errors";
 
 export class TupleCodec extends Codec implements ICodec, IArgsCodec {
   private subCodecs: ICodec[];
@@ -30,9 +35,9 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     this.subCodecs = codecs;
   }
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, allowNull: boolean = false): void {
     if (!Array.isArray(object)) {
-      throw new InvalidArgumentError(`an array was expected, got ${object}`);
+      throw new InvalidArgumentError(`an array was expected, got "${object}"`);
     }
 
     const codecs = this.subCodecs;
@@ -55,10 +60,25 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
       const elem = object[i];
       elemData.writeInt32(0); // reserved bytes
       if (elem == null) {
-        elemData.writeInt32(-1);
+        if (allowNull) {
+          elemData.writeInt32(-1);
+        } else {
+          throw new MissingArgumentError(
+            `element at index ${i} in tuple cannot be 'null'`
+          );
+        }
       } else {
-        const codec = codecs[i];
-        codec.encode(elemData, elem);
+        try {
+          codecs[i].encode(elemData, elem);
+        } catch (e) {
+          if (e instanceof QueryArgumentError) {
+            throw new InvalidArgumentError(
+              `invalid element at index ${i} in tuple: ${e.message}`
+            );
+          } else {
+            throw e;
+          }
+        }
       }
     }
 
@@ -84,7 +104,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     }
 
     const buf = new WriteBuffer();
-    this.encode(buf, args);
+    this.encode(buf, args, true);
     return buf.unwrap();
   }
 

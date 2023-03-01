@@ -727,7 +727,7 @@ Object.defineProperty(exports, "__esModule", { value: true });\n`
 let moduleCounter = 0;
 
 export class DirBuilder {
-  private _map = new StrictMap<string, CodeBuilder>();
+  _map = new StrictMap<string, CodeBuilder>();
   _refs = new Map<string, {internalName: string; dir: string}>();
   _modules = new Map<string, string[]>();
 

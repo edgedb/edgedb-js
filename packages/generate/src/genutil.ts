@@ -447,6 +447,7 @@ export type GeneratorParams = {
   functions: $.introspect.FunctionTypes;
   globals: $.introspect.Globals;
   operators: $.introspect.OperatorTypes;
+  edgedbVersion: Version;
 };
 
 export function exitWithError(message: string): never {

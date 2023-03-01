@@ -131,9 +131,10 @@ export async function teardownTests(client: Client) {
   await client.close();
 }
 
-export const version_lt = async (client: Client, cutoff: number) => {
-  const version = await client.queryRequiredSingle<{major: number}>(
-    `select sys::get_version()`
-  );
-  return version.major < cutoff;
+export const versionGTE = (majorVer: number) => {
+  const version = JSON.parse(process.env._JEST_EDGEDB_VERSION!);
+  return version.major >= majorVer;
 };
+
+export const testIfVersionGTE = (majorVer: number) =>
+  versionGTE(majorVer) ? test.skip : test;

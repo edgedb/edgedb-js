@@ -1,6 +1,12 @@
 import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql-js";
-import {setupTests, teardownTests, tc, version_lt} from "./setupTeardown";
+import {
+  setupTests,
+  teardownTests,
+  tc,
+  testIfVersionGTE,
+  versionGTE
+} from "./setupTeardown";
 
 let client: edgedb.Client;
 
@@ -146,17 +152,23 @@ test("complex params", async () => {
   });
 });
 
-// test("non castable scalars", async () => {
-//   e.params(
-//     {
-//       // @ts-expect-error
-//       num: e.int64,
-//       // @ts-expect-error
-//       tuple: e.tuple([e.int64]),
-//     },
-//     p => e.select({num: p.num, tuple: p.num})
-//   );
-// });
+test("native tuple type params", async () => {
+  const query = e.params({test: e.tuple([e.str, e.int64])}, $ =>
+    e.select($.test)
+  );
+
+  if (versionGTE(3)) {
+    expect(query.toEdgeQL()).toEqual(`WITH
+  __param__test := <tuple<std::str, std::int64>>$test
+SELECT (SELECT __param__test)`);
+  } else {
+    expect(query.toEdgeQL()).toEqual(`WITH
+  __param__test := <tuple<std::str, std::int64>>to_json(<str>$test)
+SELECT (SELECT __param__test)`);
+  }
+
+  await query.run(client, {test: ["str", 123]});
+});
 
 test("all param types", async () => {
   const params = {
@@ -263,8 +275,7 @@ test("all param types", async () => {
   );
 });
 
-test("v2 param types", async () => {
-  if (await version_lt(client, 2)) return;
+testIfVersionGTE(2)("v2 param types", async () => {
   const params = {
     date_duration: e.cal.date_duration
   };
