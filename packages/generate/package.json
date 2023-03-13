@@ -18,11 +18,11 @@
   ],
   "bin": "dist/cli.js",
   "peerDependencies": {
-    "edgedb": "^1.0.0-alpha.0"
+    "edgedb": "^1.1.0"
   },
   "devDependencies": {
     "conditional-type-checks": "^1.0.5",
-    "edgedb": "~1.0.0-alpha.2",
+    "edgedb": "^1.1.0",
     "esbuild": "^0.15.7",
     "globby": "^13.1.2",
     "superjson": "^1.7.5",
