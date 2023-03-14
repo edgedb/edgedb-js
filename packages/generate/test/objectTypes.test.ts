@@ -183,4 +183,11 @@ test("select *", () => {
 
     return {};
   });
+
+  // on insert select
+  e.select(e.insert(e.Movie, {title: "test"}), movie => {
+    expect(movie["*"]).toEqual(movieStarShape);
+
+    return movie["*"];
+  }).toEdgeQL();
 });

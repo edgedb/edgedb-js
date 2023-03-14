@@ -447,22 +447,20 @@ export function $getScopedExpr<T extends ExpressionRoot>(
       expr.__cardinality__ === Cardinality.One &&
       expr.__element__.__name__ === "std::FreeObject";
 
-    const isInsert = expr.__kind__ === ExpressionKind.Insert;
-    scopedExpr =
-      isFreeObject || isInsert
-        ? (expr as any as Expression<TypeSet<BaseType, Cardinality>>)
-        : $expressionify({
-            ...expr,
-            __cardinality__: Cardinality.One,
-            __scopedFrom__: expr,
-            ...(expr.__element__.__kind__ === TypeKind.object
-              ? {
-                  "*": getStarShapeFromPointers(
-                    (expr.__element__ as ObjectType).__pointers__
-                  )
-                }
-              : {})
-          });
+    scopedExpr = isFreeObject
+      ? (expr as any as Expression<TypeSet<BaseType, Cardinality>>)
+      : $expressionify({
+          ...expr,
+          __cardinality__: Cardinality.One,
+          __scopedFrom__: expr,
+          ...(expr.__element__.__kind__ === TypeKind.object
+            ? {
+                "*": getStarShapeFromPointers(
+                  (expr.__element__ as ObjectType).__pointers__
+                )
+              }
+            : {})
+        });
     scopeRoots.add(scopedExpr);
     const uncached = !scopedExpr;
     if (uncached) {
