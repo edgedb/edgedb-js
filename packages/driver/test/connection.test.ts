@@ -180,6 +180,7 @@ const errorMapping: {[key: string]: string | RegExp} = {
     /^no 'edgedb\.toml' found and no connection options specified either/,
   invalid_credentials_file: /^cannot read credentials file/,
   invalid_dsn_or_instance_name: /^invalid DSN or instance name/,
+  invalid_instance_name: /^invalid instance name/,
   invalid_dsn: /^invalid DSN/,
   unix_socket_unsupported: /^unix socket paths not supported/,
   invalid_port: /^invalid port/,
