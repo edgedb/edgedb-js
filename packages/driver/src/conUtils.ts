@@ -974,8 +974,8 @@ async function parseDSNIntoConfig(
     "tls_ca_file",
     null,
     config._tlsCAData,
-    (val: string | null, source: string) =>
-      config.setTlsCAFile(val, source, readFile)
+    (val: string | null, _source: string) =>
+      config.setTlsCAFile(val, _source, readFile)
   );
 
   await handleDSNPart(
