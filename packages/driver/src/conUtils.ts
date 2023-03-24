@@ -30,6 +30,8 @@ import {InterfaceError} from "./errors";
 import {decodeB64, utf8Decoder, utf8Encoder} from "./primitives/buffer";
 import {crcHqx} from "./primitives/crcHqx";
 
+const DOMAIN_NAME_MAX_LEN = 63;
+
 export type Address = [string, number];
 
 export const validTlsSecurityValues = [
@@ -790,12 +792,18 @@ async function resolveConfigOptions<
         }
         let credentialsFile = config.credentialsFile;
         if (credentialsFile === undefined) {
-          if (!/^[A-Za-z_]\w*(\/[A-Za-z_]\w*)?$/.test(config.instanceName!)) {
-            throw new InterfaceError(
-              `invalid DSN or instance name: '${config.instanceName}'`
+          if (/^\w(-?\w)*$/.test(config.instanceName!)) {
+            credentialsFile = await getCredentialsPath(
+              config.instanceName!,
+              serverUtils!
             );
-          }
-          if (config.instanceName!.includes("/")) {
+            source = sources.instanceName!;
+          } else {
+            if (!/^([A-Za-z0-9](-?[A-Za-z0-9])*)\/([A-Za-z0-9](-?[A-Za-z0-9])*)$/.test(config.instanceName!)) {
+              throw new InterfaceError(
+                `invalid DSN or instance name: '${config.instanceName}'`
+              );
+            }
             await parseCloudInstanceNameIntoConfig(
               resolvedConfig,
               config.instanceName!,
@@ -804,11 +812,6 @@ async function resolveConfigOptions<
             );
             return {hasCompoundOptions: true, anyOptionsUsed: true};
           }
-          credentialsFile = await getCredentialsPath(
-            config.instanceName!,
-            serverUtils!
-          );
-          source = sources.instanceName!;
         } else {
           source = sources.credentialsFile!;
         }
@@ -968,6 +971,13 @@ async function parseDSNIntoConfig(
   );
 
   await handleDSNPart("tls_ca", null, config._tlsCAData, config.setTlsCAData);
+  await handleDSNPart(
+    "tls_ca_file",
+    null,
+    config._tlsCAData,
+    (val: string | null, _source: string) =>
+      config.setTlsCAFile(val, _source, readFile)
+  );
 
   await handleDSNPart(
     "tls_security",
@@ -996,6 +1006,16 @@ async function parseCloudInstanceNameIntoConfig(
   source: string,
   serverUtils: ServerUtils | null
 ): Promise<void> {
+  const [org, instanceName] = cloudInstanceName.split("/");
+  const domainName = `${instanceName}--${org}`;
+  if (domainName.length > DOMAIN_NAME_MAX_LEN) {
+    throw new InterfaceError(
+      `invalid instance name: cloud instance name length cannot exceed ${
+        DOMAIN_NAME_MAX_LEN - 1
+      } characters: ${cloudInstanceName}`
+    );
+  }
+
   let secretKey = config.secretKey;
   if (secretKey == null) {
     try {
@@ -1042,8 +1062,8 @@ async function parseCloudInstanceNameIntoConfig(
     const dnsBucket = (crcHqx(utf8Encoder.encode(cloudInstanceName), 0) % 100)
       .toString(10)
       .padStart(2, "0");
-    const [org, instanceName] = cloudInstanceName.split("/");
-    const host = `${instanceName}--${org}.c-${dnsBucket}.i.${dnsZone}`;
+
+    const host = `${domainName}.c-${dnsBucket}.i.${dnsZone}`;
     config.setHost(host, `resolved from 'secretKey' and ${source}`);
   } catch (e) {
     if (e instanceof errors.EdgeDBError) {
