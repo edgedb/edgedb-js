@@ -792,12 +792,18 @@ async function resolveConfigOptions<
         }
         let credentialsFile = config.credentialsFile;
         if (credentialsFile === undefined) {
-          if (!/^(\w(-?\w)*)(\/(\w(-?\w)*))?$/.test(config.instanceName!)) {
-            throw new InterfaceError(
-              `invalid DSN or instance name: '${config.instanceName}'`
+          if (/^\w(-?\w)*$/.test(config.instanceName!)) {
+            credentialsFile = await getCredentialsPath(
+              config.instanceName!,
+              serverUtils!
             );
-          }
-          if (config.instanceName!.includes("/")) {
+            source = sources.instanceName!;
+          } else {
+            if (!/^([A-Za-z0-9](-?[A-Za-z0-9])*)\/([A-Za-z0-9](-?[A-Za-z0-9])*)$/.test(config.instanceName!)) {
+              throw new InterfaceError(
+                `invalid DSN or instance name: '${config.instanceName}'`
+              );
+            }
             await parseCloudInstanceNameIntoConfig(
               resolvedConfig,
               config.instanceName!,
@@ -805,12 +811,7 @@ async function resolveConfigOptions<
               serverUtils
             );
             return {hasCompoundOptions: true, anyOptionsUsed: true};
-          }
-          credentialsFile = await getCredentialsPath(
-            config.instanceName!,
-            serverUtils!
-          );
-          source = sources.instanceName!;
+	  }
         } else {
           source = sources.credentialsFile!;
         }
