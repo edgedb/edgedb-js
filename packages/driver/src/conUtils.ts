@@ -811,7 +811,7 @@ async function resolveConfigOptions<
               serverUtils
             );
             return {hasCompoundOptions: true, anyOptionsUsed: true};
-	  }
+          }
         } else {
           source = sources.credentialsFile!;
         }
