@@ -17,7 +17,7 @@ executing queries.
 
 .. note::
 
-  In actuality, the client maintains an *pool* of connections under the hood.
+  In actuality, the client maintains a *pool* of connections under the hood.
   When your server is under load, queries will be run in parallel across many
   connections, instead of being bottlenecked by a single connection.
 
