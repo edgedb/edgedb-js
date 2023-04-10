@@ -9,6 +9,7 @@ export interface CommandOptions {
   target?: Target;
   out?: string;
   file?: string;
+  suffix?: string;
   watch?: boolean;
   promptPassword?: boolean;
   passwordFromStdin?: boolean;

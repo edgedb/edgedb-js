@@ -129,7 +129,8 @@ currently supported.`);
       const files = generateFiles({
         target: params.options.target!,
         path,
-        types
+        types,
+        suffix: params.options.suffix
       });
       for (const f of files) {
         const prettyPath = "./" + adapter.path.posix.relative(root, f.path);
@@ -151,7 +152,7 @@ currently supported.`);
   }
 
   // generate per-query files
-  console.log(`Generating files for following queries:`);
+  console.log(`Generating the following files:`);
   await Promise.all(matches.map(generateFilesForQuery));
 
   if (!params.options.watch) {
@@ -190,6 +191,7 @@ function generateFiles(params: {
   target: Target;
   path: string;
   types: QueryType;
+  suffix?: string;
 }): {
   path: string;
   contents: string;
@@ -197,6 +199,9 @@ function generateFiles(params: {
   extension: string;
 }[] {
   const queryFileName = adapter.path.basename(params.path);
+  const outputFileName = params.suffix
+    ? params.path.replace(/\.\w+$/, `.${params.suffix}`)
+    : params.path;
 
   const method =
     params.types.cardinality === Cardinality.ONE
@@ -239,13 +244,13 @@ function generateFiles(params: {
     case "cjs":
       return [
         {
-          path: `${params.path}.js`,
+          path: `${outputFileName}.js`,
           contents: `${jsImpl}\n\nmodule.exports.${functionName} = ${functionName};`,
           imports: {},
           extension: ".js"
         },
         {
-          path: `${params.path}.d.ts`,
+          path: `${outputFileName}.d.ts`,
           contents: `export ${dtsImpl}`,
           imports: tsImports,
           extension: ".d.ts"
@@ -255,7 +260,7 @@ function generateFiles(params: {
     case "deno":
       return [
         {
-          path: `${params.path}.ts`,
+          path: `${outputFileName}.ts`,
           contents: `export ${tsImpl}`,
           imports: tsImports,
           extension: ".ts"
@@ -264,13 +269,13 @@ function generateFiles(params: {
     case "esm":
       return [
         {
-          path: `${params.path}.mjs`,
+          path: `${outputFileName}.mjs`,
           contents: `export ${jsImpl}`,
           imports: {},
           extension: ".mjs"
         },
         {
-          path: `${params.path}.d.ts`,
+          path: `${outputFileName}.d.ts`,
           contents: `export ${dtsImpl}`,
           imports: tsImports,
           extension: ".d.ts"
@@ -279,7 +284,7 @@ function generateFiles(params: {
     case "mts":
       return [
         {
-          path: `${params.path}.mts`,
+          path: `${outputFileName}.mts`,
           contents: `export ${tsImpl}`,
           imports: tsImports,
           extension: ".mts"
@@ -288,7 +293,7 @@ function generateFiles(params: {
     case "ts":
       return [
         {
-          path: `${params.path}.ts`,
+          path: `${outputFileName}.ts`,
           contents: `export ${tsImpl}`,
           imports: tsImports,
           extension: ".ts"

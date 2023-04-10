@@ -181,6 +181,18 @@ const run = async () => {
         }
         options.out = getVal();
         break;
+      case "--suffix":
+        if (
+          generator === Generator.Interfaces ||
+          generator === Generator.Queries
+        ) {
+          options.suffix = getVal();
+        } else {
+          exitWithError(
+            `--suffix is not supported for generator "${generator}"`
+          );
+        }
+        break;
       case "--file":
         if (generator === Generator.Interfaces) {
           options.file = getVal();
