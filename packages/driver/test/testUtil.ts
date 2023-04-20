@@ -87,7 +87,7 @@ export const getServerCommand = (
     srvcmd = process.env.EDGEDB_SERVER_BIN;
   }
 
-  let args = [srvcmd];
+  let args = [srvcmd.replace(/ /g, "\\ ")];
   if (process.platform === "win32") {
     args = ["wsl", "-u", "edgedb", ...args];
   }
@@ -125,7 +125,7 @@ export const getServerCommand = (
     "--port=auto",
     "--emit-server-status=" + statusFile,
     "--security=strict",
-    "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }"
+    `--bootstrap-command="ALTER ROLE edgedb { SET password := 'edgedbtest' }"`
   ];
 
   return {args, availableFeatures};
@@ -145,7 +145,8 @@ export const startServer = async (
     console.log(`running command: ${cmd.join(" ")}`);
   }
   const proc = child_process.spawn(cmd[0], cmd.slice(1), {
-    env: {...process.env, ...env}
+    env: {...process.env, ...env},
+    shell: true,
   });
 
   try {
