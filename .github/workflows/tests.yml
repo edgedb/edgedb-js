@@ -18,18 +18,18 @@ jobs:
     continue-on-error: ${{ matrix.edgedb-version == 'nightly' }}
     strategy:
       matrix:
-        node-version: ["14", "16", "18"]
+        node-version: ["16", "18", "20"]
         os: [ubuntu-latest]
         edgedb-version: ["stable"]
         include:
           - os: ubuntu-latest
-            node-version: "16"
+            node-version: "18"
             edgedb-version: "nightly"
           - os: ubuntu-latest
-            node-version: "16"
+            node-version: "18"
             edgedb-version: "1.4"
           - os: macos-latest
-            node-version: "16"
+            node-version: "18"
             edgedb-version: "stable"
           # - os: windows-2019
           #   node-version: "16"
@@ -94,12 +94,12 @@ jobs:
           server-version: ${{ matrix.edgedb-version }}
 
       - name: Run query builder tests
-        if: ${{ matrix.node-version >= 14 && matrix.edgedb-version != '1.4'}}
+        if: ${{ matrix.node-version >= 16 && matrix.edgedb-version != '1.4'}}
         run: |
           yarn workspace @edgedb/generate test:ci
 
       - name: Test QB generation on v1
-        if: ${{ matrix.node-version >= 14 && matrix.edgedb-version == '1.4' }}
+        if: ${{ matrix.node-version >= 16 && matrix.edgedb-version == '1.4' }}
         run: |
           yarn workspace @edgedb/generate test:v1
 
