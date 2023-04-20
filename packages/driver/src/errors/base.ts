@@ -15,12 +15,12 @@ export class EdgeDBError extends Error {
   ) {
     // @ts-ignore
     super(undefined, options);
+    this._message = message ?? "";
     Object.defineProperties(this, {
       _message: {enumerable: false},
       _query: {enumerable: false},
       _attrs: {enumerable: false}
     });
-    this._message = message ?? "";
   }
 
   get message() {

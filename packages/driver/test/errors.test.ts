@@ -26,3 +26,8 @@ test("resolve error", () => {
   expect(resolveErrorCode(0x04_ff_ff_ff)).toBe(edgedb.QueryError);
   expect(resolveErrorCode(0xfe_ff_ff_ff)).toBe(edgedb.EdgeDBError);
 });
+
+test("message is set", () => {
+  const error = new edgedb.AccessError("test");
+  expect(error.message).toBe("test");
+});
