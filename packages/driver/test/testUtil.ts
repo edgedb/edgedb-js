@@ -125,7 +125,7 @@ export const getServerCommand = (
     "--port=auto",
     "--emit-server-status=" + statusFile,
     "--security=strict",
-    `--bootstrap-command="ALTER ROLE edgedb { SET password := 'edgedbtest' }"`
+    `--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }`
   ];
 
   return {args, availableFeatures};
@@ -146,7 +146,6 @@ export const startServer = async (
   }
   const proc = child_process.spawn(cmd[0], cmd.slice(1), {
     env: {...process.env, ...env},
-    shell: true,
   });
 
   try {
@@ -260,7 +259,7 @@ export const shutdown = async (
       // tslint:disable-next-line
       console.error("!!! EdgeDB exit timeout... !!!");
       proc.kill("SIGTERM");
-    }, 120_000);
+    }, 30_000);
 
     proc.on("exit", (_code: number, signal: string) => {
       clearTimeout(to);
