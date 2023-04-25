@@ -4,7 +4,6 @@
     "outDir": "dist",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "importsNotUsedAsValues": "error",
   },
   "include": [
     "edgeql-js",
