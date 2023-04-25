@@ -72,6 +72,10 @@ jobs:
         run: |
           yarn lint
 
+      - name: ESLint (ignore failures for now)
+        run: |
+          yarn eslint || echo "ESLint still failing... Fine for now!"
+
       - name: Build
         run: |
           yarn workspaces run build
