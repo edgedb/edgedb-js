@@ -518,3 +518,12 @@ SELECT __scope_0_defaultHero {
   single secret2 := __scope_0_defaultHero.__withVar_1
 }`);
 });
+
+test("repeated expr used outside scope", () => {
+  const expr = e.to_str(e.int64(123));
+  const query = e.tuple([expr, e.select(expr)]);
+
+  expect(() => query.toEdgeQL()).toThrow(
+    /Cannot extract repeated expression into 'WITH' block, expression used outside of 'WITH'able expression/
+  );
+});

@@ -215,19 +215,32 @@ export function $toEdgeQL(this: any) {
       if (!withBlock) {
         // if parent scopes haven't all been resolved,
         // re-add current expr to `seen` to be resolved later
-        if (parentScopes.some(parentScope => seen.has(parentScope))) {
+        if (
+          parentScopes.some(
+            parentScope => parentScope && seen.has(parentScope)
+          )
+        ) {
           seen.set(expr, refData);
           continue;
         }
 
+        if (parentScopes.some(scope => scope == null)) {
+          throw new Error(
+            `Cannot extract repeated expression into 'WITH' block, ` +
+              `expression used outside of 'WITH'able expression`
+          );
+        }
+
         const [firstParentScopeChain, ...parentScopeChains] = parentScopes.map(
           scope => {
-            const scopes = [scope];
+            const scopes: WithScopeExpr[] = [scope!];
             const pendingScopes = [scope];
             while (pendingScopes.length) {
               const currentScope = pendingScopes.shift()!;
               pendingScopes.push(
-                ...walkExprCtx.seen.get(currentScope)!.parentScopes
+                ...[
+                  ...walkExprCtx.seen.get(currentScope)!.parentScopes
+                ].filter(s => s !== null)
               );
               if (!scopes.includes(currentScope)) {
                 scopes.push(currentScope);
@@ -250,7 +263,7 @@ export function $toEdgeQL(this: any) {
       if (!withBlock) {
         throw new Error(
           `Cannot extract repeated expression into 'WITH' block, ` +
-            `query has no 'WITH'able expressions`
+            `expression does not appear within common 'WITH'able expression`
         );
       }
 
@@ -327,7 +340,7 @@ interface WalkExprTreeCtx {
     {
       refCount: number;
       // tracks all withable ancestors
-      parentScopes: Set<WithScopeExpr>;
+      parentScopes: Set<WithScopeExpr | null>;
       // tracks all child exprs
       childExprs: SomeExpression[];
       // tracks bound scope from e.with
@@ -391,16 +404,14 @@ function walkExprTree(
     // const arg = (expr as any)?.__parent__ || (expr as any)?.__name__;
     // if (arg) console.log(arg);
     // }
-    if (parentScope) {
-      seenExpr.parentScopes.add(parentScope);
-    }
+    seenExpr.parentScopes.add(parentScope);
     return [expr, ...seenExpr.childExprs];
   }
 
   const childExprs: SomeExpression[] = [];
   ctx.seen.set(expr, {
     refCount: 1,
-    parentScopes: new Set(parentScope ? [parentScope] : []),
+    parentScopes: new Set([parentScope]),
     childExprs,
     boundScope: null,
     aliases: [],
