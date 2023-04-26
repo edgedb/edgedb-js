@@ -26,14 +26,15 @@
   },
   "devDependencies": {
     "@js-temporal/polyfill": "^0.4.1",
+    "@types/jest": "^29.5.1",
     "get-stdin": "^7.0.0",
     "globby": "^13.1.2",
-    "jest": "*",
-    "jest-environment-jsdom": "^29.1.2",
+    "jest": "29.5.0",
+    "jest-environment-jsdom": "^29.5.0",
     "node-fetch": "2.6.7",
-    "ts-jest": "*",
-    "tsx": "*",
-    "typescript": "^4.9"
+    "ts-jest": "29.1.0",
+    "tsx": "3.12.6",
+    "typescript": "^5.0"
   },
   "scripts": {
     "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",
