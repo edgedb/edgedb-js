@@ -7,3 +7,61 @@ UNION (
   ((__forVar__0 * 2) + __forVar__0)
 )`);
 });
+
+test("with vars in for loop", () => {
+  const q1 = e.for(e.set(1, 2, 3), i => {
+    const str = e.to_str(i);
+    return e.select({
+      a: e.select(str),
+      b: e.select(e.tuple([str, str]))
+    });
+  });
+
+  expect(q1.toEdgeQL()).toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
+UNION (
+  (WITH
+    __withVar_0 := std::to_str(__forVar__0)
+  SELECT {
+    single a := (SELECT __withVar_0),
+    single b := (
+      SELECT (
+        __withVar_0,
+        __withVar_0
+      )
+    )
+  })
+)`);
+
+  const q2 = e.for(e.set(1, 2, 3), i => {
+    const str = e.to_str(i);
+    return e
+      .insert(e.Hero, {
+        name: str,
+        secret_identity: str
+      })
+      .unlessConflict(person => ({
+        on: person.name,
+        else: e.update(person, () => ({
+          set: {
+            name: str
+          }
+        }))
+      }));
+  });
+
+  expect(q2.toEdgeQL()).toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
+UNION (
+  (WITH
+    __withVar_1 := std::to_str(__forVar__0)
+  INSERT default::Hero {
+    name := __withVar_1,
+    secret_identity := __withVar_1
+  }
+  UNLESS CONFLICT ON default::Hero.name
+  ELSE ((WITH
+    __scope_0_defaultHero := default::Hero
+  UPDATE __scope_0_defaultHero SET {
+    name := __withVar_1
+  })))
+)`);
+});
