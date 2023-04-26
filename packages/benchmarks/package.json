@@ -1,0 +1,44 @@
+{
+  "name": "edgedb-benchmarks",
+  "version": "1.0.0",
+  "description": "Benchmarks for EdgeDB JavaScript client libraries",
+  "homepage": "https://edgedb.com/docs",
+  "author": "EdgeDB <info@edgedb.com>",
+  "engines": {
+    "node": ">= 16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edgedb/edgedb-js.git"
+  },
+  "main": "./dist/index.node.js",
+  "types": "./dist/index.node.d.ts",
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "files": [
+    "/dist"
+  ],
+  "devDependencies": {
+    "@types/jest": "^29.5.1",
+    "benny": "^3.7.1",
+    "jest": "29.5.0",
+    "ts-jest": "29.1.0",
+    "tsx": "3.12.6",
+    "typescript": "^5.0"
+  },
+  "scripts": {
+    "benchmark": "tsx src/benchmark.ts"
+  },
+  "bugs": {
+    "url": "https://github.com/edgedb/edgedb-js/issues"
+  },
+  "keywords": [],
+  "dependencies": {
+    "tinybench": "^2.5.0",
+    "ts-node": "^10.9.1",
+    "ts48": "npm:typescript@4.8.4",
+    "ts49": "npm:typescript@4.9.5",
+    "ts50": "npm:typescript@5.0.4",
+    "ts51": "npm:typescript@5.1.3"
+  }
+}
