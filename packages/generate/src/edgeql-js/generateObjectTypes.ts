@@ -267,7 +267,9 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     //   plainTypeModule.types.set(name, getTypeName(type.name, true));
     // }
     // plainTypeModule.buf.writeln([
-    //   t`${!isUnionType ? "export " : ""}interface ${getTypeName(type.name)}${
+    //   t`${
+    //    !isUnionType ? "export " : ""
+    //   }interface ${getTypeName(type.name)}${
     //     type.bases.length
     //       ? ` extends ${type.bases
     //           .map(({id}) => {
@@ -354,7 +356,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     const lines = [
       ...type.pointers,
       ...type.backlinks,
-      ...type.backlink_stubs,
+      ...type.backlink_stubs
     ].map(ptrToLine);
 
     // generate shape type
