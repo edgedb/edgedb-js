@@ -16,9 +16,9 @@ export class EdgeDBError extends Error {
     // @ts-ignore
     super(undefined, options);
     Object.defineProperties(this, {
-      _message: {enumerable: false},
-      _query: {enumerable: false},
-      _attrs: {enumerable: false}
+      _message: {writable: true, enumerable: false},
+      _query: {writable: true, enumerable: false},
+      _attrs: {writable: true, enumerable: false}
     });
     this._message = message ?? "";
   }
