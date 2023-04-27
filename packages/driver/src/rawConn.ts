@@ -174,9 +174,8 @@ export class RawConnection extends BaseRawConnection {
       if (this.messageWaiter) {
         this.messageWaiter.setError(e);
         this.messageWaiter = null;
-      } else {
-        throw e;
       }
+      this._abortWithError(e);
     }
 
     if (pause) {
