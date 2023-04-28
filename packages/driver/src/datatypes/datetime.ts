@@ -233,10 +233,10 @@ export class LocalDate {
 
   toString(): string {
     const year =
-      this.year < 1000 || this.year > 9999
+      this.year < 0 || this.year > 9999
         ? (this.year < 0 ? "-" : "+") +
           Math.abs(this.year).toString().padStart(6, "0")
-        : this.year.toString();
+        : this.year.toString().padStart(4, "0");
     const month = this.month.toString().padStart(2, "0");
     const day = this.day.toString().padStart(2, "0");
     return `${year}-${month}-${day}`;

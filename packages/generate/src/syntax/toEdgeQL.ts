@@ -210,42 +210,61 @@ export function $toEdgeQL(this: any) {
       // first, check if expr is bound to scope
       let withBlock = refData.boundScope;
 
-      // filter nulls
-      const parentScopes = [...refData.parentScopes].filter(
-        scope => scope !== null
-      ) as WithScopeExpr[];
+      const parentScopes = [...refData.parentScopes];
 
       // if expression is unbound
       if (!withBlock) {
         // if parent scopes haven't all been resolved,
         // re-add current expr to `seen` to be resolved later
-        if (parentScopes.some(parentScope => seen.has(parentScope))) {
+        if (
+          parentScopes.some(
+            parentScope => parentScope && seen.has(parentScope)
+          )
+        ) {
           seen.set(expr, refData);
           continue;
         }
 
-        // set withBlock to top-level parent scope
-        const resolvedParentScopes = parentScopes.map(
-          parentScope => withVars.get(parentScope)?.scope ?? parentScope
+        if (parentScopes.some(scope => scope == null)) {
+          throw new Error(
+            `Cannot extract repeated expression into 'WITH' block, ` +
+              `expression used outside of 'WITH'able expression`
+          );
+        }
+
+        const [firstParentScopeChain, ...parentScopeChains] = parentScopes.map(
+          scope => {
+            const scopes: WithScopeExpr[] = [scope!];
+            const pendingScopes = [scope];
+            while (pendingScopes.length) {
+              const currentScope = pendingScopes.shift()!;
+              pendingScopes.push(
+                ...[
+                  ...walkExprCtx.seen.get(currentScope)!.parentScopes
+                ].filter(s => s !== null)
+              );
+              if (!scopes.includes(currentScope)) {
+                scopes.push(currentScope);
+              }
+            }
+            return scopes;
+          }
         );
-        withBlock =
-          resolvedParentScopes.find(parentScope => {
-            // loop over parent scopes
-            // get list of children exprs for each parent
-            const childExprs = new Set(
-              walkExprCtx.seen.get(parentScope)!.childExprs
-            );
-            // return true for scope that contains all other scopes
-            return resolvedParentScopes.every(
-              scope => childExprs.has(scope) || scope === parentScope
-            );
-          }) ?? walkExprCtx.rootScope;
+        const commonParentScope = firstParentScopeChain
+          ? firstParentScopeChain.find(scope =>
+              // find the first parent scope in the chain that is shared by
+              // the other parent scope chains
+              parentScopeChains.every(otherScope => otherScope.includes(scope))
+            )
+          : null;
+
+        withBlock = commonParentScope ?? walkExprCtx.rootScope;
       }
 
       if (!withBlock) {
         throw new Error(
           `Cannot extract repeated expression into 'WITH' block, ` +
-            `query has no 'WITH'able expressions`
+            `expression does not appear within common 'WITH'able expression`
         );
       }
 
@@ -536,8 +555,9 @@ function walkExprTree(
     case ExpressionKind.InsertUnlessConflict: {
       // InsertUnlessConflict doesn't create a new scope, the parent scope of
       // child expressions is the wrapped Insert expr
+      const insertChildExprs: SomeExpression[] = [];
       if (expr.__conflict__.on) {
-        childExprs.push(
+        insertChildExprs.push(
           ...walkExprTree(
             expr.__conflict__.on,
             expr.__expr__ as $expr_Insert,
@@ -546,7 +566,7 @@ function walkExprTree(
         );
       }
       if (expr.__conflict__.else) {
-        childExprs.push(
+        insertChildExprs.push(
           ...walkExprTree(
             expr.__conflict__.else,
             expr.__expr__ as $expr_Insert,
@@ -555,7 +575,10 @@ function walkExprTree(
         );
       }
 
-      childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
+      walkExprTree(expr.__expr__, parentScope, ctx);
+      ctx.seen
+        .get(expr.__expr__ as $expr_Insert)!
+        .childExprs.push(...insertChildExprs);
       break;
     }
     case ExpressionKind.Group: {
@@ -1049,7 +1072,7 @@ function renderEdgeQL(
     return `(${renderEdgeQL(expr.__expr__, ctx, false, true).slice(
       1,
       -1
-    )} ${clause.join("")})`;
+    )}${clause.join("")})`;
   } else if (expr.__kind__ === ExpressionKind.Group) {
     const groupingSet = expr.__modifiers__.by as any as GroupingSet;
     const elementsShape =

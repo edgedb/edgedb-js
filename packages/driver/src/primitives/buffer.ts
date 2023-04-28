@@ -28,7 +28,7 @@ const BUFFER_INC_SIZE: number = 4096;
 /* Max number of recv buffers that can be queued for
  * reading.
  */
-const BUFFER_RING_CAPACITY: number = 2048;
+const BUFFER_RING_CAPACITY: number = 8192;
 
 const EMPTY_BUFFER = new Uint8Array(0);
 
