@@ -63,14 +63,14 @@ export const getStringRepresentation: (
         getStringRepresentation(types.get(it.id), params)
       );
       return {
-        staticType: frag`${joinFrags(
+        staticType: joinFrags(
           items.map(it => it.staticType),
           " | "
-        )}`,
-        runtimeType: frag`${joinFrags(
+        ),
+        runtimeType: joinFrags(
           items.map(it => it.runtimeType),
           " | "
-        )}`
+        )
       };
     }
     return {
