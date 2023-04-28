@@ -240,11 +240,13 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       // }
       continue;
     }
-    if (type.intersection_of && type.intersection_of.length) {
+
+    const isUnionType = Boolean(type.union_of?.length);
+    const isIntersectionType = Boolean(type.intersection_of?.length);
+
+    if (isIntersectionType) {
       continue;
     }
-
-    const isUnionType = !!type.union_of?.length;
 
     const {mod, name} = splitName(type.name);
 
@@ -302,8 +304,8 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     //             return `  ${quote(pointer.name)}${
     //               isOptional ? "?" : ""
     //             }: ${getTSType(pointer)}${
-    //               pointer.real_cardinality === Cardinality.Many ||
-    //               pointer.real_cardinality === Cardinality.AtLeastOne
+    //               pointer.card === Cardinality.Many ||
+    //               pointer.card === Cardinality.AtLeastOne
     //                 ? "[]"
     //                 : ""
     //             }${isOptional ? " | null" : ""};`;
