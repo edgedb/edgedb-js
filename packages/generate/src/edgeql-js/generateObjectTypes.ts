@@ -58,6 +58,21 @@ export const getStringRepresentation: (
         runtimeType: [getRef(type.name)]
       };
     }
+    if (type.union_of?.length) {
+      const items = type.union_of.map(it =>
+        getStringRepresentation(types.get(it.id), params)
+      );
+      return {
+        staticType: frag`${joinFrags(
+          items.map(it => it.staticType),
+          " | "
+        )}`,
+        runtimeType: frag`${joinFrags(
+          items.map(it => it.runtimeType),
+          " | "
+        )}`
+      };
+    }
     return {
       staticType: [getRef(type.name)],
       runtimeType: [getRef(type.name)]
