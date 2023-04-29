@@ -143,47 +143,17 @@ export const getStringRepresentation: (
 export const generateObjectTypes = (params: GeneratorParams) => {
   const {dir, types} = params;
 
-  // const plainTypesCode = dir.getPath("types");
-  // plainTypesCode.addImportStar("edgedb", "edgedb", {
-  //   typeOnly: true
-  // });
-  // const plainTypeModules = new Map<
-  //   string,
-  //   {internalName: string; buf: CodeBuffer; types: Map<string, string>}
-  // >();
-
-  // const getPlainTypeModule = (
-  //   typeName: string
-  // ): {
-  //   tMod: string;
-  //   tName: string;
-  //   module: {
-  //     internalName: string;
-  //     buf: CodeBuffer;
-  //     types: Map<string, string>;
-  //   };
-  // } => {
-  //   const {mod: tMod, name: tName} = splitName(typeName);
-  //   if (!plainTypeModules.has(tMod)) {
-  //     plainTypeModules.set(tMod, {
-  //       internalName: makePlainIdent(tMod),
-  //       buf: new CodeBuffer(),
-  //       types: new Map()
-  //     });
-  //   }
-  //   return {tMod, tName, module: plainTypeModules.get(tMod)!};
-  // };
-
-  // const _getTypeName =
-  //   (mod: string) =>
-  //   (typeName: string, withModule: boolean = false): string => {
-  //     const {tMod, tName, module} = getPlainTypeModule(typeName);
-  //     return (
-  //       ((mod !== tMod || withModule) && tMod !== "default"
-  //         ? `${module.internalName}.`
-  //         : "") + `${makePlainIdent(tName)}`
-  //     );
-  //   };
+  const descendents = new Map<string, Set<string>>();
+  for (const type of types.values()) {
+    if (type.kind === "object" && !type.is_abstract) {
+      for (const base of type.bases) {
+        if (!descendents.has(base.id)) {
+          descendents.set(base.id, new Set());
+        }
+        descendents.get(base.id)!.add(type.name);
+      }
+    }
+  }
 
   for (const type of types.values()) {
     if (type.kind !== "object") {
@@ -450,7 +420,16 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       // body.writeln([t`\n  {${lines.join(", ")}}`]);
     }
 
-    body.writeln([t`]>;`]);
+    body.writeln([
+      t`], ${
+        [
+          ...(!type.is_abstract ? [type.name] : []),
+          ...(descendents.get(type.id)?.values() ?? [])
+        ]
+          .map(typename => quote(typename))
+          .join(" | ") || "never"
+      }>;`
+    ]);
 
     if (type.name === "std::Object") {
       body.writeln([t`export `, dts`declare `, t`type $Object = ${ref}`]);

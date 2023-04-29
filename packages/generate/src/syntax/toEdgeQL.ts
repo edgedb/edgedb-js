@@ -1266,6 +1266,8 @@ function shapeToEdgeQL(
 
   const seen = new Set();
 
+  let hasPolyEl = false;
+
   for (const key in shape) {
     if (!shape.hasOwnProperty(key)) continue;
     if (seen.has(key)) {
@@ -1290,6 +1292,7 @@ function shapeToEdgeQL(
     if (val.__kind__ === ExpressionKind.PolyShapeElement) {
       polyType = val.__polyType__;
       val = val.__shapeElement__;
+      hasPolyEl = true;
     }
     const polyIntersection = polyType
       ? `[IS ${polyType.__element__.__name__}].`
@@ -1381,6 +1384,9 @@ function shapeToEdgeQL(
 
   if (lines.length === 0 && injectImplicitId) {
     addLine("id");
+  }
+  if (hasPolyEl) {
+    addLine("__typename := .__type__.name");
   }
   return keysOnly ? `{${lines.join(", ")}}` : `{\n${lines.join(",\n")}\n}`;
 }

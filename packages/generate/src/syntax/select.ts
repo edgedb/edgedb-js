@@ -875,7 +875,9 @@ export function select<Expr extends ObjectTypeExpression>(
   __element__: ObjectType<
     `${Expr["__element__"]["__name__"]}`, // _shape
     Expr["__element__"]["__pointers__"],
-    Expr["__element__"]["__shape__"] // {id: true}
+    Expr["__element__"]["__shape__"], // {id: true}
+    Expr["__element__"]["__exclusives__"],
+    Expr["__element__"]["__polyTypenames__"]
   >;
   __cardinality__: Expr["__cardinality__"];
 }>;
@@ -901,7 +903,9 @@ export function select<
   __element__: ObjectType<
     `${Expr["__element__"]["__name__"]}`, // _shape
     Expr["__element__"]["__pointers__"],
-    Omit<normaliseShape<Shape>, SelectModifierNames>
+    Omit<normaliseShape<Shape>, SelectModifierNames>,
+    Expr["__element__"]["__exclusives__"],
+    Expr["__element__"]["__polyTypenames__"]
   >;
   __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
 }>;
