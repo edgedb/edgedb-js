@@ -37,6 +37,11 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
     modes: ["ts", "js"]
   });
 
+  code.addImport({literal: true}, "./literal", {
+    allowFileExt: true,
+    modes: ["ts", "js"]
+  });
+
   code.nl();
   code.writeln([
     dts`declare `,
@@ -125,14 +130,13 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
 >;
 `,
     dts`declare `,
-    t`function set<Expr extends $.TypeSet<$.BaseType> | castMaps.scalarLiterals>(
-  ...exprs: Expr[]
-): $expr_Set<
-  $.TypeSet<
-    $.getPrimitiveBaseType<castMaps.literalToTypeSet<Expr>["__element__"]>,
-    $.Cardinality.Many
-  >
->;`
+    t`function set<
+  Type extends $.BaseType,
+  Expr extends $.TypeSet<$.getPrimitiveBaseType<Type>> | $.BaseTypeToTsType<Type>
+>(
+  type: Type,
+  exprs: Expr[]
+): $expr_Set<$.TypeSet<$.getPrimitiveBaseType<Type>, $.Cardinality.Many>>;`
   ]);
 
   code.writeln([
@@ -148,6 +152,28 @@ export const generateSetImpl = ({dir, types, casts}: GeneratorParams) => {
   //   return shared parent of scalars
   if(_exprs.length === 0){
     return null;
+  }
+
+  if (($.TypeKind`,
+    ts` as any`,
+    r`)[_exprs[0]?.__kind__] != null) {
+    if (_exprs.length !== 2 || !Array.isArray(_exprs[1])) {
+      throw new Error(
+        "Invalid args to set constructor. " +
+          "First argument is a type expression, so second argument " +
+          "is expected to be an array of values."
+      );
+    }
+    return $expressionify({
+      __kind__: $.ExpressionKind.Set,
+      __element__: _exprs[0],
+      __cardinality__: $.Cardinality.Many,
+      __exprs__: _exprs[1].map(val =>
+        val.__element__ ? val : (literal`,
+    ts` as any`,
+    r`)(_exprs[0], val)
+      )
+    });
   }
 
   const exprs`,

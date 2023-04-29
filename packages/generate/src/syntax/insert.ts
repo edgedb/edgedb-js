@@ -261,9 +261,7 @@ export function $normaliseInsertShape(
       val === null
         ? cast(pointer.target, null)
         : isMulti && Array.isArray(val)
-        ? val.length === 0
-          ? cast(pointer.target, null)
-          : set(...val.map(v => (literal as any)(pointer.target, v)))
+        ? (set as any)(pointer.target, val)
         : (literal as any)(pointer.target, val);
     newShape[key] = setModify
       ? ({[setModify]: wrappedVal} as any)
