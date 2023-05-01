@@ -93,7 +93,9 @@ export const getServerCommand = (
   }
 
   const helpCmd = [...args, "--help"];
-  const help = child_process.execSync(helpCmd.join(" "));
+  const help = child_process
+    .spawnSync(srvcmd, helpCmd.slice(1))
+    .stdout.toString();
 
   if (help.includes("--tls-cert-mode")) {
     args.push("--tls-cert-mode=generate_self_signed");
