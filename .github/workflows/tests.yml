@@ -72,6 +72,10 @@ jobs:
         run: |
           yarn lint
 
+      - name: Check format
+        run: |
+          yarn run format:check
+
       - name: ESLint (ignore failures for now)
         run: |
           yarn eslint || echo "ESLint still failing... Fine for now!"
