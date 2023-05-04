@@ -8,7 +8,7 @@ export namespace util {
     const parts = name.split("::");
     return {
       mod: parts.slice(0, -1).join("::"),
-      name: parts[parts.length - 1]
+      name: parts[parts.length - 1],
     };
   }
 
@@ -48,7 +48,7 @@ export namespace util {
   ): T => {
     return Object.defineProperty(obj, name, {
       get: getter,
-      enumerable: true
+      enumerable: true,
     }) as any;
   };
 
@@ -77,7 +77,7 @@ export namespace util {
     [K in ExcludeDollarPrefixed<keyof O>]: O[K];
   };
 
-  export function omitDollarPrefixed<O extends {[k: string]: any}>(
+  export function omitDollarPrefixed<O extends { [k: string]: any }>(
     object: O
   ): OmitDollarPrefixed<O> {
     const obj: any = {};

@@ -2,10 +2,10 @@
  * @jest-environment jsdom
  */
 
-const {TextEncoder, TextDecoder} = require("util");
+const { TextEncoder, TextDecoder } = require("util");
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
-import {getEdgeDBVersion} from "./testbase";
+import { getEdgeDBVersion } from "./testbase";
 
 // @ts-ignore
 if (typeof fetch === "undefined") {
@@ -63,7 +63,7 @@ beforeAll(async () => {
     "v8",
     "vm",
     "worker_threads",
-    "zlib"
+    "zlib",
   ]) {
     jest.mock(nodeModule, () => {
       throw new Error(`Cannot use node module '${nodeModule}' in browser`);
@@ -74,7 +74,7 @@ beforeAll(async () => {
 import {
   createClient,
   createHttpClient,
-  EdgeDBError
+  EdgeDBError,
 } from "../src/index.browser";
 
 const brokenConnectOpts = JSON.parse(
@@ -84,7 +84,7 @@ const brokenConnectOpts = JSON.parse(
 const connectOpts = {
   ...brokenConnectOpts,
   tlsCAFile: undefined,
-  tlsSecurity: "insecure"
+  tlsSecurity: "insecure",
 };
 
 // Skip tests on node < 15, since webcrypto api not available
@@ -109,7 +109,7 @@ if (nodeVersion >= 15) {
 
     expect(
       await client.querySingle(`select 'Querying from the ' ++ <str>$env`, {
-        env: "browser"
+        env: "browser",
       })
     ).toEqual("Querying from the browser");
   });

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {InternalClientError} from "../errors";
+import { InternalClientError } from "../errors";
 
 type Resolver<T> = (value: T | PromiseLike<T>) => void;
 type Rejector = (reason: any) => void;
@@ -65,12 +65,12 @@ export default class Event {
     let futResolve: Resolver<boolean> | null = null;
 
     this._promise = new Promise<boolean>((resolve, reject) => {
-      futReject = reason => {
+      futReject = (reason) => {
         this._done = true;
         reject(reason);
       };
 
-      futResolve = value => {
+      futResolve = (value) => {
         this._done = true;
         resolve(value);
       };

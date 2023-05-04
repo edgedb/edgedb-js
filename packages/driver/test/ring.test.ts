@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import {RingBuffer, RingBufferError} from "../src/primitives/ring";
+import { RingBuffer, RingBufferError } from "../src/primitives/ring";
 
 test("basic operations", () => {
-  const d = new RingBuffer<number>({capacity: 3});
+  const d = new RingBuffer<number>({ capacity: 3 });
   expect(d.length).toBe(0);
   expect(d.full).toBeFalsy();
 

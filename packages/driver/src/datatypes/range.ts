@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {Duration, LocalDate, LocalDateTime} from "./datetime";
+import { Duration, LocalDate, LocalDateTime } from "./datetime";
 
 export class Range<
   T extends number | Date | LocalDate | LocalDateTime | Duration
@@ -54,7 +54,7 @@ export class Range<
 
   toJSON() {
     return this.isEmpty
-      ? {empty: true}
+      ? { empty: true }
       : {
           lower: this._lower,
           upper: this._upper,

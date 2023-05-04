@@ -1,8 +1,8 @@
-import {BaseClientPool, Client, ConnectOptions} from "./baseClient";
-import {getConnectArgumentsParser} from "./conUtils";
-import {EdgeDBError} from "./errors";
-import {FetchConnection} from "./fetchConn";
-import {Options} from "./options";
+import { BaseClientPool, Client, ConnectOptions } from "./baseClient";
+import { getConnectArgumentsParser } from "./conUtils";
+import { EdgeDBError } from "./errors";
+import { FetchConnection } from "./fetchConn";
+import { Options } from "./options";
 
 const parseConnectArguments = getConnectArgumentsParser(null);
 
@@ -24,7 +24,7 @@ export function createHttpClient(
   return new Client(
     new FetchClientPool(
       parseConnectArguments,
-      typeof options === "string" ? {dsn: options} : options ?? {}
+      typeof options === "string" ? { dsn: options } : options ?? {}
     ),
     Options.defaults()
   );

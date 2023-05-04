@@ -5,19 +5,19 @@ import {
   Duration,
   RelativeDuration,
   ConfigMemory,
-  DateDuration
+  DateDuration,
 } from "edgedb";
-import type {$bool, $number} from "./modules/std";
+import type { $bool, $number } from "./modules/std";
 
 import {
   Cardinality,
   ExpressionKind,
   TypeKind,
-  OperatorKind
+  OperatorKind,
 } from "edgedb/dist/reflection/index";
-import {makeType} from "./hydrate";
+import { makeType } from "./hydrate";
 
-import {cardutil} from "./cardinality";
+import { cardutil } from "./cardinality";
 import type {
   $expr_PolyShapeElement,
   $scopify,
@@ -34,7 +34,7 @@ import type {
   TypeSet,
   BaseType,
   ExclusiveTuple,
-  orLiteralValue
+  orLiteralValue,
 } from "./typesystem";
 
 import {
@@ -42,18 +42,18 @@ import {
   $expr_PathLeaf,
   $expr_PathNode,
   $linkPropify,
-  ExpressionRoot
+  ExpressionRoot,
 } from "./path";
-import type {anonymizeObject} from "./casting";
-import {$expressionify, $getScopedExpr} from "./path";
-import {$getTypeByName, literal} from "./literal";
-import {spec} from "./__spec__";
+import type { anonymizeObject } from "./casting";
+import { $expressionify, $getScopedExpr } from "./path";
+import { $getTypeByName, literal } from "./literal";
+import { spec } from "./__spec__";
 import {
   scalarLiterals,
   literalToScalarType,
-  literalToTypeSet
+  literalToTypeSet,
 } from "./castMaps";
-import type {$expr_Operator} from "./funcops";
+import type { $expr_Operator } from "./funcops";
 
 export const ASC: "ASC" = "ASC";
 export const DESC: "DESC" = "DESC";
@@ -167,7 +167,7 @@ export type SelectModifiers<T extends ObjectType = ObjectType> = {
   limit?: LimitExpression | number;
 };
 
-export type UnknownSelectModifiers = {[k in keyof SelectModifiers]: unknown};
+export type UnknownSelectModifiers = { [k in keyof SelectModifiers]: unknown };
 
 export type NormalisedSelectModifiers = {
   filter?: SelectFilterExpression;
@@ -395,7 +395,7 @@ export function is<
     mappedShape[key] = {
       __kind__: ExpressionKind.PolyShapeElement,
       __polyType__: expr,
-      __shapeElement__: value
+      __shapeElement__: value,
     };
   }
   return mappedShape;
@@ -465,15 +465,15 @@ export function is<
 
 export function $handleModifiers(
   modifiers: SelectModifiers,
-  params: {root: TypeSet; scope: TypeSet}
+  params: { root: TypeSet; scope: TypeSet }
 ): {
   modifiers: NormalisedSelectModifiers;
   cardinality: Cardinality;
   needsAssertSingle: boolean;
 } {
-  const {root, scope} = params;
+  const { root, scope } = params;
   const mods: NormalisedSelectModifiers = {
-    singleton: !!modifiers["filter_single"]
+    singleton: !!modifiers["filter_single"],
   };
 
   let card = root.__cardinality__;
@@ -495,7 +495,7 @@ export function $handleModifiers(
       mods.filter = modifiers.filter_single as any;
       needsAssertSingle = true;
     } else {
-      const exprs = Object.keys(fs).map(key => {
+      const exprs = Object.keys(fs).map((key) => {
         const val = fs[key].__element__
           ? fs[key]
           : (literal as any)(
@@ -507,13 +507,13 @@ export function $handleModifiers(
         return $expressionify({
           __element__: {
             __name__: "std::bool",
-            __kind__: TypeKind.scalar
+            __kind__: TypeKind.scalar,
           } as any,
           __cardinality__: Cardinality.One,
           __kind__: ExpressionKind.Operator,
           __opkind__: OperatorKind.Infix,
           __name__: "=",
-          __args__: [(scope as any)[key], val]
+          __args__: [(scope as any)[key], val],
         }) as $expr_Operator;
       });
       if (exprs.length === 1) {
@@ -523,13 +523,13 @@ export function $handleModifiers(
           return $expressionify({
             __element__: {
               __name__: "std::bool",
-              __kind__: TypeKind.scalar
+              __kind__: TypeKind.scalar,
             } as any,
             __cardinality__: Cardinality.One,
             __kind__: ExpressionKind.Operator,
             __opkind__: OperatorKind.Infix,
             __name__: "and",
-            __args__: [a, b]
+            __args__: [a, b],
           }) as $expr_Operator;
         }) as any;
       }
@@ -539,10 +539,10 @@ export function $handleModifiers(
     const orderExprs = Array.isArray(modifiers.order_by)
       ? modifiers.order_by
       : [modifiers.order_by];
-    mods.order_by = orderExprs.map(expr =>
+    mods.order_by = orderExprs.map((expr) =>
       typeof (expr as any).__element__ === "undefined"
         ? expr
-        : {expression: expr}
+        : { expression: expr }
     ) as any;
   }
   if (modifiers.offset) {
@@ -576,7 +576,7 @@ export function $handleModifiers(
   return {
     modifiers: mods as NormalisedSelectModifiers,
     cardinality: card,
-    needsAssertSingle
+    needsAssertSingle,
   };
 }
 
@@ -598,7 +598,7 @@ function deleteExpr<
   __element__: ObjectType<
     Expr["__element__"]["__name__"],
     Expr["__element__"]["__pointers__"],
-    {id: true}
+    { id: true }
   >;
   __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
 }>;
@@ -609,11 +609,11 @@ function deleteExpr(expr: any, modifiersGetter: any) {
     __kind__: ExpressionKind.Delete,
     __element__: selectExpr.__element__,
     __cardinality__: selectExpr.__cardinality__,
-    __expr__: selectExpr
+    __expr__: selectExpr,
   }) as any;
 }
 
-export {deleteExpr as delete};
+export { deleteExpr as delete };
 
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
@@ -752,10 +752,7 @@ type linkDescToShape<L extends LinkDesc> = objectTypeToSelectShape<
 export type linkDescToSelectElement<L extends LinkDesc> =
   | boolean
   // | pointerToCastableExpression<Shape[k]>
-  | TypeSet<
-      anonymizeObject<L["target"]>,
-      cardutil.assignable<L["cardinality"]>
-    >
+  | TypeSet<anonymizeObject<L["target"]>, cardutil.assignable<L["cardinality"]>>
   | linkDescToShape<L>
   | ((
       scope: $scopify<L["target"]> & linkDescToLinkProps<L>
@@ -781,7 +778,7 @@ export type objectTypeToSelectShape<T extends ObjectType = ObjectType> =
       : T["__pointers__"][k] extends LinkDesc
       ? linkDescToSelectElement<T["__pointers__"][k]>
       : any;
-  }> & {[k: string]: unknown};
+  }> & { [k: string]: unknown };
 
 // incorporate __shape__ (computeds) on selection shapes
 // this works but a major rewrite of setToTsType is required
@@ -833,7 +830,7 @@ export type normaliseShape<
 
 const $FreeObject = makeType(
   spec,
-  [...spec.values()].find(s => s.name === "std::FreeObject")!.id,
+  [...spec.values()].find((s) => s.name === "std::FreeObject")!.id,
   literal
 );
 const FreeObject: $expr_PathNode = {
@@ -842,7 +839,7 @@ const FreeObject: $expr_PathNode = {
   __cardinality__: Cardinality.One,
   __parent__: null,
   __exclusive__: true,
-  __scopeRoot__: null
+  __scopeRoot__: null,
 } as any;
 
 export const $existingScopes = new Set<
@@ -867,7 +864,7 @@ function $shape<
 function $shape(_a: unknown, b: (...args: any) => any) {
   return b;
 }
-export {$shape as shape};
+export { $shape as shape };
 
 export function select<Expr extends ObjectTypeExpression>(
   expr: Expr
@@ -929,7 +926,7 @@ export function select<
     Modifiers
   >;
 }>;
-export function select<Shape extends {[key: string]: TypeSet}>(
+export function select<Shape extends { [key: string]: TypeSet }>(
   shape: Shape
 ): $expr_Select<{
   __element__: ObjectType<
@@ -986,7 +983,7 @@ export function select(...args: any[]) {
         __element__: literalExpr.__element__,
         __cardinality__: literalExpr.__cardinality__,
         __expr__: literalExpr,
-        __modifiers__: {}
+        __modifiers__: {},
       })
     ) as any;
   }
@@ -1011,7 +1008,7 @@ export function select(...args: any[]) {
         computed: true,
         readonly: true,
         hasDefault: false,
-        properties: {}
+        properties: {},
       };
     }
     expr = {
@@ -1020,9 +1017,9 @@ export function select(...args: any[]) {
         ...FreeObject.__element__,
         __pointers__: {
           ...FreeObject.__element__.__pointers__,
-          ...freeObjectPtrs
-        }
-      } as any
+          ...freeObjectPtrs,
+        },
+      } as any,
     };
   }
   if (!shapeGetter) {
@@ -1035,11 +1032,11 @@ export function select(...args: any[]) {
             __kind__: TypeKind.object,
             __name__: `${objectExpr.__element__.__name__}`, // _shape
             __pointers__: objectExpr.__element__.__pointers__,
-            __shape__: objectExpr.__element__.__shape__
+            __shape__: objectExpr.__element__.__shape__,
           } as any,
           __cardinality__: objectExpr.__cardinality__,
           __expr__: objectExpr,
-          __modifiers__: {}
+          __modifiers__: {},
         })
       ) as any;
     } else {
@@ -1049,7 +1046,7 @@ export function select(...args: any[]) {
           __element__: expr.__element__,
           __cardinality__: expr.__cardinality__,
           __expr__: expr,
-          __modifiers__: {}
+          __modifiers__: {},
         })
       ) as any;
     }
@@ -1057,15 +1054,15 @@ export function select(...args: any[]) {
 
   const cleanScopedExprs = $existingScopes.size === 0;
 
-  const {modifiers: mods, shape, scope} = resolveShape(shapeGetter, expr);
+  const { modifiers: mods, shape, scope } = resolveShape(shapeGetter, expr);
 
   if (cleanScopedExprs) {
     $existingScopes.clear();
   }
 
-  const {modifiers, cardinality, needsAssertSingle} = $handleModifiers(mods, {
+  const { modifiers, cardinality, needsAssertSingle } = $handleModifiers(mods, {
     root: expr,
-    scope
+    scope,
   });
   const selectExpr = $selectify({
     __kind__: ExpressionKind.Select,
@@ -1075,13 +1072,13 @@ export function select(...args: any[]) {
             __kind__: TypeKind.object,
             __name__: `${expr.__element__.__name__}`, // _shape
             __pointers__: (expr.__element__ as ObjectType).__pointers__,
-            __shape__: shape
+            __shape__: shape,
           }
         : expr.__element__,
     __cardinality__: cardinality,
     __expr__: expr,
     __modifiers__: modifiers,
-    __scope__: expr !== scope ? scope : undefined
+    __scope__: expr !== scope ? scope : undefined,
   }) as any;
 
   return needsAssertSingle
@@ -1092,7 +1089,7 @@ export function select(...args: any[]) {
 function resolveShape(
   shapeGetter: ((scope: any) => any) | any,
   expr: TypeSet
-): {modifiers: any; shape: any; scope: TypeSet} {
+): { modifiers: any; shape: any; scope: TypeSet } {
   const modifiers: any = {};
   const shape: any = {};
 
@@ -1128,7 +1125,7 @@ function resolveShape(
       shape[key] = resolveShapeElement(key, value, scope);
     }
   }
-  return {shape, modifiers, scope};
+  return { shape, modifiers, scope };
 }
 
 export function resolveShapeElement(
@@ -1139,8 +1136,7 @@ export function resolveShapeElement(
   // if value is a nested closure
   // or a nested shape object
   const isSubshape =
-    typeof value === "object" &&
-    typeof (value as any).__kind__ === "undefined";
+    typeof value === "object" && typeof (value as any).__kind__ === "undefined";
   const isClosure =
     typeof value === "function" &&
     scope.__element__.__pointers__[key]?.__kind__ === "link";
@@ -1166,13 +1162,13 @@ export function resolveShapeElement(
     const {
       shape: childShape,
       scope: childScope,
-      modifiers: mods
+      modifiers: mods,
     } = resolveShape(value as any, childExpr);
 
     // extracts normalized modifiers
-    const {modifiers, needsAssertSingle} = $handleModifiers(mods, {
+    const { modifiers, needsAssertSingle } = $handleModifiers(mods, {
       root: childExpr,
-      scope: childScope
+      scope: childScope,
     });
 
     const selectExpr = {
@@ -1181,14 +1177,14 @@ export function resolveShapeElement(
         __kind__: TypeKind.object,
         __name__: `${childExpr.__element__.__name__}`,
         __pointers__: childExpr.__element__.__pointers__,
-        __shape__: childShape
+        __shape__: childShape,
       },
       __cardinality__:
         scope.__element__.__pointers__?.[key]?.cardinality ||
         scope.__element__.__shape__?.[key]?.__cardinality__,
       __expr__: childExpr,
       __modifiers__: modifiers,
-      __scope__: childExpr !== childScope ? childScope : undefined
+      __scope__: childExpr !== childScope ? childScope : undefined,
     };
     return needsAssertSingle ? $assert_single(selectExpr as any) : selectExpr;
   } else if ((value as any)?.__kind__ === ExpressionKind.PolyShapeElement) {
@@ -1202,7 +1198,7 @@ export function resolveShapeElement(
         key,
         polyElement.__shapeElement__,
         polyScope
-      )
+      ),
     };
   } else if (typeof value === "boolean" && key.startsWith("@")) {
     const linkProp = (scope as any)[key];

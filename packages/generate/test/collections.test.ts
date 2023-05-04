@@ -1,19 +1,19 @@
-import type {Client} from "edgedb";
+import type { Client } from "edgedb";
 import * as $ from "../src/syntax/reflection";
-import e, {$infer, objectTypeToTupleType} from "../dbschema/edgeql-js";
-import type {sys} from "../dbschema/interfaces";
-import {tc} from "./setupTeardown";
+import e, { $infer, objectTypeToTupleType } from "../dbschema/edgeql-js";
+import type { sys } from "../dbschema/interfaces";
+import { tc } from "./setupTeardown";
 
-import {setupTests, teardownTests, TestData} from "./setupTeardown";
-import type {$Genre, $year} from "../dbschema/edgeql-js/modules/default";
-import type {$float64, $str, $uuid} from "../dbschema/edgeql-js/modules/std";
+import { setupTests, teardownTests, TestData } from "./setupTeardown";
+import type { $Genre, $year } from "../dbschema/edgeql-js/modules/default";
+import type { $float64, $str, $uuid } from "../dbschema/edgeql-js/modules/std";
 
 let client: Client;
 let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client, data} = setup);
+  ({ client, data } = setup);
 });
 
 afterAll(async () => {
@@ -39,15 +39,15 @@ test("array literal", async () => {
   expect(result).toEqual(["asdf", "qwer"]);
 
   const arg1 = arg[1];
-  tc.assert<tc.IsExact<typeof arg1["__kind__"], $.ExpressionKind.Operator>>(
+  tc.assert<tc.IsExact<(typeof arg1)["__kind__"], $.ExpressionKind.Operator>>(
     true
   );
   expect(arg1.__kind__).toEqual($.ExpressionKind.Operator);
-  tc.assert<tc.IsExact<typeof arg1["__cardinality__"], $.Cardinality.One>>(
+  tc.assert<tc.IsExact<(typeof arg1)["__cardinality__"], $.Cardinality.One>>(
     true
   );
   expect(arg1.__cardinality__).toEqual($.Cardinality.One);
-  tc.assert<tc.IsExact<typeof arg1["__element__"]["__name__"], "std::str">>(
+  tc.assert<tc.IsExact<(typeof arg1)["__element__"]["__name__"], "std::str">>(
     true
   );
   expect(arg1.__element__.__name__).toEqual("std::str");
@@ -68,12 +68,12 @@ test("array literal", async () => {
   const multiArrayResult = await client.query(e.select(multiArray).toEdgeQL());
   expect(multiArrayResult).toEqual([
     ["asdf", "qwer"],
-    ["asdf", "erty"]
+    ["asdf", "erty"],
   ]);
 
   const multi0 = multiArray[0];
   tc.assert<
-    tc.IsExact<typeof multi0["__cardinality__"], $.Cardinality.AtLeastOne>
+    tc.IsExact<(typeof multi0)["__cardinality__"], $.Cardinality.AtLeastOne>
   >(true);
   expect(multi0.__cardinality__).toEqual($.Cardinality.AtLeastOne);
   expect(await e.select(multi0).run(client)).toEqual(["asdf", "asdf"]);
@@ -88,7 +88,7 @@ test("array literal", async () => {
       slice4: arr[":4"],
       reverseSlice2: arr["-2:"],
       reverseSlice4: arr[":-4"],
-      reverseSlice24: arr["-4:-2"]
+      reverseSlice24: arr["-4:-2"],
     })
     .run(client);
   tc.assert<
@@ -113,7 +113,7 @@ test("array literal", async () => {
       slice4: ["z", "x", "c", "v"],
       reverseSlice2: ["n", "m"],
       reverseSlice4: ["z", "x", "c"],
-      reverseSlice24: ["v", "b"]
+      reverseSlice24: ["v", "b"],
     })
   );
 
@@ -166,7 +166,7 @@ test("tuple literal", async () => {
   const multiTupleResult = await client.query(e.select(multiTuple).toEdgeQL());
   expect(multiTupleResult).toEqual([
     ["asdf", "qwer"],
-    ["asdf", "erty"]
+    ["asdf", "erty"],
   ]);
   const multiTuplePath = multiTuple[0];
   tc.assert<tc.IsExact<$infer<typeof multiTuplePath>, [string, ...string[]]>>(
@@ -174,7 +174,7 @@ test("tuple literal", async () => {
   );
   tc.assert<
     tc.IsExact<
-      typeof multiTuplePath["__cardinality__"],
+      (typeof multiTuplePath)["__cardinality__"],
       $.Cardinality.AtLeastOne
     >
   >(true);
@@ -196,7 +196,7 @@ test("tuple literal", async () => {
 
   const nestedTuple = e.tuple([
     "a",
-    e.tuple(["b", e.set(e.str("c"), e.str("d"))])
+    e.tuple(["b", e.set(e.str("c"), e.str("d"))]),
   ]);
   type nestedTuple = $infer<typeof nestedTuple>;
   tc.assert<
@@ -208,14 +208,14 @@ test("tuple literal", async () => {
   const nestedTupleResult = await e.select(nestedTuple).run(client);
   expect(nestedTupleResult).toEqual([
     ["a", ["b", "c"]],
-    ["a", ["b", "d"]]
+    ["a", ["b", "d"]],
   ]);
   const nestedTuplePathResult = await e
     .select({
       tup0: nestedTuple[0],
       tup1: nestedTuple[1],
       tup10: nestedTuple[1][0],
-      tup11: nestedTuple[1][1]
+      tup11: nestedTuple[1][1],
     })
     .run(client);
   tc.assert<
@@ -233,10 +233,10 @@ test("tuple literal", async () => {
     tup0: ["a", "a"],
     tup1: [
       ["b", "c"],
-      ["b", "d"]
+      ["b", "d"],
     ],
     tup10: ["b", "b"],
-    tup11: ["c", "d"]
+    tup11: ["c", "d"],
   });
 
   const heroNamesTuple = e.tuple([e.Hero.name]);
@@ -248,9 +248,7 @@ test("tuple literal", async () => {
   );
   expect(heroNamesTuple.__element__.__items__[0].__name__).toEqual("std::str");
   const heroNamesTupleResult = await e.select(heroNamesTuple).run(client);
-  expect(
-    heroNamesTupleResult.sort((a, b) => a[0].localeCompare(b[0]))
-  ).toEqual(
+  expect(heroNamesTupleResult.sort((a, b) => a[0].localeCompare(b[0]))).toEqual(
     [[data.cap.name], [data.iron_man.name], [data.spidey.name]].sort((a, b) =>
       a[0].localeCompare(b[0])
     )
@@ -260,7 +258,7 @@ test("tuple literal", async () => {
 test("namedTuple literal", async () => {
   const tupleType = e.tuple({
     string: e.str,
-    number: e.int64
+    number: e.int64,
   });
   expect(tupleType.__kind__).toEqual($.TypeKind.namedtuple);
   expect(tupleType.__shape__.string.__kind__).toEqual($.TypeKind.scalar);
@@ -270,11 +268,11 @@ test("namedTuple literal", async () => {
 
   const named = e.tuple({
     string: "asdf",
-    number: 1234
+    number: 1234,
   });
 
   type named = $.setToTsType<typeof named>;
-  tc.assert<tc.IsExact<named, {string: string; number: number}>>(true);
+  tc.assert<tc.IsExact<named, { string: string; number: number }>>(true);
   expect(named.__kind__).toEqual($.ExpressionKind.NamedTuple);
   expect(named.__element__.__kind__).toEqual($.TypeKind.namedtuple);
   expect(named.__cardinality__).toEqual($.Cardinality.One);
@@ -292,7 +290,7 @@ test("namedTuple literal", async () => {
   expect(named.__element__.__shape__.number.__name__).toEqual("std::number");
   const namedResult = await client.querySingle(e.select(named).toEdgeQL());
   expect(JSON.stringify(namedResult)).toEqual(
-    JSON.stringify({string: "asdf", number: 1234})
+    JSON.stringify({ string: "asdf", number: 1234 })
   );
   const namedStr = named.string;
   const namedNum = named.number;
@@ -303,8 +301,8 @@ test("namedTuple literal", async () => {
 
   const nested = e.tuple({
     a: "asdf",
-    named: e.tuple({b: 123}),
-    tuple: e.tuple([true, e.set(e.str("x"), e.str("y"))])
+    named: e.tuple({ b: 123 }),
+    tuple: e.tuple([true, e.set(e.str("x"), e.str("y"))]),
   });
   const nestedResult = await e
     .select({
@@ -313,16 +311,16 @@ test("namedTuple literal", async () => {
       nestedNamed: nested.named,
       nestedTuple: nested.tuple,
       nestedTuple0: nested.tuple[0],
-      nestedTuple1: nested.tuple[1]
+      nestedTuple1: nested.tuple[1],
     })
     .run(client);
   tc.assert<
     tc.IsExact<
       typeof nestedResult,
       {
-        nested: {a: string; named: {b: number}; tuple: [boolean, string]}[];
+        nested: { a: string; named: { b: number }; tuple: [boolean, string] }[];
         nestedA: string[];
-        nestedNamed: {b: number}[];
+        nestedNamed: { b: number }[];
         nestedTuple: [boolean, string][];
         nestedTuple0: boolean[];
         nestedTuple1: string[];
@@ -332,27 +330,27 @@ test("namedTuple literal", async () => {
   expect(JSON.stringify(nestedResult)).toEqual(
     JSON.stringify({
       nested: [
-        {a: "asdf", named: {b: 123}, tuple: [true, "x"]},
-        {a: "asdf", named: {b: 123}, tuple: [true, "y"]}
+        { a: "asdf", named: { b: 123 }, tuple: [true, "x"] },
+        { a: "asdf", named: { b: 123 }, tuple: [true, "y"] },
       ],
       nestedA: ["asdf", "asdf"],
-      nestedNamed: [{b: 123}, {b: 123}],
+      nestedNamed: [{ b: 123 }, { b: 123 }],
       nestedTuple: [
         [true, "x"],
-        [true, "y"]
+        [true, "y"],
       ],
       nestedTuple0: [true, true],
-      nestedTuple1: ["x", "y"]
+      nestedTuple1: ["x", "y"],
     })
   );
 
-  const emptyNamedTuple = e.tuple({string: e.cast(e.str, e.set())});
+  const emptyNamedTuple = e.tuple({ string: e.cast(e.str, e.set()) });
   type emptyNamedTuple = $.setToTsType<typeof emptyNamedTuple>;
   tc.assert<tc.IsExact<emptyNamedTuple, null>>(true);
   expect(emptyNamedTuple.__cardinality__).toEqual($.Cardinality.Empty);
 
   const multiNamedTuple = e.tuple({
-    hero: e.Hero
+    hero: e.Hero,
   });
   type multiNamedTuple = $.setToTsType<typeof multiNamedTuple>;
   tc.assert<
@@ -383,7 +381,7 @@ test("non literal tuples", async () => {
       verMajor: ver.major,
       verStage: ver.stage,
       verLocal: ver.local,
-      verLocal0: ver.local[0]
+      verLocal0: ver.local[0],
     })
     .run(client);
 
@@ -410,12 +408,12 @@ test("non literal tuples", async () => {
     major: result.verMajor,
     stage: result.verStage,
     local: result.verLocal,
-    local0: result.verLocal0
+    local0: result.verLocal0,
   }).toEqual({
     major: result.ver.major,
     stage: result.ver.stage,
     local: result.ver.local,
-    local0: result.ver.local[0]
+    local0: result.ver.local[0],
   });
 });
 
@@ -428,20 +426,20 @@ test("objectTypeToTupleType helper", () => {
     "genre: default::Genre",
     "rating: std::float64",
     "release_year: default::year",
-    "title: std::str"
+    "title: std::str",
   ]);
 
   tc.assert<
     tc.IsExact<
-      typeof movieTuple["__shape__"],
-      {genre: $Genre; rating: $float64; title: $str; release_year: $year}
+      (typeof movieTuple)["__shape__"],
+      { genre: $Genre; rating: $float64; title: $str; release_year: $year }
     >
   >(true);
 
   const movieTupleWithFields = objectTypeToTupleType(e.Movie, [
     "id",
     "title",
-    "release_year"
+    "release_year",
   ]);
 
   expect(movieTupleWithFields["__kind__"]).toBe("namedtuple");
@@ -451,13 +449,13 @@ test("objectTypeToTupleType helper", () => {
   ).toEqual([
     "id: std::uuid",
     "release_year: default::year",
-    "title: std::str"
+    "title: std::str",
   ]);
 
   tc.assert<
     tc.IsExact<
-      typeof movieTupleWithFields["__shape__"],
-      {id: $uuid; title: $str; release_year: $year}
+      (typeof movieTupleWithFields)["__shape__"],
+      { id: $uuid; title: $str; release_year: $year }
     >
   >(true);
 });

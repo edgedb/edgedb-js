@@ -1,6 +1,6 @@
-import {ServerUtils, TlsSecurity, validTlsSecurityValues} from "./conUtils";
+import { ServerUtils, TlsSecurity, validTlsSecurityValues } from "./conUtils";
 
-import {InterfaceError} from "./errors";
+import { InterfaceError } from "./errors";
 
 export interface Credentials {
   host?: string;
@@ -45,7 +45,7 @@ export function validateCredentials(data: any): Credentials {
     throw new InterfaceError("`user` must be string");
   }
 
-  const result: Credentials = {user, port};
+  const result: Credentials = { user, port };
 
   const host = data.host;
   if (host != null) {
@@ -109,7 +109,7 @@ export function validateCredentials(data: any): Credentials {
   ) {
     throw new InterfaceError(
       `\`tls_security\` must be one of ${validTlsSecurityValues
-        .map(val => `"${val}"`)
+        .map((val) => `"${val}"`)
         .join(", ")}`
     );
   }

@@ -21,12 +21,12 @@ import LRU from "../src/primitives/lru";
 test("invalid capacity", () => {
   expect(() => {
     // tslint:disable-next-line: no-unused-expression
-    new LRU({capacity: -1});
+    new LRU({ capacity: -1 });
   }).toThrowError(TypeError);
 });
 
 test("capacity=1", () => {
-  const lru = new LRU<number, string>({capacity: 1});
+  const lru = new LRU<number, string>({ capacity: 1 });
 
   expect(lru.length).toBe(0);
 
@@ -50,7 +50,7 @@ test("capacity=1", () => {
 });
 
 test("capacity=3", () => {
-  const lru = new LRU<number, string>({capacity: 3});
+  const lru = new LRU<number, string>({ capacity: 3 });
 
   expect(lru.length).toBe(0);
 
@@ -87,7 +87,7 @@ test("capacity=3", () => {
 test("fuzzed", () => {
   const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   const values = ["a", "b", "c", "d", "e", "f"];
-  const lru = new LRU<number, string>({capacity: 3});
+  const lru = new LRU<number, string>({ capacity: 3 });
 
   function choice<T>(ar: T[]): T {
     return ar[Math.floor(Math.random() * ar.length)];

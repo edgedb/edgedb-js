@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {LifoQueue} from "../src/primitives/queues";
+import { LifoQueue } from "../src/primitives/queues";
 
 test("LifoQueue `get` awaits for items in the queue", async () => {
   let result = -1;
@@ -33,7 +33,7 @@ test("LifoQueue `get` awaits for items in the queue", async () => {
   expect(value).toBeGreaterThan(-1);
 });
 
-test("LifoQueue resolves items in LIFO order", done => {
+test("LifoQueue resolves items in LIFO order", (done) => {
   let result1 = -1;
   let result2 = -1;
   let result3 = -1;
@@ -58,7 +58,7 @@ test("LifoQueue resolves items in LIFO order", done => {
     const [value1, value2, value3] = await Promise.all([
       queue.get(),
       queue.get(),
-      queue.get()
+      queue.get(),
     ]);
 
     expect(value1).toBe(result3);
@@ -93,7 +93,7 @@ test("LifoQueue resolves `get` as soon as items are pushed", async () => {
   const [value1, value2, value3] = await Promise.all([
     queue.get(),
     queue.get(),
-    queue.get()
+    queue.get(),
   ]);
 
   // Note: here queue.get() is called in advance.
@@ -199,7 +199,7 @@ test("LifoQueue length is the number of available items 2", async () => {
   expect(items).toEqual(expectedResult);
 });
 
-test("LifoQueue length and pending", done => {
+test("LifoQueue length and pending", (done) => {
   const calls: string[] = [];
   const total = 20;
   const queue = new LifoQueue<number>();
@@ -235,7 +235,7 @@ test("LifoQueue length and pending", done => {
   });
 
   // note: consumers are satisfied in the same order as they arrived,
-  Promise.all(promises.slice(total, total * 2)).then(values => {
+  Promise.all(promises.slice(total, total * 2)).then((values) => {
     expect(queue.length).toBe(-total);
     expect(queue.pending).toBe(total);
 

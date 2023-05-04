@@ -1,20 +1,20 @@
-import type {Executor} from "edgedb";
+import type { Executor } from "edgedb";
 import {
   ExpressionKind,
   Cardinality,
-  TypeKind
+  TypeKind,
 } from "edgedb/dist/reflection/index";
 import type {
   Expression,
   ParamType,
   setToTsType,
   TypeSet,
-  BaseTypeToTsType
+  BaseTypeToTsType,
 } from "./typesystem";
-import {$expressionify} from "./path";
-import {runnableExpressionKinds} from "./query";
-import {select} from "./select";
-import {complexParamKinds} from "./__spec__";
+import { $expressionify } from "./path";
+import { runnableExpressionKinds } from "./query";
+import { select } from "./select";
+import { complexParamKinds } from "./__spec__";
 
 export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
   __kind__: ExpressionKind.OptionalParam;
@@ -26,7 +26,7 @@ export function optional<Type extends ParamType>(
 ): $expr_OptionalParam<Type> {
   return {
     __kind__: ExpressionKind.OptionalParam,
-    __type__: type
+    __type__: type,
   };
 }
 
@@ -112,7 +112,7 @@ export function params<
   paramsDef: Params,
   expr: (params: paramsToParamExprs<Params>) => Expr
 ): $expr_WithParams<Params, Expr> {
-  const paramExprs: {[key: string]: $expr_Param} = {};
+  const paramExprs: { [key: string]: $expr_Param } = {};
   for (const [key, param] of Object.entries(paramsDef)) {
     const paramType =
       param.__kind__ === ExpressionKind.OptionalParam ? param.__type__ : param;
@@ -128,7 +128,7 @@ export function params<
           ? Cardinality.AtMostOne
           : Cardinality.One,
       __name__: key,
-      __isComplex__: isComplex
+      __isComplex__: isComplex,
     }) as any;
   }
 
@@ -143,6 +143,6 @@ export function params<
     __element__: returnExpr.__element__,
     __cardinality__: returnExpr.__cardinality__,
     __expr__: returnExpr,
-    __params__: Object.values(paramExprs)
+    __params__: Object.values(paramExprs),
   }) as any;
 }

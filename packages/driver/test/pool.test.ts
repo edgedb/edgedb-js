@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {getClient} from "./testbase";
+import { getClient } from "./testbase";
 
 test("pool.query: basic scalars", async () => {
   const pool = getClient();
@@ -55,7 +55,7 @@ test("pool.queryJSON", async () => {
   const pool = getClient();
   try {
     const res = await pool.queryJSON("select {(a := 1), (a := 2)}");
-    expect(JSON.parse(res)).toEqual([{a: 1}, {a: 2}]);
+    expect(JSON.parse(res)).toEqual([{ a: 1 }, { a: 2 }]);
   } finally {
     await pool.close();
   }
@@ -82,14 +82,14 @@ test("pool.querySingleJSON", async () => {
     let res;
 
     res = await pool.querySingleJSON("select (a := 1)");
-    expect(JSON.parse(res)).toEqual({a: 1});
+    expect(JSON.parse(res)).toEqual({ a: 1 });
 
     res = await pool.querySingleJSON("select (a := 1n)");
-    expect(JSON.parse(res)).toEqual({a: 1});
+    expect(JSON.parse(res)).toEqual({ a: 1 });
     expect(typeof JSON.parse(res).a).toEqual("number");
 
     res = await pool.querySingleJSON("select (a := 1.5n)");
-    expect(JSON.parse(res)).toEqual({a: 1.5});
+    expect(JSON.parse(res)).toEqual({ a: 1.5 });
     expect(typeof JSON.parse(res).a).toEqual("number");
   } finally {
     await pool.close();
@@ -115,7 +115,7 @@ test("pool retry works", async () => {
   const pool = getClient();
 
   try {
-    const result = await pool.transaction(async tx => {
+    const result = await pool.transaction(async (tx) => {
       return await tx.querySingle(`SELECT 33*21`);
     });
     expect(result).toEqual(693);

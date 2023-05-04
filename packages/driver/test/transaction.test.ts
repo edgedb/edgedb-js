@@ -17,11 +17,11 @@
  */
 
 import * as errors from "../src/errors";
-import {Client} from "../src/index.node";
-import {IsolationLevel, TransactionOptions} from "../src/options";
-import {sleep} from "../src/utils";
+import { Client } from "../src/index.node";
+import { IsolationLevel, TransactionOptions } from "../src/options";
+import { sleep } from "../src/utils";
 import Event from "../src/primitives/event";
-import {getClient} from "./testbase";
+import { getClient } from "./testbase";
 
 const typename = "TransactionTest";
 
@@ -40,7 +40,7 @@ async function run(test: (con: Client) => Promise<void>): Promise<void> {
 }
 
 beforeAll(async () => {
-  await run(async con => {
+  await run(async (con) => {
     await con.execute(`
       CREATE TYPE ${typename} {
         CREATE REQUIRED PROPERTY name -> std::str;
@@ -50,17 +50,17 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await run(async con => {
+  await run(async (con) => {
     await con.execute(`DROP TYPE ${typename};`);
   });
 });
 
 test("transaction: regular 01", async () => {
-  await run(async con => {
-    const rawTransaction = con.withRetryOptions({attempts: 1}).transaction;
+  await run(async (con) => {
+    const rawTransaction = con.withRetryOptions({ attempts: 1 }).transaction;
 
     async function faulty(): Promise<void> {
-      await rawTransaction(async tx => {
+      await rawTransaction(async (tx) => {
         await tx.execute(`
           INSERT ${typename} {
             name := 'Test Transaction'
@@ -99,26 +99,26 @@ function* all_options(): Generator<
 }
 
 test("transaction: kinds", async () => {
-  await run(async con => {
+  await run(async (con) => {
     for (let [isolation, readonly, defer] of all_options()) {
-      let partial = {isolation, readonly, defer};
+      let partial = { isolation, readonly, defer };
       let opt = new TransactionOptions(partial); // class api
       await con
         .withTransactionOptions(opt)
-        .withRetryOptions({attempts: 1})
-        .transaction(async tx => {});
-      await con.withTransactionOptions(opt).transaction(async tx => {});
+        .withRetryOptions({ attempts: 1 })
+        .transaction(async (tx) => {});
+      await con.withTransactionOptions(opt).transaction(async (tx) => {});
     }
   });
 
-  await run(async con => {
+  await run(async (con) => {
     for (let [isolation, readonly, defer] of all_options()) {
-      let opt = {isolation, readonly, defer}; // obj api
+      let opt = { isolation, readonly, defer }; // obj api
       await con
         .withTransactionOptions(opt)
-        .withRetryOptions({attempts: 1})
-        .transaction(async tx => {});
-      await con.withTransactionOptions(opt).transaction(async tx => {});
+        .withRetryOptions({ attempts: 1 })
+        .transaction(async (tx) => {});
+      await con.withTransactionOptions(opt).transaction(async (tx) => {});
     }
   });
 });
@@ -150,13 +150,13 @@ test("no transaction statements", async () => {
 });
 
 test("transaction timeout", async () => {
-  const client = getClient({concurrency: 1});
+  const client = getClient({ concurrency: 1 });
 
   const startTime = Date.now();
   const timedoutQueryDone = new Event();
 
   try {
-    await client.transaction(async tx => {
+    await client.transaction(async (tx) => {
       await sleep(15_000);
 
       try {
@@ -180,13 +180,13 @@ test("transaction timeout", async () => {
 }, 20_000);
 
 test("transaction deadlocking client pool", async () => {
-  const client = getClient({concurrency: 1});
+  const client = getClient({ concurrency: 1 });
 
   const innerQueryDone = new Event();
   let innerQueryResult: any;
 
   await expect(
-    client.transaction(async tx => {
+    client.transaction(async (tx) => {
       // This query will hang forever waiting on the connection holder
       // held by the transaction, which itself will not return the holder
       // to the pool until the query completes. This deadlock should be

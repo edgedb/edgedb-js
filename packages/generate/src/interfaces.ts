@@ -1,21 +1,21 @@
 // tslint:disable:no-console
-import {CommandOptions, getPackageVersion} from "./commandutil";
-import {exitWithError} from "./genutil";
+import { CommandOptions, getPackageVersion } from "./commandutil";
+import { exitWithError } from "./genutil";
 
-import {$, adapter, Client, createClient, createHttpClient} from "edgedb";
-import {DirBuilder} from "./builders";
+import { $, adapter, Client, createClient, createHttpClient } from "edgedb";
+import { DirBuilder } from "./builders";
 
-import type {ConnectConfig} from "edgedb/dist/conUtils";
-import {generateInterfaces} from "./edgeql-js/generateInterfaces";
+import type { ConnectConfig } from "edgedb/dist/conUtils";
+import { generateInterfaces } from "./edgeql-js/generateInterfaces";
 
-const {path} = adapter;
+const { path } = adapter;
 
 export async function runInterfacesGenerator(params: {
   root: string | null;
   options: CommandOptions;
   connectionConfig: ConnectConfig;
 }) {
-  const {root, options, connectionConfig} = params;
+  const { root, options, connectionConfig } = params;
 
   let outFile: string;
   if (options.file) {
@@ -35,9 +35,7 @@ export async function runInterfacesGenerator(params: {
   if (root) {
     const relativeOutputDir = path.posix.relative(root, outFile);
     outputDirIsInProject = !relativeOutputDir.startsWith("..");
-    prettyOutputDir = outputDirIsInProject
-      ? `./${relativeOutputDir}`
-      : outFile;
+    prettyOutputDir = outputDirIsInProject ? `./${relativeOutputDir}` : outFile;
   } else {
     prettyOutputDir = outFile;
   }
@@ -49,7 +47,7 @@ export async function runInterfacesGenerator(params: {
       : createClient;
     client = cxnCreatorFn({
       ...connectionConfig,
-      concurrency: 5
+      concurrency: 5,
     });
   } catch (e) {
     exitWithError(`Failed to connect: ${(e as Error).message}`);
@@ -68,7 +66,7 @@ export async function runInterfacesGenerator(params: {
 
   const generatorParams = {
     dir,
-    types
+    types,
   };
   console.log(`Generating interfaces...`);
   generateInterfaces(generatorParams);
@@ -80,7 +78,7 @@ export async function runInterfacesGenerator(params: {
     file.render({
       mode: "ts",
       moduleKind: "esm",
-      moduleExtension: ""
+      moduleExtension: "",
     });
 
   console.log(`Writing interfaces file...`);

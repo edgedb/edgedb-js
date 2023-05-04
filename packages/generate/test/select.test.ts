@@ -2,15 +2,15 @@ import * as edgedb from "edgedb";
 import * as $ from "../src/syntax/reflection";
 import * as tc from "conditional-type-checks";
 
-import e, {$infer} from "../dbschema/edgeql-js";
-import {setupTests, teardownTests, TestData} from "./setupTeardown";
-import {CardinalityViolationError} from "edgedb";
+import e, { $infer } from "../dbschema/edgeql-js";
+import { setupTests, teardownTests, TestData } from "./setupTeardown";
+import { CardinalityViolationError } from "edgedb";
 let client: edgedb.Client;
 let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client, data} = setup);
+  ({ client, data } = setup);
 });
 
 afterAll(async () => {
@@ -88,19 +88,19 @@ test("selecting JS data", () => {
 test("no shape", async () => {
   const query = e.select(e.default.Hero);
   const result = await query.run(client);
-  tc.assert<tc.IsExact<typeof result, {id: string}[]>>(true);
+  tc.assert<tc.IsExact<typeof result, { id: string }[]>>(true);
   expect(query.__element__.__shape__).toEqual(
     e.default.Hero.__element__.__shape__
   );
-  expect(result.every(val => !!val.id)).toEqual(true);
+  expect(result.every((val) => !!val.id)).toEqual(true);
 });
 
 test("computed only shape", () => {
-  const query = e.select(e.Hero, hero => ({
-    upper_name: e.str_upper(hero.name)
+  const query = e.select(e.Hero, (hero) => ({
+    upper_name: e.str_upper(hero.name),
   }));
 
-  tc.assert<tc.IsExact<$infer<typeof query>, {upper_name: string}[]>>(true);
+  tc.assert<tc.IsExact<$infer<typeof query>, { upper_name: string }[]>>(true);
 });
 
 const q1 = e.select(e.Hero, () => ({
@@ -109,22 +109,20 @@ const q1 = e.select(e.Hero, () => ({
   name: 1 > 0,
   villains: {
     id: true,
-    computed: e.str("test")
+    computed: e.str("test"),
   },
-  computed: e.str("test")
+  computed: e.str("test"),
 }));
 
 type q1 = $.setToTsType<typeof q1>;
 
 test("path construction", () => {
   const result = e.select(e.default.Hero);
-  expect(result.villains.nemesis.name.__element__.__name__).toEqual(
-    "std::str"
-  );
+  expect(result.villains.nemesis.name.__element__.__name__).toEqual("std::str");
 });
 
 test("complex shape", () => {
-  type q1type = $.BaseTypeToTsType<typeof q1["__element__"]>;
+  type q1type = $.BaseTypeToTsType<(typeof q1)["__element__"]>;
   tc.assert<
     tc.IsExact<
       q1type,
@@ -143,7 +141,7 @@ test("complex shape", () => {
 });
 
 test("deep shape", () => {
-  const deep = e.select(e.Hero, _hero => ({
+  const deep = e.select(e.Hero, (_hero) => ({
     id: true,
     __type__: {
       name: true,
@@ -151,10 +149,10 @@ test("deep shape", () => {
         id: true,
         __type__: {
           id: true,
-          name: true
-        }
-      }
-    }
+          name: true,
+        },
+      },
+    },
   }));
   type deep = $.setToTsType<typeof deep>;
   tc.assert<
@@ -182,8 +180,8 @@ test("compositionality", () => {
   // default to { id }
   const no_shape = e.select(q1);
 
-  type no_shape = $.BaseTypeToTsType<typeof no_shape["__element__"]>;
-  type q1 = $.BaseTypeToTsType<typeof q1["__element__"]>;
+  type no_shape = $.BaseTypeToTsType<(typeof no_shape)["__element__"]>;
+  type q1 = $.BaseTypeToTsType<(typeof q1)["__element__"]>;
   tc.assert<tc.IsExact<no_shape, q1>>(true);
   expect(no_shape.__element__.__shape__).toEqual(q1.__element__.__shape__);
   // expect(no_shape.__element__.__shape__).toEqual({id: true});
@@ -191,10 +189,10 @@ test("compositionality", () => {
   // allow override shape
   const override_shape = e.select(q1, () => ({
     id: true,
-    secret_identity: true
+    secret_identity: true,
   }));
   type override_shape = $.BaseTypeToTsType<
-    typeof override_shape["__element__"]
+    (typeof override_shape)["__element__"]
   >;
   tc.assert<
     tc.IsExact<
@@ -211,10 +209,10 @@ test("polymorphism", () => {
   const query = e.select(e.Person, () => ({
     id: true,
     name: true,
-    ...e.is(e.Hero, {secret_identity: true}),
+    ...e.is(e.Hero, { secret_identity: true }),
     ...e.is(e.Villain, {
-      nemesis: {name: true}
-    })
+      nemesis: { name: true },
+    }),
   }));
   // query.__element__.
 
@@ -222,7 +220,7 @@ test("polymorphism", () => {
   expect(query.__element__.__kind__).toEqual($.TypeKind.object);
   expect(query.__element__.__name__).toEqual("default::Person");
 
-  type result = $.BaseTypeToTsType<typeof query["__element__"]>;
+  type result = $.BaseTypeToTsType<(typeof query)["__element__"]>;
   tc.assert<
     tc.IsExact<
       result,
@@ -240,36 +238,36 @@ test("polymorphism", () => {
 
 test("polymorphic with nested modifiers", () => {
   e.is(e.Villain, {
-    id: true
+    id: true,
   });
 
-  const query = e.select(e.Person, person => ({
+  const query = e.select(e.Person, (person) => ({
     id: true,
     name: true,
     ...e.is(e.Villain, {
-      nemesis: hero => ({
+      nemesis: (hero) => ({
         name: true,
         order_by: hero.name,
         filter: e.op(hero.name, "=", hero.name),
         limit: 1,
-        offset: 10
-      })
-    })
+        offset: 10,
+      }),
+    }),
   }));
 
   type q = $.setToTsType<typeof query>;
 });
 
 test("computables in polymorphics", () => {
-  const q = e.select(e.Person, person => ({
+  const q = e.select(e.Person, (person) => ({
     id: true,
     ...e.is(e.Hero, {
-      secret_identity: true
+      secret_identity: true,
     }),
     ...e.is(e.Villain, {
-      nemesis: {id: true, computable: e.int64(1234)},
-      computable: e.int64(1234)
-    })
+      nemesis: { id: true, computable: e.int64(1234) },
+      computable: e.int64(1234),
+    }),
   }));
 
   type q = $.setToTsType<typeof q>;
@@ -279,7 +277,7 @@ test("computables in polymorphics", () => {
       {
         id: string;
         secret_identity: string | null;
-        nemesis: {id: string; computable: 1234} | null;
+        nemesis: { id: string; computable: 1234 } | null;
         computable: never;
       }[]
     >
@@ -291,9 +289,9 @@ test("parent type props in polymorphic", () => {
     ...e.is(e.Hero, {
       // name is prop of Person
       name: true,
-      secret_identity: true
+      secret_identity: true,
     }),
-    ...e.is(e.Villain, {nemesis: {name: true}})
+    ...e.is(e.Villain, { nemesis: { name: true } }),
   }));
 
   tc.assert<
@@ -302,7 +300,7 @@ test("parent type props in polymorphic", () => {
       {
         name: string | null;
         secret_identity: string | null;
-        nemesis: {name: string} | null;
+        nemesis: { name: string } | null;
       }[]
     >
   >(true);
@@ -310,7 +308,7 @@ test("parent type props in polymorphic", () => {
 
 test("* in polymorphic", async () => {
   const q = e.select(e.Person, () => ({
-    ...e.is(e.Hero, e.Hero["*"])
+    ...e.is(e.Hero, e.Hero["*"]),
   }));
 
   // 'id' is filtered out since it is not valid in a polymorphic expr
@@ -337,101 +335,101 @@ test("limit/offset inference", () => {
   const testSet = e.set(1, 2, 3);
 
   tc.assert<
-    tc.IsExact<typeof testSet["__cardinality__"], $.Cardinality.AtLeastOne>
+    tc.IsExact<(typeof testSet)["__cardinality__"], $.Cardinality.AtLeastOne>
   >(true);
   expect(testSet.__cardinality__).toEqual($.Cardinality.AtLeastOne);
 
   const r0 = e.select(testSet, () => ({}));
   tc.assert<
-    tc.IsExact<typeof r0["__cardinality__"], $.Cardinality.AtLeastOne>
+    tc.IsExact<(typeof r0)["__cardinality__"], $.Cardinality.AtLeastOne>
   >(true);
   expect(r0.__cardinality__).toEqual($.Cardinality.AtLeastOne);
 
-  const r1 = e.select(testSet, () => ({limit: 1}));
-  tc.assert<tc.IsExact<typeof r1["__cardinality__"], $.Cardinality.Many>>(
+  const r1 = e.select(testSet, () => ({ limit: 1 }));
+  tc.assert<tc.IsExact<(typeof r1)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
   expect(r1.__cardinality__).toEqual($.Cardinality.Many);
 
-  const r2 = e.select(testSet, () => ({offset: 1}));
-  tc.assert<tc.IsExact<typeof r2["__cardinality__"], $.Cardinality.Many>>(
+  const r2 = e.select(testSet, () => ({ offset: 1 }));
+  tc.assert<tc.IsExact<(typeof r2)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
   expect(r2.__cardinality__).toEqual($.Cardinality.Many);
 });
 
 test("offset", () => {
-  const q = e.select(e.Hero, () => ({name: true}));
-  const r1 = e.select(q, () => ({offset: 5}));
+  const q = e.select(e.Hero, () => ({ name: true }));
+  const r1 = e.select(q, () => ({ offset: 5 }));
   expect(r1.__modifiers__.offset?.__element__.__name__).toEqual("std::number");
 });
 
 test("infer cardinality - scalar filters", () => {
   const q = e.select(e.Hero);
-  const q2 = e.select(q, hero => ({
-    filter_single: e.op(hero.name, "=", "asdf")
+  const q2 = e.select(q, (hero) => ({
+    filter_single: e.op(hero.name, "=", "asdf"),
   }));
-  tc.assert<tc.IsExact<typeof q2["__cardinality__"], $.Cardinality.AtMostOne>>(
-    true
-  );
+  tc.assert<
+    tc.IsExact<(typeof q2)["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
   expect(q2.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
   const u3 = e.uuid("asdf");
-  const q3 = e.select(q, hero => {
-    return {filter_single: e.op(hero.id, "=", u3)};
+  const q3 = e.select(q, (hero) => {
+    return { filter_single: e.op(hero.id, "=", u3) };
   });
-  tc.assert<tc.IsExact<typeof q3["__cardinality__"], $.Cardinality.AtMostOne>>(
-    true
-  );
+  tc.assert<
+    tc.IsExact<(typeof q3)["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
   expect(q3.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
   const q4 = q2.secret_identity;
-  tc.assert<tc.IsExact<typeof q4["__cardinality__"], $.Cardinality.AtMostOne>>(
-    true
-  );
+  tc.assert<
+    tc.IsExact<(typeof q4)["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
   expect(q4.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
-  const q5 = e.select(q, hero => ({
-    filter: e.op(hero.secret_identity, "=", "asdf")
+  const q5 = e.select(q, (hero) => ({
+    filter: e.op(hero.secret_identity, "=", "asdf"),
   }));
-  tc.assert<tc.IsExact<typeof q5["__cardinality__"], $.Cardinality.Many>>(
+  tc.assert<tc.IsExact<(typeof q5)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
   expect(q5.__cardinality__).toEqual($.Cardinality.Many);
 
-  const q6 = e.select(e.Villain.nemesis, nemesis => ({
-    filter_single: e.op(nemesis.name, "=", "asdf")
+  const q6 = e.select(e.Villain.nemesis, (nemesis) => ({
+    filter_single: e.op(nemesis.name, "=", "asdf"),
   }));
-  tc.assert<tc.IsExact<typeof q6["__cardinality__"], $.Cardinality.AtMostOne>>(
-    true
-  );
+  tc.assert<
+    tc.IsExact<(typeof q6)["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
   expect(q6.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
   const strs = e.set(e.str("asdf"), e.str("qwer"));
-  const q7 = e.select(e.Villain, villain => ({
-    filter: e.op(villain.name, "=", strs)
+  const q7 = e.select(e.Villain, (villain) => ({
+    filter: e.op(villain.name, "=", strs),
   }));
-  tc.assert<tc.IsExact<typeof q7["__cardinality__"], $.Cardinality.Many>>(
+  tc.assert<tc.IsExact<(typeof q7)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
   expect(q7.__cardinality__).toEqual($.Cardinality.Many);
 
-  const expr8 = e.select(e.Villain, () => ({id: true, name: true}));
-  const q8 = e.select(expr8, villain => ({
-    filter_single: e.op(villain.name, "=", "asdf")
+  const expr8 = e.select(e.Villain, () => ({ id: true, name: true }));
+  const q8 = e.select(expr8, (villain) => ({
+    filter_single: e.op(villain.name, "=", "asdf"),
   }));
-  tc.assert<tc.IsExact<typeof q8["__cardinality__"], $.Cardinality.AtMostOne>>(
-    true
-  );
+  tc.assert<
+    tc.IsExact<(typeof q8)["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
   expect(q8.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
-  const expr9 = e.select(e.Villain, () => ({id: true, name: true}));
-  const q9 = e.select(expr9, villain => ({
-    filter_single: e.op(villain.name, "=", "asdf")
+  const expr9 = e.select(e.Villain, () => ({ id: true, name: true }));
+  const q9 = e.select(expr9, (villain) => ({
+    filter_single: e.op(villain.name, "=", "asdf"),
   }));
-  tc.assert<tc.IsExact<typeof q9["__cardinality__"], $.Cardinality.AtMostOne>>(
-    true
-  );
+  tc.assert<
+    tc.IsExact<(typeof q9)["__cardinality__"], $.Cardinality.AtMostOne>
+  >(true);
   expect(q9.__cardinality__).toEqual($.Cardinality.AtMostOne);
 
   // const q10 = e.select(e.Villain, villain => ({
@@ -444,19 +442,19 @@ test("infer cardinality - scalar filters", () => {
 });
 
 test("infer cardinality - object type filters", () => {
-  const oneHero = e.select(e.Hero, () => ({limit: 1})).assert_single();
+  const oneHero = e.select(e.Hero, () => ({ limit: 1 })).assert_single();
 
-  const singleHero = e.select(e.Hero, hero => ({
-    filter_single: e.op(hero, "=", oneHero)
+  const singleHero = e.select(e.Hero, (hero) => ({
+    filter_single: e.op(hero, "=", oneHero),
   }));
 
   const c1 = singleHero.__cardinality__;
   tc.assert<tc.IsExact<typeof c1, $.Cardinality.AtMostOne>>(true);
   expect(c1).toEqual($.Cardinality.AtMostOne);
 
-  const oneProfile = e.select(e.Hero, () => ({limit: 1})).assert_single();
-  const singleMovie = e.select(e.Movie, movie => ({
-    filter_single: e.op(movie.profile, "=", oneProfile)
+  const oneProfile = e.select(e.Hero, () => ({ limit: 1 })).assert_single();
+  const singleMovie = e.select(e.Movie, (movie) => ({
+    filter_single: e.op(movie.profile, "=", oneProfile),
   }));
 
   const c2 = singleMovie.__cardinality__;
@@ -465,34 +463,34 @@ test("infer cardinality - object type filters", () => {
 
   // not a singleton
 
-  const c3 = e.select(e.Villain, villain => ({
-    filter: e.op(villain.nemesis, "=", oneHero)
+  const c3 = e.select(e.Villain, (villain) => ({
+    filter: e.op(villain.nemesis, "=", oneHero),
   })).__cardinality__;
   tc.assert<tc.IsExact<typeof c3, $.Cardinality.Many>>(true);
   expect(c3).toEqual($.Cardinality.Many);
 
   // not a singleton
   // technically a bug, but for now this behavior is expected
-  const c4 = e.select(e.Villain, villain => ({
-    filter_single: e.op(villain, "=", villain)
+  const c4 = e.select(e.Villain, (villain) => ({
+    filter_single: e.op(villain, "=", villain),
   })).__cardinality__;
   tc.assert<tc.IsExact<typeof c4, $.Cardinality.AtMostOne>>(true);
   expect(c4).toEqual($.Cardinality.AtMostOne);
 });
 
 test("non 'e.eq' filters", () => {
-  const q1 = e.select(e.Hero, hero => ({
-    filter: e.bool(true)
+  const q1 = e.select(e.Hero, (hero) => ({
+    filter: e.bool(true),
   }));
-  tc.assert<tc.IsExact<typeof q1["__cardinality__"], $.Cardinality.Many>>(
+  tc.assert<tc.IsExact<(typeof q1)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
   expect(q1.__cardinality__).toEqual($.Cardinality.Many);
 
-  const q2 = e.select(e.Hero, hero => ({
-    filter: e.op(true, "if", e.op(hero.name, "=", "Thanos"), "else", false)
+  const q2 = e.select(e.Hero, (hero) => ({
+    filter: e.op(true, "if", e.op(hero.name, "=", "Thanos"), "else", false),
   }));
-  tc.assert<tc.IsExact<typeof q2["__cardinality__"], $.Cardinality.Many>>(
+  tc.assert<tc.IsExact<(typeof q2)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
   expect(q2.__cardinality__).toEqual($.Cardinality.Many);
@@ -501,13 +499,13 @@ test("non 'e.eq' filters", () => {
 test("fetch heroes", async () => {
   const result = await e.select(e.Hero).run(client);
   expect(result.length).toEqual(3);
-  expect(result.every(h => typeof h.id === "string")).toEqual(true);
+  expect(result.every((h) => typeof h.id === "string")).toEqual(true);
 });
 
 test("filter by id", async () => {
   const result = await e
-    .select(e.Hero, hero => ({
-      filter_single: {id: data.spidey.id}
+    .select(e.Hero, (hero) => ({
+      filter_single: { id: data.spidey.id },
     }))
     .run(client);
 
@@ -516,8 +514,8 @@ test("filter by id", async () => {
 
 test("filter by id expr", async () => {
   const result = await e
-    .select(e.Hero, hero => ({
-      filter_single: {id: e.uuid(data.spidey.id)}
+    .select(e.Hero, (hero) => ({
+      filter_single: { id: e.uuid(data.spidey.id) },
     }))
     .run(client);
 
@@ -526,10 +524,10 @@ test("filter by id expr", async () => {
 
 test("limit 1", async () => {
   const query = e
-    .select(e.Hero, hero => ({
+    .select(e.Hero, (hero) => ({
       order_by: hero.name,
       offset: 1,
-      limit: 1
+      limit: 1,
     }))
     .assert_single();
   const result = await e.select(query).run(client);
@@ -537,25 +535,25 @@ test("limit 1", async () => {
 });
 
 test("limit 2", async () => {
-  const query = e.select(e.Hero, hero => ({
+  const query = e.select(e.Hero, (hero) => ({
     order_by: hero.name,
     offset: 1,
-    limit: 2
+    limit: 2,
   }));
   const results = await query.run(client);
 
   expect(results.length).toEqual(2);
-  expect(results).toEqual([{id: data.iron_man.id}, {id: data.spidey.id}]);
+  expect(results).toEqual([{ id: data.iron_man.id }, { id: data.spidey.id }]);
 });
 
 test("order by self", async () => {
-  const query = e.select(e.Hero, hero => ({
-    order_by: hero
+  const query = e.select(e.Hero, (hero) => ({
+    order_by: hero,
   }));
   const result = await query.run(client);
   expect(result).toEqual(
     [data.cap, data.spidey, data.iron_man]
-      .map(h => ({id: h.id}))
+      .map((h) => ({ id: h.id }))
       .sort((a, b) => a.id.localeCompare(b.id))
   );
 });
@@ -563,34 +561,37 @@ test("order by self", async () => {
 test("shapes", async () => {
   const query = e.select(
     e
-      .select(e.Hero, hero => ({filter: e.op(hero.name, "=", "Iron Man")}))
+      .select(e.Hero, (hero) => ({ filter: e.op(hero.name, "=", "Iron Man") }))
       .assert_single(),
     () => ({
       id: true,
       name: true,
       secret_identity: true,
-      villains: {id: true}
+      villains: { id: true },
     })
   );
 
   const result = await query.run(client);
   expect(result).toMatchObject(data.iron_man);
-  expect(result?.villains).toEqual([{id: data.thanos.id}]);
+  expect(result?.villains).toEqual([{ id: data.thanos.id }]);
 });
 
 test("computables", async () => {
   const all_heroes = e.select(e.Hero, () => ({
     // __type__: {name: true}
-    id: true
+    id: true,
   }));
   const query = e.select(
     e
-      .select(e.Person.is(e.Hero), hero => ({order_by: hero.name, limit: 1}))
+      .select(e.Person.is(e.Hero), (hero) => ({
+        order_by: hero.name,
+        limit: 1,
+      }))
       .assert_single(),
-    hero => ({
+    (hero) => ({
       id: true,
       computable: e.int64(35),
-      all_heroes
+      all_heroes,
     })
   );
 
@@ -619,11 +620,13 @@ test("computables", async () => {
 
 test("type intersections", async () => {
   const query = e.select(e.Person.is(e.Hero), () => ({
-    id: true
+    id: true,
     // __type__: {name: true},
   }));
   const results = await query.run(client);
-  expect(results.every(person => typeof person.id === "string")).toEqual(true);
+  expect(results.every((person) => typeof person.id === "string")).toEqual(
+    true
+  );
   // expect(
   //   results.every(person => person.__type__.name === "default::Hero")
   // ).toEqual(true);
@@ -632,7 +635,7 @@ test("type intersections", async () => {
 test("type intersections - static", () => {
   const result = e.select(e.Movie.characters).is(e.Villain);
   type result = $.setToTsType<typeof result>;
-  tc.assert<tc.IsExact<result, {id: string}[]>>(true);
+  tc.assert<tc.IsExact<result, { id: string }[]>>(true);
 });
 
 test("backlinks", async () => {
@@ -640,14 +643,14 @@ test("backlinks", async () => {
     .select(e.Hero["<characters[is Movie]"], () => ({
       id: true,
       // __type__: {name: true},
-      title: true
+      title: true,
     }))
     .run(client);
 
   const q2 = e.select(e.Hero["<characters"].is(e.Movie), () => ({
     id: true,
     // __type__: {name: true},
-    title: true
+    title: true,
   }));
 
   const result2 = await q2.run(client);
@@ -658,13 +661,13 @@ test("backlinks", async () => {
     [data.the_avengers.title, data.civil_war.title].includes(result1[0].title)
   ).toEqual(true);
 
-  const q3 = e.select(e.Hero, hero => ({
+  const q3 = e.select(e.Hero, (hero) => ({
     "<characters[is Movie]": {
-      title: true
+      title: true,
     },
     starredIn: e.select(hero["<characters[is Movie]"], () => ({
-      title: true
-    }))
+      title: true,
+    })),
   }));
 
   const res3 = await q3.run(client);
@@ -672,8 +675,8 @@ test("backlinks", async () => {
     tc.IsExact<
       typeof res3,
       {
-        "<characters[is Movie]": {title: string}[];
-        starredIn: {title: string}[];
+        "<characters[is Movie]": { title: string }[];
+        starredIn: { title: string }[];
       }[]
     >
   >(true);
@@ -687,17 +690,17 @@ test("overrides with implicit casting", () => {
   e.select(e.Hero, () => ({
     id: e.uuid("asdf"),
     number_of_movies: e.int64(1234),
-    name: e.str("adsf")
+    name: e.str("adsf"),
   }));
 });
 
 test("link properties", async () => {
-  const query = e.select(e.Movie, movie => ({
+  const query = e.select(e.Movie, (movie) => ({
     id: true,
-    characters: char => ({
+    characters: (char) => ({
       name: true,
-      "@character_name": true
-    })
+      "@character_name": true,
+    }),
   }));
 
   const result = await query.run(client);
@@ -717,16 +720,16 @@ test("link properties", async () => {
 });
 
 test("link properties in expressions", async () => {
-  const query = e.select(e.Movie, movie => ({
+  const query = e.select(e.Movie, (movie) => ({
     id: true,
-    characters: char => ({
+    characters: (char) => ({
       name: true,
       "@character_name": true,
       char_name: char["@character_name"],
       person_name: char.name,
 
-      filter: e.op(char["@character_name"], "ilike", "a%")
-    })
+      filter: e.op(char["@character_name"], "ilike", "a%"),
+    }),
   }));
 
   const result = await query.run(client);
@@ -748,19 +751,19 @@ test("link properties in expressions", async () => {
 });
 
 test("polymorphic link properties in expressions", async () => {
-  const query = e.select(e.Object, obj => ({
+  const query = e.select(e.Object, (obj) => ({
     id: true,
     ...e.is(e.Movie, {
       title: true,
-      characters: char => ({
+      characters: (char) => ({
         name: true,
         "@character_name": true,
         char_name: char["@character_name"],
         person_name: char.name,
 
-        filter: e.op(char["@character_name"], "ilike", "a%")
-      })
-    })
+        filter: e.op(char["@character_name"], "ilike", "a%"),
+      }),
+    }),
   }));
 
   query.__element__.__shape__.characters;
@@ -793,13 +796,13 @@ test("polymorphic link properties in expressions", async () => {
 // });
 
 test("filters in subqueries", async () => {
-  const q1 = e.select(e.Hero, hero => ({
+  const q1 = e.select(e.Hero, (hero) => ({
     name: true,
     villains: {
       id: true,
-      name: true
+      name: true,
     },
-    filter_single: e.op(hero.name, "=", data.spidey.name)
+    filter_single: e.op(hero.name, "=", data.spidey.name),
   }));
 
   const res1 = await q1.run(client);
@@ -807,14 +810,14 @@ test("filters in subqueries", async () => {
   expect(res1).not.toBeNull();
   expect(res1!.villains.length).toBe(1);
 
-  const q2 = e.select(e.Hero, hero => ({
+  const q2 = e.select(e.Hero, (hero) => ({
     name: true,
-    villains: v => ({
+    villains: (v) => ({
       id: true,
       name: true,
-      filter: e.op(v.name, "ilike", "%n%")
+      filter: e.op(v.name, "ilike", "%n%"),
     }),
-    filter_single: e.op(hero.name, "=", data.spidey.name)
+    filter_single: e.op(hero.name, "=", data.spidey.name),
   }));
 
   const res2 = await q2.run(client);
@@ -837,23 +840,23 @@ test("filters in subqueries", async () => {
 
   tc.assert<tc.IsExact<typeof res1, typeof res2>>(true);
 
-  const q3 = e.select(e.Hero, hero => ({
+  const q3 = e.select(e.Hero, (hero) => ({
     name: true,
-    villains: v => ({
+    villains: (v) => ({
       id: true,
       name: true,
-      filter: e.op(v.name, "=", "Thanos")
+      filter: e.op(v.name, "=", "Thanos"),
     }),
-    thanos: e.select(hero.villains, v => ({
+    thanos: e.select(hero.villains, (v) => ({
       name: true,
-      filter_single: e.op(v.name, "=", "Thanos")
-    }))
+      filter_single: e.op(v.name, "=", "Thanos"),
+    })),
   }));
 
   const test = await e
-    .select(e.Hero.villains, v => ({
+    .select(e.Hero.villains, (v) => ({
       name: true,
-      filter: e.op(v.name, "=", "Thanos")
+      filter: e.op(v.name, "=", "Thanos"),
     }))
     .run(client);
 
@@ -863,7 +866,7 @@ test("filters in subqueries", async () => {
   const res3 = await q3.run(client);
 
   expect(Array.isArray(res3)).toBe(true);
-  const ironMan = res3.find(r => r.name === "Iron Man");
+  const ironMan = res3.find((r) => r.name === "Iron Man");
   expect(ironMan).not.toBeUndefined();
   expect(Array.isArray(ironMan!.villains)).toBe(true);
   expect(Array.isArray(ironMan!.thanos)).toBe(false);
@@ -902,14 +905,14 @@ test("repeated computed", async () => {
   const query = e.select(e.Villain, () => ({
     id: true,
     name: true,
-    nemesis: nemesis => {
+    nemesis: (nemesis) => {
       const nameLen = e.len(nemesis.name);
       return {
         name: true,
         nameLen,
-        nameLen2: nameLen
+        nameLen2: nameLen,
       };
-    }
+    },
   }));
 
   expect(query.toEdgeQL()).toEqual(`WITH
@@ -954,25 +957,25 @@ SELECT __scope_0_defaultVillain {
 });
 
 test("polymorphic subqueries", async () => {
-  const query = e.select(e.Movie.characters, character => ({
+  const query = e.select(e.Movie.characters, (character) => ({
     id: true,
     name: true,
-    ...e.is(e.Villain, {nemesis: true}),
+    ...e.is(e.Villain, { nemesis: true }),
     ...e.is(e.Hero, {
       secret_identity: true,
       villains: {
         id: true,
         name: true,
-        nemesis: nemesis => {
+        nemesis: (nemesis) => {
           const nameLen = e.len(nemesis.name);
           return {
             name: true,
             nameLen,
-            nameLen2: nameLen
+            nameLen2: nameLen,
           };
-        }
-      }
-    })
+        },
+      },
+    }),
   }));
 
   expect(query.toEdgeQL()).toEqual(`WITH
@@ -1037,14 +1040,14 @@ SELECT __scope_0_defaultPerson {
 });
 
 test("polymorphic field in nested shape", async () => {
-  const query = e.select(e.Movie, movie => ({
+  const query = e.select(e.Movie, (movie) => ({
     title: true,
-    characters: char => ({
+    characters: (char) => ({
       name: true,
       order_by: char.name,
-      ...e.is(e.Hero, {secret_identity: true})
+      ...e.is(e.Hero, { secret_identity: true }),
     }),
-    filter_single: e.op(movie.title, "=", "The Avengers")
+    filter_single: e.op(movie.title, "=", "The Avengers"),
   }));
 
   const result = await query.run(client);
@@ -1053,13 +1056,13 @@ test("polymorphic field in nested shape", async () => {
     characters: [
       {
         name: data.cap.name,
-        secret_identity: data.cap.secret_identity
+        secret_identity: data.cap.secret_identity,
       },
       {
         name: data.iron_man.name,
-        secret_identity: data.iron_man.secret_identity
-      }
-    ]
+        secret_identity: data.iron_man.secret_identity,
+      },
+    ],
   });
 
   tc.assert<
@@ -1087,21 +1090,21 @@ test("correlated path select", async () => {
 
   expect((await query.run(client)).sort()).toEqual(
     $.util
-      .flatMap(heros, h1 =>
-        heros.map(h2 => `${h1.name} is ${h2.secret_identity}`)
+      .flatMap(heros, (h1) =>
+        heros.map((h2) => `${h1.name} is ${h2.secret_identity}`)
       )
       .sort()
   );
 
   expect((await correlatedQuery.run(client)).sort()).toEqual(
-    heros.map(h => `${h.name} is ${h.secret_identity}`).sort()
+    heros.map((h) => `${h.name} is ${h.secret_identity}`).sort()
   );
 });
 
 test("modifiers on scalar selects", async () => {
   // filter
-  const q1 = e.select(e.Hero.name, el => ({
-    filter: e.op(el, "ilike", "%man%")
+  const q1 = e.select(e.Hero.name, (el) => ({
+    filter: e.op(el, "ilike", "%man%"),
   }));
   const res1 = await q1.run(client);
   tc.assert<tc.IsExact<typeof res1, string[]>>(true);
@@ -1116,15 +1119,15 @@ test("modifiers on scalar selects", async () => {
     e.int64(3)
   );
 
-  const q2 = e.select(unorderedSet, el => ({
-    order_by: el
+  const q2 = e.select(unorderedSet, (el) => ({
+    order_by: el,
   }));
   const res2 = await q2.run(client);
   tc.assert<tc.IsExact<typeof res2, [number, ...number[]]>>(true);
   expect(res2).toEqual([1, 2, 3, 4, 5]);
 
-  const q3 = e.select(unorderedSet, el => ({
-    order_by: {expression: el, direction: e.DESC}
+  const q3 = e.select(unorderedSet, (el) => ({
+    order_by: { expression: el, direction: e.DESC },
   }));
   const res3 = await q3.run(client);
   tc.assert<tc.IsExact<typeof res3, [number, ...number[]]>>(true);
@@ -1132,9 +1135,9 @@ test("modifiers on scalar selects", async () => {
 
   // offset and limit
   const q4 = e
-    .select(unorderedSet, el => ({
+    .select(unorderedSet, (el) => ({
       offset: 2,
-      limit: 1
+      limit: 1,
     }))
     .assert_single();
   const res4 = await e.select(q4).run(client);
@@ -1143,26 +1146,26 @@ test("modifiers on scalar selects", async () => {
 });
 
 test("nested matching scopes", async () => {
-  const q = e.select(e.Hero, h => ({
+  const q = e.select(e.Hero, (h) => ({
     name: h.name,
-    otherHeros: e.select(e.Hero, h2 => ({
+    otherHeros: e.select(e.Hero, (h2) => ({
       name: true,
       names: e.op(h.name, "++", h2.name),
-      order_by: h2.name
+      order_by: h2.name,
     })),
-    order_by: h.name
+    order_by: h.name,
   }));
 
   const result = await q.run(client);
 
   const heros = [data.cap, data.iron_man, data.spidey];
 
-  const expectedResult = heros.map(h => ({
+  const expectedResult = heros.map((h) => ({
     name: h.name,
-    otherHeros: heros.map(h2 => ({
+    otherHeros: heros.map((h2) => ({
       name: h2.name,
-      names: h.name + h2.name
-    }))
+      names: h.name + h2.name,
+    })),
   }));
 
   expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedResult));
@@ -1177,7 +1180,7 @@ test("runnable expressions", async () => {
 test("computed property path", async () => {
   const numbers = e.set(1, 2, 3);
   const expr = e.select({
-    numbers
+    numbers,
   });
   const query = e.select(expr.numbers);
 
@@ -1185,10 +1188,10 @@ test("computed property path", async () => {
 });
 
 test("select with enums", async () => {
-  const query = e.select(e.Movie, movie => ({
+  const query = e.select(e.Movie, (movie) => ({
     title: true,
     genre: true,
-    filter: e.op(movie.genre, "=", e.Genre.Action)
+    filter: e.op(movie.genre, "=", e.Genre.Action),
   }));
   const result = await query.run(client);
   expect(result.length).toEqual(2);
@@ -1205,17 +1208,17 @@ test("Date type", async () => {
 
 test("select *", async () => {
   const allFields = await e
-    .select(e.Movie, movie => ({
+    .select(e.Movie, (movie) => ({
       ...e.Movie["*"],
-      filter: e.op(movie.title, "=", data.the_avengers.title)
+      filter: e.op(movie.title, "=", data.the_avengers.title),
     }))
     .run(client);
 
   expect(allFields).toEqual([
     {
       ...data.the_avengers,
-      characters: undefined
-    }
+      characters: undefined,
+    },
   ]);
 });
 
@@ -1223,40 +1226,40 @@ test("select required multi link", async () => {
   const query = e.select(e.User, () => ({
     username: true,
     favourite_movies: {
-      title: true
-    }
+      title: true,
+    },
   }));
 
   await query.run(client);
 });
 
 test("filter on link prop", async () => {
-  const query = e.select(e.Movie, movie => ({
+  const query = e.select(e.Movie, (movie) => ({
     title: true,
-    characters: c => ({
+    characters: (c) => ({
       name: true,
       "@character_name": true,
-      filter: e.op(c["@character_name"], "=", "Tony Stark")
-    })
+      filter: e.op(c["@character_name"], "=", "Tony Stark"),
+    }),
   }));
   await query.run(client);
 });
 
 test("filter on link prop in nested path", async () => {
-  const query = e.select(e.Movie, movie => ({
+  const query = e.select(e.Movie, (movie) => ({
     filter: e.op("Iron Man", "in", movie.characters["@character_name"]),
-    title: true
+    title: true,
   }));
   await query.run(client);
 });
 
 test("cardinality of linkprop in scopified object", async () => {
-  const query = e.select(e.Movie.characters, c => {
+  const query = e.select(e.Movie.characters, (c) => {
     expect(c["@character_name"].__cardinality__).toEqual(
       $.Cardinality.AtMostOne
     );
     return {
-      name: true
+      name: true,
       // doesn't work yet
       // ["@character_name"]: true,
     };
@@ -1265,14 +1268,14 @@ test("cardinality of linkprop in scopified object", async () => {
 });
 
 test("portable shape", async () => {
-  const baseShape = e.shape(e.Movie, movie => ({
-    ...movie["*"]
+  const baseShape = e.shape(e.Movie, (movie) => ({
+    ...movie["*"],
   }));
-  const query = e.select(e.Movie, m => {
+  const query = e.select(e.Movie, (m) => {
     return {
       ...baseShape(m),
-      characters: {name: true},
-      filter_single: e.op(m.title, "=", "The Avengers")
+      characters: { name: true },
+      filter_single: e.op(m.title, "=", "The Avengers"),
     };
   });
 
@@ -1284,7 +1287,7 @@ test("portable shape", async () => {
 test("filter_single id", async () => {
   const query = e.select(e.Movie, () => ({
     title: true,
-    filter_single: {title: "The Avengers"}
+    filter_single: { title: "The Avengers" },
   }));
   const result = await query.run(client);
   expect(result?.title).toEqual("The Avengers");
@@ -1293,7 +1296,7 @@ test("filter_single id", async () => {
 test("filter_single exclusive prop", async () => {
   const query = e.select(e.Movie, () => ({
     title: true,
-    filter_single: {title: "The Avengers"}
+    filter_single: { title: "The Avengers" },
   }));
   const result = await query.run(client);
   expect(result?.title).toEqual("The Avengers");
@@ -1302,7 +1305,7 @@ test("filter_single exclusive prop", async () => {
 test("filter_single composite", async () => {
   const query = e.select(e.Movie, () => ({
     title: true,
-    filter_single: {title: "The Avengers", release_year: 2012}
+    filter_single: { title: "The Avengers", release_year: 2012 },
   }));
   const result = await query.run(client);
   expect(result?.title).toEqual("The Avengers");
@@ -1314,8 +1317,8 @@ test("filter_single composite truple", async () => {
     filter_single: {
       a: "adsf",
       b: "adsf",
-      c: "adsf"
-    }
+      c: "adsf",
+    },
   }));
 
   await query.run(client);
@@ -1325,14 +1328,14 @@ test("filter_single expect error", async () => {
   // @ts-expect-error
   e.select(e.Movie, () => ({
     title: true,
-    filter_single: {genre: e.Genre.Horror}
+    filter_single: { genre: e.Genre.Horror },
   }));
 });
 
 test("filter_single card mismatch", async () => {
-  const query = e.select(e.Movie, movie => ({
+  const query = e.select(e.Movie, (movie) => ({
     title: true,
-    filter_single: e.op(movie.genre, "=", e.Genre.Action)
+    filter_single: e.op(movie.genre, "=", e.Genre.Action),
   }));
 
   await expect(query.run(client)).rejects.toThrow(CardinalityViolationError);
@@ -1350,13 +1353,13 @@ test("filter_single card mismatch", async () => {
 // })
 
 test("type union links", async () => {
-  const query = e.select(e.Z, z => ({
+  const query = e.select(e.Z, (z) => ({
     xy: {
       a: true,
       ...e.is(e.X, {
-        b: true
-      })
-    }
+        b: true,
+      }),
+    },
   }));
 
   const result = await query.run(client);
@@ -1364,7 +1367,7 @@ test("type union links", async () => {
   tc.assert<
     tc.IsExact<
       typeof result,
-      {xy: {a: string | null; b: number | null} | null}[]
+      { xy: { a: string | null; b: number | null } | null }[]
     >
   >(true);
 });

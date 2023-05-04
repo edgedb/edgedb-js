@@ -16,13 +16,13 @@
  * limitations under the License.
  */
 
-import {CodecsRegistry} from "./codecs/registry";
-import {Address, NormalizedConnectConfig} from "./conUtils";
-import {PROTO_VER, BaseRawConnection} from "./baseConn";
+import { CodecsRegistry } from "./codecs/registry";
+import { Address, NormalizedConnectConfig } from "./conUtils";
+import { PROTO_VER, BaseRawConnection } from "./baseConn";
 import Event from "./primitives/event";
 import * as chars from "./primitives/chars";
-import {InternalClientError, ProtocolError} from "./errors";
-import {HTTPSCRAMAuth} from "./httpScram";
+import { InternalClientError, ProtocolError } from "./errors";
+import { HTTPSCRAMAuth } from "./httpScram";
 
 // @ts-ignore
 // if (typeof fetch === "undefined") {
@@ -87,7 +87,9 @@ class BaseFetchConnection extends BaseRawConnection {
     this.messageWaiter = new Event();
 
     try {
-      const headers: {[index: string]: string} = {"Content-Type": PROTO_MIME};
+      const headers: { [index: string]: string } = {
+        "Content-Type": PROTO_MIME,
+      };
 
       if (this.config.user !== undefined) {
         headers["X-EdgeDB-User"] = this.config.user;
@@ -103,7 +105,7 @@ class BaseFetchConnection extends BaseRawConnection {
       const resp = await FETCH(this.addr, {
         method: "post",
         body: data,
-        headers
+        headers,
       });
 
       if (!resp.ok) {
@@ -182,7 +184,7 @@ export class FetchConnection extends BaseFetchConnection {
       return `${config.address}/db/${config.database}`;
     }
 
-    const {address, tlsSecurity, database} = config;
+    const { address, tlsSecurity, database } = config;
 
     const protocol = tlsSecurity === "insecure" ? "http" : "https";
     const baseUrl = `${protocol}://${address[0]}:${address[1]}`;
@@ -195,7 +197,7 @@ export class FetchConnection extends BaseFetchConnection {
     registry: CodecsRegistry
   ): Promise<FetchConnection> {
     const {
-      connectionParams: {tlsSecurity, user, password = ""}
+      connectionParams: { tlsSecurity, user, password = "" },
     } = config;
 
     if (!_tokens.has(config)) {
@@ -211,7 +213,7 @@ export class FetchConnection extends BaseFetchConnection {
         tlsSecurity,
         database: config.connectionParams.database,
         user: config.connectionParams.user,
-        token: _tokens.get(config)!
+        token: _tokens.get(config)!,
       },
       registry
     );

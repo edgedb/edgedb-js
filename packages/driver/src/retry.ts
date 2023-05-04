@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-import {BaseRawConnection} from "./baseConn";
-import {CodecsRegistry} from "./codecs/registry";
-import {Address, NormalizedConnectConfig} from "./conUtils";
+import { BaseRawConnection } from "./baseConn";
+import { CodecsRegistry } from "./codecs/registry";
+import { Address, NormalizedConnectConfig } from "./conUtils";
 import * as errors from "./errors";
-import {sleep} from "./utils";
+import { sleep } from "./utils";
 
 export type ConnectWithTimeout = (
   addr: Address,
@@ -61,7 +61,7 @@ export async function retryingConnect(
             const logMsg = [
               `A client connection error occurred; reconnecting because ` +
                 `of "waitUntilAvailable=${config.connectionParams.waitUntilAvailable}".`,
-              e
+              e,
             ];
 
             if (

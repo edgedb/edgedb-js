@@ -1,26 +1,26 @@
 #!/usr/bin/env node
 
 // tslint:disable:no-console
-import {adapter} from "edgedb";
+import { adapter } from "edgedb";
 
-import {ConnectConfig, validTlsSecurityValues} from "edgedb/dist/conUtils";
-import {parseConnectArguments} from "edgedb/dist/conUtils.server";
+import { ConnectConfig, validTlsSecurityValues } from "edgedb/dist/conUtils";
+import { parseConnectArguments } from "edgedb/dist/conUtils.server";
 import {
   CommandOptions,
   promptForPassword,
-  readPasswordFromStdin
+  readPasswordFromStdin,
 } from "./commandutil";
-import {generateQueryBuilder} from "./edgeql-js";
-import {runInterfacesGenerator} from "./interfaces";
-import {exitWithError} from "./genutil";
-import {generateQueryFiles} from "./queries";
+import { generateQueryBuilder } from "./edgeql-js";
+import { runInterfacesGenerator } from "./interfaces";
+import { exitWithError } from "./genutil";
+import { generateQueryFiles } from "./queries";
 
-const {path, readFileUtf8, exists} = adapter;
+const { path, readFileUtf8, exists } = adapter;
 
 enum Generator {
   QueryBuilder = "edgeql-js",
   Queries = "queries",
-  Interfaces = "interfaces"
+  Interfaces = "interfaces",
 }
 
 const availableGeneratorsHelp = `
@@ -143,7 +143,7 @@ const run = async () => {
         if (!validTlsSecurityValues.includes(tlsSec)) {
           exitWithError(
             `Invalid value for --tls-security. Must be one of: ${validTlsSecurityValues
-              .map(x => `"${x}"`)
+              .map((x) => `"${x}"`)
               .join(" | ")}`
           );
         }
@@ -286,7 +286,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     const denoConfigPath = path.join(projectRoot, "deno.json");
     const denoJsonExists = await exists(denoConfigPath);
 
-    let packageJson: {type: string} | null = null;
+    let packageJson: { type: string } | null = null;
     const pkgJsonPath = path.join(projectRoot, "package.json");
     if (await exists(pkgJsonPath)) {
       packageJson = JSON.parse(await readFileUtf8(pkgJsonPath));
@@ -345,7 +345,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     const username = (
       await parseConnectArguments({
         ...connectionConfig,
-        password: ""
+        password: "",
       })
     ).connectionParams.user;
     connectionConfig.password = await promptForPassword(username);
@@ -359,7 +359,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
       await generateQueryBuilder({
         options,
         connectionConfig,
-        root: projectRoot
+        root: projectRoot,
       });
       adapter.process.exit();
       break;
@@ -367,14 +367,14 @@ Run this command inside an EdgeDB project directory or specify the desired targe
       await generateQueryFiles({
         options,
         connectionConfig,
-        root: projectRoot
+        root: projectRoot,
       });
       break;
     case Generator.Interfaces:
       await runInterfacesGenerator({
         options,
         connectionConfig,
-        root: projectRoot
+        root: projectRoot,
       });
       break;
   }

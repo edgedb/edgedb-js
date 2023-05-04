@@ -1,7 +1,7 @@
 import type * as edgedb from "edgedb";
-import {Cardinality, ExpressionKind} from "edgedb/dist/reflection/index";
-import {jsonifyComplexParams} from "./json";
-import {select} from "./select";
+import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
+import { jsonifyComplexParams } from "./json";
+import { select } from "./select";
 
 export const runnableExpressionKinds = new Set([
   ExpressionKind.Select,
@@ -12,7 +12,7 @@ export const runnableExpressionKinds = new Set([
   ExpressionKind.Group,
   ExpressionKind.For,
   ExpressionKind.With,
-  ExpressionKind.WithParams
+  ExpressionKind.WithParams,
 ]);
 
 const wrappedExprCache = new WeakMap();

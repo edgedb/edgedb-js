@@ -9,15 +9,15 @@ import {
   // PropertyDesc,
   Cardinality,
   // BaseType,
-  typeutil
+  typeutil,
 } from "edgedb/dist/reflection/index";
 
-import {cardutil} from "./cardinality";
+import { cardutil } from "./cardinality";
 
-import {literalToTypeSet} from "./castMaps";
-import {$arrayLikeIndexify, $tuplePathify} from "./collections";
-import {$toEdgeQL} from "./toEdgeQL";
-import {$queryFunc, $queryFuncJSON} from "./query";
+import { literalToTypeSet } from "./castMaps";
+import { $arrayLikeIndexify, $tuplePathify } from "./collections";
+import { $toEdgeQL } from "./toEdgeQL";
+import { $queryFunc, $queryFuncJSON } from "./query";
 
 import type {
   BaseType,
@@ -28,7 +28,7 @@ import type {
   ObjectTypeSet,
   PropertyDesc,
   PropertyShape,
-  TypeSet
+  TypeSet,
 } from "./typesystem";
 // import {typeutil} from "./typeutil";
 // import {cardutil} from "./cardinality";
@@ -92,14 +92,14 @@ export type pathifyPointers<
         string]: Root["__element__"]["__pointers__"][k] extends PropertyDesc
         ? $expr_PathLeaf<
             getChildOfObjectTypeSet<Root, k>,
-            {type: anonymizeObjectTypeSet<Root>; linkName: k}
+            { type: anonymizeObjectTypeSet<Root>; linkName: k }
             // Root["__element__"]["__pointers__"][k]["exclusive"]
           >
         : Root["__element__"]["__pointers__"][k] extends LinkDesc
         ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
           ? $expr_PathNode<
               getChildOfObjectTypeSet<Root, k>,
-              {type: anonymizeObjectTypeSet<Root>; linkName: k}
+              { type: anonymizeObjectTypeSet<Root>; linkName: k }
               // Root["__element__"]["__pointers__"][k]["exclusive"]
             >
           : unknown
@@ -110,14 +110,14 @@ type anonymizeObjectTypeSet<T extends ObjectTypeSet> = typeutil.flatten<{
   __element__: ObjectType<
     T["__element__"]["__name__"],
     T["__element__"]["__pointers__"],
-    {id: true}
+    { id: true }
   >;
   __cardinality__: T["__cardinality__"];
 }>;
 
 export type pathifyShape<
   Root extends ObjectTypeSet,
-  Shape extends {[k: string]: any} = Root["__element__"]["__shape__"]
+  Shape extends { [k: string]: any } = Root["__element__"]["__shape__"]
 > = string extends keyof Shape
   ? {}
   : {
@@ -130,7 +130,7 @@ export type pathifyShape<
                 Shape[k]["__cardinality__"]
               >
             >,
-            {type: Root; linkName: k}
+            { type: Root; linkName: k }
             // false
           >
         : Shape[k] extends TypeSet
@@ -142,7 +142,7 @@ export type pathifyShape<
                 Shape[k]["__cardinality__"]
               >
             >,
-            {type: Root; linkName: k}
+            { type: Root; linkName: k }
             // false
           >
         : // must be unknown (not never) to avoid overriding
@@ -164,7 +164,7 @@ type pathifyLinkProps<
             Props[k]["cardinality"]
           >
         >,
-        {type: $expr_PathNode<Root, Parent>; linkName: k}
+        { type: $expr_PathNode<Root, Parent>; linkName: k }
         // {type: $expr_PathNode<Root>; linkName: k},
         // Props[k]["exclusive"]
       >
@@ -236,7 +236,7 @@ function PathLeaf<
     __cardinality__: root.__cardinality__,
     __parent__: parent,
     // __exclusive__: exclusive,
-    __scopeRoot__: scopeRoot
+    __scopeRoot__: scopeRoot,
   }) as any;
 }
 
@@ -266,12 +266,12 @@ function PathNode<
     __cardinality__: root.__cardinality__,
     __parent__: parent,
     // __exclusive__: exclusive,
-    __scopeRoot__: scopeRoot
+    __scopeRoot__: scopeRoot,
   };
 
   Object.defineProperty(obj, "*", {
     writable: false,
-    value: getStarShapeFromPointers(obj.__element__.__pointers__)
+    value: getStarShapeFromPointers(obj.__element__.__pointers__),
   });
   return $expressionify(obj) as any;
 }
@@ -293,11 +293,11 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
             __cardinality__: cardutil.multiplyCardinalities(
               target.__cardinality__,
               ptr.cardinality
-            )
+            ),
           },
           {
             linkName: prop,
-            type: proxy
+            type: proxy,
           },
           ptr.exclusive ?? false,
           target.__scopeRoot__ ?? (scopeRoots.has(proxy) ? proxy : null)
@@ -305,7 +305,7 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
       );
     }
     return target[prop];
-  }
+  },
 };
 
 export function $pathify<Root extends TypeSet, Parent extends PathParent>(
@@ -318,19 +318,19 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
   const root: $expr_PathNode<ObjectTypeSet> = _root as any;
 
   let pointers = {
-    ...root.__element__.__pointers__
+    ...root.__element__.__pointers__,
   };
 
   if (root.__parent__) {
-    const {type, linkName} = root.__parent__;
+    const { type, linkName } = root.__parent__;
     const parentPointer = type.__element__.__pointers__[linkName];
     if (parentPointer?.__kind__ === "link") {
-      pointers = {...pointers, ...parentPointer.properties};
+      pointers = { ...pointers, ...parentPointer.properties };
     }
   }
 
   for (const [key, val] of Object.entries(
-    root.__element__.__shape__ || {id: true}
+    root.__element__.__shape__ || { id: true }
   )) {
     if (pointers[key]) continue;
     const valType: BaseType = (val as any)?.__element__;
@@ -344,7 +344,7 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
       exclusive: false,
       computed: true,
       readonly: true,
-      hasDefault: false
+      hasDefault: false,
     };
   }
 
@@ -360,9 +360,9 @@ function isFunc(this: any, expr: ObjectTypeSet) {
     __cardinality__: this.__cardinality__,
     __element__: {
       ...expr.__element__,
-      __shape__: {id: true}
+      __shape__: { id: true },
     } as any,
-    __expr__: this
+    __expr__: this,
   });
 }
 
@@ -373,7 +373,7 @@ export function $assert_single(expr: Expression) {
     __cardinality__: cardutil.overrideUpperBound(expr.__cardinality__, "One"),
     __name__: "std::assert_single",
     __args__: [expr],
-    __namedargs__: {}
+    __namedargs__: {},
   }) as any;
 }
 
@@ -384,7 +384,7 @@ const jsonDestructureProxyHandlers: ProxyHandler<ExpressionRoot> = {
       return jsonDestructure.call(proxy, parsedProp);
     }
     return (target as any)[prop];
-  }
+  },
 };
 
 function jsonDestructure(this: ExpressionRoot, path: any) {
@@ -398,7 +398,7 @@ function jsonDestructure(this: ExpressionRoot, path: any) {
     ),
     __name__: "[]",
     __opkind__: "Infix",
-    __args__: [this, pathTypeSet]
+    __args__: [this, pathTypeSet],
   }) as any;
 }
 
@@ -457,9 +457,9 @@ export function $getScopedExpr<T extends ExpressionRoot>(
             ? {
                 "*": getStarShapeFromPointers(
                   (expr.__element__ as ObjectType).__pointers__
-                )
+                ),
               }
-            : {})
+            : {}),
         });
     scopeRoots.add(scopedExpr);
     const uncached = !scopedExpr;
@@ -471,4 +471,4 @@ export function $getScopedExpr<T extends ExpressionRoot>(
   return scopedExpr as any;
 }
 
-export {PathLeaf as $PathLeaf, PathNode as $PathNode};
+export { PathLeaf as $PathLeaf, PathNode as $PathNode };

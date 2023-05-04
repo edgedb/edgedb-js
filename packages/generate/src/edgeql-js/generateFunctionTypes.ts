@@ -1,5 +1,5 @@
-import type {GeneratorParams} from "../genutil";
-import {frag, getRef, quote, splitName} from "../genutil";
+import type { GeneratorParams } from "../genutil";
+import { frag, getRef, quote, splitName } from "../genutil";
 import {
   all,
   CodeBuffer,
@@ -9,11 +9,11 @@ import {
   dts,
   r,
   t,
-  ts
+  ts,
 } from "../builders";
 
-import {getStringRepresentation} from "./generateObjectTypes";
-import type {$} from "../genutil";
+import { getStringRepresentation } from "./generateObjectTypes";
+import type { $ } from "../genutil";
 import {
   getTypesSpecificity,
   sortFuncopOverloads,
@@ -22,14 +22,14 @@ import {
   GroupedParams,
   findPathOfAnytype,
   AnytypeDef,
-  FuncopDefOverload
+  FuncopDefOverload,
 } from "../funcoputil";
 
 export const generateFunctionTypes = ({
   dir,
   functions,
   types,
-  casts
+  casts,
 }: GeneratorParams) => {
   generateFuncopTypes(
     dir,
@@ -72,7 +72,7 @@ export interface FuncopDef {
   name: string;
   kind?: string;
   description?: string;
-  return_type: {id: string; name: string};
+  return_type: { id: string; name: string };
   return_typemod: $.introspect.FuncopTypemod;
   params: $.introspect.FuncopParam[];
   preserves_optionality?: boolean;
@@ -103,12 +103,12 @@ export function generateFuncopTypes<F extends FuncopDef>(
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
 
   for (const [funcName, _funcDefs] of funcops.entries()) {
-    const {mod, name} = splitName(funcName);
+    const { mod, name } = splitName(funcName);
 
     const code = dir.getModule(mod);
 
     code.registerRef(funcName, _funcDefs[0].id);
-    code.addToDefaultExport(getRef(funcName, {prefix: ""}), name);
+    code.addToDefaultExport(getRef(funcName, { prefix: "" }), name);
 
     // edgeql stdlib has a constructor function with the same name as the
     // literal constructor and type constuctor for 'range', so replace
@@ -130,7 +130,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
 
     let overloadDefIndex = 1;
     for (const funcDef of funcDefs) {
-      const {params} = funcDef;
+      const { params } = funcDef;
 
       const hasParams = params.positional.length + params.named.length > 0;
 
@@ -138,7 +138,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
         !hasParams ||
         params.positional.length === 0 ||
         params.named.some(
-          param => !(param.typemod === "OptionalType" || param.hasDefault)
+          (param) => !(param.typemod === "OptionalType" || param.hasDefault)
         )
           ? [true]
           : params.named.length > 0
@@ -150,12 +150,12 @@ export function generateFuncopTypes<F extends FuncopDef>(
           overloadsBuf.writeln([
             t`/**
  * ${funcDef.description.replace(/\*\//g, "")}
- */`
+ */`,
           ]);
         }
 
         const functionTypeName = frag`${getRef(funcName, {
-          prefix: ""
+          prefix: "",
         })}λ${typeDefSuffix}${
           overloadDefIndex++ > 1 ? String(overloadDefIndex - 1) : ""
         }`;
@@ -164,7 +164,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
           hasParams
             ? `<${[
                 ...(hasNamedParams ? ["NamedArgs"] : []),
-                ...params.positional.map(param => param.typeName)
+                ...params.positional.map((param) => param.typeName),
               ].join(", ")}>`
             : ""
         };`;
@@ -173,14 +173,14 @@ export function generateFuncopTypes<F extends FuncopDef>(
           dts`declare `,
           t`type ${functionTypeName}${
             hasParams ? `<` : ` = $.$expr_${funcopExprKind}<`
-          }`
+          }`,
         ]);
 
         overloadsBuf.writeln([
           dts`declare `,
-          t`function ${getRef(funcName, {prefix: ""})}${
+          t`function ${getRef(funcName, { prefix: "" })}${
             hasParams ? "<" : frag`(): ${functionTypeSig}`
-          }`
+          }`,
         ]);
 
         const anytypes = funcDef.anytypes;
@@ -242,7 +242,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
                       const paramType = getStringRepresentation(param.type, {
                         types,
                         anytype,
-                        casts: casts.implicitCastFromMap
+                        casts: casts.implicitCastFromMap,
                       });
                       let typeStr = frag`$.TypeSet<${paramType.staticType}>`;
                       if (allowsLiterals(param.type, anytypes)) {
@@ -276,7 +276,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
                 const paramTypeStr = getStringRepresentation(param.type, {
                   types,
                   anytype,
-                  casts: casts.implicitCastFromMap
+                  casts: casts.implicitCastFromMap,
                 });
 
                 let type = frag`$.TypeSet<${paramTypeStr.staticType}>`;
@@ -323,7 +323,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
                     : ""
                 }: ${param.typeName}${
                   param.kind === "VariadicParam" ? "" : ","
-                }`
+                }`,
               ]);
             }
           });
@@ -351,13 +351,13 @@ export function generateFuncopTypes<F extends FuncopDef>(
             types.get(funcDef.return_type.id),
             {
               types,
-              anytype: returnAnytype
+              anytype: returnAnytype,
             }
           );
 
           const positionalParams = params.positional
             .map(
-              param =>
+              (param) =>
                 `${param.kind === "VariadicParam" ? "..." : ""}${
                   param.typeName
                 }`
@@ -399,16 +399,16 @@ export function generateFuncopTypes<F extends FuncopDef>(
 
     // implementation
     code.writeln([
-      r`function ${getRef(funcName, {prefix: ""})}(...args`,
+      r`function ${getRef(funcName, { prefix: "" })}(...args`,
       ts`: any[]`,
-      r`) {`
+      r`) {`,
     ]);
 
     code.indented(() => {
       code.writeln([
         r`const {${
           funcDefs[0].kind ? "kind, " : ""
-        }returnType, cardinality, args: positionalArgs, namedArgs} = _.syntax.$resolveOverload('${funcName}', args, _.spec, [`
+        }returnType, cardinality, args: positionalArgs, namedArgs} = _.syntax.$resolveOverload('${funcName}', args, _.spec, [`,
       ]);
       code.indented(() => {
         let overloadIndex = 0;
@@ -440,7 +440,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
 }
 
 export function generateFuncopDef(funcopDef: FuncopDefOverload<FuncopDef>) {
-  const {params} = funcopDef;
+  const { params } = funcopDef;
 
   function getArgSpec(param: GroupedParams["named" | "positional"][number]) {
     return `{typeId: ${quote(param.type.id)}, optional: ${(
@@ -450,12 +450,12 @@ export function generateFuncopDef(funcopDef: FuncopDefOverload<FuncopDef>) {
     ).toString()}, variadic: ${(param.kind === "VariadicParam").toString()}}`;
   }
 
-  const argsDef = params.positional.map(param => {
+  const argsDef = params.positional.map((param) => {
     return getArgSpec(param);
   });
   const namedArgsDef = params.named.length
     ? `namedArgs: {${params.named
-        .map(param => {
+        .map((param) => {
           return `${quote(param.name)}: ${getArgSpec(param)}`;
         })
         .join(", ")}}, `
@@ -505,16 +505,16 @@ export function generateReturnCardinality(
   }
 
   const cardinalities = [
-    ...params.positional.map(p => ({
+    ...params.positional.map((p) => ({
       ...p,
-      genTypeName: p.typeName
+      genTypeName: p.typeName,
     })),
     ...(hasNamedParams
-      ? params.named.map(p => ({
+      ? params.named.map((p) => ({
           ...p,
-          genTypeName: `NamedArgs[${quote(p.name)}]`
+          genTypeName: `NamedArgs[${quote(p.name)}]`,
         }))
-      : [])
+      : []),
   ];
 
   if (name === "std::union") {
@@ -551,7 +551,7 @@ export function generateReturnCardinality(
     );
   }
 
-  const paramCardinalities = cardinalities.map(param => {
+  const paramCardinalities = cardinalities.map((param) => {
     if (param.typemod === "SetOfType") {
       if (preservesOptionality) {
         return (

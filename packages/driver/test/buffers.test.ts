@@ -19,7 +19,7 @@
 import {
   BufferError,
   WriteMessageBuffer,
-  encodeB64
+  encodeB64,
 } from "../src/primitives/buffer";
 import * as chars from "../src/primitives/chars";
 

@@ -1,15 +1,15 @@
-import {$, Client} from "edgedb";
-import {tc} from "./setupTeardown";
-import e, {$infer} from "../dbschema/edgeql-js";
-import {setupTests, teardownTests, TestData} from "./setupTeardown";
-import {TypeKind} from "edgedb/dist/reflection";
+import { $, Client } from "edgedb";
+import { tc } from "./setupTeardown";
+import e, { $infer } from "../dbschema/edgeql-js";
+import { setupTests, teardownTests, TestData } from "./setupTeardown";
+import { TypeKind } from "edgedb/dist/reflection";
 
 let client: Client;
 let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client, data} = setup);
+  ({ client, data } = setup);
 });
 
 afterAll(async () => {
@@ -32,7 +32,7 @@ test("empty sets", async () => {
   expect(int32Set.toEdgeQL()).toEqual(`<std::int32>{}`);
   tc.assert<tc.IsExact<$infer<typeof int32Set>, null>>(true);
   tc.assert<
-    tc.IsExact<typeof int32Set["__element__"]["__name__"], "std::number">
+    tc.IsExact<(typeof int32Set)["__element__"]["__name__"], "std::number">
   >(true);
 
   expect(await e.cast(e.int64, e.set()).run(client)).toEqual(null);
@@ -63,23 +63,23 @@ test("object set contructor", async () => {
 
   expect(
     await e
-      .select(e.set(e.select(e.Hero), e.select(e.Villain)), obj => ({
+      .select(e.set(e.select(e.Hero), e.select(e.Villain)), (obj) => ({
         name: true,
-        filter: e.op(obj.name, "=", "Thanos")
+        filter: e.op(obj.name, "=", "Thanos"),
       }))
       .assert_single()
       .run(client)
-  ).toEqual({name: "Thanos"});
+  ).toEqual({ name: "Thanos" });
 
   expect(
     await e
-      .select(e.set(e.Hero, e.Villain), obj => ({
+      .select(e.set(e.Hero, e.Villain), (obj) => ({
         name: true,
-        filter: e.op(obj.name, "=", "Thanos")
+        filter: e.op(obj.name, "=", "Thanos"),
       }))
       .assert_single()
       .run(client)
-  ).toEqual({name: "Thanos"});
+  ).toEqual({ name: "Thanos" });
 });
 
 test("scalar set contructor", () => {
@@ -162,7 +162,7 @@ test("tuples", async () => {
   expect(q1.__element__.__items__[1].__name__).toEqual("std::str");
   expect(await q1.run(client)).toMatchObject([
     [1, "asdf", 214],
-    [3, "asdf", 5]
+    [3, "asdf", 5],
   ]);
 
   expect(() => e.set(e.tuple([1]), e.tuple([1, 2]))).toThrow();
@@ -171,21 +171,21 @@ test("tuples", async () => {
 
 test("named tuples", async () => {
   const q1 = e.set(
-    e.tuple({a: 1, b: "asdf", c: e.int16(214)}),
-    e.tuple({a: 3, b: "asdf", c: e.int64(5)})
+    e.tuple({ a: 1, b: "asdf", c: e.int16(214) }),
+    e.tuple({ a: 3, b: "asdf", c: e.int64(5) })
   );
   expect(q1.__element__.__kind__).toEqual(TypeKind.namedtuple);
   expect(await q1.run(client)).toMatchObject([
-    {a: 1, b: "asdf", c: 214},
-    {a: 3, b: "asdf", c: 5}
+    { a: 1, b: "asdf", c: 214 },
+    { a: 3, b: "asdf", c: 5 },
   ]);
 
-  expect(() => e.set(e.tuple({a: 1}), e.tuple({a: "asfd"}))).toThrow();
-  expect(() => e.set(e.tuple({a: 1}), e.tuple({a: "asfd", b: "qwer"})));
+  expect(() => e.set(e.tuple({ a: 1 }), e.tuple({ a: "asfd" }))).toThrow();
+  expect(() => e.set(e.tuple({ a: 1 }), e.tuple({ a: "asfd", b: "qwer" })));
   expect(() =>
-    e.set(e.tuple({a: "asfd", b: "qwer"}), e.tuple({a: 1}))
+    e.set(e.tuple({ a: "asfd", b: "qwer" }), e.tuple({ a: 1 }))
   ).toThrow();
-  expect(() => e.set(e.tuple({a: 1}), e.tuple({b: "asfd"}))).toThrow();
+  expect(() => e.set(e.tuple({ a: 1 }), e.tuple({ b: "asfd" }))).toThrow();
 });
 
 test("array", async () => {

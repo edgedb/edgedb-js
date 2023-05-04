@@ -47,7 +47,7 @@ if (typeof crypto === "undefined") {
           key,
           {
             name: "HMAC",
-            hash: {name: "SHA-256"}
+            hash: { name: "SHA-256" },
           },
           false,
           ["sign"]
@@ -58,7 +58,7 @@ if (typeof crypto === "undefined") {
   };
 }
 
-export {randomBytes, H, HMAC};
+export { randomBytes, H, HMAC };
 
 export function getEnv(
   envName: string,

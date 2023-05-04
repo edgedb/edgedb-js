@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
-import {ICodec, ScalarCodec} from "./ifaces";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { ICodec, ScalarCodec } from "./ifaces";
 import * as bi from "../primitives/bigint";
 import {
   LocalDateTime,
@@ -27,10 +27,10 @@ import {
   RelativeDuration,
   DateDuration,
   LocalDateFromOrdinal,
-  LocalDateToOrdinal
+  LocalDateToOrdinal,
 } from "../datatypes/datetime";
-import {ymd2ord} from "../datatypes/dateutil";
-import {InvalidArgumentError, ProtocolError} from "../errors";
+import { ymd2ord } from "../datatypes/dateutil";
+import { InvalidArgumentError, ProtocolError } from "../errors";
 
 /* PostgreSQL UTC epoch starts on "January 1, 2000", whereas
  * in JavaScript, the UTC epoch starts on "January 1, 1970" (the UNIX epoch).
@@ -183,7 +183,7 @@ const unencodableDurationFields: Array<keyof Duration> = [
   "years",
   "months",
   "weeks",
-  "days"
+  "days",
 ];
 
 export function checkValidEdgeDBDuration(duration: Duration): null | string {

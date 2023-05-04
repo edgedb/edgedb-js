@@ -1,4 +1,4 @@
-import type {Cardinality} from "edgedb/dist/reflection/index";
+import type { Cardinality } from "edgedb/dist/reflection/index";
 import type {
   ArrayType,
   BaseType,
@@ -14,11 +14,11 @@ import type {
   ScalarType,
   TupleType,
   TypeSet,
-  RangeType
+  RangeType,
 } from "./typesystem";
-import type {cardutil} from "./cardinality";
+import type { cardutil } from "./cardinality";
 
-import type {scalarCastableFrom, scalarAssignableBy} from "./castMaps";
+import type { scalarCastableFrom, scalarAssignableBy } from "./castMaps";
 
 export type anonymizeObject<T extends ObjectType> = ObjectType<
   string,

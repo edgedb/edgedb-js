@@ -17,10 +17,10 @@
  */
 
 import char, * as chars from "./chars";
-import {RingBuffer} from "./ring";
+import { RingBuffer } from "./ring";
 import * as bi from "./bigint";
 import * as compat from "../compat";
-import {LegacyHeaderCodes} from "../ifaces";
+import { LegacyHeaderCodes } from "../ifaces";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE: number = 4096;
@@ -63,7 +63,7 @@ if (typeof btoa === "undefined") {
   };
 }
 
-export {decodeB64, encodeB64};
+export { decodeB64, encodeB64 };
 
 const useBigInt64Fallback =
   typeof DataView.prototype.getBigInt64 === "undefined";
@@ -253,7 +253,7 @@ export class WriteMessageBuffer {
 
   writeLegacyHeaders(
     headers:
-      | {[key in keyof typeof LegacyHeaderCodes]?: string | Uint8Array}
+      | { [key in keyof typeof LegacyHeaderCodes]?: string | Uint8Array }
       | null
   ): this {
     if (this.messagePos < 0) {
@@ -432,7 +432,7 @@ export class ReadMessageBuffer {
   private curMessageReady: boolean;
 
   constructor() {
-    this.bufs = new RingBuffer<Uint8Array>({capacity: BUFFER_RING_CAPACITY});
+    this.bufs = new RingBuffer<Uint8Array>({ capacity: BUFFER_RING_CAPACITY });
     this.buf0 = null;
     this.pos0 = 0;
     this.len0 = 0;
@@ -642,9 +642,7 @@ export class ReadMessageBuffer {
 
     const buf = this._readBuffer(2);
     this.curMessageLenUnread -= 2;
-    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getInt16(
-      0
-    );
+    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getInt16(0);
   }
 
   readInt32(): number {
@@ -661,9 +659,7 @@ export class ReadMessageBuffer {
 
     const buf = this._readBuffer(4);
     this.curMessageLenUnread -= 4;
-    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getInt32(
-      0
-    );
+    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getInt32(0);
   }
 
   readUInt16(): number {
@@ -718,11 +714,9 @@ export class ReadMessageBuffer {
 
     const buf = this._readBuffer(8);
     this.curMessageLenUnread -= 8;
-    return new DataView(
-      buf.buffer,
-      buf.byteOffset,
-      buf.byteLength
-    ).getBigInt64(0);
+    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getBigInt64(
+      0
+    );
   }
 
   readString(): string {

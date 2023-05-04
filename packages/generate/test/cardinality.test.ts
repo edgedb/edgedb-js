@@ -1,6 +1,6 @@
-import type {$} from "edgedb";
-import type {cardutil} from "../src/syntax/cardinality";
-import {tc} from "./setupTeardown";
+import type { $ } from "edgedb";
+import type { cardutil } from "../src/syntax/cardinality";
+import { tc } from "./setupTeardown";
 
 test("multiply$.Cardinality", () => {
   tc.assert<

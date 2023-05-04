@@ -1,12 +1,12 @@
-import {Executor} from "../../ifaces";
-import {StrictMap} from "../strictMap";
+import { Executor } from "../../ifaces";
+import { StrictMap } from "../strictMap";
 
-import {FuncopParam, replaceNumberTypes, FuncopTypemod} from "./functions";
-import {util} from "../util";
-import {typeutil} from "../typeutil";
-import {OperatorKind} from "../enums";
+import { FuncopParam, replaceNumberTypes, FuncopTypemod } from "./functions";
+import { util } from "../util";
+import { typeutil } from "../typeutil";
+import { OperatorKind } from "../enums";
 
-export type {FuncopTypemod};
+export type { FuncopTypemod };
 
 export interface OperatorDef {
   id: string;
@@ -14,14 +14,12 @@ export interface OperatorDef {
   originalName: string;
   operator_kind: OperatorKind;
   description?: string;
-  return_type: {id: string; name: string};
+  return_type: { id: string; name: string };
   return_typemod: FuncopTypemod;
   params: FuncopParam[];
 }
 
-export type OperatorTypes = typeutil.depromisify<
-  ReturnType<typeof _operators>
->;
+export type OperatorTypes = typeutil.depromisify<ReturnType<typeof _operators>>;
 
 const _operators = async (cxn: Executor) => {
   const operatorsJson = await cxn.queryJSON(`
@@ -58,7 +56,7 @@ const _operators = async (cxn: Executor) => {
       continue;
     }
 
-    const {mod} = util.splitName(op.name);
+    const { mod } = util.splitName(op.name);
 
     const name = `${mod}::${identifier}`;
 
@@ -74,7 +72,7 @@ const _operators = async (cxn: Executor) => {
       description: op.annotations.find(
         (anno: any) => anno.name === "std::description"
       )?.["@value"],
-      annotations: undefined
+      annotations: undefined,
     };
 
     replaceNumberTypes(opDef);
@@ -96,17 +94,17 @@ function hashOpDef(def: OperatorDef): string {
     return_type: def.return_type.id,
     return_typemod: def.return_typemod,
     params: def.params
-      .map(param =>
+      .map((param) =>
         JSON.stringify({
           kind: param.kind,
           type: param.type.id,
           typemod: param.typemod,
-          hasDefault: !!param.hasDefault
+          hasDefault: !!param.hasDefault,
         })
       )
       .sort(),
-    operator_kind: def.operator_kind
+    operator_kind: def.operator_kind,
   });
 }
 
-export {_operators as operators};
+export { _operators as operators };

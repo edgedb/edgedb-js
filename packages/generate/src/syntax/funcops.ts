@@ -1,6 +1,10 @@
-import {Cardinality, introspect, TypeKind} from "edgedb/dist/reflection/index";
-import {cardutil} from "./cardinality";
-import {makeType} from "./hydrate";
+import {
+  Cardinality,
+  introspect,
+  TypeKind,
+} from "edgedb/dist/reflection/index";
+import { cardutil } from "./cardinality";
+import { makeType } from "./hydrate";
 import type {
   BaseType,
   BaseTypeSet,
@@ -8,13 +12,16 @@ import type {
   ObjectType,
   TypeSet,
   RangeType,
-  Expression
+  Expression,
 } from "./typesystem";
-import {cast} from "./cast";
-import {isImplicitlyCastableTo, literalToTypeSet} from "./castMaps";
-import {literal} from "./literal";
+import { cast } from "./cast";
+import { isImplicitlyCastableTo, literalToTypeSet } from "./castMaps";
+import { literal } from "./literal";
 
-import type {ExpressionKind, OperatorKind} from "edgedb/dist/reflection/index";
+import type {
+  ExpressionKind,
+  OperatorKind,
+} from "edgedb/dist/reflection/index";
 
 export type $expr_Function<
   // Name extends string = string,
@@ -31,7 +38,7 @@ export type $expr_Function<
   __kind__: ExpressionKind.Function;
   __name__: string;
   __args__: (BaseTypeSet | undefined)[];
-  __namedargs__: {[key: string]: BaseTypeSet};
+  __namedargs__: { [key: string]: BaseTypeSet };
 }>;
 
 export type $expr_Operator<
@@ -60,21 +67,21 @@ interface OverloadFuncArgDef {
 interface OverloadFuncDef {
   kind?: string;
   args: OverloadFuncArgDef[];
-  namedArgs?: {[key: string]: OverloadFuncArgDef};
+  namedArgs?: { [key: string]: OverloadFuncArgDef };
   returnTypeId: string;
   returnTypemod?: "SetOfType" | "OptionalType";
   preservesOptionality?: boolean;
 }
 
 function mapLiteralToTypeSet(literals: any[]): TypeSet[];
-function mapLiteralToTypeSet(literals: {[key: string]: any}): {
+function mapLiteralToTypeSet(literals: { [key: string]: any }): {
   [key: string]: TypeSet;
 };
-function mapLiteralToTypeSet(literals: any[] | {[key: string]: any}) {
+function mapLiteralToTypeSet(literals: any[] | { [key: string]: any }) {
   if (Array.isArray(literals)) {
-    return literals.map(lit => (lit != null ? literalToTypeSet(lit) : lit));
+    return literals.map((lit) => (lit != null ? literalToTypeSet(lit) : lit));
   }
-  const obj: {[key: string]: TypeSet} = {};
+  const obj: { [key: string]: TypeSet } = {};
   for (const key of Object.keys(literals)) {
     obj[key] =
       literals[key] != null ? literalToTypeSet(literals[key]) : literals[key];
@@ -89,7 +96,7 @@ export function $resolveOverload(
   funcDefs: OverloadFuncDef[]
 ) {
   const positionalArgs: (TypeSet | undefined)[] = [];
-  let namedArgs: {[key: string]: TypeSet} | undefined;
+  let namedArgs: { [key: string]: TypeSet } | undefined;
   if (args.length) {
     if (args[0] !== undefined) {
       try {
@@ -122,7 +129,7 @@ export function $resolveOverload(
       funcName.includes("::")
         ? `'e.${funcName.split("::")[1]}()'`
         : `operator '${funcName}'`
-    } with args: ${args.map(arg => `${arg}`).join(", ")}`
+    } with args: ${args.map((arg) => `${arg}`).join(", ")}`
   );
 }
 
@@ -131,7 +138,7 @@ const ANYTYPE_ARG = Symbol();
 function _tryOverload(
   funcName: string,
   args: (BaseTypeSet | undefined)[],
-  namedArgs: {[key: string]: BaseTypeSet} | undefined,
+  namedArgs: { [key: string]: BaseTypeSet } | undefined,
   typeSpec: introspect.Types,
   funcDef: OverloadFuncDef
 ): {
@@ -139,13 +146,13 @@ function _tryOverload(
   returnType: BaseType;
   cardinality: Cardinality;
   args: BaseTypeSet[];
-  namedArgs: {[key: string]: BaseTypeSet};
+  namedArgs: { [key: string]: BaseTypeSet };
 } | null {
   if (
     (funcDef.namedArgs === undefined && namedArgs !== undefined) ||
     (namedArgs === undefined &&
       funcDef.namedArgs &&
-      Object.values(funcDef.namedArgs).some(arg => !arg.optional))
+      Object.values(funcDef.namedArgs).some((arg) => !arg.optional))
   ) {
     return null;
   }
@@ -155,9 +162,7 @@ function _tryOverload(
     return null;
   }
 
-  const paramCardinalities: [Cardinality, ...Cardinality[]] = [
-    Cardinality.One
-  ];
+  const paramCardinalities: [Cardinality, ...Cardinality[]] = [Cardinality.One];
 
   if (namedArgs) {
     for (const [key, value] of Object.entries(namedArgs)) {
@@ -214,7 +219,7 @@ function _tryOverload(
         }
       }
     } else {
-      const {match, anytype} = compareType(
+      const { match, anytype } = compareType(
         typeSpec,
         argDef.typeId,
         arg.__element__
@@ -240,7 +245,7 @@ function _tryOverload(
         const card = argDef.variadic
           ? cardutil.multiplyCardinalitiesVariadic(
               (args.slice(i) as BaseTypeSet[]).map(
-                el => el.__cardinality__
+                (el) => el.__cardinality__
               ) as [Cardinality, ...Cardinality[]]
             )
           : arg.__cardinality__;
@@ -296,7 +301,7 @@ function _tryOverload(
     if (!returnAnytype) {
       throw new Error(`could not resolve anytype for ${funcName}`);
     }
-    positionalArgs = positionalArgs.map(arg =>
+    positionalArgs = positionalArgs.map((arg) =>
       (arg as any) === ANYTYPE_ARG ? cast(returnAnytype!, null) : arg
     );
   }
@@ -311,16 +316,16 @@ function _tryOverload(
     ),
     cardinality,
     args: positionalArgs,
-    namedArgs: namedArgs ?? {}
+    namedArgs: namedArgs ?? {},
   };
 }
 
-const nameRemapping: {[key: string]: string} = {
+const nameRemapping: { [key: string]: string } = {
   "std::int16": "std::number",
   "std::int32": "std::number",
   "std::int64": "std::number",
   "std::float32": "std::number",
-  "std::float64": "std::number"
+  "std::float64": "std::number",
 };
 const descendantCache = new Map<string, string[]>();
 function getDescendantNames(typeSpec: introspect.Types, typeId: string) {
@@ -331,15 +336,15 @@ function getDescendantNames(typeSpec: introspect.Types, typeId: string) {
     ...new Set(
       [...typeSpec.values()]
         .filter(
-          type =>
-            type.kind === "scalar" && type.bases.some(({id}) => id === typeId)
+          (type) =>
+            type.kind === "scalar" && type.bases.some(({ id }) => id === typeId)
         )
-        .flatMap(type =>
+        .flatMap((type) =>
           type.is_abstract
             ? getDescendantNames(typeSpec, type.id)
             : [nameRemapping[type.name]!, type.name]
         )
-    )
+    ),
   ];
   descendantCache.set(typeId, descendants);
   return descendants;
@@ -349,22 +354,22 @@ function compareType(
   typeSpec: introspect.Types,
   typeId: string,
   arg: BaseType
-): {match: boolean; anytype?: BaseType} {
+): { match: boolean; anytype?: BaseType } {
   const type = typeSpec.get(typeId);
 
   if (type.name === "anytype") {
-    return {match: true, anytype: arg};
+    return { match: true, anytype: arg };
   }
 
   if (type.name === "std::anypoint") {
     const descendants = getDescendantNames(typeSpec, typeId);
     if (descendants.includes(arg.__name__)) {
-      return {match: true, anytype: arg};
+      return { match: true, anytype: arg };
     }
   }
 
   if (type.name === "std::anyenum") {
-    return {match: arg.__kind__ === TypeKind.enum};
+    return { match: arg.__kind__ === TypeKind.enum };
   }
 
   if (type.kind === "scalar") {
@@ -373,7 +378,7 @@ function compareType(
       match:
         (arg.__kind__ === TypeKind.scalar || arg.__kind__ === TypeKind.enum) &&
         (arg.__name__ === type.name ||
-          isImplicitlyCastableTo(arg.__name__, type.name))
+          isImplicitlyCastableTo(arg.__name__, type.name)),
     };
   }
   if (type.kind === "array") {
@@ -395,7 +400,7 @@ function compareType(
     }
   }
   if (type.kind === "object") {
-    if (arg.__kind__ !== TypeKind.object) return {match: false};
+    if (arg.__kind__ !== TypeKind.object) return { match: false };
 
     const objectArg = arg as ObjectType;
     let match = true;
@@ -415,7 +420,7 @@ function compareType(
     }
 
     return {
-      match
+      match,
     };
   }
   if (type.kind === "tuple") {
@@ -432,22 +437,22 @@ function compareType(
         let anytype: BaseType | undefined;
         for (let i = 0; i < keys.length; i++) {
           if (keys[i] !== type.tuple_elements[i]!.name) {
-            return {match: false};
+            return { match: false };
           }
-          const {match: m, anytype: a} = compareType(
+          const { match: m, anytype: a } = compareType(
             typeSpec,
             type.tuple_elements[i]!.target_id,
             (items as any)[keys[i]!]
           );
           if (!m) {
-            return {match: false};
+            return { match: false };
           }
           if (a) anytype = a;
         }
-        return {match: true, anytype};
+        return { match: true, anytype };
       }
     }
   }
 
-  return {match: false};
+  return { match: false };
 }

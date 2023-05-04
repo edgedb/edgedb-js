@@ -1,9 +1,9 @@
-import type {TypeSet, setToTsType} from "./typesystem";
+import type { TypeSet, setToTsType } from "./typesystem";
 
-export {literal} from "./literal";
+export { literal } from "./literal";
 export {} from "./path";
-export {set} from "./set";
-export {cast} from "./cast";
+export { set } from "./set";
+export { cast } from "./cast";
 export {
   ASC,
   DESC,
@@ -11,20 +11,20 @@ export {
   EMPTY_LAST,
   is,
   delete,
-  select
+  select,
 } from "./select";
-export {update} from "./update";
-export {insert} from "./insert";
+export { update } from "./update";
+export { insert } from "./insert";
 export {
   array,
   tuple,
-  $objectTypeToTupleType as objectTypeToTupleType
+  $objectTypeToTupleType as objectTypeToTupleType,
 } from "./collections";
 export {} from "./funcops";
-export {for} from "./for";
-export {alias, with} from "./with";
-export {optional, params} from "./params";
-export {detached} from "./detached";
+export { for } from "./for";
+export { alias, with } from "./with";
+export { optional, params } from "./params";
+export { detached } from "./detached";
 export {} from "./toEdgeQL";
 
 export type $infer<A extends TypeSet> = setToTsType<A>;

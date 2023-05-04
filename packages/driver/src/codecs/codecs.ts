@@ -16,21 +16,21 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
-import {BoolCodec} from "./boolean";
-import {ICodec, uuid, Codec, CodecKind} from "./ifaces";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { BoolCodec } from "./boolean";
+import { ICodec, uuid, Codec, CodecKind } from "./ifaces";
 import {
   Int16Codec,
   Int32Codec,
   Int64Codec,
   Float32Codec,
-  Float64Codec
+  Float64Codec,
 } from "./numbers";
-import {BigIntCodec, DecimalStringCodec} from "./numerics";
-import {StrCodec} from "./text";
-import {UUIDCodec} from "./uuid";
-import {BytesCodec} from "./bytes";
-import {JSONCodec} from "./json";
+import { BigIntCodec, DecimalStringCodec } from "./numerics";
+import { StrCodec } from "./text";
+import { UUIDCodec } from "./uuid";
+import { BytesCodec } from "./bytes";
+import { JSONCodec } from "./json";
 import {
   DateTimeCodec,
   LocalDateCodec,
@@ -38,12 +38,12 @@ import {
   LocalTimeCodec,
   DurationCodec,
   RelativeDurationCodec,
-  DateDurationCodec
+  DateDurationCodec,
 } from "./datetime";
-import {ConfigMemoryCodec} from "./memory";
-import {InternalClientError} from "../errors";
+import { ConfigMemoryCodec } from "./memory";
+import { InternalClientError } from "../errors";
 
-import {INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID} from "./consts";
+import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
 
 ///////////////////////////////////////////////////////////////////////////////
 

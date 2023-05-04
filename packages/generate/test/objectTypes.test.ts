@@ -1,8 +1,8 @@
 import * as $ from "../src/syntax/reflection";
-import type {PropertyDesc} from "../src/syntax/typesystem";
+import type { PropertyDesc } from "../src/syntax/typesystem";
 import e from "../dbschema/edgeql-js";
-import type {$str} from "../dbschema/edgeql-js/modules/std";
-import {tc} from "./setupTeardown";
+import type { $str } from "../dbschema/edgeql-js/modules/std";
+import { tc } from "./setupTeardown";
 
 const $Hero = e.default.Hero.__element__;
 const $AnnotationSubject = e.schema.AnnotationSubject.__element__;
@@ -24,9 +24,9 @@ test("property hydration", () => {
     true
   );
   // expect(e.default.Movie.profile.__exclusive__).toEqual(true);
-  expect(
-    e.default.Movie.__element__.__pointers__.characters.exclusive
-  ).toEqual(false);
+  expect(e.default.Movie.__element__.__pointers__.characters.exclusive).toEqual(
+    false
+  );
   // expect(e.default.Movie.characters.__exclusive__).toEqual(false);
 });
 
@@ -41,9 +41,7 @@ test("link hydration", () => {
 
   // type union link
   expect($Z.__pointers__.xy.__kind__).toEqual("link");
-  expect($Z.__pointers__.xy.target.__name__).toEqual(
-    "default::X | default::Y"
-  );
+  expect($Z.__pointers__.xy.target.__name__).toEqual("default::X | default::Y");
   expect(Object.keys($Z.__pointers__.xy.target.__pointers__).sort()).toEqual([
     "__type__",
     "a",
@@ -66,7 +64,7 @@ test("link properties", () => {
 test("overloaded properties", () => {
   tc.assert<
     tc.IsExact<
-      typeof e.AdminUser["__element__"]["__pointers__"]["username"],
+      (typeof e.AdminUser)["__element__"]["__pointers__"]["username"],
       PropertyDesc<$str, $.Cardinality.One, true, false, false, false>
     >
   >(true);
@@ -108,7 +106,7 @@ test("merging tests", () => {
   expect(Object.keys(merged.__pointers__).includes("__type__")).toEqual(true);
   expect(Object.keys(merged.__pointers__).includes("name")).toEqual(true);
   expect(Object.keys(merged.__pointers__).includes("age")).toEqual(true);
-  type merged = keyof typeof merged["__pointers__"];
+  type merged = keyof (typeof merged)["__pointers__"];
   // shared keys
   tc.assert<tc.IsExact<merged, "id" | "__type__" | "name" | "age">>(true);
 });
@@ -123,19 +121,14 @@ test("backlinks", () => {
   expect(heroMovie.__element__.__name__).toEqual("default::Movie");
   expect(heroVillain.nemesis.__element__.__name__).toEqual("default::Hero");
   expect(
-    e.select(e.Villain, () => ({limit: 1})).assert_single().nemesis
+    e.select(e.Villain, () => ({ limit: 1 })).assert_single().nemesis
       .__cardinality__
   ).toEqual($.Cardinality.AtMostOne);
 
-  expect(e.Profile["<profile"].__element__.__name__).toEqual(
-    "std::BaseObject"
-  );
+  expect(e.Profile["<profile"].__element__.__name__).toEqual("std::BaseObject");
   expect(e.Profile["<profile"].__cardinality__).toEqual($.Cardinality.Many);
 
-  const merged = $.$mergeObjectTypes(
-    e.Hero.__element__,
-    e.Villain.__element__
-  );
+  const merged = $.$mergeObjectTypes(e.Hero.__element__, e.Villain.__element__);
   expect(merged.__pointers__["<characters"].target.__name__).toEqual(
     "std::BaseObject"
   );
@@ -150,7 +143,7 @@ test("select *", () => {
     title: true,
     genre: true,
     rating: true,
-    release_year: true
+    release_year: true,
   };
 
   // on root object
@@ -171,7 +164,7 @@ test("select *", () => {
   >(true);
 
   // on select scope
-  e.select(e.Movie, movie => {
+  e.select(e.Movie, (movie) => {
     expect(movie["*"]).toEqual(movieStarShape);
 
     return {};
@@ -180,7 +173,7 @@ test("select *", () => {
   // on wrapped select scope
   e.select(
     e.select(e.Movie, () => ({})),
-    movie => {
+    (movie) => {
       expect(movie["*"]).toEqual(movieStarShape);
 
       return {};
@@ -188,19 +181,19 @@ test("select *", () => {
   );
 
   // on polymorphic select scope
-  e.select(e.Person.is(e.Hero), hero => {
+  e.select(e.Person.is(e.Hero), (hero) => {
     expect(hero["*"]).toEqual({
       id: true,
       name: true,
       secret_identity: true,
-      number_of_movies: true
+      number_of_movies: true,
     });
 
     return {};
   });
 
   // on insert select
-  e.select(e.insert(e.Movie, {title: "test"}), movie => {
+  e.select(e.insert(e.Movie, { title: "test" }), (movie) => {
     expect(movie["*"]).toEqual(movieStarShape);
 
     return movie["*"];

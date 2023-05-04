@@ -1,5 +1,5 @@
-import {Cardinality} from "edgedb/dist/reflection/index";
-import type {TypeSet} from "./typesystem";
+import { Cardinality } from "edgedb/dist/reflection/index";
+import type { TypeSet } from "./typesystem";
 
 // Computing cardinality of path
 // From base set cadinality and pointer cardinality
@@ -161,12 +161,14 @@ export namespace cardutil {
     if (cards.length === 0) throw new Error("Empty tuple not allowed");
     if (cards.length === 1) return cards[0] as any;
     const [first, second, ...rest] = cards as unknown as [
-      Cardinality, Cardinality, ...Cardinality[]
+      Cardinality,
+      Cardinality,
+      ...Cardinality[]
     ];
     if (cards.length === 2) return mergeCardinalities(first, second) as any;
     return mergeCardinalitiesVariadic([
       mergeCardinalities(first, second),
-      ...rest
+      ...rest,
     ]);
   }
 

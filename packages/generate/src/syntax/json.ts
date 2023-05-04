@@ -1,13 +1,13 @@
-import {ExpressionKind, TypeKind} from "edgedb/dist/reflection/index";
-import type {ParamType} from "./typesystem";
-import {encodeB64} from "edgedb/dist/primitives/buffer";
-import type {$expr_WithParams} from "./params";
+import { ExpressionKind, TypeKind } from "edgedb/dist/reflection/index";
+import type { ParamType } from "./typesystem";
+import { encodeB64 } from "edgedb/dist/primitives/buffer";
+import type { $expr_WithParams } from "./params";
 
 function jsonStringify(type: ParamType, val: any): string {
   if (type.__kind__ === TypeKind.array) {
     if (Array.isArray(val)) {
       return `[${val
-        .map(item => jsonStringify(type.__element__, item))
+        .map((item) => jsonStringify(type.__element__, item))
         .join()}]`;
     }
     throw new Error(`Param with array type is not an array`);
@@ -74,7 +74,7 @@ function jsonStringify(type: ParamType, val: any): string {
 
 export function jsonifyComplexParams(expr: any, _args: any) {
   if (_args && expr.__kind__ === ExpressionKind.WithParams) {
-    const args = {..._args};
+    const args = { ..._args };
     for (const param of (expr as $expr_WithParams).__params__) {
       if (param.__isComplex__) {
         args[param.__name__] = jsonStringify(

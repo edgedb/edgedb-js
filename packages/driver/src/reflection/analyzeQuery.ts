@@ -1,17 +1,17 @@
-import type {ParseResult} from "../baseConn";
-import {ArrayCodec} from "../codecs/array";
-import {AT_LEAST_ONE, AT_MOST_ONE, MANY, ONE} from "../codecs/consts";
-import {EnumCodec} from "../codecs/enum";
-import {ICodec, ScalarCodec} from "../codecs/ifaces";
-import {NamedTupleCodec} from "../codecs/namedtuple";
-import {ObjectCodec} from "../codecs/object";
-import {RangeCodec} from "../codecs/range";
-import {NullCodec} from "../codecs/codecs";
-import {SetCodec} from "../codecs/set";
-import {TupleCodec} from "../codecs/tuple";
-import {Cardinality, OutputFormat} from "../ifaces";
-import {Options, Session} from "../options";
-import type {Client, BaseClientPool} from "../baseClient";
+import type { ParseResult } from "../baseConn";
+import { ArrayCodec } from "../codecs/array";
+import { AT_LEAST_ONE, AT_MOST_ONE, MANY, ONE } from "../codecs/consts";
+import { EnumCodec } from "../codecs/enum";
+import { ICodec, ScalarCodec } from "../codecs/ifaces";
+import { NamedTupleCodec } from "../codecs/namedtuple";
+import { ObjectCodec } from "../codecs/object";
+import { RangeCodec } from "../codecs/range";
+import { NullCodec } from "../codecs/codecs";
+import { SetCodec } from "../codecs/set";
+import { TupleCodec } from "../codecs/tuple";
+import { Cardinality, OutputFormat } from "../ifaces";
+import { Options, Session } from "../options";
+import type { Client, BaseClientPool } from "../baseClient";
 
 type QueryType = {
   args: string;
@@ -49,14 +49,14 @@ export async function analyzeQuery(
   const args = walkCodec(inCodec, {
     indent: "",
     optionalNulls: true,
-    imports
+    imports,
   });
 
   const result = generateSetType(
     walkCodec(outCodec, {
       indent: "",
       optionalNulls: false,
-      imports
+      imports,
     }),
     cardinality
   );
@@ -66,7 +66,7 @@ export async function analyzeQuery(
     args,
     cardinality,
     query,
-    imports
+    imports,
   };
 }
 
@@ -88,14 +88,14 @@ function generateSetType(type: string, cardinality: Cardinality): string {
 
 function walkCodec(
   codec: ICodec,
-  ctx: {indent: string; optionalNulls: boolean; imports: Set<string>}
+  ctx: { indent: string; optionalNulls: boolean; imports: Set<string> }
 ): string {
   if (codec instanceof NullCodec) {
     return "null";
   }
   if (codec instanceof ScalarCodec) {
     if (codec instanceof EnumCodec) {
-      return `(${codec.values.map(val => JSON.stringify(val)).join(" | ")})`;
+      return `(${codec.values.map((val) => JSON.stringify(val)).join(" | ")})`;
     }
     if (codec.importedType) {
       ctx.imports.add(codec.tsType);
@@ -106,7 +106,7 @@ function walkCodec(
     const fields =
       codec instanceof ObjectCodec
         ? codec.getFields()
-        : codec.getNames().map(name => ({name, cardinality: ONE}));
+        : codec.getNames().map((name) => ({ name, cardinality: ONE }));
     const subCodecs = codec.getSubcodecs();
     return `{\n${fields
       .map((field, i) => {
@@ -122,7 +122,7 @@ function walkCodec(
         return `${ctx.indent}  ${JSON.stringify(field.name)}${
           ctx.optionalNulls && field.cardinality === AT_MOST_ONE ? "?" : ""
         }: ${generateSetType(
-          walkCodec(subCodec, {...ctx, indent: ctx.indent + "  "}),
+          walkCodec(subCodec, { ...ctx, indent: ctx.indent + "  " }),
           field.cardinality
         )};`;
       })
@@ -134,7 +134,7 @@ function walkCodec(
   if (codec instanceof TupleCodec) {
     return `[${codec
       .getSubcodecs()
-      .map(subCodec => walkCodec(subCodec, ctx))
+      .map((subCodec) => walkCodec(subCodec, ctx))
       .join(", ")}]`;
   }
   if (codec instanceof RangeCodec) {

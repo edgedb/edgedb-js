@@ -7,7 +7,7 @@ import {
   generateStatusFileName,
   getServerCommand,
   getWSLPath,
-  startServer
+  startServer,
   // generateQB,
   // generateQueries
 } from "../../driver/test/testUtil";
@@ -18,9 +18,9 @@ import {
   const statusFile = generateStatusFileName("node");
   console.log("Node status file:", statusFile);
 
-  const {args} = getServerCommand(getWSLPath(statusFile));
+  const { args } = getServerCommand(getWSLPath(statusFile));
 
-  const {proc, config} = await startServer(args, statusFile);
+  const { proc, config } = await startServer(args, statusFile);
 
   console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);
 

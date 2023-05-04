@@ -1,12 +1,12 @@
 import {
   expect as _expect,
-  addMatchers
+  addMatchers,
 } from "https://deno.land/x/expect/mod.ts";
-import {MatchResult} from "https://deno.land/x/expect/matchers.ts";
-import {bold, green, red} from "https://deno.land/std@0.177.0/fmt/colors.ts";
+import { MatchResult } from "https://deno.land/x/expect/matchers.ts";
+import { bold, green, red } from "https://deno.land/std@0.177.0/fmt/colors.ts";
 
-export {Buffer} from "https://deno.land/std@0.177.0/node/buffer.ts";
-export {process} from "https://deno.land/std@0.177.0/node/process.ts";
+export { Buffer } from "https://deno.land/std@0.177.0/node/buffer.ts";
+export { process } from "https://deno.land/std@0.177.0/node/process.ts";
 
 const ACTUAL = red(bold("actual"));
 const EXPECTED = green(bold("expected"));
@@ -24,7 +24,7 @@ function createStr(v: unknown): string {
 function buildFail(message: string) {
   return {
     pass: false,
-    message
+    message,
   };
 }
 
@@ -83,7 +83,7 @@ function toThrow(
       }
     }
 
-    return {pass: true};
+    return { pass: true };
   } else {
     return buildFail(
       `expect(${ACTUAL}).toThrow(${EXPECTED})\n\nexpected ${red(
@@ -95,10 +95,10 @@ function toThrow(
 
 addMatchers({
   toBeCloseTo() {
-    return {pass: true};
+    return { pass: true };
   },
   toThrow,
-  toThrowError: toThrow
+  toThrowError: toThrow,
 });
 
 type Expected = ReturnType<typeof _expect>;
@@ -115,8 +115,8 @@ type ExpectedExtended = Expected & {
 
 const expect = _expect as (value: any) => ExpectedExtended;
 
-export {expect};
+export { expect };
 
 export const test = Deno.test;
 
-export const jest = {setTimeout: (timeout: number) => {}};
+export const jest = { setTimeout: (timeout: number) => {} };

@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
-import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
-import {ArrayCodec} from "./array";
-import {InvalidArgumentError, ProtocolError} from "../errors";
+import { ICodec, Codec, uuid, CodecKind } from "./ifaces";
+import { WriteBuffer, ReadBuffer } from "../primitives/buffer";
+import { ArrayCodec } from "./array";
+import { InvalidArgumentError, ProtocolError } from "../errors";
 
 export class SetCodec extends Codec implements ICodec {
   private subCodec: ICodec;

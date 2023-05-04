@@ -17,7 +17,7 @@
  */
 
 let mockFs = false;
-let mockedFiles: {[key: string]: string} = {};
+let mockedFiles: { [key: string]: string } = {};
 let homedir: string | null = null;
 
 jest.mock("fs", () => {
@@ -56,9 +56,9 @@ jest.mock("fs", () => {
       stat: async (filepath: string, ...args: any[]) => {
         if (!mockFs) return actualFs.promises.stat(filepath, ...args);
 
-        return {dev: 0};
-      }
-    }
+        return { dev: 0 };
+      },
+    },
   };
 });
 jest.mock("os", () => {
@@ -68,17 +68,17 @@ jest.mock("os", () => {
     ...actualOs,
     homedir: () => {
       return homedir ?? actualOs.homedir();
-    }
+    },
   };
 });
 
 import * as fs from "fs";
 import * as crypto from "crypto";
-import {join as pathJoin} from "path";
-import {Client, Duration} from "../src/index.node";
-import {parseDuration} from "../src/conUtils";
-import {parseConnectArguments, findStashPath} from "../src/conUtils.server";
-import {getClient} from "./testbase";
+import { join as pathJoin } from "path";
+import { Client, Duration } from "../src/index.node";
+import { parseDuration } from "../src/conUtils";
+import { parseConnectArguments, findStashPath } from "../src/conUtils.server";
+import { getClient } from "./testbase";
 import * as errors from "../src/errors";
 import * as platform from "../src/platform";
 
@@ -94,7 +94,7 @@ async function envWrap(
   {
     env,
     fs,
-    captureWarnings = false
+    captureWarnings = false,
   }: {
     env: ConnectionTestCase["env"];
     fs?: ConnectionTestCase["fs"];
@@ -102,7 +102,7 @@ async function envWrap(
   },
   func: () => Promise<unknown>
 ): Promise<string[]> {
-  let oldEnv: {[key: string]: any};
+  let oldEnv: { [key: string]: any };
   let oldCwd: any;
   let oldWarn: any;
   const warnings: string[] = [];
@@ -136,7 +136,7 @@ async function envWrap(
           }
           return files;
         },
-        {} as {[key: string]: string}
+        {} as { [key: string]: string }
       );
     }
   }
@@ -172,7 +172,7 @@ async function envWrap(
   return warnings;
 }
 
-const errorMapping: {[key: string]: string | RegExp} = {
+const errorMapping: { [key: string]: string | RegExp } = {
   credentials_file_not_found: /^cannot read credentials file/,
   project_not_initialised:
     /^Found 'edgedb\.toml' but the project is not initialized/,
@@ -198,11 +198,11 @@ const errorMapping: {[key: string]: string | RegExp} = {
   exclusive_options: /^Cannot specify both .* and .*/,
   secret_key_not_found:
     /^Cannot connect to cloud instances without a secret key/,
-  invalid_secret_key: /^Invalid secret key/
+  invalid_secret_key: /^Invalid secret key/,
 };
 
-const warningMapping: {[key: string]: string} = {
-  docker_tcp_port: `EDGEDB_PORT in 'tcp://host:port' format, so will be ignored`
+const warningMapping: { [key: string]: string } = {
+  docker_tcp_port: `EDGEDB_PORT in 'tcp://host:port' format, so will be ignored`,
 };
 
 interface ConnectionResult {
@@ -212,13 +212,13 @@ interface ConnectionResult {
   password: string | null;
   tlsCAData: string | null;
   tlsSecurity: boolean;
-  serverSettings: {[key: string]: string};
+  serverSettings: { [key: string]: string };
   waitUntilAvailable: string;
 }
 
 type ConnectionTestCase = {
-  opts?: {[key: string]: any};
-  env?: {[key: string]: string};
+  opts?: { [key: string]: any };
+  env?: { [key: string]: string };
   platform?: "windows" | "macos";
   fs?: {
     cwd?: string;
@@ -226,14 +226,14 @@ type ConnectionTestCase = {
     files?: {
       [key: string]:
         | string
-        | {"instance-name": string; "project-path": string};
+        | { "instance-name": string; "project-path": string };
     };
   };
   warnings?: string[];
-} & ({result: ConnectionResult} | {error: {type: string}});
+} & ({ result: ConnectionResult } | { error: { type: string } });
 
 async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
-  const {env = {}, opts: _opts = {}, fs, platform} = testcase;
+  const { env = {}, opts: _opts = {}, fs, platform } = testcase;
   if (
     fs &&
     ((!platform &&
@@ -244,7 +244,7 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
     return;
   }
 
-  const opts = {..._opts, instanceName: _opts.instance};
+  const opts = { ..._opts, instanceName: _opts.instance };
 
   if ("error" in testcase) {
     const error = errorMapping[testcase.error.type];
@@ -253,14 +253,14 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
     }
 
     await expect(() =>
-      envWrap({env, fs}, () => parseConnectArguments(opts))
+      envWrap({ env, fs }, () => parseConnectArguments(opts))
     ).rejects.toThrow(error);
   } else {
     const warnings = await envWrap(
-      {env, fs, captureWarnings: !!testcase.warnings},
+      { env, fs, captureWarnings: !!testcase.warnings },
       async () => {
         try {
-          const {connectionParams} = await parseConnectArguments(opts);
+          const { connectionParams } = await parseConnectArguments(opts);
 
           let waitMilli = connectionParams.waitUntilAvailable;
           const waitHours = Math.floor(waitMilli / 3_600_000);
@@ -290,12 +290,12 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
                 waitSeconds,
                 waitMilli
               )
-            )
+            ),
           }).toEqual({
             ...testcase.result,
             waitUntilAvailable: parseDuration(
               testcase.result.waitUntilAvailable
-            )
+            ),
           });
         } catch (e) {
           console.log(testcase);
@@ -337,10 +337,10 @@ test("parseConnectArguments", async () => {
   }
 });
 
-const platformNames: {[key: string]: string} = {
+const platformNames: { [key: string]: string } = {
   windows: "win32",
   macos: "darwin",
-  linux: "linux"
+  linux: "linux",
 };
 
 test("project path hashing", async () => {
@@ -371,7 +371,7 @@ test("project path hashing", async () => {
   for (const testcase of hashingTestcases) {
     if (platformNames[testcase.platform] === process.platform) {
       await envWrap(
-        {env: testcase.env ?? {}, fs: {homedir: testcase.homeDir}},
+        { env: testcase.env ?? {}, fs: { homedir: testcase.homeDir } },
         async () =>
           expect(await findStashPath(testcase.project)).toBe(testcase.result)
       );
@@ -387,60 +387,60 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     password: null,
     tlsCAData: null,
     tlsSecurity: "strict",
-    serverSettings: {}
+    serverSettings: {},
   };
 
   for (const testcase of [
     {
-      opts: {host: "localhost", user: "user", logging: false},
-      result: {...defaults, user: "user"},
+      opts: { host: "localhost", user: "user", logging: false },
+      result: { ...defaults, user: "user" },
       logging: false,
       inProject: false,
       fromProject: false,
-      fromEnv: false
+      fromEnv: false,
     },
     {
-      opts: {user: "user"},
+      opts: { user: "user" },
       env: {
         EDGEDB_DATABASE: "testdb",
         EDGEDB_PASSWORD: "passw",
         EDGEDB_HOST: "host",
-        EDGEDB_PORT: "123"
+        EDGEDB_PORT: "123",
       },
       result: {
         ...defaults,
         address: ["host", 123],
         user: "user",
         database: "testdb",
-        password: "passw"
+        password: "passw",
       },
       logging: true,
       inProject: false,
       fromProject: false,
-      fromEnv: true
+      fromEnv: true,
     },
     {
-      opts: {dsn: "edgedb://", user: "user"},
+      opts: { dsn: "edgedb://", user: "user" },
       env: {
         EDGEDB_DATABASE: "testdb",
         EDGEDB_PASSWORD: "passw",
         EDGEDB_HOST: "host",
-        EDGEDB_PORT: "123"
+        EDGEDB_PORT: "123",
       },
       result: {
         ...defaults,
-        user: "user"
+        user: "user",
       },
       logging: true,
       inProject: false,
       fromProject: false,
-      fromEnv: false
+      fromEnv: false,
     },
     {
-      opts: {user: "user"},
+      opts: { user: "user" },
       env: {
         EDGEDB_DATABASE: "testdb",
-        EDGEDB_PASSWORD: "passw"
+        EDGEDB_PASSWORD: "passw",
       },
       fs: {
         cwd: "/home/edgedb/test",
@@ -452,26 +452,26 @@ test("logging, inProject, fromProject, fromEnv", async () => {
           "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158/instance-name":
             "test_project",
           "/home/edgedb/.config/edgedb/credentials/test_project.json":
-            '{"port": 10702, "user": "test3n", "password": "lZTBy1RVCfOpBAOwSCwIyBIR", "database": "test3n"}'
-        }
+            '{"port": 10702, "user": "test3n", "password": "lZTBy1RVCfOpBAOwSCwIyBIR", "database": "test3n"}',
+        },
       },
       result: {
         ...defaults,
         address: ["localhost", 10702],
         user: "user",
         database: "testdb",
-        password: "passw"
+        password: "passw",
       },
       logging: true,
       inProject: true,
       fromProject: true,
-      fromEnv: true
+      fromEnv: true,
     },
     {
-      opts: {user: "user", database: "db", password: "secret"},
+      opts: { user: "user", database: "db", password: "secret" },
       env: {
         EDGEDB_DATABASE: "testdb",
-        EDGEDB_PASSWORD: "passw"
+        EDGEDB_PASSWORD: "passw",
       },
       fs: {
         cwd: "/home/edgedb/test",
@@ -483,43 +483,43 @@ test("logging, inProject, fromProject, fromEnv", async () => {
           "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158/instance-name":
             "test_project",
           "/home/edgedb/.config/edgedb/credentials/test_project.json":
-            '{"port": 10702, "user": "test3n", "password": "lZTBy1RVCfOpBAOwSCwIyBIR", "database": "test3n"}'
-        }
+            '{"port": 10702, "user": "test3n", "password": "lZTBy1RVCfOpBAOwSCwIyBIR", "database": "test3n"}',
+        },
       },
       result: {
         ...defaults,
         address: ["localhost", 10702],
         user: "user",
         database: "db",
-        password: "secret"
+        password: "secret",
       },
       logging: true,
       inProject: true,
       fromProject: true,
-      fromEnv: false
+      fromEnv: false,
     },
     {
-      opts: {host: "test.local"},
+      opts: { host: "test.local" },
       env: {
         EDGEDB_DATABASE: "testdb",
-        EDGEDB_PASSWORD: "passw"
+        EDGEDB_PASSWORD: "passw",
       },
       fs: {
         cwd: "/home/edgedb/test",
         homedir: "/home/edgedb",
         files: {
-          "/home/edgedb/test/edgedb.toml": ""
-        }
+          "/home/edgedb/test/edgedb.toml": "",
+        },
       },
       result: {
         ...defaults,
-        address: ["test.local", 5656]
+        address: ["test.local", 5656],
       },
       logging: true,
       inProject: true,
       fromProject: false,
-      fromEnv: false
-    }
+      fromEnv: false,
+    },
   ]) {
     if (
       testcase.fs &&
@@ -529,9 +529,9 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     }
 
     await envWrap(
-      {env: testcase.env as any, fs: testcase.fs as any},
+      { env: testcase.env as any, fs: testcase.fs as any },
       async () => {
-        const {connectionParams, logging, inProject, fromProject, fromEnv} =
+        const { connectionParams, logging, inProject, fromProject, fromEnv } =
           await parseConnectArguments(testcase.opts);
         expect({
           address: connectionParams.address,
@@ -540,7 +540,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
           password: connectionParams.password ?? null,
           tlsCAData: connectionParams._tlsCAData,
           tlsSecurity: connectionParams.tlsSecurity,
-          serverSettings: connectionParams.serverSettings
+          serverSettings: connectionParams.serverSettings,
         }).toEqual(testcase.result);
         expect(logging).toEqual(testcase.logging);
         expect(await inProject()).toEqual(testcase.inProject);
@@ -565,25 +565,25 @@ test("EDGEDB_CLIENT_SECURITY env var", async () => {
     ["strict", "default", "strict"],
     ["strict", "insecure", null],
     ["strict", "no_host_verification", null],
-    ["strict", "strict", "strict"]
+    ["strict", "strict", "strict"],
   ];
 
   for (const [clientSecurity, clientTlsSecurity, result] of truthTable) {
     await envWrap(
       {
         env: {
-          EDGEDB_CLIENT_SECURITY: clientSecurity
-        }
+          EDGEDB_CLIENT_SECURITY: clientSecurity,
+        },
       },
       async () => {
         const parseConnectArgs = parseConnectArguments({
           host: "localhost",
-          tlsSecurity: clientTlsSecurity as any
+          tlsSecurity: clientTlsSecurity as any,
         });
         if (!result) {
           await expect(parseConnectArgs).rejects.toThrow();
         } else {
-          const {connectionParams} = await parseConnectArgs;
+          const { connectionParams } = await parseConnectArgs;
           expect(connectionParams._tlsSecurity).toBe(result);
         }
       }
@@ -596,7 +596,7 @@ test("connect: timeout", async () => {
   try {
     client = await getClient({
       timeout: 1,
-      waitUntilAvailable: 0
+      waitUntilAvailable: 0,
     }).ensureConnected();
     throw new Error("connection didn't time out");
   } catch (e: any) {
@@ -615,7 +615,7 @@ test("connect: refused", async () => {
     client = await getClient({
       host: "localhost",
       port: 23456,
-      waitUntilAvailable: 0
+      waitUntilAvailable: 0,
     }).ensureConnected();
     throw new Error("connection isn't refused");
   } catch (e: any) {
@@ -634,7 +634,7 @@ test("connect: invalid name", async () => {
     client = await getClient({
       host: "invalid.example.org",
       port: 23456,
-      waitUntilAvailable: 0
+      waitUntilAvailable: 0,
     }).ensureConnected();
     throw new Error("name was resolved");
   } catch (e: any) {
@@ -653,7 +653,7 @@ test("connect: refused unix", async () => {
   try {
     client = await getClient({
       host: "/tmp/non-existent",
-      waitUntilAvailable: 0
+      waitUntilAvailable: 0,
     }).ensureConnected();
     throw new Error("connection isn't refused");
   } catch (e: any) {

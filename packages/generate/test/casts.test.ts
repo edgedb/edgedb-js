@@ -1,14 +1,14 @@
 import e from "../dbschema/edgeql-js";
-import type {$Movie} from "../dbschema/edgeql-js/modules/default";
+import type { $Movie } from "../dbschema/edgeql-js/modules/default";
 
-import {setupTests, tc, TestData, teardownTests} from "./setupTeardown";
-import type {Client} from "edgedb";
+import { setupTests, tc, TestData, teardownTests } from "./setupTeardown";
+import type { Client } from "edgedb";
 let client: Client;
 let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client, data} = setup);
+  ({ client, data } = setup);
 });
 
 afterAll(async () => {
@@ -18,7 +18,7 @@ afterAll(async () => {
 test("casting", () => {
   const primitiveCast = e.cast(e.float32, e.float64(3.14));
   tc.assert<
-    tc.IsExact<typeof primitiveCast["__element__"], typeof e["float64"]>
+    tc.IsExact<(typeof primitiveCast)["__element__"], (typeof e)["float64"]>
   >(true);
   expect(primitiveCast.toEdgeQL()).toEqual(
     `<std::float32>(<std::float64>3.14)`
@@ -42,5 +42,5 @@ test("object type empty set", () => {
 
   expect(expr.toEdgeQL()).toEqual(`<default::Movie>{}`);
 
-  tc.assert<tc.IsExact<typeof expr["__element__"], $Movie>>(true);
+  tc.assert<tc.IsExact<(typeof expr)["__element__"], $Movie>>(true);
 });

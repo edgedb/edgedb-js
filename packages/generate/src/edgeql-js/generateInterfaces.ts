@@ -1,7 +1,7 @@
-import {CodeBuffer, js, t} from "../builders";
-import type {GeneratorParams} from "../genutil";
-import {$} from "../genutil";
-import {makePlainIdent, quote, splitName, toTSScalarType} from "../genutil";
+import { CodeBuffer, js, t } from "../builders";
+import type { GeneratorParams } from "../genutil";
+import { $ } from "../genutil";
+import { makePlainIdent, quote, splitName, toTSScalarType } from "../genutil";
 
 export type GenerateInterfacesParams = Pick<GeneratorParams, "dir" | "types">;
 
@@ -16,11 +16,11 @@ interface ModuleData {
 }
 
 export const generateInterfaces = (params: GenerateInterfacesParams) => {
-  const {dir, types} = params;
+  const { dir, types } = params;
 
   const plainTypesCode = dir.getPath("interfaces");
   plainTypesCode.addImportStar("edgedb", "edgedb", {
-    typeOnly: true
+    typeOnly: true,
   });
   const plainTypeModules = new Map<string, ModuleData>();
 
@@ -44,7 +44,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
         buf: new CodeBuffer(),
         types: new Map(),
         isRoot: !parentModName,
-        nestedModules: new Map()
+        nestedModules: new Map(),
       };
       plainTypeModules.set(mod, module);
 
@@ -63,15 +63,15 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
     tName: string;
     module: ModuleData;
   } => {
-    const {mod: tMod, name: tName} = splitName(typeName);
+    const { mod: tMod, name: tName } = splitName(typeName);
 
-    return {tMod, tName, module: getModule(tMod)};
+    return { tMod, tName, module: getModule(tMod) };
   };
 
   const _getTypeName =
     (mod: string) =>
     (typeName: string, withModule: boolean = false): string => {
-      const {tMod, tName, module} = getPlainTypeModule(typeName);
+      const { tMod, tName, module } = getPlainTypeModule(typeName);
       return (
         ((mod !== tMod || withModule) && tMod !== "default"
           ? `${module.fullInternalName}.`
@@ -82,15 +82,15 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
   for (const type of types.values()) {
     if (type.kind === "scalar" && type.enum_values?.length) {
       // generate plain enum type
-      const {mod: enumMod, name: enumName} = splitName(type.name);
+      const { mod: enumMod, name: enumName } = splitName(type.name);
       const getEnumTypeName = _getTypeName(enumMod);
 
-      const {module} = getPlainTypeModule(type.name);
+      const { module } = getPlainTypeModule(type.name);
       module.types.set(enumName, getEnumTypeName(type.name, true));
       module.buf.writeln([
         t`export type ${getEnumTypeName(type.name)} = ${type.enum_values
-          .map(val => quote(val))
-          .join(" | ")};`
+          .map((val) => quote(val))
+          .join(" | ")};`,
       ]);
     }
     if (type.kind !== "object") {
@@ -104,7 +104,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
       continue;
     }
 
-    const {mod, name} = splitName(type.name);
+    const { mod, name } = splitName(type.name);
     const body = dir.getModule(mod);
     body.registerRef(type.name, type.id);
 
@@ -124,25 +124,21 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
 
       if (isUnion) {
         return targetType.union_of
-          .map(({id}) => types.get(id))
-          .map(member => getTypeName(member.name))
+          .map(({ id }) => types.get(id))
+          .map((member) => getTypeName(member.name))
           .join(" | ");
       } else if (isLink) {
         return getTypeName(targetType.name);
       } else {
-        return toTSScalarType(
-          targetType as $.introspect.PrimitiveType,
-          types,
-          {
-            getEnumRef: enumType => getTypeName(enumType.name),
-            edgedbDatatypePrefix: ""
-          }
-        ).join("");
+        return toTSScalarType(targetType as $.introspect.PrimitiveType, types, {
+          getEnumRef: (enumType) => getTypeName(enumType.name),
+          edgedbDatatypePrefix: "",
+        }).join("");
       }
     };
 
-    const {module: plainTypeModule} = getPlainTypeModule(type.name);
-    const pointers = type.pointers.filter(ptr => ptr.name !== "__type__");
+    const { module: plainTypeModule } = getPlainTypeModule(type.name);
+    const pointers = type.pointers.filter((ptr) => ptr.name !== "__type__");
 
     if (!isUnionType) {
       plainTypeModule.types.set(name, getTypeName(type.name, true));
@@ -152,7 +148,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
       t`${isUnionType ? "" : "export "}interface ${getTypeName(type.name)}${
         type.bases.length
           ? ` extends ${type.bases
-              .map(({id}) => {
+              .map(({ id }) => {
                 const baseType = types.get(id);
                 return getTypeName(baseType.name);
               })
@@ -161,7 +157,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
       } ${
         pointers.length
           ? `{\n${pointers
-              .map(pointer => {
+              .map((pointer) => {
                 const isOptional = pointer.card === $.Cardinality.AtMostOne;
                 return `  ${quote(pointer.name)}${
                   isOptional ? "?" : ""
@@ -174,7 +170,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
               })
               .join("\n")}\n}`
           : "{}"
-      }\n`
+      }\n`,
     ]);
   }
 
@@ -208,12 +204,12 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
       plainTypesCode.decreaseIndent();
       plainTypesCode.writeln([t`}`]);
       plainTypesCode.writeln([js`}`]);
-      plainTypesCode.addExport(module.internalName, {modes: ["js"]});
+      plainTypesCode.addExport(module.internalName, { modes: ["js"] });
     }
   };
 
   for (const module of [...plainTypeModules.values()].filter(
-    mod => mod.isRoot
+    (mod) => mod.isRoot
   )) {
     writeModuleExports(module);
   }
@@ -239,6 +235,6 @@ export namespace helper {
   export type Props<T> = Pick<T, propertyKeys<T>>;
   export type Links<T> = Pick<T, linkKeys<T>>;
 }
-`
+`,
   ]);
 };

@@ -1,11 +1,11 @@
-import {ExpressionKind, Cardinality} from "edgedb/dist/reflection/index";
-import type {BaseType, Expression, TypeSet} from "./typesystem";
-import type {$expr_Select} from "./select";
-import type {$expr_For} from "./for";
-import type {$expr_Insert} from "./insert";
-import type {$expr_Update} from "./update";
-import type {$expr_Group} from "./group";
-import {$expressionify} from "./path";
+import { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index";
+import type { BaseType, Expression, TypeSet } from "./typesystem";
+import type { $expr_Select } from "./select";
+import type { $expr_For } from "./for";
+import type { $expr_Insert } from "./insert";
+import type { $expr_Update } from "./update";
+import type { $expr_Group } from "./group";
+import { $expressionify } from "./path";
 
 export type $expr_Alias<
   El extends BaseType = BaseType,
@@ -24,7 +24,7 @@ export function alias<Expr extends Expression>(
     __kind__: ExpressionKind.Alias,
     __element__: expr.__element__,
     __cardinality__: expr.__cardinality__,
-    __expr__: expr
+    __expr__: expr,
   }) as any;
 }
 
@@ -55,8 +55,8 @@ function _with<Expr extends WithableExpression>(
     __element__: expr.__element__,
     __cardinality__: expr.__cardinality__,
     __refs__: refs,
-    __expr__: expr as any
+    __expr__: expr as any,
   }) as any;
 }
 
-export {_with as with};
+export { _with as with };

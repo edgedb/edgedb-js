@@ -1,7 +1,7 @@
 import e from "../dbschema/edgeql-js";
 
 test("simple for loop", () => {
-  expect(e.for(e.set(1, 2, 3), x => e.op(e.op(x, "*", 2), "+", x)).toEdgeQL())
+  expect(e.for(e.set(1, 2, 3), (x) => e.op(e.op(x, "*", 2), "+", x)).toEdgeQL())
     .toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
 UNION (
   ((__forVar__0 * 2) + __forVar__0)
@@ -9,11 +9,11 @@ UNION (
 });
 
 test("with vars in for loop", () => {
-  const q1 = e.for(e.set(1, 2, 3), i => {
+  const q1 = e.for(e.set(1, 2, 3), (i) => {
     const str = e.to_str(i);
     return e.select({
       a: e.select(str),
-      b: e.select(e.tuple([str, str]))
+      b: e.select(e.tuple([str, str])),
     });
   });
 
@@ -32,20 +32,20 @@ UNION (
   })
 )`);
 
-  const q2 = e.for(e.set(1, 2, 3), i => {
+  const q2 = e.for(e.set(1, 2, 3), (i) => {
     const str = e.to_str(i);
     return e
       .insert(e.Hero, {
         name: str,
-        secret_identity: str
+        secret_identity: str,
       })
-      .unlessConflict(person => ({
+      .unlessConflict((person) => ({
         on: person.name,
         else: e.update(person, () => ({
           set: {
-            name: str
-          }
-        }))
+            name: str,
+          },
+        })),
       }));
   });
 

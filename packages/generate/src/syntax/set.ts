@@ -1,5 +1,5 @@
-import type {ExpressionKind, Cardinality} from "edgedb/dist/reflection/index";
-import {TypeKind} from "edgedb/dist/reflection/index";
+import type { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index";
+import { TypeKind } from "edgedb/dist/reflection/index";
 import type {
   ArrayType,
   BaseTypeTuple,
@@ -11,10 +11,10 @@ import type {
   Expression,
   ObjectType,
   getPrimitiveBaseType,
-  SomeType
+  SomeType,
 } from "./typesystem";
 
-import {$mergeObjectTypes, mergeObjectTypes} from "./hydrate";
+import { $mergeObjectTypes, mergeObjectTypes } from "./hydrate";
 
 import * as castMaps from "./castMaps";
 
@@ -26,10 +26,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
   }
   if (a.__kind__ === TypeKind.scalar && b.__kind__ === TypeKind.scalar) {
     return castMaps.getSharedParentScalar(a, b);
-  } else if (
-    a.__kind__ === TypeKind.object &&
-    b.__kind__ === TypeKind.object
-  ) {
+  } else if (a.__kind__ === TypeKind.object && b.__kind__ === TypeKind.object) {
     return $mergeObjectTypes(a, b);
   } else if (a.__kind__ === TypeKind.tuple && b.__kind__ === TypeKind.tuple) {
     if (a.__items__.length !== b.__items__.length) {
@@ -50,8 +47,8 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
 
       return {
         __kind__: TypeKind.tuple,
-        __name__: `tuple<${items.map(item => item.__name__).join(", ")}>`,
-        __items__: items as BaseTypeTuple
+        __name__: `tuple<${items.map((item) => item.__name__).join(", ")}>`,
+        __items__: items as BaseTypeTuple,
       };
     } catch (err) {
       throw new Error(
@@ -65,14 +62,14 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
     const aKeys = Object.keys(a);
     const bKeys = new Set(Object.keys(b));
     const sameKeys =
-      aKeys.length === bKeys.size && aKeys.every(k => bKeys.has(k));
+      aKeys.length === bKeys.size && aKeys.every((k) => bKeys.has(k));
     if (!sameKeys) {
       throw new Error(
         `Incompatible tuple types: ${a.__name__} and ${b.__name__}`
       );
     }
     try {
-      const items: {[k: string]: BaseType} = {};
+      const items: { [k: string]: BaseType } = {};
       for (const [i] of Object.entries(a.__shape__)) {
         if (!a.__shape__[i] || !b.__shape__[i]) {
           throw new Error();
@@ -88,7 +85,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
         __name__: `tuple<${Object.entries(items)
           .map(([key, val]: [string, any]) => `${key}: ${val.__name__}`)
           .join(", ")}>`,
-        __shape__: items
+        __shape__: items,
       };
     } catch (err) {
       throw new Error(
@@ -104,7 +101,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
       return {
         __kind__: TypeKind.array,
         __name__: a.__name__,
-        __element__: mergedEl
+        __element__: mergedEl,
       } as ArrayType;
     } catch (err) {
       throw new Error(
@@ -123,7 +120,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
   }
 }
 
-export {set} from "./setImpl";
+export { set } from "./setImpl";
 
 // export type $expr_Set<Set extends LooseTypeSet = LooseTypeSet> = Expression<
 export type $expr_Set<Set extends LooseTypeSet = LooseTypeSet> = Expression<{
@@ -187,7 +184,7 @@ export type LooseTypeSet<
   __cardinality__: C;
 };
 
-export type {mergeObjectTypes};
+export type { mergeObjectTypes };
 
 type _mergeObjectTypesVariadic<Types extends [ObjectType, ...ObjectType[]]> =
   Types extends [infer U]

@@ -2,7 +2,7 @@ import type {
   Expression,
   BaseType,
   BaseTypeToTsType,
-  ScalarType
+  ScalarType,
 } from "./typesystem";
 
 // import {
@@ -15,10 +15,10 @@ import type {
 // } from "edgedb/dist/reflection/index";
 
 // import type {$expr_Literal} from "./literal";
-import {$expressionify} from "./path";
-import {spec} from "./__spec__";
-import {Cardinality, ExpressionKind} from "edgedb/dist/reflection/index";
-import {makeType} from "./hydrate";
+import { $expressionify } from "./path";
+import { spec } from "./__spec__";
+import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
+import { makeType } from "./hydrate";
 
 export type $expr_Literal<Type extends BaseType = BaseType> = Expression<{
   __element__: Type;
@@ -35,13 +35,13 @@ export function literal<T extends BaseType>(
     __element__: type,
     __cardinality__: Cardinality.One,
     __kind__: ExpressionKind.Literal,
-    __value__: value
+    __value__: value,
   }) as any;
 }
 
 export const $nameMapping = new Map<string, string>([
-  ...([...spec.values()].map(type => [type.name, type.id]) as any),
-  ["std::number", "00000000-0000-0000-0000-0000000001ff"]
+  ...([...spec.values()].map((type) => [type.name, type.id]) as any),
+  ["std::number", "00000000-0000-0000-0000-0000000001ff"],
 ]);
 
 export function $getType(id: string): (val: any) => $expr_Literal<ScalarType> {

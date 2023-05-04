@@ -1,6 +1,6 @@
 import type * as $ from "../src/syntax/reflection";
 import e from "../dbschema/edgeql-js";
-import {tc} from "./setupTeardown";
+import { tc } from "./setupTeardown";
 
 test("simple repeated expression", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
@@ -22,20 +22,20 @@ SELECT (__withVar_0 + __withVar_1)`);
 
 test("implicit WITH vars referencing each other", () => {
   const skip = e.int64(10);
-  const remainingHeros = e.select(e.Hero, hero => ({
+  const remainingHeros = e.select(e.Hero, (hero) => ({
     order_by: hero.id,
-    offset: skip
+    offset: skip,
   }));
   const pageResults = e.select(remainingHeros, () => ({
     id: true,
     name: true,
-    limit: 10
+    limit: 10,
   }));
 
   const query = e.select({
     pageResults,
     nextOffset: e.op(skip, "+", e.count(pageResults)),
-    hasMore: e.select(e.op(e.count(remainingHeros), ">", 10))
+    hasMore: e.select(e.op(e.count(remainingHeros), ">", 10)),
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
@@ -64,7 +64,7 @@ SELECT {
   single hasMore := (SELECT (std::count(__withVar_3) > 10))
 }`);
 
-  type queryType = $.BaseTypeToTsType<typeof query["__element__"]>;
+  type queryType = $.BaseTypeToTsType<(typeof query)["__element__"]>;
   tc.assert<
     tc.IsExact<
       queryType,
@@ -100,7 +100,7 @@ test("explicit WITH block in nested query", () => {
   expect(
     e
       .select({
-        nested: e.with([numbers], e.select(numbers))
+        nested: e.with([numbers], e.select(numbers)),
       })
       .toEdgeQL()
   ).toEqual(`SELECT {
@@ -119,7 +119,7 @@ test("explicit WITH in nested query, var used outside WITH block", () => {
     e
       .select({
         numbers,
-        nested: e.with([numbers], e.select(numbers))
+        nested: e.with([numbers], e.select(numbers)),
       })
       .toEdgeQL()
   ).toThrow();
@@ -134,7 +134,7 @@ test("explicit WITH block nested in implicit WITH block", () => {
     e
       .select({
         numbers: explicitWith,
-        numbers2: explicitWith
+        numbers2: explicitWith,
       })
       .toEdgeQL()
   ).toEqual(`WITH
@@ -159,7 +159,7 @@ test("explicit WITH block nested in explicit WITH block", () => {
       .with(
         [explicitWith],
         e.select({
-          numbers: explicitWith
+          numbers: explicitWith,
         })
       )
       .toEdgeQL()
@@ -185,7 +185,7 @@ test("explicit WITH block nested in explicit WITH block, sub expr explicitly ext
       .with(
         [explicitWith, number],
         e.select({
-          numbers: explicitWith
+          numbers: explicitWith,
         })
       )
       .toEdgeQL()
@@ -212,7 +212,7 @@ test("explicit WITH nested in explicit WITH, expr declared in both", () => {
       .with(
         [explicitWith, numbers],
         e.select({
-          numbers: explicitWith
+          numbers: explicitWith,
         })
       )
       .toEdgeQL()
@@ -231,7 +231,7 @@ test("explicit WITH block nested in explicit WITH block, sub expr implicitly ext
         [explicitWith],
         e.select({
           number,
-          numbers: explicitWith
+          numbers: explicitWith,
         })
       )
       .toEdgeQL()
@@ -250,14 +250,14 @@ SELECT {
 
 test("implicit WITH and explicit WITH in sub expr", () => {
   const skip = e.int64(10);
-  const remainingHeros = e.select(e.Hero, hero => ({
+  const remainingHeros = e.select(e.Hero, (hero) => ({
     order_by: hero.id,
-    offset: skip
+    offset: skip,
   }));
   const pageResults = e.select(remainingHeros, () => ({
     id: true,
     name: true,
-    limit: 10
+    limit: 10,
   }));
 
   const nextOffset = e.op(skip, "+", e.count(pageResults));
@@ -265,7 +265,7 @@ test("implicit WITH and explicit WITH in sub expr", () => {
   const query = e.select({
     pageResults,
     nextOffset: e.with([nextOffset], e.select(nextOffset)),
-    hasMore: e.select(e.op(e.count(remainingHeros), ">", 10))
+    hasMore: e.select(e.op(e.count(remainingHeros), ">", 10)),
   });
 
   expect(query.toEdgeQL()).toEqual(`WITH
@@ -304,13 +304,13 @@ test("explicit WITH nested in implicit WITH + alias implicit", () => {
 
   const numbersAlias = e.alias(numbers);
 
-  const explicitWith = e.with([numbers], e.select({numbers, numbersAlias}));
+  const explicitWith = e.with([numbers], e.select({ numbers, numbersAlias }));
 
   expect(
     e
       .select({
         numbers: explicitWith,
-        numbers2: explicitWith
+        numbers2: explicitWith,
       })
       .toEdgeQL()
   ).toEqual(`WITH
@@ -336,14 +336,14 @@ test("explicit WITH nested in implicit WITH + alias explicit", () => {
 
   const explicitWith = e.with(
     [numbers, numbersAlias],
-    e.select({numbers, numbersAlias})
+    e.select({ numbers, numbersAlias })
   );
 
   expect(
     e
       .select({
         numbers: explicitWith,
-        numbers2: explicitWith
+        numbers2: explicitWith,
       })
       .toEdgeQL()
   ).toEqual(`WITH
@@ -367,14 +367,14 @@ test("explicit WITH nested in implicit WITH + alias outside WITH", () => {
 
   const numbersAlias = e.alias(numbers);
 
-  const explicitWith = e.with([numbers], e.select({numbers, numbersAlias}));
+  const explicitWith = e.with([numbers], e.select({ numbers, numbersAlias }));
 
   expect(() =>
     e
       .select({
         numbers: explicitWith,
         numbers2: explicitWith,
-        numbersAlias
+        numbersAlias,
       })
       .toEdgeQL()
   ).toThrow();
@@ -400,7 +400,7 @@ test(
         .with(
           [explicitWith, numbers],
           e.select({
-            numbers: explicitWith
+            numbers: explicitWith,
           })
         )
         .toEdgeQL()
@@ -437,7 +437,7 @@ test(
         .with(
           [explicitWith, numbers],
           e.select({
-            numbers: explicitWith
+            numbers: explicitWith,
           })
         )
         .toEdgeQL()
@@ -456,12 +456,12 @@ SELECT {
 );
 
 test("query with no WITH block", () => {
-  const query = e.select(e.Person.is(e.Hero), person => ({
+  const query = e.select(e.Person.is(e.Hero), (person) => ({
     id: true,
     computable: e.int64(35),
-    all_heroes: e.select(e.Hero, () => ({__type__: {name: true}})),
+    all_heroes: e.select(e.Hero, () => ({ __type__: { name: true } })),
     order_by: person.name,
-    limit: 1
+    limit: 1,
   }));
 
   expect(query.toEdgeQL()).toEqual(
@@ -490,7 +490,7 @@ LIMIT 1`
 });
 
 test("repeated expression referencing scoped select object", () => {
-  const query = e.select(e.Hero, hero => {
+  const query = e.select(e.Hero, (hero) => {
     const secret = e.op(
       e.op(hero.name, "++", " is "),
       "++",
@@ -499,7 +499,7 @@ test("repeated expression referencing scoped select object", () => {
     return {
       name: true,
       secret,
-      secret2: secret
+      secret2: secret,
     };
   });
 

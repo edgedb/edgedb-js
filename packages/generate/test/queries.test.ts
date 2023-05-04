@@ -1,13 +1,13 @@
 import type * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
-import {getMoviesStarring} from "../dbschema/queries";
-import {setupTests, teardownTests, TestData} from "./setupTeardown";
+import { getMoviesStarring } from "../dbschema/queries";
+import { setupTests, teardownTests, TestData } from "./setupTeardown";
 let client: edgedb.Client;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client} = setup);
+  ({ client } = setup);
 });
 
 afterAll(async () => {
@@ -15,7 +15,7 @@ afterAll(async () => {
 });
 
 test("basic select", async () => {
-  const result = await getMoviesStarring(client, {name: "Iron Man"});
+  const result = await getMoviesStarring(client, { name: "Iron Man" });
 
   type result = typeof result;
   tc.assert<

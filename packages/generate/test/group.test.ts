@@ -1,12 +1,12 @@
 import type * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
-import e, {$infer} from "../dbschema/edgeql-js";
+import e, { $infer } from "../dbschema/edgeql-js";
 import {
   setupTests,
   teardownTests,
   TestData,
-  versionGTE
+  versionGTE,
 } from "./setupTeardown";
 
 let client: edgedb.Client;
@@ -14,7 +14,7 @@ let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client, data} = setup);
+  ({ client, data } = setup);
 });
 
 afterAll(async () => {
@@ -23,15 +23,15 @@ afterAll(async () => {
 
 if (versionGTE(2)) {
   test("basic group", async () => {
-    const query = e.group(e.Movie, movie => {
+    const query = e.group(e.Movie, (movie) => {
       const release_year = movie.release_year;
       return {
         release_year: true,
         title: true,
-        characters: {name: true},
+        characters: { name: true },
         by: {
-          release_year
-        }
+          release_year,
+        },
       };
     });
     // query.__element__.__shape__.elements.__element__.__shape__;
@@ -60,11 +60,11 @@ if (versionGTE(2)) {
 
     expect(result).toMatchObject([
       {
-        grouping: ["release_year"]
+        grouping: ["release_year"],
       },
       {
-        grouping: ["release_year"]
-      }
+        grouping: ["release_year"],
+      },
     ]);
     expect(result.length).toEqual(2);
     expect(result[0].elements.length).toEqual(1);
@@ -75,18 +75,18 @@ if (versionGTE(2)) {
 
   test("group nested select", async () => {
     const query = e.group(
-      e.select(e.Movie, m => ({
-        filter: e.op(m.release_year, ">", 2015)
+      e.select(e.Movie, (m) => ({
+        filter: e.op(m.release_year, ">", 2015),
       })),
-      movie => {
+      (movie) => {
         const release_year = movie.release_year;
         return {
           release_year: true,
           title: true,
-          characters: {name: true},
+          characters: { name: true },
           by: {
-            release_year
-          }
+            release_year,
+          },
         };
       }
     );
@@ -114,8 +114,8 @@ if (versionGTE(2)) {
 
     expect(result).toMatchObject([
       {
-        grouping: ["release_year"]
-      }
+        grouping: ["release_year"],
+      },
     ]);
     expect(result.length).toEqual(1);
     expect(result[0].elements.length).toEqual(1);
@@ -125,14 +125,14 @@ if (versionGTE(2)) {
   });
 
   test("multiple keys", async () => {
-    const query = e.group(e.Movie, movie => {
+    const query = e.group(e.Movie, (movie) => {
       const title = movie.title;
       const ry = movie.release_year;
       return {
         by: {
           title,
-          ry
-        }
+          ry,
+        },
       };
     });
 
@@ -157,24 +157,24 @@ if (versionGTE(2)) {
     expect(result.length).toEqual(2);
     expect(result[0].elements.length).toEqual(1);
     expect(
-      result.filter(val => val.key.title === data.civil_war.title)[0]
+      result.filter((val) => val.key.title === data.civil_war.title)[0]
     ).toMatchObject({
-      key: {title: data.civil_war.title, ry: data.civil_war.release_year},
-      grouping: ["title", "ry"]
+      key: { title: data.civil_war.title, ry: data.civil_war.release_year },
+      grouping: ["title", "ry"],
     });
     expect(
-      result.filter(val => val.key.title === data.the_avengers.title)[0]
+      result.filter((val) => val.key.title === data.the_avengers.title)[0]
     ).toMatchObject({
       key: {
         title: data.the_avengers.title,
-        ry: data.the_avengers.release_year
+        ry: data.the_avengers.release_year,
       },
-      grouping: ["title", "ry"]
+      grouping: ["title", "ry"],
     });
   });
 
   test("extracted key with shape", async () => {
-    const query = e.group(e.Movie, movie => {
+    const query = e.group(e.Movie, (movie) => {
       const titleLen = e.len(movie.title);
 
       return {
@@ -184,8 +184,8 @@ if (versionGTE(2)) {
         by: {
           title1: titleLen,
           title2: titleLen,
-          title3: titleLen
-        }
+          title3: titleLen,
+        },
       };
     });
 
@@ -255,7 +255,7 @@ SELECT __scope_0_defaultMovie_groups {
   });
 
   test("grouping set", async () => {
-    const query = e.group(e.Movie, movie => {
+    const query = e.group(e.Movie, (movie) => {
       const title = movie.title;
 
       return {
@@ -263,36 +263,36 @@ SELECT __scope_0_defaultMovie_groups {
           title,
           ...e.group.set({
             year: movie.release_year,
-            rating: movie.rating
-          })
-        }
+            rating: movie.rating,
+          }),
+        },
       };
     });
 
     const result = await query.run(client);
     expect(result.length).toEqual(4);
     expect(result).toMatchObject([
-      {grouping: ["title", "year"]},
-      {grouping: ["title", "year"]},
-      {grouping: ["title", "rating"]},
-      {grouping: ["title", "rating"]}
+      { grouping: ["title", "year"] },
+      { grouping: ["title", "year"] },
+      { grouping: ["title", "rating"] },
+      { grouping: ["title", "rating"] },
     ]);
     expect(result[0].elements.length).toEqual(1);
   });
 
   test("grouping tuples", async () => {
-    const query = e.group(e.Movie, movie => {
+    const query = e.group(e.Movie, (movie) => {
       return {
         by: {
           ...e.group.tuple({
             title: movie.title,
-            len: e.len(movie.title)
+            len: e.len(movie.title),
           }),
           ...e.group.tuple({
             year: movie.release_year,
-            rating: movie.rating
-          })
-        }
+            rating: movie.rating,
+          }),
+        },
       };
     });
 
@@ -304,21 +304,21 @@ SELECT __scope_0_defaultMovie_groups {
       "title",
       "len",
       "year",
-      "rating"
+      "rating",
     ]);
     expect(result.length).toEqual(2);
   });
 
   test("cube", async () => {
-    const query = e.group(e.Movie, movie => {
+    const query = e.group(e.Movie, (movie) => {
       return {
         by: {
           ...e.group.cube({
             title: movie.title,
             len: e.len(movie.title),
-            year: movie.release_year
-          })
-        }
+            year: movie.release_year,
+          }),
+        },
       };
     });
 
@@ -330,15 +330,15 @@ SELECT __scope_0_defaultMovie_groups {
   });
 
   test("rollup", async () => {
-    const query = e.group(e.Movie, movie => {
+    const query = e.group(e.Movie, (movie) => {
       return {
         by: {
           ...e.group.rollup({
             title: movie.title,
             len: e.len(movie.title),
-            year: movie.release_year
-          })
-        }
+            year: movie.release_year,
+          }),
+        },
       };
     });
 
@@ -348,8 +348,8 @@ SELECT __scope_0_defaultMovie_groups {
     );
     expect(
       result
-        .map(r => r.grouping)
-        .every(g => {
+        .map((r) => r.grouping)
+        .every((g) => {
           return (
             (!g[0] || g[0] === "title") &&
             (!g[1] || g[1] === "len") &&
@@ -362,16 +362,16 @@ SELECT __scope_0_defaultMovie_groups {
 
   test("key override error", async () => {
     expect(() =>
-      e.group(e.Movie, movie => {
+      e.group(e.Movie, (movie) => {
         return {
           by: {
             ...e.group.tuple({
-              title: movie.title
+              title: movie.title,
             }),
             ...e.group.tuple({
-              title: e.len(movie.title)
-            })
-          }
+              title: e.len(movie.title),
+            }),
+          },
         };
       })
     ).toThrow();
@@ -381,7 +381,7 @@ SELECT __scope_0_defaultMovie_groups {
   test("key override error", async () => {
     // reused elements should get pulled out into with
     // and ordered topologically
-    const query = e.group(e.Movie, movie => {
+    const query = e.group(e.Movie, (movie) => {
       const len = e.len(movie.title);
       const ccc = e.op(len, "+", 4);
 
@@ -390,8 +390,8 @@ SELECT __scope_0_defaultMovie_groups {
           ccc,
           ccc2: ccc,
           len,
-          len2: len
-        }
+          len2: len,
+        },
       };
     });
     const result = await query.run(client);

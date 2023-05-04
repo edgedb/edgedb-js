@@ -1,15 +1,15 @@
-import type {Executor} from "edgedb/dist/ifaces";
-import type {$expr_PathNode, $expr_TypeIntersection, $pathify} from "./path";
-import type {$expr_Literal} from "./literal";
-import type {$expr_Operator} from "./funcops";
+import type { Executor } from "edgedb/dist/ifaces";
+import type { $expr_PathNode, $expr_TypeIntersection, $pathify } from "./path";
+import type { $expr_Literal } from "./literal";
+import type { $expr_Operator } from "./funcops";
 import type {
   typeutil,
   Cardinality,
-  ExpressionKind
+  ExpressionKind,
 } from "edgedb/dist/reflection/index";
-import {TypeKind} from "edgedb/dist/reflection/index";
-import type {cardutil} from "./cardinality";
-import type {Range} from "edgedb";
+import { TypeKind } from "edgedb/dist/reflection/index";
+import type { cardutil } from "./cardinality";
+import type { Range } from "edgedb";
 
 //////////////////
 // BASETYPE
@@ -103,7 +103,7 @@ export function $toSet<Root extends BaseType, Card extends Cardinality>(
 ): TypeSet<Root, Card> {
   return {
     __element__: root,
-    __cardinality__: card
+    __cardinality__: card,
   };
 }
 
@@ -180,7 +180,7 @@ export type ExpressionMethods<Set extends TypeSet> = {
     ObjectType<
       T["__element__"]["__name__"],
       T["__element__"]["__pointers__"],
-      {id: true}
+      { id: true }
     >
   >;
   assert_single(): assert_single<
@@ -369,7 +369,7 @@ export type computeObjectShape<
   Shape
 > = typeutil.flatten<
   keyof Shape extends never
-    ? {id: string}
+    ? { id: string }
     : {
         [k in keyof Shape]: Shape[k] extends $expr_PolyShapeElement<
           infer PolyType,
@@ -393,7 +393,7 @@ export type pointerToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
   El extends PropertyDesc
     ? propToTsType<El>
     : El extends LinkDesc<any, any, any, any>
-    ? {id: string}
+    ? { id: string }
     : never;
 
 export type PrimitiveType =
@@ -457,11 +457,7 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
       >;
       slice<
         S extends TypeSet<ScalarType<"std::number">> | number,
-        E extends
-          | TypeSet<ScalarType<"std::number">>
-          | number
-          | undefined
-          | null
+        E extends TypeSet<ScalarType<"std::number">> | number | undefined | null
       >(
         start: S,
         end: E
@@ -481,11 +477,7 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
         // >
       >;
       slice<
-        E extends
-          | TypeSet<ScalarType<"std::number">>
-          | number
-          | undefined
-          | null
+        E extends TypeSet<ScalarType<"std::number">> | number | undefined | null
       >(
         start: undefined | null,
         end: E
@@ -582,10 +574,7 @@ export type $expr_Tuple<
 
 export type indexKeys<T> = T extends `${number}` ? T : never;
 
-type addTuplePaths<
-  Items extends BaseType[],
-  ParentCard extends Cardinality
-> = {
+type addTuplePaths<Items extends BaseType[], ParentCard extends Cardinality> = {
   [k in indexKeys<keyof Items>]: Items[k] extends BaseType
     ? $expr_TuplePath<Items[k], ParentCard>
     : never;
@@ -644,11 +633,10 @@ type addNamedTuplePaths<
     : never;
 };
 
-export type NamedTupleLiteralShape = {[k: string]: TypeSet};
-export type NamedTupleShape = {[k: string]: BaseType};
-export interface NamedTupleType<
-  Shape extends NamedTupleShape = NamedTupleShape
-> extends BaseType {
+export type NamedTupleLiteralShape = { [k: string]: TypeSet };
+export type NamedTupleShape = { [k: string]: BaseType };
+export interface NamedTupleType<Shape extends NamedTupleShape = NamedTupleShape>
+  extends BaseType {
   __name__: string;
   __kind__: TypeKind.namedtuple;
   __shape__: Shape;
@@ -727,10 +715,12 @@ export type computeTsType<
   C extends Cardinality
 > = BaseType extends T ? unknown : computeTsTypeCard<BaseTypeToTsType<T>, C>;
 
-export type propToTsType<Prop extends PropertyDesc> =
-  Prop extends PropertyDesc<infer Type, infer Card>
-    ? setToTsType<TypeSet<Type, Card>>
-    : never;
+export type propToTsType<Prop extends PropertyDesc> = Prop extends PropertyDesc<
+  infer Type,
+  infer Card
+>
+  ? setToTsType<TypeSet<Type, Card>>
+  : never;
 
 export type linkToTsType<Link extends LinkDesc> = computeTsType<
   Link["target"],
@@ -790,9 +780,9 @@ export type ParamType =
   | ArrayType<
       | ScalarType
       | TupleType<typeutil.tupleOf<ParamType>>
-      | NamedTupleType<{[k: string]: ParamType}>
+      | NamedTupleType<{ [k: string]: ParamType }>
       | RangeType
     >
   | TupleType<typeutil.tupleOf<ParamType>>
-  | NamedTupleType<{[k: string]: ParamType}>
+  | NamedTupleType<{ [k: string]: ParamType }>
   | RangeType;
