@@ -1,7 +1,7 @@
 import * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
-import type {Movie, schema} from "../dbschema/interfaces";
+import type {Movie, X, Y, Z} from "../dbschema/interfaces";
 
 export type Genre = "Horror" | "Action" | "RomCom" | "Science Fiction";
 
@@ -26,8 +26,12 @@ export interface test_Profile extends BaseObject {
   b?: string | null;
   c?: string | null;
 }
+interface test_Z extends BaseObject {
+  xy?: X | Y | null;
+}
 
 test("check generated interfaces", () => {
   // TODO: re-enable test when 2.0 is stable
   tc.assert<tc.IsExact<Movie, test_Movie>>(true);
+  tc.assert<tc.IsExact<Z, test_Z>>(true);
 });

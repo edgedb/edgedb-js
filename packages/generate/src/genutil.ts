@@ -4,7 +4,7 @@ import type {
   DirBuilder,
   IdentRef
 } from "./builders";
-import type * as introspect from "edgedb/dist/reflection/queries/types";
+import * as introspect from "edgedb/dist/reflection/queries/types";
 import {util} from "edgedb/dist/reflection/index";
 
 export {$} from "edgedb";

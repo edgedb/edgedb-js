@@ -96,10 +96,11 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
     if (type.kind !== "object") {
       continue;
     }
-    if (
-      (type.union_of && type.union_of.length) ||
-      (type.intersection_of && type.intersection_of.length)
-    ) {
+
+    const isUnionType = Boolean(type.union_of?.length);
+    const isIntersectionType = Boolean(type.intersection_of?.length);
+
+    if (isIntersectionType) {
       continue;
     }
 
@@ -115,7 +116,18 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
 
     const getTSType = (pointer: $.introspect.Pointer): string => {
       const targetType = types.get(pointer.target_id);
-      if (pointer.kind === "link") {
+      const isLink = pointer.kind === "link";
+      const isUnion =
+        isLink &&
+        targetType.kind === "object" &&
+        Boolean(targetType.union_of?.length);
+
+      if (isUnion) {
+        return targetType.union_of
+          .map(({id}) => types.get(id))
+          .map(member => getTypeName(member.name))
+          .join(" | ");
+      } else if (isLink) {
         return getTypeName(targetType.name);
       } else {
         return toTSScalarType(
@@ -131,9 +143,13 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
 
     const {module: plainTypeModule} = getPlainTypeModule(type.name);
     const pointers = type.pointers.filter(ptr => ptr.name !== "__type__");
-    plainTypeModule.types.set(name, getTypeName(type.name, true));
+
+    if (!isUnionType) {
+      plainTypeModule.types.set(name, getTypeName(type.name, true));
+    }
+
     plainTypeModule.buf.writeln([
-      t`export interface ${getTypeName(type.name)}${
+      t`${isUnionType ? "" : "export "}interface ${getTypeName(type.name)}${
         type.bases.length
           ? ` extends ${type.bases
               .map(({id}) => {

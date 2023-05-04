@@ -394,3 +394,13 @@ test("insert named tuple as shape", async () => {
     profiles: [{a: "a", b: "b", c: "c"}]
   });
 });
+
+test("type union links", async () => {
+  const query = e.insert(e.Z, {
+    xy: e.insert(e.Y, {
+      c: true
+    })
+  });
+
+  await query.run(client);
+});

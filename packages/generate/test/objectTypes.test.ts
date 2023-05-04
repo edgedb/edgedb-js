@@ -8,6 +8,7 @@ const $Hero = e.default.Hero.__element__;
 const $AnnotationSubject = e.schema.AnnotationSubject.__element__;
 const $Bag = e.default.Bag.__element__;
 const $Simple = e.default.Simple.__element__;
+const $Z = e.default.Z.__element__;
 
 test("property hydration", () => {
   expect(typeof $Hero).toBe("object");
@@ -37,6 +38,20 @@ test("link hydration", () => {
     "default::Villain"
   );
   expect($Hero.__pointers__.villains.properties).toEqual({});
+
+  // type union link
+  expect($Z.__pointers__.xy.__kind__).toEqual("link");
+  expect($Z.__pointers__.xy.target.__name__).toEqual(
+    "default::X | default::Y"
+  );
+  expect(Object.keys($Z.__pointers__.xy.target.__pointers__).sort()).toEqual([
+    "__type__",
+    "a",
+    "id",
+  ]);
+  expect($Z.__pointers__.xy.target.__pointers__.a.target.__name__).toEqual(
+    "std::str"
+  );
 });
 
 const link = $AnnotationSubject.__pointers__.annotations;

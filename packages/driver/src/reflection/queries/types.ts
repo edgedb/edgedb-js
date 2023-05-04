@@ -111,7 +111,7 @@ export const typeMapping = new Map([
   ]
 ]);
 
-export async function _types(
+export async function getTypes(
   cxn: Executor,
   params?: {debug?: boolean}
 ): Promise<Types> {
@@ -133,7 +133,10 @@ export async function _types(
 
     SELECT Type {
       id,
-      name,
+      name :=
+        array_join(array_agg([IS ObjectType].union_of.name), ' | ')
+        IF EXISTS [IS ObjectType].union_of
+        ELSE .name,
       is_abstract := .abstract,
 
       kind := 'object' IF Type IS ObjectType ELSE
@@ -183,7 +186,11 @@ export async function _types(
       ) {
         target := (.subject[is schema::Property].name ?? .subject[is schema::Link].name ?? .subjectexpr)
       } filter .name = 'std::exclusive'),
-      backlinks := (SELECT DETACHED Link FILTER .target = Type) {
+      backlinks := (
+         SELECT DETACHED Link
+         FILTER .target = Type
+           AND NOT EXISTS .source[IS ObjectType].union_of
+        ) {
         card := "AtMostOne"
           IF
           EXISTS (select .constraints filter .name = 'std::exclusive')
@@ -221,12 +228,12 @@ export async function _types(
     ORDER BY .name;
   `;
 
-  const types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
+  const _types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
   // tslint:disable-next-line
-  if (debug) console.log(JSON.stringify(types, null, 2));
+  if (debug) console.log(JSON.stringify(_types, null, 2));
 
   // remap types
-  for (const type of types) {
+  for (const type of _types) {
     if (Array.isArray((type as ObjectType).backlinks)) {
       for (const backlink of (type as ObjectType).backlinks) {
         const isName = backlink.name.match(/\[is (.+)\]/)![1];
@@ -268,7 +275,7 @@ export async function _types(
         }
 
         const rawExclusives: {target: string}[] = type.exclusives as any;
-        const exclusives: typeof type["exclusives"] = [];
+        const exclusives: (typeof type)["exclusives"] = [];
         for (const ex of rawExclusives) {
           const target = ex.target;
           if (target in ptrs) {
@@ -305,10 +312,40 @@ export async function _types(
         break;
     }
   }
-  types.push(numberType);
+  _types.push(numberType);
 
   // Now sort `types` topologically:
-  return topoSort(types);
+  const types = topoSort(_types);
+
+  // For union types, set pointers to be pointers common to all
+  // types in the union
+  for (const [_, type] of types) {
+    if (type.kind === "object" && type.union_of.length) {
+      const unionTypes = type.union_of.map(({id}) => {
+        const t = types.get(id);
+        if (t.kind !== "object") {
+          throw new Error(
+            `type '${t.name}' of union '${type.name}' is not an object type`
+          );
+        }
+        return t;
+      });
+
+      const [first, ...rest] = unionTypes;
+      const restPointerNames = rest.map(
+        t => new Set(t.pointers.map(p => p.name))
+      );
+      for (const pointer of first.pointers) {
+        if (restPointerNames.every(names => names.has(pointer.name))) {
+          (type.pointers as Pointer[]).push(pointer);
+        }
+      }
+      type.backlinks = [];
+      type.backlink_stubs = [];
+    }
+  }
+
+  return types;
 }
 
 export function topoSort(types: Type[]) {
@@ -366,4 +403,4 @@ export function topoSort(types: Type[]) {
   return sorted;
 }
 
-export {_types as types};
+export {getTypes as types};
