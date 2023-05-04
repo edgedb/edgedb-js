@@ -363,7 +363,7 @@ export class RawConnection extends BaseRawConnection {
       database: this.config.connectionParams.database,
     };
     if (this.config.connectionParams.secretKey != null) {
-      params["token"] = this.config.connectionParams.secretKey;
+      params["secret_key"] = this.config.connectionParams.secretKey;
     }
 
     handshake.writeInt16(Object.keys(params).length);
