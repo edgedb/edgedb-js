@@ -1,4 +1,4 @@
-import {utf8Decoder} from "../primitives/buffer";
+import { utf8Decoder } from "../primitives/buffer";
 
 export class EdgeDBError extends Error {
   source?: Error;
@@ -16,9 +16,9 @@ export class EdgeDBError extends Error {
     // @ts-ignore
     super(undefined, options);
     Object.defineProperties(this, {
-      _message: {writable: true, enumerable: false},
-      _query: {writable: true, enumerable: false},
-      _attrs: {writable: true, enumerable: false}
+      _message: { writable: true, enumerable: false },
+      _query: { writable: true, enumerable: false },
+      _attrs: { writable: true, enumerable: false },
     });
     this._message = message ?? "";
   }
@@ -59,7 +59,7 @@ enum ErrorAttr {
   columnEnd = -9,
   utf16ColumnEnd = -8,
   characterStart = -7,
-  characterEnd = -6
+  characterEnd = -6,
 }
 
 function tryParseInt(val: any) {

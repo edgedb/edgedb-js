@@ -1,13 +1,13 @@
 import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql-js";
-import type {getSharedParentPrimitiveVariadic} from "../dbschema/edgeql-js/syntax";
-import {setupTests, tc, teardownTests} from "./setupTeardown";
+import type { getSharedParentPrimitiveVariadic } from "../dbschema/edgeql-js/syntax";
+import { setupTests, tc, teardownTests } from "./setupTeardown";
 
 let client: edgedb.Client;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client} = setup);
+  ({ client } = setup);
 });
 
 afterAll(async () => {
@@ -26,7 +26,7 @@ test("primitive types", () => {
 test("collection types", () => {
   const arrayType = e.array(e.str);
   expect(arrayType.__name__).toEqual("array<std::str>");
-  const named = e.tuple({str: e.str});
+  const named = e.tuple({ str: e.str });
   expect(named.__name__).toEqual("tuple<str: std::str>");
   expect(named.__shape__.str.__name__).toEqual("std::str");
   const unnamed = e.tuple([e.str, e.int64]);
@@ -82,7 +82,7 @@ test("range primitives", async () => {
       range: e.range(range),
       lowerRange: e.range(lowerRange),
       upperRange: e.range(upperRange),
-      dateRange: e.range(dateRange)
+      dateRange: e.range(dateRange),
     })
     .run(client);
 
@@ -102,51 +102,51 @@ test("range primitives", async () => {
     range: range,
     lowerRange: lowerRange,
     upperRange: new edgedb.Range(null, 8, false),
-    dateRange: dateRange
+    dateRange: dateRange,
   });
 
   const getLower = e.range_get_lower(e.Bag.rangeField);
 
   tc.assert<
-    tc.IsExact<typeof getLower["__element__"]["__name__"], "std::number">
+    tc.IsExact<(typeof getLower)["__element__"]["__name__"], "std::number">
   >(true);
   expect(getLower.__element__.__name__).toEqual("std::number");
 
   const q2 = e.params(
     {
       range: e.range(e.int32),
-      rangeArray: e.array(e.range(e.datetime))
+      rangeArray: e.array(e.range(e.datetime)),
     },
-    $ =>
+    ($) =>
       e.select({
         range: $.range,
-        rangeArray: $.rangeArray
+        rangeArray: $.rangeArray,
       })
   );
 
-  const res2 = await q2.run(client, {range, rangeArray: [dateRange]});
+  const res2 = await q2.run(client, { range, rangeArray: [dateRange] });
 
   tc.assert<
     tc.IsExact<
       typeof res2,
-      {range: edgedb.Range<number>; rangeArray: edgedb.Range<Date>[]}
+      { range: edgedb.Range<number>; rangeArray: edgedb.Range<Date>[] }
     >
   >(true);
 
-  expect(res2).toEqual({range: range, rangeArray: [dateRange]});
+  expect(res2).toEqual({ range: range, rangeArray: [dateRange] });
 
   await e
     .insert(e.Bag, {
       stringsMulti: "test",
-      rangeField: range
+      rangeField: range,
     })
     .run(client);
 
   await e
     .update(e.Bag, () => ({
       set: {
-        rangeField: e.range(lowerRange)
-      }
+        rangeField: e.range(lowerRange),
+      },
     }))
     .run(client);
 

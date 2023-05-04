@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import {ProtocolVersion} from "./ifaces";
+import { ProtocolVersion } from "./ifaces";
 
-const idCounter: {[key: string]: number} = {};
+const idCounter: { [key: string]: number } = {};
 
 export function getUniqueId(prefix: string = ""): string {
   if (!idCounter[prefix]) {
@@ -29,7 +29,7 @@ export function getUniqueId(prefix: string = ""): string {
 }
 
 export function sleep(durationMillis: number): Promise<void> {
-  return new Promise(accept => {
+  return new Promise((accept) => {
     setTimeout(() => accept(), durationMillis);
   });
 }

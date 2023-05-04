@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-import {KNOWN_TYPENAMES} from "./consts";
+import { KNOWN_TYPENAMES } from "./consts";
 
-import {ICodec, Codec, uuid, IArgsCodec, CodecKind} from "./ifaces";
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
+import { ICodec, Codec, uuid, IArgsCodec, CodecKind } from "./ifaces";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import {
   InvalidArgumentError,
   MissingArgumentError,
   ProtocolError,
-  QueryArgumentError
+  QueryArgumentError,
 } from "../errors";
 
 export class TupleCodec extends Codec implements ICodec, IArgsCodec {

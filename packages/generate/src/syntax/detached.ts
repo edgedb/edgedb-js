@@ -1,6 +1,6 @@
-import {ExpressionKind} from "edgedb/dist/reflection/index";
-import type {Expression, TypeSet} from "./typesystem";
-import {$expressionify} from "./path";
+import { ExpressionKind } from "edgedb/dist/reflection/index";
+import type { Expression, TypeSet } from "./typesystem";
+import { $expressionify } from "./path";
 
 export function detached<Expr extends TypeSet>(
   expr: Expr
@@ -9,7 +9,7 @@ export function detached<Expr extends TypeSet>(
     __element__: expr.__element__,
     __cardinality__: expr.__cardinality__,
     __expr__: expr,
-    __kind__: ExpressionKind.Detached
+    __kind__: ExpressionKind.Detached,
   }) as any;
 }
 

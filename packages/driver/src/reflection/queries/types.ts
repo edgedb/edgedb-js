@@ -1,7 +1,7 @@
-import {Executor} from "../../ifaces";
-import {Cardinality} from "../enums";
-import type {UUID} from "./queryTypes";
-import {StrictMap} from "../strictMap";
+import { Executor } from "../../ifaces";
+import { Cardinality } from "../enums";
+import type { UUID } from "./queryTypes";
+import { StrictMap } from "../strictMap";
 
 export type Pointer = {
   card: Cardinality;
@@ -38,7 +38,7 @@ export type TypeProperties<T extends TypeKind> = {
 export type ScalarType = TypeProperties<"scalar"> & {
   is_abstract: boolean;
   is_seq: boolean;
-  bases: ReadonlyArray<{id: UUID}>;
+  bases: ReadonlyArray<{ id: UUID }>;
   enum_values: ReadonlyArray<string> | null;
   material_id: UUID | null;
   cast_type?: UUID;
@@ -46,13 +46,13 @@ export type ScalarType = TypeProperties<"scalar"> & {
 
 export type ObjectType = TypeProperties<"object"> & {
   is_abstract: boolean;
-  bases: ReadonlyArray<{id: UUID}>;
-  union_of: ReadonlyArray<{id: UUID}>;
-  intersection_of: ReadonlyArray<{id: UUID}>;
+  bases: ReadonlyArray<{ id: UUID }>;
+  union_of: ReadonlyArray<{ id: UUID }>;
+  intersection_of: ReadonlyArray<{ id: UUID }>;
   pointers: ReadonlyArray<Pointer>;
   backlinks: ReadonlyArray<Backlink>;
   backlink_stubs: ReadonlyArray<Backlink>;
-  exclusives: {[k: string]: Pointer}[];
+  exclusives: { [k: string]: Pointer }[];
 };
 
 export type ArrayType = TypeProperties<"array"> & {
@@ -85,35 +85,35 @@ const numberType: ScalarType = {
   kind: "scalar",
   enum_values: null,
   material_id: null,
-  bases: []
+  bases: [],
 };
 
 export const typeMapping = new Map([
   [
     "00000000-0000-0000-0000-000000000103", // int16
-    numberType
+    numberType,
   ],
   [
     "00000000-0000-0000-0000-000000000104", // int32
-    numberType
+    numberType,
   ],
   [
     "00000000-0000-0000-0000-000000000105", // int64
-    numberType
+    numberType,
   ],
   [
     "00000000-0000-0000-0000-000000000106", // float32
-    numberType
+    numberType,
   ],
   [
     "00000000-0000-0000-0000-000000000107", // float64
-    numberType
-  ]
+    numberType,
+  ],
 ]);
 
 export async function getTypes(
   cxn: Executor,
-  params?: {debug?: boolean}
+  params?: { debug?: boolean }
 ): Promise<Types> {
   const debug = params?.debug === true;
   const version = await cxn.queryRequiredSingle<number>(
@@ -237,10 +237,7 @@ export async function getTypes(
     if (Array.isArray((type as ObjectType).backlinks)) {
       for (const backlink of (type as ObjectType).backlinks) {
         const isName = backlink.name.match(/\[is (.+)\]/)![1];
-        if (
-          isName.split("::").length === 2 &&
-          isName.startsWith("default::")
-        ) {
+        if (isName.split("::").length === 2 && isName.startsWith("default::")) {
           backlink.name = backlink.name.replace(
             /\[is (.+)\]/,
             `[is ${isName.slice(9)}]`
@@ -274,25 +271,25 @@ export async function getTypes(
           ptrs[ptr.name] = ptr;
         }
 
-        const rawExclusives: {target: string}[] = type.exclusives as any;
+        const rawExclusives: { target: string }[] = type.exclusives as any;
         const exclusives: (typeof type)["exclusives"] = [];
         for (const ex of rawExclusives) {
           const target = ex.target;
           if (target in ptrs) {
-            exclusives.push({[ex.target]: ptrs[ex.target]});
+            exclusives.push({ [ex.target]: ptrs[ex.target] });
           }
           if (target[0] === "(" && target[target.length - 1] === ")") {
             const targets = target
               .slice(1, -1)
               .split(" ")
-              .map(t => {
+              .map((t) => {
                 t = t.trim();
                 if (t[0] === ".") t = t.slice(1);
                 if (t[t.length - 1] === ",") t = t.slice(0, -1);
                 return t;
               });
             const newEx: any = {};
-            if (!targets.every(t => t in ptrs)) {
+            if (!targets.every((t) => t in ptrs)) {
               continue;
             }
             for (const t of targets) {
@@ -321,7 +318,7 @@ export async function getTypes(
   // types in the union
   for (const [_, type] of types) {
     if (type.kind === "object" && type.union_of.length) {
-      const unionTypes = type.union_of.map(({id}) => {
+      const unionTypes = type.union_of.map(({ id }) => {
         const t = types.get(id);
         if (t.kind !== "object") {
           throw new Error(
@@ -333,10 +330,10 @@ export async function getTypes(
 
       const [first, ...rest] = unionTypes;
       const restPointerNames = rest.map(
-        t => new Set(t.pointers.map(p => p.name))
+        (t) => new Set(t.pointers.map((p) => p.name))
       );
       for (const pointer of first.pointers) {
-        if (restPointerNames.every(names => names.has(pointer.name))) {
+        if (restPointerNames.every((names) => names.has(pointer.name))) {
           (type.pointers as Pointer[]).push(pointer);
         }
       }
@@ -361,7 +358,7 @@ export function topoSort(types: Type[]) {
       continue;
     }
 
-    for (const {id: base} of type.bases) {
+    for (const { id: base } of type.bases) {
       if (!graph.has(base)) {
         throw new Error(`reference to an unknown object type: ${base}`);
       }
@@ -403,4 +400,4 @@ export function topoSort(types: Type[]) {
   return sorted;
 }
 
-export {getTypes as types};
+export { getTypes as types };

@@ -1,20 +1,20 @@
 import {
   Duration,
   DisabledCapabilityError,
-  InvalidReferenceError
+  InvalidReferenceError,
 } from "../src/index.node";
-import {getClient, getEdgeDBVersion} from "./testbase";
+import { getClient, getEdgeDBVersion } from "./testbase";
 
 if (getEdgeDBVersion().major >= 2) {
   test("with module", async () => {
-    const client = getClient({concurrency: 1});
+    const client = getClient({ concurrency: 1 });
 
     await expect(client.query(`select get_version()`)).rejects.toThrowError(
       InvalidReferenceError
     );
 
     await expect(
-      client.withModuleAliases({module: "sys"}).query(`select get_version()`)
+      client.withModuleAliases({ module: "sys" }).query(`select get_version()`)
     ).resolves.not.toThrow();
 
     // make sure session state was reset
@@ -26,7 +26,7 @@ if (getEdgeDBVersion().major >= 2) {
   });
 
   test("withGlobals", async () => {
-    const client = getClient({concurrency: 1});
+    const client = getClient({ concurrency: 1 });
 
     await client.execute(`
       create global userId -> uuid;
@@ -47,10 +47,10 @@ if (getEdgeDBVersion().major >= 2) {
           userId := global userId,
           currentTags := global currentTags,
         }`)
-      ).toEqual({userId: null, currentTags: null});
+      ).toEqual({ userId: null, currentTags: null });
 
       const clientWithUserId = client.withGlobals({
-        userId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        userId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       });
 
       expect(
@@ -60,7 +60,7 @@ if (getEdgeDBVersion().major >= 2) {
         }`)
       ).toEqual({
         userId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-        currentTags: null
+        currentTags: null,
       });
 
       // make sure session state is reset
@@ -69,20 +69,20 @@ if (getEdgeDBVersion().major >= 2) {
           userId := global userId,
           currentTags := global currentTags,
         }`)
-      ).toEqual({userId: null, currentTags: null});
+      ).toEqual({ userId: null, currentTags: null });
 
       // check session state gets merged
       expect(
         await clientWithUserId.withGlobals({
           userId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-          currentTags: ["a", "b", "c"]
+          currentTags: ["a", "b", "c"],
         }).querySingle(`select {
           userId := global userId,
           currentTags := global currentTags,
         }`)
       ).toEqual({
         userId: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-        currentTags: ["a", "b", "c"]
+        currentTags: ["a", "b", "c"],
       });
 
       expect(
@@ -90,31 +90,31 @@ if (getEdgeDBVersion().major >= 2) {
       ).toEqual(["default value", "default value"]);
       expect(
         await client
-          .withGlobals({reqTest: "abc", defaultTest: "def"})
+          .withGlobals({ reqTest: "abc", defaultTest: "def" })
           .querySingle(`select (global reqTest, global defaultTest)`)
       ).toEqual(["abc", "def"]);
       expect(
         await client
           .withGlobals({
-            defaultTest: null
+            defaultTest: null,
           })
           .querySingle(`select global defaultTest`)
       ).toEqual(null);
 
       await expect(
-        client.withGlobals({unknownGlobal: 123}).query("select 1")
+        client.withGlobals({ unknownGlobal: 123 }).query("select 1")
       ).rejects.toThrowError(/invalid global 'default::unknownGlobal'/);
 
       expect(
         client
-          .withGlobals({test: "abc"})
+          .withGlobals({ test: "abc" })
           .querySingle(`select global custom::test`)
       ).rejects.toThrowError(/invalid global 'default::test'/);
 
       expect(
         await client
-          .withModuleAliases({module: "custom"})
-          .withGlobals({test: "abc"})
+          .withModuleAliases({ module: "custom" })
+          .withGlobals({ test: "abc" })
           .querySingle(`select global custom::test`)
       ).toEqual("abc");
     } finally {
@@ -129,7 +129,7 @@ if (getEdgeDBVersion().major >= 2) {
   }, 10000);
 
   test("withConfig", async () => {
-    const client = getClient({concurrency: 1});
+    const client = getClient({ concurrency: 1 });
 
     expect(
       (
@@ -143,7 +143,7 @@ if (getEdgeDBVersion().major >= 2) {
       (
         await client
           .withConfig({
-            query_execution_timeout: Duration.from("PT30S")
+            query_execution_timeout: Duration.from("PT30S"),
           })
           .queryRequiredSingle<Duration>(
             `select assert_single(cfg::Config.query_execution_timeout)`
@@ -202,14 +202,14 @@ if (getEdgeDBVersion().major >= 2) {
 
     await expect(
       client
-        .withGlobals({userId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+        .withGlobals({ userId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" })
         .query("select 1")
     ).rejects.toThrowError(
       /setting session state is not supported in this version of EdgeDB/
     );
 
     await expect(
-      client.withModuleAliases({module: "sys"}).query("select 1")
+      client.withModuleAliases({ module: "sys" }).query("select 1")
     ).rejects.toThrowError(
       /setting session state is not supported in this version of EdgeDB/
     );
@@ -217,7 +217,7 @@ if (getEdgeDBVersion().major >= 2) {
     await expect(
       client
         .withConfig({
-          query_execution_timeout: Duration.from("PT30S")
+          query_execution_timeout: Duration.from("PT30S"),
         })
         .query("select 1")
     ).rejects.toThrowError(

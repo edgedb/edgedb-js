@@ -1,7 +1,7 @@
 import * as $ from "../src/syntax/reflection";
 import e from "../dbschema/edgeql-js/index";
-import {$PathNode} from "../dbschema/edgeql-js/syntax";
-import {tc} from "./setupTeardown";
+import { $PathNode } from "../dbschema/edgeql-js/syntax";
+import { tc } from "./setupTeardown";
 
 test("path structure", () => {
   const Hero = e.default.Hero;
@@ -87,20 +87,20 @@ test("type intersection on path node", () => {
   const hero = person.is(e.Hero);
   tc.assert<
     tc.IsExact<
-      typeof hero["__element__"]["__pointers__"],
-      typeof $Hero["__pointers__"]
+      (typeof hero)["__element__"]["__pointers__"],
+      (typeof $Hero)["__pointers__"]
     >
   >(true);
   tc.assert<
     tc.IsExact<
-      typeof hero["__element__"]["__name__"],
-      typeof $Hero["__name__"]
+      (typeof hero)["__element__"]["__name__"],
+      (typeof $Hero)["__name__"]
     >
   >(true);
-  tc.assert<tc.IsExact<typeof hero["__element__"]["__shape__"], {id: true}>>(
-    true
-  );
-  expect(hero.__element__.__shape__).toEqual({id: true});
+  tc.assert<
+    tc.IsExact<(typeof hero)["__element__"]["__shape__"], { id: true }>
+  >(true);
+  expect(hero.__element__.__shape__).toEqual({ id: true });
   expect(hero.__element__.__name__).toEqual("default::Hero");
   expect(hero.__element__.__kind__).toEqual($.TypeKind.object);
   expect(hero.__kind__).toEqual($.ExpressionKind.TypeIntersection);
@@ -108,13 +108,11 @@ test("type intersection on path node", () => {
   expect(hero.__expr__).toBe(person);
   // check that pathify works
   expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
-  expect(hero.toEdgeQL()).toEqual(
-    `DETACHED default::Person[IS default::Hero]`
-  );
+  expect(hero.toEdgeQL()).toEqual(`DETACHED default::Person[IS default::Hero]`);
 });
 
 test("type intersection on select", () => {
-  const q2 = e.select(e.Person, () => ({id: true, name: true, limit: 5}));
+  const q2 = e.select(e.Person, () => ({ id: true, name: true, limit: 5 }));
   const hero = q2.is(e.Hero);
   expect(hero.__element__.__name__).toEqual("default::Hero");
   expect(hero.__element__.__kind__).toEqual($.TypeKind.object);
@@ -128,7 +126,7 @@ test("type intersection on select", () => {
 test("assert_single", () => {
   const singleHero = e.Hero.assert_single();
   tc.assert<
-    tc.IsExact<typeof singleHero["__cardinality__"], $.Cardinality.AtMostOne>
+    tc.IsExact<(typeof singleHero)["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);
   expect(singleHero.__cardinality__).toEqual($.Cardinality.AtMostOne);
 });

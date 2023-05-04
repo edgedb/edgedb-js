@@ -2,7 +2,7 @@ import {
   Cardinality,
   ExpressionKind,
   typeutil,
-  TypeKind
+  TypeKind,
 } from "edgedb/dist/reflection/index";
 import type {
   Expression,
@@ -16,17 +16,17 @@ import type {
   stripSet,
   TypeSet,
   ObjectType,
-  NamedTupleType
+  NamedTupleType,
 } from "./typesystem";
-import type {pointerToAssignmentExpression} from "./casting";
-import {$expressionify, $getScopedExpr} from "./path";
-import {cast} from "./cast";
-import {set} from "./set";
-import {literal} from "./literal";
-import {$getTypeByName} from "./literal";
-import type {$expr_PathNode} from "./path";
-import type {$Object} from "./modules/std";
-import type {scalarLiterals} from "./castMaps";
+import type { pointerToAssignmentExpression } from "./casting";
+import { $expressionify, $getScopedExpr } from "./path";
+import { cast } from "./cast";
+import { set } from "./set";
+import { literal } from "./literal";
+import { $getTypeByName } from "./literal";
+import type { $expr_PathNode } from "./path";
+import type { $Object } from "./modules/std";
+import type { scalarLiterals } from "./castMaps";
 
 export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
   T["cardinality"] extends
@@ -55,7 +55,7 @@ export type RawInsertShape<El extends ObjectType> =
                 ? undefined | null
                 : never)
             | (Shape[k]["hasDefault"] extends true ? undefined : never);
-        }> & {[k in `@${string}`]: TypeSet | scalarLiterals}
+        }> & { [k in `@${string}`]: TypeSet | scalarLiterals }
       : never
     : never;
 
@@ -92,7 +92,7 @@ export type $expr_Insert<
     //   __expr__: $expr_PathNode;
     //   __shape__: InsertShape<El>;
     // }>,
-    {on: null}
+    { on: null }
   >;
   unlessConflict<Conflict extends UnlessConflict>(
     conflictGetter: (scope: $scopify<El>) => Conflict
@@ -135,12 +135,12 @@ function unlessConflict(
     __kind__: ExpressionKind.InsertUnlessConflict,
     __element__: this.__element__,
     __cardinality__: Cardinality.AtMostOne,
-    __expr__: this
+    __expr__: this,
     // __conflict__: Conflict;
   };
 
   if (!conflictGetter) {
-    expr.__conflict__ = {on: null};
+    expr.__conflict__ = { on: null };
     return $expressionify(expr);
   } else {
     const scopedExpr = $getScopedExpr(this.__expr__);
@@ -165,17 +165,17 @@ export function $insertify(
 
 export function $normaliseInsertShape(
   root: ObjectTypeSet,
-  shape: {[key: string]: any},
+  shape: { [key: string]: any },
   isUpdate: boolean = false
-): {[key: string]: TypeSet | {"+=": TypeSet} | {"-=": TypeSet}} {
+): { [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet } } {
   const newShape: {
-    [key: string]: TypeSet | {"+=": TypeSet} | {"-=": TypeSet};
+    [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet };
   } = {};
 
   const _shape: [string, any][] =
     shape.__element__?.__kind__ === TypeKind.namedtuple
       ? Object.keys((shape.__element__ as NamedTupleType).__shape__).map(
-          key => [key, shape[key]]
+          (key) => [key, shape[key]]
         )
       : Object.entries(shape);
   for (const [key, _val] of _shape) {
@@ -263,10 +263,10 @@ export function $normaliseInsertShape(
         : isMulti && Array.isArray(val)
         ? val.length === 0
           ? cast(pointer.target, null)
-          : set(...val.map(v => (literal as any)(pointer.target, v)))
+          : set(...val.map((v) => (literal as any)(pointer.target, v)))
         : (literal as any)(pointer.target, val);
     newShape[key] = setModify
-      ? ({[setModify]: wrappedVal} as any)
+      ? ({ [setModify]: wrappedVal } as any)
       : wrappedVal;
   }
   return newShape;
@@ -291,7 +291,7 @@ export function insert<Root extends $expr_PathNode>(
     __element__: root.__element__,
     __cardinality__: Cardinality.One,
     __expr__: root,
-    __shape__: $normaliseInsertShape(root, shape)
+    __shape__: $normaliseInsertShape(root, shape),
   };
   (expr as any).unlessConflict = unlessConflict.bind(expr);
   return $expressionify($insertify(expr)) as any;

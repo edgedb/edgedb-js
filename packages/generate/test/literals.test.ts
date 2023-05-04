@@ -1,7 +1,7 @@
 import * as edgedb from "edgedb";
-import {TypeKind} from "edgedb/dist/reflection";
+import { TypeKind } from "edgedb/dist/reflection";
 import e from "../dbschema/edgeql-js";
-import {setupTests, testIfVersionGTE} from "./setupTeardown";
+import { setupTests, testIfVersionGTE } from "./setupTeardown";
 
 test("literals", () => {
   const duration = new edgedb.Duration(0, 0, 0, 0, 5, 6, 7, 8, 9, 10);
@@ -45,7 +45,7 @@ test("literals", () => {
 
   expect(e.std.json("asdf").toEdgeQL()).toEqual(`to_json($$"asdf"$$)`);
   expect(
-    e.std.json({a: 123, b: "some string", c: [true, false]}).toEdgeQL()
+    e.std.json({ a: 123, b: "some string", c: [true, false] }).toEdgeQL()
   ).toEqual('to_json($${"a":123,"b":"some string","c":[true,false]}$$)');
 
   expect(e.std.str(`asdfaf`).toEdgeQL()).toEqual(`"asdfaf"`);
@@ -75,8 +75,8 @@ test("literals", () => {
 test("collection type literals", () => {
   const literalArray = e.literal(e.array(e.str), ["adsf"]);
   expect(literalArray.toEdgeQL()).toEqual(`["adsf"]`);
-  const literalNamedTuple = e.literal(e.tuple({str: e.str}), {
-    str: "asdf"
+  const literalNamedTuple = e.literal(e.tuple({ str: e.str }), {
+    str: "asdf",
   });
   expect(literalNamedTuple.toEdgeQL()).toEqual(`( str := "asdf" )`);
   const literalTuple = e.literal(e.tuple([e.str, e.int64]), ["asdf", 1234]);
@@ -101,7 +101,7 @@ test("enum literals", () => {
 });
 
 testIfVersionGTE(2)("constructing with strings", async () => {
-  const {client} = await setupTests();
+  const { client } = await setupTests();
 
   const dateString = new Date().toISOString();
   expect(

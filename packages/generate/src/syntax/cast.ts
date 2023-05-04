@@ -1,13 +1,13 @@
-import {ExpressionKind, Cardinality} from "edgedb/dist/reflection/index";
+import { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index";
 import type {
   Expression,
   BaseType,
   TypeSet,
-  ObjectTypeExpression
+  ObjectTypeExpression,
 } from "./typesystem";
-import {$expressionify} from "./path";
-import type {orScalarLiteral} from "./castMaps";
-import {literalToTypeSet} from "./castMaps";
+import { $expressionify } from "./path";
+import type { orScalarLiteral } from "./castMaps";
+import { literalToTypeSet } from "./castMaps";
 
 export function cast<Target extends BaseType | ObjectTypeExpression>(
   target: Target,
@@ -38,7 +38,7 @@ export function cast(target: BaseType, expr: any) {
     __cardinality__:
       cleanedExpr === null ? Cardinality.Empty : cleanedExpr.__cardinality__,
     __expr__: cleanedExpr,
-    __kind__: ExpressionKind.Cast
+    __kind__: ExpressionKind.Cast,
   }) as any;
 }
 

@@ -1,16 +1,16 @@
 import superjson from "superjson";
-import type {Client} from "edgedb";
+import type { Client } from "edgedb";
 import e from "../dbschema/edgeql-js";
 import * as $ from "../src/syntax/reflection";
 
-import {TestData, setupTests, teardownTests} from "./setupTeardown";
+import { TestData, setupTests, teardownTests } from "./setupTeardown";
 
 let client: Client;
 let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client, data} = setup);
+  ({ client, data } = setup);
 });
 
 afterAll(async () => {
@@ -27,7 +27,7 @@ function checkOperatorExpr<T extends $.$expr_Operator>(
 ) {
   expect(expr.__name__).toEqual(name);
   expect(superjson.stringify(expr.__args__)).toEqual(
-    superjson.stringify(args.filter(arg => arg !== undefined))
+    superjson.stringify(args.filter((arg) => arg !== undefined))
   );
   expect(expr.__element__).toEqual(returnType);
   expect(expr.__cardinality__).toEqual(cardinality);
@@ -157,7 +157,7 @@ test("if else op", () => {
     [
       e.str("this"),
       e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
-      e.set(e.str("that"), e.str("other"))
+      e.set(e.str("that"), e.str("other")),
     ],
     e.str,
     $.Cardinality.AtLeastOne,
@@ -176,7 +176,7 @@ test("if else op", () => {
     [
       e.cast(e.str, e.set()),
       e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
-      e.set(e.str("that"), e.str("other"))
+      e.set(e.str("that"), e.str("other")),
     ],
     e.str,
     $.Cardinality.Many,
@@ -195,7 +195,7 @@ test("if else op", () => {
     [
       e.str("this"),
       e.op(42, "=", e.literal(e.float32, 42)),
-      e.cast(e.str, e.set())
+      e.cast(e.str, e.set()),
     ],
     e.str,
     $.Cardinality.AtMostOne,
@@ -204,11 +204,11 @@ test("if else op", () => {
 });
 
 test("non-literal args", async () => {
-  const loki = e.select(e.Hero, hero => ({
-    filter: e.op(hero.name, "=", "Loki")
+  const loki = e.select(e.Hero, (hero) => ({
+    filter: e.op(hero.name, "=", "Loki"),
   }));
-  const thanos = e.select(e.Villain, villain => ({
-    filter: e.op(villain.name, "=", "Thanos")
+  const thanos = e.select(e.Villain, (villain) => ({
+    filter: e.op(villain.name, "=", "Thanos"),
   }));
 
   const expr = e.op(loki, "??", thanos);

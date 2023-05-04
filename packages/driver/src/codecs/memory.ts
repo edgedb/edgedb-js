@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
-import {ICodec, ScalarCodec} from "./ifaces";
-import {ConfigMemory} from "../datatypes/memory";
-import {InvalidArgumentError} from "../errors";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { ICodec, ScalarCodec } from "./ifaces";
+import { ConfigMemory } from "../datatypes/memory";
+import { InvalidArgumentError } from "../errors";
 
 export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
   tsType = "ConfigMemory";

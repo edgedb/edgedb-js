@@ -1,4 +1,4 @@
-import {shutdown} from "./testUtil";
+import { shutdown } from "./testUtil";
 
 export default async () => {
   // tslint:disable-next-line

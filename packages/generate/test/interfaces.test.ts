@@ -1,7 +1,7 @@
 import * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
-import type {Movie, X, Y, Z} from "../dbschema/interfaces";
+import type { Movie, X, Y, Z } from "../dbschema/interfaces";
 
 export type Genre = "Horror" | "Action" | "RomCom" | "Science Fiction";
 

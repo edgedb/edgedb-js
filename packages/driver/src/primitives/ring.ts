@@ -25,7 +25,7 @@ export class RingBuffer<T> {
   private writer: number;
   private capacity: number;
 
-  constructor({capacity}: {capacity: number}) {
+  constructor({ capacity }: { capacity: number }) {
     if (capacity <= 0 || capacity >= 0xffffffff) {
       throw new RingBufferError("invalid capacity");
     }

@@ -21,14 +21,14 @@ import {
   Credentials,
   getCredentialsPath,
   readCredentialsFile,
-  validateCredentials
+  validateCredentials,
 } from "./credentials";
-import {getEnv} from "./adapter.shared.node";
-import {Duration, parseHumanDurationString} from "./datatypes/datetime";
-import {checkValidEdgeDBDuration} from "./codecs/datetime";
-import {InterfaceError} from "./errors";
-import {decodeB64, utf8Decoder, utf8Encoder} from "./primitives/buffer";
-import {crcHqx} from "./primitives/crcHqx";
+import { getEnv } from "./adapter.shared.node";
+import { Duration, parseHumanDurationString } from "./datatypes/datetime";
+import { checkValidEdgeDBDuration } from "./codecs/datetime";
+import { InterfaceError } from "./errors";
+import { decodeB64, utf8Decoder, utf8Encoder } from "./primitives/buffer";
+import { crcHqx } from "./primitives/crcHqx";
 
 const DOMAIN_NAME_MAX_LEN = 63;
 
@@ -38,10 +38,10 @@ export const validTlsSecurityValues = [
   "insecure",
   "no_host_verification",
   "strict",
-  "default"
+  "default",
 ] as const;
 
-export type TlsSecurity = typeof validTlsSecurityValues[number];
+export type TlsSecurity = (typeof validTlsSecurityValues)[number];
 
 interface PartiallyNormalizedConfig {
   connectionParams: ResolvedConnectConfig;
@@ -98,7 +98,7 @@ export function getConnectArgumentsParser(
     return {
       ...(await parseConnectDsnAndArgs(opts, utils)),
       connectTimeout: opts.timeout,
-      logging: opts.logging ?? true
+      logging: opts.logging ?? true,
     };
   };
 }
@@ -146,7 +146,7 @@ export class ResolvedConnectConfig {
   _waitUntilAvailable: number | null = null;
   _waitUntilAvailableSource: string | null = null;
 
-  serverSettings: {[key: string]: string} = {};
+  serverSettings: { [key: string]: string } = {};
 
   constructor() {
     this.setHost = this.setHost.bind(this);
@@ -243,7 +243,7 @@ export class ResolvedConnectConfig {
     source: string,
     readFile: (fn: string) => Promise<string>
   ): Promise<boolean> {
-    return this._setParamAsync("tlsCAData", caFile, source, caFilePath =>
+    return this._setParamAsync("tlsCAData", caFile, source, (caFilePath) =>
       readFile(caFilePath)
     );
   }
@@ -258,16 +258,14 @@ export class ResolvedConnectConfig {
           throw new InterfaceError(
             `invalid 'tlsSecurity' value: '${_tlsSecurity}', ` +
               `must be one of ${validTlsSecurityValues
-                .map(val => `'${val}'`)
+                .map((val) => `'${val}'`)
                 .join(", ")}`
           );
         }
         const clientSecurity = getEnv("EDGEDB_CLIENT_SECURITY");
         if (clientSecurity !== undefined) {
           if (
-            !["default", "insecure_dev_mode", "strict"].includes(
-              clientSecurity
-            )
+            !["default", "insecure_dev_mode", "strict"].includes(clientSecurity)
           ) {
             throw new InterfaceError(
               `invalid EDGEDB_CLIENT_SECURITY value: '${clientSecurity}', ` +
@@ -310,10 +308,10 @@ export class ResolvedConnectConfig {
     );
   }
 
-  addServerSettings(settings: {[key: string]: string}): void {
+  addServerSettings(settings: { [key: string]: string }): void {
     this.serverSettings = {
       ...settings,
-      ...this.serverSettings
+      ...this.serverSettings,
     };
   }
 
@@ -356,7 +354,7 @@ export class ResolvedConnectConfig {
   explainConfig(): string {
     const output: string[] = [
       `Parameter          Value                                    Source`,
-      `---------          -----                                    ------`
+      `---------          -----                                    ------`,
     ];
 
     const outputLine = (param: string, val: any, rawVal: any, source: any) => {
@@ -375,12 +373,7 @@ export class ResolvedConnectConfig {
 
     outputLine("host", this.address[0], this._host, this._hostSource);
     outputLine("port", this.address[1], this._port, this._portSource);
-    outputLine(
-      "database",
-      this.database,
-      this._database,
-      this._databaseSource
-    );
+    outputLine("database", this.database, this._database, this._databaseSource);
     outputLine("user", this.user, this._user, this._userSource);
     outputLine(
       "password",
@@ -495,7 +488,7 @@ async function parseConnectDsnAndArgs(
       : [config.dsn, config.instanceName];
 
   // resolve explicit config options
-  let {hasCompoundOptions} = await resolveConfigOptions(
+  let { hasCompoundOptions } = await resolveConfigOptions(
     resolvedConfig,
     {
       dsn,
@@ -512,7 +505,7 @@ async function parseConnectDsnAndArgs(
       tlsCAFile: config.tlsCAFile,
       tlsSecurity: config.tlsSecurity,
       serverSettings: config.serverSettings,
-      waitUntilAvailable: config.waitUntilAvailable
+      waitUntilAvailable: config.waitUntilAvailable,
     },
     {
       dsn: `'dsnOrInstanceName' option (parsed as dsn)`,
@@ -532,7 +525,7 @@ async function parseConnectDsnAndArgs(
       tlsCAFile: `'tlsCAFile' option`,
       tlsSecurity: `'tlsSecurity' option`,
       serverSettings: `'serverSettings' option`,
-      waitUntilAvailable: `'waitUntilAvailable' option`
+      waitUntilAvailable: `'waitUntilAvailable' option`,
     },
     `Cannot have more than one of the following connection options: ` +
       `'dsn', 'instanceName', 'credentials', 'credentialsFile' or 'host'/'port'`,
@@ -552,7 +545,7 @@ async function parseConnectDsnAndArgs(
       port = undefined;
     }
 
-    ({hasCompoundOptions, anyOptionsUsed: fromEnv} =
+    ({ hasCompoundOptions, anyOptionsUsed: fromEnv } =
       await resolveConfigOptions(
         resolvedConfig,
         {
@@ -570,7 +563,7 @@ async function parseConnectDsnAndArgs(
           tlsCA: getEnv("EDGEDB_TLS_CA"),
           tlsCAFile: getEnv("EDGEDB_TLS_CA_FILE"),
           tlsSecurity: getEnv("EDGEDB_CLIENT_TLS_SECURITY"),
-          waitUntilAvailable: getEnv("EDGEDB_WAIT_UNTIL_AVAILABLE")
+          waitUntilAvailable: getEnv("EDGEDB_WAIT_UNTIL_AVAILABLE"),
         },
         {
           dsn: `'EDGEDB_DSN' environment variable`,
@@ -587,7 +580,7 @@ async function parseConnectDsnAndArgs(
           tlsCA: `'EDGEDB_TLS_CA' environment variable`,
           tlsCAFile: `'EDGEDB_TLS_CA_FILE' environment variable`,
           tlsSecurity: `'EDGEDB_CLIENT_TLS_SECURITY' environment variable`,
-          waitUntilAvailable: `'EDGEDB_WAIT_UNTIL_AVAILABLE' environment variable`
+          waitUntilAvailable: `'EDGEDB_WAIT_UNTIL_AVAILABLE' environment variable`,
         },
         `Cannot have more than one of the following connection environment variables: ` +
           `'EDGEDB_DSN', 'EDGEDB_INSTANCE', 'EDGEDB_CREDENTIALS', ` +
@@ -617,20 +610,20 @@ async function parseConnectDsnAndArgs(
     const stashDir = await serverUtils.findStashPath(projectDir);
     const instName = await serverUtils
       .readFileUtf8(stashDir, "instance-name")
-      .then(name => name.trim())
+      .then((name) => name.trim())
       .catch(() => null);
 
     if (instName !== null) {
       const cloudProfile = await serverUtils
         .readFileUtf8(stashDir, "cloud-profile")
-        .then(name => name.trim())
+        .then((name) => name.trim())
         .catch(() => undefined);
       await resolveConfigOptions(
         resolvedConfig,
-        {instanceName: instName, cloudProfile},
+        { instanceName: instName, cloudProfile },
         {
           instanceName: `project linked instance ('${instName}')`,
-          cloudProfile: `project defined cloud instance ('${cloudProfile}')`
+          cloudProfile: `project defined cloud instance ('${cloudProfile}')`,
         },
         "",
         serverUtils
@@ -650,7 +643,7 @@ async function parseConnectDsnAndArgs(
     connectionParams: resolvedConfig,
     inProject: async () => (await serverUtils?.findProjectDir(false)) != null,
     fromEnv,
-    fromProject
+    fromProject,
   };
 }
 
@@ -669,7 +662,7 @@ interface ResolveConfigOptionsConfig {
   tlsCA: string;
   tlsCAFile: string;
   tlsSecurity: string;
-  serverSettings: {[key: string]: string};
+  serverSettings: { [key: string]: string };
   waitUntilAvailable: number | string | Duration;
 }
 
@@ -678,10 +671,10 @@ async function resolveConfigOptions<
 >(
   resolvedConfig: ResolvedConnectConfig,
   config: Config,
-  sources: {[key in keyof Config]: string},
+  sources: { [key in keyof Config]: string },
   compoundParamsError: string,
   serverUtils: ServerUtils | null
-): Promise<{hasCompoundOptions: boolean; anyOptionsUsed: boolean}> {
+): Promise<{ hasCompoundOptions: boolean; anyOptionsUsed: boolean }> {
   let anyOptionsUsed = false;
 
   const readFile =
@@ -708,10 +701,8 @@ async function resolveConfigOptions<
     resolvedConfig.setPassword(config.password ?? null, sources.password!) ||
     anyOptionsUsed;
   anyOptionsUsed =
-    resolvedConfig.setSecretKey(
-      config.secretKey ?? null,
-      sources.secretKey!
-    ) || anyOptionsUsed;
+    resolvedConfig.setSecretKey(config.secretKey ?? null, sources.secretKey!) ||
+    anyOptionsUsed;
   anyOptionsUsed =
     resolvedConfig.setCloudProfile(
       config.cloudProfile ?? null,
@@ -743,8 +734,8 @@ async function resolveConfigOptions<
     config.instanceName,
     config.credentials,
     config.credentialsFile,
-    config.host ?? config.port
-  ].filter(param => param !== undefined).length;
+    config.host ?? config.port,
+  ].filter((param) => param !== undefined).length;
 
   if (compoundParamsCount > 1) {
     throw new InterfaceError(compoundParamsError);
@@ -799,7 +790,11 @@ async function resolveConfigOptions<
             );
             source = sources.instanceName!;
           } else {
-            if (!/^([A-Za-z0-9](-?[A-Za-z0-9])*)\/([A-Za-z0-9](-?[A-Za-z0-9])*)$/.test(config.instanceName!)) {
+            if (
+              !/^([A-Za-z0-9](-?[A-Za-z0-9])*)\/([A-Za-z0-9](-?[A-Za-z0-9])*)$/.test(
+                config.instanceName!
+              )
+            ) {
               throw new InterfaceError(
                 `invalid DSN or instance name: '${config.instanceName}'`
               );
@@ -810,7 +805,7 @@ async function resolveConfigOptions<
               sources.instanceName!,
               serverUtils
             );
-            return {hasCompoundOptions: true, anyOptionsUsed: true};
+            return { hasCompoundOptions: true, anyOptionsUsed: true };
           }
         } else {
           source = sources.credentialsFile!;
@@ -826,10 +821,10 @@ async function resolveConfigOptions<
       resolvedConfig.setTlsCAData(creds.tlsCAData ?? null, source);
       resolvedConfig.setTlsSecurity(creds.tlsSecurity ?? null, source);
     }
-    return {hasCompoundOptions: true, anyOptionsUsed: true};
+    return { hasCompoundOptions: true, anyOptionsUsed: true };
   }
 
-  return {hasCompoundOptions: false, anyOptionsUsed};
+  return { hasCompoundOptions: false, anyOptionsUsed };
 }
 
 async function parseDSNIntoConfig(
@@ -886,15 +881,15 @@ async function parseDSNIntoConfig(
     value: string | null,
     currentValue: any,
     setter: (value: string | null, source: string) => any | Promise<unknown>,
-    formatter: (val: string) => string = val => val
+    formatter: (val: string) => string = (val) => val
   ): Promise<void> {
     if (
       [
         value || null,
         searchParams.get(paramName),
         searchParams.get(`${paramName}_env`),
-        searchParams.get(`${paramName}_file`)
-      ].filter(param => param != null).length > 1
+        searchParams.get(`${paramName}_file`),
+      ].filter((param) => param != null).length > 1
     ) {
       throw new InterfaceError(
         `invalid DSN: more than one of ${

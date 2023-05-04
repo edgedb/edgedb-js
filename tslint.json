@@ -2,9 +2,7 @@
   "extends": ["tslint:recommended", "tslint-config-prettier"],
   "rulesDirectory": ["tslint-plugin-prettier"],
   "rules": {
-    "max-line-length": {
-      "options": [79]
-    },
+    "max-line-length": false,
     "new-parens": true,
     "no-arg": true,
     "curly": [true, "ignore-same-line"],

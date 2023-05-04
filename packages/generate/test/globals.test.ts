@@ -1,14 +1,14 @@
 import type * as edgedb from "edgedb";
-import {$} from "edgedb";
+import { $ } from "edgedb";
 import * as tc from "conditional-type-checks";
 
-import e, {$infer} from "../dbschema/edgeql-js";
+import e, { $infer } from "../dbschema/edgeql-js";
 
 import {
   setupTests,
   teardownTests,
   TestData,
-  testIfVersionGTE
+  testIfVersionGTE,
 } from "./setupTeardown";
 
 let client: edgedb.Client;
@@ -16,7 +16,7 @@ let data: TestData;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client, data} = setup);
+  ({ client, data } = setup);
 });
 
 afterAll(async () => {
@@ -58,9 +58,7 @@ testIfVersionGTE(2)("globals", async () => {
   expect(e.global.str_global_with_default.__cardinality__).toEqual(
     $.Cardinality.One
   );
-  expect(e.global.str_multi.__element__.__name__).toEqual(
-    `default::str_multi`
-  );
+  expect(e.global.str_multi.__element__.__name__).toEqual(`default::str_multi`);
   expect(e.global.str_multi.__cardinality__).toEqual($.Cardinality.AtLeastOne);
   expect(e.global.str_required.__element__.__name__).toEqual(`std::str`);
   expect(e.global.str_required.__cardinality__).toEqual($.Cardinality.One);
@@ -77,9 +75,7 @@ testIfVersionGTE(2)("globals", async () => {
     $.Cardinality.AtMostOne
   );
   expect(e.global.uuid_global.__element__.__name__).toEqual(`std::uuid`);
-  expect(e.global.uuid_global.__cardinality__).toEqual(
-    $.Cardinality.AtMostOne
-  );
+  expect(e.global.uuid_global.__cardinality__).toEqual($.Cardinality.AtMostOne);
   expect(e.extra.global.user_id.__element__.__name__).toEqual(`std::uuid`);
   expect(e.extra.global.user_id.__cardinality__).toEqual(
     $.Cardinality.AtMostOne

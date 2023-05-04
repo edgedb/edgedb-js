@@ -1,16 +1,16 @@
 // tslint:disable:no-console
 
 // import {setupTests} from "./test/setupTeardown";
-import {createClient} from "edgedb";
+import { createClient } from "edgedb";
 import e from "./edgeql-js/index.mjs";
-import {freeShape, scalarQuery} from "./queries.mjs";
+import { freeShape, scalarQuery } from "./queries.mjs";
 
 async function run() {
   try {
     const client = createClient();
     const query = e.select({
       num: e.int64(35),
-      msg: e.str("Hello world")
+      msg: e.str("Hello world"),
     });
 
     const result = await query.run(client);
@@ -19,7 +19,7 @@ async function run() {
     }
 
     await scalarQuery(client);
-    const shapeData = await freeShape(client, {data: "Iron Man"});
+    const shapeData = await freeShape(client, { data: "Iron Man" });
 
     if (shapeData.data !== "Iron Man") {
       throw new Error("Failure: --mts");

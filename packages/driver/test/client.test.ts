@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {parseConnectArguments} from "../src/conUtils.server";
+import { parseConnectArguments } from "../src/conUtils.server";
 import {
   Client,
   DivisionByZeroError,
@@ -36,19 +36,19 @@ import {
   _ICodec,
   Session,
   AuthenticationError,
-  InvalidReferenceError
+  InvalidReferenceError,
 } from "../src/index.node";
 
-import {retryingConnect} from "../src/retry";
-import {RawConnection} from "../src/rawConn";
-import {AdminUIFetchConnection} from "../src/fetchConn";
-import {CustomCodecSpec} from "../src/codecs/registry";
+import { retryingConnect } from "../src/retry";
+import { RawConnection } from "../src/rawConn";
+import { AdminUIFetchConnection } from "../src/fetchConn";
+import { CustomCodecSpec } from "../src/codecs/registry";
 import {
   getAvailableFeatures,
   getClient,
   getConnectOptions,
   getEdgeDBVersion,
-  isDeno
+  isDeno,
 } from "./testbase";
 
 function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
@@ -89,7 +89,7 @@ test("query: basic scalars", async () => {
     );
     expect(res).toEqual([
       -1, 1, 0, 15, 281474976710656, 22, -11111, 346456723423, -346456723423,
-      2251799813685125, -2251799813685125
+      2251799813685125, -2251799813685125,
     ]);
 
     res = await con.query("select <int32>{-1, 0, 1, 10, 2147483647};");
@@ -191,7 +191,7 @@ test("fetch: bigint", async () => {
       BigInt("999"),
       BigInt("1011"),
       BigInt("1009"),
-      BigInt("1709")
+      BigInt("1709"),
     ];
 
     // Generate random bigints
@@ -330,7 +330,7 @@ test("fetch: decimal as string", async () => {
     "-0.000010000",
     "-0.0000100000",
     "-0.00001000000",
-    "1" + "0".repeat(117) + "." + "0".repeat(161)
+    "1" + "0".repeat(117) + "." + "0".repeat(161),
   ];
 
   try {
@@ -371,7 +371,7 @@ test("fetch: int64 as bigint", async () => {
     "-1100000",
     "113",
     "1152921504594725865",
-    "-1152921504594725865"
+    "-1152921504594725865",
   ];
 
   try {
@@ -384,7 +384,7 @@ test("fetch: int64 as bigint", async () => {
       SELECT
         (inp, str, <array<int64>>inpStr)
     `,
-      [vals.map(v => BigInt(v)), vals]
+      [vals.map((v) => BigInt(v)), vals]
     );
 
     expect(fetched[0].length).toBe(vals.length);
@@ -404,21 +404,21 @@ test("fetch: positional args", async () => {
     const intCases: Array<[string[], number[]]> = [
       [
         ["int16", "int32", "int64"],
-        [1, 1111]
+        [1, 1111],
       ],
       [
         ["int16", "int32", "int64"],
-        [100, -101]
+        [100, -101],
       ],
       [
         ["int16", "int32", "int64"],
-        [10011, 0]
+        [10011, 0],
       ],
       [["int64"], [17592186032104, -4398037227340]],
       [
         ["float32", "float64"],
-        [10011, 12312]
-      ]
+        [10011, 12312],
+      ],
     ];
     for (const [types, values] of intCases) {
       for (const type of types) {
@@ -459,7 +459,7 @@ test("fetch: positional args", async () => {
     );
 
     res = await con.querySingle(`select len(<array<int64>>$0)`, [
-      [1, 2, 3, 4, 5]
+      [1, 2, 3, 4, 5],
     ]);
     expect(res).toEqual(5);
   } finally {
@@ -471,12 +471,12 @@ test("fetch: named args", async () => {
   const con = getClient();
   let res: any;
   try {
-    res = await con.querySingle(`select <str>$a`, {a: "123"});
+    res = await con.querySingle(`select <str>$a`, { a: "123" });
     expect(res).toBe("123");
 
     res = await con.querySingle(`select <str>$a ++ <str>$b`, {
       b: "abc",
-      a: "123"
+      a: "123",
     });
     expect(res).toBe("123abc");
 
@@ -484,19 +484,19 @@ test("fetch: named args", async () => {
       .querySingle(`select <str>$a ++ <str>$b`, {
         b: "abc",
         a: "123",
-        c: "def"
+        c: "def",
       })
       .then(() => {
         throw new Error(
           "there should have been an unexpected named argument error"
         );
       })
-      .catch(e => {
+      .catch((e) => {
         expect(e.toString()).toMatch(/Unused named argument: "c"/);
       });
 
     res = await con.querySingle(`select len(<OPTIONAL str>$a ?? "aa")`, {
-      a: null
+      a: null,
     });
     expect(res).toBe(2);
   } finally {
@@ -508,11 +508,11 @@ if (getEdgeDBVersion().major >= 3) {
   test("fetch: tuples in args", async () => {
     const client = getClient();
     try {
-      const tests: {[key: string]: any[]} = {
+      const tests: { [key: string]: any[] } = {
         // Basic tuples
         "tuple<str, bool>": [
           ["x", true],
-          ["y", false]
+          ["y", false],
         ],
         "optional tuple<str, bool>": [["x", true], null],
         // Some pointlessly nested tuples
@@ -524,8 +524,8 @@ if (getEdgeDBVersion().major >= 3) {
           [[0, "zero"]],
           [
             [0, "zero"],
-            [1, "one"]
-          ]
+            [1, "one"],
+          ],
         ],
         "optional array<tuple<int64, str>>": [
           null,
@@ -533,8 +533,8 @@ if (getEdgeDBVersion().major >= 3) {
           [[0, "zero"]],
           [
             [0, "zero"],
-            [1, "one"]
-          ]
+            [1, "one"],
+          ],
         ],
         "array<tuple<str, array<int64>>>": [
           [],
@@ -543,28 +543,28 @@ if (getEdgeDBVersion().major >= 3) {
           [
             ["x", []],
             ["y", []],
-            ["z", []]
+            ["z", []],
           ],
           [
             ["x", [1]],
             ["y", []],
-            ["z", []]
+            ["z", []],
           ],
           [
             ["x", []],
             ["y", [1]],
-            ["z", []]
+            ["z", []],
           ],
           [
             ["x", []],
             ["y", []],
-            ["z", [1]]
+            ["z", [1]],
           ],
           [
             ["x", []],
             ["y", [1, 2]],
-            ["z", [1, 2, 3]]
-          ]
+            ["z", [1, 2, 3]],
+          ],
         ],
         // Arrays of pointlessly nested tuples
         "array<tuple<tuple<str, bool>, int64>>": [
@@ -572,98 +572,98 @@ if (getEdgeDBVersion().major >= 3) {
           [[["x", true], 1]],
           [
             [["x", true], 1],
-            [["z", false], 2]
-          ]
+            [["z", false], 2],
+          ],
         ],
         "array<tuple<tuple<array<str>, bool>, int64>>": [
           [],
           [[[[], true], 1]],
           [
             [[["x", "y", "z"], true], 1],
-            [[["z"], false], 2]
-          ]
+            [[["z"], false], 2],
+          ],
         ],
         // Named tuples
-        "tuple<a: str, b: bool>": [{a: "x", b: true}],
-        "optional tuple<a: str, b: bool>": [{a: "x", b: true}, null],
+        "tuple<a: str, b: bool>": [{ a: "x", b: true }],
+        "optional tuple<a: str, b: bool>": [{ a: "x", b: true }, null],
         "tuple<x: tuple<a: str, b: bool>>": [
           {
-            x: {a: "x", b: true}
-          }
+            x: { a: "x", b: true },
+          },
         ],
         "tuple<x: tuple<a: str, b: bool>, y: int64>": [
           {
-            x: {a: "x", b: true},
-            y: 1
-          }
+            x: { a: "x", b: true },
+            y: 1,
+          },
         ],
         "array<tuple<a: int64, b: str>>": [
           [],
-          [{a: 0, b: "zero"}],
+          [{ a: 0, b: "zero" }],
           [
-            {a: 0, b: "zero"},
-            {a: 1, b: "one"}
-          ]
+            { a: 0, b: "zero" },
+            { a: 1, b: "one" },
+          ],
         ],
         "optional array<tuple<a: int64, b: str>>": [
           null,
           [],
-          [{a: 0, b: "zero"}],
+          [{ a: 0, b: "zero" }],
           [
-            {a: 0, b: "zero"},
-            {a: 1, b: "one"}
-          ]
+            { a: 0, b: "zero" },
+            { a: 1, b: "one" },
+          ],
         ],
         "array<tuple<a: str, b: array<int64>>>": [
           [],
-          [{a: "x", b: []}],
+          [{ a: "x", b: [] }],
           [
             {
               a: "x",
-              b: [1]
-            }
+              b: [1],
+            },
           ],
           [
-            {a: "x", b: []},
-            {a: "y", b: []},
-            {a: "z", b: []}
+            { a: "x", b: [] },
+            { a: "y", b: [] },
+            { a: "z", b: [] },
           ],
           [
             {
               a: "x",
-              b: [1]
+              b: [1],
             },
-            {a: "y", b: []},
-            {a: "z", b: []}
+            { a: "y", b: [] },
+            { a: "z", b: [] },
           ],
           [
-            {a: "x", b: []},
+            { a: "x", b: [] },
             {
               a: "y",
-              b: [1]
+              b: [1],
             },
-            {a: "z", b: []}
+            { a: "z", b: [] },
           ],
           [
-            {a: "x", b: []},
-            {a: "y", b: []},
+            { a: "x", b: [] },
+            { a: "y", b: [] },
             {
               a: "z",
-              b: [1]
-            }
+              b: [1],
+            },
           ],
           [
-            {a: "x", b: []},
+            { a: "x", b: [] },
             {
               a: "y",
-              b: [1, 2]
+              b: [1, 2],
             },
             {
               a: "z",
-              b: [1, 2, 3]
-            }
-          ]
-        ]
+              b: [1, 2, 3],
+            },
+          ],
+        ],
       };
 
       for (let [cast, inputs] of Object.entries(tests)) {
@@ -676,13 +676,13 @@ if (getEdgeDBVersion().major >= 3) {
 
       await expect(
         client.query(`select <tuple<str, int64>>$test`, {
-          test: ["str", 123, 456]
+          test: ["str", 123, 456],
         })
       ).rejects.toThrow(/expected 2 tuple items, got 3/);
 
       await expect(
         client.query(`select <tuple<str, int64>>$test`, {
-          test: ["str", "123"]
+          test: ["str", "123"],
         })
       ).rejects.toThrow(
         /invalid element at index 1 in tuple: a number was expected, got "123"/
@@ -690,31 +690,31 @@ if (getEdgeDBVersion().major >= 3) {
 
       await expect(
         client.query(`select <tuple<str, int64>>$test`, {
-          test: ["str", null]
+          test: ["str", null],
         })
       ).rejects.toThrow(/element at index 1 in tuple cannot be 'null'/);
 
       await expect(
         client.query(`select <tuple<a: str, b: int64>>$test`, {
-          test: ["str", 123]
+          test: ["str", 123],
         })
       ).rejects.toThrow(/an object was expected, got "str,123"/);
 
       await expect(
         client.query(`select <tuple<str, int64>>$test`, {
-          test: {a: "str", b: 123}
+          test: { a: "str", b: 123 },
         })
       ).rejects.toThrow(/an array was expected, got "\[object Object\]"/);
 
       await expect(
         client.query(`select <tuple<a: str, b: int64>>$test`, {
-          test: {a: "str", b: 123, c: 456}
+          test: { a: "str", b: 123, c: 456 },
         })
       ).rejects.toThrow(/expected 2 elements in named tuple, got 3/);
 
       await expect(
         client.query(`select <tuple<a: str, b: int64>>$test`, {
-          test: {a: "str", b: "123"}
+          test: { a: "str", b: "123" },
         })
       ).rejects.toThrow(
         /invalid element 'b' in named tuple: a number was expected, got "123"/
@@ -722,7 +722,7 @@ if (getEdgeDBVersion().major >= 3) {
 
       await expect(
         client.query(`select <tuple<a: str, b: int64>>$test`, {
-          test: {a: "str", b: null}
+          test: { a: "str", b: null },
         })
       ).rejects.toThrow(/element 'b' in named tuple cannot be 'null'/);
     } finally {
@@ -745,7 +745,7 @@ test("fetch: int overflow", async () => {
       .then(() => {
         throw new Error("there should have been an overflow error");
       })
-      .catch(e => {
+      .catch((e) => {
         expect(e.toString()).toMatch(/cannot unpack.*9007199254740992.*/);
       });
 
@@ -759,7 +759,7 @@ test("fetch: int overflow", async () => {
       .then(() => {
         throw new Error("there should have been an overflow error");
       })
-      .catch(e => {
+      .catch((e) => {
         expect(e.toString()).toMatch(/cannot unpack.*-9007199254740993.*/);
       });
   } finally {
@@ -818,13 +818,13 @@ test("fetch: cal::local_time", async () => {
       "11:12:13",
       "00:01:11.34",
       "00:00:00",
-      "23:59:59.999"
+      "23:59:59.999",
     ]) {
       res = await con.querySingle(
         `
         select (<cal::local_time><str>$time, <str><cal::local_time><str>$time);
         `,
-        {time}
+        { time }
       );
       expect(res[0].toString()).toBe(res[1]);
 
@@ -832,7 +832,7 @@ test("fetch: cal::local_time", async () => {
         `
         select <cal::local_time>$time;
         `,
-        {time: res[0]}
+        { time: res[0] }
       );
       expect(res2.toString()).toBe(res[0].toString());
     }
@@ -855,13 +855,13 @@ test("fetch: duration", async () => {
     for (const time of [
       "24 hours",
       "68464977 seconds 74 milliseconds 11 microseconds",
-      "-752043.296 milliseconds"
+      "-752043.296 milliseconds",
     ]) {
       res = await con.querySingle(
         `
         select (<duration><str>$time, <str><duration><str>$time);
         `,
-        {time}
+        { time }
       );
 
       expect(res[0].toString()).toBe(normaliseIsoDuration(res[1]));
@@ -870,7 +870,7 @@ test("fetch: duration", async () => {
         `
         select <duration>$time;
         `,
-        {time: res[0]}
+        { time: res[0] }
       );
       expect(res2.toString()).toBe(res[0].toString());
     }
@@ -879,14 +879,14 @@ test("fetch: duration", async () => {
       new Duration(1),
       new Duration(0, -1),
       new Duration(0, 0, 1, 0),
-      new Duration(0, 0, 0, -1)
+      new Duration(0, 0, 0, -1),
     ]) {
       await con
-        .querySingle(`select <duration>$time`, {time})
+        .querySingle(`select <duration>$time`, { time })
         .then(() => {
           throw new Error("There should have encoding error");
         })
-        .catch(e => {
+        .catch((e) => {
           expect(e.toString()).toMatch(
             /Cannot encode a 'Duration' with a non-zero number of.*/
           );
@@ -916,7 +916,7 @@ if (!isDeno) {
       new Duration(0, 0, 0, 0, 0, 0, 0, -752043),
       new Duration(0, 0, 0, 0, 0, 0, 0, 3542924),
       new Duration(0, 0, 0, 0, 0, 0, 0, 86400000),
-      new Duration(0, 0, 0, 0, 0, 0, 0, -86400000)
+      new Duration(0, 0, 0, 0, 0, 0, 0, -86400000),
     ];
 
     // Fuzz it!
@@ -949,7 +949,7 @@ if (!isDeno) {
       for (let i = 0; i < durs.length; i++) {
         const roundedDur = Temporal.Duration.from(durs[i]).round({
           largestUnit: "hours",
-          smallestUnit: "microseconds"
+          smallestUnit: "microseconds",
         });
         expect(roundedDur.years).toBe(dursFromDb[i].years);
         expect(roundedDur.months).toBe(dursFromDb[i].months);
@@ -979,7 +979,7 @@ test("fetch: relative_duration", async () => {
       "-752043.296 milliseconds",
       "20 years 5 days 10 seconds",
       "3 months",
-      "7 weeks 9 microseconds"
+      "7 weeks 9 microseconds",
     ]) {
       res = await con.querySingle(
         `
@@ -988,7 +988,7 @@ test("fetch: relative_duration", async () => {
             <str><cal::relative_duration><str>$time,
           );
         `,
-        {time}
+        { time }
       );
       expect(res[0].toString()).toBe(res[1]);
 
@@ -996,7 +996,7 @@ test("fetch: relative_duration", async () => {
         `
         select <cal::relative_duration>$time;
         `,
-        {time: res[0]}
+        { time: res[0] }
       );
       expect(res2.toString()).toBe(res[0].toString());
     }
@@ -1022,7 +1022,7 @@ if (!isDeno) {
       new RelativeDuration(0, 0, 0, 0, 0, -12, -32, -43.296),
       new RelativeDuration(0, 0, 0, 0, 0, 59, 2, 924),
       new RelativeDuration(0, 0, 0, 0, 24, 0, 0, 0),
-      new RelativeDuration(0, 0, 0, 0, -24, 0, 0, 0)
+      new RelativeDuration(0, 0, 0, 0, -24, 0, 0, 0),
     ];
 
     // Fuzz it!
@@ -1086,7 +1086,7 @@ test("fetch: ConfigMemory", async () => {
       "9MiB",
       "102938GiB",
       "108TiB",
-      "42PiB"
+      "42PiB",
     ]) {
       res = await client.querySingle(
         `
@@ -1095,7 +1095,7 @@ test("fetch: ConfigMemory", async () => {
             <str><cfg::memory><str>$mem,
           );
         `,
-        {mem}
+        { mem }
       );
       expect(res[0].toString()).toBe(res[1]);
 
@@ -1103,7 +1103,7 @@ test("fetch: ConfigMemory", async () => {
         `
         select <cfg::memory>$mem;
         `,
-        {mem: res[0]}
+        { mem: res[0] }
       );
       expect(res2.toString()).toBe(res[0].toString());
     }
@@ -1118,7 +1118,7 @@ if (getEdgeDBVersion().major >= 2) {
       [false, false],
       [true, false],
       [false, true],
-      [true, true]
+      [true, true],
     ]
       .map(
         ([incl, incu]) =>
@@ -1132,7 +1132,7 @@ if (getEdgeDBVersion().major >= 2) {
       new Range(lower, upper, false, false),
       new Range(lower, upper, true, false),
       new Range(lower, upper, false, true),
-      new Range(lower, upper, true, true)
+      new Range(lower, upper, true, true),
     ];
   }
 
@@ -1163,7 +1163,7 @@ if (getEdgeDBVersion().major >= 2) {
           new Range(124, 456),
           new Range(123, 456),
           new Range(124, 457),
-          new Range(123, 457)
+          new Range(123, 457),
         ],
         floats: expandRangeJS(123.456, 456.789),
         datetimes: expandRangeJS(
@@ -1174,12 +1174,12 @@ if (getEdgeDBVersion().major >= 2) {
           new Range(new LocalDate(2022, 7, 2), new LocalDate(2022, 7, 14)),
           new Range(new LocalDate(2022, 7, 1), new LocalDate(2022, 7, 14)),
           new Range(new LocalDate(2022, 7, 2), new LocalDate(2022, 7, 15)),
-          new Range(new LocalDate(2022, 7, 1), new LocalDate(2022, 7, 15))
+          new Range(new LocalDate(2022, 7, 1), new LocalDate(2022, 7, 15)),
         ],
         local_datetimes: expandRangeJS(
           new LocalDateTime(2022, 7, 1, 12),
           new LocalDateTime(2022, 7, 14, 12)
-        )
+        ),
       });
 
       expect(
@@ -1220,7 +1220,7 @@ if (getEdgeDBVersion().major >= 2) {
         "-752043 days",
         "20 years 5 days",
         "3 months",
-        "7 weeks"
+        "7 weeks",
       ]) {
         res = await con.querySingle(
           `
@@ -1229,7 +1229,7 @@ if (getEdgeDBVersion().major >= 2) {
             <str><cal::date_duration><str>$time,
           );
         `,
-          {time}
+          { time }
         );
         expect(res[0].toString()).toBe(res[1]);
 
@@ -1237,7 +1237,7 @@ if (getEdgeDBVersion().major >= 2) {
           `
         select <cal::date_duration>$time;
         `,
-          {time: res[0]}
+          { time: res[0] }
         );
         expect(res2.toString()).toBe(res[0].toString());
       }
@@ -1264,7 +1264,7 @@ test("fetch: tuple", async () => {
     res = await con.query("select {(1, 'abc'), (2, 'bcd')}");
     expect(res).toEqual([
       [1, "abc"],
-      [2, "bcd"]
+      [2, "bcd"],
     ]);
     const t0: Array<any> = res[0];
 
@@ -1311,14 +1311,14 @@ test("fetch: object", async () => {
           {
             kind: "PositionalParam",
             num: 0,
-            "@foo": 42
+            "@foo": 42,
           },
           {
             kind: "PositionalParam",
             num: 1,
-            "@foo": 42
-          }
-        ]
+            "@foo": 42,
+          },
+        ],
       })
     );
 
@@ -1426,9 +1426,7 @@ test("fetch: uuid", async () => {
     );
     expect(res).toBe("759637d8-6635-11e9-b9d4-098002d459d5");
 
-    res = await con.queryRequiredSingle<string>(
-      `SELECT uuid_generate_v1mc();`
-    );
+    res = await con.queryRequiredSingle<string>(`SELECT uuid_generate_v1mc();`);
     const uuidRegex =
       /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/;
     expect(uuidRegex.test(res)).toEqual(true);
@@ -1441,7 +1439,7 @@ test("fetch: enum", async () => {
   const client = getClient();
 
   try {
-    await client.withRetryOptions({attempts: 1}).transaction(async tx => {
+    await client.withRetryOptions({ attempts: 1 }).transaction(async (tx) => {
       await tx.execute(`
         CREATE SCALAR TYPE MyEnum EXTENDING enum<"A", "B">;
       `);
@@ -1562,7 +1560,7 @@ test("fetch: long strings", async () => {
       .then(() => {
         throw new Error("the query should have errored out");
       })
-      .catch(e => {
+      .catch((e) => {
         expect(e.toString()).toMatch(
           /query result is too big: buffer overflow/
         );
@@ -1577,14 +1575,14 @@ test("querySingleJSON", async () => {
   let res: any;
   try {
     res = await con.querySingleJSON("select (a := 1)");
-    expect(JSON.parse(res)).toEqual({a: 1});
+    expect(JSON.parse(res)).toEqual({ a: 1 });
 
     res = await con.querySingleJSON("select (a := 1n)");
-    expect(JSON.parse(res)).toEqual({a: 1});
+    expect(JSON.parse(res)).toEqual({ a: 1 });
     expect(typeof JSON.parse(res).a).toEqual("number");
 
     res = await con.querySingleJSON("select (a := 1.5n)");
-    expect(JSON.parse(res)).toEqual({a: 1.5});
+    expect(JSON.parse(res)).toEqual({ a: 1.5 });
     expect(typeof JSON.parse(res).a).toEqual("number");
   } finally {
     await con.close();
@@ -1595,7 +1593,7 @@ test("queryJSON", async () => {
   const con = getClient();
   try {
     const res = await con.queryJSON("select {(a := 1), (a := 2)}");
-    expect(JSON.parse(res)).toEqual([{a: 1}, {a: 2}]);
+    expect(JSON.parse(res)).toEqual([{ a: 1 }, { a: 2 }]);
   } finally {
     await con.close();
   }
@@ -1641,11 +1639,11 @@ test("query(Required)Single cardinality", async () => {
     querySingleTests,
     queryRequiredSingleTests,
     querySingleJSONTests,
-    queryRequiredSingleJSONTests
+    queryRequiredSingleJSONTests,
   ]) {
     await tests(client);
     try {
-      await client.transaction(tx => tests(tx));
+      await client.transaction((tx) => tests(tx));
     } catch {}
   }
 
@@ -1691,10 +1689,10 @@ test("query(Required)Single cardinality", async () => {
 
 test("transaction state cleanup", async () => {
   // concurrency 1 to ensure we reuse the underlying connection
-  const client = getClient({concurrency: 1});
+  const client = getClient({ concurrency: 1 });
 
   await expect(
-    client.transaction(async tx => {
+    client.transaction(async (tx) => {
       try {
         await tx.query(`select 1/0`);
       } catch {
@@ -1704,9 +1702,7 @@ test("transaction state cleanup", async () => {
     })
   ).rejects.toThrow(/current transaction is aborted/);
 
-  await expect(client.querySingle(`select 'success'`)).resolves.toBe(
-    "success"
-  );
+  await expect(client.querySingle(`select 'success'`)).resolves.toBe("success");
 
   client.close();
 });
@@ -1747,7 +1743,7 @@ test("scripts and args", async () => {
             name := 'test'
           }
           `,
-          {name: "test"}
+          { name: "test" }
         )
       ).rejects.toThrowError(QueryArgumentError);
 
@@ -1761,7 +1757,7 @@ test("scripts and args", async () => {
       ).toEqual(undefined);
 
       expect(await client.query(`select ScriptTest {name}`)).toEqual([
-        {name: "test0"}
+        { name: "test0" },
       ]);
 
       await expect(
@@ -1787,14 +1783,14 @@ test("scripts and args", async () => {
           insert ScriptTest {
             name := 'test' ++ <str>count(detached ScriptTest)
           };`,
-          {name: "test1"}
+          { name: "test1" }
         )
       ).resolves.toEqual(undefined);
 
       expect(await client.query(`select ScriptTest {name}`)).toEqual([
-        {name: "test0"},
-        {name: "test1"},
-        {name: "test2"}
+        { name: "test0" },
+        { name: "test1" },
+        { name: "test2" },
       ]);
 
       // expect(
@@ -1818,7 +1814,7 @@ test("scripts and args", async () => {
           `insert ScriptTest {
         name := <str>$name
       }`,
-          {name: "test"}
+          { name: "test" }
         )
       ).rejects.toThrowError(
         /arguments in execute\(\) is not supported in this version of EdgeDB/
@@ -1829,7 +1825,7 @@ test("scripts and args", async () => {
           `insert ScriptTest {
         name := 'test'
       }`,
-          {name: "test"}
+          { name: "test" }
         )
       ).rejects.toThrowError(
         /arguments in execute\(\) is not supported in this version of EdgeDB/
@@ -1853,7 +1849,7 @@ test("fetch/optimistic cache invalidation", async () => {
   const query = `SELECT ${typename}.prop1 LIMIT 1`;
   const client = getClient();
   try {
-    await client.transaction(async tx => {
+    await client.transaction(async (tx) => {
       await tx.execute(`
         CREATE TYPE ${typename} {
           CREATE REQUIRED PROPERTY prop1 -> std::str;
@@ -1974,10 +1970,10 @@ if (getEdgeDBVersion().major >= 2) {
       const query = `SELECT Function {
         name
       }`;
-      const state = new Session({module: "schema"});
+      const state = new Session({ module: "schema" });
       const options = {
         injectTypenames: true,
-        implicitLimit: BigInt(5)
+        implicitLimit: BigInt(5),
       } as const;
       const [_, outCodec] = await con.rawParse(query, state, options);
       const resultData = await con.rawExecute(query, state, outCodec, options);
@@ -2006,16 +2002,16 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
         address: config.connectionParams.address,
         database: config.connectionParams.database,
         user: config.connectionParams.user,
-        token: token
+        token: token,
       },
       codecsRegistry
     );
 
     const query = `SELECT Function { name }`;
-    const state = new Session({module: "schema"});
+    const state = new Session({ module: "schema" });
     const options = {
       injectTypenames: true,
-      implicitLimit: BigInt(5)
+      implicitLimit: BigInt(5),
     } as const;
 
     const [_, outCodec] = await fetchConn.rawParse(query, state, options);
@@ -2041,7 +2037,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
         database: config.connectionParams.database,
         tlsSecurity: "insecure",
         user: config.connectionParams.user,
-        token: "invalid token"
+        token: "invalid token",
       },
       codecsRegistry
     );

@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer, utf8Encoder} from "../primitives/buffer";
-import {ICodec, ScalarCodec} from "./ifaces";
-import {InvalidArgumentError, ProtocolError} from "../errors";
+import { ReadBuffer, WriteBuffer, utf8Encoder } from "../primitives/buffer";
+import { ICodec, ScalarCodec } from "./ifaces";
+import { InvalidArgumentError, ProtocolError } from "../errors";
 
 export class JSONCodec extends ScalarCodec implements ICodec {
   tsType = "unknown";

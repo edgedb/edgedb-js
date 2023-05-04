@@ -1,12 +1,12 @@
-import {KNOWN_TYPENAMES} from "../src/codecs/consts";
+import { KNOWN_TYPENAMES } from "../src/codecs/consts";
 import {
   DateTimeCodec,
   DurationCodec,
   LocalDateTimeCodec,
-  LocalTimeCodec
+  LocalTimeCodec,
 } from "../src/codecs/datetime";
-import {Duration, LocalDateTime, LocalTime} from "../src/index.shared";
-import {ReadBuffer, WriteBuffer} from "../src/primitives/buffer";
+import { Duration, LocalDateTime, LocalTime } from "../src/index.shared";
+import { ReadBuffer, WriteBuffer } from "../src/primitives/buffer";
 
 // EdgeDB date/time types have microsecond precision.
 // JS Date has millisecond precision, Temporal types have nanosecond.
@@ -40,7 +40,7 @@ test("datetime", () => {
     ["446774400001499", "2014-02-27T00:00:00.001Z"], // positive timestamp, 1499
     ["698996583002500", "2022-02-24T05:43:03.002Z"], // positive timestamp, round down
     ["698996583002501", "2022-02-24T05:43:03.003Z"], // positive timestamp, 2501
-    ["698996583002499", "2022-02-24T05:43:03.002Z"] // positive timestamp, 2499
+    ["698996583002499", "2022-02-24T05:43:03.002Z"], // positive timestamp, 2499
   ];
 
   for (const [micros, datestring] of tests) {
@@ -79,7 +79,7 @@ test("local_datetime", () => {
     ["2014-02-27T00:00:00.000001499", "446774400000001"], // "positive timestamp, 1499"
     ["2022-02-24T05:43:03.000002500", "698996583000002"], // "positive timestamp, round down"
     ["2022-02-24T05:43:03.000002501", "698996583000003"], // "positive timestamp, 2501"
-    ["2022-02-24T05:43:03.000002499", "698996583000002"] // "positive timestamp, 2499"
+    ["2022-02-24T05:43:03.000002499", "698996583000002"], // "positive timestamp, 2499"
   ];
 
   for (const [datestring, micros] of tests) {
@@ -90,7 +90,7 @@ test("local_datetime", () => {
           /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{3})(\d{3})(\d{3})/
         )!
         .slice(1)
-        .map(n => parseInt(n, 10))
+        .map((n) => parseInt(n, 10))
     );
     const buf = new WriteBuffer();
     codec.encode(buf, localDatetime);
@@ -111,7 +111,7 @@ test("local_time", () => {
     ["01:02:03.000005499", "3723000005"], // 5499
     ["01:02:03.000004500", "3723000004"], // round down
     ["01:02:03.000004501", "3723000005"], // 4501
-    ["01:02:03.000004499", "3723000004"] // 4499
+    ["01:02:03.000004499", "3723000004"], // 4499
   ];
 
   for (const [datestring, micros] of tests) {
@@ -120,7 +120,7 @@ test("local_time", () => {
       ...datestring
         .match(/(\d{2}):(\d{2}):(\d{2}).(\d{3})(\d{3})(\d{3})/)!
         .slice(1)
-        .map(n => parseInt(n, 10))
+        .map((n) => parseInt(n, 10))
     );
     const buf = new WriteBuffer();
     codec.encode(buf, localDatetime);
@@ -148,7 +148,7 @@ test("duration", () => {
     ["-PT456.000002501S", "-456000003"], // "2501 nanos"
     ["-PT5789.000003500S", "-5789000004"], // "round up"
     ["-PT12345.000003499S", "-12345000003"], // "3499 nanos"
-    ["-PT789012.000003501S", "-789012000004"] // "3501 nanos"
+    ["-PT789012.000003501S", "-789012000004"], // "3501 nanos"
   ];
 
   for (const [durationString, micros] of tests) {

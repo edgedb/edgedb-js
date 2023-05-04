@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-import {ICodec, Codec, uuid, IArgsCodec, CodecKind} from "./ifaces";
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
-import {EmptyTupleCodec} from "./tuple";
+import { ICodec, Codec, uuid, IArgsCodec, CodecKind } from "./ifaces";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { EmptyTupleCodec } from "./tuple";
 import {
   InvalidArgumentError,
   MissingArgumentError,
   UnknownArgumentError,
   ProtocolError,
-  QueryArgumentError
+  QueryArgumentError,
 } from "../errors";
 
 export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
@@ -41,9 +41,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
 
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "object" || Array.isArray(object)) {
-      throw new InvalidArgumentError(
-        `an object was expected, got "${object}"`
-      );
+      throw new InvalidArgumentError(`an object was expected, got "${object}"`);
     }
 
     const codecsLen = this.subCodecs.length;
@@ -101,7 +99,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     const codecsLen = codecs.length;
 
     if (keys.length > codecsLen) {
-      const extraKeys = keys.filter(key => !namesSet.has(key));
+      const extraKeys = keys.filter((key) => !namesSet.has(key));
       throw new UnknownArgumentError(
         `Unused named argument${
           extraKeys.length === 1 ? "" : "s"

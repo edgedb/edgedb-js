@@ -24,12 +24,12 @@ export {
   LocalTime,
   Duration,
   RelativeDuration,
-  DateDuration
+  DateDuration,
 } from "./datatypes/datetime";
-export {ConfigMemory} from "./datatypes/memory";
-export {Range} from "./datatypes/range";
+export { ConfigMemory } from "./datatypes/memory";
+export { Range } from "./datatypes/range";
 
-export type {Executor} from "./ifaces";
+export type { Executor } from "./ifaces";
 
 export * from "./errors";
 
@@ -41,5 +41,5 @@ export const _CodecsRegistry = reg.CodecsRegistry;
 export const _ReadBuffer = buf.ReadBuffer;
 export type _ICodec = codecs.ICodec;
 
-import {plugJSBI} from "./primitives/bigint";
+import { plugJSBI } from "./primitives/bigint";
 export const _plugJSBI = plugJSBI;

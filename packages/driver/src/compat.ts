@@ -36,7 +36,7 @@ export function decodeInt64ToString(buf: Uint8Array): string {
   let negative = false;
   if (inp[0] & 0x80) {
     // A negative integer; invert all bits.
-    inp = inp.map(x => x ^ 0xff);
+    inp = inp.map((x) => x ^ 0xff);
     // Account for the two's compliment's `1`.
     inp[inp.length - 1]++;
 

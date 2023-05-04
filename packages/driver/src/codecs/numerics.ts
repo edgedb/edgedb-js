@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
-import {ICodec, ScalarCodec} from "./ifaces";
-import {InvalidArgumentError, ProtocolError} from "../errors";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { ICodec, ScalarCodec } from "./ifaces";
+import { InvalidArgumentError, ProtocolError } from "../errors";
 
 const NUMERIC_POS = 0x0000;
 const NUMERIC_NEG = 0x4000;

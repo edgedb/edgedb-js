@@ -1,7 +1,7 @@
 import {
   ExpressionKind,
   typeutil,
-  Cardinality
+  Cardinality,
 } from "edgedb/dist/reflection/index";
 import type {
   Expression,
@@ -12,18 +12,18 @@ import type {
   stripNonUpdateables,
   ObjectTypeExpression,
   ObjectType,
-  $scopify
+  $scopify,
 } from "./typesystem";
-import type {pointerToAssignmentExpression} from "./casting";
-import {$expressionify, $getScopedExpr, $assert_single} from "./path";
+import type { pointerToAssignmentExpression } from "./casting";
+import { $expressionify, $getScopedExpr, $assert_single } from "./path";
 import {
   SelectModifiers,
   NormalisedSelectModifiers,
   ComputeSelectCardinality,
   $existingScopes,
-  $handleModifiers
+  $handleModifiers,
 } from "./select";
-import {$normaliseInsertShape, pointerIsOptional} from "./insert";
+import { $normaliseInsertShape, pointerIsOptional } from "./insert";
 
 /////////////////
 /// UPDATE
@@ -57,8 +57,8 @@ export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
                   | Cardinality.Many
                   | Cardinality.AtLeastOne
                   ?
-                      | {"+=": pointerToAssignmentExpression<Shape[k], true>}
-                      | {"-=": pointerToAssignmentExpression<Shape[k], true>}
+                      | { "+=": pointerToAssignmentExpression<Shape[k], true> }
+                      | { "-=": pointerToAssignmentExpression<Shape[k], true> }
                   : never)
             )
           | (pointerIsOptional<Shape[k]> extends true
@@ -110,9 +110,9 @@ export function update<
     throw new Error(`Update shape must contain 'set' shape`);
   }
 
-  const {modifiers, cardinality, needsAssertSingle} = $handleModifiers(mods, {
+  const { modifiers, cardinality, needsAssertSingle } = $handleModifiers(mods, {
     root: expr,
-    scope
+    scope,
   });
 
   const updateExpr = {
@@ -122,7 +122,7 @@ export function update<
     __expr__: expr,
     __shape__: $normaliseInsertShape(expr, updateShape, true),
     __modifiers__: modifiers,
-    __scope__: scope
+    __scope__: scope,
   } as any;
 
   return needsAssertSingle

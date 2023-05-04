@@ -16,17 +16,17 @@
  * limitations under the License.
  */
 
-import {net, tls} from "./adapter.node";
-import {PROTO_VER, PROTO_VER_MIN, BaseRawConnection} from "./baseConn";
-import {CodecsRegistry} from "./codecs/registry";
+import { net, tls } from "./adapter.node";
+import { PROTO_VER, PROTO_VER_MIN, BaseRawConnection } from "./baseConn";
+import { CodecsRegistry } from "./codecs/registry";
 import {
   Address,
   NormalizedConnectConfig,
-  ResolvedConnectConfig
+  ResolvedConnectConfig,
 } from "./conUtils";
-import {versionGreaterThan, versionGreaterThanOrEqual} from "./utils";
-import {ProtocolVersion} from "./ifaces";
-import {WriteMessageBuffer} from "./primitives/buffer";
+import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
+import { ProtocolVersion } from "./ifaces";
+import { WriteMessageBuffer } from "./primitives/buffer";
 import Event from "./primitives/event";
 import char, * as chars from "./primitives/chars";
 import * as scram from "./scram";
@@ -36,13 +36,10 @@ enum AuthenticationStatuses {
   AUTH_OK = 0,
   AUTH_SASL = 10,
   AUTH_SASL_CONTINUE = 11,
-  AUTH_SASL_FINAL = 12
+  AUTH_SASL_FINAL = 12,
 }
 
-const _tlsOptions = new WeakMap<
-  ResolvedConnectConfig,
-  tls.ConnectionOptions
->();
+const _tlsOptions = new WeakMap<ResolvedConnectConfig, tls.ConnectionOptions>();
 function getTlsOptions(config: ResolvedConnectConfig): tls.ConnectionOptions {
   if (_tlsOptions.has(config)) {
     return _tlsOptions.get(config)!;
@@ -52,7 +49,7 @@ function getTlsOptions(config: ResolvedConnectConfig): tls.ConnectionOptions {
 
   const tlsOptions: tls.ConnectionOptions = {
     ALPNProtocols: ["edgedb-binary"],
-    rejectUnauthorized: tlsSecurity !== "insecure"
+    rejectUnauthorized: tlsSecurity !== "insecure",
   };
 
   _tlsOptions.set(config, tlsOptions);
@@ -229,7 +226,7 @@ export class RawConnection extends BaseRawConnection {
       return net.createConnection(port, host);
     }
 
-    const opts = {...options, host, port};
+    const opts = { ...options, host, port };
     return tls.connect(opts);
   }
 
@@ -361,9 +358,9 @@ export class RawConnection extends BaseRawConnection {
       .writeInt16(this.protocolVersion[0])
       .writeInt16(this.protocolVersion[1]);
 
-    const params: {[key: string]: string} = {
+    const params: { [key: string]: string } = {
       user: this.config.connectionParams.user,
-      database: this.config.connectionParams.database
+      database: this.config.connectionParams.database,
     };
     if (this.config.connectionParams.secretKey != null) {
       params["token"] = this.config.connectionParams.secretKey;

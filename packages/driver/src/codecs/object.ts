@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
-import {ONE, AT_LEAST_ONE} from "./consts";
+import { ICodec, Codec, uuid, CodecKind } from "./ifaces";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { ONE, AT_LEAST_ONE } from "./consts";
 import {
   InvalidArgumentError,
   MissingArgumentError,
   QueryArgumentError,
   UnknownArgumentError,
-  ProtocolError
+  ProtocolError,
 } from "../errors";
 
 const EDGE_POINTER_IS_IMPLICIT = 1 << 0;
@@ -65,7 +65,7 @@ export class ObjectCodec extends Codec implements ICodec {
         name,
         implicit: !!(flags[i] & EDGE_POINTER_IS_IMPLICIT),
         linkprop: isLinkprop,
-        cardinality: cards[i]
+        cardinality: cards[i],
       };
       this.namesSet.add(name);
     }
@@ -138,7 +138,7 @@ export class ObjectCodec extends Codec implements ICodec {
     const codecsLen = codecs.length;
 
     if (keys.length > codecsLen) {
-      const extraKeys = keys.filter(key => !namesSet.has(key));
+      const extraKeys = keys.filter((key) => !namesSet.has(key));
       throw new UnknownArgumentError(
         `Unused named argument${
           extraKeys.length === 1 ? "" : "s"

@@ -1,4 +1,4 @@
-import {crypto} from "https://deno.land/std@0.177.0/crypto/mod.ts";
+import { crypto } from "https://deno.land/std@0.177.0/crypto/mod.ts";
 
 export async function randomBytes(size: number): Promise<Uint8Array> {
   const buf = new Uint8Array(size);
@@ -21,7 +21,7 @@ export async function HMAC(
         key,
         {
           name: "HMAC",
-          hash: {name: "SHA-256"}
+          hash: { name: "SHA-256" },
         },
         false,
         ["sign"]
@@ -35,7 +35,7 @@ export function getEnv(envName: string, required = false): string | undefined {
   if (!required) {
     const state = Deno.permissions.querySync({
       name: "env",
-      variable: envName
+      variable: envName,
     }).state;
     if (state !== "granted") {
       return undefined;

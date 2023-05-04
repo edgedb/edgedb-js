@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer} from "../primitives/buffer";
-import {ICodec, ScalarCodec} from "./ifaces";
-import {InvalidArgumentError} from "../errors";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { ICodec, ScalarCodec } from "./ifaces";
+import { InvalidArgumentError } from "../errors";
 
 export class BoolCodec extends ScalarCodec implements ICodec {
   tsType = "boolean";

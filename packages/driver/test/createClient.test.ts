@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-import {spawn} from "child_process";
-import {TransactionConflictError, InterfaceError} from "../src/index.node";
-import {sleep} from "../src/utils";
+import { spawn } from "child_process";
+import { TransactionConflictError, InterfaceError } from "../src/index.node";
+import { sleep } from "../src/utils";
 import Event from "../src/primitives/event";
-import {getClient, getConnectOptions} from "./testbase";
+import { getClient, getConnectOptions } from "./testbase";
 
 test("lazy connect + concurrency", async () => {
   let client = getClient();
@@ -39,7 +39,7 @@ test("lazy connect + concurrency", async () => {
 
   await client.close();
 
-  client = getClient({concurrency: 3});
+  client = getClient({ concurrency: 3 });
 
   // @ts-ignore
   expect(client.pool._getStats().openConnections).toEqual(0);
@@ -61,7 +61,7 @@ test("lazy connect + concurrency", async () => {
   const promises = Promise.all(
     Array(10)
       .fill(0)
-      .map((_, i) => client.query(`select <int16>$i`, {i}))
+      .map((_, i) => client.query(`select <int16>$i`, { i }))
   );
 
   // @ts-ignore
@@ -86,16 +86,16 @@ function timeScriptShutdown(script: string, timeout = 5_000) {
 
     let shutdownStart = 0;
     let err = "";
-    proc.stdout.on("data", data => {
+    proc.stdout.on("data", (data) => {
       if (String(data).trim() === "done") {
         shutdownStart = Date.now();
       }
     });
-    proc.stderr.on("data", data => {
+    proc.stderr.on("data", (data) => {
       err += data;
     });
 
-    proc.on("close", code => {
+    proc.on("close", (code) => {
       if (code == null) {
         return;
       }
@@ -134,7 +134,7 @@ test("unref idle connections", async () => {
 }, 10_000);
 
 test("client close", async () => {
-  const client = getClient({concurrency: 5});
+  const client = getClient({ concurrency: 5 });
 
   const closeTrigger = new Event();
 
@@ -143,7 +143,7 @@ test("client close", async () => {
   let attemptCount = 0;
   for (let i = 0; i < 10; i++) {
     let localAttemptCount = 0;
-    const query = client.transaction(async tx => {
+    const query = client.transaction(async (tx) => {
       attemptCount++;
       localAttemptCount++;
       if (attemptCount === 5) {
@@ -177,7 +177,7 @@ test("client close", async () => {
   let resolvedLast: string | null = null;
   await Promise.all([
     closePromise.then(() => (resolvedLast = "close")),
-    Promise.all(promises).then(() => (resolvedLast = "queries"))
+    Promise.all(promises).then(() => (resolvedLast = "queries")),
   ]);
 
   expect(resolvedLast).toBe("close");
@@ -197,7 +197,7 @@ test("client close", async () => {
 });
 
 test("client terminate", async () => {
-  const client = getClient({concurrency: 5});
+  const client = getClient({ concurrency: 5 });
 
   const closeTrigger = new Event();
 
@@ -206,7 +206,7 @@ test("client terminate", async () => {
   let attemptCount = 0;
   for (let i = 0; i < 10; i++) {
     let localAttemptCount = 0;
-    const query = client.transaction(async tx => {
+    const query = client.transaction(async (tx) => {
       attemptCount++;
       localAttemptCount++;
       if (attemptCount === 5) {

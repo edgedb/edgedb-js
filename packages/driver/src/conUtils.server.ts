@@ -4,10 +4,10 @@ import {
   readFileUtf8,
   exists,
   hashSHA1toHex,
-  hasFSReadPermission
+  hasFSReadPermission,
 } from "./adapter.node";
 import * as platform from "./platform";
-import {getConnectArgumentsParser} from "./conUtils";
+import { getConnectArgumentsParser } from "./conUtils";
 
 const projectDirCache = new Map<string, string | null>();
 
@@ -56,7 +56,7 @@ export const serverUtils = {
   findProjectDir,
   findStashPath,
   readFileUtf8,
-  searchConfigDir: platform.searchConfigDir
+  searchConfigDir: platform.searchConfigDir,
 };
 
 export const parseConnectArguments = getConnectArgumentsParser(serverUtils);

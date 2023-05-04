@@ -1,14 +1,14 @@
-import {spawn} from "child_process";
+import { spawn } from "child_process";
 import * as process from "process";
 import * as child_process from "child_process";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
 import * as readline from "readline";
-import type {ConnectConfig} from "../src/conUtils";
+import type { ConnectConfig } from "../src/conUtils";
 
-import {Client, createClient} from "../src/index.node";
-import type {EdgeDBVersion} from "./testbase";
+import { Client, createClient } from "../src/index.node";
+import type { EdgeDBVersion } from "./testbase";
 
 interface ServerInfo {
   port: number;
@@ -24,7 +24,7 @@ export const getServerInfo = async (
   }
 
   const input = fs.createReadStream(filename);
-  const rl = readline.createInterface({input});
+  const rl = readline.createInterface({ input });
 
   let line;
   for await (line of rl) {
@@ -46,7 +46,7 @@ const awaitServerInfo = async (statusFile: string) => {
     serverInfo = await getServerInfo(statusFile);
 
     if (serverInfo == null) {
-      await new Promise(resolve => setTimeout(resolve, 1_000));
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
     } else {
       break;
     }
@@ -80,7 +80,7 @@ export const generateStatusFileName = (tag: string): string => {
 
 export const getServerCommand = (
   statusFile: string
-): {args: string[]; availableFeatures: string[]} => {
+): { args: string[]; availableFeatures: string[] } => {
   const availableFeatures: string[] = [];
   let srvcmd = `edgedb-server`;
   if (process.env.EDGEDB_SERVER_BIN) {
@@ -127,10 +127,10 @@ export const getServerCommand = (
     "--port=auto",
     "--emit-server-status=" + statusFile,
     "--security=strict",
-    "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }"
+    "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }",
   ];
 
-  return {args, availableFeatures};
+  return { args, availableFeatures };
 };
 
 interface ServerInst {
@@ -141,24 +141,24 @@ interface ServerInst {
 export const startServer = async (
   cmd: string[],
   statusFile: string,
-  env: {[key: string]: string} = {}
+  env: { [key: string]: string } = {}
 ): Promise<ServerInst> => {
   if (process.env.EDGEDB_DEBUG_SERVER) {
     console.log(`running command: ${cmd.join(" ")}`);
   }
   const proc = child_process.spawn(cmd[0], cmd.slice(1), {
-    env: {...process.env, ...env}
+    env: { ...process.env, ...env },
   });
 
   try {
     if (process.env.EDGEDB_DEBUG_SERVER) {
-      proc.stdout.on("data", data => {
+      proc.stdout.on("data", (data) => {
         process.stdout.write(data.toString());
       });
     }
 
     let stderrData: string = "";
-    proc.stderr.on("data", data => {
+    proc.stderr.on("data", (data) => {
       if (process.env.EDGEDB_DEBUG_SERVER) {
         process.stderr.write(data.toString());
       } else {
@@ -180,7 +180,7 @@ export const startServer = async (
               `code ${code} or signal ${signal}`
           );
         });
-      })
+      }),
     ]);
     proc.removeAllListeners("exit");
 
@@ -202,14 +202,14 @@ export const startServer = async (
       user: "edgedb",
       password: "edgedbtest",
       database: "edgedb",
-      tlsSecurity: "no_host_verification"
+      tlsSecurity: "no_host_verification",
     };
 
     if (typeof runtimeData.tls_cert_file === "string") {
       config.tlsCAFile = runtimeData.tls_cert_file;
     }
 
-    return {config, proc};
+    return { config, proc };
   } catch (err) {
     proc.kill();
     throw err;
@@ -218,7 +218,7 @@ export const startServer = async (
 
 export const connectToServer = async (
   config: ConnectConfig
-): Promise<{client: Client; version: EdgeDBVersion}> => {
+): Promise<{ client: Client; version: EdgeDBVersion }> => {
   const client = createClient(config);
 
   let version: EdgeDBVersion;
@@ -247,7 +247,7 @@ export const connectToServer = async (
     throw e;
   }
 
-  return {client, version};
+  return { client, version };
 };
 
 export const shutdown = async (
@@ -281,7 +281,7 @@ export const shutdown = async (
 
 export async function applyMigrations(
   config: ConnectConfig,
-  params?: {flags?: string[]}
+  params?: { flags?: string[] }
 ) {
   console.log("\nApplying migrations...");
 
@@ -297,7 +297,7 @@ export async function applyMigrations(
       "migrate",
       ...(params?.flags || []),
       "--schema-dir",
-      getWSLPath(path.join(process.cwd(), "dbschema"))
+      getWSLPath(path.join(process.cwd(), "dbschema")),
     ]);
   } else {
     await runCommand(
@@ -335,19 +335,19 @@ export async function runTests(config: ConnectConfig) {
 export async function runCommand(
   command: string,
   args: string[] = [],
-  env?: {[key: string]: string | undefined}
+  env?: { [key: string]: string | undefined }
 ): Promise<void> {
   const proc = spawn(command, args, {
     stdio: ["pipe", "inherit", "inherit"],
     shell: true,
     env: {
       ...process.env,
-      ...env
-    }
+      ...env,
+    },
   });
 
   return new Promise<void>((resolve, reject) => {
-    proc.once("exit", code => {
+    proc.once("exit", (code) => {
       if (code === 0) {
         resolve();
       } else {
@@ -356,7 +356,7 @@ export async function runCommand(
         );
       }
     });
-    proc.once("error", err => {
+    proc.once("error", (err) => {
       proc.removeAllListeners("exit");
       reject(err);
     });
@@ -374,6 +374,6 @@ export function configToEnv(config: ConnectConfig): {
     EDGEDB_PASSWORD: config.password,
     // EDGEDB_TLS_CA_FILE: config.tlsCAFile,
     // EDGEDB_CLIENT_TLS_SECURITY: config.tlsSecurity,
-    EDGEDB_CLIENT_SECURITY: "insecure_dev_mode"
+    EDGEDB_CLIENT_SECURITY: "insecure_dev_mode",
   };
 }

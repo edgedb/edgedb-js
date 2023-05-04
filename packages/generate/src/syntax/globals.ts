@@ -1,6 +1,6 @@
-import {ExpressionKind, Cardinality} from "edgedb/dist/reflection/index";
-import type {Expression, BaseType} from "./typesystem";
-import {$expressionify} from "./path";
+import { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index";
+import type { Expression, BaseType } from "./typesystem";
+import { $expressionify } from "./path";
 
 export function makeGlobal<
   // Name extends string,
@@ -11,7 +11,7 @@ export function makeGlobal<
     __name__: name,
     __element__: type,
     __cardinality__: card,
-    __kind__: ExpressionKind.Global
+    __kind__: ExpressionKind.Global,
   });
 }
 

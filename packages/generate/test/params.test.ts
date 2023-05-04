@@ -5,14 +5,14 @@ import {
   teardownTests,
   tc,
   testIfVersionGTE,
-  versionGTE
+  versionGTE,
 } from "./setupTeardown";
 
 let client: edgedb.Client;
 
 beforeAll(async () => {
   const setup = await setupTests();
-  ({client} = setup);
+  ({ client } = setup);
 });
 
 afterAll(async () => {
@@ -24,13 +24,13 @@ test("simple params", () => {
     {
       str: e.str,
       numArr: e.array(e.int64),
-      optBool: e.optional(e.bool)
+      optBool: e.optional(e.bool),
     },
-    params =>
+    (params) =>
       e.select({
         str: params.str,
         nums: e.array_unpack(params.numArr),
-        x: e.op("true", "if", params.optBool, "else", "false")
+        x: e.op("true", "if", params.optBool, "else", "false"),
       })
   );
 
@@ -71,13 +71,13 @@ test("complex params", async () => {
       numArr: e.array(e.int64),
       optBool: e.optional(e.bool),
       tuple: e.tuple([e.str, e.int32, e.array(e.bool)]),
-      namedTuple: e.tuple({a: e.float64, b: e.array(e.bigint), c: e.str}),
+      namedTuple: e.tuple({ a: e.float64, b: e.array(e.bigint), c: e.str }),
       jsonTuple: e.tuple([e.json]),
       people: e.array(
-        e.tuple({name: e.str, age: e.int64, tags: e.array(e.str)})
-      )
+        e.tuple({ name: e.str, age: e.int64, tags: e.array(e.str) })
+      ),
     },
-    params =>
+    (params) =>
       e.select({
         str: params.str,
         nums: e.array_unpack(params.numArr),
@@ -87,7 +87,7 @@ test("complex params", async () => {
         namedTuple: params.namedTuple,
         namedTupleA: params.namedTuple.a,
         jsonTuple: params.jsonTuple,
-        people: params.people
+        people: params.people,
       })
   );
 
@@ -101,9 +101,9 @@ test("complex params", async () => {
         numArr: readonly number[];
         optBool?: boolean | null;
         tuple: readonly [string, number, boolean[]];
-        namedTuple: Readonly<{a: number; b: bigint[]; c: string}>;
+        namedTuple: Readonly<{ a: number; b: bigint[]; c: string }>;
         jsonTuple: readonly [unknown];
-        people: Readonly<{name: string; age: number; tags: string[]}[]>;
+        people: Readonly<{ name: string; age: number; tags: string[] }[]>;
       }
     >
   >(true);
@@ -112,12 +112,12 @@ test("complex params", async () => {
     str: "test string",
     numArr: [1, 2, 3],
     tuple: ["str", 123, [true, false]],
-    namedTuple: {a: 123, b: [BigInt(4), BigInt(5)], c: "str"},
-    jsonTuple: [{a: 123, b: ["c", "d"]}],
+    namedTuple: { a: 123, b: [BigInt(4), BigInt(5)], c: "str" },
+    jsonTuple: [{ a: 123, b: ["c", "d"] }],
     people: [
-      {name: "person a", age: 23, tags: ["a", "b"]},
-      {name: "person b", age: 45, tags: ["b", "c"]}
-    ]
+      { name: "person a", age: 23, tags: ["a", "b"] },
+      { name: "person b", age: 45, tags: ["b", "c"] },
+    ],
   });
 
   expect({
@@ -127,14 +127,14 @@ test("complex params", async () => {
     namedTuple: {
       a: result.namedTuple.a,
       b: result.namedTuple.b,
-      c: result.namedTuple.c
+      c: result.namedTuple.c,
     },
     jsonTuple: [...result.jsonTuple],
-    people: result.people.map(p => ({
+    people: result.people.map((p) => ({
       name: p.name,
       age: p.age,
-      tags: [...p.tags]
-    }))
+      tags: [...p.tags],
+    })),
   }).toEqual({
     id: (result as any).id,
     str: "test string",
@@ -142,18 +142,18 @@ test("complex params", async () => {
     x: null,
     tuple: ["str", 123, [true, false]],
     tupleArrSlice: [false],
-    namedTuple: {a: 123, b: [BigInt(4), BigInt(5)], c: "str"},
+    namedTuple: { a: 123, b: [BigInt(4), BigInt(5)], c: "str" },
     namedTupleA: 123,
-    jsonTuple: [{a: 123, b: ["c", "d"]}],
+    jsonTuple: [{ a: 123, b: ["c", "d"] }],
     people: [
-      {name: "person a", age: 23, tags: ["a", "b"]},
-      {name: "person b", age: 45, tags: ["b", "c"]}
-    ]
+      { name: "person a", age: 23, tags: ["a", "b"] },
+      { name: "person b", age: 45, tags: ["b", "c"] },
+    ],
   });
 });
 
 test("native tuple type params", async () => {
-  const query = e.params({test: e.tuple([e.str, e.int64])}, $ =>
+  const query = e.params({ test: e.tuple([e.str, e.int64]) }, ($) =>
     e.select($.test)
   );
 
@@ -167,7 +167,7 @@ SELECT (SELECT __param__test)`);
 SELECT (SELECT __param__test)`);
   }
 
-  await query.run(client, {test: ["str", 123]});
+  await query.run(client, { test: ["str", 123] });
 });
 
 test("all param types", async () => {
@@ -192,10 +192,10 @@ test("all param types", async () => {
     local_datetime: e.cal.local_datetime,
     relative_duration: e.cal.relative_duration,
     date_duration: e.cal.date_duration,
-    memory: e.cfg.memory
+    memory: e.cfg.memory,
   };
 
-  const query = e.params(params, p => e.select(p));
+  const query = e.params(params, (p) => e.select(p));
 
   const args = {
     int16: 1,
@@ -219,7 +219,7 @@ test("all param types", async () => {
     local_datetime: new edgedb.LocalDateTime(2021, 11, 25, 1, 2, 3),
     relative_duration: new edgedb.RelativeDuration(1, 2, 3),
     date_duration: new edgedb.DateDuration(1, 2, 3, 4),
-    memory: new edgedb.ConfigMemory(BigInt(125952))
+    memory: new edgedb.ConfigMemory(BigInt(125952)),
   };
 
   const result = await query.run(client, args);
@@ -227,7 +227,7 @@ test("all param types", async () => {
   expect(result).toEqual({
     // @ts-ignore
     id: result.id,
-    ...args
+    ...args,
   });
 
   tc.assert<
@@ -261,13 +261,13 @@ test("all param types", async () => {
 
   const complexQuery = e.params(
     {
-      tuple: e.tuple(params)
+      tuple: e.tuple(params),
     },
-    p => e.select(p)
+    (p) => e.select(p)
   );
 
   const complexResult = await complexQuery.run(client, {
-    tuple: args
+    tuple: args,
   });
 
   expect(Object.values(complexResult.tuple as any)).toEqual(
@@ -277,13 +277,13 @@ test("all param types", async () => {
 
 testIfVersionGTE(2)("v2 param types", async () => {
   const params = {
-    date_duration: e.cal.date_duration
+    date_duration: e.cal.date_duration,
   };
 
-  const query = e.params(params, p => e.select(p));
+  const query = e.params(params, (p) => e.select(p));
 
   const args = {
-    date_duration: new edgedb.DateDuration(1, 2, 3, 4)
+    date_duration: new edgedb.DateDuration(1, 2, 3, 4),
   };
 
   const result = await query.run(client, args);
@@ -291,7 +291,7 @@ testIfVersionGTE(2)("v2 param types", async () => {
   expect(result).toEqual({
     // @ts-ignore
     id: result.id,
-    ...args
+    ...args,
   });
 
   tc.assert<
@@ -307,7 +307,7 @@ testIfVersionGTE(2)("v2 param types", async () => {
 test("non-runnable return expression", () => {
   const reusedExpr = e.set(1, 2, 3);
 
-  const query = e.params({}, $ => e.set(reusedExpr, reusedExpr));
+  const query = e.params({}, ($) => e.set(reusedExpr, reusedExpr));
 
   expect(() => query.toEdgeQL()).not.toThrow();
 });

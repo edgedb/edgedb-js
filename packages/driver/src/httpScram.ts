@@ -1,9 +1,9 @@
-import {ProtocolError} from "./errors";
+import { ProtocolError } from "./errors";
 import {
   decodeB64,
   encodeB64,
   utf8Decoder,
-  utf8Encoder
+  utf8Encoder,
 } from "./primitives/buffer";
 import {
   bufferEquals,
@@ -11,7 +11,7 @@ import {
   buildClientFirstMessage,
   generateNonce,
   parseServerFinalMessage,
-  parseServerFirstMessage
+  parseServerFirstMessage,
 } from "./scram";
 
 const AUTH_ENDPOINT = "/auth/token";
@@ -40,8 +40,8 @@ export async function HTTPSCRAMAuth(
   const FETCH = typeof fetch === "undefined" ? require("node-fetch") : fetch;
   const serverFirstRes = await FETCH(authUrl, {
     headers: {
-      Authorization: `SCRAM-SHA-256 data=${utf8ToB64(clientFirst)}`
-    }
+      Authorization: `SCRAM-SHA-256 data=${utf8ToB64(clientFirst)}`,
+    },
   });
   if (serverFirstRes.status === 403) {
     // tslint:disable-next-line:no-console
@@ -75,8 +75,8 @@ export async function HTTPSCRAMAuth(
 
   const serverFinalRes = await FETCH(authUrl, {
     headers: {
-      Authorization: `SCRAM-SHA-256 sid=${sid}, data=${utf8ToB64(clientFinal)}`
-    }
+      Authorization: `SCRAM-SHA-256 sid=${sid}, data=${utf8ToB64(clientFinal)}`,
+    },
   });
   if (!serverFinalRes.ok) {
     throw new Error("Invalid credentials");
@@ -130,7 +130,7 @@ function parseHeaders(
   }
   return new Map(
     rawAttrs
-      ? rawAttrs.split(",").map(attr => {
+      ? rawAttrs.split(",").map((attr) => {
           const [key, val] = attr.split("=", 2);
           return [key.trim(), val.trim()];
         })

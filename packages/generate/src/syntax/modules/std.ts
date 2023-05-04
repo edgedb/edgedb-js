@@ -1,14 +1,14 @@
-import type {Duration} from "edgedb";
+import type { Duration } from "edgedb";
 import type {
   BaseType,
   TypeSet,
   ScalarType,
   ObjectType,
-  scalarTypeWithConstructor
+  scalarTypeWithConstructor,
 } from "../typesystem";
 
-import type {$expr_PathNode} from "../path";
-import type {Cardinality} from "edgedb/dist/reflection/index";
+import type { $expr_PathNode } from "../path";
+import type { Cardinality } from "edgedb/dist/reflection/index";
 declare function assert_single(input: TypeSet<BaseType>): any;
 
 declare const number: scalarTypeWithConstructor<
@@ -30,4 +30,4 @@ export type $decimal = ScalarType<"std::decimal", string>;
 export type $datetime = ScalarType<"std::datetime", Date>;
 export type $duration = ScalarType<"std::duration", Duration>;
 
-export default {assert_single, number, FreeObject};
+export default { assert_single, number, FreeObject };

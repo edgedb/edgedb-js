@@ -1,7 +1,7 @@
-import {Cardinality, ExpressionKind} from "edgedb/dist/reflection/index";
-import {cardutil} from "./cardinality";
-import type {Expression, BaseType, BaseTypeSet} from "./typesystem";
-import {$expressionify} from "./path";
+import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
+import { cardutil } from "./cardinality";
+import type { Expression, BaseType, BaseTypeSet } from "./typesystem";
+import { $expressionify } from "./path";
 
 export type $expr_For<
   El extends BaseType = BaseType,
@@ -36,7 +36,7 @@ function _for<IteratorSet extends BaseTypeSet, Expr extends BaseTypeSet>(
   const forVar = $expressionify({
     __kind__: ExpressionKind.ForVar,
     __element__: set.__element__,
-    __cardinality__: Cardinality.One
+    __cardinality__: Cardinality.One,
   }) as $expr_ForVar<IteratorSet["__element__"]>;
 
   const returnExpr = expr(forVar);
@@ -50,8 +50,8 @@ function _for<IteratorSet extends BaseTypeSet, Expr extends BaseTypeSet>(
     ),
     __iterSet__: set,
     __expr__: returnExpr,
-    __forVar__: forVar
+    __forVar__: forVar,
   }) as any;
 }
 
-export {_for as for};
+export { _for as for };

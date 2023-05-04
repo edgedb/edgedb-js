@@ -1,4 +1,4 @@
-import type {$} from "edgedb";
+import type { $ } from "edgedb";
 
 import type {
   BaseType,
@@ -6,11 +6,11 @@ import type {
   ObjectTypePointers,
   LinkDesc,
   PropertyDesc,
-  TupleType
+  TupleType,
 } from "./typesystem";
 
-import {util, TypeKind} from "edgedb/dist/reflection/index";
-import type {typeutil} from "edgedb/dist/reflection/index";
+import { util, TypeKind } from "edgedb/dist/reflection/index";
+import type { typeutil } from "edgedb/dist/reflection/index";
 
 const typeCache = new Map<string, BaseType>();
 
@@ -26,7 +26,7 @@ function applySpec(
   const allPointers = [
     ...type.pointers,
     ...type.backlinks,
-    ...type.backlink_stubs
+    ...type.backlink_stubs,
   ];
   for (const ptr of allPointers) {
     if (seen.has(ptr.name)) {
@@ -40,14 +40,14 @@ function applySpec(
         cardinality: ptr.card,
         exclusive: ptr.is_exclusive,
         computed: ptr.is_computed,
-        readonly: ptr.is_readonly
+        readonly: ptr.is_readonly,
       } as LinkDesc;
       util.defineGetter(shape[ptr.name], "target", () =>
         makeType(spec, ptr.target_id, literal)
       );
       util.defineGetter(shape[ptr.name], "properties", () => {
         if (!shape[ptr.name][_linkProps]) {
-          const linkProperties: {[k: string]: any} = (shape[ptr.name][
+          const linkProperties: { [k: string]: any } = (shape[ptr.name][
             _linkProps
           ] = {});
           for (const linkProp of ptr.pointers ?? []) {
@@ -61,7 +61,7 @@ function applySpec(
             }
 
             const linkPropObject: any = {
-              __kind__: "property"
+              __kind__: "property",
             };
             linkPropObject.cardinality = linkProp.card;
             util.defineGetter(linkPropObject, "target", () => {
@@ -78,7 +78,7 @@ function applySpec(
         cardinality: ptr.card,
         exclusive: ptr.is_exclusive,
         computed: ptr.is_computed,
-        readonly: ptr.is_readonly
+        readonly: ptr.is_readonly,
       } as PropertyDesc;
       util.defineGetter(shape[ptr.name], "target", () =>
         makeType(spec, ptr.target_id, literal)
@@ -152,7 +152,7 @@ export function makeType<T extends BaseType>(
         Object.defineProperty(scalarObj, val, {
           get() {
             return literal(scalarObj, val);
-          }
+          },
         });
       }
     } else {
@@ -180,7 +180,7 @@ export function makeType<T extends BaseType>(
       obj.__kind__ = TypeKind.tuple;
 
       util.defineGetter(obj, "__items__", () => {
-        return type.tuple_elements.map(el =>
+        return type.tuple_elements.map((el) =>
           makeType(spec, el.target_id, literal, anytype)
         ) as any;
       });
@@ -267,7 +267,7 @@ export function $mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
       }
       return merged;
     },
-    __shape__: {}
+    __shape__: {},
   };
   return obj as any;
 }

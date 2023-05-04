@@ -17,8 +17,8 @@
  */
 
 import * as errors from "./index";
-import {ErrorType} from "./base";
-import {errorMapping} from "./map";
+import { ErrorType } from "./base";
+import { errorMapping } from "./map";
 
 export function resolveErrorCode(code: number): ErrorType {
   let result: ErrorType | undefined;

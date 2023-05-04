@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-import {INVALID_CODEC, NullCodec, NULL_CODEC} from "./codecs/codecs";
-import {ICodec, uuid} from "./codecs/ifaces";
-import {NamedTupleCodec} from "./codecs/namedtuple";
-import {ObjectCodec} from "./codecs/object";
-import {CodecsRegistry} from "./codecs/registry";
-import {EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec} from "./codecs/tuple";
-import {versionGreaterThanOrEqual} from "./utils";
+import { INVALID_CODEC, NullCodec, NULL_CODEC } from "./codecs/codecs";
+import { ICodec, uuid } from "./codecs/ifaces";
+import { NamedTupleCodec } from "./codecs/namedtuple";
+import { ObjectCodec } from "./codecs/object";
+import { CodecsRegistry } from "./codecs/registry";
+import { EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec } from "./codecs/tuple";
+import { versionGreaterThanOrEqual } from "./utils";
 import * as errors from "./errors";
-import {resolveErrorCode} from "./errors/resolve";
+import { resolveErrorCode } from "./errors/resolve";
 import {
   Cardinality,
   LegacyHeaderCodes,
@@ -32,19 +32,19 @@ import {
   QueryOptions,
   ProtocolVersion,
   QueryArgs,
-  ServerSettings
+  ServerSettings,
 } from "./ifaces";
 import {
   ReadBuffer,
   ReadMessageBuffer,
   utf8Decoder,
   WriteBuffer,
-  WriteMessageBuffer
+  WriteMessageBuffer,
 } from "./primitives/buffer";
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
 import LRU from "./primitives/lru";
-import {Session} from "./options";
+import { Session } from "./options";
 
 export const PROTO_VER: ProtocolVersion = [1, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];
@@ -54,7 +54,7 @@ enum TransactionStatus {
   TRANS_ACTIVE = 1, // command in progress
   TRANS_INTRANS = 2, // idle, within transaction block
   TRANS_INERROR = 3, // idle, within failed transaction
-  TRANS_UNKNOWN = 4 // cannot determine status
+  TRANS_UNKNOWN = 4, // cannot determine status
 }
 
 export enum Capabilities {
@@ -66,7 +66,7 @@ export enum Capabilities {
   DDL = 1 << 3, // query contains DDL
   PERSISTENT_CONFIG = 1 << 4, // server or database config change
   SET_GLOBAL = 1 << 5,
-  ALL = 0xffff_ffff
+  ALL = 0xffff_ffff,
 }
 
 const NO_TRANSACTION_CAPABILITIES =
@@ -88,12 +88,12 @@ const RESTRICTED_CAPABILITIES =
 enum CompilationFlag {
   INJECT_OUTPUT_TYPE_IDS = 1 << 0,
   INJECT_OUTPUT_TYPE_NAMES = 1 << 1,
-  INJECT_OUTPUT_OBJECT_IDS = 1 << 2
+  INJECT_OUTPUT_OBJECT_IDS = 1 << 2,
 }
 
 const OLD_ERROR_CODES = new Map([
   [0x05_03_00_01, 0x05_03_01_01], // TransactionSerializationError #2431
-  [0x05_03_00_02, 0x05_03_01_02] // TransactionDeadlockError      #2431
+  [0x05_03_00_02, 0x05_03_01_02], // TransactionDeadlockError      #2431
 ]);
 
 export type ParseResult = [
@@ -140,7 +140,7 @@ export class BaseRawConnection {
     this.buffer = new ReadMessageBuffer();
 
     this.codecsRegistry = registry;
-    this.queryCodecCache = new LRU({capacity: 1000});
+    this.queryCodecCache = new LRU({ capacity: 1000 });
 
     this.lastStatus = null;
 
@@ -154,9 +154,7 @@ export class BaseRawConnection {
   }
 
   protected throwNotImplemented(method: string): never {
-    throw new errors.InternalClientError(
-      `method ${method} is not implemented`
-    );
+    throw new errors.InternalClientError(`method ${method} is not implemented`);
   }
 
   protected async _waitForMessage(): Promise<void> {
@@ -269,7 +267,7 @@ export class BaseRawConnection {
       outCodec,
       capabilities,
       inTypeData,
-      outTypeData
+      outTypeData,
     ];
   }
 
@@ -451,7 +449,7 @@ export class BaseRawConnection {
     wb.beginMessage(chars.$P)
       .writeLegacyHeaders({
         explicitObjectids: "true",
-        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES
+        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
       })
       .writeChar(outputFormat)
       .writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
@@ -588,7 +586,7 @@ export class BaseRawConnection {
                 outCodec,
                 capabilities,
                 inCodecData,
-                outCodecData
+                outCodecData,
               ] = this._parseDescribeTypeMessage();
             } catch (e: any) {
               error = e;
@@ -630,7 +628,7 @@ export class BaseRawConnection {
       outCodec,
       capabilities,
       inCodecData,
-      outCodecData
+      outCodecData,
     ];
   }
 
@@ -663,10 +661,7 @@ export class BaseRawConnection {
         return EmptyTupleCodec.BUFFER;
       }
 
-      if (
-        inCodec instanceof NamedTupleCodec ||
-        inCodec instanceof TupleCodec
-      ) {
+      if (inCodec instanceof NamedTupleCodec || inCodec instanceof TupleCodec) {
         return inCodec.encodeArgs(args);
       }
 
@@ -684,7 +679,7 @@ export class BaseRawConnection {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
       .writeLegacyHeaders({
-        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES
+        allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
       })
       .writeString("") // statement name
       .writeBuffer(this._encodeArgs(args, inCodec))
@@ -761,7 +756,7 @@ export class BaseRawConnection {
     wb.beginMessage(chars.$O);
     wb.writeLegacyHeaders({
       explicitObjectids: "true",
-      allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES
+      allowCapabilities: NO_TRANSACTION_CAPABILITIES_BYTES,
     });
     wb.writeChar(outputFormat);
     wb.writeChar(expectOne ? Cardinality.AT_MOST_ONE : Cardinality.MANY);
@@ -826,7 +821,7 @@ export class BaseRawConnection {
               newCard,
               inCodec,
               outCodec,
-              capabilities
+              capabilities,
             ]);
             reExec = true;
           } catch (e: any) {
@@ -965,7 +960,7 @@ export class BaseRawConnection {
               outCodec,
               capabilities,
               inCodecBuf,
-              outCodecBuf
+              outCodecBuf,
             ] = this._parseDescribeTypeMessage();
             const key = this._getQueryCacheKey(
               query,
@@ -976,7 +971,7 @@ export class BaseRawConnection {
               newCard,
               inCodec,
               outCodec,
-              capabilities
+              capabilities,
             ]);
           } catch (e: any) {
             error = e;
@@ -1026,7 +1021,7 @@ export class BaseRawConnection {
       outCodec!,
       capabilities,
       inCodecBuf,
-      outCodecBuf
+      outCodecBuf,
     ];
   }
 
@@ -1119,7 +1114,7 @@ export class BaseRawConnection {
               newCard,
               newInCodec,
               newOutCodec,
-              capabilities
+              capabilities,
             ]);
             outCodec = newOutCodec;
           } catch (e: any) {
@@ -1227,11 +1222,7 @@ export class BaseRawConnection {
       let [card, inCodec, outCodec] = this.queryCodecCache.get(key) ?? [];
 
       if (card) {
-        this._validateFetchCardinality(
-          card,
-          outputFormat,
-          expectedCardinality
-        );
+        this._validateFetchCardinality(card, outputFormat, expectedCardinality);
       }
 
       if (
@@ -1245,11 +1236,7 @@ export class BaseRawConnection {
           state,
           privilegedMode
         );
-        this._validateFetchCardinality(
-          card,
-          outputFormat,
-          expectedCardinality
-        );
+        this._validateFetchCardinality(card, outputFormat, expectedCardinality);
       }
 
       try {
@@ -1292,11 +1279,7 @@ export class BaseRawConnection {
 
       if (this.queryCodecCache.has(key)) {
         const [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
-        this._validateFetchCardinality(
-          card,
-          outputFormat,
-          expectedCardinality
-        );
+        this._validateFetchCardinality(card, outputFormat, expectedCardinality);
         await this._legacyOptimisticExecuteFlow(
           query,
           args,
@@ -1307,13 +1290,12 @@ export class BaseRawConnection {
           ret
         );
       } else {
-        const [card, inCodec, outCodec, capabilities] =
-          await this._legacyParse(query, outputFormat, expectOne);
-        this._validateFetchCardinality(
-          card,
+        const [card, inCodec, outCodec, capabilities] = await this._legacyParse(
+          query,
           outputFormat,
-          expectedCardinality
+          expectOne
         );
+        this._validateFetchCardinality(card, outputFormat, expectedCardinality);
         this.queryCodecCache.set(key, [card, inCodec, outCodec, capabilities]);
 
         await this._legacyExecuteFlow(args, inCodec, outCodec, ret);
@@ -1370,7 +1352,7 @@ export class BaseRawConnection {
       .writeLegacyHeaders({
         allowCapabilities: !allowTransactionCommands
           ? NO_TRANSACTION_CAPABILITIES_BYTES
-          : undefined
+          : undefined,
       })
       .writeString(query) // statement name
       .endMessage();
@@ -1475,7 +1457,7 @@ export class BaseRawConnection {
       result[4]!,
       result[5]!,
       this.protocolVersion,
-      result[3]
+      result[3],
     ];
   }
 

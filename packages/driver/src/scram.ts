@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-import {randomBytes, H, HMAC} from "./adapter.shared.node";
-import {utf8Encoder, encodeB64, decodeB64} from "./primitives/buffer";
-import {ProtocolError} from "./errors";
+import { randomBytes, H, HMAC } from "./adapter.shared.node";
+import { utf8Encoder, encodeB64, decodeB64 } from "./primitives/buffer";
+import { ProtocolError } from "./errors";
 
-export {H, HMAC};
+export { H, HMAC };
 
 const RAW_NONCE_LENGTH = 18;
 

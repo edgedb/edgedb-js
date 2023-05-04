@@ -1,7 +1,7 @@
-import {process} from "https://deno.land/std@0.177.0/node/process.ts";
+import { process } from "https://deno.land/std@0.177.0/node/process.ts";
 import {
   crypto,
-  toHashString
+  toHashString,
 } from "https://deno.land/std@0.177.0/crypto/mod.ts";
 
 import path from "https://deno.land/std@0.177.0/node/path.ts";
@@ -10,14 +10,14 @@ import * as fs from "https://deno.land/std@0.177.0/node/fs/promises.ts";
 import EventEmitter from "https://deno.land/std@0.177.0/node/events.ts";
 import util from "https://deno.land/std@0.177.0/node/util.ts";
 
-export {path, process, util, fs};
+export { path, process, util, fs };
 
 export async function readFileUtf8(...pathParts: string[]): Promise<string> {
   return await Deno.readTextFile(path.join(...pathParts));
 }
 
 export function hasFSReadPermission(): boolean {
-  return Deno.permissions.querySync({name: "read"}).state === "granted";
+  return Deno.permissions.querySync({ name: "read" }).state === "granted";
 }
 
 export async function readDir(path: string) {
@@ -34,11 +34,11 @@ export async function readDir(path: string) {
 
 export async function walk(
   path: string,
-  params?: {match?: RegExp[]; skip?: RegExp[]}
+  params?: { match?: RegExp[]; skip?: RegExp[] }
 ) {
-  const {match, skip} = params || {};
+  const { match, skip } = params || {};
   await _fs.ensureDir(path);
-  const entries = _fs.walk(path, {match, skip});
+  const entries = _fs.walk(path, { match, skip });
   const files: string[] = [];
   for await (const e of entries) {
     if (!e.isFile) {
@@ -136,7 +136,7 @@ async function toArray(iter: AsyncIterable<unknown>) {
 //   }
 // }
 
-export async function input(message = "", _params?: {silent?: boolean}) {
+export async function input(message = "", _params?: { silent?: boolean }) {
   const buf = new Uint8Array(1024);
   await Deno.stdout.write(new TextEncoder().encode(message));
   const n = <number>await Deno.stdin.read(buf);
@@ -156,8 +156,8 @@ export namespace net {
     // typing when (if?) this becomes stable
     const opts: any =
       typeof port === "string"
-        ? {transport: "unix", path: port}
-        : {port, hostname};
+        ? { transport: "unix", path: port }
+        : { port, hostname };
 
     const conn = Deno.connect(opts);
 
@@ -240,13 +240,13 @@ export namespace net {
     constructor(pconn: Promise<Deno.Conn>) {
       super();
       pconn
-        .then(conn => {
+        .then((conn) => {
           this._conn = conn;
           this._reader = conn;
           this.emit("connect");
           this.resume();
         })
-        .catch(e => {
+        .catch((e) => {
           this.emit("error", e);
         });
     }
@@ -267,7 +267,7 @@ export namespace tls {
       port: options.port,
       hostname: options.host,
       alpnProtocols: options.ALPNProtocols,
-      caCerts: typeof options.ca === "string" ? [options.ca] : options.ca
+      caCerts: typeof options.ca === "string" ? [options.ca] : options.ca,
     });
 
     return new TLSSocket(conn);
@@ -295,7 +295,7 @@ export namespace tls {
     constructor(pconn: Promise<Deno.TlsConn>) {
       super();
       pconn
-        .then(async conn => {
+        .then(async (conn) => {
           const handshake = await conn.handshake();
           this._alpnProtocol = handshake.alpnProtocol;
           this._conn = conn;
@@ -303,7 +303,7 @@ export namespace tls {
           this.emit("secureConnect");
           this.resume();
         })
-        .catch(e => {
+        .catch((e) => {
           this.emit("error", e);
         });
     }

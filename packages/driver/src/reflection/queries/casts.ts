@@ -1,25 +1,25 @@
-import {Executor} from "../../ifaces";
-import type {typeutil} from "../typeutil";
-import {typeMapping} from "./types";
+import { Executor } from "../../ifaces";
+import type { typeutil } from "../typeutil";
+import { typeMapping } from "./types";
 
 type Cast = {
   id: string;
-  source: {id: string; name: string};
-  target: {id: string; name: string};
+  source: { id: string; name: string };
+  target: { id: string; name: string };
   allow_assignment: boolean;
   allow_implicit: boolean;
 };
 
 const reachableFrom: (
   source: string,
-  adj: {[k: string]: string[]},
+  adj: { [k: string]: string[] },
   seen?: Set<string>
 ) => string[] = (source, adj, seen = new Set<string>()) => {
   const reachable = new Set<string>();
   if (seen.has(source)) return [];
   seen.add(source);
 
-  (adj[source] || []).map(cast => {
+  (adj[source] || []).map((cast) => {
     reachable.add(cast);
     for (const item of reachableFrom(cast, adj, seen)) {
       reachable.add(item);
@@ -30,7 +30,7 @@ const reachableFrom: (
 
 export type Casts = typeutil.depromisify<ReturnType<typeof casts>>;
 
-export const casts = async (cxn: Executor, params?: {debug?: boolean}) => {
+export const casts = async (cxn: Executor, params?: { debug?: boolean }) => {
   const allCastsRaw = await cxn.queryJSON(`WITH MODULE schema
         SELECT Cast {
             id,
@@ -48,7 +48,7 @@ export const casts = async (cxn: Executor, params?: {debug?: boolean}) => {
   const allCasts: Cast[] = JSON.parse(allCastsRaw);
   // initialize castsBySource and types
   const types = new Set<string>();
-  const typesById: Record<string, {name: string; id: string}> = {};
+  const typesById: Record<string, { name: string; id: string }> = {};
   const castsById: Record<string, Cast> = {};
   const castsBySource: Record<string, string[]> = {};
   const implicitCastsBySource: Record<string, string[]> = {};
@@ -87,11 +87,11 @@ export const casts = async (cxn: Executor, params?: {debug?: boolean}) => {
     }
   }
 
-  const castMap: {[k: string]: string[]} = {};
-  const implicitCastMap: {[k: string]: string[]} = {};
-  const implicitCastFromMap: {[k: string]: string[]} = {};
-  const assignmentCastMap: {[k: string]: string[]} = {};
-  const assignableByMap: {[k: string]: string[]} = {};
+  const castMap: { [k: string]: string[] } = {};
+  const implicitCastMap: { [k: string]: string[] } = {};
+  const implicitCastFromMap: { [k: string]: string[] } = {};
+  const assignmentCastMap: { [k: string]: string[] } = {};
+  const assignableByMap: { [k: string]: string[] } = {};
 
   for (const type of [...types]) {
     castMap[type] = castsBySource[type] || [];
@@ -107,7 +107,7 @@ export const casts = async (cxn: Executor, params?: {debug?: boolean}) => {
     for (const [fromId, castArr] of Object.entries(implicitCastMap)) {
       console.log(
         `${typesById[fromId].name} implicitly castable to: [${castArr
-          .map(id => typesById[id].name)
+          .map((id) => typesById[id].name)
           .join(", ")}]`
       );
     }
@@ -115,7 +115,7 @@ export const casts = async (cxn: Executor, params?: {debug?: boolean}) => {
     for (const [fromId, castArr] of Object.entries(implicitCastFromMap)) {
       console.log(
         `${typesById[fromId].name} implicitly castable from: [${castArr
-          .map(id => typesById[id].name)
+          .map((id) => typesById[id].name)
           .join(", ")}]`
       );
     }
@@ -124,7 +124,7 @@ export const casts = async (cxn: Executor, params?: {debug?: boolean}) => {
     for (const [fromId, castArr] of Object.entries(assignmentCastMap)) {
       console.log(
         `${typesById[fromId].name} assignable to: [${castArr
-          .map(id => typesById[id].name)
+          .map((id) => typesById[id].name)
           .join(", ")}]`
       );
     }
@@ -133,7 +133,7 @@ export const casts = async (cxn: Executor, params?: {debug?: boolean}) => {
     for (const [fromId, castArr] of Object.entries(assignableByMap)) {
       console.log(
         `${typesById[fromId].name} assignable by: [${castArr
-          .map(id => typesById[id].name)
+          .map((id) => typesById[id].name)
           .join(", ")}]`
       );
     }
@@ -142,7 +142,7 @@ export const casts = async (cxn: Executor, params?: {debug?: boolean}) => {
     for (const [fromId, castArr] of Object.entries(castMap)) {
       console.log(
         `${typesById[fromId].name} castable to: [${castArr
-          .map(id => {
+          .map((id) => {
             return typesById[id].name;
           })
           .join(", ")}]`
@@ -156,6 +156,6 @@ export const casts = async (cxn: Executor, params?: {debug?: boolean}) => {
     implicitCastMap,
     implicitCastFromMap,
     assignmentCastMap,
-    assignableByMap
+    assignableByMap,
   };
 };

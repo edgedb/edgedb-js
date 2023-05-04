@@ -15,16 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {ClientConnectionHolder} from "./baseClient";
-import {BaseRawConnection} from "./baseConn";
+import { ClientConnectionHolder } from "./baseClient";
+import { BaseRawConnection } from "./baseConn";
 import * as errors from "./errors";
-import {Cardinality, Executor, OutputFormat, QueryArgs} from "./ifaces";
+import { Cardinality, Executor, OutputFormat, QueryArgs } from "./ifaces";
 
 export enum TransactionState {
   ACTIVE = 0,
   COMMITTED = 1,
   ROLLEDBACK = 2,
-  FAILED = 3
+  FAILED = 3,
 }
 
 export class Transaction implements Executor {

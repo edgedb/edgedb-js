@@ -2,9 +2,9 @@ import {
   Cardinality,
   ExpressionKind,
   TypeKind,
-  typeutil
+  typeutil,
 } from "edgedb/dist/reflection/index";
-import {cardutil} from "./cardinality";
+import { cardutil } from "./cardinality";
 import type {
   $expr_Array,
   $expr_NamedTuple,
@@ -21,17 +21,17 @@ import type {
   ObjectTypePointers,
   PropertyDesc,
   TupleType,
-  TypeSet
+  TypeSet,
 } from "./typesystem";
 
-import {$expressionify, ExpressionRoot} from "./path";
-import type {getCardsFromExprs} from "./set";
+import { $expressionify, ExpressionRoot } from "./path";
+import type { getCardsFromExprs } from "./set";
 import {
   literalToScalarType,
   literalToTypeSet,
   mapLiteralToTypeSet,
   orScalarLiteral,
-  scalarLiterals
+  scalarLiterals,
 } from "./castMaps";
 
 const indexSliceRegx = /^(-?\d+)(?:(:)(-?\d+)?)?|:(-?\d+)$/;
@@ -58,13 +58,13 @@ const arrayLikeProxyHandlers: ProxyHandler<ExpressionRoot> = {
             ? literalToTypeSet(Number(start))
             : [
                 start && literalToTypeSet(Number(start)),
-                end && literalToTypeSet(Number(end))
-              ]
-        ]
+                end && literalToTypeSet(Number(end)),
+              ],
+        ],
       }) as any;
     }
     return (target as any)[prop];
-  }
+  },
 };
 
 function arrayLikeIndex(this: ExpressionRoot, index: any) {
@@ -81,7 +81,7 @@ function arrayLikeIndex(this: ExpressionRoot, index: any) {
     ),
     __name__: "[]",
     __opkind__: "Infix",
-    __args__: [this, indexTypeSet]
+    __args__: [this, indexTypeSet],
   }) as any;
 }
 
@@ -100,7 +100,7 @@ function arrayLikeSlice(this: ExpressionRoot, start: any, end: any) {
     ),
     __name__: "[]",
     __opkind__: "Infix",
-    __args__: [this, [startTypeSet, endTypeSet]]
+    __args__: [this, [startTypeSet, endTypeSet]],
   }) as any;
 }
 
@@ -149,25 +149,25 @@ export function array<
 >;
 export function array(arg: any) {
   if (Array.isArray(arg)) {
-    const items = arg.map(a => literalToTypeSet(a));
+    const items = arg.map((a) => literalToTypeSet(a));
     return $expressionify({
       __kind__: ExpressionKind.Array,
       __cardinality__: cardutil.multiplyCardinalitiesVariadic(
-        items.map(item => item.__cardinality__) as any
+        items.map((item) => item.__cardinality__) as any
       ),
       __element__: {
         __kind__: TypeKind.array,
         __name__: `array<${items[0]!.__element__.__name__}>`,
-        __element__: items[0]!.__element__
+        __element__: items[0]!.__element__,
       } as any,
-      __items__: items
+      __items__: items,
     });
   }
   if (arg.__kind__) {
     return {
       __kind__: TypeKind.array,
       __name__: `array<${arg.__name__}>`,
-      __element__: arg
+      __element__: arg,
     } as any;
   }
 
@@ -188,7 +188,7 @@ const tupleProxyHandlers: ProxyHandler<ExpressionRoot> = {
     return items?.hasOwnProperty(prop)
       ? tuplePath(proxy, (items as any)[prop], prop as any)
       : (target as any)[prop];
-  }
+  },
 };
 
 export function $tuplePathify(expr: ExpressionRoot) {
@@ -212,7 +212,7 @@ function tuplePath(
     __element__: itemType,
     __cardinality__: parent.__cardinality__,
     __parent__: parent,
-    __index__: index
+    __index__: index,
   }) as any;
 }
 
@@ -220,7 +220,7 @@ function makeTupleType(name: string, items: BaseType[]) {
   return {
     __kind__: TypeKind.tuple,
     __name__: name,
-    __items__: items
+    __items__: items,
   } as any;
 }
 
@@ -240,34 +240,34 @@ export function tuple<
 export function tuple<Shape extends NamedTupleShape>(
   shape: Shape
 ): NamedTupleType<Shape>;
-export function tuple<Shape extends {[k: string]: TypeSet | scalarLiterals}>(
+export function tuple<Shape extends { [k: string]: TypeSet | scalarLiterals }>(
   shape: Shape
 ): $expr_NamedTuple<mapLiteralToTypeSet<Shape>>;
 export function tuple(input: any) {
   if (Array.isArray(input)) {
     // is tuple
-    if (input.every(item => typeKinds.has(item.__kind__))) {
+    if (input.every((item) => typeKinds.has(item.__kind__))) {
       const typeItems = input as BaseType[];
       const typeName = `tuple<${typeItems
-        .map(item => item.__name__)
+        .map((item) => item.__name__)
         .join(", ")}>`;
       return makeTupleType(typeName, typeItems);
     }
 
-    const items = input.map(item => literalToTypeSet(item));
+    const items = input.map((item) => literalToTypeSet(item));
     const name = `tuple<${items
-      .map(item => item.__element__.__name__)
+      .map((item) => item.__element__.__name__)
       .join(", ")}>`;
     return $expressionify({
       __kind__: ExpressionKind.Tuple,
       __element__: makeTupleType(
         name,
-        items.map(item => item.__element__)
+        items.map((item) => item.__element__)
       ),
       __cardinality__: cardutil.multiplyCardinalitiesVariadic(
-        items.map(i => i.__cardinality__) as any
+        items.map((i) => i.__cardinality__) as any
       ),
-      __items__: items
+      __items__: items,
     }) as any;
   } else {
     // is named tuple
@@ -278,7 +278,7 @@ export function tuple(input: any) {
       return {
         __kind__: TypeKind.namedtuple,
         __name__: typeName,
-        __shape__: input
+        __shape__: input,
       } as any;
     }
 
@@ -297,12 +297,12 @@ export function tuple(input: any) {
       __element__: {
         __kind__: TypeKind.namedtuple,
         __name__: name,
-        __shape__: typeShape
+        __shape__: typeShape,
       } as any,
       __cardinality__: cardutil.multiplyCardinalitiesVariadic(
-        Object.values(exprShape).map(val => val.__cardinality__) as any
+        Object.values(exprShape).map((val) => val.__cardinality__) as any
       ),
-      __shape__: exprShape
+      __shape__: exprShape,
     }) as any;
   }
 }

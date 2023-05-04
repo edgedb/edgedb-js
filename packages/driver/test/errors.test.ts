@@ -17,7 +17,7 @@
  */
 
 import * as edgedb from "../src/index.node";
-import {resolveErrorCode} from "../src/errors/resolve";
+import { resolveErrorCode } from "../src/errors/resolve";
 
 test("resolve error", () => {
   expect(resolveErrorCode(0x04_02_01_01)).toBe(edgedb.InvalidLinkTargetError);

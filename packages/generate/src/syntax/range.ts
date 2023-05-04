@@ -1,30 +1,30 @@
-import type {LocalDate, LocalDateTime, Duration} from "edgedb";
-import {Range} from "edgedb";
-import {TypeKind, ExpressionKind} from "edgedb/dist/reflection/index";
+import type { LocalDate, LocalDateTime, Duration } from "edgedb";
+import { Range } from "edgedb";
+import { TypeKind, ExpressionKind } from "edgedb/dist/reflection/index";
 
-import type {cardutil} from "./cardinality";
+import type { cardutil } from "./cardinality";
 import type {
   RangeType,
   getPrimitiveBaseType,
   TypeSet,
-  BaseType
+  BaseType,
 } from "./typesystem";
-import type {$expr_Literal} from "./literal";
+import type { $expr_Literal } from "./literal";
 
 import type {
   $number,
   $decimal,
   $datetime,
   $duration,
-  $bool
+  $bool,
 } from "./modules/std";
-import type {$local_date, $local_datetime} from "./modules/cal";
-import type {literalToScalarType, orScalarLiteral} from "./castMaps";
-import {literalToTypeSet} from "./castMaps";
-import {spec} from "./__spec__";
-import {literal, $nameMapping} from "./literal";
-import {$expr_Function, $resolveOverload} from "./funcops";
-import {$expressionify} from "./path";
+import type { $local_date, $local_datetime } from "./modules/cal";
+import type { literalToScalarType, orScalarLiteral } from "./castMaps";
+import { literalToTypeSet } from "./castMaps";
+import { spec } from "./__spec__";
+import { literal, $nameMapping } from "./literal";
+import { $expr_Function, $resolveOverload } from "./funcops";
+import { $expressionify } from "./path";
 
 type $anypoint =
   | $number
@@ -34,9 +34,7 @@ type $anypoint =
   | $local_datetime
   | $duration;
 
-function range<Element extends $anypoint>(
-  element: Element
-): RangeType<Element>;
+function range<Element extends $anypoint>(element: Element): RangeType<Element>;
 function range<T extends number | Date | LocalDate | LocalDateTime | Duration>(
   val: Range<T>
 ): $expr_Literal<RangeType<getPrimitiveBaseType<literalToScalarType<T>>>>;
@@ -140,7 +138,7 @@ function range(...args: any[]): any {
       return {
         __kind__: TypeKind.range,
         __name__: `range<${arg.__name__}>`,
-        __element__: arg
+        __element__: arg,
       } as any;
     }
   }
@@ -148,7 +146,7 @@ function range(...args: any[]): any {
     returnType,
     cardinality,
     args: positionalArgs,
-    namedArgs
+    namedArgs,
   } = $resolveOverload("std::range", args, spec, [
     {
       args: [
@@ -156,37 +154,37 @@ function range(...args: any[]): any {
           typeId: $nameMapping.get("std::anypoint")!,
           optional: true,
           setoftype: false,
-          variadic: false
+          variadic: false,
         },
         {
           typeId: $nameMapping.get("std::anypoint")!,
           optional: true,
           setoftype: false,
-          variadic: false
-        }
+          variadic: false,
+        },
       ],
       namedArgs: {
         inc_lower: {
           typeId: $nameMapping.get("std::bool")!,
           optional: true,
           setoftype: false,
-          variadic: false
+          variadic: false,
         },
         inc_upper: {
           typeId: $nameMapping.get("std::bool")!,
           optional: true,
           setoftype: false,
-          variadic: false
+          variadic: false,
         },
         empty: {
           typeId: $nameMapping.get("std::bool")!,
           optional: true,
           setoftype: false,
-          variadic: false
-        }
+          variadic: false,
+        },
       },
-      returnTypeId: $nameMapping.get("range<std::anypoint>")!
-    }
+      returnTypeId: $nameMapping.get("range<std::anypoint>")!,
+    },
   ]);
   return $expressionify({
     __kind__: ExpressionKind.Function,
@@ -194,8 +192,8 @@ function range(...args: any[]): any {
     __cardinality__: cardinality,
     __name__: "std::range",
     __args__: positionalArgs,
-    __namedargs__: namedArgs
+    __namedargs__: namedArgs,
   }) as any;
 }
 
-export {range as $range};
+export { range as $range };

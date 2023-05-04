@@ -1,6 +1,6 @@
-import {Executor} from "../../ifaces";
-import {StrictMap} from "../strictMap";
-import type {typeutil} from "../typeutil";
+import { Executor } from "../../ifaces";
+import { StrictMap } from "../strictMap";
+import type { typeutil } from "../typeutil";
 
 /*
   for scalars
@@ -42,10 +42,10 @@ FILTER
       id: string;
       name: string;
       is_abstract: boolean;
-      bases: {id: string; name: string}[];
-      ancestors: {id: string; name: string}[];
-      children: {id: string; name: string}[];
-      descendants: {id: string; name: string}[];
+      bases: { id: string; name: string }[];
+      ancestors: { id: string; name: string }[];
+      children: { id: string; name: string }[];
+      descendants: { id: string; name: string }[];
     }
   >();
 
@@ -89,4 +89,4 @@ FILTER
   // return castsFrom;
   // // return castsResult;
 };
-export {_scalars as scalars};
+export { _scalars as scalars };

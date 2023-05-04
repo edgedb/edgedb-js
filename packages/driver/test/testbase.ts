@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import createClient, {Client, ConnectOptions} from "../src/index.node";
+import createClient, { Client, ConnectOptions } from "../src/index.node";
 
 export interface EdgeDBVersion {
   major: number;
@@ -44,7 +44,7 @@ function _getOpts(opts: ConnectOptions): ConnectOptions {
   if (!opts.database) {
     opts.database = "jest";
   }
-  return {...config, ...opts};
+  return { ...config, ...opts };
 }
 
 export function getConnectOptions(): ConnectOptions {

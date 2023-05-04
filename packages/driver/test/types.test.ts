@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {Temporal} from "@js-temporal/polyfill";
+import { Temporal } from "@js-temporal/polyfill";
 import {
   Duration,
   LocalDate,

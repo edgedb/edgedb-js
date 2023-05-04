@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {execFile} from "child_process";
+import { execFile } from "child_process";
 
 jest.setTimeout(120000);
 test("run deno test", async () => {
@@ -31,12 +31,12 @@ test("run deno test", async () => {
         "--allow-read",
         "--allow-write",
         "--unsafely-ignore-certificate-errors",
-        "test"
+        "test",
       ],
       {
         env: process.env,
         timeout: 120_000,
-        cwd: "../deno"
+        cwd: "../deno",
       },
       (error, stdout, stderr) => {
         console.log(stdout);
@@ -60,7 +60,7 @@ test("deno check", async () => {
       {
         env: process.env,
         timeout: 60_000,
-        cwd: "../deno"
+        cwd: "../deno",
       },
       (error, _stdout, stderr) => {
         if (error) {

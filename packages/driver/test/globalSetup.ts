@@ -4,7 +4,7 @@ import {
   generateStatusFileName,
   getServerCommand,
   getWSLPath,
-  startServer
+  startServer,
 } from "./testUtil";
 
 export default async () => {
@@ -14,9 +14,9 @@ export default async () => {
   const statusFile = generateStatusFileName("node");
   console.log("Node status file:", statusFile);
 
-  const {args, availableFeatures} = getServerCommand(getWSLPath(statusFile));
+  const { args, availableFeatures } = getServerCommand(getWSLPath(statusFile));
   console.log(`Starting server...`);
-  const {proc, config} = await startServer(args, statusFile);
+  const { proc, config } = await startServer(args, statusFile);
 
   // @ts-ignore
   global.edgedbProc = proc;
@@ -25,7 +25,7 @@ export default async () => {
   process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
     JSON.stringify(availableFeatures);
 
-  const {client, version} = await connectToServer(config);
+  const { client, version } = await connectToServer(config);
 
   // @ts-ignore
   global.edgedbConn = client;

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import type {TLSSocket} from "tls";
+import type { TLSSocket } from "tls";
 
 interface PatchedTLSSocket extends TLSSocket {
   abortOnMessageType: number | null;
@@ -70,15 +70,15 @@ jest.mock("tls", () => {
   };
 });
 
-import {getClient} from "./testbase";
+import { getClient } from "./testbase";
 import * as chars from "../src/primitives/chars";
-import {sleep} from "../src/utils";
+import { sleep } from "../src/utils";
 
 test("transaction retry on connection error after start", async () => {
-  const client = getClient({concurrency: 1});
+  const client = getClient({ concurrency: 1 });
 
   let retryCount = 0;
-  const result = await client.transaction(async tx => {
+  const result = await client.transaction(async (tx) => {
     retryCount++;
 
     if (retryCount === 1) {
@@ -95,10 +95,10 @@ test("transaction retry on connection error after start", async () => {
 });
 
 test("transaction retry on connection error before commit", async () => {
-  const client = getClient({concurrency: 1});
+  const client = getClient({ concurrency: 1 });
 
   let retryCount = 0;
-  const result = await client.transaction(async tx => {
+  const result = await client.transaction(async (tx) => {
     retryCount++;
 
     const result = await tx.querySingle(`select 'Hello EdgeDB!'`);
@@ -118,11 +118,11 @@ test("transaction retry on connection error before commit", async () => {
 });
 
 test("transaction retry on connection error after commit", async () => {
-  const client = getClient({concurrency: 1});
+  const client = getClient({ concurrency: 1 });
 
   let retryCount = 0;
   await expect(
-    client.transaction(async tx => {
+    client.transaction(async (tx) => {
       retryCount++;
 
       const result = await tx.querySingle(`select 'Hello EdgeDB!'`);
@@ -143,9 +143,9 @@ test("transaction retry on connection error after commit", async () => {
 });
 
 test("retry readonly queries", async () => {
-  const client = getClient({concurrency: 1});
+  const client = getClient({ concurrency: 1 });
 
-  const nonRetryingClient = client.withRetryOptions({attempts: 1});
+  const nonRetryingClient = client.withRetryOptions({ attempts: 1 });
 
   await client.ensureConnected();
 

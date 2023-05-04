@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import {ICodec, Codec, uuid, CodecKind} from "./ifaces";
-import {WriteBuffer, ReadBuffer} from "../primitives/buffer";
-import {Range} from "../datatypes/range";
-import {InvalidArgumentError} from "../errors";
+import { ICodec, Codec, uuid, CodecKind } from "./ifaces";
+import { WriteBuffer, ReadBuffer } from "../primitives/buffer";
+import { Range } from "../datatypes/range";
+import { InvalidArgumentError } from "../errors";
 
 enum RangeFlags {
   EMPTY = 1 << 0,

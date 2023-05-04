@@ -1,7 +1,7 @@
 import * as tc from "conditional-type-checks";
-import {Client, createClient} from "edgedb";
+import { Client, createClient } from "edgedb";
 
-export {tc};
+export { tc };
 
 // insert tony
 // insert cap
@@ -21,7 +21,7 @@ interface Hero {
 interface Villain {
   id: string;
   name: string;
-  nemesis: {id: string; name: string};
+  nemesis: { id: string; name: string };
 }
 interface Movie {
   id: string;
@@ -29,7 +29,7 @@ interface Movie {
   genre: string;
   rating: number | null;
   release_year: number;
-  characters: {id: string}[];
+  characters: { id: string }[];
 }
 
 export async function setupTests() {
@@ -38,8 +38,7 @@ export async function setupTests() {
   set allow_user_specified_id := true;`);
   await cleanupData(client);
 
-  const iron_man: Hero =
-    await client.queryRequiredSingle(`SELECT (INSERT Hero {
+  const iron_man: Hero = await client.queryRequiredSingle(`SELECT (INSERT Hero {
   name := "Iron Man",
   secret_identity := "Tony Stark"
 }) {id, name, secret_identity}`);
@@ -59,7 +58,7 @@ export async function setupTests() {
   name := "Thanos",
   nemesis := (SELECT Hero FILTER .id = <uuid>$nemesis_id)
 }) { id, name, nemesis: { id, name }}`,
-    {nemesis_id: iron_man.id}
+    { nemesis_id: iron_man.id }
   );
 
   const docOck: Villain = await client.queryRequiredSingle(
@@ -67,7 +66,7 @@ export async function setupTests() {
   name := "Doc Ock",
   nemesis := (SELECT Hero FILTER .id = <uuid>$nemesis_id)
 }) {id, name, nemesis: { id, name }}`,
-    {nemesis_id: spidey.id}
+    { nemesis_id: spidey.id }
   );
 
   const the_avengers: Movie = await client.queryRequiredSingle(
@@ -86,7 +85,7 @@ SELECT (INSERT Movie {
     SELECT Person { @character_name := char.0 } FILTER .id = char.1
   ))
 }) {id, title, rating, genre, release_year, characters: {id}};`,
-    {ironman_id: iron_man.id, cap_id: cap.id}
+    { ironman_id: iron_man.id, cap_id: cap.id }
   );
   const civil_war: Movie = await client.queryRequiredSingle(
     `SELECT (INSERT Movie {
@@ -106,9 +105,9 @@ SELECT (INSERT Movie {
       thanos,
       docOck,
       the_avengers,
-      civil_war
+      civil_war,
     },
-    client
+    client,
   };
 }
 

@@ -16,25 +16,25 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, utf8Decoder} from "../primitives/buffer";
+import { ReadBuffer, utf8Decoder } from "../primitives/buffer";
 import LRU from "../primitives/lru";
-import {ICodec, uuid, ScalarCodec} from "./ifaces";
-import {NULL_CODEC, SCALAR_CODECS} from "./codecs";
-import {NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES} from "./consts";
-import {EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec} from "./tuple";
+import { ICodec, uuid, ScalarCodec } from "./ifaces";
+import { NULL_CODEC, SCALAR_CODECS } from "./codecs";
+import { NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES } from "./consts";
+import { EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec } from "./tuple";
 import * as numbers from "./numbers";
 import * as datecodecs from "./datetime";
-import {JSONStringCodec} from "./json";
-import {ArrayCodec} from "./array";
-import {NamedTupleCodec} from "./namedtuple";
-import {EnumCodec} from "./enum";
-import {ObjectCodec} from "./object";
-import {SetCodec} from "./set";
-import {RangeCodec} from "./range";
-import {ProtocolVersion} from "../ifaces";
-import {versionGreaterThanOrEqual} from "../utils";
-import {SparseObjectCodec} from "./sparseObject";
-import {ProtocolError, InternalClientError} from "../errors";
+import { JSONStringCodec } from "./json";
+import { ArrayCodec } from "./array";
+import { NamedTupleCodec } from "./namedtuple";
+import { EnumCodec } from "./enum";
+import { ObjectCodec } from "./object";
+import { SetCodec } from "./set";
+import { RangeCodec } from "./range";
+import { ProtocolVersion } from "../ifaces";
+import { versionGreaterThanOrEqual } from "../utils";
+import { SparseObjectCodec } from "./sparseObject";
+import { ProtocolError, InternalClientError } from "../errors";
 
 const CODECS_CACHE_SIZE = 1000;
 const CODECS_BUILD_CACHE_SIZE = 200;
@@ -66,15 +66,15 @@ export class CodecsRegistry {
   private customScalarCodecs: Map<uuid, ICodec>;
 
   constructor() {
-    this.codecs = new LRU({capacity: CODECS_CACHE_SIZE});
-    this.codecsBuildCache = new LRU({capacity: CODECS_BUILD_CACHE_SIZE});
+    this.codecs = new LRU({ capacity: CODECS_CACHE_SIZE });
+    this.codecsBuildCache = new LRU({ capacity: CODECS_BUILD_CACHE_SIZE });
     this.customScalarCodecs = new Map();
   }
 
   setCustomCodecs({
     int64_bigint,
     datetime_localDatetime,
-    json_string
+    json_string,
   }: CustomCodecSpec = {}): void {
     // This is a private API and it will change in the future.
 

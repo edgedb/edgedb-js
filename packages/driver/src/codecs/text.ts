@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import {ReadBuffer, WriteBuffer, utf8Encoder} from "../primitives/buffer";
-import {ICodec, ScalarCodec} from "./ifaces";
-import {InvalidArgumentError} from "../errors";
+import { ReadBuffer, WriteBuffer, utf8Encoder } from "../primitives/buffer";
+import { ICodec, ScalarCodec } from "./ifaces";
+import { InvalidArgumentError } from "../errors";
 
 export class StrCodec extends ScalarCodec implements ICodec {
   tsType = "string";

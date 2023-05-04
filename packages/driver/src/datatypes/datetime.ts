@@ -23,7 +23,7 @@ import {
   ymd2ord,
   ord2ymd,
   daysBeforeMonth,
-  isLeapYear
+  isLeapYear,
 } from "./dateutil";
 
 export const DATE_PRIVATE = Symbol.for("edgedb.datetime");
@@ -382,7 +382,7 @@ export class Duration {
       seconds,
       milliseconds,
       microseconds,
-      nanoseconds
+      nanoseconds,
     ];
 
     let sign = 0;
@@ -557,7 +557,7 @@ export class Duration {
         minutes,
         fMinutes,
         seconds,
-        fSeconds
+        fSeconds,
       ] = matches;
       if (_duration.length < 3 || _time.length === 1) {
         throw new RangeError(`invalid duration: ${str}`);
@@ -797,7 +797,7 @@ export class DateDuration {
   }
 }
 
-const humanDurationPrefixes: {[key: string]: number} = {
+const humanDurationPrefixes: { [key: string]: number } = {
   h: 3_600_000,
   hou: 3_600_000,
   m: 60_000,
@@ -805,7 +805,7 @@ const humanDurationPrefixes: {[key: string]: number} = {
   s: 1000,
   sec: 1000,
   ms: 1,
-  mil: 1
+  mil: 1,
 };
 
 export function parseHumanDurationString(durationStr: string): number {
