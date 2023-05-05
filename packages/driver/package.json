@@ -40,7 +40,7 @@
     "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",
     "build:cjs": "tsc --project tsconfig.json",
     "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
-    "test": "jest --detectOpenHandles",
+    "test": "npx --node-options='--experimental-fetch' jest --detectOpenHandles",
     "lint": "tslint 'packages/*/src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node genErrors.js",
