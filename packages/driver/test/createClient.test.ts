@@ -77,7 +77,7 @@ test("lazy connect + concurrency", async () => {
 
 function timeScriptShutdown(script: string, timeout = 5_000) {
   return new Promise<number>((resolve, reject) => {
-    const proc = spawn("node", ["--eval", script]);
+    const proc = spawn("node", ["--experimental-fetch", "--eval", script]);
 
     const timeoutRef = setTimeout(() => {
       proc.kill();
