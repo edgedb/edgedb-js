@@ -287,6 +287,7 @@ export namespace tls {
     ca?: string | string[];
     checkServerIdentity?: (a: string, b: any) => Error | undefined;
     rejectUnauthorized?: boolean;
+    servername?: string;
   }
 
   export class TLSSocket extends net.BaseSocket<Deno.TlsConn> {

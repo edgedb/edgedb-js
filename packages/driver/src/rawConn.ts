@@ -49,6 +49,9 @@ function getTlsOptions(config: ResolvedConnectConfig): tls.ConnectionOptions {
 
   const tlsOptions: tls.ConnectionOptions = {
     ALPNProtocols: ["edgedb-binary"],
+    // XXX Deno doesn't support this and that means it won't
+    // work with EdgeDB Cloud.
+    servername: config.address[0],
     rejectUnauthorized: tlsSecurity !== "insecure",
   };
 
