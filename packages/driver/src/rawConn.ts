@@ -18,17 +18,18 @@
 
 import { net, tls } from "./adapter.node";
 import { PROTO_VER, PROTO_VER_MIN, BaseRawConnection } from "./baseConn";
-import { CodecsRegistry } from "./codecs/registry";
+import type { CodecsRegistry } from "./codecs/registry";
 import {
   Address,
   NormalizedConnectConfig,
   ResolvedConnectConfig,
 } from "./conUtils";
 import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
-import { ProtocolVersion } from "./ifaces";
+import type { ClientHandshakeOptions, ProtocolVersion } from "./ifaces";
 import { WriteMessageBuffer } from "./primitives/buffer";
 import Event from "./primitives/event";
-import char, * as chars from "./primitives/chars";
+import type char from "./primitives/chars";
+import * as chars from "./primitives/chars";
 import * as scram from "./scram";
 import * as errors from "./errors";
 
@@ -361,16 +362,17 @@ export class RawConnection extends BaseRawConnection {
       .writeInt16(this.protocolVersion[0])
       .writeInt16(this.protocolVersion[1]);
 
-    const params: { [key: string]: string } = {
+    const clientHandshakeOptions: ClientHandshakeOptions = {
       user: this.config.connectionParams.user,
       database: this.config.connectionParams.database,
     };
     if (this.config.connectionParams.secretKey != null) {
-      params["secret_key"] = this.config.connectionParams.secretKey;
+      clientHandshakeOptions.secret_key =
+        this.config.connectionParams.secretKey;
     }
 
-    handshake.writeInt16(Object.keys(params).length);
-    for (const [key, value] of Object.entries(params)) {
+    handshake.writeInt16(Object.keys(clientHandshakeOptions).length);
+    for (const [key, value] of Object.entries(clientHandshakeOptions)) {
       handshake.writeString(key).writeString(value);
     }
 
