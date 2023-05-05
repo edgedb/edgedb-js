@@ -7,13 +7,6 @@ global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 import { getEdgeDBVersion } from "./testbase";
 
-// @ts-ignore
-if (typeof fetch === "undefined") {
-  // Pre 17.5 NodeJS environment.
-  // @ts-ignore
-  globalThis.fetch = require("node-fetch"); // tslint:disable-line
-}
-
 const nodeVersion = parseInt(process.version.slice(1).split(".")[0], 10);
 
 if (nodeVersion >= 15) {

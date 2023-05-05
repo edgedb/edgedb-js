@@ -24,13 +24,6 @@ import * as chars from "./primitives/chars";
 import { InternalClientError, ProtocolError } from "./errors";
 import { HTTPSCRAMAuth } from "./httpScram";
 
-// @ts-ignore
-// if (typeof fetch === "undefined") {
-// Pre 17.5 NodeJS environment.
-// @ts-ignore
-//   globalThis.fetch = require("node-fetch"); // tslint:disable-line
-// }
-
 interface FetchConfig {
   address: Address | string;
   database: string;
@@ -99,10 +92,7 @@ class BaseFetchConnection extends BaseRawConnection {
         headers.Authorization = `Bearer ${this.config.token}`;
       }
 
-      const FETCH =
-        // @ts-ignore
-        typeof fetch === "undefined" ? require("node-fetch") : fetch;
-      const resp = await FETCH(this.addr, {
+      const resp = await fetch(this.addr, {
         method: "post",
         body: data,
         headers,
