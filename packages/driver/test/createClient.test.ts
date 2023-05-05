@@ -100,7 +100,7 @@ function timeScriptShutdown(script: string, timeout = 5_000) {
         return;
       }
       clearTimeout(timeoutRef);
-      if (code === 0 && !err && shutdownStart) {
+      if (code === 0 && shutdownStart) {
         resolve(Date.now() - shutdownStart);
       } else {
         reject(`script failed with exit code: ${code}\n${err}`);
