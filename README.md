@@ -43,7 +43,10 @@ writing some simple queries.
 
 ### Requirements
 
-- Node.js 14+
+- Node.js 16+
+  - We rely on global `fetch` being available, so you can bring your own
+    polyfill and if you run Node 16, you'll need to run with the
+    `--experimental-fetch` flag enabled.
 - For TypeScript users:
   - TypeScript 4.4+ is required
   - `yarn add @types/node --dev`
@@ -210,16 +213,16 @@ directory, as defined relative to your project root.
 For details on generating the query builder, refer to the [complete documentation](https://www.edgedb.com/docs/clients/js/generation). Below is a simple `select` query as an example.
 
 ```ts
-import {createClient} from "edgedb";
+import { createClient } from "edgedb";
 import e from "./dbschema/edgeql-js";
 
 const client = createClient();
-const query = e.select(e.Movie, movie => ({
+const query = e.select(e.Movie, (movie) => ({
   id: true,
   title: true,
-  actors: {name: true},
+  actors: { name: true },
   num_actors: e.count(movie.actors),
-  filter_single: e.op(movie.title, "=", "Dune")
+  filter_single: e.op(movie.title, "=", "Dune"),
 }));
 
 const result = await query.run(client);
