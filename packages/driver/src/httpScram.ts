@@ -73,7 +73,7 @@ export async function HTTPSCRAMAuth(
     serverNonce
   );
 
-  const serverFinalRes = await fetch(authUrl, {
+  const serverFinalRes = await FETCH(authUrl, {
     headers: {
       Authorization: `SCRAM-SHA-256 sid=${sid}, data=${utf8ToB64(clientFinal)}`,
     },
