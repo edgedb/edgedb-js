@@ -77,7 +77,7 @@ test("lazy connect + concurrency", async () => {
 
 function timeScriptShutdown(script: string, timeout = 5_000) {
   return new Promise<number>((resolve, reject) => {
-    const proc = spawn("node", ["--eval", script]);
+    const proc = spawn("node", ["--experimental-fetch", "--eval", script]);
 
     const timeoutRef = setTimeout(() => {
       proc.kill();
@@ -100,7 +100,7 @@ function timeScriptShutdown(script: string, timeout = 5_000) {
         return;
       }
       clearTimeout(timeoutRef);
-      if (code === 0 && !err && shutdownStart) {
+      if (code === 0 && shutdownStart) {
         resolve(Date.now() - shutdownStart);
       } else {
         reject(`script failed with exit code: ${code}\n${err}`);

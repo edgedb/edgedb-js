@@ -1,5 +1,5 @@
 /**
- * @jest-environment jsdom
+ * @jest-environment ./test/jsdom-with-fetch.ts
  */
 
 const { TextEncoder, TextDecoder } = require("util");
