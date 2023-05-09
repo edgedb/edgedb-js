@@ -509,10 +509,6 @@ fact that they will only occur in certain objects.
   shape object.
 
 
-Type intersection
------------------
-
-
 Detached
 --------
 
