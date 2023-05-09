@@ -168,7 +168,7 @@ Select many objects by ID
       release_year: true,
       filter: e.op(movie.id, 'in', e.array_unpack(ids)),
     }))
-  
+
   const result = await query.run(client, {
     ids: [
       '2053a8b4-49b1-437a-84c8-e1b0291ccd9f',
@@ -277,6 +277,8 @@ params object. This should correspond to a boolean expression.
 Filters on links
 ----------------
 
+Links can be filtered using traditional filters.
+
 .. code-block:: typescript
 
   e.select(e.Movie, movie => ({
@@ -287,6 +289,20 @@ Filters on links
     }),
     filter_single: {title: 'Iron Man'}
   }));
+
+
+You can also use the :ref:`type intersection
+<edgedb-js-objects-type-intersections>` operator to filter a link based on its
+type.
+
+.. code-block:: typescript
+
+    e.select(e.Actor, actor => ({
+      movies: actor.roles.is(e.Movie),
+    }));
+
+This is how you would use the EdgeQL :eql:op:`[is type] <isintersect>` type
+intersection operator via the TypeScript query builder.
 
 
 Filters on link properties
@@ -489,6 +505,11 @@ fact that they will only occur in certain objects.
   field. So for convenience when using the ``['*']`` all properties shorthand
   with ``e.is``, the ``id`` property will be filtered out of the polymorphic
   shape object.
+
+
+Type intersection
+-----------------
+
 
 Detached
 --------
