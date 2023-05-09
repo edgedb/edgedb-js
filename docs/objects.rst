@@ -84,6 +84,8 @@ Paths can be constructed from any object expression, not just the root types.
   // (insert Movie { title := "Iron Man" }).title
 
 
+.. _edgedb-js-objects-type-intersections:
+
 Type intersections
 ^^^^^^^^^^^^^^^^^^
 
