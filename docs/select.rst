@@ -293,7 +293,9 @@ Links can be filtered using traditional filters.
 
 You can also use the :ref:`type intersection
 <edgedb-js-objects-type-intersections>` operator to filter a link based on its
-type.
+type. For example, since `actor.roles` might be of type `Movie` or `TVShow`,
+to only return `roles` that are `Movie`s, you would use the `.is` type
+intersection operator:
 
 .. code-block:: typescript
 
