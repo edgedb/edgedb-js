@@ -6,7 +6,7 @@ const execFile = util.promisify(require("child_process").execFile);
 const prettier = require("prettier");
 
 (async () => {
-  const {stdout: grammar} = await execFile("edb", [
+  const { stdout: grammar } = await execFile("edb", [
     "gen-meta-grammars",
     "edgeql",
   ]);
@@ -16,15 +16,17 @@ const prettier = require("prettier");
 
   const reservedKeywords = resKeywords
     .split("\n")
-    .map(line => line.trim().replace(/,$/, "").slice(1, -1))
-    .filter(keyword => !!keyword);
+    .map((line) => line.trim().replace(/,$/, "").slice(1, -1))
+    .filter((keyword) => !!keyword);
 
   await fs.writeFile(
     path.join(__dirname, "../src/reflection/reservedKeywords.ts"),
-    `export const reservedKeywords = ${JSON.stringify(
-      reservedKeywords,
-      null,
-      2
-    )}\n`
+    prettier.format(
+      `export const reservedKeywords = new Set(${JSON.stringify(
+        reservedKeywords,
+        null,
+        2
+      )})\n`
+    )
   );
 })();

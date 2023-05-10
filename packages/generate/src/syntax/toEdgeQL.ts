@@ -1577,7 +1577,7 @@ function q(ident: string, allowBacklinks: boolean = true): string {
     const isReserved =
       lident !== "__type__" &&
       lident !== "__std__" &&
-      reservedKeywords.includes(lident);
+      reservedKeywords.has(lident);
 
     if (!isReserved) {
       return ident;
