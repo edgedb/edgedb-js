@@ -1459,7 +1459,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
         if (val.includes(" ")) {
           stringRep = `<${type.__name__}>"${val}"`;
         } else {
-          stringRep = `${type.__name__}.${val}`;
+          stringRep = `${type.__name__}.${q(val)}`;
         }
       } else {
         throw new Error(
