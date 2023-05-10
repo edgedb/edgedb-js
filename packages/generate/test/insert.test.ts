@@ -45,6 +45,22 @@ test("basic insert", async () => {
   await client.execute(`DELETE Movie FILTER .title = 'Black Widow';`);
 });
 
+test("insert with keyword enum", async () => {
+  const q1 = e.insert(e.Movie, {
+    title: "A fine selection",
+    genre: e.Genre.Select,
+    rating: 2,
+  });
+
+  await q1.run(client);
+  await e
+    .delete(e.Movie, (movie) => ({
+      filter: e.op(movie.title, "=", "A fine selection"),
+    }))
+    .run(client);
+  await client.execute(`DELETE Movie FILTER .title = 'A fine selection';`);
+});
+
 test("unless conflict", async () => {
   const q0 = e
     .insert(e.Movie, {
