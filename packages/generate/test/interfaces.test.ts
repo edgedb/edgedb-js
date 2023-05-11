@@ -1,6 +1,6 @@
 import * as tc from "conditional-type-checks";
 
-import type { Movie, X, Y, Z } from "../dbschema/interfaces";
+import type { Power, Movie, X, Y, Z } from "../dbschema/interfaces";
 
 export type Genre =
   | "Horror"
@@ -15,6 +15,7 @@ export interface BaseObject {
 export interface test_Person extends BaseObject {
   name: string;
   height?: string | null;
+  powers: Power[];
 }
 export interface test_Movie extends BaseObject {
   characters: test_Person[];
