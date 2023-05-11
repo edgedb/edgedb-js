@@ -70,3 +70,9 @@ export interface QueryOptions {
   injectTypeids?: boolean;
   injectObjectids?: boolean;
 }
+
+export interface ClientHandshakeOptions {
+  user: string;
+  database: string;
+  secret_key?: string;
+}
