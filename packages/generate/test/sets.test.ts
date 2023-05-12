@@ -144,9 +144,9 @@ test("invalid sets", () => {
 });
 
 test("enums", () => {
-  const query = e.set(e.Genre.Action, e.Genre.Horror);
+  const query = e.set(e.Genre.Action, e.Genre.Horror, e.Genre.Select);
   expect(query.toEdgeQL()).toEqual(
-    `{ default::Genre.Action, default::Genre.Horror }`
+    "{ default::Genre.Action, default::Genre.Horror, default::Genre.`Select` }"
   );
 
   expect(() => e.set(e.Genre.Action, e.sys.VersionStage.dev as any)).toThrow();

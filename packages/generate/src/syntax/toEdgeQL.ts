@@ -1459,7 +1459,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
         if (val.includes(" ")) {
           stringRep = `<${type.__name__}>"${val}"`;
         } else {
-          stringRep = `${type.__name__}.${val}`;
+          stringRep = `${type.__name__}.${q(val)}`;
         }
       } else {
         throw new Error(
@@ -1577,7 +1577,7 @@ function q(ident: string, allowBacklinks: boolean = true): string {
     const isReserved =
       lident !== "__type__" &&
       lident !== "__std__" &&
-      reservedKeywords.includes(lident);
+      reservedKeywords.has(lident);
 
     if (!isReserved) {
       return ident;

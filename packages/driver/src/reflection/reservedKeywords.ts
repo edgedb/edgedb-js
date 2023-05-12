@@ -1,4 +1,4 @@
-export const reservedKeywords = [
+export const reservedKeywords = new Set([
   "__edgedbsys__",
   "__edgedbtpl__",
   "__source__",
@@ -85,4 +85,4 @@ export const reservedKeywords = [
   "when",
   "window",
   "with",
-];
+]);
