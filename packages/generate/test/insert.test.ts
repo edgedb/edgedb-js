@@ -149,14 +149,22 @@ describe("insert", () => {
   test("nested insert", async () => {
     const q1 = e.insert(e.Villain, {
       name: e.str("villain"),
+      powers: e.insert(e.EvilPower, { name: "genius" }),
+
       nemesis: e.insert(e.Hero, {
         name: "hero",
+        powers: e.for(e.set(e.str("flight"), e.str("super strength")), (name) =>
+          e.insert(e.GoodPower, { name })
+        ),
       }),
     });
 
     const q2 = e.select(q1, () => ({
       name: true,
-      nemesis: { name: true },
+      powers: {
+        name: true,
+      },
+      nemesis: { name: true, powers: { name: true } },
     }));
 
     const result = await q2.run(client);
@@ -164,9 +172,11 @@ describe("insert", () => {
     assert.deepEqual(result, {
       ...result,
       name: "villain",
+      powers: [{ name: "genius" }],
       nemesis: {
         ...result.nemesis,
         name: "hero",
+        powers: [{ name: "flight" }, { name: "super strength" }],
       },
     });
 
