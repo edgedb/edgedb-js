@@ -185,6 +185,7 @@ test("select *", () => {
     expect(hero["*"]).toEqual({
       id: true,
       name: true,
+      height: true,
       secret_identity: true,
       number_of_movies: true,
     });
