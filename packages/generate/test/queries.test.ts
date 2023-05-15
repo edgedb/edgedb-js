@@ -27,6 +27,7 @@ test("basic select", async () => {
         release_year: number;
         characters: {
           name: string;
+          height: string | null;
           "@character_name": string | null;
         }[];
         tuple: [number, string, bigint[]];

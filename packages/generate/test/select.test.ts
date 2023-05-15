@@ -317,6 +317,7 @@ test("* in polymorphic", async () => {
       $infer<typeof q>,
       {
         name: string | null;
+        height: string | null;
         number_of_movies: number | null;
         secret_identity: string | null;
       }[]

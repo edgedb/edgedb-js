@@ -30,6 +30,7 @@ module default {
     required property name -> str {
       constraint exclusive;
     };
+    property height -> decimal;
   }
 
   type Villain extending Person {
