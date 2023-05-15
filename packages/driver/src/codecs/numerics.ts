@@ -76,6 +76,8 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
 }
 
 export class DecimalStringCodec extends ScalarCodec implements ICodec {
+  tsType = "string";
+
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "string") {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);
