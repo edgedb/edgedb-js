@@ -4,6 +4,7 @@ select Movie {
   release_year,
   characters: {
     name,
+    height,
     @character_name,
   },
   `tuple` := (123, 'abc', [123n]),
