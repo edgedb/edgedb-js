@@ -1,4 +1,4 @@
-import { CodeFragment, dts, r, t, ts } from "../builders";
+import { CodeFragment, IdentRef, dts, r, t, ts } from "../builders";
 import type { GeneratorParams } from "../genutil";
 import type { $ } from "../genutil";
 import {
@@ -453,34 +453,93 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     // instantiate ObjectType subtype from shape
     body.writeln([
       dts`declare `,
-      t`type ${ref} = $.ObjectType<${quote(type.name)}, ${ref}λShape, null, [`,
+      // type Foo = $.ObjectType<
+      t`type ${ref} = $.ObjectType<`,
     ]);
-
-    const bases = type.bases
-      .map((b) => types.get(b.id))
-      .map((b) => getRef(b.name));
     body.indented(() => {
-      for (const b of bases) {
-        body.writeln([t`...${b}['__exclusives__'],`]);
+      // Name
+      body.writeln([t`${quote(type.name)},`]);
+      // Pointers
+      body.writeln([t`${ref}λShape, `]);
+      // Shape
+      body.writeln([t`null, `]);
+      // Exclusives
+      body.writeln([t`[`]);
+
+      // Base types exclusives
+      const bases = (function findRecursiveBases(
+        bases: readonly { id: string }[]
+      ): IdentRef[] {
+        return [
+          ...bases
+            .map((b) => types.get(b.id) as $.introspect.ObjectType)
+            // TODO: make this better at rejecting system types
+            .filter((b) => splitName(b.name).mod !== "std")
+            .flatMap((b) => {
+              if (b.bases.length) {
+                return [...findRecursiveBases(b.bases), b];
+              }
+              return [b];
+            })
+            .map((b) => getRef(b.name)),
+        ];
+      })(type.bases);
+
+      body.indented(() => {
+        for (const b of bases) {
+          body.writeln([t`...${b}['__exclusives__'],`]);
+        }
+      });
+
+      // This type exclusives
+      body.indented(() => {
+        for (const ex of type.exclusives) {
+          body.writeln([
+            t`{`,
+            ...Object.keys(ex).map((key) => {
+              const target = types.get(ex[key].target_id);
+              const { staticType } = getStringRepresentation(target, { types });
+              const card = `$.Cardinality.One | $.Cardinality.AtMostOne `;
+              return t`${key}: {__element__: ${staticType}, __cardinality__: ${card}},`;
+            }),
+            t`},`,
+          ]);
+        }
+      });
+
+      // Exclusives, End
+      body.writeln([t`],`]);
+
+      // Subtypes
+      body.writeln([t`| ${quote(ref.name)}`]);
+      if (
+        type.is_abstract &&
+        !["std", "sys", "schema"].includes(splitName(type.name).mod)
+      ) {
+        function findRecursiveSubtypes(type: {
+          id: string;
+        }): $.introspect.ObjectType[] {
+          const subtypes: $.introspect.ObjectType[] = [];
+          for (const candidate of types.values()) {
+            if (
+              candidate.kind === "object" &&
+              candidate.bases.find((b) => b.id === type.id)
+            ) {
+              subtypes.push(candidate);
+              subtypes.push(...findRecursiveSubtypes(candidate));
+            }
+          }
+          return subtypes;
+        }
+        const subtypes = findRecursiveSubtypes(type).map((t) => getRef(t.name));
+
+        for (const sub of subtypes) {
+          body.writeln([t`| ${quote(sub.name)}`]);
+        }
       }
     });
 
-    // const ref = getRef(type.name);
-    for (const ex of type.exclusives) {
-      body.writeln([
-        t`  {`,
-        ...Object.keys(ex).map((key) => {
-          const target = types.get(ex[key].target_id);
-          const { staticType } = getStringRepresentation(target, { types });
-          const card = `$.Cardinality.One | $.Cardinality.AtMostOne `;
-          return t`${key}: {__element__: ${staticType}, __cardinality__: ${card}},`;
-        }),
-        t`},`,
-      ]);
-      // body.writeln([t`\n  {${lines.join(", ")}}`]);
-    }
-
-    body.writeln([t`]>;`]);
+    body.writeln([t`>;`]);
 
     if (type.name === "std::Object") {
       body.writeln([t`export `, dts`declare `, t`type $Object = ${ref}`]);

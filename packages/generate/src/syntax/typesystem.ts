@@ -217,14 +217,15 @@ export interface ObjectType<
   Name extends string = string,
   Pointers extends ObjectTypePointers = ObjectTypePointers,
   Shape extends object | null = any,
-  Exclusives extends ExclusiveTuple = ExclusiveTuple
-  // Polys extends Poly[] = any[]
+  Exclusives extends ExclusiveTuple = ExclusiveTuple,
+  SubtypeNames extends string = Name
 > extends BaseType {
   __kind__: TypeKind.object;
   __name__: Name;
   __pointers__: Pointers;
   __shape__: Shape;
   __exclusives__: Exclusives;
+  __subNames__: SubtypeNames;
 }
 
 export type PropertyTypes =
