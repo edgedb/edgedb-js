@@ -381,12 +381,21 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     const baseTypesUnion = type.bases.length
       ? frag`${joinFrags(
           type.bases.map((base) => {
+            function getRecursiveLinks(base: {
+              id: string;
+            }): ($.introspect.Pointer | $.introspect.Backlink)[] {
+              const baseType = types.get(base.id) as $.introspect.ObjectType;
+              return [
+                ...baseType.pointers,
+                ...baseType.backlinks,
+                ...baseType.backlink_stubs,
+                ...(baseType.bases.length
+                  ? baseType.bases.flatMap(getRecursiveLinks)
+                  : []),
+              ];
+            }
             const baseType = types.get(base.id) as $.introspect.ObjectType;
-            const overloadedFields = [
-              ...baseType.pointers,
-              ...baseType.backlinks,
-              ...baseType.backlink_stubs,
-            ]
+            const overloadedFields = getRecursiveLinks(base)
               .filter((field) => fieldNames.has(field.name))
               .map((field) => quote(field.name));
             const baseRef = getRef(baseType.name);
