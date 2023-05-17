@@ -473,8 +473,6 @@ export const generateObjectTypes = (params: GeneratorParams) => {
         return [
           ...bases
             .map((b) => types.get(b.id) as $.introspect.ObjectType)
-            // TODO: make this better at rejecting system types
-            .filter((b) => splitName(b.name).mod !== "std")
             .flatMap((b) => {
               if (b.bases.length) {
                 return [...findRecursiveBases(b.bases), b];
