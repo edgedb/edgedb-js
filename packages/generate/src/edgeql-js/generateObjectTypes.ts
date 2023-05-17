@@ -381,17 +381,17 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     const baseTypesUnion = type.bases.length
       ? frag`${joinFrags(
           type.bases.map((base) => {
-            function getRecursiveLinks(base: {
+            function getRecursiveLinks(b: {
               id: string;
             }): ($.introspect.Pointer | $.introspect.Backlink)[] {
-              const baseType = types.get(base.id) as $.introspect.ObjectType;
+              const { pointers, backlinks, backlink_stubs, bases } = types.get(
+                b.id
+              ) as $.introspect.ObjectType;
               return [
-                ...baseType.pointers,
-                ...baseType.backlinks,
-                ...baseType.backlink_stubs,
-                ...(baseType.bases.length
-                  ? baseType.bases.flatMap(getRecursiveLinks)
-                  : []),
+                ...pointers,
+                ...backlinks,
+                ...backlink_stubs,
+                ...(bases.length ? bases.flatMap(getRecursiveLinks) : []),
               ];
             }
             const baseType = types.get(base.id) as $.introspect.ObjectType;
@@ -468,10 +468,10 @@ export const generateObjectTypes = (params: GeneratorParams) => {
 
       // Base types exclusives
       const bases = (function findRecursiveBases(
-        bases: readonly { id: string }[]
+        bs: readonly { id: string }[]
       ): IdentRef[] {
         return [
-          ...bases
+          ...bs
             .map((b) => types.get(b.id) as $.introspect.ObjectType)
             .flatMap((b) => {
               if (b.bases.length) {
@@ -514,25 +514,24 @@ export const generateObjectTypes = (params: GeneratorParams) => {
         type.is_abstract &&
         !["std", "sys", "schema"].includes(splitName(type.name).mod)
       ) {
-        function findRecursiveSubtypes(type: {
+        const subtypes = (function findRecursiveSubtypes(sub: {
           id: string;
         }): $.introspect.ObjectType[] {
-          const subtypes: $.introspect.ObjectType[] = [];
+          const subs: $.introspect.ObjectType[] = [];
           for (const candidate of types.values()) {
             if (
               candidate.kind === "object" &&
-              candidate.bases.find((b) => b.id === type.id)
+              candidate.bases.find((b) => b.id === sub.id)
             ) {
-              subtypes.push(candidate);
-              subtypes.push(...findRecursiveSubtypes(candidate));
+              subs.push(candidate);
+              subs.push(...findRecursiveSubtypes(candidate));
             }
           }
-          return subtypes;
-        }
-        const subtypes = findRecursiveSubtypes(type).map((t) => getRef(t.name));
+          return subs;
+        })(type);
 
         for (const sub of subtypes) {
-          body.writeln([t`| ${quote(sub.name)}`]);
+          body.writeln([t`| ${quote(getRef(sub.name).name)}`]);
         }
       }
     });
