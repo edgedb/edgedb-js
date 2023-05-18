@@ -35,8 +35,9 @@ interface test_Z extends BaseObject {
   xy?: X | Y | null;
 }
 
-test("check generated interfaces", () => {
-  // TODO: re-enable test when 2.0 is stable
-  tc.assert<tc.IsExact<Movie, test_Movie>>(true);
-  tc.assert<tc.IsExact<Z, test_Z>>(true);
+describe("interfaces", () => {
+  test("check generated interfaces", () => {
+    tc.assert<tc.IsExact<Movie, test_Movie>>(true);
+    tc.assert<tc.IsExact<Z, test_Z>>(true);
+  });
 });
