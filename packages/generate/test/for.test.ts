@@ -4,10 +4,11 @@ import e from "../dbschema/edgeql-js";
 test("simple for loop", () => {
   assert.equal(
     e.for(e.set(1, 2, 3), (x) => e.op(e.op(x, "*", 2), "+", x)).toEdgeQL(),
-    `FOR __forVar__0 IN {{ 1, 2, 3 }}
-  UNION (
-    ((__forVar__0 * 2) + __forVar__0)
-  )`
+    `\
+FOR __forVar__0 IN {{ 1, 2, 3 }}
+UNION (
+  ((__forVar__0 * 2) + __forVar__0)
+)`
   );
 });
 
@@ -20,7 +21,9 @@ test("with vars in for loop", () => {
     });
   });
 
-  assert.equal(q1.toEdgeQL(), `FOR __forVar__0 IN {{ 1, 2, 3 }}
+  assert.equal(
+    q1.toEdgeQL(),
+    `FOR __forVar__0 IN {{ 1, 2, 3 }}
 UNION (
   (WITH
     __withVar_0 := std::to_str(__forVar__0)
@@ -33,7 +36,8 @@ UNION (
       )
     )
   })
-)`);
+)`
+  );
 
   const q2 = e.for(e.set(1, 2, 3), (i) => {
     const str = e.to_str(i);
@@ -52,7 +56,9 @@ UNION (
       }));
   });
 
-  assert.equal(q2.toEdgeQL(), `FOR __forVar__0 IN {{ 1, 2, 3 }}
+  assert.equal(
+    q2.toEdgeQL(),
+    `FOR __forVar__0 IN {{ 1, 2, 3 }}
 UNION (
   (WITH
     __withVar_1 := std::to_str(__forVar__0)
@@ -66,5 +72,6 @@ UNION (
   UPDATE __scope_0_defaultHero SET {
     name := __withVar_1
   })))
-)`);
+)`
+  );
 });
