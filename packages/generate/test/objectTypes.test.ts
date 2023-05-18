@@ -21,10 +21,14 @@ test("property hydration", () => {
   assert.equal($Hero.__pointers__.name.exclusive, true);
   assert.equal($Hero.__pointers__.secret_identity.exclusive, false);
 
-  assert.equal(e.default.Movie.__element__.__pointers__.profile.exclusive, true);
-  // expect(e.default.Movie.profile.__exclusive__).toEqual(true);
-  assert.equal(e.default.Movie.__element__.__pointers__.characters.exclusive, false);
-  // expect(e.default.Movie.characters.__exclusive__).toEqual(false);
+  assert.equal(
+    e.default.Movie.__element__.__pointers__.profile.exclusive,
+    true
+  );
+  assert.equal(
+    e.default.Movie.__element__.__pointers__.characters.exclusive,
+    false
+  );
 });
 
 test("link hydration", () => {
@@ -36,19 +40,25 @@ test("link hydration", () => {
 
   // type union link
   assert.equal($Z.__pointers__.xy.__kind__, "link");
-  assert.equal($Z.__pointers__.xy.target.__name__, "default::X | default::Y");
   assert.deepEqual(Object.keys($Z.__pointers__.xy.target.__pointers__).sort(), [
     "__type__",
     "a",
     "id",
   ]);
-  assert.equal($Z.__pointers__.xy.target.__pointers__.a.target.__name__, "std::str");
+  assert.equal(
+    $Z.__pointers__.xy.target.__pointers__.a.target.__name__,
+    "std::str"
+  );
+  assert.equal($Z.__pointers__.xy.target.__name__, "default::X | default::Y");
 });
 
 const link = $AnnotationSubject.__pointers__.annotations;
 test("link properties", () => {
   assert.equal(link.properties["@value"].target.__name__, "std::str");
-  assert.deepEqual(link.properties["@value"].cardinality, $.Cardinality.AtMostOne);
+  assert.deepEqual(
+    link.properties["@value"].cardinality,
+    $.Cardinality.AtMostOne
+  );
   assert.equal(link.properties["@value"].__kind__, "property");
 });
 
@@ -106,17 +116,26 @@ test("backlinks", () => {
   const heroMovie = e.Hero["<characters[is Movie]"];
 
   const heroVillain = e.Hero["<nemesis[is Villain]"];
-  assert.equal(heroMovie.toEdgeQL(), `DETACHED default::Hero.<characters[is Movie]`);
+  assert.equal(
+    heroMovie.toEdgeQL(),
+    `DETACHED default::Hero.<characters[is Movie]`
+  );
   assert.equal(heroMovie.__element__.__name__, "default::Movie");
   assert.equal(heroVillain.nemesis.__element__.__name__, "default::Hero");
-  assert.deepEqual(e.select(e.Villain, () => ({ limit: 1 })).assert_single().nemesis
-    .__cardinality__, $.Cardinality.AtMostOne);
+  assert.deepEqual(
+    e.select(e.Villain, () => ({ limit: 1 })).assert_single().nemesis
+      .__cardinality__,
+    $.Cardinality.AtMostOne
+  );
 
   assert.equal(e.Profile["<profile"].__element__.__name__, "std::BaseObject");
   assert.deepEqual(e.Profile["<profile"].__cardinality__, $.Cardinality.Many);
 
   const merged = $.$mergeObjectTypes(e.Hero.__element__, e.Villain.__element__);
-  assert.equal(merged.__pointers__["<characters"].target.__name__, "std::BaseObject");
+  assert.equal(
+    merged.__pointers__["<characters"].target.__name__,
+    "std::BaseObject"
+  );
   assert.equal(
     merged.__pointers__["<characters[is Movie]"].target.__name__,
     "default::Movie"

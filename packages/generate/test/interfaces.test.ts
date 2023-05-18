@@ -1,4 +1,3 @@
-import * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
 import type { Movie, X, Y, Z } from "../dbschema/interfaces";
