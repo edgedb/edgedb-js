@@ -121,23 +121,23 @@ test("scalar set contructor", () => {
 });
 
 test("invalid sets", () => {
-  expect(() => {
+  assert.throws(() => {
     // @ts-expect-error
     e.set(e.Hero, e.int64(1243));
-  }).toThrow();
+  });
 
   // @ts-expect-error
-  expect(() => e.set(e.int64(5), e.bigint(BigInt(1234)))).toThrow();
+  assert.throws(() => e.set(e.int64(5), e.bigint(BigInt(1234))));
 
   // never
-  expect(() => {
+  assert.throws(() => {
     // @ts-expect-error
     e.set(e.str("asdf"), e.int64(1243));
-  }).toThrow();
-  expect(() => {
+  });
+  assert.throws(() => {
     // @ts-expect-error
     e.set(e.bool(true), e.bigint(BigInt(14)));
-  }).toThrow();
+  });
 });
 
 test("enums", () => {
@@ -147,7 +147,7 @@ test("enums", () => {
     "{ default::Genre.Action, default::Genre.Horror, default::Genre.`Select` }"
   );
 
-  expect(() => e.set(e.Genre.Action, e.sys.VersionStage.dev as any)).toThrow();
+  assert.throws(() => e.set(e.Genre.Action, e.sys.VersionStage.dev as any));
 });
 
 test("tuples", async () => {
@@ -163,8 +163,8 @@ test("tuples", async () => {
     [3, "asdf", 5],
   ]);
 
-  expect(() => e.set(e.tuple([1]), e.tuple([1, 2]))).toThrow();
-  expect(() => e.set(e.tuple([1]), e.tuple(["asdf"]))).toThrow();
+  assert.throws(() => e.set(e.tuple([1]), e.tuple([1, 2])));
+  assert.throws(() => e.set(e.tuple([1]), e.tuple(["asdf"])));
 });
 
 test("named tuples", async () => {
@@ -178,12 +178,11 @@ test("named tuples", async () => {
     { a: 3, b: "asdf", c: 5 },
   ]);
 
-  expect(() => e.set(e.tuple({ a: 1 }), e.tuple({ a: "asfd" }))).toThrow();
+  assert.throws(() => e.set(e.tuple({ a: 1 }), e.tuple({ a: "asfd" })));
   expect(() => e.set(e.tuple({ a: 1 }), e.tuple({ a: "asfd", b: "qwer" })));
-  expect(() =>
-    e.set(e.tuple({ a: "asfd", b: "qwer" }), e.tuple({ a: 1 }))
-  ).toThrow();
-  expect(() => e.set(e.tuple({ a: 1 }), e.tuple({ b: "asfd" }))).toThrow();
+  assert.throws(() =>
+    e.set(e.tuple({ a: "asfd", b: "qwer" }), e.tuple({ a: 1 })));
+  assert.throws(() => e.set(e.tuple({ a: 1 }), e.tuple({ b: "asfd" })));
 });
 
 test("array", async () => {
@@ -192,7 +191,6 @@ test("array", async () => {
 
   assert.deepEqual(await q1.run(client), [[5, 67], [6]]);
 
-  expect(() =>
-    e.set(e.array([e.int16(5)]), e.array(["asdf"]) as any)
-  ).toThrow();
+  assert.throws(() =>
+    e.set(e.array([e.int16(5)]), e.array(["asdf"]) as any));
 });

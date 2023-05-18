@@ -354,7 +354,7 @@ SELECT __scope_0_defaultMovie_groups {
   });
 
   test("key override error", async () => {
-    expect(() =>
+    assert.throws(() =>
       e.group(e.Movie, (movie) => {
         return {
           by: {
@@ -366,8 +366,7 @@ SELECT __scope_0_defaultMovie_groups {
             }),
           },
         };
-      })
-    ).toThrow();
+      }));
   });
 
   // clause ordering in `using`

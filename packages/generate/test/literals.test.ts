@@ -91,10 +91,9 @@ test("enum literals", () => {
 
   expect(e.Genre.__values__).toContain("Horror");
 
-  expect(() => (e.Genre as any).NotAGenre.toEdgeQL()).toThrow();
-  expect(() =>
-    e.literal(e.Genre, "NotAGenre" as "Horror").toEdgeQL()
-  ).toThrow();
+  assert.throws(() => (e.Genre as any).NotAGenre.toEdgeQL());
+  assert.throws(() =>
+    e.literal(e.Genre, "NotAGenre" as "Horror").toEdgeQL());
 });
 
 testIfVersionGTE(2)("constructing with strings", async () => {

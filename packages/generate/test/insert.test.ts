@@ -330,7 +330,7 @@ describe("insert", () => {
   });
 
   test("no plain data as link prop", async () => {
-    expect(() =>
+    assert.throws(() =>
       e.insert(e.Movie, {
         title: "Guardians",
         release_year: 2014,
@@ -338,8 +338,7 @@ describe("insert", () => {
           name: "Star-Lord",
           "@character_name": "Peter Quill",
         }),
-      })
-    ).toThrow();
+      }));
   });
 
   test("undefined in insert", async () => {

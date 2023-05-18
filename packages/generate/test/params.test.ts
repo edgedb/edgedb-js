@@ -317,6 +317,6 @@ SELECT (SELECT __param__test)`
 
     const query = e.params({}, () => e.set(reusedExpr, reusedExpr));
 
-    expect(() => query.toEdgeQL()).not.toThrow();
+    assert.doesNotThrow(() => query.toEdgeQL());
   });
 });

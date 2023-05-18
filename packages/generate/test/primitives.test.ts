@@ -77,8 +77,8 @@ test("range primitives", async () => {
   assert.equal(e.range(3).toEdgeQL(), `std::range(3)`);
   assert.equal(e.range(undefined, 8).toEdgeQL(), `std::range(<std::float64>{}, 8)`);
 
-  expect(() => e.range(new edgedb.Range(null, null))).toThrow();
-  expect(() => e.range(edgedb.Range.empty())).toThrow();
+  assert.throws(() => e.range(new edgedb.Range(null, null)));
+  assert.throws(() => e.range(edgedb.Range.empty()));
 
   const res = await e
     .select({

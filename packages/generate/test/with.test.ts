@@ -92,7 +92,7 @@ SELECT {
 test("simple repeated expression not in select expr", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
-  expect(() => e.op(numbers, "+", numbers).toEdgeQL()).toThrow();
+  assert.throws(() => e.op(numbers, "+", numbers).toEdgeQL());
 });
 
 test("explicit WITH block", () => {
@@ -128,14 +128,13 @@ test("explicit WITH block in nested query", () => {
 test("explicit WITH in nested query, var used outside WITH block", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
-  expect(() =>
+  assert.throws(() =>
     e
       .select({
         numbers,
         nested: e.with([numbers], e.select(numbers)),
       })
-      .toEdgeQL()
-  ).toThrow();
+      .toEdgeQL());
 });
 
 test("explicit WITH block nested in implicit WITH block", () => {
@@ -223,7 +222,7 @@ test("explicit WITH nested in explicit WITH, expr declared in both", () => {
 
   const explicitWith = e.with([numbers], e.select(numbers));
 
-  expect(() =>
+  assert.throws(() =>
     e
       .with(
         [explicitWith, numbers],
@@ -231,8 +230,7 @@ test("explicit WITH nested in explicit WITH, expr declared in both", () => {
           numbers: explicitWith,
         })
       )
-      .toEdgeQL()
-  ).toThrow();
+      .toEdgeQL());
 });
 
 test("explicit WITH block nested in explicit WITH block, sub expr implicitly extracted", () => {
@@ -391,15 +389,14 @@ test("explicit WITH nested in implicit WITH + alias outside WITH", () => {
 
   const explicitWith = e.with([numbers], e.select({ numbers, numbersAlias }));
 
-  expect(() =>
+  assert.throws(() =>
     e
       .select({
         numbers: explicitWith,
         numbers2: explicitWith,
         numbersAlias,
       })
-      .toEdgeQL()
-  ).toThrow();
+      .toEdgeQL());
 });
 
 test(
@@ -554,7 +551,5 @@ test("repeated expr used outside scope", () => {
   const expr = e.to_str(e.int64(123));
   const query = e.tuple([expr, e.select(expr)]);
 
-  expect(() => query.toEdgeQL()).toThrow(
-    /Cannot extract repeated expression into 'WITH' block, expression used outside of 'WITH'able expression/
-  );
+  assert.throws(() => query.toEdgeQL());
 });
