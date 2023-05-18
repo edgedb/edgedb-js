@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql-js";
 import type { getSharedParentPrimitiveVariadic } from "../dbschema/edgeql-js/syntax";
@@ -15,24 +16,24 @@ afterAll(async () => {
 });
 
 test("primitive types", () => {
-  expect(e.int16.__name__).toEqual("std::int16");
-  expect(e.int32.__name__).toEqual("std::int32");
-  expect(e.int64.__name__).toEqual("std::int64");
-  expect(e.float32.__name__).toEqual("std::float32");
-  expect(e.float64.__name__).toEqual("std::float64");
-  expect(e.str.__name__).toEqual("std::str");
+  assert.equal(e.int16.__name__, "std::int16");
+  assert.equal(e.int32.__name__, "std::int32");
+  assert.equal(e.int64.__name__, "std::int64");
+  assert.equal(e.float32.__name__, "std::float32");
+  assert.equal(e.float64.__name__, "std::float64");
+  assert.equal(e.str.__name__, "std::str");
 });
 
 test("collection types", () => {
   const arrayType = e.array(e.str);
-  expect(arrayType.__name__).toEqual("array<std::str>");
+  assert.equal(arrayType.__name__, "array<std::str>");
   const named = e.tuple({ str: e.str });
-  expect(named.__name__).toEqual("tuple<str: std::str>");
-  expect(named.__shape__.str.__name__).toEqual("std::str");
+  assert.equal(named.__name__, "tuple<str: std::str>");
+  assert.equal(named.__shape__.str.__name__, "std::str");
   const unnamed = e.tuple([e.str, e.int64]);
-  expect(unnamed.__name__).toEqual("tuple<std::str, std::int64>");
-  expect(unnamed.__items__[0].__name__).toEqual("std::str");
-  expect(unnamed.__items__[1].__name__).toEqual("std::int64");
+  assert.equal(unnamed.__name__, "tuple<std::str, std::int64>");
+  assert.equal(unnamed.__items__[0].__name__, "std::str");
+  assert.equal(unnamed.__items__[1].__name__, "std::int64");
 });
 
 test("scalar type merging", () => {
@@ -55,24 +56,26 @@ test("range primitives", async () => {
     new Date("2022-07-05T16:00:00Z")
   );
 
-  expect(e.std.range(range).toEdgeQL()).toEqual(
+  assert.equal(
+    e.std.range(range).toEdgeQL(),
     `std::range(3, 8, inc_lower := true, inc_upper := false)`
   );
-  expect(e.std.range(lowerRange).toEdgeQL()).toEqual(
+  assert.equal(
+    e.std.range(lowerRange).toEdgeQL(),
     `std::range(3, <std::int64>{}, inc_lower := true, inc_upper := false)`
   );
-  expect(e.std.range(upperRange).toEdgeQL()).toEqual(
+  assert.equal(
+    e.std.range(upperRange).toEdgeQL(),
     `std::range(<std::int64>{}, 8, inc_lower := true, inc_upper := false)`
   );
-  expect(e.std.range(dateRange).toEdgeQL()).toEqual(
+  assert.equal(
+    e.std.range(dateRange).toEdgeQL(),
     `std::range(<std::datetime>'2022-07-05T14:00:00.000Z', <std::datetime>'2022-07-05T16:00:00.000Z', inc_lower := true, inc_upper := false)`
   );
 
-  expect(e.range(3, 8).toEdgeQL()).toEqual(`std::range(3, 8)`);
-  expect(e.range(3).toEdgeQL()).toEqual(`std::range(3)`);
-  expect(e.range(undefined, 8).toEdgeQL()).toEqual(
-    `std::range(<std::float64>{}, 8)`
-  );
+  assert.equal(e.range(3, 8).toEdgeQL(), `std::range(3, 8)`);
+  assert.equal(e.range(3).toEdgeQL(), `std::range(3)`);
+  assert.equal(e.range(undefined, 8).toEdgeQL(), `std::range(<std::float64>{}, 8)`);
 
   expect(() => e.range(new edgedb.Range(null, null))).toThrow();
   expect(() => e.range(edgedb.Range.empty())).toThrow();
@@ -98,7 +101,7 @@ test("range primitives", async () => {
     >
   >(true);
 
-  expect(res).toEqual({
+  assert.deepEqual(res, {
     range: range,
     lowerRange: lowerRange,
     upperRange: new edgedb.Range(null, 8, false),
@@ -110,7 +113,7 @@ test("range primitives", async () => {
   tc.assert<
     tc.IsExact<(typeof getLower)["__element__"]["__name__"], "std::number">
   >(true);
-  expect(getLower.__element__.__name__).toEqual("std::number");
+  assert.equal(getLower.__element__.__name__, "std::number");
 
   const q2 = e.params(
     {
@@ -133,7 +136,7 @@ test("range primitives", async () => {
     >
   >(true);
 
-  expect(res2).toEqual({ range: range, rangeArray: [dateRange] });
+  assert.deepEqual(res2, { range: range, rangeArray: [dateRange] });
 
   await e
     .insert(e.Bag, {
@@ -154,12 +157,12 @@ test("range primitives", async () => {
 
   tc.assert<tc.IsExact<typeof res3, edgedb.Range<number>[]>>(true);
 
-  expect(res3).toEqual([lowerRange]);
+  assert.deepEqual(res3, [lowerRange]);
 
   await e.delete(e.Bag).run(client);
 });
 
 test("enum value with space", async () => {
   const result = await e.Genre["Science Fiction"].run(client);
-  expect(result).toEqual("Science Fiction");
+  assert.equal(result, "Science Fiction");
 });

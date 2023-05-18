@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import type * as edgedb from "edgedb";
 
 import e from "../dbschema/edgeql-js";
@@ -92,16 +93,14 @@ test("scoped update", async () => {
   const result = await query.run(client);
   tc.assert<tc.IsExact<typeof result, { id: string } | null>>(true);
 
-  expect(result).toEqual({ id: data.spidey.id });
+  assert.deepEqual(result, { id: data.spidey.id });
 
-  expect(
-    await e
-      .select(e.Hero, (hero) => ({
-        name: true,
-        filter_single: e.op(hero.id, "=", e.uuid(result!.id)),
-      }))
-      .run(client)
-  ).toEqual({ name: `The Amazing ${data.spidey.name}` });
+  assert.deepEqual(await e
+    .select(e.Hero, (hero) => ({
+      name: true,
+      filter_single: e.op(hero.id, "=", e.uuid(result!.id)),
+    }))
+    .run(client), { name: `The Amazing ${data.spidey.name}` });
 });
 
 test("update link property", async () => {
@@ -116,7 +115,7 @@ test("update link property", async () => {
     .select(theAvengers, () => ({ id: true, characters: true }))
     .run(client);
 
-  expect(qq1?.characters.length).toEqual(2);
+  assert.equal(qq1?.characters.length, 2);
 
   const q2 = e.update(theAvengers, () => ({
     set: {
@@ -132,7 +131,7 @@ test("update link property", async () => {
   const t2 = await e
     .select(theAvengers, () => ({ id: true, characters: true }))
     .run(client);
-  expect(t2?.characters.length).toEqual(3);
+  assert.equal(t2?.characters.length, 3);
 
   await e
     .update(theAvengers, () => ({
@@ -149,7 +148,7 @@ test("update link property", async () => {
   const t3 = await e
     .select(theAvengers, () => ({ id: true, characters: true }))
     .run(client);
-  expect(t3?.characters.length).toEqual(2);
+  assert.equal(t3?.characters.length, 2);
 
   await e
     .update(theAvengers, () => ({
@@ -162,7 +161,7 @@ test("update link property", async () => {
   const t4 = await e
     .select(theAvengers, () => ({ id: true, characters: true }))
     .run(client);
-  expect(t4?.characters.length).toEqual(0);
+  assert.equal(t4?.characters.length, 0);
 
   await e
     .update(theAvengers, () => ({
@@ -181,7 +180,7 @@ test("update link property", async () => {
   const t5 = await e
     .select(theAvengers, () => ({ id: true, characters: true }))
     .run(client);
-  expect(t5?.characters.length).toEqual(2);
+  assert.equal(t5?.characters.length, 2);
 });
 
 test("optional prop update", async () => {

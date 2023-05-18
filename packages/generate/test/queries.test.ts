@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import type * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
@@ -44,5 +45,5 @@ test("basic select", async () => {
     >
   >(true);
 
-  expect(result.length).toEqual(2);
+  assert.equal(result.length, 2);
 });

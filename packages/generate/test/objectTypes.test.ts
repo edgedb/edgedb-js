@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import * as $ from "../src/syntax/reflection";
 import type { PropertyDesc } from "../src/syntax/typesystem";
 import e from "../dbschema/edgeql-js";
@@ -11,54 +12,44 @@ const $Simple = e.default.Simple.__element__;
 const $Z = e.default.Z.__element__;
 
 test("property hydration", () => {
-  expect(typeof $Hero).toBe("object");
-  expect($Hero.__name__).toBe("default::Hero");
-  expect($Hero.__pointers__.name.__kind__).toBe("property");
-  expect($Hero.__pointers__.name.cardinality).toBe($.Cardinality.One);
-  expect($Hero.__pointers__.name.target).toEqual(e.std.str);
-  expect($Hero.__pointers__.name.target.__kind__).toEqual($.TypeKind.scalar);
-  expect($Hero.__pointers__.name.exclusive).toEqual(true);
-  expect($Hero.__pointers__.secret_identity.exclusive).toEqual(false);
+  assert.equal(typeof $Hero, "object");
+  assert.equal($Hero.__name__, "default::Hero");
+  assert.equal($Hero.__pointers__.name.__kind__, "property");
+  assert.equal($Hero.__pointers__.name.cardinality, $.Cardinality.One);
+  assert.deepEqual($Hero.__pointers__.name.target, e.std.str);
+  assert.deepEqual($Hero.__pointers__.name.target.__kind__, $.TypeKind.scalar);
+  assert.equal($Hero.__pointers__.name.exclusive, true);
+  assert.equal($Hero.__pointers__.secret_identity.exclusive, false);
 
-  expect(e.default.Movie.__element__.__pointers__.profile.exclusive).toEqual(
-    true
-  );
+  assert.equal(e.default.Movie.__element__.__pointers__.profile.exclusive, true);
   // expect(e.default.Movie.profile.__exclusive__).toEqual(true);
-  expect(e.default.Movie.__element__.__pointers__.characters.exclusive).toEqual(
-    false
-  );
+  assert.equal(e.default.Movie.__element__.__pointers__.characters.exclusive, false);
   // expect(e.default.Movie.characters.__exclusive__).toEqual(false);
 });
 
 test("link hydration", () => {
-  expect($Hero.__pointers__.villains.__kind__).toBe("link");
-  expect($Hero.__pointers__.villains.target.__kind__).toBe($.TypeKind.object);
-  expect($Hero.__pointers__.villains.cardinality).toBe($.Cardinality.Many);
-  expect($Hero.__pointers__.villains.target.__name__).toEqual(
-    "default::Villain"
-  );
-  expect($Hero.__pointers__.villains.properties).toEqual({});
+  assert.equal($Hero.__pointers__.villains.__kind__, "link");
+  assert.equal($Hero.__pointers__.villains.target.__kind__, $.TypeKind.object);
+  assert.equal($Hero.__pointers__.villains.cardinality, $.Cardinality.Many);
+  assert.equal($Hero.__pointers__.villains.target.__name__, "default::Villain");
+  assert.deepEqual($Hero.__pointers__.villains.properties, {});
 
   // type union link
-  expect($Z.__pointers__.xy.__kind__).toEqual("link");
-  expect($Z.__pointers__.xy.target.__name__).toEqual("default::X | default::Y");
-  expect(Object.keys($Z.__pointers__.xy.target.__pointers__).sort()).toEqual([
+  assert.equal($Z.__pointers__.xy.__kind__, "link");
+  assert.equal($Z.__pointers__.xy.target.__name__, "default::X | default::Y");
+  assert.deepEqual(Object.keys($Z.__pointers__.xy.target.__pointers__).sort(), [
     "__type__",
     "a",
     "id",
   ]);
-  expect($Z.__pointers__.xy.target.__pointers__.a.target.__name__).toEqual(
-    "std::str"
-  );
+  assert.equal($Z.__pointers__.xy.target.__pointers__.a.target.__name__, "std::str");
 });
 
 const link = $AnnotationSubject.__pointers__.annotations;
 test("link properties", () => {
-  expect(link.properties["@value"].target.__name__).toEqual("std::str");
-  expect(link.properties["@value"].cardinality).toEqual(
-    $.Cardinality.AtMostOne
-  );
-  expect(link.properties["@value"].__kind__).toEqual("property");
+  assert.equal(link.properties["@value"].target.__name__, "std::str");
+  assert.deepEqual(link.properties["@value"].cardinality, $.Cardinality.AtMostOne);
+  assert.equal(link.properties["@value"].__kind__, "property");
 });
 
 test("overloaded properties", () => {
@@ -73,39 +64,39 @@ test("overloaded properties", () => {
 test("named tuple tests", () => {
   // named tuple tests
   const BagShape = $Bag.__pointers__;
-  expect(BagShape.namedTuple.cardinality).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(BagShape.namedTuple.cardinality, $.Cardinality.AtMostOne);
 
   const namedTuple = BagShape.namedTuple.target;
-  expect(namedTuple.__kind__).toEqual($.TypeKind.namedtuple);
-  expect(namedTuple.__shape__.x.__name__).toEqual("std::str");
-  expect(namedTuple.__shape__.x.__kind__).toEqual($.TypeKind.scalar);
-  expect(namedTuple.__shape__.y.__name__).toEqual("std::int64");
+  assert.deepEqual(namedTuple.__kind__, $.TypeKind.namedtuple);
+  assert.equal(namedTuple.__shape__.x.__name__, "std::str");
+  assert.deepEqual(namedTuple.__shape__.x.__kind__, $.TypeKind.scalar);
+  assert.equal(namedTuple.__shape__.y.__name__, "std::int64");
 });
 
 test("unnamed tuple tests", () => {
   // named tuple tests
   const BagShape = $Bag.__pointers__;
   const unnamedTuple = BagShape.unnamedTuple.target;
-  expect(unnamedTuple.__kind__).toEqual($.TypeKind.tuple);
-  expect(unnamedTuple.__items__[0].__name__).toEqual("std::str");
-  expect(unnamedTuple.__items__[1].__name__).toEqual("std::int64");
+  assert.deepEqual(unnamedTuple.__kind__, $.TypeKind.tuple);
+  assert.equal(unnamedTuple.__items__[0].__name__, "std::str");
+  assert.equal(unnamedTuple.__items__[1].__name__, "std::int64");
 });
 
 test("array tests", () => {
   // named tuple tests
   const BagShape = $Bag.__pointers__;
   const arrayProp = BagShape.stringsArr.target;
-  expect(arrayProp.__kind__).toEqual($.TypeKind.array);
-  expect(arrayProp.__element__.__name__).toEqual("std::str");
+  assert.deepEqual(arrayProp.__kind__, $.TypeKind.array);
+  assert.equal(arrayProp.__element__.__name__, "std::str");
 });
 
 test("merging tests", () => {
   const merged = $.$mergeObjectTypes($Bag, $Simple);
-  expect(Object.keys(merged.__pointers__).length).toEqual(4);
-  expect(Object.keys(merged.__pointers__).includes("id")).toEqual(true);
-  expect(Object.keys(merged.__pointers__).includes("__type__")).toEqual(true);
-  expect(Object.keys(merged.__pointers__).includes("name")).toEqual(true);
-  expect(Object.keys(merged.__pointers__).includes("age")).toEqual(true);
+  assert.equal(Object.keys(merged.__pointers__).length, 4);
+  assert.equal(Object.keys(merged.__pointers__).includes("id"), true);
+  assert.equal(Object.keys(merged.__pointers__).includes("__type__"), true);
+  assert.equal(Object.keys(merged.__pointers__).includes("name"), true);
+  assert.equal(Object.keys(merged.__pointers__).includes("age"), true);
   type merged = keyof (typeof merged)["__pointers__"];
   // shared keys
   tc.assert<tc.IsExact<merged, "id" | "__type__" | "name" | "age">>(true);
@@ -115,24 +106,19 @@ test("backlinks", () => {
   const heroMovie = e.Hero["<characters[is Movie]"];
 
   const heroVillain = e.Hero["<nemesis[is Villain]"];
-  expect(heroMovie.toEdgeQL()).toEqual(
-    `DETACHED default::Hero.<characters[is Movie]`
-  );
-  expect(heroMovie.__element__.__name__).toEqual("default::Movie");
-  expect(heroVillain.nemesis.__element__.__name__).toEqual("default::Hero");
-  expect(
-    e.select(e.Villain, () => ({ limit: 1 })).assert_single().nemesis
-      .__cardinality__
-  ).toEqual($.Cardinality.AtMostOne);
+  assert.equal(heroMovie.toEdgeQL(), `DETACHED default::Hero.<characters[is Movie]`);
+  assert.equal(heroMovie.__element__.__name__, "default::Movie");
+  assert.equal(heroVillain.nemesis.__element__.__name__, "default::Hero");
+  assert.deepEqual(e.select(e.Villain, () => ({ limit: 1 })).assert_single().nemesis
+    .__cardinality__, $.Cardinality.AtMostOne);
 
-  expect(e.Profile["<profile"].__element__.__name__).toEqual("std::BaseObject");
-  expect(e.Profile["<profile"].__cardinality__).toEqual($.Cardinality.Many);
+  assert.equal(e.Profile["<profile"].__element__.__name__, "std::BaseObject");
+  assert.deepEqual(e.Profile["<profile"].__cardinality__, $.Cardinality.Many);
 
   const merged = $.$mergeObjectTypes(e.Hero.__element__, e.Villain.__element__);
-  expect(merged.__pointers__["<characters"].target.__name__).toEqual(
-    "std::BaseObject"
-  );
-  expect(merged.__pointers__["<characters[is Movie]"].target.__name__).toEqual(
+  assert.equal(merged.__pointers__["<characters"].target.__name__, "std::BaseObject");
+  assert.equal(
+    merged.__pointers__["<characters[is Movie]"].target.__name__,
     "default::Movie"
   );
 });
@@ -149,7 +135,7 @@ test("select *", () => {
   // on root object
   const movieStar = e.Movie["*"];
 
-  expect(movieStar).toEqual(movieStarShape);
+  assert.deepEqual(movieStar, movieStarShape);
   tc.assert<
     tc.IsExact<
       typeof movieStar,
@@ -165,7 +151,7 @@ test("select *", () => {
 
   // on select scope
   e.select(e.Movie, (movie) => {
-    expect(movie["*"]).toEqual(movieStarShape);
+    assert.deepEqual(movie["*"], movieStarShape);
 
     return {};
   });
@@ -174,7 +160,7 @@ test("select *", () => {
   e.select(
     e.select(e.Movie, () => ({})),
     (movie) => {
-      expect(movie["*"]).toEqual(movieStarShape);
+      assert.deepEqual(movie["*"], movieStarShape);
 
       return {};
     }
@@ -182,7 +168,7 @@ test("select *", () => {
 
   // on polymorphic select scope
   e.select(e.Person.is(e.Hero), (hero) => {
-    expect(hero["*"]).toEqual({
+    assert.deepEqual(hero["*"], {
       id: true,
       name: true,
       height: true,
@@ -195,7 +181,7 @@ test("select *", () => {
 
   // on insert select
   e.select(e.insert(e.Movie, { title: "test" }), (movie) => {
-    expect(movie["*"]).toEqual(movieStarShape);
+    assert.deepEqual(movie["*"], movieStarShape);
 
     return movie["*"];
   }).toEdgeQL();

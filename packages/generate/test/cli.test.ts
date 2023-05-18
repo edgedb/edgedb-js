@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import path from "path";
 import { adapter } from "edgedb";
 import { execSync } from "child_process";
@@ -9,5 +10,5 @@ test("basic generate", async () => {
     stdio: "inherit",
   });
   const qbIndex = path.resolve(QBDIR, "dbschema", "edgeql-js", "index.ts");
-  expect(await adapter.exists(qbIndex)).toEqual(true);
+  assert.equal(await adapter.exists(qbIndex), true);
 }, 60000);

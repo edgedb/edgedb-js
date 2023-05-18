@@ -1,11 +1,14 @@
+import assert from "node:assert/strict";
 import e from "../dbschema/edgeql-js";
 
 test("simple for loop", () => {
-  expect(e.for(e.set(1, 2, 3), (x) => e.op(e.op(x, "*", 2), "+", x)).toEdgeQL())
-    .toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
-UNION (
-  ((__forVar__0 * 2) + __forVar__0)
-)`);
+  assert.equal(
+    e.for(e.set(1, 2, 3), (x) => e.op(e.op(x, "*", 2), "+", x)).toEdgeQL(),
+    `FOR __forVar__0 IN {{ 1, 2, 3 }}
+  UNION (
+    ((__forVar__0 * 2) + __forVar__0)
+  )`
+  );
 });
 
 test("with vars in for loop", () => {
@@ -17,7 +20,7 @@ test("with vars in for loop", () => {
     });
   });
 
-  expect(q1.toEdgeQL()).toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
+  assert.equal(q1.toEdgeQL(), `FOR __forVar__0 IN {{ 1, 2, 3 }}
 UNION (
   (WITH
     __withVar_0 := std::to_str(__forVar__0)
@@ -49,7 +52,7 @@ UNION (
       }));
   });
 
-  expect(q2.toEdgeQL()).toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
+  assert.equal(q2.toEdgeQL(), `FOR __forVar__0 IN {{ 1, 2, 3 }}
 UNION (
   (WITH
     __withVar_1 := std::to_str(__forVar__0)

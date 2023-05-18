@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import type { Client } from "edgedb";
 import type { Villain } from "../dbschema/edgeql-js/modules/default";
 import type { InsertShape } from "../dbschema/edgeql-js/insert";
@@ -36,7 +37,7 @@ test("basic insert", async () => {
     rating: 5,
   });
 
-  expect(q1.__cardinality__).toEqual($.Cardinality.One);
+  assert.deepEqual(q1.__cardinality__, $.Cardinality.One);
   tc.assert<tc.IsExact<(typeof q1)["__cardinality__"], $.Cardinality.One>>(
     true
   );
@@ -69,7 +70,7 @@ test("unless conflict", async () => {
     })
     .unlessConflict();
 
-  expect(q0.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(q0.__cardinality__, $.Cardinality.AtMostOne);
   tc.assert<
     tc.IsExact<(typeof q0)["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);
@@ -83,14 +84,14 @@ test("unless conflict", async () => {
       on: movie.title,
     }));
 
-  expect(q1.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(q1.__cardinality__, $.Cardinality.AtMostOne);
   tc.assert<
     tc.IsExact<(typeof q1)["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);
 
   const r1 = await q1.run(client);
 
-  expect(r1).toEqual(null);
+  assert.equal(r1, null);
   tc.assert<tc.IsExact<typeof r1, { id: string } | null>>(true);
 
   const q2 = e
@@ -115,10 +116,10 @@ test("unless conflict", async () => {
 
   for (const movie of allMovies) {
     if (movie.title === "The Avengers") {
-      expect(movie.rating).toEqual(11);
-      expect(r2.id).toEqual(movie.id);
+      assert.equal(movie.rating, 11);
+      assert.deepEqual(r2.id, movie.id);
     } else {
-      expect(movie.rating).not.toEqual(11);
+      assert.notDeepEqual(movie.rating, 11);
     }
   }
 
@@ -132,11 +133,11 @@ test("unless conflict", async () => {
       else: e.select(e.Hero, () => ({ name: true })),
     }));
 
-  expect(q3.__cardinality__).toEqual($.Cardinality.Many);
+  assert.deepEqual(q3.__cardinality__, $.Cardinality.Many);
   tc.assert<tc.IsExact<(typeof q3)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
-  expect(q3.__element__.__name__).toEqual("std::Object");
+  assert.equal(q3.__element__.__name__, "std::Object");
   tc.assert<tc.IsExact<(typeof q3)["__element__"]["__name__"], "std::Object">>(
     true
   );
@@ -295,8 +296,8 @@ test("insert link prop in nested select", async () => {
   }));
 
   const result = await selected.run(client);
-  expect(result.characters[0]["@character_name"]).toEqual("Tony Stark");
-  expect(result.characters[0].name).toEqual("Iron Man");
+  assert.equal(result.characters[0]["@character_name"], "Tony Stark");
+  assert.equal(result.characters[0].name, "Iron Man");
 });
 
 test("insert link prop in nested insert", async () => {
@@ -317,8 +318,8 @@ test("insert link prop in nested insert", async () => {
   }));
 
   const result = await selected.run(client);
-  expect(result.characters[0]["@character_name"]).toEqual("Ivan Vanko");
-  expect(result.characters[0].name).toEqual("Whiplash");
+  assert.equal(result.characters[0]["@character_name"], "Ivan Vanko");
+  assert.equal(result.characters[0].name, "Whiplash");
 });
 
 test("no plain data as link prop", async () => {
@@ -341,7 +342,7 @@ test("undefined in insert", async () => {
       release_year: undefined,
     })
     .run(client);
-  expect(result.id).toBeDefined();
+  assert.ok(result.id);
 });
 
 test("invalid insert", async () => {
@@ -358,7 +359,7 @@ test("invalid insert", async () => {
 test("empty shape insert", async () => {
   const res = await e.insert(e.Profile, {}).run(client);
 
-  expect(Object.keys(res)).toEqual(["id"]);
+  assert.deepEqual(Object.keys(res), ["id"]);
 });
 
 testIfVersionGTE(2)("insert custom ID", async () => {

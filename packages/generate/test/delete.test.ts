@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import type * as edgedb from "edgedb";
 
 import e from "../dbschema/edgeql-js";
@@ -28,8 +29,8 @@ test("basic delete", async () => {
   }));
   const deletedResult = await deleteBlackWidow.run(client);
 
-  expect(deletedResult).not.toEqual(null);
-  expect(deletedResult!.id).toEqual(insertedResult.id);
+  assert.notDeepEqual(deletedResult, null);
+  assert.deepEqual(deletedResult!.id, insertedResult.id);
 
   const deleteWrappingSelect = e.delete(
     e.select(e.Hero, (hero) => ({
@@ -42,7 +43,7 @@ test("basic delete", async () => {
   tc.assert<tc.IsExact<typeof wrappingDeleteResult, { id: string } | null>>(
     true
   );
-  expect(wrappingDeleteResult).toEqual(null);
+  assert.equal(wrappingDeleteResult, null);
 
   const deleteAll = e.delete(e.Hero);
   tc.assert<

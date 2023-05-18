@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
@@ -24,7 +25,8 @@ test("basic select", async () => {
 
   const result = await query.runJSON(client);
   tc.assert<tc.IsExact<typeof result, string>>(true);
-  expect(result).toEqual(
+  assert.equal(
+    result,
     '[{"title" : "Captain America: Civil War"}, {"title" : "The Avengers"}]'
   );
 });
@@ -37,7 +39,7 @@ test("select one", async () => {
 
   const result = await query.runJSON(client);
   tc.assert<tc.IsExact<typeof result, string>>(true);
-  expect(result).toEqual('[{"title" : "The Avengers"}]');
+  assert.equal(result, '[{"title" : "The Avengers"}]');
 });
 
 test("json properties", async () => {
@@ -77,7 +79,7 @@ test("json param", async () => {
 test("json read/write equivalents", async () => {
   const data = [5, "asdf", { sup: [3] }, ["asdf", 1234, false, null]];
   for (const datum of data) {
-    expect(await e.json(datum).run(client)).toEqual(datum);
+    assert.deepEqual(await e.json(datum).run(client), datum);
   }
 });
 
@@ -91,7 +93,7 @@ test("serialize data classes", async () => {
     new edgedb.RelativeDuration(3),
     new edgedb.DateDuration(1),
   ];
-  expect(await e.json(datum).run(client)).toEqual([
+  assert.deepEqual(await e.json(datum).run(client), [
     "2022-07-18T21:42:46.569Z",
     "2020-01-01",
     "2020-01-01T00:00:00",

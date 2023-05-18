@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import superjson from "superjson";
 import type { Client } from "edgedb";
 import e from "../dbschema/edgeql-js";
@@ -25,15 +26,16 @@ function checkOperatorExpr<T extends $.$expr_Operator>(
   cardinality: T["__cardinality__"],
   edgeql?: string
 ) {
-  expect(expr.__name__).toEqual(name);
-  expect(superjson.stringify(expr.__args__)).toEqual(
+  assert.deepEqual(expr.__name__, name);
+  assert.deepEqual(
+    superjson.stringify(expr.__args__),
     superjson.stringify(args.filter((arg) => arg !== undefined))
   );
-  expect(expr.__element__).toEqual(returnType);
-  expect(expr.__cardinality__).toEqual(cardinality);
+  assert.deepEqual(expr.__element__, returnType);
+  assert.deepEqual(expr.__cardinality__, cardinality);
 
   if (edgeql) {
-    expect(expr.toEdgeQL()).toEqual(edgeql);
+    assert.deepEqual(expr.toEdgeQL(), edgeql);
   }
 }
 
@@ -218,18 +220,18 @@ test("non-literal args", async () => {
 
 test("cardinalities for set of operators", async () => {
   const t1 = e.op(e.cast(e.str, e.set()), "??", "default");
-  expect(t1.__cardinality__).toEqual($.Cardinality.AtMostOne);
-  expect(await t1.run(client)).toEqual("default");
+  assert.deepEqual(t1.__cardinality__, $.Cardinality.AtMostOne);
+  assert.equal(await t1.run(client), "default");
 
   const t2 = e.op(e.cast(e.str, e.set()), "union", "default");
-  expect(t2.__cardinality__).toEqual($.Cardinality.One);
-  expect(await t1.run(client)).toEqual("default");
+  assert.deepEqual(t2.__cardinality__, $.Cardinality.One);
+  assert.equal(await t1.run(client), "default");
 
   const t3 = e.op("one", "union", "two");
-  expect(t3.__cardinality__).toEqual($.Cardinality.AtLeastOne);
-  expect(await t3.run(client)).toEqual(["one", "two"]);
+  assert.deepEqual(t3.__cardinality__, $.Cardinality.AtLeastOne);
+  assert.deepEqual(await t3.run(client), ["one", "two"]);
 
   const t4 = e.op("distinct", "default");
-  expect(t4.__cardinality__).toEqual($.Cardinality.One);
-  expect(await t4.run(client)).toEqual("default");
+  assert.deepEqual(t4.__cardinality__, $.Cardinality.One);
+  assert.equal(await t4.run(client), "default");
 });

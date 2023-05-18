@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import type * as edgedb from "edgedb";
 import e from "../dbschema/edgeql-js";
 import { setupTests, tc, teardownTests, TestData } from "./setupTeardown";
@@ -40,5 +41,5 @@ test("detached", async () => {
     id: data.iron_man.id,
     name: data.iron_man.name,
   });
-  expect(result?.friends).toEqual(heroes);
+  assert.deepEqual(result?.friends, heroes);
 });

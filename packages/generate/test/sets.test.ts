@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { $, Client } from "edgedb";
 import { tc } from "./setupTeardown";
 import e, { $infer } from "../dbschema/edgeql-js";
@@ -17,108 +18,104 @@ afterAll(async () => {
 });
 
 test("empty sets", async () => {
-  expect(e.set()).toEqual(null);
+  assert.equal(e.set(), null);
 
   const stringSet = e.cast(e.str, e.set());
-  expect(stringSet.toEdgeQL()).toEqual(`<std::str>{}`);
+  assert.equal(stringSet.toEdgeQL(), `<std::str>{}`);
   tc.assert<tc.IsExact<$infer<typeof stringSet>, null>>(true);
 
   const $Hero = e.Hero.__element__;
   const heroSet = e.cast($Hero, e.set());
-  expect(heroSet.toEdgeQL()).toEqual(`<default::Hero>{}`);
+  assert.equal(heroSet.toEdgeQL(), `<default::Hero>{}`);
   tc.assert<tc.IsExact<$infer<typeof heroSet>, null>>(true);
 
   const int32Set = e.cast(e.int32, e.set());
-  expect(int32Set.toEdgeQL()).toEqual(`<std::int32>{}`);
+  assert.equal(int32Set.toEdgeQL(), `<std::int32>{}`);
   tc.assert<tc.IsExact<$infer<typeof int32Set>, null>>(true);
   tc.assert<
     tc.IsExact<(typeof int32Set)["__element__"]["__name__"], "std::number">
   >(true);
 
-  expect(await e.cast(e.int64, e.set()).run(client)).toEqual(null);
+  assert.equal(await e.cast(e.int64, e.set()).run(client), null);
 });
 
 test("object set contructor", async () => {
   const hero = e.set(e.default.Hero);
-  expect(hero.id.__element__.__name__).toEqual("std::uuid");
-  expect(hero.name.__element__.__name__).toEqual("std::str");
-  expect(hero.number_of_movies.__element__.__name__).toEqual("std::int64");
+  assert.equal(hero.id.__element__.__name__, "std::uuid");
+  assert.equal(hero.name.__element__.__name__, "std::str");
+  assert.equal(hero.number_of_movies.__element__.__name__, "std::int64");
 
   const person = e.set(e.default.Hero, e.default.Villain);
-  expect(person.id.__element__.__name__).toEqual("std::uuid");
-  expect(person.name.__element__.__name__).toEqual("std::str");
-  expect((person as any).number_of_movies).toEqual(undefined);
-  expect(person.__element__.__name__).toEqual(
-    "default::Hero UNION default::Villain"
-  );
+  assert.equal(person.id.__element__.__name__, "std::uuid");
+  assert.equal(person.name.__element__.__name__, "std::str");
+  assert.deepEqual((person as any).number_of_movies, undefined);
+  assert.equal(person.__element__.__name__, "default::Hero UNION default::Villain");
 
   const merged = e.set(e.default.Hero, e.default.Villain, e.default.Person);
-  expect(merged.__element__.__name__).toEqual(
+  assert.equal(
+    merged.__element__.__name__,
     "default::Hero UNION default::Villain UNION default::Person"
   );
 
-  expect(e.set(e.select(e.Hero), e.select(e.Villain)).toEdgeQL()).toEqual(
+  assert.equal(
+    e.set(e.select(e.Hero), e.select(e.Villain)).toEdgeQL(),
     `{ (SELECT DETACHED default::Hero), (SELECT DETACHED default::Villain) }`
   );
 
-  expect(
-    await e
-      .select(e.set(e.select(e.Hero), e.select(e.Villain)), (obj) => ({
-        name: true,
-        filter: e.op(obj.name, "=", "Thanos"),
-      }))
-      .assert_single()
-      .run(client)
-  ).toEqual({ name: "Thanos" });
+  assert.deepEqual(await e
+    .select(e.set(e.select(e.Hero), e.select(e.Villain)), (obj) => ({
+      name: true,
+      filter: e.op(obj.name, "=", "Thanos"),
+    }))
+    .assert_single()
+    .run(client), { name: "Thanos" });
 
-  expect(
-    await e
-      .select(e.set(e.Hero, e.Villain), (obj) => ({
-        name: true,
-        filter: e.op(obj.name, "=", "Thanos"),
-      }))
-      .assert_single()
-      .run(client)
-  ).toEqual({ name: "Thanos" });
+  assert.deepEqual(await e
+    .select(e.set(e.Hero, e.Villain), (obj) => ({
+      name: true,
+      filter: e.op(obj.name, "=", "Thanos"),
+    }))
+    .assert_single()
+    .run(client), { name: "Thanos" });
 });
 
 test("scalar set contructor", () => {
   // single elements
   const _f1 = e.set("asdf");
-  expect(_f1.__element__.__name__).toEqual("std::str");
-  expect(_f1.__cardinality__).toEqual($.Cardinality.One);
-  expect(_f1.__element__.__kind__).toEqual($.TypeKind.scalar);
-  expect(_f1.toEdgeQL()).toEqual(`{ "asdf" }`);
+  assert.equal(_f1.__element__.__name__, "std::str");
+  assert.deepEqual(_f1.__cardinality__, $.Cardinality.One);
+  assert.deepEqual(_f1.__element__.__kind__, $.TypeKind.scalar);
+  assert.equal(_f1.toEdgeQL(), `{ "asdf" }`);
   type _f1 = $infer<typeof _f1>;
   tc.assert<tc.IsExact<_f1, "asdf">>(true);
 
   const _f4 = e.set(e.int32(42));
-  expect(_f4.__element__.__name__).toEqual("std::int32");
-  expect(_f4.__cardinality__).toEqual($.Cardinality.One);
-  expect(_f4.__element__.__kind__).toEqual($.TypeKind.scalar);
-  expect(_f4.toEdgeQL()).toEqual(`{ <std::int32>42 }`);
+  assert.equal(_f4.__element__.__name__, "std::int32");
+  assert.deepEqual(_f4.__cardinality__, $.Cardinality.One);
+  assert.deepEqual(_f4.__element__.__kind__, $.TypeKind.scalar);
+  assert.equal(_f4.toEdgeQL(), `{ <std::int32>42 }`);
   type _f4 = $infer<typeof _f4>;
   tc.assert<tc.IsExact<_f4, 42>>(true);
 
   // multiple elements
   const _f2 = e.set("asdf", "qwer", e.str("poiu"));
-  expect(_f2.__element__.__name__).toEqual("std::str");
-  expect(_f2.__cardinality__).toEqual($.Cardinality.AtLeastOne);
-  expect(_f2.toEdgeQL()).toEqual(`{ "asdf", "qwer", "poiu" }`);
+  assert.equal(_f2.__element__.__name__, "std::str");
+  assert.deepEqual(_f2.__cardinality__, $.Cardinality.AtLeastOne);
+  assert.equal(_f2.toEdgeQL(), `{ "asdf", "qwer", "poiu" }`);
   type _f2 = $infer<typeof _f2>;
   tc.assert<tc.IsExact<_f2, [string, ...string[]]>>(true);
 
   const _f3 = e.set(1, 2, 3);
-  expect(_f3.__element__.__name__).toEqual("std::number");
-  expect(_f3.__cardinality__).toEqual($.Cardinality.AtLeastOne);
-  expect(_f3.toEdgeQL()).toEqual(`{ 1, 2, 3 }`);
+  assert.equal(_f3.__element__.__name__, "std::number");
+  assert.deepEqual(_f3.__cardinality__, $.Cardinality.AtLeastOne);
+  assert.equal(_f3.toEdgeQL(), `{ 1, 2, 3 }`);
   type _f3 = $infer<typeof _f3>;
   tc.assert<tc.IsExact<_f3, [number, ...number[]]>>(true);
 
   // implicit casting
   const _f5 = e.set(5, e.literal(e.float32, 1234.5));
-  expect(_f5.__element__.__name__).toEqual("std::number");
-  expect(_f5.toEdgeQL()).toEqual(`{ 5, <std::float32>1234.5 }`);
+  assert.equal(_f5.__element__.__name__, "std::number");
+  assert.equal(_f5.toEdgeQL(), `{ 5, <std::float32>1234.5 }`);
   type _f5 = $infer<typeof _f5>;
   tc.assert<tc.IsExact<_f5, [number, ...number[]]>>(true);
 });
@@ -145,7 +142,8 @@ test("invalid sets", () => {
 
 test("enums", () => {
   const query = e.set(e.Genre.Action, e.Genre.Horror, e.Genre.Select);
-  expect(query.toEdgeQL()).toEqual(
+  assert.equal(
+    query.toEdgeQL(),
     "{ default::Genre.Action, default::Genre.Horror, default::Genre.`Select` }"
   );
 
@@ -157,9 +155,9 @@ test("tuples", async () => {
     e.tuple([1, "asdf", e.int16(214)]),
     e.tuple([3, "asdf", e.int64(5)])
   );
-  expect(q1.__element__.__kind__).toEqual(TypeKind.tuple);
-  expect(q1.__element__.__items__[0].__name__).toEqual("std::number");
-  expect(q1.__element__.__items__[1].__name__).toEqual("std::str");
+  assert.deepEqual(q1.__element__.__kind__, TypeKind.tuple);
+  assert.equal(q1.__element__.__items__[0].__name__, "std::number");
+  assert.equal(q1.__element__.__items__[1].__name__, "std::str");
   expect(await q1.run(client)).toMatchObject([
     [1, "asdf", 214],
     [3, "asdf", 5],
@@ -174,7 +172,7 @@ test("named tuples", async () => {
     e.tuple({ a: 1, b: "asdf", c: e.int16(214) }),
     e.tuple({ a: 3, b: "asdf", c: e.int64(5) })
   );
-  expect(q1.__element__.__kind__).toEqual(TypeKind.namedtuple);
+  assert.deepEqual(q1.__element__.__kind__, TypeKind.namedtuple);
   expect(await q1.run(client)).toMatchObject([
     { a: 1, b: "asdf", c: 214 },
     { a: 3, b: "asdf", c: 5 },
@@ -190,9 +188,9 @@ test("named tuples", async () => {
 
 test("array", async () => {
   const q1 = e.set(e.array([e.int16(5), e.int64(67)]), e.array([6]));
-  expect(q1.__element__.__kind__).toEqual(TypeKind.array);
+  assert.deepEqual(q1.__element__.__kind__, TypeKind.array);
 
-  expect(await q1.run(client)).toEqual([[5, 67], [6]]);
+  assert.deepEqual(await q1.run(client), [[5, 67], [6]]);
 
   expect(() =>
     e.set(e.array([e.int16(5)]), e.array(["asdf"]) as any)

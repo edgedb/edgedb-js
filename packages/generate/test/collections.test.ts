@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import type { Client } from "edgedb";
 import * as $ from "../src/syntax/reflection";
 import e, { $infer, objectTypeToTupleType } from "../dbschema/edgeql-js";
@@ -22,51 +23,49 @@ afterAll(async () => {
 
 test("array literal", async () => {
   const strArrayType = e.array(e.str);
-  expect(strArrayType.__kind__).toEqual($.TypeKind.array);
-  expect(strArrayType.__element__.__kind__).toEqual($.TypeKind.scalar);
-  expect(strArrayType.__element__.__name__).toEqual("std::str");
+  assert.deepEqual(strArrayType.__kind__, $.TypeKind.array);
+  assert.deepEqual(strArrayType.__element__.__kind__, $.TypeKind.scalar);
+  assert.equal(strArrayType.__element__.__name__, "std::str");
 
   const arg = e.array(["asdf", e.str("qwer")]);
 
   type arg = $.setToTsType<typeof arg>;
   tc.assert<tc.IsExact<arg, string[]>>(true);
-  expect(arg.__kind__).toEqual($.ExpressionKind.Array);
-  expect(arg.__element__.__kind__).toEqual($.TypeKind.array);
-  expect(arg.__cardinality__).toEqual($.Cardinality.One);
-  expect(arg.__element__.__element__.__kind__).toEqual($.TypeKind.scalar);
-  expect(arg.__element__.__element__.__name__).toEqual("std::str");
+  assert.deepEqual(arg.__kind__, $.ExpressionKind.Array);
+  assert.deepEqual(arg.__element__.__kind__, $.TypeKind.array);
+  assert.deepEqual(arg.__cardinality__, $.Cardinality.One);
+  assert.deepEqual(arg.__element__.__element__.__kind__, $.TypeKind.scalar);
+  assert.equal(arg.__element__.__element__.__name__, "std::str");
   const result = await client.querySingle(e.select(arg).toEdgeQL());
-  expect(result).toEqual(["asdf", "qwer"]);
+  assert.deepEqual(result, ["asdf", "qwer"]);
 
   const arg1 = arg[1];
   tc.assert<tc.IsExact<(typeof arg1)["__kind__"], $.ExpressionKind.Operator>>(
     true
   );
-  expect(arg1.__kind__).toEqual($.ExpressionKind.Operator);
+  assert.deepEqual(arg1.__kind__, $.ExpressionKind.Operator);
   tc.assert<tc.IsExact<(typeof arg1)["__cardinality__"], $.Cardinality.One>>(
     true
   );
-  expect(arg1.__cardinality__).toEqual($.Cardinality.One);
+  assert.deepEqual(arg1.__cardinality__, $.Cardinality.One);
   tc.assert<tc.IsExact<(typeof arg1)["__element__"]["__name__"], "std::str">>(
     true
   );
-  expect(arg1.__element__.__name__).toEqual("std::str");
-  expect(await e.select(arg1).run(client)).toEqual("qwer");
+  assert.equal(arg1.__element__.__name__, "std::str");
+  assert.equal(await e.select(arg1).run(client), "qwer");
 
   const multiArray = e.array(["asdf", e.set(e.str("qwer"), e.str("erty"))]);
 
   type multiArray = $.setToTsType<typeof multiArray>;
   tc.assert<tc.IsExact<multiArray, [string[], ...string[][]]>>(true);
-  expect(multiArray.__kind__).toEqual($.ExpressionKind.Array);
-  expect(multiArray.__element__.__kind__).toEqual($.TypeKind.array);
+  assert.deepEqual(multiArray.__kind__, $.ExpressionKind.Array);
+  assert.deepEqual(multiArray.__element__.__kind__, $.TypeKind.array);
 
-  expect(multiArray.__cardinality__).toEqual($.Cardinality.AtLeastOne);
-  expect(multiArray.__element__.__element__.__kind__).toEqual(
-    $.TypeKind.scalar
-  );
-  expect(multiArray.__element__.__element__.__name__).toEqual("std::str");
+  assert.deepEqual(multiArray.__cardinality__, $.Cardinality.AtLeastOne);
+  assert.deepEqual(multiArray.__element__.__element__.__kind__, $.TypeKind.scalar);
+  assert.equal(multiArray.__element__.__element__.__name__, "std::str");
   const multiArrayResult = await client.query(e.select(multiArray).toEdgeQL());
-  expect(multiArrayResult).toEqual([
+  assert.deepEqual(multiArrayResult, [
     ["asdf", "qwer"],
     ["asdf", "erty"],
   ]);
@@ -75,8 +74,8 @@ test("array literal", async () => {
   tc.assert<
     tc.IsExact<(typeof multi0)["__cardinality__"], $.Cardinality.AtLeastOne>
   >(true);
-  expect(multi0.__cardinality__).toEqual($.Cardinality.AtLeastOne);
-  expect(await e.select(multi0).run(client)).toEqual(["asdf", "asdf"]);
+  assert.deepEqual(multi0.__cardinality__, $.Cardinality.AtLeastOne);
+  assert.deepEqual(await e.select(multi0).run(client), ["asdf", "asdf"]);
 
   // array slicing
   const arr = e.str_split(e.str("zxcvbnm"), e.str(""));
@@ -105,17 +104,15 @@ test("array literal", async () => {
       }
     >
   >(true);
-  expect(JSON.stringify(sliceResult)).toEqual(
-    JSON.stringify({
-      reverseIndex: "n",
-      slice24: ["c", "v"],
-      slice2: ["c", "v", "b", "n", "m"],
-      slice4: ["z", "x", "c", "v"],
-      reverseSlice2: ["n", "m"],
-      reverseSlice4: ["z", "x", "c"],
-      reverseSlice24: ["v", "b"],
-    })
-  );
+  assert.deepEqual(JSON.stringify(sliceResult), JSON.stringify({
+    reverseIndex: "n",
+    slice24: ["c", "v"],
+    slice2: ["c", "v", "b", "n", "m"],
+    slice4: ["z", "x", "c", "v"],
+    reverseSlice2: ["n", "m"],
+    reverseSlice4: ["z", "x", "c"],
+    reverseSlice24: ["v", "b"],
+  }));
 
   // @ts-expect-error
   arr["str"];
@@ -125,28 +122,28 @@ test("array literal", async () => {
 
 test("tuple literal", async () => {
   const tupleType = e.tuple([e.str, e.int64]);
-  expect(tupleType.__kind__).toEqual($.TypeKind.tuple);
-  expect(tupleType.__items__[0].__kind__).toEqual($.TypeKind.scalar);
-  expect(tupleType.__items__[0].__name__).toEqual("std::str");
-  expect(tupleType.__items__[1].__kind__).toEqual($.TypeKind.scalar);
-  expect(tupleType.__items__[1].__name__).toEqual("std::int64");
+  assert.deepEqual(tupleType.__kind__, $.TypeKind.tuple);
+  assert.deepEqual(tupleType.__items__[0].__kind__, $.TypeKind.scalar);
+  assert.equal(tupleType.__items__[0].__name__, "std::str");
+  assert.deepEqual(tupleType.__items__[1].__kind__, $.TypeKind.scalar);
+  assert.equal(tupleType.__items__[1].__name__, "std::int64");
 
   const myTuple = e.tuple(["asdf", 45]);
   type myTuple = $.setToTsType<typeof myTuple>;
   tc.assert<tc.IsExact<myTuple, [string, number]>>(true);
-  expect(myTuple.__element__.__kind__).toEqual($.TypeKind.tuple);
-  expect(myTuple.__element__.__items__[0].__kind__).toEqual($.TypeKind.scalar);
-  expect(myTuple.__element__.__items__[0].__name__).toEqual("std::str");
-  expect(myTuple.__element__.__items__[1].__kind__).toEqual($.TypeKind.scalar);
-  expect(myTuple.__element__.__items__[1].__name__).toEqual("std::number");
+  assert.deepEqual(myTuple.__element__.__kind__, $.TypeKind.tuple);
+  assert.deepEqual(myTuple.__element__.__items__[0].__kind__, $.TypeKind.scalar);
+  assert.equal(myTuple.__element__.__items__[0].__name__, "std::str");
+  assert.deepEqual(myTuple.__element__.__items__[1].__kind__, $.TypeKind.scalar);
+  assert.equal(myTuple.__element__.__items__[1].__name__, "std::number");
   const myTupleResult = await client.querySingle(e.select(myTuple).toEdgeQL());
-  expect(myTupleResult).toEqual(["asdf", 45]);
+  assert.deepEqual(myTupleResult, ["asdf", 45]);
   const myTuplePath0 = myTuple[0];
   const myTuplePath1 = myTuple[1];
   tc.assert<tc.IsExact<$infer<typeof myTuplePath0>, string>>(true);
   tc.assert<tc.IsExact<$infer<typeof myTuplePath1>, number>>(true);
-  expect(await e.select(myTuplePath0).run(client)).toEqual("asdf");
-  expect(await e.select(myTuplePath1).run(client)).toEqual(45);
+  assert.equal(await e.select(myTuplePath0).run(client), "asdf");
+  assert.equal(await e.select(myTuplePath1).run(client), 45);
 
   const multiTuple = e.tuple(["asdf", e.set(e.str("qwer"), e.str("erty"))]);
   tc.assert<
@@ -155,16 +152,14 @@ test("tuple literal", async () => {
       [[string, string], ...[string, string][]]
     >
   >(true);
-  expect(multiTuple.__kind__).toEqual($.ExpressionKind.Tuple);
-  expect(multiTuple.__element__.__kind__).toEqual($.TypeKind.tuple);
-  expect(multiTuple.__cardinality__).toEqual($.Cardinality.AtLeastOne);
-  expect(multiTuple.__element__.__items__[0].__kind__).toEqual(
-    $.TypeKind.scalar
-  );
-  expect(multiTuple.__element__.__items__[0].__name__).toEqual("std::str");
-  expect(multiTuple.__element__.__items__[1].__name__).toEqual("std::str");
+  assert.deepEqual(multiTuple.__kind__, $.ExpressionKind.Tuple);
+  assert.deepEqual(multiTuple.__element__.__kind__, $.TypeKind.tuple);
+  assert.deepEqual(multiTuple.__cardinality__, $.Cardinality.AtLeastOne);
+  assert.deepEqual(multiTuple.__element__.__items__[0].__kind__, $.TypeKind.scalar);
+  assert.equal(multiTuple.__element__.__items__[0].__name__, "std::str");
+  assert.equal(multiTuple.__element__.__items__[1].__name__, "std::str");
   const multiTupleResult = await client.query(e.select(multiTuple).toEdgeQL());
-  expect(multiTupleResult).toEqual([
+  assert.deepEqual(multiTupleResult, [
     ["asdf", "qwer"],
     ["asdf", "erty"],
   ]);
@@ -178,21 +173,19 @@ test("tuple literal", async () => {
       $.Cardinality.AtLeastOne
     >
   >(true);
-  expect(multiTuplePath.__cardinality__).toEqual($.Cardinality.AtLeastOne);
-  expect(await e.select(multiTuplePath).run(client)).toEqual(["asdf", "asdf"]);
+  assert.deepEqual(multiTuplePath.__cardinality__, $.Cardinality.AtLeastOne);
+  assert.deepEqual(await e.select(multiTuplePath).run(client), ["asdf", "asdf"]);
 
   const singleTuple = e.tuple([e.str("asdf")]);
   type singleTuple = $infer<typeof singleTuple>;
   tc.assert<tc.IsExact<singleTuple, [string]>>(true);
-  expect(singleTuple.__element__.__kind__).toEqual($.TypeKind.tuple);
-  expect(singleTuple.__element__.__items__[0].__kind__).toEqual(
-    $.TypeKind.scalar
-  );
-  expect(singleTuple.__element__.__items__[0].__name__).toEqual("std::str");
+  assert.deepEqual(singleTuple.__element__.__kind__, $.TypeKind.tuple);
+  assert.deepEqual(singleTuple.__element__.__items__[0].__kind__, $.TypeKind.scalar);
+  assert.equal(singleTuple.__element__.__items__[0].__name__, "std::str");
   const singleTupleResult = await client.querySingle(
     e.select(singleTuple).toEdgeQL()
   );
-  expect(singleTupleResult).toEqual(["asdf"]);
+  assert.deepEqual(singleTupleResult, ["asdf"]);
 
   const nestedTuple = e.tuple([
     "a",
@@ -206,7 +199,7 @@ test("tuple literal", async () => {
     >
   >(true);
   const nestedTupleResult = await e.select(nestedTuple).run(client);
-  expect(nestedTupleResult).toEqual([
+  assert.deepEqual(nestedTupleResult, [
     ["a", ["b", "c"]],
     ["a", ["b", "d"]],
   ]);
@@ -229,7 +222,7 @@ test("tuple literal", async () => {
       }
     >
   >(true);
-  expect(JSON.parse(JSON.stringify(nestedTuplePathResult))).toEqual({
+  assert.deepEqual(JSON.parse(JSON.stringify(nestedTuplePathResult)), {
     tup0: ["a", "a"],
     tup1: [
       ["b", "c"],
@@ -242,13 +235,12 @@ test("tuple literal", async () => {
   const heroNamesTuple = e.tuple([e.Hero.name]);
   type heroNamesTuple = $infer<typeof heroNamesTuple>;
   tc.assert<tc.IsExact<heroNamesTuple, [string][]>>(true);
-  expect(heroNamesTuple.__element__.__kind__).toEqual($.TypeKind.tuple);
-  expect(heroNamesTuple.__element__.__items__[0].__kind__).toEqual(
-    $.TypeKind.scalar
-  );
-  expect(heroNamesTuple.__element__.__items__[0].__name__).toEqual("std::str");
+  assert.deepEqual(heroNamesTuple.__element__.__kind__, $.TypeKind.tuple);
+  assert.deepEqual(heroNamesTuple.__element__.__items__[0].__kind__, $.TypeKind.scalar);
+  assert.equal(heroNamesTuple.__element__.__items__[0].__name__, "std::str");
   const heroNamesTupleResult = await e.select(heroNamesTuple).run(client);
-  expect(heroNamesTupleResult.sort((a, b) => a[0].localeCompare(b[0]))).toEqual(
+  assert.deepEqual(
+    heroNamesTupleResult.sort((a, b) => a[0].localeCompare(b[0])),
     [[data.cap.name], [data.iron_man.name], [data.spidey.name]].sort((a, b) =>
       a[0].localeCompare(b[0])
     )
@@ -260,11 +252,11 @@ test("namedTuple literal", async () => {
     string: e.str,
     number: e.int64,
   });
-  expect(tupleType.__kind__).toEqual($.TypeKind.namedtuple);
-  expect(tupleType.__shape__.string.__kind__).toEqual($.TypeKind.scalar);
-  expect(tupleType.__shape__.string.__name__).toEqual("std::str");
-  expect(tupleType.__shape__.number.__kind__).toEqual($.TypeKind.scalar);
-  expect(tupleType.__shape__.number.__name__).toEqual("std::int64");
+  assert.deepEqual(tupleType.__kind__, $.TypeKind.namedtuple);
+  assert.deepEqual(tupleType.__shape__.string.__kind__, $.TypeKind.scalar);
+  assert.equal(tupleType.__shape__.string.__name__, "std::str");
+  assert.deepEqual(tupleType.__shape__.number.__kind__, $.TypeKind.scalar);
+  assert.equal(tupleType.__shape__.number.__name__, "std::int64");
 
   const named = e.tuple({
     string: "asdf",
@@ -273,31 +265,28 @@ test("namedTuple literal", async () => {
 
   type named = $.setToTsType<typeof named>;
   tc.assert<tc.IsExact<named, { string: string; number: number }>>(true);
-  expect(named.__kind__).toEqual($.ExpressionKind.NamedTuple);
-  expect(named.__element__.__kind__).toEqual($.TypeKind.namedtuple);
-  expect(named.__cardinality__).toEqual($.Cardinality.One);
-  expect(named.__shape__.string.__kind__).toEqual($.ExpressionKind.Literal);
-  expect(named.__shape__.string.__value__).toEqual("asdf");
-  expect(named.__shape__.number.__kind__).toEqual($.ExpressionKind.Literal);
-  expect(named.__shape__.number.__value__).toEqual(1234);
-  expect(named.__element__.__shape__.string.__kind__).toEqual(
-    $.TypeKind.scalar
-  );
-  expect(named.__element__.__shape__.string.__name__).toEqual("std::str");
-  expect(named.__element__.__shape__.number.__kind__).toEqual(
-    $.TypeKind.scalar
-  );
-  expect(named.__element__.__shape__.number.__name__).toEqual("std::number");
+  assert.deepEqual(named.__kind__, $.ExpressionKind.NamedTuple);
+  assert.deepEqual(named.__element__.__kind__, $.TypeKind.namedtuple);
+  assert.deepEqual(named.__cardinality__, $.Cardinality.One);
+  assert.deepEqual(named.__shape__.string.__kind__, $.ExpressionKind.Literal);
+  assert.equal(named.__shape__.string.__value__, "asdf");
+  assert.deepEqual(named.__shape__.number.__kind__, $.ExpressionKind.Literal);
+  assert.equal(named.__shape__.number.__value__, 1234);
+  assert.deepEqual(named.__element__.__shape__.string.__kind__, $.TypeKind.scalar);
+  assert.equal(named.__element__.__shape__.string.__name__, "std::str");
+  assert.deepEqual(named.__element__.__shape__.number.__kind__, $.TypeKind.scalar);
+  assert.equal(named.__element__.__shape__.number.__name__, "std::number");
   const namedResult = await client.querySingle(e.select(named).toEdgeQL());
-  expect(JSON.stringify(namedResult)).toEqual(
+  assert.deepEqual(
+    JSON.stringify(namedResult),
     JSON.stringify({ string: "asdf", number: 1234 })
   );
   const namedStr = named.string;
   const namedNum = named.number;
   tc.assert<tc.IsExact<$infer<typeof namedStr>, string>>(true);
   tc.assert<tc.IsExact<$infer<typeof namedNum>, number>>(true);
-  expect(await e.select(namedStr).run(client)).toEqual("asdf");
-  expect(await e.select(namedNum).run(client)).toEqual(1234);
+  assert.equal(await e.select(namedStr).run(client), "asdf");
+  assert.equal(await e.select(namedNum).run(client), 1234);
 
   const nested = e.tuple({
     a: "asdf",
@@ -327,27 +316,25 @@ test("namedTuple literal", async () => {
       }
     >
   >(true);
-  expect(JSON.stringify(nestedResult)).toEqual(
-    JSON.stringify({
-      nested: [
-        { a: "asdf", named: { b: 123 }, tuple: [true, "x"] },
-        { a: "asdf", named: { b: 123 }, tuple: [true, "y"] },
-      ],
-      nestedA: ["asdf", "asdf"],
-      nestedNamed: [{ b: 123 }, { b: 123 }],
-      nestedTuple: [
-        [true, "x"],
-        [true, "y"],
-      ],
-      nestedTuple0: [true, true],
-      nestedTuple1: ["x", "y"],
-    })
-  );
+  assert.deepEqual(JSON.stringify(nestedResult), JSON.stringify({
+    nested: [
+      { a: "asdf", named: { b: 123 }, tuple: [true, "x"] },
+      { a: "asdf", named: { b: 123 }, tuple: [true, "y"] },
+    ],
+    nestedA: ["asdf", "asdf"],
+    nestedNamed: [{ b: 123 }, { b: 123 }],
+    nestedTuple: [
+      [true, "x"],
+      [true, "y"],
+    ],
+    nestedTuple0: [true, true],
+    nestedTuple1: ["x", "y"],
+  }));
 
   const emptyNamedTuple = e.tuple({ string: e.cast(e.str, e.set()) });
   type emptyNamedTuple = $.setToTsType<typeof emptyNamedTuple>;
   tc.assert<tc.IsExact<emptyNamedTuple, null>>(true);
-  expect(emptyNamedTuple.__cardinality__).toEqual($.Cardinality.Empty);
+  assert.deepEqual(emptyNamedTuple.__cardinality__, $.Cardinality.Empty);
 
   const multiNamedTuple = e.tuple({
     hero: e.Hero,
@@ -363,17 +350,17 @@ test("namedTuple literal", async () => {
       }[]
     >
   >(true);
-  expect(multiNamedTuple.__cardinality__).toEqual($.Cardinality.Many);
+  assert.deepEqual(multiNamedTuple.__cardinality__, $.Cardinality.Many);
 });
 
 test("non literal tuples", async () => {
   const ver = e.sys.get_version();
-  expect(ver.major.__element__.__name__).toEqual("std::int64");
-  expect(ver.major.__cardinality__).toEqual($.Cardinality.One);
-  expect(ver.stage.__element__.__name__).toEqual("sys::VersionStage");
-  expect(ver.stage.__cardinality__).toEqual($.Cardinality.One);
-  expect(ver.local.__element__.__name__).toEqual("array<std::str>");
-  expect(ver.local.__cardinality__).toEqual($.Cardinality.One);
+  assert.equal(ver.major.__element__.__name__, "std::int64");
+  assert.deepEqual(ver.major.__cardinality__, $.Cardinality.One);
+  assert.equal(ver.stage.__element__.__name__, "sys::VersionStage");
+  assert.deepEqual(ver.stage.__cardinality__, $.Cardinality.One);
+  assert.equal(ver.local.__element__.__name__, "array<std::str>");
+  assert.deepEqual(ver.local.__cardinality__, $.Cardinality.One);
 
   const result = await e
     .select({
@@ -404,12 +391,12 @@ test("non literal tuples", async () => {
     >
   >(true);
 
-  expect({
+  assert.deepEqual({
     major: result.verMajor,
     stage: result.verStage,
     local: result.verLocal,
     local0: result.verLocal0,
-  }).toEqual({
+  }, {
     major: result.ver.major,
     stage: result.ver.stage,
     local: result.ver.local,
@@ -420,9 +407,9 @@ test("non literal tuples", async () => {
 test("objectTypeToTupleType helper", () => {
   const movieTuple = objectTypeToTupleType(e.Movie);
 
-  expect(movieTuple["__kind__"]).toBe("namedtuple");
-  expect(movieTuple["__name__"].slice(0, 6)).toBe("tuple<");
-  expect(movieTuple["__name__"].slice(6, -1).split(", ").sort()).toEqual([
+  assert.equal(movieTuple["__kind__"], "namedtuple");
+  assert.equal(movieTuple["__name__"].slice(0, 6), "tuple<");
+  assert.deepEqual(movieTuple["__name__"].slice(6, -1).split(", ").sort(), [
     "genre: default::Genre",
     "rating: std::float64",
     "release_year: default::year",
@@ -442,11 +429,9 @@ test("objectTypeToTupleType helper", () => {
     "release_year",
   ]);
 
-  expect(movieTupleWithFields["__kind__"]).toBe("namedtuple");
-  expect(movieTupleWithFields["__name__"].slice(0, 6)).toBe("tuple<");
-  expect(
-    movieTupleWithFields["__name__"].slice(6, -1).split(", ").sort()
-  ).toEqual([
+  assert.equal(movieTupleWithFields["__kind__"], "namedtuple");
+  assert.equal(movieTupleWithFields["__name__"].slice(0, 6), "tuple<");
+  assert.deepEqual(movieTupleWithFields["__name__"].slice(6, -1).split(", ").sort(), [
     "id: std::uuid",
     "release_year: default::year",
     "title: std::str",

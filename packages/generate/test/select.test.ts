@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
 import * as $ from "../src/syntax/reflection";
 import * as tc from "conditional-type-checks";
@@ -25,74 +26,72 @@ test("basic select", () => {
 
 test("selecting JS data", () => {
   const strSelect = e.select("test");
-  expect(strSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(strSelect.__element__).toBe(e.str);
-  expect(strSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(strSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(strSelect.__element__, e.str);
+  assert.equal(strSelect.__cardinality__, $.Cardinality.One);
 
   const numberSelect = e.select(1234);
-  expect(numberSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(numberSelect.__element__.__name__).toBe(`std::number`);
-  expect(numberSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(numberSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(numberSelect.__element__.__name__, `std::number`);
+  assert.equal(numberSelect.__cardinality__, $.Cardinality.One);
 
   const boolSelect = e.select(false);
-  expect(boolSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(boolSelect.__element__).toBe(e.bool);
-  expect(boolSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(boolSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(boolSelect.__element__, e.bool);
+  assert.equal(boolSelect.__cardinality__, $.Cardinality.One);
 
   const bigintSelect = e.select(BigInt(1234));
-  expect(bigintSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(bigintSelect.__element__).toBe(e.bigint);
-  expect(bigintSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(bigintSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(bigintSelect.__element__, e.bigint);
+  assert.equal(bigintSelect.__cardinality__, $.Cardinality.One);
 
   const bufferSelect = e.select(Buffer.from([]));
-  expect(bufferSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(bufferSelect.__element__).toBe(e.bytes);
-  expect(bufferSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(bufferSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(bufferSelect.__element__, e.bytes);
+  assert.equal(bufferSelect.__cardinality__, $.Cardinality.One);
 
   const dateSelect = e.select(new Date());
-  expect(dateSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(dateSelect.__element__).toBe(e.datetime);
-  expect(dateSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(dateSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(dateSelect.__element__, e.datetime);
+  assert.equal(dateSelect.__cardinality__, $.Cardinality.One);
 
   const durationSelect = e.select(new edgedb.Duration());
-  expect(durationSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(durationSelect.__element__).toBe(e.duration);
-  expect(durationSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(durationSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(durationSelect.__element__, e.duration);
+  assert.equal(durationSelect.__cardinality__, $.Cardinality.One);
 
   const ldrSelect = e.select(new edgedb.LocalDateTime(1, 2, 3));
-  expect(ldrSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(ldrSelect.__element__).toBe(e.cal.local_datetime);
-  expect(ldrSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(ldrSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(ldrSelect.__element__, e.cal.local_datetime);
+  assert.equal(ldrSelect.__cardinality__, $.Cardinality.One);
 
   const ldSelect = e.select(new edgedb.LocalDate(1, 2, 3));
-  expect(ldSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(ldSelect.__element__).toBe(e.cal.local_date);
-  expect(ldSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(ldSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(ldSelect.__element__, e.cal.local_date);
+  assert.equal(ldSelect.__cardinality__, $.Cardinality.One);
 
   const ltSelect = e.select(new edgedb.LocalTime(1, 2, 3));
-  expect(ltSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(ltSelect.__element__).toBe(e.cal.local_time);
-  expect(ltSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(ltSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(ltSelect.__element__, e.cal.local_time);
+  assert.equal(ltSelect.__cardinality__, $.Cardinality.One);
 
   const rdSelect = e.select(new edgedb.RelativeDuration(1, 2, 3));
-  expect(rdSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(rdSelect.__element__).toBe(e.cal.relative_duration);
-  expect(rdSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(rdSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(rdSelect.__element__, e.cal.relative_duration);
+  assert.equal(rdSelect.__cardinality__, $.Cardinality.One);
 
   const memSelect = e.select(new edgedb.ConfigMemory(BigInt(1234)));
-  expect(memSelect.__kind__).toBe($.ExpressionKind.Select);
-  expect(memSelect.__element__).toBe(e.cfg.memory);
-  expect(memSelect.__cardinality__).toBe($.Cardinality.One);
+  assert.equal(memSelect.__kind__, $.ExpressionKind.Select);
+  assert.equal(memSelect.__element__, e.cfg.memory);
+  assert.equal(memSelect.__cardinality__, $.Cardinality.One);
 });
 
 test("no shape", async () => {
   const query = e.select(e.default.Hero);
   const result = await query.run(client);
   tc.assert<tc.IsExact<typeof result, { id: string }[]>>(true);
-  expect(query.__element__.__shape__).toEqual(
-    e.default.Hero.__element__.__shape__
-  );
-  expect(result.every((val) => !!val.id)).toEqual(true);
+  assert.deepEqual(query.__element__.__shape__, e.default.Hero.__element__.__shape__);
+  assert.equal(result.every((val) => !!val.id), true);
 });
 
 test("computed only shape", () => {
@@ -118,7 +117,7 @@ type q1 = $.setToTsType<typeof q1>;
 
 test("path construction", () => {
   const result = e.select(e.default.Hero);
-  expect(result.villains.nemesis.name.__element__.__name__).toEqual("std::str");
+  assert.equal(result.villains.nemesis.name.__element__.__name__, "std::str");
 });
 
 test("complex shape", () => {
@@ -183,7 +182,7 @@ test("compositionality", () => {
   type no_shape = $.BaseTypeToTsType<(typeof no_shape)["__element__"]>;
   type q1 = $.BaseTypeToTsType<(typeof q1)["__element__"]>;
   tc.assert<tc.IsExact<no_shape, q1>>(true);
-  expect(no_shape.__element__.__shape__).toEqual(q1.__element__.__shape__);
+  assert.deepEqual(no_shape.__element__.__shape__, q1.__element__.__shape__);
   // expect(no_shape.__element__.__shape__).toEqual({id: true});
 
   // allow override shape
@@ -216,9 +215,9 @@ test("polymorphism", () => {
   }));
   // query.__element__.
 
-  expect(query.__kind__).toEqual($.ExpressionKind.Select);
-  expect(query.__element__.__kind__).toEqual($.TypeKind.object);
-  expect(query.__element__.__name__).toEqual("default::Person");
+  assert.deepEqual(query.__kind__, $.ExpressionKind.Select);
+  assert.deepEqual(query.__element__.__kind__, $.TypeKind.object);
+  assert.equal(query.__element__.__name__, "default::Person");
 
   type result = $.BaseTypeToTsType<(typeof query)["__element__"]>;
   tc.assert<
@@ -338,31 +337,31 @@ test("limit/offset inference", () => {
   tc.assert<
     tc.IsExact<(typeof testSet)["__cardinality__"], $.Cardinality.AtLeastOne>
   >(true);
-  expect(testSet.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  assert.deepEqual(testSet.__cardinality__, $.Cardinality.AtLeastOne);
 
   const r0 = e.select(testSet, () => ({}));
   tc.assert<
     tc.IsExact<(typeof r0)["__cardinality__"], $.Cardinality.AtLeastOne>
   >(true);
-  expect(r0.__cardinality__).toEqual($.Cardinality.AtLeastOne);
+  assert.deepEqual(r0.__cardinality__, $.Cardinality.AtLeastOne);
 
   const r1 = e.select(testSet, () => ({ limit: 1 }));
   tc.assert<tc.IsExact<(typeof r1)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
-  expect(r1.__cardinality__).toEqual($.Cardinality.Many);
+  assert.deepEqual(r1.__cardinality__, $.Cardinality.Many);
 
   const r2 = e.select(testSet, () => ({ offset: 1 }));
   tc.assert<tc.IsExact<(typeof r2)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
-  expect(r2.__cardinality__).toEqual($.Cardinality.Many);
+  assert.deepEqual(r2.__cardinality__, $.Cardinality.Many);
 });
 
 test("offset", () => {
   const q = e.select(e.Hero, () => ({ name: true }));
   const r1 = e.select(q, () => ({ offset: 5 }));
-  expect(r1.__modifiers__.offset?.__element__.__name__).toEqual("std::number");
+  assert.equal(r1.__modifiers__.offset?.__element__.__name__, "std::number");
 });
 
 test("infer cardinality - scalar filters", () => {
@@ -373,7 +372,7 @@ test("infer cardinality - scalar filters", () => {
   tc.assert<
     tc.IsExact<(typeof q2)["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);
-  expect(q2.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(q2.__cardinality__, $.Cardinality.AtMostOne);
 
   const u3 = e.uuid("asdf");
   const q3 = e.select(q, (hero) => {
@@ -382,13 +381,13 @@ test("infer cardinality - scalar filters", () => {
   tc.assert<
     tc.IsExact<(typeof q3)["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);
-  expect(q3.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(q3.__cardinality__, $.Cardinality.AtMostOne);
 
   const q4 = q2.secret_identity;
   tc.assert<
     tc.IsExact<(typeof q4)["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);
-  expect(q4.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(q4.__cardinality__, $.Cardinality.AtMostOne);
 
   const q5 = e.select(q, (hero) => ({
     filter: e.op(hero.secret_identity, "=", "asdf"),
@@ -396,7 +395,7 @@ test("infer cardinality - scalar filters", () => {
   tc.assert<tc.IsExact<(typeof q5)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
-  expect(q5.__cardinality__).toEqual($.Cardinality.Many);
+  assert.deepEqual(q5.__cardinality__, $.Cardinality.Many);
 
   const q6 = e.select(e.Villain.nemesis, (nemesis) => ({
     filter_single: e.op(nemesis.name, "=", "asdf"),
@@ -404,7 +403,7 @@ test("infer cardinality - scalar filters", () => {
   tc.assert<
     tc.IsExact<(typeof q6)["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);
-  expect(q6.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(q6.__cardinality__, $.Cardinality.AtMostOne);
 
   const strs = e.set(e.str("asdf"), e.str("qwer"));
   const q7 = e.select(e.Villain, (villain) => ({
@@ -413,7 +412,7 @@ test("infer cardinality - scalar filters", () => {
   tc.assert<tc.IsExact<(typeof q7)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
-  expect(q7.__cardinality__).toEqual($.Cardinality.Many);
+  assert.deepEqual(q7.__cardinality__, $.Cardinality.Many);
 
   const expr8 = e.select(e.Villain, () => ({ id: true, name: true }));
   const q8 = e.select(expr8, (villain) => ({
@@ -422,7 +421,7 @@ test("infer cardinality - scalar filters", () => {
   tc.assert<
     tc.IsExact<(typeof q8)["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);
-  expect(q8.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(q8.__cardinality__, $.Cardinality.AtMostOne);
 
   const expr9 = e.select(e.Villain, () => ({ id: true, name: true }));
   const q9 = e.select(expr9, (villain) => ({
@@ -431,7 +430,7 @@ test("infer cardinality - scalar filters", () => {
   tc.assert<
     tc.IsExact<(typeof q9)["__cardinality__"], $.Cardinality.AtMostOne>
   >(true);
-  expect(q9.__cardinality__).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(q9.__cardinality__, $.Cardinality.AtMostOne);
 
   // const q10 = e.select(e.Villain, villain => ({
   //   filter_single: e.op(villain.name, "=", e.cast(e.str, e.set()))
@@ -451,7 +450,7 @@ test("infer cardinality - object type filters", () => {
 
   const c1 = singleHero.__cardinality__;
   tc.assert<tc.IsExact<typeof c1, $.Cardinality.AtMostOne>>(true);
-  expect(c1).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(c1, $.Cardinality.AtMostOne);
 
   const oneProfile = e.select(e.Hero, () => ({ limit: 1 })).assert_single();
   const singleMovie = e.select(e.Movie, (movie) => ({
@@ -460,7 +459,7 @@ test("infer cardinality - object type filters", () => {
 
   const c2 = singleMovie.__cardinality__;
   tc.assert<tc.IsExact<typeof c2, $.Cardinality.AtMostOne>>(true);
-  expect(c2).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(c2, $.Cardinality.AtMostOne);
 
   // not a singleton
 
@@ -468,7 +467,7 @@ test("infer cardinality - object type filters", () => {
     filter: e.op(villain.nemesis, "=", oneHero),
   })).__cardinality__;
   tc.assert<tc.IsExact<typeof c3, $.Cardinality.Many>>(true);
-  expect(c3).toEqual($.Cardinality.Many);
+  assert.deepEqual(c3, $.Cardinality.Many);
 
   // not a singleton
   // technically a bug, but for now this behavior is expected
@@ -476,7 +475,7 @@ test("infer cardinality - object type filters", () => {
     filter_single: e.op(villain, "=", villain),
   })).__cardinality__;
   tc.assert<tc.IsExact<typeof c4, $.Cardinality.AtMostOne>>(true);
-  expect(c4).toEqual($.Cardinality.AtMostOne);
+  assert.deepEqual(c4, $.Cardinality.AtMostOne);
 });
 
 test("non 'e.eq' filters", () => {
@@ -486,7 +485,7 @@ test("non 'e.eq' filters", () => {
   tc.assert<tc.IsExact<(typeof q1)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
-  expect(q1.__cardinality__).toEqual($.Cardinality.Many);
+  assert.deepEqual(q1.__cardinality__, $.Cardinality.Many);
 
   const q2 = e.select(e.Hero, (hero) => ({
     filter: e.op(true, "if", e.op(hero.name, "=", "Thanos"), "else", false),
@@ -494,13 +493,13 @@ test("non 'e.eq' filters", () => {
   tc.assert<tc.IsExact<(typeof q2)["__cardinality__"], $.Cardinality.Many>>(
     true
   );
-  expect(q2.__cardinality__).toEqual($.Cardinality.Many);
+  assert.deepEqual(q2.__cardinality__, $.Cardinality.Many);
 });
 
 test("fetch heroes", async () => {
   const result = await e.select(e.Hero).run(client);
-  expect(result.length).toEqual(3);
-  expect(result.every((h) => typeof h.id === "string")).toEqual(true);
+  assert.equal(result.length, 3);
+  assert.equal(result.every((h) => typeof h.id === "string"), true);
 });
 
 test("filter by id", async () => {
@@ -510,7 +509,7 @@ test("filter by id", async () => {
     }))
     .run(client);
 
-  expect(result?.id).toEqual(data.spidey.id);
+  assert.deepEqual(result?.id, data.spidey.id);
 });
 
 test("filter by id expr", async () => {
@@ -520,7 +519,7 @@ test("filter by id expr", async () => {
     }))
     .run(client);
 
-  expect(result?.id).toEqual(data.spidey.id);
+  assert.deepEqual(result?.id, data.spidey.id);
 });
 
 test("limit 1", async () => {
@@ -532,7 +531,7 @@ test("limit 1", async () => {
     }))
     .assert_single();
   const result = await e.select(query).run(client);
-  expect(result?.id).toEqual(data.iron_man.id);
+  assert.deepEqual(result?.id, data.iron_man.id);
 });
 
 test("limit 2", async () => {
@@ -543,8 +542,8 @@ test("limit 2", async () => {
   }));
   const results = await query.run(client);
 
-  expect(results.length).toEqual(2);
-  expect(results).toEqual([{ id: data.iron_man.id }, { id: data.spidey.id }]);
+  assert.equal(results.length, 2);
+  assert.deepEqual(results, [{ id: data.iron_man.id }, { id: data.spidey.id }]);
 });
 
 test("order by self", async () => {
@@ -552,11 +551,9 @@ test("order by self", async () => {
     order_by: hero,
   }));
   const result = await query.run(client);
-  expect(result).toEqual(
-    [data.cap, data.spidey, data.iron_man]
-      .map((h) => ({ id: h.id }))
-      .sort((a, b) => a.id.localeCompare(b.id))
-  );
+  assert.deepEqual(result, [data.cap, data.spidey, data.iron_man]
+    .map((h) => ({ id: h.id }))
+    .sort((a, b) => a.id.localeCompare(b.id)));
 });
 
 test("shapes", async () => {
@@ -574,7 +571,7 @@ test("shapes", async () => {
 
   const result = await query.run(client);
   expect(result).toMatchObject(data.iron_man);
-  expect(result?.villains).toEqual([{ id: data.thanos.id }]);
+  assert.deepEqual(result?.villains, [{ id: data.thanos.id }]);
 });
 
 test("computables", async () => {
@@ -612,8 +609,8 @@ test("computables", async () => {
   >(true);
   const results = await query.run(client);
 
-  expect(results?.id).toEqual(data.cap.id);
-  expect(results?.computable).toEqual(35);
+  assert.deepEqual(results?.id, data.cap.id);
+  assert.equal(results?.computable, 35);
   // expect(
   //   results?.all_heroes.every(hero => hero.__type__.name === "default::Hero")
   // ).toEqual(true);
@@ -625,9 +622,7 @@ test("type intersections", async () => {
     // __type__: {name: true},
   }));
   const results = await query.run(client);
-  expect(results.every((person) => typeof person.id === "string")).toEqual(
-    true
-  );
+  assert.equal(results.every((person) => typeof person.id === "string"), true);
   // expect(
   //   results.every(person => person.__type__.name === "default::Hero")
   // ).toEqual(true);
@@ -656,11 +651,12 @@ test("backlinks", async () => {
 
   const result2 = await q2.run(client);
 
-  expect(result1).toEqual(result2);
-  expect(Array.isArray(result1)).toEqual(true);
-  expect(
-    [data.the_avengers.title, data.civil_war.title].includes(result1[0].title)
-  ).toEqual(true);
+  assert.deepEqual(result1, result2);
+  assert.equal(Array.isArray(result1), true);
+  assert.equal(
+    [data.the_avengers.title, data.civil_war.title].includes(result1[0].title),
+    true
+  );
 
   const q3 = e.select(e.Hero, (hero) => ({
     "<characters[is Movie]": {
@@ -683,7 +679,7 @@ test("backlinks", async () => {
   >(true);
 
   for (const hero of res3) {
-    expect(hero["<characters[is Movie]"]).toEqual(hero.starredIn);
+    assert.deepEqual(hero["<characters[is Movie]"], hero.starredIn);
   }
 });
 
@@ -808,8 +804,8 @@ test("filters in subqueries", async () => {
 
   const res1 = await q1.run(client);
 
-  expect(res1).not.toBeNull();
-  expect(res1!.villains.length).toBe(1);
+  assert.ok(res1);
+  assert.equal(res1!.villains.length, 1);
 
   const q2 = e.select(e.Hero, (hero) => ({
     name: true,
@@ -823,8 +819,8 @@ test("filters in subqueries", async () => {
 
   const res2 = await q2.run(client);
 
-  expect(res2).not.toBeNull();
-  expect(res2!.villains.length).toBe(0);
+  assert.ok(res2);
+  assert.equal(res2!.villains.length, 0);
 
   tc.assert<
     tc.IsExact<
@@ -866,11 +862,11 @@ test("filters in subqueries", async () => {
   // q3.__modifiers__.
   const res3 = await q3.run(client);
 
-  expect(Array.isArray(res3)).toBe(true);
+  assert.equal(Array.isArray(res3), true);
   const ironMan = res3.find((r) => r.name === "Iron Man");
-  expect(ironMan).not.toBeUndefined();
-  expect(Array.isArray(ironMan!.villains)).toBe(true);
-  expect(Array.isArray(ironMan!.thanos)).toBe(false);
+  assert.ok(ironMan);
+  assert.equal(Array.isArray(ironMan!.villains), true);
+  assert.equal(Array.isArray(ironMan!.thanos), false);
 
   tc.assert<
     tc.IsExact<
@@ -916,7 +912,7 @@ test("repeated computed", async () => {
     },
   }));
 
-  expect(query.toEdgeQL()).toEqual(`WITH
+  assert.equal(query.toEdgeQL(), `WITH
   __scope_0_defaultVillain := DETACHED default::Villain
 SELECT __scope_0_defaultVillain {
   id,
@@ -979,7 +975,7 @@ test("polymorphic subqueries", async () => {
     }),
   }));
 
-  expect(query.toEdgeQL()).toEqual(`WITH
+  assert.equal(query.toEdgeQL(), `WITH
   __scope_0_defaultPerson := DETACHED default::Movie.characters
 SELECT __scope_0_defaultPerson {
   id,
@@ -1052,7 +1048,7 @@ test("polymorphic field in nested shape", async () => {
   }));
 
   const result = await query.run(client);
-  expect(JSON.parse(JSON.stringify(result))).toEqual({
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), {
     title: data.the_avengers.title,
     characters: [
       {
@@ -1089,15 +1085,14 @@ test("correlated path select", async () => {
 
   const heros = [data.cap, data.iron_man, data.spidey];
 
-  expect((await query.run(client)).sort()).toEqual(
-    $.util
-      .flatMap(heros, (h1) =>
-        heros.map((h2) => `${h1.name} is ${h2.secret_identity}`)
-      )
-      .sort()
-  );
+  assert.deepEqual((await query.run(client)).sort(), $.util
+    .flatMap(heros, (h1) =>
+      heros.map((h2) => `${h1.name} is ${h2.secret_identity}`)
+    )
+    .sort());
 
-  expect((await correlatedQuery.run(client)).sort()).toEqual(
+  assert.deepEqual(
+    (await correlatedQuery.run(client)).sort(),
     heros.map((h) => `${h.name} is ${h.secret_identity}`).sort()
   );
 });
@@ -1109,7 +1104,7 @@ test("modifiers on scalar selects", async () => {
   }));
   const res1 = await q1.run(client);
   tc.assert<tc.IsExact<typeof res1, string[]>>(true);
-  expect(res1.sort()).toEqual([data.iron_man.name, data.spidey.name].sort());
+  assert.deepEqual(res1.sort(), [data.iron_man.name, data.spidey.name].sort());
 
   // order
   const unorderedSet = e.set(
@@ -1125,14 +1120,14 @@ test("modifiers on scalar selects", async () => {
   }));
   const res2 = await q2.run(client);
   tc.assert<tc.IsExact<typeof res2, [number, ...number[]]>>(true);
-  expect(res2).toEqual([1, 2, 3, 4, 5]);
+  assert.deepEqual(res2, [1, 2, 3, 4, 5]);
 
   const q3 = e.select(unorderedSet, (el) => ({
     order_by: { expression: el, direction: e.DESC },
   }));
   const res3 = await q3.run(client);
   tc.assert<tc.IsExact<typeof res3, [number, ...number[]]>>(true);
-  expect(res3).toEqual([5, 4, 3, 2, 1]);
+  assert.deepEqual(res3, [5, 4, 3, 2, 1]);
 
   // offset and limit
   const q4 = e
@@ -1143,7 +1138,7 @@ test("modifiers on scalar selects", async () => {
     .assert_single();
   const res4 = await e.select(q4).run(client);
   tc.assert<tc.IsExact<typeof res4, number | null>>(true);
-  expect(res4).toEqual(1);
+  assert.equal(res4, 1);
 });
 
 test("nested matching scopes", async () => {
@@ -1169,13 +1164,13 @@ test("nested matching scopes", async () => {
     })),
   }));
 
-  expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedResult));
+  assert.deepEqual(JSON.stringify(result), JSON.stringify(expectedResult));
 });
 
 test("runnable expressions", async () => {
   const expr = e.op("Hello ", "++", "World");
 
-  expect(await expr.run(client)).toEqual(`Hello World`);
+  assert.equal(await expr.run(client), `Hello World`);
 });
 
 test("computed property path", async () => {
@@ -1185,7 +1180,7 @@ test("computed property path", async () => {
   });
   const query = e.select(expr.numbers);
 
-  expect(await query.run(client)).toEqual([1, 2, 3]);
+  assert.deepEqual(await query.run(client), [1, 2, 3]);
 });
 
 test("select with enums", async () => {
@@ -1195,7 +1190,7 @@ test("select with enums", async () => {
     filter: e.op(movie.genre, "=", e.Genre.Action),
   }));
   const result = await query.run(client);
-  expect(result.length).toEqual(2);
+  assert.equal(result.length, 2);
 });
 
 test("filter by sequence", async () => {
@@ -1215,7 +1210,7 @@ test("select *", async () => {
     }))
     .run(client);
 
-  expect(allFields).toEqual([
+  assert.deepEqual(allFields, [
     {
       ...data.the_avengers,
       characters: undefined,
@@ -1256,9 +1251,7 @@ test("filter on link prop in nested path", async () => {
 
 test("cardinality of linkprop in scopified object", async () => {
   const query = e.select(e.Movie.characters, (c) => {
-    expect(c["@character_name"].__cardinality__).toEqual(
-      $.Cardinality.AtMostOne
-    );
+    assert.deepEqual(c["@character_name"].__cardinality__, $.Cardinality.AtMostOne);
     return {
       name: true,
       // doesn't work yet
@@ -1281,8 +1274,8 @@ test("portable shape", async () => {
   });
 
   const result = await query.run(client);
-  expect(result?.rating).toBeDefined();
-  expect(result?.characters).toBeDefined();
+  assert.ok(result?.rating);
+  assert.ok(result?.characters);
 });
 
 test("filter_single id", async () => {
@@ -1291,7 +1284,7 @@ test("filter_single id", async () => {
     filter_single: { title: "The Avengers" },
   }));
   const result = await query.run(client);
-  expect(result?.title).toEqual("The Avengers");
+  assert.equal(result?.title, "The Avengers");
 });
 
 test("filter_single exclusive prop", async () => {
@@ -1300,7 +1293,7 @@ test("filter_single exclusive prop", async () => {
     filter_single: { title: "The Avengers" },
   }));
   const result = await query.run(client);
-  expect(result?.title).toEqual("The Avengers");
+  assert.equal(result?.title, "The Avengers");
 });
 
 test("filter_single composite", async () => {
@@ -1309,7 +1302,7 @@ test("filter_single composite", async () => {
     filter_single: { title: "The Avengers", release_year: 2012 },
   }));
   const result = await query.run(client);
-  expect(result?.title).toEqual("The Avengers");
+  assert.equal(result?.title, "The Avengers");
 });
 
 test("filter_single composite truple", async () => {

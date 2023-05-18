@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import e from "../dbschema/edgeql-js";
 import type { $Movie } from "../dbschema/edgeql-js/modules/default";
 
@@ -20,27 +21,23 @@ test("casting", () => {
   tc.assert<
     tc.IsExact<(typeof primitiveCast)["__element__"], (typeof e)["float64"]>
   >(true);
-  expect(primitiveCast.toEdgeQL()).toEqual(
-    `<std::float32>(<std::float64>3.14)`
-  );
+  assert.equal(primitiveCast.toEdgeQL(), `<std::float32>(<std::float64>3.14)`);
 });
 
 test("enums", async () => {
-  expect(e.cast(e.Genre, e.str("Horror")).toEdgeQL()).toEqual(
-    `<default::Genre>("Horror")`
-  );
+  assert.equal(e.cast(e.Genre, e.str("Horror")).toEdgeQL(), `<default::Genre>("Horror")`);
   const result = await e.cast(e.Genre, e.str("Horror")).run(client);
-  expect(result).toEqual("Horror");
+  assert.equal(result, "Horror");
 });
 
 test("scalar literals", () => {
-  expect(e.cast(e.json, "hello").toEdgeQL()).toEqual(`<std::json>("hello")`);
+  assert.equal(e.cast(e.json, "hello").toEdgeQL(), `<std::json>("hello")`);
 });
 
 test("object type empty set", () => {
   const expr = e.cast(e.Movie, e.set());
 
-  expect(expr.toEdgeQL()).toEqual(`<default::Movie>{}`);
+  assert.equal(expr.toEdgeQL(), `<default::Movie>{}`);
 
   tc.assert<tc.IsExact<(typeof expr)["__element__"], $Movie>>(true);
 });

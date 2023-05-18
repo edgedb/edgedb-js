@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import type * as $ from "../src/syntax/reflection";
 import e from "../dbschema/edgeql-js";
 import { tc } from "./setupTeardown";
@@ -5,7 +6,7 @@ import { tc } from "./setupTeardown";
 test("simple repeated expression", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
-  expect(e.select(e.op(numbers, "+", numbers)).toEdgeQL()).toEqual(`WITH
+  assert.equal(e.select(e.op(numbers, "+", numbers)).toEdgeQL(), `WITH
   __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 }
 SELECT (__withVar_0 + __withVar_0)`);
 });
@@ -13,8 +14,7 @@ SELECT (__withVar_0 + __withVar_0)`);
 test("simple expression with alias", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
-  expect(e.select(e.op(numbers, "+", e.alias(numbers))).toEdgeQL())
-    .toEqual(`WITH
+  assert.equal(e.select(e.op(numbers, "+", e.alias(numbers))).toEdgeQL(), `WITH
   __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 },
   __withVar_1 := __withVar_0
 SELECT (__withVar_0 + __withVar_1)`);
@@ -38,7 +38,7 @@ test("implicit WITH vars referencing each other", () => {
     hasMore: e.select(e.op(e.count(remainingHeros), ">", 10)),
   });
 
-  expect(query.toEdgeQL()).toEqual(`WITH
+  assert.equal(query.toEdgeQL(), `WITH
   __withVar_4 := <std::int64>10,
   __withVar_3 := (
     WITH
@@ -89,7 +89,7 @@ test("simple repeated expression not in select expr", () => {
 test("explicit WITH block", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
-  expect(e.with([numbers], e.select(numbers)).toEdgeQL()).toEqual(`WITH
+  assert.equal(e.with([numbers], e.select(numbers)).toEdgeQL(), `WITH
   __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 }
 SELECT __withVar_0`);
 });
@@ -97,13 +97,11 @@ SELECT __withVar_0`);
 test("explicit WITH block in nested query", () => {
   const numbers = e.set(e.int64(1), e.int64(2), e.int64(3));
 
-  expect(
-    e
-      .select({
-        nested: e.with([numbers], e.select(numbers)),
-      })
-      .toEdgeQL()
-  ).toEqual(`SELECT {
+  assert.equal(e
+    .select({
+      nested: e.with([numbers], e.select(numbers)),
+    })
+    .toEdgeQL(), `SELECT {
   multi nested := assert_exists((
     WITH
       __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 }
@@ -130,14 +128,12 @@ test("explicit WITH block nested in implicit WITH block", () => {
 
   const explicitWith = e.with([numbers], e.select(numbers));
 
-  expect(
-    e
-      .select({
-        numbers: explicitWith,
-        numbers2: explicitWith,
-      })
-      .toEdgeQL()
-  ).toEqual(`WITH
+  assert.equal(e
+    .select({
+      numbers: explicitWith,
+      numbers2: explicitWith,
+    })
+    .toEdgeQL(), `WITH
   __withVar_0 := (
     WITH
       __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 }
@@ -154,16 +150,14 @@ test("explicit WITH block nested in explicit WITH block", () => {
 
   const explicitWith = e.with([numbers], e.select(numbers));
 
-  expect(
-    e
-      .with(
-        [explicitWith],
-        e.select({
-          numbers: explicitWith,
-        })
-      )
-      .toEdgeQL()
-  ).toEqual(`WITH
+  assert.equal(e
+    .with(
+      [explicitWith],
+      e.select({
+        numbers: explicitWith,
+      })
+    )
+    .toEdgeQL(), `WITH
   __withVar_0 := (
     WITH
       __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 }
@@ -180,16 +174,14 @@ test("explicit WITH block nested in explicit WITH block, sub expr explicitly ext
 
   const explicitWith = e.with([numbers], e.select(numbers));
 
-  expect(
-    e
-      .with(
-        [explicitWith, number],
-        e.select({
-          numbers: explicitWith,
-        })
-      )
-      .toEdgeQL()
-  ).toEqual(`WITH
+  assert.equal(e
+    .with(
+      [explicitWith, number],
+      e.select({
+        numbers: explicitWith,
+      })
+    )
+    .toEdgeQL(), `WITH
   __withVar_2 := <std::int64>2,
   __withVar_0 := (
     WITH
@@ -225,17 +217,15 @@ test("explicit WITH block nested in explicit WITH block, sub expr implicitly ext
 
   const explicitWith = e.with([numbers], e.select(numbers));
 
-  expect(
-    e
-      .with(
-        [explicitWith],
-        e.select({
-          number,
-          numbers: explicitWith,
-        })
-      )
-      .toEdgeQL()
-  ).toEqual(`WITH
+  assert.equal(e
+    .with(
+      [explicitWith],
+      e.select({
+        number,
+        numbers: explicitWith,
+      })
+    )
+    .toEdgeQL(), `WITH
   __withVar_2 := <std::int64>2,
   __withVar_0 := (
     WITH
@@ -268,7 +258,7 @@ test("implicit WITH and explicit WITH in sub expr", () => {
     hasMore: e.select(e.op(e.count(remainingHeros), ">", 10)),
   });
 
-  expect(query.toEdgeQL()).toEqual(`WITH
+  assert.equal(query.toEdgeQL(), `WITH
   __withVar_5 := <std::int64>10,
   __withVar_4 := (
     WITH
@@ -306,14 +296,12 @@ test("explicit WITH nested in implicit WITH + alias implicit", () => {
 
   const explicitWith = e.with([numbers], e.select({ numbers, numbersAlias }));
 
-  expect(
-    e
-      .select({
-        numbers: explicitWith,
-        numbers2: explicitWith,
-      })
-      .toEdgeQL()
-  ).toEqual(`WITH
+  assert.equal(e
+    .select({
+      numbers: explicitWith,
+      numbers2: explicitWith,
+    })
+    .toEdgeQL(), `WITH
   __withVar_0 := (
     WITH
       __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 },
@@ -339,14 +327,12 @@ test("explicit WITH nested in implicit WITH + alias explicit", () => {
     e.select({ numbers, numbersAlias })
   );
 
-  expect(
-    e
-      .select({
-        numbers: explicitWith,
-        numbers2: explicitWith,
-      })
-      .toEdgeQL()
-  ).toEqual(`WITH
+  assert.equal(e
+    .select({
+      numbers: explicitWith,
+      numbers2: explicitWith,
+    })
+    .toEdgeQL(), `WITH
   __withVar_0 := (
     WITH
       __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 },
@@ -395,16 +381,14 @@ test(
       e.select(e.op(numbers, "+", numbersAlias))
     );
 
-    expect(
-      e
-        .with(
-          [explicitWith, numbers],
-          e.select({
-            numbers: explicitWith,
-          })
-        )
-        .toEdgeQL()
-    ).toEqual(`WITH
+    assert.equal(e
+      .with(
+        [explicitWith, numbers],
+        e.select({
+          numbers: explicitWith,
+        })
+      )
+      .toEdgeQL(), `WITH
   __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 },
   __withVar_0 := (
     WITH
@@ -432,16 +416,14 @@ test(
       e.select(e.op(numbers, "+", numbersAlias2))
     );
 
-    expect(
-      e
-        .with(
-          [explicitWith, numbers],
-          e.select({
-            numbers: explicitWith,
-          })
-        )
-        .toEdgeQL()
-    ).toEqual(`WITH
+    assert.equal(e
+      .with(
+        [explicitWith, numbers],
+        e.select({
+          numbers: explicitWith,
+        })
+      )
+      .toEdgeQL(), `WITH
   __withVar_1 := { <std::int64>1, <std::int64>2, <std::int64>3 },
   __withVar_2 := __withVar_1,
   __withVar_0 := (
@@ -464,29 +446,27 @@ test("query with no WITH block", () => {
     limit: 1,
   }));
 
-  expect(query.toEdgeQL()).toEqual(
-    `WITH
-  __scope_0_defaultHero := DETACHED default::Person[IS default::Hero]
+  assert.equal(query.toEdgeQL(), `WITH
+__scope_0_defaultHero := DETACHED default::Person[IS default::Hero]
 SELECT __scope_0_defaultHero {
-  id,
-  single computable := <std::int64>35,
-  multi all_heroes := (
-    WITH
-      __scope_1_defaultHero := DETACHED default::Hero
-    SELECT __scope_1_defaultHero {
-      __type__ := (
-        WITH
-          __scope_2_schemaObjectType := __scope_1_defaultHero.__type__
-        SELECT __scope_2_schemaObjectType {
-          name
-        }
-      )
-    }
-  )
+id,
+single computable := <std::int64>35,
+multi all_heroes := (
+  WITH
+    __scope_1_defaultHero := DETACHED default::Hero
+  SELECT __scope_1_defaultHero {
+    __type__ := (
+      WITH
+        __scope_2_schemaObjectType := __scope_1_defaultHero.__type__
+      SELECT __scope_2_schemaObjectType {
+        name
+      }
+    )
+  }
+)
 }
 ORDER BY __scope_0_defaultHero.name
-LIMIT 1`
-  );
+LIMIT 1`);
 });
 
 test("repeated expression referencing scoped select object", () => {
@@ -503,7 +483,7 @@ test("repeated expression referencing scoped select object", () => {
     };
   });
 
-  expect(query.toEdgeQL()).toEqual(`WITH
+  assert.equal(query.toEdgeQL(), `WITH
   __scope_0_defaultHero_expr := DETACHED default::Hero,
   __scope_0_defaultHero := (FOR __scope_0_defaultHero_inner IN {__scope_0_defaultHero_expr} UNION (
     WITH

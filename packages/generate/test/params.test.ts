@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql-js";
 import {
@@ -34,7 +35,7 @@ test("simple params", () => {
       })
   );
 
-  expect(query.toEdgeQL()).toEqual(`WITH
+  assert.equal(query.toEdgeQL(), `WITH
   __param__str := <std::str>$str,
   __param__numArr := <array<std::int64>>$numArr,
   __param__optBool := <OPTIONAL std::bool>$optBool
@@ -120,7 +121,7 @@ test("complex params", async () => {
     ],
   });
 
-  expect({
+  assert.deepEqual({
     ...result,
     nums: [...result.nums],
     tuple: [...result.tuple],
@@ -135,7 +136,7 @@ test("complex params", async () => {
       age: p.age,
       tags: [...p.tags],
     })),
-  }).toEqual({
+  }, {
     id: (result as any).id,
     str: "test string",
     nums: [1, 2, 3],
@@ -158,11 +159,11 @@ test("native tuple type params", async () => {
   );
 
   if (versionGTE(3)) {
-    expect(query.toEdgeQL()).toEqual(`WITH
+    assert.equal(query.toEdgeQL(), `WITH
   __param__test := <tuple<std::str, std::int64>>$test
 SELECT (SELECT __param__test)`);
   } else {
-    expect(query.toEdgeQL()).toEqual(`WITH
+    assert.equal(query.toEdgeQL(), `WITH
   __param__test := <tuple<std::str, std::int64>>to_json(<str>$test)
 SELECT (SELECT __param__test)`);
   }
@@ -224,7 +225,7 @@ test("all param types", async () => {
 
   const result = await query.run(client, args);
 
-  expect(result).toEqual({
+  assert.deepEqual(result, {
     // @ts-ignore
     id: result.id,
     ...args,
@@ -270,9 +271,7 @@ test("all param types", async () => {
     tuple: args,
   });
 
-  expect(Object.values(complexResult.tuple as any)).toEqual(
-    Object.values(args)
-  );
+  assert.deepEqual(Object.values(complexResult.tuple as any), Object.values(args));
 });
 
 testIfVersionGTE(2)("v2 param types", async () => {
@@ -288,7 +287,7 @@ testIfVersionGTE(2)("v2 param types", async () => {
 
   const result = await query.run(client, args);
 
-  expect(result).toEqual({
+  assert.deepEqual(result, {
     // @ts-ignore
     id: result.id,
     ...args,
