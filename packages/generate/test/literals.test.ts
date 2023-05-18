@@ -28,8 +28,14 @@ test("literals", () => {
     e.std.datetime(new Date("2021-06-25T02:01:13.681Z")).toEdgeQL(),
     `<std::datetime>'2021-06-25T02:01:13.681Z'`
   );
-  assert.equal(e.std.decimal("1234.1234n").toEdgeQL(), `<std::decimal>"1234.1234n"`);
-  assert.equal(e.std.duration(duration).toEdgeQL(), `<std::duration>'PT5H6M7.00800901S'`);
+  assert.equal(
+    e.std.decimal("1234.1234n").toEdgeQL(),
+    `<std::decimal>"1234.1234n"`
+  );
+  assert.equal(
+    e.std.duration(duration).toEdgeQL(),
+    `<std::duration>'PT5H6M7.00800901S'`
+  );
   assert.equal(e.std.int16(144.1235).toEdgeQL(), `<std::int16>144.1235`);
   assert.equal(e.std.int64(1234.15).toEdgeQL(), `<std::int64>1234.15`);
   assert.equal(e.std.float64(1234.1234).toEdgeQL(), `<std::float64>1234.1234`);
@@ -55,12 +61,18 @@ test("literals", () => {
     e.std.uuid(uuid).toEdgeQL(),
     `<std::uuid>"317fee4c-0da5-45aa-9980-fedac211bfb6"`
   );
-  assert.equal(e.cal.local_date(localdate).toEdgeQL(), `<cal::local_date>'2021-10-31'`);
+  assert.equal(
+    e.cal.local_date(localdate).toEdgeQL(),
+    `<cal::local_date>'2021-10-31'`
+  );
   assert.equal(
     e.cal.local_datetime(localdatetime).toEdgeQL(),
     `<cal::local_datetime>'2021-10-31T21:45:30'`
   );
-  assert.equal(e.cal.local_time(localtime).toEdgeQL(), `<cal::local_time>'15:15:00'`);
+  assert.equal(
+    e.cal.local_time(localtime).toEdgeQL(),
+    `<cal::local_time>'15:15:00'`
+  );
   assert.equal(
     e.cal.relative_duration(relduration).toEdgeQL(),
     `<cal::relative_duration>'P1Y2M21D'`
@@ -87,20 +99,25 @@ test("enum literals", () => {
   assert.deepEqual(e.Genre.Horror.__element__.__kind__, TypeKind.enum);
   assert.deepEqual(horror.__element__, e.Genre);
   assert.deepEqual(horror.__cardinality__, edgedb.$.Cardinality.One);
-  assert.equal(e.literal(e.Genre, "Horror").toEdgeQL(), `default::Genre.Horror`);
+  assert.equal(
+    e.literal(e.Genre, "Horror").toEdgeQL(),
+    `default::Genre.Horror`
+  );
 
-  expect(e.Genre.__values__).toContain("Horror");
+  assert.ok(e.Genre.__values__.includes("Horror"));
 
   assert.throws(() => (e.Genre as any).NotAGenre.toEdgeQL());
-  assert.throws(() =>
-    e.literal(e.Genre, "NotAGenre" as "Horror").toEdgeQL());
+  assert.throws(() => e.literal(e.Genre, "NotAGenre" as "Horror").toEdgeQL());
 });
 
 testIfVersionGTE(2)("constructing with strings", async () => {
   const { client } = await setupTests();
 
   const dateString = new Date().toISOString();
-  assert.deepEqual(await (await e.datetime(dateString).run(client)).toISOString(), dateString);
+  assert.deepEqual(
+    (await e.datetime(dateString).run(client)).toISOString(),
+    dateString
+  );
 
   await e.int64("12341234").run(client);
   await e.cal.local_datetime("1999-03-31T15:17:00").run(client);

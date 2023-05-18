@@ -95,12 +95,15 @@ test("scoped update", async () => {
 
   assert.deepEqual(result, { id: data.spidey.id });
 
-  assert.deepEqual(await e
-    .select(e.Hero, (hero) => ({
-      name: true,
-      filter_single: e.op(hero.id, "=", e.uuid(result!.id)),
-    }))
-    .run(client), { name: `The Amazing ${data.spidey.name}` });
+  assert.deepEqual(
+    await e
+      .select(e.Hero, (hero) => ({
+        name: true,
+        filter_single: e.op(hero.id, "=", e.uuid(result!.id)),
+      }))
+      .run(client),
+    { name: `The Amazing ${data.spidey.name}` }
+  );
 });
 
 test("update link property", async () => {
@@ -204,9 +207,8 @@ test("exclude readonly props", () => {
 });
 
 test("empty update", async () => {
-  expect(
-    e.update(e.Movie, () => ({ set: {} })).run(client)
-  ).resolves.not.toThrow();
+  const result = await e.update(e.Movie, () => ({ set: {} })).run(client);
+  assert.ok(result);
 });
 
 test("update with filter_single", async () => {

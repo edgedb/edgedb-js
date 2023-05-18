@@ -190,7 +190,6 @@ describe("select", () => {
     type q1 = $.BaseTypeToTsType<(typeof q1)["__element__"]>;
     tc.assert<tc.IsExact<no_shape, q1>>(true);
     assert.deepEqual(no_shape.__element__.__shape__, q1.__element__.__shape__);
-    // expect(no_shape.__element__.__shape__).toEqual({id: true});
 
     // allow override shape
     const override_shape = e.select(q1, () => ({
@@ -436,14 +435,6 @@ describe("select", () => {
       tc.IsExact<(typeof q9)["__cardinality__"], $.Cardinality.AtMostOne>
     >(true);
     assert.deepEqual(q9.__cardinality__, $.Cardinality.AtMostOne);
-
-    // const q10 = e.select(e.Villain, villain => ({
-    //   filter_single: e.op(villain.name, "=", e.cast(e.str, e.set()))
-    // }));
-    // tc.assert<tc.IsExact<typeof q10["__cardinality__"], $.Cardinality.Empty>>(
-    //   true
-    // );
-    // expect(q10.__cardinality__).toEqual($.Cardinality.Empty);
   });
 
   test("infer cardinality - object type filters", () => {
@@ -586,8 +577,9 @@ describe("select", () => {
     );
 
     const result = await query.run(client);
-    expect(result).toMatchObject(data.iron_man);
-    assert.deepEqual(result?.villains, [{ id: data.thanos.id }]);
+    assert.ok(result);
+    assert.deepEqual(result, { ...result, ...data.iron_man });
+    assert.deepEqual(result.villains, [{ id: data.thanos.id }]);
   });
 
   test("computables", async () => {
@@ -627,9 +619,6 @@ describe("select", () => {
 
     assert.deepEqual(results?.id, data.cap.id);
     assert.equal(results?.computable, 35);
-    // expect(
-    //   results?.all_heroes.every(hero => hero.__type__.name === "default::Hero")
-    // ).toEqual(true);
   });
 
   test("type intersections", async () => {
@@ -642,9 +631,6 @@ describe("select", () => {
       results.every((person) => typeof person.id === "string"),
       true
     );
-    // expect(
-    //   results.every(person => person.__type__.name === "default::Hero")
-    // ).toEqual(true);
   });
 
   test("type intersections - static", () => {
@@ -1361,7 +1347,7 @@ SELECT __scope_0_defaultPerson {
       filter_single: e.op(movie.genre, "=", e.Genre.Action),
     }));
 
-    await expect(query.run(client)).rejects.toThrow(CardinalityViolationError);
+    assert.rejects(() => query.run(client), CardinalityViolationError);
   });
 
   test("type union links", async () => {
