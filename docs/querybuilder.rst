@@ -607,3 +607,19 @@ Reference global variables.
   e.default.global.user_id;  // same as above
   e.my_module.global.some_value;
 
+Other modules
+^^^^^^^^^^^^^
+
+Reference entities in modules other than ``default``.
+
+The ``Vampire`` type in a module named ``characters``:
+
+.. code-block:: typescript
+
+  e.characters.Vampire;
+
+As shown in "Globals," a global ``some_value`` in a module ``my_module``:
+
+.. code-block:: typescript
+
+  e.my_module.global.some_value;
