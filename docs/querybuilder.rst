@@ -19,6 +19,16 @@ users, or anyone who prefers writing queries with code.
   const result = await query.run(client)
   // { id: string; title: string; actors: {name: string}[] }[]
 
+.. note:: Is it an ORM?
+
+  No—it's better! Like any modern TypeScript ORM, the query builder gives you
+  full typesafety and autocompletion, but without the power and `performance
+  <https://github.com/edgedb/imdbench>`_
+  tradeoffs. You have access to the **full power** of EdgeQL and can write
+  EdgeQL queries of arbitrary complexity. And since EdgeDB compiles each
+  EdgeQL query into a single, highly-optimized SQL query, your queries stay
+  fast, even when they're complex.
+
 Why use the query builder?
 --------------------------
 
