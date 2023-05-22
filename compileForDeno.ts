@@ -5,11 +5,8 @@ import {
   join,
   relative
 } from "https://deno.land/std@0.177.0/path/posix.ts";
-import {createRequire} from "https://deno.land/std@0.177.0/node/module.ts";
 
-const require = createRequire(import.meta.url);
-
-const ts = require("typescript");
+import ts from "npm:typescript";
 
 const normalisePath = (path: string) => path.replace(/\\/g, "/");
 
