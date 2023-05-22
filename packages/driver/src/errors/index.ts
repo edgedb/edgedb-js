@@ -80,6 +80,7 @@ export class ParameterTypeMismatchError extends InputDataError {
 }
 
 export class StateMismatchError extends InputDataError {
+  protected static tags = { [tags.SHOULD_RETRY]: true };
   get code(): number {
     return 0x03_02_02_00;
   }
@@ -349,6 +350,12 @@ export class DuplicateCastDefinitionError extends DuplicateDefinitionError {
   }
 }
 
+export class DuplicateMigrationError extends DuplicateDefinitionError {
+  get code(): number {
+    return 0x04_05_02_0b;
+  }
+}
+
 export class SessionTimeoutError extends QueryError {
   get code(): number {
     return 0x04_06_00_00;
@@ -356,6 +363,7 @@ export class SessionTimeoutError extends QueryError {
 }
 
 export class IdleSessionTimeoutError extends SessionTimeoutError {
+  protected static tags = { [tags.SHOULD_RETRY]: true };
   get code(): number {
     return 0x04_06_01_00;
   }
@@ -409,6 +417,12 @@ export class AccessPolicyError extends InvalidValueError {
   }
 }
 
+export class QueryAssertionError extends InvalidValueError {
+  get code(): number {
+    return 0x05_01_00_04;
+  }
+}
+
 export class IntegrityError extends ExecutionError {
   get code(): number {
     return 0x05_02_00_00;
@@ -457,6 +471,12 @@ export class TransactionDeadlockError extends TransactionConflictError {
   protected static tags = { [tags.SHOULD_RETRY]: true };
   get code(): number {
     return 0x05_03_01_02;
+  }
+}
+
+export class WatchError extends ExecutionError {
+  get code(): number {
+    return 0x05_04_00_00;
   }
 }
 
