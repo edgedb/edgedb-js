@@ -24,6 +24,31 @@ function b64ToUtf8(str: string): string {
   return utf8Decoder.decode(decodeB64(str));
 }
 
+/**
+ * Parses SCRAM-SHA-256 authentication parameters from a string.
+ * @param authParamsString a string of comma-separated key-value pairs
+ * @returns an object with `sid` and `data` properties, decoded string or `null` when not present
+ */
+function parseSidAndData(paramsStr: string): {
+  sid: string | null;
+  data: string | null;
+} {
+  const params = new Map(
+    paramsStr.length > 0
+      ? paramsStr
+          .split(",")
+          .map((attr) => attr.split(/=(.+)?/, 2)) // split on first '=' only; nb, `.split("=", 2)` doesn't do that
+          .map(([key, val]) => [key.trim(), val.trim()])
+      : []
+  );
+
+  const sid = params.get("sid") ?? null;
+  const rawData = params.get("data");
+  const data = rawData ? b64ToUtf8(rawData) : null;
+
+  return { sid, data };
+}
+
 export async function HTTPSCRAMAuth(
   baseUrl: string,
   username: string,
@@ -41,27 +66,42 @@ export async function HTTPSCRAMAuth(
       Authorization: `SCRAM-SHA-256 data=${utf8ToB64(clientFirst)}`,
     },
   });
-  if (serverFirstRes.status === 403) {
-    // tslint:disable-next-line:no-console
-    console.log(serverFirstRes);
-    throw new Error(`Server doesn't support HTTP SCRAM authentication`);
+
+  // The first request must have status 401 Unauthorized and provide a
+  // WWW-Authenticate header with a SCRAM-SHA-256 challenge.
+  // See: https://github.com/edgedb/edgedb/blob/09782afd3b759440abbb1b26ee19b6589be04275/edb/server/protocol/auth/scram.py#L153-L157
+  const authenticateHeader = serverFirstRes.headers.get("WWW-Authenticate");
+  if (serverFirstRes.status !== 401 || !authenticateHeader) {
+    const body = await serverFirstRes.text();
+    throw new ProtocolError(`authentication failed: ${body}`);
   }
-  const firstAttrs = parseHeaders(serverFirstRes.headers, "WWW-Authenticate");
-  if (firstAttrs.size === 0) {
-    throw new Error("Invalid credentials");
-  }
-  if (!firstAttrs.has("sid") || !firstAttrs.has("data")) {
+
+  // WWW-Authenticate can contain multiple comma-separated authentication
+  // schemes (each with own comma-separated parameter pairs), but we only support
+  // one SCRAM-SHA-256 challenge, e.g., `SCRAM-SHA-256 sid=..., data=...`.
+  if (!authenticateHeader.startsWith("SCRAM-SHA-256")) {
     throw new ProtocolError(
-      `server response doesn't contain '${
-        !firstAttrs.has("sid") ? "sid" : "data"
-      }' attribute`
+      `unsupported authentication scheme: ${authenticateHeader}`
     );
   }
-  const sid = firstAttrs.get("sid")!;
-  const serverFirst = b64ToUtf8(firstAttrs.get("data")!);
+
+  // The server may respond with a 401 Unauthorized and `WWW-Authenticate: SCRAM-SHA-256` with
+  // no parameters if authentication fails, e.g., due to an incorrect username.
+  // See: https://github.com/edgedb/edgedb/blob/09782afd3b759440abbb1b26ee19b6589be04275/edb/server/protocol/auth/scram.py#L112-L120
+  const authParams = authenticateHeader.split(/ (.+)?/, 2)[1] ?? "";
+  if (authParams.length === 0) {
+    const body = await serverFirstRes.text();
+    throw new ProtocolError(`authentication failed: ${body}`);
+  }
+
+  const { sid, data: serverFirst } = parseSidAndData(authParams);
+  if (!sid || !serverFirst) {
+    throw new ProtocolError(
+      `authentication challenge missing '${!sid ? "sid" : "data"}' attribute`
+    );
+  }
 
   const [serverNonce, salt, iterCount] = parseServerFirstMessage(serverFirst);
-
   const [clientFinal, expectedServerSig] = await buildClientFinalMessage(
     password,
     salt,
@@ -76,62 +116,32 @@ export async function HTTPSCRAMAuth(
       Authorization: `SCRAM-SHA-256 sid=${sid}, data=${utf8ToB64(clientFinal)}`,
     },
   });
-  if (!serverFinalRes.ok) {
-    throw new Error("Invalid credentials");
+
+  // The second request is successful if the server responds with a 200 and an
+  // Authentication-Info header (see https://datatracker.ietf.org/doc/html/rfc7615#section-3).
+  // See: https://github.com/edgedb/edgedb/blob/09782afd3b759440abbb1b26ee19b6589be04275/edb/server/protocol/auth/scram.py#L252-L254
+  const authInfoHeader = serverFinalRes.headers.get("Authentication-Info");
+  if (!serverFinalRes.ok || !authInfoHeader) {
+    const body = await serverFinalRes.text();
+    throw new ProtocolError(`authentication failed: ${body}`);
   }
-  const finalAttrs = parseHeaders(
-    serverFinalRes.headers,
-    "Authentication-Info",
-    false
-  );
-  if (!firstAttrs.has("sid") || !firstAttrs.has("data")) {
+
+  const { data: serverFinal, sid: sidFinal } = parseSidAndData(authInfoHeader);
+  if (!sidFinal || !serverFinal) {
     throw new ProtocolError(
-      `server response doesn't contain '${
-        !firstAttrs.has("sid") ? "sid" : "data"
-      }' attribute`
+      `authentication info missing '${!sidFinal ? "sid" : "data"}' attribute`
     );
   }
-  if (finalAttrs.get("sid") !== sid) {
+
+  if (sidFinal !== sid) {
     throw new ProtocolError("SCRAM session id does not match");
   }
-  const serverFinal = b64ToUtf8(finalAttrs.get("data")!);
 
   const serverSig = parseServerFinalMessage(serverFinal);
-
   if (!bufferEquals(serverSig, expectedServerSig)) {
     throw new ProtocolError("server SCRAM proof does not match");
   }
 
   const authToken = await serverFinalRes.text();
-
   return authToken;
-}
-
-function parseHeaders(
-  headers: Headers,
-  headerName: string,
-  checkAlgo: boolean = true
-) {
-  const header = headers.get(headerName);
-  if (!header) {
-    throw new ProtocolError(`response doesn't contain '${headerName}' header`);
-  }
-  let rawAttrs: string;
-  if (checkAlgo) {
-    const [algo, ..._rawAttrs] = header.split(" ");
-    if (algo !== "SCRAM-SHA-256") {
-      throw new ProtocolError(`invalid scram algo '${algo}'`);
-    }
-    rawAttrs = _rawAttrs.join(" ");
-  } else {
-    rawAttrs = header;
-  }
-  return new Map(
-    rawAttrs
-      ? rawAttrs.split(",").map((attr) => {
-          const [key, val] = attr.split("=", 2);
-          return [key.trim(), val.trim()];
-        })
-      : []
-  );
 }
