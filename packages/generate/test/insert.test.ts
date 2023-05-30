@@ -338,7 +338,8 @@ describe("insert", () => {
           name: "Star-Lord",
           "@character_name": "Peter Quill",
         }),
-      }));
+      })
+    );
   });
 
   test("undefined in insert", async () => {
