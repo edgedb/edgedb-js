@@ -1,8 +1,8 @@
 .. _edgedb-js-interfaces:
 
-===============
-Interfaces #New
-===============
+==========
+Interfaces
+==========
 
 The ``interfaces`` generator introspects your schema and generates file containing *TypeScript interfaces* that correspond to each object type. This is useful for writing typesafe code to interact with EdgeDB.
 
