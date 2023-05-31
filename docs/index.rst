@@ -27,6 +27,10 @@ EdgeDB TypeScript/JS Client
    group
    reference
 
+This is the official EdgeDB client library for JavaScript and TypeScript. It’s
+the easiest way to connect to your database and execute queries from a Node.js
+or Deno backend.
+
 .. _edgedb-js-installation:
 
 
@@ -61,132 +65,256 @@ npm and deno.land, and can be installed with your package manager of choice.
 
       import * as edgedb from "http://deno.land/x/edgedb/mod.ts";
 
-Requirements
-------------
+.. _edgedb-js-quickstart:
 
-We currently test with all LTS versions of Node with TypeScript v5.0.4, and Deno
-1.30.x. TypeScript requires both ``"strict": true`` and ``"downlevelIteration":
-true`` in your ``tsconfig.json``.
+Quickstart
+==========
 
-.. _edgedb-js-example:
+Setup
+^^^^^
 
-Examples
-========
+This section assumes you have gone through the :ref:`Quickstart Guide
+<ref_quickstart>` and understand how to update schemas, run migrations, and have
+a working EdgeDB project. Let's update the schema to make the ``title`` property
+of the ``Movie`` type exclusive. This will help with filtering by
+``Movie.title`` in our queries.
 
-The :ref:`Client class <edgedb-js-driver>` implements the core functionality
-required to establish a connection to your database and execute queries. If you
-prefer writing queries as strings, the Client API is all you need. However, we
-also provide several powerful generators which, along with TypeScript, allow for
-safe and powerful use of EdgeDB queries in your application.
+.. code-block:: sdl
+  :caption: dbschema/default.esdl
 
-In the following examples, we compare performing the same query manually vs with
-the various generators.
+  module default {
+    type Movie {
+      required property title -> str {
+        constraint exclusive;
+      };
+      multi link actors -> Person;
+    }
 
-.. tabs::
+    type Person {
+      required property name -> str;
+    }
+  }
 
-    .. code-tab:: typescript
-      :caption: Query builder
+Generate the new migration and apply them:
 
-      import * as edgedb from "edgedb";
-      import * as e from "./dbschema/edgeql-js";
+.. code-block:: bash
 
-      const client = edgedb.createClient();
+  $ edgedb migration create
+  $ edgedb migrate
 
-      const query = e.params({ ids: e.array(e.uuid) }, ({ ids }) =>
-        e.select(e.Movie, (movie) => ({
-          id: true,
-          title: true,
-          release_year: true,
-          filter: e.op(movie.id, "in", e.array_unpack(ids)),
-        }))
-      );
+We'll be using TypeScript and Node for this example, so let's setup a simple
+app:
 
-      async function run() {
-        await query.run(client, {
-          ids: [
-            '2053a8b4-49b1-437a-84c8-e1b0291ccd9f',
-            '2053a8b4-49b1-437a-84c8-af5d3f383484',
-          ],
-        });
-        // { id: string; title: string; release_year: number | null }[]
+.. code-block:: bash
+
+  $ npm init -y # initialize a new npm project
+  $ npm i edgedb
+  $ npm i -D typescript @types/node @edgedb/generate tsx
+  $ npx tsc --init # initialize basic a basic TypeScript project
+
+Client
+^^^^^^
+
+The ``Client`` class implements the core functionality required to establish a
+connection to your database and execute queries. If you prefer writing queries
+as strings, the Client API is all you need.
+
+Let's create a simple Node.js script that seeds the database by running an
+insert query directly with the driver:
+
+.. code-block:: typescript
+  :caption: seed.ts
+
+  import * as edgedb from "edgedb";
+
+  const client = edgedb.createClient();
+
+  async function main() {
+    await client.execute(`
+      insert Person { name := "Robert Downey Jr." };
+      insert Person { name := "Scarlett Johansson" };
+      insert Movie {
+        title := <str>$title,
+        actors := (
+          select Person filter .name in {
+            "Robert Downey Jr.",
+            "Scarlett Johansson"
+          }
+        )
       }
+    `, { title: "Iron Man 2" });
+  }
 
-      run();
+  main();
 
-    .. code-tab:: typescript
-      :caption: Queries
+We can now seed the database by running this script with ``tsx``
 
-      import * as edgedb from "edgedb";
-      import { selectMovieByIds } from "./dbschema/queries";
+.. code-block:: bash
 
-      const client = edgedb.createClient();
+  $ npx tsx seed.ts
 
-      async function run(){
-        await selectMoviesByIds(client, {
-          ids: [
-            '2053a8b4-49b1-437a-84c8-e1b0291ccd9f',
-            '2053a8b4-49b1-437a-84c8-af5d3f383484',
-          ],
-        });
-        // { id: string; title: string; release_year: number | null }[]
-      }
+Feel free to explore the database in the EdgeDB UI. You should see this new
+data, and any data you inserted when running the Quickstart.
 
-      run();
+Query
+^^^^^
 
-    .. code-tab:: typescript
-      :caption: Interfaces
+Now, let's write a Node.js script that queries the database for details about
+Iron Man 2:
 
-      import * as edgedb from "edgedb";
-      import fs from "node:fs/promises";
-      import { User } from "./dbschema/interfaces";
+.. code-block:: typescript
+  :caption: query.ts
 
-      const client = edgedb.createClient();
+  import * as edgedb from "edgedb";
 
-      async function run(){
-        const query = await fs.readFile(
-          "./selectMoviesByIds.edgeql",
-          {encoding: "utf8" }
-        );
-        await client.query<User>(query, {
-          ids: [
-            '2053a8b4-49b1-437a-84c8-e1b0291ccd9f',
-            '2053a8b4-49b1-437a-84c8-af5d3f383484',
-          ],
-        });
-        // User
-      }
+  const client = edgedb.createClient();
 
-      run();
-
-    .. code-tab:: typescript
-      :caption: Client-only
-
-      import * as edgedb from "edgedb";
-      import fs from "node:fs/promises";
-
-      const client = edgedb.createClient();
-
-      async function run(){
-        const query = await fs.readFile(
-          "./selectMoviesByIds.edgeql",
-          {encoding: "utf8" }
-        );
-        await client.query(query, {
-          ids: [
-            '2053a8b4-49b1-437a-84c8-e1b0291ccd9f',
-            '2053a8b4-49b1-437a-84c8-af5d3f383484',
-          ],
-        });
-      }
-
-      run();
-
-    .. code-tab:: edgeql
-      :caption: EdgeQL
-
+  async function main() {
+    const result = await client.querySingle(`
       select Movie {
-        id,
         title,
-        release_year,
-      }
-      filter .id in array_unpack(<set<uuid>>$ids);
+        actors: {
+          name,
+        }
+      } filter .title = "Iron Man 2"
+    `);
+
+    console.log(JSON.stringify(result, null, 2));
+  }
+
+  main();
+
+Interfaces
+^^^^^^^^^^
+
+Since we're using TypeScript, it would be nice to be able to type the return
+value of this query, so let's use our first generator, the :ref:`Queries
+generator <edgedb-js-queries>` to tell TypeScript what the type of our result
+is.
+
+First we run the generator:
+
+.. code-block:: bash
+
+  $ npx @edgedb/generate interfaces
+
+This generator introspects your database schema and generates a set of
+equivalent TypeScript interfaces.
+
+Now we can annotate our query since we are selecting the whole ``Movie`` type:
+
+.. code-block:: typescript
+  :caption: query.ts
+
+  import * as edgedb from "edgedb";
+  import { Movie } from "./dbschema/interfaces"
+
+  const client = edgedb.createClient();
+
+  async function main() {
+    // result will be inferred as Movie | null
+    const result = await client.querySingle<Movie>(`
+      select Movie {
+        title,
+        actors: {
+          name,
+        }
+      } filter .title = "Iron Man 2"
+    `);
+
+    console.log(JSON.stringify(result, null, 2));
+  }
+
+  main();
+
+You can now run the script with ``tsx``:
+
+.. code-block:: bash
+
+  $ npx tsx query.ts
+
+Queries generator
+^^^^^^^^^^^^^^^^^
+
+Wouldn't it be great if we could write any arbitrary query and get a type-safe
+function that we could call? Good news, that's exactly what the next generator
+does! The :ref:`queries generator <edgedb-js-queries>` Scans your project for
+``*.edgeql`` files and generates a file containing a strongly-typed function.
+
+First, move the query into a separate file called ``getMovie.edgeql``. Next,
+we'll run the ``queries`` generator:
+
+.. code-block:: bash
+
+  $ npx @edgedb/generate queries --file
+
+Now, let's update our query script to call the generated function:
+
+.. code-block:: typescript
+  :caption: query.ts
+
+  import * as edgedb from "edgedb";
+  import { getMovie } from "./dbschema/queries"
+
+  const client = edgedb.createClient();
+
+  async function main() {
+    // result will be inferred as Movie | null
+    const result = await getMovie(client);
+
+    console.log(JSON.stringify(result, null, 2));
+  }
+
+  main();
+
+Now, if you change the query to return different data, or take parameters, the
+type of the generated function will change. It'll be completely type safe!
+
+Query builder
+^^^^^^^^^^^^^
+
+At last we've arrived at the most powerful API for querying your EdgeDB
+instance: the query builder. The EdgeDB query builder provides a **code-first**
+way to write **fully-typed** EdgeQL queries with TypeScript. We recommend it for
+TypeScript users, or anyone who prefers writing queries with code.
+
+First, we'll run the query builder generator:
+
+.. code-block:: bash
+
+  $ npx @edgedb/generate edgeql-js
+
+Now, we can import the generated query builder and express our query completely
+in TypeScript, getting editor completion, type checking, and type inferrence:
+
+.. code-block:: typescript
+  :caption: query.ts
+
+  import * as edgedb from "edgedb";
+  import e from "./dbschema/edgeql-js";
+
+  const client = edgedb.createClient();
+
+  async function main() {
+    // result will be inferred based on the query
+    const result = await e
+      .select(e.Movie, () => ({
+        title: true,
+        actors: () => ({ name: true }),
+        filter_single: { title: "Iron Man 2" },
+      }))
+      .run(client);
+
+    console.log(JSON.stringify(result, null, 2));
+  }
+
+  main();
+
+What's next
+===========
+
+We recommend reading the :ref:`Client docs <edgedb-js-driver>` first and getting
+familiar with configuring the client. You'll find important APIs like
+``withGlobals`` and connection details there. After that, depending on your
+preferences, look through the :ref:`Query Builder <edgedb-js-qb>` documentation
+and use the other pages as a reference for writing code-first EdgeDB queries.
