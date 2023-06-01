@@ -1,15 +1,12 @@
-import {ensureDir, walk} from "https://deno.land/std@0.177.0/fs/mod.ts";
+import { ensureDir, walk } from "https://deno.land/std@0.177.0/fs/mod.ts";
 import {
   basename,
   dirname,
   join,
-  relative
+  relative,
 } from "https://deno.land/std@0.177.0/path/posix.ts";
-import {createRequire} from "https://deno.land/std@0.177.0/node/module.ts";
 
-const require = createRequire(import.meta.url);
-
-const ts = require("typescript");
+import ts from "npm:typescript";
 
 const normalisePath = (path: string) => path.replace(/\\/g, "/");
 
@@ -20,17 +17,17 @@ export async function run({
   pathRewriteRules = [],
   importRewriteRules = [],
   injectImports = [],
-  sourceFilter
+  sourceFilter,
 }: {
   sourceDir: string;
   destDir: string;
   destEntriesToClean?: string[];
-  pathRewriteRules?: {match: RegExp; replace: string}[];
+  pathRewriteRules?: { match: RegExp; replace: string }[];
   importRewriteRules?: {
     match: RegExp;
     replace: string | ((match: string, sourcePath?: string) => string);
   }[];
-  injectImports?: {imports: string[]; from: string}[];
+  injectImports?: { imports: string[]; from: string }[];
   sourceFilter?: (path: string) => boolean;
 }) {
   console.log(`Denoifying ${sourceDir}...`);
@@ -38,14 +35,14 @@ export async function run({
   try {
     for await (const entry of Deno.readDir(destDir)) {
       if (!destEntriesToClean || destClean.has(entry.name)) {
-        await Deno.remove(join(destDir, entry.name), {recursive: true});
+        await Deno.remove(join(destDir, entry.name), { recursive: true });
       }
     }
   } catch {}
 
   const sourceFilePathMap = new Map<string, string>();
 
-  for await (const entry of walk(sourceDir, {includeDirs: false})) {
+  for await (const entry of walk(sourceDir, { includeDirs: false })) {
     const sourcePath = normalisePath(entry.path);
     if (sourceFilter && !sourceFilter(sourcePath)) {
       continue;
@@ -85,23 +82,23 @@ export async function run({
         isFirstNode = false;
 
         const neededImports = injectImports.reduce(
-          (neededImports, {imports, from}) => {
-            const usedImports = imports.filter(importName =>
+          (neededImports, { imports, from }) => {
+            const usedImports = imports.filter((importName) =>
               parsedSource.identifiers?.has(importName)
             );
             if (usedImports.length) {
               neededImports.push({
                 imports: usedImports,
-                from
+                from,
               });
             }
             return neededImports;
           },
-          [] as {imports: string[]; from: string}[]
+          [] as { imports: string[]; from: string }[]
         );
 
         if (neededImports.length) {
-          const importDecls = neededImports.map(neededImport => {
+          const importDecls = neededImports.map((neededImport) => {
             const imports = neededImport.imports.join(", ");
             // no need to resolve path if it is import from url
             const importPath = neededImport.from.startsWith("https://")
@@ -179,7 +176,7 @@ export async function run({
     // First check importRewriteRules
     for (const rule of importRewriteRules) {
       if (rule.match.test(importPath)) {
-        const path = importPath.replace(rule.match, match =>
+        const path = importPath.replace(rule.match, (match) =>
           typeof rule.replace === "function"
             ? rule.replace(match, sourcePath)
             : rule.replace
