@@ -92,7 +92,7 @@ jobs:
       #     yarn build:deno
 
       - name: Install EdgeDB
-        uses: edgedb/setup-edgedb@v1
+        uses: edgedb/setup-edgedb@8bc9e10005674ec772652b86e1fdd476e6462284
         with:
           server-version: ${{ matrix.edgedb-version }}
           project-dir: ./packages/generate
