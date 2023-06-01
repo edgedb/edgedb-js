@@ -64,7 +64,7 @@ export async function HTTPSCRAMAuth(
   const { sid, data: serverFirst } = parseScramAttrs(authParams);
   if (!sid || !serverFirst) {
     throw new ProtocolError(
-      `authentication challenge missing '${!sid ? "sid" : "data"}' attribute`
+      `authentication challenge missing attributes: expected "sid" and "data", got '${authParams}'`
     );
   }
 
@@ -96,7 +96,7 @@ export async function HTTPSCRAMAuth(
   const { data: serverFinal, sid: sidFinal } = parseScramAttrs(authInfoHeader);
   if (!sidFinal || !serverFinal) {
     throw new ProtocolError(
-      `authentication info missing '${!sidFinal ? "sid" : "data"}' attribute`
+      `authentication info missing attributes: expected "sid" and "data", got '${authInfoHeader}'`
     );
   }
 
