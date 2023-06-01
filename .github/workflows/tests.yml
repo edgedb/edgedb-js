@@ -98,8 +98,8 @@ jobs:
 
       - name: Show actual EdgeDB server version
         run: |
+          cd packages/generate
           echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()') >> $GITHUB_ENV
-
 
       - name: Run query builder tests
         if: ${{ matrix.node-version >= 16 && matrix.edgedb-version != '1.4'}}
