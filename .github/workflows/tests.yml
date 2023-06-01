@@ -95,6 +95,7 @@ jobs:
         uses: edgedb/setup-edgedb@v1
         with:
           server-version: ${{ matrix.edgedb-version }}
+          project-dir: ./packages/generate
 
       - name: Show actual EdgeDB server version
         run: |
