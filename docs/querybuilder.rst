@@ -1,8 +1,8 @@
 .. _edgedb-js-qb:
 
-=============
-Query Builder
-=============
+=======================
+Query Builder Generator
+=======================
 
 The EdgeDB query builder provides a **code-first** way to write
 **fully-typed** EdgeQL queries with TypeScript. We recommend it for TypeScript
