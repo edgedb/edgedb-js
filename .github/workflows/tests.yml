@@ -28,6 +28,9 @@ jobs:
           - os: ubuntu-latest
             node-version: "18"
             edgedb-version: "1.4"
+          - os: ubuntu-latest
+            node-version: "18"
+            edgedb-version: "2"
           - os: macos-latest
             node-version: "18"
             edgedb-version: "stable"
