@@ -17,7 +17,13 @@ users, or anyone who prefers writing queries with code.
   }));
 
   const result = await query.run(client)
-  // { id: string; title: string; actors: {name: string}[] }[]
+  /*
+    {
+      id: string;
+      title: string;
+      actors: { name: string; }[];
+    }[]
+  */
 
 .. note:: Is it an ORM?
 
@@ -204,11 +210,11 @@ special ``*`` property:
 
   const result = await query.run(client);
   /*
-  {
-    id: string;
-    title: string;
-    release_year: number | null;  # optional property
-  }[]
+    {
+      id: string;
+      title: string;
+      release_year: number | null;  # optional property
+    }[]
   */
 
 Nested shapes
@@ -225,7 +231,13 @@ Nested shapes
   }));
 
   const result = await query.run(client);
-  // { id: string; title: string; actors: { name: string }[] }[]
+  /*
+    {
+      id: string;
+      title: string;
+      actors: { name: string; }[];
+    }[]
+  */
 
 Filtering
 ^^^^^^^^^

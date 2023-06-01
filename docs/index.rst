@@ -153,9 +153,9 @@ We can now seed the database by running this script with ``tsx``
 
   $ npx tsx seed.ts
 
-Feel free to explore the database in the :ref:`EdgeDB UI <ref_cli_edgedb_ui>`, where you will find the new
-data you inserted through this script, as well as any data you inserted when
-running the Quickstart.
+Feel free to explore the database in the :ref:`EdgeDB UI <ref_cli_edgedb_ui>`,
+where you will find the new data you inserted through this script, as well as
+any data you inserted when running the Quickstart.
 
 .. note:: A word on module systems
 
@@ -165,8 +165,8 @@ running the Quickstart.
   without a file extension throughout this documentation. Please see your build
   or environment tooling's guidance on how to adapt this style.
 
-Query
-^^^^^
+Querying with plain strings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Now, let's write a Node.js script that queries the database for details about
 Iron Man 2:
@@ -197,8 +197,8 @@ Interfaces
 ^^^^^^^^^^
 
 Since we're using TypeScript, it would be nice to be able to type the return
-value of this query, so let's use our first generator, the :ref:`Queries
-generator <edgedb-js-queries>` to tell TypeScript what the type of our result
+value of this query, so let's use our first generator, the :ref:`interfaces
+generator <edgedb-js-interfaces>` to tell TypeScript what the type of our result
 is.
 
 First we run the generator:
@@ -247,7 +247,7 @@ Queries generator
 
 Wouldn't it be great if we could write any arbitrary query and get a type-safe
 function that we could call? Good news, that's exactly what the next generator
-does! The :ref:`queries generator <edgedb-js-queries>` Scans your project for
+does! The :ref:`queries generator <edgedb-js-queries>` scans your project for
 ``*.edgeql`` files and generates a file containing a strongly-typed function.
 
 First, move the query into a separate file called ``getMovie.edgeql``. Next,
@@ -277,8 +277,9 @@ provide us with type-safe querying.
 
   main();
 
-Now, if you change the query to return different data, or take parameters, the
-type of the generated function will change. It'll be completely type safe!
+Now, if you change the query to return different data, or take parameters, and
+run the queries generator again, the type of the newly generated function will
+change. It'll be completely type safe!
 
 Query builder
 ^^^^^^^^^^^^^
@@ -335,8 +336,8 @@ in TypeScript, getting editor completion, type checking, and type inferrence:
 What's next
 ===========
 
-We recommend reading the :ref:`Client docs <edgedb-js-driver>` first and getting
+We recommend reading the :ref:`client docs <edgedb-js-driver>` first and getting
 familiar with configuring the client. You'll find important APIs like
 ``withGlobals`` and connection details there. After that, depending on your
-preferences, look through the :ref:`Query Builder <edgedb-js-qb>` documentation
+preferences, look through the :ref:`query builder <edgedb-js-qb>` documentation
 and use the other pages as a reference for writing code-first EdgeDB queries.
