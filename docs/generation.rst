@@ -39,15 +39,15 @@ Run a generator with the following command.
       --unstable \
       https://deno.land/x/edgedb/generate.ts <generator> [options]
 
-The value of generators should be one of the following:
+The value of ``<generator>`` should be one of the following:
 
 .. list-table::
    :class: funcoptable
 
    * - ``edgeql-js``
-     - Provides a **code-first** way to write **fully-typed** EdgeQL queries
-       with TypeScript. We recommend it for TypeScript users, or anyone who
-       prefers writing queries with code.
+     - Generates the query builder which provides a **code-first** way to write
+       **fully-typed** EdgeQL queries with TypeScript. We recommend it for
+       TypeScript users, or anyone who prefers writing queries with code.
      - :ref:`docs <edgedb-js-qb>`
 
    * - ``queries``
@@ -64,9 +64,9 @@ The value of generators should be one of the following:
 Connection
 ^^^^^^^^^^
 
-Generating the query builder requires a connection to an active EdgeDB database.
-It does **not** simply read your local ``.esdl`` schema files. Generators rely
-on the database to introspect the schema and analyze queries. Doing so without a
+The generators require a connection to an active EdgeDB database. It does
+**not** simply read your local ``.esdl`` schema files. Generators rely on the
+database to introspect the schema and analyze queries. Doing so without a
 database connection would require implementing a full EdgeQL parser and static
 analyzer in JavaScript—which we don't intend to do anytime soon.
 
@@ -75,10 +75,10 @@ analyzer in JavaScript—which we don't intend to do anytime soon.
   Make sure your development database is up-to-date with your latest schema
   before running a generator!
 
-If you're using ``edgedb project init``, this is automatically handled for you.
-Otherwise, you'll need to explicitly pass connection information via environment
-variables or CLI flags, just like any other CLI command. See :ref:`Client
-Libraries > Connection <edgedb_client_connection>` for guidance.
+If you're using ``edgedb project init``, the connection is automatically handled
+for you. Otherwise, you'll need to explicitly pass connection information via
+environment variables or CLI flags, just like any other CLI command. See
+:ref:`Client Libraries > Connection <edgedb_client_connection>` for guidance.
 
 .. _edgedb_qb_target:
 
