@@ -157,6 +157,14 @@ Feel free to explore the database in the EdgeDB UI, where you will find the new
 data you inserted through this script, as well as any data you inserted when
 running the Quickstart.
 
+.. note:: A word on module systems
+
+  Different build tools and runtimes have different specifications for how
+  modules are imported, and we support a wide-range of those styles. For
+  clarity, we will be sticking to standard TypeScript-style ESM module importing
+  without a file extension throughout this documentation. Please see your build
+  or environment tooling's guidance on how to adapt this style.
+
 Query
 ^^^^^
 
