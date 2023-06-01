@@ -3,122 +3,85 @@
 Generators
 ==========
 
-The ``@edgedb/generate`` package provides a set of code generation tools that are useful when developing an EdgeDB-backed applications with TypeScript/JavaScript.
+The ``@edgedb/generate`` package provides a set of code generation tools that
+are useful when developing an EdgeDB-backed applications with
+TypeScript/JavaScript.
 
 **Official generators**
 
-- ``queries``: Scans your project for ``*.edgeql`` files and generates a file containing a strongly-typed function alongside each. Alternatively you can use ``--file`` mode to generate a single file containing all the query functions.
+- ``queries``: Scans your project for ``*.edgeql`` files and generates a file
+  containing a strongly-typed function alongside each. Alternatively you can use
+  ``--file`` mode to generate a single file containing all the query functions.
 - ``edgeql-js``: Introspects your database schema and generates a query builder.
-- ``interfaces``: Introspects your database schema and generates a set of equivalent TypeScript interfaces.
+- ``interfaces``: Introspects your database schema and generates a set of
+  equivalent TypeScript interfaces.
 
 **Third party generators**
 
-If you implement a code generator, submit a PR and we'll list it here! The ``edgedb`` package exports a ``$`` namespace containing some utilities for introspecting the schema and analyzing queries. We use these same tools to implement the official generators.
-
-Requirements
-^^^^^^^^^^^^
+If you implement a code generator, submit a PR and we'll list it here! The
+``edgedb`` package exports a ``$`` namespace containing some utilities for
+introspecting the schema and analyzing queries. We use these same tools to
+implement the official generators.
 
 To get started with generators, first initialize an :ref:`EdgeDB project
-<ref_guide_using_projects>` in the root of your application. Generators will look for an ``edgedb.toml`` file to determine the root of your application.
-
-.. note::
-
-  Follow the :ref:`Quickstart <ref_quickstart>` for detailed instructions on installing the CLI, initializing a project, writing a basic schema, and executing your first migration.
-
-The query builder works for both JavaScript and TypeScript users, and supports both Node.js and Deno. It's possible to use the query builder with or without TypeScript. Some requirements apply to TypeScript users only.
-
-**Node.js**
-- ``Node.js v14+``. Run ``node --version`` to see your current version.
-
-**Deno**
-
-- ``Deno v0.20+``.
-
-**TypeScript**
-
-- ``TypeScript v4.4+``.
-- *For Node.js users*: ``npm install @types/node -D``.
-- Strict mode: ``"strict": true``
-- Downlevel iteration (query builder only): ``"downlevelIteration": true``
-
-.. code-block:: javascript
-
-  // tsconfig.json
-  {
-    // ...
-    "compilerOptions": {
-      // ...
-      "strict": true,
-      "downlevelIteration": true,
-    }
-  }
-
-Installation
-^^^^^^^^^^^^
-
-.. note::
-
-  If you're using Deno, you can skip this step.
-
-Install the ``edgedb`` package.
-
-.. code-block:: bash
-
-  $ npm install edgedb       # npm users
-  $ yarn add edgedb          # yarn users
-
-Then install ``@edgedb/generate`` as a dev dependency.
-
-.. code-block:: bash
-
-  $ npm install @edgedb/generate --save-dev      # npm users
-  $ yarn add @edgedb/generate --dev              # yarn users
-
-Running a generator
-^^^^^^^^^^^^^^^^^^^
+<ref_guide_using_projects>` in the root of your application. Generators will
+look for an ``edgedb.toml`` file to determine the root of your application. See
+the :ref:`Overview <edgedb-js-installation>` page for details on installing
 
 Run a generator with the following command.
 
-**Node.js**
+.. tabs::
 
-.. code-block:: bash
+  .. code-tab:: bash
+    :caption: npm
 
-  $ npx @edgedb/generate <generator> [options]
+    $ npx @edgedb/generate <generator> [options]
 
+  .. code-tab:: bash
+    :caption: yarn
 
-**Deno**
+    $ yarn run -B generate <generator> [options]
 
-.. code-block:: bash
+  .. code-tab:: bash
+    :caption: pnpm
 
-  $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts <generator> [options]
+    $ pnpm exec generate <generator> [options]
 
+  .. code-tab:: bash
+    :caption: Deno
 
-The value of ``<generator>`` should be one of the following.
-
-- ``queries``: This generator scans your project for ``*.edgeql`` files and generates a file containing a strongly-typed function alongside each. Alternatively you can use ``--file`` mode to generate a single file containing all the "query functions".
-- ``edgeql-js``: This generator introspects your database schema and generates a query builder.
-- ``interfaces``: This generator introspects your database schema and generates TypeScript interfaces for each object type.
+    $ deno run \
+      --allow-all \
+      --unstable \
+      https://deno.land/x/edgedb/generate.ts <generator> [options]
 
 Connection
 ^^^^^^^^^^
 
-Generating the query builder requires a
-connection to an active EdgeDB database. It does **not** simply read your local ``.esdl`` schema files. Generators rely on the database to introspect the schema and analyze queries. Doing so without a database connection would require implementing a full EdgeQL parser and static analyzer in JavaScript—which we don't intend to do anytime soon.
+Generating the query builder requires a connection to an active EdgeDB database.
+It does **not** simply read your local ``.esdl`` schema files. Generators rely
+on the database to introspect the schema and analyze queries. Doing so without a
+database connection would require implementing a full EdgeQL parser and static
+analyzer in JavaScript—which we don't intend to do anytime soon.
 
 .. note::
 
-  Make sure your development database is up-to-date with your latest schema before running a generator!
+  Make sure your development database is up-to-date with your latest schema
+  before running a generator!
 
-If you're using ``edgedb project init``, this is automatically handled for you. Otherwise, you'll need to explicitly pass connection information via environment variables or CLI flags, just like any other CLI command. See :ref:`Client Libraries > Connection <edgedb_client_connection>` for guidance.
+If you're using ``edgedb project init``, this is automatically handled for you.
+Otherwise, you'll need to explicitly pass connection information via environment
+variables or CLI flags, just like any other CLI command. See :ref:`Client
+Libraries > Connection <edgedb_client_connection>` for guidance.
 
 .. _edgedb_qb_target:
 
 Targets
 ^^^^^^^
 
-All generators look at your environment and guess what kind of
-files to generate (``.ts`` vs ``.js + .d.ts``) and what module system to use
-(CommonJS vs ES modules). You can override this with the ``--target`` flag.
+All generators look at your environment and guess what kind of files to generate
+(``.ts`` vs ``.js + .d.ts``) and what module system to use (CommonJS vs ES
+modules). You can override this with the ``--target`` flag.
 
 .. list-table::
 
@@ -142,9 +105,3 @@ To see helptext for the ``@edgedb/generate`` command, run the following.
 .. code-block:: bash
 
   $ npx @edgedb/generate --help
-
-
-Or read the full documentation for each generator:
-
-- :ref:`Query files <edgedb-js-queries>`
-- :ref:`Query builder <edgedb-js-qb>`
