@@ -153,7 +153,7 @@ We can now seed the database by running this script with ``tsx``
 
   $ npx tsx seed.ts
 
-Feel free to explore the database in the EdgeDB UI, where you will find the new
+Feel free to explore the database in the :ref:`EdgeDB UI <ref_cli_edgedb_ui>`, where you will find the new
 data you inserted through this script, as well as any data you inserted when
 running the Quickstart.
 
