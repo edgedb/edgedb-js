@@ -1,8 +1,12 @@
 import type * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
-import { getMoviesStarring } from "../dbschema/queries";
-import { setupTests, teardownTests, TestData } from "./setupTeardown";
+import {
+  getMoviesStarring,
+  type GetMoviesStarringArgs,
+  type GetMoviesStarringReturns,
+} from "../dbschema/queries";
+import { setupTests, teardownTests } from "./setupTeardown";
 let client: edgedb.Client;
 
 beforeAll(async () => {
@@ -45,4 +49,15 @@ test("basic select", async () => {
   >(true);
 
   expect(result.length).toEqual(2);
+
+  tc.assert<
+    tc.IsExact<
+      GetMoviesStarringArgs,
+      {
+        name?: string | null;
+      }
+    >
+  >(true);
+
+  tc.assert<tc.IsExact<GetMoviesStarringReturns, result>>(true);
 });

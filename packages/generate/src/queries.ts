@@ -1,7 +1,7 @@
 import { $, adapter, createClient, createHttpClient } from "edgedb";
 import type { ConnectConfig } from "edgedb/dist/conUtils";
 import { Cardinality } from "edgedb/dist/ifaces";
-import { CommandOptions, getPackageVersion } from "./commandutil";
+import { type CommandOptions, getPackageVersion } from "./commandutil";
 import type { Target } from "./genutil";
 
 // generate per-file queries
@@ -208,6 +208,8 @@ function generateFiles(params: {
     .replace(/\.edgeql$/, "")
     .replace(/-[A-Za-z]/g, (m) => m[1].toUpperCase())
     .replace(/^[^A-Za-z_]|\W/g, "_");
+  const interfaceName =
+    functionName.charAt(0).toUpperCase() + functionName.slice(1);
   const imports: any = {};
   for (const i of params.types.imports) {
     imports[i] = true;
@@ -221,7 +223,11 @@ function generateFiles(params: {
   return client.${method}(\`${params.types.query
     .trim()
     .replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
-}`;
+
+}
+${hasArgs ? `\nexport type ${interfaceName}Args = ${params.types.args};` : ""}
+export type ${interfaceName}Returns = ${params.types.result};
+`;
 
   const jsImpl = `async function ${functionName}(client${
     hasArgs ? `, args` : ""
