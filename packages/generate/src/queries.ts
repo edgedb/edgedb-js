@@ -210,36 +210,45 @@ function generateFiles(params: {
     .replace(/^[^A-Za-z_]|\W/g, "_");
   const interfaceName =
     functionName.charAt(0).toUpperCase() + functionName.slice(1);
+  const argsInterfaceName = `${interfaceName}Args`;
+  const returnsInterfaceName = `${interfaceName}Returns`;
+  const hasArgs = params.types.args && params.types.args !== "null";
+  const queryDefs = `\
+${hasArgs ? `export type ${argsInterfaceName} = ${params.types.args};\n` : ""}
+export type ${returnsInterfaceName} = ${params.types.result};\
+`;
   const imports: any = {};
   for (const i of params.types.imports) {
     imports[i] = true;
   }
   const tsImports = { Executor: true, ...imports };
 
-  const hasArgs = params.types.args && params.types.args !== "null";
-  const tsImpl = `async function ${functionName}(client: Executor${
-    hasArgs ? `, args: ${params.types.args}` : ""
-  }): Promise<${params.types.result}> {
-  return client.${method}(\`${params.types.query
+  const tsImpl = `${queryDefs}
+
+export async function ${functionName}(client: Executor${
+    hasArgs ? `, args: ${argsInterfaceName}` : ""
+  }): Promise<${returnsInterfaceName}> {
+  return client.${method}(\`\\
+${params.types.query
     .trim()
     .replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
-
 }
-${hasArgs ? `\nexport type ${interfaceName}Args = ${params.types.args};` : ""}
-export type ${interfaceName}Returns = ${params.types.result};
 `;
 
   const jsImpl = `async function ${functionName}(client${
     hasArgs ? `, args` : ""
   }) {
-  return client.${method}(\`${params.types.query.replace(/`/g, "\\`")}\`${
+  return client.${method}(\`\\
+${params.types.query.replace(/`/g, "\\`")}\`${
     hasArgs ? `, args` : ""
   });
 }`;
 
-  const dtsImpl = `function ${functionName}(client: Executor${
-    hasArgs ? `, args: ${params.types.args}` : ""
-  }): Promise<${params.types.result}>;`;
+  const dtsImpl = `${queryDefs}
+
+export function ${functionName}(client: Executor${
+    hasArgs ? `, args: ${argsInterfaceName}` : ""
+  }): Promise<${returnsInterfaceName}>;`;
 
   switch (params.target) {
     case "cjs":
@@ -252,7 +261,7 @@ export type ${interfaceName}Returns = ${params.types.result};
         },
         {
           path: `${params.path}.d.ts`,
-          contents: `export ${dtsImpl}`,
+          contents: dtsImpl,
           imports: tsImports,
           extension: ".d.ts",
         },
@@ -262,7 +271,7 @@ export type ${interfaceName}Returns = ${params.types.result};
       return [
         {
           path: `${params.path}.ts`,
-          contents: `export ${tsImpl}`,
+          contents: tsImpl,
           imports: tsImports,
           extension: ".ts",
         },
@@ -277,7 +286,7 @@ export type ${interfaceName}Returns = ${params.types.result};
         },
         {
           path: `${params.path}.d.ts`,
-          contents: `export ${dtsImpl}`,
+          contents: dtsImpl,
           imports: tsImports,
           extension: ".d.ts",
         },
@@ -286,7 +295,7 @@ export type ${interfaceName}Returns = ${params.types.result};
       return [
         {
           path: `${params.path}.mts`,
-          contents: `export ${tsImpl}`,
+          contents: tsImpl,
           imports: tsImports,
           extension: ".mts",
         },
@@ -295,7 +304,7 @@ export type ${interfaceName}Returns = ${params.types.result};
       return [
         {
           path: `${params.path}.ts`,
-          contents: `export ${tsImpl}`,
+          contents: tsImpl,
           imports: tsImports,
           extension: ".ts",
         },
