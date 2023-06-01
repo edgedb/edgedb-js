@@ -37,8 +37,8 @@ or Deno backend.
 Installation
 ============
 
-The database driver and optional (but recommended!) generators are published to
-npm and deno.land, and can be installed with your package manager of choice.
+You can install the published database driver and optional (but recommended!)
+generators from npm and deno.land using your package manager of choice.
 
 .. tabs::
 
@@ -153,8 +153,9 @@ We can now seed the database by running this script with ``tsx``
 
   $ npx tsx seed.ts
 
-Feel free to explore the database in the EdgeDB UI. You should see this new
-data, and any data you inserted when running the Quickstart.
+Feel free to explore the database in the EdgeDB UI, where you will find the new
+data you inserted through this script, as well as any data you inserted when
+running the Quickstart.
 
 Query
 ^^^^^
@@ -248,7 +249,8 @@ we'll run the ``queries`` generator:
 
   $ npx @edgedb/generate queries --file
 
-Now, let's update our query script to call the generated function:
+Now, let's update our query script to call the generated function, which will
+provide us with type-safe querying.
 
 .. code-block:: typescript
   :caption: query.ts
