@@ -217,6 +217,9 @@ function generateFiles(params: {
 ${hasArgs ? `export type ${argsInterfaceName} = ${params.types.args};\n` : ""}
 export type ${returnsInterfaceName} = ${params.types.result};\
 `;
+  const functionBody = `\
+${params.types.query.trim().replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
+`;
   const imports: any = {};
   for (const i of params.types.imports) {
     imports[i] = true;
@@ -229,9 +232,7 @@ export async function ${functionName}(client: Executor${
     hasArgs ? `, args: ${argsInterfaceName}` : ""
   }): Promise<${returnsInterfaceName}> {
   return client.${method}(\`\\
-${params.types.query
-    .trim()
-    .replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
+${functionBody}
 }
 `;
 
@@ -239,9 +240,7 @@ ${params.types.query
     hasArgs ? `, args` : ""
   }) {
   return client.${method}(\`\\
-${params.types.query.replace(/`/g, "\\`")}\`${
-    hasArgs ? `, args` : ""
-  });
+${functionBody}
 }`;
 
   const dtsImpl = `${queryDefs}
