@@ -38,7 +38,7 @@ Installation
 ============
 
 You can install the published database driver and optional (but recommended!)
-generators from npm and deno.land using your package manager of choice.
+generators from npm using your package manager of choice.
 
 .. tabs::
 
