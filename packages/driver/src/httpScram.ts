@@ -16,39 +16,6 @@ import {
 
 const AUTH_ENDPOINT = "/auth/token";
 
-function utf8ToB64(str: string): string {
-  return encodeB64(utf8Encoder.encode(str));
-}
-
-function b64ToUtf8(str: string): string {
-  return utf8Decoder.decode(decodeB64(str));
-}
-
-/**
- * Parses SCRAM-SHA-256 authentication parameters from a string.
- * @param authParamsString a string of comma-separated key-value pairs
- * @returns an object with `sid` and `data` properties, decoded string or `null` when not present
- */
-function parseSidAndData(paramsStr: string): {
-  sid: string | null;
-  data: string | null;
-} {
-  const params = new Map(
-    paramsStr.length > 0
-      ? paramsStr
-          .split(",")
-          .map((attr) => attr.split(/=(.+)?/, 2)) // split on first '=' only; nb, `.split("=", 2)` doesn't do that
-          .map(([key, val]) => [key.trim(), val.trim()])
-      : []
-  );
-
-  const sid = params.get("sid") ?? null;
-  const rawData = params.get("data");
-  const data = rawData ? b64ToUtf8(rawData) : null;
-
-  return { sid, data };
-}
-
 export async function HTTPSCRAMAuth(
   baseUrl: string,
   username: string,
@@ -94,7 +61,7 @@ export async function HTTPSCRAMAuth(
     throw new ProtocolError(`authentication failed: ${body}`);
   }
 
-  const { sid, data: serverFirst } = parseSidAndData(authParams);
+  const { sid, data: serverFirst } = parseScramAttrs(authParams);
   if (!sid || !serverFirst) {
     throw new ProtocolError(
       `authentication challenge missing '${!sid ? "sid" : "data"}' attribute`
@@ -126,7 +93,7 @@ export async function HTTPSCRAMAuth(
     throw new ProtocolError(`authentication failed: ${body}`);
   }
 
-  const { data: serverFinal, sid: sidFinal } = parseSidAndData(authInfoHeader);
+  const { data: serverFinal, sid: sidFinal } = parseScramAttrs(authInfoHeader);
   if (!sidFinal || !serverFinal) {
     throw new ProtocolError(
       `authentication info missing '${!sidFinal ? "sid" : "data"}' attribute`
@@ -144,4 +111,32 @@ export async function HTTPSCRAMAuth(
 
   const authToken = await serverFinalRes.text();
   return authToken;
+}
+
+function utf8ToB64(str: string): string {
+  return encodeB64(utf8Encoder.encode(str));
+}
+
+function b64ToUtf8(str: string): string {
+  return utf8Decoder.decode(decodeB64(str));
+}
+
+function parseScramAttrs(paramsStr: string): {
+  sid: string | null;
+  data: string | null;
+} {
+  const params = new Map(
+    paramsStr.length > 0
+      ? paramsStr
+          .split(",")
+          .map((attr) => attr.split(/=(.+)?/, 2)) // split on first '=' only; nb, `.split("=", 2)` doesn't do that
+          .map(([key, val]) => [key.trim(), val.trim()])
+      : []
+  );
+
+  const sid = params.get("sid") ?? null;
+  const rawData = params.get("data");
+  const data = rawData ? b64ToUtf8(rawData) : null;
+
+  return { sid, data };
 }
