@@ -185,6 +185,26 @@ Insert an object
   // { id: string }
   // by default INSERT only returns the id of the new object
 
+.. _edgedb-js-qb-transaction:
+
+Transaction
+^^^^^^^^^^^
+
+We can also run the same query as above, build with the query builder, in a
+transaction.
+
+.. code-block:: typescript
+
+  const query = e.insert(e.Movie, {
+    title: 'Doctor Strange 2',
+    release_year: 2022
+  });
+
+  await client.transaction(async (tx) => {
+    const result = await query.run(tx);
+    // { id: string }
+  });
+
 
 Select objects
 ^^^^^^^^^^^^^^
