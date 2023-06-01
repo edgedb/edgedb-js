@@ -27,9 +27,6 @@ jobs:
             edgedb-version: "nightly"
           - os: ubuntu-latest
             node-version: "18"
-            edgedb-version: "1.4"
-          - os: ubuntu-latest
-            node-version: "18"
             edgedb-version: "2"
           - os: macos-latest
             node-version: "18"
@@ -95,6 +92,12 @@ jobs:
         uses: edgedb/setup-edgedb@8bc9e10005674ec772652b86e1fdd476e6462284
         with:
           server-version: ${{ matrix.edgedb-version }}
+          project-dir: ./packages/generate
+
+      - name: Show actual EdgeDB server version
+        run: |
+          cd packages/generate
+          echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()') >> $GITHUB_ENV
 
       - name: Run query builder tests
         if: ${{ matrix.node-version >= 16 && matrix.edgedb-version != '1.4'}}
