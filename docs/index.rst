@@ -294,6 +294,18 @@ First, we'll run the query builder generator:
 
   $ npx @edgedb/generate edgeql-js
 
+.. note:: Version control
+
+  The first time you run the generator, you'll be prompted to add the generated
+  files to your ``.gitignore``. Confirm this prompt to automatically add a line
+  to your ``.gitignore`` that excludes the generated files.
+
+  For consistency, we recommend omitting the generated files from version
+  control and re-generating them as part of your deployment process. However,
+  there may be circumstances where checking the generated files into version
+  control is desirable, e.g. if you are building Docker images that must contain
+  the full source code of your application.
+
 Now, we can import the generated query builder and express our query completely
 in TypeScript, getting editor completion, type checking, and type inferrence:
 
