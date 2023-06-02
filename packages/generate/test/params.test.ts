@@ -1,13 +1,7 @@
 import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql-js";
-import {
-  setupTests,
-  teardownTests,
-  tc,
-  testIfVersionGTE,
-  versionGTE,
-} from "./setupTeardown";
+import { setupTests, teardownTests, tc, versionGTE } from "./setupTeardown";
 
 let client: edgedb.Client;
 
@@ -283,7 +277,7 @@ SELECT (SELECT __param__test)`
     assert.deepEqual(Object.values(complexResult.tuple), Object.values(args));
   });
 
-  testIfVersionGTE(2)("v2 param types", async () => {
+  test("v2 param types", async () => {
     const params = {
       date_duration: e.cal.date_duration,
     };
@@ -305,11 +299,7 @@ SELECT (SELECT __param__test)`
       >
     >(true);
 
-    assert.deepEqual(result, {
-      // @ts-expect-error result includes an id
-      id: result.id,
-      ...args,
-    });
+    assert.deepEqual(result, args);
   });
 
   test("non-runnable return expression", () => {

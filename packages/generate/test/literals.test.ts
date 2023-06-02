@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
 import { TypeKind } from "edgedb/dist/reflection";
 import e from "../dbschema/edgeql-js";
-import { setupTests, testIfVersionGTE } from "./setupTeardown";
+import { setupTests } from "./setupTeardown";
 
 describe("literals", () => {
   test("literals", () => {
@@ -114,7 +114,7 @@ describe("literals", () => {
     assert.throws(() => e.literal(e.Genre, "NotAGenre" as "Horror").toEdgeQL());
   });
 
-  testIfVersionGTE(2)("constructing with strings", async () => {
+  test("constructing with strings", async () => {
     const { client } = await setupTests();
 
     const dateString = new Date().toISOString();
