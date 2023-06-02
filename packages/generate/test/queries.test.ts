@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import type * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
-import { getMoviesStarring } from "../dbschema/queries";
+import {
+  getMoviesStarring,
+  type GetMoviesStarringArgs,
+  type GetMoviesStarringReturns,
+} from "../dbschema/queries";
 import { setupTests, teardownTests } from "./setupTeardown";
 
 describe("queries", () => {
@@ -48,5 +52,16 @@ describe("queries", () => {
     >(true);
 
     assert.equal(result.length, 2);
+
+    tc.assert<
+      tc.IsExact<
+        GetMoviesStarringArgs,
+        {
+          name?: string | null;
+        }
+      >
+    >(true);
+
+    tc.assert<tc.IsExact<GetMoviesStarringReturns, result>>(true);
   });
 });
