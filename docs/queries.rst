@@ -96,15 +96,24 @@ The generated file will look something like this:
 
 .. code-block:: typescript
 
-  import type {Client} from "edgedb";
+  import type { Client } from "edgedb";
+
+  export type GetUserArgs = {
+    user_id: string;
+  };
+
+  export type GetUserReturns = {
+    name: string;
+    email: string;
+  } | null;
 
   export async function getUser(
     client: Client,
-    params: { user_id: string }
-  ): Promise<{ name: string, email: string } | null> {
+    args: GetUserArgs
+  ): Promise<GetUserReturns> {
     return await client.querySingle(
       `select User { name, email } filter .id = <uuid>$user_id;`,
-      params
+      args
     );
   }
 
@@ -113,23 +122,31 @@ Some things to note:
 - The first argument is a ``Client`` instance. This is the same client you would use to execute a query manually. You can use the same client for both manual and generated queries.
 - The second argument is a parameter object. The keys of this object are the names of the parameters in the query.
 - The code uses the ``querySingle`` method, since the query is only expected to return a single result.
+- We export the type of the parameter object and the return value unwrapped from the promise.
 
 We can now use this function in our code.
 
 .. code-block:: typescript
 
-  import {getUser} from "./queries/getUser.query";
-  import {createClient} from "edgedb";
+  import { getUser } from "./queries/getUser.query";
+  import {
+    createClient,
+    type GetUserArgs,
+    type GetUserReturns,
+  } from "edgedb";
 
   const client = await createClient();
 
-  const user = await getUser(client, {
+  const newUser: GetUserArgs = {
     user_id: "00000000-0000-0000-0000-000000000000"
-  });
+  };
 
+  const user = await getUser(client, newUser); // GetUserReturns
 
-  user.name; // string
-  user.email; // string
+  if (user) {
+    user.name; // string
+    user.email; // string
+  }
 
 
 Single-file mode
