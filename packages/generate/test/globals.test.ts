@@ -4,7 +4,7 @@ import { $ } from "edgedb";
 
 import e from "../dbschema/edgeql-js";
 
-import { setupTests, teardownTests, testIfVersionGTE } from "./setupTeardown";
+import { setupTests, teardownTests } from "./setupTeardown";
 
 describe("globals", () => {
   let client: edgedb.Client;
@@ -18,7 +18,7 @@ describe("globals", () => {
     await teardownTests(client);
   });
 
-  testIfVersionGTE(2)("globals", async () => {
+  test("globals", async () => {
     assert.equal(
       e.select(e.global.uuid_global).toEdgeQL(),
       `SELECT (GLOBAL default::uuid_global)`
