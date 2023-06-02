@@ -224,7 +224,7 @@ in the JavaScript type system, so we've implemented classes like
   * - ``bigint``
     - ``BigInt``
   * - ``decimal``
-    - N/A (not supported)
+    - ``string``
   * - ``bytes``
     - ``Uint8Array``
   * - ``datetime``
