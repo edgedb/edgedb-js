@@ -197,6 +197,8 @@ function generateFiles(params: {
   extension: string;
 }[] {
   const queryFileName = adapter.path.basename(params.path);
+  const baseFileName = queryFileName.replace(/\.edgeql$/, "");
+  const outputBaseFileName = `${baseFileName}.query`;
 
   const method =
     params.types.cardinality === Cardinality.ONE
@@ -204,8 +206,7 @@ function generateFiles(params: {
       : params.types.cardinality === Cardinality.AT_MOST_ONE
       ? "querySingle"
       : "query";
-  const functionName = queryFileName
-    .replace(/\.edgeql$/, "")
+  const functionName = baseFileName
     .replace(/-[A-Za-z]/g, (m) => m[1].toUpperCase())
     .replace(/^[^A-Za-z_]|\W/g, "_");
   const imports: any = {};
@@ -239,13 +240,13 @@ function generateFiles(params: {
     case "cjs":
       return [
         {
-          path: `${params.path}.js`,
+          path: `${outputBaseFileName}.js`,
           contents: `${jsImpl}\n\nmodule.exports.${functionName} = ${functionName};`,
           imports: {},
           extension: ".js",
         },
         {
-          path: `${params.path}.d.ts`,
+          path: `${outputBaseFileName}.d.ts`,
           contents: `export ${dtsImpl}`,
           imports: tsImports,
           extension: ".d.ts",
@@ -255,7 +256,7 @@ function generateFiles(params: {
     case "deno":
       return [
         {
-          path: `${params.path}.ts`,
+          path: `${outputBaseFileName}.ts`,
           contents: `export ${tsImpl}`,
           imports: tsImports,
           extension: ".ts",
@@ -264,13 +265,13 @@ function generateFiles(params: {
     case "esm":
       return [
         {
-          path: `${params.path}.mjs`,
+          path: `${outputBaseFileName}.mjs`,
           contents: `export ${jsImpl}`,
           imports: {},
           extension: ".mjs",
         },
         {
-          path: `${params.path}.d.ts`,
+          path: `${outputBaseFileName}.d.ts`,
           contents: `export ${dtsImpl}`,
           imports: tsImports,
           extension: ".d.ts",
@@ -279,7 +280,7 @@ function generateFiles(params: {
     case "mts":
       return [
         {
-          path: `${params.path}.mts`,
+          path: `${outputBaseFileName}.mts`,
           contents: `export ${tsImpl}`,
           imports: tsImports,
           extension: ".mts",
@@ -288,7 +289,7 @@ function generateFiles(params: {
     case "ts":
       return [
         {
-          path: `${params.path}.ts`,
+          path: `${outputBaseFileName}.ts`,
           contents: `export ${tsImpl}`,
           imports: tsImports,
           extension: ".ts",

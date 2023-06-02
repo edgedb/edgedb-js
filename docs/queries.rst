@@ -60,13 +60,18 @@ The following command will run the ``queries`` generator.
 
     $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts queries
 
-The generator will detect the project root by looking for an ``edgedb.toml``, then scan the directory for ``*.edgeql`` files. In this case, there's only one: ``queries/getUser.edgeql``.
+The generator will detect the project root by looking for an ``edgedb.toml``,
+then scan the directory for ``*.edgeql`` files. In this case, there's only one:
+``queries/getUser.edgeql``.
 
 .. code-block:: text
 
   select User { name, email } filter .id = <uuid>$user_id;
 
-For each ``.edgeql`` file, the generator will read the contents and send the query to the database, which returns type information about its parameters and return type. The generator uses this information to create a new file ``getUser.edgeql.ts`` alongside the original ``getUser.edgeql`` file.
+For each ``.edgeql`` file, the generator will read the contents and send the
+query to the database, which returns type information about its parameters and
+return type. The generator uses this information to create a new file
+``getUser.query.ts`` alongside the original ``getUser.edgeql`` file.
 
 .. code-block:: text
 
@@ -77,12 +82,15 @@ For each ``.edgeql`` file, the generator will read the contents and send the que
   ├── dbschema
   └── queries
       └── getUser.edgeql
-      └── getUser.edgeql.ts    <-- generated file
+      └── getUser.query.ts    <-- generated file
 
 
 .. note::
 
-  This example assumes you are using TypeScript. The generator tries to auto-detect the language you're using; you can also specify the language with the ``--target`` flag. See the :ref:`Targets <edgedb_qb_target>` section for more information.
+  This example assumes you are using TypeScript. The generator tries to
+  auto-detect the language you're using; you can also specify the language with
+  the ``--target`` flag. See the :ref:`Targets <edgedb_qb_target>` section for
+  more information.
 
 The generated file will look something like this:
 
@@ -110,7 +118,7 @@ We can now use this function in our code.
 
 .. code-block:: typescript
 
-  import {getUser} from "./queries/getUser.edgeql";
+  import {getUser} from "./queries/getUser.query";
   import {createClient} from "edgedb";
 
   const client = await createClient();
