@@ -299,11 +299,7 @@ SELECT (SELECT __param__test)`
       >
     >(true);
 
-    assert.deepEqual(result, {
-      // @ts-expect-error result includes an id
-      id: result.id,
-      ...args,
-    });
+    assert.deepEqual(result, args);
   });
 
   test("non-runnable return expression", () => {
