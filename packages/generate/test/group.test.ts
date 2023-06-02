@@ -1,27 +1,33 @@
+import assert from "node:assert/strict";
 import type * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
-import e, { $infer } from "../dbschema/edgeql-js";
+import e, { type $infer } from "../dbschema/edgeql-js";
 import {
   setupTests,
   teardownTests,
-  TestData,
+  type TestData,
   versionGTE,
 } from "./setupTeardown";
 
-let client: edgedb.Client;
-let data: TestData;
+describe("group", () => {
+  let client: edgedb.Client;
+  let data: TestData;
 
-beforeAll(async () => {
-  const setup = await setupTests();
-  ({ client, data } = setup);
-});
+  beforeAll(async () => {
+    const setup = await setupTests();
+    ({ client, data } = setup);
+  });
 
-afterAll(async () => {
-  await teardownTests(client);
-});
+  afterAll(async () => {
+    await teardownTests(client);
+  });
 
-if (versionGTE(2)) {
+  if (!versionGTE(2)) {
+    return test.skip("group requires EdgeDB 2+", () => {
+      assert.ok(true);
+    });
+  }
   test("basic group", async () => {
     const query = e.group(e.Movie, (movie) => {
       const release_year = movie.release_year;
@@ -58,19 +64,13 @@ if (versionGTE(2)) {
       >
     >(true);
 
-    expect(result).toMatchObject([
-      {
-        grouping: ["release_year"],
-      },
-      {
-        grouping: ["release_year"],
-      },
-    ]);
-    expect(result.length).toEqual(2);
-    expect(result[0].elements.length).toEqual(1);
-    expect(result[0].elements[0].title).toBeDefined();
-    expect(result[1].elements[0].release_year).toBeDefined();
-    expect(result[1].elements[0].characters[0].name).toBeDefined();
+    assert.equal(result.length, 2);
+    assert.equal(result[0].grouping[0], "release_year");
+    assert.equal(result[1].grouping[0], "release_year");
+    assert.equal(result[0].elements.length, 1);
+    assert.ok(result[0].elements[0].title);
+    assert.ok(result[1].elements[0].release_year);
+    assert.ok(result[1].elements[0].characters[0].name);
   });
 
   test("group nested select", async () => {
@@ -112,16 +112,12 @@ if (versionGTE(2)) {
       >
     >(true);
 
-    expect(result).toMatchObject([
-      {
-        grouping: ["release_year"],
-      },
-    ]);
-    expect(result.length).toEqual(1);
-    expect(result[0].elements.length).toEqual(1);
-    expect(result[0].elements[0].title).toBeDefined();
-    expect(result[0].elements[0].release_year).toBeDefined();
-    expect(result[0].elements[0].characters[0].name).toBeDefined();
+    assert.equal(result.length, 1);
+    assert.equal(result[0].grouping[0], "release_year");
+    assert.equal(result[0].elements.length, 1);
+    assert.ok(result[0].elements[0].title);
+    assert.ok(result[0].elements[0].release_year);
+    assert.ok(result[0].elements[0].characters[0].name);
   });
 
   test("multiple keys", async () => {
@@ -154,17 +150,21 @@ if (versionGTE(2)) {
       >
     >(true);
 
-    expect(result.length).toEqual(2);
-    expect(result[0].elements.length).toEqual(1);
-    expect(
-      result.filter((val) => val.key.title === data.civil_war.title)[0]
-    ).toMatchObject({
+    assert.equal(result.length, 2);
+    assert.equal(result[0].elements.length, 1);
+    const civilWar = result.find(
+      (val) => val.key.title === data.civil_war.title
+    );
+    assert.deepEqual(civilWar, {
+      ...civilWar,
       key: { title: data.civil_war.title, ry: data.civil_war.release_year },
       grouping: ["title", "ry"],
     });
-    expect(
-      result.filter((val) => val.key.title === data.the_avengers.title)[0]
-    ).toMatchObject({
+    const theAvengers = result.find(
+      (val) => val.key.title === data.the_avengers.title
+    );
+    assert.deepEqual(theAvengers, {
+      ...theAvengers,
       key: {
         title: data.the_avengers.title,
         ry: data.the_avengers.release_year,
@@ -189,18 +189,10 @@ if (versionGTE(2)) {
       };
     });
 
-    // TODO: switch back after https://github.com/edgedb/edgedb/issues/3967
-    // is fixed
-    //   expect(query.toEdgeQL()).toEqual(`WITH
-    //   __scope_0_defaultMovie := DETACHED default::Movie
-    // GROUP __scope_0_defaultMovie
-    // USING
-    //   __withVar_1 := std::len(__scope_0_defaultMovie.title),
-    //   title1 := __withVar_1,
-    //   title2 := __withVar_1,
-    //   title3 := __withVar_1
-    // BY title1, title2, title3`);
-    expect(query.toEdgeQL()).toEqual(`WITH
+    assert.equal(
+      query.toEdgeQL(),
+      `\
+WITH
   __scope_0_defaultMovie_expr := DETACHED default::Movie,
   __scope_0_defaultMovie := (FOR __scope_0_defaultMovie_inner IN {__scope_0_defaultMovie_expr} UNION (
     WITH
@@ -225,7 +217,8 @@ SELECT __scope_0_defaultMovie_groups {
     release_year,
     single len := __scope_0_defaultMovie_groups.elements.__withVar_1
   }
-}`);
+}`
+    );
 
     const result = await query.run(client);
     type result = typeof result;
@@ -247,11 +240,11 @@ SELECT __scope_0_defaultMovie_groups {
         }[]
       >
     >(true);
-    expect(result.length).toEqual(2);
-    expect(result[0].elements[0].title).toBeDefined();
-    expect(result[1].elements[0].release_year).toBeDefined();
-    expect(result[1].elements[0].len).toBeDefined();
-    expect(result[0].grouping).toEqual(["title1", "title2", "title3"]);
+    assert.equal(result.length, 2);
+    assert.ok(result[0].elements[0].title);
+    assert.ok(result[1].elements[0].release_year);
+    assert.ok(result[1].elements[0].len);
+    assert.deepEqual(result[0].grouping, ["title1", "title2", "title3"]);
   });
 
   test("grouping set", async () => {
@@ -270,14 +263,12 @@ SELECT __scope_0_defaultMovie_groups {
     });
 
     const result = await query.run(client);
-    expect(result.length).toEqual(4);
-    expect(result).toMatchObject([
-      { grouping: ["title", "year"] },
-      { grouping: ["title", "year"] },
-      { grouping: ["title", "rating"] },
-      { grouping: ["title", "rating"] },
-    ]);
-    expect(result[0].elements.length).toEqual(1);
+    assert.equal(result.length, 4);
+    assert.deepEqual(result[0].grouping, ["title", "year"]);
+    assert.deepEqual(result[1].grouping, ["title", "year"]);
+    assert.deepEqual(result[2].grouping, ["title", "rating"]);
+    assert.deepEqual(result[3].grouping, ["title", "rating"]);
+    assert.equal(result[0].elements.length, 1);
   });
 
   test("grouping tuples", async () => {
@@ -297,16 +288,12 @@ SELECT __scope_0_defaultMovie_groups {
     });
 
     const result = await query.run(client);
-    expect(
-      query.toEdgeQL().includes(`BY (title, len), (year, rating)`)
-    ).toEqual(true);
-    expect(result[0].grouping).toMatchObject([
-      "title",
-      "len",
-      "year",
-      "rating",
-    ]);
-    expect(result.length).toEqual(2);
+    assert.equal(
+      query.toEdgeQL().includes(`BY (title, len), (year, rating)`),
+      true
+    );
+    assert.deepEqual(result[0].grouping, ["title", "len", "year", "rating"]);
+    assert.equal(result.length, 2);
   });
 
   test("cube", async () => {
@@ -323,10 +310,8 @@ SELECT __scope_0_defaultMovie_groups {
     });
 
     const result = await query.run(client);
-    expect(query.toEdgeQL().includes(`BY cube(title, len, year)`)).toEqual(
-      true
-    );
-    expect(result.length).toEqual(15);
+    assert.equal(query.toEdgeQL().includes(`BY cube(title, len, year)`), true);
+    assert.equal(result.length, 15);
   });
 
   test("rollup", async () => {
@@ -343,10 +328,11 @@ SELECT __scope_0_defaultMovie_groups {
     });
 
     const result = await query.run(client);
-    expect(query.toEdgeQL().includes(`BY rollup(title, len, year)`)).toEqual(
+    assert.equal(
+      query.toEdgeQL().includes(`BY rollup(title, len, year)`),
       true
     );
-    expect(
+    assert.equal(
       result
         .map((r) => r.grouping)
         .every((g) => {
@@ -355,13 +341,14 @@ SELECT __scope_0_defaultMovie_groups {
             (!g[1] || g[1] === "len") &&
             (!g[2] || g[2] === "year")
           );
-        })
-    ).toEqual(true);
-    expect(result.length).toEqual(7);
+        }),
+      true
+    );
+    assert.equal(result.length, 7);
   });
 
   test("key override error", async () => {
-    expect(() =>
+    assert.throws(() =>
       e.group(e.Movie, (movie) => {
         return {
           by: {
@@ -374,7 +361,7 @@ SELECT __scope_0_defaultMovie_groups {
           },
         };
       })
-    ).toThrow();
+    );
   });
 
   // clause ordering in `using`
@@ -395,30 +382,6 @@ SELECT __scope_0_defaultMovie_groups {
       };
     });
     const result = await query.run(client);
-    expect(result[0].grouping).toEqual(["ccc", "ccc2", "len", "len2"]);
+    assert.deepEqual(result[0].grouping, ["ccc", "ccc2", "len", "len2"]);
   });
-
-  // depends on https://github.com/edgedb/edgedb/issues/3951
-  // test("composition", async () => {
-  //   const group = e.group(e.Movie, movie => ({
-  //     by: {ry: movie.release_year},
-  //   }));
-
-  //   const query = e.select(group, () => ({
-  //     grouping: true,
-  //     key: {ry: true},
-  //     elements: {
-  //       title: true,
-  //       release_year: true,
-  //     },
-  //   }));
-
-  //   const result = await query.run(client);
-
-  //   expect(result.length).toEqual(2);
-  //   expect(result[0].elements[0].title).toBeDefined();
-  //   expect(result[1].elements[0].release_year).toBeDefined();
-  // });
-} else {
-  test.skip("group only supported in EdgeDB v2", () => {});
-}
+});

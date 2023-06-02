@@ -1,165 +1,172 @@
+import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
 import e from "../dbschema/edgeql-js";
 import type { getSharedParentPrimitiveVariadic } from "../dbschema/edgeql-js/syntax";
 import { setupTests, tc, teardownTests } from "./setupTeardown";
 
-let client: edgedb.Client;
-
-beforeAll(async () => {
-  const setup = await setupTests();
-  ({ client } = setup);
-});
-
-afterAll(async () => {
-  await teardownTests(client);
-});
-
-test("primitive types", () => {
-  expect(e.int16.__name__).toEqual("std::int16");
-  expect(e.int32.__name__).toEqual("std::int32");
-  expect(e.int64.__name__).toEqual("std::int64");
-  expect(e.float32.__name__).toEqual("std::float32");
-  expect(e.float64.__name__).toEqual("std::float64");
-  expect(e.str.__name__).toEqual("std::str");
-});
-
-test("collection types", () => {
-  const arrayType = e.array(e.str);
-  expect(arrayType.__name__).toEqual("array<std::str>");
-  const named = e.tuple({ str: e.str });
-  expect(named.__name__).toEqual("tuple<str: std::str>");
-  expect(named.__shape__.str.__name__).toEqual("std::str");
-  const unnamed = e.tuple([e.str, e.int64]);
-  expect(unnamed.__name__).toEqual("tuple<std::str, std::int64>");
-  expect(unnamed.__items__[0].__name__).toEqual("std::str");
-  expect(unnamed.__items__[1].__name__).toEqual("std::int64");
-});
-
-test("scalar type merging", () => {
-  type _t1 = getSharedParentPrimitiveVariadic<
-    [typeof e.std.str, typeof e.std.str]
-  >;
-  tc.assert<tc.IsExact<_t1, typeof e.std.str>>(true);
-  type _t2 = getSharedParentPrimitiveVariadic<
-    [typeof e.std.str, typeof e.std.int32]
-  >;
-  tc.assert<tc.IsExact<_t2, never>>(true);
-});
-
-test("range primitives", async () => {
-  const range = new edgedb.Range(3, 8);
-  const lowerRange = new edgedb.Range(3, null);
-  const upperRange = new edgedb.Range(null, 8);
-  const dateRange = new edgedb.Range(
-    new Date("2022-07-05T14:00:00Z"),
-    new Date("2022-07-05T16:00:00Z")
-  );
-
-  expect(e.std.range(range).toEdgeQL()).toEqual(
-    `std::range(3, 8, inc_lower := true, inc_upper := false)`
-  );
-  expect(e.std.range(lowerRange).toEdgeQL()).toEqual(
-    `std::range(3, <std::int64>{}, inc_lower := true, inc_upper := false)`
-  );
-  expect(e.std.range(upperRange).toEdgeQL()).toEqual(
-    `std::range(<std::int64>{}, 8, inc_lower := true, inc_upper := false)`
-  );
-  expect(e.std.range(dateRange).toEdgeQL()).toEqual(
-    `std::range(<std::datetime>'2022-07-05T14:00:00.000Z', <std::datetime>'2022-07-05T16:00:00.000Z', inc_lower := true, inc_upper := false)`
-  );
-
-  expect(e.range(3, 8).toEdgeQL()).toEqual(`std::range(3, 8)`);
-  expect(e.range(3).toEdgeQL()).toEqual(`std::range(3)`);
-  expect(e.range(undefined, 8).toEdgeQL()).toEqual(
-    `std::range(<std::float64>{}, 8)`
-  );
-
-  expect(() => e.range(new edgedb.Range(null, null))).toThrow();
-  expect(() => e.range(edgedb.Range.empty())).toThrow();
-
-  const res = await e
-    .select({
-      range: e.range(range),
-      lowerRange: e.range(lowerRange),
-      upperRange: e.range(upperRange),
-      dateRange: e.range(dateRange),
-    })
-    .run(client);
-
-  tc.assert<
-    tc.IsExact<
-      typeof res,
-      {
-        range: edgedb.Range<number>;
-        lowerRange: edgedb.Range<number>;
-        upperRange: edgedb.Range<number>;
-        dateRange: edgedb.Range<Date>;
-      }
-    >
-  >(true);
-
-  expect(res).toEqual({
-    range: range,
-    lowerRange: lowerRange,
-    upperRange: new edgedb.Range(null, 8, false),
-    dateRange: dateRange,
+describe("primitives", () => {
+  let client: edgedb.Client;
+  beforeAll(async () => {
+    const setup = await setupTests();
+    ({ client } = setup);
   });
 
-  const getLower = e.range_get_lower(e.Bag.rangeField);
+  afterAll(async () => {
+    await teardownTests(client);
+  });
 
-  tc.assert<
-    tc.IsExact<(typeof getLower)["__element__"]["__name__"], "std::number">
-  >(true);
-  expect(getLower.__element__.__name__).toEqual("std::number");
+  test("primitive types", () => {
+    assert.equal(e.int16.__name__, "std::int16");
+    assert.equal(e.int32.__name__, "std::int32");
+    assert.equal(e.int64.__name__, "std::int64");
+    assert.equal(e.float32.__name__, "std::float32");
+    assert.equal(e.float64.__name__, "std::float64");
+    assert.equal(e.str.__name__, "std::str");
+  });
 
-  const q2 = e.params(
-    {
-      range: e.range(e.int32),
-      rangeArray: e.array(e.range(e.datetime)),
-    },
-    ($) =>
-      e.select({
-        range: $.range,
-        rangeArray: $.rangeArray,
+  test("collection types", () => {
+    const arrayType = e.array(e.str);
+    assert.equal(arrayType.__name__, "array<std::str>");
+    const named = e.tuple({ str: e.str });
+    assert.equal(named.__name__, "tuple<str: std::str>");
+    assert.equal(named.__shape__.str.__name__, "std::str");
+    const unnamed = e.tuple([e.str, e.int64]);
+    assert.equal(unnamed.__name__, "tuple<std::str, std::int64>");
+    assert.equal(unnamed.__items__[0].__name__, "std::str");
+    assert.equal(unnamed.__items__[1].__name__, "std::int64");
+  });
+
+  test("scalar type merging", () => {
+    type _t1 = getSharedParentPrimitiveVariadic<
+      [typeof e.std.str, typeof e.std.str]
+    >;
+    tc.assert<tc.IsExact<_t1, typeof e.std.str>>(true);
+    type _t2 = getSharedParentPrimitiveVariadic<
+      [typeof e.std.str, typeof e.std.int32]
+    >;
+    tc.assert<tc.IsExact<_t2, never>>(true);
+  });
+
+  test("range primitives", async () => {
+    const range = new edgedb.Range(3, 8);
+    const lowerRange = new edgedb.Range(3, null);
+    const upperRange = new edgedb.Range(null, 8);
+    const dateRange = new edgedb.Range(
+      new Date("2022-07-05T14:00:00Z"),
+      new Date("2022-07-05T16:00:00Z")
+    );
+
+    assert.equal(
+      e.std.range(range).toEdgeQL(),
+      `std::range(3, 8, inc_lower := true, inc_upper := false)`
+    );
+    assert.equal(
+      e.std.range(lowerRange).toEdgeQL(),
+      `std::range(3, <std::int64>{}, inc_lower := true, inc_upper := false)`
+    );
+    assert.equal(
+      e.std.range(upperRange).toEdgeQL(),
+      `std::range(<std::int64>{}, 8, inc_lower := true, inc_upper := false)`
+    );
+    assert.equal(
+      e.std.range(dateRange).toEdgeQL(),
+      `std::range(<std::datetime>'2022-07-05T14:00:00.000Z', <std::datetime>'2022-07-05T16:00:00.000Z', inc_lower := true, inc_upper := false)`
+    );
+
+    assert.equal(e.range(3, 8).toEdgeQL(), `std::range(3, 8)`);
+    assert.equal(e.range(3).toEdgeQL(), `std::range(3)`);
+    assert.equal(
+      e.range(undefined, 8).toEdgeQL(),
+      `std::range(<std::float64>{}, 8)`
+    );
+
+    assert.throws(() => e.range(new edgedb.Range(null, null)));
+    assert.throws(() => e.range(edgedb.Range.empty()));
+
+    const res = await e
+      .select({
+        range: e.range(range),
+        lowerRange: e.range(lowerRange),
+        upperRange: e.range(upperRange),
+        dateRange: e.range(dateRange),
       })
-  );
+      .run(client);
 
-  const res2 = await q2.run(client, { range, rangeArray: [dateRange] });
+    tc.assert<
+      tc.IsExact<
+        typeof res,
+        {
+          range: edgedb.Range<number>;
+          lowerRange: edgedb.Range<number>;
+          upperRange: edgedb.Range<number>;
+          dateRange: edgedb.Range<Date>;
+        }
+      >
+    >(true);
 
-  tc.assert<
-    tc.IsExact<
-      typeof res2,
-      { range: edgedb.Range<number>; rangeArray: edgedb.Range<Date>[] }
-    >
-  >(true);
+    assert.deepEqual(res, {
+      range: range,
+      lowerRange: lowerRange,
+      upperRange: new edgedb.Range(null, 8, false),
+      dateRange: dateRange,
+    });
 
-  expect(res2).toEqual({ range: range, rangeArray: [dateRange] });
+    const getLower = e.range_get_lower(e.Bag.rangeField);
 
-  await e
-    .insert(e.Bag, {
-      stringsMulti: "test",
-      rangeField: range,
-    })
-    .run(client);
+    tc.assert<
+      tc.IsExact<(typeof getLower)["__element__"]["__name__"], "std::number">
+    >(true);
+    assert.equal(getLower.__element__.__name__, "std::number");
 
-  await e
-    .update(e.Bag, () => ({
-      set: {
-        rangeField: e.range(lowerRange),
+    const q2 = e.params(
+      {
+        range: e.range(e.int32),
+        rangeArray: e.array(e.range(e.datetime)),
       },
-    }))
-    .run(client);
+      ($) =>
+        e.select({
+          range: $.range,
+          rangeArray: $.rangeArray,
+        })
+    );
 
-  const res3 = await e.select(e.Bag.rangeField).run(client);
+    const res2 = await q2.run(client, { range, rangeArray: [dateRange] });
 
-  tc.assert<tc.IsExact<typeof res3, edgedb.Range<number>[]>>(true);
+    tc.assert<
+      tc.IsExact<
+        typeof res2,
+        { range: edgedb.Range<number>; rangeArray: edgedb.Range<Date>[] }
+      >
+    >(true);
 
-  expect(res3).toEqual([lowerRange]);
+    assert.deepEqual(res2, { range: range, rangeArray: [dateRange] });
 
-  await e.delete(e.Bag).run(client);
-});
+    await e
+      .insert(e.Bag, {
+        stringsMulti: "test",
+        rangeField: range,
+      })
+      .run(client);
 
-test("enum value with space", async () => {
-  const result = await e.Genre["Science Fiction"].run(client);
-  expect(result).toEqual("Science Fiction");
+    await e
+      .update(e.Bag, () => ({
+        set: {
+          rangeField: e.range(lowerRange),
+        },
+      }))
+      .run(client);
+
+    const res3 = await e.select(e.Bag.rangeField).run(client);
+
+    tc.assert<tc.IsExact<typeof res3, edgedb.Range<number>[]>>(true);
+
+    assert.deepEqual(res3, [lowerRange]);
+
+    await e.delete(e.Bag).run(client);
+  });
+
+  test("enum value with space", async () => {
+    const result = await e.Genre["Science Fiction"].run(client);
+    assert.equal(result, "Science Fiction");
+  });
 });
