@@ -4,12 +4,7 @@ import type { Villain } from "../dbschema/edgeql-js/modules/default";
 import type { InsertShape } from "../dbschema/edgeql-js/insert";
 import e from "../dbschema/edgeql-js";
 
-import {
-  setupTests,
-  teardownTests,
-  tc,
-  testIfVersionGTE,
-} from "./setupTeardown";
+import { setupTests, teardownTests, tc } from "./setupTeardown";
 
 describe("insert", () => {
   let client: Client;
@@ -379,7 +374,7 @@ describe("insert", () => {
     assert.deepEqual(Object.keys(res), ["id"]);
   });
 
-  testIfVersionGTE(2)("insert custom ID", async () => {
+  test("insert custom ID", async () => {
     await e
       .insert(e.Hero, {
         id: "00000000-0000-0000-0000-000000000000",

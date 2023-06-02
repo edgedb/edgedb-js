@@ -3,12 +3,7 @@ import type * as edgedb from "edgedb";
 import * as tc from "conditional-type-checks";
 
 import e, { type $infer } from "../dbschema/edgeql-js";
-import {
-  setupTests,
-  teardownTests,
-  type TestData,
-  versionGTE,
-} from "./setupTeardown";
+import { setupTests, teardownTests, type TestData } from "./setupTeardown";
 
 describe("group", () => {
   let client: edgedb.Client;
@@ -23,11 +18,6 @@ describe("group", () => {
     await teardownTests(client);
   });
 
-  if (!versionGTE(2)) {
-    return test.skip("group requires EdgeDB 2+", () => {
-      assert.ok(true);
-    });
-  }
   test("basic group", async () => {
     const query = e.group(e.Movie, (movie) => {
       const release_year = movie.release_year;

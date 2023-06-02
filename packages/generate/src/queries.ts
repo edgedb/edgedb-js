@@ -1,7 +1,7 @@
 import { $, adapter, createClient, createHttpClient } from "edgedb";
 import type { ConnectConfig } from "edgedb/dist/conUtils";
 import { Cardinality } from "edgedb/dist/ifaces";
-import { CommandOptions, getPackageVersion } from "./commandutil";
+import { type CommandOptions, getPackageVersion } from "./commandutil";
 import type { Target } from "./genutil";
 
 // generate per-file queries
@@ -197,6 +197,8 @@ function generateFiles(params: {
   extension: string;
 }[] {
   const queryFileName = adapter.path.basename(params.path);
+  const baseFileName = queryFileName.replace(/\.edgeql$/, "");
+  const outputBaseFileName = `${baseFileName}.query`;
 
   const method =
     params.types.cardinality === Cardinality.ONE
@@ -204,49 +206,62 @@ function generateFiles(params: {
       : params.types.cardinality === Cardinality.AT_MOST_ONE
       ? "querySingle"
       : "query";
-  const functionName = queryFileName
-    .replace(/\.edgeql$/, "")
+  const functionName = baseFileName
     .replace(/-[A-Za-z]/g, (m) => m[1].toUpperCase())
     .replace(/^[^A-Za-z_]|\W/g, "_");
+  const interfaceName =
+    functionName.charAt(0).toUpperCase() + functionName.slice(1);
+  const argsInterfaceName = `${interfaceName}Args`;
+  const returnsInterfaceName = `${interfaceName}Returns`;
+  const hasArgs = params.types.args && params.types.args !== "null";
+  const queryDefs = `\
+${hasArgs ? `export type ${argsInterfaceName} = ${params.types.args};\n` : ""}
+export type ${returnsInterfaceName} = ${params.types.result};\
+`;
+  const functionBody = `\
+${params.types.query.trim().replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
+`;
   const imports: any = {};
   for (const i of params.types.imports) {
     imports[i] = true;
   }
   const tsImports = { Executor: true, ...imports };
 
-  const hasArgs = params.types.args && params.types.args !== "null";
-  const tsImpl = `async function ${functionName}(client: Executor${
-    hasArgs ? `, args: ${params.types.args}` : ""
-  }): Promise<${params.types.result}> {
-  return client.${method}(\`${params.types.query
-    .trim()
-    .replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
-}`;
+  const tsImpl = `${queryDefs}
+
+export async function ${functionName}(client: Executor${
+    hasArgs ? `, args: ${argsInterfaceName}` : ""
+  }): Promise<${returnsInterfaceName}> {
+  return client.${method}(\`\\
+${functionBody}
+}
+`;
 
   const jsImpl = `async function ${functionName}(client${
     hasArgs ? `, args` : ""
   }) {
-  return client.${method}(\`${params.types.query.replace(/`/g, "\\`")}\`${
-    hasArgs ? `, args` : ""
-  });
+  return client.${method}(\`\\
+${functionBody}
 }`;
 
-  const dtsImpl = `function ${functionName}(client: Executor${
-    hasArgs ? `, args: ${params.types.args}` : ""
-  }): Promise<${params.types.result}>;`;
+  const dtsImpl = `${queryDefs}
+
+export function ${functionName}(client: Executor${
+    hasArgs ? `, args: ${argsInterfaceName}` : ""
+  }): Promise<${returnsInterfaceName}>;`;
 
   switch (params.target) {
     case "cjs":
       return [
         {
-          path: `${params.path}.js`,
+          path: `${outputBaseFileName}.js`,
           contents: `${jsImpl}\n\nmodule.exports.${functionName} = ${functionName};`,
           imports: {},
           extension: ".js",
         },
         {
-          path: `${params.path}.d.ts`,
-          contents: `export ${dtsImpl}`,
+          path: `${outputBaseFileName}.d.ts`,
+          contents: dtsImpl,
           imports: tsImports,
           extension: ".d.ts",
         },
@@ -255,8 +270,8 @@ function generateFiles(params: {
     case "deno":
       return [
         {
-          path: `${params.path}.ts`,
-          contents: `export ${tsImpl}`,
+          path: `${outputBaseFileName}.ts`,
+          contents: tsImpl,
           imports: tsImports,
           extension: ".ts",
         },
@@ -264,14 +279,14 @@ function generateFiles(params: {
     case "esm":
       return [
         {
-          path: `${params.path}.mjs`,
+          path: `${outputBaseFileName}.mjs`,
           contents: `export ${jsImpl}`,
           imports: {},
           extension: ".mjs",
         },
         {
-          path: `${params.path}.d.ts`,
-          contents: `export ${dtsImpl}`,
+          path: `${outputBaseFileName}.d.ts`,
+          contents: dtsImpl,
           imports: tsImports,
           extension: ".d.ts",
         },
@@ -279,8 +294,8 @@ function generateFiles(params: {
     case "mts":
       return [
         {
-          path: `${params.path}.mts`,
-          contents: `export ${tsImpl}`,
+          path: `${outputBaseFileName}.mts`,
+          contents: tsImpl,
           imports: tsImports,
           extension: ".mts",
         },
@@ -288,8 +303,8 @@ function generateFiles(params: {
     case "ts":
       return [
         {
-          path: `${params.path}.ts`,
-          contents: `export ${tsImpl}`,
+          path: `${outputBaseFileName}.ts`,
+          contents: tsImpl,
           imports: tsImports,
           extension: ".ts",
         },
