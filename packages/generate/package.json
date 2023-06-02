@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.1",
+    "@types/node": "^20.1.7",
     "conditional-type-checks": "^1.0.5",
     "edgedb": "^1.1.0",
     "esbuild": "^0.15.7",

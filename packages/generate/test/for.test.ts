@@ -1,23 +1,30 @@
+import assert from "node:assert/strict";
 import e from "../dbschema/edgeql-js";
 
-test("simple for loop", () => {
-  expect(e.for(e.set(1, 2, 3), (x) => e.op(e.op(x, "*", 2), "+", x)).toEdgeQL())
-    .toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
+describe("for", () => {
+  test("simple for loop", () => {
+    assert.equal(
+      e.for(e.set(1, 2, 3), (x) => e.op(e.op(x, "*", 2), "+", x)).toEdgeQL(),
+      `\
+FOR __forVar__0 IN {{ 1, 2, 3 }}
 UNION (
   ((__forVar__0 * 2) + __forVar__0)
-)`);
-});
-
-test("with vars in for loop", () => {
-  const q1 = e.for(e.set(1, 2, 3), (i) => {
-    const str = e.to_str(i);
-    return e.select({
-      a: e.select(str),
-      b: e.select(e.tuple([str, str])),
-    });
+)`
+    );
   });
 
-  expect(q1.toEdgeQL()).toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
+  test("with vars in for loop", () => {
+    const q1 = e.for(e.set(1, 2, 3), (i) => {
+      const str = e.to_str(i);
+      return e.select({
+        a: e.select(str),
+        b: e.select(e.tuple([str, str])),
+      });
+    });
+
+    assert.equal(
+      q1.toEdgeQL(),
+      `FOR __forVar__0 IN {{ 1, 2, 3 }}
 UNION (
   (WITH
     __withVar_0 := std::to_str(__forVar__0)
@@ -30,26 +37,29 @@ UNION (
       )
     )
   })
-)`);
+)`
+    );
 
-  const q2 = e.for(e.set(1, 2, 3), (i) => {
-    const str = e.to_str(i);
-    return e
-      .insert(e.Hero, {
-        name: str,
-        secret_identity: str,
-      })
-      .unlessConflict((person) => ({
-        on: person.name,
-        else: e.update(person, () => ({
-          set: {
-            name: str,
-          },
-        })),
-      }));
-  });
+    const q2 = e.for(e.set(1, 2, 3), (i) => {
+      const str = e.to_str(i);
+      return e
+        .insert(e.Hero, {
+          name: str,
+          secret_identity: str,
+        })
+        .unlessConflict((person) => ({
+          on: person.name,
+          else: e.update(person, () => ({
+            set: {
+              name: str,
+            },
+          })),
+        }));
+    });
 
-  expect(q2.toEdgeQL()).toEqual(`FOR __forVar__0 IN {{ 1, 2, 3 }}
+    assert.equal(
+      q2.toEdgeQL(),
+      `FOR __forVar__0 IN {{ 1, 2, 3 }}
 UNION (
   (WITH
     __withVar_1 := std::to_str(__forVar__0)
@@ -63,5 +73,7 @@ UNION (
   UPDATE __scope_0_defaultHero SET {
     name := __withVar_1
   })))
-)`);
+)`
+    );
+  });
 });

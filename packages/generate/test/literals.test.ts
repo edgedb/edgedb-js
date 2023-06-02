@@ -1,118 +1,134 @@
+import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
 import { TypeKind } from "edgedb/dist/reflection";
 import e from "../dbschema/edgeql-js";
 import { setupTests, testIfVersionGTE } from "./setupTeardown";
 
-test("literals", () => {
-  const duration = new edgedb.Duration(0, 0, 0, 0, 5, 6, 7, 8, 9, 10);
-  const localdate = new edgedb.LocalDate(2021, 10, 31);
-  const localdatetime = new edgedb.LocalDateTime(2021, 10, 31, 21, 45, 30);
-  const localtime = new edgedb.LocalTime(15, 15, 0);
-  const relduration = new edgedb.RelativeDuration(1, 2, 3);
-  const dateduration = new edgedb.DateDuration(1, 2, 3, 4);
-  const uuid = "317fee4c-0da5-45aa-9980-fedac211bfb6";
+describe("literals", () => {
+  test("literals", () => {
+    const duration = new edgedb.Duration(0, 0, 0, 0, 5, 6, 7, 8, 9, 10);
+    const localdate = new edgedb.LocalDate(2021, 10, 31);
+    const localdatetime = new edgedb.LocalDateTime(2021, 10, 31, 21, 45, 30);
+    const localtime = new edgedb.LocalTime(15, 15, 0);
+    const relduration = new edgedb.RelativeDuration(1, 2, 3);
+    const dateduration = new edgedb.DateDuration(1, 2, 3, 4);
+    const uuid = "317fee4c-0da5-45aa-9980-fedac211bfb6";
 
-  expect(e.std.bigint(BigInt("9007199254740991")).toEdgeQL()).toEqual(
-    `<std::bigint>9007199254740991n`
-  );
-  expect(e.std.bool(true).toEdgeQL()).toEqual(`true`);
-  expect(
-    e.std.bytes(Buffer.from(`whatever\nðñòóôõö÷øùúûüýþÿ`)).toEdgeQL()
-  ).toEqual(
-    `b'whatever\\n\\xc3\\xb0\\xc3\\xb1\\xc3\\xb2\\xc3\\xb3\\xc3\\xb4\\xc3` +
-      `\\xb5\\xc3\\xb6\\xc3\\xb7\\xc3\\xb8\\xc3\\xb9\\xc3\\xba\\xc3\\xbb` +
-      `\\xc3\\xbc\\xc3\\xbd\\xc3\\xbe\\xc3\\xbf'`
-  );
-  expect(
-    e.std.datetime(new Date("2021-06-25T02:01:13.681Z")).toEdgeQL()
-  ).toEqual(`<std::datetime>'2021-06-25T02:01:13.681Z'`);
-  expect(e.std.decimal("1234.1234n").toEdgeQL()).toEqual(
-    `<std::decimal>"1234.1234n"`
-  );
-  expect(e.std.duration(duration).toEdgeQL()).toEqual(
-    `<std::duration>'PT5H6M7.00800901S'`
-  );
-  expect(e.std.int16(144.1235).toEdgeQL()).toEqual(`<std::int16>144.1235`);
-  expect(e.std.int64(1234.15).toEdgeQL()).toEqual(`<std::int64>1234.15`);
-  expect(e.std.float64(1234.1234).toEdgeQL()).toEqual(
-    `<std::float64>1234.1234`
-  );
-  expect(e.std.float64(124).toEdgeQL()).toEqual(`<std::float64>124`);
-  expect(e.std.int16("9223372036854775807").toEdgeQL()).toEqual(
-    `<std::int16>9223372036854775807`
-  );
-  expect(e.year("1234").toEdgeQL()).toEqual(`<default::year>1234`);
+    assert.equal(
+      e.std.bigint(BigInt("9007199254740991")).toEdgeQL(),
+      `<std::bigint>9007199254740991n`
+    );
+    assert.equal(e.std.bool(true).toEdgeQL(), `true`);
+    assert.deepEqual(
+      e.std.bytes(Buffer.from(`whatever\nðñòóôõö÷øùúûüýþÿ`)).toEdgeQL(),
+      `b'whatever\\n\\xc3\\xb0\\xc3\\xb1\\xc3\\xb2\\xc3\\xb3\\xc3\\xb4\\xc3` +
+        `\\xb5\\xc3\\xb6\\xc3\\xb7\\xc3\\xb8\\xc3\\xb9\\xc3\\xba\\xc3\\xbb` +
+        `\\xc3\\xbc\\xc3\\xbd\\xc3\\xbe\\xc3\\xbf'`
+    );
+    assert.equal(
+      e.std.datetime(new Date("2021-06-25T02:01:13.681Z")).toEdgeQL(),
+      `<std::datetime>'2021-06-25T02:01:13.681Z'`
+    );
+    assert.equal(
+      e.std.decimal("1234.1234n").toEdgeQL(),
+      `<std::decimal>"1234.1234n"`
+    );
+    assert.equal(
+      e.std.duration(duration).toEdgeQL(),
+      `<std::duration>'PT5H6M7.00800901S'`
+    );
+    assert.equal(e.std.int16(144.1235).toEdgeQL(), `<std::int16>144.1235`);
+    assert.equal(e.std.int64(1234.15).toEdgeQL(), `<std::int64>1234.15`);
+    assert.equal(
+      e.std.float64(1234.1234).toEdgeQL(),
+      `<std::float64>1234.1234`
+    );
+    assert.equal(e.std.float64(124).toEdgeQL(), `<std::float64>124`);
+    assert.equal(
+      e.std.int16("9223372036854775807").toEdgeQL(),
+      `<std::int16>9223372036854775807`
+    );
+    assert.equal(e.year("1234").toEdgeQL(), `<default::year>1234`);
 
-  expect(e.std.json("asdf").toEdgeQL()).toEqual(`to_json($$"asdf"$$)`);
-  expect(
-    e.std.json({ a: 123, b: "some string", c: [true, false] }).toEdgeQL()
-  ).toEqual('to_json($${"a":123,"b":"some string","c":[true,false]}$$)');
+    assert.equal(e.std.json("asdf").toEdgeQL(), `to_json($$"asdf"$$)`);
+    assert.equal(
+      e.std.json({ a: 123, b: "some string", c: [true, false] }).toEdgeQL(),
+      'to_json($${"a":123,"b":"some string","c":[true,false]}$$)'
+    );
 
-  expect(e.std.str(`asdfaf`).toEdgeQL()).toEqual(`"asdfaf"`);
-  expect(e.std.str(`string " with ' all \` quotes`).toEdgeQL()).toEqual(
-    `"string \\" with ' all \` quotes"`
-  );
-  expect(e.std.uuid(uuid).toEdgeQL()).toEqual(
-    `<std::uuid>"317fee4c-0da5-45aa-9980-fedac211bfb6"`
-  );
-  expect(e.cal.local_date(localdate).toEdgeQL()).toEqual(
-    `<cal::local_date>'2021-10-31'`
-  );
-  expect(e.cal.local_datetime(localdatetime).toEdgeQL()).toEqual(
-    `<cal::local_datetime>'2021-10-31T21:45:30'`
-  );
-  expect(e.cal.local_time(localtime).toEdgeQL()).toEqual(
-    `<cal::local_time>'15:15:00'`
-  );
-  expect(e.cal.relative_duration(relduration).toEdgeQL()).toEqual(
-    `<cal::relative_duration>'P1Y2M21D'`
-  );
-  expect(e.cal.date_duration(dateduration).toEdgeQL()).toEqual(
-    `<cal::date_duration>'P1Y2M25D'`
-  );
-});
-
-test("collection type literals", () => {
-  const literalArray = e.literal(e.array(e.str), ["adsf"]);
-  expect(literalArray.toEdgeQL()).toEqual(`["adsf"]`);
-  const literalNamedTuple = e.literal(e.tuple({ str: e.str }), {
-    str: "asdf",
+    assert.equal(e.std.str(`asdfaf`).toEdgeQL(), `"asdfaf"`);
+    assert.equal(
+      e.std.str(`string " with ' all \` quotes`).toEdgeQL(),
+      `"string \\" with ' all \` quotes"`
+    );
+    assert.equal(
+      e.std.uuid(uuid).toEdgeQL(),
+      `<std::uuid>"317fee4c-0da5-45aa-9980-fedac211bfb6"`
+    );
+    assert.equal(
+      e.cal.local_date(localdate).toEdgeQL(),
+      `<cal::local_date>'2021-10-31'`
+    );
+    assert.equal(
+      e.cal.local_datetime(localdatetime).toEdgeQL(),
+      `<cal::local_datetime>'2021-10-31T21:45:30'`
+    );
+    assert.equal(
+      e.cal.local_time(localtime).toEdgeQL(),
+      `<cal::local_time>'15:15:00'`
+    );
+    assert.equal(
+      e.cal.relative_duration(relduration).toEdgeQL(),
+      `<cal::relative_duration>'P1Y2M21D'`
+    );
+    assert.equal(
+      e.cal.date_duration(dateduration).toEdgeQL(),
+      `<cal::date_duration>'P1Y2M25D'`
+    );
   });
-  expect(literalNamedTuple.toEdgeQL()).toEqual(`( str := "asdf" )`);
-  const literalTuple = e.literal(e.tuple([e.str, e.int64]), ["asdf", 1234]);
-  expect(literalTuple.toEdgeQL()).toEqual(`( "asdf", <std::int64>1234 )`);
-});
 
-test("enum literals", () => {
-  const horror = e.Genre.Horror;
-  expect(e.Genre.Horror.__element__.__kind__).toEqual(TypeKind.enum);
-  expect(horror.__element__).toEqual(e.Genre);
-  expect(horror.__cardinality__).toEqual(edgedb.$.Cardinality.One);
-  expect(e.literal(e.Genre, "Horror").toEdgeQL()).toEqual(
-    `default::Genre.Horror`
-  );
+  test("collection type literals", () => {
+    const literalArray = e.literal(e.array(e.str), ["adsf"]);
+    assert.equal(literalArray.toEdgeQL(), `["adsf"]`);
+    const literalNamedTuple = e.literal(e.tuple({ str: e.str }), {
+      str: "asdf",
+    });
+    assert.equal(literalNamedTuple.toEdgeQL(), `( str := "asdf" )`);
+    const literalTuple = e.literal(e.tuple([e.str, e.int64]), ["asdf", 1234]);
+    assert.equal(literalTuple.toEdgeQL(), `( "asdf", <std::int64>1234 )`);
+  });
 
-  expect(e.Genre.__values__).toContain("Horror");
+  test("enum literals", () => {
+    const horror = e.Genre.Horror;
+    assert.deepEqual(e.Genre.Horror.__element__.__kind__, TypeKind.enum);
+    assert.deepEqual(horror.__element__, e.Genre);
+    assert.deepEqual(horror.__cardinality__, edgedb.$.Cardinality.One);
+    assert.equal(
+      e.literal(e.Genre, "Horror").toEdgeQL(),
+      `default::Genre.Horror`
+    );
 
-  expect(() => (e.Genre as any).NotAGenre.toEdgeQL()).toThrow();
-  expect(() =>
-    e.literal(e.Genre, "NotAGenre" as "Horror").toEdgeQL()
-  ).toThrow();
-});
+    assert.ok(e.Genre.__values__.includes("Horror"));
 
-testIfVersionGTE(2)("constructing with strings", async () => {
-  const { client } = await setupTests();
+    assert.throws(() => (e.Genre as any).NotAGenre.toEdgeQL());
+    assert.throws(() => e.literal(e.Genre, "NotAGenre" as "Horror").toEdgeQL());
+  });
 
-  const dateString = new Date().toISOString();
-  expect(
-    await (await e.datetime(dateString).run(client)).toISOString()
-  ).toEqual(dateString);
+  testIfVersionGTE(2)("constructing with strings", async () => {
+    const { client } = await setupTests();
 
-  await e.int64("12341234").run(client);
-  await e.cal.local_datetime("1999-03-31T15:17:00").run(client);
-  await e.cal.local_date("1999-03-31").run(client);
-  await e.cal.local_time("15:17:00").run(client);
-  await e.duration("5 hours").run(client);
-  await e.cal.relative_duration("4 weeks 5 hours").run(client);
-  await e.cal.date_duration("4 months 5 days").run(client);
+    const dateString = new Date().toISOString();
+    assert.deepEqual(
+      (await e.datetime(dateString).run(client)).toISOString(),
+      dateString
+    );
+
+    await e.int64("12341234").run(client);
+    await e.cal.local_datetime("1999-03-31T15:17:00").run(client);
+    await e.cal.local_date("1999-03-31").run(client);
+    await e.cal.local_time("15:17:00").run(client);
+    await e.duration("5 hours").run(client);
+    await e.cal.relative_duration("4 weeks 5 hours").run(client);
+    await e.cal.date_duration("4 months 5 days").run(client);
+  });
 });
