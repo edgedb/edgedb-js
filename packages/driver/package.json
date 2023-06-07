@@ -11,15 +11,15 @@
     "type": "git",
     "url": "https://github.com/edgedb/edgedb-js.git"
   },
-  "main": "./dist/index.node.js",
-  "types": "./dist/index.node.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "license": "Apache-2.0",
   "sideEffects": false,
   "files": [
     "/dist"
   ],
   "browser": {
-    "./dist/index.node.js": "./dist/index.browser.js"
+    "./dist/index.js": "./dist/index.browser.js"
   },
   "bin": {
     "edgeql-js": "./dist/cli.js"
