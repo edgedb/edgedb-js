@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import * as edgedb from "../src/index.node";
+import * as edgedb from "../src/index";
 import { resolveErrorCode } from "../src/errors/resolve";
 
 test("resolve error", () => {

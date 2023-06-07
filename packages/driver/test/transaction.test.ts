@@ -17,7 +17,7 @@
  */
 
 import * as errors from "../src/errors";
-import { Client } from "../src/index.node";
+import { Client } from "../src/index";
 import { IsolationLevel, TransactionOptions } from "../src/options";
 import { sleep } from "../src/utils";
 import Event from "../src/primitives/event";

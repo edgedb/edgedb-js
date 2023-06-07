@@ -17,7 +17,7 @@
  */
 
 import * as errors from "../src/errors";
-import { Client } from "../src/index.node";
+import { Client } from "../src/index";
 import { defaultBackoff, RetryOptions } from "../src/options";
 import { getClient } from "./testbase";
 

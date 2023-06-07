@@ -75,7 +75,7 @@ jest.mock("os", () => {
 import * as fs from "fs";
 import * as crypto from "crypto";
 import { join as pathJoin } from "path";
-import { Client, Duration } from "../src/index.node";
+import { Client, Duration } from "../src/index";
 import { parseDuration } from "../src/conUtils";
 import { parseConnectArguments, findStashPath } from "../src/conUtils.server";
 import { getClient } from "./testbase";

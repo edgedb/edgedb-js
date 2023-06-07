@@ -2,7 +2,7 @@ import {
   Duration,
   DisabledCapabilityError,
   InvalidReferenceError,
-} from "../src/index.node";
+} from "../src/index";
 import { getClient, getEdgeDBVersion } from "./testbase";
 
 if (getEdgeDBVersion().major >= 2) {

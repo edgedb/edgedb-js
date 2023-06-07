@@ -1,4 +1,4 @@
-import createClient from "../../driver/src/index.node";
+import createClient from "../../driver/src/index";
 
 import {
   shutdown,
