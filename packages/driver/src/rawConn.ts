@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { net, tls } from "./adapter.node";
+import { net, tls } from "./adapter";
 import { PROTO_VER, PROTO_VER_MIN, BaseRawConnection } from "./baseConn";
 import type { CodecsRegistry } from "./codecs/registry";
 import {
