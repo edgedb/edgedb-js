@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+import { Buffer } from "buffer";
 import * as chars from "./chars";
 import char from "./chars";
 import { RingBuffer } from "./ring";
