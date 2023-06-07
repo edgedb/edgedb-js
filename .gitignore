@@ -11,3 +11,6 @@ node_modules
 .DS_Store
 .vscode
 .node-version
+
+# at least temporarily
+deno_dist/
