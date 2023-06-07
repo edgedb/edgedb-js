@@ -39,6 +39,10 @@ export class ConfigMemory {
     return this._bytes as BigInt;
   }
 
+  get bytesBigIntLike(): bi.BigIntLike {
+    return this._bytes;
+  }
+
   get kibibytes(): number {
     return Number(this._bytes) / KiB;
   }
