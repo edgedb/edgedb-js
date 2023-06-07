@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 
-import char, * as chars from "./chars";
+import * as chars from "./chars";
+import char from "./chars";
 import { RingBuffer } from "./ring";
 import * as bi from "./bigint";
 import * as compat from "../compat";
