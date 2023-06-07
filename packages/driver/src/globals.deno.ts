@@ -15,7 +15,7 @@ const CAN_NOT_DISPLAY = "[Cannot display]";
 function createStr(v: unknown): string {
   try {
     return Deno.inspect(v);
-  } catch (e) {
+  } catch (_e) {
     return red(CAN_NOT_DISPLAY);
   }
 }
@@ -118,4 +118,4 @@ export { expect };
 
 export const test = Deno.test;
 
-export const jest = { setTimeout: (timeout: number) => {} };
+export const jest = { setTimeout: (_timeout: number) => {} };

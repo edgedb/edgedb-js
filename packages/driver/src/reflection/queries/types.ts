@@ -246,7 +246,7 @@ export async function getTypes(
       }
     }
     switch (type.kind) {
-      case "scalar":
+      case "scalar": {
         if (typeMapping.has(type.id)) {
           type.cast_type = typeMapping.get(type.id)!.id;
         }
@@ -261,11 +261,13 @@ export async function getTypes(
             typeMapping.get(type.material_id)?.id ?? type.material_id;
         }
         break;
-      case "range":
+      }
+      case "range": {
         type.range_element_id =
           typeMapping.get(type.range_element_id)?.id ?? type.range_element_id;
         break;
-      case "object":
+      }
+      case "object": {
         const ptrs: any = {};
         for (const ptr of type.pointers) {
           ptrs[ptr.name] = ptr;
@@ -307,6 +309,7 @@ export async function getTypes(
         //     typeMapping.get(pointer.target_id)?.id ?? pointer.target_id,
         // }));
         break;
+      }
     }
   }
   _types.push(numberType);

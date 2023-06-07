@@ -451,7 +451,7 @@ export class RawConnection extends BaseRawConnection {
 
           if (
             !(this.sock instanceof tls.TLSSocket) &&
-            // @ts-ignore
+            // @ts-ignore - FIXME: make a rawConn.deno.ts file instead of this
             typeof Deno === "undefined" &&
             versionGreaterThanOrEqual(this.protocolVersion, [0, 11])
           ) {
