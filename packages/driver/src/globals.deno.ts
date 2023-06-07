@@ -1,8 +1,8 @@
 import {
   expect as _expect,
   addMatchers,
-} from "https://deno.land/x/expect/mod.ts";
-import { MatchResult } from "https://deno.land/x/expect/matchers.ts";
+} from "https://deno.land/x/expect@v0.3.0/mod.ts";
+import { MatchResult } from "https://deno.land/x/expect@v0.3.0/matchers.ts";
 import { bold, green, red } from "https://deno.land/std@0.177.0/fmt/colors.ts";
 
 export { process } from "https://deno.land/std@0.177.0/node/process.ts";
