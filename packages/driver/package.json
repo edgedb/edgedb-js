@@ -40,7 +40,7 @@
   "scripts": {
     "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",
     "build:cjs": "tsc --project tsconfig.json",
-    "build:deno": "rm -rf deno_dist && npx denoify",
+    "build:deno": "rm -rf deno_dist && yarn run denoify",
     "test": "npx --node-options='--experimental-fetch' jest --detectOpenHandles",
     "lint": "yarn lint:cjs && yarn lint:deno",
     "lint:cjs": "tslint 'packages/*/src/**/*.ts'",
