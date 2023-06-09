@@ -15,5 +15,12 @@ module.exports = {
     // querybuilder, so set this option to ensure we always do that
     "@typescript-eslint/consistent-type-imports": "error",
     "@typescript-eslint/no-inferrable-types": "warn",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+      },
+    ],
   },
 };
