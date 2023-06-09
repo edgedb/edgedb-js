@@ -1,33 +1,73 @@
 import * as path from "node:path";
+import * as assert from "node:assert/strict";
 import { Bench } from "tinybench";
 
 import { type TSServer, createServer } from "./server-fixture";
 
 const mockFileName = path.join(__dirname, "..", "project-fixture", "main.ts");
 const mockFileContent = `\
-import { edgedb } from "edgedb";
-import * as e from "./dbschema/edgeql-js";
+import { createClient } from "edgedb";
+import e from "./dbschema/edgeql-js";
 
 async fuction main() {
-  await e.select(e.Person, () => ({
-    # cursor here
-  }))
+  const client = createClient();
+  await e
+    .select(e.Person, () => ({
+      // Cursor here
+    }))
+    .run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
+  await e.select(e.Person, () => ({})).run(client);
 }
 
 main();
 `;
 
 async function getCompletion(server: TSServer) {
-  await server.requestCommand("completions", {
+  return server.requestCommand("completions", {
     file: mockFileName,
     offset: 4,
-    line: 5,
+    line: 8,
   });
 }
 
 let activeServer: TSServer;
 
-let bench = new Bench({ time: 50 });
+let bench = new Bench({ time: 5000, iterations: 2000 });
 
 for (const version of ["ts48", "ts49", "ts50", "ts51"]) {
   bench = bench.add(
@@ -36,7 +76,7 @@ for (const version of ["ts48", "ts49", "ts50", "ts51"]) {
       await getCompletion(activeServer);
     },
     {
-      beforeAll: () => {
+      beforeAll: async () => {
         activeServer = createServer(
           path.join(
             __dirname,
@@ -45,8 +85,8 @@ for (const version of ["ts48", "ts49", "ts50", "ts51"]) {
             "..",
             "node_modules",
             version,
-            "bin",
-            "tsserver"
+            "lib",
+            "tsserver.js"
           )
         );
         activeServer.send({
@@ -56,6 +96,26 @@ for (const version of ["ts48", "ts49", "ts50", "ts51"]) {
             fileContent: mockFileContent,
           },
         });
+        const response = await getCompletion(activeServer);
+        assert.equal(response.command, "completions");
+        assert.ok(response.success);
+        assert.ok(response.body.length && response.body.length > 0);
+        assert.ok(
+          response.body.some(
+            (com: Record<string, string>) => com.name === "__type__"
+          )
+        );
+        assert.ok(
+          response.body.some(
+            (com: Record<string, string>) => com.name === "filter_single"
+          )
+        );
+        assert.ok(
+          response.body.some((com: Record<string, string>) => com.name === "id")
+        );
+        for (const _ of Array.from({ length: 100 })) {
+          await getCompletion(activeServer);
+        }
       },
       afterAll: async () => {
         await activeServer.close();

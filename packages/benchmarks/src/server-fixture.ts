@@ -2,6 +2,8 @@ import { fork, type ChildProcess } from "node:child_process";
 import path from "node:path";
 import readline from "node:readline";
 
+type TSServerResponse = { type: "response" } & Record<string, any>;
+
 class Deferred<T> {
   promise: Promise<T>;
   resolve!: (t: T) => void;
@@ -21,7 +23,7 @@ export class TSServer {
   _isClosed: boolean;
   _server: ChildProcess;
   _seq: number;
-  deferred: Deferred<unknown> | null = null;
+  deferred: Deferred<TSServerResponse> | null = null;
 
   constructor(tsserverPath: string) {
     const logfile = path.join(__dirname, "log.txt");
@@ -59,7 +61,7 @@ export class TSServer {
           return;
         }
         try {
-          const result = JSON.parse(line);
+          const result: TSServerResponse = JSON.parse(line);
           if (result.type === "response") {
             --this._pendingResponses;
             this.deferred?.resolve(result);
@@ -87,7 +89,7 @@ export class TSServer {
       ++this._pendingResponses;
     }
     const seq = ++this._seq;
-    const deferred = new Deferred();
+    const deferred = new Deferred<TSServerResponse>();
     this.deferred = deferred;
     const req =
       JSON.stringify(Object.assign({ seq, type: "request" }, command)) + "\n";
