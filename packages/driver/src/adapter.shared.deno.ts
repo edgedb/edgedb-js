@@ -1,5 +1,3 @@
-import { crypto } from "https://deno.land/std@0.177.0/crypto/mod.ts";
-
 export async function randomBytes(size: number): Promise<Uint8Array> {
   const buf = new Uint8Array(size);
   return crypto.getRandomValues(buf);
