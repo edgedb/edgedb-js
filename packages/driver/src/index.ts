@@ -21,7 +21,7 @@ export default createClient;
 
 export { createClient, createHttpClient } from "./nodeClient";
 
-import * as adapter from "./adapter.node";
+import * as adapter from "./adapter";
 export { adapter };
 
 export { RawConnection as _RawConnection } from "./rawConn";

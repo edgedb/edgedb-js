@@ -1,0 +1,14 @@
+{
+  "lint": {
+    "rules": {
+      "exclude": [
+        // FIXME: all of these should arguably be fixed, both node.js and deno
+        "no-namespace",
+        "no-explicit-any",
+        "ban-types",
+        "no-inferrable-types",
+        "require-await"
+      ]
+    }
+  }
+}

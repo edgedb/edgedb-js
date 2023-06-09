@@ -1,4 +1,5 @@
-import { path, homeDir, exists } from "./adapter.node";
+import process from "process";
+import { path, homeDir, exists } from "./adapter";
 
 export const isWindows = process.platform === "win32";
 

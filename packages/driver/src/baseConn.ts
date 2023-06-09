@@ -161,7 +161,7 @@ export class BaseRawConnection {
     this.throwNotImplemented("_waitForMessage");
   }
 
-  protected _sendData(data: Uint8Array): void {
+  protected _sendData(_data: Uint8Array): void {
     this.throwNotImplemented("_sendData");
   }
 
@@ -462,12 +462,12 @@ export class BaseRawConnection {
 
     this._sendData(wb.unwrap());
 
-    let cardinality: number | void;
-    let inTypeId: uuid | void;
-    let outTypeId: uuid | void;
-    let inCodec: ICodec | null;
-    let outCodec: ICodec | null;
-    let capabilities: number = -1;
+    let cardinality: number | null = null;
+    let inTypeId: uuid | null = null;
+    let outTypeId: uuid | null = null;
+    let inCodec: ICodec | null = null;
+    let outCodec: ICodec | null = null;
+    let capabilities = -1;
     let parsing = true;
     let error: Error | null = null;
     let inCodecData: Uint8Array | null = null;

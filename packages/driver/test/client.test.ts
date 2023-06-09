@@ -37,7 +37,7 @@ import {
   Session,
   AuthenticationError,
   InvalidReferenceError,
-} from "../src/index.node";
+} from "../src/index";
 
 import { retryingConnect } from "../src/retry";
 import { RawConnection } from "../src/rawConn";

@@ -7,7 +7,7 @@
     "declarationDir": null,
     // "paths": {
     //   "edgedb": [
-    //     "./src/index.node"
+    //     "./src/index"
     //   ],
     //   "@generated/*": [
     //     "./src/syntax/genMock/*"

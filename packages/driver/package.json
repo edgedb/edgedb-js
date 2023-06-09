@@ -11,15 +11,15 @@
     "type": "git",
     "url": "https://github.com/edgedb/edgedb-js.git"
   },
-  "main": "./dist/index.node.js",
-  "types": "./dist/index.node.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "license": "Apache-2.0",
   "sideEffects": false,
   "files": [
     "/dist"
   ],
   "browser": {
-    "./dist/index.node.js": "./dist/index.browser.js"
+    "./dist/index.js": "./dist/index.browser.js"
   },
   "bin": {
     "edgeql-js": "./dist/cli.js"
@@ -27,10 +27,12 @@
   "devDependencies": {
     "@js-temporal/polyfill": "^0.4.1",
     "@types/jest": "^29.5.1",
+    "denoify": "^1.5.8",
     "get-stdin": "^7.0.0",
     "globby": "^13.1.2",
     "jest": "29.5.0",
     "jest-environment-jsdom": "^29.5.0",
+    "nodemon": "^2.0.22",
     "ts-jest": "29.1.0",
     "tsx": "3.12.6",
     "typescript": "^5.0"
@@ -38,12 +40,14 @@
   "scripts": {
     "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",
     "build:cjs": "tsc --project tsconfig.json",
-    "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
+    "build:deno": "rm -rf deno_dist && yarn run denoify",
     "test": "npx --node-options='--experimental-fetch' jest --detectOpenHandles",
-    "lint": "tslint 'packages/*/src/**/*.ts'",
+    "lint": "yarn lint:cjs && yarn lint:deno",
+    "lint:cjs": "tslint 'packages/*/src/**/*.ts'",
+    "lint:deno": "deno lint --unstable deno_dist",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node genErrors.js",
-    "watch": "nodemon -e js,ts,tsx --ignore dist -x ",
+    "watch": "nodemon -e js,ts,tsx -i dist -i deno_dist -- -x ",
     "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno"
   }
 }

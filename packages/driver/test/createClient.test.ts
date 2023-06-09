@@ -17,7 +17,7 @@
  */
 
 import { spawn } from "child_process";
-import { TransactionConflictError, InterfaceError } from "../src/index.node";
+import { TransactionConflictError, InterfaceError } from "../src/index";
 import { sleep } from "../src/utils";
 import Event from "../src/primitives/event";
 import { getClient, getConnectOptions } from "./testbase";
@@ -113,7 +113,7 @@ test("unref idle connections", async () => {
   const shutdownTime = await timeScriptShutdown(
     `delete global.crypto;
 
-    const {createClient} = require('./dist/index.node');
+    const {createClient} = require('./dist/index');
 
 (async () => {
   const client = createClient(${JSON.stringify(getConnectOptions())});

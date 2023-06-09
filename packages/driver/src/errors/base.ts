@@ -13,7 +13,6 @@ export class EdgeDBError extends Error {
       cause?: unknown;
     }
   ) {
-    // @ts-ignore
     super(undefined, options);
     Object.defineProperties(this, {
       _message: { writable: true, enumerable: false },
@@ -66,7 +65,9 @@ function tryParseInt(val: any) {
   if (val instanceof Uint8Array) {
     try {
       return parseInt(utf8Decoder.decode(val), 10);
-    } catch {}
+    } catch {
+      // not an integer
+    }
   }
   return null;
 }

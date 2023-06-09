@@ -7,7 +7,7 @@ import * as fs from "fs";
 import * as readline from "readline";
 import type { ConnectConfig } from "../src/conUtils";
 
-import { Client, createClient } from "../src/index.node";
+import { Client, createClient } from "../src/index";
 import type { EdgeDBVersion } from "./testbase";
 
 interface ServerInfo {

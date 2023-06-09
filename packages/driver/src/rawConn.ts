@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { net, tls } from "./adapter.node";
+import { net, tls } from "./adapter";
 import { PROTO_VER, PROTO_VER_MIN, BaseRawConnection } from "./baseConn";
 import type { CodecsRegistry } from "./codecs/registry";
 import {
@@ -106,12 +106,11 @@ export class RawConnection extends BaseRawConnection {
     this.sock.on("data", this._onData.bind(this));
 
     if (tls.TLSSocket && this.sock instanceof tls.TLSSocket) {
-      // This is bizarre, but "connect" can be fired before
+      // @ts-ignore - This is bizarre, but "connect" can be fired before
       // "secureConnect" for some reason. The documentation
       // doesn't provide a clue why. We need to be able to validate
       // that the 'edgedb-binary' ALPN protocol was selected
       // in connect when we're connecting over TLS.
-      // @ts-ignore
       this.sock.on("secureConnect", this._onConnect.bind(this));
     } else {
       this.sock.on("connect", this._onConnect.bind(this));
@@ -452,7 +451,7 @@ export class RawConnection extends BaseRawConnection {
 
           if (
             !(this.sock instanceof tls.TLSSocket) &&
-            // @ts-ignore
+            // @ts-ignore - FIXME: make a rawConn.deno.ts file instead of this
             typeof Deno === "undefined" &&
             versionGreaterThanOrEqual(this.protocolVersion, [0, 11])
           ) {

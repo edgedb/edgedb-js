@@ -10,3 +10,7 @@ node_modules
 **/yarn-error.log
 .DS_Store
 .vscode
+.node-version
+
+# at least temporarily
+deno_dist/

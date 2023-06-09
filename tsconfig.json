@@ -28,5 +28,8 @@
     "noUnusedLocals": true,
     "useDefineForClassFields": true,
     "resolveJsonModule": true
-  }
+  },
+  "exclude": [
+    "**/*.deno.ts"
+  ]
 }

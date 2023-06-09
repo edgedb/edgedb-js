@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { randomBytes, H, HMAC } from "./adapter.shared.node";
+import { randomBytes, H, HMAC } from "./adapter.shared";
 import { utf8Encoder, encodeB64, decodeB64 } from "./primitives/buffer";
 import { ProtocolError } from "./errors";
 

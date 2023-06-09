@@ -1,8 +1,8 @@
 import {
   expect as _expect,
   addMatchers,
-} from "https://deno.land/x/expect/mod.ts";
-import { MatchResult } from "https://deno.land/x/expect/matchers.ts";
+} from "https://deno.land/x/expect@v0.3.0/mod.ts";
+import { MatchResult } from "https://deno.land/x/expect@v0.3.0/matchers.ts";
 import { bold, green, red } from "https://deno.land/std@0.177.0/fmt/colors.ts";
 
 export { process } from "https://deno.land/std@0.177.0/node/process.ts";
@@ -15,7 +15,7 @@ const CAN_NOT_DISPLAY = "[Cannot display]";
 function createStr(v: unknown): string {
   try {
     return Deno.inspect(v);
-  } catch (e) {
+  } catch (_e) {
     return red(CAN_NOT_DISPLAY);
   }
 }
@@ -118,4 +118,4 @@ export { expect };
 
 export const test = Deno.test;
 
-export const jest = { setTimeout: (timeout: number) => {} };
+export const jest = { setTimeout: (_timeout: number) => {} };

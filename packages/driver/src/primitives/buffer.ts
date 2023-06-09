@@ -16,7 +16,9 @@
  * limitations under the License.
  */
 
-import char, * as chars from "./chars";
+import { Buffer } from "buffer";
+import * as chars from "./chars";
+import char from "./chars";
 import { RingBuffer } from "./ring";
 import * as bi from "./bigint";
 import * as compat from "../compat";
@@ -40,11 +42,9 @@ let encodeB64: (data: Uint8Array) => string;
 
 if (typeof btoa === "undefined") {
   decodeB64 = (b64: string): Uint8Array => {
-    // @ts-ignore
     return Buffer.from(b64, "base64");
   };
   encodeB64 = (data: Uint8Array): string => {
-    // @ts-ignore
     return Buffer.from(data).toString("base64");
   };
 } else {

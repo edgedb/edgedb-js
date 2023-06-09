@@ -23,7 +23,7 @@ import {
   readCredentialsFile,
   validateCredentials,
 } from "./credentials";
-import { getEnv } from "./adapter.shared.node";
+import { getEnv } from "./adapter.shared";
 import { Duration, parseHumanDurationString } from "./datatypes/datetime";
 import { checkValidEdgeDBDuration } from "./codecs/datetime";
 import { InterfaceError } from "./errors";

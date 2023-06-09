@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import createClient, { Client, ConnectOptions } from "../src/index.node";
+import createClient, { Client, ConnectOptions } from "../src/index";
 
 export interface EdgeDBVersion {
   major: number;
