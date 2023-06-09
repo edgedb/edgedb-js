@@ -27,7 +27,7 @@
     "typescript": "^5.0"
   },
   "scripts": {
-    "benchmark": "tsx src/benchmark.ts"
+    "benchmark": "tsx src/index.ts"
   },
   "bugs": {
     "url": "https://github.com/edgedb/edgedb-js/issues"
