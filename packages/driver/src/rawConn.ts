@@ -168,20 +168,14 @@ export class RawConnection extends BaseRawConnection {
   }
 
   private _onData(data: Uint8Array): void {
-    let pause = false;
     try {
-      pause = this.buffer.feed(data);
+      this.buffer.feed(data);
     } catch (e: any) {
       if (this.messageWaiter) {
         this.messageWaiter.setError(e);
         this.messageWaiter = null;
       }
       this._abortWithError(e);
-    }
-
-    if (pause) {
-      this.paused = true;
-      this.sock.pause();
     }
 
     if (this.messageWaiter) {

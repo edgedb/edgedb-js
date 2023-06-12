@@ -107,16 +107,10 @@ class BaseFetchConnection extends BaseRawConnection {
       const respData = await resp.arrayBuffer();
       const buf = new Uint8Array(respData);
 
-      let pause = false;
       try {
-        pause = this.buffer.feed(buf);
+        this.buffer.feed(buf);
       } catch (e: any) {
         this.messageWaiter.setError(e);
-      }
-
-      if (pause) {
-        // unreachable
-        throw new ProtocolError("too much data received");
       }
 
       if (!this.buffer.takeMessage()) {
