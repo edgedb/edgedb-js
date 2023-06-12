@@ -38,7 +38,6 @@ jobs:
         with:
           path: packages/driver
 
-
       - name: Write version to file
         run: |
           echo "${{ steps.package-version.outputs.current-version }}"
@@ -52,6 +51,7 @@ jobs:
       - name: Compile for Deno
         run: |
           yarn workspace edgedb build:deno
+          yarn workspace @edgedb/generate build:deno
 
       - name: Push to edgedb-deno
         run: ./.github/workflows/push-edgedb-deno.sh
