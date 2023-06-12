@@ -1001,7 +1001,8 @@ async function parseCloudInstanceNameIntoConfig(
   source: string,
   serverUtils: ServerUtils | null
 ): Promise<void> {
-  const [org, instanceName] = cloudInstanceName.split("/");
+  const normInstanceName = cloudInstanceName.toLowerCase();
+  const [org, instanceName] = normInstanceName.split("/");
   const domainName = `${instanceName}--${org}`;
   if (domainName.length > DOMAIN_NAME_MAX_LEN) {
     throw new InterfaceError(
@@ -1054,7 +1055,7 @@ async function parseCloudInstanceNameIntoConfig(
         "Invalid secret key: payload does not contain 'iss' value"
       );
     }
-    const dnsBucket = (crcHqx(utf8Encoder.encode(cloudInstanceName), 0) % 100)
+    const dnsBucket = (crcHqx(utf8Encoder.encode(normInstanceName), 0) % 100)
       .toString(10)
       .padStart(2, "0");
 
