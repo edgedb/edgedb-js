@@ -483,7 +483,7 @@ export class ReadMessageBuffer {
   private __nextBuf(): void {
     // Only called from ensureFirstBuf().  This part
     // is factored out to let ensureFirstBuf() be inlined.
-    const nextBuf = this.bufs.pop();
+    const nextBuf = this.bufs.shift();
     if (nextBuf == null) {
       throw new BufferError("buffer overread");
     }
