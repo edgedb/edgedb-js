@@ -1544,32 +1544,6 @@ test("querySingle: arrays", async () => {
 
 jest.setTimeout(60_000);
 
-test("fetch: long strings", async () => {
-  // This test is meant to stress test the ring buffer.
-
-  const con = getClient();
-  let res: any;
-  try {
-    // A 1mb string.
-    res = await con.querySingle("select str_repeat('a', <int64>(10^6));");
-    expect(res.length).toEqual(1_000_000);
-
-    // A 100mb string.
-    await con
-      .querySingle("select str_repeat('aa', <int64>(10^8));")
-      .then(() => {
-        throw new Error("the query should have errored out");
-      })
-      .catch((e) => {
-        expect(e.toString()).toMatch(
-          /query result is too big: buffer overflow/
-        );
-      });
-  } finally {
-    await con.close();
-  }
-});
-
 test("querySingleJSON", async () => {
   const con = getClient();
   let res: any;

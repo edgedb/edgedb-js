@@ -17,18 +17,12 @@
  */
 
 import char, * as chars from "./chars";
-import { RingBuffer } from "./ring";
 import * as bi from "./bigint";
 import * as compat from "../compat";
 import { LegacyHeaderCodes } from "../ifaces";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE: number = 4096;
-
-/* Max number of recv buffers that can be queued for
- * reading.
- */
-const BUFFER_RING_CAPACITY: number = 8192;
 
 const EMPTY_BUFFER = new Uint8Array(0);
 
@@ -419,7 +413,7 @@ export function uuidToBuffer(uuid: string) {
 }
 
 export class ReadMessageBuffer {
-  private bufs: RingBuffer<Uint8Array>;
+  private bufs: Uint8Array[];
   private len: number;
 
   private buf0: DataView | null;
@@ -432,7 +426,7 @@ export class ReadMessageBuffer {
   private curMessageReady: boolean;
 
   constructor() {
-    this.bufs = new RingBuffer<Uint8Array>({ capacity: BUFFER_RING_CAPACITY });
+    this.bufs = [];
     this.buf0 = null;
     this.pos0 = 0;
     this.len0 = 0;
@@ -448,7 +442,7 @@ export class ReadMessageBuffer {
     return this.len;
   }
 
-  feed(buf: Uint8Array): boolean {
+  feed(buf: Uint8Array): void {
     if (
       this.buf0 == null ||
       (this.pos0 === this.len0 && this.bufs.length === 0)
@@ -457,20 +451,14 @@ export class ReadMessageBuffer {
       this.len0 = buf.byteLength;
       this.pos0 = 0;
       this.len = this.len0;
-      return false;
     } else {
-      return this.feedEnqueue(buf);
+      this.feedEnqueue(buf);
     }
   }
 
-  private feedEnqueue(buf: Uint8Array): boolean {
-    this.bufs.enq(buf);
+  private feedEnqueue(buf: Uint8Array): void {
+    this.bufs.push(buf);
     this.len += buf.byteLength;
-    const isFull = this.bufs.full;
-    if (isFull && this.curMessageType !== 0) {
-      throw new BufferError("query result is too big: buffer overflow");
-    }
-    return isFull;
   }
 
   private ensureFirstBuf(): DataView {
@@ -493,7 +481,7 @@ export class ReadMessageBuffer {
   private __nextBuf(): void {
     // Only called from ensureFirstBuf().  This part
     // is factored out to let ensureFirstBuf() be inlined.
-    const nextBuf = this.bufs.deq();
+    const nextBuf = this.bufs.shift();
     if (nextBuf == null) {
       throw new BufferError("buffer overread");
     }
