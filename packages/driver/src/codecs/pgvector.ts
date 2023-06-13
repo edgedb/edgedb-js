@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { ICodec, ScalarCodec } from "./ifaces";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
 
-const PG_VECTOR_MAX_DIM = (1 << 16) - 1;
+export const PG_VECTOR_MAX_DIM = (1 << 16) - 1;
 
 export class PgVectorCodec extends ScalarCodec implements ICodec {
   tsType = "Float32Array";
@@ -42,7 +42,7 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
       .writeInt32(4 + object.length * 4)
       .writeUInt16(object.length)
       .writeUInt16(0);
-    for (var el of object) {
+    for (const el of object) {
       buf.writeFloat32(el);
     }
   }
@@ -59,7 +59,7 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
     );
     const vec = new Float32Array(dim);
 
-    for (var i = 0; i < dim; i++) {
+    for (let i = 0; i < dim; i++) {
       vec[i] = data.getFloat32(i * 4);
     }
 
