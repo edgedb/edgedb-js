@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import assert from "node:assert/strict";
 import fc from "fast-check";
 import { parseConnectArguments } from "../src/conUtils.server";
 import {
@@ -400,7 +399,7 @@ test("fetch: int64 as bigint", async () => {
   }
 });
 
-describe.only("fetch: ext::pgvector::vector", () => {
+describe("fetch: ext::pgvector::vector", () => {
   const con = getClient();
   const hasPgVectorExtentionQuery = `
     select exists (
@@ -442,9 +441,9 @@ describe.only("fetch: ext::pgvector::vector", () => {
             "select <ext::pgvector::vector>$0;",
             [data]
           );
-          assert.ok(result);
-          assert.ok(result instanceof Float32Array);
-          assert.deepEqual(result, data);
+          expect(result).toBeTruthy();
+          expect(result).toBeInstanceOf(Float32Array);
+          expect(result).toEqual(data);
         }
       ),
       { numRuns: 1000 }
@@ -470,20 +469,11 @@ describe.only("fetch: ext::pgvector::vector", () => {
             "select <json><ext::pgvector::vector>$0;",
             [data]
           );
-          assert.ok(result);
-          console.log({
-            result,
-            data,
-            floatingResult: new Float32Array(result),
-            jsonData: new Float32Array(
-              JSON.parse(JSON.stringify(Array.from(data)))
-            ),
-          });
-          const f32JsonResult = new Float32Array(result);
+          const f32JsonResult = new Float32Array(result!);
           const f32JsonData = new Float32Array(
             JSON.parse(JSON.stringify(Array.from(data)))
           );
-          assert.deepEqual(f32JsonResult, f32JsonData);
+          expect(f32JsonResult).toEqual(f32JsonData);
         }
       ),
       { numRuns: 1000 }
@@ -497,9 +487,9 @@ describe.only("fetch: ext::pgvector::vector", () => {
     if (!hasPgVectorExtention) return;
 
     const data = new Float32Array([]);
-    await assert.rejects(() =>
+    await expect(
       con.querySingle("select <ext::pgvector::vector>$0;", [data])
-    );
+    ).rejects.toThrow();
   });
 
   test("invalid: invalid argument", async () => {
@@ -508,9 +498,9 @@ describe.only("fetch: ext::pgvector::vector", () => {
     );
     if (!hasPgVectorExtention) return;
 
-    await assert.rejects(() =>
+    await expect(
       con.querySingle("select <ext::pgvector::vector>$0;", ["foo"])
-    );
+    ).rejects.toThrow();
   });
 });
 
