@@ -1,29 +1,29 @@
-import {run} from "../../compileForDeno.ts";
+import { run } from "../../compileForDeno.ts";
 
 const denoTestFiles = new Set([
   "test/testbase.ts",
   "test/client.test.ts",
   "test/credentials.test.ts",
-  "test/credentials1.json"
+  "test/credentials1.json",
 ]);
 
 await run({
   sourceDir: "./src",
   destDir: "../deno",
   destEntriesToClean: ["_src", "mod.ts"],
-  sourceFilter: path => {
+  sourceFilter: (path) => {
     return !/\/syntax\//.test(path);
   },
   pathRewriteRules: [
-    {match: /^src\/index.node.ts$/, replace: "mod.ts"},
-    {match: /^src\//, replace: "_src/"}
+    { match: /^src\/index.node.ts$/, replace: "mod.ts" },
+    { match: /^src\//, replace: "_src/" },
   ],
   injectImports: [
     {
       imports: ["process"],
-      from: "src/globals.deno.ts"
-    }
-  ]
+      from: "src/globals.deno.ts",
+    },
+  ],
 }).then(async () =>
   run({
     sourceDir: "./test",
@@ -31,33 +31,50 @@ await run({
     sourceFilter: (path: any) => {
       return denoTestFiles.has(path);
     },
-    pathRewriteRules: [{match: /^test\//, replace: ""}],
+    pathRewriteRules: [{ match: /^test\//, replace: "" }],
     importRewriteRules: [
       {
         match: /^\.\.\/src\/index.node$/,
-        replace: "../mod.ts"
+        replace: "../mod.ts",
       },
       {
         match: /^globals.deno.ts$/,
-        replace: "../globals.deno.ts"
+        replace: "../globals.deno.ts",
       },
       {
         match: /^\.\.\/src\/.+/,
-        replace: match =>
+        replace: (match) =>
           `${match.replace(/^\.\.\/src\//, "../_src/")}${
             match.endsWith(".ts") ? "" : ".ts"
-          }`
-      }
+          }`,
+      },
+      {
+        match: /^fast-check$/,
+        replace: "npm:fast-check",
+      },
+      {
+        match: /^node:.*$/,
+        replace: (match) => match,
+      },
     ],
     injectImports: [
       {
-        imports: ["process", "test", "expect", "jest"],
-        from: "src/globals.deno.ts"
-      }
+        imports: [
+          "process",
+          "test",
+          "expect",
+          "jest",
+          "describe",
+          "beforeAll",
+          "afterAll",
+          "it",
+        ],
+        from: "src/globals.deno.ts",
+      },
       // {
       //   imports: ["test", "expect", "jest"],
       //   from: "test/globals.deno.ts",
       // },
-    ]
+    ],
   })
 );
