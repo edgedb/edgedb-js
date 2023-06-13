@@ -442,7 +442,7 @@ export class ReadMessageBuffer {
     return this.len;
   }
 
-  feed(buf: Uint8Array): boolean {
+  feed(buf: Uint8Array): void {
     if (
       this.buf0 == null ||
       (this.pos0 === this.len0 && this.bufs.length === 0)
@@ -451,16 +451,14 @@ export class ReadMessageBuffer {
       this.len0 = buf.byteLength;
       this.pos0 = 0;
       this.len = this.len0;
-      return false;
     } else {
-      return this.feedEnqueue(buf);
+      this.feedEnqueue(buf);
     }
   }
 
-  private feedEnqueue(buf: Uint8Array): boolean {
+  private feedEnqueue(buf: Uint8Array): void {
     this.bufs.push(buf);
     this.len += buf.byteLength;
-    return false;
   }
 
   private ensureFirstBuf(): DataView {
