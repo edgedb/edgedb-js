@@ -399,110 +399,112 @@ test("fetch: int64 as bigint", async () => {
   }
 });
 
-describe("fetch: ext::pgvector::vector", () => {
-  const con = getClient();
-  const hasPgVectorExtentionQuery = `
+if (!isDeno) {
+  describe("fetch: ext::pgvector::vector", () => {
+    const con = getClient();
+    const hasPgVectorExtentionQuery = `
     select exists (
       select sys::ExtensionPackage filter .name = 'pgvector'
     )`;
 
-  beforeAll(async () => {
-    const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-      hasPgVectorExtentionQuery
-    );
-    if (!hasPgVectorExtention) return;
-    await con.execute("create extension pgvector;");
+    beforeAll(async () => {
+      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
+        hasPgVectorExtentionQuery
+      );
+      if (!hasPgVectorExtention) return;
+      await con.execute("create extension pgvector;");
+    });
+
+    afterAll(async () => {
+      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
+        hasPgVectorExtentionQuery
+      );
+      if (!hasPgVectorExtention) return;
+      await con.execute("drop extension pgvector;");
+    });
+
+    it("valid: Float32Array", async () => {
+      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
+        hasPgVectorExtentionQuery
+      );
+      if (!hasPgVectorExtention) return;
+
+      await fc.assert(
+        fc.asyncProperty(
+          fc.float32Array({
+            noNaN: true,
+            noDefaultInfinity: true,
+            minLength: 1,
+            maxLength: PG_VECTOR_MAX_DIM,
+          }),
+          async (data) => {
+            const result = await con.querySingle(
+              "select <ext::pgvector::vector>$0;",
+              [data]
+            );
+            expect(result).toBeTruthy();
+            expect(result).toBeInstanceOf(Float32Array);
+            expect(result).toEqual(data);
+          }
+        ),
+        { numRuns: 1000 }
+      );
+    });
+
+    it("valid: JSON", async () => {
+      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
+        hasPgVectorExtentionQuery
+      );
+      if (!hasPgVectorExtention) return;
+
+      await fc.assert(
+        fc.asyncProperty(
+          fc.float32Array({
+            noNaN: true,
+            noDefaultInfinity: true,
+            minLength: 1,
+            maxLength: PG_VECTOR_MAX_DIM,
+          }),
+          async (data) => {
+            const result = await con.querySingle<number[]>(
+              "select <json><ext::pgvector::vector>$0;",
+              [data]
+            );
+            const f32JsonResult = new Float32Array(result!);
+            const f32JsonData = new Float32Array(
+              JSON.parse(JSON.stringify(Array.from(data)))
+            );
+            expect(f32JsonResult).toEqual(f32JsonData);
+          }
+        ),
+        { numRuns: 1000 }
+      );
+    });
+
+    it("invalid: empty", async () => {
+      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
+        hasPgVectorExtentionQuery
+      );
+      if (!hasPgVectorExtention) return;
+
+      const data = new Float32Array([]);
+      await expect(
+        con.querySingle("select <ext::pgvector::vector>$0;", [data])
+      ).rejects.toThrow();
+    });
+
+    it("invalid: invalid argument", async () => {
+      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
+        hasPgVectorExtentionQuery
+      );
+      if (!hasPgVectorExtention) return;
+
+      await expect(
+        con.querySingle("select <ext::pgvector::vector>$0;", ["foo"])
+      ).rejects.toThrow();
+    });
   });
-
-  afterAll(async () => {
-    const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-      hasPgVectorExtentionQuery
-    );
-    if (!hasPgVectorExtention) return;
-    await con.execute("drop extension pgvector;");
-  });
-
-  test("valid: Float32Array", async () => {
-    const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-      hasPgVectorExtentionQuery
-    );
-    if (!hasPgVectorExtention) return;
-
-    await fc.assert(
-      fc.asyncProperty(
-        fc.float32Array({
-          noNaN: true,
-          noDefaultInfinity: true,
-          minLength: 1,
-          maxLength: PG_VECTOR_MAX_DIM,
-        }),
-        async (data) => {
-          const result = await con.querySingle(
-            "select <ext::pgvector::vector>$0;",
-            [data]
-          );
-          expect(result).toBeTruthy();
-          expect(result).toBeInstanceOf(Float32Array);
-          expect(result).toEqual(data);
-        }
-      ),
-      { numRuns: 1000 }
-    );
-  });
-
-  test("valid: JSON", async () => {
-    const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-      hasPgVectorExtentionQuery
-    );
-    if (!hasPgVectorExtention) return;
-
-    await fc.assert(
-      fc.asyncProperty(
-        fc.float32Array({
-          noNaN: true,
-          noDefaultInfinity: true,
-          minLength: 1,
-          maxLength: PG_VECTOR_MAX_DIM,
-        }),
-        async (data) => {
-          const result = await con.querySingle<number[]>(
-            "select <json><ext::pgvector::vector>$0;",
-            [data]
-          );
-          const f32JsonResult = new Float32Array(result!);
-          const f32JsonData = new Float32Array(
-            JSON.parse(JSON.stringify(Array.from(data)))
-          );
-          expect(f32JsonResult).toEqual(f32JsonData);
-        }
-      ),
-      { numRuns: 1000 }
-    );
-  });
-
-  test("invalid: empty", async () => {
-    const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-      hasPgVectorExtentionQuery
-    );
-    if (!hasPgVectorExtention) return;
-
-    const data = new Float32Array([]);
-    await expect(
-      con.querySingle("select <ext::pgvector::vector>$0;", [data])
-    ).rejects.toThrow();
-  });
-
-  test("invalid: invalid argument", async () => {
-    const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-      hasPgVectorExtentionQuery
-    );
-    if (!hasPgVectorExtention) return;
-
-    await expect(
-      con.querySingle("select <ext::pgvector::vector>$0;", ["foo"])
-    ).rejects.toThrow();
-  });
-});
+}
 
 test("fetch: positional args", async () => {
   const con = getClient();
