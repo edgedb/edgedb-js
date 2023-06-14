@@ -142,7 +142,7 @@ test("transaction retry on connection error after commit", async () => {
   await client.close();
 });
 
-test("retry readonly queries", async () => {
+test("retry readonly queries: complete fetch", async () => {
   const client = getClient({ concurrency: 1 });
 
   const nonRetryingClient = client.withRetryOptions({ attempts: 1 });
@@ -157,27 +157,38 @@ test("retry readonly queries", async () => {
     "Hello EdgeDB!"
   );
 
-  // optimistic fetch
+  currentSocket!.abortOnNextMessageType(chars.$D);
+  await expect(
+    nonRetryingClient.query(`select 'Hello edgedb-js!'`)
+  ).rejects.toThrow();
+
+  await client.close();
+});
+
+test("retry readonly queries: optimistic fetch", async () => {
+  const client = getClient({ concurrency: 1 });
+
+  const nonRetryingClient = client.withRetryOptions({ attempts: 1 });
+
+  await client.ensureConnected();
+
   currentSocket!.abortOnNextMessageType(chars.$D);
   await expect(client.querySingle(`select 'Hello EdgeDB!'`)).resolves.toBe(
     "Hello EdgeDB!"
   );
 
-  // optimistic fetch - non retrying
   currentSocket!.abortOnNextMessageType(chars.$D);
   await expect(
     nonRetryingClient.querySingle(`select 'Hello EdgeDB!'`)
   ).rejects.toThrow();
 
-  // last query didn't retry so manually reconnect now, so currentSocket is
-  // up to date
-  await client.ensureConnected();
+  await client.close();
+});
 
-  // complete fetch - non retrying
-  currentSocket!.abortOnNextMessageType(chars.$D);
-  await expect(
-    nonRetryingClient.query(`select 'Hello edgedb-js!'`)
-  ).rejects.toThrow();
+test("non readonly queries: optimistic fetch", async () => {
+  const client = getClient({ concurrency: 1 });
+
+  await client.ensureConnected();
 
   // non readonly queries
 
