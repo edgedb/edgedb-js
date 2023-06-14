@@ -181,7 +181,12 @@ export async function run({
             ? rule.replace(match, sourcePath)
             : rule.replace
         );
-        if (!path.endsWith(".ts")) return path + ".ts";
+        if (
+          !path.endsWith(".ts") &&
+          !path.startsWith("node:") &&
+          !path.startsWith("npm:")
+        )
+          return path + ".ts";
         return path;
       }
     }

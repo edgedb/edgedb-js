@@ -27,6 +27,7 @@
   "devDependencies": {
     "@js-temporal/polyfill": "^0.4.1",
     "@types/jest": "^29.5.1",
+    "fast-check": "^3.10.0",
     "get-stdin": "^7.0.0",
     "globby": "^13.1.2",
     "jest": "29.5.0",
