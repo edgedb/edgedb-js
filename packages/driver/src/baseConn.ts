@@ -44,7 +44,7 @@ import {
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
 import LRU from "./primitives/lru";
-import { Session } from "./options";
+import { SerializedSessionState, Session } from "./options";
 
 export const PROTO_VER: ProtocolVersion = [1, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];
@@ -140,9 +140,9 @@ export class BaseRawConnection {
 
   protected stateCodec: ICodec = INVALID_CODEC;
   protected stateCache: [Session, Uint8Array] | null = null;
-  protected lastStateUpdate: any = null;
+  lastStateUpdate: SerializedSessionState | null = null;
 
-  protected cliMode: boolean = false;
+  protected adminUIMode: boolean = false;
 
   /** @internal */
   protected constructor(registry: CodecsRegistry) {
@@ -292,7 +292,7 @@ export class BaseRawConnection {
       const stateTypeId = this.buffer.readUUID();
       const stateData = this.buffer.readLenPrefixedBuffer();
 
-      if (this.cliMode && stateTypeId === this.stateCodec.tid) {
+      if (this.adminUIMode && stateTypeId === this.stateCodec.tid) {
         this.lastStateUpdate = this.stateCodec.decode(
           new ReadBuffer(stateData)
         );
@@ -903,7 +903,7 @@ export class BaseRawConnection {
     );
     wb.writeString(query);
 
-    if (!this.cliMode && state === Session.defaults()) {
+    if (!this.adminUIMode && state === Session.defaults()) {
       wb.writeBuffer(NULL_CODEC.tidBuffer);
       wb.writeInt32(0);
     } else {

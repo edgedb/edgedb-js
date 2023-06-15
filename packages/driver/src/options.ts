@@ -108,6 +108,13 @@ export interface SessionOptions {
   globals?: Record<string, any>;
 }
 
+export interface SerializedSessionState {
+  module?: string;
+  aliases?: [string, string][];
+  config?: { [name: string]: unknown };
+  globals?: { [name: string]: unknown };
+}
+
 export class Session {
   readonly module: string;
   readonly moduleAliases: Record<string, string>;
@@ -155,7 +162,7 @@ export class Session {
 
   /** @internal */
   _serialise() {
-    const state: any = {};
+    const state: SerializedSessionState = {};
     if (this.module !== "default") {
       state.module = this.module;
     }
