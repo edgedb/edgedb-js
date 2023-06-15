@@ -143,6 +143,8 @@ class BaseFetchConnection extends BaseRawConnection {
 }
 
 export class AdminUIFetchConnection extends BaseFetchConnection {
+  adminUIMode = true;
+
   protected _buildAddr(): string {
     const config = this.config;
 

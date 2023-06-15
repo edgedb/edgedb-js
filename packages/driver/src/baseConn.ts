@@ -44,7 +44,7 @@ import {
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
 import LRU from "./primitives/lru";
-import { Session } from "./options";
+import { SerializedSessionState, Session } from "./options";
 
 export const PROTO_VER: ProtocolVersion = [1, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];
@@ -83,6 +83,12 @@ const RESTRICTED_CAPABILITIES =
     ~Capabilities.TRANSACTION &
     ~Capabilities.SESSION_CONFIG &
     ~Capabilities.SET_GLOBAL) >>>
+  0;
+
+const STUDIO_CAPABILITIES =
+  (RESTRICTED_CAPABILITIES |
+    Capabilities.SESSION_CONFIG |
+    Capabilities.SET_GLOBAL) >>>
   0;
 
 enum CompilationFlag {
@@ -134,6 +140,9 @@ export class BaseRawConnection {
 
   protected stateCodec: ICodec = INVALID_CODEC;
   protected stateCache: [Session, Uint8Array] | null = null;
+  lastStateUpdate: SerializedSessionState | null = null;
+
+  protected adminUIMode: boolean = false;
 
   /** @internal */
   protected constructor(registry: CodecsRegistry) {
@@ -279,8 +288,15 @@ export class BaseRawConnection {
     } else {
       this.buffer.readBigInt64();
       status = this.buffer.readString();
-      this.buffer.readUUID(); // state type id
-      this.buffer.readLenPrefixedBuffer(); // state
+
+      const stateTypeId = this.buffer.readUUID();
+      const stateData = this.buffer.readLenPrefixedBuffer();
+
+      if (this.adminUIMode && stateTypeId === this.stateCodec.tid) {
+        this.lastStateUpdate = this.stateCodec.decode(
+          new ReadBuffer(stateData)
+        );
+      }
     }
     this.buffer.finishMessage();
     return status;
@@ -862,13 +878,10 @@ export class BaseRawConnection {
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
     state: Session,
-    privilegedMode: boolean,
+    capabilitiesFlags: number,
     options: QueryOptions | undefined
   ) {
-    wb.writeFlags(
-      0xffff_ffff,
-      privilegedMode ? Capabilities.ALL : RESTRICTED_CAPABILITIES
-    );
+    wb.writeFlags(0xffff_ffff, capabilitiesFlags);
     wb.writeFlags(
       0,
       0 |
@@ -890,12 +903,12 @@ export class BaseRawConnection {
     );
     wb.writeString(query);
 
-    if (state === Session.defaults()) {
+    if (!this.adminUIMode && state === Session.defaults()) {
       wb.writeBuffer(NULL_CODEC.tidBuffer);
       wb.writeInt32(0);
     } else {
       wb.writeBuffer(this.stateCodec.tidBuffer);
-      if (this.stateCodec === INVALID_CODEC) {
+      if (this.stateCodec === INVALID_CODEC || this.stateCodec === NULL_CODEC) {
         wb.writeInt32(0);
       } else {
         if (this.stateCache?.[0] !== state) {
@@ -913,7 +926,7 @@ export class BaseRawConnection {
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
     state: Session,
-    privilegedMode: boolean = false,
+    capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
     options?: QueryOptions
   ): Promise<ParseResult> {
     const wb = new WriteMessageBuffer();
@@ -926,7 +939,7 @@ export class BaseRawConnection {
       outputFormat,
       expectedCardinality,
       state,
-      privilegedMode,
+      capabilitiesFlags,
       options
     );
 
@@ -1008,7 +1021,7 @@ export class BaseRawConnection {
           outputFormat,
           expectedCardinality,
           state,
-          privilegedMode,
+          capabilitiesFlags,
           options
         );
       }
@@ -1034,7 +1047,7 @@ export class BaseRawConnection {
     inCodec: ICodec,
     outCodec: ICodec,
     result: Array<any> | WriteBuffer,
-    privilegedMode: boolean = false,
+    capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
     options?: QueryOptions
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
@@ -1047,7 +1060,7 @@ export class BaseRawConnection {
       outputFormat,
       expectedCardinality,
       state,
-      privilegedMode,
+      capabilitiesFlags,
       options
     );
 
@@ -1150,7 +1163,7 @@ export class BaseRawConnection {
           inCodec,
           outCodec,
           result,
-          privilegedMode,
+          capabilitiesFlags,
           options
         );
       }
@@ -1234,7 +1247,7 @@ export class BaseRawConnection {
           outputFormat,
           expectedCardinality,
           state,
-          privilegedMode
+          privilegedMode ? Capabilities.ALL : undefined
         );
         this._validateFetchCardinality(card, outputFormat, expectedCardinality);
       }
@@ -1249,7 +1262,7 @@ export class BaseRawConnection {
           inCodec ?? NULL_CODEC,
           outCodec ?? NULL_CODEC,
           ret,
-          privilegedMode
+          privilegedMode ? Capabilities.ALL : undefined
         );
       } catch (e) {
         if (e instanceof errors.ParameterTypeMismatchError) {
@@ -1263,7 +1276,7 @@ export class BaseRawConnection {
             inCodec ?? NULL_CODEC,
             outCodec ?? NULL_CODEC,
             ret,
-            privilegedMode
+            privilegedMode ? Capabilities.ALL : undefined
           );
         } else {
           throw e;
@@ -1448,7 +1461,7 @@ export class BaseRawConnection {
       OutputFormat.BINARY,
       Cardinality.MANY,
       state,
-      false,
+      STUDIO_CAPABILITIES,
       options
     ))!;
     return [
@@ -1479,7 +1492,7 @@ export class BaseRawConnection {
       inCodec ?? NULL_CODEC,
       outCodec ?? NULL_CODEC,
       result,
-      false,
+      STUDIO_CAPABILITIES,
       options
     );
     return result.unwrap();

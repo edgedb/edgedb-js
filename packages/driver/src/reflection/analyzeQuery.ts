@@ -35,8 +35,7 @@ export async function analyzeQuery(
       query,
       OutputFormat.BINARY,
       Cardinality.MANY,
-      Session.defaults(),
-      false
+      Session.defaults()
     );
   } finally {
     await holder.release();
