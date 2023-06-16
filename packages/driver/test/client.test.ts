@@ -438,13 +438,16 @@ if (!isDeno) {
             maxLength: PG_VECTOR_MAX_DIM,
           }),
           async (data) => {
-            const result = await con.querySingle(
-              "select <ext::pgvector::vector>$0;",
-              [data]
+            const result = await con.querySingle<unknown[]>(
+              "select (<ext::pgvector::vector>$0, <ext::pgvector::vector>$1)",
+              [data, [...data]]
             );
-            expect(result).toBeTruthy();
-            expect(result).toBeInstanceOf(Float32Array);
-            expect(result).toEqual(data);
+            expect(Array.isArray(result)).toBe(true);
+            expect(result!.length).toBe(2);
+            expect(result![0]).toBeInstanceOf(Float32Array);
+            expect(result![1]).toBeInstanceOf(Float32Array);
+            expect(result![0]).toEqual(data);
+            expect(result![1]).toEqual(data);
           }
         ),
         { numRuns: 1000 }
