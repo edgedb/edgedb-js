@@ -201,6 +201,7 @@ SELECT (SELECT __param__test)`
       relative_duration: e.cal.relative_duration,
       date_duration: e.cal.date_duration,
       memory: e.cfg.memory,
+      pgvector: e.ext.pgvector.vector,
     };
 
     const query = e.params(params, (p) => e.select(p));
@@ -228,6 +229,11 @@ SELECT (SELECT __param__test)`
       relative_duration: new edgedb.RelativeDuration(1, 2, 3),
       date_duration: new edgedb.DateDuration(1, 2, 3, 4),
       memory: new edgedb.ConfigMemory(BigInt(125952)),
+      pgvector: Float32Array.from(
+        Array(10)
+          .fill(0)
+          .map(() => Math.random())
+      ),
     };
 
     const result = await query.run(client, args);
@@ -257,6 +263,7 @@ SELECT (SELECT __param__test)`
           relative_duration: edgedb.RelativeDuration;
           date_duration: edgedb.DateDuration;
           memory: edgedb.ConfigMemory;
+          pgvector: Float32Array;
         }
       >
     >(true);

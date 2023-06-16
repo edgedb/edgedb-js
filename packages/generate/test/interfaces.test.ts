@@ -30,6 +30,7 @@ export interface test_Profile extends BaseObject {
   a?: string | null;
   b?: string | null;
   c?: string | null;
+  plot_embedding?: Float32Array | null;
 }
 interface test_Z extends BaseObject {
   xy?: X | Y | null;

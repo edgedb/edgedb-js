@@ -169,4 +169,23 @@ describe("primitives", () => {
     const result = await e.Genre["Science Fiction"].run(client);
     assert.equal(result, "Science Fiction");
   });
+
+  test("pgvector", async () => {
+    const query = e.select(e.Profile, () => ({
+      plot_embedding: true,
+      vector_literal: e.ext.pgvector.vector(Float32Array.from([1, 2, 3])),
+    }));
+
+    const result = await query.run(client);
+
+    tc.assert<
+      tc.IsExact<
+        typeof result,
+        {
+          plot_embedding: Float32Array | null;
+          vector_literal: Float32Array;
+        }[]
+      >
+    >(true);
+  });
 });

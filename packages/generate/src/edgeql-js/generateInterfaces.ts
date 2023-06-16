@@ -130,10 +130,22 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
       } else if (isLink) {
         return getTypeName(targetType.name);
       } else {
-        return toTSScalarType(targetType as $.introspect.PrimitiveType, types, {
-          getEnumRef: (enumType) => getTypeName(enumType.name),
-          edgedbDatatypePrefix: "",
-        }).join("");
+        const baseType =
+          targetType.kind === "scalar"
+            ? (targetType.bases
+                .map(({ id }) => types.get(id))
+                .filter(
+                  (baseType) => !baseType.is_abstract
+                )[0] as $.introspect.ScalarType)
+            : null;
+        return toTSScalarType(
+          baseType ?? (targetType as $.introspect.PrimitiveType),
+          types,
+          {
+            getEnumRef: (enumType) => getTypeName(enumType.name),
+            edgedbDatatypePrefix: "",
+          }
+        ).join("");
       }
     };
 

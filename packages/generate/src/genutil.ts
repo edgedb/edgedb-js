@@ -99,6 +99,7 @@ export const scalarToLiteralMapping: {
     literalKind: "instanceof",
     extraTypes: ["string"],
   },
+  "ext::pgvector::vector": { type: "Float32Array", literalKind: "instanceof" },
 };
 
 export const literalToScalarMapping: {

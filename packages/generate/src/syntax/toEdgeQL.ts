@@ -1513,6 +1513,8 @@ function literalToEdgeQL(type: BaseType, val: any): string {
   } else if (val instanceof Uint8Array) {
     stringRep = bufferToStringRep(val);
     skipCast = true;
+  } else if (val instanceof Float32Array) {
+    stringRep = `[${val.join(",")}]`;
   } else if (val instanceof Range) {
     const elType = (type as RangeType).__element__;
 
