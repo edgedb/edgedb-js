@@ -198,7 +198,11 @@ function generateFiles(params: {
 }[] {
   const queryFileName = adapter.path.basename(params.path);
   const baseFileName = queryFileName.replace(/\.edgeql$/, "");
-  const outputBaseFileName = `${baseFileName}.query`;
+  const outputDirname = adapter.path.dirname(params.path);
+  const outputBaseFileName = adapter.path.join(
+    outputDirname,
+    `${baseFileName}.query`
+  );
 
   const method =
     params.types.cardinality === Cardinality.ONE
