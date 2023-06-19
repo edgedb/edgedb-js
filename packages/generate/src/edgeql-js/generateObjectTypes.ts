@@ -1,4 +1,4 @@
-import { CodeFragment, dts, r, t, ts } from "../builders";
+import { CodeFragment, IdentRef, dts, r, t, ts } from "../builders";
 import type { GeneratorParams } from "../genutil";
 import type { $ } from "../genutil";
 import {
@@ -381,12 +381,21 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     const baseTypesUnion = type.bases.length
       ? frag`${joinFrags(
           type.bases.map((base) => {
+            function getRecursiveLinks(b: {
+              id: string;
+            }): ($.introspect.Pointer | $.introspect.Backlink)[] {
+              const { pointers, backlinks, backlink_stubs, bases } = types.get(
+                b.id
+              ) as $.introspect.ObjectType;
+              return [
+                ...pointers,
+                ...backlinks,
+                ...backlink_stubs,
+                ...(bases.length ? bases.flatMap(getRecursiveLinks) : []),
+              ];
+            }
             const baseType = types.get(base.id) as $.introspect.ObjectType;
-            const overloadedFields = [
-              ...baseType.pointers,
-              ...baseType.backlinks,
-              ...baseType.backlink_stubs,
-            ]
+            const overloadedFields = getRecursiveLinks(base)
               .filter((field) => fieldNames.has(field.name))
               .map((field) => quote(field.name));
             const baseRef = getRef(baseType.name);
@@ -444,34 +453,90 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     // instantiate ObjectType subtype from shape
     body.writeln([
       dts`declare `,
-      t`type ${ref} = $.ObjectType<${quote(type.name)}, ${ref}λShape, null, [`,
+      // type Foo = $.ObjectType<
+      t`type ${ref} = $.ObjectType<`,
     ]);
-
-    const bases = type.bases
-      .map((b) => types.get(b.id))
-      .map((b) => getRef(b.name));
     body.indented(() => {
-      for (const b of bases) {
-        body.writeln([t`...${b}['__exclusives__'],`]);
+      // Name
+      body.writeln([t`${quote(type.name)},`]);
+      // Pointers
+      body.writeln([t`${ref}λShape, `]);
+      // Shape
+      body.writeln([t`null, `]);
+      // Exclusives
+      body.writeln([t`[`]);
+
+      // Base types exclusives
+      const bases = (function findRecursiveBases(
+        bs: readonly { id: string }[]
+      ): IdentRef[] {
+        return [
+          ...bs
+            .map((b) => types.get(b.id) as $.introspect.ObjectType)
+            .flatMap((b) => {
+              if (b.bases.length) {
+                return [...findRecursiveBases(b.bases), b];
+              }
+              return [b];
+            })
+            .map((b) => getRef(b.name)),
+        ];
+      })(type.bases);
+
+      body.indented(() => {
+        for (const b of bases) {
+          body.writeln([t`...${b}['__exclusives__'],`]);
+        }
+      });
+
+      // This type exclusives
+      body.indented(() => {
+        for (const ex of type.exclusives) {
+          body.writeln([
+            t`{`,
+            ...Object.keys(ex).map((key) => {
+              const target = types.get(ex[key].target_id);
+              const { staticType } = getStringRepresentation(target, { types });
+              const card = `$.Cardinality.One | $.Cardinality.AtMostOne `;
+              return t`${key}: {__element__: ${staticType}, __cardinality__: ${card}},`;
+            }),
+            t`},`,
+          ]);
+        }
+      });
+
+      // Exclusives, End
+      body.writeln([t`],`]);
+
+      // Subtypes
+      body.writeln([t`| ${quote(ref.name)}`]);
+      if (
+        type.is_abstract &&
+        !["std", "sys", "schema"].includes(splitName(type.name).mod)
+      ) {
+        const subtypes = (function findRecursiveSubtypes(sub: {
+          id: string;
+        }): $.introspect.ObjectType[] {
+          const subs: $.introspect.ObjectType[] = [];
+          for (const candidate of types.values()) {
+            if (
+              candidate.kind === "object" &&
+              candidate.bases.find((b) => b.id === sub.id)
+            ) {
+              subs.push(candidate);
+              subs.push(...findRecursiveSubtypes(candidate));
+            }
+          }
+          return subs;
+        })(type);
+
+        for (const sub of subtypes) {
+          body.writeln([t`| ${quote(getRef(sub.name).name)}`]);
+        }
       }
     });
 
-    // const ref = getRef(type.name);
-    for (const ex of type.exclusives) {
-      body.writeln([
-        t`  {`,
-        ...Object.keys(ex).map((key) => {
-          const target = types.get(ex[key].target_id);
-          const { staticType } = getStringRepresentation(target, { types });
-          const card = `$.Cardinality.One | $.Cardinality.AtMostOne `;
-          return t`${key}: {__element__: ${staticType}, __cardinality__: ${card}},`;
-        }),
-        t`},`,
-      ]);
-      // body.writeln([t`\n  {${lines.join(", ")}}`]);
-    }
-
-    body.writeln([t`]>;`]);
+    body.writeln([t`>;`]);
 
     if (type.name === "std::Object") {
       body.writeln([t`export `, dts`declare `, t`type $Object = ${ref}`]);

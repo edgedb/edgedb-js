@@ -111,57 +111,12 @@ export type exclusivesToFilterSingle<E extends ExclusiveTuple> =
             : orLiteralValue<E[j][k]>;
         };
       }[number];
+
 export type SelectModifiers<T extends ObjectType = ObjectType> = {
-  // export type SelectModifiers = {
   filter?: SelectFilterExpression;
-  filter_single?: // | Partial<
-  //     typeutil.stripNever<{
-  //       [k in keyof T["__pointers__"]]: T["__pointers__"][k]
-  // extends PropertyDesc
-  //         ? orScalarLiteral<{
-  //             __element__: T["__pointers__"][k]["target"];
-  //             __cardinality__: T["__pointers__"][k]["cardinality"];
-  //           }>
-  //         : never;
-  //     }>
-  //   >
-
-  // | (ObjectType extends T
-  //       ? unknown
-  //       : typeutil.stripNever<{
-  //           [k in keyof T["__pointers__"]]: T["__pointers__"][k]
-  // extends PropertyDesc<
-  //             infer T,
-  //             infer C,
-  //             infer E
-  //           >
-  //             ? E extends true
-  //               ? orScalarLiteral<{
-  //                   __element__: T;
-  //                   __cardinality__: C;
-  //                 }>
-  //               : never
-  //             : never;
-  //         }>)
-  exclusivesToFilterSingle<T["__exclusives__"]> | SelectFilterExpression;
-
-  // | (ObjectType extends T
-  //     ? unknown
-  //     : typeutil.stripNever<{
-  //         [k in keyof T["__pointers__"]]: T["__pointers__"][k]
-  // extends PropertyDesc<
-  //           infer T,
-  //           infer C,
-  //           infer E
-  //         >
-  //           ? E extends true
-  //             ? orScalarLiteral<{
-  //                 __element__: T;
-  //                 __cardinality__: C;
-  //               }>
-  //             : never
-  //           : never;
-  //       }>);
+  filter_single?:
+    | exclusivesToFilterSingle<T["__exclusives__"]>
+    | SelectFilterExpression;
   order_by?: OrderByExpression;
   offset?: OffsetExpression | number;
   limit?: LimitExpression | number;
@@ -872,7 +827,9 @@ export function select<Expr extends ObjectTypeExpression>(
   __element__: ObjectType<
     `${Expr["__element__"]["__name__"]}`, // _shape
     Expr["__element__"]["__pointers__"],
-    Expr["__element__"]["__shape__"] // {id: true}
+    Expr["__element__"]["__shape__"], // {id: true}
+    Expr["__element__"]["__exclusives__"],
+    Expr["__element__"]["__subNames__"]
   >;
   __cardinality__: Expr["__cardinality__"];
 }>;

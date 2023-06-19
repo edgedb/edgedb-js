@@ -15,6 +15,8 @@ import type {
   TupleType,
   TypeSet,
   RangeType,
+  ExclusiveTuple,
+  ObjectTypePointers,
 } from "./typesystem";
 import type { cardutil } from "./cardinality";
 
@@ -73,22 +75,25 @@ export type pointerToAssignmentExpression<
 export type setToAssignmentExpression<
   Set extends TypeSet,
   IsSetModifier extends boolean
-> = [Set] extends [PrimitiveTypeSet]
+> = Set extends PrimitiveTypeSet
   ?
       | TypeSet<
           assignableBy<Set["__element__"]>,
           cardutil.assignable<
-            // Set["__cardinality__"]
             cardutil.overrideLowerBound<Set["__cardinality__"], "Zero">
           >
         >
       | getAssignmentLiteral<Set, IsSetModifier>
-  : [Set] extends [ObjectTypeSet]
+  : Set extends ObjectTypeSet
   ? TypeSet<
       ObjectType<
         // anonymize the object type
         string,
-        Set["__element__"]["__pointers__"]
+        ObjectTypePointers,
+        any,
+        ExclusiveTuple,
+        // Allow expressions that are assignable to a supertype
+        Set["__element__"]["__subNames__"]
       >,
       cardutil.assignable<
         // Allow expressions with AtMostOne or Many cardinality in

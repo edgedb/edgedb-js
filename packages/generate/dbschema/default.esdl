@@ -20,7 +20,13 @@ module default {
   scalar type global_seq extending sequence;
   global seq_global -> global_seq;
 
+  abstract type Power {
+    property name -> str;
+  }
 
+  type GoodPower extending Power {}
+
+  type EvilPower extending Power {}
 
   abstract link movie_character {
     property character_name -> str;
@@ -31,16 +37,21 @@ module default {
       constraint exclusive;
     };
     property height -> decimal;
+    multi link powers -> Power;
   }
 
-  type Villain extending Person {
+  abstract type MainCharacter extending Person {}
+
+  type Villain extending MainCharacter {
     link nemesis -> Hero;
+    overloaded multi link powers -> EvilPower;
   }
 
-  type Hero extending Person {
+  type Hero extending MainCharacter {
     property secret_identity -> str;
     property number_of_movies -> int64;
     multi link villains := .<nemesis[IS Villain];
+    overloaded multi link powers -> GoodPower;
   }
 
   scalar type year extending int16 {
