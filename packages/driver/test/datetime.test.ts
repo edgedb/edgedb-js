@@ -57,35 +57,111 @@ test("local_datetime", () => {
     KNOWN_TYPENAMES.get("cal::local_datetime")!
   );
 
-  const tests: [string, string][] = [
-    ["9999-12-31T23:59:59.999999499", "252455615999999999"], // maximum
-    ["0001-01-01T00:00:00.000000000", "-63082281600000000"], // minimum
-    ["1814-03-09T01:02:03.000005500", "-5863791476999994"], // "negative unix timestamp, round up"
-    ["1814-03-09T01:02:03.000005501", "-5863791476999994"], // "negative unix timestamp, 5501"
-    ["1814-03-09T01:02:03.000005499", "-5863791476999995"], // "negative unix timestamp, 5499"
-    ["1856-08-27T01:02:03.000004500", "-4523554676999996"], // "negative unix timestamp, round down"
-    ["1856-08-27T01:02:03.000004501", "-4523554676999995"], // "negative unix timestamp, 4501"
-    ["1856-08-27T01:02:03.000004499", "-4523554676999996"], // "negative unix timestamp, 4499"
-    ["1969-12-31T23:59:59.999999500", "-946684800000000"], // "unix timestamp to zero"
-    ["1997-07-05T01:02:03.000009500", "-78620276999990"], // "negative postgres timestamp, round up"
-    ["1997-07-05T01:02:03.000009500", "-78620276999990"], // "negative postgres timestamp, 9501"
-    ["1997-07-05T01:02:03.000009499", "-78620276999991"], // "negative postgres timestamp, 9499"
-    ["1997-07-05T01:02:03.000000500", "-78620277000000"], // "negative postgres timestamp, round down"
-    ["1997-07-05T01:02:03.000000501", "-78620276999999"], // "negative postgres timestamp, 501"
-    ["1997-07-05T01:02:03.000000499", "-78620277000000"], // "negative postgres timestamp, 499"
-    ["1999-12-31T23:59:59.999999500", "0"], // "postgres timestamp to zero"
-    ["2014-02-27T00:00:00.000001500", "446774400000002"], // "positive timestamp, round up"
-    ["2014-02-27T00:00:00.000001501", "446774400000002"], // "positive timestamp, 1501"
-    ["2014-02-27T00:00:00.000001499", "446774400000001"], // "positive timestamp, 1499"
-    ["2022-02-24T05:43:03.000002500", "698996583000002"], // "positive timestamp, round down"
-    ["2022-02-24T05:43:03.000002501", "698996583000003"], // "positive timestamp, 2501"
-    ["2022-02-24T05:43:03.000002499", "698996583000002"], // "positive timestamp, 2499"
+  const tests: [string, string, string][] = [
+    [
+      "9999-12-31T23:59:59.999999499",
+      "252455615999999999",
+      "9999-12-31T23:59:59.999999",
+    ], // maximum
+    [
+      "0001-01-01T00:00:00.000000000",
+      "-63082281600000000",
+      "0001-01-01T00:00:00",
+    ], // minimum
+    [
+      "1814-03-09T01:02:03.000005500",
+      "-5863791476999994",
+      "1814-03-09T01:02:03.000006",
+    ], // "negative unix timestamp, round up"
+    [
+      "1814-03-09T01:02:03.000005501",
+      "-5863791476999994",
+      "1814-03-09T01:02:03.000006",
+    ], // "negative unix timestamp, 5501"
+    [
+      "1814-03-09T01:02:03.000005499",
+      "-5863791476999995",
+      "1814-03-09T01:02:03.000005",
+    ], // "negative unix timestamp, 5499"
+    [
+      "1856-08-27T01:02:03.000004500",
+      "-4523554676999996",
+      "1856-08-27T01:02:03.000004",
+    ], // "negative unix timestamp, round down"
+    [
+      "1856-08-27T01:02:03.000004501",
+      "-4523554676999995",
+      "1856-08-27T01:02:03.000005",
+    ], // "negative unix timestamp, 4501"
+    [
+      "1856-08-27T01:02:03.000004499",
+      "-4523554676999996",
+      "1856-08-27T01:02:03.000004",
+    ], // "negative unix timestamp, 4499"
+    [
+      "1969-12-31T23:59:59.999999500",
+      "-946684800000000",
+      "1970-01-01T00:00:00",
+    ], // "unix timestamp to zero"
+    [
+      "1997-07-05T01:02:03.000009500",
+      "-78620276999990",
+      "1997-07-05T01:02:03.00001",
+    ], // "negative postgres timestamp, round up"
+    [
+      "1997-07-05T01:02:03.000009500",
+      "-78620276999990",
+      "1997-07-05T01:02:03.00001",
+    ], // "negative postgres timestamp, 9501"
+    [
+      "1997-07-05T01:02:03.000009499",
+      "-78620276999991",
+      "1997-07-05T01:02:03.000009",
+    ], // "negative postgres timestamp, 9499"
+    ["1997-07-05T01:02:03.000000500", "-78620277000000", "1997-07-05T01:02:03"], // "negative postgres timestamp, round down"
+    [
+      "1997-07-05T01:02:03.000000501",
+      "-78620276999999",
+      "1997-07-05T01:02:03.000001",
+    ], // "negative postgres timestamp, 501"
+    ["1997-07-05T01:02:03.000000499", "-78620277000000", "1997-07-05T01:02:03"], // "negative postgres timestamp, 499"
+    ["1999-12-31T23:59:59.999999500", "0", "2000-01-01T00:00:00"], // "postgres timestamp to zero"
+    [
+      "2014-02-27T00:00:00.000001500",
+      "446774400000002",
+      "2014-02-27T00:00:00.000002",
+    ], // "positive timestamp, round up"
+    [
+      "2014-02-27T00:00:00.000001501",
+      "446774400000002",
+      "2014-02-27T00:00:00.000002",
+    ], // "positive timestamp, 1501"
+    [
+      "2014-02-27T00:00:00.000001499",
+      "446774400000001",
+      "2014-02-27T00:00:00.000001",
+    ], // "positive timestamp, 1499"
+    [
+      "2022-02-24T05:43:03.000002500",
+      "698996583000002",
+      "2022-02-24T05:43:03.000002",
+    ], // "positive timestamp, round down"
+    [
+      "2022-02-24T05:43:03.000002501",
+      "698996583000003",
+      "2022-02-24T05:43:03.000003",
+    ], // "positive timestamp, 2501"
+    [
+      "2022-02-24T05:43:03.000002499",
+      "698996583000002",
+      "2022-02-24T05:43:03.000002",
+    ], // "positive timestamp, 2499"
   ];
 
-  for (const [datestring, micros] of tests) {
+  for (const [inputDatestring, micros, outputDatestring] of tests) {
     const localDatetime = new LocalDateTime(
       // @ts-ignore
-      ...datestring
+      ...inputDatestring
         .match(
           /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{3})(\d{3})(\d{3})/
         )!
@@ -97,6 +173,10 @@ test("local_datetime", () => {
     const encodedMicros = Buffer.from(buf.unwrap()).readBigInt64BE(4);
 
     expect(encodedMicros).toEqual(BigInt(micros));
+
+    const readBuf = new ReadBuffer(buf.unwrap().slice(4));
+    const decodedLocalDatetime = codec.decode(readBuf);
+    expect(decodedLocalDatetime.toString()).toBe(outputDatestring);
   }
 });
 

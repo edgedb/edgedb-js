@@ -102,8 +102,14 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
 
   decode(buf: ReadBuffer): any {
     const bi1000 = bi.make(1000);
-    const us = buf.readBigInt64();
-    const ms = bi.div(us, bi1000);
+    const bi_us = buf.readBigInt64();
+    const bi_ms = bi.div(bi_us, bi1000);
+    let us = Number(bi.sub(bi_us, bi.mul(bi_ms, bi1000)));
+    let ms = Number(bi_ms);
+    if (us < 0) {
+      us += 1000;
+      ms -= 1;
+    }
 
     const date = new Date(Number(ms) + TIMESHIFT);
     return new LocalDateTime(
@@ -114,7 +120,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
       date.getUTCMinutes(),
       date.getUTCSeconds(),
       date.getUTCMilliseconds(),
-      Number(bi.sub(us, bi.mul(ms, bi1000)))
+      us
     );
   }
 }
