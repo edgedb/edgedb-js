@@ -66,6 +66,10 @@ module default {
 
   scalar type embedding extending ext::pgvector::vector<1234>;
 
+  type PgVectorTest {
+    property test_embedding: embedding;
+  }
+
   type Profile {
     property plot_summary -> str;
     property slug -> str {
@@ -74,8 +78,6 @@ module default {
     property a -> str;
     property b -> str;
     property c -> str;
-
-    property plot_embedding: embedding;
 
     constraint exclusive on ((  .plot_summary,    .slug  ));
     constraint exclusive on (((.a,.b,.c)));

@@ -4,5 +4,4 @@ select {
   data := <str>$data,
   required multi arg := {'asdf'},
   enums := [Genre.Horror, Genre.Action],
-  embedding := <embedding>[1, 2, 3],
 };

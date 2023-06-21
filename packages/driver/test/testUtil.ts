@@ -10,6 +10,8 @@ import type { ConnectConfig } from "../src/conUtils";
 import { Client, createClient } from "../src/index.node";
 import type { EdgeDBVersion } from "./testbase";
 
+export type { EdgeDBVersion };
+
 interface ServerInfo {
   port: number;
   socket_dir: string;
@@ -325,11 +327,6 @@ export async function generateQueries(config: ConnectConfig) {
     ["generate", "queries", "--file"],
     configToEnv(config)
   );
-}
-
-export async function runTests(config: ConnectConfig) {
-  console.log(`\nRunning tests...`);
-  await runCommand("yarn", ["test"], configToEnv(config));
 }
 
 export async function runCommand(

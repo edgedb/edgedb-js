@@ -135,7 +135,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
             ? (targetType.bases
                 .map(({ id }) => types.get(id))
                 .filter(
-                  (baseType) => !baseType.is_abstract
+                  (base) => !base.is_abstract
                 )[0] as $.introspect.ScalarType)
             : null;
         return toTSScalarType(

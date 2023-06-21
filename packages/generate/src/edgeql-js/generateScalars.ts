@@ -117,9 +117,7 @@ export const generateScalars = (params: GeneratorParams) => {
     // generate non-enum non-abstract scalar
     const baseType = type.bases
       .map(({ id }) => types.get(id))
-      .filter(
-        (baseType) => !baseType.is_abstract
-      )[0] as $.introspect.ScalarType;
+      .filter((base) => !base.is_abstract)[0] as $.introspect.ScalarType;
     const tsType = toTSScalarType(baseType ?? type, types);
     // const tsType = toTSScalarType(type, types);
     // const extraTypes = scalarToLiteralMapping[type.name]?.extraTypes;

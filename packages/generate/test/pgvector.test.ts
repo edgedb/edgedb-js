@@ -1,0 +1,73 @@
+import assert from "node:assert/strict";
+import * as edgedb from "edgedb";
+import e from "../dbschema/edgeql-js";
+import { setupTests, tc, teardownTests } from "./setupTeardown";
+
+import type { PgVectorTest } from "../dbschema/interfaces";
+
+interface BaseObject {
+  id: string;
+}
+interface test_PgVectorTest extends BaseObject {
+  test_embedding?: Float32Array | null;
+}
+
+describe("pgvector", () => {
+  let client: edgedb.Client;
+  beforeAll(async () => {
+    const setup = await setupTests();
+    ({ client } = setup);
+  });
+
+  afterAll(async () => {
+    await teardownTests(client);
+  });
+
+  test("check generated interfaces", () => {
+    tc.assert<tc.IsExact<PgVectorTest, test_PgVectorTest>>(true);
+  });
+
+  test("inferred return type + literal encoding", async () => {
+    const query = e.select(e.PgVectorTest, () => ({
+      test_embedding: true,
+      vector_literal: e.ext.pgvector.vector(Float32Array.from([1, 2, 3])),
+    }));
+
+    const result = await query.run(client);
+
+    tc.assert<
+      tc.IsExact<
+        typeof result,
+        {
+          test_embedding: Float32Array | null;
+          vector_literal: Float32Array;
+        }[]
+      >
+    >(true);
+  });
+
+  test("params", async () => {
+    const query = e.params({ vec: e.ext.pgvector.vector }, ($) => e.select($));
+
+    const args = {
+      vec: Float32Array.from(
+        Array(10)
+          .fill(0)
+          .map(() => Math.random())
+      ),
+    };
+
+    const result = await query.run(client, args);
+
+    tc.assert<
+      tc.IsExact<
+        typeof result,
+        {
+          vec: Float32Array;
+        }
+      >
+    >(true);
+
+    assert.deepEqual(result, args);
+  });
+});
