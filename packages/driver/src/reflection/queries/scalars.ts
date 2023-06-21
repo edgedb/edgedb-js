@@ -28,7 +28,7 @@ select InheritingObject {
   is_abstract,
   bases: { id, name },
   ancestors: { id, name },
-  children := (select .<bases)[IS Type] { id, name },
+  children := .<bases[IS Type] { id, name },
   descendants := .<ancestors[IS Type] { id, name }
 }
 FILTER
