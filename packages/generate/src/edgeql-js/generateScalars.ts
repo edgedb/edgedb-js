@@ -130,6 +130,9 @@ export const generateScalars = (params: GeneratorParams) => {
       const extraTypes = (
         scalarToLiteralMapping[mapped.name]?.extraTypes || ["never"]
       ).join(" | ");
+      const argTypes = (
+        scalarToLiteralMapping[mapped.name]?.argTypes ?? []
+      ).join(" | ");
       // const extraTypesUnion = extraTypes ?
       //   `, ${extraTypes.join(" | ")}` : "";
       // sc.writeln([
@@ -141,7 +144,9 @@ export const generateScalars = (params: GeneratorParams) => {
       sc.writeln([
         t`export `,
         dts`declare `,
-        t`type ${ref} = $.ScalarType<"${mapped.name}", ${tsType}>;`,
+        t`type ${ref} = $.ScalarType<"${mapped.name}", ${tsType}${
+          argTypes ? `, ${tsType} | ${argTypes}` : ""
+        }>;`,
       ]);
 
       // sc.writeln([
@@ -164,12 +169,17 @@ export const generateScalars = (params: GeneratorParams) => {
       const extraTypes = (
         scalarToLiteralMapping[type.name]?.extraTypes || ["never"]
       ).join(" | ");
+      const argTypes = (scalarToLiteralMapping[type.name]?.argTypes ?? []).join(
+        " | "
+      );
       // const extraTypesUnion = extraTypes ?
       //   `, ${extraTypes.join(" | ")}` : "";
       sc.writeln([
         t`export `,
         dts`declare `,
-        t`type ${ref} = $.ScalarType<"${type.name}", ${tsType}>;`,
+        t`type ${ref} = $.ScalarType<"${type.name}", ${tsType}${
+          argTypes ? `, ${tsType} | ${argTypes}` : ""
+        }>;`,
       ]);
 
       sc.writeln([

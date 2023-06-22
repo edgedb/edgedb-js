@@ -32,10 +32,12 @@ export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
 export interface ScalarType<
   Name extends string = string,
   TsType extends any = any,
+  TsArgType extends any = TsType,
   TsConstType extends TsType = TsType
 > extends BaseType {
   __kind__: TypeKind.scalar;
   __tstype__: TsType;
+  __tsargtype__: TsArgType;
   __tsconsttype__: TsConstType;
   __name__: Name;
 }
@@ -49,6 +51,7 @@ export type scalarTypeWithConstructor<
     ScalarType<
       S["__name__"],
       S["__tstype__"],
+      S["__tsargtype__"],
       T extends S["__tstype__"] ? T : S["__tstype__"]
     >
   >;
@@ -516,9 +519,10 @@ export interface ArrayType<
   __element__: Element;
 }
 
-type ArrayTypeToTsType<Type extends ArrayType> = BaseTypeToTsType<
-  Type["__element__"]
->[];
+type ArrayTypeToTsType<
+  Type extends ArrayType,
+  isParam extends boolean = false
+> = BaseTypeToTsType<Type["__element__"], isParam>[];
 
 /////////////////////////
 /// TUPLE TYPE
@@ -587,9 +591,12 @@ export interface TupleType<Items extends BaseTypeTuple = BaseTypeTuple>
   __items__: Items;
 }
 
-type TupleItemsToTsType<Items extends BaseTypeTuple> = {
+type TupleItemsToTsType<
+  Items extends BaseTypeTuple,
+  isParam extends boolean = false
+> = {
   [k in keyof Items]: Items[k] extends BaseType
-    ? BaseTypeToTsType<Items[k]>
+    ? BaseTypeToTsType<Items[k], isParam>
     : never;
 };
 
@@ -642,8 +649,14 @@ export interface NamedTupleType<Shape extends NamedTupleShape = NamedTupleShape>
   __shape__: Shape;
 }
 
-type NamedTupleTypeToTsType<Type extends NamedTupleType> = {
-  [k in keyof Type["__shape__"]]: BaseTypeToTsType<Type["__shape__"][k]>;
+type NamedTupleTypeToTsType<
+  Type extends NamedTupleType,
+  isParam extends boolean = false
+> = {
+  [k in keyof Type["__shape__"]]: BaseTypeToTsType<
+    Type["__shape__"][k],
+    isParam
+  >;
 };
 
 /////////////////////////
@@ -668,18 +681,23 @@ export type orLiteralValue<Set extends TypeSet> =
       ? never
       : computeTsType<Set["__element__"], Set["__cardinality__"]>);
 
-export type BaseTypeToTsType<Type extends BaseType> = Type extends ScalarType
-  ? Type["__tsconsttype__"]
+export type BaseTypeToTsType<
+  Type extends BaseType,
+  isParam extends boolean = false
+> = Type extends ScalarType
+  ? isParam extends true
+    ? Type["__tsargtype__"]
+    : Type["__tsconsttype__"]
   : Type extends EnumType
   ? Type["__tstype__"]
   : Type extends ArrayType<any>
-  ? typeutil.flatten<ArrayTypeToTsType<Type>>
+  ? typeutil.flatten<ArrayTypeToTsType<Type, isParam>>
   : Type extends RangeType
   ? Range<Type["__element__"]["__tsconsttype__"]>
   : Type extends TupleType
-  ? TupleItemsToTsType<Type["__items__"]>
+  ? TupleItemsToTsType<Type["__items__"], isParam>
   : Type extends NamedTupleType
-  ? typeutil.flatten<NamedTupleTypeToTsType<Type>>
+  ? typeutil.flatten<NamedTupleTypeToTsType<Type, isParam>>
   : Type extends ObjectType
   ? typeutil.flatten<
       computeObjectShape<Type["__pointers__"], Type["__shape__"]>
@@ -739,7 +757,7 @@ export type pointerToTsType<El extends PropertyDesc | LinkDesc> =
 ///////////////////
 
 export type getPrimitiveBaseType<T extends BaseType> = T extends ScalarType
-  ? ScalarType<T["__name__"], T["__tstype__"]>
+  ? ScalarType<T["__name__"], T["__tstype__"], T["__tsargtype__"]>
   : T;
 
 export type getPrimitiveNonArrayBaseType<T extends BaseType> =

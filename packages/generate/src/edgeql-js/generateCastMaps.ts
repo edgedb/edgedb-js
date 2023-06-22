@@ -324,6 +324,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
 > = $.ScalarType<
   T["__name__"],
   T["__tstype__"],
+  T['__tsargtype__'],
   TsConstType
 >;`,
   ]);

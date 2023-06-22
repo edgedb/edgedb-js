@@ -47,14 +47,17 @@ describe("pgvector", () => {
   });
 
   test("params", async () => {
-    const query = e.params({ vec: e.ext.pgvector.vector }, ($) => e.select($));
+    const query = e.params(
+      { vec: e.ext.pgvector.vector, arrayVec: e.ext.pgvector.vector },
+      ($) => e.select($)
+    );
 
+    const arrayVec = Array(10)
+      .fill(0)
+      .map(() => Math.random());
     const args = {
-      vec: Float32Array.from(
-        Array(10)
-          .fill(0)
-          .map(() => Math.random())
-      ),
+      vec: Float32Array.from(arrayVec),
+      arrayVec,
     };
 
     const result = await query.run(client, args);
@@ -64,10 +67,14 @@ describe("pgvector", () => {
         typeof result,
         {
           vec: Float32Array;
+          arrayVec: Float32Array;
         }
       >
     >(true);
 
-    assert.deepEqual(result, args);
+    assert.deepEqual(result, {
+      ...args,
+      arrayVec: Float32Array.from(args.arrayVec),
+    });
   });
 });
