@@ -408,12 +408,46 @@ Delete objects
   const result = await query.run(client);
   // { id: string }[]
 
+Delete multiple objects using an array of properties:
+
+.. code-block:: typescript
+
+  const titles = ["The Avengers", "Doctor Strange 2"];
+  const query = e.delete(e.Movie, (movie) => ({
+    filter: e.op(
+      movie.title,
+      "in",
+      e.array_unpack(e.literal(e.array(e.str), titles))
+    )
+  }));
+  const result = await query.run(client);
+  // { id: string }[]
+
+Note that we have to use ``array_unpack`` to cast our ``array<str>`` into a
+``set<str>`` since the ``in`` operator works on sets. And we use ``literal`` to
+create a custom literal since we're inlining the titles array into our query.
+
+Here's an example of how to do this with params:
+
+.. code-block:: typescript
+
+  const query = e.params({ titles: e.array(e.str) }, ({ titles }) =>
+    e.delete(e.Movie, (movie) => ({
+      filter: e.op(movie.title, "in", e.array_unpack(titles)),
+    }))
+  );
+
+  const result = await query.run(client, {
+    titles: ["The Avengers", "Doctor Strange 2"],
+  });
+  // { id: string }[]
+
 Compose queries
 ^^^^^^^^^^^^^^^
 
 All query expressions are fully composable; this is one of the major
 differentiators between this query builder and a typical ORM. For instance, we
-can ``select`` an ``insert`` query in order to fetch properties of the object we
+can ```select`` an ``insert`` query in order to fetch properties of the object we
 just inserted.
 
 
