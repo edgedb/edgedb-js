@@ -447,7 +447,7 @@ Compose queries
 
 All query expressions are fully composable; this is one of the major
 differentiators between this query builder and a typical ORM. For instance, we
-can ```select`` an ``insert`` query in order to fetch properties of the object we
+can ``select`` an ``insert`` query in order to fetch properties of the object we
 just inserted.
 
 
