@@ -974,7 +974,8 @@ export function select(...args: any[]) {
     firstArg instanceof LocalTime ||
     firstArg instanceof RelativeDuration ||
     firstArg instanceof DateDuration ||
-    firstArg instanceof ConfigMemory
+    firstArg instanceof ConfigMemory ||
+    firstArg instanceof Float32Array
   ) {
     const literalExpr = literalToTypeSet(firstArg);
     return $expressionify(

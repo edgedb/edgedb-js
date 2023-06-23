@@ -40,6 +40,7 @@ export const scalarToLiteralMapping: {
     type: string;
     literalKind?: "typeof" | "instanceof";
     extraTypes?: string[];
+    argTypes?: string[];
   };
 } = {
   "std::int16": { type: "number" },
@@ -98,6 +99,12 @@ export const scalarToLiteralMapping: {
     type: "edgedb.ConfigMemory",
     literalKind: "instanceof",
     extraTypes: ["string"],
+  },
+  "ext::pgvector::vector": {
+    type: "Float32Array",
+    literalKind: "instanceof",
+    extraTypes: ["number[]"],
+    argTypes: ["number[]"],
   },
 };
 

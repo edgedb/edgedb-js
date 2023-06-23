@@ -1,3 +1,4 @@
+using extension pgvector;
 
 module default {
 
@@ -63,6 +64,11 @@ module default {
     constraint exclusive on ((.title, .release_year));
   }
 
+  scalar type embedding extending ext::pgvector::vector<1234>;
+
+  type PgVectorTest {
+    property test_embedding: embedding;
+  }
 
   type Profile {
     property plot_summary -> str;

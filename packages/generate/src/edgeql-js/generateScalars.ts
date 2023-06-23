@@ -115,7 +115,10 @@ export const generateScalars = (params: GeneratorParams) => {
     }
 
     // generate non-enum non-abstract scalar
-    const tsType = toTSScalarType(type, types);
+    const baseType = type.bases
+      .map(({ id }) => types.get(id))
+      .filter((base) => !base.is_abstract)[0] as $.introspect.ScalarType;
+    const tsType = toTSScalarType(baseType ?? type, types);
     // const tsType = toTSScalarType(type, types);
     // const extraTypes = scalarToLiteralMapping[type.name]?.extraTypes;
     // const extraTypesUnion = extraTypes ? `, ${extraTypes.join(" | ")}` : "";
@@ -126,6 +129,9 @@ export const generateScalars = (params: GeneratorParams) => {
 
       const extraTypes = (
         scalarToLiteralMapping[mapped.name]?.extraTypes || ["never"]
+      ).join(" | ");
+      const argTypes = (
+        scalarToLiteralMapping[mapped.name]?.argTypes ?? []
       ).join(" | ");
       // const extraTypesUnion = extraTypes ?
       //   `, ${extraTypes.join(" | ")}` : "";
@@ -138,7 +144,9 @@ export const generateScalars = (params: GeneratorParams) => {
       sc.writeln([
         t`export `,
         dts`declare `,
-        t`type ${ref} = $.ScalarType<"${mapped.name}", ${tsType}>;`,
+        t`type ${ref} = $.ScalarType<"${mapped.name}", ${tsType}${
+          argTypes ? `, ${tsType} | ${argTypes}` : ""
+        }>;`,
       ]);
 
       // sc.writeln([
@@ -161,12 +169,17 @@ export const generateScalars = (params: GeneratorParams) => {
       const extraTypes = (
         scalarToLiteralMapping[type.name]?.extraTypes || ["never"]
       ).join(" | ");
+      const argTypes = (scalarToLiteralMapping[type.name]?.argTypes ?? []).join(
+        " | "
+      );
       // const extraTypesUnion = extraTypes ?
       //   `, ${extraTypes.join(" | ")}` : "";
       sc.writeln([
         t`export `,
         dts`declare `,
-        t`type ${ref} = $.ScalarType<"${type.name}", ${tsType}>;`,
+        t`type ${ref} = $.ScalarType<"${type.name}", ${tsType}${
+          argTypes ? `, ${tsType} | ${argTypes}` : ""
+        }>;`,
       ]);
 
       sc.writeln([
