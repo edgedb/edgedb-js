@@ -183,11 +183,11 @@ select User {
 filter .email = <str>$email;
 ```
 
-This generator will generate a `getUser.edgeql.ts` file alongside it that exports a function called `getUser`.
+This generator will generate a `getUser.query.ts` file alongside it that exports a function called `getUser`.
 
 ```
 import {createClient} from "edgedb";
-import {myQuery} from "./myQuery.edgeql";
+import {myQuery} from "./myQuery.query";
 
 const client = createClient();
 
