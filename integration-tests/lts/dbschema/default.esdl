@@ -128,6 +128,10 @@ module default {
 
   type Simple extending HasName, HasAge {}
 
+  type W {
+    property a -> str;
+    property d -> float64;
+  }
   type X {
     property a -> str;
     property b -> int32;
@@ -137,7 +141,7 @@ module default {
     property c -> bool;
   }
   type Z {
-    link xy -> X | Y;
+    link xy -> W | X | Y;
   }
 
   # Unicode handling

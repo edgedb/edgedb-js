@@ -58,7 +58,10 @@ describe("object types", () => {
       $Z.__pointers__.xy.target.__pointers__.a.target.__name__,
       "std::str"
     );
-    assert.equal($Z.__pointers__.xy.target.__name__, "default::X | default::Y");
+    assert.equal(
+      $Z.__pointers__.xy.target.__name__,
+      "default::X | default::Y | default::W"
+    );
   });
 
   const link = $AnnotationSubject.__pointers__.annotations;

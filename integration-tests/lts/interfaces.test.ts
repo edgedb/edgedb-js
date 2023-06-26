@@ -1,6 +1,6 @@
 import * as tc from "conditional-type-checks";
 
-import type { Movie, X, Y, Z } from "./dbschema/interfaces";
+import type { Movie, W, X, Y, Z } from "./dbschema/interfaces";
 
 export type Genre =
   | "Horror"
@@ -32,7 +32,7 @@ export interface test_Profile extends BaseObject {
   c?: string | null;
 }
 interface test_Z extends BaseObject {
-  xy?: X | Y | null;
+  xy?: W | X | Y | null;
 }
 
 describe("interfaces", () => {
