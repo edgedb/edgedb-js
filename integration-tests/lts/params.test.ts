@@ -274,7 +274,7 @@ SELECT (SELECT __param__test)`
       tuple: args,
     });
 
-    assert.deepEqual(Object.values(complexResult.tuple), Object.values(args));
+    assert.deepEqual(complexResult.tuple, args);
   });
 
   test("v2 param types", async () => {
