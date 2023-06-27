@@ -3,7 +3,7 @@ import path from "path";
 import { adapter } from "edgedb";
 import { execSync } from "child_process";
 
-const QBDIR = path.resolve(__dirname, ".");
+const QBDIR = path.resolve(__dirname, "..");
 
 describe("cli", () => {
   test("basic generate", async () => {
