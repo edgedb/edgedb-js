@@ -99,14 +99,23 @@ jobs:
           echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
 
       - name: Run query builder tests
-        if: ${{ matrix.node-version >= 16 && matrix.edgedb-version != '1.4'}}
         run: |
           yarn workspace @edgedb/generate test:ci
 
-      - name: Test QB generation on v1
-        if: ${{ matrix.node-version >= 16 && matrix.edgedb-version == '1.4' }}
+      - name: Run query builder integration tests nightly
+        if: ${{ matrix.edgedb-version == 'nightly'}}
         run: |
-          yarn workspace @edgedb/generate test:v1
+          yarn workspace @edgedb/integration-nightly test:ci
+
+      - name: Run query builder integration tests stable
+        if: ${{ matrix.edgedb-version == 'stable'}}
+        run: |
+          yarn workspace @edgedb/integration-stable test:ci
+
+      - name: Run query builder integration tests LTS
+        if: ${{ matrix.edgedb-version == '2'}}
+        run: |
+          yarn workspace @edgedb/integration-lts test:ci
 
       - name: Run functional tests
         run: |
