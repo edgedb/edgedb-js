@@ -7,13 +7,9 @@ import {
   getServerCommand,
   getWSLPath,
   startServer,
-  type EdgeDBVersion,
   runCommand,
   configToEnv,
 } from "../../driver/test/testUtil";
-
-// @ts-expect-error
-import jestConfig from "../jest.config.js";
 
 (async function main() {
   console.log("\nStarting EdgeDB test cluster...");
@@ -29,36 +25,10 @@ import jestConfig from "../jest.config.js";
 
   const managementConn = await createClient(config).ensureConnected();
 
-  const version = await managementConn.queryRequiredSingle<EdgeDBVersion>(
-    `select sys::get_version()`
-  );
-
   try {
-    await applyMigrations(config, {
-      flags:
-        version.major < 3
-          ? [
-              "--to-revision",
-              "m1sxhoqfjqn7vtpmatzanmwydtxndf3jlf33npkblmya42fx3bcdoa",
-            ]
-          : undefined,
-    });
+    await applyMigrations(config);
     console.log(`\nRunning tests...`);
-    await runCommand(
-      "yarn",
-      [
-        "test:ts",
-        ...(version.major < 3
-          ? [
-              `--testPathIgnorePatterns="${[
-                "pgvector",
-                ...jestConfig.testPathIgnorePatterns,
-              ].join("|")}"`,
-            ]
-          : []),
-      ],
-      configToEnv(config)
-    );
+    await runCommand("yarn", ["test:ts"], configToEnv(config));
     await runCommand("yarn", ["test:non_ts"], configToEnv(config));
   } catch (err) {
     console.error(err);
