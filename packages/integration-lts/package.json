@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@edgedb/integration-stable",
+  "name": "@edgedb/integration-lts",
   "version": "0.0.0",
   "scripts": {
     "generate": "../generate/dist/cli.js",
