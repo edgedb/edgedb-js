@@ -1,6 +1,4 @@
-import { type Config } from "jest";
-
-const config: Config = {
+module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
   testPathIgnorePatterns: ["./dist", "./esm", "./mts", "./cjs", "./deno"],
@@ -8,5 +6,3 @@ const config: Config = {
   transform: {},
   globals: {},
 };
-
-export default config;
