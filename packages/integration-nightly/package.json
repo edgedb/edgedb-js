@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "generate": "../generate/dist/cli.js",
+    "build": "echo 'Integration tests, no build output...'",
     "test": "NODE_OPTIONS=\"--experimental-vm-modules\" yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit --passWithNoTests"
   },
   "devDependencies": {
