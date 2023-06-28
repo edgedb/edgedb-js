@@ -28,8 +28,7 @@ import {
   try {
     await applyMigrations(config);
     console.log(`\nRunning tests...`);
-    await runCommand("yarn", ["test:ts"], configToEnv(config));
-    await runCommand("yarn", ["test:non_ts"], configToEnv(config));
+    await runCommand("yarn", ["test"], configToEnv(config));
   } catch (err) {
     console.error(err);
     process.exit(1);

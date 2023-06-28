@@ -102,20 +102,19 @@ jobs:
         run: |
           yarn workspace @edgedb/generate test:ci
 
-      - name: Run query builder integration tests nightly
-        if: ${{ matrix.edgedb-version == 'nightly'}}
+      - name: Run query builder integration tests
         run: |
-          yarn workspace @edgedb/integration-nightly test:ci
+          yarn workspace @edgedb/integration-lts test:ci
 
       - name: Run query builder integration tests stable
-        if: ${{ matrix.edgedb-version == 'stable'}}
+        if: ${{ matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
           yarn workspace @edgedb/integration-stable test:ci
 
-      - name: Run query builder integration tests LTS
-        if: ${{ matrix.edgedb-version == '2'}}
+      - name: Run query builder integration tests nightly
+        if: ${{ matrix.edgedb-version == 'nightly' }}
         run: |
-          yarn workspace @edgedb/integration-lts test:ci
+          yarn workspace @edgedb/integration-nightly test:ci
 
       - name: Run functional tests
         run: |
