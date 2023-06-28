@@ -21,7 +21,7 @@ describe("pgvector", () => {
 
   afterAll(async () => {
     await teardownTests(client);
-  });
+  }, 10_000);
 
   test("check generated interfaces", () => {
     tc.assert<tc.IsExact<PgVectorTest, test_PgVectorTest>>(true);
