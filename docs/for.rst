@@ -188,8 +188,8 @@ you pass to the query's ``run`` method.
 
 .. _edgedb-js-for-bulk-inserts-conflicting-data:
 
-Inserting the conflicting data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Inserting the inner conflicting data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: typescript
 
@@ -227,10 +227,10 @@ database *before* we run this query, but it won't handle conflicts that come
 about over the course of this query. The ``distinct`` operator we used earlier
 pro-actively eliminates any conflicts we might have had among this data.
 
-.. _edgedb-js-for-bulk-inserts-parent-data:
+.. _edgedb-js-for-bulk-inserts-outer-data:
 
-Inserting the parent data
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Inserting the outer data
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: typescript
 
