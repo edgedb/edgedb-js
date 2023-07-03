@@ -275,7 +275,7 @@ export function ${functionName}(client: Executor${
       return [
         {
           path: `${outputBaseFileName}.ts`,
-          contents: tsImpl,
+          contents: "// deno-lint-ignore-file require-await\n" + tsImpl,
           imports: tsImports,
           extension: ".ts",
         },
