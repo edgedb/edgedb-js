@@ -140,6 +140,51 @@ describe("insert", () => {
     tc.assert<tc.IsExact<typeof r3, { id: string }[]>>(true);
   });
 
+  test("unless conflict: nested in with expression", async () => {
+    const q4 = e.params(
+      {
+        movies: e.array(
+          e.tuple({
+            title: e.str,
+            rating: e.int16,
+          })
+        ),
+        heros: e.array(
+          e.tuple({
+            name: e.str,
+          })
+        ),
+      },
+      ($) => {
+        const heros = e.for(e.array_unpack($.heros), (hero) =>
+          e.insert(e.Hero, { name: hero.name }).unlessConflict()
+        );
+
+        return e.with(
+          [heros],
+          e.for(e.array_unpack($.movies), (movie) =>
+            e
+              .insert(e.Movie, {
+                title: movie.title,
+                rating: movie.rating,
+                characters: e.select(heros, () => ({ id: true })),
+              })
+              .unlessConflict()
+          )
+        );
+      }
+    );
+
+    console.log(q4.toEdgeQL());
+
+    const r4 = await q4.run(client, {
+      movies: [{ title: "The Avengers", rating: 11 }],
+      heros: [{ name: "Spider Man" }, { name: "Spider Man" }],
+    });
+
+    tc.assert<tc.IsExact<typeof r4, { id: string }[]>>(true);
+  });
+
   test("nested insert", async () => {
     const q1 = e.insert(e.Villain, {
       name: e.str("villain"),
