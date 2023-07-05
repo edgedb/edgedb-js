@@ -4,7 +4,7 @@
 
 import _fs from "fs";
 import path from "path";
-import {globby} from "globby";
+import { globby } from "globby";
 
 const args = process.argv;
 const denoOnly = args[2] === "--deno";
@@ -27,11 +27,11 @@ async function readGlob(params: {
   contentTx?: (orig: string) => string;
   pathTx?: (orig: string) => string;
 }) {
-  const {pattern, cwd, pathTx, contentTx} = params;
-  const matches = await globby(pattern, {cwd});
+  const { pattern, cwd, pathTx, contentTx } = params;
+  const matches = await globby(pattern, { cwd });
 
   return await Promise.all(
-    matches.map(async match => {
+    matches.map(async (match) => {
       const absolute = path.posix.join(cwd, match);
       const content = await fs.readFile(absolute, "utf8");
       const finalPath = pathTx ? pathTx(match) : match;
@@ -39,7 +39,7 @@ async function readGlob(params: {
       const finalContent = contentTx ? contentTx(content) : content;
       return {
         path: finalPath,
-        content: finalContent
+        content: finalContent,
       };
     })
   );
@@ -50,14 +50,14 @@ async function run() {
   // DTS
   const dtsFiles = await readGlob({
     pattern: "*.d.ts",
-    cwd: distSyntax
+    cwd: distSyntax,
   });
 
   // TS
   const tsFiles = await readGlob({
     pattern: "*.ts",
     cwd: srcSyntax,
-    contentTx: content => content
+    contentTx: (content) => content,
   });
 
   // CJS
@@ -66,9 +66,9 @@ async function run() {
     ...(await readGlob({
       pattern: "*.js",
       cwd: distSyntax,
-      contentTx: content => content.replace(reDriver, `"edgedb/dist$1.js"`)
+      contentTx: (content) => content.replace(reDriver, `"edgedb/dist$1.js"`),
     })),
-    ...dtsFiles
+    ...dtsFiles,
   ];
 
   // ESM
@@ -77,13 +77,13 @@ async function run() {
     ...(await readGlob({
       pattern: "*.js",
       cwd: esmSyntax,
-      pathTx: p => p.replace(/\.js/g, ".mjs"),
-      contentTx: content =>
+      pathTx: (p) => p.replace(/\.js/g, ".mjs"),
+      contentTx: (content) =>
         content
           .replace(reDriver, `"edgedb/dist$1.js"`)
-          .replace(reRelativeImports, `"$1.mjs"`)
+          .replace(reRelativeImports, `"$1.mjs"`),
     })),
-    ...dtsFiles
+    ...dtsFiles,
   ];
 
   // MTS
@@ -91,25 +91,25 @@ async function run() {
   const mtsFiles = await readGlob({
     pattern: "*.ts",
     cwd: srcSyntax,
-    pathTx: p => p.replace(/\.ts/g, ".mts"),
-    contentTx: content =>
+    pathTx: (p) => p.replace(/\.ts/g, ".mts"),
+    contentTx: (content) =>
       content
         .replace(reDriver, `"edgedb/dist$1.js"`)
-        .replace(reRelativeImports, `"$1.mjs"`)
+        .replace(reRelativeImports, `"$1.mjs"`),
   });
 
   // DENO
   const denoFiles = await readGlob({
     pattern: "*.ts",
     cwd: srcSyntax,
-    contentTx: content => {
+    contentTx: (content) => {
       if (content.indexOf("Buffer") !== -1) {
         content = `import {Buffer} from "https://deno.land/std@0.177.0/node/buffer.ts";\n\n${content}`;
       }
       return content
         .replace(reDriver, `"edgedb/_src$1.ts"`)
         .replace(reRelativeImports, `"$1.ts"`);
-    }
+    },
   });
 
   if (DEBUG) {
@@ -128,13 +128,13 @@ async function run() {
   }
 
   if (!denoOnly) {
-    const FILES: {[k: string]: Array<unknown>} = {
+    const FILES: { [k: string]: Array<unknown> } = {
       dts: dtsFiles,
       deno: denoFiles,
       cjs: cjsFiles,
       esm: esmFiles,
       mts: mtsFiles,
-      ts: tsFiles
+      ts: tsFiles,
     };
 
     if (!FILES.dts.length) console.warn("No syntax files found for dts");
@@ -153,7 +153,7 @@ async function run() {
     await fs.writeFile(
       path.join(__dirname, "..", "deno", "_generate", "FILES.ts"),
       `export const syntax: {[k: string]: {path: string; content: string}[]} = ${JSON.stringify(
-        {deno: denoFiles}
+        { deno: denoFiles }
       )}`
     );
   }

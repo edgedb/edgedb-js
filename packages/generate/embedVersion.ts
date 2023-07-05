@@ -1,5 +1,5 @@
 import path from "path";
-import {readFileSync, writeFileSync} from "fs";
+import { readFileSync, writeFileSync } from "fs";
 
 const packageVersion = JSON.parse(
   readFileSync(path.join(__dirname, "package.json"), "utf8")

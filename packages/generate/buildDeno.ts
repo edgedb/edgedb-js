@@ -1,10 +1,10 @@
-import {run} from "../../compileForDeno.ts";
+import { run } from "../../compileForDeno.ts";
 
 await run({
   sourceDir: "./src",
   destDir: "../deno/_generate",
-  sourceFilter: path => !/src\/syntax/.test(path),
-  pathRewriteRules: [{match: /src\//, replace: "./"}],
+  sourceFilter: (path) => !/src\/syntax/.test(path),
+  pathRewriteRules: [{ match: /src\//, replace: "./" }],
   importRewriteRules: [
     {
       match: /^edgedb\/dist\//,
@@ -12,20 +12,20 @@ await run({
         return path?.includes("src/generators")
           ? match.replace(/^edgedb\/dist\//, "../../_src/")
           : match.replace(/^edgedb\/dist\//, "../_src/");
-      }
+      },
     },
     {
       match: /^edgedb$/,
-      replace: "../mod.ts"
+      replace: "../mod.ts",
     },
     {
       match: /^\.\.\/\.\.\/src\/.+/,
-      replace: match =>
+      replace: (match) =>
         `${match.replace(/^\.\.\/\.\.\/src\//, "../_src/")}${
           match.endsWith(".ts") ? "" : ".ts"
-        }`
-    }
-  ]
+        }`,
+    },
+  ],
 }).then(async () => {
   await Deno.writeTextFile(
     "../deno/generate.ts",
