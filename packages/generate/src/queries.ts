@@ -241,6 +241,10 @@ ${functionBody}
 }
 `;
 
+  const denoImpl = `
+// deno-lint-ignore-file require-await
+${tsImpl}`;
+
   const jsImpl = `async function ${functionName}(client${
     hasArgs ? `, args` : ""
   }) {
@@ -275,7 +279,7 @@ export function ${functionName}(client: Executor${
       return [
         {
           path: `${outputBaseFileName}.ts`,
-          contents: tsImpl,
+          contents: denoImpl,
           imports: tsImports,
           extension: ".ts",
         },
