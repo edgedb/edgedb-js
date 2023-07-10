@@ -41,7 +41,6 @@ describe("pgvector", () => {
       };
     });
 
-    console.log(query.toEdgeQL());
     const result = await query.run(client);
 
     tc.assert<
