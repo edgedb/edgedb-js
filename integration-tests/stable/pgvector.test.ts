@@ -28,11 +28,20 @@ describe("pgvector", () => {
   });
 
   test("inferred return type + literal encoding", async () => {
-    const query = e.select(e.PgVectorTest, () => ({
-      test_embedding: true,
-      vector_literal: e.ext.pgvector.vector(Float32Array.from([1, 2, 3])),
-    }));
+    const query = e.select(e.PgVectorTest, ($) => {
+      const dist = e.ext.pgvector.cosine_distance(
+        $.test_embedding,
+        e.ext.pgvector.vector(Float32Array.from([1, 2, 3]))
+      );
+      return {
+        test_embedding: true,
+        vector_literal: e.ext.pgvector.vector(Float32Array.from([1, 2, 3])),
+        dist,
+        order_by: dist,
+      };
+    });
 
+    console.log(query.toEdgeQL());
     const result = await query.run(client);
 
     tc.assert<
@@ -41,6 +50,7 @@ describe("pgvector", () => {
         {
           test_embedding: Float32Array | null;
           vector_literal: Float32Array;
+          dist: number | null;
         }[]
       >
     >(true);
