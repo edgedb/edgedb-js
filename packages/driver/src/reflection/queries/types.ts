@@ -127,7 +127,7 @@ export async function getTypes(
       material_scalars := (
         SELECT ScalarType
         FILTER
-          (.name LIKE 'std::%' OR .name LIKE 'cal::%')
+          (.name LIKE 'std::%' OR .name LIKE 'cal::%' OR .name LIKE 'ext::%')
           AND NOT .is_abstract
       )
 
