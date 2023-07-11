@@ -1,4 +1,4 @@
-import createClient from "../driver/src/index.node";
+import createClient from "../../packages/driver/src/index.node";
 
 import {
   shutdown,
@@ -9,7 +9,7 @@ import {
   startServer,
   runCommand,
   configToEnv,
-} from "../driver/test/testUtil";
+} from "../../packages/driver/test/testUtil";
 
 (async function main() {
   console.log("\nStarting EdgeDB test cluster...");

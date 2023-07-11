@@ -1,5 +1,5 @@
 import type { $ } from "edgedb";
-import type { cardutil } from "../generate/src/syntax/cardinality";
+import type { cardutil } from "../../packages/generate/src/syntax/cardinality";
 import { tc } from "./setupTeardown";
 
 describe("cardinality", () => {

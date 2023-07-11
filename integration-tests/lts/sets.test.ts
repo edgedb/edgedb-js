@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { $, type Client } from "edgedb";
 import e, { type $infer } from "./dbschema/edgeql-js";
 import { setupTests, teardownTests, tc } from "./setupTeardown";
-import { TypeKind } from "../generate/src/syntax/reflection";
+import { TypeKind } from "../../packages/generate/src/syntax/reflection";
 
 describe("sets", () => {
   let client: Client;

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import * as $ from "../generate/src/syntax/reflection";
-import type { PropertyDesc } from "../generate/src/syntax/typesystem";
+import * as $ from "../../packages/generate/src/syntax/reflection";
+import type { PropertyDesc } from "../../packages/generate/src/syntax/typesystem";
 import e from "./dbschema/edgeql-js";
 import type { $str } from "./dbschema/edgeql-js/modules/std";
 import { tc } from "./setupTeardown";

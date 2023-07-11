@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
-import * as $ from "../generate/src/syntax/reflection";
+import * as $ from "../../packages/generate/src/syntax/reflection";
 
 import e, { type $infer } from "./dbschema/edgeql-js";
 import { setupTests, teardownTests, tc, type TestData } from "./setupTeardown";

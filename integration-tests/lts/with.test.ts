@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import type * as $ from "../generate/src/syntax/reflection";
+import type * as $ from "../../packages/generate/src/syntax/reflection";
 import e from "./dbschema/edgeql-js";
 import { tc } from "./setupTeardown";
 

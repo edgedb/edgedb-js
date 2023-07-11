@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import superjson from "superjson";
-import * as $ from "../generate/src/syntax/reflection";
+import * as $ from "../../packages/generate/src/syntax/reflection";
 import e from "./dbschema/edgeql-js";
-import type { $expr_Function } from "../generate/src/syntax/funcops";
+import type { $expr_Function } from "../../packages/generate/src/syntax/funcops";
 import { tc } from "./setupTeardown";
 import { number } from "./dbschema/edgeql-js/modules/std";
 

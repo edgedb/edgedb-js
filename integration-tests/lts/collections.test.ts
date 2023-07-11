@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import type { Client } from "edgedb";
-import * as $ from "../generate/src/syntax/reflection";
+import * as $ from "../../packages/generate/src/syntax/reflection";
 import e, { type $infer, objectTypeToTupleType } from "./dbschema/edgeql-js";
 import type { sys } from "./dbschema/interfaces";
 

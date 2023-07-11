@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import * as $ from "../generate/src/syntax/reflection";
+import * as $ from "../../packages/generate/src/syntax/reflection";
 import e from "./dbschema/edgeql-js/index";
 import { $PathNode } from "./dbschema/edgeql-js/syntax";
 import { tc } from "./setupTeardown";

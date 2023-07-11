@@ -17,8 +17,8 @@
   "importMap": "./import_map.json",
   "tasks": {
     "play": "deno run --unstable --allow-net --allow-read --allow-env --unsafely-ignore-certificate-errors=localhost test.ts",
-    "edgeql-js": "deno run -A --unstable --unsafely-ignore-certificate-errors=localhost ../../deno/generate.ts edgeql-js --output-dir edgeql-js --target deno",
-    "queries": "deno run -A --unstable --unsafely-ignore-certificate-errors=localhost ../../deno/generate.ts queries --target deno --file queries",
-    "interfaces": "deno run -A --unstable --unsafely-ignore-certificate-errors=localhost ../../deno/generate.ts interfaces --file ifaces"
+    "edgeql-js": "deno run -A --unstable --unsafely-ignore-certificate-errors=localhost ../../../packages/deno/generate.ts edgeql-js --output-dir edgeql-js --target deno",
+    "queries": "deno run -A --unstable --unsafely-ignore-certificate-errors=localhost ../../../packages/deno/generate.ts queries --target deno --file queries",
+    "interfaces": "deno run -A --unstable --unsafely-ignore-certificate-errors=localhost ../../../packages/deno/generate.ts interfaces --file ifaces"
   }
 }

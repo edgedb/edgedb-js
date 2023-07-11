@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import superjson from "superjson";
 import type { Client } from "edgedb";
 import e from "./dbschema/edgeql-js";
-import * as $ from "../generate/src/syntax/reflection";
+import * as $ from "../../packages/generate/src/syntax/reflection";
 
 import { setupTests, teardownTests } from "./setupTeardown";
 
