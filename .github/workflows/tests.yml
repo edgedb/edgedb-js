@@ -108,7 +108,7 @@ jobs:
           yarn workspace @edgedb/integration-legacy test:ci
 
       - name: Run query builder integration tests lts
-        if: ${{ matrix.edgedb-version == '1' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
+        if: ${{ matrix.edgedb-version == '2' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
           yarn workspace @edgedb/integration-lts test:ci
 
