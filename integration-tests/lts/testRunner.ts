@@ -1,4 +1,4 @@
-import createClient from "../../driver/src/index.node";
+import createClient from "../../packages/driver/src/index.node";
 
 import {
   shutdown,
@@ -9,7 +9,7 @@ import {
   startServer,
   runCommand,
   configToEnv,
-} from "../../driver/test/testUtil";
+} from "../../packages/driver/test/testUtil";
 
 (async function main() {
   console.log("\nStarting EdgeDB test cluster...");
@@ -28,7 +28,8 @@ import {
   try {
     await applyMigrations(config);
     console.log(`\nRunning tests...`);
-    await runCommand("yarn", ["test"], configToEnv(config));
+    await runCommand("yarn", ["test:ts"], configToEnv(config));
+    await runCommand("yarn", ["test:non_ts"], configToEnv(config));
   } catch (err) {
     console.error(err);
     process.exit(1);

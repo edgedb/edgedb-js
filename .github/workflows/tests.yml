@@ -28,12 +28,12 @@ jobs:
           - os: ubuntu-latest
             node-version: "18"
             edgedb-version: "2"
+          - os: ubuntu-latest
+            node-version: "18"
+            edgedb-version: "1"
           - os: macos-latest
             node-version: "18"
             edgedb-version: "stable"
-          # - os: windows-2019
-          #   node-version: "16"
-          #   edgedb-version: "stable"
 
     steps:
       - uses: actions/checkout@v2
@@ -99,14 +99,28 @@ jobs:
           echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
 
       - name: Run query builder tests
-        if: ${{ matrix.node-version >= 16 && matrix.edgedb-version != '1.4'}}
         run: |
           yarn workspace @edgedb/generate test:ci
 
-      - name: Test QB generation on v1
-        if: ${{ matrix.node-version >= 16 && matrix.edgedb-version == '1.4' }}
+      - name: Run query builder integration tests legacy
+        if: ${{ matrix.edgedb-version == '1' || matrix.edgedb-version == '2' }}
         run: |
-          yarn workspace @edgedb/generate test:v1
+          yarn workspace @edgedb/integration-legacy test:ci
+
+      - name: Run query builder integration tests lts
+        if: ${{ matrix.edgedb-version == '2' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
+        run: |
+          yarn workspace @edgedb/integration-lts test:ci
+
+      - name: Run query builder integration tests stable
+        if: ${{ matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
+        run: |
+          yarn workspace @edgedb/integration-stable test:ci
+
+      - name: Run query builder integration tests nightly
+        if: ${{ matrix.edgedb-version == 'nightly' }}
+        run: |
+          yarn workspace @edgedb/integration-nightly test:ci
 
       - name: Run functional tests
         run: |

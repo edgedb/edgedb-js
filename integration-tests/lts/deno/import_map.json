@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "edgedb": "../../../packages/deno/mod.ts",
+    "edgedb/": "../../../packages/deno/"
+  }
+}

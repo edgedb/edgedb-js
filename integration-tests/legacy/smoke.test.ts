@@ -1,0 +1,43 @@
+import assert from "node:assert/strict";
+import { type Client } from "edgedb";
+import e from "./dbschema/edgeql-js";
+import { setupTests, tc, teardownTests } from "./setupTeardown";
+
+describe("legacy database version smoke tests", () => {
+  let client: Client;
+
+  beforeAll(async () => {
+    const setup = await setupTests();
+    ({ client } = setup);
+  });
+
+  afterAll(async () => {
+    await teardownTests(client);
+  });
+
+  test("basic smoke test flow", async () => {
+    await e
+      .insert(e.User, {
+        name: String(Math.random()),
+        friends: e.select(
+          e.detached(
+            e.insert(e.User, {
+              name: String(Math.random()),
+            })
+          )
+        ),
+      })
+      .run(client);
+
+    assert.equal(
+      (
+        await e
+          .select(e.User, () => ({
+            id: true,
+          }))
+          .run(client)
+      ).length,
+      2
+    );
+  });
+});

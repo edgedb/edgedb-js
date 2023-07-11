@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "name": "@edgedb/integration-nightly",
+  "version": "0.0.0",
+  "scripts": {
+    "generate": "../../packages/generate/dist/cli.js",
+    "build": "echo 'Integration tests, no build output...'",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit --passWithNoTests",
+    "test:ci": "tsx ./testRunner.ts"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.2",
+    "@types/node": "^20.3.2",
+    "conditional-type-checks": "^1.0.6",
+    "jest": "^29.5.0",
+    "superjson": "^1.12.4",
+    "ts-jest": "^29.1.0",
+    "typescript": "5.0.4"
+  },
+  "dependencies": {}
+}
