@@ -127,9 +127,15 @@ export function $resolveOverload(
   throw new Error(
     `No function overload found for ${
       funcName.includes("::")
-        ? `'e.${funcName.split("::")[1]}()'`
+        ? `'e.${funcName.split("::").join(".")}()'`
         : `operator '${funcName}'`
-    } with args: ${args.map((arg) => `${arg}`).join(", ")}`
+    } with args: ${[...positionalArgs, ...Object.values(namedArgs ?? {})]
+      .filter(Boolean)
+      .map(
+        (arg) =>
+          `Element: ${arg!.__element__.__name__} (${arg!.__cardinality__})`
+      )
+      .join(", ")}`
   );
 }
 

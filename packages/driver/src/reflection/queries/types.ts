@@ -126,9 +126,9 @@ export async function getTypes(
 
       material_scalars := (
         SELECT ScalarType
-        FILTER
-          (.name LIKE 'std::%' OR .name LIKE 'cal::%')
-          AND NOT .is_abstract
+        FILTER NOT .abstract
+           AND NOT EXISTS .enum_values
+           AND NOT EXISTS (SELECT .ancestors FILTER NOT .abstract)
       )
 
     SELECT Type {

@@ -15,7 +15,7 @@ export async function setupTests() {
 }
 
 async function cleanupData(client: Client) {
-  await client.execute(`reset schema to initial`);
+  await client.execute(`delete PgVectorTest`);
 }
 
 export async function teardownTests(client: Client) {
