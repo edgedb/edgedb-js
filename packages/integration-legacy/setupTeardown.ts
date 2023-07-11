@@ -15,9 +15,7 @@ export async function setupTests() {
 }
 
 async function cleanupData(client: Client) {
-  await client.execute(`
-# Delete any user-defined objects here
-`);
+  await client.execute(`delete User`);
 }
 
 export async function teardownTests(client: Client) {
