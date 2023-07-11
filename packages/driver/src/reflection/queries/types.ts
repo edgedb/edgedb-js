@@ -128,7 +128,9 @@ export async function getTypes(
         SELECT ScalarType
         FILTER
           (.name LIKE 'std::%' OR .name LIKE 'cal::%' OR .name LIKE 'ext::%')
-          AND NOT .is_abstract
+          AND NOT .abstract
+          AND NOT EXISTS .enum_values
+          AND NOT EXISTS (SELECT .ancestors FILTER NOT .abstract)
       )
 
     SELECT Type {
