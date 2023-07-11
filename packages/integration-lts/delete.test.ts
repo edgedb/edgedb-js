@@ -2,14 +2,15 @@ import assert from "node:assert/strict";
 import type * as edgedb from "edgedb";
 
 import e from "./dbschema/edgeql-js";
-import { setupTests, teardownTests, tc } from "./setupTeardown";
+import { setupTests, teardownTests, tc, type TestData } from "./setupTeardown";
 
 describe("delete", () => {
   let client: edgedb.Client;
+  let data: TestData;
 
   beforeAll(async () => {
     const setup = await setupTests();
-    ({ client } = setup);
+    ({ client, data } = setup);
   });
 
   afterAll(async () => {
@@ -60,5 +61,26 @@ describe("delete", () => {
         filter_single: { id: "00000000-0000-0000-0000-000000000000" },
       }))
       .run(client);
+  });
+
+  test("delete with in operator", async () => {
+    const query = e.params(
+      {
+        titles: e.array(e.str),
+      },
+      ({ titles }) =>
+        e.delete(e.Movie, (movie) => ({
+          filter: e.op(movie.title, "in", e.array_unpack(titles)),
+        }))
+    );
+
+    const deletedResult = await query.run(client, {
+      titles: [data.the_avengers.title, data.civil_war.title],
+    });
+    assert.deepEqual(
+      deletedResult,
+      [{ id: data.the_avengers.id }, { id: data.civil_war.id }],
+      "deletes the correct movies"
+    );
   });
 });

@@ -2,7 +2,7 @@
 
 
 For Loops
----------
+=========
 
 ``for`` loops let you iterate over any set of values.
 
@@ -17,7 +17,7 @@ For Loops
 .. _edgedb-js-for-bulk-inserts:
 
 Bulk inserts
-^^^^^^^^^^^^
+------------
 
 It's common to use ``for`` loops to perform bulk inserts. The raw data is
 passed in as a ``json`` parameter, converted to a set of ``json`` objects with
@@ -25,7 +25,7 @@ passed in as a ``json`` parameter, converted to a set of ``json`` objects with
 
 .. code-block:: typescript
 
-  const query = e.params({items: e.json}, (params) => {
+  const query = e.params({ items: e.json }, (params) => {
     return e.for(e.json_array_unpack(params.items), (item) => {
       return e.insert(e.Movie, {
         title: e.cast(e.str, item.title),
@@ -36,15 +36,20 @@ passed in as a ``json`` parameter, converted to a set of ``json`` objects with
 
   const result = await query.run(client, {
     items: [
-      {title: 'Deadpool', release_year: 2016},
-      {title: 'Deadpool 2', release_year: 2018},
-      {title: 'Deadpool 3', release_year: null},
+      { title: "Deadpool", release_year: 2016 },
+      { title: "Deadpool 2", release_year: 2018 },
+      { title: "Deadpool 3", release_year: null },
     ],
   });
 
 Note that any optional properties values must be explicitly set to ``null``.
 They cannot be set to ``undefined`` or omitted; doing so will cause a runtime
 error.
+
+.. _edgedb-js-for-bulk-inserts-conflicts:
+
+Handling conflicts in bulk inserts
+----------------------------------
 
 Here's a more complex example, demonstrating how to complete a nested insert
 with conflicts on the inner items. First, take a look at the schema for this
@@ -54,17 +59,18 @@ database:
 
     module default {
       type Character {
-        required property name -> str {
+        required name: str {
           constraint exclusive;
         }
-        property portrayed_by -> str;
-        multi link movies -> Movie;
+        portrayed_by: str;
+        multi movies: Movie;
       }
+
       type Movie {
-        required property title -> str {
+        required title: str {
           constraint exclusive;
         };
-        property release_year -> int64;
+        release_year: int64;
       }
     }
 
@@ -107,93 +113,68 @@ down.
 
 .. code-block:: typescript
 
-    const query = e.params(
-      {
-        characters: e.array(
-          e.tuple({
-            portrayed_by: e.str,
-            name: e.str,
-            movies: e.array(e.str),
-          })
+  const query = e.params(
+    {
+      characters: e.array(
+        e.tuple({
+          portrayed_by: e.str,
+          name: e.str,
+          movies: e.array(e.str),
+        })
+      ),
+    },
+    (params) => {
+      const movies = e.for(
+        e.op(
+          "distinct",
+          e.array_unpack(e.array_unpack(params.characters).movies)
         ),
-      },
-      (params) => {
-        const movies = e.for(
-          e.op(
-            "distinct",
-            e.array_unpack(e.array_unpack(params.characters).movies)
-          ),
-          (movieTitle) => {
-            return (
-              e.insert(e.Movie, {
-                title: movieTitle,
-              })
-              .unlessConflict((movie) => ({
-                on: movie.title,
-                else: movie,
+        (movieTitle) => {
+          return e
+            .insert(e.Movie, {
+              title: movieTitle,
+            })
+            .unlessConflict((movie) => ({
+              on: movie.title,
+              else: movie,
+            }));
+        }
+      );
+      return e.with(
+        [movies],
+        e.for(e.array_unpack(params.characters), (character) => {
+          return e.insert(e.Character, {
+            name: character.name,
+            portrayed_by: character.portrayed_by,
+            movies: e.assert_distinct(
+              e.select(movies, (movie) => ({
+                filter: e.op(movie.title, "in", e.array_unpack(character.movies)),
               }))
-            );
-          }
-        );
-        return e.with(
-          [movies],
-          e.for(e.array_unpack(params.characters), (character) => {
-            return e.insert(e.Character, {
-              name: character.name,
-              portrayed_by: character.portrayed_by,
-              movies: e.assert_distinct(
-                e.select(movies, (movie) => ({
-                  filter: e.op(
-                    movie.title,
-                    'in',
-                    e.array_unpack(character.movies)
-                  )
-                }))
-              ),
-            });
-          })
-        );
-      }
-    );
+            ),
+          });
+        })
+      );
+    }
+  );
 
-    await query.run(client, {
-      characters: [{
-          portrayed_by: "Robert Downey Jr.",
-          name: "Iron Man",
-          movies: ["Iron Man", "Iron Man 2", "Iron Man 3"],
-        },
-        {
-          portrayed_by: "Chris Evans",
-          name: "Captain America",
-          movies: [
-            "Captain America: The First Avenger",
-            "The Avengers",
-            "Captain America: The Winter Soldier",
-          ],
-        },
-        {
-          portrayed_by: "Mark Ruffalo",
-          name: "The Hulk",
-          movies: ["The Avengers", "Iron Man 3", "Avengers: Age of Ultron"],
-        },
-      ],
-    });
+.. _edgedb-js-for-bulk-inserts-conflicts-params:
 
-We'll start with the ``e.params`` call.
+Structured params
+~~~~~~~~~~~~~~~~~
 
 .. code-block:: typescript
 
-    const query = e.params(
-      {
-        characters: e.array(
-          e.tuple({
-            portrayed_by: e.str,
-            name: e.str,
-            movies: e.array(e.str),
-          })
-        ),
-      },
-      (params) => { ...
+  const query = e.params(
+    {
+      characters: e.array(
+        e.tuple({
+          portrayed_by: e.str,
+          name: e.str,
+          movies: e.array(e.str),
+        })
+      ),
+    },
+    (params) => { ...
 
 In raw EdgeQL, you can only have scalar types as parameters. We could mirror
 that here with something like this: ``e.params({characters: e.json})``, but
@@ -205,28 +186,29 @@ objects as named tuples by passing an object to ``e.tuple`` — all the data in
 the array will be properly cast for us. It will also better type check the data
 you pass to the query's ``run`` method.
 
+.. _edgedb-js-for-bulk-inserts-conflicting-data:
+
+Inserting the inner conflicting data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. code-block:: typescript
 
-    ...
-    (params) => {
-      const movies = e.for(
-        e.op(
-          "distinct",
-          e.array_unpack(e.array_unpack(params.characters).movies)
-        ),
-        (movie) => {
-          return (
-            e.insert(e.Movie, {
-              title: movie,
-            })
-            .unlessConflict((movie) => ({
-              on: movie.title,
-              else: movie,
-            }))
-          );
-        }
-      );
-    ...
+  ...
+  (params) => {
+    const movies = e.for(
+      e.op("distinct", e.array_unpack(e.array_unpack(params.characters).movies)),
+      (movie) => {
+        return e
+          .insert(e.Movie, {
+            title: movie,
+          })
+          .unlessConflict((movie) => ({
+            on: movie.title,
+            else: movie,
+          }));
+      }
+    );
+  ...
 
 We need to separate this movie insert query so that we can use ``distinct`` on
 it. We could just nest an insert inside our character insert if movies weren't
@@ -245,28 +227,29 @@ database *before* we run this query, but it won't handle conflicts that come
 about over the course of this query. The ``distinct`` operator we used earlier
 pro-actively eliminates any conflicts we might have had among this data.
 
+.. _edgedb-js-for-bulk-inserts-outer-data:
+
+Inserting the outer data
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. code-block:: typescript
 
-    ...
-    return e.with(
-      [movies],
-      e.for(e.array_unpack(params.characters), (character) => {
-        return e.insert(e.Character, {
-          name: character.name,
-          portrayed_by: character.portrayed_by,
-          movies: e.assert_distinct(
-            e.select(movies, (movie) => ({
-              filter: e.op(
-                movie.title,
-                'in',
-                e.array_unpack(character.movies)
-              )
-            }))
-          )
-        });
-      })
-    );
-    ...
+  ...
+  return e.with(
+    [movies],
+    e.for(e.array_unpack(params.characters), (character) => {
+      return e.insert(e.Character, {
+        name: character.name,
+        portrayed_by: character.portrayed_by,
+        movies: e.assert_distinct(
+          e.select(movies, (movie) => ({
+            filter: e.op(movie.title, "in", e.array_unpack(character.movies)),
+          }))
+        ),
+      });
+    })
+  );
+  ...
 
 The query builder will try to automatically use EdgeQL's ``with``, but in this
 instance, it doesn't know where to place the ``with``. By using ``e.with``
