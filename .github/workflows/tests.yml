@@ -28,12 +28,12 @@ jobs:
           - os: ubuntu-latest
             node-version: "18"
             edgedb-version: "2"
+          - os: ubuntu-latest
+            node-version: "18"
+            edgedb-version: "1"
           - os: macos-latest
             node-version: "18"
             edgedb-version: "stable"
-          # - os: windows-2019
-          #   node-version: "16"
-          #   edgedb-version: "stable"
 
     steps:
       - uses: actions/checkout@v2
@@ -102,7 +102,13 @@ jobs:
         run: |
           yarn workspace @edgedb/generate test:ci
 
-      - name: Run query builder integration tests
+      - name: Run query builder integration tests legacy
+        if: ${{ matrix.edgedb-version == '1' || matrix.edgedb-version == '2' }}
+        run: |
+          yarn workspace @edgedb/integration-legacy test:ci
+
+      - name: Run query builder integration tests lts
+        if: ${{ matrix.edgedb-version == '1' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
           yarn workspace @edgedb/integration-lts test:ci
 
