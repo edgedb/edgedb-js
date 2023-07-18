@@ -632,7 +632,9 @@ async function parseConnectDsnAndArgs(
     } else {
       throw new errors.ClientConnectionError(
         "Found 'edgedb.toml' but the project is not initialized. " +
-          "Run `edgedb project init`."
+          "If you are developing, run `edgedb project init`." + 
+          "If you are running this project in production, use a DSN." +
+          "Read more here: [https://github.com/edgedb/edgedb-js#configuring-the-connection](https://github.com/edgedb/edgedb-js#configuring-the-connection)"
       );
     }
   }
