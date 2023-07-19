@@ -4,6 +4,7 @@ import type {
   BaseType,
   TypeSet,
   ObjectTypeExpression,
+  ScalarType,
 } from "./typesystem";
 import { $expressionify } from "./path";
 import type { orScalarLiteral } from "./castMaps";
@@ -20,18 +21,15 @@ export function cast<Target extends BaseType | ObjectTypeExpression>(
     : never,
   Cardinality.Empty
 >;
-export function cast<
-  Target extends BaseType | ObjectTypeExpression,
-  Expr extends TypeSet
->(
+export function cast<Target extends ObjectTypeExpression>(
+  target: Target,
+  arg: TypeSet<ScalarType<"std::uuid">>
+): $expr_Cast<Target["__element__"], Cardinality.One>;
+export function cast<Target extends BaseType, Expr extends TypeSet>(
   target: Target,
   expr: orScalarLiteral<Expr>
 ): $expr_Cast<
-  Target extends BaseType
-    ? Target
-    : Target extends ObjectTypeExpression
-    ? Target["__element__"]
-    : never,
+  Target,
   Cardinality extends Expr["__cardinality__"]
     ? Cardinality.One
     : Expr["__cardinality__"]

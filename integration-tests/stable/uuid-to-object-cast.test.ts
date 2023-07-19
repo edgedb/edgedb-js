@@ -48,5 +48,10 @@ SELECT __scope_0_defaultPgVectorTest {
   single internal := <default::PgVectorTest>(<std::uuid>("${inserted.id}"))
 }`
     );
+
+    e.select(e.PgVectorTest, () => ({
+      // @ts-expect-error: does not allow assignment of non UUID
+      internal: e.cast(e.PgVectorTest, inserted.id),
+    }));
   });
 });
