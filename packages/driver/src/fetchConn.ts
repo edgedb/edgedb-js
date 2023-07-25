@@ -183,13 +183,15 @@ export class FetchConnection extends BaseFetchConnection {
     registry: CodecsRegistry
   ): Promise<FetchConnection> {
     const {
-      connectionParams: { tlsSecurity, user, password = "" },
+      connectionParams: { tlsSecurity, user, password = "", secretKey },
     } = config;
 
-    if (!_tokens.has(config)) {
+    let token = secretKey ?? _tokens.get(config);
+
+    if (!token) {
       const protocol = tlsSecurity === "insecure" ? "http" : "https";
       const baseUrl = `${protocol}://${addr[0]}:${addr[1]}`;
-      const token = await HTTPSCRAMAuth(baseUrl, user, password);
+      token = await HTTPSCRAMAuth(baseUrl, user, password);
       _tokens.set(config, token);
     }
 
@@ -199,7 +201,7 @@ export class FetchConnection extends BaseFetchConnection {
         tlsSecurity,
         database: config.connectionParams.database,
         user: config.connectionParams.user,
-        token: _tokens.get(config)!,
+        token,
       },
       registry
     );
