@@ -201,7 +201,7 @@ export class FetchConnection extends BaseFetchConnection {
         tlsSecurity,
         database: config.connectionParams.database,
         user: config.connectionParams.user,
-        token: token,
+        token,
       },
       registry
     );
