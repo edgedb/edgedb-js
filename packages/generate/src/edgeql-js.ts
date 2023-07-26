@@ -97,7 +97,7 @@ export async function generateQueryBuilder(params: {
     }
   } else {
     // output dir doesn't exist, so assume first run
-    options.updateIgnoreFile = true;
+    options.updateIgnoreFile ??= true;
   }
 
   // generate query builder
