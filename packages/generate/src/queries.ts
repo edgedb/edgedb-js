@@ -8,7 +8,7 @@ import type { Target } from "./genutil";
 // generate per-file queries, then listen for changes and update
 export async function generateQueryFiles(params: {
   root: string | null;
-  options: CommandOptions;
+  options: CommandOptions & { suffix?: string };
   client: Client;
 }) {
   if (params.options.file && params.options.watch) {
@@ -64,6 +64,7 @@ currently supported.`);
             target: params.options.target!,
             path,
             types,
+            suffix: params.options.suffix,
           });
           for (const f of files) {
             if (!filesByExtension[f.extension]) {
@@ -122,6 +123,7 @@ currently supported.`);
         target: params.options.target!,
         path,
         types,
+        suffix: params.options.suffix,
       });
       for (const f of files) {
         const prettyPath = "./" + adapter.path.posix.relative(root, f.path);
@@ -181,6 +183,7 @@ function generateFiles(params: {
   target: Target;
   path: string;
   types: QueryType;
+  suffix?: string;
 }): {
   path: string;
   contents: string;
@@ -192,7 +195,7 @@ function generateFiles(params: {
   const outputDirname = adapter.path.dirname(params.path);
   const outputBaseFileName = adapter.path.join(
     outputDirname,
-    `${baseFileName}.query`
+    `${baseFileName}${params.suffix ?? ".query"}`
   );
 
   const method =
