@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // tslint:disable:no-console
-import { adapter } from "edgedb";
+import { adapter, Client, createClient, createHttpClient } from "edgedb";
 
 import { ConnectConfig, validTlsSecurityValues } from "edgedb/dist/conUtils";
 import { parseConnectArguments } from "edgedb/dist/conUtils.server";
@@ -354,11 +354,24 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     connectionConfig.password = await readPasswordFromStdin();
   }
 
+  let client: Client;
+  try {
+    const cxnCreatorFn = options.useHttpClient
+      ? createHttpClient
+      : createClient;
+    client = cxnCreatorFn({
+      ...connectionConfig,
+      concurrency: 5,
+    });
+  } catch (e) {
+    exitWithError(`Failed to connect: ${(e as Error).message}`);
+  }
+
   switch (generator) {
     case Generator.QueryBuilder:
       await generateQueryBuilder({
         options,
-        connectionConfig,
+        client,
         root: projectRoot,
       });
       adapter.process.exit();
@@ -366,14 +379,14 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     case Generator.Queries:
       await generateQueryFiles({
         options,
-        connectionConfig,
+        client,
         root: projectRoot,
       });
       break;
     case Generator.Interfaces:
       await runInterfacesGenerator({
         options,
-        connectionConfig,
+        client,
         root: projectRoot,
       });
       break;

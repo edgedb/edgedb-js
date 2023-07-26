@@ -1,11 +1,8 @@
 // tslint:disable:no-console
 import { CommandOptions, getPackageVersion } from "./commandutil";
-import { exitWithError } from "./genutil";
-
-import { $, adapter, Client, createClient, createHttpClient } from "edgedb";
+import { $, adapter, type Client } from "edgedb";
 import { DirBuilder } from "./builders";
 
-import type { ConnectConfig } from "edgedb/dist/conUtils";
 import { generateInterfaces } from "./edgeql-js/generateInterfaces";
 
 const { path } = adapter;
@@ -13,9 +10,9 @@ const { path } = adapter;
 export async function runInterfacesGenerator(params: {
   root: string | null;
   options: CommandOptions;
-  connectionConfig: ConnectConfig;
+  client: Client;
 }) {
-  const { root, options, connectionConfig } = params;
+  const { root, options, client } = params;
 
   let outFile: string;
   if (options.file) {
@@ -38,19 +35,6 @@ export async function runInterfacesGenerator(params: {
     prettyOutputDir = outputDirIsInProject ? `./${relativeOutputDir}` : outFile;
   } else {
     prettyOutputDir = outFile;
-  }
-
-  let client: Client;
-  try {
-    const cxnCreatorFn = options.useHttpClient
-      ? createHttpClient
-      : createClient;
-    client = cxnCreatorFn({
-      ...connectionConfig,
-      concurrency: 5,
-    });
-  } catch (e) {
-    exitWithError(`Failed to connect: ${(e as Error).message}`);
   }
 
   const dir = new DirBuilder();
