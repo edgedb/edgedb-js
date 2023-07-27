@@ -9,9 +9,11 @@ await run({
     {
       match: /^edgedb\/dist\//,
       replace: (match, path) => {
-        return path?.includes("src/generators")
-          ? match.replace(/^edgedb\/dist\//, "../../_src/")
-          : match.replace(/^edgedb\/dist\//, "../_src/");
+        return (
+          path?.includes("src/generators")
+            ? match.replace(/^edgedb\/dist\//, "../../_src/")
+            : match.replace(/^edgedb\/dist\//, "../_src/")
+        ).replace(/.js$/, '');
       }
     },
     {
