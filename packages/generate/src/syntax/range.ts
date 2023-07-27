@@ -1,6 +1,6 @@
 import type { LocalDate, LocalDateTime, Duration } from "edgedb";
 import { Range } from "edgedb";
-import { TypeKind, ExpressionKind } from "edgedb/dist/reflection/index";
+import { TypeKind, ExpressionKind } from "edgedb/dist/reflection/index.js";
 
 import type { cardutil } from "./cardinality";
 import type {

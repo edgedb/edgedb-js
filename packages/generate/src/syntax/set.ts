@@ -1,5 +1,5 @@
 import type { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index";
-import { TypeKind } from "edgedb/dist/reflection/index";
+import { TypeKind } from "edgedb/dist/reflection/index.js";
 import type {
   ArrayType,
   BaseTypeTuple,

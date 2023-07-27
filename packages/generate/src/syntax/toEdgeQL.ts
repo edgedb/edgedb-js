@@ -13,7 +13,7 @@ import {
   OperatorKind,
   TypeKind,
   util,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 import {
   $expr_Array,
   $expr_NamedTuple,
@@ -36,7 +36,7 @@ import type {
   $expr_PathNode,
   $expr_TypeIntersection,
 } from "./path";
-import { reservedKeywords } from "edgedb/dist/reflection/index";
+import { reservedKeywords } from "edgedb/dist/reflection/index.js";
 import type { $expr_Cast } from "./cast";
 import type { $expr_Detached } from "./detached";
 import type { $expr_For, $expr_ForVar } from "./for";

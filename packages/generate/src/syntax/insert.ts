@@ -3,7 +3,7 @@ import {
   ExpressionKind,
   typeutil,
   TypeKind,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 import type {
   Expression,
   LinkDesc,

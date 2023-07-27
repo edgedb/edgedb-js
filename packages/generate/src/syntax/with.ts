@@ -1,4 +1,4 @@
-import { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index";
+import { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index.js";
 import type { BaseType, Expression, TypeSet } from "./typesystem";
 import type { $expr_Select } from "./select";
 import type { $expr_For } from "./for";

@@ -8,7 +8,7 @@ import type {
 } from "../typesystem";
 
 import type { $expr_PathNode } from "../path";
-import type { Cardinality } from "edgedb/dist/reflection/index";
+import type { Cardinality } from "edgedb/dist/reflection/index.js";
 declare function assert_single(input: TypeSet<BaseType>): any;
 
 declare const number: scalarTypeWithConstructor<

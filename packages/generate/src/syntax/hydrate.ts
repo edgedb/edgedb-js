@@ -9,8 +9,8 @@ import type {
   TupleType,
 } from "./typesystem";
 
-import { util, TypeKind } from "edgedb/dist/reflection/index";
-import type { typeutil } from "edgedb/dist/reflection/index";
+import { util, TypeKind } from "edgedb/dist/reflection/index.js";
+import type { typeutil } from "edgedb/dist/reflection/index.js";
 
 const typeCache = new Map<string, BaseType>();
 

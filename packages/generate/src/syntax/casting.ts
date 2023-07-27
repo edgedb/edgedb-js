@@ -1,4 +1,4 @@
-import type { Cardinality } from "edgedb/dist/reflection/index";
+import type { Cardinality } from "edgedb/dist/reflection/index.js";
 import type {
   ArrayType,
   BaseType,

@@ -2,7 +2,7 @@ import {
   ExpressionKind,
   typeutil,
   Cardinality,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 import type {
   Expression,
   ObjectTypePointers,

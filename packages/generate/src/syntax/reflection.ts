@@ -1,4 +1,4 @@
-export * from "edgedb/dist/reflection/index";
+export * from "edgedb/dist/reflection/index.js";
 export * from "./typesystem";
 export { cardutil } from "./cardinality";
 export type { $expr_Literal } from "./literal";

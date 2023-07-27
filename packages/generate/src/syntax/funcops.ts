@@ -2,7 +2,7 @@ import {
   Cardinality,
   introspect,
   TypeKind,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 import { cardutil } from "./cardinality";
 import { makeType } from "./hydrate";
 import type {
@@ -21,7 +21,7 @@ import { literal } from "./literal";
 import type {
   ExpressionKind,
   OperatorKind,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 
 export type $expr_Function<
   // Name extends string = string,

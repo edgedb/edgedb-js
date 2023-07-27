@@ -1,4 +1,4 @@
-import { Cardinality } from "edgedb/dist/reflection/index";
+import { Cardinality } from "edgedb/dist/reflection/index.js";
 import type { TypeSet } from "./typesystem";
 
 // Computing cardinality of path

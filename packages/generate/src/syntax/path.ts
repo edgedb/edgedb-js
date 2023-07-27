@@ -10,7 +10,7 @@ import {
   Cardinality,
   // BaseType,
   typeutil,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 
 import { cardutil } from "./cardinality";
 

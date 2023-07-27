@@ -12,12 +12,12 @@ import type {
 //   BaseTypeToTsType,
 //   makeType,
 //   ScalarType
-// } from "edgedb/dist/reflection/index";
+// } from "edgedb/dist/reflection/index.js";
 
 // import type {$expr_Literal} from "./literal";
 import { $expressionify } from "./path";
 import { spec } from "./__spec__";
-import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
+import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index.js";
 import { makeType } from "./hydrate";
 
 export type $expr_Literal<Type extends BaseType = BaseType> = Expression<{

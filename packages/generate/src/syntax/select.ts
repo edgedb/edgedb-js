@@ -14,7 +14,7 @@ import {
   ExpressionKind,
   TypeKind,
   OperatorKind,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 import { makeType } from "./hydrate";
 
 import { cardutil } from "./cardinality";

@@ -6,8 +6,8 @@ import type {
   typeutil,
   Cardinality,
   ExpressionKind,
-} from "edgedb/dist/reflection/index";
-import { TypeKind } from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
+import { TypeKind } from "edgedb/dist/reflection/index.js";
 import type { cardutil } from "./cardinality";
 import type { Range } from "edgedb";
 

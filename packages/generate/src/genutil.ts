@@ -5,7 +5,7 @@ import type {
   IdentRef,
 } from "./builders";
 import * as introspect from "edgedb/dist/reflection/queries/types";
-import { util } from "edgedb/dist/reflection/index";
+import { util } from "edgedb/dist/reflection/index.js";
 
 export { $ } from "edgedb";
 import type { $ } from "edgedb";

@@ -1,5 +1,5 @@
 import type * as edgedb from "edgedb";
-import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
+import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index.js";
 import { jsonifyComplexParams } from "./json";
 import { select } from "./select";
 
