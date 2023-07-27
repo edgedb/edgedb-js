@@ -148,7 +148,7 @@ currently supported.`);
   //   generate output file
 }
 
-function stringifyImports(imports: { [k: string]: boolean }) {
+export function stringifyImports(imports: { [k: string]: boolean }) {
   if (Object.keys(imports).length === 0) return "";
   return `import type {${Object.keys(imports).join(", ")}} from "edgedb";`;
 }
@@ -170,7 +170,7 @@ async function getMatches(root: string) {
 
 type QueryType = Awaited<ReturnType<(typeof $)["analyzeQuery"]>>;
 
-function generateFiles(params: {
+export function generateFiles(params: {
   target: Target;
   path: string;
   types: QueryType;
