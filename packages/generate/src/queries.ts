@@ -1,5 +1,4 @@
-import { $, adapter, createClient, createHttpClient } from "edgedb";
-import type { ConnectConfig } from "edgedb/dist/conUtils";
+import { $, adapter, type Client } from "edgedb";
 import { Cardinality } from "edgedb/dist/ifaces";
 import { type CommandOptions, getPackageVersion } from "./commandutil";
 import type { Target } from "./genutil";
@@ -10,7 +9,7 @@ import type { Target } from "./genutil";
 export async function generateQueryFiles(params: {
   root: string | null;
   options: CommandOptions;
-  connectionConfig: ConnectConfig;
+  client: Client;
 }) {
   if (params.options.file && params.options.watch) {
     throw new Error(`Using --watch and --file mode simultaneously is not
@@ -30,13 +29,7 @@ currently supported.`);
     console.log("   " + params.root);
   }
 
-  const cxnCreatorFn = params.options.useHttpClient
-    ? createHttpClient
-    : createClient;
-  const client = cxnCreatorFn({
-    ...params.connectionConfig,
-    concurrency: 5,
-  });
+  const { client } = params;
 
   // file mode: introspect all queries and generate one file
   // generate one query per file
