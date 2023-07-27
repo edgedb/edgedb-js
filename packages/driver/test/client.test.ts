@@ -40,8 +40,6 @@ import {
   InvalidReferenceError,
 } from "../src/index.node";
 
-import { retryingConnect } from "../src/retry";
-import { RawConnection } from "../src/rawConn";
 import { AdminUIFetchConnection } from "../src/fetchConn";
 import { CustomCodecSpec } from "../src/codecs/registry";
 import {
@@ -52,6 +50,7 @@ import {
   isDeno,
 } from "./testbase";
 import { PG_VECTOR_MAX_DIM } from "../src/codecs/pgvector";
+import { HTTPSCRAMAuth } from "../src/httpScram";
 
 function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
   // @ts-ignore
@@ -2041,53 +2040,24 @@ function _decodeResultBuffer(outCodec: _ICodec, resultData: Uint8Array) {
   return result;
 }
 
-// 'raw' methods are only used by edgedb studio, so only need to work with
-// EdgeDB 2.0 or greater
-if (getEdgeDBVersion().major >= 2) {
-  test("'implicit*' headers", async () => {
-    const config = await parseConnectArguments(getConnectOptions());
-    const registry = new _CodecsRegistry();
-    const con = await retryingConnect(
-      RawConnection.connectWithTimeout.bind(RawConnection),
-      config,
-      registry
-    );
-    try {
-      const query = `SELECT Function {
-        name
-      }`;
-      const state = new Session({ module: "schema" });
-      const options = {
-        injectTypenames: true,
-        implicitLimit: BigInt(5),
-      } as const;
-      const [_, outCodec] = await con.rawParse(query, state, options);
-      const resultData = await con.rawExecute(query, state, outCodec, options);
-
-      const result = _decodeResultBuffer(outCodec, resultData);
-
-      expect(result).toHaveLength(5);
-      expect(result[0]["__tname__"]).toBe("schema::Function");
-    } finally {
-      await con.close();
-    }
-  });
-}
-
 if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
-  // @ts-ignore // make deno ignore skip
-  test.skip("binary protocol over http", async () => {
-    //@ts-ignore
-    const tokenFile = require("path").join(__dirname, "keys", "jwt");
-    //@ts-ignore
-    const token = require("fs").readFileSync(tokenFile, "utf8").trim();
+  test("binary protocol over http", async () => {
     const codecsRegistry = new _CodecsRegistry();
     const config = await parseConnectArguments(getConnectOptions());
+
+    const { address, user, password } = config.connectionParams;
+    const token = await HTTPSCRAMAuth(
+      `http://${address[0]}:${address[1]}`,
+      user,
+      password!
+    );
+
     const fetchConn = AdminUIFetchConnection.create(
       {
         address: config.connectionParams.address,
         database: config.connectionParams.database,
         user: config.connectionParams.user,
+        tlsSecurity: "insecure",
         token: token,
       },
       codecsRegistry

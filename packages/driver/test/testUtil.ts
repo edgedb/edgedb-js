@@ -113,8 +113,6 @@ export const getServerCommand = (
 
   if (help.includes("--admin-ui")) {
     args.push("--http-endpoint-security=optional");
-    // args.push("--jws-key-file", path.join(__dirname, "keys", "public.pem"));
-    // args.push("--jwe-key-file", path.join(__dirname, "keys", "private.pem"));
     args.push("--jose-key-mode=generate");
 
     availableFeatures.push("binary-over-http");
