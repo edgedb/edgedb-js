@@ -7,7 +7,6 @@ import {
   isTTY,
   promptBoolean,
 } from "./commandutil";
-import { exitWithError } from "./genutil";
 import { DirBuilder } from "./builders";
 import { syntax } from "./FILES";
 
@@ -358,8 +357,8 @@ async function canOverwrite(outputDir: string, options: CommandOptions) {
   } catch {}
 
   const error = config
-    ? `A query builder with a different config already exists in that location.`
-    : `Output directory '${outputDir}' already exists.`;
+    ? `Error: A query builder with a different config already exists in that location.`
+    : `Error: Output directory '${outputDir}' already exists.`;
 
   if (
     isTTY() &&
@@ -368,5 +367,5 @@ async function canOverwrite(outputDir: string, options: CommandOptions) {
     return true;
   }
 
-  return exitWithError(`Error: ${error}`);
+  throw new Error(error);
 }
