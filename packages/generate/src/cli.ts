@@ -375,7 +375,6 @@ Run this command inside an EdgeDB project directory or specify the desired targe
           client,
           root: projectRoot,
         });
-        adapter.process.exit();
         break;
       case Generator.Queries:
         await generateQueryFiles({
@@ -395,6 +394,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
   } catch (e) {
     exitWithError((e as Error).message);
   }
+  adapter.process.exit();
 };
 
 function printHelp() {
