@@ -37,7 +37,6 @@ currently supported.`);
   const matches = await getMatches(root);
   if (matches.length === 0) {
     console.log(`No .edgeql files found in project`);
-    adapter.exit();
     return;
   }
 
@@ -109,7 +108,6 @@ currently supported.`);
         );
       }
     }
-    adapter.exit();
     return;
   }
 
@@ -144,11 +142,6 @@ currently supported.`);
   // generate per-query files
   console.log(`Generating files for following queries:`);
   await Promise.all(matches.map(generateFilesForQuery));
-
-  if (!params.options.watch) {
-    adapter.exit();
-    return;
-  }
 
   // find all *.edgeql files
   // for query in queries:

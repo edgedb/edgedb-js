@@ -367,30 +367,34 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     exitWithError(`Failed to connect: ${(e as Error).message}`);
   }
 
-  switch (generator) {
-    case Generator.QueryBuilder:
-      await generateQueryBuilder({
-        options,
-        client,
-        root: projectRoot,
-      });
-      adapter.process.exit();
-      break;
-    case Generator.Queries:
-      await generateQueryFiles({
-        options,
-        client,
-        root: projectRoot,
-      });
-      break;
-    case Generator.Interfaces:
-      await runInterfacesGenerator({
-        options,
-        client,
-        root: projectRoot,
-      });
-      break;
+  try {
+    switch (generator) {
+      case Generator.QueryBuilder:
+        await generateQueryBuilder({
+          options,
+          client,
+          root: projectRoot,
+        });
+        break;
+      case Generator.Queries:
+        await generateQueryFiles({
+          options,
+          client,
+          root: projectRoot,
+        });
+        break;
+      case Generator.Interfaces:
+        await runInterfacesGenerator({
+          options,
+          client,
+          root: projectRoot,
+        });
+        break;
+    }
+  } catch (e) {
+    exitWithError((e as Error).message);
   }
+  adapter.process.exit();
 };
 
 function printHelp() {
