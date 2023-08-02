@@ -30,7 +30,7 @@ import { NamedTupleCodec } from "./namedtuple";
 import { EnumCodec } from "./enum";
 import { ObjectCodec } from "./object";
 import { SetCodec } from "./set";
-import { RangeCodec } from "./range";
+import { MultiRangeCodec, RangeCodec } from "./range";
 import { ProtocolVersion } from "../ifaces";
 import { versionGreaterThanOrEqual } from "../utils";
 import { SparseObjectCodec } from "./sparseObject";
@@ -51,6 +51,7 @@ const CTYPE_INPUT_SHAPE = 8;
 const CTYPE_RANGE = 9;
 const CTYPE_OBJECT = 10;
 const CTYPE_COMPOUND = 11;
+const CTYPE_MULTIRANGE = 12;
 
 export interface CustomCodecSpec {
   int64_bigint?: boolean;
@@ -212,6 +213,7 @@ export class CodecsRegistry {
         }
 
         case CTYPE_RANGE:
+        case CTYPE_MULTIRANGE:
         case CTYPE_SCALAR: {
           frb.discard(2);
           break;
@@ -564,7 +566,8 @@ export class CodecsRegistry {
         break;
       }
 
-      case CTYPE_RANGE: {
+      case CTYPE_RANGE:
+      case CTYPE_MULTIRANGE: {
         let typeName: string | null = null;
         if (isProtoV2) {
           typeName = frb.readString();
@@ -582,10 +585,15 @@ export class CodecsRegistry {
         const subCodec = cl[pos];
         if (subCodec == null) {
           throw new ProtocolError(
-            "could not build range codec: missing subcodec"
+            `could not build ${
+              t === CTYPE_MULTIRANGE ? "multi" : ""
+            }range codec: missing subcodec`
           );
         }
-        res = new RangeCodec(tid, typeName, subCodec);
+        res =
+          t === CTYPE_MULTIRANGE
+            ? new MultiRangeCodec(tid, typeName, subCodec)
+            : new RangeCodec(tid, typeName, subCodec);
         break;
       }
 

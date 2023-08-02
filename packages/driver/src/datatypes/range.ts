@@ -26,7 +26,7 @@ export class Range<
   constructor(
     private readonly _lower: T | null,
     private readonly _upper: T | null,
-    private readonly _incLower: boolean = true,
+    private readonly _incLower: boolean = _lower == null ? false : true,
     private readonly _incUpper: boolean = false
   ) {}
 
@@ -61,5 +61,27 @@ export class Range<
           inc_lower: this._incLower,
           inc_upper: this._incUpper,
         };
+  }
+}
+
+export class MultiRange<
+  T extends number | Date | LocalDate | LocalDateTime | Duration
+> {
+  private _ranges: Set<Range<T>>;
+
+  constructor(ranges: Range<T>[]) {
+    this._ranges = new Set(ranges);
+  }
+
+  get length() {
+    return this._ranges.size;
+  }
+
+  get values() {
+    return this._ranges.values();
+  }
+
+  [Symbol.iterator]() {
+    return this.values;
   }
 }

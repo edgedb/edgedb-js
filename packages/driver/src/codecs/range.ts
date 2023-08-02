@@ -18,8 +18,8 @@
 
 import { ICodec, Codec, uuid, CodecKind } from "./ifaces";
 import { WriteBuffer, ReadBuffer } from "../primitives/buffer";
-import { Range } from "../datatypes/range";
-import { InvalidArgumentError } from "../errors";
+import { MultiRange, Range } from "../datatypes/range";
+import { InvalidArgumentError, ProtocolError } from "../errors";
 
 enum RangeFlags {
   EMPTY = 1 << 0,
@@ -39,12 +39,11 @@ export class RangeCodec extends Codec implements ICodec {
     this.typeName = typeName;
   }
 
-  encode(buf: WriteBuffer, obj: any): void {
+  static encodeRange(subCodec: ICodec, buf: WriteBuffer, obj: any): void {
     if (!(obj instanceof Range)) {
       throw new InvalidArgumentError("a Range was expected");
     }
 
-    const subCodec = this.subCodec;
     const elemData = new WriteBuffer();
 
     if (obj.lower !== null) {
@@ -68,7 +67,7 @@ export class RangeCodec extends Codec implements ICodec {
     buf.writeBuffer(elemBuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  static decodeRange(subCodec: ICodec, buf: ReadBuffer): any {
     const flags = buf.readUInt8();
 
     if (flags & RangeFlags.EMPTY) {
@@ -76,7 +75,6 @@ export class RangeCodec extends Codec implements ICodec {
     }
 
     const elemBuf = ReadBuffer.alloc();
-    const subCodec = this.subCodec;
 
     let lower: any = null;
     let upper: any = null;
@@ -101,11 +99,96 @@ export class RangeCodec extends Codec implements ICodec {
     );
   }
 
+  encode(buf: WriteBuffer, obj: any): void {
+    RangeCodec.encodeRange(this.subCodec, buf, obj);
+  }
+
+  decode(buf: ReadBuffer): any {
+    return RangeCodec.decodeRange(this.subCodec, buf);
+  }
+
   getSubcodecs(): ICodec[] {
     return [this.subCodec];
   }
 
   getKind(): CodecKind {
     return "range";
+  }
+}
+
+export class MultiRangeCodec extends Codec implements ICodec {
+  private subCodec: ICodec;
+  readonly typeName: string | null;
+
+  constructor(tid: uuid, typeName: string | null, subCodec: ICodec) {
+    super(tid);
+    this.subCodec = subCodec;
+    this.typeName = typeName;
+  }
+
+  encode(buf: WriteBuffer, obj: any): void {
+    if (!(obj instanceof MultiRange)) {
+      throw new InvalidArgumentError("a MultiRange was expected");
+    }
+
+    const objLen = obj.length;
+
+    if (objLen > 0x7fffffff) {
+      // objLen > MAXINT32
+      throw new InvalidArgumentError("too many elements in multirange");
+    }
+
+    const subCodec = this.subCodec;
+    const elemData = new WriteBuffer();
+
+    for (const item of obj) {
+      try {
+        RangeCodec.encodeRange(subCodec, elemData, item);
+      } catch (e) {
+        throw new InvalidArgumentError(`invalid multirange element: $e`);
+      }
+    }
+
+    const elemBuf = elemData.unwrap();
+    if (elemBuf.length > 0x7fffffff - 4) {
+      throw new InvalidArgumentError(
+        `size of encoded multirange extends allowed ${0x7fffffff - 4} bytes`
+      );
+    }
+
+    buf
+      .writeInt32(4 + elemBuf.length)
+      .writeInt32(objLen)
+      .writeBuffer(elemBuf);
+  }
+
+  decode(buf: ReadBuffer): any {
+    const elemCount = buf.readInt32();
+
+    const subCodec = this.subCodec;
+    const elemBuf = ReadBuffer.alloc();
+
+    const result = new Array(elemCount);
+
+    for (var i = 0; i < elemCount; i++) {
+      const elemLen = buf.readInt32();
+      if (elemLen == -1) {
+        throw new ProtocolError("unexpected NULL value in multirange");
+      } else {
+        buf.sliceInto(elemBuf, elemLen);
+        result[i] = RangeCodec.decodeRange(subCodec, elemBuf);
+        elemBuf.finish();
+      }
+    }
+
+    return new MultiRange(result);
+  }
+
+  getSubcodecs(): ICodec[] {
+    return [this.subCodec];
+  }
+
+  getKind(): CodecKind {
+    return "multirange";
   }
 }

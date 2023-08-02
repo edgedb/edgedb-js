@@ -38,6 +38,7 @@ import {
   Session,
   AuthenticationError,
   InvalidReferenceError,
+  MultiRange,
 } from "../src/index.node";
 
 import { retryingConnect } from "../src/retry";
@@ -1357,6 +1358,64 @@ if (getEdgeDBVersion().major >= 2) {
       await con.close();
     }
     return;
+  });
+}
+
+if (getEdgeDBVersion().major >= 4) {
+  test("fetch: multirange", async () => {
+    const samples = [
+      { in: new MultiRange([]) },
+      {
+        in: new MultiRange([Range.empty()]),
+        out: new MultiRange([]),
+      },
+      {
+        in: new MultiRange([
+          new Range(null, 0),
+          new Range(1, 2),
+          new Range(4, null),
+        ]),
+      },
+      {
+        in: new MultiRange([
+          new Range(null, 2, undefined, true),
+          new Range(5, 9),
+          new Range(5, 9),
+          new Range(5, 9),
+          new Range(null, 2, undefined, true),
+        ]),
+        out: new MultiRange([new Range(null, 3), new Range(5, 9)]),
+      },
+      {
+        in: new MultiRange([
+          new Range(null, 2),
+          new Range(-5, 9),
+          new Range(13, null),
+        ]),
+        out: new MultiRange([new Range(null, 9), new Range(13, null)]),
+      },
+    ];
+
+    const client = getClient();
+
+    try {
+      const result = await client.querySingle(
+        "SELECT <array<multirange<int32>>>$0",
+        [[new MultiRange([new Range(1, 2)])]]
+      );
+      expect(result).toEqual([new MultiRange([new Range(1, 2)])]);
+
+      for (const sample of samples) {
+        const result = await client.querySingle(
+          "select <multirange<int64>>$0",
+          [sample.in]
+        );
+
+        expect(result).toEqual(sample.out ?? sample.in);
+      }
+    } finally {
+      await client.close();
+    }
   });
 }
 
