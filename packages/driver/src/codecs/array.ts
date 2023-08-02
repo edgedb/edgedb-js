@@ -27,11 +27,18 @@ import { NamedTupleCodec } from "./namedtuple";
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;
   private len: number;
+  public typeName: string | null;
 
-  constructor(tid: uuid, subCodec: ICodec, len: number) {
+  constructor(
+    tid: uuid,
+    typeName: string | null,
+    subCodec: ICodec,
+    len: number
+  ) {
     super(tid);
     this.subCodec = subCodec;
     this.len = len;
+    this.typeName = typeName;
   }
 
   encode(buf: WriteBuffer, obj: any): void {
