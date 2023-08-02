@@ -16,7 +16,10 @@ import { ReadBuffer, WriteBuffer } from "../src/primitives/buffer";
 // Tests adapted from https://github.com/edgedb/edgedb-rust/blob/master/edgedb-protocol/tests/datetime_chrono.rs
 
 test("datetime", () => {
-  const codec = new DateTimeCodec(KNOWN_TYPENAMES.get("std::datetime")!);
+  const codec = new DateTimeCodec(
+    KNOWN_TYPENAMES.get("std::datetime")!,
+    "std::datetime"
+  );
 
   const tests: [string, string][] = [
     ["252455615999999999", "+010000-01-01T00:00:00.000Z"], // maximum
@@ -54,7 +57,8 @@ test("datetime", () => {
 
 test("local_datetime", () => {
   const codec = new LocalDateTimeCodec(
-    KNOWN_TYPENAMES.get("cal::local_datetime")!
+    KNOWN_TYPENAMES.get("cal::local_datetime")!,
+    "cal::local_datetime"
   );
 
   const tests: [string, string, string][] = [
@@ -181,7 +185,10 @@ test("local_datetime", () => {
 });
 
 test("local_time", () => {
-  const codec = new LocalTimeCodec(KNOWN_TYPENAMES.get("cal::local_time")!);
+  const codec = new LocalTimeCodec(
+    KNOWN_TYPENAMES.get("cal::local_time")!,
+    "cal::local_time"
+  );
 
   const tests: [string, string][] = [
     ["00:00:00.000000000", "0"], // minimum
@@ -211,7 +218,10 @@ test("local_time", () => {
 });
 
 test("duration", () => {
-  const codec = new DurationCodec(KNOWN_TYPENAMES.get("std::duration")!);
+  const codec = new DurationCodec(
+    KNOWN_TYPENAMES.get("std::duration")!,
+    "std::duration"
+  );
 
   const tests: [string, string][] = [
     ["PT0S", "0"], // "Zero"

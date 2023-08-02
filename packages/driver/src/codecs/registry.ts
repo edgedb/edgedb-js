@@ -49,6 +49,8 @@ const CTYPE_ARRAY = 6;
 const CTYPE_ENUM = 7;
 const CTYPE_INPUT_SHAPE = 8;
 const CTYPE_RANGE = 9;
+const CTYPE_OBJECT = 10;
+const CTYPE_COMPOUND = 11;
 
 export interface CustomCodecSpec {
   int64_bigint?: boolean;
@@ -81,7 +83,7 @@ export class CodecsRegistry {
     if (int64_bigint) {
       this.customScalarCodecs.set(
         INT64_TYPEID,
-        new numbers.Int64BigintCodec(INT64_TYPEID)
+        new numbers.Int64BigintCodec(INT64_TYPEID, "std::int64")
       );
     } else {
       this.customScalarCodecs.delete(INT64_TYPEID);
@@ -90,7 +92,7 @@ export class CodecsRegistry {
     if (datetime_localDatetime) {
       this.customScalarCodecs.set(
         DATETIME_TYPEID,
-        new datecodecs.LocalDateTimeCodec(DATETIME_TYPEID)
+        new datecodecs.LocalDateTimeCodec(DATETIME_TYPEID, "std::datetime")
       );
     } else {
       this.customScalarCodecs.delete(DATETIME_TYPEID);
@@ -99,7 +101,7 @@ export class CodecsRegistry {
     if (json_string) {
       this.customScalarCodecs.set(
         JSON_TYPEID,
-        new JSONStringCodec(JSON_TYPEID)
+        new JSONStringCodec(JSON_TYPEID, "std::json")
       );
     } else {
       this.customScalarCodecs.delete(JSON_TYPEID);
@@ -137,7 +139,15 @@ export class CodecsRegistry {
     let codec: ICodec | null = null;
 
     while (frb.length) {
-      codec = this._buildCodec(frb, codecsList, protocolVersion);
+      if (versionGreaterThanOrEqual(protocolVersion, [2, 0])) {
+        const descLen = frb.readInt32();
+        const descBuf = ReadBuffer.alloc();
+        frb.sliceInto(descBuf, descLen);
+        codec = this._buildCodec(descBuf, codecsList, protocolVersion, true);
+        descBuf.finish("unexpected trailing data in type descriptor buffer");
+      } else {
+        codec = this._buildCodec(frb, codecsList, protocolVersion, false);
+      }
       if (codec == null) {
         // An annotation; ignore.
         continue;
@@ -156,7 +166,8 @@ export class CodecsRegistry {
   private _buildCodec(
     frb: ReadBuffer,
     cl: ICodec[],
-    protocolVersion: ProtocolVersion
+    protocolVersion: ProtocolVersion,
+    isProtoV2: boolean
   ): ICodec | null {
     const t = frb.readUInt8();
     const tid = frb.readUUID();
@@ -169,6 +180,10 @@ export class CodecsRegistry {
     if (res != null) {
       // We have a codec for this "tid"; advance the buffer
       // so that we can process the next codec.
+      if (isProtoV2) {
+        frb.discard(frb.length);
+        return res;
+      }
 
       switch (t) {
         case CTYPE_SET: {
@@ -292,6 +307,13 @@ export class CodecsRegistry {
 
       case CTYPE_SHAPE:
       case CTYPE_INPUT_SHAPE: {
+        if (t == CTYPE_SHAPE && isProtoV2) {
+          // @ts-expect-error
+          const isEphemeralFreeShape = frb.readBoolean();
+          // @ts-expect-error
+          const objTypePos = frb.readUInt16();
+        }
+
         const els = frb.readUInt16();
         const codecs: ICodec[] = new Array(els);
         const names: string[] = new Array(els);
@@ -323,6 +345,12 @@ export class CodecsRegistry {
           names[i] = name;
           flags[i] = flag!;
           cards[i] = card!;
+
+          if (t == CTYPE_SHAPE && isProtoV2) {
+            const sourceTypePos = frb.readUInt16();
+            // @ts-expect-error
+            const sourceType = cl[sourceTypePos];
+          }
         }
 
         res =
@@ -345,23 +373,86 @@ export class CodecsRegistry {
       }
 
       case CTYPE_SCALAR: {
-        const pos = frb.readUInt16();
-        res = cl[pos];
-        if (res == null) {
-          throw new ProtocolError(
-            "could not build scalar codec: missing a codec for base scalar"
-          );
+        if (isProtoV2) {
+          const typeName = frb.readString();
+          // @ts-expect-error
+          const isSchemaDefined = frb.readBoolean();
+
+          const ancestorCount = frb.readUInt16();
+          const ancestors: ICodec[] = [];
+          for (var i = 0; i < ancestorCount; i++) {
+            const ancestorPos = frb.readUInt16();
+            const ancestorCodec = cl[ancestorPos];
+            if (ancestorCodec == null) {
+              throw new ProtocolError(
+                "could not build scalar codec: missing a codec for base scalar"
+              );
+            }
+
+            if (!(ancestorCodec instanceof ScalarCodec)) {
+              throw new ProtocolError(
+                `a scalar codec expected for base scalar type, ` +
+                  `got ${ancestorCodec}`
+              );
+            }
+            ancestors.push(ancestorCodec);
+          }
+
+          if (ancestorCount == 0) {
+            res = this.customScalarCodecs.get(tid) ?? SCALAR_CODECS.get(tid);
+            if (res == null) {
+              if (KNOWN_TYPES.has(tid)) {
+                throw new InternalClientError(
+                  `no JS codec for ${KNOWN_TYPES.get(tid)}`
+                );
+              }
+
+              throw new InternalClientError(
+                `no JS codec for the type with ID ${tid}`
+              );
+            }
+          } else {
+            const baseCodec = ancestors[ancestors.length - 1];
+            if (!(baseCodec instanceof ScalarCodec)) {
+              throw new ProtocolError(
+                `a scalar codec expected for base scalar type, ` +
+                  `got ${baseCodec}`
+              );
+            }
+            res = baseCodec.derive(tid, typeName) as ICodec;
+          }
+        } else {
+          const pos = frb.readUInt16();
+          res = cl[pos];
+          if (res == null) {
+            throw new ProtocolError(
+              "could not build scalar codec: missing a codec for base scalar"
+            );
+          }
+          if (!(res instanceof ScalarCodec)) {
+            throw new ProtocolError(
+              "could not build scalar codec: base scalar has a non-scalar codec"
+            );
+          }
+          res = <ICodec>res.derive(tid, null);
         }
-        if (!(res instanceof ScalarCodec)) {
-          throw new ProtocolError(
-            "could not build scalar codec: base scalar has a non-scalar codec"
-          );
-        }
-        res = <ICodec>res.derive(tid);
         break;
       }
 
       case CTYPE_ARRAY: {
+        let typeName: string | null = null;
+        if (isProtoV2) {
+          typeName = frb.readString();
+          // @ts-expect-error
+          const isSchemaDefined = frb.readBoolean();
+          const ancestorCount = frb.readUInt16();
+          for (var i = 0; i < ancestorCount; i++) {
+            const ancestorPos = frb.readUInt16();
+            // @ts-expect-error
+            const ancestorCodec = cl[ancestorPos];
+          }
+        }
+
         const pos = frb.readUInt16();
         const els = frb.readUInt16();
         if (els !== 1) {
@@ -376,11 +467,24 @@ export class CodecsRegistry {
             "could not build array codec: missing subcodec"
           );
         }
-        res = new ArrayCodec(tid, subCodec, dimLen);
+        res = new ArrayCodec(tid, typeName, subCodec, dimLen);
         break;
       }
 
       case CTYPE_TUPLE: {
+        let typeName: string | null = null;
+        if (isProtoV2) {
+          typeName = frb.readString();
+          // @ts-expect-error
+          const isSchemaDefined = frb.readBoolean();
+          const ancestorCount = frb.readUInt16();
+          for (var i = 0; i < ancestorCount; i++) {
+            const ancestorPos = frb.readUInt16();
+            // @ts-expect-error
+            const ancestorCodec = cl[ancestorPos];
+          }
+        }
+
         const els = frb.readUInt16();
         if (els === 0) {
           res = EMPTY_TUPLE_CODEC;
@@ -396,12 +500,25 @@ export class CodecsRegistry {
             }
             codecs[i] = subCodec;
           }
-          res = new TupleCodec(tid, codecs);
+          res = new TupleCodec(tid, typeName, codecs);
         }
         break;
       }
 
       case CTYPE_NAMEDTUPLE: {
+        let typeName: string | null = null;
+        if (isProtoV2) {
+          typeName = frb.readString();
+          // @ts-expect-error
+          const isSchemaDefined = frb.readBoolean();
+          const ancestorCount = frb.readUInt16();
+          for (var i = 0; i < ancestorCount; i++) {
+            const ancestorPos = frb.readUInt16();
+            // @ts-expect-error
+            const ancestorCodec = cl[ancestorPos];
+          }
+        }
+
         const els = frb.readUInt16();
         const codecs = new Array(els);
         const names = new Array(els);
@@ -417,11 +534,23 @@ export class CodecsRegistry {
           }
           codecs[i] = subCodec;
         }
-        res = new NamedTupleCodec(tid, codecs, names);
+        res = new NamedTupleCodec(tid, typeName, codecs, names);
         break;
       }
 
       case CTYPE_ENUM: {
+        let typeName: string | null = null;
+        if (isProtoV2) {
+          typeName = frb.readString();
+          // @ts-expect-error
+          const isSchemaDefined = frb.readBoolean();
+          const ancestorCount = frb.readUInt16();
+          for (var i = 0; i < ancestorCount; i++) {
+            const ancestorPos = frb.readUInt16();
+            // @ts-expect-error
+            const ancestorCodec = cl[ancestorPos];
+          }
+        }
         /* There's no way to customize ordering in JS, so we
            simply ignore that information and unpack enums into
            simple strings.
@@ -431,11 +560,24 @@ export class CodecsRegistry {
         for (let i = 0; i < els; i++) {
           values.push(frb.readString());
         }
-        res = new EnumCodec(tid, null, values);
+        res = new EnumCodec(tid, typeName, null, values);
         break;
       }
 
       case CTYPE_RANGE: {
+        let typeName: string | null = null;
+        if (isProtoV2) {
+          typeName = frb.readString();
+          // @ts-expect-error
+          const isSchemaDefined = frb.readBoolean();
+          const ancestorCount = frb.readUInt16();
+          for (var i = 0; i < ancestorCount; i++) {
+            const ancestorPos = frb.readUInt16();
+            // @ts-expect-error
+            const ancestorCodec = cl[ancestorPos];
+          }
+        }
+
         const pos = frb.readUInt16();
         const subCodec = cl[pos];
         if (subCodec == null) {
@@ -443,7 +585,21 @@ export class CodecsRegistry {
             "could not build range codec: missing subcodec"
           );
         }
-        res = new RangeCodec(tid, subCodec);
+        res = new RangeCodec(tid, typeName, subCodec);
+        break;
+      }
+
+      case CTYPE_OBJECT: {
+        // Ignore
+        frb.discard(frb.length);
+        res = NULL_CODEC;
+        break;
+      }
+
+      case CTYPE_COMPOUND: {
+        // Ignore
+        frb.discard(frb.length);
+        res = NULL_CODEC;
         break;
       }
     }
