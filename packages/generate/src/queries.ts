@@ -156,7 +156,11 @@ export function stringifyImports(imports: { [k: string]: boolean }) {
 async function getMatches(root: string) {
   return adapter.walk(root, {
     match: [/[^\/]\.edgeql$/],
-    skip: [/node_modules/, RegExp(`dbschema\\${adapter.path.sep}migrations`)],
+    skip: [
+      /node_modules/,
+      RegExp(`dbschema\\${adapter.path.sep}migrations`),
+      RegExp(`dbschema\\${adapter.path.sep}fixups`),
+    ],
   });
 }
 
