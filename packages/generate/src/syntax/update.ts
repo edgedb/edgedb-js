@@ -1,6 +1,6 @@
 import {
   ExpressionKind,
-  typeutil,
+  type typeutil,
   Cardinality,
 } from "edgedb/dist/reflection/index";
 import type {
@@ -17,13 +17,13 @@ import type {
 import type { pointerToAssignmentExpression } from "./casting";
 import { $expressionify, $getScopedExpr, $assert_single } from "./path";
 import {
-  SelectModifiers,
-  NormalisedSelectModifiers,
-  ComputeSelectCardinality,
+  type SelectModifiers,
+  type NormalisedSelectModifiers,
+  type ComputeSelectCardinality,
   $existingScopes,
   $handleModifiers,
 } from "./select";
-import { $normaliseInsertShape, pointerIsOptional } from "./insert";
+import { $normaliseInsertShape, type pointerIsOptional } from "./insert";
 
 /////////////////
 /// UPDATE

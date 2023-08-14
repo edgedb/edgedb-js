@@ -1,7 +1,7 @@
 import {
   Cardinality,
   ExpressionKind,
-  typeutil,
+  type typeutil,
   TypeKind,
 } from "edgedb/dist/reflection/index";
 import type {

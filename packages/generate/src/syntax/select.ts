@@ -39,18 +39,18 @@ import type {
 
 import {
   $assert_single,
-  $expr_PathLeaf,
-  $expr_PathNode,
-  $linkPropify,
-  ExpressionRoot,
+  type $expr_PathLeaf,
+  type $expr_PathNode,
+  type $linkPropify,
+  type ExpressionRoot,
 } from "./path";
 import type { anonymizeObject } from "./casting";
 import { $expressionify, $getScopedExpr } from "./path";
 import { $getTypeByName, literal } from "./literal";
 import { spec } from "./__spec__";
 import {
-  scalarLiterals,
-  literalToScalarType,
+  type scalarLiterals,
+  type literalToScalarType,
   literalToTypeSet,
 } from "./castMaps";
 import type { $expr_Operator } from "./funcops";

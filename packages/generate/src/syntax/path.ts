@@ -9,7 +9,7 @@ import {
   // PropertyDesc,
   Cardinality,
   // BaseType,
-  typeutil,
+  type typeutil,
 } from "edgedb/dist/reflection/index";
 
 import { cardutil } from "./cardinality";

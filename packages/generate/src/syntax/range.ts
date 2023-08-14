@@ -23,7 +23,7 @@ import type { literalToScalarType, orScalarLiteral } from "./castMaps";
 import { literalToTypeSet } from "./castMaps";
 import { spec } from "./__spec__";
 import { literal, $nameMapping } from "./literal";
-import { $expr_Function, $resolveOverload } from "./funcops";
+import { type $expr_Function, $resolveOverload } from "./funcops";
 import { $expressionify } from "./path";
 
 type $anypoint =
