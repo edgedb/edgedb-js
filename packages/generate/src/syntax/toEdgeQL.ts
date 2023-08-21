@@ -15,20 +15,20 @@ import {
   util,
 } from "edgedb/dist/reflection/index";
 import {
-  $expr_Array,
-  $expr_NamedTuple,
-  $expr_Tuple,
-  $expr_TuplePath,
-  BaseType,
-  EnumType,
+  type $expr_Array,
+  type $expr_NamedTuple,
+  type $expr_Tuple,
+  type $expr_TuplePath,
+  type BaseType,
+  type EnumType,
   isArrayType,
   isNamedTupleType,
   isObjectType,
   isTupleType,
-  ObjectType,
-  ObjectTypeSet,
-  RangeType,
-  TypeSet,
+  type ObjectType,
+  type ObjectTypeSet,
+  type RangeType,
+  type TypeSet,
 } from "./typesystem";
 import type { $expr_Literal } from "./literal";
 import type {

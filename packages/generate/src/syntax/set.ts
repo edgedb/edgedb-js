@@ -14,7 +14,7 @@ import type {
   SomeType,
 } from "./typesystem";
 
-import { $mergeObjectTypes, mergeObjectTypes } from "./hydrate";
+import { $mergeObjectTypes, type mergeObjectTypes } from "./hydrate";
 
 import * as castMaps from "./castMaps";
 
