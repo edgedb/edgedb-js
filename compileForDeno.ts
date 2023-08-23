@@ -135,17 +135,13 @@ export async function run({
 
         let resolvedImportPath = resolveImportPath(importPath, sourcePath);
 
-        if (resolvedImportPath.endsWith("/adapter.node.ts")) {
-          resolvedImportPath = resolvedImportPath.replace(
-            "/adapter.node.ts",
-            "/adapter.deno.ts"
-          );
-        }
-        if (resolvedImportPath.endsWith("/adapter.shared.node.ts")) {
-          resolvedImportPath = resolvedImportPath.replace(
-            "/adapter.shared.node.ts",
-            "/adapter.shared.deno.ts"
-          );
+        for (const name of ["adapter", "adapter.shared", "adapter.crypto"]) {
+          if (resolvedImportPath.endsWith(`/${name}.node.ts`)) {
+            resolvedImportPath = resolvedImportPath.replace(
+              `/${name}.node.ts`,
+              `/${name}.deno.ts`
+            );
+          }
         }
 
         rewrittenFile.push(resolvedImportPath);

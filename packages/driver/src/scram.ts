@@ -16,11 +16,9 @@
  * limitations under the License.
  */
 
-import { randomBytes, H, HMAC } from "./adapter.shared.node";
 import { utf8Encoder, encodeB64, decodeB64 } from "./primitives/buffer";
 import { ProtocolError } from "./errors";
-
-export { H, HMAC };
+import type { CryptoUtils } from "./utils";
 
 const RAW_NONCE_LENGTH = 18;
 
@@ -34,161 +32,176 @@ export function saslprep(str: string): string {
   return str.normalize("NFKC");
 }
 
-export function bufferEquals(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  for (let i = 0, len = a.length; i < len; i++) {
-    if (a[i] !== b[i]) {
+export function getSCRAM({ randomBytes, H, HMAC }: CryptoUtils) {
+  function bufferEquals(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) {
       return false;
     }
-  }
-  return true;
-}
-
-export function generateNonce(
-  length: number = RAW_NONCE_LENGTH
-): Promise<Uint8Array> {
-  return randomBytes(length);
-}
-
-export function buildClientFirstMessage(
-  clientNonce: Uint8Array,
-  username: string
-): [string, string] {
-  const bare = `n=${saslprep(username)},r=${encodeB64(clientNonce)}`;
-  return [`n,,${bare}`, bare];
-}
-
-export function parseServerFirstMessage(
-  msg: string
-): [Uint8Array, Uint8Array, number] {
-  const attrs = msg.split(",");
-
-  if (attrs.length < 3) {
-    throw new ProtocolError("malformed SCRAM message");
+    for (let i = 0, len = a.length; i < len; i++) {
+      if (a[i] !== b[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
-  const nonceAttr = attrs[0];
-  if (!nonceAttr || nonceAttr[0] !== "r") {
-    throw new ProtocolError("malformed SCRAM message");
-  }
-  const nonceB64 = nonceAttr.split("=", 2)[1];
-  if (!nonceB64) {
-    throw new ProtocolError("malformed SCRAM message");
-  }
-  const nonce = decodeB64(nonceB64);
-
-  const saltAttr = attrs[1];
-  if (!saltAttr || saltAttr[0] !== "s") {
-    throw new ProtocolError("malformed SCRAM message");
-  }
-  const saltB64 = saltAttr.split("=", 2)[1];
-  if (!saltB64) {
-    throw new ProtocolError("malformed SCRAM message");
-  }
-  const salt = decodeB64(saltB64);
-
-  const iterAttr = attrs[2];
-  if (!iterAttr || iterAttr[0] !== "i") {
-    throw new ProtocolError("malformed SCRAM message");
-  }
-  const iter = iterAttr.split("=", 2)[1];
-  if (!iter || !iter.match(/^[0-9]*$/)) {
-    throw new ProtocolError("malformed SCRAM message");
-  }
-  const iterCount = parseInt(iter, 10);
-  if (iterCount <= 0) {
-    throw new ProtocolError("malformed SCRAM message");
+  function generateNonce(
+    length: number = RAW_NONCE_LENGTH
+  ): Promise<Uint8Array> {
+    return randomBytes(length);
   }
 
-  return [nonce, salt, iterCount];
-}
-
-export function parseServerFinalMessage(msg: string): Uint8Array {
-  const attrs = msg.split(",");
-
-  if (attrs.length < 1) {
-    throw new ProtocolError("malformed SCRAM message");
+  function buildClientFirstMessage(
+    clientNonce: Uint8Array,
+    username: string
+  ): [string, string] {
+    const bare = `n=${saslprep(username)},r=${encodeB64(clientNonce)}`;
+    return [`n,,${bare}`, bare];
   }
 
-  const nonceAttr = attrs[0];
-  if (!nonceAttr || nonceAttr[0] !== "v") {
-    throw new ProtocolError("malformed SCRAM message");
-  }
-  const signatureB64 = nonceAttr.split("=", 2)[1];
-  if (!signatureB64) {
-    throw new ProtocolError("malformed SCRAM message");
-  }
-  return decodeB64(signatureB64);
-}
+  function parseServerFirstMessage(
+    msg: string
+  ): [Uint8Array, Uint8Array, number] {
+    const attrs = msg.split(",");
 
-export async function buildClientFinalMessage(
-  password: string,
-  salt: Uint8Array,
-  iterations: number,
-  clientFirstBare: string,
-  serverFirst: string,
-  serverNonce: Uint8Array
-): Promise<[string, Uint8Array]> {
-  const clientFinal = `c=biws,r=${encodeB64(serverNonce)}`;
-  const authMessage = utf8Encoder.encode(
-    `${clientFirstBare},${serverFirst},${clientFinal}`
-  );
-  const saltedPassword = await getSaltedPassword(
-    utf8Encoder.encode(saslprep(password)),
-    salt,
-    iterations
-  );
-  const clientKey = await getClientKey(saltedPassword);
-  const storedKey = await H(clientKey);
-  const clientSignature = await HMAC(storedKey, authMessage);
-  const clientProof = XOR(clientKey, clientSignature);
+    if (attrs.length < 3) {
+      throw new ProtocolError("malformed SCRAM message");
+    }
 
-  const serverKey = await getServerKey(saltedPassword);
-  const serverProof = await HMAC(serverKey, authMessage);
+    const nonceAttr = attrs[0];
+    if (!nonceAttr || nonceAttr[0] !== "r") {
+      throw new ProtocolError("malformed SCRAM message");
+    }
+    const nonceB64 = nonceAttr.split("=", 2)[1];
+    if (!nonceB64) {
+      throw new ProtocolError("malformed SCRAM message");
+    }
+    const nonce = decodeB64(nonceB64);
 
-  return [`${clientFinal},p=${encodeB64(clientProof)}`, serverProof];
-}
+    const saltAttr = attrs[1];
+    if (!saltAttr || saltAttr[0] !== "s") {
+      throw new ProtocolError("malformed SCRAM message");
+    }
+    const saltB64 = saltAttr.split("=", 2)[1];
+    if (!saltB64) {
+      throw new ProtocolError("malformed SCRAM message");
+    }
+    const salt = decodeB64(saltB64);
 
-export async function getSaltedPassword(
-  password: Uint8Array,
-  salt: Uint8Array,
-  iterations: number
-): Promise<Uint8Array> {
-  // U1 := HMAC(str, salt + INT(1))
+    const iterAttr = attrs[2];
+    if (!iterAttr || iterAttr[0] !== "i") {
+      throw new ProtocolError("malformed SCRAM message");
+    }
+    const iter = iterAttr.split("=", 2)[1];
+    if (!iter || !iter.match(/^[0-9]*$/)) {
+      throw new ProtocolError("malformed SCRAM message");
+    }
+    const iterCount = parseInt(iter, 10);
+    if (iterCount <= 0) {
+      throw new ProtocolError("malformed SCRAM message");
+    }
 
-  const msg = new Uint8Array(salt.length + 4);
-  msg.set(salt);
-  msg.set([0, 0, 0, 1], salt.length);
-
-  let Hi = await HMAC(password, msg);
-  let Ui = Hi;
-
-  for (let _ = 0; _ < iterations - 1; _++) {
-    Ui = await HMAC(password, Ui);
-    Hi = XOR(Hi, Ui);
+    return [nonce, salt, iterCount];
   }
 
-  return Hi;
-}
+  function parseServerFinalMessage(msg: string): Uint8Array {
+    const attrs = msg.split(",");
 
-export function getClientKey(saltedPassword: Uint8Array): Promise<Uint8Array> {
-  return HMAC(saltedPassword, utf8Encoder.encode("Client Key"));
-}
+    if (attrs.length < 1) {
+      throw new ProtocolError("malformed SCRAM message");
+    }
 
-export function getServerKey(saltedPassword: Uint8Array): Promise<Uint8Array> {
-  return HMAC(saltedPassword, utf8Encoder.encode("Server Key"));
-}
-
-export function XOR(a: Uint8Array, b: Uint8Array): Uint8Array {
-  const len = a.length;
-  if (len !== b.length) {
-    throw new ProtocolError("scram.XOR: buffers are of different lengths");
+    const nonceAttr = attrs[0];
+    if (!nonceAttr || nonceAttr[0] !== "v") {
+      throw new ProtocolError("malformed SCRAM message");
+    }
+    const signatureB64 = nonceAttr.split("=", 2)[1];
+    if (!signatureB64) {
+      throw new ProtocolError("malformed SCRAM message");
+    }
+    return decodeB64(signatureB64);
   }
-  const res = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    res[i] = a[i] ^ b[i];
+
+  async function buildClientFinalMessage(
+    password: string,
+    salt: Uint8Array,
+    iterations: number,
+    clientFirstBare: string,
+    serverFirst: string,
+    serverNonce: Uint8Array
+  ): Promise<[string, Uint8Array]> {
+    const clientFinal = `c=biws,r=${encodeB64(serverNonce)}`;
+    const authMessage = utf8Encoder.encode(
+      `${clientFirstBare},${serverFirst},${clientFinal}`
+    );
+    const saltedPassword = await _getSaltedPassword(
+      utf8Encoder.encode(saslprep(password)),
+      salt,
+      iterations
+    );
+    const clientKey = await _getClientKey(saltedPassword);
+    const storedKey = await H(clientKey);
+    const clientSignature = await HMAC(storedKey, authMessage);
+    const clientProof = _XOR(clientKey, clientSignature);
+
+    const serverKey = await _getServerKey(saltedPassword);
+    const serverProof = await HMAC(serverKey, authMessage);
+
+    return [`${clientFinal},p=${encodeB64(clientProof)}`, serverProof];
   }
-  return res;
+
+  async function _getSaltedPassword(
+    password: Uint8Array,
+    salt: Uint8Array,
+    iterations: number
+  ): Promise<Uint8Array> {
+    // U1 := HMAC(str, salt + INT(1))
+
+    const msg = new Uint8Array(salt.length + 4);
+    msg.set(salt);
+    msg.set([0, 0, 0, 1], salt.length);
+
+    let Hi = await HMAC(password, msg);
+    let Ui = Hi;
+
+    for (let _ = 0; _ < iterations - 1; _++) {
+      Ui = await HMAC(password, Ui);
+      Hi = _XOR(Hi, Ui);
+    }
+
+    return Hi;
+  }
+
+  function _getClientKey(saltedPassword: Uint8Array): Promise<Uint8Array> {
+    return HMAC(saltedPassword, utf8Encoder.encode("Client Key"));
+  }
+
+  function _getServerKey(saltedPassword: Uint8Array): Promise<Uint8Array> {
+    return HMAC(saltedPassword, utf8Encoder.encode("Server Key"));
+  }
+
+  function _XOR(a: Uint8Array, b: Uint8Array): Uint8Array {
+    const len = a.length;
+    if (len !== b.length) {
+      throw new ProtocolError("scram.XOR: buffers are of different lengths");
+    }
+    const res = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      res[i] = a[i] ^ b[i];
+    }
+    return res;
+  }
+
+  return {
+    bufferEquals,
+    generateNonce,
+    buildClientFirstMessage,
+    parseServerFirstMessage,
+    parseServerFinalMessage,
+    buildClientFinalMessage,
+    _getSaltedPassword,
+    _getClientKey,
+    _getServerKey,
+    _XOR,
+  };
 }

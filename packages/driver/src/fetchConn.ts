@@ -22,7 +22,7 @@ import { PROTO_VER, BaseRawConnection } from "./baseConn";
 import Event from "./primitives/event";
 import * as chars from "./primitives/chars";
 import { InternalClientError, ProtocolError } from "./errors";
-import { HTTPSCRAMAuth } from "./httpScram";
+import type { HttpSCRAMAuth } from "./httpScram";
 
 interface FetchConfig {
   address: Address | string;
@@ -177,38 +177,40 @@ export class FetchConnection extends BaseFetchConnection {
     return `${baseUrl}/db/${database}`;
   }
 
-  static async connectWithTimeout(
-    addr: Address,
-    config: NormalizedConnectConfig,
-    registry: CodecsRegistry
-  ): Promise<FetchConnection> {
-    const {
-      connectionParams: { tlsSecurity, user, password = "", secretKey },
-    } = config;
+  static createConnectWithTimeout(httpSCRAMAuth: HttpSCRAMAuth) {
+    return async function connectWithTimeout(
+      addr: Address,
+      config: NormalizedConnectConfig,
+      registry: CodecsRegistry
+    ) {
+      const {
+        connectionParams: { tlsSecurity, user, password = "", secretKey },
+      } = config;
 
-    let token = secretKey ?? _tokens.get(config);
+      let token = secretKey ?? _tokens.get(config);
 
-    if (!token) {
-      const protocol = tlsSecurity === "insecure" ? "http" : "https";
-      const baseUrl = `${protocol}://${addr[0]}:${addr[1]}`;
-      token = await HTTPSCRAMAuth(baseUrl, user, password);
-      _tokens.set(config, token);
-    }
+      if (!token) {
+        const protocol = tlsSecurity === "insecure" ? "http" : "https";
+        const baseUrl = `${protocol}://${addr[0]}:${addr[1]}`;
+        token = await httpSCRAMAuth(baseUrl, user, password);
+        _tokens.set(config, token);
+      }
 
-    const conn = new FetchConnection(
-      {
-        address: addr,
-        tlsSecurity,
-        database: config.connectionParams.database,
-        user: config.connectionParams.user,
-        token,
-      },
-      registry
-    );
+      const conn = new FetchConnection(
+        {
+          address: addr,
+          tlsSecurity,
+          database: config.connectionParams.database,
+          user: config.connectionParams.user,
+          token,
+        },
+        registry
+      );
 
-    conn.connected = true;
-    conn.connWaiter.set();
+      conn.connected = true;
+      conn.connWaiter.set();
 
-    return conn;
+      return conn;
+    };
   }
 }
