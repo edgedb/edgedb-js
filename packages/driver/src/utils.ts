@@ -59,3 +59,9 @@ export function versionGreaterThanOrEqual(
 
   return versionGreaterThan(left, right);
 }
+
+export interface CryptoUtils {
+  randomBytes: (size: number) => Promise<Uint8Array>;
+  H: (msg: Uint8Array) => Promise<Uint8Array>;
+  HMAC: (key: Uint8Array, msg: Uint8Array) => Promise<Uint8Array>;
+}

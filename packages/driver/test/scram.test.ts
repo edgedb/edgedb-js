@@ -16,7 +16,10 @@
  * limitations under the License.
  */
 
-import * as scram from "../src/scram";
+import { getSCRAM, saslprep } from "../src/scram";
+import cryptoUtils from "../src/adapter.crypto.node";
+
+const scram = getSCRAM(cryptoUtils);
 
 test("scram: RFC example", async () => {
   // Test SCRAM-SHA-256 against an example in RFC 7677
@@ -35,22 +38,22 @@ test("scram: RFC example", async () => {
 
   const authMessage = `${client_first},${server_first},${client_final}`;
 
-  const saltedPassword = await scram.getSaltedPassword(
-    Buffer.from(scram.saslprep(password), "utf-8"),
+  const saltedPassword = await scram._getSaltedPassword(
+    Buffer.from(saslprep(password), "utf-8"),
     Buffer.from(salt, "base64"),
     iterations
   );
 
-  const clientKey = await scram.getClientKey(saltedPassword);
-  const serverKey = await scram.getServerKey(saltedPassword);
-  const storedKey = await scram.H(clientKey);
+  const clientKey = await scram._getClientKey(saltedPassword);
+  const serverKey = await scram._getServerKey(saltedPassword);
+  const storedKey = await cryptoUtils.H(clientKey);
 
-  const clientSignature = await scram.HMAC(
+  const clientSignature = await cryptoUtils.HMAC(
     storedKey,
     Buffer.from(authMessage, "utf8")
   );
-  const clientProof = scram.XOR(clientKey, clientSignature);
-  const serverProof = await scram.HMAC(
+  const clientProof = scram._XOR(clientKey, clientSignature);
+  const serverProof = await cryptoUtils.HMAC(
     serverKey,
     Buffer.from(authMessage, "utf8")
   );
