@@ -185,7 +185,7 @@ Iron Man 2:
         actors: {
           name,
         }
-      } filter .title = "Iron Man 2"
+      } filter .title = "Iron Man 2" limit 1
     `);
 
     console.log(JSON.stringify(result, null, 2));
