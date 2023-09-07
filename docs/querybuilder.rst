@@ -10,20 +10,29 @@ users, or anyone who prefers writing queries with code.
 
 .. code-block:: typescript
 
-  const query = e.select(e.Movie, ()=>({
-    id: true,
-    title: true,
-    actors: { name: true }
-  }));
+  import * as edgedb from "edgedb";
+  import e from "./dbschema/edgeql-js";
 
-  const result = await query.run(client)
-  /*
-    {
-      id: string;
-      title: string;
-      actors: { name: string; }[];
-    }[]
-  */
+  const client = edgedb.createClient();
+
+  async function run() {
+    const query = e.select(e.Movie, ()=>({
+      id: true,
+      title: true,
+      actors: { name: true }
+    }));
+
+    const result = await query.run(client)
+    /*
+      {
+        id: string;
+        title: string;
+        actors: { name: string; }[];
+      }[]
+    */
+  }
+
+  run();
 
 .. note:: Is it an ORM?
 
@@ -89,27 +98,19 @@ which accepts a ``Client`` instead as the first argument. The result is
 
 .. code-block:: typescript
 
-  import * as edgedb from "edgedb";
+  await e.str("hello world").run(client);
+  // => "hello world"
 
-  const client = edgedb.createClient();
+  await e.set(e.int64(1), e.int64(2), e.int64(3)).run(client);
+  // => [1, 2, 3]
 
-  async function run() {
-    await e.str("hello world").run(client);
-    // => "hello world"
-
-    await e.set(e.int64(1), e.int64(2), e.int64(3)).run(client);
-    // => [1, 2, 3]
-
-    await e
-      .select(e.Movie, () => ({
-        title: true,
-        actors: { name: true },
-      }))
-      .run(client);
-    // => [{ title: "The Avengers", actors: [...]}]
-  }
-
-  run();
+  await e
+    .select(e.Movie, () => ({
+      title: true,
+      actors: { name: true },
+    }))
+    .run(client);
+  // => [{ title: "The Avengers", actors: [...]}]
 
 Note that the ``.run`` method accepts an instance of :js:class:`Client` (or
 ``Transaction``) as it's first argument. See :ref:`Creating a Client
@@ -149,7 +150,7 @@ Extracting the inferred type
 
 The query builder *automatically infers* the TypeScript type that best
 represents the result of a given expression. This inferred type can be
-extracted with the ``$infer`` helper.
+extracted with the ``$infer`` type helper.
 
 .. code-block:: typescript
 
