@@ -75,35 +75,40 @@ export function prettyPrintError(
   attrs: Map<number, Uint8Array>,
   query: string
 ) {
+  let errMessage = "\n";
+
   const lineStart = tryParseInt(attrs.get(ErrorAttr.lineStart));
   const lineEnd = tryParseInt(attrs.get(ErrorAttr.lineEnd));
   const colStart = tryParseInt(attrs.get(ErrorAttr.utf16ColumnStart));
   const colEnd = tryParseInt(attrs.get(ErrorAttr.utf16ColumnEnd));
 
   if (
-    lineStart == null ||
-    lineEnd == null ||
-    colStart == null ||
-    colEnd == null
+    lineStart != null &&
+    lineEnd != null &&
+    colStart != null &&
+    colEnd != null
   ) {
-    return "";
+    const queryLines = query.split("\n");
+
+    const lineNoWidth = lineEnd.toString().length;
+
+    errMessage += "|".padStart(lineNoWidth + 3) + "\n";
+
+    for (let i = lineStart; i < lineEnd + 1; i++) {
+      const line = queryLines[i - 1];
+      const start = i === lineStart ? colStart : 0;
+      const end = i === lineEnd ? colEnd : line.length;
+      errMessage += ` ${i.toString().padStart(lineNoWidth)} | ${line}\n`;
+      errMessage += `${"|".padStart(lineNoWidth + 3)} ${""
+        .padStart(end - start, "^")
+        .padStart(end)}\n`;
+    }
   }
 
-  const queryLines = query.split("\n");
-
-  const lineNoWidth = lineEnd.toString().length;
-  let errMessage = "\n";
-
-  errMessage += "|".padStart(lineNoWidth + 3) + "\n";
-
-  for (let i = lineStart; i < lineEnd + 1; i++) {
-    const line = queryLines[i - 1];
-    const start = i === lineStart ? colStart : 0;
-    const end = i === lineEnd ? colEnd : line.length;
-    errMessage += ` ${i.toString().padStart(lineNoWidth)} | ${line}\n`;
-    errMessage += `${"|".padStart(lineNoWidth + 3)} ${""
-      .padStart(end - start, "^")
-      .padStart(end)}\n`;
+  if (attrs.has(ErrorAttr.details)) {
+    errMessage += `Details: ${utf8Decoder.decode(
+      attrs.get(ErrorAttr.details)
+    )}\n`;
   }
   if (attrs.has(ErrorAttr.hint)) {
     errMessage += `Hint: ${utf8Decoder.decode(attrs.get(ErrorAttr.hint))}\n`;
