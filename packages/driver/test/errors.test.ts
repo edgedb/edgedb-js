@@ -51,3 +51,20 @@ test("message is set with attrs and query", () => {
   expect(error.message).toContain(String(lineNum));
   expect(error.message).toContain("^".repeat(columnCount));
 });
+
+test("message is set with attrs and query without position", () => {
+  const error = new edgedb.AccessError("test");
+  const attrs = new Map<number, Uint8Array>();
+
+  // hint
+  attrs.set(1, new Uint8Array(Buffer.from(String("hint text"), "utf-8")));
+  // details
+  attrs.set(2, new Uint8Array(Buffer.from(String("details text"), "utf-8")));
+
+  (error as any)._attrs = attrs;
+  (error as any)._query = "0123456789\n";
+  expect(error.message).toContain("test");
+  expect(error.message).toContain(String("hint text"));
+  expect(error.message).toContain(String("details text"));
+  expect(error.message).toBe("test\nDetails: details text\nHint: hint text\n");
+});
