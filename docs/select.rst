@@ -274,6 +274,74 @@ params object. This should correspond to a boolean expression.
   EdgeDB, there is minimal danger of conflicting with a property or link named
   ``filter``. All shapes can contain filter clauses, even nested ones.
 
+If you have many conditions you want to test for, your filter can start to get
+difficult to read.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => ({
+    id: true,
+    title: true,
+    filter: e.op(
+      e.op(
+        e.op(movie.title, 'ilike', "The Matrix%"),
+        'and',
+        e.op(movie.release_year, '=', 1999)
+      ),
+      'or',
+      e.op(movie.title, '=', 'Iron Man')
+    )
+  }));
+
+To improve readability, we recommend breaking these operations out into named
+variables and composing them.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => {
+    const isAMatrixMovie = e.op(movie.title, 'ilike', "The Matrix%");
+    const wasReleased1999 = e.op(movie.release_year, '=', 1999);
+    const isIronMan = e.op(movie.title, '=', 'Iron Man');
+    return {
+      id: true,
+      title: true,
+      filter: e.op(
+        e.op(
+          isAMatrixMovie,
+          'and',
+          wasReleased1999
+        ),
+        'or',
+        isIronMan
+      )
+    }
+  });
+
+You can combine compound conditions as much or as little as makes sense for
+your application.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => {
+    const isAMatrixMovie = e.op(movie.title, 'ilike', "The Matrix%");
+    const wasReleased1999 = e.op(movie.release_year, '=', 1999);
+    const isAMatrixMovieReleased1999 = e.op(
+      isAMatrixMovie,
+      'and',
+      wasReleased1999
+    );
+    const isIronMan = e.op(movie.title, '=', 'Iron Man');
+    return {
+      id: true,
+      title: true,
+      filter: e.op(
+        isAMatrixMovieReleased1999
+        'or',
+        isIronMan
+      )
+    }
+  });
+
 Filters on links
 ----------------
 
