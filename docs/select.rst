@@ -360,7 +360,25 @@ takes a set.
     ),
   }));
 
-The conditions passed to ``e.any`` can be composed just like before.
+Similarly to ``e.any``, ``e.all`` can replace multiple conditions strung
+together with ``and``.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => ({
+    id: true,
+    title: true,
+    filter: e.all(
+      e.set(
+        e.op(movie.title, "ilike", "captain%")
+        e.op(movie.title, "ilike", "%america%")
+        e.op(movie.title, "ilike", "%:%")
+      )
+    ),
+  }));
+
+The conditions passed to ``e.any`` or ``e.all`` can be composed just like
+before.
 
 .. code-block:: typescript
 
