@@ -342,6 +342,46 @@ your application.
     }
   });
 
+If you need to string together several conditions with ``or``, ``e.any`` may be
+a better choice. Be sure to wrap your conditions in ``e.set`` since ``e.any``
+takes a set.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => ({
+    id: true,
+    title: true,
+    filter: e.any(
+      e.set(
+        e.op(movie.title, "=", "Iron Man"),
+        e.op(movie.title, "ilike", "guardians%"),
+        e.op(movie.title, "ilike", "captain%")
+      )
+    ),
+  }));
+
+The conditions passed to ``e.any`` can be composed just like before.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => {
+    const isIronMan = e.op(movie.title, "=", "Iron Man");
+    const startsWithGuardians = e.op(movie.title, "ilike", "guardians%");
+    const startsWithCaptain = e.op(movie.title, "ilike", "captain%");
+    return {
+      id: true,
+      title: true,
+      filter: e.any(
+        e.set(
+          isIronMan,
+          startsWithGuardians,
+          startsWithCaptain
+        )
+      ),
+    }
+  });
+
+
 Filters on links
 ----------------
 
