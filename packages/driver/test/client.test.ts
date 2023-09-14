@@ -50,7 +50,8 @@ import {
   isDeno,
 } from "./testbase";
 import { PG_VECTOR_MAX_DIM } from "../src/codecs/pgvector";
-import { HTTPSCRAMAuth } from "../src/httpScram";
+import { getHTTPSCRAMAuth } from "../src/httpScram";
+import cryptoUtils from "../src/adapter.crypto.node";
 
 function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
   // @ts-ignore
@@ -2046,7 +2047,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     const config = await parseConnectArguments(getConnectOptions());
 
     const { address, user, password } = config.connectionParams;
-    const token = await HTTPSCRAMAuth(
+    const token = await getHTTPSCRAMAuth(cryptoUtils)(
       `http://${address[0]}:${address[1]}`,
       user,
       password!
