@@ -274,6 +274,132 @@ params object. This should correspond to a boolean expression.
   EdgeDB, there is minimal danger of conflicting with a property or link named
   ``filter``. All shapes can contain filter clauses, even nested ones.
 
+If you have many conditions you want to test for, your filter can start to get
+difficult to read.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => ({
+    id: true,
+    title: true,
+    filter: e.op(
+      e.op(
+        e.op(movie.title, 'ilike', "The Matrix%"),
+        'and',
+        e.op(movie.release_year, '=', 1999)
+      ),
+      'or',
+      e.op(movie.title, '=', 'Iron Man')
+    )
+  }));
+
+To improve readability, we recommend breaking these operations out into named
+variables and composing them.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => {
+    const isAMatrixMovie = e.op(movie.title, 'ilike', "The Matrix%");
+    const wasReleased1999 = e.op(movie.release_year, '=', 1999);
+    const isIronMan = e.op(movie.title, '=', 'Iron Man');
+    return {
+      id: true,
+      title: true,
+      filter: e.op(
+        e.op(
+          isAMatrixMovie,
+          'and',
+          wasReleased1999
+        ),
+        'or',
+        isIronMan
+      )
+    }
+  });
+
+You can combine compound conditions as much or as little as makes sense for
+your application.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => {
+    const isAMatrixMovie = e.op(movie.title, 'ilike', "The Matrix%");
+    const wasReleased1999 = e.op(movie.release_year, '=', 1999);
+    const isAMatrixMovieReleased1999 = e.op(
+      isAMatrixMovie,
+      'and',
+      wasReleased1999
+    );
+    const isIronMan = e.op(movie.title, '=', 'Iron Man');
+    return {
+      id: true,
+      title: true,
+      filter: e.op(
+        isAMatrixMovieReleased1999
+        'or',
+        isIronMan
+      )
+    }
+  });
+
+If you need to string together several conditions with ``or``, ``e.any`` may be
+a better choice. Be sure to wrap your conditions in ``e.set`` since ``e.any``
+takes a set.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => ({
+    id: true,
+    title: true,
+    filter: e.any(
+      e.set(
+        e.op(movie.title, "=", "Iron Man"),
+        e.op(movie.title, "ilike", "guardians%"),
+        e.op(movie.title, "ilike", "captain%")
+      )
+    ),
+  }));
+
+Similarly to ``e.any``, ``e.all`` can replace multiple conditions strung
+together with ``and``.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => ({
+    id: true,
+    title: true,
+    filter: e.all(
+      e.set(
+        e.op(movie.title, "ilike", "captain%")
+        e.op(movie.title, "ilike", "%america%")
+        e.op(movie.title, "ilike", "%:%")
+      )
+    ),
+  }));
+
+The conditions passed to ``e.any`` or ``e.all`` can be composed just like
+before.
+
+.. code-block:: typescript
+
+  e.select(e.Movie, movie => {
+    const isIronMan = e.op(movie.title, "=", "Iron Man");
+    const startsWithGuardians = e.op(movie.title, "ilike", "guardians%");
+    const startsWithCaptain = e.op(movie.title, "ilike", "captain%");
+    return {
+      id: true,
+      title: true,
+      filter: e.any(
+        e.set(
+          isIronMan,
+          startsWithGuardians,
+          startsWithCaptain
+        )
+      ),
+    }
+  });
+
+
 Filters on links
 ----------------
 
