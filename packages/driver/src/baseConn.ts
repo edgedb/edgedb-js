@@ -78,17 +78,11 @@ new DataView(NO_TRANSACTION_CAPABILITIES_BYTES.buffer).setUint32(
   NO_TRANSACTION_CAPABILITIES
 );
 
-const RESTRICTED_CAPABILITIES =
+export const RESTRICTED_CAPABILITIES =
   (Capabilities.ALL &
     ~Capabilities.TRANSACTION &
     ~Capabilities.SESSION_CONFIG &
     ~Capabilities.SET_GLOBAL) >>>
-  0;
-
-const STUDIO_CAPABILITIES =
-  (RESTRICTED_CAPABILITIES |
-    Capabilities.SESSION_CONFIG |
-    Capabilities.SET_GLOBAL) >>>
   0;
 
 enum CompilationFlag {
@@ -1038,7 +1032,7 @@ export class BaseRawConnection {
     ];
   }
 
-  private async _executeFlow(
+  protected async _executeFlow(
     query: string,
     args: QueryArgs,
     outputFormat: OutputFormat,
@@ -1446,55 +1440,5 @@ export class BaseRawConnection {
 
   async close(): Promise<void> {
     this._abort();
-  }
-
-  // These methods are exposed for use by EdgeDB Studio
-  public async rawParse(
-    query: string,
-    state: Session,
-    options?: QueryOptions
-  ): Promise<
-    [ICodec, ICodec, Uint8Array, Uint8Array, ProtocolVersion, number]
-  > {
-    const result = (await this._parse(
-      query,
-      OutputFormat.BINARY,
-      Cardinality.MANY,
-      state,
-      STUDIO_CAPABILITIES,
-      options
-    ))!;
-    return [
-      result[1],
-      result[2],
-      result[4]!,
-      result[5]!,
-      this.protocolVersion,
-      result[3],
-    ];
-  }
-
-  public async rawExecute(
-    query: string,
-    state: Session,
-    outCodec?: ICodec,
-    options?: QueryOptions,
-    inCodec?: ICodec,
-    args: QueryArgs = null
-  ): Promise<Uint8Array> {
-    const result = new WriteBuffer();
-    await this._executeFlow(
-      query,
-      args,
-      outCodec ? OutputFormat.BINARY : OutputFormat.NONE,
-      Cardinality.MANY,
-      state,
-      inCodec ?? NULL_CODEC,
-      outCodec ?? NULL_CODEC,
-      result,
-      STUDIO_CAPABILITIES,
-      options
-    );
-    return result.unwrap();
   }
 }

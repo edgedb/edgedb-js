@@ -16,13 +16,29 @@
  * limitations under the License.
  */
 
+import {
+  BaseRawConnection,
+  Capabilities,
+  PROTO_VER,
+  RESTRICTED_CAPABILITIES,
+} from "./baseConn";
+import { NULL_CODEC } from "./codecs/codecs";
+import { ICodec } from "./codecs/ifaces";
 import { CodecsRegistry } from "./codecs/registry";
 import { Address, NormalizedConnectConfig } from "./conUtils";
-import { PROTO_VER, BaseRawConnection } from "./baseConn";
-import Event from "./primitives/event";
-import * as chars from "./primitives/chars";
 import { InternalClientError, ProtocolError } from "./errors";
 import type { HttpSCRAMAuth } from "./httpScram";
+import {
+  Cardinality,
+  OutputFormat,
+  ProtocolVersion,
+  QueryArgs,
+  QueryOptions,
+} from "./ifaces";
+import { Session } from "./options";
+import { WriteBuffer } from "./primitives/buffer";
+import * as chars from "./primitives/chars";
+import Event from "./primitives/event";
 
 interface FetchConfig {
   address: Address | string;
@@ -34,9 +50,16 @@ interface FetchConfig {
 
 const PROTO_MIME = `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`;
 
+const STUDIO_CAPABILITIES =
+  (RESTRICTED_CAPABILITIES |
+    Capabilities.SESSION_CONFIG |
+    Capabilities.SET_GLOBAL) >>>
+  0;
+
 class BaseFetchConnection extends BaseRawConnection {
   protected config: FetchConfig;
   protected addr: string;
+  protected abortSignal: AbortSignal | null = null;
 
   constructor(config: FetchConfig, registry: CodecsRegistry) {
     super(registry);
@@ -96,6 +119,7 @@ class BaseFetchConnection extends BaseRawConnection {
         method: "post",
         body: data,
         headers,
+        signal: this.abortSignal,
       });
 
       if (!resp.ok) {
@@ -129,16 +153,17 @@ class BaseFetchConnection extends BaseRawConnection {
     this.__sendData(data);
   }
 
-  static create(
+  static create<T extends typeof BaseFetchConnection>(
+    this: T,
     config: FetchConfig,
     registry: CodecsRegistry
-  ): BaseFetchConnection {
+  ): InstanceType<T> {
     const conn = new this(config, registry);
 
     conn.connected = true;
     conn.connWaiter.set();
 
-    return conn;
+    return conn as InstanceType<T>;
   }
 }
 
@@ -157,6 +182,62 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
     const protocol = tlsSecurity === "insecure" ? "http" : "https";
     const baseUrl = `${protocol}://${address[0]}:${address[1]}`;
     return `${baseUrl}/db/${database}`;
+  }
+
+  // These methods are exposed for use by EdgeDB Studio
+  public async rawParse(
+    query: string,
+    state: Session,
+    options?: QueryOptions,
+    abortSignal?: AbortSignal | null
+  ): Promise<
+    [ICodec, ICodec, Uint8Array, Uint8Array, ProtocolVersion, number]
+  > {
+    this.abortSignal = abortSignal ?? null;
+
+    const result = (await this._parse(
+      query,
+      OutputFormat.BINARY,
+      Cardinality.MANY,
+      state,
+      STUDIO_CAPABILITIES,
+      options
+    ))!;
+    return [
+      result[1],
+      result[2],
+      result[4]!,
+      result[5]!,
+      this.protocolVersion,
+      result[3],
+    ];
+  }
+
+  public async rawExecute(
+    query: string,
+    state: Session,
+    outCodec?: ICodec,
+    options?: QueryOptions,
+    inCodec?: ICodec,
+    args: QueryArgs = null,
+    abortSignal?: AbortSignal | null
+  ): Promise<Uint8Array> {
+    this.abortSignal = abortSignal ?? null;
+
+    const result = new WriteBuffer();
+    await this._executeFlow(
+      query,
+      args,
+      outCodec ? OutputFormat.BINARY : OutputFormat.NONE,
+      Cardinality.MANY,
+      state,
+      inCodec ?? NULL_CODEC,
+      outCodec ?? NULL_CODEC,
+      result,
+      STUDIO_CAPABILITIES,
+      options
+    );
+    return result.unwrap();
   }
 }
 
