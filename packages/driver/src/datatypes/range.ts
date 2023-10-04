@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Duration, LocalDate, LocalDateTime } from "./datetime";
+import type { Duration, LocalDate, LocalDateTime } from "./datetime";
 
 export class Range<
   T extends number | Date | LocalDate | LocalDateTime | Duration
@@ -61,5 +61,27 @@ export class Range<
           inc_lower: this._incLower,
           inc_upper: this._incUpper,
         };
+  }
+}
+
+export class MultiRange<
+  T extends number | Date | LocalDate | LocalDateTime | Duration
+> {
+  constructor(private readonly _ranges: Range<T>[] = []) {}
+
+  get length() {
+    return this._ranges.length;
+  }
+
+  *[Symbol.iterator]() {
+    for (const range of this._ranges) {
+      yield range;
+    }
+  }
+
+  toJSON() {
+    return {
+      ranges: this._ranges,
+    };
   }
 }

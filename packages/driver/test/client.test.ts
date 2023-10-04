@@ -18,15 +18,15 @@
 
 import fc from "fast-check";
 import { parseConnectArguments } from "../src/conUtils.server";
+import type { Client, Executor, _ICodec } from "../src/index.node";
 import {
-  Client,
   DivisionByZeroError,
   Duration,
   EdgeDBError,
-  Executor,
   LocalDate,
   LocalDateTime,
   Range,
+  MultiRange,
   MissingRequiredError,
   NoDataError,
   RelativeDuration,
@@ -34,14 +34,13 @@ import {
   QueryArgumentError,
   _CodecsRegistry,
   _ReadBuffer,
-  _ICodec,
   Session,
   AuthenticationError,
   InvalidReferenceError,
 } from "../src/index.node";
 
 import { AdminUIFetchConnection } from "../src/fetchConn";
-import { CustomCodecSpec } from "../src/codecs/registry";
+import type { CustomCodecSpec } from "../src/codecs/registry";
 import {
   getAvailableFeatures,
   getClient,
@@ -1224,32 +1223,32 @@ test("fetch: ConfigMemory", async () => {
   }
 });
 
+function expandRangeEQL(lower: string, upper: string) {
+  return [
+    [false, false],
+    [true, false],
+    [false, true],
+    [true, true],
+  ]
+    .map(
+      ([incl, incu]) =>
+        `range(${lower}, ${upper}, inc_lower := ${incl}, inc_upper := ${incu})`
+    )
+    .join(",\n");
+}
+
+function expandRangeJS(lower: any, upper: any) {
+  return [
+    new Range(lower, upper, false, false),
+    new Range(lower, upper, true, false),
+    new Range(lower, upper, false, true),
+    new Range(lower, upper, true, true),
+  ];
+}
+
 if (getEdgeDBVersion().major >= 2) {
-  function expandRangeEQL(lower: string, upper: string) {
-    return [
-      [false, false],
-      [true, false],
-      [false, true],
-      [true, true],
-    ]
-      .map(
-        ([incl, incu]) =>
-          `range(${lower}, ${upper}, inc_lower := ${incl}, inc_upper := ${incu})`
-      )
-      .join(",\n");
-  }
-
-  function expandRangeJS(lower: any, upper: any) {
-    return [
-      new Range(lower, upper, false, false),
-      new Range(lower, upper, true, false),
-      new Range(lower, upper, false, true),
-      new Range(lower, upper, true, true),
-    ];
-  }
-
   test("fetch: ranges", async () => {
-    const client = await getClient();
+    const client = getClient();
 
     try {
       const res = await client.querySingle<any>(`
@@ -1357,6 +1356,18 @@ if (getEdgeDBVersion().major >= 2) {
       await con.close();
     }
     return;
+  });
+}
+
+if (getEdgeDBVersion().major >= 4) {
+  test("fetch: multirange", async () => {
+    const client = getClient();
+    const multiRangeRes = await client.query(
+      "select <multirange<int32>>$mr;",
+      { mr: new MultiRange([new Range(1, 2)])}
+    );
+
+    expect(multiRangeRes).toEqual([new MultiRange([new Range(1, 2)])]);
   });
 }
 
