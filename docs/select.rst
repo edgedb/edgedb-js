@@ -370,8 +370,8 @@ together with ``and``.
     title: true,
     filter: e.all(
       e.set(
-        e.op(movie.title, "ilike", "captain%")
-        e.op(movie.title, "ilike", "%america%")
+        e.op(movie.title, "ilike", "captain%"),
+        e.op(movie.title, "ilike", "%america%"),
         e.op(movie.title, "ilike", "%:%")
       )
     ),
