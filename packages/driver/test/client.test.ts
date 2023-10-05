@@ -1362,10 +1362,9 @@ if (getEdgeDBVersion().major >= 2) {
 if (getEdgeDBVersion().major >= 4) {
   test("fetch: multirange", async () => {
     const client = getClient();
-    const multiRangeRes = await client.query(
-      "select <multirange<int32>>$mr;",
-      { mr: new MultiRange([new Range(1, 2)])}
-    );
+    const multiRangeRes = await client.query("select <multirange<int32>>$mr;", {
+      mr: new MultiRange([new Range(1, 2)]),
+    });
 
     expect(multiRangeRes).toEqual([new MultiRange([new Range(1, 2)])]);
   });

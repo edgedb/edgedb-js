@@ -220,7 +220,7 @@ function _findPathOfAnytype(
         return `[${isNamed ? quote(name) : name}]${elPath}`;
       }
     }
-  } else if (type.kind === "range") {
+  } else if (type.kind === "range" || type.kind === "multirange") {
     return `["__element__"]["__element__"]`;
   }
 

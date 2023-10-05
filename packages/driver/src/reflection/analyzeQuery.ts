@@ -147,7 +147,7 @@ function walkCodec(
   if (codec instanceof MultiRangeCodec) {
     const subCodec = codec.getSubcodecs()[0];
     if (!(subCodec instanceof ScalarCodec)) {
-      throw Error("expected range subtype to be scalar type");
+      throw Error("expected multirange subtype to be scalar type");
     }
     ctx.imports.add("MultiRange");
     return `MultiRange<${subCodec.tsType}>`;

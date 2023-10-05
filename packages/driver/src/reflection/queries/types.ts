@@ -1,5 +1,5 @@
-import { Executor } from "../../ifaces";
-import { Cardinality } from "../enums";
+import type { Executor } from "../../ifaces";
+import type { Cardinality } from "../enums";
 import type { UUID } from "./queryTypes";
 import { StrictMap } from "../strictMap";
 
@@ -27,6 +27,7 @@ export type TypeKind =
   | "array"
   | "tuple"
   | "range"
+  | "multirange"
   | "unknown";
 
 export type TypeProperties<T extends TypeKind> = {
@@ -73,7 +74,17 @@ export type RangeType = TypeProperties<"range"> & {
   is_abstract: boolean;
 };
 
-export type PrimitiveType = ScalarType | ArrayType | TupleType | RangeType;
+export type MultiRangeType = TypeProperties<"multirange"> & {
+  multirange_element_id: UUID;
+  is_abstract: boolean;
+};
+
+export type PrimitiveType =
+  | ScalarType
+  | ArrayType
+  | TupleType
+  | RangeType
+  | MultiRangeType;
 export type Type = PrimitiveType | ObjectType;
 export type Types = StrictMap<UUID, Type>;
 
@@ -120,6 +131,7 @@ export async function getTypes(
     `select sys::get_version().major;`
   );
   const v2Plus = version >= 2;
+  const v4Plus = version >= 4;
   const QUERY = `
     WITH
       MODULE schema,
@@ -144,6 +156,7 @@ export async function getTypes(
               'array' IF Type IS Array ELSE
               'tuple' IF Type IS Tuple ELSE
               ${v2Plus ? `'range' IF Type IS Range ELSE` : ``}
+              ${v4Plus ? `'multirange' IF Type IS MultiRange ELSE` : ``}
               'unknown',
 
       [IS ScalarType].enum_values,
@@ -224,6 +237,11 @@ export async function getTypes(
         name
       } ORDER BY @index ASC),
       ${v2Plus ? `range_element_id := [IS Range].element_type.id,` : ``}
+      ${
+        v4Plus
+          ? `multirange_element_id := [IS MultiRange].element_type.id,`
+          : ``
+      }
     }
     ORDER BY .name;
   `;
@@ -260,6 +278,11 @@ export async function getTypes(
           type.cast_type =
             typeMapping.get(type.material_id)?.id ?? type.material_id;
         }
+        break;
+      case "multirange":
+        type.multirange_element_id =
+          typeMapping.get(type.multirange_element_id)?.id ??
+          type.multirange_element_id;
         break;
       case "range":
         type.range_element_id =

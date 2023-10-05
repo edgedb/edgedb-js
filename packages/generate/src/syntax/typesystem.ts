@@ -9,7 +9,7 @@ import type {
 } from "edgedb/dist/reflection/index";
 import { TypeKind } from "edgedb/dist/reflection/index";
 import type { cardutil } from "./cardinality";
-import type { Range } from "edgedb";
+import type { Range, MultiRange } from "edgedb";
 
 //////////////////
 // BASETYPE
@@ -244,7 +244,8 @@ export type SomeType =
   | TupleType
   | ObjectType
   | NamedTupleType
-  | RangeType;
+  | RangeType
+  | MultiRangeType;
 
 export interface PropertyDesc<
   Type extends BaseType = BaseType,
@@ -405,7 +406,8 @@ export type PrimitiveType =
   | TupleType
   | NamedTupleType
   | ArrayType
-  | RangeType;
+  | RangeType
+  | MultiRangeType;
 
 export type PrimitiveTypeSet = TypeSet<PrimitiveType, Cardinality>;
 
@@ -672,6 +674,19 @@ export interface RangeType<
   __element__: Element;
 }
 
+/////////////////////////
+/// MULTIRANGE TYPE
+/////////////////////////
+
+export interface MultiRangeType<
+  Element extends ScalarType = ScalarType,
+  Name extends string = `multirange<${Element["__name__"]}>`
+> extends BaseType {
+  __name__: Name;
+  __kind__: TypeKind.multirange;
+  __element__: Element;
+}
+
 /////////////////////
 /// TSTYPE COMPUTATION
 /////////////////////
@@ -694,6 +709,8 @@ export type BaseTypeToTsType<
   ? typeutil.flatten<ArrayTypeToTsType<Type, isParam>>
   : Type extends RangeType
   ? Range<Type["__element__"]["__tsconsttype__"]>
+  : Type extends MultiRangeType
+  ? MultiRange<Type["__element__"]["__tsconsttype__"]>
   : Type extends TupleType
   ? TupleItemsToTsType<Type["__items__"], isParam>
   : Type extends NamedTupleType
@@ -788,7 +805,8 @@ export type NonArrayType =
   | ObjectType
   | TupleType
   | NamedTupleType
-  | RangeType;
+  | RangeType
+  | MultiRangeType;
 
 export type AnyTupleType = TupleType | NamedTupleType;
 
@@ -800,7 +818,9 @@ export type ParamType =
       | TupleType<typeutil.tupleOf<ParamType>>
       | NamedTupleType<{ [k: string]: ParamType }>
       | RangeType
+      | MultiRangeType
     >
   | TupleType<typeutil.tupleOf<ParamType>>
   | NamedTupleType<{ [k: string]: ParamType }>
-  | RangeType;
+  | RangeType
+  | MultiRangeType;

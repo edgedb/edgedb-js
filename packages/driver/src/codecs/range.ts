@@ -152,7 +152,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
       }
     }
 
-    const elemBuf = elemData.unwrap()
+    const elemBuf = elemData.unwrap();
     const elemDataLen = elemBuf.length;
     if (elemDataLen > MAXINT32 - 4) {
       throw new InvalidArgumentError(

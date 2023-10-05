@@ -13,6 +13,7 @@ import type {
   TypeSet,
   RangeType,
   Expression,
+  MultiRangeType,
 } from "./typesystem";
 import { cast } from "./cast";
 import { isImplicitlyCastableTo, literalToTypeSet } from "./castMaps";
@@ -402,6 +403,15 @@ function compareType(
         typeSpec,
         type.range_element_id,
         (arg as any as RangeType).__element__ as BaseType
+      );
+    }
+  }
+  if (type.kind === "multirange") {
+    if (arg.__kind__ === TypeKind.multirange) {
+      return compareType(
+        typeSpec,
+        type.multirange_element_id,
+        (arg as any as MultiRangeType).__element__ as BaseType
       );
     }
   }

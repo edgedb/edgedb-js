@@ -213,6 +213,15 @@ export function toTSScalarType(
       return frag`${opts.edgedbDatatypePrefix}edgedb.Range<${tn}>`;
     }
 
+    case "multirange": {
+      const tn = toTSScalarType(
+        types.get(type.multirange_element_id) as introspect.PrimitiveType,
+        types,
+        opts
+      );
+      return frag`${opts.edgedbDatatypePrefix}edgedb.MultiRange<${tn}>`;
+    }
+
     default:
       util.assertNever(type);
   }

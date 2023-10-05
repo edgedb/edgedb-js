@@ -150,6 +150,17 @@ export const getStringRepresentation: (
           .runtimeType
       })`,
     };
+  } else if (type.kind === "multirange") {
+    return {
+      staticType: frag`$.MultiRangeType<${
+        getStringRepresentation(types.get(type.multirange_element_id), params)
+          .staticType
+      }>`,
+      runtimeType: frag`$.MultiRangeType(${
+        getStringRepresentation(types.get(type.multirange_element_id), params)
+          .runtimeType
+      })`,
+    };
   } else {
     throw new Error("Invalid type");
   }
