@@ -393,6 +393,8 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     }
   } catch (e) {
     exitWithError((e as Error).message);
+  } finally {
+    await client.close();
   }
   adapter.process.exit();
 };
