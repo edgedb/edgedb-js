@@ -103,6 +103,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
 
   for (const [funcName, _funcDefs] of funcops.entries()) {
+    console.log("Generating function type for", funcName);
     const { mod, name } = splitName(funcName);
 
     const code = dir.getModule(mod);

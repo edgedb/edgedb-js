@@ -121,13 +121,21 @@ export async function generateQueryBuilder(params: {
     operators,
     edgedbVersion: version,
   };
+  console.log("Generating runtime spec...");
   generateRuntimeSpec(generatorParams);
+  console.log("Generating cast maps...");
   generateCastMaps(generatorParams);
+  console.log("Generating scalars...");
   generateScalars(generatorParams);
+  console.log("Generating object types...");
   generateObjectTypes(generatorParams);
+  console.log("Generating function types...");
   generateFunctionTypes(generatorParams);
+  console.log("Generating operators...");
   generateOperators(generatorParams);
+  console.log("Generating set impl...");
   generateSetImpl(generatorParams);
+  console.log("Generating globals...");
   generateGlobals(generatorParams);
 
   // TODO: Fix 'fts' module generation properly, for now we just disable
