@@ -42,12 +42,7 @@ export async function runInterfacesGenerator(params: {
 
   // tslint:disable-next-line
   console.log(`Introspecting database schema...`);
-  let types: $.introspect.Types;
-  try {
-    types = await $.introspect.types(client);
-  } finally {
-    client.close();
-  }
+  const types = await $.introspect.types(client);
 
   const generatorParams = {
     dir,

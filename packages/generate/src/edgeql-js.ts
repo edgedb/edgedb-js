@@ -88,76 +88,72 @@ export async function generateQueryBuilder(params: {
 
   const dir = new DirBuilder();
 
-  try {
-    // tslint:disable-next-line
-    console.log(`Introspecting database schema...`);
+  // tslint:disable-next-line
+  console.log(`Introspecting database schema...`);
 
-    const [types, scalars, casts, functions, operators, globals, version] =
-      await Promise.all([
-        $.introspect.types(cxn),
-        $.introspect.scalars(cxn),
-        $.introspect.casts(cxn),
-        $.introspect.functions(cxn),
-        $.introspect.operators(cxn),
-        $.introspect.globals(cxn),
-        cxn.queryRequiredSingle<Version>(`select sys::get_version()`),
-      ]);
+  const [types, scalars, casts, functions, operators, globals, version] =
+    await Promise.all([
+      $.introspect.types(cxn),
+      $.introspect.scalars(cxn),
+      $.introspect.casts(cxn),
+      $.introspect.functions(cxn),
+      $.introspect.operators(cxn),
+      $.introspect.globals(cxn),
+      cxn.queryRequiredSingle<Version>(`select sys::get_version()`),
+    ]);
 
-    const typesByName: Record<string, $.introspect.Type> = {};
-    for (const type of types.values()) {
-      typesByName[type.name] = type;
+  const typesByName: Record<string, $.introspect.Type> = {};
+  for (const type of types.values()) {
+    typesByName[type.name] = type;
 
-      // skip "anytype" and "anytuple"
-      if (!type.name.includes("::")) continue;
-    }
-
-    const generatorParams: GeneratorParams = {
-      dir,
-      types,
-      typesByName,
-      casts,
-      scalars,
-      functions,
-      globals,
-      operators,
-      edgedbVersion: version,
-    };
-    generateRuntimeSpec(generatorParams);
-    generateCastMaps(generatorParams);
-    generateScalars(generatorParams);
-    generateObjectTypes(generatorParams);
-    generateFunctionTypes(generatorParams);
-    generateOperators(generatorParams);
-    generateSetImpl(generatorParams);
-    generateGlobals(generatorParams);
-
-    // TODO: Fix 'fts' module generation properly, for now we just disable
-    // output of this module
-    dir._modules.delete("fts");
-    dir._map.delete("modules/fts");
-    // -----------------
-
-    generateIndex(generatorParams);
-
-    // generate module imports
-
-    const importsFile = dir.getPath("imports");
-
-    importsFile.addExportStar("edgedb", { as: "edgedb" });
-    importsFile.addExportFrom({ spec: true }, "./__spec__", {
-      allowFileExt: true,
-    });
-    importsFile.addExportStar("./syntax", {
-      allowFileExt: true,
-      as: "syntax",
-    });
-    importsFile.addExportStar("./castMaps", {
-      allowFileExt: true,
-      as: "castMaps",
-    });
-  } finally {
-    await cxn.close();
+    // skip "anytype" and "anytuple"
+    if (!type.name.includes("::")) continue;
   }
+
+  const generatorParams: GeneratorParams = {
+    dir,
+    types,
+    typesByName,
+    casts,
+    scalars,
+    functions,
+    globals,
+    operators,
+    edgedbVersion: version,
+  };
+  generateRuntimeSpec(generatorParams);
+  generateCastMaps(generatorParams);
+  generateScalars(generatorParams);
+  generateObjectTypes(generatorParams);
+  generateFunctionTypes(generatorParams);
+  generateOperators(generatorParams);
+  generateSetImpl(generatorParams);
+  generateGlobals(generatorParams);
+
+  // TODO: Fix 'fts' module generation properly, for now we just disable
+  // output of this module
+  dir._modules.delete("fts");
+  dir._map.delete("modules/fts");
+  // -----------------
+
+  generateIndex(generatorParams);
+
+  // generate module imports
+
+  const importsFile = dir.getPath("imports");
+
+  importsFile.addExportStar("edgedb", { as: "edgedb" });
+  importsFile.addExportFrom({ spec: true }, "./__spec__", {
+    allowFileExt: true,
+  });
+  importsFile.addExportStar("./syntax", {
+    allowFileExt: true,
+    as: "syntax",
+  });
+  importsFile.addExportStar("./castMaps", {
+    allowFileExt: true,
+    as: "castMaps",
+  });
 
   const initialFiles = new Set(await walk(outputDir));
   const written = new Set<string>();
