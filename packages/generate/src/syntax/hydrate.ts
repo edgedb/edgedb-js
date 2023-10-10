@@ -227,7 +227,7 @@ export function makeType<T extends BaseType>(
     });
     return obj;
   } else {
-    throw new Error("Invalid type.");
+    throw new Error(`Invalid type: ${JSON.stringify(type, null, 2)}`);
   }
 }
 export type mergeObjectShapes<

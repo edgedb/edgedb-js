@@ -162,7 +162,7 @@ export const getStringRepresentation: (
       })`,
     };
   } else {
-    throw new Error("Invalid type");
+    throw new Error(`Invalid type: ${JSON.stringify(type, null, 2)}`);
   }
 };
 
