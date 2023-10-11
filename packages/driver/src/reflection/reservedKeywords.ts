@@ -12,6 +12,7 @@ export const reservedKeywords = new Set([
   "anyarray",
   "anytuple",
   "anytype",
+  "anyobject",
   "begin",
   "case",
   "check",
