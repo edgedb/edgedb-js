@@ -38,6 +38,12 @@ export const getStringRepresentation: (
       runtimeType: [],
     };
   }
+  if (type.name === "anyobject") {
+    return {
+      staticType: [`$.AnyObjectType`],
+      runtimeType: [],
+    };
+  }
   if (type.name === "std::anypoint") {
     return {
       staticType: frag`${params.anytype ?? getRef("std::anypoint")}`,

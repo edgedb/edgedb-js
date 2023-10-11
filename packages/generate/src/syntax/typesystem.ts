@@ -810,6 +810,8 @@ export type NonArrayType =
 
 export type AnyTupleType = TupleType | NamedTupleType;
 
+export type AnyObjectType = ObjectType;
+
 export type ParamType =
   | ScalarType
   | EnumType
