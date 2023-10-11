@@ -368,6 +368,10 @@ function compareType(
     return { match: true, anytype: arg };
   }
 
+  if (type.name === "anyobject") {
+    return { match: arg.__kind__ === TypeKind.object, anytype: arg };
+  }
+
   if (type.name === "std::anypoint") {
     const descendants = getDescendantNames(typeSpec, typeId);
     if (descendants.includes(arg.__name__)) {
