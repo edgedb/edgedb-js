@@ -137,6 +137,12 @@ export async function generateQueryBuilder(params: {
   generateSetImpl(generatorParams);
   console.log("Generating globals...");
   generateGlobals(generatorParams);
+
+  if (version.major < 4) {
+    dir._modules.delete("fts");
+    dir._map.delete("modules/fts");
+  }
+
   console.log("Generating index...");
   generateIndex(generatorParams);
 
