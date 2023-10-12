@@ -36,10 +36,13 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
 
     // create an anytype overload for 'range<anypoint>' so 'anypoint'
     // gets inferred to the same type in return type
-    const anypointParams = [
+    const paramsList = [
       ...overload.params.positional,
       ...overload.params.named,
-    ].filter((param) => param.type.name.includes("anypoint"));
+    ];
+    const anypointParams = paramsList.filter((param) =>
+      param.type.name.includes("anypoint")
+    );
     if (anypointParams.length) {
       return [
         {
@@ -50,6 +53,23 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
             typeObj: anypointParams[0].type,
             refName: anypointParams[0].typeName,
             refPath: findPathOfAnytype(anypointParams[0].type.id, types),
+          },
+        },
+      ];
+    }
+    const anyobjectParams = paramsList.filter((param) =>
+      param.type.name.includes("anyobject")
+    );
+    if (anyobjectParams.length) {
+      return [
+        {
+          ...overload,
+          anytypes: {
+            kind: "noncastable" as const,
+            type: ["$.ObjectType"],
+            typeObj: anyobjectParams[0].type,
+            refName: anyobjectParams[0].typeName,
+            refPath: findPathOfAnytype(anyobjectParams[0].type.id, types),
           },
         },
       ];
@@ -73,10 +93,9 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
     //                  other params reference first param type
     //   - return anytype: references first param type
 
-    const anytypeParams = [
-      ...overload.params.positional,
-      ...overload.params.named,
-    ].filter((param) => param.type.name.includes("anytype"));
+    const anytypeParams = paramsList.filter((param) =>
+      param.type.name.includes("anytype")
+    );
 
     if (anytypeParams.length) {
       const hasArrayType =
@@ -204,7 +223,11 @@ function _findPathOfAnytype(
 ): string | null {
   const type = types.get(typeId);
 
-  if (type.name === "anytype" || type.name === "anypoint") {
+  if (
+    type.name === "anytype" ||
+    type.name === "anypoint" ||
+    type.name === "anyobject"
+  ) {
     return '["__element__"]';
   }
   if (type.kind === "array") {
