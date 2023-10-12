@@ -51,7 +51,7 @@ export class ArrayCodec extends Codec implements ICodec {
 
     if (!Array.isArray(obj) && !isTypedArray(obj)) {
       throw new InvalidArgumentError(
-        `an array or multirange was expected (got type ${obj.constructor.name})`
+        `an array was expected (got type ${obj.constructor.name})`
       );
     }
 
@@ -64,7 +64,8 @@ export class ArrayCodec extends Codec implements ICodec {
       throw new InvalidArgumentError("too many elements in array");
     }
 
-    for (const item of obj) {
+    for (let i = 0; i < objLen; i++) {
+      const item = obj[i];
       if (item == null) {
         elemData.writeInt32(-1);
       } else {
