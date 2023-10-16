@@ -309,7 +309,7 @@ export class CodecsRegistry {
 
       case CTYPE_SHAPE:
       case CTYPE_INPUT_SHAPE: {
-        if (t == CTYPE_SHAPE && isProtoV2) {
+        if (t === CTYPE_SHAPE && isProtoV2) {
           // @ts-expect-error
           const isEphemeralFreeShape = frb.readBoolean();
           // @ts-expect-error
@@ -348,7 +348,7 @@ export class CodecsRegistry {
           flags[i] = flag!;
           cards[i] = card!;
 
-          if (t == CTYPE_SHAPE && isProtoV2) {
+          if (t === CTYPE_SHAPE && isProtoV2) {
             const sourceTypePos = frb.readUInt16();
             // @ts-expect-error
             const sourceType = cl[sourceTypePos];
@@ -382,7 +382,7 @@ export class CodecsRegistry {
 
           const ancestorCount = frb.readUInt16();
           const ancestors: ICodec[] = [];
-          for (var i = 0; i < ancestorCount; i++) {
+          for (let i = 0; i < ancestorCount; i++) {
             const ancestorPos = frb.readUInt16();
             const ancestorCodec = cl[ancestorPos];
             if (ancestorCodec == null) {
@@ -400,7 +400,7 @@ export class CodecsRegistry {
             ancestors.push(ancestorCodec);
           }
 
-          if (ancestorCount == 0) {
+          if (ancestorCount === 0) {
             res = this.customScalarCodecs.get(tid) ?? SCALAR_CODECS.get(tid);
             if (res == null) {
               if (KNOWN_TYPES.has(tid)) {
@@ -448,7 +448,7 @@ export class CodecsRegistry {
           // @ts-expect-error
           const isSchemaDefined = frb.readBoolean();
           const ancestorCount = frb.readUInt16();
-          for (var i = 0; i < ancestorCount; i++) {
+          for (let i = 0; i < ancestorCount; i++) {
             const ancestorPos = frb.readUInt16();
             // @ts-expect-error
             const ancestorCodec = cl[ancestorPos];
@@ -480,7 +480,7 @@ export class CodecsRegistry {
           // @ts-expect-error
           const isSchemaDefined = frb.readBoolean();
           const ancestorCount = frb.readUInt16();
-          for (var i = 0; i < ancestorCount; i++) {
+          for (let i = 0; i < ancestorCount; i++) {
             const ancestorPos = frb.readUInt16();
             // @ts-expect-error
             const ancestorCodec = cl[ancestorPos];
@@ -514,7 +514,7 @@ export class CodecsRegistry {
           // @ts-expect-error
           const isSchemaDefined = frb.readBoolean();
           const ancestorCount = frb.readUInt16();
-          for (var i = 0; i < ancestorCount; i++) {
+          for (let i = 0; i < ancestorCount; i++) {
             const ancestorPos = frb.readUInt16();
             // @ts-expect-error
             const ancestorCodec = cl[ancestorPos];
@@ -547,7 +547,7 @@ export class CodecsRegistry {
           // @ts-expect-error
           const isSchemaDefined = frb.readBoolean();
           const ancestorCount = frb.readUInt16();
-          for (var i = 0; i < ancestorCount; i++) {
+          for (let i = 0; i < ancestorCount; i++) {
             const ancestorPos = frb.readUInt16();
             // @ts-expect-error
             const ancestorCodec = cl[ancestorPos];
@@ -573,7 +573,7 @@ export class CodecsRegistry {
           // @ts-expect-error
           const isSchemaDefined = frb.readBoolean();
           const ancestorCount = frb.readUInt16();
-          for (var i = 0; i < ancestorCount; i++) {
+          for (let i = 0; i < ancestorCount; i++) {
             const ancestorPos = frb.readUInt16();
             // @ts-expect-error
             const ancestorCodec = cl[ancestorPos];
