@@ -81,7 +81,8 @@ export const generateStatusFileName = (tag: string): string => {
 };
 
 export const getServerCommand = (
-  statusFile: string
+  statusFile: string,
+  strictSecurity = true
 ): { args: string[]; availableFeatures: string[] } => {
   const availableFeatures: string[] = [];
   let srvcmd = `edgedb-server`;
@@ -126,7 +127,7 @@ export const getServerCommand = (
     "--testmode",
     "--port=auto",
     "--emit-server-status=" + statusFile,
-    "--security=strict",
+    `--security=${strictSecurity ? "strict" : "insecure_dev_mode"}`,
     "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }",
   ];
 
