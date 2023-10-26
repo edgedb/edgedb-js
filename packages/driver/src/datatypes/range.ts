@@ -67,7 +67,10 @@ export class Range<
 export class MultiRange<
   T extends number | Date | LocalDate | LocalDateTime | Duration
 > {
-  constructor(private readonly _ranges: Range<T>[] = []) {}
+  private readonly _ranges: Range<T>[];
+  constructor(ranges: Range<T>[] = []) {
+    this._ranges = [...ranges];
+  }
 
   get length() {
     return this._ranges.length;
@@ -80,8 +83,6 @@ export class MultiRange<
   }
 
   toJSON() {
-    return {
-      ranges: this._ranges,
-    };
+    return [...this._ranges];
   }
 }
