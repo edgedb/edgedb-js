@@ -142,7 +142,7 @@ function walkCodec(
       throw Error("expected range subtype to be scalar type");
     }
     ctx.imports.add("Range");
-    return `Range<${subCodec.tsType}>`;
+    return `Range<${walkCodec(subCodec, ctx)}>`;
   }
   if (codec instanceof MultiRangeCodec) {
     const subCodec = codec.getSubcodecs()[0];
@@ -150,7 +150,7 @@ function walkCodec(
       throw Error("expected multirange subtype to be scalar type");
     }
     ctx.imports.add("MultiRange");
-    return `MultiRange<${subCodec.tsType}>`;
+    return `MultiRange<${walkCodec(subCodec, ctx)}>`;
   }
   throw Error(`Unexpected codec kind: ${codec.getKind()}`);
 }
