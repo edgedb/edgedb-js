@@ -4,29 +4,36 @@ import { ResolvedConnectConfig } from "edgedb/dist/conUtils";
 
 import * as pkce from "./pkce";
 
-interface TokenData {
+export interface TokenData {
   auth_token: string;
   identity_id: string | null;
   provider_token: string | null;
   provider_refresh_token: string | null;
 }
 
-const builtinOAuthProviderNames = [
+export const builtinOAuthProviderNames = [
   "builtin::oauth_apple",
   "builtin::oauth_azure",
   "builtin::oauth_github",
   "builtin::oauth_google",
 ] as const;
-type BuiltinOAuthProviderNames = (typeof builtinOAuthProviderNames)[number];
+export type BuiltinOAuthProviderNames =
+  (typeof builtinOAuthProviderNames)[number];
 
-const builtinLocalProviderNames = ["builtin::local_emailpassword"] as const;
-type BuiltinLocalProviderNames = (typeof builtinLocalProviderNames)[number];
+export const builtinLocalProviderNames = [
+  "builtin::local_emailpassword",
+] as const;
+export type BuiltinLocalProviderNames =
+  (typeof builtinLocalProviderNames)[number];
 
 export class Auth {
   /** @internal */
   public readonly baseUrl: string;
 
-  private constructor(private readonly client: edgedb.Client, baseUrl: string) {
+  protected constructor(
+    public readonly client: edgedb.Client,
+    baseUrl: string
+  ) {
     this.baseUrl = baseUrl;
   }
 
@@ -83,8 +90,8 @@ export class Auth {
     return null;
   }
 
-  createAuthSession() {
-    return new AuthSession(this);
+  createPKCESession() {
+    return new AuthPCKESession(this);
   }
 
   getToken(code: string, verifier: string): Promise<TokenData> {
@@ -105,13 +112,36 @@ export class Auth {
     return this.getToken(code, verifier);
   }
 
-  async signupWithEmailPassword(email: string, password: string) {
+  async signupWithEmailPassword(
+    email: string,
+    password: string,
+    verifyUrl: string
+  ): Promise<
+    | { status: "complete"; tokenData: TokenData }
+    | { status: "verificationRequired"; verifier: string }
+  > {
     const { challenge, verifier } = pkce.createVerifierChallengePair();
-    const { code } = (await this._fetch("register", "post", undefined, {
+    const result = (await this._fetch("register", "post", undefined, {
       provider: "builtin::local_emailpassword",
       challenge,
       email,
       password,
+      verify_url: verifyUrl,
+    })) as { code: string } | { verification_email_sent_at: string };
+    if ("code" in result) {
+      return {
+        status: "complete",
+        tokenData: await this.getToken(result.code, verifier),
+      };
+    } else {
+      return { status: "verificationRequired", verifier };
+    }
+  }
+
+  async verifyEmailPasswordSignup(verificationToken: string, verifier: string) {
+    const { code } = (await this._fetch("verify", "post", undefined, {
+      provider: "builtin::local_emailpassword",
+      verification_token: verificationToken,
     })) as { code: string };
     return this.getToken(code, verifier);
   }
@@ -169,7 +199,7 @@ export class Auth {
   }
 }
 
-class AuthSession {
+export class AuthPCKESession {
   public readonly challenge: string;
   public readonly verifier: string;
 
@@ -185,7 +215,7 @@ class AuthSession {
     redirectToOnSignup?: string
   ) {
     const params = new URLSearchParams({
-      provider_name: providerName,
+      provider: providerName,
       challenge: this.challenge,
       redirect_to: redirectTo,
     });
@@ -197,46 +227,46 @@ class AuthSession {
     return `${this.auth.baseUrl}/authorize?${params.toString()}`;
   }
 
-  getEmailPasswordSigninFormActionUrl(
-    redirectTo: string,
-    redirectToOnFailure?: string
-  ) {
-    const params = new URLSearchParams({
-      provider_name: "builtin::local_emailpassword",
-      challenge: this.challenge,
-      redirect_to: redirectTo,
-    });
+  // getEmailPasswordSigninFormActionUrl(
+  //   redirectTo: string,
+  //   redirectToOnFailure?: string
+  // ) {
+  //   const params = new URLSearchParams({
+  //     provider_name: "builtin::local_emailpassword",
+  //     challenge: this.challenge,
+  //     redirect_to: redirectTo,
+  //   });
 
-    if (redirectToOnFailure) {
-      params.append("redirect_on_failure", redirectToOnFailure);
-    }
+  //   if (redirectToOnFailure) {
+  //     params.append("redirect_on_failure", redirectToOnFailure);
+  //   }
 
-    return `${this.auth.baseUrl}/authenticate?${params.toString()}`;
-  }
+  //   return `${this.auth.baseUrl}/authenticate?${params.toString()}`;
+  // }
 
-  getEmailPasswordSignupFormActionUrl(
-    redirectTo: string,
-    redirectToOnFailure?: string
-  ) {
-    const params = new URLSearchParams({
-      provider_name: "builtin::local_emailpassword",
-      challenge: this.challenge,
-      redirect_to: redirectTo,
-    });
+  // getEmailPasswordSignupFormActionUrl(
+  //   redirectTo: string,
+  //   redirectToOnFailure?: string
+  // ) {
+  //   const params = new URLSearchParams({
+  //     provider_name: "builtin::local_emailpassword",
+  //     challenge: this.challenge,
+  //     redirect_to: redirectTo,
+  //   });
 
-    if (redirectToOnFailure) {
-      params.append("redirect_on_failure", redirectToOnFailure);
-    }
+  //   if (redirectToOnFailure) {
+  //     params.append("redirect_on_failure", redirectToOnFailure);
+  //   }
 
-    return `${this.auth.baseUrl}/register?${params.toString()}`;
-  }
+  //   return `${this.auth.baseUrl}/register?${params.toString()}`;
+  // }
 
   getHostedUISigninUrl() {
     const params = new URLSearchParams({
       challenge: this.challenge,
     });
 
-    return `${this.auth.baseUrl}/ui/sigin?${params.toString()}`;
+    return `${this.auth.baseUrl}/ui/signin?${params.toString()}`;
   }
 
   getHostedUISignupUrl() {

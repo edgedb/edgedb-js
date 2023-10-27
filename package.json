@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "integration-tests/*"
+    "integration-tests/*",
+    "examples/*"
   ],
   "packageManager": "yarn@1.22.19",
   "devDependencies": {
