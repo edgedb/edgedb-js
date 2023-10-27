@@ -127,10 +127,12 @@ export class MultiRangeCodec extends Codec implements ICodec {
   readonly tsModule = "edgedb";
 
   private subCodec: ICodec;
+  public typeName: string | null;
 
-  constructor(tid: uuid, subCodec: ICodec) {
+  constructor(tid: uuid, typeName: string | null, subCodec: ICodec) {
     super(tid);
     this.subCodec = subCodec;
+    this.typeName = typeName;
   }
 
   encode(buf: WriteBuffer, obj: any): void {

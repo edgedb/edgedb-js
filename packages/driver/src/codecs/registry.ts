@@ -606,6 +606,18 @@ export class CodecsRegistry {
       }
 
       case CTYPE_MULTIRANGE: {
+        let typeName: string | null = null;
+        if (isProtoV2) {
+          typeName = frb.readString();
+          // @ts-expect-error: reserved for future use
+          const isSchemaDefined = frb.readBoolean();
+          const ancestorCount = frb.readUInt16();
+          for (let i = 0; i < ancestorCount; i++) {
+            const ancestorPos = frb.readUInt16();
+            // @ts-expect-error: reserved for future use
+            const ancestorCodec = cl[ancestorPos];
+          }
+        }
         const pos = frb.readUInt16();
         const subCodec = cl[pos];
         if (subCodec == null) {
@@ -613,7 +625,7 @@ export class CodecsRegistry {
             "could not build range codec: missing subcodec",
           );
         }
-        res = new MultiRangeCodec(tid, subCodec);
+        res = new MultiRangeCodec(tid, typeName, subCodec);
         break;
       }
     }
