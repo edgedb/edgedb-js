@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-const fs = require("fs");
-const path = require("path");
-
-const getStdin = require("get-stdin");
-const prettier = require("prettier");
+import { fileURLToPath, URL } from "url";
+import fs from "node:fs";
+import path from "node:path";
+import getStdin from "get-stdin";
+import prettier from "prettier";
 
 class Buffer {
   constructor() {
@@ -39,6 +39,8 @@ class Buffer {
     return this.buf.join("\n");
   }
 }
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = new URL("", import.meta.url).pathname;
 
 (async () => {
   const prettierOptions = (await prettier.resolveConfig(__dirname)) ?? {};

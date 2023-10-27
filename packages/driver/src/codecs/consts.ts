@@ -24,6 +24,7 @@ export const INVALID_CODEC_ID = "ffffffffffffffffffffffffffffffff";
 export const KNOWN_TYPES = new Map<uuid, string>([
   ["00000000000000000000000000000001", "anytype"],
   ["00000000000000000000000000000002", "anytuple"],
+  ["00000000000000000000000000000003", "anyobject"],
   ["000000000000000000000000000000f0", "std"],
   ["000000000000000000000000000000ff", "empty-tuple"],
   ["00000000000000000000000000000100", "std::uuid"],

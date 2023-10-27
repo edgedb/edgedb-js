@@ -511,6 +511,32 @@ export class BackendUnavailableError extends AvailabilityError {
   }
 }
 
+export class ServerOfflineError extends AvailabilityError {
+  protected static tags = {
+    [tags.SHOULD_RECONNECT]: true,
+    [tags.SHOULD_RETRY]: true,
+  };
+  get code(): number {
+    return 0x08_00_00_02;
+  }
+}
+
+export class UnknownTenantError extends AvailabilityError {
+  protected static tags = {
+    [tags.SHOULD_RECONNECT]: true,
+    [tags.SHOULD_RETRY]: true,
+  };
+  get code(): number {
+    return 0x08_00_00_03;
+  }
+}
+
+export class ServerBlockedError extends AvailabilityError {
+  get code(): number {
+    return 0x08_00_00_04;
+  }
+}
+
 export class BackendError extends EdgeDBError {
   get code(): number {
     return 0x09_00_00_00;

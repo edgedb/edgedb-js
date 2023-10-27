@@ -38,6 +38,12 @@ export const getStringRepresentation: (
       runtimeType: [],
     };
   }
+  if (type.name === "anyobject") {
+    return {
+      staticType: [`$.AnyObjectType`],
+      runtimeType: [],
+    };
+  }
   if (type.name === "std::anypoint") {
     return {
       staticType: frag`${params.anytype ?? getRef("std::anypoint")}`,
@@ -150,8 +156,19 @@ export const getStringRepresentation: (
           .runtimeType
       })`,
     };
+  } else if (type.kind === "multirange") {
+    return {
+      staticType: frag`$.MultiRangeType<${
+        getStringRepresentation(types.get(type.multirange_element_id), params)
+          .staticType
+      }>`,
+      runtimeType: frag`$.MultiRangeType(${
+        getStringRepresentation(types.get(type.multirange_element_id), params)
+          .runtimeType
+      })`,
+    };
   } else {
-    throw new Error("Invalid type");
+    throw new Error(`Invalid type: ${JSON.stringify(type, null, 2)}`);
   }
 };
 

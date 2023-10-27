@@ -5,7 +5,7 @@ import { EnumCodec } from "../codecs/enum";
 import { ICodec, ScalarCodec } from "../codecs/ifaces";
 import { NamedTupleCodec } from "../codecs/namedtuple";
 import { ObjectCodec } from "../codecs/object";
-import { RangeCodec } from "../codecs/range";
+import { MultiRangeCodec, RangeCodec } from "../codecs/range";
 import { NullCodec } from "../codecs/codecs";
 import { SetCodec } from "../codecs/set";
 import { TupleCodec } from "../codecs/tuple";
@@ -142,7 +142,15 @@ function walkCodec(
       throw Error("expected range subtype to be scalar type");
     }
     ctx.imports.add("Range");
-    return `Range<${subCodec.tsType}>`;
+    return `Range<${walkCodec(subCodec, ctx)}>`;
+  }
+  if (codec instanceof MultiRangeCodec) {
+    const subCodec = codec.getSubcodecs()[0];
+    if (!(subCodec instanceof ScalarCodec)) {
+      throw Error("expected multirange subtype to be scalar type");
+    }
+    ctx.imports.add("MultiRange");
+    return `MultiRange<${walkCodec(subCodec, ctx)}>`;
   }
   throw Error(`Unexpected codec kind: ${codec.getKind()}`);
 }

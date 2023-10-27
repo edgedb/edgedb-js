@@ -17,6 +17,7 @@ export async function setupTests() {
 async function cleanupData(client: Client) {
   await client.execute(`
 # Delete any user-defined objects here
+delete WithMultiRange;
 `);
 }
 

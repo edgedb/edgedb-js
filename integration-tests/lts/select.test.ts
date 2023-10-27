@@ -310,6 +310,7 @@ describe("select", () => {
   test("* in polymorphic", async () => {
     const q = e.select(e.Person, () => ({
       ...e.is(e.Hero, e.Hero["*"]),
+      name: true,
     }));
 
     // 'id' is filtered out since it is not valid in a polymorphic expr
@@ -317,7 +318,7 @@ describe("select", () => {
       tc.IsExact<
         $infer<typeof q>,
         {
-          name: string | null;
+          name: string;
           height: string | null;
           number_of_movies: number | null;
           secret_identity: string | null;

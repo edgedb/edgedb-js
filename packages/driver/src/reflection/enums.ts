@@ -15,6 +15,7 @@ export enum TypeKind {
   tuple = "tuple",
   array = "array",
   range = "range",
+  multirange = "multirange",
 }
 
 export enum ExpressionKind {

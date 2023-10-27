@@ -217,8 +217,17 @@ export function makeType<T extends BaseType>(
       return `range<${obj.__element__.__name__}>`;
     });
     return obj;
+  } else if (type.kind === "multirange") {
+    obj.__kind__ = TypeKind.multirange;
+    util.defineGetter(obj, "__element__", () => {
+      return makeType(spec, type.multirange_element_id, literal, anytype);
+    });
+    util.defineGetter(obj, "__name__", () => {
+      return `multirange<${obj.__element__.__name__}>`;
+    });
+    return obj;
   } else {
-    throw new Error("Invalid type.");
+    throw new Error(`Invalid type: ${JSON.stringify(type, null, 2)}`);
   }
 }
 export type mergeObjectShapes<

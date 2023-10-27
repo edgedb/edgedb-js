@@ -16,10 +16,11 @@
  * limitations under the License.
  */
 
-import { ICodec, Codec, ScalarCodec, uuid, CodecKind } from "./ifaces";
+import type { ICodec, uuid, CodecKind } from "./ifaces";
+import { Codec, ScalarCodec } from "./ifaces";
 import { WriteBuffer, ReadBuffer } from "../primitives/buffer";
 import { TupleCodec } from "./tuple";
-import { RangeCodec } from "./range";
+import { MultiRangeCodec, RangeCodec } from "./range";
 import { InvalidArgumentError, ProtocolError } from "../errors";
 import { NamedTupleCodec } from "./namedtuple";
 
@@ -39,7 +40,8 @@ export class ArrayCodec extends Codec implements ICodec {
         this.subCodec instanceof ScalarCodec ||
         this.subCodec instanceof TupleCodec ||
         this.subCodec instanceof NamedTupleCodec ||
-        this.subCodec instanceof RangeCodec
+        this.subCodec instanceof RangeCodec ||
+        this.subCodec instanceof MultiRangeCodec
       )
     ) {
       throw new InvalidArgumentError(
@@ -48,7 +50,9 @@ export class ArrayCodec extends Codec implements ICodec {
     }
 
     if (!Array.isArray(obj) && !isTypedArray(obj)) {
-      throw new InvalidArgumentError("an array was expected");
+      throw new InvalidArgumentError(
+        `an array was expected (got type ${obj.constructor.name})`
+      );
     }
 
     const subCodec = this.subCodec;

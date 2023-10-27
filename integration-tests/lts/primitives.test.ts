@@ -66,7 +66,7 @@ describe("primitives", () => {
     );
     assert.equal(
       e.std.range(upperRange).toEdgeQL(),
-      `std::range(<std::int64>{}, 8, inc_lower := true, inc_upper := false)`
+      `std::range(<std::int64>{}, 8, inc_lower := false, inc_upper := false)`
     );
     assert.equal(
       e.std.range(dateRange).toEdgeQL(),

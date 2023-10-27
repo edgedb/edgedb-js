@@ -15,6 +15,7 @@ import type {
   TupleType,
   TypeSet,
   RangeType,
+  MultiRangeType,
 } from "./typesystem";
 import type { cardutil } from "./cardinality";
 
@@ -56,6 +57,12 @@ export type assignableBy<T extends BaseType> = T extends ScalarType
     }>
   : T extends RangeType
   ? RangeType<
+      scalarAssignableBy<T["__element__"]> extends ScalarType
+        ? scalarAssignableBy<T["__element__"]>
+        : never
+    >
+  : T extends MultiRangeType
+  ? MultiRangeType<
       scalarAssignableBy<T["__element__"]> extends ScalarType
         ? scalarAssignableBy<T["__element__"]>
         : never
