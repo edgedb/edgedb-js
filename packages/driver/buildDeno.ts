@@ -12,11 +12,11 @@ await run({
   destDir: "../deno",
   destEntriesToClean: ["_src", "mod.ts"],
   sourceFilter: (path) => {
-    const doesMatch =
+    return (
       !/cli\.mts$/.test(path) ||
       !/\/syntax\//.test(path) ||
-      path.includes("deno.json");
-    return doesMatch;
+      path.includes("deno.json")
+    );
   },
   pathRewriteRules: [
     { match: /^src\/index.node.ts$/, replace: "mod.ts" },
