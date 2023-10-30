@@ -15,9 +15,10 @@ export const generateGlobals = ({ dir, globals, types }: GeneratorParams) => {
 
   for (const [mod, gs] of Object.entries(globalsByMod)) {
     const code = dir.getModule(mod);
+    const modName = mod.split("::").join("_");
     code.writeln([
       dts`declare `,
-      ...frag`const $${mod}__globals`,
+      ...frag`const $${modName}__globals`,
       t`: {`,
       ...gs
         .flatMap((g) => {
@@ -53,9 +54,9 @@ export const generateGlobals = ({ dir, globals, types }: GeneratorParams) => {
     ]);
 
     code.nl();
-    code.registerRef(`$${mod}__globals`);
+    code.registerRef(`$${modName}__globals`);
     code.addToDefaultExport(
-      getRef(`$${mod}__globals`, { prefix: "" }),
+      getRef(`$${modName}__globals`, { prefix: "" }),
       "global"
     );
   }
