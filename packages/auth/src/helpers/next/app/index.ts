@@ -1,27 +1,49 @@
 import { Client } from "edgedb";
 import {
-  AuthPCKESession,
   Auth,
   BuiltinOAuthProviderNames,
-  builtinLocalProviderNames,
   builtinOAuthProviderNames,
   TokenData,
 } from "../../../core";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export interface NextAppAuthOptions {
   baseUrl: string;
   authRoutesPath?: string;
   authCookieName?: string;
   pkceVerifierCookieName?: string;
+  passwordResetPath?: string;
 }
+
+type ParamsOrError<Result extends object> =
+  | ({ error: null } & Result)
+  | ({ error: Error } & { [Key in keyof Result]?: undefined });
+
+export interface CreateAuthRouteHandlers {
+  onOAuthCallback(
+    params: ParamsOrError<{ tokenData: TokenData; isSignUp: boolean }>
+  ): void;
+  onEmailPasswordSignIn(params: ParamsOrError<{ tokenData: TokenData }>): void;
+  onEmailPasswordSignUp(
+    params: ParamsOrError<{ tokenData: TokenData | null }>
+  ): void;
+  onEmailPasswordReset(params: ParamsOrError<{ tokenData: TokenData }>): void;
+  onEmailVerify(params: ParamsOrError<{ tokenData: TokenData }>): void;
+  onBuiltinUICallback(
+    params: ParamsOrError<{ tokenData: TokenData | null; isSignUp: boolean }>
+  ): void;
+  onSignout(): void;
+}
+
+type OptionalOptions = "passwordResetPath";
 
 export class NextAppAuth {
   private readonly core: Promise<Auth>;
   /** @internal */
-  readonly options: Required<NextAppAuthOptions>;
+  readonly options: Required<Omit<NextAppAuthOptions, OptionalOptions>> &
+    Pick<NextAppAuthOptions, OptionalOptions>;
 
   /** @internal */
   constructor(client: Client, options: NextAppAuthOptions) {
@@ -43,26 +65,11 @@ export class NextAppAuth {
     onOAuthCallback,
     onEmailPasswordSignIn,
     onEmailPasswordSignUp,
+    onEmailPasswordReset,
     onEmailVerify,
     onBuiltinUICallback,
     onSignout,
-  }: {
-    onOAuthCallback?: ((
-      err: null,
-      tokenData: TokenData,
-      isSignup: boolean
-    ) => void) &
-      ((err: Error, tokenData?: undefined, isSignup?: undefined) => void);
-    onEmailPasswordSignIn?: ((err: null, tokenData: TokenData) => void) &
-      ((err: Error, tokenData?: undefined) => void);
-    onEmailPasswordSignUp?: ((err: null, tokenData: TokenData | null) => void) &
-      ((err: Error, tokenData?: undefined) => void);
-    onEmailVerify?: ((err: null, tokenData: TokenData) => void) &
-      ((err: Error, tokenData?: undefined) => void);
-    onBuiltinUICallback?: ((err: null, tokenData: TokenData) => void) &
-      ((err: Error, tokenData?: undefined) => void);
-    onSignout?: () => void;
-  }) {
+  }: Partial<CreateAuthRouteHandlers>) {
     return {
       GET: async (
         req: NextRequest,
@@ -92,7 +99,7 @@ export class NextAppAuth {
               pkceSession.getOAuthUrl(
                 provider,
                 redirectUrl,
-                `${redirectUrl}?isSignup=true`
+                `${redirectUrl}?isSignUp=true`
               )
             );
           }
@@ -102,27 +109,36 @@ export class NextAppAuth {
                 `'onOAuthCallback' auth route handler not configured`
               );
             }
+            const error = req.nextUrl.searchParams.get("error");
+            if (error) {
+              const desc = req.nextUrl.searchParams.get("error_description");
+              return onOAuthCallback({
+                error: new Error(error + (desc ? `: ${desc}` : "")),
+              });
+            }
             const code = req.nextUrl.searchParams.get("code");
-            const isSignup =
-              req.nextUrl.searchParams.get("isSignup") === "true";
+            const isSignUp =
+              req.nextUrl.searchParams.get("isSignUp") === "true";
             const verifier = req.cookies.get(
               this.options.pkceVerifierCookieName
             )?.value;
             if (!code) {
-              return onOAuthCallback(new Error("no pkce code in response"));
+              return onOAuthCallback({
+                error: new Error("no pkce code in response"),
+              });
             }
             if (!verifier) {
-              return onOAuthCallback(
-                new Error("no pkce verifier cookie found")
-              );
+              return onOAuthCallback({
+                error: new Error("no pkce verifier cookie found"),
+              });
             }
             let tokenData: TokenData;
             try {
               tokenData = await (await this.core).getToken(code, verifier);
             } catch (err) {
-              return onOAuthCallback(
-                err instanceof Error ? err : new Error(String(err))
-              );
+              return onOAuthCallback({
+                error: err instanceof Error ? err : new Error(String(err)),
+              });
             }
             cookies().set({
               name: this.options.authCookieName,
@@ -132,7 +148,7 @@ export class NextAppAuth {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onOAuthCallback(null, tokenData, isSignup);
+            return onOAuthCallback({ error: null, tokenData, isSignUp });
           }
           case "emailpassword/verify": {
             if (!onEmailVerify) {
@@ -146,12 +162,14 @@ export class NextAppAuth {
               this.options.pkceVerifierCookieName
             )?.value;
             if (!verificationToken) {
-              return onEmailVerify(
-                new Error("no verification_token in response")
-              );
+              return onEmailVerify({
+                error: new Error("no verification_token in response"),
+              });
             }
             if (!verifier) {
-              return onEmailVerify(new Error("no pkce verifier cookie found"));
+              return onEmailVerify({
+                error: new Error("no pkce verifier cookie found"),
+              });
             }
             let tokenData: TokenData;
             try {
@@ -159,9 +177,9 @@ export class NextAppAuth {
                 await this.core
               ).verifyEmailPasswordSignup(verificationToken, verifier);
             } catch (err) {
-              return onEmailVerify(
-                err instanceof Error ? err : new Error(String(err))
-              );
+              return onEmailVerify({
+                error: err instanceof Error ? err : new Error(String(err)),
+              });
             }
             cookies().set({
               name: this.options.authCookieName,
@@ -171,33 +189,55 @@ export class NextAppAuth {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onEmailVerify(null, tokenData);
+            return onEmailVerify({ error: null, tokenData });
           }
-          case "builtin": {
+          case "builtin/callback": {
             if (!onBuiltinUICallback) {
               throw new Error(
                 `'onBuiltinUICallback' auth route handler not configured`
               );
             }
+            const error = req.nextUrl.searchParams.get("error");
+            if (error) {
+              const desc = req.nextUrl.searchParams.get("error_description");
+              return onBuiltinUICallback({
+                error: new Error(error + (desc ? `: ${desc}` : "")),
+              });
+            }
             const code = req.nextUrl.searchParams.get("code");
+            const verificationEmailSentAt = req.nextUrl.searchParams.get(
+              "verification_email_sent_at"
+            );
+
+            if (!code) {
+              if (verificationEmailSentAt) {
+                return onBuiltinUICallback({
+                  error: null,
+                  tokenData: null,
+                  isSignUp: true,
+                });
+              }
+              return onBuiltinUICallback({
+                error: new Error("no pkce code in response"),
+              });
+            }
             const verifier = req.cookies.get(
               this.options.pkceVerifierCookieName
             )?.value;
-            if (!code) {
-              return onBuiltinUICallback(new Error("no pkce code in response"));
-            }
             if (!verifier) {
-              return onBuiltinUICallback(
-                new Error("no pkce verifier cookie found")
-              );
+              return onBuiltinUICallback({
+                error: new Error("no pkce verifier cookie found"),
+              });
             }
+            const isSignUp =
+              req.nextUrl.searchParams.get("isSignUp") === "true";
             let tokenData: TokenData;
             try {
               tokenData = await (await this.core).getToken(code, verifier);
             } catch (err) {
-              return onBuiltinUICallback(
-                err instanceof Error ? err : new Error(String(err))
-              );
+              return onBuiltinUICallback({
+                error: err instanceof Error ? err : new Error(String(err)),
+              });
             }
             cookies().set({
               name: this.options.authCookieName,
@@ -207,7 +247,7 @@ export class NextAppAuth {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onBuiltinUICallback(null, tokenData);
+            return onBuiltinUICallback({ error: null, tokenData, isSignUp });
           }
           case "builtin/signin":
           case "builtin/signup": {
@@ -249,26 +289,26 @@ export class NextAppAuth {
             }
             let tokenData: TokenData;
             try {
-              const { email, password } = extractEmailPassword(
-                req.headers.get("Content-Type") === "application/json"
-                  ? await req.json()
-                  : await req.formData()
+              const [email, password] = _extractParams(
+                await _getReqBody(req),
+                ["email", "password"],
+                "email or password missing from request body"
               );
               tokenData = await (
                 await this.core
               ).signinWithEmailPassword(email, password);
             } catch (err) {
-              return onEmailPasswordSignIn(
-                err instanceof Error ? err : new Error(String(err))
-              );
+              return onEmailPasswordSignIn({
+                error: err instanceof Error ? err : new Error(String(err)),
+              });
             }
             cookies().set({
               name: this.options.authCookieName,
               value: tokenData.auth_token,
               httpOnly: true,
-              sameSite: "lax",
+              sameSite: "strict",
             });
-            return onEmailPasswordSignIn(null, tokenData);
+            return onEmailPasswordSignIn({ error: null, tokenData });
           }
           case "emailpassword/signup": {
             if (!onEmailPasswordSignUp) {
@@ -280,10 +320,10 @@ export class NextAppAuth {
               ReturnType<Awaited<typeof this.core>["signupWithEmailPassword"]>
             >;
             try {
-              const { email, password } = extractEmailPassword(
-                req.headers.get("Content-Type") === "application/json"
-                  ? await req.json()
-                  : await req.formData()
+              const [email, password] = _extractParams(
+                await _getReqBody(req),
+                ["email", "password"],
+                "email or password missing from request body"
               );
               result = await (
                 await this.core
@@ -293,9 +333,9 @@ export class NextAppAuth {
                 `${this._authRoute}/emailpassword/verify`
               );
             } catch (err) {
-              return onEmailPasswordSignUp(
-                err instanceof Error ? err : new Error(String(err))
-              );
+              return onEmailPasswordSignUp({
+                error: err instanceof Error ? err : new Error(String(err)),
+              });
             }
             if (result.status === "complete") {
               cookies().set({
@@ -304,7 +344,10 @@ export class NextAppAuth {
                 httpOnly: true,
                 sameSite: "strict",
               });
-              return onEmailPasswordSignUp(null, result.tokenData);
+              return onEmailPasswordSignUp({
+                error: null,
+                tokenData: result.tokenData,
+              });
             } else {
               cookies().set({
                 name: this.options.pkceVerifierCookieName,
@@ -312,8 +355,54 @@ export class NextAppAuth {
                 httpOnly: true,
                 sameSite: "strict",
               });
-              return onEmailPasswordSignUp(null, null);
+              return onEmailPasswordSignUp({ error: null, tokenData: null });
             }
+          }
+          case "emailpassword/send-reset-email": {
+            const [email, resetUrl] = _extractParams(
+              await _getReqBody(req),
+              ["email", "reset_url"],
+              "email or reset_url missing from request body"
+            );
+            (await this.core).sendPasswordResetEmail(email, resetUrl);
+          }
+          case "emailpassword/reset-password": {
+            if (!onEmailPasswordReset) {
+              throw new Error(
+                `'onEmailPasswordReset' auth route handler not configured`
+              );
+            }
+            let tokenData: TokenData;
+            try {
+              const [resetToken, password] = _extractParams(
+                await _getReqBody(req),
+                ["reset_token", "password"],
+                "reset_token or password missing from request body"
+              );
+
+              tokenData = await (
+                await this.core
+              ).resetPasswordWithResetToken(resetToken, password);
+            } catch (err) {
+              return onEmailPasswordReset({
+                error: err instanceof Error ? err : new Error(String(err)),
+              });
+            }
+            cookies().set({
+              name: this.options.authCookieName,
+              value: tokenData.auth_token,
+              httpOnly: true,
+              sameSite: "strict",
+            });
+            return onEmailPasswordReset({ error: null, tokenData });
+          }
+          case "emailpassword/resend-verification-email": {
+            const [verificationToken] = _extractParams(
+              await _getReqBody(req),
+              ["verification_token"],
+              "verification_token missing from request body"
+            );
+            (await this.core).resendVerificationEmail(verificationToken);
           }
           default:
             return new Response("Unknown auth route", {
@@ -332,7 +421,11 @@ export class NextAppAuth {
       emailPasswordSignIn: async (
         data: FormData | { email: string; password: string }
       ) => {
-        const { email, password } = extractEmailPassword(data);
+        const [email, password] = _extractParams(
+          data,
+          ["email", "password"],
+          "email or password missing"
+        );
         const tokenData = await (
           await this.core
         ).signinWithEmailPassword(email, password);
@@ -340,14 +433,18 @@ export class NextAppAuth {
           name: this.options.authCookieName,
           value: tokenData.auth_token,
           httpOnly: true,
-          sameSite: "lax",
+          sameSite: "strict",
         });
         return tokenData;
       },
       emailPasswordSignUp: async (
         data: FormData | { email: string; password: string }
       ) => {
-        const { email, password } = extractEmailPassword(data);
+        const [email, password] = _extractParams(
+          data,
+          ["email", "password"],
+          "email or password missing"
+        );
         const result = await (
           await this.core
         ).signupWithEmailPassword(
@@ -373,11 +470,58 @@ export class NextAppAuth {
           return null;
         }
       },
+      emailPasswordSendPasswordResetEmail: async (
+        data: FormData | { email: string; resetUrl: string }
+      ) => {
+        if (!this.options.passwordResetPath) {
+          throw new Error(`'passwordResetPath' option not configured`);
+        }
+        const [email] = _extractParams(data, ["email"], "email missing");
+        await (
+          await this.core
+        ).sendPasswordResetEmail(
+          email,
+          `${this.options.baseUrl}/${this.options.passwordResetPath}`
+        );
+      },
+      emailPasswordResetPassword: async (
+        data: FormData | { resetToken: string; password: string }
+      ) => {
+        const [resetToken, password] = _extractParams(
+          data,
+          ["reset_token", "password"],
+          "reset_token or password missing"
+        );
+        const tokenData = await (
+          await this.core
+        ).resetPasswordWithResetToken(resetToken, password);
+        cookies().set({
+          name: this.options.authCookieName,
+          value: tokenData.auth_token,
+          httpOnly: true,
+          sameSite: "strict",
+        });
+        return tokenData;
+      },
+      emailPasswordResendVerificationEmail: async (
+        data: FormData | { verification_token: string }
+      ) => {
+        const [verificationToken] = _extractParams(
+          data,
+          ["verification_token"],
+          "verification_token missing"
+        );
+        await (await this.core).resendVerificationEmail(verificationToken);
+      },
     };
   }
 
   async getSession() {
     return new NextAppAuthSession(this, (await this.core).client);
+  }
+
+  isPasswordResetTokenValid(resetToken: string) {
+    return Auth.checkPasswordResetTokenValid(resetToken);
   }
 
   getOAuthUrl(providerName: BuiltinOAuthProviderNames) {
@@ -389,7 +533,7 @@ export class NextAppAuth {
   getBuiltinUIUrl() {
     return `${this._authRoute}/builtin/signin`;
   }
-  getBuiltinUISignupUrl() {
+  getBuiltinUISignUpUrl() {
     return `${this._authRoute}/builtin/signup`;
   }
 
@@ -427,18 +571,40 @@ export class NextAppAuthSession {
   }
 }
 
-function extractEmailPassword(data: FormData | any) {
-  let email: string | undefined;
-  let password: string | undefined;
+function _getReqBody(req: NextRequest) {
+  return req.headers.get("Content-Type") === "application/json"
+    ? req.json()
+    : req.formData();
+}
+
+function _extractParams(
+  data: FormData | any,
+  paramNames: string[],
+  errMessage: string
+) {
+  const params: string[] = [];
   if (data instanceof FormData) {
-    email = data.get("email")?.toString();
-    password = data.get("password")?.toString();
+    for (const paramName of paramNames) {
+      const param = data.get(paramName)?.toString();
+      if (!param) {
+        throw new Error(errMessage);
+      }
+      params.push(param);
+    }
   } else {
-    email = data.email;
-    password = data.password;
+    if (typeof data !== "object") {
+      throw new Error("expected json object");
+    }
+    for (const paramName of paramNames) {
+      const param = data[paramName];
+      if (!param) {
+        throw new Error(errMessage);
+      }
+      if (typeof param !== "string") {
+        throw new Error(`expected '${paramName}' to be a string`);
+      }
+      params.push(param);
+    }
   }
-  if (!email || !password) {
-    throw new Error(`email or password is missing`);
-  }
-  return { email, password };
+  return params;
 }

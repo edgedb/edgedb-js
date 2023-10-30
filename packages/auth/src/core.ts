@@ -146,31 +146,43 @@ export class Auth {
     return this.getToken(code, verifier);
   }
 
+  async resendVerificationEmail(verificationToken: string) {
+    await this._fetch("resend-verification-email", "post", undefined, {
+      provider: "builtin::local_emailpassword",
+      verification_token: verificationToken,
+    });
+  }
+
   async sendPasswordResetEmail(email: string, resetUrl: string) {
-    return this._fetch("send_reset_email", "post", undefined, {
+    return this._fetch("send-reset-email", "post", undefined, {
       provider: "builtin::local_emailpassword",
       email,
       reset_url: resetUrl,
     }) as Promise<{ email_sent: string }>;
   }
 
-  checkPasswordResetTokenValid(resetToken: string) {
-    const payload = jwtDecode(resetToken);
-    if (
-      typeof payload != "object" ||
-      payload == null ||
-      !("exp" in payload) ||
-      typeof payload.exp != "number"
-    ) {
-      throw new Error("reset token does not contain valid expiry time");
+  static checkPasswordResetTokenValid(resetToken: string) {
+    try {
+      const payload = jwtDecode(resetToken);
+      if (
+        typeof payload != "object" ||
+        payload == null ||
+        !("exp" in payload) ||
+        typeof payload.exp != "number"
+      ) {
+        return false;
+      }
+      return payload.exp < Date.now();
+    } catch {
+      return false;
     }
-    return payload.exp < Date.now();
   }
 
-  async resetPasswordWithResetToken(resetToken: string) {
-    return this._fetch("reset_password", "post", undefined, {
+  async resetPasswordWithResetToken(resetToken: string, password: string) {
+    return this._fetch("reset-password", "post", undefined, {
       provider: "builtin::local_emailpassword",
       reset_token: resetToken,
+      password,
     }) as Promise<TokenData>;
   }
 

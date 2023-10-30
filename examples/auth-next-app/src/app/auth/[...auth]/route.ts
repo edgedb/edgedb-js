@@ -2,19 +2,19 @@ import { auth } from "@/edgedb";
 import { redirect } from "next/navigation";
 
 const { GET, POST } = auth.createAuthRouteHandlers({
-  onOAuthCallback(err, tokenData, isSignup) {
-    console.log(err, tokenData, isSignup);
+  onOAuthCallback({ error, tokenData, isSignUp }) {
+    console.log(error, tokenData, isSignUp);
     redirect("/");
   },
   onSignout() {
     redirect("/");
   },
-  onEmailVerify(err, tokenData) {
-    console.log(err, tokenData);
+  onEmailVerify({ error, tokenData }) {
+    console.log(error, tokenData);
     redirect("/");
   },
-  onBuiltinUICallback(err, tokenData) {
-    console.log(err, tokenData);
+  onBuiltinUICallback({ error, tokenData }) {
+    console.log(error, tokenData);
     redirect("/");
   },
 });
