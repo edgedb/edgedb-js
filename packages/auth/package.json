@@ -1,7 +1,7 @@
 {
   "name": "@edgedb/auth",
-  "description": "Helper library for EdgeDB Auth extension",
-  "version": "0.0.1",
+  "description": "Helper library for the EdgeDB Auth extension",
+  "version": "0.1.0-alpha.1",
   "author": "EdgeDB <info@edgedb.com>",
   "repository": {
     "type": "git",
