@@ -1,6 +1,6 @@
 {
   "name": "@edgedb/auth-core",
-  "description": "Helper library for the EdgeDB Auth extension",
+  "description": "Core helper library for the EdgeDB Auth extension",
   "version": "0.1.0-alpha.1",
   "author": "EdgeDB <info@edgedb.com>",
   "repository": {
