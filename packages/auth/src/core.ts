@@ -165,10 +165,10 @@ export class Auth {
     try {
       const payload = jwtDecode(resetToken);
       if (
-        typeof payload != "object" ||
+        typeof payload !== "object" ||
         payload == null ||
         !("exp" in payload) ||
-        typeof payload.exp != "number"
+        typeof payload.exp !== "number"
       ) {
         return false;
       }
