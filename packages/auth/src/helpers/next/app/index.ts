@@ -1,21 +1,12 @@
 import { Client } from "edgedb";
-import {
-  Auth,
-  BuiltinOAuthProviderNames,
-  builtinOAuthProviderNames,
-  TokenData,
-} from "../../../core";
+import { Auth, builtinOAuthProviderNames, TokenData } from "../../../core";
+import { NextAuth, NextAuthOptions, NextAuthSession } from "../shared";
+
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextRequest } from "next/server";
 
-export interface NextAppAuthOptions {
-  baseUrl: string;
-  authRoutesPath?: string;
-  authCookieName?: string;
-  pkceVerifierCookieName?: string;
-  passwordResetPath?: string;
-}
+export { type NextAuthOptions, NextAuthSession };
 
 type ParamsOrError<Result extends object> =
   | ({ error: null } & Result)
@@ -37,28 +28,19 @@ export interface CreateAuthRouteHandlers {
   onSignout(): void;
 }
 
-type OptionalOptions = "passwordResetPath";
-
-export class NextAppAuth {
+export class NextAppAuth extends NextAuth {
   private readonly core: Promise<Auth>;
-  /** @internal */
-  readonly options: Required<Omit<NextAppAuthOptions, OptionalOptions>> &
-    Pick<NextAppAuthOptions, OptionalOptions>;
 
-  /** @internal */
-  constructor(client: Client, options: NextAppAuthOptions) {
+  constructor(client: Client, options: NextAuthOptions) {
+    super(client, options);
     this.core = Auth.create(client);
-    this.options = {
-      baseUrl: options.baseUrl.replace(/\/$/, ""),
-      authRoutesPath: options.authRoutesPath?.replace(/^\/|\/$/g, "") ?? "auth",
-      authCookieName: options.authCookieName ?? "edgedb-session",
-      pkceVerifierCookieName:
-        options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
-    };
   }
 
-  private get _authRoute() {
-    return `${this.options.baseUrl}/${this.options.authRoutesPath}`;
+  getSession() {
+    return new NextAuthSession(
+      this.client,
+      cookies().get(this.options.authCookieName)?.value.split(";")[0]
+    );
   }
 
   createAuthRouteHandlers({
@@ -359,12 +341,18 @@ export class NextAppAuth {
             }
           }
           case "emailpassword/send-reset-email": {
-            const [email, resetUrl] = _extractParams(
+            if (!this.options.passwordResetUrl) {
+              throw new Error(`'passwordResetUrl' option not configured`);
+            }
+            const [email] = _extractParams(
               await _getReqBody(req),
-              ["email", "reset_url"],
-              "email or reset_url missing from request body"
+              ["email"],
+              "email missing from request body"
             );
-            (await this.core).sendPasswordResetEmail(email, resetUrl);
+            (await this.core).sendPasswordResetEmail(
+              email,
+              this.options.passwordResetUrl
+            );
           }
           case "emailpassword/reset-password": {
             if (!onEmailPasswordReset) {
@@ -473,15 +461,15 @@ export class NextAppAuth {
       emailPasswordSendPasswordResetEmail: async (
         data: FormData | { email: string; resetUrl: string }
       ) => {
-        if (!this.options.passwordResetPath) {
-          throw new Error(`'passwordResetPath' option not configured`);
+        if (!this.options.passwordResetUrl) {
+          throw new Error(`'passwordResetUrl' option not configured`);
         }
         const [email] = _extractParams(data, ["email"], "email missing");
         await (
           await this.core
         ).sendPasswordResetEmail(
           email,
-          `${this.options.baseUrl}/${this.options.passwordResetPath}`
+          `${this.options.baseUrl}/${this.options.passwordResetUrl}`
         );
       },
       emailPasswordResetPassword: async (
@@ -515,60 +503,13 @@ export class NextAppAuth {
       },
     };
   }
-
-  async getSession() {
-    return new NextAppAuthSession(this, (await this.core).client);
-  }
-
-  isPasswordResetTokenValid(resetToken: string) {
-    return Auth.checkPasswordResetTokenValid(resetToken);
-  }
-
-  getOAuthUrl(providerName: BuiltinOAuthProviderNames) {
-    return `${this._authRoute}/oauth?${new URLSearchParams({
-      provider_name: providerName,
-    }).toString()}`;
-  }
-
-  getBuiltinUIUrl() {
-    return `${this._authRoute}/builtin/signin`;
-  }
-  getBuiltinUISignUpUrl() {
-    return `${this._authRoute}/builtin/signup`;
-  }
-
-  getSignoutUrl() {
-    return `${this._authRoute}/signout`;
-  }
 }
 
 export default function createNextAppAuth(
   client: Client,
-  options: NextAppAuthOptions
+  options: NextAuthOptions
 ) {
   return new NextAppAuth(client, options);
-}
-
-export class NextAppAuthSession {
-  private readonly authToken?: string;
-  public readonly client: Client;
-
-  /** @internal */
-  constructor(private readonly auth: NextAppAuth, client: Client) {
-    this.authToken = cookies()
-      .get(auth.options.authCookieName)
-      ?.value.split(";")[0];
-    this.client = this.authToken
-      ? client.withGlobals({ "ext::auth::client_token": this.authToken })
-      : client;
-  }
-
-  async isLoggedIn() {
-    if (!this.authToken) return false;
-    return (await this.client.querySingle(
-      `select exists global ext::auth::ClientTokenIdentity`
-    )) as boolean;
-  }
 }
 
 function _getReqBody(req: NextRequest) {
