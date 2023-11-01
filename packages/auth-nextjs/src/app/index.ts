@@ -1,5 +1,5 @@
 import { Client } from "edgedb";
-import { Auth, builtinOAuthProviderNames, TokenData } from "../../../core";
+import { Auth, builtinOAuthProviderNames, TokenData } from "@edgedb/auth-core";
 import { NextAuth, NextAuthOptions, NextAuthSession } from "../shared";
 
 import { cookies } from "next/headers";
