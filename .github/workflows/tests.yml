@@ -90,6 +90,7 @@ jobs:
         uses: edgedb/setup-edgedb@8bc9e10005674ec772652b86e1fdd476e6462284
         with:
           instance-name: test
+          cli-version: 3.5
           server-version: ${{ matrix.edgedb-version }}
 
       - name: Show actual EdgeDB server version

@@ -65,6 +65,12 @@ generators from npm using your package manager of choice.
 
       import * as edgedb from "http://deno.land/x/edgedb/mod.ts";
 
+    .. code-tab:: bash
+      :caption: bun
+
+      $ bun add edgedb                 # database driver
+      $ bun add --dev @edgedb/generate # generators
+
 .. _edgedb-js-quickstart:
 
 Quickstart

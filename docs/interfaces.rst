@@ -17,6 +17,7 @@ Install the ``edgedb`` package.
 
   $ npm install edgedb       # npm users
   $ yarn add edgedb          # yarn users
+  $ bun add edgedb           # bun users
 
 Then install ``@edgedb/generate`` as a dev dependency.
 
@@ -24,6 +25,7 @@ Then install ``@edgedb/generate`` as a dev dependency.
 
   $ npm install @edgedb/generate --save-dev      # npm users
   $ yarn add @edgedb/generate --dev              # yarn users
+  $ bun add --dev @edgedb/generate               # bun users
 
 
 Generation
@@ -60,6 +62,11 @@ The following command will run the ``interfaces`` generator.
     :caption: Deno
 
     $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts interfaces
+
+  .. code-tab:: bash
+    :caption: Bun
+
+    $ bunx @edgedb/generate queries
 
 This will introspect your schema and generate TypeScript interfaces that correspond to each object type. By default, these interfaces will be written to a single file called ``interfaces.ts`` into the ``dbschema`` directory in your project root. The file will contain the following contents (roughly):
 

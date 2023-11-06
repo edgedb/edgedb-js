@@ -39,6 +39,11 @@ Run a generator with the following command.
       --unstable \
       https://deno.land/x/edgedb/generate.ts <generator> [options]
 
+    .. code-tab:: bash
+      :caption: bun
+
+      $ bunx @edgedb/generate <generator> [options]
+
 The value of ``<generator>`` should be one of the following:
 
 .. list-table::
