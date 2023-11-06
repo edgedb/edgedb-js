@@ -17,7 +17,8 @@
   ],
   "scripts": {
     "test": "jest --detectOpenHandles",
-    "build": "tsc --project tsconfig.json"
+    "build": "tsc --project tsconfig.json",
+    "gen-consts": "node genConsts.js"
   },
   "devDependencies": {
     "@types/node": "^20.8.4",

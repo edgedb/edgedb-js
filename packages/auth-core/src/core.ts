@@ -3,6 +3,7 @@ import * as edgedb from "edgedb";
 import { ResolvedConnectConfig } from "edgedb/dist/conUtils";
 
 import * as pkce from "./pkce";
+import { BuiltinOAuthProviderNames } from "./consts";
 
 export interface TokenData {
   auth_token: string;
@@ -10,21 +11,6 @@ export interface TokenData {
   provider_token: string | null;
   provider_refresh_token: string | null;
 }
-
-export const builtinOAuthProviderNames = [
-  "builtin::oauth_apple",
-  "builtin::oauth_azure",
-  "builtin::oauth_github",
-  "builtin::oauth_google",
-] as const;
-export type BuiltinOAuthProviderNames =
-  (typeof builtinOAuthProviderNames)[number];
-
-export const builtinLocalProviderNames = [
-  "builtin::local_emailpassword",
-] as const;
-export type BuiltinLocalProviderNames =
-  (typeof builtinLocalProviderNames)[number];
 
 export class Auth {
   /** @internal */
@@ -51,29 +37,26 @@ export class Auth {
   }
 
   /** @internal */
-  public async _fetch(
+  public async _get<T extends any = unknown>(path: string): Promise<T> {
+    const res = await fetch(new URL(path, this.baseUrl), {
+      method: "get",
+    });
+    if (!res.ok) {
+      throw new Error(await res.text());
+    }
+    if (res.headers.get("content-type")?.startsWith("application/json")) {
+      return res.json();
+    }
+    return null as any;
+  }
+
+  /** @internal */
+  public async _post<T extends any = unknown>(
     path: string,
-    method: "get",
-    searchParams?: Record<string, string>
-  ): Promise<unknown>;
-  public async _fetch(
-    path: string,
-    method: "post",
-    searchParams?: Record<string, string>,
     body?: any
-  ): Promise<unknown>;
-  public async _fetch(
-    path: string,
-    method: "get" | "post",
-    searchParams?: Record<string, string>,
-    body?: any
-  ) {
-    const url = `${this.baseUrl}/${path}${
-      searchParams ? "?" + new URLSearchParams(searchParams).toString() : ""
-    }`;
-    const res = await fetch(url, {
-      method,
-      // verbose: true,
+  ): Promise<T> {
+    const res = await fetch(new URL(path, this.baseUrl), {
+      method: "post",
       ...(body != null
         ? {
             body: JSON.stringify(body),
@@ -87,7 +70,7 @@ export class Auth {
     if (res.headers.get("content-type")?.startsWith("application/json")) {
       return res.json();
     }
-    return null;
+    return null as any;
   }
 
   createPKCESession() {
@@ -95,20 +78,22 @@ export class Auth {
   }
 
   getToken(code: string, verifier: string): Promise<TokenData> {
-    return this._fetch("token", "get", {
-      code,
-      verifier,
-    }) as Promise<TokenData>;
+    return this._get<TokenData>(
+      `token?${new URLSearchParams({
+        code,
+        verifier,
+      }).toString()}`
+    );
   }
 
   async signinWithEmailPassword(email: string, password: string) {
     const { challenge, verifier } = pkce.createVerifierChallengePair();
-    const { code } = (await this._fetch("authenticate", "post", undefined, {
+    const { code } = await this._post<{ code: string }>("authenticate", {
       provider: "builtin::local_emailpassword",
       challenge,
       email,
       password,
-    })) as { code: string };
+    });
     return this.getToken(code, verifier);
   }
 
@@ -121,13 +106,15 @@ export class Auth {
     | { status: "verificationRequired"; verifier: string }
   > {
     const { challenge, verifier } = pkce.createVerifierChallengePair();
-    const result = (await this._fetch("register", "post", undefined, {
+    const result = await this._post<
+      { code: string } | { verification_email_sent_at: string }
+    >("register", {
       provider: "builtin::local_emailpassword",
       challenge,
       email,
       password,
       verify_url: verifyUrl,
-    })) as { code: string } | { verification_email_sent_at: string };
+    });
     if ("code" in result) {
       return {
         status: "complete",
@@ -139,26 +126,26 @@ export class Auth {
   }
 
   async verifyEmailPasswordSignup(verificationToken: string, verifier: string) {
-    const { code } = (await this._fetch("verify", "post", undefined, {
+    const { code } = await this._post<{ code: string }>("verify", {
       provider: "builtin::local_emailpassword",
       verification_token: verificationToken,
-    })) as { code: string };
+    });
     return this.getToken(code, verifier);
   }
 
   async resendVerificationEmail(verificationToken: string) {
-    await this._fetch("resend-verification-email", "post", undefined, {
+    await this._post("resend-verification-email", {
       provider: "builtin::local_emailpassword",
       verification_token: verificationToken,
     });
   }
 
   async sendPasswordResetEmail(email: string, resetUrl: string) {
-    return this._fetch("send-reset-email", "post", undefined, {
+    return this._post<{ email_sent: string }>("send-reset-email", {
       provider: "builtin::local_emailpassword",
       email,
       reset_url: resetUrl,
-    }) as Promise<{ email_sent: string }>;
+    });
   }
 
   static checkPasswordResetTokenValid(resetToken: string) {
@@ -179,22 +166,35 @@ export class Auth {
   }
 
   async resetPasswordWithResetToken(resetToken: string, password: string) {
-    return this._fetch("reset-password", "post", undefined, {
+    return this._post<TokenData>("reset-password", {
       provider: "builtin::local_emailpassword",
       reset_token: resetToken,
       password,
-    }) as Promise<TokenData>;
+    });
   }
 
   async getProvidersInfo() {
-    // TODO: cache this data somehow?
-    const providers = (await this.client.query(`
-    with module ext::auth
-    select cfg::Config.extensions[is AuthConfig].providers {
-      _typename := .__type__.name,
-      name,
-      [is OAuthProviderConfig].display_name,
-    }`)) as { _typename: string; name: string; display_name: string | null }[];
+    // TODO: cache this data when we have a way to invalidate on config update
+    let providers: {
+      _typename: string;
+      name: string;
+      display_name: string | null;
+    }[];
+    try {
+      providers = await this.client.query(`
+      with module ext::auth
+      select cfg::Config.extensions[is AuthConfig].providers {
+        _typename := .__type__.name,
+        name,
+        [is OAuthProviderConfig].display_name,
+      }`);
+    } catch (err) {
+      if (err instanceof edgedb.InvalidReferenceError) {
+        throw new Error("auth extension is not enabled");
+      }
+      throw err;
+    }
+
     const emailPasswordProvider = providers.find(
       (p) => p.name === "builtin::local_emailpassword"
     );
@@ -226,17 +226,17 @@ export class AuthPCKESession {
     redirectTo: string,
     redirectToOnSignup?: string
   ) {
-    const params = new URLSearchParams({
-      provider: providerName,
-      challenge: this.challenge,
-      redirect_to: redirectTo,
-    });
+    const url = new URL("authorize", this.auth.baseUrl);
+
+    url.searchParams.set("provider", providerName);
+    url.searchParams.set("challenge", this.challenge);
+    url.searchParams.set("redirect_to", redirectTo);
 
     if (redirectToOnSignup) {
-      params.append("redirect_to_on_signup", redirectToOnSignup);
+      url.searchParams.set("redirect_to_on_signup", redirectToOnSignup);
     }
 
-    return `${this.auth.baseUrl}/authorize?${params.toString()}`;
+    return url.toString();
   }
 
   // getEmailPasswordSigninFormActionUrl(
@@ -274,18 +274,16 @@ export class AuthPCKESession {
   // }
 
   getHostedUISigninUrl() {
-    const params = new URLSearchParams({
-      challenge: this.challenge,
-    });
+    const url = new URL("ui/signin", this.auth.baseUrl);
+    url.searchParams.set("challenge", this.challenge);
 
-    return `${this.auth.baseUrl}/ui/signin?${params.toString()}`;
+    return url.toString();
   }
 
   getHostedUISignupUrl() {
-    const params = new URLSearchParams({
-      challenge: this.challenge,
-    });
+    const url = new URL("ui/signup", this.auth.baseUrl);
+    url.searchParams.set("challenge", this.challenge);
 
-    return `${this.auth.baseUrl}/ui/signup?${params.toString()}`;
+    return url.toString();
   }
 }
