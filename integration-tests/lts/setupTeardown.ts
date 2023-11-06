@@ -112,16 +112,19 @@ SELECT (INSERT Movie {
 }
 
 async function cleanupData(client: Client) {
-  await client.execute(`DELETE \`S p a M\``);
-  await client.execute(`DELETE A`);
-  await client.execute(`DELETE Łukasz`);
-  await client.execute(`DELETE Bag;`);
-  await client.execute(`DELETE Simple;`);
-  await client.execute(`DELETE User;`);
-  await client.execute(`DELETE Movie;`);
-  await client.execute(`DELETE Villain;`);
-  await client.execute(`DELETE Hero;`);
-  await client.execute(`DELETE Profile;`);
+  await client.execute(`
+    delete \`S p a M\`;
+    delete A;
+    delete Łukasz;
+    delete Bag;
+    delete Simple;
+    delete User;
+    delete Movie;
+    delete Villain;
+    delete Hero;
+    delete Profile;
+    delete PgVectorTest;
+  `);
 }
 
 export async function teardownTests(client: Client) {
