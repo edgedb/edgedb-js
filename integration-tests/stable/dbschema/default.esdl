@@ -1,9 +1,27 @@
-using extension pgvector;
+using extension pgcrypto;
+using extension auth;
 
 module default {
-  scalar type embedding extending ext::pgvector::vector<1234>;
+  type CryptoTest {
+    hash_sha256: bytes;
+  }
 
-  type PgVectorTest {
-    test_embedding: embedding;
+  type User {
+    identity: ext::auth::Identity;
+  }
+
+  type Post {
+    required text: str;
+
+    index fts::index on (
+      fts::with_options(
+        .text,
+        language := fts::Language.eng
+      )
+    );
+  }
+
+  type WithMultiRange {
+    required ranges: multirange<std::int32>;
   }
 };

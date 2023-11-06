@@ -15,7 +15,12 @@ export async function setupTests() {
 }
 
 async function cleanupData(client: Client) {
-  await client.execute(`delete PgVectorTest`);
+  await client.execute(`
+    delete CryptoTest;
+    delete User;
+    delete Post;
+    delete WithMultiRange;
+  `);
 }
 
 export async function teardownTests(client: Client) {
