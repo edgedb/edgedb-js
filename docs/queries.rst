@@ -21,6 +21,7 @@ Install the ``edgedb`` package.
 
   $ npm install edgedb       # npm users
   $ yarn add edgedb          # yarn users
+  $ bun add edgedb           # bun users
 
 Then install ``@edgedb/generate`` as a dev dependency.
 
@@ -28,6 +29,7 @@ Then install ``@edgedb/generate`` as a dev dependency.
 
   $ npm install @edgedb/generate --save-dev      # npm users
   $ yarn add @edgedb/generate --dev              # yarn users
+  $ bun add --dev @edgedb/generate               # bun users
 
 
 Generation
@@ -59,6 +61,11 @@ The following command will run the ``queries`` generator.
     :caption: Deno
 
     $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts queries
+
+  .. code-tab:: bash
+    :caption: Bun
+
+    $ bunx @edgedb/generate queries
 
 The generator will detect the project root by looking for an ``edgedb.toml``,
 then scan the directory for ``*.edgeql`` files. In this case, there's only one:

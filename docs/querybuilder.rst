@@ -61,8 +61,53 @@ helps you write valid queries the first time.
 *Close to EdgeQL!* The goal of the query builder is to provide an API that is as
 close as possible to EdgeQL itself while feeling like idiomatic TypeScript.
 
-Configuration
--------------
+Installation
+------------
+
+To get started, install the following packages.
+
+.. note::
+
+  If you're using Deno, you can skip this step.
+
+Install the ``edgedb`` package.
+
+.. code-block:: bash
+
+  $ npm install edgedb       # npm users
+  $ yarn add edgedb          # yarn users
+  $ bun add edgedb           # bun users
+
+Then install ``@edgedb/generate`` as a dev dependency.
+
+.. code-block:: bash
+
+  $ npm install @edgedb/generate --save-dev      # npm users
+  $ yarn add @edgedb/generate --dev              # yarn users
+  $ bun add --dev @edgedb/generate               # bun users
+
+
+Generation
+----------
+
+The following command will run the ``edgeql-js`` query builder generator.
+
+.. tabs::
+
+  .. code-tab:: bash
+    :caption: Node.js
+
+    $ npx @edgedb/generate edgeql-js
+
+  .. code-tab:: bash
+    :caption: Deno
+
+    $ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts edgeql-js
+
+  .. code-tab:: bash
+    :caption: Bun
+
+    $ bunx @edgedb/generate edgeql-js
 
 The generation command is configurable in a number of ways.
 
