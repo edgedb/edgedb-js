@@ -198,6 +198,7 @@ export class CodecsRegistry {
         }
 
         case CTYPE_RANGE:
+        case CTYPE_MULTIRANGE:
         case CTYPE_SCALAR: {
           frb.discard(2);
           break;
