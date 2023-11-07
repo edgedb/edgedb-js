@@ -175,18 +175,20 @@ export class Auth {
 
   async getProvidersInfo() {
     // TODO: cache this data when we have a way to invalidate on config update
-    let providers: {
-      _typename: string;
-      name: string;
-      display_name: string | null;
-    }[];
     try {
-      providers = await this.client.query(`
-      with module ext::auth
-      select cfg::Config.extensions[is AuthConfig].providers {
-        _typename := .__type__.name,
-        name,
-        [is OAuthProviderConfig].display_name,
+      return await this.client.queryRequiredSingle<{
+        oauth: { name: string; display_name: string }[];
+        emailPassword: boolean;
+      }>(`
+      with
+        module ext::auth,
+        providers := (select cfg::Config.extensions[is AuthConfig].providers)
+      select {
+        oauth := providers[is OAuthProviderConfig] {
+          name,
+          display_name
+        },
+        emailPassword := exists providers[is EmailPasswordProviderConfig]
       }`);
     } catch (err) {
       if (err instanceof edgedb.InvalidReferenceError) {
@@ -194,20 +196,6 @@ export class Auth {
       }
       throw err;
     }
-
-    const emailPasswordProvider = providers.find(
-      (p) => p.name === "builtin::local_emailpassword"
-    );
-
-    return {
-      oauth: providers
-        .filter((p) => p.name.startsWith("builtin::oauth_"))
-        .map((p) => ({
-          name: p.name,
-          display_name: p.display_name!,
-        })),
-      emailPassword: emailPasswordProvider != null,
-    };
   }
 }
 
