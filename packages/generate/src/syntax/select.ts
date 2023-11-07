@@ -35,6 +35,7 @@ import type {
   BaseType,
   ExclusiveTuple,
   orLiteralValue,
+  NamedTupleType,
 } from "./typesystem";
 
 import {
@@ -368,7 +369,7 @@ export type InferOffsetLimitCardinality<
 //   Modifiers
 // >;
 export type ComputeSelectCardinality<
-  Expr extends ObjectTypeExpression,
+  Expr extends ObjectTypeExpression | TypeSet<NamedTupleType, Cardinality>,
   Modifiers extends UnknownSelectModifiers
 > = InferOffsetLimitCardinality<
   undefined extends Modifiers["filter_single"]
@@ -780,6 +781,21 @@ export type objectTypeToSelectShape<T extends ObjectType = ObjectType> =
       : any;
   }> & { [k: string]: unknown };
 
+export type namedTupleTypeToSelectShape<
+  T extends NamedTupleType = NamedTupleType
+> = Partial<
+  {
+    [k in keyof T["__shape__"]]: T["__shape__"][k] extends PropertyDesc
+      ?
+          | boolean
+          | TypeSet<
+              T["__shape__"][k]["target"],
+              cardutil.assignable<T["__shape__"][k]["cardinality"]>
+            >
+      : any;
+  } & { [k: string]: unknown }
+>;
+
 // incorporate __shape__ (computeds) on selection shapes
 // this works but a major rewrite of setToTsType is required
 // to incorporate __shape__-based selection shapes into
@@ -900,6 +916,19 @@ export function select<
     Expr["__element__"]["__pointers__"],
     Omit<normaliseShape<Shape>, SelectModifierNames>
   >;
+  __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
+}>;
+
+export function select<
+  Expr extends TypeSet<NamedTupleType, Cardinality>,
+  Shape extends namedTupleTypeToSelectShape<Expr["__element__"]> &
+    Omit<NormalisedSelectModifiers, "singleton">,
+  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
+>(
+  expr: Expr,
+  shape: (scope: $scopify<Expr["__element__"]>) => Readonly<Shape>
+): $expr_Select<{
+  __element__: NamedTupleType<Expr["__element__"]["__shape__"]>;
   __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
 }>;
 /*
@@ -1096,7 +1125,8 @@ function resolveShape(
 
   // get scoped object if expression is objecttypeset
   const scope =
-    expr.__element__.__kind__ === TypeKind.object
+    expr.__element__.__kind__ === TypeKind.object ||
+    expr.__element__.__kind__ === TypeKind.namedtuple
       ? $getScopedExpr(expr as any, $existingScopes)
       : expr;
 
@@ -1117,7 +1147,10 @@ function resolveShape(
     } else {
       // for scalar expressions, scope === expr
       // shape keys are not allowed
-      if (expr.__element__.__kind__ !== TypeKind.object) {
+      if (
+        expr.__element__.__kind__ !== TypeKind.object &&
+        expr.__element__.__kind__ !== TypeKind.namedtuple
+      ) {
         throw new Error(
           `Invalid select shape key '${key}' on scalar expression, ` +
             `only modifiers are allowed (filter, order_by, offset and limit)`
