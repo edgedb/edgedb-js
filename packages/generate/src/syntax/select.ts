@@ -36,6 +36,7 @@ import type {
   ExclusiveTuple,
   orLiteralValue,
   NamedTupleType,
+  $expr_TuplePath,
 } from "./typesystem";
 
 import {
@@ -930,7 +931,7 @@ export function select<
   Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
-  shape: (scope: $scopify<Expr["__element__"]>) => Readonly<Shape>
+  shape: (scope: $expr_TuplePath<Expr["__element__"], Cardinality.One>) => Readonly<Shape>
 ): $expr_Select<{
   __element__: NamedTupleType<Expr["__element__"]["__shape__"]>;
   __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;

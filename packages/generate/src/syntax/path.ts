@@ -20,6 +20,7 @@ import { $toEdgeQL } from "./toEdgeQL";
 import { $queryFunc, $queryFuncJSON } from "./query";
 
 import type {
+  $expr_TuplePath,
   BaseType,
   Expression,
   LinkDesc,
@@ -190,10 +191,7 @@ export type getPropsShape<T extends ObjectType | NamedTupleType> =
   >;
 
 export type $expr_PathNode<
-  Root extends TypeSet<
-    ObjectType | NamedTupleType,
-    Cardinality
-  > = ObjectTypeSet,
+  Root extends TypeSet<ObjectType, Cardinality> = ObjectTypeSet,
   Parent extends PathParent | null = PathParent | null
   // Exclusive extends boolean = boolean
 > = Expression<{
@@ -328,7 +326,11 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
     return _root as any;
   }
 
-  const root: $expr_PathNode<ObjectTypeSet> = _root as any;
+  const root: $expr_PathNode<ObjectTypeSet> | $expr_TuplePath = _root as any;
+
+  if (root.__kind__ === ExpressionKind.TuplePath) {
+    return _root as any;
+  }
 
   let pointers = {
     ...root.__element__.__pointers__,

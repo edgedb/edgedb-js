@@ -264,7 +264,7 @@ export interface PropertyDesc<
   hasDefault: HasDefault;
 }
 
-export type $scopify<Type extends ObjectType | NamedTupleType> = $expr_PathNode<
+export type $scopify<Type extends ObjectType> = $expr_PathNode<
   TypeSet<Type, Cardinality.One>
   // null,
   // true // exclusivity

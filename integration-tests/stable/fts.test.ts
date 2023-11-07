@@ -29,7 +29,9 @@ describe("full-text search", () => {
       })
       .run(client, { posts });
 
-    const allQuery = e.select(e.fts.search(e.Post, "search"), () => ({
+    const searchExpr = e.select(e.fts.search(e.Post, "search"));
+
+    const allQuery = e.select(searchExpr, (post) => ({
       object: true,
       score: true,
     }));
@@ -47,7 +49,7 @@ describe("full-text search", () => {
       >
     >(true);
 
-    const filteredQuery = e.select(e.fts.search(e.Post, "search"), (post) => ({
+    const filteredQuery = e.select(searchExpr, (post) => ({
       object: true,
       score: true,
       filter: e.op(post.score, ">", e.float64(0.81)),
@@ -55,5 +57,16 @@ describe("full-text search", () => {
     const filtered = await filteredQuery.run(client);
 
     expect(filtered.length).toBe(1);
+
+    const noShapeQuery = e.select(searchExpr);
+    const noShape = await noShapeQuery.run(client);
+
+    expect(noShape).toEqual(all);
+
+    const objectSelectQuery = e.select(searchExpr.object, () => ({
+      text: true,
+    }));
+    const objectSelect = await objectSelectQuery.run(client);
+    expect(objectSelect).toEqual([]);
   });
 });
