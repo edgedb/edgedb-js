@@ -1372,6 +1372,15 @@ if (getEdgeDBVersion().major >= 4) {
       );
 
       expect(multiRangeRes).toEqual([expected]);
+
+      // query to make sure we exercise the code path where we re-use the
+      // multirange codec from the last query
+      await client.query(
+        `select {
+          multirange := <multirange<int32>>$mr
+        }`,
+        { mr: expected }
+      );
     } finally {
       await client.close();
     }
