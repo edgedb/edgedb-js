@@ -63,8 +63,8 @@ describe("full-text search", () => {
 
     expect(noShape).toEqual(all);
 
-    const objectSelectQuery = e.select(searchExpr.object, () => ({
-      text: true,
+    const objectSelectQuery = e.select(searchExpr.object, (post) => ({
+      text: post.text,
     }));
     const objectSelect = await objectSelectQuery.run(client);
     expect(objectSelect).toEqual([]);
