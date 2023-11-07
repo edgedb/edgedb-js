@@ -112,7 +112,9 @@ export type exclusivesToFilterSingle<E extends ExclusiveTuple> =
             : orLiteralValue<E[j][k]>;
         };
       }[number];
-export type SelectModifiers<T extends ObjectType = ObjectType> = {
+export type SelectModifiers<
+  T extends ObjectType | NamedTupleType = ObjectType
+> = {
   // export type SelectModifiers = {
   filter?: SelectFilterExpression;
   filter_single?: // | Partial<
@@ -144,7 +146,9 @@ export type SelectModifiers<T extends ObjectType = ObjectType> = {
   //               : never
   //             : never;
   //         }>)
-  exclusivesToFilterSingle<T["__exclusives__"]> | SelectFilterExpression;
+  T extends ObjectType
+    ? exclusivesToFilterSingle<T["__exclusives__"]> | SelectFilterExpression
+    : never;
 
   // | (ObjectType extends T
   //     ? unknown
@@ -922,7 +926,7 @@ export function select<
 export function select<
   Expr extends TypeSet<NamedTupleType, Cardinality>,
   Shape extends namedTupleTypeToSelectShape<Expr["__element__"]> &
-    Omit<NormalisedSelectModifiers, "singleton">,
+    SelectModifiers<Expr["__element__"]>,
   Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
