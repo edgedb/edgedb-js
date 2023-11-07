@@ -1,6 +1,7 @@
 import type { Client } from "edgedb";
 import e, { type $infer } from "./dbschema/edgeql-js";
 import { setupTests, tc, teardownTests } from "./setupTeardown";
+import { $Post } from "./dbschema/edgeql-js/modules/default";
 
 describe("full-text search", () => {
   let client: Client;
@@ -43,7 +44,7 @@ describe("full-text search", () => {
       tc.IsExact<
         $infer<typeof allQuery>,
         {
-          object: Record<string, unknown>;
+          object: { id: string };
           score: number;
         }[]
       >
@@ -68,5 +69,9 @@ describe("full-text search", () => {
     }));
     const objectSelect = await objectSelectQuery.run(client);
     expect(objectSelect).toEqual([]);
+
+    tc.assert<tc.IsExact<$infer<typeof objectSelectQuery>, { text: string }[]>>(
+      true
+    );
   });
 });
