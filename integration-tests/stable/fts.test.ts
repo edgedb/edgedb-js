@@ -50,12 +50,10 @@ describe("full-text search", () => {
     const filteredQuery = e.select(e.fts.search(e.Post, "search"), (post) => ({
       object: true,
       score: true,
-      filter: e.op(post.score, ">", e.float64(0.83)),
+      filter: e.op(post.score, ">", e.float64(0.81)),
     }));
-    console.log(filteredQuery.toEdgeQL());
     const filtered = await filteredQuery.run(client);
 
-    console.log(filtered);
     expect(filtered.length).toBe(1);
   });
 });

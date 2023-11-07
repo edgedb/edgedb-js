@@ -1125,8 +1125,7 @@ function resolveShape(
 
   // get scoped object if expression is objecttypeset
   const scope =
-    expr.__element__.__kind__ === TypeKind.object ||
-    expr.__element__.__kind__ === TypeKind.namedtuple
+    expr.__element__.__kind__ === TypeKind.object
       ? $getScopedExpr(expr as any, $existingScopes)
       : expr;
 
