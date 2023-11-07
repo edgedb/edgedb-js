@@ -98,7 +98,7 @@ export function makeType<T extends BaseType>(
 ): T {
   const type = spec.get(id);
 
-  if (type.name === "anytype" || type.name === "std::anypoint") {
+  if (type.name === "anytype" || type.name === "std::anypoint" || type.name === "anyobject") {
     if (anytype) return anytype as unknown as T;
     throw new Error("anytype not provided");
   }
