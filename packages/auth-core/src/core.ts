@@ -31,7 +31,7 @@ export class Auth {
     const [host, port] = connectConfig.address;
     const baseUrl = `${
       connectConfig.tlsSecurity === "insecure" ? "http" : "https"
-    }://${host}:${port}/db/${connectConfig.database}/ext/auth`;
+    }://${host}:${port}/db/${connectConfig.database}/ext/auth/`;
 
     return new this(client, baseUrl);
   }
