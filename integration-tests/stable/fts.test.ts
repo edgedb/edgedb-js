@@ -32,7 +32,7 @@ describe("full-text search", () => {
 
     const searchExpr = e.select(e.fts.search(e.Post, "search"));
 
-    const allQuery = e.select(searchExpr, (post) => ({
+    const allQuery = e.select(searchExpr, () => ({
       object: true,
       score: true,
     }));
