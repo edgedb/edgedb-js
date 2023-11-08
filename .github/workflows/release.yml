@@ -30,7 +30,12 @@ jobs:
           yarn
           yarn workspaces run build
 
-      # Driver
+      - name: Changelog Vars
+        run: |
+          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      # edgedb
 
       - name: Copy readme
         run: cp README.md packages/driver/README.md
@@ -46,39 +51,12 @@ jobs:
       - name: If publish 'edgedb'
         if: steps.publish_driver.outputs.type != 'none'
         run: |
-          echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
+          echo "Published ${{ steps.publish_driver.outputs.type }} version: ${{ steps.publish_driver.outputs.version }}"
 
       - name: If 'edgedb' version unchanged
         if: steps.publish_driver.outputs.type == 'none'
         run: |
           echo "Version in package.json has not changed. Skipping."
-
-      # Generate
-
-      - id: publish_generate
-        name: Publish '@edgedb/generate' to NPM
-        uses: JS-DevTools/npm-publish@v1
-        with:
-          package: packages/generate/package.json
-          token: ${{ secrets.NPM_TOKEN }}
-          dry-run: false
-
-      - name: If publish '@edgedb/generate'
-        if: steps.publish_generate.outputs.type != 'none'
-        run: |
-          echo "Published ${{ steps.publish.outputs.type }} version: ${{ steps.publish.outputs.version }}"
-
-      - name: If '@edgedb/generate' version unchanged
-        if: steps.publish_generate.outputs.type == 'none'
-        run: |
-          echo "Version in package.json has not changed. Skipping."
-
-      # Changelogs
-
-      - name: Changelog Vars
-        run: |
-          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-          echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Build 'edgedb' Changelog
         id: github_driver_release
@@ -109,6 +87,25 @@ jobs:
           draft: true
           prerelease: false
 
+      # @edgedb/generate
+
+      - id: publish_generate
+        name: Publish '@edgedb/generate' to NPM
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          package: packages/generate/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          dry-run: false
+
+      - name: If publish '@edgedb/generate'
+        if: steps.publish_generate.outputs.type != 'none'
+        run: |
+          echo "Published ${{ steps.publish_generate.outputs.type }} version: ${{ steps.publish_generate.outputs.version }}"
+
+      - name: If '@edgedb/generate' version unchanged
+        if: steps.publish_generate.outputs.type == 'none'
+        run: |
+          echo "Version in package.json has not changed. Skipping."
 
       - name: Build '@edgedb/generate' Changelog
         id: github_generate_release
@@ -136,5 +133,103 @@ jobs:
           release_name: \@edgedb/generate v${{ steps.publish_generate.outputs.version }}
           commitish: ${{ github.ref }}
           body: ${{steps.github_generate_release.outputs.changelog}}
+          draft: true
+          prerelease: false
+
+      # @edgedb/auth-core
+
+      - id: publish_auth_core
+        name: Publish '@edgedb/auth-core' to NPM
+        users: JS-DevTools/npm-publish@v1
+        with:
+          package: packages/auth-core/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          dry-run: false
+
+      - name: If publish '@edgedb/auth-core'
+        if: steps.publish_auth_core.outputs.type != 'none'
+        run: |
+          echo "Published ${{ steps.publish_auth_core.outputs.type }} version: ${{ steps.publish_auth_core.outputs.version }}"
+
+      - name: If '@edgedb/auth-core' version unchanged
+        if: steps.public_auth_core.outputs.type == 'none'
+        run: |
+          echo "Version in package.json has not changed. Skipping."
+
+      - name: Build '@edgedb/auth-core' Changelog
+        id: github_auth_core_release
+        uses: mikepenz/release-changelog-builder-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          fromTag: "${{ env.last_tag }}"
+          toTag: ${{ github.ref }}
+          commitMode: true
+          configurationJson: |
+            {
+              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
+              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
+              "categories": []
+            }
+
+      - name: Create '@edgedb/auth-core' Release
+        if: steps.publish_auth_core.outputs.type != 'none'
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: auth-core-v${{ steps.publish_auth_core.outputs.version }}
+          release_name: \@edgedb/auth-core v${{ steps.publish_auth_core.outputs.version }}
+          commitish: ${{ github.ref }}
+          body: ${{steps.github_auth_core_release.outputs.changelog}}
+          draft: true
+          prerelease: false
+
+      # @edgedb/auth-nextjs
+
+      - id: publish_auth_nextjs
+        name: Publish '@edgedb/auth-nextjs' to NPM
+        users: JS-DevTools/npm-publish@v1
+        with:
+          package: packages/auth-nextjs/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          dry-run: false
+
+      - name: If publish '@edgedb/auth-nextjs'
+        if: steps.publish_auth_nextjs.outputs.type != 'none'
+        run: |
+          echo "Published ${{ steps.publish_auth_nextjs.outputs.type }} version: ${{ steps.publish_auth_nextjs.outputs.version }}"
+
+      - name: If '@edgedb/auth-nextjs' version unchanged
+        if: steps.public_auth_nextjs.outputs.type == 'none'
+        run: |
+          echo "Version in package.json has not changed. Skipping."
+
+      - name: Build '@edgedb/auth-nextjs' Changelog
+        id: github_auth_nextjs_release
+        uses: mikepenz/release-changelog-builder-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          fromTag: "${{ env.last_tag }}"
+          toTag: ${{ github.ref }}
+          commitMode: true
+          configurationJson: |
+            {
+              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
+              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
+              "categories": []
+            }
+
+      - name: Create '@edgedb/auth-nextjs' Release
+        if: steps.publish_auth_nextjs.outputs.type != 'none'
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: auth-nextjs-v${{ steps.publish_auth_nextjs.outputs.version }}
+          release_name: \@edgedb/auth-nextjs v${{ steps.publish_auth_nextjs.outputs.version }}
+          commitish: ${{ github.ref }}
+          body: ${{steps.github_auth_nextjs_release.outputs.changelog}}
           draft: true
           prerelease: false
