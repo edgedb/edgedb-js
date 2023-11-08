@@ -9,8 +9,4 @@ export const builtinOAuthProviderNames = [
 export type BuiltinOAuthProviderNames =
   (typeof builtinOAuthProviderNames)[number];
 
-export const builtinLocalProviderNames = [
-  "builtin::local_emailpassword",
-] as const;
-export type BuiltinLocalProviderNames =
-  (typeof builtinLocalProviderNames)[number];
+export const emailPasswordProviderName = "builtin::local_emailpassword";

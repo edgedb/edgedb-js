@@ -3,7 +3,7 @@ import * as edgedb from "edgedb";
 import { ResolvedConnectConfig } from "edgedb/dist/conUtils";
 
 import * as pkce from "./pkce";
-import { BuiltinOAuthProviderNames } from "./consts";
+import { BuiltinOAuthProviderNames, emailPasswordProviderName } from "./consts";
 
 export interface TokenData {
   auth_token: string;
@@ -89,7 +89,7 @@ export class Auth {
   async signinWithEmailPassword(email: string, password: string) {
     const { challenge, verifier } = pkce.createVerifierChallengePair();
     const { code } = await this._post<{ code: string }>("authenticate", {
-      provider: "builtin::local_emailpassword",
+      provider: emailPasswordProviderName,
       challenge,
       email,
       password,
@@ -109,7 +109,7 @@ export class Auth {
     const result = await this._post<
       { code: string } | { verification_email_sent_at: string }
     >("register", {
-      provider: "builtin::local_emailpassword",
+      provider: emailPasswordProviderName,
       challenge,
       email,
       password,
@@ -127,7 +127,7 @@ export class Auth {
 
   async verifyEmailPasswordSignup(verificationToken: string, verifier: string) {
     const { code } = await this._post<{ code: string }>("verify", {
-      provider: "builtin::local_emailpassword",
+      provider: emailPasswordProviderName,
       verification_token: verificationToken,
     });
     return this.getToken(code, verifier);
@@ -135,14 +135,14 @@ export class Auth {
 
   async resendVerificationEmail(verificationToken: string) {
     await this._post("resend-verification-email", {
-      provider: "builtin::local_emailpassword",
+      provider: emailPasswordProviderName,
       verification_token: verificationToken,
     });
   }
 
   async sendPasswordResetEmail(email: string, resetUrl: string) {
     return this._post<{ email_sent: string }>("send-reset-email", {
-      provider: "builtin::local_emailpassword",
+      provider: emailPasswordProviderName,
       email,
       reset_url: resetUrl,
     });
@@ -167,7 +167,7 @@ export class Auth {
 
   async resetPasswordWithResetToken(resetToken: string, password: string) {
     return this._post<TokenData>("reset-password", {
-      provider: "builtin::local_emailpassword",
+      provider: emailPasswordProviderName,
       reset_token: resetToken,
       password,
     });
@@ -232,7 +232,7 @@ export class AuthPCKESession {
   //   redirectToOnFailure?: string
   // ) {
   //   const params = new URLSearchParams({
-  //     provider_name: "builtin::local_emailpassword",
+  //     provider_name: emailPasswordProviderName,
   //     challenge: this.challenge,
   //     redirect_to: redirectTo,
   //   });
@@ -249,7 +249,7 @@ export class AuthPCKESession {
   //   redirectToOnFailure?: string
   // ) {
   //   const params = new URLSearchParams({
-  //     provider_name: "builtin::local_emailpassword",
+  //     provider_name: emailPasswordProviderName,
   //     challenge: this.challenge,
   //     redirect_to: redirectTo,
   //   });
