@@ -24,7 +24,6 @@ import type {
   BaseType,
   Expression,
   LinkDesc,
-  NamedTupleType,
   ObjectType,
   ObjectTypePointers,
   ObjectTypeSet,
@@ -173,25 +172,16 @@ type pathifyLinkProps<
     : unknown;
 };
 
-export type getPropsShape<T extends ObjectType | NamedTupleType> =
-  typeutil.flatten<
-    typeutil.stripNever<
-      T extends ObjectType
-        ? {
-            [k in keyof T["__pointers__"]]: T["__pointers__"][k]["__kind__"] extends "property"
-              ? true
-              : never;
-          }
-        : {
-            [k in keyof T["__shape__"]]: T["__shape__"][k]["__kind__"] extends "property"
-              ? true
-              : never;
-          }
-    >
-  >;
+export type getPropsShape<T extends ObjectType> = typeutil.flatten<
+  typeutil.stripNever<{
+    [k in keyof T["__pointers__"]]: T["__pointers__"][k]["__kind__"] extends "property"
+      ? true
+      : never;
+  }>
+>;
 
 export type $expr_PathNode<
-  Root extends TypeSet<ObjectType, Cardinality> = ObjectTypeSet,
+  Root extends ObjectTypeSet = ObjectTypeSet,
   Parent extends PathParent | null = PathParent | null
   // Exclusive extends boolean = boolean
 > = Expression<{
