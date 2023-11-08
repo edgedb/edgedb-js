@@ -309,24 +309,20 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
   },
 };
 
-export function $pathify<Root extends TypeSet, Parent extends PathParent>(
-  _root: Root
-): $pathify<Root> {
+export function $pathify<Root extends TypeSet>(_root: Root): $pathify<Root> {
   if (_root.__element__.__kind__ !== TypeKind.object) {
-    return _root as any;
+    return _root as $pathify<Root>;
   }
 
-  const root: $expr_PathNode<ObjectTypeSet> | $expr_TuplePath = _root as any;
-
-  if (root.__kind__ === ExpressionKind.TuplePath) {
-    return _root as any;
-  }
+  const root = _root as unknown as
+    | $expr_PathNode<ObjectTypeSet>
+    | $expr_TuplePath<ObjectType>;
 
   let pointers = {
     ...root.__element__.__pointers__,
   };
 
-  if (root.__parent__) {
+  if (root.__parent__ && root.__kind__ !== ExpressionKind.TuplePath) {
     const { type, linkName } = root.__parent__;
     const parentPointer = type.__element__.__pointers__[linkName];
     if (parentPointer?.__kind__ === "link") {
