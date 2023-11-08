@@ -500,6 +500,28 @@ describe("select", () => {
     );
   });
 
+  test("named tuples", async () => {
+    const namedTuple = e.tuple({ foo: e.str("bar") });
+    const result = await e.select(namedTuple).run(client);
+    assert.deepEqual(result, { foo: "bar" });
+
+    const pathResult = await e.select(namedTuple.foo).run(client);
+    assert.deepEqual(pathResult, "bar");
+
+    const nestedObjectTuple = e.for(e.select(e.Hero), (hero) =>
+      e.tuple({
+        hero,
+        score: e.random(),
+      })
+    );
+    const nestedObjectQuery = e.select(nestedObjectTuple.hero, (hero) => ({
+      name: hero.name,
+      order_by: nestedObjectTuple.score,
+    }));
+    const nestedObjectResult = await nestedObjectQuery.run(client);
+    assert.deepEqual(nestedObjectResult, []);
+  });
+
   test("filter by id", async () => {
     const result = await e
       .select(e.Hero, () => ({
