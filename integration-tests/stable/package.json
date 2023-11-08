@@ -16,7 +16,7 @@
     "superjson": "^1.12.4",
     "ts-jest": "^29.1.0",
     "typescript": "^5.2.2",
-    "edgedb": "workspaces:*"
+    "edgedb": "^1.4.1"
   },
   "dependencies": {}
 }
