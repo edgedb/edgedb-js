@@ -83,7 +83,10 @@ jobs:
 
       - name: Build
         run: |
-          yarn workspaces run build
+          yarn workspace edgedb build
+          yarn workspace @edgedb/auth-core build
+          yarn workspace @edgedb/auth-nextjs build
+          yarn workspace @edgedb/generate build
 
       # - name: Compile for Deno
       #   run: |
