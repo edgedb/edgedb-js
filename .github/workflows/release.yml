@@ -140,7 +140,7 @@ jobs:
 
       - id: publish_auth_core
         name: Publish '@edgedb/auth-core' to NPM
-        users: JS-DevTools/npm-publish@v1
+        uses: JS-DevTools/npm-publish@v1
         with:
           package: packages/auth-core/package.json
           token: ${{ secrets.NPM_TOKEN }}
@@ -189,7 +189,7 @@ jobs:
 
       - id: publish_auth_nextjs
         name: Publish '@edgedb/auth-nextjs' to NPM
-        users: JS-DevTools/npm-publish@v1
+        uses: JS-DevTools/npm-publish@v1
         with:
           package: packages/auth-nextjs/package.json
           token: ${{ secrets.NPM_TOKEN }}
