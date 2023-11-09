@@ -152,7 +152,7 @@ jobs:
           echo "Published ${{ steps.publish_auth_core.outputs.type }} version: ${{ steps.publish_auth_core.outputs.version }}"
 
       - name: If '@edgedb/auth-core' version unchanged
-        if: steps.public_auth_core.outputs.type == 'none'
+        if: steps.publish_auth_core.outputs.type == 'none'
         run: |
           echo "Version in package.json has not changed. Skipping."
 
@@ -201,7 +201,7 @@ jobs:
           echo "Published ${{ steps.publish_auth_nextjs.outputs.type }} version: ${{ steps.publish_auth_nextjs.outputs.version }}"
 
       - name: If '@edgedb/auth-nextjs' version unchanged
-        if: steps.public_auth_nextjs.outputs.type == 'none'
+        if: steps.publish_auth_nextjs.outputs.type == 'none'
         run: |
           echo "Version in package.json has not changed. Skipping."
 
