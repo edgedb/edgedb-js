@@ -16,7 +16,7 @@ jobs:
     continue-on-error: ${{ matrix.edgedb-version == 'nightly' }}
     strategy:
       matrix:
-        node-version: ["16", "18", "20"]
+        node-version: ["18", "20"]
         os: [ubuntu-latest]
         edgedb-version: ["stable"]
         include:
@@ -29,9 +29,6 @@ jobs:
           - os: ubuntu-latest
             node-version: "18"
             edgedb-version: "2"
-          - os: ubuntu-latest
-            node-version: "18"
-            edgedb-version: "1"
           - os: macos-latest
             node-version: "18"
             edgedb-version: "stable"
@@ -108,7 +105,7 @@ jobs:
           yarn workspace @edgedb/generate test:ci
 
       - name: Run query builder integration tests legacy
-        if: ${{ matrix.edgedb-version == '1' || matrix.edgedb-version == '2' }}
+        if: ${{ matrix.edgedb-version == '2' }}
         run: |
           yarn workspace @edgedb/integration-legacy test:ci
 
