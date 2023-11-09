@@ -47,7 +47,7 @@ jobs:
         with:
           package: packages/driver/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          dry-run: false
+          access: public
 
       - name: If publish 'edgedb'
         if: steps.publish_driver.outputs.type != ''
@@ -100,7 +100,7 @@ jobs:
         with:
           package: packages/generate/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          dry-run: false
+          access: public
 
       - name: If publish '@edgedb/generate'
         if: steps.publish_generate.outputs.type != ''
@@ -153,7 +153,7 @@ jobs:
         with:
           package: packages/auth-core/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          dry-run: false
+          access: public
 
       - name: If publish '@edgedb/auth-core'
         if: steps.publish_auth_core.outputs.type != ''
@@ -206,7 +206,7 @@ jobs:
         with:
           package: packages/auth-nextjs/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          dry-run: false
+          access: public
 
       - name: If publish '@edgedb/auth-nextjs'
         if: steps.publish_auth_nextjs.outputs.type != ''
