@@ -25,10 +25,8 @@ jobs:
         with:
           deno-version: v1.30.x
 
-      - name: Install deps and build
-        run: |
-          yarn
-          yarn workspaces run build
+      - name: Install deps
+        run: yarn
 
       - name: Changelog Vars
         run: |
@@ -39,6 +37,9 @@ jobs:
 
       - name: Copy readme
         run: cp README.md packages/driver/README.md
+
+      - name: Build edgedb
+        run: yarn workspace edgedb run build
 
       - id: publish_driver
         name: Publish 'edgedb' to NPM
@@ -89,6 +90,9 @@ jobs:
 
       # @edgedb/generate
 
+      - name: Build @edgedb/generate
+        run: yarn workspace @edgedb/generate run build
+
       - id: publish_generate
         name: Publish '@edgedb/generate' to NPM
         uses: JS-DevTools/npm-publish@v1
@@ -138,6 +142,9 @@ jobs:
 
       # @edgedb/auth-core
 
+      - name: Build @edgedb/auth-core
+        run: yarn workspace @edgedb/auth-core run build
+
       - id: publish_auth_core
         name: Publish '@edgedb/auth-core' to NPM
         uses: JS-DevTools/npm-publish@v1
@@ -186,6 +193,9 @@ jobs:
           prerelease: false
 
       # @edgedb/auth-nextjs
+
+      - name: Build @edgedb/auth-nextjs
+        run: yarn workspace @edgedb/auth-nextjs run build
 
       - id: publish_auth_nextjs
         name: Publish '@edgedb/auth-nextjs' to NPM
