@@ -34,7 +34,7 @@
     "jest-environment-jsdom": "^29.5.0",
     "ts-jest": "29.1.0",
     "tsx": "^3.12.7",
-    "typescript": "5.0.4"
+    "typescript": "^5.2.2"
   },
   "scripts": {
     "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",
