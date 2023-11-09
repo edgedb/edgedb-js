@@ -60,6 +60,7 @@ jobs:
           echo "Version in package.json has not changed. Skipping."
 
       - name: Build 'edgedb' Changelog
+        if: steps.publish_driver.outputs.type != ''
         id: github_driver_release
         uses: mikepenz/release-changelog-builder-action@v3
         env:
@@ -107,11 +108,12 @@ jobs:
           echo "Published ${{ steps.publish_generate.outputs.type }} version: ${{ steps.publish_generate.outputs.version }}"
 
       - name: If '@edgedb/generate' version unchanged
-        if: steps.publish_driver.outputs.type == ''
+        if: steps.publish_generate.outputs.type == ''
         run: |
           echo "Version in package.json has not changed. Skipping."
 
       - name: Build '@edgedb/generate' Changelog
+        if: steps.publish_generate.outputs.type != ''
         id: github_generate_release
         uses: mikepenz/release-changelog-builder-action@v3
         env:
@@ -159,11 +161,12 @@ jobs:
           echo "Published ${{ steps.publish_auth_core.outputs.type }} version: ${{ steps.publish_auth_core.outputs.version }}"
 
       - name: If '@edgedb/auth-core' version unchanged
-        if: steps.publish_driver.outputs.type == ''
+        if: steps.publish_auth_core.outputs.type == ''
         run: |
           echo "Version in package.json has not changed. Skipping."
 
       - name: Build '@edgedb/auth-core' Changelog
+        if: steps.publish_auth_core.outputs.type != ''
         id: github_auth_core_release
         uses: mikepenz/release-changelog-builder-action@v3
         env:
@@ -211,11 +214,12 @@ jobs:
           echo "Published ${{ steps.publish_auth_nextjs.outputs.type }} version: ${{ steps.publish_auth_nextjs.outputs.version }}"
 
       - name: If '@edgedb/auth-nextjs' version unchanged
-        if: steps.publish_driver.outputs.type == ''
+        if: steps.publish_auth_nextjs.outputs.type == ''
         run: |
           echo "Version in package.json has not changed. Skipping."
 
       - name: Build '@edgedb/auth-nextjs' Changelog
+        if: steps.publish_auth_nextjs.outputs.type != ''
         id: github_auth_nextjs_release
         uses: mikepenz/release-changelog-builder-action@v3
         env:
