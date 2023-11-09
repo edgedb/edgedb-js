@@ -353,6 +353,7 @@ export class NextAppAuth extends NextAuth {
               email,
               this.options.passwordResetUrl
             );
+            return new Response(null, { status: 204 });
           }
           case "emailpassword/reset-password": {
             if (!onEmailPasswordReset) {
@@ -391,6 +392,7 @@ export class NextAppAuth extends NextAuth {
               "verification_token missing from request body"
             );
             (await this.core).resendVerificationEmail(verificationToken);
+            return new Response(null, { status: 204 });
           }
           default:
             return new Response("Unknown auth route", {
