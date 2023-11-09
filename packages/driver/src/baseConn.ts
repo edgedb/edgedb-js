@@ -472,9 +472,9 @@ export class BaseRawConnection {
 
     this._sendData(wb.unwrap());
 
-    let cardinality: number | void;
-    let inTypeId: uuid | void;
-    let outTypeId: uuid | void;
+    let cardinality: number | null = null;
+    let inTypeId: uuid | null = null;
+    let outTypeId: uuid | null = null;
     let inCodec: ICodec | null;
     let outCodec: ICodec | null;
     let capabilities: number = -1;
