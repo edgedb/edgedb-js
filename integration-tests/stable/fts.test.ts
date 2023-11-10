@@ -66,9 +66,16 @@ describe("full-text search", () => {
 
     const objectSelectQuery = e.select(searchExpr.object, (post) => ({
       text: post.text,
+      order_by: searchExpr.score,
     }));
     const objectSelect = await objectSelectQuery.run(client);
-    expect(objectSelect).toEqual([]);
+    expect(objectSelect).toEqual([
+      { text: posts[0] },
+      { text: posts[1] },
+      { text: posts[2] },
+      { text: posts[3] },
+      { text: posts[4] },
+    ]);
 
     tc.assert<tc.IsExact<$infer<typeof objectSelectQuery>, { text: string }[]>>(
       true

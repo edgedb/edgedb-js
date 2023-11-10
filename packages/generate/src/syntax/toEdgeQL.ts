@@ -149,13 +149,16 @@ export function $toEdgeQL(this: any) {
     if (withVars.has(expr)) {
       continue;
     }
-
     // ignore unbound leaves, nodes, and intersections
     // these should be rendered as is
     if (
       !refData.boundScope &&
       (expr.__kind__ === ExpressionKind.PathLeaf ||
         expr.__kind__ === ExpressionKind.PathNode ||
+        expr.__kind__ === ExpressionKind.TuplePath ||
+        (expr.__kind__ === ExpressionKind.Select &&
+          (expr.__expr__ as SomeExpression).__kind__ ===
+            ExpressionKind.TuplePath) ||
         expr.__kind__ === ExpressionKind.TypeIntersection)
     ) {
       continue;

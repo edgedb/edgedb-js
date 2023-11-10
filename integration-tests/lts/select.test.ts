@@ -508,18 +508,21 @@ describe("select", () => {
     const pathResult = await e.select(namedTuple.foo).run(client);
     assert.deepEqual(pathResult, "bar");
 
-    const nestedObjectTuple = e.for(e.select(e.Hero), (hero) =>
-      e.tuple({
-        hero,
-        score: e.random(),
-      })
+    const nestedObjectTuple = e.for(
+      e.enumerate(e.select(e.Hero)),
+      (enumeration) =>
+        e.tuple({
+          hero: enumeration[1],
+          index: enumeration[0],
+        })
     );
     const nestedObjectQuery = e.select(nestedObjectTuple.hero, (hero) => ({
       name: hero.name,
-      order_by: nestedObjectTuple.score,
+      order_by: nestedObjectTuple.index,
     }));
     const nestedObjectResult = await nestedObjectQuery.run(client);
-    assert.deepEqual(nestedObjectResult, []);
+    assert.equal(nestedObjectResult.length, 3);
+    assert.ok(nestedObjectResult.every((r) => Boolean(r.name)));
   });
 
   test("filter by id", async () => {
