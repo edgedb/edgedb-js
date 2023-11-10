@@ -99,6 +99,39 @@ describe("select", () => {
     );
   });
 
+  test("named tuple to free object", async () => {
+    const namedTuple = e.tuple({
+      object: e.select(e.Hero, () => ({ limit: 1 })),
+      score: e.random(),
+    });
+    const freeObject = e.for(e.select(namedTuple), (item) =>
+      e.select({ object: item.object, score: item.score })
+    );
+
+    const query = e.select(freeObject, (scope) => ({
+      name: scope.object.name,
+      score: scope.score,
+    }));
+
+    type Query = $infer<typeof query>;
+    tc.assert<
+      tc.IsExact<
+        Query,
+        {
+          name: string;
+          score: number;
+        }[]
+      >
+    >(true);
+
+    const result = await query.run(client);
+
+    console.log(result);
+    assert.equal(result.length, 1);
+    assert.ok(result[0].name);
+    assert.ok(result[0].score);
+  });
+
   test("computed only shape", () => {
     const query = e.select(e.Hero, (hero) => ({
       upper_name: e.str_upper(hero.name),
