@@ -122,11 +122,53 @@ jobs:
         run: |
           yarn workspace edgedb test
 
+  auth-test:
+    # Skip tests when doing a release to avoid the workflow race
+    # when the release PR gets merged by the bot.
+    if: needs.prep.outputs.version == 0
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.edgedb-version == 'nightly' }}
+    strategy:
+      matrix:
+        node-version: ["20"]
+        os: [ubuntu-latest]
+        edgedb-version: ["nightly"]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 50
+          submodules: true
+
+      - name: Set up Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dev deps
+        run: |
+          yarn
+
+      - name: Build
+        run: |
+          yarn workspace edgedb build
+          yarn workspace @edgedb/auth-core build
+
+      - name: Install EdgeDB
+        uses: edgedb/setup-edgedb@8bc9e10005674ec772652b86e1fdd476e6462284
+        with:
+          instance-name: test
+          server-version: ${{ matrix.edgedb-version }}
+
+      - name: Run tests
+        run: |
+          yarn workspace @edgedb/auth-core test
+
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.
   regression-tests:
     name: "Regression Tests"
-    needs: [test]
+    needs: [test, auth-test]
     runs-on: ubuntu-latest
     steps:
       - run: echo OK
