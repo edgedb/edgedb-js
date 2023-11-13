@@ -15,11 +15,12 @@ describe("auth", () => {
 
   test("check generated globals", () => {
     const clientTokenIdentity = e.select(
-      e.ext.auth.global.ClientTokenIdentity,
+      e.assert_single(e.ext.auth.global.ClientTokenIdentity),
       (i) => ({
         ...i["*"],
       })
     );
+
     tc.assert<
       tc.IsExact<
         $infer<typeof clientTokenIdentity>,
@@ -29,7 +30,7 @@ describe("auth", () => {
           modified_at: Date;
           issuer: string;
           subject: string;
-        }[]
+        } | null
       >
     >(true);
   });

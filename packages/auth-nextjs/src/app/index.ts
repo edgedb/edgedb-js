@@ -1,12 +1,17 @@
-import { Client } from "edgedb";
-import { Auth, builtinOAuthProviderNames, TokenData } from "@edgedb/auth-core";
-import { NextAuth, NextAuthOptions, NextAuthSession } from "../shared";
-
+import {
+  Auth,
+  builtinOAuthProviderNames,
+  type BuiltinOAuthProviderNames,
+  type TokenData,
+} from "@edgedb/auth-core";
+import type { Client } from "edgedb";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
-export { type NextAuthOptions, NextAuthSession };
+import { NextAuth, NextAuthSession, type NextAuthOptions } from "../shared";
+
+export { NextAuthSession, type NextAuthOptions };
 
 type ParamsOrError<Result extends object> =
   | ({ error: null } & Result)
@@ -66,7 +71,7 @@ export class NextAppAuth extends NextAuth {
             }
             const provider = req.nextUrl.searchParams.get(
               "provider_name"
-            ) as any;
+            ) as BuiltinOAuthProviderNames | null;
             if (!provider || !builtinOAuthProviderNames.includes(provider)) {
               throw new Error(`invalid provider_name: ${provider}`);
             }
@@ -353,6 +358,7 @@ export class NextAppAuth extends NextAuth {
               email,
               this.options.passwordResetUrl
             );
+            return new Response(null, { status: 204 });
           }
           case "emailpassword/reset-password": {
             if (!onEmailPasswordReset) {
@@ -391,6 +397,7 @@ export class NextAppAuth extends NextAuth {
               "verification_token missing from request body"
             );
             (await this.core).resendVerificationEmail(verificationToken);
+            return new Response(null, { status: 204 });
           }
           default:
             return new Response("Unknown auth route", {
@@ -519,7 +526,7 @@ function _getReqBody(req: NextRequest) {
 }
 
 function _extractParams(
-  data: FormData | any,
+  data: FormData | Record<string, unknown>,
   paramNames: string[],
   errMessage: string
 ) {
