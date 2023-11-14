@@ -147,7 +147,7 @@ test("test password signup/signin/reset flow", async () => {
   } finally {
     await client.close();
   }
-}, 10_000);
+}, 60_000);
 
 test("get providers info", async () => {
   const client = getClient({ tlsSecurity: "insecure" });

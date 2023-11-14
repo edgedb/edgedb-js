@@ -33,7 +33,7 @@ describe("auth", () => {
         } | null
       >
     >(true);
-  }, 60_000);
+  });
 
   test("check client token query", () => {
     const clientToken = e.select(e.ext.auth.global.client_token);
