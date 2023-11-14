@@ -99,6 +99,31 @@ describe("select", () => {
     );
   });
 
+  test("named tuple as free object", async () => {
+    const namedTuple = e.tuple({
+      object: e.select(e.Hero, () => ({ limit: 1 })),
+      score: e.random(),
+    });
+
+    const query = e.select(namedTuple);
+    type Query = $infer<typeof query>;
+    tc.assert<
+      tc.IsExact<
+        Query,
+        {
+          object: { id: string };
+          score: number;
+        }[]
+      >
+    >(true);
+
+    const withShape = e.select(namedTuple, (q) => ({
+      name: q.object.name,
+      score: q.score,
+    }));
+    type WithShape = $infer<typeof withShape>;
+  });
+
   test("named tuple to free object", async () => {
     const namedTuple = e.tuple({
       object: e.select(e.Hero, () => ({ limit: 1 })),

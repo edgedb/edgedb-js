@@ -35,6 +35,8 @@ import type {
   BaseType,
   ExclusiveTuple,
   orLiteralValue,
+  NamedTupleType,
+  $expr_TuplePath,
 } from "./typesystem";
 
 import {
@@ -111,7 +113,9 @@ export type exclusivesToFilterSingle<E extends ExclusiveTuple> =
             : orLiteralValue<E[j][k]>;
         };
       }[number];
-export type SelectModifiers<T extends ObjectType = ObjectType> = {
+export type SelectModifiers<
+  T extends ObjectType | NamedTupleType = ObjectType
+> = {
   // export type SelectModifiers = {
   filter?: SelectFilterExpression;
   filter_single?: // | Partial<
@@ -143,7 +147,9 @@ export type SelectModifiers<T extends ObjectType = ObjectType> = {
   //               : never
   //             : never;
   //         }>)
-  exclusivesToFilterSingle<T["__exclusives__"]> | SelectFilterExpression;
+  T extends ObjectType
+    ? exclusivesToFilterSingle<T["__exclusives__"]> | SelectFilterExpression
+    : never;
 
   // | (ObjectType extends T
   //     ? unknown
@@ -368,7 +374,7 @@ export type InferOffsetLimitCardinality<
 //   Modifiers
 // >;
 export type ComputeSelectCardinality<
-  Expr extends ObjectTypeExpression,
+  Expr extends ObjectTypeExpression | TypeSet<NamedTupleType>,
   Modifiers extends UnknownSelectModifiers
 > = InferOffsetLimitCardinality<
   undefined extends Modifiers["filter_single"]
@@ -780,6 +786,17 @@ export type objectTypeToSelectShape<T extends ObjectType = ObjectType> =
       : any;
   }> & { [k: string]: unknown };
 
+export type namedTupleTypeToSelectShape<
+  T extends NamedTupleType = NamedTupleType
+> = Partial<{
+  [k in keyof T["__shape__"]]: T["__shape__"][k] extends ObjectType
+    ?
+        | boolean
+        | TypeSet<anonymizeObject<T["__shape__"][k]>, Cardinality.One>
+    : boolean | TypeSet<T["__shape__"][k], Cardinality.One>;
+}> &
+  Record<string, unknown>;
+
 // incorporate __shape__ (computeds) on selection shapes
 // this works but a major rewrite of setToTsType is required
 // to incorporate __shape__-based selection shapes into
@@ -879,6 +896,43 @@ export function select<Expr extends ObjectTypeExpression>(
 export function select<Expr extends TypeSet>(
   expr: Expr
 ): $expr_Select<stripSet<Expr>>;
+export function select<
+  Expr extends TypeSet<NamedTupleType>,
+  RawShape extends namedTupleTypeToSelectShape<Expr["__element__"]>,
+  Shape extends RawShape & SelectModifiers<Expr["__element__"]>,
+  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
+>(
+  expr: Expr,
+  shape: (
+    scope: $expr_TuplePath<Expr["__element__"], Cardinality.One>
+  ) => Readonly<Shape>
+): $expr_Select<{
+  __element__: ObjectType<
+    `std::FreeObject`,
+    {
+      [k in keyof Expr["__element__"]["__shape__"]]: Expr["__element__"]["__shape__"][k] extends ObjectType
+        ? LinkDesc<
+            Expr["__element__"]["__shape__"][k],
+            Cardinality.One,
+            Record<never, never>,
+            false,
+            true,
+            true,
+            false
+          >
+        : PropertyDesc<
+            Expr["__element__"]["__shape__"][k],
+            Cardinality.One,
+            false,
+            true,
+            true,
+            false
+          >;
+    },
+    Omit<normaliseShape<Shape>, SelectModifierNames>
+  >;
+  __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
+}>;
 export function select<
   Expr extends ObjectTypeExpression,
   Shape extends objectTypeToSelectShape<Expr["__element__"]> &
