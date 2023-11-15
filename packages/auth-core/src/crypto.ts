@@ -1,3 +1,4 @@
+// TODO: Drop when Node 18 is EOL: 2025-04-30
 if (!globalThis.crypto) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   globalThis.crypto = require("node:crypto").webcrypto;
