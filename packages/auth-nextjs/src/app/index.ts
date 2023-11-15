@@ -466,7 +466,7 @@ export class NextAppAuth extends NextAuth {
         }
       },
       emailPasswordSendPasswordResetEmail: async (
-        data: FormData | { email: string; resetUrl: string }
+        data: FormData | { email: string }
       ) => {
         if (!this.options.passwordResetUrl) {
           throw new Error(`'passwordResetUrl' option not configured`);
