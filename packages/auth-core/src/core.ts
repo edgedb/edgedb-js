@@ -1,9 +1,12 @@
 import jwtDecode from "jwt-decode";
 import * as edgedb from "edgedb";
-import { ResolvedConnectConfig } from "edgedb/dist/conUtils";
+import { type ResolvedConnectConfig } from "edgedb/dist/conUtils";
 
 import * as pkce from "./pkce";
-import { BuiltinOAuthProviderNames, emailPasswordProviderName } from "./consts";
+import {
+  type BuiltinOAuthProviderNames,
+  emailPasswordProviderName,
+} from "./consts";
 
 export interface TokenData {
   auth_token: string;
@@ -73,8 +76,9 @@ export class Auth {
     return null as any;
   }
 
-  createPKCESession() {
-    return new AuthPCKESession(this);
+  async createPKCESession() {
+    const { challenge, verifier } = await pkce.createVerifierChallengePair();
+    return new AuthPCKESession(this, challenge, verifier);
   }
 
   getToken(code: string, verifier: string): Promise<TokenData> {
@@ -87,7 +91,7 @@ export class Auth {
   }
 
   async signinWithEmailPassword(email: string, password: string) {
-    const { challenge, verifier } = pkce.createVerifierChallengePair();
+    const { challenge, verifier } = await pkce.createVerifierChallengePair();
     const { code } = await this._post<{ code: string }>("authenticate", {
       provider: emailPasswordProviderName,
       challenge,
@@ -105,7 +109,7 @@ export class Auth {
     | { status: "complete"; tokenData: TokenData }
     | { status: "verificationRequired"; verifier: string }
   > {
-    const { challenge, verifier } = pkce.createVerifierChallengePair();
+    const { challenge, verifier } = await pkce.createVerifierChallengePair();
     const result = await this._post<
       { code: string } | { verification_email_sent_at: string }
     >("register", {
@@ -200,14 +204,11 @@ export class Auth {
 }
 
 export class AuthPCKESession {
-  public readonly challenge: string;
-  public readonly verifier: string;
-
-  constructor(private auth: Auth) {
-    const { challenge, verifier } = pkce.createVerifierChallengePair();
-    this.challenge = challenge;
-    this.verifier = verifier;
-  }
+  constructor(
+    private auth: Auth,
+    public readonly challenge: string,
+    public readonly verifier: string
+  ) {}
 
   getOAuthUrl(
     providerName: BuiltinOAuthProviderNames,

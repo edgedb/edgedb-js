@@ -76,7 +76,9 @@ export class NextAppAuth extends NextAuth {
               throw new Error(`invalid provider_name: ${provider}`);
             }
             const redirectUrl = `${this._authRoute}/oauth/callback`;
-            const pkceSession = (await this.core).createPKCESession();
+            const pkceSession = await this.core.then((core) =>
+              core.createPKCESession()
+            );
             cookies().set({
               name: this.options.pkceVerifierCookieName,
               value: pkceSession.verifier,
@@ -238,7 +240,9 @@ export class NextAppAuth extends NextAuth {
           }
           case "builtin/signin":
           case "builtin/signup": {
-            const pkceSession = (await this.core).createPKCESession();
+            const pkceSession = await this.core.then((core) =>
+              core.createPKCESession()
+            );
             cookies().set({
               name: this.options.pkceVerifierCookieName,
               value: pkceSession.verifier,
