@@ -3,14 +3,14 @@ if (!globalThis.crypto) {
   globalThis.crypto = require("node:crypto").webcrypto;
 }
 
-export function bytesToBase64Url(bytes: Uint8Array): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-  let base64url = "";
-  let i = 0;
+const BASE64_URL_CHARS =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
+export function bytesToBase64Url(bytes: Uint8Array): string {
   const len = bytes.length;
-  for (; i < len; i += 3) {
+  let base64url = "";
+
+  for (let i = 0; i < len; i += 3) {
     const b1 = bytes[i] & 0xff;
     const b2 = i + 1 < len ? bytes[i + 1] & 0xff : 0;
     const b3 = i + 2 < len ? bytes[i + 2] & 0xff : 0;
@@ -20,12 +20,12 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
     const enc3 = ((b2 & 0x0f) << 2) | (b3 >> 6);
     const enc4 = b3 & 0x3f;
 
-    base64url += chars.charAt(enc1) + chars.charAt(enc2);
+    base64url += BASE64_URL_CHARS.charAt(enc1) + BASE64_URL_CHARS.charAt(enc2);
     if (i + 1 < len) {
-      base64url += chars.charAt(enc3);
+      base64url += BASE64_URL_CHARS.charAt(enc3);
     }
     if (i + 2 < len) {
-      base64url += chars.charAt(enc4);
+      base64url += BASE64_URL_CHARS.charAt(enc4);
     }
   }
 
