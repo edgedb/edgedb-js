@@ -24,6 +24,7 @@ export abstract class NextAuth {
       authCookieName: options.authCookieName ?? "edgedb-session",
       pkceVerifierCookieName:
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
+      passwordResetUrl: options.passwordResetUrl,
     };
   }
 
