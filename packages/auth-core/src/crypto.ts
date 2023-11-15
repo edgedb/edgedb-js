@@ -33,11 +33,10 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
 }
 
 export async function sha256(
-  bytes: BufferSource | string
+  source: BufferSource | string
 ): Promise<Uint8Array> {
-  if (typeof bytes === "string") {
-    bytes = new TextEncoder().encode(bytes);
-  }
+  const bytes =
+    typeof source === "string" ? new TextEncoder().encode(source) : source;
   return new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
 }
 
