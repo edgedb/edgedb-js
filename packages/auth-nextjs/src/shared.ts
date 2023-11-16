@@ -1,5 +1,13 @@
 import { Client } from "edgedb";
-import { Auth, BuiltinOAuthProviderNames } from "@edgedb/auth-core";
+import {
+  Auth,
+  BuiltinOAuthProviderNames,
+  emailPasswordProviderName,
+} from "@edgedb/auth-core";
+
+export type BuiltinProviderNames =
+  | BuiltinOAuthProviderNames
+  | typeof emailPasswordProviderName;
 
 export interface NextAuthOptions {
   baseUrl: string;

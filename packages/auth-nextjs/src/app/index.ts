@@ -9,9 +9,19 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 
-import { NextAuth, NextAuthSession, type NextAuthOptions } from "../shared";
+import {
+  NextAuth,
+  NextAuthSession,
+  type NextAuthOptions,
+  BuiltinProviderNames,
+} from "../shared";
 
-export { NextAuthSession, type NextAuthOptions };
+export {
+  NextAuthSession,
+  type NextAuthOptions,
+  type BuiltinProviderNames,
+  type TokenData,
+};
 
 type ParamsOrError<Result extends object> =
   | ({ error: null } & Result)
@@ -46,6 +56,10 @@ export class NextAppAuth extends NextAuth {
       this.client,
       cookies().get(this.options.authCookieName)?.value.split(";")[0]
     );
+  }
+
+  async getProvidersInfo() {
+    return (await this.core).getProvidersInfo();
   }
 
   createAuthRouteHandlers({
