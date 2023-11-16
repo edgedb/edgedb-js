@@ -513,7 +513,7 @@ export class NextAppAuth extends NextAuth {
         });
       },
       emailPasswordResetPassword: async (
-        data: FormData | { resetToken: string; password: string }
+        data: FormData | { reset_token: string; password: string }
       ) => {
         const verifier = cookies().get(
           this.options.pkceVerifierCookieName
