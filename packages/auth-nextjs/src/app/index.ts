@@ -350,8 +350,8 @@ export class NextAppAuth extends NextAuth {
             }
           }
           case "emailpassword/send-reset-email": {
-            if (!this.options.passwordResetUrl) {
-              throw new Error(`'passwordResetUrl' option not configured`);
+            if (!this.options.passwordResetPath) {
+              throw new Error(`'passwordResetPath' option not configured`);
             }
             const [email] = _extractParams(
               await _getReqBody(req),
@@ -360,7 +360,13 @@ export class NextAppAuth extends NextAuth {
             );
             const { verifier } = await (
               await this.core
-            ).sendPasswordResetEmail(email, this.options.passwordResetUrl);
+            ).sendPasswordResetEmail(
+              email,
+              new URL(
+                this.options.passwordResetPath,
+                this.options.baseUrl
+              ).toString()
+            );
             cookies().set({
               name: this.options.pkceVerifierCookieName,
               value: verifier,
@@ -486,15 +492,18 @@ export class NextAppAuth extends NextAuth {
       emailPasswordSendPasswordResetEmail: async (
         data: FormData | { email: string }
       ) => {
-        if (!this.options.passwordResetUrl) {
-          throw new Error(`'passwordResetUrl' option not configured`);
+        if (!this.options.passwordResetPath) {
+          throw new Error(`'passwordResetPath' option not configured`);
         }
         const [email] = _extractParams(data, ["email"], "email missing");
         const { verifier } = await (
           await this.core
         ).sendPasswordResetEmail(
           email,
-          `${this.options.baseUrl}/${this.options.passwordResetUrl}`
+          new URL(
+            this.options.passwordResetPath,
+            this.options.baseUrl
+          ).toString()
         );
         cookies().set({
           name: this.options.pkceVerifierCookieName,

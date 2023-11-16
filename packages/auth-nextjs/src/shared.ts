@@ -6,10 +6,10 @@ export interface NextAuthOptions {
   authRoutesPath?: string;
   authCookieName?: string;
   pkceVerifierCookieName?: string;
-  passwordResetUrl?: string;
+  passwordResetPath?: string;
 }
 
-type OptionalOptions = "passwordResetUrl";
+type OptionalOptions = "passwordResetPath";
 
 export abstract class NextAuth {
   /** @internal */
@@ -24,7 +24,7 @@ export abstract class NextAuth {
       authCookieName: options.authCookieName ?? "edgedb-session",
       pkceVerifierCookieName:
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
-      passwordResetUrl: options.passwordResetUrl,
+      passwordResetPath: options.passwordResetPath,
     };
   }
 
