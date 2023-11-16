@@ -66,8 +66,12 @@ export class NextAuthSession {
 
   async isLoggedIn() {
     if (!this.authToken) return false;
-    return (await this.client.querySingle(
-      `select exists global ext::auth::ClientTokenIdentity`
-    )) as boolean;
+    try {
+      return (await this.client.querySingle(
+        `select exists global ext::auth::ClientTokenIdentity`
+      )) as boolean;
+    } catch {
+      return false;
+    }
   }
 }
