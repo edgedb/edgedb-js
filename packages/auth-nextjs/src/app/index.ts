@@ -23,9 +23,9 @@ export {
   type TokenData,
 };
 
-type ParamsOrError<Result extends object> =
-  | ({ error: null } & Result)
-  | ({ error: Error } & { [Key in keyof Result]?: undefined });
+type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
+  | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)
+  | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
 
 export interface CreateAuthRouteHandlers {
   onOAuthCallback(
@@ -36,7 +36,12 @@ export interface CreateAuthRouteHandlers {
     params: ParamsOrError<{ tokenData: TokenData | null }>
   ): void;
   onEmailPasswordReset(params: ParamsOrError<{ tokenData: TokenData }>): void;
-  onEmailVerify(params: ParamsOrError<{ tokenData: TokenData }>): void;
+  onEmailVerify(
+    params: ParamsOrError<
+      { tokenData: TokenData },
+      { verificationToken?: string }
+    >
+  ): void;
   onBuiltinUICallback(
     params: ParamsOrError<{ tokenData: TokenData | null; isSignUp: boolean }>
   ): void;
@@ -172,6 +177,7 @@ export class NextAppAuth extends NextAuth {
             if (!verifier) {
               return onEmailVerify({
                 error: new Error("no pkce verifier cookie found"),
+                verificationToken,
               });
             }
             let tokenData: TokenData;
@@ -182,6 +188,7 @@ export class NextAppAuth extends NextAuth {
             } catch (err) {
               return onEmailVerify({
                 error: err instanceof Error ? err : new Error(String(err)),
+                verificationToken,
               });
             }
             cookies().set({
