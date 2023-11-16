@@ -342,6 +342,12 @@ export class NextAppAuth extends NextAuth {
                 error: err instanceof Error ? err : new Error(String(err)),
               });
             }
+            cookies().set({
+              name: this.options.pkceVerifierCookieName,
+              value: result.verifier,
+              httpOnly: true,
+              sameSite: "strict",
+            });
             if (result.status === "complete") {
               cookies().set({
                 name: this.options.authCookieName,
@@ -354,12 +360,6 @@ export class NextAppAuth extends NextAuth {
                 tokenData: result.tokenData,
               });
             } else {
-              cookies().set({
-                name: this.options.pkceVerifierCookieName,
-                value: result.verifier,
-                httpOnly: true,
-                sameSite: "strict",
-              });
               return onEmailPasswordSignUp({ error: null, tokenData: null });
             }
           }
@@ -485,6 +485,12 @@ export class NextAppAuth extends NextAuth {
           password,
           `${this._authRoute}/emailpassword/verify`
         );
+        cookies().set({
+          name: this.options.pkceVerifierCookieName,
+          value: result.verifier,
+          httpOnly: true,
+          sameSite: "strict",
+        });
         if (result.status === "complete") {
           cookies().set({
             name: this.options.authCookieName,
@@ -493,15 +499,8 @@ export class NextAppAuth extends NextAuth {
             sameSite: "strict",
           });
           return result.tokenData;
-        } else {
-          cookies().set({
-            name: this.options.pkceVerifierCookieName,
-            value: result.verifier,
-            httpOnly: true,
-            sameSite: "strict",
-          });
-          return null;
         }
+        return null;
       },
       emailPasswordSendPasswordResetEmail: async (
         data: FormData | { email: string }
