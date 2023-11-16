@@ -29,7 +29,11 @@ type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
 
 export interface CreateAuthRouteHandlers {
   onOAuthCallback(
-    params: ParamsOrError<{ tokenData: TokenData; isSignUp: boolean }>
+    params: ParamsOrError<{
+      tokenData: TokenData;
+      provider: BuiltinOAuthProviderNames;
+      isSignUp: boolean;
+    }>
   ): void;
   onEmailPasswordSignIn(params: ParamsOrError<{ tokenData: TokenData }>): void;
   onEmailPasswordSignUp(
@@ -43,7 +47,15 @@ export interface CreateAuthRouteHandlers {
     >
   ): void;
   onBuiltinUICallback(
-    params: ParamsOrError<{ tokenData: TokenData | null; isSignUp: boolean }>
+    params: ParamsOrError<
+      (
+        | {
+            tokenData: TokenData;
+            provider: BuiltinProviderNames;
+          }
+        | { tokenData: null; provider: null }
+      ) & { isSignUp: boolean }
+    >
   ): void;
   onSignout(): void;
 }
@@ -156,7 +168,14 @@ export class NextAppAuth extends NextAuth {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onOAuthCallback({ error: null, tokenData, isSignUp });
+            return onOAuthCallback({
+              error: null,
+              tokenData,
+              provider: req.nextUrl.searchParams.get(
+                "provider"
+              ) as BuiltinOAuthProviderNames,
+              isSignUp,
+            });
           }
           case "emailpassword/verify": {
             if (!onEmailVerify) {
@@ -224,6 +243,7 @@ export class NextAppAuth extends NextAuth {
                 return onBuiltinUICallback({
                   error: null,
                   tokenData: null,
+                  provider: null,
                   isSignUp: true,
                 });
               }
@@ -257,7 +277,14 @@ export class NextAppAuth extends NextAuth {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onBuiltinUICallback({ error: null, tokenData, isSignUp });
+            return onBuiltinUICallback({
+              error: null,
+              tokenData,
+              provider: req.nextUrl.searchParams.get(
+                "provider"
+              ) as BuiltinProviderNames,
+              isSignUp,
+            });
           }
           case "builtin/signin":
           case "builtin/signup": {
