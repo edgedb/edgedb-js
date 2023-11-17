@@ -1,14 +1,11 @@
-import crypto from "node:crypto";
+import { bytesToBase64Url, sha256, randomBytes } from "./crypto";
 
-export function createVerifierChallengePair(): {
+export async function createVerifierChallengePair(): Promise<{
   verifier: string;
   challenge: string;
-} {
-  const verifier = crypto.randomBytes(32).toString("base64url");
-  const challenge = crypto
-    .createHash("sha256")
-    .update(verifier)
-    .digest("base64url");
+}> {
+  const verifier = bytesToBase64Url(randomBytes(32));
+  const challenge = await sha256(verifier).then(bytesToBase64Url);
 
   return { verifier, challenge };
 }
