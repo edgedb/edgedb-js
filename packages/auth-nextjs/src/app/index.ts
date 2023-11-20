@@ -358,10 +358,15 @@ export class NextAppAuth extends NextAuth {
               ["email"],
               "email missing from request body"
             );
-            (await this.core).sendPasswordResetEmail(
-              email,
-              this.options.passwordResetUrl
-            );
+            const { verifier } = await (
+              await this.core
+            ).sendPasswordResetEmail(email, this.options.passwordResetUrl);
+            cookies().set({
+              name: this.options.pkceVerifierCookieName,
+              value: verifier,
+              httpOnly: true,
+              sameSite: "strict",
+            });
             return new Response(null, { status: 204 });
           }
           case "emailpassword/reset-password": {
@@ -372,6 +377,14 @@ export class NextAppAuth extends NextAuth {
             }
             let tokenData: TokenData;
             try {
+              const verifier = req.cookies.get(
+                this.options.pkceVerifierCookieName
+              )?.value;
+              if (!verifier) {
+                return onEmailPasswordReset({
+                  error: new Error("no pkce verifier cookie found"),
+                });
+              }
               const [resetToken, password] = _extractParams(
                 await _getReqBody(req),
                 ["reset_token", "password"],
@@ -380,7 +393,7 @@ export class NextAppAuth extends NextAuth {
 
               tokenData = await (
                 await this.core
-              ).resetPasswordWithResetToken(resetToken, password);
+              ).resetPasswordWithResetToken(resetToken, verifier, password);
             } catch (err) {
               return onEmailPasswordReset({
                 error: err instanceof Error ? err : new Error(String(err)),
@@ -392,6 +405,7 @@ export class NextAppAuth extends NextAuth {
               httpOnly: true,
               sameSite: "strict",
             });
+            cookies().delete(this.options.pkceVerifierCookieName);
             return onEmailPasswordReset({ error: null, tokenData });
           }
           case "emailpassword/resend-verification-email": {
@@ -476,16 +490,28 @@ export class NextAppAuth extends NextAuth {
           throw new Error(`'passwordResetUrl' option not configured`);
         }
         const [email] = _extractParams(data, ["email"], "email missing");
-        await (
+        const { verifier } = await (
           await this.core
         ).sendPasswordResetEmail(
           email,
           `${this.options.baseUrl}/${this.options.passwordResetUrl}`
         );
+        cookies().set({
+          name: this.options.pkceVerifierCookieName,
+          value: verifier,
+          httpOnly: true,
+          sameSite: "strict",
+        });
       },
       emailPasswordResetPassword: async (
         data: FormData | { resetToken: string; password: string }
       ) => {
+        const verifier = cookies().get(
+          this.options.pkceVerifierCookieName
+        )?.value;
+        if (!verifier) {
+          throw new Error("no pkce verifier cookie found");
+        }
         const [resetToken, password] = _extractParams(
           data,
           ["reset_token", "password"],
@@ -493,13 +519,14 @@ export class NextAppAuth extends NextAuth {
         );
         const tokenData = await (
           await this.core
-        ).resetPasswordWithResetToken(resetToken, password);
+        ).resetPasswordWithResetToken(resetToken, verifier, password);
         cookies().set({
           name: this.options.authCookieName,
           value: tokenData.auth_token,
           httpOnly: true,
           sameSite: "strict",
         });
+        cookies().delete(this.options.pkceVerifierCookieName);
         return tokenData;
       },
       emailPasswordResendVerificationEmail: async (

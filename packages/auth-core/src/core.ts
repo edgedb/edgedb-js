@@ -145,11 +145,16 @@ export class Auth {
   }
 
   async sendPasswordResetEmail(email: string, resetUrl: string) {
-    return this._post<{ email_sent: string }>("send-reset-email", {
-      provider: emailPasswordProviderName,
-      email,
-      reset_url: resetUrl,
-    });
+    const { challenge, verifier } = pkce.createVerifierChallengePair();
+    return {
+      verifier,
+      ...(await this._post<{ email_sent: string }>("send-reset-email", {
+        provider: emailPasswordProviderName,
+        challenge,
+        email,
+        reset_url: resetUrl,
+      })),
+    };
   }
 
   static checkPasswordResetTokenValid(resetToken: string) {
@@ -169,19 +174,24 @@ export class Auth {
     }
   }
 
-  async resetPasswordWithResetToken(resetToken: string, password: string) {
-    return this._post<TokenData>("reset-password", {
+  async resetPasswordWithResetToken(
+    resetToken: string,
+    verifier: string,
+    password: string
+  ) {
+    const { code } = await this._post<{ code: string }>("reset-password", {
       provider: emailPasswordProviderName,
       reset_token: resetToken,
       password,
     });
+    return this.getToken(code, verifier);
   }
 
   async getProvidersInfo() {
     // TODO: cache this data when we have a way to invalidate on config update
     try {
       return await this.client.queryRequiredSingle<{
-        oauth: { name: string; display_name: string }[];
+        oauth: { name: BuiltinOAuthProviderNames; display_name: string }[];
         emailPassword: boolean;
       }>(`
       with
