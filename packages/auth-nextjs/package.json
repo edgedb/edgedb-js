@@ -29,6 +29,6 @@
     "edgedb": "^1.3.6"
   },
   "dependencies": {
-    "@edgedb/auth-core": "0.1.0-alpha.1"
+    "@edgedb/auth-core": "0.1.0-beta.1"
   }
 }
