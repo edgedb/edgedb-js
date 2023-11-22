@@ -4,3 +4,6 @@ import * as testbase from "../../driver/test/testbase";
 export const getClient = testbase.getClient as unknown as (
   opts?: ConnectOptions
 ) => Client;
+
+export const getConnectOptions =
+  testbase.getConnectOptions as unknown as () => ConnectOptions;
