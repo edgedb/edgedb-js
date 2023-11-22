@@ -9,26 +9,53 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 
-import { NextAuth, NextAuthSession, type NextAuthOptions } from "../shared";
+import {
+  NextAuth,
+  NextAuthSession,
+  type NextAuthOptions,
+  BuiltinProviderNames,
+} from "../shared";
 
-export { NextAuthSession, type NextAuthOptions };
+export {
+  NextAuthSession,
+  type NextAuthOptions,
+  type BuiltinProviderNames,
+  type TokenData,
+};
 
-type ParamsOrError<Result extends object> =
-  | ({ error: null } & Result)
-  | ({ error: Error } & { [Key in keyof Result]?: undefined });
+type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
+  | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)
+  | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
 
 export interface CreateAuthRouteHandlers {
   onOAuthCallback(
-    params: ParamsOrError<{ tokenData: TokenData; isSignUp: boolean }>
+    params: ParamsOrError<{
+      tokenData: TokenData;
+      provider: BuiltinOAuthProviderNames;
+      isSignUp: boolean;
+    }>
   ): void;
   onEmailPasswordSignIn(params: ParamsOrError<{ tokenData: TokenData }>): void;
   onEmailPasswordSignUp(
     params: ParamsOrError<{ tokenData: TokenData | null }>
   ): void;
   onEmailPasswordReset(params: ParamsOrError<{ tokenData: TokenData }>): void;
-  onEmailVerify(params: ParamsOrError<{ tokenData: TokenData }>): void;
+  onEmailVerify(
+    params: ParamsOrError<
+      { tokenData: TokenData },
+      { verificationToken?: string }
+    >
+  ): void;
   onBuiltinUICallback(
-    params: ParamsOrError<{ tokenData: TokenData | null; isSignUp: boolean }>
+    params: ParamsOrError<
+      (
+        | {
+            tokenData: TokenData;
+            provider: BuiltinProviderNames;
+          }
+        | { tokenData: null; provider: null }
+      ) & { isSignUp: boolean }
+    >
   ): void;
   onSignout(): void;
 }
@@ -46,6 +73,10 @@ export class NextAppAuth extends NextAuth {
       this.client,
       cookies().get(this.options.authCookieName)?.value.split(";")[0]
     );
+  }
+
+  async getProvidersInfo() {
+    return (await this.core).getProvidersInfo();
   }
 
   createAuthRouteHandlers({
@@ -137,7 +168,14 @@ export class NextAppAuth extends NextAuth {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onOAuthCallback({ error: null, tokenData, isSignUp });
+            return onOAuthCallback({
+              error: null,
+              tokenData,
+              provider: req.nextUrl.searchParams.get(
+                "provider"
+              ) as BuiltinOAuthProviderNames,
+              isSignUp,
+            });
           }
           case "emailpassword/verify": {
             if (!onEmailVerify) {
@@ -158,6 +196,7 @@ export class NextAppAuth extends NextAuth {
             if (!verifier) {
               return onEmailVerify({
                 error: new Error("no pkce verifier cookie found"),
+                verificationToken,
               });
             }
             let tokenData: TokenData;
@@ -168,6 +207,7 @@ export class NextAppAuth extends NextAuth {
             } catch (err) {
               return onEmailVerify({
                 error: err instanceof Error ? err : new Error(String(err)),
+                verificationToken,
               });
             }
             cookies().set({
@@ -203,6 +243,7 @@ export class NextAppAuth extends NextAuth {
                 return onBuiltinUICallback({
                   error: null,
                   tokenData: null,
+                  provider: null,
                   isSignUp: true,
                 });
               }
@@ -236,7 +277,14 @@ export class NextAppAuth extends NextAuth {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onBuiltinUICallback({ error: null, tokenData, isSignUp });
+            return onBuiltinUICallback({
+              error: null,
+              tokenData,
+              provider: req.nextUrl.searchParams.get(
+                "provider"
+              ) as BuiltinProviderNames,
+              isSignUp,
+            });
           }
           case "builtin/signin":
           case "builtin/signup": {
@@ -328,6 +376,12 @@ export class NextAppAuth extends NextAuth {
                 error: err instanceof Error ? err : new Error(String(err)),
               });
             }
+            cookies().set({
+              name: this.options.pkceVerifierCookieName,
+              value: result.verifier,
+              httpOnly: true,
+              sameSite: "strict",
+            });
             if (result.status === "complete") {
               cookies().set({
                 name: this.options.authCookieName,
@@ -340,18 +394,12 @@ export class NextAppAuth extends NextAuth {
                 tokenData: result.tokenData,
               });
             } else {
-              cookies().set({
-                name: this.options.pkceVerifierCookieName,
-                value: result.verifier,
-                httpOnly: true,
-                sameSite: "strict",
-              });
               return onEmailPasswordSignUp({ error: null, tokenData: null });
             }
           }
           case "emailpassword/send-reset-email": {
-            if (!this.options.passwordResetUrl) {
-              throw new Error(`'passwordResetUrl' option not configured`);
+            if (!this.options.passwordResetPath) {
+              throw new Error(`'passwordResetPath' option not configured`);
             }
             const [email] = _extractParams(
               await _getReqBody(req),
@@ -360,7 +408,13 @@ export class NextAppAuth extends NextAuth {
             );
             const { verifier } = await (
               await this.core
-            ).sendPasswordResetEmail(email, this.options.passwordResetUrl);
+            ).sendPasswordResetEmail(
+              email,
+              new URL(
+                this.options.passwordResetPath,
+                this.options.baseUrl
+              ).toString()
+            );
             cookies().set({
               name: this.options.pkceVerifierCookieName,
               value: verifier,
@@ -465,6 +519,12 @@ export class NextAppAuth extends NextAuth {
           password,
           `${this._authRoute}/emailpassword/verify`
         );
+        cookies().set({
+          name: this.options.pkceVerifierCookieName,
+          value: result.verifier,
+          httpOnly: true,
+          sameSite: "strict",
+        });
         if (result.status === "complete") {
           cookies().set({
             name: this.options.authCookieName,
@@ -473,28 +533,24 @@ export class NextAppAuth extends NextAuth {
             sameSite: "strict",
           });
           return result.tokenData;
-        } else {
-          cookies().set({
-            name: this.options.pkceVerifierCookieName,
-            value: result.verifier,
-            httpOnly: true,
-            sameSite: "strict",
-          });
-          return null;
         }
+        return null;
       },
       emailPasswordSendPasswordResetEmail: async (
         data: FormData | { email: string }
       ) => {
-        if (!this.options.passwordResetUrl) {
-          throw new Error(`'passwordResetUrl' option not configured`);
+        if (!this.options.passwordResetPath) {
+          throw new Error(`'passwordResetPath' option not configured`);
         }
         const [email] = _extractParams(data, ["email"], "email missing");
         const { verifier } = await (
           await this.core
         ).sendPasswordResetEmail(
           email,
-          `${this.options.baseUrl}/${this.options.passwordResetUrl}`
+          new URL(
+            this.options.passwordResetPath,
+            this.options.baseUrl
+          ).toString()
         );
         cookies().set({
           name: this.options.pkceVerifierCookieName,
@@ -504,7 +560,7 @@ export class NextAppAuth extends NextAuth {
         });
       },
       emailPasswordResetPassword: async (
-        data: FormData | { resetToken: string; password: string }
+        data: FormData | { reset_token: string; password: string }
       ) => {
         const verifier = cookies().get(
           this.options.pkceVerifierCookieName

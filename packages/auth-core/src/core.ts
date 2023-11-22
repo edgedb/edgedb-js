@@ -106,7 +106,7 @@ export class Auth {
     password: string,
     verifyUrl: string
   ): Promise<
-    | { status: "complete"; tokenData: TokenData }
+    | { status: "complete"; verifier: string; tokenData: TokenData }
     | { status: "verificationRequired"; verifier: string }
   > {
     const { challenge, verifier } = await pkce.createVerifierChallengePair();
@@ -122,6 +122,7 @@ export class Auth {
     if ("code" in result) {
       return {
         status: "complete",
+        verifier,
         tokenData: await this.getToken(result.code, verifier),
       };
     } else {
@@ -145,7 +146,7 @@ export class Auth {
   }
 
   async sendPasswordResetEmail(email: string, resetUrl: string) {
-    const { challenge, verifier } = pkce.createVerifierChallengePair();
+    const { challenge, verifier } = await pkce.createVerifierChallengePair();
     return {
       verifier,
       ...(await this._post<{ email_sent: string }>("send-reset-email", {

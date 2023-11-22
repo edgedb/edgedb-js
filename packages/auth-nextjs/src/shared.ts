@@ -1,15 +1,23 @@
 import { Client } from "edgedb";
-import { Auth, BuiltinOAuthProviderNames } from "@edgedb/auth-core";
+import {
+  Auth,
+  BuiltinOAuthProviderNames,
+  emailPasswordProviderName,
+} from "@edgedb/auth-core";
+
+export type BuiltinProviderNames =
+  | BuiltinOAuthProviderNames
+  | typeof emailPasswordProviderName;
 
 export interface NextAuthOptions {
   baseUrl: string;
   authRoutesPath?: string;
   authCookieName?: string;
   pkceVerifierCookieName?: string;
-  passwordResetUrl?: string;
+  passwordResetPath?: string;
 }
 
-type OptionalOptions = "passwordResetUrl";
+type OptionalOptions = "passwordResetPath";
 
 export abstract class NextAuth {
   /** @internal */
@@ -24,7 +32,7 @@ export abstract class NextAuth {
       authCookieName: options.authCookieName ?? "edgedb-session",
       pkceVerifierCookieName:
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
-      passwordResetUrl: options.passwordResetUrl,
+      passwordResetPath: options.passwordResetPath,
     };
   }
 
@@ -66,8 +74,12 @@ export class NextAuthSession {
 
   async isLoggedIn() {
     if (!this.authToken) return false;
-    return (await this.client.querySingle(
-      `select exists global ext::auth::ClientTokenIdentity`
-    )) as boolean;
+    try {
+      return await this.client.querySingle<boolean>(
+        `select exists global ext::auth::ClientTokenIdentity`
+      );
+    } catch {
+      return false;
+    }
   }
 }
