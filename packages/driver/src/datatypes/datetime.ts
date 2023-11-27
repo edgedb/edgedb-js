@@ -113,6 +113,9 @@ export class LocalTime {
     this.millisecond = isoMillisecond;
     this.microsecond = isoMicrosecond;
     this.nanosecond = isoNanosecond;
+
+    forwardJsonAsToString(this);
+    throwOnValueOf(this, "LocalTime");
   }
 
   toString(): string {
@@ -130,14 +133,6 @@ export class LocalTime {
         .padStart(3, "0")}`.replace(/(?:0+)$/, "");
     }
     return repr;
-  }
-
-  toJSON(): string {
-    return this.toString();
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare LocalTime");
   }
 }
 
@@ -171,6 +166,9 @@ export class LocalDate {
       date.setUTCFullYear(isoYear);
     }
     localDateInstances.set(this, date);
+
+    forwardJsonAsToString(this);
+    throwOnValueOf(this, "LocalDate");
   }
 
   get year(): number {
@@ -222,14 +220,6 @@ export class LocalDate {
     const day = this.day.toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
-
-  toJSON(): string {
-    return this.toString();
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare LocalDate");
-  }
 }
 
 export function LocalDateToOrdinal(localdate: LocalDate): number {
@@ -264,6 +254,7 @@ export class LocalDateTime extends LocalDate {
       isoNanosecond
     );
     localTimeInstances.set(this, time);
+    throwOnValueOf(this, "LocalDateTime");
   }
 
   get hour(): number {
@@ -287,10 +278,6 @@ export class LocalDateTime extends LocalDate {
 
   toString(): string {
     return `${super.toString()}T${localTimeInstances.get(this)!.toString()}`;
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare LocalDateTime");
   }
 }
 
@@ -389,6 +376,9 @@ export class Duration {
     this.microseconds = microseconds || 0;
     this.nanoseconds = nanoseconds || 0;
     this.sign = sign || 0;
+
+    forwardJsonAsToString(this);
+    throwOnValueOf(this, "TemporalDuration");
   }
 
   get blank(): boolean {
@@ -451,14 +441,6 @@ export class Duration {
       dateParts +
       (timeParts ? "T" + timeParts : "")
     );
-  }
-
-  toJSON(): string {
-    return this.toString();
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare TemporalDuration");
   }
 
   static from(item: string | Duration | DurationLike): Duration {
@@ -606,6 +588,9 @@ export class RelativeDuration {
     this.seconds = Math.trunc(seconds) || 0;
     this.milliseconds = Math.trunc(milliseconds) || 0;
     this.microseconds = Math.trunc(microseconds) || 0;
+
+    forwardJsonAsToString(this);
+    throwOnValueOf(this, "RelativeDuration");
   }
 
   toString(): string {
@@ -646,14 +631,6 @@ export class RelativeDuration {
 
     return str;
   }
-
-  toJSON(): string {
-    return this.toString();
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare RelativeDuration");
-  }
 }
 
 export class DateDuration {
@@ -672,6 +649,9 @@ export class DateDuration {
     this.months = Math.trunc(months) || 0;
     this.weeks = Math.trunc(weeks) || 0;
     this.days = Math.trunc(days) || 0;
+
+    forwardJsonAsToString(this);
+    throwOnValueOf(this, "DateDuration");
   }
 
   toString(): string {
@@ -692,14 +672,6 @@ export class DateDuration {
     }
 
     return str;
-  }
-
-  toJSON(): string {
-    return this.toString();
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare DateDuration");
   }
 }
 
@@ -740,3 +712,20 @@ export function parseHumanDurationString(durationStr: string): number {
   }
   return duration;
 }
+
+const forwardJsonAsToString = (obj: object) => {
+  Object.defineProperty(obj, "toJSON", {
+    value: () => obj.toString(),
+    enumerable: false,
+    configurable: true,
+  });
+};
+const throwOnValueOf = (obj: object, typename: string) => {
+  Object.defineProperty(obj, "valueOf", {
+    value: () => {
+      throw new TypeError(`Not possible to compare ${typename}`);
+    },
+    enumerable: false,
+    configurable: true,
+  });
+};
