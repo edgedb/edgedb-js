@@ -32,6 +32,11 @@ test("types: LocalDate", async () => {
   expect(ld.day).toBe(30);
   expect(ld.month).toBe(1);
 
+  const temporalPlainDate: LocalDate = Temporal.PlainDate.from(ld);
+  expect(ld.year).toBe(temporalPlainDate.year);
+  expect(ld.month).toBe(temporalPlainDate.month);
+  expect(ld.day).toBe(temporalPlainDate.day);
+
   for (const [y, m, d, n] of [
     [1, 1, 1, 1],
     [1, 12, 31, 365],
@@ -67,7 +72,7 @@ test("types: LocalDate", async () => {
     const day = Math.random() * (Math.floor(month) === 2 ? 28 : 30) + 1;
 
     const localDate = new LocalDate(year, month, day);
-    const plainDate = new Temporal.PlainDate(year, month, day);
+    const plainDate: LocalDate = new Temporal.PlainDate(year, month, day);
 
     expect(localDate.year).toBe(plainDate.year);
     expect(localDate.month).toBe(plainDate.month);
@@ -101,7 +106,7 @@ test("types: LocalTime", async () => {
       microsecond,
       nanosecond
     );
-    const plainTime = new Temporal.PlainTime(
+    const plainTime: LocalTime = new Temporal.PlainTime(
       hour,
       minute,
       second,
@@ -154,7 +159,7 @@ test("types: Duration", async () => {
       );
 
     const duration = new Duration(...args);
-    const temporalDuration = new Temporal.Duration(...args);
+    const temporalDuration: Duration = new Temporal.Duration(...args);
 
     expect(duration.years).toBe(temporalDuration.years);
     expect(duration.months).toBe(temporalDuration.months);
