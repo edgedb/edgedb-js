@@ -18,7 +18,6 @@
 
 import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { ICodec, ScalarCodec } from "./ifaces";
-import * as bi from "../primitives/bigint";
 import {
   LocalDateTime,
   LocalDate,
@@ -77,23 +76,22 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
       );
     }
 
-    const ms = bi.make(localDateInstances.get(object)!.getTime() - TIMESHIFT);
-    let us = bi.add(
-      bi.mul(ms, bi.make(1000)),
-      bi.make(
-        object.hour * 3_600_000_000 +
-          object.minute * 60_000_000 +
-          object.second * 1_000_000 +
-          object.millisecond * 1000 +
+    const ms = BigInt(localDateInstances.get(object)!.getTime() - TIMESHIFT);
+    let us =
+      ms * 1000n +
+      BigInt(
+        object.hour * 36e8 +
+          object.minute * 6e7 +
+          object.second * 1e6 +
+          object.millisecond * 1e3 +
           object.microsecond
-      )
-    );
+      );
 
     if (
       (object.nanosecond === 500 && Math.abs(object.microsecond) % 2 === 1) ||
       object.nanosecond > 500
     ) {
-      us = bi.add(us, bi.make(1));
+      us += 1n;
     }
 
     buf.writeInt32(8);
@@ -101,10 +99,9 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer): LocalDateTime {
-    const bi1000 = bi.make(1000);
     const bi_us = buf.readBigInt64();
-    const bi_ms = bi.div(bi_us, bi1000);
-    let us = Number(bi.sub(bi_us, bi.mul(bi_ms, bi1000)));
+    const bi_ms = bi_us / 1000n;
+    let us = Number(bi_us - bi_ms * 1000n);
     let ms = Number(bi_ms);
     if (us < 0) {
       us += 1000;
@@ -217,38 +214,26 @@ export class DurationCodec extends ScalarCodec implements ICodec {
       );
     }
 
-    let us = bi.make(Math.abs(object.microseconds));
-    us = bi.add(
-      us,
-      bi.mul(bi.make(Math.abs(object.milliseconds)), bi.make(1_000))
-    );
-    us = bi.add(
-      us,
-      bi.mul(bi.make(Math.abs(object.seconds)), bi.make(1_000_000))
-    );
-    us = bi.add(
-      us,
-      bi.mul(bi.make(Math.abs(object.minutes)), bi.make(60_000_000))
-    );
-    us = bi.add(
-      us,
-      bi.mul(bi.make(Math.abs(object.hours)), bi.make(3_600_000_000))
-    );
+    let us = BigInt(Math.abs(object.microseconds));
+    us += BigInt(Math.abs(object.milliseconds)) * BigInt(1e3);
+    us += BigInt(Math.abs(object.seconds)) * BigInt(1e6);
+    us += BigInt(Math.abs(object.minutes)) * BigInt(6e7);
+    us += BigInt(Math.abs(object.hours)) * BigInt(36e8);
 
     if (
       (Math.abs(object.nanoseconds) === 500 &&
         Math.abs(object.microseconds) % 2 === 1) ||
       Math.abs(object.nanoseconds) > 500
     ) {
-      us = bi.add(us, bi.make(1));
+      us += 1n;
     }
 
     if (object.sign < 0) {
-      us = bi.mul(us, bi.make(-1));
+      us *= -1n;
     }
 
     buf.writeInt32(16);
-    buf.writeBigInt64(us as bigint);
+    buf.writeBigInt64(us);
     buf.writeInt32(0);
     buf.writeInt32(0);
   }
@@ -267,13 +252,13 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     let sign = 1;
     if (Number(bius) < 0) {
       sign = -1;
-      bius = bi.mul(bi.make(-1), bius);
+      bius *= -1n;
     }
 
-    const biMillion = bi.make(1_000_000);
+    const biMillion = 1_000_000n;
 
-    const biSeconds = bi.div(bius, biMillion);
-    let us = Number(bi.sub(bius, bi.mul(biSeconds, biMillion)));
+    const biSeconds = bius / biMillion;
+    let us = Number(bius - biSeconds * biMillion);
     const ms = Math.floor(us / 1000);
     us = us % 1000;
 
@@ -307,14 +292,15 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
       `);
     }
 
-    let us = bi.make(object.microseconds);
-    us = bi.add(us, bi.mul(bi.make(object.milliseconds), bi.make(1_000)));
-    us = bi.add(us, bi.mul(bi.make(object.seconds), bi.make(1_000_000)));
-    us = bi.add(us, bi.mul(bi.make(object.minutes), bi.make(60_000_000)));
-    us = bi.add(us, bi.mul(bi.make(object.hours), bi.make(3_600_000_000)));
+    const us =
+      BigInt(object.microseconds) +
+      BigInt(object.milliseconds) * BigInt(1e3) +
+      BigInt(object.seconds) * BigInt(1e6) +
+      BigInt(object.minutes) * BigInt(6e7) +
+      BigInt(object.hours) * BigInt(36e8);
 
     buf.writeInt32(16);
-    buf.writeBigInt64(us as bigint);
+    buf.writeBigInt64(us);
     buf.writeInt32(object.days + 7 * object.weeks);
     buf.writeInt32(object.months + 12 * object.years);
   }
@@ -327,13 +313,13 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
     let sign = 1;
     if (Number(bius) < 0) {
       sign = -1;
-      bius = bi.mul(bi.make(-1), bius);
+      bius *= -1n;
     }
 
-    const biMillion = bi.make(1_000_000);
+    const million = BigInt(1e6);
 
-    const biSeconds = bi.div(bius, biMillion);
-    let us = Number(bi.sub(bius, bi.mul(biSeconds, biMillion)));
+    const biSeconds = bius / million;
+    let us = Number(bius - biSeconds * million);
     const ms = Math.trunc(us / 1000);
     us = us % 1000;
 

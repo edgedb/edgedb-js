@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import { decodeInt64ToString } from "../src/compat";
 import { WriteBuffer } from "../src/primitives/buffer";
 
 test("int64 rendering", () => {
@@ -29,7 +28,7 @@ test("int64 rendering", () => {
     wbuf.reset();
     wbuf.writeInt64(inp);
     const buf = wbuf.unwrap();
-    const out = decodeInt64ToString(buf);
+    const out = buf.toString();
 
     expect(out).toBe(inp.toString());
   };

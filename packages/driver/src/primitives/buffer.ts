@@ -18,8 +18,6 @@
 
 import type char from "./chars";
 import * as chars from "./chars";
-import * as bi from "./bigint";
-import * as compat from "../compat";
 import { LegacyHeaderCodes } from "../ifaces";
 
 /* WriteBuffer over-allocation */
@@ -64,9 +62,6 @@ if (Buffer === "function") {
 }
 
 export { decodeB64, encodeB64 };
-
-const useBigInt64Fallback =
-  typeof DataView.prototype.getBigInt64 === "undefined";
 
 export class BufferError extends Error {}
 
@@ -186,13 +181,13 @@ export class WriteBuffer {
     return this;
   }
 
-  writeBigInt64(i: bi.BigIntLike): this {
-    let ii: bi.BigIntLike = i;
-    if (bi.lt(ii, bi.make(0))) {
-      ii = bi.add(bi.make("18446744073709551616"), i);
+  writeBigInt64(i: bigint): this {
+    let ii = i;
+    if (ii < 0n) {
+      ii = 18446744073709551616n + i;
     }
-    const hi = bi.rshift(ii, bi.make(32));
-    const lo = bi.bitand(ii, bi.make(0xffffffff));
+    const hi = ii >> 32n;
+    const lo = ii & 0xffffffffn;
     this.writeUInt32(Number(hi));
     this.writeUInt32(Number(lo));
     return this;
@@ -340,7 +335,7 @@ export class WriteMessageBuffer {
     return this;
   }
 
-  writeBigInt64(i: bi.BigIntLike): this {
+  writeBigInt64(i: bigint): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeChar: no current message");
     }
@@ -977,9 +972,9 @@ export class ReadBuffer {
   }
 
   private reportInt64Overflow(hi: number, lo: number): never {
-    const bhi = bi.make(hi);
-    const blo = bi.make(lo >>> 0);
-    const num = bi.add(bi.mul(bhi, bi.make(0x100000000)), blo);
+    const bhi = BigInt(hi);
+    const blo = BigInt(lo >>> 0);
+    const num = bhi * BigInt(0x100000000) + blo;
 
     throw new BufferError(
       `integer overflow: cannot unpack <std::int64>'${num.toString()}' ` +
@@ -1005,35 +1000,13 @@ export class ReadBuffer {
     return this.reportInt64Overflow(hi, lo);
   }
 
-  readBigInt64Fallback(): bi.BigIntLike {
-    if (bi.hasNativeBigInt) {
-      const hi = this.buffer.getUint32(this.pos);
-      const lo = this.buffer.getUint32(this.pos + 4);
-      this.pos += 8;
-
-      let res = (BigInt(hi) << BigInt(32)) + BigInt(lo);
-      if (hi >= 0x80000000) {
-        res = BigInt("-18446744073709551616") + res;
-      }
-      return res;
-    } else {
-      const buf = this.readBuffer(8);
-      const snum = compat.decodeInt64ToString(buf);
-      return bi.make(snum);
-    }
-  }
-
-  readBigInt64(): bi.BigIntLike {
+  readBigInt64(): bigint {
     if (this.pos + 8 > this.len) {
       throw new BufferError("buffer overread");
     }
-    if (!useBigInt64Fallback) {
-      const ret = this.buffer.getBigInt64(this.pos);
-      this.pos += 8;
-      return ret;
-    } else {
-      return this.readBigInt64Fallback();
-    }
+    const ret = this.buffer.getBigInt64(this.pos);
+    this.pos += 8;
+    return ret;
   }
 
   readBuffer(size: number): Uint8Array {
