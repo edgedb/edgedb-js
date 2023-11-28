@@ -28,6 +28,7 @@ import {
   DateDuration,
   LocalDateFromOrdinal,
   LocalDateToOrdinal,
+  localDateInstances,
 } from "../datatypes/datetime";
 import { ymd2ord } from "../datatypes/dateutil";
 import { InvalidArgumentError, ProtocolError } from "../errors";
@@ -76,8 +77,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
       );
     }
 
-    // tslint:disable-next-line:no-string-literal
-    const ms = bi.make(object["_date"].getTime() - TIMESHIFT);
+    const ms = bi.make(localDateInstances.get(object)!.getTime() - TIMESHIFT);
     let us = bi.add(
       bi.mul(ms, bi.make(1000)),
       bi.make(
