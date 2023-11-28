@@ -48,13 +48,15 @@ function assertInteger(val: number): number {
   return val;
 }
 
+export const localTimeInstances = new WeakMap<object, LocalTime>();
+
 export class LocalTime {
-  private readonly _hour: number;
-  private readonly _minute: number;
-  private readonly _second: number;
-  private readonly _millisecond: number;
-  private readonly _microsecond: number;
-  private readonly _nanosecond: number;
+  readonly hour: number;
+  readonly minute: number;
+  readonly second: number;
+  readonly millisecond: number;
+  readonly microsecond: number;
+  readonly nanosecond: number;
 
   constructor(
     isoHour: number = 0,
@@ -105,62 +107,38 @@ export class LocalTime {
       );
     }
 
-    this._hour = isoHour;
-    this._minute = isoMinute;
-    this._second = isoSecond;
-    this._millisecond = isoMillisecond;
-    this._microsecond = isoMicrosecond;
-    this._nanosecond = isoNanosecond;
-  }
+    this.hour = isoHour;
+    this.minute = isoMinute;
+    this.second = isoSecond;
+    this.millisecond = isoMillisecond;
+    this.microsecond = isoMicrosecond;
+    this.nanosecond = isoNanosecond;
 
-  get hour(): number {
-    return this._hour;
-  }
-  get minute(): number {
-    return this._minute;
-  }
-  get second(): number {
-    return this._second;
-  }
-  get millisecond(): number {
-    return this._millisecond;
-  }
-  get microsecond(): number {
-    return this._microsecond;
-  }
-  get nanosecond(): number {
-    return this._nanosecond;
+    forwardJsonAsToString(this);
+    throwOnValueOf(this, "LocalTime");
   }
 
   toString(): string {
-    const hh = this._hour.toString().padStart(2, "0");
-    const mm = this._minute.toString().padStart(2, "0");
-    const ss = this._second.toString().padStart(2, "0");
+    const hh = this.hour.toString().padStart(2, "0");
+    const mm = this.minute.toString().padStart(2, "0");
+    const ss = this.second.toString().padStart(2, "0");
     let repr = `${hh}:${mm}:${ss}`;
-    if (this._millisecond || this._microsecond || this._nanosecond) {
-      repr += `.${this._millisecond
+    if (this.millisecond || this.microsecond || this.nanosecond) {
+      repr += `.${this.millisecond
         .toString()
-        .padStart(3, "0")}${this._microsecond
+        .padStart(3, "0")}${this.microsecond
         .toString()
-        .padStart(3, "0")}${this._nanosecond
+        .padStart(3, "0")}${this.nanosecond
         .toString()
         .padStart(3, "0")}`.replace(/(?:0+)$/, "");
     }
     return repr;
   }
-
-  toJSON(): string {
-    return this.toString();
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare LocalTime");
-  }
 }
 
-export class LocalDate {
-  private readonly _date: Date;
+export const localDateInstances = new WeakMap<object, Date>();
 
+export class LocalDate {
   constructor(isoYear: number, isoMonth: number, isoDay: number) {
     isoYear = Math.trunc(toNumber(isoYear));
     isoMonth = Math.floor(toNumber(isoMonth));
@@ -183,30 +161,33 @@ export class LocalDate {
       );
     }
 
-    this._date = new Date(Date.UTC(isoYear, isoMonth - 1, isoDay));
+    const date = new Date(Date.UTC(isoYear, isoMonth - 1, isoDay));
     if (isoYear >= 0 && isoYear <= 99) {
-      this._date.setUTCFullYear(isoYear);
+      date.setUTCFullYear(isoYear);
     }
+    localDateInstances.set(this, date);
+
+    forwardJsonAsToString(this);
+    throwOnValueOf(this, "LocalDate");
   }
 
   get year(): number {
-    return this._date.getUTCFullYear();
+    return localDateInstances.get(this)!.getUTCFullYear();
   }
   get month(): number {
-    return this._date.getUTCMonth() + 1;
+    return localDateInstances.get(this)!.getUTCMonth() + 1;
   }
   get day(): number {
-    return this._date.getUTCDate();
+    return localDateInstances.get(this)!.getUTCDate();
   }
   get dayOfWeek(): number {
-    return ((this._date.getUTCDay() + 6) % 7) + 1;
+    return ((localDateInstances.get(this)!.getUTCDay() + 6) % 7) + 1;
   }
   get dayOfYear(): number {
+    const date = localDateInstances.get(this)!;
     return (
-      daysBeforeMonth(
-        this._date.getUTCFullYear(),
-        this._date.getUTCMonth() + 1
-      ) + this._date.getUTCDate()
+      daysBeforeMonth(date.getUTCFullYear(), date.getUTCMonth() + 1) +
+      date.getUTCDate()
     );
   }
   // get weekOfYear(): number {
@@ -216,19 +197,17 @@ export class LocalDate {
     return 7;
   }
   get daysInMonth(): number {
-    return daysInMonth(
-      this._date.getUTCFullYear(),
-      this._date.getUTCMonth() + 1
-    );
+    const date = localDateInstances.get(this)!;
+    return daysInMonth(date.getUTCFullYear(), date.getUTCMonth() + 1);
   }
   get daysInYear(): number {
-    return isLeapYear(this._date.getUTCFullYear()) ? 366 : 365;
+    return this.inLeapYear ? 366 : 365;
   }
   get monthsInYear(): number {
     return 12;
   }
   get inLeapYear(): boolean {
-    return isLeapYear(this._date.getUTCFullYear());
+    return isLeapYear(localDateInstances.get(this)!.getUTCFullYear());
   }
 
   toString(): string {
@@ -240,14 +219,6 @@ export class LocalDate {
     const month = this.month.toString().padStart(2, "0");
     const day = this.day.toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
-  }
-
-  toJSON(): string {
-    return this.toString();
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare LocalDate");
   }
 }
 
@@ -261,8 +232,6 @@ export function LocalDateFromOrdinal(ordinal: number): LocalDate {
 }
 
 export class LocalDateTime extends LocalDate {
-  private readonly _time: LocalTime;
-
   constructor(
     isoYear: number,
     isoMonth: number,
@@ -276,7 +245,7 @@ export class LocalDateTime extends LocalDate {
   ) {
     super(isoYear, isoMonth, isoDay);
 
-    this._time = new LocalTime(
+    const time = new LocalTime(
       isoHour,
       isoMinute,
       isoSecond,
@@ -284,35 +253,31 @@ export class LocalDateTime extends LocalDate {
       isoMicrosecond,
       isoNanosecond
     );
+    localTimeInstances.set(this, time);
+    throwOnValueOf(this, "LocalDateTime");
   }
 
-  // tslint:disable:no-string-literal
   get hour(): number {
-    return this._time["_hour"];
+    return localTimeInstances.get(this)!.hour;
   }
   get minute(): number {
-    return this._time["_minute"];
+    return localTimeInstances.get(this)!.minute;
   }
   get second(): number {
-    return this._time["_second"];
+    return localTimeInstances.get(this)!.second;
   }
   get millisecond(): number {
-    return this._time["_millisecond"];
+    return localTimeInstances.get(this)!.millisecond;
   }
   get microsecond(): number {
-    return this._time["_microsecond"];
+    return localTimeInstances.get(this)!.microsecond;
   }
   get nanosecond(): number {
-    return this._time["_nanosecond"];
+    return localTimeInstances.get(this)!.nanosecond;
   }
-  // tslint:enable:no-string-literal
 
   toString(): string {
-    return `${super.toString()}T${this._time.toString()}`;
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare LocalDateTime");
+    return `${super.toString()}T${localTimeInstances.get(this)!.toString()}`;
   }
 }
 
@@ -337,17 +302,17 @@ const durationRegex = new RegExp(
 );
 
 export class Duration {
-  private readonly _years: number;
-  private readonly _months: number;
-  private readonly _weeks: number;
-  private readonly _days: number;
-  private readonly _hours: number;
-  private readonly _minutes: number;
-  private readonly _seconds: number;
-  private readonly _milliseconds: number;
-  private readonly _microseconds: number;
-  private readonly _nanoseconds: number;
-  private readonly _sign: number;
+  readonly years: number;
+  readonly months: number;
+  readonly weeks: number;
+  readonly days: number;
+  readonly hours: number;
+  readonly minutes: number;
+  readonly seconds: number;
+  readonly milliseconds: number;
+  readonly microseconds: number;
+  readonly nanoseconds: number;
+  readonly sign: number;
 
   constructor(
     years: number = 0,
@@ -400,95 +365,65 @@ export class Duration {
       sign = sign || fieldSign;
     }
 
-    this._years = years || 0;
-    this._months = months || 0;
-    this._weeks = weeks || 0;
-    this._days = days || 0;
-    this._hours = hours || 0;
-    this._minutes = minutes || 0;
-    this._seconds = seconds || 0;
-    this._milliseconds = milliseconds || 0;
-    this._microseconds = microseconds || 0;
-    this._nanoseconds = nanoseconds || 0;
-    this._sign = sign || 0;
+    this.years = years || 0;
+    this.months = months || 0;
+    this.weeks = weeks || 0;
+    this.days = days || 0;
+    this.hours = hours || 0;
+    this.minutes = minutes || 0;
+    this.seconds = seconds || 0;
+    this.milliseconds = milliseconds || 0;
+    this.microseconds = microseconds || 0;
+    this.nanoseconds = nanoseconds || 0;
+    this.sign = sign || 0;
+
+    forwardJsonAsToString(this);
+    throwOnValueOf(this, "TemporalDuration");
   }
 
-  get years(): number {
-    return this._years;
-  }
-  get months(): number {
-    return this._months;
-  }
-  get weeks(): number {
-    return this._weeks;
-  }
-  get days(): number {
-    return this._days;
-  }
-  get hours(): number {
-    return this._hours;
-  }
-  get minutes(): number {
-    return this._minutes;
-  }
-  get seconds(): number {
-    return this._seconds;
-  }
-  get milliseconds(): number {
-    return this._milliseconds;
-  }
-  get microseconds(): number {
-    return this._microseconds;
-  }
-  get nanoseconds(): number {
-    return this._nanoseconds;
-  }
-  get sign(): number {
-    return this._sign;
-  }
   get blank(): boolean {
-    return this._sign === 0;
+    return this.sign === 0;
   }
 
   toString(): string {
     let dateParts = "";
-    if (this._years) {
-      dateParts += bi.make(Math.abs(this._years)) + "Y";
+    if (this.years) {
+      dateParts += bi.make(Math.abs(this.years)) + "Y";
     }
-    if (this._months) {
-      dateParts += bi.make(Math.abs(this._months)) + "M";
+    if (this.months) {
+      dateParts += bi.make(Math.abs(this.months)) + "M";
     }
-    if (this._weeks) {
-      dateParts += bi.make(Math.abs(this._weeks)) + "W";
+    if (this.weeks) {
+      dateParts += bi.make(Math.abs(this.weeks)) + "W";
     }
-    if (this._days) {
-      dateParts += bi.make(Math.abs(this._days)) + "D";
+    if (this.days) {
+      dateParts += bi.make(Math.abs(this.days)) + "D";
     }
 
     let timeParts = "";
-    if (this._hours) {
-      timeParts += bi.make(Math.abs(this._hours)) + "H";
+    if (this.hours) {
+      timeParts += bi.make(Math.abs(this.hours)) + "H";
     }
-    if (this._minutes) {
-      timeParts += bi.make(Math.abs(this._minutes)) + "M";
+    if (this.minutes) {
+      timeParts += bi.make(Math.abs(this.minutes)) + "M";
     }
     if (
       (!dateParts && !timeParts) ||
-      this._seconds ||
-      this._milliseconds ||
-      this._microseconds ||
-      this._nanoseconds
+      this.seconds ||
+      this.milliseconds ||
+      this.microseconds ||
+      this.nanoseconds
     ) {
       const totalNanoseconds = bi
         .add(
           bi.add(
             bi.add(
-              bi.mul(bi.make(Math.abs(this._seconds)), bi.make(1e9)),
-              bi.mul(bi.make(Math.abs(this._milliseconds)), bi.make(1e6))
+              bi.mul(bi.make(Math.abs(this.seconds)), bi.make(1e9)),
+              bi.mul(bi.make(Math.abs(this.milliseconds)), bi.make(1e6))
             ),
-            bi.mul(bi.make(Math.abs(this._microseconds)), bi.make(1e3))
+            bi.mul(bi.make(Math.abs(this.microseconds)), bi.make(1e3))
           ),
-          bi.make(Math.abs(this._nanoseconds))
+          bi.make(Math.abs(this.nanoseconds))
         )
         .toString()
         .padStart(10, "0");
@@ -501,19 +436,11 @@ export class Duration {
     }
 
     return (
-      (this._sign === -1 ? "-" : "") +
+      (this.sign === -1 ? "-" : "") +
       "P" +
       dateParts +
       (timeParts ? "T" + timeParts : "")
     );
-  }
-
-  toJSON(): string {
-    return this.toString();
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare TemporalDuration");
   }
 
   static from(item: string | Duration | DurationLike): Duration {
@@ -631,15 +558,15 @@ export class Duration {
 }
 
 export class RelativeDuration {
-  private readonly _years: number;
-  private readonly _months: number;
-  private readonly _weeks: number;
-  private readonly _days: number;
-  private readonly _hours: number;
-  private readonly _minutes: number;
-  private readonly _seconds: number;
-  private readonly _milliseconds: number;
-  private readonly _microseconds: number;
+  readonly years: number;
+  readonly months: number;
+  readonly weeks: number;
+  readonly days: number;
+  readonly hours: number;
+  readonly minutes: number;
+  readonly seconds: number;
+  readonly milliseconds: number;
+  readonly microseconds: number;
 
   constructor(
     years: number = 0,
@@ -652,67 +579,43 @@ export class RelativeDuration {
     milliseconds: number = 0,
     microseconds: number = 0
   ) {
-    this._years = Math.trunc(years) || 0;
-    this._months = Math.trunc(months) || 0;
-    this._weeks = Math.trunc(weeks) || 0;
-    this._days = Math.trunc(days) || 0;
-    this._hours = Math.trunc(hours) || 0;
-    this._minutes = Math.trunc(minutes) || 0;
-    this._seconds = Math.trunc(seconds) || 0;
-    this._milliseconds = Math.trunc(milliseconds) || 0;
-    this._microseconds = Math.trunc(microseconds) || 0;
-  }
-  get years(): number {
-    return this._years;
-  }
-  get months(): number {
-    return this._months;
-  }
-  get weeks(): number {
-    return this._weeks;
-  }
-  get days(): number {
-    return this._days;
-  }
-  get hours(): number {
-    return this._hours;
-  }
-  get minutes(): number {
-    return this._minutes;
-  }
-  get seconds(): number {
-    return this._seconds;
-  }
-  get milliseconds(): number {
-    return this._milliseconds;
-  }
-  get microseconds(): number {
-    return this._microseconds;
+    this.years = Math.trunc(years) || 0;
+    this.months = Math.trunc(months) || 0;
+    this.weeks = Math.trunc(weeks) || 0;
+    this.days = Math.trunc(days) || 0;
+    this.hours = Math.trunc(hours) || 0;
+    this.minutes = Math.trunc(minutes) || 0;
+    this.seconds = Math.trunc(seconds) || 0;
+    this.milliseconds = Math.trunc(milliseconds) || 0;
+    this.microseconds = Math.trunc(microseconds) || 0;
+
+    forwardJsonAsToString(this);
+    throwOnValueOf(this, "RelativeDuration");
   }
 
   toString(): string {
     let str = "P";
-    if (this._years) {
-      str += `${this._years}Y`;
+    if (this.years) {
+      str += `${this.years}Y`;
     }
-    if (this._months) {
-      str += `${this._months}M`;
+    if (this.months) {
+      str += `${this.months}M`;
     }
-    const days = this._days + 7 * this._weeks;
+    const days = this.days + 7 * this.weeks;
     if (days) {
       str += `${days}D`;
     }
 
     let timeParts = "";
-    if (this._hours) {
-      timeParts += `${this._hours}H`;
+    if (this.hours) {
+      timeParts += `${this.hours}H`;
     }
-    if (this._minutes) {
-      timeParts += `${this._minutes}M`;
+    if (this.minutes) {
+      timeParts += `${this.minutes}M`;
     }
 
     const seconds =
-      this._seconds + this._milliseconds / 1e3 + this._microseconds / 1e6;
+      this.seconds + this.milliseconds / 1e3 + this.microseconds / 1e6;
 
     if (seconds !== 0) {
       timeParts += `${seconds}S`;
@@ -728,21 +631,13 @@ export class RelativeDuration {
 
     return str;
   }
-
-  toJSON(): string {
-    return this.toString();
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare RelativeDuration");
-  }
 }
 
 export class DateDuration {
-  private readonly _years: number;
-  private readonly _months: number;
-  private readonly _weeks: number;
-  private readonly _days: number;
+  readonly years: number;
+  readonly months: number;
+  readonly weeks: number;
+  readonly days: number;
 
   constructor(
     years: number = 0,
@@ -750,33 +645,24 @@ export class DateDuration {
     weeks: number = 0,
     days: number = 0
   ) {
-    this._years = Math.trunc(years) || 0;
-    this._months = Math.trunc(months) || 0;
-    this._weeks = Math.trunc(weeks) || 0;
-    this._days = Math.trunc(days) || 0;
-  }
-  get years(): number {
-    return this._years;
-  }
-  get months(): number {
-    return this._months;
-  }
-  get weeks(): number {
-    return this._weeks;
-  }
-  get days(): number {
-    return this._days;
+    this.years = Math.trunc(years) || 0;
+    this.months = Math.trunc(months) || 0;
+    this.weeks = Math.trunc(weeks) || 0;
+    this.days = Math.trunc(days) || 0;
+
+    forwardJsonAsToString(this);
+    throwOnValueOf(this, "DateDuration");
   }
 
   toString(): string {
     let str = "P";
-    if (this._years) {
-      str += `${this._years}Y`;
+    if (this.years) {
+      str += `${this.years}Y`;
     }
-    if (this._months) {
-      str += `${this._months}M`;
+    if (this.months) {
+      str += `${this.months}M`;
     }
-    const days = this._days + 7 * this._weeks;
+    const days = this.days + 7 * this.weeks;
     if (days) {
       str += `${days}D`;
     }
@@ -786,14 +672,6 @@ export class DateDuration {
     }
 
     return str;
-  }
-
-  toJSON(): string {
-    return this.toString();
-  }
-
-  valueOf(): any {
-    throw new TypeError("Not possible to compare DateDuration");
   }
 }
 
@@ -834,3 +712,20 @@ export function parseHumanDurationString(durationStr: string): number {
   }
   return duration;
 }
+
+const forwardJsonAsToString = (obj: object) => {
+  Object.defineProperty(obj, "toJSON", {
+    value: () => obj.toString(),
+    enumerable: false,
+    configurable: true,
+  });
+};
+const throwOnValueOf = (obj: object, typename: string) => {
+  Object.defineProperty(obj, "valueOf", {
+    value: () => {
+      throw new TypeError(`Not possible to compare ${typename}`);
+    },
+    enumerable: false,
+    configurable: true,
+  });
+};
