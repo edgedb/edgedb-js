@@ -451,7 +451,7 @@ export function $getScopedExpr<T extends ExpressionRoot>(
       expr.__element__.__name__ === "std::FreeObject";
 
     scopedExpr = isFreeObject
-      ? (expr as any as Expression<TypeSet<BaseType, Cardinality>>)
+      ? (expr as unknown as Expression<TypeSet<BaseType, Cardinality>>)
       : $expressionify({
           ...expr,
           __cardinality__: Cardinality.One,
