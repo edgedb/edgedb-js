@@ -11,10 +11,13 @@
   "license": "Apache-2.0",
   "sideEffects": false,
   "files": [
-    "/dist"
+    "./dist"
   ],
+  "exports": {
+    "./*": "./dist/*.js"
+  },
   "scripts": {
-    "build": "tsc --project tsconfig.json"
+    "build": "rm -r ./dist && tsc --project tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "^20.8.4",

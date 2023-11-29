@@ -3,6 +3,7 @@ import {
   builtinOAuthProviderNames,
   type BuiltinOAuthProviderNames,
   type TokenData,
+  type ParamsOrError,
 } from "@edgedb/auth-core";
 import type { Client } from "edgedb";
 import { cookies } from "next/headers";
@@ -22,10 +23,6 @@ export {
   type BuiltinProviderNames,
   type TokenData,
 };
-
-type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
-  | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)
-  | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
 
 export interface CreateAuthRouteHandlers {
   onOAuthCallback(
