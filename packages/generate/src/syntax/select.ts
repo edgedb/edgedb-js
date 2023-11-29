@@ -57,10 +57,10 @@ import {
 } from "./castMaps";
 import type { $expr_Operator } from "./funcops";
 
-export const ASC: "ASC" = "ASC";
-export const DESC: "DESC" = "DESC";
-export const EMPTY_FIRST: "EMPTY FIRST" = "EMPTY FIRST";
-export const EMPTY_LAST: "EMPTY LAST" = "EMPTY LAST";
+export const ASC = "ASC" as const;
+export const DESC = "DESC" as const;
+export const EMPTY_FIRST = "EMPTY FIRST" as const;
+export const EMPTY_LAST = "EMPTY LAST" as const;
 export type OrderByDirection = "ASC" | "DESC";
 export type OrderByEmpty = "EMPTY FIRST" | "EMPTY LAST";
 
