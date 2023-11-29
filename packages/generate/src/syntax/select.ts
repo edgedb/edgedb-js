@@ -791,9 +791,7 @@ export type namedTupleTypeToSelectShape<
   T extends NamedTupleType = NamedTupleType
 > = Partial<{
   [k in keyof T["__shape__"]]: T["__shape__"][k] extends ObjectType
-    ?
-        | boolean
-        | TypeSet<anonymizeObject<T["__shape__"][k]>, Cardinality.One>
+    ? boolean | TypeSet<anonymizeObject<T["__shape__"][k]>, Cardinality.One>
     : boolean | TypeSet<T["__shape__"][k], Cardinality.One>;
 }> &
   Record<string, unknown>;
@@ -1058,7 +1056,7 @@ export function select(...args: any[]) {
         shape[k] = (forScope as any)[k];
       }
       return select(shape);
-    })
+    });
   }
   if (expr === FreeObject) {
     const freeObjectPtrs: ObjectTypePointers = {};
