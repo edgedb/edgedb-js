@@ -897,6 +897,29 @@ export function select<Expr extends TypeSet>(
   expr: Expr
 ): $expr_Select<stripSet<Expr>>;
 export function select<
+  Expr extends ObjectTypeExpression,
+  Shape extends objectTypeToSelectShape<Expr["__element__"]> &
+    SelectModifiers<Expr["__element__"]>,
+  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
+>(
+  expr: Expr,
+  shape: (
+    scope: $scopify<Expr["__element__"]> &
+      $linkPropify<{
+        [k in keyof Expr]: k extends "__cardinality__"
+          ? Cardinality.One
+          : Expr[k];
+      }>
+  ) => Readonly<Shape>
+): $expr_Select<{
+  __element__: ObjectType<
+    `${Expr["__element__"]["__name__"]}`, // _shape
+    Expr["__element__"]["__pointers__"],
+    Omit<normaliseShape<Shape>, SelectModifierNames>
+  >;
+  __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
+}>;
+export function select<
   Expr extends TypeSet<NamedTupleType>,
   RawShape extends namedTupleTypeToSelectShape<Expr["__element__"]>,
   Shape extends RawShape & SelectModifiers<Expr["__element__"]>,
@@ -929,29 +952,6 @@ export function select<
             false
           >;
     },
-    Omit<normaliseShape<Shape>, SelectModifierNames>
-  >;
-  __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
-}>;
-export function select<
-  Expr extends ObjectTypeExpression,
-  Shape extends objectTypeToSelectShape<Expr["__element__"]> &
-    SelectModifiers<Expr["__element__"]>,
-  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
->(
-  expr: Expr,
-  shape: (
-    scope: $scopify<Expr["__element__"]> &
-      $linkPropify<{
-        [k in keyof Expr]: k extends "__cardinality__"
-          ? Cardinality.One
-          : Expr[k];
-      }>
-  ) => Readonly<Shape>
-): $expr_Select<{
-  __element__: ObjectType<
-    `${Expr["__element__"]["__name__"]}`, // _shape
-    Expr["__element__"]["__pointers__"],
     Omit<normaliseShape<Shape>, SelectModifierNames>
   >;
   __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
