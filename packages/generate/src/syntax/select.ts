@@ -55,7 +55,7 @@ import {
   type literalToScalarType,
   literalToTypeSet,
 } from "./castMaps";
-import type { $expr_Operator } from "./funcops";
+import type { $expr_Function, $expr_Operator } from "./funcops";
 import { for as $for } from "./for";
 
 export const ASC = "ASC" as const;
@@ -919,7 +919,7 @@ export function select<
   __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
 }>;
 export function select<
-  Expr extends TypeSet<NamedTupleType>,
+  Expr extends TypeSet<NamedTupleType> | $expr_Function<NamedTupleType>,
   RawShape extends namedTupleTypeToSelectShape<Expr["__element__"]>,
   Shape extends RawShape & SelectModifiers<Expr["__element__"]>,
   Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
