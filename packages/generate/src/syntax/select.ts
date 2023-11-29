@@ -56,6 +56,7 @@ import {
   literalToTypeSet,
 } from "./castMaps";
 import type { $expr_Operator } from "./funcops";
+import { for as $for } from "./for";
 
 export const ASC = "ASC" as const;
 export const DESC = "DESC" as const;
@@ -1050,6 +1051,15 @@ export function select(...args: any[]) {
 
   let expr = exprPair[0];
   const shapeGetter = exprPair[1];
+  if (expr.__element__.__kind__ === TypeKind.namedtuple) {
+    expr = $for(expr as TypeSet<NamedTupleType>, (forScope) => {
+      const shape: any = {};
+      for (const k of Object.keys(forScope.__element__.__shape__)) {
+        shape[k] = (forScope as any)[k];
+      }
+      return select(shape);
+    })
+  }
   if (expr === FreeObject) {
     const freeObjectPtrs: ObjectTypePointers = {};
     for (const [k, v] of Object.entries(args[0]) as [string, TypeSet][]) {
@@ -1171,7 +1181,10 @@ function resolveShape(
     } else {
       // for scalar expressions, scope === expr
       // shape keys are not allowed
-      if (expr.__element__.__kind__ !== TypeKind.object) {
+      if (
+        expr.__element__.__kind__ !== TypeKind.object &&
+        expr.__element__.__kind__ !== TypeKind.namedtuple
+      ) {
         throw new Error(
           `Invalid select shape key '${key}' on scalar expression, ` +
             `only modifiers are allowed (filter, order_by, offset and limit)`
@@ -1191,20 +1204,12 @@ export function resolveShapeElement(
   // if value is a nested closure
   // or a nested shape object
   const isSubshape =
-    typeof value === "object" && typeof (value as any).__kind__ === "undefined";
+    typeof value === "object" && typeof value.__kind__ === "undefined";
   const isClosure =
     typeof value === "function" &&
+    scope.__element__.__kind__ === TypeKind.object &&
     scope.__element__.__pointers__[key]?.__kind__ === "link";
-  // if (isSubshape) {
-  //   // return value;
-  //   const childExpr = (scope as any)[key];
-  //   const {
-  //     shape: childShape,
-  //     // scope: childScope,
-  //     // modifiers: mods,
-  //   } = resolveShape(value as any, childExpr);
-  //   return childShape;
-  // }
+
   if (isSubshape || isClosure) {
     // get child node expression
     // this relies on Proxy-based getters
@@ -1246,6 +1251,7 @@ export function resolveShapeElement(
     const polyElement = value as $expr_PolyShapeElement;
 
     const polyScope = (scope as any).is(polyElement.__polyType__);
+
     return {
       __kind__: ExpressionKind.PolyShapeElement,
       __polyType__: polyScope,
@@ -1257,6 +1263,7 @@ export function resolveShapeElement(
     };
   } else if (typeof value === "boolean" && key.startsWith("@")) {
     const linkProp = (scope as any)[key];
+
     if (!linkProp) {
       throw new Error(
         (scope as any).__parent__
