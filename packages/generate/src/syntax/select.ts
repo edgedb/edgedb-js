@@ -57,6 +57,7 @@ import {
 } from "./castMaps";
 import type { $expr_Function, $expr_Operator } from "./funcops";
 import { for as $for } from "./for";
+import { op } from "./operators";
 
 export const ASC = "ASC" as const;
 export const DESC = "DESC" as const;
@@ -1053,7 +1054,7 @@ export function select(...args: any[]) {
     expr = $for(expr as TypeSet<NamedTupleType>, (forScope) => {
       const shape: any = {};
       for (const k of Object.keys(forScope.__element__.__shape__)) {
-        shape[k] = (forScope as any)[k];
+        shape[k] = op("distinct", (forScope as any)[k]);
       }
       return select(shape);
     });

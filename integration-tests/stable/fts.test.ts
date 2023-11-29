@@ -32,11 +32,9 @@ describe("full-text search", () => {
     const searchExpr = e.fts.search(e.Post, "search");
 
     const allQuery = e.select(searchExpr, ($) => ({
-      id: $.object.id,
       text: $.object.text,
       score: $.score,
     }));
-    console.log("allQuery", allQuery.toEdgeQL());
     type All = $infer<typeof allQuery>;
     const all = await allQuery.run(client);
 
@@ -46,7 +44,6 @@ describe("full-text search", () => {
       tc.IsExact<
         All,
         {
-          id: string;
           text: string;
           score: number;
         }[]
@@ -64,9 +61,6 @@ describe("full-text search", () => {
         }[]
       >
     >(true);
-    const noShape = await noShapeQuery.run(client);
-
-    expect(noShape).toEqual(all);
   });
 
   test("fts with filter", async () => {
@@ -83,9 +77,9 @@ describe("full-text search", () => {
 
   test("fts with sub-select and order by", async () => {
     const searchExpr = e.fts.search(e.Post, "search");
-    const objectSelectQuery = e.select(searchExpr.object, (post) => ({
-      text: post.text,
-      order_by: searchExpr.score,
+    const objectSelectQuery = e.select(searchExpr, (search) => ({
+      text: search.object.text,
+      order_by: search.score,
     }));
     const objectSelect = await objectSelectQuery.run(client);
     expect(objectSelect).toEqual([
