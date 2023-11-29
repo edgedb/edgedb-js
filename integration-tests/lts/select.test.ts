@@ -174,7 +174,6 @@ describe("select", () => {
 
     const result = await query.run(client);
 
-    console.log(result);
     assert.equal(result.length, 1);
     assert.ok(result[0].name);
     assert.ok(result[0].score);
