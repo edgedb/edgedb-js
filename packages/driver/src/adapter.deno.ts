@@ -87,11 +87,11 @@ export function homeDir(): string {
 //       `import * as fs from "https://deno.land/std@0.159.0/node/fs.ts";`
 //       when the 'fs' compat module does not require '--unstable' flag.
 
-async function toArray(iter: AsyncIterable<unknown>) {
-  const arr = [];
-  for await (const i of iter) arr.push(i);
-  return arr;
-}
+// async function toArray(iter: AsyncIterable<unknown>) {
+//   const arr = [];
+//   for await (const i of iter) arr.push(i);
+//   return arr;
+// }
 
 // deno-lint-ignore-file
 // export namespace fs {
