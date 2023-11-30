@@ -108,7 +108,8 @@ export function generateOperators({
         overloadIndex++;
       }
 
-      const operatorForms = opName === "std::if_else" ? ["PYTHON", "FUNCTIONAL"] : ["NORMAL"];
+      const operatorForms =
+        opName === "std::if_else" ? ["PYTHON", "FUNCTIONAL"] : ["NORMAL"];
       for (const operatorForm of operatorForms) {
         if (opDef.description) {
           overloadsBuf.writeln([
@@ -196,7 +197,7 @@ export function generateOperators({
                 } else {
                   overloadsBuf.writeln([
                     t`op: "if", ${args[1]}, op2: "then", ${args[0]}, op3: "else", ${args[2]}`,
-                  ])
+                  ]);
                 }
               } else {
                 throw new Error(`unknown ternary operator: ${opName}`);
