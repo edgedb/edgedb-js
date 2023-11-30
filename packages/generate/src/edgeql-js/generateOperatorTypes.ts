@@ -108,146 +108,155 @@ export function generateOperators({
         overloadIndex++;
       }
 
-      if (opDef.description) {
-        overloadsBuf.writeln([
-          t`/**
+      const operatorForms = opName === "std::if_else" ? ["PYTHON", "FUNCTIONAL"] : ["NORMAL"];
+      for (const operatorForm of operatorForms) {
+        if (opDef.description) {
+          overloadsBuf.writeln([
+            t`/**
 * ${opDef.description.replace(/\*\//g, "")}
 */`,
-        ]);
-      }
+          ]);
+        }
 
-      overloadsBuf.writeln([dts`declare `, t`function op<`]);
+        overloadsBuf.writeln([dts`declare `, t`function op<`]);
 
-      const anytypes = opDef.anytypes;
-      const anytypeParams: string[] = [];
+        const anytypes = opDef.anytypes;
+        const anytypeParams: string[] = [];
 
-      function getParamAnytype(
-        paramTypeName: string,
-        paramType: $.introspect.Type
-      ) {
-        if (!anytypes) return undefined;
-        if (anytypes.kind === "castable") {
-          if (paramType.name.includes("anytype")) {
-            const path = findPathOfAnytype(paramType.id, types);
-            anytypeParams.push(`${paramTypeName}${path}`);
+        const getParamAnytype = (
+          paramTypeName: string,
+          paramType: $.introspect.Type
+        ) => {
+          if (!anytypes) return undefined;
+          if (anytypes.kind === "castable") {
+            if (paramType.name.includes("anytype")) {
+              const path = findPathOfAnytype(paramType.id, types);
+              anytypeParams.push(`${paramTypeName}${path}`);
+            }
+            return anytypes.type;
+          } else {
+            return anytypes.refName === paramTypeName
+              ? anytypes.type
+              : `$.getPrimitive${
+                  anytypes.type[0] === "$.NonArrayType" ? "NonArray" : ""
+                }BaseType<${
+                  allowsLiterals(anytypes.typeObj, anytypes)
+                    ? `_.castMaps.literalToTypeSet<${anytypes.refName}>`
+                    : anytypes.refName
+                }${anytypes.refPath}>`;
           }
-          return anytypes.type;
-        } else {
-          return anytypes.refName === paramTypeName
-            ? anytypes.type
+        };
+
+        // let hasLiterals = false;
+        overloadsBuf.indented(() => {
+          for (const param of params.positional) {
+            const anytype = getParamAnytype(param.typeName, param.type);
+
+            const paramTypeStr = getStringRepresentation(param.type, {
+              types,
+              anytype,
+              casts: casts.implicitCastFromMap,
+            });
+
+            let type = frag`$.TypeSet<${paramTypeStr.staticType}>`;
+
+            if (allowsLiterals(param.type, anytypes)) {
+              type = frag`_.castMaps.orScalarLiteral<${type}>`;
+              // hasLiterals = true;
+            }
+
+            overloadsBuf.writeln([t`${param.typeName} extends ${type},`]);
+          }
+        });
+
+        overloadsBuf.writeln([t`>(`]);
+
+        overloadsBuf.indented(() => {
+          const args = params.positional.map(
+            (param) => `${param.internalName}: ${param.typeName}`
+          );
+          switch (opDef.operator_kind) {
+            case $.OperatorKind.Infix:
+              overloadsBuf.writeln([
+                t`${args[0]}, op: ${quote(opSymbol)}, ${args[1]}`,
+              ]);
+              break;
+            case $.OperatorKind.Prefix:
+              overloadsBuf.writeln([t`op: ${quote(opSymbol)}, ${args[0]}`]);
+              break;
+            case $.OperatorKind.Postfix:
+              overloadsBuf.writeln([t`${args[0]}, op: ${quote(opSymbol)}`]);
+              break;
+            case $.OperatorKind.Ternary:
+              if (opName === "std::if_else") {
+                if (operatorForm === "PYTHON") {
+                  overloadsBuf.writeln([
+                    t`${args[0]}, op: "if", ${args[1]}, op2: "else", ${args[2]}`,
+                  ]);
+                } else {
+                  overloadsBuf.writeln([
+                    t`op: "if", ${args[1]}, op2: "then", ${args[0]}, op3: "else", ${args[2]}`,
+                  ])
+                }
+              } else {
+                throw new Error(`unknown ternary operator: ${opName}`);
+              }
+              break;
+            default:
+              throw new Error(`unknown operator kind: ${opDef.operator_kind}`);
+          }
+        });
+
+        // const paramTypeNames = params.positional
+        //   .map(param => param.typeName)
+        //   .join(", ");
+
+        const returnAnytype = anytypes
+          ? anytypes.kind === "castable"
+            ? anytypeParams.length <= 1
+              ? anytypeParams[0]
+              : anytypeParams.slice(1).reduce((parent, type) => {
+                  return `${anytypes.returnAnytypeWrapper}<${parent}, ${type}>`;
+                }, anytypeParams[0])
             : `$.getPrimitive${
                 anytypes.type[0] === "$.NonArrayType" ? "NonArray" : ""
               }BaseType<${
                 allowsLiterals(anytypes.typeObj, anytypes)
                   ? `_.castMaps.literalToTypeSet<${anytypes.refName}>`
                   : anytypes.refName
-              }${anytypes.refPath}>`;
-        }
-      }
-
-      // let hasLiterals = false;
-      overloadsBuf.indented(() => {
-        for (const param of params.positional) {
-          const anytype = getParamAnytype(param.typeName, param.type);
-
-          const paramTypeStr = getStringRepresentation(param.type, {
+              }${anytypes.refPath}>`
+          : undefined;
+        const returnType = getStringRepresentation(
+          types.get(opDef.return_type.id),
+          {
             types,
-            anytype,
-            casts: casts.implicitCastFromMap,
-          });
-
-          let type = frag`$.TypeSet<${paramTypeStr.staticType}>`;
-
-          if (allowsLiterals(param.type, anytypes)) {
-            type = frag`_.castMaps.orScalarLiteral<${type}>`;
-            // hasLiterals = true;
+            anytype: returnAnytype,
           }
-
-          overloadsBuf.writeln([t`${param.typeName} extends ${type},`]);
-        }
-      });
-
-      overloadsBuf.writeln([t`>(`]);
-
-      overloadsBuf.indented(() => {
-        const args = params.positional.map(
-          (param) => `${param.internalName}: ${param.typeName}`
         );
-        switch (opDef.operator_kind) {
-          case $.OperatorKind.Infix:
-            overloadsBuf.writeln([
-              t`${args[0]}, op: ${quote(opSymbol)}, ${args[1]}`,
-            ]);
-            break;
-          case $.OperatorKind.Prefix:
-            overloadsBuf.writeln([t`op: ${quote(opSymbol)}, ${args[0]}`]);
-            break;
-          case $.OperatorKind.Postfix:
-            overloadsBuf.writeln([t`${args[0]}, op: ${quote(opSymbol)}`]);
-            break;
-          case $.OperatorKind.Ternary:
-            if (opName === "std::if_else") {
-              overloadsBuf.writeln([
-                t`${args[0]}, op: "if", ${args[1]}, op2: "else", ${args[2]}`,
-              ]);
-            } else {
-              throw new Error(`unknown ternary operator: ${opName}`);
-            }
-            break;
-          default:
-            throw new Error(`unknown operator kind: ${opDef.operator_kind}`);
-        }
-      });
 
-      // const paramTypeNames = params.positional
-      //   .map(param => param.typeName)
-      //   .join(", ");
-
-      const returnAnytype = anytypes
-        ? anytypes.kind === "castable"
-          ? anytypeParams.length <= 1
-            ? anytypeParams[0]
-            : anytypeParams.slice(1).reduce((parent, type) => {
-                return `${anytypes.returnAnytypeWrapper}<${parent}, ${type}>`;
-              }, anytypeParams[0])
-          : `$.getPrimitive${
-              anytypes.type[0] === "$.NonArrayType" ? "NonArray" : ""
-            }BaseType<${
-              allowsLiterals(anytypes.typeObj, anytypes)
-                ? `_.castMaps.literalToTypeSet<${anytypes.refName}>`
-                : anytypes.refName
-            }${anytypes.refPath}>`
-        : undefined;
-      const returnType = getStringRepresentation(
-        types.get(opDef.return_type.id),
-        {
-          types,
-          anytype: returnAnytype,
-        }
-      );
-
-      overloadsBuf.writeln([t`): $.$expr_Operator<`]);
-      overloadsBuf.indented(() => {
-        // overloadsBuf.writeln([t`${quote(opSymbol)},`]);
-        // overloadsBuf.writeln([t`$.OperatorKind.${opDef.operator_kind},`]);
-        // overloadsBuf.writeln([
-        //   t`${
-        //     hasLiterals
-        //       ? `_.castMaps.mapLiteralToTypeSet<[${paramTypeNames}]>`
-        //       : `[${paramTypeNames}]`
-        //   },`
-        // ]);
-        overloadsBuf.writeln([
-          t`${returnType.staticType}, ${generateReturnCardinality(
-            opName,
-            params,
-            opDef.return_typemod,
-            false,
-            anytypes
-          )}`,
-        ]);
-      });
-      overloadsBuf.writeln([t`>;`]);
+        overloadsBuf.writeln([t`): $.$expr_Operator<`]);
+        overloadsBuf.indented(() => {
+          // overloadsBuf.writeln([t`${quote(opSymbol)},`]);
+          // overloadsBuf.writeln([t`$.OperatorKind.${opDef.operator_kind},`]);
+          // overloadsBuf.writeln([
+          //   t`${
+          //     hasLiterals
+          //       ? `_.castMaps.mapLiteralToTypeSet<[${paramTypeNames}]>`
+          //       : `[${paramTypeNames}]`
+          //   },`
+          // ]);
+          overloadsBuf.writeln([
+            t`${returnType.staticType}, ${generateReturnCardinality(
+              opName,
+              params,
+              opDef.return_typemod,
+              false,
+              anytypes
+            )}`,
+          ]);
+        });
+        overloadsBuf.writeln([t`>;`]);
+      }
     }
   }
 
@@ -314,8 +323,16 @@ export function generateOperators({
     }
   } else if (args.length === 5) {
     if (typeof args[1] === "string" && typeof args[3] === "string") {
+      // Python-style if-else
       op = \`\${args[1]}_\${args[3]}\`;
       params = [args[0], args[2], args[4]];
+      defs = overloadDefs.Ternary[op];
+    }
+  } else if (args.length === 6) {
+    // Functional-style if-then-else
+    if (typeof args[0] === "string" && typeof args[2] === "string" && typeof args[4] === "string") {
+      op = \`\${args[0]}_\${args[4]}\`;
+      params = [args[3], args[1], args[5]];
       defs = overloadDefs.Ternary[op];
     }
   }
