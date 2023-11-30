@@ -1,0 +1,263 @@
+-- Prefix --
+not          ( v SingletonType bool ) SingletonType bool
+plus         ( l SingletonType number ) SingletonType number
+plus         ( l SingletonType bigint ) SingletonType bigint
+plus         ( l SingletonType decimal ) SingletonType decimal
+minus        ( l SingletonType number ) SingletonType number
+minus        ( l SingletonType bigint ) SingletonType bigint
+minus        ( l SingletonType decimal ) SingletonType decimal
+minus        ( v SingletonType duration ) SingletonType duration
+minus        ( v SingletonType cal::relative_duration ) SingletonType cal::relative_duration
+exists       ( s SetOfType anytype ) SingletonType bool
+distinct     ( s SetOfType anytype ) SetOfType anytype
+
+-- Ternary --
+if_else      ( if_true SetOfType anytype, condition SingletonType bool, if_false SetOfType anytype ) SetOfType anytype
+
+-- Infix --
+eq           ( l SingletonType anytuple, r SingletonType anytuple ) SingletonType bool
+eq           ( l SingletonType bool, r SingletonType bool ) SingletonType bool
+eq           ( l SingletonType anyenum, r SingletonType anyenum ) SingletonType bool
+eq           ( l SingletonType number, r SingletonType number ) SingletonType bool
+eq           ( l SingletonType bigint, r SingletonType bigint ) SingletonType bool
+eq           ( l SingletonType decimal, r SingletonType decimal ) SingletonType bool
+eq           ( l SingletonType decimal, r SingletonType anyint ) SingletonType bool
+eq           ( l SingletonType array<anytype>, r SingletonType array<anytype> ) SingletonType bool
+eq           ( l SingletonType bytes, r SingletonType bytes ) SingletonType bool
+eq           ( l SingletonType datetime, r SingletonType datetime ) SingletonType bool
+eq           ( l SingletonType duration, r SingletonType duration ) SingletonType bool
+eq           ( l SingletonType json, r SingletonType json ) SingletonType bool
+eq           ( l SingletonType str, r SingletonType str ) SingletonType bool
+eq           ( l SingletonType uuid, r SingletonType uuid ) SingletonType bool
+eq           ( l SingletonType range<anypoint>, r SingletonType range<anypoint> ) SingletonType bool
+eq           ( l SingletonType BaseObject, r SingletonType BaseObject ) SingletonType bool
+eq           ( l SingletonType cfg::memory, r SingletonType cfg::memory ) SingletonType bool
+eq           ( l SingletonType cal::local_datetime, r SingletonType cal::local_datetime ) SingletonType bool
+eq           ( l SingletonType cal::local_date, r SingletonType cal::local_date ) SingletonType bool
+eq           ( l SingletonType cal::local_time, r SingletonType cal::local_time ) SingletonType bool
+eq           ( l SingletonType cal::relative_duration, r SingletonType cal::relative_duration ) SingletonType bool
+coal_eq      ( l OptionalType anytuple, r OptionalType anytuple ) SingletonType bool
+coal_eq      ( l OptionalType bool, r OptionalType bool ) SingletonType bool
+coal_eq      ( l OptionalType anyenum, r OptionalType anyenum ) SingletonType bool
+coal_eq      ( l OptionalType number, r OptionalType number ) SingletonType bool
+coal_eq      ( l OptionalType bigint, r OptionalType bigint ) SingletonType bool
+coal_eq      ( l OptionalType decimal, r OptionalType decimal ) SingletonType bool
+coal_eq      ( l OptionalType decimal, r OptionalType anyint ) SingletonType bool
+coal_eq      ( l OptionalType array<anytype>, r OptionalType array<anytype> ) SingletonType bool
+coal_eq      ( l OptionalType bytes, r OptionalType bytes ) SingletonType bool
+coal_eq      ( l OptionalType datetime, r OptionalType datetime ) SingletonType bool
+coal_eq      ( l OptionalType duration, r OptionalType duration ) SingletonType bool
+coal_eq      ( l OptionalType json, r OptionalType json ) SingletonType bool
+coal_eq      ( l OptionalType str, r OptionalType str ) SingletonType bool
+coal_eq      ( l OptionalType uuid, r OptionalType uuid ) SingletonType bool
+coal_eq      ( l OptionalType range<anypoint>, r OptionalType range<anypoint> ) SingletonType bool
+coal_eq      ( l OptionalType BaseObject, r OptionalType BaseObject ) SingletonType bool
+coal_eq      ( l OptionalType cfg::memory, r OptionalType cfg::memory ) SingletonType bool
+coal_eq      ( l OptionalType cal::local_datetime, r OptionalType cal::local_datetime ) SingletonType bool
+coal_eq      ( l OptionalType cal::local_date, r OptionalType cal::local_date ) SingletonType bool
+coal_eq      ( l OptionalType cal::local_time, r OptionalType cal::local_time ) SingletonType bool
+coal_eq      ( l OptionalType cal::relative_duration, r OptionalType cal::relative_duration ) SingletonType bool
+neq          ( l SingletonType anytuple, r SingletonType anytuple ) SingletonType bool
+neq          ( l SingletonType bool, r SingletonType bool ) SingletonType bool
+neq          ( l SingletonType anyenum, r SingletonType anyenum ) SingletonType bool
+neq          ( l SingletonType number, r SingletonType number ) SingletonType bool
+neq          ( l SingletonType bigint, r SingletonType bigint ) SingletonType bool
+neq          ( l SingletonType decimal, r SingletonType decimal ) SingletonType bool
+neq          ( l SingletonType decimal, r SingletonType anyint ) SingletonType bool
+neq          ( l SingletonType array<anytype>, r SingletonType array<anytype> ) SingletonType bool
+neq          ( l SingletonType bytes, r SingletonType bytes ) SingletonType bool
+neq          ( l SingletonType datetime, r SingletonType datetime ) SingletonType bool
+neq          ( l SingletonType duration, r SingletonType duration ) SingletonType bool
+neq          ( l SingletonType json, r SingletonType json ) SingletonType bool
+neq          ( l SingletonType str, r SingletonType str ) SingletonType bool
+neq          ( l SingletonType uuid, r SingletonType uuid ) SingletonType bool
+neq          ( l SingletonType range<anypoint>, r SingletonType range<anypoint> ) SingletonType bool
+neq          ( l SingletonType BaseObject, r SingletonType BaseObject ) SingletonType bool
+neq          ( l SingletonType cfg::memory, r SingletonType cfg::memory ) SingletonType bool
+neq          ( l SingletonType cal::local_datetime, r SingletonType cal::local_datetime ) SingletonType bool
+neq          ( l SingletonType cal::local_date, r SingletonType cal::local_date ) SingletonType bool
+neq          ( l SingletonType cal::local_time, r SingletonType cal::local_time ) SingletonType bool
+neq          ( l SingletonType cal::relative_duration, r SingletonType cal::relative_duration ) SingletonType bool
+coal_neq     ( l OptionalType anytuple, r OptionalType anytuple ) SingletonType bool
+coal_neq     ( l OptionalType bool, r OptionalType bool ) SingletonType bool
+coal_neq     ( l OptionalType anyenum, r OptionalType anyenum ) SingletonType bool
+coal_neq     ( l OptionalType number, r OptionalType number ) SingletonType bool
+coal_neq     ( l OptionalType duration, r OptionalType duration ) SingletonType bool
+coal_neq     ( l OptionalType bigint, r OptionalType bigint ) SingletonType bool
+coal_neq     ( l OptionalType decimal, r OptionalType decimal ) SingletonType bool
+coal_neq     ( l OptionalType decimal, r OptionalType anyint ) SingletonType bool
+coal_neq     ( l OptionalType array<anytype>, r OptionalType array<anytype> ) SingletonType bool
+coal_neq     ( l OptionalType bytes, r OptionalType bytes ) SingletonType bool
+coal_neq     ( l OptionalType datetime, r OptionalType datetime ) SingletonType bool
+coal_neq     ( l OptionalType json, r OptionalType json ) SingletonType bool
+coal_neq     ( l OptionalType str, r OptionalType str ) SingletonType bool
+coal_neq     ( l OptionalType uuid, r OptionalType uuid ) SingletonType bool
+coal_neq     ( l OptionalType range<anypoint>, r OptionalType range<anypoint> ) SingletonType bool
+coal_neq     ( l OptionalType BaseObject, r OptionalType BaseObject ) SingletonType bool
+coal_neq     ( l OptionalType cfg::memory, r OptionalType cfg::memory ) SingletonType bool
+coal_neq     ( l OptionalType cal::local_datetime, r OptionalType cal::local_datetime ) SingletonType bool
+coal_neq     ( l OptionalType cal::local_date, r OptionalType cal::local_date ) SingletonType bool
+coal_neq     ( l OptionalType cal::local_time, r OptionalType cal::local_time ) SingletonType bool
+coal_neq     ( l OptionalType cal::relative_duration, r OptionalType cal::relative_duration ) SingletonType bool
+gte          ( l SingletonType anytuple, r SingletonType anytuple ) SingletonType bool
+gte          ( l SingletonType bool, r SingletonType bool ) SingletonType bool
+gte          ( l SingletonType anyenum, r SingletonType anyenum ) SingletonType bool
+gte          ( l SingletonType number, r SingletonType number ) SingletonType bool
+gte          ( l SingletonType bigint, r SingletonType bigint ) SingletonType bool
+gte          ( l SingletonType decimal, r SingletonType decimal ) SingletonType bool
+gte          ( l SingletonType anyint, r SingletonType decimal ) SingletonType bool
+gte          ( l SingletonType array<anytype>, r SingletonType array<anytype> ) SingletonType bool
+gte          ( l SingletonType bytes, r SingletonType bytes ) SingletonType bool
+gte          ( l SingletonType datetime, r SingletonType datetime ) SingletonType bool
+gte          ( l SingletonType duration, r SingletonType duration ) SingletonType bool
+gte          ( l SingletonType json, r SingletonType json ) SingletonType bool
+gte          ( l SingletonType str, r SingletonType str ) SingletonType bool
+gte          ( l SingletonType uuid, r SingletonType uuid ) SingletonType bool
+gte          ( l SingletonType range<anypoint>, r SingletonType range<anypoint> ) SingletonType bool
+gte          ( l SingletonType BaseObject, r SingletonType BaseObject ) SingletonType bool
+gte          ( l SingletonType cfg::memory, r SingletonType cfg::memory ) SingletonType bool
+gte          ( l SingletonType cal::local_datetime, r SingletonType cal::local_datetime ) SingletonType bool
+gte          ( l SingletonType cal::local_date, r SingletonType cal::local_date ) SingletonType bool
+gte          ( l SingletonType cal::local_time, r SingletonType cal::local_time ) SingletonType bool
+gte          ( l SingletonType cal::relative_duration, r SingletonType cal::relative_duration ) SingletonType bool
+gt           ( l SingletonType anytuple, r SingletonType anytuple ) SingletonType bool
+gt           ( l SingletonType bool, r SingletonType bool ) SingletonType bool
+gt           ( l SingletonType anyenum, r SingletonType anyenum ) SingletonType bool
+gt           ( l SingletonType number, r SingletonType number ) SingletonType bool
+gt           ( l SingletonType bigint, r SingletonType bigint ) SingletonType bool
+gt           ( l SingletonType decimal, r SingletonType decimal ) SingletonType bool
+gt           ( l SingletonType anyint, r SingletonType decimal ) SingletonType bool
+gt           ( l SingletonType array<anytype>, r SingletonType array<anytype> ) SingletonType bool
+gt           ( l SingletonType bytes, r SingletonType bytes ) SingletonType bool
+gt           ( l SingletonType datetime, r SingletonType datetime ) SingletonType bool
+gt           ( l SingletonType duration, r SingletonType duration ) SingletonType bool
+gt           ( l SingletonType json, r SingletonType json ) SingletonType bool
+gt           ( l SingletonType str, r SingletonType str ) SingletonType bool
+gt           ( l SingletonType uuid, r SingletonType uuid ) SingletonType bool
+gt           ( l SingletonType range<anypoint>, r SingletonType range<anypoint> ) SingletonType bool
+gt           ( l SingletonType BaseObject, r SingletonType BaseObject ) SingletonType bool
+gt           ( l SingletonType cfg::memory, r SingletonType cfg::memory ) SingletonType bool
+gt           ( l SingletonType cal::local_datetime, r SingletonType cal::local_datetime ) SingletonType bool
+gt           ( l SingletonType cal::local_date, r SingletonType cal::local_date ) SingletonType bool
+gt           ( l SingletonType cal::local_time, r SingletonType cal::local_time ) SingletonType bool
+gt           ( l SingletonType cal::relative_duration, r SingletonType cal::relative_duration ) SingletonType bool
+lte          ( l SingletonType anytuple, r SingletonType anytuple ) SingletonType bool
+lte          ( l SingletonType bool, r SingletonType bool ) SingletonType bool
+lte          ( l SingletonType anyenum, r SingletonType anyenum ) SingletonType bool
+lte          ( l SingletonType number, r SingletonType number ) SingletonType bool
+lte          ( l SingletonType bigint, r SingletonType bigint ) SingletonType bool
+lte          ( l SingletonType decimal, r SingletonType decimal ) SingletonType bool
+lte          ( l SingletonType anyint, r SingletonType decimal ) SingletonType bool
+lte          ( l SingletonType array<anytype>, r SingletonType array<anytype> ) SingletonType bool
+lte          ( l SingletonType bytes, r SingletonType bytes ) SingletonType bool
+lte          ( l SingletonType datetime, r SingletonType datetime ) SingletonType bool
+lte          ( l SingletonType duration, r SingletonType duration ) SingletonType bool
+lte          ( l SingletonType json, r SingletonType json ) SingletonType bool
+lte          ( l SingletonType str, r SingletonType str ) SingletonType bool
+lte          ( l SingletonType uuid, r SingletonType uuid ) SingletonType bool
+lte          ( l SingletonType range<anypoint>, r SingletonType range<anypoint> ) SingletonType bool
+lte          ( l SingletonType BaseObject, r SingletonType BaseObject ) SingletonType bool
+lte          ( l SingletonType cfg::memory, r SingletonType cfg::memory ) SingletonType bool
+lte          ( l SingletonType cal::local_datetime, r SingletonType cal::local_datetime ) SingletonType bool
+lte          ( l SingletonType cal::local_date, r SingletonType cal::local_date ) SingletonType bool
+lte          ( l SingletonType cal::local_time, r SingletonType cal::local_time ) SingletonType bool
+lte          ( l SingletonType cal::relative_duration, r SingletonType cal::relative_duration ) SingletonType bool
+lt           ( l SingletonType anytuple, r SingletonType anytuple ) SingletonType bool
+lt           ( l SingletonType bool, r SingletonType bool ) SingletonType bool
+lt           ( l SingletonType anyenum, r SingletonType anyenum ) SingletonType bool
+lt           ( l SingletonType number, r SingletonType number ) SingletonType bool
+lt           ( l SingletonType bigint, r SingletonType bigint ) SingletonType bool
+lt           ( l SingletonType decimal, r SingletonType decimal ) SingletonType bool
+lt           ( l SingletonType anyint, r SingletonType decimal ) SingletonType bool
+lt           ( l SingletonType array<anytype>, r SingletonType array<anytype> ) SingletonType bool
+lt           ( l SingletonType bytes, r SingletonType bytes ) SingletonType bool
+lt           ( l SingletonType datetime, r SingletonType datetime ) SingletonType bool
+lt           ( l SingletonType duration, r SingletonType duration ) SingletonType bool
+lt           ( l SingletonType json, r SingletonType json ) SingletonType bool
+lt           ( l SingletonType str, r SingletonType str ) SingletonType bool
+lt           ( l SingletonType uuid, r SingletonType uuid ) SingletonType bool
+lt           ( l SingletonType range<anypoint>, r SingletonType range<anypoint> ) SingletonType bool
+lt           ( l SingletonType BaseObject, r SingletonType BaseObject ) SingletonType bool
+lt           ( l SingletonType cfg::memory, r SingletonType cfg::memory ) SingletonType bool
+lt           ( l SingletonType cal::local_datetime, r SingletonType cal::local_datetime ) SingletonType bool
+lt           ( l SingletonType cal::local_date, r SingletonType cal::local_date ) SingletonType bool
+lt           ( l SingletonType cal::local_time, r SingletonType cal::local_time ) SingletonType bool
+lt           ( l SingletonType cal::relative_duration, r SingletonType cal::relative_duration ) SingletonType bool
+or           ( a SingletonType bool, b SingletonType bool ) SingletonType bool
+and          ( a SingletonType bool, b SingletonType bool ) SingletonType bool
+plus         ( l SingletonType number, r SingletonType number ) SingletonType number
+plus         ( l SingletonType bigint, r SingletonType bigint ) SingletonType bigint
+plus         ( l SingletonType decimal, r SingletonType decimal ) SingletonType decimal
+plus         ( l SingletonType datetime, r SingletonType duration ) SingletonType datetime
+plus         ( l SingletonType duration, r SingletonType duration ) SingletonType duration
+plus         ( l SingletonType range<anypoint>, r SingletonType range<anypoint> ) SingletonType range<anypoint>
+plus         ( l SingletonType datetime, r SingletonType cal::relative_duration ) SingletonType datetime
+plus         ( l SingletonType cal::local_datetime, r SingletonType duration ) SingletonType cal::local_datetime
+plus         ( l SingletonType cal::local_datetime, r SingletonType cal::relative_duration ) SingletonType cal::local_datetime
+plus         ( l SingletonType cal::local_date, r SingletonType duration ) SingletonType cal::local_datetime
+plus         ( l SingletonType cal::local_date, r SingletonType cal::relative_duration ) SingletonType cal::local_datetime
+plus         ( l SingletonType cal::local_date, r SingletonType cal::date_duration ) SingletonType cal::local_date
+plus         ( l SingletonType cal::local_time, r SingletonType duration ) SingletonType cal::local_time
+plus         ( l SingletonType cal::local_time, r SingletonType cal::relative_duration ) SingletonType cal::local_time
+plus         ( l SingletonType cal::relative_duration, r SingletonType cal::relative_duration ) SingletonType cal::relative_duration
+plus         ( l SingletonType cal::date_duration, r SingletonType cal::date_duration ) SingletonType cal::date_duration
+plus         ( l SingletonType duration, r SingletonType cal::relative_duration ) SingletonType cal::relative_duration
+minus        ( l SingletonType number, r SingletonType number ) SingletonType number
+minus        ( l SingletonType bigint, r SingletonType bigint ) SingletonType bigint
+minus        ( l SingletonType decimal, r SingletonType decimal ) SingletonType decimal
+minus        ( l SingletonType datetime, r SingletonType duration ) SingletonType datetime
+minus        ( l SingletonType datetime, r SingletonType datetime ) SingletonType duration
+minus        ( l SingletonType duration, r SingletonType duration ) SingletonType duration
+minus        ( l SingletonType range<anypoint>, r SingletonType range<anypoint> ) SingletonType range<anypoint>
+minus        ( l SingletonType datetime, r SingletonType cal::relative_duration ) SingletonType datetime
+minus        ( l SingletonType cal::local_datetime, r SingletonType duration ) SingletonType cal::local_datetime
+minus        ( l SingletonType cal::local_datetime, r SingletonType cal::relative_duration ) SingletonType cal::local_datetime
+minus        ( l SingletonType cal::local_datetime, r SingletonType cal::local_datetime ) SingletonType cal::relative_duration
+minus        ( l SingletonType cal::local_date, r SingletonType duration ) SingletonType cal::local_datetime
+minus        ( l SingletonType cal::local_date, r SingletonType cal::relative_duration ) SingletonType cal::local_datetime
+minus        ( l SingletonType cal::local_date, r SingletonType cal::date_duration ) SingletonType cal::local_date
+minus        ( l SingletonType cal::local_date, r SingletonType cal::local_date ) SingletonType cal::date_duration
+minus        ( l SingletonType cal::local_time, r SingletonType duration ) SingletonType cal::local_time
+minus        ( l SingletonType cal::local_time, r SingletonType cal::relative_duration ) SingletonType cal::local_time
+minus        ( l SingletonType cal::local_time, r SingletonType cal::local_time ) SingletonType cal::relative_duration
+minus        ( l SingletonType cal::relative_duration, r SingletonType cal::relative_duration ) SingletonType cal::relative_duration
+minus        ( l SingletonType cal::date_duration, r SingletonType cal::date_duration ) SingletonType cal::date_duration
+minus        ( l SingletonType duration, r SingletonType cal::relative_duration ) SingletonType cal::relative_duration
+mult         ( l SingletonType number, r SingletonType number ) SingletonType number
+mult         ( l SingletonType bigint, r SingletonType bigint ) SingletonType bigint
+mult         ( l SingletonType decimal, r SingletonType decimal ) SingletonType decimal
+mult         ( l SingletonType range<anypoint>, r SingletonType range<anypoint> ) SingletonType range<anypoint>
+div          ( l SingletonType number, r SingletonType number ) SingletonType number
+div          ( l SingletonType decimal, r SingletonType decimal ) SingletonType decimal
+floordiv     ( n SingletonType number, d SingletonType number ) SingletonType number
+floordiv     ( n SingletonType bigint, d SingletonType bigint ) SingletonType bigint
+floordiv     ( n SingletonType decimal, d SingletonType decimal ) SingletonType decimal
+mod          ( n SingletonType number, d SingletonType number ) SingletonType number
+mod          ( n SingletonType bigint, d SingletonType bigint ) SingletonType bigint
+mod          ( n SingletonType decimal, d SingletonType decimal ) SingletonType decimal
+pow          ( n SingletonType number, p SingletonType number ) SingletonType number
+pow          ( n SingletonType bigint, p SingletonType bigint ) SingletonType decimal
+pow          ( n SingletonType decimal, p SingletonType decimal ) SingletonType decimal
+in           ( e SingletonType anytype, s SetOfType anytype ) SingletonType bool
+not_in       ( e SingletonType anytype, s SetOfType anytype ) SingletonType bool
+union        ( s1 SetOfType anytype, s2 SetOfType anytype ) SetOfType anytype
+coalesce     ( l OptionalType anytype, r SetOfType anytype ) SetOfType anytype
+concat       ( l SingletonType array<anytype>, r SingletonType array<anytype> ) SingletonType array<anytype>
+concat       ( l SingletonType bytes, r SingletonType bytes ) SingletonType bytes
+concat       ( l SingletonType str, r SingletonType str ) SingletonType str
+concatenate  ( l SingletonType json, r SingletonType json ) SingletonType json
+like         ( string SingletonType str, pattern SingletonType str ) SingletonType bool
+ilike        ( string SingletonType str, pattern SingletonType str ) SingletonType bool
+not_like     ( string SingletonType str, pattern SingletonType str ) SingletonType bool
+not_ilike    ( string SingletonType str, pattern SingletonType str ) SingletonType bool
+
+
+// index        ( l SingletonType array<anytype>, r SingletonType number ) SingletonType anytype
+// index        ( l SingletonType bytes, r SingletonType number ) SingletonType bytes
+// index        ( l SingletonType json, r SingletonType number ) SingletonType json
+// index        ( l SingletonType str, r SingletonType number ) SingletonType str
+// slice        ( l SingletonType array<anytype>, r SingletonType tuple<int64, int64> ) SingletonType array<anytype>
+// slice        ( l SingletonType bytes, r SingletonType tuple<int64, int64> ) SingletonType bytes
+// slice        ( l SingletonType json, r SingletonType tuple<int64, int64> ) SingletonType json
+// slice        ( l SingletonType str, r SingletonType tuple<int64, int64> ) SingletonType str
+// destructure  ( l SingletonType json, r SingletonType str ) SingletonType json

@@ -1,0 +1,80 @@
+-- Prefix --
+not          ( v [S] bool ) [S] bool
+plus <T>     ( l [S] <T> ) [S] <T>             T extends number | bigint | decimal
+minus <T>    ( l [S] <T> ) [S] <T>             T extends number | bigint | decimal | duration | cal::relative_duration
+exists       ( s SetOfType anytype ) [S] bool
+distinct     ( s SetOfType anytype ) SetOfType anytype
+
+-- Ternary --
+if_else      ( if_true SetOfType anytype, condition [S] bool, if_false SetOfType anytype ) SetOfType anytype
+
+-- Infix --
+eq <T>       ( l [S] <T>, r [S] <T> ) [S] bool         T extends anytuple | bool | anyenum | number | bigint | decimal | array<anytype> | bytes | datetime | duration | json | str | uuid | range<anypoint> | BaseObject | cfg::memory | cal::local_datetime | cal::local_date | cal::local_time | cal::relative_duration
+eq           ( l [S] decimal, r [S] anyint ) [S] bool
+coal_eq <T>  ( l [O] <T>, r [O] <T> ) [S] bool         T extends anytuple | bool | anyenum | number | bigint | decimal | array<anytype> | bytes | datetime | duration | json | str | uuid | range<anypoint> | BaseObject | cfg::memory | cal::local_datetime | cal::local_date | cal::local_time | cal::relative_duration
+coal_eq      ( l [O] decimal, r [O] anyint ) [S] bool
+neq <T>      ( l [S] <T>, r [S] <T> ) [S] bool         T extends anytuple | bool | anyenum | number | bigint | decimal | array<anytype> | bytes | datetime | duration | json | str | uuid | range<anypoint> | BaseObject | cfg::memory | cal::local_datetime | cal::local_date | cal::local_time | cal::relative_duration
+neq          ( l [S] decimal, r [S] anyint ) [S] bool
+coal_neq <T> ( l [O] <T>, r [O] <T> ) [S] bool         T extends anytuple | bool | anyenum | number | bigint | decimal | array<anytype> | bytes | datetime | duration | json | str | uuid | range<anypoint> | BaseObject | cfg::memory | cal::local_datetime | cal::local_date | cal::local_time | cal::relative_duration
+coal_neq     ( l [O] decimal, r [O] anyint ) [S] bool
+gte <T>      ( l [S] <T>, r [S] <T> ) [S] bool         T extends anytuple | bool | anyenum | number | bigint | decimal | array<anytype> | bytes | datetime | duration | json | str | uuid | range<anypoint> | BaseObject | cfg::memory | cal::local_datetime | cal::local_date | cal::local_time | cal::relative_duration
+gte          ( l [S] anyint, r [S] decimal ) [S] bool
+gt <T>       ( l [S] <T>, r [S] <T> ) [S] bool         T extends anytuple | bool | anyenum | number | bigint | decimal | array<anytype> | bytes | datetime | duration | json | str | uuid | range<anypoint> | BaseObject | cfg::memory | cal::local_datetime | cal::local_date | cal::local_time | cal::relative_duration
+gt           ( l [S] anyint, r [S] decimal ) [S] bool
+lte <T>      ( l [S] <T>, r [S] <T> ) [S] bool         T extends anytuple | bool | anyenum | number | bigint | decimal | array<anytype> | bytes | datetime | duration | json | str | uuid | range<anypoint> | BaseObject | cfg::memory | cal::local_datetime | cal::local_date | cal::local_time | cal::relative_duration
+lte          ( l [S] anyint, r [S] decimal ) [S] bool
+lt <T>       ( l [S] <T>, r [S] <T> ) [S] bool         T extends anytuple | bool | anyenum | number | bigint | decimal | array<anytype> | bytes | datetime | duration | json | str | uuid | range<anypoint> | BaseObject | cfg::memory | cal::local_datetime | cal::local_date | cal::local_time | cal::relative_duration
+lt           ( l [S] anyint, r [S] decimal ) [S] bool
+or           ( a [S] bool, b [S] bool ) [S] bool
+and          ( a [S] bool, b [S] bool ) [S] bool
+plus <T>     ( l [S] <T>, r [S] <T> ) [S] <T>          T extends number | bigint | decimal | duration | range<anypoint> | cal::relative_duration | cal::date_duration
+plus         ( l [S] datetime, r [S] duration ) [S] datetime
+plus         ( l [S] datetime, r [S] cal::relative_duration ) [S] datetime
+plus         ( l [S] cal::local_datetime, r [S] duration ) [S] cal::local_datetime
+plus         ( l [S] cal::local_datetime, r [S] cal::relative_duration ) [S] cal::local_datetime
+plus         ( l [S] cal::local_date, r [S] duration ) [S] cal::local_datetime
+plus         ( l [S] cal::local_date, r [S] cal::relative_duration ) [S] cal::local_datetime
+plus         ( l [S] cal::local_date, r [S] cal::date_duration ) [S] cal::local_date
+plus         ( l [S] cal::local_time, r [S] duration ) [S] cal::local_time
+plus         ( l [S] cal::local_time, r [S] cal::relative_duration ) [S] cal::local_time
+plus         ( l [S] duration, r [S] cal::relative_duration ) [S] cal::relative_duration
+minus <T>    ( l [S] <T>, r [S] <T> ) [S] <T>          T extends number | bigint | decimal | duration | range<anypoint> | cal::relative_duration | cal::date_duration
+minus        ( l [S] datetime, r [S] duration ) [S] datetime
+minus        ( l [S] datetime, r [S] datetime ) [S] duration
+minus        ( l [S] datetime, r [S] cal::relative_duration ) [S] datetime
+minus        ( l [S] cal::local_datetime, r [S] duration ) [S] cal::local_datetime
+minus        ( l [S] cal::local_datetime, r [S] cal::relative_duration ) [S] cal::local_datetime
+minus        ( l [S] cal::local_datetime, r [S] cal::local_datetime ) [S] cal::relative_duration
+minus        ( l [S] cal::local_date, r [S] duration ) [S] cal::local_datetime
+minus        ( l [S] cal::local_date, r [S] cal::relative_duration ) [S] cal::local_datetime
+minus        ( l [S] cal::local_date, r [S] cal::date_duration ) [S] cal::local_date
+minus        ( l [S] cal::local_date, r [S] cal::local_date ) [S] cal::date_duration
+minus        ( l [S] cal::local_time, r [S] duration ) [S] cal::local_time
+minus        ( l [S] cal::local_time, r [S] cal::relative_duration ) [S] cal::local_time
+minus        ( l [S] cal::local_time, r [S] cal::local_time ) [S] cal::relative_duration
+minus        ( l [S] duration, r [S] cal::relative_duration ) [S] cal::relative_duration
+mult <T>     ( l [S] <T>, r [S] <T> ) [S] <T>          T extends number | bigint | decimal | range<anypoint>
+div <T>      ( l [S] <T>, r [S] <T> ) [S] <T>          T extends number | decimal
+floordiv <T> ( n [S] <T>, d [S] <T> ) [S] <T>          T extends number | bigint | decimal
+mod <T>      ( n [S] <T>, d [S] <T> ) [S] <T>          T extends number | bigint | decimal
+pow <T>      ( n [S] <T>, p [S] <T> ) [S] <T>          T extends number | bigint | decimal
+in           ( e [S] anytype, s SetOfType anytype ) [S] bool
+not_in       ( e [S] anytype, s SetOfType anytype ) [S] bool
+union        ( s1 SetOfType anytype, s2 SetOfType anytype ) SetOfType anytype
+coalesce     ( l [O] anytype, r SetOfType anytype ) SetOfType anytype
+concat <T>   ( l [S] <T>, r [S] <T> ) [S] <T>          T extends array<anytype> | bytes | str | json
+like         ( string [S] str, pattern [S] str ) [S] bool
+ilike        ( string [S] str, pattern [S] str ) [S] bool
+not_like     ( string [S] str, pattern [S] str ) [S] bool
+not_ilike    ( string [S] str, pattern [S] str ) [S] bool
+
+
+// index        ( l [S] array<anytype>, r [S] number ) [S] anytype
+// index        ( l [S] bytes, r [S] number ) [S] bytes
+// index        ( l [S] json, r [S] number ) [S] json
+// index        ( l [S] str, r [S] number ) [S] str
+// slice        ( l [S] array<anytype>, r [S] tuple<int64, int64> ) [S] array<anytype>
+// slice        ( l [S] bytes, r [S] tuple<int64, int64> ) [S] bytes
+// slice        ( l [S] json, r [S] tuple<int64, int64> ) [S] json
+// slice        ( l [S] str, r [S] tuple<int64, int64> ) [S] str
+// destructure  ( l [S] json, r [S] str ) [S] json

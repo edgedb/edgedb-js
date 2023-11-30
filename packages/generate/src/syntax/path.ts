@@ -30,6 +30,8 @@ import type {
   PropertyShape,
   TypeSet
 } from "./typesystem";
+import {op} from "./operators";
+import {opNames} from "./chainedOps";
 // import {typeutil} from "./typeutil";
 // import {cardutil} from "./cardinality";
 
@@ -417,11 +419,37 @@ export function $jsonDestructure(_expr: ExpressionRoot) {
   return _expr;
 }
 
+function resolveChainedOp(expr: any, opSymbol: string, args: any[]) {
+  switch (args.length) {
+    case 0:
+      return op(opSymbol, expr);
+    case 1:
+    default:
+      return op(expr, opSymbol, ...args);
+  }
+}
+
+const chainedOpProxyHandlers: ProxyHandler<ExpressionRoot> = {
+  get(target: ExpressionRoot, prop: string | symbol, proxy: any) {
+    const type = target.__element__;
+    const opSymbol = (opNames as any)[type.__kind__]?.[
+      ((type as any).__casttype__ ?? type).__name__
+    ]?.[prop];
+    return opSymbol
+      ? (...args: any[]) => resolveChainedOp(proxy, opSymbol, args)
+      : (target as any)[prop];
+  }
+};
+
+function $addChainedOps(expr: ExpressionRoot) {
+  return new Proxy(expr, chainedOpProxyHandlers);
+}
+
 export function $expressionify<T extends ExpressionRoot>(
   _expr: T
 ): Expression<T> {
   const expr: Expression = $pathify(
-    $jsonDestructure($arrayLikeIndexify($tuplePathify(_expr)))
+    $addChainedOps($jsonDestructure($arrayLikeIndexify($tuplePathify(_expr))))
   ) as any;
 
   expr.run = $queryFunc.bind(expr) as any;

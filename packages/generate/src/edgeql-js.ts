@@ -21,6 +21,7 @@ import {generateOperators} from "./edgeql-js/generateOperatorTypes";
 import {generateRuntimeSpec} from "./edgeql-js/generateRuntimeSpec";
 import {generateScalars} from "./edgeql-js/generateScalars";
 import {generateSetImpl} from "./edgeql-js/generateSetImpl";
+import {generateChainedOperators} from "./edgeql-js/generateChainedOperators";
 
 const {path, fs, readFileUtf8, exists, exit, walk} = adapter;
 
@@ -151,6 +152,7 @@ export async function generateQueryBuilder(params: {
     generateObjectTypes(generatorParams);
     generateFunctionTypes(generatorParams);
     generateOperators(generatorParams);
+    generateChainedOperators(generatorParams);
     generateSetImpl(generatorParams);
     generateGlobals(generatorParams);
     generateIndex(generatorParams);

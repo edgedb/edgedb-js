@@ -10,6 +10,7 @@ import type {
 import {TypeKind} from "edgedb/dist/reflection/index";
 import type {cardutil} from "./cardinality";
 import type {Range} from "edgedb";
+import type {$chainedOps} from "./chainedOps";
 
 //////////////////
 // BASETYPE
@@ -130,7 +131,8 @@ export type Expression<
           : {}) &
         $tuplePathify<Set> &
         $arrayLikeIndexify<Set> &
-        $jsonDestructure<Set>);
+        $jsonDestructure<Set> &
+        $chainedOps<Set>);
 
 export type stripSet<T> = "__element__" extends keyof T
   ? "__cardinality__" extends keyof T

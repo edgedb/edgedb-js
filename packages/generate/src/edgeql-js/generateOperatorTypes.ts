@@ -65,6 +65,28 @@ export function generateOperators({
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
   const code = dir.getPath("operators");
 
+  // console.log(
+  //   [...operators.values()]
+  //     .flatMap(ops =>
+  //       ops
+  //         // .filter(op => op.params.some(p => p.kind !== "PositionalParam"))
+  //         .map(op => {
+  //           return [
+  //             op.name,
+  //             op.operator_kind,
+  //             "(",
+  //             op.params
+  //               .map(p => [p.name, p.typemod, p.kind, p.type.name].join(" "))
+  //               .join(", "),
+  //             ")",
+  //             op.return_typemod,
+  //             op.return_type.name
+  //           ].join(" ");
+  //         })
+  //     )
+  //     .join("\n")
+  // );
+
   code.addImportStar("$", "./reflection", {allowFileExt: true});
   code.addImportStar("_", "./imports", {allowFileExt: true});
 
