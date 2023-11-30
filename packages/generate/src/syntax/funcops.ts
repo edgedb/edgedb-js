@@ -1,6 +1,6 @@
 import {
   Cardinality,
-  introspect,
+  type introspect,
   TypeKind,
 } from "edgedb/dist/reflection/index";
 import { cardutil } from "./cardinality";

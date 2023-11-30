@@ -1,10 +1,11 @@
-import { Executor } from "../../ifaces";
+import type { Executor } from "../../ifaces";
 import { StrictMap } from "../strictMap";
 
-import { FuncopParam, replaceNumberTypes, FuncopTypemod } from "./functions";
+import type { FuncopParam, FuncopTypemod } from "./functions";
+import { replaceNumberTypes } from "./functions";
 import { util } from "../util";
-import { typeutil } from "../typeutil";
-import { OperatorKind } from "../enums";
+import type { typeutil } from "../typeutil";
+import type { OperatorKind } from "../enums";
 
 export type { FuncopTypemod };
 
@@ -49,7 +50,7 @@ const _operators = async (cxn: Executor) => {
 
   for (const op of JSON.parse(operatorsJson)) {
     const identifier = op.annotations.find(
-      (anno: any) => anno.name === "std::identifier"
+      (anno: { name: string }) => anno.name === "std::identifier"
     )?.["@value"];
 
     if (!identifier) {
@@ -70,7 +71,7 @@ const _operators = async (cxn: Executor) => {
       kind: op.operator_kind,
       originalName: op.name,
       description: op.annotations.find(
-        (anno: any) => anno.name === "std::description"
+        (anno: { name: string }) => anno.name === "std::description"
       )?.["@value"],
       annotations: undefined,
     };
