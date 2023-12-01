@@ -170,6 +170,7 @@ that later.
 
 Converting to EdgeQL
 --------------------
+:index: querybuilder toedgeql
 
 You can extract an EdgeQL representation of any expression calling the
 ``.toEdgeQL()`` method. Below is a number of expressions and the EdgeQL they
