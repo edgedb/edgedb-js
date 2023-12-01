@@ -41,26 +41,32 @@ jobs:
       - name: Build edgedb
         run: yarn workspace edgedb run build
 
-      - id: publish_driver
-        name: Publish 'edgedb' to NPM
+      - id: check_publish_driver
+        name: Dry-run publish 'edgedb' to npm
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/driver/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          access: public
-
-      - name: If publish 'edgedb'
-        if: steps.publish_driver.outputs.type != ''
-        run: |
-          echo "Published ${{ steps.publish_driver.outputs.type }} version: ${{ steps.publish_driver.outputs.version }}"
+          dry-run: true
 
       - name: If 'edgedb' version unchanged
-        if: steps.publish_driver.outputs.type == ''
+        if: steps.check_publish_driver.outputs.type == ''
         run: |
-          echo "Version in package.json has not changed. Skipping."
+          echo "Version in package.json has not changed. Creating canary release."
+          cd packages/driver
+          npm --no-git-tag-version version minor
+          npm --no-git-tag-version version $(npm pkg get version | sed 's/"//g')-canary.$(date +'%Y%m%dT%H%M%S')
+
+      - name: Publish 'edgedb'
+        uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
+        with:
+          package: packages/driver/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          public: true
+          tag: ${{ steps.check_publish_driver.outputs.type == '' && 'canary' || 'latest' }}
 
       - name: Build 'edgedb' Changelog
-        if: steps.publish_driver.outputs.type != ''
+        if: steps.check_publish_driver.outputs.type != ''
         id: github_driver_release
         uses: mikepenz/release-changelog-builder-action@v3
         env:
@@ -76,14 +82,14 @@ jobs:
               "categories": []
             }
 
-      - name: Create 'edgedb' Release
-        if: steps.publish_driver.outputs.type != ''
+      - name: Create 'edgedb' GitHub Release
+        if: steps.check_publish_driver.outputs.type != ''
         uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.publish_driver.outputs.version }}
-          release_name: edgedb-js v${{ steps.publish_driver.outputs.version }}
+          tag_name: v${{ steps.check_publish_driver.outputs.version }}
+          release_name: edgedb-js v${{ steps.check_publish_driver.outputs.version }}
           commitish: ${{ github.ref }}
           body: ${{steps.github_driver_release.outputs.changelog}}
           draft: true
@@ -94,26 +100,32 @@ jobs:
       - name: Build @edgedb/generate
         run: yarn workspace @edgedb/generate run build
 
-      - id: publish_generate
-        name: Publish '@edgedb/generate' to NPM
+      - id: check_publish_generate
+        name: Dry-run publish '@edgedb/generate' to npm
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/generate/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          access: public
-
-      - name: If publish '@edgedb/generate'
-        if: steps.publish_generate.outputs.type != ''
-        run: |
-          echo "Published ${{ steps.publish_generate.outputs.type }} version: ${{ steps.publish_generate.outputs.version }}"
+          dry-run: true
 
       - name: If '@edgedb/generate' version unchanged
-        if: steps.publish_generate.outputs.type == ''
+        if: steps.check_publish_generate.outputs.type == ''
         run: |
-          echo "Version in package.json has not changed. Skipping."
+          echo "Version in package.json has not changed. Creating canary release."
+          cd packages/generate
+          npm --no-git-tag-version version minor
+          npm --no-git-tag-version version $(npm pkg get version | sed 's/"//g')-canary.$(date +'%Y%m%dT%H%M%S')
+
+      - name: Publish '@edgedb/generate'
+        uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
+        with:
+          package: packages/generate/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          public: true
+          tag: ${{ steps.check_publish_generate.outputs.type == '' && 'canary' || 'latest' }}
 
       - name: Build '@edgedb/generate' Changelog
-        if: steps.publish_generate.outputs.type != ''
+        if: steps.check_publish_generate.outputs.type != ''
         id: github_generate_release
         uses: mikepenz/release-changelog-builder-action@v3
         env:
@@ -129,14 +141,14 @@ jobs:
               "categories": []
             }
 
-      - name: Create '@edgedb/generate' Release
-        if: steps.publish_generate.outputs.type != ''
+      - name: Create '@edgedb/generate' GitHub Release
+        if: steps.check_publish_generate.outputs.type != ''
         uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: generate-v${{ steps.publish_generate.outputs.version }}
-          release_name: \@edgedb/generate v${{ steps.publish_generate.outputs.version }}
+          tag_name: generate-v${{ steps.check_publish_generate.outputs.version }}
+          release_name: \@edgedb/generate v${{ steps.check_publish_generate.outputs.version }}
           commitish: ${{ github.ref }}
           body: ${{steps.github_generate_release.outputs.changelog}}
           draft: true
@@ -147,26 +159,32 @@ jobs:
       - name: Build @edgedb/auth-core
         run: yarn workspace @edgedb/auth-core run build
 
-      - id: publish_auth_core
-        name: Publish '@edgedb/auth-core' to NPM
+      - id: check_publish_auth_core
+        name: Dry-run publish '@edgedb/auth-core' to npm
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/auth-core/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          access: public
-
-      - name: If publish '@edgedb/auth-core'
-        if: steps.publish_auth_core.outputs.type != ''
-        run: |
-          echo "Published ${{ steps.publish_auth_core.outputs.type }} version: ${{ steps.publish_auth_core.outputs.version }}"
+          dry-run: true
 
       - name: If '@edgedb/auth-core' version unchanged
-        if: steps.publish_auth_core.outputs.type == ''
+        if: steps.check_publish_auth_core.outputs.type == ''
         run: |
-          echo "Version in package.json has not changed. Skipping."
+          echo "Version in package.json has not changed. Creating canary release."
+          cd packages/auth-core
+          npm --no-git-tag-version version minor
+          npm --no-git-tag-version version $(npm pkg get version | sed 's/"//g')-canary.$(date +'%Y%m%dT%H%M%S')
+
+      - name: Publish '@edgedb/auth-core'
+        uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
+        with:
+          package: packages/auth-core/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          public: true
+          tag: ${{ steps.check_publish_auth_core.outputs.type == '' && 'canary' || 'latest' }}
 
       - name: Build '@edgedb/auth-core' Changelog
-        if: steps.publish_auth_core.outputs.type != ''
+        if: steps.check_publish_auth_core.outputs.type != ''
         id: github_auth_core_release
         uses: mikepenz/release-changelog-builder-action@v3
         env:
@@ -183,13 +201,13 @@ jobs:
             }
 
       - name: Create '@edgedb/auth-core' Release
-        if: steps.publish_auth_core.outputs.type != ''
+        if: steps.check_publish_auth_core.outputs.type != ''
         uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: auth-core-v${{ steps.publish_auth_core.outputs.version }}
-          release_name: \@edgedb/auth-core v${{ steps.publish_auth_core.outputs.version }}
+          tag_name: auth-core-v${{ steps.check_publish_auth_core.outputs.version }}
+          release_name: \@edgedb/auth-core v${{ steps.check_publish_auth_core.outputs.version }}
           commitish: ${{ github.ref }}
           body: ${{steps.github_auth_core_release.outputs.changelog}}
           draft: true
@@ -200,26 +218,32 @@ jobs:
       - name: Build @edgedb/auth-nextjs
         run: yarn workspace @edgedb/auth-nextjs run build
 
-      - id: publish_auth_nextjs
-        name: Publish '@edgedb/auth-nextjs' to NPM
+      - id: check_publish_auth_nextjs
+        name: Dry-run publish '@edgedb/auth-nextjs' to npm
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/auth-nextjs/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          access: public
-
-      - name: If publish '@edgedb/auth-nextjs'
-        if: steps.publish_auth_nextjs.outputs.type != ''
-        run: |
-          echo "Published ${{ steps.publish_auth_nextjs.outputs.type }} version: ${{ steps.publish_auth_nextjs.outputs.version }}"
+          dry-run: true
 
       - name: If '@edgedb/auth-nextjs' version unchanged
-        if: steps.publish_auth_nextjs.outputs.type == ''
+        if: steps.check_publish_auth_nextjs.outputs.type == ''
         run: |
-          echo "Version in package.json has not changed. Skipping."
+          echo "Version in package.json has not changed. Creating canary release."
+          cd packages/auth-nextjs
+          npm --no-git-tag-version version minor
+          npm --no-git-tag-version version $(npm pkg get version | sed 's/"//g')-canary.$(date +'%Y%m%dT%H%M%S')
+
+      - name: Publish '@edgedb/auth-nextjs'
+        uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
+        with:
+          package: packages/auth-nextjs/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          public: true
+          tag: ${{ steps.check_publish_auth_nextjs.outputs.type == '' && 'canary' || 'latest' }}
 
       - name: Build '@edgedb/auth-nextjs' Changelog
-        if: steps.publish_auth_nextjs.outputs.type != ''
+        if: steps.check_publish_auth_nextjs.outputs.type != ''
         id: github_auth_nextjs_release
         uses: mikepenz/release-changelog-builder-action@v3
         env:
@@ -236,13 +260,13 @@ jobs:
             }
 
       - name: Create '@edgedb/auth-nextjs' Release
-        if: steps.publish_auth_nextjs.outputs.type != ''
+        if: steps.check_publish_auth_nextjs.outputs.type != ''
         uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: auth-nextjs-v${{ steps.publish_auth_nextjs.outputs.version }}
-          release_name: \@edgedb/auth-nextjs v${{ steps.publish_auth_nextjs.outputs.version }}
+          tag_name: auth-nextjs-v${{ steps.check_publish_auth_nextjs.outputs.version }}
+          release_name: \@edgedb/auth-nextjs v${{ steps.check_publish_auth_nextjs.outputs.version }}
           commitish: ${{ github.ref }}
           body: ${{steps.github_auth_nextjs_release.outputs.changelog}}
           draft: true
