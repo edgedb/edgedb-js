@@ -54,7 +54,7 @@ jobs:
         run: |
           echo "Version in package.json has not changed. Creating canary release."
           yarn workspace edgedb version --no-git-tag-version --minor
-          CURRENT_VERSION=$(node -p "require('./packages/edgedb/package.json').version")
+          CURRENT_VERSION=$(node -p "require('./packages/driver/package.json').version")
           yarn workspace edgedb version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
       - name: Publish 'edgedb'
