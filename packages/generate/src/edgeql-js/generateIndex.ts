@@ -128,7 +128,7 @@ export function generateIndex(params: GeneratorParams) {
       });
 
       const valueStr = defaultSpreadTypes.has(moduleName)
-        ? `{ ..._${internalName}, ..._default.${moduleName} }`
+        ? `Object.freeze({ ..._${internalName}, ..._default.${moduleName} })`
         : `_${internalName}`;
       index.writeln([r`${genutil.quote(moduleName)}: ${valueStr},`]);
     }
