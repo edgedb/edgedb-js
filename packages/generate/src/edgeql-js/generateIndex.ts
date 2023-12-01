@@ -92,12 +92,17 @@ export function generateIndex(params: GeneratorParams) {
     `const ExportDefault`,
     t`: ${spreadTypes.reverse().join(" & \n  ")} & {`,
   ]);
+  const defaultSpreadTypes = new Set(
+    dir.getModule("default").getDefaultExportKeys()
+  );
   index.indented(() => {
     for (const [moduleName, internalName] of topLevelModules) {
       if (dir.getModule(moduleName).isEmpty()) continue;
-      index.writeln([
-        t`${genutil.quote(moduleName)}: typeof _${internalName};`,
-      ]);
+      let typeStr = `typeof _${internalName}`;
+      if (defaultSpreadTypes.has(moduleName)) {
+        typeStr += ` & typeof _default.${moduleName}`;
+      }
+      index.writeln([t`${genutil.quote(moduleName)}: ${typeStr};`]);
     }
   });
 
@@ -122,7 +127,10 @@ export function generateIndex(params: GeneratorParams) {
         allowFileExt: true,
       });
 
-      index.writeln([r`${genutil.quote(moduleName)}: _${internalName},`]);
+      const valueStr = defaultSpreadTypes.has(moduleName)
+        ? `Object.freeze({ ..._${internalName}, ..._default.${moduleName} })`
+        : `_${internalName}`;
+      index.writeln([r`${genutil.quote(moduleName)}: ${valueStr},`]);
     }
   });
   index.writeln([r`};`]);

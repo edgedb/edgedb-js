@@ -1368,4 +1368,11 @@ SELECT __scope_0_defaultPerson {
       >
     >(true);
   });
+
+  test("Reference default type and module with same name", async () => {
+    const query = e.select(e.User, () => ({
+      active: e.User.Status.Active,
+    }));
+    await query.run(client);
+  });
 });

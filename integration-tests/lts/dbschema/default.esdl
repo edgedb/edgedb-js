@@ -209,3 +209,7 @@ module `💯💯💯` {
 module extra {
   global user_id -> uuid;
 }
+
+module User {
+  scalar type Status extending enum<"Active", "Disabled">;
+}
