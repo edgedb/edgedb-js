@@ -62,7 +62,7 @@ jobs:
         with:
           package: packages/driver/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          public: true
+          access: public
           tag: ${{ steps.check_publish_driver.outputs.type == '' && 'canary' || 'latest' }}
 
       - name: Build 'edgedb' Changelog
@@ -121,7 +121,7 @@ jobs:
         with:
           package: packages/generate/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          public: true
+          access: public
           tag: ${{ steps.check_publish_generate.outputs.type == '' && 'canary' || 'latest' }}
 
       - name: Build '@edgedb/generate' Changelog
@@ -180,7 +180,7 @@ jobs:
         with:
           package: packages/auth-core/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          public: true
+          access: public
           tag: ${{ steps.check_publish_auth_core.outputs.type == '' && 'canary' || 'latest' }}
 
       - name: Build '@edgedb/auth-core' Changelog
@@ -239,7 +239,7 @@ jobs:
         with:
           package: packages/auth-nextjs/package.json
           token: ${{ secrets.NPM_TOKEN }}
-          public: true
+          access: public
           tag: ${{ steps.check_publish_auth_nextjs.outputs.type == '' && 'canary' || 'latest' }}
 
       - name: Build '@edgedb/auth-nextjs' Changelog
