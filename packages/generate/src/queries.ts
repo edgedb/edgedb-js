@@ -2,7 +2,7 @@ import { $, adapter, type Client } from "edgedb";
 import { Cardinality } from "edgedb/dist/ifaces";
 import { type CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
-import type { Target } from "./genutil";
+import { type Target, camelify } from "./genutil";
 
 // generate per-file queries
 // generate queries in a single file
@@ -198,9 +198,7 @@ export function generateFiles(params: {
       : params.types.cardinality === Cardinality.AT_MOST_ONE
       ? "querySingle"
       : "query";
-  const functionName = baseFileName
-    .replace(/-[A-Za-z]/g, (m) => m[1].toUpperCase())
-    .replace(/^[^A-Za-z_]|\W/g, "_");
+  const functionName = camelify(baseFileName);
   const interfaceName =
     functionName.charAt(0).toUpperCase() + functionName.slice(1);
   const argsInterfaceName = `${interfaceName}Args`;
