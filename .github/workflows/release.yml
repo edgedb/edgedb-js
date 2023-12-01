@@ -53,9 +53,9 @@ jobs:
         if: steps.check_publish_driver.outputs.type == ''
         run: |
           echo "Version in package.json has not changed. Creating canary release."
-          cd packages/driver
-          npm --no-git-tag-version version minor
-          npm --no-git-tag-version version $(npm pkg get version | sed 's/"//g')-canary.$(date +'%Y%m%dT%H%M%S')
+          yarn workspace edgedb version --minor
+          CURRENT_VERSION=$(node -p "require('./packages/edgedb/package.json').version")
+          yarn workspace edgedb version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
       - name: Publish 'edgedb'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
@@ -112,9 +112,9 @@ jobs:
         if: steps.check_publish_generate.outputs.type == ''
         run: |
           echo "Version in package.json has not changed. Creating canary release."
-          cd packages/generate
-          npm --no-git-tag-version version minor
-          npm --no-git-tag-version version $(npm pkg get version | sed 's/"//g')-canary.$(date +'%Y%m%dT%H%M%S')
+          yarn workspace @edgedb/generate version --minor
+          CURRENT_VERSION=$(node -p "require('./packages/generate/package.json').version")
+          yarn workspace @edgedb/generate version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
       - name: Publish '@edgedb/generate'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
@@ -171,9 +171,9 @@ jobs:
         if: steps.check_publish_auth_core.outputs.type == ''
         run: |
           echo "Version in package.json has not changed. Creating canary release."
-          cd packages/auth-core
-          npm --no-git-tag-version version minor
-          npm --no-git-tag-version version $(npm pkg get version | sed 's/"//g')-canary.$(date +'%Y%m%dT%H%M%S')
+          yarn workspace @edgedb/auth-core version --minor
+          CURRENT_VERSION=$(node -p "require('./packages/auth-core/package.json').version")
+          yarn workspace @edgedb/auth-core version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
       - name: Publish '@edgedb/auth-core'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
@@ -230,9 +230,9 @@ jobs:
         if: steps.check_publish_auth_nextjs.outputs.type == ''
         run: |
           echo "Version in package.json has not changed. Creating canary release."
-          cd packages/auth-nextjs
-          npm --no-git-tag-version version minor
-          npm --no-git-tag-version version $(npm pkg get version | sed 's/"//g')-canary.$(date +'%Y%m%dT%H%M%S')
+          yarn workspace @edgedb/auth-nextjs version --minor
+          CURRENT_VERSION=$(node -p "require('./packages/auth-nextjs/package.json').version")
+          yarn workspace @edgedb/auth-nextjs version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
       - name: Publish '@edgedb/auth-nextjs'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
