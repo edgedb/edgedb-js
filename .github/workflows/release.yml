@@ -230,9 +230,9 @@ jobs:
         if: steps.check_publish_auth_nextjs.outputs.type == ''
         run: |
           echo "Version in package.json has not changed. Creating canary release."
-          yarn workspace @edgedb/auth-nextjs version --minor
+          yarn workspace @edgedb/auth-nextjs version  --no-git-tag-version --minor
           CURRENT_VERSION=$(node -p "require('./packages/auth-nextjs/package.json').version")
-          yarn workspace @edgedb/auth-nextjs version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
+          yarn workspace @edgedb/auth-nextjs version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
       - name: Publish '@edgedb/auth-nextjs'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
