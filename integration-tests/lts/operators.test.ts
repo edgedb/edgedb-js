@@ -26,20 +26,22 @@ describe("operators", () => {
     cardinality: T["__cardinality__"],
     edgeql?: string
   ) {
-    assert.deepEqual(expr.__name__, name);
-    assert.deepEqual(
-      superjson.stringify(expr.__args__),
-      superjson.stringify(args.filter((arg) => arg !== undefined))
-    );
-    assert.deepEqual(expr.__element__, returnType);
-    assert.deepEqual(expr.__cardinality__, cardinality);
+    test(`${name} operator: expect ${edgeql ?? "(NO EDGEQL)"}`, async () => {
+      assert.deepEqual(expr.__name__, name);
+      assert.deepEqual(
+        superjson.stringify(expr.__args__),
+        superjson.stringify(args.filter((arg) => arg !== undefined))
+      );
+      assert.deepEqual(expr.__element__, returnType);
+      assert.deepEqual(expr.__cardinality__, cardinality);
 
-    if (edgeql) {
-      assert.deepEqual(expr.toEdgeQL(), edgeql);
-    }
+      if (edgeql) {
+        assert.deepEqual(expr.toEdgeQL(), edgeql);
+      }
+    });
   }
 
-  test("slice and index ops", () => {
+  describe("slice and index ops", () => {
     checkOperatorExpr(
       e.str("test string")["2:5"],
       "[]",
@@ -113,7 +115,7 @@ describe("operators", () => {
     );
   });
 
-  test("if else op", () => {
+  describe("if else op", () => {
     checkOperatorExpr(
       e.op(
         "this",
@@ -202,6 +204,15 @@ describe("operators", () => {
       e.str,
       $.Cardinality.AtMostOne,
       `"this" IF (42 = <std::float32>42) ELSE <std::str>{}`
+    );
+
+    checkOperatorExpr(
+      e.op("if", e.bool(true), "then", e.int64(1), "else", e.int64(2)),
+      "if_else",
+      [e.int64(1), e.bool(true), e.int64(2)],
+      e.int64,
+      $.Cardinality.One,
+      `<std::int64>1 IF true ELSE <std::int64>2`
     );
   });
 
