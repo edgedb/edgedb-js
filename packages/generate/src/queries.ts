@@ -96,8 +96,11 @@ currently supported.`);
         const filePath =
           (adapter.path.isAbsolute(params.options.file)
             ? params.options.file
-            : adapter.path.join(params.schemaDir, params.options.file)) +
-          extension;
+            : adapter.path.join(
+                adapter.process.cwd(),
+                params.schemaDir,
+                params.options.file
+              )) + extension;
         const prettyPath = adapter.path.isAbsolute(params.options.file)
           ? params.options.file + extension
           : "./" + adapter.path.posix.relative(root, filePath);
