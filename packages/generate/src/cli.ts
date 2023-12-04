@@ -192,7 +192,7 @@ const run = async () => {
           if (args.length > 0 && args[0][0] !== "-") {
             options.file = getVal();
           } else {
-            options.file = "dbschema/queries";
+            options.file = "queries";
           }
         } else {
           exitWithError(
