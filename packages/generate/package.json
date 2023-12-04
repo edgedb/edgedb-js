@@ -21,6 +21,7 @@
     "edgedb": "^1.4.0"
   },
   "devDependencies": {
+    "@iarna/toml": "^2.2.5",
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.2",
     "conditional-type-checks": "^1.0.6",
