@@ -389,6 +389,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
           options,
           client,
           root: projectRoot,
+          schemaDir,
         });
         break;
       case Generator.Queries:
@@ -404,6 +405,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
           options,
           client,
           root: projectRoot,
+          schemaDir,
         });
         break;
     }

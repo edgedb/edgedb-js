@@ -43,8 +43,9 @@ export async function generateQueryBuilder(params: {
   root: string | null;
   options: CommandOptions;
   client: Client;
+  schemaDir: string;
 }) {
-  const { root, options, client: cxn } = params;
+  const { root, options, client: cxn, schemaDir } = params;
 
   let outputDir: string;
   if (options.out) {
@@ -52,7 +53,7 @@ export async function generateQueryBuilder(params: {
       ? options.out
       : path.join(adapter.process.cwd(), options.out);
   } else if (root) {
-    outputDir = path.join(root, "dbschema", "edgeql-js");
+    outputDir = path.join(root, schemaDir, "edgeql-js");
   } else {
     throw new Error(
       `No edgedb.toml found. Initialize an EdgeDB project with\n\`edgedb project init\` or specify an output directory with \`--output-dir\``
