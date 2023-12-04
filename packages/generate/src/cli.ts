@@ -7,6 +7,7 @@ import * as TOML from "@iarna/toml";
 import {
   type ConnectConfig,
   validTlsSecurityValues,
+  isValidTlsSecurityValue,
 } from "edgedb/dist/conUtils";
 import { parseConnectArguments } from "edgedb/dist/conUtils.server";
 import {
@@ -16,7 +17,7 @@ import {
 } from "./commandutil";
 import { generateQueryBuilder } from "./edgeql-js";
 import { runInterfacesGenerator } from "./interfaces";
-import { exitWithError } from "./genutil";
+import { type Target, exitWithError } from "./genutil";
 import { generateQueryFiles } from "./queries";
 
 const { path, readFileUtf8, exists } = adapter;
@@ -142,9 +143,9 @@ const run = async () => {
       case "--tls-ca-file":
         connectionConfig.tlsCAFile = getVal();
         break;
-      case "--tls-security":
-        const tlsSec: any = getVal();
-        if (!validTlsSecurityValues.includes(tlsSec)) {
+      case "--tls-security": {
+        const tlsSec = getVal();
+        if (!isValidTlsSecurityValue(tlsSec)) {
           exitWithError(
             `Invalid value for --tls-security. Must be one of: ${validTlsSecurityValues
               .map((x) => `"${x}"`)
@@ -153,10 +154,11 @@ const run = async () => {
         }
         connectionConfig.tlsSecurity = tlsSec;
         break;
+      }
       case "--use-http-client":
         options.useHttpClient = true;
         break;
-      case "--target":
+      case "--target": {
         if (generator === Generator.Interfaces) {
           exitWithError(
             `--target is not supported for generator "${generator}"`
@@ -170,8 +172,9 @@ const run = async () => {
             }", expected "deno", "mts", "ts", "esm" or "cjs"`
           );
         }
-        options.target = target as any;
+        options.target = target as Target;
         break;
+      }
       case "--out":
       case "--output-dir":
         if (
