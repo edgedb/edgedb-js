@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 
 // tslint:disable:no-console
-import { adapter, Client, createClient, createHttpClient } from "edgedb";
+import { adapter, type Client, createClient, createHttpClient } from "edgedb";
+import * as TOML from "@iarna/toml";
 
-import { ConnectConfig, validTlsSecurityValues } from "edgedb/dist/conUtils";
+import {
+  type ConnectConfig,
+  validTlsSecurityValues,
+} from "edgedb/dist/conUtils";
 import { parseConnectArguments } from "edgedb/dist/conUtils.server";
 import {
-  CommandOptions,
+  type CommandOptions,
   promptForPassword,
   readPasswordFromStdin,
 } from "./commandutil";
@@ -264,10 +268,21 @@ const run = async () => {
   }
 
   let currentDir = adapter.process.cwd();
+  let schemaDir = "dbschema";
   const systemRoot = path.parse(currentDir).root;
   while (currentDir !== systemRoot) {
     if (await exists(path.join(currentDir, "edgedb.toml"))) {
       projectRoot = currentDir;
+      const config: {
+        project?: { "schema-dir"?: string };
+      } = TOML.parse(await readFileUtf8(currentDir, "edgedb.toml"));
+
+      const maybeProjectTable = config.project;
+      const maybeSchemaDir =
+        maybeProjectTable && maybeProjectTable["schema-dir"];
+      if (typeof maybeSchemaDir === "string") {
+        schemaDir = maybeSchemaDir;
+      }
       break;
     }
     currentDir = path.join(currentDir, "..");
@@ -381,6 +396,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
           options,
           client,
           root: projectRoot,
+          schemaDir,
         });
         break;
       case Generator.Interfaces:
