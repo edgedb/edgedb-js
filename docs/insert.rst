@@ -78,6 +78,7 @@ queries:
 
 Handling conflicts
 ^^^^^^^^^^^^^^^^^^
+:index: querybuilder unlessconflict unless conflict
 
 In EdgeQL, "upsert" functionality is achieved by handling **conflicts** on
 ``insert`` statements with the ``unless conflict`` clause. In the query
