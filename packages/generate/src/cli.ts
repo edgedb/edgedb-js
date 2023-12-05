@@ -1,18 +1,23 @@
 #!/usr/bin/env node
 
 // tslint:disable:no-console
-import { adapter, Client, createClient, createHttpClient } from "edgedb";
+import { adapter, type Client, createClient, createHttpClient } from "edgedb";
+import * as TOML from "@iarna/toml";
 
-import { ConnectConfig, validTlsSecurityValues } from "edgedb/dist/conUtils";
+import {
+  type ConnectConfig,
+  validTlsSecurityValues,
+  isValidTlsSecurityValue,
+} from "edgedb/dist/conUtils";
 import { parseConnectArguments } from "edgedb/dist/conUtils.server";
 import {
-  CommandOptions,
+  type CommandOptions,
   promptForPassword,
   readPasswordFromStdin,
 } from "./commandutil";
 import { generateQueryBuilder } from "./edgeql-js";
 import { runInterfacesGenerator } from "./interfaces";
-import { exitWithError } from "./genutil";
+import { type Target, exitWithError } from "./genutil";
 import { generateQueryFiles } from "./queries";
 
 const { path, readFileUtf8, exists } = adapter;
@@ -61,6 +66,28 @@ const run = async () => {
     case Generator.Interfaces:
       options.target = "ts";
       break;
+  }
+
+  let projectRoot: string | null = null;
+  let currentDir = adapter.process.cwd();
+  let schemaDir = "dbschema";
+  const systemRoot = path.parse(currentDir).root;
+  while (currentDir !== systemRoot) {
+    if (await exists(path.join(currentDir, "edgedb.toml"))) {
+      projectRoot = currentDir;
+      const config: {
+        project?: { "schema-dir"?: string };
+      } = TOML.parse(await readFileUtf8(currentDir, "edgedb.toml"));
+
+      const maybeProjectTable = config.project;
+      const maybeSchemaDir =
+        maybeProjectTable && maybeProjectTable["schema-dir"];
+      if (typeof maybeSchemaDir === "string") {
+        schemaDir = maybeSchemaDir;
+      }
+      break;
+    }
+    currentDir = path.join(currentDir, "..");
   }
 
   while (args.length) {
@@ -138,9 +165,9 @@ const run = async () => {
       case "--tls-ca-file":
         connectionConfig.tlsCAFile = getVal();
         break;
-      case "--tls-security":
-        const tlsSec: any = getVal();
-        if (!validTlsSecurityValues.includes(tlsSec)) {
+      case "--tls-security": {
+        const tlsSec = getVal();
+        if (!isValidTlsSecurityValue(tlsSec)) {
           exitWithError(
             `Invalid value for --tls-security. Must be one of: ${validTlsSecurityValues
               .map((x) => `"${x}"`)
@@ -149,10 +176,11 @@ const run = async () => {
         }
         connectionConfig.tlsSecurity = tlsSec;
         break;
+      }
       case "--use-http-client":
         options.useHttpClient = true;
         break;
-      case "--target":
+      case "--target": {
         if (generator === Generator.Interfaces) {
           exitWithError(
             `--target is not supported for generator "${generator}"`
@@ -166,8 +194,9 @@ const run = async () => {
             }", expected "deno", "mts", "ts", "esm" or "cjs"`
           );
         }
-        options.target = target as any;
+        options.target = target as Target;
         break;
+      }
       case "--out":
       case "--output-dir":
         if (
@@ -188,7 +217,7 @@ const run = async () => {
           if (args.length > 0 && args[0][0] !== "-") {
             options.file = getVal();
           } else {
-            options.file = "dbschema/queries";
+            options.file = adapter.path.join(schemaDir, "queries");
           }
         } else {
           exitWithError(
@@ -221,36 +250,6 @@ const run = async () => {
     adapter.process.exit();
   }
 
-  // }
-
-  // check for locally install edgedb
-  // const edgedbPath = path.join(rootDir, "node_modules", "edgedb");
-  // if (!fs.existsSync(edgedbPath)) {
-  //   console.error(
-  //     `Error: 'edgedb' package is not yet installed locally.
-  //  Run `npm install edgedb` before generating the query builder.`
-  //   );
-  //   adapter.process.exit();
-  // }
-  let projectRoot: string | null = null;
-
-  // cannot find projectRoot with package.json in deno.
-  // case 1. use deno.json
-  // case 2. use edgedb.toml for finding projectRoot
-  // if (options.target === "deno") {
-  //   // projectRoot = currentDir;
-  //   const {getRoot} = await import(
-  //     "https://deno.land/x/find_root@v0.2.1/mod.ts"
-  //   );
-  //   const hasDenoJson = await getRoot("deno.json", currentDir);
-  //   if (hasDenoJson.isErr()) {
-  //     exitWithError(
-  //       "Error: no deno.json found. Make sure you're inside your
-  // project directory."
-  //     );
-  //   }
-  //   currentDir = hasDenoJson.value.inDir;
-  // } else {
   switch (generator) {
     case Generator.QueryBuilder:
       console.log(`Generating query builder...`);
@@ -261,16 +260,6 @@ const run = async () => {
     case Generator.Interfaces:
       console.log(`Generating TS interfaces from schema...`);
       break;
-  }
-
-  let currentDir = adapter.process.cwd();
-  const systemRoot = path.parse(currentDir).root;
-  while (currentDir !== systemRoot) {
-    if (await exists(path.join(currentDir, "edgedb.toml"))) {
-      projectRoot = currentDir;
-      break;
-    }
-    currentDir = path.join(currentDir, "..");
   }
 
   if (!options.target) {
@@ -374,6 +363,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
           options,
           client,
           root: projectRoot,
+          schemaDir,
         });
         break;
       case Generator.Queries:
@@ -381,6 +371,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
           options,
           client,
           root: projectRoot,
+          schemaDir,
         });
         break;
       case Generator.Interfaces:
@@ -388,6 +379,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
           options,
           client,
           root: projectRoot,
+          schemaDir,
         });
         break;
     }

@@ -43,6 +43,15 @@ export const validTlsSecurityValues = [
 
 export type TlsSecurity = (typeof validTlsSecurityValues)[number];
 
+export function isValidTlsSecurityValue(
+  candidate: unknown
+): candidate is TlsSecurity {
+  return (
+    typeof candidate === "string" &&
+    validTlsSecurityValues.includes(candidate as TlsSecurity)
+  );
+}
+
 interface PartiallyNormalizedConfig {
   connectionParams: ResolvedConnectConfig;
 

@@ -12,8 +12,9 @@ export async function runInterfacesGenerator(params: {
   root: string | null;
   options: CommandOptions;
   client: Client;
+  schemaDir: string;
 }) {
-  const { root, options, client } = params;
+  const { root, options, client, schemaDir } = params;
 
   let outFile: string;
   if (options.file) {
@@ -21,7 +22,7 @@ export async function runInterfacesGenerator(params: {
       ? options.file
       : path.join(adapter.process.cwd(), options.file);
   } else if (root) {
-    outFile = path.join(root, "dbschema/interfaces.ts");
+    outFile = path.join(root, schemaDir, "interfaces.ts");
   } else {
     throw new Error(
       `No edgedb.toml found. Initialize an EdgeDB project with\n\`edgedb project init\` or specify an output file with \`--file\``

@@ -4,8 +4,9 @@ mts/edgeql-js
 esm/edgeql-js
 deno/edgeql-js
 cjs/edgeql-js
-dbschema/edgeql-js
-dbschema/queries.ts
-dbschema/interfaces.ts
+db/schema/edgeql-js
+db/schema/queries.ts
+db/schema/interfaces.ts
 **/*.edgeql.*
 **/*/queries.*
+**/*.query.ts

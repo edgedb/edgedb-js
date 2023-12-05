@@ -11,6 +11,7 @@ export async function generateQueryFiles(params: {
   root: string | null;
   options: CommandOptions;
   client: Client;
+  schemaDir: string;
 }) {
   if (params.options.file && params.options.watch) {
     throw new Error(`Using --watch and --file mode simultaneously is not
@@ -35,9 +36,10 @@ currently supported.`);
   // file mode: introspect all queries and generate one file
   // generate one query per file
 
-  const matches = await getMatches(root);
+  console.log(`Detected schema directory: ${params.schemaDir}`);
+  const matches = await getMatches(root, params.schemaDir);
   if (matches.length === 0) {
-    console.log(`No .edgeql files found in project`);
+    console.log(`No .edgeql files found outside of ${params.schemaDir}`);
     return;
   }
 
@@ -94,13 +96,11 @@ currently supported.`);
         const filePath =
           (adapter.path.isAbsolute(params.options.file)
             ? params.options.file
-            : adapter.path.join(
-                adapter.process.cwd(), // all paths computed relative to cwd
-                params.options.file
-              )) + extension;
+            : adapter.path.join(adapter.process.cwd(), params.options.file)) +
+          extension;
         const prettyPath = adapter.path.isAbsolute(params.options.file)
-          ? params.options.file + extension
-          : "./" + adapter.path.posix.relative(root, filePath);
+          ? filePath
+          : `./${adapter.path.posix.relative(root, filePath)}`;
         console.log(`   ${prettyPath}`);
         await adapter.fs.writeFile(
           filePath,
@@ -153,13 +153,13 @@ export function stringifyImports(imports: { [k: string]: boolean }) {
   return `import type {${Object.keys(imports).join(", ")}} from "edgedb";`;
 }
 
-async function getMatches(root: string) {
+async function getMatches(root: string, schemaDir: string) {
   return adapter.walk(root, {
     match: [/[^\/]\.edgeql$/],
     skip: [
       /node_modules/,
-      RegExp(`dbschema\\${adapter.path.sep}migrations`),
-      RegExp(`dbschema\\${adapter.path.sep}fixups`),
+      RegExp(`${schemaDir}\\${adapter.path.sep}migrations`),
+      RegExp(`${schemaDir}\\${adapter.path.sep}fixups`),
     ],
   });
 }
