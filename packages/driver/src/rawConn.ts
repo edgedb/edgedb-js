@@ -56,7 +56,8 @@ function getTlsOptions(config: ResolvedConnectConfig): tls.ConnectionOptions {
     rejectUnauthorized: tlsSecurity !== "insecure",
   };
 
-  if (net.isIP(config.address[0]) !== 0) {
+  const isIPAddress = net.isIP(config.address[0]) !== 0;
+  if (!isIPAddress) {
     // XXX Deno doesn't support this and that means it won't
     // work with EdgeDB Cloud.
     tlsOptions.servername = config.address[0];
