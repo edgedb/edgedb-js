@@ -68,6 +68,28 @@ const run = async () => {
       break;
   }
 
+  let projectRoot: string | null = null;
+  let currentDir = adapter.process.cwd();
+  let schemaDir = "dbschema";
+  const systemRoot = path.parse(currentDir).root;
+  while (currentDir !== systemRoot) {
+    if (await exists(path.join(currentDir, "edgedb.toml"))) {
+      projectRoot = currentDir;
+      const config: {
+        project?: { "schema-dir"?: string };
+      } = TOML.parse(await readFileUtf8(currentDir, "edgedb.toml"));
+
+      const maybeProjectTable = config.project;
+      const maybeSchemaDir =
+        maybeProjectTable && maybeProjectTable["schema-dir"];
+      if (typeof maybeSchemaDir === "string") {
+        schemaDir = maybeSchemaDir;
+      }
+      break;
+    }
+    currentDir = path.join(currentDir, "..");
+  }
+
   while (args.length) {
     let flag = args.shift()!;
     let val: string | null = null;
@@ -195,7 +217,7 @@ const run = async () => {
           if (args.length > 0 && args[0][0] !== "-") {
             options.file = getVal();
           } else {
-            options.file = "queries";
+            options.file = adapter.path.join(schemaDir, "queries");
           }
         } else {
           exitWithError(
@@ -228,36 +250,6 @@ const run = async () => {
     adapter.process.exit();
   }
 
-  // }
-
-  // check for locally install edgedb
-  // const edgedbPath = path.join(rootDir, "node_modules", "edgedb");
-  // if (!fs.existsSync(edgedbPath)) {
-  //   console.error(
-  //     `Error: 'edgedb' package is not yet installed locally.
-  //  Run `npm install edgedb` before generating the query builder.`
-  //   );
-  //   adapter.process.exit();
-  // }
-  let projectRoot: string | null = null;
-
-  // cannot find projectRoot with package.json in deno.
-  // case 1. use deno.json
-  // case 2. use edgedb.toml for finding projectRoot
-  // if (options.target === "deno") {
-  //   // projectRoot = currentDir;
-  //   const {getRoot} = await import(
-  //     "https://deno.land/x/find_root@v0.2.1/mod.ts"
-  //   );
-  //   const hasDenoJson = await getRoot("deno.json", currentDir);
-  //   if (hasDenoJson.isErr()) {
-  //     exitWithError(
-  //       "Error: no deno.json found. Make sure you're inside your
-  // project directory."
-  //     );
-  //   }
-  //   currentDir = hasDenoJson.value.inDir;
-  // } else {
   switch (generator) {
     case Generator.QueryBuilder:
       console.log(`Generating query builder...`);
@@ -268,27 +260,6 @@ const run = async () => {
     case Generator.Interfaces:
       console.log(`Generating TS interfaces from schema...`);
       break;
-  }
-
-  let currentDir = adapter.process.cwd();
-  let schemaDir = "dbschema";
-  const systemRoot = path.parse(currentDir).root;
-  while (currentDir !== systemRoot) {
-    if (await exists(path.join(currentDir, "edgedb.toml"))) {
-      projectRoot = currentDir;
-      const config: {
-        project?: { "schema-dir"?: string };
-      } = TOML.parse(await readFileUtf8(currentDir, "edgedb.toml"));
-
-      const maybeProjectTable = config.project;
-      const maybeSchemaDir =
-        maybeProjectTable && maybeProjectTable["schema-dir"];
-      if (typeof maybeSchemaDir === "string") {
-        schemaDir = maybeSchemaDir;
-      }
-      break;
-    }
-    currentDir = path.join(currentDir, "..");
   }
 
   if (!options.target) {

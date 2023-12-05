@@ -96,14 +96,11 @@ currently supported.`);
         const filePath =
           (adapter.path.isAbsolute(params.options.file)
             ? params.options.file
-            : adapter.path.join(
-                adapter.process.cwd(),
-                params.schemaDir,
-                params.options.file
-              )) + extension;
+            : adapter.path.join(adapter.process.cwd(), params.options.file)) +
+          extension;
         const prettyPath = adapter.path.isAbsolute(params.options.file)
-          ? params.options.file + extension
-          : "./" + adapter.path.posix.relative(root, filePath);
+          ? filePath
+          : `./${adapter.path.posix.relative(root, filePath)}`;
         console.log(`   ${prettyPath}`);
         await adapter.fs.writeFile(
           filePath,
