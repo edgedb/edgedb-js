@@ -9,6 +9,7 @@ import * as _fs from "https://deno.land/std@0.177.0/fs/mod.ts";
 import * as fs from "https://deno.land/std@0.177.0/node/fs/promises.ts";
 import EventEmitter from "https://deno.land/std@0.177.0/node/events.ts";
 import util from "https://deno.land/std@0.177.0/node/util.ts";
+import { isIP as _isIP } from "https://deno.land/std@0.177.0/node/net.ts";
 
 export { path, process, util, fs };
 
@@ -163,6 +164,8 @@ export namespace net {
 
     return new Socket(conn);
   }
+
+  export const isIP = _isIP;
 
   export declare interface Socket {
     on(eventName: "error", listener: (e: any) => void): this;
