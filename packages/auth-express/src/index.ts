@@ -10,6 +10,7 @@ import {
   type Request as ExpressRequest,
   type Response as ExpressResponse,
   Router,
+  type NextFunction,
 } from "express";
 
 export type BuiltinProviderNames =
@@ -157,6 +158,21 @@ export class ExpressAuth extends BaseAuth {
 
   async getProvidersInfo() {
     return (await this.core).getProvidersInfo();
+  }
+
+  createMiddleware() {
+    return async (
+      req: ExpressRequest,
+      res: ExpressResponse,
+      next: NextFunction
+    ) => {
+      try {
+        res.locals.auth = this.getSession(req);
+        next();
+      } catch (err) {
+        next(err);
+      }
+    };
   }
 
   createAuthRouteHandlers({
