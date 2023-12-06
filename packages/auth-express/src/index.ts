@@ -185,6 +185,7 @@ export class ExpressAuth extends BaseAuth {
     onSignout,
   }: Partial<CreateAuthRouteHandlers>) {
     const router = Router();
+
     router.get("/oauth", async (req, res, next) => {
       try {
         if (!onOAuthCallback) {
@@ -653,6 +654,7 @@ export class ExpressAuth extends BaseAuth {
       httpOnly: true,
       sameSite: "strict",
     });
+    res.locals.session = new ExpressAuthSession(this.client, undefined);
   }
 
   async emailPasswordSignIn(
