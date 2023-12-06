@@ -160,14 +160,14 @@ export class ExpressAuth extends BaseAuth {
     return (await this.core).getProvidersInfo();
   }
 
-  createMiddleware() {
+  createSessionMiddleware() {
     return async (
       req: ExpressRequest,
       res: ExpressResponse,
       next: NextFunction
     ) => {
       try {
-        res.locals.auth = this.getSession(req);
+        res.locals.session = this.getSession(req);
         next();
       } catch (err) {
         next(err);
@@ -175,7 +175,7 @@ export class ExpressAuth extends BaseAuth {
     };
   }
 
-  createAuthRouteHandlers({
+  createRouter({
     onOAuthCallback,
     onEmailPasswordSignIn,
     onEmailPasswordSignUp,
