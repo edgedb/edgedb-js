@@ -27,6 +27,21 @@ export interface ExpressAuthOptions {
 
 type OptionalOptions = "passwordResetPath";
 
+export interface SessionRequest extends ExpressRequest {
+  session?: ExpressAuthSession;
+}
+
+export interface TokenDataRequest extends ExpressRequest {
+  tokenData?: TokenData;
+}
+
+export interface AuthRequest extends SessionRequest, TokenDataRequest {}
+
+export interface CallbackRequest extends AuthRequest {
+  provider?: BuiltinOAuthProviderNames;
+  isSignUp?: boolean;
+}
+
 export abstract class BaseAuth {
   /** @internal */
   readonly options: Required<Omit<ExpressAuthOptions, OptionalOptions>> &
@@ -92,56 +107,6 @@ export class ExpressAuthSession {
   }
 }
 
-type ParamsOrError<
-  Result extends object = Record<never, never>,
-  ErrorDetails extends object = Record<never, never>
-> =
-  | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)
-  | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
-
-interface CreateAuthRouteHandlers {
-  onOAuthCallback(
-    params: ParamsOrError<{
-      tokenData: TokenData;
-      provider: BuiltinOAuthProviderNames;
-      isSignUp: boolean;
-    }>,
-    res: ExpressResponse
-  ): void;
-  onEmailPasswordSignIn(
-    params: ParamsOrError<{ tokenData: TokenData }>,
-    res: ExpressResponse
-  ): void;
-  onEmailPasswordSignUp(
-    params: ParamsOrError<{ tokenData: TokenData | null }>,
-    res: ExpressResponse
-  ): void;
-  onEmailPasswordReset(
-    params: ParamsOrError<{ tokenData: TokenData }>,
-    res: ExpressResponse
-  ): void;
-  onEmailVerify(
-    params: ParamsOrError<
-      { tokenData: TokenData },
-      { verificationToken?: string }
-    >,
-    res: ExpressResponse
-  ): void;
-  onBuiltinUICallback(
-    params: ParamsOrError<
-      (
-        | {
-            tokenData: TokenData;
-            provider: BuiltinProviderNames;
-          }
-        | { tokenData: null; provider: null }
-      ) & { isSignUp: boolean }
-    >,
-    res: ExpressResponse
-  ): void;
-  onSignout(res: ExpressResponse): void;
-}
-
 export class ExpressAuth extends BaseAuth {
   private readonly core: Promise<Auth>;
 
@@ -162,12 +127,12 @@ export class ExpressAuth extends BaseAuth {
 
   createSessionMiddleware() {
     return async (
-      req: ExpressRequest,
-      res: ExpressResponse,
+      req: SessionRequest,
+      _: ExpressResponse,
       next: NextFunction
     ) => {
       try {
-        res.locals.session = this.getSession(req);
+        req.session = this.getSession(req);
         next();
       } catch (err) {
         next(err);
@@ -175,24 +140,11 @@ export class ExpressAuth extends BaseAuth {
     };
   }
 
-  createRouter({
-    onOAuthCallback,
-    onEmailPasswordSignIn,
-    onEmailPasswordSignUp,
-    onEmailPasswordReset,
-    onEmailVerify,
-    onBuiltinUICallback,
-    onSignout,
-  }: Partial<CreateAuthRouteHandlers>) {
-    const router = Router();
+  createRouter() {
+    const router = Router().use(this.options.authRoutesPath);
 
     router.get("/oauth", async (req, res, next) => {
       try {
-        if (!onOAuthCallback) {
-          throw new Error(
-            `'onOAuthCallback' auth route handler not configured`
-          );
-        }
         const provider = new URL(req.url).searchParams.get(
           "provider_name"
         ) as BuiltinOAuthProviderNames | null;
@@ -218,54 +170,25 @@ export class ExpressAuth extends BaseAuth {
       }
     });
 
-    router.get("/oauth/callback", async (req, res, next) => {
+    router.get("/oauth/callback", async (req: CallbackRequest, res, next) => {
       try {
-        if (!onOAuthCallback) {
-          throw new Error(
-            `'onOAuthCallback' auth route handler not configured`
-          );
-        }
         const requestUrl = new URL(req.url);
         const error = requestUrl.searchParams.get("error");
         if (error) {
           const desc = requestUrl.searchParams.get("error_description");
-          return onOAuthCallback(
-            {
-              error: new Error(error + (desc ? `: ${desc}` : "")),
-            },
-            res
-          );
+          throw new Error(error + (desc ? `: ${desc}` : ""));
         }
+
         const code = requestUrl.searchParams.get("code");
         const isSignUp = requestUrl.searchParams.get("isSignUp") === "true";
         const verifier = req.cookies[this.options.pkceVerifierCookieName];
         if (!code) {
-          return onOAuthCallback(
-            {
-              error: new Error("no pkce code in response"),
-            },
-            res
-          );
+          throw new Error("no pkce code in response");
         }
         if (!verifier) {
-          return onOAuthCallback(
-            {
-              error: new Error("no pkce verifier cookie found"),
-            },
-            res
-          );
+          throw new Error("no pkce verifier cookie found");
         }
-        let tokenData: TokenData;
-        try {
-          tokenData = await (await this.core).getToken(code, verifier);
-        } catch (err) {
-          return onOAuthCallback(
-            {
-              error: err instanceof Error ? err : new Error(String(err)),
-            },
-            res
-          );
-        }
+        const tokenData = await (await this.core).getToken(code, verifier);
 
         res.cookie(this.options.authCookieName, tokenData.auth_token, {
           httpOnly: true,
@@ -273,91 +196,52 @@ export class ExpressAuth extends BaseAuth {
         });
         res.clearCookie(this.options.pkceVerifierCookieName);
 
-        return onOAuthCallback(
-          {
-            error: null,
-            tokenData,
-            provider: requestUrl.searchParams.get(
-              "provider"
-            ) as BuiltinOAuthProviderNames,
-            isSignUp,
-          },
-          res
-        );
+        req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
+        req.tokenData = tokenData;
+        req.isSignUp = isSignUp;
+        req.provider = requestUrl.searchParams.get(
+          "provider"
+        ) as BuiltinOAuthProviderNames;
       } catch (err) {
         next(err);
       }
     });
 
-    router.get("/emailpassword/verify", async (req, res, next) => {
+    router.get("/emailpassword/verify", async (req: AuthRequest, res, next) => {
       try {
-        if (!onEmailVerify) {
-          throw new Error(`'onEmailVerify' auth route handler not configured`);
-        }
         const requestUrl = new URL(req.url);
         const verificationToken =
           requestUrl.searchParams.get("verification_token");
         const verifier = req.cookies[this.options.pkceVerifierCookieName];
         if (!verificationToken) {
-          return onEmailVerify(
-            {
-              error: new Error("no verification_token in response"),
-            },
-            res
-          );
+          throw new Error("no verification_token in response");
         }
         if (!verifier) {
-          return onEmailVerify(
-            {
-              error: new Error("no pkce verifier cookie found"),
-              verificationToken,
-            },
-            res
-          );
+          throw new Error("no pkce verifier cookie found");
         }
-        let tokenData: TokenData;
-        try {
-          tokenData = await (
-            await this.core
-          ).verifyEmailPasswordSignup(verificationToken, verifier);
-        } catch (err) {
-          return onEmailVerify(
-            {
-              error: err instanceof Error ? err : new Error(String(err)),
-              verificationToken,
-            },
-            res
-          );
-        }
+        const tokenData = await (
+          await this.core
+        ).verifyEmailPasswordSignup(verificationToken, verifier);
         res.cookie(this.options.authCookieName, tokenData.auth_token, {
           httpOnly: true,
           sameSite: "strict",
         });
         res.clearCookie(this.options.pkceVerifierCookieName);
 
-        return onEmailVerify({ error: null, tokenData }, res);
+        req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
+        req.tokenData = tokenData;
       } catch (err) {
         next(err);
       }
     });
 
-    router.get("/builtin/callback", async (req, res, next) => {
+    router.get("/builtin/callback", async (req: CallbackRequest, res, next) => {
       try {
-        if (!onBuiltinUICallback) {
-          throw new Error(
-            `'onBuiltinUICallback' auth route handler not configured`
-          );
-        }
         const requestUrl = new URL(req.url);
         const error = requestUrl.searchParams.get("error");
         if (error) {
           const desc = requestUrl.searchParams.get("error_description");
-          return onBuiltinUICallback(
-            {
-              error: new Error(error + (desc ? `: ${desc}` : "")),
-            },
-            res
-          );
+          throw new Error(error + (desc ? `: ${desc}` : ""));
         }
         const code = requestUrl.searchParams.get("code");
         const verificationEmailSentAt = requestUrl.searchParams.get(
@@ -366,61 +250,29 @@ export class ExpressAuth extends BaseAuth {
 
         if (!code) {
           if (verificationEmailSentAt) {
-            return onBuiltinUICallback(
-              {
-                error: null,
-                tokenData: null,
-                provider: null,
-                isSignUp: true,
-              },
-              res
-            );
+            req.session = new ExpressAuthSession(this.client, undefined);
+            req.isSignUp = true;
           }
-          return onBuiltinUICallback(
-            {
-              error: new Error("no pkce code in response"),
-            },
-            res
-          );
+          throw new Error("no pkce code in response");
         }
         const verifier = req.cookies[this.options.pkceVerifierCookieName];
         if (!verifier) {
-          return onBuiltinUICallback(
-            {
-              error: new Error("no pkce verifier cookie found"),
-            },
-            res
-          );
+          throw new Error("no pkce verifier cookie found");
         }
         const isSignUp = requestUrl.searchParams.get("isSignUp") === "true";
-        let tokenData: TokenData;
-        try {
-          tokenData = await (await this.core).getToken(code, verifier);
-        } catch (err) {
-          return onBuiltinUICallback(
-            {
-              error: err instanceof Error ? err : new Error(String(err)),
-            },
-            res
-          );
-        }
+        const tokenData = await (await this.core).getToken(code, verifier);
         res.cookie(this.options.authCookieName, tokenData.auth_token, {
           httpOnly: true,
           sameSite: "lax",
         });
         res.clearCookie(this.options.pkceVerifierCookieName);
 
-        return onBuiltinUICallback(
-          {
-            error: null,
-            tokenData,
-            provider: requestUrl.searchParams.get(
-              "provider"
-            ) as BuiltinProviderNames,
-            isSignUp,
-          },
-          res
-        );
+        req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
+        req.tokenData = tokenData;
+        req.isSignUp = isSignUp;
+        req.provider = requestUrl.searchParams.get(
+          "provider"
+        ) as BuiltinOAuthProviderNames;
       } catch (err) {
         next(err);
       }
@@ -454,107 +306,84 @@ export class ExpressAuth extends BaseAuth {
       }
     });
 
-    router.get("/signout", async (_, res, next) => {
+    router.get("/signout", async (req: SessionRequest, res, next) => {
       try {
-        if (!onSignout) {
-          throw new Error(`'onSignout' auth route handler not configured`);
-        }
         res.clearCookie(this.options.authCookieName);
-        return onSignout(res);
+        req.session = new ExpressAuthSession(this.client, undefined);
       } catch (err) {
         next(err);
       }
     });
 
-    router.post("/emailpassword/signin", async (req, res, next) => {
-      try {
-        if (!onEmailPasswordSignIn) {
-          throw new Error(
-            `'onEmailPasswordSignIn' auth route handler not configured`
-          );
-        }
-        let tokenData: TokenData;
+    router.post(
+      "/emailpassword/signin",
+      async (req: AuthRequest, res, next) => {
         try {
           const [email, password] = _extractParams(
             req.body,
             ["email", "password"],
             "email or password missing from request body"
           );
-          tokenData = await (
+          const tokenData = await (
             await this.core
           ).signinWithEmailPassword(email, password);
+          res.cookie(this.options.authCookieName, tokenData.auth_token, {
+            httpOnly: true,
+            sameSite: "strict",
+          });
+          req.session = new ExpressAuthSession(
+            this.client,
+            tokenData.auth_token
+          );
+          req.tokenData = tokenData;
         } catch (err) {
-          return onEmailPasswordSignIn(
-            {
-              error: err instanceof Error ? err : new Error(String(err)),
-            },
-            res
-          );
+          next(err);
         }
-        res.cookie(this.options.authCookieName, tokenData.auth_token, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
-        return onEmailPasswordSignIn({ error: null, tokenData }, res);
-      } catch (err) {
-        next(err);
       }
-    });
+    );
 
-    router.post("/emailpassword/signup", async (req, res, next) => {
-      try {
-        if (!onEmailPasswordSignUp) {
-          throw new Error(
-            `'onEmailPasswordSignUp' auth route handler not configured`
-          );
-        }
-        let result: Awaited<
-          ReturnType<Awaited<typeof this.core>["signupWithEmailPassword"]>
-        >;
+    router.post(
+      "/emailpassword/signup",
+      async (req: AuthRequest, res, next) => {
         try {
           const [email, password] = _extractParams(
             req.body,
             ["email", "password"],
             "email or password missing from request body"
           );
-          result = await (
+          const result = await (
             await this.core
           ).signupWithEmailPassword(
             email,
             password,
             `${this._authRoute}/emailpassword/verify`
           );
-        } catch (err) {
-          return onEmailPasswordSignUp(
-            {
-              error: err instanceof Error ? err : new Error(String(err)),
-            },
-            res
-          );
-        }
-        res.cookie(this.options.pkceVerifierCookieName, result.verifier, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
-        if (result.status === "complete") {
-          res.cookie(this.options.authCookieName, result.tokenData.auth_token, {
+          res.cookie(this.options.pkceVerifierCookieName, result.verifier, {
             httpOnly: true,
             sameSite: "strict",
           });
-          return onEmailPasswordSignUp(
-            {
-              error: null,
-              tokenData: result.tokenData,
-            },
-            res
-          );
-        } else {
-          return onEmailPasswordSignUp({ error: null, tokenData: null }, res);
+          if (result.status === "complete") {
+            res.cookie(
+              this.options.authCookieName,
+              result.tokenData.auth_token,
+              {
+                httpOnly: true,
+                sameSite: "strict",
+              }
+            );
+            req.session = new ExpressAuthSession(
+              this.client,
+              result.tokenData.auth_token
+            );
+            req.tokenData = result.tokenData;
+          } else {
+            req.session = new ExpressAuthSession(this.client, undefined);
+          }
+        } catch (err) {
+          next(err);
         }
-      } catch (err) {
-        next(err);
       }
-    });
+    );
 
     router.post("/emailpassword/send-reset-email", async (req, res, next) => {
       try {
@@ -584,23 +413,14 @@ export class ExpressAuth extends BaseAuth {
         next(err);
       }
     });
-    router.post("/emailpassword/reset-password", async (req, res, next) => {
-      try {
-        if (!onEmailPasswordReset) {
-          throw new Error(
-            `'onEmailPasswordReset' auth route handler not configured`
-          );
-        }
-        let tokenData: TokenData;
+
+    router.post(
+      "/emailpassword/reset-password",
+      async (req: AuthRequest, res, next) => {
         try {
           const verifier = req.cookies[this.options.pkceVerifierCookieName];
           if (!verifier) {
-            return onEmailPasswordReset(
-              {
-                error: new Error("no pkce verifier cookie found"),
-              },
-              res
-            );
+            throw new Error("no pkce verifier cookie found");
           }
           const [resetToken, password] = _extractParams(
             req.body,
@@ -608,27 +428,25 @@ export class ExpressAuth extends BaseAuth {
             "reset_token or password missing from request body"
           );
 
-          tokenData = await (
+          const tokenData = await (
             await this.core
           ).resetPasswordWithResetToken(resetToken, verifier, password);
-        } catch (err) {
-          return onEmailPasswordReset(
-            {
-              error: err instanceof Error ? err : new Error(String(err)),
-            },
-            res
+          res.cookie(this.options.authCookieName, tokenData.auth_token, {
+            httpOnly: true,
+            sameSite: "strict",
+          });
+          res.clearCookie(this.options.pkceVerifierCookieName);
+          req.session = new ExpressAuthSession(
+            this.client,
+            tokenData.auth_token
           );
+          req.tokenData = tokenData;
+        } catch (err) {
+          next(err);
         }
-        res.cookie(this.options.authCookieName, tokenData.auth_token, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
-        res.clearCookie(this.options.pkceVerifierCookieName);
-        return onEmailPasswordReset({ error: null, tokenData }, res);
-      } catch (err) {
-        next(err);
       }
-    });
+    );
+
     router.post(
       "/emailpassword/resend-verification-email",
       async (req, res, next) => {
