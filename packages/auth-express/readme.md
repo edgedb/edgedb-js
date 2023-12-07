@@ -12,9 +12,7 @@ npm install @edgedb/auth-express
 
 **Note:** We have tested this library against the latest version of Express v4 with the types provided at DefinitelyTyped and have set up `peerDependencies` based on typical usage with npm.
 
-## Express middleware requirements
-
-This library depends on the following middleware being installed in your Express app:
+We depend on the following middleware being installed in your Express app:
 
 - `body-parser`: both JSON and urlencoded
 - `cookie-parser`
@@ -30,15 +28,13 @@ app.use(express.urlencoded());
 app.use(cookieParser());
 ```
 
-## Usage
-
 This library provides a few affordances for adding EdgeDB Auth to your existing Express app:
 
 - Routers and route handlers to handle the authentication flow required by EdgeDB.
 - Middleware to attach sessions to requests.
 - Some additional utility functions for handling various auth related concerns.
 
-### Setting up auth routes
+## Setting up auth routes
 
 After [configuring the EdgeDB Auth extension](https://www.edgedb.com/docs/guides/auth/index), you can set up the various auth routes with our route builders.
 
@@ -63,7 +59,7 @@ The available auth config options are as follows:
 - `pkceVerifierCookieName?: string`: The name of the cookie where the verifier for the PKCE flow will be stored, defaults to 'edgedb-pkce-verifier'
 - `passwordResetUrl?: string`: The url of the the password reset page; needed if you want to enable password reset emails in your app.
 
-#### Built-in UI
+### Built-in UI
 
 If you're using our built-in UI, all you need to do is attach a callback handler to the built-in UI router factory:
 
