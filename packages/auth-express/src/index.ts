@@ -21,16 +21,6 @@ export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
   | typeof emailPasswordProviderName;
 
-export interface ExpressAuthOptions {
-  baseUrl: string;
-  authRoutesPath?: string;
-  authCookieName?: string;
-  pkceVerifierCookieName?: string;
-  passwordResetPath?: string;
-}
-
-type OptionalOptions = "passwordResetPath";
-
 export interface SessionRequest extends ExpressRequest {
   session?: ExpressAuthSession;
 }
@@ -44,49 +34,6 @@ export interface AuthRequest extends SessionRequest, TokenDataRequest {}
 export interface CallbackRequest extends AuthRequest {
   provider?: BuiltinOAuthProviderNames;
   isSignUp?: boolean;
-}
-
-export abstract class BaseAuth {
-  /** @internal */
-  readonly options: Required<Omit<ExpressAuthOptions, OptionalOptions>> &
-    Pick<ExpressAuthOptions, OptionalOptions>;
-
-  /** @internal */
-  constructor(protected readonly client: Client, options: ExpressAuthOptions) {
-    this.options = {
-      baseUrl: options.baseUrl.replace(/\/$/, ""),
-      authRoutesPath: options.authRoutesPath?.replace(/^\/|\/$/g, "") ?? "auth",
-      authCookieName: options.authCookieName ?? "edgedb-session",
-      pkceVerifierCookieName:
-        options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
-      passwordResetPath: options.passwordResetPath,
-    };
-  }
-
-  protected get _authRoute() {
-    return `${this.options.baseUrl}/${this.options.authRoutesPath}`;
-  }
-
-  isPasswordResetTokenValid(resetToken: string) {
-    return Auth.checkPasswordResetTokenValid(resetToken);
-  }
-
-  getOAuthUrl(providerName: BuiltinOAuthProviderNames) {
-    return `${this._authRoute}/oauth?${new URLSearchParams({
-      provider_name: providerName,
-    }).toString()}`;
-  }
-
-  getBuiltinUIUrl() {
-    return `${this._authRoute}/builtin/signin`;
-  }
-  getBuiltinUISignUpUrl() {
-    return `${this._authRoute}/builtin/signup`;
-  }
-
-  getSignoutUrl() {
-    return `${this._authRoute}/signout`;
-  }
 }
 
 export class ExpressAuthSession {
@@ -111,13 +58,59 @@ export class ExpressAuthSession {
   }
 }
 
-export class ExpressAuth extends BaseAuth {
+export interface ExpressAuthOptions {
+  baseUrl: string;
+  authRoutesPath?: string;
+  authCookieName?: string;
+  pkceVerifierCookieName?: string;
+  passwordResetPath?: string;
+}
+
+type OptionalOptions = "passwordResetPath";
+
+export class ExpressAuth {
+  private readonly options: Required<
+    Omit<ExpressAuthOptions, OptionalOptions>
+  > &
+    Pick<ExpressAuthOptions, OptionalOptions>;
   private readonly core: Promise<Auth>;
 
-  constructor(client: Client, options: ExpressAuthOptions) {
-    super(client, options);
+  constructor(protected readonly client: Client, options: ExpressAuthOptions) {
+    this.options = {
+      baseUrl: options.baseUrl.replace(/\/$/, ""),
+      authRoutesPath: options.authRoutesPath?.replace(/^\/|\/$/g, "") ?? "auth",
+      authCookieName: options.authCookieName ?? "edgedb-session",
+      pkceVerifierCookieName:
+        options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
+      passwordResetPath: options.passwordResetPath,
+    };
     this.core = Auth.create(client);
   }
+
+  protected get _authRoute() {
+    return `${this.options.baseUrl}/${this.options.authRoutesPath}`;
+  }
+
+  isPasswordResetTokenValid = (resetToken: string) => {
+    return Auth.checkPasswordResetTokenValid(resetToken);
+  };
+
+  getOAuthUrl = (providerName: BuiltinOAuthProviderNames) => {
+    return `${this._authRoute}/oauth?${new URLSearchParams({
+      provider_name: providerName,
+    }).toString()}`;
+  };
+
+  getBuiltinUIUrl = () => {
+    return `${this._authRoute}/builtin/signin`;
+  };
+  getBuiltinUISignUpUrl = () => {
+    return `${this._authRoute}/builtin/signup`;
+  };
+
+  getSignoutUrl = () => {
+    return `${this._authRoute}/signout`;
+  };
 
   getSession = (req: ExpressRequest) => {
     const authCookie = req.cookies[this.options.authCookieName];
