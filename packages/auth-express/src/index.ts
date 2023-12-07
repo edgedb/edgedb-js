@@ -46,7 +46,7 @@ export class ExpressAuthSession {
       : client;
   }
 
-  async isLoggedIn() {
+  async isSignedIn() {
     if (!this.authToken) return false;
     try {
       return await this.client.querySingle<boolean>(
