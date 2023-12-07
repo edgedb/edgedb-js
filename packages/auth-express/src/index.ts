@@ -10,7 +10,12 @@ import {
   type Request as ExpressRequest,
   type Response as ExpressResponse,
   type NextFunction,
+  Router,
+  type ErrorRequestHandler,
+  type RequestHandler,
 } from "express";
+
+type RouterStack = (RequestHandler | ErrorRequestHandler)[];
 
 export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
@@ -114,17 +119,17 @@ export class ExpressAuth extends BaseAuth {
     this.core = Auth.create(client);
   }
 
-  getSession(req: ExpressRequest) {
+  getSession = (req: ExpressRequest) => {
     const authCookie = req.cookies[this.options.authCookieName];
 
     return new ExpressAuthSession(this.client, authCookie);
-  }
+  };
 
-  async getProvidersInfo() {
+  getProvidersInfo = async () => {
     return (await this.core).getProvidersInfo();
-  }
+  };
 
-  createSessionMiddleware() {
+  createSessionMiddleware = () => {
     return async (
       req: SessionRequest,
       _: ExpressResponse,
@@ -137,7 +142,57 @@ export class ExpressAuth extends BaseAuth {
         next(err);
       }
     };
-  }
+  };
+
+  createBuiltinRouter = (
+    stacks: Record<keyof typeof this.builtin, RouterStack>
+  ) => {
+    const router = Router();
+
+    router.get("/signin", this.builtin.signIn, ...stacks.signIn);
+    router.get("/signup", this.builtin.signUp, ...stacks.signUp);
+    router.get("/callback", this.builtin.callback, ...stacks.callback);
+
+    return router;
+  };
+
+  createEmailPasswordRouter = (
+    stacks: Record<keyof typeof this.emailPassword, RouterStack>
+  ) => {
+    const router = Router();
+
+    router.post("/signin", this.emailPassword.signIn, ...stacks.signIn);
+    router.post("/signup", this.emailPassword.signUp, ...stacks.signUp);
+    router.post("/verify", this.emailPassword.verify, ...stacks.verify);
+    router.post(
+      "/send_password_reset_email",
+      this.emailPassword.sendPasswordResetEmail,
+      ...stacks.sendPasswordResetEmail
+    );
+    router.post(
+      "/reset_password",
+      this.emailPassword.resetPassword,
+      ...stacks.resetPassword
+    );
+    router.post(
+      "/resend_verification_email",
+      this.emailPassword.resendVerificationEmail,
+      ...stacks.resendVerificationEmail
+    );
+
+    return router;
+  };
+
+  createOAuthRouter = (
+    stacks: Record<keyof typeof this.oAuth, RouterStack>
+  ) => {
+    const router = Router();
+
+    router.get("/", this.oAuth.redirect, ...stacks.redirect);
+    router.get("/callback", this.oAuth.callback, ...stacks.callback);
+
+    return router;
+  };
 
   signout = async (
     req: AuthRequest,
@@ -219,7 +274,7 @@ export class ExpressAuth extends BaseAuth {
           throw new Error("no pkce verifier cookie found");
         }
         const isSignUp = requestUrl.searchParams.get("isSignUp") === "true";
-        const tokenData = await(await this.core).getToken(code, verifier);
+        const tokenData = await (await this.core).getToken(code, verifier);
         res.cookie(this.options.authCookieName, tokenData.auth_token, {
           httpOnly: true,
           sameSite: "lax",
@@ -337,10 +392,9 @@ export class ExpressAuth extends BaseAuth {
           ["email", "password"],
           "email or password missing from request body"
         );
-        const tokenData = await(await this.core).signinWithEmailPassword(
-          email,
-          password
-        );
+        const tokenData = await (
+          await this.core
+        ).signinWithEmailPassword(email, password);
         res.cookie(this.options.authCookieName, tokenData.auth_token, {
           httpOnly: true,
           sameSite: "strict",
@@ -408,10 +462,9 @@ export class ExpressAuth extends BaseAuth {
         if (!verifier) {
           throw new Error("no pkce verifier cookie found");
         }
-        const tokenData = await(await this.core).verifyEmailPasswordSignup(
-          verificationToken,
-          verifier
-        );
+        const tokenData = await (
+          await this.core
+        ).verifyEmailPasswordSignup(verificationToken, verifier);
         res.cookie(this.options.authCookieName, tokenData.auth_token, {
           httpOnly: true,
           sameSite: "strict",
@@ -474,11 +527,9 @@ export class ExpressAuth extends BaseAuth {
           "reset_token or password missing from request body"
         );
 
-        const tokenData = await(await this.core).resetPasswordWithResetToken(
-          resetToken,
-          verifier,
-          password
-        );
+        const tokenData = await (
+          await this.core
+        ).resetPasswordWithResetToken(resetToken, verifier, password);
         res.cookie(this.options.authCookieName, tokenData.auth_token, {
           httpOnly: true,
           sameSite: "strict",
