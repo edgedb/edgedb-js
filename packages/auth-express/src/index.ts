@@ -137,14 +137,20 @@ export class ExpressAuth {
     };
   };
 
-  createBuiltinRouter = (
-    stacks: Record<keyof typeof this.builtin, RouterStack>
-  ) => {
+  createBuiltinRouter = ({
+    signIn = [],
+    signUp = [],
+    callback,
+  }: {
+    signIn?: RouterStack;
+    signUp?: RouterStack;
+    callback: RouterStack;
+  }) => {
     const router = Router();
 
-    router.get("/signin", this.builtin.signIn, ...stacks.signIn);
-    router.get("/signup", this.builtin.signUp, ...stacks.signUp);
-    router.get("/callback", this.builtin.callback, ...stacks.callback);
+    router.get("/signin", this.builtin.signIn, ...signIn);
+    router.get("/signup", this.builtin.signUp, ...signUp);
+    router.get("/callback", this.builtin.callback, ...callback);
 
     return router;
   };
@@ -176,13 +182,17 @@ export class ExpressAuth {
     return router;
   };
 
-  createOAuthRouter = (
-    stacks: Record<keyof typeof this.oAuth, RouterStack>
-  ) => {
+  createOAuthRouter = ({
+    redirect = [],
+    callback,
+  }: {
+    redirect?: RouterStack;
+    callback: RouterStack;
+  }) => {
     const router = Router();
 
-    router.get("/", this.oAuth.redirect, ...stacks.redirect);
-    router.get("/callback", this.oAuth.callback, ...stacks.callback);
+    router.get("/", this.oAuth.redirect, ...redirect);
+    router.get("/callback", this.oAuth.callback, ...callback);
 
     return router;
   };
