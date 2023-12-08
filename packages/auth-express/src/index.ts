@@ -108,10 +108,6 @@ export class ExpressAuth {
     return `${this._authRoute}/builtin/signup`;
   };
 
-  getSignoutUrl = () => {
-    return `${this._authRoute}/signout`;
-  };
-
   getSession = (req: ExpressRequest) => {
     const authCookie = req.cookies[this.options.authCookieName];
 
