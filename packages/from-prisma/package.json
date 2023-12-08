@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@edgedb/generate": "^0.4.1",
+    "@prisma/client": "^5.7.0",
     "@types/node": "^20.10.3",
     "@types/pg-cursor": "^2.7.2",
     "prisma": "^5.7.0",
