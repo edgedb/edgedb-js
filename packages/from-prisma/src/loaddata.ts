@@ -1,15 +1,11 @@
 import { PrismaClient, Visibility } from '@prisma/client'
+import { Dictionary } from './utils'
+
 
 const prisma = new PrismaClient()
-
-interface Dictionary<T> {
-    [Key: string]: T;
-}
-
 const badge: Dictionary<number> = {}
 const status: Dictionary<number> = {}
 const user: Dictionary<number> = {}
-
 var curTime: Date = new Date(2023, 11, 21, 13)
 
 

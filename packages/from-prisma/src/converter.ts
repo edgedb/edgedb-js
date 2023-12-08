@@ -1,30 +1,16 @@
 import { Prisma } from '@prisma/client'
 import * as runtime from '@prisma/client/runtime/library'
-import { open, writeFile } from 'node:fs/promises';
+import { writeFile, open } from 'node:fs/promises'
 import pg from 'pg'
 import Cursor from 'pg-cursor'
-import * as edgedb from "edgedb"
+import dotenv from 'dotenv'
+import * as edgedb from 'edgedb'
+
+import { Dictionary, SCALAR_MAP } from './utils'
 
 
-interface Dictionary<T> {
-  [Key: string]: T;
-}
-
-
-const HOMEDIR = '/home/victor/dev/social_prisma'
-const SCALAR_MAP: Dictionary<string> = {
-  'String': 'str',
-  'Boolean': 'bool',
-  'Int': 'int32',
-  'BigInt': 'bigint',
-  'Float': 'float64',
-  'Decimal': 'decimal',
-  'DateTime': 'cal::local_datetime',
-  'Json': 'json',
-  'Bytes': 'bytes',
-}
-const client = new pg.Client(
-  'postgresql://victor:localvic@localhost:5432/social')
+dotenv.config()
+const client = new pg.Client(process.env.DATABASE_URL!.split('?')[0])
 const edbclient = edgedb.createClient();
 
 
@@ -76,8 +62,9 @@ function renderField(field: runtime.DMMF.Field, ver: string): string {
     return ''
   }
 
-  if (ver == 'final' && field.isRequired && !field.isList) {
-    // only final schema has required fields
+  if (field.isRequired && !field.isList
+      && (ver == 'final' || field.kind != 'object')) {
+    // only final schema has required links
     sdl += 'required '
   }
   if (field.isList) {
@@ -102,8 +89,23 @@ function renderField(field: runtime.DMMF.Field, ver: string): string {
 }
 
 
-function renderSDL(ver: string) {
+function renderEnum(enumtype: runtime.DMMF.DatamodelEnum, ver: string): string {
+  const values = enumtype.values.map((val) => val.dbName ?? val.name)
+  return `\
+  scalar type ${ enumtype.name }
+    extending enum<${ values.join(', ') }>;
+`
+}
+
+
+function renderSDL(ver: string): string {
   let sdl: string = ''
+
+  Prisma.dmmf.datamodel.enums.forEach((enumtype) => {
+    sdl += renderEnum(enumtype, ver)
+  })
+
+  sdl += '\n'
 
   Prisma.dmmf.datamodel.models.forEach((model) => {
     sdl += renderType(model, ver)
@@ -118,22 +120,33 @@ ${ sdl }
 }
 
 
-async function writeSchemas() {
-  await writeFile(`${ HOMEDIR }/esdl/init.esdl`, renderSDL('init'))
-  await writeFile(`${ HOMEDIR }/esdl/final.esdl`, renderSDL('final'))
+export async function writeSchema(esdldir: string) {
+  await writeFile(`${ esdldir }/init.esdl`, renderSDL('init'))
+  await writeFile(`${ esdldir }/final.esdl`, renderSDL('final'))
 }
 
 
-async function dumpAsJSON() {
+export function wrappedWriteSchema(esdldir: string) {
+  writeSchema(esdldir)
+    .then(async () => {
+    })
+    .catch(async (e) => {
+      console.error(e)
+      process.exit(1)
+    })
+}
+
+
+export async function dumpJSON(jsondir: string) {
   // Connect to database server
-  await client.connect();
+  await client.connect()
 
   // copy all the tables
   for (let model of Prisma.dmmf.datamodel.models) {
-    let file = await open(`${ HOMEDIR }/dump/${ model.name }.json`, 'w')
+    let file = await open(`${ jsondir }/${ model.name }.json`, 'w')
 
     let cursor = client.query(new Cursor(`
-      SELECT ROW_TO_JSON(t)::text AS data FROM "${ model.name }" AS t
+      SELECT ROW_TO_JSON(t)::text AS data FROM "${ model.dbName ?? model.name }" AS t
     `))
 
     let data: any[]
@@ -144,21 +157,57 @@ async function dumpAsJSON() {
       }
     } while (data.length > 0)
   }
+
+  await client.end()
 }
 
 
-async function populateEdgeDB() {
+export function wrappedDumpJSON(jsondir: string) {
+  dumpJSON(jsondir)
+    .then(async () => {
+      await client.end()
+    })
+    .catch(async (e) => {
+      console.error(e)
+      await client.end()
+      process.exit(1)
+    })
+}
+
+
+function getEdbFieldName(name: string): string {
+  if (name == 'id') {
+    return 'original_id'
+  } else {
+    return name
+  }
+}
+
+
+function getEdbFieldType(field: runtime.DMMF.Field): string {
+  // Prisma scalars need to be mapped to built-ins, other types can use their
+  // own names
+  if (field.kind == 'scalar') {
+    return SCALAR_MAP[field.type]
+  } else {
+    return field.type
+  }
+}
+
+
+export async function migrate(jsondir: string) {
   // read the JSON dumps and insert them
   for (let model of Prisma.dmmf.datamodel.models) {
-    const file = await open(`${ HOMEDIR }/dump/${ model.name }.json`, 'r')
+    const file = await open(`${ jsondir }/${ model.name }.json`, 'r')
     let properties: string[] = []
 
     for (let field of model.fields) {
       // we only expect properties
       if (field.kind != 'object') {
         properties.push(
-          `${ field.isId ? 'original_id' : field.name } :=
-            <${ SCALAR_MAP[field.type] }>data['${ field.name }']`
+          `${ getEdbFieldName(field.name) } :=
+            <${ getEdbFieldType(field) }>
+            data['${ field.dbName ?? field.name }']`
         )
       }
     }
@@ -182,7 +231,7 @@ async function populateEdgeDB() {
         links.push(
           `${ field.name } := (
             select ${ field.type }
-            filter .original_id =
+            filter .${ getEdbFieldName(field.relationToFields![0]) } =
               ${ model.name }.${ field.relationFromFields![0] }
           )`
         )

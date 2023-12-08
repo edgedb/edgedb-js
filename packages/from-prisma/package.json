@@ -24,20 +24,25 @@
   "devDependencies": {
     "@edgedb/generate": "^0.4.1",
     "@prisma/client": "^5.7.0",
-    "@types/node": "^20.10.3",
+    "@types/node": "^20.10.4",
     "@types/pg-cursor": "^2.7.2",
+    "edgedb": "^1.4.1",
     "prisma": "^5.7.0",
     "ts-node": "^10.9.1",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "commander": "^11.1.0",
     "dotenv": "^16.3.1",
-    "edgedb": "^1.4.1",
     "pg": "^8.11.3",
     "pg-cursor": "^2.10.3"
   },
   "scripts": {
-    "build": "rm -rf dist && tsc --project tsconfig.json && chmod +x dist/cli.js"
+    "load-prisma": "prisma migrate reset -f && ts-node --project tsconfig.json src/loaddata.ts",
+    "cli": "ts-node --project tsconfig.json src/cli.ts"
+  },
+  "prisma": {
+    "schema": "prisma-project/schema.prisma"
   }
 }
