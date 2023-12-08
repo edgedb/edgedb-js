@@ -149,6 +149,7 @@ app.use("/auth", builtinRouter);
 
 ### Custom UI: Email and password `createEmailPasswordRouter`
 
+- `routerPath: string`, required, This is the path relative to the `baseUrl` given that was configured when creating the `ExpressAuth` object that this router will be attached to. This is used to build the URL to the email verification path configured by the router factory.
 - `signIn: (express.RouteHandler | express.ErrorHandler)[]`, required, Attached middleware executes when sign-in attempt succeeds. Typically you will redirect the user to your application here.
 - `signUp: (express.RouteHandler | express.ErrorHandler)[]`, required, Attached middleware executes when sign-up attempt succeeds. Typically you will redirect the user to your application here.
 - `verify: (express.RouteHandler | express.ErrorHandler)[]`, Attached middleware executes after the user verifies their email successfully. Typically you will redirect the user to your application here.
@@ -159,6 +160,7 @@ app.use("/auth", builtinRouter);
 
 ```ts
 const emailPasswordRouter = expressAuth.createEmailPasswordRouter({
+  routerPath: "/auth/email-password",
   signIn: [
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/");
@@ -191,7 +193,7 @@ const emailPasswordRouter = expressAuth.createEmailPasswordRouter({
   ],
 });
 
-app.use("/auth/email-password", emailPasswordRouter);
+app.use(emailPasswordRouter);
 // This creates the following routes:
 // - POST /auth/email-password/signin
 // - POST /auth/email-password/signup
@@ -203,11 +205,13 @@ app.use("/auth/email-password", emailPasswordRouter);
 
 ### Custom UI: OAuth `createOAuthRouter`
 
-- `redirect?: (express.RouteHandler | express.ErrorHandler)[]`, Attached middleware executes just before redirecting the user to the Identity Provider's OAuth consent flow.
+- `routerPath: string`, required, This is the path relative to the `baseUrl` given that was configured when creating the `ExpressAuth` object that this router will be attached to. This is used to build the URL to the callback path configured by the router factory.
 - `callback: (express.RouteHandler | express.ErrorHandler)[]`, required, Once the authentication flow completes, this callback will be called, and you must return a terminating Express route handler here. Typically, you'll redirect to elsewhere in your app based on `req.isSignUp`.
+- `redirect?: (express.RouteHandler | express.ErrorHandler)[]`, Attached middleware executes just before redirecting the user to the Identity Provider's OAuth consent flow.
 
 ```ts
 const oAuthRouter = expressAuth.createOAuthRouter({
+  routerPath: "/auth/oauth",
   callback: [
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/");
@@ -215,7 +219,7 @@ const oAuthRouter = expressAuth.createOAuthRouter({
   ],
 });
 
-app.use("/auth/oauth", oAuthRouter);
+app.use(oAuthRouter);
 // This creates the following routes:
 // - GET /auth/oauth/
 // - GET /auth/oauth/callback
@@ -259,7 +263,10 @@ const emailPasswordRouter = Router()
   )
   .post(
     "/signup",
-    expressAuth.emailPassword.signUp,
+    expressAuth.emailPassword.signUp(
+      // URL of the verify endpoint configured below
+      "http://localhost:3000/auth/email-password/verify"
+    ),
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/onboarding");
     }
@@ -273,7 +280,10 @@ const emailPasswordRouter = Router()
   )
   .post(
     "/send-password-reset-email",
-    expressAuth.emailPassword.sendPasswordResetEmail,
+    expressAuth.emailPassword.sendPasswordResetEmail(
+      // URL of the reset password endpoint configured below
+      "http://localhost:3000/auth/email-password/reset-password"
+    ),
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/email-success");
     }
@@ -300,7 +310,13 @@ app.use("/auth/email-password", emailPasswordRouter);
 
 ```ts
 const oAuthRouter = Router()
-  .get("/", expressAuth.oauth.redirect)
+  .get(
+    "/",
+    expressAuth.oauth.redirect(
+      // URL of the callback endpoint configured below
+      "http://localhost:3000/auth/oauth/callback"
+    )
+  )
   .get(
     "/callback",
     expressAuth.oauth.callback,
@@ -338,7 +354,6 @@ const builtinRouter = expressAuth.createBuiltinRouter({
 ### `createExpressAuth` (default package export)
 
 - `baseUrl: string`, required, The url of your application; needed for various auth flows (eg. OAuth) to redirect back to.
-- `authRoutesPath?: string`, The path to the auth route handlers, defaults to 'auth', see below for more details.
 - `authCookieName?: string`, The name of the cookie where the auth token will be stored, defaults to 'edgedb-session'.
 - `pkceVerifierCookieName?: string`: The name of the cookie where the verifier for the PKCE flow will be stored, defaults to 'edgedb-pkce-verifier'
 - `passwordResetUrl?: string`: The url of the the password reset page; needed if you want to enable password reset emails in your app.
@@ -348,7 +363,6 @@ Returns: `ExpressAuth`
 ### `ExpressAuth`
 
 - `isPasswordResetTokenValid(resetToken: string)`: Checks if the provided password reset token is valid.
-- `getOAuthUrl(providerName: BuiltinOAuthProviderNames)`: Returns the OAuth URL for the specified provider.
 - `getBuiltinUIUrl()`: Returns the URL for the built-in UI.
 - `getBuiltinUISignUpUrl()`: Returns the URL for the built-in UI sign up page.
 - `getSession(req: ExpressRequest)`: Returns the session for the specified request.

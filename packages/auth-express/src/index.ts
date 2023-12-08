@@ -60,7 +60,6 @@ export class ExpressAuthSession {
 
 export interface ExpressAuthOptions {
   baseUrl: string;
-  authRoutesPath?: string;
   authCookieName?: string;
   pkceVerifierCookieName?: string;
   passwordResetPath?: string;
@@ -78,7 +77,6 @@ export class ExpressAuth {
   constructor(protected readonly client: Client, options: ExpressAuthOptions) {
     this.options = {
       baseUrl: options.baseUrl.replace(/\/$/, ""),
-      authRoutesPath: options.authRoutesPath?.replace(/^\/|\/$/g, "") ?? "auth",
       authCookieName: options.authCookieName ?? "edgedb-session",
       pkceVerifierCookieName:
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
@@ -87,25 +85,8 @@ export class ExpressAuth {
     this.core = Auth.create(client);
   }
 
-  protected get _authRoute() {
-    return `${this.options.baseUrl}/${this.options.authRoutesPath}`;
-  }
-
   isPasswordResetTokenValid = (resetToken: string) => {
     return Auth.checkPasswordResetTokenValid(resetToken);
-  };
-
-  getOAuthUrl = (providerName: BuiltinOAuthProviderNames) => {
-    return `${this._authRoute}/oauth?${new URLSearchParams({
-      provider_name: providerName,
-    }).toString()}`;
-  };
-
-  getBuiltinUIUrl = () => {
-    return `${this._authRoute}/builtin/signin`;
-  };
-  getBuiltinUISignUpUrl = () => {
-    return `${this._authRoute}/builtin/signup`;
   };
 
   getSession = (req: ExpressRequest) => {
@@ -152,16 +133,25 @@ export class ExpressAuth {
   };
 
   createEmailPasswordRouter = (
+    routerPath: string,
     stacks: Record<keyof typeof this.emailPassword, RouterStack>
   ) => {
-    const router = Router();
+    const router = Router().use(routerPath);
 
     router.post("/signin", this.emailPassword.signIn, ...stacks.signIn);
-    router.post("/signup", this.emailPassword.signUp, ...stacks.signUp);
+    router.post(
+      "/signup",
+      this.emailPassword.signUp(
+        new URL(`${routerPath}/verify`, this.options.baseUrl).toString()
+      ),
+      ...stacks.signUp
+    );
     router.post("/verify", this.emailPassword.verify, ...stacks.verify);
     router.post(
       "/send-password-reset-email",
-      this.emailPassword.sendPasswordResetEmail,
+      this.emailPassword.sendPasswordResetEmail(
+        new URL(`${routerPath}/reset-password`, this.options.baseUrl).toString()
+      ),
       ...stacks.sendPasswordResetEmail
     );
     router.post(
@@ -179,15 +169,23 @@ export class ExpressAuth {
   };
 
   createOAuthRouter = ({
+    routerPath,
     redirect = [],
     callback,
   }: {
+    routerPath: string;
     redirect?: RouterStack;
     callback: RouterStack;
   }) => {
-    const router = Router();
+    const router = Router().use(routerPath);
 
-    router.get("/", this.oAuth.redirect, ...redirect);
+    router.get(
+      "/",
+      this.oAuth.redirect(
+        new URL(`${routerPath}/callback`, this.options.baseUrl).toString()
+      ),
+      ...redirect
+    );
     router.get("/callback", this.oAuth.callback, ...callback);
 
     return router;
@@ -212,37 +210,38 @@ export class ExpressAuth {
   };
 
   oAuth = {
-    redirect: async (
-      req: AuthRequest,
-      res: ExpressResponse,
-      next: NextFunction
-    ) => {
-      try {
-        const provider = new URL(req.url).searchParams.get(
-          "provider_name"
-        ) as BuiltinOAuthProviderNames | null;
-        if (!provider || !builtinOAuthProviderNames.includes(provider)) {
-          throw new Error(`invalid provider_name: ${provider}`);
+    redirect:
+      (callbackUrl: string) =>
+      async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
+        try {
+          const provider = new URL(req.url).searchParams.get(
+            "provider_name"
+          ) as BuiltinOAuthProviderNames | null;
+          if (!provider || !builtinOAuthProviderNames.includes(provider)) {
+            throw new Error(`invalid provider_name: ${provider}`);
+          }
+          const pkceSession = await this.core.then((core) =>
+            core.createPKCESession()
+          );
+          res.cookie(
+            this.options.pkceVerifierCookieName,
+            pkceSession.verifier,
+            {
+              httpOnly: true,
+            }
+          );
+          next();
+          res.redirect(
+            pkceSession.getOAuthUrl(
+              provider,
+              callbackUrl,
+              `${callbackUrl}?isSignUp=true`
+            )
+          );
+        } catch (err) {
+          next(err);
         }
-        const redirectUrl = `${this._authRoute}/oauth/callback`;
-        const pkceSession = await this.core.then((core) =>
-          core.createPKCESession()
-        );
-        res.cookie(this.options.pkceVerifierCookieName, pkceSession.verifier, {
-          httpOnly: true,
-        });
-        next();
-        res.redirect(
-          pkceSession.getOAuthUrl(
-            provider,
-            redirectUrl,
-            `${redirectUrl}?isSignUp=true`
-          )
-        );
-      } catch (err) {
-        next(err);
-      }
-    },
+      },
 
     callback: async (
       req: CallbackRequest,
@@ -405,46 +404,44 @@ export class ExpressAuth {
         next(err);
       }
     },
-    signUp: async (
-      req: AuthRequest,
-      res: ExpressResponse,
-      next: NextFunction
-    ) => {
-      try {
-        const [email, password] = _extractParams(
-          req.body,
-          ["email", "password"],
-          "email or password missing from request body"
-        );
-        const result = await (
-          await this.core
-        ).signupWithEmailPassword(
-          email,
-          password,
-          `${this._authRoute}/emailpassword/verify`
-        );
-        res.cookie(this.options.pkceVerifierCookieName, result.verifier, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
-        if (result.status === "complete") {
-          res.cookie(this.options.authCookieName, result.tokenData.auth_token, {
+    signUp:
+      (verifyUrl: string) =>
+      async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
+        try {
+          const [email, password] = _extractParams(
+            req.body,
+            ["email", "password"],
+            "email or password missing from request body"
+          );
+          const result = await (
+            await this.core
+          ).signupWithEmailPassword(email, password, verifyUrl);
+          res.cookie(this.options.pkceVerifierCookieName, result.verifier, {
             httpOnly: true,
             sameSite: "strict",
           });
-          req.session = new ExpressAuthSession(
-            this.client,
-            result.tokenData.auth_token
-          );
-          req.tokenData = result.tokenData;
-        } else {
-          req.session = new ExpressAuthSession(this.client, undefined);
+          if (result.status === "complete") {
+            res.cookie(
+              this.options.authCookieName,
+              result.tokenData.auth_token,
+              {
+                httpOnly: true,
+                sameSite: "strict",
+              }
+            );
+            req.session = new ExpressAuthSession(
+              this.client,
+              result.tokenData.auth_token
+            );
+            req.tokenData = result.tokenData;
+          } else {
+            req.session = new ExpressAuthSession(this.client, undefined);
+          }
+          next();
+        } catch (err) {
+          next(err);
         }
-        next();
-      } catch (err) {
-        next(err);
-      }
-    },
+      },
     verify: async (
       req: AuthRequest,
       res: ExpressResponse,
@@ -477,39 +474,31 @@ export class ExpressAuth {
         next(err);
       }
     },
-    sendPasswordResetEmail: async (
-      req: AuthRequest,
-      res: ExpressResponse,
-      next: NextFunction
-    ) => {
-      try {
-        if (!this.options.passwordResetPath) {
-          throw new Error(`'passwordResetPath' option not configured`);
+    sendPasswordResetEmail:
+      (passwordResetUrl: string) =>
+      async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
+        try {
+          if (!this.options.passwordResetPath) {
+            throw new Error(`'passwordResetPath' option not configured`);
+          }
+          const [email] = _extractParams(
+            req.body,
+            ["email"],
+            "email missing from request body"
+          );
+          const { verifier } = await (
+            await this.core
+          ).sendPasswordResetEmail(email, passwordResetUrl);
+          res.cookie(this.options.pkceVerifierCookieName, verifier, {
+            httpOnly: true,
+            sameSite: "strict",
+          });
+          res.status(204);
+          next();
+        } catch (err) {
+          next(err);
         }
-        const [email] = _extractParams(
-          req.body,
-          ["email"],
-          "email missing from request body"
-        );
-        const { verifier } = await (
-          await this.core
-        ).sendPasswordResetEmail(
-          email,
-          new URL(
-            this.options.passwordResetPath,
-            this.options.baseUrl
-          ).toString()
-        );
-        res.cookie(this.options.pkceVerifierCookieName, verifier, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
-        res.status(204);
-        next();
-      } catch (err) {
-        next(err);
-      }
-    },
+      },
     resetPassword: async (
       req: AuthRequest,
       res: ExpressResponse,
