@@ -136,7 +136,7 @@ export class ExpressAuth {
     routerPath: string,
     stacks: Record<keyof typeof this.emailPassword, RouterStack>
   ) => {
-    const router = Router().use(routerPath);
+    const router = Router();
 
     router.post("/signin", this.emailPassword.signIn, ...stacks.signIn);
     router.post(
@@ -146,7 +146,7 @@ export class ExpressAuth {
       ),
       ...stacks.signUp
     );
-    router.post("/verify", this.emailPassword.verify, ...stacks.verify);
+    router.get("/verify", this.emailPassword.verify, ...stacks.verify);
     router.post(
       "/send-password-reset-email",
       this.emailPassword.sendPasswordResetEmail(
@@ -165,7 +165,7 @@ export class ExpressAuth {
       ...stacks.resendVerificationEmail
     );
 
-    return router;
+    return Router().use(routerPath, router);
   };
 
   createOAuthRouter = ({
@@ -177,7 +177,7 @@ export class ExpressAuth {
     redirect?: RouterStack;
     callback: RouterStack;
   }) => {
-    const router = Router().use(routerPath);
+    const router = Router();
 
     router.get(
       "/",
@@ -188,7 +188,7 @@ export class ExpressAuth {
     );
     router.get("/callback", this.oAuth.callback, ...callback);
 
-    return router;
+    return Router().use(routerPath, router);
   };
 
   signout = async (
@@ -214,7 +214,10 @@ export class ExpressAuth {
       (callbackUrl: string) =>
       async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
         try {
-          const provider = new URL(req.url).searchParams.get(
+          const provider = new URL(
+            req.url,
+            `http://${req.headers.host}`
+          ).searchParams.get(
             "provider_name"
           ) as BuiltinOAuthProviderNames | null;
           if (!provider || !builtinOAuthProviderNames.includes(provider)) {
@@ -249,7 +252,7 @@ export class ExpressAuth {
       next: NextFunction
     ) => {
       try {
-        const requestUrl = new URL(req.url);
+        const requestUrl = new URL(req.url, `http://${req.headers.host}`);
         const error = requestUrl.searchParams.get("error");
         if (error) {
           const desc = requestUrl.searchParams.get("error_description");
@@ -335,7 +338,7 @@ export class ExpressAuth {
       next: NextFunction
     ) => {
       try {
-        const requestUrl = new URL(req.url);
+        const requestUrl = new URL(req.url, `http://${req.headers.host}`);
         const error = requestUrl.searchParams.get("error");
         if (error) {
           const desc = requestUrl.searchParams.get("error_description");
@@ -448,7 +451,7 @@ export class ExpressAuth {
       next: NextFunction
     ) => {
       try {
-        const requestUrl = new URL(req.url);
+        const requestUrl = new URL(req.url, `http://${req.headers.host}`);
         const verificationToken =
           requestUrl.searchParams.get("verification_token");
         const verifier = req.cookies[this.options.pkceVerifierCookieName];
