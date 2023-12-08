@@ -214,10 +214,8 @@ export class ExpressAuth {
       (callbackUrl: string) =>
       async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
         try {
-          const provider = new URL(
-            req.url,
-            `http://${req.headers.host}`
-          ).searchParams.get(
+          const searchParams = new URLSearchParams(req.url.split("?")[1]);
+          const provider = searchParams.get(
             "provider_name"
           ) as BuiltinOAuthProviderNames | null;
           if (!provider || !builtinOAuthProviderNames.includes(provider)) {
@@ -252,14 +250,14 @@ export class ExpressAuth {
       next: NextFunction
     ) => {
       try {
-        const requestUrl = new URL(req.url, `http://${req.headers.host}`);
-        const error = requestUrl.searchParams.get("error");
+        const searchParams = new URLSearchParams(req.url.split("?")[1]);
+        const error = searchParams.get("error");
         if (error) {
-          const desc = requestUrl.searchParams.get("error_description");
+          const desc = searchParams.get("error_description");
           throw new Error(error + (desc ? `: ${desc}` : ""));
         }
-        const code = requestUrl.searchParams.get("code");
-        const verificationEmailSentAt = requestUrl.searchParams.get(
+        const code = searchParams.get("code");
+        const verificationEmailSentAt = searchParams.get(
           "verification_email_sent_at"
         );
 
@@ -274,7 +272,7 @@ export class ExpressAuth {
         if (!verifier) {
           throw new Error("no pkce verifier cookie found");
         }
-        const isSignUp = requestUrl.searchParams.get("isSignUp") === "true";
+        const isSignUp = searchParams.get("isSignUp") === "true";
         const tokenData = await (await this.core).getToken(code, verifier);
         res.cookie(this.options.authCookieName, tokenData.auth_token, {
           httpOnly: true,
@@ -285,7 +283,7 @@ export class ExpressAuth {
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;
         req.isSignUp = isSignUp;
-        req.provider = requestUrl.searchParams.get(
+        req.provider = searchParams.get(
           "provider"
         ) as BuiltinOAuthProviderNames;
         next();
@@ -338,14 +336,14 @@ export class ExpressAuth {
       next: NextFunction
     ) => {
       try {
-        const requestUrl = new URL(req.url, `http://${req.headers.host}`);
-        const error = requestUrl.searchParams.get("error");
+        const searchParams = new URLSearchParams(req.url.split("?")[1]);
+        const error = searchParams.get("error");
         if (error) {
-          const desc = requestUrl.searchParams.get("error_description");
+          const desc = searchParams.get("error_description");
           throw new Error(error + (desc ? `: ${desc}` : ""));
         }
-        const code = requestUrl.searchParams.get("code");
-        const verificationEmailSentAt = requestUrl.searchParams.get(
+        const code = searchParams.get("code");
+        const verificationEmailSentAt = searchParams.get(
           "verification_email_sent_at"
         );
 
@@ -360,7 +358,7 @@ export class ExpressAuth {
         if (!verifier) {
           throw new Error("no pkce verifier cookie found");
         }
-        const isSignUp = requestUrl.searchParams.get("isSignUp") === "true";
+        const isSignUp = searchParams.get("isSignUp") === "true";
         const tokenData = await (await this.core).getToken(code, verifier);
         res.cookie(this.options.authCookieName, tokenData.auth_token, {
           httpOnly: true,
@@ -451,9 +449,8 @@ export class ExpressAuth {
       next: NextFunction
     ) => {
       try {
-        const requestUrl = new URL(req.url, `http://${req.headers.host}`);
-        const verificationToken =
-          requestUrl.searchParams.get("verification_token");
+        const searchParams = new URLSearchParams(req.url.split("?")[1]);
+        const verificationToken = searchParams.get("verification_token");
         const verifier = req.cookies[this.options.pkceVerifierCookieName];
         if (!verificationToken) {
           throw new Error("no verification_token in response");
