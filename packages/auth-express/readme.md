@@ -363,8 +363,6 @@ Returns: `ExpressAuth`
 ### `ExpressAuth`
 
 - `isPasswordResetTokenValid(resetToken: string)`: Checks if the provided password reset token is valid.
-- `getBuiltinUIUrl()`: Returns the URL for the built-in UI.
-- `getBuiltinUISignUpUrl()`: Returns the URL for the built-in UI sign up page.
 - `getSession(req: ExpressRequest)`: Returns the session for the specified request.
 - `getProvidersInfo()`: Returns information about the available providers.
 - `createSessionMiddleware()`: Creates a session middleware.
