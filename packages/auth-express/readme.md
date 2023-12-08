@@ -24,7 +24,7 @@ import cookieParser from "cookie-parser";
 const app = express();
 
 app.use(express.json());
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 ```
 
@@ -159,8 +159,7 @@ app.use("/auth", builtinRouter);
 
 
 ```ts
-const emailPasswordRouter = auth.createEmailPasswordRouter({
-  routerPath: "/auth/email-password",
+const emailPasswordRouter = auth.createEmailPasswordRouter("/auth/email-password", {
   signIn: [
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/");
@@ -210,8 +209,7 @@ app.use(emailPasswordRouter);
 - `redirect?: (express.RouteHandler | express.ErrorHandler)[]`, Attached middleware executes just before redirecting the user to the Identity Provider's OAuth consent flow.
 
 ```ts
-const oAuthRouter = auth.createOAuthRouter({
-  routerPath: "/auth/oauth",
+const oAuthRouter = auth.createOAuthRouter("/auth/oauth", {
   callback: [
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/");
