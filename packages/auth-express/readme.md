@@ -56,7 +56,7 @@ const auth = createExpressAuth(client, {
 We provide a middleware factory that will attach an `ExpressAuthSession` object to your request object, which you can use to make authenticated queries, or protect routes.
 
 ```ts
-app.use(expressAuth.createSessionMiddleware());
+app.use(auth.createSessionMiddleware());
 ```
 
 You can then use the `expressAuth.SessionRequest` type for your route's request parameter, which adds a `session` key to your request object.
@@ -128,7 +128,7 @@ app.get("/signout", expressAuth.signout, (req, res) => {
 - `callback: (express.RouteHandler | express.ErrorHandler)[]`, required, Once the authentication flow completes, this callback will be called, and you must return a terminating Express route handler here. Typically, you'll redirect to elsewhere in your app based on `req.isSignUp`.
 
 ```ts
-const builtinRouter = expressAuth.createBuiltinRouter({
+const builtinRouter = auth.createBuiltinRouter({
   callback: [
     (req: expressAuth.CallbackRequest, res, next) => {
       if (req.isSignUp) {
@@ -159,7 +159,7 @@ app.use("/auth", builtinRouter);
 
 
 ```ts
-const emailPasswordRouter = expressAuth.createEmailPasswordRouter({
+const emailPasswordRouter = auth.createEmailPasswordRouter({
   routerPath: "/auth/email-password",
   signIn: [
     (req: expressAuth.AuthRequest, res) => {
@@ -210,7 +210,7 @@ app.use(emailPasswordRouter);
 - `redirect?: (express.RouteHandler | express.ErrorHandler)[]`, Attached middleware executes just before redirecting the user to the Identity Provider's OAuth consent flow.
 
 ```ts
-const oAuthRouter = expressAuth.createOAuthRouter({
+const oAuthRouter = auth.createOAuthRouter({
   routerPath: "/auth/oauth",
   callback: [
     (req: expressAuth.AuthRequest, res) => {
@@ -233,11 +233,11 @@ Each route is also available as a middleware itself for maximum customization, t
 
 ```ts
 const builtinRouter = Router()
-  .get("/signin", expressAuth.builtin.signIn)
-  .get("/signup", expressAuth.builtin.signUp)
+  .get("/signin", auth.builtin.signIn)
+  .get("/signup", auth.builtin.signUp)
   .get(
     "/callback",
-    expressAuth.builtin.callback,
+    auth.builtin.callback,
     (req: expressAuth.CallbackRequest, res, next) => {
       if (req.isSignUp) {
         return res.redirect("/onboarding");
@@ -256,14 +256,14 @@ app.use("/auth", builtinRouter);
 const emailPasswordRouter = Router()
   .post(
     "/signin",
-    expressAuth.emailPassword.signIn,
+    auth.emailPassword.signIn,
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/");
     }
   )
   .post(
     "/signup",
-    expressAuth.emailPassword.signUp(
+    auth.emailPassword.signUp(
       // URL of the verify endpoint configured below
       "http://localhost:3000/auth/email-password/verify"
     ),
@@ -273,14 +273,14 @@ const emailPasswordRouter = Router()
   )
   .post(
     "/verify",
-    expressAuth.emailPassword.verify,
+    auth.emailPassword.verify,
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/");
     }
   )
   .post(
     "/send-password-reset-email",
-    expressAuth.emailPassword.sendPasswordResetEmail(
+    auth.emailPassword.sendPasswordResetEmail(
       // URL of the reset password endpoint configured below
       "http://localhost:3000/auth/email-password/reset-password"
     ),
@@ -290,14 +290,14 @@ const emailPasswordRouter = Router()
   )
   .post(
     "/reset-password",
-    expressAuth.emailPassword.resetPassword,
+    auth.emailPassword.resetPassword,
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/email-success");
     }
   )
   .post(
     "/resend-verification-email",
-    expressAuth.emailPassword.resendVerificationEmail,
+    auth.emailPassword.resendVerificationEmail,
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/");
     }
@@ -312,14 +312,14 @@ app.use("/auth/email-password", emailPasswordRouter);
 const oAuthRouter = Router()
   .get(
     "/",
-    expressAuth.oauth.redirect(
+    auth.oAuth.redirect(
       // URL of the callback endpoint configured below
       "http://localhost:3000/auth/oauth/callback"
     )
   )
   .get(
     "/callback",
-    expressAuth.oauth.callback,
+    auth.oAuth.callback,
     (req: expressAuth.AuthRequest, res) => {
       res.redirect("/");
     }
@@ -333,7 +333,7 @@ app.use("/auth/oauth", oAuthRouter);
 If an error occurs during the authentication flow, it will be passed to the Express error handler. You can use Express error handlers to handle errors either on individual routes by adding the error handlers to the middleware arrays or in your route definitions, or define a router-wide error handler. Any Express error handling pattern is available here, but let's examine a quick example of handling error with the built-in UI flow:
 
 ```ts
-const builtinRouter = expressAuth.createBuiltinRouter({
+const builtinRouter = auth.createBuiltinRouter({
   callback: [
     (req: expressAuth.CallbackRequest, res, next) => {
       if (req.isSignUp) {
