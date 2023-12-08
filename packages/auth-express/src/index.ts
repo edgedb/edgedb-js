@@ -164,17 +164,17 @@ export class ExpressAuth {
     router.post("/signup", this.emailPassword.signUp, ...stacks.signUp);
     router.post("/verify", this.emailPassword.verify, ...stacks.verify);
     router.post(
-      "/send_password_reset_email",
+      "/send-password-reset-email",
       this.emailPassword.sendPasswordResetEmail,
       ...stacks.sendPasswordResetEmail
     );
     router.post(
-      "/reset_password",
+      "/reset-password",
       this.emailPassword.resetPassword,
       ...stacks.resetPassword
     );
     router.post(
-      "/resend_verification_email",
+      "/resend-verification-email",
       this.emailPassword.resendVerificationEmail,
       ...stacks.resendVerificationEmail
     );
