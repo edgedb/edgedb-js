@@ -168,15 +168,16 @@ export class ExpressAuth {
     return Router().use(routerPath, router);
   };
 
-  createOAuthRouter = ({
-    routerPath,
-    redirect = [],
-    callback,
-  }: {
-    routerPath: string;
-    redirect?: RouterStack;
-    callback: RouterStack;
-  }) => {
+  createOAuthRouter = (
+    routerPath: string,
+    {
+      redirect = [],
+      callback,
+    }: {
+      redirect?: RouterStack;
+      callback: RouterStack;
+    }
+  ) => {
     const router = Router();
 
     router.get(
