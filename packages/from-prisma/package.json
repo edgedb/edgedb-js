@@ -1,0 +1,42 @@
+{
+  "name": "@edgedb/from-prisma",
+  "version": "0.4.1",
+  "description": "Migrate your Postgres database to EdgeDB using Prisma",
+  "homepage": "https://edgedb.com/docs",
+  "author": "EdgeDB <info@edgedb.com>",
+  "engines": {
+    "node": ">= 18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgedb/edgedb-js.git"
+  },
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "files": [
+    "/dist"
+  ],
+  "bin": "dist/cli.js",
+  "peerDependencies": {
+    "edgedb": "^1.4.1",
+    "prisma": "^5.0.0"
+  },
+  "devDependencies": {
+    "@edgedb/generate": "^0.4.1",
+    "@types/node": "^20.10.3",
+    "@types/pg-cursor": "^2.7.2",
+    "prisma": "^5.7.0",
+    "ts-node": "^10.9.1",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "edgedb": "^1.4.1",
+    "pg": "^8.11.3",
+    "pg-cursor": "^2.10.3"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc --project tsconfig.json && chmod +x dist/cli.js"
+  }
+}

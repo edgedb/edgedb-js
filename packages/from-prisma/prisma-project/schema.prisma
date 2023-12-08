@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider  = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+model Badge {
+  id                Int     @id @default(autoincrement())
+  name              String  @unique
+  description       String?
+  users             User[]
+}
+
+model Status {
+  id                Int     @id @default(autoincrement())
+  title             String  @unique
+  users             User[]
+}
+
+model User {
+  numId             Int     @id @default(autoincrement())
+  name              String  @unique
+  email             String  @unique
+  password          String
+  client_settings   Json
+  description       String?
+
+  badge             Badge?  @relation(fields: [badgeId], references: [id])
+  badgeId           Int?
+  status            Status? @relation(fields: [statusId], references: [id])
+  statusId          Int?
+  posts             Post[]
+  bookmarks         Bookmarks[]
+}
+
+model Thread {
+  id                Int     @id @default(autoincrement())
+  title             String?
+  posts             Post[]
+}
+
+model Post {
+  id                Int     @id @default(autoincrement())
+  body              String
+  creation_time     DateTime
+  edited_time       DateTime?
+
+  user              User    @relation(fields: [userId], references: [numId])
+  userId            Int
+  thread            Thread? @relation(fields: [threadId], references: [id])
+  threadId          Int?
+  replyTo           Post?   @relation(name: "Reply", fields: [replyToId], references: [id])
+  reply             Post[]  @relation(name: "Reply")
+  replyToId         Int?
+  bookmarkedBy      Bookmarks[]
+  visibility        Visibility    @default(Medium)
+}
+
+model Bookmarks {
+  id                Int     @id @default(autoincrement())
+  note              String?
+  user              User    @relation(fields: [userId], references: [numId])
+  userId            Int     @map("from_user")
+  post              Post    @relation(fields: [postId], references: [id])
+  postId            Int     @map("to_post")
+
+  @@index([userId, postId])
+  @@map("user_bookmarks")
+}
+
+enum Visibility {
+  None
+  Low
+  Medium
+  High
+}

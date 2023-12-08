@@ -1,0 +1,11 @@
+trace
+trace/*
+test/mts/edgeql-js
+test/esm/edgeql-js
+test/deno/edgeql-js
+test/cjs/edgeql-js
+dbschema/edgeql-js
+dbschema/queries.ts
+dbschema/interfaces.ts
+**/*.edgeql.*
+test/*/queries.*
