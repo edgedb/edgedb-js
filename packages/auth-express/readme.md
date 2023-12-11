@@ -123,6 +123,8 @@ app.get("/signout", expressAuth.signout, (req, res) => {
 
 #### Built-in UI: `createBuiltinRouter`
 
+When using the built-in UI, be sure to set your `redirect_to` and `redirect_to_on_signup` values in the configuration to the route that the callback is mounted to, adding `?isSignUp=true` to the `redirect_to_on_signup` value.
+
 - `callback: (express.RouteHandler | express.ErrorHandler)[]`, required, Once the authentication flow completes, this callback will be called, and you must return a terminating Express route handler here. Typically, you'll redirect to elsewhere in your app based on `req.isSignUp`.
 
 ```ts
