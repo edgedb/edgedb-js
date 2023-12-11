@@ -123,8 +123,6 @@ app.get("/signout", expressAuth.signout, (req, res) => {
 
 #### Built-in UI: `createBuiltinRouter`
 
-- `signIn?: (express.RouteHandler | express.ErrorHandler)[]`, Attached middleware executes just before redirecting the user to the built-in UI.
-- `signUp?: (express.RouteHandler | express.ErrorHandler)[]`, Attached middleware executes just before redirecting the user to the built-in UI.
 - `callback: (express.RouteHandler | express.ErrorHandler)[]`, required, Once the authentication flow completes, this callback will be called, and you must return a terminating Express route handler here. Typically, you'll redirect to elsewhere in your app based on `req.isSignUp`.
 
 ```ts
@@ -144,7 +142,7 @@ app.use("/auth", builtinRouter);
 // Creates the following routes:
 // - GET /auth/signin: Redirects to built-in UI's sign in page
 // - GET /auth/signup: Redirects to built-in UI's sign up page
-// - GET /auth/callback: You must provide a terminating route handler in the configuration
+// - GET /auth/callback: Handles successful authentication. Typically you'll create a new user if `isSignUp` is true, and redirect appropriately.
 ```
 
 ### Custom UI: Email and password `createEmailPasswordRouter`
@@ -206,7 +204,6 @@ app.use(emailPasswordRouter);
 
 - `routerPath: string`, required, This is the path relative to the `baseUrl` given that was configured when creating the `ExpressAuth` object that this router will be attached to. This is used to build the URL to the callback path configured by the router factory.
 - `callback: (express.RouteHandler | express.ErrorHandler)[]`, required, Once the authentication flow completes, this callback will be called, and you must return a terminating Express route handler here. Typically, you'll redirect to elsewhere in your app based on `req.isSignUp`.
-- `redirect?: (express.RouteHandler | express.ErrorHandler)[]`, Attached middleware executes just before redirecting the user to the Identity Provider's OAuth consent flow.
 
 ```ts
 const oAuthRouter = auth.createOAuthRouter("/auth/oauth", {
