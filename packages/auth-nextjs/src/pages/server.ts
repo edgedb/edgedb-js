@@ -31,7 +31,7 @@ export class NextPagesAuth extends NextAuth {
       [key: string]: string;
     }>;
   }) {
-    let session =
+    const session =
       sessionCache.get(req) ??
       new NextAuthSession(
         this.client,
