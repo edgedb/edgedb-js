@@ -114,19 +114,11 @@ export class ExpressAuth {
     };
   };
 
-  createBuiltinRouter = ({
-    signIn = [],
-    signUp = [],
-    callback,
-  }: {
-    signIn?: RouterStack;
-    signUp?: RouterStack;
-    callback: RouterStack;
-  }) => {
+  createBuiltinRouter = ({ callback }: { callback: RouterStack }) => {
     const router = Router();
 
-    router.get("/signin", this.builtin.signIn, ...signIn);
-    router.get("/signup", this.builtin.signUp, ...signUp);
+    router.get("/signin", this.builtin.signIn);
+    router.get("/signup", this.builtin.signUp);
     router.get("/callback", this.builtin.callback, ...callback);
 
     return router;
@@ -171,10 +163,8 @@ export class ExpressAuth {
   createOAuthRouter = (
     routerPath: string,
     {
-      redirect = [],
       callback,
     }: {
-      redirect?: RouterStack;
       callback: RouterStack;
     }
   ) => {
@@ -184,8 +174,7 @@ export class ExpressAuth {
       "/",
       this.oAuth.redirect(
         new URL(`${routerPath}/callback`, this.options.baseUrl).toString()
-      ),
-      ...redirect
+      )
     );
     router.get("/callback", this.oAuth.callback, ...callback);
 
@@ -232,7 +221,6 @@ export class ExpressAuth {
               httpOnly: true,
             }
           );
-          next();
           res.redirect(
             pkceSession.getOAuthUrl(
               provider,
@@ -307,7 +295,6 @@ export class ExpressAuth {
         res.cookie(this.options.pkceVerifierCookieName, pkceSession.verifier, {
           httpOnly: true,
         });
-        next();
         res.redirect(pkceSession.getHostedUISigninUrl());
       } catch (err) {
         next(err);
@@ -325,7 +312,6 @@ export class ExpressAuth {
         res.cookie(this.options.pkceVerifierCookieName, pkceSession.verifier, {
           httpOnly: true,
         });
-        next();
         res.redirect(pkceSession.getHostedUISignupUrl());
       } catch (err) {
         next(err);
