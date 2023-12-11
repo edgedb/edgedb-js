@@ -356,7 +356,7 @@ export class ExpressAuth {
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;
         req.isSignUp = isSignUp;
-        req.provider = requestUrl.searchParams.get(
+        req.provider = searchParams.get(
           "provider"
         ) as BuiltinOAuthProviderNames;
         next();
