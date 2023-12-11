@@ -1,5 +1,5 @@
+import { type BuiltinOAuthProviderNames } from "@edgedb/auth-core";
 import type { Client } from "edgedb";
-import { Auth, type BuiltinOAuthProviderNames } from "@edgedb/auth-core";
 
 export interface RemixAuthOptions {
   baseUrl: string;
@@ -11,20 +11,17 @@ export interface RemixAuthOptions {
 
 type OptionalOptions = "passwordResetPath";
 
-export default function createRemixAppAuth(
-  client: Client,
-  options: RemixAuthOptions
-) {
-  return new RemixAppAuth(client, options);
+export function createClientAuth(options: RemixAuthOptions) {
+  return new RemixClientAuth(options);
 }
 
-export class RemixAppAuth {
-  private readonly core: Promise<Auth>;
-
-  private readonly options: Required<Omit<RemixAuthOptions, OptionalOptions>> &
+export class RemixClientAuth {
+  protected readonly options: Required<
+    Omit<RemixAuthOptions, OptionalOptions>
+  > &
     Pick<RemixAuthOptions, OptionalOptions>;
 
-  constructor(client: Client, options: RemixAuthOptions) {
+  constructor(options: RemixAuthOptions) {
     this.options = {
       baseUrl: options.baseUrl.replace(/\/$/, ""),
       authRoutesPath: options.authRoutesPath?.replace(/^\/|\/$/g, "") ?? "auth",
@@ -33,16 +30,10 @@ export class RemixAppAuth {
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
       passwordResetPath: options.passwordResetPath,
     };
-
-    this.core = Auth.create(client);
   }
 
   protected get _authRoute() {
     return `${this.options.baseUrl}/${this.options.authRoutesPath}`;
-  }
-
-  isPasswordResetTokenValid(resetToken: string) {
-    return Auth.checkPasswordResetTokenValid(resetToken);
   }
 
   getOAuthUrl(providerName: BuiltinOAuthProviderNames) {
@@ -62,15 +53,26 @@ export class RemixAppAuth {
   getSignoutUrl() {
     return `${this._authRoute}/signout`;
   }
+}
 
-  // getSession() {
-  //   return new NextAuthSession(
-  //     this.client,
-  //     cookies().get(this.options.authCookieName)?.value.split(";")[0]
-  //   );
-  // }
+export class RemixAuthSession {
+  public readonly client: Client;
 
-  async getProvidersInfo() {
-    return (await this.core).getProvidersInfo();
+  /** @internal */
+  constructor(client: Client, private readonly authToken: string | undefined) {
+    this.client = this.authToken
+      ? client.withGlobals({ "ext::auth::client_token": this.authToken })
+      : client;
+  }
+
+  async isLoggedIn() {
+    if (!this.authToken) return false;
+    try {
+      return await this.client.querySingle<boolean>(
+        `select exists global ext::auth::ClientTokenIdentity`
+      );
+    } catch {
+      return false;
+    }
   }
 }
