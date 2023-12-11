@@ -1,6 +1,7 @@
 import type { Client } from "edgedb";
 import {
   Auth,
+  builtinOAuthProviderNames,
   type BuiltinOAuthProviderNames,
   type TokenData,
   type emailPasswordProviderName,
@@ -12,6 +13,7 @@ import {
   RemixAuthSession,
 } from "./client";
 import { Octokit } from "@octokit/core";
+import { redirect } from "@remix-run/node";
 
 export type { RemixAuthOptions } from "./client";
 
@@ -28,6 +30,14 @@ type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
   | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
 
 export interface CreateAuthRouteHandlers {
+  onOAuthCallback(
+    params: ParamsOrError<{
+      tokenData: TokenData;
+      provider: BuiltinOAuthProviderNames;
+      isSignUp: boolean;
+      headers: Headers;
+    }>
+  ): void;
   onBuiltinUICallback(
     params: ParamsOrError<
       (
@@ -76,7 +86,7 @@ export class RemixServerAuth extends RemixClientAuth {
   }
 
   createAuthRouteHandlers({
-    // onOAuthCallback,
+    onOAuthCallback,
     onBuiltinUICallback,
     onEmailVerify,
     onSignout,
@@ -96,10 +106,93 @@ export class RemixServerAuth extends RemixClientAuth {
         const searchParams = new URL(request.url).searchParams;
         switch (path) {
           case "oauth": {
-            return null; // todo
+            if (!onOAuthCallback) {
+              throw new Error(
+                `'onOAuthCallback' auth route handler not configured`
+              );
+            }
+            const provider = searchParams.get(
+              "provider_name"
+            ) as BuiltinOAuthProviderNames | null;
+
+            if (!provider || !builtinOAuthProviderNames.includes(provider)) {
+              throw new Error(`invalid provider_name: ${provider}`);
+            }
+            const redirectUrl = `${this._authRoute}/oauth/callback`;
+            const pkceSession = await this.core.then((core) =>
+              core.createPKCESession()
+            );
+
+            return redirect(
+              pkceSession.getOAuthUrl(
+                provider,
+                redirectUrl,
+                `${redirectUrl}?isSignUp=true`
+              ),
+              {
+                headers: new Headers({
+                  "Set-Cookie": `${this.options.pkceVerifierCookieName}=${pkceSession.verifier}; HttpOnly;`,
+                }),
+              }
+            );
           }
           case "oauth/callback": {
-            return null; // todo
+            if (!onOAuthCallback) {
+              throw new Error(
+                `'onOAuthCallback' auth route handler not configured`
+              );
+            }
+            const error = searchParams.get("error");
+            if (error) {
+              const desc = searchParams.get("error_description");
+              return onOAuthCallback({
+                error: new Error(error + (desc ? `: ${desc}` : "")),
+              });
+            }
+            const code = searchParams.get("code");
+            const isSignUp = searchParams.get("isSignUp") === "true";
+
+            const verifier =
+              parseCookies(request)[this.options.pkceVerifierCookieName];
+
+            if (!code) {
+              return onOAuthCallback({
+                error: new Error("no pkce code in response"),
+              });
+            }
+
+            if (!verifier) {
+              return onOAuthCallback({
+                error: new Error("no pkce verifier cookie found"),
+              });
+            }
+            let tokenData: TokenData;
+            try {
+              tokenData = await (await this.core).getToken(code, verifier);
+            } catch (err) {
+              return onOAuthCallback({
+                error: err instanceof Error ? err : new Error(String(err)),
+              });
+            }
+            const headers = new Headers();
+            headers.append(
+              "Set-Cookie",
+              `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=Lax; Path=/`
+            );
+            headers.append(
+              "Set-Cookie",
+              `${this.options.pkceVerifierCookieName}=`
+            );
+
+            return onOAuthCallback({
+              error: null,
+              tokenData,
+              provider: searchParams.get(
+                "provider"
+              ) as BuiltinOAuthProviderNames,
+              isSignUp,
+              headers,
+            });
           }
           case "builtin/callback": {
             if (!onBuiltinUICallback) {
