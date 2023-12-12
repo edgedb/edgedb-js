@@ -381,6 +381,68 @@ export class RemixServerAuth extends RemixClientAuth {
     return { tokenData: null, headers };
   }
 
+  // async emailPasswordSignUp(
+  //   req: Request,
+  //   data?: { email: string; password: string }
+  // ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  // async emailPasswordSignIn<Res extends Response>(
+  //   req: Request,
+  //   cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res
+  // ): Promise<Res>;
+  // async emailPasswordSignIn<Res extends Response>(
+  //   req: Request,
+  //   data: { email: string; password: string },
+  //   cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res
+  // ): Promise<Res>;
+  // async emailPasswordSignIn(
+  //   req: Request,
+  //   dataOrCb?:
+  //     | { email: string; password: string }
+  //     | ((params: ParamsOrError<{ tokenData: TokenData }>) => Response),
+  //   cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Response
+  // ): Promise<
+  //   | Response
+  //   | {
+  //       tokenData: TokenData;
+  //       headers: Headers;
+  //     }
+  // > {
+  //   const formData = await req.formData();
+
+  //   const [email, password] = _extractParams(
+  //     formData,
+  //     ["email", "password"],
+  //     "email or password missing"
+  //   );
+
+  //   const result = await (
+  //     await this.core
+  //   ).signupWithEmailPassword(
+  //     email,
+  //     password,
+  //     `${this._authRoute}/emailpassword/verify`
+  //   );
+
+  //   const headers = new Headers();
+  //   headers.append(
+  //     "Set-Cookie",
+  //     `${this.options.pkceVerifierCookieName}=${result.verifier}; HttpOnly; SameSite=strict`
+  //   );
+
+  //   if (result.status === "complete") {
+  //     const tokenData = result.tokenData;
+
+  //     headers.append(
+  //       "Set-Cookie",
+  //       `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict`
+  //     );
+  //     return { tokenData, headers };
+  //   }
+
+  //   return { tokenData: null, headers };
+
+  // }
+
   async emailPasswordResendVerificationEmail(
     data: FormData | { verification_token: string }
   ) {
@@ -393,24 +455,55 @@ export class RemixServerAuth extends RemixClientAuth {
     await (await this.core).resendVerificationEmail(verificationToken);
   }
 
-  async emailPasswordSignIn(request: Request) {
-    const formData = await request.formData();
+  async emailPasswordSignIn(
+    req: Request,
+    data?: { email: string; password: string }
+  ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  async emailPasswordSignIn<Res extends Response>(
+    req: Request,
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res
+  ): Promise<Res>;
+  async emailPasswordSignIn<Res extends Response>(
+    req: Request,
+    data: { email: string; password: string },
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res
+  ): Promise<Res>;
+  async emailPasswordSignIn(
+    req: Request,
+    dataOrCb?:
+      | { email: string; password: string }
+      | ((params: ParamsOrError<{ tokenData: TokenData }>) => Response),
+    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Response
+  ): Promise<
+    | Response
+    | {
+        tokenData: TokenData;
+        headers: Headers;
+      }
+  > {
+    return handleSignInAction(
+      async (data, headers) => {
+        const [email, password] = _extractParams(
+          data,
+          ["email", "password"],
+          "email or password missing"
+        );
 
-    const [email, password] = _extractParams(
-      formData,
-      ["email", "password"],
-      "email or password missing"
+        const tokenData = await (
+          await this.core
+        ).signinWithEmailPassword(email, password);
+
+        headers.append(
+          "Set-Cookie",
+          `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict; Path=/`
+        );
+
+        return { tokenData };
+      },
+      req,
+      dataOrCb,
+      cb
     );
-
-    const tokenData = await (
-      await this.core
-    ).signinWithEmailPassword(email, password);
-
-    const headers = new Headers({
-      "Set-Cookie": `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict`,
-    });
-
-    return { tokenData, headers };
   }
 
   async emailPasswordSendPasswordResetEmail(request: Request) {
@@ -552,4 +645,57 @@ function _extractParams(
   }
 
   return params;
+}
+
+async function handleSignInAction(
+  action: (
+    data: Record<string, string> | FormData,
+    headers: Headers
+  ) => Promise<any>,
+  req: Request,
+  dataOrCb: Record<string, string> | ((data: any) => any) | undefined,
+  cb: ((data: any) => any) | undefined
+) {
+  const data = typeof dataOrCb === "object" ? dataOrCb : await req.formData();
+  const callback = typeof dataOrCb === "function" ? dataOrCb : cb;
+
+  const headers: Headers = new Headers();
+  let params: any;
+  let error: Error | null = null;
+  try {
+    params = await action(data, headers);
+  } catch (err) {
+    error = err instanceof Error ? err : new Error(String(err));
+  }
+
+  if (callback) {
+    let res: any;
+    try {
+      res = await callback(error ? { error } : params);
+    } catch (err) {
+      if (err instanceof Response) {
+        res = err;
+      } else {
+        throw err;
+      }
+    }
+    if (res instanceof Response) {
+      const newHeaders = new Headers(res.headers);
+      for (const [key, val] of headers.entries()) {
+        newHeaders.append(key, val);
+      }
+
+      return new Response(res.body, {
+        headers: newHeaders,
+        status: res.status,
+      });
+    } else {
+      return json(res, { headers });
+    }
+  } else {
+    if (error) {
+      throw error;
+    }
+    return { ...params, headers };
+  }
 }
