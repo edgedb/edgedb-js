@@ -59,7 +59,7 @@ We provide a middleware factory that will attach an `ExpressAuthSession` object 
 app.use(auth.createSessionMiddleware());
 ```
 
-You can then use the `expressAuth.SessionRequest` type for your route's request parameter, which adds a `session` key to your request object.
+You can then use the `SessionRequest` type for your route's request parameter, which extends the Express `Request` type with `session?: ExpressAuthSession`.
 
 ```ts
 app.get("/dashboard", (req: expressAuth.SessionRequest, res) => {
