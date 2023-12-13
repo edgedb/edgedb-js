@@ -1,0 +1,30 @@
+{
+  "name": "@edgedb/create",
+  "version": "0.1.0",
+  "description": "Create a new EdgeDB-based project",
+  "homepage": "https://edgedb.com/docs",
+  "author": "EdgeDB <info@edgedb.com>",
+  "engines": {
+    "node": ">= 18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgedb/edgedb-js.git"
+  },
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "files": [
+    "/dist"
+  ],
+  "bin": "dist/cli.js",
+  "peerDependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.3.2",
+    "tsx": "^4.6.2",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {},
+  "scripts": {
+    "build": "tsc"
+  }
+}

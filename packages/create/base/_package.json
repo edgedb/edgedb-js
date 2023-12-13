@@ -1,0 +1,18 @@
+{
+  "name": "replace-me",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "edgedb": "1.x"
+  },
+  "devDependencies": {
+    "@edgedb/generate": "1.x",
+    "@typescript-eslint/eslint-plugin": "6.x",
+    "@typescript-eslint/parser": "6.x",
+    "@eslint/eslintrc": "2.x",
+    "eslint": "8.x",
+    "eslint-config-prettier": "9.x",
+    "typescript": "5.x"
+  }
+}

@@ -1,8 +1,8 @@
-dist
+dist/
 packages/deno
-/.bench
-/.vscode
-node_modules
+.bench
+.vscode/
+node_modules/
 **/.yarn/*
 !.yarn/releases
 
