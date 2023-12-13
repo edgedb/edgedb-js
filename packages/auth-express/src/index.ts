@@ -62,16 +62,10 @@ export interface ExpressAuthOptions {
   baseUrl: string;
   authCookieName?: string;
   pkceVerifierCookieName?: string;
-  passwordResetPath?: string;
 }
 
-type OptionalOptions = "passwordResetPath";
-
 export class ExpressAuth {
-  private readonly options: Required<
-    Omit<ExpressAuthOptions, OptionalOptions>
-  > &
-    Pick<ExpressAuthOptions, OptionalOptions>;
+  private readonly options: Required<ExpressAuthOptions>;
   private readonly core: Promise<Auth>;
 
   constructor(protected readonly client: Client, options: ExpressAuthOptions) {
@@ -80,7 +74,6 @@ export class ExpressAuth {
       authCookieName: options.authCookieName ?? "edgedb-session",
       pkceVerifierCookieName:
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
-      passwordResetPath: options.passwordResetPath,
     };
     this.core = Auth.create(client);
   }
