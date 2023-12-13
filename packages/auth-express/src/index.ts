@@ -126,6 +126,7 @@ export class ExpressAuth {
 
   createEmailPasswordRouter = (
     routerPath: string,
+    resetPasswordPath: string,
     stacks: Record<keyof typeof this.emailPassword, RouterStack>
   ) => {
     const router = Router();
@@ -142,7 +143,7 @@ export class ExpressAuth {
     router.post(
       "/send-password-reset-email",
       this.emailPassword.sendPasswordResetEmail(
-        new URL(`${routerPath}/reset-password`, this.options.baseUrl).toString()
+        new URL(resetPasswordPath, this.options.baseUrl).toString()
       ),
       ...stacks.sendPasswordResetEmail
     );
@@ -465,17 +466,15 @@ export class ExpressAuth {
       (passwordResetUrl: string) =>
       async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
         try {
-          if (!this.options.passwordResetPath) {
-            throw new Error(`'passwordResetPath' option not configured`);
-          }
           const [email] = _extractParams(
             req.body,
             ["email"],
             "email missing from request body"
           );
-          const { verifier } = await (
-            await this.core
-          ).sendPasswordResetEmail(email, passwordResetUrl);
+          const { verifier } = await(await this.core).sendPasswordResetEmail(
+            email,
+            passwordResetUrl
+          );
           res.cookie(this.options.pkceVerifierCookieName, verifier, {
             httpOnly: true,
             sameSite: "strict",

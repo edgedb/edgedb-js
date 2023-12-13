@@ -159,38 +159,42 @@ app.use("/auth", builtinRouter);
 
 
 ```ts
-const emailPasswordRouter = auth.createEmailPasswordRouter("/auth/email-password", {
-  signIn: [
-    (req: expressAuth.AuthRequest, res) => {
-      res.redirect("/");
-    },
-  ],
-  signUp: [
-    (req: expressAuth.AuthRequest, res) => {
-      res.redirect("/onboarding");
-    },
-  ],
-  verify: [
-    (req: expressAuth.AuthRequest, res) => {
-      res.redirect("/");
-    },
-  ],
-  sendPasswordResetEmail: [
-    (req: expressAuth.AuthRequest, res) => {
-      res.redirect("/email-success");
-    },
-  ],
-  resetPassword: [
-    (req: expressAuth.AuthRequest, res) => {
-      res.redirect("/email-success");
-    },
-  ],
-  resendVerificationEmail: [
-    (req: expressAuth.AuthRequest, res) => {
-      res.redirect("/");
-    },
-  ],
-});
+const emailPasswordRouter = auth.createEmailPasswordRouter(
+  "/auth/email-password", // Path to mount router at
+  "/forgot-password", // Path to your custom reset password UI
+  {
+    signIn: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/");
+      },
+    ],
+    signUp: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/onboarding");
+      },
+    ],
+    verify: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/");
+      },
+    ],
+    sendPasswordResetEmail: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/email-success");
+      },
+    ],
+    resetPassword: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/email-success");
+      },
+    ],
+    resendVerificationEmail: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/");
+      },
+    ],
+  }
+);
 
 app.use(emailPasswordRouter);
 // This creates the following routes:
