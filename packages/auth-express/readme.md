@@ -196,7 +196,7 @@ app.use(emailPasswordRouter);
 // This creates the following routes:
 // - POST /auth/email-password/signin
 // - POST /auth/email-password/signup
-// - POST /auth/email-password/verify
+// - GET /auth/email-password/verify
 // - POST /auth/email-password/send-password-reset-email
 // - POST /auth/email-password/reset-password
 // - POST /auth/email-password/resend-verification-email
@@ -268,7 +268,7 @@ const emailPasswordRouter = Router()
       res.redirect("/onboarding");
     }
   )
-  .post(
+  .get(
     "/verify",
     auth.emailPassword.verify,
     (req: expressAuth.AuthRequest, res) => {
