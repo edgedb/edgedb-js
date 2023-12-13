@@ -340,7 +340,7 @@ const builtinRouter = auth.createBuiltinRouter({
       res.redirect("/");
     },
     (error: any, req, res, next) => {
-      res.redirect(`/error?${encodeURIComponent(error.message)}`);
+      res.redirect(`/error?error=${encodeURIComponent(error.message)}`);
     },
   ],
 });
