@@ -471,10 +471,9 @@ export class ExpressAuth {
             ["email"],
             "email missing from request body"
           );
-          const { verifier } = await(await this.core).sendPasswordResetEmail(
-            email,
-            passwordResetUrl
-          );
+          const { verifier } = await (
+            await this.core
+          ).sendPasswordResetEmail(email, passwordResetUrl);
           res.cookie(this.options.pkceVerifierCookieName, verifier, {
             httpOnly: true,
             sameSite: "strict",
