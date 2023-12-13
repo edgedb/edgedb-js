@@ -1,6 +1,7 @@
 {
   "name": "@edgedb/create",
   "version": "0.1.0",
+  "type": "module",
   "description": "Create a new EdgeDB-based project",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
@@ -16,15 +17,22 @@
   "files": [
     "/dist"
   ],
-  "bin": "dist/cli.js",
+  "bin": {
+    "@edgedb/create": "./dist/cli.js"
+  },
   "peerDependencies": {},
   "devDependencies": {
-    "@types/node": "^20.3.2",
+    "@types/debug": "^4.1.12",
+    "@types/node": "^20.10.4",
     "tsx": "^4.6.2",
     "typescript": "^5.2.2"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@clack/prompts": "^0.7.0",
+    "debug": "^4.3.4"
+  },
   "scripts": {
+    "create": "tsx src/cli.ts",
     "build": "tsc"
   }
 }
