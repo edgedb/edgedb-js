@@ -17,9 +17,7 @@
   "files": [
     "/dist"
   ],
-  "bin": {
-    "@edgedb/create": "./dist/cli.js"
-  },
+  "bin":  "dist/cli.js",
   "peerDependencies": {},
   "devDependencies": {
     "@types/debug": "^4.1.12",
@@ -29,7 +27,9 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
-    "debug": "^4.3.4"
+    "debug": "^4.3.4",
+    "read-pkg": "^9.0.1",
+    "write-package": "^7.0.0"
   },
   "scripts": {
     "create": "tsx src/cli.ts",

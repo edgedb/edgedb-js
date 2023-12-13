@@ -1,5 +1,5 @@
 import debug from "debug";
-import type { RecipeOptions } from "./types.js";
+import type { RecipeOptions } from "../types.js";
 
 const logger = debug("@edgedb/create:recipe:express");
 

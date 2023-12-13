@@ -1,5 +1,8 @@
+#!/usr/bin/env node
+
 import * as p from "@clack/prompts";
 import process from "node:process";
+import path from "node:path";
 import debug from "debug";
 
 import * as utils from "./utils.js";
@@ -56,7 +59,10 @@ async function main() {
   logger(setup);
 
   for (const recipe of recipes) {
-    await recipe(setup);
+    await recipe({
+      ...setup,
+      projectDir: path.resolve(process.cwd(), setup.projectName),
+    });
   }
 }
 

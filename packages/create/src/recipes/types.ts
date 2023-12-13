@@ -1,5 +1,6 @@
 export type RecipeOptions = {
   projectName: string;
+  projectDir: string;
   framework: string;
   useEdgeDBAuth: boolean;
   shouldGitInit: boolean;
