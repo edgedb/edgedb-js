@@ -35,28 +35,26 @@ export interface CreateAuthRouteHandlers {
       tokenData: TokenData;
       provider: BuiltinOAuthProviderNames;
       isSignUp: boolean;
-      headers: Headers;
     }>
-  ): void;
+  ): Promise<Response>;
   onBuiltinUICallback(
     params: ParamsOrError<
       (
         | {
             tokenData: TokenData;
             provider: BuiltinProviderNames;
-            headers: Headers;
           }
-        | { tokenData: null; provider: null; headers: null }
+        | { tokenData: null; provider: null }
       ) & { isSignUp: boolean }
     >
   ): Promise<Response>;
   onEmailVerify(
     params: ParamsOrError<
-      { tokenData: TokenData; headers: Headers },
+      { tokenData: TokenData },
       { verificationToken?: string }
     >
   ): Promise<Response>;
-  onSignout(params: { headers: Headers }): void;
+  onSignout(): Promise<Response>;
 }
 
 export class RemixServerAuth extends RemixClientAuth {
@@ -174,6 +172,7 @@ export class RemixServerAuth extends RemixClientAuth {
                 error: err instanceof Error ? err : new Error(String(err)),
               });
             }
+
             const headers = new Headers();
             headers.append(
               "Set-Cookie",
@@ -184,14 +183,13 @@ export class RemixServerAuth extends RemixClientAuth {
               `${this.options.pkceVerifierCookieName}=`
             );
 
-            return onOAuthCallback({
+            return oathCallbackCall(onOAuthCallback, headers, {
               error: null,
               tokenData,
               provider: searchParams.get(
                 "provider"
               ) as BuiltinOAuthProviderNames,
               isSignUp,
-              headers,
             });
           }
           case "builtin/callback": {
@@ -218,7 +216,6 @@ export class RemixServerAuth extends RemixClientAuth {
                   error: null,
                   tokenData: null,
                   provider: null,
-                  headers: null,
                   isSignUp: true,
                 });
               }
@@ -254,12 +251,11 @@ export class RemixServerAuth extends RemixClientAuth {
               `${this.options.pkceVerifierCookieName}=`
             );
 
-            return onBuiltinUICallback({
+            return oathCallbackCall(onBuiltinUICallback, headers, {
               error: null,
               tokenData,
               provider: searchParams.get("provider") as BuiltinProviderNames,
               isSignUp,
-              headers,
             });
           }
           case "builtin/signin":
@@ -287,18 +283,22 @@ export class RemixServerAuth extends RemixClientAuth {
             const verificationToken = searchParams.get("verification_token");
             const verifier =
               parseCookies(request)[this.options.pkceVerifierCookieName];
+
             if (!verificationToken) {
               return onEmailVerify({
                 error: new Error("no verification_token in response"),
               });
             }
+
             if (!verifier) {
               return onEmailVerify({
                 error: new Error("no pkce verifier cookie found"),
                 verificationToken,
               });
             }
+
             let tokenData: TokenData;
+
             try {
               tokenData = await (
                 await this.core
@@ -316,10 +316,9 @@ export class RemixServerAuth extends RemixClientAuth {
               `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict; Path=/`
             );
 
-            return onEmailVerify({
+            return oathCallbackCall(onEmailVerify, headers, {
               error: null,
               tokenData,
-              headers,
             });
           }
 
@@ -329,13 +328,12 @@ export class RemixServerAuth extends RemixClientAuth {
             }
 
             const headers = new Headers({
-              ...request.headers,
               "Set-Cookie": `${
                 this.options.authCookieName
               }=; HttpOnly; SameSite=strict; Expires=${Date.now()}; Path=/`,
             });
 
-            return onSignout({ headers });
+            return oathCallbackCall(onSignout, headers);
           }
 
           default:
@@ -756,5 +754,42 @@ async function callbackCall(
     });
   } else {
     return json(res, { headers });
+  }
+}
+
+async function oathCallbackCall(
+  cb: (data?: any) => any,
+  headers: Headers,
+  params?: any
+) {
+  let res: any;
+
+  try {
+    res = params ? await cb(params) : await cb();
+  } catch (err) {
+    if (err instanceof Response) {
+      res = err;
+    } else {
+      throw err;
+    }
+  }
+
+  if (
+    res instanceof Response &&
+    res.status > 300 &&
+    res.status < 400 &&
+    res.headers.get("Location")
+  ) {
+    const newHeaders = new Headers(res.headers);
+    for (const [key, val] of headers.entries()) {
+      newHeaders.append(key, val);
+    }
+
+    return new Response(res.body, {
+      headers: newHeaders,
+      status: res.status,
+    });
+  } else {
+    throw Error("The auth route handler should return redirect.");
   }
 }
