@@ -5,6 +5,6 @@ export type RecipeOptions = {
   useEdgeDBAuth: boolean;
   shouldGitInit: boolean;
   shouldInstall: boolean;
-}
+};
 
 export type Recipe = (options: RecipeOptions) => Promise<void>;

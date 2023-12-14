@@ -27,7 +27,9 @@ export default async function edgeDBRecipe({
   const serverVersion = JSON.parse(stdout.trim());
   logger(`EdgeDB version: ${serverVersion}`);
   if (serverVersion === "") {
-    const err = new Error("There was a problem initializing the EdgeDB project");
+    const err = new Error(
+      "There was a problem initializing the EdgeDB project"
+    );
     spinner.stop(err.message);
     logger({ stdout, stderr });
 
