@@ -13,6 +13,7 @@
     "@eslint/eslintrc": "2.x",
     "eslint": "8.x",
     "eslint-config-prettier": "9.x",
+    "prettier": "3.x",
     "typescript": "5.x"
   }
 }
