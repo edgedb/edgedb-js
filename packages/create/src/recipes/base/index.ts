@@ -39,19 +39,19 @@ export default async function BaseRecipe({
     }
   }
 
-  const dirname = new URL(import.meta.url).pathname;
+  const dirname = path.dirname(new URL(import.meta.url).pathname);
 
   logger("Copying files");
   await fs.copyFile(
-    path.resolve(dirname, "_eslint.config.js"),
+    path.resolve(dirname, "./_eslint.config.js"),
     path.resolve(projectDir, "eslint.config.js")
   );
   await fs.copyFile(
-    path.resolve(dirname, "_package.json"),
+    path.resolve(dirname, "./_package.json"),
     path.resolve(projectDir, "package.json")
   );
   await fs.copyFile(
-    path.resolve(dirname, "_tsconfig.json"),
+    path.resolve(dirname, "./_tsconfig.json"),
     path.resolve(projectDir, "tsconfig.json")
   );
 
