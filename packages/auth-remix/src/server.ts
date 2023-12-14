@@ -13,7 +13,7 @@ import {
   RemixAuthSession,
 } from "./client";
 import { Octokit } from "@octokit/core";
-import { redirect } from "@remix-run/node";
+import { redirect, json } from "@remix-run/node";
 
 export type { RemixAuthOptions } from "./client";
 
@@ -345,103 +345,74 @@ export class RemixServerAuth extends RemixClientAuth {
     };
   }
 
-  async signupWithEmailPassword(request: Request) {
-    const formData = await request.formData();
+  async emailPasswordSignUp(
+    req: Request,
+    data?: { email: string; password: string }
+  ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  async emailPasswordSignUp<Res extends Response>(
+    req: Request,
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res>;
+  async emailPasswordSignUp<Res extends Response>(
+    req: Request,
+    data: { email: string; password: string },
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res>;
+  async emailPasswordSignUp(
+    req: Request,
+    dataOrCb?:
+      | { email: string; password: string }
+      | ((
+          params: ParamsOrError<{ tokenData: TokenData }>
+        ) => Response | Promise<Response>),
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData }>
+    ) => Response | Promise<Response>
+  ): Promise<
+    | Response
+    | {
+        tokenData: TokenData;
+        headers: Headers;
+      }
+  > {
+    return handleAction(
+      async (data, headers) => {
+        const [email, password] = _extractParams(
+          data,
+          ["email", "password"],
+          "email or password missing"
+        );
 
-    const [email, password] = _extractParams(
-      formData,
-      ["email", "password"],
-      "email or password missing"
+        const result = await (
+          await this.core
+        ).signupWithEmailPassword(
+          email,
+          password,
+          `${this._authRoute}/emailpassword/verify`
+        );
+
+        headers.append(
+          "Set-Cookie",
+          `${this.options.pkceVerifierCookieName}=${result.verifier}; HttpOnly; SameSite=strict`
+        );
+
+        if (result.status === "complete") {
+          const tokenData = result.tokenData;
+
+          headers.append(
+            "Set-Cookie",
+            `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict`
+          );
+          return { tokenData, headers };
+        }
+
+        return { tokenData: null, headers };
+      },
+      req,
+      dataOrCb,
+      cb
     );
-
-    const result = await (
-      await this.core
-    ).signupWithEmailPassword(
-      email,
-      password,
-      `${this._authRoute}/emailpassword/verify`
-    );
-
-    const headers = new Headers();
-    headers.append(
-      "Set-Cookie",
-      `${this.options.pkceVerifierCookieName}=${result.verifier}; HttpOnly; SameSite=strict`
-    );
-
-    if (result.status === "complete") {
-      const tokenData = result.tokenData;
-
-      headers.append(
-        "Set-Cookie",
-        `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict`
-      );
-      return { tokenData, headers };
-    }
-
-    return { tokenData: null, headers };
   }
-
-  // async emailPasswordSignUp(
-  //   req: Request,
-  //   data?: { email: string; password: string }
-  // ): Promise<{ tokenData: TokenData; headers: Headers }>;
-  // async emailPasswordSignIn<Res extends Response>(
-  //   req: Request,
-  //   cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res
-  // ): Promise<Res>;
-  // async emailPasswordSignIn<Res extends Response>(
-  //   req: Request,
-  //   data: { email: string; password: string },
-  //   cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res
-  // ): Promise<Res>;
-  // async emailPasswordSignIn(
-  //   req: Request,
-  //   dataOrCb?:
-  //     | { email: string; password: string }
-  //     | ((params: ParamsOrError<{ tokenData: TokenData }>) => Response),
-  //   cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Response
-  // ): Promise<
-  //   | Response
-  //   | {
-  //       tokenData: TokenData;
-  //       headers: Headers;
-  //     }
-  // > {
-  //   const formData = await req.formData();
-
-  //   const [email, password] = _extractParams(
-  //     formData,
-  //     ["email", "password"],
-  //     "email or password missing"
-  //   );
-
-  //   const result = await (
-  //     await this.core
-  //   ).signupWithEmailPassword(
-  //     email,
-  //     password,
-  //     `${this._authRoute}/emailpassword/verify`
-  //   );
-
-  //   const headers = new Headers();
-  //   headers.append(
-  //     "Set-Cookie",
-  //     `${this.options.pkceVerifierCookieName}=${result.verifier}; HttpOnly; SameSite=strict`
-  //   );
-
-  //   if (result.status === "complete") {
-  //     const tokenData = result.tokenData;
-
-  //     headers.append(
-  //       "Set-Cookie",
-  //       `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict`
-  //     );
-  //     return { tokenData, headers };
-  //   }
-
-  //   return { tokenData: null, headers };
-
-  // }
 
   async emailPasswordResendVerificationEmail(
     data: FormData | { verification_token: string }
@@ -461,19 +432,23 @@ export class RemixServerAuth extends RemixClientAuth {
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
   async emailPasswordSignIn<Res extends Response>(
     req: Request,
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
   ): Promise<Res>;
   async emailPasswordSignIn<Res extends Response>(
     req: Request,
     data: { email: string; password: string },
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
   ): Promise<Res>;
   async emailPasswordSignIn(
     req: Request,
     dataOrCb?:
       | { email: string; password: string }
-      | ((params: ParamsOrError<{ tokenData: TokenData }>) => Response),
-    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Response
+      | ((
+          params: ParamsOrError<{ tokenData: TokenData }>
+        ) => Response | Promise<Response>),
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData }>
+    ) => Response | Promise<Response>
   ): Promise<
     | Response
     | {
@@ -481,7 +456,7 @@ export class RemixServerAuth extends RemixClientAuth {
         headers: Headers;
       }
   > {
-    return handleSignInAction(
+    return handleAction(
       async (data, headers) => {
         const [email, password] = _extractParams(
           data,
@@ -506,74 +481,148 @@ export class RemixServerAuth extends RemixClientAuth {
     );
   }
 
-  async emailPasswordSendPasswordResetEmail(request: Request) {
-    const data = await request.formData();
+  async emailPasswordSendPasswordResetEmail(
+    req: Request,
+    data?: { email: string; password: string }
+  ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  async emailPasswordSendPasswordResetEmail<Res extends Response>(
+    req: Request,
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res>;
+  async emailPasswordSendPasswordResetEmail<Res extends Response>(
+    req: Request,
+    data: { email: string; password: string },
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res>;
+  async emailPasswordSendPasswordResetEmail(
+    req: Request,
+    dataOrCb?:
+      | { email: string; password: string }
+      | ((
+          params: ParamsOrError<{ tokenData: TokenData }>
+        ) => Response | Promise<Response>),
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData }>
+    ) => Response | Promise<Response>
+  ): Promise<
+    | Response
+    | {
+        tokenData: TokenData;
+        headers: Headers;
+      }
+  > {
+    return handleAction(
+      async (data, headers) => {
+        if (!this.options.passwordResetPath) {
+          throw new Error(`'passwordResetPath' option not configured`);
+        }
+        const [email] = _extractParams(data, ["email"], "email missing");
 
-    if (!this.options.passwordResetPath) {
-      throw new Error(`'passwordResetPath' option not configured`);
-    }
-    const [email] = _extractParams(data, ["email"], "email missing");
+        const { verifier } = await (
+          await this.core
+        ).sendPasswordResetEmail(
+          email,
+          new URL(
+            this.options.passwordResetPath,
+            this.options.baseUrl
+          ).toString()
+        );
 
-    const { verifier } = await (
-      await this.core
-    ).sendPasswordResetEmail(
-      email,
-      new URL(this.options.passwordResetPath, this.options.baseUrl).toString()
+        headers.append(
+          "Set-Cookie",
+          `${this.options.pkceVerifierCookieName}=${verifier}; HttpOnly; SameSite=strict`
+        );
+      },
+      req,
+      dataOrCb,
+      cb
     );
+  }
 
+  async emailPasswordResetPassword(
+    req: Request,
+    data?: { email: string; password: string }
+  ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  async emailPasswordResetPassword<Res extends Response>(
+    req: Request,
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res>;
+  async emailPasswordResetPassword<Res extends Response>(
+    req: Request,
+    data: { email: string; password: string },
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res>;
+  async emailPasswordResetPassword(
+    req: Request,
+    dataOrCb?:
+      | { email: string; password: string }
+      | ((
+          params: ParamsOrError<{ tokenData: TokenData }>
+        ) => Response | Promise<Response>),
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData }>
+    ) => Response | Promise<Response>
+  ): Promise<
+    | Response
+    | {
+        tokenData: TokenData;
+        headers: Headers;
+      }
+  > {
+    return handleAction(
+      async (data, headers, req) => {
+        const verifier = parseCookies(req)[this.options.pkceVerifierCookieName];
+
+        if (!verifier) {
+          throw new Error("no pkce verifier cookie found");
+        }
+
+        let resetToken = new URL(req.url).searchParams.get("reset_token");
+
+        if (Array.isArray(resetToken)) {
+          resetToken = resetToken[0];
+        }
+
+        if (!resetToken) {
+          throw new Error("reset token not found");
+        }
+
+        const [password] = _extractParams(
+          data,
+          ["password"],
+          "password missing"
+        );
+        const tokenData = await (
+          await this.core
+        ).resetPasswordWithResetToken(resetToken, verifier, password);
+
+        headers.append(
+          "Set-Cookie",
+          `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=Lax`
+        );
+
+        headers.append("Set-Cookie", `${this.options.pkceVerifierCookieName}=`);
+
+        return { tokenData };
+      },
+      req,
+      dataOrCb,
+      cb
+    );
+  }
+
+  async signout(
+    cb?: () => Response | Promise<Response>
+  ): Promise<{ headers: Headers }> {
     const headers = new Headers({
-      "Set-Cookie": `${this.options.pkceVerifierCookieName}=${verifier}; HttpOnly; SameSite=strict`,
+      "Set-Cookie": `${
+        this.options.authCookieName
+      }=; HttpOnly; SameSite=strict; expires=${Date.now()}`,
     });
 
+    if (cb) return callbackCall(cb, headers);
+
     return { headers };
-  }
-
-  async emailPasswordResetPassword(request: Request) {
-    const verifier = parseCookies(request)[this.options.pkceVerifierCookieName];
-
-    if (!verifier) {
-      throw new Error("no pkce verifier cookie found");
-    }
-
-    let resetToken = new URL(request.url).searchParams.get("reset_token");
-    if (Array.isArray(resetToken)) {
-      resetToken = resetToken[0];
-    }
-
-    if (!resetToken) {
-      throw new Error("reset token not found");
-    }
-
-    const [password] = _extractParams(
-      await request.formData(),
-      ["password"],
-      "password missing"
-    );
-
-    const tokenData = await (
-      await this.core
-    ).resetPasswordWithResetToken(resetToken, verifier, password);
-
-    const headers = new Headers();
-
-    headers.append(
-      "Set-Cookie",
-      `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=Lax`
-    );
-    headers.append("Set-Cookie", `${this.options.pkceVerifierCookieName}=`);
-
-    return { tokenData, headers };
-  }
-
-  async signout(request: Request) {
-    return {
-      headers: new Headers({
-        ...request.headers,
-        "Set-Cookie": `${
-          this.options.authCookieName
-        }=; HttpOnly; SameSite=strict; expires=${Date.now()}`,
-      }),
-    };
   }
 
   async createUser(tokenData: TokenData, provider?: BuiltinProviderNames) {
@@ -647,10 +696,11 @@ function _extractParams(
   return params;
 }
 
-async function handleSignInAction(
+async function handleAction(
   action: (
     data: Record<string, string> | FormData,
-    headers: Headers
+    headers: Headers,
+    req: Request
   ) => Promise<any>,
   req: Request,
   dataOrCb: Record<string, string> | ((data: any) => any) | undefined,
@@ -663,39 +713,48 @@ async function handleSignInAction(
   let params: any;
   let error: Error | null = null;
   try {
-    params = await action(data, headers);
+    params = (await action(data, headers, req)) || {};
   } catch (err) {
     error = err instanceof Error ? err : new Error(String(err));
   }
 
   if (callback) {
-    let res: any;
-    try {
-      res = await callback(error ? { error } : params);
-    } catch (err) {
-      if (err instanceof Response) {
-        res = err;
-      } else {
-        throw err;
-      }
-    }
-    if (res instanceof Response) {
-      const newHeaders = new Headers(res.headers);
-      for (const [key, val] of headers.entries()) {
-        newHeaders.append(key, val);
-      }
-
-      return new Response(res.body, {
-        headers: newHeaders,
-        status: res.status,
-      });
-    } else {
-      return json(res, { headers });
-    }
+    return callbackCall(callback, headers, error, params);
   } else {
     if (error) {
       throw error;
     }
     return { ...params, headers };
+  }
+}
+
+async function callbackCall(
+  cb: (data?: any) => any,
+  headers: Headers,
+  error?: Error | null,
+  params?: any
+) {
+  let res: any;
+  try {
+    res = error || params ? await cb(error ? { error } : params) : await cb();
+  } catch (err) {
+    if (err instanceof Response) {
+      res = err;
+    } else {
+      throw err;
+    }
+  }
+  if (res instanceof Response) {
+    const newHeaders = new Headers(res.headers);
+    for (const [key, val] of headers.entries()) {
+      newHeaders.append(key, val);
+    }
+
+    return new Response(res.body, {
+      headers: newHeaders,
+      status: res.status,
+    });
+  } else {
+    return json(res, { headers });
   }
 }
