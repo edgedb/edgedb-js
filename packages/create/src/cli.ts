@@ -6,7 +6,7 @@ import path from "node:path";
 import debug from "debug";
 
 import * as utils from "./utils.js";
-import { recipes } from "./recipes.js";
+import { recipes } from "./recipes/index.js";
 
 const logger = debug("@edgedb/create:main");
 
