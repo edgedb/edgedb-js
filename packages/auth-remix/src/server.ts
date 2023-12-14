@@ -613,7 +613,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
   async signout(
     cb?: () => Response | Promise<Response>
-  ): Promise<{ headers: Headers }> {
+  ): Promise<{ headers: Headers } | Response> {
     const headers = new Headers({
       "Set-Cookie": `${
         this.options.authCookieName
