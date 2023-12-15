@@ -219,7 +219,7 @@ ${params.types.query.trim().replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
 
   const tsImpl = `${queryDefs}
 
-export async function ${functionName}(client: Executor${
+export function ${functionName}(client: Executor${
     hasArgs ? `, args: ${argsInterfaceName}` : ""
   }): Promise<${returnsInterfaceName}> {
   return client.${method}(\`\\
@@ -228,7 +228,6 @@ ${functionBody}
 `;
 
   const denoImpl = `
-// deno-lint-ignore-file require-await
 ${tsImpl}`;
 
   const jsImpl = `async function ${functionName}(client${
