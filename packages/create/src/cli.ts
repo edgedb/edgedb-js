@@ -21,7 +21,7 @@ async function main() {
           message: "What is the name of your project or application?",
         }),
       framework: () =>
-        p.select<{ value: Framework, label: string }[], Framework>({
+        p.select<{ value: Framework; label: string }[], Framework>({
           message: "What web framework should be used?",
           options: [
             { value: "next", label: "Next.js" },
