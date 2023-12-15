@@ -1,5 +1,4 @@
 import { type BuiltinOAuthProviderNames } from "@edgedb/auth-core";
-import type { Client } from "edgedb";
 
 export interface RemixAuthOptions {
   baseUrl: string;
@@ -21,6 +20,7 @@ export class RemixClientAuth {
   > &
     Pick<RemixAuthOptions, OptionalOptions>;
 
+  /** @internal */
   constructor(options: RemixAuthOptions) {
     this.options = {
       baseUrl: options.baseUrl.replace(/\/$/, ""),
@@ -52,27 +52,5 @@ export class RemixClientAuth {
 
   getSignoutUrl() {
     return `${this._authRoute}/signout`;
-  }
-}
-
-export class RemixAuthSession {
-  public readonly client: Client;
-
-  /** @internal */
-  constructor(client: Client, private readonly authToken: string | undefined) {
-    this.client = this.authToken
-      ? client.withGlobals({ "ext::auth::client_token": this.authToken })
-      : client;
-  }
-
-  async isLoggedIn() {
-    if (!this.authToken) return false;
-    try {
-      return await this.client.querySingle<boolean>(
-        `select exists global ext::auth::ClientTokenIdentity`
-      );
-    } catch {
-      return false;
-    }
   }
 }

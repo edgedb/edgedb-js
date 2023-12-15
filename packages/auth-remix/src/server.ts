@@ -1,3 +1,4 @@
+import { redirect, json, TypedResponse } from "@remix-run/server-runtime";
 import type { Client } from "edgedb";
 import {
   Auth,
@@ -7,15 +8,9 @@ import {
   type emailPasswordProviderName,
 } from "@edgedb/auth-core";
 
-import {
-  type RemixAuthOptions,
-  RemixClientAuth,
-  RemixAuthSession,
-} from "./client";
-import { Octokit } from "@octokit/core";
-import { redirect, json } from "@remix-run/node";
+import { type RemixAuthOptions, RemixClientAuth } from "./client";
 
-export type { RemixAuthOptions } from "./client";
+export type { TokenData, RemixAuthOptions };
 
 export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
@@ -28,6 +23,28 @@ export function createServerAuth(client: Client, options: RemixAuthOptions) {
 type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
   | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)
   | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
+
+export class RemixAuthSession {
+  public readonly client: Client;
+
+  /** @internal */
+  constructor(client: Client, private readonly authToken: string | undefined) {
+    this.client = this.authToken
+      ? client.withGlobals({ "ext::auth::client_token": this.authToken })
+      : client;
+  }
+
+  async isLoggedIn() {
+    if (!this.authToken) return false;
+    try {
+      return await this.client.querySingle<boolean>(
+        `select exists global ext::auth::ClientTokenIdentity`
+      );
+    } catch {
+      return false;
+    }
+  }
+}
 
 export interface CreateAuthRouteHandlers {
   onOAuthCallback(
@@ -61,6 +78,7 @@ export class RemixServerAuth extends RemixClientAuth {
   private readonly client: Client;
   private readonly core: Promise<Auth>;
 
+  /** @internal */
   constructor(client: Client, options: RemixAuthOptions) {
     super(options);
 
@@ -183,7 +201,7 @@ export class RemixServerAuth extends RemixClientAuth {
               `${this.options.pkceVerifierCookieName}=`
             );
 
-            return oathCallbackCall(onOAuthCallback, headers, {
+            return cbCall(onOAuthCallback, headers, {
               error: null,
               tokenData,
               provider: searchParams.get(
@@ -251,7 +269,7 @@ export class RemixServerAuth extends RemixClientAuth {
               `${this.options.pkceVerifierCookieName}=`
             );
 
-            return oathCallbackCall(onBuiltinUICallback, headers, {
+            return cbCall(onBuiltinUICallback, headers, {
               error: null,
               tokenData,
               provider: searchParams.get("provider") as BuiltinProviderNames,
@@ -316,7 +334,7 @@ export class RemixServerAuth extends RemixClientAuth {
               `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict; Path=/`
             );
 
-            return oathCallbackCall(onEmailVerify, headers, {
+            return cbCall(onEmailVerify, headers, {
               error: null,
               tokenData,
             });
@@ -333,7 +351,7 @@ export class RemixServerAuth extends RemixClientAuth {
               }=; HttpOnly; SameSite=strict; Expires=${Date.now()}; Path=/`,
             });
 
-            return oathCallbackCall(onSignout, headers);
+            return cbCall(onSignout, headers);
           }
 
           default:
@@ -481,7 +499,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
   async emailPasswordSendPasswordResetEmail(
     req: Request,
-    data?: { email: string; password: string }
+    data?: { email: string }
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
   async emailPasswordSendPasswordResetEmail<Res extends Response>(
     req: Request,
@@ -489,13 +507,13 @@ export class RemixServerAuth extends RemixClientAuth {
   ): Promise<Res>;
   async emailPasswordSendPasswordResetEmail<Res extends Response>(
     req: Request,
-    data: { email: string; password: string },
+    data: { email: string },
     cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
   ): Promise<Res>;
   async emailPasswordSendPasswordResetEmail(
     req: Request,
     dataOrCb?:
-      | { email: string; password: string }
+      | { email: string }
       | ((
           params: ParamsOrError<{ tokenData: TokenData }>
         ) => Response | Promise<Response>),
@@ -539,7 +557,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
   async emailPasswordResetPassword(
     req: Request,
-    data?: { email: string; password: string }
+    data?: { reset_token: string; password: string }
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
   async emailPasswordResetPassword<Res extends Response>(
     req: Request,
@@ -547,13 +565,13 @@ export class RemixServerAuth extends RemixClientAuth {
   ): Promise<Res>;
   async emailPasswordResetPassword<Res extends Response>(
     req: Request,
-    data: { email: string; password: string },
+    data: { reset_token: string; password: string },
     cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
   ): Promise<Res>;
   async emailPasswordResetPassword(
     req: Request,
     dataOrCb?:
-      | { email: string; password: string }
+      | { reset_token: string; password: string }
       | ((
           params: ParamsOrError<{ tokenData: TokenData }>
         ) => Response | Promise<Response>),
@@ -575,21 +593,12 @@ export class RemixServerAuth extends RemixClientAuth {
           throw new Error("no pkce verifier cookie found");
         }
 
-        let resetToken = new URL(req.url).searchParams.get("reset_token");
-
-        if (Array.isArray(resetToken)) {
-          resetToken = resetToken[0];
-        }
-
-        if (!resetToken) {
-          throw new Error("reset token not found");
-        }
-
-        const [password] = _extractParams(
+        const [resetToken, password] = _extractParams(
           data,
-          ["password"],
-          "password missing"
+          ["reset_token", "password"],
+          "reset_token or password missing"
         );
+
         const tokenData = await (
           await this.core
         ).resetPasswordWithResetToken(resetToken, verifier, password);
@@ -609,6 +618,10 @@ export class RemixServerAuth extends RemixClientAuth {
     );
   }
 
+  async signout(): Promise<{ headers: Headers }>;
+  async signout<Res>(
+    cb: () => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async signout(
     cb?: () => Response | Promise<Response>
   ): Promise<{ headers: Headers } | Response> {
@@ -618,34 +631,9 @@ export class RemixServerAuth extends RemixClientAuth {
       }=; HttpOnly; SameSite=strict; expires=${Date.now()}`,
     });
 
-    if (cb) return callbackCall(cb, headers);
+    if (cb) return actionCbCall(cb, headers);
 
     return { headers };
-  }
-
-  async createUser(tokenData: TokenData, provider?: BuiltinProviderNames) {
-    let username: string | null = null;
-    if (tokenData.provider_token && provider === "builtin::oauth_github") {
-      const { data } = await new Octokit({
-        auth: tokenData.provider_token,
-      }).request("get /user");
-
-      username = data.login;
-    }
-    await this.client.query(
-      `
-    with identity := (select ext::auth::Identity filter .id = <uuid>$identity_id),
-    insert User {
-      identity := identity,
-      name := <optional str>$username ?? (
-        select ext::auth::EmailFactor filter .identity = identity
-      ).email
-    } unless conflict on .identity`,
-      {
-        identity_id: tokenData.identity_id,
-        username: username,
-      }
-    );
   }
 }
 
@@ -717,7 +705,7 @@ async function handleAction(
   }
 
   if (callback) {
-    return callbackCall(callback, headers, error, params);
+    return actionCbCall(callback, headers, error, params);
   } else {
     if (error) {
       throw error;
@@ -726,7 +714,7 @@ async function handleAction(
   }
 }
 
-async function callbackCall(
+async function actionCbCall(
   cb: (data?: any) => any,
   headers: Headers,
   error?: Error | null,
@@ -757,11 +745,7 @@ async function callbackCall(
   }
 }
 
-async function oathCallbackCall(
-  cb: (data?: any) => any,
-  headers: Headers,
-  params?: any
-) {
+async function cbCall(cb: (data?: any) => any, headers: Headers, params?: any) {
   let res: any;
 
   try {
