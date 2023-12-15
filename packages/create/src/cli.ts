@@ -6,15 +6,13 @@ import path from "node:path";
 import debug from "debug";
 
 import * as utils from "./utils.js";
-import { recipes } from "./recipes/index.js";
+import { recipes, type Framework } from "./recipes/index.js";
 
 const logger = debug("@edgedb/create:main");
 
 async function main() {
   const packageManager = utils.getPackageManager();
   logger({ packageManager });
-
-  type Framework = "next" | "remix" | "express" | "node-http" | "none";
 
   const setup = await p.group(
     {
@@ -23,7 +21,7 @@ async function main() {
           message: "What is the name of your project or application?",
         }),
       framework: () =>
-        p.select<{ value: Framework; label: string }[], Framework>({
+        p.select<{ value: Framework, label: string }[], Framework>({
           message: "What web framework should be used?",
           options: [
             { value: "next", label: "Next.js" },
