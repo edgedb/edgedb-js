@@ -389,3 +389,62 @@ jobs:
           body: ${{steps.github_auth_remix_release.outputs.changelog}}
           draft: true
           prerelease: false
+
+      # @edgedb/create
+
+      - name: Build @edgedb/create
+        run: yarn workspace @edgedb/create run build
+
+      - id: check_publish_create
+        name: Dry-run publish '@edgedb/create' to npm
+        uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
+        with:
+          package: packages/create/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          dry-run: true
+
+      - name: If '@edgedb/create' version unchanged
+        if: steps.check_publish_create.outputs.type == ''
+        run: |
+          echo "Version in package.json has not changed. Creating canary release."
+          yarn workspace @edgedb/create version  --no-git-tag-version --minor
+          CURRENT_VERSION=$(node -p "require('./packages/create/package.json').version")
+          yarn workspace @edgedb/create version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
+
+      - name: Publish '@edgedb/create'
+        uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
+        with:
+          package: packages/create/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          access: public
+          tag: ${{ steps.check_publish_create.outputs.type == '' && 'canary' || 'latest' }}
+
+      - name: Build '@edgedb/create' Changelog
+        if: steps.check_publish_create.outputs.type != ''
+        id: github_create_release
+        uses: mikepenz/release-changelog-builder-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          fromTag: "${{ env.last_tag }}"
+          toTag: ${{ github.ref }}
+          commitMode: true
+          configurationJson: |
+            {
+              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
+              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
+              "categories": []
+            }
+
+      - name: Create '@edgedb/create' Release
+        if: steps.check_publish_create.outputs.type != ''
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: create-v${{ steps.check_publish_create.outputs.version }}
+          release_name: \@edgedb/create v${{ steps.check_publish_create.outputs.version }}
+          commitish: ${{ github.ref }}
+          body: ${{steps.github_create_release.outputs.changelog}}
+          draft: true
+          prerelease: false
