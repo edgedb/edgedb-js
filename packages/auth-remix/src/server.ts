@@ -1,4 +1,5 @@
-import { redirect, json, TypedResponse } from "@remix-run/server-runtime";
+import { redirect, json, type TypedResponse } from "@remix-run/server-runtime";
+import * as cookie from "cookie";
 import type { Client } from "edgedb";
 import {
   Auth,
@@ -7,7 +8,6 @@ import {
   type TokenData,
   type emailPasswordProviderName,
 } from "@edgedb/auth-core";
-
 import { type RemixAuthOptions, RemixClientAuth } from "./client";
 
 export type { TokenData, RemixAuthOptions };
@@ -90,10 +90,10 @@ export class RemixServerAuth extends RemixClientAuth {
     return Auth.checkPasswordResetTokenValid(resetToken);
   }
 
-  getSession(request: Request) {
+  getSession(req: Request) {
     return new RemixAuthSession(
       this.client,
-      parseCookies(request)[this.options.authCookieName]
+      parseCookies(req)[this.options.authCookieName]
     );
   }
 
@@ -109,7 +109,7 @@ export class RemixServerAuth extends RemixClientAuth {
   }: Partial<CreateAuthRouteHandlers>) {
     return {
       loader: async ({
-        request,
+        request: req,
         params,
       }: {
         request: Request;
@@ -119,7 +119,7 @@ export class RemixServerAuth extends RemixClientAuth {
         if (!path) {
           throw new Error(`route handlers file should end with '.$.ts'`);
         }
-        const searchParams = new URL(request.url).searchParams;
+        const searchParams = new URL(req.url).searchParams;
         switch (path) {
           case "oauth": {
             if (!onOAuthCallback) {
@@ -130,7 +130,6 @@ export class RemixServerAuth extends RemixClientAuth {
             const provider = searchParams.get(
               "provider_name"
             ) as BuiltinOAuthProviderNames | null;
-
             if (!provider || !builtinOAuthProviderNames.includes(provider)) {
               throw new Error(`invalid provider_name: ${provider}`);
             }
@@ -138,7 +137,6 @@ export class RemixServerAuth extends RemixClientAuth {
             const pkceSession = await this.core.then((core) =>
               core.createPKCESession()
             );
-
             return redirect(
               pkceSession.getOAuthUrl(
                 provider,
@@ -147,11 +145,16 @@ export class RemixServerAuth extends RemixClientAuth {
               ),
               {
                 headers: new Headers({
-                  "Set-Cookie": `${this.options.pkceVerifierCookieName}=${pkceSession.verifier}; HttpOnly;`,
+                  "Set-Cookie": cookie.serialize(
+                    this.options.pkceVerifierCookieName,
+                    pkceSession.verifier,
+                    { httpOnly: true }
+                  ),
                 }),
               }
             );
           }
+
           case "oauth/callback": {
             if (!onOAuthCallback) {
               throw new Error(
@@ -167,18 +170,15 @@ export class RemixServerAuth extends RemixClientAuth {
             }
             const code = searchParams.get("code");
             const isSignUp = searchParams.get("isSignUp") === "true";
-
             const verifier =
-              parseCookies(request)[this.options.pkceVerifierCookieName];
-
+              parseCookies(req)[this.options.pkceVerifierCookieName];
             if (!code) {
               return onOAuthCallback({
                 error: new Error("no pkce code in response"),
               });
             }
-
             if (!verifier) {
-              return onOAuthCallback({
+              return cbCall(onOAuthCallback, {
                 error: new Error("no pkce verifier cookie found"),
               });
             }
@@ -186,30 +186,39 @@ export class RemixServerAuth extends RemixClientAuth {
             try {
               tokenData = await (await this.core).getToken(code, verifier);
             } catch (err) {
-              return onOAuthCallback({
+              return cbCall(onOAuthCallback, {
                 error: err instanceof Error ? err : new Error(String(err)),
               });
             }
-
             const headers = new Headers();
             headers.append(
               "Set-Cookie",
-              `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=Lax; Path=/`
+              cookie.serialize(
+                this.options.authCookieName,
+                tokenData.auth_token,
+                { httpOnly: true, sameSite: "lax", path: "/" }
+              )
             );
             headers.append(
               "Set-Cookie",
-              `${this.options.pkceVerifierCookieName}=`
+              cookie.serialize(this.options.pkceVerifierCookieName, "", {
+                maxAge: 0,
+              })
             );
-
-            return cbCall(onOAuthCallback, headers, {
-              error: null,
-              tokenData,
-              provider: searchParams.get(
-                "provider"
-              ) as BuiltinOAuthProviderNames,
-              isSignUp,
-            });
+            return cbCall(
+              onOAuthCallback,
+              {
+                error: null,
+                tokenData,
+                provider: searchParams.get(
+                  "provider"
+                ) as BuiltinOAuthProviderNames,
+                isSignUp,
+              },
+              headers
+            );
           }
+
           case "builtin/callback": {
             if (!onBuiltinUICallback) {
               throw new Error(
@@ -219,7 +228,7 @@ export class RemixServerAuth extends RemixClientAuth {
             const error = searchParams.get("error");
             if (error) {
               const desc = searchParams.get("error_description");
-              return onBuiltinUICallback({
+              return cbCall(onBuiltinUICallback, {
                 error: new Error(error + (desc ? `: ${desc}` : "")),
               });
             }
@@ -227,25 +236,24 @@ export class RemixServerAuth extends RemixClientAuth {
             const verificationEmailSentAt = searchParams.get(
               "verification_email_sent_at"
             );
-
             if (!code) {
               if (verificationEmailSentAt) {
-                return onBuiltinUICallback({
+                return cbCall(onBuiltinUICallback, {
                   error: null,
                   tokenData: null,
                   provider: null,
                   isSignUp: true,
                 });
               }
-              return onBuiltinUICallback({
+              return cbCall(onBuiltinUICallback, {
                 error: new Error("no pkce code in response"),
               });
             }
             const verifier =
-              parseCookies(request)[this.options.pkceVerifierCookieName];
+              parseCookies(req)[this.options.pkceVerifierCookieName];
 
             if (!verifier) {
-              return onBuiltinUICallback({
+              return cbCall(onBuiltinUICallback, {
                 error: new Error("no pkce verifier cookie found"),
               });
             }
@@ -254,44 +262,62 @@ export class RemixServerAuth extends RemixClientAuth {
             try {
               tokenData = await (await this.core).getToken(code, verifier);
             } catch (err) {
-              return onBuiltinUICallback({
+              return cbCall(onBuiltinUICallback, {
                 error: err instanceof Error ? err : new Error(String(err)),
               });
             }
-
             const headers = new Headers();
             headers.append(
               "Set-Cookie",
-              `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=Strict; Path=/`
+              cookie.serialize(
+                this.options.authCookieName,
+                tokenData.auth_token,
+                {
+                  httpOnly: true,
+                  sameSite: "strict",
+                  path: "/",
+                }
+              )
             );
             headers.append(
               "Set-Cookie",
-              `${this.options.pkceVerifierCookieName}=`
+              cookie.serialize(this.options.pkceVerifierCookieName, "", {
+                maxAge: 0,
+              })
             );
-
-            return cbCall(onBuiltinUICallback, headers, {
-              error: null,
-              tokenData,
-              provider: searchParams.get("provider") as BuiltinProviderNames,
-              isSignUp,
-            });
+            return cbCall(
+              onBuiltinUICallback,
+              {
+                error: null,
+                tokenData,
+                provider: searchParams.get("provider") as BuiltinProviderNames,
+                isSignUp,
+              },
+              headers
+            );
           }
+
           case "builtin/signin":
           case "builtin/signup": {
             const pkceSession = await this.core.then((core) =>
               core.createPKCESession()
             );
-            return new Response(null, {
-              status: 302,
-              headers: {
-                "Set-Cookie": `${this.options.pkceVerifierCookieName}=${pkceSession.verifier}; HttpOnly`,
-                Location:
-                  path.split("/").pop() === "signup"
-                    ? pkceSession.getHostedUISignupUrl()
-                    : pkceSession.getHostedUISigninUrl(),
-              },
-            });
+            return redirect(
+              path.split("/").pop() === "signup"
+                ? pkceSession.getHostedUISignupUrl()
+                : pkceSession.getHostedUISigninUrl(),
+              {
+                headers: {
+                  "Set-Cookie": cookie.serialize(
+                    this.options.pkceVerifierCookieName,
+                    pkceSession.verifier,
+                    { httpOnly: true }
+                  ),
+                },
+              }
+            );
           }
+
           case "emailpassword/verify": {
             if (!onEmailVerify) {
               throw new Error(
@@ -300,58 +326,63 @@ export class RemixServerAuth extends RemixClientAuth {
             }
             const verificationToken = searchParams.get("verification_token");
             const verifier =
-              parseCookies(request)[this.options.pkceVerifierCookieName];
-
+              parseCookies(req)[this.options.pkceVerifierCookieName];
             if (!verificationToken) {
-              return onEmailVerify({
+              return cbCall(onEmailVerify, {
                 error: new Error("no verification_token in response"),
               });
             }
-
             if (!verifier) {
-              return onEmailVerify({
+              return cbCall(onEmailVerify, {
                 error: new Error("no pkce verifier cookie found"),
                 verificationToken,
               });
             }
-
             let tokenData: TokenData;
-
             try {
               tokenData = await (
                 await this.core
               ).verifyEmailPasswordSignup(verificationToken, verifier);
             } catch (err) {
-              return onEmailVerify({
+              return cbCall(onEmailVerify, {
                 error: err instanceof Error ? err : new Error(String(err)),
                 verificationToken,
               });
             }
-
-            const headers = new Headers();
-            headers.append(
-              "Set-Cookie",
-              `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict; Path=/`
-            );
-
-            return cbCall(onEmailVerify, headers, {
-              error: null,
-              tokenData,
+            const headers = new Headers({
+              "Set-Cookie": cookie.serialize(
+                this.options.authCookieName,
+                tokenData.auth_token,
+                {
+                  httpOnly: true,
+                  sameSite: "strict",
+                  path: "/",
+                }
+              ),
             });
+            return cbCall(
+              onEmailVerify,
+              {
+                error: null,
+                tokenData,
+              },
+              headers
+            );
           }
 
           case "signout": {
             if (!onSignout) {
               throw new Error(`'onSignout' auth route handler not configured`);
             }
-
             const headers = new Headers({
-              "Set-Cookie": `${
-                this.options.authCookieName
-              }=; HttpOnly; SameSite=strict; Expires=${Date.now()}; Path=/`,
+              "Set-Cookie": cookie.serialize(this.options.authCookieName, "", {
+                httpOnly: true,
+                sameSite: "strict",
+                path: "/",
+                maxAge: 0,
+              }),
             });
-
-            return cbCall(onSignout, headers);
+            return cbCall(onSignout, {}, headers);
           }
 
           default:
@@ -365,31 +396,29 @@ export class RemixServerAuth extends RemixClientAuth {
     req: Request,
     data?: { email: string; password: string }
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
-  async emailPasswordSignUp<Res extends Response>(
+  async emailPasswordSignUp<Res>(
     req: Request,
     cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
-  ): Promise<Res>;
-  async emailPasswordSignUp<Res extends Response>(
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async emailPasswordSignUp<Res>(
     req: Request,
     data: { email: string; password: string },
     cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
-  ): Promise<Res>;
-  async emailPasswordSignUp(
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async emailPasswordSignUp<Res>(
     req: Request,
     dataOrCb?:
       | { email: string; password: string }
       | ((
           params: ParamsOrError<{ tokenData: TokenData }>
-        ) => Response | Promise<Response>),
-    cb?: (
-      params: ParamsOrError<{ tokenData: TokenData }>
-    ) => Response | Promise<Response>
+        ) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
   ): Promise<
-    | Response
     | {
         tokenData: TokenData;
         headers: Headers;
       }
+    | (Res extends Response ? Res : TypedResponse<Res>)
   > {
     return handleAction(
       async (data, headers) => {
@@ -409,7 +438,14 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          `${this.options.pkceVerifierCookieName}=${result.verifier}; HttpOnly; SameSite=strict`
+          cookie.serialize(
+            this.options.pkceVerifierCookieName,
+            result.verifier,
+            {
+              httpOnly: true,
+              sameSite: "strict",
+            }
+          )
         );
 
         if (result.status === "complete") {
@@ -417,7 +453,14 @@ export class RemixServerAuth extends RemixClientAuth {
 
           headers.append(
             "Set-Cookie",
-            `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict`
+            cookie.serialize(
+              this.options.authCookieName,
+              tokenData.auth_token,
+              {
+                httpOnly: true,
+                sameSite: "strict",
+              }
+            )
           );
           return { tokenData, headers };
         }
@@ -430,6 +473,7 @@ export class RemixServerAuth extends RemixClientAuth {
     );
   }
 
+  // todo
   async emailPasswordResendVerificationEmail(
     data: FormData | { verification_token: string }
   ) {
@@ -446,31 +490,29 @@ export class RemixServerAuth extends RemixClientAuth {
     req: Request,
     data?: { email: string; password: string }
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
-  async emailPasswordSignIn<Res extends Response>(
+  async emailPasswordSignIn<Res>(
     req: Request,
     cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
-  ): Promise<Res>;
-  async emailPasswordSignIn<Res extends Response>(
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async emailPasswordSignIn<Res>(
     req: Request,
     data: { email: string; password: string },
     cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
-  ): Promise<Res>;
-  async emailPasswordSignIn(
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async emailPasswordSignIn<Res>(
     req: Request,
     dataOrCb?:
       | { email: string; password: string }
       | ((
           params: ParamsOrError<{ tokenData: TokenData }>
-        ) => Response | Promise<Response>),
-    cb?: (
-      params: ParamsOrError<{ tokenData: TokenData }>
-    ) => Response | Promise<Response>
+        ) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
   ): Promise<
-    | Response
     | {
         tokenData: TokenData;
         headers: Headers;
       }
+    | (Res extends Response ? Res : TypedResponse<Res>)
   > {
     return handleAction(
       async (data, headers) => {
@@ -486,7 +528,11 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=strict; Path=/`
+          cookie.serialize(this.options.authCookieName, tokenData.auth_token, {
+            httpOnly: true,
+            sameSite: "strict",
+            path: "/",
+          })
         );
 
         return { tokenData };
@@ -501,31 +547,29 @@ export class RemixServerAuth extends RemixClientAuth {
     req: Request,
     data?: { email: string }
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
-  async emailPasswordSendPasswordResetEmail<Res extends Response>(
+  async emailPasswordSendPasswordResetEmail<Res>(
     req: Request,
     cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
-  ): Promise<Res>;
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSendPasswordResetEmail<Res extends Response>(
     req: Request,
     data: { email: string },
     cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
-  ): Promise<Res>;
-  async emailPasswordSendPasswordResetEmail(
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async emailPasswordSendPasswordResetEmail<Res>(
     req: Request,
     dataOrCb?:
       | { email: string }
       | ((
           params: ParamsOrError<{ tokenData: TokenData }>
-        ) => Response | Promise<Response>),
-    cb?: (
-      params: ParamsOrError<{ tokenData: TokenData }>
-    ) => Response | Promise<Response>
+        ) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
   ): Promise<
-    | Response
     | {
         tokenData: TokenData;
         headers: Headers;
       }
+    | (Res extends Response ? Res : TypedResponse<Res>)
   > {
     return handleAction(
       async (data, headers) => {
@@ -546,7 +590,10 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          `${this.options.pkceVerifierCookieName}=${verifier}; HttpOnly; SameSite=strict`
+          cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
+            httpOnly: true,
+            sameSite: "strict",
+          })
         );
       },
       req,
@@ -559,31 +606,29 @@ export class RemixServerAuth extends RemixClientAuth {
     req: Request,
     data?: { reset_token: string; password: string }
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
-  async emailPasswordResetPassword<Res extends Response>(
+  async emailPasswordResetPassword<Res>(
     req: Request,
     cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
-  ): Promise<Res>;
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordResetPassword<Res extends Response>(
     req: Request,
     data: { reset_token: string; password: string },
     cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
-  ): Promise<Res>;
-  async emailPasswordResetPassword(
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async emailPasswordResetPassword<Res>(
     req: Request,
     dataOrCb?:
       | { reset_token: string; password: string }
       | ((
           params: ParamsOrError<{ tokenData: TokenData }>
-        ) => Response | Promise<Response>),
-    cb?: (
-      params: ParamsOrError<{ tokenData: TokenData }>
-    ) => Response | Promise<Response>
+        ) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
   ): Promise<
-    | Response
     | {
         tokenData: TokenData;
         headers: Headers;
       }
+    | (Res extends Response ? Res : TypedResponse<Res>)
   > {
     return handleAction(
       async (data, headers, req) => {
@@ -605,10 +650,18 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          `${this.options.authCookieName}=${tokenData.auth_token}; HttpOnly; SameSite=Lax`
+          cookie.serialize(this.options.authCookieName, tokenData.auth_token, {
+            httpOnly: true,
+            sameSite: "lax",
+          })
         );
 
-        headers.append("Set-Cookie", `${this.options.pkceVerifierCookieName}=`);
+        headers.append(
+          "Set-Cookie",
+          cookie.serialize(this.options.pkceVerifierCookieName, "", {
+            maxAge: 0,
+          })
+        );
 
         return { tokenData };
       },
@@ -622,13 +675,18 @@ export class RemixServerAuth extends RemixClientAuth {
   async signout<Res>(
     cb: () => Res | Promise<Res>
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
-  async signout(
-    cb?: () => Response | Promise<Response>
-  ): Promise<{ headers: Headers } | Response> {
+  async signout<Res>(cb?: () => Res | Promise<Res>): Promise<
+    | {
+        headers: Headers;
+      }
+    | (Res extends Response ? Res : TypedResponse<Res>)
+  > {
     const headers = new Headers({
-      "Set-Cookie": `${
-        this.options.authCookieName
-      }=; HttpOnly; SameSite=strict; expires=${Date.now()}`,
+      "Set-Cookie": cookie.serialize(this.options.authCookieName, "", {
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 0,
+      }),
     });
 
     if (cb) return actionCbCall(cb, headers);
@@ -637,16 +695,9 @@ export class RemixServerAuth extends RemixClientAuth {
   }
 }
 
-function parseCookies(request: Request) {
-  const cookies = request.headers.get("Cookie");
-
-  return cookies
-    ? cookies.split(";").reduce((cookies, cookie) => {
-        const [name, val] = cookie.split("=");
-        cookies[name.trim()] = val.trim();
-        return cookies;
-      }, {} as { [key: string]: string | undefined })
-    : {};
+function parseCookies(req: Request) {
+  const cookies = req.headers.get("Cookie");
+  return cookie.parse(cookies || "");
 }
 
 function _extractParams(
@@ -698,6 +749,7 @@ async function handleAction(
   const headers: Headers = new Headers();
   let params: any;
   let error: Error | null = null;
+
   try {
     params = (await action(data, headers, req)) || {};
   } catch (err) {
@@ -710,6 +762,7 @@ async function handleAction(
     if (error) {
       throw error;
     }
+
     return { ...params, headers };
   }
 }
@@ -721,6 +774,7 @@ async function actionCbCall(
   params?: any
 ) {
   let res: any;
+
   try {
     res = error || params ? await cb(error ? { error } : params) : await cb();
   } catch (err) {
@@ -730,6 +784,7 @@ async function actionCbCall(
       throw err;
     }
   }
+
   if (res instanceof Response) {
     const newHeaders = new Headers(res.headers);
     for (const [key, val] of headers.entries()) {
@@ -745,7 +800,7 @@ async function actionCbCall(
   }
 }
 
-async function cbCall(cb: (data?: any) => any, headers: Headers, params?: any) {
+async function cbCall(cb: (data?: any) => any, params: any, headers?: Headers) {
   let res: any;
 
   try {
@@ -765,15 +820,17 @@ async function cbCall(cb: (data?: any) => any, headers: Headers, params?: any) {
     res.headers.get("Location")
   ) {
     const newHeaders = new Headers(res.headers);
-    for (const [key, val] of headers.entries()) {
-      newHeaders.append(key, val);
-    }
+
+    if (headers)
+      for (const [key, val] of headers.entries()) {
+        newHeaders.append(key, val);
+      }
 
     return new Response(res.body, {
       headers: newHeaders,
       status: res.status,
     });
   } else {
-    throw Error("The auth route handler should return redirect.");
+    throw Error("The auth route callback should return redirect.");
   }
 }
