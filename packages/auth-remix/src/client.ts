@@ -10,7 +10,7 @@ export interface RemixAuthOptions {
 
 type OptionalOptions = "passwordResetPath";
 
-export function createClientAuth(options: RemixAuthOptions) {
+export default function createClientAuth(options: RemixAuthOptions) {
   return new RemixClientAuth(options);
 }
 
