@@ -151,7 +151,7 @@ export class RemixServerAuth extends RemixClientAuth {
                   "Set-Cookie": cookie.serialize(
                     this.options.pkceVerifierCookieName,
                     pkceSession.verifier,
-                    { httpOnly: true }
+                    { httpOnly: true, path: "/" }
                   ),
                 }),
               }
@@ -167,7 +167,7 @@ export class RemixServerAuth extends RemixClientAuth {
             const error = searchParams.get("error");
             if (error) {
               const desc = searchParams.get("error_description");
-              return onOAuthCallback({
+              return cbCall(onOAuthCallback, {
                 error: new Error(error + (desc ? `: ${desc}` : "")),
               });
             }
@@ -176,7 +176,7 @@ export class RemixServerAuth extends RemixClientAuth {
             const verifier =
               parseCookies(req)[this.options.pkceVerifierCookieName];
             if (!code) {
-              return onOAuthCallback({
+              return cbCall(onOAuthCallback, {
                 error: new Error("no pkce code in response"),
               });
             }
@@ -206,6 +206,7 @@ export class RemixServerAuth extends RemixClientAuth {
               "Set-Cookie",
               cookie.serialize(this.options.pkceVerifierCookieName, "", {
                 maxAge: 0,
+                path: "/",
               })
             );
             return cbCall(
@@ -286,6 +287,7 @@ export class RemixServerAuth extends RemixClientAuth {
               "Set-Cookie",
               cookie.serialize(this.options.pkceVerifierCookieName, "", {
                 maxAge: 0,
+                path: "/",
               })
             );
             return cbCall(
@@ -314,7 +316,7 @@ export class RemixServerAuth extends RemixClientAuth {
                   "Set-Cookie": cookie.serialize(
                     this.options.pkceVerifierCookieName,
                     pkceSession.verifier,
-                    { httpOnly: true }
+                    { httpOnly: true, path: "/" }
                   ),
                 },
               }
@@ -447,6 +449,7 @@ export class RemixServerAuth extends RemixClientAuth {
             {
               httpOnly: true,
               sameSite: "strict",
+              path: "/",
             }
           )
         );
@@ -462,6 +465,7 @@ export class RemixServerAuth extends RemixClientAuth {
               {
                 httpOnly: true,
                 sameSite: "strict",
+                path: "/",
               }
             )
           );
@@ -622,6 +626,7 @@ export class RemixServerAuth extends RemixClientAuth {
           cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
             httpOnly: true,
             sameSite: "strict",
+            path: "/",
           })
         );
       },
@@ -682,6 +687,7 @@ export class RemixServerAuth extends RemixClientAuth {
           cookie.serialize(this.options.authCookieName, tokenData.auth_token, {
             httpOnly: true,
             sameSite: "lax",
+            path: "/",
           })
         );
 
@@ -689,6 +695,7 @@ export class RemixServerAuth extends RemixClientAuth {
           "Set-Cookie",
           cookie.serialize(this.options.pkceVerifierCookieName, "", {
             maxAge: 0,
+            path: "/",
           })
         );
 
@@ -715,6 +722,7 @@ export class RemixServerAuth extends RemixClientAuth {
         httpOnly: true,
         sameSite: "strict",
         maxAge: 0,
+        path: "/",
       }),
     });
 
