@@ -847,10 +847,11 @@ async function cbCall(cb: (data?: any) => any, params: any, headers?: Headers) {
   ) {
     const newHeaders = new Headers(res.headers);
 
-    if (headers)
+    if (headers) {
       for (const [key, val] of headers.entries()) {
         newHeaders.append(key, val);
       }
+    }
 
     return new Response(res.body, {
       headers: newHeaders,
