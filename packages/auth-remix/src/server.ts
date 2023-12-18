@@ -473,17 +473,43 @@ export class RemixServerAuth extends RemixClientAuth {
     );
   }
 
-  // todo
   async emailPasswordResendVerificationEmail(
-    data: FormData | { verification_token: string }
-  ) {
-    const [verificationToken] = _extractParams(
-      data,
-      ["verification_token"],
-      "verification_token missing"
-    );
+    req: Request,
+    data?: { verification_token: string }
+  ): Promise<{ headers: Headers }>;
+  async emailPasswordResendVerificationEmail<Res>(
+    req: Request,
+    cb: () => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async emailPasswordResendVerificationEmail<Res>(
+    req: Request,
+    data: { verification_token: string },
+    cb: () => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async emailPasswordResendVerificationEmail<Res>(
+    req: Request,
+    dataOrCb?: { verification_token: string } | (() => Res | Promise<Res>),
+    cb?: () => Res | Promise<Res>
+  ): Promise<
+    | {
+        headers: Headers;
+      }
+    | (Res extends Response ? Res : TypedResponse<Res>)
+  > {
+    return handleAction(
+      async (data) => {
+        const [verificationToken] = _extractParams(
+          data,
+          ["verification_token"],
+          "verification_token missing"
+        );
 
-    await (await this.core).resendVerificationEmail(verificationToken);
+        await (await this.core).resendVerificationEmail(verificationToken);
+      },
+      req,
+      dataOrCb,
+      cb
+    );
   }
 
   async emailPasswordSignIn(
