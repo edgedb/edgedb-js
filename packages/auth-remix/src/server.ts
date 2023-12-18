@@ -8,7 +8,7 @@ import {
   type TokenData,
   type emailPasswordProviderName,
 } from "@edgedb/auth-core";
-import { type RemixAuthOptions, RemixClientAuth } from "./client";
+import { type RemixAuthOptions, RemixClientAuth } from "./client.js";
 
 export type { TokenData, RemixAuthOptions };
 
@@ -16,12 +16,11 @@ export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
   | typeof emailPasswordProviderName;
 
-export default function createServerAuth(
-  client: Client,
-  options: RemixAuthOptions
-) {
+export function createServerAuth(client: Client, options: RemixAuthOptions) {
   return new RemixServerAuth(client, options);
 }
+
+export default createServerAuth;
 
 type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
   | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)

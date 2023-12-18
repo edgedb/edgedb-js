@@ -2,17 +2,21 @@
   "compilerOptions": {
     "declarationDir": "./dist",
     "outDir": "./dist",
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext"
+    ],
     "target": "ESNext",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "Node16",
     "declaration": true,
     "strict": true,
     "downlevelIteration": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
