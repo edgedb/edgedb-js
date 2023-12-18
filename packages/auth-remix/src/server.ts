@@ -16,7 +16,10 @@ export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
   | typeof emailPasswordProviderName;
 
-export function createServerAuth(client: Client, options: RemixAuthOptions) {
+export default function createServerAuth(
+  client: Client,
+  options: RemixAuthOptions
+) {
   return new RemixServerAuth(client, options);
 }
 
