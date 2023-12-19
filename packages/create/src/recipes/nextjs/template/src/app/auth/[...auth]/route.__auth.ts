@@ -4,13 +4,13 @@ import { auth } from "@/edgedb";
 export const { GET, POST } = auth.createAuthRouteHandlers({
   async onBuiltinUICallback({ error, tokenData, provider, isSignUp }) {
     if (error) {
-      // sign in failed
+      console.error("sign in failed", error);
     }
     if (!tokenData) {
-      // email requires validation
+      console.log("email verification required");
     }
     if (isSignUp) {
-      // create user
+      console.log("new sign up");
     }
     redirect("/");
   },
