@@ -53,7 +53,7 @@ const recipe: BaseRecipe = {
       projectDir: path.resolve(process.cwd(), opts.projectName),
     };
   },
-  async apply({ projectDir }) {
+  async apply({ projectDir, projectName }) {
     logger("Running base recipe");
     try {
       const projectDirStat = await fs.stat(projectDir);
@@ -99,7 +99,7 @@ const recipe: BaseRecipe = {
     );
 
     logger("Writing package.json");
-    await updatePackage(projectDir, { name: projectDir });
+    await updatePackage(projectDir, { name: projectName });
   },
 };
 
