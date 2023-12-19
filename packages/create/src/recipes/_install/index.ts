@@ -1,8 +1,7 @@
 import debug from "debug";
 import * as p from "@clack/prompts";
 
-import * as utils from "../../utils.js";
-import { BaseOptions, Recipe } from "../types.js";
+import type { BaseOptions, Recipe } from "../types.js";
 
 const logger = debug("@edgedb/create:recipe:install");
 
