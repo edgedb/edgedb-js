@@ -1,13 +1,13 @@
 import debug from "debug";
-import type { Recipe } from "../types.js";
+import type { BaseOptions, Recipe } from "../types.js";
 
 const logger = debug("@edgedb/create:recipe:express");
 
 const recipe: Recipe = {
-  skip(opts) {
+  skip(opts: BaseOptions) {
     return opts.framework !== "express";
   },
-  async apply(baseOptions, recipeOptions) {
+  async apply(baseOptions: BaseOptions) {
     logger("Running express recipe");
   },
 };

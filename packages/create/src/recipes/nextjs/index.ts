@@ -3,7 +3,7 @@ import * as p from "@clack/prompts";
 import debug from "debug";
 import { updatePackage } from "write-package";
 
-import { Recipe } from "../types.js";
+import { BaseOptions, Recipe } from "../types.js";
 import { copyTemplateFiles } from "../../utils.js";
 
 const logger = debug("@edgedb/create:recipe:nextjs");
@@ -13,7 +13,7 @@ interface NextjsOptions {
 }
 
 const recipe: Recipe<NextjsOptions> = {
-  skip(opts) {
+  skip(opts: BaseOptions) {
     return opts.framework !== "next";
   },
   getOptions() {
@@ -31,7 +31,10 @@ const recipe: Recipe<NextjsOptions> = {
         }),
     });
   },
-  async apply({ projectDir, useEdgeDBAuth }, { router }) {
+  async apply(
+    { projectDir, useEdgeDBAuth }: BaseOptions,
+    { router }: NextjsOptions
+  ) {
     logger("Running nextjs recipe");
 
     const dirname = path.dirname(new URL(import.meta.url).pathname);

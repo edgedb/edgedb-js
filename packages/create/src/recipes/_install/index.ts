@@ -2,7 +2,7 @@ import debug from "debug";
 import * as p from "@clack/prompts";
 
 import * as utils from "../../utils.js";
-import { Recipe } from "../types.js";
+import { BaseOptions, Recipe } from "../types.js";
 
 const logger = debug("@edgedb/create:recipe:install");
 
@@ -12,7 +12,7 @@ interface InstallOptions {
 }
 
 const recipe: Recipe<InstallOptions> = {
-  getOptions({ packageManager }) {
+  getOptions({ packageManager }: BaseOptions) {
     return p.group({
       shouldGitInit: () =>
         p.confirm({
@@ -26,7 +26,7 @@ const recipe: Recipe<InstallOptions> = {
         }),
     });
   },
-  async apply(baseOptions, recipeOptions) {
+  async apply(baseOptions: BaseOptions, recipeOptions: InstallOptions) {
     logger("Running install recipe");
   },
 };

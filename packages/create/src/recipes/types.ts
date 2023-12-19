@@ -10,7 +10,7 @@ export interface BaseOptions {
   useEdgeDBAuth: boolean;
 }
 
-export interface Recipe<RecipeOptions = any> {
+export interface Recipe<RecipeOptions = undefined> {
   skip?: (baseOptions: BaseOptions) => boolean;
   getOptions?: (baseOptions: BaseOptions) => Promise<RecipeOptions>;
   apply: (

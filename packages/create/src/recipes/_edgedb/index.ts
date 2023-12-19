@@ -5,13 +5,13 @@ import debug from "debug";
 import util from "node:util";
 import childProcess from "node:child_process";
 
-import { Recipe } from "../types.js";
+import { BaseOptions, Recipe } from "../types.js";
 
 const logger = debug("@edgedb/create:recipe:edgedb");
 const exec = util.promisify(childProcess.exec);
 
 const recipe: Recipe = {
-  async apply({ projectDir, useEdgeDBAuth }) {
+  async apply({ projectDir, useEdgeDBAuth }: BaseOptions) {
     logger("Running edgedb recipe");
 
     const spinner = p.spinner();

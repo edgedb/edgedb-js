@@ -41,6 +41,12 @@
     }
   },
   "linterOptions": {
-    "exclude": ["**/*.deno.ts", "**/generated/**", "test/**", "qb/test/**"]
+    "exclude": [
+      "**/*.deno.ts",
+      "**/generated/**",
+      "test/**",
+      "qb/test/**",
+      "packages/create/src/recipes/*/template/**"
+    ]
   }
 }

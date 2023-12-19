@@ -8,7 +8,7 @@ import * as p from "@clack/prompts";
 import { updatePackage } from "write-package";
 
 import * as utils from "../../utils.js";
-import type { Framework, BaseRecipe } from "../types.js";
+import type { Framework, BaseRecipe, BaseOptions } from "../types.js";
 
 const logger = debug("@edgedb/create:recipe:base");
 
@@ -53,7 +53,7 @@ const recipe: BaseRecipe = {
       projectDir: path.resolve(process.cwd(), opts.projectName),
     };
   },
-  async apply({ projectDir, projectName }) {
+  async apply({ projectDir, projectName }: BaseOptions) {
     logger("Running base recipe");
     try {
       const projectDirStat = await fs.stat(projectDir);
