@@ -19,15 +19,42 @@ export function getPackageManager(): PackageManager {
   }
 }
 
+interface CopyTemplateFilesOpts {
+  tags?: Set<string>;
+  rewritePath?: (path: string) => string;
+  injectVars?: { varname: string; value: string; files: string[] }[];
+}
+
 export async function copyTemplateFiles(
   source: string,
   dest: string,
-  tags: Set<string>
+  opts?: CopyTemplateFilesOpts
 ) {
-  await _walkDir(source, dest, tags);
+  await _walkDir(source, dest, source, {
+    ...opts,
+    injectVars:
+      opts?.injectVars?.reduce((vars, { varname, value, files }) => {
+        for (const filename of files) {
+          const filepath = path.join(source, filename);
+          if (!vars[filepath]) {
+            vars[filepath] = [];
+          }
+          vars[filepath].push({ varname, value });
+        }
+        return vars;
+      }, {} as { [filepath: string]: { varname: string; value: string }[] }) ??
+      {},
+  });
 }
 
-async function _walkDir(source: string, dest: string, tags: Set<string>) {
+async function _walkDir(
+  source: string,
+  _dest: string,
+  untaggedSource: string,
+  opts: Omit<CopyTemplateFilesOpts, "injectVars"> & {
+    injectVars: { [filepath: string]: { varname: string; value: string }[] };
+  }
+) {
   const files: { [filename: string]: { entry: Dirent; tags: string[] }[] } = {};
   const dirs: { [dirname: string]: { entry: Dirent; tags: string[] }[] } = {};
   for (const entry of await fs.readdir(source, { withFileTypes: true })) {
@@ -48,30 +75,44 @@ async function _walkDir(source: string, dest: string, tags: Set<string>) {
     }
   }
 
+  const dest = opts.rewritePath ? opts.rewritePath(_dest) : _dest;
+
   for (const [filename, entries] of Object.entries(files)) {
     const file = entries
       .sort((a, b) => b.tags.length - a.tags.length)
-      .find((entry) => entry.tags.every((tag) => tags.has(tag)));
+      .find((entry) => entry.tags.every((tag) => opts.tags?.has(tag) ?? false));
 
     if (file) {
       await fs.mkdir(dest, { recursive: true });
-      await fs.copyFile(
-        path.join(source, file.entry.name),
-        path.join(dest, filename)
-      );
+      const trueFilepath = path.join(source, file.entry.name);
+      const untaggedFilepath = path.join(untaggedSource, filename);
+      const destFilepath = path.join(dest, filename);
+
+      if (opts.injectVars[untaggedFilepath]) {
+        let content = await fs.readFile(trueFilepath, { encoding: "utf8" });
+        for (const { varname, value } of opts.injectVars[untaggedFilepath]) {
+          content = content.replace(RegExp(`{{{${varname}}}}`, "g"), value);
+        }
+        await fs.writeFile(destFilepath, content, {
+          encoding: "utf8",
+        });
+      } else {
+        await fs.copyFile(trueFilepath, destFilepath);
+      }
     }
   }
 
   for (const [dirname, entries] of Object.entries(dirs)) {
     const dir = entries
       .sort((a, b) => b.tags.length - a.tags.length)
-      .find((entry) => entry.tags.every((tag) => tags.has(tag)));
+      .find((entry) => entry.tags.every((tag) => opts.tags?.has(tag) ?? false));
 
     if (dir) {
       await _walkDir(
         path.join(source, dir.entry.name),
         path.join(dest, dirname),
-        tags
+        path.join(untaggedSource, dirname),
+        opts
       );
     }
   }

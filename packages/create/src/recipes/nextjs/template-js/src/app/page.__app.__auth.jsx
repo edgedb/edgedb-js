@@ -1,14 +1,33 @@
 import Image from "next/image";
 import styles from "./page.module.css";
 
-export default function Home() {
+import { auth } from "@/edgedb";
+
+export default async function Home() {
+  const session = auth.getSession();
+
+  const signedIn = await session.isLoggedIn();
+
   return (
     <main className={styles.main}>
       <div className={styles.description}>
         <p>
           Get started by editing&nbsp;
-          <code className={styles.code}>{{{srcDir}}}app/page.tsx</code>
+          <code className={styles.code}>{{{srcDir}}}app/page.jsx</code>
         </p>
+
+        {signedIn ? (
+          <p>
+            You are signed in. <a href={auth.getSignoutUrl()}>Sign Out</a>
+          </p>
+        ) : (
+          <p>
+            You are not signed in.
+            <br />
+            <a href={auth.getBuiltinUIUrl()}>Sign In with Builtin UI</a>
+          </p>
+        )}
+
         <div>
           <a
             href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"

@@ -3,9 +3,20 @@ import Image from "next/image";
 import { Inter } from "next/font/google";
 import styles from "@/styles/Home.module.css";
 
+import { auth } from "@/edgedb";
+import { auth as clientAuth } from "@/edgedb.client";
+
 const inter = Inter({ subsets: ["latin"] });
 
-export default function Home() {
+export const getServerSideProps = (async ({ req }) => {
+  const session = auth.getSession(req);
+
+  return {
+    props: { signedIn: await session.isSignedIn() },
+  };
+});
+
+export default function Home({ signedIn }) {
   return (
     <>
       <Head>
@@ -18,8 +29,22 @@ export default function Home() {
         <div className={styles.description}>
           <p>
             Get started by editing&nbsp;
-            <code className={styles.code}>{{{srcDir}}}pages/index.tsx</code>
+            <code className={styles.code}>{{{srcDir}}}pages/index.jsx</code>
           </p>
+
+          {signedIn ? (
+            <p>
+              You are signed in.{" "}
+              <a href={clientAuth.getSignoutUrl()}>Sign Out</a>
+            </p>
+          ) : (
+            <p>
+              You are not signed in.
+              <br />
+              <a href={clientAuth.getBuiltinUIUrl()}>Sign In with Builtin UI</a>
+            </p>
+          )}
+
           <div>
             <a
               href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"

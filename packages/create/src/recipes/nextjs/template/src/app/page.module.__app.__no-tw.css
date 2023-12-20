@@ -11,14 +11,16 @@
   display: inherit;
   justify-content: inherit;
   align-items: inherit;
+  gap: 2rem;
   font-size: 0.85rem;
+  line-height: 1.2rem;
   max-width: var(--max-width);
   width: 100%;
   z-index: 2;
   font-family: var(--font-mono);
 }
 
-.description a {
+.description div a {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -32,6 +34,11 @@
   background-color: rgba(var(--callout-rgb), 0.5);
   border: 1px solid rgba(var(--callout-border-rgb), 0.3);
   border-radius: var(--border-radius);
+}
+
+.description p a {
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .code {
