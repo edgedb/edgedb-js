@@ -194,7 +194,6 @@ export default function Home({
       {signedIn ? (
         <>
           <div>You are signed in</div>
-          {await session.client.queryJSON(`...`)}
         </>
       ) : (
         <>
