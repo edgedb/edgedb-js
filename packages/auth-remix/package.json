@@ -3,6 +3,7 @@
   "description": "Helper library to integrate the EdgeDB Auth extension with Remix",
   "version": "0.1.0-alpha.1",
   "author": "EdgeDB <info@edgedb.com>",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/edgedb/edgedb-js.git",

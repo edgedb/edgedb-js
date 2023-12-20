@@ -8,7 +8,7 @@ import {
   type TokenData,
   type emailPasswordProviderName,
 } from "@edgedb/auth-core";
-import { type RemixAuthOptions, RemixClientAuth } from "./client";
+import { type RemixAuthOptions, RemixClientAuth } from "./client.js";
 
 export type { TokenData, RemixAuthOptions };
 
