@@ -1,4 +1,4 @@
-import { type BuiltinOAuthProviderNames } from "@edgedb/auth-core";
+import type { BuiltinOAuthProviderNames } from "@edgedb/auth-core";
 
 export interface RemixAuthOptions {
   baseUrl: string;

@@ -18,7 +18,7 @@ npm install @edgedb/auth-remix
 1. Initialize the client auth helper by passing configuration options to `createClientAuth()`. This will return a `RemixClientAuth` object which you can use in your components. You can skip this part if you find it unnecessary and provide all your data through the loader (the next step), but we suggest having the client auth too and use it directly in your components to get OAuth, BuiltinUI and signout URLs.
 
 ```ts
-// app/services/auth.client.ts
+// app/services/auth.ts
 
 import createClientAuth, {
   type RemixAuthOptions,
