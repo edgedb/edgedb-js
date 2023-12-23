@@ -15,27 +15,40 @@ npm install @edgedb/auth-remix
 
 **Prerequisites**: Before adding EdgeDB auth to your Remix app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers (you can do this in CLI or EdgeDB UI). Refer to the auth extension docs for details on how to do this.
 
-1. Initialize the auth helper by passing an EdgeDB `Client` object to `createServerAuth()`, along with configuration options. This will return a `RemixServerAuth` object which you can use across your app.
+1. Initialize the client auth helper by passing configuration options to `createClientAuth()`. This will return a `RemixClientAuth` object which you can use in your components. You can skip this part if you find it unnecessary and provide all your data through the loader (the next step), but we suggest having the client auth too and use it directly in your components to get OAuth, BuiltinUI and signout URLs.
+
+```ts
+// app/services/auth.client.ts
+
+import createClientAuth, {
+  type RemixAuthOptions,
+} from "@edgedb/auth-remix/client";
+
+export const options: RemixAuthOptions = {
+  baseUrl: "http://localhost:3000",
+  // ...
+};
+
+const auth = createClientAuth(options);
+
+export default auth;
+```
+
+2. Initialize the server auth helper by passing an EdgeDB `Client` object to `createServerAuth()`, along with configuration options. This will return a `RemixServerAuth` object which you can use across your app on the server side.
 
    ```ts
    // app/services/auth.server.ts
 
-   import createServerAuth, {
-     type RemixAuthOptions,
-   } from "@edgedb/auth-remix/server";
+   import createServerAuth from "@edgedb/auth-remix/server";
    import { createClient } from "edgedb";
-
-   export const authConfig: RemixAuthOptions = {
-     baseUrl: "http://localhost:3000",
-     // ...
-   };
+   import { options } from "./auth.client";
 
    export const client = createClient({
      //Note: when developing locally you will need to set tls  security to insecure, because the dev server uses  self-signed certificates which will cause api calls with the fetch api to fail.
      tlsSecurity: "insecure",
    });
 
-   export const auth = createServerAuth(client, authConfig);
+   export const auth = createServerAuth(client, options);
    ```
 
    The available auth config options are as follows:
@@ -46,7 +59,7 @@ npm install @edgedb/auth-remix
    - `pkceVerifierCookieName?: string`: The name of the cookie where the verifier for the PKCE flow will be stored, defaults to `'edgedb-pkce-verifier'`
    - `passwordResetUrl?: string`: The url of the the password reset page; needed if you want to enable password reset emails in your app.
 
-2. Setup the auth route handlers, with `auth.createAuthRouteHandlers()`. Callback functions can be provided to handle various auth events, where you can define what to do in the case of successful signin's or errors. You only need to configure callback functions for the types of auth you wish to use in your app.
+3. Setup the auth route handlers, with `auth.createAuthRouteHandlers()`. Callback functions can be provided to handle various auth events, where you can define what to do in the case of successful signin's or errors. You only need to configure callback functions for the types of auth you wish to use in your app.
 
    ```ts
    // app/routes/auth.$.ts
@@ -68,15 +81,12 @@ npm install @edgedb/auth-remix
 
    - `onOAuthCallback`
    - `onBuiltinUICallback`
-   - `onEmailPasswordSignIn`
-   - `onEmailPasswordSignUp`
-   - `onEmailPasswordReset`
    - `onEmailVerify`
    - `onSignout`
 
    By default the handlers expect to exist under the `/routes/auth` path in your app, however if you want to place them elsewhere, you will also need to configure the `authRoutesPath` option of `createServerAuth` to match.
 
-3. Now we just need to setup the UI to allow your users to sign in/up, etc. The easiest way to get started is to use the EdgeDB Auth's builtin UI. Or alternatively you can implement your own custom UI.
+4. Now we just need to setup the UI to allow your users to sign in/up, etc. The easiest way to get started is to use the EdgeDB Auth's builtin UI. Or alternatively you can implement your own custom UI.
 
    **Builtin UI**
 
@@ -99,14 +109,15 @@ npm install @edgedb/auth-remix
 
 ## Usage
 
-Now you have auth all configured and user's can signin/signup/etc. you can use the `auth.getSession()` method in your app pages to retrieve an `AuthSession` object. This session object allows you to check if the user is currently logged in with the `isLoggedIn` method, and also provides a `Client` object automatically configured with the `ext::auth::client_token` global, so you can run queries using the `ext::auth::ClientTokenIdentity` of the currently signed in user.
+Now you have auth all configured and user's can signin/signup/etc. you can use the `auth.getSession()` method in your app pages to retrieve an `AuthSession` object. This session object allows you to check if the user is currently signed in with the `isSignedIn` method, and also provides a `Client` object automatically configured with the `ext::auth::client_token` global, so you can run queries using the `ext::auth::ClientTokenIdentity` of the currently signed in user.
 
 ```ts
 // app/routes/_index.tsx
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, Link } from "@remix-run/react";
-import { client, auth } from "~/services/auth.server";
+import auth, { client } from "~/services/auth.server";
+import clientAuth from "~/services/auth.client";
 import { transformSearchParams } from "~/utils";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -115,40 +126,36 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   );
 
   const session = auth.getSession(request);
-  const isLoggedIn = await session.isLoggedIn();
-  const username = isLoggedIn
-    ? (await session.client.querySingle<string>(
-        `select global currentUser.name`
-      )) || ""
-    : "";
-
-  let params = new URL(request.url).searchParams;
+  const isSignedIn = await session.isSignedIn();
+  const username = await session.client.queryRequiredSingle<string>(
+    `select global currentUser.name`
+  );
 
   return json({
     builtinUIEnabled,
-    builtinUIUrl: auth.getBuiltinUIUrl(),
-    isLoggedIn,
+    isSignedIn,
     username,
-    params: transformSearchParams(params),
   });
 };
 
 export default function Index() {
-  const { builtinUIUrl, isLoggedIn, username } = useLoaderData<typeof loader>();
+  const { isSignedIn, username } = useLoaderData<typeof loader>();
 
   return (
     <main>
       <h1>Home</h1>
-      {isLoggedIn ? (
+      {isSignedIn ? (
         <>
           <h2>
-            You are logged in as<span>{username}</span>
+            You are logged in {username ? `as <span>${username}</span>` : ""}
           </h2>
         </>
       ) : (
         <>
           <h2>You are not logged in</h2>
-          <Link to={builtinUIUrl}>Sign in with Built-in UI</Link>
+          <Link to={clientAuth.getBuiltinUIUrl()}>
+            Sign in with Built-in UI
+          </Link>
         </>
       )}
     </main>
