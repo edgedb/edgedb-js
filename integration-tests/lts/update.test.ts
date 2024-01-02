@@ -189,11 +189,7 @@ describe("update", () => {
 
   test("optional prop update", async () => {
     const theAvengers = await e
-      .select(e.Movie, (movie) => ({
-        filter: e.op(movie.title, "=", "The Avengers"),
-        limit: 1,
-      }))
-      .assert_single()
+      .select(e.Movie, () => ({ filter_single: { title: "The Avengers" } }))
       .run(client);
     assert.ok(theAvengers);
 
