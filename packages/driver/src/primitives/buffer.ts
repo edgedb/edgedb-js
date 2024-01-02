@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 
-import char, * as chars from "./chars";
+import type char from "./chars";
+import * as chars from "./chars";
 import * as bi from "./bigint";
 import * as compat from "../compat";
 import { LegacyHeaderCodes } from "../ifaces";
@@ -32,14 +33,19 @@ export const utf8Decoder = new TextDecoder("utf8");
 let decodeB64: (b64: string) => Uint8Array;
 let encodeB64: (data: Uint8Array) => string;
 
-if (typeof btoa === "undefined") {
+// @ts-ignore: Buffer is not defined in Deno
+if (Buffer === "function") {
   decodeB64 = (b64: string): Uint8Array => {
-    // @ts-ignore
+    // @ts-ignore: Buffer is not defined in Deno
     return Buffer.from(b64, "base64");
   };
   encodeB64 = (data: Uint8Array): string => {
-    // @ts-ignore
-    return Buffer.from(data).toString("base64");
+    // @ts-ignore: Buffer is not defined in Deno
+    const buf = !Buffer.isBuffer(data)
+      ? // @ts-ignore: Buffer is not defined in Deno
+        Buffer.from(data.buffer, data.byteOffset, data.byteLength)
+      : data;
+    return buf.toString("base64");
   };
 } else {
   decodeB64 = (b64: string): Uint8Array => {

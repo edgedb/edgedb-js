@@ -1,14 +1,12 @@
-import { process } from "https://deno.land/std@0.177.0/node/process.ts";
-import {
-  crypto,
-  toHashString,
-} from "https://deno.land/std@0.177.0/crypto/mod.ts";
-
-import path from "https://deno.land/std@0.177.0/node/path.ts";
-import * as _fs from "https://deno.land/std@0.177.0/fs/mod.ts";
-import * as fs from "https://deno.land/std@0.177.0/node/fs/promises.ts";
-import EventEmitter from "https://deno.land/std@0.177.0/node/events.ts";
-import util from "https://deno.land/std@0.177.0/node/util.ts";
+import process from "node:process";
+import crypto from "node:crypto";
+import url from "node:url";
+import path from "node:path";
+import * as _fs from "https://deno.land/std@0.208.0/fs/mod.ts";
+import fs from "node:fs/promises";
+import util from "node:util";
+import { isIP as _isIP } from "node:net";
+import { EventEmitter } from "node:events";
 
 export { path, process, util, fs };
 
@@ -50,7 +48,7 @@ export async function walk(
 }
 
 export async function exists(fn: string | URL): Promise<boolean> {
-  fn = fn instanceof URL ? path.fromFileUrl(fn) : fn;
+  fn = fn instanceof URL ? url.fileURLToPath(fn) : fn;
   try {
     await Deno.lstat(fn);
     return true;
@@ -64,10 +62,7 @@ export async function exists(fn: string | URL): Promise<boolean> {
 }
 
 export function hashSHA1toHex(msg: string): string {
-  return toHashString(
-    crypto.subtle.digestSync("SHA-1", new TextEncoder().encode(msg)),
-    "hex"
-  );
+  return crypto.createHash("sha1").update(msg).digest("hex");
 }
 
 export function homeDir(): string {
@@ -87,11 +82,11 @@ export function homeDir(): string {
 //       `import * as fs from "https://deno.land/std@0.159.0/node/fs.ts";`
 //       when the 'fs' compat module does not require '--unstable' flag.
 
-async function toArray(iter: AsyncIterable<unknown>) {
-  const arr = [];
-  for await (const i of iter) arr.push(i);
-  return arr;
-}
+// async function toArray(iter: AsyncIterable<unknown>) {
+//   const arr = [];
+//   for await (const i of iter) arr.push(i);
+//   return arr;
+// }
 
 // deno-lint-ignore-file
 // export namespace fs {
@@ -163,6 +158,8 @@ export namespace net {
 
     return new Socket(conn);
   }
+
+  export const isIP = _isIP;
 
   export declare interface Socket {
     on(eventName: "error", listener: (e: any) => void): this;

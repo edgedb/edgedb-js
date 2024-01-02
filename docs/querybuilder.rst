@@ -3,6 +3,7 @@
 =======================
 Query Builder Generator
 =======================
+:index: querybuilder generator typescript
 
 The EdgeDB query builder provides a **code-first** way to write
 **fully-typed** EdgeQL queries with TypeScript. We recommend it for TypeScript
@@ -170,6 +171,7 @@ that later.
 
 Converting to EdgeQL
 --------------------
+:index: querybuilder toedgeql
 
 You can extract an EdgeQL representation of any expression calling the
 ``.toEdgeQL()`` method. Below is a number of expressions and the EdgeQL they

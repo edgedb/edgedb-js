@@ -2,7 +2,7 @@ import { $, adapter, type Client } from "edgedb";
 import { Cardinality } from "edgedb/dist/ifaces";
 import { type CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
-import type { Target } from "./genutil";
+import { type Target, camelify } from "./genutil";
 
 // generate per-file queries
 // generate queries in a single file
@@ -11,6 +11,7 @@ export async function generateQueryFiles(params: {
   root: string | null;
   options: CommandOptions;
   client: Client;
+  schemaDir: string;
 }) {
   if (params.options.file && params.options.watch) {
     throw new Error(`Using --watch and --file mode simultaneously is not
@@ -35,9 +36,10 @@ currently supported.`);
   // file mode: introspect all queries and generate one file
   // generate one query per file
 
-  const matches = await getMatches(root);
+  console.log(`Detected schema directory: ${params.schemaDir}`);
+  const matches = await getMatches(root, params.schemaDir);
   if (matches.length === 0) {
-    console.log(`No .edgeql files found in project`);
+    console.log(`No .edgeql files found outside of ${params.schemaDir}`);
     return;
   }
 
@@ -94,13 +96,11 @@ currently supported.`);
         const filePath =
           (adapter.path.isAbsolute(params.options.file)
             ? params.options.file
-            : adapter.path.join(
-                adapter.process.cwd(), // all paths computed relative to cwd
-                params.options.file
-              )) + extension;
+            : adapter.path.join(adapter.process.cwd(), params.options.file)) +
+          extension;
         const prettyPath = adapter.path.isAbsolute(params.options.file)
-          ? params.options.file + extension
-          : "./" + adapter.path.posix.relative(root, filePath);
+          ? filePath
+          : `./${adapter.path.posix.relative(root, filePath)}`;
         console.log(`   ${prettyPath}`);
         await adapter.fs.writeFile(
           filePath,
@@ -153,13 +153,13 @@ export function stringifyImports(imports: { [k: string]: boolean }) {
   return `import type {${Object.keys(imports).join(", ")}} from "edgedb";`;
 }
 
-async function getMatches(root: string) {
+async function getMatches(root: string, schemaDir: string) {
   return adapter.walk(root, {
     match: [/[^\/]\.edgeql$/],
     skip: [
       /node_modules/,
-      RegExp(`dbschema\\${adapter.path.sep}migrations`),
-      RegExp(`dbschema\\${adapter.path.sep}fixups`),
+      RegExp(`${schemaDir}\\${adapter.path.sep}migrations`),
+      RegExp(`${schemaDir}\\${adapter.path.sep}fixups`),
     ],
   });
 }
@@ -198,9 +198,7 @@ export function generateFiles(params: {
       : params.types.cardinality === Cardinality.AT_MOST_ONE
       ? "querySingle"
       : "query";
-  const functionName = baseFileName
-    .replace(/-[A-Za-z]/g, (m) => m[1].toUpperCase())
-    .replace(/^[^A-Za-z_]|\W/g, "_");
+  const functionName = camelify(baseFileName);
   const interfaceName =
     functionName.charAt(0).toUpperCase() + functionName.slice(1);
   const argsInterfaceName = `${interfaceName}Args`;
@@ -221,7 +219,7 @@ ${params.types.query.trim().replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
 
   const tsImpl = `${queryDefs}
 
-export async function ${functionName}(client: Executor${
+export function ${functionName}(client: Executor${
     hasArgs ? `, args: ${argsInterfaceName}` : ""
   }): Promise<${returnsInterfaceName}> {
   return client.${method}(\`\\
@@ -230,7 +228,6 @@ ${functionBody}
 `;
 
   const denoImpl = `
-// deno-lint-ignore-file require-await
 ${tsImpl}`;
 
   const jsImpl = `async function ${functionName}(client${
