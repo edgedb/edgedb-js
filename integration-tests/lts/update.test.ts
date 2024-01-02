@@ -188,16 +188,32 @@ describe("update", () => {
   });
 
   test("optional prop update", async () => {
+    const theAvengers = await e
+      .select(e.Movie, (movie) => ({
+        filter: e.op(movie.title, "=", "The Avengers"),
+        limit: 1,
+      }))
+      .assert_single()
+      .run(client);
+    assert.ok(theAvengers);
+
     const query = e.params({ title: e.optional(e.str) }, (params) => {
       return e.update(e.Movie, (m) => ({
-        filter_single: { title: "not a real title" },
+        filter_single: { id: theAvengers.id },
         set: {
-          // Error here
-          title: params.title,
+          title: e.op(params.title, "??", m.title),
         },
       }));
     });
-    await query.run(client, { title: "still not real" });
+    await query.run(client, { title: "The Avengers!" });
+
+    const selected = await e.select(e.Movie, () => ({
+      id: true,
+      title: true,
+      filter_single: { id: theAvengers.id },
+    })).run(client);
+    assert.ok(selected);
+    assert.equal(selected.title, "The Avengers!");
   });
 
   test("exclude readonly props", () => {
