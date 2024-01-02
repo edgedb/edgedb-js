@@ -47,6 +47,8 @@ an expression inside a larger query.
   wrappedQuery.run(client, {name: "Harry Styles"});
 
 
+.. _edgedb-js-optional-parameters:
+
 Optional parameters
 ^^^^^^^^^^^^^^^^^^^
 
