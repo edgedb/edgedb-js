@@ -61,7 +61,7 @@ const recipe: Recipe<EdgeDBOptions> = {
 
         spinner.start("Installing EdgeDB CLI");
         await exec(
-          "curl --proto '=https' --tlsv1.2 -sSf https://sh.edgedb.com | sh"
+          "curl --proto '=https' --tlsv1.2 -sSf https://sh.edgedb.com | sh -s -- -y"
         );
         spinner.stop("EdgeDB CLI installed");
       }
@@ -82,7 +82,7 @@ const recipe: Recipe<EdgeDBOptions> = {
         { cwd: projectDir }
       );
       const serverVersion = JSON.parse(stdout.trim());
-      logger(`EdgeDB version: ${serverVersion}`);
+      logger(`EdgeDB server version: ${serverVersion}`);
       if (serverVersion === "") {
         const err = new Error(
           "There was a problem initializing the EdgeDB project"
@@ -95,7 +95,7 @@ const recipe: Recipe<EdgeDBOptions> = {
       spinner.stop(`EdgeDB v${serverVersion} project initialized`);
     } else {
       logger("Skipping edgedb project init");
-      logger("Copying EdgeDB schema to project");
+      logger("Copying basic EdgeDB project files");
 
       const dirname = path.dirname(new URL(import.meta.url).pathname);
       await copyTemplateFiles(
