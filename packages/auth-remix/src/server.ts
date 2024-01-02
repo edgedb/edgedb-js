@@ -486,17 +486,19 @@ export class RemixServerAuth extends RemixClientAuth {
   ): Promise<{ headers: Headers }>;
   async emailPasswordResendVerificationEmail<Res>(
     req: Request,
-    cb: () => Res | Promise<Res>
+    cb: (error?: Error) => Res | Promise<Res>
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordResendVerificationEmail<Res>(
     req: Request,
     data: { verification_token: string },
-    cb: () => Res | Promise<Res>
+    cb: (error?: Error) => Res | Promise<Res>
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordResendVerificationEmail<Res>(
     req: Request,
-    dataOrCb?: { verification_token: string } | (() => Res | Promise<Res>),
-    cb?: () => Res | Promise<Res>
+    dataOrCb?:
+      | { verification_token: string }
+      | ((error?: Error) => Res | Promise<Res>),
+    cb?: (error?: Error) => Res | Promise<Res>
   ): Promise<
     | {
         headers: Headers;

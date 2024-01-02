@@ -121,41 +121,26 @@ import clientAuth from "~/services/auth.client";
 import { transformSearchParams } from "~/utils";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const builtinUIEnabled = await client.queryRequiredSingle<boolean>(
-    `select exists ext::auth::UIConfig`
-  );
-
   const session = auth.getSession(request);
   const isSignedIn = await session.isSignedIn();
-  const username = await session.client.queryRequiredSingle<string>(
-    `select global currentUser.name`
-  );
 
   return json({
-    builtinUIEnabled,
     isSignedIn,
-    username,
   });
 };
 
 export default function Index() {
-  const { isSignedIn, username } = useLoaderData<typeof loader>();
+  const { isSignedIn } = useLoaderData<typeof loader>();
 
   return (
     <main>
       <h1>Home</h1>
       {isSignedIn ? (
-        <>
-          <h2>
-            You are logged in {username ? `as <span>${username}</span>` : ""}
-          </h2>
-        </>
+        <h2>You are logged in</h2>
       ) : (
         <>
           <h2>You are not logged in</h2>
-          <Link to={clientAuth.getBuiltinUIUrl()}>
-            Sign in with Built-in UI
-          </Link>
+          <Link to={clientAuth.getBuiltinUIUrl()}>Sign in with Builtin UI</Link>
         </>
       )}
     </main>
