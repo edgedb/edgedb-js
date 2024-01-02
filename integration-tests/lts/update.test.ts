@@ -206,6 +206,7 @@ describe("update", () => {
       }));
     });
     await query.run(client, { title: "The Avengers!" });
+    await query.run(client, {});
 
     const selected = await e.select(e.Movie, () => ({
       id: true,
