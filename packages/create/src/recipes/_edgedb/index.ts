@@ -75,25 +75,32 @@ const recipe: Recipe<EdgeDBOptions> = {
       }
 
       spinner.start("Initializing EdgeDB project");
-      await execInLoginShell("edgedb project init --non-interactive", {
-        cwd: projectDir,
-      });
-      const { stdout, stderr } = await execInLoginShell(
-        "edgedb query 'select sys::get_version_as_str()'",
-        { cwd: projectDir }
-      );
-      const serverVersion = JSON.parse(stdout.trim());
-      logger(`EdgeDB server version: ${serverVersion}`);
-      if (serverVersion === "") {
-        const err = new Error(
-          "There was a problem initializing the EdgeDB project"
+      try {
+        await execInLoginShell("edgedb project init --non-interactive", {
+          cwd: projectDir,
+        });
+        const { stdout, stderr } = await execInLoginShell(
+          "edgedb query 'select sys::get_version_as_str()'",
+          { cwd: projectDir }
         );
-        spinner.stop(err.message);
-        logger({ stdout, stderr });
+        const serverVersion = JSON.parse(stdout.trim());
+        logger(`EdgeDB server version: ${serverVersion}`);
+        if (serverVersion === "") {
+          const err = new Error(
+            "There was a problem initializing the EdgeDB project"
+          );
+          spinner.stop(err.message);
+          logger({ stdout, stderr });
 
-        throw err;
+          throw err;
+        }
+        spinner.stop(`EdgeDB v${serverVersion} project initialized`);
+      } catch (error) {
+        logger(error);
+        throw error;
+      } finally {
+        spinner.stop();
       }
-      spinner.stop(`EdgeDB v${serverVersion} project initialized`);
     } else {
       logger("Skipping edgedb project init");
       logger("Copying basic EdgeDB project files");
