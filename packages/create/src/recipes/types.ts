@@ -1,12 +1,25 @@
+import { type PackageManager } from "../utils.js";
+
 export type Framework = "next" | "remix" | "express" | "node-http" | "none";
 
-export type RecipeOptions = {
+export interface BaseOptions {
+  packageManager: PackageManager;
   projectName: string;
-  projectDir: string;
   framework: Framework;
+  projectDir: string;
   useEdgeDBAuth: boolean;
-  shouldGitInit: boolean;
-  shouldInstall: boolean;
-};
+}
 
-export type Recipe = (options: RecipeOptions) => Promise<void>;
+export interface Recipe<RecipeOptions = undefined> {
+  skip?: (baseOptions: BaseOptions) => boolean;
+  getOptions?: (baseOptions: BaseOptions) => Promise<RecipeOptions>;
+  apply: (
+    baseOptions: BaseOptions,
+    recipeOptions: RecipeOptions
+  ) => Promise<void>;
+}
+
+export interface BaseRecipe {
+  getOptions: () => Promise<BaseOptions>;
+  apply: (baseOptions: BaseOptions) => Promise<void>;
+}
