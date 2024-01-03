@@ -2,10 +2,9 @@ import * as p from "@clack/prompts";
 import fs from "node:fs/promises";
 import path from "node:path";
 import debug from "debug";
-import { spawn } from "node:child_process";
 
 import type { BaseOptions, Recipe } from "../types.js";
-import { copyTemplateFiles } from "../../utils.js";
+import { copyTemplateFiles, execInLoginShell } from "../../utils.js";
 
 const logger = debug("@edgedb/create:recipe:edgedb");
 
@@ -71,6 +70,7 @@ const recipe: Recipe<EdgeDBOptions> = {
         logger(edgedbCliVersion);
       } catch (error) {
         logger("EdgeDB CLI could not be installed.");
+        logger(error);
         throw new Error("EdgeDB CLI could not be installed.");
       }
 
@@ -119,28 +119,3 @@ const recipe: Recipe<EdgeDBOptions> = {
 };
 
 export default recipe;
-
-async function execInLoginShell(
-  command: string,
-  options?: { cwd?: string }
-): Promise<{ stdout: string; stderr: string }> {
-  return new Promise((resolve, reject) => {
-    let stdout = "";
-    let stderr = "";
-    const child = spawn("/bin/bash", ["-l", "-c", command], options);
-    child.stdout.on("data", (data) => {
-      stdout += data;
-    });
-    child.stderr.on("data", (data) => {
-      stderr += data;
-    });
-    child.on("close", (code) => {
-      if (code !== 0) {
-        logger({ stdout, stderr });
-        reject(new Error(`Command "${command}" exited with code ${code}`));
-      } else {
-        resolve({ stdout, stderr });
-      }
-    });
-  });
-}

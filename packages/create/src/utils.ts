@@ -2,6 +2,7 @@ import process from "node:process";
 import fs from "node:fs/promises";
 import { type Dirent } from "node:fs";
 import path from "node:path";
+import { spawn } from "node:child_process";
 
 export type PackageManager = "npm" | "yarn" | "pnpm" | "bun";
 
@@ -116,4 +117,35 @@ async function _walkDir(
       );
     }
   }
+}
+
+export async function execInLoginShell(
+  command: string,
+  options?: { cwd?: string }
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    let stdout = "";
+    let stderr = "";
+    const child = spawn("/bin/bash", ["-l", "-c", command], options);
+    child.stdout.on("data", (data) => {
+      stdout += data;
+    });
+    child.stderr.on("data", (data) => {
+      stderr += data;
+    });
+    child.on("close", (code) => {
+      if (code !== 0) {
+        reject(
+          new Error(
+            `\
+Command "${command}" exited with code ${code}
+stderr: ${stderr}
+stdout: ${stdout}`
+          )
+        );
+      } else {
+        resolve({ stdout, stderr });
+      }
+    });
+  });
 }
