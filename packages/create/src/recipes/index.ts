@@ -9,7 +9,7 @@ import { Recipe } from "./types.js";
 
 export { baseRecipe };
 
-export const recipes: Recipe[] = [
+export const recipes: Recipe<any>[] = [
   // frameworks
   express,
   nextjs,
