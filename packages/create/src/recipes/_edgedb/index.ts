@@ -2,14 +2,12 @@ import * as p from "@clack/prompts";
 import fs from "node:fs/promises";
 import path from "node:path";
 import debug from "debug";
-import util from "node:util";
-import childProcess from "node:child_process";
+import { spawn } from "node:child_process";
 
 import type { BaseOptions, Recipe } from "../types.js";
 import { copyTemplateFiles } from "../../utils.js";
 
 const logger = debug("@edgedb/create:recipe:edgedb");
-const exec = util.promisify(childProcess.exec);
 
 interface EdgeDBOptions {
   initializeProject: boolean;
@@ -39,7 +37,7 @@ const recipe: Recipe<EdgeDBOptions> = {
       let edgedbCliVersion: string | null = null;
       let shouldInstallCli: boolean | symbol = true;
       try {
-        const { stdout } = await exec("edgedb --version");
+        const { stdout } = await execInLoginShell("edgedb --version");
         edgedbCliVersion = stdout.trim();
         logger(edgedbCliVersion);
       } catch (error) {
@@ -60,14 +58,15 @@ const recipe: Recipe<EdgeDBOptions> = {
         logger("Installing EdgeDB CLI");
 
         spinner.start("Installing EdgeDB CLI");
-        await exec(
+        const { stdout, stderr } = await execInLoginShell(
           "curl --proto '=https' --tlsv1.2 -sSf https://sh.edgedb.com | sh -s -- -y"
         );
+        logger({ stdout, stderr });
         spinner.stop("EdgeDB CLI installed");
       }
 
       try {
-        const { stdout } = await exec("edgedb --version");
+        const { stdout } = await execInLoginShell("edgedb --version");
         edgedbCliVersion = stdout.trim();
         logger(edgedbCliVersion);
       } catch (error) {
@@ -76,8 +75,10 @@ const recipe: Recipe<EdgeDBOptions> = {
       }
 
       spinner.start("Initializing EdgeDB project");
-      await exec("edgedb project init --non-interactive", { cwd: projectDir });
-      const { stdout, stderr } = await exec(
+      await execInLoginShell("edgedb project init --non-interactive", {
+        cwd: projectDir,
+      });
+      const { stdout, stderr } = await execInLoginShell(
         "edgedb query 'select sys::get_version_as_str()'",
         { cwd: projectDir }
       );
@@ -118,3 +119,28 @@ const recipe: Recipe<EdgeDBOptions> = {
 };
 
 export default recipe;
+
+async function execInLoginShell(
+  command: string,
+  options?: { cwd?: string }
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    let stdout = "";
+    let stderr = "";
+    const child = spawn("/bin/bash", ["-l", "-c", command], options);
+    child.stdout.on("data", (data) => {
+      stdout += data;
+    });
+    child.stderr.on("data", (data) => {
+      stderr += data;
+    });
+    child.on("close", (code) => {
+      if (code !== 0) {
+        logger({ stdout, stderr });
+        reject(new Error(`Command "${command}" exited with code ${code}`));
+      } else {
+        resolve({ stdout, stderr });
+      }
+    });
+  });
+}
