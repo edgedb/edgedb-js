@@ -5,7 +5,7 @@ import _install from "./_install/index.js";
 import express from "./express/index.js";
 import nextjs from "./nextjs/index.js";
 
-import { Recipe } from "./types.js";
+import { type Recipe } from "./types.js";
 
 export { baseRecipe };
 
