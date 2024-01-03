@@ -7,8 +7,8 @@ Update objects with the ``e.update`` function.
 
 .. code-block:: typescript
 
-  e.update(e.Movie, movie => ({
-    filter_single: {title: "Avengers 4"},
+  e.update(e.Movie, () => ({
+    filter_single: { title: "Avengers 4" },
     set: {
       title: "Avengers: Endgame"
     }
@@ -19,12 +19,27 @@ You can reference the current value of the object's properties.
 
 .. code-block:: typescript
 
-  e.update(e.Movie, movie => ({
+  e.update(e.Movie, (movie) => ({
     filter: e.op(movie.title[0], '=', ' '),
     set: {
       title: e.str_trim(movie.title)
     }
   }))
+
+You can conditionally update a property by using an :ref:`optional parameter
+<edgedb-js-optional-parameters>` and the :ref:`coalescing infix operator
+<edgedb-js-funcops-infix>`.
+
+.. code-block:: typescript
+
+  e.params({ id: e.uuid, title: e.optional(e.str) }, (params) =>
+    e.update(e.Movie, (movie) => ({
+      filter_single: { id: params.id },
+      set: {
+        title: e.op(params.title, "??", movie.title),
+      }
+    }))
+  );
 
 
 Updating links

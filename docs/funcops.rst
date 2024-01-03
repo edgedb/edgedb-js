@@ -24,6 +24,8 @@ All built-in standard library functions are reflected as functions in ``e``.
   // math::mean({3, 5, 7})
 
 
+.. _edgedb-js-funcops-prefix:
+
 Prefix operators
 ^^^^^^^^^^^^^^^^
 
@@ -43,6 +45,8 @@ Prefix operators operate on a single argument: ``OPERATOR <arg>``.
   * - ``"exists"`` ``"distinct"`` ``"not"``
 
 
+.. _edgedb-js-funcops-infix:
+
 Infix operators
 ^^^^^^^^^^^^^^^
 
@@ -60,6 +64,8 @@ Infix operators operate on two arguments: ``<arg> OPERATOR <arg>``.
       ``"^"`` ``"in"`` ``"not in"`` ``"union"`` ``"??"`` ``"++"`` ``"like"``
       ``"ilike"`` ``"not like"`` ``"not ilike"``
 
+
+.. _edgedb-js-funcops-ternary:
 
 Ternary operators
 ^^^^^^^^^^^^^^^^^
