@@ -2,7 +2,7 @@ import process from "node:process";
 import fs from "node:fs/promises";
 import { type Dirent } from "node:fs";
 import path from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, type SpawnOptionsWithoutStdio } from "node:child_process";
 
 export type PackageManager = "npm" | "yarn" | "pnpm" | "bun";
 
@@ -121,7 +121,7 @@ async function _walkDir(
 
 export async function execInLoginShell(
   command: string,
-  options?: { cwd?: string }
+  options?: SpawnOptionsWithoutStdio
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     let stdout = "";
