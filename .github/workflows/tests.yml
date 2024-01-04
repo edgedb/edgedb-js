@@ -59,7 +59,7 @@ jobs:
 
       - name: Install dev deps
         run: |
-          yarn
+          yarn --frozen-lockfile
 
       - name: Lint
         run: |
