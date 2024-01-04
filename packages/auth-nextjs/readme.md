@@ -90,7 +90,7 @@
 
 ### Usage
 
-Now you have auth all configured and user's can signin/signup/etc. you can use the `auth.getSession()` method in your app pages to retrieve an `AuthSession` object. This session object allows you to check if the user is currently logged in with the `isLoggedIn` method, and also provides a `Client` object automatically configured with the `ext::auth::client_token` global, so you can run queries using the `ext::auth::ClientTokenIdentity` of the currently signed in user.
+Now you have auth all configured and user's can signin/signup/etc. you can use the `auth.getSession()` method in your app pages to retrieve an `AuthSession` object. This session object allows you to check if the user is currently logged in with the `isSignedIn` method, and also provides a `Client` object automatically configured with the `ext::auth::client_token` global, so you can run queries using the `ext::auth::ClientTokenIdentity` of the currently signed in user.
 
 ```ts
 import { auth } from "@/edgedb";
@@ -98,7 +98,7 @@ import { auth } from "@/edgedb";
 export default async function Home() {
   const session = await auth.getSession();
 
-  const loggedIn = await session.isLoggedIn();
+  const loggedIn = await session.isSignedIn();
 
   return (
     <main>
