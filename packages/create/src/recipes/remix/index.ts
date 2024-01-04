@@ -28,7 +28,7 @@ const recipe: Recipe = {
         typecheck: "tsc",
       },
       dependencies: {
-        ...(useEdgeDBAuth ? { "@edgedb/auth-nextjs": "^0.1.0-beta.1" } : {}),
+        ...(useEdgeDBAuth ? { "@edgedb/auth-remix": "^0.1.0-beta.1" } : {}),
         react: "^18",
         "react-dom": "^18",
         "@remix-run/css-bundle": "*",
