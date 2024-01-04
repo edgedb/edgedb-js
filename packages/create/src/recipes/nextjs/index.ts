@@ -68,7 +68,7 @@ const recipe: Recipe<NextjsOptions> = {
     }
 
     await copyTemplateFiles(
-      path.resolve(dirname, lang === "js" ? "./template-js" : "./template"),
+      path.resolve(dirname, lang === "js" ? "./template/js" : "./template/ts"),
       projectDir,
       {
         tags,
