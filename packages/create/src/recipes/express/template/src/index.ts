@@ -69,5 +69,5 @@ app.get("/", requireAuth, async (req: AuthRequest, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log("Listening on http://localhost:${PORT}");
+  console.log(`Listening on http://localhost:${PORT}`);
 });
