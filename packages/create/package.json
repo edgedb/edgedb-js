@@ -14,10 +14,8 @@
   },
   "license": "Apache-2.0",
   "sideEffects": false,
-  "files": [
-    "/dist"
-  ],
-  "bin":  "dist/cli.js",
+  "files": ["/dist"],
+  "bin": "dist/cli.js",
   "peerDependencies": {},
   "devDependencies": {
     "@types/debug": "^4.1.12",
@@ -33,6 +31,7 @@
   },
   "scripts": {
     "create": "tsx src/cli.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "test": "tsc --noEmit"
   }
 }
