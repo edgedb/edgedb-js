@@ -31,7 +31,7 @@
   },
   "scripts": {
     "create": "tsx src/cli.ts",
-    "build": "tsc",
+    "build": "build.sh",
     "test": "tsc --noEmit"
   }
 }
