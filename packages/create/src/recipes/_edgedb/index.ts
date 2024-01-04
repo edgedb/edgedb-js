@@ -106,11 +106,7 @@ const recipe: Recipe<EdgeDBOptions> = {
       logger("Copying basic EdgeDB project files");
 
       const dirname = path.dirname(new URL(import.meta.url).pathname);
-      await copyTemplateFiles(
-        path.resolve(dirname, "./template"),
-        projectDir,
-        new Set()
-      );
+      await copyTemplateFiles(path.resolve(dirname, "./template"), projectDir);
     }
 
     if (useEdgeDBAuth) {
