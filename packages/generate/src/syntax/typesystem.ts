@@ -843,7 +843,7 @@ export type NonArrayType =
 
 export type AnyTupleType = TupleType | NamedTupleType;
 
-export type AnyGenericObjectType = GenericObjectType;
+export type AnyObjectType = GenericObjectType;
 
 export type ParamType =
   | ScalarType

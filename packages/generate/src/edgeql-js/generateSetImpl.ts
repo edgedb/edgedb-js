@@ -89,7 +89,7 @@ export const generateSetImpl = ({ dir, types, casts }: GeneratorParams) => {
   code.writeln([
     dts`declare `,
     t`function set<
-  Expr extends $.ObjectTypeSet,
+  Expr extends $.GenericObjectTypeSet,
   Exprs extends [Expr, ...Expr[]]
 >(
   ...exprs: Exprs
