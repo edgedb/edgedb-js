@@ -12,9 +12,11 @@
     "test:cjs": "yarn generate queries --target cjs --file cjs/queries && yarn generate edgeql-js --target cjs --output-dir cjs/edgeql-js && cd cjs && node test.js",
     "test:mts": "yarn generate queries --target mts --file mts/queries && yarn generate edgeql-js --target mts --output-dir mts/edgeql-js && cd mts && yarn build && node dist/test.js",
     "test:deno": "cd deno && deno task edgeql-js && deno task queries && deno task play",
-    "test:ci": "tsx ./testRunner.ts"
+    "test:ci": "tsx ./testRunner.ts",
+    "bench:types": "cd ../.. && tsx integration-tests/lts/bench.ts"
   },
   "devDependencies": {
+    "@arktype/attest": "^0.5.0",
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.2",
     "conditional-type-checks": "^1.0.6",

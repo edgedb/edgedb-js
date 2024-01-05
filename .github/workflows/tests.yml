@@ -126,6 +126,10 @@ jobs:
         run: |
           yarn workspace @edgedb/create test
 
+      - name: Run benchmarks
+        run: |
+          yarn workspace @edgedb/integration-lts run bench:types
+
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.
   regression-tests:
