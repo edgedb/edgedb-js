@@ -15,14 +15,14 @@ bench("select: free object", () => {
 bench("select: id only", () => {
   const query = e.select(e.User, () => ({ id: true }));
   return {} as typeof query;
-}).types([3642, "instantiations"]);
+}).types([3895, "instantiations"]);
 
 bench("select: filtered", () => {
   const query = e.select(e.User, () => ({
     filter_single: { id: e.uuid("123") },
   }));
   return {} as typeof query;
-}).types([5384, "instantiations"]);
+}).types([5386, "instantiations"]);
 
 bench("select: nested", () => {
   const user = e.select(e.User, () => ({
@@ -31,7 +31,7 @@ bench("select: nested", () => {
   const query = e.select(user, () => ({ id: true }));
 
   return {} as typeof query;
-}).types([7412, "instantiations"]);
+}).types([7593, "instantiations"]);
 
 bench("select: complex", () => {
   const query = e.select(e.Movie, () => ({
@@ -43,7 +43,7 @@ bench("select: complex", () => {
     }),
   }));
   return {} as typeof query;
-}).types([6339, "instantiations"]);
+}).types([6556, "instantiations"]);
 
 bench("select: with filter", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -55,7 +55,7 @@ bench("select: with filter", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([98669, "instantiations"]);
+}).types([6690, "instantiations"]);
 
 bench("select: with order", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -68,7 +68,7 @@ bench("select: with order", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([98963, "instantiations"]);
+}).types([6985, "instantiations"]);
 
 bench("select: with limit", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -81,7 +81,7 @@ bench("select: with limit", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([98694, "instantiations"]);
+}).types([6713, "instantiations"]);
 
 bench("select: with offset", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -94,5 +94,4 @@ bench("select: with offset", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([98730, "instantiations"]);
-
+}).types([6752, "instantiations"]);
