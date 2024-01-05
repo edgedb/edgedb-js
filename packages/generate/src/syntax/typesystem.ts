@@ -31,8 +31,8 @@ export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
 
 export interface ScalarType<
   Name extends string = string,
-  TsType extends any = any,
-  TsArgType extends any = TsType,
+  TsType = any,
+  TsArgType = TsType,
   TsConstType extends TsType = TsType
 > extends BaseType {
   __kind__: TypeKind.scalar;
@@ -47,13 +47,14 @@ export type scalarTypeWithConstructor<
   ExtraTsTypes = never
 > = S & {
   // tslint:disable-next-line
-  <T extends S["__tstype__"] | ExtraTsTypes>(val: T): $expr_Literal<
-    ScalarType<
-      S["__name__"],
-      S["__tstype__"],
-      S["__tsargtype__"],
-      T extends S["__tstype__"] ? T : S["__tstype__"]
-    >
+  <
+    T extends S["__tstype__"] | ExtraTsTypes,
+  >(
+    val: T
+  ): $expr_Literal<
+    Omit<S, "__tsconsttype__"> & {
+      __tsconsttype__: T extends S["__tstype__"] ? T : S["__tstype__"];
+    }
   >;
 };
 
