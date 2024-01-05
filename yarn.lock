@@ -10,6 +10,26 @@
     "@jridgewell/gen-mapping" "^0.3.0"
     "@jridgewell/trace-mapping" "^0.3.9"
 
+"@arktype/attest@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@arktype/attest/-/attest-0.5.0.tgz#bee97b89603af05ca77a5aed07cef77f746d386b"
+  integrity sha512-MRWnjq2rAJLhPZP9GqWHLyIOBomzxcJxHdzANNcEZV/EXdutS4YumdoHi3NEsk6zt0kscqk4reRRPnUa2zwhrQ==
+  dependencies:
+    "@arktype/fs" "0.0.10"
+    "@arktype/util" "0.0.16"
+    "@typescript/vfs" "1.5.0"
+    arktype latest
+
+"@arktype/fs@0.0.10":
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/@arktype/fs/-/fs-0.0.10.tgz#2d728c99856554a08725b81d970bd1dc1a4e0d91"
+  integrity sha512-aPYLmcdS7eHUftTQOyPZRdoMWrvuk4m0LwO6dB9fwKqJTngnizWAeP0AS+tMincPhdZEahRyX0ju9Czvdm/zkQ==
+
+"@arktype/util@0.0.16":
+  version "0.0.16"
+  resolved "https://registry.yarnpkg.com/@arktype/util/-/util-0.0.16.tgz#2401e3ac238f135ab1fa81ad4f849d0783318534"
+  integrity sha512-a10hhQ5E95tV0wfi8N9/74Uo6mRDHjeGWaHsyZriq4a9srZ9AbJ3UlYUQfIaQgsxLIuMw3kdClsE/H3tMdZKvw==
+
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.18.6", "@babel/code-frame@^7.21.4":
   version "7.21.4"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.21.4.tgz#d0fa9e4413aca81f2b23b9442797bda1826edb39"
@@ -1459,6 +1479,13 @@
     "@typescript-eslint/types" "5.60.1"
     eslint-visitor-keys "^3.3.0"
 
+"@typescript/vfs@1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@typescript/vfs/-/vfs-1.5.0.tgz#ed942922724f9ace8c07c80b006c47e5e3833218"
+  integrity sha512-AJS307bPgbsZZ9ggCT3wwpg3VbTKMFNHfaY/uF0ahSkYYrPF2dSSKDNIDIQAHm9qJqbLvCsSJH7yN4Vs/CsMMg==
+  dependencies:
+    debug "^4.1.1"
+
 "@web3-storage/multipart-parser@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@web3-storage/multipart-parser/-/multipart-parser-1.0.0.tgz#6b69dc2a32a5b207ba43e556c25cc136a56659c4"
@@ -1567,6 +1594,11 @@ argparse@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/argparse/-/argparse-2.0.1.tgz#246f50f3ca78a3240f6c997e8a9bd1eac49e4b38"
   integrity sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==
+
+arktype@latest:
+  version "1.0.28-alpha"
+  resolved "https://registry.yarnpkg.com/arktype/-/arktype-1.0.28-alpha.tgz#26cb8ea9fef86a4dbae4868d6e5ba98b5f34f5b7"
+  integrity sha512-cjakiZXXa4+y1OL0oFk0HRjIrEwJhNNvkqXkiR53SOpyKHwSqFrjrQkY4K8MlnQybRhd/y4OG4NVDR1Ea4WDkQ==
 
 array-flatten@1.1.1:
   version "1.1.1"
