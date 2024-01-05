@@ -373,7 +373,7 @@ For the router factories and route middleware, see the sections above for config
 ### `ExpressAuthSession`
 
 - `client: Client`: `ext::auth::auth_token` global set based on the auth token that is present in the authentication cookie. If there is no cookie, the `Client` will be the original client that was passed when creating the `ExpressAuth` object.
-- `isLoggedIn: () => Promise<boolean>`: Checks to see if this Request has a valid, unexpired auth token.
+- `isSignedIn: () => Promise<boolean>`: Checks to see if this Request has a valid, unexpired auth token.
 
 ### `TokenData`
 

@@ -5,7 +5,7 @@ import { auth } from "@/edgedb";
 export default async function Home() {
   const session = auth.getSession();
 
-  const signedIn = await session.isLoggedIn();
+  const signedIn = await session.isSignedIn();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
