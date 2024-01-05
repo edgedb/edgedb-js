@@ -175,7 +175,7 @@ export type assert_single<
 export type ExpressionMethods<Set extends TypeSet> = {
   toEdgeQL(): string;
 
-  is<T extends ObjectTypeSet>(
+  is<T extends GenericObjectTypeSet>(
     ixn: T
   ): $expr_TypeIntersection<
     Set["__cardinality__"],
@@ -207,20 +207,53 @@ export interface EnumType<
 }
 
 //////////////////
-// OBJECTTYPE
+// GenericObjectType
 //////////////////
 
-export type ObjectTypeSet = TypeSet<ObjectType, Cardinality>;
-export type ObjectTypeExpression = TypeSet<ObjectType, Cardinality>;
+export type GenericObjectTypeSet = ObjectTypeSet<
+  string,
+  ObjectTypePointers,
+  any,
+  ExclusiveTuple
+>;
+
+export type GenericObjectTypeExpression = ObjectTypeExpression<
+  string,
+  ObjectTypePointers,
+  any,
+  ExclusiveTuple
+>;
+
+export type ObjectTypeSet<
+  Name extends string,
+  Pointers,
+  Shape,
+  Exclusives
+> = TypeSet<ObjectType<Name, Pointers, Shape, Exclusives>, Cardinality>;
+
+export type ObjectTypeExpression<
+  Name extends string,
+  Pointers,
+  Shape,
+  Exclusives
+> = TypeSet<ObjectType<Name, Pointers, Shape, Exclusives>, Cardinality>;
 
 export type ExclusiveTuple = typeutil.tupleOf<{
   [k: string]: TypeSet;
 }>;
+
+export type GenericObjectType = ObjectType<
+  string,
+  ObjectTypePointers,
+  any,
+  ExclusiveTuple
+>;
+
 export interface ObjectType<
   Name extends string = string,
-  Pointers extends ObjectTypePointers = ObjectTypePointers,
-  Shape extends object | null = any,
-  Exclusives extends ExclusiveTuple = ExclusiveTuple
+  Pointers = any,
+  Shape = any,
+  Exclusives = any
   // Polys extends Poly[] = any[]
 > extends BaseType {
   __kind__: TypeKind.object;
@@ -242,7 +275,7 @@ export type SomeType =
   | EnumType
   | ArrayType
   | TupleType
-  | ObjectType
+  | GenericObjectType
   | NamedTupleType
   | RangeType
   | MultiRangeType;
@@ -264,7 +297,7 @@ export interface PropertyDesc<
   hasDefault: HasDefault;
 }
 
-export type $scopify<Type extends ObjectType> = $expr_PathNode<
+export type $scopify<Type extends GenericObjectType> = $expr_PathNode<
   TypeSet<Type, Cardinality.One>
   // null,
   // true // exclusivity
@@ -275,7 +308,7 @@ export type PropertyShape = {
 };
 
 export interface LinkDesc<
-  Type extends ObjectType = any,
+  Type extends GenericObjectType = any,
   Card extends Cardinality = Cardinality,
   LinkProps extends PropertyShape = any,
   Exclusive extends boolean = boolean,
@@ -347,20 +380,20 @@ type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
   : never;
 
 // Element extends (scope: any) => any
-// ? Pointer["target"] extends ObjectType
+// ? Pointer["target"] extends GenericObjectType
 //   ? computeObjectShape<
 //       Pointer["target"]["__pointers__"],
 //       ReturnType<Element>
 //     >
 //   : never
 // : Element extends object
-// ? Pointer["target"] extends ObjectType
+// ? Pointer["target"] extends GenericObjectType
 //   ? computeObjectShape<Pointer["target"]["__pointers__"], Element>
 //   : never
 // : never;
 
 export type $expr_PolyShapeElement<
-  PolyType extends ObjectTypeSet = ObjectTypeSet,
+  PolyType extends GenericObjectTypeSet = GenericObjectTypeSet,
   ShapeElement extends any = any
 > = {
   __kind__: ExpressionKind.PolyShapeElement;
@@ -692,7 +725,7 @@ export interface MultiRangeType<
 /////////////////////
 export type orLiteralValue<Set extends TypeSet> =
   | Set
-  | (Set["__element__"] extends ObjectType
+  | (Set["__element__"] extends GenericObjectType
       ? never
       : computeTsType<Set["__element__"], Set["__cardinality__"]>);
 
@@ -715,7 +748,7 @@ export type BaseTypeToTsType<
   ? TupleItemsToTsType<Type["__items__"], isParam>
   : Type extends NamedTupleType
   ? typeutil.flatten<NamedTupleTypeToTsType<Type, isParam>>
-  : Type extends ObjectType
+  : Type extends GenericObjectType
   ? typeutil.flatten<
       computeObjectShape<Type["__pointers__"], Type["__shape__"]>
     >
@@ -786,7 +819,7 @@ export function isScalarType(type: BaseType): type is ScalarType {
 export function isEnumType(type: BaseType): type is EnumType {
   return type.__kind__ === TypeKind.enum;
 }
-export function isObjectType(type: BaseType): type is ObjectType {
+export function isGenericObjectType(type: BaseType): type is GenericObjectType {
   return type.__kind__ === TypeKind.object;
 }
 export function isTupleType(type: BaseType): type is TupleType {
@@ -802,7 +835,7 @@ export function isArrayType(type: BaseType): type is ArrayType {
 export type NonArrayType =
   | ScalarType
   | EnumType
-  | ObjectType
+  | GenericObjectType
   | TupleType
   | NamedTupleType
   | RangeType
@@ -810,7 +843,7 @@ export type NonArrayType =
 
 export type AnyTupleType = TupleType | NamedTupleType;
 
-export type AnyObjectType = ObjectType;
+export type AnyGenericObjectType = GenericObjectType;
 
 export type ParamType =
   | ScalarType
