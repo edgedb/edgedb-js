@@ -22,6 +22,7 @@ import { $queryFunc, $queryFuncJSON } from "./query";
 import type {
   BaseType,
   Expression,
+  GenericObjectTypeSet,
   LinkDesc,
   ObjectType,
   ObjectTypePointers,
@@ -36,7 +37,7 @@ import type {
 // get the set representing the result of a path traversal
 // including cardinality merging
 type getChildOfObjectTypeSet<
-  Root extends ObjectTypeSet,
+  Root extends GenericObjectTypeSet,
   ChildKey extends keyof Root["__element__"]["__pointers__"]
 > = TypeSet<
   Root["__element__"]["__pointers__"][ChildKey]["target"],
@@ -48,14 +49,14 @@ type getChildOfObjectTypeSet<
 
 // path parent must be object expression
 export interface PathParent<
-  Parent extends ObjectTypeSet = ObjectTypeSet,
+  Parent extends GenericObjectTypeSet = GenericObjectTypeSet,
   L extends string = string
 > {
   type: Parent;
   linkName: L;
 }
 
-export type $linkPropify<Root extends ObjectTypeSet> = Root extends {
+export type $linkPropify<Root extends GenericObjectTypeSet> = Root extends {
   __parent__: PathParent<infer Parent, infer L>;
 }
   ? // tslint:disable-next-line
@@ -75,14 +76,14 @@ export type $linkPropify<Root extends ObjectTypeSet> = Root extends {
 export type $pathify<
   Root extends TypeSet
   // Parent extends PathParent | null = null
-> = Root extends ObjectTypeSet
-  ? ObjectTypeSet extends Root
+> = Root extends GenericObjectTypeSet
+  ? GenericObjectTypeSet extends Root
     ? {} // Root is literally ObjectTypeSet
     : pathifyPointers<Root> & pathifyShape<Root> & $linkPropify<Root>
   : {}; // pathify does nothing on non-object types
 
 export type pathifyPointers<
-  Root extends ObjectTypeSet
+  Root extends GenericObjectTypeSet
   // Parent extends PathParent | null = null
 > = ObjectTypePointers extends Root["__element__"]["__pointers__"]
   ? unknown
@@ -96,7 +97,7 @@ export type pathifyPointers<
             // Root["__element__"]["__pointers__"][k]["exclusive"]
           >
         : Root["__element__"]["__pointers__"][k] extends LinkDesc
-        ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
+        ? getChildOfObjectTypeSet<Root, k> extends GenericObjectTypeSet
           ? $expr_PathNode<
               getChildOfObjectTypeSet<Root, k>,
               { type: anonymizeObjectTypeSet<Root>; linkName: k }
@@ -106,7 +107,7 @@ export type pathifyPointers<
         : unknown;
     };
 
-type anonymizeObjectTypeSet<T extends ObjectTypeSet> = typeutil.flatten<{
+type anonymizeObjectTypeSet<T extends GenericObjectTypeSet> = typeutil.flatten<{
   __element__: ObjectType<
     T["__element__"]["__name__"],
     T["__element__"]["__pointers__"],
@@ -116,12 +117,12 @@ type anonymizeObjectTypeSet<T extends ObjectTypeSet> = typeutil.flatten<{
 }>;
 
 export type pathifyShape<
-  Root extends ObjectTypeSet,
+  Root extends GenericObjectTypeSet,
   Shape extends { [k: string]: any } = Root["__element__"]["__shape__"]
 > = string extends keyof Shape
   ? {}
   : {
-      [k in keyof Shape & string]: Shape[k] extends ObjectTypeSet
+      [k in keyof Shape & string]: Shape[k] extends GenericObjectTypeSet
         ? $expr_PathNode<
             TypeSet<
               Shape[k]["__element__"],
@@ -152,7 +153,7 @@ export type pathifyShape<
 
 type pathifyLinkProps<
   Props extends PropertyShape,
-  Root extends ObjectTypeSet,
+  Root extends GenericObjectTypeSet,
   Parent extends PathParent | null = null
 > = {
   [k in keyof Props & string]: Props[k] extends PropertyDesc
@@ -180,7 +181,7 @@ export type getPropsShape<T extends ObjectType> = typeutil.flatten<
 >;
 
 export type $expr_PathNode<
-  Root extends ObjectTypeSet = ObjectTypeSet,
+  Root extends GenericObjectTypeSet = GenericObjectTypeSet,
   Parent extends PathParent | null = PathParent | null
   // Exclusive extends boolean = boolean
 > = Expression<{
@@ -251,7 +252,7 @@ function getStarShapeFromPointers(pointers: ObjectTypePointers) {
 }
 
 function PathNode<
-  Root extends ObjectTypeSet,
+  Root extends GenericObjectTypeSet,
   Parent extends PathParent | null
   // Exclusive extends boolean = boolean
 >(
@@ -315,7 +316,7 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
     return _root as any;
   }
 
-  const root: $expr_PathNode<ObjectTypeSet> = _root as any;
+  const root: $expr_PathNode<GenericObjectTypeSet> = _root as any;
 
   let pointers = {
     ...root.__element__.__pointers__,
@@ -354,7 +355,7 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
   return new Proxy(root, pathifyProxyHandlers);
 }
 
-function isFunc(this: any, expr: ObjectTypeSet) {
+function isFunc(this: any, expr: GenericObjectTypeSet) {
   return $expressionify({
     __kind__: ExpressionKind.TypeIntersection,
     __cardinality__: this.__cardinality__,

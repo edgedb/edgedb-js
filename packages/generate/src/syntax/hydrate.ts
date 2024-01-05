@@ -7,6 +7,7 @@ import type {
   LinkDesc,
   PropertyDesc,
   TupleType,
+  GenericObjectType,
 } from "./typesystem";
 
 import { util, TypeKind } from "edgedb/dist/reflection/index";
@@ -242,8 +243,8 @@ export type mergeObjectShapes<
 }>;
 
 export type mergeObjectTypes<
-  A extends ObjectType | undefined,
-  B extends ObjectType | undefined
+  A extends GenericObjectType | undefined,
+  B extends GenericObjectType | undefined
 > = A extends ObjectType
   ? B extends ObjectType
     ? ObjectType<
@@ -256,10 +257,10 @@ export type mergeObjectTypes<
   ? B
   : undefined;
 
-export function $mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
-  a: A,
-  b: B
-): mergeObjectTypes<A, B> {
+export function $mergeObjectTypes<
+  A extends GenericObjectType,
+  B extends GenericObjectType
+>(a: A, b: B): mergeObjectTypes<A, B> {
   const obj = {
     __kind__: TypeKind.object,
     __name__: `${a.__name__} UNION ${b.__name__}`,

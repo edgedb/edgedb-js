@@ -7,6 +7,7 @@ import type {
   $scopify,
   PropertyDesc,
   LinkDesc,
+  GenericObjectTypeSet,
 } from "./typesystem";
 import {
   Cardinality,
@@ -92,7 +93,7 @@ const cube = makeGroupingSet("cube");
 const setFuncs = { set, tuple, rollup, cube };
 
 export type $expr_Group<
-  Expr extends ObjectTypeSet = ObjectTypeSet,
+  Expr extends GenericObjectTypeSet = GenericObjectTypeSet,
   Mods extends GroupModifiers = GroupModifiers,
   Shape extends object = { id: true }
 > = Expression<{
@@ -166,14 +167,14 @@ export type $expr_Group<
   // bit of a lie, this is a GroupingSet at runtime
   __modifiers__: Mods;
   __kind__: ExpressionKind.Group;
-  __expr__: ObjectTypeSet;
-  __scope__: ObjectTypeSet;
+  __expr__: GenericObjectTypeSet;
+  __scope__: GenericObjectTypeSet;
 }>;
 
 // type modifierKeys = "by";
 type noUndefined<T> = T extends undefined ? never : T;
 type groupFunc = <
-  Expr extends ObjectTypeSet,
+  Expr extends GenericObjectTypeSet,
   // Shape extends GroupModifiers
   // Grps extends SimpleGroupElements,
   Shape extends { by?: SimpleGroupElements } & objectTypeToSelectShape<
@@ -313,7 +314,7 @@ function resolveShape(
   const shape: any = {};
 
   // get scoped object if expression is objecttypeset
-  const scope = $getScopedExpr(expr as any) as ObjectTypeSet;
+  const scope = $getScopedExpr(expr as any) as GenericObjectTypeSet;
 
   // execute getter with scope
   const selectShape =

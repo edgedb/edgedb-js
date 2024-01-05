@@ -35,6 +35,8 @@ import type {
   BaseType,
   ExclusiveTuple,
   orLiteralValue,
+  GenericObjectTypeExpression,
+  GenericObjectTypeSet,
 } from "./typesystem";
 
 import {
@@ -103,7 +105,7 @@ export type exclusivesToFilterSingle<E extends ExclusiveTuple> =
     ? never
     : {
         [j in keyof E]: {
-          [k in keyof E[j]]: E[j][k] extends ObjectTypeSet
+          [k in keyof E[j]]: E[j][k] extends GenericObjectTypeSet
             ? TypeSet<
                 anonymizeObject<E[j][k]["__element__"]>,
                 E[j][k]["__cardinality__"]
@@ -209,7 +211,7 @@ export type $expr_Select<Set extends TypeSet = TypeSet> = Expression<{
   __expr__: TypeSet;
   __kind__: ExpressionKind.Select;
   __modifiers__: NormalisedSelectModifiers;
-  __scope__?: ObjectTypeExpression;
+  __scope__?: GenericObjectTypeExpression;
 }>;
 // Modifier methods removed for now, until we can fix typescript inference
 // problems / excessively deep errors
@@ -220,7 +222,7 @@ export interface SelectModifierMethods<Root extends TypeSet> {
     filter:
       | Filter
       | ((
-          scope: Root extends ObjectTypeSet
+          scope: Root extends GenericObjectTypeSet
             ? $scopify<Root["__element__"]>
             : stripSet<Root>
         ) => Filter)
@@ -229,7 +231,7 @@ export interface SelectModifierMethods<Root extends TypeSet> {
     order_by:
       | OrderByExpression
       | ((
-          scope: Root extends ObjectTypeSet
+          scope: Root extends GenericObjectTypeSet
             ? $scopify<Root["__element__"]>
             : stripSet<Root>
         ) => OrderByExpression)
@@ -239,7 +241,7 @@ export interface SelectModifierMethods<Root extends TypeSet> {
       | OffsetExpression
       | number
       | ((
-          scope: Root extends ObjectTypeSet
+          scope: Root extends GenericObjectTypeSet
             ? $scopify<Root["__element__"]>
             : stripSet<Root>
         ) => OffsetExpression | number)
@@ -256,7 +258,7 @@ export interface SelectModifierMethods<Root extends TypeSet> {
       | LimitExpression
       | number
       | ((
-          scope: Root extends ObjectTypeSet
+          scope: Root extends GenericObjectTypeSet
             ? $scopify<Root["__element__"]>
             : stripSet<Root>
         ) => LimitExpression | number)
@@ -368,7 +370,7 @@ export type InferOffsetLimitCardinality<
 //   Modifiers
 // >;
 export type ComputeSelectCardinality<
-  Expr extends ObjectTypeExpression,
+  Expr extends GenericObjectTypeExpression,
   Modifiers extends UnknownSelectModifiers
 > = InferOffsetLimitCardinality<
   undefined extends Modifiers["filter_single"]
@@ -378,7 +380,7 @@ export type ComputeSelectCardinality<
 >;
 
 export function is<
-  Expr extends ObjectTypeExpression,
+  Expr extends GenericObjectTypeExpression,
   Shape extends objectTypeToSelectShape<Expr["__element__"]>
 >(
   expr: Expr,
@@ -580,16 +582,17 @@ export function $handleModifiers(
   };
 }
 
-export type $expr_Delete<Root extends ObjectTypeSet = ObjectTypeSet> =
-  Expression<{
-    __kind__: ExpressionKind.Delete;
-    __element__: Root["__element__"];
-    __cardinality__: Root["__cardinality__"];
-    __expr__: ObjectTypeSet;
-  }>;
+export type $expr_Delete<
+  Root extends GenericObjectTypeSet = GenericObjectTypeSet
+> = Expression<{
+  __kind__: ExpressionKind.Delete;
+  __element__: Root["__element__"];
+  __cardinality__: Root["__cardinality__"];
+  __expr__: GenericObjectTypeSet;
+}>;
 
 function deleteExpr<
-  Expr extends ObjectTypeExpression,
+  Expr extends GenericObjectTypeExpression,
   Modifiers extends SelectModifiers<Expr["__element__"]>
 >(
   expr: Expr,
@@ -847,7 +850,7 @@ export const $existingScopes = new Set<
 >();
 
 function $shape<
-  Expr extends ObjectTypeExpression,
+  Expr extends GenericObjectTypeExpression,
   Shape extends objectTypeToSelectShape<Expr["__element__"]> &
     SelectModifiers<Expr["__element__"]> // <Expr["__element__"]>
 >(
@@ -866,7 +869,7 @@ function $shape(_a: unknown, b: (...args: any) => any) {
 }
 export { $shape as shape };
 
-export function select<Expr extends ObjectTypeExpression>(
+export function select<Expr extends GenericObjectTypeExpression>(
   expr: Expr
 ): $expr_Select<{
   __element__: ObjectType<
@@ -880,7 +883,7 @@ export function select<Expr extends TypeSet>(
   expr: Expr
 ): $expr_Select<stripSet<Expr>>;
 export function select<
-  Expr extends ObjectTypeExpression,
+  Expr extends GenericObjectTypeExpression,
   Shape extends objectTypeToSelectShape<Expr["__element__"]> &
     SelectModifiers<Expr["__element__"]>,
   Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
@@ -1025,7 +1028,7 @@ export function select(...args: any[]) {
   }
   if (!shapeGetter) {
     if (expr.__element__.__kind__ === TypeKind.object) {
-      const objectExpr: ObjectTypeSet = expr as any;
+      const objectExpr: GenericObjectTypeSet = expr as any;
       return $expressionify(
         $selectify({
           __kind__: ExpressionKind.Select,
@@ -1132,7 +1135,7 @@ function resolveShape(
 export function resolveShapeElement(
   key: any,
   value: any,
-  scope: ObjectTypeExpression
+  scope: GenericObjectTypeExpression
 ): any {
   // if value is a nested closure
   // or a nested shape object

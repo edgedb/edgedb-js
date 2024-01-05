@@ -4,18 +4,19 @@ import type {
   BaseType,
   TypeSet,
   ObjectTypeExpression,
+  GenericObjectTypeExpression,
 } from "./typesystem";
 import { $expressionify } from "./path";
 import type { orScalarLiteral } from "./castMaps";
 import { literalToTypeSet } from "./castMaps";
 
-export function cast<Target extends BaseType | ObjectTypeExpression>(
+export function cast<Target extends BaseType | GenericObjectTypeExpression>(
   target: Target,
   arg: null
 ): $expr_Cast<
   Target extends BaseType
     ? Target
-    : Target extends ObjectTypeExpression
+    : Target extends GenericObjectTypeExpression
     ? Target["__element__"]
     : never,
   Cardinality.Empty

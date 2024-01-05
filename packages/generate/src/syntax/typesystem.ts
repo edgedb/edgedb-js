@@ -819,7 +819,7 @@ export function isScalarType(type: BaseType): type is ScalarType {
 export function isEnumType(type: BaseType): type is EnumType {
   return type.__kind__ === TypeKind.enum;
 }
-export function isGenericObjectType(type: BaseType): type is GenericObjectType {
+export function isObjectType(type: BaseType): type is GenericObjectType {
   return type.__kind__ === TypeKind.object;
 }
 export function isTupleType(type: BaseType): type is TupleType {

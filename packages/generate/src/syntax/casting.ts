@@ -16,6 +16,7 @@ import type {
   TypeSet,
   RangeType,
   MultiRangeType,
+  GenericObjectTypeSet,
 } from "./typesystem";
 import type { cardutil } from "./cardinality";
 
@@ -90,7 +91,7 @@ export type setToAssignmentExpression<
           >
         >
       | getAssignmentLiteral<Set, IsSetModifier>
-  : [Set] extends [ObjectTypeSet]
+  : [Set] extends [GenericObjectTypeSet]
   ? TypeSet<
       ObjectType<
         // anonymize the object type

@@ -17,6 +17,7 @@ import type {
   TypeSet,
   ObjectType,
   NamedTupleType,
+  GenericObjectTypeSet,
 } from "./typesystem";
 import type { pointerToAssignmentExpression } from "./casting";
 import { $expressionify, $getScopedExpr } from "./path";
@@ -164,9 +165,9 @@ export function $insertify(
 }
 
 export function $normaliseInsertShape(
-  root: ObjectTypeSet,
+  root: GenericObjectTypeSet,
   shape: { [key: string]: any },
-  isUpdate: boolean = false
+  isUpdate = false
 ): { [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet } } {
   const newShape: {
     [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet };

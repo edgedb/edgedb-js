@@ -14,6 +14,7 @@ import {
   TypeKind,
   util,
 } from "edgedb/dist/reflection/index";
+import type { GenericObjectTypeSet } from "./typesystem";
 import {
   type $expr_Array,
   type $expr_NamedTuple,
@@ -380,7 +381,7 @@ function walkExprTree(
         param = param.__shapeElement__;
       }
       if (typeof param === "object") {
-        if (!!(param as any).__kind__) {
+        if ((param as any).__kind__) {
           // param is expression
           childExprs.push(...walkExprTree(param as any, expr as any, ctx));
         } else {
@@ -518,7 +519,7 @@ function walkExprTree(
           // don't walk shape twice if select expr justs wrap another object
           // type expr with the same shape
           expr.__element__.__shape__ !==
-            (expr.__expr__ as ObjectTypeSet).__element__.__shape__
+            (expr.__expr__ as GenericObjectTypeSet).__element__.__shape__
         ) {
           walkShape(expr.__element__.__shape__ ?? {});
         }
@@ -656,8 +657,8 @@ function walkExprTree(
 function renderEdgeQL(
   _expr: TypeSet,
   ctx: RenderCtx,
-  renderShape: boolean = true,
-  noImplicitDetached: boolean = false
+  renderShape = true,
+  noImplicitDetached = false
 ): string {
   if (!(_expr as any).__kind__) {
     throw new Error("Invalid expression.");
@@ -955,7 +956,7 @@ function renderEdgeQL(
 
       if (
         expr.__element__.__shape__ !==
-        (expr.__expr__ as ObjectTypeSet).__element__.__shape__
+        (expr.__expr__ as GenericObjectTypeSet).__element__.__shape__
       ) {
         lines.push(
           shapeToEdgeQL(
@@ -1256,8 +1257,8 @@ function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
   type: ObjectType | null = null,
-  keysOnly: boolean = false,
-  injectImplicitId: boolean = true
+  keysOnly = false,
+  injectImplicitId = true
 ) {
   const pointers = type?.__pointers__ || null;
   const isFreeObject = type?.__name__ === "std::FreeObject";
@@ -1284,10 +1285,10 @@ function shapeToEdgeQL(
     let polyType: SomeExpression | null = null;
 
     if (typeof val === "object" && !val.__element__) {
-      if (!!val["+="]) {
+      if (val["+="]) {
         operator = "+=";
         val = val["+="];
-      } else if (!!val["-="]) {
+      } else if (val["-="]) {
         operator = "-=";
         val = val["-="];
       }
@@ -1564,7 +1565,7 @@ function indent(str: string, depth: number) {
 
 // backtick quote identifiers if needed
 // https://github.com/edgedb/edgedb/blob/master/edb/edgeql/quote.py
-function q(ident: string, allowBacklinks: boolean = true): string {
+function q(ident: string, allowBacklinks = true): string {
   if (
     !ident ||
     ident.startsWith("@") ||

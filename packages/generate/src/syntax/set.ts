@@ -12,6 +12,7 @@ import type {
   ObjectType,
   getPrimitiveBaseType,
   SomeType,
+  GenericObjectTypeSet,
 } from "./typesystem";
 
 import { $mergeObjectTypes, type mergeObjectTypes } from "./hydrate";
@@ -209,7 +210,7 @@ export type getTypesFromExprs<Exprs extends [TypeSet, ...TypeSet[]]> = {
 };
 
 export type getTypesFromObjectExprs<
-  Exprs extends [ObjectTypeSet, ...ObjectTypeSet[]]
+  Exprs extends [GenericObjectTypeSet, ...GenericObjectTypeSet[]]
 > = {
   [k in keyof Exprs]: Exprs[k] extends TypeSet<infer El, any> ? El : never;
 };

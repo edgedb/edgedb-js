@@ -12,6 +12,7 @@ import type {
   $expr_TuplePath,
   ArrayType,
   BaseType,
+  GenericObjectTypeExpression,
   getPrimitiveBaseType,
   NamedTupleLiteralShape,
   NamedTupleShape,
@@ -315,7 +316,9 @@ type PropertyNamesFromPointers<Pointers extends ObjectTypePointers> = {
     : never]: Pointers[k];
 };
 
-export function $objectTypeToTupleType<Expr extends ObjectTypeExpression>(
+export function $objectTypeToTupleType<
+  Expr extends GenericObjectTypeExpression
+>(
   objectType: Expr
 ): PropertyNamesFromPointers<
   Expr["__element__"]["__pointers__"]
@@ -329,7 +332,7 @@ export function $objectTypeToTupleType<Expr extends ObjectTypeExpression>(
     : never
   : never;
 export function $objectTypeToTupleType<
-  Expr extends ObjectTypeExpression,
+  Expr extends GenericObjectTypeExpression,
   Fields extends keyof PropertyNamesFromPointers<
     Expr["__element__"]["__pointers__"]
   >
@@ -343,7 +346,7 @@ export function $objectTypeToTupleType<
 }>;
 export function $objectTypeToTupleType(...args: any[]): any {
   const [objExpr, fields] = args as [
-    ObjectTypeExpression,
+    GenericObjectTypeExpression,
     string[] | undefined
   ];
   const shape = Object.entries(objExpr.__element__.__pointers__).reduce(
