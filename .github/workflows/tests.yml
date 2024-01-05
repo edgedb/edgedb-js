@@ -21,16 +21,16 @@ jobs:
         edgedb-version: ["stable"]
         include:
           - os: ubuntu-latest
-            node-version: "18"
+            node-version: "20"
             edgedb-version: "nightly"
           - os: ubuntu-latest
-            node-version: "18"
+            node-version: "20"
             edgedb-version: "3"
           - os: ubuntu-latest
-            node-version: "18"
+            node-version: "20"
             edgedb-version: "2"
           - os: macos-latest
-            node-version: "18"
+            node-version: "20"
             edgedb-version: "stable"
 
     steps:
