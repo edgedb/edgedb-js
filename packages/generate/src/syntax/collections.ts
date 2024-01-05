@@ -18,7 +18,6 @@ import type {
   NamedTupleShape,
   NamedTupleType,
   NonArrayType,
-  ObjectTypeExpression,
   ObjectTypePointers,
   PropertyDesc,
   TupleType,

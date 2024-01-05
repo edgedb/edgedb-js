@@ -1,10 +1,9 @@
-import { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index";
+import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
 import type {
-  Expression,
   BaseType,
-  TypeSet,
-  ObjectTypeExpression,
+  Expression,
   GenericObjectTypeExpression,
+  TypeSet,
 } from "./typesystem";
 import { $expressionify } from "./path";
 import type { orScalarLiteral } from "./castMaps";

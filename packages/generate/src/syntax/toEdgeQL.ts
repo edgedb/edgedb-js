@@ -27,7 +27,6 @@ import {
   isObjectType,
   isTupleType,
   type ObjectType,
-  type ObjectTypeSet,
   type RangeType,
   type TypeSet,
 } from "./typesystem";

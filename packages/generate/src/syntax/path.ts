@@ -26,7 +26,6 @@ import type {
   LinkDesc,
   ObjectType,
   ObjectTypePointers,
-  ObjectTypeSet,
   PropertyDesc,
   PropertyShape,
   TypeSet,

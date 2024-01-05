@@ -7,7 +7,6 @@ import {
 import type {
   Expression,
   LinkDesc,
-  ObjectTypeSet,
   ObjectTypePointers,
   PropertyDesc,
   stripBacklinks,

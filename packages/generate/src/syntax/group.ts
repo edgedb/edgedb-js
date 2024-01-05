@@ -1,7 +1,6 @@
 import type {
   Expression,
   ObjectType,
-  ObjectTypeSet,
   TypeSet,
   BaseType,
   $scopify,

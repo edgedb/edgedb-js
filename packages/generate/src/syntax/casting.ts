@@ -8,7 +8,6 @@ import type {
   LinkDesc,
   NamedTupleType,
   ObjectType,
-  ObjectTypeSet,
   PrimitiveTypeSet,
   PropertyDesc,
   ScalarType,

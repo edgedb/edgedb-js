@@ -5,7 +5,6 @@ import type {
   BaseTypeTuple,
   BaseType,
   NamedTupleType,
-  ObjectTypeSet,
   TypeSet,
   TupleType,
   Expression,
