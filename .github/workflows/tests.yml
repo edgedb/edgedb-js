@@ -107,6 +107,7 @@ jobs:
         if: ${{ matrix.edgedb-version == '3' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
           yarn workspace @edgedb/integration-lts test:ci
+          yarn workspace @edgedb/integration-lts run bench:types
 
       - name: Run query builder integration tests stable
         if: ${{ matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
@@ -125,10 +126,6 @@ jobs:
       - name: Run create-app tests
         run: |
           yarn workspace @edgedb/create test
-
-      - name: Run benchmarks
-        run: |
-          yarn workspace @edgedb/integration-lts run bench:types
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.
