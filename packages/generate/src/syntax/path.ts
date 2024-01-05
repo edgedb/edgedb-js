@@ -26,6 +26,7 @@ import type {
   LinkDesc,
   ObjectType,
   ObjectTypePointers,
+  ObjectTypeSet,
   PropertyDesc,
   PropertyShape,
   TypeSet,
@@ -75,8 +76,8 @@ export type $linkPropify<Root extends GenericObjectTypeSet> = Root extends {
 export type $pathify<
   Root extends TypeSet
   // Parent extends PathParent | null = null
-> = Root extends GenericObjectTypeSet
-  ? GenericObjectTypeSet extends Root
+> = Root extends ObjectTypeSet<string, any, any, any>
+  ? ObjectTypeSet<string, any, any, any> extends Root
     ? {} // Root is literally ObjectTypeSet
     : pathifyPointers<Root> & pathifyShape<Root> & $linkPropify<Root>
   : {}; // pathify does nothing on non-object types
