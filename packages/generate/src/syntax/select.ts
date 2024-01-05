@@ -881,6 +881,7 @@ export function select<Expr extends TypeSet>(
 export function select<
   Expr extends ObjectTypeExpression,
   Element extends Expr["__element__"],
+  ElementName extends `${Element["__name__"]}`,
   Scope extends $scopify<Element> &
     $linkPropify<{
       [k in keyof Expr]: k extends "__cardinality__"
@@ -888,17 +889,19 @@ export function select<
         : Expr[k];
     }>,
   Shape extends objectTypeToSelectShape<Element> & SelectModifiers<Element>,
-  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
+  SelectCard extends ComputeSelectCardinality<Expr, Modifiers>,
+  SelectShape extends normaliseShape<Shape, SelectModifierNames>,
+  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>,
 >(
   expr: Expr,
   shape: (scope: Scope) => Readonly<Shape>
 ): $expr_Select<{
   __element__: ObjectType<
-    `${Element["__name__"]}`, // _shape
+    ElementName,
     Element["__pointers__"],
-    Omit<normaliseShape<Shape>, SelectModifierNames>
+    SelectShape
   >;
-  __cardinality__: ComputeSelectCardinality<Expr, Modifiers>;
+  __cardinality__: SelectCard;
 }>;
 /*
 
