@@ -762,21 +762,24 @@ export type linkDescToSelectElement<L extends LinkDesc> =
 // pointers -> links
 // links -> target object type
 // links -> link properties
-export type objectTypeToSelectShape<T extends ObjectType = ObjectType> =
+export type objectTypeToSelectShape<
+  T extends ObjectType = ObjectType,
+  Pointers extends ObjectTypePointers = T["__pointers__"]
+> =
   // ObjectType extends T
   //   ? {[k: string]: unknown}
   //   :
   Partial<{
-    [k in keyof T["__pointers__"]]: T["__pointers__"][k] extends PropertyDesc
+    [k in keyof Pointers]: Pointers[k] extends PropertyDesc
       ?
           | boolean
           | TypeSet<
-              T["__pointers__"][k]["target"],
-              cardutil.assignable<T["__pointers__"][k]["cardinality"]>
+              Pointers[k]["target"],
+              cardutil.assignable<Pointers[k]["cardinality"]>
             >
           | $expr_PolyShapeElement
-      : T["__pointers__"][k] extends LinkDesc
-      ? linkDescToSelectElement<T["__pointers__"][k]>
+      : Pointers[k] extends LinkDesc
+      ? linkDescToSelectElement<Pointers[k]>
       : any;
   }> & { [k: string]: unknown };
 
@@ -891,16 +894,12 @@ export function select<
   Shape extends objectTypeToSelectShape<Element> & SelectModifiers<Element>,
   SelectCard extends ComputeSelectCardinality<Expr, Modifiers>,
   SelectShape extends normaliseShape<Shape, SelectModifierNames>,
-  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>,
+  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
   shape: (scope: Scope) => Readonly<Shape>
 ): $expr_Select<{
-  __element__: ObjectType<
-    ElementName,
-    Element["__pointers__"],
-    SelectShape
-  >;
+  __element__: ObjectType<ElementName, Element["__pointers__"], SelectShape>;
   __cardinality__: SelectCard;
 }>;
 /*
