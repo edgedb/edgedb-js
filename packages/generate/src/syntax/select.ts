@@ -353,10 +353,10 @@ export interface SelectModifierMethods<Root extends TypeSet> {
 
 export type InferOffsetLimitCardinality<
   Card extends Cardinality,
-  Modifers extends UnknownSelectModifiers
-> = Modifers["limit"] extends number | LimitExpression
+  Modifiers extends UnknownSelectModifiers
+> = Modifiers["limit"] extends number | LimitExpression
   ? cardutil.overrideLowerBound<Card, "Zero">
-  : Modifers["offset"] extends number | OffsetExpression
+  : Modifiers["offset"] extends number | OffsetExpression
   ? cardutil.overrideLowerBound<Card, "Zero">
   : Card;
 
@@ -741,7 +741,7 @@ export type linkDescToLinkProps<Desc extends LinkDesc> = {
 export type pointersToObjectType<P extends ObjectTypePointers> = ObjectType<
   string,
   P,
-  {}
+  object
 >;
 
 type linkDescToShape<L extends LinkDesc> = objectTypeToSelectShape<
@@ -749,6 +749,7 @@ type linkDescToShape<L extends LinkDesc> = objectTypeToSelectShape<
 > &
   objectTypeToSelectShape<pointersToObjectType<L["properties"]>> &
   SelectModifiers;
+
 export type linkDescToSelectElement<L extends LinkDesc> =
   | boolean
   // | pointerToCastableExpression<Shape[k]>
@@ -868,15 +869,18 @@ function $shape(_a: unknown, b: (...args: any) => any) {
 }
 export { $shape as shape };
 
-export function select<Expr extends ObjectTypeExpression>(
+export function select<
+  Expr extends ObjectTypeExpression,
+  Element extends Expr["__element__"],
+  ElementName extends `${Element["__name__"]}`,
+  ElementPointers extends Element["__pointers__"],
+  ElementShape extends Element["__shape__"],
+  Card extends Expr["__cardinality__"]
+>(
   expr: Expr
 ): $expr_Select<{
-  __element__: ObjectType<
-    `${Expr["__element__"]["__name__"]}`, // _shape
-    Expr["__element__"]["__pointers__"],
-    Expr["__element__"]["__shape__"] // {id: true}
-  >;
-  __cardinality__: Expr["__cardinality__"];
+  __element__: ObjectType<ElementName, ElementPointers, ElementShape>;
+  __cardinality__: Card;
 }>;
 export function select<Expr extends TypeSet>(
   expr: Expr
@@ -884,16 +888,16 @@ export function select<Expr extends TypeSet>(
 export function select<
   Expr extends ObjectTypeExpression,
   Element extends Expr["__element__"],
-  ElementName extends `${Element["__name__"]}`,
+  Shape extends objectTypeToSelectShape<Element> & SelectModifiers<Element>,
+  SelectCard extends ComputeSelectCardinality<Expr, Modifiers>,
+  SelectShape extends normaliseShape<Shape, SelectModifierNames>,
   Scope extends $scopify<Element> &
     $linkPropify<{
       [k in keyof Expr]: k extends "__cardinality__"
         ? Cardinality.One
         : Expr[k];
     }>,
-  Shape extends objectTypeToSelectShape<Element> & SelectModifiers<Element>,
-  SelectCard extends ComputeSelectCardinality<Expr, Modifiers>,
-  SelectShape extends normaliseShape<Shape, SelectModifierNames>,
+  ElementName extends `${Element["__name__"]}`,
   Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>
 >(
   expr: Expr,
