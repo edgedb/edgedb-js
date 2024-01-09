@@ -44,7 +44,7 @@ export interface ScalarType<
 
 export type scalarTypeWithConstructor<
   S extends ScalarType,
-  ExtraTsTypes extends any = never
+  ExtraTsTypes = never
 > = S & {
   // tslint:disable-next-line
   <T extends S["__tstype__"] | ExtraTsTypes>(val: T): $expr_Literal<
@@ -706,7 +706,7 @@ export type BaseTypeToTsType<
   : Type extends EnumType
   ? Type["__tstype__"]
   : Type extends ArrayType<any>
-  ? typeutil.flatten<ArrayTypeToTsType<Type, isParam>>
+  ? ArrayTypeToTsType<Type, isParam>
   : Type extends RangeType
   ? Range<Type["__element__"]["__tsconsttype__"]>
   : Type extends MultiRangeType
