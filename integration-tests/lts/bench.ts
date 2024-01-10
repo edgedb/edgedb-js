@@ -49,7 +49,7 @@ bench("select: filtered", () => {
     filter_single: { id: e.uuid("123") },
   }));
   return {} as typeof query;
-}).types([5081, "instantiations"]);
+}).types([5019, "instantiations"]);
 
 bench("select: nested", () => {
   const user = e.select(e.User, () => ({
@@ -58,7 +58,7 @@ bench("select: nested", () => {
   const query = e.select(user, () => ({ id: true }));
 
   return {} as typeof query;
-}).types([6099, "instantiations"]);
+}).types([6037, "instantiations"]);
 
 bench("select: complex", () => {
   const query = e.select(e.Movie, () => ({
@@ -82,7 +82,7 @@ bench("select: with filter", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([6331, "instantiations"]);
+}).types([6289, "instantiations"]);
 
 bench("select: with order", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -95,7 +95,7 @@ bench("select: with order", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([6666, "instantiations"]);
+}).types([6624, "instantiations"]);
 
 bench("select: with limit", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -108,7 +108,7 @@ bench("select: with limit", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([6394, "instantiations"]);
+}).types([6352, "instantiations"]);
 
 bench("select: with offset", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -121,7 +121,7 @@ bench("select: with offset", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([6433, "instantiations"]);
+}).types([6391, "instantiations"]);
 
 bench("params select", () => {
   const query = e.params({ name: e.str }, (params) =>
@@ -135,4 +135,4 @@ bench("params select", () => {
     }))
   );
   return {} as typeof query;
-}).types([11907, "instantiations"]);
+}).types([11865, "instantiations"]);

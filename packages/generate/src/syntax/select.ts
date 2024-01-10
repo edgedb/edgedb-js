@@ -96,6 +96,10 @@ export type SelectModifierNames =
   | "offset"
   | "limit";
 
+type filterSingle<T extends TypeSet> = T extends ObjectTypeSet
+  ? TypeSet<anonymizeObject<T["__element__"]>, T["__cardinality__"]>
+  : orLiteralValue<T>;
+
 export type exclusivesToFilterSingle<E extends ExclusiveTuple> =
   ExclusiveTuple extends E
     ? never
@@ -103,12 +107,7 @@ export type exclusivesToFilterSingle<E extends ExclusiveTuple> =
     ? never
     : {
         [j in keyof E]: {
-          [k in keyof E[j]]: E[j][k] extends ObjectTypeSet
-            ? TypeSet<
-                anonymizeObject<E[j][k]["__element__"]>,
-                E[j][k]["__cardinality__"]
-              >
-            : orLiteralValue<E[j][k]>;
+          [k in keyof E[j]]: filterSingle<E[j][k]>;
         };
       }[number];
 export type SelectModifiers<T extends ObjectType = ObjectType> = {
