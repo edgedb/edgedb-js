@@ -750,14 +750,18 @@ type linkDescToShape<L extends LinkDesc> = objectTypeToSelectShape<
   objectTypeToSelectShape<pointersToObjectType<L["properties"]>> &
   SelectModifiers;
 
-export type linkDescToSelectElement<L extends LinkDesc> =
+type linkDescToSelectElement<L extends LinkDesc> =
   | boolean
-  // | pointerToCastableExpression<Shape[k]>
   | TypeSet<anonymizeObject<L["target"]>, cardutil.assignable<L["cardinality"]>>
   | linkDescToShape<L>
   | ((
       scope: $scopify<L["target"]> & linkDescToLinkProps<L>
     ) => linkDescToShape<L>);
+
+type propDescToSelectElement<P extends PropertyDesc> =
+  | boolean
+  | TypeSet<P["target"], cardutil.assignable<P["cardinality"]>>
+  | $expr_PolyShapeElement;
 
 // object types -> pointers
 // pointers -> links
@@ -766,23 +770,13 @@ export type linkDescToSelectElement<L extends LinkDesc> =
 export type objectTypeToSelectShape<
   T extends ObjectType = ObjectType,
   Pointers extends ObjectTypePointers = T["__pointers__"]
-> =
-  // ObjectType extends T
-  //   ? {[k: string]: unknown}
-  //   :
-  Partial<{
-    [k in keyof Pointers]: Pointers[k] extends PropertyDesc
-      ?
-          | boolean
-          | TypeSet<
-              Pointers[k]["target"],
-              cardutil.assignable<Pointers[k]["cardinality"]>
-            >
-          | $expr_PolyShapeElement
-      : Pointers[k] extends LinkDesc
-      ? linkDescToSelectElement<Pointers[k]>
-      : any;
-  }> & { [k: string]: unknown };
+> = Partial<{
+  [k in keyof Pointers]: Pointers[k] extends PropertyDesc
+    ? propDescToSelectElement<Pointers[k]>
+    : Pointers[k] extends LinkDesc
+    ? linkDescToSelectElement<Pointers[k]>
+    : any;
+}> & { [k: string]: unknown };
 
 // incorporate __shape__ (computeds) on selection shapes
 // this works but a major rewrite of setToTsType is required
