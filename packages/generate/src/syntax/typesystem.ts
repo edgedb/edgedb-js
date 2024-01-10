@@ -47,11 +47,7 @@ export type scalarTypeWithConstructor<
   ExtraTsTypes = never
 > = S & {
   // tslint:disable-next-line
-  <
-    T extends S["__tstype__"] | ExtraTsTypes,
-  >(
-    val: T
-  ): $expr_Literal<
+  <T extends S["__tstype__"] | ExtraTsTypes>(val: T): $expr_Literal<
     Omit<S, "__tsconsttype__"> & {
       __tsconsttype__: T extends S["__tstype__"] ? T : S["__tstype__"];
     }
