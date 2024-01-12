@@ -145,7 +145,7 @@ export function toTSScalarType(
         return [getRef(type.name, { prefix: "" })];
       }
 
-      if (type.material_id) {
+      if (type.material_id && !scalarToLiteralMapping[type.name]) {
         return toTSScalarType(
           types.get(type.material_id) as introspect.ScalarType,
           types,
