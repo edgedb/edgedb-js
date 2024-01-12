@@ -4,7 +4,6 @@ import path from "node:path";
 
 import debug from "debug";
 import * as p from "@clack/prompts";
-
 import { updatePackage } from "write-package";
 
 import { getPackageManager, copyTemplateFiles } from "../../utils.js";
