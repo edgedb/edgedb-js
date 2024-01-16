@@ -41,6 +41,24 @@ You can conditionally update a property by using an :ref:`optional parameter
     }))
   );
 
+Note that ``e.update`` will return just the `{ id: true }` of the updated object. If you want to select further properties, you can wrap the update in a `e.select` call.
+
+.. code-block:: typescript
+
+  e.params({ id: e.uuid, title: e.optional(e.str) }, (params) =>
+    e.select(
+      e.update(e.Movie, (movie) => ({
+        filter_single: { id: params.id },
+        set: {
+          title: e.op(params.title, "??", movie.title),
+        },
+      })),
+      (movie) => ({
+        title: movie.title,
+      }),
+    ),
+  );
+
 
 Updating links
 ^^^^^^^^^^^^^^
