@@ -41,7 +41,7 @@ You can conditionally update a property by using an :ref:`optional parameter
     }))
   );
 
-Note that ``e.update`` will return just the `{ id: true }` of the updated object. If you want to select further properties, you can wrap the update in a `e.select` call. This is still just a single query to the database.
+Note that ``e.update`` will return just the ``{ id: true }`` of the updated object. If you want to select further properties, you can wrap the update in a ``e.select`` call. This is still just a single query to the database.
 
 .. code-block:: typescript
 
