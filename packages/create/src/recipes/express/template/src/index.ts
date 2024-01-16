@@ -4,7 +4,6 @@ import { type AuthRequest } from "@edgedb/auth-express";
 
 import { styles } from "./styles.js";
 import { auth, requireAuth, signoutRoute, builtinUIRouter } from "./auth.js";
-import { router as todosRouter } from "./todos.js";
 import { PORT } from "./env.js";
 
 const app = express();
@@ -14,7 +13,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(auth.createSessionMiddleware());
 
-app.use("/api/todos", todosRouter);
+router.get("/api/deep-thought", requireAuth, async (req: AuthRequest, res) => {
+  // See more examples of making queries here: https://github.com/edgedb/edgedb-examples/blob/main/express-auth/todos.ts
+  const answer = await req.session!.client.query<number>("select 42;");
+  res.json(answer);
+});
 
 app.use("/auth", builtinUIRouter);
 app.use("/auth/signout", signoutRoute);
