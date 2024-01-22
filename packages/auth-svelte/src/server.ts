@@ -715,7 +715,7 @@ async function handleAction(
   const data = typeof dataOrCb === "object" ? dataOrCb : await req.formData();
   const callback = typeof dataOrCb === "function" ? dataOrCb : cb;
   let params;
-  let error: Error | null = new Error("mozda err");
+  let error: Error | null = null;
 
   try {
     params = (await action(data, cookies)) || {};
