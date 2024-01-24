@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/edgedb/edgedb-js.git",
-    "directory": "packages/auth-svelte"
+    "directory": "packages/auth-sveltekit"
   },
   "license": "Apache-2.0",
   "sideEffects": false,
@@ -20,17 +20,17 @@
   "devDependencies": {
     "@types/node": "^20.8.4",
     "edgedb": "^1.3.6",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "svelte": "^4.2.7",
+    "@sveltejs/kit": "^2.0.0",
+    "vite": "^5.0.3"
   },
   "peerDependencies": {
     "edgedb": "^1.3.6"
+
   },
   "dependencies": {
-    "@edgedb/auth-core": "^0.1.0-beta.1",
-    "@sveltejs/kit": "^2.0.0",
-    "svelte": "^4.2.7",
-    "vite": "^5.0.3",
-    "cookie": "^0.6.0"
+    "@edgedb/auth-core": "^0.1.0-beta.1"
   },
   "exports": {
     "./*": "./dist/*.js"
