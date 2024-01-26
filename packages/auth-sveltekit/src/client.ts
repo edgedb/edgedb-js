@@ -29,11 +29,11 @@ export function getConfig(options: AuthOptions) {
   };
 }
 
-export default function createEdgedbClientAuth(options: AuthOptions) {
-  return new EdgedbClientAuth(options);
+export default function createClientAuth(options: AuthOptions) {
+  return new ClientAuth(options);
 }
 
-export class EdgedbClientAuth {
+export class ClientAuth {
   protected readonly config: AuthConfig;
 
   /** @internal */

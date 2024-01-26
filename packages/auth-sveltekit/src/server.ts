@@ -13,7 +13,7 @@ import {
   type emailPasswordProviderName,
 } from "@edgedb/auth-core";
 import {
-  EdgedbClientAuth,
+  ClientAuth,
   getConfig,
   type AuthConfig,
   type AuthOptions,
@@ -62,8 +62,8 @@ export default function serverAuth(client: Client, options: AuthOptions) {
   const config = getConfig(options);
 
   return {
-    createEdgedbServerAuth: ({ event }: { event: RequestEvent }) =>
-      new EdgedbServerAuth(client, core, event, options),
+    createServerRequestAuth: ({ event }: { event: RequestEvent }) =>
+      new ServerRequestAuth(client, core, event, options),
     createAuthRouteHook:
       (handlers: AuthRouteHandlers): Handle =>
       ({ event, resolve }) => {
@@ -76,6 +76,183 @@ export default function serverAuth(client: Client, options: AuthOptions) {
         return resolve(event);
       },
   };
+}
+
+export class ServerRequestAuth extends ClientAuth {
+  private readonly client: Client;
+  private readonly core: Promise<Auth>;
+  private readonly cookies: Cookies;
+
+  public get session() {
+    return new AuthSession(
+      this.client,
+      this.cookies.get(this.config.authCookieName)
+    );
+  }
+
+  /** @internal */
+  constructor(
+    client: Client,
+    core: Promise<Auth>,
+    { cookies }: RequestEvent,
+    options: AuthOptions
+  ) {
+    super(options);
+
+    this.client = client;
+    this.core = core;
+    this.cookies = cookies;
+  }
+
+  isPasswordResetTokenValid(resetToken: string) {
+    return Auth.checkPasswordResetTokenValid(resetToken);
+  }
+
+  async getProvidersInfo() {
+    return (await this.core).getProvidersInfo();
+  }
+
+  async emailPasswordSignUp({
+    email,
+    password,
+  }: {
+    email: string;
+    password: string;
+  }): Promise<{ tokenData?: TokenData | null }> {
+    const result = await (
+      await this.core
+    ).signupWithEmailPassword(
+      email,
+      password,
+      `${this.config.authRoute}/emailpassword/verify`
+    );
+
+    this.cookies.set(this.config.pkceVerifierCookieName, result.verifier, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+    });
+
+    if (result.status === "complete") {
+      const tokenData = result.tokenData;
+
+      this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+      });
+
+      return { tokenData };
+    }
+
+    return { tokenData: null };
+  }
+
+  async emailPasswordResendVerificationEmail({
+    verificationToken,
+  }: {
+    verificationToken: string;
+  }): Promise<void> {
+    await (await this.core).resendVerificationEmail(verificationToken);
+  }
+
+  async emailPasswordSignIn({
+    email,
+    password,
+  }: {
+    email: string;
+    password: string;
+  }): Promise<{ tokenData?: TokenData; error?: Error }> {
+    const tokenData = await (
+      await this.core
+    ).signinWithEmailPassword(email, password);
+
+    this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+    });
+
+    return { tokenData };
+  }
+
+  async emailPasswordSendPasswordResetEmail({
+    email,
+  }: {
+    email: string;
+  }): Promise<void> {
+    if (!this.config.passwordResetPath) {
+      throw new Error(`'passwordResetPath' option not configured`);
+    }
+
+    const { verifier } = await (
+      await this.core
+    ).sendPasswordResetEmail(
+      email,
+      new URL(this.config.passwordResetPath, this.config.baseUrl).toString()
+    );
+
+    this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+    });
+  }
+
+  async emailPasswordResetPassword({
+    resetToken,
+    password,
+  }: {
+    resetToken: string;
+    password: string;
+  }): Promise<{ tokenData: TokenData }> {
+    const verifier = this.cookies.get(this.config.pkceVerifierCookieName);
+
+    if (!verifier) {
+      throw new Error("no pkce verifier cookie found");
+    }
+
+    const tokenData = await (
+      await this.core
+    ).resetPasswordWithResetToken(resetToken, verifier, password);
+
+    this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
+
+    this.cookies.delete(this.config.pkceVerifierCookieName, {
+      path: "/",
+    });
+    return { tokenData };
+  }
+
+  async signout(): Promise<void> {
+    this.cookies.delete(this.config.authCookieName, { path: "/" });
+  }
+}
+
+export class AuthSession {
+  public readonly client: Client;
+
+  /** @internal */
+  constructor(client: Client, private readonly authToken: string | undefined) {
+    this.client = this.authToken
+      ? client.withGlobals({ "ext::auth::client_token": this.authToken })
+      : client;
+  }
+
+  async isSignedIn() {
+    if (!this.authToken) return false;
+    try {
+      return await this.client.querySingle<boolean>(
+        `select exists global ext::auth::ClientTokenIdentity`
+      );
+    } catch {
+      return false;
+    }
+  }
 }
 
 async function createAuthRouteHandlers(
@@ -308,182 +485,5 @@ async function createAuthRouteHandlers(
 
     default:
       throw new Error("Unknown auth route");
-  }
-}
-
-export class SvelteAuthSession {
-  public readonly client: Client;
-
-  /** @internal */
-  constructor(client: Client, private readonly authToken: string | undefined) {
-    this.client = this.authToken
-      ? client.withGlobals({ "ext::auth::client_token": this.authToken })
-      : client;
-  }
-
-  async isSignedIn() {
-    if (!this.authToken) return false;
-    try {
-      return await this.client.querySingle<boolean>(
-        `select exists global ext::auth::ClientTokenIdentity`
-      );
-    } catch {
-      return false;
-    }
-  }
-}
-
-export class EdgedbServerAuth extends EdgedbClientAuth {
-  private readonly client: Client;
-  private readonly core: Promise<Auth>;
-  private readonly cookies: Cookies;
-
-  public get session() {
-    return new SvelteAuthSession(
-      this.client,
-      this.cookies.get(this.config.authCookieName)
-    );
-  }
-
-  /** @internal */
-  constructor(
-    client: Client,
-    core: Promise<Auth>,
-    { cookies }: RequestEvent,
-    options: AuthOptions
-  ) {
-    super(options);
-
-    this.client = client;
-    this.core = core;
-    this.cookies = cookies;
-  }
-
-  isPasswordResetTokenValid(resetToken: string) {
-    return Auth.checkPasswordResetTokenValid(resetToken);
-  }
-
-  async getProvidersInfo() {
-    return (await this.core).getProvidersInfo();
-  }
-
-  async emailPasswordSignUp({
-    email,
-    password,
-  }: {
-    email: string;
-    password: string;
-  }): Promise<{ tokenData?: TokenData | null }> {
-    const result = await (
-      await this.core
-    ).signupWithEmailPassword(
-      email,
-      password,
-      `${this.config.authRoute}/emailpassword/verify`
-    );
-
-    this.cookies.set(this.config.pkceVerifierCookieName, result.verifier, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
-
-    if (result.status === "complete") {
-      const tokenData = result.tokenData;
-
-      this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-        httpOnly: true,
-        sameSite: "strict",
-        path: "/",
-      });
-
-      return { tokenData };
-    }
-
-    return { tokenData: null };
-  }
-
-  async emailPasswordResendVerificationEmail({
-    verificationToken,
-  }: {
-    verificationToken: string;
-  }): Promise<void> {
-    await (await this.core).resendVerificationEmail(verificationToken);
-  }
-
-  async emailPasswordSignIn({
-    email,
-    password,
-  }: {
-    email: string;
-    password: string;
-  }): Promise<{ tokenData?: TokenData; error?: Error }> {
-    const tokenData = await (
-      await this.core
-    ).signinWithEmailPassword(email, password);
-
-    this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
-
-    return { tokenData };
-  }
-
-  async emailPasswordSendPasswordResetEmail({
-    email,
-  }: {
-    email: string;
-  }): Promise<void> {
-    if (!this.config.passwordResetPath) {
-      throw new Error(`'passwordResetPath' option not configured`);
-    }
-
-    const { verifier } = await (
-      await this.core
-    ).sendPasswordResetEmail(
-      email,
-      new URL(this.config.passwordResetPath, this.config.baseUrl).toString()
-    );
-
-    this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
-  }
-
-  async emailPasswordResetPassword({
-    resetToken,
-    password,
-  }: {
-    resetToken: string;
-    password: string;
-  }): Promise<{ tokenData: TokenData }> {
-    const verifier = this.cookies.get(this.config.pkceVerifierCookieName);
-
-    if (!verifier) {
-      throw new Error("no pkce verifier cookie found");
-    }
-
-    const tokenData = await (
-      await this.core
-    ).resetPasswordWithResetToken(resetToken, verifier, password);
-
-    this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-    });
-
-    this.cookies.delete(this.config.pkceVerifierCookieName, {
-      path: "/",
-    });
-    return { tokenData };
-  }
-
-  async signout(): Promise<void> {
-    this.cookies.delete(this.config.authCookieName, { path: "/" });
   }
 }
