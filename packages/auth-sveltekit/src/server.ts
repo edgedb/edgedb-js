@@ -57,10 +57,7 @@ export interface AuthRouteHandlers {
   onSignout(): Promise<Response>;
 }
 
-export default function initializeEdgedbServerAuth(
-  client: Client,
-  options: AuthOptions
-) {
+export default function serverAuth(client: Client, options: AuthOptions) {
   const core = Auth.create(client);
   const config = getConfig(options);
 
