@@ -13,13 +13,13 @@ import {
   type emailPasswordProviderName,
 } from "@edgedb/auth-core";
 import {
-  SvelteClientAuth,
+  EdgedbClientAuth,
   getConfig,
-  type SvelteAuthConfig,
-  type SvelteAuthOptions,
+  type AuthConfig,
+  type AuthOptions,
 } from "./client.js";
 
-export type { TokenData, SvelteAuthOptions, Client };
+export type { TokenData, AuthOptions, Client };
 
 export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
@@ -57,16 +57,16 @@ export interface AuthRouteHandlers {
   onSignout(): Promise<Response>;
 }
 
-export default function createServerAuth(
+export default function initializeEdgedbServerAuth(
   client: Client,
-  options: SvelteAuthOptions
+  options: AuthOptions
 ) {
   const core = Auth.create(client);
   const config = getConfig(options);
 
   return {
-    createServerAuth: ({ event }: { event: RequestEvent }) =>
-      new SvelteServerAuth(client, core, event, options),
+    createEdgedbServerAuth: ({ event }: { event: RequestEvent }) =>
+      new EdgedbServerAuth(client, core, event, options),
     createAuthRouteHook:
       (handlers: AuthRouteHandlers): Handle =>
       ({ event, resolve }) => {
@@ -90,7 +90,7 @@ async function createAuthRouteHandlers(
   }: Partial<AuthRouteHandlers>,
   event: RequestEvent,
   core: Promise<Auth>,
-  config: SvelteAuthConfig
+  config: AuthConfig
 ) {
   const url = new URL(event.request.url);
   const searchParams = url.searchParams;
@@ -336,7 +336,7 @@ export class SvelteAuthSession {
   }
 }
 
-export class SvelteServerAuth extends SvelteClientAuth {
+export class EdgedbServerAuth extends EdgedbClientAuth {
   private readonly client: Client;
   private readonly core: Promise<Auth>;
   private readonly cookies: Cookies;
@@ -353,7 +353,7 @@ export class SvelteServerAuth extends SvelteClientAuth {
     client: Client,
     core: Promise<Auth>,
     { cookies }: RequestEvent,
-    options: SvelteAuthOptions
+    options: AuthOptions
   ) {
     super(options);
 

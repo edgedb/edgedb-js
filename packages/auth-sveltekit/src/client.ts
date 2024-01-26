@@ -1,6 +1,6 @@
 import type { BuiltinOAuthProviderNames } from "@edgedb/auth-core";
 
-export interface SvelteAuthOptions {
+export interface AuthOptions {
   baseUrl: string;
   authRoutesPath?: string;
   authCookieName?: string;
@@ -10,12 +10,10 @@ export interface SvelteAuthOptions {
 
 type OptionalOptions = "passwordResetPath";
 
-export type SvelteAuthConfig = Required<
-  Omit<SvelteAuthOptions, OptionalOptions>
-> &
-  Pick<SvelteAuthOptions, OptionalOptions> & { authRoute: string };
+export type AuthConfig = Required<Omit<AuthOptions, OptionalOptions>> &
+  Pick<AuthOptions, OptionalOptions> & { authRoute: string };
 
-export function getConfig(options: SvelteAuthOptions) {
+export function getConfig(options: AuthOptions) {
   const baseUrl = options.baseUrl.replace(/\/$/, "");
   const authRoutesPath =
     options.authRoutesPath?.replace(/^\/|\/$/g, "") ?? "auth";
@@ -31,15 +29,15 @@ export function getConfig(options: SvelteAuthOptions) {
   };
 }
 
-export default function createClientAuth(options: SvelteAuthOptions) {
-  return new SvelteClientAuth(options);
+export default function createEdgedbClientAuth(options: AuthOptions) {
+  return new EdgedbClientAuth(options);
 }
 
-export class SvelteClientAuth {
-  protected readonly config: SvelteAuthConfig;
+export class EdgedbClientAuth {
+  protected readonly config: AuthConfig;
 
   /** @internal */
-  constructor(options: SvelteAuthOptions) {
+  constructor(options: AuthOptions) {
     this.config = getConfig(options);
   }
 
