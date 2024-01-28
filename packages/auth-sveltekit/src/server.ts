@@ -36,7 +36,7 @@ export interface AuthRouteHandlers {
       provider: BuiltinOAuthProviderNames;
       isSignUp: boolean;
     }>
-  ): Promise<Response>;
+  ): Promise<never>;
   onBuiltinUICallback(
     params: ParamsOrError<
       (
@@ -47,15 +47,17 @@ export interface AuthRouteHandlers {
         | { tokenData: null; provider: null }
       ) & { isSignUp: boolean }
     >
-  ): Promise<Response>;
+  ): Promise<never>;
   onEmailVerify(
     params: ParamsOrError<
       { tokenData: TokenData },
       { verificationToken?: string }
     >
-  ): Promise<Response>;
-  onSignout(): Promise<Response>;
+  ): Promise<never>;
+  onSignout(): Promise<never>;
 }
+
+const noMatchingRoute = Symbol();
 
 export default function serverAuth(client: Client, options: AuthOptions) {
   const core = Auth.create(client);
@@ -66,11 +68,18 @@ export default function serverAuth(client: Client, options: AuthOptions) {
       new ServerRequestAuth(client, core, event, options),
     createAuthRouteHook:
       (handlers: AuthRouteHandlers): Handle =>
-      ({ event, resolve }) => {
-        const pathname = new URL(event.request.url).pathname;
+      async ({ event, resolve }) => {
+        const pathname = event.url.pathname;
 
-        if (pathname.startsWith(`/${config.authRoutesPath}`)) {
-          return createAuthRouteHandlers(handlers, event, core, config);
+        if (pathname.startsWith(`/${config.authRoutesPath}/`)) {
+          if (
+            (await handleAuthRoutes(handlers, event, core, config)) !==
+            noMatchingRoute
+          ) {
+            throw new Error(
+              "Auth route handler should always call redirect()."
+            );
+          }
         }
 
         return resolve(event);
@@ -112,13 +121,15 @@ export class ServerRequestAuth extends ClientAuth {
     return (await this.core).getProvidersInfo();
   }
 
-  async emailPasswordSignUp({
-    email,
-    password,
-  }: {
-    email: string;
-    password: string;
-  }): Promise<{ tokenData?: TokenData | null }> {
+  async emailPasswordSignUp(
+    data: { email: string; password: string } | FormData
+  ): Promise<{ tokenData?: TokenData | null }> {
+    const [email, password] = extractParams(
+      data,
+      ["email", "password"],
+      "email or password missing"
+    );
+
     const result = await (
       await this.core
     ).signupWithEmailPassword(
@@ -148,21 +159,27 @@ export class ServerRequestAuth extends ClientAuth {
     return { tokenData: null };
   }
 
-  async emailPasswordResendVerificationEmail({
-    verificationToken,
-  }: {
-    verificationToken: string;
-  }): Promise<void> {
+  async emailPasswordResendVerificationEmail(
+    data: { verificationToken: string } | FormData
+  ): Promise<void> {
+    const [verificationToken] = extractParams(
+      data,
+      ["verification_token"],
+      "verification_token missing"
+    );
+
     await (await this.core).resendVerificationEmail(verificationToken);
   }
 
-  async emailPasswordSignIn({
-    email,
-    password,
-  }: {
-    email: string;
-    password: string;
-  }): Promise<{ tokenData?: TokenData; error?: Error }> {
+  async emailPasswordSignIn(
+    data: { email: string; password: string } | FormData
+  ): Promise<{ tokenData?: TokenData; error?: Error }> {
+    const [email, password] = extractParams(
+      data,
+      ["email", "password"],
+      "email or password missing"
+    );
+
     const tokenData = await (
       await this.core
     ).signinWithEmailPassword(email, password);
@@ -176,14 +193,14 @@ export class ServerRequestAuth extends ClientAuth {
     return { tokenData };
   }
 
-  async emailPasswordSendPasswordResetEmail({
-    email,
-  }: {
-    email: string;
-  }): Promise<void> {
+  async emailPasswordSendPasswordResetEmail(
+    data: { email: string } | FormData
+  ): Promise<void> {
     if (!this.config.passwordResetPath) {
       throw new Error(`'passwordResetPath' option not configured`);
     }
+
+    const [email] = extractParams(data, ["email"], "email missing");
 
     const { verifier } = await (
       await this.core
@@ -199,18 +216,20 @@ export class ServerRequestAuth extends ClientAuth {
     });
   }
 
-  async emailPasswordResetPassword({
-    resetToken,
-    password,
-  }: {
-    resetToken: string;
-    password: string;
-  }): Promise<{ tokenData: TokenData }> {
+  async emailPasswordResetPassword(
+    data: { reset_token: string; password: string } | FormData
+  ): Promise<{ tokenData: TokenData }> {
     const verifier = this.cookies.get(this.config.pkceVerifierCookieName);
 
     if (!verifier) {
       throw new Error("no pkce verifier cookie found");
     }
+
+    const [resetToken, password] = extractParams(
+      data,
+      ["reset_token", "password"],
+      "reset_token or password missing"
+    );
 
     const tokenData = await (
       await this.core
@@ -255,21 +274,52 @@ export class AuthSession {
   }
 }
 
-async function createAuthRouteHandlers(
+function extractParams(
+  data: FormData | Record<string, unknown>,
+  paramNames: string[],
+  errMessage: string
+) {
+  const params: string[] = [];
+  if (data instanceof FormData) {
+    for (const paramName of paramNames) {
+      const param = data.get(paramName)?.toString();
+      if (!param) {
+        throw new Error(errMessage);
+      }
+      params.push(param);
+    }
+  } else {
+    if (typeof data !== "object") {
+      throw new Error("expected json object");
+    }
+    for (const paramName of paramNames) {
+      const param = data[paramName];
+      if (!param) {
+        throw new Error(errMessage);
+      }
+      if (typeof param !== "string") {
+        throw new Error(`expected '${paramName}' to be a string`);
+      }
+      params.push(param);
+    }
+  }
+
+  return params;
+}
+
+async function handleAuthRoutes(
   {
     onOAuthCallback,
     onBuiltinUICallback,
     onEmailVerify,
     onSignout,
   }: Partial<AuthRouteHandlers>,
-  event: RequestEvent,
+  { url, cookies }: RequestEvent,
   core: Promise<Auth>,
   config: AuthConfig
 ) {
-  const url = new URL(event.request.url);
   const searchParams = url.searchParams;
   const path = url.pathname.split("/").slice(2).join("/");
-  const cookies = event.cookies;
 
   switch (path) {
     case "oauth": {
@@ -289,6 +339,7 @@ async function createAuthRouteHandlers(
         httpOnly: true,
         path: "/",
       });
+
       return redirect(
         303,
         pkceSession.getOAuthUrl(
@@ -484,6 +535,6 @@ async function createAuthRouteHandlers(
     }
 
     default:
-      throw new Error("Unknown auth route");
+      return noMatchingRoute;
   }
 }
