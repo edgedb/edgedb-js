@@ -64,7 +64,7 @@ export default function serverAuth(client: Client, options: AuthOptions) {
   const config = getConfig(options);
 
   return {
-    createServerRequestAuth: ({ event }: { event: RequestEvent }) =>
+    createServerRequestAuth: (event: RequestEvent) =>
       new ServerRequestAuth(client, core, event, options),
     createAuthRouteHook:
       (handlers: AuthRouteHandlers): Handle =>

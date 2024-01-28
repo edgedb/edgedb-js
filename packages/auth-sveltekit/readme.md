@@ -15,16 +15,16 @@ npm install @edgedb/auth-sveltekit
 
 **Prerequisites**: Before adding EdgeDB auth to your Sveltekit app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers (you can do this in CLI or EdgeDB UI). Refer to the auth extension docs for details on how to do this.
 
-1. Initialize the client auth helper by passing configuration options to `createClientAuth()`. This will return a `SvelteClientAuth` object which you can use in your components. You can skip this part if you find it unnecessary and provide all your data through the load functions (the next step), but we suggest having the client auth too and use it directly in your components to get OAuth, BuiltinUI and signout URLs.
+1. Initialize the client auth helper by passing configuration options to `createClientAuth()`. This will return a `ClientAuth` object which you can use in your components. You can skip this part if you find it unnecessary and provide all your data through the load functions (the next step), but we suggest having the client auth too and use it directly in your components to get OAuth, BuiltinUI and signout URLs.
 
 ```ts
 // src/lib/auth.ts
 
 import createClientAuth, {
-  type SvelteAuthOptions,
+  type AuthOptions,
 } from "@edgedb/auth-sveltekit/client";
 
-export const options: SvelteAuthOptions = {
+export const options: AuthOptions = {
   baseUrl: "http://localhost:5173",
   // ...
 };
@@ -34,59 +34,76 @@ const auth = createClientAuth(options);
 export default auth;
 ```
 
-2. Initialize the server auth helper by passing an EdgeDB `Client` object to `createServerAuth()`, along with configuration options. This will return a `SvelteServerAuth` object which you can use across your app on the server side.
+The available auth config options are as follows:
 
-   ```ts
-   // src/lib/server/auth.ts
+- `baseUrl: string`, _required_, The url of your application; needed for various auth flows (eg. OAuth) to redirect back to.
+- `authRoutesPath?: string`, The path to the auth route handlers, defaults to `'auth'`, see below for more details.
+- `authCookieName?: string`, The name of the cookie where the auth token will be stored, defaults to `'edgedb-session'`.
+- `pkceVerifierCookieName?: string`: The name of the cookie where the verifier for the PKCE flow will be stored, defaults to `'edgedb-pkce-verifier'`
+- `passwordResetUrl?: string`: The url of the the password reset page; needed if you want to enable password reset emails in your app.
 
-   import createServerAuth from "@edgedb/auth-sveltekit/server";
-   import { createClient } from "edgedb";
-   import { options } from "./$lib/auth";
+2. Lets create an EdgeDB client that you will need for creating server auth client.
 
-   export const client = createClient({
-     //Note: when developing locally you will need to set tls  security to insecure, because the dev server uses  self-signed certificates which will cause api calls with the fetch api to fail.
-     tlsSecurity: "insecure",
-   });
+```ts
+// src/lib/server/auth.ts
+import { createClient } from "edgedb";
 
-   export const auth = createServerAuth(client, options);
-   ```
+export const client = createClient({
+  //Note: when developing locally you will need to set tls  security to insecure, because the dev server uses  self-signed certificates which will cause api calls with the fetch api to fail.
+  tlsSecurity: "insecure",
+});
+```
 
-   The available auth config options are as follows:
+3. Create the server auth client in a handle hook. Firstly call `serverAuth` passing to it EdgeDB client you created in the previous step, along with configuration options from step 1. This will give you back the `createServerRequestAuth` and `createAuthRouteHook`. You should call `createServerRequestAuth` inside a handle to attach the server client to `event.locals`. Calling `createAuthRouteHook` will give you back a hook so you should just invoke it inside `sequence` and pass your auth route handlers to it.
+   You can now access the server auth in all actions and load functions through `event.locals`.
 
-   - `baseUrl: string`, _required_, The url of your application; needed for various auth flows (eg. OAuth) to redirect back to.
-   - `authRoutesPath?: string`, The path to the auth route handlers, defaults to `'auth'`, see below for more details.
-   - `authCookieName?: string`, The name of the cookie where the auth token will be stored, defaults to `'edgedb-session'`.
-   - `pkceVerifierCookieName?: string`: The name of the cookie where the verifier for the PKCE flow will be stored, defaults to `'edgedb-pkce-verifier'`
-   - `passwordResetUrl?: string`: The url of the the password reset page; needed if you want to enable password reset emails in your app.
+```ts
+import serverAuth, {
+  type AuthRouteHandlers,
+} from "@edgedb/auth-sveltekit/server";
+import { redirect, type Handle } from "@sveltejs/kit";
+import { sequence } from "@sveltejs/kit/hooks";
+import { client } from "$lib/server/auth";
+import { createUser } from "$lib/server/utils";
+import { options } from "$lib/auth";
 
-3. Setup the auth route handlers, with `auth.createAuthRouteHandlers()`. Callback functions can be provided to handle various auth events, where you can define what to do in the case of successful signin's or errors. You only need to configure callback functions for the types of auth you wish to use in your app.
+const { createServerRequestAuth, createAuthRouteHook } = serverAuth(
+  client,
+  options
+);
 
-   ```ts
-   // app/routes/auth/[...auth]/+server.ts
+const createServerAuthClient: Handle = ({ event, resolve }) => {
+  event.locals.auth = createServerRequestAuth(event);
 
-   import { redirect } from "@sveltejs/kit";
-   import auth from "$lib/server/auth";
+  return resolve(event);
+};
 
-   export const GET = auth.createAuthRouteHandlers({
-     async onOAuthCallback({ error, tokenData, provider, isSignUp }) {
-       redirect(303, "/");
-     },
-     onSignout() {
-       redirect("/");
-     },
-   });
-   ```
+// You only need to configure callback functions for the types of auth you wish to use in your app.
+const authRouteHandlers: AuthRouteHandlers = {
+  async onOAuthCallback({ error, tokenData, provider, isSignUp }) {
+    redirect(303, "/");
+  },
+  onSignout() {
+    redirect("/");
+  },
+};
 
-The currently available auth handlers are:
+export const handle = sequence(
+  createServerAuthClient,
+  createAuthRouteHook(authRouteHandlers)
+);
+```
+
+The currently available auth route handlers are:
 
 - `onOAuthCallback`
 - `onBuiltinUICallback`
 - `onEmailVerify`
 - `onSignout`
 
-By default the handlers expect to exist under the `/routes/auth` path in your app, however if you want to place them elsewhere, you will also need to configure the `authRoutesPath` option of `createServerAuth` to match.
+In any of them you can define what to do in case of success or error. Every handler should return a redirect call.
 
-4. Now we just need to setup the UI to allow your users to sign in/up, etc. The easiest way to get started is to use the EdgeDB Auth's builtin UI. Or alternatively you can implement your own custom UI.
+5. Now we just need to setup the UI to allow your users to sign in/up, etc. The easiest way to get started is to use the EdgeDB Auth's builtin UI. Or alternatively you can implement your own custom UI.
 
    **Builtin UI**
 
@@ -98,27 +115,25 @@ By default the handlers expect to exist under the `/routes/auth` path in your ap
 
    To help with implementing your own custom auth UI, the `auth` object has a number of methods you can use:
 
-   - `emailPasswordSignUp`
-   - `emailPasswordSignIn`
-   - `emailPasswordResendVerificationEmail`
-   - `emailPasswordSendPasswordResetEmail`
-   - `emailPasswordResetPassword`
-   - `signout`
+   - `emailPasswordSignUp(data: { email: string; password: string } | FormData)`
+   - `emailPasswordSignIn(data: { email: string; password: string } | FormData)`
+   - `emailPasswordResendVerificationEmail(data: { verification_token: string } | FormData)`
+   - `emailPasswordSendPasswordResetEmail(data: { email: string } | FormData)`
+   - `emailPasswordResetPassword(data: { reset_token: string; password: string } | FormData)`
+   - `signout()`
    - `isPasswordResetTokenValid(resetToken: string)`: Checks if a password reset token is still valid.
    - `getOAuthUrl(providerName: string)`: This method takes the name of an OAuth provider (make sure you configure providers you need in the auth ext config first using CLI or EdgeDB UI) and returns a link that will initiate the OAuth sign in flow for that provider. You will also need to configure the `onOAuthCallback` auth route handler.
 
 ## Usage
 
-Now you have auth configured and users can signin/signup/etc. You can use the `auth.getSession()` method in server files to retrieve an `AuthSession` object. This session object allows you to check if the user is currently signed in with the `isSignedIn` method, and also provides a `Client` object automatically configured with the `ext::auth::client_token` global, so you can run queries using the `ext::auth::ClientTokenIdentity` of the currently signed in user.
+Now you have auth configured and users can signin/signup/etc. You can use the `locals.auth.session` in server files to retrieve an `AuthSession` object. This session object allows you to check if the user is currently signed in with the `isSignedIn` method, and also provides a `Client` object automatically configured with the `ext::auth::client_token` global, so you can run queries using the `ext::auth::ClientTokenIdentity` of the currently signed in user.
 
 ```ts
 // src/routes/+page.server.ts
-import auth, { client } from "$lib/server/auth";
-import { addTodo, deleteTodo, updateTodo } from "$lib/server/database";
 import { fail, type Actions } from "@sveltejs/kit";
 
-export async function load({ request }) {
-  const session = auth.getSession(request);
+export async function load({ locals }) {
+  const session = locals.auth.session;
   const isSignedIn = await session.isSignedIn();
 
   return {
