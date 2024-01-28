@@ -87,27 +87,21 @@ export default function serverAuth(client: Client, options: AuthOptions) {
   };
 }
 
-const sessionCache: Record<string, AuthSession> = {};
-
 export class ServerRequestAuth extends ClientAuth {
   private readonly client: Client;
   private readonly core: Promise<Auth>;
   private readonly cookies: Cookies;
+  private _session: AuthSession | undefined;
 
-  public get session() {
-    const authCookie = this.cookies.get(this.config.authCookieName);
-
-    if (authCookie && sessionCache[authCookie]) {
-      return sessionCache[authCookie];
+  get session() {
+    if (!this._session) {
+      this._session = new AuthSession(
+        this.client,
+        this.cookies.get(this.config.authCookieName)
+      );
     }
 
-    const authSession = new AuthSession(this.client, authCookie);
-
-    if (authCookie) {
-      sessionCache[authCookie] = authSession;
-    }
-
-    return authSession;
+    return this._session;
   }
 
   /** @internal */
