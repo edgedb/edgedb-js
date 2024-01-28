@@ -87,16 +87,27 @@ export default function serverAuth(client: Client, options: AuthOptions) {
   };
 }
 
+const sessionCache: Record<string, AuthSession> = {};
+
 export class ServerRequestAuth extends ClientAuth {
   private readonly client: Client;
   private readonly core: Promise<Auth>;
   private readonly cookies: Cookies;
 
   public get session() {
-    return new AuthSession(
-      this.client,
-      this.cookies.get(this.config.authCookieName)
-    );
+    const authCookie = this.cookies.get(this.config.authCookieName);
+
+    if (authCookie && sessionCache[authCookie]) {
+      return sessionCache[authCookie];
+    }
+
+    const authSession = new AuthSession(this.client, authCookie);
+
+    if (authCookie) {
+      sessionCache[authCookie] = authSession;
+    }
+
+    return authSession;
   }
 
   /** @internal */
@@ -160,7 +171,7 @@ export class ServerRequestAuth extends ClientAuth {
   }
 
   async emailPasswordResendVerificationEmail(
-    data: { verificationToken: string } | FormData
+    data: { verification_token: string } | FormData
   ): Promise<void> {
     const [verificationToken] = extractParams(
       data,
