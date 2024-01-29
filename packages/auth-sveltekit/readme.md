@@ -73,12 +73,12 @@ const { createServerRequestAuth, createAuthRouteHook } = serverAuth(
 );
 
 const createServerAuthClient: Handle = ({ event, resolve }) => {
-  event.locals.auth = createServerRequestAuth(event);
+  event.locals.auth = createServerRequestAuth(event); // (*)
 
   return resolve(event);
 };
 
-// You only need to configure callback functions for the types of auth you wish to use in your app.
+// You only need to configure callback functions for the types of auth you wish to use in your app. (**)
 const authRouteHandlers: AuthRouteHandlers = {
   async onOAuthCallback({ error, tokenData, provider, isSignUp }) {
     redirect(303, "/");
@@ -94,7 +94,27 @@ export const handle = sequence(
 );
 ```
 
-The currently available auth route handlers are:
+\* If you use typescript you need to update `Locals` type with `auth` so that auth is correctly recognized throughout the project:
+
+```ts
+import type { ServerRequestAuth } from "@edgedb/auth-sveltekit/server";
+
+declare global {
+  namespace App {
+    // interface Error {}
+    interface Locals {
+      auth: ServerRequestAuth;
+    }
+    // interface PageData {}
+    // interface PageState {}
+    // interface Platform {}
+  }
+}
+
+export {};
+```
+
+\*\* The currently available auth route handlers are:
 
 - `onOAuthCallback`
 - `onBuiltinUICallback`
@@ -103,7 +123,7 @@ The currently available auth route handlers are:
 
 In any of them you can define what to do in case of success or error. Every handler should return a redirect call.
 
-5. Now we just need to setup the UI to allow your users to sign in/up, etc. The easiest way to get started is to use the EdgeDB Auth's builtin UI. Or alternatively you can implement your own custom UI.
+4. Now we just need to setup the UI to allow your users to sign in/up, etc. The easiest way to get started is to use the EdgeDB Auth's builtin UI. Or alternatively you can implement your own custom UI.
 
    **Builtin UI**
 
