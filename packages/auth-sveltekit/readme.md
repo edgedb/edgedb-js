@@ -15,7 +15,9 @@ npm install @edgedb/auth-sveltekit
 
 **Prerequisites**: Before adding EdgeDB auth to your Sveltekit app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers (you can do this in CLI or EdgeDB UI). Refer to the auth extension docs for details on how to do this.
 
-1. Initialize the client auth helper by passing configuration options to `createClientAuth()`. This will return a `ClientAuth` object which you can use in your components. You can skip this part if you find it unnecessary and provide all your data through the load functions (the next step), but we suggest having the client auth too and use it directly in your components to get OAuth, BuiltinUI and signout URLs.
+### Client auth helper
+
+Initialize the client auth helper by passing configuration options to `createClientAuth()`. This will return a `ClientAuth` object which you can use in your components. You can skip this part if you find it unnecessary and provide all your data through the load functions (the next step), but we suggest having the client auth too and use it directly in your components to get OAuth, BuiltinUI and signout URLs.
 
 ```ts
 // src/lib/auth.ts
@@ -41,8 +43,11 @@ The available auth config options are as follows:
 - `authCookieName?: string`, The name of the cookie where the auth token will be stored, defaults to `'edgedb-session'`.
 - `pkceVerifierCookieName?: string`: The name of the cookie where the verifier for the PKCE flow will be stored, defaults to `'edgedb-pkce-verifier'`
 - `passwordResetUrl?: string`: The url of the the password reset page; needed if you want to enable password reset emails in your app.
+  &nbsp;
 
-2. Lets create an EdgeDB client that you will need for creating server auth client.
+### EdgeDB client
+
+Lets create an EdgeDB client that you will need for creating server auth client.
 
 ```ts
 // src/lib/server/auth.ts
@@ -54,8 +59,10 @@ export const client = createClient({
 });
 ```
 
-3. Create the server auth client in a handle hook. Firstly call `serverAuth` passing to it EdgeDB client you created in the previous step, along with configuration options from step 1. This will give you back the `createServerRequestAuth` and `createAuthRouteHook`. You should call `createServerRequestAuth` inside a handle to attach the server client to `event.locals`. Calling `createAuthRouteHook` will give you back a hook so you should just invoke it inside `sequence` and pass your auth route handlers to it.
-   You can now access the server auth in all actions and load functions through `event.locals`.
+### Server auth client
+
+Create the server auth client in a handle hook. Firstly call `serverAuth` passing to it EdgeDB client you created in the previous step, along with configuration options from step 1. This will give you back the `createServerRequestAuth` and `createAuthRouteHook`. You should call `createServerRequestAuth` inside a handle to attach the server client to `event.locals`. Calling `createAuthRouteHook` will give you back a hook so you should just invoke it inside `sequence` and pass your auth route handlers to it.
+You can now access the server auth in all actions and load functions through `event.locals`.
 
 ```ts
 import serverAuth, {
@@ -123,26 +130,28 @@ export {};
 
 In any of them you can define what to do in case of success or error. Every handler should return a redirect call.
 
-4. Now we just need to setup the UI to allow your users to sign in/up, etc. The easiest way to get started is to use the EdgeDB Auth's builtin UI. Or alternatively you can implement your own custom UI.
+### UI
 
-   **Builtin UI**
+Now we just need to setup the UI to allow your users to sign in/up, etc. The easiest way to get started is to use the EdgeDB Auth's builtin UI. Or alternatively you can implement your own custom UI.
 
-   To use the builtin auth UI, first you will need to enable the UI in the auth ext configuration (see the auth ext docs for details). For the `redirect_to` and `redirect_to_on_signup` configuration options, set them to `{your_app_url}/auth/builtin/callback` and `{your_app_url}/auth/builtin/callback?isSignUp=true` respectively. (Note: if you have setup the auth route handlers under a custom path, replace `auth` in the above url with that path).
+**Builtin UI**
 
-   Then you just need to configure the `onBuiltinUICallback` route handler to define what to do once the builtin ui redirects back to your app, and place a link to the builtin UI url returned by `auth.getBuiltinUIUrl()` somewhere in your app.
+To use the builtin auth UI, first you will need to enable the UI in the auth ext configuration (see the auth ext docs for details). For the `redirect_to` and `redirect_to_on_signup` configuration options, set them to `{your_app_url}/auth/builtin/callback` and `{your_app_url}/auth/builtin/callback?isSignUp=true` respectively. (Note: if you have setup the auth route handlers under a custom path, replace `auth` in the above url with that path).
 
-   **Custom UI**
+Then you just need to configure the `onBuiltinUICallback` route handler to define what to do once the builtin ui redirects back to your app, and place a link to the builtin UI url returned by `auth.getBuiltinUIUrl()` somewhere in your app.
 
-   To help with implementing your own custom auth UI, the `auth` object has a number of methods you can use:
+**Custom UI**
 
-   - `emailPasswordSignUp(data: { email: string; password: string } | FormData)`
-   - `emailPasswordSignIn(data: { email: string; password: string } | FormData)`
-   - `emailPasswordResendVerificationEmail(data: { verification_token: string } | FormData)`
-   - `emailPasswordSendPasswordResetEmail(data: { email: string } | FormData)`
-   - `emailPasswordResetPassword(data: { reset_token: string; password: string } | FormData)`
-   - `signout()`
-   - `isPasswordResetTokenValid(resetToken: string)`: Checks if a password reset token is still valid.
-   - `getOAuthUrl(providerName: string)`: This method takes the name of an OAuth provider (make sure you configure providers you need in the auth ext config first using CLI or EdgeDB UI) and returns a link that will initiate the OAuth sign in flow for that provider. You will also need to configure the `onOAuthCallback` auth route handler.
+To help with implementing your own custom auth UI, the `auth` object has a number of methods you can use:
+
+- `emailPasswordSignUp(data: { email: string; password: string } | FormData)`
+- `emailPasswordSignIn(data: { email: string; password: string } | FormData)`
+- `emailPasswordResendVerificationEmail(data: { verification_token: string } | FormData)`
+- `emailPasswordSendPasswordResetEmail(data: { email: string } | FormData)`
+- `emailPasswordResetPassword(data: { reset_token: string; password: string } | FormData)`
+- `signout()`
+- `isPasswordResetTokenValid(resetToken: string)`: Checks if a password reset token is still valid.
+- `getOAuthUrl(providerName: string)`: This method takes the name of an OAuth provider (make sure you configure providers you need in the auth ext config first using CLI or EdgeDB UI) and returns a link that will initiate the OAuth sign in flow for that provider. You will also need to configure the `onOAuthCallback` auth route handler.
 
 ## Usage
 
