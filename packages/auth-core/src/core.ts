@@ -145,10 +145,11 @@ export class Auth {
     });
   }
 
-  async resendVerificationEmailForEmail(email: string) {
+  async resendVerificationEmailForEmail(email: string, verifyUrl: string) {
     await this._post("resend-verification-email", {
       provider: emailPasswordProviderName,
       email,
+      verify_url: verifyUrl,
     });
   }
 

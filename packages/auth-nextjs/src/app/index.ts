@@ -160,7 +160,12 @@ export class NextAppAuth extends NextAuth {
         if (verificationToken) {
           await (await this.core).resendVerificationEmail(verificationToken);
         } else if (email) {
-          await (await this.core).resendVerificationEmailForEmail(email);
+          await (
+            await this.core
+          ).resendVerificationEmailForEmail(
+            email,
+            `${this._authRoute}/emailpassword/verify`
+          );
         }
       },
     };
