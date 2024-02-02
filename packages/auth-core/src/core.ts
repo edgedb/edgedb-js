@@ -145,6 +145,13 @@ export class Auth {
     });
   }
 
+  async resendVerificationEmailForEmail(email: string) {
+    await this._post("resend-verification-email", {
+      provider: emailPasswordProviderName,
+      email,
+    });
+  }
+
   async sendPasswordResetEmail(email: string, resetUrl: string) {
     const { challenge, verifier } = await pkce.createVerifierChallengePair();
     return {

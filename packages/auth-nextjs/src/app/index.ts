@@ -135,14 +135,33 @@ export class NextAppAuth extends NextAuth {
         return tokenData;
       },
       emailPasswordResendVerificationEmail: async (
-        data: FormData | { verification_token: string }
+        data: FormData | { verification_token: string } | { email: string }
       ) => {
-        const [verificationToken] = _extractParams(
-          data,
-          ["verification_token"],
-          "verification_token missing"
-        );
-        await (await this.core).resendVerificationEmail(verificationToken);
+        let email;
+        let verificationToken;
+        try {
+          [verificationToken] = _extractParams(
+            data,
+            ["verification_token"],
+            "verification_token missing"
+          );
+        } catch (tokenError) {
+          try {
+            [email] = _extractParams(data, ["email"], "email missing");
+          } catch (emailError) {
+            const bothParamsMissing = [tokenError, emailError]
+              .map((err) => (err as Error).message)
+              .join(" and ");
+
+            throw new Error(`${bothParamsMissing}. Either one is required.`);
+          }
+        }
+
+        if (verificationToken) {
+          await (await this.core).resendVerificationEmail(verificationToken);
+        } else if (email) {
+          await (await this.core).resendVerificationEmailForEmail(email);
+        }
       },
     };
   }
