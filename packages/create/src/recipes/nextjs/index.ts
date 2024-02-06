@@ -26,10 +26,10 @@ const recipe: Recipe<NextjsOptions> = {
           { value: NextjsOptions["lang"]; label: string }[],
           NextjsOptions["lang"]
         >({
-          message: "Use Typescript?",
+          message: "Use TypeScript?",
           options: [
-            { value: "ts", label: "Typescript" },
-            { value: "js", label: "Javascript" },
+            { value: "ts", label: "TypeScript" },
+            { value: "js", label: "JavaScript" },
           ],
         }),
       router: () =>

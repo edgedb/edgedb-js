@@ -46,7 +46,7 @@ module.exports = {
       },
     },
 
-    // Typescript
+    // TypeScript
     {
       files: ["**/*.{ts,tsx}"],
       plugins: ["@typescript-eslint", "import"],
