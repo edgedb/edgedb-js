@@ -71,6 +71,28 @@ generators from npm using your package manager of choice.
       $ bun add edgedb                 # database driver
       $ bun add --dev @edgedb/generate # generators
 
+.. note:: Deno users
+
+    Create these two files in your project root:
+
+    .. code-block:: json
+        :caption: importMap.json
+
+        {
+          "imports": {
+            "edgedb": "https://deno.land/x/edgedb/mod.ts",
+            "edgedb/": "https://deno.land/x/edgedb/"
+          }
+        }
+
+    .. code-block:: json
+        :caption: deno.js
+
+        {
+          "importMap": "./importMap.json"
+        }
+
+
 .. _edgedb-js-quickstart:
 
 Quickstart

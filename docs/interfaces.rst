@@ -68,6 +68,27 @@ The following command will run the ``interfaces`` generator.
 
     $ bunx @edgedb/generate queries
 
+.. note:: Deno users
+
+    Create these two files in your project root:
+
+    .. code-block:: json
+        :caption: importMap.json
+
+        {
+          "imports": {
+            "edgedb": "https://deno.land/x/edgedb/mod.ts",
+            "edgedb/": "https://deno.land/x/edgedb/"
+          }
+        }
+
+    .. code-block:: json
+        :caption: deno.js
+
+        {
+          "importMap": "./importMap.json"
+        }
+
 This will introspect your schema and generate TypeScript interfaces that correspond to each object type. By default, these interfaces will be written to a single file called ``interfaces.ts`` into the ``dbschema`` directory in your project root. The file will contain the following contents (roughly):
 
 .. code-block:: typescript
