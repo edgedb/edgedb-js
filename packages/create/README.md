@@ -12,6 +12,12 @@ Important points to note:
 
 ```bash
 $ npm create @edgedb
+# or
+yarn create @edgedb
+# or
+pnpm create @edgedb
+# or
+bun create @edgedb
 ```
 
 After running the command, you will be prompted to provide a project name and choose a template. You can also specify whether to use EdgeDB Auth, initialize a git repository, and install dependencies.
