@@ -22,7 +22,7 @@ After running the command, you will be prompted to provide a project name and ch
 
 The tool will then create a new directory with the specified name and set up the project.
 
-### Local Recipe Development
+## Local Recipe Development
 
 Install dependencies in the root directory:
 
