@@ -1,6 +1,5 @@
 import debug from "debug";
 import * as p from "@clack/prompts";
-import pc from "picocolors";
 
 import type { BaseOptions, Recipe } from "../types.js";
 import { execInLoginShell } from "../../utils.js";
