@@ -16,7 +16,6 @@ const recipe: BaseRecipe = {
     const packageManager = getPackageManager();
     logger({ packageManager });
 
-    p.intro("Welcome to the EdgeDB Create CLI 🚀");
     const opts = await p.group(
       {
         projectName: () =>
