@@ -109,7 +109,7 @@ const recipe: Recipe<EdgeDBOptions> = {
       await copyTemplateFiles(path.resolve(dirname, "./template"), projectDir);
     }
 
-    if (useEdgeDBAuth) {
+    if (useEdgeDBAuth && initializeProject) {
       logger("Adding auth extension to project");
 
       spinner.start("Enabling auth extension in EdgeDB schema");
