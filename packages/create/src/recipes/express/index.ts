@@ -31,7 +31,7 @@ const recipe: Recipe = {
       },
       dependencies: {
         ...(baseOptions.useEdgeDBAuth
-          ? { "@edgedb/auth-express": "^0.1.0-beta.2" }
+          ? { "@edgedb/auth-express": "^0.1.0" }
           : {}),
         "cookie-parser": "^1.4.6",
         express: "^4.18.2",
