@@ -2,8 +2,6 @@
 
 This recipe provides a starting point for building an [Express](https://expressjs.com/) application with EdgeDB as the database.
 
-We try to actively monitor and incorporate significant changes from the original "create-app" templates to to ensure developers have access to the latest features and best practices.
-
 ✨ Check out the [`@edgedb/create` package](https://github.com/edgedb/edgedb-js/blob/master/packages/create/README.md) for more information.
 
 ## Usage

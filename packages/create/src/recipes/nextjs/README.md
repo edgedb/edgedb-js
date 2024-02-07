@@ -1,4 +1,4 @@
-# NextJS Integration Recipe for EdgeDB
+# Next.js Integration Recipe for EdgeDB
 
 This recipe provides a starting point for building a [Next.js](https://nextjs.org/) application with EdgeDB as the database. It is based on the official Next.js starter template.
 
@@ -18,7 +18,7 @@ pnpm create @edgedb
 bun create @edgedb
 ```
 
-After running the command, you will be prompted to provide a project name and choose the **"NextJS"** template. You can also specify whether to use EdgeDB Auth, initialize a git repository, and install dependencies.
+After running the command, you will be prompted to provide a project name and choose the **"Next.js"** template. You can also specify whether to use EdgeDB Auth, initialize a git repository, and install dependencies.
 
 The tool will then create a new directory with the specified name and set up the project.
 
@@ -48,4 +48,4 @@ Run a local version:
 $ yarn create
 ```
 
-Then choose the **"NextJS"** template.
+Then choose the **"Next.js"** template.
