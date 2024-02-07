@@ -14,7 +14,9 @@
   },
   "license": "Apache-2.0",
   "sideEffects": false,
-  "files": ["/dist"],
+  "files": [
+    "/dist"
+  ],
   "bin": "dist/cli.js",
   "peerDependencies": {},
   "devDependencies": {
@@ -26,6 +28,7 @@
   "dependencies": {
     "@clack/prompts": "^0.7.0",
     "debug": "^4.3.4",
+    "picocolors": "^1.0.0",
     "read-pkg": "^9.0.1",
     "write-package": "^7.0.0"
   },
