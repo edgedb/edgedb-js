@@ -117,6 +117,19 @@ const recipe: Recipe<EdgeDBOptions> = {
       const data = await fs.readFile(filePath, "utf8");
       await fs.writeFile(filePath, `using extension auth;\n\n${data}`);
       spinner.stop("Auth extension enabled in EdgeDB schema");
+
+      logger("Creating and applying initial migration");
+      spinner.start("Creating and applying initial migration");
+      try {
+        await execInLoginShell("edgedb migration create", { cwd: projectDir });
+        await execInLoginShell("edgedb migrate", { cwd: projectDir });
+        spinner.stop("Initial migration created and applied");
+      } catch (error) {
+        logger(error);
+        throw error;
+      } finally {
+        spinner.stop();
+      }
     }
   },
 };

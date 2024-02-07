@@ -1,5 +1,6 @@
 import debug from "debug";
 import * as p from "@clack/prompts";
+import chalk from "chalk";
 
 import type { BaseOptions, Recipe } from "../types.js";
 import { execInLoginShell } from "../../utils.js";
@@ -70,6 +71,18 @@ const recipe: Recipe<InstallOptions> = {
         throw err;
       }
     }
+
+    p.outro(`\
+Your EdgeDB project has been initialized! 🚀
+
+Enter your project directory using: ${chalk.green(
+      `cd ${baseOptions.projectName}`
+    )} 
+Follow the instructions in the ${chalk.green("README.md")} file to get started.
+
+Need help? Join our community at ${chalk.green(
+      "https://edgedb.com/community"
+    )}`);
   },
 };
 
