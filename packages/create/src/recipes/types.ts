@@ -1,6 +1,12 @@
 import { type PackageManager } from "../utils.js";
 
-export type Framework = "next" | "remix" | "express" | "node-http" | "none";
+export type Framework =
+  | "next"
+  | "remix"
+  | "express"
+  | "sveltekit"
+  | "node-http"
+  | "none";
 
 export interface BaseOptions {
   packageManager: PackageManager;
