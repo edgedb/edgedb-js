@@ -93,7 +93,6 @@ then scan the directory for ``*.edgeql`` files. In this case, there's only one:
 ``queries/getUser.edgeql``.
 
 .. code-block:: edgeql
-    :caption: getUser.edgeql
 
     select User { name, email } filter .id = <uuid>$user_id;
 
