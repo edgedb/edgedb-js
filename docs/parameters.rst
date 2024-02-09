@@ -78,6 +78,19 @@ A type can be made optional with the ``e.optional`` function.
   // or without duration
   const result = await query.run(client, {title: 'The Eternals'});
 
+If you are using the queries generator, add the keyword ``optional`` within a type cast:
+
+.. code-block:: edgeql
+  update Movie {
+    title: <str>$title,
+    duration: <optional duration>$duration
+  }
+
+.. note::
+  When using the queries generator, you may be tempted to declare the same parameter in multiple places. 
+  However, it's better practice to declare it once by assigning it to a variable in a ``with`` block 
+  and reference that variable instead in the rest of your query.
+
 Complex types
 ^^^^^^^^^^^^^
 
