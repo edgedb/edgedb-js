@@ -93,8 +93,9 @@ then scan the directory for ``*.edgeql`` files. In this case, there's only one:
 ``queries/getUser.edgeql``.
 
 .. code-block:: text
+    :caption: getUser.edgeql
 
-  select User { name, email } filter .id = <uuid>$user_id;
+    select User { name, email } filter .id = <uuid>$user_id;
 
 For each ``.edgeql`` file, the generator will read the contents and send the
 query to the database, which returns type information about its parameters and
@@ -262,3 +263,13 @@ To exclude the generated files, add the following lines to your ``.gitignore`` f
 
   **/*.edgeql.ts
   dbschema/queries.*
+
+Writing Queries with Parameters
+----------------
+To inject external values into your EdgeQL queries, you can use :ref:`parameters <ref_eql_params>`. 
+
+When using the queries generator, you may be tempted to declare the same parameter in multiple places. 
+However, it's better practice to declare it once by assigning it to a variable in a :ref:`with block <ref_eql_with_params>`
+and reference that variable in the rest of your query.
+
+Check out the :ref:`EdgeQL docs <ref_edgeql>` to learn more about writing queries. 
