@@ -89,7 +89,7 @@ If you are using the queries generator, add the keyword ``optional`` within a ty
 .. note::
   When using the queries generator, you may be tempted to declare the same parameter in multiple places. 
   However, it's better practice to declare it once by assigning it to a variable in a ``with`` block 
-  and reference that variable instead in the rest of your query.
+  and reference that variable in the rest of your query.
 
 Complex types
 ^^^^^^^^^^^^^
