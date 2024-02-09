@@ -92,7 +92,7 @@ The generator will detect the project root by looking for an ``edgedb.toml``,
 then scan the directory for ``*.edgeql`` files. In this case, there's only one:
 ``queries/getUser.edgeql``.
 
-.. code-block:: text
+.. code-block:: edgeql
     :caption: getUser.edgeql
 
     select User { name, email } filter .id = <uuid>$user_id;
@@ -270,6 +270,7 @@ To inject external values into your EdgeQL queries, you can use :ref:`parameters
 
 When using the queries generator, you may be tempted to declare the same parameter in multiple places. 
 However, it's better practice to declare it once by assigning it to a variable in a :ref:`with block <ref_eql_with_params>`
-and reference that variable in the rest of your query.
+and reference that variable in the rest of your query. This way you avoid mismatched types in your declarations, 
+such as forgetting to mark them all as :ref:`optional<>`.
 
 Check out the :ref:`EdgeQL docs <ref_edgeql>` to learn more about writing queries. 
