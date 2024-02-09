@@ -94,7 +94,7 @@ then scan the directory for ``*.edgeql`` files. In this case, there's only one:
 
 .. code-block:: edgeql
 
-    select User { name, email } filter .id = <uuid>$user_id;
+  select User { name, email } filter .id = <uuid>$user_id;
 
 For each ``.edgeql`` file, the generator will read the contents and send the
 query to the database, which returns type information about its parameters and
