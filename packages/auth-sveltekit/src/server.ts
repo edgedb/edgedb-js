@@ -30,14 +30,14 @@ type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
   | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
 
 export interface AuthRouteHandlers {
-  onOAuthCallback(
+  onOAuthCallback?: (
     params: ParamsOrError<{
       tokenData: TokenData;
       provider: BuiltinOAuthProviderNames;
       isSignUp: boolean;
     }>
-  ): Promise<never>;
-  onBuiltinUICallback(
+  ) => Promise<never>;
+  onBuiltinUICallback?: (
     params: ParamsOrError<
       (
         | {
@@ -47,14 +47,14 @@ export interface AuthRouteHandlers {
         | { tokenData: null; provider: null }
       ) & { isSignUp: boolean }
     >
-  ): Promise<never>;
-  onEmailVerify(
+  ) => Promise<never>;
+  onEmailVerify?: (
     params: ParamsOrError<
       { tokenData: TokenData },
       { verificationToken?: string }
     >
-  ): Promise<never>;
-  onSignout(): Promise<never>;
+  ) => Promise<never>;
+  onSignout?: () => Promise<never>;
 }
 
 const noMatchingRoute = Symbol();
@@ -318,7 +318,7 @@ async function handleAuthRoutes(
     onBuiltinUICallback,
     onEmailVerify,
     onSignout,
-  }: Partial<AuthRouteHandlers>,
+  }: AuthRouteHandlers,
   { url, cookies }: RequestEvent,
   core: Promise<Auth>,
   config: AuthConfig
