@@ -265,7 +265,8 @@ To exclude the generated files, add the following lines to your ``.gitignore`` f
   dbschema/queries.*
 
 Writing Queries with Parameters
-----------------
+-------------------------------
+
 To inject external values into your EdgeQL queries, you can use :ref:`parameters <ref_eql_params>`. 
 
 When using the queries generator, you may be tempted to declare the same parameter in multiple places. 
