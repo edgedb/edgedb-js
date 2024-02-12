@@ -270,7 +270,7 @@ Writing Queries with Parameters
 To inject external values into your EdgeQL queries, you can use :ref:`parameters <ref_eql_params>`. 
 
 When using the queries generator, you may be tempted to declare the same parameter in multiple places. 
-However, it's better practice to declare it once by assigning it to a variable in a `with block </docs/edgeql/with#query-parameters>`
+However, it's better practice to declare it once by assigning it to a variable in a `with block </docs/edgeql/with#query-parameters>`__
 and reference that variable in the rest of your query. This way you avoid mismatched types in your declarations, 
 such as forgetting to mark them all as `optional </docs/edgeql/parameters#optional-parameters>`__.
 
