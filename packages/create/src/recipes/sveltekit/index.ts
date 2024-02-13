@@ -78,7 +78,9 @@ const recipe: Recipe<SveltekitOptions> = {
         }),
       },
       dependencies: {
-        ...(useEdgeDBAuth && { "@edgedb/auth-sveltekit": "^0.1.0-alpha.1" }),
+        ...(useEdgeDBAuth && {
+          "@edgedb/auth-sveltekit": "^0.1.1",
+        }),
       },
       devDependencies: {
         "@sveltejs/adapter-auto": "^3.0.0",
