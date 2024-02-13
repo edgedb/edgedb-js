@@ -1,7 +1,7 @@
 import { redirect } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import serverAuth from "@edgedb/auth-sveltekit/server";
-import { client } from "$lib/server/auth";
+import { client } from "$lib/server/edgedb";
 import { options } from "$lib/auth";
 
 const authRouteHandlers = {
@@ -31,13 +31,8 @@ const { createServerRequestAuth, createAuthRouteHook } = serverAuth(
   options
 );
 
-const createServerAuthClient = ({ event, resolve }) => {
+export const handle = sequence(({ event, resolve }) => {
   event.locals.auth = createServerRequestAuth(event);
 
   return resolve(event);
-};
-
-export const handle = sequence(
-  createServerAuthClient,
-  createAuthRouteHook(authRouteHandlers)
-);
+}, createAuthRouteHook(authRouteHandlers));
