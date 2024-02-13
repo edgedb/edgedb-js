@@ -110,6 +110,27 @@ The following command will run the ``edgeql-js`` query builder generator.
 
     $ bunx @edgedb/generate edgeql-js
 
+.. note:: Deno users
+
+    Create these two files in your project root:
+
+    .. code-block:: json
+        :caption: importMap.json
+
+        {
+          "imports": {
+            "edgedb": "https://deno.land/x/edgedb/mod.ts",
+            "edgedb/": "https://deno.land/x/edgedb/"
+          }
+        }
+
+    .. code-block:: json
+        :caption: deno.js
+
+        {
+          "importMap": "./importMap.json"
+        }
+
 The generation command is configurable in a number of ways.
 
 ``--output-dir <path>``

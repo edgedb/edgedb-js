@@ -26,10 +26,10 @@ const recipe: Recipe<NextjsOptions> = {
           { value: NextjsOptions["lang"]; label: string }[],
           NextjsOptions["lang"]
         >({
-          message: "Use Typescript?",
+          message: "Use TypeScript?",
           options: [
-            { value: "ts", label: "Typescript" },
-            { value: "js", label: "Javascript" },
+            { value: "ts", label: "TypeScript" },
+            { value: "js", label: "JavaScript" },
           ],
         }),
       router: () =>
@@ -102,7 +102,7 @@ const recipe: Recipe<NextjsOptions> = {
         lint: "next lint",
       },
       dependencies: {
-        ...(useEdgeDBAuth ? { "@edgedb/auth-nextjs": "^0.1.0-beta.1" } : {}),
+        ...(useEdgeDBAuth ? { "@edgedb/auth-nextjs": "^0.1.0" } : {}),
         edgedb: "^1.4.1",
         react: "^18",
         "react-dom": "^18",

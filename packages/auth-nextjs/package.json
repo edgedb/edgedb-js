@@ -1,7 +1,7 @@
 {
   "name": "@edgedb/auth-nextjs",
   "description": "Helper library to integrate the EdgeDB Auth extension with Next.js",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0",
   "author": "EdgeDB <info@edgedb.com>",
   "repository": {
     "type": "git",
@@ -34,6 +34,6 @@
     "next": "^13.5.6"
   },
   "dependencies": {
-    "@edgedb/auth-core": "0.1.0-beta.1"
+    "@edgedb/auth-core": "0.1.0"
   }
 }

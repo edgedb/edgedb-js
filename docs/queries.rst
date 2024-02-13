@@ -67,6 +67,27 @@ The following command will run the ``queries`` generator.
 
     $ bunx @edgedb/generate queries
 
+.. note:: Deno users
+
+    Create these two files in your project root:
+
+    .. code-block:: json
+        :caption: importMap.json
+
+        {
+          "imports": {
+            "edgedb": "https://deno.land/x/edgedb/mod.ts",
+            "edgedb/": "https://deno.land/x/edgedb/"
+          }
+        }
+
+    .. code-block:: json
+        :caption: deno.js
+
+        {
+          "importMap": "./importMap.json"
+        }
+
 The generator will detect the project root by looking for an ``edgedb.toml``,
 then scan the directory for ``*.edgeql`` files. In this case, there's only one:
 ``queries/getUser.edgeql``.
