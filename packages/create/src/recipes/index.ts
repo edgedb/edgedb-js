@@ -5,6 +5,7 @@ import _install from "./_install/index.js";
 import express from "./express/index.js";
 import nextjs from "./nextjs/index.js";
 import remix from "./remix/index.js";
+import sveltekit from "./sveltekit/index.js";
 
 import { type Recipe } from "./types.js";
 
@@ -15,6 +16,7 @@ export const recipes: Recipe<any>[] = [
   express,
   nextjs,
   remix,
+  sveltekit,
   // init
   _edgedbInit,
   _install,

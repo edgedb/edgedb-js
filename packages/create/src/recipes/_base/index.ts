@@ -29,6 +29,7 @@ const recipe: BaseRecipe = {
               { value: "next", label: "Next.js" },
               { value: "remix", label: "Remix" },
               { value: "express", label: "Express" },
+              { value: "sveltekit", label: "SvelteKit" },
               { value: "node-http", label: "Node HTTP Server" },
               { value: "none", label: "None" },
             ],
