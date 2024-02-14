@@ -59,4 +59,5 @@ export const serverUtils = {
   searchConfigDir: platform.searchConfigDir,
 };
 
-export const parseConnectArguments = getConnectArgumentsParser(serverUtils);
+export const makeConnectArgumentsParser = () =>
+  getConnectArgumentsParser(serverUtils, process.env);

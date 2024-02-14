@@ -17,7 +17,7 @@
  */
 
 import fc from "fast-check";
-import { parseConnectArguments } from "../src/conUtils.server";
+import { makeConnectArgumentsParser } from "../src/conUtils.server";
 import type { Client, Executor, _ICodec } from "../src/index.node";
 import {
   DivisionByZeroError,
@@ -2071,7 +2071,7 @@ function _decodeResultBuffer(outCodec: _ICodec, resultData: Uint8Array) {
 if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
   test("binary protocol over http", async () => {
     const codecsRegistry = new _CodecsRegistry();
-    const config = await parseConnectArguments(getConnectOptions());
+    const config = await makeConnectArgumentsParser()(getConnectOptions());
 
     const { address, user, password } = config.connectionParams;
     const token = await getHTTPSCRAMAuth(cryptoUtils)(
@@ -2114,7 +2114,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
 
   test("binary protocol over http failing auth", async () => {
     const codecsRegistry = new _CodecsRegistry();
-    const config = await parseConnectArguments(getConnectOptions());
+    const config = await makeConnectArgumentsParser()(getConnectOptions());
     const fetchConn = AdminUIFetchConnection.create(
       {
         address: config.connectionParams.address,

@@ -14,6 +14,7 @@ module.exports = {
     // aren't imported as 'import type' in other parts of the generated
     // querybuilder, so set this option to ensure we always do that
     "@typescript-eslint/consistent-type-imports": "error",
-    "@typescript-eslint/no-namespace": "off"
+    "@typescript-eslint/no-namespace": "off",
+    "@typescript-eslint/no-inferrable-types": "off",
   }
 };

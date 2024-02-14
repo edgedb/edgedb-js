@@ -1,4 +1,4 @@
-import { BaseClientPool, Client, ConnectOptions } from "./baseClient";
+import { BaseClientPool, Client, type ConnectOptions } from "./baseClient";
 import { getConnectArgumentsParser } from "./conUtils";
 import cryptoUtils from "./browserCrypto";
 import { EdgeDBError } from "./errors";
@@ -6,7 +6,8 @@ import { FetchConnection } from "./fetchConn";
 import { getHTTPSCRAMAuth } from "./httpScram";
 import { Options } from "./options";
 
-const parseConnectArguments = getConnectArgumentsParser(null);
+const makeConnectArgumentsParser = (env: Record<string, string | undefined>) =>
+  getConnectArgumentsParser(null, env);
 const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils);
 
 class FetchClientPool extends BaseClientPool {
@@ -22,11 +23,12 @@ export function createClient(): Client {
 }
 
 export function createHttpClient(
-  options?: string | ConnectOptions | null
+  options?: string | ConnectOptions | null,
+  env: Record<string, string | undefined> = {}
 ): Client {
   return new Client(
     new FetchClientPool(
-      parseConnectArguments,
+      makeConnectArgumentsParser(env),
       typeof options === "string" ? { dsn: options } : options ?? {}
     ),
     Options.defaults()

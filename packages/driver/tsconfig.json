@@ -3,7 +3,10 @@
   "compilerOptions": {
     "declarationDir": "./dist",
     "outDir": "./dist",
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "lib": [
+      "es2022"
+    ]
     // "baseUrl": ".",
     // "typeRoots": [
     //   "./node_modules/@types"
