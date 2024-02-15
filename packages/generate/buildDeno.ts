@@ -8,7 +8,7 @@ await run({
   importRewriteRules: [
     {
       match: /^@iarna\/toml$/,
-      replace: "https://deno.land/std@0.208.0/toml/mod.ts",
+      replace: "https://deno.land/std@0.216.0/toml/mod.ts",
     },
     {
       match: /^edgedb\/dist\//,
