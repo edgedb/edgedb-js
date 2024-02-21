@@ -101,7 +101,7 @@ currently supported.`);
           }
         } catch (err) {
           wasError = true;
-          collectAndPrintError(errs, prettyPath, err)
+          errs.push(formatError(prettyPath, err));
         }
       })
     );
