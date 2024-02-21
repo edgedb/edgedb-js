@@ -53,7 +53,7 @@ currently supported.`);
     for (const err of errs) {
         console.log('\x1b[22m' + err)
     }
-    if(errs.length > 1) console.log(summary)
+    if(errs.length > 0) console.log(summary)
     const t1Pretty = ((performance.now()-t0)/1000).toFixed(2)
     console.log(`\x1b[1;33mCompleted in: ${t1Pretty}s\x1b[0m\n`)
   }
