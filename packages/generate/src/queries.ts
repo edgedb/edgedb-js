@@ -4,10 +4,9 @@ import { type CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
 import { type Target, camelify } from "./genutil";
 
-function collectAndPrintError(errs:string[], path:string, err:any){
+function formatError(path: string, err: any){
   const message = `Error in file '${path}': ${err.toString()}`
-  errs.push(message)
-  console.log(`\x1b[31m${message}\x1b[0m`);
+  return `\x1b[31m${message}\x1b[0m`;
 }
 
 // generate per-file queries
