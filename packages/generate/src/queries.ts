@@ -4,6 +4,12 @@ import { type CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
 import { type Target, camelify } from "./genutil";
 
+function collectAndPrintError(errs:string[], path:string, err:any){
+  const message = `Error in file '${path}': ${err.toString()}`
+  errs.push(message)
+  console.log(`\x1b[31m${message}\x1b[0m`);
+}
+
 // generate per-file queries
 // generate queries in a single file
 // generate per-file queries, then listen for changes and update
@@ -13,6 +19,7 @@ export async function generateQueryFiles(params: {
   client: Client;
   schemaDir: string;
 }) {
+  const t0 = performance.now()
   if (params.options.file && params.options.watch) {
     throw new Error(`Using --watch and --file mode simultaneously is not
 currently supported.`);
@@ -38,6 +45,21 @@ currently supported.`);
 
   console.log(`Detected schema directory: ${params.schemaDir}`);
   const matches = await getMatches(root, params.schemaDir);
+
+  const errs:string[] = [];
+  function printSummary(){
+    const passedCount = matches.length - errs.length
+    const summary = `\n\x1b[${errs.length > 0 ? '1;31m' : '1;32m'}${passedCount}/${matches.length} queries passed${errs.length ? ', '+errs.length+' failed'  : '!'}`
+    console.log(summary)
+    for (const err of errs) {
+        console.log('\x1b[22m')
+        console.error(err)
+    }
+    if(errs.length > 1) console.log(summary)
+    const t1Pretty = ((performance.now()-t0)/1000).toFixed(2)
+    console.log(`\x1b[1;33mCompleted in: ${t1Pretty}s\x1b[0m\n`)
+  }
+
   if (matches.length === 0) {
     console.log(`No .edgeql files found outside of ${params.schemaDir}`);
     return;
@@ -80,9 +102,7 @@ currently supported.`);
           }
         } catch (err) {
           wasError = true;
-          console.log(
-            `Error in file '${prettyPath}': ${(err as Error).toString()}`
-          );
+          collectAndPrintError(errs, prettyPath, err)
         }
       })
     );
@@ -109,6 +129,7 @@ currently supported.`);
         );
       }
     }
+    printSummary();
     return;
   }
 
@@ -131,11 +152,7 @@ currently supported.`);
         );
       }
     } catch (err) {
-      console.log(
-        `Error in file './${adapter.path.posix.relative(root, path)}': ${(
-          err as any
-        ).toString()}`
-      );
+      collectAndPrintError(errs, './'+adapter.path.posix.relative(root, path), err)
     }
   }
 
@@ -146,6 +163,8 @@ currently supported.`);
   // find all *.edgeql files
   // for query in queries:
   //   generate output file
+
+  printSummary();
 }
 
 export function stringifyImports(imports: { [k: string]: boolean }) {
