@@ -151,7 +151,12 @@ currently supported.`);
         );
       }
     } catch (err) {
-      collectAndPrintError(errs, './'+adapter.path.posix.relative(root, path), err)
+      errs.push(
+        formatErrors(
+          './' + adapter.path.posix.relative(root, path),
+          err
+        )
+      );
     }
   }
 
