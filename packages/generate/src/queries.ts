@@ -49,10 +49,9 @@ currently supported.`);
   function printSummary(){
     const passedCount = matches.length - errs.length
     const summary = `\n\x1b[${errs.length > 0 ? '1;31m' : '1;32m'}${passedCount}/${matches.length} queries passed${errs.length ? ', '+errs.length+' failed'  : '!'}`
-    console.log(summary)
+    console.log(summary + '\n')
     for (const err of errs) {
-        console.log('\x1b[22m')
-        console.error(err)
+        console.log('\x1b[22m' + err)
     }
     if(errs.length > 1) console.log(summary)
     const t1Pretty = ((performance.now()-t0)/1000).toFixed(2)
