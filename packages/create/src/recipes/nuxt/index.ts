@@ -35,10 +35,10 @@ const recipe: Recipe = {
       },
       dependencies: {
         "@iconify-json/heroicons": "1.1.19",
-        "@nuxt/ui": "^2.13.0"
+        "@nuxt/ui": "^2.13.0",
+        "nuxt-edgedb-module": "^0.0.42"
       },
       devDependencies: {
-        "nuxt-edgedb-module": "latest",
         "@edgedb/generate": "0.4.1",
         "@nuxt/devtools": "latest",
         "nuxt": "latest"
