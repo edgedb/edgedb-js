@@ -1277,19 +1277,34 @@ SELECT __scope_0_defaultPerson {
 
   test("portable shape", async () => {
     const baseShape = e.shape(e.Movie, (movie) => ({
-      ...movie["*"],
+      title: true,
+      rating: true,
+      filter_single: e.op(movie.title, "=", "The Avengers"),
     }));
+
+    type ShapeType = $infer<typeof baseShape>;
+    tc.assert<
+      tc.IsExact<
+        ShapeType,
+        {
+          title: string;
+          rating: number | null;
+        } | null
+      >
+    >(true);
+
     const query = e.select(e.Movie, (m) => {
       return {
         ...baseShape(m),
         characters: { name: true },
-        filter_single: e.op(m.title, "=", "The Avengers"),
       };
     });
 
     const result = await query.run(client);
-    assert.ok(result?.rating);
-    assert.ok(result?.characters);
+    assert.ok(result);
+    assert.ok(result.title);
+    assert.ok(result.rating);
+    assert.ok(result.characters);
   });
 
   test("filter_single id", async () => {
