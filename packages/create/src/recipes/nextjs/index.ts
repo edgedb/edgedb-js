@@ -3,7 +3,7 @@ import * as p from "@clack/prompts";
 import debug from "debug";
 import { updatePackage } from "write-package";
 
-import { BaseOptions, Recipe } from "../types.js";
+import type { BaseOptions, Recipe } from "../types.js";
 import { copyTemplateFiles } from "../../utils.js";
 
 const logger = debug("@edgedb/create:recipe:nextjs");
@@ -102,7 +102,7 @@ const recipe: Recipe<NextjsOptions> = {
         lint: "next lint",
       },
       dependencies: {
-        ...(useEdgeDBAuth ? { "@edgedb/auth-nextjs": "^0.1.0" } : {}),
+        ...(useEdgeDBAuth ? { "nuxt-edgedb-module": "^0.1.0" } : {}),
         edgedb: "^1.4.1",
         react: "^18",
         "react-dom": "^18",
