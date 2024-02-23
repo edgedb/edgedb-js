@@ -4,8 +4,8 @@ import { type CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
 import { type Target, camelify } from "./genutil";
 
-function formatError(path: string, err: any){
-  const message = `Error in file '${path}': ${err.toString()}`
+function formatError(path: string, err: any) {
+  const message = `Error in file '${path}': ${err.toString()}`;
   return `\x1b[31m${message}\x1b[0m`;
 }
 
@@ -18,7 +18,7 @@ export async function generateQueryFiles(params: {
   client: Client;
   schemaDir: string;
 }) {
-  const t0 = performance.now()
+  const t0 = performance.now();
   if (params.options.file && params.options.watch) {
     throw new Error(`Using --watch and --file mode simultaneously is not
 currently supported.`);
@@ -45,17 +45,21 @@ currently supported.`);
   console.log(`Detected schema directory: ${params.schemaDir}`);
   const matches = await getMatches(root, params.schemaDir);
 
-  const errs:string[] = [];
-  function printSummary(){
-    const passedCount = matches.length - errs.length
-    const summary = `\n\x1b[${errs.length > 0 ? '1;31m' : '1;32m'}${passedCount}/${matches.length} queries passed${errs.length ? ', '+errs.length+' failed'  : '!'}`
-    console.log(summary + '\n')
+  const errs: string[] = [];
+  function printSummary() {
+    const passedCount = matches.length - errs.length;
+    const summary = `\n\x1b[${
+      errs.length > 0 ? "1;31m" : "1;32m"
+    }${passedCount}/${matches.length} queries passed${
+      errs.length ? ", " + errs.length + " failed" : "!"
+    }`;
+    console.log(summary + "\n");
     for (const err of errs) {
-        console.log('\x1b[22m' + err)
+      console.log("\x1b[22m" + err);
     }
-    if(errs.length > 0) console.log(summary)
-    const t1Pretty = ((performance.now()-t0)/1000).toFixed(2)
-    console.log(`\x1b[1;33mCompleted in: ${t1Pretty}s\x1b[0m\n`)
+    if (errs.length > 0) console.log(summary);
+    const t1Pretty = ((performance.now() - t0) / 1000).toFixed(2);
+    console.log(`\x1b[1;33mCompleted in: ${t1Pretty}s\x1b[0m\n`);
   }
 
   if (matches.length === 0) {
@@ -151,10 +155,7 @@ currently supported.`);
       }
     } catch (err) {
       errs.push(
-        formatErrors(
-          './' + adapter.path.posix.relative(root, path),
-          err
-        )
+        formatErrors("./" + adapter.path.posix.relative(root, path), err)
       );
     }
   }
