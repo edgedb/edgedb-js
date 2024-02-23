@@ -35,7 +35,7 @@ export class NextPagesAuth extends NextAuth {
       sessionCache.get(req) ??
       new NextAuthSession(
         this.client,
-        req.cookies[this.options.authCookieName]?.split(";")[0]
+        req.cookies[this.options.authCookieName]?.split(";")[0] ?? null
       );
     sessionCache.set(req, session);
     return session;

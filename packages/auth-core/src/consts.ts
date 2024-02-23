@@ -3,8 +3,10 @@
 export const builtinOAuthProviderNames = [
   "builtin::oauth_apple",
   "builtin::oauth_azure",
+  "builtin::oauth_discord",
   "builtin::oauth_github",
   "builtin::oauth_google",
+  "builtin::oauth_slack",
 ] as const;
 export type BuiltinOAuthProviderNames =
   (typeof builtinOAuthProviderNames)[number];

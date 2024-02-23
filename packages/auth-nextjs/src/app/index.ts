@@ -25,7 +25,7 @@ export class NextAppAuth extends NextAuth {
     () =>
       new NextAuthSession(
         this.client,
-        cookies().get(this.options.authCookieName)?.value.split(";")[0]
+        cookies().get(this.options.authCookieName)?.value.split(";")[0] ?? null
       )
   );
 
