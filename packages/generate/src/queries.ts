@@ -9,6 +9,22 @@ function formatError(path: string, err: any) {
   return `\x1b[31m${message}\x1b[0m`;
 }
 
+function printSummary(matches: string[], errs: string[], t0: number) {
+  const passedCount = matches.length - errs.length;
+  const summary = `\n\x1b[${
+    errs.length > 0 ? "1;31m" : "1;32m"
+  }${passedCount}/${matches.length} queries passed${
+    errs.length ? ", " + errs.length + " failed" : "!"
+  }`;
+  console.log(summary + "\n");
+  for (const err of errs) {
+    console.log("\x1b[22m" + err);
+  }
+  if (errs.length > 0) console.log(summary);
+  const t1Pretty = ((performance.now() - t0) / 1000).toFixed(2);
+  console.log(`\x1b[1;33mCompleted in: ${t1Pretty}s\x1b[0m\n`);
+}
+
 // generate per-file queries
 // generate queries in a single file
 // generate per-file queries, then listen for changes and update
@@ -20,8 +36,9 @@ export async function generateQueryFiles(params: {
 }) {
   const t0 = performance.now();
   if (params.options.file && params.options.watch) {
-    throw new Error(`Using --watch and --file mode simultaneously is not
-currently supported.`);
+    throw new Error(
+      `Using --watch and --file mode simultaneously is not currently supported.`
+    );
   }
 
   const noRoot = !params.root;
@@ -46,21 +63,6 @@ currently supported.`);
   const matches = await getMatches(root, params.schemaDir);
 
   const errs: string[] = [];
-  function printSummary() {
-    const passedCount = matches.length - errs.length;
-    const summary = `\n\x1b[${
-      errs.length > 0 ? "1;31m" : "1;32m"
-    }${passedCount}/${matches.length} queries passed${
-      errs.length ? ", " + errs.length + " failed" : "!"
-    }`;
-    console.log(summary + "\n");
-    for (const err of errs) {
-      console.log("\x1b[22m" + err);
-    }
-    if (errs.length > 0) console.log(summary);
-    const t1Pretty = ((performance.now() - t0) / 1000).toFixed(2);
-    console.log(`\x1b[1;33mCompleted in: ${t1Pretty}s\x1b[0m\n`);
-  }
 
   if (matches.length === 0) {
     console.log(`No .edgeql files found outside of ${params.schemaDir}`);
@@ -131,7 +133,7 @@ currently supported.`);
         );
       }
     }
-    printSummary();
+    printSummary(matches, errs, t0);
     return;
   }
 
@@ -155,7 +157,7 @@ currently supported.`);
       }
     } catch (err) {
       errs.push(
-        formatErrors("./" + adapter.path.posix.relative(root, path), err)
+        formatError("./" + adapter.path.posix.relative(root, path), err)
       );
     }
   }
@@ -168,7 +170,7 @@ currently supported.`);
   // for query in queries:
   //   generate output file
 
-  printSummary();
+  printSummary(matches, errs, t0);
 }
 
 export function stringifyImports(imports: { [k: string]: boolean }) {
