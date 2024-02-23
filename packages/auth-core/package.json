@@ -10,6 +10,16 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./webauthn": {
+      "types": "./dist/webauthn.d.ts",
+      "default": "./dist/webauthn.js"
+    }
+  },
   "license": "Apache-2.0",
   "sideEffects": false,
   "files": [

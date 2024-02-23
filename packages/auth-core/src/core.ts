@@ -6,7 +6,9 @@ import * as pkce from "./pkce";
 import {
   type BuiltinOAuthProviderNames,
   emailPasswordProviderName,
+  webAuthnProviderName,
 } from "./consts";
+import { type Serialized, requestGET, requestPOST } from "./utils";
 
 export interface TokenData {
   auth_token: string;
@@ -14,6 +16,14 @@ export interface TokenData {
   provider_token: string | null;
   provider_refresh_token: string | null;
 }
+
+type RegistrationResponse =
+  | { code: string }
+  | { verification_email_sent_at: string };
+
+type SignupResponse =
+  | { status: "complete"; verifier: string; tokenData: TokenData }
+  | { status: "verificationRequired"; verifier: string };
 
 export class Auth {
   /** @internal */
@@ -40,40 +50,19 @@ export class Auth {
   }
 
   /** @internal */
-  public async _get<T extends any = unknown>(path: string): Promise<T> {
-    const res = await fetch(new URL(path, this.baseUrl), {
-      method: "get",
-    });
-    if (!res.ok) {
-      throw new Error(await res.text());
-    }
-    if (res.headers.get("content-type")?.startsWith("application/json")) {
-      return res.json();
-    }
-    return null as any;
+  public async _get<T = unknown>(
+    path: string,
+    searchParams?: Record<string, string>
+  ): Promise<T> {
+    return requestGET<T>(new URL(path, this.baseUrl).href, searchParams);
   }
 
   /** @internal */
-  public async _post<T extends any = unknown>(
+  public async _post<T = unknown>(
     path: string,
-    body?: any
+    body?: object
   ): Promise<T> {
-    const res = await fetch(new URL(path, this.baseUrl), {
-      method: "post",
-      ...(body != null
-        ? {
-            body: JSON.stringify(body),
-            headers: { "Content-Type": "application/json" },
-          }
-        : undefined),
-    });
-    if (!res.ok) {
-      throw new Error(await res.text());
-    }
-    if (res.headers.get("content-type")?.startsWith("application/json")) {
-      return res.json();
-    }
-    return null as any;
+    return requestPOST<T>(new URL(path, this.baseUrl).href, body);
   }
 
   async createPKCESession() {
@@ -82,12 +71,69 @@ export class Auth {
   }
 
   getToken(code: string, verifier: string): Promise<TokenData> {
-    return this._get<TokenData>(
-      `token?${new URLSearchParams({
-        code,
-        verifier,
-      }).toString()}`
+    return this._get<TokenData>(`token`, { code, verifier });
+  }
+
+  async getWebAuthnSignupOptions(
+    email: string
+  ): Promise<Serialized<PublicKeyCredentialCreationOptions>> {
+    return this._get<Serialized<PublicKeyCredentialCreationOptions>>(
+      `webauthn/register/options`,
+      { email }
     );
+  }
+
+  async signupWithWebAuthn(
+    email: string,
+    credentials: Serialized<PublicKeyCredential>,
+    verifyUrl: string
+  ): Promise<SignupResponse> {
+    credentials.rawId;
+    const { challenge, verifier } = await pkce.createVerifierChallengePair();
+    const result = await this._post<RegistrationResponse>("webauthn/register", {
+      provider: webAuthnProviderName,
+      challenge,
+      credentials,
+      email,
+      verify_url: verifyUrl,
+    });
+
+    if ("code" in result) {
+      return {
+        status: "complete",
+        verifier,
+        tokenData: await this.getToken(result.code, verifier),
+      };
+    } else {
+      return { status: "verificationRequired", verifier };
+    }
+  }
+
+  async getWebAuthnSigninOptions(
+    email: string
+  ): Promise<Serialized<PublicKeyCredentialRequestOptions>> {
+    return this._get<Serialized<PublicKeyCredentialRequestOptions>>(
+      `webauthn/authenticate/options`,
+      { email }
+    );
+  }
+
+  async signinWithWebAuthn(
+    email: string,
+    assertion: Serialized<PublicKeyCredential>
+  ): Promise<TokenData> {
+    const { challenge, verifier } = await pkce.createVerifierChallengePair();
+    const { code } = await this._post<{ code: string }>(
+      "webauthn/authenticate",
+      {
+        provider: webAuthnProviderName,
+        challenge,
+        email,
+        assertion,
+      }
+    );
+
+    return this.getToken(code, verifier);
   }
 
   async signinWithEmailPassword(email: string, password: string) {
@@ -105,14 +151,9 @@ export class Auth {
     email: string,
     password: string,
     verifyUrl: string
-  ): Promise<
-    | { status: "complete"; verifier: string; tokenData: TokenData }
-    | { status: "verificationRequired"; verifier: string }
-  > {
+  ): Promise<SignupResponse> {
     const { challenge, verifier } = await pkce.createVerifierChallengePair();
-    const result = await this._post<
-      { code: string } | { verification_email_sent_at: string }
-    >("register", {
+    const result = await this._post<RegistrationResponse>("register", {
       provider: emailPasswordProviderName,
       challenge,
       email,
