@@ -1,20 +1,36 @@
 /** Base class for all exceptions raised by the auth extension. */
-export class EdgeDBAuthError extends Error {}
+export class EdgeDBAuthError extends Error {
+  get type() {
+    return "_EdgeDBAuth";
+  }
+}
 
 /** Error returned by auth extension could not be decoded into a
  * known error class.
  */
-export class UnknownError extends EdgeDBAuthError {}
+export class UnknownError extends EdgeDBAuthError {
+  get type() {
+    return "_Unknown";
+  }
+}
 
 /** Base class for all backend auth extension errors. It is not recommended to
  * return these errors to the user.
  */
-export class BackendError extends EdgeDBAuthError {}
+export class BackendError extends EdgeDBAuthError {
+  get type() {
+    return "_Backend";
+  }
+}
 
 /** Base class for all errors arising during normal use of the auth extension.
  * These errors are considered safe to return to the user.
  */
-export class UserError extends EdgeDBAuthError {}
+export class UserError extends EdgeDBAuthError {
+  get type() {
+    return "_User";
+  }
+}
 
 /** Required resource could not be found. */
 export class NotFoundError extends EdgeDBAuthError {
@@ -24,7 +40,11 @@ export class NotFoundError extends EdgeDBAuthError {
 }
 
 /** Error in auth extension configuration. */
-export class ConfigurationError extends BackendError {}
+export class ConfigurationError extends BackendError {
+  get type() {
+    return "_Configuration";
+  }
+}
 
 /** Required configuration is missing. */
 export class MissingConfigurationError extends ConfigurationError {
@@ -69,7 +89,11 @@ export class OAuthProviderFailureError extends UserError {
 }
 
 /** Error with email verification. */
-export class VerificationError extends UserError {}
+export class VerificationError extends UserError {
+  get type() {
+    return "_Verification";
+  }
+}
 
 /** Email verification token has expired. */
 export class VerificationTokenExpiredError extends VerificationError {
@@ -86,7 +110,11 @@ export class VerificationRequiredError extends VerificationError {
 }
 
 /** Error during PKCE flow. */
-export class PKCEError extends UserError {}
+export class PKCEError extends UserError {
+  get type() {
+    return "_PKCE";
+  }
+}
 
 /** Failed to create a valid PKCEChallenge object. */
 export class PKCECreationFailedError extends PKCEError {

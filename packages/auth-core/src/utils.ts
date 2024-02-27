@@ -80,9 +80,11 @@ export async function requestPOST<ResponseT>(
   }
 }
 
-const errorMapping = new Map(
+export const errorMapping = new Map(
   Object.values(errors)
-    .map((errClass) => ("type" in errClass ? [errClass.type, errClass] : null))
+    .map((errClass) =>
+      "type" in errClass.prototype ? [errClass.prototype.type, errClass] : null
+    )
     .filter((entry) => entry != null) as unknown as [
     string,
     errors.EdgeDBAuthError
