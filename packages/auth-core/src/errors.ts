@@ -2,15 +2,18 @@
 export class EdgeDBAuthError extends Error {}
 
 /** Error returned by auth extension could not be decoded into a
- * known error class. */
+ * known error class.
+ */
 export class UnknownError extends EdgeDBAuthError {}
 
 /** Base class for all backend auth extension errors. It is not recommended to
- * return these errors to the user. */
+ * return these errors to the user.
+ */
 export class BackendError extends EdgeDBAuthError {}
 
 /** Base class for all errors arising during normal use of the auth extension.
- * These errors are considered safe to return to the user. */
+ * These errors are considered safe to return to the user.
+ */
 export class UserError extends EdgeDBAuthError {}
 
 /** Required resource could not be found. */
