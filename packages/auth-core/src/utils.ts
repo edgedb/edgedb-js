@@ -1,3 +1,5 @@
+import * as errors from "./errors";
+
 export async function requestGET<ResponseT>(
   href: string,
   searchParams?: Record<string, string>,
@@ -23,7 +25,7 @@ export async function requestGET<ResponseT>(
       if (onFailure) {
         return onFailure(bodyText);
       }
-      throw new Error(`Failed to fetch ${href}: ${bodyText}`);
+      throw decodeError(bodyText);
     }
 
     if (response.headers.get("content-type")?.includes("application/json")) {
@@ -63,7 +65,7 @@ export async function requestPOST<ResponseT>(
       if (onFailure) {
         return onFailure(bodyText);
       }
-      throw new Error(`Failed to fetch ${href}: ${bodyText}`);
+      throw decodeError(bodyText);
     }
 
     if (response.headers.get("content-type")?.includes("application/json")) {
@@ -75,5 +77,46 @@ export async function requestPOST<ResponseT>(
       return onFailure((err as Error).message);
     }
     throw err;
+  }
+}
+
+const errorMapping = new Map(
+  Object.values(errors)
+    .map((errClass) => ("type" in errClass ? [errClass.type, errClass] : null))
+    .filter((entry) => entry != null) as unknown as [
+    string,
+    errors.EdgeDBAuthError
+  ][]
+);
+
+export function decodeError(errorBody: string): errors.EdgeDBAuthError {
+  try {
+    const errorJson = JSON.parse(errorBody);
+    if (
+      typeof errorJson !== "object" ||
+      !errorJson["error"] ||
+      typeof errorJson["error"] !== "object"
+    ) {
+      return new errors.UnknownError(
+        `Error returned by server does not contain 'error' object`
+      );
+    }
+    const error = errorJson["error"];
+    if (
+      !("type" in error && "message" in error) ||
+      typeof error["type"] !== "string" ||
+      typeof error["message"] !== "string"
+    ) {
+      return new errors.UnknownError(
+        `Error object returned by server does not contain 'type' or 'message'`
+      );
+    }
+    const errorClass = errorMapping.get(error.type);
+    if (!errorClass) {
+      return new errors.UnknownError(`Unknown error type: '${error.type}'`);
+    }
+    return new (errorClass as any)(error["message"]);
+  } catch {
+    return new errors.UnknownError(`Failed to decode error json: ${errorBody}`);
   }
 }

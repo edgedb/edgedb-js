@@ -12,12 +12,11 @@ import { requestGET, requestPOST } from "./utils";
 import type {
   RegistrationResponseJSON,
   AuthenticationResponseJSON,
-  PublicKeyCredentialCreationOptionsJSON,
-  PublicKeyCredentialRequestOptionsJSON,
   TokenData,
   RegistrationResponse,
   SignupResponse,
 } from "./types";
+import * as errors from "./errors";
 
 export class Auth {
   /** @internal */
@@ -250,7 +249,7 @@ export class Auth {
       }`);
     } catch (err) {
       if (err instanceof edgedb.InvalidReferenceError) {
-        throw new Error("auth extension is not enabled");
+        throw new errors.ConfigurationError("auth extension is not enabled");
       }
       throw err;
     }
