@@ -1,4 +1,9 @@
-import { type TokenData } from "@edgedb/auth-core";
+import {
+  type TokenData,
+  ConfigurationError,
+  PKCEError,
+  InvalidDataError,
+} from "@edgedb/auth-core";
 import type { Client } from "edgedb";
 import { cookies } from "next/headers";
 import { cache } from "react";
@@ -12,6 +17,7 @@ import {
   _extractParams,
 } from "../shared";
 
+export * from "@edgedb/auth-core/dist/errors";
 export {
   NextAuthSession,
   type NextAuthOptions,
@@ -89,7 +95,9 @@ export class NextAppAuth extends NextAuth {
         data: FormData | { email: string }
       ) => {
         if (!this.options.passwordResetPath) {
-          throw new Error(`'passwordResetPath' option not configured`);
+          throw new ConfigurationError(
+            `'passwordResetPath' option not configured`
+          );
         }
         const [email] = _extractParams(data, ["email"], "email missing");
         const { verifier } = await (
@@ -115,7 +123,7 @@ export class NextAppAuth extends NextAuth {
           this.options.pkceVerifierCookieName
         )?.value;
         if (!verifier) {
-          throw new Error("no pkce verifier cookie found");
+          throw new PKCEError("no pkce verifier cookie found");
         }
         const [resetToken, password] = _extractParams(
           data,
@@ -153,7 +161,9 @@ export class NextAppAuth extends NextAuth {
               .map((err) => (err as Error).message)
               .join(" and ");
 
-            throw new Error(`${bothParamsMissing}. Either one is required.`);
+            throw new InvalidDataError(
+              `${bothParamsMissing}. Either one is required.`
+            );
           }
         }
 
