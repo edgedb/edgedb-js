@@ -8,7 +8,13 @@ import {
   emailPasswordProviderName,
   webAuthnProviderName,
 } from "./consts";
-import { type Serialized, requestGET, requestPOST } from "./utils";
+import { requestGET, requestPOST } from "./utils";
+import type {
+  RegistrationResponseJSON,
+  AuthenticationResponseJSON,
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+} from "./types";
 
 export interface TokenData {
   auth_token: string;
@@ -58,10 +64,7 @@ export class Auth {
   }
 
   /** @internal */
-  public async _post<T = unknown>(
-    path: string,
-    body?: object
-  ): Promise<T> {
+  public async _post<T = unknown>(path: string, body?: object): Promise<T> {
     return requestPOST<T>(new URL(path, this.baseUrl).href, body);
   }
 
@@ -76,8 +79,8 @@ export class Auth {
 
   async getWebAuthnSignupOptions(
     email: string
-  ): Promise<Serialized<PublicKeyCredentialCreationOptions>> {
-    return this._get<Serialized<PublicKeyCredentialCreationOptions>>(
+  ): Promise<PublicKeyCredentialCreationOptionsJSON> {
+    return this._get<PublicKeyCredentialCreationOptionsJSON>(
       `webauthn/register/options`,
       { email }
     );
@@ -85,7 +88,7 @@ export class Auth {
 
   async signupWithWebAuthn(
     email: string,
-    credentials: Serialized<PublicKeyCredential>,
+    credentials: RegistrationResponseJSON,
     verifyUrl: string
   ): Promise<SignupResponse> {
     credentials.rawId;
@@ -111,8 +114,8 @@ export class Auth {
 
   async getWebAuthnSigninOptions(
     email: string
-  ): Promise<Serialized<PublicKeyCredentialRequestOptions>> {
-    return this._get<Serialized<PublicKeyCredentialRequestOptions>>(
+  ): Promise<PublicKeyCredentialRequestOptionsJSON> {
+    return this._get<PublicKeyCredentialRequestOptionsJSON>(
       `webauthn/authenticate/options`,
       { email }
     );
@@ -120,7 +123,7 @@ export class Auth {
 
   async signinWithWebAuthn(
     email: string,
-    assertion: Serialized<PublicKeyCredential>
+    assertion: AuthenticationResponseJSON
   ): Promise<TokenData> {
     const { challenge, verifier } = await pkce.createVerifierChallengePair();
     const { code } = await this._post<{ code: string }>(

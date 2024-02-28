@@ -1,13 +1,3 @@
-export type Serialized<T> = {
-  [P in keyof T]-?: T[P] extends BufferSource
-    ? string
-    : T[P] extends (infer U)[]
-    ? Serialized<U>[]
-    : T[P] extends object | undefined
-    ? Serialized<T[P]>
-    : T[P];
-};
-
 export async function requestGET<ResponseT>(
   href: string,
   searchParams?: Record<string, string>,

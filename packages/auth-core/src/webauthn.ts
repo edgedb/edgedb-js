@@ -1,29 +1,42 @@
 import { base64UrlToBytes, bytesToBase64Url } from "./crypto";
 import { webAuthnProviderName } from "./consts";
-import { type Serialized, requestGET, requestPOST } from "./utils";
+import { requestGET, requestPOST } from "./utils";
+import type {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+} from "./types";
+
+interface WebAuthnClientOptions {
+  signupOptionsUrl: string;
+  signupUrl: string;
+  signinOptionsUrl: string;
+  signinUrl: string;
+  verifyUrl: string;
+}
 
 export class WebAuthnClient {
   private readonly signupOptionsUrl: string;
   private readonly signupUrl: string;
   private readonly signinOptionsUrl: string;
   private readonly signinUrl: string;
+  private readonly verifyUrl: string;
 
-  constructor(
-    public readonly baseUrl: string,
-    public readonly verifyUrl: string
-  ) {
-    this.signupOptionsUrl = `${baseUrl}/webauthn/signup/options`;
-    this.signupUrl = `${baseUrl}/webauthn/signup`;
-    this.signinOptionsUrl = `${baseUrl}/webauthn/signin/options`;
-    this.signinUrl = `${baseUrl}/webauthn/signin`;
+  constructor(options: WebAuthnClientOptions) {
+    this.signupOptionsUrl = options.signupOptionsUrl;
+    this.signupUrl = options.signupUrl;
+    this.signinOptionsUrl = options.signinOptionsUrl;
+    this.signinUrl = options.signinUrl;
+    this.verifyUrl = options.verifyUrl;
   }
 
   public async signUp(email: string): Promise<{ code?: string }> {
-    const options = await requestGET<
-      Serialized<PublicKeyCredentialCreationOptions>
-    >(this.signupOptionsUrl, { email }, async (errorMessage) => {
-      throw new Error(`Failed to get sign-up options: ${errorMessage}`);
-    });
+    const options = await requestGET<PublicKeyCredentialCreationOptionsJSON>(
+      this.signupOptionsUrl,
+      { email },
+      async (errorMessage) => {
+        throw new Error(`Failed to get sign-up options: ${errorMessage}`);
+      }
+    );
 
     const credentials = await navigator.credentials.create({
       publicKey: {
@@ -55,11 +68,13 @@ export class WebAuthnClient {
   }
 
   async signIn(email: string): Promise<{ code?: string }> {
-    const options = await requestGET<
-      Serialized<PublicKeyCredentialRequestOptions>
-    >(this.signinOptionsUrl, { email }, async (errorMessage) => {
-      throw new Error(`Failed to get sign-in options: ${errorMessage}`);
-    });
+    const options = await requestGET<PublicKeyCredentialRequestOptionsJSON>(
+      this.signinOptionsUrl,
+      { email },
+      async (errorMessage) => {
+        throw new Error(`Failed to get sign-in options: ${errorMessage}`);
+      }
+    );
 
     const assertion = (await navigator.credentials.get({
       publicKey: {
