@@ -8,6 +8,7 @@ import {
   InvalidDataError,
   PKCEError,
   EdgeDBAuthError,
+  OAuthProviderFailureError,
 } from "@edgedb/auth-core";
 
 import {
@@ -135,7 +136,9 @@ export abstract class NextAuth extends NextAuthHelpers {
             if (error) {
               const desc = req.nextUrl.searchParams.get("error_description");
               return onOAuthCallback({
-                error: new Error(error + (desc ? `: ${desc}` : "")),
+                error: new OAuthProviderFailureError(
+                  error + (desc ? `: ${desc}` : "")
+                ),
               });
             }
             const code = req.nextUrl.searchParams.get("code");
@@ -146,12 +149,12 @@ export abstract class NextAuth extends NextAuthHelpers {
             )?.value;
             if (!code) {
               return onOAuthCallback({
-                error: new Error("no pkce code in response"),
+                error: new PKCEError("no pkce code in response"),
               });
             }
             if (!verifier) {
               return onOAuthCallback({
-                error: new Error("no pkce verifier cookie found"),
+                error: new PKCEError("no pkce verifier cookie found"),
               });
             }
             let tokenData: TokenData;
@@ -193,12 +196,12 @@ export abstract class NextAuth extends NextAuthHelpers {
             )?.value;
             if (!verificationToken) {
               return onEmailVerify({
-                error: new Error("no verification_token in response"),
+                error: new PKCEError("no verification_token in response"),
               });
             }
             if (!verifier) {
               return onEmailVerify({
-                error: new Error("no pkce verifier cookie found"),
+                error: new PKCEError("no pkce verifier cookie found"),
                 verificationToken,
               });
             }
@@ -234,7 +237,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             if (error) {
               const desc = req.nextUrl.searchParams.get("error_description");
               return onBuiltinUICallback({
-                error: new Error(error + (desc ? `: ${desc}` : "")),
+                error: new EdgeDBAuthError(error + (desc ? `: ${desc}` : "")),
               });
             }
             const code = req.nextUrl.searchParams.get("code");
@@ -252,7 +255,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 });
               }
               return onBuiltinUICallback({
-                error: new Error("no pkce code in response"),
+                error: new PKCEError("no pkce code in response"),
               });
             }
             const verifier = req.cookies.get(
@@ -260,7 +263,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             )?.value;
             if (!verifier) {
               return onBuiltinUICallback({
-                error: new Error("no pkce verifier cookie found"),
+                error: new PKCEError("no pkce verifier cookie found"),
               });
             }
             const isSignUp =

@@ -7,9 +7,17 @@ import {
   type BuiltinOAuthProviderNames,
   type TokenData,
   type emailPasswordProviderName,
+  ConfigurationError,
+  MissingConfigurationError,
+  InvalidDataError,
+  PKCEError,
+  BackendError,
+  OAuthProviderFailureError,
+  EdgeDBAuthError,
 } from "@edgedb/auth-core";
 import { type RemixAuthOptions, RemixClientAuth } from "./client.js";
 
+export * from "@edgedb/auth-core/dist/errors.js";
 export type { TokenData, RemixAuthOptions };
 
 export type BuiltinProviderNames =
@@ -120,13 +128,15 @@ export class RemixServerAuth extends RemixClientAuth {
       }) => {
         const path = params["*"];
         if (!path) {
-          throw new Error(`route handlers file should end with '.$.ts'`);
+          throw new ConfigurationError(
+            `route handlers file should end with '.$.ts'`
+          );
         }
         const searchParams = new URL(req.url).searchParams;
         switch (path) {
           case "oauth": {
             if (!onOAuthCallback) {
-              throw new Error(
+              throw new ConfigurationError(
                 `'onOAuthCallback' auth route handler not configured`
               );
             }
@@ -134,7 +144,7 @@ export class RemixServerAuth extends RemixClientAuth {
               "provider_name"
             ) as BuiltinOAuthProviderNames | null;
             if (!provider || !builtinOAuthProviderNames.includes(provider)) {
-              throw new Error(`invalid provider_name: ${provider}`);
+              throw new InvalidDataError(`invalid provider_name: ${provider}`);
             }
             const redirectUrl = `${this._authRoute}/oauth/callback`;
             const pkceSession = await this.core.then((core) =>
@@ -160,7 +170,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
           case "oauth/callback": {
             if (!onOAuthCallback) {
-              throw new Error(
+              throw new ConfigurationError(
                 `'onOAuthCallback' auth route handler not configured`
               );
             }
@@ -168,7 +178,9 @@ export class RemixServerAuth extends RemixClientAuth {
             if (error) {
               const desc = searchParams.get("error_description");
               return cbCall(onOAuthCallback, {
-                error: new Error(error + (desc ? `: ${desc}` : "")),
+                error: new OAuthProviderFailureError(
+                  error + (desc ? `: ${desc}` : "")
+                ),
               });
             }
             const code = searchParams.get("code");
@@ -177,12 +189,12 @@ export class RemixServerAuth extends RemixClientAuth {
               parseCookies(req)[this.options.pkceVerifierCookieName];
             if (!code) {
               return cbCall(onOAuthCallback, {
-                error: new Error("no pkce code in response"),
+                error: new PKCEError("no pkce code in response"),
               });
             }
             if (!verifier) {
               return cbCall(onOAuthCallback, {
-                error: new Error("no pkce verifier cookie found"),
+                error: new PKCEError("no pkce verifier cookie found"),
               });
             }
             let tokenData: TokenData;
@@ -225,7 +237,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
           case "builtin/callback": {
             if (!onBuiltinUICallback) {
-              throw new Error(
+              throw new ConfigurationError(
                 `'onBuiltinUICallback' auth route handler not configured`
               );
             }
@@ -233,7 +245,7 @@ export class RemixServerAuth extends RemixClientAuth {
             if (error) {
               const desc = searchParams.get("error_description");
               return cbCall(onBuiltinUICallback, {
-                error: new Error(error + (desc ? `: ${desc}` : "")),
+                error: new EdgeDBAuthError(error + (desc ? `: ${desc}` : "")),
               });
             }
             const code = searchParams.get("code");
@@ -250,7 +262,7 @@ export class RemixServerAuth extends RemixClientAuth {
                 });
               }
               return cbCall(onBuiltinUICallback, {
-                error: new Error("no pkce code in response"),
+                error: new PKCEError("no pkce code in response"),
               });
             }
             const verifier =
@@ -258,7 +270,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
             if (!verifier) {
               return cbCall(onBuiltinUICallback, {
-                error: new Error("no pkce verifier cookie found"),
+                error: new PKCEError("no pkce verifier cookie found"),
               });
             }
             const isSignUp = searchParams.get("isSignUp") === "true";
@@ -325,7 +337,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
           case "emailpassword/verify": {
             if (!onEmailVerify) {
-              throw new Error(
+              throw new ConfigurationError(
                 `'onEmailVerify' auth route handler not configured`
               );
             }
@@ -334,12 +346,12 @@ export class RemixServerAuth extends RemixClientAuth {
               parseCookies(req)[this.options.pkceVerifierCookieName];
             if (!verificationToken) {
               return cbCall(onEmailVerify, {
-                error: new Error("no verification_token in response"),
+                error: new PKCEError("no verification_token in response"),
               });
             }
             if (!verifier) {
               return cbCall(onEmailVerify, {
-                error: new Error("no pkce verifier cookie found"),
+                error: new PKCEError("no pkce verifier cookie found"),
                 verificationToken,
               });
             }
@@ -377,7 +389,9 @@ export class RemixServerAuth extends RemixClientAuth {
 
           case "signout": {
             if (!onSignout) {
-              throw new Error(`'onSignout' auth route handler not configured`);
+              throw new ConfigurationError(
+                `'onSignout' auth route handler not configured`
+              );
             }
             const headers = new Headers({
               "Set-Cookie": cookie.serialize(this.options.authCookieName, "", {
@@ -391,7 +405,7 @@ export class RemixServerAuth extends RemixClientAuth {
           }
 
           default:
-            throw new Error("Unknown auth route");
+            throw new Response("Unknown auth route", { status: 404 });
         }
       },
     };
@@ -609,7 +623,9 @@ export class RemixServerAuth extends RemixClientAuth {
     return handleAction(
       async (data, headers) => {
         if (!this.options.passwordResetPath) {
-          throw new Error(`'passwordResetPath' option not configured`);
+          throw new ConfigurationError(
+            `'passwordResetPath' option not configured`
+          );
         }
         const [email] = _extractParams(data, ["email"], "email missing");
 
@@ -671,7 +687,7 @@ export class RemixServerAuth extends RemixClientAuth {
         const verifier = parseCookies(req)[this.options.pkceVerifierCookieName];
 
         if (!verifier) {
-          throw new Error("no pkce verifier cookie found");
+          throw new PKCEError("no pkce verifier cookie found");
         }
 
         const [resetToken, password] = _extractParams(
@@ -749,21 +765,21 @@ function _extractParams(
     for (const paramName of paramNames) {
       const param = data.get(paramName)?.toString();
       if (!param) {
-        throw new Error(errMessage);
+        throw new InvalidDataError(errMessage);
       }
       params.push(param);
     }
   } else {
     if (typeof data !== "object") {
-      throw new Error("expected json object");
+      throw new InvalidDataError("expected json object");
     }
     for (const paramName of paramNames) {
       const param = data[paramName];
       if (!param) {
-        throw new Error(errMessage);
+        throw new InvalidDataError(errMessage);
       }
       if (typeof param !== "string") {
-        throw new Error(`expected '${paramName}' to be a string`);
+        throw new InvalidDataError(`expected '${paramName}' to be a string`);
       }
       params.push(param);
     }
@@ -871,6 +887,6 @@ async function cbCall(cb: (data?: any) => any, params: any, headers?: Headers) {
       status: res.status,
     });
   } else {
-    throw Error("The auth route callback should return redirect.");
+    throw new BackendError("The auth route callback should return redirect.");
   }
 }
