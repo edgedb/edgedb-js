@@ -1,4 +1,3 @@
-import type { ParseResult } from "../baseConn";
 import { ArrayCodec } from "../codecs/array";
 import { AT_LEAST_ONE, AT_MOST_ONE, MANY, ONE } from "../codecs/consts";
 import { EnumCodec } from "../codecs/enum";
@@ -25,25 +24,8 @@ export async function analyzeQuery(
   client: Client,
   query: string
 ): Promise<QueryType> {
-  let parseResult: ParseResult;
-  const pool: BaseClientPool = (client as any).pool;
+  const [cardinality, inCodec, outCodec] = await parseQuery(client, query);
 
-  const holder = await pool.acquireHolder(Options.defaults());
-  try {
-    const cxn = await holder._getConnection();
-    parseResult = await cxn._parse(
-      query,
-      OutputFormat.BINARY,
-      Cardinality.MANY,
-      Session.defaults()
-    );
-  } finally {
-    await holder.release();
-  }
-
-  const cardinality = parseResult[0];
-  const inCodec = parseResult[1];
-  const outCodec = parseResult[2];
   const imports = new Set<string>();
   const args = walkCodec(inCodec, {
     indent: "",
@@ -69,7 +51,27 @@ export async function analyzeQuery(
   };
 }
 
-function generateSetType(type: string, cardinality: Cardinality): string {
+export async function parseQuery(client: Client, query: string) {
+  const pool: BaseClientPool = (client as any).pool;
+
+  const holder = await pool.acquireHolder(Options.defaults());
+  try {
+    const cxn = await holder._getConnection();
+    return await cxn._parse(
+      query,
+      OutputFormat.BINARY,
+      Cardinality.MANY,
+      Session.defaults()
+    );
+  } finally {
+    await holder.release();
+  }
+}
+
+export function generateSetType(
+  type: string,
+  cardinality: Cardinality
+): string {
   switch (cardinality) {
     case Cardinality.MANY:
       return `${type}[]`;
@@ -85,7 +87,7 @@ function generateSetType(type: string, cardinality: Cardinality): string {
 
 // type AtLeastOne<T> = [T, ...T[]];
 
-function walkCodec(
+export function walkCodec(
   codec: ICodec,
   ctx: { indent: string; optionalNulls: boolean; imports: Set<string> }
 ): string {

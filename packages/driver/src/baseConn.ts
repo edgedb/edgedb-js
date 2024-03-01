@@ -97,12 +97,12 @@ const OLD_ERROR_CODES = new Map([
 ]);
 
 export type ParseResult = [
-  Cardinality,
-  ICodec,
-  ICodec,
-  number,
-  Uint8Array | null,
-  Uint8Array | null
+  cardinality: Cardinality,
+  inCodec: ICodec,
+  outCodec: ICodec,
+  capabilities: number,
+  inCodecBuffer: Uint8Array | null,
+  outCodecBuffer: Uint8Array | null
 ];
 
 export type connConstructor = new (

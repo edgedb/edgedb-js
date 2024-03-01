@@ -30,4 +30,4 @@ export * from "./reservedKeywords";
 // export * from "../syntax/funcops";
 // export * from "./syntax";
 export * as introspect from "./queries";
-export * from "./analyzeQuery";
+export { analyzeQuery } from "./analyzeQuery";
