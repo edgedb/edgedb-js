@@ -99,6 +99,86 @@ describe("select", () => {
     );
   });
 
+  test("named tuple as free object", async () => {
+    const namedTuple = e.tuple({
+      object: e.select(e.Hero, () => ({ limit: 1 })),
+      score: e.random(),
+    });
+
+    const query = e.select(namedTuple);
+    type Query = $infer<typeof query>;
+    tc.assert<
+      tc.IsExact<
+        Query,
+        {
+          object: { id: string };
+          score: number;
+        }[]
+      >
+    >(true);
+  });
+
+  test("named tuple as free object with shape", async () => {
+    const namedTuple = e.tuple({
+      object: e.select(e.Hero, () => ({ limit: 1 })),
+      score: e.random(),
+    });
+    const withShape = e.select(namedTuple, (q) => {
+      return {
+        name: q.object.name,
+        score: q.score,
+      };
+    });
+
+    type WithShape = $infer<typeof withShape>;
+    tc.assert<
+      tc.IsExact<
+        WithShape,
+        {
+          name: string;
+          score: number;
+        }[]
+      >
+    >(true);
+
+    const result = await withShape.run(client);
+    assert.equal(result.length, 1);
+    assert.ok(typeof result[0].name === "string");
+    assert.ok(typeof result[0].score === "number");
+  });
+
+  test("named tuple to free object", async () => {
+    const namedTuple = e.tuple({
+      object: e.select(e.Hero, () => ({ limit: 1 })),
+      score: e.random(),
+    });
+    const freeObject = e.for(e.select(namedTuple), (item) =>
+      e.select({ object: item.object, score: item.score })
+    );
+
+    const query = e.select(freeObject, (scope) => ({
+      name: scope.object.name,
+      score: scope.score,
+    }));
+
+    type Query = $infer<typeof query>;
+    tc.assert<
+      tc.IsExact<
+        Query,
+        {
+          name: string;
+          score: number;
+        }[]
+      >
+    >(true);
+
+    const result = await query.run(client);
+
+    assert.equal(result.length, 1);
+    assert.ok(result[0].name);
+    assert.ok(result[0].score);
+  });
+
   test("computed only shape", () => {
     const query = e.select(e.Hero, (hero) => ({
       upper_name: e.str_upper(hero.name),
@@ -107,25 +187,18 @@ describe("select", () => {
     tc.assert<tc.IsExact<$infer<typeof query>, { upper_name: string }[]>>(true);
   });
 
-  const q1 = e.select(e.Hero, () => ({
-    id: true,
-    secret_identity: true,
-    name: 1 > 0,
-    villains: {
-      id: true,
-      computed: e.str("test"),
-    },
-    computed: e.str("test"),
-  }));
-
-  type q1 = $.setToTsType<typeof q1>;
-
-  test("path construction", () => {
-    const result = e.select(e.default.Hero);
-    assert.equal(result.villains.nemesis.name.__element__.__name__, "std::str");
-  });
-
   test("complex shape", () => {
+    const q1 = e.select(e.Hero, () => ({
+      id: true,
+      secret_identity: true,
+      name: 1 > 0,
+      villains: {
+        id: true,
+        computed: e.str("test"),
+      },
+      computed: e.str("test"),
+    }));
+
     type q1type = $.BaseTypeToTsType<(typeof q1)["__element__"]>;
     tc.assert<
       tc.IsExact<
@@ -142,6 +215,11 @@ describe("select", () => {
         }
       >
     >(true);
+  });
+
+  test("path construction", () => {
+    const result = e.select(e.default.Hero);
+    assert.equal(result.villains.nemesis.name.__element__.__name__, "std::str");
   });
 
   test("deep shape", () => {
@@ -180,6 +258,17 @@ describe("select", () => {
   });
 
   test("compositionality", () => {
+    const q1 = e.select(e.Hero, () => ({
+      id: true,
+      secret_identity: true,
+      name: 1 > 0,
+      villains: {
+        id: true,
+        computed: e.str("test"),
+      },
+      computed: e.str("test"),
+    }));
+
     // selecting a select statement should
     // default to { id }
     const no_shape = e.select(q1);

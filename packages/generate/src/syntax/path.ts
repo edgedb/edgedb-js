@@ -20,6 +20,7 @@ import { $toEdgeQL } from "./toEdgeQL";
 import { $queryFunc, $queryFuncJSON } from "./query";
 
 import type {
+  $expr_TuplePath,
   BaseType,
   Expression,
   LinkDesc,
@@ -315,13 +316,15 @@ export function $pathify<Root extends TypeSet, Parent extends PathParent>(
     return _root as any;
   }
 
-  const root: $expr_PathNode<ObjectTypeSet> = _root as any;
+  const root = _root as unknown as
+    | $expr_PathNode<ObjectTypeSet>
+    | $expr_TuplePath<ObjectType>;
 
   let pointers = {
     ...root.__element__.__pointers__,
   };
 
-  if (root.__parent__) {
+  if (root.__parent__ && root.__kind__ !== ExpressionKind.TuplePath) {
     const { type, linkName } = root.__parent__;
     const parentPointer = type.__element__.__pointers__[linkName];
     if (parentPointer?.__kind__ === "link") {
@@ -448,7 +451,7 @@ export function $getScopedExpr<T extends ExpressionRoot>(
       expr.__element__.__name__ === "std::FreeObject";
 
     scopedExpr = isFreeObject
-      ? (expr as any as Expression<TypeSet<BaseType, Cardinality>>)
+      ? (expr as unknown as Expression<TypeSet<BaseType, Cardinality>>)
       : $expressionify({
           ...expr,
           __cardinality__: Cardinality.One,

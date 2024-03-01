@@ -40,7 +40,7 @@ export const getStringRepresentation: (
   }
   if (type.name === "anyobject") {
     return {
-      staticType: [`$.AnyObjectType`],
+      staticType: [`${params.anytype ?? "$.AnyObjectType"}`],
       runtimeType: [],
     };
   }
