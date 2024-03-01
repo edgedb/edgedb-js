@@ -100,10 +100,10 @@ SELECT (SELECT {
           str: string;
           numArr: readonly number[];
           optBool?: boolean | null;
-          tuple: readonly [string, number, boolean[]];
-          namedTuple: Readonly<{ a: number; b: bigint[]; c: string }>;
+          tuple: readonly [string, number, readonly boolean[]];
+          namedTuple: Readonly<{ a: number; b: readonly bigint[]; c: string }>;
           jsonTuple: readonly [unknown];
-          people: Readonly<{ name: string; age: number; tags: string[] }[]>;
+          people: Readonly<{ name: string; age: number; tags: readonly string[] }[]>;
         }
       >
     >(true);

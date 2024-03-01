@@ -109,15 +109,15 @@ export type setToAssignmentExpression<
 type getAssignmentLiteral<
   Set extends PrimitiveTypeSet,
   IsSetModifier extends boolean
-> = BaseTypeToTsType<Set["__element__"]> extends infer TsType
+> = BaseTypeToTsType<Set["__element__"], true> extends infer TsType
   ?
       | TsType
       | (Set["__cardinality__"] extends Cardinality.Many
-          ? TsType[]
+          ? readonly TsType[]
           : Set["__cardinality__"] extends Cardinality.AtLeastOne
           ? IsSetModifier extends true
-            ? TsType[]
-            : [TsType, ...TsType[]]
+            ? readonly TsType[]
+            : readonly [TsType, ...TsType[]]
           : never)
   : never;
 
