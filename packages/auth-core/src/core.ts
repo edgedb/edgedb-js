@@ -7,6 +7,7 @@ import {
   type BuiltinOAuthProviderNames,
   emailPasswordProviderName,
   webAuthnProviderName,
+  magicLinkProviderName,
 } from "./consts";
 import { requestGET, requestPOST } from "./utils";
 import type {
@@ -170,6 +171,36 @@ export class Auth {
       verification_token: verificationToken,
     });
     return this.getToken(code, verifier);
+  }
+
+  async signupWithMagicLink(
+    email: string,
+    callbackUrl: string,
+    redirectOnFailure: string,
+    challenge: string
+  ): Promise<void> {
+    await this._post("magic-link/register", {
+      provider: magicLinkProviderName,
+      challenge,
+      email,
+      callback_url: callbackUrl,
+      redirect_on_failure: redirectOnFailure,
+    });
+  }
+
+  async signinWithMagicLink(
+    email: string,
+    callbackUrl: string,
+    redirectOnFailure: string,
+    challenge: string
+  ): Promise<void> {
+    await this._post("magic-link/email", {
+      provider: magicLinkProviderName,
+      challenge,
+      email,
+      callback_url: callbackUrl,
+      redirect_on_failure: redirectOnFailure,
+    });
   }
 
   async resendVerificationEmail(verificationToken: string) {

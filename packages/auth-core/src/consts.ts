@@ -13,3 +13,4 @@ export type BuiltinOAuthProviderNames =
 
 export const emailPasswordProviderName = "builtin::local_emailpassword";
 export const webAuthnProviderName = "builtin::local_webauthn";
+export const magicLinkProviderName = "builtin::local_magic_link";
