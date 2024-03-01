@@ -113,11 +113,11 @@ type getAssignmentLiteral<
   ?
       | TsType
       | (Set["__cardinality__"] extends Cardinality.Many
-          ? TsType[]
+          ? readonly TsType[]
           : Set["__cardinality__"] extends Cardinality.AtLeastOne
           ? IsSetModifier extends true
-            ? TsType[]
-            : [TsType, ...TsType[]]
+            ? readonly TsType[]
+            : readonly [TsType, ...TsType[]]
           : never)
   : never;
 
