@@ -395,7 +395,7 @@ describe("insert", () => {
     const items: readonly string[] = ["asdf"];
     const query = e.insert(e.Bag, {
       stringsMulti: ["asdf", ...items] as const,
-      stringMultiArr: items,
+      stringMultiArr: [items] as const,
       stringsArr: items,
     });
     await query.run(client);
