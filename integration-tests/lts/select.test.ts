@@ -1050,10 +1050,11 @@ SELECT __scope_0_defaultPerson {
       title: true,
       characters: (char) => ({
         name: true,
-        order_by: char.name,
+        order_by: char.name, // assert order by scalar
         ...e.is(e.Hero, { secret_identity: true }),
       }),
       filter_single: e.op(movie.title, "=", "The Avengers"),
+      order_by: movie.genre, // assert order by enum
     }));
 
     const result = await query.run(client);

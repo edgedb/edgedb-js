@@ -35,6 +35,7 @@ import type {
   BaseType,
   ExclusiveTuple,
   orLiteralValue,
+  EnumType,
 } from "./typesystem";
 
 import {
@@ -62,7 +63,10 @@ export const EMPTY_LAST: "EMPTY LAST" = "EMPTY LAST";
 export type OrderByDirection = "ASC" | "DESC";
 export type OrderByEmpty = "EMPTY FIRST" | "EMPTY LAST";
 
-export type OrderByExpr = TypeSet<ScalarType | ObjectType, Cardinality>;
+export type OrderByExpr = TypeSet<
+  ScalarType | EnumType | ObjectType,
+  Cardinality
+>;
 export type OrderByObjExpr = {
   expression: OrderByExpr;
   direction?: OrderByDirection;
