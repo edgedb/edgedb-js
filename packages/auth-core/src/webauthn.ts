@@ -4,6 +4,8 @@ import { requestGET, requestPOST } from "./utils";
 import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
+  SignupResponse,
+  TokenData,
 } from "./types";
 
 interface WebAuthnClientOptions {
@@ -29,7 +31,7 @@ export class WebAuthnClient {
     this.verifyUrl = options.verifyUrl;
   }
 
-  public async signUp(email: string): Promise<{ code?: string }> {
+  public async signUp(email: string): Promise<SignupResponse> {
     const options = await requestGET<PublicKeyCredentialCreationOptionsJSON>(
       this.signupOptionsUrl,
       { email },
@@ -38,28 +40,53 @@ export class WebAuthnClient {
       }
     );
 
-    const credentials = await navigator.credentials.create({
+    const userHandle = options.user.id;
+    const credentials = (await navigator.credentials.create({
       publicKey: {
         ...options,
         challenge: base64UrlToBytes(options.challenge),
         user: {
           ...options.user,
-          id: base64UrlToBytes(options.user.id),
+          id: base64UrlToBytes(userHandle),
         },
         excludeCredentials: options.excludeCredentials?.map((credential) => ({
           ...credential,
           id: base64UrlToBytes(credential.id),
         })),
       },
-    });
+    })) as PublicKeyCredential | null;
 
-    return await requestPOST<{ code?: string }>(
+    if (!credentials) {
+      throw new Error("Failed to create credentials");
+    }
+
+    const credentialsResponse =
+      credentials.response as AuthenticatorAttestationResponse;
+    const encodedCredentials = {
+      authenticatorAttachment: credentials.authenticatorAttachment,
+      clientExtensionResults: credentials.getClientExtensionResults(),
+      id: credentials.id,
+      rawId: bytesToBase64Url(new Uint8Array(credentials.rawId)),
+      response: {
+        ...credentialsResponse,
+        attestationObject: bytesToBase64Url(
+          new Uint8Array(credentialsResponse.attestationObject)
+        ),
+        clientDataJSON: bytesToBase64Url(
+          new Uint8Array(credentialsResponse.clientDataJSON)
+        ),
+      },
+      type: credentials.type,
+    };
+
+    return await requestPOST<SignupResponse>(
       this.signupUrl,
       {
         email,
-        credentials,
+        credentials: encodedCredentials,
         provider: webAuthnProviderName,
         verify_url: this.verifyUrl,
+        user_handle: userHandle,
       },
       async (errorMessage) => {
         throw new Error(`Failed to sign up: ${errorMessage}`);
@@ -67,7 +94,7 @@ export class WebAuthnClient {
     );
   }
 
-  async signIn(email: string): Promise<{ code?: string }> {
+  async signIn(email: string): Promise<TokenData> {
     const options = await requestGET<PublicKeyCredentialRequestOptionsJSON>(
       this.signinOptionsUrl,
       { email },
@@ -95,10 +122,12 @@ export class WebAuthnClient {
       assertion.response as AuthenticatorAssertionResponse;
 
     const encodedAssertion = {
-      ...assertion,
+      type: assertion.type,
+      id: assertion.id,
+      authenticatorAttachments: assertion.authenticatorAttachment,
+      clientExtensionResults: assertion.getClientExtensionResults(),
       rawId: bytesToBase64Url(new Uint8Array(assertion.rawId)),
       response: {
-        ...assertion.response,
         authenticatorData: bytesToBase64Url(
           new Uint8Array(assertionResponse.authenticatorData)
         ),
@@ -114,7 +143,7 @@ export class WebAuthnClient {
       },
     };
 
-    return await requestPOST<{ code?: string }>(
+    return await requestPOST<TokenData>(
       this.signinUrl,
       {
         email,

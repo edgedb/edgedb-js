@@ -14,22 +14,10 @@ import type {
   AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
+  TokenData,
+  RegistrationResponse,
+  SignupResponse,
 } from "./types";
-
-export interface TokenData {
-  auth_token: string;
-  identity_id: string | null;
-  provider_token: string | null;
-  provider_refresh_token: string | null;
-}
-
-type RegistrationResponse =
-  | { code: string }
-  | { verification_email_sent_at: string };
-
-type SignupResponse =
-  | { status: "complete"; verifier: string; tokenData: TokenData }
-  | { status: "verificationRequired"; verifier: string };
 
 export class Auth {
   /** @internal */
@@ -77,21 +65,18 @@ export class Auth {
     return this._get<TokenData>(`token`, { code, verifier });
   }
 
-  async getWebAuthnSignupOptions(
-    email: string
-  ): Promise<PublicKeyCredentialCreationOptionsJSON> {
-    return this._get<PublicKeyCredentialCreationOptionsJSON>(
-      `webauthn/register/options`,
-      { email }
-    );
+  getWebAuthnSignupOptionsUrl(email: string) {
+    const url = new URL(`webauthn/register/options`, this.baseUrl);
+    url.searchParams.append("email", email);
+    return url.href;
   }
 
   async signupWithWebAuthn(
     email: string,
     credentials: RegistrationResponseJSON,
-    verifyUrl: string
+    verifyUrl: string,
+    userHandle: string
   ): Promise<SignupResponse> {
-    credentials.rawId;
     const { challenge, verifier } = await pkce.createVerifierChallengePair();
     const result = await this._post<RegistrationResponse>("webauthn/register", {
       provider: webAuthnProviderName,
@@ -99,6 +84,7 @@ export class Auth {
       credentials,
       email,
       verify_url: verifyUrl,
+      user_handle: userHandle,
     });
 
     if ("code" in result) {
@@ -112,13 +98,10 @@ export class Auth {
     }
   }
 
-  async getWebAuthnSigninOptions(
-    email: string
-  ): Promise<PublicKeyCredentialRequestOptionsJSON> {
-    return this._get<PublicKeyCredentialRequestOptionsJSON>(
-      `webauthn/authenticate/options`,
-      { email }
-    );
+  getWebAuthnSigninOptionsUrl(email: string) {
+    const url = new URL(`webauthn/authenticate/options`, this.baseUrl);
+    url.searchParams.append("email", email);
+    return url.href;
   }
 
   async signinWithWebAuthn(
@@ -136,6 +119,14 @@ export class Auth {
       }
     );
 
+    return this.getToken(code, verifier);
+  }
+
+  async verifyWebAuthnSignup(verificationToken: string, verifier: string) {
+    const { code } = await this._post<{ code: string }>("verify", {
+      provider: webAuthnProviderName,
+      verification_token: verificationToken,
+    });
     return this.getToken(code, verifier);
   }
 

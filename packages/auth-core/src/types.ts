@@ -69,3 +69,18 @@ export interface AuthenticatorAssertionResponseJSON {
   signature: Base64URLString;
   userHandle?: string;
 }
+
+export interface TokenData {
+  auth_token: string;
+  identity_id: string | null;
+  provider_token: string | null;
+  provider_refresh_token: string | null;
+}
+
+export type RegistrationResponse =
+  | { code: string }
+  | { verification_email_sent_at: string };
+
+export type SignupResponse =
+  | { status: "complete"; verifier: string; tokenData: TokenData }
+  | { status: "verificationRequired"; verifier: string };

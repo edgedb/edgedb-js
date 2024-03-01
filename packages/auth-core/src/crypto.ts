@@ -1,11 +1,3 @@
-/* eslint @typescript-eslint/no-var-requires: ["off"] */
-
-// TODO: Drop when Node 18 is EOL: 2025-04-30
-if (!globalThis.crypto) {
-  // tslint:disable-next-line: no-var-requires
-  globalThis.crypto = require("node:crypto").webcrypto;
-}
-
 const BASE64_URL_CHARS =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
@@ -62,9 +54,6 @@ export function base64UrlToBytes(base64url: string): Uint8Array {
 
   return new Uint8Array(outputArray);
 }
-
-
-
 
 export async function sha256(
   source: BufferSource | string
