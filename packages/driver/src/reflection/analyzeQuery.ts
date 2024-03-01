@@ -1,7 +1,8 @@
 import { ArrayCodec } from "../codecs/array";
 import { AT_LEAST_ONE, AT_MOST_ONE, MANY, ONE } from "../codecs/consts";
 import { EnumCodec } from "../codecs/enum";
-import { ICodec, ScalarCodec } from "../codecs/ifaces";
+import type { ICodec } from "../codecs/ifaces";
+import { ScalarCodec } from "../codecs/ifaces";
 import { NamedTupleCodec } from "../codecs/namedtuple";
 import { ObjectCodec } from "../codecs/object";
 import { MultiRangeCodec, RangeCodec } from "../codecs/range";
@@ -33,7 +34,7 @@ export async function analyzeQuery(
     imports,
   });
 
-  const result = generateSetType(
+  const result = applyCardinalityToTsType(
     walkCodec(outCodec, {
       indent: "",
       optionalNulls: false,
@@ -68,7 +69,7 @@ export async function parseQuery(client: Client, query: string) {
   }
 }
 
-export function generateSetType(
+export function applyCardinalityToTsType(
   type: string,
   cardinality: Cardinality
 ): string {
@@ -87,7 +88,8 @@ export function generateSetType(
 
 // type AtLeastOne<T> = [T, ...T[]];
 
-export function walkCodec(
+export { walkCodec as walkCodecToTsType };
+function walkCodec(
   codec: ICodec,
   ctx: { indent: string; optionalNulls: boolean; imports: Set<string> }
 ): string {
@@ -122,7 +124,7 @@ export function walkCodec(
         }
         return `${ctx.indent}  ${JSON.stringify(field.name)}${
           ctx.optionalNulls && field.cardinality === AT_MOST_ONE ? "?" : ""
-        }: ${generateSetType(
+        }: ${applyCardinalityToTsType(
           walkCodec(subCodec, { ...ctx, indent: ctx.indent + "  " }),
           field.cardinality
         )};`;
