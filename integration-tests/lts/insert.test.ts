@@ -391,6 +391,16 @@ describe("insert", () => {
     await query.run(client);
   });
 
+  test("readonly arrays for array and multi properties", async () => {
+    const items: readonly string[] = ["asdf"];
+    const query = e.insert(e.Bag, {
+      stringsMulti: ["asdf", ...items] as const,
+      stringMultiArr: items,
+      stringsArr: items,
+    });
+    await query.run(client);
+  });
+
   test("insert named tuple as shape", async () => {
     const query = e.params(
       {
