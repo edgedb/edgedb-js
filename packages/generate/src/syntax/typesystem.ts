@@ -521,7 +521,11 @@ export interface ArrayType<
 type ArrayTypeToTsType<
   Type extends ArrayType,
   isParam extends boolean = false
-> = BaseTypeToTsType<Type["__element__"], isParam>[];
+> = BaseTypeToTsType<Type["__element__"], isParam> extends infer TsType
+  ? isParam extends true
+    ? readonly TsType[]
+    : TsType[]
+  : never;
 
 /////////////////////////
 /// TUPLE TYPE
