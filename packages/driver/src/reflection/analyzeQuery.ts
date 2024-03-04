@@ -149,7 +149,8 @@ export const defaultCodecGenerators: CodecGeneratorMap = new Map([
     const subCodecs = codec
       .getSubcodecs()
       .map((subCodec) => ctx.walk(subCodec));
-    return `${ctx.readonly ? "readonly " : ""}[${subCodecs.join(", ")}]`;
+    const tuple = `[${subCodecs.join(", ")}]`;
+    return ctx.readonly ? `(readonly ${tuple})` : tuple;
   }),
   genDef(ArrayCodec, (codec, ctx) =>
     ctx.applyCardinality(ctx.walk(codec.getSubcodecs()[0]), Cardinality.Many)
@@ -216,13 +217,15 @@ export const defaultApplyCardinalityToTsType =
   (type: string, cardinality: Cardinality): string => {
     switch (cardinality) {
       case Cardinality.Many:
-        return `${ctx.readonly ? "readonly " : ""}${type}[]`;
+        return `${ctx.readonly ? "Readonly" : ""}Array<${type}>`;
       case Cardinality.One:
         return type;
       case Cardinality.AtMostOne:
         return `${type} | null`;
-      case Cardinality.AtLeastOne:
-        return `${ctx.readonly ? "readonly " : ""}[(${type}), ...(${type})[]]`;
+      case Cardinality.AtLeastOne: {
+        const tuple = `[(${type}), ...(${type})[]]`;
+        return ctx.readonly ? `(readonly ${tuple})` : tuple;
+      }
     }
     throw new Error(`Unexpected cardinality: ${cardinality}`);
   };
