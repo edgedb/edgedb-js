@@ -650,4 +650,25 @@ export class Client implements Executor {
       await holder.release();
     }
   }
+
+  async parse(query: string) {
+    const holder = await this.pool.acquireHolder(this.options);
+    try {
+      const cxn = await holder._getConnection();
+      const result = await cxn._parse(
+        query,
+        OutputFormat.BINARY,
+        Cardinality.MANY,
+        this.options.session
+      );
+
+      return {
+        in: result[1],
+        out: result[2],
+        cardinality: result[0],
+      };
+    } finally {
+      await holder.release();
+    }
+  }
 }

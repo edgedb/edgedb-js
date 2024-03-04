@@ -9,9 +9,8 @@ import { MultiRangeCodec, RangeCodec } from "../codecs/range";
 import { NullCodec } from "../codecs/codecs";
 import { SetCodec } from "../codecs/set";
 import { TupleCodec } from "../codecs/tuple";
-import { Cardinality, OutputFormat } from "../ifaces";
-import { Options, Session } from "../options";
-import type { Client, BaseClientPool } from "../baseClient";
+import { Cardinality } from "../ifaces";
+import type { Client } from "../baseClient";
 
 type QueryType = {
   args: string;
@@ -25,7 +24,7 @@ export async function analyzeQuery(
   client: Client,
   query: string
 ): Promise<QueryType> {
-  const [cardinality, inCodec, outCodec] = await parseQuery(client, query);
+  const { cardinality, in: inCodec, out: outCodec } = await client.parse(query);
 
   const imports = new Set<string>();
   const args = walkCodec(inCodec, {
@@ -52,23 +51,6 @@ export async function analyzeQuery(
     query,
     imports,
   };
-}
-
-export async function parseQuery(client: Client, query: string) {
-  const pool: BaseClientPool = (client as any).pool;
-
-  const holder = await pool.acquireHolder(Options.defaults());
-  try {
-    const cxn = await holder._getConnection();
-    return await cxn._parse(
-      query,
-      OutputFormat.BINARY,
-      Cardinality.MANY,
-      Session.defaults()
-    );
-  } finally {
-    await holder.release();
-  }
 }
 
 export function applyCardinalityToTsType(
