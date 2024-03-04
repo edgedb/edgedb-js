@@ -22,7 +22,10 @@ describe("queries", () => {
   });
 
   test("basic select", async () => {
-    const result = await getMoviesStarring(client, { name: "Iron Man" });
+    const result = await getMoviesStarring(client, {
+      name: "Iron Man",
+      years: [2012, 2016] as const, // readonly arrays accepted
+    });
 
     type result = typeof result;
     tc.assert<
@@ -58,6 +61,7 @@ describe("queries", () => {
         GetMoviesStarringArgs,
         {
           name?: string | null;
+          years: readonly number[];
         }
       >
     >(true);

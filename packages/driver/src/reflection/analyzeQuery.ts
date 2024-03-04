@@ -31,6 +31,7 @@ export async function analyzeQuery(
   const args = walkCodec(inCodec, {
     indent: "",
     optionalNulls: true,
+    readonly: true,
     imports,
   });
 
@@ -38,6 +39,7 @@ export async function analyzeQuery(
     walkCodec(outCodec, {
       indent: "",
       optionalNulls: false,
+      readonly: false,
       imports,
     }),
     cardinality
@@ -91,7 +93,12 @@ export function applyCardinalityToTsType(
 export { walkCodec as walkCodecToTsType };
 function walkCodec(
   codec: ICodec,
-  ctx: { indent: string; optionalNulls: boolean; imports: Set<string> }
+  ctx: {
+    indent: string;
+    optionalNulls: boolean;
+    readonly: boolean;
+    imports: Set<string>;
+  }
 ): string {
   if (codec instanceof NullCodec) {
     return "null";
@@ -111,7 +118,7 @@ function walkCodec(
         ? codec.getFields()
         : codec.getNames().map((name) => ({ name, cardinality: ONE }));
     const subCodecs = codec.getSubcodecs();
-    return `{\n${fields
+    const objectShape = `{\n${fields
       .map((field, i) => {
         let subCodec = subCodecs[i];
         if (subCodec instanceof SetCodec) {
@@ -130,12 +137,16 @@ function walkCodec(
         )};`;
       })
       .join("\n")}\n${ctx.indent}}`;
+    return ctx.readonly ? `Readonly<${objectShape}>` : objectShape;
   }
   if (codec instanceof ArrayCodec) {
-    return `${walkCodec(codec.getSubcodecs()[0], ctx)}[]`;
+    return `${ctx.readonly ? "readonly " : ""}${walkCodec(
+      codec.getSubcodecs()[0],
+      ctx
+    )}[]`;
   }
   if (codec instanceof TupleCodec) {
-    return `[${codec
+    return `${ctx.readonly ? "readonly " : ""}[${codec
       .getSubcodecs()
       .map((subCodec) => walkCodec(subCodec, ctx))
       .join(", ")}]`;
