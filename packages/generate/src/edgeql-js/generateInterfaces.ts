@@ -1,4 +1,4 @@
-import { CodeBuffer, js, t } from "../builders";
+import { CodeBuffer, t } from "../builders";
 import type { GeneratorParams } from "../genutil";
 import { $ } from "../genutil";
 import { makePlainIdent, quote, splitName, toTSScalarType } from "../genutil";
@@ -32,8 +32,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
       const modName = modParts[modParts.length - 1];
       const parentModName = modParts.slice(0, -1).join("::");
       const parent = parentModName ? getModule(parentModName) : null;
-      const internalName =
-        modName === "default" && !parentModName ? "" : makePlainIdent(modName);
+      const internalName = makePlainIdent(modName);
 
       module = {
         name: modName,
@@ -73,9 +72,8 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
     (typeName: string, withModule: boolean = false): string => {
       const { tMod, tName, module } = getPlainTypeModule(typeName);
       return (
-        ((mod !== tMod || withModule) && tMod !== "default"
-          ? `${module.fullInternalName}.`
-          : "") + `${makePlainIdent(tName)}`
+        (mod !== tMod || withModule ? `${module.fullInternalName}.` : "") +
+        `${makePlainIdent(tName)}`
       );
     };
 
@@ -178,12 +176,8 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
   const plainTypesExportBuf = new CodeBuffer();
 
   const writeModuleExports = (module: ModuleData) => {
-    const wrapInNamespace = !(module.isRoot && module.name === "default");
-    if (wrapInNamespace) {
-      plainTypesCode.writeln([t`export namespace ${module.internalName} {`]);
-      plainTypesCode.writeln([js`const ${module.internalName} = {`]);
-      plainTypesCode.increaseIndent();
-    }
+    plainTypesCode.writeln([t`export namespace ${module.internalName} {`]);
+    plainTypesCode.increaseIndent();
 
     plainTypesCode.writeBuf(module.buf);
 
@@ -200,11 +194,17 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
     plainTypesExportBuf.decreaseIndent();
     plainTypesExportBuf.writeln([t`};`]);
 
-    if (wrapInNamespace) {
-      plainTypesCode.decreaseIndent();
-      plainTypesCode.writeln([t`}`]);
-      plainTypesCode.writeln([js`}`]);
-      plainTypesCode.addExport(module.internalName, { modes: ["js"] });
+    plainTypesCode.decreaseIndent();
+    plainTypesCode.writeln([t`}`]);
+    plainTypesCode.addExport(module.internalName, { modes: ["js"] });
+
+    if (module.isRoot && module.name === "default") {
+      for (const [typeName, typeRef] of module.types) {
+        plainTypesCode.writeln([`import ${typeName} = ${typeRef};`]);
+      }
+      plainTypesCode.writeln([
+        `export {${[...module.types.keys()].join(", ")}};`,
+      ]);
     }
   };
 
