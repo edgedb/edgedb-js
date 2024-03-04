@@ -37,6 +37,7 @@ import Event from "./primitives/event";
 import { LifoQueue } from "./primitives/queues";
 import { BaseRawConnection } from "./baseConn";
 import { ConnectWithTimeout, retryingConnect } from "./retry";
+import { util } from "./reflection/util";
 import { Transaction } from "./transaction";
 import { sleep } from "./utils";
 
@@ -661,11 +662,12 @@ export class Client implements Executor {
         Cardinality.MANY,
         this.options.session
       );
+      const cardinality = util.parseCardinality(result[0]);
 
       return {
         in: result[1],
         out: result[2],
-        cardinality: result[0],
+        cardinality,
       };
     } finally {
       await holder.release();

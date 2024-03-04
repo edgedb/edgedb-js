@@ -1,5 +1,4 @@
 import { ArrayCodec } from "../codecs/array";
-import { AT_LEAST_ONE, AT_MOST_ONE, MANY, ONE } from "../codecs/consts";
 import { EnumCodec } from "../codecs/enum";
 import type { ICodec } from "../codecs/ifaces";
 import { ScalarCodec } from "../codecs/ifaces";
@@ -9,8 +8,9 @@ import { MultiRangeCodec, RangeCodec } from "../codecs/range";
 import { NullCodec } from "../codecs/codecs";
 import { SetCodec } from "../codecs/set";
 import { TupleCodec } from "../codecs/tuple";
-import { Cardinality } from "../ifaces";
 import type { Client } from "../baseClient";
+import { Cardinality } from "./enums";
+import { util } from "./util";
 
 type QueryType = {
   args: string;
@@ -58,13 +58,13 @@ export function applyCardinalityToTsType(
   cardinality: Cardinality
 ): string {
   switch (cardinality) {
-    case Cardinality.MANY:
+    case Cardinality.Many:
       return `${type}[]`;
-    case Cardinality.ONE:
+    case Cardinality.One:
       return type;
-    case Cardinality.AT_MOST_ONE:
+    case Cardinality.AtMostOne:
       return `${type} | null`;
-    case Cardinality.AT_LEAST_ONE:
+    case Cardinality.AtLeastOne:
       return `[(${type}), ...(${type})[]]`;
   }
   throw Error(`unexpected cardinality: ${cardinality}`);
@@ -98,24 +98,30 @@ function walkCodec(
     const fields =
       codec instanceof ObjectCodec
         ? codec.getFields()
-        : codec.getNames().map((name) => ({ name, cardinality: ONE }));
+        : codec.getNames().map((name) => ({ name, cardinality: undefined }));
     const subCodecs = codec.getSubcodecs();
     const objectShape = `{\n${fields
       .map((field, i) => {
+        const cardinality = field.cardinality
+          ? util.parseCardinality(field.cardinality)
+          : Cardinality.One;
         let subCodec = subCodecs[i];
         if (subCodec instanceof SetCodec) {
           if (
-            !(field.cardinality === MANY || field.cardinality === AT_LEAST_ONE)
+            !(
+              cardinality === Cardinality.Many ||
+              cardinality === Cardinality.AtLeastOne
+            )
           ) {
             throw Error("subcodec is SetCodec, but upper cardinality is one");
           }
           subCodec = subCodec.getSubcodecs()[0];
         }
         return `${ctx.indent}  ${JSON.stringify(field.name)}${
-          ctx.optionalNulls && field.cardinality === AT_MOST_ONE ? "?" : ""
+          ctx.optionalNulls && cardinality === Cardinality.AtMostOne ? "?" : ""
         }: ${applyCardinalityToTsType(
           walkCodec(subCodec, { ...ctx, indent: ctx.indent + "  " }),
-          field.cardinality
+          cardinality
         )};`;
       })
       .join("\n")}\n${ctx.indent}}`;

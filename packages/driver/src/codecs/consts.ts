@@ -57,9 +57,3 @@ export const KNOWN_TYPENAMES = (() => {
   }
   return res;
 })();
-
-export const NO_RESULT = 0x6e;
-export const AT_MOST_ONE = 0x6f;
-export const ONE = 0x41;
-export const MANY = 0x6d;
-export const AT_LEAST_ONE = 0x4d;

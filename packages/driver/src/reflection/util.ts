@@ -1,3 +1,6 @@
+import { Cardinality as RawCardinality } from "../ifaces";
+import { Cardinality } from "./enums";
+
 export namespace util {
   export function assertNever(arg: never, error?: Error): never {
     throw error ?? new Error(`${arg} is supposed to be of "never" type`);
@@ -88,4 +91,22 @@ export namespace util {
     }
     return obj;
   }
+
+  export const parseCardinality = (
+    cardinality: RawCardinality
+  ): Cardinality => {
+    switch (cardinality) {
+      case RawCardinality.MANY:
+        return Cardinality.Many;
+      case RawCardinality.ONE:
+        return Cardinality.One;
+      case RawCardinality.AT_MOST_ONE:
+        return Cardinality.AtMostOne;
+      case RawCardinality.AT_LEAST_ONE:
+        return Cardinality.AtLeastOne;
+      case RawCardinality.NO_RESULT:
+        return Cardinality.Empty;
+    }
+    throw new Error(`Unexpected cardinality: ${cardinality}`);
+  };
 }
