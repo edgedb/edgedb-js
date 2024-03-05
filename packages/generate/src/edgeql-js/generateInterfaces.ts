@@ -98,7 +98,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
     const isUnionType = Boolean(type.union_of?.length);
     const isIntersectionType = Boolean(type.intersection_of?.length);
 
-    if (isIntersectionType) {
+    if (isIntersectionType || isUnionType) {
       continue;
     }
 
@@ -138,12 +138,10 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
     const { module: plainTypeModule } = getPlainTypeModule(type.name);
     const pointers = type.pointers.filter((ptr) => ptr.name !== "__type__");
 
-    if (!isUnionType) {
-      plainTypeModule.types.set(name, getTypeName(type.name, true));
-    }
+    plainTypeModule.types.set(name, getTypeName(type.name, true));
 
     plainTypeModule.buf.writeln([
-      t`${isUnionType ? "" : "export "}interface ${getTypeName(type.name)}${
+      t`export interface ${getTypeName(type.name)}${
         type.bases.length
           ? ` extends ${type.bases
               .map(({ id }) => {
@@ -199,11 +197,23 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
     plainTypesCode.addExport(module.internalName, { modes: ["js"] });
 
     if (module.isRoot && module.name === "default") {
-      for (const [typeName, typeRef] of module.types) {
-        plainTypesCode.writeln([`import ${typeName} = ${typeRef};`]);
+      const typeRefs = [
+        ...module.types.values(),
+        ...[...module.nestedModules.values()].map(
+          (nestedMod) => nestedMod.fullInternalName
+        ),
+      ];
+      for (const typeRef of typeRefs) {
+        plainTypesCode.writeln([
+          `import ${typeRef.slice(
+            module.internalName.length + 1
+          )} = ${typeRef};`,
+        ]);
       }
       plainTypesCode.writeln([
-        `export {${[...module.types.keys()].join(", ")}};`,
+        `export {${typeRefs
+          .map((typeRef) => typeRef.slice(module.internalName.length + 1))
+          .join(", ")}};`,
       ]);
     }
   };

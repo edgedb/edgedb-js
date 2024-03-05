@@ -1,6 +1,15 @@
 import * as tc from "conditional-type-checks";
 
-import type { Movie, W, X, Y, Z } from "./dbschema/interfaces";
+import type {
+  Movie,
+  W,
+  X,
+  Y,
+  Z,
+  User,
+  nested,
+  $default,
+} from "./dbschema/interfaces";
 
 export type Genre =
   | "Horror"
@@ -34,10 +43,27 @@ export interface test_Profile extends BaseObject {
 interface test_Z extends BaseObject {
   xy?: W | X | Y | null;
 }
+interface test_User extends BaseObject {
+  username: string;
+  favourite_movies: Movie[];
+}
 
 describe("interfaces", () => {
   test("check generated interfaces", () => {
     tc.assert<tc.IsExact<Movie, test_Movie>>(true);
     tc.assert<tc.IsExact<Z, test_Z>>(true);
+
+    // default module export
+    tc.assert<tc.IsExact<$default.Movie, Movie>>(true);
+
+    // test overlapping namespaces
+    // default::User type
+    tc.assert<tc.IsExact<User, test_User>>(true);
+    // user module
+    tc.assert<tc.IsExact<User.Status, "Active" | "Disabled">>(true);
+    tc.assert<tc.IsExact<User.User, User>>(true);
+
+    // module nested in default module
+    tc.assert<tc.IsExact<nested.Test["prop"], string | null | undefined>>(true);
   });
 });

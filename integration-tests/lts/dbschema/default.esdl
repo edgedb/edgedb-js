@@ -197,6 +197,12 @@ module default {
   type PgVectorTest {
     test_embedding: embedding;
   }
+
+  module nested {
+    type Test {
+      property prop: str;
+    }
+  }
 };
 
 module `💯💯💯` {
@@ -212,4 +218,6 @@ module extra {
 
 module User {
   scalar type Status extending enum<"Active", "Disabled">;
+
+  type User extending default::User;
 }
