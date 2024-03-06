@@ -54,7 +54,6 @@ export async function requestPOST<ResponseT>(
       ...(body != null
         ? {
             body: JSON.stringify(body),
-            headers: { "Content-Type": "application/json" },
           }
         : undefined),
     });
