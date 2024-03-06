@@ -1,11 +1,3 @@
-/* eslint @typescript-eslint/no-var-requires: ["off"] */
-
-// TODO: Drop when Node 18 is EOL: 2025-04-30
-if (!globalThis.crypto) {
-  // tslint:disable-next-line: no-var-requires
-  globalThis.crypto = require("node:crypto").webcrypto;
-}
-
 const BASE64_URL_CHARS =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
@@ -33,6 +25,34 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
   }
 
   return base64url;
+}
+
+export function base64UrlToBytes(base64url: string): Uint8Array {
+  // Add padding if necessary
+  let paddedBase64url = base64url;
+  const padLength = base64url.length % 4;
+  if (padLength) {
+    paddedBase64url += "=".repeat(4 - padLength);
+  }
+
+  const outputArray = [];
+
+  for (let i = 0; i < paddedBase64url.length; i += 4) {
+    const enc1 = BASE64_URL_CHARS.indexOf(paddedBase64url.charAt(i));
+    const enc2 = BASE64_URL_CHARS.indexOf(paddedBase64url.charAt(i + 1));
+    const enc3 = BASE64_URL_CHARS.indexOf(paddedBase64url.charAt(i + 2));
+    const enc4 = BASE64_URL_CHARS.indexOf(paddedBase64url.charAt(i + 3));
+
+    const b1 = (enc1 << 2) | (enc2 >> 4);
+    const b2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+    const b3 = ((enc3 & 3) << 6) | enc4;
+
+    outputArray.push(b1);
+    if (enc3 !== -1) outputArray.push(b2);
+    if (enc4 !== -1) outputArray.push(b3);
+  }
+
+  return new Uint8Array(outputArray);
 }
 
 export async function sha256(

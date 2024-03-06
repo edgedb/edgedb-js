@@ -12,3 +12,4 @@ export type BuiltinOAuthProviderNames =
   (typeof builtinOAuthProviderNames)[number];
 
 export const emailPasswordProviderName = "builtin::local_emailpassword";
+export const webAuthnProviderName = "builtin::local_webauthn";
