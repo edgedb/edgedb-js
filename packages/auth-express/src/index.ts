@@ -4,6 +4,10 @@ import {
   type emailPasswordProviderName,
   type BuiltinOAuthProviderNames,
   type TokenData,
+  InvalidDataError,
+  OAuthProviderFailureError,
+  PKCEError,
+  EdgeDBAuthError,
 } from "@edgedb/auth-core";
 import type { Client } from "edgedb";
 import {
@@ -16,6 +20,8 @@ import {
 } from "express";
 
 type RouterStack = (RequestHandler | ErrorRequestHandler)[];
+
+export * from "@edgedb/auth-core/dist/errors.js";
 
 export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
@@ -203,7 +209,7 @@ export class ExpressAuth {
             "provider_name"
           ) as BuiltinOAuthProviderNames | null;
           if (!provider || !builtinOAuthProviderNames.includes(provider)) {
-            throw new Error(`invalid provider_name: ${provider}`);
+            throw new InvalidDataError(`invalid provider_name: ${provider}`);
           }
           const pkceSession = await this.core.then((core) =>
             core.createPKCESession()
@@ -237,7 +243,9 @@ export class ExpressAuth {
         const error = searchParams.get("error");
         if (error) {
           const desc = searchParams.get("error_description");
-          throw new Error(error + (desc ? `: ${desc}` : ""));
+          throw new OAuthProviderFailureError(
+            error + (desc ? `: ${desc}` : "")
+          );
         }
         const code = searchParams.get("code");
         const verificationEmailSentAt = searchParams.get(
@@ -249,11 +257,11 @@ export class ExpressAuth {
             req.session = new ExpressAuthSession(this.client, undefined);
             req.isSignUp = true;
           }
-          throw new Error("no pkce code in response");
+          throw new PKCEError("no pkce code in response");
         }
         const verifier = req.cookies[this.options.pkceVerifierCookieName];
         if (!verifier) {
-          throw new Error("no pkce verifier cookie found");
+          throw new PKCEError("no pkce verifier cookie found");
         }
         const isSignUp = searchParams.get("isSignUp") === "true";
         const tokenData = await (await this.core).getToken(code, verifier);
@@ -321,7 +329,7 @@ export class ExpressAuth {
         const error = searchParams.get("error");
         if (error) {
           const desc = searchParams.get("error_description");
-          throw new Error(error + (desc ? `: ${desc}` : ""));
+          throw new EdgeDBAuthError(error + (desc ? `: ${desc}` : ""));
         }
         const code = searchParams.get("code");
         const verificationEmailSentAt = searchParams.get(
@@ -333,11 +341,11 @@ export class ExpressAuth {
             req.session = new ExpressAuthSession(this.client, undefined);
             req.isSignUp = true;
           }
-          throw new Error("no pkce code in response");
+          throw new PKCEError("no pkce code in response");
         }
         const verifier = req.cookies[this.options.pkceVerifierCookieName];
         if (!verifier) {
-          throw new Error("no pkce verifier cookie found");
+          throw new PKCEError("no pkce verifier cookie found");
         }
         const isSignUp = searchParams.get("isSignUp") === "true";
         const tokenData = await (await this.core).getToken(code, verifier);
@@ -434,10 +442,10 @@ export class ExpressAuth {
         const verificationToken = searchParams.get("verification_token");
         const verifier = req.cookies[this.options.pkceVerifierCookieName];
         if (!verificationToken) {
-          throw new Error("no verification_token in response");
+          throw new PKCEError("no verification_token in response");
         }
         if (!verifier) {
-          throw new Error("no pkce verifier cookie found");
+          throw new PKCEError("no pkce verifier cookie found");
         }
         const tokenData = await (
           await this.core
@@ -485,7 +493,7 @@ export class ExpressAuth {
       try {
         const verifier = req.cookies[this.options.pkceVerifierCookieName];
         if (!verifier) {
-          throw new Error("no pkce verifier cookie found");
+          throw new PKCEError("no pkce verifier cookie found");
         }
         const [resetToken, password] = _extractParams(
           req.body,
@@ -543,15 +551,15 @@ function _extractParams(
 ) {
   const params: string[] = [];
   if (typeof data !== "object") {
-    throw new Error("expected json object");
+    throw new InvalidDataError("expected json object");
   }
   for (const paramName of paramNames) {
     const param = data[paramName];
     if (!param) {
-      throw new Error(errMessage);
+      throw new InvalidDataError(errMessage);
     }
     if (typeof param !== "string") {
-      throw new Error(`expected '${paramName}' to be a string`);
+      throw new InvalidDataError(`expected '${paramName}' to be a string`);
     }
     params.push(param);
   }

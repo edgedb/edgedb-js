@@ -11,6 +11,12 @@ import {
   type BuiltinOAuthProviderNames,
   type TokenData,
   type emailPasswordProviderName,
+  BackendError,
+  ConfigurationError,
+  PKCEError,
+  InvalidDataError,
+  OAuthProviderFailureError,
+  EdgeDBAuthError,
 } from "@edgedb/auth-core";
 import {
   ClientAuth,
@@ -19,6 +25,7 @@ import {
   type AuthOptions,
 } from "./client.js";
 
+export * from "@edgedb/auth-core/dist/errors.js";
 export type { TokenData, AuthOptions, Client };
 
 export type BuiltinProviderNames =
@@ -76,7 +83,7 @@ export default function serverAuth(client: Client, options: AuthOptions) {
             (await handleAuthRoutes(handlers, event, core, config)) !==
             noMatchingRoute
           ) {
-            throw new Error(
+            throw new BackendError(
               "Auth route handler should always call redirect()."
             );
           }
@@ -202,7 +209,7 @@ export class ServerRequestAuth extends ClientAuth {
     data: { email: string } | FormData
   ): Promise<void> {
     if (!this.config.passwordResetPath) {
-      throw new Error(`'passwordResetPath' option not configured`);
+      throw new ConfigurationError(`'passwordResetPath' option not configured`);
     }
 
     const [email] = extractParams(data, ["email"], "email missing");
@@ -227,7 +234,7 @@ export class ServerRequestAuth extends ClientAuth {
     const verifier = this.cookies.get(this.config.pkceVerifierCookieName);
 
     if (!verifier) {
-      throw new Error("no pkce verifier cookie found");
+      throw new PKCEError("no pkce verifier cookie found");
     }
 
     const [resetToken, password] = extractParams(
@@ -289,21 +296,21 @@ function extractParams(
     for (const paramName of paramNames) {
       const param = data.get(paramName)?.toString();
       if (!param) {
-        throw new Error(errMessage);
+        throw new InvalidDataError(errMessage);
       }
       params.push(param);
     }
   } else {
     if (typeof data !== "object") {
-      throw new Error("expected json object");
+      throw new InvalidDataError("expected json object");
     }
     for (const paramName of paramNames) {
       const param = data[paramName];
       if (!param) {
-        throw new Error(errMessage);
+        throw new InvalidDataError(errMessage);
       }
       if (typeof param !== "string") {
-        throw new Error(`expected '${paramName}' to be a string`);
+        throw new InvalidDataError(`expected '${paramName}' to be a string`);
       }
       params.push(param);
     }
@@ -329,13 +336,15 @@ async function handleAuthRoutes(
   switch (path) {
     case "oauth": {
       if (!onOAuthCallback) {
-        throw new Error(`'onOAuthCallback' auth route handler not configured`);
+        throw new ConfigurationError(
+          `'onOAuthCallback' auth route handler not configured`
+        );
       }
       const provider = searchParams.get(
         "provider_name"
       ) as BuiltinOAuthProviderNames | null;
       if (!provider || !builtinOAuthProviderNames.includes(provider)) {
-        throw new Error(`invalid provider_name: ${provider}`);
+        throw new InvalidDataError(`invalid provider_name: ${provider}`);
       }
       const redirectUrl = `${config.authRoute}/oauth/callback`;
       const pkceSession = await core.then((core) => core.createPKCESession());
@@ -357,13 +366,17 @@ async function handleAuthRoutes(
 
     case "oauth/callback": {
       if (!onOAuthCallback) {
-        throw new Error(`'onOAuthCallback' auth route handler not configured`);
+        throw new ConfigurationError(
+          `'onOAuthCallback' auth route handler not configured`
+        );
       }
       const error = searchParams.get("error");
       if (error) {
         const desc = searchParams.get("error_description");
         return onOAuthCallback({
-          error: new Error(error + (desc ? `: ${desc}` : "")),
+          error: new OAuthProviderFailureError(
+            error + (desc ? `: ${desc}` : "")
+          ),
         });
       }
       const code = searchParams.get("code");
@@ -371,12 +384,12 @@ async function handleAuthRoutes(
       const verifier = cookies.get(config.pkceVerifierCookieName);
       if (!code) {
         return onOAuthCallback({
-          error: new Error("no pkce code in response"),
+          error: new PKCEError("no pkce code in response"),
         });
       }
       if (!verifier) {
         return onOAuthCallback({
-          error: new Error("no pkce verifier cookie found"),
+          error: new PKCEError("no pkce verifier cookie found"),
         });
       }
       let tokenData: TokenData;
@@ -409,7 +422,7 @@ async function handleAuthRoutes(
 
     case "builtin/callback": {
       if (!onBuiltinUICallback) {
-        throw new Error(
+        throw new ConfigurationError(
           `'onBuiltinUICallback' auth route handler not configured`
         );
       }
@@ -417,7 +430,7 @@ async function handleAuthRoutes(
       if (error) {
         const desc = searchParams.get("error_description");
         return onBuiltinUICallback({
-          error: new Error(error + (desc ? `: ${desc}` : "")),
+          error: new EdgeDBAuthError(error + (desc ? `: ${desc}` : "")),
         });
       }
       const code = searchParams.get("code");
@@ -434,14 +447,14 @@ async function handleAuthRoutes(
           });
         }
         return onBuiltinUICallback({
-          error: new Error("no pkce code in response"),
+          error: new PKCEError("no pkce code in response"),
         });
       }
       const verifier = cookies.get(config.pkceVerifierCookieName);
 
       if (!verifier) {
         return onBuiltinUICallback({
-          error: new Error("no pkce verifier cookie found"),
+          error: new PKCEError("no pkce verifier cookie found"),
         });
       }
       const isSignUp = searchParams.get("isSignUp") === "true";
@@ -492,18 +505,20 @@ async function handleAuthRoutes(
 
     case "emailpassword/verify": {
       if (!onEmailVerify) {
-        throw new Error(`'onEmailVerify' auth route handler not configured`);
+        throw new ConfigurationError(
+          `'onEmailVerify' auth route handler not configured`
+        );
       }
       const verificationToken = searchParams.get("verification_token");
       const verifier = cookies.get(config.pkceVerifierCookieName);
       if (!verificationToken) {
         return onEmailVerify({
-          error: new Error("no verification_token in response"),
+          error: new PKCEError("no verification_token in response"),
         });
       }
       if (!verifier) {
         return onEmailVerify({
-          error: new Error("no pkce verifier cookie found"),
+          error: new PKCEError("no pkce verifier cookie found"),
           verificationToken,
         });
       }
@@ -533,7 +548,9 @@ async function handleAuthRoutes(
 
     case "signout": {
       if (!onSignout) {
-        throw new Error(`'onSignout' auth route handler not configured`);
+        throw new ConfigurationError(
+          `'onSignout' auth route handler not configured`
+        );
       }
       cookies.delete(config.authCookieName, { path: "/" });
       return onSignout();
