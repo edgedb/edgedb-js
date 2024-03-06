@@ -43,10 +43,13 @@ module.exports = {
           { name: "Link", linkAttribute: "to" },
           { name: "NavLink", linkAttribute: "to" },
         ],
+        "import/resolver": {
+          typescript: {},
+        },
       },
     },
 
-    // TypeScript
+    // Typescript
     {
       files: ["**/*.{ts,tsx}"],
       plugins: ["@typescript-eslint", "import"],
@@ -71,7 +74,7 @@ module.exports = {
 
     // Node
     {
-      files: [".eslintrc.js"],
+      files: [".eslintrc.cjs"],
       env: {
         node: true,
       },
