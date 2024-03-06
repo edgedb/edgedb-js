@@ -94,7 +94,7 @@ export class WebAuthnClient {
     );
   }
 
-  async signIn(email: string): Promise<TokenData> {
+  async signIn(email: string): Promise<void> {
     const options = await requestGET<PublicKeyCredentialRequestOptionsJSON>(
       this.signinOptionsUrl,
       { email },
@@ -143,7 +143,7 @@ export class WebAuthnClient {
       },
     };
 
-    return await requestPOST<TokenData>(
+    await requestPOST(
       this.signinUrl,
       {
         email,
