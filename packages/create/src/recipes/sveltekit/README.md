@@ -1,6 +1,6 @@
-# Remix Integration Recipe for EdgeDB
+# Sveltekit Integration Recipe for EdgeDB
 
-This recipe provides a starting point for building a [Remix](https://remix.run/) application with EdgeDB as the database. It is based on the official Remix starter template.
+This recipe provides a starting point for building a [Sveltekit](https://kit.svelte.dev/) application with EdgeDB as the database.
 
 We try to actively monitor and incorporate significant changes from the original "create-app" templates to ensure developers have access to the latest features and best practices. However, we might not cover every possible configuration or permutation due to the vast scope of possibilities.
 
@@ -18,7 +18,7 @@ pnpm create @edgedb
 bun create @edgedb
 ```
 
-After running the command, you will be prompted to provide a project name and choose the **"Remix"** template. You can also specify whether to use EdgeDB Auth, initialize a git repository, and install dependencies.
+After running the command, you will be prompted to provide a project name and choose the **"Sveltekit"** template. You can also specify whether to use EdgeDB Auth, initialize a git repository, and install dependencies.
 
 The tool will then create a new directory with the specified name and set up the project.
 
@@ -48,4 +48,4 @@ Run a local version:
 $ yarn run create
 ```
 
-Then choose the **"Remix"** template.
+Then choose the **"Sveltekit"** template.

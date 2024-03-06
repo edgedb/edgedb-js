@@ -47,8 +47,8 @@ const recipe: Recipe<SveltekitOptions> = {
     logger("Running Sveltekit recipe");
 
     const dirname = path.dirname(new URL(import.meta.url).pathname);
-    let tags;
 
+    let tags;
     if (useEdgeDBAuth) {
       tags = new Set<string>(["auth"]);
     }
