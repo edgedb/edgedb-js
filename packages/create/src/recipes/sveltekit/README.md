@@ -45,7 +45,7 @@ $ yarn build
 Run a local version:
 
 ```bash
-$ yarn create
+$ yarn run create
 ```
 
 Then choose the **"Sveltekit"** template.
