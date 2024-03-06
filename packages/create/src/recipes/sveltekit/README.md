@@ -1,6 +1,6 @@
 # Sveltekit Integration Recipe for EdgeDB
 
-This recipe provides a starting point for building a [Svelteki](https://kit.svelte.dev/) application with EdgeDB as the database.
+This recipe provides a starting point for building a [Sveltekit](https://kit.svelte.dev/) application with EdgeDB as the database.
 
 We try to actively monitor and incorporate significant changes from the original "create-app" templates to ensure developers have access to the latest features and best practices. However, we might not cover every possible configuration or permutation due to the vast scope of possibilities.
 
