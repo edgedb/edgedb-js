@@ -15,6 +15,7 @@
   ],
   "exports": {
     "./app": "./dist/app/index.js",
+    "./app/client": "./dist/app/client.js",
     "./pages/*": "./dist/pages/*.js"
   },
   "scripts": {

@@ -9,6 +9,7 @@ import {
   PKCEError,
   EdgeDBAuthError,
   OAuthProviderFailureError,
+  type SignupResponse,
 } from "@edgedb/auth-core";
 
 import {
@@ -19,11 +20,14 @@ import {
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
 
 export { type BuiltinProviderNames, NextAuthHelpers, type NextAuthOptions };
 
-type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
+type ParamsOrError<
+  Result extends object,
+  ErrorDetails extends object = object
+> =
   | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)
   | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
 
@@ -54,6 +58,12 @@ export interface CreateAuthRouteHandlers {
       { verificationToken?: string }
     >,
     req?: NextRequest
+  ): Promise<never>;
+  onWebAuthnSignUp(
+    params: ParamsOrError<{ tokenData: TokenData | null }>
+  ): Promise<NextResponse<SignupResponse>>;
+  onWebAuthnSignIn(
+    params: ParamsOrError<{ tokenData: TokenData }>
   ): Promise<never>;
   onBuiltinUICallback(
     params: ParamsOrError<
@@ -96,6 +106,8 @@ export abstract class NextAuth extends NextAuthHelpers {
     onEmailPasswordSignUp,
     onEmailPasswordReset,
     onEmailVerify,
+    onWebAuthnSignUp,
+    onWebAuthnSignIn,
     onBuiltinUICallback,
     onSignout,
   }: Partial<CreateAuthRouteHandlers>) {
@@ -259,6 +271,68 @@ export abstract class NextAuth extends NextAuthHelpers {
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onEmailVerify({ error: null, tokenData }, req);
+          }
+          case "webauthn/signup/options": {
+            const email = req.nextUrl.searchParams.get("email");
+            if (!email) {
+              throw new InvalidDataError("'email' is missing in request search parameters")
+            }
+            return Response.redirect(
+              (await this.core).getWebAuthnSignupOptionsUrl(email)
+            );
+          }
+          case "webauthn/signin/options": {
+            const email = req.nextUrl.searchParams.get("email");
+            if (!email) {
+              throw new InvalidDataError("'email' is missing in request search parameters")
+            }
+            return Response.redirect(
+              (await this.core).getWebAuthnSigninOptionsUrl(email)
+            );
+          }
+          case "webauthn/verify": {
+            if (!onEmailVerify) {
+              throw new ConfigurationError(
+                `'onEmailVerify' auth route handler not configured`
+              );
+            }
+            const verificationToken =
+              req.nextUrl.searchParams.get("verification_token");
+            const verifier = req.cookies.get(
+              this.options.pkceVerifierCookieName
+            )?.value;
+            if (!verificationToken) {
+              return onEmailVerify({
+                error: new PKCEError("no verification_token in response"),
+              });
+            }
+            if (!verifier) {
+              return onEmailVerify({
+                error: new PKCEError("no pkce verifier cookie found"),
+                verificationToken,
+              });
+            }
+            let tokenData: TokenData;
+            try {
+              tokenData = await (
+                await this.core
+              ).verifyWebAuthnSignup(verificationToken, verifier);
+            } catch (err) {
+              return onEmailVerify({
+                error: err instanceof Error ? err : new Error(String(err)),
+                verificationToken,
+              });
+            }
+            cookies().set({
+              name: this.options.authCookieName,
+              value: tokenData.auth_token,
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            });
+            cookies().delete(this.options.pkceVerifierCookieName);
+
+            return onEmailVerify({ error: null, tokenData });
           }
           case "builtin/callback": {
             if (!onBuiltinUICallback) {
@@ -569,6 +643,87 @@ export abstract class NextAuth extends NextAuthHelpers {
             return isAction
               ? Response.json({ _data: null })
               : new Response(null, { status: 204 });
+          }
+          case "webauthn/signup": {
+            if (!onWebAuthnSignUp) {
+              throw new ConfigurationError(
+                `'onWebAuthnSignUp' auth route handler not configured`
+              );
+            }
+
+            const { email, credentials, verify_url, user_handle } =
+              await req.json();
+
+            let result: SignupResponse;
+            try {
+              result = await (
+                await this.core
+              ).signupWithWebAuthn(
+                email,
+                credentials,
+                verify_url,
+                user_handle
+              );
+            } catch (err) {
+              const error = err instanceof Error ? err : new Error(String(err));
+              return _wrapResponse(onWebAuthnSignUp({ error }), false)
+            }
+
+            cookies().set({
+              name: this.options.pkceVerifierCookieName,
+              value: result.verifier,
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            });
+            if (result.status === "complete") {
+              cookies().set({
+                name: this.options.authCookieName,
+                value: result.tokenData.auth_token,
+                httpOnly: true,
+                sameSite: "strict",
+                path: "/",
+              });
+              return _wrapResponse(
+                onWebAuthnSignUp({
+                  error: null,
+                  tokenData: result.tokenData,
+                }),
+                false
+              );
+            } else {
+              return _wrapResponse(
+                onWebAuthnSignUp({ error: null, tokenData: null }),
+                false
+              );
+            }
+          }
+          case "webauthn/signin": {
+            if (!onWebAuthnSignIn) {
+              throw new ConfigurationError(
+                `'onWebAuthnSignIn' auth route handler not configured`
+              );
+            }
+            const { email, assertion } = await req.json();
+
+            let tokenData: TokenData;
+            try {
+              tokenData = await (await this.core).signinWithWebAuthn(email, assertion);
+            } catch (err) {
+              const error = err instanceof Error ? err : new Error(String(err));
+              return _wrapResponse(onWebAuthnSignIn({ error }), false)
+            }
+            cookies().set({
+              name: this.options.authCookieName,
+              value: tokenData.auth_token,
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            });
+            return _wrapResponse(
+              onWebAuthnSignIn({ error: null, tokenData }),
+              false
+            );
           }
           default:
             return new Response("Unknown auth route", {
