@@ -12,7 +12,7 @@ import {
   NextAuth,
   NextAuthSession,
   type NextAuthOptions,
-  BuiltinProviderNames,
+  type BuiltinProviderNames,
   type CreateAuthRouteHandlers,
   _extractParams,
 } from "../shared";
