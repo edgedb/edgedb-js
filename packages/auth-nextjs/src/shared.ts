@@ -65,6 +65,12 @@ export interface CreateAuthRouteHandlers {
   onWebAuthnSignIn(
     params: ParamsOrError<{ tokenData: TokenData }>
   ): Promise<never>;
+  onMagicLinkCallback(
+    params: ParamsOrError<{ tokenData: TokenData; isSignUp: boolean }>
+  ): Promise<never>;
+  onMagicLinkSignIn(
+    params: ParamsOrError<{ tokenData: TokenData }>
+  ): Promise<never>;
   onBuiltinUICallback(
     params: ParamsOrError<
       (
@@ -108,6 +114,7 @@ export abstract class NextAuth extends NextAuthHelpers {
     onEmailVerify,
     onWebAuthnSignUp,
     onWebAuthnSignIn,
+    onMagicLinkCallback,
     onBuiltinUICallback,
     onSignout,
   }: Partial<CreateAuthRouteHandlers>) {
@@ -275,7 +282,9 @@ export abstract class NextAuth extends NextAuthHelpers {
           case "webauthn/signup/options": {
             const email = req.nextUrl.searchParams.get("email");
             if (!email) {
-              throw new InvalidDataError("'email' is missing in request search parameters")
+              throw new InvalidDataError(
+                "'email' is missing in request search parameters"
+              );
             }
             return Response.redirect(
               (await this.core).getWebAuthnSignupOptionsUrl(email)
@@ -284,7 +293,9 @@ export abstract class NextAuth extends NextAuthHelpers {
           case "webauthn/signin/options": {
             const email = req.nextUrl.searchParams.get("email");
             if (!email) {
-              throw new InvalidDataError("'email' is missing in request search parameters")
+              throw new InvalidDataError(
+                "'email' is missing in request search parameters"
+              );
             }
             return Response.redirect(
               (await this.core).getWebAuthnSigninOptionsUrl(email)
@@ -333,6 +344,60 @@ export abstract class NextAuth extends NextAuthHelpers {
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onEmailVerify({ error: null, tokenData });
+          }
+          case "magiclink/callback": {
+            if (!onMagicLinkCallback) {
+              throw new ConfigurationError(
+                `'onMagicLinkCallback' auth route handler not configured`
+              );
+            }
+            const error = req.nextUrl.searchParams.get("error");
+            if (error) {
+              const desc = req.nextUrl.searchParams.get("error_description");
+              return onMagicLinkCallback({
+                error: new OAuthProviderFailureError(
+                  error + (desc ? `: ${desc}` : "")
+                ),
+              });
+            }
+            const code = req.nextUrl.searchParams.get("code");
+            const isSignUp =
+              req.nextUrl.searchParams.get("isSignUp") === "true";
+            const verifier = req.cookies.get(
+              this.options.pkceVerifierCookieName
+            )?.value;
+            if (!code) {
+              return onMagicLinkCallback({
+                error: new PKCEError("no pkce code in response"),
+              });
+            }
+            if (!verifier) {
+              return onMagicLinkCallback({
+                error: new PKCEError("no pkce verifier cookie found"),
+              });
+            }
+            let tokenData: TokenData;
+            try {
+              tokenData = await (await this.core).getToken(code, verifier);
+            } catch (err) {
+              return onMagicLinkCallback({
+                error: err instanceof Error ? err : new Error(String(err)),
+              });
+            }
+            cookies().set({
+              name: this.options.authCookieName,
+              value: tokenData.auth_token,
+              httpOnly: true,
+              sameSite: "lax",
+              path: "/",
+            });
+            cookies().delete(this.options.pkceVerifierCookieName);
+
+            return onMagicLinkCallback({
+              error: null,
+              tokenData,
+              isSignUp,
+            });
           }
           case "builtin/callback": {
             if (!onBuiltinUICallback) {
@@ -658,15 +723,10 @@ export abstract class NextAuth extends NextAuthHelpers {
             try {
               result = await (
                 await this.core
-              ).signupWithWebAuthn(
-                email,
-                credentials,
-                verify_url,
-                user_handle
-              );
+              ).signupWithWebAuthn(email, credentials, verify_url, user_handle);
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err));
-              return _wrapResponse(onWebAuthnSignUp({ error }), false)
+              return _wrapResponse(onWebAuthnSignUp({ error }), false);
             }
 
             cookies().set({
@@ -708,10 +768,12 @@ export abstract class NextAuth extends NextAuthHelpers {
 
             let tokenData: TokenData;
             try {
-              tokenData = await (await this.core).signinWithWebAuthn(email, assertion);
+              tokenData = await (
+                await this.core
+              ).signinWithWebAuthn(email, assertion);
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err));
-              return _wrapResponse(onWebAuthnSignIn({ error }), false)
+              return _wrapResponse(onWebAuthnSignIn({ error }), false);
             }
             cookies().set({
               name: this.options.authCookieName,
@@ -724,6 +786,74 @@ export abstract class NextAuth extends NextAuthHelpers {
               onWebAuthnSignIn({ error: null, tokenData }),
               false
             );
+          }
+          case "magiclink/signup": {
+            if (!this.options.magicLinkFailurePath) {
+              throw new ConfigurationError(
+                `'magicLinkFailurePath' option not configured`
+              );
+            }
+            const data = await _getReqBody(req);
+            const isAction = _isAction(data);
+            const [email] = _extractParams(
+              data,
+              ["email"],
+              "email missing from request body"
+            );
+            const { verifier } = await (
+              await this.core
+            ).signupWithMagicLink(
+              email,
+              `${this._authRoute}/magiclink/callback?isSignUp=true`,
+              new URL(
+                this.options.magicLinkFailurePath,
+                this.options.baseUrl
+              ).toString()
+            );
+            cookies().set({
+              name: this.options.pkceVerifierCookieName,
+              value: verifier,
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            });
+            return isAction
+              ? Response.json({ _data: null })
+              : new Response(null, { status: 204 });
+          }
+          case "magiclink/send": {
+            if (!this.options.magicLinkFailurePath) {
+              throw new ConfigurationError(
+                `'magicLinkFailurePath' option not configured`
+              );
+            }
+            const data = await _getReqBody(req);
+            const isAction = _isAction(data);
+            const [email] = _extractParams(
+              data,
+              ["email"],
+              "email missing from request body"
+            );
+            const { verifier } = await (
+              await this.core
+            ).signinWithMagicLink(
+              email,
+              `${this._authRoute}/magiclink/callback`,
+              new URL(
+                this.options.magicLinkFailurePath,
+                this.options.baseUrl
+              ).toString()
+            );
+            cookies().set({
+              name: this.options.pkceVerifierCookieName,
+              value: verifier,
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            });
+            return isAction
+              ? Response.json({ _data: null })
+              : new Response(null, { status: 204 });
           }
           default:
             return new Response("Unknown auth route", {

@@ -16,9 +16,10 @@ export interface NextAuthOptions {
   authCookieName?: string;
   pkceVerifierCookieName?: string;
   passwordResetPath?: string;
+  magicLinkFailurePath?: string;
 }
 
-type OptionalOptions = "passwordResetPath";
+type OptionalOptions = "passwordResetPath" | "magicLinkFailurePath";
 
 export abstract class NextAuthHelpers {
   /** @internal */
@@ -35,6 +36,7 @@ export abstract class NextAuthHelpers {
       pkceVerifierCookieName:
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
       passwordResetPath: options.passwordResetPath,
+      magicLinkFailurePath: options.magicLinkFailurePath,
     };
     this.webAuthnClient = new WebAuthnClient({
       signupOptionsUrl: `${this._authRoute}/webauthn/signup/options`,

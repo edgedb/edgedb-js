@@ -178,6 +178,54 @@ export class NextAppAuth extends NextAuth {
           );
         }
       },
+      magicLinkSignUp: async (data: FormData | { email: string }) => {
+        if (!this.options.magicLinkFailurePath) {
+          throw new ConfigurationError(
+            `'magicLinkFailurePath' option not configured`
+          );
+        }
+        const [email] = _extractParams(data, ["email"], "email missing");
+        const { verifier } = await (
+          await this.core
+        ).signupWithMagicLink(
+          email,
+          `${this._authRoute}/magiclink/callback?isSignUp=true`,
+          new URL(
+            this.options.magicLinkFailurePath,
+            this.options.baseUrl
+          ).toString()
+        );
+        cookies().set({
+          name: this.options.pkceVerifierCookieName,
+          value: verifier,
+          httpOnly: true,
+          sameSite: "strict",
+        });
+      },
+      magicLinkSignIn: async (data: FormData | { email: string }) => {
+        if (!this.options.magicLinkFailurePath) {
+          throw new ConfigurationError(
+            `'magicLinkFailurePath' option not configured`
+          );
+        }
+        const [email] = _extractParams(data, ["email"], "email missing");
+        const { verifier } = await (
+          await this.core
+        ).signinWithMagicLink(
+          email,
+          `${this._authRoute}/magiclink/callback`,
+          new URL(
+            this.options.magicLinkFailurePath,
+            this.options.baseUrl
+          ).toString()
+        );
+        cookies().set({
+          name: this.options.pkceVerifierCookieName,
+          value: verifier,
+          httpOnly: true,
+          sameSite: "strict",
+        });
+      },
     };
   }
 }
