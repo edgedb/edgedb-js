@@ -203,7 +203,7 @@ export class Auth {
       redirect_on_failure: redirectOnFailure,
     });
 
-    return {verifier};
+    return { verifier };
   }
 
   async resendVerificationEmail(verificationToken: string) {
