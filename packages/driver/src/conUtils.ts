@@ -124,6 +124,13 @@ type ConnectConfigParams =
   | "tlsSecurity"
   | "waitUntilAvailable";
 
+export type ResolvedConnectConfigReadonly = Readonly<
+  Pick<
+    ResolvedConnectConfig,
+    Exclude<keyof ResolvedConnectConfig, `${"_" | "set" | "add"}${string}`>
+  >
+>;
+
 export class ResolvedConnectConfig {
   _host: string | null = null;
   _hostSource: string | null = null;
@@ -155,7 +162,7 @@ export class ResolvedConnectConfig {
   _waitUntilAvailable: number | null = null;
   _waitUntilAvailableSource: string | null = null;
 
-  serverSettings: { [key: string]: string } = {};
+  serverSettings: { readonly [key: string]: string } = {};
 
   constructor() {
     this.setHost = this.setHost.bind(this);

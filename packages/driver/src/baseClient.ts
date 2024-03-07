@@ -22,6 +22,7 @@ import {
   ConnectArgumentsParser,
   ConnectConfig,
   NormalizedConnectConfig,
+  ResolvedConnectConfigReadonly,
 } from "./conUtils";
 import * as errors from "./errors";
 import { Cardinality, Executor, OutputFormat, QueryArgs } from "./ifaces";
@@ -367,6 +368,11 @@ export abstract class BaseClientPool {
     );
   }
 
+  async resolveConnectionParams(): Promise<ResolvedConnectConfigReadonly> {
+    const config = await this._getNormalizedConnectConfig();
+    return config.connectionParams;
+  }
+
   async getNewConnection(): Promise<BaseRawConnection> {
     if (this._closing?.done) {
       throw new errors.InterfaceError("The client is closed");
@@ -549,6 +555,10 @@ export class Client implements Executor {
   async ensureConnected(): Promise<this> {
     await this.pool.ensureConnected();
     return this;
+  }
+
+  async resolveConnectionParams(): Promise<ResolvedConnectConfigReadonly> {
+    return this.pool.resolveConnectionParams();
   }
 
   isClosed(): boolean {
