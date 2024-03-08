@@ -88,6 +88,13 @@ export class OAuthProviderFailureError extends UserError {
   }
 }
 
+/** Magic link flow failed. */
+export class MagicLinkFailureError extends UserError {
+  get type() {
+    return "MagicLinkFailure";
+  }
+}
+
 /** Error with email verification. */
 export class VerificationError extends UserError {
   get type() {

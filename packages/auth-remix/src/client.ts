@@ -7,9 +7,10 @@ export interface RemixAuthOptions {
   authCookieName?: string;
   pkceVerifierCookieName?: string;
   passwordResetPath?: string;
+  magicLinkFailurePath?: string;
 }
 
-type OptionalOptions = "passwordResetPath";
+type OptionalOptions = "passwordResetPath" | "magicLinkFailurePath";
 
 export default function createClientAuth(options: RemixAuthOptions) {
   return new RemixClientAuth(options);

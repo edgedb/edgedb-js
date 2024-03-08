@@ -13,6 +13,7 @@ import {
   BackendError,
   OAuthProviderFailureError,
   EdgeDBAuthError,
+  MagicLinkFailureError,
   type AuthenticationResponseJSON,
   type RegistrationResponseJSON,
 } from "@edgedb/auth-core";
@@ -86,6 +87,12 @@ export interface CreateAuthRouteHandlers {
       { verificationToken?: string }
     >
   ): Promise<Response>;
+  onMagicLinkCallback(
+    params: ParamsOrError<{
+      tokenData: TokenData;
+      isSignUp: boolean;
+    }>
+  ): Promise<Response>;
   onSignout(): Promise<Response>;
 }
 
@@ -120,6 +127,7 @@ export class RemixServerAuth extends RemixClientAuth {
     onOAuthCallback,
     onBuiltinUICallback,
     onEmailVerify,
+    onMagicLinkCallback,
     onSignout,
   }: Partial<CreateAuthRouteHandlers>) {
     return {
@@ -233,6 +241,70 @@ export class RemixServerAuth extends RemixClientAuth {
                 provider: searchParams.get(
                   "provider"
                 ) as BuiltinOAuthProviderNames,
+                isSignUp,
+              },
+              headers
+            );
+          }
+
+          case "magiclink/callback": {
+            if (!onMagicLinkCallback) {
+              throw new ConfigurationError(
+                `'onMagicLinkCallback' auth route handler not configured`
+              );
+            }
+            const error = searchParams.get("error");
+            if (error) {
+              const desc = searchParams.get("error_description");
+              return cbCall(onMagicLinkCallback, {
+                error: new MagicLinkFailureError(
+                  error + (desc ? `: ${desc}` : "")
+                ),
+              });
+            }
+            const code = searchParams.get("code");
+            const isSignUp = searchParams.get("isSignUp") === "true";
+            const verifier =
+              parseCookies(req)[this.options.pkceVerifierCookieName];
+            if (!code) {
+              return cbCall(onMagicLinkCallback, {
+                error: new PKCEError("no pkce code in response"),
+              });
+            }
+            if (!verifier) {
+              return cbCall(onMagicLinkCallback, {
+                error: new PKCEError("no pkce verifier cookie found"),
+              });
+            }
+            let tokenData: TokenData;
+            try {
+              tokenData = await (await this.core).getToken(code, verifier);
+            } catch (err) {
+              return cbCall(onMagicLinkCallback, {
+                error: err instanceof Error ? err : new Error(String(err)),
+              });
+            }
+            const headers = new Headers();
+            headers.append(
+              "Set-Cookie",
+              cookie.serialize(
+                this.options.authCookieName,
+                tokenData.auth_token,
+                { httpOnly: true, sameSite: "lax", path: "/" }
+              )
+            );
+            headers.append(
+              "Set-Cookie",
+              cookie.serialize(this.options.pkceVerifierCookieName, "", {
+                maxAge: 0,
+                path: "/",
+              })
+            );
+            return cbCall(
+              onMagicLinkCallback,
+              {
+                error: null,
+                tokenData,
                 isSignUp,
               },
               headers
@@ -477,7 +549,7 @@ export class RemixServerAuth extends RemixClientAuth {
                 maxAge: 0,
               }),
             });
-            return cbCall(onSignout, {}, headers);
+            return cbCall(onSignout, undefined, headers);
           }
 
           default:
@@ -955,6 +1027,132 @@ export class RemixServerAuth extends RemixClientAuth {
     );
   }
 
+  async magicLinkSignUp(
+    req: Request,
+    data?: {
+      email: string;
+    }
+  ): Promise<{ headers: Headers }>;
+  async magicLinkSignUp<Res>(
+    req: Request,
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async magicLinkSignUp<Res>(
+    req: Request,
+    data: {
+      email: string;
+    },
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async magicLinkSignUp<Res>(
+    req: Request,
+    dataOrCb?:
+      | {
+          email: string;
+        }
+      | ((params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<
+    { headers: Headers } | (Res extends Response ? Res : TypedResponse<Res>)
+  > {
+    return handleAction(
+      async (data, headers) => {
+        if (!this.options.magicLinkFailurePath) {
+          throw new ConfigurationError(
+            `'magicLinkFailurePath' option not configured`
+          );
+        }
+        const [email] = _extractParams(data, ["email"], "email missing");
+
+        const { verifier } = await (
+          await this.core
+        ).signupWithMagicLink(
+          email,
+          `${this._authRoute}/magiclink/callback?isSignUp=true`,
+          new URL(
+            this.options.magicLinkFailurePath,
+            this.options.baseUrl
+          ).toString()
+        );
+
+        headers.append(
+          "Set-Cookie",
+          cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
+            httpOnly: true,
+            sameSite: "strict",
+            path: "/",
+          })
+        );
+      },
+      req,
+      dataOrCb,
+      cb
+    );
+  }
+
+  async magicLinkSend(
+    req: Request,
+    data?: {
+      email: string;
+    }
+  ): Promise<{ headers: Headers }>;
+  async magicLinkSend<Res>(
+    req: Request,
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async magicLinkSend<Res>(
+    req: Request,
+    data: {
+      email: string;
+    },
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async magicLinkSend<Res>(
+    req: Request,
+    dataOrCb?:
+      | {
+          email: string;
+        }
+      | ((params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<
+    { headers: Headers } | (Res extends Response ? Res : TypedResponse<Res>)
+  > {
+    return handleAction(
+      async (data, headers) => {
+        if (!this.options.magicLinkFailurePath) {
+          throw new ConfigurationError(
+            `'magicLinkFailurePath' option not configured`
+          );
+        }
+        const [email] = _extractParams(data, ["email"], "email missing");
+
+        const { verifier } = await (
+          await this.core
+        ).signinWithMagicLink(
+          email,
+          `${this._authRoute}/magiclink/callback?isSignUp=true`,
+          new URL(
+            this.options.magicLinkFailurePath,
+            this.options.baseUrl
+          ).toString()
+        );
+
+        headers.append(
+          "Set-Cookie",
+          cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
+            httpOnly: true,
+            sameSite: "strict",
+            path: "/",
+          })
+        );
+      },
+      req,
+      dataOrCb,
+      cb
+    );
+  }
+
   async signout(): Promise<{ headers: Headers }>;
   async signout<Res>(
     cb: () => Res | Promise<Res>
@@ -1085,11 +1283,19 @@ async function actionCbCall(
   }
 }
 
-async function cbCall(cb: (data?: any) => any, params: any, headers?: Headers) {
+async function cbCall<Params>(
+  cb: undefined extends Params ? () => any : (data: Params) => any,
+  params: Params,
+  headers?: Headers
+) {
   let res: any;
 
   try {
-    res = params ? await cb(params) : await cb();
+    if (params === undefined) {
+      res = await (cb as () => any)();
+    } else {
+      res = await cb(params);
+    }
   } catch (err) {
     if (err instanceof Response) {
       res = err;
