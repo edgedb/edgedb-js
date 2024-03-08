@@ -1,4 +1,5 @@
 import type { BuiltinOAuthProviderNames } from "@edgedb/auth-core";
+import { WebAuthnClient } from "@edgedb/auth-core/webauthn";
 
 export interface RemixAuthOptions {
   baseUrl: string;
@@ -19,6 +20,7 @@ export class RemixClientAuth {
     Omit<RemixAuthOptions, OptionalOptions>
   > &
     Pick<RemixAuthOptions, OptionalOptions>;
+  readonly webauthnClient: WebAuthnClient;
 
   /** @internal */
   constructor(options: RemixAuthOptions) {
@@ -30,6 +32,13 @@ export class RemixClientAuth {
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
       passwordResetPath: options.passwordResetPath,
     };
+    this.webauthnClient = new WebAuthnClient({
+      signupOptionsUrl: `${this._authRoute}/webauthn/signup/options`,
+      signupUrl: `${this._authRoute}/webauthn/signup`,
+      signinOptionsUrl: `${this._authRoute}/webauthn/signin/options`,
+      signinUrl: `${this._authRoute}/webauthn/signin`,
+      verifyUrl: `${this._authRoute}/webauthn/verify`,
+    });
   }
 
   protected get _authRoute() {

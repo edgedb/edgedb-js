@@ -13,6 +13,8 @@ import {
   BackendError,
   OAuthProviderFailureError,
   EdgeDBAuthError,
+  type AuthenticationResponseJSON,
+  type RegistrationResponseJSON,
 } from "@edgedb/auth-core";
 import { type RemixAuthOptions, RemixClientAuth } from "./client.js";
 
@@ -389,6 +391,78 @@ export class RemixServerAuth extends RemixClientAuth {
             );
           }
 
+          case "webauthn/signup/options": {
+            const email = searchParams.get("email");
+            if (!email) {
+              throw new InvalidDataError("email missing");
+            }
+            return Response.redirect(
+              (await this.core).getWebAuthnSignupOptionsUrl(email)
+            );
+          }
+
+          case "webauthn/signin/options": {
+            const email = searchParams.get("email");
+            if (!email) {
+              throw new InvalidDataError("email missing");
+            }
+            return Response.redirect(
+              (await this.core).getWebAuthnSigninOptionsUrl(email)
+            );
+          }
+
+          case "webauthn/verify": {
+            if (!onEmailVerify) {
+              throw new ConfigurationError(
+                `'onEmailVerify' auth route handler not configured`
+              );
+            }
+            const verificationToken = searchParams.get("verification_token");
+            const verifier =
+              parseCookies(req)[this.options.pkceVerifierCookieName];
+            if (!verificationToken) {
+              return cbCall(onEmailVerify, {
+                error: new PKCEError("no verification_token in response"),
+              });
+            }
+            if (!verifier) {
+              return cbCall(onEmailVerify, {
+                error: new PKCEError("no pkce verifier cookie found"),
+                verificationToken,
+              });
+            }
+            let tokenData: TokenData;
+            try {
+              tokenData = await (
+                await this.core
+              ).verifyWebAuthnSignup(verificationToken, verifier);
+            } catch (err) {
+              return cbCall(onEmailVerify, {
+                error: err instanceof Error ? err : new Error(String(err)),
+                verificationToken,
+              });
+            }
+            const headers = new Headers({
+              "Set-Cookie": cookie.serialize(
+                this.options.authCookieName,
+                tokenData.auth_token,
+                {
+                  httpOnly: true,
+                  sameSite: "strict",
+                  path: "/",
+                }
+              ),
+            });
+            return cbCall(
+              onEmailVerify,
+              {
+                error: null,
+                tokenData,
+              },
+              headers
+            );
+          }
+
           case "signout": {
             if (!onSignout) {
               throw new ConfigurationError(
@@ -594,6 +668,160 @@ export class RemixServerAuth extends RemixClientAuth {
     );
   }
 
+  async webAuthnSignIn(
+    req: Request,
+    data?: { email: string; assertion: AuthenticationResponseJSON }
+  ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  async webAuthnSignIn<Res>(
+    req: Request,
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async webAuthnSignIn<Res>(
+    req: Request,
+    data: { email: string; assertion: AuthenticationResponseJSON },
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async webAuthnSignIn<Res>(
+    req: Request,
+    dataOrCb?:
+      | {
+          email: string;
+          assertion: AuthenticationResponseJSON;
+        }
+      | ((
+          params: ParamsOrError<{ tokenData: TokenData }>
+        ) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<
+    | {
+        tokenData: TokenData;
+        headers: Headers;
+      }
+    | (Res extends Response ? Res : TypedResponse<Res>)
+  > {
+    return handleAction<{
+      email: string;
+      assertion: AuthenticationResponseJSON;
+    }>(
+      async (data, headers) => {
+        const { email, assertion } = data;
+
+        const tokenData = await (
+          await this.core
+        ).signinWithWebAuthn(email, assertion);
+
+        headers.append(
+          "Set-Cookie",
+          cookie.serialize(this.options.authCookieName, tokenData.auth_token, {
+            httpOnly: true,
+            sameSite: "strict",
+            path: "/",
+          })
+        );
+
+        return { tokenData };
+      },
+      req,
+      dataOrCb,
+      cb
+    );
+  }
+
+  async webAuthnSignUp(
+    req: Request,
+    data?: {
+      email: string;
+      credentials: RegistrationResponseJSON;
+      verify_url: string;
+      user_handle: string;
+    }
+  ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  async webAuthnSignUp<Res>(
+    req: Request,
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async webAuthnSignUp<Res>(
+    req: Request,
+    data: {
+      email: string;
+      credentials: RegistrationResponseJSON;
+      verify_url: string;
+      user_handle: string;
+    },
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async webAuthnSignUp<Res>(
+    req: Request,
+    dataOrCb?:
+      | {
+          email: string;
+          credentials: RegistrationResponseJSON;
+          verify_url: string;
+          user_handle: string;
+        }
+      | ((
+          params: ParamsOrError<{ tokenData: TokenData }>
+        ) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<
+    | {
+        tokenData: TokenData;
+        headers: Headers;
+      }
+    | (Res extends Response ? Res : TypedResponse<Res>)
+  > {
+    return handleAction<{
+      email: string;
+      credentials: RegistrationResponseJSON;
+      verify_url: string;
+      user_handle: string;
+    }>(
+      async (data, headers) => {
+        const { email, credentials, verify_url, user_handle } = data;
+
+        const result = await (
+          await this.core
+        ).signupWithWebAuthn(email, credentials, verify_url, user_handle);
+
+        headers.append(
+          "Set-Cookie",
+          cookie.serialize(
+            this.options.pkceVerifierCookieName,
+            result.verifier,
+            {
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            }
+          )
+        );
+
+        if (result.status === "complete") {
+          const tokenData = result.tokenData;
+
+          headers.append(
+            "Set-Cookie",
+            cookie.serialize(
+              this.options.authCookieName,
+              tokenData.auth_token,
+              {
+                httpOnly: true,
+                sameSite: "strict",
+                path: "/",
+              }
+            )
+          );
+          return { tokenData, headers };
+        }
+
+        return { tokenData: null, headers };
+      },
+      req,
+      dataOrCb,
+      cb
+    );
+  }
+
   async emailPasswordSendPasswordResetEmail(
     req: Request,
     data?: { email: string }
@@ -790,18 +1018,18 @@ function _extractParams(
   return params;
 }
 
-async function handleAction(
-  action: (
-    data: Record<string, string> | FormData,
-    headers: Headers,
-    req: Request
-  ) => Promise<any>,
+async function handleAction<DataT extends Record<string, any> | FormData>(
+  action: (data: DataT, headers: Headers, req: Request) => Promise<any>,
   req: Request,
-  dataOrCb: Record<string, string> | ((data: any) => any) | undefined,
+  dataOrCb: Record<string, any> | ((data: any) => any) | undefined,
   cb: ((data: any) => any) | undefined
 ) {
-  const data = typeof dataOrCb === "object" ? dataOrCb : await req.formData();
-  const callback = typeof dataOrCb === "function" ? dataOrCb : cb;
+  const data = (
+    typeof dataOrCb === "object" ? dataOrCb : await req.formData()
+  ) as DataT;
+  const callback = (typeof dataOrCb === "function" ? dataOrCb : cb) as (
+    data: any
+  ) => any;
 
   const headers: Headers = new Headers();
   let params: any;
