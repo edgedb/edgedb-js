@@ -603,15 +603,16 @@ export class CodeBuilder {
 
     let prefix = "";
     if (ref.dir !== this.dir) {
-      const mod = path.posix.basename(ref.dir, path.posix.extname(ref.dir));
-      prefix = `_${mod}`;
+      const namespaceParts = identRef.name.split("::").slice(0, -1);
+      prefix = `_${namespaceParts.join("")}`;
+      const moduleFileName = namespaceParts.at(-1)!;
 
       let importPath = path.posix.join(
         path.posix.relative(
           path.posix.dirname(this.dir),
           path.posix.dirname(ref.dir)
         ),
-        mod
+        moduleFileName
       );
 
       if (!importPath.startsWith("../")) {
