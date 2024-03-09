@@ -488,12 +488,22 @@ class BuilderImportsExports {
       exports.push(`export type { ${exportTypes.join(", ")} };\n`);
     }
     if (refsDefault.length || forceDefaultExport) {
+      const refsByExportAs = [...groupToMapBy(refsDefault, (x) => x.as)].map(
+        ([as, group]) => ({
+          as,
+          refs: group.map(({ ref }) => ref).reverse(),
+        })
+      );
       if (mode === "ts" || mode === "dts") {
         exports.push(
           `${
             mode === "dts" ? "declare " : ""
-          }type __defaultExports = {\n${refsDefault
-            .map(({ ref, as }) => `  ${genutil.quote(as)}: typeof ${ref}`)
+          }type __defaultExports = {\n${refsByExportAs
+            .map(({ refs, as }) => {
+              const key = genutil.quote(as);
+              const value = refs.map((ref) => `typeof ${ref}`).join(" & ");
+              return `  ${key}: ${value}`;
+            })
             .join(";\n")}\n};`
         );
       }
@@ -501,8 +511,17 @@ class BuilderImportsExports {
         exports.push(
           `const __defaultExports${
             mode === "ts" ? ": __defaultExports" : ""
-          } = {\n${refsDefault
-            .map(({ ref, as }) => `  ${genutil.quote(as)}: ${ref}`)
+          } = {\n${refsByExportAs
+            .map(({ refs, as }) => {
+              const key = genutil.quote(as);
+              const value =
+                refs.length === 1
+                  ? refs
+                  : `Object.freeze({ ${refs
+                      .map((ref) => `...${ref}`)
+                      .join(", ")} })`;
+              return `  ${key}: ${value}`;
+            })
             .join(",\n")}\n};`
         );
       }
@@ -847,3 +866,14 @@ export class DirBuilder {
     }
   }
 }
+
+const groupToMapBy = <K, V>(
+  items: Iterable<V>,
+  by: (item: V) => K
+): ReadonlyMap<K, readonly V[]> =>
+  [...items].reduce((map, item) => {
+    const groupKey = by(item);
+    const prev = map.get(groupKey) ?? [];
+    map.set(groupKey, [...prev, item]);
+    return map;
+  }, new Map<K, V[]>());
