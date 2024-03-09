@@ -33,20 +33,21 @@ export interface CreateAuthRouteHandlers {
       tokenData: TokenData;
       provider: BuiltinOAuthProviderNames;
       isSignUp: boolean;
+      req: NextRequest;
     }>
   ): Promise<never>;
   onEmailPasswordSignIn(
-    params: ParamsOrError<{ tokenData: TokenData }>
+    params: ParamsOrError<{ tokenData: TokenData; req: NextRequest }>
   ): Promise<Response>;
   onEmailPasswordSignUp(
-    params: ParamsOrError<{ tokenData: TokenData | null }>
+    params: ParamsOrError<{ tokenData: TokenData | null; req: NextRequest }>
   ): Promise<Response>;
   onEmailPasswordReset(
-    params: ParamsOrError<{ tokenData: TokenData }>
+    params: ParamsOrError<{ tokenData: TokenData; req: NextRequest }>
   ): Promise<Response>;
   onEmailVerify(
     params: ParamsOrError<
-      { tokenData: TokenData },
+      { tokenData: TokenData; req: NextRequest },
       { verificationToken?: string }
     >
   ): Promise<never>;
@@ -56,12 +57,17 @@ export interface CreateAuthRouteHandlers {
         | {
             tokenData: TokenData;
             provider: BuiltinProviderNames;
+            req: NextRequest;
           }
-        | { tokenData: null; provider: null }
+        | {
+            tokenData: null;
+            provider: null;
+            req: NextRequest;
+          }
       ) & { isSignUp: boolean }
     >
   ): Promise<never>;
-  onSignout(): Promise<never>;
+  onSignout(params: ParamsOrError<{ req: NextRequest }>): Promise<never>;
 }
 
 export abstract class NextAuth extends NextAuthHelpers {
@@ -181,6 +187,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 "provider"
               ) as BuiltinOAuthProviderNames,
               isSignUp,
+              req,
             });
           }
           case "emailpassword/verify": {
@@ -225,7 +232,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onEmailVerify({ error: null, tokenData });
+            return onEmailVerify({ error: null, tokenData, req });
           }
           case "builtin/callback": {
             if (!onBuiltinUICallback) {
@@ -252,6 +259,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                   tokenData: null,
                   provider: null,
                   isSignUp: true,
+                  req,
                 });
               }
               return onBuiltinUICallback({
@@ -292,6 +300,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 "provider"
               ) as BuiltinProviderNames,
               isSignUp,
+              req,
             });
           }
           case "builtin/signin":
@@ -318,7 +327,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               );
             }
             cookies().delete(this.options.authCookieName);
-            return onSignout();
+            return onSignout({ error: null, req });
           }
           default:
             return new Response("Unknown auth route", {
@@ -363,7 +372,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               path: "/",
             });
             return _wrapResponse(
-              onEmailPasswordSignIn?.({ error: null, tokenData }),
+              onEmailPasswordSignIn?.({ error: null, tokenData, req }),
               isAction
             );
           }
@@ -416,12 +425,13 @@ export abstract class NextAuth extends NextAuthHelpers {
                 onEmailPasswordSignUp?.({
                   error: null,
                   tokenData: result.tokenData,
+                  req,
                 }),
                 isAction
               );
             } else {
               return _wrapResponse(
-                onEmailPasswordSignUp?.({ error: null, tokenData: null }),
+                onEmailPasswordSignUp?.({ error: null, tokenData: null, req }),
                 isAction
               );
             }
@@ -499,7 +509,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
             return _wrapResponse(
-              onEmailPasswordReset?.({ error: null, tokenData }),
+              onEmailPasswordReset?.({ error: null, tokenData, req }),
               isAction
             );
           }
