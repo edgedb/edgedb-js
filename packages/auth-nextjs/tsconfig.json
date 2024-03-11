@@ -6,8 +6,7 @@
       "ESNext"
     ],
     "target": "ESNext",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "Node16",
     "declaration": true,
     "strict": true,
     "downlevelIteration": true,

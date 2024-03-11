@@ -17,7 +17,7 @@ import {
 } from "@edgedb/auth-core";
 import { type RemixAuthOptions, RemixClientAuth } from "./client.js";
 
-export * from "@edgedb/auth-core/dist/errors.js";
+export * from "@edgedb/auth-core/errors";
 export type { TokenData, RemixAuthOptions };
 
 export type BuiltinProviderNames =
