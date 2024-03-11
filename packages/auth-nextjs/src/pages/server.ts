@@ -8,7 +8,7 @@ import {
   NextAuthSession,
 } from "../shared";
 
-export * from "@edgedb/auth-core/dist/errors";
+export * from "@edgedb/auth-core/errors";
 export {
   NextAuthSession,
   type NextAuthOptions,

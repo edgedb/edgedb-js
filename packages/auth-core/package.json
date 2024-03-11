@@ -15,9 +15,9 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./webauthn": {
-      "types": "./dist/webauthn.d.ts",
-      "default": "./dist/webauthn.js"
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
     }
   },
   "license": "Apache-2.0",

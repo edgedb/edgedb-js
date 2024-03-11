@@ -25,7 +25,7 @@ import {
   type AuthOptions,
 } from "./client.js";
 
-export * from "@edgedb/auth-core/dist/errors.js";
+export * from "@edgedb/auth-core/errors";
 export type { TokenData, AuthOptions, Client };
 
 export type BuiltinProviderNames =
