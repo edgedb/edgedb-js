@@ -37,6 +37,7 @@
     "typescript": "^5.2.2"
   },
   "scripts": {
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",
     "build:cjs": "tsc --project tsconfig.json",
     "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",

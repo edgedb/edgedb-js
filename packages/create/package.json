@@ -33,6 +33,7 @@
     "write-package": "^7.0.0"
   },
   "scripts": {
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "create": "tsx src/cli.ts",
     "build": "./build.sh",
     "test": "tsc --noEmit"

@@ -18,6 +18,7 @@
     "./pages/*": "./dist/pages/*.js"
   },
   "scripts": {
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "build": "tsc --project tsconfig.json"
   },
   "devDependencies": {
