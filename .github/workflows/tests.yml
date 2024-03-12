@@ -73,14 +73,15 @@ jobs:
         run: |
           yarn eslint || echo "ESLint still failing... Fine for now!"
 
-      - name: Typecheck
-        run: |
-          yarn workspaces run typecheck
-
       - name: Build
         run: |
           yarn workspace edgedb build
           yarn workspace @edgedb/generate build
+          yarn workspace @edgedb/auth-core build
+
+      - name: Typecheck
+        run: |
+          yarn workspaces run typecheck
 
       # - name: Compile for Deno
       #   run: |
