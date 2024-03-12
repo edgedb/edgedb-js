@@ -220,4 +220,17 @@ module User {
   scalar type Status extending enum<"Active", "Disabled">;
 
   type User extending default::User;
+
+  type Profile {
+    link address -> User::Profile::MailingAddress;
+  }
+
+  module Profile {
+    type MailingAddress {
+      property street -> str;
+      property city -> str;
+      property state -> str;
+      property zip -> str;
+    }
+  }
 }
