@@ -21,7 +21,7 @@ import {
 
 type RouterStack = (RequestHandler | ErrorRequestHandler)[];
 
-export * from "@edgedb/auth-core/dist/errors.js";
+export * from "@edgedb/auth-core/errors";
 
 export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
