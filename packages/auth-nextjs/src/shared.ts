@@ -33,22 +33,27 @@ export interface CreateAuthRouteHandlers {
       tokenData: TokenData;
       provider: BuiltinOAuthProviderNames;
       isSignUp: boolean;
-    }>
+    }>,
+    req?: NextRequest
   ): Promise<never>;
   onEmailPasswordSignIn(
-    params: ParamsOrError<{ tokenData: TokenData }>
+    params: ParamsOrError<{ tokenData: TokenData }>,
+    req?: NextRequest
   ): Promise<Response>;
   onEmailPasswordSignUp(
-    params: ParamsOrError<{ tokenData: TokenData | null }>
+    params: ParamsOrError<{ tokenData: TokenData | null }>,
+    req?: NextRequest
   ): Promise<Response>;
   onEmailPasswordReset(
-    params: ParamsOrError<{ tokenData: TokenData }>
+    params: ParamsOrError<{ tokenData: TokenData }>,
+    req?: NextRequest
   ): Promise<Response>;
   onEmailVerify(
     params: ParamsOrError<
       { tokenData: TokenData },
       { verificationToken?: string }
-    >
+    >,
+    req?: NextRequest
   ): Promise<never>;
   onBuiltinUICallback(
     params: ParamsOrError<
@@ -57,11 +62,15 @@ export interface CreateAuthRouteHandlers {
             tokenData: TokenData;
             provider: BuiltinProviderNames;
           }
-        | { tokenData: null; provider: null }
+        | {
+            tokenData: null;
+            provider: null;
+          }
       ) & { isSignUp: boolean }
-    >
+    >,
+    req?: NextRequest
   ): Promise<never>;
-  onSignout(): Promise<never>;
+  onSignout(req?: NextRequest): Promise<never>;
 }
 
 export abstract class NextAuth extends NextAuthHelpers {
@@ -135,11 +144,14 @@ export abstract class NextAuth extends NextAuthHelpers {
             const error = req.nextUrl.searchParams.get("error");
             if (error) {
               const desc = req.nextUrl.searchParams.get("error_description");
-              return onOAuthCallback({
-                error: new OAuthProviderFailureError(
-                  error + (desc ? `: ${desc}` : "")
-                ),
-              });
+              return onOAuthCallback(
+                {
+                  error: new OAuthProviderFailureError(
+                    error + (desc ? `: ${desc}` : "")
+                  ),
+                },
+                req
+              );
             }
             const code = req.nextUrl.searchParams.get("code");
             const isSignUp =
@@ -148,22 +160,31 @@ export abstract class NextAuth extends NextAuthHelpers {
               this.options.pkceVerifierCookieName
             )?.value;
             if (!code) {
-              return onOAuthCallback({
-                error: new PKCEError("no pkce code in response"),
-              });
+              return onOAuthCallback(
+                {
+                  error: new PKCEError("no pkce code in response"),
+                },
+                req
+              );
             }
             if (!verifier) {
-              return onOAuthCallback({
-                error: new PKCEError("no pkce verifier cookie found"),
-              });
+              return onOAuthCallback(
+                {
+                  error: new PKCEError("no pkce verifier cookie found"),
+                },
+                req
+              );
             }
             let tokenData: TokenData;
             try {
               tokenData = await (await this.core).getToken(code, verifier);
             } catch (err) {
-              return onOAuthCallback({
-                error: err instanceof Error ? err : new Error(String(err)),
-              });
+              return onOAuthCallback(
+                {
+                  error: err instanceof Error ? err : new Error(String(err)),
+                },
+                req
+              );
             }
             cookies().set({
               name: this.options.authCookieName,
@@ -174,14 +195,17 @@ export abstract class NextAuth extends NextAuthHelpers {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onOAuthCallback({
-              error: null,
-              tokenData,
-              provider: req.nextUrl.searchParams.get(
-                "provider"
-              ) as BuiltinOAuthProviderNames,
-              isSignUp,
-            });
+            return onOAuthCallback(
+              {
+                error: null,
+                tokenData,
+                provider: req.nextUrl.searchParams.get(
+                  "provider"
+                ) as BuiltinOAuthProviderNames,
+                isSignUp,
+              },
+              req
+            );
           }
           case "emailpassword/verify": {
             if (!onEmailVerify) {
@@ -195,15 +219,21 @@ export abstract class NextAuth extends NextAuthHelpers {
               this.options.pkceVerifierCookieName
             )?.value;
             if (!verificationToken) {
-              return onEmailVerify({
-                error: new PKCEError("no verification_token in response"),
-              });
+              return onEmailVerify(
+                {
+                  error: new PKCEError("no verification_token in response"),
+                },
+                req
+              );
             }
             if (!verifier) {
-              return onEmailVerify({
-                error: new PKCEError("no pkce verifier cookie found"),
-                verificationToken,
-              });
+              return onEmailVerify(
+                {
+                  error: new PKCEError("no pkce verifier cookie found"),
+                  verificationToken,
+                },
+                req
+              );
             }
             let tokenData: TokenData;
             try {
@@ -211,10 +241,13 @@ export abstract class NextAuth extends NextAuthHelpers {
                 await this.core
               ).verifyEmailPasswordSignup(verificationToken, verifier);
             } catch (err) {
-              return onEmailVerify({
-                error: err instanceof Error ? err : new Error(String(err)),
-                verificationToken,
-              });
+              return onEmailVerify(
+                {
+                  error: err instanceof Error ? err : new Error(String(err)),
+                  verificationToken,
+                },
+                req
+              );
             }
             cookies().set({
               name: this.options.authCookieName,
@@ -225,7 +258,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onEmailVerify({ error: null, tokenData });
+            return onEmailVerify({ error: null, tokenData }, req);
           }
           case "builtin/callback": {
             if (!onBuiltinUICallback) {
@@ -236,9 +269,12 @@ export abstract class NextAuth extends NextAuthHelpers {
             const error = req.nextUrl.searchParams.get("error");
             if (error) {
               const desc = req.nextUrl.searchParams.get("error_description");
-              return onBuiltinUICallback({
-                error: new EdgeDBAuthError(error + (desc ? `: ${desc}` : "")),
-              });
+              return onBuiltinUICallback(
+                {
+                  error: new EdgeDBAuthError(error + (desc ? `: ${desc}` : "")),
+                },
+                req
+              );
             }
             const code = req.nextUrl.searchParams.get("code");
             const verificationEmailSentAt = req.nextUrl.searchParams.get(
@@ -247,24 +283,33 @@ export abstract class NextAuth extends NextAuthHelpers {
 
             if (!code) {
               if (verificationEmailSentAt) {
-                return onBuiltinUICallback({
-                  error: null,
-                  tokenData: null,
-                  provider: null,
-                  isSignUp: true,
-                });
+                return onBuiltinUICallback(
+                  {
+                    error: null,
+                    tokenData: null,
+                    provider: null,
+                    isSignUp: true,
+                  },
+                  req
+                );
               }
-              return onBuiltinUICallback({
-                error: new PKCEError("no pkce code in response"),
-              });
+              return onBuiltinUICallback(
+                {
+                  error: new PKCEError("no pkce code in response"),
+                },
+                req
+              );
             }
             const verifier = req.cookies.get(
               this.options.pkceVerifierCookieName
             )?.value;
             if (!verifier) {
-              return onBuiltinUICallback({
-                error: new PKCEError("no pkce verifier cookie found"),
-              });
+              return onBuiltinUICallback(
+                {
+                  error: new PKCEError("no pkce verifier cookie found"),
+                },
+                req
+              );
             }
             const isSignUp =
               req.nextUrl.searchParams.get("isSignUp") === "true";
@@ -272,9 +317,12 @@ export abstract class NextAuth extends NextAuthHelpers {
             try {
               tokenData = await (await this.core).getToken(code, verifier);
             } catch (err) {
-              return onBuiltinUICallback({
-                error: err instanceof Error ? err : new Error(String(err)),
-              });
+              return onBuiltinUICallback(
+                {
+                  error: err instanceof Error ? err : new Error(String(err)),
+                },
+                req
+              );
             }
             cookies().set({
               name: this.options.authCookieName,
@@ -285,14 +333,17 @@ export abstract class NextAuth extends NextAuthHelpers {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onBuiltinUICallback({
-              error: null,
-              tokenData,
-              provider: req.nextUrl.searchParams.get(
-                "provider"
-              ) as BuiltinProviderNames,
-              isSignUp,
-            });
+            return onBuiltinUICallback(
+              {
+                error: null,
+                tokenData,
+                provider: req.nextUrl.searchParams.get(
+                  "provider"
+                ) as BuiltinProviderNames,
+                isSignUp,
+              },
+              req
+            );
           }
           case "builtin/signin":
           case "builtin/signup": {
@@ -318,7 +369,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               );
             }
             cookies().delete(this.options.authCookieName);
-            return onSignout();
+            return onSignout(req);
           }
           default:
             return new Response("Unknown auth route", {
@@ -352,7 +403,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err));
               return onEmailPasswordSignIn
-                ? _wrapResponse(onEmailPasswordSignIn({ error }), isAction)
+                ? _wrapResponse(onEmailPasswordSignIn({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
             cookies().set({
@@ -363,7 +414,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               path: "/",
             });
             return _wrapResponse(
-              onEmailPasswordSignIn?.({ error: null, tokenData }),
+              onEmailPasswordSignIn?.({ error: null, tokenData }, req),
               isAction
             );
           }
@@ -394,7 +445,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err));
               return onEmailPasswordSignUp
-                ? _wrapResponse(onEmailPasswordSignUp({ error }), isAction)
+                ? _wrapResponse(onEmailPasswordSignUp({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
             cookies().set({
@@ -413,15 +464,18 @@ export abstract class NextAuth extends NextAuthHelpers {
                 path: "/",
               });
               return _wrapResponse(
-                onEmailPasswordSignUp?.({
-                  error: null,
-                  tokenData: result.tokenData,
-                }),
+                onEmailPasswordSignUp?.(
+                  {
+                    error: null,
+                    tokenData: result.tokenData,
+                  },
+                  req
+                ),
                 isAction
               );
             } else {
               return _wrapResponse(
-                onEmailPasswordSignUp?.({ error: null, tokenData: null }),
+                onEmailPasswordSignUp?.({ error: null, tokenData: null }, req),
                 isAction
               );
             }
@@ -487,7 +541,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err));
               return onEmailPasswordReset
-                ? _wrapResponse(onEmailPasswordReset({ error }), isAction)
+                ? _wrapResponse(onEmailPasswordReset({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
             cookies().set({
@@ -499,7 +553,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
             return _wrapResponse(
-              onEmailPasswordReset?.({ error: null, tokenData }),
+              onEmailPasswordReset?.({ error: null, tokenData }, req),
               isAction
             );
           }
