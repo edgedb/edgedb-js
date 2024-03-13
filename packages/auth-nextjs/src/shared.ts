@@ -506,15 +506,44 @@ export abstract class NextAuth extends NextAuthHelpers {
           case "emailpassword/resend-verification-email": {
             const data = await _getReqBody(req);
             const isAction = _isAction(data);
-            const [verificationToken] = _extractParams(
-              data,
-              ["verification_token"],
-              "verification_token missing from request body"
-            );
-            (await this.core).resendVerificationEmail(verificationToken);
-            return isAction
-              ? Response.json({ _data: null })
-              : new Response(null, { status: 204 });
+            const verificationToken =
+              data instanceof FormData
+                ? data.get("verification_token")?.toString()
+                : data.verification_token;
+            const email =
+              data instanceof FormData
+                ? data.get("email")?.toString()
+                : data.email;
+
+            if (verificationToken) {
+              await (
+                await this.core
+              ).resendVerificationEmail(verificationToken.toString());
+              return isAction
+                ? Response.json({ _data: null })
+                : new Response(null, { status: 204 });
+            } else if (email) {
+              const { verifier } = await (
+                await this.core
+              ).resendVerificationEmailForEmail(
+                email.toString(),
+                `${this._authRoute}/emailpassword/verify`
+              );
+              cookies().set({
+                name: this.options.pkceVerifierCookieName,
+                value: verifier,
+                httpOnly: true,
+                sameSite: "strict",
+                path: "/",
+              });
+              return isAction
+                ? Response.json({ _data: null })
+                : new Response(null, { status: 204 });
+            } else {
+              throw new InvalidDataError(
+                "verification_token or email missing from request body"
+              );
+            }
           }
           default:
             return new Response("Unknown auth route", {
@@ -550,7 +579,9 @@ export class NextAuthSession {
   }
 }
 
-function _getReqBody(req: NextRequest) {
+function _getReqBody(
+  req: NextRequest
+): Promise<FormData | Record<string, unknown>> {
   return req.headers.get("Content-Type") === "application/json"
     ? req.json()
     : req.formData();

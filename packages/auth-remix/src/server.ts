@@ -496,7 +496,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
   async emailPasswordResendVerificationEmail(
     req: Request,
-    data?: { verification_token: string }
+    data?: { verification_token: string } | { email: string }
   ): Promise<{ headers: Headers }>;
   async emailPasswordResendVerificationEmail<Res>(
     req: Request,
@@ -504,13 +504,14 @@ export class RemixServerAuth extends RemixClientAuth {
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordResendVerificationEmail<Res>(
     req: Request,
-    data: { verification_token: string },
+    data: { verification_token: string } | { email: string },
     cb: (error?: Error) => Res | Promise<Res>
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordResendVerificationEmail<Res>(
     req: Request,
     dataOrCb?:
       | { verification_token: string }
+      | { email: string }
       | ((error?: Error) => Res | Promise<Res>),
     cb?: (error?: Error) => Res | Promise<Res>
   ): Promise<
@@ -520,14 +521,38 @@ export class RemixServerAuth extends RemixClientAuth {
     | (Res extends Response ? Res : TypedResponse<Res>)
   > {
     return handleAction(
-      async (data) => {
-        const [verificationToken] = _extractParams(
-          data,
-          ["verification_token"],
-          "verification_token missing"
-        );
+      async (data, headers) => {
+        const verificationToken =
+          data instanceof FormData
+            ? data.get("verification_token")
+            : data.verification_token;
+        const email = data instanceof FormData ? data.get("email") : data.email;
 
-        await (await this.core).resendVerificationEmail(verificationToken);
+        if (verificationToken) {
+          await (
+            await this.core
+          ).resendVerificationEmail(verificationToken.toString());
+        } else if (email) {
+          const { verifier } = await (
+            await this.core
+          ).resendVerificationEmailForEmail(
+            email.toString(),
+            `${this._authRoute}/emailpassword/verify`
+          );
+
+          headers.append(
+            "Set-Cookie",
+            cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            })
+          );
+        } else {
+          throw new InvalidDataError(
+            "verification_token or email missing. Either one is required."
+          );
+        }
       },
       req,
       dataOrCb,

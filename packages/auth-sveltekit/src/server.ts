@@ -172,15 +172,43 @@ export class ServerRequestAuth extends ClientAuth {
   }
 
   async emailPasswordResendVerificationEmail(
-    data: { verification_token: string } | FormData
+    data: { verification_token: string } | { email: string } | FormData
   ): Promise<void> {
-    const [verificationToken] = extractParams(
-      data,
-      ["verification_token"],
-      "verification_token missing"
-    );
+    const verificationToken =
+      data instanceof FormData
+        ? data.get("verification_token")
+        : "verification_token" in data
+        ? data.verification_token
+        : null;
+    const email =
+      data instanceof FormData
+        ? data.get("email")
+        : "email" in data
+        ? data.email
+        : null;
 
-    await (await this.core).resendVerificationEmail(verificationToken);
+    if (verificationToken) {
+      return await (
+        await this.core
+      ).resendVerificationEmail(verificationToken.toString());
+    } else if (email) {
+      const { verifier } = await (
+        await this.core
+      ).resendVerificationEmailForEmail(
+        email.toString(),
+        `${this.config.authRoute}/emailpassword/verify`
+      );
+
+      this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+      });
+    } else {
+      throw new InvalidDataError(
+        "expected 'verification_token' or 'email' in data"
+      );
+    }
   }
 
   async emailPasswordSignIn(
