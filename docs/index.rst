@@ -71,6 +71,12 @@ generators from npm using your package manager of choice.
       $ bun add edgedb                 # database driver
       $ bun add --dev @edgedb/generate # generators
 
+We require that ``strict`` mode be enabled in your ``tsconfig.json`` file. If
+you are using ``tsc --init``, this is enabled by default, so you should be good
+to go. If you are not using ``tsc --init``, please ensure that ``"strict":
+true`` is set in your ``tsconfig.json`` file. Also, ensure that no other
+configuration is disabling ``strict`` mode or ``strictNullChecks``.
+
 .. note:: Deno users
 
     Create these two files in your project root:
