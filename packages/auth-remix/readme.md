@@ -41,7 +41,7 @@ export default auth;
 
    import createServerAuth from "@edgedb/auth-remix/server";
    import { createClient } from "edgedb";
-   import { options } from "./auth.client";
+   import { options } from "./auth";
 
    export const client = createClient({
      //Note: when developing locally you will need to set tls  security to insecure, because the dev server uses  self-signed certificates which will cause api calls with the fetch api to fail.
@@ -65,13 +65,13 @@ export default auth;
    // app/routes/auth.$.ts
 
    import { redirect } from "@remix-run/node";
-   import { auth } from "~/services/auth.server";
+   import auth from "~/services/auth.server";
 
    export const { loader } = auth.createAuthRouteHandlers({
-     onOAuthCallback({ error, tokenData, provider, isSignUp }) {
+     async onOAuthCallback({ error, tokenData, provider, isSignUp }) {
        return redirect("/");
      },
-     onSignout() {
+     async onSignout() {
        return redirect("/");
      },
    });
@@ -116,9 +116,9 @@ Now you have auth all configured and user's can signin/signup/etc. you can use t
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, Link } from "@remix-run/react";
+
 import auth, { client } from "~/services/auth.server";
 import clientAuth from "~/services/auth.client";
-import { transformSearchParams } from "~/utils";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = auth.getSession(request);
