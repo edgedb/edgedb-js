@@ -562,24 +562,30 @@ export class RemixServerAuth extends RemixClientAuth {
   async emailPasswordSignUp(
     req: Request,
     data?: { email: string; password: string }
-  ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  ): Promise<{ tokenData: TokenData | null; headers: Headers }>;
   async emailPasswordSignUp<Res>(
     req: Request,
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSignUp<Res>(
     req: Request,
     data: { email: string; password: string },
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSignUp<Res>(
     req: Request,
     dataOrCb?:
       | { email: string; password: string }
       | ((
-          params: ParamsOrError<{ tokenData: TokenData }>
+          params: ParamsOrError<{ tokenData: TokenData | null }>
         ) => Res | Promise<Res>),
-    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
   ): Promise<
     | {
         tokenData: TokenData;
@@ -807,10 +813,12 @@ export class RemixServerAuth extends RemixClientAuth {
       verify_url: string;
       user_handle: string;
     }
-  ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  ): Promise<{ tokenData: TokenData | null; headers: Headers }>;
   async webAuthnSignUp<Res>(
     req: Request,
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async webAuthnSignUp<Res>(
     req: Request,
@@ -820,7 +828,9 @@ export class RemixServerAuth extends RemixClientAuth {
       verify_url: string;
       user_handle: string;
     },
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async webAuthnSignUp<Res>(
     req: Request,
@@ -832,12 +842,14 @@ export class RemixServerAuth extends RemixClientAuth {
           user_handle: string;
         }
       | ((
-          params: ParamsOrError<{ tokenData: TokenData }>
+          params: ParamsOrError<{ tokenData: TokenData | null }>
         ) => Res | Promise<Res>),
-    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
   ): Promise<
     | {
-        tokenData: TokenData;
+        tokenData: TokenData | null;
         headers: Headers;
       }
     | (Res extends Response ? Res : TypedResponse<Res>)
