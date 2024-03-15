@@ -4,8 +4,6 @@ import { requestGET, requestPOST } from "./utils";
 import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
-  SignupResponse,
-  TokenData,
 } from "./types";
 
 interface WebAuthnClientOptions {
@@ -31,7 +29,7 @@ export class WebAuthnClient {
     this.verifyUrl = options.verifyUrl;
   }
 
-  public async signUp(email: string): Promise<SignupResponse> {
+  public async signUp<T>(email: string): Promise<T> {
     const options = await requestGET<PublicKeyCredentialCreationOptionsJSON>(
       this.signupOptionsUrl,
       { email },
@@ -79,7 +77,7 @@ export class WebAuthnClient {
       type: credentials.type,
     };
 
-    return await requestPOST<SignupResponse>(
+    return await requestPOST<T>(
       this.signupUrl,
       {
         email,
