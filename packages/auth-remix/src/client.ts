@@ -21,7 +21,7 @@ export class RemixClientAuth {
     Omit<RemixAuthOptions, OptionalOptions>
   > &
     Pick<RemixAuthOptions, OptionalOptions>;
-  readonly webauthnClient: WebAuthnClient;
+  readonly webAuthnClient: WebAuthnClient;
 
   /** @internal */
   constructor(options: RemixAuthOptions) {
@@ -33,7 +33,7 @@ export class RemixClientAuth {
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
       passwordResetPath: options.passwordResetPath,
     };
-    this.webauthnClient = new WebAuthnClient({
+    this.webAuthnClient = new WebAuthnClient({
       signupOptionsUrl: `${this._authRoute}/webauthn/signup/options`,
       signupUrl: `${this._authRoute}/webauthn/signup`,
       signinOptionsUrl: `${this._authRoute}/webauthn/signin/options`,
