@@ -1222,8 +1222,13 @@ async function handleAction<DataT extends Record<string, any> | FormData>(
   dataOrCb: Record<string, any> | ((data: any) => any) | undefined,
   cb: ((data: any) => any) | undefined
 ) {
+  const contentType = req.headers.get("content-type") ?? "application/json";
   const data = (
-    typeof dataOrCb === "object" ? dataOrCb : await req.formData()
+    typeof dataOrCb === "object"
+      ? dataOrCb
+      : contentType.startsWith("application/json")
+      ? await req.json()
+      : await req.formData()
   ) as DataT;
   const callback = (typeof dataOrCb === "function" ? dataOrCb : cb) as (
     data: any
