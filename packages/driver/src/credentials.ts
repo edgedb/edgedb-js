@@ -1,4 +1,8 @@
-import { ServerUtils, TlsSecurity, validTlsSecurityValues } from "./conUtils";
+import {
+  type ServerUtils,
+  type TlsSecurity,
+  validTlsSecurityValues,
+} from "./conUtils";
 
 import { InterfaceError } from "./errors";
 
@@ -7,7 +11,16 @@ export interface Credentials {
   port?: number;
   user: string;
   password?: string;
+  /**
+   * Either 'database' or 'branch' may appear in credentials, but not both.
+   * If both are specified, an error will be thrown.
+   */
   database?: string;
+  /**
+   * Either 'database' or 'branch' may appear in credentials, but not both.
+   * If both are specified, an error will be thrown.
+   */
+  branch?: string;
   tlsCAData?: string;
   tlsSecurity?: TlsSecurity;
 }
@@ -61,6 +74,16 @@ export function validateCredentials(data: any): Credentials {
       throw new InterfaceError("`database` must be string");
     }
     result.database = database;
+  }
+
+  const branch = data.branch;
+  if (branch != null) {
+    if (typeof branch !== "string") {
+      throw new InterfaceError("`branch` must be string");
+    }
+    if (database != null) {
+      throw new InterfaceError("`database` and `branch` cannot both be set");
+    }
   }
 
   const password = data.password;
