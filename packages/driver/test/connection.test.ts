@@ -195,7 +195,7 @@ const errorMapping: { [key: string]: string | RegExp } = {
   file_not_found: /no such file or directory/,
   invalid_tls_security:
     /^invalid 'tlsSecurity' value|'tlsSecurity' value cannot be lower than security level set by EDGEDB_CLIENT_SECURITY/,
-  exclusive_options: /^Cannot specify both .* and .*/,
+  exclusive_options: /^Cannot specify both .* and .*|are mutually exclusive/,
   secret_key_not_found:
     /^Cannot connect to cloud instances without a secret key/,
   invalid_secret_key: /^Invalid secret key/,
@@ -273,6 +273,7 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
           expect({
             address: connectionParams.address,
             database: connectionParams.database,
+            branch: connectionParams.branch,
             user: connectionParams.user,
             password: connectionParams.password ?? null,
             secretKey: connectionParams.secretKey ?? null,
@@ -315,7 +316,7 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
   }
 }
 
-test("parseConnectArguments", async () => {
+describe("parseConnectArguments", () => {
   let connectionTestcases: any[];
   try {
     connectionTestcases = JSON.parse(
@@ -333,7 +334,9 @@ test("parseConnectArguments", async () => {
   }
 
   for (const testcase of connectionTestcases) {
-    await runConnectionTest(testcase);
+    test(testcase.name, async () => {
+      await runConnectionTest(testcase);
+    });
   }
 });
 
