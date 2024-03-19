@@ -3,7 +3,7 @@ import e from "./dbschema/edgeql-js";
 import type { $Movie } from "./dbschema/edgeql-js/modules/default";
 
 import { setupTests, tc, teardownTests } from "./setupTeardown";
-import type { Client } from "edgedb";
+import type { Client, $ } from "edgedb";
 
 describe("casts", () => {
   let client: Client;
@@ -47,6 +47,7 @@ describe("casts", () => {
     assert.equal(expr.toEdgeQL(), `<default::Movie>{}`);
 
     tc.assert<tc.IsExact<(typeof expr)["__element__"], $Movie>>(true);
+    tc.assert<tc.IsExact<(typeof expr)["__cardinality__"], $.Cardinality.Empty>>(true);
   });
 
   test("UUID to object cast", () => {
@@ -61,8 +62,26 @@ describe("casts", () => {
     );
 
     tc.assert<tc.IsExact<(typeof expr)["__element__"], $Movie>>(true);
+    tc.assert<tc.IsExact<(typeof expr)["__cardinality__"], $.Cardinality.One>>(true);
 
     // @ts-expect-error: does not allow assignment of non UUID
     e.cast(e.Movie, 42);
+  });
+
+  test("multiple UUIDs to object cast", () => {
+    const ids = e.cast(e.uuid, e.set(
+      "00000000-0000-0000-0000-000000000000",
+      "00000000-0000-0000-0000-000000000001",
+      "00000000-0000-0000-0000-000000000002",
+    ));
+    const expr = e.cast(e.Movie, ids);
+
+    assert.equal(
+      expr.toEdgeQL(),
+      `<default::Movie>(<std::uuid>({ "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002" }))`
+    );
+
+    tc.assert<tc.IsExact<(typeof expr)["__element__"], $Movie>>(true);
+    tc.assert<tc.IsExact<(typeof expr)["__cardinality__"], $.Cardinality.AtLeastOne>>(true);
   });
 });

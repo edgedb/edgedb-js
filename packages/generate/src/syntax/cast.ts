@@ -21,10 +21,13 @@ export function cast<Target extends BaseType | ObjectTypeExpression>(
     : never,
   Cardinality.Empty
 >;
-export function cast<Target extends ObjectTypeExpression>(
+export function cast<
+  Target extends ObjectTypeExpression,
+  Card extends Cardinality
+>(
   target: Target,
-  arg: TypeSet<ScalarType<"std::uuid">>
-): $expr_Cast<Target["__element__"], Cardinality.One>;
+  arg: TypeSet<ScalarType<"std::uuid">, Card>
+): $expr_Cast<Target["__element__"], Card>;
 export function cast<Target extends BaseType, Expr extends TypeSet>(
   target: Target,
   expr: orScalarLiteral<Expr>
