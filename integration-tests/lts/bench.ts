@@ -5,51 +5,56 @@ import e from "./dbschema/edgeql-js";
 bench("scalar literal", () => {
   const lit = e.int32(42);
   return {} as typeof lit;
-}).types([555, "instantiations"]);
+}).types([558, "instantiations"]);
 
 bench("array literal", () => {
   const lit = e.literal(e.array(e.str), ["abcd"]);
   return {} as typeof lit;
-}).types([2407, "instantiations"]);
+}).types([4116, "instantiations"]);
 
 bench("named tuple literal", () => {
   const lit = e.literal(e.tuple({ str: e.str }), {
     str: "asdf",
   });
   return {} as typeof lit;
-}).types([11597, "instantiations"]);
+}).types([13063, "instantiations"]);
+
+bench("tuple literal", () => {
+  const lit = e.literal(e.tuple([e.str, e.int32]), ["asdf", 42]);
+  return {} as typeof lit;
+}).types([9668, "instantiations"]);
 
 bench("base type: array", () => {
   const baseType = e.array(e.str);
   return {} as typeof baseType;
-}).types([348, "instantiations"]);
+}).types([351, "instantiations"]);
 
 bench("base type: named tuple", () => {
   const baseType = e.tuple({ str: e.str });
   return {} as typeof baseType;
-}).types([2160, "instantiations"]);
+}).types([3545, "instantiations"]);
 
 bench("select: scalar", () => {
   const query = e.select(e.int32(42));
   return {} as typeof query;
-}).types([1155, "instantiations"]);
+}).types([1177, "instantiations"]);
 
 bench("select: free object", () => {
   const query = e.select({ meaning: e.int32(42) });
   return {} as typeof query;
-}).types([2012, "instantiations"]);
+}).types([2033, "instantiations"]);
 
 bench("select: id only", () => {
   const query = e.select(e.User, () => ({ id: true }));
   return {} as typeof query;
-}).types([3687, "instantiations"]);
+}).types([3702, "instantiations"]);
 
 bench("select: filtered", () => {
   const query = e.select(e.User, () => ({
     filter_single: { id: e.uuid("123") },
   }));
   return {} as typeof query;
-}).types([5019, "instantiations"]);
+}).types([5046, "instantiations"]);
 
 bench("select: nested", () => {
   const user = e.select(e.User, () => ({
@@ -58,7 +63,7 @@ bench("select: nested", () => {
   const query = e.select(user, () => ({ id: true }));
 
   return {} as typeof query;
-}).types([6037, "instantiations"]);
+}).types([6064, "instantiations"]);
 
 bench("select: complex", () => {
   const query = e.select(e.Movie, () => ({
@@ -70,7 +75,7 @@ bench("select: complex", () => {
     }),
   }));
   return {} as typeof query;
-}).types([6342, "instantiations"]);
+}).types([6374, "instantiations"]);
 
 bench("select: with filter", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -82,7 +87,7 @@ bench("select: with filter", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([6289, "instantiations"]);
+}).types([6447, "instantiations"]);
 
 bench("select: with order", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -95,7 +100,7 @@ bench("select: with order", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([6624, "instantiations"]);
+}).types([6786, "instantiations"]);
 
 bench("select: with limit", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -108,7 +113,7 @@ bench("select: with limit", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([6352, "instantiations"]);
+}).types([6510, "instantiations"]);
 
 bench("select: with offset", () => {
   const query = e.select(e.Hero, (hero) => ({
@@ -121,7 +126,7 @@ bench("select: with offset", () => {
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
-}).types([6391, "instantiations"]);
+}).types([6553, "instantiations"]);
 
 bench("params select", () => {
   const query = e.params({ name: e.str }, (params) =>
@@ -135,4 +140,4 @@ bench("params select", () => {
     }))
   );
   return {} as typeof query;
-}).types([11865, "instantiations"]);
+}).types([12005, "instantiations"]);
