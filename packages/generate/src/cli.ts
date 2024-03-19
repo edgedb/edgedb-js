@@ -9,7 +9,7 @@ import {
   validTlsSecurityValues,
   isValidTlsSecurityValue,
 } from "edgedb/dist/conUtils";
-import { parseConnectArguments } from "edgedb/dist/conUtils.server";
+import { makeConnectArgumentsParser } from "edgedb/dist/conUtils.server";
 import {
   type CommandOptions,
   promptForPassword,
@@ -33,6 +33,8 @@ Available generators:
  - edgeql-js (query builder)
  - queries (query files)
  - interfaces`;
+
+const parseConnectArguments = makeConnectArgumentsParser();
 
 const run = async () => {
   const args = adapter.process.argv.slice(2);

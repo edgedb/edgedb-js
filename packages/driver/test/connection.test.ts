@@ -20,8 +20,8 @@ let mockFs = false;
 let mockedFiles: { [key: string]: string } = {};
 let homedir: string | null = null;
 
-jest.mock("fs", () => {
-  const actualFs = jest.requireActual("fs");
+jest.mock("node:fs", () => {
+  const actualFs = jest.requireActual("node:fs");
 
   return {
     ...actualFs,
@@ -61,8 +61,8 @@ jest.mock("fs", () => {
     },
   };
 });
-jest.mock("os", () => {
-  const actualOs = jest.requireActual("os");
+jest.mock("node:os", () => {
+  const actualOs = jest.requireActual("node:os");
 
   return {
     ...actualOs,
@@ -77,7 +77,10 @@ import * as crypto from "crypto";
 import { join as pathJoin } from "path";
 import { Client, Duration } from "../src/index.node";
 import { parseDuration } from "../src/conUtils";
-import { parseConnectArguments, findStashPath } from "../src/conUtils.server";
+import {
+  makeConnectArgumentsParser,
+  findStashPath,
+} from "../src/conUtils.server";
 import { getClient } from "./testbase";
 import * as errors from "../src/errors";
 import * as platform from "../src/platform";
@@ -253,14 +256,14 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
     }
 
     await expect(() =>
-      envWrap({ env, fs }, () => parseConnectArguments(opts))
+      envWrap({ env, fs }, () => makeConnectArgumentsParser()(opts))
     ).rejects.toThrow(error);
   } else {
     const warnings = await envWrap(
       { env, fs, captureWarnings: !!testcase.warnings },
       async () => {
         try {
-          const { connectionParams } = await parseConnectArguments(opts);
+          const { connectionParams } = await makeConnectArgumentsParser()(opts);
 
           let waitMilli = connectionParams.waitUntilAvailable;
           const waitHours = Math.floor(waitMilli / 3_600_000);
@@ -298,8 +301,15 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
             ),
           });
         } catch (e) {
-          console.log(testcase);
-          throw e;
+          throw new Error(
+            `\
+Failing test case:
+${JSON.stringify(testcase, null, 2)}
+process.env: ${JSON.stringify(process.env)}`,
+            {
+              cause: e,
+            }
+          );
         }
       }
     );
@@ -315,7 +325,7 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
   }
 }
 
-test("parseConnectArguments", async () => {
+describe("parseConnectArguments", () => {
   let connectionTestcases: any[];
   try {
     connectionTestcases = JSON.parse(
@@ -332,9 +342,12 @@ test("parseConnectArguments", async () => {
     );
   }
 
-  for (const testcase of connectionTestcases) {
-    await runConnectionTest(testcase);
-  }
+  test.each(connectionTestcases)(
+    "connection test %#",
+    async (testcase: ConnectionTestCase) => {
+      await runConnectionTest(testcase);
+    }
+  );
 });
 
 const platformNames: { [key: string]: string } = {
@@ -343,7 +356,7 @@ const platformNames: { [key: string]: string } = {
   linux: "linux",
 };
 
-test("project path hashing", async () => {
+describe("project path hashing", () => {
   let hashingTestcases: {
     platform: string;
     homeDir: string;
@@ -368,7 +381,7 @@ test("project path hashing", async () => {
     );
   }
 
-  for (const testcase of hashingTestcases) {
+  test.each(hashingTestcases)("hashing test %#", async (testcase) => {
     if (platformNames[testcase.platform] === process.platform) {
       await envWrap(
         { env: testcase.env ?? {}, fs: { homedir: testcase.homeDir } },
@@ -376,10 +389,10 @@ test("project path hashing", async () => {
           expect(await findStashPath(testcase.project)).toBe(testcase.result)
       );
     }
-  }
+  });
 });
 
-test("logging, inProject, fromProject, fromEnv", async () => {
+describe("logging, inProject, fromProject, fromEnv", () => {
   const defaults = {
     address: ["localhost", 5656],
     database: "edgedb",
@@ -390,7 +403,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     serverSettings: {},
   };
 
-  for (const testcase of [
+  const testcases = [
     {
       opts: { host: "localhost", user: "user", logging: false },
       result: { ...defaults, user: "user" },
@@ -520,19 +533,21 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       fromProject: false,
       fromEnv: false,
     },
-  ]) {
+  ];
+
+  test.each(testcases)("test %#", async (testcase) => {
     if (
       testcase.fs &&
       (process.platform === "win32" || process.platform === "darwin")
     ) {
-      continue;
+      return;
     }
 
     await envWrap(
       { env: testcase.env as any, fs: testcase.fs as any },
       async () => {
         const { connectionParams, logging, inProject, fromProject, fromEnv } =
-          await parseConnectArguments(testcase.opts);
+          await makeConnectArgumentsParser()(testcase.opts);
         expect({
           address: connectionParams.address,
           database: connectionParams.database,
@@ -548,10 +563,10 @@ test("logging, inProject, fromProject, fromEnv", async () => {
         expect(fromEnv).toEqual(testcase.fromEnv);
       }
     );
-  }
+  });
 });
 
-test("EDGEDB_CLIENT_SECURITY env var", async () => {
+describe("EDGEDB_CLIENT_SECURITY env var", () => {
   const truthTable: [string, string, string | null][] = [
     // CLIENT_SECURITY, CLIENT_TLS_SECURITY, result
     ["default", "default", "default"],
@@ -568,27 +583,30 @@ test("EDGEDB_CLIENT_SECURITY env var", async () => {
     ["strict", "strict", "strict"],
   ];
 
-  for (const [clientSecurity, clientTlsSecurity, result] of truthTable) {
-    await envWrap(
-      {
-        env: {
-          EDGEDB_CLIENT_SECURITY: clientSecurity,
+  test.each(truthTable)(
+    "given CLIENT_SECURITY %s and CLIENT_TLS_SECURITY %s, expects result %s",
+    async (clientSecurity, clientTlsSecurity, result) => {
+      await envWrap(
+        {
+          env: {
+            EDGEDB_CLIENT_SECURITY: clientSecurity,
+          },
         },
-      },
-      async () => {
-        const parseConnectArgs = parseConnectArguments({
-          host: "localhost",
-          tlsSecurity: clientTlsSecurity as any,
-        });
-        if (!result) {
-          await expect(parseConnectArgs).rejects.toThrow();
-        } else {
-          const { connectionParams } = await parseConnectArgs;
-          expect(connectionParams._tlsSecurity).toBe(result);
+        async () => {
+          const parseConnectArgs = makeConnectArgumentsParser()({
+            host: "localhost",
+            tlsSecurity: clientTlsSecurity as any,
+          });
+          if (!result) {
+            await expect(parseConnectArgs).rejects.toThrow();
+          } else {
+            const { connectionParams } = await parseConnectArgs;
+            expect(connectionParams._tlsSecurity).toBe(result);
+          }
         }
-      }
-    );
-  }
+      );
+    }
+  );
 });
 
 test("connect: timeout", async () => {

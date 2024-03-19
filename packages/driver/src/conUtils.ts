@@ -18,12 +18,11 @@
 
 import * as errors from "./errors";
 import {
-  Credentials,
+  type Credentials,
   getCredentialsPath,
   readCredentialsFile,
   validateCredentials,
 } from "./credentials";
-import { getEnv } from "./adapter.shared.node";
 import { Duration, parseHumanDurationString } from "./datatypes/datetime";
 import { checkValidEdgeDBDuration } from "./codecs/datetime";
 import { InterfaceError } from "./errors";
@@ -101,11 +100,12 @@ export type ConnectArgumentsParser = (
 ) => Promise<NormalizedConnectConfig>;
 
 export function getConnectArgumentsParser(
-  utils: ServerUtils | null
+  utils: ServerUtils | null,
+  env: { [key: string]: string | undefined }
 ): ConnectArgumentsParser {
   return async (opts: ConnectConfig) => {
     return {
-      ...(await parseConnectDsnAndArgs(opts, utils)),
+      ...(await parseConnectDsnAndArgs(opts, utils, env)),
       connectTimeout: opts.timeout,
       logging: opts.logging ?? true,
     };
@@ -156,8 +156,11 @@ export class ResolvedConnectConfig {
   _waitUntilAvailableSource: string | null = null;
 
   serverSettings: { [key: string]: string } = {};
+  env: { [key: string]: string | undefined } = {};
 
-  constructor() {
+  constructor(env: { [key: string]: string | undefined }) {
+    this.env = env;
+
     this.setHost = this.setHost.bind(this);
     this.setPort = this.setPort.bind(this);
     this.setDatabase = this.setDatabase.bind(this);
@@ -271,7 +274,7 @@ export class ResolvedConnectConfig {
                 .join(", ")}`
           );
         }
-        const clientSecurity = getEnv("EDGEDB_CLIENT_SECURITY");
+        const clientSecurity = this.env["EDGEDB_CLIENT_SECURITY"];
         if (clientSecurity !== undefined) {
           if (
             !["default", "insecure_dev_mode", "strict"].includes(clientSecurity)
@@ -483,9 +486,10 @@ export function parseDuration(duration: string | number | Duration): number {
 
 async function parseConnectDsnAndArgs(
   config: ConnectConfig,
-  serverUtils: ServerUtils | null
+  serverUtils: ServerUtils | null,
+  env: { [key: string]: string | undefined }
 ): Promise<PartiallyNormalizedConfig> {
-  const resolvedConfig = new ResolvedConnectConfig();
+  const resolvedConfig = new ResolvedConnectConfig(env);
   let fromEnv = false;
   let fromProject = false;
 
@@ -510,7 +514,7 @@ async function parseConnectDsnAndArgs(
       user: config.user,
       password: config.password,
       secretKey: config.secretKey,
-      cloudProfile: getEnv("EDGEDB_CLOUD_PROFILE"),
+      cloudProfile: env["EDGEDB_CLOUD_PROFILE"],
       tlsCA: config.tlsCA,
       tlsCAFile: config.tlsCAFile,
       tlsSecurity: config.tlsSecurity,
@@ -540,13 +544,14 @@ async function parseConnectDsnAndArgs(
     },
     `Cannot have more than one of the following connection options: ` +
       `'dsn', 'instanceName', 'credentials', 'credentialsFile' or 'host'/'port'`,
-    serverUtils
+    serverUtils,
+    env
   );
 
   if (!hasCompoundOptions) {
     // resolve config from env vars
 
-    let port: string | undefined = getEnv("EDGEDB_PORT");
+    let port: string | undefined = env["EDGEDB_PORT"];
     if (resolvedConfig._port === null && port?.startsWith("tcp://")) {
       // EDGEDB_PORT is set by 'docker --link' so ignore and warn
       // tslint:disable-next-line: no-console
@@ -560,20 +565,20 @@ async function parseConnectDsnAndArgs(
       await resolveConfigOptions(
         resolvedConfig,
         {
-          dsn: getEnv("EDGEDB_DSN"),
-          instanceName: getEnv("EDGEDB_INSTANCE"),
-          credentials: getEnv("EDGEDB_CREDENTIALS"),
-          credentialsFile: getEnv("EDGEDB_CREDENTIALS_FILE"),
-          host: getEnv("EDGEDB_HOST"),
+          dsn: env["EDGEDB_DSN"],
+          instanceName: env["EDGEDB_INSTANCE"],
+          credentials: env["EDGEDB_CREDENTIALS"],
+          credentialsFile: env["EDGEDB_CREDENTIALS_FILE"],
+          host: env["EDGEDB_HOST"],
           port,
-          database: getEnv("EDGEDB_DATABASE"),
-          user: getEnv("EDGEDB_USER"),
-          password: getEnv("EDGEDB_PASSWORD"),
-          secretKey: getEnv("EDGEDB_SECRET_KEY"),
-          tlsCA: getEnv("EDGEDB_TLS_CA"),
-          tlsCAFile: getEnv("EDGEDB_TLS_CA_FILE"),
-          tlsSecurity: getEnv("EDGEDB_CLIENT_TLS_SECURITY"),
-          waitUntilAvailable: getEnv("EDGEDB_WAIT_UNTIL_AVAILABLE"),
+          database: env["EDGEDB_DATABASE"],
+          user: env["EDGEDB_USER"],
+          password: env["EDGEDB_PASSWORD"],
+          secretKey: env["EDGEDB_SECRET_KEY"],
+          tlsCA: env["EDGEDB_TLS_CA"],
+          tlsCAFile: env["EDGEDB_TLS_CA_FILE"],
+          tlsSecurity: env["EDGEDB_CLIENT_TLS_SECURITY"],
+          waitUntilAvailable: env["EDGEDB_WAIT_UNTIL_AVAILABLE"],
         },
         {
           dsn: `'EDGEDB_DSN' environment variable`,
@@ -594,7 +599,8 @@ async function parseConnectDsnAndArgs(
         `Cannot have more than one of the following connection environment variables: ` +
           `'EDGEDB_DSN', 'EDGEDB_INSTANCE', 'EDGEDB_CREDENTIALS', ` +
           `'EDGEDB_CREDENTIALS_FILE' or 'EDGEDB_HOST'`,
-        serverUtils
+        serverUtils,
+        env
       ));
   }
 
@@ -643,7 +649,8 @@ async function parseConnectDsnAndArgs(
           database: `project default database`,
         },
         "",
-        serverUtils
+        serverUtils,
+        env
       );
       fromProject = true;
     } else {
@@ -690,7 +697,8 @@ async function resolveConfigOptions<
   config: Config,
   sources: { [key in keyof Config]: string },
   compoundParamsError: string,
-  serverUtils: ServerUtils | null
+  serverUtils: ServerUtils | null,
+  env: Record<string, string | undefined>
 ): Promise<{ hasCompoundOptions: boolean; anyOptionsUsed: boolean }> {
   let anyOptionsUsed = false;
 
@@ -780,7 +788,8 @@ async function resolveConfigOptions<
           : config.host !== undefined
           ? sources.host!
           : sources.port!,
-        readFile
+        readFile,
+        env
       );
     } else {
       let creds: Credentials;
@@ -848,13 +857,14 @@ async function parseDSNIntoConfig(
   _dsnString: string,
   config: ResolvedConnectConfig,
   source: string,
-  readFile: (fn: string) => Promise<string>
+  readFile: (fn: string) => Promise<string>,
+  env: Record<string, string | undefined>
 ): Promise<void> {
   // URL api does not support ipv6 zone ids, so extract zone id before parsing
   // https://url.spec.whatwg.org/#host-representation
   let dsnString = _dsnString;
   let regexHostname: string | null = null;
-  let zoneId: string = "";
+  let zoneId = "";
   const regexResult = /\[(.*?)(%25.+?)\]/.exec(_dsnString);
   if (regexResult) {
     regexHostname = regexResult[1];
@@ -920,15 +930,15 @@ async function parseDSNIntoConfig(
       let param = value || (searchParams.get(paramName) ?? null);
       let paramSource = source;
       if (param === null) {
-        const env = searchParams.get(`${paramName}_env`);
-        if (env != null) {
-          param = getEnv(env, true) ?? null;
+        const key = searchParams.get(`${paramName}_env`);
+        if (key != null) {
+          param = env[key] ?? null;
           if (param === null) {
             throw new InterfaceError(
-              `'${paramName}_env' environment variable '${env}' doesn't exist`
+              `'${paramName}_env' environment variable '${key}' doesn't exist`
             );
           }
-          paramSource += ` (${paramName}_env: ${env})`;
+          paramSource += ` (${paramName}_env: ${key})`;
         }
       }
       if (param === null) {

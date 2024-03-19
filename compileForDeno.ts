@@ -135,7 +135,7 @@ export async function run({
 
         let resolvedImportPath = resolveImportPath(importPath, sourcePath);
 
-        for (const name of ["adapter", "adapter.shared", "adapter.crypto"]) {
+        for (const name of ["adapter", "adapter.crypto"]) {
           if (resolvedImportPath.endsWith(`/${name}.node.ts`)) {
             resolvedImportPath = resolvedImportPath.replace(
               `/${name}.node.ts`,
