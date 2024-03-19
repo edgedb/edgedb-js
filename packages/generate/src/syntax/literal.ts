@@ -27,10 +27,10 @@ export type $expr_Literal<Type extends BaseType = BaseType> = Expression<{
   __value__: any;
 }>;
 
-export function literal<T extends BaseType>(
-  type: T,
-  value: BaseTypeToTsType<T>
-): $expr_Literal<T> {
+export function literal<
+  T extends BaseType,
+  TsType extends BaseTypeToTsType<T> = BaseTypeToTsType<T>
+>(type: T, value: TsType): $expr_Literal<T> {
   return $expressionify({
     __element__: type,
     __cardinality__: Cardinality.One,
