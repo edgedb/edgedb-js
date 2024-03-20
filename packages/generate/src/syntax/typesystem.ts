@@ -55,7 +55,7 @@ export type scalarTypeWithConstructor<
 };
 
 type $jsonDestructure<Set extends TypeSet> =
-  Set["__element__"] extends ScalarType<"std::json">
+  Set extends TypeSet<ScalarType<"std::json">>
     ? {
         [path: string]: $expr_Operator<
           // "[]",
@@ -127,7 +127,7 @@ export type Expression<
               run(cxn: Executor): Promise<setToTsType<Set>>;
               runJSON(cxn: Executor): Promise<string>;
             }
-          : {}) &
+          : unknown) &
         $tuplePathify<Set> &
         $arrayLikeIndexify<Set> &
         $jsonDestructure<Set>);
@@ -497,7 +497,6 @@ type $arrayLikeIndexify<Set extends TypeSet> = Set["__element__"] extends
       >;
     }
   : unknown;
-
 export type $expr_Array<
   Type extends ArrayType = ArrayType,
   Card extends Cardinality = Cardinality
@@ -707,7 +706,9 @@ type ArrayTypeToTsType<
 export type BaseTypeToTsType<
   Type extends BaseType,
   isParam extends boolean = false
-> = Type extends ScalarType
+> = Type extends never
+  ? never
+  : Type extends ScalarType
   ? ScalarTypeToTsType<Type, isParam>
   : Type extends EnumType
   ? Type["__tstype__"]
@@ -722,9 +723,7 @@ export type BaseTypeToTsType<
   : Type extends NamedTupleType
   ? NamedTupleTypeToTsType<Type, isParam>
   : Type extends ObjectType
-  ? typeutil.flatten<
-      computeObjectShape<Type["__pointers__"], Type["__shape__"]>
-    >
+  ? computeObjectShape<Type["__pointers__"], Type["__shape__"]>
   : never;
 
 export type setToTsType<Set extends TypeSet> = computeTsType<
