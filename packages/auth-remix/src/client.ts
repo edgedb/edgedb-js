@@ -26,12 +26,11 @@ export class RemixClientAuth {
   /** @internal */
   constructor(options: RemixAuthOptions) {
     this.options = {
+      authCookieName: "edgedb-session",
+      pkceVerifierCookieName: "edgedb-pkce-verifier",
+      ...options,
       baseUrl: options.baseUrl.replace(/\/$/, ""),
       authRoutesPath: options.authRoutesPath?.replace(/^\/|\/$/g, "") ?? "auth",
-      authCookieName: options.authCookieName ?? "edgedb-session",
-      pkceVerifierCookieName:
-        options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
-      passwordResetPath: options.passwordResetPath,
     };
     this.webAuthnClient = new WebAuthnClient({
       signupOptionsUrl: `${this._authRoute}/webauthn/signup/options`,
