@@ -112,14 +112,14 @@ of the ``Movie`` type exclusive. This will help with filtering by
 
   module default {
     type Movie {
-      required property title -> str {
+      required title: str {
         constraint exclusive;
       };
-      multi link actors -> Person;
+      multi actors: Person;
     }
 
     type Person {
-      required property name -> str;
+      required name: str;
     }
   }
 

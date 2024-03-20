@@ -37,15 +37,15 @@ Assume your database contains the following EdgeDB schema.
 
   module default {
     type Person {
-      required property name -> str;
+      required name: str;
     }
 
     scalar type Genre extending enum<Horror, Comedy, Drama>;
 
     type Movie {
-      required property title -> str;
-      property genre -> Genre;
-      multi link actors -> Person;
+      required title: str;
+      genre: Genre;
+      multi actors: Person;
     }
   }
 

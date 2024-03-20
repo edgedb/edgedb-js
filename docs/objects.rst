@@ -10,22 +10,24 @@ All queries on this page assume the following schema.
 
   module default {
     type Person {
-      required property name -> str;
+      required name: str;
     }
 
     abstract type Content {
-      required property title -> str {constraint exclusive};
-      multi link actors -> Person {
-        property character_name -> str;
+      required title: str {
+        constraint exclusive
+      };
+      multi actors: Person {
+        character_name: str;
       };
     }
 
     type Movie extending Content {
-      property release_year -> int64;
+      release_year: int64;
     }
 
     type TVShow extending Content {
-      property num_seasons -> int64;
+      num_seasons: int64;
     }
   }
 
