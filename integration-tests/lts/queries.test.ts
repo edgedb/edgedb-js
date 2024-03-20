@@ -6,6 +6,8 @@ import {
   getMoviesStarring,
   type GetMoviesStarringArgs,
   type GetMoviesStarringReturns,
+  deepArrayInput,
+  type DeepArrayInputArgs,
 } from "./dbschema/queries";
 import { setupTests, teardownTests } from "./setupTeardown";
 
@@ -67,5 +69,31 @@ describe("queries", () => {
     >(true);
 
     tc.assert<tc.IsExact<GetMoviesStarringReturns, result>>(true);
+  });
+
+  test("deep array input", async () => {
+    const result = await deepArrayInput(client, {
+      deep: [
+        ['name', 'Stark'],
+        ['color', 'red'],
+      ] as const,
+    });
+
+    type result = typeof result;
+    tc.assert<
+      tc.IsExact<
+        result,
+        Array<[string, string]>
+      >
+    >(true);
+
+    tc.assert<
+      tc.IsExact<
+        DeepArrayInputArgs,
+        {
+          deep: ReadonlyArray<readonly [string, string]>;
+        }
+      >
+    >(true);
   });
 });

@@ -1,5 +1,4 @@
 import { $, adapter, type Client } from "edgedb";
-import { Cardinality } from "edgedb/dist/ifaces";
 import { type CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
 import { type Target, camelify } from "./genutil";
@@ -193,9 +192,9 @@ export function generateFiles(params: {
   );
 
   const method =
-    params.types.cardinality === Cardinality.ONE
+    params.types.cardinality === $.Cardinality.One
       ? "queryRequiredSingle"
-      : params.types.cardinality === Cardinality.AT_MOST_ONE
+      : params.types.cardinality === $.Cardinality.AtMostOne
       ? "querySingle"
       : "query";
   const functionName = camelify(baseFileName);

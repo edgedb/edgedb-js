@@ -38,6 +38,7 @@ import Event from "./primitives/event";
 import { LifoQueue } from "./primitives/queues";
 import { BaseRawConnection } from "./baseConn";
 import { ConnectWithTimeout, retryingConnect } from "./retry";
+import { util } from "./reflection/util";
 import { Transaction } from "./transaction";
 import { sleep } from "./utils";
 
@@ -656,6 +657,28 @@ export class Client implements Executor {
     const holder = await this.pool.acquireHolder(this.options);
     try {
       return await holder.queryRequiredSingleJSON(query, args);
+    } finally {
+      await holder.release();
+    }
+  }
+
+  async parse(query: string) {
+    const holder = await this.pool.acquireHolder(this.options);
+    try {
+      const cxn = await holder._getConnection();
+      const result = await cxn._parse(
+        query,
+        OutputFormat.BINARY,
+        Cardinality.MANY,
+        this.options.session
+      );
+      const cardinality = util.parseCardinality(result[0]);
+
+      return {
+        in: result[1],
+        out: result[2],
+        cardinality,
+      };
     } finally {
       await holder.release();
     }

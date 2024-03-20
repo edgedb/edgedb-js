@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
+import { Cardinality } from "../ifaces";
 import { ICodec, Codec, uuid, CodecKind } from "./ifaces";
 import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { ONE, AT_LEAST_ONE } from "./consts";
 import {
   InvalidArgumentError,
   MissingArgumentError,
@@ -34,7 +34,7 @@ export interface ObjectFieldInfo {
   name: string;
   implicit: boolean;
   linkprop: boolean;
-  cardinality: number;
+  cardinality: Cardinality;
 }
 
 export class ObjectCodec extends Codec implements ICodec {
@@ -104,7 +104,7 @@ export class ObjectCodec extends Codec implements ICodec {
       const arg = args[i];
       if (arg == null) {
         const card = this.cardinalities[i];
-        if (card === ONE || card === AT_LEAST_ONE) {
+        if (card === Cardinality.ONE || card === Cardinality.AT_LEAST_ONE) {
           throw new MissingArgumentError(
             `argument ${this.fields[i].name} is required, but received ${arg}`
           );
@@ -154,7 +154,7 @@ export class ObjectCodec extends Codec implements ICodec {
       elemData.writeInt32(0); // reserved bytes
       if (val == null) {
         const card = this.cardinalities[i];
-        if (card === ONE || card === AT_LEAST_ONE) {
+        if (card === Cardinality.ONE || card === Cardinality.AT_LEAST_ONE) {
           throw new MissingArgumentError(
             `argument ${this.fields[i].name} is required, but received ${val}`
           );

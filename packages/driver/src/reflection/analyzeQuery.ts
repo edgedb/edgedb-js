@@ -1,5 +1,4 @@
 import { ArrayCodec } from "../codecs/array";
-import { AT_LEAST_ONE, AT_MOST_ONE, MANY, ONE } from "../codecs/consts";
 import { EnumCodec } from "../codecs/enum";
 import type { ICodec } from "../codecs/ifaces";
 import { ScalarCodec } from "../codecs/ifaces";
@@ -9,9 +8,9 @@ import { MultiRangeCodec, RangeCodec } from "../codecs/range";
 import { NullCodec } from "../codecs/codecs";
 import { SetCodec } from "../codecs/set";
 import { TupleCodec } from "../codecs/tuple";
-import { Cardinality, OutputFormat } from "../ifaces";
-import { Options, Session } from "../options";
-import type { Client, BaseClientPool } from "../baseClient";
+import type { Client } from "../baseClient";
+import { Cardinality } from "./enums";
+import { util } from "./util";
 
 type QueryType = {
   args: string;
@@ -25,147 +24,208 @@ export async function analyzeQuery(
   client: Client,
   query: string
 ): Promise<QueryType> {
-  const [cardinality, inCodec, outCodec] = await parseQuery(client, query);
+  const { cardinality, in: inCodec, out: outCodec } = await client.parse(query);
 
-  const imports = new Set<string>();
-  const args = walkCodec(inCodec, {
-    indent: "",
+  const args = generateTSTypeFromCodec(inCodec, Cardinality.One, {
     optionalNulls: true,
     readonly: true,
-    imports,
   });
-
-  const result = applyCardinalityToTsType(
-    walkCodec(outCodec, {
-      indent: "",
-      optionalNulls: false,
-      readonly: false,
-      imports,
-    }),
-    cardinality
-  );
+  const result = generateTSTypeFromCodec(outCodec, cardinality);
 
   return {
-    result,
-    args,
+    result: result.type,
+    args: args.type,
     cardinality,
     query,
-    imports,
+    imports: new Set([...args.imports, ...result.imports]),
   };
 }
 
-export async function parseQuery(client: Client, query: string) {
-  const pool: BaseClientPool = (client as any).pool;
+type AbstractClass<T> = (abstract new (...arguments_: any[]) => T) & {
+  prototype: T;
+};
 
-  const holder = await pool.acquireHolder(Options.defaults());
-  try {
-    const cxn = await holder._getConnection();
-    return await cxn._parse(
-      query,
-      OutputFormat.BINARY,
-      Cardinality.MANY,
-      Session.defaults()
-    );
-  } finally {
-    await holder.release();
-  }
-}
+type CodecLike = ICodec | ScalarCodec;
 
-export function applyCardinalityToTsType(
-  type: string,
-  cardinality: Cardinality
-): string {
-  switch (cardinality) {
-    case Cardinality.MANY:
-      return `${type}[]`;
-    case Cardinality.ONE:
-      return type;
-    case Cardinality.AT_MOST_ONE:
-      return `${type} | null`;
-    case Cardinality.AT_LEAST_ONE:
-      return `[(${type}), ...(${type})[]]`;
-  }
-  throw Error(`unexpected cardinality: ${cardinality}`);
-}
+export type CodecGenerator<Codec extends CodecLike = CodecLike> = (
+  codec: Codec,
+  context: CodecGeneratorContext
+) => string;
 
-// type AtLeastOne<T> = [T, ...T[]];
+type CodecGeneratorMap = ReadonlyMap<AbstractClass<CodecLike>, CodecGenerator>;
 
-export { walkCodec as walkCodecToTsType };
-function walkCodec(
+export type CodecGeneratorContext = {
+  indent: string;
+  optionalNulls: boolean;
+  readonly: boolean;
+  imports: Set<string>;
+  walk: (codec: CodecLike, context?: CodecGeneratorContext) => string;
+  generators: CodecGeneratorMap;
+  applyCardinality: (type: string, cardinality: Cardinality) => string;
+};
+
+export type CodecGenerationOptions = Partial<
+  Pick<
+    CodecGeneratorContext,
+    "optionalNulls" | "readonly" | "generators" | "applyCardinality"
+  >
+>;
+
+export const generateTSTypeFromCodec = (
   codec: ICodec,
-  ctx: {
-    indent: string;
-    optionalNulls: boolean;
-    readonly: boolean;
-    imports: Set<string>;
-  }
-): string {
-  if (codec instanceof NullCodec) {
-    return "null";
-  }
-  if (codec instanceof ScalarCodec) {
-    if (codec instanceof EnumCodec) {
-      return `(${codec.values.map((val) => JSON.stringify(val)).join(" | ")})`;
-    }
+  cardinality: Cardinality = Cardinality.One,
+  options: CodecGenerationOptions = {}
+) => {
+  const optionsWithDefaults = {
+    indent: "",
+    optionalNulls: false,
+    readonly: false,
+    ...options,
+  };
+  const context: CodecGeneratorContext = {
+    ...optionsWithDefaults,
+    generators: defaultCodecGenerators,
+    applyCardinality: defaultApplyCardinalityToTsType(optionsWithDefaults),
+    ...options,
+    imports: new Set(),
+    walk: (codec, innerContext) => {
+      innerContext ??= context;
+      for (const [type, generator] of innerContext.generators) {
+        if (codec instanceof type) {
+          return generator(codec, innerContext);
+        }
+      }
+      throw new Error(`Unexpected codec kind: ${codec.getKind()}`);
+    },
+  };
+  const type = context.applyCardinality(
+    context.walk(codec, context),
+    cardinality
+  );
+  return {
+    type,
+    imports: context.imports,
+  };
+};
+
+/** A helper function to define a codec generator tuple. */
+const genDef = <Codec extends CodecLike>(
+  codecType: AbstractClass<Codec>,
+  generator: CodecGenerator<Codec>
+) =>
+  [codecType as AbstractClass<CodecLike>, generator as CodecGenerator] as const;
+export { genDef as defineCodecGeneratorTuple };
+
+export const defaultCodecGenerators: CodecGeneratorMap = new Map([
+  genDef(NullCodec, () => "null"),
+  genDef(EnumCodec, (codec) => {
+    return `(${codec.values.map((val) => JSON.stringify(val)).join(" | ")})`;
+  }),
+  genDef(ScalarCodec, (codec, ctx) => {
     if (codec.importedType) {
       ctx.imports.add(codec.tsType);
     }
     return codec.tsType;
-  }
-  if (codec instanceof ObjectCodec || codec instanceof NamedTupleCodec) {
-    const fields =
-      codec instanceof ObjectCodec
-        ? codec.getFields()
-        : codec.getNames().map((name) => ({ name, cardinality: ONE }));
+  }),
+  genDef(ObjectCodec, (codec, ctx) => {
     const subCodecs = codec.getSubcodecs();
-    const objectShape = `{\n${fields
-      .map((field, i) => {
-        let subCodec = subCodecs[i];
-        if (subCodec instanceof SetCodec) {
-          if (
-            !(field.cardinality === MANY || field.cardinality === AT_LEAST_ONE)
-          ) {
-            throw Error("subcodec is SetCodec, but upper cardinality is one");
-          }
-          subCodec = subCodec.getSubcodecs()[0];
-        }
-        return `${ctx.indent}  ${JSON.stringify(field.name)}${
-          ctx.optionalNulls && field.cardinality === AT_MOST_ONE ? "?" : ""
-        }: ${applyCardinalityToTsType(
-          walkCodec(subCodec, { ...ctx, indent: ctx.indent + "  " }),
-          field.cardinality
-        )};`;
-      })
-      .join("\n")}\n${ctx.indent}}`;
-    return ctx.readonly ? `Readonly<${objectShape}>` : objectShape;
-  }
-  if (codec instanceof ArrayCodec) {
-    return `${ctx.readonly ? "readonly " : ""}${walkCodec(
-      codec.getSubcodecs()[0],
-      ctx
-    )}[]`;
-  }
-  if (codec instanceof TupleCodec) {
-    return `${ctx.readonly ? "readonly " : ""}[${codec
+    const fields = codec.getFields().map((field, i) => ({
+      name: field.name,
+      codec: subCodecs[i],
+      cardinality: util.parseCardinality(field.cardinality),
+    }));
+    return generateTsObject(fields, ctx);
+  }),
+  genDef(NamedTupleCodec, (codec, ctx) => {
+    const subCodecs = codec.getSubcodecs();
+    const fields = codec.getNames().map((name, i) => ({
+      name,
+      codec: subCodecs[i],
+      cardinality: Cardinality.One,
+    }));
+    return generateTsObject(fields, ctx);
+  }),
+  genDef(TupleCodec, (codec, ctx) => {
+    const subCodecs = codec
       .getSubcodecs()
-      .map((subCodec) => walkCodec(subCodec, ctx))
-      .join(", ")}]`;
-  }
-  if (codec instanceof RangeCodec) {
+      .map((subCodec) => ctx.walk(subCodec));
+    const tuple = `[${subCodecs.join(", ")}]`;
+    return ctx.readonly ? `(readonly ${tuple})` : tuple;
+  }),
+  genDef(ArrayCodec, (codec, ctx) =>
+    ctx.applyCardinality(ctx.walk(codec.getSubcodecs()[0]), Cardinality.Many)
+  ),
+  genDef(RangeCodec, (codec, ctx) => {
     const subCodec = codec.getSubcodecs()[0];
     if (!(subCodec instanceof ScalarCodec)) {
       throw Error("expected range subtype to be scalar type");
     }
     ctx.imports.add("Range");
-    return `Range<${walkCodec(subCodec, ctx)}>`;
-  }
-  if (codec instanceof MultiRangeCodec) {
+    return `Range<${ctx.walk(subCodec)}>`;
+  }),
+  genDef(MultiRangeCodec, (codec, ctx) => {
     const subCodec = codec.getSubcodecs()[0];
     if (!(subCodec instanceof ScalarCodec)) {
       throw Error("expected multirange subtype to be scalar type");
     }
     ctx.imports.add("MultiRange");
-    return `MultiRange<${walkCodec(subCodec, ctx)}>`;
+    return `MultiRange<${ctx.walk(subCodec)}>`;
+  }),
+]);
+
+export const generateTsObject = (
+  fields: Array<Parameters<typeof generateTsObjectField>[0]>,
+  ctx: CodecGeneratorContext
+) => {
+  const properties = fields.map((field) => generateTsObjectField(field, ctx));
+  return `{\n${properties.join("\n")}\n${ctx.indent}}`;
+};
+
+export const generateTsObjectField = (
+  field: { name: string; cardinality: Cardinality; codec: ICodec },
+  ctx: CodecGeneratorContext
+) => {
+  const codec = unwrapSetCodec(field.codec, field.cardinality);
+
+  const name = JSON.stringify(field.name);
+  const value = ctx.applyCardinality(
+    ctx.walk(codec, { ...ctx, indent: ctx.indent + "  " }),
+    field.cardinality
+  );
+  const optional =
+    ctx.optionalNulls && field.cardinality === Cardinality.AtMostOne;
+  const questionMark = optional ? "?" : "";
+  const isReadonly = ctx.readonly ? "readonly " : "";
+  return `${ctx.indent}  ${isReadonly}${name}${questionMark}: ${value};`;
+};
+
+function unwrapSetCodec(codec: ICodec, cardinality: Cardinality) {
+  if (!(codec instanceof SetCodec)) {
+    return codec;
   }
-  throw Error(`Unexpected codec kind: ${codec.getKind()}`);
+  if (
+    cardinality === Cardinality.Many ||
+    cardinality === Cardinality.AtLeastOne
+  ) {
+    return codec.getSubcodecs()[0];
+  }
+  throw new Error("Sub-codec is SetCodec, but upper cardinality is one");
 }
+
+export const defaultApplyCardinalityToTsType =
+  (ctx: Pick<CodecGeneratorContext, "readonly">) =>
+  (type: string, cardinality: Cardinality): string => {
+    switch (cardinality) {
+      case Cardinality.Many:
+        return `${ctx.readonly ? "Readonly" : ""}Array<${type}>`;
+      case Cardinality.One:
+        return type;
+      case Cardinality.AtMostOne:
+        return `${type} | null`;
+      case Cardinality.AtLeastOne: {
+        const tuple = `[(${type}), ...(${type})[]]`;
+        return ctx.readonly ? `(readonly ${tuple})` : tuple;
+      }
+    }
+    throw new Error(`Unexpected cardinality: ${cardinality}`);
+  };
