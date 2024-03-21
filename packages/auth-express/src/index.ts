@@ -181,6 +181,37 @@ export class ExpressAuth {
     return Router().use(routerPath, router);
   };
 
+  createMagicLinkRouter = (
+    routerPath: string,
+    {
+      callback,
+      failureUrl,
+    }: {
+      callback: RouterStack;
+      failureUrl: string;
+    }
+  ) => {
+    const router = Router();
+
+    router.post(
+      "/send",
+      this.magicLink.send(
+        new URL(`${routerPath}/callback`, this.options.baseUrl).toString(),
+        failureUrl
+      )
+    );
+    router.post(
+      "/signup",
+      this.magicLink.signUp(
+        new URL(`${routerPath}/callback`, this.options.baseUrl).toString(),
+        failureUrl
+      )
+    );
+    router.get("/callback", this.magicLink.callback, ...callback);
+
+    return Router().use(routerPath, router);
+  }
+
   signout = async (
     req: AuthRequest,
     res: ExpressResponse,
@@ -534,6 +565,90 @@ export class ExpressAuth {
         next(err);
       }
     },
+  };
+
+  magicLink = {
+    callback: async (
+      req: CallbackRequest,
+      res: ExpressResponse,
+      next: NextFunction
+    ) => {
+      try {
+        const searchParams = new URLSearchParams(req.url.split("?")[1]);
+        const error = searchParams.get("error");
+        if (error) {
+          const desc = searchParams.get("error_description");
+          throw new EdgeDBAuthError(error + (desc ? `: ${desc}` : ""));
+        }
+        const code = searchParams.get("code");
+        if (!code) {
+          throw new PKCEError("no pkce code in response");
+        }
+
+        const isSignUp = searchParams.get("isSignUp") === "true";
+        const verifier = req.cookies[this.options.pkceVerifierCookieName];
+        if (!verifier) {
+          throw new PKCEError("no pkce verifier cookie found");
+        }
+        const tokenData = await (
+          await this.core
+        ).getToken(code, verifier);
+        res.cookie(this.options.authCookieName, tokenData.auth_token, {
+          httpOnly: true,
+          sameSite: "strict",
+        });
+        res.clearCookie(this.options.pkceVerifierCookieName);
+
+        req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
+        req.tokenData = tokenData;
+        req.isSignUp = isSignUp;
+        next();
+      } catch (err) {
+        next(err);
+      }
+    },
+    signUp:
+      (callbackUrl: string, failureUrl: string) =>
+      async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
+        try {
+          const [email] = _extractParams(
+            req.body,
+            ["email"],
+            "email missing from request body"
+          );
+          const { verifier } = await (
+            await this.core
+          ).signupWithMagicLink(email, callbackUrl, failureUrl);
+          res.cookie(this.options.pkceVerifierCookieName, verifier, {
+            httpOnly: true,
+            sameSite: "strict",
+          });
+          next();
+        } catch (err) {
+          next(err);
+        }
+      },
+    send:
+      (callbackUrl: string, failureUrl: string) =>
+      async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
+        try {
+          const [email] = _extractParams(
+            req.body,
+            ["email"],
+            "email missing from request body"
+          );
+          const { verifier } = await (
+            await this.core
+          ).signinWithMagicLink(email, callbackUrl, failureUrl);
+          res.cookie(this.options.pkceVerifierCookieName, verifier, {
+            httpOnly: true,
+            sameSite: "strict",
+          });
+          next();
+        } catch (err) {
+          next(err);
+        }
+      },
   };
 }
 
