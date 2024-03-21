@@ -226,6 +226,33 @@ app.use(oAuthRouter);
 // - GET /auth/oauth/callback
 ```
 
+### Custom UI: Magic Link
+
+- `routerPath: string`, required, This is the path relative to the `baseUrl` configured when creating the `ExpressAuth` object. This path is used to build the URL for the callback path configured by the router factory.
+- `callback: (express.RouteHandler | express.ErrorHandler)[]`, required, Once the authentication flow completes, this callback will be called, and you must return a terminating Express route handler here. Typically, you'll redirect to elsewhere in your app based on `req.isSignUp`.
+- `failureUrl: string`, required, URL to redirect to in case of a failure during the Magic Link process.
+
+```ts
+const magicLinkRouter = auth.createMagicLinkRouter(
+  "/auth/magic-link",
+  {
+    callback: [
+      (req: expressAuth.CallbackRequest, res) => {
+        res.redirect("/");
+      },
+    ],
+    failureUrl: "/login-failure"
+  }
+);
+
+app.use(magicLinkRouter);
+// This creates the following routes:
+// - POST /auth/magic-link/send
+// - POST /auth/magic-link/signup
+// - GET /auth/magic-link/callback
+```
+
+
 ### Custom router
 
 Each route is also available as a middleware itself for maximum customization, to allow custom route names, per-route middleware customization, and integration with advanced Express patterns. Here are examples that are equivalent to the ones given in the router factory section:
@@ -329,6 +356,41 @@ const oAuthRouter = Router()
 app.use("/auth/oauth", oAuthRouter);
 ```
 
+### Custom UI: Magic Link
+
+```ts
+const magicLinkRoute = Router()
+  .post(
+    "/send",
+    auth.magicLink.send(
+      // URL of the callback endpoint configured below
+      "http://localhost:3000/auth/magic-link/callback",
+      // URL of the route in your app that should receive login errors
+      "/login-failure",
+    ),
+  )
+  .post(
+    "/signup",
+    auth.magicLink.signUp(
+      // URL of the callback endpoint configured below
+      "http://localhost:3000/auth/magic-link/callback",
+      // URL of the route in your app that should receive login errors
+      "/login-failure",
+    ),
+  )
+  .get(
+    "/callback",
+    auth.magicLink.callback,
+    (req: expressAuth.CallbackRequest, res) => {
+      // Custom logic after successful authentication
+      res.redirect("/");
+    },
+  );
+
+
+app.use("/auth/magic-link", router);
+```
+
 ### Error handling
 
 If an error occurs during the authentication flow, it will be passed to the Express error handler. You can use Express error handlers to handle errors either on individual routes by adding the error handlers to the middleware arrays or in your route definitions, or define a router-wide error handler. Any Express error handling pattern is available here, but let's examine a quick example of handling error with the built-in UI flow:
@@ -399,3 +461,4 @@ This is an extension of the Express `Request` interface containing some optional
 
 - `session?: ExpressAuthSession`
 - `tokenData?: TokenData`
+
