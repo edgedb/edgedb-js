@@ -252,6 +252,63 @@ app.use(magicLinkRouter);
 // - GET /auth/magic-link/callback
 ```
 
+### Custom UI: WebAuthn
+
+Unlike the other authentication methods, WebAuthn requires a client-side script that runs in the browser. This script requests JSON from the EdgeDB Auth server that gets options to pass to the Web Authentication API built into the browser, and then after successfully creating new credentials or retrieving existing credentials, it calls back to the endpoints you're configuring below.
+
+In order to facilitate the sign in and sign up ceremonies, we export a helper class called `WebAuthnClient` that you must configure with some relevant paths based on how you set up your routing below.
+
+```ts
+import { WebAuthnClient } from "@edgedb/auth-express";
+
+const webAuthnClient = new WebAuthnClient({
+  signupOptionsUrl: "http://localhost:3000/auth/webauthn/signup/options",
+  signupUrl: "http://localhost:3000/auth/webauthn/signup",
+  signinOptionsUrl: "http://localhost:3000/auth/webauthn/signin/options",
+  signinUrl: "http://localhost:3000/auth/webauthn/signin",
+  verifyUrl: "http://localhost:3000/auth/webauthn/verify",
+});
+```
+
+- `routerPath: string`, required, This is the path relative to the `baseUrl` configured when creating the `ExpressAuth` object. This path is used to build the URL for the callback path configured by the router factory.
+- `signIn: (express.RouteHandler | express.ErrorHandler)[]`, required, Attached middleware executes when sign-in attempt succeeds. Typically you will redirect the user to your application here.
+- `signUp: (express.RouteHandler | express.ErrorHandler)[]`, required, Attached middleware executes when sign-up attempt succeeds. Typically you will redirect the user to your application here.
+- `verify: (express.RouteHandler | express.ErrorHandler)[]`, Attached middleware executes after the user verifies their email successfully. Typically you will redirect the user to your application here.
+- `signInOptions: (express.RouteHandler | express.ErrorHandler)[]`, This redirects the user to the appropriate URL of the EdgeDB server to retrieve the WebAuthn sign in options.
+- `signUpOptions: (express.RouteHandler | express.ErrorHandler)[]`, This redirects the user to the appropriate URL of the EdgeDB server to retrieve the WebAuthn sign up options.
+
+```ts
+const webAuthnRouter = auth.createWebAuthnRouter(
+  "/auth/webauthn",
+  {
+    signInOptions: [],
+    signIn: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/");
+      },
+    ],
+    signUpOptions: [],
+    signUp: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/onboarding");
+      },
+    ],
+    verify: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/");
+      },
+    ],
+  }
+);
+
+app.use(webAuthnRouter);
+// This creates the following routes:
+// - GET /auth/webauthn/signin/options
+// - POST /auth/webauthn/signin
+// - GET /auth/webauthn/signup/options
+// - POST /auth/webauthn/signup
+// - GET /auth/webauthn/verify
+```
 
 ### Custom router
 
@@ -389,6 +446,43 @@ const magicLinkRoute = Router()
 
 
 app.use("/auth/magic-link", router);
+```
+
+#### Custom UI: WebAuthn
+
+```ts
+const webAuthnRouter = Router()
+  .get(
+    "/signin/options",
+    auth.webauthn.signInOptions
+  )
+  .post(
+    "/signin",
+    auth.webauthn.signIn,
+    (req: expressAuth.AuthRequest, res) => {
+      res.redirect("/");
+    }
+  )
+  .get(
+    "/signup/options",
+    auth.webauthn.signUpOptions
+  )
+  .post(
+    "/signup",
+    auth.webauthn.signUp,
+    (req: expressAuth.AuthRequest, res) => {
+      res.redirect("/onboarding");
+    }
+  )
+  .get(
+    "/verify",
+    auth.webauthn.verify,
+    (req: expressAuth.AuthRequest, res) => {
+      res.redirect("/");
+    }
+  );
+
+app.use("/auth/webauthn", webAuthnRouter);
 ```
 
 ### Error handling
