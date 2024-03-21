@@ -38,38 +38,42 @@ export interface CreateAuthRouteHandlers {
       provider: BuiltinOAuthProviderNames;
       isSignUp: boolean;
     }>,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<never>;
   onEmailPasswordSignIn(
     params: ParamsOrError<{ tokenData: TokenData }>,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<Response>;
   onEmailPasswordSignUp(
     params: ParamsOrError<{ tokenData: TokenData | null }>,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<Response>;
   onEmailPasswordReset(
     params: ParamsOrError<{ tokenData: TokenData }>,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<Response>;
   onEmailVerify(
     params: ParamsOrError<
       { tokenData: TokenData },
       { verificationToken?: string }
     >,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<never>;
   onWebAuthnSignUp(
-    params: ParamsOrError<{ tokenData: TokenData | null }>
+    params: ParamsOrError<{ tokenData: TokenData | null }>,
+    req: NextRequest
   ): Promise<NextResponse<SignupResponse>>;
   onWebAuthnSignIn(
-    params: ParamsOrError<{ tokenData: TokenData }>
+    params: ParamsOrError<{ tokenData: TokenData }>,
+    req: NextRequest
   ): Promise<never>;
   onMagicLinkCallback(
-    params: ParamsOrError<{ tokenData: TokenData; isSignUp: boolean }>
+    params: ParamsOrError<{ tokenData: TokenData; isSignUp: boolean }>,
+    req: NextRequest
   ): Promise<never>;
   onMagicLinkSignIn(
-    params: ParamsOrError<{ tokenData: TokenData }>
+    params: ParamsOrError<{ tokenData: TokenData }>,
+    req: NextRequest
   ): Promise<never>;
   onBuiltinUICallback(
     params: ParamsOrError<
@@ -84,9 +88,9 @@ export interface CreateAuthRouteHandlers {
           }
       ) & { isSignUp: boolean }
     >,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<never>;
-  onSignout(req?: NextRequest): Promise<never>;
+  onSignout(req: NextRequest): Promise<never>;
 }
 
 export abstract class NextAuth extends NextAuthHelpers {
@@ -313,15 +317,21 @@ export abstract class NextAuth extends NextAuthHelpers {
               this.options.pkceVerifierCookieName
             )?.value;
             if (!verificationToken) {
-              return onEmailVerify({
-                error: new PKCEError("no verification_token in response"),
-              });
+              return onEmailVerify(
+                {
+                  error: new PKCEError("no verification_token in response"),
+                },
+                req
+              );
             }
             if (!verifier) {
-              return onEmailVerify({
-                error: new PKCEError("no pkce verifier cookie found"),
-                verificationToken,
-              });
+              return onEmailVerify(
+                {
+                  error: new PKCEError("no pkce verifier cookie found"),
+                  verificationToken,
+                },
+                req
+              );
             }
             let tokenData: TokenData;
             try {
@@ -329,10 +339,13 @@ export abstract class NextAuth extends NextAuthHelpers {
                 await this.core
               ).verifyWebAuthnSignup(verificationToken, verifier);
             } catch (err) {
-              return onEmailVerify({
-                error: err instanceof Error ? err : new Error(String(err)),
-                verificationToken,
-              });
+              return onEmailVerify(
+                {
+                  error: err instanceof Error ? err : new Error(String(err)),
+                  verificationToken,
+                },
+                req
+              );
             }
             cookies().set({
               name: this.options.authCookieName,
@@ -343,7 +356,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onEmailVerify({ error: null, tokenData });
+            return onEmailVerify({ error: null, tokenData }, req);
           }
           case "magiclink/callback": {
             if (!onMagicLinkCallback) {
@@ -354,11 +367,14 @@ export abstract class NextAuth extends NextAuthHelpers {
             const error = req.nextUrl.searchParams.get("error");
             if (error) {
               const desc = req.nextUrl.searchParams.get("error_description");
-              return onMagicLinkCallback({
-                error: new OAuthProviderFailureError(
-                  error + (desc ? `: ${desc}` : "")
-                ),
-              });
+              return onMagicLinkCallback(
+                {
+                  error: new OAuthProviderFailureError(
+                    error + (desc ? `: ${desc}` : "")
+                  ),
+                },
+                req
+              );
             }
             const code = req.nextUrl.searchParams.get("code");
             const isSignUp =
@@ -367,22 +383,31 @@ export abstract class NextAuth extends NextAuthHelpers {
               this.options.pkceVerifierCookieName
             )?.value;
             if (!code) {
-              return onMagicLinkCallback({
-                error: new PKCEError("no pkce code in response"),
-              });
+              return onMagicLinkCallback(
+                {
+                  error: new PKCEError("no pkce code in response"),
+                },
+                req
+              );
             }
             if (!verifier) {
-              return onMagicLinkCallback({
-                error: new PKCEError("no pkce verifier cookie found"),
-              });
+              return onMagicLinkCallback(
+                {
+                  error: new PKCEError("no pkce verifier cookie found"),
+                },
+                req
+              );
             }
             let tokenData: TokenData;
             try {
               tokenData = await (await this.core).getToken(code, verifier);
             } catch (err) {
-              return onMagicLinkCallback({
-                error: err instanceof Error ? err : new Error(String(err)),
-              });
+              return onMagicLinkCallback(
+                {
+                  error: err instanceof Error ? err : new Error(String(err)),
+                },
+                req
+              );
             }
             cookies().set({
               name: this.options.authCookieName,
@@ -393,11 +418,14 @@ export abstract class NextAuth extends NextAuthHelpers {
             });
             cookies().delete(this.options.pkceVerifierCookieName);
 
-            return onMagicLinkCallback({
-              error: null,
-              tokenData,
-              isSignUp,
-            });
+            return onMagicLinkCallback(
+              {
+                error: null,
+                tokenData,
+                isSignUp,
+              },
+              req
+            );
           }
           case "builtin/callback": {
             if (!onBuiltinUICallback) {
@@ -726,7 +754,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               ).signupWithWebAuthn(email, credentials, verify_url, user_handle);
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err));
-              return _wrapResponse(onWebAuthnSignUp({ error }), false);
+              return _wrapResponse(onWebAuthnSignUp({ error }, req), false);
             }
 
             cookies().set({
@@ -745,15 +773,18 @@ export abstract class NextAuth extends NextAuthHelpers {
                 path: "/",
               });
               return _wrapResponse(
-                onWebAuthnSignUp({
-                  error: null,
-                  tokenData: result.tokenData,
-                }),
+                onWebAuthnSignUp(
+                  {
+                    error: null,
+                    tokenData: result.tokenData,
+                  },
+                  req
+                ),
                 false
               );
             } else {
               return _wrapResponse(
-                onWebAuthnSignUp({ error: null, tokenData: null }),
+                onWebAuthnSignUp({ error: null, tokenData: null }, req),
                 false
               );
             }
@@ -773,7 +804,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               ).signinWithWebAuthn(email, assertion);
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err));
-              return _wrapResponse(onWebAuthnSignIn({ error }), false);
+              return _wrapResponse(onWebAuthnSignIn({ error }, req), false);
             }
             cookies().set({
               name: this.options.authCookieName,
@@ -783,7 +814,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               path: "/",
             });
             return _wrapResponse(
-              onWebAuthnSignIn({ error: null, tokenData }),
+              onWebAuthnSignIn({ error: null, tokenData }, req),
               false
             );
           }
