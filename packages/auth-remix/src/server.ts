@@ -13,6 +13,9 @@ import {
   BackendError,
   OAuthProviderFailureError,
   EdgeDBAuthError,
+  MagicLinkFailureError,
+  type AuthenticationResponseJSON,
+  type RegistrationResponseJSON,
 } from "@edgedb/auth-core";
 import { type RemixAuthOptions, RemixClientAuth } from "./client.js";
 
@@ -84,6 +87,12 @@ export interface CreateAuthRouteHandlers {
       { verificationToken?: string }
     >
   ): Promise<Response>;
+  onMagicLinkCallback(
+    params: ParamsOrError<{
+      tokenData: TokenData;
+      isSignUp: boolean;
+    }>
+  ): Promise<Response>;
   onSignout(): Promise<Response>;
 }
 
@@ -118,6 +127,7 @@ export class RemixServerAuth extends RemixClientAuth {
     onOAuthCallback,
     onBuiltinUICallback,
     onEmailVerify,
+    onMagicLinkCallback,
     onSignout,
   }: Partial<CreateAuthRouteHandlers>) {
     return {
@@ -231,6 +241,70 @@ export class RemixServerAuth extends RemixClientAuth {
                 provider: searchParams.get(
                   "provider"
                 ) as BuiltinOAuthProviderNames,
+                isSignUp,
+              },
+              headers
+            );
+          }
+
+          case "magiclink/callback": {
+            if (!onMagicLinkCallback) {
+              throw new ConfigurationError(
+                `'onMagicLinkCallback' auth route handler not configured`
+              );
+            }
+            const error = searchParams.get("error");
+            if (error) {
+              const desc = searchParams.get("error_description");
+              return cbCall(onMagicLinkCallback, {
+                error: new MagicLinkFailureError(
+                  error + (desc ? `: ${desc}` : "")
+                ),
+              });
+            }
+            const code = searchParams.get("code");
+            const isSignUp = searchParams.get("isSignUp") === "true";
+            const verifier =
+              parseCookies(req)[this.options.pkceVerifierCookieName];
+            if (!code) {
+              return cbCall(onMagicLinkCallback, {
+                error: new PKCEError("no pkce code in response"),
+              });
+            }
+            if (!verifier) {
+              return cbCall(onMagicLinkCallback, {
+                error: new PKCEError("no pkce verifier cookie found"),
+              });
+            }
+            let tokenData: TokenData;
+            try {
+              tokenData = await (await this.core).getToken(code, verifier);
+            } catch (err) {
+              return cbCall(onMagicLinkCallback, {
+                error: err instanceof Error ? err : new Error(String(err)),
+              });
+            }
+            const headers = new Headers();
+            headers.append(
+              "Set-Cookie",
+              cookie.serialize(
+                this.options.authCookieName,
+                tokenData.auth_token,
+                { httpOnly: true, sameSite: "lax", path: "/" }
+              )
+            );
+            headers.append(
+              "Set-Cookie",
+              cookie.serialize(this.options.pkceVerifierCookieName, "", {
+                maxAge: 0,
+                path: "/",
+              })
+            );
+            return cbCall(
+              onMagicLinkCallback,
+              {
+                error: null,
+                tokenData,
                 isSignUp,
               },
               headers
@@ -389,6 +463,78 @@ export class RemixServerAuth extends RemixClientAuth {
             );
           }
 
+          case "webauthn/signup/options": {
+            const email = searchParams.get("email");
+            if (!email) {
+              throw new InvalidDataError("email missing");
+            }
+            return Response.redirect(
+              (await this.core).getWebAuthnSignupOptionsUrl(email)
+            );
+          }
+
+          case "webauthn/signin/options": {
+            const email = searchParams.get("email");
+            if (!email) {
+              throw new InvalidDataError("email missing");
+            }
+            return Response.redirect(
+              (await this.core).getWebAuthnSigninOptionsUrl(email)
+            );
+          }
+
+          case "webauthn/verify": {
+            if (!onEmailVerify) {
+              throw new ConfigurationError(
+                `'onEmailVerify' auth route handler not configured`
+              );
+            }
+            const verificationToken = searchParams.get("verification_token");
+            const verifier =
+              parseCookies(req)[this.options.pkceVerifierCookieName];
+            if (!verificationToken) {
+              return cbCall(onEmailVerify, {
+                error: new PKCEError("no verification_token in response"),
+              });
+            }
+            if (!verifier) {
+              return cbCall(onEmailVerify, {
+                error: new PKCEError("no pkce verifier cookie found"),
+                verificationToken,
+              });
+            }
+            let tokenData: TokenData;
+            try {
+              tokenData = await (
+                await this.core
+              ).verifyWebAuthnSignup(verificationToken, verifier);
+            } catch (err) {
+              return cbCall(onEmailVerify, {
+                error: err instanceof Error ? err : new Error(String(err)),
+                verificationToken,
+              });
+            }
+            const headers = new Headers({
+              "Set-Cookie": cookie.serialize(
+                this.options.authCookieName,
+                tokenData.auth_token,
+                {
+                  httpOnly: true,
+                  sameSite: "strict",
+                  path: "/",
+                }
+              ),
+            });
+            return cbCall(
+              onEmailVerify,
+              {
+                error: null,
+                tokenData,
+              },
+              headers
+            );
+          }
+
           case "signout": {
             if (!onSignout) {
               throw new ConfigurationError(
@@ -403,7 +549,7 @@ export class RemixServerAuth extends RemixClientAuth {
                 maxAge: 0,
               }),
             });
-            return cbCall(onSignout, {}, headers);
+            return cbCall(onSignout, undefined, headers);
           }
 
           default:
@@ -416,24 +562,30 @@ export class RemixServerAuth extends RemixClientAuth {
   async emailPasswordSignUp(
     req: Request,
     data?: { email: string; password: string }
-  ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  ): Promise<{ tokenData: TokenData | null; headers: Headers }>;
   async emailPasswordSignUp<Res>(
     req: Request,
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSignUp<Res>(
     req: Request,
     data: { email: string; password: string },
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSignUp<Res>(
     req: Request,
     dataOrCb?:
       | { email: string; password: string }
       | ((
-          params: ParamsOrError<{ tokenData: TokenData }>
+          params: ParamsOrError<{ tokenData: TokenData | null }>
         ) => Res | Promise<Res>),
-    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
   ): Promise<
     | {
         tokenData: TokenData;
@@ -594,6 +746,166 @@ export class RemixServerAuth extends RemixClientAuth {
     );
   }
 
+  async webAuthnSignIn(
+    req: Request,
+    data?: { email: string; assertion: AuthenticationResponseJSON }
+  ): Promise<{ tokenData: TokenData; headers: Headers }>;
+  async webAuthnSignIn<Res>(
+    req: Request,
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async webAuthnSignIn<Res>(
+    req: Request,
+    data: { email: string; assertion: AuthenticationResponseJSON },
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async webAuthnSignIn<Res>(
+    req: Request,
+    dataOrCb?:
+      | {
+          email: string;
+          assertion: AuthenticationResponseJSON;
+        }
+      | ((
+          params: ParamsOrError<{ tokenData: TokenData }>
+        ) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+  ): Promise<
+    | {
+        tokenData: TokenData;
+        headers: Headers;
+      }
+    | (Res extends Response ? Res : TypedResponse<Res>)
+  > {
+    return handleAction<{
+      email: string;
+      assertion: AuthenticationResponseJSON;
+    }>(
+      async (data, headers) => {
+        const { email, assertion } = data;
+
+        const tokenData = await (
+          await this.core
+        ).signinWithWebAuthn(email, assertion);
+
+        headers.append(
+          "Set-Cookie",
+          cookie.serialize(this.options.authCookieName, tokenData.auth_token, {
+            httpOnly: true,
+            sameSite: "strict",
+            path: "/",
+          })
+        );
+
+        return { tokenData };
+      },
+      req,
+      dataOrCb,
+      cb
+    );
+  }
+
+  async webAuthnSignUp(
+    req: Request,
+    data?: {
+      email: string;
+      credentials: RegistrationResponseJSON;
+      verify_url: string;
+      user_handle: string;
+    }
+  ): Promise<{ tokenData: TokenData | null; headers: Headers }>;
+  async webAuthnSignUp<Res>(
+    req: Request,
+    cb: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async webAuthnSignUp<Res>(
+    req: Request,
+    data: {
+      email: string;
+      credentials: RegistrationResponseJSON;
+      verify_url: string;
+      user_handle: string;
+    },
+    cb: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async webAuthnSignUp<Res>(
+    req: Request,
+    dataOrCb?:
+      | {
+          email: string;
+          credentials: RegistrationResponseJSON;
+          verify_url: string;
+          user_handle: string;
+        }
+      | ((
+          params: ParamsOrError<{ tokenData: TokenData | null }>
+        ) => Res | Promise<Res>),
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData | null }>
+    ) => Res | Promise<Res>
+  ): Promise<
+    | {
+        tokenData: TokenData | null;
+        headers: Headers;
+      }
+    | (Res extends Response ? Res : TypedResponse<Res>)
+  > {
+    return handleAction<{
+      email: string;
+      credentials: RegistrationResponseJSON;
+      verify_url: string;
+      user_handle: string;
+    }>(
+      async (data, headers) => {
+        const { email, credentials, verify_url, user_handle } = data;
+
+        const result = await (
+          await this.core
+        ).signupWithWebAuthn(email, credentials, verify_url, user_handle);
+
+        headers.append(
+          "Set-Cookie",
+          cookie.serialize(
+            this.options.pkceVerifierCookieName,
+            result.verifier,
+            {
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            }
+          )
+        );
+
+        if (result.status === "complete") {
+          const tokenData = result.tokenData;
+
+          headers.append(
+            "Set-Cookie",
+            cookie.serialize(
+              this.options.authCookieName,
+              tokenData.auth_token,
+              {
+                httpOnly: true,
+                sameSite: "strict",
+                path: "/",
+              }
+            )
+          );
+          return { tokenData, headers };
+        }
+
+        return { tokenData: null, headers };
+      },
+      req,
+      dataOrCb,
+      cb
+    );
+  }
+
   async emailPasswordSendPasswordResetEmail(
     req: Request,
     data?: { email: string }
@@ -727,6 +1039,132 @@ export class RemixServerAuth extends RemixClientAuth {
     );
   }
 
+  async magicLinkSignUp(
+    req: Request,
+    data?: {
+      email: string;
+    }
+  ): Promise<{ headers: Headers }>;
+  async magicLinkSignUp<Res>(
+    req: Request,
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async magicLinkSignUp<Res>(
+    req: Request,
+    data: {
+      email: string;
+    },
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async magicLinkSignUp<Res>(
+    req: Request,
+    dataOrCb?:
+      | {
+          email: string;
+        }
+      | ((params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<
+    { headers: Headers } | (Res extends Response ? Res : TypedResponse<Res>)
+  > {
+    return handleAction(
+      async (data, headers) => {
+        if (!this.options.magicLinkFailurePath) {
+          throw new ConfigurationError(
+            `'magicLinkFailurePath' option not configured`
+          );
+        }
+        const [email] = _extractParams(data, ["email"], "email missing");
+
+        const { verifier } = await (
+          await this.core
+        ).signupWithMagicLink(
+          email,
+          `${this._authRoute}/magiclink/callback?isSignUp=true`,
+          new URL(
+            this.options.magicLinkFailurePath,
+            this.options.baseUrl
+          ).toString()
+        );
+
+        headers.append(
+          "Set-Cookie",
+          cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
+            httpOnly: true,
+            sameSite: "strict",
+            path: "/",
+          })
+        );
+      },
+      req,
+      dataOrCb,
+      cb
+    );
+  }
+
+  async magicLinkSend(
+    req: Request,
+    data?: {
+      email: string;
+    }
+  ): Promise<{ headers: Headers }>;
+  async magicLinkSend<Res>(
+    req: Request,
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async magicLinkSend<Res>(
+    req: Request,
+    data: {
+      email: string;
+    },
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
+  async magicLinkSend<Res>(
+    req: Request,
+    dataOrCb?:
+      | {
+          email: string;
+        }
+      | ((params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>),
+    cb?: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+  ): Promise<
+    { headers: Headers } | (Res extends Response ? Res : TypedResponse<Res>)
+  > {
+    return handleAction(
+      async (data, headers) => {
+        if (!this.options.magicLinkFailurePath) {
+          throw new ConfigurationError(
+            `'magicLinkFailurePath' option not configured`
+          );
+        }
+        const [email] = _extractParams(data, ["email"], "email missing");
+
+        const { verifier } = await (
+          await this.core
+        ).signinWithMagicLink(
+          email,
+          `${this._authRoute}/magiclink/callback?isSignUp=true`,
+          new URL(
+            this.options.magicLinkFailurePath,
+            this.options.baseUrl
+          ).toString()
+        );
+
+        headers.append(
+          "Set-Cookie",
+          cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
+            httpOnly: true,
+            sameSite: "strict",
+            path: "/",
+          })
+        );
+      },
+      req,
+      dataOrCb,
+      cb
+    );
+  }
+
   async signout(): Promise<{ headers: Headers }>;
   async signout<Res>(
     cb: () => Res | Promise<Res>
@@ -790,18 +1228,23 @@ function _extractParams(
   return params;
 }
 
-async function handleAction(
-  action: (
-    data: Record<string, string> | FormData,
-    headers: Headers,
-    req: Request
-  ) => Promise<any>,
+async function handleAction<DataT extends Record<string, any> | FormData>(
+  action: (data: DataT, headers: Headers, req: Request) => Promise<any>,
   req: Request,
-  dataOrCb: Record<string, string> | ((data: any) => any) | undefined,
+  dataOrCb: Record<string, any> | ((data: any) => any) | undefined,
   cb: ((data: any) => any) | undefined
 ) {
-  const data = typeof dataOrCb === "object" ? dataOrCb : await req.formData();
-  const callback = typeof dataOrCb === "function" ? dataOrCb : cb;
+  const contentType = req.headers.get("content-type") ?? "application/json";
+  const data = (
+    typeof dataOrCb === "object"
+      ? dataOrCb
+      : contentType.startsWith("application/json")
+      ? await req.json()
+      : await req.formData()
+  ) as DataT;
+  const callback = (typeof dataOrCb === "function" ? dataOrCb : cb) as (
+    data: any
+  ) => any;
 
   const headers: Headers = new Headers();
   let params: any;
@@ -857,11 +1300,19 @@ async function actionCbCall(
   }
 }
 
-async function cbCall(cb: (data?: any) => any, params: any, headers?: Headers) {
+async function cbCall<Params>(
+  cb: undefined extends Params ? () => any : (data: Params) => any,
+  params: Params,
+  headers?: Headers
+) {
   let res: any;
 
   try {
-    res = params ? await cb(params) : await cb();
+    if (params === undefined) {
+      res = await (cb as () => any)();
+    } else {
+      res = await cb(params);
+    }
   } catch (err) {
     if (err instanceof Response) {
       res = err;
