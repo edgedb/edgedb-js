@@ -47,6 +47,9 @@ export interface AuthRouteHandlers {
       isSignUp: boolean;
     }>
   ) => Promise<never>;
+  onMagicLinkCallback?: (
+    params: ParamsOrError<{ tokenData: TokenData; isSignUp: boolean }>
+  ) => Promise<never>;
   onBuiltinUICallback?: (
     params: ParamsOrError<
       (
@@ -153,21 +156,12 @@ export class ServerRequestAuth extends ClientAuth {
       `${this.config.authRoute}/emailpassword/verify`
     );
 
-    this.cookies.set(this.config.pkceVerifierCookieName, result.verifier, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
+    this.setVerifierCookie(result.verifier);
 
     if (result.status === "complete") {
       const tokenData = result.tokenData;
 
-      this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-        httpOnly: true,
-        sameSite: "strict",
-        path: "/",
-      });
-
+      this.setAuthTokenCookie(tokenData.auth_token);
       return { tokenData };
     }
 
@@ -199,11 +193,7 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).signinWithEmailPassword(email, password);
 
-    this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
+    this.setAuthTokenCookie(tokenData.auth_token);
 
     return { tokenData };
   }
@@ -224,11 +214,7 @@ export class ServerRequestAuth extends ClientAuth {
       new URL(this.config.passwordResetPath, this.config.baseUrl).toString()
     );
 
-    this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
+    this.setVerifierCookie(verifier);
   }
 
   async emailPasswordResetPassword(
@@ -250,20 +236,82 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).resetPasswordWithResetToken(resetToken, verifier, password);
 
-    this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-    });
-
-    this.cookies.delete(this.config.pkceVerifierCookieName, {
-      path: "/",
-    });
+    this.setAuthTokenCookie(tokenData.auth_token);
+    this.deleteVerifierCookie();
     return { tokenData };
   }
 
+  async magicLinkSignUp(data: { email: string } | FormData): Promise<void> {
+    if (!this.config.magicLinkFailurePath) {
+      throw new ConfigurationError(
+        `'magicLinkFailurePath' option not configured`
+      );
+    }
+    const [email] = extractParams(data, ["email"], "email missing");
+
+    const callbackUrl = new URL("magiclink/callback", this.config.authRoute);
+    callbackUrl.searchParams.set("isSignUp", "true");
+    const errorUrl = new URL(
+      this.config.magicLinkFailurePath,
+      this.config.baseUrl
+    );
+    const { verifier } = await (
+      await this.core
+    ).signupWithMagicLink(email, callbackUrl.href, errorUrl.href);
+
+    this.setVerifierCookie(verifier);
+  }
+
+  async magicLinkSend(data: { email: string } | FormData): Promise<void> {
+    if (!this.config.magicLinkFailurePath) {
+      throw new ConfigurationError(
+        `'magicLinkFailurePath' option not configured`
+      );
+    }
+    const [email] = extractParams(data, ["email"], "email missing");
+
+    const callbackUrl = new URL("magiclink/callback", this.config.authRoute);
+    const errorUrl = new URL(
+      this.config.magicLinkFailurePath,
+      this.config.baseUrl
+    );
+    const { verifier } = await (
+      await this.core
+    ).signinWithMagicLink(email, callbackUrl.href, errorUrl.href);
+
+    this.setVerifierCookie(verifier);
+  }
+
   async signout(): Promise<void> {
-    this.cookies.delete(this.config.authCookieName, { path: "/" });
+    this.deleteAuthTokenCookie();
+  }
+
+  private setVerifierCookie(verifier: string) {
+    this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+    });
+  }
+
+  private deleteVerifierCookie() {
+    this.cookies.delete(this.config.pkceVerifierCookieName, {
+      path: "/",
+    });
+  }
+
+  private setAuthTokenCookie(authToken: string) {
+    this.cookies.set(this.config.authCookieName, authToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+    });
+  }
+
+  private deleteAuthTokenCookie() {
+    this.cookies.delete(this.config.authCookieName, {
+      path: "/",
+    });
   }
 }
 
@@ -328,6 +376,7 @@ async function handleAuthRoutes(
     onBuiltinUICallback,
     onEmailVerify,
     onSignout,
+    onMagicLinkCallback,
   }: AuthRouteHandlers,
   { url, cookies }: RequestEvent,
   core: Promise<Auth>,
@@ -419,6 +468,61 @@ async function handleAuthRoutes(
         error: null,
         tokenData,
         provider: searchParams.get("provider") as BuiltinOAuthProviderNames,
+        isSignUp,
+      });
+    }
+
+    case "magiclink/callback": {
+      if (!onMagicLinkCallback) {
+        throw new ConfigurationError(
+          `'onMagicLinkCallback' auth route handler not configured`
+        );
+      }
+
+      const error = searchParams.get("error");
+      if (error) {
+        const desc = searchParams.get("error_description");
+        return onMagicLinkCallback({
+          error: new EdgeDBAuthError(error + (desc ? `: ${desc}` : "")),
+        });
+      }
+
+      const code = searchParams.get("code");
+      if (!code) {
+        return onMagicLinkCallback({
+          error: new PKCEError("no pkce code in response"),
+        });
+      }
+      const isSignUp = searchParams.get("isSignUp") === "true";
+      const verifier = cookies.get(config.pkceVerifierCookieName);
+
+      if (!verifier) {
+        return onMagicLinkCallback({
+          error: new PKCEError("no pkce verifier cookie found"),
+        });
+      }
+      let tokenData: TokenData;
+      try {
+        tokenData = await (await core).getToken(code, verifier);
+      } catch (err) {
+        return onMagicLinkCallback({
+          error: err instanceof Error ? err : new Error(String(err)),
+        });
+      }
+      cookies.set(config.authCookieName, tokenData.auth_token, {
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+      });
+
+      cookies.set(config.pkceVerifierCookieName, "", {
+        maxAge: 0,
+        path: "/",
+      });
+
+      return onMagicLinkCallback({
+        error: null,
+        tokenData,
         isSignUp,
       });
     }

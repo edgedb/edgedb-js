@@ -6,9 +6,10 @@ export interface AuthOptions {
   authCookieName?: string;
   pkceVerifierCookieName?: string;
   passwordResetPath?: string;
+  magicLinkFailurePath?: string;
 }
 
-type OptionalOptions = "passwordResetPath";
+type OptionalOptions = "passwordResetPath" | "magicLinkFailurePath";
 
 export type AuthConfig = Required<Omit<AuthOptions, OptionalOptions>> &
   Pick<AuthOptions, OptionalOptions> & { authRoute: string };
@@ -19,12 +20,11 @@ export function getConfig(options: AuthOptions) {
     options.authRoutesPath?.replace(/^\/|\/$/g, "") ?? "auth";
 
   return {
+    authCookieName: "edgedb-session",
+    pkceVerifierCookieName: "edgedb-pkce-verifier",
+    ...options,
     baseUrl,
     authRoutesPath,
-    authCookieName: options.authCookieName ?? "edgedb-session",
-    pkceVerifierCookieName:
-      options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
-    passwordResetPath: options.passwordResetPath,
     authRoute: `${baseUrl}/${authRoutesPath}`,
   };
 }
