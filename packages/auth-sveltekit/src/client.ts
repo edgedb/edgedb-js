@@ -1,4 +1,5 @@
 import type { BuiltinOAuthProviderNames } from "@edgedb/auth-core";
+import { WebAuthnClient } from "@edgedb/auth-core/webauthn";
 
 export interface AuthOptions {
   baseUrl: string;
@@ -35,10 +36,18 @@ export default function createClientAuth(options: AuthOptions) {
 
 export class ClientAuth {
   protected readonly config: AuthConfig;
+  readonly webAuthnClient: WebAuthnClient;
 
   /** @internal */
   constructor(options: AuthOptions) {
     this.config = getConfig(options);
+    this.webAuthnClient = new WebAuthnClient({
+      signupOptionsUrl: `${this.config.authRoute}/webauthn/signup/options`,
+      signupUrl: `${this.config.authRoute}/webauthn/signup`,
+      signinOptionsUrl: `${this.config.authRoute}/webauthn/signin/options`,
+      signinUrl: `${this.config.authRoute}/webauthn/signin`,
+      verifyUrl: `${this.config.authRoute}/webauthn/verify`,
+    });
   }
 
   getOAuthUrl(providerName: BuiltinOAuthProviderNames) {

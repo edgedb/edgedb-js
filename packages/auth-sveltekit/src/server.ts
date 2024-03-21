@@ -17,6 +17,8 @@ import {
   InvalidDataError,
   OAuthProviderFailureError,
   EdgeDBAuthError,
+  type RegistrationResponseJSON,
+  type AuthenticationResponseJSON,
 } from "@edgedb/auth-core";
 import {
   ClientAuth,
@@ -280,6 +282,45 @@ export class ServerRequestAuth extends ClientAuth {
     ).signinWithMagicLink(email, callbackUrl.href, errorUrl.href);
 
     this.setVerifierCookie(verifier);
+  }
+
+  async webAuthnSignUp(data: {
+    email: string;
+    credentials: RegistrationResponseJSON;
+    verify_url: string;
+    user_handle: string;
+  }): Promise<{ tokenData: TokenData | null }> {
+    const {
+      email,
+      credentials,
+      verify_url: verifyUrl,
+      user_handle: userHandle,
+    } = data;
+
+    const result = await (
+      await this.core
+    ).signupWithWebAuthn(email, credentials, verifyUrl, userHandle);
+
+    this.setVerifierCookie(result.verifier);
+    if (result.status === "complete") {
+      this.setAuthTokenCookie(result.tokenData.auth_token);
+      return { tokenData: result.tokenData };
+    }
+
+    return { tokenData: null };
+  }
+
+  async webAuthnSignIn(data: {
+    email: string;
+    assertion: AuthenticationResponseJSON;
+  }): Promise<{ tokenData: TokenData | null }> {
+    const { email, assertion } = data;
+    const tokenData = await (
+      await this.core
+    ).signinWithWebAuthn(email, assertion);
+
+    this.setAuthTokenCookie(tokenData.auth_token);
+    return { tokenData };
   }
 
   async signout(): Promise<void> {
@@ -634,6 +675,66 @@ async function handleAuthRoutes(
         tokenData = await (
           await core
         ).verifyEmailPasswordSignup(verificationToken, verifier);
+      } catch (err) {
+        return onEmailVerify({
+          error: err instanceof Error ? err : new Error(String(err)),
+          verificationToken,
+        });
+      }
+
+      cookies.set(config.authCookieName, tokenData.auth_token, {
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+      });
+
+      return onEmailVerify({
+        error: null,
+        tokenData,
+      });
+    }
+
+    case "webauthn/signup/options": {
+      const email = searchParams.get("email");
+      if (!email) {
+        throw new InvalidDataError("email missing");
+      }
+      return redirect(302, (await core).getWebAuthnSignupOptionsUrl(email));
+    }
+
+    case "webauthn/signin/options": {
+      const email = searchParams.get("email");
+      if (!email) {
+        throw new InvalidDataError("email missing");
+      }
+      return redirect(302, (await core).getWebAuthnSigninOptionsUrl(email));
+    }
+
+    case "webauthn/verify": {
+      if (!onEmailVerify) {
+        throw new ConfigurationError(
+          `'onEmailVerify' auth route handler not configured`
+        );
+      }
+
+      const verificationToken = searchParams.get("verification_token");
+      if (!verificationToken) {
+        return onEmailVerify({
+          error: new InvalidDataError("verification_token missing"),
+        });
+      }
+      const verifier = cookies.get(config.pkceVerifierCookieName);
+      if (!verifier) {
+        return onEmailVerify({
+          error: new PKCEError("no pkce verifier cookie found"),
+          verificationToken,
+        });
+      }
+      let tokenData: TokenData;
+      try {
+        tokenData = await (
+          await core
+        ).verifyWebAuthnSignup(verificationToken, verifier);
       } catch (err) {
         return onEmailVerify({
           error: err instanceof Error ? err : new Error(String(err)),
