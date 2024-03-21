@@ -2,6 +2,9 @@ import {
   type BuiltinOAuthProviderNames,
   type emailPasswordProviderName,
 } from "@edgedb/auth-core";
+import { WebAuthnClient } from "@edgedb/auth-core/webauthn";
+
+export * as webauthn from "@edgedb/auth-core/webauthn";
 
 export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
@@ -13,14 +16,16 @@ export interface NextAuthOptions {
   authCookieName?: string;
   pkceVerifierCookieName?: string;
   passwordResetPath?: string;
+  magicLinkFailurePath?: string;
 }
 
-type OptionalOptions = "passwordResetPath";
+type OptionalOptions = "passwordResetPath" | "magicLinkFailurePath";
 
 export abstract class NextAuthHelpers {
   /** @internal */
   readonly options: Required<Omit<NextAuthOptions, OptionalOptions>> &
     Pick<NextAuthOptions, OptionalOptions>;
+  readonly webAuthnClient: WebAuthnClient;
 
   /** @internal */
   constructor(options: NextAuthOptions) {
@@ -31,7 +36,15 @@ export abstract class NextAuthHelpers {
       pkceVerifierCookieName:
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
       passwordResetPath: options.passwordResetPath,
+      magicLinkFailurePath: options.magicLinkFailurePath,
     };
+    this.webAuthnClient = new WebAuthnClient({
+      signupOptionsUrl: `${this._authRoute}/webauthn/signup/options`,
+      signupUrl: `${this._authRoute}/webauthn/signup`,
+      signinOptionsUrl: `${this._authRoute}/webauthn/signin/options`,
+      signinUrl: `${this._authRoute}/webauthn/signin`,
+      verifyUrl: `${this._authRoute}/webauthn/verify`,
+    });
   }
 
   protected get _authRoute() {

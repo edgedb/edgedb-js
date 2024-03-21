@@ -32,7 +32,10 @@ export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
   | typeof emailPasswordProviderName;
 
-type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
+type ParamsOrError<
+  Result extends object,
+  ErrorDetails extends object = object
+> =
   | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)
   | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
 

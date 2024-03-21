@@ -1,4 +1,4 @@
-import { Client } from "edgedb";
+import { type Client } from "edgedb";
 import { type TokenData } from "@edgedb/auth-core";
 import {
   type BuiltinProviderNames,

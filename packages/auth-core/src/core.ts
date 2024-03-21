@@ -176,24 +176,25 @@ export class Auth {
   async signupWithMagicLink(
     email: string,
     callbackUrl: string,
-    redirectOnFailure: string,
-    challenge: string
-  ): Promise<void> {
+    redirectOnFailure: string
+  ): Promise<{ verifier: string }> {
+    const { challenge, verifier } = await pkce.createVerifierChallengePair();
     await this._post("magic-link/register", {
       provider: magicLinkProviderName,
-      challenge,
       email,
+      challenge,
       callback_url: callbackUrl,
       redirect_on_failure: redirectOnFailure,
     });
+    return { verifier };
   }
 
   async signinWithMagicLink(
     email: string,
     callbackUrl: string,
-    redirectOnFailure: string,
-    challenge: string
-  ): Promise<void> {
+    redirectOnFailure: string
+  ): Promise<{ verifier: string }> {
+    const { challenge, verifier } = await pkce.createVerifierChallengePair();
     await this._post("magic-link/email", {
       provider: magicLinkProviderName,
       challenge,
@@ -201,6 +202,8 @@ export class Auth {
       callback_url: callbackUrl,
       redirect_on_failure: redirectOnFailure,
     });
+
+    return { verifier };
   }
 
   async resendVerificationEmail(verificationToken: string) {

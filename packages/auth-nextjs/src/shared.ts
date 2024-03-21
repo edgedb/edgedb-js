@@ -9,6 +9,7 @@ import {
   PKCEError,
   EdgeDBAuthError,
   OAuthProviderFailureError,
+  type SignupResponse,
 } from "@edgedb/auth-core";
 
 import {
@@ -19,11 +20,14 @@ import {
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
 
 export { type BuiltinProviderNames, NextAuthHelpers, type NextAuthOptions };
 
-type ParamsOrError<Result extends object, ErrorDetails extends object = {}> =
+type ParamsOrError<
+  Result extends object,
+  ErrorDetails extends object = object
+> =
   | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)
   | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
 
@@ -34,26 +38,42 @@ export interface CreateAuthRouteHandlers {
       provider: BuiltinOAuthProviderNames;
       isSignUp: boolean;
     }>,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<never>;
   onEmailPasswordSignIn(
     params: ParamsOrError<{ tokenData: TokenData }>,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<Response>;
   onEmailPasswordSignUp(
     params: ParamsOrError<{ tokenData: TokenData | null }>,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<Response>;
   onEmailPasswordReset(
     params: ParamsOrError<{ tokenData: TokenData }>,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<Response>;
   onEmailVerify(
     params: ParamsOrError<
       { tokenData: TokenData },
       { verificationToken?: string }
     >,
-    req?: NextRequest
+    req: NextRequest
+  ): Promise<never>;
+  onWebAuthnSignUp(
+    params: ParamsOrError<{ tokenData: TokenData | null }>,
+    req: NextRequest
+  ): Promise<NextResponse<SignupResponse>>;
+  onWebAuthnSignIn(
+    params: ParamsOrError<{ tokenData: TokenData }>,
+    req: NextRequest
+  ): Promise<never>;
+  onMagicLinkCallback(
+    params: ParamsOrError<{ tokenData: TokenData; isSignUp: boolean }>,
+    req: NextRequest
+  ): Promise<never>;
+  onMagicLinkSignIn(
+    params: ParamsOrError<{ tokenData: TokenData }>,
+    req: NextRequest
   ): Promise<never>;
   onBuiltinUICallback(
     params: ParamsOrError<
@@ -68,9 +88,9 @@ export interface CreateAuthRouteHandlers {
           }
       ) & { isSignUp: boolean }
     >,
-    req?: NextRequest
+    req: NextRequest
   ): Promise<never>;
-  onSignout(req?: NextRequest): Promise<never>;
+  onSignout(req: NextRequest): Promise<never>;
 }
 
 export abstract class NextAuth extends NextAuthHelpers {
@@ -96,6 +116,9 @@ export abstract class NextAuth extends NextAuthHelpers {
     onEmailPasswordSignUp,
     onEmailPasswordReset,
     onEmailVerify,
+    onWebAuthnSignUp,
+    onWebAuthnSignIn,
+    onMagicLinkCallback,
     onBuiltinUICallback,
     onSignout,
   }: Partial<CreateAuthRouteHandlers>) {
@@ -259,6 +282,150 @@ export abstract class NextAuth extends NextAuthHelpers {
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onEmailVerify({ error: null, tokenData }, req);
+          }
+          case "webauthn/signup/options": {
+            const email = req.nextUrl.searchParams.get("email");
+            if (!email) {
+              throw new InvalidDataError(
+                "'email' is missing in request search parameters"
+              );
+            }
+            return Response.redirect(
+              (await this.core).getWebAuthnSignupOptionsUrl(email)
+            );
+          }
+          case "webauthn/signin/options": {
+            const email = req.nextUrl.searchParams.get("email");
+            if (!email) {
+              throw new InvalidDataError(
+                "'email' is missing in request search parameters"
+              );
+            }
+            return Response.redirect(
+              (await this.core).getWebAuthnSigninOptionsUrl(email)
+            );
+          }
+          case "webauthn/verify": {
+            if (!onEmailVerify) {
+              throw new ConfigurationError(
+                `'onEmailVerify' auth route handler not configured`
+              );
+            }
+            const verificationToken =
+              req.nextUrl.searchParams.get("verification_token");
+            const verifier = req.cookies.get(
+              this.options.pkceVerifierCookieName
+            )?.value;
+            if (!verificationToken) {
+              return onEmailVerify(
+                {
+                  error: new PKCEError("no verification_token in response"),
+                },
+                req
+              );
+            }
+            if (!verifier) {
+              return onEmailVerify(
+                {
+                  error: new PKCEError("no pkce verifier cookie found"),
+                  verificationToken,
+                },
+                req
+              );
+            }
+            let tokenData: TokenData;
+            try {
+              tokenData = await (
+                await this.core
+              ).verifyWebAuthnSignup(verificationToken, verifier);
+            } catch (err) {
+              return onEmailVerify(
+                {
+                  error: err instanceof Error ? err : new Error(String(err)),
+                  verificationToken,
+                },
+                req
+              );
+            }
+            cookies().set({
+              name: this.options.authCookieName,
+              value: tokenData.auth_token,
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            });
+            cookies().delete(this.options.pkceVerifierCookieName);
+
+            return onEmailVerify({ error: null, tokenData }, req);
+          }
+          case "magiclink/callback": {
+            if (!onMagicLinkCallback) {
+              throw new ConfigurationError(
+                `'onMagicLinkCallback' auth route handler not configured`
+              );
+            }
+            const error = req.nextUrl.searchParams.get("error");
+            if (error) {
+              const desc = req.nextUrl.searchParams.get("error_description");
+              return onMagicLinkCallback(
+                {
+                  error: new OAuthProviderFailureError(
+                    error + (desc ? `: ${desc}` : "")
+                  ),
+                },
+                req
+              );
+            }
+            const code = req.nextUrl.searchParams.get("code");
+            const isSignUp =
+              req.nextUrl.searchParams.get("isSignUp") === "true";
+            const verifier = req.cookies.get(
+              this.options.pkceVerifierCookieName
+            )?.value;
+            if (!code) {
+              return onMagicLinkCallback(
+                {
+                  error: new PKCEError("no pkce code in response"),
+                },
+                req
+              );
+            }
+            if (!verifier) {
+              return onMagicLinkCallback(
+                {
+                  error: new PKCEError("no pkce verifier cookie found"),
+                },
+                req
+              );
+            }
+            let tokenData: TokenData;
+            try {
+              tokenData = await (await this.core).getToken(code, verifier);
+            } catch (err) {
+              return onMagicLinkCallback(
+                {
+                  error: err instanceof Error ? err : new Error(String(err)),
+                },
+                req
+              );
+            }
+            cookies().set({
+              name: this.options.authCookieName,
+              value: tokenData.auth_token,
+              httpOnly: true,
+              sameSite: "lax",
+              path: "/",
+            });
+            cookies().delete(this.options.pkceVerifierCookieName);
+
+            return onMagicLinkCallback(
+              {
+                error: null,
+                tokenData,
+                isSignUp,
+              },
+              req
+            );
           }
           case "builtin/callback": {
             if (!onBuiltinUICallback) {
@@ -566,6 +733,155 @@ export abstract class NextAuth extends NextAuthHelpers {
               "verification_token missing from request body"
             );
             (await this.core).resendVerificationEmail(verificationToken);
+            return isAction
+              ? Response.json({ _data: null })
+              : new Response(null, { status: 204 });
+          }
+          case "webauthn/signup": {
+            if (!onWebAuthnSignUp) {
+              throw new ConfigurationError(
+                `'onWebAuthnSignUp' auth route handler not configured`
+              );
+            }
+
+            const { email, credentials, verify_url, user_handle } =
+              await req.json();
+
+            let result: SignupResponse;
+            try {
+              result = await (
+                await this.core
+              ).signupWithWebAuthn(email, credentials, verify_url, user_handle);
+            } catch (err) {
+              const error = err instanceof Error ? err : new Error(String(err));
+              return _wrapResponse(onWebAuthnSignUp({ error }, req), false);
+            }
+
+            cookies().set({
+              name: this.options.pkceVerifierCookieName,
+              value: result.verifier,
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            });
+            if (result.status === "complete") {
+              cookies().set({
+                name: this.options.authCookieName,
+                value: result.tokenData.auth_token,
+                httpOnly: true,
+                sameSite: "strict",
+                path: "/",
+              });
+              return _wrapResponse(
+                onWebAuthnSignUp(
+                  {
+                    error: null,
+                    tokenData: result.tokenData,
+                  },
+                  req
+                ),
+                false
+              );
+            } else {
+              return _wrapResponse(
+                onWebAuthnSignUp({ error: null, tokenData: null }, req),
+                false
+              );
+            }
+          }
+          case "webauthn/signin": {
+            if (!onWebAuthnSignIn) {
+              throw new ConfigurationError(
+                `'onWebAuthnSignIn' auth route handler not configured`
+              );
+            }
+            const { email, assertion } = await req.json();
+
+            let tokenData: TokenData;
+            try {
+              tokenData = await (
+                await this.core
+              ).signinWithWebAuthn(email, assertion);
+            } catch (err) {
+              const error = err instanceof Error ? err : new Error(String(err));
+              return _wrapResponse(onWebAuthnSignIn({ error }, req), false);
+            }
+            cookies().set({
+              name: this.options.authCookieName,
+              value: tokenData.auth_token,
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            });
+            return _wrapResponse(
+              onWebAuthnSignIn({ error: null, tokenData }, req),
+              false
+            );
+          }
+          case "magiclink/signup": {
+            if (!this.options.magicLinkFailurePath) {
+              throw new ConfigurationError(
+                `'magicLinkFailurePath' option not configured`
+              );
+            }
+            const data = await _getReqBody(req);
+            const isAction = _isAction(data);
+            const [email] = _extractParams(
+              data,
+              ["email"],
+              "email missing from request body"
+            );
+            const { verifier } = await (
+              await this.core
+            ).signupWithMagicLink(
+              email,
+              `${this._authRoute}/magiclink/callback?isSignUp=true`,
+              new URL(
+                this.options.magicLinkFailurePath,
+                this.options.baseUrl
+              ).toString()
+            );
+            cookies().set({
+              name: this.options.pkceVerifierCookieName,
+              value: verifier,
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            });
+            return isAction
+              ? Response.json({ _data: null })
+              : new Response(null, { status: 204 });
+          }
+          case "magiclink/send": {
+            if (!this.options.magicLinkFailurePath) {
+              throw new ConfigurationError(
+                `'magicLinkFailurePath' option not configured`
+              );
+            }
+            const data = await _getReqBody(req);
+            const isAction = _isAction(data);
+            const [email] = _extractParams(
+              data,
+              ["email"],
+              "email missing from request body"
+            );
+            const { verifier } = await (
+              await this.core
+            ).signinWithMagicLink(
+              email,
+              `${this._authRoute}/magiclink/callback`,
+              new URL(
+                this.options.magicLinkFailurePath,
+                this.options.baseUrl
+              ).toString()
+            );
+            cookies().set({
+              name: this.options.pkceVerifierCookieName,
+              value: verifier,
+              httpOnly: true,
+              sameSite: "strict",
+              path: "/",
+            });
             return isAction
               ? Response.json({ _data: null })
               : new Response(null, { status: 204 });

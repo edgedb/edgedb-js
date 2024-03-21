@@ -61,6 +61,14 @@ export class NextPagesClientAuth extends NextAuthHelpers {
       data
     );
   }
+
+  async magicLinkSignUp(data: { email: string } | FormData) {
+    return await apiRequest(`${this._authRoute}/magiclink/signup`, data);
+  }
+
+  async magicLinkSend(data: { email: string } | FormData) {
+    return await apiRequest(`${this._authRoute}/magiclink/send`, data);
+  }
 }
 
 async function apiRequest(url: string, _data: any) {
