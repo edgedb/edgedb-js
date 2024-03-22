@@ -229,19 +229,31 @@ app.use(oAuthRouter);
 ### Custom UI: Magic Link
 
 - `routerPath: string`, required, This is the path relative to the `baseUrl` configured when creating the `ExpressAuth` object. This path is used to build the URL for the callback path configured by the router factory.
-- `callback: (express.RouteHandler | express.ErrorHandler)[]`, required, Once the authentication flow completes, this callback will be called, and you must return a terminating Express route handler here. Typically, you'll redirect to elsewhere in your app based on `req.isSignUp`.
 - `failureUrl: string`, required, URL to redirect to in case of a failure during the Magic Link process.
+- `callback: (express.RouteHandler | express.ErrorHandler)[]`, required, Once the authentication flow completes, this callback will be called, and you must return a terminating Express route handler here. Typically, you'll redirect to elsewhere in your app based on `req.isSignUp`.
+- `send: (express.RouteHandler | express.ErrorHandler)[]`, this route handler stack will be called when a request is made to send a magic link to a registered email address. Typically, you'll return some HTML or a redirect here that indicates that the user should check their email.
+- `signup: (express.RouteHandler | express.ErrorHandler)[]`, this route handler stack will be called when a request is made to register an email address. Typically, you'll return some HTML or a redirect here that indicates that the user should check their email.
 
 ```ts
 const magicLinkRouter = auth.createMagicLinkRouter(
   "/auth/magic-link",
+  "/login-failure",
   {
     callback: [
       (req: expressAuth.CallbackRequest, res) => {
         res.redirect("/");
       },
     ],
-    failureUrl: "/login-failure"
+    send: [
+      (req, res) => {
+        res.redirect("/check-email.html");
+      },
+    ],
+    signUp: [
+      (req, res) => {
+        res.redirect("/check-email.html");
+      }
+    ]
   }
 );
 
