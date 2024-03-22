@@ -184,13 +184,8 @@ export class ExpressAuth {
 
   createMagicLinkRouter = (
     routerPath: string,
-    {
-      callback,
-      failureUrl,
-    }: {
-      callback: RouterStack;
-      failureUrl: string;
-    }
+    failurePath: string,
+    stacks: Record<keyof typeof this.magicLink, RouterStack>
   ) => {
     const router = Router();
 
@@ -198,17 +193,19 @@ export class ExpressAuth {
       "/send",
       this.magicLink.send(
         new URL(`${routerPath}/callback`, this.options.baseUrl).toString(),
-        failureUrl
-      )
+        new URL(failurePath, this.options.baseUrl).toString()
+      ),
+      ...stacks.send
     );
     router.post(
       "/signup",
       this.magicLink.signUp(
         new URL(`${routerPath}/callback`, this.options.baseUrl).toString(),
-        failureUrl
-      )
+        new URL(failurePath, this.options.baseUrl).toString()
+      ),
+      ...stacks.signUp
     );
-    router.get("/callback", this.magicLink.callback, ...callback);
+    router.get("/callback", this.magicLink.callback, ...stacks.callback);
 
     return Router().use(routerPath, router);
   };
@@ -638,6 +635,13 @@ export class ExpressAuth {
             ["email"],
             "email missing from request body"
           );
+          console.log(
+            `magic link signup: ${JSON.stringify(
+              { callbackUrl, failureUrl, email },
+              null,
+              2
+            )}`
+          );
           const { verifier } = await (
             await this.core
           ).signupWithMagicLink(email, callbackUrl, failureUrl);
@@ -658,6 +662,13 @@ export class ExpressAuth {
             req.body,
             ["email"],
             "email missing from request body"
+          );
+          console.log(
+            `magic link send: ${JSON.stringify(
+              { callbackUrl, failureUrl, email },
+              null,
+              2
+            )}`
           );
           const { verifier } = await (
             await this.core
