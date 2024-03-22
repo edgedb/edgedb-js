@@ -22,7 +22,7 @@
     "./dist/index.node.js": "./dist/index.browser.js"
   },
   "bin": {
-    "edgeql-js": "./dist/cli.js"
+    "edgedb": "./dist/cli.js"
   },
   "devDependencies": {
     "@js-temporal/polyfill": "0.4.3",

@@ -1,20 +1,39 @@
 #!/usr/bin/env node
+import { execSync } from "node:child_process";
 
-// tslint:disable:no-console
-console.log(
-  `Failure: The \`npx edgeql-js\` command is no longer supported.
+function isEdgeDBCLIInstalled() {
+  try {
+    execSync("edgedb --version", { stdio: "ignore" });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
 
-To generate the EdgeDB query builder, install \`@edgedb/generate\`
-package as a dev dependency in your local project. This package implements
-a set of code generation tools for EdgeDB.
+function installEdgeDBCLI() {
+  console.log("Installing EdgeDB CLI...");
+  if (process.platform === "win32") {
+    execSync("iwr https://ps1.edgedb.com -useb | iex", {
+      stdio: "inherit",
+      shell: "powershell",
+    });
+  } else {
+    execSync("curl https://sh.edgedb.com --proto '=https' -sSf1 | sh", {
+      stdio: "inherit",
+    });
+  }
+}
 
-  $ npm install -D @edgedb/generate      (npm)
-  $ yarn add -D @edgedb/generate         (yarn)
+function runEdgeDBCLI(args: string[]) {
+  execSync(`edgedb ${args.join(" ")}`, { stdio: "inherit" });
+}
 
-Then run the following command to generate the query builder.
+function main(args: string[]) {
+  if (!isEdgeDBCLIInstalled()) {
+    installEdgeDBCLI();
+  }
 
-  $ npx @edgedb/generate edgeql-js
-`
-);
+  runEdgeDBCLI(args);
+}
 
-export {};
+main(process.argv.slice(2));
