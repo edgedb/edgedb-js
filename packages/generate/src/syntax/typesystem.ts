@@ -54,35 +54,26 @@ export type scalarTypeWithConstructor<
   >;
 };
 
-type $jsonDestructure<Set extends TypeSet> =
-  Set extends TypeSet<ScalarType<"std::json">>
-    ? {
-        [path: string]: $expr_Operator<
-          // "[]",
-          // OperatorKind.Infix,
-          // [Set, TypeSet],
-          // TypeSet<
-          Set["__element__"],
-          Set["__cardinality__"]
-          // >
-        >;
-      } & {
-        destructure<T extends TypeSet<ScalarType<"std::str">> | string>(
-          path: T
-        ): $expr_Operator<
-          // "[]",
-          // OperatorKind.Infix,
-          // [Set, TypeSet],
-          // TypeSet<
-          Set["__element__"],
-          cardutil.multiplyCardinalities<
-            Set["__cardinality__"],
-            T extends TypeSet ? T["__cardinality__"] : Cardinality.One
-          >
-          // >
-        >;
-      }
-    : unknown;
+type $jsonDestructure<Set extends TypeSet> = Set extends TypeSet<
+  ScalarType<"std::json">
+>
+  ? {
+      [path: string]: $expr_Operator<
+        Set["__element__"],
+        Set["__cardinality__"]
+      >;
+    } & {
+      destructure<T extends TypeSet<ScalarType<"std::str">> | string>(
+        path: T
+      ): $expr_Operator<
+        Set["__element__"],
+        cardutil.multiplyCardinalities<
+          Set["__cardinality__"],
+          T extends TypeSet ? T["__cardinality__"] : Cardinality.One
+        >
+      >;
+    }
+  : unknown;
 
 ////////////////////
 // SETS AND EXPRESSIONS
