@@ -35,6 +35,7 @@ export function literal<T extends BaseType>(
     __element__: type,
     __cardinality__: Cardinality.One,
     __kind__: ExpressionKind.Literal,
+    // @ts-expect-error: Type instantiation error
     __value__: value,
   }) as any;
 }
