@@ -2,7 +2,7 @@ import process from "node:process";
 import crypto from "node:crypto";
 import url from "node:url";
 import path from "node:path";
-import * as _fs from "https://deno.land/std@0.208.0/fs/mod.ts";
+import * as _fs from "https://deno.land/std@0.216.0/fs/mod.ts";
 import fs from "node:fs/promises";
 import util from "node:util";
 import { isIP as _isIP } from "node:net";
