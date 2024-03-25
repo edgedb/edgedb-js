@@ -29,14 +29,15 @@ export type $expr_Literal<Type extends BaseType = BaseType> = Expression<{
 
 export function literal<
   T extends BaseType,
-  TsType extends BaseTypeToTsType<T> = BaseTypeToTsType<T>
->(type: T, value: TsType): $expr_Literal<T> {
+  TsType extends BaseTypeToTsType<T> = BaseTypeToTsType<T>,
+  ExprType extends $expr_Literal<T> = $expr_Literal<T>
+>(type: T, value: TsType): ExprType {
   return $expressionify({
     __element__: type,
     __cardinality__: Cardinality.One,
     __kind__: ExpressionKind.Literal,
     __value__: value,
-  }) as any;
+  }) as ExprType;
 }
 
 export const $nameMapping = new Map<string, string>([
