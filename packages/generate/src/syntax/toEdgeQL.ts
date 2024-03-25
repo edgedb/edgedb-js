@@ -935,7 +935,12 @@ function renderEdgeQL(
     if (expr.__expr__ === null) {
       return `<${typeName}>{}`;
     }
-    return `<${typeName}>(${renderEdgeQL(expr.__expr__, ctx)})`;
+    const rawInnerExpr = renderEdgeQL(expr.__expr__, ctx);
+    const isCast =
+      (expr.__expr__ as any).__kind__ === ExpressionKind.Cast &&
+      rawInnerExpr[0] === "(";
+    const innerExpr = isCast ? rawInnerExpr.slice(1, -1) : rawInnerExpr;
+    return `(<${typeName}>${innerExpr})`;
   } else if (expr.__kind__ === ExpressionKind.Select) {
     const lines: string[] = [];
     if (isObjectType(expr.__element__)) {
