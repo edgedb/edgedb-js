@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 
-import * as bi from "../primitives/bigint";
-
 import {
   daysInMonth,
   ymd2ord,
@@ -388,24 +386,24 @@ export class Duration {
   toString(): string {
     let dateParts = "";
     if (this.years) {
-      dateParts += bi.make(Math.abs(this.years)) + "Y";
+      dateParts += BigInt(Math.abs(this.years)) + "Y";
     }
     if (this.months) {
-      dateParts += bi.make(Math.abs(this.months)) + "M";
+      dateParts += BigInt(Math.abs(this.months)) + "M";
     }
     if (this.weeks) {
-      dateParts += bi.make(Math.abs(this.weeks)) + "W";
+      dateParts += BigInt(Math.abs(this.weeks)) + "W";
     }
     if (this.days) {
-      dateParts += bi.make(Math.abs(this.days)) + "D";
+      dateParts += BigInt(Math.abs(this.days)) + "D";
     }
 
     let timeParts = "";
     if (this.hours) {
-      timeParts += bi.make(Math.abs(this.hours)) + "H";
+      timeParts += BigInt(Math.abs(this.hours)) + "H";
     }
     if (this.minutes) {
-      timeParts += bi.make(Math.abs(this.minutes)) + "M";
+      timeParts += BigInt(Math.abs(this.minutes)) + "M";
     }
     if (
       (!dateParts && !timeParts) ||
@@ -414,17 +412,12 @@ export class Duration {
       this.microseconds ||
       this.nanoseconds
     ) {
-      const totalNanoseconds = bi
-        .add(
-          bi.add(
-            bi.add(
-              bi.mul(bi.make(Math.abs(this.seconds)), bi.make(1e9)),
-              bi.mul(bi.make(Math.abs(this.milliseconds)), bi.make(1e6))
-            ),
-            bi.mul(bi.make(Math.abs(this.microseconds)), bi.make(1e3))
-          ),
-          bi.make(Math.abs(this.nanoseconds))
-        )
+      const totalNanoseconds = (
+        BigInt(Math.abs(this.seconds)) * BigInt(1e9) +
+        BigInt(Math.abs(this.milliseconds)) * BigInt(1e6) +
+        BigInt(Math.abs(this.microseconds)) * BigInt(1e3) +
+        BigInt(Math.abs(this.nanoseconds))
+      )
         .toString()
         .padStart(10, "0");
 

@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 
-import * as bi from "../primitives/bigint";
-
 const KiB = 1024;
 const MiB = 1024 * KiB;
 const GiB = 1024 * MiB;
@@ -25,9 +23,9 @@ const TiB = 1024 * GiB;
 const PiB = 1024 * TiB;
 
 export class ConfigMemory {
-  private readonly _bytes: bi.BigIntLike;
+  private readonly _bytes: bigint;
 
-  constructor(bytes: bi.BigIntLike) {
+  constructor(bytes: bigint) {
     this._bytes = bytes;
   }
 
@@ -35,8 +33,8 @@ export class ConfigMemory {
     return Number(this._bytes);
   }
 
-  get bytesBigInt(): BigInt {
-    return this._bytes as BigInt;
+  get bytesBigInt(): bigint {
+    return this._bytes;
   }
 
   get kibibytes(): number {
@@ -61,25 +59,25 @@ export class ConfigMemory {
 
   toString(): string {
     const bytes = this._bytes;
-    const bigPiB = bi.make(PiB);
-    if (bi.gte(bytes, bigPiB) && Number(bi.remainder(bytes, bigPiB)) === 0) {
-      return `${bi.div(bytes, bigPiB)}PiB`;
+    const bigPiB = BigInt(PiB);
+    if (bytes >= bigPiB && Number(bytes % bigPiB) === 0) {
+      return `${bytes / bigPiB}PiB`;
     }
-    const bigTiB = bi.make(TiB);
-    if (bi.gte(bytes, bigTiB) && Number(bi.remainder(bytes, bigTiB)) === 0) {
-      return `${bi.div(bytes, bigTiB)}TiB`;
+    const bigTiB = BigInt(TiB);
+    if (bytes >= bigTiB && Number(bytes % bigTiB) === 0) {
+      return `${bytes / bigTiB}TiB`;
     }
-    const bigGiB = bi.make(GiB);
-    if (bi.gte(bytes, bigGiB) && Number(bi.remainder(bytes, bigGiB)) === 0) {
-      return `${bi.div(bytes, bigGiB)}GiB`;
+    const bigGiB = BigInt(GiB);
+    if (bytes >= bigGiB && Number(bytes % bigGiB) === 0) {
+      return `${bytes / bigGiB}GiB`;
     }
-    const bigMiB = bi.make(MiB);
-    if (bi.gte(bytes, bigMiB) && Number(bi.remainder(bytes, bigMiB)) === 0) {
-      return `${bi.div(bytes, bigMiB)}MiB`;
+    const bigMiB = BigInt(MiB);
+    if (bytes >= bigMiB && Number(bytes % bigMiB) === 0) {
+      return `${bytes / bigMiB}MiB`;
     }
-    const bigKiB = bi.make(KiB);
-    if (bi.gte(bytes, bigKiB) && Number(bi.remainder(bytes, bigKiB)) === 0) {
-      return `${bi.div(bytes, bigKiB)}KiB`;
+    const bigKiB = BigInt(KiB);
+    if (bytes >= bigKiB && Number(bytes % bigKiB) === 0) {
+      return `${bytes / bigKiB}KiB`;
     }
     return `${bytes}B`;
   }
