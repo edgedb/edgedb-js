@@ -1,13 +1,13 @@
-import * as crypto from "crypto";
-import { promises as fs } from "fs";
-import * as net from "net";
-import * as os from "os";
-import * as path from "path";
-import * as tls from "tls";
+import * as crypto from "node:crypto";
+import { promises as fs } from "node:fs";
+import * as net from "node:net";
+import * as os from "node:os";
+import * as path from "node:path";
+import * as tls from "node:tls";
 
-import process from "process";
-import * as readline from "readline";
-import { Writable } from "stream";
+import process from "node:process";
+import * as readline from "node:readline";
+import { Writable } from "node:stream";
 
 export { path, net, fs, tls, process };
 
