@@ -27,6 +27,7 @@ const recipe: BaseRecipe = {
             message: "What web framework should be used?",
             options: [
               { value: "next", label: "Next.js" },
+              { value: "nuxt", label: "Nuxt" },
               { value: "remix", label: "Remix" },
               { value: "express", label: "Express" },
               { value: "sveltekit", label: "SvelteKit" },

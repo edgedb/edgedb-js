@@ -6,6 +6,7 @@ import express from "./express/index.js";
 import nextjs from "./nextjs/index.js";
 import remix from "./remix/index.js";
 import sveltekit from "./sveltekit/index.js";
+import nuxt from "./nuxt/index.js";
 
 import { type Recipe } from "./types.js";
 
@@ -17,6 +18,7 @@ export const recipes: Recipe<any>[] = [
   nextjs,
   remix,
   sveltekit,
+  nuxt,
   // init
   _edgedbInit,
   _install,

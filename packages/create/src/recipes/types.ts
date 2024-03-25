@@ -6,6 +6,7 @@ export type Framework =
   | "express"
   | "sveltekit"
   | "node-http"
+  | "nuxt"
   | "none";
 
 export interface BaseOptions {

@@ -3,7 +3,7 @@ import * as p from "@clack/prompts";
 import debug from "debug";
 import { updatePackage } from "write-package";
 
-import { BaseOptions, Recipe } from "../types.js";
+import type { BaseOptions, Recipe } from "../types.js";
 import { copyTemplateFiles } from "../../utils.js";
 
 const logger = debug("@edgedb/create:recipe:nextjs");
