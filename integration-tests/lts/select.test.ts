@@ -1162,6 +1162,7 @@ SELECT __scope_0_defaultPerson {
       name: h.name,
       otherHeros: e.select(e.Hero, (h2) => ({
         name: true,
+        // @ts-expect-error - FIXME: union too complex to represent error
         names: e.op(h.name, "++", h2.name),
         order_by: h2.name,
       })),
@@ -1377,9 +1378,11 @@ SELECT __scope_0_defaultPerson {
 
     const result = await query.run(client);
 
+    type Result = typeof result;
+
     tc.assert<
       tc.IsExact<
-        typeof result,
+        Result,
         { xy: { a: string | null; b: number | null } | null }[]
       >
     >(true);

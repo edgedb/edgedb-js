@@ -381,13 +381,6 @@ export type computeObjectShape<
       }
 >;
 
-export type pointerToTsTypeSimple<El extends PropertyDesc | LinkDesc> =
-  El extends PropertyDesc
-    ? propToTsType<El>
-    : El extends LinkDesc<any, any, any, any>
-    ? { id: string }
-    : never;
-
 export type PrimitiveType =
   | ScalarType
   | EnumType
@@ -639,12 +632,10 @@ export interface NamedTupleType<Shape extends NamedTupleShape = NamedTupleShape>
 
 type NamedTupleTypeToTsType<
   Type extends NamedTupleType,
-  isParam extends boolean = false
+  isParam extends boolean = false,
+  Shape extends NamedTupleShape = Type["__shape__"]
 > = typeutil.flatten<{
-  [k in keyof Type["__shape__"]]: BaseTypeToTsType<
-    Type["__shape__"][k],
-    isParam
-  >;
+  [k in keyof Shape]: BaseTypeToTsType<Shape[k], isParam>;
 }>;
 
 /////////////////////////
@@ -697,8 +688,8 @@ type ArrayTypeToTsType<
 export type BaseTypeToTsType<
   Type extends BaseType,
   isParam extends boolean = false
-> = Type extends never
-  ? never
+> = BaseType extends Type
+  ? unknown
   : Type extends ScalarType
   ? ScalarTypeToTsType<Type, isParam>
   : Type extends EnumType
@@ -722,10 +713,7 @@ export type setToTsType<Set extends TypeSet> = computeTsType<
   Set["__cardinality__"]
 >;
 
-export type computeTsTypeCard<
-  T extends any,
-  C extends Cardinality
-> = Cardinality extends C
+export type computeTsTypeCard<T, C extends Cardinality> = Cardinality extends C
   ? unknown
   : C extends Cardinality.Empty
   ? null
@@ -746,24 +734,11 @@ export type computeTsType<
   C extends Cardinality
 > = BaseType extends T ? unknown : computeTsTypeCard<BaseTypeToTsType<T>, C>;
 
-export type propToTsType<Prop extends PropertyDesc> = Prop extends PropertyDesc<
-  infer Type,
-  infer Card
->
-  ? setToTsType<TypeSet<Type, Card>>
-  : never;
-
-export type linkToTsType<Link extends LinkDesc> = computeTsType<
-  Link["target"],
-  Link["cardinality"]
->;
-
-export type pointerToTsType<El extends PropertyDesc | LinkDesc> =
-  El extends PropertyDesc
-    ? propToTsType<El>
-    : El extends LinkDesc<any, any, any, any>
-    ? linkToTsType<El>
-    : never;
+export type pointerToTsType<
+  El extends PropertyDesc | LinkDesc,
+  T extends BaseType = El["target"],
+  C extends Cardinality = El["cardinality"]
+> = computeTsType<T, C>;
 
 ///////////////////
 // TYPE HELPERS

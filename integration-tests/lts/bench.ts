@@ -1,6 +1,12 @@
 import { bench } from "@arktype/attest";
 
 import e from "./dbschema/edgeql-js";
+import { type BaseTypeToTsType } from "./dbschema/edgeql-js/typesystem";
+
+bench("BaseTypeToTsType: scalar", () => {
+  const lit = e.int32(42);
+  return {} as BaseTypeToTsType<typeof lit>;
+}).types([601, "instantiations"]);
 
 bench("e.literal: scalar", () => {
   const lit = e.literal(e.int32, 42);
@@ -16,6 +22,11 @@ bench("e.str: scalar", () => {
   const lit = e.str("abcd");
   return {} as typeof lit;
 }).types([894, "instantiations"]);
+
+bench("BaseTypeToTsType: array literal", () => {
+  const lit = e.array([e.str("abcd")]);
+  return {} as BaseTypeToTsType<typeof lit>;
+}).types([2631, "instantiations"]);
 
 bench("e.literal: array literal", () => {
   const lit = e.literal(e.array(e.str), ["abcd"]);
