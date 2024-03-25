@@ -12,10 +12,13 @@ await run({
   destDir: "../deno",
   destEntriesToClean: ["_src", "mod.ts"],
   sourceFilter: (path) => {
-    return !/\/syntax\//.test(path);
+    const doesMatch = !/\/syntax\//.test(path) || path.includes("deno.json");
+    console.log({ path, doesMatch });
+    return doesMatch;
   },
   pathRewriteRules: [
     { match: /^src\/index.node.ts$/, replace: "mod.ts" },
+    { match: /^src\/deno.json$/, replace: "deno.json" },
     { match: /^src\//, replace: "_src/" },
   ],
   injectImports: [
@@ -24,7 +27,7 @@ await run({
       from: "src/globals.deno.ts",
     },
   ],
-}).then(async () =>
+}).then(() =>
   run({
     sourceDir: "./test",
     destDir: "../deno/test",

@@ -891,9 +891,9 @@ export class ReadBuffer {
     return this.len - this.pos;
   }
 
-  finish(): void {
+  finish(message?: string): void {
     if (this.len !== this.pos) {
-      throw new BufferError("unexpected trailing data in buffer");
+      throw new BufferError(message ?? "unexpected trailing data in buffer");
     }
   }
 
@@ -1034,6 +1034,10 @@ export class ReadBuffer {
     } else {
       return this.readBigInt64Fallback();
     }
+  }
+
+  readBoolean(): boolean {
+    return this.readUInt8() !== 0;
   }
 
   readBuffer(size: number): Uint8Array {
