@@ -145,36 +145,40 @@ export class NextAppAuth extends NextAuth {
       emailPasswordResendVerificationEmail: async (
         data: FormData | { verification_token: string } | { email: string }
       ) => {
-        let email;
-        let verificationToken;
-        try {
-          [verificationToken] = _extractParams(
-            data,
-            ["verification_token"],
-            "verification_token missing"
-          );
-        } catch (tokenError) {
-          try {
-            [email] = _extractParams(data, ["email"], "email missing");
-          } catch (emailError) {
-            const bothParamsMissing = [tokenError, emailError]
-              .map((err) => (err as Error).message)
-              .join(" and ");
-
-            throw new InvalidDataError(
-              `${bothParamsMissing}. Either one is required.`
-            );
-          }
-        }
+        const verificationToken =
+          data instanceof FormData
+            ? data.get("verification_token")
+            : "verification_token" in data
+            ? data.verification_token
+            : null;
+        const email =
+          data instanceof FormData
+            ? data.get("email")
+            : "email" in data
+            ? data.email
+            : null;
 
         if (verificationToken) {
-          await (await this.core).resendVerificationEmail(verificationToken);
-        } else if (email) {
           await (
             await this.core
+          ).resendVerificationEmail(verificationToken.toString());
+        } else if (email) {
+          const { verifier } = await (
+            await this.core
           ).resendVerificationEmailForEmail(
-            email,
+            email.toString(),
             `${this._authRoute}/emailpassword/verify`
+          );
+
+          cookies().set({
+            name: this.options.pkceVerifierCookieName,
+            value: verifier,
+            httpOnly: true,
+            sameSite: "strict",
+          });
+        } else {
+          throw new InvalidDataError(
+            "either verification_token or email must be provided"
           );
         }
       },

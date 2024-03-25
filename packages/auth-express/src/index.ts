@@ -516,24 +516,46 @@ export class ExpressAuth {
         next(err);
       }
     },
-    resendVerificationEmail: async (
-      req: AuthRequest,
-      res: ExpressResponse,
-      next: NextFunction
-    ) => {
-      try {
-        const [verificationToken] = _extractParams(
-          req.body,
-          ["verification_token"],
-          "verification_token missing from request body"
-        );
-        (await this.core).resendVerificationEmail(verificationToken);
-        res.status(204);
-        next();
-      } catch (err) {
-        next(err);
-      }
-    },
+    resendVerificationEmail:
+      (verifyUrl?: string) =>
+      async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
+        try {
+          if ("verification_token" in req.body) {
+            const verificationToken = req.body.verification_token;
+            if (typeof verificationToken !== "string") {
+              throw new InvalidDataError(
+                "expected 'verification_token' to be a string"
+              );
+            }
+            await (await this.core).resendVerificationEmail(verificationToken);
+          } else if ("email" in req.body) {
+            const email = req.body.email;
+            if (typeof email !== "string") {
+              throw new InvalidDataError("expected 'email' to be a string");
+            }
+            if (!verifyUrl) {
+              throw new InvalidDataError(
+                "verifyUrl is required when email is provided"
+              );
+            }
+            const { verifier } = await (
+              await this.core
+            ).resendVerificationEmailForEmail(email, verifyUrl);
+            res.cookie(this.options.pkceVerifierCookieName, verifier, {
+              httpOnly: true,
+              sameSite: "strict",
+            });
+          } else {
+            throw new InvalidDataError(
+              "verification_token or email missing from request body"
+            );
+          }
+          res.status(204);
+          next();
+        } catch (err) {
+          next(err);
+        }
+      },
   };
 }
 

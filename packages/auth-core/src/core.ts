@@ -214,11 +214,14 @@ export class Auth {
   }
 
   async resendVerificationEmailForEmail(email: string, verifyUrl: string) {
+    const { verifier, challenge } = await pkce.createVerifierChallengePair();
     await this._post("resend-verification-email", {
       provider: emailPasswordProviderName,
       email,
       verify_url: verifyUrl,
+      challenge,
     });
+    return { verifier };
   }
 
   async sendPasswordResetEmail(email: string, resetUrl: string) {

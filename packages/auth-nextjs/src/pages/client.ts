@@ -54,6 +54,11 @@ export class NextPagesClientAuth extends NextAuthHelpers {
       | {
           verification_token: string;
         }
+      | {
+          email: string;
+          verify_url: string;
+          challenge: string;
+        }
       | FormData
   ) {
     return await apiRequest(
