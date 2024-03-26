@@ -6,12 +6,12 @@ import { type BaseTypeToTsType } from "./dbschema/edgeql-js/typesystem";
 bench("BaseTypeToTsType: scalar", () => {
   const lit = e.int32(42);
   return {} as BaseTypeToTsType<typeof lit>;
-}).types([601, "instantiations"]);
+}).types([596, "instantiations"]);
 
 bench("e.literal: scalar", () => {
   const lit = e.literal(e.int32, 42);
   return {} as typeof lit;
-}).types([992, "instantiations"]);
+}).types([755, "instantiations"]);
 
 bench("e.int32: scalar", () => {
   const lit = e.int32(42);
@@ -26,34 +26,34 @@ bench("e.str: scalar", () => {
 bench("BaseTypeToTsType: array literal", () => {
   const lit = e.array([e.str("abcd")]);
   return {} as BaseTypeToTsType<typeof lit>;
-}).types([2631, "instantiations"]);
+}).types([2394, "instantiations"]);
 
 bench("e.literal: array literal", () => {
   const lit = e.literal(e.array(e.str), ["abcd"]);
   return {} as typeof lit;
-}).types([4095, "instantiations"]);
+}).types([1980, "instantiations"]);
 
 bench("e.array: array literal", () => {
   const lit = e.array([e.str("abcd")]);
   return {} as typeof lit;
-}).types([2599, "instantiations"]);
+}).types([2367, "instantiations"]);
 
 bench("e.literal: named tuple literal", () => {
   const lit = e.literal(e.tuple({ str: e.str }), {
     str: "asdf",
   });
   return {} as typeof lit;
-}).types([10996, "instantiations"]);
+}).types([10765, "instantiations"]);
 
 bench("e.tuple: named tuple literal", () => {
   const lit = e.tuple({ str: e.str("asdf") });
   return {} as typeof lit;
-}).types([7796, "instantiations"]);
+}).types([7564, "instantiations"]);
 
 bench("e.literal: tuple literal", () => {
   const lit = e.literal(e.tuple([e.str, e.int32]), ["asdf", 42]);
   return {} as typeof lit;
-}).types([7600, "instantiations"]);
+}).types([4670, "instantiations"]);
 
 bench("e.tuple: tuple literal", () => {
   const lit = e.tuple([e.str("asdf"), e.int32(42)]);
@@ -66,7 +66,7 @@ bench("e.literal: array of tuples", () => {
     ["qwer", 43],
   ]);
   return {} as typeof lit;
-}).types([10191, "instantiations"]);
+}).types([5664, "instantiations"]);
 
 bench("e.array: array of tuples", () => {
   const lit = e.array([
@@ -74,7 +74,7 @@ bench("e.array: array of tuples", () => {
     e.tuple([e.str("qwer"), e.int32(43)]),
   ]);
   return {} as typeof lit;
-}).types([20613, "instantiations"]);
+}).types([20582, "instantiations"]);
 
 bench("base type: array", () => {
   const baseType = e.array(e.str);
@@ -106,7 +106,7 @@ bench("select: filtered", () => {
     filter_single: { id: e.uuid("123") },
   }));
   return {} as typeof query;
-}).types([5102, "instantiations"]);
+}).types([5100, "instantiations"]);
 
 bench("select: nested", () => {
   const user = e.select(e.User, () => ({
@@ -115,7 +115,7 @@ bench("select: nested", () => {
   const query = e.select(user, () => ({ id: true }));
 
   return {} as typeof query;
-}).types([6118, "instantiations"]);
+}).types([6116, "instantiations"]);
 
 bench("select: complex", () => {
   const query = e.select(e.Movie, () => ({
@@ -192,4 +192,4 @@ bench("params select", () => {
     }))
   );
   return {} as typeof query;
-}).types([11248, "instantiations"]);
+}).types([11290, "instantiations"]);
