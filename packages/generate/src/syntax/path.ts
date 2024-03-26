@@ -77,9 +77,9 @@ export type $pathify<
   // Parent extends PathParent | null = null
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
-    ? {} // Root is literally ObjectTypeSet
+    ? unknown // Root is literally ObjectTypeSet
     : pathifyPointers<Root> & pathifyShape<Root> & $linkPropify<Root>
-  : {}; // pathify does nothing on non-object types
+  : unknown; // pathify does nothing on non-object types
 
 export type pathifyPointers<
   Root extends ObjectTypeSet

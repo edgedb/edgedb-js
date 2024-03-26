@@ -1162,7 +1162,9 @@ SELECT __scope_0_defaultPerson {
       name: h.name,
       otherHeros: e.select(e.Hero, (h2) => ({
         name: true,
-        names: e.op(h.name, "++", h2.name),
+        name_one: h.name,
+        name_two: h2.name,
+        names_match: e.op(h.name, "=", h2.name),
         order_by: h2.name,
       })),
       order_by: h.name,
@@ -1176,7 +1178,9 @@ SELECT __scope_0_defaultPerson {
       name: h.name,
       otherHeros: heros.map((h2) => ({
         name: h2.name,
-        names: h.name + h2.name,
+        name_one: h.name,
+        name_two: h2.name,
+        names_match: h.name === h2.name,
       })),
     }));
 
@@ -1377,9 +1381,11 @@ SELECT __scope_0_defaultPerson {
 
     const result = await query.run(client);
 
+    type Result = typeof result;
+
     tc.assert<
       tc.IsExact<
-        typeof result,
+        Result,
         { xy: { a: string | null; b: number | null } | null }[]
       >
     >(true);
