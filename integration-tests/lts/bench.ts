@@ -193,3 +193,13 @@ bench("params select", () => {
   );
   return {} as typeof query;
 }).types([11290, "instantiations"]);
+
+bench("e.op: str = str", () => {
+  const op = e.op(e.str("a"), "=", e.str("b"));
+  return {} as typeof op;
+}).types([1854, "instantiations"]);
+
+bench("e.op: str ilike str", () => {
+  const op = e.op(e.str("a"), "ilike", e.str("b"));
+  return {} as typeof op;
+}).types([51413, "instantiations"]);
