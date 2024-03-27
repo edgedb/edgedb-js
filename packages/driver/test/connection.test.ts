@@ -334,7 +334,7 @@ describe("parseConnectArguments", () => {
   }
 
   for (const testcase of connectionTestcases) {
-    test(testcase.name, async () => {
+    test(JSON.stringify(testcase, null, 2), async () => {
       await runConnectionTest(testcase);
     });
   }
