@@ -15,7 +15,7 @@ const EDGEDB_PKG_ROOT = "https://packages.edgedb.com";
 const EDGEDB_PKG_IDX = `${EDGEDB_PKG_ROOT}/archive/.jsonindexes`;
 const CACHE_DIR = envPaths("edgedb").cache;
 const TEMPORARY_CLI_PATH = path.join(CACHE_DIR, "/edgedb-cli");
-const CLI_CACHE_PATH = path.join(CACHE_DIR, "/cli-location");
+const CLI_LOCATION_CACHE_FILE_PATH = path.join(CACHE_DIR, "/cli-location");
 
 interface Package {
   name: string;
@@ -47,15 +47,15 @@ async function installEdgeDbCli(): Promise<string> {
   debug("Installing EdgeDB CLI...");
   await downloadCliPackage();
 
-  const binDir = getBinDir(TEMPORARY_CLI_PATH);
-  fs.writeFileSync(CLI_CACHE_PATH, binDir, { encoding: "utf8" });
-  debug("CLI installed at:", binDir);
+  const installDir = getInstallDir(TEMPORARY_CLI_PATH);
+  fs.writeFileSync(CLI_LOCATION_CACHE_FILE_PATH, installDir, { encoding: "utf8" });
+  debug("CLI installed at:", installDir);
 
-  if (!fs.existsSync(path.join(binDir, "edgedb"))) {
+  if (!fs.existsSync(path.join(installDir, "edgedb"))) {
     debug("Self-installing EdgeDB CLI...");
     selfInstallEdgeDbCli(TEMPORARY_CLI_PATH);
   }
-  return binDir;
+  return installDir;
 }
 
 async function downloadCliPackage() {
@@ -74,9 +74,9 @@ async function downloadCliPackage() {
 
 async function getCliLocationFromCache(): Promise<string | null> {
   debug("Checking CLI cache...");
-  if (fs.existsSync(CLI_CACHE_PATH)) {
+  if (fs.existsSync(CLI_LOCATION_CACHE_FILE_PATH)) {
     const cachedBinDir = fs
-      .readFileSync(CLI_CACHE_PATH, { encoding: "utf8" })
+      .readFileSync(CLI_LOCATION_CACHE_FILE_PATH, { encoding: "utf8" })
       .trim();
     if (cachedBinDir && fs.existsSync(path.join(cachedBinDir, "edgedb"))) {
       debug("CLI found in cache at:", cachedBinDir);
@@ -235,9 +235,9 @@ function getBaseDist(arch: string, platform: string, libc = ""): string {
   return dist;
 }
 
-function getBinDir(cliPath: string): string {
+function getInstallDir(cliPath: string): string {
   debug("Getting binary directory for CLI path:", cliPath);
-  const binDir = runEdgeDbCli(["info", "--get", "'bin-dir'"], cliPath);
+  const binDir = runEdgeDbCli(["info", "--get", "'install-dir'"], cliPath);
   debug("Binary directory:", binDir);
   return binDir.toString().trim();
 }
