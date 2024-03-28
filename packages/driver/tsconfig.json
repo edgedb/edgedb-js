@@ -4,29 +4,7 @@
     "declarationDir": "./dist",
     "outDir": "./dist",
     "downlevelIteration": true
-    // "baseUrl": ".",
-    // "typeRoots": [
-    //   "./node_modules/@types"
-    // ],
-    // "paths": {
-    //   "edgedb": [
-    //     "./src/index.node"
-    //   ],
-    //   "@generated/*": [
-    //     "./src/syntax/genMock/*"
-    //   ],
-    // }
   },
-  "include": [
-    "src",
-    // "../generate/src/generate.ts",
-    // "../generate/src/util/functionUtils.ts",
-    // "../generate/src/util/genutil.ts",
-  ],
-  "exclude": [
-    "**/*.deno.ts",
-    // "test/deno/*",
-    "dist",
-    // "qb",
-  ]
+  "include": ["src"],
+  "exclude": ["src/cli.mts", "**/*.deno.ts", "dist"]
 }
