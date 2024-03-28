@@ -12,7 +12,7 @@ import which from "which";
 const debug = Debug("edgedb:cli");
 
 const EDGEDB_PKG_ROOT = "https://packages.edgedb.com";
-const EDGEDB_PKG_IDX = `${EDGEDB_PKG_ROOT}/archive/.jsonindexes`;
+const EDGEDB_PKG_IDX = new URL("archive/.jsonindexes", EDGEDB_PKG_ROOT);
 const CACHE_DIR = envPaths("edgedb").cache;
 const TEMPORARY_CLI_PATH = path.join(CACHE_DIR, "/edgedb-cli");
 const CLI_LOCATION_CACHE_FILE_PATH = path.join(CACHE_DIR, "/cli-location");
@@ -138,7 +138,7 @@ async function findPackage(): Promise<Package> {
 
 async function getVersionMap(dist: string): Promise<Map<string, Package>> {
   debug("Getting version map for distribution:", dist);
-  const indexRequest = await fetch(`${EDGEDB_PKG_IDX}/${dist}.json`);
+  const indexRequest = await fetch(new URL(`${dist}.json`, EDGEDB_PKG_IDX));
   const index = (await indexRequest.json()) as { packages: Package[] };
   const versionMap = new Map();
 
