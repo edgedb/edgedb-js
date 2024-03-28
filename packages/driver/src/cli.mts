@@ -12,7 +12,6 @@ import which from "which";
 const debug = Debug("edgedb:cli");
 
 const EDGEDB_PKG_ROOT = "https://packages.edgedb.com";
-const EDGEDB_PKG_IDX = new URL("archive/.jsonindexes", EDGEDB_PKG_ROOT);
 const CACHE_DIR = envPaths("edgedb").cache;
 const TEMPORARY_CLI_PATH = path.join(CACHE_DIR, "/edgedb-cli");
 const CLI_LOCATION_CACHE_FILE_PATH = path.join(CACHE_DIR, "/cli-location");
@@ -48,7 +47,9 @@ async function installEdgeDbCli(): Promise<string> {
   await downloadCliPackage();
 
   const installDir = getInstallDir(TEMPORARY_CLI_PATH);
-  fs.writeFileSync(CLI_LOCATION_CACHE_FILE_PATH, installDir, { encoding: "utf8" });
+  fs.writeFileSync(CLI_LOCATION_CACHE_FILE_PATH, installDir, {
+    encoding: "utf8",
+  });
   debug("CLI installed at:", installDir);
 
   if (!fs.existsSync(path.join(installDir, "edgedb"))) {
@@ -138,7 +139,9 @@ async function findPackage(): Promise<Package> {
 
 async function getVersionMap(dist: string): Promise<Map<string, Package>> {
   debug("Getting version map for distribution:", dist);
-  const indexRequest = await fetch(new URL(`${dist}.json`, EDGEDB_PKG_IDX));
+  const indexRequest = await fetch(
+    new URL(`archive/.jsonindexes/${dist}.json`, EDGEDB_PKG_ROOT)
+  );
   const index = (await indexRequest.json()) as { packages: Package[] };
   const versionMap = new Map();
 
