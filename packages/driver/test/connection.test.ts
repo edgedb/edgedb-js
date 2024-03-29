@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import debug from "debug";
 
 let mockFs = false;
 let mockedFiles: { [key: string]: string } = {};
@@ -335,6 +336,11 @@ describe("parseConnectArguments", () => {
 
   for (const [i, testcase] of connectionTestcases.entries()) {
     test(`shared client test: index={${i}}`, async () => {
+      if (i === 218) {
+        debug.enable("edgedb:con_utils:*");
+      } else {
+        debug.disable();
+      }
       await runConnectionTest(testcase);
     });
   }
