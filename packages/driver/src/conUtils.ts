@@ -30,6 +30,10 @@ import { InterfaceError } from "./errors";
 import { decodeB64, utf8Decoder, utf8Encoder } from "./primitives/buffer";
 import { crcHqx } from "./primitives/crcHqx";
 
+import Debug from "debug";
+
+const debug = Debug("edgedb:con_utils");
+
 const DOMAIN_NAME_MAX_LEN = 63;
 
 export type Address = [string, number];
@@ -189,6 +193,8 @@ export class ResolvedConnectConfig {
     source: string,
     validator?: (value: NonNullable<Value>) => this[`_${Param}`]
   ): boolean {
+    const log = debug.extend("_setParam");
+    log("setting %s to %o from %s", param, value, source);
     if (this[`_${param}`] === null) {
       this[`_${param}Source`] = source;
       if (value !== null) {

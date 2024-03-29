@@ -126,6 +126,8 @@ jobs:
           yarn workspace @edgedb/integration-nightly test:ci
 
       - name: Run functional tests
+        env:
+          DEBUG: "edgedb:*"
         run: |
           yarn workspace edgedb test
 
