@@ -34,10 +34,14 @@ try {
 async function main(args: string[]) {
   debug("Starting main function with args:", args);
   const cliLocation =
-    whichEdgeDbCli() ??
+    (await whichEdgeDbCli()) ??
     (await getCliLocationFromCache()) ??
     (await installEdgeDbCli()) ??
     null;
+
+  if (cliLocation === null) {
+    throw Error("Failed to find or install EdgeDB CLI.");
+  }
 
   return runEdgeDbCli(args, cliLocation);
 }
@@ -88,10 +92,10 @@ async function getCliLocationFromCache(): Promise<string | null> {
   return null;
 }
 
-function whichEdgeDbCli() {
+async function whichEdgeDbCli() {
   debug("Checking if CLI is in PATH...");
-  const location = which.sync("edgedb", { nothrow: true });
-  debug("CLI location:", location);
+  const location = await which("edgedb", { nothrow: true });
+  debug(`CLI found in PATH at: ${location}`);
   if (location) {
     return path.dirname(location);
   }
@@ -104,8 +108,9 @@ function runEdgeDbCli(
   execOptions: ExecSyncOptions = { stdio: "inherit" }
 ) {
   const cliCommand = path.join(pathToCli ?? "", "edgedb");
-  debug("Running EdgeDB CLI command:", cliCommand, "with args:", args);
-  return execSync(`${cliCommand} ${args.join(" ")}`, execOptions);
+  const command = `${cliCommand} ${args.join(" ")}`;
+  debug(`Running EdgeDB CLI: ${command}`);
+  return execSync(command, execOptions);
 }
 
 function selfInstallEdgeDbCli(pathToCli: string) {
@@ -114,7 +119,6 @@ function selfInstallEdgeDbCli(pathToCli: string) {
 }
 
 async function findPackage(): Promise<Package> {
-  debug("Finding compatible package...");
   const arch = os.arch();
   const platform = os.platform();
   const includeCliPrereleases = true;
@@ -122,6 +126,7 @@ async function findPackage(): Promise<Package> {
   const libc = platform === "linux" ? "musl" : "";
   const dist = getBaseDist(arch, platform, libc);
 
+  debug(`Finding compatible package for ${dist}...`);
   const versionMap = await getVersionMap(dist);
   const pkg = await getMatchingPkg(
     versionMap,
