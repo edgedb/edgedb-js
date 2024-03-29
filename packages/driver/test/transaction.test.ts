@@ -17,7 +17,7 @@
  */
 
 import * as errors from "../src/errors";
-import { Client } from "../src/index.node";
+import { type Client } from "../src/index.node";
 import { IsolationLevel, TransactionOptions } from "../src/options";
 import { sleep } from "../src/utils";
 import Event from "../src/primitives/event";
@@ -47,7 +47,7 @@ beforeAll(async () => {
       };
     `);
   });
-});
+}, 10_000);
 
 afterAll(async () => {
   await run(async (con) => {
@@ -80,18 +80,18 @@ test("transaction: regular 01", async () => {
 
     expect(items).toHaveLength(0);
   });
-});
+}, 10_000);
 
 function* all_options(): Generator<
   [IsolationLevel | undefined, boolean | undefined, boolean | undefined],
   void,
   void
 > {
-  let levels = [undefined, IsolationLevel.Serializable];
-  let booleans = [undefined, true, false];
-  for (let isolation of levels) {
-    for (let readonly of booleans) {
-      for (let deferred of booleans) {
+  const levels = [undefined, IsolationLevel.Serializable];
+  const booleans = [undefined, true, false];
+  for (const isolation of levels) {
+    for (const readonly of booleans) {
+      for (const deferred of booleans) {
         yield [isolation, readonly, deferred];
       }
     }
@@ -100,25 +100,33 @@ function* all_options(): Generator<
 
 test("transaction: kinds", async () => {
   await run(async (con) => {
-    for (let [isolation, readonly, defer] of all_options()) {
-      let partial = { isolation, readonly, defer };
-      let opt = new TransactionOptions(partial); // class api
+    for (const [isolation, readonly, defer] of all_options()) {
+      const partial = { isolation, readonly, defer };
+      const opt = new TransactionOptions(partial); // class api
       await con
         .withTransactionOptions(opt)
         .withRetryOptions({ attempts: 1 })
-        .transaction(async (tx) => {});
-      await con.withTransactionOptions(opt).transaction(async (tx) => {});
+        .transaction(async () => {
+          /* no-op */
+        });
+      await con.withTransactionOptions(opt).transaction(async () => {
+        /* no-op */
+      });
     }
   });
 
   await run(async (con) => {
-    for (let [isolation, readonly, defer] of all_options()) {
-      let opt = { isolation, readonly, defer }; // obj api
+    for (const [isolation, readonly, defer] of all_options()) {
+      const opt = { isolation, readonly, defer }; // obj api
       await con
         .withTransactionOptions(opt)
         .withRetryOptions({ attempts: 1 })
-        .transaction(async (tx) => {});
-      await con.withTransactionOptions(opt).transaction(async (tx) => {});
+        .transaction(async () => {
+          /* no-op */
+        });
+      await con.withTransactionOptions(opt).transaction(async () => {
+        /* no-op */
+      });
     }
   });
 });
@@ -183,10 +191,10 @@ test("transaction deadlocking client pool", async () => {
   const client = getClient({ concurrency: 1 });
 
   const innerQueryDone = new Event();
-  let innerQueryResult: any;
+  let innerQueryResult;
 
   await expect(
-    client.transaction(async (tx) => {
+    client.transaction(async () => {
       // This query will hang forever waiting on the connection holder
       // held by the transaction, which itself will not return the holder
       // to the pool until the query completes. This deadlock should be

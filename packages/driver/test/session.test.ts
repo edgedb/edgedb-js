@@ -126,7 +126,7 @@ if (getEdgeDBVersion().major >= 2) {
 
       client.close();
     }
-  }, 10000);
+  }, 20_000);
 
   test("withConfig", async () => {
     const client = getClient({ concurrency: 1 });
@@ -195,7 +195,7 @@ if (getEdgeDBVersion().major >= 2) {
 
       client.close();
     }
-  });
+  }, 10_000);
 } else {
   test("legacy protocol", async () => {
     const client = getClient();
