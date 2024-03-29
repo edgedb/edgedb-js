@@ -333,8 +333,8 @@ describe("parseConnectArguments", () => {
     );
   }
 
-  for (const testcase of connectionTestcases) {
-    test(JSON.stringify(testcase, null, 2), async () => {
+  for (const [i, testcase] of connectionTestcases.entries()) {
+    test(`shared client test: index={${i}}`, async () => {
       await runConnectionTest(testcase);
     });
   }
