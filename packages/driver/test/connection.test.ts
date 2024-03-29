@@ -237,16 +237,7 @@ async function runConnectionTest(
   testcase: ConnectionTestCase,
   shouldDebug = false
 ): Promise<void> {
-  const { env = {}, opts: _opts = {}, fs, platform } = testcase;
-  if (
-    fs &&
-    ((!platform &&
-      (process.platform === "win32" || process.platform === "darwin")) ||
-      (platform === "windows" && process.platform !== "win32") ||
-      (platform === "macos" && process.platform !== "darwin"))
-  ) {
-    return;
-  }
+  const { env = {}, opts: _opts = {}, fs } = testcase;
   if (shouldDebug) {
     debug.enable("edgedb:con_utils:*");
   } else {
@@ -355,11 +346,11 @@ describe("parseConnectArguments", () => {
       test.skip(`shared client test: index={${i}}`, () => {
         // platform not supported for this test case
       });
+    } else {
+      test(`shared client test: index={${i}}`, async () => {
+        await runConnectionTest(testcase, knownFailure);
+      });
     }
-
-    test(`shared client test: index={${i}}`, async () => {
-      await runConnectionTest(testcase, knownFailure);
-    })
   }
 });
 
