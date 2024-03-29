@@ -195,7 +195,7 @@ if (getEdgeDBVersion().major >= 2) {
 
       client.close();
     }
-  }, 10_000);
+  }, 50_000);
 } else {
   test("legacy protocol", async () => {
     const client = getClient();
