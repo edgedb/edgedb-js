@@ -233,7 +233,10 @@ type ConnectionTestCase = {
   warnings?: string[];
 } & ({ result: ConnectionResult } | { error: { type: string } });
 
-async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
+async function runConnectionTest(
+  testcase: ConnectionTestCase,
+  shouldDebug = false
+): Promise<void> {
   const { env = {}, opts: _opts = {}, fs, platform } = testcase;
   if (
     fs &&
@@ -243,6 +246,11 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
       (platform === "macos" && process.platform !== "darwin"))
   ) {
     return;
+  }
+  if (shouldDebug) {
+    debug.enable("edgedb:con_utils:*");
+  } else {
+    debug.disable();
   }
 
   const opts = { ..._opts, instanceName: _opts.instance };
@@ -335,14 +343,23 @@ describe("parseConnectArguments", () => {
   }
 
   for (const [i, testcase] of connectionTestcases.entries()) {
+    const { fs, platform } = testcase;
+    const knownFailure = [218, 221, 222, 228, 229, 244, 245].includes(i);
+    if (
+      fs &&
+      ((!platform &&
+        (process.platform === "win32" || process.platform === "darwin")) ||
+        (platform === "windows" && process.platform !== "win32") ||
+        (platform === "macos" && process.platform !== "darwin"))
+    ) {
+      test.skip(`shared client test: index={${i}}`, () => {
+        // platform not supported for this test case
+      });
+    }
+
     test(`shared client test: index={${i}}`, async () => {
-      if (i === 218) {
-        debug.enable("edgedb:con_utils:*");
-      } else {
-        debug.disable();
-      }
-      await runConnectionTest(testcase);
-    });
+      await runConnectionTest(testcase, knownFailure);
+    })
   }
 });
 
