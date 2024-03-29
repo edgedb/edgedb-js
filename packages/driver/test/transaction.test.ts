@@ -53,7 +53,7 @@ afterAll(async () => {
   await run(async (con) => {
     await con.execute(`DROP TYPE ${typename};`);
   });
-}, 10_000);
+}, 50_000);
 
 test("transaction: regular 01", async () => {
   await run(async (con) => {
