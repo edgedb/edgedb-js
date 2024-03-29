@@ -133,7 +133,7 @@ export class BaseRawConnection {
   isLegacyProtocol = false;
 
   protected stateCodec: ICodec = INVALID_CODEC;
-  protected stateCache: [Session, Uint8Array] | null = null;
+  protected stateCache = new WeakMap<Session, Uint8Array>();
   lastStateUpdate: SerializedSessionState | null = null;
 
   protected adminUIMode: boolean = false;
@@ -405,7 +405,7 @@ export class BaseRawConnection {
       codec = this.codecsRegistry.buildCodec(typedesc, this.protocolVersion);
     }
     this.stateCodec = codec;
-    this.stateCache = null;
+    this.stateCache = new WeakMap();
     this.buffer.finishMessage();
   }
 
@@ -905,12 +905,12 @@ export class BaseRawConnection {
       if (this.stateCodec === INVALID_CODEC || this.stateCodec === NULL_CODEC) {
         wb.writeInt32(0);
       } else {
-        if (this.stateCache?.[0] !== state) {
+        if (!this.stateCache.has(state)) {
           const buf = new WriteBuffer();
           this.stateCodec.encode(buf, state._serialise());
-          this.stateCache = [state, buf.unwrap()];
+          this.stateCache.set(state, buf.unwrap());
         }
-        wb.writeBuffer(this.stateCache![1]);
+        wb.writeBuffer(this.stateCache.get(state)!);
       }
     }
   }
