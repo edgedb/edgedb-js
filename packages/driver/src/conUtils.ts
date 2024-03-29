@@ -750,11 +750,13 @@ async function resolveConfigOptions<
     );
   }
 
+  /*
   if (config.database != null && config.branch != null) {
     throw new InterfaceError(
       `Cannot specify both ${sources.database} and ${sources.branch} `
     );
   }
+  */
 
   anyOptionsUsed =
     resolvedConfig.setDatabase(config.database ?? null, sources.database!) ||
