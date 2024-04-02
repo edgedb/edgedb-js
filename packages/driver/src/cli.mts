@@ -145,9 +145,9 @@ async function findPackage(): Promise<Package> {
   const arch = os.arch();
   const platform = os.platform();
   const includeCliPrereleases = true;
-  const cliVersionRange = "*";
+  const cliVersionRange = ">=4.1.1";
   const libc = platform === "linux" ? "musl" : "";
-  const dist = getBaseDist(arch, platform, libc) + ".nightly";
+  const dist = getBaseDist(arch, platform, libc);
 
   debug(`Finding compatible package for ${dist}...`);
   const versionMap = await getVersionMap(dist);
