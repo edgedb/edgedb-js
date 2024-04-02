@@ -84,6 +84,7 @@ export function validateCredentials(data: any): Credentials {
     if (database != null) {
       throw new InterfaceError("`database` and `branch` cannot both be set");
     }
+    result.branch = branch;
   }
 
   const password = data.password;

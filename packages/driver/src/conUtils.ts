@@ -885,6 +885,7 @@ async function resolveConfigOptions<
 
       resolvedConfig.setHost(creds.host ?? null, source);
       resolvedConfig.setPort(creds.port ?? null, source);
+      resolvedConfig.setBranch(creds.branch ?? null, source);
       resolvedConfig.setDatabase(creds.database ?? null, source);
       resolvedConfig.setUser(creds.user ?? null, source);
       resolvedConfig.setPassword(creds.password ?? null, source);
