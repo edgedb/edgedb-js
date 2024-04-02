@@ -225,7 +225,12 @@ async function getMatchingPkg(
 async function downloadFile(url: string | URL, path: string) {
   debug("Downloading file from URL:", url);
   const response = await fetch(url);
-  const fileStream = createWriteStream(path);
+  if (!response.ok || !response.body) {
+    throw new Error(`Download failed: ${response.statusText}`);
+  }
+
+  const fileStream = createWriteStream(path, { flush: true });
+
   if (response.body) {
     for await (const chunk of streamReader(response.body)) {
       fileStream.write(chunk);
