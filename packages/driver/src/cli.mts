@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { execSync, type ExecSyncOptions } from "node:child_process";
+import { createWriteStream } from "node:fs";
 import * as os from "node:os";
-import * as fs from "node:fs";
+import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as process from "node:process";
 import * as semver from "semver";
@@ -28,6 +29,15 @@ try {
   process.exit(0);
 } catch (err) {
   console.error(err);
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    typeof err.code === "number"
+  ) {
+    process.exit(err.code);
+  }
+
   process.exit(1);
 }
 
@@ -51,45 +61,59 @@ async function installEdgeDbCli(): Promise<string> {
   await downloadCliPackage();
 
   const installDir = getInstallDir(TEMPORARY_CLI_PATH);
-  fs.writeFileSync(CLI_LOCATION_CACHE_FILE_PATH, installDir, {
+  const binaryPath = path.join(installDir, "edgedb");
+  await fs.writeFile(CLI_LOCATION_CACHE_FILE_PATH, binaryPath, {
     encoding: "utf8",
   });
-  debug("CLI installed at:", installDir);
+  debug("CLI installed at:", binaryPath);
 
-  if (!fs.existsSync(path.join(installDir, "edgedb"))) {
+  try {
+    await fs.access(binaryPath, fs.constants.F_OK);
+  } catch {
     debug("Self-installing EdgeDB CLI...");
     selfInstallEdgeDbCli(TEMPORARY_CLI_PATH);
   }
-  return installDir;
+  return binaryPath;
 }
 
 async function downloadCliPackage() {
+  console.log("No EdgeDB CLI found, downloading CLI package...");
   debug("Downloading CLI package...");
   const cliPkg = await findPackage();
   const downloadDir = path.dirname(TEMPORARY_CLI_PATH);
-  if (!fs.existsSync(downloadDir)) {
-    fs.mkdirSync(downloadDir, { recursive: true });
-  }
+  await fs.mkdir(downloadDir, { recursive: true }).catch((error) => {
+    if (error.code !== "EEXIST") throw error;
+  });
   const downloadUrl = new URL(cliPkg.installref, EDGEDB_PKG_ROOT);
   await downloadFile(downloadUrl, TEMPORARY_CLI_PATH);
   debug("CLI package downloaded to:", TEMPORARY_CLI_PATH);
 
-  fs.chmodSync(TEMPORARY_CLI_PATH, 0o755);
+  await fs.chmod(TEMPORARY_CLI_PATH, 0o755);
+  const stat = await fs.stat(TEMPORARY_CLI_PATH);
+  debug("CLI package stats:", stat);
 }
 
 async function getCliLocationFromCache(): Promise<string | null> {
   debug("Checking CLI cache...");
-  if (fs.existsSync(CLI_LOCATION_CACHE_FILE_PATH)) {
-    const cachedBinDir = fs
-      .readFileSync(CLI_LOCATION_CACHE_FILE_PATH, { encoding: "utf8" })
-      .trim();
-    if (cachedBinDir && fs.existsSync(path.join(cachedBinDir, "edgedb"))) {
-      debug("CLI found in cache at:", cachedBinDir);
-      return cachedBinDir;
+  try {
+    const cachedBinaryPath = (
+      await fs.readFile(CLI_LOCATION_CACHE_FILE_PATH, { encoding: "utf8" })
+    ).trim();
+      debug("CLI path in cache at:", cachedBinaryPath);
+    try {
+      await fs.access(cachedBinaryPath, fs.constants.F_OK);
+      debug("CLI binary found in path:", cachedBinaryPath);
+      return cachedBinaryPath;
+    } catch (err) {
+      // EdgeDB binary not found in the cached directory
+      debug("No CLI found in cache.", err);
+      return null;
     }
+  } catch (err) {
+    // Cache file does not exist or other error
+    debug("Cache directory does not exist.", err);
+    return null;
   }
-  debug("No CLI found in cache.");
-  return null;
 }
 
 async function whichEdgeDbCli() {
@@ -97,7 +121,7 @@ async function whichEdgeDbCli() {
   const location = await which("edgedb", { nothrow: true });
   debug(`CLI found in PATH at: ${location}`);
   if (location) {
-    return path.dirname(location);
+    return location;
   }
   return null;
 }
@@ -107,7 +131,7 @@ function runEdgeDbCli(
   pathToCli: string | null,
   execOptions: ExecSyncOptions = { stdio: "inherit" }
 ) {
-  const cliCommand = path.join(pathToCli ?? "", "edgedb");
+  const cliCommand = pathToCli ?? "edgedb";
   const command = `${cliCommand} ${args.join(" ")}`;
   debug(`Running EdgeDB CLI: ${command}`);
   return execSync(command, execOptions);
@@ -124,7 +148,7 @@ async function findPackage(): Promise<Package> {
   const includeCliPrereleases = true;
   const cliVersionRange = "*";
   const libc = platform === "linux" ? "musl" : "";
-  const dist = getBaseDist(arch, platform, libc);
+  const dist = getBaseDist(arch, platform, libc) + ".nightly";
 
   debug(`Finding compatible package for ${dist}...`);
   const versionMap = await getVersionMap(dist);
@@ -202,7 +226,7 @@ async function getMatchingPkg(
 async function downloadFile(url: string | URL, path: string) {
   debug("Downloading file from URL:", url);
   const response = await fetch(url);
-  const fileStream = fs.createWriteStream(path);
+  const fileStream = createWriteStream(path);
   if (response.body) {
     for await (const chunk of streamReader(response.body)) {
       fileStream.write(chunk);
@@ -244,10 +268,14 @@ function getBaseDist(arch: string, platform: string, libc = ""): string {
 }
 
 function getInstallDir(cliPath: string): string {
-  debug("Getting binary directory for CLI path:", cliPath);
-  const binDir = runEdgeDbCli(["info", "--get", "'install-dir'"], cliPath);
-  debug("Binary directory:", binDir);
-  return binDir.toString().trim();
+  debug("Getting install directory for CLI path:", cliPath);
+  const installDir = runEdgeDbCli(["info", "--get", "'install-dir'"], cliPath, {
+    stdio: "pipe",
+  })
+    .toString()
+    .trim();
+  debug("Install directory:", installDir);
+  return installDir;
 }
 
 async function* streamReader(readableStream: ReadableStream<Uint8Array>) {
