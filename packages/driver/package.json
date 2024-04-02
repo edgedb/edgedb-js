@@ -53,6 +53,7 @@
   "dependencies": {
     "debug": "^4.3.4",
     "env-paths": "^3.0.0",
+    "semver": "^7.6.0",
     "which": "^4.0.0"
   }
 }
