@@ -88,9 +88,10 @@ async function downloadCliPackage() {
   await downloadFile(downloadUrl, TEMPORARY_CLI_PATH);
   debug("CLI package downloaded to:", TEMPORARY_CLI_PATH);
 
-  await fs.chmod(TEMPORARY_CLI_PATH, 0o755);
-  const stat = await fs.stat(TEMPORARY_CLI_PATH);
-  debug("CLI package stats:", stat);
+  const fd = await fs.open(TEMPORARY_CLI_PATH, "r+");
+  await fd.chmod(0o755);
+  await fd.datasync();
+  await fd.close();
 }
 
 async function getCliLocationFromCache(): Promise<string | null> {
