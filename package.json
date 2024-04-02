@@ -20,8 +20,8 @@
   "scripts": {
     "lint": "tslint 'packages/*/src/**/*.ts'",
     "eslint": "eslint 'packages/*/src/**/*.ts'",
-    "format:check": "prettier --check 'packages/*/src/**/*.ts' 'packages/*/test/**/*.ts'",
-    "format": "prettier --write 'packages/*/src/**/*.ts' 'packages/*/test/**/*.ts'",
+    "format:check": "prettier --check 'packages/*/src/**/*.(mts|ts)' 'packages/*/test/**/*.ts'",
+    "format": "prettier --write 'packages/*/src/**/*.(mts|ts)' 'packages/*/test/**/*.ts'",
     "generate": "yarn workspace @edgedb/generate generate"
   }
 }
