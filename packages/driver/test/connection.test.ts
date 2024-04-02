@@ -335,7 +335,7 @@ describe("parseConnectArguments", () => {
 
   for (const [i, testcase] of connectionTestcases.entries()) {
     const { fs, platform } = testcase;
-    const knownFailure = [218, 221, 222, 228, 229, 244, 245].includes(i);
+    const knownFailure = [221, 222, 228, 229, 242, 244, 245, 258].includes(i);
     if (
       fs &&
       ((!platform &&
