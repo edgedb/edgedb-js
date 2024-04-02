@@ -659,7 +659,7 @@ async function parseConnectDsnAndArgs(
       .catch(() => null);
 
     if (instName !== null) {
-      const [cloudProfile, database, branch] = await Promise.all([
+      const [cloudProfile, database] = await Promise.all([
         serverUtils
           .readFileUtf8(stashDir, "cloud-profile")
           .then((name) => name.trim())
@@ -668,20 +668,15 @@ async function parseConnectDsnAndArgs(
           .readFileUtf8(stashDir, "database")
           .then((name) => name.trim())
           .catch(() => undefined),
-        serverUtils
-          .readFileUtf8(stashDir, "branch")
-          .then((name) => name.trim())
-          .catch(() => undefined),
       ]);
 
       await resolveConfigOptions(
         resolvedConfig,
-        { instanceName: instName, cloudProfile, database, branch },
+        { instanceName: instName, cloudProfile, database },
         {
           instanceName: `project linked instance ('${instName}')`,
           cloudProfile: `project defined cloud instance ('${cloudProfile}')`,
           database: `project default database`,
-          branch: `project default branch`,
         },
         "",
         serverUtils
@@ -776,6 +771,9 @@ async function resolveConfigOptions<
       anyOptionsUsed;
   }
 
+  anyOptionsUsed =
+    resolvedConfig.setBranch(config.branch ?? null, sources.branch!) ||
+    anyOptionsUsed;
   anyOptionsUsed =
     resolvedConfig.setUser(config.user ?? null, sources.user!) ||
     anyOptionsUsed;
