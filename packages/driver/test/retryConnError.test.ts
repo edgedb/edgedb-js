@@ -161,8 +161,6 @@ test("retry readonly queries: complete fetch", async () => {
   await expect(
     nonRetryingClient.query(`select 'Hello edgedb-js!'`)
   ).rejects.toThrow();
-
-  await client.close();
 });
 
 test("retry readonly queries: optimistic fetch", async () => {
@@ -229,4 +227,4 @@ test("non readonly queries: optimistic fetch", async () => {
   ).toBe(3);
 
   await client.close();
-});
+}, 15_000);

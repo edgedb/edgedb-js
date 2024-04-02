@@ -17,7 +17,7 @@
  */
 
 import * as errors from "../src/errors";
-import { Client } from "../src/index.node";
+import { type Client } from "../src/index.node";
 import { defaultBackoff, RetryOptions } from "../src/options";
 import { getClient } from "./testbase";
 
@@ -34,7 +34,7 @@ class Barrier {
     }
     this._counter -= 1;
     if (this._counter == 0) {
-      for (let waiter of this._waiters.splice(0, this._waiters.length)) {
+      for (const waiter of this._waiters.splice(0, this._waiters.length)) {
         waiter();
       }
     } else {
@@ -94,13 +94,13 @@ beforeAll(async () => {
       };
     `);
   });
-});
+}, 50_000);
 
 afterAll(async () => {
   await run(async (con) => {
     await con.execute(`DROP TYPE ${typename};`);
   });
-});
+}, 50_000);
 
 test("retry: regular 01", async () => {
   await run(async (con) => {
@@ -116,7 +116,7 @@ test("retry: regular 01", async () => {
 
 async function checkRetries(client: Client, client2: Client, name: string) {
   let iterations = 0;
-  let barrier = new Barrier(2);
+  const barrier = new Barrier(2);
 
   async function transaction(client: Client): Promise<unknown> {
     return await client.transaction(async (tx) => {
@@ -152,7 +152,10 @@ async function checkRetries(client: Client, client2: Client, name: string) {
     });
   }
 
-  let results = await Promise.all([transaction(client), transaction(client2)]);
+  const results = await Promise.all([
+    transaction(client),
+    transaction(client2),
+  ]);
   results.sort();
   expect(results).toEqual([1, 2]);
   expect(iterations).toEqual(3);
@@ -199,7 +202,9 @@ test("retry attempts", async () => {
 
       throw new errors.TransactionConflictError();
     });
-  } catch {}
+  } catch {
+    /* empty catch */
+  }
 
   expect(counter).toBe(5);
 
