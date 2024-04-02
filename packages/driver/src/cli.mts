@@ -99,19 +99,18 @@ async function getCliLocationFromCache(): Promise<string | null> {
     const cachedBinaryPath = (
       await fs.readFile(CLI_LOCATION_CACHE_FILE_PATH, { encoding: "utf8" })
     ).trim();
-      debug("CLI path in cache at:", cachedBinaryPath);
+    debug("CLI path in cache at:", cachedBinaryPath);
+
     try {
       await fs.access(cachedBinaryPath, fs.constants.F_OK);
       debug("CLI binary found in path:", cachedBinaryPath);
       return cachedBinaryPath;
     } catch (err) {
-      // EdgeDB binary not found in the cached directory
       debug("No CLI found in cache.", err);
       return null;
     }
   } catch (err) {
-    // Cache file does not exist or other error
-    debug("Cache directory does not exist.", err);
+    debug("Cache file cannot be read.", err);
     return null;
   }
 }
