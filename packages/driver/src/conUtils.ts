@@ -750,18 +750,32 @@ async function resolveConfigOptions<
     );
   }
 
-  if (config.database != null && config.branch != null) {
-    throw new InterfaceError(
-      `Cannot specify both ${sources.database} and ${sources.branch} `
-    );
+  if (config.database != null) {
+    if (config.branch != null) {
+      throw new InterfaceError(
+        `${sources.database} and ${sources.branch} are mutually exclusive`
+      );
+    }
+    if (resolvedConfig._branch != null) {
+      throw new InterfaceError(
+        `${sources.database} and ${resolvedConfig._branchSource} are mutually exclusive`
+      );
+    }
+    anyOptionsUsed =
+      resolvedConfig.setDatabase(config.database ?? null, sources.database!) ||
+      anyOptionsUsed;
+  }
+  if (config.branch != null) {
+    if (resolvedConfig._database != null) {
+      throw new InterfaceError(
+        `${resolvedConfig._databaseSource} and ${sources.branch} are mutually exclusive`
+      );
+    }
+    anyOptionsUsed =
+      resolvedConfig.setBranch(config.branch ?? null, sources.branch!) ||
+      anyOptionsUsed;
   }
 
-  anyOptionsUsed =
-    resolvedConfig.setDatabase(config.database ?? null, sources.database!) ||
-    anyOptionsUsed;
-  anyOptionsUsed =
-    resolvedConfig.setBranch(config.branch ?? null, sources.branch!) ||
-    anyOptionsUsed;
   anyOptionsUsed =
     resolvedConfig.setUser(config.user ?? null, sources.user!) ||
     anyOptionsUsed;
@@ -883,8 +897,21 @@ async function resolveConfigOptions<
 
       resolvedConfig.setHost(creds.host ?? null, source);
       resolvedConfig.setPort(creds.port ?? null, source);
-      resolvedConfig.setBranch(creds.branch ?? null, source);
-      resolvedConfig.setDatabase(creds.database ?? null, source);
+      if (creds.database != null) {
+        if (resolvedConfig._branch != null) {
+          throw new InterfaceError(
+            `"branch" in configuration and "database" in credentials are mutually exclusive`
+          );
+        }
+        resolvedConfig.setDatabase(creds.database ?? null, source);
+      } else if (creds.branch != null) {
+        if (resolvedConfig._database != null) {
+          throw new InterfaceError(
+            `"database" in configuration and "branch" in credentials are mutually exclusive`
+          );
+        }
+        resolvedConfig.setBranch(creds.branch ?? null, source);
+      }
       resolvedConfig.setUser(creds.user ?? null, source);
       resolvedConfig.setPassword(creds.password ?? null, source);
       resolvedConfig.setTlsCAData(creds.tlsCAData ?? null, source);
