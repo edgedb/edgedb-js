@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import debug from "debug";
 
 let mockFs = false;
 let mockedFiles: { [key: string]: string } = {};
@@ -76,7 +75,7 @@ jest.mock("os", () => {
 import * as fs from "fs";
 import * as crypto from "crypto";
 import { join as pathJoin } from "path";
-import { Client, Duration } from "../src/index.node";
+import { type Client, Duration } from "../src/index.node";
 import { parseDuration } from "../src/conUtils";
 import { parseConnectArguments, findStashPath } from "../src/conUtils.server";
 import { getClient } from "./testbase";
@@ -233,16 +232,8 @@ type ConnectionTestCase = {
   warnings?: string[];
 } & ({ result: ConnectionResult } | { error: { type: string } });
 
-async function runConnectionTest(
-  testcase: ConnectionTestCase,
-  shouldDebug = false
-): Promise<void> {
+async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
   const { env = {}, opts: _opts = {}, fs } = testcase;
-  if (shouldDebug) {
-    debug.enable("edgedb:con_utils:*");
-  } else {
-    debug.disable();
-  }
 
   const opts = { ..._opts, instanceName: _opts.instance };
 
@@ -335,7 +326,6 @@ describe("parseConnectArguments", () => {
 
   for (const [i, testcase] of connectionTestcases.entries()) {
     const { fs, platform } = testcase;
-    const knownFailure = [221, 222, 228, 229, 242, 244, 245, 258].includes(i);
     if (
       fs &&
       ((!platform &&
@@ -348,7 +338,7 @@ describe("parseConnectArguments", () => {
       });
     } else {
       test(`shared client test: index={${i}}`, async () => {
-        await runConnectionTest(testcase, knownFailure);
+        await runConnectionTest(testcase);
       });
     }
   }
