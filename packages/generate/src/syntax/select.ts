@@ -382,16 +382,14 @@ export type ComputeSelectCardinality<
 
 export function is<
   Expr extends ObjectTypeExpression,
-  Shape extends objectTypeToSelectShape<Expr["__element__"]>
->(
-  expr: Expr,
-  shape: Shape
-): {
-  [k in Exclude<
-    keyof Shape,
-    SelectModifierNames | "id"
-  >]: $expr_PolyShapeElement<Expr, normaliseElement<Shape[k]>>;
-} {
+  Shape extends objectTypeToSelectShape<Expr["__element__"]>,
+  ReturnT extends {
+    [k in Exclude<
+      keyof Shape,
+      SelectModifierNames | "id"
+    >]: $expr_PolyShapeElement<Expr, normaliseElement<Shape[k]>>;
+  }
+>(expr: Expr, shape: Shape): ReturnT {
   const mappedShape: any = {};
   for (const [key, value] of Object.entries(shape)) {
     if (key === "id") continue;
