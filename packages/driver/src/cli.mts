@@ -64,7 +64,7 @@ async function whichEdgeDbCli() {
     debug(`  - CLI found in PATH at: ${location}`);
     return location;
   }
-  debug("  - No CLI found in PATH.")
+  debug("  - No CLI found in PATH.");
   return null;
 }
 
