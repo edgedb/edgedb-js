@@ -164,7 +164,7 @@ async function findPackage(): Promise<Package> {
   );
   if (!pkg) {
     throw Error(
-      "  - No compatible EdgeDB CLI package found for the current platform"
+      `No compatible EdgeDB CLI package found for the current platform ${dist}`
     );
   }
   debug("  - Package found:", pkg);
