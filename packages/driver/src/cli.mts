@@ -46,7 +46,8 @@ async function main(args: string[]) {
   const cliLocation =
     (await whichEdgeDbCli()) ??
     (await getCliLocationFromCache()) ??
-    (await installEdgeDbCli()) ??
+    (await getCliLocationFromTempCli()) ??
+    (await selfInstallFromTempCli()) ??
     null;
 
   if (cliLocation === null) {
@@ -56,8 +57,41 @@ async function main(args: string[]) {
   return runEdgeDbCli(args, cliLocation);
 }
 
-async function installEdgeDbCli(): Promise<string> {
-  debug("Installing EdgeDB CLI...");
+async function whichEdgeDbCli() {
+  debug("Checking if CLI is in PATH...");
+  const location = await which("edgedb", { nothrow: true });
+  if (location) {
+    debug(`  - CLI found in PATH at: ${location}`);
+    return location;
+  }
+  debug("  - No CLI found in PATH.")
+  return null;
+}
+
+async function getCliLocationFromCache(): Promise<string | null> {
+  debug("Checking CLI cache...");
+  try {
+    const cachedBinaryPath = (
+      await fs.readFile(CLI_LOCATION_CACHE_FILE_PATH, { encoding: "utf8" })
+    ).trim();
+    debug("  - CLI path in cache at:", cachedBinaryPath);
+
+    try {
+      await fs.access(cachedBinaryPath, fs.constants.F_OK);
+      debug("  - CLI binary found in path:", cachedBinaryPath);
+      return cachedBinaryPath;
+    } catch (err) {
+      debug("  - No CLI found in cache.", err);
+      return null;
+    }
+  } catch (err) {
+    debug("  - Cache file cannot be read.", err);
+    return null;
+  }
+}
+
+async function getCliLocationFromTempCli(): Promise<string | null> {
+  debug("Installing temporary CLI to get install directory...");
   await downloadCliPackage();
 
   const installDir = getInstallDir(TEMPORARY_CLI_PATH);
@@ -65,15 +99,23 @@ async function installEdgeDbCli(): Promise<string> {
   await fs.writeFile(CLI_LOCATION_CACHE_FILE_PATH, binaryPath, {
     encoding: "utf8",
   });
-  debug("CLI installed at:", binaryPath);
+  debug("  - CLI installed at:", binaryPath);
 
   try {
+    debug("  - CLI binary found in path:", binaryPath);
     await fs.access(binaryPath, fs.constants.F_OK);
+    return binaryPath;
   } catch {
-    debug("Self-installing EdgeDB CLI...");
-    selfInstallEdgeDbCli(TEMPORARY_CLI_PATH);
+    debug("  - CLI binary not found in path:", binaryPath);
+    return null;
   }
-  return binaryPath;
+}
+
+async function selfInstallFromTempCli(): Promise<string | null> {
+  debug("Self-installing EdgeDB CLI...");
+  runEdgeDbCli(["_self_install"], TEMPORARY_CLI_PATH);
+  debug("  - CLI self-installed successfully.");
+  return getCliLocationFromCache();
 }
 
 async function downloadCliPackage() {
@@ -86,44 +128,12 @@ async function downloadCliPackage() {
   });
   const downloadUrl = new URL(cliPkg.installref, EDGEDB_PKG_ROOT);
   await downloadFile(downloadUrl, TEMPORARY_CLI_PATH);
-  debug("CLI package downloaded to:", TEMPORARY_CLI_PATH);
+  debug("  - CLI package downloaded to:", TEMPORARY_CLI_PATH);
 
   const fd = await fs.open(TEMPORARY_CLI_PATH, "r+");
   await fd.chmod(0o755);
   await fd.datasync();
   await fd.close();
-}
-
-async function getCliLocationFromCache(): Promise<string | null> {
-  debug("Checking CLI cache...");
-  try {
-    const cachedBinaryPath = (
-      await fs.readFile(CLI_LOCATION_CACHE_FILE_PATH, { encoding: "utf8" })
-    ).trim();
-    debug("CLI path in cache at:", cachedBinaryPath);
-
-    try {
-      await fs.access(cachedBinaryPath, fs.constants.F_OK);
-      debug("CLI binary found in path:", cachedBinaryPath);
-      return cachedBinaryPath;
-    } catch (err) {
-      debug("No CLI found in cache.", err);
-      return null;
-    }
-  } catch (err) {
-    debug("Cache file cannot be read.", err);
-    return null;
-  }
-}
-
-async function whichEdgeDbCli() {
-  debug("Checking if CLI is in PATH...");
-  const location = await which("edgedb", { nothrow: true });
-  debug(`CLI found in PATH at: ${location}`);
-  if (location) {
-    return location;
-  }
-  return null;
 }
 
 function runEdgeDbCli(
@@ -135,11 +145,6 @@ function runEdgeDbCli(
   const command = `${cliCommand} ${args.join(" ")}`;
   debug(`Running EdgeDB CLI: ${command}`);
   return execSync(command, execOptions);
-}
-
-function selfInstallEdgeDbCli(pathToCli: string) {
-  debug("Self-installing EdgeDB CLI...");
-  return runEdgeDbCli(["_self_install"], pathToCli);
 }
 
 async function findPackage(): Promise<Package> {
@@ -159,10 +164,10 @@ async function findPackage(): Promise<Package> {
   );
   if (!pkg) {
     throw Error(
-      "No compatible EdgeDB CLI package found for the current platform"
+      "  - No compatible EdgeDB CLI package found for the current platform"
     );
   }
-  debug("Package found:", pkg);
+  debug("  - Package found:", pkg);
   return pkg;
 }
 
@@ -213,7 +218,7 @@ async function getMatchingPkg(
   }
 
   if (matchingPkg) {
-    debug("Matching version found:", matchingPkg.version);
+    debug("  - Matching version found:", matchingPkg.version);
     return matchingPkg;
   } else {
     throw Error(
@@ -227,7 +232,7 @@ async function downloadFile(url: string | URL, path: string) {
   debug("Downloading file from URL:", url);
   const response = await fetch(url);
   if (!response.ok || !response.body) {
-    throw new Error(`Download failed: ${response.statusText}`);
+    throw new Error(`  - Download failed: ${response.statusText}`);
   }
 
   const fileStream = createWriteStream(path, { flush: true });
@@ -237,9 +242,9 @@ async function downloadFile(url: string | URL, path: string) {
       fileStream.write(chunk);
     }
     fileStream.end();
-    debug("File downloaded successfully.");
+    debug("  - File downloaded successfully.");
   } else {
-    throw new Error("Download failed: no response body");
+    throw new Error("  - Download failed: no response body");
   }
 }
 
@@ -268,7 +273,7 @@ function getBaseDist(arch: string, platform: string, libc = ""): string {
   }
 
   const dist = `${distArch}-${distPlatform}`;
-  debug("Base distribution:", dist);
+  debug("  - Base distribution:", dist);
   return dist;
 }
 
@@ -279,7 +284,7 @@ function getInstallDir(cliPath: string): string {
   })
     .toString()
     .trim();
-  debug("Install directory:", installDir);
+  debug("  - Install directory:", installDir);
   return installDir;
 }
 
@@ -291,5 +296,5 @@ async function* streamReader(readableStream: ReadableStream<Uint8Array>) {
     if (done) break;
     yield value;
   }
-  debug("Stream reading completed.");
+  debug("  - Stream reading completed.");
 }
