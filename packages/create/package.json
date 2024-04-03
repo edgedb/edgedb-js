@@ -23,7 +23,7 @@
     "@types/debug": "^4.1.12",
     "@types/node": "^20.10.4",
     "tsx": "^4.6.2",
-    "typescript": "^5.2.2"
+    "typescript": "^5.4.3"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",

@@ -34,7 +34,7 @@
     "jest-environment-jsdom": "^29.5.0",
     "ts-jest": "29.1.0",
     "tsx": "^3.12.7",
-    "typescript": "^5.2.2"
+    "typescript": "^5.4.3"
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
