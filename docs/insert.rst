@@ -78,7 +78,7 @@ queries:
 
 Handling conflicts
 ^^^^^^^^^^^^^^^^^^
-:index: querybuilder unlessconflict unless conflict
+:index: querybuilder unlessconflict unless conflict constraint
 
 In EdgeQL, "upsert" functionality is achieved by handling **conflicts** on
 ``insert`` statements with the ``unless conflict`` clause. In the query
@@ -125,6 +125,7 @@ The following query simply returns the pre-existing (conflicting) object.
     else: movie
   }));
 
+
 Or you can perform an upsert operation with an ``e.update`` in the ``else``.
 
 .. code-block:: typescript
@@ -141,6 +142,18 @@ Or you can perform an upsert operation with an ``e.update`` in the ``else``.
     })),
   }));
 
+
+If the constraint you're targeting is a composite constraint, wrap the
+properties in a tuple.
+
+.. code-block:: typescript
+
+  e.insert(e.Movie, {
+    title: "Spider-Man: No Way Home",
+    release_year: 2021
+  }).unlessConflict(movie => ({
+    on: e.tuple([movie.title, movie.release_year])
+  }));
 
 Bulk inserts
 ^^^^^^^^^^^^
