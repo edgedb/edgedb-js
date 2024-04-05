@@ -29,9 +29,7 @@ try {
   await main(process.argv.slice(2));
   process.exit(0);
 } catch (err) {
-  if (IS_TTY) {
-    console.error(err);
-  }
+  console.error(err);
   if (
     typeof err === "object" &&
     err !== null &&
