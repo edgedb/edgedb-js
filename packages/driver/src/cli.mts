@@ -12,6 +12,7 @@ import which from "which";
 
 const debug = Debug("edgedb:cli");
 
+const IS_TTY = process.stdout.isTTY;
 const EDGEDB_PKG_ROOT = "https://packages.edgedb.com";
 const CACHE_DIR = envPaths("edgedb").cache;
 const TEMPORARY_CLI_PATH = path.join(CACHE_DIR, "/edgedb-cli");
@@ -28,7 +29,9 @@ try {
   await main(process.argv.slice(2));
   process.exit(0);
 } catch (err) {
-  console.error(err);
+  if (IS_TTY) {
+    console.error(err);
+  }
   if (
     typeof err === "object" &&
     err !== null &&
@@ -119,7 +122,9 @@ async function selfInstallFromTempCli(): Promise<string | null> {
 }
 
 async function downloadCliPackage() {
-  console.log("No EdgeDB CLI found, downloading CLI package...");
+  if (IS_TTY) {
+    console.log("No EdgeDB CLI found, downloading CLI package...");
+  }
   debug("Downloading CLI package...");
   const cliPkg = await findPackage();
   const downloadDir = path.dirname(TEMPORARY_CLI_PATH);
