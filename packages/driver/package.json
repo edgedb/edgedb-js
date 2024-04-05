@@ -22,11 +22,12 @@
     "./dist/index.node.js": "./dist/index.browser.js"
   },
   "bin": {
-    "edgeql-js": "./dist/cli.js"
+    "edgedb": "./dist/cli.mjs"
   },
   "devDependencies": {
     "@js-temporal/polyfill": "0.4.3",
     "@types/jest": "^29.5.2",
+    "@types/which": "^3.0.3",
     "fast-check": "^3.10.0",
     "get-stdin": "^9.0.0",
     "globby": "^13.2.0",
@@ -38,7 +39,8 @@
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:deno",
+    "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:cli && yarn build:deno",
+    "build:cli": "tsc --project tsconfig.cli.json",
     "build:cjs": "tsc --project tsconfig.json",
     "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
     "test": "npx --node-options='--experimental-fetch' jest --detectOpenHandles",
@@ -47,5 +49,11 @@
     "gen-errors": "edb gen-errors-json --client | node genErrors.mjs",
     "watch": "nodemon -e js,ts,tsx --ignore dist -x ",
     "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno"
+  },
+  "dependencies": {
+    "debug": "^4.3.4",
+    "env-paths": "^3.0.0",
+    "semver": "^7.6.0",
+    "which": "^4.0.0"
   }
 }

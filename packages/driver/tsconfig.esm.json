@@ -4,23 +4,8 @@
     "module": "es2015",
     "outDir": "./dist/__esm",
     "declaration": false,
-    "declarationDir": null,
-    // "paths": {
-    //   "edgedb": [
-    //     "./src/index.node"
-    //   ],
-    //   "@generated/*": [
-    //     "./src/syntax/genMock/*"
-    //   ],
-    // }
+    "declarationDir": null
   },
-  "include": [
-    "src/syntax",
-  ],
-  "exclude": [
-    "**/*.deno.ts",
-    "test/deno/*",
-    "dist",
-    "qb",
-  ]
+  "include": ["src/syntax"],
+  "exclude": ["**/*.deno.ts", "test/deno/*", "dist", "qb"]
 }
