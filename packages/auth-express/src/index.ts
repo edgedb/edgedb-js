@@ -22,7 +22,6 @@ import {
 type RouterStack = (RequestHandler | ErrorRequestHandler)[];
 
 export * from "@edgedb/auth-core/errors";
-export { WebAuthnClient } from "@edgedb/auth-core/webauthn";
 
 export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
