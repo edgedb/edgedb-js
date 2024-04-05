@@ -226,6 +226,102 @@ app.use(oAuthRouter);
 // - GET /auth/oauth/callback
 ```
 
+### Custom UI: Magic Link
+
+- `routerPath: string`, required, This is the path relative to the `baseUrl` configured when creating the `ExpressAuth` object. This path is used to build the URL for the callback path configured by the router factory.
+- `failureUrl: string`, required, URL to redirect to in case of a failure during the Magic Link process.
+- `callback: (express.RouteHandler | express.ErrorHandler)[]`, required, Once the authentication flow completes, this callback will be called, and you must return a terminating Express route handler here. Typically, you'll redirect to elsewhere in your app based on `req.isSignUp`.
+- `send: (express.RouteHandler | express.ErrorHandler)[]`, this route handler stack will be called when a request is made to send a magic link to a registered email address. Typically, you'll return some HTML or a redirect here that indicates that the user should check their email.
+- `signup: (express.RouteHandler | express.ErrorHandler)[]`, this route handler stack will be called when a request is made to register an email address. Typically, you'll return some HTML or a redirect here that indicates that the user should check their email.
+
+```ts
+const magicLinkRouter = auth.createMagicLinkRouter(
+  "/auth/magic-link",
+  "/login-failure",
+  {
+    callback: [
+      (req: expressAuth.CallbackRequest, res) => {
+        res.redirect("/");
+      },
+    ],
+    send: [
+      (req, res) => {
+        res.redirect("/check-email.html");
+      },
+    ],
+    signUp: [
+      (req, res) => {
+        res.redirect("/check-email.html");
+      }
+    ]
+  }
+);
+
+app.use(magicLinkRouter);
+// This creates the following routes:
+// - POST /auth/magic-link/send
+// - POST /auth/magic-link/signup
+// - GET /auth/magic-link/callback
+```
+
+### Custom UI: WebAuthn
+
+Unlike the other authentication methods, WebAuthn requires a client-side script that runs in the browser. This script requests JSON from the EdgeDB Auth server that gets options to pass to the Web Authentication API built into the browser, and then after successfully creating new credentials or retrieving existing credentials, it calls back to the endpoints you're configuring below.
+
+In order to facilitate the sign in and sign up ceremonies, we export a helper class called `WebAuthnClient` that you must configure with some relevant paths based on how you set up your routing below.
+
+```ts
+import { WebAuthnClient } from "@edgedb/auth-express";
+
+const webAuthnClient = new WebAuthnClient({
+  signupOptionsUrl: "http://localhost:3000/auth/webauthn/signup/options",
+  signupUrl: "http://localhost:3000/auth/webauthn/signup",
+  signinOptionsUrl: "http://localhost:3000/auth/webauthn/signin/options",
+  signinUrl: "http://localhost:3000/auth/webauthn/signin",
+  verifyUrl: "http://localhost:3000/auth/webauthn/verify",
+});
+```
+
+- `routerPath: string`, required, This is the path relative to the `baseUrl` configured when creating the `ExpressAuth` object. This path is used to build the URL for the callback path configured by the router factory.
+- `signIn: (express.RouteHandler | express.ErrorHandler)[]`, required, Attached middleware executes when sign-in attempt succeeds. Typically you will redirect the user to your application here.
+- `signUp: (express.RouteHandler | express.ErrorHandler)[]`, required, Attached middleware executes when sign-up attempt succeeds. Typically you will redirect the user to your application here.
+- `verify: (express.RouteHandler | express.ErrorHandler)[]`, Attached middleware executes after the user verifies their email successfully. Typically you will redirect the user to your application here.
+- `signInOptions: (express.RouteHandler | express.ErrorHandler)[]`, This redirects the user to the appropriate URL of the EdgeDB server to retrieve the WebAuthn sign in options.
+- `signUpOptions: (express.RouteHandler | express.ErrorHandler)[]`, This redirects the user to the appropriate URL of the EdgeDB server to retrieve the WebAuthn sign up options.
+
+```ts
+const webAuthnRouter = auth.createWebAuthnRouter(
+  "/auth/webauthn",
+  {
+    signInOptions: [],
+    signIn: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/");
+      },
+    ],
+    signUpOptions: [],
+    signUp: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/onboarding");
+      },
+    ],
+    verify: [
+      (req: expressAuth.AuthRequest, res) => {
+        res.redirect("/");
+      },
+    ],
+  }
+);
+
+app.use(webAuthnRouter);
+// This creates the following routes:
+// - GET /auth/webauthn/signin/options
+// - POST /auth/webauthn/signin
+// - GET /auth/webauthn/signup/options
+// - POST /auth/webauthn/signup
+// - GET /auth/webauthn/verify
+```
+
 ### Custom router
 
 Each route is also available as a middleware itself for maximum customization, to allow custom route names, per-route middleware customization, and integration with advanced Express patterns. Here are examples that are equivalent to the ones given in the router factory section:
@@ -329,6 +425,78 @@ const oAuthRouter = Router()
 app.use("/auth/oauth", oAuthRouter);
 ```
 
+### Custom UI: Magic Link
+
+```ts
+const magicLinkRoute = Router()
+  .post(
+    "/send",
+    auth.magicLink.send(
+      // URL of the callback endpoint configured below
+      "http://localhost:3000/auth/magic-link/callback",
+      // URL of the route in your app that should receive login errors
+      "/login-failure",
+    ),
+  )
+  .post(
+    "/signup",
+    auth.magicLink.signUp(
+      // URL of the callback endpoint configured below
+      "http://localhost:3000/auth/magic-link/callback",
+      // URL of the route in your app that should receive login errors
+      "/login-failure",
+    ),
+  )
+  .get(
+    "/callback",
+    auth.magicLink.callback,
+    (req: expressAuth.CallbackRequest, res) => {
+      // Custom logic after successful authentication
+      res.redirect("/");
+    },
+  );
+
+
+app.use("/auth/magic-link", router);
+```
+
+#### Custom UI: WebAuthn
+
+```ts
+const webAuthnRouter = Router()
+  .get(
+    "/signin/options",
+    auth.webauthn.signInOptions
+  )
+  .post(
+    "/signin",
+    auth.webauthn.signIn,
+    (req: expressAuth.AuthRequest, res) => {
+      res.redirect("/");
+    }
+  )
+  .get(
+    "/signup/options",
+    auth.webauthn.signUpOptions
+  )
+  .post(
+    "/signup",
+    auth.webauthn.signUp,
+    (req: expressAuth.AuthRequest, res) => {
+      res.redirect("/onboarding");
+    }
+  )
+  .get(
+    "/verify",
+    auth.webauthn.verify,
+    (req: expressAuth.AuthRequest, res) => {
+      res.redirect("/");
+    }
+  );
+
+app.use("/auth/webauthn", webAuthnRouter);
+```
+
 ### Error handling
 
 If an error occurs during the authentication flow, it will be passed to the Express error handler. You can use Express error handlers to handle errors either on individual routes by adding the error handlers to the middleware arrays or in your route definitions, or define a router-wide error handler. Any Express error handling pattern is available here, but let's examine a quick example of handling error with the built-in UI flow:
@@ -399,3 +567,4 @@ This is an extension of the Express `Request` interface containing some optional
 
 - `session?: ExpressAuthSession`
 - `tokenData?: TokenData`
+

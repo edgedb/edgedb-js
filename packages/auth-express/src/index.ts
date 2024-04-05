@@ -181,6 +181,57 @@ export class ExpressAuth {
     return Router().use(routerPath, router);
   };
 
+  createMagicLinkRouter = (
+    routerPath: string,
+    failurePath: string,
+    stacks: Record<keyof typeof this.magicLink, RouterStack>
+  ) => {
+    const router = Router();
+
+    router.post(
+      "/send",
+      this.magicLink.send(
+        new URL(`${routerPath}/callback`, this.options.baseUrl).toString(),
+        new URL(failurePath, this.options.baseUrl).toString()
+      ),
+      ...stacks.send
+    );
+    router.post(
+      "/signup",
+      this.magicLink.signUp(
+        new URL(`${routerPath}/callback`, this.options.baseUrl).toString(),
+        new URL(failurePath, this.options.baseUrl).toString()
+      ),
+      ...stacks.signUp
+    );
+    router.get("/callback", this.magicLink.callback, ...stacks.callback);
+
+    return Router().use(routerPath, router);
+  };
+
+  createWebAuthnRouter = (
+    routerPath: string,
+    stacks: Record<keyof typeof this.webAuthn, RouterStack>
+  ) => {
+    const router = Router();
+
+    router.get(
+      "/signin/options",
+      this.webAuthn.signInOptions,
+      ...stacks.signInOptions
+    );
+    router.post("/signin", this.webAuthn.signIn, ...stacks.signIn);
+    router.get(
+      "/signup/options",
+      this.webAuthn.signUpOptions,
+      ...stacks.signUpOptions
+    );
+    router.post("/signup", this.webAuthn.signUp, ...stacks.signUp);
+    router.get("/verify", this.webAuthn.verify, ...stacks.verify);
+
+    return Router().use(routerPath, router);
+  };
+
   signout = async (
     req: AuthRequest,
     res: ExpressResponse,
@@ -529,6 +580,225 @@ export class ExpressAuth {
         );
         (await this.core).resendVerificationEmail(verificationToken);
         res.status(204);
+        next();
+      } catch (err) {
+        next(err);
+      }
+    },
+  };
+
+  magicLink = {
+    callback: async (
+      req: CallbackRequest,
+      res: ExpressResponse,
+      next: NextFunction
+    ) => {
+      try {
+        const searchParams = new URLSearchParams(req.url.split("?")[1]);
+        const error = searchParams.get("error");
+        if (error) {
+          const desc = searchParams.get("error_description");
+          throw new EdgeDBAuthError(error + (desc ? `: ${desc}` : ""));
+        }
+        const code = searchParams.get("code");
+        if (!code) {
+          throw new PKCEError("no pkce code in response");
+        }
+
+        const isSignUp = searchParams.get("isSignUp") === "true";
+        const verifier = req.cookies[this.options.pkceVerifierCookieName];
+        if (!verifier) {
+          throw new PKCEError("no pkce verifier cookie found");
+        }
+        const tokenData = await (await this.core).getToken(code, verifier);
+        res.cookie(this.options.authCookieName, tokenData.auth_token, {
+          httpOnly: true,
+          sameSite: "strict",
+        });
+        res.clearCookie(this.options.pkceVerifierCookieName);
+
+        req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
+        req.tokenData = tokenData;
+        req.isSignUp = isSignUp;
+        next();
+      } catch (err) {
+        next(err);
+      }
+    },
+    signUp:
+      (callbackUrl: string, failureUrl: string) =>
+      async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
+        try {
+          const [email] = _extractParams(
+            req.body,
+            ["email"],
+            "email missing from request body"
+          );
+          console.log(
+            `magic link signup: ${JSON.stringify(
+              { callbackUrl, failureUrl, email },
+              null,
+              2
+            )}`
+          );
+          const { verifier } = await (
+            await this.core
+          ).signupWithMagicLink(email, callbackUrl, failureUrl);
+          res.cookie(this.options.pkceVerifierCookieName, verifier, {
+            httpOnly: true,
+            sameSite: "strict",
+          });
+          next();
+        } catch (err) {
+          next(err);
+        }
+      },
+    send:
+      (callbackUrl: string, failureUrl: string) =>
+      async (req: AuthRequest, res: ExpressResponse, next: NextFunction) => {
+        try {
+          const [email] = _extractParams(
+            req.body,
+            ["email"],
+            "email missing from request body"
+          );
+          console.log(
+            `magic link send: ${JSON.stringify(
+              { callbackUrl, failureUrl, email },
+              null,
+              2
+            )}`
+          );
+          const { verifier } = await (
+            await this.core
+          ).signinWithMagicLink(email, callbackUrl, failureUrl);
+          res.cookie(this.options.pkceVerifierCookieName, verifier, {
+            httpOnly: true,
+            sameSite: "strict",
+          });
+          next();
+        } catch (err) {
+          next(err);
+        }
+      },
+  };
+
+  webAuthn = {
+    verify: async (
+      req: AuthRequest,
+      res: ExpressResponse,
+      next: NextFunction
+    ) => {
+      try {
+        const searchParams = new URLSearchParams(req.url.split("?")[1]);
+        const verificationToken = searchParams.get("verification_token");
+        const verifier = req.cookies[this.options.pkceVerifierCookieName];
+        if (!verificationToken) {
+          throw new PKCEError("no verification_token in response");
+        }
+        if (!verifier) {
+          throw new PKCEError("no pkce verifier cookie found");
+        }
+        const tokenData = await (
+          await this.core
+        ).verifyWebAuthnSignup(verificationToken, verifier);
+        res.cookie(this.options.authCookieName, tokenData.auth_token, {
+          httpOnly: true,
+          sameSite: "strict",
+        });
+        res.clearCookie(this.options.pkceVerifierCookieName);
+
+        req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
+        req.tokenData = tokenData;
+        next();
+      } catch (err) {
+        next(err);
+      }
+    },
+    signInOptions: async (
+      req: AuthRequest,
+      res: ExpressResponse,
+      next: NextFunction
+    ) => {
+      try {
+        const searchParams = new URLSearchParams(req.url.split("?")[1]);
+        const email = searchParams.get("email");
+        if (!email) {
+          throw new InvalidDataError("email missing from request query");
+        }
+        const optionsUrl = (await this.core).getWebAuthnSigninOptionsUrl(email);
+        res.redirect(optionsUrl);
+      } catch (err) {
+        next(err);
+      }
+    },
+    signIn: async (
+      req: AuthRequest,
+      res: ExpressResponse,
+      next: NextFunction
+    ) => {
+      try {
+        const { email, assertion } = req.body;
+        const tokenData = await (
+          await this.core
+        ).signinWithWebAuthn(email, assertion);
+        res.cookie(this.options.authCookieName, tokenData.auth_token, {
+          httpOnly: true,
+          sameSite: "strict",
+        });
+        req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
+        req.tokenData = tokenData;
+        next();
+      } catch (err) {
+        next(err);
+      }
+    },
+    signUpOptions: async (
+      req: AuthRequest,
+      res: ExpressResponse,
+      next: NextFunction
+    ) => {
+      try {
+        const searchParams = new URLSearchParams(req.url.split("?")[1]);
+        const email = searchParams.get("email");
+        if (!email) {
+          throw new InvalidDataError("email missing from request query");
+        }
+        const optionsUrl = (await this.core).getWebAuthnSignupOptionsUrl(email);
+        res.redirect(optionsUrl);
+      } catch (err) {
+        next(err);
+      }
+    },
+    signUp: async (
+      req: AuthRequest,
+      res: ExpressResponse,
+      next: NextFunction
+    ) => {
+      try {
+        const { email, credentials, verify_url, user_handle } = req.body;
+        const result = await (
+          await this.core
+        ).signupWithWebAuthn(email, credentials, verify_url, user_handle);
+        const verifier = result.verifier;
+        res.cookie(this.options.pkceVerifierCookieName, verifier, {
+          httpOnly: true,
+          sameSite: "strict",
+        });
+
+        if (result.status === "complete") {
+          res.cookie(this.options.authCookieName, result.tokenData.auth_token, {
+            httpOnly: true,
+            sameSite: "strict",
+          });
+          req.session = new ExpressAuthSession(
+            this.client,
+            result.tokenData.auth_token
+          );
+          req.tokenData = result.tokenData;
+        } else {
+          req.session = new ExpressAuthSession(this.client, undefined);
+        }
         next();
       } catch (err) {
         next(err);
