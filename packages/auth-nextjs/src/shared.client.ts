@@ -26,6 +26,7 @@ export abstract class NextAuthHelpers {
   readonly options: Required<Omit<NextAuthOptions, OptionalOptions>> &
     Pick<NextAuthOptions, OptionalOptions>;
   readonly webAuthnClient: WebAuthnClient;
+  readonly isSecure: boolean;
 
   /** @internal */
   constructor(options: NextAuthOptions) {
@@ -45,6 +46,7 @@ export abstract class NextAuthHelpers {
       signinUrl: `${this._authRoute}/webauthn/signin`,
       verifyUrl: `${this._authRoute}/webauthn/verify`,
     });
+    this.isSecure = this.options.baseUrl.startsWith("https");
   }
 
   protected get _authRoute() {

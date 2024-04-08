@@ -110,6 +110,28 @@ export abstract class NextAuth extends NextAuthHelpers {
     return Auth.checkPasswordResetTokenValid(resetToken);
   }
 
+  setVerifierCookie(verifier: string) {
+    cookies().set({
+      name: this.options.pkceVerifierCookieName,
+      value: verifier,
+      httpOnly: true,
+      path: "/",
+      sameSite: "strict",
+      secure: this.isSecure,
+    });
+  }
+
+  setSessionCookie(token: string) {
+    cookies().set({
+      name: this.options.authCookieName,
+      value: token,
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+      secure: this.isSecure,
+    });
+  }
+
   createAuthRouteHandlers({
     onOAuthCallback,
     onEmailPasswordSignIn,
@@ -144,12 +166,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             const pkceSession = await this.core.then((core) =>
               core.createPKCESession()
             );
-            cookies().set({
-              name: this.options.pkceVerifierCookieName,
-              value: pkceSession.verifier,
-              httpOnly: true,
-              path: "/",
-            });
+            this.setVerifierCookie(pkceSession.verifier);
             return redirect(
               pkceSession.getOAuthUrl(
                 provider,
@@ -209,13 +226,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req
               );
             }
-            cookies().set({
-              name: this.options.authCookieName,
-              value: tokenData.auth_token,
-              httpOnly: true,
-              sameSite: "lax",
-              path: "/",
-            });
+            this.setSessionCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onOAuthCallback(
@@ -272,13 +283,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req
               );
             }
-            cookies().set({
-              name: this.options.authCookieName,
-              value: tokenData.auth_token,
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            });
+            this.setSessionCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onEmailVerify({ error: null, tokenData }, req);
@@ -347,13 +352,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req
               );
             }
-            cookies().set({
-              name: this.options.authCookieName,
-              value: tokenData.auth_token,
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            });
+            this.setSessionCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onEmailVerify({ error: null, tokenData }, req);
@@ -409,13 +408,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req
               );
             }
-            cookies().set({
-              name: this.options.authCookieName,
-              value: tokenData.auth_token,
-              httpOnly: true,
-              sameSite: "lax",
-              path: "/",
-            });
+            this.setSessionCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onMagicLinkCallback(
@@ -491,13 +484,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req
               );
             }
-            cookies().set({
-              name: this.options.authCookieName,
-              value: tokenData.auth_token,
-              httpOnly: true,
-              sameSite: "lax",
-              path: "/",
-            });
+            this.setSessionCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onBuiltinUICallback(
@@ -517,12 +504,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             const pkceSession = await this.core.then((core) =>
               core.createPKCESession()
             );
-            cookies().set({
-              name: this.options.pkceVerifierCookieName,
-              value: pkceSession.verifier,
-              httpOnly: true,
-              path: "/",
-            });
+            this.setVerifierCookie(pkceSession.verifier);
             return redirect(
               params.auth[params.auth.length - 1] === "signup"
                 ? pkceSession.getHostedUISignupUrl()
@@ -573,13 +555,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 ? _wrapResponse(onEmailPasswordSignIn({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
-            cookies().set({
-              name: this.options.authCookieName,
-              value: tokenData.auth_token,
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            });
+            this.setSessionCookie(tokenData.auth_token);
             return _wrapResponse(
               onEmailPasswordSignIn?.({ error: null, tokenData }, req),
               isAction
@@ -615,21 +591,9 @@ export abstract class NextAuth extends NextAuthHelpers {
                 ? _wrapResponse(onEmailPasswordSignUp({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
-            cookies().set({
-              name: this.options.pkceVerifierCookieName,
-              value: result.verifier,
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            });
+            this.setVerifierCookie(result.verifier);
             if (result.status === "complete") {
-              cookies().set({
-                name: this.options.authCookieName,
-                value: result.tokenData.auth_token,
-                httpOnly: true,
-                sameSite: "strict",
-                path: "/",
-              });
+              this.setSessionCookie(result.tokenData.auth_token);
               return _wrapResponse(
                 onEmailPasswordSignUp?.(
                   {
@@ -669,13 +633,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 this.options.baseUrl
               ).toString()
             );
-            cookies().set({
-              name: this.options.pkceVerifierCookieName,
-              value: verifier,
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            });
+            this.setVerifierCookie(verifier);
             return isAction
               ? Response.json({ _data: null })
               : new Response(null, { status: 204 });
@@ -711,13 +669,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 ? _wrapResponse(onEmailPasswordReset({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
-            cookies().set({
-              name: this.options.authCookieName,
-              value: tokenData.auth_token,
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            });
+            this.setSessionCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
             return _wrapResponse(
               onEmailPasswordReset?.({ error: null, tokenData }, req),
@@ -757,21 +709,9 @@ export abstract class NextAuth extends NextAuthHelpers {
               return _wrapResponse(onWebAuthnSignUp({ error }, req), false);
             }
 
-            cookies().set({
-              name: this.options.pkceVerifierCookieName,
-              value: result.verifier,
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            });
+            this.setVerifierCookie(result.verifier);
             if (result.status === "complete") {
-              cookies().set({
-                name: this.options.authCookieName,
-                value: result.tokenData.auth_token,
-                httpOnly: true,
-                sameSite: "strict",
-                path: "/",
-              });
+              this.setSessionCookie(result.tokenData.auth_token);
               return _wrapResponse(
                 onWebAuthnSignUp(
                   {
@@ -806,13 +746,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               const error = err instanceof Error ? err : new Error(String(err));
               return _wrapResponse(onWebAuthnSignIn({ error }, req), false);
             }
-            cookies().set({
-              name: this.options.authCookieName,
-              value: tokenData.auth_token,
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            });
+            this.setSessionCookie(tokenData.auth_token);
             return _wrapResponse(
               onWebAuthnSignIn({ error: null, tokenData }, req),
               false
@@ -841,13 +775,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 this.options.baseUrl
               ).toString()
             );
-            cookies().set({
-              name: this.options.pkceVerifierCookieName,
-              value: verifier,
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            });
+            this.setVerifierCookie(verifier);
             return isAction
               ? Response.json({ _data: null })
               : new Response(null, { status: 204 });
@@ -875,13 +803,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 this.options.baseUrl
               ).toString()
             );
-            cookies().set({
-              name: this.options.pkceVerifierCookieName,
-              value: verifier,
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            });
+            this.setVerifierCookie(verifier);
             return isAction
               ? Response.json({ _data: null })
               : new Response(null, { status: 204 });
