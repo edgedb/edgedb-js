@@ -18,12 +18,6 @@ await run({
     { match: /^src\/index.node.ts$/, replace: "mod.ts" },
     { match: /^src\//, replace: "_src/" },
   ],
-  importRewriteRules: [
-    {
-      match: /^debug$/,
-      replace: "npm:debug",
-    },
-  ],
   injectImports: [
     {
       imports: ["process"],

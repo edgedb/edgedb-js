@@ -11,15 +11,7 @@ export interface Credentials {
   port?: number;
   user: string;
   password?: string;
-  /**
-   * Either 'database' or 'branch' may appear in credentials, but not both.
-   * If both are specified, an error will be thrown.
-   */
   database?: string;
-  /**
-   * Either 'database' or 'branch' may appear in credentials, but not both.
-   * If both are specified, an error will be thrown.
-   */
   branch?: string;
   tlsCAData?: string;
   tlsSecurity?: TlsSecurity;
