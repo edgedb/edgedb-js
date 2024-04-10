@@ -3,13 +3,13 @@ import * as p from "@clack/prompts";
 import debug from "debug";
 import { updatePackage } from "write-package";
 
-import { BaseOptions, Recipe } from "../types.js";
+import type { BaseOptions, Recipe } from "../types.js";
 import { copyTemplateFiles } from "../../utils.js";
 
 const logger = debug("@edgedb/create:recipe:nextjs");
 
 interface NextjsOptions {
-  lang: "ts" | "js";
+  useTS: boolean;
   router: "app" | "pages";
   useTailwind: boolean;
   useSrcDir: boolean;
@@ -21,16 +21,10 @@ const recipe: Recipe<NextjsOptions> = {
   },
   getOptions() {
     return p.group({
-      lang: () =>
-        p.select<
-          { value: NextjsOptions["lang"]; label: string }[],
-          NextjsOptions["lang"]
-        >({
-          message: "Use TypeScript?",
-          options: [
-            { value: "ts", label: "TypeScript" },
-            { value: "js", label: "JavaScript" },
-          ],
+      useTS: () =>
+        p.confirm({
+          message: "Would you like to use TypeScript?",
+          initialValue: true,
         }),
       router: () =>
         p.select<
@@ -55,7 +49,7 @@ const recipe: Recipe<NextjsOptions> = {
   },
   async apply(
     { projectDir, useEdgeDBAuth }: BaseOptions,
-    { lang, router, useTailwind, useSrcDir }: NextjsOptions
+    { useTS, router, useTailwind, useSrcDir }: NextjsOptions
   ) {
     logger("Running nextjs recipe");
 
@@ -68,7 +62,7 @@ const recipe: Recipe<NextjsOptions> = {
     }
 
     await copyTemplateFiles(
-      path.resolve(dirname, lang === "js" ? "./template/js" : "./template/ts"),
+      path.resolve(dirname, useTS ? "./template/ts" : "./template/js"),
       projectDir,
       {
         tags,
@@ -109,7 +103,7 @@ const recipe: Recipe<NextjsOptions> = {
         next: "14.0.4",
       },
       devDependencies: {
-        ...(lang === "ts"
+        ...(useTS
           ? {
               typescript: "^5",
               "@types/node": "^20",
