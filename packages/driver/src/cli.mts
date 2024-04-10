@@ -61,8 +61,8 @@ async function main(args: string[]) {
 
 async function whichEdgeDbCli() {
   debug("Checking if CLI is in PATH...");
-  const location = await which("edgedb", { nothrow: true });
-  if (location) {
+  const locations = await which("edgedb", { nothrow: true, all: true });
+  for (const location of locations) {
     const actualLocation = await fs.realpath(location);
     debug(
       `  - CLI found in PATH at: ${location} (resolved to: ${actualLocation})`
@@ -71,7 +71,7 @@ async function whichEdgeDbCli() {
     const scriptLocation = new URL(import.meta.url).pathname;
     if (actualLocation === scriptLocation) {
       debug("  - CLI found in PATH is the current script. Ignoring.");
-      return null;
+      continue;
     }
     return location;
   }
