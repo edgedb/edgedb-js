@@ -43,6 +43,7 @@ try {
 }
 
 async function main(args: string[]) {
+  debug(`Running CLI wrapper from: ${new URL(import.meta.url).pathname}`);
   debug("Starting main function with args:", args);
   const cliLocation =
     (await whichEdgeDbCli()) ??
