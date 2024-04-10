@@ -11,16 +11,14 @@
   },
   "license": "Apache-2.0",
   "sideEffects": false,
-  "files": [
-    "/dist"
-  ],
+  "files": ["/dist"],
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "build": "tsc --project tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "^20.8.4",
-    "edgedb": "^1.4.0",
+    "edgedb": "^1.5.0",
     "typescript": "^5.4.3"
   },
   "peerDependencies": {

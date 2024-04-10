@@ -1,6 +1,6 @@
 {
   "name": "edgedb",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "The official Node.js client library for EdgeDB",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
@@ -15,9 +15,7 @@
   "types": "./dist/index.node.d.ts",
   "license": "Apache-2.0",
   "sideEffects": false,
-  "files": [
-    "/dist"
-  ],
+  "files": ["/dist"],
   "browser": {
     "./dist/index.node.js": "./dist/index.browser.js"
   },
