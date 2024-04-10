@@ -18,7 +18,7 @@
 
 import * as errors from "./errors";
 import {
-  Credentials,
+  type Credentials,
   getCredentialsPath,
   readCredentialsFile,
   validateCredentials,
@@ -76,6 +76,7 @@ export interface ConnectConfig {
   host?: string;
   port?: number;
   database?: string;
+  branch?: string;
   user?: string;
   password?: string;
   secretKey?: string;
@@ -116,6 +117,7 @@ type ConnectConfigParams =
   | "host"
   | "port"
   | "database"
+  | "branch"
   | "user"
   | "password"
   | "secretKey"
@@ -140,6 +142,9 @@ export class ResolvedConnectConfig {
 
   _database: string | null = null;
   _databaseSource: string | null = null;
+
+  _branch: string | null = null;
+  _branchSource: string | null = null;
 
   _user: string | null = null;
   _userSource: string | null = null;
@@ -168,6 +173,7 @@ export class ResolvedConnectConfig {
     this.setHost = this.setHost.bind(this);
     this.setPort = this.setPort.bind(this);
     this.setDatabase = this.setDatabase.bind(this);
+    this.setBranch = this.setBranch.bind(this);
     this.setUser = this.setUser.bind(this);
     this.setPassword = this.setPassword.bind(this);
     this.setSecretKey = this.setSecretKey.bind(this);
@@ -226,6 +232,15 @@ export class ResolvedConnectConfig {
         throw new InterfaceError(`invalid database name: '${db}'`);
       }
       return db;
+    });
+  }
+
+  setBranch(branch: string | null, source: string): boolean {
+    return this._setParam("branch", branch, source, (branchName: string) => {
+      if (branchName === "") {
+        throw new InterfaceError(`invalid branch name: '${branchName}'`);
+      }
+      return branchName;
     });
   }
 
@@ -336,7 +351,11 @@ export class ResolvedConnectConfig {
   }
 
   get database(): string {
-    return this._database ?? "edgedb";
+    return this._database ?? this._branch ?? "edgedb";
+  }
+
+  get branch(): string {
+    return this._branch ?? this._database ?? "__default__";
   }
 
   get user(): string {
@@ -514,6 +533,7 @@ async function parseConnectDsnAndArgs(
       host: config.host,
       port: config.port,
       database: config.database,
+      branch: config.branch,
       user: config.user,
       password: config.password,
       secretKey: config.secretKey,
@@ -535,6 +555,7 @@ async function parseConnectDsnAndArgs(
       host: `'host' option`,
       port: `'port' option`,
       database: `'database' option`,
+      branch: `'branch' option`,
       user: `'user' option`,
       password: `'password' option`,
       secretKey: `'secretKey' option`,
@@ -574,6 +595,7 @@ async function parseConnectDsnAndArgs(
           host: getEnv("EDGEDB_HOST"),
           port,
           database: getEnv("EDGEDB_DATABASE"),
+          branch: getEnv("EDGEDB_BRANCH"),
           user: getEnv("EDGEDB_USER"),
           password: getEnv("EDGEDB_PASSWORD"),
           secretKey: getEnv("EDGEDB_SECRET_KEY"),
@@ -590,6 +612,7 @@ async function parseConnectDsnAndArgs(
           host: `'EDGEDB_HOST' environment variable`,
           port: `'EDGEDB_PORT' environment variable`,
           database: `'EDGEDB_DATABASE' environment variable`,
+          branch: `'EDGEDB_BRANCH' environment variable`,
           user: `'EDGEDB_USER' environment variable`,
           password: `'EDGEDB_PASSWORD' environment variable`,
           secretKey: `'EDGEDB_SECRET_KEY' environment variable`,
@@ -679,6 +702,7 @@ interface ResolveConfigOptionsConfig {
   host: string;
   port: number | string;
   database: string;
+  branch: string;
   user: string;
   password: string;
   secretKey: string;
@@ -715,9 +739,28 @@ async function resolveConfigOptions<
     );
   }
 
-  anyOptionsUsed =
-    resolvedConfig.setDatabase(config.database ?? null, sources.database!) ||
-    anyOptionsUsed;
+  if (config.database != null) {
+    if (config.branch != null) {
+      throw new InterfaceError(
+        `${sources.database} and ${sources.branch} are mutually exclusive`
+      );
+    }
+    if (resolvedConfig._branch == null) {
+      anyOptionsUsed =
+        resolvedConfig.setDatabase(
+          config.database ?? null,
+          sources.database!
+        ) || anyOptionsUsed;
+    }
+  }
+  if (config.branch != null) {
+    if (resolvedConfig._database == null) {
+      anyOptionsUsed =
+        resolvedConfig.setBranch(config.branch ?? null, sources.branch!) ||
+        anyOptionsUsed;
+    }
+  }
+
   anyOptionsUsed =
     resolvedConfig.setUser(config.user ?? null, sources.user!) ||
     anyOptionsUsed;
@@ -839,7 +882,15 @@ async function resolveConfigOptions<
 
       resolvedConfig.setHost(creds.host ?? null, source);
       resolvedConfig.setPort(creds.port ?? null, source);
-      resolvedConfig.setDatabase(creds.database ?? null, source);
+      if (creds.database != null) {
+        if (resolvedConfig._branch == null) {
+          resolvedConfig.setDatabase(creds.database ?? null, source);
+        }
+      } else if (creds.branch != null) {
+        if (resolvedConfig._database == null) {
+          resolvedConfig.setBranch(creds.branch ?? null, source);
+        }
+      }
       resolvedConfig.setUser(creds.user ?? null, source);
       resolvedConfig.setPassword(creds.password ?? null, source);
       resolvedConfig.setTlsCAData(creds.tlsCAData ?? null, source);
@@ -861,7 +912,7 @@ async function parseDSNIntoConfig(
   // https://url.spec.whatwg.org/#host-representation
   let dsnString = _dsnString;
   let regexHostname: string | null = null;
-  let zoneId: string = "";
+  let zoneId = "";
   const regexResult = /\[(.*?)(%25.+?)\]/.exec(_dsnString);
   if (regexResult) {
     regexHostname = regexResult[1];
@@ -891,7 +942,7 @@ async function parseDSNIntoConfig(
   }
 
   const searchParams = new Map<string, string>();
-  for (const [key, value] of parsed.searchParams as any) {
+  for (const [key, value] of parsed.searchParams) {
     if (searchParams.has(key)) {
       throw new InterfaceError(
         `invalid DSN: duplicate query parameter '${key}'`
@@ -965,13 +1016,50 @@ async function parseDSNIntoConfig(
   await handleDSNPart("port", parsed.port, config._port, config.setPort);
 
   const stripLeadingSlash = (str: string) => str.replace(/^\//, "");
-  await handleDSNPart(
-    "database",
-    stripLeadingSlash(parsed.pathname),
-    config._database,
-    config.setDatabase,
-    stripLeadingSlash
-  );
+
+  const searchParamsContainsDatabase =
+    searchParams.has("database") ||
+    searchParams.has("database_env") ||
+    searchParams.has("database_file");
+  const searchParamsContainsBranch =
+    searchParams.has("branch") ||
+    searchParams.has("branch_env") ||
+    searchParams.has("branch_file");
+
+  if (searchParamsContainsBranch) {
+    if (searchParamsContainsDatabase) {
+      throw new InterfaceError(
+        `invalid DSN: cannot specify both 'database' and 'branch'`
+      );
+    }
+    if (config._database === null) {
+      await handleDSNPart(
+        "branch",
+        stripLeadingSlash(parsed.pathname),
+        config._branch,
+        config.setBranch,
+        stripLeadingSlash
+      );
+    } else {
+      searchParams.delete("branch");
+      searchParams.delete("branch_env");
+      searchParams.delete("branch_file");
+    }
+  } else {
+    if (config._branch === null) {
+      await handleDSNPart(
+        "database",
+        stripLeadingSlash(parsed.pathname),
+        config._database,
+        config.setDatabase,
+        stripLeadingSlash
+      );
+    } else {
+      searchParams.delete("database");
+      searchParams.delete("database_env");
+      searchParams.delete("database_file");
+    }
+  }
 
   await handleDSNPart("user", parsed.username, config._user, config.setUser);
 
