@@ -13,13 +13,14 @@
   },
   "license": "Apache-2.0",
   "sideEffects": false,
-  "files": ["/dist"],
+  "files": [
+    "/dist"
+  ],
   "bin": "dist/cli.js",
   "peerDependencies": {
     "edgedb": "^1.5.0"
   },
   "devDependencies": {
-    "@iarna/toml": "^2.2.5",
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.2",
     "conditional-type-checks": "^1.0.6",
@@ -31,7 +32,9 @@
     "ts-jest": "^29.1.0",
     "typescript": "^5.4.3"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@iarna/toml": "^2.2.5"
+  },
   "scripts": {
     "typecheck": "tsc --project tsconfig.build.json --noEmit",
     "play": "tsx playground.ts",
