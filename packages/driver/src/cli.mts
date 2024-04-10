@@ -26,7 +26,14 @@ interface Package {
 }
 
 try {
-  await main(process.argv.slice(2));
+  debug("Process argv:", process.argv);
+  // n.b. Using `npx`, the 3rd argument is the script name, unlike
+  // `node` where the 2nd argument is the script name.
+  let args = process.argv.slice(2);
+  if (args[0] === "edgedb") {
+    args = args.slice(1);
+  }
+  await main(args);
   process.exit(0);
 } catch (err) {
   console.error(err);
