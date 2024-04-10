@@ -206,7 +206,13 @@ type ConnectionTestCase = {
     files?: {
       [key: string]:
         | string
-        | { "instance-name": string; "project-path": string };
+        | {
+            "instance-name": string;
+            "project-path": string;
+            "cloud-profile"?: string;
+            database?: string;
+            branch?: string;
+          };
     };
   };
   warnings?: string[];
@@ -290,7 +296,7 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
 }
 
 describe("parseConnectArguments", () => {
-  let connectionTestcases: any[];
+  let connectionTestcases: ConnectionTestCase[];
   try {
     connectionTestcases = JSON.parse(
       fs.readFileSync(
@@ -310,32 +316,75 @@ describe("parseConnectArguments", () => {
     const { fs, platform } = testcase;
     if (fs && !platform && process.platform === "darwin") {
       const patchedFiles =
-        testcase.fs.files &&
-        Object.keys(testcase.fs.files).reduce((acc, key) => {
-          const linuxPath = key;
-          const macPath = linuxPathToMacOsPath(linuxPath);
-          const fileContent = testcase.fs.files[key];
-          if (typeof fileContent === "string") {
-            acc[macPath] = testcase.fs.files[key];
-          } else {
-            acc[macPath] = {
-              "instance-name": fileContent["instance-name"],
-              "project-path": linuxPathToMacOsPath(fileContent["project-path"]),
-            };
-          }
-          return acc;
-        }, {} as Record<string, string | { "instance-name": string; "project-path": string }>);
+        testcase.fs?.files &&
+        Object.entries(testcase.fs.files).reduce(
+          (acc, [linuxPath, fileContent]) => {
+            const macPath = linuxPathToMacOsPath(linuxPath);
+            if (typeof fileContent === "string") {
+              acc[macPath] = fileContent;
+            } else {
+              acc[macPath] = {
+                "instance-name": fileContent["instance-name"],
+                "project-path": linuxPathToMacOsPath(
+                  fileContent["project-path"]
+                ),
+                ...(fileContent.database && { database: fileContent.database }),
+                ...(fileContent.branch && { branch: fileContent.branch }),
+                ...(fileContent["cloud-profile"] && {
+                  "cloud-profile": fileContent["cloud-profile"],
+                }),
+              };
+            }
+            return acc;
+          },
+          {} as Record<
+            string,
+            | string
+            | {
+                "instance-name": string;
+                "project-path": string;
+                database?: string;
+                branch?: string;
+                "cloud-profile"?: string;
+              }
+          >
+        );
       const patchFs: ConnectionTestCase["fs"] = {
-        cwd: testcase.fs.cwd && linuxPathToMacOsPath(testcase.fs.cwd),
+        cwd: testcase.fs?.cwd && linuxPathToMacOsPath(testcase.fs.cwd),
         homedir:
-          testcase.fs.homedir && linuxPathToMacOsPath(testcase.fs.homedir),
+          testcase.fs?.homedir && linuxPathToMacOsPath(testcase.fs.homedir),
         files: patchedFiles,
       };
+      const patchedTestcase = {
+        ...testcase,
+        env: {
+          ...testcase.env,
+          ...Object.entries(testcase.env ?? {}).reduce((acc, [key, value]) => {
+            return {
+              ...acc,
+              [key]: linuxPathToMacOsPath(value as string),
+            };
+          }, {} as Record<string, string>),
+        },
+        opts: {
+          ...testcase.opts,
+          ...(testcase.opts?.dsn && {
+            dsn: linuxPathToMacOsPath(testcase.opts.dsn),
+          }),
+          ...(testcase.opts?.tlsCAFile && {
+            tlsCAFile: linuxPathToMacOsPath(testcase.opts.tlsCAFile),
+          }),
+          ...(testcase.opts?.credentialsFile && {
+            credentialsFile: linuxPathToMacOsPath(
+              testcase.opts.credentialsFile
+            ),
+          }),
+        },
+        fs: patchFs,
+      };
+
       test(`shared client test: index={${i}} patched for macos`, async () => {
-        await runConnectionTest({
-          ...testcase,
-          fs: patchFs,
-        });
+        await runConnectionTest(patchedTestcase);
       });
     } else if (
       fs &&
