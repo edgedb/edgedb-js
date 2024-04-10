@@ -84,13 +84,12 @@ jobs:
 
       - name: Create 'edgedb' GitHub Release
         if: steps.check_publish_driver.outputs.type != ''
-        uses: actions/create-release@latest
+        uses: softprops/action-gh-release@v2.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ steps.check_publish_driver.outputs.version }}
-          release_name: edgedb-js v${{ steps.check_publish_driver.outputs.version }}
-          commitish: ${{ github.ref }}
+          name: edgedb-js v${{ steps.check_publish_driver.outputs.version }}
           body: ${{steps.github_driver_release.outputs.changelog}}
           draft: true
           prerelease: false
@@ -143,13 +142,12 @@ jobs:
 
       - name: Create '@edgedb/generate' GitHub Release
         if: steps.check_publish_generate.outputs.type != ''
-        uses: actions/create-release@latest
+        uses: softprops/action-gh-release@v2.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: generate-v${{ steps.check_publish_generate.outputs.version }}
-          release_name: \@edgedb/generate v${{ steps.check_publish_generate.outputs.version }}
-          commitish: ${{ github.ref }}
+          name: \@edgedb/generate v${{ steps.check_publish_generate.outputs.version }}
           body: ${{steps.github_generate_release.outputs.changelog}}
           draft: true
           prerelease: false
@@ -202,13 +200,12 @@ jobs:
 
       - name: Create '@edgedb/auth-core' Release
         if: steps.check_publish_auth_core.outputs.type != ''
-        uses: actions/create-release@latest
+        uses: softprops/action-gh-release@v2.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: auth-core-v${{ steps.check_publish_auth_core.outputs.version }}
-          release_name: \@edgedb/auth-core v${{ steps.check_publish_auth_core.outputs.version }}
-          commitish: ${{ github.ref }}
+          name: \@edgedb/auth-core v${{ steps.check_publish_auth_core.outputs.version }}
           body: ${{steps.github_auth_core_release.outputs.changelog}}
           draft: true
           prerelease: false
@@ -261,13 +258,12 @@ jobs:
 
       - name: Create '@edgedb/auth-nextjs' Release
         if: steps.check_publish_auth_nextjs.outputs.type != ''
-        uses: actions/create-release@latest
+        uses: softprops/action-gh-release@v2.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: auth-nextjs-v${{ steps.check_publish_auth_nextjs.outputs.version }}
-          release_name: \@edgedb/auth-nextjs v${{ steps.check_publish_auth_nextjs.outputs.version }}
-          commitish: ${{ github.ref }}
+          name: \@edgedb/auth-nextjs v${{ steps.check_publish_auth_nextjs.outputs.version }}
           body: ${{steps.github_auth_nextjs_release.outputs.changelog}}
           draft: true
           prerelease: false
@@ -320,13 +316,12 @@ jobs:
 
       - name: Create '@edgedb/auth-express' Release
         if: steps.check_publish_auth_express.outputs.type != ''
-        uses: actions/create-release@latest
+        uses: softprops/action-gh-release@v2.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: auth-express-v${{ steps.check_publish_auth_express.outputs.version }}
-          release_name: \@edgedb/auth-express v${{ steps.check_publish_auth_express.outputs.version }}
-          commitish: ${{ github.ref }}
+          name: \@edgedb/auth-express v${{ steps.check_publish_auth_express.outputs.version }}
           body: ${{steps.github_auth_express_release.outputs.changelog}}
           draft: true
           prerelease: false
@@ -379,13 +374,12 @@ jobs:
 
       - name: Create '@edgedb/auth-remix' Release
         if: steps.check_publish_auth_remix.outputs.type != ''
-        uses: actions/create-release@latest
+        uses: softprops/action-gh-release@v2.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: auth-remix-v${{ steps.check_publish_auth_remix.outputs.version }}
-          release_name: \@edgedb/auth-remix v${{ steps.check_publish_auth_remix.outputs.version }}
-          commitish: ${{ github.ref }}
+          name: \@edgedb/auth-remix v${{ steps.check_publish_auth_remix.outputs.version }}
           body: ${{steps.github_auth_remix_release.outputs.changelog}}
           draft: true
           prerelease: false
@@ -438,13 +432,12 @@ jobs:
 
       - name: Create '@edgedb/auth-sveltekit' Release
         if: steps.check_publish_auth_sveltekit.outputs.type != ''
-        uses: actions/create-release@latest
+        uses: softprops/action-gh-release@v2.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: auth-sveltekit-v${{ steps.check_publish_auth_sveltekit.outputs.version }}
-          release_name: \@edgedb/auth-sveltekit v${{ steps.check_publish_auth_sveltekit.outputs.version }}
-          commitish: ${{ github.ref }}
+          name: \@edgedb/auth-sveltekit v${{ steps.check_publish_auth_sveltekit.outputs.version }}
           body: ${{steps.github_auth_sveltekit_release.outputs.changelog}}
           draft: true
           prerelease: false
@@ -497,13 +490,12 @@ jobs:
 
       - name: Create '@edgedb/create' Release
         if: steps.check_publish_create.outputs.type != ''
-        uses: actions/create-release@latest
+        uses: softprops/action-gh-release@v2.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: create-v${{ steps.check_publish_create.outputs.version }}
-          release_name: \@edgedb/create v${{ steps.check_publish_create.outputs.version }}
-          commitish: ${{ github.ref }}
+          name: \@edgedb/create v${{ steps.check_publish_create.outputs.version }}
           body: ${{steps.github_create_release.outputs.changelog}}
           draft: true
           prerelease: false
