@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  build_and_publish:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -33,14 +33,24 @@ jobs:
           echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
           echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
-      # edgedb
-
       - name: Copy readme
         run: cp README.md packages/driver/README.md
 
       - name: Build edgedb
         run: yarn workspace edgedb run build
 
+      - name: Build @edgedb/generate
+        run: yarn workspace @edgedb/generate run build
+
+      - name: Build @edgedb/auth-core
+        run: yarn workspace @edgedb/auth-core run build
+
+  publish_edgedb:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - id: check_publish_driver
         name: Dry-run publish 'edgedb' to npm
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
@@ -94,11 +104,12 @@ jobs:
           draft: true
           prerelease: false
 
-      # @edgedb/generate
-
-      - name: Build @edgedb/generate
-        run: yarn workspace @edgedb/generate run build
-
+  publish_generate:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - id: check_publish_generate
         name: Dry-run publish '@edgedb/generate' to npm
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
@@ -152,11 +163,12 @@ jobs:
           draft: true
           prerelease: false
 
-      # @edgedb/auth-core
-
-      - name: Build @edgedb/auth-core
-        run: yarn workspace @edgedb/auth-core run build
-
+  publish_auth_core:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - id: check_publish_auth_core
         name: Dry-run publish '@edgedb/auth-core' to npm
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
@@ -210,8 +222,12 @@ jobs:
           draft: true
           prerelease: false
 
-      # @edgedb/auth-nextjs
-
+  publish_auth_nextjs:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - name: Build @edgedb/auth-nextjs
         run: yarn workspace @edgedb/auth-nextjs run build
 
@@ -268,8 +284,12 @@ jobs:
           draft: true
           prerelease: false
 
-      # @edgedb/auth-express
-
+  publish_auth_express:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - name: Build @edgedb/auth-express
         run: yarn workspace @edgedb/auth-express run build
 
@@ -326,8 +346,12 @@ jobs:
           draft: true
           prerelease: false
 
-      # @edgedb/auth-remix
-
+  publish_auth_remix:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - name: Build @edgedb/auth-remix
         run: yarn workspace @edgedb/auth-remix run build
 
@@ -384,8 +408,12 @@ jobs:
           draft: true
           prerelease: false
 
-      # @edgedb/auth-sveltekit
-
+  publish_auth_sveltekit:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - name: Build @edgedb/auth-sveltekit
         run: yarn workspace @edgedb/auth-sveltekit run build
 
@@ -442,8 +470,12 @@ jobs:
           draft: true
           prerelease: false
 
-      # @edgedb/create
-
+  publish_create:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - name: Build @edgedb/create
         run: yarn workspace @edgedb/create run build
 
