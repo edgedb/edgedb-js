@@ -745,29 +745,22 @@ async function resolveConfigOptions<
         `${sources.database} and ${sources.branch} are mutually exclusive`
       );
     }
-    if (resolvedConfig._branch != null) {
-      throw new InterfaceError(
-        `${sources.database} and ${resolvedConfig._branchSource} are mutually exclusive`
-      );
+    if (resolvedConfig._branch == null) {
+      anyOptionsUsed =
+        resolvedConfig.setDatabase(
+          config.database ?? null,
+          sources.database!
+        ) || anyOptionsUsed;
     }
-    anyOptionsUsed =
-      resolvedConfig.setDatabase(config.database ?? null, sources.database!) ||
-      anyOptionsUsed;
   }
   if (config.branch != null) {
-    if (resolvedConfig._database != null) {
-      throw new InterfaceError(
-        `${resolvedConfig._databaseSource} and ${sources.branch} are mutually exclusive`
-      );
+    if (resolvedConfig._database == null) {
+      anyOptionsUsed =
+        resolvedConfig.setBranch(config.branch ?? null, sources.branch!) ||
+        anyOptionsUsed;
     }
-    anyOptionsUsed =
-      resolvedConfig.setBranch(config.branch ?? null, sources.branch!) ||
-      anyOptionsUsed;
   }
 
-  anyOptionsUsed =
-    resolvedConfig.setBranch(config.branch ?? null, sources.branch!) ||
-    anyOptionsUsed;
   anyOptionsUsed =
     resolvedConfig.setUser(config.user ?? null, sources.user!) ||
     anyOptionsUsed;
@@ -890,19 +883,13 @@ async function resolveConfigOptions<
       resolvedConfig.setHost(creds.host ?? null, source);
       resolvedConfig.setPort(creds.port ?? null, source);
       if (creds.database != null) {
-        if (resolvedConfig._branch != null) {
-          throw new InterfaceError(
-            `"branch" in configuration and "database" in credentials are mutually exclusive`
-          );
+        if (resolvedConfig._branch == null) {
+          resolvedConfig.setDatabase(creds.database ?? null, source);
         }
-        resolvedConfig.setDatabase(creds.database ?? null, source);
       } else if (creds.branch != null) {
-        if (resolvedConfig._database != null) {
-          throw new InterfaceError(
-            `"database" in configuration and "branch" in credentials are mutually exclusive`
-          );
+        if (resolvedConfig._database == null) {
+          resolvedConfig.setBranch(creds.branch ?? null, source);
         }
-        resolvedConfig.setBranch(creds.branch ?? null, source);
       }
       resolvedConfig.setUser(creds.user ?? null, source);
       resolvedConfig.setPassword(creds.password ?? null, source);
@@ -1045,25 +1032,7 @@ async function parseDSNIntoConfig(
         `invalid DSN: cannot specify both 'database' and 'branch'`
       );
     }
-    if (config._database !== null) {
-      throw new InterfaceError(
-        `'branch' in DSN and '${config._databaseSource}' are mutually exclusive`
-      );
-    }
-    await handleDSNPart(
-      "branch",
-      stripLeadingSlash(parsed.pathname),
-      config._branch,
-      config.setBranch,
-      stripLeadingSlash
-    );
-  } else {
-    if (config._branch !== null) {
-      if (searchParamsContainsDatabase) {
-        throw new InterfaceError(
-          `'database' in DSN and '${config._branchSource}' are mutually exclusive`
-        );
-      }
+    if (config._database === null) {
       await handleDSNPart(
         "branch",
         stripLeadingSlash(parsed.pathname),
@@ -1072,6 +1041,12 @@ async function parseDSNIntoConfig(
         stripLeadingSlash
       );
     } else {
+      searchParams.delete("branch");
+      searchParams.delete("branch_env");
+      searchParams.delete("branch_file");
+    }
+  } else {
+    if (config._branch === null) {
       await handleDSNPart(
         "database",
         stripLeadingSlash(parsed.pathname),
@@ -1079,6 +1054,10 @@ async function parseDSNIntoConfig(
         config.setDatabase,
         stripLeadingSlash
       );
+    } else {
+      searchParams.delete("database");
+      searchParams.delete("database_env");
+      searchParams.delete("database_file");
     }
   }
 

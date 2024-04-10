@@ -81,7 +81,7 @@ export function validateCredentials(data: any): Credentials {
     if (typeof branch !== "string") {
       throw new InterfaceError("`branch` must be string");
     }
-    if (database != null) {
+    if (database != null && branch !== database) {
       throw new InterfaceError("`database` and `branch` cannot both be set");
     }
     result.branch = branch;
