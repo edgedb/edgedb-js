@@ -4,7 +4,10 @@
 
 ### Setup
 
-**Prerequisites**: Before adding EdgeDB auth to your Next.js app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers. Refer to the auth extension docs for details on how to do this.
+**Prerequisites**:
+- Node v18+
+  - **Note**: Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
+- Before adding EdgeDB auth to your Next.js app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers. Refer to the auth extension docs for details on how to do this.
 
 1. Initialize the auth helper by passing an EdgeDB `Client` object to `createAuth()`, along with some configuration options. This will return a `NextAppAuth` object which you can use across your app. Similarly to the `Client` it's recommended to export this auth object from some root configuration file in your app.
 

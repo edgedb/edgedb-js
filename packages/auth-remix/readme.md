@@ -13,7 +13,10 @@ npm install @edgedb/auth-remix
 
 ## Setup
 
-**Prerequisites**: Before adding EdgeDB auth to your Remix app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers (you can do this in CLI or EdgeDB UI). Refer to the auth extension docs for details on how to do this.
+**Prerequisites**:
+- Node v18+
+  - **Note**: Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
+- Before adding EdgeDB auth to your Remix app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers (you can do this in CLI or EdgeDB UI). Refer to the auth extension docs for details on how to do this.
 
 1. Initialize the client auth helper by passing configuration options to `createClientAuth()`. This will return a `RemixClientAuth` object which you can use in your components. You can skip this part if you find it unnecessary and provide all your data through the loader (the next step), but we suggest having the client auth too and use it directly in your components to get OAuth, BuiltinUI and signout URLs.
 

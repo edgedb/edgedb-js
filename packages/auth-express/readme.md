@@ -12,10 +12,15 @@ npm install @edgedb/auth-express
 
 **Note:** We have tested this library against the latest version of Express v4 with the types provided at DefinitelyTyped and have set up `peerDependencies` based on typical usage with npm.
 
-We depend on the following middleware being installed in your Express app:
+## Setup
 
-- `body-parser`: both JSON and urlencoded
-- `cookie-parser`
+**Prerequisites**:
+- Node v18+
+  - **Note**: Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
+- Before adding EdgeDB auth to your Express app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers (you can do this in CLI or EdgeDB UI). Refer to the auth extension docs for details on how to do this.
+- We depend on the following middleware being installed in your Express app:
+  - `body-parser`: both JSON and urlencoded
+  - `cookie-parser`
 
 ```ts
 import express from "express";
