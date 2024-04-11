@@ -210,11 +210,15 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
           )} = ${typeRef};`,
         ]);
       }
+      plainTypesCode.writeln([t`export type {`]);
+      plainTypesCode.increaseIndent();
       plainTypesCode.writeln([
-        `export type {${typeRefs
+        typeRefs
           .map((typeRef) => typeRef.slice(module.internalName.length + 1))
-          .join(", ")}};`,
+          .join(",\n"),
       ]);
+      plainTypesCode.decreaseIndent();
+      plainTypesCode.writeln([t`};`]);
     }
   };
 
