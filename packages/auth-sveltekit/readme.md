@@ -1,6 +1,6 @@
 # @edgedb/auth-sveltekit
 
-This library provides a set of utilities to help you integrate authentication into your [Sveltekit](https://kit.svelte.dev/) application.
+This library provides a set of utilities to help you integrate authentication into your [SvelteKit](https://kit.svelte.dev/) application.
 It supports authentication with various OAuth providers, as well as email/password authentication.
 
 ## Installation
@@ -13,7 +13,10 @@ npm install @edgedb/auth-sveltekit
 
 ## Setup
 
-**Prerequisites**: Before adding EdgeDB auth to your Sveltekit app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers (you can do this in CLI or EdgeDB UI). Refer to the auth extension docs for details on how to do this.
+**Prerequisites**:
+- Node v18+
+  - **Note**: Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
+- Before adding EdgeDB auth to your SvelteKit app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers (you can do this in CLI or EdgeDB UI). Refer to the auth extension docs for details on how to do this.
 
 ### Client auth helper
 
