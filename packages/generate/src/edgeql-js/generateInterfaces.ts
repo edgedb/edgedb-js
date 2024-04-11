@@ -211,7 +211,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
         ]);
       }
       plainTypesCode.writeln([
-        `export {${typeRefs
+        `export type {${typeRefs
           .map((typeRef) => typeRef.slice(module.internalName.length + 1))
           .join(", ")}};`,
       ]);
