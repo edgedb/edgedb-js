@@ -191,6 +191,14 @@ export function generateFiles(params: {
     `${baseFileName}.query`
   );
 
+  const validCardinalities = Object.values($.Cardinality);
+  if (!validCardinalities.includes(params.types.cardinality)) {
+    throw new Error(
+      `Invalid cardinality: ${
+        params.types.cardinality
+      }. Expected one of ${validCardinalities.join(", ")}.`
+    );
+  }
   const method =
     params.types.cardinality === $.Cardinality.One
       ? "queryRequiredSingle"
