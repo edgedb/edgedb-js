@@ -1,12 +1,6 @@
 import { bench } from "@arktype/attest";
 
 import e from "./dbschema/edgeql-js";
-import { type BaseTypeToTsType } from "./dbschema/edgeql-js/typesystem";
-
-bench("BaseTypeToTsType: scalar", () => {
-  const lit = e.int32(42);
-  return {} as BaseTypeToTsType<typeof lit>;
-}).types([596, "instantiations"]);
 
 bench("e.literal: scalar", () => {
   const lit = e.literal(e.int32, 42);
@@ -23,11 +17,6 @@ bench("e.str: scalar", () => {
   return {} as typeof lit;
 }).types([894, "instantiations"]);
 
-bench("BaseTypeToTsType: array literal", () => {
-  const lit = e.array([e.str("abcd")]);
-  return {} as BaseTypeToTsType<typeof lit>;
-}).types([2394, "instantiations"]);
-
 bench("e.literal: array literal", () => {
   const lit = e.literal(e.array(e.str), ["abcd"]);
   return {} as typeof lit;
@@ -43,12 +32,12 @@ bench("e.literal: named tuple literal", () => {
     str: "asdf",
   });
   return {} as typeof lit;
-}).types([10765, "instantiations"]);
+}).types([10767, "instantiations"]);
 
 bench("e.tuple: named tuple literal", () => {
   const lit = e.tuple({ str: e.str("asdf") });
   return {} as typeof lit;
-}).types([7564, "instantiations"]);
+}).types([7565, "instantiations"]);
 
 bench("e.literal: tuple literal", () => {
   const lit = e.literal(e.tuple([e.str, e.int32]), ["asdf", 42]);
@@ -58,7 +47,7 @@ bench("e.literal: tuple literal", () => {
 bench("e.tuple: tuple literal", () => {
   const lit = e.tuple([e.str("asdf"), e.int32(42)]);
   return {} as typeof lit;
-}).types([4836, "instantiations"]);
+}).types([4837, "instantiations"]);
 
 bench("e.literal: array of tuples", () => {
   const lit = e.literal(e.array(e.tuple([e.str, e.int32])), [
@@ -84,7 +73,7 @@ bench("base type: array", () => {
 bench("base type: named tuple", () => {
   const baseType = e.tuple({ str: e.str });
   return {} as typeof baseType;
-}).types([3564, "instantiations"]);
+}).types([3565, "instantiations"]);
 
 bench("select: scalar", () => {
   const query = e.select(e.int32(42));
