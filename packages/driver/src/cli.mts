@@ -161,7 +161,7 @@ function runEdgeDbCli(
   pathToCli: string | null,
   execOptions: ExecSyncOptions = { stdio: "inherit" }
 ) {
-  const cliCommand = pathToCli ?? "edgedb";
+  const cliCommand = `"${pathToCli ?? "edgedb"}"`;
   const command = `${cliCommand} ${args.join(" ")}`;
   debug(`Running EdgeDB CLI: ${command}`);
   return execSync(command, execOptions);
