@@ -27,29 +27,14 @@ interface Package {
   installref: string;
 }
 
-try {
-  debug("Process argv:", process.argv);
-  // n.b. Using `npx`, the 3rd argument is the script name, unlike
-  // `node` where the 2nd argument is the script name.
-  let args = process.argv.slice(2);
-  if (args[0] === "edgedb") {
-    args = args.slice(1);
-  }
-  await main(args);
-  process.exit(0);
-} catch (err) {
-  console.error(err);
-  if (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    typeof err.code === "number"
-  ) {
-    process.exit(err.code);
-  }
-
-  process.exit(1);
+debug("Process argv:", process.argv);
+// n.b. Using `npx`, the 3rd argument is the script name, unlike
+// `node` where the 2nd argument is the script name.
+let args = process.argv.slice(2);
+if (args[0] === "edgedb") {
+  args = args.slice(1);
 }
+await main(args);
 
 async function main(args: string[]) {
   debug(`Running CLI wrapper from: ${fileURLToPath(import.meta.url)}`);
@@ -65,7 +50,24 @@ async function main(args: string[]) {
     throw Error("Failed to find or install EdgeDB CLI.");
   }
 
-  return runEdgeDbCli(args, cliLocation);
+  try {
+    runEdgeDbCli(args, cliLocation);
+  } catch (err) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      typeof err.code === "number"
+    ) {
+      process.exit(err.code);
+    } else {
+      console.error(err);
+    }
+
+    process.exit(1);
+  }
+
+  process.exit(0);
 }
 
 async function whichEdgeDbCli() {
