@@ -56,10 +56,10 @@ async function main(args: string[]) {
     if (
       typeof err === "object" &&
       err !== null &&
-      "code" in err &&
-      typeof err.code === "number"
+      "status" in err &&
+      typeof err.status === "number"
     ) {
-      process.exit(err.code);
+      process.exit(err.status);
     } else {
       console.error(err);
     }
