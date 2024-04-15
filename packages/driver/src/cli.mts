@@ -158,10 +158,10 @@ async function downloadCliPackage() {
 
 function runEdgeDbCli(
   args: string[],
-  pathToCli: string | null,
+  pathToCli: string,
   execOptions: ExecSyncOptions = { stdio: "inherit" }
 ) {
-  const cliCommand = pathToCli ?? "edgedb";
+  const cliCommand = `"${pathToCli}"`;
   const command = `${cliCommand} ${args.join(" ")}`;
   debug(`Running EdgeDB CLI: ${command}`);
   return execSync(command, execOptions);
