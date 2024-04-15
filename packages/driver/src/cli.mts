@@ -4,6 +4,7 @@ import { createWriteStream } from "node:fs";
 import * as os from "node:os";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import * as process from "node:process";
 import * as semver from "semver";
 import envPaths from "env-paths";
@@ -13,6 +14,7 @@ import which from "which";
 const debug = Debug("edgedb:cli");
 
 const IS_TTY = process.stdout.isTTY;
+const SCRIPT_LOCATION = await fs.realpath(fileURLToPath(import.meta.url));
 const EDGEDB_PKG_ROOT = "https://packages.edgedb.com";
 const CACHE_DIR = envPaths("edgedb").cache;
 const TEMPORARY_CLI_PATH = path.join(CACHE_DIR, "/edgedb-cli");
@@ -50,7 +52,7 @@ try {
 }
 
 async function main(args: string[]) {
-  debug(`Running CLI wrapper from: ${new URL(import.meta.url).pathname}`);
+  debug(`Running CLI wrapper from: ${fileURLToPath(import.meta.url)}`);
   debug("Starting main function with args:", args);
   const cliLocation =
     (await whichEdgeDbCli()) ??
@@ -75,9 +77,17 @@ async function whichEdgeDbCli() {
       `  - CLI found in PATH at: ${location} (resolved to: ${actualLocation})`
     );
 
-    const scriptLocation = new URL(import.meta.url).pathname;
-    if (actualLocation === scriptLocation) {
+    if (actualLocation === SCRIPT_LOCATION) {
       debug("  - CLI found in PATH is the current script. Ignoring.");
+      continue;
+    }
+
+    const lowerCaseLocation = actualLocation.toLowerCase();
+    if (
+      lowerCaseLocation.endsWith(".cmd") ||
+      lowerCaseLocation.endsWith(".ps1")
+    ) {
+      debug("  - CLI found in PATH is a Windows script. Ignoring.");
       continue;
     }
     return location;
