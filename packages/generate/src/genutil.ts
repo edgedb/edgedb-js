@@ -482,9 +482,7 @@ export type Version = {
 };
 
 export function camelify(str: string): string {
-  const base = str
+  return str
     .replace(/[-_][A-Za-z]/g, (m) => m[1].toUpperCase())
     .replace(/^[^A-Za-z_]|\W/g, "_");
-
-  return base.charAt(0).toLowerCase() + base.slice(1);
 }
