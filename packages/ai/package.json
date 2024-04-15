@@ -27,7 +27,7 @@
   ],
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "test": "jest --detectOpenHandles",
+    "test": "jest --detectOpenHandles --passWithNoTests",
     "build": "tsc --project tsconfig.json"
   },
   "devDependencies": {
