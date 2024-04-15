@@ -81,6 +81,7 @@ jobs:
           yarn workspace edgedb build
           yarn workspace @edgedb/generate build
           yarn workspace @edgedb/auth-core build
+          yarn workspace @edgedb/ai build
 
       - name: Typecheck
         run: |
@@ -132,6 +133,10 @@ jobs:
       - name: Run create-app tests
         run: |
           yarn workspace @edgedb/create test
+
+      - name: Run @edgedb/ai tests
+        run: |
+          yarn workspace @edgedb/ai test
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.
