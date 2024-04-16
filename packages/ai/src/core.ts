@@ -1,25 +1,22 @@
 import type { Client } from "edgedb";
 import type { ResolvedConnectConfig } from "edgedb/dist/conUtils";
 
-import type { EdgeDBAIOptions, QueryContext } from "./types.js";
+import type { AIOptions, QueryContext, RAGRequest } from "./types.js";
 
-export function createAI(
-  client: Client,
-  options: Partial<EdgeDBAIOptions> = {}
-) {
+export function createAI(client: Client, options: Partial<AIOptions> = {}) {
   return new EdgeDBAI(client, options);
 }
 
 export class EdgeDBAI {
   /** @internal */
   private readonly baseUrl: Promise<string>;
-  private readonly options: EdgeDBAIOptions;
+  private readonly options: AIOptions;
   private readonly context: QueryContext;
 
   /** @internal */
   constructor(
     public readonly client: Client,
-    options: Partial<EdgeDBAIOptions> = {},
+    options: Partial<AIOptions> = {},
     context: Partial<QueryContext> = {}
   ) {
     this.baseUrl = EdgeDBAI.getBaseUrl(client);
@@ -49,7 +46,7 @@ export class EdgeDBAI {
     return baseUrl;
   }
 
-  withConfig(options: Partial<EdgeDBAIOptions>) {
+  withConfig(options: Partial<AIOptions>) {
     return new EdgeDBAI(
       this.client,
       { ...this.options, ...options },
@@ -64,28 +61,37 @@ export class EdgeDBAI {
     });
   }
 
-  async queryRag(
-    message: string,
-    context: QueryContext = this.context
-  ): Promise<string> {
+  private async fetchRag(request: RAGRequest) {
+    const headers = request.stream
+      ? { Accept: "text/event-stream", "Content-Type": "application/json" }
+      : { Accept: "application/json", "Content-Type": "application/json" };
+
     const response = await fetch(new URL("rag", await this.baseUrl), {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: this.options.model,
-        prompt: this.options.prompt,
-        context,
-        query: message,
-      }),
+      headers,
+      body: JSON.stringify(request),
     });
 
     if (!response.ok) {
       const bodyText = await response.text();
       throw new Error(bodyText);
     }
+
+    return response;
+  }
+
+  async queryRag(
+    message: string,
+    context: QueryContext = this.context
+  ): Promise<string> {
+    const response = await this.fetchRag({
+      model: this.options.model,
+      prompt: this.options.prompt,
+      context,
+      query: message,
+      stream: false,
+    });
+
     if (!response.headers.get("content-type")?.includes("application/json")) {
       throw new Error(
         "expected response to have content-type: application/json"
