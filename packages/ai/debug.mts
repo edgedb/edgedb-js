@@ -14,7 +14,7 @@ const gpt4Ai = createAI(client, {
 const astronomyAi = gpt4Ai.withContext({ query: "Astronomy" });
 
 console.time("gpt-4 Time");
-console.log(await astronomyAi.RAGQuery("What color is the sky on Mars?"));
+console.log(await astronomyAi.queryRag("What color is the sky on Mars?"));
 console.timeEnd("gpt-4 Time");
 
 const fastAstronomyAi = astronomyAi.withConfig({
@@ -22,11 +22,11 @@ const fastAstronomyAi = astronomyAi.withConfig({
 });
 
 console.time("gpt-3.5 Time");
-console.log(await fastAstronomyAi.RAGQuery("What color is the sky on Mars?"));
+console.log(await fastAstronomyAi.queryRag("What color is the sky on Mars?"));
 console.timeEnd("gpt-3.5 Time");
 
 const fastChemistryAi = fastAstronomyAi.withContext({ query: "Chemistry" });
 
 console.log(
-  await fastChemistryAi.RAGQuery("What is the atomic number of gold?")
+  await fastChemistryAi.queryRag("What is the atomic number of gold?")
 );

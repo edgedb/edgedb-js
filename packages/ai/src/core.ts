@@ -64,8 +64,8 @@ export class EdgeDBAI {
     });
   }
 
-  async RAGQuery(
-    query: string,
+  async queryRag(
+    message: string,
     context: QueryContext = this.context
   ): Promise<string> {
     const response = await fetch(new URL("rag", await this.baseUrl), {
@@ -78,7 +78,7 @@ export class EdgeDBAI {
         model: this.options.model,
         prompt: this.options.prompt,
         context,
-        query,
+        query: message,
       }),
     });
 
