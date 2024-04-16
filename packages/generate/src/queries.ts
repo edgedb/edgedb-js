@@ -71,10 +71,9 @@ currently supported.`);
               filesByExtension[f.extension] = f;
             } else {
               filesByExtension[f.extension].contents += `\n\n` + f.contents;
-              filesByExtension[f.extension].imports = {
-                ...filesByExtension[f.extension].imports,
-                ...f.imports,
-              };
+              filesByExtension[f.extension].imports = filesByExtension[
+                f.extension
+              ].imports.merge(f.imports);
             }
           }
         } catch (err) {
@@ -147,9 +146,13 @@ currently supported.`);
   //   generate output file
 }
 
-export function stringifyImports(imports: { [k: string]: boolean }) {
-  if (Object.keys(imports).length === 0) return "";
-  return `import type {${Object.keys(imports).join(", ")}} from "edgedb";`;
+export function stringifyImports(imports: $.ImportMap) {
+  return [...imports]
+    .map(
+      ([module, specifiers]) =>
+        `import type {${[...specifiers].join(", ")}} from "${module}";`
+    )
+    .join("\n");
 }
 
 async function getMatches(root: string, schemaDir: string) {
@@ -180,7 +183,7 @@ export function generateFiles(params: {
 }): {
   path: string;
   contents: string;
-  imports: { [k: string]: boolean };
+  imports: $.ImportMap;
   extension: string;
 }[] {
   const queryFileName = adapter.path.basename(params.path);
@@ -215,11 +218,7 @@ export type ${returnsInterfaceName} = ${params.types.result};\
   const functionBody = `\
 ${params.types.query.trim().replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
 `;
-  const imports: any = {};
-  for (const i of params.types.imports) {
-    imports[i] = true;
-  }
-  const tsImports = { Executor: true, ...imports };
+  const tsImports = params.types.imports.add("edgedb", "Executor");
 
   const tsImpl = `${queryDefs}
 

@@ -67,7 +67,7 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
 
 export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
   tsType = "LocalDateTime";
-  importedType = true;
+  tsModule = "edgedb";
 
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof LocalDateTime)) {
@@ -124,7 +124,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
 
 export class LocalDateCodec extends ScalarCodec implements ICodec {
   tsType = "LocalDate";
-  importedType = true;
+  tsModule = "edgedb";
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof LocalDate)) {
       throw new InvalidArgumentError(
@@ -143,7 +143,7 @@ export class LocalDateCodec extends ScalarCodec implements ICodec {
 
 export class LocalTimeCodec extends ScalarCodec implements ICodec {
   tsType = "LocalTime";
-  importedType = true;
+  tsModule = "edgedb";
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof LocalTime)) {
       throw new InvalidArgumentError(
@@ -200,7 +200,7 @@ export function checkValidEdgeDBDuration(duration: Duration): null | string {
 
 export class DurationCodec extends ScalarCodec implements ICodec {
   tsType = "Duration";
-  importedType = true;
+  tsModule = "edgedb";
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof Duration)) {
       throw new InvalidArgumentError(
@@ -284,7 +284,7 @@ export class DurationCodec extends ScalarCodec implements ICodec {
 
 export class RelativeDurationCodec extends ScalarCodec implements ICodec {
   tsType = "RelativeDuration";
-  importedType = true;
+  tsModule = "edgedb";
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof RelativeDuration)) {
       throw new InvalidArgumentError(`
@@ -351,7 +351,7 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
 
 export class DateDurationCodec extends ScalarCodec implements ICodec {
   tsType = "DateDuration";
-  importedType = true;
+  tsModule = "edgedb";
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof DateDuration)) {
       throw new InvalidArgumentError(`

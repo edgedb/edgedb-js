@@ -93,6 +93,9 @@ function decodeRange(buf: ReadBuffer, subCodec: ICodec): any {
 }
 
 export class RangeCodec extends Codec implements ICodec {
+  readonly tsType = "Range";
+  readonly tsModule = "edgedb";
+
   private subCodec: ICodec;
 
   constructor(tid: uuid, subCodec: ICodec) {
@@ -118,6 +121,9 @@ export class RangeCodec extends Codec implements ICodec {
 }
 
 export class MultiRangeCodec extends Codec implements ICodec {
+  readonly tsType = "MultiRange";
+  readonly tsModule = "edgedb";
+
   private subCodec: ICodec;
 
   constructor(tid: uuid, subCodec: ICodec) {
