@@ -1,4 +1,4 @@
-import { $, adapter, type Client } from "edgedb";
+import { $, adapter, type Client, type Executor } from "edgedb";
 import { type CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
 import type { Target } from "./genutil";
@@ -191,20 +191,15 @@ export function generateFiles(params: {
     `${baseFileName}.query`
   );
 
-  const validCardinalities = Object.values($.Cardinality);
-  if (!validCardinalities.includes(params.types.cardinality)) {
+  const method = cardinalityToExecutorMethod[params.types.cardinality];
+  if (!method) {
+    const validCardinalities = Object.values($.Cardinality);
     throw new Error(
       `Invalid cardinality: ${
         params.types.cardinality
       }. Expected one of ${validCardinalities.join(", ")}.`
     );
   }
-  const method =
-    params.types.cardinality === $.Cardinality.One
-      ? "queryRequiredSingle"
-      : params.types.cardinality === $.Cardinality.AtMostOne
-      ? "querySingle"
-      : "query";
   const functionName = baseFileName
     .replace(/-[A-Za-z]/g, (m) => m[1].toUpperCase())
     .replace(/^[^A-Za-z_]|\W/g, "_");
@@ -313,3 +308,11 @@ export function ${functionName}(client: Executor${
       ];
   }
 }
+
+export const cardinalityToExecutorMethod = {
+  One: "queryRequiredSingle",
+  AtMostOne: "querySingle",
+  Many: "query",
+  AtLeastOne: "query",
+  Empty: "query",
+} satisfies Record<`${$.Cardinality}`, keyof Executor>;
