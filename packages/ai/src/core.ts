@@ -111,4 +111,55 @@ export class EdgeDBAI {
 
     return data.response;
   }
+
+  async *getRagAsyncGenerator(
+    message: string,
+    context: QueryContext = this.context
+  ) {
+    const response = await this.fetchRag({
+      model: this.options.model,
+      prompt: this.options.prompt,
+      context,
+      query: message,
+      stream: true,
+    });
+
+    if (response.body) {
+      const reader = response.body.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          yield new TextDecoder().decode(value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    }
+  }
+
+  streamRag(
+    message: string,
+    context: QueryContext = this.context
+  ): Response {
+    const generator = this.getRagAsyncGenerator(message, context);
+
+    const stream = new ReadableStream<string>({
+      async start(controller) {
+        try {
+          for await (const chunk of generator) {
+            controller.enqueue(chunk);
+          }
+        } catch (error) {
+          controller.error(error);
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: { "Content-Type": "text/event-stream" },
+    });
+  }
 }
