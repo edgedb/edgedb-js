@@ -111,7 +111,7 @@ export class EdgeDBAI {
   async *getRagAsyncGenerator(
     message: string,
     context: QueryContext = this.context
-  ): AsyncGenerator<string, void, never> {
+  ): AsyncGenerator<string, void, undefined> {
     const response = await this.fetchRag({
       model: this.options.model,
       prompt: this.options.prompt,
