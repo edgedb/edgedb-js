@@ -138,10 +138,7 @@ export class EdgeDBAI {
     }
   }
 
-  streamRag(
-    message: string,
-    context: QueryContext = this.context
-  ): Response {
+  streamRag(message: string, context: QueryContext = this.context): Response {
     const generator = this.getRagAsyncGenerator(message, context);
 
     const stream = new ReadableStream<string>({
