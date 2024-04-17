@@ -87,7 +87,9 @@ async function _walkDir(
       await fs.mkdir(dest, { recursive: true });
       const trueFilepath = path.join(source, file.entry.name);
       const untaggedFilepath = path.join(untaggedSource, filename);
-      const destFilepath = path.join(dest, filename);
+      // n.b. special handling to avoid npm publishing from excluding .gitignore
+      const destFilename = filename === "gitignore" ? ".gitignore" : filename;
+      const destFilepath = path.join(dest, destFilename);
 
       if (opts.injectVars[untaggedFilepath]) {
         let content = await fs.readFile(trueFilepath, { encoding: "utf8" });
