@@ -1,5 +1,5 @@
 import type { Client } from "edgedb";
-import type { ResolvedConnectConfig } from "edgedb/dist/conUtils";
+import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
 
 import type { AIOptions, QueryContext, RAGRequest } from "./types.js";
 
