@@ -28,11 +28,6 @@
 
 </div>
 
-<br />
-<br />
-
-> The `v1.0.0` version of this library was released on Oct 21, 2022. There are a number of new features and breaking changes, especially regarding the query builder workflow. Refer to the [release notes](https://github.com/edgedb/edgedb-js/releases/tag/v1.0.0) for full information.
-
 This is the official [EdgeDB](https://github.com/edgedb/edgedb) client library
 for JavaScript and TypeScript.
 
@@ -43,10 +38,7 @@ writing some simple queries.
 
 ### Requirements
 
-- Node.js 16+
-  - We rely on global `fetch` being available, so you can bring your own
-    polyfill and if you run Node 16, you'll need to run with the
-    `--experimental-fetch` flag enabled.
+- Node.js 18+
 - For TypeScript users:
   - TypeScript 4.4+ is required
   - `yarn add @types/node --dev`
@@ -59,13 +51,6 @@ yarn add edgedb         # yarn users
 ```
 
 > EdgeDB 2.x requires `v0.21.0` or later
-
-## Packages
-
-- `packages/driver`: The `edgedb` client library.
-- `packages/generate`: The `@edgedb/generate` package. Implements code generators, including `edgeql-js` and `queries`.
-- `packages/deno`: The directory where the auto-generated `deno.land/x/edgedb` package is generated into. Both the driver and codegen tools are generated into this module.
-- `packages/edgeql-js`: A skeleton package that prints an informative error message when `npx edgeql-js` is executed without `edgedb` installed.
 
 ## Basic usage
 
@@ -162,6 +147,7 @@ $ npx @edgedb/generate <generator> [FLAGS]
 The following `<generator>`s are currently supported:
 
 - `queries`: Generate typed functions from `*.edgeql` files
+- `interfaces`: Generate interfaces for your schema types
 - `edgeql-js`: Generate the query builder
 
 ### `queries`
