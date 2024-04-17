@@ -23,7 +23,7 @@ export class EdgeDBAI {
     this.options = {
       model: options.model ?? "gpt-3.5-turbo",
       prompt: options.prompt ?? {
-        name: "builtin:rag-default",
+        name: "builtin::rag-default",
       },
     };
     this.context = {
