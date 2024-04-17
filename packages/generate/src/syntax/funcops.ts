@@ -284,7 +284,7 @@ function _tryOverload(
       positionalArgs[1]!.__cardinality__
     );
   } else if (funcName === "??") {
-    cardinality = cardutil.orCardinalities(
+    cardinality = cardutil.coalesceCardinalities(
       positionalArgs[0]!.__cardinality__,
       positionalArgs[1]!.__cardinality__
     );

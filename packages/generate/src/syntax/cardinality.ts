@@ -351,4 +351,34 @@ export namespace cardutil {
     : C extends Cardinality.Many
     ? Cardinality
     : never;
+
+  // Cardinality	Empty      	AtMostOne	  One	        Many	      AtLeastOne
+  // Empty	      Empty	      AtMostOne	  One	        Many	      AtLeastOne
+  // AtMostOne	  AtMostOne	  AtMostOne	  One	        Many	      AtLeastOne
+  // One	        One	        One	        One	        One	        One
+  // Many	        Many	      Many	      AtLeastOne	Many	      AtLeastOne
+  // AtLeastOne	  AtLeastOne  AtLeastOne	AtLeastOne	AtLeastOne  AtLeastOne
+
+  export type coalesceCardinalities<
+    C1 extends Cardinality,
+    C2 extends Cardinality
+  > = C1 extends Cardinality.One
+    ? C1
+    : C1 extends Cardinality.AtLeastOne
+    ? C1
+    : C2 extends Cardinality.One
+    ? overrideLowerBound<C1, "One">
+    : C2 extends Cardinality.AtLeastOne
+    ? Cardinality.AtLeastOne
+    : orCardinalities<C1, C2>;
+
+  export function coalesceCardinalities(
+    c1: Cardinality,
+    c2: Cardinality
+  ): Cardinality {
+    if (c1 === Cardinality.One || c1 === Cardinality.AtLeastOne) return c1;
+    if (c2 === Cardinality.One) return overrideLowerBound(c1, "One");
+    if (c2 === Cardinality.AtLeastOne) return Cardinality.AtLeastOne;
+    return orCardinalities(c1, c2);
+  }
 }

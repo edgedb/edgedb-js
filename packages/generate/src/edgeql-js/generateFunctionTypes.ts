@@ -525,7 +525,7 @@ export function generateReturnCardinality(
   }
 
   if (name === "std::coalesce") {
-    return `$.cardutil.orCardinalities<
+    return `$.cardutil.coalesceCardinalities<
         $.cardutil.paramCardinality<${cardinalities[0].genTypeName}>,
         $.cardutil.paramCardinality<${cardinalities[1].genTypeName}>
       >`;

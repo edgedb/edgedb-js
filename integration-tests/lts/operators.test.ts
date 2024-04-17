@@ -232,7 +232,7 @@ describe("operators", () => {
 
   test("cardinalities for set of operators", async () => {
     const t1 = e.op(e.cast(e.str, e.set()), "??", "default");
-    assert.deepEqual(t1.__cardinality__, $.Cardinality.AtMostOne);
+    assert.deepEqual(t1.__cardinality__, $.Cardinality.One);
     assert.equal(await t1.run(client), "default");
 
     const t2 = e.op(e.cast(e.str, e.set()), "union", "default");
