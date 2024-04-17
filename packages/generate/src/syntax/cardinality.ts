@@ -352,12 +352,12 @@ export namespace cardutil {
     ? Cardinality
     : never;
 
-  // Cardinality	Empty      	AtMostOne	  One	        Many	      AtLeastOne
-  // Empty	      Empty	      AtMostOne	  One	        Many	      AtLeastOne
-  // AtMostOne	  AtMostOne	  AtMostOne	  One	        Many	      AtLeastOne
-  // One	        One	        One	        One	        One	        One
-  // Many	        Many	      Many	      AtLeastOne	Many	      AtLeastOne
-  // AtLeastOne	  AtLeastOne  AtLeastOne	AtLeastOne	AtLeastOne  AtLeastOne
+  // Cardinality  Empty       AtMostOne   One         Many        AtLeastOne
+  // Empty        Empty       AtMostOne   One         Many        AtLeastOne
+  // AtMostOne    AtMostOne   AtMostOne   One         Many        AtLeastOne
+  // One          One         One         One         One         One
+  // Many         Many        Many        AtLeastOne  Many        AtLeastOne
+  // AtLeastOne   AtLeastOne  AtLeastOne  AtLeastOne  AtLeastOne  AtLeastOne
 
   export type coalesceCardinalities<
     C1 extends Cardinality,
