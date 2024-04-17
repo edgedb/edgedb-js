@@ -142,7 +142,7 @@ export class EdgeDBAI {
     const generator = this.getRagAsyncGenerator(message, context);
 
     const stream = new ReadableStream<string>({
-      async start(controller) {
+      async start(controller: ReadableStreamDefaultController<string>) {
         try {
           for await (const chunk of generator) {
             controller.enqueue(chunk);
