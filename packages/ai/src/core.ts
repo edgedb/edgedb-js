@@ -20,12 +20,7 @@ export class EdgeDBAI {
     context: Partial<QueryContext> = {}
   ) {
     this.baseUrl = EdgeDBAI.getBaseUrl(client);
-    this.options = {
-      model: options.model ?? "gpt-3.5-turbo",
-      prompt: options.prompt ?? {
-        name: "builtin::rag-default",
-      },
-    };
+    this.options = options;
     this.context = {
       query: context.query ?? "",
       ...(context.variables && { variables: context.variables }),

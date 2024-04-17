@@ -6,8 +6,8 @@ export type Prompt =
   | { custom: { role: ChatParticipantRole; content: string }[] };
 
 export interface AIOptions {
-  model: string;
-  prompt: Prompt;
+  model?: string;
+  prompt?: Prompt;
 }
 
 export interface QueryContext {
