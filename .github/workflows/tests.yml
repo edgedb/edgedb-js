@@ -25,7 +25,7 @@ jobs:
             edgedb-version: "nightly"
           - os: ubuntu-latest
             node-version: "20"
-            edgedb-version: "5.0-beta.2"
+            edgedb-version: "5.0-rc.1"
           - os: ubuntu-latest
             node-version: "20"
             edgedb-version: "3"
