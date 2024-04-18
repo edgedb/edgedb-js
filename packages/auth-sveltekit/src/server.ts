@@ -17,6 +17,9 @@ import {
   InvalidDataError,
   OAuthProviderFailureError,
   EdgeDBAuthError,
+  MagicLinkFailureError,
+  type AuthenticationResponseJSON,
+  type RegistrationResponseJSON,
 } from "@edgedb/auth-core";
 import {
   ClientAuth,
@@ -64,6 +67,12 @@ export interface AuthRouteHandlers {
       { verificationToken?: string }
     >
   ) => Promise<never>;
+  onMagicLinkCallback(
+    params: ParamsOrError<{
+      tokenData: TokenData;
+      isSignUp: boolean;
+    }>
+  ): Promise<Response>;
   onSignout?: () => Promise<never>;
 }
 
@@ -288,6 +297,104 @@ export class ServerRequestAuth extends ClientAuth {
     return { tokenData };
   }
 
+  async magicLinkSignUp(data: { email: string } | FormData): Promise<void> {
+    if (!this.config.magicLinkFailurePath) {
+      throw new ConfigurationError(
+        `'magicLinkFailurePath' option not configured`
+      );
+    }
+    const [email] = extractParams(data, ["email"], "email missing");
+
+    const { verifier } = await (
+      await this.core
+    ).signupWithMagicLink(
+      email,
+      `${this.config.authRoute}/magiclink/callback?isSignUp=true`,
+      new URL(this.config.magicLinkFailurePath, this.config.baseUrl).toString()
+    );
+
+    this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+    });
+  }
+
+  async magicLinkSend(data: { email: string } | FormData): Promise<void> {
+    if (!this.config.magicLinkFailurePath) {
+      throw new ConfigurationError(
+        `'magicLinkFailurePath' option not configured`
+      );
+    }
+    const [email] = extractParams(data, ["email"], "email missing");
+
+    const { verifier } = await (
+      await this.core
+    ).signinWithMagicLink(
+      email,
+      `${this.config.authRoute}/magiclink/callback?isSignUp=true`,
+      new URL(this.config.magicLinkFailurePath, this.config.baseUrl).toString()
+    );
+
+    this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+    });
+  }
+
+  async webAuthnSignIn(data: {
+    email: string;
+    assertion: AuthenticationResponseJSON;
+  }): Promise<{ tokenData: TokenData }> {
+    const { email, assertion } = data;
+
+    const tokenData = await (
+      await this.core
+    ).signinWithWebAuthn(email, assertion);
+
+    this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+    });
+
+    return { tokenData };
+  }
+
+  async webAuthnSignUp(data: {
+    email: string;
+    credentials: RegistrationResponseJSON;
+    verify_url: string;
+    user_handle: string;
+  }): Promise<{ tokenData: TokenData | null }> {
+    const { email, credentials, verify_url, user_handle } = data;
+
+    const result = await (
+      await this.core
+    ).signupWithWebAuthn(email, credentials, verify_url, user_handle);
+
+    this.cookies.set(this.config.pkceVerifierCookieName, result.verifier, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+    });
+
+    if (result.status === "complete") {
+      const tokenData = result.tokenData;
+
+      this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+      });
+
+      return { tokenData };
+    }
+
+    return { tokenData: null };
+  }
+
   async signout(): Promise<void> {
     this.cookies.delete(this.config.authCookieName, { path: "/" });
   }
@@ -353,6 +460,7 @@ async function handleAuthRoutes(
     onOAuthCallback,
     onBuiltinUICallback,
     onEmailVerify,
+    onMagicLinkCallback,
     onSignout,
   }: AuthRouteHandlers,
   { url, cookies }: RequestEvent,
@@ -556,6 +664,124 @@ async function handleAuthRoutes(
         tokenData = await (
           await core
         ).verifyEmailPasswordSignup(verificationToken, verifier);
+      } catch (err) {
+        return onEmailVerify({
+          error: err instanceof Error ? err : new Error(String(err)),
+          verificationToken,
+        });
+      }
+
+      cookies.set(config.authCookieName, tokenData.auth_token, {
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+      });
+
+      return onEmailVerify({
+        error: null,
+        tokenData,
+      });
+    }
+
+    case "magiclink/callback": {
+      if (!onMagicLinkCallback) {
+        throw new ConfigurationError(
+          `'onMagicLinkCallback' auth route handler not configured`
+        );
+      }
+
+      const error = searchParams.get("error");
+      if (error) {
+        const desc = searchParams.get("error_description");
+        return onMagicLinkCallback({
+          error: new MagicLinkFailureError(error + (desc ? `: ${desc}` : "")),
+        });
+      }
+
+      const code = searchParams.get("code");
+      const isSignUp = searchParams.get("isSignUp") === "true";
+      const verifier = cookies.get(config.pkceVerifierCookieName);
+      if (!code) {
+        return onMagicLinkCallback({
+          error: new PKCEError("no pkce code in response"),
+        });
+      }
+
+      if (!verifier) {
+        return onMagicLinkCallback({
+          error: new PKCEError("no pkce verifier cookie found"),
+        });
+      }
+
+      let tokenData: TokenData;
+      try {
+        tokenData = await (await core).getToken(code, verifier);
+      } catch (err) {
+        return onMagicLinkCallback({
+          error: err instanceof Error ? err : new Error(String(err)),
+        });
+      }
+
+      cookies.set(config.authCookieName, tokenData.auth_token, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+      });
+
+      cookies.set(config.pkceVerifierCookieName, "", {
+        maxAge: 0,
+        path: "/",
+      });
+
+      return onMagicLinkCallback({
+        error: null,
+        tokenData,
+        isSignUp,
+      });
+    }
+
+    case "webauthn/signup/options": {
+      const email = searchParams.get("email");
+      if (!email) {
+        throw new InvalidDataError("email missing");
+      }
+
+      return redirect(303, (await core).getWebAuthnSignupOptionsUrl(email));
+    }
+
+    case "webauthn/signin/options": {
+      const email = searchParams.get("email");
+      if (!email) {
+        throw new InvalidDataError("email missing");
+      }
+
+      return redirect(303, (await core).getWebAuthnSigninOptionsUrl(email));
+    }
+
+    case "webauthn/verify": {
+      if (!onEmailVerify) {
+        throw new ConfigurationError(
+          `'onEmailVerify' auth route handler not configured`
+        );
+      }
+      const verificationToken = searchParams.get("verification_token");
+      const verifier = cookies.get(config.pkceVerifierCookieName);
+      if (!verificationToken) {
+        return onEmailVerify({
+          error: new PKCEError("no verification_token in response"),
+        });
+      }
+      if (!verifier) {
+        return onEmailVerify({
+          error: new PKCEError("no pkce verifier cookie found"),
+          verificationToken,
+        });
+      }
+      let tokenData: TokenData;
+      try {
+        tokenData = await (
+          await core
+        ).verifyWebAuthnSignup(verificationToken, verifier);
       } catch (err) {
         return onEmailVerify({
           error: err instanceof Error ? err : new Error(String(err)),
