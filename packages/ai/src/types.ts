@@ -6,7 +6,7 @@ export type Prompt =
   | { custom: { role: ChatParticipantRole; content: string }[] };
 
 export interface AIOptions {
-  model?: string;
+  model: string;
   prompt?: Prompt;
 }
 
@@ -19,7 +19,7 @@ export interface QueryContext {
 
 export interface RAGRequest {
   model: string;
-  prompt: Prompt;
+  prompt?: Prompt;
   context: QueryContext;
   query: string;
   stream?: boolean;

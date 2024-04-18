@@ -3,7 +3,7 @@ import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
 
 import type { AIOptions, QueryContext, RAGRequest } from "./types.js";
 
-export function createAI(client: Client, options: Partial<AIOptions> = {}) {
+export function createAI(client: Client, options: AIOptions) {
   return new EdgeDBAI(client, options);
 }
 
@@ -16,7 +16,7 @@ export class EdgeDBAI {
   /** @internal */
   constructor(
     public readonly client: Client,
-    options: Partial<AIOptions> = {},
+    options: AIOptions,
     context: Partial<QueryContext> = {}
   ) {
     this.baseUrl = EdgeDBAI.getBaseUrl(client);

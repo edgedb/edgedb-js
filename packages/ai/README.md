@@ -21,9 +21,9 @@ See the AI documentation for detailed guidance on setting up the AI extension an
 Creates an instance of `EdgeDBAI` with the specified client and options.
 
 - `client`: An EdgeDB client instance.
-- `options`: Optional. Configuration options for the AI model.
-  - `model`: Specifies the AI model to use. This could be a version of GPT or any other model supported by EdgeDB AI.
-  - `prompt`: Defines the input prompt for the AI model. The prompt can be a simple string, an ID referencing a stored prompt, or a custom prompt structure that includes roles and content for more complex interactions. The default is the built-in system prompt.
+- `options`: Configuration options for the AI model.
+  - `model`: Required. Specifies the AI model to use. This could be a version of GPT or any other model supported by EdgeDB AI.
+  - `prompt`: Optional. Defines the input prompt for the AI model. The prompt can be a simple string, an ID referencing a stored prompt, or a custom prompt structure that includes roles and content for more complex interactions. The default is the built-in system prompt.
 
 ### `EdgeDBAI`
 
