@@ -501,3 +501,43 @@ jobs:
           body: ${{steps.github_create_release.outputs.changelog}}
           draft: true
           prerelease: false
+
+      # @edgedb/ai
+
+      - name: Build @edgedb/ai
+        run: yarn workspace @edgedb/ai run build
+
+      - id: check_publish_ai
+        name: Dry-run publish '@edgedb/ai' to npm
+        uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
+        with:
+          package: packages/ai/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          dry-run: true
+
+      - name: If '@edgedb/ai' version unchanged
+        if: steps.check_publish_ai.outputs.type == ''
+        run: |
+          echo "Version in package.json has not changed. Creating canary release."
+          yarn workspace @edgedb/ai version  --no-git-tag-version --minor
+          CURRENT_VERSION=$(node -p "require('./packages/ai/package.json').version")
+          yarn workspace @edgedb/ai version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
+
+      - name: Publish '@edgedb/ai'
+        uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
+        with:
+          package: packages/ai/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          access: public
+          tag: ${{ steps.check_publish_ai.outputs.type == '' && 'canary' || 'latest' }}
+
+      - name: Create '@edgedb/ai' Release
+        if: steps.check_publish_ai.outputs.type != ''
+        uses: softprops/action-gh-release@v2.0.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ai-v${{ steps.check_publish_ai.outputs.version }}
+          name: \@edgedb/ai v${{ steps.check_publish_ai.outputs.version }}
+          draft: true
+          prerelease: false
