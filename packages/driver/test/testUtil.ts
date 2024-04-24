@@ -202,7 +202,7 @@ export const startServer = async (
       port: runtimeData.port,
       user: "edgedb",
       password: "edgedbtest",
-      database: "edgedb",
+      branch: "main",
       tlsSecurity: "no_host_verification",
     };
 
