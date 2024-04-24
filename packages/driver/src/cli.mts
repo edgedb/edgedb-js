@@ -85,6 +85,7 @@ async function whichEdgeDbCli() {
     }
 
     const lowerCaseLocation = actualLocation.toLowerCase();
+    // n.b. Windows package binaries are actual scripts
     if (
       lowerCaseLocation.endsWith(".cmd") ||
       lowerCaseLocation.endsWith(".ps1")
@@ -92,6 +93,15 @@ async function whichEdgeDbCli() {
       debug("  - CLI found in PATH is a Windows script. Ignoring.");
       continue;
     }
+
+    // n.b. pnpm uses a shell script for package binaries instead of symlinks
+    if (lowerCaseLocation.includes("node_modules/.bin")) {
+      debug(
+        "  - CLI found in PATH is in a node_modules/.bin directory. Ignoring."
+      );
+      continue;
+    }
+
     return location;
   }
   debug("  - No CLI found in PATH.");
