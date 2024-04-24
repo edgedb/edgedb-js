@@ -32,9 +32,10 @@ jobs:
           - os: ubuntu-latest
             node-version: "20"
             edgedb-version: "2"
-          - os: macos-latest
-            node-version: "20"
-            edgedb-version: "stable"
+          # XXX: macOS is currently unsupported by setup-edgedb
+          # - os: macos-latest
+          #   node-version: "20"
+          #   edgedb-version: "stable"
 
     steps:
       - uses: actions/checkout@v2
