@@ -6,7 +6,12 @@ import {
   type AuthenticatedFetch,
 } from "edgedb/dist/utils.js";
 
-import type { AIOptions, QueryContext, RAGRequest } from "./types.js";
+import type {
+  AIOptions,
+  QueryContext,
+  RAGRequest,
+  StreamingMessage,
+} from "./types.js";
 
 export function createAI(client: Client, options: AIOptions) {
   return new EdgeDBAI(client, options);
@@ -111,7 +116,7 @@ export class EdgeDBAI {
   async *getRagAsyncGenerator(
     message: string,
     context: QueryContext = this.context
-  ): AsyncGenerator<string, void, undefined> {
+  ): AsyncGenerator<StreamingMessage, void, undefined> {
     const response = await this.fetchRag({
       model: this.options.model,
       prompt: this.options.prompt,
@@ -120,17 +125,23 @@ export class EdgeDBAI {
       stream: true,
     });
 
-    if (response.body) {
-      const reader = response.body.getReader();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          yield new TextDecoder().decode(value);
-        }
-      } finally {
-        reader.releaseLock();
+    if (!response.body) {
+      throw new Error("Expected response to include a body");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const decoded = decoder.decode(value);
+        const message = extractMessageFromSSE(decoded);
+        yield message;
+        if (message.type === "message_stop") break;
       }
+    } finally {
+      reader.releaseLock();
     }
   }
 
@@ -151,4 +162,12 @@ export class EdgeDBAI {
       headers: { "Content-Type": "text/event-stream" },
     });
   }
+}
+
+function extractMessageFromSSE(sse: string): StreamingMessage {
+  const [_, data] = sse.split(/data: /, 2);
+  if (!data) {
+    throw new Error("Expected SSE message to include a data payload");
+  }
+  return JSON.parse(data) as StreamingMessage;
 }
