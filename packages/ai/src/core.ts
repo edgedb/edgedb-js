@@ -139,23 +139,19 @@ export class EdgeDBAI {
   }
 
   streamRag(message: string, context: QueryContext = this.context): Response {
-    const generator = this.getRagAsyncGenerator(message, context);
-
-    const stream = new ReadableStream<string>({
-      async start(controller: ReadableStreamDefaultController<string>) {
-        try {
-          for await (const chunk of generator) {
-            controller.enqueue(chunk);
-          }
-        } catch (error) {
-          controller.error(error);
-        } finally {
-          controller.close();
-        }
-      },
+    const response = await this.fetchRag({
+      model: this.options.model,
+      prompt: this.options.prompt,
+      context,
+      query: message,
+      stream: true,
     });
 
-    return new Response(stream, {
+    if (!response.body) {
+      throw new Error("Expected response to include a body");
+    }
+
+    return new Response(response.body, {
       headers: { "Content-Type": "text/event-stream" },
     });
   }
