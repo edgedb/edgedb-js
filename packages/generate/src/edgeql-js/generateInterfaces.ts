@@ -197,28 +197,26 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
     plainTypesCode.addExport(module.internalName, { modes: ["js"] });
 
     if (module.isRoot && module.name === "default") {
-      const typeRefs = [
-        ...module.types.values(),
-        ...[...module.nestedModules.values()].map(
-          (nestedMod) => nestedMod.fullInternalName
-        ),
-      ];
-      for (const typeRef of typeRefs) {
-        plainTypesCode.writeln([
-          `import ${typeRef.slice(
-            module.internalName.length + 1
-          )} = ${typeRef};`,
-        ]);
+      const sliceTo = module.internalName.length + 1;
+      for (const typeRef of module.types.values()) {
+        const aliased = typeRef.slice(sliceTo);
+        plainTypesCode.writeln([`export type ${aliased} = ${typeRef};\n`]);
       }
-      plainTypesCode.writeln([t`export type {`]);
-      plainTypesCode.increaseIndent();
-      plainTypesCode.writeln([
-        typeRefs
-          .map((typeRef) => typeRef.slice(module.internalName.length + 1))
-          .join(",\n"),
-      ]);
-      plainTypesCode.decreaseIndent();
-      plainTypesCode.writeln([t`};`]);
+
+      for (const nestedMod of module.nestedModules.values()) {
+        plainTypesCode.writeln([
+          `export namespace ${nestedMod.internalName} {`,
+        ]);
+        plainTypesCode.increaseIndent();
+        for (const typeRef of nestedMod.types.values()) {
+          const aliased = typeRef.slice(
+            sliceTo + nestedMod.internalName.length + 1
+          );
+          plainTypesCode.writeln([`export type ${aliased} = ${typeRef};`]);
+        }
+        plainTypesCode.decreaseIndent();
+        plainTypesCode.writeln([`}`]);
+      }
     }
   };
 
