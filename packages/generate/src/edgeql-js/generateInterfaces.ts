@@ -203,22 +203,11 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
           (nestedMod) => nestedMod.fullInternalName
         ),
       ];
+      const sliceTo = module.internalName.length + 1;
       for (const typeRef of typeRefs) {
-        plainTypesCode.writeln([
-          `import ${typeRef.slice(
-            module.internalName.length + 1
-          )} = ${typeRef};`,
-        ]);
+        const aliased = typeRef.slice(sliceTo);
+        plainTypesCode.writeln([`export type ${aliased} = ${typeRef};\n`]);
       }
-      plainTypesCode.writeln([t`export type {`]);
-      plainTypesCode.increaseIndent();
-      plainTypesCode.writeln([
-        typeRefs
-          .map((typeRef) => typeRef.slice(module.internalName.length + 1))
-          .join(",\n"),
-      ]);
-      plainTypesCode.decreaseIndent();
-      plainTypesCode.writeln([t`};`]);
     }
   };
 
