@@ -35,7 +35,7 @@ export type MessageStart = {
 };
 
 export type ContentBlockStart = {
-  type: "conent_block_start";
+  type: "content_block_start";
   index: number;
   content_block: {
     text: string;

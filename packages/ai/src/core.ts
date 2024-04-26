@@ -149,7 +149,10 @@ export class EdgeDBAI {
     }
   }
 
-  streamRag(message: string, context: QueryContext = this.context): Response {
+  async streamRag(
+    message: string,
+    context: QueryContext = this.context
+  ): Promise<Response> {
     const response = await this.fetchRag({
       model: this.options.model,
       prompt: this.options.prompt,
