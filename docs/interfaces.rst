@@ -66,7 +66,7 @@ The following command will run the ``interfaces`` generator.
   .. code-tab:: bash
     :caption: Bun
 
-    $ bunx @edgedb/generate queries
+    $ bunx @edgedb/generate interfaces
 
 .. note:: Deno users
 
@@ -118,7 +118,7 @@ Pass a ``--file`` flag to specify the output file path.
 
 .. code-block:: bash
 
-  $ npx @edgedb/generate queries --file schema.ts
+  $ npx @edgedb/generate interfaces --file schema.ts
 
 If the value passed as ``--file`` is a relative path, it will be evaluated relative to the current working directory (``process.cwd()``). If the value is an absolute path, it will be used as-is.
 
