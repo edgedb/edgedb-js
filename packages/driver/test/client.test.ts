@@ -2074,13 +2074,6 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     const codecsRegistry = new _CodecsRegistry();
     const config = await parseConnectArguments(getConnectOptions());
 
-    const { address, user, password } = config.connectionParams;
-    const token = await getHTTPSCRAMAuth(cryptoUtils)(
-      `http://${address[0]}:${address[1]}`,
-      user,
-      password!
-    );
-
     const fetchConn = AdminUIFetchConnection.create(
       await makeFetch(config.connectionParams, getHTTPSCRAMAuth(cryptoUtils)),
       codecsRegistry
