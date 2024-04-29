@@ -1,4 +1,4 @@
-import { BaseClientPool, Client, ConnectOptions } from "./baseClient";
+import { BaseClientPool, Client, type ConnectOptions } from "./baseClient";
 import { parseConnectArguments } from "./conUtils.server";
 import cryptoUtils from "./adapter.crypto.node";
 import { Options } from "./options";

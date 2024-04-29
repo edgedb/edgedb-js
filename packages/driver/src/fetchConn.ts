@@ -23,30 +23,23 @@ import {
   RESTRICTED_CAPABILITIES,
 } from "./baseConn";
 import { NULL_CODEC } from "./codecs/codecs";
-import { ICodec } from "./codecs/ifaces";
-import { CodecsRegistry } from "./codecs/registry";
-import { Address, NormalizedConnectConfig } from "./conUtils";
+import type { ICodec } from "./codecs/ifaces";
+import type { CodecsRegistry } from "./codecs/registry";
+import type { NormalizedConnectConfig } from "./conUtils";
 import { InternalClientError, ProtocolError } from "./errors";
 import type { HttpSCRAMAuth } from "./httpScram";
 import {
   Cardinality,
   OutputFormat,
-  ProtocolVersion,
-  QueryArgs,
-  QueryOptions,
+  type ProtocolVersion,
+  type QueryArgs,
+  type QueryOptions,
 } from "./ifaces";
-import { Session } from "./options";
+import type { Session } from "./options";
 import { WriteBuffer } from "./primitives/buffer";
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
-
-interface FetchConfig {
-  address: Address | string;
-  database: string;
-  tlsSecurity?: string;
-  user?: string;
-  token?: string;
-}
+import { type FetchWrapper, makeFetch } from "./utils";
 
 const PROTO_MIME = `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`;
 
@@ -57,18 +50,12 @@ const STUDIO_CAPABILITIES =
   0;
 
 class BaseFetchConnection extends BaseRawConnection {
-  protected config: FetchConfig;
-  protected addr: string;
+  protected fetchWrapper: FetchWrapper;
   protected abortSignal: AbortSignal | null = null;
 
-  constructor(config: FetchConfig, registry: CodecsRegistry) {
+  constructor(fetch: FetchWrapper, registry: CodecsRegistry) {
     super(registry);
-    this.config = config;
-    this.addr = this._buildAddr();
-  }
-
-  protected _buildAddr(): string {
-    this.throwNotImplemented("_buildAddr");
+    this.fetchWrapper = fetch;
   }
 
   protected async _waitForMessage(): Promise<void> {
@@ -103,22 +90,12 @@ class BaseFetchConnection extends BaseRawConnection {
     this.messageWaiter = new Event();
 
     try {
-      const headers: { [index: string]: string } = {
-        "Content-Type": PROTO_MIME,
-      };
-
-      if (this.config.user !== undefined) {
-        headers["X-EdgeDB-User"] = this.config.user;
-      }
-
-      if (this.config.token !== undefined) {
-        headers.Authorization = `Bearer ${this.config.token}`;
-      }
-
-      const resp = await fetch(this.addr, {
+      const resp = await this.fetchWrapper("", {
         method: "post",
         body: data,
-        headers,
+        headers: {
+          "Content-Type": PROTO_MIME,
+        },
         signal: this.abortSignal,
       });
 
@@ -155,10 +132,10 @@ class BaseFetchConnection extends BaseRawConnection {
 
   static create<T extends typeof BaseFetchConnection>(
     this: T,
-    config: FetchConfig,
+    fetch: FetchWrapper,
     registry: CodecsRegistry
   ): InstanceType<T> {
-    const conn = new this(config, registry);
+    const conn = new this(fetch, registry);
 
     conn.connected = true;
     conn.connWaiter.set();
@@ -169,20 +146,6 @@ class BaseFetchConnection extends BaseRawConnection {
 
 export class AdminUIFetchConnection extends BaseFetchConnection {
   adminUIMode = true;
-
-  protected _buildAddr(): string {
-    const config = this.config;
-
-    if (typeof config.address === "string") {
-      return `${config.address}/db/${config.database}`;
-    }
-
-    const { address, tlsSecurity, database } = config;
-
-    const protocol = tlsSecurity === "insecure" ? "http" : "https";
-    const baseUrl = `${protocol}://${address[0]}:${address[1]}`;
-    return `${baseUrl}/db/${database}`;
-  }
 
   // These methods are exposed for use by EdgeDB Studio
   public async rawParse(
@@ -241,52 +204,15 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
   }
 }
 
-const _tokens = new WeakMap<NormalizedConnectConfig, string>();
-
 export class FetchConnection extends BaseFetchConnection {
-  protected _buildAddr(): string {
-    const config = this.config;
-
-    if (typeof config.address === "string") {
-      return `${config.address}/db/${config.database}`;
-    }
-
-    const { address, tlsSecurity, database } = config;
-
-    const protocol = tlsSecurity === "insecure" ? "http" : "https";
-    const baseUrl = `${protocol}://${address[0]}:${address[1]}`;
-    return `${baseUrl}/db/${database}`;
-  }
-
   static createConnectWithTimeout(httpSCRAMAuth: HttpSCRAMAuth) {
     return async function connectWithTimeout(
-      addr: Address,
       config: NormalizedConnectConfig,
       registry: CodecsRegistry
     ) {
-      const {
-        connectionParams: { tlsSecurity, user, password = "", secretKey },
-      } = config;
+      const fetch = await makeFetch(config.connectionParams, httpSCRAMAuth);
 
-      let token = secretKey ?? _tokens.get(config);
-
-      if (!token) {
-        const protocol = tlsSecurity === "insecure" ? "http" : "https";
-        const baseUrl = `${protocol}://${addr[0]}:${addr[1]}`;
-        token = await httpSCRAMAuth(baseUrl, user, password);
-        _tokens.set(config, token);
-      }
-
-      const conn = new FetchConnection(
-        {
-          address: addr,
-          tlsSecurity,
-          database: config.connectionParams.database,
-          user: config.connectionParams.user,
-          token,
-        },
-        registry
-      );
+      const conn = new FetchConnection(fetch, registry);
 
       conn.connected = true;
       conn.connWaiter.set();

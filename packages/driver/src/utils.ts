@@ -16,11 +16,13 @@
  * limitations under the License.
  */
 
-import { ProtocolVersion } from "./ifaces";
+import type { ResolvedConnectConfig } from "./conUtils";
+import type { HttpSCRAMAuth } from "./httpScram";
+import type { ProtocolVersion } from "./ifaces";
 
 const idCounter: { [key: string]: number } = {};
 
-export function getUniqueId(prefix: string = ""): string {
+export function getUniqueId(prefix = ""): string {
   if (!idCounter[prefix]) {
     idCounter[prefix] = 0;
   }
@@ -64,4 +66,49 @@ export interface CryptoUtils {
   randomBytes: (size: number) => Promise<Uint8Array>;
   H: (msg: Uint8Array) => Promise<Uint8Array>;
   HMAC: (key: Uint8Array, msg: Uint8Array) => Promise<Uint8Array>;
+}
+
+const _tokens = new WeakMap<ResolvedConnectConfig, string>();
+
+export type FetchWrapper = (
+  path: string,
+  init: RequestInit
+) => Promise<Response>;
+
+export async function makeFetch(
+  config: ResolvedConnectConfig,
+  httpSCRAMAuth: HttpSCRAMAuth,
+  basePath?: string
+): Promise<FetchWrapper> {
+  let token = config.secretKey ?? _tokens.get(config);
+
+  const { address, tlsSecurity, database } = config;
+
+  const protocol = tlsSecurity === "insecure" ? "http" : "https";
+  const baseUrl = `${protocol}://${address[0]}:${address[1]}`;
+  const databaseUrl = `${baseUrl}/db/${database}/${basePath ?? ""}`;
+
+  if (!token) {
+    token = await httpSCRAMAuth(baseUrl, config.user, config.password ?? "");
+    _tokens.set(config, token);
+  }
+
+  return (path: string, init: RequestInit) => {
+    const url = new URL(path, databaseUrl);
+
+    const headers = new Headers(init.headers);
+
+    if (config.user !== undefined) {
+      headers.append("X-EdgeDB-User", config.user);
+    }
+
+    if (token !== undefined) {
+      headers.append("Authorization", `Bearer ${token}`);
+    }
+
+    return fetch(url, {
+      ...init,
+      headers,
+    });
+  };
 }

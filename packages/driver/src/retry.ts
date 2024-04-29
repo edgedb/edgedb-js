@@ -16,14 +16,13 @@
  * limitations under the License.
  */
 
-import { BaseRawConnection } from "./baseConn";
-import { CodecsRegistry } from "./codecs/registry";
-import { Address, NormalizedConnectConfig } from "./conUtils";
+import type { BaseRawConnection } from "./baseConn";
+import type { CodecsRegistry } from "./codecs/registry";
+import type { NormalizedConnectConfig } from "./conUtils";
 import * as errors from "./errors";
 import { sleep } from "./utils";
 
 export type ConnectWithTimeout = (
-  addr: Address,
   config: NormalizedConnectConfig,
   registry: CodecsRegistry
 ) => Promise<BaseRawConnection>;
@@ -41,11 +40,7 @@ export async function retryingConnect(
       : Date.now() + config.connectionParams.waitUntilAvailable;
   while (true) {
     try {
-      return await connectWithTimeout(
-        config.connectionParams.address,
-        config,
-        registry
-      );
+      return await connectWithTimeout(config, registry);
     } catch (e) {
       if (e instanceof errors.ClientConnectionError) {
         if (e.hasTag(errors.SHOULD_RECONNECT)) {
