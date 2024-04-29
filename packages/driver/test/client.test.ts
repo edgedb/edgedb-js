@@ -51,6 +51,7 @@ import {
 import { PG_VECTOR_MAX_DIM } from "../src/codecs/pgvector";
 import { getHTTPSCRAMAuth } from "../src/httpScram";
 import cryptoUtils from "../src/adapter.crypto.node";
+import { makeFetch } from "../src/utils";
 
 function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
   // @ts-ignore
@@ -2081,13 +2082,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     );
 
     const fetchConn = AdminUIFetchConnection.create(
-      {
-        address: config.connectionParams.address,
-        database: config.connectionParams.database,
-        user: config.connectionParams.user,
-        tlsSecurity: "insecure",
-        token: token,
-      },
+      await makeFetch(config.connectionParams, getHTTPSCRAMAuth(cryptoUtils)),
       codecsRegistry
     );
 
@@ -2116,13 +2111,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     const codecsRegistry = new _CodecsRegistry();
     const config = await parseConnectArguments(getConnectOptions());
     const fetchConn = AdminUIFetchConnection.create(
-      {
-        address: config.connectionParams.address,
-        database: config.connectionParams.database,
-        tlsSecurity: "insecure",
-        user: config.connectionParams.user,
-        token: "invalid token",
-      },
+      await makeFetch(config.connectionParams, async () => "invalid token"),
       codecsRegistry
     );
 
