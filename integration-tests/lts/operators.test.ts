@@ -230,9 +230,88 @@ describe("operators", () => {
     assert.ok(result);
   });
 
+  describe("cardinalities for coalesce (??) operator", () => {
+    const strElement = {
+      __kind__: $.TypeKind.scalar,
+      __name__: "str",
+    };
+    const emptySet = {
+      __cardinality__: $.Cardinality.Empty,
+      __element__: strElement,
+    };
+    const atMostOneSet = {
+      __cardinality__: $.Cardinality.AtMostOne,
+      __element__: strElement,
+    };
+    const oneSet = {
+      __cardinality__: $.Cardinality.One,
+      __element__: strElement,
+    };
+    const manySet = {
+      __cardinality__: $.Cardinality.Many,
+      __element__: strElement,
+    };
+    const atLeastOneSet = {
+      __cardinality__: $.Cardinality.AtLeastOne,
+      __element__: strElement,
+    };
+
+    const cardinalityPairs = [
+      { lhs: emptySet, rhs: emptySet, expected: $.Cardinality.Empty },
+      { lhs: emptySet, rhs: atMostOneSet, expected: $.Cardinality.AtMostOne },
+      { lhs: emptySet, rhs: oneSet, expected: $.Cardinality.One },
+      { lhs: emptySet, rhs: manySet, expected: $.Cardinality.Many },
+      { lhs: emptySet, rhs: atLeastOneSet, expected: $.Cardinality.AtLeastOne },
+      { lhs: atMostOneSet, rhs: emptySet, expected: $.Cardinality.AtMostOne },
+      {
+        lhs: atMostOneSet,
+        rhs: atMostOneSet,
+        expected: $.Cardinality.AtMostOne,
+      },
+      { lhs: atMostOneSet, rhs: oneSet, expected: $.Cardinality.One },
+      { lhs: atMostOneSet, rhs: manySet, expected: $.Cardinality.Many },
+      {
+        lhs: atMostOneSet,
+        rhs: atLeastOneSet,
+        expected: $.Cardinality.AtLeastOne,
+      },
+      { lhs: oneSet, rhs: emptySet, expected: $.Cardinality.One },
+      { lhs: oneSet, rhs: atMostOneSet, expected: $.Cardinality.One },
+      { lhs: oneSet, rhs: oneSet, expected: $.Cardinality.One },
+      { lhs: oneSet, rhs: manySet, expected: $.Cardinality.One },
+      { lhs: oneSet, rhs: atLeastOneSet, expected: $.Cardinality.One },
+      { lhs: manySet, rhs: emptySet, expected: $.Cardinality.Many },
+      { lhs: manySet, rhs: atMostOneSet, expected: $.Cardinality.Many },
+      { lhs: manySet, rhs: oneSet, expected: $.Cardinality.AtLeastOne },
+      { lhs: manySet, rhs: manySet, expected: $.Cardinality.Many },
+      { lhs: manySet, rhs: atLeastOneSet, expected: $.Cardinality.AtLeastOne },
+      { lhs: atLeastOneSet, rhs: emptySet, expected: $.Cardinality.AtLeastOne },
+      {
+        lhs: atLeastOneSet,
+        rhs: atMostOneSet,
+        expected: $.Cardinality.AtLeastOne,
+      },
+      { lhs: atLeastOneSet, rhs: oneSet, expected: $.Cardinality.AtLeastOne },
+      { lhs: atLeastOneSet, rhs: manySet, expected: $.Cardinality.AtLeastOne },
+      {
+        lhs: atLeastOneSet,
+        rhs: atLeastOneSet,
+        expected: $.Cardinality.AtLeastOne,
+      },
+    ];
+
+    test.each(cardinalityPairs)(
+      "Test $#: LHS: $lhs.__cardinality__, RHS: $rhs.__cardinality__, Expected: $expected",
+      ({ lhs, rhs, expected }) => {
+        const testExpr = e.op(lhs, "??", rhs);
+        assert.deepEqual(testExpr.__cardinality__, expected);
+      }
+    );
+  });
+
   test("cardinalities for set of operators", async () => {
     const t1 = e.op(e.cast(e.str, e.set()), "??", "default");
-    assert.deepEqual(t1.__cardinality__, $.Cardinality.AtMostOne);
+    assert.deepEqual(t1.__cardinality__, $.Cardinality.One);
     assert.equal(await t1.run(client), "default");
 
     const t2 = e.op(e.cast(e.str, e.set()), "union", "default");
