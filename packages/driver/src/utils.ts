@@ -70,16 +70,16 @@ export interface CryptoUtils {
 
 const _tokens = new WeakMap<ResolvedConnectConfig, string>();
 
-export type FetchWrapper = (
+export type AuthenticatedFetch = (
   path: string,
   init: RequestInit
 ) => Promise<Response>;
 
-export async function makeFetch(
+export async function getAuthenticatedFetch(
   config: ResolvedConnectConfig,
   httpSCRAMAuth: HttpSCRAMAuth,
   basePath?: string
-): Promise<FetchWrapper> {
+): Promise<AuthenticatedFetch> {
   let token = config.secretKey ?? _tokens.get(config);
 
   const { address, tlsSecurity, database } = config;

@@ -39,7 +39,7 @@ import type { Session } from "./options";
 import { WriteBuffer } from "./primitives/buffer";
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
-import { type FetchWrapper, makeFetch } from "./utils";
+import { type AuthenticatedFetch, getAuthenticatedFetch } from "./utils";
 
 const PROTO_MIME = `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`;
 
@@ -50,12 +50,12 @@ const STUDIO_CAPABILITIES =
   0;
 
 class BaseFetchConnection extends BaseRawConnection {
-  protected fetchWrapper: FetchWrapper;
+  protected authenticatedFetch: AuthenticatedFetch;
   protected abortSignal: AbortSignal | null = null;
 
-  constructor(fetch: FetchWrapper, registry: CodecsRegistry) {
+  constructor(fetch: AuthenticatedFetch, registry: CodecsRegistry) {
     super(registry);
-    this.fetchWrapper = fetch;
+    this.authenticatedFetch = fetch;
   }
 
   protected async _waitForMessage(): Promise<void> {
@@ -90,7 +90,7 @@ class BaseFetchConnection extends BaseRawConnection {
     this.messageWaiter = new Event();
 
     try {
-      const resp = await this.fetchWrapper("", {
+      const resp = await this.authenticatedFetch("", {
         method: "post",
         body: data,
         headers: {
@@ -132,7 +132,7 @@ class BaseFetchConnection extends BaseRawConnection {
 
   static create<T extends typeof BaseFetchConnection>(
     this: T,
-    fetch: FetchWrapper,
+    fetch: AuthenticatedFetch,
     registry: CodecsRegistry
   ): InstanceType<T> {
     const conn = new this(fetch, registry);
@@ -210,7 +210,10 @@ export class FetchConnection extends BaseFetchConnection {
       config: NormalizedConnectConfig,
       registry: CodecsRegistry
     ) {
-      const fetch = await makeFetch(config.connectionParams, httpSCRAMAuth);
+      const fetch = await getAuthenticatedFetch(
+        config.connectionParams,
+        httpSCRAMAuth
+      );
 
       const conn = new FetchConnection(fetch, registry);
 

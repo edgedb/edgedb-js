@@ -2,7 +2,10 @@ import type { Client } from "edgedb";
 import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
 import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
 import cryptoUtils from "edgedb/dist/adapter.crypto.node.js";
-import { makeFetch, type FetchWrapper } from "edgedb/dist/utils.js";
+import {
+  getAuthenticatedFetch,
+  type AuthenticatedFetch,
+} from "edgedb/dist/utils.js";
 
 import type { AIOptions, QueryContext, RAGRequest } from "./types.js";
 
@@ -14,7 +17,7 @@ const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils.default);
 
 export class EdgeDBAI {
   /** @internal */
-  private readonly fetchWrapper: Promise<FetchWrapper>;
+  private readonly authenticatedFetch: Promise<AuthenticatedFetch>;
   private readonly options: AIOptions;
   private readonly context: QueryContext;
 
@@ -24,7 +27,7 @@ export class EdgeDBAI {
     options: AIOptions,
     context: Partial<QueryContext> = {}
   ) {
-    this.fetchWrapper = EdgeDBAI.getFetchWrapper(client);
+    this.authenticatedFetch = EdgeDBAI.getAuthenticatedFetch(client);
     this.options = options;
     this.context = {
       query: context.query ?? "",
@@ -33,12 +36,12 @@ export class EdgeDBAI {
     };
   }
 
-  private static async getFetchWrapper(client: Client) {
+  private static async getAuthenticatedFetch(client: Client) {
     const connectConfig: ResolvedConnectConfig = (
       await (client as any).pool._getNormalizedConnectConfig()
     ).connectionParams;
 
-    return makeFetch(connectConfig, httpSCRAMAuth, "ext/ai/");
+    return getAuthenticatedFetch(connectConfig, httpSCRAMAuth, "ext/ai/");
   }
 
   withConfig(options: Partial<AIOptions>) {
@@ -62,7 +65,7 @@ export class EdgeDBAI {
       : { Accept: "application/json", "Content-Type": "application/json" };
 
     const response = await (
-      await this.fetchWrapper
+      await this.authenticatedFetch
     )("rag", {
       method: "POST",
       headers,
