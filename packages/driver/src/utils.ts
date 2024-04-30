@@ -88,8 +88,8 @@ export async function makeFetch(
   const baseUrl = `${protocol}://${address[0]}:${address[1]}`;
   const databaseUrl = `${baseUrl}/db/${database}/${basePath ?? ""}`;
 
-  if (!token) {
-    token = await httpSCRAMAuth(baseUrl, config.user, config.password ?? "");
+  if (!token && config.password != null) {
+    token = await httpSCRAMAuth(baseUrl, config.user, config.password);
     _tokens.set(config, token);
   }
 
