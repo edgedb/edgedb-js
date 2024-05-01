@@ -37,9 +37,18 @@ Creates an instance of `EdgeDBAI` with the specified client and options.
 
   Returns a new `EdgeDBAI` instance with an updated query context.
 
-- `async queryRag(message: string, context: QueryContext = this.context): Promise<string>`
+- `async queryRag(message: string, context?: QueryContext): Promise<string>`
 
   Sends a query with context to the configured AI model and returns the response as a string.
+
+- `streamRag(message: string, context?: QueryContext): Promise<Response>`
+
+  Streams a query to the configured AI model and returns a `Response` object that streams the results. This method is useful for handling large datasets or continuous data feeds.
+
+- `getRagAsyncGenerator(message: string, context?: QueryContext): AsyncGenerator<StreamingMessage, void, undefined>`
+
+  Initiates a streaming query to the AI model and returns an asynchronous generator. This allows for handling streaming data as it arrives.
+
 
 ## Example
 
