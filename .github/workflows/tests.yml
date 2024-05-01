@@ -16,7 +16,7 @@ jobs:
     continue-on-error: ${{ matrix.edgedb-version == 'nightly' }}
     strategy:
       matrix:
-        node-version: ["18", "20"]
+        node-version: ["18", "20", "22"]
         os: [ubuntu-latest]
         edgedb-version: ["stable"]
         include:
