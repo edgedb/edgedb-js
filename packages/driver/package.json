@@ -43,7 +43,7 @@
     "build:cli": "tsc --project tsconfig.cli.json",
     "build:cjs": "tsc --project tsconfig.json",
     "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
-    "test": "npx --node-options='--experimental-fetch' jest --detectOpenHandles",
+    "test": "npx jest --detectOpenHandles",
     "lint": "tslint 'packages/*/src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node genErrors.mjs",

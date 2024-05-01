@@ -27,7 +27,7 @@
     "no-empty": false,
     "arrow-parens": false,
     "no-string-literal": false,
-    "typedef": [true, "property-declaration", "parameter"],
+    "typedef": false,
     "whitespace": [
       true,
       "check-branch",

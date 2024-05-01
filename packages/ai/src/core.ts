@@ -1,5 +1,11 @@
 import type { Client } from "edgedb";
 import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
+import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
+import cryptoUtils from "edgedb/dist/adapter.crypto.node.js";
+import {
+  getAuthenticatedFetch,
+  type AuthenticatedFetch,
+} from "edgedb/dist/utils.js";
 
 import type { AIOptions, QueryContext, RAGRequest } from "./types.js";
 
@@ -7,9 +13,11 @@ export function createAI(client: Client, options: AIOptions) {
   return new EdgeDBAI(client, options);
 }
 
+const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils.default);
+
 export class EdgeDBAI {
   /** @internal */
-  private readonly baseUrl: Promise<string>;
+  private readonly authenticatedFetch: Promise<AuthenticatedFetch>;
   private readonly options: AIOptions;
   private readonly context: QueryContext;
 
@@ -19,7 +27,7 @@ export class EdgeDBAI {
     options: AIOptions,
     context: Partial<QueryContext> = {}
   ) {
-    this.baseUrl = EdgeDBAI.getBaseUrl(client);
+    this.authenticatedFetch = EdgeDBAI.getAuthenticatedFetch(client);
     this.options = options;
     this.context = {
       query: context.query ?? "",
@@ -28,17 +36,12 @@ export class EdgeDBAI {
     };
   }
 
-  private static async getBaseUrl(client: Client) {
+  private static async getAuthenticatedFetch(client: Client) {
     const connectConfig: ResolvedConnectConfig = (
       await (client as any).pool._getNormalizedConnectConfig()
     ).connectionParams;
 
-    const [host, port] = connectConfig.address;
-    const baseUrl = `${
-      connectConfig.tlsSecurity === "insecure" ? "http" : "https"
-    }://${host}:${port}/branch/${connectConfig.database}/ext/ai/`;
-
-    return baseUrl;
+    return getAuthenticatedFetch(connectConfig, httpSCRAMAuth, "ext/ai/");
   }
 
   withConfig(options: Partial<AIOptions>) {
@@ -61,7 +64,9 @@ export class EdgeDBAI {
       ? { Accept: "text/event-stream", "Content-Type": "application/json" }
       : { Accept: "application/json", "Content-Type": "application/json" };
 
-    const response = await fetch(new URL("rag", await this.baseUrl), {
+    const response = await (
+      await this.authenticatedFetch
+    )("rag", {
       method: "POST",
       headers,
       body: JSON.stringify(request),

@@ -51,6 +51,7 @@ import {
 import { PG_VECTOR_MAX_DIM } from "../src/codecs/pgvector";
 import { getHTTPSCRAMAuth } from "../src/httpScram";
 import cryptoUtils from "../src/adapter.crypto.node";
+import { getAuthenticatedFetch } from "../src/utils";
 
 function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
   // @ts-ignore
@@ -2071,23 +2072,16 @@ function _decodeResultBuffer(outCodec: _ICodec, resultData: Uint8Array) {
 if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
   test("binary protocol over http", async () => {
     const codecsRegistry = new _CodecsRegistry();
-    const config = await parseConnectArguments(getConnectOptions());
-
-    const { address, user, password } = config.connectionParams;
-    const token = await getHTTPSCRAMAuth(cryptoUtils)(
-      `http://${address[0]}:${address[1]}`,
-      user,
-      password!
-    );
+    const config = await parseConnectArguments({
+      ...getConnectOptions(),
+      tlsSecurity: "insecure",
+    });
 
     const fetchConn = AdminUIFetchConnection.create(
-      {
-        address: config.connectionParams.address,
-        database: config.connectionParams.database,
-        user: config.connectionParams.user,
-        tlsSecurity: "insecure",
-        token: token,
-      },
+      await getAuthenticatedFetch(
+        config.connectionParams,
+        getHTTPSCRAMAuth(cryptoUtils)
+      ),
       codecsRegistry
     );
 
@@ -2114,15 +2108,15 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
 
   test("binary protocol over http failing auth", async () => {
     const codecsRegistry = new _CodecsRegistry();
-    const config = await parseConnectArguments(getConnectOptions());
+    const config = await parseConnectArguments({
+      ...getConnectOptions(),
+      tlsSecurity: "insecure",
+    });
     const fetchConn = AdminUIFetchConnection.create(
-      {
-        address: config.connectionParams.address,
-        database: config.connectionParams.database,
-        tlsSecurity: "insecure",
-        user: config.connectionParams.user,
-        token: "invalid token",
-      },
+      await getAuthenticatedFetch(
+        config.connectionParams,
+        async () => "invalid token"
+      ),
       codecsRegistry
     );
 
