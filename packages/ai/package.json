@@ -44,5 +44,8 @@
   },
   "peerDependencies": {
     "edgedb": "^1.5.0"
+  },
+  "dependencies": {
+    "eventsource-parser": "^1.1.2"
   }
 }
