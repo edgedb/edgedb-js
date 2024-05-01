@@ -1,10 +1,8 @@
 import { BaseClientPool, Client, type ConnectOptions } from "./baseClient";
 import { parseConnectArguments } from "./conUtils.server";
-import cryptoUtils from "./adapter.crypto.node";
 import { Options } from "./options";
 import { RawConnection } from "./rawConn";
 import { FetchConnection } from "./fetchConn";
-import { getHTTPSCRAMAuth } from "./httpScram";
 
 class ClientPool extends BaseClientPool {
   isStateless = false;
@@ -21,11 +19,9 @@ export function createClient(options?: string | ConnectOptions | null): Client {
   );
 }
 
-const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils);
-
 class FetchClientPool extends BaseClientPool {
   isStateless = true;
-  _connectWithTimeout = FetchConnection.createConnectWithTimeout(httpSCRAMAuth);
+  _connectWithTimeout = FetchConnection.createConnectWithTimeout();
 }
 
 export function createHttpClient(

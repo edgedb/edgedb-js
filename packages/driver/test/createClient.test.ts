@@ -111,9 +111,7 @@ function timeScriptShutdown(script: string, timeout = 5_000) {
 
 test("unref idle connections", async () => {
   const shutdownTime = await timeScriptShutdown(
-    `delete global.crypto;
-
-    const {createClient} = require('./dist/index.node');
+    `const {createClient} = require('./dist/index.node');
 
 (async () => {
   const client = createClient(${JSON.stringify(getConnectOptions())});

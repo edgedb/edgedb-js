@@ -1,7 +1,6 @@
 import type { Client } from "edgedb";
 import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
-import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
-import cryptoUtils from "edgedb/dist/adapter.crypto.node.js";
+import { HTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
 import {
   getAuthenticatedFetch,
   type AuthenticatedFetch,
@@ -12,8 +11,6 @@ import type { AIOptions, QueryContext, RAGRequest } from "./types.js";
 export function createAI(client: Client, options: AIOptions) {
   return new EdgeDBAI(client, options);
 }
-
-const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils.default);
 
 export class EdgeDBAI {
   /** @internal */
@@ -41,7 +38,7 @@ export class EdgeDBAI {
       await (client as any).pool._getNormalizedConnectConfig()
     ).connectionParams;
 
-    return getAuthenticatedFetch(connectConfig, httpSCRAMAuth, "ext/ai/");
+    return getAuthenticatedFetch(connectConfig, "ext/ai/");
   }
 
   withConfig(options: Partial<AIOptions>) {

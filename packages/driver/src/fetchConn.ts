@@ -27,7 +27,6 @@ import type { ICodec } from "./codecs/ifaces";
 import type { CodecsRegistry } from "./codecs/registry";
 import type { NormalizedConnectConfig } from "./conUtils";
 import { InternalClientError, ProtocolError } from "./errors";
-import type { HttpSCRAMAuth } from "./httpScram";
 import {
   Cardinality,
   OutputFormat,
@@ -205,14 +204,13 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
 }
 
 export class FetchConnection extends BaseFetchConnection {
-  static createConnectWithTimeout(httpSCRAMAuth: HttpSCRAMAuth) {
+  static createConnectWithTimeout() {
     return async function connectWithTimeout(
       config: NormalizedConnectConfig,
       registry: CodecsRegistry
     ) {
       const fetch = await getAuthenticatedFetch(
         config.connectionParams,
-        httpSCRAMAuth
       );
 
       const conn = new FetchConnection(fetch, registry);
