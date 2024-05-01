@@ -51,10 +51,7 @@ test("scram: RFC example", async () => {
     Buffer.from(authMessage, "utf8")
   );
   const clientProof = scram._XOR(clientKey, clientSignature);
-  const serverProof = await HMAC(
-    serverKey,
-    Buffer.from(authMessage, "utf8")
-  );
+  const serverProof = await HMAC(serverKey, Buffer.from(authMessage, "utf8"));
 
   expect(Buffer.from(clientProof).toString("base64")).toBe(
     "dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
