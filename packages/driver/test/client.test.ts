@@ -2072,7 +2072,10 @@ function _decodeResultBuffer(outCodec: _ICodec, resultData: Uint8Array) {
 if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
   test("binary protocol over http", async () => {
     const codecsRegistry = new _CodecsRegistry();
-    const config = await parseConnectArguments(getConnectOptions());
+    const config = await parseConnectArguments({
+      ...getConnectOptions(),
+      tlsSecurity: "insecure",
+    });
 
     const fetchConn = AdminUIFetchConnection.create(
       await getAuthenticatedFetch(
@@ -2105,7 +2108,10 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
 
   test("binary protocol over http failing auth", async () => {
     const codecsRegistry = new _CodecsRegistry();
-    const config = await parseConnectArguments(getConnectOptions());
+    const config = await parseConnectArguments({
+      ...getConnectOptions(),
+      tlsSecurity: "insecure",
+    });
     const fetchConn = AdminUIFetchConnection.create(
       await getAuthenticatedFetch(
         config.connectionParams,
