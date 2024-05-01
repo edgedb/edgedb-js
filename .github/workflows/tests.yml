@@ -36,6 +36,8 @@ jobs:
           # - os: macos-latest
           #   node-version: "20"
           #   edgedb-version: "stable"
+    env:
+      NODE_OPTIONS: ${{ matrix.node-version == '18' && '--experimental-global-webcrypto' || '' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -128,8 +130,6 @@ jobs:
           yarn workspace @edgedb/integration-nightly test:ci
 
       - name: Run functional tests
-        env:
-          NODE_OPTIONS: ${{ matrix.node-version == '18' && '--experimental-global-webcrypto' || '' }}
         run: |
           yarn workspace edgedb test
 
