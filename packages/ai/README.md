@@ -49,6 +49,9 @@ Creates an instance of `EdgeDBAI` with the specified client and options.
 
   Initiates a streaming query to the AI model and returns an asynchronous generator. This allows for handling streaming data as it arrives.
 
+- `async generateEmbeddings(input: string): Promise<Float32Array>`
+
+  Generates embeddings for a given input string for use in the `ext::ai::search` function.
 
 ## Example
 

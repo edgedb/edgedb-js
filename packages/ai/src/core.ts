@@ -170,6 +170,39 @@ export class EdgeDBAI {
       headers: { "Content-Type": "text/event-stream" },
     });
   }
+
+  async generateEmbeddings(input: string): Promise<Float32Array> {
+    const authenticatedFetch = await this.authenticatedFetch;
+
+    const response = await authenticatedFetch("embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ input, model: this.options.model }),
+    });
+
+    if (!response.ok) {
+      const bodyText = await response.text();
+      throw new Error(bodyText);
+    }
+
+    const contentType = response.headers.get("content-type");
+    if (contentType !== "application/json") {
+      const bodyText = await response.text();
+      throw new Error(
+        `Expected response to have content-type: application/json, got ${contentType}\n${bodyText}`
+      );
+    }
+
+    const json: unknown = await response.json();
+    const maybeEmbedding = parseEmbedding(json);
+    if (maybeEmbedding === null) {
+      throw new Error("Expected response to include an embedding");
+    }
+    return maybeEmbedding;
+  }
 }
 
 function extractMessageFromParsedEvent(
@@ -180,4 +213,26 @@ function extractMessageFromParsedEvent(
     throw new Error("Expected SSE message to include a data payload");
   }
   return JSON.parse(data) as StreamingMessage;
+}
+
+function parseEmbedding(json: unknown): Float32Array | null {
+  if (json !== null && typeof json === "object" && "data" in json) {
+    const data: unknown = json.data;
+    if (data !== null && Array.isArray(data) && data.length > 0) {
+      const first: unknown = data[0];
+      if (
+        first !== null &&
+        typeof first === "object" &&
+        "embedding" in first &&
+        Array.isArray(first.embedding)
+      ) {
+        const embedding: unknown[] = first.embedding;
+        if (typeof embedding[0] === "number") {
+          return new Float32Array(embedding as number[]);
+        }
+      }
+    }
+  }
+
+  return null;
 }
