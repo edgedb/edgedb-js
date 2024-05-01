@@ -23,7 +23,7 @@ import { InvalidArgumentError } from "../errors";
 
 export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
   tsType = "ConfigMemory";
-  importedType = true;
+  tsModule = "edgedb";
 
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof ConfigMemory)) {

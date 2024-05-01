@@ -1,4 +1,4 @@
-import { $, adapter, type Client } from "edgedb";
+import { $, adapter, type Client, type Executor } from "edgedb";
 import { type CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
 import type { Target } from "./genutil";
@@ -71,10 +71,9 @@ currently supported.`);
               filesByExtension[f.extension] = f;
             } else {
               filesByExtension[f.extension].contents += `\n\n` + f.contents;
-              filesByExtension[f.extension].imports = {
-                ...filesByExtension[f.extension].imports,
-                ...f.imports,
-              };
+              filesByExtension[f.extension].imports = filesByExtension[
+                f.extension
+              ].imports.merge(f.imports);
             }
           }
         } catch (err) {
@@ -147,9 +146,13 @@ currently supported.`);
   //   generate output file
 }
 
-export function stringifyImports(imports: { [k: string]: boolean }) {
-  if (Object.keys(imports).length === 0) return "";
-  return `import type {${Object.keys(imports).join(", ")}} from "edgedb";`;
+export function stringifyImports(imports: ImportMap) {
+  return [...imports]
+    .map(
+      ([module, specifiers]) =>
+        `import type {${[...specifiers].join(", ")}} from "${module}";`
+    )
+    .join("\n");
 }
 
 async function getMatches(root: string, schemaDir: string) {
@@ -180,7 +183,7 @@ export function generateFiles(params: {
 }): {
   path: string;
   contents: string;
-  imports: { [k: string]: boolean };
+  imports: ImportMap;
   extension: string;
 }[] {
   const queryFileName = adapter.path.basename(params.path);
@@ -191,20 +194,15 @@ export function generateFiles(params: {
     `${baseFileName}.query`
   );
 
-  const validCardinalities = Object.values($.Cardinality);
-  if (!validCardinalities.includes(params.types.cardinality)) {
+  const method = cardinalityToExecutorMethod[params.types.cardinality];
+  if (!method) {
+    const validCardinalities = Object.values($.Cardinality);
     throw new Error(
       `Invalid cardinality: ${
         params.types.cardinality
       }. Expected one of ${validCardinalities.join(", ")}.`
     );
   }
-  const method =
-    params.types.cardinality === $.Cardinality.One
-      ? "queryRequiredSingle"
-      : params.types.cardinality === $.Cardinality.AtMostOne
-      ? "querySingle"
-      : "query";
   const functionName = baseFileName
     .replace(/-[A-Za-z]/g, (m) => m[1].toUpperCase())
     .replace(/^[^A-Za-z_]|\W/g, "_");
@@ -220,11 +218,11 @@ export type ${returnsInterfaceName} = ${params.types.result};\
   const functionBody = `\
 ${params.types.query.trim().replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
 `;
-  const imports: any = {};
-  for (const i of params.types.imports) {
-    imports[i] = true;
-  }
-  const tsImports = { Executor: true, ...imports };
+
+  const tsImports =
+    (params.types as unknown as { importMap?: ImportMap }).importMap ??
+    new ImportMap([["edgedb", params.types.imports]]);
+  tsImports.add("edgedb", "Executor");
 
   const tsImpl = `${queryDefs}
 
@@ -258,7 +256,7 @@ export function ${functionName}(client: Executor${
         {
           path: `${outputBaseFileName}.js`,
           contents: `${jsImpl}\n\nmodule.exports.${functionName} = ${functionName};`,
-          imports: {},
+          imports: new ImportMap(),
           extension: ".js",
         },
         {
@@ -283,7 +281,7 @@ export function ${functionName}(client: Executor${
         {
           path: `${outputBaseFileName}.mjs`,
           contents: `export ${jsImpl}`,
-          imports: {},
+          imports: new ImportMap(),
           extension: ".mjs",
         },
         {
@@ -311,5 +309,33 @@ export function ${functionName}(client: Executor${
           extension: ".ts",
         },
       ];
+  }
+}
+
+export const cardinalityToExecutorMethod = {
+  One: "queryRequiredSingle",
+  AtMostOne: "querySingle",
+  Many: "query",
+  AtLeastOne: "query",
+  Empty: "query",
+} satisfies Record<`${$.Cardinality}`, keyof Executor>;
+
+export class ImportMap extends Map<string, Set<string>> {
+  add(module: string, specifier: string) {
+    if (!this.has(module)) {
+      this.set(module, new Set());
+    }
+    this.get(module)!.add(specifier);
+    return this;
+  }
+
+  merge(map: ImportMap) {
+    const out = new ImportMap();
+    for (const [mod, specifiers] of [...this, ...map]) {
+      for (const specifier of specifiers) {
+        out.add(mod, specifier);
+      }
+    }
+    return out;
   }
 }

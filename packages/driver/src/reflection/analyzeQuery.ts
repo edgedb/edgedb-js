@@ -17,6 +17,8 @@ type QueryType = {
   result: string;
   cardinality: Cardinality;
   query: string;
+  importMap: ImportMap;
+  /** @deprecated */
   imports: Set<string>;
 };
 
@@ -32,12 +34,14 @@ export async function analyzeQuery(
   });
   const result = generateTSTypeFromCodec(outCodec, cardinality);
 
+  const imports = args.imports.merge(result.imports);
   return {
     result: result.type,
     args: args.type,
     cardinality,
     query,
-    imports: new Set([...args.imports, ...result.imports]),
+    importMap: imports,
+    imports: imports.get("edgedb") ?? new Set(),
   };
 }
 
@@ -58,7 +62,7 @@ export type CodecGeneratorContext = {
   indent: string;
   optionalNulls: boolean;
   readonly: boolean;
-  imports: Set<string>;
+  imports: ImportMap;
   walk: (codec: CodecLike, context?: CodecGeneratorContext) => string;
   generators: CodecGeneratorMap;
   applyCardinality: (type: string, cardinality: Cardinality) => string;
@@ -87,7 +91,7 @@ export const generateTSTypeFromCodec = (
     generators: defaultCodecGenerators,
     applyCardinality: defaultApplyCardinalityToTsType(optionsWithDefaults),
     ...options,
-    imports: new Set(),
+    imports: new ImportMap(),
     walk: (codec, innerContext) => {
       innerContext ??= context;
       for (const [type, generator] of innerContext.generators) {
@@ -122,8 +126,8 @@ export const defaultCodecGenerators: CodecGeneratorMap = new Map([
     return `(${codec.values.map((val) => JSON.stringify(val)).join(" | ")})`;
   }),
   genDef(ScalarCodec, (codec, ctx) => {
-    if (codec.importedType) {
-      ctx.imports.add(codec.tsType);
+    if (codec.tsModule) {
+      ctx.imports.add(codec.tsModule, codec.tsType);
     }
     return codec.tsType;
   }),
@@ -160,16 +164,16 @@ export const defaultCodecGenerators: CodecGeneratorMap = new Map([
     if (!(subCodec instanceof ScalarCodec)) {
       throw Error("expected range subtype to be scalar type");
     }
-    ctx.imports.add("Range");
-    return `Range<${ctx.walk(subCodec)}>`;
+    ctx.imports.add(codec.tsModule, codec.tsType);
+    return `${codec.tsType}<${ctx.walk(subCodec)}>`;
   }),
   genDef(MultiRangeCodec, (codec, ctx) => {
     const subCodec = codec.getSubcodecs()[0];
     if (!(subCodec instanceof ScalarCodec)) {
       throw Error("expected multirange subtype to be scalar type");
     }
-    ctx.imports.add("MultiRange");
-    return `MultiRange<${ctx.walk(subCodec)}>`;
+    ctx.imports.add(codec.tsModule, codec.tsType);
+    return `${codec.tsType}<${ctx.walk(subCodec)}>`;
   }),
 ]);
 
@@ -229,3 +233,23 @@ export const defaultApplyCardinalityToTsType =
     }
     throw new Error(`Unexpected cardinality: ${cardinality}`);
   };
+
+export class ImportMap extends Map<string, Set<string>> {
+  add(module: string, specifier: string) {
+    if (!this.has(module)) {
+      this.set(module, new Set());
+    }
+    this.get(module)!.add(specifier);
+    return this;
+  }
+
+  merge(map: ImportMap) {
+    const out = new ImportMap();
+    for (const [mod, specifiers] of [...this, ...map]) {
+      for (const specifier of specifiers) {
+        out.add(mod, specifier);
+      }
+    }
+    return out;
+  }
+}
