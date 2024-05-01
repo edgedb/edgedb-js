@@ -310,7 +310,8 @@ export class RawConnection extends BaseRawConnection {
             err = new errors.ClientConnectionFailedError(
               `${e.message}\n` +
                 `Attempted to connect using the following credentials:\n` +
-                `${config.connectionParams.explainConfig()}\n`
+                `${config.connectionParams.explainConfig()}\n`,
+              { cause: e }
             );
             break;
           case "ECONNREFUSED":
@@ -321,14 +322,16 @@ export class RawConnection extends BaseRawConnection {
             err = new errors.ClientConnectionFailedTemporarilyError(
               `${e.message}\n` +
                 `Attempted to connect using the following credentials:\n` +
-                `${config.connectionParams.explainConfig()}\n`
+                `${config.connectionParams.explainConfig()}\n`,
+              { cause: e }
             );
             break;
           default:
             err = new errors.ClientConnectionFailedError(
               `${e.message}\n` +
                 `Attempted to connect using the following credentials:\n` +
-                `${config.connectionParams.explainConfig()}\n`
+                `${config.connectionParams.explainConfig()}\n`,
+              { cause: e }
             );
             break;
         }
