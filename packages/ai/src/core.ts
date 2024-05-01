@@ -1,12 +1,11 @@
 import type { Client } from "edgedb";
+import { EventSourceParserStream, ParsedEvent } from "eventsource-parser/stream";
+
 import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
-import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
-import cryptoUtils from "edgedb/dist/adapter.crypto.node.js";
 import {
   getAuthenticatedFetch,
   type AuthenticatedFetch,
 } from "edgedb/dist/utils.js";
-
 import type {
   AIOptions,
   QueryContext,
@@ -17,8 +16,6 @@ import type {
 export function createAI(client: Client, options: AIOptions) {
   return new EdgeDBAI(client, options);
 }
-
-const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils.default);
 
 export class EdgeDBAI {
   /** @internal */
@@ -46,7 +43,7 @@ export class EdgeDBAI {
       await (client as any).pool._getNormalizedConnectConfig()
     ).connectionParams;
 
-    return getAuthenticatedFetch(connectConfig, httpSCRAMAuth, "ext/ai/");
+    return getAuthenticatedFetch(connectConfig, "ext/ai/");
   }
 
   withConfig(options: Partial<AIOptions>) {
@@ -133,14 +130,12 @@ export class EdgeDBAI {
       throw new Error("Expected response to include a body");
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+    const reader = response.body.pipeThrough(new TextDecoderStream()).pipeThrough(new EventSourceParserStream()).getReader();
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const decoded = decoder.decode(value);
-        const message = extractMessageFromSSE(decoded);
+        const message = extractMessageFromParsedEvent(value);
         yield message;
         if (message.type === "message_stop") break;
       }
@@ -171,8 +166,8 @@ export class EdgeDBAI {
   }
 }
 
-function extractMessageFromSSE(sse: string): StreamingMessage {
-  const [_, data] = sse.split(/data: /, 2);
+function extractMessageFromParsedEvent(parsedEvent: ParsedEvent): StreamingMessage {
+  const { data } = parsedEvent;
   if (!data) {
     throw new Error("Expected SSE message to include a data payload");
   }
