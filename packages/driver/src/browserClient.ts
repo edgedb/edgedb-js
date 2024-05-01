@@ -8,7 +8,7 @@ const parseConnectArguments = getConnectArgumentsParser(null);
 
 class FetchClientPool extends BaseClientPool {
   isStateless = true;
-  _connectWithTimeout = FetchConnection.createConnectWithTimeout();
+  _connectWithTimeout = FetchConnection.connectWithTimeout.bind(FetchConnection);
 }
 
 export function createClient(): Client {

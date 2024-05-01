@@ -204,21 +204,17 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
 }
 
 export class FetchConnection extends BaseFetchConnection {
-  static createConnectWithTimeout() {
-    return async function connectWithTimeout(
-      config: NormalizedConnectConfig,
-      registry: CodecsRegistry
-    ) {
-      const fetch = await getAuthenticatedFetch(
-        config.connectionParams,
-      );
+  static async connectWithTimeout(
+    config: NormalizedConnectConfig,
+    registry: CodecsRegistry
+  ) {
+    const fetch = await getAuthenticatedFetch(config.connectionParams);
 
-      const conn = new FetchConnection(fetch, registry);
+    const conn = new FetchConnection(fetch, registry);
 
-      conn.connected = true;
-      conn.connWaiter.set();
+    conn.connected = true;
+    conn.connWaiter.set();
 
-      return conn;
-    };
+    return conn;
   }
 }

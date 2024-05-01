@@ -21,7 +21,7 @@ export function createClient(options?: string | ConnectOptions | null): Client {
 
 class FetchClientPool extends BaseClientPool {
   isStateless = true;
-  _connectWithTimeout = FetchConnection.createConnectWithTimeout();
+  _connectWithTimeout = FetchConnection.connectWithTimeout.bind(FetchConnection);
 }
 
 export function createHttpClient(
