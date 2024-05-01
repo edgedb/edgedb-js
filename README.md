@@ -40,8 +40,8 @@ writing some simple queries.
 
 - Node.js 18+
   - The driver requires the Browser API `crypto` to be available as a global.
-    Therefore, for Node 18, you _must_ run `node` with the special command line
-    flag `--experimental-global-webcrypto`.
+    Therefore, for Node versions before 19, you _must_ run `node` with the
+    special command line flag `--experimental-global-webcrypto`.
 - For TypeScript users:
   - TypeScript 4.4+ is required
   - `yarn add @types/node --dev`
