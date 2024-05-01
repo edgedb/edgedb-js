@@ -44,6 +44,7 @@ const recipe: Recipe<NextjsOptions> = {
       useSrcDir: () =>
         p.confirm({
           message: "Use `src/` directory?",
+          initialValue: false,
         }),
     });
   },
