@@ -1,5 +1,8 @@
 import type { Client } from "edgedb";
-import { EventSourceParserStream, ParsedEvent } from "eventsource-parser/stream";
+import {
+  EventSourceParserStream,
+  ParsedEvent,
+} from "eventsource-parser/stream";
 
 import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
 import {
@@ -130,7 +133,10 @@ export class EdgeDBAI {
       throw new Error("Expected response to include a body");
     }
 
-    const reader = response.body.pipeThrough(new TextDecoderStream()).pipeThrough(new EventSourceParserStream()).getReader();
+    const reader = response.body
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new EventSourceParserStream())
+      .getReader();
     try {
       while (true) {
         const { done, value } = await reader.read();
@@ -166,7 +172,9 @@ export class EdgeDBAI {
   }
 }
 
-function extractMessageFromParsedEvent(parsedEvent: ParsedEvent): StreamingMessage {
+function extractMessageFromParsedEvent(
+  parsedEvent: ParsedEvent
+): StreamingMessage {
   const { data } = parsedEvent;
   if (!data) {
     throw new Error("Expected SSE message to include a data payload");
