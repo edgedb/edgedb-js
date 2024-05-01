@@ -17,7 +17,9 @@ type QueryType = {
   result: string;
   cardinality: Cardinality;
   query: string;
-  imports: ImportMap;
+  importMap: ImportMap;
+  /** @deprecated */
+  imports: Set<string>;
 };
 
 export async function analyzeQuery(
@@ -32,12 +34,14 @@ export async function analyzeQuery(
   });
   const result = generateTSTypeFromCodec(outCodec, cardinality);
 
+  const imports = args.imports.merge(result.imports);
   return {
     result: result.type,
     args: args.type,
     cardinality,
     query,
-    imports: args.imports.merge(result.imports),
+    importMap: imports,
+    imports: imports.get("edgedb") ?? new Set(),
   };
 }
 

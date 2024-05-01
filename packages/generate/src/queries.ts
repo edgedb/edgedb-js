@@ -146,7 +146,7 @@ currently supported.`);
   //   generate output file
 }
 
-export function stringifyImports(imports: $.ImportMap) {
+export function stringifyImports(imports: ImportMap) {
   return [...imports]
     .map(
       ([module, specifiers]) =>
@@ -183,7 +183,7 @@ export function generateFiles(params: {
 }): {
   path: string;
   contents: string;
-  imports: $.ImportMap;
+  imports: ImportMap;
   extension: string;
 }[] {
   const queryFileName = adapter.path.basename(params.path);
@@ -218,7 +218,11 @@ export type ${returnsInterfaceName} = ${params.types.result};\
   const functionBody = `\
 ${params.types.query.trim().replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
 `;
-  const tsImports = params.types.imports.add("edgedb", "Executor");
+
+  const tsImports =
+    (params.types as unknown as { importMap?: ImportMap }).importMap ??
+    new ImportMap([["edgedb", params.types.imports]]);
+  tsImports.add("edgedb", "Executor");
 
   const tsImpl = `${queryDefs}
 
@@ -252,7 +256,7 @@ export function ${functionName}(client: Executor${
         {
           path: `${outputBaseFileName}.js`,
           contents: `${jsImpl}\n\nmodule.exports.${functionName} = ${functionName};`,
-          imports: {},
+          imports: new ImportMap(),
           extension: ".js",
         },
         {
@@ -277,7 +281,7 @@ export function ${functionName}(client: Executor${
         {
           path: `${outputBaseFileName}.mjs`,
           contents: `export ${jsImpl}`,
-          imports: {},
+          imports: new ImportMap(),
           extension: ".mjs",
         },
         {
@@ -315,3 +319,23 @@ export const cardinalityToExecutorMethod = {
   AtLeastOne: "query",
   Empty: "query",
 } satisfies Record<`${$.Cardinality}`, keyof Executor>;
+
+export class ImportMap extends Map<string, Set<string>> {
+  add(module: string, specifier: string) {
+    if (!this.has(module)) {
+      this.set(module, new Set());
+    }
+    this.get(module)!.add(specifier);
+    return this;
+  }
+
+  merge(map: ImportMap) {
+    const out = new ImportMap();
+    for (const [mod, specifiers] of [...this, ...map]) {
+      for (const specifier of specifiers) {
+        out.add(mod, specifier);
+      }
+    }
+    return out;
+  }
+}
