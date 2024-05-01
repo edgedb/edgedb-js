@@ -61,6 +61,10 @@ jobs:
         with:
           deno-version: v1.x
 
+      - name: Set NODE_OPTIONS for Node 18
+        if: ${{ matrix.node-version == '18' }}
+        run: echo "NODE_OPTIONS=--experimental-global-webcrypto" >> $GITHUB_ENV
+
       - name: Install dev deps
         run: |
           yarn --frozen-lockfile
