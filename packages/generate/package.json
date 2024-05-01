@@ -47,7 +47,7 @@
     "build:fast": "npx esbuild --tsconfig=tsconfig.build.json --outdir=dist --platform=node --format=cjs src/**/*.ts src/*.ts && yarn syntax:make",
     "watch": "nodemon --ignore dist --ignore dbschema/edgeql-js -x ",
     "generate": "./dist/cli.js",
-    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit",
+    "test": "yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit",
     "test:ci": "tsx test/testRunner.ts"
   }
 }

@@ -7,7 +7,7 @@
     "generate": "../../packages/generate/dist/cli.js",
     "build": "echo 'Integration tests, no build output...'",
     "test": "yarn test:ts && yarn test:non_ts",
-    "test:ts": "NODE_OPTIONS=\"--experimental-vm-modules\" pwd && yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit",
+    "test:ts": "pwd && yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit",
     "test:non_ts": "yarn test:esm && yarn test:cjs && yarn test:mts && yarn test:deno",
     "test:esm": "yarn generate queries --target esm --file esm/queries && yarn generate edgeql-js --target esm --output-dir esm/edgeql-js && cd esm && node test.js",
     "test:cjs": "yarn generate queries --target cjs --file cjs/queries && yarn generate edgeql-js --target cjs --output-dir cjs/edgeql-js && cd cjs && node test.js",
