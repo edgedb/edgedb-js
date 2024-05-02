@@ -25,7 +25,7 @@ jobs:
             edgedb-version: "nightly"
           - os: ubuntu-latest
             node-version: "20"
-            edgedb-version: "5.0-rc.1"
+            edgedb-version: "4"
           - os: ubuntu-latest
             node-version: "20"
             edgedb-version: "3"
@@ -112,13 +112,13 @@ jobs:
           yarn workspace @edgedb/integration-legacy test:ci
 
       - name: Run query builder integration tests lts
-        if: ${{ matrix.edgedb-version == '3' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' || matrix.edgedb-version == '5.0-beta.2' }}
+        if: ${{ matrix.edgedb-version == '3' || matrix.edgedb-version == '4' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
           yarn workspace @edgedb/integration-lts test:ci
           yarn workspace @edgedb/integration-lts run bench:types || echo "Benchmark types script failed, proceeding anyway."
 
       - name: Run query builder integration tests stable
-        if: ${{ matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' || matrix.edgedb-version == '5.0-beta.2' }}
+        if: ${{ matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
           yarn workspace @edgedb/integration-stable test:ci
 
