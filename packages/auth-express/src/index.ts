@@ -96,7 +96,7 @@ export class ExpressAuth {
       sameSite: "strict",
       expires,
     });
-  }
+  };
 
   private createAuthCookie = (res: ExpressResponse, authToken: string) => {
     const expires = Auth.getTokenExpiration(authToken);
@@ -106,7 +106,7 @@ export class ExpressAuth {
       sameSite: "strict",
       expires: expires ?? undefined,
     });
-  }
+  };
 
   getSession = (req: ExpressRequest) => {
     const authCookie = req.cookies[this.options.authCookieName];
