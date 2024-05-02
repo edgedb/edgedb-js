@@ -39,6 +39,12 @@ await main(args);
 async function main(args: string[]) {
   debug(`Running CLI wrapper from: ${fileURLToPath(import.meta.url)}`);
   debug("Starting main function with args:", args);
+
+  // check to see if we are being tested as a CLI binary wrapper
+  if (args.length === 1 && args[0] === "--succeed-if-cli-bin-wrapper") {
+    process.exit(0);
+  }
+
   const cliLocation =
     (await whichEdgeDbCli()) ??
     (await getCliLocationFromCache()) ??
@@ -100,6 +106,14 @@ async function whichEdgeDbCli() {
         "  - CLI found in PATH is in a node_modules/.bin directory. Ignoring."
       );
       continue;
+    }
+
+    try {
+      runEdgeDbCli(["--succeed-if-cli-bin-wrapper"], actualLocation, { stdio: "ignore" });
+      debug("  - CLI found in PATH is wrapper script. Ignoring.");
+      continue;
+    } catch (err) {
+      debug("  - CLI found in PATH is not a wrapper script. Using.");
     }
 
     return location;
