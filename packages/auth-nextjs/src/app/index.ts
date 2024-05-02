@@ -51,12 +51,7 @@ export class NextAppAuth extends NextAuth {
         const tokenData = await (
           await this.core
         ).signinWithEmailPassword(email, password);
-        cookies().set({
-          name: this.options.authCookieName,
-          value: tokenData.auth_token,
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.setSessionCookie(tokenData.auth_token);
         return tokenData;
       },
       emailPasswordSignUp: async (
@@ -74,19 +69,9 @@ export class NextAppAuth extends NextAuth {
           password,
           `${this._authRoute}/emailpassword/verify`
         );
-        cookies().set({
-          name: this.options.pkceVerifierCookieName,
-          value: result.verifier,
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.setVerifierCookie(result.verifier);
         if (result.status === "complete") {
-          cookies().set({
-            name: this.options.authCookieName,
-            value: result.tokenData.auth_token,
-            httpOnly: true,
-            sameSite: "strict",
-          });
+          this.setSessionCookie(result.tokenData.auth_token);
           return result.tokenData;
         }
         return null;
@@ -109,12 +94,7 @@ export class NextAppAuth extends NextAuth {
             this.options.baseUrl
           ).toString()
         );
-        cookies().set({
-          name: this.options.pkceVerifierCookieName,
-          value: verifier,
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.setVerifierCookie(verifier);
       },
       emailPasswordResetPassword: async (
         data: FormData | { reset_token: string; password: string }
@@ -133,12 +113,7 @@ export class NextAppAuth extends NextAuth {
         const tokenData = await (
           await this.core
         ).resetPasswordWithResetToken(resetToken, verifier, password);
-        cookies().set({
-          name: this.options.authCookieName,
-          value: tokenData.auth_token,
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.setSessionCookie(tokenData.auth_token);
         cookies().delete(this.options.pkceVerifierCookieName);
         return tokenData;
       },
@@ -199,12 +174,7 @@ export class NextAppAuth extends NextAuth {
             this.options.baseUrl
           ).toString()
         );
-        cookies().set({
-          name: this.options.pkceVerifierCookieName,
-          value: verifier,
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.setVerifierCookie(verifier);
       },
       magicLinkSignIn: async (data: FormData | { email: string }) => {
         if (!this.options.magicLinkFailurePath) {
@@ -223,12 +193,7 @@ export class NextAppAuth extends NextAuth {
             this.options.baseUrl
           ).toString()
         );
-        cookies().set({
-          name: this.options.pkceVerifierCookieName,
-          value: verifier,
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.setVerifierCookie(verifier);
       },
     };
   }
