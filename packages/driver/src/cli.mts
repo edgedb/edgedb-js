@@ -39,6 +39,12 @@ await main(args);
 async function main(args: string[]) {
   debug(`Running CLI wrapper from: ${fileURLToPath(import.meta.url)}`);
   debug("Starting main function with args:", args);
+  debug(`  - IS_TTY: ${IS_TTY}`);
+  debug(`  - SCRIPT_LOCATION: ${SCRIPT_LOCATION}`);
+  debug(`  - EDGEDB_PKG_ROOT: ${EDGEDB_PKG_ROOT}`);
+  debug(`  - CACHE_DIR: ${CACHE_DIR}`);
+  debug(`  - TEMPORARY_CLI_PATH: ${TEMPORARY_CLI_PATH}`);
+  debug(`  - CLI_LOCATION_CACHE_FILE_PATH: ${CLI_LOCATION_CACHE_FILE_PATH}`);
 
   // check to see if we are being tested as a CLI binary wrapper
   if (args.length === 1 && args[0] === "--succeed-if-cli-bin-wrapper") {
@@ -46,8 +52,8 @@ async function main(args: string[]) {
   }
 
   const cliLocation =
-    (await whichEdgeDbCli()) ??
     (await getCliLocationFromCache()) ??
+    (await whichEdgeDbCli()) ??
     (await getCliLocationFromTempCli()) ??
     (await selfInstallFromTempCli()) ??
     null;
@@ -116,6 +122,9 @@ async function whichEdgeDbCli() {
       debug("  - CLI found in PATH is not a wrapper script. Using.");
     }
 
+    await fs.writeFile(CLI_LOCATION_CACHE_FILE_PATH, actualLocation, {
+      encoding: "utf8",
+    });
     return location;
   }
   debug("  - No CLI found in PATH.");
