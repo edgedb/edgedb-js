@@ -237,18 +237,27 @@ export class Auth {
     };
   }
 
-  static checkPasswordResetTokenValid(resetToken: string) {
+  static getTokenExpiration(token: string) {
     try {
-      const payload = jwtDecode(resetToken);
+      const payload = jwtDecode(token);
       if (
         typeof payload !== "object" ||
         payload == null ||
         !("exp" in payload) ||
         typeof payload.exp !== "number"
       ) {
-        return false;
+        return null;
       }
-      return payload.exp < Date.now();
+      return new Date(payload.exp * 1000);
+    } catch {
+      return null;
+    }
+  }
+
+  static checkPasswordResetTokenValid(resetToken: string) {
+    try {
+      const expirationDate = this.getTokenExpiration(resetToken);
+      return expirationDate && expirationDate.getTime() > Date.now();
     } catch {
       return false;
     }
