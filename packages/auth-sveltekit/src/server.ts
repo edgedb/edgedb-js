@@ -132,6 +132,26 @@ export class ServerRequestAuth extends ClientAuth {
     return Auth.checkPasswordResetTokenValid(resetToken);
   }
 
+  private setVerifierCookie(verifier: string) {
+    const expires = new Date(Date.now() + 1000 * 60 * 24 * 7); // In 7 days
+    this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+      expires,
+    });
+  }
+
+  private setAuthCookie(authToken: string) {
+    const expires = Auth.getTokenExpiration(authToken);
+    this.cookies.set(this.config.authCookieName, authToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+      expires: expires ?? undefined,
+    });
+  }
+
   async getProvidersInfo() {
     return (await this.core).getProvidersInfo();
   }
@@ -153,20 +173,12 @@ export class ServerRequestAuth extends ClientAuth {
       `${this.config.authRoute}/emailpassword/verify`
     );
 
-    this.cookies.set(this.config.pkceVerifierCookieName, result.verifier, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
+    this.setVerifierCookie(result.verifier);
 
     if (result.status === "complete") {
       const tokenData = result.tokenData;
 
-      this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-        httpOnly: true,
-        sameSite: "strict",
-        path: "/",
-      });
+      this.setAuthCookie(tokenData.auth_token);
 
       return { tokenData };
     }
@@ -202,11 +214,7 @@ export class ServerRequestAuth extends ClientAuth {
         `${this.config.authRoute}/emailpassword/verify`
       );
 
-      this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
-        httpOnly: true,
-        sameSite: "strict",
-        path: "/",
-      });
+      this.setVerifierCookie(verifier);
     } else {
       throw new InvalidDataError(
         "expected 'verification_token' or 'email' in data"
@@ -227,11 +235,7 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).signinWithEmailPassword(email, password);
 
-    this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
+    this.setAuthCookie(tokenData.auth_token);
 
     return { tokenData };
   }
@@ -252,11 +256,7 @@ export class ServerRequestAuth extends ClientAuth {
       new URL(this.config.passwordResetPath, this.config.baseUrl).toString()
     );
 
-    this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
+    this.setVerifierCookie(verifier);
   }
 
   async emailPasswordResetPassword(
@@ -278,11 +278,7 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).resetPasswordWithResetToken(resetToken, verifier, password);
 
-    this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-    });
+    this.setAuthCookie(tokenData.auth_token);
 
     this.cookies.delete(this.config.pkceVerifierCookieName, {
       path: "/",
