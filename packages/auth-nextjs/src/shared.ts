@@ -118,10 +118,12 @@ export abstract class NextAuth extends NextAuthHelpers {
       path: "/",
       sameSite: "strict",
       secure: this.isSecure,
+      expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // In 7 days
     });
   }
 
   setSessionCookie(token: string) {
+    const expirationDate = Auth.getTokenExpiration(token);
     cookies().set({
       name: this.options.authCookieName,
       value: token,
@@ -129,6 +131,7 @@ export abstract class NextAuth extends NextAuthHelpers {
       sameSite: "strict",
       path: "/",
       secure: this.isSecure,
+      expires: expirationDate ?? undefined,
     });
   }
 
