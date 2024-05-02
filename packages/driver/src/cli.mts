@@ -51,8 +51,9 @@ async function main(args: string[]) {
     process.exit(0);
   }
 
+  const maybeCachedCliLocation = await getCliLocationFromCache();
   const cliLocation =
-    (await getCliLocationFromCache()) ??
+    maybeCachedCliLocation ??
     (await whichEdgeDbCli()) ??
     (await getCliLocationFromTempCli()) ??
     (await selfInstallFromTempCli()) ??
@@ -64,6 +65,14 @@ async function main(args: string[]) {
 
   try {
     runEdgeDbCli(args, cliLocation);
+    if (cliLocation !== maybeCachedCliLocation) {
+      debug("CLI location not cached.");
+      debug(`  - Cached location: ${maybeCachedCliLocation}`);
+      debug(`  - CLI location: ${cliLocation}`);
+      debug(`Updating cache with new CLI location: ${cliLocation}`);
+      await writeCliLocationToCache(cliLocation);
+      debug("Cache updated.")
+    }
   } catch (err) {
     if (
       typeof err === "object" &&
@@ -122,9 +131,6 @@ async function whichEdgeDbCli() {
       debug("  - CLI found in PATH is not a wrapper script. Using.");
     }
 
-    await fs.writeFile(CLI_LOCATION_CACHE_FILE_PATH, actualLocation, {
-      encoding: "utf8",
-    });
     return location;
   }
   debug("  - No CLI found in PATH.");
@@ -159,9 +165,7 @@ async function getCliLocationFromTempCli(): Promise<string | null> {
 
   const installDir = getInstallDir(TEMPORARY_CLI_PATH);
   const binaryPath = path.join(installDir, "edgedb");
-  await fs.writeFile(CLI_LOCATION_CACHE_FILE_PATH, binaryPath, {
-    encoding: "utf8",
-  });
+  await writeCliLocationToCache(binaryPath);
   debug("  - CLI installed at:", binaryPath);
 
   try {
@@ -172,6 +176,13 @@ async function getCliLocationFromTempCli(): Promise<string | null> {
     debug("  - CLI binary not found in path:", binaryPath);
     return null;
   }
+}
+
+async function writeCliLocationToCache(cliLocation: string) {
+  debug("Writing CLI location to cache:", cliLocation);
+  await fs.writeFile(CLI_LOCATION_CACHE_FILE_PATH, cliLocation, {
+    encoding: "utf8",
+  });
 }
 
 async function selfInstallFromTempCli(): Promise<string | null> {
