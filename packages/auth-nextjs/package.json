@@ -36,6 +36,6 @@
     "react": "^18.2.0"
   },
   "dependencies": {
-    "@edgedb/auth-core": "0.2.0"
+    "@edgedb/auth-core": "0.2.1"
   }
 }

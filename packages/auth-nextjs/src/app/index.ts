@@ -51,7 +51,7 @@ export class NextAppAuth extends NextAuth {
         const tokenData = await (
           await this.core
         ).signinWithEmailPassword(email, password);
-        this.setSessionCookie(tokenData.auth_token);
+        this.setAuthCookie(tokenData.auth_token);
         return tokenData;
       },
       emailPasswordSignUp: async (
@@ -71,7 +71,7 @@ export class NextAppAuth extends NextAuth {
         );
         this.setVerifierCookie(result.verifier);
         if (result.status === "complete") {
-          this.setSessionCookie(result.tokenData.auth_token);
+          this.setAuthCookie(result.tokenData.auth_token);
           return result.tokenData;
         }
         return null;
@@ -113,7 +113,7 @@ export class NextAppAuth extends NextAuth {
         const tokenData = await (
           await this.core
         ).resetPasswordWithResetToken(resetToken, verifier, password);
-        this.setSessionCookie(tokenData.auth_token);
+        this.setAuthCookie(tokenData.auth_token);
         cookies().delete(this.options.pkceVerifierCookieName);
         return tokenData;
       },

@@ -123,6 +123,26 @@ export class RemixServerAuth extends RemixClientAuth {
     return (await this.core).getProvidersInfo();
   }
 
+  private createVerifierCookie(verifier: string) {
+    const expires = new Date(Date.now() + 1000 * 60 * 24 * 7); // In 7 days
+    return cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+      expires,
+    });
+  }
+
+  private createAuthCookie(authToken: string) {
+    const expires = Auth.getTokenExpiration(authToken);
+    return cookie.serialize(this.options.authCookieName, authToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+      expires: expires ?? undefined,
+    });
+  }
+
   createAuthRouteHandlers({
     onOAuthCallback,
     onBuiltinUICallback,
@@ -170,11 +190,7 @@ export class RemixServerAuth extends RemixClientAuth {
               ),
               {
                 headers: new Headers({
-                  "Set-Cookie": cookie.serialize(
-                    this.options.pkceVerifierCookieName,
-                    pkceSession.verifier,
-                    { httpOnly: true, path: "/" }
-                  ),
+                  "Set-Cookie": this.createVerifierCookie(pkceSession.verifier),
                 }),
               }
             );
@@ -220,11 +236,7 @@ export class RemixServerAuth extends RemixClientAuth {
             const headers = new Headers();
             headers.append(
               "Set-Cookie",
-              cookie.serialize(
-                this.options.authCookieName,
-                tokenData.auth_token,
-                { httpOnly: true, sameSite: "lax", path: "/" }
-              )
+              this.createAuthCookie(tokenData.auth_token)
             );
             headers.append(
               "Set-Cookie",
@@ -287,11 +299,7 @@ export class RemixServerAuth extends RemixClientAuth {
             const headers = new Headers();
             headers.append(
               "Set-Cookie",
-              cookie.serialize(
-                this.options.authCookieName,
-                tokenData.auth_token,
-                { httpOnly: true, sameSite: "lax", path: "/" }
-              )
+              this.createAuthCookie(tokenData.auth_token)
             );
             headers.append(
               "Set-Cookie",
@@ -361,15 +369,7 @@ export class RemixServerAuth extends RemixClientAuth {
             const headers = new Headers();
             headers.append(
               "Set-Cookie",
-              cookie.serialize(
-                this.options.authCookieName,
-                tokenData.auth_token,
-                {
-                  httpOnly: true,
-                  sameSite: "strict",
-                  path: "/",
-                }
-              )
+              this.createAuthCookie(tokenData.auth_token)
             );
             headers.append(
               "Set-Cookie",
@@ -401,11 +401,7 @@ export class RemixServerAuth extends RemixClientAuth {
                 : pkceSession.getHostedUISigninUrl(),
               {
                 headers: {
-                  "Set-Cookie": cookie.serialize(
-                    this.options.pkceVerifierCookieName,
-                    pkceSession.verifier,
-                    { httpOnly: true, path: "/" }
-                  ),
+                  "Set-Cookie": this.createVerifierCookie(pkceSession.verifier),
                 },
               }
             );
@@ -443,15 +439,7 @@ export class RemixServerAuth extends RemixClientAuth {
               });
             }
             const headers = new Headers({
-              "Set-Cookie": cookie.serialize(
-                this.options.authCookieName,
-                tokenData.auth_token,
-                {
-                  httpOnly: true,
-                  sameSite: "strict",
-                  path: "/",
-                }
-              ),
+              "Set-Cookie": this.createAuthCookie(tokenData.auth_token),
             });
             return cbCall(
               onEmailVerify,
@@ -515,15 +503,7 @@ export class RemixServerAuth extends RemixClientAuth {
               });
             }
             const headers = new Headers({
-              "Set-Cookie": cookie.serialize(
-                this.options.authCookieName,
-                tokenData.auth_token,
-                {
-                  httpOnly: true,
-                  sameSite: "strict",
-                  path: "/",
-                }
-              ),
+              "Set-Cookie": this.createAuthCookie(tokenData.auth_token),
             });
             return cbCall(
               onEmailVerify,
@@ -611,15 +591,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          cookie.serialize(
-            this.options.pkceVerifierCookieName,
-            result.verifier,
-            {
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            }
-          )
+          this.createVerifierCookie(result.verifier)
         );
 
         if (result.status === "complete") {
@@ -627,15 +599,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
           headers.append(
             "Set-Cookie",
-            cookie.serialize(
-              this.options.authCookieName,
-              tokenData.auth_token,
-              {
-                httpOnly: true,
-                sameSite: "strict",
-                path: "/",
-              }
-            )
+            this.createAuthCookie(tokenData.auth_token)
           );
           return { tokenData, headers };
         }
@@ -694,14 +658,7 @@ export class RemixServerAuth extends RemixClientAuth {
             `${this._authRoute}/emailpassword/verify`
           );
 
-          headers.append(
-            "Set-Cookie",
-            cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            })
-          );
+          headers.append("Set-Cookie", this.createVerifierCookie(verifier));
         } else {
           throw new InvalidDataError(
             "verification_token or email missing. Either one is required."
@@ -756,11 +713,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          cookie.serialize(this.options.authCookieName, tokenData.auth_token, {
-            httpOnly: true,
-            sameSite: "strict",
-            path: "/",
-          })
+          this.createAuthCookie(tokenData.auth_token)
         );
 
         return { tokenData };
@@ -815,11 +768,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          cookie.serialize(this.options.authCookieName, tokenData.auth_token, {
-            httpOnly: true,
-            sameSite: "strict",
-            path: "/",
-          })
+          this.createAuthCookie(tokenData.auth_token)
         );
 
         return { tokenData };
@@ -894,15 +843,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          cookie.serialize(
-            this.options.pkceVerifierCookieName,
-            result.verifier,
-            {
-              httpOnly: true,
-              sameSite: "strict",
-              path: "/",
-            }
-          )
+          this.createVerifierCookie(result.verifier)
         );
 
         if (result.status === "complete") {
@@ -910,15 +851,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
           headers.append(
             "Set-Cookie",
-            cookie.serialize(
-              this.options.authCookieName,
-              tokenData.auth_token,
-              {
-                httpOnly: true,
-                sameSite: "strict",
-                path: "/",
-              }
-            )
+            this.createAuthCookie(tokenData.auth_token)
           );
           return { tokenData, headers };
         }
@@ -978,14 +911,7 @@ export class RemixServerAuth extends RemixClientAuth {
           ).toString()
         );
 
-        headers.append(
-          "Set-Cookie",
-          cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
-            httpOnly: true,
-            sameSite: "strict",
-            path: "/",
-          })
-        );
+        headers.append("Set-Cookie", this.createVerifierCookie(verifier));
       },
       req,
       dataOrCb,
@@ -1041,11 +967,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          cookie.serialize(this.options.authCookieName, tokenData.auth_token, {
-            httpOnly: true,
-            sameSite: "lax",
-            path: "/",
-          })
+          this.createAuthCookie(tokenData.auth_token)
         );
 
         headers.append(
@@ -1112,14 +1034,7 @@ export class RemixServerAuth extends RemixClientAuth {
           ).toString()
         );
 
-        headers.append(
-          "Set-Cookie",
-          cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
-            httpOnly: true,
-            sameSite: "strict",
-            path: "/",
-          })
-        );
+        headers.append("Set-Cookie", this.createVerifierCookie(verifier));
       },
       req,
       dataOrCb,
@@ -1175,14 +1090,7 @@ export class RemixServerAuth extends RemixClientAuth {
           ).toString()
         );
 
-        headers.append(
-          "Set-Cookie",
-          cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
-            httpOnly: true,
-            sameSite: "strict",
-            path: "/",
-          })
-        );
+        headers.append("Set-Cookie", this.createVerifierCookie(verifier));
       },
       req,
       dataOrCb,

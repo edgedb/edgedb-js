@@ -118,10 +118,12 @@ export abstract class NextAuth extends NextAuthHelpers {
       path: "/",
       sameSite: "strict",
       secure: this.isSecure,
+      expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // In 7 days
     });
   }
 
-  setSessionCookie(token: string) {
+  setAuthCookie(token: string) {
+    const expirationDate = Auth.getTokenExpiration(token);
     cookies().set({
       name: this.options.authCookieName,
       value: token,
@@ -129,6 +131,7 @@ export abstract class NextAuth extends NextAuthHelpers {
       sameSite: "strict",
       path: "/",
       secure: this.isSecure,
+      expires: expirationDate ?? undefined,
     });
   }
 
@@ -226,7 +229,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req
               );
             }
-            this.setSessionCookie(tokenData.auth_token);
+            this.setAuthCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onOAuthCallback(
@@ -283,7 +286,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req
               );
             }
-            this.setSessionCookie(tokenData.auth_token);
+            this.setAuthCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onEmailVerify({ error: null, tokenData }, req);
@@ -352,7 +355,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req
               );
             }
-            this.setSessionCookie(tokenData.auth_token);
+            this.setAuthCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onEmailVerify({ error: null, tokenData }, req);
@@ -408,7 +411,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req
               );
             }
-            this.setSessionCookie(tokenData.auth_token);
+            this.setAuthCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onMagicLinkCallback(
@@ -484,7 +487,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req
               );
             }
-            this.setSessionCookie(tokenData.auth_token);
+            this.setAuthCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
 
             return onBuiltinUICallback(
@@ -555,7 +558,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 ? _wrapResponse(onEmailPasswordSignIn({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
-            this.setSessionCookie(tokenData.auth_token);
+            this.setAuthCookie(tokenData.auth_token);
             return _wrapResponse(
               onEmailPasswordSignIn?.({ error: null, tokenData }, req),
               isAction
@@ -593,7 +596,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             }
             this.setVerifierCookie(result.verifier);
             if (result.status === "complete") {
-              this.setSessionCookie(result.tokenData.auth_token);
+              this.setAuthCookie(result.tokenData.auth_token);
               return _wrapResponse(
                 onEmailPasswordSignUp?.(
                   {
@@ -669,7 +672,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 ? _wrapResponse(onEmailPasswordReset({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
-            this.setSessionCookie(tokenData.auth_token);
+            this.setAuthCookie(tokenData.auth_token);
             cookies().delete(this.options.pkceVerifierCookieName);
             return _wrapResponse(
               onEmailPasswordReset?.({ error: null, tokenData }, req),
@@ -740,7 +743,7 @@ export abstract class NextAuth extends NextAuthHelpers {
 
             this.setVerifierCookie(result.verifier);
             if (result.status === "complete") {
-              this.setSessionCookie(result.tokenData.auth_token);
+              this.setAuthCookie(result.tokenData.auth_token);
               return _wrapResponse(
                 onWebAuthnSignUp(
                   {
@@ -775,7 +778,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               const error = err instanceof Error ? err : new Error(String(err));
               return _wrapResponse(onWebAuthnSignIn({ error }, req), false);
             }
-            this.setSessionCookie(tokenData.auth_token);
+            this.setAuthCookie(tokenData.auth_token);
             return _wrapResponse(
               onWebAuthnSignIn({ error: null, tokenData }, req),
               false

@@ -88,6 +88,26 @@ export class ExpressAuth {
     return Auth.checkPasswordResetTokenValid(resetToken);
   };
 
+  private createVerifierCookie = (res: ExpressResponse, verifier: string) => {
+    const expires = new Date(Date.now() + 1000 * 60 * 24 * 7); // In 7 days
+    res.cookie(this.options.pkceVerifierCookieName, verifier, {
+      httpOnly: true,
+      path: "/",
+      sameSite: "strict",
+      expires,
+    });
+  };
+
+  private createAuthCookie = (res: ExpressResponse, authToken: string) => {
+    const expires = Auth.getTokenExpiration(authToken);
+    res.cookie(this.options.authCookieName, authToken, {
+      httpOnly: true,
+      path: "/",
+      sameSite: "strict",
+      expires: expires ?? undefined,
+    });
+  };
+
   getSession = (req: ExpressRequest) => {
     const authCookie = req.cookies[this.options.authCookieName];
 
@@ -265,13 +285,7 @@ export class ExpressAuth {
           const pkceSession = await this.core.then((core) =>
             core.createPKCESession()
           );
-          res.cookie(
-            this.options.pkceVerifierCookieName,
-            pkceSession.verifier,
-            {
-              httpOnly: true,
-            }
-          );
+          this.createVerifierCookie(res, pkceSession.verifier);
           res.redirect(
             pkceSession.getOAuthUrl(
               provider,
@@ -316,10 +330,7 @@ export class ExpressAuth {
         }
         const isSignUp = searchParams.get("isSignUp") === "true";
         const tokenData = await (await this.core).getToken(code, verifier);
-        res.cookie(this.options.authCookieName, tokenData.auth_token, {
-          httpOnly: true,
-          sameSite: "lax",
-        });
+        this.createAuthCookie(res, tokenData.auth_token);
         res.clearCookie(this.options.pkceVerifierCookieName);
 
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
@@ -345,9 +356,7 @@ export class ExpressAuth {
         const pkceSession = await this.core.then((core) =>
           core.createPKCESession()
         );
-        res.cookie(this.options.pkceVerifierCookieName, pkceSession.verifier, {
-          httpOnly: true,
-        });
+        this.createVerifierCookie(res, pkceSession.verifier);
         res.redirect(pkceSession.getHostedUISigninUrl());
       } catch (err) {
         next(err);
@@ -362,9 +371,7 @@ export class ExpressAuth {
         const pkceSession = await this.core.then((core) =>
           core.createPKCESession()
         );
-        res.cookie(this.options.pkceVerifierCookieName, pkceSession.verifier, {
-          httpOnly: true,
-        });
+        this.createVerifierCookie(res, pkceSession.verifier);
         res.redirect(pkceSession.getHostedUISignupUrl());
       } catch (err) {
         next(err);
@@ -400,10 +407,7 @@ export class ExpressAuth {
         }
         const isSignUp = searchParams.get("isSignUp") === "true";
         const tokenData = await (await this.core).getToken(code, verifier);
-        res.cookie(this.options.authCookieName, tokenData.auth_token, {
-          httpOnly: true,
-          sameSite: "lax",
-        });
+        this.createAuthCookie(res, tokenData.auth_token);
         res.clearCookie(this.options.pkceVerifierCookieName);
 
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
@@ -434,10 +438,7 @@ export class ExpressAuth {
         const tokenData = await (
           await this.core
         ).signinWithEmailPassword(email, password);
-        res.cookie(this.options.authCookieName, tokenData.auth_token, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.createAuthCookie(res, tokenData.auth_token);
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;
         next();
@@ -457,19 +458,9 @@ export class ExpressAuth {
           const result = await (
             await this.core
           ).signupWithEmailPassword(email, password, verifyUrl);
-          res.cookie(this.options.pkceVerifierCookieName, result.verifier, {
-            httpOnly: true,
-            sameSite: "strict",
-          });
+          this.createVerifierCookie(res, result.verifier);
           if (result.status === "complete") {
-            res.cookie(
-              this.options.authCookieName,
-              result.tokenData.auth_token,
-              {
-                httpOnly: true,
-                sameSite: "strict",
-              }
-            );
+            this.createAuthCookie(res, result.tokenData.auth_token);
             req.session = new ExpressAuthSession(
               this.client,
               result.tokenData.auth_token
@@ -501,10 +492,7 @@ export class ExpressAuth {
         const tokenData = await (
           await this.core
         ).verifyEmailPasswordSignup(verificationToken, verifier);
-        res.cookie(this.options.authCookieName, tokenData.auth_token, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.createAuthCookie(res, tokenData.auth_token);
         res.clearCookie(this.options.pkceVerifierCookieName);
 
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
@@ -526,10 +514,7 @@ export class ExpressAuth {
           const { verifier } = await (
             await this.core
           ).sendPasswordResetEmail(email, passwordResetUrl);
-          res.cookie(this.options.pkceVerifierCookieName, verifier, {
-            httpOnly: true,
-            sameSite: "strict",
-          });
+          this.createVerifierCookie(res, verifier);
           res.status(204);
           next();
         } catch (err) {
@@ -555,10 +540,7 @@ export class ExpressAuth {
         const tokenData = await (
           await this.core
         ).resetPasswordWithResetToken(resetToken, verifier, password);
-        res.cookie(this.options.authCookieName, tokenData.auth_token, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.createAuthCookie(res, tokenData.auth_token);
         res.clearCookie(this.options.pkceVerifierCookieName);
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;
@@ -592,10 +574,7 @@ export class ExpressAuth {
             const { verifier } = await (
               await this.core
             ).resendVerificationEmailForEmail(email, verifyUrl);
-            res.cookie(this.options.pkceVerifierCookieName, verifier, {
-              httpOnly: true,
-              sameSite: "strict",
-            });
+            this.createVerifierCookie(res, verifier);
           } else {
             throw new InvalidDataError(
               "verification_token or email missing from request body"
@@ -633,10 +612,7 @@ export class ExpressAuth {
           throw new PKCEError("no pkce verifier cookie found");
         }
         const tokenData = await (await this.core).getToken(code, verifier);
-        res.cookie(this.options.authCookieName, tokenData.auth_token, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.createAuthCookie(res, tokenData.auth_token);
         res.clearCookie(this.options.pkceVerifierCookieName);
 
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
@@ -666,10 +642,7 @@ export class ExpressAuth {
           const { verifier } = await (
             await this.core
           ).signupWithMagicLink(email, callbackUrl, failureUrl);
-          res.cookie(this.options.pkceVerifierCookieName, verifier, {
-            httpOnly: true,
-            sameSite: "strict",
-          });
+          this.createVerifierCookie(res, verifier);
           next();
         } catch (err) {
           next(err);
@@ -694,10 +667,7 @@ export class ExpressAuth {
           const { verifier } = await (
             await this.core
           ).signinWithMagicLink(email, callbackUrl, failureUrl);
-          res.cookie(this.options.pkceVerifierCookieName, verifier, {
-            httpOnly: true,
-            sameSite: "strict",
-          });
+          this.createVerifierCookie(res, verifier);
           next();
         } catch (err) {
           next(err);
@@ -724,10 +694,7 @@ export class ExpressAuth {
         const tokenData = await (
           await this.core
         ).verifyWebAuthnSignup(verificationToken, verifier);
-        res.cookie(this.options.authCookieName, tokenData.auth_token, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.createAuthCookie(res, tokenData.auth_token);
         res.clearCookie(this.options.pkceVerifierCookieName);
 
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
@@ -764,10 +731,7 @@ export class ExpressAuth {
         const tokenData = await (
           await this.core
         ).signinWithWebAuthn(email, assertion);
-        res.cookie(this.options.authCookieName, tokenData.auth_token, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.createAuthCookie(res, tokenData.auth_token);
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;
         next();
@@ -803,16 +767,10 @@ export class ExpressAuth {
           await this.core
         ).signupWithWebAuthn(email, credentials, verify_url, user_handle);
         const verifier = result.verifier;
-        res.cookie(this.options.pkceVerifierCookieName, verifier, {
-          httpOnly: true,
-          sameSite: "strict",
-        });
+        this.createVerifierCookie(res, verifier);
 
         if (result.status === "complete") {
-          res.cookie(this.options.authCookieName, result.tokenData.auth_token, {
-            httpOnly: true,
-            sameSite: "strict",
-          });
+          this.createAuthCookie(res, result.tokenData.auth_token);
           req.session = new ExpressAuthSession(
             this.client,
             result.tokenData.auth_token
