@@ -183,7 +183,7 @@ jobs:
           cd temp-pnpm
           pnpm init
           pnpm add ${{ github.workspace }}/edgedb-cli.tar.gz
-          pnpm exec edgedb -- --version
+          pnpm exec edgedb --version
 
       - uses: oven-sh/setup-bun@8f24390df009a496891208e5e36b8a1de1f45135
       - name: Test CLI wrapper with bun
