@@ -39,9 +39,22 @@ await main(args);
 async function main(args: string[]) {
   debug(`Running CLI wrapper from: ${fileURLToPath(import.meta.url)}`);
   debug("Starting main function with args:", args);
+  debug(`  - IS_TTY: ${IS_TTY}`);
+  debug(`  - SCRIPT_LOCATION: ${SCRIPT_LOCATION}`);
+  debug(`  - EDGEDB_PKG_ROOT: ${EDGEDB_PKG_ROOT}`);
+  debug(`  - CACHE_DIR: ${CACHE_DIR}`);
+  debug(`  - TEMPORARY_CLI_PATH: ${TEMPORARY_CLI_PATH}`);
+  debug(`  - CLI_LOCATION_CACHE_FILE_PATH: ${CLI_LOCATION_CACHE_FILE_PATH}`);
+
+  // check to see if we are being tested as a CLI binary wrapper
+  if (args.length === 1 && args[0] === "--succeed-if-cli-bin-wrapper") {
+    process.exit(0);
+  }
+
+  const maybeCachedCliLocation = await getCliLocationFromCache();
   const cliLocation =
+    maybeCachedCliLocation ??
     (await whichEdgeDbCli()) ??
-    (await getCliLocationFromCache()) ??
     (await getCliLocationFromTempCli()) ??
     (await selfInstallFromTempCli()) ??
     null;
@@ -52,6 +65,14 @@ async function main(args: string[]) {
 
   try {
     runEdgeDbCli(args, cliLocation);
+    if (cliLocation !== maybeCachedCliLocation) {
+      debug("CLI location not cached.");
+      debug(`  - Cached location: ${maybeCachedCliLocation}`);
+      debug(`  - CLI location: ${cliLocation}`);
+      debug(`Updating cache with new CLI location: ${cliLocation}`);
+      await writeCliLocationToCache(cliLocation);
+      debug("Cache updated.");
+    }
   } catch (err) {
     if (
       typeof err === "object" &&
@@ -102,6 +123,16 @@ async function whichEdgeDbCli() {
       continue;
     }
 
+    try {
+      runEdgeDbCli(["--succeed-if-cli-bin-wrapper"], actualLocation, {
+        stdio: "ignore",
+      });
+      debug("  - CLI found in PATH is wrapper script. Ignoring.");
+      continue;
+    } catch (err) {
+      debug("  - CLI found in PATH is not a wrapper script. Using.");
+    }
+
     return location;
   }
   debug("  - No CLI found in PATH.");
@@ -111,9 +142,29 @@ async function whichEdgeDbCli() {
 async function getCliLocationFromCache(): Promise<string | null> {
   debug("Checking CLI cache...");
   try {
-    const cachedBinaryPath = (
-      await fs.readFile(CLI_LOCATION_CACHE_FILE_PATH, { encoding: "utf8" })
-    ).trim();
+    let cachedBinaryPath: string | null = null;
+    try {
+      cachedBinaryPath = (
+        await fs.readFile(CLI_LOCATION_CACHE_FILE_PATH, { encoding: "utf8" })
+      ).trim();
+    } catch (err: unknown) {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        err.code === "ENOENT"
+      ) {
+        debug("  - Cache file does not exist.");
+      } else if (
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        err.code === "EACCES"
+      ) {
+        debug("  - No permission to read cache file.");
+      }
+      return null;
+    }
     debug("  - CLI path in cache at:", cachedBinaryPath);
 
     try {
@@ -136,9 +187,7 @@ async function getCliLocationFromTempCli(): Promise<string | null> {
 
   const installDir = getInstallDir(TEMPORARY_CLI_PATH);
   const binaryPath = path.join(installDir, "edgedb");
-  await fs.writeFile(CLI_LOCATION_CACHE_FILE_PATH, binaryPath, {
-    encoding: "utf8",
-  });
+  await writeCliLocationToCache(binaryPath);
   debug("  - CLI installed at:", binaryPath);
 
   try {
@@ -149,6 +198,15 @@ async function getCliLocationFromTempCli(): Promise<string | null> {
     debug("  - CLI binary not found in path:", binaryPath);
     return null;
   }
+}
+
+async function writeCliLocationToCache(cliLocation: string) {
+  debug("Writing CLI location to cache:", cliLocation);
+  const dir = path.dirname(CLI_LOCATION_CACHE_FILE_PATH);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(CLI_LOCATION_CACHE_FILE_PATH, cliLocation, {
+    encoding: "utf8",
+  });
 }
 
 async function selfInstallFromTempCli(): Promise<string | null> {

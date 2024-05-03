@@ -147,3 +147,87 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo OK
+
+  test-cli-wrapper:
+    name: "Test CLI Wrapper"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Install EdgeDB
+        uses: edgedb/setup-edgedb@6763b6de72782d9c2e5ecc1095986a1c707da68f
+        with:
+          cli-version: stable
+          server-version: none
+
+      - name: Install dev deps
+        run: |
+          yarn --frozen-lockfile
+
+      - name: Build and pack CLI wrapper
+        run: |
+          yarn workspace edgedb run build
+          yarn workspace edgedb pack --filename=${{ github.workspace }}/edgedb-cli.tar.gz
+
+      - name: Test CLI wrapper with npm
+        run: |
+          mkdir temp-npm
+          cd temp-npm
+          npm init -y
+          npm install ${{ github.workspace }}/edgedb-cli.tar.gz
+          npm exec edgedb -- --version
+
+      - name: Test CLI wrapper with yarn
+        run: |
+          mkdir temp-yarn
+          cd temp-yarn
+          yarn init -y
+          yarn add ${{ github.workspace}}/edgedb-cli.tar.gz
+          yarn edgedb --version
+
+      - uses: threeal/setup-yarn-action@ec8c075e62bc497968de40011c2b766f5e8f1ac5
+        with:
+          version: latest
+          cache: false
+      - name: Test CLI wrapper with yarn-berry
+        run: |
+          mkdir temp-yarn-berry
+          cd temp-yarn-berry
+          yarn set version berry
+          yarn init -y
+          touch yarn.lock
+          yarn add ${{ github.workspace }}/edgedb-cli.tar.gz
+          yarn edgedb --version
+
+      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        with:
+          version: latest
+          run_install: false
+      - name: Test CLI wrapper with pnpm
+        run: |
+          mkdir temp-pnpm
+          cd temp-pnpm
+          pnpm init
+          pnpm add ${{ github.workspace }}/edgedb-cli.tar.gz
+          pnpm exec edgedb --version
+
+      - uses: oven-sh/setup-bun@8f24390df009a496891208e5e36b8a1de1f45135
+      - name: Test CLI wrapper with bun
+        run: |
+          mkdir temp-bun
+          cd temp-bun
+          bun init
+          bun add ${{ github.workspace }}/edgedb-cli.tar.gz
+          bun edgedb --version
