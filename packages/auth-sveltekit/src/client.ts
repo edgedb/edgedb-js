@@ -35,10 +35,12 @@ export default function createClientAuth(options: AuthOptions) {
 
 export class ClientAuth {
   protected readonly config: AuthConfig;
+  protected readonly isSecure: boolean;
 
   /** @internal */
   constructor(options: AuthOptions) {
     this.config = getConfig(options);
+    this.isSecure = this.config.baseUrl.startsWith("https");
   }
 
   getOAuthUrl(providerName: BuiltinOAuthProviderNames) {

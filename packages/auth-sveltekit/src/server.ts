@@ -139,6 +139,7 @@ export class ServerRequestAuth extends ClientAuth {
       sameSite: "strict",
       path: "/",
       expires,
+      secure: this.isSecure,
     });
   }
 
@@ -149,6 +150,7 @@ export class ServerRequestAuth extends ClientAuth {
       sameSite: "strict",
       path: "/",
       expires: expires ?? undefined,
+      secure: this.isSecure,
     });
   }
 
