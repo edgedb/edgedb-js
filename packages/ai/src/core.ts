@@ -15,10 +15,14 @@ import type {
   RAGRequest,
   StreamingMessage,
 } from "./types.js";
+import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
+import browserCryptoUtils from "edgedb/dist/browserCrypto.js";
 
 export function createAI(client: Client, options: AIOptions) {
   return new EdgeDBAI(client, options);
 }
+
+const httpSCRAMAuth = getHTTPSCRAMAuth(browserCryptoUtils.default);
 
 export class EdgeDBAI {
   /** @internal */
@@ -46,7 +50,7 @@ export class EdgeDBAI {
       await (client as any).pool._getNormalizedConnectConfig()
     ).connectionParams;
 
-    return getAuthenticatedFetch(connectConfig, "ext/ai/");
+    return getAuthenticatedFetch(connectConfig, httpSCRAMAuth, "ext/ai/");
   }
 
   withConfig(options: Partial<AIOptions>) {
