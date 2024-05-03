@@ -73,6 +73,7 @@ export interface ExpressAuthOptions {
 export class ExpressAuth {
   private readonly options: Required<ExpressAuthOptions>;
   private readonly core: Promise<Auth>;
+  private readonly isSecure: boolean;
 
   constructor(protected readonly client: Client, options: ExpressAuthOptions) {
     this.options = {
@@ -82,6 +83,7 @@ export class ExpressAuth {
         options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
     };
     this.core = Auth.create(client);
+    this.isSecure = this.options.baseUrl.startsWith("https");
   }
 
   isPasswordResetTokenValid = (resetToken: string) => {
@@ -95,6 +97,7 @@ export class ExpressAuth {
       path: "/",
       sameSite: "strict",
       expires,
+      secure: this.isSecure,
     });
   };
 
@@ -105,6 +108,7 @@ export class ExpressAuth {
       path: "/",
       sameSite: "strict",
       expires: expires ?? undefined,
+      secure: this.isSecure,
     });
   };
 

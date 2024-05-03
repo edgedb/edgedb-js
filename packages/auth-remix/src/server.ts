@@ -130,6 +130,7 @@ export class RemixServerAuth extends RemixClientAuth {
       sameSite: "strict",
       path: "/",
       expires,
+      secure: this.isSecure,
     });
   }
 
@@ -140,6 +141,7 @@ export class RemixServerAuth extends RemixClientAuth {
       sameSite: "strict",
       path: "/",
       expires: expires ?? undefined,
+      secure: this.isSecure,
     });
   }
 

@@ -22,6 +22,7 @@ export class RemixClientAuth {
   > &
     Pick<RemixAuthOptions, OptionalOptions>;
   readonly webAuthnClient: WebAuthnClient;
+  protected readonly isSecure: boolean;
 
   /** @internal */
   constructor(options: RemixAuthOptions) {
@@ -39,6 +40,7 @@ export class RemixClientAuth {
       signinUrl: `${this._authRoute}/webauthn/signin`,
       verifyUrl: `${this._authRoute}/webauthn/verify`,
     });
+    this.isSecure = this.options.baseUrl.startsWith("https");
   }
 
   protected get _authRoute() {
