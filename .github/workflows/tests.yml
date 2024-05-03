@@ -139,6 +139,56 @@ jobs:
         run: |
           yarn workspace @edgedb/ai test
 
+      - name: Pack CLI wrapper for local testing
+        run: |
+          yarn workspace edgedb pack --filename=edgedb-cli.tar.gz
+
+      - name: Test CLI wrapper with npm
+        run: |
+          mkdir temp-npm
+          cd temp-npm
+          npm init -y
+          npm install ../edgedb-cli.tar.gz
+          npm exec edgedb -- --version
+
+      - name: Test CLI wrapper with yarn
+        run: |
+          mkdir temp-yarn
+          cd temp-yarn
+          yarn init -y
+          yarn add ../edgedb-cli.tar.gz
+          yarn edgedb --version
+
+      - uses: threeal/setup-yarn-action@ec8c075e62bc497968de40011c2b766f5e8f1ac5
+        with:
+          version: latest
+      - name: Test CLI wrapper with yarn-berry
+        run: |
+          mkdir temp-yarn-berry
+          cd temp-yarn-berry
+          yarn set version berry
+          yarn init -y
+          yarn add ../edgedb-cli.tar.gz
+          yarn edgedb --version
+
+      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+      - name: Test CLI wrapper with pnpm
+        run: |
+          mkdir temp-pnpm
+          cd temp-pnpm
+          pnpm init -y
+          pnpm add ../edgedb-cli.tar.gz
+          pnpm exec edgedb -- --version
+
+      - uses: oven-sh/setup-bun@8f24390df009a496891208e5e36b8a1de1f45135
+      - name: Test CLI wrapper with bun
+        run: |
+          mkdir temp-bun
+          cd temp-bun
+          bun init
+          bun add ../edgedb-cli.tar.gz
+          bun edgedb --version
+
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.
   regression-tests:
