@@ -202,6 +202,8 @@ async function getCliLocationFromTempCli(): Promise<string | null> {
 
 async function writeCliLocationToCache(cliLocation: string) {
   debug("Writing CLI location to cache:", cliLocation);
+  const dir = path.dirname(CLI_LOCATION_CACHE_FILE_PATH);
+  await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(CLI_LOCATION_CACHE_FILE_PATH, cliLocation, {
     encoding: "utf8",
   });
