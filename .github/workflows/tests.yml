@@ -162,6 +162,7 @@ jobs:
       - uses: threeal/setup-yarn-action@ec8c075e62bc497968de40011c2b766f5e8f1ac5
         with:
           version: latest
+          cache: false
       - name: Test CLI wrapper with yarn-berry
         run: |
           mkdir temp-yarn-berry
