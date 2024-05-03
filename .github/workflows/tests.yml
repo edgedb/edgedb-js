@@ -169,6 +169,7 @@ jobs:
           cd temp-yarn-berry
           yarn set version berry
           yarn init -y
+          touch yarn.lock
           yarn add ${{ github.workspace }}/edgedb-cli.tar.gz
           yarn edgedb --version
 
