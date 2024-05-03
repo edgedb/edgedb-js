@@ -142,9 +142,29 @@ async function whichEdgeDbCli() {
 async function getCliLocationFromCache(): Promise<string | null> {
   debug("Checking CLI cache...");
   try {
-    const cachedBinaryPath = (
-      await fs.readFile(CLI_LOCATION_CACHE_FILE_PATH, { encoding: "utf8" })
-    ).trim();
+    let cachedBinaryPath: string | null = null;
+    try {
+      cachedBinaryPath = (
+        await fs.readFile(CLI_LOCATION_CACHE_FILE_PATH, { encoding: "utf8" })
+      ).trim();
+    } catch (err: unknown) {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        err.code === "ENOENT"
+      ) {
+        debug("  - Cache file does not exist.");
+      } else if (
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        err.code === "EACCES"
+      ) {
+        debug("  - No permission to read cache file.");
+      }
+      return null;
+    }
     debug("  - CLI path in cache at:", cachedBinaryPath);
 
     try {
