@@ -181,7 +181,7 @@ jobs:
         run: |
           mkdir temp-pnpm
           cd temp-pnpm
-          pnpm init -y
+          pnpm init
           pnpm add ${{ github.workspace }}/edgedb-cli.tar.gz
           pnpm exec edgedb -- --version
 
