@@ -71,7 +71,7 @@ async function main(args: string[]) {
       debug(`  - CLI location: ${cliLocation}`);
       debug(`Updating cache with new CLI location: ${cliLocation}`);
       await writeCliLocationToCache(cliLocation);
-      debug("Cache updated.")
+      debug("Cache updated.");
     }
   } catch (err) {
     if (
@@ -124,7 +124,9 @@ async function whichEdgeDbCli() {
     }
 
     try {
-      runEdgeDbCli(["--succeed-if-cli-bin-wrapper"], actualLocation, { stdio: "ignore" });
+      runEdgeDbCli(["--succeed-if-cli-bin-wrapper"], actualLocation, {
+        stdio: "ignore",
+      });
       debug("  - CLI found in PATH is wrapper script. Ignoring.");
       continue;
     } catch (err) {
