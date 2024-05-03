@@ -139,8 +139,46 @@ jobs:
         run: |
           yarn workspace @edgedb/ai test
 
-      - name: Pack CLI wrapper for local testing
+  # This job exists solely to act as the test job aggregate to be
+  # targeted by branch policies.
+  regression-tests:
+    name: "Regression Tests"
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo OK
+
+  test-cli-wrapper:
+    name: "Test CLI Wrapper"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Install EdgeDB
+        uses: edgedb/setup-edgedb@6763b6de72782d9c2e5ecc1095986a1c707da68f
+        with:
+          cli-version: stable
+          server-version: none
+
+      - name: Install dev deps
         run: |
+          yarn --frozen-lockfile
+
+      - name: Build and pack CLI wrapper
+        run: |
+          yarn workspace edgedb run build
           yarn workspace edgedb pack --filename=${{ github.workspace }}/edgedb-cli.tar.gz
 
       - name: Test CLI wrapper with npm
@@ -193,12 +231,3 @@ jobs:
           bun init
           bun add ${{ github.workspace }}/edgedb-cli.tar.gz
           bun edgedb --version
-
-  # This job exists solely to act as the test job aggregate to be
-  # targeted by branch policies.
-  regression-tests:
-    name: "Regression Tests"
-    needs: [test]
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo OK
