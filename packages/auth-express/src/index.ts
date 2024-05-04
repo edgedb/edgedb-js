@@ -95,7 +95,7 @@ export class ExpressAuth {
     res.cookie(this.options.pkceVerifierCookieName, verifier, {
       httpOnly: true,
       path: "/",
-      sameSite: "strict",
+      sameSite: "lax",
       expires,
       secure: this.isSecure,
     });
@@ -106,7 +106,7 @@ export class ExpressAuth {
     res.cookie(this.options.authCookieName, authToken, {
       httpOnly: true,
       path: "/",
-      sameSite: "strict",
+      sameSite: "lax",
       expires: expires ?? undefined,
       secure: this.isSecure,
     });

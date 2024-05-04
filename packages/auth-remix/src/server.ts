@@ -127,7 +127,7 @@ export class RemixServerAuth extends RemixClientAuth {
     const expires = new Date(Date.now() + 1000 * 60 * 24 * 7); // In 7 days
     return cookie.serialize(this.options.pkceVerifierCookieName, verifier, {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       expires,
       secure: this.isSecure,
@@ -138,7 +138,7 @@ export class RemixServerAuth extends RemixClientAuth {
     const expires = Auth.getTokenExpiration(authToken);
     return cookie.serialize(this.options.authCookieName, authToken, {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       expires: expires ?? undefined,
       secure: this.isSecure,
