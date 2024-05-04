@@ -136,7 +136,7 @@ export class ServerRequestAuth extends ClientAuth {
     const expires = new Date(Date.now() + 1000 * 60 * 24 * 7); // In 7 days
     this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       expires,
       secure: this.isSecure,
@@ -147,7 +147,7 @@ export class ServerRequestAuth extends ClientAuth {
     const expires = Auth.getTokenExpiration(authToken);
     this.cookies.set(this.config.authCookieName, authToken, {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       expires: expires ?? undefined,
       secure: this.isSecure,

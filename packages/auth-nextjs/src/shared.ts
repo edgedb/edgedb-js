@@ -116,7 +116,7 @@ export abstract class NextAuth extends NextAuthHelpers {
       value: verifier,
       httpOnly: true,
       path: "/",
-      sameSite: "strict",
+      sameSite: "lax",
       secure: this.isSecure,
       expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // In 7 days
     });
@@ -128,7 +128,7 @@ export abstract class NextAuth extends NextAuthHelpers {
       name: this.options.authCookieName,
       value: token,
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       secure: this.isSecure,
       expires: expirationDate ?? undefined,
