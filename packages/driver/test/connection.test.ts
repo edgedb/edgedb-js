@@ -49,7 +49,7 @@ test("connect: refused", async () => {
     throw new Error("connection isn't refused");
   } catch (e: any) {
     expect(e).toBeInstanceOf(errors.ClientConnectionClosedError);
-    expect(e.source.code).toMatch("ECONNREFUSED");
+    expect(e.cause.code).toMatch("ECONNREFUSED");
   } finally {
     if (typeof client !== "undefined") {
       await client.close();
@@ -68,8 +68,8 @@ test("connect: invalid name", async () => {
     throw new Error("name was resolved");
   } catch (e: any) {
     expect(e).toBeInstanceOf(errors.ClientConnectionClosedError);
-    expect(e.source.code).toMatch("ENOTFOUND");
-    expect(e.source.syscall).toMatch("getaddrinfo");
+    expect(e.cause.code).toMatch("ENOTFOUND");
+    expect(e.cause.syscall).toMatch("getaddrinfo");
   } finally {
     if (typeof client !== "undefined") {
       await client.close();
