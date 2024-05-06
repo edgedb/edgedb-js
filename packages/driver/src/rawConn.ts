@@ -163,12 +163,9 @@ export class RawConnection extends BaseRawConnection {
 
   protected _onError(err: Error): void {
     const newErr = new errors.ClientConnectionClosedError(
-      `network error: ${err}`
+      `network error: ${err}`,
+      { cause: err }
     );
-    Object.defineProperty(newErr, "cause", {
-      enumerable: false,
-      value: err,
-    });
 
     try {
       this._abortWaiters(newErr);
@@ -341,10 +338,6 @@ export class RawConnection extends BaseRawConnection {
             );
             break;
         }
-        Object.defineProperty(err, "cause", {
-          enumerable: false,
-          value: e,
-        });
         throw err;
       }
     } finally {
