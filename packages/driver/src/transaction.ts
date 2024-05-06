@@ -75,9 +75,9 @@ export class Transaction implements Executor {
     const abortError = this._rawConn.getConnAbortError();
     if (
       abortError instanceof errors.EdgeDBError &&
-      abortError.source instanceof errors.TransactionTimeoutError
+      abortError.cause instanceof errors.TransactionTimeoutError
     ) {
-      throw abortError.source;
+      throw abortError.cause;
     } else {
       throw abortError;
     }

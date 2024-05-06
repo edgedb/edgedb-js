@@ -152,7 +152,7 @@ export class RawConnection extends BaseRawConnection {
       this.buffer.takeMessage() &&
       this.buffer.getMessageType() === chars.$E
     ) {
-      newErr.source = this._parseErrorMessage();
+      newErr.cause = this._parseErrorMessage();
     }
 
     this._abortWithError(newErr);
@@ -162,7 +162,7 @@ export class RawConnection extends BaseRawConnection {
     const newErr = new errors.ClientConnectionClosedError(
       `network error: ${err}`
     );
-    newErr.source = err;
+    newErr.cause = err;
 
     try {
       this._abortWaiters(newErr);
@@ -335,7 +335,7 @@ export class RawConnection extends BaseRawConnection {
             );
             break;
         }
-        err.source = e;
+        err.cause = e;
         throw err;
       }
     } finally {

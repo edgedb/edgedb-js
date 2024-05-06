@@ -1,7 +1,6 @@
 import { utf8Decoder } from "../primitives/buffer";
 
 export class EdgeDBError extends Error {
-  source?: Error;
   protected static tags: object = {};
   private _message: string;
   private _query?: string;
