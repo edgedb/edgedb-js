@@ -438,6 +438,8 @@ OPTIONS:
         When used with the 'queries' generator, also changes output to single-file mode
     --force-overwrite
         Overwrite <path> contents without confirmation
+    --no-update-ignore-file
+        Do not prompt to update gitignore with generated code
 `);
 }
 run();
