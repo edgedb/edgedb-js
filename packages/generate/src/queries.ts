@@ -179,7 +179,8 @@ type QueryType = Awaited<ReturnType<(typeof $)["analyzeQuery"]>>;
 export function generateFiles(params: {
   target: Target;
   path: string;
-  types: QueryType;
+  types: Omit<QueryType, "imports" | "importMap"> &
+    Partial<Pick<QueryType, "imports" | "importMap">>;
 }): {
   path: string;
   contents: string;
@@ -220,8 +221,10 @@ ${params.types.query.trim().replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
 `;
 
   const tsImports =
-    (params.types as unknown as { importMap?: ImportMap }).importMap ??
-    new ImportMap([["edgedb", params.types.imports]]);
+    params.types.importMap ??
+    new ImportMap(
+      params.types.imports ? [["edgedb", params.types.imports]] : []
+    );
   tsImports.add("edgedb", "Executor");
 
   const tsImpl = `${queryDefs}
