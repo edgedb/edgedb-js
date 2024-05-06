@@ -236,6 +236,9 @@ const run = async () => {
       case "--force-overwrite":
         options.forceOverwrite = true;
         break;
+      case "--no-update-ignore-file":
+        options.updateIgnoreFile = false;
+        break;
       default:
         exitWithError(`Unknown option: ${flag}`);
     }
@@ -435,6 +438,8 @@ OPTIONS:
         When used with the 'queries' generator, also changes output to single-file mode
     --force-overwrite
         Overwrite <path> contents without confirmation
+    --no-update-ignore-file
+        Do not prompt to update gitignore with generated code
 `);
 }
 run();
