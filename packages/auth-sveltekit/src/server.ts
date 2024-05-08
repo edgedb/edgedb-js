@@ -313,11 +313,7 @@ export class ServerRequestAuth extends ClientAuth {
       new URL(this.config.magicLinkFailurePath, this.config.baseUrl).toString()
     );
 
-    this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
+    this.setVerifierCookie(verifier);
   }
 
   async magicLinkSend(data: { email: string } | FormData): Promise<void> {
@@ -336,11 +332,7 @@ export class ServerRequestAuth extends ClientAuth {
       new URL(this.config.magicLinkFailurePath, this.config.baseUrl).toString()
     );
 
-    this.cookies.set(this.config.pkceVerifierCookieName, verifier, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
+    this.setVerifierCookie(verifier);
   }
 
   async webAuthnSignIn(data: {
@@ -353,11 +345,7 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).signinWithWebAuthn(email, assertion);
 
-    this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
+    this.setAuthCookie(tokenData.auth_token);
 
     return { tokenData };
   }
@@ -374,20 +362,12 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).signupWithWebAuthn(email, credentials, verify_url, user_handle);
 
-    this.cookies.set(this.config.pkceVerifierCookieName, result.verifier, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-    });
+    this.setVerifierCookie(result.verifier);
 
     if (result.status === "complete") {
       const tokenData = result.tokenData;
 
-      this.cookies.set(this.config.authCookieName, tokenData.auth_token, {
-        httpOnly: true,
-        sameSite: "strict",
-        path: "/",
-      });
+      this.setAuthCookie(tokenData.auth_token);
 
       return { tokenData };
     }
@@ -492,7 +472,7 @@ async function handleAuthRoutes(
       });
 
       return redirect(
-        303,
+        307,
         pkceSession.getOAuthUrl(
           provider,
           redirectUrl,
@@ -633,7 +613,7 @@ async function handleAuthRoutes(
       });
 
       return redirect(
-        303,
+        307,
         path.split("/").pop() === "signup"
           ? pkceSession.getHostedUISignupUrl()
           : pkceSession.getHostedUISigninUrl()
@@ -746,7 +726,7 @@ async function handleAuthRoutes(
         throw new InvalidDataError("email missing");
       }
 
-      return redirect(303, (await core).getWebAuthnSignupOptionsUrl(email));
+      return redirect(307, (await core).getWebAuthnSignupOptionsUrl(email));
     }
 
     case "webauthn/signin/options": {
@@ -755,7 +735,7 @@ async function handleAuthRoutes(
         throw new InvalidDataError("email missing");
       }
 
-      return redirect(303, (await core).getWebAuthnSigninOptionsUrl(email));
+      return redirect(307, (await core).getWebAuthnSigninOptionsUrl(email));
     }
 
     case "webauthn/verify": {
