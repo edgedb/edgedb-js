@@ -28,7 +28,6 @@ const recipe: Recipe<EdgeDBOptions> = {
     { initializeProject }: EdgeDBOptions
   ) {
     logger("Running edgedb recipe");
-    logger("Checking for existing EdgeDB CLI");
 
     const spinner = p.spinner();
 
@@ -39,7 +38,7 @@ const recipe: Recipe<EdgeDBOptions> = {
           cwd: projectDir,
         });
         const { stdout, stderr } = await execInPackageManager(
-          "edgedb query 'select sys::get_version_as_str()'",
+          `edgedb query "select sys::get_version_as_str()"`,
           { cwd: projectDir }
         );
         const serverVersion = JSON.parse(stdout.trim());
