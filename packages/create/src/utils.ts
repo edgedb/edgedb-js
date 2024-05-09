@@ -160,16 +160,16 @@ export async function execInPackageManager(
   let command;
   switch (packageManager) {
     case "yarn":
-      command = `yarn exec '${cmd}'`;
+      command = `yarn exec -- ${cmd}`;
       break;
     case "bun":
-      command = `bun run --bun '${cmd}'`;
+      command = `bun run --bun ${cmd}`;
       break;
     case "pnpm":
-      command = `pnpm exec '${cmd}'`;
+      command = `pnpm exec ${cmd}`;
       break;
     case "npm":
-      command = `npm exec -- '${cmd}'`;
+      command = `npm exec -- ${cmd}`;
       break;
     default:
       command = cmd;
