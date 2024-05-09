@@ -25,7 +25,8 @@ test("run deno test", async () => {
       "deno",
       [
         "test",
-        "--unstable",
+        "--reload",
+        "--check",
         "--allow-net",
         "--allow-env",
         "--allow-read",

@@ -4,12 +4,13 @@ import * as net from "net";
 import * as os from "os";
 import * as path from "path";
 import * as tls from "tls";
+import { Buffer } from "node:buffer";
 
 import process from "process";
 import * as readline from "readline";
 import { Writable } from "stream";
 
-export { path, net, fs, tls, process };
+export { path, net, fs, tls, process, Buffer };
 
 export async function readFileUtf8(...pathParts: string[]): Promise<string> {
   return await fs.readFile(path.join(...pathParts), { encoding: "utf8" });
