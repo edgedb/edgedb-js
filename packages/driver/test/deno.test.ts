@@ -54,9 +54,7 @@ test("deno check", async () => {
   return await new Promise<void>((resolve, reject) => {
     return execFile(
       "deno",
-      // TODO: remove unstable flag when deno stdlib node/process module
-      // doesn't need it
-      ["eval", "--unstable", 'import * as edgedb from "./mod.ts"'],
+      ["eval", 'import * as edgedb from "./mod.ts"'],
       {
         env: process.env,
         timeout: 60_000,
