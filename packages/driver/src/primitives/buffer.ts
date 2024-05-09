@@ -21,7 +21,7 @@ import * as chars from "./chars";
 import { LegacyHeaderCodes } from "../ifaces";
 
 /* WriteBuffer over-allocation */
-const BUFFER_INC_SIZE: number = 4096;
+const BUFFER_INC_SIZE = 4096;
 
 const EMPTY_BUFFER = new Uint8Array(0);
 
@@ -31,18 +31,14 @@ export const utf8Decoder = new TextDecoder("utf8");
 let decodeB64: (b64: string) => Uint8Array;
 let encodeB64: (data: Uint8Array) => string;
 
-// @ts-ignore: Buffer is not defined in Deno
-if (Buffer === "function") {
+if (typeof globalThis.Buffer === "function") {
   decodeB64 = (b64: string): Uint8Array => {
-    // @ts-ignore: Buffer is not defined in Deno
-    return Buffer.from(b64, "base64");
+    return globalThis.Buffer.from(b64, "base64");
   };
   encodeB64 = (data: Uint8Array): string => {
-    // @ts-ignore: Buffer is not defined in Deno
-    const buf = !Buffer.isBuffer(data)
-      ? // @ts-ignore: Buffer is not defined in Deno
-        Buffer.from(data.buffer, data.byteOffset, data.byteLength)
-      : data;
+    const buf = globalThis.Buffer.isBuffer(data)
+      ? data
+      : globalThis.Buffer.from(data.buffer, data.byteOffset, data.byteLength);
     return buf.toString("base64");
   };
 } else {
