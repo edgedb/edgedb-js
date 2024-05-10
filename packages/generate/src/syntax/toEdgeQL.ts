@@ -585,7 +585,7 @@ function walkExprTree(
     case ExpressionKind.Group: {
       const groupingSet = expr.__modifiers__.by as any as GroupingSet;
       // const groupingSet = expr.__grouping__ as any as GroupingSet;
-      for (const [_k, groupExpr] of groupingSet.__exprs__) {
+      for (const [, groupExpr] of groupingSet.__exprs__) {
         // this prevents recurring grouping elements from being walked twice
         // this way, these won't get pulled into with blocks,
         // which is good because they need to be rendered in `using`
