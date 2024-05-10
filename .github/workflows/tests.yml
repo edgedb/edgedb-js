@@ -186,6 +186,7 @@ jobs:
           cd temp-npm
           npm init -y
           npm install ${{ github.workspace }}/edgedb-cli.tar.gz
+          npm exec edgedb -- project init --non-interactive
           npm exec edgedb -- --version
           npm exec edgedb -- query 'select sys::get_version_as_str()'
 
@@ -195,6 +196,7 @@ jobs:
           cd temp-yarn
           yarn init -y
           yarn add ${{ github.workspace}}/edgedb-cli.tar.gz
+          yarn edgedb project init --non-interactive
           yarn edgedb --version
           yarn edgedb query 'select sys::get_version_as_str()'
 
@@ -210,6 +212,7 @@ jobs:
           yarn init -y
           touch yarn.lock
           yarn add ${{ github.workspace }}/edgedb-cli.tar.gz
+          yarn edgedb project init --non-interactive
           yarn edgedb --version
           yarn edgedb query 'select sys::get_version_as_str()'
 
@@ -223,6 +226,7 @@ jobs:
           cd temp-pnpm
           pnpm init
           pnpm add ${{ github.workspace }}/edgedb-cli.tar.gz
+          pnpm exec edgedb project init --non-interactive
           pnpm exec edgedb --version
           pnpm exec edgedb query 'select sys::get_version_as_str()'
 
@@ -233,5 +237,6 @@ jobs:
           cd temp-bun
           bun init
           bun add ${{ github.workspace }}/edgedb-cli.tar.gz
+          bun edgedb project init --non-interactive
           bun edgedb --version
           bun edgedb query 'select sys::get_version_as_str()'
