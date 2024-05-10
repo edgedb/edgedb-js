@@ -17,7 +17,8 @@
  */
 
 import { Cardinality } from "../ifaces";
-import { ICodec, Codec, uuid, CodecKind } from "./ifaces";
+import type { ICodec, uuid, CodecKind } from "./ifaces";
+import { Codec } from "./ifaces";
 import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import {
   InvalidArgumentError,

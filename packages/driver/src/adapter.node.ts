@@ -85,7 +85,7 @@ export function input(
 ): Promise<string> {
   let silent = false;
 
-  const output = !!params?.silent
+  const output = params?.silent
     ? new Writable({
         write(
           chunk: any,

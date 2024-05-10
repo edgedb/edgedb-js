@@ -8,7 +8,7 @@ export {
   afterAll,
   it,
 } from "https://deno.land/std@0.177.0/testing/bdd.ts";
-import { MatchResult } from "https://deno.land/x/expect/matchers.ts";
+import type { MatchResult } from "https://deno.land/x/expect/matchers.ts";
 import { bold, green, red } from "https://deno.land/std@0.177.0/fmt/colors.ts";
 
 export { process } from "https://deno.land/std@0.177.0/node/process.ts";

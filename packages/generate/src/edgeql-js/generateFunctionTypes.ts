@@ -1,11 +1,12 @@
 import type { GeneratorParams } from "../genutil";
 import { frag, getRef, quote, splitName } from "../genutil";
+import type {
+  CodeBuilder,
+  CodeFragment,
+  DirBuilder} from "../builders";
 import {
   all,
   CodeBuffer,
-  CodeBuilder,
-  CodeFragment,
-  DirBuilder,
   dts,
   r,
   t,
@@ -14,15 +15,16 @@ import {
 
 import { getStringRepresentation } from "./generateObjectTypes";
 import type { $ } from "../genutil";
+import type {
+  GroupedParams,
+  AnytypeDef,
+  FuncopDefOverload} from "../funcoputil";
 import {
   getTypesSpecificity,
   sortFuncopOverloads,
   getImplicitCastableRootTypes,
   expandFuncopAnytypeOverloads,
-  GroupedParams,
-  findPathOfAnytype,
-  AnytypeDef,
-  FuncopDefOverload,
+  findPathOfAnytype
 } from "../funcoputil";
 
 export const generateFunctionTypes = ({

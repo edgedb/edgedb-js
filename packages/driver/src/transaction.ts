@@ -15,10 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ClientConnectionHolder } from "./baseClient";
-import { BaseRawConnection } from "./baseConn";
+import type { ClientConnectionHolder } from "./baseClient";
+import type { BaseRawConnection } from "./baseConn";
 import * as errors from "./errors";
-import { Cardinality, Executor, OutputFormat, QueryArgs } from "./ifaces";
+import {
+  type Executor,
+  type QueryArgs,
+  Cardinality,
+  OutputFormat,
+} from "./ifaces";
 
 export enum TransactionState {
   ACTIVE = 0,

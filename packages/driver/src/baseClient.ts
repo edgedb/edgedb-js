@@ -18,26 +18,32 @@
 
 import type { Duration } from "./datatypes/datetime";
 import { CodecsRegistry } from "./codecs/registry";
-import {
+import type {
   ConnectArgumentsParser,
   ConnectConfig,
   NormalizedConnectConfig,
   ResolvedConnectConfigReadonly,
 } from "./conUtils";
 import * as errors from "./errors";
-import { Cardinality, Executor, OutputFormat, QueryArgs } from "./ifaces";
 import {
-  Options,
+  type Executor,
+  type QueryArgs,
+  Cardinality,
+  OutputFormat,
+} from "./ifaces";
+import type {
   RetryOptions,
   Session,
   SimpleRetryOptions,
   SimpleTransactionOptions,
   TransactionOptions,
 } from "./options";
+import { Options } from "./options";
 import Event from "./primitives/event";
 import { LifoQueue } from "./primitives/queues";
-import { BaseRawConnection } from "./baseConn";
-import { ConnectWithTimeout, retryingConnect } from "./retry";
+import type { BaseRawConnection } from "./baseConn";
+import type { ConnectWithTimeout } from "./retry";
+import { retryingConnect } from "./retry";
 import { util } from "./reflection/util";
 import { Transaction } from "./transaction";
 import { sleep } from "./utils";

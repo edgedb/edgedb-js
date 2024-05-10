@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-import { ReadBuffer, uuidToBuffer, WriteBuffer } from "../primitives/buffer";
-import { ICodec, ScalarCodec } from "./ifaces";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { uuidToBuffer } from "../primitives/buffer";
+import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
 
 function UUIDBufferFromString(uuid: string): Uint8Array {

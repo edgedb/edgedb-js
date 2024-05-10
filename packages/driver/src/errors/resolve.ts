@@ -17,7 +17,7 @@
  */
 
 import * as errors from "./index";
-import { ErrorType } from "./base";
+import type { ErrorType } from "./base";
 import { errorMapping } from "./map";
 
 export function resolveErrorCode(code: number): ErrorType {

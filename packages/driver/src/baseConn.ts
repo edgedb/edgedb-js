@@ -17,22 +17,23 @@
  */
 
 import { INVALID_CODEC, NullCodec, NULL_CODEC } from "./codecs/codecs";
-import { ICodec, uuid } from "./codecs/ifaces";
+import type { ICodec, uuid } from "./codecs/ifaces";
 import { NamedTupleCodec } from "./codecs/namedtuple";
 import { ObjectCodec } from "./codecs/object";
-import { CodecsRegistry } from "./codecs/registry";
+import type { CodecsRegistry } from "./codecs/registry";
 import { EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec } from "./codecs/tuple";
 import { versionGreaterThanOrEqual } from "./utils";
 import * as errors from "./errors";
 import { resolveErrorCode } from "./errors/resolve";
-import {
-  Cardinality,
-  LegacyHeaderCodes,
-  OutputFormat,
+import type {
   QueryOptions,
   ProtocolVersion,
   QueryArgs,
-  ServerSettings,
+  ServerSettings} from "./ifaces";
+import {
+  Cardinality,
+  LegacyHeaderCodes,
+  OutputFormat
 } from "./ifaces";
 import {
   ReadBuffer,
@@ -44,7 +45,8 @@ import {
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
 import LRU from "./primitives/lru";
-import { SerializedSessionState, Session } from "./options";
+import type { SerializedSessionState} from "./options";
+import { Session } from "./options";
 
 export const PROTO_VER: ProtocolVersion = [1, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];

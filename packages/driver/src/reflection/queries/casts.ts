@@ -1,4 +1,4 @@
-import { Executor } from "../../ifaces";
+import type { Executor } from "../../ifaces";
 import type { typeutil } from "../typeutil";
 import { typeMapping } from "./types";
 

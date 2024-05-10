@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { ICodec, ScalarCodec } from "./ifaces";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError, ProtocolError } from "../errors";
 
 const NUMERIC_POS = 0x0000;
@@ -34,7 +34,7 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
     const NBASE = BigInt("10000");
     const ZERO = BigInt("0");
 
-    const digits: BigInt[] = [];
+    const digits: bigint[] = [];
     let sign = NUMERIC_POS;
     let uval = object;
 
@@ -54,7 +54,7 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
 
     while (uval) {
       // @ts-ignore
-      const mod: BigInt = uval % NBASE;
+      const mod: bigint = uval % NBASE;
       // @ts-ignore
       uval /= NBASE;
       digits.push(mod);

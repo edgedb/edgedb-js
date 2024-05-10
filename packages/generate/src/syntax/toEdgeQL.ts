@@ -380,7 +380,7 @@ function walkExprTree(
         param = param.__shapeElement__;
       }
       if (typeof param === "object") {
-        if (!!(param as any).__kind__) {
+        if ((param as any).__kind__) {
           // param is expression
           childExprs.push(...walkExprTree(param as any, expr as any, ctx));
         } else {
@@ -1289,10 +1289,10 @@ function shapeToEdgeQL(
     let polyType: SomeExpression | null = null;
 
     if (typeof val === "object" && !val.__element__) {
-      if (!!val["+="]) {
+      if (val["+="]) {
         operator = "+=";
         val = val["+="];
-      } else if (!!val["-="]) {
+      } else if (val["-="]) {
         operator = "-=";
         val = val["-="];
       }

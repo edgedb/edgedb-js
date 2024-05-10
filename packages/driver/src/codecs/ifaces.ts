@@ -16,7 +16,11 @@
  * limitations under the License.
  */
 
-import { ReadBuffer, WriteBuffer, uuidToBuffer } from "../primitives/buffer";
+import {
+  type ReadBuffer,
+  type WriteBuffer,
+  uuidToBuffer,
+} from "../primitives/buffer";
 import { KNOWN_TYPES } from "./consts";
 
 export type uuid = string;
