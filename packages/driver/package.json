@@ -27,6 +27,7 @@
   "devDependencies": {
     "@js-temporal/polyfill": "0.4.3",
     "@types/jest": "^29.5.2",
+    "@types/shell-quote": "^1.7.5",
     "@types/which": "^3.0.3",
     "fast-check": "^3.10.0",
     "get-stdin": "^9.0.0",
@@ -54,6 +55,7 @@
     "debug": "^4.3.4",
     "env-paths": "^3.0.0",
     "semver": "^7.6.0",
+    "shell-quote": "^1.8.1",
     "which": "^4.0.0"
   }
 }
