@@ -10,6 +10,7 @@ import * as semver from "semver";
 import envPaths from "env-paths";
 import Debug from "debug";
 import which from "which";
+import { quote } from "shell-quote";
 
 const debug = Debug("edgedb:cli");
 
@@ -241,8 +242,7 @@ function runEdgeDbCli(
   pathToCli: string,
   execOptions: ExecSyncOptions = { stdio: "inherit" }
 ) {
-  const cliCommand = `"${pathToCli}"`;
-  const command = `${cliCommand} ${args.join(" ")}`;
+  const command = quote([pathToCli, ...args]);
   debug(`Running EdgeDB CLI: ${command}`);
   return execSync(command, execOptions);
 }

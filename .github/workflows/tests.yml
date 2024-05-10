@@ -170,7 +170,6 @@ jobs:
         uses: edgedb/setup-edgedb@6763b6de72782d9c2e5ecc1095986a1c707da68f
         with:
           cli-version: stable
-          server-version: none
 
       - name: Install dev deps
         run: |
@@ -187,7 +186,9 @@ jobs:
           cd temp-npm
           npm init -y
           npm install ${{ github.workspace }}/edgedb-cli.tar.gz
+          npm exec edgedb -- project init --non-interactive
           npm exec edgedb -- --version
+          npm exec edgedb -- query 'select sys::get_version_as_str()'
 
       - name: Test CLI wrapper with yarn
         run: |
@@ -195,7 +196,9 @@ jobs:
           cd temp-yarn
           yarn init -y
           yarn add ${{ github.workspace}}/edgedb-cli.tar.gz
+          yarn edgedb project init --non-interactive
           yarn edgedb --version
+          yarn edgedb query 'select sys::get_version_as_str()'
 
       - uses: threeal/setup-yarn-action@ec8c075e62bc497968de40011c2b766f5e8f1ac5
         with:
@@ -209,7 +212,9 @@ jobs:
           yarn init -y
           touch yarn.lock
           yarn add ${{ github.workspace }}/edgedb-cli.tar.gz
+          yarn edgedb project init --non-interactive
           yarn edgedb --version
+          yarn edgedb query 'select sys::get_version_as_str()'
 
       - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
         with:
@@ -221,7 +226,9 @@ jobs:
           cd temp-pnpm
           pnpm init
           pnpm add ${{ github.workspace }}/edgedb-cli.tar.gz
+          pnpm exec edgedb project init --non-interactive
           pnpm exec edgedb --version
+          pnpm exec edgedb query 'select sys::get_version_as_str()'
 
       - uses: oven-sh/setup-bun@8f24390df009a496891208e5e36b8a1de1f45135
       - name: Test CLI wrapper with bun
@@ -230,4 +237,6 @@ jobs:
           cd temp-bun
           bun init
           bun add ${{ github.workspace }}/edgedb-cli.tar.gz
+          bun edgedb project init --non-interactive
           bun edgedb --version
+          bun edgedb query 'select sys::get_version_as_str()'
