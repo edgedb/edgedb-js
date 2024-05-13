@@ -16,7 +16,7 @@ export default tseslint.config(
       // querybuilder, so set this option to ensure we always do that
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-namespace": "off",
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   }
 );

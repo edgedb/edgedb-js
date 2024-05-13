@@ -642,11 +642,16 @@ export class RemixServerAuth extends RemixClientAuth {
   > {
     return handleAction(
       async (data, headers) => {
-        const verificationToken =
-          data instanceof FormData
-            ? data.get("verification_token")
-            : data.verification_token;
-        const email = data instanceof FormData ? data.get("email") : data.email;
+        let verificationToken, email;
+
+        if (hasVerificationToken(data)) {
+          verificationToken =
+            data instanceof FormData
+              ? data.get("verification_token")
+              : hasVerificationToken(data) && ["verification_token"];
+        } else {
+          email = data instanceof FormData ? data.get("email") : data.email;
+        }
 
         if (verificationToken) {
           await (
@@ -757,10 +762,7 @@ export class RemixServerAuth extends RemixClientAuth {
       }
     | (Res extends Response ? Res : TypedResponse<Res>)
   > {
-    return handleAction<{
-      email: string;
-      assertion: AuthenticationResponseJSON;
-    }>(
+    return handleAction(
       async (data, headers) => {
         const { email, assertion } = data;
 
@@ -830,12 +832,7 @@ export class RemixServerAuth extends RemixClientAuth {
       }
     | (Res extends Response ? Res : TypedResponse<Res>)
   > {
-    return handleAction<{
-      email: string;
-      credentials: RegistrationResponseJSON;
-      verify_url: string;
-      user_handle: string;
-    }>(
+    return handleAction(
       async (data, headers) => {
         const { email, credentials, verify_url, user_handle } = data;
 
@@ -1163,11 +1160,25 @@ function _extractParams(
   return params;
 }
 
-async function handleAction<DataT extends Record<string, any> | FormData>(
-  action: (data: DataT, headers: Headers, req: Request) => Promise<any>,
+function hasVerificationToken(
+  data: { verification_token: string } | { email: string }
+): data is { verification_token: string } {
+  return "verification_token" in data;
+}
+
+async function handleAction<
+  Data extends Record<string, unknown> | FormData,
+  Params,
+  Res
+>(
+  action: (
+    data: Data,
+    headers: Headers,
+    req: Request
+  ) => Promise<Record<string, unknown> | void>,
   req: Request,
-  dataOrCb: Record<string, any> | ((data: any) => any) | undefined,
-  cb: ((data: any) => any) | undefined
+  dataOrCb?: Data | ((data: Params) => Res | Promise<Res>),
+  cb?: (data: Params) => Res | Promise<Res>
 ) {
   const contentType = req.headers.get("content-type") ?? "application/json";
   const data = (
@@ -1176,10 +1187,9 @@ async function handleAction<DataT extends Record<string, any> | FormData>(
       : contentType.startsWith("application/json")
       ? await req.json()
       : await req.formData()
-  ) as DataT;
-  const callback = (typeof dataOrCb === "function" ? dataOrCb : cb) as (
-    data: any
-  ) => any;
+  ) as Data;
+
+  const callback = typeof dataOrCb === "function" ? dataOrCb : cb;
 
   const headers: Headers = new Headers();
   let params: any;
@@ -1202,16 +1212,29 @@ async function handleAction<DataT extends Record<string, any> | FormData>(
   }
 }
 
-async function actionCbCall(
-  cb: (data?: any) => any,
+function actionCbCall<Res>(
+  cb: () => Res | Promise<Res>,
+  headers: Headers
+): Promise<Response>;
+function actionCbCall<Params, Res>(
+  cb: (data: Params) => Res | Promise<Res>,
+  headers: Headers,
+  error: Error | null,
+  params?: Params
+): Promise<Response>;
+async function actionCbCall<Params, Res>(
+  cb: (data?: Params) => Res | Promise<Res>,
   headers: Headers,
   error?: Error | null,
-  params?: any
+  params?: Params
 ) {
-  let res: any;
+  let res: Res | Response;
 
   try {
-    res = error || params ? await cb(error ? { error } : params) : await cb();
+    res =
+      error || params
+        ? await cb(error ? ({ error } as Params) : params)
+        : await cb();
   } catch (err) {
     if (err instanceof Response) {
       res = err;
@@ -1235,16 +1258,18 @@ async function actionCbCall(
   }
 }
 
-async function cbCall<Params>(
-  cb: undefined extends Params ? () => any : (data: Params) => any,
+async function cbCall<Params, Res>(
+  cb: undefined extends Params
+    ? () => Res | Promise<Res>
+    : (data: Params) => Res | Promise<Res>,
   params: Params,
   headers?: Headers
 ) {
-  let res: any;
+  let res: Res | Promise<Res> | Response | Promise<Response>;
 
   try {
     if (params === undefined) {
-      res = await (cb as () => any)();
+      res = await (cb as () => Res | Promise<Res>)();
     } else {
       res = await cb(params);
     }
