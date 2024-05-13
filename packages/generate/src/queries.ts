@@ -217,7 +217,9 @@ ${hasArgs ? `export type ${argsInterfaceName} = ${params.types.args};\n` : ""}
 export type ${returnsInterfaceName} = ${params.types.result};\
 `;
   const functionBody = `\
-${params.types.query.trim().replace(/`/g, "\\`")}\`${hasArgs ? `, args` : ""});
+${params.types.query.trim().replace(/\\/g, "\\\\").replace(/`/g, "\\`")}\`${
+    hasArgs ? `, args` : ""
+  });
 `;
 
   const tsImports =

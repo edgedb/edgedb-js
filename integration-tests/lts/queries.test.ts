@@ -11,6 +11,7 @@ import {
   type GetMoviesStarringReturns,
   deepArrayInput,
   type DeepArrayInputArgs,
+  freeShape,
 } from "./dbschema/queries";
 import { type TestData, setupTests, teardownTests } from "./setupTeardown";
 
@@ -120,5 +121,19 @@ describe("queries", () => {
     });
 
     assert.equal(missing, null);
+  });
+
+  test("free shape", async () => {
+    const result = await freeShape(client, { data: "123" });
+
+    assert.ok(result);
+    assert.deepEqual(result, {
+      name: "arg",
+      points: 1234n,
+      data: "123",
+      arg: ["asdf"],
+      enums: ["Horror", "Action"],
+      regexp: "find me",
+    });
   });
 });
