@@ -30,11 +30,6 @@ jobs:
       - name: Install deps
         run: yarn
 
-      - name: Changelog Vars
-        run: |
-          echo "last_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-          echo "curr_commit=$(git rev-parse HEAD)" >> $GITHUB_ENV
-
       # edgedb
 
       - name: Copy readme
@@ -67,23 +62,6 @@ jobs:
           access: public
           tag: ${{ steps.check_publish_driver.outputs.type == '' && 'canary' || 'latest' }}
 
-      - name: Build 'edgedb' Changelog
-        if: steps.check_publish_driver.outputs.type != ''
-        id: github_driver_release
-        uses: mikepenz/release-changelog-builder-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: "${{ env.last_tag }}"
-          toTag: ${{ github.ref }}
-          commitMode: true
-          configurationJson: |
-            {
-              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
-              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
-              "categories": []
-            }
-
       - name: Create 'edgedb' GitHub Release
         if: steps.check_publish_driver.outputs.type != ''
         uses: softprops/action-gh-release@v2.0.4
@@ -92,7 +70,6 @@ jobs:
         with:
           tag_name: v${{ steps.check_publish_driver.outputs.version }}
           name: edgedb-js v${{ steps.check_publish_driver.outputs.version }}
-          body: ${{steps.github_driver_release.outputs.changelog}}
           draft: true
           prerelease: false
 
@@ -125,23 +102,6 @@ jobs:
           access: public
           tag: ${{ steps.check_publish_generate.outputs.type == '' && 'canary' || 'latest' }}
 
-      - name: Build '@edgedb/generate' Changelog
-        if: steps.check_publish_generate.outputs.type != ''
-        id: github_generate_release
-        uses: mikepenz/release-changelog-builder-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: "${{ env.last_tag }}"
-          toTag: ${{ github.ref }}
-          commitMode: true
-          configurationJson: |
-            {
-              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
-              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
-              "categories": []
-            }
-
       - name: Create '@edgedb/generate' GitHub Release
         if: steps.check_publish_generate.outputs.type != ''
         uses: softprops/action-gh-release@v2.0.4
@@ -150,7 +110,6 @@ jobs:
         with:
           tag_name: generate-v${{ steps.check_publish_generate.outputs.version }}
           name: \@edgedb/generate v${{ steps.check_publish_generate.outputs.version }}
-          body: ${{steps.github_generate_release.outputs.changelog}}
           draft: true
           prerelease: false
 
@@ -183,23 +142,6 @@ jobs:
           access: public
           tag: ${{ steps.check_publish_auth_core.outputs.type == '' && 'canary' || 'latest' }}
 
-      - name: Build '@edgedb/auth-core' Changelog
-        if: steps.check_publish_auth_core.outputs.type != ''
-        id: github_auth_core_release
-        uses: mikepenz/release-changelog-builder-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: "${{ env.last_tag }}"
-          toTag: ${{ github.ref }}
-          commitMode: true
-          configurationJson: |
-            {
-              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
-              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
-              "categories": []
-            }
-
       - name: Create '@edgedb/auth-core' Release
         if: steps.check_publish_auth_core.outputs.type != ''
         uses: softprops/action-gh-release@v2.0.4
@@ -208,7 +150,6 @@ jobs:
         with:
           tag_name: auth-core-v${{ steps.check_publish_auth_core.outputs.version }}
           name: \@edgedb/auth-core v${{ steps.check_publish_auth_core.outputs.version }}
-          body: ${{steps.github_auth_core_release.outputs.changelog}}
           draft: true
           prerelease: false
 
@@ -241,23 +182,6 @@ jobs:
           access: public
           tag: ${{ steps.check_publish_auth_nextjs.outputs.type == '' && 'canary' || 'latest' }}
 
-      - name: Build '@edgedb/auth-nextjs' Changelog
-        if: steps.check_publish_auth_nextjs.outputs.type != ''
-        id: github_auth_nextjs_release
-        uses: mikepenz/release-changelog-builder-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: "${{ env.last_tag }}"
-          toTag: ${{ github.ref }}
-          commitMode: true
-          configurationJson: |
-            {
-              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
-              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
-              "categories": []
-            }
-
       - name: Create '@edgedb/auth-nextjs' Release
         if: steps.check_publish_auth_nextjs.outputs.type != ''
         uses: softprops/action-gh-release@v2.0.4
@@ -266,7 +190,6 @@ jobs:
         with:
           tag_name: auth-nextjs-v${{ steps.check_publish_auth_nextjs.outputs.version }}
           name: \@edgedb/auth-nextjs v${{ steps.check_publish_auth_nextjs.outputs.version }}
-          body: ${{steps.github_auth_nextjs_release.outputs.changelog}}
           draft: true
           prerelease: false
 
@@ -299,23 +222,6 @@ jobs:
           access: public
           tag: ${{ steps.check_publish_auth_express.outputs.type == '' && 'canary' || 'latest' }}
 
-      - name: Build '@edgedb/auth-express' Changelog
-        if: steps.check_publish_auth_express.outputs.type != ''
-        id: github_auth_express_release
-        uses: mikepenz/release-changelog-builder-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: "${{ env.last_tag }}"
-          toTag: ${{ github.ref }}
-          commitMode: true
-          configurationJson: |
-            {
-              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
-              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
-              "categories": []
-            }
-
       - name: Create '@edgedb/auth-express' Release
         if: steps.check_publish_auth_express.outputs.type != ''
         uses: softprops/action-gh-release@v2.0.4
@@ -324,7 +230,6 @@ jobs:
         with:
           tag_name: auth-express-v${{ steps.check_publish_auth_express.outputs.version }}
           name: \@edgedb/auth-express v${{ steps.check_publish_auth_express.outputs.version }}
-          body: ${{steps.github_auth_express_release.outputs.changelog}}
           draft: true
           prerelease: false
 
@@ -357,23 +262,6 @@ jobs:
           access: public
           tag: ${{ steps.check_publish_auth_remix.outputs.type == '' && 'canary' || 'latest' }}
 
-      - name: Build '@edgedb/auth-remix' Changelog
-        if: steps.check_publish_auth_remix.outputs.type != ''
-        id: github_auth_remix_release
-        uses: mikepenz/release-changelog-builder-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: "${{ env.last_tag }}"
-          toTag: ${{ github.ref }}
-          commitMode: true
-          configurationJson: |
-            {
-              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
-              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
-              "categories": []
-            }
-
       - name: Create '@edgedb/auth-remix' Release
         if: steps.check_publish_auth_remix.outputs.type != ''
         uses: softprops/action-gh-release@v2.0.4
@@ -382,7 +270,6 @@ jobs:
         with:
           tag_name: auth-remix-v${{ steps.check_publish_auth_remix.outputs.version }}
           name: \@edgedb/auth-remix v${{ steps.check_publish_auth_remix.outputs.version }}
-          body: ${{steps.github_auth_remix_release.outputs.changelog}}
           draft: true
           prerelease: false
 
@@ -415,23 +302,6 @@ jobs:
           access: public
           tag: ${{ steps.check_publish_auth_sveltekit.outputs.type == '' && 'canary' || 'latest' }}
 
-      - name: Build '@edgedb/auth-sveltekit' Changelog
-        if: steps.check_publish_auth_sveltekit.outputs.type != ''
-        id: github_auth_sveltekit_release
-        uses: mikepenz/release-changelog-builder-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: "${{ env.last_tag }}"
-          toTag: ${{ github.ref }}
-          commitMode: true
-          configurationJson: |
-            {
-              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
-              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
-              "categories": []
-            }
-
       - name: Create '@edgedb/auth-sveltekit' Release
         if: steps.check_publish_auth_sveltekit.outputs.type != ''
         uses: softprops/action-gh-release@v2.0.4
@@ -440,7 +310,6 @@ jobs:
         with:
           tag_name: auth-sveltekit-v${{ steps.check_publish_auth_sveltekit.outputs.version }}
           name: \@edgedb/auth-sveltekit v${{ steps.check_publish_auth_sveltekit.outputs.version }}
-          body: ${{steps.github_auth_sveltekit_release.outputs.changelog}}
           draft: true
           prerelease: false
 
@@ -473,23 +342,6 @@ jobs:
           access: public
           tag: ${{ steps.check_publish_create.outputs.type == '' && 'canary' || 'latest' }}
 
-      - name: Build '@edgedb/create' Changelog
-        if: steps.check_publish_create.outputs.type != ''
-        id: github_create_release
-        uses: mikepenz/release-changelog-builder-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: "${{ env.last_tag }}"
-          toTag: ${{ github.ref }}
-          commitMode: true
-          configurationJson: |
-            {
-              "template": "## Commits:\n\n#{{UNCATEGORIZED}}",
-              "pr_template": "- #{{MERGE_SHA}} #{{TITLE}}",
-              "categories": []
-            }
-
       - name: Create '@edgedb/create' Release
         if: steps.check_publish_create.outputs.type != ''
         uses: softprops/action-gh-release@v2.0.4
@@ -498,7 +350,6 @@ jobs:
         with:
           tag_name: create-v${{ steps.check_publish_create.outputs.version }}
           name: \@edgedb/create v${{ steps.check_publish_create.outputs.version }}
-          body: ${{steps.github_create_release.outputs.changelog}}
           draft: true
           prerelease: false
 
