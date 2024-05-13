@@ -1277,7 +1277,7 @@ function shapeToEdgeQL(
   const seen = new Set();
 
   for (const key in shape) {
-    if (!shape.hasOwnProperty(key)) continue;
+    if (!Object.prototype.hasOwnProperty.call(shape, key)) continue;
     if (seen.has(key)) {
       // tslint:disable-next-line
       console.warn(`Invalid: duplicate key "${key}"`);
@@ -1315,7 +1315,8 @@ function shapeToEdgeQL(
     const addCardinalityAnnotations = pointers && (!ptr || isFreeObject);
 
     const expectedCardinality =
-      addCardinalityAnnotations && val.hasOwnProperty("__cardinality__")
+      addCardinalityAnnotations &&
+      Object.prototype.hasOwnProperty.call(val, "__cardinality__")
         ? val.__cardinality__ === Cardinality.Many ||
           val.__cardinality__ === Cardinality.AtLeastOne
           ? "multi "
@@ -1345,7 +1346,10 @@ function shapeToEdgeQL(
       throw new Error(`Invalid shape element at "${key}".`);
     }
 
-    const valIsExpression = val.hasOwnProperty("__kind__");
+    const valIsExpression = Object.prototype.hasOwnProperty.call(
+      val,
+      "__kind__"
+    );
 
     // is subshape
     if (!valIsExpression) {

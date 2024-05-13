@@ -948,6 +948,6 @@ function _isRedirect(error: any) {
   ) {
     return false;
   }
-  const [_, type, location] = ((error as any).digest as string).split(";");
+  const [, type, location] = ((error as any).digest as string).split(";");
   return { _redirect: { location, replace: type === "replace" } };
 }

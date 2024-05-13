@@ -183,7 +183,7 @@ export class ResolvedConnectConfig {
     this.setWaitUntilAvailable = this.setWaitUntilAvailable.bind(this);
   }
 
-  _setParam<Param extends ConnectConfigParams, Value extends any>(
+  _setParam<Param extends ConnectConfigParams, Value>(
     param: Param,
     value: Value,
     source: string,
@@ -200,7 +200,7 @@ export class ResolvedConnectConfig {
     }
     return false;
   }
-  async _setParamAsync<Param extends ConnectConfigParams, Value extends any>(
+  async _setParamAsync<Param extends ConnectConfigParams, Value>(
     param: Param,
     value: Value,
     source: string,
@@ -402,7 +402,8 @@ export class ResolvedConnectConfig {
       output.push(
         param.padEnd(19, " ") +
           (value + (isDefault ? " (default)" : "")).padEnd(42, " ") +
-          source ?? "default"
+          // todo check if correct
+          (source ?? "default")
       );
     };
 

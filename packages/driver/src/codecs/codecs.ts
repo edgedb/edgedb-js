@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import type { ReadBuffer } from "../primitives/buffer";
 import { WriteBuffer } from "../primitives/buffer";
 import { BoolCodec } from "./boolean";
 import { type ICodec, type uuid, type CodecKind, Codec } from "./ifaces";
@@ -51,11 +50,11 @@ import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
 
 export class NullCodec extends Codec implements ICodec {
   static BUFFER: Uint8Array = new WriteBuffer().writeInt32(0).unwrap();
-  encode(_buf: WriteBuffer, _object: any): void {
+  encode(): void {
     throw new InternalClientError("null codec cannot used to encode data");
   }
 
-  decode(_buf: ReadBuffer): any {
+  decode(): any {
     throw new InternalClientError("null codec cannot used to decode data");
   }
 

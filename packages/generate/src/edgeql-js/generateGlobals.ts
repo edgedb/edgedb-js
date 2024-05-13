@@ -7,7 +7,7 @@ import type { $ } from "../genutil";
 
 export const generateGlobals = ({ dir, globals, types }: GeneratorParams) => {
   const globalsByMod: { [k: string]: $.introspect.Global[] } = {};
-  for (const [_id, g] of globals.entries()) {
+  for (const [, g] of globals.entries()) {
     const { mod } = splitName(g.name);
     globalsByMod[mod] = globalsByMod[mod] || [];
     globalsByMod[mod].push(g);

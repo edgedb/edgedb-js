@@ -24,7 +24,7 @@ import { InvalidArgumentError } from "../errors";
 function UUIDBufferFromString(uuid: string): Uint8Array {
   let uuidClean = uuid;
   if (uuidClean.length !== 32) {
-    uuidClean = uuidClean.replace(/\-/g, "");
+    uuidClean = uuidClean.replace(/-/g, "");
     if (uuidClean.length !== 32) {
       throw new TypeError(`invalid UUID "${uuid}"`);
     }

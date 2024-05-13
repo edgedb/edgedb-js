@@ -18,7 +18,7 @@
 
 import type { ICodec, uuid, CodecKind } from "./ifaces";
 import { Codec } from "./ifaces";
-import { type WriteBuffer, ReadBuffer } from "../primitives/buffer";
+import { ReadBuffer } from "../primitives/buffer";
 import { ArrayCodec } from "./array";
 import { InvalidArgumentError, ProtocolError } from "../errors";
 
@@ -30,7 +30,7 @@ export class SetCodec extends Codec implements ICodec {
     this.subCodec = subCodec;
   }
 
-  encode(_buf: WriteBuffer, _obj: any): void {
+  encode(): void {
     throw new InvalidArgumentError("Sets cannot be passed in query arguments");
   }
 

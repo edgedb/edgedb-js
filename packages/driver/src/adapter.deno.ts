@@ -132,7 +132,7 @@ export function homeDir(): string {
 //   }
 // }
 
-export async function input(message = "", _params?: { silent?: boolean }) {
+export async function input(message = "") {
   const buf = new Uint8Array(1024);
   await Deno.stdout.write(new TextEncoder().encode(message));
   const n = <number>await Deno.stdin.read(buf);
@@ -271,10 +271,7 @@ export namespace tls {
     return new TLSSocket(conn);
   }
 
-  export function checkServerIdentity(
-    hostname: string,
-    cert: Object
-  ): Error | undefined {
+  export function checkServerIdentity(): Error | undefined {
     return undefined;
   }
 

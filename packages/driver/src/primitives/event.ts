@@ -32,7 +32,7 @@ export default class Event {
   }
 
   /** @internal */
-  then(...args: any[]): any {
+  then(): any {
     // The mere presense of this method will trip TS if one awaits on
     // an Event object directly.
     throw new InternalClientError(

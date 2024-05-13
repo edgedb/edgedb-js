@@ -124,4 +124,4 @@ export { expect };
 
 export const test = Deno.test;
 
-export const jest = { setTimeout: (timeout: number) => {} };
+export const jest = { setTimeout: () => {} };

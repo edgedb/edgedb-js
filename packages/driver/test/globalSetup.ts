@@ -18,7 +18,6 @@ export default async () => {
   console.log(`Starting server...`);
   const { proc, config } = await startServer(args, statusFile);
 
-  // @ts-ignore
   global.edgedbProc = proc;
 
   process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(config);
@@ -27,7 +26,6 @@ export default async () => {
 
   const { client, version } = await connectToServer(config);
 
-  // @ts-ignore
   global.edgedbConn = client;
   process.env._JEST_EDGEDB_VERSION = JSON.stringify(version);
 

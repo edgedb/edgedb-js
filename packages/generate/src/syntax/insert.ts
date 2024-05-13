@@ -252,10 +252,12 @@ export function $normaliseInsertShape(
     const isMulti =
       pointer.cardinality === Cardinality.AtLeastOne ||
       pointer.cardinality === Cardinality.Many;
-    if (pointer.__kind__ === "property") {
-      if (pointer.target.__name__ === "std::json") {
-      }
-    }
+
+    // Todo delete or fix this
+    // if (pointer.__kind__ === "property") {
+    //   if (pointer.target.__name__ === "std::json") {
+    //   }
+    // }
 
     const wrappedVal =
       val === null

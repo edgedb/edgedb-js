@@ -288,7 +288,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     // switch to more robust solution after splitting
     // @edgedb/generate into separate package
 
-    // @ts-ignore
+    // @ts-expect-error todo
     const isDenoRuntime = typeof Deno !== "undefined";
 
     if (isDenoRuntime || denoJsonExists) {

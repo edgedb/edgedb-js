@@ -48,14 +48,11 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
 
     if (object < ZERO) {
       sign = NUMERIC_NEG;
-      // @ts-ignore
       uval = -uval;
     }
 
     while (uval) {
-      // @ts-ignore
       const mod: bigint = uval % NBASE;
-      // @ts-ignore
       uval /= NBASE;
       digits.push(mod);
     }
@@ -91,7 +88,7 @@ export class DecimalStringCodec extends ScalarCodec implements ICodec {
       throw new InvalidArgumentError(`invalid decimal string "${object}"`);
     }
 
-    const [_, sign, int, _frac, _exp] = match;
+    const [, sign, int, _frac, _exp] = match;
 
     const frac = _frac ?? "";
     const exp = _exp ? parseInt(_exp, 10) : 0;

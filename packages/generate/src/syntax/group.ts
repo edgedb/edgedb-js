@@ -16,7 +16,7 @@ import {
 import { makeType } from "./hydrate";
 
 import { $expressionify, $getScopedExpr } from "./path";
-// @ts-ignore
+// @ts-expect-error todo check if this is correct
 import type { $FreeObjectλShape, $str } from "./modules/std";
 import { spec } from "./__spec__";
 import { literal } from "./literal";
@@ -117,7 +117,7 @@ export type $expr_Group<
           }
         >,
         Cardinality.One,
-        {},
+        Record<string, never>,
         false,
         true,
         true,
@@ -126,7 +126,7 @@ export type $expr_Group<
       elements: LinkDesc<
         Expr["__element__"],
         Cardinality.Many,
-        {},
+        Record<string, never>,
         false,
         true,
         true,

@@ -32,10 +32,7 @@ export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
       );
     }
     buf.writeInt32(8);
-    buf.writeBigInt64(
-      // @ts-ignore
-      object._bytes
-    );
+    buf.writeBigInt64(object._bytes);
   }
 
   decode(buf: ReadBuffer): any {

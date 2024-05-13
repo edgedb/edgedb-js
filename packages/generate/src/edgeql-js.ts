@@ -185,7 +185,9 @@ export async function generateQueryBuilder(params: {
     let oldContents = "";
     try {
       oldContents = await readFileUtf8(outputPath);
-    } catch {}
+    } catch (err) {
+      console.error("Error occurred while reading file", outputPath, err);
+    }
 
     const newContents = headerComment + f.content;
     if (oldContents !== newContents) {
@@ -307,7 +309,9 @@ project to exclude these files.`
     let gitIgnoreFile: string | null = null;
     try {
       gitIgnoreFile = await readFileUtf8(gitIgnorePath);
-    } catch {}
+    } catch (err) {
+      console.error("Error occurred while reading file", gitIgnorePath, err);
+    }
 
     const vcsLine = path.posix.relative(root, outputDir);
 
@@ -345,8 +349,10 @@ async function canOverwrite(outputDir: string, options: CommandOptions) {
   }
 
   let config: any = null;
+  const fileName = path.join(outputDir, "config.json");
+
   try {
-    const configFile = await readFileUtf8(path.join(outputDir, "config.json"));
+    const configFile = await readFileUtf8(fileName);
     if (configFile.startsWith(configFileHeader)) {
       config = JSON.parse(configFile.slice(configFileHeader.length));
 
@@ -354,7 +360,13 @@ async function canOverwrite(outputDir: string, options: CommandOptions) {
         return true;
       }
     }
-  } catch {}
+  } catch (err) {
+    console.error(
+      "Error occurred while reading or parsing file",
+      fileName,
+      err
+    );
+  }
 
   const error = config
     ? `Error: A query builder with a different config already exists in that location.`

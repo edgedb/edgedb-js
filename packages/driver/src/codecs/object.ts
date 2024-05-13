@@ -72,7 +72,7 @@ export class ObjectCodec extends Codec implements ICodec {
     }
   }
 
-  encode(_buf: WriteBuffer, _object: any): void {
+  encode(): void {
     throw new InvalidArgumentError("Objects cannot be passed as arguments");
   }
 

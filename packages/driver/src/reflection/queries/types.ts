@@ -288,7 +288,7 @@ export async function getTypes(
         type.range_element_id =
           typeMapping.get(type.range_element_id)?.id ?? type.range_element_id;
         break;
-      case "object":
+      case "object": {
         const ptrs: any = {};
         for (const ptr of type.pointers) {
           ptrs[ptr.name] = ptr;
@@ -330,6 +330,7 @@ export async function getTypes(
         //     typeMapping.get(pointer.target_id)?.id ?? pointer.target_id,
         // }));
         break;
+      }
     }
   }
   _types.push(numberType);
@@ -339,7 +340,7 @@ export async function getTypes(
 
   // For union types, set pointers to be pointers common to all
   // types in the union
-  for (const [_, type] of types) {
+  for (const [, type] of types) {
     if (type.kind === "object" && type.union_of.length) {
       const unionTypes = type.union_of.map(({ id }) => {
         const t = types.get(id);

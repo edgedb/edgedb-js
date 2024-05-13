@@ -26,7 +26,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
   const reverseTopo = Array.from(types)
     .reverse() // reverse topological order
-    .map(([_, type]) => type);
+    .map(([, type]) => type);
 
   /////////////////////////////////////
   // generate implicit scalar mapping

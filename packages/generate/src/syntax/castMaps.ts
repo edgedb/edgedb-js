@@ -1,9 +1,9 @@
-export type scalarCastableFrom<T extends any> = any;
-export type scalarAssignableBy<T extends any> = any;
-export type orScalarLiteral<T extends any> = any;
+export type scalarCastableFrom = any;
+export type scalarAssignableBy = any;
+export type orScalarLiteral = any;
 export type scalarLiterals = any;
-export type literalToScalarType<T extends any> = any;
-type literalToTypeSet<T extends any> = any;
+export type literalToScalarType = any;
+type literalToTypeSet = any;
 export type mapLiteralToTypeSet<T> = {
   [k in keyof T]: literalToTypeSet<T[k]>;
 };
