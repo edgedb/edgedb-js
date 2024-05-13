@@ -109,7 +109,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: generate-v${{ steps.check_publish_generate.outputs.version }}
-          name: \@edgedb/generate v${{ steps.check_publish_generate.outputs.version }}
+          name: @edgedb/generate v${{ steps.check_publish_generate.outputs.version }}
           draft: true
           prerelease: false
 
@@ -149,7 +149,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: auth-core-v${{ steps.check_publish_auth_core.outputs.version }}
-          name: \@edgedb/auth-core v${{ steps.check_publish_auth_core.outputs.version }}
+          name: @edgedb/auth-core v${{ steps.check_publish_auth_core.outputs.version }}
           draft: true
           prerelease: false
 
@@ -189,7 +189,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: auth-nextjs-v${{ steps.check_publish_auth_nextjs.outputs.version }}
-          name: \@edgedb/auth-nextjs v${{ steps.check_publish_auth_nextjs.outputs.version }}
+          name: @edgedb/auth-nextjs v${{ steps.check_publish_auth_nextjs.outputs.version }}
           draft: true
           prerelease: false
 
@@ -229,7 +229,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: auth-express-v${{ steps.check_publish_auth_express.outputs.version }}
-          name: \@edgedb/auth-express v${{ steps.check_publish_auth_express.outputs.version }}
+          name: @edgedb/auth-express v${{ steps.check_publish_auth_express.outputs.version }}
           draft: true
           prerelease: false
 
@@ -269,7 +269,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: auth-remix-v${{ steps.check_publish_auth_remix.outputs.version }}
-          name: \@edgedb/auth-remix v${{ steps.check_publish_auth_remix.outputs.version }}
+          name: @edgedb/auth-remix v${{ steps.check_publish_auth_remix.outputs.version }}
           draft: true
           prerelease: false
 
@@ -309,7 +309,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: auth-sveltekit-v${{ steps.check_publish_auth_sveltekit.outputs.version }}
-          name: \@edgedb/auth-sveltekit v${{ steps.check_publish_auth_sveltekit.outputs.version }}
+          name: @edgedb/auth-sveltekit v${{ steps.check_publish_auth_sveltekit.outputs.version }}
           draft: true
           prerelease: false
 
@@ -349,7 +349,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: create-v${{ steps.check_publish_create.outputs.version }}
-          name: \@edgedb/create v${{ steps.check_publish_create.outputs.version }}
+          name: @edgedb/create v${{ steps.check_publish_create.outputs.version }}
           draft: true
           prerelease: false
 
@@ -389,6 +389,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ai-v${{ steps.check_publish_ai.outputs.version }}
-          name: \@edgedb/ai v${{ steps.check_publish_ai.outputs.version }}
+          name: @edgedb/ai v${{ steps.check_publish_ai.outputs.version }}
           draft: true
           prerelease: false
