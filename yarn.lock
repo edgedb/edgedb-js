@@ -10,33 +10,38 @@
     "@jridgewell/gen-mapping" "^0.3.0"
     "@jridgewell/trace-mapping" "^0.3.9"
 
-"@arktype/attest@^0.7.8":
-  version "0.7.8"
-  resolved "https://registry.yarnpkg.com/@arktype/attest/-/attest-0.7.8.tgz#c99a14f5a28d10402c0664fe6ad99f6941788914"
-  integrity sha512-WeUr1/tnHUTeEJDCQvqLq+1biEEj4wNpUynb/4FKebi8FNaubkjulLe0IKILpr+NDWld7LLxb9xsj+7TDSRKfg==
+"@arktype/attest@^0.7.5":
+  version "0.7.5"
+  resolved "https://registry.yarnpkg.com/@arktype/attest/-/attest-0.7.5.tgz#d8bf6ff48e2036cc4543c2e39ced5bddfc834a73"
+  integrity sha512-ZOF9uqLbvoVO6RHhlByJEBBj5qhWLpaCK/wWa5guD1OQR1/a7JZ9jCrDAcaASt6tYBA3dGhDerXhc7FcDWlRQw==
   dependencies:
-    "@arktype/fs" "0.0.20"
-    "@arktype/util" "0.0.46"
+    "@arktype/fs" "0.0.19"
+    "@arktype/util" "0.0.41"
     "@typescript/analyze-trace" "0.10.1"
     "@typescript/vfs" "1.5.0"
-    arktype latest
+    arktype "2.0.0-dev.11"
 
-"@arktype/fs@0.0.20":
-  version "0.0.20"
-  resolved "https://registry.yarnpkg.com/@arktype/fs/-/fs-0.0.20.tgz#9489624ba5d5df75f22828f1bac6975f40613669"
-  integrity sha512-WnoIFrhiDKnWixd7xmcvFTlP7ZVReT7j37nTbCpieUCsVaUldb38pgQjxdvlJN40UL3kkjxyiYIRmc7BOvgy1A==
+"@arktype/fs@0.0.19":
+  version "0.0.19"
+  resolved "https://registry.yarnpkg.com/@arktype/fs/-/fs-0.0.19.tgz#bfce90a0d457c3cc3bb06830f00f9c217ac8f816"
+  integrity sha512-ZEiSc6DgJANSgMTee9lueumCH/3gIikJWT8wlN8CyVk/IDFKFbJb3/BHj906Aw+APvCc8oyvu+2Hanshkgh4Bg==
 
-"@arktype/schema@0.1.10":
-  version "0.1.10"
-  resolved "https://registry.yarnpkg.com/@arktype/schema/-/schema-0.1.10.tgz#173aa630c31c3332a2cc202c066aaf543b98863c"
-  integrity sha512-soPxL3D4Ad0f7LIhMlah9WD0lo1LpGuE3tMg9emJSMROkA0cirRXAfnsO16QLpoeqUa5QP8zAnnqjEJhKSa6uA==
+"@arktype/schema@0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@arktype/schema/-/schema-0.1.2.tgz#66c749ea8b7dc3c20c54ee40c0bd5024f313854d"
+  integrity sha512-ggvxs5P0toqd/4/XK76URQrtyOYpbYcLhirEZeTso6FxkloPa0lT+whPg7DNQj5qi2OQXLUHBYKMx9DOb13ViQ==
   dependencies:
-    "@arktype/util" "0.0.46"
+    "@arktype/util" "0.0.38"
 
-"@arktype/util@0.0.46":
-  version "0.0.46"
-  resolved "https://registry.yarnpkg.com/@arktype/util/-/util-0.0.46.tgz#19c72910fcda3e7a07a1e488e1b047f3de3be4d9"
-  integrity sha512-Sll+sNpGV61f5JKd16Zn/y5tDRf/MoGgQTSMkcx9rineZvjGDKJlQ17zgH6I7YzSa2ta+BJrSlECk0C0HQNaMQ==
+"@arktype/util@0.0.38":
+  version "0.0.38"
+  resolved "https://registry.yarnpkg.com/@arktype/util/-/util-0.0.38.tgz#0909e28533a3dd924b2a837962b09cd4838a9299"
+  integrity sha512-IvYMGnkUASJllRk3mdBVgckomKx2LNsDTrWCxz04EBK1OuU+4fJ/smSjxgZVWfopNXZds9sHNxZgTJOIw7GvJw==
+
+"@arktype/util@0.0.41":
+  version "0.0.41"
+  resolved "https://registry.yarnpkg.com/@arktype/util/-/util-0.0.41.tgz#a2c384b3fcc98b9007c1ee2d1df2a8fe45e80c7f"
+  integrity sha512-0YURzJ42v+lhlP1t5Dj90YezETRTCdFU0oM4xMVpYsmPx/DHJzr9n7AX1QPAlYWH4wY7hYY3gwai3O+8VntPgw==
 
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.18.6", "@babel/code-frame@^7.21.4":
   version "7.21.4"
@@ -1851,13 +1856,13 @@ aria-query@^5.3.0:
   dependencies:
     dequal "^2.0.3"
 
-arktype@latest:
-  version "2.0.0-dev.18"
-  resolved "https://registry.yarnpkg.com/arktype/-/arktype-2.0.0-dev.18.tgz#6176cc8afa2d6bc514ec617e0f80ad197d65838e"
-  integrity sha512-UdAElu/1DgO14AvzpxLeb8Df/OOFvNPUGGTILPz9d5vGRg+140Xojk7KdIR1U7/NRTYErnMWN4HArgi++uBsEQ==
+arktype@2.0.0-dev.11:
+  version "2.0.0-dev.11"
+  resolved "https://registry.yarnpkg.com/arktype/-/arktype-2.0.0-dev.11.tgz#f5bb3bf18e0d51a6948fc800d0dbcb899c6b29e1"
+  integrity sha512-k+WVQoHsHsTyTiVQkO201mxLQxyXHmy3buJW8TXLOkr4X2yOUCp0K1SBscuG9OEJoc8MjpvoIharjPHEkFI7kg==
   dependencies:
-    "@arktype/schema" "0.1.10"
-    "@arktype/util" "0.0.46"
+    "@arktype/schema" "0.1.2"
+    "@arktype/util" "0.0.38"
 
 array-flatten@1.1.1:
   version "1.1.1"
