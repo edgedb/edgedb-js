@@ -7,22 +7,54 @@ import { $expr_Operator, cardutil } from "./dbschema/edgeql-js/reflection";
 
 type OpDef<LHS, Op, RHS, Ret> = [LHS, Op, RHS, Ret];
 
-type Extends<L, R> = L extends R ? true : false;
-
-type FindOpDefFor<LHS, Defs> = Defs extends OpDef<infer L, infer Op, any, any>
-  ? Extends<LHS, L> extends true
-    ? Defs
+type FindOpFor<Defs, LHS> = Defs extends OpDef<infer L, any, any, any>
+  ? LHS extends L
+    ? Defs[1]
     : never
   : never;
+
+type FindRHSFor<Defs, LHS, Op> = Defs extends OpDef<any, any, any, any>
+  ? LHS extends Defs[0]
+    ? Op extends Defs[1]
+      ? Defs[2]
+      : never
+    : never
+  : never;
+
+type FindRetFor<
+  Defs,
+  LHS,
+  Op,
+  RHS
+> = Defs extends OpDef<any, any, any, any>
+  ? LHS extends Defs[0]
+    ? Op extends Defs[1]
+      ? RHS extends Defs[2]
+        ? Defs[3]
+        : never
+      : never
+    : never
+  : never;
+
 const literalStr = e.str("hello");
-type FindOpFor$str = FindOpDefFor<typeof literalStr, InfixOperators>;
+type FindOpFor$str = FindOpFor<InfixOperators, typeof literalStr>;
+type FindRHSFor$str = FindRHSFor<
+  InfixOperators,
+  typeof literalStr,
+  "++"
+>;
+type FindRetFor$str = FindRetFor<
+  InfixOperators,
+  typeof literalStr,
+  "++",
+  FindRHSFor$str
+>;
 
 export declare function op<
   LHS,
-  Def extends FindOpDefFor<LHS, InfixOperators>,
-  Op extends Def[1],
-  RHS extends Def[2],
-  Ret extends Def[3]
+  Op extends FindOpFor<InfixOperators, LHS>,
+  RHS extends FindRHSFor<InfixOperators, LHS, Op>,
+  Ret extends FindRetFor<InfixOperators, LHS, Op, RHS>
 >(
   lhs: LHS,
   op: Op,

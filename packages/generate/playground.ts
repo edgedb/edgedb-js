@@ -21,6 +21,7 @@ async function run() {
     beep: op(p.text, "++", e.str("beep")),
     boop: op(e.len(p.text), "+", e.int32(1)),
   }));
+  op(e.str("hello"), "ilike", e.str("world"));
 
   // @/ts-expect-error cannot compare strings and numbers
   op(e.str("hello"), "=", e.int32(1));
