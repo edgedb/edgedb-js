@@ -27,7 +27,6 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "@arktype/attest": "^0.7.5",
     "edgedb": "^1.5.0"
   }
 }
