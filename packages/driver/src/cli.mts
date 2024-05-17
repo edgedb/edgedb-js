@@ -212,7 +212,8 @@ async function writeCliLocationToCache(cliLocation: string) {
 
 async function selfInstallFromTempCli(): Promise<string | null> {
   debug("Self-installing EdgeDB CLI...");
-  runEdgeDbCli(["_self_install"], TEMPORARY_CLI_PATH);
+  const cmd = IS_TTY ? ["_self_install"] : ["_self_install", "--quiet"];
+  runEdgeDbCli(cmd, TEMPORARY_CLI_PATH);
   debug("  - CLI self-installed successfully.");
   return getCliLocationFromCache();
 }
