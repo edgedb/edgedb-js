@@ -166,11 +166,6 @@ jobs:
         with:
           deno-version: v1.x
 
-      - name: Install EdgeDB
-        uses: edgedb/setup-edgedb@6763b6de72782d9c2e5ecc1095986a1c707da68f
-        with:
-          cli-version: stable
-
       - name: Install dev deps
         run: |
           yarn --frozen-lockfile
