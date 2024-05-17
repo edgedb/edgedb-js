@@ -179,6 +179,21 @@ describe("select", () => {
     >(true);
   });
 
+  test("nested free object", async () => {
+    const hero = e.select(e.Hero, () => ({ limit: 1 }));
+    const villain = e.select(e.Villain, () => ({ limit: 1 }));
+
+    const q = await e
+      .select({
+        hero,
+        villain,
+      })
+      .run(client);
+
+    assert.ok(q.hero);
+    assert.ok(q.villain);
+  });
+
   test("compositionality", () => {
     // selecting a select statement should
     // default to { id }
