@@ -379,7 +379,7 @@ function getBaseDist(arch: string, platform: string, libc = ""): string {
 
 function getInstallDir(cliPath: string): string {
   debug("Getting install directory for CLI path:", cliPath);
-  const installDir = runEdgeDbCli(["info", "--get", "'install-dir'"], cliPath, {
+  const installDir = runEdgeDbCli(["info", "--get", "install-dir"], cliPath, {
     stdio: "pipe",
   })
     .toString()
