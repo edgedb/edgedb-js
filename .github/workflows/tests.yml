@@ -36,6 +36,8 @@ jobs:
           # - os: macos-latest
           #   node-version: "20"
           #   edgedb-version: "stable"
+    env:
+      NODE_OPTIONS: ${{ matrix.node-version == '18' && '--experimental-global-webcrypto' || '' }}
 
     steps:
       - uses: actions/checkout@v4

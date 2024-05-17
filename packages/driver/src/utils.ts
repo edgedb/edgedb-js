@@ -17,7 +17,7 @@
  */
 
 import type { ResolvedConnectConfig } from "./conUtils";
-import type { HttpSCRAMAuth } from "./httpScram";
+import { HTTPSCRAMAuth } from "./httpScram";
 import type { ProtocolVersion } from "./ifaces";
 
 const idCounter: { [key: string]: number } = {};
@@ -62,12 +62,6 @@ export function versionGreaterThanOrEqual(
   return versionGreaterThan(left, right);
 }
 
-export interface CryptoUtils {
-  randomBytes: (size: number) => Promise<Uint8Array>;
-  H: (msg: Uint8Array) => Promise<Uint8Array>;
-  HMAC: (key: Uint8Array, msg: Uint8Array) => Promise<Uint8Array>;
-}
-
 const _tokens = new WeakMap<ResolvedConnectConfig, string>();
 
 export type AuthenticatedFetch = (
@@ -77,7 +71,6 @@ export type AuthenticatedFetch = (
 
 export async function getAuthenticatedFetch(
   config: ResolvedConnectConfig,
-  httpSCRAMAuth: HttpSCRAMAuth,
   basePath?: string
 ): Promise<AuthenticatedFetch> {
   let token = config.secretKey ?? _tokens.get(config);
@@ -89,7 +82,7 @@ export async function getAuthenticatedFetch(
   const databaseUrl = `${baseUrl}/db/${database}/${basePath ?? ""}`;
 
   if (!token && config.password != null) {
-    token = await httpSCRAMAuth(baseUrl, config.user, config.password);
+    token = await HTTPSCRAMAuth(baseUrl, config.user, config.password);
     _tokens.set(config, token);
   }
 

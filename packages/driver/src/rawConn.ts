@@ -29,9 +29,8 @@ import { WriteMessageBuffer } from "./primitives/buffer";
 import Event from "./primitives/event";
 import type char from "./primitives/chars";
 import * as chars from "./primitives/chars";
-import { getSCRAM } from "./scram";
+import * as scram from "./scram";
 import * as errors from "./errors";
-import cryptoUtils from "./adapter.crypto.node";
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,
@@ -39,8 +38,6 @@ enum AuthenticationStatuses {
   AUTH_SASL_CONTINUE = 11,
   AUTH_SASL_FINAL = 12,
 }
-
-const scram = getSCRAM(cryptoUtils);
 
 const _tlsOptions = new WeakMap<ResolvedConnectConfig, tls.ConnectionOptions>();
 function getTlsOptions(config: ResolvedConnectConfig): tls.ConnectionOptions {
