@@ -545,6 +545,11 @@
     picocolors "^1.0.0"
     sisteransi "^1.0.5"
 
+"@edgedb/generate@0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@edgedb/generate/-/generate-0.5.0.tgz#a5ed6cbde67475cf944374b02c8992def508ef3a"
+  integrity sha512-pl/y4NdyewQ+HFeTjsNaWVDrUDtRgwY5bPniJbedRfZSyj7wC9qECpgUp+DZknQk1A8WZSSt/7MEaeXH+cTkGQ==
+
 "@esbuild/aix-ppc64@0.19.11":
   version "0.19.11"
   resolved "https://registry.yarnpkg.com/@esbuild/aix-ppc64/-/aix-ppc64-0.19.11.tgz#2acd20be6d4f0458bc8c784103495ff24f13b1d3"

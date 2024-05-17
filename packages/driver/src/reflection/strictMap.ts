@@ -28,3 +28,11 @@ export class StrictMap<K, V> extends Map<K, V> {
     return super.get(key)!;
   }
 }
+
+export class StrictMapSet<K, V> extends StrictMap<K, Set<V>> {
+  appendAt(key: K, value: V): void {
+    const set = this.has(key) ? this.get(key) : new Set<V>();
+    set.add(value);
+    this.set(key, set);
+  }
+}

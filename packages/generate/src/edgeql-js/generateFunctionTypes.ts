@@ -465,6 +465,21 @@ export function generateFuncopDef(funcopDef: FuncopDefOverload<FuncopDef>) {
   }${funcopDef.preserves_optionality ? `, preservesOptionality: true` : ""}}`;
 }
 
+function parametersToFunctionCardinality(
+  params: GroupedParams,
+): ($.introspect.FuncopParam & { genTypeName: string })[] {
+  return [
+    ...params.positional.map((p) => ({
+      ...p,
+      genTypeName: p.typeName,
+    })),
+    ...params.named.map((p) => ({
+      ...p,
+      genTypeName: `NamedArgs[${quote(p.name)}]`,
+    })),
+  ];
+}
+
 // default -> cardinality of cartesian product of params actual cardinality
 // (or overridden cardinality below)
 
@@ -482,9 +497,14 @@ export function generateReturnCardinality(
   name: string,
   params: GroupedParams,
   returnTypemod: $.introspect.FuncopTypemod,
-  hasNamedParams: boolean,
+  _hasNamedParams: boolean,
   _anytypes: AnytypeDef | null,
   preservesOptionality = false,
+  parametersToCardinality: (
+    params: GroupedParams,
+  ) => ($.introspect.FuncopParam & {
+    genTypeName: string;
+  })[] = parametersToFunctionCardinality,
 ) {
   if (
     returnTypemod === "SetOfType" &&
@@ -497,18 +517,7 @@ export function generateReturnCardinality(
     return `$.Cardinality.Many`;
   }
 
-  const cardinalities = [
-    ...params.positional.map((p) => ({
-      ...p,
-      genTypeName: p.typeName,
-    })),
-    ...(hasNamedParams
-      ? params.named.map((p) => ({
-          ...p,
-          genTypeName: `NamedArgs[${quote(p.name)}]`,
-        }))
-      : []),
-  ];
+  const cardinalities = parametersToCardinality(params);
 
   if (name === "std::union") {
     return `$.cardutil.mergeCardinalities<
