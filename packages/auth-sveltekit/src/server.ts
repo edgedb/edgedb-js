@@ -153,6 +153,22 @@ export class ServerRequestAuth extends ClientAuth {
   private readonly cookies: Cookies;
   private _session: AuthSession | undefined;
 
+  private setVerifierCookie(verifier: string) {
+    setVerifierCookie(this.cookies, this.config, verifier);
+  }
+
+  private setAuthCookie(authToken: string) {
+    setAuthCookie(this.cookies, this.config, authToken);
+  }
+
+  private deleteVerifierCookie() {
+    deleteCookie(this.cookies, this.config.pkceVerifierCookieName);
+  }
+
+  private deleteAuthCookie() {
+    deleteCookie(this.cookies, this.config.authCookieName);
+  }
+
   get session() {
     if (!this._session) {
       this._session = new AuthSession(
@@ -203,12 +219,12 @@ export class ServerRequestAuth extends ClientAuth {
       `${this.config.authRoute}/emailpassword/verify`
     );
 
-    setVerifierCookie(this.cookies, this.config, result.verifier);
+    this.setVerifierCookie(result.verifier);
 
     if (result.status === "complete") {
       const tokenData = result.tokenData;
 
-      setAuthCookie(this.cookies, this.config, tokenData.auth_token);
+      this.setAuthCookie(tokenData.auth_token);
 
       return { tokenData };
     }
@@ -244,7 +260,7 @@ export class ServerRequestAuth extends ClientAuth {
         `${this.config.authRoute}/emailpassword/verify`
       );
 
-      setVerifierCookie(this.cookies, this.config, verifier);
+      this.setVerifierCookie(verifier);
     } else {
       throw new InvalidDataError(
         "expected 'verification_token' or 'email' in data"
@@ -265,7 +281,7 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).signinWithEmailPassword(email, password);
 
-    setAuthCookie(this.cookies, this.config, tokenData.auth_token);
+    this.setAuthCookie(tokenData.auth_token);
 
     return { tokenData };
   }
@@ -286,7 +302,7 @@ export class ServerRequestAuth extends ClientAuth {
       new URL(this.config.passwordResetPath, this.config.baseUrl).toString()
     );
 
-    setVerifierCookie(this.cookies, this.config, verifier);
+    this.setVerifierCookie(verifier);
   }
 
   async emailPasswordResetPassword(
@@ -308,9 +324,9 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).resetPasswordWithResetToken(resetToken, verifier, password);
 
-    setAuthCookie(this.cookies, this.config, tokenData.auth_token);
+    this.setAuthCookie(tokenData.auth_token);
 
-    deleteCookie(this.cookies, this.config.pkceVerifierCookieName);
+    this.deleteVerifierCookie();
 
     return { tokenData };
   }
@@ -331,7 +347,7 @@ export class ServerRequestAuth extends ClientAuth {
       new URL(this.config.magicLinkFailurePath, this.config.baseUrl).toString()
     );
 
-    setVerifierCookie(this.cookies, this.config, verifier);
+    this.setVerifierCookie(verifier);
   }
 
   async magicLinkSend(data: { email: string } | FormData): Promise<void> {
@@ -350,7 +366,7 @@ export class ServerRequestAuth extends ClientAuth {
       new URL(this.config.magicLinkFailurePath, this.config.baseUrl).toString()
     );
 
-    setVerifierCookie(this.cookies, this.config, verifier);
+    this.setVerifierCookie(verifier);
   }
 
   async webAuthnSignIn(data: {
@@ -363,7 +379,7 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).signinWithWebAuthn(email, assertion);
 
-    setAuthCookie(this.cookies, this.config, tokenData.auth_token);
+    this.setAuthCookie(tokenData.auth_token);
 
     return { tokenData };
   }
@@ -380,12 +396,12 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).signupWithWebAuthn(email, credentials, verify_url, user_handle);
 
-    setVerifierCookie(this.cookies, this.config, result.verifier);
+    this.setVerifierCookie(result.verifier);
 
     if (result.status === "complete") {
       const tokenData = result.tokenData;
 
-      setAuthCookie(this.cookies, this.config, tokenData.auth_token);
+      this.setAuthCookie(tokenData.auth_token);
 
       return { tokenData };
     }
@@ -394,7 +410,7 @@ export class ServerRequestAuth extends ClientAuth {
   }
 
   async signout(): Promise<void> {
-    deleteCookie(this.cookies, this.config.authCookieName);
+    this.deleteAuthCookie();
   }
 }
 
