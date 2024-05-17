@@ -129,7 +129,8 @@ type ConnectConfigParams =
 export type ResolvedConnectConfigReadonly = Readonly<
   Pick<
     ResolvedConnectConfig,
-    Exclude<keyof ResolvedConnectConfig, `${"_" | "set" | "add"}${string}`>
+    | Exclude<keyof ResolvedConnectConfig, `${"_" | "set" | "add"}${string}`>
+    | "address"
   >
 >;
 
