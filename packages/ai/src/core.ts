@@ -1,5 +1,4 @@
 import type { Client } from "edgedb";
-import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
 import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
 import cryptoUtils from "edgedb/dist/adapter.crypto.node.js";
 import {
@@ -37,10 +36,7 @@ export class EdgeDBAI {
   }
 
   private static async getAuthenticatedFetch(client: Client) {
-    const connectConfig: ResolvedConnectConfig = (
-      await (client as any).pool._getNormalizedConnectConfig()
-    ).connectionParams;
-
+    const connectConfig = await client.resolveConnectionParams();
     return getAuthenticatedFetch(connectConfig, httpSCRAMAuth, "ext/ai/");
   }
 

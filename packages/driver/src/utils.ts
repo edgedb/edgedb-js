@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import type { ResolvedConnectConfig } from "./conUtils";
+import type { ResolvedConnectConfigReadonly } from "./conUtils";
 import type { HttpSCRAMAuth } from "./httpScram";
 import type { ProtocolVersion } from "./ifaces";
 
@@ -68,7 +68,7 @@ export interface CryptoUtils {
   HMAC: (key: Uint8Array, msg: Uint8Array) => Promise<Uint8Array>;
 }
 
-const _tokens = new WeakMap<ResolvedConnectConfig, string>();
+const _tokens = new WeakMap<ResolvedConnectConfigReadonly, string>();
 
 export type AuthenticatedFetch = (
   path: string,
@@ -76,7 +76,7 @@ export type AuthenticatedFetch = (
 ) => Promise<Response>;
 
 export async function getAuthenticatedFetch(
-  config: ResolvedConnectConfig,
+  config: ResolvedConnectConfigReadonly,
   httpSCRAMAuth: HttpSCRAMAuth,
   basePath?: string
 ): Promise<AuthenticatedFetch> {
