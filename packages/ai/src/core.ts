@@ -1,19 +1,28 @@
 import type { Client } from "edgedb";
+import {
+  EventSourceParserStream,
+  ParsedEvent,
+} from "eventsource-parser/stream";
+
 import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
-import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
-import cryptoUtils from "edgedb/dist/adapter.crypto.node.js";
 import {
   getAuthenticatedFetch,
   type AuthenticatedFetch,
 } from "edgedb/dist/utils.js";
-
-import type { AIOptions, QueryContext, RAGRequest } from "./types.js";
+import type {
+  AIOptions,
+  QueryContext,
+  RAGRequest,
+  StreamingMessage,
+} from "./types.js";
+import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
+import browserCryptoUtils from "edgedb/dist/browserCrypto.js";
 
 export function createAI(client: Client, options: AIOptions) {
   return new EdgeDBAI(client, options);
 }
 
-const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils.default);
+const httpSCRAMAuth = getHTTPSCRAMAuth(browserCryptoUtils.default);
 
 export class EdgeDBAI {
   /** @internal */
@@ -111,4 +120,68 @@ export class EdgeDBAI {
 
     return data.response;
   }
+
+  async *getRagAsyncGenerator(
+    message: string,
+    context: QueryContext = this.context
+  ): AsyncGenerator<StreamingMessage, void, undefined> {
+    const response = await this.fetchRag({
+      model: this.options.model,
+      prompt: this.options.prompt,
+      context,
+      query: message,
+      stream: true,
+    });
+
+    if (!response.body) {
+      throw new Error("Expected response to include a body");
+    }
+
+    const reader = response.body
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new EventSourceParserStream())
+      .getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const message = extractMessageFromParsedEvent(value);
+        yield message;
+        if (message.type === "message_stop") break;
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  async streamRag(
+    message: string,
+    context: QueryContext = this.context
+  ): Promise<Response> {
+    const response = await this.fetchRag({
+      model: this.options.model,
+      prompt: this.options.prompt,
+      context,
+      query: message,
+      stream: true,
+    });
+
+    if (!response.body) {
+      throw new Error("Expected response to include a body");
+    }
+
+    return new Response(response.body, {
+      headers: { "Content-Type": "text/event-stream" },
+    });
+  }
+}
+
+function extractMessageFromParsedEvent(
+  parsedEvent: ParsedEvent
+): StreamingMessage {
+  const { data } = parsedEvent;
+  if (!data) {
+    throw new Error("Expected SSE message to include a data payload");
+  }
+  return JSON.parse(data) as StreamingMessage;
 }
