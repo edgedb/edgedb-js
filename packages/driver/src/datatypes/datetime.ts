@@ -188,9 +188,7 @@ export class LocalDate {
       date.getUTCDate()
     );
   }
-  // get weekOfYear(): number {
-  //   return Math.floor((10 + this.dayOfYear - this.dayOfWeek) / 7);
-  // }
+
   get daysInWeek(): number {
     return 7;
   }
@@ -632,12 +630,7 @@ export class DateDuration {
   readonly weeks: number;
   readonly days: number;
 
-  constructor(
-    years = 0,
-    months = 0,
-    weeks = 0,
-    days = 0
-  ) {
+  constructor(years = 0, months = 0, weeks = 0, days = 0) {
     this.years = Math.trunc(years) || 0;
     this.months = Math.trunc(months) || 0;
     this.weeks = Math.trunc(weeks) || 0;

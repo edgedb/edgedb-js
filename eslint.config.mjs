@@ -14,6 +14,7 @@ export default tseslint.config(
       // },
     },
     rules: {
+      "@typescript-eslint/class-literal-property-style": "off",
       "@typescript-eslint/no-unnecessary-type-constraint": "warn",
       // Svelte doesn't correctly compile if imports of the generated /modules
       // aren't imported as 'import type' in other parts of the generated
@@ -21,6 +22,7 @@ export default tseslint.config(
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-namespace": "off",
       "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-empty-function": "warn",
     },
   }
 );
