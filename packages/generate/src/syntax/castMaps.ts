@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export type scalarCastableFrom = any;
 export type scalarAssignableBy = any;
 export type orScalarLiteral = any;
