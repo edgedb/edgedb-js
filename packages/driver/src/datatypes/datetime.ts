@@ -57,12 +57,12 @@ export class LocalTime {
   readonly nanosecond: number;
 
   constructor(
-    isoHour: number = 0,
-    isoMinute: number = 0,
-    isoSecond: number = 0,
-    isoMillisecond: number = 0,
-    isoMicrosecond: number = 0,
-    isoNanosecond: number = 0
+    isoHour = 0,
+    isoMinute = 0,
+    isoSecond = 0,
+    isoMillisecond = 0,
+    isoMicrosecond = 0,
+    isoNanosecond = 0
   ) {
     isoHour = Math.floor(toNumber(isoHour));
     isoMinute = Math.floor(toNumber(isoMinute));
@@ -234,12 +234,12 @@ export class LocalDateTime extends LocalDate {
     isoYear: number,
     isoMonth: number,
     isoDay: number,
-    isoHour: number = 0,
-    isoMinute: number = 0,
-    isoSecond: number = 0,
-    isoMillisecond: number = 0,
-    isoMicrosecond: number = 0,
-    isoNanosecond: number = 0
+    isoHour = 0,
+    isoMinute = 0,
+    isoSecond = 0,
+    isoMillisecond = 0,
+    isoMicrosecond = 0,
+    isoNanosecond = 0
   ) {
     super(isoYear, isoMonth, isoDay);
 
@@ -313,16 +313,16 @@ export class Duration {
   readonly sign: number;
 
   constructor(
-    years: number = 0,
-    months: number = 0,
-    weeks: number = 0,
-    days: number = 0,
-    hours: number = 0,
-    minutes: number = 0,
-    seconds: number = 0,
-    milliseconds: number = 0,
-    microseconds: number = 0,
-    nanoseconds: number = 0
+    years = 0,
+    months = 0,
+    weeks = 0,
+    days = 0,
+    hours = 0,
+    minutes = 0,
+    seconds = 0,
+    milliseconds = 0,
+    microseconds = 0,
+    nanoseconds = 0
   ) {
     years = assertInteger(toNumber(years));
     months = assertInteger(toNumber(months));
@@ -562,15 +562,15 @@ export class RelativeDuration {
   readonly microseconds: number;
 
   constructor(
-    years: number = 0,
-    months: number = 0,
-    weeks: number = 0,
-    days: number = 0,
-    hours: number = 0,
-    minutes: number = 0,
-    seconds: number = 0,
-    milliseconds: number = 0,
-    microseconds: number = 0
+    years = 0,
+    months = 0,
+    weeks = 0,
+    days = 0,
+    hours = 0,
+    minutes = 0,
+    seconds = 0,
+    milliseconds = 0,
+    microseconds = 0
   ) {
     this.years = Math.trunc(years) || 0;
     this.months = Math.trunc(months) || 0;
@@ -633,10 +633,10 @@ export class DateDuration {
   readonly days: number;
 
   constructor(
-    years: number = 0,
-    months: number = 0,
-    weeks: number = 0,
-    days: number = 0
+    years = 0,
+    months = 0,
+    weeks = 0,
+    days = 0
   ) {
     this.years = Math.trunc(years) || 0;
     this.months = Math.trunc(months) || 0;
@@ -668,7 +668,7 @@ export class DateDuration {
   }
 }
 
-const humanDurationPrefixes: { [key: string]: number } = {
+const humanDurationPrefixes: Record<string, number> = {
   h: 3_600_000,
   hou: 3_600_000,
   m: 60_000,

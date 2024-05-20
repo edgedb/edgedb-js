@@ -47,7 +47,7 @@ function applySpec(
       );
       util.defineGetter(shape[ptr.name], "properties", () => {
         if (!shape[ptr.name][_linkProps]) {
-          const linkProperties: { [k: string]: any } = (shape[ptr.name][
+          const linkProperties: Record<string, any> = (shape[ptr.name][
             _linkProps
           ] = {});
           for (const linkProp of ptr.pointers ?? []) {

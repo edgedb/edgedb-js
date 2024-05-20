@@ -70,9 +70,7 @@ export function generateOperators({
 
   const overloadsBuf = new CodeBuffer();
 
-  const overloadDefs: {
-    [opKind: string]: { [opSymbol: string]: string[] };
-  } = {};
+  const overloadDefs: Record<string, Record<string, string[]>> = {};
   for (const opKind of Object.values($.OperatorKind)) {
     overloadDefs[opKind] = {};
   }

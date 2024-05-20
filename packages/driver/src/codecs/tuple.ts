@@ -36,7 +36,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     this.subCodecs = codecs;
   }
 
-  encode(buf: WriteBuffer, object: any, allowNull: boolean = false): void {
+  encode(buf: WriteBuffer, object: any, allowNull = false): void {
     if (!Array.isArray(object)) {
       throw new InvalidArgumentError(`an array was expected, got "${object}"`);
     }

@@ -69,7 +69,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
       );
     }
     try {
-      const items: { [k: string]: BaseType } = {};
+      const items: Record<string, BaseType> = {};
       for (const [i] of Object.entries(a.__shape__)) {
         if (!a.__shape__[i] || !b.__shape__[i]) {
           throw new Error();
@@ -176,10 +176,10 @@ type _getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
 export type getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
   _getSharedParentPrimitiveVariadic<Types>;
 
-export type LooseTypeSet<T = any, C extends Cardinality = Cardinality> = {
+export interface LooseTypeSet<T = any, C extends Cardinality = Cardinality> {
   __element__: T;
   __cardinality__: C;
-};
+}
 
 export type { mergeObjectTypes };
 

@@ -20,7 +20,7 @@ import type { ResolvedConnectConfig } from "./conUtils";
 import type { HttpSCRAMAuth } from "./httpScram";
 import type { ProtocolVersion } from "./ifaces";
 
-const idCounter: { [key: string]: number } = {};
+const idCounter: Record<string, number> = {};
 
 export function getUniqueId(prefix = ""): string {
   if (!idCounter[prefix]) {

@@ -1,5 +1,5 @@
 export type UUID = string;
-export type Version = {
+export interface Version {
   major: number;
   minor: number;
-};
+}

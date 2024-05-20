@@ -18,7 +18,7 @@ const { path, fs, readFileUtf8, exists, walk } = adapter;
 
 export const configFileHeader = `// EdgeDB query builder`;
 
-export type GeneratorParams = {
+export interface GeneratorParams {
   dir: DirBuilder;
   types: $.introspect.Types;
   typesByName: Record<string, $.introspect.Type>;
@@ -28,13 +28,13 @@ export type GeneratorParams = {
   globals: $.introspect.Globals;
   operators: $.introspect.OperatorTypes;
   edgedbVersion: Version;
-};
+}
 
 export type Target = "ts" | "esm" | "cjs" | "mts" | "deno";
-export type Version = {
+export interface Version {
   major: number;
   minor: number;
-};
+}
 
 export async function generateQueryBuilder(params: {
   root: string | null;
@@ -86,8 +86,7 @@ export async function generateQueryBuilder(params: {
 
   const dir = new DirBuilder();
 
-  // tslint:disable-next-line
-  console.log(`Introspecting database schema...`);
+   console.log(`Introspecting database schema...`);
 
   const [types, scalars, casts, functions, operators, globals, version] =
     await Promise.all([

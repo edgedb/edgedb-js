@@ -2,17 +2,17 @@ import type { Executor } from "../../ifaces";
 import type { typeutil } from "../typeutil";
 import { typeMapping } from "./types";
 
-type Cast = {
+interface Cast {
   id: string;
   source: { id: string; name: string };
   target: { id: string; name: string };
   allow_assignment: boolean;
   allow_implicit: boolean;
-};
+}
 
 const reachableFrom: (
   source: string,
-  adj: { [k: string]: string[] },
+  adj: Record<string, string[]>,
   seen?: Set<string>
 ) => string[] = (source, adj, seen = new Set<string>()) => {
   const reachable = new Set<string>();
@@ -87,11 +87,11 @@ export const casts = async (cxn: Executor, params?: { debug?: boolean }) => {
     }
   }
 
-  const castMap: { [k: string]: string[] } = {};
-  const implicitCastMap: { [k: string]: string[] } = {};
-  const implicitCastFromMap: { [k: string]: string[] } = {};
-  const assignmentCastMap: { [k: string]: string[] } = {};
-  const assignableByMap: { [k: string]: string[] } = {};
+  const castMap: Record<string, string[]> = {};
+  const implicitCastMap: Record<string, string[]> = {};
+  const implicitCastFromMap: Record<string, string[]> = {};
+  const assignmentCastMap: Record<string, string[]> = {};
+  const assignableByMap: Record<string, string[]> = {};
 
   for (const type of [...types]) {
     castMap[type] = castsBySource[type] || [];
@@ -101,8 +101,7 @@ export const casts = async (cxn: Executor, params?: { debug?: boolean }) => {
     assignableByMap[type] = reachableFrom(type, assignmentCastsByTarget);
   }
 
-  // tslint:disable:no-console
-  if (params?.debug === true) {
+   if (params?.debug === true) {
     console.log(`\nIMPLICIT`);
     for (const [fromId, castArr] of Object.entries(implicitCastMap)) {
       console.log(

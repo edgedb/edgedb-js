@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-// tslint:disable:no-console
 import { adapter, type Client, createClient, createHttpClient } from "edgedb";
 import * as TOML from "@iarna/toml";
 

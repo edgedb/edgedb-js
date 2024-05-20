@@ -58,8 +58,7 @@ export interface PathParent<
 export type $linkPropify<Root extends ObjectTypeSet> = Root extends {
   __parent__: PathParent<infer Parent, infer L>;
 }
-  ? // tslint:disable-next-line
-    Parent["__element__"]["__pointers__"][L] extends LinkDesc<
+  ?    Parent["__element__"]["__pointers__"][L] extends LinkDesc<
       any,
       any,
       infer LinkProps,
@@ -117,7 +116,7 @@ type anonymizeObjectTypeSet<T extends ObjectTypeSet> = typeutil.flatten<{
 
 export type pathifyShape<
   Root extends ObjectTypeSet,
-  Shape extends { [k: string]: any } = Root["__element__"]["__shape__"]
+  Shape extends Record<string, any> = Root["__element__"]["__shape__"]
 > = string extends keyof Shape
   ? Record<string, never>
   : {
@@ -214,11 +213,11 @@ export type $expr_PathLeaf<
   // __exclusive__: boolean;
 }>;
 
-export type ExpressionRoot = {
+export interface ExpressionRoot {
   __element__: BaseType;
   __cardinality__: Cardinality;
   __kind__: ExpressionKind;
-};
+}
 
 function PathLeaf<
   Root extends TypeSet,

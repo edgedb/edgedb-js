@@ -69,7 +69,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
 
   const _getTypeName =
     (mod: string) =>
-    (typeName: string, withModule: boolean = false): string => {
+    (typeName: string, withModule = false): string => {
       const { tMod, tName, module } = getPlainTypeModule(typeName);
       return (
         (mod !== tMod || withModule ? `${module.fullInternalName}.` : "") +

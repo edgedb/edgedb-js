@@ -30,18 +30,16 @@ import type {
 type SingletonSet = Expression<
   TypeSet<BaseType, Cardinality.One | Cardinality.AtMostOne>
 >;
-type SimpleGroupElements = { [k: string]: SingletonSet };
-type GroupModifiers = { by: SimpleGroupElements };
-type NestedGroupElements = {
-  [k: string]: SingletonSet | GroupingSet;
-};
+type SimpleGroupElements = Record<string, SingletonSet>;
+interface GroupModifiers { by: SimpleGroupElements }
+type NestedGroupElements = Record<string, SingletonSet | GroupingSet>;
 
-export type GroupingSet = {
+export interface GroupingSet {
   __kind__: "groupingset";
   __settype__: "set" | "tuple" | "rollup" | "cube";
   __elements__: NestedGroupElements;
   __exprs__: [string, SingletonSet][];
-};
+}
 export function isGroupingSet(arg: any): arg is GroupingSet {
   return arg.__kind__ === "groupingset";
 }
@@ -107,8 +105,7 @@ export type $expr_Group<
         ObjectType<
           "std::FreeObject",
           {
-            // tslint:disable-next-line
-            [k in keyof Mods["by"]]: Mods["by"][k]["__element__"] extends ObjectType
+                       [k in keyof Mods["by"]]: Mods["by"][k]["__element__"] extends ObjectType
               ? never
               : PropertyDesc<
                   Mods["by"][k]["__element__"],

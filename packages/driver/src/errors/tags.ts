@@ -1,2 +1,2 @@
-export const SHOULD_RECONNECT: symbol = Symbol("SHOULD_RECONNECT");
-export const SHOULD_RETRY: symbol = Symbol("SHOULD_RETRY");
+export const SHOULD_RECONNECT = Symbol("SHOULD_RECONNECT");
+export const SHOULD_RETRY = Symbol("SHOULD_RETRY");

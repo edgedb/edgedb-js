@@ -20,10 +20,10 @@ type Param = ParamType | $expr_OptionalParam;
 
 type ParamsRecord = Record<string, Param>;
 
-export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
+export interface $expr_OptionalParam<Type extends ParamType = ParamType> {
   __kind__: ExpressionKind.OptionalParam;
   __type__: Type;
-};
+}
 
 export function optional<Type extends ParamType>(
   type: Type
@@ -102,7 +102,7 @@ export function params<
   paramsDef: Params,
   expr: (params: paramsToParamExprs<Params>) => Expr
 ): $expr_WithParams<Params, Expr> {
-  const paramExprs: { [key: string]: $expr_Param } = {};
+  const paramExprs: Record<string, $expr_Param> = {};
   for (const [key, param] of Object.entries(paramsDef)) {
     const paramType =
       param.__kind__ === ExpressionKind.OptionalParam ? param.__type__ : param;

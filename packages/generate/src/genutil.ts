@@ -37,14 +37,12 @@ export function quote(val: string): string {
   return JSON.stringify(val.toString());
 }
 
-export const scalarToLiteralMapping: {
-  [key: string]: {
+export const scalarToLiteralMapping: Record<string, {
     type: string;
     literalKind?: "typeof" | "instanceof";
     extraTypes?: string[];
     argTypes?: string[];
-  };
-} = {
+  }> = {
   "std::int16": { type: "number" },
   "std::int32": { type: "number" },
   "std::int64": { type: "number", extraTypes: ["string"] },
@@ -110,9 +108,7 @@ export const scalarToLiteralMapping: {
   },
 };
 
-export const literalToScalarMapping: {
-  [key: string]: { type: string; literalKind: "typeof" | "instanceof" };
-} = {};
+export const literalToScalarMapping: Record<string, { type: string; literalKind: "typeof" | "instanceof" }> = {};
 for (const [scalarType, { type, literalKind }] of Object.entries(
   scalarToLiteralMapping
 )) {
@@ -232,7 +228,7 @@ export function toTSObjectType(
   types: introspect.Types,
   currentMod: string,
   code: CodeBuilder,
-  level: number = 0
+  level = 0
 ): CodeFragment[] {
   if (type.intersection_of && type.intersection_of.length) {
     const res: CodeFragment[][] = [];
@@ -456,7 +452,7 @@ export async function writeDirWithTarget(
   }
 }
 
-export type GeneratorParams = {
+export interface GeneratorParams {
   dir: DirBuilder;
   types: $.introspect.Types;
   typesByName: Record<string, $.introspect.Type>;
@@ -466,17 +462,16 @@ export type GeneratorParams = {
   globals: $.introspect.Globals;
   operators: $.introspect.OperatorTypes;
   edgedbVersion: Version;
-};
+}
 
 export function exitWithError(message: string): never {
-  // tslint:disable-next-line
-  console.error(message);
+   console.error(message);
   adapter.exit(1);
   throw new Error();
 }
 
 export type Target = "ts" | "esm" | "cjs" | "mts" | "deno";
-export type Version = {
+export interface Version {
   major: number;
   minor: number;
-};
+}

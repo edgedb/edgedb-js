@@ -45,7 +45,7 @@ type AnyCodeFrag = CodeFragment | Frag;
 
 export class CodeBuffer {
   private buf: AnyCodeFrag[][] = [];
-  private indent: number = 0;
+  private indent = 0;
 
   getBuf() {
     return this.buf;
@@ -103,7 +103,7 @@ type Import = {
 } & (
   | { type: "default"; name: string }
   | { type: "star"; name: string }
-  | { type: "partial"; names: { [key: string]: string | boolean } }
+  | { type: "partial"; names: Record<string, string | boolean> }
 );
 
 type Export = { modes: Set<Mode> } & (
@@ -117,7 +117,7 @@ type Export = { modes: Set<Mode> } & (
   | { type: "refsDefault"; ref: IdentRef | string; as: string }
   | {
       type: "from";
-      names: { [key: string]: string | boolean };
+      names: Record<string, string | boolean>;
       fromPath: string;
       allowFileExt?: boolean;
       typeOnly: boolean;
@@ -130,14 +130,14 @@ type Export = { modes: Set<Mode> } & (
     }
 );
 
-type ImportParams = {
+interface ImportParams {
   allowFileExt?: boolean;
   modes?: Mode[];
   typeOnly?: boolean;
-};
-type ExportParams = { modes?: Mode[] };
+}
+interface ExportParams { modes?: Mode[] }
 
-const allModes: Set<Mode> = new Set(["dts", "js", "ts"]);
+const allModes = new Set<Mode>(["dts", "js", "ts"]);
 class BuilderImportsExports {
   constructor(
     public imports: Set<Import> = new Set<Import>(),
@@ -145,7 +145,7 @@ class BuilderImportsExports {
   ) {}
 
   addImport(
-    names: { [key: string]: string | boolean },
+    names: Record<string, string | boolean>,
     fromPath: string,
     params: ImportParams = {}
   ) {
@@ -220,7 +220,7 @@ class BuilderImportsExports {
   }
 
   addExportFrom(
-    names: { [key: string]: string | boolean },
+    names: Record<string, string | boolean>,
     fromPath: string,
     params: ImportParams = {}
   ) {
@@ -812,7 +812,7 @@ export class DirBuilder {
       moduleExtension: string;
       written: Set<string>;
     },
-    headerComment: string = ""
+    headerComment = ""
   ): Promise<void> {
     const dir = path.normalize(to);
 

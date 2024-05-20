@@ -33,9 +33,7 @@ function buildFail(message: string) {
   };
 }
 
-interface ErrorConstructor {
-  new (...args: any[]): Error;
-}
+type ErrorConstructor = new (...args: any[]) => Error;
 
 // modified from 'https://deno.land/x/expect/matchers.ts'
 function toThrow(

@@ -67,11 +67,11 @@ export type OrderByExpr = TypeSet<
   ScalarType | EnumType | ObjectType,
   Cardinality
 >;
-export type OrderByObjExpr = {
+export interface OrderByObjExpr {
   expression: OrderByExpr;
   direction?: OrderByDirection;
   empty?: OrderByEmpty;
-};
+}
 
 export type OrderByExpression =
   | OrderByExpr
@@ -114,7 +114,7 @@ export type exclusivesToFilterSingle<E extends ExclusiveTuple> =
           [k in keyof E[j]]: filterSingle<E[j][k]>;
         };
       }[number];
-export type SelectModifiers<T extends ObjectType = ObjectType> = {
+export interface SelectModifiers<T extends ObjectType = ObjectType> {
   // export type SelectModifiers = {
   filter?: SelectFilterExpression;
   filter_single?: // | Partial<
@@ -168,17 +168,17 @@ export type SelectModifiers<T extends ObjectType = ObjectType> = {
   order_by?: OrderByExpression;
   offset?: OffsetExpression | number;
   limit?: LimitExpression | number;
-};
+}
 
 export type UnknownSelectModifiers = { [k in keyof SelectModifiers]: unknown };
 
-export type NormalisedSelectModifiers = {
+export interface NormalisedSelectModifiers {
   filter?: SelectFilterExpression;
   order_by?: OrderByObjExpr[];
   offset?: OffsetExpression;
   limit?: LimitExpression;
   singleton: boolean;
-};
+}
 
 // type NormaliseOrderByModifier<Mods extends OrderByExpression> =
 //   Mods extends OrderByExpr
@@ -777,7 +777,7 @@ export type objectTypeToSelectShape<
     : Pointers[k] extends LinkDesc
     ? linkDescToSelectElement<Pointers[k]>
     : any;
-}> & { [k: string]: unknown };
+}> & Record<string, unknown>;
 
 // incorporate __shape__ (computeds) on selection shapes
 // this works but a major rewrite of setToTsType is required
@@ -932,7 +932,7 @@ export function select<
     Modifiers
   >;
 }>;
-export function select<Shape extends { [key: string]: TypeSet }>(
+export function select<Shape extends Record<string, TypeSet>>(
   shape: Shape
 ): $expr_Select<{
   __element__: ObjectType<

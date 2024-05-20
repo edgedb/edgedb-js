@@ -444,8 +444,7 @@ export abstract class BaseClientPool {
     );
 
     const warningTimeoutId = setTimeout(() => {
-      // tslint:disable-next-line: no-console
-      console.warn(
+           console.warn(
         "Client.close() is taking over 60 seconds to complete. " +
           "Check if you have any unreleased connections left."
       );
@@ -540,7 +539,7 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withSession(session));
   }
 
-  withModuleAliases(aliases: { [name: string]: string }) {
+  withModuleAliases(aliases: Record<string, string>) {
     return new Client(
       this.pool,
       this.options.withSession(this.options.session.withModuleAliases(aliases))
@@ -552,7 +551,7 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withSession(newConfig));
   }
 
-  withGlobals(globals: { [name: string]: any }): Client {
+  withGlobals(globals: Record<string, any>): Client {
     return new Client(
       this.pool,
       this.options.withSession(this.options.session.withGlobals(globals))

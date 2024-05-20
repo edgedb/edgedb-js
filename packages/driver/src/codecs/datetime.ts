@@ -182,7 +182,7 @@ export class LocalTimeCodec extends ScalarCodec implements ICodec {
   }
 }
 
-const unencodableDurationFields: Array<keyof Duration> = [
+const unencodableDurationFields: (keyof Duration)[] = [
   "years",
   "months",
   "weeks",

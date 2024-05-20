@@ -493,7 +493,7 @@ export function generateReturnCardinality(
   returnTypemod: $.introspect.FuncopTypemod,
   hasNamedParams: boolean,
   anytypes: AnytypeDef | null,
-  preservesOptionality: boolean = false
+  preservesOptionality = false
 ) {
   if (
     returnTypemod === "SetOfType" &&

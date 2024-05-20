@@ -72,15 +72,13 @@ export async function retryingConnect(
                   `\n`
               );
             }
-            // tslint:disable-next-line: no-console
-            console.warn(...logMsg);
+                       console.warn(...logMsg);
           }
         } else {
           throw e;
         }
       } else {
-        // tslint:disable-next-line: no-console
-        console.error("Unexpected connection error:", e);
+               console.error("Unexpected connection error:", e);
         throw e; // this shouldn't happen
       }
     }

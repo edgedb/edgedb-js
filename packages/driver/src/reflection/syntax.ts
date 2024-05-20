@@ -1,4 +1,4 @@
-export const syntax: { [k: string]: { path: string; content: string }[] } = {
+export const syntax: Record<string, { path: string; content: string }[]> = {
   deno: [],
   cjs: [],
   esm: [],

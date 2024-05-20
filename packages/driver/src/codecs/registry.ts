@@ -359,7 +359,7 @@ export class CodecsRegistry {
             "could not build scalar codec: base scalar has a non-scalar codec"
           );
         }
-        res = <ICodec>res.derive(tid);
+        res = res.derive(tid) as ICodec;
         break;
       }
 

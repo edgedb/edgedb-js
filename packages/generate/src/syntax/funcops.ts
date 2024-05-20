@@ -39,7 +39,7 @@ export type $expr_Function<
   __kind__: ExpressionKind.Function;
   __name__: string;
   __args__: (BaseTypeSet | undefined)[];
-  __namedargs__: { [key: string]: BaseTypeSet };
+  __namedargs__: Record<string, BaseTypeSet>;
 }>;
 
 export type $expr_Operator<
@@ -68,21 +68,19 @@ interface OverloadFuncArgDef {
 interface OverloadFuncDef {
   kind?: string;
   args: OverloadFuncArgDef[];
-  namedArgs?: { [key: string]: OverloadFuncArgDef };
+  namedArgs?: Record<string, OverloadFuncArgDef>;
   returnTypeId: string;
   returnTypemod?: "SetOfType" | "OptionalType";
   preservesOptionality?: boolean;
 }
 
 function mapLiteralToTypeSet(literals: any[]): TypeSet[];
-function mapLiteralToTypeSet(literals: { [key: string]: any }): {
-  [key: string]: TypeSet;
-};
-function mapLiteralToTypeSet(literals: any[] | { [key: string]: any }) {
+function mapLiteralToTypeSet(literals: Record<string, any>): Record<string, TypeSet>;
+function mapLiteralToTypeSet(literals: any[] | Record<string, any>) {
   if (Array.isArray(literals)) {
     return literals.map((lit) => (lit != null ? literalToTypeSet(lit) : lit));
   }
-  const obj: { [key: string]: TypeSet } = {};
+  const obj: Record<string, TypeSet> = {};
   for (const key of Object.keys(literals)) {
     obj[key] =
       literals[key] != null ? literalToTypeSet(literals[key]) : literals[key];
@@ -97,7 +95,7 @@ export function $resolveOverload(
   funcDefs: OverloadFuncDef[]
 ) {
   const positionalArgs: (TypeSet | undefined)[] = [];
-  let namedArgs: { [key: string]: TypeSet } | undefined;
+  let namedArgs: Record<string, TypeSet> | undefined;
   if (args.length) {
     if (args[0] !== undefined) {
       try {
@@ -145,7 +143,7 @@ const ANYTYPE_ARG = Symbol();
 function _tryOverload(
   funcName: string,
   args: (BaseTypeSet | undefined)[],
-  namedArgs: { [key: string]: BaseTypeSet } | undefined,
+  namedArgs: Record<string, BaseTypeSet> | undefined,
   typeSpec: introspect.Types,
   funcDef: OverloadFuncDef
 ): {
@@ -153,7 +151,7 @@ function _tryOverload(
   returnType: BaseType;
   cardinality: Cardinality;
   args: BaseTypeSet[];
-  namedArgs: { [key: string]: BaseTypeSet };
+  namedArgs: Record<string, BaseTypeSet>;
 } | null {
   if (
     (funcDef.namedArgs === undefined && namedArgs !== undefined) ||
@@ -327,7 +325,7 @@ function _tryOverload(
   };
 }
 
-const nameRemapping: { [key: string]: string } = {
+const nameRemapping: Record<string, string> = {
   "std::int16": "std::number",
   "std::int32": "std::number",
   "std::int64": "std::number",

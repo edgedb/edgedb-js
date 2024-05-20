@@ -64,13 +64,13 @@ interface UnlessConflict {
   else?: TypeSet;
 }
 
-type InsertBaseExpression<Root extends TypeSet = TypeSet> = {
+interface InsertBaseExpression<Root extends TypeSet = TypeSet> {
   __kind__: ExpressionKind.Insert;
   __element__: Root["__element__"];
   __cardinality__: Cardinality.One;
   __expr__: stripSet<Root>;
   __shape__: any;
-};
+}
 export type $expr_Insert<
   // Root extends $expr_PathNode = $expr_PathNode
   El extends ObjectType = ObjectType
@@ -165,12 +165,10 @@ export function $insertify(
 
 export function $normaliseInsertShape(
   root: ObjectTypeSet,
-  shape: { [key: string]: any },
-  isUpdate: boolean = false
-): { [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet } } {
-  const newShape: {
-    [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet };
-  } = {};
+  shape: Record<string, any>,
+  isUpdate = false
+): Record<string, TypeSet | { "+=": TypeSet } | { "-=": TypeSet }> {
+  const newShape: Record<string, TypeSet | { "+=": TypeSet } | { "-=": TypeSet }> = {};
 
   const _shape: [string, any][] =
     shape.__element__?.__kind__ === TypeKind.namedtuple

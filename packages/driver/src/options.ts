@@ -39,7 +39,7 @@ export class RetryOptions {
   readonly default: RetryRule;
   private overrides: Map<RetryCondition, RetryRule>;
 
-  constructor(attempts: number = 3, backoff: BackoffFunction = defaultBackoff) {
+  constructor(attempts = 3, backoff: BackoffFunction = defaultBackoff) {
     this.default = new RetryRule(attempts, backoff);
     this.overrides = new Map();
   }
@@ -111,8 +111,8 @@ export interface SessionOptions {
 export interface SerializedSessionState {
   module?: string;
   aliases?: [string, string][];
-  config?: { [name: string]: unknown };
-  globals?: { [name: string]: unknown };
+  config?: Record<string, unknown>;
+  globals?: Record<string, unknown>;
 }
 
 export class Session {
@@ -136,9 +136,7 @@ export class Session {
   withModuleAliases({
     module,
     ...aliases
-  }: {
-    [name: string]: string;
-  }): Session {
+  }: Record<string, string>): Session {
     return new Session({
       ...this,
       module: module ?? this.module,
@@ -146,14 +144,14 @@ export class Session {
     });
   }
 
-  withConfig(config: { [name: string]: any }): Session {
+  withConfig(config: Record<string, any>): Session {
     return new Session({
       ...this,
       config: { ...this.config, ...config },
     });
   }
 
-  withGlobals(globals: { [name: string]: any }): Session {
+  withGlobals(globals: Record<string, any>): Session {
     return new Session({
       ...this,
       globals: { ...this.globals, ...globals },
@@ -178,7 +176,7 @@ export class Session {
       state.globals = _globals.reduce((globals, [key, val]) => {
         globals[key.includes("::") ? key : `${this.module}::${key}`] = val;
         return globals;
-      }, {} as { [key: string]: any });
+      }, {} as Record<string, any>);
     }
     return state;
   }

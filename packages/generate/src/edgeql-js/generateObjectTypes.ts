@@ -18,7 +18,7 @@ export const getStringRepresentation: (
   params: {
     types: $.introspect.Types;
     anytype?: string | CodeFragment[];
-    casts?: { [key: string]: string[] };
+    casts?: Record<string, string[]>;
     castSuffix?: string;
   }
 ) => { staticType: CodeFragment[]; runtimeType: CodeFragment[] } = (
@@ -199,7 +199,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     // generate interface
     /////////
 
-    type Line = {
+    interface Line {
       card: string;
       staticType: CodeFragment[];
       runtimeType: CodeFragment[];
@@ -210,7 +210,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
       hasDefault: boolean;
       kind: "link" | "property";
       lines: Line[];
-    };
+    }
 
     const ptrToLine: (
       ptr: $.introspect.Pointer | $.introspect.Backlink
@@ -363,8 +363,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     body.writeln([
       dts`declare `,
       ...frag`const ${literal}`,
-      // tslint:disable-next-line
-      t`: $.$expr_PathNode<$.TypeSet<${ref}, $.Cardinality.${typeCard}>, null> `,
+           t`: $.$expr_PathNode<$.TypeSet<${ref}, $.Cardinality.${typeCard}>, null> `,
       r`= _.syntax.$PathNode($.$toSet(${ref}, $.Cardinality.${typeCard}), null);`,
     ]);
     body.nl();

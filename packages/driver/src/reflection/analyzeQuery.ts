@@ -12,7 +12,7 @@ import type { Client } from "../baseClient";
 import { Cardinality } from "./enums";
 import { util } from "./util";
 
-type QueryType = {
+interface QueryType {
   args: string;
   result: string;
   cardinality: Cardinality;
@@ -20,7 +20,7 @@ type QueryType = {
   importMap: ImportMap;
   /** @deprecated */
   imports: Set<string>;
-};
+}
 
 export async function analyzeQuery(
   client: Client,
@@ -58,7 +58,7 @@ export type CodecGenerator<Codec extends CodecLike = CodecLike> = (
 
 type CodecGeneratorMap = ReadonlyMap<AbstractClass<CodecLike>, CodecGenerator>;
 
-export type CodecGeneratorContext = {
+export interface CodecGeneratorContext {
   indent: string;
   optionalNulls: boolean;
   readonly: boolean;
@@ -66,7 +66,7 @@ export type CodecGeneratorContext = {
   walk: (codec: CodecLike, context?: CodecGeneratorContext) => string;
   generators: CodecGeneratorMap;
   applyCardinality: (type: string, cardinality: Cardinality) => string;
-};
+}
 
 export type CodecGenerationOptions = Partial<
   Pick<
@@ -178,7 +178,7 @@ export const defaultCodecGenerators: CodecGeneratorMap = new Map([
 ]);
 
 export const generateTsObject = (
-  fields: Array<Parameters<typeof generateTsObjectField>[0]>,
+  fields: Parameters<typeof generateTsObjectField>[0][],
   ctx: CodecGeneratorContext
 ) => {
   const properties = fields.map((field) => generateTsObjectField(field, ctx));

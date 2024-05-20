@@ -237,7 +237,7 @@ export function tuple<Items extends typeutil.tupleOf<TypeSet | scalarLiterals>>(
 export function tuple<Shape extends NamedTupleShape>(
   shape: Shape
 ): NamedTupleType<Shape>;
-export function tuple<Shape extends { [k: string]: TypeSet | scalarLiterals }>(
+export function tuple<Shape extends Record<string, TypeSet | scalarLiterals>>(
   shape: Shape
 ): $expr_NamedTuple<mapLiteralToTypeSet<Shape>>;
 export function tuple(input: any) {

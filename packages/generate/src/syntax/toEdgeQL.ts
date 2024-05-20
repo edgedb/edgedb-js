@@ -589,7 +589,7 @@ function walkExprTree(
         // this prevents recurring grouping elements from being walked twice
         // this way, these won't get pulled into with blocks,
         // which is good because they need to be rendered in `using`
-        const seen: Set<any> = new Set();
+        const seen = new Set<any>();
         if (!seen.has(expr)) {
           childExprs.push(...walkExprTree(groupExpr, expr, ctx));
           seen.add(expr);
@@ -656,8 +656,8 @@ function walkExprTree(
 function renderEdgeQL(
   _expr: TypeSet,
   ctx: RenderCtx,
-  renderShape: boolean = true,
-  noImplicitDetached: boolean = false
+  renderShape = true,
+  noImplicitDetached = false
 ): string {
   if (!(_expr as any).__kind__) {
     throw new Error("Invalid expression.");
@@ -1261,8 +1261,8 @@ function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
   type: ObjectType | null = null,
-  keysOnly: boolean = false,
-  injectImplicitId: boolean = true
+  keysOnly = false,
+  injectImplicitId = true
 ) {
   const pointers = type?.__pointers__ || null;
   const isFreeObject = type?.__name__ === "std::FreeObject";
@@ -1279,8 +1279,7 @@ function shapeToEdgeQL(
   for (const key in shape) {
     if (!Object.prototype.hasOwnProperty.call(shape, key)) continue;
     if (seen.has(key)) {
-      // tslint:disable-next-line
-      console.warn(`Invalid: duplicate key "${key}"`);
+           console.warn(`Invalid: duplicate key "${key}"`);
       continue;
     }
     seen.add(key);
@@ -1573,7 +1572,7 @@ function indent(str: string, depth: number) {
 
 // backtick quote identifiers if needed
 // https://github.com/edgedb/edgedb/blob/master/edb/edgeql/quote.py
-function q(ident: string, allowBacklinks: boolean = true): string {
+function q(ident: string, allowBacklinks = true): string {
   if (
     !ident ||
     ident.startsWith("@") ||

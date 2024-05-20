@@ -28,9 +28,7 @@ const sessionCache = new WeakMap<any, NextAuthSession>();
 
 export class NextPagesAuth extends NextAuth {
   getSession(req: {
-    cookies: Partial<{
-      [key: string]: string;
-    }>;
+    cookies: Partial<Record<string, string>>;
   }) {
     const session =
       sessionCache.get(req) ??

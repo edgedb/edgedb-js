@@ -27,14 +27,14 @@ export namespace util {
   export const getFromArrayMap = <T>(map: Record<string, T[]>, id: string) => {
     return map[id] || [];
   };
-  type PropertyDef = {
+  interface PropertyDef {
     configurable?: boolean;
     enumerable?: boolean;
     writable?: boolean;
     value?: any;
     set?: (v: any) => any;
     get?: () => any;
-  };
+  }
 
   export const defineProperty = <T>(
     obj: T,
@@ -80,7 +80,7 @@ export namespace util {
     [K in ExcludeDollarPrefixed<keyof O>]: O[K];
   };
 
-  export function omitDollarPrefixed<O extends { [k: string]: any }>(
+  export function omitDollarPrefixed<O extends Record<string, any>>(
     object: O
   ): OmitDollarPrefixed<O> {
     const obj: any = {};

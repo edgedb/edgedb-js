@@ -3,13 +3,13 @@ import type { Cardinality } from "../enums";
 import type { UUID } from "./queryTypes";
 import type { StrictMap } from "../strictMap";
 
-export type Global = {
+export interface Global {
   id: UUID;
   name: string;
   has_default: boolean;
   target_id: UUID;
   card: Cardinality;
-};
+}
 
 export type Globals = StrictMap<UUID, Global>;
 

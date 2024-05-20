@@ -19,10 +19,10 @@ export interface BaseType {
   __kind__: TypeKind;
   __name__: string;
 }
-export type BaseTypeSet = {
+export interface BaseTypeSet {
   __element__: BaseType;
   __cardinality__: Cardinality;
-};
+}
 export type BaseTypeTuple = typeutil.tupleOf<BaseType>;
 
 //////////////////
@@ -45,24 +45,19 @@ export interface ScalarType<
 export type scalarTypeWithConstructor<
   S extends ScalarType,
   ExtraTsTypes = never
-> = S & {
-  // tslint:disable-next-line
-  <T extends S["__tstype__"] | ExtraTsTypes>(val: T): $expr_Literal<
+> = S &(<T extends S["__tstype__"] | ExtraTsTypes>(val: T) => $expr_Literal<
     Omit<S, "__tsconsttype__"> & {
       __tsconsttype__: T extends S["__tstype__"] ? T : S["__tstype__"];
     }
-  >;
-};
+  >);
 
 type $jsonDestructure<Set extends TypeSet> = Set extends TypeSet<
   ScalarType<"std::json">
 >
-  ? {
-      [path: string]: $expr_Operator<
+  ? Record<string, $expr_Operator<
         Set["__element__"],
         Set["__cardinality__"]
-      >;
-    } & {
+      >> & {
       destructure<T extends TypeSet<ScalarType<"std::str">> | string>(
         path: T
       ): $expr_Operator<
@@ -160,7 +155,7 @@ export type assert_single<
   __namedargs__: object;
 }>;
 
-export type ExpressionMethods<Set extends TypeSet> = {
+export interface ExpressionMethods<Set extends TypeSet> {
   toEdgeQL(): string;
 
   is<T extends ObjectTypeSet>(
@@ -179,7 +174,7 @@ export type ExpressionMethods<Set extends TypeSet> = {
     Cardinality.AtMostOne
     // cardutil.overrideUpperBound<Set["__cardinality__"], "One">
   >;
-};
+}
 
 //////////////////
 // ENUMTYPE
@@ -201,9 +196,7 @@ export interface EnumType<
 export type ObjectTypeSet = TypeSet<ObjectType, Cardinality>;
 export type ObjectTypeExpression = TypeSet<ObjectType, Cardinality>;
 
-export type ExclusiveTuple = typeutil.tupleOf<{
-  [k: string]: TypeSet;
-}>;
+export type ExclusiveTuple = typeutil.tupleOf<Record<string, TypeSet>>;
 export interface ObjectType<
   Name extends string = string,
   Pointers extends ObjectTypePointers = ObjectTypePointers,
@@ -258,9 +251,7 @@ export type $scopify<Type extends ObjectType> = $expr_PathNode<
   // true // exclusivity
 >;
 
-export type PropertyShape = {
-  [k: string]: PropertyDesc;
-};
+export type PropertyShape = Record<string, PropertyDesc>;
 
 export interface LinkDesc<
   Type extends ObjectType = any,
@@ -281,9 +272,7 @@ export interface LinkDesc<
   hasDefault: HasDefault;
 }
 
-export type ObjectTypePointers = {
-  [k: string]: PropertyDesc | LinkDesc;
-};
+export type ObjectTypePointers = Record<string, PropertyDesc | LinkDesc>;
 
 export type stripBacklinks<T extends ObjectTypePointers> = {
   [k in keyof T]: k extends `<${string}` ? never : T[k];
@@ -347,14 +336,14 @@ type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
 //   : never
 // : never;
 
-export type $expr_PolyShapeElement<
+export interface $expr_PolyShapeElement<
   PolyType extends ObjectTypeSet = ObjectTypeSet,
   ShapeElement = any
-> = {
+> {
   __kind__: ExpressionKind.PolyShapeElement;
   __polyType__: PolyType;
   __shapeElement__: ShapeElement;
-};
+}
 
 export type computeObjectShape<
   Pointers extends ObjectTypePointers,
@@ -621,8 +610,8 @@ type addNamedTuplePaths<
     : never;
 };
 
-export type NamedTupleLiteralShape = { [k: string]: TypeSet };
-export type NamedTupleShape = { [k: string]: BaseType };
+export type NamedTupleLiteralShape = Record<string, TypeSet>;
+export type NamedTupleShape = Record<string, BaseType>;
 export interface NamedTupleType<Shape extends NamedTupleShape = NamedTupleShape>
   extends BaseType {
   __name__: string;
