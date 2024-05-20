@@ -848,12 +848,9 @@ export class DirBuilder {
 
       const filePath = dest + params.fileExtension;
 
-      let oldContents = "";
-      try {
-        oldContents = await readFileUtf8(filePath);
-      } catch (err) {
-        console.error("Error occurred while reading file", filePath, err);
-      }
+      const oldContents = await readFileUtf8(filePath)
+        .then((content) => content)
+        .catch(() => "");
 
       const newContents =
         headerComment +

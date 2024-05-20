@@ -4,10 +4,14 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
+  // ...tseslint.configs.stylistic,
   {
     files: ["packages/*/src/**/*.ts"],
     languageOptions: {
       parser: tseslint.parser,
+      // parserOptions: {
+      //   project: true,
+      // },
     },
     rules: {
       "@typescript-eslint/no-unnecessary-type-constraint": "warn",

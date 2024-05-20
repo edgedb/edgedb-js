@@ -64,8 +64,8 @@ function tryParseInt(val: any) {
   if (val instanceof Uint8Array) {
     try {
       return parseInt(utf8Decoder.decode(val), 10);
-    } catch (err) {
-      console.error("Failed to parse integer value: ", val, err);
+    } catch {
+      return null;
     }
   }
   return null;

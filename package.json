@@ -14,7 +14,7 @@
     "typescript-eslint": "^7.8.0"
   },
   "scripts": {
-    "lint": "eslint 'packages/*/src/**/*.ts'",
+    "lint": "eslint 'packages/*/src/**/*.ts' --quiet",
     "lint:fix": "eslint 'packages/*/src/**/*.ts' --fix",
     "format:check": "prettier --check 'packages/*/src/**/*.(mts|ts)' 'packages/*/test/**/*.ts'",
     "format": "prettier --write 'packages/*/src/**/*.(mts|ts)' 'packages/*/test/**/*.ts'",

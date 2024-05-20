@@ -1,5 +1,3 @@
-// tslint:disable:no-console
-
 import { $, adapter, type Client } from "edgedb";
 import { type CommandOptions, isTTY, promptBoolean } from "./commandutil";
 import { headerComment } from "./genutil";
@@ -18,7 +16,6 @@ import { generateSetImpl } from "./edgeql-js/generateSetImpl";
 
 const { path, fs, readFileUtf8, exists, walk } = adapter;
 
-// tslint:disable-next-line
 export const configFileHeader = `// EdgeDB query builder`;
 
 export type GeneratorParams = {
@@ -182,12 +179,9 @@ export async function generateQueryBuilder(params: {
     const outputPath = path.join(syntaxOutDir, f.path);
     written.add(outputPath);
 
-    let oldContents = "";
-    try {
-      oldContents = await readFileUtf8(outputPath);
-    } catch (err) {
-      console.error("Error occurred while reading file", outputPath, err);
-    }
+    const oldContents = await readFileUtf8(outputPath)
+      .then((content) => content)
+      .catch(() => "");
 
     const newContents = headerComment + f.content;
     if (oldContents !== newContents) {
@@ -306,12 +300,9 @@ project to exclude these files.`
   } else if (options.updateIgnoreFile) {
     const gitIgnorePath = path.join(root, ".gitignore");
 
-    let gitIgnoreFile: string | null = null;
-    try {
-      gitIgnoreFile = await readFileUtf8(gitIgnorePath);
-    } catch (err) {
-      console.error("Error occurred while reading file", gitIgnorePath, err);
-    }
+    const gitIgnoreFile = await readFileUtf8(gitIgnorePath)
+      .then((content) => content)
+      .catch(() => "");
 
     const vcsLine = path.posix.relative(root, outputDir);
 
@@ -360,13 +351,8 @@ async function canOverwrite(outputDir: string, options: CommandOptions) {
         return true;
       }
     }
-  } catch (err) {
-    console.error(
-      "Error occurred while reading or parsing file",
-      fileName,
-      err
-    );
-  }
+    // eslint-disable-next-line no-empty
+  } catch {}
 
   const error = config
     ? `Error: A query builder with a different config already exists in that location.`
