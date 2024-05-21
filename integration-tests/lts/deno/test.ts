@@ -1,5 +1,3 @@
-// tslint:disable:no-console
-
 // import {setupTests} from "./test/setupTeardown";
 import { createClient } from "edgedb";
 

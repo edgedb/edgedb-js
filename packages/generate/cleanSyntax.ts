@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-// tslint:disable:no-console
 import _fs from "fs";
 import path from "path";
 
@@ -12,8 +11,8 @@ const esmSyntax = path.join(__dirname, "dist", "__esm");
 async function run() {
   console.log(`Cleaning up...`);
   console.log(`Removing ${esmSyntax}`);
-  await fs.rm(esmSyntax, {recursive: true, force: true});
+  await fs.rm(esmSyntax, { recursive: true, force: true });
   console.log(`Removing ${distSyntax}`);
-  await fs.rm(distSyntax, {recursive: true, force: true});
+  await fs.rm(distSyntax, { recursive: true, force: true });
 }
 run();

@@ -301,7 +301,7 @@ project to exclude these files.`
 
     const gitIgnoreFile = await readFileUtf8(gitIgnorePath)
       .then((content) => content)
-      .catch(() => "");
+      .catch(() => null);
 
     const vcsLine = path.posix.relative(root, outputDir);
 

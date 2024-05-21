@@ -20,7 +20,6 @@ import LRU from "../src/primitives/lru";
 
 test("invalid capacity", () => {
   expect(() => {
-    // tslint:disable-next-line: no-unused-expression
     new LRU({ capacity: -1 });
   }).toThrowError(TypeError);
 });

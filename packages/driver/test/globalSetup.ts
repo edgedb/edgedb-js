@@ -8,7 +8,6 @@ import {
 } from "./testUtil";
 
 export default async () => {
-  // tslint:disable-next-line
   console.log("\nStarting EdgeDB test cluster...");
 
   const statusFile = generateStatusFileName("node");
@@ -29,6 +28,5 @@ export default async () => {
   global.edgedbConn = client;
   process.env._JEST_EDGEDB_VERSION = JSON.stringify(version);
 
-  // tslint:disable-next-line
   console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);
 };

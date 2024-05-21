@@ -258,7 +258,6 @@ export const shutdown = async (
 
   await new Promise<void>((resolve, reject) => {
     const to = setTimeout(() => {
-      // tslint:disable-next-line
       console.error("!!! EdgeDB exit timeout... !!!");
       proc.kill("SIGTERM");
     }, 30_000);

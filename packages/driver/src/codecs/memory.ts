@@ -32,6 +32,8 @@ export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
       );
     }
     buf.writeInt32(8);
+
+    // @ts-expect-error Property '_bytes' is private and only accessible within class 'ConfigMemory'.
     buf.writeBigInt64(object._bytes);
   }
 

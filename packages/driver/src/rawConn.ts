@@ -455,6 +455,7 @@ export class RawConnection extends BaseRawConnection {
 
           if (
             !(this.sock instanceof tls.TLSSocket) &&
+            // @ts-expect-error Cannot find name 'Deno'.
             typeof Deno === "undefined" &&
             versionGreaterThanOrEqual(this.protocolVersion, [0, 11])
           ) {

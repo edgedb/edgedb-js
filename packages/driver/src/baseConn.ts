@@ -163,7 +163,7 @@ export class BaseRawConnection {
     this.throwNotImplemented("_waitForMessage");
   }
 
-  protected _sendData(): void {
+  protected _sendData(_data: Uint8Array): void {
     this.throwNotImplemented("_sendData");
   }
 

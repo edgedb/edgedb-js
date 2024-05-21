@@ -18,7 +18,7 @@
 
 import { ReadBuffer, utf8Decoder } from "../primitives/buffer";
 import LRU from "../primitives/lru";
-import type { type ICodec, type uuid, ScalarCodec } from "./ifaces";
+import { type ICodec, type uuid, ScalarCodec } from "./ifaces";
 import { NULL_CODEC, SCALAR_CODECS } from "./codecs";
 import { NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES } from "./consts";
 import { EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec } from "./tuple";

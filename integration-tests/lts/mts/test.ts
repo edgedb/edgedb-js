@@ -1,6 +1,3 @@
-// tslint:disable:no-console
-
-// import {setupTests} from "./test/setupTeardown";
 import { createClient } from "edgedb";
 import e from "./edgeql-js/index.mjs";
 import { freeShape, scalarQuery } from "./queries.mjs";
