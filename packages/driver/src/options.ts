@@ -133,10 +133,7 @@ export class Session {
     this.globals = globals;
   }
 
-  withModuleAliases({
-    module,
-    ...aliases
-  }: Record<string, string>): Session {
+  withModuleAliases({ module, ...aliases }: Record<string, string>): Session {
     return new Session({
       ...this,
       module: module ?? this.module,

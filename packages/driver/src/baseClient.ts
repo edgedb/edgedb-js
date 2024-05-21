@@ -444,7 +444,7 @@ export abstract class BaseClientPool {
     );
 
     const warningTimeoutId = setTimeout(() => {
-           console.warn(
+      console.warn(
         "Client.close() is taking over 60 seconds to complete. " +
           "Check if you have any unreleased connections left."
       );

@@ -37,12 +37,15 @@ export function quote(val: string): string {
   return JSON.stringify(val.toString());
 }
 
-export const scalarToLiteralMapping: Record<string, {
+export const scalarToLiteralMapping: Record<
+  string,
+  {
     type: string;
     literalKind?: "typeof" | "instanceof";
     extraTypes?: string[];
     argTypes?: string[];
-  }> = {
+  }
+> = {
   "std::int16": { type: "number" },
   "std::int32": { type: "number" },
   "std::int64": { type: "number", extraTypes: ["string"] },
@@ -108,7 +111,10 @@ export const scalarToLiteralMapping: Record<string, {
   },
 };
 
-export const literalToScalarMapping: Record<string, { type: string; literalKind: "typeof" | "instanceof" }> = {};
+export const literalToScalarMapping: Record<
+  string,
+  { type: string; literalKind: "typeof" | "instanceof" }
+> = {};
 for (const [scalarType, { type, literalKind }] of Object.entries(
   scalarToLiteralMapping
 )) {
@@ -465,7 +471,7 @@ export interface GeneratorParams {
 }
 
 export function exitWithError(message: string): never {
-   console.error(message);
+  console.error(message);
   adapter.exit(1);
   throw new Error();
 }

@@ -75,7 +75,9 @@ interface OverloadFuncDef {
 }
 
 function mapLiteralToTypeSet(literals: any[]): TypeSet[];
-function mapLiteralToTypeSet(literals: Record<string, any>): Record<string, TypeSet>;
+function mapLiteralToTypeSet(
+  literals: Record<string, any>
+): Record<string, TypeSet>;
 function mapLiteralToTypeSet(literals: any[] | Record<string, any>) {
   if (Array.isArray(literals)) {
     return literals.map((lit) => (lit != null ? literalToTypeSet(lit) : lit));

@@ -86,7 +86,7 @@ export async function generateQueryBuilder(params: {
 
   const dir = new DirBuilder();
 
-   console.log(`Introspecting database schema...`);
+  console.log(`Introspecting database schema...`);
 
   const [types, scalars, casts, functions, operators, globals, version] =
     await Promise.all([

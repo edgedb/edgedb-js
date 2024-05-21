@@ -168,7 +168,10 @@ export function $normaliseInsertShape(
   shape: Record<string, any>,
   isUpdate = false
 ): Record<string, TypeSet | { "+=": TypeSet } | { "-=": TypeSet }> {
-  const newShape: Record<string, TypeSet | { "+=": TypeSet } | { "-=": TypeSet }> = {};
+  const newShape: Record<
+    string,
+    TypeSet | { "+=": TypeSet } | { "-=": TypeSet }
+  > = {};
 
   const _shape: [string, any][] =
     shape.__element__?.__kind__ === TypeKind.namedtuple

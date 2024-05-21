@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 import { EdgeDBError } from "./base";
 import * as tags from "./tags";
 export { EdgeDBError } from "./base";

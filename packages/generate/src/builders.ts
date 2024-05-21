@@ -135,7 +135,9 @@ interface ImportParams {
   modes?: Mode[];
   typeOnly?: boolean;
 }
-interface ExportParams { modes?: Mode[] }
+interface ExportParams {
+  modes?: Mode[];
+}
 
 const allModes = new Set<Mode>(["dts", "js", "ts"]);
 class BuilderImportsExports {

@@ -49,7 +49,10 @@ currently supported.`);
 
   // generate all queries in single file
   if (params.options.file) {
-    const filesByExtension: Record<string, ReturnType<typeof generateFiles>[number]> = {};
+    const filesByExtension: Record<
+      string,
+      ReturnType<typeof generateFiles>[number]
+    > = {};
     let wasError = false;
     await Promise.all(
       matches.map(async (path) => {

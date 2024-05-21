@@ -777,7 +777,8 @@ export type objectTypeToSelectShape<
     : Pointers[k] extends LinkDesc
     ? linkDescToSelectElement<Pointers[k]>
     : any;
-}> & Record<string, unknown>;
+}> &
+  Record<string, unknown>;
 
 // incorporate __shape__ (computeds) on selection shapes
 // this works but a major rewrite of setToTsType is required

@@ -40,7 +40,7 @@ export async function runInterfacesGenerator(params: {
 
   const dir = new DirBuilder();
 
-   console.log(`Introspecting database schema...`);
+  console.log(`Introspecting database schema...`);
   const types = await $.introspect.types(client);
 
   const generatorParams = {

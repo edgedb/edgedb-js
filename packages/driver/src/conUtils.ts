@@ -578,7 +578,7 @@ async function parseConnectDsnAndArgs(
     let port: string | undefined = getEnv("EDGEDB_PORT");
     if (resolvedConfig._port === null && port?.startsWith("tcp://")) {
       // EDGEDB_PORT is set by 'docker --link' so ignore and warn
-           console.warn(
+      console.warn(
         `EDGEDB_PORT in 'tcp://host:port' format, so will be ignored`
       );
       port = undefined;

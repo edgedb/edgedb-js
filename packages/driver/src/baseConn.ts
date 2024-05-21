@@ -334,10 +334,7 @@ export class BaseRawConnection {
     this.buffer.finishMessage();
   }
 
-  private _parseDataMessages(
-    codec: ICodec,
-    result: any[] | WriteBuffer
-  ): void {
+  private _parseDataMessages(codec: ICodec, result: any[] | WriteBuffer): void {
     const frb = ReadBuffer.alloc();
     const $D = chars.$D;
     const buffer = this.buffer;
@@ -427,8 +424,8 @@ export class BaseRawConnection {
         this._parseHeaders();
         this.buffer.finishMessage();
 
-               console.info("SERVER MESSAGE", severity, code, message);
-       
+        console.info("SERVER MESSAGE", severity, code, message);
+
         break;
       }
 

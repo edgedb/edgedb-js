@@ -37,7 +37,7 @@ export class EdgeDBError extends Error {
   hasTag(tag: symbol): boolean {
     // Can't index by symbol, except when using <any>:
     //   https://github.com/microsoft/TypeScript/issues/1863
-    const error_type = (this.constructor as typeof EdgeDBError) as any;
+    const error_type = this.constructor as typeof EdgeDBError as any;
     return Boolean(error_type.tags?.[tag]);
   }
 }
@@ -61,14 +61,12 @@ enum ErrorAttr {
 }
 
 function tryParseInt(val: any) {
-  if (val instanceof Uint8Array) {
-    try {
-      return parseInt(utf8Decoder.decode(val), 10);
-    } catch {
-      return null;
-    }
+  if (!(val instanceof Uint8Array)) return null;
+  try {
+    return parseInt(utf8Decoder.decode(val), 10);
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export function prettyPrintError(

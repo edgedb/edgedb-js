@@ -72,13 +72,13 @@ export async function retryingConnect(
                   `\n`
               );
             }
-                       console.warn(...logMsg);
+            console.warn(...logMsg);
           }
         } else {
           throw e;
         }
       } else {
-               console.error("Unexpected connection error:", e);
+        console.error("Unexpected connection error:", e);
         throw e; // this shouldn't happen
       }
     }

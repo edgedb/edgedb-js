@@ -43,8 +43,7 @@ export async function copyTemplateFiles(
           vars[filepath].push({ varname, value });
         }
         return vars;
-      }, {} as Record<string, { varname: string; value: string }[]>) ??
-      {},
+      }, {} as Record<string, { varname: string; value: string }[]>) ?? {},
   });
 }
 
