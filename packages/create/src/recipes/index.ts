@@ -18,6 +18,6 @@ export const recipes: Recipe<any>[] = [
   remix,
   sveltekit,
   // init
-  _edgedbInit,
   _install,
+  _edgedbInit,
 ];

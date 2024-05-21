@@ -151,3 +151,28 @@ stdout: ${stdout}`
     });
   });
 }
+
+export async function execInPackageManager(
+  cmd: string,
+  options?: SpawnOptionsWithoutStdio
+): Promise<{ stdout: string; stderr: string }> {
+  const packageManager = getPackageManager();
+  let command;
+  switch (packageManager) {
+    case "yarn":
+      command = `yarn exec -- ${cmd}`;
+      break;
+    case "bun":
+      command = `bun run --bun ${cmd}`;
+      break;
+    case "pnpm":
+      command = `pnpm exec ${cmd}`;
+      break;
+    case "npm":
+      command = `npm exec -- ${cmd}`;
+      break;
+    default:
+      command = cmd;
+  }
+  return execInLoginShell(command, options);
+}

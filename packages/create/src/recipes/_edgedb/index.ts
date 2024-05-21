@@ -4,7 +4,7 @@ import path from "node:path";
 import debug from "debug";
 
 import type { BaseOptions, Recipe } from "../types.js";
-import { copyTemplateFiles, execInLoginShell } from "../../utils.js";
+import { copyTemplateFiles, execInPackageManager } from "../../utils.js";
 
 const logger = debug("@edgedb/create:recipe:edgedb");
 
@@ -28,59 +28,17 @@ const recipe: Recipe<EdgeDBOptions> = {
     { initializeProject }: EdgeDBOptions
   ) {
     logger("Running edgedb recipe");
-    logger("Checking for existing EdgeDB CLI");
 
     const spinner = p.spinner();
 
     if (initializeProject) {
-      let edgedbCliVersion: string | null = null;
-      let shouldInstallCli: boolean | symbol = true;
-      try {
-        const { stdout } = await execInLoginShell("edgedb --version");
-        edgedbCliVersion = stdout.trim();
-        logger(edgedbCliVersion);
-      } catch (error) {
-        logger("No EdgeDB CLI detected");
-        shouldInstallCli = await p.confirm({
-          message:
-            "The EdgeDB CLI is required to initialize a project. Install now?",
-          initialValue: true,
-        });
-      }
-
-      if (edgedbCliVersion === null) {
-        if (shouldInstallCli === false) {
-          logger("User declined to install EdgeDB CLI");
-          throw new Error("EdgeDB CLI is required");
-        }
-
-        logger("Installing EdgeDB CLI");
-
-        spinner.start("Installing EdgeDB CLI");
-        const { stdout, stderr } = await execInLoginShell(
-          "curl --proto '=https' --tlsv1.2 -sSf https://sh.edgedb.com | sh -s -- -y"
-        );
-        logger({ stdout, stderr });
-        spinner.stop("EdgeDB CLI installed");
-      }
-
-      try {
-        const { stdout } = await execInLoginShell("edgedb --version");
-        edgedbCliVersion = stdout.trim();
-        logger(edgedbCliVersion);
-      } catch (error) {
-        logger("EdgeDB CLI could not be installed.");
-        logger(error);
-        throw new Error("EdgeDB CLI could not be installed.");
-      }
-
       spinner.start("Initializing EdgeDB project");
       try {
-        await execInLoginShell("edgedb project init --non-interactive", {
+        await execInPackageManager("edgedb project init --non-interactive", {
           cwd: projectDir,
         });
-        const { stdout, stderr } = await execInLoginShell(
-          "edgedb query 'select sys::get_version_as_str()'",
+        const { stdout, stderr } = await execInPackageManager(
+          `edgedb query "select sys::get_version_as_str()"`,
           { cwd: projectDir }
         );
         const serverVersion = JSON.parse(stdout.trim());
@@ -122,10 +80,10 @@ const recipe: Recipe<EdgeDBOptions> = {
         logger("Creating and applying initial migration");
         spinner.start("Creating and applying initial migration");
         try {
-          await execInLoginShell("edgedb migration create", {
+          await execInPackageManager("edgedb migration create", {
             cwd: projectDir,
           });
-          await execInLoginShell("edgedb migrate", { cwd: projectDir });
+          await execInPackageManager("edgedb migrate", { cwd: projectDir });
           spinner.stop("Initial migration created and applied");
         } catch (error) {
           logger(error);
