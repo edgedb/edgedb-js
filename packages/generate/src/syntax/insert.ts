@@ -260,7 +260,8 @@ export function $normaliseInsertShape(
         : isMulti && Array.isArray(val)
         ? val.length === 0
           ? cast(pointer.target, null)
-          : set(...val.map((v) => (literal as any)(pointer.target, v)))
+          : // @ts-expect-error: A spread argument must either have a tuple type or be passed to a rest parameter.
+            set(...val.map((v) => (literal as any)(pointer.target, v)))
         : (literal as any)(pointer.target, val);
     newShape[key] = setModify
       ? ({ [setModify]: wrappedVal } as any)

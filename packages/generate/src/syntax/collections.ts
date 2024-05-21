@@ -226,10 +226,14 @@ function makeTupleType(name: string, items: BaseType[]) {
 
 const typeKinds = new Set(Object.values(TypeKind));
 
+// @ts-expect-error: Type instantiation is excessively deep and possibly infinite.
 export function tuple<Items extends typeutil.tupleOf<BaseType>>(
   items: Items
 ): TupleType<Items>;
-export function tuple<Items extends typeutil.tupleOf<TypeSet | scalarLiterals>>(
+export function tuple<
+  _Item extends TypeSet | scalarLiterals,
+  Items extends typeutil.tupleOf<TypeSet | scalarLiterals>
+>(
   items: Items
 ): $expr_Tuple<
   Items extends typeutil.tupleOf<any> ? mapLiteralToTypeSet<Items> : never
