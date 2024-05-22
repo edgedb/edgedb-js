@@ -127,7 +127,7 @@ export class ClientConnectionHolder {
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     let result: T | void;
-    for (let iteration = 0; true; ++iteration) {
+    for (let iteration = 0; ; ++iteration) {
       const transaction = await Transaction._startTransaction(this);
 
       let commitFailed = false;
@@ -179,7 +179,7 @@ export class ClientConnectionHolder {
     expectedCardinality: Cardinality
   ): Promise<any> {
     let result: any;
-    for (let iteration = 0; true; ++iteration) {
+    for (let iteration = 0; ; ++iteration) {
       const conn = await this._getConnection();
       try {
         result = await conn.fetch(

@@ -162,6 +162,7 @@ export namespace net {
 
   export const isIP = _isIP;
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
   export declare interface Socket {
     on(eventName: "error", listener: (e: any) => void): this;
     on(eventName: "connect", listener: () => void): this;
@@ -234,6 +235,7 @@ export namespace net {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
   export class Socket extends BaseSocket<Deno.Conn> {
     constructor(pconn: Promise<Deno.Conn>) {
       super();
