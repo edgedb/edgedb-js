@@ -1,5 +1,6 @@
 using extension pgcrypto;
 using extension auth;
+using extension ai;
 
 module default {
   type CryptoTest {

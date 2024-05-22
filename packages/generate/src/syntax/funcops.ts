@@ -113,6 +113,15 @@ export function $resolveOverload(
   }
 
   for (const def of funcDefs) {
+    console.dir(
+      {
+        def,
+        funcName,
+        positionalArgs,
+        namedArgs,
+      },
+      { depth: 5 }
+    );
     const resolvedOverload = _tryOverload(
       funcName,
       positionalArgs,
@@ -233,6 +242,14 @@ function _tryOverload(
       );
 
       if (!match) {
+        console.dir({
+          argType: typeSpec.get(argDef.typeId),
+          argIndex: i,
+          argDef,
+          arg,
+          match,
+          anytype,
+        }, { depth: 5 });
         return null;
       }
       if (!returnAnytype && anytype) {
@@ -385,6 +402,14 @@ function compareType(
 
   if (type.kind === "scalar") {
     arg = (arg as any).__casttype__ ?? arg;
+    console.log("scalar comparison", {
+      argKind: arg.__kind__,
+      argKindMatch: arg.__kind__ === TypeKind.scalar,
+      argName: arg.__name__,
+      typeName: type.name,
+      argNameMatch: arg.__name__ === type.name,
+      argImplicitCast: isImplicitlyCastableTo(arg.__name__, type.name),
+    });
     return {
       match:
         (arg.__kind__ === TypeKind.scalar || arg.__kind__ === TypeKind.enum) &&
@@ -394,6 +419,17 @@ function compareType(
   }
   if (type.kind === "array") {
     if (arg.__kind__ === TypeKind.array) {
+      console.log("recursing into array element check");
+      const arrayCompare = compareType(
+        typeSpec,
+        type.array_element_id,
+        (arg as any as ArrayType).__element__ as BaseType
+      );
+      console.dir({
+        element: typeSpec.get(type.array_element_id),
+        arg: (arg as any).__element__,
+        arrayCompare,
+      }, { depth: 5 });
       return compareType(
         typeSpec,
         type.array_element_id,
