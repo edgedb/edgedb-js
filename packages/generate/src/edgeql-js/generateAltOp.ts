@@ -20,7 +20,6 @@ import {
 import { $ } from "../genutil";
 import { getStringRepresentation } from "./generateObjectTypes";
 
-
 export function generateOperatorFunctions({
   dir,
   operators,
@@ -132,6 +131,7 @@ interface InfixContainerComparisonOperator extends BaseOperator {
 interface InfixContainerHomogenousOperator extends BaseOperator {
   type: "InfixContainerHomogenousOperator";
   lhs: CodeFragment[];
+  rhs: CodeFragment[] | null;
 }
 
 /**
@@ -162,7 +162,6 @@ function operatorFromOpDef(
   opName: string,
   opDef: FuncopDefOverload<$.introspect.OperatorDef>
 ): Operator {
-
   const operatorSymbol =
     opName === "std::if_else"
       ? "if_else"
@@ -220,7 +219,10 @@ function operatorFromOpDef(
         const [lhs, rhs] = opDef.params.positional;
         log("InfixContainerComparisonOperator lhs: ", lhs);
         log("InfixContainerComparisonOperator rhs: ", rhs);
-        log("InfixContainerComparisonOperator has rhs: ", rhs.type.id !== lhs.type.id);
+        log(
+          "InfixContainerComparisonOperator has rhs: ",
+          rhs.type.id !== lhs.type.id
+        );
         return {
           type: "InfixContainerComparisonOperator",
           lhs: typeToCodeFragment(lhs),
@@ -229,10 +231,15 @@ function operatorFromOpDef(
         };
       } else {
         // Homogenous
-        log("InfixContainerHomogenousOperator lhs: ", opDef.params.positional[0]);
+        const [lhs, rhs] = opDef.params.positional;
+        log(
+          "InfixContainerHomogenousOperator lhs: ",
+          opDef.params.positional[0]
+        );
         return {
           type: "InfixContainerHomogenousOperator",
-          lhs: typeToCodeFragment(opDef.params.positional[0]),
+          lhs: typeToCodeFragment(lhs),
+          rhs: rhs.type.id !== lhs.type.id ? typeToCodeFragment(rhs) : null,
           operatorSymbol,
         };
       }
@@ -480,9 +487,7 @@ export function generateOperators({
   overloadsBuf.writeln([t`};`]);
 
   // InfixContainerComparisonOperators
-  overloadsBuf.writeln([
-    t`type ArgSetOf<LHS, RHS = LHS> =`,
-  ]);
+  overloadsBuf.writeln([t`type ArgSetOf<LHS, RHS = LHS> =`]);
   overloadsBuf.indented(() => {
     overloadsBuf.writeln([
       t`LHS extends $.TypeSet<$.RangeType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>> }`,
@@ -494,8 +499,8 @@ export function generateOperators({
       t`: LHS extends $.TypeSet<$.ArrayType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.ArrayType<$.getPrimitiveNonArrayBaseType<LHS["__element__"]["__element__"]>>> }`,
     ]);
     overloadsBuf.writeln([
-      t`: LHS extends _.castMaps.orScalarLiteral<$.TypeSet<$.BaseType>> ? { lhs: LHS; rhs:_.castMaps.orScalarLiteral<$.TypeSet<$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>>> }`
-    ])
+      t`: LHS extends _.castMaps.orScalarLiteral<$.TypeSet<$.BaseType>> ? { lhs: LHS; rhs:_.castMaps.orScalarLiteral<$.TypeSet<$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>>> }`,
+    ]);
     overloadsBuf.writeln([t`: { lhs: LHS; rhs: RHS };`]);
   });
   overloadsBuf.writeln([t`type InfixContainerComparisonOperators = {`]);
@@ -515,14 +520,39 @@ export function generateOperators({
   });
   overloadsBuf.writeln([t`};`]);
 
-  // InfixContainerHomogenousOperators
+  // InfixContainerHomogeneousOperators
+  overloadsBuf.writeln([t`type ArgSetAndReturnOf<LHS, RHS = LHS> =`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([
+      t`LHS extends $.TypeSet<$.RangeType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>>; ret: $.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>> }`,
+    ]);
+    overloadsBuf.writeln([
+      t`: LHS extends $.TypeSet<$.MultiRangeType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.MultiRangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>>; ret: $.MultiRangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>> }`,
+    ]);
+    overloadsBuf.writeln([
+      t`: LHS extends $.TypeSet<$.ArrayType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.ArrayType<$.getPrimitiveNonArrayBaseType<LHS["__element__"]["__element__"]>>>; ret: $.ArrayType<$.getPrimitiveNonArrayBaseType<LHS["__element__"]["__element__"]>> }`,
+    ]);
+    overloadsBuf.writeln([
+      t`: LHS extends _.castMaps.orScalarLiteral<$.TypeSet<$.BaseType>> ? { lhs: LHS; rhs:_.castMaps.orScalarLiteral<$.TypeSet<$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>>>; ret: $.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]> }`,
+    ]);
+    overloadsBuf.writeln([
+      t`: LHS extends $.TypeSet<$.BaseType> ? RHS extends $.TypeSet<$.BaseType> ? { lhs: LHS; rhs: RHS; ret: $.getPrimitiveBaseType<LHS["__element__"]> } : never`,
+    ]);
+    overloadsBuf.writeln([t`: never;`]);
+  });
   overloadsBuf.writeln([t`type InfixContainerHomogeneousOperators = {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of infixContainerHomogenousDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| { lhs: ${def.lhs} }`]);
+          if (def.rhs) {
+            overloadsBuf.writeln([
+              t`| ArgSetAndReturnOf<${def.lhs}, ${def.rhs}>`,
+            ]);
+          } else {
+            overloadsBuf.writeln([t`| ArgSetAndReturnOf<${def.lhs}>`]);
+          }
         }
       });
     }
@@ -612,7 +642,7 @@ export function generateOperators({
   code.indented(() => {
     code.writeln([t`Op extends keyof InfixHomogeneousOperators,`]);
     code.writeln([t`LHS extends InfixHomogeneousOperators[Op]["lhs"],`]);
-    code.writeln([t`RHS extends LHS`]);
+    code.writeln([t`RHS extends InfixHomogeneousOperators[Op]["lhs"]`]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -630,7 +660,7 @@ export function generateOperators({
   code.indented(() => {
     code.writeln([t`Op extends keyof InfixComparisonOperators,`]);
     code.writeln([t`LHS extends InfixComparisonOperators[Op]["lhs"],`]);
-    code.writeln([t`RHS extends LHS`]);
+    code.writeln([t`RHS extends InfixComparisonOperators[Op]["rhs"]`]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -649,14 +679,15 @@ export function generateOperators({
       t`LHS extends InfixContainerHomogeneousOperators[Op]["lhs"],`,
     ]);
     code.writeln([
-      t`RHS extends InfixContainerHomogeneousOperators[Op]["lhs"]`,
+      t`RHS extends InfixContainerHomogeneousOperators[Op]["rhs"],`,
+    ]);
+    code.writeln([
+      t`Ret extends InfixContainerHomogeneousOperators[Op]["ret"]`,
     ]);
   });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: LHS): $.$expr_Operator<`]);
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
-    code.writeln([
-      t`$.ArrayType<_.syntax.getSharedParentPrimitive<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
-    ]);
+    code.writeln([t`Ret,`]);
     code.writeln([
       t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
     ]);
@@ -696,11 +727,14 @@ export function generateOperators({
     t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
   ]);
   code.indented(() => {
+    /*
     code.writeln([
       t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
     ]);
+    */
+    code.writeln([t`any,`]);
     code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>`,
+      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
     ]);
   });
   code.writeln([t`>;`]);
