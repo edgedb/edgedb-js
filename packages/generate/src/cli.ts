@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-// tslint:disable:no-console
 import { adapter, type Client, createClient, createHttpClient } from "edgedb";
 import * as TOML from "@iarna/toml";
 
@@ -287,8 +286,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     // doesn't work with `extends`
     // switch to more robust solution after splitting
     // @edgedb/generate into separate package
-
-    // @ts-ignore
+    // @ts-expect-error cannot find name 'Deno'
     const isDenoRuntime = typeof Deno !== "undefined";
 
     if (isDenoRuntime || denoJsonExists) {

@@ -157,7 +157,7 @@ export function stringifyImports(imports: ImportMap) {
 
 async function getMatches(root: string, schemaDir: string) {
   return adapter.walk(root, {
-    match: [/[^\/]\.edgeql$/],
+    match: [/[^/]\.edgeql$/],
     skip: [
       /node_modules/,
       RegExp(`${schemaDir}\\${adapter.path.sep}migrations`),

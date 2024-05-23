@@ -102,7 +102,7 @@ export function input(
     output,
   });
 
-  return new Promise((resolve, rej) => {
+  return new Promise((resolve) => {
     rl.question(message, (val) => {
       rl.close();
       resolve(val);

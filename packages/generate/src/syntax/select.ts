@@ -56,10 +56,10 @@ import {
 } from "./castMaps";
 import type { $expr_Operator } from "./funcops";
 
-export const ASC: "ASC" = "ASC";
-export const DESC: "DESC" = "DESC";
-export const EMPTY_FIRST: "EMPTY FIRST" = "EMPTY FIRST";
-export const EMPTY_LAST: "EMPTY LAST" = "EMPTY LAST";
+export const ASC = "ASC";
+export const DESC = "DESC";
+export const EMPTY_FIRST = "EMPTY FIRST";
+export const EMPTY_LAST = "EMPTY LAST";
 export type OrderByDirection = "ASC" | "DESC";
 export type OrderByEmpty = "EMPTY FIRST" | "EMPTY LAST";
 
@@ -942,7 +942,7 @@ export function select<Shape extends { [key: string]: TypeSet }>(
         ? LinkDesc<
             Shape[k]["__element__"],
             Shape[k]["__cardinality__"],
-            {},
+            Record<string, never>,
             false,
             true,
             true,

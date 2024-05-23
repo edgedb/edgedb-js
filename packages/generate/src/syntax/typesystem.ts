@@ -157,7 +157,7 @@ export type assert_single<
   __kind__: ExpressionKind.Function;
   __name__: "std::assert_single";
   __args__: TypeSet[]; // discard wrapped expression
-  __namedargs__: {};
+  __namedargs__: object;
 }>;
 
 export type ExpressionMethods<Set extends TypeSet> = {
@@ -349,7 +349,7 @@ type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
 
 export type $expr_PolyShapeElement<
   PolyType extends ObjectTypeSet = ObjectTypeSet,
-  ShapeElement extends any = any
+  ShapeElement = any
 > = {
   __kind__: ExpressionKind.PolyShapeElement;
   __polyType__: PolyType;

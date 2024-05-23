@@ -29,12 +29,9 @@ import type {
   QueryOptions,
   ProtocolVersion,
   QueryArgs,
-  ServerSettings} from "./ifaces";
-import {
-  Cardinality,
-  LegacyHeaderCodes,
-  OutputFormat
+  ServerSettings,
 } from "./ifaces";
+import { Cardinality, LegacyHeaderCodes, OutputFormat } from "./ifaces";
 import {
   ReadBuffer,
   ReadMessageBuffer,
@@ -45,7 +42,7 @@ import {
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
 import LRU from "./primitives/lru";
-import type { SerializedSessionState} from "./options";
+import type { SerializedSessionState } from "./options";
 import { Session } from "./options";
 
 export const PROTO_VER: ProtocolVersion = [1, 0];
@@ -166,7 +163,7 @@ export class BaseRawConnection {
     this.throwNotImplemented("_waitForMessage");
   }
 
-  protected _sendData(data: Uint8Array): void {
+  protected _sendData(_data: Uint8Array): void {
     this.throwNotImplemented("_sendData");
   }
 

@@ -1,1 +1,1 @@
-export function set(...args: any[]): any {}
+export function set(..._args: any[]): any {}

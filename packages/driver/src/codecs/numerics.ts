@@ -48,14 +48,11 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
 
     if (object < ZERO) {
       sign = NUMERIC_NEG;
-      // @ts-ignore
       uval = -uval;
     }
 
     while (uval) {
-      // @ts-ignore
       const mod: bigint = uval % NBASE;
-      // @ts-ignore
       uval /= NBASE;
       digits.push(mod);
     }

@@ -69,7 +69,7 @@ export type $linkPropify<Root extends ObjectTypeSet> = Root extends {
       any
     >
     ? pathifyLinkProps<LinkProps, Root, PathParent<Parent, L>>
-    : {}
+    : object
   : unknown;
 
 export type $pathify<
@@ -119,7 +119,7 @@ export type pathifyShape<
   Root extends ObjectTypeSet,
   Shape extends { [k: string]: any } = Root["__element__"]["__shape__"]
 > = string extends keyof Shape
-  ? {}
+  ? object
   : {
       [k in keyof Shape & string]: Shape[k] extends ObjectTypeSet
         ? $expr_PathNode<
@@ -308,7 +308,7 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
   },
 };
 
-export function $pathify<Root extends TypeSet, Parent extends PathParent>(
+export function $pathify<Root extends TypeSet, _Parent extends PathParent>(
   _root: Root
 ): $pathify<Root> {
   if (_root.__element__.__kind__ !== TypeKind.object) {

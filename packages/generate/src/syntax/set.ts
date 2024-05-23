@@ -176,10 +176,7 @@ type _getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
 export type getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
   _getSharedParentPrimitiveVariadic<Types>;
 
-export type LooseTypeSet<
-  T extends any = any,
-  C extends Cardinality = Cardinality
-> = {
+export type LooseTypeSet<T = any, C extends Cardinality = Cardinality> = {
   __element__: T;
   __cardinality__: C;
 };

@@ -274,8 +274,8 @@ export namespace tls {
   }
 
   export function checkServerIdentity(
-    hostname: string,
-    cert: Object
+    _hostname: string,
+    _cert: object
   ): Error | undefined {
     return undefined;
   }
