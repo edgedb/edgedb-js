@@ -247,7 +247,7 @@ export async function getTypes(
   `;
 
   const _types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
-   if (debug) console.log(JSON.stringify(_types, null, 2));
+  if (debug) console.log(JSON.stringify(_types, null, 2));
 
   // remap types
   for (const type of _types) {

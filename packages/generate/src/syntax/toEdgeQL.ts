@@ -1279,7 +1279,7 @@ function shapeToEdgeQL(
   for (const key in shape) {
     if (!Object.prototype.hasOwnProperty.call(shape, key)) continue;
     if (seen.has(key)) {
-           console.warn(`Invalid: duplicate key "${key}"`);
+      console.warn(`Invalid: duplicate key "${key}"`);
       continue;
     }
     seen.add(key);

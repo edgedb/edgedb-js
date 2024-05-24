@@ -469,7 +469,7 @@ export type GeneratorParams = {
 };
 
 export function exitWithError(message: string): never {
-   console.error(message);
+  console.error(message);
   adapter.exit(1);
   throw new Error();
 }
