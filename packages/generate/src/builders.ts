@@ -137,7 +137,7 @@ type ImportParams = {
 };
 type ExportParams = { modes?: Mode[] };
 
-const allModes: Set<Mode> = new Set(["dts", "js", "ts"]);
+const allModes = new Set<Mode>(["dts", "js", "ts"]);
 class BuilderImportsExports {
   constructor(
     public imports: Set<Import> = new Set<Import>(),

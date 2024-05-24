@@ -19,9 +19,9 @@
 import { InternalClientError } from "../errors";
 
 export class LifoQueue<T> {
-  private _promises: Array<Promise<T>>;
-  private _resolvers: Array<(t: T) => void>;
-  private _rejecters: Array<(err: Error) => void>;
+  private _promises: Promise<T>[];
+  private _resolvers: ((t: T) => void)[];
+  private _rejecters: ((err: Error) => void)[];
 
   constructor() {
     this._resolvers = [];

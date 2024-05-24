@@ -469,8 +469,7 @@ export type GeneratorParams = {
 };
 
 export function exitWithError(message: string): never {
-  // tslint:disable-next-line
-  console.error(message);
+   console.error(message);
   adapter.exit(1);
   throw new Error();
 }

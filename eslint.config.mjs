@@ -26,6 +26,11 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      //
+      "@typescript-eslint/adjacent-overload-signatures": "error",
+      "@typescript-eslint/array-type": "error",
+      "@typescript-eslint/ban-tslint-comment": "error",
+      "@typescript-eslint/consistent-generic-constructors": "error",
     },
   }
 );

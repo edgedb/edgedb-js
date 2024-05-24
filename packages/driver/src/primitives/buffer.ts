@@ -239,7 +239,7 @@ export class WriteMessageBuffer {
 
     const entries = Object.entries(headers).filter(
       ([_, value]) => value !== undefined
-    ) as Array<[keyof typeof LegacyHeaderCodes, string | Uint8Array]>;
+    ) as [keyof typeof LegacyHeaderCodes, string | Uint8Array][];
     this.buffer.writeUInt16(entries.length);
     for (const [code, value] of entries) {
       this.buffer.writeUInt16(LegacyHeaderCodes[code]);

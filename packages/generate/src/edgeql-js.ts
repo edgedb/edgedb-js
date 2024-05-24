@@ -1,4 +1,3 @@
-// tslint:disable:no-console
 
 import { $, adapter, type Client } from "edgedb";
 import { type CommandOptions, isTTY, promptBoolean } from "./commandutil";
@@ -18,7 +17,6 @@ import { generateSetImpl } from "./edgeql-js/generateSetImpl";
 
 const { path, fs, readFileUtf8, exists, walk } = adapter;
 
-// tslint:disable-next-line
 export const configFileHeader = `// EdgeDB query builder`;
 
 export type GeneratorParams = {
@@ -89,8 +87,7 @@ export async function generateQueryBuilder(params: {
 
   const dir = new DirBuilder();
 
-  // tslint:disable-next-line
-  console.log(`Introspecting database schema...`);
+   console.log(`Introspecting database schema...`);
 
   const [types, scalars, casts, functions, operators, globals, version] =
     await Promise.all([

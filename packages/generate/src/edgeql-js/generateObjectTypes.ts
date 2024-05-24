@@ -363,8 +363,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     body.writeln([
       dts`declare `,
       ...frag`const ${literal}`,
-      // tslint:disable-next-line
-      t`: $.$expr_PathNode<$.TypeSet<${ref}, $.Cardinality.${typeCard}>, null> `,
+           t`: $.$expr_PathNode<$.TypeSet<${ref}, $.Cardinality.${typeCard}>, null> `,
       r`= _.syntax.$PathNode($.$toSet(${ref}, $.Cardinality.${typeCard}), null);`,
     ]);
     body.nl();

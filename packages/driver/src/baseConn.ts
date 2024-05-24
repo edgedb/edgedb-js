@@ -336,7 +336,7 @@ export class BaseRawConnection {
 
   private _parseDataMessages(
     codec: ICodec,
-    result: Array<any> | WriteBuffer
+    result: any[] | WriteBuffer
   ): void {
     const frb = ReadBuffer.alloc();
     const $D = chars.$D;
@@ -427,10 +427,8 @@ export class BaseRawConnection {
         this._parseHeaders();
         this.buffer.finishMessage();
 
-        /* tslint:disable */
-        console.info("SERVER MESSAGE", severity, code, message);
-        /* tslint:enable */
-
+               console.info("SERVER MESSAGE", severity, code, message);
+       
         break;
       }
 
@@ -683,7 +681,7 @@ export class BaseRawConnection {
     args: QueryArgs,
     inCodec: ICodec,
     outCodec: ICodec,
-    result: Array<any> | WriteBuffer
+    result: any[] | WriteBuffer
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
@@ -755,7 +753,7 @@ export class BaseRawConnection {
     expectedCardinality: Cardinality,
     inCodec: ICodec,
     outCodec: ICodec,
-    result: Array<any> | WriteBuffer
+    result: any[] | WriteBuffer
   ): Promise<void> {
     const expectOne =
       expectedCardinality === Cardinality.ONE ||
@@ -1039,7 +1037,7 @@ export class BaseRawConnection {
     state: Session,
     inCodec: ICodec,
     outCodec: ICodec,
-    result: Array<any> | WriteBuffer,
+    result: any[] | WriteBuffer,
     capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
     options?: QueryOptions
   ): Promise<void> {

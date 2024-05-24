@@ -101,8 +101,7 @@ export const casts = async (cxn: Executor, params?: { debug?: boolean }) => {
     assignableByMap[type] = reachableFrom(type, assignmentCastsByTarget);
   }
 
-  // tslint:disable:no-console
-  if (params?.debug === true) {
+   if (params?.debug === true) {
     console.log(`\nIMPLICIT`);
     for (const [fromId, castArr] of Object.entries(implicitCastMap)) {
       console.log(

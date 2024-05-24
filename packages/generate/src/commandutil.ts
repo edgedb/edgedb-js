@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-// tslint:disable:no-console
 import { adapter } from "edgedb";
 import { type Target, exitWithError } from "./genutil";
 

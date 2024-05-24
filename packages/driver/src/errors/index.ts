@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-/* tslint:disable */
 
 import { EdgeDBError } from "./base";
 import * as tags from "./tags";

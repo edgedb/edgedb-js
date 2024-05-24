@@ -12,7 +12,7 @@ export type Pointer = {
   is_computed: boolean;
   is_readonly: boolean;
   has_default: boolean;
-  pointers: ReadonlyArray<Pointer> | null;
+  pointers: readonly Pointer[] | null;
 };
 
 export type Backlink = Pointer & {
@@ -39,20 +39,20 @@ export type TypeProperties<T extends TypeKind> = {
 export type ScalarType = TypeProperties<"scalar"> & {
   is_abstract: boolean;
   is_seq: boolean;
-  bases: ReadonlyArray<{ id: UUID }>;
-  enum_values: ReadonlyArray<string> | null;
+  bases: readonly { id: UUID }[];
+  enum_values: readonly string[] | null;
   material_id: UUID | null;
   cast_type?: UUID;
 };
 
 export type ObjectType = TypeProperties<"object"> & {
   is_abstract: boolean;
-  bases: ReadonlyArray<{ id: UUID }>;
-  union_of: ReadonlyArray<{ id: UUID }>;
-  intersection_of: ReadonlyArray<{ id: UUID }>;
-  pointers: ReadonlyArray<Pointer>;
-  backlinks: ReadonlyArray<Backlink>;
-  backlink_stubs: ReadonlyArray<Backlink>;
+  bases: readonly { id: UUID }[];
+  union_of: readonly { id: UUID }[];
+  intersection_of: readonly { id: UUID }[];
+  pointers: readonly Pointer[];
+  backlinks: readonly Backlink[];
+  backlink_stubs: readonly Backlink[];
   exclusives: { [k: string]: Pointer }[];
 };
 
@@ -62,10 +62,10 @@ export type ArrayType = TypeProperties<"array"> & {
 };
 
 export type TupleType = TypeProperties<"tuple"> & {
-  tuple_elements: ReadonlyArray<{
+  tuple_elements: readonly {
     name: string;
     target_id: UUID;
-  }>;
+  }[];
   is_abstract: boolean;
 };
 
@@ -247,8 +247,7 @@ export async function getTypes(
   `;
 
   const _types: Type[] = JSON.parse(await cxn.queryJSON(QUERY));
-  // tslint:disable-next-line
-  if (debug) console.log(JSON.stringify(_types, null, 2));
+   if (debug) console.log(JSON.stringify(_types, null, 2));
 
   // remap types
   for (const type of _types) {

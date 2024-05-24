@@ -589,7 +589,7 @@ function walkExprTree(
         // this prevents recurring grouping elements from being walked twice
         // this way, these won't get pulled into with blocks,
         // which is good because they need to be rendered in `using`
-        const seen: Set<any> = new Set();
+        const seen = new Set<any>();
         if (!seen.has(expr)) {
           childExprs.push(...walkExprTree(groupExpr, expr, ctx));
           seen.add(expr);
@@ -1279,8 +1279,7 @@ function shapeToEdgeQL(
   for (const key in shape) {
     if (!Object.prototype.hasOwnProperty.call(shape, key)) continue;
     if (seen.has(key)) {
-      // tslint:disable-next-line
-      console.warn(`Invalid: duplicate key "${key}"`);
+           console.warn(`Invalid: duplicate key "${key}"`);
       continue;
     }
     seen.add(key);

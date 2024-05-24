@@ -58,8 +58,7 @@ export interface PathParent<
 export type $linkPropify<Root extends ObjectTypeSet> = Root extends {
   __parent__: PathParent<infer Parent, infer L>;
 }
-  ? // tslint:disable-next-line
-    Parent["__element__"]["__pointers__"][L] extends LinkDesc<
+  ?    Parent["__element__"]["__pointers__"][L] extends LinkDesc<
       any,
       any,
       infer LinkProps,
