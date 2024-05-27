@@ -26,7 +26,9 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      //
+      // Stylistic rules
+      // We need to use the tseslint.configs.stylistic, but some stylistic rules are erroring.
+      // These 4 pass. We can gradually add the rest and at the end replace with the tseslint config.
       "@typescript-eslint/adjacent-overload-signatures": "error",
       "@typescript-eslint/array-type": "error",
       "@typescript-eslint/ban-tslint-comment": "error",
