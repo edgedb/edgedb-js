@@ -286,7 +286,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
     // doesn't work with `extends`
     // switch to more robust solution after splitting
     // @edgedb/generate into separate package
-    // @ts-expect-error cannot find name 'Deno'
+    // @ts-ignore
     const isDenoRuntime = typeof Deno !== "undefined";
 
     if (isDenoRuntime || denoJsonExists) {
