@@ -104,7 +104,7 @@ async function run() {
     cwd: srcSyntax,
     contentTx: content => {
       if (content.indexOf("Buffer") !== -1) {
-        content = `import {Buffer} from "https://deno.land/std@0.177.0/node/buffer.ts";\n\n${content}`;
+        content = `import { Buffer } from "node:buffer";\n\n${content}`;
       }
       return content
         .replace(reDriver, `"edgedb/_src$1.ts"`)

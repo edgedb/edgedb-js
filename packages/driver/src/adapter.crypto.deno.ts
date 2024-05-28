@@ -1,4 +1,4 @@
-import { crypto } from "https://deno.land/std@0.177.0/crypto/mod.ts";
+import { crypto } from "https://deno.land/std@0.216.0/crypto/mod.ts";
 
 import type { CryptoUtils } from "./utils.ts";
 
