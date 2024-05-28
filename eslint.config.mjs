@@ -4,6 +4,7 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
+  ...tseslint.configs.stylistic,
   {
     files: ["packages/*/src/**/*.ts"],
     languageOptions: {
@@ -26,13 +27,16 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      // Stylistic rules
-      // We need to use the tseslint.configs.stylistic, but some stylistic rules are erroring.
-      // These 4 pass. We can gradually add the rest and at the end replace with the tseslint config.
-      "@typescript-eslint/adjacent-overload-signatures": "error",
-      "@typescript-eslint/array-type": "error",
-      "@typescript-eslint/ban-tslint-comment": "error",
-      "@typescript-eslint/consistent-generic-constructors": "error",
+      // turn off stylistic rules that results with errors
+      "@typescript-eslint/class-literal-property-style": "off",
+      "@typescript-eslint/consistent-indexed-object-style": "off",
+      "@typescript-eslint/consistent-type-assertions": "off",
+      "@typescript-eslint/consistent-type-definitions": "off",
+      "@typescript-eslint/no-confusing-non-null-assertion": "off",
+      "no-empty-function": "off", // should be off
+      "@typescript-eslint/no-empty-interface": "off",
+      "@typescript-eslint/no-inferrable-types": "off",
+      "@typescript-eslint/prefer-for-of": "off",
     },
   }
 );
