@@ -135,7 +135,7 @@ export function homeDir(): string {
 export async function input(message = "", _params?: { silent?: boolean }) {
   const buf = new Uint8Array(1024);
   await Deno.stdout.write(new TextEncoder().encode(message));
-  const n = <number>await Deno.stdin.read(buf);
+  const n = (await Deno.stdin.read(buf)) as number;
   return new TextDecoder().decode(buf.subarray(0, n)).trim();
 }
 

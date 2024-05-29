@@ -56,7 +56,7 @@ export class Int32Codec extends ScalarCodec implements ICodec {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
     buf.writeInt32(4);
-    buf.writeInt32(<number>object);
+    buf.writeInt32(object as number);
   }
 
   decode(buf: ReadBuffer): any {
@@ -71,7 +71,7 @@ export class Int16Codec extends ScalarCodec implements ICodec {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
     buf.writeInt32(2);
-    buf.writeInt16(<number>object);
+    buf.writeInt16(object as number);
   }
 
   decode(buf: ReadBuffer): any {
@@ -86,7 +86,7 @@ export class Float32Codec extends ScalarCodec implements ICodec {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
     buf.writeInt32(4);
-    buf.writeFloat32(<number>object);
+    buf.writeFloat32(object as number);
   }
 
   decode(buf: ReadBuffer): any {
@@ -101,7 +101,7 @@ export class Float64Codec extends ScalarCodec implements ICodec {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
     buf.writeInt32(8);
-    buf.writeFloat64(<number>object);
+    buf.writeFloat64(object as number);
   }
 
   decode(buf: ReadBuffer): any {

@@ -23,17 +23,16 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-empty-function": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",
+      "no-empty-function": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       // turn off stylistic rules that results with errors
+      "@typescript-eslint/no-confusing-non-null-assertion": "off",
       "@typescript-eslint/class-literal-property-style": "off",
       "@typescript-eslint/consistent-indexed-object-style": "off",
-      "@typescript-eslint/consistent-type-assertions": "off",
       "@typescript-eslint/consistent-type-definitions": "off",
-      "@typescript-eslint/no-confusing-non-null-assertion": "off",
-      "no-empty-function": "off", // should be off
       "@typescript-eslint/no-empty-interface": "off",
     },
   }

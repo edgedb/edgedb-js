@@ -29,7 +29,7 @@ export class StrCodec extends ScalarCodec implements ICodec {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }
 
-    const val = <string>object;
+    const val = object as string;
     const strbuf = utf8Encoder.encode(val);
     buf.writeInt32(strbuf.length);
     buf.writeBuffer(strbuf);
