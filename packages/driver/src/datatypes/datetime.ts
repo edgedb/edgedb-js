@@ -632,12 +632,7 @@ export class DateDuration {
   readonly weeks: number;
   readonly days: number;
 
-  constructor(
-    years = 0,
-    months = 0,
-    weeks = 0,
-    days = 0
-  ) {
+  constructor(years = 0, months = 0, weeks = 0, days = 0) {
     this.years = Math.trunc(years) || 0;
     this.months = Math.trunc(months) || 0;
     this.weeks = Math.trunc(weeks) || 0;
