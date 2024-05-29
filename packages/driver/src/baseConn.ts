@@ -109,7 +109,7 @@ export type connConstructor = new (
 ) => BaseRawConnection;
 
 export class BaseRawConnection {
-  protected connected: boolean = false;
+  protected connected = false;
 
   protected lastStatus: string | null;
 
@@ -135,7 +135,7 @@ export class BaseRawConnection {
   protected stateCache = new WeakMap<Session, Uint8Array>();
   lastStateUpdate: SerializedSessionState | null = null;
 
-  protected adminUIMode: boolean = false;
+  protected adminUIMode = false;
 
   /** @internal */
   protected constructor(registry: CodecsRegistry) {
@@ -471,7 +471,7 @@ export class BaseRawConnection {
     let outTypeId: uuid | null = null;
     let inCodec: ICodec | null;
     let outCodec: ICodec | null;
-    let capabilities: number = -1;
+    let capabilities = -1;
     let parsing = true;
     let error: Error | null = null;
     let inCodecData: Uint8Array | null = null;
@@ -1193,7 +1193,7 @@ export class BaseRawConnection {
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
     state: Session,
-    privilegedMode: boolean = false
+    privilegedMode = false
   ): Promise<any> {
     if (this.isLegacyProtocol && outputFormat === OutputFormat.NONE) {
       if (args != null) {
@@ -1344,7 +1344,7 @@ export class BaseRawConnection {
 
   async legacyExecute(
     query: string,
-    allowTransactionCommands: boolean = false
+    allowTransactionCommands = false
   ): Promise<void> {
     this._checkState();
 

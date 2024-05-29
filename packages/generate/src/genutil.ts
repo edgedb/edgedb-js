@@ -232,7 +232,7 @@ export function toTSObjectType(
   types: introspect.Types,
   currentMod: string,
   code: CodeBuilder,
-  level: number = 0
+  level = 0
 ): CodeFragment[] {
   if (type.intersection_of && type.intersection_of.length) {
     const res: CodeFragment[][] = [];

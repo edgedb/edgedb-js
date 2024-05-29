@@ -45,7 +45,7 @@ type AnyCodeFrag = CodeFragment | Frag;
 
 export class CodeBuffer {
   private buf: AnyCodeFrag[][] = [];
-  private indent: number = 0;
+  private indent = 0;
 
   getBuf() {
     return this.buf;
@@ -812,7 +812,7 @@ export class DirBuilder {
       moduleExtension: string;
       written: Set<string>;
     },
-    headerComment: string = ""
+    headerComment = ""
   ): Promise<void> {
     const dir = path.normalize(to);
 

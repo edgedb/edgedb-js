@@ -996,7 +996,7 @@ export class ReadBuffer {
     return buf;
   }
 
-  readUUID(dash: string = ""): string {
+  readUUID(dash = ""): string {
     if (this.pos + 16 > this.len) {
       throw new BufferError("buffer overread");
     }

@@ -27,7 +27,7 @@ export class Range<
     private readonly _lower: T | null,
     private readonly _upper: T | null,
     private readonly _incLower: boolean = _lower != null,
-    private readonly _incUpper: boolean = false
+    private readonly _incUpper = false
   ) {}
 
   get lower() {

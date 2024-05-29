@@ -39,7 +39,7 @@ export class RetryOptions {
   readonly default: RetryRule;
   private overrides: Map<RetryCondition, RetryRule>;
 
-  constructor(attempts: number = 3, backoff: BackoffFunction = defaultBackoff) {
+  constructor(attempts = 3, backoff: BackoffFunction = defaultBackoff) {
     this.default = new RetryRule(attempts, backoff);
     this.overrides = new Map();
   }

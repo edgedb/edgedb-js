@@ -656,8 +656,8 @@ function walkExprTree(
 function renderEdgeQL(
   _expr: TypeSet,
   ctx: RenderCtx,
-  renderShape: boolean = true,
-  noImplicitDetached: boolean = false
+  renderShape = true,
+  noImplicitDetached = false
 ): string {
   if (!(_expr as any).__kind__) {
     throw new Error("Invalid expression.");
@@ -1261,8 +1261,8 @@ function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
   type: ObjectType | null = null,
-  keysOnly: boolean = false,
-  injectImplicitId: boolean = true
+  keysOnly = false,
+  injectImplicitId = true
 ) {
   const pointers = type?.__pointers__ || null;
   const isFreeObject = type?.__name__ === "std::FreeObject";
@@ -1572,7 +1572,7 @@ function indent(str: string, depth: number) {
 
 // backtick quote identifiers if needed
 // https://github.com/edgedb/edgedb/blob/master/edb/edgeql/quote.py
-function q(ident: string, allowBacklinks: boolean = true): string {
+function q(ident: string, allowBacklinks = true): string {
   if (
     !ident ||
     ident.startsWith("@") ||

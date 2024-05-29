@@ -12,7 +12,7 @@ import { getConnectArgumentsParser } from "./conUtils";
 const projectDirCache = new Map<string, string | null>();
 
 async function findProjectDir(
-  required: boolean = true
+  required = true
 ): Promise<string | null> {
   if (!required && !hasFSReadPermission()) {
     return null;

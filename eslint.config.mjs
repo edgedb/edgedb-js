@@ -35,8 +35,6 @@ export default tseslint.config(
       "@typescript-eslint/no-confusing-non-null-assertion": "off",
       "no-empty-function": "off", // should be off
       "@typescript-eslint/no-empty-interface": "off",
-      "@typescript-eslint/no-inferrable-types": "off",
-      "@typescript-eslint/prefer-for-of": "off",
     },
   }
 );

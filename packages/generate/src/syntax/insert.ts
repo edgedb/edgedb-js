@@ -166,7 +166,7 @@ export function $insertify(
 export function $normaliseInsertShape(
   root: ObjectTypeSet,
   shape: { [key: string]: any },
-  isUpdate: boolean = false
+  isUpdate = false
 ): { [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet } } {
   const newShape: {
     [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet };
