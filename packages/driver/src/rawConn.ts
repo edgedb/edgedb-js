@@ -117,7 +117,6 @@ export class RawConnection extends BaseRawConnection {
       // doesn't provide a clue why. We need to be able to validate
       // that the 'edgedb-binary' ALPN protocol was selected
       // in connect when we're connecting over TLS.
-      // @ts-ignore
       this.sock.on("secureConnect", this._onConnect.bind(this));
     } else {
       this.sock.on("connect", this._onConnect.bind(this));

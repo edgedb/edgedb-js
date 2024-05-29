@@ -380,7 +380,7 @@ function walkExprTree(
         param = param.__shapeElement__;
       }
       if (typeof param === "object") {
-        if (!!(param as any).__kind__) {
+        if ((param as any).__kind__) {
           // param is expression
           childExprs.push(...walkExprTree(param as any, expr as any, ctx));
         } else {
@@ -585,11 +585,11 @@ function walkExprTree(
     case ExpressionKind.Group: {
       const groupingSet = expr.__modifiers__.by as any as GroupingSet;
       // const groupingSet = expr.__grouping__ as any as GroupingSet;
-      for (const [_k, groupExpr] of groupingSet.__exprs__) {
+      for (const [, groupExpr] of groupingSet.__exprs__) {
         // this prevents recurring grouping elements from being walked twice
         // this way, these won't get pulled into with blocks,
         // which is good because they need to be rendered in `using`
-        const seen: Set<any> = new Set();
+        const seen = new Set<any>();
         if (!seen.has(expr)) {
           childExprs.push(...walkExprTree(groupExpr, expr, ctx));
           seen.add(expr);
@@ -656,8 +656,8 @@ function walkExprTree(
 function renderEdgeQL(
   _expr: TypeSet,
   ctx: RenderCtx,
-  renderShape: boolean = true,
-  noImplicitDetached: boolean = false
+  renderShape = true,
+  noImplicitDetached = false
 ): string {
   if (!(_expr as any).__kind__) {
     throw new Error("Invalid expression.");
@@ -1261,8 +1261,8 @@ function shapeToEdgeQL(
   shape: object | null,
   ctx: RenderCtx,
   type: ObjectType | null = null,
-  keysOnly: boolean = false,
-  injectImplicitId: boolean = true
+  keysOnly = false,
+  injectImplicitId = true
 ) {
   const pointers = type?.__pointers__ || null;
   const isFreeObject = type?.__name__ === "std::FreeObject";
@@ -1277,9 +1277,8 @@ function shapeToEdgeQL(
   const seen = new Set();
 
   for (const key in shape) {
-    if (!shape.hasOwnProperty(key)) continue;
+    if (!Object.prototype.hasOwnProperty.call(shape, key)) continue;
     if (seen.has(key)) {
-      // tslint:disable-next-line
       console.warn(`Invalid: duplicate key "${key}"`);
       continue;
     }
@@ -1289,10 +1288,10 @@ function shapeToEdgeQL(
     let polyType: SomeExpression | null = null;
 
     if (typeof val === "object" && !val.__element__) {
-      if (!!val["+="]) {
+      if (val["+="]) {
         operator = "+=";
         val = val["+="];
-      } else if (!!val["-="]) {
+      } else if (val["-="]) {
         operator = "-=";
         val = val["-="];
       }
@@ -1315,7 +1314,8 @@ function shapeToEdgeQL(
     const addCardinalityAnnotations = pointers && (!ptr || isFreeObject);
 
     const expectedCardinality =
-      addCardinalityAnnotations && val.hasOwnProperty("__cardinality__")
+      addCardinalityAnnotations &&
+      Object.prototype.hasOwnProperty.call(val, "__cardinality__")
         ? val.__cardinality__ === Cardinality.Many ||
           val.__cardinality__ === Cardinality.AtLeastOne
           ? "multi "
@@ -1345,7 +1345,10 @@ function shapeToEdgeQL(
       throw new Error(`Invalid shape element at "${key}".`);
     }
 
-    const valIsExpression = val.hasOwnProperty("__kind__");
+    const valIsExpression = Object.prototype.hasOwnProperty.call(
+      val,
+      "__kind__"
+    );
 
     // is subshape
     if (!valIsExpression) {
@@ -1569,7 +1572,7 @@ function indent(str: string, depth: number) {
 
 // backtick quote identifiers if needed
 // https://github.com/edgedb/edgedb/blob/master/edb/edgeql/quote.py
-function q(ident: string, allowBacklinks: boolean = true): string {
+function q(ident: string, allowBacklinks = true): string {
   if (
     !ident ||
     ident.startsWith("@") ||

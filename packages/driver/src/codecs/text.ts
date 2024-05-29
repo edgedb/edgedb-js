@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-import { ReadBuffer, WriteBuffer, utf8Encoder } from "../primitives/buffer";
-import { ICodec, ScalarCodec } from "./ifaces";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { utf8Encoder } from "../primitives/buffer";
+import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
 
 export class StrCodec extends ScalarCodec implements ICodec {
@@ -28,7 +29,7 @@ export class StrCodec extends ScalarCodec implements ICodec {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }
 
-    const val = <string>object;
+    const val = object as string;
     const strbuf = utf8Encoder.encode(val);
     buf.writeInt32(strbuf.length);
     buf.writeBuffer(strbuf);

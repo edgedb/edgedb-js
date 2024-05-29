@@ -4,7 +4,7 @@ import type {
   DirBuilder,
   IdentRef,
 } from "./builders";
-import * as introspect from "edgedb/dist/reflection/queries/types";
+import type * as introspect from "edgedb/dist/reflection/queries/types";
 import { util } from "edgedb/dist/reflection/index";
 
 export { $ } from "edgedb";
@@ -232,7 +232,7 @@ export function toTSObjectType(
   types: introspect.Types,
   currentMod: string,
   code: CodeBuilder,
-  level: number = 0
+  level = 0
 ): CodeFragment[] {
   if (type.intersection_of && type.intersection_of.length) {
     const res: CodeFragment[][] = [];
@@ -469,7 +469,6 @@ export type GeneratorParams = {
 };
 
 export function exitWithError(message: string): never {
-  // tslint:disable-next-line
   console.error(message);
   adapter.exit(1);
   throw new Error();

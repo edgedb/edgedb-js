@@ -45,14 +45,14 @@ export interface ScalarType<
 export type scalarTypeWithConstructor<
   S extends ScalarType,
   ExtraTsTypes = never
-> = S & {
-  // tslint:disable-next-line
-  <T extends S["__tstype__"] | ExtraTsTypes>(val: T): $expr_Literal<
+> = S &
+  (<T extends S["__tstype__"] | ExtraTsTypes>(
+    val: T
+  ) => $expr_Literal<
     Omit<S, "__tsconsttype__"> & {
       __tsconsttype__: T extends S["__tstype__"] ? T : S["__tstype__"];
     }
-  >;
-};
+  >);
 
 type $jsonDestructure<Set extends TypeSet> = Set extends TypeSet<
   ScalarType<"std::json">
@@ -157,7 +157,7 @@ export type assert_single<
   __kind__: ExpressionKind.Function;
   __name__: "std::assert_single";
   __args__: TypeSet[]; // discard wrapped expression
-  __namedargs__: {};
+  __namedargs__: object;
 }>;
 
 export type ExpressionMethods<Set extends TypeSet> = {
@@ -349,7 +349,7 @@ type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
 
 export type $expr_PolyShapeElement<
   PolyType extends ObjectTypeSet = ObjectTypeSet,
-  ShapeElement extends any = any
+  ShapeElement = any
 > = {
   __kind__: ExpressionKind.PolyShapeElement;
   __polyType__: PolyType;

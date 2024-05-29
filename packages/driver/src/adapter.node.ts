@@ -85,7 +85,7 @@ export function input(
 ): Promise<string> {
   let silent = false;
 
-  const output = !!params?.silent
+  const output = params?.silent
     ? new Writable({
         write(
           chunk: any,
@@ -102,7 +102,7 @@ export function input(
     output,
   });
 
-  return new Promise((resolve, rej) => {
+  return new Promise((resolve) => {
     rl.question(message, (val) => {
       rl.close();
       resolve(val);

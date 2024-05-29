@@ -1,4 +1,4 @@
-import { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index";
+import { type Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
 import type { Expression, BaseType } from "./typesystem";
 import { $expressionify } from "./path";
 

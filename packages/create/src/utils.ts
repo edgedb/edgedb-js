@@ -43,8 +43,7 @@ export async function copyTemplateFiles(
           vars[filepath].push({ varname, value });
         }
         return vars;
-      }, {} as { [filepath: string]: { varname: string; value: string }[] }) ??
-      {},
+      }, {} as Record<string, { varname: string; value: string }[]>) ?? {},
   });
 }
 
@@ -53,11 +52,11 @@ async function _walkDir(
   _dest: string,
   untaggedSource: string,
   opts: Omit<CopyTemplateFilesOpts, "injectVars"> & {
-    injectVars: { [filepath: string]: { varname: string; value: string }[] };
+    injectVars: Record<string, { varname: string; value: string }[]>;
   }
 ) {
-  const files: { [filename: string]: { entry: Dirent; tags: string[] }[] } = {};
-  const dirs: { [dirname: string]: { entry: Dirent; tags: string[] }[] } = {};
+  const files: Record<string, { entry: Dirent; tags: string[] }[]> = {};
+  const dirs: Record<string, { entry: Dirent; tags: string[] }[]> = {};
   for (const entry of await fs.readdir(source, { withFileTypes: true })) {
     const parts = entry.name.split(".");
     const name = [

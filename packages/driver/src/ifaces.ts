@@ -34,7 +34,7 @@ export enum Cardinality {
   AT_LEAST_ONE = chars.$M,
 }
 
-export type QueryArgs = { [_: string]: unknown } | unknown[] | null;
+export type QueryArgs = Record<string, unknown> | unknown[] | null;
 
 export interface Executor {
   execute(query: string, args?: QueryArgs): Promise<void>;
@@ -51,9 +51,7 @@ export interface KnownServerSettings {
   system_config?: any;
 }
 
-export type ServerSettings = KnownServerSettings & {
-  [key: string]: Uint8Array;
-};
+export type ServerSettings = KnownServerSettings & Record<string, Uint8Array>;
 
 export const LegacyHeaderCodes = {
   implicitLimit: 0xff01,

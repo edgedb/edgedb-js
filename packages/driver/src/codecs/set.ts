@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-import { ICodec, Codec, uuid, CodecKind } from "./ifaces";
-import { WriteBuffer, ReadBuffer } from "../primitives/buffer";
+import type { ICodec, uuid, CodecKind } from "./ifaces";
+import { Codec } from "./ifaces";
+import { type WriteBuffer, ReadBuffer } from "../primitives/buffer";
 import { ArrayCodec } from "./array";
 import { InvalidArgumentError, ProtocolError } from "../errors";
 

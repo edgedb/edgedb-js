@@ -18,7 +18,7 @@
 
 import { ReadBuffer, utf8Decoder } from "../primitives/buffer";
 import LRU from "../primitives/lru";
-import { ICodec, uuid, ScalarCodec } from "./ifaces";
+import { type ICodec, type uuid, ScalarCodec } from "./ifaces";
 import { NULL_CODEC, SCALAR_CODECS } from "./codecs";
 import { NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES } from "./consts";
 import { EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec } from "./tuple";
@@ -31,7 +31,7 @@ import { EnumCodec } from "./enum";
 import { ObjectCodec } from "./object";
 import { SetCodec } from "./set";
 import { MultiRangeCodec, RangeCodec } from "./range";
-import { ProtocolVersion } from "../ifaces";
+import type { ProtocolVersion } from "../ifaces";
 import { versionGreaterThanOrEqual } from "../utils";
 import { SparseObjectCodec } from "./sparseObject";
 import { ProtocolError, InternalClientError } from "../errors";
@@ -359,7 +359,7 @@ export class CodecsRegistry {
             "could not build scalar codec: base scalar has a non-scalar codec"
           );
         }
-        res = <ICodec>res.derive(tid);
+        res = res.derive(tid) as ICodec;
         break;
       }
 

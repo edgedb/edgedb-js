@@ -45,7 +45,7 @@ type AnyCodeFrag = CodeFragment | Frag;
 
 export class CodeBuffer {
   private buf: AnyCodeFrag[][] = [];
-  private indent: number = 0;
+  private indent = 0;
 
   getBuf() {
     return this.buf;
@@ -137,7 +137,7 @@ type ImportParams = {
 };
 type ExportParams = { modes?: Mode[] };
 
-const allModes: Set<Mode> = new Set(["dts", "js", "ts"]);
+const allModes = new Set<Mode>(["dts", "js", "ts"]);
 class BuilderImportsExports {
   constructor(
     public imports: Set<Import> = new Set<Import>(),
@@ -292,7 +292,7 @@ class BuilderImportsExports {
               : `const ${imp.name} = __importStar(require("${imp.fromPath}"));`
           );
           break;
-        case "partial":
+        case "partial": {
           const names = Object.entries(imp.names)
             .map(([key, val]) => {
               if (typeof val === "boolean" && !val) return null;
@@ -313,6 +313,7 @@ class BuilderImportsExports {
               : `const { ${names} } = require("${imp.fromPath}");`
           );
           break;
+        }
       }
     }
 
@@ -346,7 +347,7 @@ class BuilderImportsExports {
         continue;
       }
       switch (exp.type) {
-        case "named":
+        case "named": {
           let name = "";
           const nameFrags = Array.isArray(exp.name) ? exp.name : [exp.name];
           for (const nameFrag of nameFrags) {
@@ -383,6 +384,7 @@ class BuilderImportsExports {
             }
           }
           break;
+        }
         case "from":
           if (moduleKind === "esm") {
             exportsFrom.push(
@@ -810,7 +812,7 @@ export class DirBuilder {
       moduleExtension: string;
       written: Set<string>;
     },
-    headerComment: string = ""
+    headerComment = ""
   ): Promise<void> {
     const dir = path.normalize(to);
 
@@ -846,10 +848,9 @@ export class DirBuilder {
 
       const filePath = dest + params.fileExtension;
 
-      let oldContents = "";
-      try {
-        oldContents = await readFileUtf8(filePath);
-      } catch {}
+      const oldContents = await readFileUtf8(filePath)
+        .then((content) => content)
+        .catch(() => "");
 
       const newContents =
         headerComment +

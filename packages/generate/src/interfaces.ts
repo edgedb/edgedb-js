@@ -1,4 +1,3 @@
-// tslint:disable:no-console
 import type { CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
 import { $, adapter, type Client } from "edgedb";
@@ -41,7 +40,6 @@ export async function runInterfacesGenerator(params: {
 
   const dir = new DirBuilder();
 
-  // tslint:disable-next-line
   console.log(`Introspecting database schema...`);
   const types = await $.introspect.types(client);
 

@@ -3,10 +3,10 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { auth } from "@/edgedb";
 
-type Data = {
+interface Data {
   name: string;
   identity: any;
-};
+}
 
 export default async function handler(
   req: NextApiRequest,

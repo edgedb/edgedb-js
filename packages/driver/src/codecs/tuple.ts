@@ -18,7 +18,8 @@
 
 import { KNOWN_TYPENAMES } from "./consts";
 
-import { ICodec, Codec, uuid, IArgsCodec, CodecKind } from "./ifaces";
+import type { ICodec, uuid, IArgsCodec, CodecKind } from "./ifaces";
+import { Codec } from "./ifaces";
 import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import {
   InvalidArgumentError,
@@ -35,7 +36,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     this.subCodecs = codecs;
   }
 
-  encode(buf: WriteBuffer, object: any, allowNull: boolean = false): void {
+  encode(buf: WriteBuffer, object: any, allowNull = false): void {
     if (!Array.isArray(object)) {
       throw new InvalidArgumentError(`an array was expected, got "${object}"`);
     }

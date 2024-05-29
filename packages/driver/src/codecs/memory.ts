@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { ICodec, ScalarCodec } from "./ifaces";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { type ICodec, ScalarCodec } from "./ifaces";
 import { ConfigMemory } from "../datatypes/memory";
 import { InvalidArgumentError } from "../errors";
 
@@ -32,10 +32,8 @@ export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
       );
     }
     buf.writeInt32(8);
-    buf.writeBigInt64(
-      // @ts-ignore
-      object._bytes
-    );
+    // @ts-expect-error _bytes is private
+    buf.writeBigInt64(object._bytes);
   }
 
   decode(buf: ReadBuffer): any {

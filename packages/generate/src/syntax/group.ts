@@ -107,7 +107,6 @@ export type $expr_Group<
         ObjectType<
           "std::FreeObject",
           {
-            // tslint:disable-next-line
             [k in keyof Mods["by"]]: Mods["by"][k]["__element__"] extends ObjectType
               ? never
               : PropertyDesc<
@@ -117,6 +116,8 @@ export type $expr_Group<
           }
         >,
         Cardinality.One,
+        // todo check if this can be fixed better
+        // eslint-disable-next-line @typescript-eslint/ban-types
         {},
         false,
         true,
@@ -126,6 +127,8 @@ export type $expr_Group<
       elements: LinkDesc<
         Expr["__element__"],
         Cardinality.Many,
+        // todo check if this can be fixed better
+        // eslint-disable-next-line @typescript-eslint/ban-types
         {},
         false,
         true,

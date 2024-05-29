@@ -3,7 +3,7 @@ import type { CryptoUtils } from "./utils";
 let cryptoUtils: CryptoUtils;
 
 if (typeof crypto === "undefined") {
-  // tslint:disable-next-line:no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const nodeCrypto = require("crypto");
 
   cryptoUtils = {
@@ -32,7 +32,7 @@ if (typeof crypto === "undefined") {
     },
   };
 } else {
-  // tslint:disable-next-line:no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   cryptoUtils = require("./browserCrypto").default;
 }
 

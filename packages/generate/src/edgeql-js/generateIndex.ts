@@ -64,11 +64,11 @@ export function generateIndex(params: GeneratorParams) {
   const excludedKeys = new Set<string>(topLevelModules.keys());
 
   const spreadTypes: string[] = [];
-  for (let { name, keys, module } of spreadModules) {
+  for (const { name, keys: providedKeys, module } of spreadModules) {
     if (module?.isEmpty()) {
       continue;
     }
-    keys = keys ?? module!.getDefaultExportKeys();
+    const keys = providedKeys ?? module!.getDefaultExportKeys();
     const conflictingKeys = keys.filter((key) => excludedKeys.has(key));
     let typeStr: string;
     if (conflictingKeys.length) {

@@ -16,7 +16,11 @@
  * limitations under the License.
  */
 
-import { ReadBuffer, WriteBuffer, uuidToBuffer } from "../primitives/buffer";
+import {
+  type ReadBuffer,
+  type WriteBuffer,
+  uuidToBuffer,
+} from "../primitives/buffer";
 import { KNOWN_TYPES } from "./consts";
 
 export type uuid = string;
@@ -78,7 +82,7 @@ export abstract class ScalarCodec extends Codec {
 
   derive(tid: uuid): Codec {
     const self = this.constructor;
-    return <Codec>new (<any>self)(tid, this.tid);
+    return new (self as any)(tid, this.tid) as Codec;
   }
 
   getSubcodecs(): ICodec[] {

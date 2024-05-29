@@ -184,7 +184,7 @@ export class ResolvedConnectConfig {
     this.setWaitUntilAvailable = this.setWaitUntilAvailable.bind(this);
   }
 
-  _setParam<Param extends ConnectConfigParams, Value extends any>(
+  _setParam<Param extends ConnectConfigParams, Value>(
     param: Param,
     value: Value,
     source: string,
@@ -201,7 +201,7 @@ export class ResolvedConnectConfig {
     }
     return false;
   }
-  async _setParamAsync<Param extends ConnectConfigParams, Value extends any>(
+  async _setParamAsync<Param extends ConnectConfigParams, Value>(
     param: Param,
     value: Value,
     source: string,
@@ -403,7 +403,7 @@ export class ResolvedConnectConfig {
       output.push(
         param.padEnd(19, " ") +
           (value + (isDefault ? " (default)" : "")).padEnd(42, " ") +
-          source ?? "default"
+          (source ?? "default")
       );
     };
 
@@ -578,7 +578,6 @@ async function parseConnectDsnAndArgs(
     let port: string | undefined = getEnv("EDGEDB_PORT");
     if (resolvedConfig._port === null && port?.startsWith("tcp://")) {
       // EDGEDB_PORT is set by 'docker --link' so ignore and warn
-      // tslint:disable-next-line: no-console
       console.warn(
         `EDGEDB_PORT in 'tcp://host:port' format, so will be ignored`
       );

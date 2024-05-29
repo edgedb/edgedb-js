@@ -1,4 +1,4 @@
-import { Executor } from "../../ifaces";
+import type { Executor } from "../../ifaces";
 import type { typeutil } from "../typeutil";
 import { typeMapping } from "./types";
 
@@ -101,7 +101,6 @@ export const casts = async (cxn: Executor, params?: { debug?: boolean }) => {
     assignableByMap[type] = reachableFrom(type, assignmentCastsByTarget);
   }
 
-  // tslint:disable:no-console
   if (params?.debug === true) {
     console.log(`\nIMPLICIT`);
     for (const [fromId, castArr] of Object.entries(implicitCastMap)) {

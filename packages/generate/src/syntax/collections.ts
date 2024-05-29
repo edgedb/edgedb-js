@@ -185,7 +185,7 @@ const tupleProxyHandlers: ProxyHandler<ExpressionRoot> = {
         : type.__kind__ === TypeKind.namedtuple
         ? (type as NamedTupleType).__shape__
         : null;
-    return items?.hasOwnProperty(prop)
+    return items && Object.prototype.hasOwnProperty.call(items, prop)
       ? tuplePath(proxy, (items as any)[prop], prop as any)
       : (target as any)[prop];
   },
@@ -230,7 +230,7 @@ export function tuple<Items extends typeutil.tupleOf<BaseType>>(
   items: Items
 ): TupleType<Items>;
 export function tuple<
-  Item extends TypeSet | scalarLiterals,
+  _Item extends TypeSet | scalarLiterals,
   Items extends typeutil.tupleOf<TypeSet | scalarLiterals>
 >(
   items: Items

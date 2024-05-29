@@ -27,11 +27,7 @@ export default function createNextPagesServerAuth(
 const sessionCache = new WeakMap<any, NextAuthSession>();
 
 export class NextPagesAuth extends NextAuth {
-  getSession(req: {
-    cookies: Partial<{
-      [key: string]: string;
-    }>;
-  }) {
+  getSession(req: { cookies: Partial<Record<string, string>> }) {
     const session =
       sessionCache.get(req) ??
       new NextAuthSession(

@@ -8,7 +8,7 @@ export {
   afterAll,
   it,
 } from "https://deno.land/std@0.177.0/testing/bdd.ts";
-import { MatchResult } from "https://deno.land/x/expect/matchers.ts";
+import type { MatchResult } from "https://deno.land/x/expect/matchers.ts";
 import { bold, green, red } from "https://deno.land/std@0.177.0/fmt/colors.ts";
 
 export { process } from "https://deno.land/std@0.177.0/node/process.ts";
@@ -33,9 +33,7 @@ function buildFail(message: string) {
   };
 }
 
-interface ErrorConstructor {
-  new (...args: any[]): Error;
-}
+type ErrorConstructor = new (...args: any[]) => Error;
 
 // modified from 'https://deno.land/x/expect/matchers.ts'
 function toThrow(
@@ -124,4 +122,4 @@ export { expect };
 
 export const test = Deno.test;
 
-export const jest = { setTimeout: (timeout: number) => {} };
+export const jest = { setTimeout: (_timeout: number) => {} };

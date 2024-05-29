@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { ICodec, ScalarCodec } from "./ifaces";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { type ICodec, ScalarCodec } from "./ifaces";
 import {
   LocalDateTime,
   LocalDate,
@@ -182,7 +182,7 @@ export class LocalTimeCodec extends ScalarCodec implements ICodec {
   }
 }
 
-const unencodableDurationFields: Array<keyof Duration> = [
+const unencodableDurationFields: (keyof Duration)[] = [
   "years",
   "months",
   "weeks",

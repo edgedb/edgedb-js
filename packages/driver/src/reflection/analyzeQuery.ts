@@ -178,7 +178,7 @@ export const defaultCodecGenerators: CodecGeneratorMap = new Map([
 ]);
 
 export const generateTsObject = (
-  fields: Array<Parameters<typeof generateTsObjectField>[0]>,
+  fields: Parameters<typeof generateTsObjectField>[0][],
   ctx: CodecGeneratorContext
 ) => {
   const properties = fields.map((field) => generateTsObjectField(field, ctx));

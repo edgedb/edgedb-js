@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-// tslint:disable:no-console
 import { adapter } from "edgedb";
-import { exitWithError, Target } from "./genutil";
+import { type Target, exitWithError } from "./genutil";
 
 export interface CommandOptions {
   showHelp?: boolean;

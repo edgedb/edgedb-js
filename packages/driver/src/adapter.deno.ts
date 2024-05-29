@@ -135,7 +135,7 @@ export function homeDir(): string {
 export async function input(message = "", _params?: { silent?: boolean }) {
   const buf = new Uint8Array(1024);
   await Deno.stdout.write(new TextEncoder().encode(message));
-  const n = <number>await Deno.stdin.read(buf);
+  const n = (await Deno.stdin.read(buf)) as number;
   return new TextDecoder().decode(buf.subarray(0, n)).trim();
 }
 
@@ -162,6 +162,7 @@ export namespace net {
 
   export const isIP = _isIP;
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
   export declare interface Socket {
     on(eventName: "error", listener: (e: any) => void): this;
     on(eventName: "connect", listener: () => void): this;
@@ -234,6 +235,7 @@ export namespace net {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
   export class Socket extends BaseSocket<Deno.Conn> {
     constructor(pconn: Promise<Deno.Conn>) {
       super();
@@ -272,8 +274,8 @@ export namespace tls {
   }
 
   export function checkServerIdentity(
-    hostname: string,
-    cert: Object
+    _hostname: string,
+    _cert: object
   ): Error | undefined {
     return undefined;
   }

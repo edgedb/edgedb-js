@@ -18,26 +18,32 @@
 
 import type { Duration } from "./datatypes/datetime";
 import { CodecsRegistry } from "./codecs/registry";
-import {
+import type {
   ConnectArgumentsParser,
   ConnectConfig,
   NormalizedConnectConfig,
   ResolvedConnectConfigReadonly,
 } from "./conUtils";
 import * as errors from "./errors";
-import { Cardinality, Executor, OutputFormat, QueryArgs } from "./ifaces";
 import {
-  Options,
+  type Executor,
+  type QueryArgs,
+  Cardinality,
+  OutputFormat,
+} from "./ifaces";
+import type {
   RetryOptions,
   Session,
   SimpleRetryOptions,
   SimpleTransactionOptions,
   TransactionOptions,
 } from "./options";
+import { Options } from "./options";
 import Event from "./primitives/event";
 import { LifoQueue } from "./primitives/queues";
-import { BaseRawConnection } from "./baseConn";
-import { ConnectWithTimeout, retryingConnect } from "./retry";
+import type { BaseRawConnection } from "./baseConn";
+import type { ConnectWithTimeout } from "./retry";
+import { retryingConnect } from "./retry";
 import { util } from "./reflection/util";
 import { Transaction } from "./transaction";
 import { sleep } from "./utils";
@@ -121,7 +127,7 @@ export class ClientConnectionHolder {
     action: (transaction: Transaction) => Promise<T>
   ): Promise<T> {
     let result: T | void;
-    for (let iteration = 0; true; ++iteration) {
+    for (let iteration = 0; ; ++iteration) {
       const transaction = await Transaction._startTransaction(this);
 
       let commitFailed = false;
@@ -173,7 +179,7 @@ export class ClientConnectionHolder {
     expectedCardinality: Cardinality
   ): Promise<any> {
     let result: any;
-    for (let iteration = 0; true; ++iteration) {
+    for (let iteration = 0; ; ++iteration) {
       const conn = await this._getConnection();
       try {
         result = await conn.fetch(
@@ -438,7 +444,6 @@ export abstract class BaseClientPool {
     );
 
     const warningTimeoutId = setTimeout(() => {
-      // tslint:disable-next-line: no-console
       console.warn(
         "Client.close() is taking over 60 seconds to complete. " +
           "Check if you have any unreleased connections left."
@@ -534,7 +539,7 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withSession(session));
   }
 
-  withModuleAliases(aliases: { [name: string]: string }) {
+  withModuleAliases(aliases: Record<string, string>) {
     return new Client(
       this.pool,
       this.options.withSession(this.options.session.withModuleAliases(aliases))
@@ -546,7 +551,7 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withSession(newConfig));
   }
 
-  withGlobals(globals: { [name: string]: any }): Client {
+  withGlobals(globals: Record<string, any>): Client {
     return new Client(
       this.pool,
       this.options.withSession(this.options.session.withGlobals(globals))

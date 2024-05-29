@@ -166,7 +166,7 @@ export function $insertify(
 export function $normaliseInsertShape(
   root: ObjectTypeSet,
   shape: { [key: string]: any },
-  isUpdate: boolean = false
+  isUpdate = false
 ): { [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet } } {
   const newShape: {
     [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet };
@@ -252,10 +252,6 @@ export function $normaliseInsertShape(
     const isMulti =
       pointer.cardinality === Cardinality.AtLeastOne ||
       pointer.cardinality === Cardinality.Many;
-    if (pointer.__kind__ === "property") {
-      if (pointer.target.__name__ === "std::json") {
-      }
-    }
 
     const wrappedVal =
       val === null

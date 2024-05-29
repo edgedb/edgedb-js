@@ -7,19 +7,15 @@
   ],
   "packageManager": "yarn@1.22.19",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.60.1",
-    "@typescript-eslint/parser": "^5.60.1",
-    "eslint": "^8.43.0",
-    "eslint-config-prettier": "^8.8.0",
+    "@eslint/js": "^9.2.0",
+    "eslint": "^9.2.0",
     "prettier": "^2.8.8",
-    "tslint": "^6.1.3",
-    "tslint-config-prettier": "^1.18.0",
-    "tslint-plugin-prettier": "^2.3.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^7.8.0"
   },
   "scripts": {
-    "lint": "tslint 'packages/*/src/**/*.ts'",
-    "eslint": "eslint 'packages/*/src/**/*.ts'",
+    "lint": "eslint --quiet 'packages/*/src/**/*.ts'",
+    "lint:fix": "eslint 'packages/*/src/**/*.ts' --fix",
     "format:check": "prettier --check 'packages/*/src/**/*.(mts|ts)' 'packages/*/test/**/*.ts'",
     "format": "prettier --write 'packages/*/src/**/*.(mts|ts)' 'packages/*/test/**/*.ts'",
     "generate": "yarn workspace @edgedb/generate generate"
