@@ -144,6 +144,20 @@ interface InfixContainerHomogenousOperator extends BaseOperator {
 interface TernaryHomogenousOperator extends BaseOperator {
   type: "TernaryHomogenousOperator";
   lhs: CodeFragment[];
+  rhs: CodeFragment[] | null;
+}
+
+/**
+ * Ternary operators that take a boolean and two container types and return a
+ * value of the same type based on the boolean
+ *
+ * @example
+ * `std::if_else`
+ */
+interface TernaryContainerHomogenousOperator extends BaseOperator {
+  type: "TernaryContainerHomogenousOperator";
+  lhs: CodeFragment[];
+  rhs: CodeFragment[] | null;
 }
 
 type Operator =
@@ -153,7 +167,8 @@ type Operator =
   | InfixComparisonOperator
   | InfixContainerComparisonOperator
   | InfixContainerHomogenousOperator
-  | TernaryHomogenousOperator;
+  | TernaryHomogenousOperator
+  | TernaryContainerHomogenousOperator;
 
 function operatorFromOpDef(
   typeToCodeFragment: (
@@ -166,25 +181,32 @@ function operatorFromOpDef(
     opName === "std::if_else"
       ? "if_else"
       : splitName(opDef.originalName).name.toLowerCase();
-  const log = debug(`edgedb:codegen:generateAltOp:${opName}`);
-  log({ opName, operatorSymbol, returnType: opDef.return_type.name });
+  const log = debug(`edgedb:codegen:operatorFromOpDef:${opName}`);
+  log({
+    opName,
+    operatorSymbol,
+    returnType: opDef.return_type.name,
+    anytypes: opDef.anytypes,
+  });
+  const anytypeIsBaseType = Boolean(opDef.anytypes?.type[0] === "$.BaseType");
 
   if (opDef.operator_kind === $.OperatorKind.Prefix) {
     // Prefix
+    const [operand] = opDef.params.positional;
     if (opDef.return_type.name === "std::bool") {
       // Predicate
-      log("PrefixPredicateOperator operand: ", opDef.params.positional[0]);
+      log("PrefixPredicateOperator operand: ", operand);
       return {
         type: "PrefixPredicateOperator",
-        operand: typeToCodeFragment(opDef.params.positional[0]),
+        operand: typeToCodeFragment(operand),
         operatorSymbol,
       };
     } else {
       // Homogenous
-      log("PrefixHomogenousOperator operand: ", opDef.params.positional[0]);
+      log("PrefixHomogenousOperator operand: ", operand);
       return {
         type: "PrefixHomogenousOperator",
-        operand: typeToCodeFragment(opDef.params.positional[0]),
+        operand: typeToCodeFragment(operand),
         operatorSymbol,
       };
     }
@@ -244,14 +266,32 @@ function operatorFromOpDef(
         };
       }
     }
-  } else {
+  } else if (opDef.operator_kind === $.OperatorKind.Ternary) {
     // Ternary
-    log("TernaryHomogenousOperator lhs: ", opDef.params.positional[0]);
-    return {
-      type: "TernaryHomogenousOperator",
-      lhs: typeToCodeFragment(opDef.params.positional[0]),
-      operatorSymbol,
-    };
+    const [lhs, _cond, rhs] = opDef.params.positional;
+    if (lhs.type.kind === "scalar" || anytypeIsBaseType) {
+      // Scalar
+      log("TernaryHomogenousOperator lhs: ", lhs);
+      log("TernaryHomogenousOperator rhs: ", rhs);
+      return {
+        type: "TernaryHomogenousOperator",
+        lhs: typeToCodeFragment(lhs),
+        rhs: rhs.type.id !== lhs.type.id ? typeToCodeFragment(rhs) : null,
+        operatorSymbol,
+      };
+    } else {
+      // Container
+      log("TernaryContainerHomogenousOperator lhs: ", lhs);
+      log("TernaryContainerHomogenousOperator rhs: ", rhs);
+      return {
+        type: "TernaryContainerHomogenousOperator",
+        lhs: typeToCodeFragment(lhs),
+        rhs: rhs.type.id !== lhs.type.id ? typeToCodeFragment(rhs) : null,
+        operatorSymbol,
+      };
+    }
+  } else {
+    throw new Error(`Unknown operator kind: ${opDef.operator_kind}`);
   }
 }
 
@@ -302,9 +342,26 @@ export function generateOperators({
     InfixContainerHomogenousOperator
   >();
   const ternaryDefs = new StrictMapSet<string, TernaryHomogenousOperator>();
+  const ternaryContainerDefs = new StrictMapSet<
+    string,
+    TernaryContainerHomogenousOperator
+  >();
 
   for (const [opName, _opDefs] of operators.entries()) {
     if (skipOperators.has(opName)) continue;
+    const log = debug(`edgedb:codegen:generateOperators:${opName}`);
+    log(
+      _opDefs.map((opDef) => ({
+        return_type: opDef.return_type,
+        return_typemod: opDef.return_typemod,
+        params0: opDef.params[0].type,
+        params0_typemode: opDef.params[0].typemod,
+        params1: opDef.params[1]?.type,
+        params1_typemode: opDef.params[1]?.typemod,
+        params2: opDef.params[2]?.type,
+        params2_typemode: opDef.params[2]?.typemod,
+      }))
+    );
 
     const opDefs = expandFuncopAnytypeOverloads(
       sortFuncopOverloads(_opDefs, typeSpecificities),
@@ -425,6 +482,9 @@ export function generateOperators({
           break;
         case "TernaryHomogenousOperator":
           ternaryDefs.appendAt(opSymbol, operator);
+          break;
+        case "TernaryContainerHomogenousOperator":
+          ternaryContainerDefs.appendAt(opSymbol, operator);
           break;
       }
     }
@@ -566,7 +626,31 @@ export function generateOperators({
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| { lhs: ${def.lhs} }`]);
+          if (def.rhs) {
+            overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.rhs} }`]);
+          } else {
+            overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.lhs} }`]);
+          }
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`};`]);
+
+  // TernaryContainerHomogenousOperators
+  overloadsBuf.writeln([t`type TernaryContainerHomogeneousOperators = {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of ternaryContainerDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          if (def.rhs) {
+            overloadsBuf.writeln([
+              t`| ArgSetAndReturnOf<${def.lhs}, ${def.rhs}>`,
+            ]);
+          } else {
+            overloadsBuf.writeln([t`| ArgSetAndReturnOf<${def.lhs}>`]);
+          }
         }
       });
     }
@@ -607,6 +691,55 @@ export function generateOperators({
 
   code.nl();
 
+  // PrefixPredicateOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof PrefixPredicateOperators,`]);
+    code.writeln([t`Operand extends PrefixPredicateOperators[Op]["operand"]`]);
+  });
+  code.writeln([t`>(op: Op, operand: Operand): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([t`_std.$bool,`]);
+    code.writeln([t`$.cardutil.paramCardinality<Operand>`]);
+  });
+  code.writeln([t`>;`]);
+
+  // InfixComparisonOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixComparisonOperators,`]);
+    code.writeln([t`LHS extends InfixComparisonOperators[Op]["lhs"],`]);
+    code.writeln([t`RHS extends InfixComparisonOperators[Op]["rhs"]`]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([t`_std.$bool,`]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+
+  // InfixContainerComparisonOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixContainerComparisonOperators,`]);
+    code.writeln([
+      t`LHS extends InfixContainerComparisonOperators[Op]["lhs"],`,
+    ]);
+    code.writeln([
+      t`RHS extends InfixContainerComparisonOperators[Op]["rhs"]`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([t`_std.$bool,`]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+
   // PrefixHomogeneousOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
@@ -624,19 +757,6 @@ export function generateOperators({
   });
   code.writeln([t`>;`]);
 
-  // PrefixPredicateOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof PrefixPredicateOperators,`]);
-    code.writeln([t`Operand extends PrefixPredicateOperators[Op]["operand"]`]);
-  });
-  code.writeln([t`>(op: Op, operand: Operand): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`_std.$bool,`]);
-    code.writeln([t`$.cardutil.paramCardinality<Operand>`]);
-  });
-  code.writeln([t`>;`]);
-
   // InfixHomogeneousOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
@@ -649,22 +769,6 @@ export function generateOperators({
     code.writeln([
       t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<Op>["__element__"]>,`,
     ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-
-  // InfixComparisonOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixComparisonOperators,`]);
-    code.writeln([t`LHS extends InfixComparisonOperators[Op]["lhs"],`]);
-    code.writeln([t`RHS extends InfixComparisonOperators[Op]["rhs"]`]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`_std.$bool,`]);
     code.writeln([
       t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
     ]);
@@ -694,45 +798,50 @@ export function generateOperators({
   });
   code.writeln([t`>;`]);
 
-  // InfixContainerComparisonOperators
+  // TernaryHomogeneousOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
-    code.writeln([t`Op extends keyof InfixContainerComparisonOperators,`]);
+    code.writeln([t`Op extends keyof TernaryHomogeneousOperators,`]);
     code.writeln([
-      t`LHS extends InfixContainerComparisonOperators[Op]["lhs"],`,
+      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
     ]);
-    code.writeln([t`RHS extends InfixContainerComparisonOperators[Op]["rhs"]`]);
+    code.writeln([t`LHS extends TernaryHomogeneousOperators[Op]["lhs"],`]);
+    code.writeln([t`RHS extends TernaryHomogeneousOperators[Op]["rhs"]`]);
   });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.writeln([
+    t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
+  ]);
   code.indented(() => {
-    code.writeln([t`_std.$bool,`]);
     code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
     ]);
   });
   code.writeln([t`>;`]);
 
-  // TernaryHomogeneousOperators
+  // TernaryContainerHomogeneousOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
     code.writeln([
       t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
     ]);
     code.writeln([
-      t`LHS extends TernaryHomogeneousOperators["if_else"]["lhs"],`,
+      t`LHS extends TernaryContainerHomogeneousOperators["if_else"]["lhs"],`,
     ]);
-    code.writeln([t`RHS extends LHS`]);
+    code.writeln([
+      t`RHS extends TernaryContainerHomogeneousOperators["if_else"]["rhs"],`,
+    ]);
+    code.writeln([
+      t`Ret extends TernaryContainerHomogeneousOperators["if_else"]["ret"]`,
+    ]);
   });
   code.writeln([
     t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
   ]);
   code.indented(() => {
-    /*
-    code.writeln([
-      t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-    */
-    code.writeln([t`any,`]);
+    code.writeln([t`Ret,`]);
     code.writeln([
       t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
     ]);
