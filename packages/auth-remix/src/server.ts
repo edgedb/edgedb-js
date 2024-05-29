@@ -158,7 +158,7 @@ export class RemixServerAuth extends RemixClientAuth {
         params,
       }: {
         request: Request;
-        params: { [key: string]: string | undefined };
+        params: Record<string, string | undefined>;
       }) => {
         const path = params["*"];
         if (!path) {

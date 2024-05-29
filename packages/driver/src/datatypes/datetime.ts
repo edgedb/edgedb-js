@@ -663,7 +663,7 @@ export class DateDuration {
   }
 }
 
-const humanDurationPrefixes: { [key: string]: number } = {
+const humanDurationPrefixes: Record<string, number> = {
   h: 3_600_000,
   hou: 3_600_000,
   m: 60_000,

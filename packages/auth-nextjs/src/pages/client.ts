@@ -77,7 +77,7 @@ export class NextPagesClientAuth extends NextAuthHelpers {
 }
 
 async function apiRequest(url: string, _data: any) {
-  let data: { [key: string]: any };
+  let data: Record<string, any>;
   if (_data instanceof FormData) {
     data = {};
     for (const [key, val] of _data.entries()) {
