@@ -7,11 +7,11 @@
   ],
   "packageManager": "yarn@1.22.19",
   "devDependencies": {
-    "@eslint/js": "^9.2.0",
-    "eslint": "^9.2.0",
+    "@eslint/js": "^9.3.0",
+    "eslint": "^9.3.0",
     "prettier": "^3.2.5",
     "typescript": "^5.4.5",
-    "typescript-eslint": "^7.8.0"
+    "typescript-eslint": "^8.0.0-alpha.22"
   },
   "scripts": {
     "lint": "eslint --quiet 'packages/*/src/**/*.ts'",

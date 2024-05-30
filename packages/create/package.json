@@ -21,16 +21,16 @@
   "peerDependencies": {},
   "devDependencies": {
     "@types/debug": "^4.1.12",
-    "@types/node": "^20.10.4",
-    "tsx": "^4.6.2",
+    "@types/node": "^20.12.13",
+    "tsx": "^4.11.0",
     "typescript": "^5.4.5"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
     "debug": "^4.3.4",
-    "picocolors": "^1.0.0",
+    "picocolors": "^1.0.1",
     "read-pkg": "^9.0.1",
-    "write-package": "^7.0.0"
+    "write-package": "^7.0.1"
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",

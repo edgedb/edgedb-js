@@ -23,11 +23,11 @@
     "build": "tsc --project tsconfig.json"
   },
   "devDependencies": {
-    "@types/node": "^20.8.4",
-    "@types/react": "^18.2.42",
+    "@types/node": "^20.12.13",
+    "@types/react": "^18.3.3",
     "edgedb": "^1.5.0",
-    "next": "13.5.6",
-    "react": "^18.2.0",
+    "next": "14.2.3",
+    "react": "^18.3.1",
     "typescript": "^5.4.5"
   },
   "peerDependencies": {
