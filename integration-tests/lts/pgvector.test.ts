@@ -31,7 +31,7 @@ describe("pgvector", () => {
     const query = e.select(e.PgVectorTest, ($) => {
       const dist = e.ext.pgvector.cosine_distance(
         $.test_embedding,
-        e.ext.pgvector.vector(Float32Array.from([1, 2, 3]))
+        e.ext.pgvector.vector(Float32Array.from([1, 2, 3])),
       );
       return {
         test_embedding: true,
@@ -58,7 +58,7 @@ describe("pgvector", () => {
   test("params", async () => {
     const query = e.params(
       { vec: e.ext.pgvector.vector, arrayVec: e.ext.pgvector.vector },
-      ($) => e.select($)
+      ($) => e.select($),
     );
 
     const arrayVec = Array(10)

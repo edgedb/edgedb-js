@@ -103,7 +103,7 @@ describe("update", () => {
           filter_single: e.op(hero.id, "=", e.uuid(result!.id)),
         }))
         .run(client),
-      { name: `The Amazing ${data.spidey.name}` }
+      { name: `The Amazing ${data.spidey.name}` },
     );
   });
 
@@ -174,7 +174,7 @@ describe("update", () => {
             filter: e.op(
               hero.id,
               "in",
-              e.set(e.uuid(data.cap.id), e.uuid(data.iron_man.id))
+              e.set(e.uuid(data.cap.id), e.uuid(data.iron_man.id)),
             ),
           })),
         },
@@ -204,11 +204,13 @@ describe("update", () => {
     await query.run(client, { title: "The Avengers!" });
     await query.run(client, {});
 
-    const selected = await e.select(e.Movie, () => ({
-      id: true,
-      title: true,
-      filter_single: { id: theAvengers.id },
-    })).run(client);
+    const selected = await e
+      .select(e.Movie, () => ({
+        id: true,
+        title: true,
+        filter_single: { id: theAvengers.id },
+      }))
+      .run(client);
     assert.ok(selected);
     assert.equal(selected.title, "The Avengers!");
   });
@@ -240,7 +242,7 @@ describe("update", () => {
         filter_single: e.op(
           profile["<profile[is Movie]"].title,
           "=",
-          "The Avengers"
+          "The Avengers",
         ),
         set: { a: "test" },
       }))

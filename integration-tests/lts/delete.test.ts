@@ -37,12 +37,12 @@ describe("delete", () => {
       e.select(e.Hero, (hero) => ({
         name: true,
         filter_single: e.op(hero.name, "=", "Black Widow"),
-      }))
+      })),
     );
     const wrappingDeleteResult = await deleteWrappingSelect.run(client);
 
     tc.assert<tc.IsExact<typeof wrappingDeleteResult, { id: string } | null>>(
-      true
+      true,
     );
     assert.equal(wrappingDeleteResult, null);
 
@@ -71,7 +71,7 @@ describe("delete", () => {
       ({ titles }) =>
         e.delete(e.Movie, (movie) => ({
           filter: e.op(movie.title, "in", e.array_unpack(titles)),
-        }))
+        })),
     );
 
     const deletedResult = await query.run(client, {
@@ -80,7 +80,7 @@ describe("delete", () => {
     assert.deepEqual(
       deletedResult,
       [{ id: data.the_avengers.id }, { id: data.civil_war.id }],
-      "deletes the correct movies"
+      "deletes the correct movies",
     );
   });
 });

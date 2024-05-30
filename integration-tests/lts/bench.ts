@@ -178,7 +178,7 @@ bench("params select", () => {
         name: true,
       }),
       filter_single: e.op(hero.name, "=", params.name),
-    }))
+    })),
   );
   return {} as typeof query;
 }).types([11290, "instantiations"]);

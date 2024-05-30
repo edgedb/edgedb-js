@@ -11,7 +11,7 @@ describe("with", () => {
       e.select(e.op(numbers, "+", numbers)).toEdgeQL(),
       `WITH
   __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 }
-SELECT (__withVar_0 + __withVar_0)`
+SELECT (__withVar_0 + __withVar_0)`,
     );
   });
 
@@ -23,7 +23,7 @@ SELECT (__withVar_0 + __withVar_0)`
       `WITH
   __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 },
   __withVar_1 := __withVar_0
-SELECT (__withVar_0 + __withVar_1)`
+SELECT (__withVar_0 + __withVar_1)`,
     );
   });
 
@@ -71,7 +71,7 @@ SELECT {
   multi pageResults := (__withVar_1 {id, name}),
   single nextOffset := (__withVar_4 + std::count(__withVar_1)),
   single hasMore := (SELECT (std::count(__withVar_3) > 10))
-}`
+}`,
     );
 
     type queryType = $.BaseTypeToTsType<(typeof query)["__element__"]>;
@@ -103,7 +103,7 @@ SELECT {
       e.with([numbers], e.select(numbers)).toEdgeQL(),
       `WITH
   __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 }
-SELECT __withVar_0`
+SELECT __withVar_0`,
     );
   });
 
@@ -122,7 +122,7 @@ SELECT __withVar_0`
       __withVar_0 := { <std::int64>1, <std::int64>2, <std::int64>3 }
     SELECT __withVar_0
   ))
-}`
+}`,
     );
   });
 
@@ -135,7 +135,7 @@ SELECT __withVar_0`
           numbers,
           nested: e.with([numbers], e.select(numbers)),
         })
-        .toEdgeQL()
+        .toEdgeQL(),
     );
   });
 
@@ -160,7 +160,7 @@ SELECT __withVar_0`
 SELECT {
   multi numbers := assert_exists(__withVar_0),
   multi numbers2 := assert_exists(__withVar_0)
-}`
+}`,
     );
   });
 
@@ -175,7 +175,7 @@ SELECT {
           [explicitWith],
           e.select({
             numbers: explicitWith,
-          })
+          }),
         )
         .toEdgeQL(),
       `WITH
@@ -186,7 +186,7 @@ SELECT {
   )
 SELECT {
   multi numbers := assert_exists(__withVar_0)
-}`
+}`,
     );
   });
 
@@ -202,7 +202,7 @@ SELECT {
           [explicitWith, number],
           e.select({
             numbers: explicitWith,
-          })
+          }),
         )
         .toEdgeQL(),
       `WITH
@@ -214,7 +214,7 @@ SELECT {
   )
 SELECT {
   multi numbers := assert_exists(__withVar_0)
-}`
+}`,
     );
   });
 
@@ -230,9 +230,9 @@ SELECT {
           [explicitWith, numbers],
           e.select({
             numbers: explicitWith,
-          })
+          }),
         )
-        .toEdgeQL()
+        .toEdgeQL(),
     );
   });
 
@@ -249,7 +249,7 @@ SELECT {
           e.select({
             number,
             numbers: explicitWith,
-          })
+          }),
         )
         .toEdgeQL(),
       `WITH
@@ -262,7 +262,7 @@ SELECT {
 SELECT {
   single number := __withVar_2,
   multi numbers := assert_exists(__withVar_0)
-}`
+}`,
     );
   });
 
@@ -316,7 +316,7 @@ SELECT {
     SELECT __withVar_2
   ),
   single hasMore := (SELECT (std::count(__withVar_4) > 10))
-}`
+}`,
     );
   });
 
@@ -347,7 +347,7 @@ SELECT {
 SELECT {
   single numbers := __withVar_0,
   single numbers2 := __withVar_0
-}`
+}`,
     );
   });
 
@@ -358,7 +358,7 @@ SELECT {
 
     const explicitWith = e.with(
       [numbers, numbersAlias],
-      e.select({ numbers, numbersAlias })
+      e.select({ numbers, numbersAlias }),
     );
 
     assert.equal(
@@ -381,7 +381,7 @@ SELECT {
 SELECT {
   single numbers := __withVar_0,
   single numbers2 := __withVar_0
-}`
+}`,
     );
   });
 
@@ -399,7 +399,7 @@ SELECT {
           numbers2: explicitWith,
           numbersAlias,
         })
-        .toEdgeQL()
+        .toEdgeQL(),
     );
   });
 
@@ -415,7 +415,7 @@ SELECT {
       const arg = e.op(numbers, "+", numbersAlias);
       const explicitWith = e.with(
         [numbersAlias],
-        e.select(e.op(numbers, "+", numbersAlias))
+        e.select(e.op(numbers, "+", numbersAlias)),
       );
 
       assert.equal(
@@ -424,7 +424,7 @@ SELECT {
             [explicitWith, numbers],
             e.select({
               numbers: explicitWith,
-            })
+            }),
           )
           .toEdgeQL(),
         `WITH
@@ -436,9 +436,9 @@ SELECT {
   )
 SELECT {
   multi numbers := assert_exists(__withVar_0)
-}`
+}`,
       );
-    }
+    },
   );
 
   test(
@@ -453,7 +453,7 @@ SELECT {
 
       const explicitWith = e.with(
         [numbersAlias2],
-        e.select(e.op(numbers, "+", numbersAlias2))
+        e.select(e.op(numbers, "+", numbersAlias2)),
       );
 
       assert.equal(
@@ -462,7 +462,7 @@ SELECT {
             [explicitWith, numbers],
             e.select({
               numbers: explicitWith,
-            })
+            }),
           )
           .toEdgeQL(),
         `\
@@ -476,9 +476,9 @@ WITH
   )
 SELECT {
   multi numbers := assert_exists(__withVar_0)
-}`
+}`,
       );
-    }
+    },
   );
 
   test("query with no WITH block", () => {
@@ -513,7 +513,7 @@ SELECT __scope_0_defaultHero {
   )
 }
 ORDER BY __scope_0_defaultHero.name
-LIMIT 1`
+LIMIT 1`,
     );
   });
 
@@ -522,7 +522,7 @@ LIMIT 1`
       const secret = e.op(
         e.op(hero.name, "++", " is "),
         "++",
-        hero.secret_identity
+        hero.secret_identity,
       );
       return {
         name: true,
@@ -547,7 +547,7 @@ SELECT __scope_0_defaultHero {
   name,
   single secret := __scope_0_defaultHero.__withVar_1,
   single secret2 := __scope_0_defaultHero.__withVar_1
-}`
+}`,
     );
   });
 

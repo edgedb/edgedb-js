@@ -12,16 +12,16 @@ function checkFunctionExpr<T extends $expr_Function>(
   args: T["__args__"],
   namedargs: T["__namedargs__"],
   returnType: T["__element__"],
-  cardinality: T["__cardinality__"]
+  cardinality: T["__cardinality__"],
 ) {
   assert.deepEqual(expr.__name__, name);
   assert.deepEqual(
     superjson.stringify(expr.__args__),
-    superjson.stringify(args.filter((arg) => arg !== undefined))
+    superjson.stringify(args.filter((arg) => arg !== undefined)),
   );
   assert.deepEqual(
     superjson.stringify(expr.__namedargs__),
-    superjson.stringify(namedargs)
+    superjson.stringify(namedargs),
   );
   assert.deepEqual(expr.__element__.__name__, returnType.__name__);
   assert.deepEqual(expr.__cardinality__, cardinality);
@@ -35,7 +35,7 @@ describe("functions", () => {
       [],
       {},
       e.str,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     checkFunctionExpr(
@@ -50,7 +50,7 @@ describe("functions", () => {
         stage_no: e.int64,
         local: e.array(e.str),
       }),
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     try {
@@ -66,7 +66,7 @@ describe("functions", () => {
       [e.str("test")],
       {},
       number,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     checkFunctionExpr(
@@ -75,7 +75,7 @@ describe("functions", () => {
       [e.bytes(Buffer.from(""))],
       {},
       number,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     checkFunctionExpr(
@@ -84,7 +84,7 @@ describe("functions", () => {
       [e.literal(e.array(e.int32), [1, 2, 3])],
       {},
       number,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     const setOfStr = e.set(e.str("test"), e.str("test2"));
@@ -95,7 +95,7 @@ describe("functions", () => {
       [setOfStr],
       {},
       number,
-      $.Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne,
     );
 
     const datetime_getArgs = [e.datetime(new Date()), e.str("day")] as const;
@@ -105,7 +105,7 @@ describe("functions", () => {
       datetime_getArgs as $.typeutil.writeable<typeof datetime_getArgs>,
       {},
       number,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     const datetime_getArgs2 = [
@@ -118,7 +118,7 @@ describe("functions", () => {
       datetime_getArgs2 as $.typeutil.writeable<typeof datetime_getArgs2>,
       {},
       number,
-      $.Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne,
     );
 
     try {
@@ -137,20 +137,20 @@ describe("functions", () => {
       [e.str("pattern"), e.str("sub"), e.str("str")],
       {},
       e.str,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.std.re_replace(
         { flags: e.str("flags") },
         e.str("pattern"),
         e.str("sub"),
-        e.str("str")
+        e.str("str"),
       ),
       "std::re_replace",
       [e.str("pattern"), e.str("sub"), e.str("str")],
       { flags: e.str("flags") },
       e.str,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.std.re_replace({}, e.str("pattern"), e.str("sub"), e.str("str")),
@@ -158,20 +158,20 @@ describe("functions", () => {
       [e.str("pattern"), e.str("sub"), e.str("str")],
       {},
       e.str,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.std.re_replace(
         { flags: e.cast(e.str, e.set()) },
         e.str("pattern"),
         e.str("sub"),
-        e.str("str")
+        e.str("str"),
       ),
       "std::re_replace",
       [e.str("pattern"), e.str("sub"), e.str("str")],
       { flags: e.cast(e.str, e.set()) },
       e.str,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     checkFunctionExpr(
@@ -180,7 +180,7 @@ describe("functions", () => {
       [],
       {},
       e.duration,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.to_duration({ hours: e.int64(5) }),
@@ -188,7 +188,7 @@ describe("functions", () => {
       [],
       { hours: e.int64(5) },
       e.duration,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.to_duration({ hours: e.int64(5), seconds: e.int64(30) }),
@@ -196,7 +196,7 @@ describe("functions", () => {
       [],
       { hours: e.int64(5), seconds: e.int64(30) },
       e.duration,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.to_duration({ hours: e.set(e.int64(5), e.int64(6)) }),
@@ -204,7 +204,7 @@ describe("functions", () => {
       [],
       { hours: e.set(e.int64(5), e.int64(6)) },
       e.duration,
-      $.Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne,
     );
     checkFunctionExpr(
       e.to_duration({ hours: e.int64(5) }),
@@ -212,7 +212,7 @@ describe("functions", () => {
       [],
       { hours: e.int64(5) },
       e.duration,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     checkFunctionExpr(
@@ -221,7 +221,7 @@ describe("functions", () => {
       [],
       { "🙀": e.int64(1) },
       number,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     try {
@@ -230,7 +230,7 @@ describe("functions", () => {
         { wrongKey: e.str("") },
         e.str("pattern"),
         e.str("sub"),
-        e.str("str")
+        e.str("str"),
       );
 
       e.std.re_replace(
@@ -238,7 +238,7 @@ describe("functions", () => {
         { flags: e.int32(1) },
         e.str("pattern"),
         e.str("sub"),
-        e.str("str")
+        e.str("str"),
       );
 
       // @ts-expect-error
@@ -255,7 +255,7 @@ describe("functions", () => {
       [e.json("json"), e.str("path")],
       {},
       e.json,
-      $.Cardinality.AtMostOne
+      $.Cardinality.AtMostOne,
     );
     checkFunctionExpr(
       e.json_get(e.json("json"), e.str("some"), e.str("path")),
@@ -263,45 +263,45 @@ describe("functions", () => {
       [e.json("json"), e.str("some"), e.str("path")],
       {},
       e.json,
-      $.Cardinality.AtMostOne
+      $.Cardinality.AtMostOne,
     );
     checkFunctionExpr(
       e.json_get(
         e.json("json"),
         e.str("some"),
-        e.set(e.str("path"), e.str("extended"))
+        e.set(e.str("path"), e.str("extended")),
       ),
       "std::json_get",
       [e.json("json"), e.str("some"), e.set(e.str("path"), e.str("extended"))],
       {},
       e.json,
-      $.Cardinality.Many
+      $.Cardinality.Many,
     );
     checkFunctionExpr(
       e.json_get(
         {},
         e.json("json"),
         e.str("some"),
-        e.set(e.str("path"), e.str("extended"))
+        e.set(e.str("path"), e.str("extended")),
       ),
       "std::json_get",
       [e.json("json"), e.str("some"), e.set(e.str("path"), e.str("extended"))],
       {},
       e.json,
-      $.Cardinality.Many
+      $.Cardinality.Many,
     );
     checkFunctionExpr(
       e.json_get(
         { default: e.json("defaultjson") },
         e.json("json"),
         e.str("some"),
-        e.str("path")
+        e.str("path"),
       ),
       "std::json_get",
       [e.json("json"), e.str("some"), e.str("path")],
       { default: e.json("defaultjson") },
       e.json,
-      $.Cardinality.AtMostOne
+      $.Cardinality.AtMostOne,
     );
   });
 
@@ -312,7 +312,7 @@ describe("functions", () => {
       [e.json("json")],
       {},
       e.json,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.min(e.set(e.int64(1), e.int64(2))),
@@ -320,7 +320,7 @@ describe("functions", () => {
       [e.set(e.int64(1), e.int64(2))],
       {},
       number,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     checkFunctionExpr(
@@ -329,7 +329,7 @@ describe("functions", () => {
       [e.str("str")],
       {},
       e.array(e.str),
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     checkFunctionExpr(
@@ -338,13 +338,13 @@ describe("functions", () => {
       [e.literal(e.array(e.str), ["str"])],
       {},
       e.str,
-      $.Cardinality.Many
+      $.Cardinality.Many,
     );
 
     checkFunctionExpr(
       e.contains(
         e.literal(e.array(e.str), ["test", "haystack"]),
-        e.set(e.str("needle"), e.str("haystack"))
+        e.set(e.str("needle"), e.str("haystack")),
       ),
       "std::contains",
       [
@@ -353,13 +353,13 @@ describe("functions", () => {
       ],
       {},
       e.bool,
-      $.Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne,
     );
 
     checkFunctionExpr(
       e.contains(
         e.literal(e.array(e.int16), [1, 2, 3]),
-        e.cast(e.int64, e.bigint(BigInt(2)))
+        e.cast(e.int64, e.bigint(BigInt(2))),
       ),
       "std::contains",
       [
@@ -368,7 +368,7 @@ describe("functions", () => {
       ],
       {},
       e.bool,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     checkFunctionExpr(
@@ -377,14 +377,14 @@ describe("functions", () => {
       [e.literal(e.array(e.float32), [1, 2, 3]), e.int64(2)],
       {},
       e.bool,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     checkFunctionExpr(
       e.array_get(
         { default: e.bigint(BigInt(0)) },
         e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-        e.int64(4)
+        e.int64(4),
       ),
       "std::array_get",
       [
@@ -393,7 +393,7 @@ describe("functions", () => {
       ],
       { default: e.bigint(BigInt(0)) },
       e.bigint,
-      $.Cardinality.AtMostOne
+      $.Cardinality.AtMostOne,
     );
 
     try {
@@ -404,7 +404,7 @@ describe("functions", () => {
         // @ts-expect-error
         { default: e.str("0") },
         e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-        e.int64(4)
+        e.int64(4),
       );
 
       // @ts-expect-error
@@ -423,7 +423,7 @@ describe("functions", () => {
       [e.int64(123), e.str("")],
       {},
       e.str,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.to_str(e.int64(123), e.cast(e.str, e.set())),
@@ -431,7 +431,7 @@ describe("functions", () => {
       [e.int64(123), e.cast(e.str, e.set())],
       {},
       e.str,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.to_str(e.int64(123), undefined),
@@ -439,7 +439,7 @@ describe("functions", () => {
       [e.int64(123), e.cast(e.str, e.set()) as any],
       {},
       e.str,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.to_str(e.set(e.int64(123), e.int64(456)), undefined),
@@ -447,7 +447,7 @@ describe("functions", () => {
       [e.set(e.int64(123), e.int64(456)), e.cast(e.str, e.set()) as any],
       {},
       e.str,
-      $.Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne,
     );
     checkFunctionExpr(
       e.to_str(e.int64(123)),
@@ -455,7 +455,7 @@ describe("functions", () => {
       [e.int64(123), undefined as any],
       {},
       e.str,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     // setoftype param
@@ -465,7 +465,7 @@ describe("functions", () => {
       [e.int64(1)],
       {},
       number,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.sum(e.set(e.int64(1), e.int64(2))),
@@ -473,7 +473,7 @@ describe("functions", () => {
       [e.set(e.int64(1), e.int64(2))],
       {},
       number,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
     checkFunctionExpr(
       e.sum(e.cast(e.int64, e.set())),
@@ -481,14 +481,14 @@ describe("functions", () => {
       [e.cast(e.int64, e.set())],
       {},
       number,
-      $.Cardinality.One
+      $.Cardinality.One,
     );
 
     // optional return
     checkFunctionExpr(
       e.array_get(
         e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
-        e.int64(1)
+        e.int64(1),
       ),
       "std::array_get",
       [
@@ -497,7 +497,7 @@ describe("functions", () => {
       ],
       {},
       e.bigint,
-      $.Cardinality.AtMostOne
+      $.Cardinality.AtMostOne,
     );
     checkFunctionExpr(
       e.array_get(e.cast(e.array(e.bigint), e.set()), e.int64(1)),
@@ -505,7 +505,7 @@ describe("functions", () => {
       [e.cast(e.array(e.bigint), e.set()), e.int64(1)],
       {},
       e.bigint,
-      $.Cardinality.Empty
+      $.Cardinality.Empty,
     );
     // BROKEN
     // checkFunctionExpr(
@@ -536,7 +536,7 @@ describe("functions", () => {
       [e.literal(e.array(e.str), ["str"])],
       {},
       e.str,
-      $.Cardinality.Many
+      $.Cardinality.Many,
     );
     checkFunctionExpr(
       e.array_unpack(e.cast(e.array(e.str), e.set())),
@@ -544,7 +544,7 @@ describe("functions", () => {
       [e.cast(e.array(e.str), e.set())],
       {},
       e.str,
-      $.Cardinality.Many
+      $.Cardinality.Many,
     );
     checkFunctionExpr(
       e.array_unpack(e.literal(e.array(e.str), ["str"])),
@@ -552,7 +552,7 @@ describe("functions", () => {
       [e.literal(e.array(e.str), ["str"])],
       {},
       e.str,
-      $.Cardinality.Many
+      $.Cardinality.Many,
     );
   });
 
@@ -649,7 +649,7 @@ describe("functions", () => {
     const atLeastOneExists = e.assert_exists(atLeastOneSet);
     assert.deepEqual(
       atLeastOneExists.__cardinality__,
-      $.Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne,
     );
     tc.assert<
       tc.IsExact<
@@ -676,7 +676,7 @@ describe("functions", () => {
     const query = e.str_trim(e.str("test string"));
     assert.deepEqual(query.__cardinality__, $.Cardinality.One);
     tc.assert<tc.IsExact<(typeof query)["__cardinality__"], $.Cardinality.One>>(
-      true
+      true,
     );
   });
 });

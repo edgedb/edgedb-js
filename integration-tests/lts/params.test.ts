@@ -27,7 +27,7 @@ describe("params", () => {
           str: params.str,
           nums: e.array_unpack(params.numArr),
           x: e.op("true", "if", params.optBool, "else", "false"),
-        })
+        }),
     );
 
     assert.equal(
@@ -41,7 +41,7 @@ SELECT (SELECT {
   single str := __param__str,
   multi nums := std::array_unpack(__param__numArr),
   single x := ("true" IF __param__optBool ELSE "false")
-})`
+})`,
     );
 
     assert.throws(() => e.select(query).toEdgeQL());
@@ -60,7 +60,7 @@ SELECT (SELECT {
 
     assert.rejects(
       // @ts-expect-error need to pass a params object
-      query.run(client)
+      query.run(client),
     );
   });
 
@@ -74,7 +74,7 @@ SELECT (SELECT {
         namedTuple: e.tuple({ a: e.float64, b: e.array(e.bigint), c: e.str }),
         jsonTuple: e.tuple([e.json]),
         people: e.array(
-          e.tuple({ name: e.str, age: e.int64, tags: e.array(e.str) })
+          e.tuple({ name: e.str, age: e.int64, tags: e.array(e.str) }),
         ),
       },
       (params) =>
@@ -88,7 +88,7 @@ SELECT (SELECT {
           namedTupleA: params.namedTuple.a,
           jsonTuple: params.jsonTuple,
           people: params.people,
-        })
+        }),
     );
 
     type paramsType = Parameters<typeof query.run>[1];
@@ -103,7 +103,9 @@ SELECT (SELECT {
           tuple: readonly [string, number, readonly boolean[]];
           namedTuple: Readonly<{ a: number; b: readonly bigint[]; c: string }>;
           jsonTuple: readonly [unknown];
-          people: Readonly<{ name: string; age: number; tags: readonly string[] }[]>;
+          people: Readonly<
+            { name: string; age: number; tags: readonly string[] }[]
+          >;
         }
       >
     >(true);
@@ -150,13 +152,13 @@ SELECT (SELECT {
           { name: "person a", age: 23, tags: ["a", "b"] },
           { name: "person b", age: 45, tags: ["b", "c"] },
         ],
-      }
+      },
     );
   });
 
   test("native tuple type params", async () => {
     const query = e.params({ test: e.tuple([e.str, e.int64]) }, ($) =>
-      e.select($.test)
+      e.select($.test),
     );
 
     if (versionGTE(3)) {
@@ -164,14 +166,14 @@ SELECT (SELECT {
         query.toEdgeQL(),
         `WITH
   __param__test := <tuple<std::str, std::int64>>$test
-SELECT (SELECT __param__test)`
+SELECT (SELECT __param__test)`,
       );
     } else {
       assert.equal(
         query.toEdgeQL(),
         `WITH
   __param__test := <tuple<std::str, std::int64>>to_json(<str>$test)
-SELECT (SELECT __param__test)`
+SELECT (SELECT __param__test)`,
       );
     }
 
@@ -267,7 +269,7 @@ SELECT (SELECT __param__test)`
       {
         tuple: e.tuple(params),
       },
-      (p) => e.select(p)
+      (p) => e.select(p),
     );
 
     const complexResult = await complexQuery.run(client, {

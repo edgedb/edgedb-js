@@ -78,7 +78,7 @@ describe("group", () => {
             release_year,
           },
         };
-      }
+      },
     );
 
     type query = $infer<typeof query>;
@@ -143,7 +143,7 @@ describe("group", () => {
     assert.equal(result.length, 2);
     assert.equal(result[0].elements.length, 1);
     const civilWar = result.find(
-      (val) => val.key.title === data.civil_war.title
+      (val) => val.key.title === data.civil_war.title,
     );
     assert.deepEqual(civilWar, {
       ...civilWar,
@@ -151,7 +151,7 @@ describe("group", () => {
       grouping: ["title", "ry"],
     });
     const theAvengers = result.find(
-      (val) => val.key.title === data.the_avengers.title
+      (val) => val.key.title === data.the_avengers.title,
     );
     assert.deepEqual(theAvengers, {
       ...theAvengers,
@@ -207,7 +207,7 @@ SELECT __scope_0_defaultMovie_groups {
     release_year,
     single len := __scope_0_defaultMovie_groups.elements.__withVar_1
   }
-}`
+}`,
     );
 
     const result = await query.run(client);
@@ -280,7 +280,7 @@ SELECT __scope_0_defaultMovie_groups {
     const result = await query.run(client);
     assert.equal(
       query.toEdgeQL().includes(`BY (title, len), (year, rating)`),
-      true
+      true,
     );
     assert.deepEqual(result[0].grouping, ["title", "len", "year", "rating"]);
     assert.equal(result.length, 2);
@@ -320,7 +320,7 @@ SELECT __scope_0_defaultMovie_groups {
     const result = await query.run(client);
     assert.equal(
       query.toEdgeQL().includes(`BY rollup(title, len, year)`),
-      true
+      true,
     );
     assert.equal(
       result
@@ -332,7 +332,7 @@ SELECT __scope_0_defaultMovie_groups {
             (!g[2] || g[2] === "year")
           );
         }),
-      true
+      true,
     );
     assert.equal(result.length, 7);
   });
@@ -350,7 +350,7 @@ SELECT __scope_0_defaultMovie_groups {
             }),
           },
         };
-      })
+      }),
     );
   });
 

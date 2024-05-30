@@ -24,13 +24,13 @@ describe("operators", () => {
     args: any[],
     returnType: T["__element__"],
     cardinality: T["__cardinality__"],
-    edgeql?: string
+    edgeql?: string,
   ) {
     test(`${name} operator: expect ${edgeql ?? "(NO EDGEQL)"}`, async () => {
       assert.deepEqual(expr.__name__, name);
       assert.deepEqual(
         superjson.stringify(expr.__args__),
-        superjson.stringify(args.filter((arg) => arg !== undefined))
+        superjson.stringify(args.filter((arg) => arg !== undefined)),
       );
       assert.deepEqual(expr.__element__, returnType);
       assert.deepEqual(expr.__cardinality__, cardinality);
@@ -48,7 +48,7 @@ describe("operators", () => {
       [e.str("test string"), [e.int64(2), e.int64(5)]],
       e.str,
       $.Cardinality.One,
-      `"test string"[2:5]`
+      `"test string"[2:5]`,
     );
 
     checkOperatorExpr(
@@ -57,7 +57,7 @@ describe("operators", () => {
       [e.str("test string"), [e.int64(2), e.int64(5)]],
       e.str,
       $.Cardinality.One,
-      `"test string"[<std::int64>2:<std::int64>5]`
+      `"test string"[<std::int64>2:<std::int64>5]`,
     );
 
     checkOperatorExpr(
@@ -66,7 +66,7 @@ describe("operators", () => {
       [e.array([BigInt(1), BigInt(2), BigInt(3)]), [e.int64(1), e.int64(2)]],
       e.array(e.bigint),
       $.Cardinality.One,
-      `[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][1:2]`
+      `[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][1:2]`,
     );
 
     checkOperatorExpr(
@@ -75,7 +75,7 @@ describe("operators", () => {
       [e.str("test string"), e.int64(3)],
       e.str,
       $.Cardinality.One,
-      `"test string"[3]`
+      `"test string"[3]`,
     );
 
     checkOperatorExpr(
@@ -84,7 +84,7 @@ describe("operators", () => {
       [e.str("test string"), e.int64(3)],
       e.str,
       $.Cardinality.One,
-      `"test string"[<std::int64>3]`
+      `"test string"[<std::int64>3]`,
     );
 
     checkOperatorExpr(
@@ -93,7 +93,7 @@ describe("operators", () => {
       [e.array([BigInt(1), BigInt(2), BigInt(3)]), e.int64(2)],
       e.bigint,
       $.Cardinality.One,
-      `[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][2]`
+      `[<std::bigint>1n, <std::bigint>2n, <std::bigint>3n][2]`,
     );
 
     checkOperatorExpr(
@@ -102,7 +102,7 @@ describe("operators", () => {
       [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
       e.json,
       $.Cardinality.One,
-      `std::to_json("{\\\"name\\\":\\\"Bob\\\"}")["name"]`
+      `std::to_json("{\\\"name\\\":\\\"Bob\\\"}")["name"]`,
     );
 
     checkOperatorExpr(
@@ -111,7 +111,7 @@ describe("operators", () => {
       [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
       e.json,
       $.Cardinality.One,
-      `std::to_json("{\\\"name\\\":\\\"Bob\\\"}")["name"]`
+      `std::to_json("{\\\"name\\\":\\\"Bob\\\"}")["name"]`,
     );
   });
 
@@ -122,13 +122,13 @@ describe("operators", () => {
         "if",
         e.op(42, "=", e.literal(e.float32, 42)),
         "else",
-        e.str("that")
+        e.str("that"),
       ),
       "if_else",
       [e.str("this"), e.op(42, "=", e.literal(e.float32, 42)), e.str("that")],
       e.str,
       $.Cardinality.One,
-      `"this" IF (42 = <std::float32>42) ELSE "that"`
+      `"this" IF (42 = <std::float32>42) ELSE "that"`,
     );
 
     checkOperatorExpr(
@@ -137,7 +137,7 @@ describe("operators", () => {
       [e.str("this"), e.cast(e.bool, e.set()), e.str("that")],
       e.str,
       $.Cardinality.Empty,
-      `"this" IF <std::bool>{} ELSE "that"`
+      `"this" IF <std::bool>{} ELSE "that"`,
     );
 
     checkOperatorExpr(
@@ -146,7 +146,7 @@ describe("operators", () => {
       [e.str("this"), e.set(e.bool(true), e.bool(false)), e.str("that")],
       e.str,
       $.Cardinality.AtLeastOne,
-      `"this" IF { true, false } ELSE "that"`
+      `"this" IF { true, false } ELSE "that"`,
     );
 
     checkOperatorExpr(
@@ -155,7 +155,7 @@ describe("operators", () => {
         "if",
         e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
         "else",
-        e.set(e.str("that"), e.str("other"))
+        e.set(e.str("that"), e.str("other")),
       ),
       "if_else",
       [
@@ -165,7 +165,7 @@ describe("operators", () => {
       ],
       e.str,
       $.Cardinality.AtLeastOne,
-      `"this" IF (<std::int64>42 = <std::float32>42) ELSE { "that", "other" }`
+      `"this" IF (<std::int64>42 = <std::float32>42) ELSE { "that", "other" }`,
     );
 
     checkOperatorExpr(
@@ -174,7 +174,7 @@ describe("operators", () => {
         "if",
         e.op(e.literal(e.int64, 42), "=", e.literal(e.float32, 42)),
         "else",
-        e.set(e.str("that"), e.str("other"))
+        e.set(e.str("that"), e.str("other")),
       ),
       "if_else",
       [
@@ -184,7 +184,7 @@ describe("operators", () => {
       ],
       e.str,
       $.Cardinality.Many,
-      `<std::str>{} IF (<std::int64>42 = <std::float32>42) ELSE { "that", "other" }`
+      `<std::str>{} IF (<std::int64>42 = <std::float32>42) ELSE { "that", "other" }`,
     );
 
     checkOperatorExpr(
@@ -193,7 +193,7 @@ describe("operators", () => {
         "if",
         e.op(42, "=", e.literal(e.float32, 42)),
         "else",
-        e.cast(e.str, e.set())
+        e.cast(e.str, e.set()),
       ),
       "if_else",
       [
@@ -203,7 +203,7 @@ describe("operators", () => {
       ],
       e.str,
       $.Cardinality.AtMostOne,
-      `"this" IF (42 = <std::float32>42) ELSE <std::str>{}`
+      `"this" IF (42 = <std::float32>42) ELSE <std::str>{}`,
     );
 
     checkOperatorExpr(
@@ -212,7 +212,7 @@ describe("operators", () => {
       [e.int64(1), e.bool(true), e.int64(2)],
       e.int64,
       $.Cardinality.One,
-      `<std::int64>1 IF true ELSE <std::int64>2`
+      `<std::int64>1 IF true ELSE <std::int64>2`,
     );
   });
 
@@ -305,7 +305,7 @@ describe("operators", () => {
       ({ lhs, rhs, expected }) => {
         const testExpr = e.op(lhs, "??", rhs);
         assert.deepEqual(testExpr.__cardinality__, expected);
-      }
+      },
     );
   });
 

@@ -23,20 +23,20 @@ describe("paths", () => {
 
     assert.equal(
       Villain["<villains[is Hero]"].__element__.__name__,
-      "default::Hero"
+      "default::Hero",
     );
 
     // check path root cardinalities
     tc.assert<tc.IsExact<Hero["__cardinality__"], $.Cardinality.Many>>(true);
     tc.assert<tc.IsExact<HeroSingleton["__cardinality__"], $.Cardinality.One>>(
-      true
+      true,
     );
 
     // Hero.name
     assert.equal(Hero.name.__element__.__name__, "std::str");
     assert.deepEqual(Hero.name.__cardinality__, $.Cardinality.Many);
     tc.assert<tc.IsExact<Hero["name"]["__cardinality__"], $.Cardinality.Many>>(
-      true
+      true,
     );
 
     // HeroSingleton.name
@@ -52,11 +52,11 @@ describe("paths", () => {
     type AtLeastOneHero = typeof AtLeastOneHero;
     assert.deepEqual(
       AtLeastOneHero.id.__cardinality__,
-      $.Cardinality.AtLeastOne
+      $.Cardinality.AtLeastOne,
     );
     assert.deepEqual(
       AtLeastOneHero.number_of_movies.__cardinality__,
-      $.Cardinality.Many
+      $.Cardinality.Many,
     );
     tc.assert<
       tc.IsExact<
@@ -76,18 +76,18 @@ describe("paths", () => {
 
     assert.equal(
       Hero.villains.nemesis.villains.name.toEdgeQL(),
-      "DETACHED default::Hero.villains.nemesis.villains.name"
+      "DETACHED default::Hero.villains.nemesis.villains.name",
     );
     const Herotype = Hero.__type__.__type__.__type__;
     assert.equal(
       Herotype.annotations.__type__.computed_fields.toEdgeQL(),
-      "DETACHED default::Hero.__type__.__type__.__type__.annotations.__type__.computed_fields"
+      "DETACHED default::Hero.__type__.__type__.__type__.annotations.__type__.computed_fields",
     );
     assert.ok(Hero.villains.__parent__);
     assert.equal(Hero.villains.__parent__?.linkName, "villains");
     assert.equal(
       Hero.villains.__parent__?.type.__element__.__name__,
-      "default::Hero"
+      "default::Hero",
     );
   });
 
