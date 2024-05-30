@@ -14,8 +14,8 @@
     "typescript-eslint": "^8.0.0-alpha.22"
   },
   "scripts": {
-    "lint": "eslint --quiet 'packages/*/src/**/*.ts'",
-    "lint:fix": "eslint 'packages/*/src/**/*.ts' --fix",
+    "lint": "eslint --quiet",
+    "lint:fix": "eslint --fix",
     "format": "prettier --check 'packages/*/(src|test)/**/*.(mts|ts)' 'integration-tests/*/*.(mts|ts)'",
     "format:fix": "prettier --write 'packages/*/(src|test)/**/*.(mts|ts)' 'integration-tests/*/*.(mts|ts)'",
     "generate": "yarn workspace @edgedb/generate generate"
