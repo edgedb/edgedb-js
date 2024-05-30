@@ -19,7 +19,7 @@ export {
 
 export default function createNextPagesServerAuth(
   client: Client,
-  options: NextAuthOptions
+  options: NextAuthOptions,
 ) {
   return new NextPagesAuth(client, options);
 }
@@ -32,7 +32,7 @@ export class NextPagesAuth extends NextAuth {
       sessionCache.get(req) ??
       new NextAuthSession(
         this.client,
-        req.cookies[this.options.authCookieName]?.split(";")[0] ?? null
+        req.cookies[this.options.authCookieName]?.split(";")[0] ?? null,
       );
     sessionCache.set(req, session);
     return session;

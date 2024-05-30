@@ -26,7 +26,7 @@ export async function promptBoolean(prompt: string, defaultVal?: boolean) {
   const response = await promptEnum(
     prompt,
     ["y", "n"],
-    defaultVal !== undefined ? (defaultVal ? "y" : "n") : undefined
+    defaultVal !== undefined ? (defaultVal ? "y" : "n") : undefined,
   );
   return response === "y";
 }
@@ -34,12 +34,12 @@ export async function promptBoolean(prompt: string, defaultVal?: boolean) {
 async function promptEnum<Val extends string, Default extends Val>(
   question: string,
   vals: Val[],
-  defaultVal?: Default
+  defaultVal?: Default,
 ): Promise<Val> {
   let response = await input(
     `${question}[${vals.join("/")}]${
       defaultVal !== undefined ? ` (leave blank for "${defaultVal}")` : ""
-    }\n> `
+    }\n> `,
   );
   response = response.trim().toLowerCase();
 
@@ -56,7 +56,7 @@ export async function promptForPassword(username: string) {
   if (!isTTY()) {
     exitWithError(
       `Cannot use --password option in non-interactive mode. ` +
-        `To read password from stdin use the --password-from-stdin option.`
+        `To read password from stdin use the --password-from-stdin option.`,
     );
   }
 

@@ -34,7 +34,7 @@ export class LifoQueue<T> {
       new Promise((resolve: (item: T) => void, reject) => {
         this._resolvers.push(resolve);
         this._rejecters.push(reject);
-      })
+      }),
     );
   }
 
@@ -52,7 +52,7 @@ export class LifoQueue<T> {
     if (!resolve) {
       // can never happen
       throw new InternalClientError(
-        "resolve function was null or undefined when attempting to push."
+        "resolve function was null or undefined when attempting to push.",
       );
     }
     resolve(item);
@@ -71,7 +71,7 @@ export class LifoQueue<T> {
     if (!promise) {
       // can never happen
       throw new InternalClientError(
-        "promise was null or undefined when attempting to get."
+        "promise was null or undefined when attempting to get.",
       );
     }
     return promise;

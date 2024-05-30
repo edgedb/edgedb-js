@@ -4,7 +4,7 @@ export async function load({ locals }) {
   const { client } = session;
 
   const builtinUIEnabled = await client.queryRequiredSingle<boolean>(
-    `select exists ext::auth::UIConfig`
+    `select exists ext::auth::UIConfig`,
   );
 
   return {

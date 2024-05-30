@@ -45,19 +45,19 @@ export type RawInsertShape<El extends ObjectType> =
   ObjectType extends El
     ? never
     : typeutil.stripNever<
-        stripNonInsertables<stripBacklinks<El["__pointers__"]>>
-      > extends infer Shape
-    ? Shape extends ObjectTypePointers
-      ? typeutil.addQuestionMarks<{
-          [k in keyof Shape]:
-            | pointerToAssignmentExpression<Shape[k]>
-            | (pointerIsOptional<Shape[k]> extends true
-                ? undefined | null
-                : never)
-            | (Shape[k]["hasDefault"] extends true ? undefined : never);
-        }> & { [k in `@${string}`]: TypeSet | scalarLiterals }
-      : never
-    : never;
+          stripNonInsertables<stripBacklinks<El["__pointers__"]>>
+        > extends infer Shape
+      ? Shape extends ObjectTypePointers
+        ? typeutil.addQuestionMarks<{
+            [k in keyof Shape]:
+              | pointerToAssignmentExpression<Shape[k]>
+              | (pointerIsOptional<Shape[k]> extends true
+                  ? undefined | null
+                  : never)
+              | (Shape[k]["hasDefault"] extends true ? undefined : never);
+          }> & { [k in `@${string}`]: TypeSet | scalarLiterals }
+        : never
+      : never;
 
 interface UnlessConflict {
   on: TypeSet | null;
@@ -73,7 +73,7 @@ type InsertBaseExpression<Root extends TypeSet = TypeSet> = {
 };
 export type $expr_Insert<
   // Root extends $expr_PathNode = $expr_PathNode
-  El extends ObjectType = ObjectType
+  El extends ObjectType = ObjectType,
   // Conflict = UnlessConflict | null
   // Shape extends InsertShape<Root> = any
 > = Expression<{
@@ -95,7 +95,7 @@ export type $expr_Insert<
     { on: null }
   >;
   unlessConflict<Conflict extends UnlessConflict>(
-    conflictGetter: (scope: $scopify<El>) => Conflict
+    conflictGetter: (scope: $scopify<El>) => Conflict,
   ): $expr_InsertUnlessConflict<
     El,
     // Expression<{
@@ -112,7 +112,7 @@ export type $expr_Insert<
 export type $expr_InsertUnlessConflict<
   El extends ObjectType = ObjectType,
   // Root extends InsertBaseExpression = InsertBaseExpression,
-  Conflict extends UnlessConflict = UnlessConflict
+  Conflict extends UnlessConflict = UnlessConflict,
 > = Expression<{
   __kind__: ExpressionKind.InsertUnlessConflict;
   __element__: Conflict["else"] extends TypeSet
@@ -129,7 +129,7 @@ export type $expr_InsertUnlessConflict<
 
 function unlessConflict(
   this: $expr_Insert,
-  conflictGetter?: (scope: TypeSet) => UnlessConflict
+  conflictGetter?: (scope: TypeSet) => UnlessConflict,
 ) {
   const expr: any = {
     __kind__: ExpressionKind.InsertUnlessConflict,
@@ -157,7 +157,7 @@ function unlessConflict(
 }
 
 export function $insertify(
-  expr: Omit<$expr_Insert, "unlessConflict">
+  expr: Omit<$expr_Insert, "unlessConflict">,
 ): $expr_Insert {
   (expr as any).unlessConflict = unlessConflict.bind(expr as any);
   return expr as any;
@@ -166,7 +166,7 @@ export function $insertify(
 export function $normaliseInsertShape(
   root: ObjectTypeSet,
   shape: { [key: string]: any },
-  isUpdate = false
+  isUpdate = false,
 ): { [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet } } {
   const newShape: {
     [key: string]: TypeSet | { "+=": TypeSet } | { "-=": TypeSet };
@@ -175,7 +175,7 @@ export function $normaliseInsertShape(
   const _shape: [string, any][] =
     shape.__element__?.__kind__ === TypeKind.namedtuple
       ? Object.keys((shape.__element__ as NamedTupleType).__shape__).map(
-          (key) => [key, shape[key]]
+          (key) => [key, shape[key]],
         )
       : Object.entries(shape);
   for (const [key, _val] of _shape) {
@@ -200,7 +200,7 @@ export function $normaliseInsertShape(
       throw new Error(
         `Could not find property pointer for ${
           isUpdate ? "update" : "insert"
-        } shape key: '${key}'`
+        } shape key: '${key}'`,
       );
     }
 
@@ -228,13 +228,13 @@ export function $normaliseInsertShape(
     // after this guard, pointer definitely is defined
     if (isLinkProp) {
       throw new Error(
-        `Cannot assign plain data to link property '${key}'. Provide an expression instead.`
+        `Cannot assign plain data to link property '${key}'. Provide an expression instead.`,
       );
     }
     // Workaround to tell TypeScript pointer definitely is defined
     if (!pointer) {
       throw new Error(
-        "Code will never reach here, but TypeScript cannot determine"
+        "Code will never reach here, but TypeScript cannot determine",
       );
     }
 
@@ -243,7 +243,7 @@ export function $normaliseInsertShape(
       throw new Error(
         `Must provide subquery when assigning to link '${key}' in ${
           isUpdate ? "update" : "insert"
-        } query.`
+        } query.`,
       );
     }
 
@@ -257,10 +257,10 @@ export function $normaliseInsertShape(
       val === null
         ? cast(pointer.target, null)
         : isMulti && Array.isArray(val)
-        ? val.length === 0
-          ? cast(pointer.target, null)
-          : set(...val.map((v) => (literal as any)(pointer.target, v)))
-        : (literal as any)(pointer.target, val);
+          ? val.length === 0
+            ? cast(pointer.target, null)
+            : set(...val.map((v) => (literal as any)(pointer.target, v)))
+          : (literal as any)(pointer.target, val);
     newShape[key] = setModify
       ? ({ [setModify]: wrappedVal } as any)
       : wrappedVal;
@@ -270,7 +270,7 @@ export function $normaliseInsertShape(
 
 export function insert<Root extends $expr_PathNode>(
   root: Root,
-  shape: InsertShape<Root["__element__"]>
+  shape: InsertShape<Root["__element__"]>,
 ): $expr_Insert<Root["__element__"]> {
   if (typeof shape !== "object") {
     throw new Error(
@@ -279,7 +279,7 @@ export function insert<Root extends $expr_PathNode>(
           ? " Hint: Insert shape is expected to be an object, " +
             "not a function returning a shape object."
           : ""
-      }`
+      }`,
     );
   }
   const expr: any = {

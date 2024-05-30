@@ -44,7 +44,7 @@ export const validTlsSecurityValues = [
 export type TlsSecurity = (typeof validTlsSecurityValues)[number];
 
 export function isValidTlsSecurityValue(
-  candidate: unknown
+  candidate: unknown,
 ): candidate is TlsSecurity {
   return (
     typeof candidate === "string" &&
@@ -98,11 +98,11 @@ export interface ServerUtils {
 }
 
 export type ConnectArgumentsParser = (
-  opts: ConnectConfig
+  opts: ConnectConfig,
 ) => Promise<NormalizedConnectConfig>;
 
 export function getConnectArgumentsParser(
-  utils: ServerUtils | null
+  utils: ServerUtils | null,
 ): ConnectArgumentsParser {
   return async (opts: ConnectConfig) => {
     return {
@@ -188,7 +188,7 @@ export class ResolvedConnectConfig {
     param: Param,
     value: Value,
     source: string,
-    validator?: (value: NonNullable<Value>) => this[`_${Param}`]
+    validator?: (value: NonNullable<Value>) => this[`_${Param}`],
   ): boolean {
     if (this[`_${param}`] === null) {
       this[`_${param}Source`] = source;
@@ -205,7 +205,7 @@ export class ResolvedConnectConfig {
     param: Param,
     value: Value,
     source: string,
-    validator?: (value: NonNullable<Value>) => Promise<this[`_${Param}`]>
+    validator?: (value: NonNullable<Value>) => Promise<this[`_${Param}`]>,
   ): Promise<boolean> {
     if (this[`_${param}`] === null) {
       this[`_${param}Source`] = source;
@@ -273,10 +273,10 @@ export class ResolvedConnectConfig {
   setTlsCAFile(
     caFile: string | null,
     source: string,
-    readFile: (fn: string) => Promise<string>
+    readFile: (fn: string) => Promise<string>,
   ): Promise<boolean> {
     return this._setParamAsync("tlsCAData", caFile, source, (caFilePath) =>
-      readFile(caFilePath)
+      readFile(caFilePath),
     );
   }
 
@@ -291,7 +291,7 @@ export class ResolvedConnectConfig {
             `invalid 'tlsSecurity' value: '${_tlsSecurity}', ` +
               `must be one of ${validTlsSecurityValues
                 .map((val) => `'${val}'`)
-                .join(", ")}`
+                .join(", ")}`,
           );
         }
         const clientSecurity = getEnv("EDGEDB_CLIENT_SECURITY");
@@ -301,7 +301,7 @@ export class ResolvedConnectConfig {
           ) {
             throw new InterfaceError(
               `invalid EDGEDB_CLIENT_SECURITY value: '${clientSecurity}', ` +
-                `must be one of 'default', 'insecure_dev_mode' or 'strict'`
+                `must be one of 'default', 'insecure_dev_mode' or 'strict'`,
             );
           }
           if (clientSecurity === "insecure_dev_mode") {
@@ -317,26 +317,26 @@ export class ResolvedConnectConfig {
                 `'tlsSecurity' value (${_tlsSecurity}) conflicts with ` +
                   `EDGEDB_CLIENT_SECURITY value (${clientSecurity}), ` +
                   `'tlsSecurity' value cannot be lower than security level ` +
-                  `set by EDGEDB_CLIENT_SECURITY`
+                  `set by EDGEDB_CLIENT_SECURITY`,
               );
             }
             _tlsSecurity = "strict";
           }
         }
         return _tlsSecurity as TlsSecurity;
-      }
+      },
     );
   }
 
   setWaitUntilAvailable(
     duration: string | number | Duration | null,
-    source: string
+    source: string,
   ): boolean {
     return this._setParam(
       "waitUntilAvailable",
       duration,
       source,
-      parseDuration
+      parseDuration,
     );
   }
 
@@ -379,8 +379,8 @@ export class ResolvedConnectConfig {
     return this._tlsSecurity && this._tlsSecurity !== "default"
       ? this._tlsSecurity
       : this._tlsCAData !== null
-      ? "no_host_verification"
-      : "strict";
+        ? "no_host_verification"
+        : "strict";
   }
 
   get waitUntilAvailable(): number {
@@ -403,7 +403,7 @@ export class ResolvedConnectConfig {
       output.push(
         param.padEnd(19, " ") +
           (value + (isDefault ? " (default)" : "")).padEnd(42, " ") +
-          (source ?? "default")
+          (source ?? "default"),
       );
     };
 
@@ -416,25 +416,25 @@ export class ResolvedConnectConfig {
       this.password &&
         this.password.slice(0, 3).padEnd(this.password.length, "*"),
       this._password,
-      this._passwordSource
+      this._passwordSource,
     );
     outputLine(
       "tlsCAData",
       this._tlsCAData && this._tlsCAData.replace(/\r\n?|\n/, ""),
       this._tlsCAData,
-      this._tlsCADataSource
+      this._tlsCADataSource,
     );
     outputLine(
       "tlsSecurity",
       this.tlsSecurity,
       this._tlsSecurity,
-      this._tlsSecuritySource
+      this._tlsSecuritySource,
     );
     outputLine(
       "waitUntilAvailable",
       this.waitUntilAvailable,
       this._waitUntilAvailable,
-      this._waitUntilAvailableSource
+      this._waitUntilAvailableSource,
     );
 
     return output.join("\n");
@@ -474,7 +474,7 @@ export function parseDuration(duration: string | number | Duration): number {
   if (typeof duration === "number") {
     if (duration < 0) {
       throw new InterfaceError(
-        "invalid waitUntilAvailable duration, must be >= 0"
+        "invalid waitUntilAvailable duration, must be >= 0",
       );
     }
     return duration;
@@ -490,12 +490,12 @@ export function parseDuration(duration: string | number | Duration): number {
     const invalidField = checkValidEdgeDBDuration(duration);
     if (invalidField) {
       throw new InterfaceError(
-        `invalid waitUntilAvailable duration, cannot have a '${invalidField}' value`
+        `invalid waitUntilAvailable duration, cannot have a '${invalidField}' value`,
       );
     }
     if (duration.sign < 0) {
       throw new InterfaceError(
-        "invalid waitUntilAvailable duration, must be >= 0"
+        "invalid waitUntilAvailable duration, must be >= 0",
       );
     }
     return (
@@ -510,7 +510,7 @@ export function parseDuration(duration: string | number | Duration): number {
 
 async function parseConnectDsnAndArgs(
   config: ConnectConfig,
-  serverUtils: ServerUtils | null
+  serverUtils: ServerUtils | null,
 ): Promise<PartiallyNormalizedConfig> {
   const resolvedConfig = new ResolvedConnectConfig();
   let fromEnv = false;
@@ -569,7 +569,7 @@ async function parseConnectDsnAndArgs(
     },
     `Cannot have more than one of the following connection options: ` +
       `'dsn', 'instanceName', 'credentials', 'credentialsFile' or 'host'/'port'`,
-    serverUtils
+    serverUtils,
   );
 
   if (!hasCompoundOptions) {
@@ -579,7 +579,7 @@ async function parseConnectDsnAndArgs(
     if (resolvedConfig._port === null && port?.startsWith("tcp://")) {
       // EDGEDB_PORT is set by 'docker --link' so ignore and warn
       console.warn(
-        `EDGEDB_PORT in 'tcp://host:port' format, so will be ignored`
+        `EDGEDB_PORT in 'tcp://host:port' format, so will be ignored`,
       );
       port = undefined;
     }
@@ -624,7 +624,7 @@ async function parseConnectDsnAndArgs(
         `Cannot have more than one of the following connection environment variables: ` +
           `'EDGEDB_DSN', 'EDGEDB_INSTANCE', 'EDGEDB_CREDENTIALS', ` +
           `'EDGEDB_CREDENTIALS_FILE' or 'EDGEDB_HOST'`,
-        serverUtils
+        serverUtils,
       ));
   }
 
@@ -634,7 +634,7 @@ async function parseConnectDsnAndArgs(
       throw new errors.ClientConnectionError(
         "no connection options specified either by arguments to `createClient` API " +
           "or environment variables; also cannot resolve from edgedb.toml in browser " +
-          "(or edge runtime) environment"
+          "(or edge runtime) environment",
       );
     }
     const projectDir = await serverUtils?.findProjectDir();
@@ -643,7 +643,7 @@ async function parseConnectDsnAndArgs(
         "no 'edgedb.toml' found and no connection options specified" +
           " either via arguments to `createClient()` API or via environment" +
           " variables EDGEDB_HOST, EDGEDB_INSTANCE, EDGEDB_DSN, " +
-          "EDGEDB_CREDENTIALS or EDGEDB_CREDENTIALS_FILE"
+          "EDGEDB_CREDENTIALS or EDGEDB_CREDENTIALS_FILE",
       );
     }
     const stashDir = await serverUtils.findStashPath(projectDir);
@@ -673,13 +673,13 @@ async function parseConnectDsnAndArgs(
           database: `project default database`,
         },
         "",
-        serverUtils
+        serverUtils,
       );
       fromProject = true;
     } else {
       throw new errors.ClientConnectionError(
         "Found 'edgedb.toml' but the project is not initialized. " +
-          "Run `edgedb project init`."
+          "Run `edgedb project init`.",
       );
     }
   }
@@ -715,13 +715,13 @@ interface ResolveConfigOptionsConfig {
 }
 
 async function resolveConfigOptions<
-  Config extends Partial<ResolveConfigOptionsConfig>
+  Config extends Partial<ResolveConfigOptionsConfig>,
 >(
   resolvedConfig: ResolvedConnectConfig,
   config: Config,
   sources: { [key in keyof Config]: string },
   compoundParamsError: string,
-  serverUtils: ServerUtils | null
+  serverUtils: ServerUtils | null,
 ): Promise<{ hasCompoundOptions: boolean; anyOptionsUsed: boolean }> {
   let anyOptionsUsed = false;
 
@@ -729,27 +729,27 @@ async function resolveConfigOptions<
     serverUtils?.readFileUtf8 ??
     ((fn: string): Promise<string> => {
       throw new InterfaceError(
-        `cannot read file "${fn}" in browser (or edge runtime) environment`
+        `cannot read file "${fn}" in browser (or edge runtime) environment`,
       );
     });
 
   if (config.tlsCA != null && config.tlsCAFile != null) {
     throw new InterfaceError(
-      `Cannot specify both ${sources.tlsCA} and ${sources.tlsCAFile}`
+      `Cannot specify both ${sources.tlsCA} and ${sources.tlsCAFile}`,
     );
   }
 
   if (config.database != null) {
     if (config.branch != null) {
       throw new InterfaceError(
-        `${sources.database} and ${sources.branch} are mutually exclusive`
+        `${sources.database} and ${sources.branch} are mutually exclusive`,
       );
     }
     if (resolvedConfig._branch == null) {
       anyOptionsUsed =
         resolvedConfig.setDatabase(
           config.database ?? null,
-          sources.database!
+          sources.database!,
         ) || anyOptionsUsed;
     }
   }
@@ -773,7 +773,7 @@ async function resolveConfigOptions<
   anyOptionsUsed =
     resolvedConfig.setCloudProfile(
       config.cloudProfile ?? null,
-      sources.cloudProfile!
+      sources.cloudProfile!,
     ) || anyOptionsUsed;
   anyOptionsUsed =
     resolvedConfig.setTlsCAData(config.tlsCA ?? null, sources.tlsCA!) ||
@@ -782,17 +782,17 @@ async function resolveConfigOptions<
     (await resolvedConfig.setTlsCAFile(
       config.tlsCAFile ?? null,
       sources.tlsCAFile!,
-      readFile
+      readFile,
     )) || anyOptionsUsed;
   anyOptionsUsed =
     resolvedConfig.setTlsSecurity(
       config.tlsSecurity ?? null,
-      sources.tlsSecurity!
+      sources.tlsSecurity!,
     ) || anyOptionsUsed;
   anyOptionsUsed =
     resolvedConfig.setWaitUntilAvailable(
       config.waitUntilAvailable ?? null,
-      sources.waitUntilAvailable!
+      sources.waitUntilAvailable!,
     ) || anyOptionsUsed;
   resolvedConfig.addServerSettings(config.serverSettings ?? {});
 
@@ -828,9 +828,9 @@ async function resolveConfigOptions<
         config.dsn
           ? sources.dsn!
           : config.host !== undefined
-          ? sources.host!
-          : sources.port!,
-        readFile
+            ? sources.host!
+            : sources.port!,
+        readFile,
       );
     } else {
       let creds: Credentials;
@@ -845,7 +845,7 @@ async function resolveConfigOptions<
               config.credentialsFile
                 ? `read credentials file "${config.credentialsFile}"`
                 : `resolve instance name "${config.instanceName}"`
-            } in browser (or edge runtime) environment`
+            } in browser (or edge runtime) environment`,
           );
         }
         let credentialsFile = config.credentialsFile;
@@ -853,24 +853,24 @@ async function resolveConfigOptions<
           if (/^\w(-?\w)*$/.test(config.instanceName!)) {
             credentialsFile = await getCredentialsPath(
               config.instanceName!,
-              serverUtils!
+              serverUtils!,
             );
             source = sources.instanceName!;
           } else {
             if (
               !/^([A-Za-z0-9](-?[A-Za-z0-9])*)\/([A-Za-z0-9](-?[A-Za-z0-9])*)$/.test(
-                config.instanceName!
+                config.instanceName!,
               )
             ) {
               throw new InterfaceError(
-                `invalid DSN or instance name: '${config.instanceName}'`
+                `invalid DSN or instance name: '${config.instanceName}'`,
               );
             }
             await parseCloudInstanceNameIntoConfig(
               resolvedConfig,
               config.instanceName!,
               sources.instanceName!,
-              serverUtils
+              serverUtils,
             );
             return { hasCompoundOptions: true, anyOptionsUsed: true };
           }
@@ -906,7 +906,7 @@ async function parseDSNIntoConfig(
   _dsnString: string,
   config: ResolvedConnectConfig,
   source: string,
-  readFile: (fn: string) => Promise<string>
+  readFile: (fn: string) => Promise<string>,
 ): Promise<void> {
   // URL api does not support ipv6 zone ids, so extract zone id before parsing
   // https://url.spec.whatwg.org/#host-representation
@@ -920,7 +920,7 @@ async function parseDSNIntoConfig(
     dsnString =
       dsnString.slice(0, regexResult.index + regexHostname.length + 1) +
       dsnString.slice(
-        regexResult.index + regexHostname.length + regexResult[2].length + 1
+        regexResult.index + regexHostname.length + regexResult[2].length + 1,
       );
   }
 
@@ -937,7 +937,7 @@ async function parseDSNIntoConfig(
   if (parsed.protocol !== "edgedb:") {
     throw new InterfaceError(
       `invalid DSN: scheme is expected to be ` +
-        `'edgedb', got '${parsed.protocol.slice(0, -1)}'`
+        `'edgedb', got '${parsed.protocol.slice(0, -1)}'`,
     );
   }
 
@@ -945,7 +945,7 @@ async function parseDSNIntoConfig(
   for (const [key, value] of parsed.searchParams) {
     if (searchParams.has(key)) {
       throw new InterfaceError(
-        `invalid DSN: duplicate query parameter '${key}'`
+        `invalid DSN: duplicate query parameter '${key}'`,
       );
     }
     searchParams.set(key, value);
@@ -956,7 +956,7 @@ async function parseDSNIntoConfig(
     value: string | null,
     currentValue: any,
     setter: (value: string | null, source: string) => any | Promise<unknown>,
-    formatter: (val: string) => string = (val) => val
+    formatter: (val: string) => string = (val) => val,
   ): Promise<void> {
     if (
       [
@@ -970,7 +970,7 @@ async function parseDSNIntoConfig(
         `invalid DSN: more than one of ${
           value !== null ? `'${paramName}', ` : ""
         }'?${paramName}=', ` +
-          `'?${paramName}_env=' or '?${paramName}_file=' was specified ${dsnString}`
+          `'?${paramName}_env=' or '?${paramName}_file=' was specified ${dsnString}`,
       );
     }
 
@@ -983,7 +983,7 @@ async function parseDSNIntoConfig(
           param = getEnv(env, true) ?? null;
           if (param === null) {
             throw new InterfaceError(
-              `'${paramName}_env' environment variable '${env}' doesn't exist`
+              `'${paramName}_env' environment variable '${env}' doesn't exist`,
             );
           }
           paramSource += ` (${paramName}_env: ${env})`;
@@ -1029,7 +1029,7 @@ async function parseDSNIntoConfig(
   if (searchParamsContainsBranch) {
     if (searchParamsContainsDatabase) {
       throw new InterfaceError(
-        `invalid DSN: cannot specify both 'database' and 'branch'`
+        `invalid DSN: cannot specify both 'database' and 'branch'`,
       );
     }
     if (config._database === null) {
@@ -1038,7 +1038,7 @@ async function parseDSNIntoConfig(
         stripLeadingSlash(parsed.pathname),
         config._branch,
         config.setBranch,
-        stripLeadingSlash
+        stripLeadingSlash,
       );
     } else {
       searchParams.delete("branch");
@@ -1052,7 +1052,7 @@ async function parseDSNIntoConfig(
         stripLeadingSlash(parsed.pathname),
         config._database,
         config.setDatabase,
-        stripLeadingSlash
+        stripLeadingSlash,
       );
     } else {
       searchParams.delete("database");
@@ -1067,14 +1067,14 @@ async function parseDSNIntoConfig(
     "password",
     parsed.password,
     config._password,
-    config.setPassword
+    config.setPassword,
   );
 
   await handleDSNPart(
     "secret_key",
     null,
     config._secretKey,
-    config.setSecretKey
+    config.setSecretKey,
   );
 
   await handleDSNPart("tls_ca", null, config._tlsCAData, config.setTlsCAData);
@@ -1083,21 +1083,21 @@ async function parseDSNIntoConfig(
     null,
     config._tlsCAData,
     (val: string | null, _source: string) =>
-      config.setTlsCAFile(val, _source, readFile)
+      config.setTlsCAFile(val, _source, readFile),
   );
 
   await handleDSNPart(
     "tls_security",
     null,
     config._tlsSecurity,
-    config.setTlsSecurity
+    config.setTlsSecurity,
   );
 
   await handleDSNPart(
     "wait_until_available",
     null,
     config._waitUntilAvailable,
-    config.setWaitUntilAvailable
+    config.setWaitUntilAvailable,
   );
 
   const serverSettings: any = {};
@@ -1111,7 +1111,7 @@ async function parseCloudInstanceNameIntoConfig(
   config: ResolvedConnectConfig,
   cloudInstanceName: string,
   source: string,
-  serverUtils: ServerUtils | null
+  serverUtils: ServerUtils | null,
 ): Promise<void> {
   const normInstanceName = cloudInstanceName.toLowerCase();
   const [org, instanceName] = normInstanceName.split("/");
@@ -1120,7 +1120,7 @@ async function parseCloudInstanceNameIntoConfig(
     throw new InterfaceError(
       `invalid instance name: cloud instance name length cannot exceed ${
         DOMAIN_NAME_MAX_LEN - 1
-      } characters: ${cloudInstanceName}`
+      } characters: ${cloudInstanceName}`,
     );
   }
 
@@ -1129,14 +1129,14 @@ async function parseCloudInstanceNameIntoConfig(
     try {
       if (!serverUtils) {
         throw new InterfaceError(
-          `Cannot get secret key from cloud profile in browser (or edge runtime) environment`
+          `Cannot get secret key from cloud profile in browser (or edge runtime) environment`,
         );
       }
 
       const profile = config.cloudProfile;
       const profilePath = await serverUtils.searchConfigDir(
         "cloud-credentials",
-        `${profile}.json`
+        `${profile}.json`,
       );
       const fileData = await serverUtils.readFileUtf8(profilePath);
 
@@ -1144,14 +1144,14 @@ async function parseCloudInstanceNameIntoConfig(
 
       if (!secretKey) {
         throw new InterfaceError(
-          `Cloud profile '${profile}' doesn't contain a secret key`
+          `Cloud profile '${profile}' doesn't contain a secret key`,
         );
       }
 
       config.setSecretKey(secretKey, `cloud-credentials/${profile}.json`);
     } catch (e) {
       throw new InterfaceError(
-        `Cannot connect to cloud instances without a secret key: ${e}`
+        `Cannot connect to cloud instances without a secret key: ${e}`,
       );
     }
   }
@@ -1164,7 +1164,7 @@ async function parseCloudInstanceNameIntoConfig(
     const dnsZone = _jwtBase64Decode(keyParts[1])["iss"];
     if (!dnsZone) {
       throw new InterfaceError(
-        "Invalid secret key: payload does not contain 'iss' value"
+        "Invalid secret key: payload does not contain 'iss' value",
       );
     }
     const dnsBucket = (crcHqx(utf8Encoder.encode(normInstanceName), 0) % 100)
@@ -1185,7 +1185,7 @@ async function parseCloudInstanceNameIntoConfig(
 function _jwtBase64Decode(payload: string) {
   return JSON.parse(
     utf8Decoder.decode(
-      decodeB64(payload.padEnd(Math.ceil(payload.length / 4) * 4, "="))
-    )
+      decodeB64(payload.padEnd(Math.ceil(payload.length / 4) * 4, "=")),
+    ),
   );
 }

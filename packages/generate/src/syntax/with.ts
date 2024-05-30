@@ -9,7 +9,7 @@ import { $expressionify } from "./path";
 
 export type $expr_Alias<
   El extends BaseType = BaseType,
-  Card extends Cardinality = Cardinality
+  Card extends Cardinality = Cardinality,
 > = Expression<{
   __element__: El;
   __cardinality__: Card;
@@ -18,7 +18,7 @@ export type $expr_Alias<
 }>;
 
 export function alias<Expr extends Expression>(
-  expr: Expr
+  expr: Expr,
 ): $expr_Alias<Expr["__element__"], Expr["__cardinality__"]> {
   return $expressionify({
     __kind__: ExpressionKind.Alias,
@@ -37,7 +37,7 @@ export type WithableExpression =
 
 export type $expr_With<
   // Refs extends TypeSet[] = TypeSet[],
-  Expr extends WithableExpression = WithableExpression
+  Expr extends WithableExpression = WithableExpression,
 > = Expression<{
   __element__: Expr["__element__"];
   __cardinality__: Expr["__cardinality__"];
@@ -48,7 +48,7 @@ export type $expr_With<
 
 function _with<Expr extends WithableExpression>(
   refs: Expression[],
-  expr: Expr
+  expr: Expr,
 ): $expr_With<Expr> {
   return $expressionify({
     __kind__: ExpressionKind.With,

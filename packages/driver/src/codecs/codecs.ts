@@ -80,7 +80,7 @@ export const INVALID_CODEC = new NullCodec(INVALID_CODEC_ID);
 
 function registerScalarCodec(
   typename: string,
-  type: new (tid: uuid) => ICodec
+  type: new (tid: uuid) => ICodec,
 ): void {
   const id = KNOWN_TYPENAMES.get(typename);
   if (id == null) {

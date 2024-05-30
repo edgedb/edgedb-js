@@ -13,7 +13,7 @@ const AUTH_ENDPOINT = "/auth/token";
 export type HttpSCRAMAuth = (
   baseUrl: string,
   username: string,
-  password: string
+  password: string,
 ) => Promise<string>;
 
 export function getHTTPSCRAMAuth(cryptoUtils: CryptoUtils): HttpSCRAMAuth {
@@ -29,13 +29,13 @@ export function getHTTPSCRAMAuth(cryptoUtils: CryptoUtils): HttpSCRAMAuth {
   return async function HTTPSCRAMAuth(
     baseUrl: string,
     username: string,
-    password: string
+    password: string,
   ): Promise<string> {
     const authUrl = baseUrl + AUTH_ENDPOINT;
     const clientNonce = await generateNonce();
     const [clientFirst, clientFirstBare] = buildClientFirstMessage(
       clientNonce,
-      username
+      username,
     );
 
     const serverFirstRes = await fetch(authUrl, {
@@ -58,7 +58,7 @@ export function getHTTPSCRAMAuth(cryptoUtils: CryptoUtils): HttpSCRAMAuth {
     // one SCRAM-SHA-256 challenge, e.g., `SCRAM-SHA-256 sid=..., data=...`.
     if (!authenticateHeader.startsWith("SCRAM-SHA-256")) {
       throw new ProtocolError(
-        `unsupported authentication scheme: ${authenticateHeader}`
+        `unsupported authentication scheme: ${authenticateHeader}`,
       );
     }
 
@@ -74,7 +74,7 @@ export function getHTTPSCRAMAuth(cryptoUtils: CryptoUtils): HttpSCRAMAuth {
     const { sid, data: serverFirst } = parseScramAttrs(authParams);
     if (!sid || !serverFirst) {
       throw new ProtocolError(
-        `authentication challenge missing attributes: expected "sid" and "data", got '${authParams}'`
+        `authentication challenge missing attributes: expected "sid" and "data", got '${authParams}'`,
       );
     }
 
@@ -85,13 +85,13 @@ export function getHTTPSCRAMAuth(cryptoUtils: CryptoUtils): HttpSCRAMAuth {
       iterCount,
       clientFirstBare,
       serverFirst,
-      serverNonce
+      serverNonce,
     );
 
     const serverFinalRes = await fetch(authUrl, {
       headers: {
         Authorization: `SCRAM-SHA-256 sid=${sid}, data=${utf8ToB64(
-          clientFinal
+          clientFinal,
         )}`,
       },
     });
@@ -109,7 +109,7 @@ export function getHTTPSCRAMAuth(cryptoUtils: CryptoUtils): HttpSCRAMAuth {
       parseScramAttrs(authInfoHeader);
     if (!sidFinal || !serverFinal) {
       throw new ProtocolError(
-        `authentication info missing attributes: expected "sid" and "data", got '${authInfoHeader}'`
+        `authentication info missing attributes: expected "sid" and "data", got '${authInfoHeader}'`,
       );
     }
 
@@ -145,7 +145,7 @@ function parseScramAttrs(paramsStr: string): {
           .split(",")
           .map((attr) => attr.split(/=(.+)?/, 2)) // split on first '=' only; nb, `.split("=", 2)` doesn't do that
           .map(([key, val]) => [key.trim(), val.trim()])
-      : []
+      : [],
   );
 
   const sid = params.get("sid") ?? null;

@@ -5,7 +5,7 @@ import { $expressionify } from "./path";
 
 export type $expr_For<
   El extends BaseType = BaseType,
-  Card extends Cardinality = Cardinality
+  Card extends Cardinality = Cardinality,
   // IterSet extends BaseTypeSet = BaseTypeSet,
   // Expr extends BaseTypeSet = BaseTypeSet
 > = Expression<{
@@ -25,7 +25,7 @@ export type $expr_ForVar<Type extends BaseType = BaseType> = Expression<{
 
 function _for<IteratorSet extends BaseTypeSet, Expr extends BaseTypeSet>(
   set: IteratorSet,
-  expr: (variable: $expr_ForVar<IteratorSet["__element__"]>) => Expr
+  expr: (variable: $expr_ForVar<IteratorSet["__element__"]>) => Expr,
 ): $expr_For<
   Expr["__element__"],
   cardutil.multiplyCardinalities<
@@ -46,7 +46,7 @@ function _for<IteratorSet extends BaseTypeSet, Expr extends BaseTypeSet>(
     __element__: returnExpr.__element__,
     __cardinality__: cardutil.multiplyCardinalities(
       set.__cardinality__,
-      returnExpr.__cardinality__
+      returnExpr.__cardinality__,
     ),
     __iterSet__: set,
     __expr__: returnExpr,

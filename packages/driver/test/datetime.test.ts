@@ -54,7 +54,7 @@ test("datetime", () => {
 
 test("local_datetime", () => {
   const codec = new LocalDateTimeCodec(
-    KNOWN_TYPENAMES.get("cal::local_datetime")!
+    KNOWN_TYPENAMES.get("cal::local_datetime")!,
   );
 
   const tests: [string, string, string][] = [
@@ -163,10 +163,10 @@ test("local_datetime", () => {
       // @ts-ignore
       ...inputDatestring
         .match(
-          /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{3})(\d{3})(\d{3})/
+          /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{3})(\d{3})(\d{3})/,
         )!
         .slice(1)
-        .map((n) => parseInt(n, 10))
+        .map((n) => parseInt(n, 10)),
     );
     const buf = new WriteBuffer();
     codec.encode(buf, localDatetime);
@@ -200,7 +200,7 @@ test("local_time", () => {
       ...datestring
         .match(/(\d{2}):(\d{2}):(\d{2}).(\d{3})(\d{3})(\d{3})/)!
         .slice(1)
-        .map((n) => parseInt(n, 10))
+        .map((n) => parseInt(n, 10)),
     );
     const buf = new WriteBuffer();
     codec.encode(buf, localDatetime);

@@ -99,7 +99,7 @@ export class RawConnection extends BaseRawConnection {
   protected constructor(
     sock: net.Socket,
     config: NormalizedConnectConfig,
-    registry: CodecsRegistry
+    registry: CodecsRegistry,
   ) {
     super(registry);
 
@@ -134,7 +134,7 @@ export class RawConnection extends BaseRawConnection {
     }
 
     const newErr = new errors.ClientConnectionClosedError(
-      `the connection has been aborted`
+      `the connection has been aborted`,
     );
 
     if (!this.connWaiter.done || this.messageWaiter) {
@@ -163,7 +163,7 @@ export class RawConnection extends BaseRawConnection {
   protected _onError(err: Error): void {
     const newErr = new errors.ClientConnectionClosedError(
       `network error: ${err}`,
-      { cause: err }
+      { cause: err },
     );
 
     try {
@@ -220,7 +220,7 @@ export class RawConnection extends BaseRawConnection {
   /** @internal */
   private static newSock(
     addr: string | [string, number],
-    options?: tls.ConnectionOptions
+    options?: tls.ConnectionOptions,
   ): net.Socket {
     if (typeof addr === "string") {
       // unix socket
@@ -246,7 +246,7 @@ export class RawConnection extends BaseRawConnection {
   async close(): Promise<void> {
     if (this.sock && this.connected) {
       this.sock.write(
-        new WriteMessageBuffer().beginMessage(chars.$X).endMessage().unwrap()
+        new WriteMessageBuffer().beginMessage(chars.$X).endMessage().unwrap(),
       );
     }
     return await super.close();
@@ -256,11 +256,11 @@ export class RawConnection extends BaseRawConnection {
   static async connectWithTimeout(
     config: NormalizedConnectConfig,
     registry: CodecsRegistry,
-    useTls = true
+    useTls = true,
   ): Promise<RawConnection> {
     const sock = this.newSock(
       config.connectionParams.address,
-      useTls ? getTlsOptions(config.connectionParams) : undefined
+      useTls ? getTlsOptions(config.connectionParams) : undefined,
     );
     const conn = new this(sock, config, registry);
     const connPromise = conn.connect();
@@ -273,8 +273,8 @@ export class RawConnection extends BaseRawConnection {
           timeoutHappened = true;
           conn.sock.destroy(
             new errors.ClientConnectionTimeoutError(
-              `connection timed out (${config.connectTimeout}ms)`
-            )
+              `connection timed out (${config.connectTimeout}ms)`,
+            ),
           );
         }
       }, config.connectTimeout);
@@ -290,7 +290,7 @@ export class RawConnection extends BaseRawConnection {
           being actually connected.  See the `ConnectionImpl._onClose` method.
         */
         throw new errors.ClientConnectionTimeoutError(
-          `connection timed out (${config.connectTimeout}ms)`
+          `connection timed out (${config.connectTimeout}ms)`,
         );
       }
       if (e instanceof errors.EdgeDBError) {
@@ -313,7 +313,7 @@ export class RawConnection extends BaseRawConnection {
               `${e.message}\n` +
                 `Attempted to connect using the following credentials:\n` +
                 `${config.connectionParams.explainConfig()}\n`,
-              { cause: e }
+              { cause: e },
             );
             break;
           case "ECONNREFUSED":
@@ -325,7 +325,7 @@ export class RawConnection extends BaseRawConnection {
               `${e.message}\n` +
                 `Attempted to connect using the following credentials:\n` +
                 `${config.connectionParams.explainConfig()}\n`,
-              { cause: e }
+              { cause: e },
             );
             break;
           default:
@@ -333,7 +333,7 @@ export class RawConnection extends BaseRawConnection {
               `${e.message}\n` +
                 `Attempted to connect using the following credentials:\n` +
                 `${config.connectionParams.explainConfig()}\n`,
-              { cause: e }
+              { cause: e },
             );
             break;
         }
@@ -353,7 +353,7 @@ export class RawConnection extends BaseRawConnection {
     if (this.sock instanceof tls.TLSSocket) {
       if (this.sock.alpnProtocol !== "edgedb-binary") {
         throw new errors.ClientConnectionFailedError(
-          "The server doesn't support the edgedb-binary protocol."
+          "The server doesn't support the edgedb-binary protocol.",
         );
       }
     }
@@ -406,14 +406,14 @@ export class RawConnection extends BaseRawConnection {
           ) {
             throw new errors.UnsupportedProtocolVersionError(
               `the server requested an unsupported version of ` +
-                `the protocol ${hi}.${lo}`
+                `the protocol ${hi}.${lo}`,
             );
           }
 
           this.protocolVersion = [hi, lo];
           this.isLegacyProtocol = !versionGreaterThanOrEqual(
             this.protocolVersion,
-            [1, 0]
+            [1, 0],
           );
           break;
         }
@@ -428,7 +428,7 @@ export class RawConnection extends BaseRawConnection {
           } else {
             throw new errors.ProtocolError(
               `unsupported authentication method requested by the ` +
-                `server: ${status}`
+                `server: ${status}`,
             );
           }
 
@@ -461,7 +461,7 @@ export class RawConnection extends BaseRawConnection {
           ) {
             const [major, minor] = this.protocolVersion;
             throw new errors.ProtocolError(
-              `the protocol version requires TLS: ${major}.${minor}`
+              `the protocol version requires TLS: ${major}.${minor}`,
             );
           }
 
@@ -479,7 +479,7 @@ export class RawConnection extends BaseRawConnection {
     const numMethods = this.buffer.readInt32();
     if (numMethods <= 0) {
       throw new errors.ProtocolError(
-        "the server requested SASL authentication but did not offer any methods"
+        "the server requested SASL authentication but did not offer any methods",
       );
     }
 
@@ -498,14 +498,14 @@ export class RawConnection extends BaseRawConnection {
     if (!foundScram256) {
       throw new errors.ProtocolError(
         `the server offered the following SASL authentication ` +
-          `methods: ${methods.join(", ")}, neither are supported.`
+          `methods: ${methods.join(", ")}, neither are supported.`,
       );
     }
 
     const clientNonce = await scram.generateNonce();
     const [clientFirst, clientFirstBare] = scram.buildClientFirstMessage(
       clientNonce,
-      this.config.connectionParams.user
+      this.config.connectionParams.user,
     );
 
     const wb = new WriteMessageBuffer();
@@ -519,7 +519,7 @@ export class RawConnection extends BaseRawConnection {
     let status = this.buffer.readInt32();
     if (status !== AuthenticationStatuses.AUTH_SASL_CONTINUE) {
       throw new errors.ProtocolError(
-        `expected SASLContinue from the server, received ${status}`
+        `expected SASLContinue from the server, received ${status}`,
       );
     }
 
@@ -536,7 +536,7 @@ export class RawConnection extends BaseRawConnection {
         itercount,
         clientFirstBare,
         serverFirst,
-        serverNonce
+        serverNonce,
       );
 
     wb.reset().beginMessage(chars.$r).writeString(clientFinal).endMessage();
@@ -546,7 +546,7 @@ export class RawConnection extends BaseRawConnection {
     status = this.buffer.readInt32();
     if (status !== AuthenticationStatuses.AUTH_SASL_FINAL) {
       throw new errors.ProtocolError(
-        `expected SASLFinal from the server, received ${status}`
+        `expected SASLFinal from the server, received ${status}`,
       );
     }
 
@@ -562,7 +562,7 @@ export class RawConnection extends BaseRawConnection {
 
   private async _ensureMessage(
     expectedMtype: char,
-    err: string
+    err: string,
   ): Promise<void> {
     if (!this.buffer.takeMessage()) {
       await this._waitForMessage();
@@ -580,7 +580,7 @@ export class RawConnection extends BaseRawConnection {
 
       default: {
         throw new errors.UnexpectedMessageError(
-          `expected ${err} from the server, received ${chars.chr(mtype)}`
+          `expected ${err} from the server, received ${chars.chr(mtype)}`,
         );
       }
     }

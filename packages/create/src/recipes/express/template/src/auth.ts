@@ -13,7 +13,7 @@ export const auth = createExpressAuth(client, {
 export const requireAuth = async (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   if (!(await req.session?.isSignedIn())) {
     res.redirect("/signin");
@@ -31,7 +31,7 @@ export const signoutRoute = Router().get(
   auth.signout,
   async (_: AuthRequest, res: Response) => {
     res.redirect("/");
-  }
+  },
 );
 
 /***************

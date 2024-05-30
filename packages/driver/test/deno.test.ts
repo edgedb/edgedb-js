@@ -46,7 +46,7 @@ test("run deno test", async () => {
           reject(error);
         }
         resolve();
-      }
+      },
     );
   });
 });
@@ -67,7 +67,7 @@ test("deno check", async () => {
           reject(error);
         }
         resolve();
-      }
+      },
     );
   });
 });

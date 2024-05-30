@@ -24,7 +24,7 @@ type QueryType = {
 
 export async function analyzeQuery(
   client: Client,
-  query: string
+  query: string,
 ): Promise<QueryType> {
   const { cardinality, in: inCodec, out: outCodec } = await client.parse(query);
 
@@ -53,7 +53,7 @@ type CodecLike = ICodec | ScalarCodec;
 
 export type CodecGenerator<Codec extends CodecLike = CodecLike> = (
   codec: Codec,
-  context: CodecGeneratorContext
+  context: CodecGeneratorContext,
 ) => string;
 
 type CodecGeneratorMap = ReadonlyMap<AbstractClass<CodecLike>, CodecGenerator>;
@@ -78,7 +78,7 @@ export type CodecGenerationOptions = Partial<
 export const generateTSTypeFromCodec = (
   codec: ICodec,
   cardinality: Cardinality = Cardinality.One,
-  options: CodecGenerationOptions = {}
+  options: CodecGenerationOptions = {},
 ) => {
   const optionsWithDefaults = {
     indent: "",
@@ -104,7 +104,7 @@ export const generateTSTypeFromCodec = (
   };
   const type = context.applyCardinality(
     context.walk(codec, context),
-    cardinality
+    cardinality,
   );
   return {
     type,
@@ -115,7 +115,7 @@ export const generateTSTypeFromCodec = (
 /** A helper function to define a codec generator tuple. */
 const genDef = <Codec extends CodecLike>(
   codecType: AbstractClass<Codec>,
-  generator: CodecGenerator<Codec>
+  generator: CodecGenerator<Codec>,
 ) =>
   [codecType as AbstractClass<CodecLike>, generator as CodecGenerator] as const;
 export { genDef as defineCodecGeneratorTuple };
@@ -157,7 +157,7 @@ export const defaultCodecGenerators: CodecGeneratorMap = new Map([
     return ctx.readonly ? `(readonly ${tuple})` : tuple;
   }),
   genDef(ArrayCodec, (codec, ctx) =>
-    ctx.applyCardinality(ctx.walk(codec.getSubcodecs()[0]), Cardinality.Many)
+    ctx.applyCardinality(ctx.walk(codec.getSubcodecs()[0]), Cardinality.Many),
   ),
   genDef(RangeCodec, (codec, ctx) => {
     const subCodec = codec.getSubcodecs()[0];
@@ -179,7 +179,7 @@ export const defaultCodecGenerators: CodecGeneratorMap = new Map([
 
 export const generateTsObject = (
   fields: Parameters<typeof generateTsObjectField>[0][],
-  ctx: CodecGeneratorContext
+  ctx: CodecGeneratorContext,
 ) => {
   const properties = fields.map((field) => generateTsObjectField(field, ctx));
   return `{\n${properties.join("\n")}\n${ctx.indent}}`;
@@ -187,14 +187,14 @@ export const generateTsObject = (
 
 export const generateTsObjectField = (
   field: { name: string; cardinality: Cardinality; codec: ICodec },
-  ctx: CodecGeneratorContext
+  ctx: CodecGeneratorContext,
 ) => {
   const codec = unwrapSetCodec(field.codec, field.cardinality);
 
   const name = JSON.stringify(field.name);
   const value = ctx.applyCardinality(
     ctx.walk(codec, { ...ctx, indent: ctx.indent + "  " }),
-    field.cardinality
+    field.cardinality,
   );
   const optional =
     ctx.optionalNulls && field.cardinality === Cardinality.AtMostOne;

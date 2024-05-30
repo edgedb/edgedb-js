@@ -82,7 +82,7 @@ export class CodecsRegistry {
     if (int64_bigint) {
       this.customScalarCodecs.set(
         INT64_TYPEID,
-        new numbers.Int64BigintCodec(INT64_TYPEID)
+        new numbers.Int64BigintCodec(INT64_TYPEID),
       );
     } else {
       this.customScalarCodecs.delete(INT64_TYPEID);
@@ -91,7 +91,7 @@ export class CodecsRegistry {
     if (datetime_localDatetime) {
       this.customScalarCodecs.set(
         DATETIME_TYPEID,
-        new datecodecs.LocalDateTimeCodec(DATETIME_TYPEID)
+        new datecodecs.LocalDateTimeCodec(DATETIME_TYPEID),
       );
     } else {
       this.customScalarCodecs.delete(DATETIME_TYPEID);
@@ -100,7 +100,7 @@ export class CodecsRegistry {
     if (json_string) {
       this.customScalarCodecs.set(
         JSON_TYPEID,
-        new JSONStringCodec(JSON_TYPEID)
+        new JSONStringCodec(JSON_TYPEID),
       );
     } else {
       this.customScalarCodecs.delete(JSON_TYPEID);
@@ -157,7 +157,7 @@ export class CodecsRegistry {
   private _buildCodec(
     frb: ReadBuffer,
     cl: ICodec[],
-    protocolVersion: ProtocolVersion
+    protocolVersion: ProtocolVersion,
   ): ICodec | null {
     const t = frb.readUInt8();
     const tid = frb.readUUID();
@@ -224,7 +224,7 @@ export class CodecsRegistry {
           const els = frb.readUInt16();
           if (els !== 1) {
             throw new ProtocolError(
-              "cannot handle arrays with more than one dimension"
+              "cannot handle arrays with more than one dimension",
             );
           }
           frb.discard(4);
@@ -256,7 +256,7 @@ export class CodecsRegistry {
             return null;
           } else {
             throw new InternalClientError(
-              `no codec implementation for EdgeDB data class ${t}`
+              `no codec implementation for EdgeDB data class ${t}`,
             );
           }
         }
@@ -276,17 +276,17 @@ export class CodecsRegistry {
         if (!res) {
           if (KNOWN_TYPES.has(tid)) {
             throw new InternalClientError(
-              `no JS codec for ${KNOWN_TYPES.get(tid)}`
+              `no JS codec for ${KNOWN_TYPES.get(tid)}`,
             );
           }
 
           throw new InternalClientError(
-            `no JS codec for the type with ID ${tid}`
+            `no JS codec for the type with ID ${tid}`,
           );
         }
         if (!(res instanceof ScalarCodec)) {
           throw new ProtocolError(
-            "could not build scalar codec: base scalar is a non-scalar codec"
+            "could not build scalar codec: base scalar is a non-scalar codec",
           );
         }
         break;
@@ -317,7 +317,7 @@ export class CodecsRegistry {
           const subCodec = cl[pos];
           if (subCodec == null) {
             throw new ProtocolError(
-              "could not build object codec: missing subcodec"
+              "could not build object codec: missing subcodec",
             );
           }
 
@@ -339,7 +339,7 @@ export class CodecsRegistry {
         const subCodec = cl[pos];
         if (subCodec == null) {
           throw new ProtocolError(
-            "could not build set codec: missing subcodec"
+            "could not build set codec: missing subcodec",
           );
         }
         res = new SetCodec(tid, subCodec);
@@ -351,12 +351,12 @@ export class CodecsRegistry {
         res = cl[pos];
         if (res == null) {
           throw new ProtocolError(
-            "could not build scalar codec: missing a codec for base scalar"
+            "could not build scalar codec: missing a codec for base scalar",
           );
         }
         if (!(res instanceof ScalarCodec)) {
           throw new ProtocolError(
-            "could not build scalar codec: base scalar has a non-scalar codec"
+            "could not build scalar codec: base scalar has a non-scalar codec",
           );
         }
         res = res.derive(tid) as ICodec;
@@ -368,14 +368,14 @@ export class CodecsRegistry {
         const els = frb.readUInt16();
         if (els !== 1) {
           throw new ProtocolError(
-            "cannot handle arrays with more than one dimension"
+            "cannot handle arrays with more than one dimension",
           );
         }
         const dimLen = frb.readInt32();
         const subCodec = cl[pos];
         if (subCodec == null) {
           throw new ProtocolError(
-            "could not build array codec: missing subcodec"
+            "could not build array codec: missing subcodec",
           );
         }
         res = new ArrayCodec(tid, subCodec, dimLen);
@@ -393,7 +393,7 @@ export class CodecsRegistry {
             const subCodec = cl[pos];
             if (subCodec == null) {
               throw new ProtocolError(
-                "could not build tuple codec: missing subcodec"
+                "could not build tuple codec: missing subcodec",
               );
             }
             codecs[i] = subCodec;
@@ -414,7 +414,7 @@ export class CodecsRegistry {
           const subCodec = cl[pos];
           if (subCodec == null) {
             throw new ProtocolError(
-              "could not build namedtuple codec: missing subcodec"
+              "could not build namedtuple codec: missing subcodec",
             );
           }
           codecs[i] = subCodec;
@@ -442,7 +442,7 @@ export class CodecsRegistry {
         const subCodec = cl[pos];
         if (subCodec == null) {
           throw new ProtocolError(
-            "could not build range codec: missing subcodec"
+            "could not build range codec: missing subcodec",
           );
         }
         res = new RangeCodec(tid, subCodec);
@@ -454,7 +454,7 @@ export class CodecsRegistry {
         const subCodec = cl[pos];
         if (subCodec == null) {
           throw new ProtocolError(
-            "could not build range codec: missing subcodec"
+            "could not build range codec: missing subcodec",
           );
         }
         res = new MultiRangeCodec(tid, subCodec);
@@ -465,11 +465,11 @@ export class CodecsRegistry {
     if (res == null) {
       if (KNOWN_TYPES.has(tid)) {
         throw new InternalClientError(
-          `could not build a codec for ${KNOWN_TYPES.get(tid)} type`
+          `could not build a codec for ${KNOWN_TYPES.get(tid)} type`,
         );
       } else {
         throw new InternalClientError(
-          `could not build a codec for ${tid} type`
+          `could not build a codec for ${tid} type`,
         );
       }
     }

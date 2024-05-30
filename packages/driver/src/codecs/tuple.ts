@@ -48,7 +48,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
       throw new InvalidArgumentError(
         `expected ${codecsLen} tuple item${codecsLen === 1 ? "" : "s"}, got ${
           object.length
-        }`
+        }`,
       );
     }
 
@@ -65,7 +65,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
           elemData.writeInt32(-1);
         } else {
           throw new MissingArgumentError(
-            `element at index ${i} in tuple cannot be 'null'`
+            `element at index ${i} in tuple cannot be 'null'`,
           );
         }
       } else {
@@ -74,7 +74,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
         } catch (e) {
           if (e instanceof QueryArgumentError) {
             throw new InvalidArgumentError(
-              `invalid element at index ${i} in tuple: ${e.message}`
+              `invalid element at index ${i} in tuple: ${e.message}`,
             );
           } else {
             throw e;
@@ -100,7 +100,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
       throw new InvalidArgumentError(
         `expected ${codecsLen} argument${codecsLen === 1 ? "" : "s"}, got ${
           args.length
-        }`
+        }`,
       );
     }
 
@@ -115,7 +115,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     if (els !== subCodecs.length) {
       throw new ProtocolError(
         `cannot decode Tuple: expected ` +
-          `${subCodecs.length} elements, got ${els}`
+          `${subCodecs.length} elements, got ${els}`,
       );
     }
 
@@ -154,12 +154,12 @@ export class EmptyTupleCodec extends Codec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!Array.isArray(object)) {
       throw new InvalidArgumentError(
-        "cannot encode empty Tuple: expected an array"
+        "cannot encode empty Tuple: expected an array",
       );
     }
     if (object.length) {
       throw new InvalidArgumentError(
-        `cannot encode empty Tuple: expected 0 elements got ${object.length}`
+        `cannot encode empty Tuple: expected 0 elements got ${object.length}`,
       );
     }
     buf.writeInt32(4);
@@ -170,7 +170,7 @@ export class EmptyTupleCodec extends Codec implements ICodec {
     const els = buf.readInt32();
     if (els !== 0) {
       throw new ProtocolError(
-        `cannot decode empty Tuple: expected 0 elements, received ${els}`
+        `cannot decode empty Tuple: expected 0 elements, received ${els}`,
       );
     }
     return [];

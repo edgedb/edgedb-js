@@ -30,7 +30,7 @@ export type $expr_Literal<Type extends BaseType = BaseType> = Expression<{
 export function literal<
   T extends BaseType,
   TsType extends BaseTypeToTsType<T> = BaseTypeToTsType<T>,
-  ExprType extends $expr_Literal<T> = $expr_Literal<T>
+  ExprType extends $expr_Literal<T> = $expr_Literal<T>,
 >(type: T, value: TsType): ExprType {
   return $expressionify({
     __element__: type,
@@ -50,7 +50,7 @@ export function $getType(id: string): (val: any) => $expr_Literal<ScalarType> {
 }
 
 export function $getTypeByName(
-  name: string
+  name: string,
 ): (val: any) => $expr_Literal<ScalarType> {
   return makeType(spec, $nameMapping.get(name)!, literal) as any;
 }

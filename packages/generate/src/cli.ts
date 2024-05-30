@@ -46,13 +46,13 @@ const run = async () => {
   }
   if (!generator || generator[0] === "-") {
     console.error(
-      `Error: No generator specified.\n  \`npx @edgedb/generate <generator>\`${availableGeneratorsHelp}`
+      `Error: No generator specified.\n  \`npx @edgedb/generate <generator>\`${availableGeneratorsHelp}`,
     );
     adapter.exit();
   }
   if (!Object.values(Generator).includes(generator)) {
     console.error(
-      `Error: Invalid generator "${generator}".${availableGeneratorsHelp}`
+      `Error: Invalid generator "${generator}".${availableGeneratorsHelp}`,
     );
     adapter.exit();
   }
@@ -148,7 +148,7 @@ const run = async () => {
       case "--password":
         if (options.passwordFromStdin === true) {
           exitWithError(
-            `Cannot use both --password and --password-from-stdin options`
+            `Cannot use both --password and --password-from-stdin options`,
           );
         }
         options.promptPassword = true;
@@ -156,7 +156,7 @@ const run = async () => {
       case "--password-from-stdin":
         if (options.promptPassword === true) {
           exitWithError(
-            `Cannot use both --password and --password-from-stdin options`
+            `Cannot use both --password and --password-from-stdin options`,
           );
         }
         options.passwordFromStdin = true;
@@ -170,7 +170,7 @@ const run = async () => {
           exitWithError(
             `Invalid value for --tls-security. Must be one of: ${validTlsSecurityValues
               .map((x) => `"${x}"`)
-              .join(" | ")}`
+              .join(" | ")}`,
           );
         }
         connectionConfig.tlsSecurity = tlsSec;
@@ -182,7 +182,7 @@ const run = async () => {
       case "--target": {
         if (generator === Generator.Interfaces) {
           exitWithError(
-            `--target is not supported for generator "${generator}"`
+            `--target is not supported for generator "${generator}"`,
           );
         }
         const target = getVal();
@@ -190,7 +190,7 @@ const run = async () => {
           exitWithError(
             `Invalid target "${
               target ?? ""
-            }", expected "deno", "mts", "ts", "esm" or "cjs"`
+            }", expected "deno", "mts", "ts", "esm" or "cjs"`,
           );
         }
         options.target = target as Target;
@@ -204,7 +204,7 @@ const run = async () => {
         ) {
           exitWithError(
             `--output-dir is not supported for generator "${generator}"` +
-              `, consider using the --file option instead`
+              `, consider using the --file option instead`,
           );
         }
         options.out = getVal();
@@ -221,7 +221,7 @@ const run = async () => {
         } else {
           exitWithError(
             `Flag --file not supported for generator "${generator}"` +
-              `, consider using the --output-dir option instead`
+              `, consider using the --output-dir option instead`,
           );
         }
 
@@ -229,7 +229,7 @@ const run = async () => {
       case "--watch":
         options.watch = true;
         exitWithError(
-          `Watch mode is not supported for generator "${generator}"`
+          `Watch mode is not supported for generator "${generator}"`,
         );
         break;
       case "--force-overwrite":
@@ -268,7 +268,7 @@ const run = async () => {
     if (!projectRoot) {
       throw new Error(
         `Failed to detect project root.
-Run this command inside an EdgeDB project directory or specify the desired target language with \`--target\``
+Run this command inside an EdgeDB project directory or specify the desired target language with \`--target\``,
       );
     }
 
@@ -294,7 +294,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
       console.log(
         `Detected ${
           isDenoRuntime ? "Deno runtime" : "deno.json"
-        }, generating TypeScript files with Deno-style imports.`
+        }, generating TypeScript files with Deno-style imports.`,
       );
     } else if (tsConfigExists) {
       const tsConfig = tsConfigExists
@@ -307,7 +307,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
       if (supportsESM && packageJson?.type === "module") {
         options.target = "mts";
         console.log(
-          `Detected tsconfig.json with ES module support, generating .mts files with ESM imports.`
+          `Detected tsconfig.json with ES module support, generating .mts files with ESM imports.`,
         );
       } else {
         options.target = "ts";
@@ -317,11 +317,11 @@ Run this command inside an EdgeDB project directory or specify the desired targe
       if (packageJson?.type === "module") {
         options.target = "esm";
         console.log(
-          `Detected "type": "module" in package.json, generating .js files with ES module syntax.`
+          `Detected "type": "module" in package.json, generating .js files with ES module syntax.`,
         );
       } else {
         console.log(
-          `Detected package.json. Generating .js files with CommonJS module syntax.`
+          `Detected package.json. Generating .js files with CommonJS module syntax.`,
         );
         options.target = "cjs";
       }

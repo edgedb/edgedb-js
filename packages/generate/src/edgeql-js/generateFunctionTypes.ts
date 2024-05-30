@@ -46,13 +46,13 @@ export const generateFunctionTypes = ({
       code.writeln([r`__name__: ${quote(funcName)},`]);
       code.writeln([r`__args__: positionalArgs,`]);
       code.writeln([r`__namedargs__: namedArgs,`]);
-    }
+    },
   );
 };
 
 export function allowsLiterals(
   type: $.introspect.Type,
-  anytypes: AnytypeDef | null
+  anytypes: AnytypeDef | null,
 ): boolean {
   return (
     (type.name === "anytype" && anytypes?.kind === "noncastable") ||
@@ -84,13 +84,13 @@ export function generateFuncopTypes<F extends FuncopDef>(
     def: F,
     args: CodeFragment[],
     namedArgs: CodeFragment[],
-    returnType: CodeFragment[]
+    returnType: CodeFragment[],
   ) => void,
   implReturnGen: (
     code: CodeBuilder,
     funcopName: string,
-    funcopDefs: F[]
-  ) => void
+    funcopDefs: F[],
+  ) => void,
 ) {
   const typeSpecificities = getTypesSpecificity(types, casts);
   const implicitCastableRootTypes = getImplicitCastableRootTypes(casts);
@@ -116,7 +116,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
       sortFuncopOverloads<F>(_funcDefs, typeSpecificities),
       types,
       casts,
-      implicitCastableRootTypes
+      implicitCastableRootTypes,
     );
 
     const overloadsBuf = new CodeBuffer();
@@ -131,12 +131,12 @@ export function generateFuncopTypes<F extends FuncopDef>(
         !hasParams ||
         params.positional.length === 0 ||
         params.named.some(
-          (param) => !(param.typemod === "OptionalType" || param.hasDefault)
+          (param) => !(param.typemod === "OptionalType" || param.hasDefault),
         )
           ? [true]
           : params.named.length > 0
-          ? [true, false]
-          : [false];
+            ? [true, false]
+            : [false];
 
       for (const hasNamedParams of namedParamsOverloads) {
         if (funcDef.description) {
@@ -182,7 +182,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
         function getParamAnytype(
           paramTypeName: string,
           paramType: $.introspect.Type,
-          optional: boolean
+          optional: boolean,
         ) {
           if (!anytypes) return undefined;
           if (anytypes.kind === "castable") {
@@ -194,7 +194,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
               anytypeParams.push(
                 optional
                   ? `${paramTypeName} extends $.TypeSet ? ${paramTypeName}${path} : undefined`
-                  : `${paramTypeName}${path}`
+                  : `${paramTypeName}${path}`,
               );
             }
             return anytypes.type;
@@ -229,7 +229,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
                       const anytype = getParamAnytype(
                         param.typeName,
                         param.type,
-                        param.typemod === "OptionalType" || !!param.hasDefault
+                        param.typemod === "OptionalType" || !!param.hasDefault,
                       );
 
                       const paramType = getStringRepresentation(param.type, {
@@ -263,7 +263,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
                   param.typeName,
                   param.type,
                   optionalUndefined &&
-                    (param.typemod === "OptionalType" || !!param.hasDefault)
+                    (param.typemod === "OptionalType" || !!param.hasDefault),
                 );
 
                 const paramTypeStr = getStringRepresentation(param.type, {
@@ -345,7 +345,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
             {
               types,
               anytype: returnAnytype,
-            }
+            },
           );
 
           const positionalParams = params.positional
@@ -353,7 +353,7 @@ export function generateFuncopTypes<F extends FuncopDef>(
               (param) =>
                 `${param.kind === "VariadicParam" ? "..." : ""}${
                   param.typeName
-                }`
+                }`,
             )
             .join(", ");
 
@@ -379,8 +379,8 @@ export function generateFuncopTypes<F extends FuncopDef>(
               funcDef.return_typemod,
               hasNamedParams,
               anytypes,
-              funcDef.preserves_optionality
-            )}`
+              funcDef.preserves_optionality,
+            )}`,
           );
         });
 
@@ -457,7 +457,7 @@ export function generateFuncopDef(funcopDef: FuncopDefOverload<FuncopDef>) {
   return `{${
     funcopDef.kind ? `kind: ${quote(funcopDef.kind)}, ` : ""
   }args: [${argsDef.join(", ")}], ${namedArgsDef}returnTypeId: ${quote(
-    funcopDef.return_type.id
+    funcopDef.return_type.id,
   )}${
     funcopDef.return_typemod === "SingletonType"
       ? ""
@@ -484,7 +484,7 @@ export function generateReturnCardinality(
   returnTypemod: $.introspect.FuncopTypemod,
   hasNamedParams: boolean,
   anytypes: AnytypeDef | null,
-  preservesOptionality = false
+  preservesOptionality = false,
 ) {
   if (
     returnTypemod === "SetOfType" &&
@@ -560,8 +560,8 @@ export function generateReturnCardinality(
       param.typemod === "OptionalType" || param.hasDefault
         ? "$.cardutil.optionalParamCardinality"
         : param.kind === "VariadicParam"
-        ? "$.cardutil.paramArrayCardinality"
-        : "$.cardutil.paramCardinality";
+          ? "$.cardutil.paramArrayCardinality"
+          : "$.cardutil.paramCardinality";
 
     return `${prefix}<${param.genTypeName}>`;
   });
@@ -573,7 +573,7 @@ export function generateReturnCardinality(
           .reduce(
             (cards, card) =>
               `$.cardutil.multiplyCardinalities<${cards}, ${card}>`,
-            paramCardinalities[0]
+            paramCardinalities[0],
           )
       : paramCardinalities[0]
     : "$.Cardinality.One";

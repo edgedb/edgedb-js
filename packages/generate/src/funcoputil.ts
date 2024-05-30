@@ -24,7 +24,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
   overloads: F[],
   types: $.introspect.Types,
   casts: $.introspect.Casts,
-  implicitCastableRootTypes: string[]
+  implicitCastableRootTypes: string[],
 ): FuncopDefOverload<F>[] {
   return $.util.flatMap(overloads, (funcDef, overloadIndex) => {
     const overload: FuncopDefOverload<F> = {
@@ -41,7 +41,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
       ...overload.params.named,
     ];
     const anypointParams = paramsList.filter((param) =>
-      param.type.name.includes("anypoint")
+      param.type.name.includes("anypoint"),
     );
     if (anypointParams.length) {
       return [
@@ -58,7 +58,7 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
       ];
     }
     const anyobjectParams = paramsList.filter((param) =>
-      param.type.name.includes("anyobject")
+      param.type.name.includes("anyobject"),
     );
     if (anyobjectParams.length) {
       return [
@@ -94,13 +94,13 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
     //   - return anytype: references first param type
 
     const anytypeParams = paramsList.filter((param) =>
-      param.type.name.includes("anytype")
+      param.type.name.includes("anytype"),
     );
 
     if (anytypeParams.length) {
       const hasArrayType =
         anytypeParams.some((param) =>
-          param.type.name.includes("array<anytype>")
+          param.type.name.includes("array<anytype>"),
         ) || overload.return_type.name.includes("array<anytype>");
 
       const catchAllOverload: FuncopDefOverload<F> = {
@@ -171,13 +171,13 @@ export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
 
 function groupParams(
   params: $.introspect.FuncopParam[],
-  types: $.introspect.Types
+  types: $.introspect.Types,
 ) {
   return {
     positional: params
       .filter(
         (param) =>
-          param.kind === "PositionalParam" || param.kind === "VariadicParam"
+          param.kind === "PositionalParam" || param.kind === "VariadicParam",
       )
       .map((param, i) => {
         let paramType = types.get(param.type.id);
@@ -208,7 +208,7 @@ export type GroupedParams = ReturnType<typeof groupParams>;
 
 export function findPathOfAnytype(
   typeId: string,
-  types: $.introspect.Types
+  types: $.introspect.Types,
 ): string {
   const path = _findPathOfAnytype(typeId, types);
   if (!path) {
@@ -219,7 +219,7 @@ export function findPathOfAnytype(
 
 function _findPathOfAnytype(
   typeId: string,
-  types: $.introspect.Types
+  types: $.introspect.Types,
 ): string | null {
   const type = types.get(typeId);
 
@@ -252,7 +252,7 @@ function _findPathOfAnytype(
 
 export function sortFuncopOverloads<F extends FuncopDef>(
   overloads: F[],
-  typeSpecificities: TypeSpecificities
+  typeSpecificities: TypeSpecificities,
 ): F[] {
   return [...overloads].sort((a, b) => {
     let i = 0;
@@ -283,13 +283,13 @@ type TypeSpecificities = $.StrictMap<string, number>;
 
 export function getTypesSpecificity(
   types: $.introspect.Types,
-  casts: $.introspect.Casts
+  casts: $.introspect.Casts,
 ) {
   const typeSpecificities = new Map<$.introspect.Type, number>();
 
   let currentSpec = 0;
   let typesToVisit: $.introspect.Type[] = [...types.values()].filter(
-    (type) => (casts.implicitCastFromMap[type.id] ?? []).length === 0
+    (type) => (casts.implicitCastFromMap[type.id] ?? []).length === 0,
   );
   const nextTypesToVisit = new Set<$.introspect.Type>();
 
@@ -297,7 +297,7 @@ export function getTypesSpecificity(
     for (const type of typesToVisit) {
       typeSpecificities.set(
         type,
-        type.name === "anytype" ? Infinity : currentSpec
+        type.name === "anytype" ? Infinity : currentSpec,
       );
       for (const castableTo of casts.implicitCastMap[type.id] ?? []) {
         nextTypesToVisit.add(types.get(castableTo));
@@ -317,7 +317,7 @@ export function getTypesSpecificity(
 }
 
 export function getImplicitCastableRootTypes(
-  casts: $.introspect.Casts
+  casts: $.introspect.Casts,
 ): string[] {
   return Object.entries(casts.implicitCastMap)
     .filter(([id, castableTo]) => {

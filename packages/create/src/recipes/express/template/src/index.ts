@@ -42,7 +42,7 @@ app.get("/onboarding", requireAuth, (req, res) => {
     pageTemplate(`
     <h1>Onboarding</h1>
     <a href="/auth/signout">Sign out</a>
-  `)
+  `),
   );
 });
 
@@ -51,7 +51,7 @@ app.get("/dashboard", requireAuth, (req, res) => {
     pageTemplate(`
     <h1>Dashboard</h1>
     <a href="/auth/signout">Sign out</a>
-  `)
+  `),
   );
 });
 
@@ -59,7 +59,7 @@ app.get("/verify", (req, res) => {
   res.send(
     pageTemplate(`
     <p>Check your email for a verification message.</p>
-  `)
+  `),
   );
 });
 

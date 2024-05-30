@@ -33,14 +33,14 @@ export class JSONCodec extends ScalarCodec implements ICodec {
       val = JSON.stringify(object);
     } catch (err) {
       throw new InvalidArgumentError(
-        `a JSON-serializable value was expected, got "${object}"`
+        `a JSON-serializable value was expected, got "${object}"`,
       );
     }
 
     // JSON.stringify can return undefined
     if (typeof val !== "string") {
       throw new InvalidArgumentError(
-        `a JSON-serializable value was expected, got "${object}"`
+        `a JSON-serializable value was expected, got "${object}"`,
       );
     }
 

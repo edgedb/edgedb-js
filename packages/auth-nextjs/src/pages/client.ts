@@ -15,23 +15,23 @@ export default function createNextPagesClientAuth(options: NextAuthOptions) {
 
 export class NextPagesClientAuth extends NextAuthHelpers {
   async emailPasswordSignIn(
-    data: { email: string; password: string } | FormData
+    data: { email: string; password: string } | FormData,
   ) {
     return await apiRequest(`${this._authRoute}/emailpassword/signin`, data);
   }
 
   async emailPasswordSignUp(
-    data: { email: string; password: string } | FormData
+    data: { email: string; password: string } | FormData,
   ) {
     return await apiRequest(`${this._authRoute}/emailpassword/signup`, data);
   }
 
   async emailPasswordSendPasswordResetEmail(
-    data: { email: string } | FormData
+    data: { email: string } | FormData,
   ) {
     return await apiRequest(
       `${this._authRoute}/emailpassword/send-reset-email`,
-      data
+      data,
     );
   }
 
@@ -41,11 +41,11 @@ export class NextPagesClientAuth extends NextAuthHelpers {
           reset_token: string;
           password: string;
         }
-      | FormData
+      | FormData,
   ) {
     return await apiRequest(
       `${this._authRoute}/emailpassword/reset-password`,
-      data
+      data,
     );
   }
 
@@ -59,11 +59,11 @@ export class NextPagesClientAuth extends NextAuthHelpers {
           verify_url: string;
           challenge: string;
         }
-      | FormData
+      | FormData,
   ) {
     return await apiRequest(
       `${this._authRoute}/emailpassword/resend-verification-email`,
-      data
+      data,
     );
   }
 

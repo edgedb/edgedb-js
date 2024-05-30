@@ -50,7 +50,7 @@ const _operators = async (cxn: Executor) => {
 
   for (const op of JSON.parse(operatorsJson)) {
     const identifier = op.annotations.find(
-      (anno: { name: string }) => anno.name === "std::identifier"
+      (anno: { name: string }) => anno.name === "std::identifier",
     )?.["@value"];
 
     if (!identifier) {
@@ -71,7 +71,7 @@ const _operators = async (cxn: Executor) => {
       kind: op.operator_kind,
       originalName: op.name,
       description: op.annotations.find(
-        (anno: { name: string }) => anno.name === "std::description"
+        (anno: { name: string }) => anno.name === "std::description",
       )?.["@value"],
       annotations: undefined,
     };
@@ -101,7 +101,7 @@ function hashOpDef(def: OperatorDef): string {
           type: param.type.id,
           typemod: param.typemod,
           hasDefault: !!param.hasDefault,
-        })
+        }),
       )
       .sort(),
     operator_kind: def.operator_kind,

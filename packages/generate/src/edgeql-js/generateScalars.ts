@@ -50,11 +50,11 @@ export const generateScalars = (params: GeneratorParams) => {
         const children = [
           ...new Set(
             scalarType.children.map(
-              (desc) => ($.introspect.typeMapping.get(desc.id) ?? desc).name
-            )
+              (desc) => ($.introspect.typeMapping.get(desc.id) ?? desc).name,
+            ),
           ),
         ].map((descName) =>
-          descName === "std::anyenum" ? "$.EnumType" : getRef(descName)
+          descName === "std::anyenum" ? "$.EnumType" : getRef(descName),
         );
         sc.writeln([
           dts`declare `,
@@ -92,7 +92,7 @@ export const generateScalars = (params: GeneratorParams) => {
         dts`declare `,
         t`type ${ref} = {\n`,
         ...type.enum_values.map(
-          (val) => t`  ${quote(val)}: $.$expr_Literal<${ref}>;\n`
+          (val) => t`  ${quote(val)}: $.$expr_Literal<${ref}>;\n`,
         ),
         t`} & `,
         t`$.EnumType<${quote(type.name)}, [${type.enum_values
@@ -167,7 +167,7 @@ export const generateScalars = (params: GeneratorParams) => {
         scalarToLiteralMapping[type.name]?.extraTypes || ["never"]
       ).join(" | ");
       const argTypes = (scalarToLiteralMapping[type.name]?.argTypes ?? []).join(
-        " | "
+        " | ",
       );
       // const extraTypesUnion = extraTypes ?
       //   `, ${extraTypes.join(" | ")}` : "";
@@ -197,10 +197,10 @@ export const generateScalars = (params: GeneratorParams) => {
           [
             ref,
             ...casts.implicitCastFromMap[type.id].map((typeId) =>
-              getRef(types.get(typeId).name)
+              getRef(types.get(typeId).name),
             ),
           ],
-          " | "
+          " | ",
         )};`,
       ]);
     }
@@ -215,11 +215,11 @@ export const generateScalars = (params: GeneratorParams) => {
             ? [
                 ref,
                 ...assignableMap.map((typeId) =>
-                  getRef(types.get(typeId).name)
+                  getRef(types.get(typeId).name),
                 ),
               ]
             : [ref],
-          " | "
+          " | ",
         )};`,
       ]);
     }

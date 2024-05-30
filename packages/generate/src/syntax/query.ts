@@ -41,7 +41,7 @@ export async function $queryFunc(this: any, cxn: edgedb.Executor, args: any) {
 export async function $queryFuncJSON(
   this: any,
   cxn: edgedb.Executor,
-  args: any
+  args: any,
 ) {
   const expr = runnableExpressionKinds.has(this.__kind__)
     ? this

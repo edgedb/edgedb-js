@@ -42,7 +42,7 @@ const recipe: Recipe<SveltekitOptions> = {
   },
   async apply(
     { projectDir, useEdgeDBAuth }: BaseOptions,
-    { lang }: SveltekitOptions
+    { lang }: SveltekitOptions,
   ) {
     logger("Running Sveltekit recipe");
 

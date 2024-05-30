@@ -19,7 +19,7 @@ interface ServerInfo {
 }
 
 export const getServerInfo = async (
-  filename: string
+  filename: string,
 ): Promise<ServerInfo | null> => {
   if (!fs.existsSync(filename)) {
     return null;
@@ -76,13 +76,13 @@ const generateTempID = (): number => {
 export const generateStatusFileName = (tag: string): string => {
   return path.join(
     os.tmpdir(),
-    `edgedb-js-status-file-${tag}-${generateTempID()}`
+    `edgedb-js-status-file-${tag}-${generateTempID()}`,
   );
 };
 
 export const getServerCommand = (
   statusFile: string,
-  strictSecurity = true
+  strictSecurity = true,
 ): { args: string[]; availableFeatures: string[] } => {
   const availableFeatures: string[] = [];
   let srvcmd = `edgedb-server`;
@@ -142,7 +142,7 @@ interface ServerInst {
 export const startServer = async (
   cmd: string[],
   statusFile: string,
-  env: { [key: string]: string } = {}
+  env: { [key: string]: string } = {},
 ): Promise<ServerInst> => {
   if (process.env.EDGEDB_DEBUG_SERVER) {
     console.log(`running command: ${cmd.join(" ")}`);
@@ -178,7 +178,7 @@ export const startServer = async (
           }
           reject(
             `EdgeDB exited prematurely with ` +
-              `code ${code} or signal ${signal}`
+              `code ${code} or signal ${signal}`,
           );
         });
       }),
@@ -188,10 +188,10 @@ export const startServer = async (
     if (runtimeData.tls_cert_file && process.platform === "win32") {
       const tmpFile = path.join(
         os.tmpdir(),
-        `edbtlscert-${generateTempID()}.pem`
+        `edbtlscert-${generateTempID()}.pem`,
       );
       const cmd = `wsl -u edgedb cp ${runtimeData.tls_cert_file} ${getWSLPath(
-        tmpFile
+        tmpFile,
       )}`;
       child_process.execSync(cmd);
       runtimeData.tls_cert_file = tmpFile;
@@ -217,7 +217,7 @@ export const startServer = async (
 };
 
 export const connectToServer = async (
-  config: ConnectConfig
+  config: ConnectConfig,
 ): Promise<{ client: Client; version: EdgeDBVersion }> => {
   const client = createClient(config);
 
@@ -252,7 +252,7 @@ export const connectToServer = async (
 
 export const shutdown = async (
   proc: child_process.ChildProcess,
-  client: Client
+  client: Client,
 ) => {
   await client.close();
 
@@ -281,7 +281,7 @@ export const shutdown = async (
 
 export async function applyMigrations(
   config: ConnectConfig,
-  params?: { flags?: string[] }
+  params?: { flags?: string[] },
 ) {
   console.log("\nApplying migrations...");
 
@@ -291,7 +291,7 @@ export async function applyMigrations(
       "edgedb",
       "env",
       ...Object.entries(configToEnv(config)).map(
-        ([key, val]) => `${key}=${val}`
+        ([key, val]) => `${key}=${val}`,
       ),
       "edgedb",
       "migrate",
@@ -303,7 +303,7 @@ export async function applyMigrations(
     await runCommand(
       "edgedb",
       ["migrate", ...(params?.flags || [])],
-      configToEnv(config)
+      configToEnv(config),
     );
   }
 }
@@ -314,7 +314,7 @@ export async function generateQB(config: ConnectConfig) {
   await runCommand(
     "yarn",
     ["generate", "edgeql-js", "--force-overwrite"],
-    configToEnv(config)
+    configToEnv(config),
   );
 }
 
@@ -323,14 +323,14 @@ export async function generateQueries(config: ConnectConfig) {
   await runCommand(
     "yarn",
     ["generate", "queries", "--file"],
-    configToEnv(config)
+    configToEnv(config),
   );
 }
 
 export async function runCommand(
   command: string,
   args: string[] = [],
-  env?: { [key: string]: string | undefined }
+  env?: { [key: string]: string | undefined },
 ): Promise<void> {
   const proc = spawn(command, args, {
     stdio: ["pipe", "inherit", "inherit"],
@@ -347,7 +347,7 @@ export async function runCommand(
         resolve();
       } else {
         reject(
-          `Command '${command} ${args.join(" ")}' exited with code: ${code}`
+          `Command '${command} ${args.join(" ")}' exited with code: ${code}`,
         );
       }
     });

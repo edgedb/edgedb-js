@@ -25,7 +25,7 @@ export class Auth {
 
   protected constructor(
     public readonly client: edgedb.Client,
-    baseUrl: string
+    baseUrl: string,
   ) {
     this.baseUrl = baseUrl;
   }
@@ -46,7 +46,7 @@ export class Auth {
   /** @internal */
   public async _get<T = unknown>(
     path: string,
-    searchParams?: Record<string, string>
+    searchParams?: Record<string, string>,
   ): Promise<T> {
     return requestGET<T>(new URL(path, this.baseUrl).href, searchParams);
   }
@@ -75,7 +75,7 @@ export class Auth {
     email: string,
     credentials: RegistrationResponseJSON,
     verifyUrl: string,
-    userHandle: string
+    userHandle: string,
   ): Promise<SignupResponse> {
     const { challenge, verifier } = await pkce.createVerifierChallengePair();
     const result = await this._post<RegistrationResponse>("webauthn/register", {
@@ -106,7 +106,7 @@ export class Auth {
 
   async signinWithWebAuthn(
     email: string,
-    assertion: AuthenticationResponseJSON
+    assertion: AuthenticationResponseJSON,
   ): Promise<TokenData> {
     const { challenge, verifier } = await pkce.createVerifierChallengePair();
     const { code } = await this._post<{ code: string }>(
@@ -116,7 +116,7 @@ export class Auth {
         challenge,
         email,
         assertion,
-      }
+      },
     );
 
     return this.getToken(code, verifier);
@@ -144,7 +144,7 @@ export class Auth {
   async signupWithEmailPassword(
     email: string,
     password: string,
-    verifyUrl: string
+    verifyUrl: string,
   ): Promise<SignupResponse> {
     const { challenge, verifier } = await pkce.createVerifierChallengePair();
     const result = await this._post<RegistrationResponse>("register", {
@@ -176,7 +176,7 @@ export class Auth {
   async signupWithMagicLink(
     email: string,
     callbackUrl: string,
-    redirectOnFailure: string
+    redirectOnFailure: string,
   ): Promise<{ verifier: string }> {
     const { challenge, verifier } = await pkce.createVerifierChallengePair();
     await this._post("magic-link/register", {
@@ -192,7 +192,7 @@ export class Auth {
   async signinWithMagicLink(
     email: string,
     callbackUrl: string,
-    redirectOnFailure: string
+    redirectOnFailure: string,
   ): Promise<{ verifier: string }> {
     const { challenge, verifier } = await pkce.createVerifierChallengePair();
     await this._post("magic-link/email", {
@@ -266,7 +266,7 @@ export class Auth {
   async resetPasswordWithResetToken(
     resetToken: string,
     verifier: string,
-    password: string
+    password: string,
   ) {
     const { code } = await this._post<{ code: string }>("reset-password", {
       provider: emailPasswordProviderName,
@@ -306,13 +306,13 @@ export class AuthPCKESession {
   constructor(
     private auth: Auth,
     public readonly challenge: string,
-    public readonly verifier: string
+    public readonly verifier: string,
   ) {}
 
   getOAuthUrl(
     providerName: BuiltinOAuthProviderNames,
     redirectTo: string,
-    redirectToOnSignup?: string
+    redirectToOnSignup?: string,
   ) {
     const url = new URL("authorize", this.auth.baseUrl);
 

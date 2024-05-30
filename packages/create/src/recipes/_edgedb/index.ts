@@ -25,7 +25,7 @@ const recipe: Recipe<EdgeDBOptions> = {
 
   async apply(
     { projectDir, useEdgeDBAuth }: BaseOptions,
-    { initializeProject }: EdgeDBOptions
+    { initializeProject }: EdgeDBOptions,
   ) {
     logger("Running edgedb recipe");
     logger("Checking for existing EdgeDB CLI");
@@ -58,7 +58,7 @@ const recipe: Recipe<EdgeDBOptions> = {
 
         spinner.start("Installing EdgeDB CLI");
         const { stdout, stderr } = await execInLoginShell(
-          "curl --proto '=https' --tlsv1.2 -sSf https://sh.edgedb.com | sh -s -- -y"
+          "curl --proto '=https' --tlsv1.2 -sSf https://sh.edgedb.com | sh -s -- -y",
         );
         logger({ stdout, stderr });
         spinner.stop("EdgeDB CLI installed");
@@ -81,13 +81,13 @@ const recipe: Recipe<EdgeDBOptions> = {
         });
         const { stdout, stderr } = await execInLoginShell(
           "edgedb query 'select sys::get_version_as_str()'",
-          { cwd: projectDir }
+          { cwd: projectDir },
         );
         const serverVersion = JSON.parse(stdout.trim());
         logger(`EdgeDB server version: ${serverVersion}`);
         if (serverVersion === "") {
           const err = new Error(
-            "There was a problem initializing the EdgeDB project"
+            "There was a problem initializing the EdgeDB project",
           );
           spinner.stop(err.message);
           logger({ stdout, stderr });

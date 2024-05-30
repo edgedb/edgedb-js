@@ -17,18 +17,18 @@ test("emptyCredentials", () => {
 
 test("port", () => {
   expect(() => validateCredentials({ user: "u1", port: "abc" })).toThrow(
-    "invalid `port` value"
+    "invalid `port` value",
   );
   expect(() => validateCredentials({ user: "u1", port: 0 })).toThrow(
-    "invalid `port` value"
+    "invalid `port` value",
   );
   expect(() => validateCredentials({ user: "u1", port: 0.5 })).toThrow(
-    "invalid `port` value"
+    "invalid `port` value",
   );
   expect(() => validateCredentials({ user: "u1", port: -1 })).toThrow(
-    "invalid `port` value"
+    "invalid `port` value",
   );
   expect(() => validateCredentials({ user: "u1", port: 65536 })).toThrow(
-    "invalid `port` value"
+    "invalid `port` value",
   );
 });

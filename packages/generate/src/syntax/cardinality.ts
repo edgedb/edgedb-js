@@ -13,32 +13,32 @@ import type { TypeSet } from "./typesystem";
 export namespace cardutil {
   export type multiplyCardinalities<
     C1 extends Cardinality,
-    C2 extends Cardinality
+    C2 extends Cardinality,
   > = C1 extends Cardinality.Empty
     ? Cardinality.Empty
     : C1 extends Cardinality.One
-    ? C2
-    : C1 extends Cardinality.AtMostOne
-    ? C2 extends Cardinality.One
-      ? Cardinality.AtMostOne
-      : C2 extends Cardinality.AtLeastOne
-      ? Cardinality.Many
-      : C2
-    : C1 extends Cardinality.Many
-    ? C2 extends Cardinality.Empty
-      ? Cardinality.Empty
-      : Cardinality.Many
-    : C1 extends Cardinality.AtLeastOne
-    ? C2 extends Cardinality.AtMostOne
-      ? Cardinality.Many
-      : C2 extends Cardinality.One
-      ? Cardinality.AtLeastOne
-      : C2
-    : never;
+      ? C2
+      : C1 extends Cardinality.AtMostOne
+        ? C2 extends Cardinality.One
+          ? Cardinality.AtMostOne
+          : C2 extends Cardinality.AtLeastOne
+            ? Cardinality.Many
+            : C2
+        : C1 extends Cardinality.Many
+          ? C2 extends Cardinality.Empty
+            ? Cardinality.Empty
+            : Cardinality.Many
+          : C1 extends Cardinality.AtLeastOne
+            ? C2 extends Cardinality.AtMostOne
+              ? Cardinality.Many
+              : C2 extends Cardinality.One
+                ? Cardinality.AtLeastOne
+                : C2
+            : never;
 
   export function multiplyCardinalities(
     c1: Cardinality,
-    c2: Cardinality
+    c2: Cardinality,
   ): Cardinality {
     if (c1 === Cardinality.Empty) return Cardinality.Empty;
 
@@ -61,37 +61,38 @@ export namespace cardutil {
   }
 
   type _multiplyCardinalitiesVariadic<
-    Cards extends [Cardinality, ...Cardinality[]]
+    Cards extends [Cardinality, ...Cardinality[]],
   > = Cards extends [infer Card]
     ? Card
     : Cards extends [infer A, infer B, ...infer Rest]
-    ? A extends Cardinality
-      ? B extends Cardinality
-        ? Rest extends Cardinality[]
-          ? multiplyCardinalities<A, B> extends Cardinality
-            ? _multiplyCardinalitiesVariadic<
-                [multiplyCardinalities<A, B>, ...Rest]
-              >
+      ? A extends Cardinality
+        ? B extends Cardinality
+          ? Rest extends Cardinality[]
+            ? multiplyCardinalities<A, B> extends Cardinality
+              ? _multiplyCardinalitiesVariadic<
+                  [multiplyCardinalities<A, B>, ...Rest]
+                >
+              : never
             : never
           : never
         : never
-      : never
-    : never;
+      : never;
 
   export type multiplyCardinalitiesVariadic<
-    Cards extends [Cardinality, ...Cardinality[]]
-  > = _multiplyCardinalitiesVariadic<Cards> extends Cardinality
-    ? _multiplyCardinalitiesVariadic<Cards>
-    : never;
+    Cards extends [Cardinality, ...Cardinality[]],
+  > =
+    _multiplyCardinalitiesVariadic<Cards> extends Cardinality
+      ? _multiplyCardinalitiesVariadic<Cards>
+      : never;
 
   export function multiplyCardinalitiesVariadic<
-    Cards extends [Cardinality, ...Cardinality[]]
+    Cards extends [Cardinality, ...Cardinality[]],
   >(cards: Cards): multiplyCardinalitiesVariadic<Cards> {
     if (cards.length === 0) throw new Error("Empty tuple not allowed");
     if (cards.length === 1) return cards[0] as any;
     return cards.reduce(
       (product, card) => multiplyCardinalities(product, card),
-      Cardinality.One
+      Cardinality.One,
     ) as any;
   }
 
@@ -106,24 +107,24 @@ export namespace cardutil {
 
   export type mergeCardinalities<
     A extends Cardinality,
-    B extends Cardinality
+    B extends Cardinality,
   > = A extends Cardinality.Empty
     ? B
     : B extends Cardinality.Empty
-    ? A
-    : A extends Cardinality.AtLeastOne
-    ? Cardinality.AtLeastOne
-    : B extends Cardinality.AtLeastOne
-    ? Cardinality.AtLeastOne
-    : A extends Cardinality.One
-    ? Cardinality.AtLeastOne
-    : B extends Cardinality.One
-    ? Cardinality.AtLeastOne
-    : Cardinality.Many;
+      ? A
+      : A extends Cardinality.AtLeastOne
+        ? Cardinality.AtLeastOne
+        : B extends Cardinality.AtLeastOne
+          ? Cardinality.AtLeastOne
+          : A extends Cardinality.One
+            ? Cardinality.AtLeastOne
+            : B extends Cardinality.One
+              ? Cardinality.AtLeastOne
+              : Cardinality.Many;
 
   export function mergeCardinalities<
     A extends Cardinality,
-    B extends Cardinality
+    B extends Cardinality,
   >(a: A, b: B): mergeCardinalities<A, B> {
     if (a === Cardinality.Empty) return b as any;
     if (b === Cardinality.Empty) return a as any;
@@ -135,35 +136,36 @@ export namespace cardutil {
   }
 
   type _mergeCardinalitiesVariadic<
-    Cards extends [Cardinality, ...Cardinality[]]
+    Cards extends [Cardinality, ...Cardinality[]],
   > = Cards extends [infer Card]
     ? Card
     : Cards extends [infer A, infer B, ...infer Rest]
-    ? A extends Cardinality
-      ? B extends Cardinality
-        ? Rest extends Cardinality[]
-          ? mergeCardinalities<A, B> extends Cardinality
-            ? _mergeCardinalitiesVariadic<[mergeCardinalities<A, B>, ...Rest]>
+      ? A extends Cardinality
+        ? B extends Cardinality
+          ? Rest extends Cardinality[]
+            ? mergeCardinalities<A, B> extends Cardinality
+              ? _mergeCardinalitiesVariadic<[mergeCardinalities<A, B>, ...Rest]>
+              : never
             : never
           : never
         : never
-      : never
-    : never;
+      : never;
 
   export type mergeCardinalitiesVariadic<
-    Cards extends [Cardinality, ...Cardinality[]]
-  > = _mergeCardinalitiesVariadic<Cards> extends Cardinality
-    ? _mergeCardinalitiesVariadic<Cards>
-    : never;
+    Cards extends [Cardinality, ...Cardinality[]],
+  > =
+    _mergeCardinalitiesVariadic<Cards> extends Cardinality
+      ? _mergeCardinalitiesVariadic<Cards>
+      : never;
   export function mergeCardinalitiesVariadic<
-    Cards extends [Cardinality, ...Cardinality[]]
+    Cards extends [Cardinality, ...Cardinality[]],
   >(cards: Cards): mergeCardinalitiesVariadic<Cards> {
     if (cards.length === 0) throw new Error("Empty tuple not allowed");
     if (cards.length === 1) return cards[0] as any;
     const [first, second, ...rest] = cards as unknown as [
       Cardinality,
       Cardinality,
-      ...Cardinality[]
+      ...Cardinality[],
     ];
     if (cards.length === 2) return mergeCardinalities(first, second) as any;
     return mergeCardinalitiesVariadic([
@@ -184,34 +186,34 @@ export namespace cardutil {
 
   export type orCardinalities<
     C1 extends Cardinality,
-    C2 extends Cardinality
+    C2 extends Cardinality,
   > = C1 extends C2
     ? C1
     : C1 extends Cardinality.Many
-    ? C1
-    : C1 extends Cardinality.AtMostOne
-    ? C2 extends Cardinality.Many
-      ? C2
-      : C2 extends Cardinality.AtLeastOne
-      ? Cardinality.Many
-      : C1
-    : C1 extends Cardinality.AtLeastOne
-    ? C2 extends Cardinality.One
-      ? Cardinality.AtLeastOne
-      : Cardinality.Many
-    : C1 extends Cardinality.Empty
-    ? C2 extends Cardinality.AtMostOne
-      ? Cardinality.AtMostOne
-      : C2 extends Cardinality.One
-      ? Cardinality.AtMostOne
-      : Cardinality.Many
-    : C2 extends Cardinality.Empty
-    ? Cardinality.AtMostOne
-    : C2;
+      ? C1
+      : C1 extends Cardinality.AtMostOne
+        ? C2 extends Cardinality.Many
+          ? C2
+          : C2 extends Cardinality.AtLeastOne
+            ? Cardinality.Many
+            : C1
+        : C1 extends Cardinality.AtLeastOne
+          ? C2 extends Cardinality.One
+            ? Cardinality.AtLeastOne
+            : Cardinality.Many
+          : C1 extends Cardinality.Empty
+            ? C2 extends Cardinality.AtMostOne
+              ? Cardinality.AtMostOne
+              : C2 extends Cardinality.One
+                ? Cardinality.AtMostOne
+                : Cardinality.Many
+            : C2 extends Cardinality.Empty
+              ? Cardinality.AtMostOne
+              : C2;
 
   export function orCardinalities(
     c1: Cardinality,
-    c2: Cardinality
+    c2: Cardinality,
   ): Cardinality {
     if (c1 === c2 || c1 === Cardinality.Many) return c1;
     if (c1 === Cardinality.AtLeastOne) {
@@ -240,24 +242,24 @@ export namespace cardutil {
 
   export type overrideLowerBound<
     C extends Cardinality,
-    O extends "One" | "Zero"
+    O extends "One" | "Zero",
   > = O extends "One"
     ? C extends Cardinality.Many
       ? Cardinality.AtLeastOne
       : C extends Cardinality.AtLeastOne
-      ? Cardinality.AtLeastOne
-      : Cardinality.One
+        ? Cardinality.AtLeastOne
+        : Cardinality.One
     : C extends Cardinality.Empty
-    ? Cardinality.Empty
-    : C extends Cardinality.Many
-    ? Cardinality.Many
-    : C extends Cardinality.AtLeastOne
-    ? Cardinality.Many
-    : Cardinality.AtMostOne;
+      ? Cardinality.Empty
+      : C extends Cardinality.Many
+        ? Cardinality.Many
+        : C extends Cardinality.AtLeastOne
+          ? Cardinality.Many
+          : Cardinality.AtMostOne;
 
   export function overrideLowerBound<
     C extends Cardinality,
-    O extends "One" | "Zero"
+    O extends "One" | "Zero",
   >(card: C, override: O): overrideLowerBound<C, O> {
     if (override === "One") {
       if (card === Cardinality.Many || card === Cardinality.AtLeastOne) {
@@ -282,26 +284,26 @@ export namespace cardutil {
 
   export type overrideUpperBound<
     C extends Cardinality,
-    O extends "One" | "Many"
+    O extends "One" | "Many",
   > = O extends "One"
     ? C extends Cardinality.Many
       ? Cardinality.AtMostOne
       : C extends Cardinality.AtLeastOne
-      ? Cardinality.One
-      : C extends Cardinality.Empty
-      ? Cardinality.AtMostOne
-      : C
+        ? Cardinality.One
+        : C extends Cardinality.Empty
+          ? Cardinality.AtMostOne
+          : C
     : C extends Cardinality.One
-    ? Cardinality.AtLeastOne
-    : C extends Cardinality.AtMostOne
-    ? Cardinality.Many
-    : C extends Cardinality.Empty
-    ? Cardinality.Many
-    : C;
+      ? Cardinality.AtLeastOne
+      : C extends Cardinality.AtMostOne
+        ? Cardinality.Many
+        : C extends Cardinality.Empty
+          ? Cardinality.Many
+          : C;
 
   export function overrideUpperBound<
     C extends Cardinality,
-    O extends "One" | "Many"
+    O extends "One" | "Many",
   >(card: C, override: O): overrideUpperBound<C, O> {
     if (override === "One") {
       if (card === Cardinality.One || card === Cardinality.AtLeastOne) {
@@ -343,14 +345,14 @@ export namespace cardutil {
   export type assignable<C extends Cardinality> = C extends Cardinality.Empty
     ? Cardinality.Empty
     : C extends Cardinality.One
-    ? Cardinality.One
-    : C extends Cardinality.AtMostOne
-    ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
-    : C extends Cardinality.AtLeastOne
-    ? Cardinality.One | Cardinality.AtLeastOne | Cardinality.Many
-    : C extends Cardinality.Many
-    ? Cardinality
-    : never;
+      ? Cardinality.One
+      : C extends Cardinality.AtMostOne
+        ? Cardinality.One | Cardinality.AtMostOne | Cardinality.Empty
+        : C extends Cardinality.AtLeastOne
+          ? Cardinality.One | Cardinality.AtLeastOne | Cardinality.Many
+          : C extends Cardinality.Many
+            ? Cardinality
+            : never;
 
   // Cardinality  Empty       AtMostOne   One         Many        AtLeastOne
   // Empty        Empty       AtMostOne   One         Many        AtLeastOne
@@ -361,20 +363,20 @@ export namespace cardutil {
 
   export type coalesceCardinalities<
     C1 extends Cardinality,
-    C2 extends Cardinality
+    C2 extends Cardinality,
   > = C1 extends Cardinality.One
     ? C1
     : C1 extends Cardinality.AtLeastOne
-    ? C1
-    : C2 extends Cardinality.One
-    ? overrideLowerBound<C1, "One">
-    : C2 extends Cardinality.AtLeastOne
-    ? Cardinality.AtLeastOne
-    : orCardinalities<C1, C2>;
+      ? C1
+      : C2 extends Cardinality.One
+        ? overrideLowerBound<C1, "One">
+        : C2 extends Cardinality.AtLeastOne
+          ? Cardinality.AtLeastOne
+          : orCardinalities<C1, C2>;
 
   export function coalesceCardinalities(
     c1: Cardinality,
-    c2: Cardinality
+    c2: Cardinality,
   ): Cardinality {
     if (c1 === Cardinality.One || c1 === Cardinality.AtLeastOne) return c1;
     if (c2 === Cardinality.One) return overrideLowerBound(c1, "One");

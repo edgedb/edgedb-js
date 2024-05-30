@@ -29,21 +29,24 @@ interface CopyTemplateFilesOpts {
 export async function copyTemplateFiles(
   source: string,
   dest: string,
-  opts?: CopyTemplateFilesOpts
+  opts?: CopyTemplateFilesOpts,
 ) {
   await _walkDir(source, dest, source, {
     ...opts,
     injectVars:
-      opts?.injectVars?.reduce((vars, { varname, value, files }) => {
-        for (const filename of files) {
-          const filepath = path.join(source, filename);
-          if (!vars[filepath]) {
-            vars[filepath] = [];
+      opts?.injectVars?.reduce(
+        (vars, { varname, value, files }) => {
+          for (const filename of files) {
+            const filepath = path.join(source, filename);
+            if (!vars[filepath]) {
+              vars[filepath] = [];
+            }
+            vars[filepath].push({ varname, value });
           }
-          vars[filepath].push({ varname, value });
-        }
-        return vars;
-      }, {} as Record<string, { varname: string; value: string }[]>) ?? {},
+          return vars;
+        },
+        {} as Record<string, { varname: string; value: string }[]>,
+      ) ?? {},
   });
 }
 
@@ -53,7 +56,7 @@ async function _walkDir(
   untaggedSource: string,
   opts: Omit<CopyTemplateFilesOpts, "injectVars"> & {
     injectVars: Record<string, { varname: string; value: string }[]>;
-  }
+  },
 ) {
   const files: Record<string, { entry: Dirent; tags: string[] }[]> = {};
   const dirs: Record<string, { entry: Dirent; tags: string[] }[]> = {};
@@ -114,7 +117,7 @@ async function _walkDir(
         path.join(source, dir.entry.name),
         path.join(dest, dirname),
         path.join(untaggedSource, dirname),
-        opts
+        opts,
       );
     }
   }
@@ -122,7 +125,7 @@ async function _walkDir(
 
 export async function execInLoginShell(
   command: string,
-  options?: SpawnOptionsWithoutStdio
+  options?: SpawnOptionsWithoutStdio,
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     let stdout = "";
@@ -141,8 +144,8 @@ export async function execInLoginShell(
             `\
 Command "${command}" exited with code ${code}
 stderr: ${stderr}
-stdout: ${stdout}`
-          )
+stdout: ${stdout}`,
+          ),
         );
       } else {
         resolve({ stdout, stderr });

@@ -17,7 +17,7 @@ const recipe: Recipe = {
     const dirname = path.dirname(new URL(import.meta.url).pathname);
     await copyTemplateFiles(
       path.resolve(dirname, "./template"),
-      baseOptions.projectDir
+      baseOptions.projectDir,
     );
 
     await updatePackage(baseOptions.projectDir, {

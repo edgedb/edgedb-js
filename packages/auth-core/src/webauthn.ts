@@ -35,7 +35,7 @@ export class WebAuthnClient {
       { email },
       async (errorMessage) => {
         throw new Error(`Failed to get sign-up options: ${errorMessage}`);
-      }
+      },
     );
 
     const userHandle = options.user.id;
@@ -68,10 +68,10 @@ export class WebAuthnClient {
       response: {
         ...credentialsResponse,
         attestationObject: bytesToBase64Url(
-          new Uint8Array(credentialsResponse.attestationObject)
+          new Uint8Array(credentialsResponse.attestationObject),
         ),
         clientDataJSON: bytesToBase64Url(
-          new Uint8Array(credentialsResponse.clientDataJSON)
+          new Uint8Array(credentialsResponse.clientDataJSON),
         ),
       },
       type: credentials.type,
@@ -88,7 +88,7 @@ export class WebAuthnClient {
       },
       async (errorMessage) => {
         throw new Error(`Failed to sign up: ${errorMessage}`);
-      }
+      },
     );
   }
 
@@ -98,7 +98,7 @@ export class WebAuthnClient {
       { email },
       async (errorMessage) => {
         throw new Error(`Failed to get sign-in options: ${errorMessage}`);
-      }
+      },
     );
 
     const assertion = (await navigator.credentials.get({
@@ -127,13 +127,13 @@ export class WebAuthnClient {
       rawId: bytesToBase64Url(new Uint8Array(assertion.rawId)),
       response: {
         authenticatorData: bytesToBase64Url(
-          new Uint8Array(assertionResponse.authenticatorData)
+          new Uint8Array(assertionResponse.authenticatorData),
         ),
         clientDataJSON: bytesToBase64Url(
-          new Uint8Array(assertionResponse.clientDataJSON)
+          new Uint8Array(assertionResponse.clientDataJSON),
         ),
         signature: bytesToBase64Url(
-          new Uint8Array(assertionResponse.signature)
+          new Uint8Array(assertionResponse.signature),
         ),
         userHandle: assertionResponse.userHandle
           ? bytesToBase64Url(new Uint8Array(assertionResponse.userHandle))
@@ -151,7 +151,7 @@ export class WebAuthnClient {
       },
       (errorMessage: string) => {
         throw new Error(`Failed to sign in: ${errorMessage}`);
-      }
+      },
     );
   }
 }

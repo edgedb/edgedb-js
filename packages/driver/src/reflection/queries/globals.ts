@@ -16,7 +16,7 @@ export type Globals = StrictMap<UUID, Global>;
 export async function globals(cxn: Executor): Promise<Globals> {
   const globalsMap = new Map();
   const version = await cxn.queryRequiredSingle<number>(
-    `select sys::get_version().major;`
+    `select sys::get_version().major;`,
   );
   if (version === 1) {
     return globalsMap;

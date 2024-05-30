@@ -140,8 +140,8 @@ export function $toEdgeQL(this: any) {
       linkProps.set(
         expr,
         refData.linkProps.map((linkProp) =>
-          linkProp.__parent__.linkName.slice(1)
-        )
+          linkProp.__parent__.linkName.slice(1),
+        ),
       );
     }
 
@@ -217,7 +217,7 @@ export function $toEdgeQL(this: any) {
         // re-add current expr to `seen` to be resolved later
         if (
           parentScopes.some(
-            (parentScope) => parentScope && seen.has(parentScope)
+            (parentScope) => parentScope && seen.has(parentScope),
           )
         ) {
           seen.set(expr, refData);
@@ -227,7 +227,7 @@ export function $toEdgeQL(this: any) {
         if (parentScopes.some((scope) => scope == null)) {
           throw new Error(
             `Cannot extract repeated expression into 'WITH' block, ` +
-              `expression used outside of 'WITH'able expression`
+              `expression used outside of 'WITH'able expression`,
           );
         }
 
@@ -239,23 +239,23 @@ export function $toEdgeQL(this: any) {
               const currentScope = pendingScopes.shift()!;
               pendingScopes.push(
                 ...[...walkExprCtx.seen.get(currentScope)!.parentScopes].filter(
-                  (s) => s !== null
-                )
+                  (s) => s !== null,
+                ),
               );
               if (!scopes.includes(currentScope)) {
                 scopes.push(currentScope);
               }
             }
             return scopes;
-          }
+          },
         );
         const commonParentScope = firstParentScopeChain
           ? firstParentScopeChain.find((scope) =>
               // find the first parent scope in the chain that is shared by
               // the other parent scope chains
               parentScopeChains.every((otherScope) =>
-                otherScope.includes(scope)
-              )
+                otherScope.includes(scope),
+              ),
             )
           : null;
 
@@ -265,7 +265,7 @@ export function $toEdgeQL(this: any) {
       if (!withBlock) {
         throw new Error(
           `Cannot extract repeated expression into 'WITH' block, ` +
-            `expression does not appear within common 'WITH'able expression`
+            `expression does not appear within common 'WITH'able expression`,
         );
       }
 
@@ -289,7 +289,7 @@ export function $toEdgeQL(this: any) {
             refData.boundScope
               ? `Expr or its aliases used outside of declared 'WITH' block scope`
               : `Cannot extract repeated or aliased expression into 'WITH' block, ` +
-                `expression or its aliases appear outside root scope`
+                `expression or its aliases appear outside root scope`,
           );
         }
       }
@@ -360,7 +360,7 @@ interface WalkExprTreeCtx {
 function walkExprTree(
   _expr: TypeSet,
   parentScope: WithScopeExpr | null,
-  ctx: WalkExprTreeCtx
+  ctx: WalkExprTreeCtx,
 ): SomeExpression[] {
   if (!(_expr as any).__kind__) {
     throw new Error(
@@ -368,7 +368,7 @@ function walkExprTree(
         `instead received ${typeof _expr}${
           typeof _expr !== "undefined" ? `: '${_expr}'` : ""
         }.` +
-        getErrorHint(_expr)
+        getErrorHint(_expr),
     );
   }
 
@@ -450,7 +450,7 @@ function walkExprTree(
           childExprs.push(expr.__parent__.type as any);
         } else {
           childExprs.push(
-            ...walkExprTree(expr.__parent__.type, parentScope, ctx)
+            ...walkExprTree(expr.__parent__.type, parentScope, ctx),
           );
         }
 
@@ -562,8 +562,8 @@ function walkExprTree(
           ...walkExprTree(
             expr.__conflict__.on,
             expr.__expr__ as $expr_Insert,
-            ctx
-          )
+            ctx,
+          ),
         );
       }
       if (expr.__conflict__.else) {
@@ -571,8 +571,8 @@ function walkExprTree(
           ...walkExprTree(
             expr.__conflict__.else,
             expr.__expr__ as $expr_Insert,
-            ctx
-          )
+            ctx,
+          ),
         );
       }
 
@@ -631,7 +631,7 @@ function walkExprTree(
     case ExpressionKind.WithParams: {
       if (parentScope !== null) {
         throw new Error(
-          `'withParams' does not support being used as a nested expression`
+          `'withParams' does not support being used as a nested expression`,
         );
       }
       childExprs.push(...walkExprTree(expr.__expr__, parentScope, ctx));
@@ -646,7 +646,7 @@ function walkExprTree(
     default:
       util.assertNever(
         expr,
-        new Error(`Unrecognized expression kind: "${(expr as any).__kind__}"`)
+        new Error(`Unrecognized expression kind: "${(expr as any).__kind__}"`),
       );
   }
 
@@ -657,7 +657,7 @@ function renderEdgeQL(
   _expr: TypeSet,
   ctx: RenderCtx,
   renderShape = true,
-  noImplicitDetached = false
+  noImplicitDetached = false,
 ): string {
   if (!(_expr as any).__kind__) {
     throw new Error("Invalid expression.");
@@ -676,7 +676,7 @@ function renderEdgeQL(
           (expr.__element__.__shape__ || {}) as object,
           ctx,
           null,
-          true // render shape only
+          true, // render shape only
         )})`
       : withVar.name;
   }
@@ -684,7 +684,7 @@ function renderEdgeQL(
   // render with block expression
   function renderWithBlockExpr(
     varExpr: SomeExpression,
-    _noImplicitDetached?: boolean
+    _noImplicitDetached?: boolean,
   ) {
     const withBlockElement = ctx.withVars.get(varExpr)!;
     let renderedExpr = renderEdgeQL(
@@ -694,7 +694,7 @@ function renderEdgeQL(
         renderWithVar: varExpr,
       },
       !withBlockElement.scopedExpr, // render shape if no scopedExpr exists
-      _noImplicitDetached
+      _noImplicitDetached,
     );
     const renderedExprNoDetached = renderEdgeQL(
       withBlockElement.scopedExpr ?? varExpr,
@@ -703,7 +703,7 @@ function renderEdgeQL(
         renderWithVar: varExpr,
       },
       !withBlockElement.scopedExpr, // render shape if no scopedExpr exists
-      true
+      true,
     );
 
     if (ctx.linkProps.has(expr)) {
@@ -711,7 +711,7 @@ function renderEdgeQL(
         .get(expr)!
         .map(
           (linkPropName) =>
-            `  __linkprop_${linkPropName} := ${renderedExprNoDetached}@${linkPropName}`
+            `  __linkprop_${linkPropName} := ${renderedExprNoDetached}@${linkPropName}`,
         )
         .join(",\n")}\n})`;
     }
@@ -722,7 +722,7 @@ function renderEdgeQL(
               renderedExpr[renderedExpr.length - 1] === ")"
               ? renderedExpr.slice(1, -1)
               : renderedExpr,
-            4
+            4,
           )}\n  )`
         : renderedExpr
     }`;
@@ -746,13 +746,13 @@ function renderEdgeQL(
     // sort associated vars
     const sortedBlockVars = topoSortWithVars(
       ctx.withBlocks.get(expr as any) ?? new Set(),
-      ctx
+      ctx,
     );
 
     if (!scopeExpr) {
       // if no scope expression exists, all variables are unscoped
       unscopedWithBlock.push(
-        ...sortedBlockVars.map((blockVar) => renderWithBlockExpr(blockVar))
+        ...sortedBlockVars.map((blockVar) => renderWithBlockExpr(blockVar)),
       );
     }
     // else if (expr.__kind__ === ExpressionKind.Group) {
@@ -770,13 +770,13 @@ function renderEdgeQL(
 
       // get list of with vars that reference scope
       const scopedVars = sortedBlockVars.filter((blockVarExpr) =>
-        ctx.withVars.get(blockVarExpr)?.childExprs.has(scopeExpr)
+        ctx.withVars.get(blockVarExpr)?.childExprs.has(scopeExpr),
       );
       // filter blockvars to only include vars that don't reference scope
       unscopedWithBlock.push(
         ...sortedBlockVars
           .filter((blockVar) => !scopedVars.includes(blockVar))
-          .map((blockVar) => renderWithBlockExpr(blockVar))
+          .map((blockVar) => renderWithBlockExpr(blockVar)),
       );
 
       // when rendering `with` variables that reference current scope
@@ -803,13 +803,13 @@ function renderEdgeQL(
             scopedVars
               .map((blockVar) => renderWithBlockExpr(blockVar))
               .join(",\n"),
-            4
+            4,
           )}\n    SELECT ${scopeVar.name} {\n${scopedVars
             .map((blockVar) => {
               const name = ctx.withVars.get(blockVar)!.name;
               return `      ${name} := ${name}`;
             })
-            .join(",\n")}\n    }\n  ))`
+            .join(",\n")}\n    }\n  ))`,
         );
 
         // change var name back to original value
@@ -857,7 +857,7 @@ function renderEdgeQL(
     const aliasedExprVar = ctx.withVars.get(expr.__expr__ as any);
     if (!aliasedExprVar) {
       throw new Error(
-        `Expression referenced by alias does not exist in 'WITH' block`
+        `Expression referenced by alias does not exist in 'WITH' block`,
       );
     }
     return aliasedExprVar.name;
@@ -880,7 +880,7 @@ function renderEdgeQL(
         expr.__parent__.type,
         ctx,
         false,
-        noImplicitDetached
+        noImplicitDetached,
       );
       return `${parent}${linkName.startsWith("@") ? "" : "."}${q(linkName)}`;
     }
@@ -899,7 +899,7 @@ function renderEdgeQL(
       throw new Error(
         `Invalid arguments to set constructor: ${exprs
           .map((ex) => ex.__element__.__name__)
-          .join(", ")}`
+          .join(", ")}`,
       );
     }
   } else if (expr.__kind__ === ExpressionKind.Array) {
@@ -910,7 +910,7 @@ function renderEdgeQL(
     return `(\n${expr.__items__
       .map(
         (item) =>
-          `  ` + renderEdgeQL(item, ctx, renderShape, noImplicitDetached)
+          `  ` + renderEdgeQL(item, ctx, renderShape, noImplicitDetached),
       )
       .join(",\n")}${expr.__items__.length === 1 ? "," : ""}\n)`;
   } else if (expr.__kind__ === ExpressionKind.NamedTuple) {
@@ -921,8 +921,8 @@ function renderEdgeQL(
             expr.__shape__[key]!,
             ctx,
             renderShape,
-            noImplicitDetached
-          )}`
+            noImplicitDetached,
+          )}`,
       )
       .join(",\n")}\n)`;
   } else if (expr.__kind__ === ExpressionKind.TuplePath) {
@@ -947,7 +947,7 @@ function renderEdgeQL(
       const selectionTarget = renderEdgeQL(
         expr.__scope__ ?? expr.__expr__,
         ctx,
-        false
+        false,
       );
 
       lines.push(
@@ -955,7 +955,7 @@ function renderEdgeQL(
           selectionTarget === "DETACHED std::FreeObject"
             ? ""
             : ` ${selectionTarget}`
-        }`
+        }`,
       );
 
       if (
@@ -966,8 +966,8 @@ function renderEdgeQL(
           shapeToEdgeQL(
             (expr.__element__.__shape__ || {}) as object,
             ctx,
-            expr.__element__
-          )
+            expr.__element__,
+          ),
         );
       }
     } else {
@@ -982,8 +982,8 @@ function renderEdgeQL(
       lines.push(
         `SELECT ${needsScalarVar ? "_ := " : ""}${renderEdgeQL(
           expr.__expr__,
-          ctx
-        )}`
+          ctx,
+        )}`,
       );
 
       if (needsScalarVar) {
@@ -1007,26 +1007,26 @@ function renderEdgeQL(
           ({ expression, direction, empty }, i) => {
             return `${i === 0 ? "ORDER BY" : "  THEN"} ${renderEdgeQL(
               expression,
-              ctx
+              ctx,
             )}${direction ? " " + direction : ""}${empty ? " " + empty : ""}`;
-          }
-        )
+          },
+        ),
       );
     }
     if (expr.__modifiers__.offset) {
       modifiers.push(
         `OFFSET ${renderEdgeQL(
           expr.__modifiers__.offset as OffsetExpression,
-          ctx
-        )}`
+          ctx,
+        )}`,
       );
     }
     if (expr.__modifiers__.limit) {
       modifiers.push(
         `LIMIT ${renderEdgeQL(
           expr.__modifiers__.limit as LimitExpression,
-          ctx
-        )}`
+          ctx,
+        )}`,
       );
     }
 
@@ -1052,14 +1052,14 @@ function renderEdgeQL(
       expr.__expr__,
       ctx,
       undefined,
-      noImplicitDetached
+      noImplicitDetached,
     )})`;
   } else if (expr.__kind__ === ExpressionKind.Insert) {
     return `(${withBlock}INSERT ${renderEdgeQL(
       expr.__expr__,
       ctx,
       false,
-      true
+      true,
     )} ${shapeToEdgeQL(expr.__shape__, ctx, null, false, false)})`;
   } else if (expr.__kind__ === ExpressionKind.InsertUnlessConflict) {
     const $on = expr.__conflict__.on;
@@ -1070,7 +1070,7 @@ function renderEdgeQL(
     }
     if ($on) {
       clause.push(
-        `\nUNLESS CONFLICT ON ${renderEdgeQL($on, ctx, false, true)}`
+        `\nUNLESS CONFLICT ON ${renderEdgeQL($on, ctx, false, true)}`,
       );
     }
     if ($else) {
@@ -1078,7 +1078,7 @@ function renderEdgeQL(
     }
     return `(${renderEdgeQL(expr.__expr__, ctx, false, true).slice(
       1,
-      -1
+      -1,
     )}${clause.join("")})`;
   } else if (expr.__kind__ === ExpressionKind.Group) {
     const groupingSet = expr.__modifiers__.by as any as GroupingSet;
@@ -1096,7 +1096,7 @@ function renderEdgeQL(
       // ...scopedWithBlock,
       // this is deduplicated in e.group
       ...groupingSet.__exprs__.map(
-        ([k, v]) => `  ${k} := ${renderEdgeQL(v, ctx)}`
+        ([k, v]) => `  ${k} := ${renderEdgeQL(v, ctx)}`,
       ),
     ];
     groupStatement.push(`USING\n${combinedBlock.join(",\n")}`);
@@ -1119,7 +1119,7 @@ function renderEdgeQL(
       ].join(",\n")},
   ${selectTarget} := (
 ${indent(groupStatement.join("\n"), 4)}
-)`
+)`,
     );
 
     // rename scope var to fix all scope references that
@@ -1130,7 +1130,7 @@ ${indent(groupStatement.join("\n"), 4)}
     // .elements reference
     const elementsShapeQuery = indent(
       shapeToEdgeQL(elementsShape as object, { ...ctx }, expr.__element__),
-      2
+      2,
     )
       .trim()
       .split(scopeVar!.name + ".")
@@ -1144,7 +1144,7 @@ ${indent(groupStatement.join("\n"), 4)}
     return `(${selectStatement.join("\n")})`;
   } else if (expr.__kind__ === ExpressionKind.Function) {
     const args = expr.__args__.map(
-      (arg) => `${renderEdgeQL(arg!, ctx, false)}`
+      (arg) => `${renderEdgeQL(arg!, ctx, false)}`,
     );
     for (const [key, arg] of Object.entries(expr.__namedargs__)) {
       args.push(`${q(key)} := ${renderEdgeQL(arg, ctx, false)}`);
@@ -1174,7 +1174,7 @@ ${indent(groupStatement.join("\n"), 4)}
         }
         return `(${renderEdgeQL(args[0]!, ctx)} ${operator} ${renderEdgeQL(
           args[1]!,
-          ctx
+          ctx,
         )})`;
       case OperatorKind.Postfix:
         return `(${renderEdgeQL(args[0]!, ctx)} ${operator})`;
@@ -1184,7 +1184,7 @@ ${indent(groupStatement.join("\n"), 4)}
         if (operator === "if_else") {
           return `(${renderEdgeQL(args[0]!, ctx)} IF ${renderEdgeQL(
             args[1]!,
-            ctx
+            ctx,
           )} ELSE ${renderEdgeQL(args[2]!, ctx)})`;
         } else {
           throw new Error(`Unknown operator: ${operator}`);
@@ -1192,7 +1192,7 @@ ${indent(groupStatement.join("\n"), 4)}
       default:
         util.assertNever(
           expr.__opkind__,
-          new Error(`Unknown operator kind: ${expr.__opkind__}`)
+          new Error(`Unknown operator kind: ${expr.__opkind__}`),
         );
     }
   } else if (expr.__kind__ === ExpressionKind.TypeIntersection) {
@@ -1202,7 +1202,7 @@ ${indent(groupStatement.join("\n"), 4)}
   } else if (expr.__kind__ === ExpressionKind.For) {
     ctx.forVars.set(expr.__forVar__, `__forVar__${ctx.forVars.size}`);
     return `(${withBlock}FOR ${ctx.forVars.get(
-      expr.__forVar__
+      expr.__forVar__,
     )} IN {${renderEdgeQL(expr.__iterSet__, ctx)}}
 UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n))`;
   } else if (expr.__kind__ === ExpressionKind.ForVar) {
@@ -1221,14 +1221,14 @@ UNION (\n${indent(renderEdgeQL(expr.__expr__, ctx), 2)}\n))`;
         renderWithVar: expr.__expr__ as any,
       },
       undefined,
-      true
+      true,
     )})`;
   } else if (expr.__kind__ === ExpressionKind.Global) {
     return `(GLOBAL ${expr.__name__})`;
   } else {
     util.assertNever(
       expr,
-      new Error(`Unrecognized expression kind: "${(expr as any).__kind__}"`)
+      new Error(`Unrecognized expression kind: "${(expr as any).__kind__}"`),
     );
   }
 }
@@ -1262,7 +1262,7 @@ function shapeToEdgeQL(
   ctx: RenderCtx,
   type: ObjectType | null = null,
   keysOnly = false,
-  injectImplicitId = true
+  injectImplicitId = true,
 ) {
   const pointers = type?.__pointers__ || null;
   const isFreeObject = type?.__name__ === "std::FreeObject";
@@ -1347,7 +1347,7 @@ function shapeToEdgeQL(
 
     const valIsExpression = Object.prototype.hasOwnProperty.call(
       val,
-      "__kind__"
+      "__kind__",
     );
 
     // is subshape
@@ -1355,8 +1355,8 @@ function shapeToEdgeQL(
       addLine(
         `${polyIntersection}${q(key, false)}: ${indent(
           shapeToEdgeQL(val, ctx, ptr?.target),
-          2
-        ).trim()}`
+          2,
+        ).trim()}`,
       );
       continue;
     }
@@ -1369,7 +1369,7 @@ function shapeToEdgeQL(
         q(key, false) +
           (isObjectType(val.__element__)
             ? `: ${shapeToEdgeQL(val.__element__.__shape__, ctx, null, true)}`
-            : "")
+            : ""),
       );
       continue;
     }
@@ -1385,10 +1385,10 @@ function shapeToEdgeQL(
                 renderedExpr[renderedExpr.length - 1] === ")"
                 ? renderedExpr.slice(1, -1)
                 : renderedExpr,
-              4
+              4,
             )}\n  )`
           : renderedExpr
-      }${wrapAssertExists ? ")" : ""}`
+      }${wrapAssertExists ? ")" : ""}`,
     );
   }
 
@@ -1400,7 +1400,7 @@ function shapeToEdgeQL(
 
 function topoSortWithVars(
   vars: Set<SomeExpression>,
-  ctx: RenderCtx
+  ctx: RenderCtx,
 ): SomeExpression[] {
   if (!vars.size) {
     return [];
@@ -1471,7 +1471,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
         }
       } else {
         throw new Error(
-          `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`
+          `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`,
         );
       }
     } else {
@@ -1504,7 +1504,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
         .join(", ")}${type.__items__.length === 1 ? "," : ""} )`;
     } else {
       throw new Error(
-        `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`
+        `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`,
       );
     }
   } else if (val instanceof Date) {
@@ -1544,17 +1544,17 @@ function literalToEdgeQL(type: BaseType, val: any): string {
     if (isNamedTupleType(type)) {
       stringRep = `( ${Object.entries(val).map(
         ([key, value]) =>
-          `${key} := ${literalToEdgeQL(type.__shape__[key]!, value)}`
+          `${key} := ${literalToEdgeQL(type.__shape__[key]!, value)}`,
       )} )`;
       skipCast = true;
     } else {
       throw new Error(
-        `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`
+        `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`,
       );
     }
   } else {
     throw new Error(
-      `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`
+      `Invalid value for type ${type.__name__}: ${JSON.stringify(val)}`,
     );
   }
   if (skipCast) {

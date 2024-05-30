@@ -81,7 +81,7 @@ export class DecimalStringCodec extends ScalarCodec implements ICodec {
     }
 
     const match = object.match(
-      /^(-?)([0-9]+)(?:\.([0-9]+))?(?:[eE]([-+]?[0-9]+))?$/
+      /^(-?)([0-9]+)(?:\.([0-9]+))?(?:[eE]([-+]?[0-9]+))?$/,
     );
 
     if (!match) {

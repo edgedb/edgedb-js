@@ -49,7 +49,7 @@ export class ObjectCodec extends Codec implements ICodec {
     codecs: ICodec[],
     names: string[],
     flags: number[],
-    cards: number[]
+    cards: number[],
   ) {
     super(tid);
 
@@ -95,7 +95,7 @@ export class ObjectCodec extends Codec implements ICodec {
       throw new QueryArgumentError(
         `expected ${codecsLen} argument${codecsLen === 1 ? "" : "s"}, got ${
           args.length
-        }`
+        }`,
       );
     }
 
@@ -107,7 +107,7 @@ export class ObjectCodec extends Codec implements ICodec {
         const card = this.cardinalities[i];
         if (card === Cardinality.ONE || card === Cardinality.AT_LEAST_ONE) {
           throw new MissingArgumentError(
-            `argument ${this.fields[i].name} is required, but received ${arg}`
+            `argument ${this.fields[i].name} is required, but received ${arg}`,
           );
         }
         elemData.writeInt32(-1);
@@ -128,7 +128,7 @@ export class ObjectCodec extends Codec implements ICodec {
   _encodeNamedArgs(args: any): Uint8Array {
     if (args == null) {
       throw new MissingArgumentError(
-        "One or more named arguments expected, received null"
+        "One or more named arguments expected, received null",
       );
     }
 
@@ -143,7 +143,7 @@ export class ObjectCodec extends Codec implements ICodec {
       throw new UnknownArgumentError(
         `Unused named argument${
           extraKeys.length === 1 ? "" : "s"
-        }: "${extraKeys.join('", "')}"`
+        }: "${extraKeys.join('", "')}"`,
       );
     }
 
@@ -157,7 +157,7 @@ export class ObjectCodec extends Codec implements ICodec {
         const card = this.cardinalities[i];
         if (card === Cardinality.ONE || card === Cardinality.AT_LEAST_ONE) {
           throw new MissingArgumentError(
-            `argument ${this.fields[i].name} is required, but received ${val}`
+            `argument ${this.fields[i].name} is required, but received ${val}`,
           );
         }
         elemData.writeInt32(-1);
@@ -182,7 +182,7 @@ export class ObjectCodec extends Codec implements ICodec {
     const els = buf.readUInt32();
     if (els !== codecs.length) {
       throw new ProtocolError(
-        `cannot decode Object: expected ${codecs.length} elements, got ${els}`
+        `cannot decode Object: expected ${codecs.length} elements, got ${els}`,
       );
     }
 

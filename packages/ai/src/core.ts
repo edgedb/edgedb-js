@@ -24,7 +24,7 @@ export class EdgeDBAI {
   constructor(
     public readonly client: Client,
     options: AIOptions,
-    context: Partial<QueryContext> = {}
+    context: Partial<QueryContext> = {},
   ) {
     this.authenticatedFetch = EdgeDBAI.getAuthenticatedFetch(client);
     this.options = options;
@@ -44,7 +44,7 @@ export class EdgeDBAI {
     return new EdgeDBAI(
       this.client,
       { ...this.options, ...options },
-      this.context
+      this.context,
     );
   }
 
@@ -78,7 +78,7 @@ export class EdgeDBAI {
 
   async queryRag(
     message: string,
-    context: QueryContext = this.context
+    context: QueryContext = this.context,
   ): Promise<string> {
     const response = await this.fetchRag({
       model: this.options.model,
@@ -90,7 +90,7 @@ export class EdgeDBAI {
 
     if (!response.headers.get("content-type")?.includes("application/json")) {
       throw new Error(
-        "expected response to have content-type: application/json"
+        "expected response to have content-type: application/json",
       );
     }
 
@@ -101,7 +101,7 @@ export class EdgeDBAI {
       typeof data.response !== "string"
     ) {
       throw new Error(
-        "expected response to be object with response key of type string"
+        "expected response to be object with response key of type string",
       );
     }
 

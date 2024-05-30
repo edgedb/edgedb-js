@@ -21,7 +21,7 @@ function applySpec(
   type: $.introspect.ObjectType,
   shape: any,
   seen: Set<string>,
-  literal: any
+  literal: any,
 ): void {
   const allPointers = [
     ...type.pointers,
@@ -43,7 +43,7 @@ function applySpec(
         readonly: ptr.is_readonly,
       } as LinkDesc;
       util.defineGetter(shape[ptr.name], "target", () =>
-        makeType(spec, ptr.target_id, literal)
+        makeType(spec, ptr.target_id, literal),
       );
       util.defineGetter(shape[ptr.name], "properties", () => {
         if (!shape[ptr.name][_linkProps]) {
@@ -81,7 +81,7 @@ function applySpec(
         readonly: ptr.is_readonly,
       } as PropertyDesc;
       util.defineGetter(shape[ptr.name], "target", () =>
-        makeType(spec, ptr.target_id, literal)
+        makeType(spec, ptr.target_id, literal),
       );
     }
   }
@@ -94,7 +94,7 @@ export function makeType<T extends BaseType>(
   // 'Type instantiation is excessively deep and possibly infinite' error
   // in typescript 4.5
   literal: any,
-  anytype?: BaseType
+  anytype?: BaseType,
 ): T {
   const type = spec.get(id);
 
@@ -136,14 +136,14 @@ export function makeType<T extends BaseType>(
     const scalarObj = type.is_abstract
       ? {}
       : type.enum_values
-      ? {}
-      : // : type.name === "std::json"
-        // ? (((val: any) => {
-        //     return literal(scalarObj, JSON.stringify(val));
-        //   }) as any)
-        (((val: any) => {
-          return literal(scalarObj, val);
-        }) as any);
+        ? {}
+        : // : type.name === "std::json"
+          // ? (((val: any) => {
+          //     return literal(scalarObj, JSON.stringify(val));
+          //   }) as any)
+          (((val: any) => {
+            return literal(scalarObj, val);
+          }) as any);
 
     if (type.enum_values) {
       scalarObj.__kind__ = TypeKind.enum;
@@ -181,7 +181,7 @@ export function makeType<T extends BaseType>(
 
       util.defineGetter(obj, "__items__", () => {
         return type.tuple_elements.map((el) =>
-          makeType(spec, el.target_id, literal, anytype)
+          makeType(spec, el.target_id, literal, anytype),
         ) as any;
       });
       util.defineGetter(obj, "__name__", () => {
@@ -232,7 +232,7 @@ export function makeType<T extends BaseType>(
 }
 export type mergeObjectShapes<
   A extends ObjectTypePointers,
-  B extends ObjectTypePointers
+  B extends ObjectTypePointers,
 > = typeutil.flatten<{
   [k in keyof A & keyof B]: A[k] extends B[k] // possible performance issue?
     ? B[k] extends A[k]
@@ -243,7 +243,7 @@ export type mergeObjectShapes<
 
 export type mergeObjectTypes<
   A extends ObjectType | undefined,
-  B extends ObjectType | undefined
+  B extends ObjectType | undefined,
 > = A extends ObjectType
   ? B extends ObjectType
     ? ObjectType<
@@ -253,12 +253,12 @@ export type mergeObjectTypes<
       >
     : A
   : B extends ObjectType
-  ? B
-  : undefined;
+    ? B
+    : undefined;
 
 export function $mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
   a: A,
-  b: B
+  b: B,
 ): mergeObjectTypes<A, B> {
   const obj = {
     __kind__: TypeKind.object,
@@ -283,7 +283,7 @@ export function $mergeObjectTypes<A extends ObjectType, B extends ObjectType>(
 
 export function $mergeTupleTypes<A extends TupleType, B extends TupleType>(
   a: A,
-  b: B
+  b: B,
 ): TupleType {
   if (a.__items__.length !== b.__items__.length) {
     throw new Error("Incompatible tuple types; lengths differ.");

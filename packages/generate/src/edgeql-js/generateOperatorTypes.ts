@@ -45,7 +45,7 @@ export function generateOperatorFunctions({
       code.writeln([r`__name__: ${quote(opDefs[0].originalName)},`]);
       code.writeln([r`__opkind__: kind,`]);
       code.writeln([r`__args__: positionalArgs,`]);
-    }
+    },
   );
 }
 
@@ -84,7 +84,7 @@ export function generateOperators({
       sortFuncopOverloads(_opDefs, typeSpecificities),
       types,
       casts,
-      implicitCastableRootTypes
+      implicitCastableRootTypes,
     );
 
     let overloadIndex = 0;
@@ -102,7 +102,7 @@ export function generateOperators({
         }
 
         overloadDefs[opDef.operator_kind][opSymbol].push(
-          generateFuncopDef(opDef)
+          generateFuncopDef(opDef),
         );
 
         overloadIndex++;
@@ -126,7 +126,7 @@ export function generateOperators({
 
         const getParamAnytype = (
           paramTypeName: string,
-          paramType: $.introspect.Type
+          paramType: $.introspect.Type,
         ) => {
           if (!anytypes) return undefined;
           if (anytypes.kind === "castable") {
@@ -174,7 +174,7 @@ export function generateOperators({
 
         overloadsBuf.indented(() => {
           const args = params.positional.map(
-            (param) => `${param.internalName}: ${param.typeName}`
+            (param) => `${param.internalName}: ${param.typeName}`,
           );
           switch (opDef.operator_kind) {
             case $.OperatorKind.Infix:
@@ -232,7 +232,7 @@ export function generateOperators({
           {
             types,
             anytype: returnAnytype,
-          }
+          },
         );
 
         overloadsBuf.writeln([t`): $.$expr_Operator<`]);
@@ -252,7 +252,7 @@ export function generateOperators({
               params,
               opDef.return_typemod,
               false,
-              anytypes
+              anytypes,
             )}`,
           ]);
         });

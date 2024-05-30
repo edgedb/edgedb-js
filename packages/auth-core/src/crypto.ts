@@ -56,7 +56,7 @@ export function base64UrlToBytes(base64url: string): Uint8Array {
 }
 
 export async function sha256(
-  source: BufferSource | string
+  source: BufferSource | string,
 ): Promise<Uint8Array> {
   const bytes =
     typeof source === "string" ? new TextEncoder().encode(source) : source;
