@@ -200,10 +200,10 @@ type Operator =
 
 function operatorFromOpDef(
   typeToCodeFragment: (
-    type: FuncopDefOverload<$.introspect.OperatorDef>["params"]["positional"][number]
+    type: FuncopDefOverload<$.introspect.OperatorDef>["params"]["positional"][number],
   ) => CodeFragment[],
   opName: string,
-  opDef: FuncopDefOverload<$.introspect.OperatorDef>
+  opDef: FuncopDefOverload<$.introspect.OperatorDef>,
 ): Operator {
   const operatorSymbol =
     opName === "std::if_else"
@@ -274,7 +274,7 @@ function operatorFromOpDef(
         log("InfixContainerComparisonOperator rhs: ", rhs);
         log(
           "InfixContainerComparisonOperator has rhs: ",
-          rhs.type.id !== lhs.type.id
+          rhs.type.id !== lhs.type.id,
         );
         return {
           type:
@@ -290,7 +290,7 @@ function operatorFromOpDef(
         const [lhs, rhs] = opDef.params.positional;
         log(
           "InfixContainerHomogenousOperator lhs: ",
-          opDef.params.positional[0]
+          opDef.params.positional[0],
         );
         return {
           type: "InfixContainerHomogenousOperator",
@@ -402,14 +402,14 @@ export function generateOperators({
         params1_typemod: opDef.params[1]?.typemod,
         params2: opDef.params[2]?.type,
         params2_typemod: opDef.params[2]?.typemod,
-      }))
+      })),
     );
 
     const opDefs = expandFuncopAnytypeOverloads(
       sortFuncopOverloads(_opDefs, typeSpecificities),
       types,
       casts,
-      implicitCastableRootTypes
+      implicitCastableRootTypes,
     );
 
     let overloadIndex = 0;
@@ -425,7 +425,7 @@ export function generateOperators({
         }
 
         overloadDefs[opDef.operator_kind][opSymbol].push(
-          generateFuncopDef(opDef)
+          generateFuncopDef(opDef),
         );
 
         overloadIndex++;
@@ -435,11 +435,11 @@ export function generateOperators({
       const anytypeParams: string[] = [];
 
       const getParamType = (
-        param: (typeof opDef.params.positional)[number]
+        param: (typeof opDef.params.positional)[number],
       ) => {
         const getParamAnytype = (
           paramTypeName: string,
-          paramType: $.introspect.Type
+          paramType: $.introspect.Type,
         ) => {
           if (!anytypes) return undefined;
           if (anytypes.kind === "castable") {
@@ -573,7 +573,9 @@ export function generateOperators({
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.rhs ?? def.lhs} }`]);
+          overloadsBuf.writeln([
+            t`| { lhs: ${def.lhs}; rhs: ${def.rhs ?? def.lhs} }`,
+          ]);
         }
       });
     }
