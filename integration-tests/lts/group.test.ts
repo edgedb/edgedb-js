@@ -30,8 +30,6 @@ describe("group", () => {
         },
       };
     });
-    // query.__element__.__shape__.elements.__element__.__shape__;
-    query.__modifiers__.by;
 
     type query = $infer<typeof query>;
     const result = await query.run(client);

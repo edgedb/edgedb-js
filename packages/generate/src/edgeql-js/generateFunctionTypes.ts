@@ -32,7 +32,7 @@ export const generateFunctionTypes = ({
     "Function",
     "FuncExpr",
     true,
-    (code, funcDef, args, namedArgs, returnType) => {
+    (code, _funcDef, _args, _namedArgs, returnType) => {
       // Name
       // code.writeln([t`${quote(funcDef.name)},`]);
       // Args
@@ -483,7 +483,7 @@ export function generateReturnCardinality(
   params: GroupedParams,
   returnTypemod: $.introspect.FuncopTypemod,
   hasNamedParams: boolean,
-  anytypes: AnytypeDef | null,
+  _anytypes: AnytypeDef | null,
   preservesOptionality = false,
 ) {
   if (

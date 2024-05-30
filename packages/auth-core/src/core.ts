@@ -1,4 +1,4 @@
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import * as edgedb from "edgedb";
 import { type ResolvedConnectConfig } from "edgedb/dist/conUtils";
 

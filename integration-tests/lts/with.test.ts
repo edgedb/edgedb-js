@@ -413,10 +413,7 @@ SELECT {
       const numbersAlias = e.alias(numbers);
 
       const arg = e.op(numbers, "+", numbersAlias);
-      const explicitWith = e.with(
-        [numbersAlias],
-        e.select(e.op(numbers, "+", numbersAlias)),
-      );
+      const explicitWith = e.with([numbersAlias], e.select(arg));
 
       assert.equal(
         e

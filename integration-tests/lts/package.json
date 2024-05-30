@@ -7,7 +7,7 @@
     "generate": "../../packages/generate/dist/cli.js",
     "build": "echo 'Integration tests, no build output...'",
     "test": "yarn test:ts && yarn test:non_ts",
-    "test:ts": "NODE_OPTIONS=\"--experimental-vm-modules\" pwd && yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit",
+    "test:ts": "pwd && yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
     "test:non_ts": "yarn test:esm && yarn test:cjs && yarn test:mts && yarn test:deno",
     "test:esm": "yarn generate queries --target esm --file esm/queries && yarn generate edgeql-js --target esm --output-dir esm/edgeql-js && cd esm && node test.js",
     "test:cjs": "yarn generate queries --target cjs --file cjs/queries && yarn generate edgeql-js --target cjs --output-dir cjs/edgeql-js && cd cjs && node test.js",
@@ -17,13 +17,13 @@
     "bench:types": "cd ../.. && tsx integration-tests/lts/bench.ts"
   },
   "devDependencies": {
-    "@arktype/attest": "^0.6.6",
-    "@types/jest": "^29.5.2",
-    "@types/node": "^20.3.2",
+    "@arktype/attest": "^0.7.8",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.12.13",
     "conditional-type-checks": "^1.0.6",
-    "jest": "^29.5.0",
-    "superjson": "^1.12.4",
-    "ts-jest": "^29.1.0",
+    "jest": "^29.7.0",
+    "superjson": "1.13.3",
+    "ts-jest": "^29.1.4",
     "typescript": "^5.4.5"
   },
   "dependencies": {

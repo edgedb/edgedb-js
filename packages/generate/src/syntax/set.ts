@@ -50,7 +50,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
         __name__: `tuple<${items.map((item) => item.__name__).join(", ")}>`,
         __items__: items as BaseTypeTuple,
       };
-    } catch (err) {
+    } catch (_err) {
       throw new Error(
         `Incompatible tuple types: ${a.__name__} and ${b.__name__}`,
       );
@@ -87,7 +87,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
           .join(", ")}>`,
         __shape__: items,
       };
-    } catch (err) {
+    } catch (_err) {
       throw new Error(
         `Incompatible tuple types: ${a.__name__} and ${b.__name__}`,
       );
@@ -103,7 +103,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
         __name__: a.__name__,
         __element__: mergedEl,
       } as ArrayType;
-    } catch (err) {
+    } catch (_err) {
       throw new Error(
         `Incompatible array types: ${a.__name__} and ${b.__name__}`,
       );

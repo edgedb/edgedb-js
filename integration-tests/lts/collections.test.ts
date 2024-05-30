@@ -122,10 +122,10 @@ describe("collections", () => {
       }),
     );
 
-    // @ts-expect-error
-    arr["str"];
-    // @ts-expect-error
-    arr[":"];
+    // @ts-expect-error does not include a str key
+    let _ = arr["str"];
+    // @ts-expect-error does not have a nonsense range operator
+    _ = arr[":"];
   });
 
   test("tuple literal", async () => {

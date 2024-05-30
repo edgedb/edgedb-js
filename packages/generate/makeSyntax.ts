@@ -20,6 +20,7 @@ const esmSyntax = path.join(__dirname, "dist", "__esm", "syntax");
 
 const reDriver = /"edgedb\/dist([a-zA-Z0-9\_\/]*)"/g;
 const reRelativeImports = /"(\.?\.\/.+)"/g;
+const reTsExpectErrorComment = /\/\/ @ts-expect-error GENERATED/g;
 
 async function readGlob(params: {
   pattern: string;
@@ -57,7 +58,7 @@ async function run() {
   const tsFiles = await readGlob({
     pattern: "*.ts",
     cwd: srcSyntax,
-    contentTx: content => content
+    contentTx: content => content.replace(reTsExpectErrorComment, "")
   });
 
   // CJS
@@ -96,6 +97,7 @@ async function run() {
       content
         .replace(reDriver, `"edgedb/dist$1.js"`)
         .replace(reRelativeImports, `"$1.mjs"`)
+        .replace(reTsExpectErrorComment, "")
   });
 
   // DENO
@@ -108,7 +110,8 @@ async function run() {
       }
       return content
         .replace(reDriver, `"edgedb/_src$1.ts"`)
-        .replace(reRelativeImports, `"$1.ts"`);
+        .replace(reRelativeImports, `"$1.ts"`)
+        .replace(reTsExpectErrorComment, "");
     }
   });
 

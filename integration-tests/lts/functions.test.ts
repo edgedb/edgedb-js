@@ -53,10 +53,8 @@ describe("functions", () => {
       $.Cardinality.One,
     );
 
-    try {
-      // @ts-expect-error
-      e.sys.get_version_as_str(e.str("error"));
-    } catch {}
+    // @ts-expect-error does not allow passing an argument
+    expect(() => e.sys.get_version_as_str(e.str("error"))).toThrow();
   });
 
   test("positional args", () => {
@@ -121,13 +119,13 @@ describe("functions", () => {
       $.Cardinality.AtLeastOne,
     );
 
-    try {
-      // @ts-expect-error
+    expect(() => {
+      // @ts-expect-error len not defined for int32 literal
       e.len(e.int32("test"));
 
-      // @ts-expect-error
+      // @ts-expect-error len not defined for Object
       e.len(e.Hero);
-    } catch {}
+    }).toThrow();
   });
 
   test("named args", () => {
@@ -224,9 +222,9 @@ describe("functions", () => {
       $.Cardinality.One,
     );
 
-    try {
+    expect(() => {
       e.std.re_replace(
-        // @ts-expect-error
+        // @ts-expect-error wrong key
         { wrongKey: e.str("") },
         e.str("pattern"),
         e.str("sub"),
@@ -234,18 +232,18 @@ describe("functions", () => {
       );
 
       e.std.re_replace(
-        // @ts-expect-error
+        // @ts-expect-error wrong type for flag
         { flags: e.int32(1) },
         e.str("pattern"),
         e.str("sub"),
         e.str("str"),
       );
 
-      // @ts-expect-error
-      e["💯"]();
-      // @ts-expect-error
-      e["💯"]({});
-    } catch {}
+      // @ts-expect-error not callable
+      let _ = e["💯"]();
+      // @ts-expect-error not callable with an empty object
+      _ = e["💯"]({});
+    }).toThrow();
   });
 
   test("variadic args", () => {
@@ -396,23 +394,23 @@ describe("functions", () => {
       $.Cardinality.AtMostOne,
     );
 
-    try {
-      // @ts-expect-error
+    expect(() => {
+      // @ts-expect-error cannot find an int needle in a str haystack
       e.contains(e.literal(e.array(e.str), ["test", "haystack"]), e.int64(1));
 
       e.array_get(
-        // @ts-expect-error
+        // @ts-expect-error cannot find an int needle in a bigint haystack
         { default: e.str("0") },
         e.literal(e.array(e.bigint), [BigInt(1), BigInt(2), BigInt(3)]),
         e.int64(4),
       );
 
-      // @ts-expect-error
+      // @ts-expect-error cannot min with an int and a str
       e.min(e.set(e.int64(1), e.str("str")));
 
-      // @ts-expect-error
+      // @ts-expect-error cannot find a bigint needle in a float32 haystack
       e.contains(e.literal(e.array(e.float32), [1, 2, 3]), e.bigint(BigInt(2)));
-    } catch {}
+    }).toThrow();
   });
 
   test("cardinality inference", () => {
