@@ -27,6 +27,7 @@
   "devDependencies": {
     "@js-temporal/polyfill": "0.4.3",
     "@types/jest": "^29.5.12",
+    "@types/semver": "^7.5.8",
     "@types/shell-quote": "^1.7.5",
     "@types/which": "^3.0.3",
     "fast-check": "^3.19.0",
