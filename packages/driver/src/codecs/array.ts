@@ -45,13 +45,13 @@ export class ArrayCodec extends Codec implements ICodec {
       )
     ) {
       throw new InvalidArgumentError(
-        "only arrays of scalars or tuples are supported"
+        "only arrays of scalars or tuples are supported",
       );
     }
 
     if (!Array.isArray(obj) && !isTypedArray(obj)) {
       throw new InvalidArgumentError(
-        `an array was expected (got type ${obj.constructor.name})`
+        `an array was expected (got type ${obj.constructor.name})`,
       );
     }
 
@@ -101,7 +101,7 @@ export class ArrayCodec extends Codec implements ICodec {
     const len = buf.readUInt32();
     if (this.len !== -1 && len !== this.len) {
       throw new ProtocolError(
-        `invalid array size: received ${len}, expected ${this.len}`
+        `invalid array size: received ${len}, expected ${this.len}`,
       );
     }
 

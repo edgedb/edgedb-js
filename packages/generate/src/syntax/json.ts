@@ -18,7 +18,7 @@ function jsonStringify(type: ParamType, val: any): string {
     }
     if (val.length !== type.__items__.length) {
       throw new Error(
-        `Param with tuple type has incorrect number of items. Got ${val.length} expected ${type.__items__.length}`
+        `Param with tuple type has incorrect number of items. Got ${val.length} expected ${type.__items__.length}`,
       );
     }
     return `[${val
@@ -33,7 +33,7 @@ function jsonStringify(type: ParamType, val: any): string {
       throw new Error(
         `Param with named tuple type has incorrect number of items. Got ${
           Object.keys(val).length
-        } expected ${Object.keys(type.__shape__).length}`
+        } expected ${Object.keys(type.__shape__).length}`,
       );
     }
     return `{${Object.entries(val)
@@ -41,8 +41,8 @@ function jsonStringify(type: ParamType, val: any): string {
         if (!type.__shape__[key]) {
           throw new Error(
             `Unexpected key in named tuple param: ${key}, expected keys: ${Object.keys(
-              type.__shape__
-            ).join()}`
+              type.__shape__,
+            ).join()}`,
           );
         }
         return `"${key}": ${jsonStringify(type.__shape__[key]!, item)}`;
@@ -79,7 +79,7 @@ export function jsonifyComplexParams(expr: any, _args: any) {
       if (param.__isComplex__) {
         args[param.__name__] = jsonStringify(
           param.__element__ as any,
-          args[param.__name__]
+          args[param.__name__],
         );
       }
     }

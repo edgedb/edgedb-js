@@ -202,7 +202,7 @@ export class WriteMessageBuffer {
   beginMessage(mtype: char): this {
     if (this.messagePos >= 0) {
       throw new BufferError(
-        "cannot begin a new message: the previous message is not finished"
+        "cannot begin a new message: the previous message is not finished",
       );
     }
     this.messagePos = this.buffer.position;
@@ -218,7 +218,7 @@ export class WriteMessageBuffer {
 
     this.buffer.buffer.setInt32(
       this.messagePos + 1,
-      this.buffer.position - this.messagePos - 1
+      this.buffer.position - this.messagePos - 1,
     );
     this.messagePos = -1;
     return this;
@@ -227,7 +227,7 @@ export class WriteMessageBuffer {
   writeLegacyHeaders(
     headers:
       | { [key in keyof typeof LegacyHeaderCodes]?: string | Uint8Array }
-      | null
+      | null,
   ): this {
     if (this.messagePos < 0) {
       throw new BufferError("cannot writeHeaders: no current message");
@@ -238,7 +238,7 @@ export class WriteMessageBuffer {
     }
 
     const entries = Object.entries(headers).filter(
-      ([_, value]) => value !== undefined
+      ([_, value]) => value !== undefined,
     ) as [keyof typeof LegacyHeaderCodes, string | Uint8Array][];
     this.buffer.writeUInt16(entries.length);
     for (const [code, value] of entries) {
@@ -250,7 +250,7 @@ export class WriteMessageBuffer {
         this.buffer.writeString(value);
       } else {
         throw new BufferError(
-          "cannot write header: value is not a Uint8Array or string"
+          "cannot write header: value is not a Uint8Array or string",
         );
       }
     }
@@ -341,7 +341,7 @@ export class WriteMessageBuffer {
   writeSync(): this {
     if (this.messagePos >= 0) {
       throw new BufferError(
-        "cannot writeSync: the previous message is not finished"
+        "cannot writeSync: the previous message is not finished",
       );
     }
     this.buffer.writeBuffer(SYNC_MESSAGE);
@@ -351,7 +351,7 @@ export class WriteMessageBuffer {
   writeFlush(): this {
     if (this.messagePos >= 0) {
       throw new BufferError(
-        "cannot writeFlush: the previous message is not finished"
+        "cannot writeFlush: the previous message is not finished",
       );
     }
     this.buffer.writeBuffer(FLUSH_MESSAGE);
@@ -361,7 +361,7 @@ export class WriteMessageBuffer {
   unwrap(): Uint8Array {
     if (this.messagePos >= 0) {
       throw new BufferError(
-        "cannot unwrap: an unfinished message is in the buffer"
+        "cannot unwrap: an unfinished message is in the buffer",
       );
     }
     return this.buffer.unwrap();
@@ -468,7 +468,7 @@ export class ReadMessageBuffer {
     this.buf0 = new DataView(
       nextBuf.buffer,
       nextBuf.byteOffset,
-      nextBuf.byteLength
+      nextBuf.byteLength,
     );
     this.pos0 = 0;
     this.len0 = nextBuf.byteLength;
@@ -510,7 +510,7 @@ export class ReadMessageBuffer {
 
         ret.set(
           new Uint8Array(buf0.buffer, buf0.byteOffset + this.pos0, nread),
-          retPos
+          retPos,
         );
         retPos += nread;
 
@@ -522,7 +522,7 @@ export class ReadMessageBuffer {
       } else {
         ret.set(
           new Uint8Array(buf0.buffer, buf0.byteOffset + this.pos0, size),
-          retPos
+          retPos,
         );
         this.pos0 += size;
         this.len -= size;
@@ -546,7 +546,7 @@ export class ReadMessageBuffer {
       const ret = new Uint8Array(
         buf0.buffer,
         buf0.byteOffset + this.pos0,
-        size
+        size,
       );
       this.pos0 += size;
       this.len -= size;
@@ -644,7 +644,7 @@ export class ReadMessageBuffer {
     const buf = this._readBuffer(2);
     this.curMessageLenUnread -= 2;
     return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getUint16(
-      0
+      0,
     );
   }
 
@@ -663,7 +663,7 @@ export class ReadMessageBuffer {
     const buf = this._readBuffer(4);
     this.curMessageLenUnread -= 4;
     return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getUint32(
-      0
+      0,
     );
   }
 
@@ -682,7 +682,7 @@ export class ReadMessageBuffer {
     const buf = this._readBuffer(8);
     this.curMessageLenUnread -= 8;
     return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getBigInt64(
-      0
+      0,
     );
   }
 
@@ -726,7 +726,7 @@ export class ReadMessageBuffer {
         this.curMessageLen = new DataView(
           buf.buffer,
           buf.byteOffset,
-          buf.byteLength
+          buf.byteLength,
         ).getInt32(0);
       }
 
@@ -808,8 +808,8 @@ export class ReadMessageBuffer {
           new Uint8Array(
             this.buf0!.buffer,
             this.buf0!.byteOffset + this.pos0,
-            this.curMessageLenUnread
-          )
+            this.curMessageLenUnread,
+          ),
         );
         this.pos0 += this.curMessageLenUnread;
         this.len -= this.curMessageLenUnread;
@@ -835,7 +835,7 @@ export class ReadMessageBuffer {
     if (this.curMessageLenUnread) {
       throw new BufferError(
         `cannot finishMessage: unread data in message ` +
-          `"${chars.chr(this.curMessageType)}"`
+          `"${chars.chr(this.curMessageType)}"`,
       );
     }
 
@@ -956,7 +956,7 @@ export class ReadBuffer {
 
     throw new BufferError(
       `integer overflow: cannot unpack <std::int64>'${num.toString()}' ` +
-        `into JavaScript Number type without losing precision`
+        `into JavaScript Number type without losing precision`,
     );
   }
 
@@ -1040,7 +1040,7 @@ export class ReadBuffer {
     }
 
     const res = utf8Decoder.decode(
-      this._rawBuffer.subarray(this.pos, this.len)
+      this._rawBuffer.subarray(this.pos, this.len),
     );
     this.pos = this.len;
     return res;
@@ -1068,7 +1068,7 @@ export class ReadBuffer {
     frb.buffer = new DataView(
       buffer.buffer,
       buffer.byteOffset,
-      buffer.byteLength
+      buffer.byteLength,
     );
     frb.pos = 0;
     frb.len = buffer.byteLength;

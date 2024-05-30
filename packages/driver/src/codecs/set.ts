@@ -53,7 +53,7 @@ export class SetCodec extends Codec implements ICodec {
     }
     if (ndims !== 1) {
       throw new ProtocolError(
-        `expected 1-dimensional array of records of arrays`
+        `expected 1-dimensional array of records of arrays`,
       );
     }
 
@@ -72,7 +72,7 @@ export class SetCodec extends Codec implements ICodec {
       if (recSize !== 1) {
         throw new ProtocolError(
           "expected a record with a single element as an array set " +
-            "element envelope"
+            "element envelope",
         );
       }
 

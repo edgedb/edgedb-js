@@ -46,7 +46,7 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof Date)) {
       throw new InvalidArgumentError(
-        `a Date instance was expected, got "${object}"`
+        `a Date instance was expected, got "${object}"`,
       );
     }
     const ms = object.getTime() - TIMESHIFT;
@@ -72,7 +72,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof LocalDateTime)) {
       throw new InvalidArgumentError(
-        `a LocalDateTime instance was expected, got "${object}"`
+        `a LocalDateTime instance was expected, got "${object}"`,
       );
     }
 
@@ -84,7 +84,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
           object.minute * 6e7 +
           object.second * 1e6 +
           object.millisecond * 1e3 +
-          object.microsecond
+          object.microsecond,
       );
 
     if (
@@ -117,7 +117,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
       date.getUTCMinutes(),
       date.getUTCSeconds(),
       date.getUTCMilliseconds(),
-      us
+      us,
     );
   }
 }
@@ -128,7 +128,7 @@ export class LocalDateCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof LocalDate)) {
       throw new InvalidArgumentError(
-        `a LocalDate instance was expected, got "${object}"`
+        `a LocalDate instance was expected, got "${object}"`,
       );
     }
     buf.writeInt32(4);
@@ -147,7 +147,7 @@ export class LocalTimeCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof LocalTime)) {
       throw new InvalidArgumentError(
-        `a LocalTime instance was expected, got "${object}"`
+        `a LocalTime instance was expected, got "${object}"`,
       );
     }
 
@@ -204,13 +204,13 @@ export class DurationCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof Duration)) {
       throw new InvalidArgumentError(
-        `a Duration instance was expected, got "${object}"`
+        `a Duration instance was expected, got "${object}"`,
       );
     }
     const invalidField = checkValidEdgeDBDuration(object);
     if (invalidField) {
       throw new InvalidArgumentError(
-        `Cannot encode a 'Duration' with a non-zero number of ${invalidField}`
+        `Cannot encode a 'Duration' with a non-zero number of ${invalidField}`,
       );
     }
 
@@ -277,7 +277,7 @@ export class DurationCodec extends ScalarCodec implements ICodec {
       minutes * sign,
       seconds * sign,
       ms * sign,
-      us * sign
+      us * sign,
     );
   }
 }
@@ -344,7 +344,7 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
       minutes * sign,
       seconds * sign,
       ms * sign,
-      us * sign
+      us * sign,
     );
   }
 }

@@ -61,7 +61,7 @@ test("lazy connect + concurrency", async () => {
   const promises = Promise.all(
     Array(10)
       .fill(0)
-      .map((_, i) => client.query(`select <int16>$i`, { i }))
+      .map((_, i) => client.query(`select <int16>$i`, { i })),
   );
 
   // @ts-ignore
@@ -127,7 +127,7 @@ test("unref idle connections", async () => {
   await client.execute('invalid query').catch(() => {});
 
   console.log('done');
-})();`
+})();`,
   );
 
   expect(shutdownTime).toBeLessThan(100);
@@ -158,7 +158,7 @@ test("client close", async () => {
     promises.push(
       i < 5
         ? expect(query).resolves.toBe(123)
-        : expect(query).rejects.toThrow(InterfaceError)
+        : expect(query).rejects.toThrow(InterfaceError),
     );
   }
 
@@ -171,7 +171,7 @@ test("client close", async () => {
   // connections are not closed immediately
   expect(
     // @ts-ignore
-    client.pool._getStats().openConnections
+    client.pool._getStats().openConnections,
   ).toBe(5);
 
   let resolvedLast: string | null = null;
@@ -188,11 +188,11 @@ test("client close", async () => {
   // connections were closed after retries were done
   expect(
     // @ts-ignore
-    client.pool._getStats().openConnections
+    client.pool._getStats().openConnections,
   ).toBe(0);
 
   await expect(client.query(`select 123`)).rejects.toThrow(
-    "The client is closed"
+    "The client is closed",
   );
 });
 
@@ -230,7 +230,7 @@ test("client terminate", async () => {
   // connections closed immediately
   expect(
     // @ts-ignore
-    client.pool._getStats().openConnections
+    client.pool._getStats().openConnections,
   ).toBe(0);
 
   await Promise.all(promises);
@@ -239,6 +239,6 @@ test("client terminate", async () => {
   expect(attemptCount).toBe(5);
 
   await expect(client.query(`select 123`)).rejects.toThrow(
-    "The client is closed"
+    "The client is closed",
   );
 });

@@ -40,7 +40,7 @@ test("test password signup/signin flow", async () => {
 
     const signupToken = await auth.signupWithEmailPassword(
       "test@example.edgedb.com",
-      "supersecretpassword"
+      "supersecretpassword",
     );
 
     expect(typeof signupToken.auth_token).toBe("string");
@@ -49,12 +49,12 @@ test("test password signup/signin flow", async () => {
     expect(signupToken.provider_token).toBeNull();
 
     await expect(
-      auth.signinWithEmailPassword("test@example.edgedb.com", "wrongpassword")
+      auth.signinWithEmailPassword("test@example.edgedb.com", "wrongpassword"),
     ).rejects.toThrow();
 
     const signinToken = await auth.signinWithEmailPassword(
       "test@example.edgedb.com",
-      "supersecretpassword"
+      "supersecretpassword",
     );
 
     const identity = (await client.withGlobals({

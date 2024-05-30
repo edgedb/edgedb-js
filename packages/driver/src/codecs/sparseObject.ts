@@ -45,7 +45,7 @@ export class SparseObjectCodec extends Codec implements ICodec {
               ? `invalid global '${key}', valid globals are ${this.names
                   .map((n) => `'${n}'`)
                   .join(", ")}`
-              : `invalid global '${key}', no valid globals exist`
+              : `invalid global '${key}', no valid globals exist`,
           );
         }
         objLen += 1;

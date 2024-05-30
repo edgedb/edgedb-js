@@ -65,7 +65,7 @@ class BaseFetchConnection extends BaseRawConnection {
 
     if (this.messageWaiter == null || this.messageWaiter.done) {
       throw new InternalClientError(
-        `message waiter was not initialized before waiting for response`
+        `message waiter was not initialized before waiting for response`,
       );
     }
 
@@ -77,13 +77,13 @@ class BaseFetchConnection extends BaseRawConnection {
       const mtype = this.buffer.getMessageType();
       throw new InternalClientError(
         `sending request before reading all data of the previous one: ` +
-          `${chars.chr(mtype)}`
+          `${chars.chr(mtype)}`,
       );
     }
 
     if (this.messageWaiter != null && !this.messageWaiter.done) {
       throw new InternalClientError(
-        `sending request before waiting for completion of the previous one`
+        `sending request before waiting for completion of the previous one`,
       );
     }
 
@@ -101,7 +101,7 @@ class BaseFetchConnection extends BaseRawConnection {
 
       if (!resp.ok) {
         throw new ProtocolError(
-          `fetch failed with status code ${resp.status}: ${resp.statusText}`
+          `fetch failed with status code ${resp.status}: ${resp.statusText}`,
         );
       }
 
@@ -133,7 +133,7 @@ class BaseFetchConnection extends BaseRawConnection {
   static create<T extends typeof BaseFetchConnection>(
     this: T,
     fetch: AuthenticatedFetch,
-    registry: CodecsRegistry
+    registry: CodecsRegistry,
   ): InstanceType<T> {
     const conn = new this(fetch, registry);
 
@@ -152,7 +152,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
     query: string,
     state: Session,
     options?: QueryOptions,
-    abortSignal?: AbortSignal | null
+    abortSignal?: AbortSignal | null,
   ): Promise<
     [ICodec, ICodec, Uint8Array, Uint8Array, ProtocolVersion, number]
   > {
@@ -164,7 +164,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
       Cardinality.MANY,
       state,
       STUDIO_CAPABILITIES,
-      options
+      options,
     ))!;
     return [
       result[1],
@@ -183,7 +183,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
     options?: QueryOptions,
     inCodec?: ICodec,
     args: QueryArgs = null,
-    abortSignal?: AbortSignal | null
+    abortSignal?: AbortSignal | null,
   ): Promise<Uint8Array> {
     this.abortSignal = abortSignal ?? null;
 
@@ -198,7 +198,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
       outCodec ?? NULL_CODEC,
       result,
       STUDIO_CAPABILITIES,
-      options
+      options,
     );
     return result.unwrap();
   }
@@ -208,11 +208,11 @@ export class FetchConnection extends BaseFetchConnection {
   static createConnectWithTimeout(httpSCRAMAuth: HttpSCRAMAuth) {
     return async function connectWithTimeout(
       config: NormalizedConnectConfig,
-      registry: CodecsRegistry
+      registry: CodecsRegistry,
     ) {
       const fetch = await getAuthenticatedFetch(
         config.connectionParams,
-        httpSCRAMAuth
+        httpSCRAMAuth,
       );
 
       const conn = new FetchConnection(fetch, registry);

@@ -20,10 +20,10 @@ export const getStringRepresentation: (
     anytype?: string | CodeFragment[];
     casts?: { [key: string]: string[] };
     castSuffix?: string;
-  }
+  },
 ) => { staticType: CodeFragment[]; runtimeType: CodeFragment[] } = (
   type,
-  params
+  params,
 ) => {
   const suffix = params.castSuffix || `λICastableTo`;
   if (type.name === "anytype") {
@@ -66,16 +66,16 @@ export const getStringRepresentation: (
     }
     if (type.union_of?.length) {
       const items = type.union_of.map((it) =>
-        getStringRepresentation(types.get(it.id), params)
+        getStringRepresentation(types.get(it.id), params),
       );
       return {
         staticType: joinFrags(
           items.map((it) => it.staticType),
-          " | "
+          " | ",
         ),
         runtimeType: joinFrags(
           items.map((it) => it.runtimeType),
-          " | "
+          " | ",
         ),
       };
     }
@@ -109,9 +109,9 @@ export const getStringRepresentation: (
             frag`${it.name}: ${
               getStringRepresentation(types.get(it.target_id), params)
                 .staticType
-            }`
+            }`,
         ),
-        ", "
+        ", ",
       );
       const itemsRuntime = joinFrags(
         type.tuple_elements.map(
@@ -119,9 +119,9 @@ export const getStringRepresentation: (
             frag`${it.name}: ${
               getStringRepresentation(types.get(it.target_id), params)
                 .runtimeType
-            }`
+            }`,
         ),
-        ", "
+        ", ",
       );
 
       return {
@@ -137,11 +137,11 @@ export const getStringRepresentation: (
       return {
         staticType: frag`$.TupleType<[${joinFrags(
           items.map((it) => it.staticType),
-          ", "
+          ", ",
         )}]>`,
         runtimeType: frag`$.TupleType([${joinFrags(
           items.map((it) => it.runtimeType),
-          ", "
+          ", ",
         )}])`,
       };
     }
@@ -213,7 +213,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     };
 
     const ptrToLine: (
-      ptr: $.introspect.Pointer | $.introspect.Backlink
+      ptr: $.introspect.Pointer | $.introspect.Backlink,
     ) => Line = (ptr) => {
       const card = `$.Cardinality.${ptr.card}`;
       const target = types.get(ptr.target_id);
@@ -261,7 +261,7 @@ export const generateObjectTypes = (params: GeneratorParams) => {
               ? frag`Omit<${baseRef}λShape, ${overloadedFields.join(" | ")}>`
               : frag`${baseRef}λShape`;
           }),
-          " & "
+          " & ",
         )} & `
       : ``;
     body.writeln([

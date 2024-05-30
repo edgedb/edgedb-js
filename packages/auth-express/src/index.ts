@@ -46,7 +46,10 @@ export class ExpressAuthSession {
   public readonly client: Client;
 
   /** @internal */
-  constructor(client: Client, private readonly authToken: string | undefined) {
+  constructor(
+    client: Client,
+    private readonly authToken: string | undefined,
+  ) {
     this.client = this.authToken
       ? client.withGlobals({ "ext::auth::client_token": this.authToken })
       : client;
@@ -56,7 +59,7 @@ export class ExpressAuthSession {
     if (!this.authToken) return false;
     try {
       return await this.client.querySingle<boolean>(
-        `select exists global ext::auth::ClientTokenIdentity`
+        `select exists global ext::auth::ClientTokenIdentity`,
       );
     } catch {
       return false;
@@ -75,7 +78,10 @@ export class ExpressAuth {
   private readonly core: Promise<Auth>;
   private readonly isSecure: boolean;
 
-  constructor(protected readonly client: Client, options: ExpressAuthOptions) {
+  constructor(
+    protected readonly client: Client,
+    options: ExpressAuthOptions,
+  ) {
     this.options = {
       baseUrl: options.baseUrl.replace(/\/$/, ""),
       authCookieName: options.authCookieName ?? "edgedb-session",
@@ -126,7 +132,7 @@ export class ExpressAuth {
     return async (
       req: SessionRequest,
       _: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         req.session = this.getSession(req);
@@ -150,7 +156,7 @@ export class ExpressAuth {
   createEmailPasswordRouter = (
     routerPath: string,
     resetPasswordPath: string,
-    stacks: Record<keyof typeof this.emailPassword, RouterStack>
+    stacks: Record<keyof typeof this.emailPassword, RouterStack>,
   ) => {
     const router = Router();
 
@@ -158,27 +164,27 @@ export class ExpressAuth {
     router.post(
       "/signup",
       this.emailPassword.signUp(
-        new URL(`${routerPath}/verify`, this.options.baseUrl).toString()
+        new URL(`${routerPath}/verify`, this.options.baseUrl).toString(),
       ),
-      ...stacks.signUp
+      ...stacks.signUp,
     );
     router.get("/verify", this.emailPassword.verify, ...stacks.verify);
     router.post(
       "/send-password-reset-email",
       this.emailPassword.sendPasswordResetEmail(
-        new URL(resetPasswordPath, this.options.baseUrl).toString()
+        new URL(resetPasswordPath, this.options.baseUrl).toString(),
       ),
-      ...stacks.sendPasswordResetEmail
+      ...stacks.sendPasswordResetEmail,
     );
     router.post(
       "/reset-password",
       this.emailPassword.resetPassword,
-      ...stacks.resetPassword
+      ...stacks.resetPassword,
     );
     router.post(
       "/resend-verification-email",
       this.emailPassword.resendVerificationEmail,
-      ...stacks.resendVerificationEmail
+      ...stacks.resendVerificationEmail,
     );
 
     return Router().use(routerPath, router);
@@ -190,15 +196,15 @@ export class ExpressAuth {
       callback,
     }: {
       callback: RouterStack;
-    }
+    },
   ) => {
     const router = Router();
 
     router.get(
       "/",
       this.oAuth.redirect(
-        new URL(`${routerPath}/callback`, this.options.baseUrl).toString()
-      )
+        new URL(`${routerPath}/callback`, this.options.baseUrl).toString(),
+      ),
     );
     router.get("/callback", this.oAuth.callback, ...callback);
 
@@ -208,7 +214,7 @@ export class ExpressAuth {
   createMagicLinkRouter = (
     routerPath: string,
     failurePath: string,
-    stacks: Record<keyof typeof this.magicLink, RouterStack>
+    stacks: Record<keyof typeof this.magicLink, RouterStack>,
   ) => {
     const router = Router();
 
@@ -216,17 +222,17 @@ export class ExpressAuth {
       "/send",
       this.magicLink.send(
         new URL(`${routerPath}/callback`, this.options.baseUrl).toString(),
-        new URL(failurePath, this.options.baseUrl).toString()
+        new URL(failurePath, this.options.baseUrl).toString(),
       ),
-      ...stacks.send
+      ...stacks.send,
     );
     router.post(
       "/signup",
       this.magicLink.signUp(
         new URL(`${routerPath}/callback`, this.options.baseUrl).toString(),
-        new URL(failurePath, this.options.baseUrl).toString()
+        new URL(failurePath, this.options.baseUrl).toString(),
       ),
-      ...stacks.signUp
+      ...stacks.signUp,
     );
     router.get("/callback", this.magicLink.callback, ...stacks.callback);
 
@@ -235,20 +241,20 @@ export class ExpressAuth {
 
   createWebAuthnRouter = (
     routerPath: string,
-    stacks: Record<keyof typeof this.webAuthn, RouterStack>
+    stacks: Record<keyof typeof this.webAuthn, RouterStack>,
   ) => {
     const router = Router();
 
     router.get(
       "/signin/options",
       this.webAuthn.signInOptions,
-      ...stacks.signInOptions
+      ...stacks.signInOptions,
     );
     router.post("/signin", this.webAuthn.signIn, ...stacks.signIn);
     router.get(
       "/signup/options",
       this.webAuthn.signUpOptions,
-      ...stacks.signUpOptions
+      ...stacks.signUpOptions,
     );
     router.post("/signup", this.webAuthn.signUp, ...stacks.signUp);
     router.get("/verify", this.webAuthn.verify, ...stacks.verify);
@@ -259,7 +265,7 @@ export class ExpressAuth {
   signout = async (
     req: AuthRequest,
     res: ExpressResponse,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       res.clearCookie(this.options.authCookieName, {
@@ -281,21 +287,21 @@ export class ExpressAuth {
         try {
           const searchParams = new URLSearchParams(req.url.split("?")[1]);
           const provider = searchParams.get(
-            "provider_name"
+            "provider_name",
           ) as BuiltinOAuthProviderNames | null;
           if (!provider || !builtinOAuthProviderNames.includes(provider)) {
             throw new InvalidDataError(`invalid provider_name: ${provider}`);
           }
           const pkceSession = await this.core.then((core) =>
-            core.createPKCESession()
+            core.createPKCESession(),
           );
           this.createVerifierCookie(res, pkceSession.verifier);
           res.redirect(
             pkceSession.getOAuthUrl(
               provider,
               callbackUrl,
-              `${callbackUrl}?isSignUp=true`
-            )
+              `${callbackUrl}?isSignUp=true`,
+            ),
           );
         } catch (err) {
           next(err);
@@ -305,7 +311,7 @@ export class ExpressAuth {
     callback: async (
       req: CallbackRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const searchParams = new URLSearchParams(req.url.split("?")[1]);
@@ -313,12 +319,12 @@ export class ExpressAuth {
         if (error) {
           const desc = searchParams.get("error_description");
           throw new OAuthProviderFailureError(
-            error + (desc ? `: ${desc}` : "")
+            error + (desc ? `: ${desc}` : ""),
           );
         }
         const code = searchParams.get("code");
         const verificationEmailSentAt = searchParams.get(
-          "verification_email_sent_at"
+          "verification_email_sent_at",
         );
 
         if (!code) {
@@ -341,7 +347,7 @@ export class ExpressAuth {
         req.tokenData = tokenData;
         req.isSignUp = isSignUp;
         req.provider = searchParams.get(
-          "provider"
+          "provider",
         ) as BuiltinOAuthProviderNames;
         next();
       } catch (err) {
@@ -354,11 +360,11 @@ export class ExpressAuth {
     signIn: async (
       _: AuthRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const pkceSession = await this.core.then((core) =>
-          core.createPKCESession()
+          core.createPKCESession(),
         );
         this.createVerifierCookie(res, pkceSession.verifier);
         res.redirect(pkceSession.getHostedUISigninUrl());
@@ -369,11 +375,11 @@ export class ExpressAuth {
     signUp: async (
       _: AuthRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const pkceSession = await this.core.then((core) =>
-          core.createPKCESession()
+          core.createPKCESession(),
         );
         this.createVerifierCookie(res, pkceSession.verifier);
         res.redirect(pkceSession.getHostedUISignupUrl());
@@ -384,7 +390,7 @@ export class ExpressAuth {
     callback: async (
       req: CallbackRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const searchParams = new URLSearchParams(req.url.split("?")[1]);
@@ -395,7 +401,7 @@ export class ExpressAuth {
         }
         const code = searchParams.get("code");
         const verificationEmailSentAt = searchParams.get(
-          "verification_email_sent_at"
+          "verification_email_sent_at",
         );
 
         if (!code) {
@@ -418,7 +424,7 @@ export class ExpressAuth {
         req.tokenData = tokenData;
         req.isSignUp = isSignUp;
         req.provider = searchParams.get(
-          "provider"
+          "provider",
         ) as BuiltinOAuthProviderNames;
         next();
       } catch (err) {
@@ -431,13 +437,13 @@ export class ExpressAuth {
     signIn: async (
       req: AuthRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const [email, password] = _extractParams(
           req.body,
           ["email", "password"],
-          "email or password missing from request body"
+          "email or password missing from request body",
         );
         const tokenData = await (
           await this.core
@@ -457,7 +463,7 @@ export class ExpressAuth {
           const [email, password] = _extractParams(
             req.body,
             ["email", "password"],
-            "email or password missing from request body"
+            "email or password missing from request body",
           );
           const result = await (
             await this.core
@@ -467,7 +473,7 @@ export class ExpressAuth {
             this.createAuthCookie(res, result.tokenData.auth_token);
             req.session = new ExpressAuthSession(
               this.client,
-              result.tokenData.auth_token
+              result.tokenData.auth_token,
             );
             req.tokenData = result.tokenData;
           } else {
@@ -481,7 +487,7 @@ export class ExpressAuth {
     verify: async (
       req: AuthRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const searchParams = new URLSearchParams(req.url.split("?")[1]);
@@ -513,7 +519,7 @@ export class ExpressAuth {
           const [email] = _extractParams(
             req.body,
             ["email"],
-            "email missing from request body"
+            "email missing from request body",
           );
           const { verifier } = await (
             await this.core
@@ -528,7 +534,7 @@ export class ExpressAuth {
     resetPassword: async (
       req: AuthRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const verifier = req.cookies[this.options.pkceVerifierCookieName];
@@ -538,7 +544,7 @@ export class ExpressAuth {
         const [resetToken, password] = _extractParams(
           req.body,
           ["reset_token", "password"],
-          "reset_token or password missing from request body"
+          "reset_token or password missing from request body",
         );
 
         const tokenData = await (
@@ -561,7 +567,7 @@ export class ExpressAuth {
             const verificationToken = req.body.verification_token;
             if (typeof verificationToken !== "string") {
               throw new InvalidDataError(
-                "expected 'verification_token' to be a string"
+                "expected 'verification_token' to be a string",
               );
             }
             await (await this.core).resendVerificationEmail(verificationToken);
@@ -572,7 +578,7 @@ export class ExpressAuth {
             }
             if (!verifyUrl) {
               throw new InvalidDataError(
-                "verifyUrl is required when email is provided"
+                "verifyUrl is required when email is provided",
               );
             }
             const { verifier } = await (
@@ -581,7 +587,7 @@ export class ExpressAuth {
             this.createVerifierCookie(res, verifier);
           } else {
             throw new InvalidDataError(
-              "verification_token or email missing from request body"
+              "verification_token or email missing from request body",
             );
           }
           res.status(204);
@@ -596,7 +602,7 @@ export class ExpressAuth {
     callback: async (
       req: CallbackRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const searchParams = new URLSearchParams(req.url.split("?")[1]);
@@ -634,14 +640,14 @@ export class ExpressAuth {
           const [email] = _extractParams(
             req.body,
             ["email"],
-            "email missing from request body"
+            "email missing from request body",
           );
           console.log(
             `magic link signup: ${JSON.stringify(
               { callbackUrl, failureUrl, email },
               null,
-              2
-            )}`
+              2,
+            )}`,
           );
           const { verifier } = await (
             await this.core
@@ -659,14 +665,14 @@ export class ExpressAuth {
           const [email] = _extractParams(
             req.body,
             ["email"],
-            "email missing from request body"
+            "email missing from request body",
           );
           console.log(
             `magic link send: ${JSON.stringify(
               { callbackUrl, failureUrl, email },
               null,
-              2
-            )}`
+              2,
+            )}`,
           );
           const { verifier } = await (
             await this.core
@@ -683,7 +689,7 @@ export class ExpressAuth {
     verify: async (
       req: AuthRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const searchParams = new URLSearchParams(req.url.split("?")[1]);
@@ -711,7 +717,7 @@ export class ExpressAuth {
     signInOptions: async (
       req: AuthRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const searchParams = new URLSearchParams(req.url.split("?")[1]);
@@ -728,7 +734,7 @@ export class ExpressAuth {
     signIn: async (
       req: AuthRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const { email, assertion } = req.body;
@@ -746,7 +752,7 @@ export class ExpressAuth {
     signUpOptions: async (
       req: AuthRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const searchParams = new URLSearchParams(req.url.split("?")[1]);
@@ -763,7 +769,7 @@ export class ExpressAuth {
     signUp: async (
       req: AuthRequest,
       res: ExpressResponse,
-      next: NextFunction
+      next: NextFunction,
     ) => {
       try {
         const { email, credentials, verify_url, user_handle } = req.body;
@@ -777,7 +783,7 @@ export class ExpressAuth {
           this.createAuthCookie(res, result.tokenData.auth_token);
           req.session = new ExpressAuthSession(
             this.client,
-            result.tokenData.auth_token
+            result.tokenData.auth_token,
           );
           req.tokenData = result.tokenData;
         } else {
@@ -793,7 +799,7 @@ export class ExpressAuth {
 
 export default function createExpressAuth(
   client: Client,
-  options: ExpressAuthOptions
+  options: ExpressAuthOptions,
 ) {
   return new ExpressAuth(client, options);
 }
@@ -801,7 +807,7 @@ export default function createExpressAuth(
 function _extractParams(
   data: Record<string, unknown>,
   paramNames: string[],
-  errMessage: string
+  errMessage: string,
 ) {
   const params: string[] = [];
   if (typeof data !== "object") {

@@ -98,7 +98,7 @@ async function whichEdgeDbCli() {
   for (const location of locations) {
     const actualLocation = await fs.realpath(location);
     debug(
-      `  - CLI found in PATH at: ${location} (resolved to: ${actualLocation})`
+      `  - CLI found in PATH at: ${location} (resolved to: ${actualLocation})`,
     );
 
     if (actualLocation === SCRIPT_LOCATION) {
@@ -119,7 +119,7 @@ async function whichEdgeDbCli() {
     // n.b. pnpm uses a shell script for package binaries instead of symlinks
     if (lowerCaseLocation.includes("node_modules/.bin")) {
       debug(
-        "  - CLI found in PATH is in a node_modules/.bin directory. Ignoring."
+        "  - CLI found in PATH is in a node_modules/.bin directory. Ignoring.",
       );
       continue;
     }
@@ -241,7 +241,7 @@ async function downloadCliPackage() {
 function runEdgeDbCli(
   args: string[],
   pathToCli: string,
-  execOptions: ExecSyncOptions = { stdio: "inherit" }
+  execOptions: ExecSyncOptions = { stdio: "inherit" },
 ) {
   const command = quote([pathToCli, ...args]);
   debug(`Running EdgeDB CLI: ${command}`);
@@ -261,11 +261,11 @@ async function findPackage(): Promise<Package> {
   const pkg = await getMatchingPkg(
     versionMap,
     cliVersionRange,
-    includeCliPrereleases
+    includeCliPrereleases,
   );
   if (!pkg) {
     throw Error(
-      `No compatible EdgeDB CLI package found for the current platform ${dist}`
+      `No compatible EdgeDB CLI package found for the current platform ${dist}`,
     );
   }
   debug("  - Package found:", pkg);
@@ -275,7 +275,7 @@ async function findPackage(): Promise<Package> {
 async function getVersionMap(dist: string): Promise<Map<string, Package>> {
   debug("Getting version map for distribution:", dist);
   const indexRequest = await fetch(
-    new URL(`archive/.jsonindexes/${dist}.json`, EDGEDB_PKG_ROOT)
+    new URL(`archive/.jsonindexes/${dist}.json`, EDGEDB_PKG_ROOT),
   );
   const index = (await indexRequest.json()) as { packages: Package[] };
   const versionMap = new Map();
@@ -299,7 +299,7 @@ async function getVersionMap(dist: string): Promise<Map<string, Package>> {
 async function getMatchingPkg(
   versionMap: Map<string, Package>,
   cliVersionRange: string,
-  includeCliPrereleases: boolean
+  includeCliPrereleases: boolean,
 ): Promise<Package | null> {
   debug("Getting matching version for range:", cliVersionRange);
   let matchingPkg: Package | null = null;
@@ -324,7 +324,7 @@ async function getMatchingPkg(
   } else {
     throw Error(
       "no published EdgeDB CLI version matches requested version " +
-        `'${cliVersionRange}'`
+        `'${cliVersionRange}'`,
     );
   }
 }

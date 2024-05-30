@@ -32,7 +32,7 @@ export type $expr_Function<
   // },
   // ReturnType extends BaseTypeSet = BaseTypeSet,
   El extends BaseType = BaseType,
-  Card extends Cardinality = Cardinality
+  Card extends Cardinality = Cardinality,
 > = Expression<{
   __element__: El;
   __cardinality__: Card;
@@ -48,7 +48,7 @@ export type $expr_Operator<
   // Args extends TypeSet[] = TypeSet[],
   // ReturnType extends TypeSet = TypeSet,
   El extends BaseType = BaseType,
-  Card extends Cardinality = Cardinality
+  Card extends Cardinality = Cardinality,
 > = Expression<{
   __element__: El;
   __cardinality__: Card;
@@ -94,7 +94,7 @@ export function $resolveOverload(
   funcName: string,
   args: any[],
   typeSpec: introspect.Types,
-  funcDefs: OverloadFuncDef[]
+  funcDefs: OverloadFuncDef[],
 ) {
   const positionalArgs: (TypeSet | undefined)[] = [];
   let namedArgs: { [key: string]: TypeSet } | undefined;
@@ -118,7 +118,7 @@ export function $resolveOverload(
       positionalArgs,
       namedArgs,
       typeSpec,
-      def
+      def,
     );
     if (resolvedOverload !== null) {
       return resolvedOverload;
@@ -134,9 +134,9 @@ export function $resolveOverload(
       .filter(Boolean)
       .map(
         (arg) =>
-          `Element: ${arg!.__element__.__name__} (${arg!.__cardinality__})`
+          `Element: ${arg!.__element__.__name__} (${arg!.__cardinality__})`,
       )
-      .join(", ")}`
+      .join(", ")}`,
   );
 }
 
@@ -147,7 +147,7 @@ function _tryOverload(
   args: (BaseTypeSet | undefined)[],
   namedArgs: { [key: string]: BaseTypeSet } | undefined,
   typeSpec: introspect.Types,
-  funcDef: OverloadFuncDef
+  funcDef: OverloadFuncDef,
 ): {
   kind?: string;
   returnType: BaseType;
@@ -187,8 +187,8 @@ function _tryOverload(
             ? cardutil.overrideUpperBound(value.__cardinality__, "One")
             : Cardinality.One
           : argDef.optional
-          ? cardutil.overrideLowerBound(value.__cardinality__, "One")
-          : value.__cardinality__
+            ? cardutil.overrideLowerBound(value.__cardinality__, "One")
+            : value.__cardinality__,
       );
     }
   }
@@ -229,7 +229,7 @@ function _tryOverload(
       const { match, anytype } = compareType(
         typeSpec,
         argDef.typeId,
-        arg.__element__
+        arg.__element__,
       );
 
       if (!match) {
@@ -240,25 +240,25 @@ function _tryOverload(
       }
 
       positionalArgs.push(
-        ...(argDef.variadic ? (args.slice(i) as BaseTypeSet[]) : [arg])
+        ...(argDef.variadic ? (args.slice(i) as BaseTypeSet[]) : [arg]),
       );
       if (argDef.setoftype) {
         paramCardinalities.push(
           funcDef.preservesOptionality
             ? cardutil.overrideUpperBound(arg.__cardinality__, "One")
-            : Cardinality.One
+            : Cardinality.One,
         );
       } else {
         const card = argDef.variadic
           ? cardutil.multiplyCardinalitiesVariadic(
               (args.slice(i) as BaseTypeSet[]).map(
-                (el) => el.__cardinality__
-              ) as [Cardinality, ...Cardinality[]]
+                (el) => el.__cardinality__,
+              ) as [Cardinality, ...Cardinality[]],
             )
           : arg.__cardinality__;
 
         paramCardinalities.push(
-          argDef.optional ? cardutil.overrideLowerBound(card, "One") : card
+          argDef.optional ? cardutil.overrideLowerBound(card, "One") : card,
         );
       }
     }
@@ -269,24 +269,24 @@ function _tryOverload(
     cardinality = cardutil.multiplyCardinalities(
       cardutil.orCardinalities(
         positionalArgs[0]!.__cardinality__,
-        positionalArgs[2]!.__cardinality__
+        positionalArgs[2]!.__cardinality__,
       ),
-      positionalArgs[1]!.__cardinality__
+      positionalArgs[1]!.__cardinality__,
     );
   } else if (funcName === "std::assert_exists") {
     cardinality = cardutil.overrideLowerBound(
       positionalArgs[0]!.__cardinality__,
-      "One"
+      "One",
     );
   } else if (funcName === "union") {
     cardinality = cardutil.mergeCardinalities(
       positionalArgs[0]!.__cardinality__,
-      positionalArgs[1]!.__cardinality__
+      positionalArgs[1]!.__cardinality__,
     );
   } else if (funcName === "??") {
     cardinality = cardutil.coalesceCardinalities(
       positionalArgs[0]!.__cardinality__,
-      positionalArgs[1]!.__cardinality__
+      positionalArgs[1]!.__cardinality__,
     );
   } else if (funcName === "distinct") {
     cardinality = positionalArgs[0]!.__cardinality__;
@@ -309,7 +309,7 @@ function _tryOverload(
       throw new Error(`could not resolve anytype for ${funcName}`);
     }
     positionalArgs = positionalArgs.map((arg) =>
-      (arg as any) === ANYTYPE_ARG ? cast(returnAnytype!, null) : arg
+      (arg as any) === ANYTYPE_ARG ? cast(returnAnytype!, null) : arg,
     );
   }
 
@@ -319,7 +319,7 @@ function _tryOverload(
       typeSpec,
       funcDef.returnTypeId,
       literal,
-      returnAnytype
+      returnAnytype,
     ),
     cardinality,
     args: positionalArgs,
@@ -344,13 +344,14 @@ function getDescendantNames(typeSpec: introspect.Types, typeId: string) {
       [...typeSpec.values()]
         .filter(
           (type) =>
-            type.kind === "scalar" && type.bases.some(({ id }) => id === typeId)
+            type.kind === "scalar" &&
+            type.bases.some(({ id }) => id === typeId),
         )
         .flatMap((type) =>
           type.is_abstract
             ? getDescendantNames(typeSpec, type.id)
-            : [nameRemapping[type.name]!, type.name]
-        )
+            : [nameRemapping[type.name]!, type.name],
+        ),
     ),
   ];
   descendantCache.set(typeId, descendants);
@@ -360,7 +361,7 @@ function getDescendantNames(typeSpec: introspect.Types, typeId: string) {
 function compareType(
   typeSpec: introspect.Types,
   typeId: string,
-  arg: BaseType
+  arg: BaseType,
 ): { match: boolean; anytype?: BaseType } {
   const type = typeSpec.get(typeId);
 
@@ -397,7 +398,7 @@ function compareType(
       return compareType(
         typeSpec,
         type.array_element_id,
-        (arg as any as ArrayType).__element__ as BaseType
+        (arg as any as ArrayType).__element__ as BaseType,
       );
     }
   }
@@ -406,7 +407,7 @@ function compareType(
       return compareType(
         typeSpec,
         type.range_element_id,
-        (arg as any as RangeType).__element__ as BaseType
+        (arg as any as RangeType).__element__ as BaseType,
       );
     }
   }
@@ -415,7 +416,7 @@ function compareType(
       return compareType(
         typeSpec,
         type.multirange_element_id,
-        (arg as any as MultiRangeType).__element__ as BaseType
+        (arg as any as MultiRangeType).__element__ as BaseType,
       );
     }
   }
@@ -448,8 +449,8 @@ function compareType(
       arg.__kind__ === TypeKind.tuple
         ? (arg as any).__items__
         : arg.__kind__ === TypeKind.namedtuple
-        ? (arg as any).__shape__
-        : null;
+          ? (arg as any).__shape__
+          : null;
     if (items) {
       const keys = Object.keys(items);
 
@@ -462,7 +463,7 @@ function compareType(
           const { match: m, anytype: a } = compareType(
             typeSpec,
             type.tuple_elements[i]!.target_id,
-            (items as any)[keys[i]!]
+            (items as any)[keys[i]!],
           );
           if (!m) {
             return { match: false };

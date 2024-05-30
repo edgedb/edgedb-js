@@ -124,11 +124,11 @@ export const typeMapping = new Map([
 
 export async function getTypes(
   cxn: Executor,
-  params?: { debug?: boolean }
+  params?: { debug?: boolean },
 ): Promise<Types> {
   const debug = params?.debug === true;
   const version = await cxn.queryRequiredSingle<number>(
-    `select sys::get_version().major;`
+    `select sys::get_version().major;`,
   );
   const v2Plus = version >= 2;
   const v4Plus = version >= 4;
@@ -257,7 +257,7 @@ export async function getTypes(
         if (isName.split("::").length === 2 && isName.startsWith("default::")) {
           backlink.name = backlink.name.replace(
             /\[is (.+)\]/,
-            `[is ${isName.slice(9)}]`
+            `[is ${isName.slice(9)}]`,
           );
         }
       }
@@ -345,7 +345,7 @@ export async function getTypes(
         const t = types.get(id);
         if (t.kind !== "object") {
           throw new Error(
-            `type '${t.name}' of union '${type.name}' is not an object type`
+            `type '${t.name}' of union '${type.name}' is not an object type`,
           );
         }
         return t;
@@ -353,7 +353,7 @@ export async function getTypes(
 
       const [first, ...rest] = unionTypes;
       const restPointerNames = rest.map(
-        (t) => new Set(t.pointers.map((p) => p.name))
+        (t) => new Set(t.pointers.map((p) => p.name)),
       );
       for (const pointer of first.pointers) {
         if (restPointerNames.every((names) => names.has(pointer.name))) {

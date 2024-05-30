@@ -57,7 +57,7 @@ export const generateGlobals = ({ dir, globals, types }: GeneratorParams) => {
     code.registerRef(`$${modName}__globals`);
     code.addToDefaultExport(
       getRef(`$${modName}__globals`, { prefix: "" }),
-      "global"
+      "global",
     );
   }
 };

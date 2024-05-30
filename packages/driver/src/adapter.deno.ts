@@ -33,7 +33,7 @@ export async function readDir(path: string) {
 
 export async function walk(
   path: string,
-  params?: { match?: RegExp[]; skip?: RegExp[] }
+  params?: { match?: RegExp[]; skip?: RegExp[] },
 ) {
   const { match, skip } = params || {};
   await _fs.ensureDir(path);
@@ -146,7 +146,7 @@ export namespace net {
   export function createConnection(unixpath: string): Socket;
   export function createConnection(
     port: number | string,
-    hostname?: string
+    hostname?: string,
   ): Socket {
     // TODO: unix transport is currently behind --unstable flag, add correct
     // typing when (if?) this becomes stable
@@ -275,7 +275,7 @@ export namespace tls {
 
   export function checkServerIdentity(
     _hostname: string,
-    _cert: object
+    _cert: object,
   ): Error | undefined {
     return undefined;
   }

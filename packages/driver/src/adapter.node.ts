@@ -34,7 +34,7 @@ export function hashSHA1toHex(msg: string): string {
 
 export async function walk(
   dir: string,
-  params?: { match?: RegExp[]; skip?: RegExp[] }
+  params?: { match?: RegExp[]; skip?: RegExp[] },
 ): Promise<string[]> {
   const { match, skip = [] } = params || {};
 
@@ -64,7 +64,7 @@ export async function walk(
       }
 
       return [fspath];
-    })
+    }),
   );
 
   return Array.prototype.concat(...files);
@@ -81,7 +81,7 @@ export async function exists(filepath: string): Promise<boolean> {
 
 export function input(
   message: string,
-  params?: { silent?: boolean }
+  params?: { silent?: boolean },
 ): Promise<string> {
   let silent = false;
 
@@ -90,7 +90,7 @@ export function input(
         write(
           chunk: any,
           encoding: BufferEncoding,
-          callback: (...args: any) => void
+          callback: (...args: any) => void,
         ) {
           if (!silent) process.stdout.write(chunk, encoding);
           callback();

@@ -58,7 +58,7 @@ const makeGroupingSet =
       ([k, grp]) =>
         isGroupingSet(grp)
           ? grp.__exprs__
-          : ([[k, grp]] as [string, SingletonSet][])
+          : ([[k, grp]] as [string, SingletonSet][]),
     );
     const filtered = unfiltered.filter(([k, expr]) => {
       if (!seenKeys.has(k)) {
@@ -68,7 +68,7 @@ const makeGroupingSet =
 
       if (expr !== seenKeys.get(k)) {
         throw new Error(
-          `Cannot override pre-existing expression with key "${k}"`
+          `Cannot override pre-existing expression with key "${k}"`,
         );
       }
 
@@ -94,7 +94,7 @@ const setFuncs = { set, tuple, rollup, cube };
 export type $expr_Group<
   Expr extends ObjectTypeSet = ObjectTypeSet,
   Mods extends GroupModifiers = GroupModifiers,
-  Shape extends object = { id: true }
+  Shape extends object = { id: true },
 > = Expression<{
   __element__: ObjectType<
     "std::FreeObject",
@@ -181,11 +181,11 @@ type groupFunc = <
   // Grps extends SimpleGroupElements,
   Shape extends { by?: SimpleGroupElements } & objectTypeToSelectShape<
     Expr["__element__"]
-  >
+  >,
   // Mods extends GroupModifiers = {by: Shape["by"]}
 >(
   expr: Expr,
-  getter: (arg: $scopify<Expr["__element__"]>) => Readonly<Shape>
+  getter: (arg: $scopify<Expr["__element__"]>) => Readonly<Shape>,
 ) => $expr_Group<
   Expr,
   { by: noUndefined<Shape["by"]> },
@@ -225,13 +225,13 @@ const groupFunc: groupFunc = (expr, getter) => {
   const $FreeObject = makeType(
     spec,
     [...spec.values()].find((s) => s.name === "std::FreeObject")!.id,
-    literal
+    literal,
   );
 
   const str = makeType(
     spec,
     [...spec.values()].find((s) => s.name === "std::str")!.id,
-    literal
+    literal,
   );
 
   return $expressionify({
@@ -310,7 +310,7 @@ Object.assign(groupFunc, setFuncs);
 
 function resolveShape(
   shapeGetter: ((scope: any) => any) | any,
-  expr: TypeSet
+  expr: TypeSet,
 ): { modifiers: { by: SimpleGroupElements }; shape: any; scope: TypeSet } {
   const modifiers: { by: SimpleGroupElements } = {} as any;
   const shape: any = {};
@@ -332,7 +332,7 @@ function resolveShape(
       if (expr.__element__.__kind__ !== TypeKind.object) {
         throw new Error(
           `Invalid select shape key '${key}' on scalar expression, ` +
-            `only modifiers are allowed (filter, order_by, offset and limit)`
+            `only modifiers are allowed (filter, order_by, offset and limit)`,
         );
       }
       shape[key] = resolveShapeElement(key, value, scope);

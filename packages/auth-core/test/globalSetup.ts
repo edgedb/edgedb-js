@@ -16,7 +16,7 @@ export default async () => {
 
   const { args, availableFeatures } = getServerCommand(
     getWSLPath(statusFile),
-    false
+    false,
   );
   console.log(`Starting server...`);
   const { proc, config } = await startServer(args, statusFile);

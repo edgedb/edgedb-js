@@ -36,7 +36,7 @@ type $anypoint =
 
 function range<Element extends $anypoint>(element: Element): RangeType<Element>;
 function range<T extends number | Date | LocalDate | LocalDateTime | Duration>(
-  val: Range<T>
+  val: Range<T>,
 ): $expr_Literal<RangeType<getPrimitiveBaseType<literalToScalarType<T>>>>;
 function range<
   NamedArgs extends {
@@ -53,11 +53,11 @@ function range<
             : getPrimitiveBaseType<literalToScalarType<P1>>
         >
       >
-    | undefined
+    | undefined,
 >(
   namedArgs: NamedArgs,
   lower?: P1,
-  upper?: P2
+  upper?: P2,
 ): $expr_Function<
   // "std::range",
   // mapLiteralToTypeSet<[P1, P2]>,
@@ -67,8 +67,8 @@ function range<
     literalToScalarType<P1> extends $anypoint
       ? literalToScalarType<P1>
       : literalToScalarType<P2> extends $anypoint
-      ? literalToScalarType<P2>
-      : $anypoint
+        ? literalToScalarType<P2>
+        : $anypoint
   >,
   cardutil.multiplyCardinalities<
     cardutil.multiplyCardinalities<
@@ -95,10 +95,10 @@ function range<
             : getPrimitiveBaseType<literalToScalarType<P1>>
         >
       >
-    | undefined
+    | undefined,
 >(
   lower?: P1,
-  upper?: P2
+  upper?: P2,
 ): $expr_Function<
   // "std::range",
   // mapLiteralToTypeSet<[P1, P2]>,
@@ -108,8 +108,8 @@ function range<
     literalToScalarType<P1> extends $anypoint
       ? literalToScalarType<P1>
       : literalToScalarType<P2> extends $anypoint
-      ? literalToScalarType<P2>
-      : $anypoint
+        ? literalToScalarType<P2>
+        : $anypoint
   >,
   cardutil.multiplyCardinalities<
     cardutil.optionalParamCardinality<P1>,
@@ -123,7 +123,7 @@ function range(...args: any[]): any {
     if (arg instanceof Range) {
       if (arg.lower === null && arg.upper === null) {
         throw new Error(
-          `Can't create literal expression from unbounded range. Try this instead:\n\n  e.range(e.cast(e.int64, e.set()), e.cast(e.int64, e.set()))`
+          `Can't create literal expression from unbounded range. Try this instead:\n\n  e.range(e.cast(e.int64, e.set()), e.cast(e.int64, e.set()))`,
         );
       }
       if (arg.isEmpty) {
@@ -131,7 +131,7 @@ function range(...args: any[]): any {
       }
       return literal(
         range(literalToTypeSet(arg.lower ?? arg.upper).__element__ as any),
-        arg
+        arg,
       );
     }
     if (arg.__kind__ && !arg.__element__) {

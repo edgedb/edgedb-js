@@ -29,7 +29,7 @@ export const generateSetImpl = ({ dir, types, casts }: GeneratorParams) => {
       LooseTypeSet: true,
     },
     "./set",
-    { allowFileExt: true, typeOnly: true }
+    { allowFileExt: true, typeOnly: true },
   );
 
   code.addImport({ getSharedParent: true }, "./set", {

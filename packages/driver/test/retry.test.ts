@@ -58,7 +58,7 @@ async function run(test: (client: Client) => Promise<void>): Promise<void> {
 }
 
 async function run2(
-  test: (con1: Client, con2: Client) => Promise<void>
+  test: (con1: Client, con2: Client) => Promise<void>,
 ): Promise<void> {
   const connection = getClient();
   try {
@@ -147,7 +147,7 @@ async function checkRetries(client: Client, client2: Client, name: string) {
           )
         ).value
       `,
-        { name }
+        { name },
       );
     });
   }
@@ -174,9 +174,9 @@ test("retry: conflict no retry", async () => {
       await checkRetries(
         con.withRetryOptions(opt),
         con2.withRetryOptions(opt),
-        "counter3"
+        "counter3",
       );
-    })
+    }),
   ).rejects.toBeInstanceOf(errors.TransactionSerializationError);
 
   await expect(
@@ -185,9 +185,9 @@ test("retry: conflict no retry", async () => {
       await checkRetries(
         con.withRetryOptions(opt),
         con2.withRetryOptions(opt),
-        "counter4"
+        "counter4",
       );
-    })
+    }),
   ).rejects.toBeInstanceOf(errors.TransactionSerializationError);
 });
 

@@ -41,7 +41,7 @@ test("scram: RFC example", async () => {
   const saltedPassword = await scram._getSaltedPassword(
     Buffer.from(saslprep(password), "utf-8"),
     Buffer.from(salt, "base64"),
-    iterations
+    iterations,
   );
 
   const clientKey = await scram._getClientKey(saltedPassword);
@@ -50,18 +50,18 @@ test("scram: RFC example", async () => {
 
   const clientSignature = await cryptoUtils.HMAC(
     storedKey,
-    Buffer.from(authMessage, "utf8")
+    Buffer.from(authMessage, "utf8"),
   );
   const clientProof = scram._XOR(clientKey, clientSignature);
   const serverProof = await cryptoUtils.HMAC(
     serverKey,
-    Buffer.from(authMessage, "utf8")
+    Buffer.from(authMessage, "utf8"),
   );
 
   expect(Buffer.from(clientProof).toString("base64")).toBe(
-    "dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
+    "dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=",
   );
   expect(Buffer.from(serverProof).toString("base64")).toBe(
-    "6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4="
+    "6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=",
   );
 });

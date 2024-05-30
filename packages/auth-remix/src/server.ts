@@ -28,14 +28,14 @@ export type BuiltinProviderNames =
 
 export default function createServerAuth(
   client: Client,
-  options: RemixAuthOptions
+  options: RemixAuthOptions,
 ) {
   return new RemixServerAuth(client, options);
 }
 
 type ParamsOrError<
   Result extends object,
-  ErrorDetails extends object = object
+  ErrorDetails extends object = object,
 > =
   | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)
   | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
@@ -44,7 +44,10 @@ export class RemixAuthSession {
   public readonly client: Client;
 
   /** @internal */
-  constructor(client: Client, private readonly authToken: string | undefined) {
+  constructor(
+    client: Client,
+    private readonly authToken: string | undefined,
+  ) {
     this.client = this.authToken
       ? client.withGlobals({ "ext::auth::client_token": this.authToken })
       : client;
@@ -54,7 +57,7 @@ export class RemixAuthSession {
     if (!this.authToken) return false;
     try {
       return await this.client.querySingle<boolean>(
-        `select exists global ext::auth::ClientTokenIdentity`
+        `select exists global ext::auth::ClientTokenIdentity`,
       );
     } catch {
       return false;
@@ -68,7 +71,7 @@ export interface CreateAuthRouteHandlers {
       tokenData: TokenData;
       provider: BuiltinOAuthProviderNames;
       isSignUp: boolean;
-    }>
+    }>,
   ): Promise<Response>;
   onBuiltinUICallback(
     params: ParamsOrError<
@@ -79,19 +82,19 @@ export interface CreateAuthRouteHandlers {
           }
         | { tokenData: null; provider: null }
       ) & { isSignUp: boolean }
-    >
+    >,
   ): Promise<Response>;
   onEmailVerify(
     params: ParamsOrError<
       { tokenData: TokenData },
       { verificationToken?: string }
-    >
+    >,
   ): Promise<Response>;
   onMagicLinkCallback(
     params: ParamsOrError<{
       tokenData: TokenData;
       isSignUp: boolean;
-    }>
+    }>,
   ): Promise<Response>;
   onSignout(): Promise<Response>;
 }
@@ -115,7 +118,7 @@ export class RemixServerAuth extends RemixClientAuth {
   getSession(req: Request) {
     return new RemixAuthSession(
       this.client,
-      parseCookies(req)[this.options.authCookieName]
+      parseCookies(req)[this.options.authCookieName],
     );
   }
 
@@ -163,7 +166,7 @@ export class RemixServerAuth extends RemixClientAuth {
         const path = params["*"];
         if (!path) {
           throw new ConfigurationError(
-            `route handlers file should end with '.$.ts'`
+            `route handlers file should end with '.$.ts'`,
           );
         }
         const searchParams = new URL(req.url).searchParams;
@@ -171,37 +174,37 @@ export class RemixServerAuth extends RemixClientAuth {
           case "oauth": {
             if (!onOAuthCallback) {
               throw new ConfigurationError(
-                `'onOAuthCallback' auth route handler not configured`
+                `'onOAuthCallback' auth route handler not configured`,
               );
             }
             const provider = searchParams.get(
-              "provider_name"
+              "provider_name",
             ) as BuiltinOAuthProviderNames | null;
             if (!provider || !builtinOAuthProviderNames.includes(provider)) {
               throw new InvalidDataError(`invalid provider_name: ${provider}`);
             }
             const redirectUrl = `${this._authRoute}/oauth/callback`;
             const pkceSession = await this.core.then((core) =>
-              core.createPKCESession()
+              core.createPKCESession(),
             );
             return redirect(
               pkceSession.getOAuthUrl(
                 provider,
                 redirectUrl,
-                `${redirectUrl}?isSignUp=true`
+                `${redirectUrl}?isSignUp=true`,
               ),
               {
                 headers: new Headers({
                   "Set-Cookie": this.createVerifierCookie(pkceSession.verifier),
                 }),
-              }
+              },
             );
           }
 
           case "oauth/callback": {
             if (!onOAuthCallback) {
               throw new ConfigurationError(
-                `'onOAuthCallback' auth route handler not configured`
+                `'onOAuthCallback' auth route handler not configured`,
               );
             }
             const error = searchParams.get("error");
@@ -209,7 +212,7 @@ export class RemixServerAuth extends RemixClientAuth {
               const desc = searchParams.get("error_description");
               return cbCall(onOAuthCallback, {
                 error: new OAuthProviderFailureError(
-                  error + (desc ? `: ${desc}` : "")
+                  error + (desc ? `: ${desc}` : ""),
                 ),
               });
             }
@@ -238,14 +241,14 @@ export class RemixServerAuth extends RemixClientAuth {
             const headers = new Headers();
             headers.append(
               "Set-Cookie",
-              this.createAuthCookie(tokenData.auth_token)
+              this.createAuthCookie(tokenData.auth_token),
             );
             headers.append(
               "Set-Cookie",
               cookie.serialize(this.options.pkceVerifierCookieName, "", {
                 maxAge: 0,
                 path: "/",
-              })
+              }),
             );
             return cbCall(
               onOAuthCallback,
@@ -253,18 +256,18 @@ export class RemixServerAuth extends RemixClientAuth {
                 error: null,
                 tokenData,
                 provider: searchParams.get(
-                  "provider"
+                  "provider",
                 ) as BuiltinOAuthProviderNames,
                 isSignUp,
               },
-              headers
+              headers,
             );
           }
 
           case "magiclink/callback": {
             if (!onMagicLinkCallback) {
               throw new ConfigurationError(
-                `'onMagicLinkCallback' auth route handler not configured`
+                `'onMagicLinkCallback' auth route handler not configured`,
               );
             }
             const error = searchParams.get("error");
@@ -272,7 +275,7 @@ export class RemixServerAuth extends RemixClientAuth {
               const desc = searchParams.get("error_description");
               return cbCall(onMagicLinkCallback, {
                 error: new MagicLinkFailureError(
-                  error + (desc ? `: ${desc}` : "")
+                  error + (desc ? `: ${desc}` : ""),
                 ),
               });
             }
@@ -301,14 +304,14 @@ export class RemixServerAuth extends RemixClientAuth {
             const headers = new Headers();
             headers.append(
               "Set-Cookie",
-              this.createAuthCookie(tokenData.auth_token)
+              this.createAuthCookie(tokenData.auth_token),
             );
             headers.append(
               "Set-Cookie",
               cookie.serialize(this.options.pkceVerifierCookieName, "", {
                 maxAge: 0,
                 path: "/",
-              })
+              }),
             );
             return cbCall(
               onMagicLinkCallback,
@@ -317,14 +320,14 @@ export class RemixServerAuth extends RemixClientAuth {
                 tokenData,
                 isSignUp,
               },
-              headers
+              headers,
             );
           }
 
           case "builtin/callback": {
             if (!onBuiltinUICallback) {
               throw new ConfigurationError(
-                `'onBuiltinUICallback' auth route handler not configured`
+                `'onBuiltinUICallback' auth route handler not configured`,
               );
             }
             const error = searchParams.get("error");
@@ -336,7 +339,7 @@ export class RemixServerAuth extends RemixClientAuth {
             }
             const code = searchParams.get("code");
             const verificationEmailSentAt = searchParams.get(
-              "verification_email_sent_at"
+              "verification_email_sent_at",
             );
             if (!code) {
               if (verificationEmailSentAt) {
@@ -371,14 +374,14 @@ export class RemixServerAuth extends RemixClientAuth {
             const headers = new Headers();
             headers.append(
               "Set-Cookie",
-              this.createAuthCookie(tokenData.auth_token)
+              this.createAuthCookie(tokenData.auth_token),
             );
             headers.append(
               "Set-Cookie",
               cookie.serialize(this.options.pkceVerifierCookieName, "", {
                 maxAge: 0,
                 path: "/",
-              })
+              }),
             );
             return cbCall(
               onBuiltinUICallback,
@@ -388,14 +391,14 @@ export class RemixServerAuth extends RemixClientAuth {
                 provider: searchParams.get("provider") as BuiltinProviderNames,
                 isSignUp,
               },
-              headers
+              headers,
             );
           }
 
           case "builtin/signin":
           case "builtin/signup": {
             const pkceSession = await this.core.then((core) =>
-              core.createPKCESession()
+              core.createPKCESession(),
             );
             return redirect(
               path.split("/").pop() === "signup"
@@ -405,14 +408,14 @@ export class RemixServerAuth extends RemixClientAuth {
                 headers: {
                   "Set-Cookie": this.createVerifierCookie(pkceSession.verifier),
                 },
-              }
+              },
             );
           }
 
           case "emailpassword/verify": {
             if (!onEmailVerify) {
               throw new ConfigurationError(
-                `'onEmailVerify' auth route handler not configured`
+                `'onEmailVerify' auth route handler not configured`,
               );
             }
             const verificationToken = searchParams.get("verification_token");
@@ -449,7 +452,7 @@ export class RemixServerAuth extends RemixClientAuth {
                 error: null,
                 tokenData,
               },
-              headers
+              headers,
             );
           }
 
@@ -459,7 +462,7 @@ export class RemixServerAuth extends RemixClientAuth {
               throw new InvalidDataError("email missing");
             }
             return Response.redirect(
-              (await this.core).getWebAuthnSignupOptionsUrl(email)
+              (await this.core).getWebAuthnSignupOptionsUrl(email),
             );
           }
 
@@ -469,14 +472,14 @@ export class RemixServerAuth extends RemixClientAuth {
               throw new InvalidDataError("email missing");
             }
             return Response.redirect(
-              (await this.core).getWebAuthnSigninOptionsUrl(email)
+              (await this.core).getWebAuthnSigninOptionsUrl(email),
             );
           }
 
           case "webauthn/verify": {
             if (!onEmailVerify) {
               throw new ConfigurationError(
-                `'onEmailVerify' auth route handler not configured`
+                `'onEmailVerify' auth route handler not configured`,
               );
             }
             const verificationToken = searchParams.get("verification_token");
@@ -513,14 +516,14 @@ export class RemixServerAuth extends RemixClientAuth {
                 error: null,
                 tokenData,
               },
-              headers
+              headers,
             );
           }
 
           case "signout": {
             if (!onSignout) {
               throw new ConfigurationError(
-                `'onSignout' auth route handler not configured`
+                `'onSignout' auth route handler not configured`,
               );
             }
             const headers = new Headers({
@@ -543,31 +546,31 @@ export class RemixServerAuth extends RemixClientAuth {
 
   async emailPasswordSignUp(
     req: Request,
-    data?: { email: string; password: string }
+    data?: { email: string; password: string },
   ): Promise<{ tokenData: TokenData | null; headers: Headers }>;
   async emailPasswordSignUp<Res>(
     req: Request,
     cb: (
-      params: ParamsOrError<{ tokenData: TokenData | null }>
-    ) => Res | Promise<Res>
+      params: ParamsOrError<{ tokenData: TokenData | null }>,
+    ) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSignUp<Res>(
     req: Request,
     data: { email: string; password: string },
     cb: (
-      params: ParamsOrError<{ tokenData: TokenData | null }>
-    ) => Res | Promise<Res>
+      params: ParamsOrError<{ tokenData: TokenData | null }>,
+    ) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSignUp<Res>(
     req: Request,
     dataOrCb?:
       | { email: string; password: string }
       | ((
-          params: ParamsOrError<{ tokenData: TokenData | null }>
+          params: ParamsOrError<{ tokenData: TokenData | null }>,
         ) => Res | Promise<Res>),
     cb?: (
-      params: ParamsOrError<{ tokenData: TokenData | null }>
-    ) => Res | Promise<Res>
+      params: ParamsOrError<{ tokenData: TokenData | null }>,
+    ) => Res | Promise<Res>,
   ): Promise<
     | {
         tokenData: TokenData;
@@ -580,7 +583,7 @@ export class RemixServerAuth extends RemixClientAuth {
         const [email, password] = _extractParams(
           data,
           ["email", "password"],
-          "email or password missing"
+          "email or password missing",
         );
 
         const result = await (
@@ -588,12 +591,12 @@ export class RemixServerAuth extends RemixClientAuth {
         ).signupWithEmailPassword(
           email,
           password,
-          `${this._authRoute}/emailpassword/verify`
+          `${this._authRoute}/emailpassword/verify`,
         );
 
         headers.append(
           "Set-Cookie",
-          this.createVerifierCookie(result.verifier)
+          this.createVerifierCookie(result.verifier),
         );
 
         if (result.status === "complete") {
@@ -601,7 +604,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
           headers.append(
             "Set-Cookie",
-            this.createAuthCookie(tokenData.auth_token)
+            this.createAuthCookie(tokenData.auth_token),
           );
           return { tokenData, headers };
         }
@@ -610,22 +613,22 @@ export class RemixServerAuth extends RemixClientAuth {
       },
       req,
       dataOrCb,
-      cb
+      cb,
     );
   }
 
   async emailPasswordResendVerificationEmail(
     req: Request,
-    data?: { verification_token: string } | { email: string }
+    data?: { verification_token: string } | { email: string },
   ): Promise<{ headers: Headers }>;
   async emailPasswordResendVerificationEmail<Res>(
     req: Request,
-    cb: (error?: Error) => Res | Promise<Res>
+    cb: (error?: Error) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordResendVerificationEmail<Res>(
     req: Request,
     data: { verification_token: string } | { email: string },
-    cb: (error?: Error) => Res | Promise<Res>
+    cb: (error?: Error) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordResendVerificationEmail<Res>(
     req: Request,
@@ -633,7 +636,7 @@ export class RemixServerAuth extends RemixClientAuth {
       | { verification_token: string }
       | { email: string }
       | ((error?: Error) => Res | Promise<Res>),
-    cb?: (error?: Error) => Res | Promise<Res>
+    cb?: (error?: Error) => Res | Promise<Res>,
   ): Promise<
     | {
         headers: Headers;
@@ -657,43 +660,45 @@ export class RemixServerAuth extends RemixClientAuth {
             await this.core
           ).resendVerificationEmailForEmail(
             email.toString(),
-            `${this._authRoute}/emailpassword/verify`
+            `${this._authRoute}/emailpassword/verify`,
           );
 
           headers.append("Set-Cookie", this.createVerifierCookie(verifier));
         } else {
           throw new InvalidDataError(
-            "verification_token or email missing. Either one is required."
+            "verification_token or email missing. Either one is required.",
           );
         }
       },
       req,
       dataOrCb,
-      cb
+      cb,
     );
   }
 
   async emailPasswordSignIn(
     req: Request,
-    data?: { email: string; password: string }
+    data?: { email: string; password: string },
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
   async emailPasswordSignIn<Res>(
     req: Request,
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSignIn<Res>(
     req: Request,
     data: { email: string; password: string },
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSignIn<Res>(
     req: Request,
     dataOrCb?:
       | { email: string; password: string }
       | ((
-          params: ParamsOrError<{ tokenData: TokenData }>
+          params: ParamsOrError<{ tokenData: TokenData }>,
         ) => Res | Promise<Res>),
-    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData }>,
+    ) => Res | Promise<Res>,
   ): Promise<
     | {
         tokenData: TokenData;
@@ -706,7 +711,7 @@ export class RemixServerAuth extends RemixClientAuth {
         const [email, password] = _extractParams(
           data,
           ["email", "password"],
-          "email or password missing"
+          "email or password missing",
         );
 
         const tokenData = await (
@@ -715,29 +720,29 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          this.createAuthCookie(tokenData.auth_token)
+          this.createAuthCookie(tokenData.auth_token),
         );
 
         return { tokenData };
       },
       req,
       dataOrCb,
-      cb
+      cb,
     );
   }
 
   async webAuthnSignIn(
     req: Request,
-    data?: { email: string; assertion: AuthenticationResponseJSON }
+    data?: { email: string; assertion: AuthenticationResponseJSON },
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
   async webAuthnSignIn<Res>(
     req: Request,
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async webAuthnSignIn<Res>(
     req: Request,
     data: { email: string; assertion: AuthenticationResponseJSON },
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async webAuthnSignIn<Res>(
     req: Request,
@@ -747,9 +752,11 @@ export class RemixServerAuth extends RemixClientAuth {
           assertion: AuthenticationResponseJSON;
         }
       | ((
-          params: ParamsOrError<{ tokenData: TokenData }>
+          params: ParamsOrError<{ tokenData: TokenData }>,
         ) => Res | Promise<Res>),
-    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData }>,
+    ) => Res | Promise<Res>,
   ): Promise<
     | {
         tokenData: TokenData;
@@ -770,14 +777,14 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          this.createAuthCookie(tokenData.auth_token)
+          this.createAuthCookie(tokenData.auth_token),
         );
 
         return { tokenData };
       },
       req,
       dataOrCb,
-      cb
+      cb,
     );
   }
 
@@ -788,13 +795,13 @@ export class RemixServerAuth extends RemixClientAuth {
       credentials: RegistrationResponseJSON;
       verify_url: string;
       user_handle: string;
-    }
+    },
   ): Promise<{ tokenData: TokenData | null; headers: Headers }>;
   async webAuthnSignUp<Res>(
     req: Request,
     cb: (
-      params: ParamsOrError<{ tokenData: TokenData | null }>
-    ) => Res | Promise<Res>
+      params: ParamsOrError<{ tokenData: TokenData | null }>,
+    ) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async webAuthnSignUp<Res>(
     req: Request,
@@ -805,8 +812,8 @@ export class RemixServerAuth extends RemixClientAuth {
       user_handle: string;
     },
     cb: (
-      params: ParamsOrError<{ tokenData: TokenData | null }>
-    ) => Res | Promise<Res>
+      params: ParamsOrError<{ tokenData: TokenData | null }>,
+    ) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async webAuthnSignUp<Res>(
     req: Request,
@@ -818,11 +825,11 @@ export class RemixServerAuth extends RemixClientAuth {
           user_handle: string;
         }
       | ((
-          params: ParamsOrError<{ tokenData: TokenData | null }>
+          params: ParamsOrError<{ tokenData: TokenData | null }>,
         ) => Res | Promise<Res>),
     cb?: (
-      params: ParamsOrError<{ tokenData: TokenData | null }>
-    ) => Res | Promise<Res>
+      params: ParamsOrError<{ tokenData: TokenData | null }>,
+    ) => Res | Promise<Res>,
   ): Promise<
     | {
         tokenData: TokenData | null;
@@ -845,7 +852,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          this.createVerifierCookie(result.verifier)
+          this.createVerifierCookie(result.verifier),
         );
 
         if (result.status === "complete") {
@@ -853,7 +860,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
           headers.append(
             "Set-Cookie",
-            this.createAuthCookie(tokenData.auth_token)
+            this.createAuthCookie(tokenData.auth_token),
           );
           return { tokenData, headers };
         }
@@ -862,31 +869,33 @@ export class RemixServerAuth extends RemixClientAuth {
       },
       req,
       dataOrCb,
-      cb
+      cb,
     );
   }
 
   async emailPasswordSendPasswordResetEmail(
     req: Request,
-    data?: { email: string }
+    data?: { email: string },
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
   async emailPasswordSendPasswordResetEmail<Res>(
     req: Request,
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSendPasswordResetEmail<Res extends Response>(
     req: Request,
     data: { email: string },
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordSendPasswordResetEmail<Res>(
     req: Request,
     dataOrCb?:
       | { email: string }
       | ((
-          params: ParamsOrError<{ tokenData: TokenData }>
+          params: ParamsOrError<{ tokenData: TokenData }>,
         ) => Res | Promise<Res>),
-    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData }>,
+    ) => Res | Promise<Res>,
   ): Promise<
     | {
         tokenData: TokenData;
@@ -898,7 +907,7 @@ export class RemixServerAuth extends RemixClientAuth {
       async (data, headers) => {
         if (!this.options.passwordResetPath) {
           throw new ConfigurationError(
-            `'passwordResetPath' option not configured`
+            `'passwordResetPath' option not configured`,
           );
         }
         const [email] = _extractParams(data, ["email"], "email missing");
@@ -909,39 +918,41 @@ export class RemixServerAuth extends RemixClientAuth {
           email,
           new URL(
             this.options.passwordResetPath,
-            this.options.baseUrl
-          ).toString()
+            this.options.baseUrl,
+          ).toString(),
         );
 
         headers.append("Set-Cookie", this.createVerifierCookie(verifier));
       },
       req,
       dataOrCb,
-      cb
+      cb,
     );
   }
 
   async emailPasswordResetPassword(
     req: Request,
-    data?: { reset_token: string; password: string }
+    data?: { reset_token: string; password: string },
   ): Promise<{ tokenData: TokenData; headers: Headers }>;
   async emailPasswordResetPassword<Res>(
     req: Request,
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordResetPassword<Res extends Response>(
     req: Request,
     data: { reset_token: string; password: string },
-    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async emailPasswordResetPassword<Res>(
     req: Request,
     dataOrCb?:
       | { reset_token: string; password: string }
       | ((
-          params: ParamsOrError<{ tokenData: TokenData }>
+          params: ParamsOrError<{ tokenData: TokenData }>,
         ) => Res | Promise<Res>),
-    cb?: (params: ParamsOrError<{ tokenData: TokenData }>) => Res | Promise<Res>
+    cb?: (
+      params: ParamsOrError<{ tokenData: TokenData }>,
+    ) => Res | Promise<Res>,
   ): Promise<
     | {
         tokenData: TokenData;
@@ -960,7 +971,7 @@ export class RemixServerAuth extends RemixClientAuth {
         const [resetToken, password] = _extractParams(
           data,
           ["reset_token", "password"],
-          "reset_token or password missing"
+          "reset_token or password missing",
         );
 
         const tokenData = await (
@@ -969,7 +980,7 @@ export class RemixServerAuth extends RemixClientAuth {
 
         headers.append(
           "Set-Cookie",
-          this.createAuthCookie(tokenData.auth_token)
+          this.createAuthCookie(tokenData.auth_token),
         );
 
         headers.append(
@@ -977,14 +988,14 @@ export class RemixServerAuth extends RemixClientAuth {
           cookie.serialize(this.options.pkceVerifierCookieName, "", {
             maxAge: 0,
             path: "/",
-          })
+          }),
         );
 
         return { tokenData };
       },
       req,
       dataOrCb,
-      cb
+      cb,
     );
   }
 
@@ -992,18 +1003,18 @@ export class RemixServerAuth extends RemixClientAuth {
     req: Request,
     data?: {
       email: string;
-    }
+    },
   ): Promise<{ headers: Headers }>;
   async magicLinkSignUp<Res>(
     req: Request,
-    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async magicLinkSignUp<Res>(
     req: Request,
     data: {
       email: string;
     },
-    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async magicLinkSignUp<Res>(
     req: Request,
@@ -1012,7 +1023,7 @@ export class RemixServerAuth extends RemixClientAuth {
           email: string;
         }
       | ((params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>),
-    cb?: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+    cb?: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>,
   ): Promise<
     { headers: Headers } | (Res extends Response ? Res : TypedResponse<Res>)
   > {
@@ -1020,7 +1031,7 @@ export class RemixServerAuth extends RemixClientAuth {
       async (data, headers) => {
         if (!this.options.magicLinkFailurePath) {
           throw new ConfigurationError(
-            `'magicLinkFailurePath' option not configured`
+            `'magicLinkFailurePath' option not configured`,
           );
         }
         const [email] = _extractParams(data, ["email"], "email missing");
@@ -1032,15 +1043,15 @@ export class RemixServerAuth extends RemixClientAuth {
           `${this._authRoute}/magiclink/callback?isSignUp=true`,
           new URL(
             this.options.magicLinkFailurePath,
-            this.options.baseUrl
-          ).toString()
+            this.options.baseUrl,
+          ).toString(),
         );
 
         headers.append("Set-Cookie", this.createVerifierCookie(verifier));
       },
       req,
       dataOrCb,
-      cb
+      cb,
     );
   }
 
@@ -1048,18 +1059,18 @@ export class RemixServerAuth extends RemixClientAuth {
     req: Request,
     data?: {
       email: string;
-    }
+    },
   ): Promise<{ headers: Headers }>;
   async magicLinkSend<Res>(
     req: Request,
-    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async magicLinkSend<Res>(
     req: Request,
     data: {
       email: string;
     },
-    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+    cb: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async magicLinkSend<Res>(
     req: Request,
@@ -1068,7 +1079,7 @@ export class RemixServerAuth extends RemixClientAuth {
           email: string;
         }
       | ((params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>),
-    cb?: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>
+    cb?: (params: ParamsOrError<Record<never, never>>) => Res | Promise<Res>,
   ): Promise<
     { headers: Headers } | (Res extends Response ? Res : TypedResponse<Res>)
   > {
@@ -1076,7 +1087,7 @@ export class RemixServerAuth extends RemixClientAuth {
       async (data, headers) => {
         if (!this.options.magicLinkFailurePath) {
           throw new ConfigurationError(
-            `'magicLinkFailurePath' option not configured`
+            `'magicLinkFailurePath' option not configured`,
           );
         }
         const [email] = _extractParams(data, ["email"], "email missing");
@@ -1088,21 +1099,21 @@ export class RemixServerAuth extends RemixClientAuth {
           `${this._authRoute}/magiclink/callback?isSignUp=true`,
           new URL(
             this.options.magicLinkFailurePath,
-            this.options.baseUrl
-          ).toString()
+            this.options.baseUrl,
+          ).toString(),
         );
 
         headers.append("Set-Cookie", this.createVerifierCookie(verifier));
       },
       req,
       dataOrCb,
-      cb
+      cb,
     );
   }
 
   async signout(): Promise<{ headers: Headers }>;
   async signout<Res>(
-    cb: () => Res | Promise<Res>
+    cb: () => Res | Promise<Res>,
   ): Promise<Res extends Response ? Res : TypedResponse<Res>>;
   async signout<Res>(cb?: () => Res | Promise<Res>): Promise<
     | {
@@ -1133,7 +1144,7 @@ function parseCookies(req: Request) {
 function _extractParams(
   data: FormData | Record<string, unknown>,
   paramNames: string[],
-  errMessage: string
+  errMessage: string,
 ) {
   const params: string[] = [];
   if (data instanceof FormData) {
@@ -1167,18 +1178,18 @@ async function handleAction<DataT extends Record<string, any> | FormData>(
   action: (data: DataT, headers: Headers, req: Request) => Promise<any>,
   req: Request,
   dataOrCb: Record<string, any> | ((data: any) => any) | undefined,
-  cb: ((data: any) => any) | undefined
+  cb: ((data: any) => any) | undefined,
 ) {
   const contentType = req.headers.get("content-type") ?? "application/json";
   const data = (
     typeof dataOrCb === "object"
       ? dataOrCb
       : contentType.startsWith("application/json")
-      ? await req.json()
-      : await req.formData()
+        ? await req.json()
+        : await req.formData()
   ) as DataT;
   const callback = (typeof dataOrCb === "function" ? dataOrCb : cb) as (
-    data: any
+    data: any,
   ) => any;
 
   const headers: Headers = new Headers();
@@ -1206,7 +1217,7 @@ async function actionCbCall(
   cb: (data?: any) => any,
   headers: Headers,
   error?: Error | null,
-  params?: any
+  params?: any,
 ) {
   let res: any;
 
@@ -1238,7 +1249,7 @@ async function actionCbCall(
 async function cbCall<Params>(
   cb: undefined extends Params ? () => any : (data: Params) => any,
   params: Params,
-  headers?: Headers
+  headers?: Headers,
 ) {
   let res: any;
 

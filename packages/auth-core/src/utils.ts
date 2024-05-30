@@ -3,7 +3,7 @@ import * as errors from "./errors";
 export async function requestGET<ResponseT>(
   href: string,
   searchParams?: Record<string, string>,
-  onFailure?: (errorMessage: string) => Promise<ResponseT>
+  onFailure?: (errorMessage: string) => Promise<ResponseT>,
 ): Promise<ResponseT> {
   const url = new URL(href);
   if (searchParams) {
@@ -44,7 +44,7 @@ export async function requestGET<ResponseT>(
 export async function requestPOST<ResponseT>(
   href: string,
   body?: object,
-  onFailure?: (errorMessage: string) => Promise<ResponseT>
+  onFailure?: (errorMessage: string) => Promise<ResponseT>,
 ): Promise<ResponseT> {
   try {
     const response = await fetch(href, {
@@ -83,12 +83,12 @@ export async function requestPOST<ResponseT>(
 export const errorMapping = new Map(
   Object.values(errors)
     .map((errClass) =>
-      "type" in errClass.prototype ? [errClass.prototype.type, errClass] : null
+      "type" in errClass.prototype ? [errClass.prototype.type, errClass] : null,
     )
     .filter((entry) => entry != null) as unknown as [
     string,
-    errors.EdgeDBAuthError
-  ][]
+    errors.EdgeDBAuthError,
+  ][],
 );
 
 export function decodeError(errorBody: string): errors.EdgeDBAuthError {
@@ -100,7 +100,7 @@ export function decodeError(errorBody: string): errors.EdgeDBAuthError {
       typeof errorJson["error"] !== "object"
     ) {
       return new errors.UnknownError(
-        `Error returned by server does not contain 'error' object`
+        `Error returned by server does not contain 'error' object`,
       );
     }
     const error = errorJson["error"];
@@ -110,7 +110,7 @@ export function decodeError(errorBody: string): errors.EdgeDBAuthError {
       typeof error["message"] !== "string"
     ) {
       return new errors.UnknownError(
-        `Error object returned by server does not contain 'type' or 'message'`
+        `Error object returned by server does not contain 'type' or 'message'`,
       );
     }
     const errorClass = errorMapping.get(error.type);

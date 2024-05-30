@@ -37,7 +37,7 @@ test("matches edgedb-python packing", () => {
 
   const buf = w.unwrap();
   expect(encodeB64(buf)).toBe(
-    "RQAAABAACgAAAAZhYWFhYWFQAAAAFQAPQkEAAAAJYmJiYmJiYmJi"
+    "RQAAABAACgAAAAZhYWFhYWFQAAAAFQAPQkEAAAAJYmJiYmJiYmJi",
   );
 });
 

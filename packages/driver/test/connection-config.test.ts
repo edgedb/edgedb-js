@@ -23,7 +23,7 @@ jest.mock("fs", () => {
           return mockedFiles[filepath];
         } else {
           const err = new Error(
-            `ENOENT: no such file or directory, open '${filepath}'`
+            `ENOENT: no such file or directory, open '${filepath}'`,
           ) as any;
           err.errno = -2;
           err.code = "ENOENT";
@@ -80,7 +80,7 @@ async function envWrap(
     fs?: ConnectionTestCase["fs"];
     captureWarnings?: boolean;
   },
-  func: () => Promise<unknown>
+  func: () => Promise<unknown>,
 ): Promise<string[]> {
   let oldEnv: { [key: string]: any };
   let oldCwd: any;
@@ -107,7 +107,7 @@ async function envWrap(
           } else {
             const filepath = path.replace(
               "${HASH}",
-              projectPathHash(content["project-path"])
+              projectPathHash(content["project-path"]),
             );
             files[filepath] = "";
             for (const [name, file] of Object.entries(content)) {
@@ -116,7 +116,7 @@ async function envWrap(
           }
           return files;
         },
-        {} as { [key: string]: string }
+        {} as { [key: string]: string },
       );
     }
   }
@@ -230,7 +230,7 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
     }
 
     await expect(() =>
-      envWrap({ env, fs }, () => parseConnectArguments(opts))
+      envWrap({ env, fs }, () => parseConnectArguments(opts)),
     ).rejects.toThrow(error);
   } else {
     const warnings = await envWrap(
@@ -266,22 +266,22 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
                 waitHours,
                 waitMinutes,
                 waitSeconds,
-                waitMilli
-              )
+                waitMilli,
+              ),
             ),
           }).toEqual({
             ...testcase.result,
             waitUntilAvailable: parseDuration(
-              testcase.result.waitUntilAvailable
+              testcase.result.waitUntilAvailable,
             ),
           });
         } catch (e) {
           throw new Error(
             `Failed testcase: ${JSON.stringify(testcase, null, 2)}`,
-            { cause: e }
+            { cause: e },
           );
         }
-      }
+      },
     );
     if (testcase.warnings) {
       for (const warntype of testcase.warnings) {
@@ -301,14 +301,14 @@ describe("parseConnectArguments", () => {
     connectionTestcases = JSON.parse(
       fs.readFileSync(
         "./test/shared-client-testcases/connection_testcases.json",
-        "utf8"
-      )
+        "utf8",
+      ),
     );
   } catch (err) {
     throw new Error(
       `Failed to read 'connection_testcases.json': ${err}.\n` +
         `Is the 'shared-client-testcases' submodule initialised? ` +
-        `Try running 'git submodule update --init'.`
+        `Try running 'git submodule update --init'.`,
     );
   }
 
@@ -326,7 +326,7 @@ describe("parseConnectArguments", () => {
               acc[macPath] = {
                 "instance-name": fileContent["instance-name"],
                 "project-path": linuxPathToMacOsPath(
-                  fileContent["project-path"]
+                  fileContent["project-path"],
                 ),
                 ...(fileContent.database && { database: fileContent.database }),
                 ...(fileContent.branch && { branch: fileContent.branch }),
@@ -347,7 +347,7 @@ describe("parseConnectArguments", () => {
                 branch?: string;
                 "cloud-profile"?: string;
               }
-          >
+          >,
         );
       const patchFs: ConnectionTestCase["fs"] = {
         cwd: testcase.fs?.cwd && linuxPathToMacOsPath(testcase.fs.cwd),
@@ -359,12 +359,15 @@ describe("parseConnectArguments", () => {
         ...testcase,
         env: {
           ...testcase.env,
-          ...Object.entries(testcase.env ?? {}).reduce((acc, [key, value]) => {
-            return {
-              ...acc,
-              [key]: linuxPathToMacOsPath(value as string),
-            };
-          }, {} as Record<string, string>),
+          ...Object.entries(testcase.env ?? {}).reduce(
+            (acc, [key, value]) => {
+              return {
+                ...acc,
+                [key]: linuxPathToMacOsPath(value as string),
+              };
+            },
+            {} as Record<string, string>,
+          ),
         },
         opts: {
           ...testcase.opts,
@@ -376,7 +379,7 @@ describe("parseConnectArguments", () => {
           }),
           ...(testcase.opts?.credentialsFile && {
             credentialsFile: linuxPathToMacOsPath(
-              testcase.opts.credentialsFile
+              testcase.opts.credentialsFile,
             ),
           }),
         },
@@ -423,14 +426,14 @@ test("project path hashing", async () => {
     hashingTestcases = JSON.parse(
       fs.readFileSync(
         "./test/shared-client-testcases/project_path_hashing_testcases.json",
-        "utf8"
-      )
+        "utf8",
+      ),
     );
   } catch (err) {
     throw new Error(
       `Failed to read 'project_path_hashing_testcases.json': ${err}.\n` +
         `Is the 'shared-client-testcases' submodule initialised? ` +
-        `Try running 'git submodule update --init'.`
+        `Try running 'git submodule update --init'.`,
     );
   }
 
@@ -439,7 +442,7 @@ test("project path hashing", async () => {
       await envWrap(
         { env: testcase.env ?? {}, fs: { homedir: testcase.homeDir } },
         async () =>
-          expect(await findStashPath(testcase.project)).toBe(testcase.result)
+          expect(await findStashPath(testcase.project)).toBe(testcase.result),
       );
     }
   }
@@ -612,7 +615,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
         expect(await inProject()).toEqual(testcase.inProject);
         expect(fromProject).toEqual(testcase.fromProject);
         expect(fromEnv).toEqual(testcase.fromEnv);
-      }
+      },
     );
   }
 });
@@ -652,7 +655,7 @@ test("EDGEDB_CLIENT_SECURITY env var", async () => {
           const { connectionParams } = await parseConnectArgs;
           expect(connectionParams._tlsSecurity).toBe(result);
         }
-      }
+      },
     );
   }
 });

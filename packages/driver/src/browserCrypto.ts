@@ -21,10 +21,10 @@ const cryptoUtils: CryptoUtils = {
             hash: { name: "SHA-256" },
           },
           false,
-          ["sign"]
+          ["sign"],
         ),
-        msg
-      )
+        msg,
+      ),
     );
   },
 };

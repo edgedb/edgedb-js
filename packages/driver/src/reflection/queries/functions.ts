@@ -116,7 +116,7 @@ function hashFuncDef(def: FunctionDef): string {
           type: param.type.id,
           typemod: param.typemod,
           hasDefault: !!param.hasDefault,
-        })
+        }),
       )
       .sort(),
     preserves_optionality: def.preserves_optionality,

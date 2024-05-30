@@ -41,7 +41,7 @@ interface ErrorConstructor {
 // modified from 'https://deno.land/x/expect/matchers.ts'
 function toThrow(
   value: any,
-  error?: RegExp | ErrorConstructor | string
+  error?: RegExp | ErrorConstructor | string,
 ): MatchResult {
   let fn;
   if (typeof value === "function") {
@@ -61,30 +61,30 @@ function toThrow(
       if (!value.message.includes(error)) {
         return buildFail(
           `expect(${ACTUAL}).toThrow(${EXPECTED})\n\nexpected ${red(
-            actualString
+            actualString,
           )} to throw error matching ${green(errorString)} but it threw ${red(
-            value.toString()
-          )}`
+            value.toString(),
+          )}`,
         );
       }
     } else if (error instanceof RegExp) {
       if (!value.message.match(error)) {
         return buildFail(
           `expect(${ACTUAL}).toThrow(${EXPECTED})\n\nexpected ${red(
-            actualString
+            actualString,
           )} to throw error matching ${green(errorString)} but it threw ${red(
-            value.toString()
-          )}`
+            value.toString(),
+          )}`,
         );
       }
     } else if (error != null) {
       if (!(value instanceof error)) {
         return buildFail(
           `expect(${ACTUAL}).toThrow(${EXPECTED})\n\nexpected ${red(
-            actualString
+            actualString,
           )} to throw error matching ${green(error.name)} but it threw ${red(
-            (value as any).constructor.name
-          )}`
+            (value as any).constructor.name,
+          )}`,
         );
       }
     }
@@ -93,8 +93,8 @@ function toThrow(
   } else {
     return buildFail(
       `expect(${ACTUAL}).toThrow(${EXPECTED})\n\nexpected ${red(
-        actualString
-      )} to throw but it did not`
+        actualString,
+      )} to throw but it did not`,
     );
   }
 }

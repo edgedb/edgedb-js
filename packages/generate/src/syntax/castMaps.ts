@@ -11,7 +11,7 @@ declare function literalToTypeSet(t: any): any;
 export { literalToTypeSet };
 export declare function isImplicitlyCastableTo(
   from: string,
-  to: string
+  to: string,
 ): boolean;
 export function getSharedParentScalar(_a: any, _b: any): any {}
 export type getSharedParentScalar<_A, _B> = any;

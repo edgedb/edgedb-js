@@ -36,7 +36,7 @@ export default class Event {
     // The mere presense of this method will trip TS if one awaits on
     // an Event object directly.
     throw new InternalClientError(
-      "Event objects cannot be awaited on directly; use Event.wait()"
+      "Event objects cannot be awaited on directly; use Event.wait()",
     );
   }
 
@@ -79,7 +79,7 @@ export default class Event {
     if (!futReject || !futResolve) {
       // Impossible per the spec.
       throw new InternalClientError(
-        "Promise executor was not called synchronously"
+        "Promise executor was not called synchronously",
       );
     }
 

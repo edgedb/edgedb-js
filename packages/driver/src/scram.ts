@@ -46,21 +46,21 @@ export function getSCRAM({ randomBytes, H, HMAC }: CryptoUtils) {
   }
 
   function generateNonce(
-    length: number = RAW_NONCE_LENGTH
+    length: number = RAW_NONCE_LENGTH,
   ): Promise<Uint8Array> {
     return randomBytes(length);
   }
 
   function buildClientFirstMessage(
     clientNonce: Uint8Array,
-    username: string
+    username: string,
   ): [string, string] {
     const bare = `n=${saslprep(username)},r=${encodeB64(clientNonce)}`;
     return [`n,,${bare}`, bare];
   }
 
   function parseServerFirstMessage(
-    msg: string
+    msg: string,
   ): [Uint8Array, Uint8Array, number] {
     const attrs = msg.split(",");
 
@@ -128,16 +128,16 @@ export function getSCRAM({ randomBytes, H, HMAC }: CryptoUtils) {
     iterations: number,
     clientFirstBare: string,
     serverFirst: string,
-    serverNonce: Uint8Array
+    serverNonce: Uint8Array,
   ): Promise<[string, Uint8Array]> {
     const clientFinal = `c=biws,r=${encodeB64(serverNonce)}`;
     const authMessage = utf8Encoder.encode(
-      `${clientFirstBare},${serverFirst},${clientFinal}`
+      `${clientFirstBare},${serverFirst},${clientFinal}`,
     );
     const saltedPassword = await _getSaltedPassword(
       utf8Encoder.encode(saslprep(password)),
       salt,
-      iterations
+      iterations,
     );
     const clientKey = await _getClientKey(saltedPassword);
     const storedKey = await H(clientKey);
@@ -153,7 +153,7 @@ export function getSCRAM({ randomBytes, H, HMAC }: CryptoUtils) {
   async function _getSaltedPassword(
     password: Uint8Array,
     salt: Uint8Array,
-    iterations: number
+    iterations: number,
   ): Promise<Uint8Array> {
     // U1 := HMAC(str, salt + INT(1))
 

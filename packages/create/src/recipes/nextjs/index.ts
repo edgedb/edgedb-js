@@ -50,7 +50,7 @@ const recipe: Recipe<NextjsOptions> = {
   },
   async apply(
     { projectDir, useEdgeDBAuth }: BaseOptions,
-    { useTS, router, useTailwind, useSrcDir }: NextjsOptions
+    { useTS, router, useTailwind, useSrcDir }: NextjsOptions,
   ) {
     logger("Running nextjs recipe");
 
@@ -86,7 +86,7 @@ const recipe: Recipe<NextjsOptions> = {
             ],
           },
         ],
-      }
+      },
     );
 
     await updatePackage(projectDir, {

@@ -21,7 +21,7 @@ import * as castMaps from "./castMaps";
 export function getSharedParent(a: SomeType, b: SomeType): SomeType {
   if (a.__kind__ !== b.__kind__) {
     throw new Error(
-      `Incompatible array types: ${a.__name__} and ${b.__name__}`
+      `Incompatible array types: ${a.__name__} and ${b.__name__}`,
     );
   }
   if (a.__kind__ === TypeKind.scalar && b.__kind__ === TypeKind.scalar) {
@@ -31,7 +31,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
   } else if (a.__kind__ === TypeKind.tuple && b.__kind__ === TypeKind.tuple) {
     if (a.__items__.length !== b.__items__.length) {
       throw new Error(
-        `Incompatible tuple types: ${a.__name__} and ${b.__name__}`
+        `Incompatible tuple types: ${a.__name__} and ${b.__name__}`,
       );
     }
     try {
@@ -41,7 +41,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
         }
         return getSharedParent(
           a.__items__[i] as SomeType,
-          b.__items__[i] as SomeType
+          b.__items__[i] as SomeType,
         );
       });
 
@@ -52,7 +52,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
       };
     } catch (err) {
       throw new Error(
-        `Incompatible tuple types: ${a.__name__} and ${b.__name__}`
+        `Incompatible tuple types: ${a.__name__} and ${b.__name__}`,
       );
     }
   } else if (
@@ -65,7 +65,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
       aKeys.length === bKeys.size && aKeys.every((k) => bKeys.has(k));
     if (!sameKeys) {
       throw new Error(
-        `Incompatible tuple types: ${a.__name__} and ${b.__name__}`
+        `Incompatible tuple types: ${a.__name__} and ${b.__name__}`,
       );
     }
     try {
@@ -76,7 +76,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
         }
         items[i] = getSharedParent(
           a.__shape__[i] as SomeType,
-          b.__shape__[i] as SomeType
+          b.__shape__[i] as SomeType,
         );
       }
 
@@ -89,14 +89,14 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
       };
     } catch (err) {
       throw new Error(
-        `Incompatible tuple types: ${a.__name__} and ${b.__name__}`
+        `Incompatible tuple types: ${a.__name__} and ${b.__name__}`,
       );
     }
   } else if (a.__kind__ === TypeKind.array && b.__kind__ === TypeKind.array) {
     try {
       const mergedEl: any = getSharedParent(
         a.__element__ as any,
-        b.__element__ as any
+        b.__element__ as any,
       );
       return {
         __kind__: TypeKind.array,
@@ -105,17 +105,17 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
       } as ArrayType;
     } catch (err) {
       throw new Error(
-        `Incompatible array types: ${a.__name__} and ${b.__name__}`
+        `Incompatible array types: ${a.__name__} and ${b.__name__}`,
       );
     }
   } else if (a.__kind__ === TypeKind.enum && b.__kind__ === TypeKind.enum) {
     if (a.__name__ === b.__name__) return a;
     throw new Error(
-      `Incompatible array types: ${a.__name__} and ${b.__name__}`
+      `Incompatible array types: ${a.__name__} and ${b.__name__}`,
     );
   } else {
     throw new Error(
-      `Incompatible array types: ${a.__name__} and ${b.__name__}`
+      `Incompatible array types: ${a.__name__} and ${b.__name__}`,
     );
   }
 }
@@ -142,36 +142,37 @@ export type getSharedParentPrimitive<A, B> = A extends undefined
     ? undefined
     : B
   : B extends undefined
-  ? A
-  : A extends ArrayType<infer AEl>
-  ? B extends ArrayType<infer BEl>
-    ? ArrayType<castMaps.getSharedParentScalar<AEl, BEl>>
-    : never
-  : A extends NamedTupleType<infer AShape>
-  ? B extends NamedTupleType<infer BShape>
-    ? NamedTupleType<{
-        [k in keyof AShape & keyof BShape]: castMaps.getSharedParentScalar<
-          AShape[k],
-          BShape[k]
-        >;
-      }>
-    : never
-  : A extends TupleType<infer AItems>
-  ? B extends TupleType<infer BItems>
-    ? mergeTypeTuples<AItems, BItems> extends BaseTypeTuple
-      ? TupleType<mergeTypeTuples<AItems, BItems>>
-      : never
-    : never
-  : castMaps.getSharedParentScalar<A, B>;
+    ? A
+    : A extends ArrayType<infer AEl>
+      ? B extends ArrayType<infer BEl>
+        ? ArrayType<castMaps.getSharedParentScalar<AEl, BEl>>
+        : never
+      : A extends NamedTupleType<infer AShape>
+        ? B extends NamedTupleType<infer BShape>
+          ? NamedTupleType<{
+              [k in keyof AShape &
+                keyof BShape]: castMaps.getSharedParentScalar<
+                AShape[k],
+                BShape[k]
+              >;
+            }>
+          : never
+        : A extends TupleType<infer AItems>
+          ? B extends TupleType<infer BItems>
+            ? mergeTypeTuples<AItems, BItems> extends BaseTypeTuple
+              ? TupleType<mergeTypeTuples<AItems, BItems>>
+              : never
+            : never
+          : castMaps.getSharedParentScalar<A, B>;
 
 type _getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
   Types extends [infer U]
     ? U
     : Types extends [infer A, infer B, ...infer Rest]
-    ? _getSharedParentPrimitiveVariadic<
-        [getSharedParentPrimitive<A, B>, ...Rest]
-      >
-    : never;
+      ? _getSharedParentPrimitiveVariadic<
+          [getSharedParentPrimitive<A, B>, ...Rest]
+        >
+      : never;
 
 export type getSharedParentPrimitiveVariadic<Types extends [any, ...any[]]> =
   _getSharedParentPrimitiveVariadic<Types>;
@@ -187,14 +188,14 @@ type _mergeObjectTypesVariadic<Types extends [ObjectType, ...ObjectType[]]> =
   Types extends [infer U]
     ? U
     : Types extends [infer A, infer B, ...infer Rest]
-    ? A extends ObjectType
-      ? B extends ObjectType
-        ? mergeObjectTypes<A, B> extends BaseType
-          ? mergeObjectTypesVariadic<[mergeObjectTypes<A, B>, ...Rest]>
+      ? A extends ObjectType
+        ? B extends ObjectType
+          ? mergeObjectTypes<A, B> extends BaseType
+            ? mergeObjectTypesVariadic<[mergeObjectTypes<A, B>, ...Rest]>
+            : never
           : never
         : never
-      : never
-    : never;
+      : never;
 
 export type mergeObjectTypesVariadic<Types extends [any, ...any[]]> =
   _mergeObjectTypesVariadic<Types>;
@@ -206,7 +207,7 @@ export type getTypesFromExprs<Exprs extends [TypeSet, ...TypeSet[]]> = {
 };
 
 export type getTypesFromObjectExprs<
-  Exprs extends [ObjectTypeSet, ...ObjectTypeSet[]]
+  Exprs extends [ObjectTypeSet, ...ObjectTypeSet[]],
 > = {
   [k in keyof Exprs]: Exprs[k] extends TypeSet<infer El, any> ? El : never;
 };

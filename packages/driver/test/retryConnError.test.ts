@@ -133,7 +133,7 @@ test("transaction retry on connection error after commit", async () => {
       }
 
       return result;
-    })
+    }),
   ).rejects.toThrow();
 
   // did not retry failed commit
@@ -154,12 +154,12 @@ test("retry readonly queries: complete fetch", async () => {
   // complete fetch - retrying
   currentSocket!.abortOnNextMessageType(chars.$D);
   await expect(client.querySingle(`select 'Hello EdgeDB!'`)).resolves.toBe(
-    "Hello EdgeDB!"
+    "Hello EdgeDB!",
   );
 
   currentSocket!.abortOnNextMessageType(chars.$D);
   await expect(
-    nonRetryingClient.query(`select 'Hello edgedb-js!'`)
+    nonRetryingClient.query(`select 'Hello edgedb-js!'`),
   ).rejects.toThrow();
 });
 
@@ -172,12 +172,12 @@ test("retry readonly queries: optimistic fetch", async () => {
 
   currentSocket!.abortOnNextMessageType(chars.$D);
   await expect(client.querySingle(`select 'Hello EdgeDB!'`)).resolves.toBe(
-    "Hello EdgeDB!"
+    "Hello EdgeDB!",
   );
 
   currentSocket!.abortOnNextMessageType(chars.$D);
   await expect(
-    nonRetryingClient.querySingle(`select 'Hello EdgeDB!'`)
+    nonRetryingClient.querySingle(`select 'Hello EdgeDB!'`),
   ).rejects.toThrow();
 
   await client.close();
@@ -217,13 +217,13 @@ test("non readonly queries: optimistic fetch", async () => {
   await expect(
     client.query(`insert RetryConnErrorTest {
       prop := 'test2'
-    }`)
+    }`),
   ).rejects.toThrow();
 
   // above inserts were aborted as data was being returned and are not
   // readonly, so each should have only been executed once and not retried
   expect(
-    await client.querySingle(`select count((select RetryConnErrorTest))`)
+    await client.querySingle(`select count((select RetryConnErrorTest))`),
   ).toBe(3);
 
   await client.close();

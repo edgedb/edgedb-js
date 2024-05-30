@@ -28,13 +28,13 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof Float32Array || Array.isArray(object))) {
       throw new InvalidArgumentError(
-        `a Float32Array or array of numbers was expected, got "${object}"`
+        `a Float32Array or array of numbers was expected, got "${object}"`,
       );
     }
 
     if (object.length > PG_VECTOR_MAX_DIM) {
       throw new InvalidArgumentError(
-        "too many elements in array to encode into pgvector"
+        "too many elements in array to encode into pgvector",
       );
     }
 
@@ -51,7 +51,7 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
       for (const el of object) {
         if (typeof el !== "number") {
           throw new InvalidArgumentError(
-            `elements of vector array expected to be a numbers, got "${el}"`
+            `elements of vector array expected to be a numbers, got "${el}"`,
           );
         }
         buf.writeFloat32(el);
@@ -67,7 +67,7 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
     const data = new DataView(
       vecBuf.buffer,
       vecBuf.byteOffset,
-      vecBuf.byteLength
+      vecBuf.byteLength,
     );
     const vec = new Float32Array(dim);
 

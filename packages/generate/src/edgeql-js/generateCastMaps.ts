@@ -33,7 +33,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   /////////////////////////////////////
 
   const materialScalars = reverseTopo.filter(
-    (type) => type.kind === "scalar" && !type.is_abstract
+    (type) => type.kind === "scalar" && !type.is_abstract,
     // && (!type.enum_values || !type.enum_values.length)
   );
 
@@ -96,7 +96,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
 
       let sharedParent: string | null = null;
       const sharedParentId = outerCastableTo.find((type) =>
-        innerCastableTo.includes(type)
+        innerCastableTo.includes(type),
       );
       if (sharedParentId) {
         const sharedParentName = types.get(sharedParentId).name;
@@ -168,7 +168,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
     `)`,
     t`: ${joinFrags(
       ["A", "B", ...[...returnTypes].map((type) => getRef(type))],
-      " | "
+      " | ",
     )}`,
     r` {`,
   ]);
@@ -232,7 +232,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   ]);
   f.indented(() => {
     for (const [sourceId, castableTo] of Object.entries(
-      casts.implicitCastMap
+      casts.implicitCastMap,
     )) {
       if (castableTo.length) {
         f.writeln([
@@ -266,7 +266,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
     t`export `,
     dts`declare `,
     t`type scalarLiterals =\n  | ${Object.keys(literalToScalarMapping).join(
-      "\n  | "
+      "\n  | ",
     )}\n  | edgedb.Range<any> | edgedb.MultiRange<any>;\n\n`,
   ]);
 
@@ -289,7 +289,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
           );
         })
         .map((scalar) => getRef(scalar.name)),
-      " | "
+      " | ",
     )}`,
   ]);
   f.writeln([t`    ? never`]);
@@ -377,7 +377,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   f.writeln([r`    return type;`]);
   f.writeln([r`  }`]);
   for (const [literalType, { literalKind, type }] of Object.entries(
-    literalToScalarMapping
+    literalToScalarMapping,
   )) {
     const fullType = typesByName[type];
     // cal::date_duration won't be defined on v1 instances

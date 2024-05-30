@@ -10,7 +10,7 @@ export class EdgeDBError extends Error {
     message?: string,
     options?: {
       cause?: unknown;
-    }
+    },
   ) {
     super(undefined, options);
     Object.defineProperties(this, {
@@ -71,7 +71,7 @@ function tryParseInt(val: any) {
 
 export function prettyPrintError(
   attrs: Map<number, Uint8Array>,
-  query: string
+  query: string,
 ) {
   let errMessage = "\n";
 
@@ -105,7 +105,7 @@ export function prettyPrintError(
 
   if (attrs.has(ErrorAttr.details)) {
     errMessage += `Details: ${utf8Decoder.decode(
-      attrs.get(ErrorAttr.details)
+      attrs.get(ErrorAttr.details),
     )}\n`;
   }
   if (attrs.has(ErrorAttr.hint)) {

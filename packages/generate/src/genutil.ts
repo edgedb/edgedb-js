@@ -28,7 +28,7 @@ export const makePlainIdent = (name: string): string => {
   }
   const replaced = name.replace(
     /[^A-Za-z0-9_]/g,
-    (match) => "0x" + match.codePointAt(0)!.toString(16)
+    (match) => "0x" + match.codePointAt(0)!.toString(16),
   );
   return replaced !== name ? `$${replaced}` : name;
 };
@@ -114,12 +114,12 @@ export const literalToScalarMapping: {
   [key: string]: { type: string; literalKind: "typeof" | "instanceof" };
 } = {};
 for (const [scalarType, { type, literalKind }] of Object.entries(
-  scalarToLiteralMapping
+  scalarToLiteralMapping,
 )) {
   if (literalKind) {
     if (literalToScalarMapping[type]) {
       throw new Error(
-        `literal type '${type}' cannot be mapped to multiple scalar types`
+        `literal type '${type}' cannot be mapped to multiple scalar types`,
       );
     }
     literalToScalarMapping[type] = { type: scalarType, literalKind };
@@ -134,7 +134,7 @@ export function toTSScalarType(
     edgedbDatatypePrefix: string;
   } = {
     edgedbDatatypePrefix: "_.",
-  }
+  },
 ): CodeFragment[] {
   switch (type.kind) {
     case "scalar": {
@@ -149,7 +149,7 @@ export function toTSScalarType(
         return toTSScalarType(
           types.get(type.material_id) as introspect.ScalarType,
           types,
-          opts
+          opts,
         );
       }
 
@@ -164,7 +164,7 @@ export function toTSScalarType(
       const tn = toTSScalarType(
         types.get(type.array_element_id) as introspect.PrimitiveType,
         types,
-        opts
+        opts,
       );
       return frag`${tn}[]`;
     }
@@ -184,7 +184,7 @@ export function toTSScalarType(
           const tn = toTSScalarType(
             types.get(target_id) as introspect.PrimitiveType,
             types,
-            opts
+            opts,
           );
           res.push(frag`${name}: ${tn}`);
         }
@@ -196,7 +196,7 @@ export function toTSScalarType(
           const tn = toTSScalarType(
             types.get(target_id) as introspect.PrimitiveType,
             types,
-            opts
+            opts,
           );
           res.push(tn);
         }
@@ -208,7 +208,7 @@ export function toTSScalarType(
       const tn = toTSScalarType(
         types.get(type.range_element_id) as introspect.PrimitiveType,
         types,
-        opts
+        opts,
       );
       return frag`${opts.edgedbDatatypePrefix}edgedb.Range<${tn}>`;
     }
@@ -217,7 +217,7 @@ export function toTSScalarType(
       const tn = toTSScalarType(
         types.get(type.multirange_element_id) as introspect.PrimitiveType,
         types,
-        opts
+        opts,
       );
       return frag`${opts.edgedbDatatypePrefix}edgedb.MultiRange<${tn}>`;
     }
@@ -232,7 +232,7 @@ export function toTSObjectType(
   types: introspect.Types,
   currentMod: string,
   code: CodeBuilder,
-  level = 0
+  level = 0,
 ): CodeFragment[] {
   if (type.intersection_of && type.intersection_of.length) {
     const res: CodeFragment[][] = [];
@@ -332,7 +332,7 @@ export function frag(
 
 export function joinFrags(
   frags: (CodeFragment | CodeFragment[])[],
-  sep: string
+  sep: string,
 ) {
   const joined: CodeFragment[] = [];
   for (const fragment of frags) {
@@ -396,7 +396,7 @@ export const reservedIdents = new Set([
 export async function writeDirWithTarget(
   dir: DirBuilder,
   target: Target,
-  params: { outputDir: string; written?: Set<string> }
+  params: { outputDir: string; written?: Set<string> },
 ) {
   const { outputDir, written = new Set<string>() } = params;
   if (target === "ts") {

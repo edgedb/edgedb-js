@@ -31,7 +31,7 @@ import { $normaliseInsertShape, type pointerIsOptional } from "./insert";
 
 export type $expr_Update<
   El extends ObjectType = ObjectType,
-  Card extends Cardinality = Cardinality
+  Card extends Cardinality = Cardinality,
   // Set extends TypeSet = TypeSet,
   // Expr extends ObjectTypeSet = ObjectTypeSet,
   // Shape extends UpdateShape<ObjectTypeSet> = any
@@ -45,28 +45,33 @@ export type $expr_Update<
   __scope__: ObjectTypeExpression;
 }>;
 
-export type UpdateShape<Root extends ObjectTypeSet> = typeutil.stripNever<
-  stripNonUpdateables<stripBacklinks<Root["__element__"]["__pointers__"]>>
-> extends infer Shape
-  ? Shape extends ObjectTypePointers
-    ? {
-        [k in keyof Shape]?:
-          | (
-              | pointerToAssignmentExpression<Shape[k]>
-              | (Shape[k]["cardinality"] extends
-                  | Cardinality.Many
-                  | Cardinality.AtLeastOne
-                  ?
-                      | { "+=": pointerToAssignmentExpression<Shape[k], true> }
-                      | { "-=": pointerToAssignmentExpression<Shape[k], true> }
-                  : never)
-            )
-          | (pointerIsOptional<Shape[k]> extends true
-              ? undefined | null
-              : never);
-      }
-    : never
-  : never;
+export type UpdateShape<Root extends ObjectTypeSet> =
+  typeutil.stripNever<
+    stripNonUpdateables<stripBacklinks<Root["__element__"]["__pointers__"]>>
+  > extends infer Shape
+    ? Shape extends ObjectTypePointers
+      ? {
+          [k in keyof Shape]?:
+            | (
+                | pointerToAssignmentExpression<Shape[k]>
+                | (Shape[k]["cardinality"] extends
+                    | Cardinality.Many
+                    | Cardinality.AtLeastOne
+                    ?
+                        | {
+                            "+=": pointerToAssignmentExpression<Shape[k], true>;
+                          }
+                        | {
+                            "-=": pointerToAssignmentExpression<Shape[k], true>;
+                          }
+                    : never)
+              )
+            | (pointerIsOptional<Shape[k]> extends true
+                ? undefined | null
+                : never);
+        }
+      : never
+    : never;
 
 export function update<
   Expr extends ObjectTypeExpression,
@@ -74,12 +79,12 @@ export function update<
     filter?: SelectModifiers["filter"];
     filter_single?: SelectModifiers<Expr["__element__"]>["filter_single"];
     set: UpdateShape<Expr>;
-  }
+  },
   // SetShape extends UpdateShape<Expr>,
   // Modifiers extends Pick<SelectModifiers, "filter">
 >(
   expr: Expr,
-  shape: (scope: $scopify<Expr["__element__"]>) => Readonly<Shape>
+  shape: (scope: $scopify<Expr["__element__"]>) => Readonly<Shape>,
 ): $expr_Update<Expr["__element__"], ComputeSelectCardinality<Expr, Shape>> {
   const cleanScopedExprs = $existingScopes.size === 0;
 
@@ -101,7 +106,7 @@ export function update<
     } else {
       throw new Error(
         `Invalid update shape key '${key}', only 'filter', 'filter_single', ` +
-          `and 'set' are allowed`
+          `and 'set' are allowed`,
       );
     }
   }

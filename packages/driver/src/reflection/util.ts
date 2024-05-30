@@ -39,7 +39,7 @@ export namespace util {
   export const defineProperty = <T>(
     obj: T,
     name: string,
-    def: PropertyDef & ThisType<T>
+    def: PropertyDef & ThisType<T>,
   ): T => {
     return Object.defineProperty(obj, name, def) as any;
   };
@@ -47,7 +47,7 @@ export namespace util {
   export const defineGetter = <T>(
     obj: T,
     name: string,
-    getter: (this: T) => any
+    getter: (this: T) => any,
   ): T => {
     return Object.defineProperty(obj, name, {
       get: getter,
@@ -56,12 +56,12 @@ export namespace util {
   };
 
   export const defineMethod = <
-    T
+    T,
     // Def extends PropertyDef<T, P>
   >(
     obj: T,
     name: string,
-    method: (this: T) => any
+    method: (this: T) => any,
   ): T => {
     (obj as any)[name] = method.bind(obj);
     return obj;
@@ -69,7 +69,7 @@ export namespace util {
 
   export function flatMap<T, U>(
     array: T[],
-    callbackfn: (value: T, index: number, array: T[]) => U[]
+    callbackfn: (value: T, index: number, array: T[]) => U[],
   ): U[] {
     return Array.prototype.concat(...array.map(callbackfn));
   }
@@ -81,7 +81,7 @@ export namespace util {
   };
 
   export function omitDollarPrefixed<O extends { [k: string]: any }>(
-    object: O
+    object: O,
   ): OmitDollarPrefixed<O> {
     const obj: any = {};
     for (const key of Object.keys(object)) {
@@ -93,7 +93,7 @@ export namespace util {
   }
 
   export const parseCardinality = (
-    cardinality: RawCardinality
+    cardinality: RawCardinality,
   ): Cardinality => {
     switch (cardinality) {
       case RawCardinality.MANY:

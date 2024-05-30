@@ -17,18 +17,18 @@ class FetchClientPool extends BaseClientPool {
 export function createClient(): Client {
   throw new EdgeDBError(
     `'createClient()' cannot be used in browser (or edge runtime) environment, ` +
-      `use 'createHttpClient()' API instead`
+      `use 'createHttpClient()' API instead`,
   );
 }
 
 export function createHttpClient(
-  options?: string | ConnectOptions | null
+  options?: string | ConnectOptions | null,
 ): Client {
   return new Client(
     new FetchClientPool(
       parseConnectArguments,
-      typeof options === "string" ? { dsn: options } : options ?? {}
+      typeof options === "string" ? { dsn: options } : options ?? {},
     ),
-    Options.defaults()
+    Options.defaults(),
   );
 }

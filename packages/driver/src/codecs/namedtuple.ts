@@ -51,7 +51,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
       throw new QueryArgumentError(
         `expected ${codecsLen} element${
           codecsLen === 1 ? "" : "s"
-        } in named tuple, got ${Object.keys(object).length}`
+        } in named tuple, got ${Object.keys(object).length}`,
       );
     }
 
@@ -62,7 +62,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
 
       if (val == null) {
         throw new MissingArgumentError(
-          `element '${key}' in named tuple cannot be 'null'`
+          `element '${key}' in named tuple cannot be 'null'`,
         );
       } else {
         elemData.writeInt32(0); // reserved
@@ -71,7 +71,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
         } catch (e) {
           if (e instanceof QueryArgumentError) {
             throw new InvalidArgumentError(
-              `invalid element '${key}' in named tuple: ${e.message}`
+              `invalid element '${key}' in named tuple: ${e.message}`,
             );
           } else {
             throw e;
@@ -89,7 +89,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
   encodeArgs(args: any): Uint8Array {
     if (args == null) {
       throw new MissingArgumentError(
-        "One or more named arguments expected, received null"
+        "One or more named arguments expected, received null",
       );
     }
 
@@ -104,7 +104,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
       throw new UnknownArgumentError(
         `Unused named argument${
           extraKeys.length === 1 ? "" : "s"
-        }: "${extraKeys.join('", "')}"`
+        }: "${extraKeys.join('", "')}"`,
       );
     }
 
@@ -140,7 +140,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     if (els !== subCodecs.length) {
       throw new ProtocolError(
         `cannot decode NamedTuple: expected ` +
-          `${subCodecs.length} elements, got ${els}`
+          `${subCodecs.length} elements, got ${els}`,
       );
     }
 

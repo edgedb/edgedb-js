@@ -104,7 +104,7 @@ test("types: LocalTime", async () => {
       second,
       millisecond,
       microsecond,
-      nanosecond
+      nanosecond,
     );
     const plainTime: LocalTime = new Temporal.PlainTime(
       hour,
@@ -112,7 +112,7 @@ test("types: LocalTime", async () => {
       second,
       millisecond,
       microsecond,
-      nanosecond
+      nanosecond,
     );
 
     expect(localTime.hour).toBe(plainTime.hour);
@@ -137,10 +137,10 @@ test("types: Duration", async () => {
       1234567890,
       1234567890,
       1234567890,
-      1234567890
-    ).toString()
+      1234567890,
+    ).toString(),
   ).toBe(
-    "P1234567890Y1234567890M1234567890W1234567890DT1234567890H1234567890M1235803693.69245789S"
+    "P1234567890Y1234567890M1234567890W1234567890DT1234567890H1234567890M1235803693.69245789S",
   );
 
   expect(new Duration(0, 0, 0, 0, 24).toString()).toBe("PT24H");
@@ -154,8 +154,8 @@ test("types: Duration", async () => {
         Math.round(
           Math.random() *
             (i < 100 ? Number.MAX_VALUE : Number.MAX_SAFE_INTEGER) *
-            sign
-        )
+            sign,
+        ),
       );
 
     const duration = new Duration(...args);

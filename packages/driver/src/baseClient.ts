@@ -79,7 +79,7 @@ export class ClientConnectionHolder {
   async acquire(options: Options): Promise<ClientConnectionHolder> {
     if (this._inUse) {
       throw new errors.InternalClientError(
-        "ClientConnectionHolder cannot be acquired, already in use"
+        "ClientConnectionHolder cannot be acquired, already in use",
       );
     }
 
@@ -93,7 +93,7 @@ export class ClientConnectionHolder {
     if (this._inUse === null) {
       throw new errors.ClientError(
         "ClientConnectionHolder.release() called on " +
-          "a free connection holder"
+          "a free connection holder",
       );
     }
 
@@ -124,7 +124,7 @@ export class ClientConnectionHolder {
   }
 
   async transaction<T>(
-    action: (transaction: Transaction) => Promise<T>
+    action: (transaction: Transaction) => Promise<T>,
   ): Promise<T> {
     let result: T | void;
     for (let iteration = 0; ; ++iteration) {
@@ -176,7 +176,7 @@ export class ClientConnectionHolder {
     query: string,
     args: QueryArgs | undefined,
     outputFormat: OutputFormat,
-    expectedCardinality: Cardinality
+    expectedCardinality: Cardinality,
   ): Promise<any> {
     let result: any;
     for (let iteration = 0; ; ++iteration) {
@@ -187,7 +187,7 @@ export class ClientConnectionHolder {
           args,
           outputFormat,
           expectedCardinality,
-          this.options.session
+          this.options.session,
         );
       } catch (err) {
         if (
@@ -197,7 +197,7 @@ export class ClientConnectionHolder {
           (conn.getQueryCapabilities(
             query,
             outputFormat,
-            expectedCardinality
+            expectedCardinality,
           ) === 0 ||
             err instanceof errors.TransactionConflictError)
         ) {
@@ -219,7 +219,7 @@ export class ClientConnectionHolder {
       query,
       args,
       OutputFormat.NONE,
-      Cardinality.NO_RESULT
+      Cardinality.NO_RESULT,
     );
   }
 
@@ -228,7 +228,7 @@ export class ClientConnectionHolder {
       query,
       args,
       OutputFormat.BINARY,
-      Cardinality.MANY
+      Cardinality.MANY,
     );
   }
 
@@ -241,7 +241,7 @@ export class ClientConnectionHolder {
       query,
       args,
       OutputFormat.BINARY,
-      Cardinality.AT_MOST_ONE
+      Cardinality.AT_MOST_ONE,
     );
   }
 
@@ -250,7 +250,7 @@ export class ClientConnectionHolder {
       query,
       args,
       OutputFormat.JSON,
-      Cardinality.AT_MOST_ONE
+      Cardinality.AT_MOST_ONE,
     );
   }
 
@@ -259,13 +259,13 @@ export class ClientConnectionHolder {
       query,
       args,
       OutputFormat.BINARY,
-      Cardinality.ONE
+      Cardinality.ONE,
     );
   }
 
   async queryRequiredSingleJSON(
     query: string,
-    args?: QueryArgs
+    args?: QueryArgs,
   ): Promise<string> {
     return this.retryingFetch(query, args, OutputFormat.JSON, Cardinality.ONE);
   }
@@ -285,7 +285,7 @@ export abstract class BaseClientPool {
 
   constructor(
     private _parseConnectArguments: ConnectArgumentsParser,
-    options: ConnectOptions
+    options: ConnectOptions,
   ) {
     this.validateClientOptions(options);
 
@@ -311,8 +311,8 @@ export abstract class BaseClientPool {
       throw new errors.InterfaceError(
         `invalid 'concurrency' value: ` +
           `expected integer greater than 0 (got ${JSON.stringify(
-            opts.concurrency
-          )})`
+            opts.concurrency,
+          )})`,
       );
     }
   }
@@ -328,7 +328,7 @@ export abstract class BaseClientPool {
   async ensureConnected(): Promise<void> {
     if (this._closing) {
       throw new errors.InterfaceError(
-        this._closing.done ? "The client is closed" : "The client is closing"
+        this._closing.done ? "The client is closed" : "The client is closing",
       );
     }
 
@@ -370,7 +370,7 @@ export abstract class BaseClientPool {
     return (
       this.__normalizedConnectConfig ??
       (this.__normalizedConnectConfig = this._parseConnectArguments(
-        this._connectConfig
+        this._connectConfig,
       ))
     );
   }
@@ -389,7 +389,7 @@ export abstract class BaseClientPool {
     const connection = await retryingConnect(
       this._connectWithTimeout,
       config,
-      this._codecsRegistry
+      this._codecsRegistry,
     );
 
     const suggestedConcurrency =
@@ -407,7 +407,7 @@ export abstract class BaseClientPool {
   async acquireHolder(options: Options): Promise<ClientConnectionHolder> {
     if (this._closing) {
       throw new errors.InterfaceError(
-        this._closing.done ? "The client is closed" : "The client is closing"
+        this._closing.done ? "The client is closed" : "The client is closing",
       );
     }
 
@@ -440,21 +440,21 @@ export abstract class BaseClientPool {
     this._closing = new Event();
 
     this._queue.cancelAllPending(
-      new errors.InterfaceError(`The client is closing`)
+      new errors.InterfaceError(`The client is closing`),
     );
 
     const warningTimeoutId = setTimeout(() => {
       console.warn(
         "Client.close() is taking over 60 seconds to complete. " +
-          "Check if you have any unreleased connections left."
+          "Check if you have any unreleased connections left.",
       );
     }, 60e3);
 
     try {
       await Promise.all(
         this._holders.map((connectionHolder) =>
-          connectionHolder._waitUntilReleasedAndClose()
-        )
+          connectionHolder._waitUntilReleasedAndClose(),
+        ),
       );
     } catch (err) {
       this._terminate();
@@ -483,7 +483,7 @@ export abstract class BaseClientPool {
     }
 
     this._queue.cancelAllPending(
-      new errors.InterfaceError(`The client is closed`)
+      new errors.InterfaceError(`The client is closed`),
     );
 
     this._terminate();
@@ -526,7 +526,7 @@ export class Client implements Executor {
   }
 
   withTransactionOptions(
-    opts: TransactionOptions | SimpleTransactionOptions
+    opts: TransactionOptions | SimpleTransactionOptions,
   ): Client {
     return new Client(this.pool, this.options.withTransactionOptions(opts));
   }
@@ -542,7 +542,7 @@ export class Client implements Executor {
   withModuleAliases(aliases: Record<string, string>) {
     return new Client(
       this.pool,
-      this.options.withSession(this.options.session.withModuleAliases(aliases))
+      this.options.withSession(this.options.session.withModuleAliases(aliases)),
     );
   }
 
@@ -554,7 +554,7 @@ export class Client implements Executor {
   withGlobals(globals: Record<string, any>): Client {
     return new Client(
       this.pool,
-      this.options.withSession(this.options.session.withGlobals(globals))
+      this.options.withSession(this.options.session.withGlobals(globals)),
     );
   }
 
@@ -580,11 +580,11 @@ export class Client implements Executor {
   }
 
   async transaction<T>(
-    action: (transaction: Transaction) => Promise<T>
+    action: (transaction: Transaction) => Promise<T>,
   ): Promise<T> {
     if (this.pool.isStateless) {
       throw new errors.EdgeDBError(
-        `cannot use 'transaction()' API on HTTP client`
+        `cannot use 'transaction()' API on HTTP client`,
       );
     }
     const holder = await this.pool.acquireHolder(this.options);
@@ -624,7 +624,7 @@ export class Client implements Executor {
 
   async querySingle<T = unknown>(
     query: string,
-    args?: QueryArgs
+    args?: QueryArgs,
   ): Promise<T | null> {
     const holder = await this.pool.acquireHolder(this.options);
     try {
@@ -645,7 +645,7 @@ export class Client implements Executor {
 
   async queryRequiredSingle<T = unknown>(
     query: string,
-    args?: QueryArgs
+    args?: QueryArgs,
   ): Promise<T> {
     const holder = await this.pool.acquireHolder(this.options);
     try {
@@ -657,7 +657,7 @@ export class Client implements Executor {
 
   async queryRequiredSingleJSON(
     query: string,
-    args?: QueryArgs
+    args?: QueryArgs,
   ): Promise<string> {
     const holder = await this.pool.acquireHolder(this.options);
     try {
@@ -675,7 +675,7 @@ export class Client implements Executor {
         query,
         OutputFormat.BINARY,
         Cardinality.MANY,
-        this.options.session
+        this.options.session,
       );
       const cardinality = util.parseCardinality(result[0]);
 

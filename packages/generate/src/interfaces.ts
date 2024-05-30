@@ -24,7 +24,7 @@ export async function runInterfacesGenerator(params: {
     outFile = path.join(root, schemaDir, "interfaces.ts");
   } else {
     throw new Error(
-      `No edgedb.toml found. Initialize an EdgeDB project with\n\`edgedb project init\` or specify an output file with \`--file\``
+      `No edgedb.toml found. Initialize an EdgeDB project with\n\`edgedb project init\` or specify an output file with \`--file\``,
     );
   }
 

@@ -23,7 +23,7 @@ currently supported.`);
     console.warn(
       `No \`edgedb.toml\` found, using process.cwd() as root directory:
    ${params.root}
-`
+`,
     );
   } else {
     console.log(`Detected project root via edgedb.toml:`);
@@ -79,16 +79,16 @@ currently supported.`);
         } catch (err) {
           wasError = true;
           console.log(
-            `Error in file '${prettyPath}': ${(err as Error).toString()}`
+            `Error in file '${prettyPath}': ${(err as Error).toString()}`,
           );
         }
-      })
+      }),
     );
     if (!wasError) {
       console.log(
         `Generating query file${
           Object.keys(filesByExtension).length > 1 ? "s" : ""
-        }...`
+        }...`,
       );
       for (const [extension, file] of Object.entries(filesByExtension)) {
         const filePath =
@@ -103,7 +103,7 @@ currently supported.`);
         await adapter.fs.writeFile(
           filePath,
           headerComment +
-            `${stringifyImports(file.imports)}\n\n${file.contents}`
+            `${stringifyImports(file.imports)}\n\n${file.contents}`,
         );
       }
     }
@@ -125,14 +125,14 @@ currently supported.`);
         console.log(`   ${prettyPath}`);
         await adapter.fs.writeFile(
           f.path,
-          headerComment + `${stringifyImports(f.imports)}\n\n${f.contents}`
+          headerComment + `${stringifyImports(f.imports)}\n\n${f.contents}`,
         );
       }
     } catch (err) {
       console.log(
         `Error in file './${adapter.path.posix.relative(root, path)}': ${(
           err as any
-        ).toString()}`
+        ).toString()}`,
       );
     }
   }
@@ -150,7 +150,7 @@ export function stringifyImports(imports: ImportMap) {
   return [...imports]
     .map(
       ([module, specifiers]) =>
-        `import type {${[...specifiers].join(", ")}} from "${module}";`
+        `import type {${[...specifiers].join(", ")}} from "${module}";`,
     )
     .join("\n");
 }
@@ -192,7 +192,7 @@ export function generateFiles(params: {
   const outputDirname = adapter.path.dirname(params.path);
   const outputBaseFileName = adapter.path.join(
     outputDirname,
-    `${baseFileName}.query`
+    `${baseFileName}.query`,
   );
 
   const method = cardinalityToExecutorMethod[params.types.cardinality];
@@ -201,7 +201,7 @@ export function generateFiles(params: {
     throw new Error(
       `Invalid cardinality: ${
         params.types.cardinality
-      }. Expected one of ${validCardinalities.join(", ")}.`
+      }. Expected one of ${validCardinalities.join(", ")}.`,
     );
   }
   const functionName = baseFileName
@@ -225,7 +225,7 @@ ${params.types.query.trim().replace(/\\/g, "\\\\").replace(/`/g, "\\`")}\`${
   const tsImports =
     params.types.importMap ??
     new ImportMap(
-      params.types.imports ? [["edgedb", params.types.imports]] : []
+      params.types.imports ? [["edgedb", params.types.imports]] : [],
     );
   tsImports.add("edgedb", "Executor");
 

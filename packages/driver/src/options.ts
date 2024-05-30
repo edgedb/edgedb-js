@@ -47,13 +47,13 @@ export class RetryOptions {
   withRule(
     condition: RetryCondition,
     attempts?: number,
-    backoff?: BackoffFunction
+    backoff?: BackoffFunction,
   ): RetryOptions {
     const def = this.default;
     const overrides = new Map(this.overrides);
     overrides.set(
       condition,
-      new RetryRule(attempts ?? def.attempts, backoff ?? def.backoff)
+      new RetryRule(attempts ?? def.attempts, backoff ?? def.backoff),
     );
     const result = Object.create(RetryOptions.prototype);
     result.default = def;
@@ -175,10 +175,13 @@ export class Session {
     }
     const _globals = Object.entries(this.globals);
     if (_globals.length) {
-      state.globals = _globals.reduce((globals, [key, val]) => {
-        globals[key.includes("::") ? key : `${this.module}::${key}`] = val;
-        return globals;
-      }, {} as { [key: string]: any });
+      state.globals = _globals.reduce(
+        (globals, [key, val]) => {
+          globals[key.includes("::") ? key : `${this.module}::${key}`] = val;
+          return globals;
+        },
+        {} as { [key: string]: any },
+      );
     }
     return state;
   }
@@ -210,7 +213,7 @@ export class Options {
   }
 
   withTransactionOptions(
-    opt: TransactionOptions | SimpleTransactionOptions
+    opt: TransactionOptions | SimpleTransactionOptions,
   ): Options {
     return new Options({
       ...this,

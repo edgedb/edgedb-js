@@ -31,8 +31,8 @@ export class NextAppAuth extends NextAuth {
     () =>
       new NextAuthSession(
         this.client,
-        cookies().get(this.options.authCookieName)?.value.split(";")[0] ?? null
-      )
+        cookies().get(this.options.authCookieName)?.value.split(";")[0] ?? null,
+      ),
   );
 
   createServerActions() {
@@ -41,12 +41,12 @@ export class NextAppAuth extends NextAuth {
         cookies().delete(this.options.authCookieName);
       },
       emailPasswordSignIn: async (
-        data: FormData | { email: string; password: string }
+        data: FormData | { email: string; password: string },
       ) => {
         const [email, password] = _extractParams(
           data,
           ["email", "password"],
-          "email or password missing"
+          "email or password missing",
         );
         const tokenData = await (
           await this.core
@@ -55,19 +55,19 @@ export class NextAppAuth extends NextAuth {
         return tokenData;
       },
       emailPasswordSignUp: async (
-        data: FormData | { email: string; password: string }
+        data: FormData | { email: string; password: string },
       ) => {
         const [email, password] = _extractParams(
           data,
           ["email", "password"],
-          "email or password missing"
+          "email or password missing",
         );
         const result = await (
           await this.core
         ).signupWithEmailPassword(
           email,
           password,
-          `${this._authRoute}/emailpassword/verify`
+          `${this._authRoute}/emailpassword/verify`,
         );
         this.setVerifierCookie(result.verifier);
         if (result.status === "complete") {
@@ -77,11 +77,11 @@ export class NextAppAuth extends NextAuth {
         return null;
       },
       emailPasswordSendPasswordResetEmail: async (
-        data: FormData | { email: string }
+        data: FormData | { email: string },
       ) => {
         if (!this.options.passwordResetPath) {
           throw new ConfigurationError(
-            `'passwordResetPath' option not configured`
+            `'passwordResetPath' option not configured`,
           );
         }
         const [email] = _extractParams(data, ["email"], "email missing");
@@ -91,16 +91,16 @@ export class NextAppAuth extends NextAuth {
           email,
           new URL(
             this.options.passwordResetPath,
-            this.options.baseUrl
-          ).toString()
+            this.options.baseUrl,
+          ).toString(),
         );
         this.setVerifierCookie(verifier);
       },
       emailPasswordResetPassword: async (
-        data: FormData | { reset_token: string; password: string }
+        data: FormData | { reset_token: string; password: string },
       ) => {
         const verifier = cookies().get(
-          this.options.pkceVerifierCookieName
+          this.options.pkceVerifierCookieName,
         )?.value;
         if (!verifier) {
           throw new PKCEError("no pkce verifier cookie found");
@@ -108,7 +108,7 @@ export class NextAppAuth extends NextAuth {
         const [resetToken, password] = _extractParams(
           data,
           ["reset_token", "password"],
-          "reset_token or password missing"
+          "reset_token or password missing",
         );
         const tokenData = await (
           await this.core
@@ -118,20 +118,20 @@ export class NextAppAuth extends NextAuth {
         return tokenData;
       },
       emailPasswordResendVerificationEmail: async (
-        data: FormData | { verification_token: string } | { email: string }
+        data: FormData | { verification_token: string } | { email: string },
       ) => {
         const verificationToken =
           data instanceof FormData
             ? data.get("verification_token")
             : "verification_token" in data
-            ? data.verification_token
-            : null;
+              ? data.verification_token
+              : null;
         const email =
           data instanceof FormData
             ? data.get("email")
             : "email" in data
-            ? data.email
-            : null;
+              ? data.email
+              : null;
 
         if (verificationToken) {
           await (
@@ -142,7 +142,7 @@ export class NextAppAuth extends NextAuth {
             await this.core
           ).resendVerificationEmailForEmail(
             email.toString(),
-            `${this._authRoute}/emailpassword/verify`
+            `${this._authRoute}/emailpassword/verify`,
           );
 
           cookies().set({
@@ -153,14 +153,14 @@ export class NextAppAuth extends NextAuth {
           });
         } else {
           throw new InvalidDataError(
-            "either verification_token or email must be provided"
+            "either verification_token or email must be provided",
           );
         }
       },
       magicLinkSignUp: async (data: FormData | { email: string }) => {
         if (!this.options.magicLinkFailurePath) {
           throw new ConfigurationError(
-            `'magicLinkFailurePath' option not configured`
+            `'magicLinkFailurePath' option not configured`,
           );
         }
         const [email] = _extractParams(data, ["email"], "email missing");
@@ -171,15 +171,15 @@ export class NextAppAuth extends NextAuth {
           `${this._authRoute}/magiclink/callback?isSignUp=true`,
           new URL(
             this.options.magicLinkFailurePath,
-            this.options.baseUrl
-          ).toString()
+            this.options.baseUrl,
+          ).toString(),
         );
         this.setVerifierCookie(verifier);
       },
       magicLinkSignIn: async (data: FormData | { email: string }) => {
         if (!this.options.magicLinkFailurePath) {
           throw new ConfigurationError(
-            `'magicLinkFailurePath' option not configured`
+            `'magicLinkFailurePath' option not configured`,
           );
         }
         const [email] = _extractParams(data, ["email"], "email missing");
@@ -190,8 +190,8 @@ export class NextAppAuth extends NextAuth {
           `${this._authRoute}/magiclink/callback`,
           new URL(
             this.options.magicLinkFailurePath,
-            this.options.baseUrl
-          ).toString()
+            this.options.baseUrl,
+          ).toString(),
         );
         this.setVerifierCookie(verifier);
       },
@@ -201,7 +201,7 @@ export class NextAppAuth extends NextAuth {
 
 export default function createNextAppAuth(
   client: Client,
-  options: NextAuthOptions
+  options: NextAuthOptions,
 ) {
   return new NextAppAuth(client, options);
 }

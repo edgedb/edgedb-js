@@ -5,7 +5,7 @@ import { $expressionify } from "./path";
 export function makeGlobal<
   // Name extends string,
   Type extends BaseType,
-  Card extends Cardinality
+  Card extends Cardinality,
 >(name: string, type: Type, card: Card): $expr_Global<Type, Card> {
   return $expressionify({
     __name__: name,
@@ -18,7 +18,7 @@ export function makeGlobal<
 export type $expr_Global<
   // Name extends string = string,
   Type extends BaseType = BaseType,
-  Card extends Cardinality = Cardinality
+  Card extends Cardinality = Cardinality,
 > = Expression<{
   __name__: string;
   __element__: Type;

@@ -19,14 +19,14 @@ export interface Credentials {
 
 export async function getCredentialsPath(
   instanceName: string,
-  serverUtils: ServerUtils
+  serverUtils: ServerUtils,
 ): Promise<string> {
   return serverUtils.searchConfigDir("credentials", instanceName + ".json");
 }
 
 export async function readCredentialsFile(
   file: string,
-  serverUtils: ServerUtils
+  serverUtils: ServerUtils,
 ): Promise<Credentials> {
   try {
     const data: string = await serverUtils.readFileUtf8(file);
@@ -103,7 +103,7 @@ export function validateCredentials(data: any): Credentials {
     if (caData != null && certData !== caData) {
       throw new InterfaceError(
         `both 'tls_ca' and 'tls_cert_data' are defined, ` +
-          `and are not in agreement`
+          `and are not in agreement`,
       );
     }
     result.tlsCAData = certData;
@@ -126,7 +126,7 @@ export function validateCredentials(data: any): Credentials {
     throw new InterfaceError(
       `\`tls_security\` must be one of ${validTlsSecurityValues
         .map((val) => `"${val}"`)
-        .join(", ")}`
+        .join(", ")}`,
     );
   }
   if (
@@ -137,7 +137,7 @@ export function validateCredentials(data: any): Credentials {
   ) {
     throw new InterfaceError(
       `both 'tls_security' and 'tls_verify_hostname' are defined, ` +
-        `and are not in agreement`
+        `and are not in agreement`,
     );
   }
   if (tlsSecurity || verifyHostname) {

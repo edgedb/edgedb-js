@@ -38,7 +38,7 @@ export function sleep(durationMillis: number): Promise<void> {
 
 export function versionGreaterThan(
   left: ProtocolVersion,
-  right: ProtocolVersion
+  right: ProtocolVersion,
 ): boolean {
   if (left[0] > right[0]) {
     return true;
@@ -53,7 +53,7 @@ export function versionGreaterThan(
 
 export function versionGreaterThanOrEqual(
   left: ProtocolVersion,
-  right: ProtocolVersion
+  right: ProtocolVersion,
 ): boolean {
   if (left[0] === right[0] && left[1] === right[1]) {
     return true;
@@ -72,13 +72,13 @@ const _tokens = new WeakMap<ResolvedConnectConfigReadonly, string>();
 
 export type AuthenticatedFetch = (
   path: string,
-  init: RequestInit
+  init: RequestInit,
 ) => Promise<Response>;
 
 export async function getAuthenticatedFetch(
   config: ResolvedConnectConfigReadonly,
   httpSCRAMAuth: HttpSCRAMAuth,
-  basePath?: string
+  basePath?: string,
 ): Promise<AuthenticatedFetch> {
   let token = config.secretKey ?? _tokens.get(config);
 

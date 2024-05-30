@@ -59,7 +59,7 @@ export function generateIndex(params: GeneratorParams) {
   ];
 
   const topLevelModules = new Map(
-    [...dir._modules.entries()].filter(([_, path]) => path.length === 1)
+    [...dir._modules.entries()].filter(([_, path]) => path.length === 1),
   );
   const excludedKeys = new Set<string>(topLevelModules.keys());
 
@@ -79,7 +79,7 @@ export function generateIndex(params: GeneratorParams) {
       typeStr = `typeof ${name}`;
     }
     spreadTypes.push(
-      name === "$syntax" ? `$.util.OmitDollarPrefixed<${typeStr}>` : typeStr
+      name === "$syntax" ? `$.util.OmitDollarPrefixed<${typeStr}>` : typeStr,
     );
     for (const key of keys) {
       excludedKeys.add(key);
@@ -93,7 +93,7 @@ export function generateIndex(params: GeneratorParams) {
     t`: ${spreadTypes.reverse().join(" & \n  ")} & {`,
   ]);
   const defaultSpreadTypes = new Set(
-    dir.getModule("default").getDefaultExportKeys()
+    dir.getModule("default").getDefaultExportKeys(),
   );
   index.indented(() => {
     for (const [moduleName, internalName] of topLevelModules) {

@@ -71,7 +71,7 @@ import {
 } from "../src/index.browser";
 
 const brokenConnectOpts = JSON.parse(
-  process.env._JEST_EDGEDB_CONNECT_CONFIG || ""
+  process.env._JEST_EDGEDB_CONNECT_CONFIG || "",
 );
 
 const connectOpts = {
@@ -92,7 +92,7 @@ if (nodeVersion >= 15) {
     const client = createHttpClient();
 
     await expect(client.ensureConnected()).rejects.toThrowError(
-      /no connection options specified/
+      /no connection options specified/,
     );
   });
 
@@ -103,7 +103,7 @@ if (nodeVersion >= 15) {
     expect(
       await client.querySingle(`select 'Querying from the ' ++ <str>$env`, {
         env: "browser",
-      })
+      }),
     ).toEqual("Querying from the browser");
   });
 } else {

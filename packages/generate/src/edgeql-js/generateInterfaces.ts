@@ -56,7 +56,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
   };
 
   const getPlainTypeModule = (
-    typeName: string
+    typeName: string,
   ): {
     tMod: string;
     tName: string;
@@ -210,7 +210,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
         plainTypesCode.increaseIndent();
         for (const typeRef of nestedMod.types.values()) {
           const aliased = typeRef.slice(
-            sliceTo + nestedMod.internalName.length + 1
+            sliceTo + nestedMod.internalName.length + 1,
           );
           plainTypesCode.writeln([`export type ${aliased} = ${typeRef};`]);
         }
@@ -221,7 +221,7 @@ export const generateInterfaces = (params: GenerateInterfacesParams) => {
   };
 
   for (const module of [...plainTypeModules.values()].filter(
-    (mod) => mod.isRoot
+    (mod) => mod.isRoot,
   )) {
     writeModuleExports(module);
   }

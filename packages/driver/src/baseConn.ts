@@ -74,7 +74,7 @@ const NO_TRANSACTION_CAPABILITIES =
 const NO_TRANSACTION_CAPABILITIES_BYTES = new Uint8Array(Array(8).fill(255));
 new DataView(NO_TRANSACTION_CAPABILITIES_BYTES.buffer).setUint32(
   4,
-  NO_TRANSACTION_CAPABILITIES
+  NO_TRANSACTION_CAPABILITIES,
 );
 
 export const RESTRICTED_CAPABILITIES =
@@ -101,11 +101,11 @@ export type ParseResult = [
   outCodec: ICodec,
   capabilities: number,
   inCodecBuffer: Uint8Array | null,
-  outCodecBuffer: Uint8Array | null
+  outCodecBuffer: Uint8Array | null,
 ];
 
 export type connConstructor = new (
-  registry: CodecsRegistry
+  registry: CodecsRegistry,
 ) => BaseRawConnection;
 
 export class BaseRawConnection {
@@ -219,7 +219,7 @@ export class BaseRawConnection {
     ICodec,
     number,
     Uint8Array,
-    Uint8Array
+    Uint8Array,
   ] {
     let capabilities = -1;
     if (this.isLegacyProtocol) {
@@ -228,8 +228,8 @@ export class BaseRawConnection {
         const buf = headers.get(LegacyHeaderCodes.capabilities)!;
         capabilities = Number(
           new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getBigInt64(
-            0
-          )
+            0,
+          ),
         );
       }
     } else {
@@ -251,7 +251,7 @@ export class BaseRawConnection {
     if (inCodec == null) {
       inCodec = this.codecsRegistry.buildCodec(
         inTypeData,
-        this.protocolVersion
+        this.protocolVersion,
       );
     }
 
@@ -259,7 +259,7 @@ export class BaseRawConnection {
     if (outCodec == null) {
       outCodec = this.codecsRegistry.buildCodec(
         outTypeData,
-        this.protocolVersion
+        this.protocolVersion,
       );
     }
 
@@ -287,7 +287,7 @@ export class BaseRawConnection {
 
       if (this.adminUIMode && stateTypeId === this.stateCodec.tid) {
         this.lastStateUpdate = this.stateCodec.decode(
-          new ReadBuffer(stateData)
+          new ReadBuffer(stateData),
         );
       }
     }
@@ -361,7 +361,7 @@ export class BaseRawConnection {
       case "suggested_pool_concurrency": {
         this.serverSettings.suggested_pool_concurrency = parseInt(
           utf8Decoder.decode(value),
-          10
+          10,
         );
         break;
       }
@@ -375,7 +375,7 @@ export class BaseRawConnection {
         if (codec === null) {
           codec = this.codecsRegistry.buildCodec(
             typedesc,
-            this.protocolVersion
+            this.protocolVersion,
           );
         }
 
@@ -432,7 +432,7 @@ export class BaseRawConnection {
       default:
         // TODO: terminate connection
         throw new errors.UnexpectedMessageError(
-          `unexpected message type ${mtype} ("${chars.chr(mtype)}")`
+          `unexpected message type ${mtype} ("${chars.chr(mtype)}")`,
         );
     }
   }
@@ -440,14 +440,14 @@ export class BaseRawConnection {
   async _legacyParse(
     query: string,
     outputFormat: OutputFormat,
-    expectOne: boolean
+    expectOne: boolean,
   ): Promise<
     [number, ICodec, ICodec, number, Uint8Array | null, Uint8Array | null]
   > {
     const wb = new WriteMessageBuffer();
     const parseSendsTypeData = versionGreaterThanOrEqual(
       this.protocolVersion,
-      [0, 14]
+      [0, 14],
     );
 
     wb.beginMessage(chars.$P)
@@ -493,8 +493,8 @@ export class BaseRawConnection {
               new DataView(
                 buf.buffer,
                 buf.byteOffset,
-                buf.byteLength
-              ).getBigInt64(0)
+                buf.byteLength,
+              ).getBigInt64(0),
             );
           }
           cardinality = this.buffer.readChar();
@@ -536,7 +536,7 @@ export class BaseRawConnection {
 
     if (inTypeId == null || outTypeId == null) {
       throw new errors.ProtocolError(
-        "did not receive in/out type ids in Parse response"
+        "did not receive in/out type ids in Parse response",
       );
     }
 
@@ -546,14 +546,14 @@ export class BaseRawConnection {
     if (inCodec == null && inCodecData != null) {
       inCodec = this.codecsRegistry.buildCodec(
         inCodecData,
-        this.protocolVersion
+        this.protocolVersion,
       );
     }
 
     if (outCodec == null && outCodecData != null) {
       outCodec = this.codecsRegistry.buildCodec(
         outCodecData,
-        this.protocolVersion
+        this.protocolVersion,
       );
     }
 
@@ -622,7 +622,7 @@ export class BaseRawConnection {
 
     if (cardinality == null || outCodec == null || inCodec == null) {
       throw new errors.ProtocolError(
-        "failed to receive type information in response to a Parse message"
+        "failed to receive type information in response to a Parse message",
       );
     }
 
@@ -642,7 +642,7 @@ export class BaseRawConnection {
         if (args != null) {
           throw new errors.QueryArgumentError(
             `This query does not contain any query parameters, ` +
-              `but query arguments were provided to the 'query*()' method`
+              `but query arguments were provided to the 'query*()' method`,
           );
         }
         return NullCodec.BUFFER;
@@ -659,7 +659,7 @@ export class BaseRawConnection {
         if (args != null) {
           throw new errors.QueryArgumentError(
             `This query does not contain any query parameters, ` +
-              `but query arguments were provided to the 'query*()' method`
+              `but query arguments were provided to the 'query*()' method`,
           );
         }
         return EmptyTupleCodec.BUFFER;
@@ -678,7 +678,7 @@ export class BaseRawConnection {
     args: QueryArgs,
     inCodec: ICodec,
     outCodec: ICodec,
-    result: any[] | WriteBuffer
+    result: any[] | WriteBuffer,
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$E)
@@ -750,7 +750,7 @@ export class BaseRawConnection {
     expectedCardinality: Cardinality,
     inCodec: ICodec,
     outCodec: ICodec,
-    result: any[] | WriteBuffer
+    result: any[] | WriteBuffer,
   ): Promise<void> {
     const expectOne =
       expectedCardinality === Cardinality.ONE ||
@@ -819,7 +819,7 @@ export class BaseRawConnection {
             const key = this._getQueryCacheKey(
               query,
               outputFormat,
-              expectedCardinality
+              expectedCardinality,
             );
             this.queryCodecCache.set(key, [
               newCard,
@@ -853,7 +853,7 @@ export class BaseRawConnection {
       this._validateFetchCardinality(
         newCard!,
         outputFormat,
-        expectedCardinality
+        expectedCardinality,
       );
 
       return await this._legacyExecuteFlow(args, inCodec, outCodec, result);
@@ -867,7 +867,7 @@ export class BaseRawConnection {
     expectedCardinality: Cardinality,
     state: Session,
     capabilitiesFlags: number,
-    options: QueryOptions | undefined
+    options: QueryOptions | undefined,
   ) {
     wb.writeFlags(0xffff_ffff, capabilitiesFlags);
     wb.writeFlags(
@@ -879,7 +879,7 @@ export class BaseRawConnection {
         (options?.injectTypeids ? CompilationFlag.INJECT_OUTPUT_TYPE_IDS : 0) |
         (options?.injectTypenames
           ? CompilationFlag.INJECT_OUTPUT_TYPE_NAMES
-          : 0)
+          : 0),
     );
     wb.writeBigInt64(options?.implicitLimit ?? BigInt(0));
     wb.writeChar(outputFormat);
@@ -887,7 +887,7 @@ export class BaseRawConnection {
       expectedCardinality === Cardinality.ONE ||
         expectedCardinality === Cardinality.AT_MOST_ONE
         ? Cardinality.AT_MOST_ONE
-        : Cardinality.MANY
+        : Cardinality.MANY,
     );
     wb.writeString(query);
 
@@ -915,7 +915,7 @@ export class BaseRawConnection {
     expectedCardinality: Cardinality,
     state: Session,
     capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
-    options?: QueryOptions
+    options?: QueryOptions,
   ): Promise<ParseResult> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$P);
@@ -928,7 +928,7 @@ export class BaseRawConnection {
       expectedCardinality,
       state,
       capabilitiesFlags,
-      options
+      options,
     );
 
     wb.endMessage();
@@ -966,7 +966,7 @@ export class BaseRawConnection {
             const key = this._getQueryCacheKey(
               query,
               outputFormat,
-              expectedCardinality
+              expectedCardinality,
             );
             this.queryCodecCache.set(key, [
               newCard,
@@ -1010,7 +1010,7 @@ export class BaseRawConnection {
           expectedCardinality,
           state,
           capabilitiesFlags,
-          options
+          options,
         );
       }
       throw error;
@@ -1036,7 +1036,7 @@ export class BaseRawConnection {
     outCodec: ICodec,
     result: any[] | WriteBuffer,
     capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
-    options?: QueryOptions
+    options?: QueryOptions,
   ): Promise<void> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
@@ -1049,7 +1049,7 @@ export class BaseRawConnection {
       expectedCardinality,
       state,
       capabilitiesFlags,
-      options
+      options,
     );
 
     wb.writeBuffer(inCodec.tidBuffer);
@@ -1109,7 +1109,7 @@ export class BaseRawConnection {
             const key = this._getQueryCacheKey(
               query,
               outputFormat,
-              expectedCardinality
+              expectedCardinality,
             );
             this.queryCodecCache.set(key, [
               newCard,
@@ -1152,7 +1152,7 @@ export class BaseRawConnection {
           outCodec,
           result,
           capabilitiesFlags,
-          options
+          options,
         );
       }
       throw error;
@@ -1162,7 +1162,7 @@ export class BaseRawConnection {
   private _getQueryCacheKey(
     query: string,
     outputFormat: OutputFormat,
-    expectedCardinality: Cardinality
+    expectedCardinality: Cardinality,
   ): string {
     const expectOne =
       expectedCardinality === Cardinality.ONE ||
@@ -1173,7 +1173,7 @@ export class BaseRawConnection {
   private _validateFetchCardinality(
     card: Cardinality,
     outputFormat: OutputFormat,
-    expectedCardinality: Cardinality
+    expectedCardinality: Cardinality,
   ): void {
     if (
       expectedCardinality === Cardinality.ONE &&
@@ -1182,7 +1182,7 @@ export class BaseRawConnection {
       throw new errors.NoDataError(
         `query executed via queryRequiredSingle${
           outputFormat === OutputFormat.JSON ? "JSON" : ""
-        }() returned no data`
+        }() returned no data`,
       );
     }
   }
@@ -1193,13 +1193,13 @@ export class BaseRawConnection {
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
     state: Session,
-    privilegedMode = false
+    privilegedMode = false,
   ): Promise<any> {
     if (this.isLegacyProtocol && outputFormat === OutputFormat.NONE) {
       if (args != null) {
         throw new errors.InterfaceError(
           `arguments in execute() is not supported in this version of ` +
-            `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`
+            `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`,
         );
       }
       return this.legacyExecute(query, privilegedMode);
@@ -1215,7 +1215,7 @@ export class BaseRawConnection {
     const key = this._getQueryCacheKey(
       query,
       outputFormat,
-      expectedCardinality
+      expectedCardinality,
     );
     const ret: any[] = [];
 
@@ -1235,7 +1235,7 @@ export class BaseRawConnection {
           outputFormat,
           expectedCardinality,
           state,
-          privilegedMode ? Capabilities.ALL : undefined
+          privilegedMode ? Capabilities.ALL : undefined,
         );
         this._validateFetchCardinality(card, outputFormat, expectedCardinality);
       }
@@ -1250,7 +1250,7 @@ export class BaseRawConnection {
           inCodec ?? NULL_CODEC,
           outCodec ?? NULL_CODEC,
           ret,
-          privilegedMode ? Capabilities.ALL : undefined
+          privilegedMode ? Capabilities.ALL : undefined,
         );
       } catch (e) {
         if (e instanceof errors.ParameterTypeMismatchError) {
@@ -1264,7 +1264,7 @@ export class BaseRawConnection {
             inCodec ?? NULL_CODEC,
             outCodec ?? NULL_CODEC,
             ret,
-            privilegedMode ? Capabilities.ALL : undefined
+            privilegedMode ? Capabilities.ALL : undefined,
           );
         } else {
           throw e;
@@ -1274,7 +1274,7 @@ export class BaseRawConnection {
       if (state !== Session.defaults()) {
         throw new errors.InterfaceError(
           `setting session state is not supported in this version of ` +
-            `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`
+            `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`,
         );
       }
 
@@ -1288,13 +1288,13 @@ export class BaseRawConnection {
           expectedCardinality,
           inCodec,
           outCodec,
-          ret
+          ret,
         );
       } else {
         const [card, inCodec, outCodec, capabilities] = await this._legacyParse(
           query,
           outputFormat,
-          expectOne
+          expectOne,
         );
         this._validateFetchCardinality(card, outputFormat, expectedCardinality);
         this.queryCodecCache.set(key, [card, inCodec, outCodec, capabilities]);
@@ -1332,19 +1332,19 @@ export class BaseRawConnection {
   getQueryCapabilities(
     query: string,
     outputFormat: OutputFormat,
-    expectedCardinality: Cardinality
+    expectedCardinality: Cardinality,
   ): number | null {
     const key = this._getQueryCacheKey(
       query,
       outputFormat,
-      expectedCardinality
+      expectedCardinality,
     );
     return this.queryCodecCache.get(key)?.[3] ?? null;
   }
 
   async legacyExecute(
     query: string,
-    allowTransactionCommands = false
+    allowTransactionCommands = false,
   ): Promise<void> {
     this._checkState();
 
@@ -1410,11 +1410,11 @@ export class BaseRawConnection {
           OutputFormat.NONE,
           Cardinality.NO_RESULT,
           Session.defaults(),
-          true
+          true,
         );
       } catch {
         this._abortWithError(
-          new errors.ClientConnectionClosedError("failed to reset state")
+          new errors.ClientConnectionClosedError("failed to reset state"),
         );
       }
     }

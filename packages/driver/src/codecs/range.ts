@@ -55,7 +55,7 @@ function encodeRange(buf: WriteBuffer, obj: any, subCodec: ICodec): void {
       : (obj.incLower ? RangeFlags.INC_LOWER : 0) |
           (obj.incUpper ? RangeFlags.INC_UPPER : 0) |
           (obj.lower === null ? RangeFlags.EMPTY_LOWER : 0) |
-          (obj.upper === null ? RangeFlags.EMPTY_UPPER : 0)
+          (obj.upper === null ? RangeFlags.EMPTY_UPPER : 0),
   );
   buf.writeBuffer(elemBuf);
 }
@@ -88,7 +88,7 @@ function decodeRange(buf: ReadBuffer, subCodec: ICodec): any {
     lower,
     upper,
     !!(flags & RangeFlags.INC_LOWER),
-    !!(flags & RangeFlags.INC_UPPER)
+    !!(flags & RangeFlags.INC_UPPER),
   );
 }
 
@@ -134,7 +134,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
   encode(buf: WriteBuffer, obj: any): void {
     if (!(obj instanceof MultiRange)) {
       throw new TypeError(
-        `a MultiRange expected (got type ${obj.constructor.name})`
+        `a MultiRange expected (got type ${obj.constructor.name})`,
       );
     }
 
@@ -150,7 +150,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
       } catch (e) {
         if (e instanceof InvalidArgumentError) {
           throw new InvalidArgumentError(
-            `invalid multirange element: ${e.message}`
+            `invalid multirange element: ${e.message}`,
           );
         } else {
           throw e;
@@ -164,7 +164,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
       throw new InvalidArgumentError(
         `size of encoded multirange datum exceeds the maximum allowed ${
           MAXINT32 - 4
-        } bytes`
+        } bytes`,
       );
     }
 
@@ -191,7 +191,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
         const elem = decodeRange(elemBuf, subCodec);
         if (elemBuf.length) {
           throw new ProtocolError(
-            `unexpected trailing data in buffer after multirange element decoding: ${elemBuf.length}`
+            `unexpected trailing data in buffer after multirange element decoding: ${elemBuf.length}`,
           );
         }
 

@@ -44,7 +44,7 @@ const recipe: BaseRecipe = {
         onCancel: () => {
           process.exit(1);
         },
-      }
+      },
     );
 
     return {
@@ -61,7 +61,7 @@ const recipe: BaseRecipe = {
 
       if (!projectDirStat.isDirectory()) {
         throw new Error(
-          `Target project directory ${projectDir} is not a directory`
+          `Target project directory ${projectDir} is not a directory`,
         );
       }
       const files = await fs.readdir(projectDir);

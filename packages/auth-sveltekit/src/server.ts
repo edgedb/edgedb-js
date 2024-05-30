@@ -37,7 +37,7 @@ export type BuiltinProviderNames =
 
 type ParamsOrError<
   Result extends object,
-  ErrorDetails extends object = object
+  ErrorDetails extends object = object,
 > =
   | ({ error: null } & { [Key in keyof ErrorDetails]?: undefined } & Result)
   | ({ error: Error } & ErrorDetails & { [Key in keyof Result]?: undefined });
@@ -48,7 +48,7 @@ export interface AuthRouteHandlers {
       tokenData: TokenData;
       provider: BuiltinOAuthProviderNames;
       isSignUp: boolean;
-    }>
+    }>,
   ) => Promise<never>;
   onBuiltinUICallback?: (
     params: ParamsOrError<
@@ -59,19 +59,19 @@ export interface AuthRouteHandlers {
           }
         | { tokenData: null; provider: null }
       ) & { isSignUp: boolean }
-    >
+    >,
   ) => Promise<never>;
   onEmailVerify?: (
     params: ParamsOrError<
       { tokenData: TokenData },
       { verificationToken?: string }
-    >
+    >,
   ) => Promise<never>;
   onMagicLinkCallback(
     params: ParamsOrError<{
       tokenData: TokenData;
       isSignUp: boolean;
-    }>
+    }>,
   ): Promise<Response>;
   onSignout?: () => Promise<never>;
 }
@@ -96,7 +96,7 @@ export default function serverAuth(client: Client, options: AuthOptions) {
             noMatchingRoute
           ) {
             throw new BackendError(
-              "Auth route handler should always call redirect()."
+              "Auth route handler should always call redirect().",
             );
           }
         }
@@ -119,7 +119,7 @@ const BASE_COOKIE_CONFIG: {
 function setVerifierCookie(
   cookies: Cookies,
   config: AuthConfig,
-  value: string
+  value: string,
 ): void {
   const expires = new Date(Date.now() + 1000 * 60 * 24 * 7); // in 7 days
   cookies.set(config.pkceVerifierCookieName, value, {
@@ -132,7 +132,7 @@ function setVerifierCookie(
 function setAuthCookie(
   cookies: Cookies,
   config: AuthConfig,
-  value: string
+  value: string,
 ): void {
   cookies.set(config.authCookieName, value, {
     ...BASE_COOKIE_CONFIG,
@@ -173,7 +173,7 @@ export class ServerRequestAuth extends ClientAuth {
     if (!this._session) {
       this._session = new AuthSession(
         this.client,
-        this.cookies.get(this.config.authCookieName)
+        this.cookies.get(this.config.authCookieName),
       );
     }
 
@@ -185,7 +185,7 @@ export class ServerRequestAuth extends ClientAuth {
     client: Client,
     core: Promise<Auth>,
     { cookies }: RequestEvent,
-    options: AuthOptions
+    options: AuthOptions,
   ) {
     super(options);
 
@@ -203,12 +203,12 @@ export class ServerRequestAuth extends ClientAuth {
   }
 
   async emailPasswordSignUp(
-    data: { email: string; password: string } | FormData
+    data: { email: string; password: string } | FormData,
   ): Promise<{ tokenData?: TokenData | null }> {
     const [email, password] = extractParams(
       data,
       ["email", "password"],
-      "email or password missing"
+      "email or password missing",
     );
 
     const result = await (
@@ -216,7 +216,7 @@ export class ServerRequestAuth extends ClientAuth {
     ).signupWithEmailPassword(
       email,
       password,
-      `${this.config.authRoute}/emailpassword/verify`
+      `${this.config.authRoute}/emailpassword/verify`,
     );
 
     this.setVerifierCookie(result.verifier);
@@ -233,20 +233,20 @@ export class ServerRequestAuth extends ClientAuth {
   }
 
   async emailPasswordResendVerificationEmail(
-    data: { verification_token: string } | { email: string } | FormData
+    data: { verification_token: string } | { email: string } | FormData,
   ): Promise<void> {
     const verificationToken =
       data instanceof FormData
         ? data.get("verification_token")
         : "verification_token" in data
-        ? data.verification_token
-        : null;
+          ? data.verification_token
+          : null;
     const email =
       data instanceof FormData
         ? data.get("email")
         : "email" in data
-        ? data.email
-        : null;
+          ? data.email
+          : null;
 
     if (verificationToken) {
       return await (
@@ -257,24 +257,24 @@ export class ServerRequestAuth extends ClientAuth {
         await this.core
       ).resendVerificationEmailForEmail(
         email.toString(),
-        `${this.config.authRoute}/emailpassword/verify`
+        `${this.config.authRoute}/emailpassword/verify`,
       );
 
       this.setVerifierCookie(verifier);
     } else {
       throw new InvalidDataError(
-        "expected 'verification_token' or 'email' in data"
+        "expected 'verification_token' or 'email' in data",
       );
     }
   }
 
   async emailPasswordSignIn(
-    data: { email: string; password: string } | FormData
+    data: { email: string; password: string } | FormData,
   ): Promise<{ tokenData?: TokenData; error?: Error }> {
     const [email, password] = extractParams(
       data,
       ["email", "password"],
-      "email or password missing"
+      "email or password missing",
     );
 
     const tokenData = await (
@@ -287,7 +287,7 @@ export class ServerRequestAuth extends ClientAuth {
   }
 
   async emailPasswordSendPasswordResetEmail(
-    data: { email: string } | FormData
+    data: { email: string } | FormData,
   ): Promise<void> {
     if (!this.config.passwordResetPath) {
       throw new ConfigurationError(`'passwordResetPath' option not configured`);
@@ -299,14 +299,14 @@ export class ServerRequestAuth extends ClientAuth {
       await this.core
     ).sendPasswordResetEmail(
       email,
-      new URL(this.config.passwordResetPath, this.config.baseUrl).toString()
+      new URL(this.config.passwordResetPath, this.config.baseUrl).toString(),
     );
 
     this.setVerifierCookie(verifier);
   }
 
   async emailPasswordResetPassword(
-    data: { reset_token: string; password: string } | FormData
+    data: { reset_token: string; password: string } | FormData,
   ): Promise<{ tokenData: TokenData }> {
     const verifier = this.cookies.get(this.config.pkceVerifierCookieName);
 
@@ -317,7 +317,7 @@ export class ServerRequestAuth extends ClientAuth {
     const [resetToken, password] = extractParams(
       data,
       ["reset_token", "password"],
-      "reset_token or password missing"
+      "reset_token or password missing",
     );
 
     const tokenData = await (
@@ -334,7 +334,7 @@ export class ServerRequestAuth extends ClientAuth {
   async magicLinkSignUp(data: { email: string } | FormData): Promise<void> {
     if (!this.config.magicLinkFailurePath) {
       throw new ConfigurationError(
-        `'magicLinkFailurePath' option not configured`
+        `'magicLinkFailurePath' option not configured`,
       );
     }
     const [email] = extractParams(data, ["email"], "email missing");
@@ -344,7 +344,7 @@ export class ServerRequestAuth extends ClientAuth {
     ).signupWithMagicLink(
       email,
       `${this.config.authRoute}/magiclink/callback?isSignUp=true`,
-      new URL(this.config.magicLinkFailurePath, this.config.baseUrl).toString()
+      new URL(this.config.magicLinkFailurePath, this.config.baseUrl).toString(),
     );
 
     this.setVerifierCookie(verifier);
@@ -353,7 +353,7 @@ export class ServerRequestAuth extends ClientAuth {
   async magicLinkSend(data: { email: string } | FormData): Promise<void> {
     if (!this.config.magicLinkFailurePath) {
       throw new ConfigurationError(
-        `'magicLinkFailurePath' option not configured`
+        `'magicLinkFailurePath' option not configured`,
       );
     }
     const [email] = extractParams(data, ["email"], "email missing");
@@ -363,7 +363,7 @@ export class ServerRequestAuth extends ClientAuth {
     ).signinWithMagicLink(
       email,
       `${this.config.authRoute}/magiclink/callback?isSignUp=true`,
-      new URL(this.config.magicLinkFailurePath, this.config.baseUrl).toString()
+      new URL(this.config.magicLinkFailurePath, this.config.baseUrl).toString(),
     );
 
     this.setVerifierCookie(verifier);
@@ -418,7 +418,10 @@ export class AuthSession {
   public readonly client: Client;
 
   /** @internal */
-  constructor(client: Client, private readonly authToken: string | undefined) {
+  constructor(
+    client: Client,
+    private readonly authToken: string | undefined,
+  ) {
     this.client = this.authToken
       ? client.withGlobals({ "ext::auth::client_token": this.authToken })
       : client;
@@ -428,7 +431,7 @@ export class AuthSession {
     if (!this.authToken) return false;
     try {
       return await this.client.querySingle<boolean>(
-        `select exists global ext::auth::ClientTokenIdentity`
+        `select exists global ext::auth::ClientTokenIdentity`,
       );
     } catch {
       return false;
@@ -439,7 +442,7 @@ export class AuthSession {
 function extractParams(
   data: FormData | Record<string, unknown>,
   paramNames: string[],
-  errMessage: string
+  errMessage: string,
 ) {
   const params: string[] = [];
   if (data instanceof FormData) {
@@ -479,7 +482,7 @@ async function handleAuthRoutes(
   }: AuthRouteHandlers,
   { url, cookies }: RequestEvent,
   core: Promise<Auth>,
-  config: AuthConfig
+  config: AuthConfig,
 ) {
   const searchParams = url.searchParams;
   const path = url.pathname.split("/").slice(2).join("/");
@@ -488,11 +491,11 @@ async function handleAuthRoutes(
     case "oauth": {
       if (!onOAuthCallback) {
         throw new ConfigurationError(
-          `'onOAuthCallback' auth route handler not configured`
+          `'onOAuthCallback' auth route handler not configured`,
         );
       }
       const provider = searchParams.get(
-        "provider_name"
+        "provider_name",
       ) as BuiltinOAuthProviderNames | null;
       if (!provider || !builtinOAuthProviderNames.includes(provider)) {
         throw new InvalidDataError(`invalid provider_name: ${provider}`);
@@ -507,15 +510,15 @@ async function handleAuthRoutes(
         pkceSession.getOAuthUrl(
           provider,
           redirectUrl,
-          `${redirectUrl}?isSignUp=true`
-        )
+          `${redirectUrl}?isSignUp=true`,
+        ),
       );
     }
 
     case "oauth/callback": {
       if (!onOAuthCallback) {
         throw new ConfigurationError(
-          `'onOAuthCallback' auth route handler not configured`
+          `'onOAuthCallback' auth route handler not configured`,
         );
       }
       const error = searchParams.get("error");
@@ -523,7 +526,7 @@ async function handleAuthRoutes(
         const desc = searchParams.get("error_description");
         return onOAuthCallback({
           error: new OAuthProviderFailureError(
-            error + (desc ? `: ${desc}` : "")
+            error + (desc ? `: ${desc}` : ""),
           ),
         });
       }
@@ -564,7 +567,7 @@ async function handleAuthRoutes(
     case "builtin/callback": {
       if (!onBuiltinUICallback) {
         throw new ConfigurationError(
-          `'onBuiltinUICallback' auth route handler not configured`
+          `'onBuiltinUICallback' auth route handler not configured`,
         );
       }
       const error = searchParams.get("error");
@@ -576,7 +579,7 @@ async function handleAuthRoutes(
       }
       const code = searchParams.get("code");
       const verificationEmailSentAt = searchParams.get(
-        "verification_email_sent_at"
+        "verification_email_sent_at",
       );
       if (!code) {
         if (verificationEmailSentAt) {
@@ -630,14 +633,14 @@ async function handleAuthRoutes(
         307,
         path.split("/").pop() === "signup"
           ? pkceSession.getHostedUISignupUrl()
-          : pkceSession.getHostedUISigninUrl()
+          : pkceSession.getHostedUISigninUrl(),
       );
     }
 
     case "emailpassword/verify": {
       if (!onEmailVerify) {
         throw new ConfigurationError(
-          `'onEmailVerify' auth route handler not configured`
+          `'onEmailVerify' auth route handler not configured`,
         );
       }
       const verificationToken = searchParams.get("verification_token");
@@ -676,7 +679,7 @@ async function handleAuthRoutes(
     case "magiclink/callback": {
       if (!onMagicLinkCallback) {
         throw new ConfigurationError(
-          `'onMagicLinkCallback' auth route handler not configured`
+          `'onMagicLinkCallback' auth route handler not configured`,
         );
       }
 
@@ -744,7 +747,7 @@ async function handleAuthRoutes(
     case "webauthn/verify": {
       if (!onEmailVerify) {
         throw new ConfigurationError(
-          `'onEmailVerify' auth route handler not configured`
+          `'onEmailVerify' auth route handler not configured`,
         );
       }
       const verificationToken = searchParams.get("verification_token");
@@ -783,7 +786,7 @@ async function handleAuthRoutes(
     case "signout": {
       if (!onSignout) {
         throw new ConfigurationError(
-          `'onSignout' auth route handler not configured`
+          `'onSignout' auth route handler not configured`,
         );
       }
 

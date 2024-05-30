@@ -3,7 +3,7 @@ import type { Expression, TypeSet } from "./typesystem";
 import { $expressionify } from "./path";
 
 export function detached<Expr extends TypeSet>(
-  expr: Expr
+  expr: Expr,
 ): $expr_Detached<Expr> {
   return $expressionify({
     __element__: expr.__element__,

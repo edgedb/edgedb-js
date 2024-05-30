@@ -71,11 +71,11 @@ test("transaction: regular 01", async () => {
     }
 
     await expect(faulty()).rejects.toThrow(
-      new errors.DivisionByZeroError().message
+      new errors.DivisionByZeroError().message,
     );
 
     const items = await con.query(
-      `select ${typename} {name} filter .name = 'Test Transaction'`
+      `select ${typename} {name} filter .name = 'Test Transaction'`,
     );
 
     expect(items).toHaveLength(0);
@@ -135,11 +135,11 @@ test("no transaction statements", async () => {
   const client = getClient();
 
   await expect(client.execute("start transaction")).rejects.toThrow(
-    errors.CapabilityError
+    errors.CapabilityError,
   );
 
   await expect(client.query("start transaction")).rejects.toThrow(
-    errors.CapabilityError
+    errors.CapabilityError,
   );
 
   // This test is broken, first rollback query throws CapabilityError, but
@@ -181,7 +181,7 @@ test("transaction timeout", async () => {
   await expect(client.querySingle(`select 123`)).resolves.toBe(123);
 
   await expect(timedoutQueryDone.wait()).rejects.toThrow(
-    errors.ClientConnectionClosedError
+    errors.ClientConnectionClosedError,
   );
 
   await client.close();
@@ -202,7 +202,7 @@ test("transaction deadlocking client pool", async () => {
       // return the holder to the pool.
       innerQueryResult = await client.querySingle(`select 123`);
       innerQueryDone.set();
-    })
+    }),
   ).rejects.toThrow(errors.TransactionTimeoutError);
 
   await expect(innerQueryDone.wait()).resolves.toBe(undefined);

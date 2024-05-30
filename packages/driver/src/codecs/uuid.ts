@@ -46,7 +46,7 @@ export class UUIDCodec extends ScalarCodec implements ICodec {
       buf.writeBuffer(ubuf);
     } else {
       throw new InvalidArgumentError(
-        `cannot encode UUID "${object}": invalid type`
+        `cannot encode UUID "${object}": invalid type`,
       );
     }
   }

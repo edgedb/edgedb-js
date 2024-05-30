@@ -13,7 +13,7 @@ type Cast = {
 const reachableFrom: (
   source: string,
   adj: { [k: string]: string[] },
-  seen?: Set<string>
+  seen?: Set<string>,
 ) => string[] = (source, adj, seen = new Set<string>()) => {
   const reachable = new Set<string>();
   if (seen.has(source)) return [];
@@ -107,7 +107,7 @@ export const casts = async (cxn: Executor, params?: { debug?: boolean }) => {
       console.log(
         `${typesById[fromId].name} implicitly castable to: [${castArr
           .map((id) => typesById[id].name)
-          .join(", ")}]`
+          .join(", ")}]`,
       );
     }
     console.log("");
@@ -115,7 +115,7 @@ export const casts = async (cxn: Executor, params?: { debug?: boolean }) => {
       console.log(
         `${typesById[fromId].name} implicitly castable from: [${castArr
           .map((id) => typesById[id].name)
-          .join(", ")}]`
+          .join(", ")}]`,
       );
     }
 
@@ -124,7 +124,7 @@ export const casts = async (cxn: Executor, params?: { debug?: boolean }) => {
       console.log(
         `${typesById[fromId].name} assignable to: [${castArr
           .map((id) => typesById[id].name)
-          .join(", ")}]`
+          .join(", ")}]`,
       );
     }
 
@@ -133,7 +133,7 @@ export const casts = async (cxn: Executor, params?: { debug?: boolean }) => {
       console.log(
         `${typesById[fromId].name} assignable by: [${castArr
           .map((id) => typesById[id].name)
-          .join(", ")}]`
+          .join(", ")}]`,
       );
     }
 
@@ -144,7 +144,7 @@ export const casts = async (cxn: Executor, params?: { debug?: boolean }) => {
           .map((id) => {
             return typesById[id].name;
           })
-          .join(", ")}]`
+          .join(", ")}]`,
       );
     }
   }

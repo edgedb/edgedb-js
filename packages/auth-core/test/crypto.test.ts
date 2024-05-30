@@ -22,7 +22,7 @@ describe("crypto", () => {
         const buffer = crypto.randomBytes(32);
         const encoded = buffer.toString("base64url");
         expect(new Uint8Array(Buffer.from(encoded, "base64url"))).toEqual(
-          base64UrlToBytes(encoded)
+          base64UrlToBytes(encoded),
         );
       }
     });
@@ -43,7 +43,7 @@ describe("crypto", () => {
       for (let i = 0; i < 100; i++) {
         const buffer = crypto.randomBytes(32);
         expect(crypto.createHash("sha256").update(buffer).digest()).toEqual(
-          Buffer.from(await sha256(buffer))
+          Buffer.from(await sha256(buffer)),
         );
       }
     });

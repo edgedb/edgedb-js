@@ -53,7 +53,7 @@ export async function generateQueryBuilder(params: {
     outputDir = path.join(root, schemaDir, "edgeql-js");
   } else {
     throw new Error(
-      `No edgedb.toml found. Initialize an EdgeDB project with\n\`edgedb project init\` or specify an output directory with \`--output-dir\``
+      `No edgedb.toml found. Initialize an EdgeDB project with\n\`edgedb project init\` or specify an output directory with \`--output-dir\``,
     );
   }
 
@@ -198,7 +198,7 @@ export async function generateQueryBuilder(params: {
         moduleExtension: "",
         written,
       },
-      headerComment
+      headerComment,
     );
   } else if (target === "mts") {
     await dir.write(
@@ -210,7 +210,7 @@ export async function generateQueryBuilder(params: {
         moduleExtension: ".mjs",
         written,
       },
-      headerComment
+      headerComment,
     );
   } else if (target === "cjs") {
     await dir.write(
@@ -222,7 +222,7 @@ export async function generateQueryBuilder(params: {
         moduleExtension: "",
         written,
       },
-      headerComment
+      headerComment,
     );
     await dir.write(
       outputDir,
@@ -233,7 +233,7 @@ export async function generateQueryBuilder(params: {
         moduleExtension: "",
         written,
       },
-      headerComment
+      headerComment,
     );
   } else if (target === "esm") {
     await dir.write(
@@ -245,7 +245,7 @@ export async function generateQueryBuilder(params: {
         moduleExtension: ".mjs",
         written,
       },
-      headerComment
+      headerComment,
     );
     await dir.write(
       outputDir,
@@ -256,7 +256,7 @@ export async function generateQueryBuilder(params: {
         moduleExtension: "",
         written,
       },
-      headerComment
+      headerComment,
     );
   } else if (target === "deno") {
     await dir.write(
@@ -268,14 +268,14 @@ export async function generateQueryBuilder(params: {
         moduleExtension: ".ts",
         written,
       },
-      headerComment
+      headerComment,
     );
   }
 
   const configPath = path.join(outputDir, "config.json");
   await fs.writeFile(
     configPath,
-    `${configFileHeader}\n${JSON.stringify({ target })}\n`
+    `${configFileHeader}\n${JSON.stringify({ target })}\n`,
   );
   written.add(configPath);
 
@@ -294,7 +294,7 @@ export async function generateQueryBuilder(params: {
     console.log(
       `\nChecking the generated files into version control is
 not recommended. Consider updating the .gitignore of your
-project to exclude these files.`
+project to exclude these files.`,
     );
   } else if (options.updateIgnoreFile) {
     const gitIgnorePath = path.join(root, ".gitignore");
@@ -321,12 +321,12 @@ is not recommended. Would you like to update .gitignore to ignore
 the query builder directory? The following line will be added:
 
    ${vcsLine}\n\n`,
-          true
+          true,
         ))
       ) {
         await fs.appendFile(
           gitIgnorePath,
-          `${gitIgnoreFile === null ? "" : "\n"}${vcsLine}\n`
+          `${gitIgnoreFile === null ? "" : "\n"}${vcsLine}\n`,
         );
       }
     }

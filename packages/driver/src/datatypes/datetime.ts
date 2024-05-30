@@ -62,7 +62,7 @@ export class LocalTime {
     isoSecond = 0,
     isoMillisecond = 0,
     isoMicrosecond = 0,
-    isoNanosecond = 0
+    isoNanosecond = 0,
   ) {
     isoHour = Math.floor(toNumber(isoHour));
     isoMinute = Math.floor(toNumber(isoMinute));
@@ -73,35 +73,35 @@ export class LocalTime {
 
     if (isoHour < 0 || isoHour > 23) {
       throw new RangeError(
-        `invalid number of hours ${isoHour}: expected a value in 0-23 range`
+        `invalid number of hours ${isoHour}: expected a value in 0-23 range`,
       );
     }
     if (isoMinute < 0 || isoMinute > 59) {
       throw new RangeError(
-        `invalid number of minutes ${isoMinute}: expected a value in 0-59 range`
+        `invalid number of minutes ${isoMinute}: expected a value in 0-59 range`,
       );
     }
     if (isoSecond < 0 || isoSecond > 59) {
       throw new RangeError(
-        `invalid number of seconds ${isoSecond}: expected a value in 0-59 range`
+        `invalid number of seconds ${isoSecond}: expected a value in 0-59 range`,
       );
     }
     if (isoMillisecond < 0 || isoMillisecond > 999) {
       throw new RangeError(
         `invalid number of milliseconds ${isoMillisecond}: ` +
-          `expected a value in 0-999 range`
+          `expected a value in 0-999 range`,
       );
     }
     if (isoMicrosecond < 0 || isoMicrosecond > 999) {
       throw new RangeError(
         `invalid number of microseconds ${isoMicrosecond}: ` +
-          `expected a value in 0-999 range`
+          `expected a value in 0-999 range`,
       );
     }
     if (isoNanosecond < 0 || isoNanosecond > 999) {
       throw new RangeError(
         `invalid number of nanoseconds ${isoNanosecond}: ` +
-          `expected a value in 0-999 range`
+          `expected a value in 0-999 range`,
       );
     }
 
@@ -144,18 +144,18 @@ export class LocalDate {
 
     if (isoYear < -271820 || isoYear > 275759) {
       throw new RangeError(
-        `invalid year ${isoYear}: expected a value in -271820-275759 range`
+        `invalid year ${isoYear}: expected a value in -271820-275759 range`,
       );
     }
     if (isoMonth < 1 || isoMonth > 12) {
       throw new RangeError(
-        `invalid month ${isoMonth}: expected a value in 1-12 range`
+        `invalid month ${isoMonth}: expected a value in 1-12 range`,
       );
     }
     const maxDays = daysInMonth(isoYear, isoMonth);
     if (isoDay < 1 || isoDay > maxDays) {
       throw new RangeError(
-        `invalid number of days ${isoDay}: expected a value in 1-${maxDays} range`
+        `invalid number of days ${isoDay}: expected a value in 1-${maxDays} range`,
       );
     }
 
@@ -239,7 +239,7 @@ export class LocalDateTime extends LocalDate {
     isoSecond = 0,
     isoMillisecond = 0,
     isoMicrosecond = 0,
-    isoNanosecond = 0
+    isoNanosecond = 0,
   ) {
     super(isoYear, isoMonth, isoDay);
 
@@ -249,7 +249,7 @@ export class LocalDateTime extends LocalDate {
       isoSecond,
       isoMillisecond,
       isoMicrosecond,
-      isoNanosecond
+      isoNanosecond,
     );
     localTimeInstances.set(this, time);
     throwOnValueOf(this, "LocalDateTime");
@@ -296,7 +296,7 @@ const durationRegex = new RegExp(
   `^(\\-|\\+)?P(?:(\\d+)Y)?(?:(\\d+)M)?(?:(\\d+)W)?(?:(\\d+)D)?` +
     `(T(?:(\\d+)(\\.\\d{1,10})?H)?(?:(\\d+)(\\.\\d{1,10})?M)?` +
     `(?:(\\d+)(\\.\\d{1,9})?S)?)?$`,
-  "i"
+  "i",
 );
 
 export class Duration {
@@ -322,7 +322,7 @@ export class Duration {
     seconds = 0,
     milliseconds = 0,
     microseconds = 0,
-    nanoseconds = 0
+    nanoseconds = 0,
   ) {
     years = assertInteger(toNumber(years));
     months = assertInteger(toNumber(months));
@@ -357,7 +357,7 @@ export class Duration {
       const fieldSign = Math.sign(field);
       if (sign && fieldSign && fieldSign !== sign) {
         throw new RangeError(
-          "mixed-sign values not allowed as duration fields"
+          "mixed-sign values not allowed as duration fields",
         );
       }
       sign = sign || fieldSign;
@@ -545,7 +545,7 @@ export class Duration {
       result.seconds,
       result.milliseconds,
       result.microseconds,
-      result.nanoseconds
+      result.nanoseconds,
     );
   }
 }
@@ -570,7 +570,7 @@ export class RelativeDuration {
     minutes = 0,
     seconds = 0,
     milliseconds = 0,
-    microseconds = 0
+    microseconds = 0,
   ) {
     this.years = Math.trunc(years) || 0;
     this.months = Math.trunc(months) || 0;

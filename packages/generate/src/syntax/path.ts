@@ -37,7 +37,7 @@ import type {
 // including cardinality merging
 type getChildOfObjectTypeSet<
   Root extends ObjectTypeSet,
-  ChildKey extends keyof Root["__element__"]["__pointers__"]
+  ChildKey extends keyof Root["__element__"]["__pointers__"],
 > = TypeSet<
   Root["__element__"]["__pointers__"][ChildKey]["target"],
   cardutil.multiplyCardinalities<
@@ -49,7 +49,7 @@ type getChildOfObjectTypeSet<
 // path parent must be object expression
 export interface PathParent<
   Parent extends ObjectTypeSet = ObjectTypeSet,
-  L extends string = string
+  L extends string = string,
 > {
   type: Parent;
   linkName: L;
@@ -72,7 +72,7 @@ export type $linkPropify<Root extends ObjectTypeSet> = Root extends {
   : unknown;
 
 export type $pathify<
-  Root extends TypeSet
+  Root extends TypeSet,
   // Parent extends PathParent | null = null
 > = Root extends ObjectTypeSet
   ? ObjectTypeSet extends Root
@@ -81,7 +81,7 @@ export type $pathify<
   : unknown; // pathify does nothing on non-object types
 
 export type pathifyPointers<
-  Root extends ObjectTypeSet
+  Root extends ObjectTypeSet,
   // Parent extends PathParent | null = null
 > = ObjectTypePointers extends Root["__element__"]["__pointers__"]
   ? unknown
@@ -95,14 +95,14 @@ export type pathifyPointers<
             // Root["__element__"]["__pointers__"][k]["exclusive"]
           >
         : Root["__element__"]["__pointers__"][k] extends LinkDesc
-        ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
-          ? $expr_PathNode<
-              getChildOfObjectTypeSet<Root, k>,
-              { type: anonymizeObjectTypeSet<Root>; linkName: k }
-              // Root["__element__"]["__pointers__"][k]["exclusive"]
-            >
-          : unknown
-        : unknown;
+          ? getChildOfObjectTypeSet<Root, k> extends ObjectTypeSet
+            ? $expr_PathNode<
+                getChildOfObjectTypeSet<Root, k>,
+                { type: anonymizeObjectTypeSet<Root>; linkName: k }
+                // Root["__element__"]["__pointers__"][k]["exclusive"]
+              >
+            : unknown
+          : unknown;
     };
 
 type anonymizeObjectTypeSet<T extends ObjectTypeSet> = typeutil.flatten<{
@@ -116,7 +116,7 @@ type anonymizeObjectTypeSet<T extends ObjectTypeSet> = typeutil.flatten<{
 
 export type pathifyShape<
   Root extends ObjectTypeSet,
-  Shape extends { [k: string]: any } = Root["__element__"]["__shape__"]
+  Shape extends { [k: string]: any } = Root["__element__"]["__shape__"],
 > = string extends keyof Shape
   ? object
   : {
@@ -133,26 +133,26 @@ export type pathifyShape<
             // false
           >
         : Shape[k] extends TypeSet
-        ? $expr_PathLeaf<
-            TypeSet<
-              Shape[k]["__element__"],
-              cardutil.multiplyCardinalities<
-                Root["__cardinality__"],
-                Shape[k]["__cardinality__"]
-              >
-            >,
-            { type: Root; linkName: k }
-            // false
-          >
-        : // must be unknown (not never) to avoid overriding
-          // a pointer with the same key
-          unknown;
+          ? $expr_PathLeaf<
+              TypeSet<
+                Shape[k]["__element__"],
+                cardutil.multiplyCardinalities<
+                  Root["__cardinality__"],
+                  Shape[k]["__cardinality__"]
+                >
+              >,
+              { type: Root; linkName: k }
+              // false
+            >
+          : // must be unknown (not never) to avoid overriding
+            // a pointer with the same key
+            unknown;
     };
 
 type pathifyLinkProps<
   Props extends PropertyShape,
   Root extends ObjectTypeSet,
-  Parent extends PathParent | null = null
+  Parent extends PathParent | null = null,
 > = {
   [k in keyof Props & string]: Props[k] extends PropertyDesc
     ? $expr_PathLeaf<
@@ -180,7 +180,7 @@ export type getPropsShape<T extends ObjectType> = typeutil.flatten<
 
 export type $expr_PathNode<
   Root extends ObjectTypeSet = ObjectTypeSet,
-  Parent extends PathParent | null = PathParent | null
+  Parent extends PathParent | null = PathParent | null,
   // Exclusive extends boolean = boolean
 > = Expression<{
   __element__: Root["__element__"];
@@ -193,7 +193,7 @@ export type $expr_PathNode<
 
 export type $expr_TypeIntersection<
   Card extends Cardinality = Cardinality,
-  Intersection extends ObjectType = ObjectType
+  Intersection extends ObjectType = ObjectType,
 > = Expression<{
   __element__: Intersection;
   __cardinality__: Card;
@@ -203,7 +203,7 @@ export type $expr_TypeIntersection<
 
 export type $expr_PathLeaf<
   Root extends TypeSet = TypeSet,
-  Parent extends PathParent = PathParent
+  Parent extends PathParent = PathParent,
   // Exclusive extends boolean = boolean
 > = Expression<{
   __element__: Root["__element__"];
@@ -222,12 +222,12 @@ export type ExpressionRoot = {
 function PathLeaf<
   Root extends TypeSet,
   Parent extends PathParent,
-  Exclusive extends boolean = boolean
+  Exclusive extends boolean = boolean,
 >(
   root: Root,
   parent: Parent,
   exclusive: Exclusive,
-  scopeRoot: TypeSet | null = null
+  scopeRoot: TypeSet | null = null,
 ): $expr_PathLeaf<Root, Parent> {
   return $expressionify({
     __kind__: ExpressionKind.PathLeaf,
@@ -251,13 +251,13 @@ function getStarShapeFromPointers(pointers: ObjectTypePointers) {
 
 function PathNode<
   Root extends ObjectTypeSet,
-  Parent extends PathParent | null
+  Parent extends PathParent | null,
   // Exclusive extends boolean = boolean
 >(
   root: Root,
   parent: Parent,
   // exclusive: boolean,
-  scopeRoot: TypeSet | null = null
+  scopeRoot: TypeSet | null = null,
 ): $expr_PathNode<Root, Parent> {
   const obj = {
     __kind__: ExpressionKind.PathNode,
@@ -291,7 +291,7 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
             __element__: ptr.target,
             __cardinality__: cardutil.multiplyCardinalities(
               target.__cardinality__,
-              ptr.cardinality
+              ptr.cardinality,
             ),
           },
           {
@@ -299,7 +299,7 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
             type: proxy,
           },
           ptr.exclusive ?? false,
-          target.__scopeRoot__ ?? (scopeRoots.has(proxy) ? proxy : null)
+          target.__scopeRoot__ ?? (scopeRoots.has(proxy) ? proxy : null),
         ))
       );
     }
@@ -308,7 +308,7 @@ const pathifyProxyHandlers: ProxyHandler<any> = {
 };
 
 export function $pathify<Root extends TypeSet, _Parent extends PathParent>(
-  _root: Root
+  _root: Root,
 ): $pathify<Root> {
   if (_root.__element__.__kind__ !== TypeKind.object) {
     return _root as any;
@@ -329,7 +329,7 @@ export function $pathify<Root extends TypeSet, _Parent extends PathParent>(
   }
 
   for (const [key, val] of Object.entries(
-    root.__element__.__shape__ || { id: true }
+    root.__element__.__shape__ || { id: true },
   )) {
     if (pointers[key]) continue;
     const valType: BaseType = (val as any)?.__element__;
@@ -393,7 +393,7 @@ function jsonDestructure(this: ExpressionRoot, path: any) {
     __element__: this.__element__,
     __cardinality__: cardutil.multiplyCardinalities(
       this.__cardinality__,
-      pathTypeSet.__cardinality__
+      pathTypeSet.__cardinality__,
     ),
     __name__: "[]",
     __opkind__: "Infix",
@@ -417,10 +417,10 @@ export function $jsonDestructure(_expr: ExpressionRoot) {
 }
 
 export function $expressionify<T extends ExpressionRoot>(
-  _expr: T
+  _expr: T,
 ): Expression<T> {
   const expr: Expression = $pathify(
-    $jsonDestructure($arrayLikeIndexify($tuplePathify(_expr)))
+    $jsonDestructure($arrayLikeIndexify($tuplePathify(_expr))),
   ) as any;
 
   expr.run = $queryFunc.bind(expr) as any;
@@ -437,7 +437,7 @@ const scopeRoots = new WeakSet<Expression>();
 
 export function $getScopedExpr<T extends ExpressionRoot>(
   expr: T,
-  existingScopes?: Set<Expression>
+  existingScopes?: Set<Expression>,
 ): Expression<T> {
   let scopedExpr = scopedExprCache.get(expr);
   if (!scopedExpr || existingScopes?.has(scopedExpr)) {
@@ -455,7 +455,7 @@ export function $getScopedExpr<T extends ExpressionRoot>(
           ...(expr.__element__.__kind__ === TypeKind.object
             ? {
                 "*": getStarShapeFromPointers(
-                  (expr.__element__ as ObjectType).__pointers__
+                  (expr.__element__ as ObjectType).__pointers__,
                 ),
               }
             : {}),

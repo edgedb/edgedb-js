@@ -19,7 +19,7 @@
 import type { Duration, LocalDate, LocalDateTime } from "./datetime";
 
 export class Range<
-  T extends number | Date | LocalDate | LocalDateTime | Duration
+  T extends number | Date | LocalDate | LocalDateTime | Duration,
 > {
   private _isEmpty = false;
 
@@ -27,7 +27,7 @@ export class Range<
     private readonly _lower: T | null,
     private readonly _upper: T | null,
     private readonly _incLower: boolean = _lower != null,
-    private readonly _incUpper = false
+    private readonly _incUpper = false,
   ) {}
 
   get lower() {
@@ -65,7 +65,7 @@ export class Range<
 }
 
 export class MultiRange<
-  T extends number | Date | LocalDate | LocalDateTime | Duration
+  T extends number | Date | LocalDate | LocalDateTime | Duration,
 > {
   private readonly _ranges: Range<T>[];
   constructor(ranges: Range<T>[] = []) {

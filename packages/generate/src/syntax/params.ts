@@ -26,7 +26,7 @@ export type $expr_OptionalParam<Type extends ParamType = ParamType> = {
 };
 
 export function optional<Type extends ParamType>(
-  type: Type
+  type: Type,
 ): $expr_OptionalParam<Type> {
   return {
     __kind__: ExpressionKind.OptionalParam,
@@ -36,18 +36,18 @@ export function optional<Type extends ParamType>(
 
 export type QueryableWithParamsExpression<
   Set extends TypeSet = TypeSet,
-  Params extends ParamsRecord = Record<string, never>
+  Params extends ParamsRecord = Record<string, never>,
 > = Expression<Set, false> & {
   run(
     cxn: Executor,
-    args: paramsToParamArgs<Params>
+    args: paramsToParamArgs<Params>,
   ): Promise<setToTsType<Set>>;
   runJSON(cxn: Executor, args: paramsToParamArgs<Params>): Promise<string>;
 };
 
 export type $expr_WithParams<
   Params extends ParamsRecord = Record<string, never>,
-  Expr extends TypeSet = TypeSet
+  Expr extends TypeSet = TypeSet,
 > = QueryableWithParamsExpression<
   {
     __kind__: ExpressionKind.WithParams;
@@ -76,7 +76,7 @@ type paramsToParamArgs<Params extends ParamsRecord> = {
 export type $expr_Param<
   Name extends string | number | symbol = string,
   Type extends ParamType = ParamType,
-  Optional extends boolean = boolean
+  Optional extends boolean = boolean,
 > = Expression<{
   __kind__: ExpressionKind.Param;
   __element__: Type;
@@ -91,16 +91,16 @@ type paramsToParamExprs<Params extends ParamsRecord> = {
   [key in keyof Params]: Params[key] extends $expr_OptionalParam
     ? $expr_Param<key, Params[key]["__type__"], true>
     : Params[key] extends ParamType
-    ? $expr_Param<key, Params[key], false>
-    : never;
+      ? $expr_Param<key, Params[key], false>
+      : never;
 };
 
 export function params<
   Params extends ParamsRecord = Record<string, never>,
-  Expr extends Expression = Expression
+  Expr extends Expression = Expression,
 >(
   paramsDef: Params,
-  expr: (params: paramsToParamExprs<Params>) => Expr
+  expr: (params: paramsToParamExprs<Params>) => Expr,
 ): $expr_WithParams<Params, Expr> {
   const paramExprs: { [key: string]: $expr_Param } = {};
   for (const [key, param] of Object.entries(paramsDef)) {

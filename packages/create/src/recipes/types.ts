@@ -21,7 +21,7 @@ export interface Recipe<RecipeOptions = undefined> {
   getOptions?: (baseOptions: BaseOptions) => Promise<RecipeOptions>;
   apply: (
     baseOptions: BaseOptions,
-    recipeOptions: RecipeOptions
+    recipeOptions: RecipeOptions,
   ) => Promise<void>;
 }
 

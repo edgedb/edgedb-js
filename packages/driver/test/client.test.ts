@@ -60,7 +60,7 @@ function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
     codecs.reduce((obj, codec) => {
       obj[codec] = true;
       return obj;
-    }, {} as any)
+    }, {} as any),
   );
 }
 
@@ -87,7 +87,7 @@ test("query: basic scalars", async () => {
         2251799813685125,
         -2251799813685125
       ];
-      `
+      `,
     );
     expect(res).toEqual([
       -1, 1, 0, 15, 281474976710656, 22, -11111, 346456723423, -346456723423,
@@ -345,7 +345,7 @@ test("fetch: decimal as string", async () => {
       SELECT
         (inp, str, <array<decimal>>inpStr)
     `,
-      [vals, vals]
+      [vals, vals],
     );
 
     expect(fetched[0].length).toBe(vals.length);
@@ -386,7 +386,7 @@ test("fetch: int64 as bigint", async () => {
       SELECT
         (inp, str, <array<int64>>inpStr)
     `,
-      [vals.map((v) => BigInt(v)), vals]
+      [vals.map((v) => BigInt(v)), vals],
     );
 
     expect(fetched[0].length).toBe(vals.length);
@@ -409,7 +409,7 @@ if (!isDeno) {
 
     beforeAll(async () => {
       const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery
+        hasPgVectorExtentionQuery,
       );
       if (!hasPgVectorExtention) return;
       await con.execute("create extension pgvector;");
@@ -417,7 +417,7 @@ if (!isDeno) {
 
     afterAll(async () => {
       const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery
+        hasPgVectorExtentionQuery,
       );
       if (!hasPgVectorExtention) return;
       await con.execute("drop extension pgvector;");
@@ -425,7 +425,7 @@ if (!isDeno) {
 
     it("valid: Float32Array", async () => {
       const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery
+        hasPgVectorExtentionQuery,
       );
       if (!hasPgVectorExtention) return;
 
@@ -440,7 +440,7 @@ if (!isDeno) {
           async (data) => {
             const result = await con.querySingle<unknown[]>(
               "select (<ext::pgvector::vector>$0, <ext::pgvector::vector>$1)",
-              [data, [...data]]
+              [data, [...data]],
             );
             expect(Array.isArray(result)).toBe(true);
             expect(result!.length).toBe(2);
@@ -448,15 +448,15 @@ if (!isDeno) {
             expect(result![1]).toBeInstanceOf(Float32Array);
             expect(result![0]).toEqual(data);
             expect(result![1]).toEqual(data);
-          }
+          },
         ),
-        { numRuns: 1000 }
+        { numRuns: 1000 },
       );
     });
 
     it("valid: JSON", async () => {
       const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery
+        hasPgVectorExtentionQuery,
       );
       if (!hasPgVectorExtention) return;
 
@@ -471,39 +471,39 @@ if (!isDeno) {
           async (data) => {
             const result = await con.querySingle<number[]>(
               "select <json><ext::pgvector::vector>$0;",
-              [data]
+              [data],
             );
             const f32JsonResult = new Float32Array(result!);
             const f32JsonData = new Float32Array(
-              JSON.parse(JSON.stringify(Array.from(data)))
+              JSON.parse(JSON.stringify(Array.from(data))),
             );
             expect(f32JsonResult).toEqual(f32JsonData);
-          }
+          },
         ),
-        { numRuns: 1000 }
+        { numRuns: 1000 },
       );
     });
 
     it("invalid: empty", async () => {
       const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery
+        hasPgVectorExtentionQuery,
       );
       if (!hasPgVectorExtention) return;
 
       const data = new Float32Array([]);
       await expect(
-        con.querySingle("select <ext::pgvector::vector>$0;", [data])
+        con.querySingle("select <ext::pgvector::vector>$0;", [data]),
       ).rejects.toThrow();
     });
 
     it("invalid: invalid argument", async () => {
       const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery
+        hasPgVectorExtentionQuery,
       );
       if (!hasPgVectorExtention) return;
 
       await expect(
-        con.querySingle("select <ext::pgvector::vector>$0;", ["foo"])
+        con.querySingle("select <ext::pgvector::vector>$0;", ["foo"]),
       ).rejects.toThrow();
     });
   });
@@ -536,7 +536,7 @@ test("fetch: positional args", async () => {
       for (const type of types) {
         res = await con.querySingle(
           `select (<${type}>$0 + <${type}>$1,);`,
-          values
+          values,
         );
         expect(res[0]).toBe(values[0] + values[1]);
       }
@@ -567,7 +567,7 @@ test("fetch: positional args", async () => {
     expect(res instanceof LocalDateTime).toBeTruthy();
     expect((res as LocalDateTime).hour).toBe(14);
     expect((res as LocalDateTime).toString()).toBe(
-      "2012-06-30T14:11:33.123456"
+      "2012-06-30T14:11:33.123456",
     );
 
     res = await con.querySingle(`select len(<array<int64>>$0)`, [
@@ -600,7 +600,7 @@ test("fetch: named args", async () => {
       })
       .then(() => {
         throw new Error(
-          "there should have been an unexpected named argument error"
+          "there should have been an unexpected named argument error",
         );
       })
       .catch((e) => {
@@ -781,7 +781,7 @@ if (getEdgeDBVersion().major >= 3) {
       for (let [cast, inputs] of Object.entries(tests)) {
         for (let input of inputs) {
           expect(
-            await client.querySingle(`select <${cast}>$0`, [input])
+            await client.querySingle(`select <${cast}>$0`, [input]),
           ).toEqual(input);
         }
       }
@@ -789,53 +789,53 @@ if (getEdgeDBVersion().major >= 3) {
       await expect(
         client.query(`select <tuple<str, int64>>$test`, {
           test: ["str", 123, 456],
-        })
+        }),
       ).rejects.toThrow(/expected 2 tuple items, got 3/);
 
       await expect(
         client.query(`select <tuple<str, int64>>$test`, {
           test: ["str", "123"],
-        })
+        }),
       ).rejects.toThrow(
-        /invalid element at index 1 in tuple: a number was expected, got "123"/
+        /invalid element at index 1 in tuple: a number was expected, got "123"/,
       );
 
       await expect(
         client.query(`select <tuple<str, int64>>$test`, {
           test: ["str", null],
-        })
+        }),
       ).rejects.toThrow(/element at index 1 in tuple cannot be 'null'/);
 
       await expect(
         client.query(`select <tuple<a: str, b: int64>>$test`, {
           test: ["str", 123],
-        })
+        }),
       ).rejects.toThrow(/an object was expected, got "str,123"/);
 
       await expect(
         client.query(`select <tuple<str, int64>>$test`, {
           test: { a: "str", b: 123 },
-        })
+        }),
       ).rejects.toThrow(/an array was expected, got "\[object Object\]"/);
 
       await expect(
         client.query(`select <tuple<a: str, b: int64>>$test`, {
           test: { a: "str", b: 123, c: 456 },
-        })
+        }),
       ).rejects.toThrow(/expected 2 elements in named tuple, got 3/);
 
       await expect(
         client.query(`select <tuple<a: str, b: int64>>$test`, {
           test: { a: "str", b: "123" },
-        })
+        }),
       ).rejects.toThrow(
-        /invalid element 'b' in named tuple: a number was expected, got "123"/
+        /invalid element 'b' in named tuple: a number was expected, got "123"/,
       );
 
       await expect(
         client.query(`select <tuple<a: str, b: int64>>$test`, {
           test: { a: "str", b: null },
-        })
+        }),
       ).rejects.toThrow(/element 'b' in named tuple cannot be 'null'/);
     } finally {
       await client.close();
@@ -913,7 +913,7 @@ test("fetch: cal::local_date", async () => {
       `
       select <cal::local_date>$0;
       `,
-      [res]
+      [res],
     );
     expect(res instanceof LocalDate).toBeTruthy();
     expect(res.toString()).toBe("2016-01-10");
@@ -936,7 +936,7 @@ test("fetch: cal::local_time", async () => {
         `
         select (<cal::local_time><str>$time, <str><cal::local_time><str>$time);
         `,
-        { time }
+        { time },
       );
       expect(res[0].toString()).toBe(res[1]);
 
@@ -944,7 +944,7 @@ test("fetch: cal::local_time", async () => {
         `
         select <cal::local_time>$time;
         `,
-        { time: res[0] }
+        { time: res[0] },
       );
       expect(res2.toString()).toBe(res[0].toString());
     }
@@ -973,7 +973,7 @@ test("fetch: duration", async () => {
         `
         select (<duration><str>$time, <str><duration><str>$time);
         `,
-        { time }
+        { time },
       );
 
       expect(res[0].toString()).toBe(normaliseIsoDuration(res[1]));
@@ -982,7 +982,7 @@ test("fetch: duration", async () => {
         `
         select <duration>$time;
         `,
-        { time: res[0] }
+        { time: res[0] },
       );
       expect(res2.toString()).toBe(res[0].toString());
     }
@@ -1000,7 +1000,7 @@ test("fetch: duration", async () => {
         })
         .catch((e) => {
           expect(e.toString()).toMatch(
-            /Cannot encode a 'Duration' with a non-zero number of.*/
+            /Cannot encode a 'Duration' with a non-zero number of.*/,
           );
         });
     }
@@ -1042,8 +1042,8 @@ if (!isDeno) {
           0,
           0,
           0,
-          randint(-500, 500) * 86400 + randint(-1000, 1000)
-        )
+          randint(-500, 500) * 86400 + randint(-1000, 1000),
+        ),
       );
     }
 
@@ -1055,7 +1055,7 @@ if (!isDeno) {
         WITH args := array_unpack(<array<duration>>$0)
         SELECT args;
       `,
-        [durs]
+        [durs],
       );
 
       for (let i = 0; i < durs.length; i++) {
@@ -1100,7 +1100,7 @@ test("fetch: relative_duration", async () => {
             <str><cal::relative_duration><str>$time,
           );
         `,
-        { time }
+        { time },
       );
       expect(res[0].toString()).toBe(res[1]);
 
@@ -1108,7 +1108,7 @@ test("fetch: relative_duration", async () => {
         `
         select <cal::relative_duration>$time;
         `,
-        { time: res[0] }
+        { time: res[0] },
       );
       expect(res2.toString()).toBe(res[0].toString());
     }
@@ -1150,8 +1150,8 @@ if (!isDeno) {
           sign * randint(0, 59),
           sign * randint(0, 59),
           sign * randint(0, 999),
-          sign * randint(0, 999)
-        )
+          sign * randint(0, 999),
+        ),
       );
     }
 
@@ -1163,7 +1163,7 @@ if (!isDeno) {
           WITH args := array_unpack(<array<cal::relative_duration>>$0)
           SELECT args;
         `,
-        [durs]
+        [durs],
       );
 
       for (let i = 0; i < durs.length; i++) {
@@ -1180,7 +1180,7 @@ test("fetch: ConfigMemory", async () => {
 
   if (
     (await client.queryRequiredSingle(
-      `select exists (select schema::Type filter .name = 'cfg::memory')`
+      `select exists (select schema::Type filter .name = 'cfg::memory')`,
     )) === false
   ) {
     await client.close();
@@ -1207,7 +1207,7 @@ test("fetch: ConfigMemory", async () => {
             <str><cfg::memory><str>$mem,
           );
         `,
-        { mem }
+        { mem },
       );
       expect(res[0].toString()).toBe(res[1]);
 
@@ -1215,7 +1215,7 @@ test("fetch: ConfigMemory", async () => {
         `
         select <cfg::memory>$mem;
         `,
-        { mem: res[0] }
+        { mem: res[0] },
       );
       expect(res2.toString()).toBe(res[0].toString());
     }
@@ -1233,7 +1233,7 @@ function expandRangeEQL(lower: string, upper: string) {
   ]
     .map(
       ([incl, incu]) =>
-        `range(${lower}, ${upper}, inc_lower := ${incl}, inc_upper := ${incu})`
+        `range(${lower}, ${upper}, inc_lower := ${incl}, inc_upper := ${incu})`,
     )
     .join(",\n");
 }
@@ -1258,15 +1258,15 @@ if (getEdgeDBVersion().major >= 2) {
           floats := (${expandRangeEQL("123.456", "456.789")}),
           datetimes := (${expandRangeEQL(
             "<datetime>'2022-07-01T16:00:00+00'",
-            "<datetime>'2022-07-01T16:30:00+00'"
+            "<datetime>'2022-07-01T16:30:00+00'",
           )}),
           local_dates := (${expandRangeEQL(
             "<cal::local_date>'2022-07-01'",
-            "<cal::local_date>'2022-07-14'"
+            "<cal::local_date>'2022-07-14'",
           )}),
           local_datetimes := (${expandRangeEQL(
             "<cal::local_datetime>'2022-07-01T12:00:00'",
-            "<cal::local_datetime>'2022-07-14T12:00:00'"
+            "<cal::local_datetime>'2022-07-14T12:00:00'",
           )}),
         }
       `);
@@ -1280,7 +1280,7 @@ if (getEdgeDBVersion().major >= 2) {
         floats: expandRangeJS(123.456, 456.789),
         datetimes: expandRangeJS(
           new Date("2022-07-01T16:00:00Z"),
-          new Date("2022-07-01T16:30:00Z")
+          new Date("2022-07-01T16:30:00Z"),
         ),
         local_dates: [
           new Range(new LocalDate(2022, 7, 2), new LocalDate(2022, 7, 14)),
@@ -1290,7 +1290,7 @@ if (getEdgeDBVersion().major >= 2) {
         ],
         local_datetimes: expandRangeJS(
           new LocalDateTime(2022, 7, 1, 12),
-          new LocalDateTime(2022, 7, 14, 12)
+          new LocalDateTime(2022, 7, 14, 12),
         ),
       });
 
@@ -1300,23 +1300,23 @@ if (getEdgeDBVersion().major >= 2) {
             [${expandRangeEQL("123", "456")}] = <array<range<int64>>>$ints,
             [${expandRangeEQL(
               "123.456",
-              "456.789"
+              "456.789",
             )}] = <array<range<float64>>>$floats,
             [${expandRangeEQL(
               "<datetime>'2022-07-01T16:00:00+00'",
-              "<datetime>'2022-07-01T16:30:00+00'"
+              "<datetime>'2022-07-01T16:30:00+00'",
             )}] = <array<range<datetime>>>$datetimes,
             [${expandRangeEQL(
               "<cal::local_date>'2022-07-01'",
-              "<cal::local_date>'2022-07-14'"
+              "<cal::local_date>'2022-07-14'",
             )}] = <array<range<cal::local_date>>>$local_dates,
             [${expandRangeEQL(
               "<cal::local_datetime>'2022-07-01T12:00:00'",
-              "<cal::local_datetime>'2022-07-14T12:00:00'"
+              "<cal::local_datetime>'2022-07-14T12:00:00'",
             )}] = <array<range<cal::local_datetime>>>$local_datetimes,
           })`,
-          res
-        )
+          res,
+        ),
       ).toBe(true);
     } finally {
       await client.close();
@@ -1341,7 +1341,7 @@ if (getEdgeDBVersion().major >= 2) {
             <str><cal::date_duration><str>$time,
           );
         `,
-          { time }
+          { time },
         );
         expect(res[0].toString()).toBe(res[1]);
 
@@ -1349,7 +1349,7 @@ if (getEdgeDBVersion().major >= 2) {
           `
         select <cal::date_duration>$time;
         `,
-          { time: res[0] }
+          { time: res[0] },
         );
         expect(res2.toString()).toBe(res[0].toString());
       }
@@ -1369,7 +1369,7 @@ if (getEdgeDBVersion().major >= 4) {
         "select <multirange<int32>>$mr;",
         {
           mr: expected,
-        }
+        },
       );
 
       expect(multiRangeRes).toEqual([expected]);
@@ -1380,7 +1380,7 @@ if (getEdgeDBVersion().major >= 4) {
         `select {
           multirange := <multirange<int32>>$mr
         }`,
-        { mr: expected }
+        { mr: expected },
       );
     } finally {
       await client.close();
@@ -1459,7 +1459,7 @@ test("fetch: object", async () => {
             "@foo": 42,
           },
         ],
-      })
+      }),
     );
 
     expect(res.params[0].num).toBe(0);
@@ -1528,7 +1528,7 @@ test("fetch: object implicit fields", async () => {
     `);
 
     expect(JSON.stringify(res)).toMatch(
-      /^\{"id":"([a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}|00000000-0000-0000-0000-000000000000)"\}$/
+      /^\{"id":"([a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}|00000000-0000-0000-0000-000000000000)"\}$/,
     );
 
     res = await con.querySingle(`
@@ -1562,7 +1562,7 @@ test("fetch: uuid", async () => {
     expect(res.replace(/\-/g, "").length).toBe(32);
 
     res = await con.querySingle(
-      "SELECT <uuid>'759637d8-6635-11e9-b9d4-098002d459d5'"
+      "SELECT <uuid>'759637d8-6635-11e9-b9d4-098002d459d5'",
     );
     expect(res).toBe("759637d8-6635-11e9-b9d4-098002d459d5");
 
@@ -1720,32 +1720,32 @@ test("query(Required)Single cardinality", async () => {
     expect(await conn.querySingle(`select 'test'`)).toBe("test");
     expect(await conn.querySingle(`select <str>{}`)).toBe(null);
     await expect(
-      conn.querySingle(`select {'multiple', 'test', 'strings'}`)
+      conn.querySingle(`select {'multiple', 'test', 'strings'}`),
     ).rejects.toBeInstanceOf(ResultCardinalityMismatchError);
   };
   const queryRequiredSingleTests = async (conn: Executor) => {
     expect(await conn.queryRequiredSingle(`select 'test'`)).toBe("test");
     await expect(
-      conn.queryRequiredSingle(`select <str>{}`)
+      conn.queryRequiredSingle(`select <str>{}`),
     ).rejects.toBeInstanceOf(NoDataError);
     await expect(
-      conn.queryRequiredSingle(`select {'multiple', 'test', 'strings'}`)
+      conn.queryRequiredSingle(`select {'multiple', 'test', 'strings'}`),
     ).rejects.toBeInstanceOf(ResultCardinalityMismatchError);
   };
   const querySingleJSONTests = async (conn: Executor) => {
     expect(await conn.querySingleJSON(`select 'test'`)).toBe('"test"');
     expect(await conn.querySingleJSON(`select <str>{}`)).toBe("null");
     await expect(
-      conn.querySingleJSON(`select {'multiple', 'test', 'strings'}`)
+      conn.querySingleJSON(`select {'multiple', 'test', 'strings'}`),
     ).rejects.toBeInstanceOf(ResultCardinalityMismatchError);
   };
   const queryRequiredSingleJSONTests = async (conn: Executor) => {
     expect(await conn.queryRequiredSingleJSON(`select 'test'`)).toBe('"test"');
     await expect(
-      conn.queryRequiredSingleJSON(`select <str>{}`)
+      conn.queryRequiredSingleJSON(`select <str>{}`),
     ).rejects.toBeInstanceOf(NoDataError);
     await expect(
-      conn.queryRequiredSingleJSON(`select {'multiple', 'test', 'strings'}`)
+      conn.queryRequiredSingleJSON(`select {'multiple', 'test', 'strings'}`),
     ).rejects.toBeInstanceOf(ResultCardinalityMismatchError);
   };
 
@@ -1813,7 +1813,7 @@ test("transaction state cleanup", async () => {
         // catch the error in the transaction so `transaction` method doesn't
         // attempt rollback
       }
-    })
+    }),
   ).rejects.toThrow(/current transaction is aborted/);
 
   await expect(client.querySingle(`select 'success'`)).resolves.toBe("success");
@@ -1857,8 +1857,8 @@ test("scripts and args", async () => {
             name := 'test'
           }
           `,
-          { name: "test" }
-        )
+          { name: "test" },
+        ),
       ).rejects.toThrowError(QueryArgumentError);
 
       expect(
@@ -1867,7 +1867,7 @@ test("scripts and args", async () => {
 
           insert ScriptTest {
             name := 'test0'
-          };`)
+          };`),
       ).toEqual(undefined);
 
       expect(await client.query(`select ScriptTest {name}`)).toEqual([
@@ -1883,8 +1883,8 @@ test("scripts and args", async () => {
 
           insert ScriptTest {
             name := 'test' ++ <str>count(detached ScriptTest)
-          };`
-        )
+          };`,
+        ),
       ).rejects.toThrowError(QueryArgumentError);
 
       await expect(
@@ -1897,8 +1897,8 @@ test("scripts and args", async () => {
           insert ScriptTest {
             name := 'test' ++ <str>count(detached ScriptTest)
           };`,
-          { name: "test1" }
-        )
+          { name: "test1" },
+        ),
       ).resolves.toEqual(undefined);
 
       expect(await client.query(`select ScriptTest {name}`)).toEqual([
@@ -1928,10 +1928,10 @@ test("scripts and args", async () => {
           `insert ScriptTest {
         name := <str>$name
       }`,
-          { name: "test" }
-        )
+          { name: "test" },
+        ),
       ).rejects.toThrowError(
-        /arguments in execute\(\) is not supported in this version of EdgeDB/
+        /arguments in execute\(\) is not supported in this version of EdgeDB/,
       );
 
       await expect(
@@ -1939,17 +1939,17 @@ test("scripts and args", async () => {
           `insert ScriptTest {
         name := 'test'
       }`,
-          { name: "test" }
-        )
+          { name: "test" },
+        ),
       ).rejects.toThrowError(
-        /arguments in execute\(\) is not supported in this version of EdgeDB/
+        /arguments in execute\(\) is not supported in this version of EdgeDB/,
       );
 
       await expect(
         client.query(`
           select 1 + 2;
           select 2 + 3;
-        `)
+        `),
       ).rejects.toThrowError();
     }
   } finally {
@@ -2045,7 +2045,7 @@ test("pretty error message", async () => {
    |
  3 |   unknown := .abc,
    |              ^^^^
-`
+`,
   );
 });
 
@@ -2080,9 +2080,9 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     const fetchConn = AdminUIFetchConnection.create(
       await getAuthenticatedFetch(
         config.connectionParams,
-        getHTTPSCRAMAuth(cryptoUtils)
+        getHTTPSCRAMAuth(cryptoUtils),
       ),
-      codecsRegistry
+      codecsRegistry,
     );
 
     const query = `SELECT Function { name }`;
@@ -2097,7 +2097,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
       query,
       state,
       outCodec,
-      options
+      options,
     );
 
     const result = _decodeResultBuffer(outCodec, resultData);
@@ -2115,13 +2115,13 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     const fetchConn = AdminUIFetchConnection.create(
       await getAuthenticatedFetch(
         config.connectionParams,
-        async () => "invalid token"
+        async () => "invalid token",
       ),
-      codecsRegistry
+      codecsRegistry,
     );
 
     await expect(
-      fetchConn.rawParse(`select 1`, Session.defaults())
+      fetchConn.rawParse(`select 1`, Session.defaults()),
     ).rejects.toThrowError(AuthenticationError);
   });
 }

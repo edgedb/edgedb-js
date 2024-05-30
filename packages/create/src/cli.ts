@@ -12,7 +12,7 @@ async function main() {
   const recipeOptions: any[] = [];
 
   const recipes = _recipes.filter(
-    (recipe) => !(recipe.skip?.(baseOptions) ?? false)
+    (recipe) => !(recipe.skip?.(baseOptions) ?? false),
   );
 
   for (const recipe of recipes) {
@@ -28,7 +28,7 @@ async function main() {
 Your EdgeDB project has been initialized! 🚀
 
 Enter your project directory using: ${pc.green(
-    `cd ${baseOptions.projectName}`
+    `cd ${baseOptions.projectName}`,
   )} 
 Follow the instructions in the ${pc.green("README.md")} file to get started.
 

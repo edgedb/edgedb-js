@@ -27,7 +27,7 @@ export class BoolCodec extends ScalarCodec implements ICodec {
     const typeOf = typeof object;
     if (typeOf !== "boolean" && typeOf !== "number") {
       throw new InvalidArgumentError(
-        `a boolean or a number was expected, got "${object}"`
+        `a boolean or a number was expected, got "${object}"`,
       );
     }
     buf.writeInt32(1);

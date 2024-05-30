@@ -24,7 +24,7 @@ import { sleep } from "./utils";
 
 export type ConnectWithTimeout = (
   config: NormalizedConnectConfig,
-  registry: CodecsRegistry
+  registry: CodecsRegistry,
 ) => Promise<BaseRawConnection>;
 
 let lastLoggingAt = 0;
@@ -32,7 +32,7 @@ let lastLoggingAt = 0;
 export async function retryingConnect(
   connectWithTimeout: ConnectWithTimeout,
   config: NormalizedConnectConfig,
-  registry: CodecsRegistry
+  registry: CodecsRegistry,
 ): Promise<BaseRawConnection> {
   const maxTime =
     config.connectionParams.waitUntilAvailable === 0
@@ -69,7 +69,7 @@ export async function retryingConnect(
                   `Hint: it looks like the program is running from a ` +
                   `directory initialized with "edgedb project init". ` +
                   `Consider calling "edgedb.connect()" without arguments.` +
-                  `\n`
+                  `\n`,
               );
             }
             console.warn(...logMsg);

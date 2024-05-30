@@ -26,7 +26,7 @@ export class BytesCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof Uint8Array)) {
       throw new InvalidArgumentError(
-        `a Uint8Array or Buffer was expected, got "${object}"`
+        `a Uint8Array or Buffer was expected, got "${object}"`,
       );
     }
 

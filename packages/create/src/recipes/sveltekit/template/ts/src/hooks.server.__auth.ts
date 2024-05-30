@@ -30,7 +30,7 @@ const authRouteHandlers: AuthRouteHandlers = {
 
 const { createServerRequestAuth, createAuthRouteHook } = serverAuth(
   client,
-  options
+  options,
 );
 
 export const handle = sequence(({ event, resolve }) => {
