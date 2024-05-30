@@ -776,6 +776,19 @@ export function generateOperators({
 
   code.nl();
 
+  // Utility type for extracting the correct union member for an operator
+  code.writeln([t`type ExtractRHS<T, LHS> =`]);
+  code.indented(() => {
+    code.writeln([t`T extends { lhs: infer LHSType; rhs: infer RHSType } ? LHS extends LHSType ? RHSType : never : never;`]);
+  });
+
+  code.writeln([t`type ExtractReturn<T, LHS, RHS> =`]);
+  code.indented(() => {
+    code.writeln([
+      t`T extends { lhs: infer LHSType; rhs: infer RHSType; ret: infer RetType } ? LHS extends LHSType ? RHS extends RHSType ? RetType : never : never : never;`,
+    ]);
+  });
+
   // PrefixPredicateOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
@@ -793,8 +806,8 @@ export function generateOperators({
   code.writeln([t`function op<`]);
   code.indented(() => {
     code.writeln([t`Op extends keyof InfixComparisonOperators,`]);
-    code.writeln([t`LHS extends InfixComparisonOperators[Op]["lhs"],`]);
-    code.writeln([t`RHS extends InfixComparisonOperators[Op]["rhs"]`]);
+    code.writeln([t`LHS extends InfixComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`]);
+    code.writeln([t`RHS extends ExtractRHS<InfixComparisonOperators[Op], LHS>`]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -809,8 +822,8 @@ export function generateOperators({
   code.writeln([t`function op<`]);
   code.indented(() => {
     code.writeln([t`Op extends keyof InfixOptionalComparisonOperators,`]);
-    code.writeln([t`LHS extends InfixOptionalComparisonOperators[Op]["lhs"],`]);
-    code.writeln([t`RHS extends InfixOptionalComparisonOperators[Op]["rhs"]`]);
+    code.writeln([t`LHS extends InfixOptionalComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`]);
+    code.writeln([t`RHS extends ExtractRHS<InfixOptionalComparisonOperators[Op], LHS>`]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -826,9 +839,9 @@ export function generateOperators({
   code.indented(() => {
     code.writeln([t`Op extends keyof InfixContainerComparisonOperators,`]);
     code.writeln([
-      t`LHS extends InfixContainerComparisonOperators[Op]["lhs"],`,
+      t`LHS extends InfixContainerComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
     ]);
-    code.writeln([t`RHS extends InfixContainerComparisonOperators[Op]["rhs"]`]);
+    code.writeln([t`RHS extends ExtractRHS<InfixContainerComparisonOperators[Op], LHS>`]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -842,11 +855,15 @@ export function generateOperators({
   // InfixOptionalContainerComparisonOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
-    code.writeln([t`Op extends keyof InfixOptionalContainerComparisonOperators,`]);
     code.writeln([
-      t`LHS extends InfixOptionalContainerComparisonOperators[Op]["lhs"],`,
+      t`Op extends keyof InfixOptionalContainerComparisonOperators,`,
     ]);
-    code.writeln([t`RHS extends InfixOptionalContainerComparisonOperators[Op]["rhs"]`]);
+    code.writeln([
+      t`LHS extends InfixOptionalContainerComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
+    ]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixOptionalContainerComparisonOperators[Op], LHS>`,
+    ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -878,8 +895,8 @@ export function generateOperators({
   code.writeln([t`function op<`]);
   code.indented(() => {
     code.writeln([t`Op extends keyof InfixHomogeneousOperators,`]);
-    code.writeln([t`LHS extends InfixHomogeneousOperators[Op]["lhs"],`]);
-    code.writeln([t`RHS extends InfixHomogeneousOperators[Op]["rhs"]`]);
+    code.writeln([t`LHS extends InfixHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`]);
+    code.writeln([t`RHS extends ExtractRHS<InfixHomogeneousOperators[Op], LHS>`]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -897,13 +914,13 @@ export function generateOperators({
   code.indented(() => {
     code.writeln([t`Op extends keyof InfixContainerHomogeneousOperators,`]);
     code.writeln([
-      t`LHS extends InfixContainerHomogeneousOperators[Op]["lhs"],`,
+      t`LHS extends InfixContainerHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
     ]);
     code.writeln([
-      t`RHS extends InfixContainerHomogeneousOperators[Op]["rhs"],`,
+      t`RHS extends ExtractRHS<InfixContainerHomogeneousOperators[Op], LHS>,`,
     ]);
     code.writeln([
-      t`Ret extends InfixContainerHomogeneousOperators[Op]["ret"]`,
+      t`Ret extends ExtractReturn<InfixContainerHomogeneousOperators[Op], LHS, RHS>`,
     ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
@@ -922,8 +939,12 @@ export function generateOperators({
     code.writeln([
       t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
     ]);
-    code.writeln([t`LHS extends TernaryHomogeneousOperators[Op]["lhs"],`]);
-    code.writeln([t`RHS extends TernaryHomogeneousOperators[Op]["rhs"]`]);
+    code.writeln([
+      t`LHS extends TernaryHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
+    ]);
+    code.writeln([
+      t`RHS extends ExtractRHS<TernaryHomogeneousOperators[Op], LHS>`,
+    ]);
   });
   code.writeln([
     t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
@@ -945,13 +966,13 @@ export function generateOperators({
       t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
     ]);
     code.writeln([
-      t`LHS extends TernaryContainerHomogeneousOperators["if_else"]["lhs"],`,
+      t`LHS extends TernaryContainerHomogeneousOperators["if_else"] extends { lhs: infer LHSType } ? LHSType : never,`,
     ]);
     code.writeln([
-      t`RHS extends TernaryContainerHomogeneousOperators["if_else"]["rhs"],`,
+      t`RHS extends ExtractRHS<TernaryContainerHomogeneousOperators["if_else"], LHS>,`,
     ]);
     code.writeln([
-      t`Ret extends TernaryContainerHomogeneousOperators["if_else"]["ret"]`,
+      t`Ret extends ExtractReturn<TernaryContainerHomogeneousOperators["if_else"], LHS, RHS>`,
     ]);
   });
   code.writeln([
