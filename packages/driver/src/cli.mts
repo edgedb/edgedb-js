@@ -130,7 +130,7 @@ async function whichEdgeDbCli() {
       });
       debug("  - CLI found in PATH is wrapper script. Ignoring.");
       continue;
-    } catch (err) {
+    } catch (_err) {
       debug("  - CLI found in PATH is not a wrapper script. Using.");
     }
 
