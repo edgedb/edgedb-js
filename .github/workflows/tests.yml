@@ -67,11 +67,11 @@ jobs:
 
       - name: Lint
         run: |
-          yarn lint
+          yarn run lint
 
       - name: Check format
         run: |
-          yarn run format:check
+          yarn run format
 
       - name: ESLint (ignore failures for now)
         run: |
