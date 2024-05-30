@@ -97,6 +97,7 @@ async function run() {
       content
         .replace(reDriver, `"edgedb/dist$1.js"`)
         .replace(reRelativeImports, `"$1.mjs"`)
+        .replace(reTsExpectErrorComment, "")
   });
 
   // DENO
@@ -109,7 +110,8 @@ async function run() {
       }
       return content
         .replace(reDriver, `"edgedb/_src$1.ts"`)
-        .replace(reRelativeImports, `"$1.ts"`);
+        .replace(reRelativeImports, `"$1.ts"`)
+        .replace(reTsExpectErrorComment, "");
     }
   });
 
