@@ -3,3 +3,5 @@
 9c4daff8be18ca57592735898f0f5f0a1a7f9c35
 # Bumped from prettier@2 to prettier@3
 e56807268a58baa1e3bfeb2ba13840a4daf760b0
+# Add the integration tests to prettier glob
+e90a154c72d47c0f01b23bbec598f242d6f11d96
