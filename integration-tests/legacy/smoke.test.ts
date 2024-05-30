@@ -23,8 +23,8 @@ describe("legacy database version smoke tests", () => {
           e.detached(
             e.insert(e.User, {
               name: String(Math.random()),
-            })
-          )
+            }),
+          ),
         ),
       })
       .run(client);
@@ -37,7 +37,7 @@ describe("legacy database version smoke tests", () => {
           }))
           .run(client)
       ).length,
-      2
+      2,
     );
   });
 });

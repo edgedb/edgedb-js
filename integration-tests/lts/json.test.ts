@@ -26,7 +26,7 @@ describe("json", () => {
     tc.assert<tc.IsExact<typeof result, string>>(true);
     assert.equal(
       result,
-      '[{"title" : "Captain America: Civil War"}, {"title" : "The Avengers"}]'
+      '[{"title" : "Captain America: Civil War"}, {"title" : "The Avengers"}]',
     );
   });
 
@@ -73,7 +73,7 @@ describe("json", () => {
       .params({ data: e.json }, (params) =>
         e.select({
           data: params.data,
-        })
+        }),
       )
       .run(client, { data: jsonData });
     assert.deepEqual(result.data, {

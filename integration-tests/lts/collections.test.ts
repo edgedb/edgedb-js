@@ -41,15 +41,15 @@ describe("collections", () => {
 
     const arg1 = arg[1];
     tc.assert<tc.IsExact<(typeof arg1)["__kind__"], $.ExpressionKind.Operator>>(
-      true
+      true,
     );
     assert.deepEqual(arg1.__kind__, $.ExpressionKind.Operator);
     tc.assert<tc.IsExact<(typeof arg1)["__cardinality__"], $.Cardinality.One>>(
-      true
+      true,
     );
     assert.deepEqual(arg1.__cardinality__, $.Cardinality.One);
     tc.assert<tc.IsExact<(typeof arg1)["__element__"]["__name__"], "std::str">>(
-      true
+      true,
     );
     assert.equal(arg1.__element__.__name__, "std::str");
     assert.equal(await e.select(arg1).run(client), "qwer");
@@ -64,11 +64,11 @@ describe("collections", () => {
     assert.deepEqual(multiArray.__cardinality__, $.Cardinality.AtLeastOne);
     assert.deepEqual(
       multiArray.__element__.__element__.__kind__,
-      $.TypeKind.scalar
+      $.TypeKind.scalar,
     );
     assert.equal(multiArray.__element__.__element__.__name__, "std::str");
     const multiArrayResult = await client.query(
-      e.select(multiArray).toEdgeQL()
+      e.select(multiArray).toEdgeQL(),
     );
     assert.deepEqual(multiArrayResult, [
       ["asdf", "qwer"],
@@ -119,7 +119,7 @@ describe("collections", () => {
         reverseSlice2: ["n", "m"],
         reverseSlice4: ["z", "x", "c"],
         reverseSlice24: ["v", "b"],
-      })
+      }),
     );
 
     // @ts-expect-error
@@ -142,16 +142,16 @@ describe("collections", () => {
     assert.deepEqual(myTuple.__element__.__kind__, $.TypeKind.tuple);
     assert.deepEqual(
       myTuple.__element__.__items__[0].__kind__,
-      $.TypeKind.scalar
+      $.TypeKind.scalar,
     );
     assert.equal(myTuple.__element__.__items__[0].__name__, "std::str");
     assert.deepEqual(
       myTuple.__element__.__items__[1].__kind__,
-      $.TypeKind.scalar
+      $.TypeKind.scalar,
     );
     assert.equal(myTuple.__element__.__items__[1].__name__, "std::number");
     const myTupleResult = await client.querySingle(
-      e.select(myTuple).toEdgeQL()
+      e.select(myTuple).toEdgeQL(),
     );
     assert.deepEqual(myTupleResult, ["asdf", 45]);
     const myTuplePath0 = myTuple[0];
@@ -173,12 +173,12 @@ describe("collections", () => {
     assert.deepEqual(multiTuple.__cardinality__, $.Cardinality.AtLeastOne);
     assert.deepEqual(
       multiTuple.__element__.__items__[0].__kind__,
-      $.TypeKind.scalar
+      $.TypeKind.scalar,
     );
     assert.equal(multiTuple.__element__.__items__[0].__name__, "std::str");
     assert.equal(multiTuple.__element__.__items__[1].__name__, "std::str");
     const multiTupleResult = await client.query(
-      e.select(multiTuple).toEdgeQL()
+      e.select(multiTuple).toEdgeQL(),
     );
     assert.deepEqual(multiTupleResult, [
       ["asdf", "qwer"],
@@ -186,7 +186,7 @@ describe("collections", () => {
     ]);
     const multiTuplePath = multiTuple[0];
     tc.assert<tc.IsExact<$infer<typeof multiTuplePath>, [string, ...string[]]>>(
-      true
+      true,
     );
     tc.assert<
       tc.IsExact<
@@ -206,11 +206,11 @@ describe("collections", () => {
     assert.deepEqual(singleTuple.__element__.__kind__, $.TypeKind.tuple);
     assert.deepEqual(
       singleTuple.__element__.__items__[0].__kind__,
-      $.TypeKind.scalar
+      $.TypeKind.scalar,
     );
     assert.equal(singleTuple.__element__.__items__[0].__name__, "std::str");
     const singleTupleResult = await client.querySingle(
-      e.select(singleTuple).toEdgeQL()
+      e.select(singleTuple).toEdgeQL(),
     );
     assert.deepEqual(singleTupleResult, ["asdf"]);
 
@@ -265,15 +265,15 @@ describe("collections", () => {
     assert.deepEqual(heroNamesTuple.__element__.__kind__, $.TypeKind.tuple);
     assert.deepEqual(
       heroNamesTuple.__element__.__items__[0].__kind__,
-      $.TypeKind.scalar
+      $.TypeKind.scalar,
     );
     assert.equal(heroNamesTuple.__element__.__items__[0].__name__, "std::str");
     const heroNamesTupleResult = await e.select(heroNamesTuple).run(client);
     assert.deepEqual(
       heroNamesTupleResult.sort((a, b) => a[0].localeCompare(b[0])),
       [[data.cap.name], [data.iron_man.name], [data.spidey.name]].sort((a, b) =>
-        a[0].localeCompare(b[0])
-      )
+        a[0].localeCompare(b[0]),
+      ),
     );
   });
 
@@ -304,18 +304,18 @@ describe("collections", () => {
     assert.equal(named.__shape__.number.__value__, 1234);
     assert.deepEqual(
       named.__element__.__shape__.string.__kind__,
-      $.TypeKind.scalar
+      $.TypeKind.scalar,
     );
     assert.equal(named.__element__.__shape__.string.__name__, "std::str");
     assert.deepEqual(
       named.__element__.__shape__.number.__kind__,
-      $.TypeKind.scalar
+      $.TypeKind.scalar,
     );
     assert.equal(named.__element__.__shape__.number.__name__, "std::number");
     const namedResult = await client.querySingle(e.select(named).toEdgeQL());
     assert.deepEqual(
       JSON.stringify(namedResult),
-      JSON.stringify({ string: "asdf", number: 1234 })
+      JSON.stringify({ string: "asdf", number: 1234 }),
     );
     const namedStr = named.string;
     const namedNum = named.number;
@@ -371,7 +371,7 @@ describe("collections", () => {
         ],
         nestedTuple0: [true, true],
         nestedTuple1: ["x", "y"],
-      })
+      }),
     );
 
     const emptyNamedTuple = e.tuple({ string: e.cast(e.str, e.set()) });
@@ -446,7 +446,7 @@ describe("collections", () => {
         stage: result.ver.stage,
         local: result.ver.local,
         local0: result.ver.local[0],
-      }
+      },
     );
   });
 
@@ -479,7 +479,7 @@ describe("collections", () => {
     assert.equal(movieTupleWithFields["__name__"].slice(0, 6), "tuple<");
     assert.deepEqual(
       movieTupleWithFields["__name__"].slice(6, -1).split(", ").sort(),
-      ["id: std::uuid", "release_year: default::year", "title: std::str"]
+      ["id: std::uuid", "release_year: default::year", "title: std::str"],
     );
 
     tc.assert<

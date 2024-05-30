@@ -50,18 +50,18 @@ describe("sets", () => {
     assert.deepEqual((person as any).number_of_movies, undefined);
     assert.equal(
       person.__element__.__name__,
-      "default::Hero UNION default::Villain"
+      "default::Hero UNION default::Villain",
     );
 
     const merged = e.set(e.default.Hero, e.default.Villain, e.default.Person);
     assert.equal(
       merged.__element__.__name__,
-      "default::Hero UNION default::Villain UNION default::Person"
+      "default::Hero UNION default::Villain UNION default::Person",
     );
 
     assert.equal(
       e.set(e.select(e.Hero), e.select(e.Villain)).toEdgeQL(),
-      `{ (SELECT DETACHED default::Hero), (SELECT DETACHED default::Villain) }`
+      `{ (SELECT DETACHED default::Hero), (SELECT DETACHED default::Villain) }`,
     );
 
     assert.deepEqual(
@@ -72,7 +72,7 @@ describe("sets", () => {
         }))
         .assert_single()
         .run(client),
-      { name: "Thanos" }
+      { name: "Thanos" },
     );
 
     assert.deepEqual(
@@ -83,7 +83,7 @@ describe("sets", () => {
         }))
         .assert_single()
         .run(client),
-      { name: "Thanos" }
+      { name: "Thanos" },
     );
   });
 
@@ -152,7 +152,7 @@ describe("sets", () => {
     const query = e.set(e.Genre.Action, e.Genre.Horror, e.Genre.Select);
     assert.equal(
       query.toEdgeQL(),
-      "{ default::Genre.Action, default::Genre.Horror, default::Genre.`Select` }"
+      "{ default::Genre.Action, default::Genre.Horror, default::Genre.`Select` }",
     );
 
     assert.throws(() => e.set(e.Genre.Action, e.sys.VersionStage.dev as any));
@@ -161,7 +161,7 @@ describe("sets", () => {
   test("tuples", async () => {
     const q1 = e.set(
       e.tuple([1, "asdf", e.int16(214)]),
-      e.tuple([3, "asdf", e.int64(5)])
+      e.tuple([3, "asdf", e.int64(5)]),
     );
     assert.deepEqual(q1.__element__.__kind__, TypeKind.tuple);
     assert.equal(q1.__element__.__items__[0].__name__, "std::number");
@@ -178,7 +178,7 @@ describe("sets", () => {
   test("named tuples", async () => {
     const q1 = e.set(
       e.tuple({ a: 1, b: "asdf", c: e.int16(214) }),
-      e.tuple({ a: 3, b: "asdf", c: e.int64(5) })
+      e.tuple({ a: 3, b: "asdf", c: e.int64(5) }),
     );
     assert.deepEqual(q1.__element__.__kind__, TypeKind.namedtuple);
     assert.deepEqual(await q1.run(client), [
@@ -188,10 +188,10 @@ describe("sets", () => {
 
     assert.throws(() => e.set(e.tuple({ a: 1 }), e.tuple({ a: "asfd" })));
     assert.throws(() =>
-      e.set(e.tuple({ a: 1 }), e.tuple({ a: "asfd", b: "qwer" }))
+      e.set(e.tuple({ a: 1 }), e.tuple({ a: "asfd", b: "qwer" })),
     );
     assert.throws(() =>
-      e.set(e.tuple({ a: "asfd", b: "qwer" }), e.tuple({ a: 1 }))
+      e.set(e.tuple({ a: "asfd", b: "qwer" }), e.tuple({ a: 1 })),
     );
     assert.throws(() => e.set(e.tuple({ a: 1 }), e.tuple({ b: "asfd" })));
   });

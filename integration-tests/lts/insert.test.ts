@@ -32,7 +32,7 @@ describe("insert", () => {
 
     assert.deepEqual(q1.__cardinality__, $.Cardinality.One);
     tc.assert<tc.IsExact<(typeof q1)["__cardinality__"], $.Cardinality.One>>(
-      true
+      true,
     );
 
     await q1.run(client);
@@ -128,7 +128,7 @@ describe("insert", () => {
 
     assert.deepEqual(q3.__cardinality__, $.Cardinality.Many);
     tc.assert<tc.IsExact<(typeof q3)["__cardinality__"], $.Cardinality.Many>>(
-      true
+      true,
     );
     assert.equal(q3.__element__.__name__, "std::Object");
     tc.assert<
@@ -167,7 +167,7 @@ describe("insert", () => {
     // cleanup
     await client.execute(`delete Villain filter .name = '${result.name}';`);
     await client.execute(
-      `delete Hero filter .name = '${result.nemesis.name}';`
+      `delete Hero filter .name = '${result.nemesis.name}';`,
     );
     return;
   });
@@ -332,7 +332,7 @@ describe("insert", () => {
           name: "Star-Lord",
           "@character_name": "Peter Quill",
         }),
-      })
+      }),
     );
   });
 
@@ -353,7 +353,7 @@ describe("insert", () => {
         .insert(e.Movie, () => ({
           title: "Invalid",
         }))
-        .toEdgeQL()
+        .toEdgeQL(),
     );
   });
 
@@ -376,7 +376,7 @@ describe("insert", () => {
         filter: e.op(
           hero.id,
           "=",
-          e.uuid("00000000-0000-0000-0000-000000000000")
+          e.uuid("00000000-0000-0000-0000-000000000000"),
         ),
       }))
       .run(client);
@@ -409,13 +409,13 @@ describe("insert", () => {
             a: e.str,
             b: e.str,
             c: e.str,
-          })
+          }),
         ),
       },
       (params) =>
         e.for(e.array_unpack(params.profiles), (profile) =>
-          e.insert(e.Profile, profile)
-        )
+          e.insert(e.Profile, profile),
+        ),
     );
 
     await query.run(client, {

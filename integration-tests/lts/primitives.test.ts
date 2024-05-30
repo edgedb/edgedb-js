@@ -53,31 +53,31 @@ describe("primitives", () => {
     const upperRange = new edgedb.Range(null, 8);
     const dateRange = new edgedb.Range(
       new Date("2022-07-05T14:00:00Z"),
-      new Date("2022-07-05T16:00:00Z")
+      new Date("2022-07-05T16:00:00Z"),
     );
 
     assert.equal(
       e.std.range(range).toEdgeQL(),
-      `std::range(3, 8, inc_lower := true, inc_upper := false)`
+      `std::range(3, 8, inc_lower := true, inc_upper := false)`,
     );
     assert.equal(
       e.std.range(lowerRange).toEdgeQL(),
-      `std::range(3, <std::int64>{}, inc_lower := true, inc_upper := false)`
+      `std::range(3, <std::int64>{}, inc_lower := true, inc_upper := false)`,
     );
     assert.equal(
       e.std.range(upperRange).toEdgeQL(),
-      `std::range(<std::int64>{}, 8, inc_lower := false, inc_upper := false)`
+      `std::range(<std::int64>{}, 8, inc_lower := false, inc_upper := false)`,
     );
     assert.equal(
       e.std.range(dateRange).toEdgeQL(),
-      `std::range(<std::datetime>'2022-07-05T14:00:00.000Z', <std::datetime>'2022-07-05T16:00:00.000Z', inc_lower := true, inc_upper := false)`
+      `std::range(<std::datetime>'2022-07-05T14:00:00.000Z', <std::datetime>'2022-07-05T16:00:00.000Z', inc_lower := true, inc_upper := false)`,
     );
 
     assert.equal(e.range(3, 8).toEdgeQL(), `std::range(3, 8)`);
     assert.equal(e.range(3).toEdgeQL(), `std::range(3)`);
     assert.equal(
       e.range(undefined, 8).toEdgeQL(),
-      `std::range(<std::float64>{}, 8)`
+      `std::range(<std::float64>{}, 8)`,
     );
 
     assert.throws(() => e.range(new edgedb.Range(null, null)));
@@ -127,7 +127,7 @@ describe("primitives", () => {
         e.select({
           range: $.range,
           rangeArray: $.rangeArray,
-        })
+        }),
     );
 
     const res2 = await q2.run(client, { range, rangeArray: [dateRange] });

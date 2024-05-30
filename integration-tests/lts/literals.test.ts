@@ -16,74 +16,74 @@ describe("literals", () => {
 
     assert.equal(
       e.std.bigint(BigInt("9007199254740991")).toEdgeQL(),
-      `<std::bigint>9007199254740991n`
+      `<std::bigint>9007199254740991n`,
     );
     assert.equal(e.std.bool(true).toEdgeQL(), `true`);
     assert.deepEqual(
       e.std.bytes(Buffer.from(`whatever\nðñòóôõö÷øùúûüýþÿ`)).toEdgeQL(),
       `b'whatever\\n\\xc3\\xb0\\xc3\\xb1\\xc3\\xb2\\xc3\\xb3\\xc3\\xb4\\xc3` +
         `\\xb5\\xc3\\xb6\\xc3\\xb7\\xc3\\xb8\\xc3\\xb9\\xc3\\xba\\xc3\\xbb` +
-        `\\xc3\\xbc\\xc3\\xbd\\xc3\\xbe\\xc3\\xbf'`
+        `\\xc3\\xbc\\xc3\\xbd\\xc3\\xbe\\xc3\\xbf'`,
     );
     assert.equal(
       e.std.datetime(new Date("2021-06-25T02:01:13.681Z")).toEdgeQL(),
-      `<std::datetime>'2021-06-25T02:01:13.681Z'`
+      `<std::datetime>'2021-06-25T02:01:13.681Z'`,
     );
     assert.equal(
       e.std.decimal("1234.1234n").toEdgeQL(),
-      `<std::decimal>"1234.1234n"`
+      `<std::decimal>"1234.1234n"`,
     );
     assert.equal(
       e.std.duration(duration).toEdgeQL(),
-      `<std::duration>'PT5H6M7.00800901S'`
+      `<std::duration>'PT5H6M7.00800901S'`,
     );
     assert.equal(e.std.int16(144.1235).toEdgeQL(), `<std::int16>144.1235`);
     assert.equal(e.std.int64(1234.15).toEdgeQL(), `<std::int64>1234.15`);
     assert.equal(
       e.std.float64(1234.1234).toEdgeQL(),
-      `<std::float64>1234.1234`
+      `<std::float64>1234.1234`,
     );
     assert.equal(e.std.float64(124).toEdgeQL(), `<std::float64>124`);
     assert.equal(
       e.std.int16("9223372036854775807").toEdgeQL(),
-      `<std::int16>9223372036854775807`
+      `<std::int16>9223372036854775807`,
     );
     assert.equal(e.year("1234").toEdgeQL(), `<default::year>1234`);
 
     assert.equal(e.std.json("asdf").toEdgeQL(), `to_json($$"asdf"$$)`);
     assert.equal(
       e.std.json({ a: 123, b: "some string", c: [true, false] }).toEdgeQL(),
-      'to_json($${"a":123,"b":"some string","c":[true,false]}$$)'
+      'to_json($${"a":123,"b":"some string","c":[true,false]}$$)',
     );
 
     assert.equal(e.std.str(`asdfaf`).toEdgeQL(), `"asdfaf"`);
     assert.equal(
       e.std.str(`string " with ' all \` quotes`).toEdgeQL(),
-      `"string \\" with ' all \` quotes"`
+      `"string \\" with ' all \` quotes"`,
     );
     assert.equal(
       e.std.uuid(uuid).toEdgeQL(),
-      `<std::uuid>"317fee4c-0da5-45aa-9980-fedac211bfb6"`
+      `<std::uuid>"317fee4c-0da5-45aa-9980-fedac211bfb6"`,
     );
     assert.equal(
       e.cal.local_date(localdate).toEdgeQL(),
-      `<cal::local_date>'2021-10-31'`
+      `<cal::local_date>'2021-10-31'`,
     );
     assert.equal(
       e.cal.local_datetime(localdatetime).toEdgeQL(),
-      `<cal::local_datetime>'2021-10-31T21:45:30'`
+      `<cal::local_datetime>'2021-10-31T21:45:30'`,
     );
     assert.equal(
       e.cal.local_time(localtime).toEdgeQL(),
-      `<cal::local_time>'15:15:00'`
+      `<cal::local_time>'15:15:00'`,
     );
     assert.equal(
       e.cal.relative_duration(relduration).toEdgeQL(),
-      `<cal::relative_duration>'P1Y2M21D'`
+      `<cal::relative_duration>'P1Y2M21D'`,
     );
     assert.equal(
       e.cal.date_duration(dateduration).toEdgeQL(),
-      `<cal::date_duration>'P1Y2M25D'`
+      `<cal::date_duration>'P1Y2M25D'`,
     );
   });
 
@@ -105,7 +105,7 @@ describe("literals", () => {
     assert.deepEqual(horror.__cardinality__, edgedb.$.Cardinality.One);
     assert.equal(
       e.literal(e.Genre, "Horror").toEdgeQL(),
-      `default::Genre.Horror`
+      `default::Genre.Horror`,
     );
 
     assert.ok(e.Genre.__values__.includes("Horror"));
@@ -120,7 +120,7 @@ describe("literals", () => {
     const dateString = new Date().toISOString();
     assert.deepEqual(
       (await e.datetime(dateString).run(client)).toISOString(),
-      dateString
+      dateString,
     );
 
     await e.int64("12341234").run(client);

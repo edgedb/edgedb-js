@@ -18,7 +18,7 @@ describe("auth", () => {
       e.assert_single(e.ext.auth.global.ClientTokenIdentity),
       (i) => ({
         ...i["*"],
-      })
+      }),
     );
 
     tc.assert<

@@ -91,11 +91,11 @@ describe("select", () => {
     tc.assert<tc.IsExact<typeof result, { id: string }[]>>(true);
     assert.deepEqual(
       query.__element__.__shape__,
-      e.default.Hero.__element__.__shape__
+      e.default.Hero.__element__.__shape__,
     );
     assert.equal(
       result.every((val) => !!val.id),
-      true
+      true,
     );
   });
 
@@ -365,13 +365,13 @@ describe("select", () => {
 
     const r1 = e.select(testSet, () => ({ limit: 1 }));
     tc.assert<tc.IsExact<(typeof r1)["__cardinality__"], $.Cardinality.Many>>(
-      true
+      true,
     );
     assert.deepEqual(r1.__cardinality__, $.Cardinality.Many);
 
     const r2 = e.select(testSet, () => ({ offset: 1 }));
     tc.assert<tc.IsExact<(typeof r2)["__cardinality__"], $.Cardinality.Many>>(
-      true
+      true,
     );
     assert.deepEqual(r2.__cardinality__, $.Cardinality.Many);
   });
@@ -411,7 +411,7 @@ describe("select", () => {
       filter: e.op(hero.secret_identity, "=", "asdf"),
     }));
     tc.assert<tc.IsExact<(typeof q5)["__cardinality__"], $.Cardinality.Many>>(
-      true
+      true,
     );
     assert.deepEqual(q5.__cardinality__, $.Cardinality.Many);
 
@@ -428,7 +428,7 @@ describe("select", () => {
       filter: e.op(villain.name, "=", strs),
     }));
     tc.assert<tc.IsExact<(typeof q7)["__cardinality__"], $.Cardinality.Many>>(
-      true
+      true,
     );
     assert.deepEqual(q7.__cardinality__, $.Cardinality.Many);
 
@@ -493,7 +493,7 @@ describe("select", () => {
       filter: e.bool(true),
     }));
     tc.assert<tc.IsExact<(typeof q1)["__cardinality__"], $.Cardinality.Many>>(
-      true
+      true,
     );
     assert.deepEqual(q1.__cardinality__, $.Cardinality.Many);
 
@@ -501,7 +501,7 @@ describe("select", () => {
       filter: e.op(true, "if", e.op(hero.name, "=", "Thanos"), "else", false),
     }));
     tc.assert<tc.IsExact<(typeof q2)["__cardinality__"], $.Cardinality.Many>>(
-      true
+      true,
     );
     assert.deepEqual(q2.__cardinality__, $.Cardinality.Many);
   });
@@ -511,7 +511,7 @@ describe("select", () => {
     assert.equal(result.length, 3);
     assert.equal(
       result.every((h) => typeof h.id === "string"),
-      true
+      true,
     );
   });
 
@@ -571,7 +571,7 @@ describe("select", () => {
       result,
       [data.cap, data.spidey, data.iron_man]
         .map((h) => ({ id: h.id }))
-        .sort((a, b) => a.id.localeCompare(b.id))
+        .sort((a, b) => a.id.localeCompare(b.id)),
     );
   });
 
@@ -587,7 +587,7 @@ describe("select", () => {
         name: true,
         secret_identity: true,
         villains: { id: true },
-      })
+      }),
     );
 
     const result = await query.run(client);
@@ -612,7 +612,7 @@ describe("select", () => {
         id: true,
         computable: e.int64(35),
         all_heroes,
-      })
+      }),
     );
 
     type query = $.setToTsType<typeof query>;
@@ -643,7 +643,7 @@ describe("select", () => {
     const results = await query.run(client);
     assert.equal(
       results.every((person) => typeof person.id === "string"),
-      true
+      true,
     );
   });
 
@@ -674,9 +674,9 @@ describe("select", () => {
     assert.equal(Array.isArray(result1), true);
     assert.equal(
       [data.the_avengers.title, data.civil_war.title].includes(
-        result1[0].title
+        result1[0].title,
       ),
-      true
+      true,
     );
 
     const q3 = e.select(e.Hero, (hero) => ({
@@ -953,7 +953,7 @@ SELECT __scope_0_defaultVillain {
       single nameLen2 := __scope_1_defaultHero.__withVar_2
     }
   )
-}`
+}`,
     );
 
     const res = await query.run(client);
@@ -1029,7 +1029,7 @@ SELECT __scope_0_defaultPerson {
       )
     }
   )
-}`
+}`,
     );
 
     const res = await query.run(client);
@@ -1103,7 +1103,7 @@ SELECT __scope_0_defaultPerson {
 
   test("correlated path select", async () => {
     const query = e.select(
-      e.op(e.op(e.Hero.name, "++", " is "), "++", e.Hero.secret_identity)
+      e.op(e.op(e.Hero.name, "++", " is "), "++", e.Hero.secret_identity),
     );
 
     const correlatedQuery = e.with([e.Hero], query);
@@ -1114,14 +1114,14 @@ SELECT __scope_0_defaultPerson {
       (await query.run(client)).sort(),
       $.util
         .flatMap(heros, (h1) =>
-          heros.map((h2) => `${h1.name} is ${h2.secret_identity}`)
+          heros.map((h2) => `${h1.name} is ${h2.secret_identity}`),
         )
-        .sort()
+        .sort(),
     );
 
     assert.deepEqual(
       (await correlatedQuery.run(client)).sort(),
-      heros.map((h) => `${h.name} is ${h.secret_identity}`).sort()
+      heros.map((h) => `${h.name} is ${h.secret_identity}`).sort(),
     );
   });
 
@@ -1134,7 +1134,7 @@ SELECT __scope_0_defaultPerson {
     tc.assert<tc.IsExact<typeof res1, string[]>>(true);
     assert.deepEqual(
       res1.sort(),
-      [data.iron_man.name, data.spidey.name].sort()
+      [data.iron_man.name, data.spidey.name].sort(),
     );
 
     // order
@@ -1143,7 +1143,7 @@ SELECT __scope_0_defaultPerson {
       e.int64(4),
       e.int64(1),
       e.int64(5),
-      e.int64(3)
+      e.int64(3),
     );
 
     const q2 = e.select(unorderedSet, (el) => ({
@@ -1284,7 +1284,7 @@ SELECT __scope_0_defaultPerson {
     const query = e.select(e.Movie.characters, (c) => {
       assert.deepEqual(
         c["@character_name"].__cardinality__,
-        $.Cardinality.AtMostOne
+        $.Cardinality.AtMostOne,
       );
       return {
         name: true,

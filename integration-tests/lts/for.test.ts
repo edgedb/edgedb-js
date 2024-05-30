@@ -9,7 +9,7 @@ describe("for", () => {
 FOR __forVar__0 IN {{ 1, 2, 3 }}
 UNION (
   ((__forVar__0 * 2) + __forVar__0)
-)`
+)`,
     );
   });
 
@@ -37,7 +37,7 @@ UNION (
       )
     )
   })
-)`
+)`,
     );
 
     const q2 = e.for(e.set(1, 2, 3), (i) => {
@@ -73,7 +73,7 @@ UNION (
   UPDATE __scope_0_defaultHero SET {
     name := __withVar_1
   })))
-)`
+)`,
     );
   });
 });
