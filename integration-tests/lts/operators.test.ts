@@ -102,7 +102,7 @@ describe("operators", () => {
       [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
       e.json,
       $.Cardinality.One,
-      `std::to_json("{\\\"name\\\":\\\"Bob\\\"}")["name"]`,
+      `std::to_json("{\\"name\\":\\"Bob\\"}")["name"]`,
     );
 
     checkOperatorExpr(
@@ -111,7 +111,7 @@ describe("operators", () => {
       [e.to_json(e.str(`{"name":"Bob"}`)), e.str("name")],
       e.json,
       $.Cardinality.One,
-      `std::to_json("{\\\"name\\\":\\\"Bob\\\"}")["name"]`,
+      `std::to_json("{\\"name\\":\\"Bob\\"}")["name"]`,
     );
   });
 

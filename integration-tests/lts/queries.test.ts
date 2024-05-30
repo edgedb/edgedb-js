@@ -85,13 +85,13 @@ describe("queries", () => {
     });
 
     type result = typeof result;
-    tc.assert<tc.IsExact<result, Array<[string, string]>>>(true);
+    tc.assert<tc.IsExact<result, [string, string][]>>(true);
 
     tc.assert<
       tc.IsExact<
         DeepArrayInputArgs,
         {
-          deep: ReadonlyArray<readonly [string, string]>;
+          deep: readonly (readonly [string, string])[];
         }
       >
     >(true);

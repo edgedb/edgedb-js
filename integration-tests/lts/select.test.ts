@@ -784,8 +784,6 @@ describe("select", () => {
       }),
     }));
 
-    query.__element__.__shape__.characters;
-
     const result = await query.run(client);
 
     tc.assert<
