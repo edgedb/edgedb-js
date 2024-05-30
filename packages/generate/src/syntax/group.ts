@@ -16,7 +16,7 @@ import {
 import { makeType } from "./hydrate";
 
 import { $expressionify, $getScopedExpr } from "./path";
-// @ts-ignore
+// @ts-expect-error this will be generated
 import type { $FreeObjectλShape, $str } from "./modules/std";
 import { spec } from "./__spec__";
 import { literal } from "./literal";
@@ -117,7 +117,7 @@ export type $expr_Group<
         >,
         Cardinality.One,
         // todo check if this can be fixed better
-        // eslint-disable-next-line @typescript-eslint/ban-types
+        // eslint-disable-next-line @typescript-eslint/no-empty-object-type
         {},
         false,
         true,
@@ -128,7 +128,7 @@ export type $expr_Group<
         Expr["__element__"],
         Cardinality.Many,
         // todo check if this can be fixed better
-        // eslint-disable-next-line @typescript-eslint/ban-types
+        // eslint-disable-next-line @typescript-eslint/no-empty-object-type
         {},
         false,
         true,

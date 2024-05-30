@@ -13,7 +13,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(auth.createSessionMiddleware());
 
-router.get("/api/deep-thought", requireAuth, async (req: AuthRequest, res) => {
+app.get("/api/deep-thought", requireAuth, async (req: AuthRequest, res) => {
   // See more examples of making queries here: https://github.com/edgedb/edgedb-examples/blob/main/express-auth/todos.ts
   const answer = await req.session!.client.query<number>("select 42;");
   res.json(answer);
@@ -37,7 +37,7 @@ ${body}
 </html>
 `;
 
-app.get("/onboarding", requireAuth, (req, res) => {
+app.get("/onboarding", requireAuth, (_req, res) => {
   res.send(
     pageTemplate(`
     <h1>Onboarding</h1>
@@ -46,7 +46,7 @@ app.get("/onboarding", requireAuth, (req, res) => {
   );
 });
 
-app.get("/dashboard", requireAuth, (req, res) => {
+app.get("/dashboard", requireAuth, (_req, res) => {
   res.send(
     pageTemplate(`
     <h1>Dashboard</h1>
@@ -55,7 +55,7 @@ app.get("/dashboard", requireAuth, (req, res) => {
   );
 });
 
-app.get("/verify", (req, res) => {
+app.get("/verify", (_req, res) => {
   res.send(
     pageTemplate(`
     <p>Check your email for a verification message.</p>
@@ -67,7 +67,7 @@ app.get("/signin", (_, res) => {
   res.redirect("/auth/signin");
 });
 
-app.get("/", requireAuth, async (req: AuthRequest, res) => {
+app.get("/", requireAuth, async (_req: AuthRequest, res) => {
   res.redirect("/dashboard");
 });
 

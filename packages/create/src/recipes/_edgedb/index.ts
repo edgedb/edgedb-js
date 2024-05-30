@@ -39,7 +39,7 @@ const recipe: Recipe<EdgeDBOptions> = {
         const { stdout } = await execInLoginShell("edgedb --version");
         edgedbCliVersion = stdout.trim();
         logger(edgedbCliVersion);
-      } catch (error) {
+      } catch (_error) {
         logger("No EdgeDB CLI detected");
         shouldInstallCli = await p.confirm({
           message:

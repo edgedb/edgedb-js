@@ -31,7 +31,7 @@ export function generateOperatorFunctions({
     "Operator",
     "OpExpr",
     false,
-    (code, opDef, args, namedArgs, returnType) => {
+    (code, _opDef, _args, _namedArgs, returnType) => {
       // Name
       // code.writeln([t`${quote(opDef.originalName)},`]);
       // OperatorKind
@@ -41,7 +41,7 @@ export function generateOperatorFunctions({
       // ReturnType
       code.writeln([t`${returnType}`]);
     },
-    (code, opName, opDefs) => {
+    (code, _opName, opDefs) => {
       code.writeln([r`__name__: ${quote(opDefs[0].originalName)},`]);
       code.writeln([r`__opkind__: kind,`]);
       code.writeln([r`__args__: positionalArgs,`]);

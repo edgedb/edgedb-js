@@ -53,7 +53,7 @@ export async function exists(fn: string | URL): Promise<boolean> {
   try {
     await Deno.lstat(fn);
     return true;
-  } catch (err) {
+  } catch (_err) {
     return false;
     // if (err instanceof Deno.errors.NotFound) {
     //   return false;

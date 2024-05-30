@@ -226,7 +226,7 @@ function PathLeaf<
 >(
   root: Root,
   parent: Parent,
-  exclusive: Exclusive,
+  _exclusive: Exclusive,
   scopeRoot: TypeSet | null = null,
 ): $expr_PathLeaf<Root, Parent> {
   return $expressionify({

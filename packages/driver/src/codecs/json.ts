@@ -31,7 +31,7 @@ export class JSONCodec extends ScalarCodec implements ICodec {
     let val: string;
     try {
       val = JSON.stringify(object);
-    } catch (err) {
+    } catch (_err) {
       throw new InvalidArgumentError(
         `a JSON-serializable value was expected, got "${object}"`,
       );

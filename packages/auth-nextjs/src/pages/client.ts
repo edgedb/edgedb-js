@@ -102,9 +102,11 @@ async function apiRequest(url: string, _data: any) {
       throw new Error(json._error.message);
     }
     if (json._redirect) {
-      (await json._redirect.replace)
-        ? Router.replace(json._redirect.location)
-        : Router.push(json._redirect.location);
+      if (await json._redirect.replace) {
+        Router.replace(json._redirect.location);
+      } else {
+        Router.push(json._redirect.location);
+      }
       return;
     }
     if (json._data !== undefined) {

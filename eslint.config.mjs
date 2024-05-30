@@ -27,12 +27,20 @@ export default tseslint.config(
       "@typescript-eslint/class-literal-property-style": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+        {
+          args: "all",
+          argsIgnorePattern: "^_",
+          caughtErrors: "all",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
       ],
       // some stylistic rules results with errors, turn them off for now
       "@typescript-eslint/consistent-indexed-object-style": "off",
       "@typescript-eslint/consistent-type-definitions": "off",
       "@typescript-eslint/no-empty-interface": "off",
     },
-  }
+  },
 );

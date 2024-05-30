@@ -40,7 +40,7 @@ export async function walk(
 
   try {
     await fs.access(dir);
-  } catch (err) {
+  } catch (_err) {
     return [];
   }
   const dirents = await fs.readdir(dir, { withFileTypes: true });
