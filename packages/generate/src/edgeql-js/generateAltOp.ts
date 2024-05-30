@@ -1,7 +1,7 @@
 import { StrictMapSet } from "edgedb/dist/reflection";
 import debug from "debug";
 
-import { CodeBuffer, CodeFragment, r, t, ts } from "../builders";
+import { CodeBuffer, type CodeFragment, r, t, ts } from "../builders";
 import type { GeneratorParams } from "../genutil";
 import { frag, quote, splitName } from "../genutil";
 import {
@@ -15,7 +15,7 @@ import {
   getImplicitCastableRootTypes,
   expandFuncopAnytypeOverloads,
   findPathOfAnytype,
-  FuncopDefOverload,
+  type FuncopDefOverload,
 } from "../funcoputil";
 import { $ } from "../genutil";
 import { getStringRepresentation } from "./generateObjectTypes";
@@ -34,7 +34,7 @@ export function generateOperatorFunctions({
     "Operator",
     "OpExpr",
     false,
-    (code, opDef, args, namedArgs, returnType) => {
+    (code, _opDef, _args, _namedArgs, returnType) => {
       // Name
       // code.writeln([t`${quote(opDef.originalName)},`]);
       // OperatorKind
@@ -44,11 +44,11 @@ export function generateOperatorFunctions({
       // ReturnType
       code.writeln([t`${returnType}`]);
     },
-    (code, opName, opDefs) => {
+    (code, _opName, opDefs) => {
       code.writeln([r`__name__: ${quote(opDefs[0].originalName)},`]);
       code.writeln([r`__opkind__: kind,`]);
       code.writeln([r`__args__: positionalArgs,`]);
-    }
+    },
   );
 }
 
