@@ -964,21 +964,19 @@ export function generateOperators({
   // TernaryContainerHomogeneousOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
+    code.writeln([t`Op extends keyof TernaryContainerHomogeneousOperators,`]);
     code.writeln([
-      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+      t`LHS extends TernaryContainerHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
     ]);
     code.writeln([
-      t`LHS extends TernaryContainerHomogeneousOperators["if_else"] extends { lhs: infer LHSType } ? LHSType : never,`,
+      t`RHS extends ExtractRHS<TernaryContainerHomogeneousOperators[Op], LHS>,`,
     ]);
     code.writeln([
-      t`RHS extends ExtractRHS<TernaryContainerHomogeneousOperators["if_else"], LHS>,`,
-    ]);
-    code.writeln([
-      t`Ret extends ExtractReturn<TernaryContainerHomogeneousOperators["if_else"], LHS, RHS>`,
+      t`Ret extends ExtractReturn<TernaryContainerHomogeneousOperators[Op], LHS, RHS>`,
     ]);
   });
   code.writeln([
-    t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
+    t`>(lhs: LHS, op1: "if", cond: _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>, op2: "else", rhs: RHS): $.$expr_Operator<`,
   ]);
   code.indented(() => {
     code.writeln([t`Ret,`]);
