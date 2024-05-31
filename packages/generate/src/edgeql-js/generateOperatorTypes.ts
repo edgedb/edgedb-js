@@ -187,6 +187,16 @@ interface TernaryContainerHomogenousOperator extends BaseOperator {
   rhs: CodeFragment[] | null;
 }
 
+// Special Cases
+/**
+ * std::coalesce
+ */
+interface CoalesceOperator extends BaseOperator {
+  type: "CoalesceOperator";
+  lhs: CodeFragment[];
+  rhs: CodeFragment[];
+}
+
 type Operator =
   | PrefixHomogenousOperator
   | PrefixPredicateOperator
@@ -197,7 +207,10 @@ type Operator =
   | InfixOptionalContainerComparisonOperator
   | InfixContainerHomogenousOperator
   | TernaryHomogenousOperator
-  | TernaryContainerHomogenousOperator;
+  | TernaryContainerHomogenousOperator
+
+  // Special Cases
+  | CoalesceOperator;
 
 function operatorFromOpDef(
   typeToCodeFragment: (
@@ -210,6 +223,16 @@ function operatorFromOpDef(
     opName === "std::if_else"
       ? "if_else"
       : splitName(opDef.originalName).name.toLowerCase();
+
+  if (opName === "std::coalesce") {
+    return {
+      type: "CoalesceOperator",
+      lhs: typeToCodeFragment(opDef.params.positional[0]),
+      rhs: typeToCodeFragment(opDef.params.positional[1]),
+      operatorSymbol,
+    };
+  }
+
   const log = debug(`edgedb:codegen:operatorFromOpDef:${opName}`);
   log({
     opName,
@@ -391,6 +414,9 @@ export function generateOperators({
     TernaryContainerHomogenousOperator
   >();
 
+  // Special cases
+  const coalesceDefs = new StrictMapSet<string, CoalesceOperator>();
+
   for (const [opName, _opDefs] of operators.entries()) {
     if (skipOperators.has(opName)) continue;
     const log = debug(`edgedb:codegen:generateOperators:${opName}`);
@@ -536,9 +562,27 @@ export function generateOperators({
         case "TernaryContainerHomogenousOperator":
           ternaryContainerDefs.appendAt(opSymbol, operator);
           break;
+        case "CoalesceOperator":
+          coalesceDefs.appendAt(opSymbol, operator);
+          break;
       }
     }
   }
+
+  // CoalesceOperators
+  overloadsBuf.writeln([t`type CoalesceReturn<LHS, RHS> = ??`])
+  overloadsBuf.writeln([t`type CoalesceOperators = {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of coalesceDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.rhs} }`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`};`]);
 
   // PrefixPredicateOperators
   overloadsBuf.writeln([t`type PrefixParamCardinality<Operand> = {`]);
