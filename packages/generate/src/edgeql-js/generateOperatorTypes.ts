@@ -82,6 +82,7 @@ interface PrefixHomogenousOperator extends BaseOperator {
 interface PrefixPredicateOperator extends BaseOperator {
   type: "PrefixPredicateOperator";
   operand: CodeFragment[];
+  typemod: $.introspect.FuncopTypemod;
 }
 
 /**
@@ -227,6 +228,7 @@ function operatorFromOpDef(
       return {
         type: "PrefixPredicateOperator",
         operand: typeToCodeFragment(operand),
+        typemod: operand.typemod,
         operatorSymbol,
       };
     } else {
@@ -539,13 +541,31 @@ export function generateOperators({
   }
 
   // PrefixPredicateOperators
+  overloadsBuf.writeln([t`type PrefixParamCardinality<Operand> = {`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`operand: Operand;`]);
+    overloadsBuf.writeln([
+      t`returnCardinality: $.cardutil.paramCardinality<Operand>;`,
+    ]);
+  });
+  overloadsBuf.writeln([t`};`]);
   overloadsBuf.writeln([t`type PrefixPredicateOperators = {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of prefixPredicateDefs.entries()) {
+      const log = debug(
+        `edgedb:codegen:generateOperators:PrefixPredicateOperators:${opSymbol}`,
+      );
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| { operand: ${def.operand} }`]);
+          log({ opSymbol, def });
+          if (def.typemod === "SetOfType") {
+            overloadsBuf.writeln([
+              t`| { operand: ${def.operand}; returnCardinality: $.Cardinality.One }`,
+            ]);
+          } else {
+            overloadsBuf.writeln([t`| PrefixParamCardinality<${def.operand}>`]);
+          }
         }
       });
     }
@@ -779,7 +799,16 @@ export function generateOperators({
   // Utility type for extracting the correct union member for an operator
   code.writeln([t`type ExtractRHS<T, LHS> =`]);
   code.indented(() => {
-    code.writeln([t`T extends { lhs: infer LHSType; rhs: infer RHSType } ? LHS extends LHSType ? RHSType : never : never;`]);
+    code.writeln([
+      t`T extends { lhs: infer LHSType; rhs: infer RHSType } ? LHS extends LHSType ? RHSType : never : never;`,
+    ]);
+  });
+
+  code.writeln([t`type ExtractReturnCardinality<T, Operand> =`]);
+  code.indented(() => {
+    code.writeln([
+      t`T extends { operand: infer OperandType; returnCardinality: infer ReturnCardinalityType } ? Operand extends OperandType ? ReturnCardinalityType : never : never;`,
+    ]);
   });
 
   code.writeln([t`type ExtractReturn<T, LHS, RHS> =`]);
@@ -795,21 +824,25 @@ export function generateOperators({
   code.writeln([t`function op<`]);
   code.indented(() => {
     code.writeln([t`Op extends keyof PrefixPredicateOperators,`]);
-    code.writeln([t`Operand extends PrefixPredicateOperators[Op]["operand"]`]);
+    code.writeln([t`Operand extends PrefixPredicateOperators[Op]["operand"],`]);
+    code.writeln([
+      t`ReturnCardinality extends ExtractReturnCardinality<PrefixPredicateOperators[Op], Operand>`,
+    ]);
   });
-  code.writeln([t`>(op: Op, operand: Operand): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`_std.$bool,`]);
-    code.writeln([t`$.cardutil.paramCardinality<Operand>`]);
-  });
-  code.writeln([t`>;`]);
+  code.writeln([
+    t`>(op: Op, operand: Operand): $.$expr_Operator<_std.$bool, ReturnCardinality>;`,
+  ]);
 
   // InfixComparisonOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
     code.writeln([t`Op extends keyof InfixComparisonOperators,`]);
-    code.writeln([t`LHS extends InfixComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`]);
-    code.writeln([t`RHS extends ExtractRHS<InfixComparisonOperators[Op], LHS>`]);
+    code.writeln([
+      t`LHS extends InfixComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
+    ]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixComparisonOperators[Op], LHS>`,
+    ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -824,8 +857,12 @@ export function generateOperators({
   code.writeln([t`function op<`]);
   code.indented(() => {
     code.writeln([t`Op extends keyof InfixOptionalComparisonOperators,`]);
-    code.writeln([t`LHS extends InfixOptionalComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`]);
-    code.writeln([t`RHS extends ExtractRHS<InfixOptionalComparisonOperators[Op], LHS>`]);
+    code.writeln([
+      t`LHS extends InfixOptionalComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
+    ]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixOptionalComparisonOperators[Op], LHS>`,
+    ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -843,7 +880,9 @@ export function generateOperators({
     code.writeln([
       t`LHS extends InfixContainerComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
     ]);
-    code.writeln([t`RHS extends ExtractRHS<InfixContainerComparisonOperators[Op], LHS>`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixContainerComparisonOperators[Op], LHS>`,
+    ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -897,8 +936,12 @@ export function generateOperators({
   code.writeln([t`function op<`]);
   code.indented(() => {
     code.writeln([t`Op extends keyof InfixHomogeneousOperators,`]);
-    code.writeln([t`LHS extends InfixHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`]);
-    code.writeln([t`RHS extends ExtractRHS<InfixHomogeneousOperators[Op], LHS>`]);
+    code.writeln([
+      t`LHS extends InfixHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
+    ]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixHomogeneousOperators[Op], LHS>`,
+    ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
@@ -966,6 +1009,9 @@ export function generateOperators({
   code.indented(() => {
     code.writeln([t`Op extends keyof TernaryContainerHomogeneousOperators,`]);
     code.writeln([
+      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+    ]);
+    code.writeln([
       t`LHS extends TernaryContainerHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
     ]);
     code.writeln([
@@ -976,7 +1022,7 @@ export function generateOperators({
     ]);
   });
   code.writeln([
-    t`>(lhs: LHS, op1: "if", cond: _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>, op2: "else", rhs: RHS): $.$expr_Operator<`,
+    t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
   ]);
   code.indented(() => {
     code.writeln([t`Ret,`]);
