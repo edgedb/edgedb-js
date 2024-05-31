@@ -21,8 +21,6 @@ export function generateIndex(params: GeneratorParams) {
   index.addExportFrom({ createClient: true }, "edgedb");
   index.addImportStar("$syntax", "./syntax", { allowFileExt: true });
   index.addImportStar("$op", "./operators", { allowFileExt: true });
-  index.addImportStar("$altOp", "./alt-operators", { allowFileExt: true });
-  index.addExportStar("./alt-operators", { as: "altOp" });
 
   const spreadModules = [
     {

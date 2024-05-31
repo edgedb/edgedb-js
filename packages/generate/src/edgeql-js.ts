@@ -4,7 +4,6 @@ import { headerComment } from "./genutil";
 import { DirBuilder } from "./builders";
 import { syntax } from "./FILES";
 
-import { generateOperators as generateAltOperators } from "./edgeql-js/generateAltOp";
 import { generateCastMaps } from "./edgeql-js/generateCastMaps";
 import { generateFunctionTypes } from "./edgeql-js/generateFunctionTypes";
 import { generateGlobals } from "./edgeql-js/generateGlobals";
@@ -131,8 +130,6 @@ export async function generateQueryBuilder(params: {
   generateFunctionTypes(generatorParams);
   console.log("Generating operators...");
   generateOperators(generatorParams);
-  console.log("Generating alternative operators...");
-  generateAltOperators(generatorParams);
   console.log("Generating set impl...");
   generateSetImpl(generatorParams);
   console.log("Generating globals...");
