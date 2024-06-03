@@ -89,6 +89,11 @@ bench("base type: named tuple", () => {
   return {} as typeof baseType;
 }).types([2831, "instantiations"]);
 
+bench("set: scalars", () => {
+  const set = e.set(int0, int1, int0);
+  return {} as typeof set;
+}).types([7596, "instantiations"]);
+
 bench("select: scalar", () => {
   const query = e.select(int0);
   return {} as typeof query;
@@ -172,11 +177,11 @@ bench("select: with order", () => {
 bench("select: with limit", () => {
   const query = e.select(e.Hero, (hero) => ({
     name: true,
-    villains: () => ({
+    villains: {
       id: true,
       name: true,
       limit: 1,
-    }),
+    },
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
@@ -185,11 +190,11 @@ bench("select: with limit", () => {
 bench("select: with offset", () => {
   const query = e.select(e.Hero, (hero) => ({
     name: true,
-    villains: () => ({
+    villains: {
       id: true,
       name: true,
       offset: 1,
-    }),
+    },
     filter_single: e.op(hero.name, "=", "Peter Parker"),
   }));
   return {} as typeof query;
@@ -199,10 +204,10 @@ bench("params select", () => {
   const query = e.params({ name: e.str }, (params) =>
     e.select(e.Hero, (hero) => ({
       name: true,
-      villains: () => ({
+      villains: {
         id: true,
         name: true,
-      }),
+      },
       filter_single: e.op(hero.name, "=", params.name),
     })),
   );
@@ -266,14 +271,11 @@ bench("e.op: complex if_else", () => {
 }).types([35102, "instantiations"]);
 
 bench("e.op: complex coalesce", () => {
-  const op = e.op(
-    allUsers,
-    "??",
-    e.insert(e.User, {
-      favourite_movies: allMovies,
-      username: "Me",
-    }),
-  );
+  const newUser = e.insert(e.User, {
+    favourite_movies: allMovies,
+    username: "Me",
+  });
+  const op = e.op(allUsers, "??", newUser);
   return {} as typeof op;
 }).types([49942, "instantiations"]);
 

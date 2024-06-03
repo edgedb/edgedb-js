@@ -191,10 +191,19 @@ interface TernaryContainerHomogenousOperator extends BaseOperator {
 /**
  * std::coalesce
  */
-interface CoalesceOperator extends BaseOperator {
-  type: "CoalesceOperator";
+interface CoalesceScalarOperator extends BaseOperator {
+  type: "CoalesceScalarOperator";
   lhs: CodeFragment[];
-  rhs: CodeFragment[];
+}
+
+interface CoalesceContainerOperator extends BaseOperator {
+  type: "CoalesceContainerOperator";
+  lhs: CodeFragment[];
+}
+
+interface CoalesceObjectOperator extends BaseOperator {
+  type: "CoalesceObjectOperator";
+  lhs: CodeFragment[];
 }
 
 type Operator =
@@ -210,7 +219,9 @@ type Operator =
   | TernaryContainerHomogenousOperator
 
   // Special Cases
-  | CoalesceOperator;
+  | CoalesceScalarOperator
+  | CoalesceContainerOperator
+  | CoalesceObjectOperator;
 
 function operatorFromOpDef(
   typeToCodeFragment: (
@@ -223,16 +234,6 @@ function operatorFromOpDef(
     opName === "std::if_else"
       ? "if_else"
       : splitName(opDef.originalName).name.toLowerCase();
-
-  if (opName === "std::coalesce") {
-    return {
-      type: "CoalesceOperator",
-      lhs: typeToCodeFragment(opDef.params.positional[0]),
-      rhs: typeToCodeFragment(opDef.params.positional[1]),
-      operatorSymbol,
-    };
-  }
-
   const log = debug(`edgedb:codegen:operatorFromOpDef:${opName}`);
   log({
     opName,
@@ -240,6 +241,32 @@ function operatorFromOpDef(
     returnType: opDef.return_type.name,
     anytypes: opDef.anytypes,
   });
+
+  if (opName === "std::coalesce") {
+    const [lhs] = opDef.params.positional;
+    if (opDef.anytypes?.kind === "noncastable") {
+      return {
+        type: "CoalesceScalarOperator",
+        lhs: typeToCodeFragment(lhs),
+        operatorSymbol,
+      };
+    } else if (
+      opDef.anytypes?.returnAnytypeWrapper === "_.syntax.mergeObjectTypes"
+    ) {
+      return {
+        type: "CoalesceObjectOperator",
+        lhs: typeToCodeFragment(lhs),
+        operatorSymbol,
+      };
+    } else {
+      return {
+        type: "CoalesceContainerOperator",
+        lhs: typeToCodeFragment(lhs),
+        operatorSymbol,
+      };
+    }
+  }
+
   const anytypeIsBaseType = Boolean(opDef.anytypes?.type[0] === "$.BaseType");
 
   if (opDef.operator_kind === $.OperatorKind.Prefix) {
@@ -415,7 +442,12 @@ export function generateOperators({
   >();
 
   // Special cases
-  const coalesceDefs = new StrictMapSet<string, CoalesceOperator>();
+  const coalesceScalarDefs = new StrictMapSet<string, CoalesceScalarOperator>();
+  const coalesceContainerDefs = new StrictMapSet<
+    string,
+    CoalesceContainerOperator
+  >();
+  const coalesceObjectDefs = new StrictMapSet<string, CoalesceObjectOperator>();
 
   for (const [opName, _opDefs] of operators.entries()) {
     if (skipOperators.has(opName)) continue;
@@ -562,28 +594,18 @@ export function generateOperators({
         case "TernaryContainerHomogenousOperator":
           ternaryContainerDefs.appendAt(opSymbol, operator);
           break;
-        case "CoalesceOperator":
-          coalesceDefs.appendAt(opSymbol, operator);
+        case "CoalesceScalarOperator":
+          coalesceScalarDefs.appendAt(opSymbol, operator);
+          break;
+        case "CoalesceContainerOperator":
+          coalesceContainerDefs.appendAt(opSymbol, operator);
+          break;
+        case "CoalesceObjectOperator":
+          coalesceObjectDefs.appendAt(opSymbol, operator);
           break;
       }
     }
   }
-
-  // CoalesceOperators
-  overloadsBuf.writeln([t`type CoalesceReturn<LHS, RHS> = ??`])
-  overloadsBuf.writeln([t`type CoalesceOperators = {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of coalesceDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.rhs} }`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`};`]);
-
   // PrefixPredicateOperators
   overloadsBuf.writeln([t`type PrefixParamCardinality<Operand> = {`]);
   overloadsBuf.indented(() => {
@@ -762,6 +784,67 @@ export function generateOperators({
           } else {
             overloadsBuf.writeln([t`| ArgSetAndReturnOf<${def.lhs}>`]);
           }
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`};`]);
+
+  // CoalesceOperators
+  overloadsBuf.writeln([t`type CoalesceScalarOperators = {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of coalesceScalarDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| { lhs: ${def.lhs} }`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`};`]);
+
+  overloadsBuf.writeln([t`type CoalesceContainerOperators = {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of coalesceContainerDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.lhs} }`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`};`]);
+
+  overloadsBuf.writeln([t`type buildCoalesceObjectOperator<`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([
+      t`LHS extends $.TypeSet<$.ObjectType> = $.TypeSet<$.ObjectType>,`,
+    ]);
+    overloadsBuf.writeln([
+      t`RHS extends $.TypeSet<$.ObjectType> = $.TypeSet<$.ObjectType>,`,
+    ]);
+    overloadsBuf.writeln([
+      t`Ret extends _.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]> = _.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+    ]);
+  });
+  overloadsBuf.writeln([t`> = {`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`lhs: LHS;`]);
+    overloadsBuf.writeln([t`rhs: RHS;`]);
+    overloadsBuf.writeln([t`ret: Ret;`]);
+  });
+  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`type CoalesceObjectOperators = {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of coalesceObjectDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([
+            t`| buildCoalesceObjectOperator<${def.lhs}, ${def.lhs}>`,
+          ]);
         }
       });
     }
@@ -1017,6 +1100,71 @@ export function generateOperators({
     code.writeln([t`Ret,`]);
     code.writeln([
       t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+
+  // CoalesceOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof CoalesceContainerOperators,`]);
+    code.writeln([
+      t`LHS extends CoalesceContainerOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
+    ]);
+    code.writeln([
+      t`RHS extends ExtractRHS<CoalesceContainerOperators[Op], LHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`_.syntax.getSharedParentPrimitive<_.castMaps.literalToTypeSet<LHS>["__element__"], RHS["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof CoalesceObjectOperators,`]);
+    code.writeln([
+      t`LHS extends CoalesceObjectOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
+    ]);
+    code.writeln([
+      t`RHS extends ExtractRHS<CoalesceObjectOperators[Op], LHS>,`,
+    ]);
+    code.writeln([
+      t`Ret extends ExtractReturn<CoalesceObjectOperators[Op], LHS, RHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([t`Ret,`]);
+    code.writeln([
+      t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof CoalesceScalarOperators,`]);
+    code.writeln([
+      t`LHS extends CoalesceScalarOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
+    ]);
+    code.writeln([
+      t`RHS extends _.castMaps.orScalarLiteral<$.TypeSet<$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>>>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
     ]);
   });
   code.writeln([t`>;`]);
