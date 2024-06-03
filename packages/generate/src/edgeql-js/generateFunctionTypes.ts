@@ -467,16 +467,17 @@ export function generateFuncopDef(funcopDef: FuncopDefOverload<FuncopDef>) {
 
 function parametersToFunctionCardinality(
   params: GroupedParams,
+  hasNamedParams: boolean,
 ): ($.introspect.FuncopParam & { genTypeName: string })[] {
   return [
     ...params.positional.map((p) => ({
       ...p,
       genTypeName: p.typeName,
     })),
-    ...params.named.map((p) => ({
+    ...(hasNamedParams ? params.named.map((p) => ({
       ...p,
       genTypeName: `NamedArgs[${quote(p.name)}]`,
-    })),
+    })) : []),
   ];
 }
 
@@ -497,11 +498,12 @@ export function generateReturnCardinality(
   name: string,
   params: GroupedParams,
   returnTypemod: $.introspect.FuncopTypemod,
-  _hasNamedParams: boolean,
+  hasNamedParams: boolean,
   _anytypes: AnytypeDef | null,
   preservesOptionality = false,
   parametersToCardinality: (
     params: GroupedParams,
+    hasNamedTypes: boolean,
   ) => ($.introspect.FuncopParam & {
     genTypeName: string;
   })[] = parametersToFunctionCardinality,
@@ -517,7 +519,7 @@ export function generateReturnCardinality(
     return `$.Cardinality.Many`;
   }
 
-  const cardinalities = parametersToCardinality(params);
+  const cardinalities = parametersToCardinality(params, hasNamedParams);
 
   if (name === "std::union") {
     return `$.cardutil.mergeCardinalities<
