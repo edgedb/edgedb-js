@@ -465,6 +465,221 @@ export function generateFuncopDef(funcopDef: FuncopDefOverload<FuncopDef>) {
   }${funcopDef.preserves_optionality ? `, preservesOptionality: true` : ""}}`;
 }
 
+type ParamCardinality =
+  | { type: "ONE" }
+  | { type: "OVERRIDE_UPPER"; with: "One"; param: ParamCardinality }
+  | { type: "OPTIONAL"; param: string }
+  | { type: "VARIADIC"; param: string }
+  | { type: "PARAM"; param: string }
+  | { type: "IDENTITY"; param: string };
+
+type ReturnCardinality =
+  | { type: "MANY" }
+  | { type: "ONE" }
+  | { type: "ZERO" }
+  | {
+      type: "MERGE";
+      params: [ParamCardinality, ParamCardinality];
+    }
+  | {
+      type: "COALESCE";
+      params: [ParamCardinality, ParamCardinality];
+    }
+  | {
+      type: "IF_ELSE";
+      condition: ParamCardinality;
+      trueBranch: ParamCardinality;
+      falseBranch: ParamCardinality;
+    }
+  | { type: "OVERRIDE_LOWER"; with: "One" | "Zero"; param: ReturnCardinality }
+  | { type: "OVERRIDE_UPPER"; with: "One"; param: ParamCardinality }
+  | { type: "MULTIPLY"; params: ParamCardinality[] }
+  | { type: "IDENTITY"; param: ParamCardinality };
+
+function getReturnCardinality(
+  name: string,
+  params: GroupedParams,
+  returnTypemod: $.introspect.FuncopTypemod,
+  hasNamedParams: boolean,
+  _anytypes: AnytypeDef | null,
+  preservesOptionality = false,
+  parametersToCardinality: (
+    params: GroupedParams,
+    hasNamedTypes: boolean,
+  ) => ($.introspect.FuncopParam & {
+    genTypeName: string;
+  })[] = parametersToFunctionCardinality,
+): ReturnCardinality {
+  if (
+    returnTypemod === "SetOfType" &&
+    name !== "std::if_else" &&
+    name !== "std::assert_exists" &&
+    name !== "std::union" &&
+    name !== "std::coalesce" &&
+    name !== "std::distinct"
+  ) {
+    return { type: "MANY" };
+  }
+
+  const cardinalities = parametersToCardinality(params, hasNamedParams);
+
+  if (name === "std::union") {
+    return {
+      type: "MERGE",
+      params: [
+        { type: "PARAM", param: cardinalities[0].genTypeName },
+        { type: "PARAM", param: cardinalities[1].genTypeName },
+      ],
+    };
+  }
+
+  if (name === "std::coalesce") {
+    return {
+      type: "COALESCE",
+      params: [
+        { type: "PARAM", param: cardinalities[0].genTypeName },
+        { type: "PARAM", param: cardinalities[1].genTypeName },
+      ],
+    };
+  }
+
+  if (name === "std::distinct") {
+    return {
+      type: "IDENTITY",
+      param: { type: "PARAM", param: cardinalities[0].genTypeName },
+    };
+  }
+
+  if (name === "std::if_else") {
+    return {
+      type: "IF_ELSE",
+      condition: { type: "PARAM", param: cardinalities[1].genTypeName },
+      trueBranch: { type: "PARAM", param: cardinalities[0].genTypeName },
+      falseBranch: { type: "PARAM", param: cardinalities[2].genTypeName },
+    };
+  }
+
+  if (name === "std::assert_exists") {
+    return {
+      type: "OVERRIDE_LOWER",
+      with: "One",
+      param: {
+        type: "IDENTITY",
+        param: { type: "PARAM", param: cardinalities[0].genTypeName },
+      },
+    };
+  }
+
+  const paramCardinalities: ParamCardinality[] = cardinalities.map(
+    (param): ParamCardinality => {
+      if (param.typemod === "SetOfType") {
+        if (preservesOptionality) {
+          return {
+            type: "OVERRIDE_UPPER",
+            with: "One",
+            param: { type: "PARAM", param: param.genTypeName },
+          };
+        } else {
+          return {
+            type: "ONE",
+          };
+        }
+      }
+
+      const type =
+        param.typemod === "OptionalType" || param.hasDefault
+          ? "OPTIONAL"
+          : param.kind === "VariadicParam"
+            ? "VARIADIC"
+            : "PARAM";
+
+      return { type, param: param.genTypeName };
+    },
+  );
+
+  const cardinality: ReturnCardinality = paramCardinalities.length
+    ? paramCardinalities.length > 1
+      ? { type: "MULTIPLY", params: paramCardinalities }
+      : { type: "IDENTITY", param: paramCardinalities[0] }
+    : { type: "ONE" };
+
+  return returnTypemod === "OptionalType" && !preservesOptionality
+    ? { type: "OVERRIDE_LOWER", with: "Zero", param: cardinality }
+    : cardinality;
+}
+
+function renderParamCardinality(card: ParamCardinality): string {
+  switch (card.type) {
+    case "ONE": {
+      return `$.Cardinality.One`;
+    }
+    case "OVERRIDE_UPPER": {
+      return `$.cardutil.overrideUpperBound<${renderParamCardinality(card.param)}, "One">`;
+    }
+    case "OPTIONAL": {
+      return `$.cardutil.optionalParamCardinality<${card.param}>`;
+    }
+    case "VARIADIC": {
+      return `$.cardutil.paramArrayCardinality<${card.param}>`;
+    }
+    case "PARAM": {
+      return `$.cardutil.paramCardinality<${card.param}>`;
+    }
+    case "IDENTITY": {
+      return card.param;
+    }
+    default: {
+      throw new Error(`Unknown param cardinality type: ${(card as any).type}`);
+    }
+  }
+}
+
+function renderCardinality(card: ReturnCardinality): string {
+  switch (card.type) {
+    case "MANY": {
+      return `$.Cardinality.Many`;
+    }
+    case "ONE": {
+      return `$.Cardinality.One`;
+    }
+    case "ZERO": {
+      return `$.Cardinality.Zero`;
+    }
+    case "MERGE": {
+      const [LHS, RHS] = card.params.map(renderParamCardinality);
+      return `$.cardutil.mergeCardinalities<${LHS}, ${RHS}>`;
+    }
+    case "COALESCE": {
+      const [LHS, RHS] = card.params.map(renderParamCardinality);
+      return `$.cardutil.coalesceCardinalities<${LHS}, ${RHS}>`;
+    }
+    case "IDENTITY": {
+      return renderParamCardinality(card.param);
+    }
+    case "IF_ELSE": {
+      return `$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<${renderParamCardinality(card.trueBranch)}, ${renderParamCardinality(card.falseBranch)}>, ${renderParamCardinality(card.condition)}>`;
+    }
+    case "OVERRIDE_LOWER": {
+      return `$.cardutil.overrideLowerBound<${renderCardinality(card.param)}, "${card.with}">`;
+    }
+    case "OVERRIDE_UPPER": {
+      return `$.cardutil.overrideUpperBound<${renderParamCardinality(card.param)}, "One">`;
+    }
+    case "MULTIPLY": {
+      return card.params
+        .slice(1)
+        .reduce(
+          (cards, card) =>
+            `$.cardutil.multiplyCardinalities<${cards}, ${renderParamCardinality(card)}>`,
+          renderParamCardinality(card.params[0]),
+        );
+    }
+    default: {
+      throw new Error(`Unknown return cardinality type: ${(card as any).type}`);
+    }
+  }
+}
+
 function parametersToFunctionCardinality(
   params: GroupedParams,
   hasNamedParams: boolean,
@@ -474,26 +689,29 @@ function parametersToFunctionCardinality(
       ...p,
       genTypeName: p.typeName,
     })),
-    ...(hasNamedParams ? params.named.map((p) => ({
-      ...p,
-      genTypeName: `NamedArgs[${quote(p.name)}]`,
-    })) : []),
+    ...(hasNamedParams
+      ? params.named.map((p) => ({
+          ...p,
+          genTypeName: `NamedArgs[${quote(p.name)}]`,
+        }))
+      : []),
   ];
 }
 
-// default -> cardinality of cartesian product of params actual cardinality
-// (or overridden cardinality below)
-
-// param typemods override actual param cardinality:
-// - setoftype -> One
-//     (unless preservesOptionality -> override upper cardinality to 1)
-// - (optional || hasDefault) -> override lower cardinality of actual to 1
-
-// return typemod:
-// - optional -> override return lower cardinality to 0
-//    (product with AtMostOne) (ignored if preservesOptionality)
-// - setoftype -> always Many
-
+/**
+ * Derives the return cardinality from the input parameters, return type-mod,
+ * and function flags:
+ * - Default: Cartesian product of parameter actual cardinalities (or overridden
+ *   cardinality)
+ * - Parameter type-mods override actual parameter cardinality:
+ *   - SetOfType: One (unless preservesOptionality, then override upper
+ *     cardinality to One)
+ *   - Optional or HasDefault: Override lower cardinality of actual to One
+ * - Return type-mod:
+ *   - Optional: Override return lower cardinality to Zero (product with
+ *     AtMostOne), ignored if preservesOptionality
+ *   - SetOfType: Always Many
+ */
 export function generateReturnCardinality(
   name: string,
   params: GroupedParams,
@@ -507,89 +725,15 @@ export function generateReturnCardinality(
   ) => ($.introspect.FuncopParam & {
     genTypeName: string;
   })[] = parametersToFunctionCardinality,
-) {
-  if (
-    returnTypemod === "SetOfType" &&
-    name !== "std::if_else" &&
-    name !== "std::assert_exists" &&
-    name !== "std::union" &&
-    name !== "std::coalesce" &&
-    name !== "std::distinct"
-  ) {
-    return `$.Cardinality.Many`;
-  }
-
-  const cardinalities = parametersToCardinality(params, hasNamedParams);
-
-  if (name === "std::union") {
-    return `$.cardutil.mergeCardinalities<
-        $.cardutil.paramCardinality<${cardinalities[0].genTypeName}>,
-        $.cardutil.paramCardinality<${cardinalities[1].genTypeName}>
-      >`;
-  }
-
-  if (name === "std::coalesce") {
-    return `$.cardutil.coalesceCardinalities<
-        $.cardutil.paramCardinality<${cardinalities[0].genTypeName}>,
-        $.cardutil.paramCardinality<${cardinalities[1].genTypeName}>
-      >`;
-  }
-
-  if (name === "std::distinct") {
-    return `$.cardutil.paramCardinality<${cardinalities[0].genTypeName}>`;
-  }
-
-  if (name === "std::if_else") {
-    return (
-      `$.cardutil.multiplyCardinalities<` +
-      `$.cardutil.orCardinalities<` +
-      `$.cardutil.paramCardinality<${cardinalities[0].genTypeName}>,` +
-      ` $.cardutil.paramCardinality<${cardinalities[2].genTypeName}>` +
-      `>, $.cardutil.paramCardinality<${cardinalities[1].genTypeName}>>`
-    );
-  }
-  if (name === "std::assert_exists") {
-    return (
-      `$.cardutil.overrideLowerBound<` +
-      `$.cardutil.paramCardinality<${cardinalities[0].genTypeName}>, "One">`
-    );
-  }
-
-  const paramCardinalities = cardinalities.map((param) => {
-    if (param.typemod === "SetOfType") {
-      if (preservesOptionality) {
-        return (
-          `$.cardutil.overrideUpperBound<` +
-          `$.cardutil.paramCardinality<${param.genTypeName}>, "One">`
-        );
-      } else {
-        return `$.Cardinality.One`;
-      }
-    }
-
-    const prefix =
-      param.typemod === "OptionalType" || param.hasDefault
-        ? "$.cardutil.optionalParamCardinality"
-        : param.kind === "VariadicParam"
-          ? "$.cardutil.paramArrayCardinality"
-          : "$.cardutil.paramCardinality";
-
-    return `${prefix}<${param.genTypeName}>`;
-  });
-
-  const cardinality = paramCardinalities.length
-    ? paramCardinalities.length > 1
-      ? paramCardinalities
-          .slice(1)
-          .reduce(
-            (cards, card) =>
-              `$.cardutil.multiplyCardinalities<${cards}, ${card}>`,
-            paramCardinalities[0],
-          )
-      : paramCardinalities[0]
-    : "$.Cardinality.One";
-
-  return returnTypemod === "OptionalType" && !preservesOptionality
-    ? `$.cardutil.overrideLowerBound<${cardinality}, 'Zero'>`
-    : cardinality;
+): string {
+  const returnCard = getReturnCardinality(
+    name,
+    params,
+    returnTypemod,
+    hasNamedParams,
+    _anytypes,
+    preservesOptionality,
+    parametersToCardinality,
+  );
+  return renderCardinality(returnCard);
 }
