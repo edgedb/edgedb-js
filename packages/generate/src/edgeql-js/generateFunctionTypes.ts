@@ -375,10 +375,8 @@ export function generateFuncopTypes<F extends FuncopDef>(
             // return type
             frag`${returnType.staticType}, ${generateReturnCardinality(
               funcName,
-              params,
+              parametersToFunctionCardinality(params, hasNamedParams),
               funcDef.return_typemod,
-              hasNamedParams,
-              anytypes,
               funcDef.preserves_optionality,
             )}`,
           );
@@ -496,19 +494,17 @@ type ReturnCardinality =
   | { type: "MULTIPLY"; params: ParamCardinality[] }
   | { type: "IDENTITY"; param: ParamCardinality };
 
+interface FuncopParamNamed extends $.introspect.FuncopParam {
+  genTypeName: string;
+}
+
 function getReturnCardinality(
   name: string,
-  params: GroupedParams,
-  returnTypemod: $.introspect.FuncopTypemod,
-  hasNamedParams: boolean,
-  _anytypes: AnytypeDef | null,
-  preservesOptionality = false,
-  parametersToCardinality: (
-    params: GroupedParams,
-    hasNamedTypes: boolean,
-  ) => ($.introspect.FuncopParam & {
+  params: ($.introspect.FuncopParam & {
     genTypeName: string;
-  })[] = parametersToFunctionCardinality,
+  })[],
+  returnTypemod: $.introspect.FuncopTypemod,
+  preservesOptionality = false,
 ): ReturnCardinality {
   if (
     returnTypemod === "SetOfType" &&
@@ -521,14 +517,12 @@ function getReturnCardinality(
     return { type: "MANY" };
   }
 
-  const cardinalities = parametersToCardinality(params, hasNamedParams);
-
   if (name === "std::union") {
     return {
       type: "MERGE",
       params: [
-        { type: "PARAM", param: cardinalities[0].genTypeName },
-        { type: "PARAM", param: cardinalities[1].genTypeName },
+        { type: "PARAM", param: params[0].genTypeName },
+        { type: "PARAM", param: params[1].genTypeName },
       ],
     };
   }
@@ -537,8 +531,8 @@ function getReturnCardinality(
     return {
       type: "COALESCE",
       params: [
-        { type: "PARAM", param: cardinalities[0].genTypeName },
-        { type: "PARAM", param: cardinalities[1].genTypeName },
+        { type: "PARAM", param: params[0].genTypeName },
+        { type: "PARAM", param: params[1].genTypeName },
       ],
     };
   }
@@ -546,16 +540,16 @@ function getReturnCardinality(
   if (name === "std::distinct") {
     return {
       type: "IDENTITY",
-      param: { type: "PARAM", param: cardinalities[0].genTypeName },
+      param: { type: "PARAM", param: params[0].genTypeName },
     };
   }
 
   if (name === "std::if_else") {
     return {
       type: "IF_ELSE",
-      condition: { type: "PARAM", param: cardinalities[1].genTypeName },
-      trueBranch: { type: "PARAM", param: cardinalities[0].genTypeName },
-      falseBranch: { type: "PARAM", param: cardinalities[2].genTypeName },
+      condition: { type: "PARAM", param: params[1].genTypeName },
+      trueBranch: { type: "PARAM", param: params[0].genTypeName },
+      falseBranch: { type: "PARAM", param: params[2].genTypeName },
     };
   }
 
@@ -565,12 +559,12 @@ function getReturnCardinality(
       with: "One",
       param: {
         type: "IDENTITY",
-        param: { type: "PARAM", param: cardinalities[0].genTypeName },
+        param: { type: "PARAM", param: params[0].genTypeName },
       },
     };
   }
 
-  const paramCardinalities: ParamCardinality[] = cardinalities.map(
+  const paramCardinalities: ParamCardinality[] = params.map(
     (param): ParamCardinality => {
       if (param.typemod === "SetOfType") {
         if (preservesOptionality) {
@@ -714,26 +708,15 @@ function parametersToFunctionCardinality(
  */
 export function generateReturnCardinality(
   name: string,
-  params: GroupedParams,
+  params: FuncopParamNamed[],
   returnTypemod: $.introspect.FuncopTypemod,
-  hasNamedParams: boolean,
-  _anytypes: AnytypeDef | null,
   preservesOptionality = false,
-  parametersToCardinality: (
-    params: GroupedParams,
-    hasNamedTypes: boolean,
-  ) => ($.introspect.FuncopParam & {
-    genTypeName: string;
-  })[] = parametersToFunctionCardinality,
 ): string {
   const returnCard = getReturnCardinality(
     name,
     params,
     returnTypemod,
-    hasNamedParams,
-    _anytypes,
     preservesOptionality,
-    parametersToCardinality,
   );
   return renderCardinality(returnCard);
 }

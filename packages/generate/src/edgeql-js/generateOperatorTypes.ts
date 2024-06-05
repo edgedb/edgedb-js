@@ -8,6 +8,7 @@ import {
   allowsLiterals,
   generateFuncopDef,
   generateFuncopTypes,
+  generateReturnCardinality,
 } from "./generateFunctionTypes";
 import {
   getTypesSpecificity,
@@ -16,6 +17,7 @@ import {
   expandFuncopAnytypeOverloads,
   findPathOfAnytype,
   type FuncopDefOverload,
+  type AnytypeDef,
 } from "../funcoputil";
 import { $ } from "../genutil";
 import { getStringRepresentation } from "./generateObjectTypes";
@@ -109,6 +111,7 @@ interface InfixComparisonOperator extends BaseOperator {
   type: "InfixComparisonOperator";
   lhs: CodeFragment[];
   rhs: CodeFragment[];
+  retCard: CodeFragment[];
 }
 
 /**
@@ -121,6 +124,7 @@ interface InfixOptionalComparisonOperator extends BaseOperator {
   type: "InfixOptionalComparisonOperator";
   lhs: CodeFragment[];
   rhs: CodeFragment[];
+  retCard: CodeFragment[];
 }
 
 /**
@@ -131,8 +135,7 @@ interface InfixOptionalComparisonOperator extends BaseOperator {
  */
 interface InfixContainerComparisonOperator extends BaseOperator {
   type: "InfixContainerComparisonOperator";
-  lhs: CodeFragment[];
-  rhs: CodeFragment[] | null;
+  args: CodeFragment[];
 }
 
 /**
@@ -144,8 +147,7 @@ interface InfixContainerComparisonOperator extends BaseOperator {
  */
 interface InfixOptionalContainerComparisonOperator extends BaseOperator {
   type: "InfixOptionalContainerComparisonOperator";
-  lhs: CodeFragment[];
-  rhs: CodeFragment[] | null;
+  args: CodeFragment[];
 }
 
 /**
@@ -223,10 +225,11 @@ type Operator =
   | CoalesceContainerOperator
   | CoalesceObjectOperator;
 
+type OverloadArg =
+  FuncopDefOverload<$.introspect.OperatorDef>["params"]["positional"][number];
+
 function operatorFromOpDef(
-  typeToCodeFragment: (
-    type: FuncopDefOverload<$.introspect.OperatorDef>["params"]["positional"][number],
-  ) => CodeFragment[],
+  typeToCodeFragment: (type: OverloadArg) => CodeFragment[],
   opName: string,
   opDef: FuncopDefOverload<$.introspect.OperatorDef>,
 ): Operator {
@@ -241,7 +244,6 @@ function operatorFromOpDef(
     returnType: opDef.return_type.name,
     anytypes: opDef.anytypes,
   });
-
   if (opName === "std::coalesce") {
     const [lhs] = opDef.params.positional;
     if (opDef.anytypes?.kind === "noncastable") {
@@ -274,7 +276,7 @@ function operatorFromOpDef(
     const [operand] = opDef.params.positional;
     if (opDef.return_type.name === "std::bool") {
       // Predicate
-      log("PrefixPredicateOperator operand: ", operand);
+      log("PrefixPredicateOperator operand: %o", operand);
       return {
         type: "PrefixPredicateOperator",
         operand: typeToCodeFragment(operand),
@@ -283,7 +285,7 @@ function operatorFromOpDef(
       };
     } else {
       // Homogenous
-      log("PrefixHomogenousOperator operand: ", operand);
+      log("PrefixHomogenousOperator operand: %o", operand);
       return {
         type: "PrefixHomogenousOperator",
         operand: typeToCodeFragment(operand),
@@ -292,29 +294,42 @@ function operatorFromOpDef(
     }
   } else if (opDef.operator_kind === $.OperatorKind.Infix) {
     // Infix
-    const [lhs, rhs] = opDef.params.positional;
-    if (lhs.type.kind === "scalar") {
+    const [lhsType, rhsType] = opDef.params.positional;
+    if (lhsType.type.kind === "scalar") {
       // Scalar
       if (opDef.return_type.name === "std::bool") {
         // Comparison
-        log("InfixComparisonOperator lhs: ", lhs);
-        log("InfixComparisonOperator rhs: ", rhs);
+        log("InfixComparisonOperator lhs: %o", lhsType);
+        log("InfixComparisonOperator rhs: %o", rhsType);
+        const retCard = generateReturnCardinality(
+          opName,
+          [
+            { ...lhsType, genTypeName: "LHS" },
+            { ...rhsType, genTypeName: "RHS" },
+          ],
+          opDef.return_typemod,
+          false,
+        );
         return {
           type:
-            lhs.typemod === "OptionalType"
+            lhsType.typemod === "OptionalType"
               ? "InfixOptionalComparisonOperator"
               : "InfixComparisonOperator",
-          lhs: typeToCodeFragment(lhs),
-          rhs: typeToCodeFragment(rhs),
+          lhs: typeToCodeFragment(lhsType),
+          rhs: typeToCodeFragment(rhsType),
           operatorSymbol,
+          retCard: frag`${retCard}`,
         };
       } else {
         // Homogenous
-        log("InfixHomogenousOperator lhs: ", lhs);
+        log("InfixHomogenousOperator lhs: %o", lhsType);
         return {
           type: "InfixHomogenousOperator",
-          lhs: typeToCodeFragment(lhs),
-          rhs: lhs.type.id !== rhs.type.id ? typeToCodeFragment(rhs) : null,
+          lhs: typeToCodeFragment(lhsType),
+          rhs:
+            lhsType.type.id !== rhsType.type.id
+              ? typeToCodeFragment(rhsType)
+              : null,
           operatorSymbol,
         };
       }
@@ -322,26 +337,45 @@ function operatorFromOpDef(
       // Container
       if (opDef.return_type.name === "std::bool") {
         // Comparison
-        log("InfixContainerComparisonOperator lhs: ", lhs);
-        log("InfixContainerComparisonOperator rhs: ", rhs);
+        log("InfixContainerComparisonOperator lhs: %o", lhsType);
+        log("InfixContainerComparisonOperator rhs: %o", rhsType);
         log(
-          "InfixContainerComparisonOperator has rhs: ",
-          rhs.type.id !== lhs.type.id,
+          "InfixContainerComparisonOperator has rhs: %o",
+          rhsType.type.id !== lhsType.type.id,
         );
+        function getArgsFromAnytypes(
+          anytypes: AnytypeDef | null,
+          lhsType: OverloadArg,
+          rhsType: OverloadArg,
+        ): CodeFragment[] {
+          if (anytypes && anytypes.kind === "noncastable") {
+            if (anytypes.typeObj.kind === "range") {
+              return frag`infixOperandsRangeType<${typeToCodeFragment(lhsType)}>`;
+            } else if (anytypes.typeObj.kind === "array") {
+              return frag`infixOperandsArrayTypeNonArray<${typeToCodeFragment(
+                lhsType,
+              )}>`;
+            } else if (anytypes.typeObj.kind === "unknown") {
+              return frag`infixOperandsBaseType<${typeToCodeFragment(lhsType)}>`;
+            }
+          }
+
+          return frag`{ lhs: ${typeToCodeFragment(lhsType)}; rhs: ${typeToCodeFragment(rhsType)} }`;
+        }
+        const args = getArgsFromAnytypes(opDef.anytypes, lhsType, rhsType);
         return {
           type:
-            lhs.typemod === "OptionalType"
+            lhsType.typemod === "OptionalType"
               ? "InfixOptionalContainerComparisonOperator"
               : "InfixContainerComparisonOperator",
-          lhs: typeToCodeFragment(lhs),
-          rhs: rhs.type.id !== lhs.type.id ? typeToCodeFragment(rhs) : null,
+          args,
           operatorSymbol,
         };
       } else {
         // Homogenous
         const [lhs, rhs] = opDef.params.positional;
         log(
-          "InfixContainerHomogenousOperator lhs: ",
+          "InfixContainerHomogenousOperator lhs: %o",
           opDef.params.positional[0],
         );
         return {
@@ -357,8 +391,8 @@ function operatorFromOpDef(
     const [lhs, _cond, rhs] = opDef.params.positional;
     if (lhs.type.kind === "scalar" || anytypeIsBaseType) {
       // Scalar
-      log("TernaryHomogenousOperator lhs: ", lhs);
-      log("TernaryHomogenousOperator rhs: ", rhs);
+      log("TernaryHomogenousOperator lhs: %o", lhs);
+      log("TernaryHomogenousOperator rhs: %o", rhs);
       return {
         type: "TernaryHomogenousOperator",
         lhs: typeToCodeFragment(lhs),
@@ -367,8 +401,8 @@ function operatorFromOpDef(
       };
     } else {
       // Container
-      log("TernaryContainerHomogenousOperator lhs: ", lhs);
-      log("TernaryContainerHomogenousOperator rhs: ", rhs);
+      log("TernaryContainerHomogenousOperator lhs: %o", lhs);
+      log("TernaryContainerHomogenousOperator rhs: %o", rhs);
       return {
         type: "TernaryContainerHomogenousOperator",
         lhs: typeToCodeFragment(lhs),
@@ -606,16 +640,50 @@ export function generateOperators({
       }
     }
   }
-  // PrefixPredicateOperators
-  overloadsBuf.writeln([t`type PrefixParamCardinality<Operand> = {`]);
+
+  overloadsBuf.writeln([
+    t`interface infixOperandsBaseType<LHS extends _.castMaps.orScalarLiteral<$.TypeSet<$.BaseType>>> {`,
+  ]);
   overloadsBuf.indented(() => {
-    overloadsBuf.writeln([t`operand: Operand;`]);
+    overloadsBuf.writeln([t`lhs: LHS;`]);
     overloadsBuf.writeln([
-      t`returnCardinality: $.cardutil.paramCardinality<Operand>;`,
+      t`rhs: _.castMaps.orScalarLiteral<$.TypeSet<$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>>>;`,
     ]);
   });
-  overloadsBuf.writeln([t`};`]);
-  overloadsBuf.writeln([t`type PrefixPredicateOperators = {`]);
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  overloadsBuf.writeln([
+    t`interface infixOperandsRangeType<LHS extends $.TypeSet<$.RangeType<_std.$anypoint>>> {`,
+  ]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`lhs: LHS;`]);
+    overloadsBuf.writeln([
+      t`rhs: $.TypeSet<$.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>>;`,
+    ]);
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  overloadsBuf.writeln([
+    t`interface infixOperandsArrayTypeNonArray<LHS extends $.TypeSet<$.ArrayType<$.NonArrayType>>> {`,
+  ]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`lhs: LHS;`]);
+    overloadsBuf.writeln([
+      t`rhs: $.TypeSet<$.ArrayType<$.getPrimitiveNonArrayBaseType<LHS["__element__"]["__element__"]>>>;`,
+    ]);
+  });
+  overloadsBuf.writeln([t`}`]);
+
+  // PrefixPredicateOperators
+  overloadsBuf.writeln([t`interface PrefixParamCardinality<Operand> {`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`operand: Operand;`]);
+    overloadsBuf.writeln([t`retCard: $.cardutil.paramCardinality<Operand>;`]);
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.writeln([t`interface PrefixPredicateOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of prefixPredicateDefs.entries()) {
       const log = debug(
@@ -627,7 +695,7 @@ export function generateOperators({
           log({ opSymbol, def });
           if (def.typemod === "SetOfType") {
             overloadsBuf.writeln([
-              t`| { operand: ${def.operand}; returnCardinality: $.Cardinality.One }`,
+              t`| { operand: ${def.operand}; retCard: $.Cardinality.One }`,
             ]);
           } else {
             overloadsBuf.writeln([t`| PrefixParamCardinality<${def.operand}>`]);
@@ -636,10 +704,10 @@ export function generateOperators({
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
   // PrefixHomogenousOperators
-  overloadsBuf.writeln([t`type PrefixHomogeneousOperators = {`]);
+  overloadsBuf.writeln([t`interface PrefixHomogeneousOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of prefixHomogeneousDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -650,10 +718,10 @@ export function generateOperators({
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
   // InfixHomogenousOperators
-  overloadsBuf.writeln([t`type InfixHomogeneousOperators = {`]);
+  overloadsBuf.writeln([t`interface InfixHomogeneousOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of infixHomogeneousDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -666,10 +734,10 @@ export function generateOperators({
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
   // InfixComparisonOperators
-  overloadsBuf.writeln([t`type InfixComparisonOperators = {`]);
+  overloadsBuf.writeln([t`interface InfixComparisonOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of infixComparisonDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -683,7 +751,7 @@ export function generateOperators({
   overloadsBuf.writeln([t`};`]);
 
   // InfixOptionalComparisonOperators
-  overloadsBuf.writeln([t`type InfixOptionalComparisonOperators = {`]);
+  overloadsBuf.writeln([t`interface InfixOptionalComparisonOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of infixOptionalComparisonDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -694,44 +762,24 @@ export function generateOperators({
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
   // InfixContainerComparisonOperators
-  overloadsBuf.writeln([t`type ArgSetOf<LHS, RHS = LHS> =`]);
-  overloadsBuf.indented(() => {
-    overloadsBuf.writeln([
-      t`LHS extends $.TypeSet<$.RangeType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>> }`,
-    ]);
-    overloadsBuf.writeln([
-      t`: LHS extends $.TypeSet<$.MultiRangeType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.MultiRangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>> }`,
-    ]);
-    overloadsBuf.writeln([
-      t`: LHS extends $.TypeSet<$.ArrayType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.ArrayType<$.getPrimitiveNonArrayBaseType<LHS["__element__"]["__element__"]>>> }`,
-    ]);
-    overloadsBuf.writeln([
-      t`: LHS extends _.castMaps.orScalarLiteral<$.TypeSet<$.BaseType>> ? { lhs: LHS; rhs:_.castMaps.orScalarLiteral<$.TypeSet<$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>>> }`,
-    ]);
-    overloadsBuf.writeln([t`: { lhs: LHS; rhs: RHS };`]);
-  });
-  overloadsBuf.writeln([t`type InfixContainerComparisonOperators = {`]);
+  overloadsBuf.writeln([t`interface InfixContainerComparisonOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of infixContainerComparisonDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          if (def.rhs) {
-            overloadsBuf.writeln([t`| ArgSetOf<${def.lhs}, ${def.rhs}>`]);
-          } else {
-            overloadsBuf.writeln([t`| ArgSetOf<${def.lhs}>`]);
-          }
+          overloadsBuf.writeln([t`| ${def.args}`])
         }
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
   // InfixOptionalContainerComparisonOperators
-  overloadsBuf.writeln([t`type InfixOptionalContainerComparisonOperators = {`]);
+  overloadsBuf.writeln([t`interface InfixOptionalContainerComparisonOperators {`]);
   overloadsBuf.indented(() => {
     for (const [
       opSymbol,
@@ -740,16 +788,12 @@ export function generateOperators({
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          if (def.rhs) {
-            overloadsBuf.writeln([t`| ArgSetOf<${def.lhs}, ${def.rhs}>`]);
-          } else {
-            overloadsBuf.writeln([t`| ArgSetOf<${def.lhs}>`]);
-          }
+          overloadsBuf.writeln([t`| ${def.args}`])
         }
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
   // InfixContainerHomogeneousOperators
   overloadsBuf.writeln([t`type ArgSetAndReturnOf<LHS, RHS = LHS> =`]);
@@ -771,7 +815,7 @@ export function generateOperators({
     ]);
     overloadsBuf.writeln([t`: never;`]);
   });
-  overloadsBuf.writeln([t`type InfixContainerHomogeneousOperators = {`]);
+  overloadsBuf.writeln([t`interface InfixContainerHomogeneousOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of infixContainerHomogenousDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -788,10 +832,10 @@ export function generateOperators({
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
   // CoalesceOperators
-  overloadsBuf.writeln([t`type CoalesceScalarOperators = {`]);
+  overloadsBuf.writeln([t`interface CoalesceScalarOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of coalesceScalarDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -802,9 +846,9 @@ export function generateOperators({
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
-  overloadsBuf.writeln([t`type CoalesceContainerOperators = {`]);
+  overloadsBuf.writeln([t`interface CoalesceContainerOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of coalesceContainerDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -815,9 +859,9 @@ export function generateOperators({
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
-  overloadsBuf.writeln([t`type buildCoalesceObjectOperator<`]);
+  overloadsBuf.writeln([t`interface buildCoalesceObjectOperator<`]);
   overloadsBuf.indented(() => {
     overloadsBuf.writeln([
       t`LHS extends $.TypeSet<$.ObjectType> = $.TypeSet<$.ObjectType>,`,
@@ -829,14 +873,14 @@ export function generateOperators({
       t`Ret extends _.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]> = _.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
     ]);
   });
-  overloadsBuf.writeln([t`> = {`]);
+  overloadsBuf.writeln([t`> {`]);
   overloadsBuf.indented(() => {
     overloadsBuf.writeln([t`lhs: LHS;`]);
     overloadsBuf.writeln([t`rhs: RHS;`]);
     overloadsBuf.writeln([t`ret: Ret;`]);
   });
-  overloadsBuf.writeln([t`};`]);
-  overloadsBuf.writeln([t`type CoalesceObjectOperators = {`]);
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.writeln([t`interface CoalesceObjectOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of coalesceObjectDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -849,10 +893,10 @@ export function generateOperators({
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
   // TernaryHomogenousOperators
-  overloadsBuf.writeln([t`type TernaryHomogeneousOperators = {`]);
+  overloadsBuf.writeln([t`interface TernaryHomogeneousOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of ternaryDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -867,10 +911,10 @@ export function generateOperators({
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
   // TernaryContainerHomogenousOperators
-  overloadsBuf.writeln([t`type TernaryContainerHomogeneousOperators = {`]);
+  overloadsBuf.writeln([t`interface TernaryContainerHomogeneousOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of ternaryContainerDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -887,7 +931,7 @@ export function generateOperators({
       });
     }
   });
-  overloadsBuf.writeln([t`};`]);
+  overloadsBuf.writeln([t`}`]);
 
   code.nl();
   code.writeln([
@@ -934,7 +978,7 @@ export function generateOperators({
   code.writeln([t`type ExtractReturnCardinality<T, Operand> =`]);
   code.indented(() => {
     code.writeln([
-      t`T extends { operand: infer OperandType; returnCardinality: infer ReturnCardinalityType } ? Operand extends OperandType ? ReturnCardinalityType : never : never;`,
+      t`T extends { operand: infer OperandType; retCard: infer ReturnCardinalityType } ? Operand extends OperandType ? ReturnCardinalityType : never : never;`,
     ]);
   });
 
