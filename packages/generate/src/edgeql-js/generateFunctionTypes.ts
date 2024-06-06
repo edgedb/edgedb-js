@@ -494,15 +494,13 @@ type ReturnCardinality =
   | { type: "MULTIPLY"; params: ParamCardinality[] }
   | { type: "IDENTITY"; param: ParamCardinality };
 
-interface FuncopParamNamed extends $.introspect.FuncopParam {
+export interface FuncopParamNamed extends $.introspect.FuncopParam {
   genTypeName: string;
 }
 
-function getReturnCardinality(
+export function getReturnCardinality(
   name: string,
-  params: ($.introspect.FuncopParam & {
-    genTypeName: string;
-  })[],
+  params: FuncopParamNamed[],
   returnTypemod: $.introspect.FuncopTypemod,
   preservesOptionality = false,
 ): ReturnCardinality {

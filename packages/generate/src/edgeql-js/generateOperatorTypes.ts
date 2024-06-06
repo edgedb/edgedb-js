@@ -5,10 +5,11 @@ import { CodeBuffer, type CodeFragment, r, t, ts } from "../builders";
 import type { GeneratorParams } from "../genutil";
 import { frag, quote, splitName } from "../genutil";
 import {
+  type FuncopParamNamed,
   allowsLiterals,
   generateFuncopDef,
   generateFuncopTypes,
-  generateReturnCardinality,
+  getReturnCardinality,
 } from "./generateFunctionTypes";
 import {
   getTypesSpecificity,
@@ -109,9 +110,7 @@ interface InfixHomogenousOperator extends BaseOperator {
 // Such as `std::=`, `std::!=`, `std::>`, `std::<`
 interface InfixComparisonOperator extends BaseOperator {
   type: "InfixComparisonOperator";
-  lhs: CodeFragment[];
-  rhs: CodeFragment[];
-  retCard: CodeFragment[];
+  args: CodeFragment[];
 }
 
 /**
@@ -122,9 +121,7 @@ interface InfixComparisonOperator extends BaseOperator {
  */
 interface InfixOptionalComparisonOperator extends BaseOperator {
   type: "InfixOptionalComparisonOperator";
-  lhs: CodeFragment[];
-  rhs: CodeFragment[];
-  retCard: CodeFragment[];
+  args: CodeFragment[];
 }
 
 /**
@@ -307,6 +304,41 @@ function operatorFromOpDef(
     return argsFragments;
   };
 
+  const withReturnCardinality = (
+    params: FuncopParamNamed[],
+    argsFragments: CodeFragment[],
+  ): CodeFragment[] => {
+    const cardinality = getReturnCardinality(
+      opDef.name,
+      params,
+      opDef.return_typemod,
+      false,
+    );
+
+    switch (cardinality.type) {
+      case "IDENTITY":
+        return frag`${argsFragments}`;
+      case "MANY":
+        return frag`${argsFragments} & { retCard: $.Cardinality.Many }`;
+      case "ONE":
+        return frag`${argsFragments} & { retCard: $.Cardinality.One }`;
+      case "ZERO":
+        return frag`${argsFragments} & { retCard: $.Cardinality.Zero }`;
+      case "COALESCE":
+        return frag`withCoalesceReturnCardinality<${argsFragments}>`;
+      case "IF_ELSE":
+        return frag`withIfElseReturnCardinality<${argsFragments}>`;
+      case "MERGE":
+        return frag`withMergeReturnCardinality<${argsFragments}>`;
+      case "MULTIPLY":
+        return frag`withMultiplyReturnCardinality<${argsFragments}>`;
+      case "OVERRIDE_LOWER":
+        return frag`withOverrideLowerReturnCardinality<${argsFragments}, ${cardinality.with}>`;
+      case "OVERRIDE_UPPER":
+        return frag`withOverrideUpperReturnCardinality<${argsFragments}, ${cardinality.with}>`;
+    }
+  };
+
   const anytypeIsBaseType = Boolean(opDef.anytypes?.type[0] === "$.BaseType");
 
   if (opDef.operator_kind === $.OperatorKind.Prefix) {
@@ -337,27 +369,23 @@ function operatorFromOpDef(
       // Scalar
       if (opDef.return_type.name === "std::bool") {
         // Comparison
-        const retCard = generateReturnCardinality(
-          opName,
+        const args = withReturnCardinality(
           [
             { ...lhsType, genTypeName: "LHS" },
             { ...rhsType, genTypeName: "RHS" },
           ],
-          opDef.return_typemod,
-          false,
+          frag`{ lhs: ${typeToCodeFragment(lhsType)}; rhs: ${typeToCodeFragment(rhsType)} }`,
         );
         log("InfixComparisonOperator lhs: %o", lhsType);
         log("InfixComparisonOperator rhs: %o", rhsType);
-        log("InfixComparisonOperator retCard: %s", retCard);
+        log("InfixComparisonOperator args: %s", args);
         return {
           type:
             lhsType.typemod === "OptionalType"
               ? "InfixOptionalComparisonOperator"
               : "InfixComparisonOperator",
-          lhs: typeToCodeFragment(lhsType),
-          rhs: typeToCodeFragment(rhsType),
+          args,
           operatorSymbol,
-          retCard: frag`${retCard}`,
         };
       } else {
         // Homogenous
@@ -707,7 +735,9 @@ export function generateOperators({
   overloadsBuf.indented(() => {
     overloadsBuf.writeln([t`Args extends {`]);
     overloadsBuf.indented(() => {
-      overloadsBuf.writeln([t`lhs: _.castMaps.orScalarLiteral<$.TypeSet<$.BaseType>>;`]);
+      overloadsBuf.writeln([
+        t`lhs: _.castMaps.orScalarLiteral<$.TypeSet<$.BaseType>>;`,
+      ]);
       overloadsBuf.writeln([t`rhs: any;`]);
     });
     overloadsBuf.writeln([t`},`]);
@@ -716,7 +746,9 @@ export function generateOperators({
   overloadsBuf.indented(() => {
     overloadsBuf.writeln([t`ret: $.getPrimitiveBaseType<`]);
     overloadsBuf.indented(() => {
-      overloadsBuf.writeln([t`_.castMaps.literalToTypeSet<Args["lhs"]>["__element__"]`]);
+      overloadsBuf.writeln([
+        t`_.castMaps.literalToTypeSet<Args["lhs"]>["__element__"]`,
+      ]);
     });
     overloadsBuf.writeln([t`>;`]);
     overloadsBuf.writeln([t`lhs: Args["lhs"];`]);
@@ -738,7 +770,9 @@ export function generateOperators({
   overloadsBuf.indented(() => {
     overloadsBuf.writeln([t`ret: $.RangeType<`]);
     overloadsBuf.indented(() => {
-      overloadsBuf.writeln([t`$.getPrimitiveBaseType<Args["lhs"]["__element__"]["__element__"]>`]);
+      overloadsBuf.writeln([
+        t`$.getPrimitiveBaseType<Args["lhs"]["__element__"]["__element__"]>`,
+      ]);
     });
     overloadsBuf.writeln([t`>;`]);
     overloadsBuf.writeln([t`lhs: Args["lhs"];`]);
@@ -760,7 +794,9 @@ export function generateOperators({
   overloadsBuf.indented(() => {
     overloadsBuf.writeln([t`ret: $.ArrayType<`]);
     overloadsBuf.indented(() => {
-      overloadsBuf.writeln([t`$.getPrimitiveNonArrayBaseType<Args["lhs"]["__element__"]["__element__"]>`]);
+      overloadsBuf.writeln([
+        t`$.getPrimitiveNonArrayBaseType<Args["lhs"]["__element__"]["__element__"]>`,
+      ]);
     });
     overloadsBuf.writeln([t`>;`]);
     overloadsBuf.writeln([t`lhs: Args["lhs"];`]);
@@ -788,6 +824,31 @@ export function generateOperators({
     overloadsBuf.writeln([t`>;`]);
     overloadsBuf.writeln([t`lhs: Args["lhs"];`]);
     overloadsBuf.writeln([t`rhs: Args["rhs"];`]);
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  overloadsBuf.writeln([t`interface withMultiplyReturnCardinality<`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`Args extends {`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`lhs: any;`]);
+      overloadsBuf.writeln([t`rhs: any;`]);
+      overloadsBuf.writeln([t`ret?: any;`]);
+    });
+    overloadsBuf.writeln([t`},`]);
+  });
+  overloadsBuf.writeln([t`> {`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`retCard: $.cardutil.multiplyCardinalities<`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`$.cardutil.paramCardinality<Args["lhs"]>,`]);
+      overloadsBuf.writeln([t`$.cardutil.paramCardinality<Args["rhs"]>`]);
+    });
+    overloadsBuf.writeln([t`>;`]);
+    overloadsBuf.writeln([t`lhs: Args["lhs"];`]);
+    overloadsBuf.writeln([t`rhs: Args["rhs"];`]);
+    overloadsBuf.writeln([t`ret: Args["ret"];`]);
   });
   overloadsBuf.writeln([t`}`]);
   overloadsBuf.nl();
@@ -859,7 +920,7 @@ export function generateOperators({
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.rhs} }`]);
+          overloadsBuf.writeln([t`| ${def.args}`]);
         }
       });
     }
@@ -873,7 +934,7 @@ export function generateOperators({
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.rhs} }`]);
+          overloadsBuf.writeln([t`| ${def.args}`]);
         }
       });
     }
@@ -1013,7 +1074,7 @@ export function generateOperators({
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`])
+          overloadsBuf.writeln([t`| ${def.args}`]);
         }
       });
     }
@@ -1061,13 +1122,37 @@ export function generateOperators({
       t`T extends { lhs: infer LHSType; rhs: infer RHSType } ? LHS extends LHSType ? RHSType : never : never;`,
     ]);
   });
+  code.nl();
 
   code.writeln([t`type ExtractReturnCardinality<T, Operand> =`]);
   code.indented(() => {
     code.writeln([
-      t`T extends { operand: infer OperandType; retCard: infer ReturnCardinalityType } ? Operand extends OperandType ? ReturnCardinalityType : never : never;`,
+      t`T extends { operand: infer OperandType; retCard: infer ReturnCardinalityType }`,
     ]);
+    code.indented(() => {
+      code.writeln([t`? Operand extends OperandType`]);
+      code.indented(() => {
+        code.writeln([t`? ReturnCardinalityType`]);
+        code.indented(() => {
+          code.writeln([t`: never`]);
+        });
+      });
+      code.writeln([
+        t`: T extends { lhs: infer LHSType; retCard: infer RetCard }`,
+      ]);
+      code.indented(() => {
+        code.writeln([t`? Operand extends LHSType`]);
+        code.indented(() => {
+          code.writeln([t`? RetCard`]);
+          code.indented(() => {
+            code.writeln([t`: never`]);
+          });
+        });
+        code.writeln([t`: never`]);
+      });
+    });
   });
+  code.nl();
 
   code.writeln([t`type ExtractReturn<T, LHS, RHS> =`]);
   code.indented(() => {
@@ -1099,15 +1184,16 @@ export function generateOperators({
       t`LHS extends InfixComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
     ]);
     code.writeln([
-      t`RHS extends ExtractRHS<InfixComparisonOperators[Op], LHS>`,
+      t`RHS extends ExtractRHS<InfixComparisonOperators[Op], LHS>,`,
+    ]);
+    code.writeln([
+      t`RetCard extends ExtractReturnCardinality<InfixComparisonOperators[Op], LHS>`,
     ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
     code.writeln([t`_std.$bool,`]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
+    code.writeln([t`RetCard`]);
   });
   code.writeln([t`>;`]);
 
@@ -1119,15 +1205,16 @@ export function generateOperators({
       t`LHS extends InfixOptionalComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
     ]);
     code.writeln([
-      t`RHS extends ExtractRHS<InfixOptionalComparisonOperators[Op], LHS>`,
+      t`RHS extends ExtractRHS<InfixOptionalComparisonOperators[Op], LHS>,`,
+    ]);
+    code.writeln([
+      t`RetCard extends ExtractReturnCardinality<InfixOptionalComparisonOperators[Op], LHS>`,
     ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
     code.writeln([t`_std.$bool,`]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.optionalParamCardinality<LHS>, $.cardutil.optionalParamCardinality<RHS>>`,
-    ]);
+    code.writeln([t`RetCard`]);
   });
   code.writeln([t`>;`]);
 
