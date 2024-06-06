@@ -184,8 +184,7 @@ interface TernaryHomogenousOperator extends BaseOperator {
  */
 interface TernaryContainerHomogenousOperator extends BaseOperator {
   type: "TernaryContainerHomogenousOperator";
-  lhs: CodeFragment[];
-  rhs: CodeFragment[] | null;
+  args: CodeFragment[];
 }
 
 // Special Cases
@@ -427,10 +426,13 @@ function operatorFromOpDef(
       // Container
       log("TernaryContainerHomogenousOperator lhs: %o", lhs);
       log("TernaryContainerHomogenousOperator rhs: %o", rhs);
+      const args = getReturnTypeFromArgsAndAnytypes(
+        opDef.anytypes,
+        getArgsFromAnytypes(opDef.anytypes, lhs, rhs),
+      );
       return {
         type: "TernaryContainerHomogenousOperator",
-        lhs: typeToCodeFragment(lhs),
-        rhs: rhs.type.id !== lhs.type.id ? typeToCodeFragment(rhs) : null,
+        args,
         operatorSymbol,
       };
     }
@@ -1011,13 +1013,7 @@ export function generateOperators({
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          if (def.rhs) {
-            overloadsBuf.writeln([
-              t`| ArgSetAndReturnOf<${def.lhs}, ${def.rhs}>`,
-            ]);
-          } else {
-            overloadsBuf.writeln([t`| ArgSetAndReturnOf<${def.lhs}>`]);
-          }
+          overloadsBuf.writeln([t`| ${def.args}`])
         }
       });
     }
