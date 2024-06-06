@@ -159,8 +159,7 @@ interface InfixOptionalContainerComparisonOperator extends BaseOperator {
  */
 interface InfixContainerHomogenousOperator extends BaseOperator {
   type: "InfixContainerHomogenousOperator";
-  lhs: CodeFragment[];
-  rhs: CodeFragment[] | null;
+  args: CodeFragment[];
 }
 
 /**
@@ -268,6 +267,46 @@ function operatorFromOpDef(
       };
     }
   }
+  const getArgsFromAnytypes = (
+    anytypes: AnytypeDef | null,
+    lhsType: OverloadArg,
+    rhsType: OverloadArg,
+  ): CodeFragment[] => {
+    if (anytypes && anytypes.kind === "noncastable") {
+      if (anytypes.typeObj.kind === "range") {
+        return frag`infixOperandsRangeType<${typeToCodeFragment(lhsType)}>`;
+      } else if (anytypes.typeObj.kind === "array") {
+        return frag`infixOperandsArrayTypeNonArray<${typeToCodeFragment(
+          lhsType,
+        )}>`;
+      } else if (anytypes.typeObj.kind === "unknown") {
+        return frag`infixOperandsBaseType<${typeToCodeFragment(lhsType)}>`;
+      }
+    }
+
+    return frag`{ lhs: ${typeToCodeFragment(lhsType)}; rhs: ${typeToCodeFragment(rhsType)} }`;
+  };
+
+  const getReturnTypeFromArgsAndAnytypes = (
+    anytypes: AnytypeDef | null,
+    argsFragments: CodeFragment[],
+  ): CodeFragment[] => {
+    if (anytypes) {
+      if (anytypes.kind === "noncastable") {
+        if (anytypes.typeObj.kind === "range") {
+          return frag`operandsRangeTypeToReturnType<${argsFragments}>`;
+        } else if (anytypes.typeObj.kind === "array") {
+          return frag`operandsArrayTypeNonArrayToReturnType<${argsFragments}>`;
+        } else if (anytypes.typeObj.kind === "unknown") {
+          return frag`operandsBaseTypeToReturnType<${argsFragments}>`;
+        }
+      } else {
+        return frag`operandsContainerToReturnType<${argsFragments}>`;
+      }
+    }
+
+    return argsFragments;
+  };
 
   const anytypeIsBaseType = Boolean(opDef.anytypes?.type[0] === "$.BaseType");
 
@@ -299,8 +338,6 @@ function operatorFromOpDef(
       // Scalar
       if (opDef.return_type.name === "std::bool") {
         // Comparison
-        log("InfixComparisonOperator lhs: %o", lhsType);
-        log("InfixComparisonOperator rhs: %o", rhsType);
         const retCard = generateReturnCardinality(
           opName,
           [
@@ -310,6 +347,9 @@ function operatorFromOpDef(
           opDef.return_typemod,
           false,
         );
+        log("InfixComparisonOperator lhs: %o", lhsType);
+        log("InfixComparisonOperator rhs: %o", rhsType);
+        log("InfixComparisonOperator retCard: %s", retCard);
         return {
           type:
             lhsType.typemod === "OptionalType"
@@ -343,25 +383,6 @@ function operatorFromOpDef(
           "InfixContainerComparisonOperator has rhs: %o",
           rhsType.type.id !== lhsType.type.id,
         );
-        function getArgsFromAnytypes(
-          anytypes: AnytypeDef | null,
-          lhsType: OverloadArg,
-          rhsType: OverloadArg,
-        ): CodeFragment[] {
-          if (anytypes && anytypes.kind === "noncastable") {
-            if (anytypes.typeObj.kind === "range") {
-              return frag`infixOperandsRangeType<${typeToCodeFragment(lhsType)}>`;
-            } else if (anytypes.typeObj.kind === "array") {
-              return frag`infixOperandsArrayTypeNonArray<${typeToCodeFragment(
-                lhsType,
-              )}>`;
-            } else if (anytypes.typeObj.kind === "unknown") {
-              return frag`infixOperandsBaseType<${typeToCodeFragment(lhsType)}>`;
-            }
-          }
-
-          return frag`{ lhs: ${typeToCodeFragment(lhsType)}; rhs: ${typeToCodeFragment(rhsType)} }`;
-        }
         const args = getArgsFromAnytypes(opDef.anytypes, lhsType, rhsType);
         return {
           type:
@@ -378,10 +399,13 @@ function operatorFromOpDef(
           "InfixContainerHomogenousOperator lhs: %o",
           opDef.params.positional[0],
         );
+        const args = getReturnTypeFromArgsAndAnytypes(
+          opDef.anytypes,
+          getArgsFromAnytypes(opDef.anytypes, lhs, rhs),
+        );
         return {
           type: "InfixContainerHomogenousOperator",
-          lhs: typeToCodeFragment(lhs),
-          rhs: rhs.type.id !== lhs.type.id ? typeToCodeFragment(rhs) : null,
+          args,
           operatorSymbol,
         };
       }
@@ -675,6 +699,96 @@ export function generateOperators({
     ]);
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  overloadsBuf.writeln([t`interface operandsBaseTypeToReturnType<`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`Args extends {`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`lhs: _.castMaps.orScalarLiteral<$.TypeSet<$.BaseType>>;`]);
+      overloadsBuf.writeln([t`rhs: any;`]);
+    });
+    overloadsBuf.writeln([t`},`]);
+  });
+  overloadsBuf.writeln([t`> {`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`ret: $.getPrimitiveBaseType<`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`_.castMaps.literalToTypeSet<Args["lhs"]>["__element__"]`]);
+    });
+    overloadsBuf.writeln([t`>;`]);
+    overloadsBuf.writeln([t`lhs: Args["lhs"];`]);
+    overloadsBuf.writeln([t`rhs: Args["rhs"];`]);
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  overloadsBuf.writeln([t`interface operandsRangeTypeToReturnType<`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`Args extends {`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`lhs: $.TypeSet<$.RangeType<_std.$anypoint>>;`]);
+      overloadsBuf.writeln([t`rhs: any;`]);
+    });
+    overloadsBuf.writeln([t`},`]);
+  });
+  overloadsBuf.writeln([t`> {`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`ret: $.RangeType<`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`$.getPrimitiveBaseType<Args["lhs"]["__element__"]["__element__"]>`]);
+    });
+    overloadsBuf.writeln([t`>;`]);
+    overloadsBuf.writeln([t`lhs: Args["lhs"];`]);
+    overloadsBuf.writeln([t`rhs: Args["rhs"];`]);
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  overloadsBuf.writeln([t`interface operandsArrayTypeNonArrayToReturnType<`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`Args extends {`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`lhs: $.TypeSet<$.ArrayType<$.NonArrayType>>;`]);
+      overloadsBuf.writeln([t`rhs: any;`]);
+    });
+    overloadsBuf.writeln([t`},`]);
+  });
+  overloadsBuf.writeln([t`> {`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`ret: $.ArrayType<`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`$.getPrimitiveNonArrayBaseType<Args["lhs"]["__element__"]["__element__"]>`]);
+    });
+    overloadsBuf.writeln([t`>;`]);
+    overloadsBuf.writeln([t`lhs: Args["lhs"];`]);
+    overloadsBuf.writeln([t`rhs: Args["rhs"];`]);
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  overloadsBuf.writeln([t`interface operandsContainerToReturnType<`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`Args extends {`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`lhs: $.TypeSet;`]);
+      overloadsBuf.writeln([t`rhs: $.TypeSet;`]);
+    });
+    overloadsBuf.writeln([t`},`]);
+  });
+  overloadsBuf.writeln([t`> {`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`ret: _.syntax.getSharedParentPrimitive<`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`Args["lhs"]["__element__"],`]);
+      overloadsBuf.writeln([t`Args["rhs"]["__element__"]`]);
+    });
+    overloadsBuf.writeln([t`>;`]);
+    overloadsBuf.writeln([t`lhs: Args["lhs"];`]);
+    overloadsBuf.writeln([t`rhs: Args["rhs"];`]);
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
   // PrefixPredicateOperators
   overloadsBuf.writeln([t`interface PrefixParamCardinality<Operand> {`]);
@@ -771,7 +885,7 @@ export function generateOperators({
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`])
+          overloadsBuf.writeln([t`| ${def.args}`]);
         }
       });
     }
@@ -779,7 +893,9 @@ export function generateOperators({
   overloadsBuf.writeln([t`}`]);
 
   // InfixOptionalContainerComparisonOperators
-  overloadsBuf.writeln([t`interface InfixOptionalContainerComparisonOperators {`]);
+  overloadsBuf.writeln([
+    t`interface InfixOptionalContainerComparisonOperators {`,
+  ]);
   overloadsBuf.indented(() => {
     for (const [
       opSymbol,
@@ -788,7 +904,7 @@ export function generateOperators({
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`])
+          overloadsBuf.writeln([t`| ${def.args}`]);
         }
       });
     }
@@ -796,38 +912,13 @@ export function generateOperators({
   overloadsBuf.writeln([t`}`]);
 
   // InfixContainerHomogeneousOperators
-  overloadsBuf.writeln([t`type ArgSetAndReturnOf<LHS, RHS = LHS> =`]);
-  overloadsBuf.indented(() => {
-    overloadsBuf.writeln([
-      t`LHS extends $.TypeSet<$.RangeType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>>; ret: $.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>> }`,
-    ]);
-    overloadsBuf.writeln([
-      t`: LHS extends $.TypeSet<$.MultiRangeType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.MultiRangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>>; ret: $.MultiRangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>> }`,
-    ]);
-    overloadsBuf.writeln([
-      t`: LHS extends $.TypeSet<$.ArrayType<any>> ? { lhs: LHS; rhs: $.TypeSet<$.ArrayType<$.getPrimitiveNonArrayBaseType<LHS["__element__"]["__element__"]>>>; ret: $.ArrayType<$.getPrimitiveNonArrayBaseType<LHS["__element__"]["__element__"]>> }`,
-    ]);
-    overloadsBuf.writeln([
-      t`: LHS extends _.castMaps.orScalarLiteral<$.TypeSet<$.BaseType>> ? { lhs: LHS; rhs:_.castMaps.orScalarLiteral<$.TypeSet<$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>>>; ret: $.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]> }`,
-    ]);
-    overloadsBuf.writeln([
-      t`: LHS extends $.TypeSet<$.BaseType> ? RHS extends $.TypeSet<$.BaseType> ? { lhs: LHS; rhs: RHS; ret: $.getPrimitiveBaseType<LHS["__element__"]> } : never`,
-    ]);
-    overloadsBuf.writeln([t`: never;`]);
-  });
   overloadsBuf.writeln([t`interface InfixContainerHomogeneousOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of infixContainerHomogenousDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          if (def.rhs) {
-            overloadsBuf.writeln([
-              t`| ArgSetAndReturnOf<${def.lhs}, ${def.rhs}>`,
-            ]);
-          } else {
-            overloadsBuf.writeln([t`| ArgSetAndReturnOf<${def.lhs}>`]);
-          }
+          overloadsBuf.writeln([t`| ${def.args}`]);
         }
       });
     }
