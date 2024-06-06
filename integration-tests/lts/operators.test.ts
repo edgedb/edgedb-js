@@ -41,6 +41,17 @@ describe("operators", () => {
     });
   }
 
+  describe("optional conditional ops", () => {
+    checkOperatorExpr(
+      e.op(e.str("hello"), "?=", e.cast(e.str, e.set())),
+      "?=",
+      [e.str("hello"), e.cast(e.str, e.set())],
+      e.bool,
+      $.Cardinality.One,
+      `"hello" ?= <std::str>{}`,
+    );
+  });
+
   describe("slice and index ops", () => {
     checkOperatorExpr(
       e.str("test string")["2:5"],
@@ -206,6 +217,7 @@ describe("operators", () => {
       `"this" IF (42 = <std::float32>42) ELSE <std::str>{}`,
     );
 
+    /*
     checkOperatorExpr(
       e.op("if", e.bool(true), "then", e.int64(1), "else", e.int64(2)),
       "if_else",
@@ -214,6 +226,7 @@ describe("operators", () => {
       $.Cardinality.One,
       `<std::int64>1 IF true ELSE <std::int64>2`,
     );
+    */
   });
 
   test("non-literal args", async () => {

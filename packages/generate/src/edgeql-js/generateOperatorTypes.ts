@@ -97,8 +97,7 @@ interface PrefixPredicateOperator extends BaseOperator {
  */
 interface InfixHomogenousOperator extends BaseOperator {
   type: "InfixHomogenousOperator";
-  lhs: CodeFragment[];
-  rhs: CodeFragment[] | null;
+  args: CodeFragment[];
 }
 
 /**
@@ -331,7 +330,9 @@ function operatorFromOpDef(
       case "MERGE":
         return frag`withMergeReturnCardinality<${argsFragments}>`;
       case "MULTIPLY":
-        return frag`withMultiplyReturnCardinality<${argsFragments}>`;
+        return cardinality.params.every((param) => param.type === "OPTIONAL")
+          ? frag`withOptionalMultiplyReturnCardinality<${argsFragments}>`
+          : frag`withMultiplyReturnCardinality<${argsFragments}>`;
       case "OVERRIDE_LOWER":
         return frag`withOverrideLowerReturnCardinality<${argsFragments}, ${cardinality.with}>`;
       case "OVERRIDE_UPPER":
@@ -390,13 +391,16 @@ function operatorFromOpDef(
       } else {
         // Homogenous
         log("InfixHomogenousOperator lhs: %o", lhsType);
+        const args = withReturnCardinality(
+          [
+            { ...lhsType, genTypeName: "LHS" },
+            { ...rhsType, genTypeName: "RHS" },
+          ],
+          frag`{ lhs: ${typeToCodeFragment(lhsType)}; rhs: ${typeToCodeFragment(rhsType)} }`,
+        );
         return {
           type: "InfixHomogenousOperator",
-          lhs: typeToCodeFragment(lhsType),
-          rhs:
-            lhsType.type.id !== rhsType.type.id
-              ? typeToCodeFragment(rhsType)
-              : null,
+          args,
           operatorSymbol,
         };
       }
@@ -853,6 +857,33 @@ export function generateOperators({
   overloadsBuf.writeln([t`}`]);
   overloadsBuf.nl();
 
+  overloadsBuf.writeln([t`interface withOptionalMultiplyReturnCardinality<`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`Args extends {`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`lhs: any;`]);
+      overloadsBuf.writeln([t`rhs: any;`]);
+      overloadsBuf.writeln([t`ret?: any;`]);
+    });
+    overloadsBuf.writeln([t`},`]);
+    overloadsBuf.writeln([t`LHS extends Args["lhs"] = Args["lhs"],`]);
+    overloadsBuf.writeln([t`RHS extends Args["rhs"] = Args["rhs"],`]);
+    overloadsBuf.writeln([t`Ret extends Args["ret"] = Args["ret"],`]);
+  });
+  overloadsBuf.writeln([t`> {`]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`retCard: $.cardutil.multiplyCardinalities<`]);
+    overloadsBuf.indented(() => {
+      overloadsBuf.writeln([t`$.cardutil.optionalParamCardinality<LHS>,`]);
+      overloadsBuf.writeln([t`$.cardutil.optionalParamCardinality<RHS>`]);
+    });
+    overloadsBuf.writeln([t`>;`]);
+    overloadsBuf.writeln([t`lhs: LHS;`]);
+    overloadsBuf.writeln([t`rhs: RHS;`]);
+    overloadsBuf.writeln([t`ret: Ret;`]);
+  });
+  overloadsBuf.writeln([t`}`]);
+
   // PrefixPredicateOperators
   overloadsBuf.writeln([t`interface PrefixParamCardinality<Operand> {`]);
   overloadsBuf.indented(() => {
@@ -905,7 +936,7 @@ export function generateOperators({
       overloadsBuf.indented(() => {
         for (const def of defs) {
           overloadsBuf.writeln([
-            t`| { lhs: ${def.lhs}; rhs: ${def.rhs ?? def.lhs} }`,
+            t`| ${def.args}`,
           ]);
         }
       });
@@ -1285,7 +1316,10 @@ export function generateOperators({
       t`LHS extends InfixHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
     ]);
     code.writeln([
-      t`RHS extends ExtractRHS<InfixHomogeneousOperators[Op], LHS>`,
+      t`RHS extends ExtractRHS<InfixHomogeneousOperators[Op], LHS>,`,
+    ]);
+    code.writeln([
+      t`RetCard extends ExtractReturnCardinality<InfixHomogeneousOperators[Op], LHS>`,
     ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
@@ -1294,7 +1328,7 @@ export function generateOperators({
       t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
     ]);
     code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      t`RetCard`,
     ]);
   });
   code.writeln([t`>;`]);
