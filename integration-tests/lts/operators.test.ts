@@ -326,4 +326,45 @@ describe("operators", () => {
     assert.deepEqual(t4.__cardinality__, $.Cardinality.One);
     assert.equal(await t4.run(client), "default");
   });
+
+  test("random assortment of invalid operators", () => {
+    try {
+      // @ts-expect-error cannot compare int64 and str
+      e.op(e.int64(10), "+", e.str("20"));
+      // @ts-expect-error cannot concat int64 and int64
+      e.op(e.int64(10), "++", e.int64(20));
+      // @ts-expect-error if condition must be bool
+      e.op("if", 1, "then", e.int64(1), "else", e.int64(0));
+      // @ts-expect-error cannot multiply number and object
+      e.op(1, "*", e.cast(e.User, e.set()));
+      // @ts-expect-error cannot union objects with different types
+      e.op(e.set(0), "union", e.set("str"));
+      const rangeOfInt32 = e.range(e.int32(0), e.int32(1));
+      const rangeOfFloat32 = e.range(e.float32(0), e.float32(1));
+      // @ts-expect-error cannot add ranges of different types
+      e.op(rangeOfInt32, "+", rangeOfFloat32);
+      // @ts-expect-error cannot concat arrays with different types
+      e.op(e.array([1, 2]), "++", e.array(["a", "b"]));
+      // @ts-expect-error cannot use `in` for sets of different types
+      e.op(e.int16(0), "in", e.set("str", "beep"));
+      const json = e.json("{}");
+      const uuid = e.uuid("00000000-0000-0000-0000-000000000000");
+      // @ts-expect-error cannot concat json and uuid
+      e.op(json, "++", uuid);
+      // @ts-expect-error if condition must be a boolean expression
+      e.op("if", e.op(1, "+", 2), "then", e.int64(1), "else", e.int64(0));
+      // @ts-expect-error not requires boolean operand
+      e.op("not", e.int16(0));
+      // @ts-expect-error true and false values of if must match
+      e.op("if", true, "then", e.int64(1), "else", e.str("beep"));
+      // @ts-expect-error ilike requires string operands
+      e.op(e.int64(0), "ilike", "beep");
+      // @ts-expect-error cannot concat date and bytes
+      e.op(e.datetime_of_statement(), "++", e.bytes(new Uint8Array([0])));
+
+      assert.fail();
+    } catch (_err) {
+      assert.ok(true);
+    }
+  });
 });
