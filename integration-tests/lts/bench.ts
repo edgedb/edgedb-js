@@ -6,6 +6,10 @@ const str0 = e.str("a");
 const str1 = e.str("b");
 const int0 = e.int16(0);
 const int1 = e.int16(1);
+const float0 = e.float32(0);
+const float1 = e.float32(1);
+const bool0 = e.bool(true);
+const bool1 = e.bool(false);
 const array0 = e.array([int0]);
 const array1 = e.array([int1]);
 const strArray0 = e.array([str0]);
@@ -281,3 +285,153 @@ bench("e.op: nested and and or operations", () => {
   );
   return {} as typeof op;
 }).types([117820, "instantiations"]);
+
+bench("e.op: string concatenation", () => {
+  const op = e.op(str0, "++", str1);
+  return {} as typeof op;
+}).types([47787, "instantiations"]);
+
+bench("e.op: integer addition", () => {
+  const op = e.op(int0, "+", int1);
+  return {} as typeof op;
+}).types([14314, "instantiations"]);
+
+bench("e.op: integer subtraction", () => {
+  const op = e.op(int0, "-", int1);
+  return {} as typeof op;
+}).types([15460, "instantiations"]);
+
+bench("e.op: integer multiplication", () => {
+  const op = e.op(int0, "*", int1);
+  return {} as typeof op;
+}).types([16880, "instantiations"]);
+
+bench("e.op: integer division", () => {
+  const op = e.op(int0, "/", int1);
+  return {} as typeof op;
+}).types([17008, "instantiations"]);
+
+bench("e.op: integer modulo", () => {
+  const op = e.op(int0, "%", int1);
+  return {} as typeof op;
+}).types([17013, "instantiations"]);
+
+bench("e.op: float addition", () => {
+  const op = e.op(float0, "+", float1);
+  return {} as typeof op;
+}).types([14314, "instantiations"]);
+
+bench("e.op: float subtraction", () => {
+  const op = e.op(float0, "-", float1);
+  return {} as typeof op;
+}).types([15460, "instantiations"]);
+
+bench("e.op: float multiplication", () => {
+  const op = e.op(float0, "*", float1);
+  return {} as typeof op;
+}).types([16880, "instantiations"]);
+
+bench("e.op: float division", () => {
+  const op = e.op(float0, "/", float1);
+  return {} as typeof op;
+}).types([17008, "instantiations"]);
+
+bench("e.op: boolean and", () => {
+  const op = e.op(bool0, "and", bool1);
+  return {} as typeof op;
+}).types([14341, "instantiations"]);
+
+bench("e.op: boolean or", () => {
+  const op = e.op(bool0, "or", bool1);
+  return {} as typeof op;
+}).types([14340, "instantiations"]);
+
+bench("e.op: string inequality", () => {
+  const op = e.op(str0, "!=", str1);
+  return {} as typeof op;
+}).types([4397, "instantiations"]);
+
+bench("e.op: integer less than", () => {
+  const op = e.op(int0, "<", int1);
+  return {} as typeof op;
+}).types([12691, "instantiations"]);
+
+bench("e.op: integer greater than", () => {
+  const op = e.op(int0, ">", int1);
+  return {} as typeof op;
+}).types([9451, "instantiations"]);
+
+bench("e.op: integer less than or equal", () => {
+  const op = e.op(int0, "<=", int1);
+  return {} as typeof op;
+}).types([11071, "instantiations"]);
+
+bench("e.op: integer greater than or equal", () => {
+  const op = e.op(int0, ">=", int1);
+  return {} as typeof op;
+}).types([7831, "instantiations"]);
+
+bench("e.op: set union", () => {
+  const op = e.op(allUsers, "union", singleUser);
+  return {} as typeof op;
+}).types([29224, "instantiations"]);
+
+bench("e.op: nested boolean and", () => {
+  const op = e.op(e.op(bool0, "and", bool1), "and", e.op(bool1, "or", bool0));
+  return {} as typeof op;
+}).types([40966, "instantiations"]);
+
+bench("e.op: nested integer addition", () => {
+  const op = e.op(e.op(int0, "+", int1), "+", e.op(int1, "+", int0));
+  return {} as typeof op;
+}).types([41003, "instantiations"]);
+
+bench("e.op: nested float multiplication", () => {
+  const op = e.op(e.op(float0, "*", float1), "*", e.op(float1, "*", float0));
+  return {} as typeof op;
+}).types([43013, "instantiations"]);
+
+bench("e.op: nested string concatenation", () => {
+  const op = e.op(e.op(str0, "++", str1), "++", e.op(str1, "++", str0));
+  return {} as typeof op;
+}).types([117728, "instantiations"]);
+
+bench("e.op: nested integer comparison", () => {
+  const op = e.op(e.op(int0, "<", int1), "and", e.op(int1, ">", int0));
+  return {} as typeof op;
+}).types([39365, "instantiations"]);
+
+bench("e.op: nested float comparison", () => {
+  const op = e.op(e.op(float0, "<=", float1), "and", e.op(float1, ">=", float0));
+  return {} as typeof op;
+}).types([37955, "instantiations"]);
+
+bench("e.op: nested boolean or", () => {
+  const op = e.op(e.op(bool0, "or", bool1), "or", e.op(bool1, "and", bool0));
+  return {} as typeof op;
+}).types([40965, "instantiations"]);
+
+bench("e.op: nested integer subtraction", () => {
+  const op = e.op(e.op(int0, "-", int1), "-", e.op(int1, "-", int0));
+  return {} as typeof op;
+}).types([41917, "instantiations"]);
+
+bench("e.op: nested float division", () => {
+  const op = e.op(e.op(float0, "/", float1), "/", e.op(float1, "/", float0));
+  return {} as typeof op;
+}).types([43259, "instantiations"]);
+
+bench("e.op: nested string inequality", () => {
+  const op = e.op(e.op(str0, "!=", str1), "and", e.op(str1, "=", str0));
+  return {} as typeof op;
+}).types([32666, "instantiations"]);
+
+bench("e.op: nested integer equality", () => {
+  const op = e.op(e.op(int0, "=", int1), "or", e.op(int1, "!=", int0));
+  return {} as typeof op;
+}).types([32663, "instantiations"]);
+
+bench("e.op: nested float equality", () => {
+  const op = e.op(e.op(float0, "=", float1), "or", e.op(float1, "!=", float0));
+  return {} as typeof op;
+}).types([32663, "instantiations"]);
