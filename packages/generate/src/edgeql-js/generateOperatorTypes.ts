@@ -1,11 +1,10 @@
-import { StrictMapSet } from "edgedb/dist/reflection";
+import { OperatorKind, StrictMapSet } from "edgedb/dist/reflection";
 import debug from "debug";
 
 import { CodeBuffer, type CodeFragment, r, t, ts } from "../builders";
 import type { GeneratorParams } from "../genutil";
 import { frag, quote, splitName } from "../genutil";
 import {
-  type FuncopParamNamed,
   allowsLiterals,
   generateFuncopDef,
   generateFuncopTypes,
@@ -18,7 +17,6 @@ import {
   expandFuncopAnytypeOverloads,
   findPathOfAnytype,
   type FuncopDefOverload,
-  type AnytypeDef,
 } from "../funcoputil";
 import { $ } from "../genutil";
 import { getStringRepresentation } from "./generateObjectTypes";
@@ -65,159 +63,164 @@ interface BaseOperator {
   operatorSymbol: string;
 }
 
-/**
- * Prefix operators that take a single value and return a single value
- *
- * @example
- * `std::distinct`, `std::+`, `std::-`
- */
-interface PrefixHomogenousOperator extends BaseOperator {
-  type: "PrefixHomogenousOperator";
+interface PrefixOperator extends BaseOperator {
+  kind: OperatorKind.Prefix;
   operand: CodeFragment[];
+  returnElement: "BOOLEAN" | "HOMOGENEOUS";
+  returnCardinality: "PARAM" | "ONE";
 }
 
-/**
- * Prefix operators that take a single value and return a boolean
- *
- * @example
- * `std::not`, `std::exists`
- */
-interface PrefixPredicateOperator extends BaseOperator {
-  type: "PrefixPredicateOperator";
-  operand: CodeFragment[];
-  typemod: $.introspect.FuncopTypemod;
+interface PrefixBooleanOperator extends PrefixOperator {
+  returnElement: "BOOLEAN";
+  returnCardinality: "PARAM";
 }
 
-/**
- * Binary operators that take two values of the same type and return a value of
- * the same type
- *
- * @example
- * `std::+`, `std::*`, `std::++`
- */
-interface InfixHomogenousOperator extends BaseOperator {
-  type: "InfixHomogenousOperator";
+interface PrefixBooleanOneOperator extends PrefixOperator {
+  returnElement: "BOOLEAN";
+  returnCardinality: "ONE";
+}
+
+interface PrefixHomogeneousOperator extends PrefixOperator {
+  returnElement: "HOMOGENEOUS";
+  returnCardinality: "PARAM";
+}
+
+interface InfixOperator extends BaseOperator {
+  kind: OperatorKind.Infix;
   args: CodeFragment[];
+  returnElement:
+    | "BOOLEAN"
+    | "SCALAR"
+    | "CONTAINER"
+    | "RANGE_TYPE"
+    | "OBJECT_ARRAY_TYPE"
+    | "ARRAY_TYPE"
+    | "BASE_TYPE"
+    | "MERGE";
+  returnCardinality:
+    | "MULTIPLY"
+    | "MULTIPLY_OPTIONAL"
+    | "MULTIPLY_ONE"
+    | "MERGE"
+    | "MANY"
+    | "COALESCE";
 }
 
-/**
- * Binary operators that compare two values and return a boolean
- *
- * @example
- * `std::=`, `std::!=`, `std::>`, `std::<`
- */
-// Such as `std::=`, `std::!=`, `std::>`, `std::<`
-interface InfixComparisonOperator extends BaseOperator {
-  type: "InfixComparisonOperator";
+interface InfixBooleanMultiplyOperator extends InfixOperator {
+  returnElement: "BOOLEAN";
+  returnCardinality: "MULTIPLY";
+}
+
+interface InfixBooleanMultiplyOptionalOperator extends InfixOperator {
+  returnElement: "BOOLEAN";
+  returnCardinality: "MULTIPLY_OPTIONAL";
+}
+
+interface InfixBooleanMultiplyOneOperator extends InfixOperator {
+  returnElement: "BOOLEAN";
+  returnCardinality: "MULTIPLY_ONE";
+}
+
+interface InfixScalarMultiplyOperator extends InfixOperator {
+  returnElement: "SCALAR";
+  returnCardinality: "MULTIPLY";
+}
+
+interface InfixContainerMultiplyOperator extends InfixOperator {
+  returnElement: "CONTAINER";
+  returnCardinality: "MULTIPLY";
+}
+
+interface InfixRangeTypeMultiplyOperator extends InfixOperator {
+  returnElement: "RANGE_TYPE";
+  returnCardinality: "MULTIPLY";
+}
+
+interface InfixArrayTypeMultiplyOperator extends InfixOperator {
+  returnElement: "ARRAY_TYPE";
+  returnCardinality: "MULTIPLY";
+}
+
+interface InfixObjectArrayTypeMultiplyOperator extends InfixOperator {
+  returnElement: "OBJECT_ARRAY_TYPE";
+  returnCardinality: "MULTIPLY";
+}
+
+interface InfixBaseTypeMultiplyOneOperator extends InfixOperator {
+  returnElement: "BASE_TYPE";
+  returnCardinality: "MULTIPLY_ONE";
+}
+
+interface InfixBaseTypeMergeOperator extends InfixOperator {
+  returnElement: "BASE_TYPE";
+  returnCardinality: "MERGE";
+}
+
+interface InfixMergeOperator extends InfixOperator {
+  returnElement: "MERGE";
+  returnCardinality: "MERGE";
+}
+
+interface InfixMergeManyOperator extends InfixOperator {
+  returnElement: "MERGE";
+  returnCardinality: "MANY";
+}
+
+interface InfixCoalesceContainerOperator extends InfixOperator {
+  returnElement: "CONTAINER";
+  returnCardinality: "COALESCE";
+}
+
+interface InfixCoalesceBaseTypeOperator extends InfixOperator {
+  returnElement: "BASE_TYPE";
+  returnCardinality: "COALESCE";
+}
+
+interface InfixCoalesceObjectOperator extends InfixOperator {
+  returnElement: "MERGE";
+  returnCardinality: "COALESCE";
+}
+
+interface TernaryOperator extends BaseOperator {
+  kind: OperatorKind.Ternary;
   args: CodeFragment[];
+  returnElement: "CONTAINER" | "BASE_TYPE" | "MERGE";
 }
 
-/**
- * Binary operators that compare two possibly empty values and return a boolean
- *
- * @example
- * `std::?=`, `std::?!=`
- */
-interface InfixOptionalComparisonOperator extends BaseOperator {
-  type: "InfixOptionalComparisonOperator";
-  args: CodeFragment[];
+interface TernaryContainerOperator extends TernaryOperator {
+  returnElement: "CONTAINER";
 }
 
-/**
- * Binary operators that compare two container types and return a boolean
- *
- * @example
- * `std::=`, `std::!=`, `std::in`, `std::not in`
- */
-interface InfixContainerComparisonOperator extends BaseOperator {
-  type: "InfixContainerComparisonOperator";
-  args: CodeFragment[];
+interface TernaryBaseTypeOperator extends TernaryOperator {
+  returnElement: "BASE_TYPE";
 }
 
-/**
- * Binary operators that compare two potentially empty container types and return a
- * boolean
- *
- * @example
- * `std::?=`, `std::?!=`
- */
-interface InfixOptionalContainerComparisonOperator extends BaseOperator {
-  type: "InfixOptionalContainerComparisonOperator";
-  args: CodeFragment[];
-}
-
-/**
- * Binary operators that take two container types and return a value of the same
- * type
- *
- * @example
- * `std::??`, `std::+`, `std::++`
- */
-interface InfixContainerHomogenousOperator extends BaseOperator {
-  type: "InfixContainerHomogenousOperator";
-  args: CodeFragment[];
-}
-
-/**
- * Ternary operators that take a boolean and two values of the same type and
- * return a value of the same type based on the boolean
- *
- * @example
- * `std::if_else`
- */
-interface TernaryHomogenousOperator extends BaseOperator {
-  type: "TernaryHomogenousOperator";
-  lhs: CodeFragment[];
-  rhs: CodeFragment[] | null;
-}
-
-/**
- * Ternary operators that take a boolean and two container types and return a
- * value of the same type based on the boolean
- *
- * @example
- * `std::if_else`
- */
-interface TernaryContainerHomogenousOperator extends BaseOperator {
-  type: "TernaryContainerHomogenousOperator";
-  args: CodeFragment[];
-}
-
-// Special Cases
-/**
- * std::coalesce
- */
-interface CoalesceScalarOperator extends BaseOperator {
-  type: "CoalesceScalarOperator";
-  lhs: CodeFragment[];
-}
-
-interface CoalesceContainerOperator extends BaseOperator {
-  type: "CoalesceContainerOperator";
-  lhs: CodeFragment[];
-}
-
-interface CoalesceObjectOperator extends BaseOperator {
-  type: "CoalesceObjectOperator";
-  lhs: CodeFragment[];
+interface TernaryMergeOperator extends TernaryOperator {
+  returnElement: "MERGE";
 }
 
 type Operator =
-  | PrefixHomogenousOperator
-  | PrefixPredicateOperator
-  | InfixHomogenousOperator
-  | InfixComparisonOperator
-  | InfixOptionalComparisonOperator
-  | InfixContainerComparisonOperator
-  | InfixOptionalContainerComparisonOperator
-  | InfixContainerHomogenousOperator
-  | TernaryHomogenousOperator
-  | TernaryContainerHomogenousOperator
-
-  // Special Cases
-  | CoalesceScalarOperator
-  | CoalesceContainerOperator
-  | CoalesceObjectOperator;
+  | PrefixBooleanOperator
+  | PrefixBooleanOneOperator
+  | PrefixHomogeneousOperator
+  | InfixBooleanMultiplyOperator
+  | InfixBooleanMultiplyOptionalOperator
+  | InfixBooleanMultiplyOneOperator
+  | InfixScalarMultiplyOperator
+  | InfixContainerMultiplyOperator
+  | InfixRangeTypeMultiplyOperator
+  | InfixArrayTypeMultiplyOperator
+  | InfixObjectArrayTypeMultiplyOperator
+  | InfixBaseTypeMultiplyOneOperator
+  | InfixBaseTypeMergeOperator
+  | InfixMergeOperator
+  | InfixMergeManyOperator
+  | InfixCoalesceContainerOperator
+  | InfixCoalesceBaseTypeOperator
+  | InfixCoalesceObjectOperator
+  | TernaryContainerOperator
+  | TernaryBaseTypeOperator
+  | TernaryMergeOperator;
 
 type OverloadArg =
   FuncopDefOverload<$.introspect.OperatorDef>["params"]["positional"][number];
@@ -236,238 +239,245 @@ function operatorFromOpDef(
     opName,
     operatorSymbol,
     returnType: opDef.return_type.name,
+    returnTypeMod: opDef.return_typemod,
     anytypes: opDef.anytypes,
+    positional: opDef.params.positional,
   });
   if (opName === "std::coalesce") {
-    const [lhs] = opDef.params.positional;
+    const [lhs, rhs] = opDef.params.positional;
     if (opDef.anytypes?.kind === "noncastable") {
       return {
-        type: "CoalesceScalarOperator",
-        lhs: typeToCodeFragment(lhs),
+        kind: OperatorKind.Infix,
+        args: frag`infixOperandsBaseType<${typeToCodeFragment(lhs)}>`,
+        returnElement: "BASE_TYPE",
+        returnCardinality: "COALESCE",
         operatorSymbol,
       };
     } else if (
       opDef.anytypes?.returnAnytypeWrapper === "_.syntax.mergeObjectTypes"
     ) {
       return {
-        type: "CoalesceObjectOperator",
-        lhs: typeToCodeFragment(lhs),
+        kind: OperatorKind.Infix,
+        args: frag`{ lhs: ${typeToCodeFragment(lhs)}, rhs: ${typeToCodeFragment(rhs)} }`,
+        returnElement: "MERGE",
+        returnCardinality: "COALESCE",
         operatorSymbol,
       };
     } else {
       return {
-        type: "CoalesceContainerOperator",
-        lhs: typeToCodeFragment(lhs),
+        kind: OperatorKind.Infix,
+        args: frag`{ lhs: ${typeToCodeFragment(lhs)}, rhs: ${typeToCodeFragment(rhs)} }`,
+        returnElement: "CONTAINER",
+        returnCardinality: "COALESCE",
         operatorSymbol,
       };
     }
   }
-  const getArgsFromAnytypes = (
-    anytypes: AnytypeDef | null,
-    lhsType: OverloadArg,
-    rhsType: OverloadArg,
-  ): CodeFragment[] => {
-    if (anytypes && anytypes.kind === "noncastable") {
-      if (anytypes.typeObj.kind === "range") {
-        return frag`infixOperandsRangeType<${typeToCodeFragment(lhsType)}>`;
-      } else if (anytypes.typeObj.kind === "array") {
-        return frag`infixOperandsArrayTypeNonArray<${typeToCodeFragment(
-          lhsType,
-        )}>`;
-      } else if (anytypes.typeObj.kind === "unknown") {
-        return frag`infixOperandsBaseType<${typeToCodeFragment(lhsType)}>`;
-      }
-    }
-
-    return frag`{ lhs: ${typeToCodeFragment(lhsType)}; rhs: ${typeToCodeFragment(rhsType)} }`;
-  };
-
-  const getReturnTypeFromArgsAndAnytypes = (
-    anytypes: AnytypeDef | null,
-    argsFragments: CodeFragment[],
-  ): CodeFragment[] => {
-    if (anytypes) {
-      if (anytypes.kind === "noncastable") {
-        if (anytypes.typeObj.kind === "range") {
-          return frag`operandsRangeTypeToReturnType<${argsFragments}>`;
-        } else if (anytypes.typeObj.kind === "array") {
-          return frag`operandsArrayTypeNonArrayToReturnType<${argsFragments}>`;
-        } else if (anytypes.typeObj.kind === "unknown") {
-          return frag`operandsBaseTypeToReturnType<${argsFragments}>`;
-        }
-      } else {
-        return frag`operandsContainerToReturnType<${argsFragments}>`;
-      }
-    }
-
-    return argsFragments;
-  };
-
-  const withReturnCardinality = (
-    params: FuncopParamNamed[],
-    argsFragments: CodeFragment[],
-  ): CodeFragment[] => {
-    const cardinality = getReturnCardinality(
-      opDef.name,
-      params,
-      opDef.return_typemod,
-      false,
-    );
-
-    switch (cardinality.type) {
-      case "IDENTITY":
-        return frag`${argsFragments}`;
-      case "MANY":
-        return frag`${argsFragments} & { retCard: $.Cardinality.Many }`;
-      case "ONE":
-        return frag`${argsFragments} & { retCard: $.Cardinality.One }`;
-      case "ZERO":
-        return frag`${argsFragments} & { retCard: $.Cardinality.Zero }`;
-      case "COALESCE":
-        return frag`withCoalesceReturnCardinality<${argsFragments}>`;
-      case "IF_ELSE":
-        return frag`withIfElseReturnCardinality<${argsFragments}>`;
-      case "MERGE":
-        return frag`withMergeReturnCardinality<${argsFragments}>`;
-      case "MULTIPLY":
-        return cardinality.params.every((param) => param.type === "OPTIONAL")
-          ? frag`withOptionalMultiplyReturnCardinality<${argsFragments}>`
-          : frag`withMultiplyReturnCardinality<${argsFragments}>`;
-      case "OVERRIDE_LOWER":
-        return frag`withOverrideLowerReturnCardinality<${argsFragments}, ${cardinality.with}>`;
-      case "OVERRIDE_UPPER":
-        return frag`withOverrideUpperReturnCardinality<${argsFragments}, ${cardinality.with}>`;
-    }
-  };
 
   const anytypeIsBaseType = Boolean(opDef.anytypes?.type[0] === "$.BaseType");
 
   if (opDef.operator_kind === $.OperatorKind.Prefix) {
     // Prefix
     const [operand] = opDef.params.positional;
+    const returnCardinality = getReturnCardinality(
+      opDef.name,
+      [{ ...operand, genTypeName: "Operand" }],
+      opDef.return_typemod,
+      false,
+    );
+    log({ returnCardinality });
     if (opDef.return_type.name === "std::bool") {
       // Predicate
-      log("PrefixPredicateOperator operand: %o", operand);
       return {
-        type: "PrefixPredicateOperator",
+        kind: OperatorKind.Prefix,
         operand: typeToCodeFragment(operand),
-        typemod: operand.typemod,
         operatorSymbol,
+        returnElement: "BOOLEAN",
+        returnCardinality:
+          returnCardinality.type === "IDENTITY" &&
+          returnCardinality.param.type === "ONE"
+            ? "ONE"
+            : "PARAM",
       };
     } else {
       // Homogenous
-      log("PrefixHomogenousOperator operand: %o", operand);
       return {
-        type: "PrefixHomogenousOperator",
+        kind: OperatorKind.Prefix,
         operand: typeToCodeFragment(operand),
         operatorSymbol,
+        returnElement: "HOMOGENEOUS",
+        returnCardinality: "PARAM",
       };
     }
   } else if (opDef.operator_kind === $.OperatorKind.Infix) {
     // Infix
     const [lhsType, rhsType] = opDef.params.positional;
+    const getArgsFromAnytypes = () => {
+      if (opDef.anytypes && opDef.anytypes.kind === "noncastable") {
+        if (opDef.anytypes.typeObj.kind === "range") {
+          return frag`infixOperandsRangeType<${typeToCodeFragment(lhsType)}>`;
+        } else if (opDef.anytypes.typeObj.kind === "array") {
+          return frag`infixOperandsArrayTypeNonArray<${typeToCodeFragment(
+            lhsType,
+          )}>`;
+        } else if (opDef.anytypes.typeObj.kind === "unknown") {
+          return frag`infixOperandsBaseType<${typeToCodeFragment(lhsType)}>`;
+        }
+      }
+
+      return frag`{ lhs: ${typeToCodeFragment(lhsType)}; rhs: ${typeToCodeFragment(rhsType)} }`;
+    };
+    const _returnCardinality = getReturnCardinality(
+      opDef.name,
+      [
+        { ...lhsType, genTypeName: "LHS" },
+        { ...rhsType, genTypeName: "RHS" },
+      ],
+      opDef.return_typemod,
+      false,
+    );
+    if (opDef.return_type.name === "std::bool") {
+      const returnCardinality =
+        _returnCardinality.type === "MULTIPLY"
+          ? _returnCardinality.params.every((p) => p.type === "OPTIONAL")
+            ? "MULTIPLY_OPTIONAL"
+            : _returnCardinality.params[1].type === "ONE"
+              ? "MULTIPLY_ONE"
+              : "MULTIPLY"
+          : "MULTIPLY";
+
+      if (lhsType.type.kind === "scalar") {
+        // Scalar
+        return {
+          kind: OperatorKind.Infix,
+          args: frag`{ lhs: ${typeToCodeFragment(lhsType)}, rhs: ${typeToCodeFragment(rhsType)} }`,
+          operatorSymbol,
+          returnElement: "BOOLEAN",
+          returnCardinality,
+        };
+      } else {
+        // Container
+        return {
+          kind: OperatorKind.Infix,
+          args: getArgsFromAnytypes(),
+          operatorSymbol,
+          returnElement: "BOOLEAN",
+          returnCardinality,
+        };
+      }
+    }
+
     if (lhsType.type.kind === "scalar") {
       // Scalar
-      if (opDef.return_type.name === "std::bool") {
-        // Comparison
-        const args = withReturnCardinality(
-          [
-            { ...lhsType, genTypeName: "LHS" },
-            { ...rhsType, genTypeName: "RHS" },
-          ],
-          frag`{ lhs: ${typeToCodeFragment(lhsType)}; rhs: ${typeToCodeFragment(rhsType)} }`,
-        );
-        log("InfixComparisonOperator lhs: %o", lhsType);
-        log("InfixComparisonOperator rhs: %o", rhsType);
-        log("InfixComparisonOperator args: %s", args);
-        return {
-          type:
-            lhsType.typemod === "OptionalType"
-              ? "InfixOptionalComparisonOperator"
-              : "InfixComparisonOperator",
-          args,
-          operatorSymbol,
-        };
-      } else {
-        // Homogenous
-        log("InfixHomogenousOperator lhs: %o", lhsType);
-        const args = withReturnCardinality(
-          [
-            { ...lhsType, genTypeName: "LHS" },
-            { ...rhsType, genTypeName: "RHS" },
-          ],
-          frag`{ lhs: ${typeToCodeFragment(lhsType)}; rhs: ${typeToCodeFragment(rhsType)} }`,
-        );
-        return {
-          type: "InfixHomogenousOperator",
-          args,
-          operatorSymbol,
-        };
-      }
+      return {
+        kind: OperatorKind.Infix,
+        args: getArgsFromAnytypes(),
+        operatorSymbol,
+        returnElement: "SCALAR",
+        returnCardinality: "MULTIPLY",
+      };
     } else {
       // Container
-      if (opDef.return_type.name === "std::bool") {
-        // Comparison
-        log("InfixContainerComparisonOperator lhs: %o", lhsType);
-        log("InfixContainerComparisonOperator rhs: %o", rhsType);
-        log(
-          "InfixContainerComparisonOperator has rhs: %o",
-          rhsType.type.id !== lhsType.type.id,
-        );
-        const args = getArgsFromAnytypes(opDef.anytypes, lhsType, rhsType);
-        return {
-          type:
-            lhsType.typemod === "OptionalType"
-              ? "InfixOptionalContainerComparisonOperator"
-              : "InfixContainerComparisonOperator",
-          args,
-          operatorSymbol,
-        };
-      } else {
-        // Homogenous
-        const [lhs, rhs] = opDef.params.positional;
-        log(
-          "InfixContainerHomogenousOperator lhs: %o",
-          opDef.params.positional[0],
-        );
-        const args = getReturnTypeFromArgsAndAnytypes(
-          opDef.anytypes,
-          getArgsFromAnytypes(opDef.anytypes, lhs, rhs),
-        );
-        return {
-          type: "InfixContainerHomogenousOperator",
-          args,
-          operatorSymbol,
-        };
+      // Homogenous
+      if (opDef.anytypes) {
+        if (opDef.return_type.name === "array<anytype>") {
+          if (
+            opDef.anytypes.kind === "castable" &&
+            opDef.anytypes.returnAnytypeWrapper === "_.syntax.mergeObjectTypes"
+          ) {
+            return {
+              kind: OperatorKind.Infix,
+              args: getArgsFromAnytypes(),
+              operatorSymbol,
+              returnElement: "OBJECT_ARRAY_TYPE",
+              returnCardinality: "MULTIPLY",
+            };
+          }
+          return {
+            kind: OperatorKind.Infix,
+            args: getArgsFromAnytypes(),
+            operatorSymbol,
+            returnElement: "ARRAY_TYPE",
+            returnCardinality: "MULTIPLY",
+          };
+        }
+        if (opDef.anytypes.kind === "noncastable") {
+          if (opDef.anytypes.typeObj.kind === "range") {
+            return {
+              kind: OperatorKind.Infix,
+              args: getArgsFromAnytypes(),
+              operatorSymbol,
+              returnElement: "RANGE_TYPE",
+              returnCardinality: "MULTIPLY",
+            };
+          } else if (opDef.anytypes.typeObj.kind === "unknown") {
+            const returnCardinality =
+              _returnCardinality.type === "MERGE" ? "MERGE" : "MULTIPLY_ONE";
+            return {
+              kind: OperatorKind.Infix,
+              args: getArgsFromAnytypes(),
+              operatorSymbol,
+              returnElement: "BASE_TYPE",
+              returnCardinality,
+            };
+          } else {
+            throw new Error(
+              `Unexpected anytype in container homogeneous operator defintion: ${opDef.anytypes}`,
+            );
+          }
+        } else {
+          if (
+            opDef.anytypes.returnAnytypeWrapper === "_.syntax.mergeObjectTypes"
+          ) {
+            return {
+              kind: OperatorKind.Infix,
+              args: getArgsFromAnytypes(),
+              operatorSymbol,
+              returnElement: "MERGE",
+              returnCardinality:
+                _returnCardinality.type === "MANY" ? "MANY" : "MERGE",
+            };
+          }
+        }
       }
+
+      return {
+        kind: OperatorKind.Infix,
+        args: getArgsFromAnytypes(),
+        operatorSymbol,
+        returnElement: "CONTAINER",
+        returnCardinality: "MULTIPLY",
+      };
     }
   } else if (opDef.operator_kind === $.OperatorKind.Ternary) {
     // Ternary
     const [lhs, _cond, rhs] = opDef.params.positional;
-    if (lhs.type.kind === "scalar" || anytypeIsBaseType) {
-      // Scalar
-      log("TernaryHomogenousOperator lhs: %o", lhs);
-      log("TernaryHomogenousOperator rhs: %o", rhs);
+    if (anytypeIsBaseType) {
       return {
-        type: "TernaryHomogenousOperator",
-        lhs: typeToCodeFragment(lhs),
-        rhs: rhs.type.id !== lhs.type.id ? typeToCodeFragment(rhs) : null,
+        kind: OperatorKind.Ternary,
+        args: frag`infixOperandsBaseType<${typeToCodeFragment(lhs)}>`,
         operatorSymbol,
-      };
-    } else {
-      // Container
-      log("TernaryContainerHomogenousOperator lhs: %o", lhs);
-      log("TernaryContainerHomogenousOperator rhs: %o", rhs);
-      const args = getReturnTypeFromArgsAndAnytypes(
-        opDef.anytypes,
-        getArgsFromAnytypes(opDef.anytypes, lhs, rhs),
-      );
-      return {
-        type: "TernaryContainerHomogenousOperator",
-        args,
-        operatorSymbol,
+        returnElement: "BASE_TYPE",
       };
     }
+    if (
+      opDef.anytypes?.kind === "castable" &&
+      opDef.anytypes.returnAnytypeWrapper === "_.syntax.mergeObjectTypes"
+    ) {
+      return {
+        kind: OperatorKind.Ternary,
+        args: frag`{ lhs: ${typeToCodeFragment(lhs)}, rhs: ${typeToCodeFragment(rhs)} }`,
+        operatorSymbol,
+        returnElement: "MERGE",
+      };
+    }
+
+    return {
+      kind: OperatorKind.Ternary,
+      args: frag`{ lhs: ${typeToCodeFragment(lhs)}, rhs: ${typeToCodeFragment(rhs)} }`,
+      operatorSymbol,
+      returnElement: "CONTAINER",
+    };
   } else {
     throw new Error(`Unknown operator kind: ${opDef.operator_kind}`);
   }
@@ -495,51 +505,78 @@ export function generateOperators({
     overloadDefs[opKind] = {};
   }
 
-  const prefixPredicateDefs = new StrictMapSet<
+  const prefixBooleanDefs = new StrictMapSet<string, PrefixBooleanOperator>();
+  const prefixBooleanOneDefs = new StrictMapSet<
     string,
-    PrefixPredicateOperator
+    PrefixBooleanOneOperator
   >();
   const prefixHomogeneousDefs = new StrictMapSet<
     string,
-    PrefixHomogenousOperator
+    PrefixHomogeneousOperator
   >();
-  const infixHomogeneousDefs = new StrictMapSet<
+  const infixBooleanMultiplyDefs = new StrictMapSet<
     string,
-    InfixHomogenousOperator
+    InfixBooleanMultiplyOperator
   >();
-  const infixComparisonDefs = new StrictMapSet<
+  const infixBooleanMultiplyOptionalDefs = new StrictMapSet<
     string,
-    InfixComparisonOperator
+    InfixBooleanMultiplyOptionalOperator
   >();
-  const infixOptionalComparisonDefs = new StrictMapSet<
+  const infixBooleanMultiplyOneDefs = new StrictMapSet<
     string,
-    InfixOptionalComparisonOperator
+    InfixBooleanMultiplyOneOperator
   >();
-  const infixContainerComparisonDefs = new StrictMapSet<
+  const infixScalarMultiplyDefs = new StrictMapSet<
     string,
-    InfixContainerComparisonOperator
+    InfixScalarMultiplyOperator
   >();
-  const infixOptionalContainerComparisonDefs = new StrictMapSet<
+  const infixContainerMultiplyDefs = new StrictMapSet<
     string,
-    InfixOptionalContainerComparisonOperator
+    InfixContainerMultiplyOperator
   >();
-  const infixContainerHomogenousDefs = new StrictMapSet<
+  const infixRangeTypeMultiplyDefs = new StrictMapSet<
     string,
-    InfixContainerHomogenousOperator
+    InfixRangeTypeMultiplyOperator
   >();
-  const ternaryDefs = new StrictMapSet<string, TernaryHomogenousOperator>();
+  const infixArrayTypeMultiplyDefs = new StrictMapSet<
+    string,
+    InfixArrayTypeMultiplyOperator
+  >();
+  const infixObjectArrayTypeMultiplyDefs = new StrictMapSet<
+    string,
+    InfixObjectArrayTypeMultiplyOperator
+  >();
+  const infixBaseTypeMultiplyOneDefs = new StrictMapSet<
+    string,
+    InfixBaseTypeMultiplyOneOperator
+  >();
+  const infixBaseTypeMergeDefs = new StrictMapSet<
+    string,
+    InfixBaseTypeMergeOperator
+  >();
+  const infixMergeDefs = new StrictMapSet<string, InfixMergeOperator>();
+  const infixMergeManyDefs = new StrictMapSet<string, InfixMergeManyOperator>();
+  const infixCoalesceContainerDefs = new StrictMapSet<
+    string,
+    InfixCoalesceContainerOperator
+  >();
+  const infixCoalesceBaseTypeDefs = new StrictMapSet<
+    string,
+    InfixCoalesceBaseTypeOperator
+  >();
+  const infixCoalesceObjectDefs = new StrictMapSet<
+    string,
+    InfixCoalesceObjectOperator
+  >();
   const ternaryContainerDefs = new StrictMapSet<
     string,
-    TernaryContainerHomogenousOperator
+    TernaryContainerOperator
   >();
-
-  // Special cases
-  const coalesceScalarDefs = new StrictMapSet<string, CoalesceScalarOperator>();
-  const coalesceContainerDefs = new StrictMapSet<
+  const ternaryBaseTypeDefs = new StrictMapSet<
     string,
-    CoalesceContainerOperator
+    TernaryBaseTypeOperator
   >();
-  const coalesceObjectDefs = new StrictMapSet<string, CoalesceObjectOperator>();
+  const ternaryMergeDefs = new StrictMapSet<string, TernaryMergeOperator>();
 
   for (const [opName, _opDefs] of operators.entries()) {
     if (skipOperators.has(opName)) continue;
@@ -655,47 +692,85 @@ export function generateOperators({
       */
 
       const operator = operatorFromOpDef(getParamType, opName, opDef);
-      switch (operator.type) {
-        case "PrefixPredicateOperator":
-          prefixPredicateDefs.appendAt(opSymbol, operator);
-          break;
-        case "PrefixHomogenousOperator":
-          prefixHomogeneousDefs.appendAt(opSymbol, operator);
-          break;
-        case "InfixHomogenousOperator":
-          infixHomogeneousDefs.appendAt(opSymbol, operator);
-          break;
-        case "InfixComparisonOperator":
-          infixComparisonDefs.appendAt(opSymbol, operator);
-          break;
-        case "InfixOptionalComparisonOperator":
-          infixOptionalComparisonDefs.appendAt(opSymbol, operator);
-          break;
-        case "InfixContainerComparisonOperator":
-          infixContainerComparisonDefs.appendAt(opSymbol, operator);
-          break;
-        case "InfixOptionalContainerComparisonOperator":
-          infixOptionalContainerComparisonDefs.appendAt(opSymbol, operator);
-          break;
-        case "InfixContainerHomogenousOperator":
-          infixContainerHomogenousDefs.appendAt(opSymbol, operator);
-          break;
-        case "TernaryHomogenousOperator":
-          ternaryDefs.appendAt(opSymbol, operator);
-          break;
-        case "TernaryContainerHomogenousOperator":
-          ternaryContainerDefs.appendAt(opSymbol, operator);
-          break;
-        case "CoalesceScalarOperator":
-          coalesceScalarDefs.appendAt(opSymbol, operator);
-          break;
-        case "CoalesceContainerOperator":
-          coalesceContainerDefs.appendAt(opSymbol, operator);
-          break;
-        case "CoalesceObjectOperator":
-          coalesceObjectDefs.appendAt(opSymbol, operator);
-          break;
-      }
+      const mapFromOperator = (
+        operator: Operator,
+      ): StrictMapSet<string, unknown> => {
+        switch (operator.kind) {
+          case OperatorKind.Prefix:
+            if (operator.returnElement === "BOOLEAN") {
+              if (operator.returnCardinality === "ONE") {
+                return prefixBooleanOneDefs;
+              } else if (operator.returnCardinality === "PARAM") {
+                return prefixBooleanDefs;
+              }
+            } else {
+              return prefixHomogeneousDefs;
+            }
+            throw new Error(
+              `Unsupported prefix operator: ${opName}: ${(operator as any).returnElement} * ${(operator as any).returnCardinality}`,
+            );
+          case OperatorKind.Infix:
+            if (operator.returnElement === "BOOLEAN") {
+              if (operator.returnCardinality === "MULTIPLY") {
+                return infixBooleanMultiplyDefs;
+              } else if (operator.returnCardinality === "MULTIPLY_OPTIONAL") {
+                return infixBooleanMultiplyOptionalDefs;
+              } else {
+                return infixBooleanMultiplyOneDefs;
+              }
+            } else if (operator.returnElement === "SCALAR") {
+              return infixScalarMultiplyDefs;
+            } else if (operator.returnElement === "RANGE_TYPE") {
+              return infixRangeTypeMultiplyDefs;
+            } else if (operator.returnElement === "ARRAY_TYPE") {
+              return infixArrayTypeMultiplyDefs;
+            } else if (operator.returnElement === "OBJECT_ARRAY_TYPE") {
+              return infixObjectArrayTypeMultiplyDefs;
+            } else if (operator.returnElement === "BASE_TYPE") {
+              if (operator.returnCardinality === "MULTIPLY_ONE") {
+                return infixBaseTypeMultiplyOneDefs;
+              } else if (operator.returnCardinality === "MERGE") {
+                return infixBaseTypeMergeDefs;
+              } else if (operator.returnCardinality === "COALESCE") {
+                return infixCoalesceBaseTypeDefs;
+              }
+            } else if (operator.returnElement === "MERGE") {
+              if (operator.returnCardinality === "MERGE") {
+                return infixMergeDefs;
+              } else if (operator.returnCardinality === "MANY") {
+                return infixMergeManyDefs;
+              } else if (operator.returnCardinality === "COALESCE") {
+                return infixCoalesceObjectDefs;
+              }
+            } else if (operator.returnElement === "CONTAINER") {
+              if (operator.returnCardinality === "MULTIPLY") {
+                return infixContainerMultiplyDefs;
+              } else if (operator.returnCardinality === "COALESCE") {
+                return infixCoalesceContainerDefs;
+              }
+            }
+            throw new Error(
+              `Unsupported infix operator: ${opName}: ${(operator as any).returnElement} * ${(operator as any).returnCardinality}`,
+            );
+          case OperatorKind.Ternary:
+            if (operator.returnElement === "CONTAINER") {
+              return ternaryContainerDefs;
+            } else if (operator.returnElement === "BASE_TYPE") {
+              return ternaryBaseTypeDefs;
+            } else if (operator.returnElement === "MERGE") {
+              return ternaryMergeDefs;
+            }
+            throw new Error(
+              `Unsupported ternary operator: ${opName}: ${(operator as any).returnElement} * ${(operator as any).returnCardinality}`,
+            );
+          default:
+            throw new Error(
+              `Unsupported operator kind: ${opName}: ${(operator as any).kind}`,
+            );
+        }
+      };
+      const map = mapFromOperator(operator);
+      map.appendAt(opSymbol, operator);
     }
   }
 
@@ -884,37 +959,44 @@ export function generateOperators({
   });
   overloadsBuf.writeln([t`}`]);
 
-  // PrefixPredicateOperators
   overloadsBuf.writeln([t`interface PrefixParamCardinality<Operand> {`]);
   overloadsBuf.indented(() => {
     overloadsBuf.writeln([t`operand: Operand;`]);
     overloadsBuf.writeln([t`retCard: $.cardutil.paramCardinality<Operand>;`]);
   });
   overloadsBuf.writeln([t`}`]);
-  overloadsBuf.writeln([t`interface PrefixPredicateOperators {`]);
+
+  // PrefixBooleanOperators
+  overloadsBuf.writeln([t`interface PrefixBooleanOperators {`]);
   overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of prefixPredicateDefs.entries()) {
-      const log = debug(
-        `edgedb:codegen:generateOperators:PrefixPredicateOperators:${opSymbol}`,
-      );
+    for (const [opSymbol, defs] of prefixBooleanDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          log({ opSymbol, def });
-          if (def.typemod === "SetOfType") {
-            overloadsBuf.writeln([
-              t`| { operand: ${def.operand}; retCard: $.Cardinality.One }`,
-            ]);
-          } else {
-            overloadsBuf.writeln([t`| PrefixParamCardinality<${def.operand}>`]);
-          }
+          overloadsBuf.writeln([t`| { operand: ${def.operand}}`]);
         }
       });
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  // PrefixHomogenousOperators
+  // PrefixBooleanOneOperators
+  overloadsBuf.writeln([t`interface PrefixBooleanOneOperators {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of prefixBooleanOneDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| { operand: ${def.operand}}`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  // PrefixHomogeneousOperators
   overloadsBuf.writeln([t`interface PrefixHomogeneousOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of prefixHomogeneousDefs.entries()) {
@@ -927,41 +1009,12 @@ export function generateOperators({
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  // InfixHomogenousOperators
-  overloadsBuf.writeln([t`interface InfixHomogeneousOperators {`]);
+  // InfixBooleanMultiplyOperators
+  overloadsBuf.writeln([t`interface InfixBooleanMultiplyOperators {`]);
   overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixHomogeneousDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([
-            t`| ${def.args}`,
-          ]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-
-  // InfixComparisonOperators
-  overloadsBuf.writeln([t`interface InfixComparisonOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixComparisonDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`};`]);
-
-  // InfixOptionalComparisonOperators
-  overloadsBuf.writeln([t`interface InfixOptionalComparisonOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixOptionalComparisonDefs.entries()) {
+    for (const [opSymbol, defs] of infixBooleanMultiplyDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
@@ -971,11 +1024,12 @@ export function generateOperators({
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  // InfixContainerComparisonOperators
-  overloadsBuf.writeln([t`interface InfixContainerComparisonOperators {`]);
+  // InfixBooleanMultiplyOptionalOperators
+  overloadsBuf.writeln([t`interface InfixBooleanMultiplyOptionalOperators {`]);
   overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixContainerComparisonDefs.entries()) {
+    for (const [opSymbol, defs] of infixBooleanMultiplyOptionalDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
@@ -985,16 +1039,12 @@ export function generateOperators({
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  // InfixOptionalContainerComparisonOperators
-  overloadsBuf.writeln([
-    t`interface InfixOptionalContainerComparisonOperators {`,
-  ]);
+  // InfixBooleanMultiplyOneOperators
+  overloadsBuf.writeln([t`interface InfixBooleanMultiplyOneOperators {`]);
   overloadsBuf.indented(() => {
-    for (const [
-      opSymbol,
-      defs,
-    ] of infixOptionalContainerComparisonDefs.entries()) {
+    for (const [opSymbol, defs] of infixBooleanMultiplyOneDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
@@ -1004,11 +1054,12 @@ export function generateOperators({
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  // InfixContainerHomogeneousOperators
-  overloadsBuf.writeln([t`interface InfixContainerHomogeneousOperators {`]);
+  // InfixScalarMultiplyOperators
+  overloadsBuf.writeln([t`interface InfixScalarMultiplyOperators {`]);
   overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixContainerHomogenousDefs.entries()) {
+    for (const [opSymbol, defs] of infixScalarMultiplyDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
@@ -1018,88 +1069,175 @@ export function generateOperators({
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  // CoalesceOperators
-  overloadsBuf.writeln([t`interface CoalesceScalarOperators {`]);
+  // InfixContainerMultiplyOperators
+  overloadsBuf.writeln([t`interface InfixContainerMultiplyOperators {`]);
   overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of coalesceScalarDefs.entries()) {
+    for (const [opSymbol, defs] of infixContainerMultiplyDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| { lhs: ${def.lhs} }`]);
+          overloadsBuf.writeln([t`| ${def.args}`]);
         }
       });
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  overloadsBuf.writeln([t`interface CoalesceContainerOperators {`]);
+  // InfixRangeTypeMultiplyOperators
+  overloadsBuf.writeln([t`interface InfixRangeTypeMultiplyOperators {`]);
   overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of coalesceContainerDefs.entries()) {
+    for (const [opSymbol, defs] of infixRangeTypeMultiplyDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.lhs} }`]);
+          overloadsBuf.writeln([t`| ${def.args}`]);
         }
       });
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  overloadsBuf.writeln([t`interface buildCoalesceObjectOperator<`]);
+  // InfixArrayTypeMultiplyOperators
+  overloadsBuf.writeln([t`interface InfixArrayTypeMultiplyOperators {`]);
   overloadsBuf.indented(() => {
-    overloadsBuf.writeln([
-      t`LHS extends $.TypeSet<$.ObjectType> = $.TypeSet<$.ObjectType>,`,
-    ]);
-    overloadsBuf.writeln([
-      t`RHS extends $.TypeSet<$.ObjectType> = $.TypeSet<$.ObjectType>,`,
-    ]);
-    overloadsBuf.writeln([
-      t`Ret extends _.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]> = _.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-  });
-  overloadsBuf.writeln([t`> {`]);
-  overloadsBuf.indented(() => {
-    overloadsBuf.writeln([t`lhs: LHS;`]);
-    overloadsBuf.writeln([t`rhs: RHS;`]);
-    overloadsBuf.writeln([t`ret: Ret;`]);
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.writeln([t`interface CoalesceObjectOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of coalesceObjectDefs.entries()) {
+    for (const [opSymbol, defs] of infixArrayTypeMultiplyDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          overloadsBuf.writeln([
-            t`| buildCoalesceObjectOperator<${def.lhs}, ${def.lhs}>`,
-          ]);
+          overloadsBuf.writeln([t`| ${def.args}`]);
         }
       });
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  // TernaryHomogenousOperators
-  overloadsBuf.writeln([t`interface TernaryHomogeneousOperators {`]);
+  // InfixObjectArrayTypeMultiplyOperators
+  overloadsBuf.writeln([t`interface InfixObjectArrayTypeMultiplyOperators {`]);
   overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of ternaryDefs.entries()) {
+    for (const [opSymbol, defs] of infixObjectArrayTypeMultiplyDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
       overloadsBuf.indented(() => {
         for (const def of defs) {
-          if (def.rhs) {
-            overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.rhs} }`]);
-          } else {
-            overloadsBuf.writeln([t`| { lhs: ${def.lhs}; rhs: ${def.lhs} }`]);
-          }
+          overloadsBuf.writeln([t`| ${def.args}`]);
         }
       });
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  // TernaryContainerHomogenousOperators
-  overloadsBuf.writeln([t`interface TernaryContainerHomogeneousOperators {`]);
+  // InfixBaseTypeMultiplyOneOperators
+  overloadsBuf.writeln([t`interface InfixBaseTypeMultiplyOneOperators {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of infixBaseTypeMultiplyOneDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| ${def.args}`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  // InfixBaseTypeMergeOperators
+  overloadsBuf.writeln([t`interface InfixBaseTypeMergeOperators {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of infixBaseTypeMergeDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| ${def.args}`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  // InfixMergeOperators
+  overloadsBuf.writeln([t`interface InfixMergeOperators {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of infixMergeDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| ${def.args}`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  // InfixMergeManyOperators
+  overloadsBuf.writeln([t`interface InfixMergeManyOperators {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of infixMergeManyDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| ${def.args}`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  // InfixCoalesceContainerOperators
+  overloadsBuf.writeln([t`interface InfixCoalesceContainerOperators {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of infixCoalesceContainerDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| ${def.args}`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  // InfixCoalesceBaseTypeOperators
+  overloadsBuf.writeln([t`interface InfixCoalesceBaseTypeOperators {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of infixCoalesceBaseTypeDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| ${def.args}`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  // InfixCoalesceObjectOperators
+  overloadsBuf.writeln([t`interface InfixCoalesceObjectOperators {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of infixCoalesceObjectDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| ${def.args}`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  // TernaryContainerOperators
+  overloadsBuf.writeln([t`interface TernaryContainerOperators {`]);
   overloadsBuf.indented(() => {
     for (const [opSymbol, defs] of ternaryContainerDefs.entries()) {
       overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
@@ -1111,8 +1249,38 @@ export function generateOperators({
     }
   });
   overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
 
-  code.nl();
+  // TernaryBaseTypeOperators
+  overloadsBuf.writeln([t`interface TernaryBaseTypeOperators {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of ternaryBaseTypeDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| ${def.args}`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  // TernaryMergeOperators
+  overloadsBuf.writeln([t`interface TernaryMergeOperators {`]);
+  overloadsBuf.indented(() => {
+    for (const [opSymbol, defs] of ternaryMergeDefs.entries()) {
+      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+      overloadsBuf.indented(() => {
+        for (const def of defs) {
+          overloadsBuf.writeln([t`| ${def.args}`]);
+        }
+      });
+    }
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
   code.writeln([
     r`const overloadDefs`,
     ts`: {
@@ -1155,109 +1323,13 @@ export function generateOperators({
   });
   code.nl();
 
-  code.writeln([t`type ExtractReturnCardinality<T, Operand> =`]);
-  code.indented(() => {
-    code.writeln([
-      t`T extends { operand: infer OperandType; retCard: infer ReturnCardinalityType }`,
-    ]);
-    code.indented(() => {
-      code.writeln([t`? Operand extends OperandType`]);
-      code.indented(() => {
-        code.writeln([t`? ReturnCardinalityType`]);
-        code.indented(() => {
-          code.writeln([t`: never`]);
-        });
-      });
-      code.writeln([
-        t`: T extends { lhs: infer LHSType; retCard: infer RetCard }`,
-      ]);
-      code.indented(() => {
-        code.writeln([t`? Operand extends LHSType`]);
-        code.indented(() => {
-          code.writeln([t`? RetCard`]);
-          code.indented(() => {
-            code.writeln([t`: never`]);
-          });
-        });
-        code.writeln([t`: never`]);
-      });
-    });
-  });
-  code.nl();
-
-  code.writeln([t`type ExtractReturn<T, LHS, RHS> =`]);
-  code.indented(() => {
-    code.writeln([
-      t`T extends { lhs: infer LHSType; rhs: infer RHSType; ret: infer RetType } ? LHS extends LHSType ? RHS extends RHSType ? RetType : never : never : never;`,
-    ]);
-  });
-
-  code.nl();
-
-  // PrefixPredicateOperators
+  // InfixBooleanMultiplyOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
-    code.writeln([t`Op extends keyof PrefixPredicateOperators,`]);
-    code.writeln([t`Operand extends PrefixPredicateOperators[Op]["operand"],`]);
+    code.writeln([t`Op extends keyof InfixBooleanMultiplyOperators,`]);
+    code.writeln([t`LHS extends InfixBooleanMultiplyOperators[Op]["lhs"],`]);
     code.writeln([
-      t`ReturnCardinality extends ExtractReturnCardinality<PrefixPredicateOperators[Op], Operand>`,
-    ]);
-  });
-  code.writeln([
-    t`>(op: Op, operand: Operand): $.$expr_Operator<_std.$bool, ReturnCardinality>;`,
-  ]);
-
-  // InfixComparisonOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixComparisonOperators,`]);
-    code.writeln([
-      t`LHS extends InfixComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixComparisonOperators[Op], LHS>,`,
-    ]);
-    code.writeln([
-      t`RetCard extends ExtractReturnCardinality<InfixComparisonOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`_std.$bool,`]);
-    code.writeln([t`RetCard`]);
-  });
-  code.writeln([t`>;`]);
-
-  // InfixOptionalComparisonOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixOptionalComparisonOperators,`]);
-    code.writeln([
-      t`LHS extends InfixOptionalComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixOptionalComparisonOperators[Op], LHS>,`,
-    ]);
-    code.writeln([
-      t`RetCard extends ExtractReturnCardinality<InfixOptionalComparisonOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`_std.$bool,`]);
-    code.writeln([t`RetCard`]);
-  });
-  code.writeln([t`>;`]);
-
-  // InfixContainerComparisonOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixContainerComparisonOperators,`]);
-    code.writeln([
-      t`LHS extends InfixContainerComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixContainerComparisonOperators[Op], LHS>`,
+      t`RHS extends ExtractRHS<InfixBooleanMultiplyOperators[Op], LHS>`,
     ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
@@ -1268,18 +1340,17 @@ export function generateOperators({
     ]);
   });
   code.writeln([t`>;`]);
+  code.nl();
 
-  // InfixOptionalContainerComparisonOperators
+  // InfixBooleanMultiplyOptionalOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
+    code.writeln([t`Op extends keyof InfixBooleanMultiplyOptionalOperators,`]);
     code.writeln([
-      t`Op extends keyof InfixOptionalContainerComparisonOperators,`,
+      t`LHS extends InfixBooleanMultiplyOptionalOperators[Op]["lhs"],`,
     ]);
     code.writeln([
-      t`LHS extends InfixOptionalContainerComparisonOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixOptionalContainerComparisonOperators[Op], LHS>`,
+      t`RHS extends ExtractRHS<InfixBooleanMultiplyOptionalOperators[Op], LHS>`,
     ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
@@ -1290,6 +1361,48 @@ export function generateOperators({
     ]);
   });
   code.writeln([t`>;`]);
+  code.nl();
+
+  // InfixBooleanMultiplyOneOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixBooleanMultiplyOneOperators,`]);
+    code.writeln([t`LHS extends InfixBooleanMultiplyOneOperators[Op]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixBooleanMultiplyOneOperators[Op], LHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([t`_std.$bool,`]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.Cardinality.One>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // PrefixBooleanOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof PrefixBooleanOperators,`]);
+    code.writeln([t`Operand extends PrefixBooleanOperators[Op]["operand"]`]);
+  });
+  code.writeln([
+    t`>(op: Op, operand: Operand): $.$expr_Operator<_std.$bool, $.cardutil.paramCardinality<Operand>>;`,
+  ]);
+  code.nl();
+
+  // PrefixBooleanOneOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof PrefixBooleanOneOperators,`]);
+    code.writeln([t`Operand extends PrefixBooleanOneOperators[Op]["operand"]`]);
+  });
+  code.writeln([
+    t`>(op: Op, operand: Operand): $.$expr_Operator<_std.$bool, $.Cardinality.One>;`,
+  ]);
+  code.nl();
 
   // PrefixHomogeneousOperators
   code.writeln([t`function op<`]);
@@ -1301,113 +1414,38 @@ export function generateOperators({
   });
   code.writeln([t`>(op: Op, operand: Operand): $.$expr_Operator<`]);
   code.indented(() => {
-    code.writeln([
-      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<Operand>["__element__"]>,`,
-    ]);
+    code.writeln([t`_.castMaps.literalToTypeSet<Operand>["__element__"],`]);
     code.writeln([t`$.cardutil.paramCardinality<Operand>`]);
   });
   code.writeln([t`>;`]);
+  code.nl();
 
-  // InfixHomogeneousOperators
+  // InfixScalarMultiplyOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
-    code.writeln([t`Op extends keyof InfixHomogeneousOperators,`]);
+    code.writeln([t`Op extends keyof InfixScalarMultiplyOperators,`]);
+    code.writeln([t`LHS extends InfixScalarMultiplyOperators[Op]["lhs"],`]);
     code.writeln([
-      t`LHS extends InfixHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixHomogeneousOperators[Op], LHS>,`,
-    ]);
-    code.writeln([
-      t`RetCard extends ExtractReturnCardinality<InfixHomogeneousOperators[Op], LHS>`,
+      t`RHS extends ExtractRHS<InfixScalarMultiplyOperators[Op], LHS>`,
     ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
   code.indented(() => {
-    code.writeln([
-      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`RetCard`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-
-  // InfixContainerHomogenousOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixContainerHomogeneousOperators,`]);
-    code.writeln([
-      t`LHS extends InfixContainerHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixContainerHomogeneousOperators[Op], LHS>,`,
-    ]);
-    code.writeln([
-      t`Ret extends ExtractReturn<InfixContainerHomogeneousOperators[Op], LHS, RHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`Ret,`]);
+    code.writeln([t`_.castMaps.literalToTypeSet<LHS>["__element__"],`]);
     code.writeln([
       t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
     ]);
   });
   code.writeln([t`>;`]);
+  code.nl();
 
-  // CoalesceOperators
+  // InfixCoalesceBaseTypeOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
-    code.writeln([t`Op extends keyof CoalesceContainerOperators,`]);
+    code.writeln([t`Op extends keyof InfixCoalesceBaseTypeOperators,`]);
+    code.writeln([t`LHS extends InfixCoalesceBaseTypeOperators[Op]["lhs"],`]);
     code.writeln([
-      t`LHS extends CoalesceContainerOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<CoalesceContainerOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`_.syntax.getSharedParentPrimitive<_.castMaps.literalToTypeSet<LHS>["__element__"], RHS["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof CoalesceObjectOperators,`]);
-    code.writeln([
-      t`LHS extends CoalesceObjectOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<CoalesceObjectOperators[Op], LHS>,`,
-    ]);
-    code.writeln([
-      t`Ret extends ExtractReturn<CoalesceObjectOperators[Op], LHS, RHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`Ret,`]);
-    code.writeln([
-      t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof CoalesceScalarOperators,`]);
-    code.writeln([
-      t`LHS extends CoalesceScalarOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
-    ]);
-    code.writeln([
-      t`RHS extends _.castMaps.orScalarLiteral<$.TypeSet<$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>>>`,
+      t`RHS extends ExtractRHS<InfixCoalesceBaseTypeOperators[Op], LHS>`,
     ]);
   });
   code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
@@ -1420,19 +1458,272 @@ export function generateOperators({
     ]);
   });
   code.writeln([t`>;`]);
+  code.nl();
 
-  // TernaryHomogeneousOperators
+  // InfixCoalesceContainerOperator
   code.writeln([t`function op<`]);
   code.indented(() => {
-    code.writeln([t`Op extends keyof TernaryHomogeneousOperators,`]);
+    code.writeln([t`Op extends keyof InfixCoalesceContainerOperators,`]);
+    code.writeln([t`LHS extends InfixCoalesceContainerOperators[Op]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixCoalesceContainerOperators[Op], LHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // InfixCoalesceObjectOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixCoalesceObjectOperators,`]);
+    code.writeln([t`LHS extends InfixCoalesceObjectOperators[Op]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixCoalesceObjectOperators[Op], LHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // InfixContainerMultiplyOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixContainerMultiplyOperators,`]);
+    code.writeln([t`LHS extends InfixContainerMultiplyOperators[Op]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixContainerMultiplyOperators[Op], LHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // InfixRangeTypeMultiplyOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixRangeTypeMultiplyOperators,`]);
+    code.writeln([t`LHS extends InfixRangeTypeMultiplyOperators[Op]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixRangeTypeMultiplyOperators[Op], LHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`$.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // InfixArrayTypeMultiplyOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixArrayTypeMultiplyOperators,`]);
+    code.writeln([t`LHS extends InfixArrayTypeMultiplyOperators[Op]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixArrayTypeMultiplyOperators[Op], LHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`$.ArrayType<_.syntax.getSharedParentPrimitive<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // InfixObjectArrayTypeMultiplyOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixObjectArrayTypeMultiplyOperators,`]);
+    code.writeln([
+      t`LHS extends InfixObjectArrayTypeMultiplyOperators[Op]["lhs"],`,
+    ]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixObjectArrayTypeMultiplyOperators[Op], LHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`$.ArrayType<_.syntax.mergeObjectTypes<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // InfixBaseTypeMultiplyOneOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixBaseTypeMultiplyOneOperators,`]);
+    code.writeln([
+      t`LHS extends InfixBaseTypeMultiplyOneOperators[Op]["lhs"],`,
+    ]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixBaseTypeMultiplyOneOperators[Op], LHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.Cardinality.One>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // InfixBaseTypeMergeOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixBaseTypeMergeOperators,`]);
+    code.writeln([t`LHS extends InfixBaseTypeMergeOperators[Op]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<InfixBaseTypeMergeOperators[Op], LHS>`,
+    ]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.mergeCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // InfixMergeOperator
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixMergeOperators,`]);
+    code.writeln([t`LHS extends InfixMergeOperators[Op]["lhs"],`]);
+    code.writeln([t`RHS extends ExtractRHS<InfixMergeOperators[Op], LHS>`]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.mergeCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // InfixMergeManyOperator
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([t`Op extends keyof InfixMergeManyOperators,`]);
+    code.writeln([t`LHS extends InfixMergeManyOperators[Op]["lhs"],`]);
+    code.writeln([t`RHS extends ExtractRHS<InfixMergeManyOperators[Op], LHS>`]);
+  });
+  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+  code.indented(() => {
+    code.writeln([
+      t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+    ]);
+    code.writeln([t`$.Cardinality.Many`]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // TernaryContainerOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
     code.writeln([
       t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
     ]);
+    code.writeln([t`LHS extends TernaryContainerOperators["if_else"]["lhs"],`]);
     code.writeln([
-      t`LHS extends TernaryHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
+      t`RHS extends ExtractRHS<TernaryContainerOperators["if_else"], LHS>`,
+    ]);
+  });
+  code.writeln([
+    t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
+  ]);
+  code.indented(() => {
+    code.writeln([
+      t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
     ]);
     code.writeln([
-      t`RHS extends ExtractRHS<TernaryHomogeneousOperators[Op], LHS>`,
+      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([
+      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+    ]);
+    code.writeln([t`LHS extends TernaryContainerOperators["if_else"]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<TernaryContainerOperators["if_else"], LHS>`,
+    ]);
+  });
+  code.writeln([
+    t`>(op1: "if", cond: Cond, op2: "then", lhs: LHS, op3: "else", rhs: RHS): $.$expr_Operator<`,
+  ]);
+  code.indented(() => {
+    code.writeln([
+      t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // TernaryBaseTypeOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([
+      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+    ]);
+    code.writeln([t`LHS extends TernaryBaseTypeOperators["if_else"]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<TernaryBaseTypeOperators["if_else"], LHS>`,
     ]);
   });
   code.writeln([
@@ -1443,40 +1734,82 @@ export function generateOperators({
       t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
     ]);
     code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
     ]);
   });
   code.writeln([t`>;`]);
-
-  // TernaryContainerHomogeneousOperators
   code.writeln([t`function op<`]);
   code.indented(() => {
-    code.writeln([t`Op extends keyof TernaryContainerHomogeneousOperators,`]);
     code.writeln([
       t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
     ]);
+    code.writeln([t`LHS extends TernaryBaseTypeOperators["if_else"]["lhs"],`]);
     code.writeln([
-      t`LHS extends TernaryContainerHomogeneousOperators[Op] extends { lhs: infer LHSType } ? LHSType : never,`,
+      t`RHS extends ExtractRHS<TernaryBaseTypeOperators["if_else"], LHS>`,
+    ]);
+  });
+  code.writeln([
+    t`>(op1: "if", cond: Cond, op2: "then", lhs: LHS, op3: "else", rhs: RHS): $.$expr_Operator<`,
+  ]);
+  code.indented(() => {
+    code.writeln([
+      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
     ]);
     code.writeln([
-      t`RHS extends ExtractRHS<TernaryContainerHomogeneousOperators[Op], LHS>,`,
+      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
     ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
+
+  // TernaryMergeOperators
+  code.writeln([t`function op<`]);
+  code.indented(() => {
     code.writeln([
-      t`Ret extends ExtractReturn<TernaryContainerHomogeneousOperators[Op], LHS, RHS>`,
+      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+    ]);
+    code.writeln([t`LHS extends TernaryMergeOperators["if_else"]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<TernaryMergeOperators["if_else"], LHS>`,
     ]);
   });
   code.writeln([
     t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
   ]);
   code.indented(() => {
-    code.writeln([t`Ret,`]);
     code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+      t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
     ]);
   });
   code.writeln([t`>;`]);
+  code.writeln([t`function op<`]);
+  code.indented(() => {
+    code.writeln([
+      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+    ]);
+    code.writeln([t`LHS extends TernaryMergeOperators["if_else"]["lhs"],`]);
+    code.writeln([
+      t`RHS extends ExtractRHS<TernaryMergeOperators["if_else"], LHS>`,
+    ]);
+  });
+  code.writeln([
+    t`>(op1: "if", cond: Cond, op2: "then", lhs: LHS, op3: "else", rhs: RHS): $.$expr_Operator<`,
+  ]);
+  code.indented(() => {
+    code.writeln([
+      t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+    ]);
+    code.writeln([
+      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+    ]);
+  });
+  code.writeln([t`>;`]);
+  code.nl();
 
-  // implementation
+  // Implementation
   code.writeln([r`function op(...args`, ts`: any[]`, r`) {`]);
   code.indented(() => {
     code.writeln([

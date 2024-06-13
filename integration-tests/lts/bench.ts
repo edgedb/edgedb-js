@@ -4,6 +4,8 @@ import e from "./dbschema/edgeql-js";
 
 const str0 = e.str("a");
 const str1 = e.str("b");
+const uuid0 = e.uuid("0");
+const uuid1 = e.uuid("1");
 const int0 = e.int16(0);
 const int1 = e.int16(1);
 const float0 = e.float32(0);
@@ -14,11 +16,16 @@ const array0 = e.array([int0]);
 const array1 = e.array([int1]);
 const strArray0 = e.array([str0]);
 const strArray1 = e.array([str1]);
+const uuidArray0 = e.array([uuid0, uuid1]);
 const datetime = e.datetime(new Date());
 const duration = e.duration("PT10M");
 const singleUser = e.cast(e.User, e.uuid("123"));
 const allUsers = e.select(e.User);
 const allMovies = e.select(e.Movie);
+const newUser = e.insert(e.User, {
+  favourite_movies: allMovies,
+  username: "Me",
+});
 
 bench("e.literal: scalar", () => {
   const lit = e.literal(e.int32, 42);
@@ -126,26 +133,29 @@ bench("select: nested", () => {
 }).types([3506, "instantiations"]);
 
 bench("select: complex", () => {
-  const query = e.select(e.Movie, () => ({
-    id: true,
-    characters: (char) => ({
-      name: true,
-      "@character_name": true,
-      filter: e.op(
-        e.op(
+  const query = e.select(e.Movie, () => {
+    return {
+      id: true,
+      characters: (char) => {
+        const matchCharName = e.op(
           char["@character_name"],
           "in",
           e.set("Tony Stark", "The Weasel", "Batman"),
-        ),
-        "or",
-        e.op(
-          e.op(e.op(char.height, "<", e.decimal("10.0")), "??", true),
-          "and",
-          e.op(e.len(char.name), ">", 0),
-        ),
-      ),
-    }),
-  }));
+        );
+        const isShort = e.op(char.height, "<", e.decimal("10.0"));
+        const hasName = e.op(e.len(char.name), ">", 0);
+        return {
+          name: true,
+          "@character_name": true,
+          filter: e.op(
+            matchCharName,
+            "or",
+            e.op(e.op(isShort, "??", true), "and", hasName),
+          ),
+        };
+      },
+    };
+  });
   return {} as typeof query;
 }).types([127736, "instantiations"]);
 
@@ -224,6 +234,11 @@ bench("e.op: str = str", () => {
   return {} as typeof op;
 }).types([327, "instantiations"]);
 
+bench("e.op: uuid = uuid", () => {
+  const op = e.op(uuid0, "=", uuid1);
+  return {} as typeof op;
+}).types([327, "instantiations"]);
+
 bench("e.op: str ilike str", () => {
   const op = e.op(str0, "ilike", str1);
   return {} as typeof op;
@@ -271,10 +286,6 @@ bench("e.op: complex if_else", () => {
 }).types([35102, "instantiations"]);
 
 bench("e.op: complex coalesce", () => {
-  const newUser = e.insert(e.User, {
-    favourite_movies: allMovies,
-    username: "Me",
-  });
   const op = e.op(allUsers, "??", newUser);
   return {} as typeof op;
 }).types([49942, "instantiations"]);
