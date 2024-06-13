@@ -159,6 +159,21 @@ bench("select: complex", () => {
   return {} as typeof query;
 }).types([127736, "instantiations"]);
 
+bench("select: nested operator", () => {
+  const query = e.select(e.Hero, (h) => ({
+    name: h.name,
+    otherHeros: e.select(e.Hero, (h2) => ({
+      name: true,
+      name_one: h.name,
+      name_two: h2.name,
+      names_concat: e.op(h.name, "++", h2.name),
+      order_by: h2.name,
+    })),
+    order_by: h.name,
+  }));
+  return {} as typeof query;
+}).types([102989, "instantiations"]);
+
 bench("select: with filter", () => {
   const query = e.select(e.Hero, (hero) => ({
     name: true,
