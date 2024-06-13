@@ -402,7 +402,11 @@ bench("e.op: nested integer comparison", () => {
 }).types([39365, "instantiations"]);
 
 bench("e.op: nested float comparison", () => {
-  const op = e.op(e.op(float0, "<=", float1), "and", e.op(float1, ">=", float0));
+  const op = e.op(
+    e.op(float0, "<=", float1),
+    "and",
+    e.op(float1, ">=", float0),
+  );
   return {} as typeof op;
 }).types([37955, "instantiations"]);
 
