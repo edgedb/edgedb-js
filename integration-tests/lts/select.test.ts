@@ -1173,6 +1173,7 @@ SELECT __scope_0_defaultPerson {
   test("nested matching scopes", async () => {
     const q = e.select(e.Hero, (h) => ({
       name: h.name,
+      height: e.decimal("10.0"),
       otherHeros: e.select(e.Hero, (h2) => ({
         name: true,
         name_one: h.name,
@@ -1182,6 +1183,8 @@ SELECT __scope_0_defaultPerson {
       })),
       order_by: h.name,
     }));
+    type h = $infer<typeof q.__element__.__shape__.height>;
+    type Q = $infer<typeof q>;
 
     const result = await q.run(client);
 

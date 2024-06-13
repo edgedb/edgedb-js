@@ -311,16 +311,18 @@ export type stripNonInsertables<T extends ObjectTypePointers> = {
       : T[k];
 };
 
-type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
+type shapeElementToTs<
+  Pointer extends PropertyDesc | LinkDesc,
   Element,
-] extends [true]
+  Card extends Cardinality = Pointer["cardinality"],
+> = [Element] extends [true]
   ? pointerToTsType<Pointer>
   : [Element] extends [false]
     ? never
     : [Element] extends [boolean]
       ? pointerToTsType<Pointer> | undefined
       : Element extends TypeSet
-        ? setToTsType<TypeSet<Element["__element__"], Pointer["cardinality"]>>
+        ? setToTsType<TypeSet<Element["__element__"], Card>>
         : Pointer extends LinkDesc
           ? Element extends object
             ? computeTsTypeCard<
@@ -328,7 +330,7 @@ type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
                   Pointer["target"]["__pointers__"] & Pointer["properties"],
                   Element
                 >,
-                Pointer["cardinality"]
+                Card
               >
             : never
           : never;
