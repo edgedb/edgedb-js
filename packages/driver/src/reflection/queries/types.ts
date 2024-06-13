@@ -67,7 +67,7 @@ export interface TupleType extends TypeProperties<"tuple"> {
     target_id: UUID;
   }[];
   is_abstract: boolean;
-};
+}
 
 export interface RangeType extends TypeProperties<"range"> {
   range_element_id: UUID;
