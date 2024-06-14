@@ -1,5 +1,4 @@
-import { OperatorKind, StrictMapSet } from "edgedb/dist/reflection";
-import debug from "debug";
+import { debug } from "debug";
 
 import { CodeBuffer, type CodeFragment, r, t, ts } from "../builders";
 import type { GeneratorParams } from "../genutil";
@@ -18,7 +17,7 @@ import {
   findPathOfAnytype,
   type FuncopDefOverload,
 } from "../funcoputil";
-import { $ } from "../genutil";
+import { $, OperatorKind, StrictMapSet } from "../genutil";
 import { getStringRepresentation } from "./generateObjectTypes";
 
 export function generateOperatorFunctions({
