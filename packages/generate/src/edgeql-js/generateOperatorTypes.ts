@@ -845,140 +845,163 @@ export function generateOperators({
   overloadsBuf.writeln([t`}`]);
   overloadsBuf.nl();
 
-  // PrefixBooleanOperators
-  overloadsBuf.writeln([t`interface PrefixBooleanOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of prefixBooleanDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| { operand: ${def.operand}}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (prefixBooleanDefs.size > 0) {
+    // PrefixBooleanOperators
+    overloadsBuf.writeln([t`interface PrefixBooleanOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of prefixBooleanDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| { operand: ${def.operand}}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // PrefixBooleanOneOperators
-  overloadsBuf.writeln([t`interface PrefixBooleanOneOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of prefixBooleanOneDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| { operand: ${def.operand}}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (prefixBooleanOneDefs.size > 0) {
+    // PrefixBooleanOneOperators
+    overloadsBuf.writeln([t`interface PrefixBooleanOneOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of prefixBooleanOneDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| { operand: ${def.operand}}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // PrefixHomogeneousOperators
-  overloadsBuf.writeln([t`interface PrefixHomogeneousOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of prefixHomogeneousDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| { operand: ${def.operand} }`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (prefixHomogeneousDefs.size > 0) {
+    // PrefixHomogeneousOperators
+    overloadsBuf.writeln([t`interface PrefixHomogeneousOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of prefixHomogeneousDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| { operand: ${def.operand} }`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixBooleanMultiplyOperators
-  overloadsBuf.writeln([t`interface InfixBooleanMultiplyOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixBooleanMultiplyDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixBooleanMultiplyDefs.size > 0) {
+    // InfixBooleanMultiplyOperators
+    overloadsBuf.writeln([t`interface InfixBooleanMultiplyOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixBooleanMultiplyDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixBooleanMultiplyOptionalOperators
-  overloadsBuf.writeln([t`interface InfixBooleanMultiplyOptionalOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixBooleanMultiplyOptionalDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixBooleanMultiplyOptionalDefs.size > 0) {
+    // InfixBooleanMultiplyOptionalOperators
+    overloadsBuf.writeln([
+      t`interface InfixBooleanMultiplyOptionalOperators {`,
+    ]);
+    overloadsBuf.indented(() => {
+      for (const [
+        opSymbol,
+        defs,
+      ] of infixBooleanMultiplyOptionalDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixBooleanMultiplyOneOperators
-  overloadsBuf.writeln([t`interface InfixBooleanMultiplyOneOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixBooleanMultiplyOneDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixBooleanMultiplyOneDefs.size > 0) {
+    // InfixBooleanMultiplyOneOperators
+    overloadsBuf.writeln([t`interface InfixBooleanMultiplyOneOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixBooleanMultiplyOneDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixScalarMultiplyOperators
-  overloadsBuf.writeln([t`interface InfixScalarMultiplyOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixScalarMultiplyDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixScalarMultiplyDefs.size > 0) {
+    // InfixScalarMultiplyOperators
+    overloadsBuf.writeln([t`interface InfixScalarMultiplyOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixScalarMultiplyDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixContainerMultiplyOperators
-  overloadsBuf.writeln([t`interface InfixContainerMultiplyOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixContainerMultiplyDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixContainerMultiplyDefs.size > 0) {
+    // InfixContainerMultiplyOperators
+    overloadsBuf.writeln([t`interface InfixContainerMultiplyOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixContainerMultiplyDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixRangeTypeMultiplyOperators
-  overloadsBuf.writeln([t`interface InfixRangeTypeMultiplyOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixRangeTypeMultiplyDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixRangeTypeMultiplyDefs.size > 0) {
+    // InfixRangeTypeMultiplyOperators
+    overloadsBuf.writeln([t`interface InfixRangeTypeMultiplyOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixRangeTypeMultiplyDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
   if (infixMultiRangeTypeMultiplyDefs.size > 0) {
     // InfixMultiRangeTypeMultiplyOperators
@@ -1000,185 +1023,214 @@ export function generateOperators({
     overloadsBuf.nl();
   }
 
-  // InfixArrayTypeMultiplyOperators
-  overloadsBuf.writeln([t`interface InfixArrayTypeMultiplyOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixArrayTypeMultiplyDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixArrayTypeMultiplyDefs.size > 0) {
+    // InfixArrayTypeMultiplyOperators
+    overloadsBuf.writeln([t`interface InfixArrayTypeMultiplyOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixArrayTypeMultiplyDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixObjectArrayTypeMultiplyOperators
-  overloadsBuf.writeln([t`interface InfixObjectArrayTypeMultiplyOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixObjectArrayTypeMultiplyDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixObjectArrayTypeMultiplyDefs.size > 0) {
+    // InfixObjectArrayTypeMultiplyOperators
+    overloadsBuf.writeln([
+      t`interface InfixObjectArrayTypeMultiplyOperators {`,
+    ]);
+    overloadsBuf.indented(() => {
+      for (const [
+        opSymbol,
+        defs,
+      ] of infixObjectArrayTypeMultiplyDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixBaseTypeMultiplyOneOperators
-  overloadsBuf.writeln([t`interface InfixBaseTypeMultiplyOneOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixBaseTypeMultiplyOneDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixBaseTypeMultiplyOneDefs.size > 0) {
+    // InfixBaseTypeMultiplyOneOperators
+    overloadsBuf.writeln([t`interface InfixBaseTypeMultiplyOneOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixBaseTypeMultiplyOneDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixBaseTypeMergeOperators
-  overloadsBuf.writeln([t`interface InfixBaseTypeMergeOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixBaseTypeMergeDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixBaseTypeMergeDefs.size > 0) {
+    // InfixBaseTypeMergeOperators
+    overloadsBuf.writeln([t`interface InfixBaseTypeMergeOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixBaseTypeMergeDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixMergeOperators
-  overloadsBuf.writeln([t`interface InfixMergeOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixMergeDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixMergeDefs.size > 0) {
+    // InfixMergeOperators
+    overloadsBuf.writeln([t`interface InfixMergeOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixMergeDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixMergeManyOperators
-  overloadsBuf.writeln([t`interface InfixMergeManyOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixMergeManyDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixMergeManyDefs.size > 0) {
+    // InfixMergeManyOperators
+    overloadsBuf.writeln([t`interface InfixMergeManyOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixMergeManyDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixCoalesceContainerOperators
-  overloadsBuf.writeln([t`interface InfixCoalesceContainerOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixCoalesceContainerDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixCoalesceContainerDefs.size > 0) {
+    // InfixCoalesceContainerOperators
+    overloadsBuf.writeln([t`interface InfixCoalesceContainerOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixCoalesceContainerDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixCoalesceBaseTypeOperators
-  overloadsBuf.writeln([t`interface InfixCoalesceBaseTypeOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixCoalesceBaseTypeDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixCoalesceBaseTypeDefs.size > 0) {
+    // InfixCoalesceBaseTypeOperators
+    overloadsBuf.writeln([t`interface InfixCoalesceBaseTypeOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixCoalesceBaseTypeDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // InfixCoalesceObjectOperators
-  overloadsBuf.writeln([t`interface InfixCoalesceObjectOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of infixCoalesceObjectDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (infixCoalesceObjectDefs.size > 0) {
+    // InfixCoalesceObjectOperators
+    overloadsBuf.writeln([t`interface InfixCoalesceObjectOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of infixCoalesceObjectDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // TernaryContainerOperators
-  overloadsBuf.writeln([t`interface TernaryContainerOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of ternaryContainerDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (ternaryContainerDefs.size > 0) {
+    // TernaryContainerOperators
+    overloadsBuf.writeln([t`interface TernaryContainerOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of ternaryContainerDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // TernaryBaseTypeOperators
-  overloadsBuf.writeln([t`interface TernaryBaseTypeOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of ternaryBaseTypeDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (ternaryBaseTypeDefs.size > 0) {
+    // TernaryBaseTypeOperators
+    overloadsBuf.writeln([t`interface TernaryBaseTypeOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of ternaryBaseTypeDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
-  // TernaryMergeOperators
-  overloadsBuf.writeln([t`interface TernaryMergeOperators {`]);
-  overloadsBuf.indented(() => {
-    for (const [opSymbol, defs] of ternaryMergeDefs.entries()) {
-      overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
-      overloadsBuf.indented(() => {
-        for (const def of defs) {
-          overloadsBuf.writeln([t`| ${def.args}`]);
-        }
-      });
-    }
-  });
-  overloadsBuf.writeln([t`}`]);
-  overloadsBuf.nl();
+  if (ternaryMergeDefs.size > 0) {
+    // TernaryMergeOperators
+    overloadsBuf.writeln([t`interface TernaryMergeOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [opSymbol, defs] of ternaryMergeDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
   code.writeln([
     r`const overloadDefs`,
@@ -1222,226 +1274,262 @@ export function generateOperators({
   });
   code.nl();
 
-  // InfixBooleanMultiplyOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixBooleanMultiplyOperators,`]);
-    code.writeln([t`LHS extends InfixBooleanMultiplyOperators[Op]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixBooleanMultiplyOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`_std.$bool,`]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixBooleanMultiplyDefs.size > 0) {
+    // InfixBooleanMultiplyOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixBooleanMultiplyOperators,`]);
+      code.writeln([t`LHS extends InfixBooleanMultiplyOperators[Op]["lhs"],`]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixBooleanMultiplyOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([t`_std.$bool,`]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixBooleanMultiplyOptionalOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixBooleanMultiplyOptionalOperators,`]);
-    code.writeln([
-      t`LHS extends InfixBooleanMultiplyOptionalOperators[Op]["lhs"],`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixBooleanMultiplyOptionalOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`_std.$bool,`]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.optionalParamCardinality<LHS>, $.cardutil.optionalParamCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixBooleanMultiplyOptionalDefs.size > 0) {
+    // InfixBooleanMultiplyOptionalOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([
+        t`Op extends keyof InfixBooleanMultiplyOptionalOperators,`,
+      ]);
+      code.writeln([
+        t`LHS extends InfixBooleanMultiplyOptionalOperators[Op]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixBooleanMultiplyOptionalOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([t`_std.$bool,`]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.optionalParamCardinality<LHS>, $.cardutil.optionalParamCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixBooleanMultiplyOneOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixBooleanMultiplyOneOperators,`]);
-    code.writeln([t`LHS extends InfixBooleanMultiplyOneOperators[Op]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixBooleanMultiplyOneOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`_std.$bool,`]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.Cardinality.One>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixBooleanMultiplyOneDefs.size > 0) {
+    // InfixBooleanMultiplyOneOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixBooleanMultiplyOneOperators,`]);
+      code.writeln([
+        t`LHS extends InfixBooleanMultiplyOneOperators[Op]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixBooleanMultiplyOneOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([t`_std.$bool,`]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.Cardinality.One>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // PrefixBooleanOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof PrefixBooleanOperators,`]);
-    code.writeln([t`Operand extends PrefixBooleanOperators[Op]["operand"]`]);
-  });
-  code.writeln([
-    t`>(op: Op, operand: Operand): $.$expr_Operator<_std.$bool, $.cardutil.paramCardinality<Operand>>;`,
-  ]);
-  code.nl();
+  if (prefixBooleanDefs.size > 0) {
+    // PrefixBooleanOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof PrefixBooleanOperators,`]);
+      code.writeln([t`Operand extends PrefixBooleanOperators[Op]["operand"]`]);
+    });
+    code.writeln([
+      t`>(op: Op, operand: Operand): $.$expr_Operator<_std.$bool, $.cardutil.paramCardinality<Operand>>;`,
+    ]);
+    code.nl();
+  }
 
-  // PrefixBooleanOneOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof PrefixBooleanOneOperators,`]);
-    code.writeln([t`Operand extends PrefixBooleanOneOperators[Op]["operand"]`]);
-  });
-  code.writeln([
-    t`>(op: Op, operand: Operand): $.$expr_Operator<_std.$bool, $.Cardinality.One>;`,
-  ]);
-  code.nl();
+  if (prefixBooleanOneDefs.size > 0) {
+    // PrefixBooleanOneOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof PrefixBooleanOneOperators,`]);
+      code.writeln([
+        t`Operand extends PrefixBooleanOneOperators[Op]["operand"]`,
+      ]);
+    });
+    code.writeln([
+      t`>(op: Op, operand: Operand): $.$expr_Operator<_std.$bool, $.Cardinality.One>;`,
+    ]);
+    code.nl();
+  }
 
-  // PrefixHomogeneousOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof PrefixHomogeneousOperators,`]);
-    code.writeln([
-      t`Operand extends PrefixHomogeneousOperators[Op]["operand"]`,
-    ]);
-  });
-  code.writeln([t`>(op: Op, operand: Operand): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`_.castMaps.literalToTypeSet<Operand>["__element__"],`]);
-    code.writeln([t`$.cardutil.paramCardinality<Operand>`]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (prefixHomogeneousDefs.size > 0) {
+    // PrefixHomogeneousOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof PrefixHomogeneousOperators,`]);
+      code.writeln([
+        t`Operand extends PrefixHomogeneousOperators[Op]["operand"]`,
+      ]);
+    });
+    code.writeln([t`>(op: Op, operand: Operand): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([t`_.castMaps.literalToTypeSet<Operand>["__element__"],`]);
+      code.writeln([t`$.cardutil.paramCardinality<Operand>`]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixScalarMultiplyOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixScalarMultiplyOperators,`]);
-    code.writeln([t`LHS extends InfixScalarMultiplyOperators[Op]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixScalarMultiplyOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([t`_.castMaps.literalToTypeSet<LHS>["__element__"],`]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixScalarMultiplyDefs.size > 0) {
+    // InfixScalarMultiplyOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixScalarMultiplyOperators,`]);
+      code.writeln([t`LHS extends InfixScalarMultiplyOperators[Op]["lhs"],`]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixScalarMultiplyOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([t`_.castMaps.literalToTypeSet<LHS>["__element__"],`]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixCoalesceBaseTypeOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixCoalesceBaseTypeOperators,`]);
-    code.writeln([t`LHS extends InfixCoalesceBaseTypeOperators[Op]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixCoalesceBaseTypeOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixCoalesceBaseTypeDefs.size > 0) {
+    // InfixCoalesceBaseTypeOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixCoalesceBaseTypeOperators,`]);
+      code.writeln([t`LHS extends InfixCoalesceBaseTypeOperators[Op]["lhs"],`]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixCoalesceBaseTypeOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixCoalesceContainerOperator
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixCoalesceContainerOperators,`]);
-    code.writeln([t`LHS extends InfixCoalesceContainerOperators[Op]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixCoalesceContainerOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixCoalesceContainerDefs.size > 0) {
+    // InfixCoalesceContainerOperator
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixCoalesceContainerOperators,`]);
+      code.writeln([
+        t`LHS extends InfixCoalesceContainerOperators[Op]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixCoalesceContainerOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixCoalesceObjectOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixCoalesceObjectOperators,`]);
-    code.writeln([t`LHS extends InfixCoalesceObjectOperators[Op]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixCoalesceObjectOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixCoalesceObjectDefs.size > 0) {
+    // InfixCoalesceObjectOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixCoalesceObjectOperators,`]);
+      code.writeln([t`LHS extends InfixCoalesceObjectOperators[Op]["lhs"],`]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixCoalesceObjectOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixContainerMultiplyOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixContainerMultiplyOperators,`]);
-    code.writeln([t`LHS extends InfixContainerMultiplyOperators[Op]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixContainerMultiplyOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixContainerMultiplyDefs.size > 0) {
+    // InfixContainerMultiplyOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixContainerMultiplyOperators,`]);
+      code.writeln([
+        t`LHS extends InfixContainerMultiplyOperators[Op]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixContainerMultiplyOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixRangeTypeMultiplyOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixRangeTypeMultiplyOperators,`]);
-    code.writeln([t`LHS extends InfixRangeTypeMultiplyOperators[Op]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixRangeTypeMultiplyOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`$.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixRangeTypeMultiplyDefs.size > 0) {
+    // InfixRangeTypeMultiplyOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixRangeTypeMultiplyOperators,`]);
+      code.writeln([
+        t`LHS extends InfixRangeTypeMultiplyOperators[Op]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixRangeTypeMultiplyOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`$.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
   if (infixMultiRangeTypeMultiplyDefs.size > 0) {
     // InfixMultiRangeTypeMultiplyOperators
@@ -1468,270 +1556,302 @@ export function generateOperators({
     code.nl();
   }
 
-  // InfixArrayTypeMultiplyOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixArrayTypeMultiplyOperators,`]);
-    code.writeln([t`LHS extends InfixArrayTypeMultiplyOperators[Op]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixArrayTypeMultiplyOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`$.ArrayType<_.syntax.getSharedParentPrimitive<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixArrayTypeMultiplyDefs.size > 0) {
+    // InfixArrayTypeMultiplyOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixArrayTypeMultiplyOperators,`]);
+      code.writeln([
+        t`LHS extends InfixArrayTypeMultiplyOperators[Op]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixArrayTypeMultiplyOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`$.ArrayType<_.syntax.getSharedParentPrimitive<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixObjectArrayTypeMultiplyOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixObjectArrayTypeMultiplyOperators,`]);
-    code.writeln([
-      t`LHS extends InfixObjectArrayTypeMultiplyOperators[Op]["lhs"],`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixObjectArrayTypeMultiplyOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`$.ArrayType<_.syntax.mergeObjectTypes<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixObjectArrayTypeMultiplyDefs.size > 0) {
+    // InfixObjectArrayTypeMultiplyOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([
+        t`Op extends keyof InfixObjectArrayTypeMultiplyOperators,`,
+      ]);
+      code.writeln([
+        t`LHS extends InfixObjectArrayTypeMultiplyOperators[Op]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixObjectArrayTypeMultiplyOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`$.ArrayType<_.syntax.mergeObjectTypes<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixBaseTypeMultiplyOneOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixBaseTypeMultiplyOneOperators,`]);
-    code.writeln([
-      t`LHS extends InfixBaseTypeMultiplyOneOperators[Op]["lhs"],`,
-    ]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixBaseTypeMultiplyOneOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.Cardinality.One>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixBaseTypeMultiplyOneDefs.size > 0) {
+    // InfixBaseTypeMultiplyOneOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixBaseTypeMultiplyOneOperators,`]);
+      code.writeln([
+        t`LHS extends InfixBaseTypeMultiplyOneOperators[Op]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixBaseTypeMultiplyOneOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.Cardinality.One>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixBaseTypeMergeOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixBaseTypeMergeOperators,`]);
-    code.writeln([t`LHS extends InfixBaseTypeMergeOperators[Op]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<InfixBaseTypeMergeOperators[Op], LHS>`,
-    ]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.mergeCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixBaseTypeMergeDefs.size > 0) {
+    // InfixBaseTypeMergeOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixBaseTypeMergeOperators,`]);
+      code.writeln([t`LHS extends InfixBaseTypeMergeOperators[Op]["lhs"],`]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixBaseTypeMergeOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.mergeCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixMergeOperator
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixMergeOperators,`]);
-    code.writeln([t`LHS extends InfixMergeOperators[Op]["lhs"],`]);
-    code.writeln([t`RHS extends ExtractRHS<InfixMergeOperators[Op], LHS>`]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.mergeCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixMergeDefs.size > 0) {
+    // InfixMergeOperator
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixMergeOperators,`]);
+      code.writeln([t`LHS extends InfixMergeOperators[Op]["lhs"],`]);
+      code.writeln([t`RHS extends ExtractRHS<InfixMergeOperators[Op], LHS>`]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.mergeCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // InfixMergeManyOperator
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([t`Op extends keyof InfixMergeManyOperators,`]);
-    code.writeln([t`LHS extends InfixMergeManyOperators[Op]["lhs"],`]);
-    code.writeln([t`RHS extends ExtractRHS<InfixMergeManyOperators[Op], LHS>`]);
-  });
-  code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-  code.indented(() => {
-    code.writeln([
-      t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-    code.writeln([t`$.Cardinality.Many`]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+  if (infixMergeManyDefs.size > 0) {
+    // InfixMergeManyOperator
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixMergeManyOperators,`]);
+      code.writeln([t`LHS extends InfixMergeManyOperators[Op]["lhs"],`]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixMergeManyOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([t`$.Cardinality.Many`]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // TernaryContainerOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
+  if (ternaryContainerDefs.size > 0) {
+    // TernaryContainerOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([
+        t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+      ]);
+      code.writeln([
+        t`LHS extends TernaryContainerOperators["if_else"]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<TernaryContainerOperators["if_else"], LHS>`,
+      ]);
+    });
     code.writeln([
-      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+      t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
     ]);
-    code.writeln([t`LHS extends TernaryContainerOperators["if_else"]["lhs"],`]);
+    code.indented(() => {
+      code.writeln([
+        t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([
+        t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+      ]);
+      code.writeln([
+        t`LHS extends TernaryContainerOperators["if_else"]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<TernaryContainerOperators["if_else"], LHS>`,
+      ]);
+    });
     code.writeln([
-      t`RHS extends ExtractRHS<TernaryContainerOperators["if_else"], LHS>`,
+      t`>(op1: "if", cond: Cond, op2: "then", lhs: LHS, op3: "else", rhs: RHS): $.$expr_Operator<`,
     ]);
-  });
-  code.writeln([
-    t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
-  ]);
-  code.indented(() => {
-    code.writeln([
-      t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([
-      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
-    ]);
-    code.writeln([t`LHS extends TernaryContainerOperators["if_else"]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<TernaryContainerOperators["if_else"], LHS>`,
-    ]);
-  });
-  code.writeln([
-    t`>(op1: "if", cond: Cond, op2: "then", lhs: LHS, op3: "else", rhs: RHS): $.$expr_Operator<`,
-  ]);
-  code.indented(() => {
-    code.writeln([
-      t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+    code.indented(() => {
+      code.writeln([
+        t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // TernaryBaseTypeOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
+  if (ternaryBaseTypeDefs.size > 0) {
+    // TernaryBaseTypeOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([
+        t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+      ]);
+      code.writeln([
+        t`LHS extends TernaryBaseTypeOperators["if_else"]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<TernaryBaseTypeOperators["if_else"], LHS>`,
+      ]);
+    });
     code.writeln([
-      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+      t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
     ]);
-    code.writeln([t`LHS extends TernaryBaseTypeOperators["if_else"]["lhs"],`]);
+    code.indented(() => {
+      code.writeln([
+        t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([
+        t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+      ]);
+      code.writeln([
+        t`LHS extends TernaryBaseTypeOperators["if_else"]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<TernaryBaseTypeOperators["if_else"], LHS>`,
+      ]);
+    });
     code.writeln([
-      t`RHS extends ExtractRHS<TernaryBaseTypeOperators["if_else"], LHS>`,
+      t`>(op1: "if", cond: Cond, op2: "then", lhs: LHS, op3: "else", rhs: RHS): $.$expr_Operator<`,
     ]);
-  });
-  code.writeln([
-    t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
-  ]);
-  code.indented(() => {
-    code.writeln([
-      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([
-      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
-    ]);
-    code.writeln([t`LHS extends TernaryBaseTypeOperators["if_else"]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<TernaryBaseTypeOperators["if_else"], LHS>`,
-    ]);
-  });
-  code.writeln([
-    t`>(op1: "if", cond: Cond, op2: "then", lhs: LHS, op3: "else", rhs: RHS): $.$expr_Operator<`,
-  ]);
-  code.indented(() => {
-    code.writeln([
-      t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+    code.indented(() => {
+      code.writeln([
+        t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
-  // TernaryMergeOperators
-  code.writeln([t`function op<`]);
-  code.indented(() => {
+  if (ternaryMergeDefs.size > 0) {
+    // TernaryMergeOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([
+        t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+      ]);
+      code.writeln([t`LHS extends TernaryMergeOperators["if_else"]["lhs"],`]);
+      code.writeln([
+        t`RHS extends ExtractRHS<TernaryMergeOperators["if_else"], LHS>`,
+      ]);
+    });
     code.writeln([
-      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+      t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
     ]);
-    code.writeln([t`LHS extends TernaryMergeOperators["if_else"]["lhs"],`]);
+    code.indented(() => {
+      code.writeln([
+        t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([
+        t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
+      ]);
+      code.writeln([t`LHS extends TernaryMergeOperators["if_else"]["lhs"],`]);
+      code.writeln([
+        t`RHS extends ExtractRHS<TernaryMergeOperators["if_else"], LHS>`,
+      ]);
+    });
     code.writeln([
-      t`RHS extends ExtractRHS<TernaryMergeOperators["if_else"], LHS>`,
+      t`>(op1: "if", cond: Cond, op2: "then", lhs: LHS, op3: "else", rhs: RHS): $.$expr_Operator<`,
     ]);
-  });
-  code.writeln([
-    t`>(lhs: LHS, op1: "if", cond: Cond, op2: "else", rhs: RHS): $.$expr_Operator<`,
-  ]);
-  code.indented(() => {
-    code.writeln([
-      t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.writeln([t`function op<`]);
-  code.indented(() => {
-    code.writeln([
-      t`Cond extends _.castMaps.orScalarLiteral<$.TypeSet<_std.$bool>>,`,
-    ]);
-    code.writeln([t`LHS extends TernaryMergeOperators["if_else"]["lhs"],`]);
-    code.writeln([
-      t`RHS extends ExtractRHS<TernaryMergeOperators["if_else"], LHS>`,
-    ]);
-  });
-  code.writeln([
-    t`>(op1: "if", cond: Cond, op2: "then", lhs: LHS, op3: "else", rhs: RHS): $.$expr_Operator<`,
-  ]);
-  code.indented(() => {
-    code.writeln([
-      t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
-    ]);
-    code.writeln([
-      t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
-    ]);
-  });
-  code.writeln([t`>;`]);
-  code.nl();
+    code.indented(() => {
+      code.writeln([
+        t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.orCardinalities<$.cardutil.paramCardinality<LHS> , $.cardutil.paramCardinality<RHS>>, $.cardutil.paramCardinality<Cond>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
   // Implementation
   code.writeln([r`function op(...args`, ts`: any[]`, r`) {`]);
