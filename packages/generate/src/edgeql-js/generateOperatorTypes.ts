@@ -93,6 +93,7 @@ interface InfixOperator extends BaseOperator {
     | "SCALAR"
     | "CONTAINER"
     | "RANGE_TYPE"
+    | "MULTI_RANGE_TYPE"
     | "OBJECT_ARRAY_TYPE"
     | "ARRAY_TYPE"
     | "BASE_TYPE"
@@ -133,6 +134,11 @@ interface InfixContainerMultiplyOperator extends InfixOperator {
 
 interface InfixRangeTypeMultiplyOperator extends InfixOperator {
   returnElement: "RANGE_TYPE";
+  returnCardinality: "MULTIPLY";
+}
+
+interface InfixMultiRangeTypeMultiplyOperator extends InfixOperator {
+  returnElement: "MULTI_RANGE_TYPE";
   returnCardinality: "MULTIPLY";
 }
 
@@ -209,6 +215,7 @@ type Operator =
   | InfixScalarMultiplyOperator
   | InfixContainerMultiplyOperator
   | InfixRangeTypeMultiplyOperator
+  | InfixMultiRangeTypeMultiplyOperator
   | InfixArrayTypeMultiplyOperator
   | InfixObjectArrayTypeMultiplyOperator
   | InfixBaseTypeMultiplyOneOperator
@@ -316,6 +323,8 @@ function operatorFromOpDef(
       if (opDef.anytypes && opDef.anytypes.kind === "noncastable") {
         if (opDef.anytypes.typeObj.kind === "range") {
           return frag`infixOperandsRangeType<${typeToCodeFragment(lhsType)}>`;
+        } else if (opDef.anytypes.typeObj.kind === "multirange") {
+          return frag`infixOperandsMultiRangeType<${typeToCodeFragment(lhsType)}>`;
         } else if (opDef.anytypes.typeObj.kind === "array") {
           return frag`infixOperandsArrayTypeNonArray<${typeToCodeFragment(
             lhsType,
@@ -410,6 +419,14 @@ function operatorFromOpDef(
               returnElement: "RANGE_TYPE",
               returnCardinality: "MULTIPLY",
             };
+          } else if (opDef.anytypes.typeObj.kind === "multirange") {
+            return {
+              kind: OperatorKind.Infix,
+              args: getArgsFromAnytypes(),
+              operatorSymbol,
+              returnElement: "MULTI_RANGE_TYPE",
+              returnCardinality: "MULTIPLY",
+            };
           } else if (opDef.anytypes.typeObj.kind === "unknown") {
             const returnCardinality =
               _returnCardinality.type === "MERGE" ? "MERGE" : "MULTIPLY_ONE";
@@ -422,7 +439,7 @@ function operatorFromOpDef(
             };
           } else {
             throw new Error(
-              `Unexpected anytype in container homogeneous operator defintion: ${opDef.anytypes}`,
+              `Unexpected anytype in container homogeneous operator defintion: ${JSON.stringify(opDef, null, 2)}`,
             );
           }
         } else {
@@ -537,6 +554,10 @@ export function generateOperators({
   const infixRangeTypeMultiplyDefs = new StrictMapSet<
     string,
     InfixRangeTypeMultiplyOperator
+  >();
+  const infixMultiRangeTypeMultiplyDefs = new StrictMapSet<
+    string,
+    InfixMultiRangeTypeMultiplyOperator
   >();
   const infixArrayTypeMultiplyDefs = new StrictMapSet<
     string,
@@ -722,6 +743,8 @@ export function generateOperators({
               return infixScalarMultiplyDefs;
             } else if (operator.returnElement === "RANGE_TYPE") {
               return infixRangeTypeMultiplyDefs;
+            } else if (operator.returnElement === "MULTI_RANGE_TYPE") {
+              return infixMultiRangeTypeMultiplyDefs;
             } else if (operator.returnElement === "ARRAY_TYPE") {
               return infixArrayTypeMultiplyDefs;
             } else if (operator.returnElement === "OBJECT_ARRAY_TYPE") {
@@ -793,6 +816,18 @@ export function generateOperators({
     overloadsBuf.writeln([t`lhs: LHS;`]);
     overloadsBuf.writeln([
       t`rhs: $.TypeSet<$.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>>;`,
+    ]);
+  });
+  overloadsBuf.writeln([t`}`]);
+  overloadsBuf.nl();
+
+  overloadsBuf.writeln([
+    t`interface infixOperandsMultiRangeType<LHS extends $.TypeSet<$.MultiRangeType<_std.$anypoint>>> {`,
+  ]);
+  overloadsBuf.indented(() => {
+    overloadsBuf.writeln([t`lhs: LHS;`]);
+    overloadsBuf.writeln([
+      t`rhs: $.TypeSet<$.MultiRangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>>;`,
     ]);
   });
   overloadsBuf.writeln([t`}`]);
@@ -944,6 +979,26 @@ export function generateOperators({
   });
   overloadsBuf.writeln([t`}`]);
   overloadsBuf.nl();
+
+  if (infixMultiRangeTypeMultiplyDefs.size > 0) {
+    // InfixMultiRangeTypeMultiplyOperators
+    overloadsBuf.writeln([t`interface InfixMultiRangeTypeMultiplyOperators {`]);
+    overloadsBuf.indented(() => {
+      for (const [
+        opSymbol,
+        defs,
+      ] of infixMultiRangeTypeMultiplyDefs.entries()) {
+        overloadsBuf.writeln([t`${quote(opSymbol)}: `]);
+        overloadsBuf.indented(() => {
+          for (const def of defs) {
+            overloadsBuf.writeln([t`| ${def.args}`]);
+          }
+        });
+      }
+    });
+    overloadsBuf.writeln([t`}`]);
+    overloadsBuf.nl();
+  }
 
   // InfixArrayTypeMultiplyOperators
   overloadsBuf.writeln([t`interface InfixArrayTypeMultiplyOperators {`]);
@@ -1387,6 +1442,31 @@ export function generateOperators({
   });
   code.writeln([t`>;`]);
   code.nl();
+
+  if (infixMultiRangeTypeMultiplyDefs.size > 0) {
+    // InfixMultiRangeTypeMultiplyOperators
+    code.writeln([t`function op<`]);
+    code.indented(() => {
+      code.writeln([t`Op extends keyof InfixMultiRangeTypeMultiplyOperators,`]);
+      code.writeln([
+        t`LHS extends InfixMultiRangeTypeMultiplyOperators[Op]["lhs"],`,
+      ]);
+      code.writeln([
+        t`RHS extends ExtractRHS<InfixMultiRangeTypeMultiplyOperators[Op], LHS>`,
+      ]);
+    });
+    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
+    code.indented(() => {
+      code.writeln([
+        t`$.MultiRangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>,`,
+      ]);
+      code.writeln([
+        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+      ]);
+    });
+    code.writeln([t`>;`]);
+    code.nl();
+  }
 
   // InfixArrayTypeMultiplyOperators
   code.writeln([t`function op<`]);
