@@ -1280,17 +1280,16 @@ export function generateOperators({
       code.writeln([t`Op extends keyof InfixBooleanMultiplyOperators,`]);
       code.writeln([t`LHS extends InfixBooleanMultiplyOperators[Op]["lhs"],`]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixBooleanMultiplyOperators[Op], LHS>`,
+        t`RHS extends ExtractRHS<InfixBooleanMultiplyOperators[Op], LHS>,`,
       ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([t`_std.$bool,`]);
+      code.writeln([t`Element extends _std.$bool,`]);
       code.writeln([
-        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Card extends $.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>,`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1305,17 +1304,16 @@ export function generateOperators({
         t`LHS extends InfixBooleanMultiplyOptionalOperators[Op]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixBooleanMultiplyOptionalOperators[Op], LHS>`,
+        t`RHS extends ExtractRHS<InfixBooleanMultiplyOptionalOperators[Op], LHS>,`,
       ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([t`_std.$bool,`]);
+      code.writeln([t`Element extends _std.$bool,`]);
       code.writeln([
-        t`$.cardutil.multiplyCardinalities<$.cardutil.optionalParamCardinality<LHS>, $.cardutil.optionalParamCardinality<RHS>>`,
+        t`Card extends $.cardutil.multiplyCardinalities<$.cardutil.optionalParamCardinality<LHS>, $.cardutil.optionalParamCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1328,17 +1326,16 @@ export function generateOperators({
         t`LHS extends InfixBooleanMultiplyOneOperators[Op]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixBooleanMultiplyOneOperators[Op], LHS>`,
+        t`RHS extends ExtractRHS<InfixBooleanMultiplyOneOperators[Op], LHS>,`,
       ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([t`_std.$bool,`]);
+      code.writeln([t`Element extends _std.$bool,`]);
       code.writeln([
-        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.Cardinality.One>`,
+        t`Card extends $.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.Cardinality.One>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1347,7 +1344,7 @@ export function generateOperators({
     code.writeln([t`function op<`]);
     code.indented(() => {
       code.writeln([t`Op extends keyof PrefixBooleanOperators,`]);
-      code.writeln([t`Operand extends PrefixBooleanOperators[Op]["operand"]`]);
+      code.writeln([t`Operand extends PrefixBooleanOperators[Op]["operand"],`]);
     });
     code.writeln([
       t`>(op: Op, operand: Operand): $.$expr_Operator<_std.$bool, $.cardutil.paramCardinality<Operand>>;`,
@@ -1361,7 +1358,7 @@ export function generateOperators({
     code.indented(() => {
       code.writeln([t`Op extends keyof PrefixBooleanOneOperators,`]);
       code.writeln([
-        t`Operand extends PrefixBooleanOneOperators[Op]["operand"]`,
+        t`Operand extends PrefixBooleanOneOperators[Op]["operand"],`,
       ]);
     });
     code.writeln([
@@ -1376,15 +1373,16 @@ export function generateOperators({
     code.indented(() => {
       code.writeln([t`Op extends keyof PrefixHomogeneousOperators,`]);
       code.writeln([
-        t`Operand extends PrefixHomogeneousOperators[Op]["operand"]`,
+        t`Operand extends PrefixHomogeneousOperators[Op]["operand"],`,
       ]);
+      code.writeln([
+        t`Element extends _.castMaps.literalToTypeSet<Operand>["__element__"],`,
+      ]);
+      code.writeln([t`Card extends $.cardutil.paramCardinality<Operand>`]);
     });
-    code.writeln([t`>(op: Op, operand: Operand): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([t`_.castMaps.literalToTypeSet<Operand>["__element__"],`]);
-      code.writeln([t`$.cardutil.paramCardinality<Operand>`]);
-    });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(op: Op, operand: Operand): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1395,19 +1393,18 @@ export function generateOperators({
       code.writeln([t`Op extends keyof InfixScalarMultiplyOperators,`]);
       code.writeln([t`LHS extends InfixScalarMultiplyOperators[Op]["lhs"],`]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixScalarMultiplyOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`_.syntax.getSharedParentPrimitive<_.castMaps.literalToTypeSet<LHS>["__element__"], _.castMaps.literalToTypeSet<RHS>["__element__"]>,`,
+        t`RHS extends ExtractRHS<InfixScalarMultiplyOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Element extends $.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>,`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1418,19 +1415,18 @@ export function generateOperators({
       code.writeln([t`Op extends keyof InfixCoalesceBaseTypeOperators,`]);
       code.writeln([t`LHS extends InfixCoalesceBaseTypeOperators[Op]["lhs"],`]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixCoalesceBaseTypeOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+        t`RHS extends ExtractRHS<InfixCoalesceBaseTypeOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Element extends $.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1443,19 +1439,18 @@ export function generateOperators({
         t`LHS extends InfixCoalesceContainerOperators[Op]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixCoalesceContainerOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+        t`RHS extends ExtractRHS<InfixCoalesceContainerOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Element extends _.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1466,19 +1461,18 @@ export function generateOperators({
       code.writeln([t`Op extends keyof InfixCoalesceObjectOperators,`]);
       code.writeln([t`LHS extends InfixCoalesceObjectOperators[Op]["lhs"],`]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixCoalesceObjectOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+        t`RHS extends ExtractRHS<InfixCoalesceObjectOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Element extends _.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.coalesceCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1491,19 +1485,18 @@ export function generateOperators({
         t`LHS extends InfixContainerMultiplyOperators[Op]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixContainerMultiplyOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`_.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+        t`RHS extends ExtractRHS<InfixContainerMultiplyOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Element extends _.syntax.getSharedParentPrimitive<LHS["__element__"], RHS["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1516,19 +1509,18 @@ export function generateOperators({
         t`LHS extends InfixRangeTypeMultiplyOperators[Op]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixRangeTypeMultiplyOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`$.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>,`,
+        t`RHS extends ExtractRHS<InfixRangeTypeMultiplyOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Element extends $.RangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1541,19 +1533,18 @@ export function generateOperators({
         t`LHS extends InfixMultiRangeTypeMultiplyOperators[Op]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixMultiRangeTypeMultiplyOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`$.MultiRangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>,`,
+        t`RHS extends ExtractRHS<InfixMultiRangeTypeMultiplyOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Element extends $.MultiRangeType<$.getPrimitiveBaseType<LHS["__element__"]["__element__"]>>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1566,19 +1557,18 @@ export function generateOperators({
         t`LHS extends InfixArrayTypeMultiplyOperators[Op]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixArrayTypeMultiplyOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`$.ArrayType<_.syntax.getSharedParentPrimitive<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
+        t`RHS extends ExtractRHS<InfixArrayTypeMultiplyOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Element extends $.ArrayType<_.syntax.getSharedParentPrimitive<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1593,19 +1583,18 @@ export function generateOperators({
         t`LHS extends InfixObjectArrayTypeMultiplyOperators[Op]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixObjectArrayTypeMultiplyOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`$.ArrayType<_.syntax.mergeObjectTypes<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
+        t`RHS extends ExtractRHS<InfixObjectArrayTypeMultiplyOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Element extends $.ArrayType<_.syntax.mergeObjectTypes<LHS["__element__"]["__element__"], RHS["__element__"]["__element__"]>>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1618,19 +1607,18 @@ export function generateOperators({
         t`LHS extends InfixBaseTypeMultiplyOneOperators[Op]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixBaseTypeMultiplyOneOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+        t`RHS extends ExtractRHS<InfixBaseTypeMultiplyOneOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.Cardinality.One>`,
+        t`Element extends $.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.Cardinality.One>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1641,19 +1629,18 @@ export function generateOperators({
       code.writeln([t`Op extends keyof InfixBaseTypeMergeOperators,`]);
       code.writeln([t`LHS extends InfixBaseTypeMergeOperators[Op]["lhs"],`]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixBaseTypeMergeOperators[Op], LHS>`,
-      ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
-      code.writeln([
-        t`$.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+        t`RHS extends ExtractRHS<InfixBaseTypeMergeOperators[Op], LHS>,`,
       ]);
       code.writeln([
-        t`$.cardutil.mergeCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Element extends $.getPrimitiveBaseType<_.castMaps.literalToTypeSet<LHS>["__element__"]>,`,
+      ]);
+      code.writeln([
+        t`Card extends $.cardutil.mergeCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1663,18 +1650,17 @@ export function generateOperators({
     code.indented(() => {
       code.writeln([t`Op extends keyof InfixMergeOperators,`]);
       code.writeln([t`LHS extends InfixMergeOperators[Op]["lhs"],`]);
-      code.writeln([t`RHS extends ExtractRHS<InfixMergeOperators[Op], LHS>`]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
+      code.writeln([t`RHS extends ExtractRHS<InfixMergeOperators[Op], LHS>,`]);
       code.writeln([
-        t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+        t`Element extends _.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
       ]);
       code.writeln([
-        t`$.cardutil.mergeCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
+        t`Card extends $.cardutil.mergeCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1685,17 +1671,16 @@ export function generateOperators({
       code.writeln([t`Op extends keyof InfixMergeManyOperators,`]);
       code.writeln([t`LHS extends InfixMergeManyOperators[Op]["lhs"],`]);
       code.writeln([
-        t`RHS extends ExtractRHS<InfixMergeManyOperators[Op], LHS>`,
+        t`RHS extends ExtractRHS<InfixMergeManyOperators[Op], LHS>,`,
       ]);
-    });
-    code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
-    code.indented(() => {
       code.writeln([
-        t`_.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
+        t`Element extends _.syntax.mergeObjectTypes<LHS["__element__"], RHS["__element__"]>,`,
       ]);
-      code.writeln([t`$.Cardinality.Many`]);
+      code.writeln([t`Card extends $.Cardinality.Many`]);
     });
-    code.writeln([t`>;`]);
+    code.writeln([
+      t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<Element, Card>;`,
+    ]);
     code.nl();
   }
 
@@ -1710,7 +1695,7 @@ export function generateOperators({
         t`LHS extends TernaryContainerOperators["if_else"]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<TernaryContainerOperators["if_else"], LHS>`,
+        t`RHS extends ExtractRHS<TernaryContainerOperators["if_else"], LHS>,`,
       ]);
     });
     code.writeln([
@@ -1734,7 +1719,7 @@ export function generateOperators({
         t`LHS extends TernaryContainerOperators["if_else"]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<TernaryContainerOperators["if_else"], LHS>`,
+        t`RHS extends ExtractRHS<TernaryContainerOperators["if_else"], LHS>,`,
       ]);
     });
     code.writeln([
@@ -1763,7 +1748,7 @@ export function generateOperators({
         t`LHS extends TernaryBaseTypeOperators["if_else"]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<TernaryBaseTypeOperators["if_else"], LHS>`,
+        t`RHS extends ExtractRHS<TernaryBaseTypeOperators["if_else"], LHS>,`,
       ]);
     });
     code.writeln([
@@ -1787,7 +1772,7 @@ export function generateOperators({
         t`LHS extends TernaryBaseTypeOperators["if_else"]["lhs"],`,
       ]);
       code.writeln([
-        t`RHS extends ExtractRHS<TernaryBaseTypeOperators["if_else"], LHS>`,
+        t`RHS extends ExtractRHS<TernaryBaseTypeOperators["if_else"], LHS>,`,
       ]);
     });
     code.writeln([
@@ -1814,7 +1799,7 @@ export function generateOperators({
       ]);
       code.writeln([t`LHS extends TernaryMergeOperators["if_else"]["lhs"],`]);
       code.writeln([
-        t`RHS extends ExtractRHS<TernaryMergeOperators["if_else"], LHS>`,
+        t`RHS extends ExtractRHS<TernaryMergeOperators["if_else"], LHS>,`,
       ]);
     });
     code.writeln([
@@ -1836,7 +1821,7 @@ export function generateOperators({
       ]);
       code.writeln([t`LHS extends TernaryMergeOperators["if_else"]["lhs"],`]);
       code.writeln([
-        t`RHS extends ExtractRHS<TernaryMergeOperators["if_else"], LHS>`,
+        t`RHS extends ExtractRHS<TernaryMergeOperators["if_else"], LHS>,`,
       ]);
     });
     code.writeln([
