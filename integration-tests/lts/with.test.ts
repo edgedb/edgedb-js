@@ -83,7 +83,7 @@ SELECT {
             id: string;
             name: string;
           }[];
-          nextOffset: 10;
+          nextOffset: number;
           hasMore: boolean;
         }
       >

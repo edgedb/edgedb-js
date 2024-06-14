@@ -1401,7 +1401,9 @@ export function generateOperators({
     });
     code.writeln([t`>(lhs: LHS, op: Op, rhs: RHS): $.$expr_Operator<`]);
     code.indented(() => {
-      code.writeln([t`_.castMaps.literalToTypeSet<LHS>["__element__"],`]);
+      code.writeln([
+        t`_.syntax.getSharedParentPrimitive<_.castMaps.literalToTypeSet<LHS>["__element__"], _.castMaps.literalToTypeSet<RHS>["__element__"]>,`,
+      ]);
       code.writeln([
         t`$.cardutil.multiplyCardinalities<$.cardutil.paramCardinality<LHS>, $.cardutil.paramCardinality<RHS>>`,
       ]);
