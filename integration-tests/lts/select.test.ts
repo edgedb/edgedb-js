@@ -1194,7 +1194,12 @@ SELECT __scope_0_defaultPerson {
           }))
           .run(client),
       (err) => {
-        if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
+        if (
+          err &&
+          typeof err === "object" &&
+          "message" in err &&
+          typeof err.message === "string"
+        ) {
           assert.match(err.message, /possibly more than one element returned/);
           return true;
         } else {

@@ -311,10 +311,9 @@ export type stripNonInsertables<T extends ObjectTypePointers> = {
       : T[k];
 };
 
-type shapeElementToTs<
-  Pointer extends PropertyDesc | LinkDesc,
+type shapeElementToTs<Pointer extends PropertyDesc | LinkDesc, Element> = [
   Element,
-> = [Element] extends [true]
+] extends [true]
   ? pointerToTsType<Pointer>
   : [Element] extends [false]
     ? never
