@@ -1,7 +1,7 @@
 {
   "name": "@edgedb/ai",
   "description": "Helper library for the EdgeDB AI extension",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "author": "EdgeDB <info@edgedb.com>",
   "type": "module",
   "repository": {
