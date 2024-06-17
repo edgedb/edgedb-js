@@ -372,10 +372,16 @@ export type computeObjectShape<
                 ShapeEl
               > | null
             : never
-          : [k] extends [keyof Pointers]
-            ? shapeElementToTs<Pointers[k], Shape[k]>
-            : Shape[k] extends TypeSet
-              ? setToTsType<Shape[k]>
+          : Shape[k] extends TypeSet
+            ? [k] extends [keyof Pointers]
+              ? Shape[k]["__cardinality__"] extends cardutil.assignable<
+                  Pointers[k]["cardinality"]
+                >
+                ? setToTsType<Shape[k]>
+                : never
+              : setToTsType<Shape[k]>
+            : [k] extends [keyof Pointers]
+              ? shapeElementToTs<Pointers[k], Shape[k]>
               : never;
       }
 >;

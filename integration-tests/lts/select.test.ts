@@ -1170,6 +1170,61 @@ SELECT __scope_0_defaultPerson {
     assert.equal(res4, 1);
   });
 
+  test("overriding pointers", async () => {
+    const q = e.select(e.Hero, () => ({
+      height: e.decimal("10.0"),
+    }));
+    type Height = $infer<typeof q.__element__.__shape__.height>;
+    type Q = $infer<typeof q>;
+    tc.assert<
+      tc.IsExact<
+        Q,
+        {
+          height: Height;
+        }[]
+      >
+    >(true);
+
+    await assert.rejects(
+      async () =>
+        e
+          // @ts-expect-error cannot assign multi cardinality if point is single
+          .select(e.Hero, () => ({
+            height: e.set(e.decimal("10.0"), e.decimal("11.0")),
+          }))
+          .run(client),
+      (err) => {
+        if (
+          err &&
+          typeof err === "object" &&
+          "message" in err &&
+          typeof err.message === "string"
+        ) {
+          assert.match(err.message, /possibly more than one element returned/);
+          return true;
+        } else {
+          assert.fail("Expected error to be an object with a message");
+        }
+      },
+    );
+  });
+
+  test("coalescing pointers", () => {
+    const q = e.select(e.Hero, (h) => ({
+      height: e.op(h.height, "??", e.decimal("10.0")),
+    }));
+    type Height = $infer<typeof q.__element__.__shape__.height>;
+    type Q = $infer<typeof q>;
+    tc.assert<
+      tc.IsExact<
+        Q,
+        {
+          height: Height;
+        }[]
+      >
+    >(true);
+  });
+
   test("nested matching scopes", async () => {
     const q = e.select(e.Hero, (h) => ({
       name: h.name,

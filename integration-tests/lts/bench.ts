@@ -225,6 +225,13 @@ bench("select: with offset", () => {
   return {} as typeof query;
 }).types([8891, "instantiations"]);
 
+bench("select: with pointer override", () => {
+  const query = e.select(e.Hero, (h) => ({
+    height: e.decimal("10.0"),
+  }));
+  return {} as typeof query;
+}).types([2160, "instantiations"]);
+
 bench("params select", () => {
   const query = e.params({ name: e.str }, (params) =>
     e.select(e.Hero, (hero) => ({
