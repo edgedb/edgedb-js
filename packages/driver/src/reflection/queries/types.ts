@@ -30,22 +30,22 @@ export type TypeKind =
   | "multirange"
   | "unknown";
 
-export type TypeProperties<T extends TypeKind> = {
+export interface TypeProperties<T extends TypeKind> {
   id: UUID;
   kind: T;
   name: string;
-};
+}
 
-export type ScalarType = TypeProperties<"scalar"> & {
+export interface ScalarType extends TypeProperties<"scalar"> {
   is_abstract: boolean;
   is_seq: boolean;
   bases: readonly { id: UUID }[];
   enum_values: readonly string[] | null;
   material_id: UUID | null;
   cast_type?: UUID;
-};
+}
 
-export type ObjectType = TypeProperties<"object"> & {
+export interface ObjectType extends TypeProperties<"object"> {
   is_abstract: boolean;
   bases: readonly { id: UUID }[];
   union_of: readonly { id: UUID }[];
@@ -54,30 +54,34 @@ export type ObjectType = TypeProperties<"object"> & {
   backlinks: readonly Backlink[];
   backlink_stubs: readonly Backlink[];
   exclusives: { [k: string]: Pointer }[];
-};
+}
 
-export type ArrayType = TypeProperties<"array"> & {
+export interface ArrayType extends TypeProperties<"array"> {
   array_element_id: UUID;
   is_abstract: boolean;
-};
+}
 
-export type TupleType = TypeProperties<"tuple"> & {
+export interface TupleType extends TypeProperties<"tuple"> {
   tuple_elements: readonly {
     name: string;
     target_id: UUID;
   }[];
   is_abstract: boolean;
-};
+}
 
-export type RangeType = TypeProperties<"range"> & {
+export interface RangeType extends TypeProperties<"range"> {
   range_element_id: UUID;
   is_abstract: boolean;
-};
+}
 
-export type MultiRangeType = TypeProperties<"multirange"> & {
+export interface MultiRangeType extends TypeProperties<"multirange"> {
   multirange_element_id: UUID;
   is_abstract: boolean;
-};
+}
+
+export interface BaseType extends TypeProperties<"unknown"> {
+  is_abstract: false;
+}
 
 export type PrimitiveType =
   | ScalarType
@@ -85,7 +89,7 @@ export type PrimitiveType =
   | TupleType
   | RangeType
   | MultiRangeType;
-export type Type = PrimitiveType | ObjectType;
+export type Type = BaseType | PrimitiveType | ObjectType;
 export type Types = StrictMap<UUID, Type>;
 
 const numberType: ScalarType = {

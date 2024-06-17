@@ -11,6 +11,10 @@ await run({
       replace: "https://deno.land/std@0.208.0/toml/mod.ts",
     },
     {
+      match: /^debug$/,
+      replace: "https://deno.land/x/debug/mod.ts",
+    },
+    {
       match: /^edgedb\/dist\//,
       replace: (match, path) => {
         return path?.includes("src/generators")

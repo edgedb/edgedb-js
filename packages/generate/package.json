@@ -32,7 +32,8 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "@iarna/toml": "^2.2.5"
+    "@iarna/toml": "^2.2.5",
+    "debug": "^4.3.4"
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.build.json --noEmit",

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import superjson from "superjson";
 import type { Client } from "edgedb";
+import fc from "fast-check";
 import e from "./dbschema/edgeql-js";
 import * as $ from "../../packages/generate/src/syntax/reflection";
 
@@ -40,6 +41,17 @@ describe("operators", () => {
       }
     });
   }
+
+  describe("optional conditional ops", () => {
+    checkOperatorExpr(
+      e.op(e.str("hello"), "?=", e.cast(e.str, e.set())),
+      "?=",
+      [e.str("hello"), e.cast(e.str, e.set())],
+      e.bool,
+      $.Cardinality.One,
+      `"hello" ?= <std::str>{}`,
+    );
+  });
 
   describe("slice and index ops", () => {
     checkOperatorExpr(
@@ -216,6 +228,85 @@ describe("operators", () => {
     );
   });
 
+  test("random assortment of valid operators", () => {
+    e.op(e.int64(10), "+", e.int64(20)); // int64 + int64
+    e.op(e.float32(3.14), "*", e.float32(2.0)); // float32 * float32
+    e.op(e.str("hello"), "++", e.str(" world")); // str ++ str
+    e.op("not", e.bool(true)); // not bool
+    e.op(e.datetime(new Date(2023, 5, 20)), "-", e.duration("PT5H")); // datetime - duration
+    e.op(e.array([e.int32(1), e.int32(2)]), "++", e.array([e.int32(3)])); // array<int32> ++ array<int32>
+    e.op(e.decimal("10.5"), "//", e.decimal("3")); // decimal // decimal
+    e.op(e.json('{"a": 1}'), "++", e.json('{"b": 2}')); // json ++ json
+    e.op(
+      e.uuid("12345678-1234-5678-1234-567812345678"),
+      "=",
+      e.uuid("12345678-1234-5678-1234-567812345678"),
+    ); // uuid = uuid
+    e.op(
+      e.bytes(new Uint8Array([1, 2])),
+      "++",
+      e.bytes(new Uint8Array([3, 4])),
+    ); // bytes ++ bytes
+    e.op(e.int16(10), "in", e.set(e.int16(5), e.int16(10), e.int16(15))); // int16 in set<int16>
+    e.op(
+      e.array([e.str("a"), e.str("b")]),
+      "union",
+      e.array([e.str("b"), e.str("c")]),
+    ); // array<str> union array<str>
+    e.op(
+      e.tuple([e.int32(1), e.str("a")]),
+      "in",
+      e.tuple([e.int32(1), e.str("a")]),
+    ); // tuple<int32, str> in tuple<int32, str>
+    e.op(
+      e.range(e.int32(1), e.int32(10)),
+      "+",
+      e.range(e.int32(5), e.int32(15)),
+    ); // range<int32> + range<int32>
+    e.op("if", e.bool(true), "then", e.int64(1), "else", e.int64(0)); // if bool then int64 else int64
+  });
+
+  test("random assortment of invalid operators", () => {
+    assert.throws(
+      // @ts-expect-error cannot compare int64 and str
+      () => e.op(e.int64(10), "+", e.str("20")),
+    );
+    assert.throws(
+      // @ts-expect-error cannot concat int64 and int64
+      () => e.op(e.int64(10), "++", e.int64(20)),
+    );
+    assert.throws(
+      // @ts-expect-error if condition must be bool
+      () => e.op("if", 1, "then", e.int64(1), "else", e.int64(0)),
+    );
+    assert.throws(
+      // @ts-expect-error cannot multiply number and object
+      () => e.op(1, "*", e.cast(e.User, e.set())),
+    );
+    const json = e.json("{}");
+    const uuid = e.uuid("00000000-0000-0000-0000-000000000000");
+    assert.throws(
+      // @ts-expect-error cannot concat json and uuid
+      () => e.op(json, "++", uuid),
+    );
+    assert.throws(
+      // @ts-expect-error if condition must be a boolean expression
+      () => e.op("if", e.op(1, "+", 2), "then", e.int64(1), "else", e.int64(0)),
+    );
+    assert.throws(
+      // @ts-expect-error not requires boolean operand
+      () => e.op("not", e.int16(0)),
+    );
+    assert.throws(
+      // @ts-expect-error ilike requires string operands
+      () => e.op(e.int64(0), "ilike", "beep"),
+    );
+    assert.throws(
+      // @ts-expect-error cannot concat date and bytes
+      () => e.op(e.datetime_of_statement(), "++", e.bytes(new Uint8Array([0]))),
+    );
+  });
+
   test("non-literal args", async () => {
     const loki = e.select(e.Hero, (hero) => ({
       filter: e.op(hero.name, "=", "Loki"),
@@ -325,5 +416,181 @@ describe("operators", () => {
     const t4 = e.op("distinct", "default");
     assert.deepEqual(t4.__cardinality__, $.Cardinality.One);
     assert.equal(await t4.run(client), "default");
+  });
+});
+
+describe("property tests", () => {
+  test("boolean composibility", () => {
+    const comparisonOperators = ["=", "!="] as const;
+    const logicalOperators = ["and", "or"] as const;
+
+    const booleanArbitrary = fc.oneof(fc.boolean(), fc.boolean().map(e.bool));
+    const stringArbitrary = fc.oneof(fc.string(), fc.string().map(e.str));
+    const numberArbitrary = fc.oneof(
+      fc.integer(),
+      fc.float(),
+      fc.integer().map(e.int64),
+      fc.float().map(e.float64),
+    );
+
+    const comparisonOperatorArbitrary = fc.constantFrom(...comparisonOperators);
+    const logicalOperatorArbitrary = fc.constantFrom(...logicalOperators);
+
+    const expressionArbitrary = fc.letrec((tie) => ({
+      booleanExpression: fc.oneof(
+        booleanArbitrary,
+        fc
+          .tuple(
+            tie("booleanExpression"),
+            logicalOperatorArbitrary,
+            tie("booleanExpression"),
+          )
+          .map(([left, operator, right]) =>
+            e.op(left as boolean, operator, right as boolean),
+          ),
+      ),
+      comparisonExpression: fc.oneof(
+        { depthSize: "medium" },
+        fc
+          .tuple(stringArbitrary, comparisonOperatorArbitrary, stringArbitrary)
+          .map(([left, operator, right]) => e.op(left, operator, right)),
+        fc
+          .tuple(numberArbitrary, comparisonOperatorArbitrary, numberArbitrary)
+          .map(([left, operator, right]) => e.op(left, operator, right)),
+        fc
+          .tuple(
+            tie("booleanExpression"),
+            comparisonOperatorArbitrary,
+            tie("booleanExpression"),
+          )
+          .map(([left, operator, right]) =>
+            e.op(left as boolean, operator, right as boolean),
+          ),
+      ),
+      expression: tie("comparisonExpression"),
+    }));
+
+    fc.assert(
+      fc.property(expressionArbitrary.expression, (expr) => {
+        if (expr && typeof expr === "object" && "__kind__" in expr) {
+          expect(expr).toHaveProperty(
+            "__kind__",
+            expect.stringMatching(
+              new RegExp(
+                `${$.ExpressionKind.Operator}|${$.ExpressionKind.Literal}`,
+              ),
+            ),
+          );
+          expect(expr).toHaveProperty("__element__");
+          expect(expr).toHaveProperty("__cardinality__");
+          expect(expr).toHaveProperty("__name__");
+          expect(expr).toHaveProperty("__opkind__");
+          expect(expr).toHaveProperty("__args__");
+        }
+      }),
+    );
+  });
+
+  test("object set composibility", () => {
+    const setOperators = ["union", "intersect", "except"] as const;
+
+    const stringArbitrary = fc.oneof(fc.string(), fc.string().map(e.str));
+    const numberArbitrary = fc.oneof(
+      fc.integer(),
+      fc.float(),
+      fc.integer().map(e.int64),
+      fc.float().map(e.float64),
+    );
+    const objectArbitrary = fc.oneof(
+      fc.constant(e.Person),
+      fc.constant(e.Hero),
+      fc.constant(e.Villain),
+    );
+    const stringSetArbitrary = fc.oneof(
+      fc.constant(e.cast(e.str, e.set())),
+      fc
+        .array(stringArbitrary, { minLength: 1 })
+        .map((strings) => e.set(...strings)),
+    );
+    const numberSetArbitrary = fc.oneof(
+      fc.constant(e.cast(e.int64, e.set())),
+      fc.constant(e.cast(e.float64, e.set())),
+      fc
+        .array(numberArbitrary, { minLength: 1 })
+        .map((numbers) => e.set(...numbers)),
+    );
+    const objectSetArbitrary = fc.oneof(
+      // Zero
+      objectArbitrary.map((obj) => e.cast(obj, e.set())),
+      // At most one object
+      objectArbitrary.map((obj) => e.assert_single(e.select(obj))),
+      // Exactly one object
+      objectArbitrary.map((obj) => e.cast(obj, e.uuid(""))),
+      // All objects
+      objectArbitrary.map((obj) => e.select(obj)),
+    );
+
+    const setOperatorArbitrary = fc.constantFrom(...setOperators);
+
+    const expressionArbitrary = fc.letrec((tie) => ({
+      stringSetExpression: fc.oneof(
+        stringSetArbitrary,
+        fc
+          .tuple(
+            tie("stringSetExpression"),
+            setOperatorArbitrary,
+            tie("stringSetExpression"),
+          )
+          .map(([left, operator, right]) =>
+            e.op(left as any, operator as any, right as any),
+          ),
+      ),
+      numberSetExpression: fc.oneof(
+        numberSetArbitrary,
+        fc
+          .tuple(
+            tie("numberSetExpression"),
+            setOperatorArbitrary,
+            tie("numberSetExpression"),
+          )
+          .map(([left, operator, right]) =>
+            e.op(left as any, operator as any, right as any),
+          ),
+      ),
+      objectSetExpression: fc.oneof(
+        objectSetArbitrary,
+        fc
+          .tuple(
+            tie("objectSetExpression"),
+            setOperatorArbitrary,
+            tie("objectSetExpression"),
+          )
+          .map(([left, operator, right]) =>
+            e.op(left as any, operator as any, right as any),
+          ),
+      ),
+      expression: fc.oneof(
+        tie("stringSetExpression"),
+        tie("numberSetExpression"),
+        tie("objectSetExpression"),
+      ),
+    }));
+
+    fc.assert(
+      fc.property(expressionArbitrary.expression, (expr) => {
+        if (expr && typeof expr === "object" && "__kind__" in expr) {
+          expect(expr).toHaveProperty("__kind__");
+
+          if (expr.__kind__ === $.ExpressionKind.Operator) {
+            expect(expr).toHaveProperty("__name__");
+            expect(expr).toHaveProperty("__opkind__", $.OperatorKind.Infix);
+            expect(expr).toHaveProperty("__args__", expect.any(Array));
+          }
+
+          expect(expr).toHaveProperty("__element__");
+          expect(expr).toHaveProperty("__cardinality__");
+        }
+      }),
+    );
   });
 });
