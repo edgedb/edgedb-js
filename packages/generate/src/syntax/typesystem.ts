@@ -10,6 +10,13 @@ import type {
 import { TypeKind } from "edgedb/dist/reflection/index";
 import type { cardutil } from "./cardinality";
 import type { Range, MultiRange } from "edgedb";
+import type {
+  ComputeSelectCardinality,
+  SelectModifierNames,
+  SelectModifiers,
+  normaliseShape,
+  objectTypeToSelectShape,
+} from "./select";
 
 //////////////////
 // BASETYPE
@@ -724,10 +731,53 @@ export type BaseTypeToTsType<
                   ? computeObjectShape<Type["__pointers__"], Type["__shape__"]>
                   : never;
 
-export type setToTsType<Set extends TypeSet> = computeTsType<
-  Set["__element__"],
-  Set["__cardinality__"]
->;
+type shapeFnToTsType<ShapeFn> = ShapeFn extends (
+  scope: infer Scope,
+) => Readonly<infer Shape>
+  ? Scope extends $scopify<ObjectType>
+    ? Shape extends objectTypeToSelectShape<Scope["__element__"]> &
+        SelectModifiers<Scope["__element__"]>
+      ? computeTsType<
+          ObjectType<
+            Scope["__element__"]["__name__"],
+            Scope["__element__"]["__pointers__"],
+            normaliseShape<Shape>
+          >,
+          ComputeSelectCardinality<
+            {
+              __element__: Scope["__element__"];
+              // TODO: Drop this explicit cardinality in a breaking change version
+              // A previous implementation of this acted this way, so we need to
+              // keep it for compatibility.
+              __cardinality__: Cardinality.Many;
+            },
+            Pick<Shape, SelectModifierNames>
+          >
+        >
+      : never
+    : never
+  : never;
+
+type portableShapeToTsType<PortableShape> = PortableShape extends (
+  expr: infer Expr extends ObjectTypeExpression,
+  shape: (scope: unknown) => Readonly<infer Shape>,
+) => (scope: unknown) => void
+  ? Shape extends objectTypeToSelectShape<Expr["__element__"]> &
+      SelectModifiers<Expr["__element__"]>
+    ? computeTsType<
+        ObjectType<
+          Expr["__element__"]["__name__"],
+          Expr["__element__"]["__pointers__"],
+          normaliseShape<Shape>
+        >,
+        ComputeSelectCardinality<Expr, Pick<Shape, SelectModifierNames>>
+      >
+    : never
+  : shapeFnToTsType<PortableShape>;
+
+export type setToTsType<Set> = Set extends TypeSet
+  ? computeTsType<Set["__element__"], Set["__cardinality__"]>
+  : portableShapeToTsType<Set>;
 
 export type computeTsTypeCard<T, C extends Cardinality> = Cardinality extends C
   ? unknown

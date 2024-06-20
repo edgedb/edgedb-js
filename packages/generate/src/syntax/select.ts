@@ -849,25 +849,17 @@ function $shape<
   Expr extends ObjectTypeExpression,
   Element extends Expr["__element__"],
   Shape extends objectTypeToSelectShape<Element> & SelectModifiers<Element>,
-  SelectCard extends ComputeSelectCardinality<Expr, Modifiers>,
-  SelectShape extends normaliseShape<Shape, SelectModifierNames>,
   Scope extends $scopify<Element> &
     $linkPropify<{
       [k in keyof Expr]: k extends "__cardinality__"
         ? Cardinality.One
         : Expr[k];
     }>,
-  Modifiers extends UnknownSelectModifiers = Pick<Shape, SelectModifierNames>,
 >(
-  expr: Expr,
-  _shape: (scope: Scope) => Readonly<Shape>,
-): ((scope: unknown) => Readonly<Shape>) &
-  TypeSet<
-    ObjectType<Element["__name__"], Element["__pointers__"], SelectShape>,
-    SelectCard
-  >;
-function $shape(_a: unknown, b: (...args: any) => any) {
-  return b;
+  _expr: Expr,
+  shape: (scope: Scope) => Readonly<Shape>,
+): (scope: Scope) => Readonly<Shape> {
+  return shape;
 }
 export { $shape as shape };
 
