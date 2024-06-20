@@ -36,6 +36,7 @@ import type {
   ExclusiveTuple,
   orLiteralValue,
   EnumType,
+  assert_single,
 } from "./typesystem";
 
 import {
@@ -855,11 +856,21 @@ function $shape<
         ? Cardinality.One
         : Expr[k];
     }>,
+  AnyElement extends Omit<Element, "__shape__"> & { __shape__: any },
 >(
   _expr: Expr,
   shape: (scope: Scope) => Readonly<Shape>,
-): (scope: Scope) => Readonly<Shape> {
-  return shape;
+): (
+  scope: Omit<Scope, "__element__" | "assert_single"> & {
+    __element__: AnyElement;
+    assert_single(): assert_single<AnyElement, Cardinality.AtMostOne>;
+  },
+  /*
+  scope: Scope,
+  */
+) => Readonly<Shape>;
+function $shape(_a: unknown, b: (...args: any) => any) {
+  return b;
 }
 export { $shape as shape };
 
