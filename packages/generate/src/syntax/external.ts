@@ -1,5 +1,3 @@
-import type { TypeSet, setToTsType } from "./typesystem";
-
 export { literal } from "./literal";
 export {} from "./path";
 export { set } from "./set";
@@ -27,4 +25,4 @@ export { optional, params } from "./params";
 export { detached } from "./detached";
 export {} from "./toEdgeQL";
 
-export type $infer<A extends TypeSet> = setToTsType<A>;
+export type { setToTsType as $infer } from "./typesystem";

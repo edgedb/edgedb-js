@@ -1354,6 +1354,13 @@ SELECT __scope_0_defaultPerson {
       rating: true,
       filter_single: e.op(movie.title, "=", "The Avengers"),
     }));
+    const characterShape = e.shape(e.Person, () => ({
+      name: true,
+      id: true,
+    }));
+    const profileShape = e.shape(e.Profile, () => ({
+      slug: true,
+    }));
 
     type ShapeType = $infer<typeof baseShape>;
     tc.assert<
@@ -1366,12 +1373,40 @@ SELECT __scope_0_defaultPerson {
       >
     >(true);
 
+    type CharacterShapeType = $infer<typeof characterShape>;
+    tc.assert<tc.IsExact<CharacterShapeType, { name: string; id: string }[]>>(
+      true,
+    );
+
     const query = e.select(e.Movie, (m) => {
       return {
         ...baseShape(m),
-        characters: { name: true },
+        characters: characterShape,
+        profile: profileShape,
       };
     });
+    assert.equal(
+      (query.__element__.__shape__.profile as any).__cardinality__,
+      $.Cardinality.AtMostOne,
+    );
+    type Q = $infer<typeof query>;
+
+    tc.assert<
+      tc.IsExact<
+        Q,
+        {
+          title: string;
+          rating: number | null;
+          characters: {
+            id: string;
+            name: string;
+          }[];
+          profile: {
+            slug: string | null;
+          } | null;
+        } | null
+      >
+    >(true);
 
     const result = await query.run(client);
     assert.ok(result);
