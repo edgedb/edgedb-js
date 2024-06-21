@@ -73,10 +73,6 @@ jobs:
         run: |
           yarn run format
 
-      - name: ESLint (ignore failures for now)
-        run: |
-          yarn eslint || echo "ESLint still failing... Fine for now!"
-
       - name: Build
         run: |
           yarn workspace edgedb build
@@ -84,13 +80,11 @@ jobs:
           yarn workspace @edgedb/auth-core build
           yarn workspace @edgedb/ai build
 
-      - name: Typecheck
-        run: |
-          yarn workspaces run typecheck
-
-      # - name: Compile for Deno
-      #   run: |
-      #     yarn build:deno
+          # Only typecheck the following since nothing depends on these packages
+          yarn workspace @edgedb/auth-remix run typecheck
+          yarn workspace @edgedb/auth-nextjs run typecheck
+          yarn workspace @edgedb/auth-express run typecheck
+          yarn workspace @edgedb/auth-sveltekit run typecheck
 
       - name: Install EdgeDB
         uses: edgedb/setup-edgedb@6763b6de72782d9c2e5ecc1095986a1c707da68f

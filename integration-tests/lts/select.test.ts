@@ -1358,6 +1358,12 @@ SELECT __scope_0_defaultPerson {
       name: true,
       id: true,
     }));
+    const heroShape = e.shape(e.Hero, () => ({
+      villains: true,
+    }));
+    const villainShape = e.shape(e.Villain, () => ({
+      nemesis: true,
+    }));
     const profileShape = e.shape(e.Profile, () => ({
       slug: true,
     }));
@@ -1413,6 +1419,25 @@ SELECT __scope_0_defaultPerson {
     assert.ok(result.title);
     assert.ok(result.rating);
     assert.ok(result.characters);
+
+    const cast = e.select(query, () => ({ characters: true }));
+    const freeObjWithShape = e.select({
+      heros: e.select(cast.characters.is(e.Hero), (h) => {
+        return heroShape(h);
+      }),
+      villains: e.select(cast.characters.is(e.Villain), villainShape),
+    });
+    type FreeObjWithShape = $infer<typeof freeObjWithShape>;
+    tc.assert<
+      tc.IsExact<
+        FreeObjWithShape,
+        {
+          heros: { villains: { id: string }[] }[];
+          villains: { nemesis: { id: string } | null }[];
+        }
+      >
+    >(true);
+    assert.ok(freeObjWithShape);
   });
 
   test("filter_single id", async () => {

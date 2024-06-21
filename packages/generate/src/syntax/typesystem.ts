@@ -177,7 +177,8 @@ export type ExpressionMethods<Set extends TypeSet> = {
     ObjectType<
       T["__element__"]["__name__"],
       T["__element__"]["__pointers__"],
-      { id: true }
+      { id: true },
+      T["__element__"]["__exclusives__"]
     >
   >;
   assert_single(): assert_single<
