@@ -86,7 +86,14 @@ jobs:
 
       - name: Typecheck
         run: |
-          yarn workspaces run typecheck
+          yarn workspace edgedb run typecheck
+          yarn workspace @edgedb/generate run typecheck
+          yarn workspace @edgedb/auth-core run typecheck
+          yarn workspace @edgedb/ai run typecheck
+          yarn workspace @edgedb/auth-remix run typecheck
+          yarn workspace @edgedb/auth-nextjs run typecheck
+          yarn workspace @edgedb/auth-express run typecheck
+          yarn workspace @edgedb/auth-sveltekit run typecheck
 
       # - name: Compile for Deno
       #   run: |
