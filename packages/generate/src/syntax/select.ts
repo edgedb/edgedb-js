@@ -36,7 +36,6 @@ import type {
   ExclusiveTuple,
   orLiteralValue,
   EnumType,
-  assert_single,
 } from "./typesystem";
 
 import {
@@ -846,26 +845,38 @@ export const $existingScopes = new Set<
   Expression<TypeSet<BaseType, Cardinality>>
 >();
 
+const shapeSymbol = Symbol("portableShape");
+
+export interface $Shape<
+  Element extends ObjectType,
+  SelectShape,
+  Card extends Cardinality = Cardinality.One,
+> {
+  [shapeSymbol]: {
+    __element__: Element;
+    __cardinality__: Card;
+    __shape__: SelectShape;
+  };
+}
+
 function $shape<
   Expr extends ObjectTypeExpression,
   Element extends Expr["__element__"],
   Shape extends objectTypeToSelectShape<Element> & SelectModifiers<Element>,
+  SelectCard extends ComputeSelectCardinality<
+    Expr,
+    Pick<Shape, SelectModifierNames>
+  >,
   Scope extends $scopify<Element> &
     $linkPropify<{
       [k in keyof Expr]: k extends "__cardinality__"
         ? Cardinality.One
         : Expr[k];
     }>,
-  ElementOfAnyShape extends Omit<Element, "__shape__"> & { __shape__: any },
 >(
   _expr: Expr,
   shape: (scope: Scope) => Readonly<Shape>,
-): (
-  scope: Omit<Scope, "__element__" | "assert_single"> & {
-    __element__: ElementOfAnyShape;
-    assert_single(): assert_single<ElementOfAnyShape, Cardinality.AtMostOne>;
-  },
-) => Readonly<Shape>;
+): ((scope: unknown) => Readonly<Shape>) & $Shape<Element, Shape, SelectCard>;
 function $shape(_a: unknown, b: (...args: any) => any) {
   return b;
 }
