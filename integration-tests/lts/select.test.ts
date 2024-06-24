@@ -4,6 +4,7 @@ import * as $ from "../../packages/generate/src/syntax/reflection";
 
 import e, { type $infer } from "./dbschema/edgeql-js";
 import { setupTests, teardownTests, tc, type TestData } from "./setupTeardown";
+
 let client: edgedb.Client;
 let data: TestData;
 
@@ -1358,8 +1359,8 @@ SELECT __scope_0_defaultPerson {
       name: true,
       id: true,
     }));
-    const heroShape = e.shape(e.Hero, () => ({
-      villains: true,
+    const personShape = e.shape(e.Person, () => ({
+      name: true,
     }));
     const villainShape = e.shape(e.Villain, () => ({
       nemesis: true,
@@ -1422,9 +1423,7 @@ SELECT __scope_0_defaultPerson {
 
     const cast = e.select(query, () => ({ characters: true }));
     const freeObjWithShape = e.select({
-      heros: e.select(cast.characters.is(e.Hero), (h) => {
-        return heroShape(h);
-      }),
+      heros: e.select(cast.characters.is(e.Hero), personShape),
       villains: e.select(cast.characters.is(e.Villain), villainShape),
     });
     type FreeObjWithShape = $infer<typeof freeObjWithShape>;
@@ -1432,7 +1431,7 @@ SELECT __scope_0_defaultPerson {
       tc.IsExact<
         FreeObjWithShape,
         {
-          heros: { villains: { id: string }[] }[];
+          heros: { name: string }[];
           villains: { nemesis: { id: string } | null }[];
         }
       >
