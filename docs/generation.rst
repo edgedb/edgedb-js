@@ -10,7 +10,11 @@ TypeScript/JavaScript.
 To get started with generators, first initialize an :ref:`EdgeDB project
 <ref_guide_using_projects>` in the root of your application. Generators will
 look for an ``edgedb.toml`` file to determine the root of your application. See
-the :ref:`Overview <edgedb-js-installation>` page for details on installing
+the :ref:`Overview <edgedb-js-installation>` page for details on installing.
+
+.. note::
+
+   Generators work by connecting to the database to get information about the current state of the schema. Make sure you run the generators again any time the schema changes so that the generated code is in-sync with the current state of the schema.
 
 Run a generator with the following command.
 

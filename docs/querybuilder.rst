@@ -149,6 +149,10 @@ The generator also supports all the :ref:`connection flags
 necessary when using a project or environment variables to configure a
 connection.
 
+.. note::
+
+   Generators work by connecting to the database to get information about the current state of the schema. Make sure you run the generators again any time the schema changes so that the generated code is in-sync with the current state of the schema.
+
 .. _edgedb-js-execution:
 
 Expressions

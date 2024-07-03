@@ -177,6 +177,10 @@ We can now use this function in our code.
     user.email; // string
   }
 
+.. note::
+
+   Generators work by connecting to the database to get information about the current state of the schema. Make sure you run the generators again any time the schema changes so that the generated code is in-sync with the current state of the schema.
+
 
 Single-file mode
 ----------------
@@ -274,4 +278,4 @@ However, it's better practice to declare it once by assigning it to a variable i
 and reference that variable in the rest of your query. This way you avoid mismatched types in your declarations, 
 such as forgetting to mark them all as `optional </docs/edgeql/parameters#optional-parameters>`__.
 
-Check out the `EdgeQL docs </docs/edgeql/index>`__ to learn more about writing queries. 
+Check out the `EdgeQL docs </docs/edgeql/index>`__ to learn more about writing queries.

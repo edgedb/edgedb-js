@@ -107,8 +107,11 @@ This will introspect your schema and generate TypeScript interfaces that corresp
     actors: Person[];
   }
 
-Any types declared in a non-``default`` module  will be generated into an
-accordingly named ``namespace``.
+Any types declared in a non-``default`` module  will be generated into an accordingly named ``namespace``.
+
+.. note::
+
+   Generators work by connecting to the database to get information about the current state of the schema. Make sure you run the generators again any time the schema changes so that the generated code is in-sync with the current state of the schema.
 
 
 Customize file path
