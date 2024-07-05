@@ -363,7 +363,7 @@ export type computeObjectShape<
 > = typeutil.flatten<
   keyof Shape extends never
     ? { id: string }
-    : {
+    : typeutil.stripNever<{
         [k in keyof Shape]: Shape[k] extends $expr_PolyShapeElement<
           infer PolyType,
           infer ShapeEl
@@ -385,7 +385,7 @@ export type computeObjectShape<
             : [k] extends [keyof Pointers]
               ? shapeElementToTs<Pointers[k], Shape[k]>
               : never;
-      }
+      }>
 >;
 
 export type PrimitiveType =
