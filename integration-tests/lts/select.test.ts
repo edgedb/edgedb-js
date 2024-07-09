@@ -295,7 +295,6 @@ describe("select", () => {
           id: string;
           secret_identity: string | null;
           nemesis: { id: string; computable: 1234 } | null;
-          computable: never;
         }[]
       >
     >(true);
@@ -336,6 +335,7 @@ describe("select", () => {
         {
           name: string;
           height: string | null;
+          isAdult: boolean | null;
           number_of_movies: number | null;
           secret_identity: string | null;
         }[]
@@ -1523,5 +1523,40 @@ SELECT __scope_0_defaultPerson {
       active: e.User.Status.Active,
     }));
     await query.run(client);
+  });
+
+  test("False shape pointers are not returned", () => {
+    const q = e.select(e.Movie, () => ({
+      title: true,
+      rating: true,
+      genre: false,
+    }));
+
+    tc.assert<
+      tc.IsExact<
+        $infer<typeof q>,
+        {
+          title: string;
+          rating: number | null;
+        }[]
+      >
+    >(true);
+  });
+
+  test("Select assignment works", () => {
+    const q = e.select(e.Person, () => ({
+      name: true,
+      isAdult: e.bool(false),
+    }));
+
+    tc.assert<
+      tc.IsExact<
+        $infer<typeof q>,
+        {
+          name: string;
+          isAdult: false;
+        }[]
+      >
+    >(true);
   });
 });

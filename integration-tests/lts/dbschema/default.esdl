@@ -31,6 +31,7 @@ module default {
       constraint exclusive;
     };
     property height -> decimal;
+    property isAdult -> bool;
   }
 
   type Villain extending Person {
