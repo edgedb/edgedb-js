@@ -24,6 +24,7 @@ export interface BaseObject {
 export interface test_Person extends BaseObject {
   name: string;
   height?: string | null;
+  isAdult?: boolean | null;
 }
 export interface test_Movie extends BaseObject {
   characters: test_Person[];

@@ -206,6 +206,7 @@ describe("object types", () => {
         id: true,
         name: true,
         height: true,
+        isAdult: true,
         secret_identity: true,
         number_of_movies: true,
       });
