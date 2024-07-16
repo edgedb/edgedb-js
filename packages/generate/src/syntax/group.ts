@@ -16,7 +16,6 @@ import {
 import { makeType } from "./hydrate";
 
 import { $expressionify, $getScopedExpr } from "./path";
-// @ts-expect-error GENERATED
 import type { $FreeObjectλShape, $str } from "./modules/std";
 import { spec } from "./__spec__";
 import { literal } from "./literal";
