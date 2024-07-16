@@ -59,7 +59,7 @@ jobs:
       - name: Set up Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.44.4
+          deno-version: v1.x
 
       - name: Install dev deps
         run: |
