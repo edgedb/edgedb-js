@@ -90,7 +90,7 @@ export const getServerCommand = (
     srvcmd = process.env.EDGEDB_SERVER_BIN;
   }
 
-  if (!(process.env.EDGEDB_SERVER_BIN || process.env.GITHUB_ACTIONS)) {
+  if (!(process.env.EDGEDB_SERVER_BIN || process.env.CI)) {
     process.env.__EDGEDB_DEVMODE = "1";
   }
 
