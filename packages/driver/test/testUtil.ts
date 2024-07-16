@@ -90,6 +90,10 @@ export const getServerCommand = (
     srvcmd = process.env.EDGEDB_SERVER_BIN;
   }
 
+  if (!(process.env.EDGEDB_SERVER_BIN || process.env.GITHUB_ACTIONS)) {
+    process.env.__EDGEDB_DEVMODE = "1";
+  }
+
   let args = [srvcmd];
   if (process.platform === "win32") {
     args = ["wsl", "-u", "edgedb", ...args];
