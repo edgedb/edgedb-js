@@ -125,7 +125,7 @@ await client.querySingle("select 2 + 2"); // => 4
 // one element
 await client.querySingle(
   `select Movie { title }
-  filter .id = <uuid>'2eb3bc76-a014-45dc-af66-2e6e8cc23e7e';`,
+  filter .id = <uuid>'2eb3bc76-a014-45dc-af66-2e6e8cc23e7e';`
 ); // => { title: "Dune" }
 ```
 
