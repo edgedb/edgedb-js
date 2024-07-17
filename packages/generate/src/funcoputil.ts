@@ -20,6 +20,25 @@ export type FuncopDefOverload<F extends FuncopDef> = F & {
   anytypes: AnytypeDef | null;
 };
 
+export function maybeRemoveOtherScalars(
+  opDefs: $.introspect.OperatorDef[],
+  types: $.introspect.Types,
+) {
+  const opDefinesAnyScalar = opDefs.some((def) =>
+    def.params.some((param) => param.type.name === "std::anyscalar"),
+  );
+
+  return opDefinesAnyScalar
+    ? opDefs.filter(function removeOtherScalars(def) {
+        return def.params.every(
+          (param) =>
+            param.type.name === "std::anyscalar" ||
+            types.get(param.type.id).kind !== "scalar",
+        );
+      })
+    : opDefs;
+}
+
 export function expandFuncopAnytypeOverloads<F extends FuncopDef>(
   overloads: F[],
   types: $.introspect.Types,

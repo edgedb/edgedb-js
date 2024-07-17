@@ -229,6 +229,7 @@ describe("operators", () => {
   });
 
   test("random assortment of valid operators", () => {
+    e.op(e.select(e.Movie).genre, "=", e.Genre.Action); // Enum = Enum
     e.op(e.int64(10), "+", e.int64(20)); // int64 + int64
     e.op(e.float32(3.14), "*", e.float32(2.0)); // float32 * float32
     e.op(e.str("hello"), "++", e.str(" world")); // str ++ str

@@ -16,6 +16,7 @@ import {
   expandFuncopAnytypeOverloads,
   findPathOfAnytype,
   type FuncopDefOverload,
+  maybeRemoveOtherScalars,
 } from "../funcoputil";
 import { $, OperatorKind, StrictMapSet } from "../genutil";
 import { getStringRepresentation } from "./generateObjectTypes";
@@ -600,22 +601,12 @@ export function generateOperators({
 
   for (const [opName, _opDefs] of operators.entries()) {
     if (skipOperators.has(opName)) continue;
-    const log = debug(`edgedb:codegen:generateOperators:${opName}`);
-    log(
-      _opDefs.map((opDef) => ({
-        return_type: opDef.return_type,
-        return_typemod: opDef.return_typemod,
-        params0: opDef.params[0].type,
-        params0_typemod: opDef.params[0].typemod,
-        params1: opDef.params[1]?.type,
-        params1_typemod: opDef.params[1]?.typemod,
-        params2: opDef.params[2]?.type,
-        params2_typemod: opDef.params[2]?.typemod,
-      })),
-    );
 
     const opDefs = expandFuncopAnytypeOverloads(
-      sortFuncopOverloads(_opDefs, typeSpecificities),
+      sortFuncopOverloads(
+        maybeRemoveOtherScalars(_opDefs, types),
+        typeSpecificities,
+      ),
       types,
       casts,
       implicitCastableRootTypes,
