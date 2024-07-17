@@ -125,7 +125,7 @@ await client.querySingle("select 2 + 2"); // => 4
 // one element
 await client.querySingle(
   `select Movie { title }
-  filter .id = <uuid>'2eb3bc76-a014-45dc-af66-2e6e8cc23e7e';`
+  filter .id = <uuid>'2eb3bc76-a014-45dc-af66-2e6e8cc23e7e';`,
 ); // => { title: "Dune" }
 ```
 
@@ -230,6 +230,14 @@ $ yarn                           # install dependencies
 $ yarn workspaces run build      # build all packages
 $ yarn workspaces run test       # run tests for all packages
 ```
+
+> In order to be able to run all tests you need to have `edgedb-server` in your
+> path. This can be done by either running tests from within a Python 3.12
+> virtual environment (you will have it if you built EdgeDB locally), or by
+> (installing)[https://docs.edgedb.com/cli/edgedb_server/edgedb_server_install#ref-cli-edgedb-server-install]
+> specific EdgeDB version and then adding its binary path to the `EDGEDB_SERVER_BIN` environment variable.
+> Check (here)[https://docs.edgedb.com/cli/edgedb_server/edgedb_server_info#ref-cli-edgedb-server-info]
+> to find how to get the binary path.
 
 ## License
 
