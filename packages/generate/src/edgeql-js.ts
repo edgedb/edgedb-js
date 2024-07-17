@@ -1,4 +1,5 @@
 import { $, adapter, type Client } from "edgedb";
+import Debug from "debug";
 import { type CommandOptions, isTTY, promptBoolean } from "./commandutil";
 import { headerComment } from "./genutil";
 import { DirBuilder } from "./builders";
@@ -15,6 +16,8 @@ import { generateScalars } from "./edgeql-js/generateScalars";
 import { generateSetImpl } from "./edgeql-js/generateSetImpl";
 
 const { path, fs, readFileUtf8, exists, walk } = adapter;
+
+const debug = Debug("edgedb:edgeql-js");
 
 export const configFileHeader = `// EdgeDB query builder`;
 
@@ -98,6 +101,23 @@ export async function generateQueryBuilder(params: {
       $.introspect.globals(cxn),
       cxn.queryRequiredSingle<Version>(`select sys::get_version()`),
     ]);
+
+  debug.extend("types")(types);
+  debug.extend("scalars")(scalars);
+  debug.extend("casts")(casts);
+  debug.extend("functions")(functions);
+
+  const opDebug = debug.extend("operators");
+  if (opDebug.enabled) {
+    for (const op of operators.values()) {
+      for (const def of op) {
+        opDebug.extend(def.name)(def);
+      }
+    }
+  }
+
+  debug.extend("globals")(globals);
+  debug.extend("version")(version);
 
   const typesByName: Record<string, $.introspect.Type> = {};
   for (const type of types.values()) {
