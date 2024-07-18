@@ -64,7 +64,7 @@ export interface CreateAuthRouteHandlers {
       provider: BuiltinOAuthProviderNames;
       isSignUp: boolean;
     }>,
-  ): Promise<never>;
+  ): Promise<never | Response>;
   onEmailPasswordSignIn(
     params: ParamsOrError<{ tokenData: TokenData }>,
   ): Promise<Response>;
@@ -79,19 +79,19 @@ export interface CreateAuthRouteHandlers {
       { tokenData: TokenData },
       { verificationToken?: string }
     >,
-  ): Promise<never>;
+  ): Promise<never | Response>;
   onWebAuthnSignUp(
     params: ParamsOrError<{ tokenData: TokenData | null }>,
   ): Promise<Response>;
   onWebAuthnSignIn(
     params: ParamsOrError<{ tokenData: TokenData }>,
-  ): Promise<never>;
+  ): Promise<never | Response>;
   onMagicLinkCallback(
     params: ParamsOrError<{ tokenData: TokenData; isSignUp: boolean }>,
-  ): Promise<never>;
+  ): Promise<never | Response>;
   onMagicLinkSignIn(
     params: ParamsOrError<{ tokenData: TokenData }>,
-  ): Promise<never>;
+  ): Promise<never | Response>;
   onBuiltinUICallback(
     params: ParamsOrError<
       (
@@ -105,8 +105,8 @@ export interface CreateAuthRouteHandlers {
           }
       ) & { isSignUp: boolean }
     >,
-  ): Promise<never>;
-  onSignout(evt: APIEvent): Promise<never>;
+  ): Promise<never | Response>;
+  onSignout(evt: APIEvent): Promise<never | Response>;
 }
 
 export class SolidServerAuth extends SolidAuthHelpers {
@@ -142,7 +142,6 @@ export class SolidServerAuth extends SolidAuthHelpers {
 
   setAuthCookie(token: string) {
     const expirationDate = Auth.getTokenExpiration(token);
-
     setCookie(this.options.authCookieName, token, {
       httpOnly: true,
       path: "/",
@@ -473,8 +472,7 @@ export class SolidServerAuth extends SolidAuthHelpers {
         switch (evt.params.auth) {
           case "emailpassword/signin": {
             const data = await _getReqBody(req);
-            const isAction = _isAction(data);
-            if (!isAction && !onEmailPasswordSignIn) {
+            if (!onEmailPasswordSignIn) {
               throw new ConfigurationError(
                 `'onEmailPasswordSignIn' auth route handler not configured`,
               );
@@ -500,8 +498,7 @@ export class SolidServerAuth extends SolidAuthHelpers {
           }
           case "emailpassword/signup": {
             const data = await _getReqBody(req);
-            const isAction = _isAction(data);
-            if (!isAction && !onEmailPasswordSignUp) {
+            if (!onEmailPasswordSignUp) {
               throw new ConfigurationError(
                 `'onEmailPasswordSignUp' auth route handler not configured`,
               );
@@ -546,7 +543,6 @@ export class SolidServerAuth extends SolidAuthHelpers {
               );
             }
             const data = await _getReqBody(req);
-            const isAction = _isAction(data);
             const [email] = _extractParams(
               data,
               ["email"],
@@ -562,14 +558,11 @@ export class SolidServerAuth extends SolidAuthHelpers {
               ).toString(),
             );
             this.setVerifierCookie(verifier);
-            return isAction
-              ? Response.json({ _data: null })
-              : new Response(null, { status: 204 });
+            return Response.json({ _data: null });
           }
           case "emailpassword/reset-password": {
             const data = await _getReqBody(req);
-            const isAction = _isAction(data);
-            if (!isAction && !onEmailPasswordReset) {
+            if (!onEmailPasswordReset) {
               throw new ConfigurationError(
                 `'onEmailPasswordReset' auth route handler not configured`,
               );
@@ -600,7 +593,6 @@ export class SolidServerAuth extends SolidAuthHelpers {
           }
           case "emailpassword/resend-verification-email": {
             const data = await _getReqBody(req);
-            const isAction = _isAction(data);
             const verificationToken =
               data instanceof FormData
                 ? data.get("verification_token")?.toString()
@@ -614,9 +606,7 @@ export class SolidServerAuth extends SolidAuthHelpers {
               await (
                 await this.core
               ).resendVerificationEmail(verificationToken.toString());
-              return isAction
-                ? Response.json({ _data: null })
-                : new Response(null, { status: 204 });
+              return Response.json({ _data: null });
             } else if (email) {
               const { verifier } = await (
                 await this.core
@@ -629,9 +619,7 @@ export class SolidServerAuth extends SolidAuthHelpers {
                 sameSite: "strict",
                 path: "/",
               });
-              return isAction
-                ? Response.json({ _data: null })
-                : new Response(null, { status: 204 });
+              return Response.json({ _data: null });
             } else {
               throw new InvalidDataError(
                 "verification_token or email missing from request body",
@@ -697,7 +685,6 @@ export class SolidServerAuth extends SolidAuthHelpers {
               );
             }
             const data = await _getReqBody(req);
-            const isAction = _isAction(data);
             const [email] = _extractParams(
               data,
               ["email"],
@@ -714,9 +701,7 @@ export class SolidServerAuth extends SolidAuthHelpers {
               ).toString(),
             );
             this.setVerifierCookie(verifier);
-            return isAction
-              ? Response.json({ _data: null })
-              : new Response(null, { status: 204 });
+            return Response.json({ _data: null });
           }
           case "magiclink/send": {
             if (!this.options.magicLinkFailurePath) {
@@ -725,7 +710,6 @@ export class SolidServerAuth extends SolidAuthHelpers {
               );
             }
             const data = await _getReqBody(req);
-            const isAction = _isAction(data);
             const [email] = _extractParams(
               data,
               ["email"],
@@ -742,9 +726,7 @@ export class SolidServerAuth extends SolidAuthHelpers {
               ).toString(),
             );
             this.setVerifierCookie(verifier);
-            return isAction
-              ? Response.json({ _data: null })
-              : new Response(null, { status: 204 });
+            return Response.json({ _data: null });
           }
           default:
             return new Response("Unknown auth route", {
@@ -952,10 +934,6 @@ function _getReqBody(
   return req.headers.get("Content-Type") === "application/json"
     ? (req.json() as unknown as Promise<Record<string, unknown>>)
     : req.formData();
-}
-
-function _isAction(data: any) {
-  return typeof data === "object" && data._action === true;
 }
 
 function _wrapError(err: Error) {
