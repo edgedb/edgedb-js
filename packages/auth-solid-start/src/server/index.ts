@@ -739,13 +739,12 @@ export class SolidServerAuth extends SolidAuthHelpers {
 
   getSession = ({
     event,
-    tokenData,
+    token,
   }: {
     event?: HTTPEvent;
-    tokenData?: TokenData;
-  } = {}) => {
+  } & { token?: string } = {}) => {
     const authToken =
-      tokenData?.auth_token ??
+      token ??
       (event
         ? getCookie(event, this.options.authCookieName)
         : getCookie(this.options.authCookieName)) ??
