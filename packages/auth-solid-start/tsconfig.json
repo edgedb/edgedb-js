@@ -5,7 +5,7 @@
     "lib": ["ESNext"],
     "target": "ESNext",
     "module": "ESNext",
-		"moduleResolution": "Bundler",
+    "moduleResolution": "Bundler",
     "declaration": true,
     "strict": true,
     "downlevelIteration": true,

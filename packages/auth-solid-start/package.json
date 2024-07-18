@@ -23,21 +23,17 @@
     "build": "tsc --project tsconfig.json"
   },
   "devDependencies": {
-    "@solidjs/start": "^1.0.4",
-    "@types/cookie": "^0.6.0",
     "@types/node": "^20.12.13",
     "edgedb": "^1.5.0",
-    "solid-js": "^1.8.18",
     "typescript": "^5.4.5"
   },
   "peerDependencies": {
     "@solidjs/start": "^1.0.4",
-    "edgedb": "^1.3.6",
-    "solid-js": "^1.8.18"
+    "edgedb": "^1.3.6"
   },
   "dependencies": {
     "@edgedb/auth-core": "0.2.1",
-    "@solidjs/router": "^0.14.1",
+    "@solidjs/start": "^1.0.4",
     "vinxi": "^0.3.14"
   }
 }
