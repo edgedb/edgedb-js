@@ -22,6 +22,7 @@
     "lint:fix": "turbo run lint:fix",
     "format": "prettier --check 'packages/*/(src|test)/**/*.(mts|ts)' 'integration-tests/*/*.(mts|ts)'",
     "format:fix": "prettier --write 'packages/*/(src|test)/**/*.(mts|ts)' 'integration-tests/*/*.(mts|ts)'",
+    "ci:typecheck": "turbo run ci:typecheck",
     "ci:test": "turbo run ci:test"
   }
 }
