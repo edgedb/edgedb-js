@@ -61,6 +61,9 @@ jobs:
         with:
           deno-version: v1.x
 
+      - name: Install Turbo globally
+          yarn global add turbo
+
       - name: Install dev deps
         run: |
           yarn --frozen-lockfile
