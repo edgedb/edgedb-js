@@ -17,12 +17,7 @@
       "dependsOn": ["@edgedb/auth-remix#typecheck"]
     },
     "ci:test": {
-      "dependsOn": [
-        "edgedb#test",
-        "@edgedb/auth-core#test",
-        "@edgedb/create#test",
-        "@edgedb/ai#test"
-      ]
+      "dependsOn": ["edgedb#test", "@edgedb/create#test", "@edgedb/ai#test"]
     }
   }
 }
