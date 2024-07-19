@@ -16,18 +16,21 @@
   ],
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "build": "tsc --project tsconfig.json"
+    "build": "tsc --project tsconfig.json",
+    "lint": "eslint --quiet",
+    "lint:fix": "eslint --fix"
   },
   "devDependencies": {
     "@types/node": "^20.12.13",
-    "edgedb": "^1.5.0",
-    "typescript": "^5.4.5"
+    "edgedb": "*",
+    "typescript": "^5.4.5",
+    "@repo/tsconfig": "*"
   },
   "peerDependencies": {
     "edgedb": "^1.3.6"
   },
   "dependencies": {
-    "@edgedb/auth-core": "^0.2.0",
+    "@edgedb/auth-core": "*",
     "@remix-run/server-runtime": "^2.9.2",
     "cookie": "^0.6.0"
   },

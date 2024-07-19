@@ -3,31 +3,29 @@
   "name": "@edgedb/integration-lts",
   "version": "0.0.0",
   "scripts": {
-    "typecheck": "echo 'Integration tests, skipping typecheck...'",
-    "generate": "../../packages/generate/dist/cli.js",
+    "typecheck": "echo 'Integration tests - lts, skipping typecheck...'",
     "build": "echo 'Integration tests, no build output...'",
     "test": "yarn test:ts && yarn test:non_ts",
-    "test:ts": "pwd && yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
+    "test:ts": "pwd && generate edgeql-js && generate queries --file && generate interfaces && NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
     "test:non_ts": "yarn test:esm && yarn test:cjs && yarn test:mts && yarn test:deno",
-    "test:esm": "yarn generate queries --target esm --file esm/queries && yarn generate edgeql-js --target esm --output-dir esm/edgeql-js && cd esm && node test.js",
-    "test:cjs": "yarn generate queries --target cjs --file cjs/queries && yarn generate edgeql-js --target cjs --output-dir cjs/edgeql-js && cd cjs && node test.js",
-    "test:mts": "yarn generate queries --target mts --file mts/queries && yarn generate edgeql-js --target mts --output-dir mts/edgeql-js && cd mts && yarn build && node dist/test.js",
+    "test:esm": "generate queries --target esm --file esm/queries && generate edgeql-js --target esm --output-dir esm/edgeql-js && cd esm && node test.js",
+    "test:cjs": "generate queries --target cjs --file cjs/queries && generate edgeql-js --target cjs --output-dir cjs/edgeql-js && cd cjs && node test.js",
+    "test:mts": "generate queries --target mts --file mts/queries && generate edgeql-js --target mts --output-dir mts/edgeql-js && cd mts && yarn build && node dist/test.js",
     "test:deno": "cd deno && deno task edgeql-js && deno task queries && deno task play",
     "test:ci": "tsx ./testRunner.ts",
     "bench:types": "cd ../.. && tsx integration-tests/lts/bench.ts"
   },
   "devDependencies": {
     "@arktype/attest": "^0.7.8",
+    "@edgedb/generate": "*",
+    "@tsconfig/node-lts": "^20.1.3",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.12.13",
     "conditional-type-checks": "^1.0.6",
+    "edgedb": "*",
     "jest": "^29.7.0",
     "superjson": "1.13.3",
     "ts-jest": "^29.1.4",
     "typescript": "^5.4.5"
-  },
-  "dependencies": {
-    "edgedb": "^1.5.0",
-    "fast-check": "^3.19.0"
   }
 }

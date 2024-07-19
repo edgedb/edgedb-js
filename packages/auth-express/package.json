@@ -28,14 +28,17 @@
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "build": "tsc --project tsconfig.json"
+    "build": "tsc --project tsconfig.json",
+    "lint": "eslint --quiet",
+    "lint:fix": "eslint --fix"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.13",
-    "edgedb": "^1.5.0",
+    "edgedb": "*",
     "express": "^4.19.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "@repo/tsconfig": "*"
   },
   "peerDependencies": {
     "cookie-parser": "^1.4.6",

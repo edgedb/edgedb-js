@@ -67,24 +67,15 @@ jobs:
 
       - name: Lint
         run: |
-          yarn run lint
+          yarn lint
 
       - name: Check format
         run: |
-          yarn run format
+          yarn format
 
-      - name: Build
+      - name: Typecheck
         run: |
-          yarn workspace edgedb build
-          yarn workspace @edgedb/generate build
-          yarn workspace @edgedb/auth-core build
-          yarn workspace @edgedb/ai build
-
-          # Only typecheck the following since nothing depends on these packages
-          yarn workspace @edgedb/auth-remix run typecheck
-          yarn workspace @edgedb/auth-nextjs run typecheck
-          yarn workspace @edgedb/auth-express run typecheck
-          yarn workspace @edgedb/auth-sveltekit run typecheck
+          yarn ci:typecheck
 
       - name: Install EdgeDB
         uses: edgedb/setup-edgedb@6763b6de72782d9c2e5ecc1095986a1c707da68f
@@ -96,42 +87,30 @@ jobs:
         run: |
           echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
 
-      - name: Run query builder tests
+      - name: Run packages' tests
         run: |
-          yarn workspace @edgedb/generate test:ci
+          yarn ci:test
 
       - name: Run query builder integration tests legacy
         if: ${{ matrix.edgedb-version == '2' }}
         run: |
-          yarn workspace @edgedb/integration-legacy test:ci
+          turbo run test:ci --filter=@edgedb/integration-legacy
 
       - name: Run query builder integration tests lts
         if: ${{ matrix.edgedb-version == '3' || matrix.edgedb-version == '4' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
-          yarn workspace @edgedb/integration-lts test:ci
-          yarn workspace @edgedb/integration-lts run bench:types || echo "Benchmark types script failed, proceeding anyway."
+          turbo run test:ci --filter=@edgedb/integration-lts
+          turbo run bench:types --filter=@edgedb/integration-lts || echo "Benchmark types script failed, proceeding anyway."
 
       - name: Run query builder integration tests stable
         if: ${{ matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
-          yarn workspace @edgedb/integration-stable test:ci
+          turbo run test:ci --filter=@edgedb/integration-stable
 
       - name: Run query builder integration tests nightly
         if: ${{ matrix.edgedb-version == 'nightly' }}
         run: |
-          yarn workspace @edgedb/integration-nightly test:ci
-
-      - name: Run functional tests
-        run: |
-          yarn workspace edgedb test
-
-      - name: Run create-app tests
-        run: |
-          yarn workspace @edgedb/create test
-
-      - name: Run @edgedb/ai tests
-        run: |
-          yarn workspace @edgedb/ai test
+          turbo run test:ci --filter=@edgedb/integration-nightly
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.

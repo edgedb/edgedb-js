@@ -29,15 +29,18 @@
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "test": "jest --detectOpenHandles --passWithNoTests",
-    "build": "tsc --project tsconfig.json"
+    "build": "tsc --project tsconfig.json",
+    "lint": "eslint --quiet",
+    "lint:fix": "eslint --fix"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^20.12.13",
-    "edgedb": "^1.5.0",
+    "edgedb": "*",
     "jest": "29.7.0",
     "ts-jest": "29.1.4",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "@repo/tsconfig": "*"
   },
   "peerDependencies": {
     "edgedb": "^1.5.0"

@@ -1,16 +1,7 @@
 {
+  "extends": "@repo/tsconfig/client.json",
   "compilerOptions": {
-    "declarationDir": "./dist",
-    "outDir": "./dist",
-    "target": "es2022",
-    "module": "node16",
-    "declaration": true,
-    "strict": true,
-    "downlevelIteration": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "isolatedModules": true
+    "outDir": "dist"
   },
   "include": ["src"]
 }

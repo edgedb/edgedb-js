@@ -17,7 +17,9 @@
     "typecheck": "echo 'Skipping typecheck...'",
     "test": "echo 'No tests. Done.'",
     "build": "echo 'Building edgeql-js...'",
-    "edgeql-js": "./index.js"
+    "edgeql-js": "./index.js",
+    "lint": "eslint --quiet",
+    "lint:fix": "eslint --fix"
   },
   "bin": "./index.js",
   "keywords": []
