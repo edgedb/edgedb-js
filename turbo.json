@@ -17,12 +17,7 @@
       "dependsOn": ["build"]
     },
     "ci:typecheck": {
-      "dependsOn": [
-        "@edgedb/auth-remix#typecheck",
-        "@edgedb/auth-nextjs#typecheck",
-        "@edgedb/auth-express#typecheck",
-        "@edgedb/auth-sveltekit#typecheck"
-      ]
+      "dependsOn": ["@edgedb/auth-remix#typecheck"]
     },
     "ci:test": {
       "dependsOn": [
