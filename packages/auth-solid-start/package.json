@@ -1,5 +1,5 @@
 {
-  "name": "edgedb-auth-solid-start",
+  "name": "@edgedb/auth-solid-start",
   "description": "Helper library to integrate the EdgeDB Auth extension with Solid Start",
   "version": "0.1.0",
   "author": "EdgeDB <info@edgedb.com>",
