@@ -22,10 +22,13 @@
     "@types/jest": "^29.5.12",
     "@types/node": "^20.12.13",
     "conditional-type-checks": "^1.0.6",
-    "edgedb": "*",
     "jest": "^29.7.0",
     "superjson": "1.13.3",
     "ts-jest": "^29.1.4",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.2"
+  },
+  "dependencies": {
+    "edgedb": "*",
+    "fast-check": "^3.19.0"
   }
 }

@@ -37,7 +37,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "ts-jest": "29.1.4",
     "tsx": "^4.11.0",
-    "typescript": "^5.4.5",
+    "typescript": "^5.5.2",
     "@repo/tsconfig": "*"
   },
   "scripts": {

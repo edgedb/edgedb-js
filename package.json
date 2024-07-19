@@ -11,7 +11,7 @@
     "eslint": "^9.3.0",
     "prettier": "^3.2.5",
     "turbo": "^2.0.6",
-    "typescript": "^5.4.5",
+    "typescript": "^5.5.2",
     "typescript-eslint": "^8.0.0-alpha.22"
   },
   "scripts": {

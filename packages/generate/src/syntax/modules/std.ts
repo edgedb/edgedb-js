@@ -24,6 +24,9 @@ declare const FreeObject: $expr_PathNode<
   // true
 >;
 
+export type $FreeObjectλShape = any;
+export type $str = ScalarType<"std::str", string>;
+
 export type $bool = ScalarType<"std::bool", boolean>;
 export type $number = ScalarType<"std::number", number>;
 export type $decimal = ScalarType<"std::decimal", string>;
