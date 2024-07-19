@@ -62,6 +62,7 @@ jobs:
           deno-version: v1.x
 
       - name: Install Turbo globally
+        run: |
           yarn global add turbo
 
       - name: Install dev deps
