@@ -3,11 +3,8 @@
   "tasks": {
     "lint": {},
     "lint:fix": {},
-    "transit-typecheck": {
-      "dependsOn": ["^transit-typecheck"]
-    },
     "typecheck": {
-      "dependsOn": ["transit-typecheck"]
+      "dependsOn": ["^typecheck"]
     },
     "build": {
       "dependsOn": ["^build"],
