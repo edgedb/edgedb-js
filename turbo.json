@@ -19,7 +19,6 @@
     "ci:test": {
       "dependsOn": [
         "edgedb#test",
-        "@edgedb/generate#test:ci",
         "@edgedb/auth-core#test",
         "@edgedb/create#test",
         "@edgedb/ai#test"
