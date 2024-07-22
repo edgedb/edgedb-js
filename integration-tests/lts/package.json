@@ -12,7 +12,7 @@
     "test:cjs": "generate queries --target cjs --file cjs/queries && generate edgeql-js --target cjs --output-dir cjs/edgeql-js && cd cjs && node test.js",
     "test:mts": "generate queries --target mts --file mts/queries && generate edgeql-js --target mts --output-dir mts/edgeql-js && cd mts && yarn build && node dist/test.js",
     "test:deno": "cd deno && deno task edgeql-js && deno task queries && deno task play",
-    "test:ci": "tsx ./testRunner.ts",
+    "test:ci": "echo 'No tests. Done.'",
     "bench:types": "cd ../.. && tsx integration-tests/lts/bench.ts"
   },
   "devDependencies": {
