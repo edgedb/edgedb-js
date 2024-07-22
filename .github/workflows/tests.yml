@@ -99,18 +99,18 @@ jobs:
       - name: Run query builder integration tests legacy
         if: ${{ matrix.edgedb-version == '2' }}
         run: |
-          yarn workspace @edgedb/integration-legacy test:ci
+          turbo run test:ci --filter=@edgedb/integration-legacy
 
       - name: Run query builder integration tests lts
         if: ${{ matrix.edgedb-version == '3' || matrix.edgedb-version == '4' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
-          yarn workspace @edgedb/integration-lts test:ci
+          turbo run test:ci --filter=@edgedb/integration-lts
           turbo run bench:types --filter=@edgedb/integration-lts || echo "Benchmark types script failed, proceeding anyway."
 
       - name: Run query builder integration tests stable
         if: ${{ matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
-          yarn workspace @edgedb/integration-stable test:ci
+          turbo run test:ci --filter=@edgedb/integration-stable
 
       - name: Run query builder integration tests nightly
         if: ${{ matrix.edgedb-version == 'nightly' }}
