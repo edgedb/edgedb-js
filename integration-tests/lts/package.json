@@ -6,13 +6,13 @@
     "typecheck": "echo 'Integration tests - lts, skipping typecheck...'",
     "build": "echo 'Integration tests, no build output...'",
     "test": "yarn test:ts && yarn test:non_ts",
-    "test:ts": "pwd && generate edgeql-js && generate queries --file && generate interfaces && NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
+    "test:ts": "pwd && npx @edgedb/generate edgeql-js && npx @edgedb/generate queries --file && npx @edgedb/generate interfaces && NODE_OPTIONS=\"--experimental-vm-modules\" jest --detectOpenHandles --forceExit",
     "test:non_ts": "yarn test:esm && yarn test:cjs && yarn test:mts && yarn test:deno",
-    "test:esm": "generate queries --target esm --file esm/queries && generate edgeql-js --target esm --output-dir esm/edgeql-js && cd esm && node test.js",
-    "test:cjs": "generate queries --target cjs --file cjs/queries && generate edgeql-js --target cjs --output-dir cjs/edgeql-js && cd cjs && node test.js",
-    "test:mts": "generate queries --target mts --file mts/queries && generate edgeql-js --target mts --output-dir mts/edgeql-js && cd mts && yarn build && node dist/test.js",
+    "test:esm": "npx @edgedb/generate queries --target esm --file esm/queries && npx @edgedb/generate edgeql-js --target esm --output-dir esm/edgeql-js && cd esm && node test.js",
+    "test:cjs": "npx @edgedb/generate queries --target cjs --file cjs/queries && npx @edgedb/generate edgeql-js --target cjs --output-dir cjs/edgeql-js && cd cjs && node test.js",
+    "test:mts": "npx @edgedb/generate queries --target mts --file mts/queries && npx @edgedb/generate edgeql-js --target mts --output-dir mts/edgeql-js && cd mts && yarn build && node dist/test.js",
     "test:deno": "cd deno && deno task edgeql-js && deno task queries && deno task play",
-    "test:ci": "echo 'No tests. Done.'",
+    "test:ci": "tsx ./testRunner.ts",
     "bench:types": "cd ../.. && tsx integration-tests/lts/bench.ts"
   },
   "devDependencies": {
