@@ -14,10 +14,21 @@
       "dependsOn": ["build"]
     },
     "ci:typecheck": {
-      "dependsOn": ["@edgedb/auth-remix#typecheck"]
+      "dependsOn": [
+        "@edgedb/auth-nextjs#typecheck",
+        "@edgedb/auth-express#typecheck",
+        "@edgedb/auth-remix#typecheck",
+        "@edgedb/auth-sveltekit#typecheck"
+      ]
     },
     "ci:test": {
-      "dependsOn": ["edgedb#test", "@edgedb/create#test", "@edgedb/ai#test"]
+      "dependsOn": [
+        "edgedb#test",
+        "@edgedb/generate#test",
+        "@edgedb/auth-core#test",
+        "@edgedb/create#test",
+        "@edgedb/ai#test"
+      ]
     },
     "test:ci": {
       "dependsOn": ["build"]

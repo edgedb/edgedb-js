@@ -87,10 +87,6 @@ jobs:
         run: |
           echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
 
-      - name: Typecheck
-        run: |
-          yarn ci:typecheck
-
       - name: Run packages' tests
         run: |
           yarn ci:test
@@ -115,6 +111,10 @@ jobs:
         if: ${{ matrix.edgedb-version == 'nightly' }}
         run: |
           turbo run test:ci --filter=@edgedb/integration-nightly
+
+      - name: Auth libs typecheck
+        run: |
+          yarn ci:typecheck
 
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.
