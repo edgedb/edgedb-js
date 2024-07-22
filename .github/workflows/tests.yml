@@ -87,6 +87,10 @@ jobs:
         run: |
           echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
 
+      - name: Typecheck
+        run: |
+          yarn ci:typecheck
+
       - name: Run packages' tests
         run: |
           yarn ci:test

@@ -20,7 +20,7 @@
       "dependsOn": ["edgedb#test", "@edgedb/create#test", "@edgedb/ai#test"]
     },
     "test:ci": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["build"]
     }
   }
 }
