@@ -231,6 +231,14 @@ $ yarn workspaces run build      # build all packages
 $ yarn workspaces run test       # run tests for all packages
 ```
 
+> In order to be able to run all tests you need to have `edgedb-server` in your
+> path. This can be done by either running tests from within a Python 3.12
+> virtual environment (you will have it if you built EdgeDB locally), or by
+> [installing](https://docs.edgedb.com/cli/edgedb_server/edgedb_server_install#ref-cli-edgedb-server-install)
+> specific EdgeDB version and then adding its binary path to the `EDGEDB_SERVER_BIN` environment variable.
+> Check [here](https://docs.edgedb.com/cli/edgedb_server/edgedb_server_info#ref-cli-edgedb-server-info)
+> to find how to get the binary path.
+
 ## License
 
 `edgedb-js` is developed and distributed under the Apache 2.0 license.

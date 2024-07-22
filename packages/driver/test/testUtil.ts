@@ -147,8 +147,16 @@ export const startServer = async (
   if (process.env.EDGEDB_DEBUG_SERVER) {
     console.log(`running command: ${cmd.join(" ")}`);
   }
+
+  const maybeEnvWithDevMode =
+    process.env.EDGEDB_SERVER_BIN || process.env.CI
+      ? {}
+      : {
+          __EDGEDB_DEVMODE: "1",
+        };
+
   const proc = child_process.spawn(cmd[0], cmd.slice(1), {
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...env, ...maybeEnvWithDevMode },
   });
 
   try {
