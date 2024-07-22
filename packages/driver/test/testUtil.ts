@@ -90,10 +90,6 @@ export const getServerCommand = (
     srvcmd = process.env.EDGEDB_SERVER_BIN;
   }
 
-  if (!(process.env.EDGEDB_SERVER_BIN || process.env.CI)) {
-    process.env.__EDGEDB_DEVMODE = "1";
-  }
-
   let args = [srvcmd];
   if (process.platform === "win32") {
     args = ["wsl", "-u", "edgedb", ...args];
@@ -151,8 +147,16 @@ export const startServer = async (
   if (process.env.EDGEDB_DEBUG_SERVER) {
     console.log(`running command: ${cmd.join(" ")}`);
   }
+
+  const maybeEnvWithDevMode =
+    process.env.EDGEDB_SERVER_BIN || process.env.CI
+      ? {}
+      : {
+          __EDGEDB_DEVMODE: "1",
+        };
+
   const proc = child_process.spawn(cmd[0], cmd.slice(1), {
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...env, ...maybeEnvWithDevMode },
   });
 
   try {
