@@ -87,6 +87,11 @@ jobs:
         run: |
           echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
 
+      - name: Generate package - edgedb project init
+        run: |
+          cd packages/generate
+          npm exec edgedb -- project init --non-interactive
+
       - name: Run packages' tests
         run: |
           yarn ci:test
