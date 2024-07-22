@@ -19,6 +19,8 @@
     "ci:test": {
       "dependsOn": ["edgedb#test", "@edgedb/create#test", "@edgedb/ai#test"]
     },
-    "test:ci": {}
+    "test:ci": {
+      "dependsOn": ["^build"]
+    }
   }
 }
