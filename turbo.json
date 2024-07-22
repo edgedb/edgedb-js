@@ -28,10 +28,12 @@
         "@edgedb/auth-core#test",
         "@edgedb/create#test",
         "@edgedb/ai#test"
-      ]
+      ],
+      "env": ["CI", "EDGEDB_SERVER_BIN"]
     },
     "test:ci": {
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "env": ["CI", "EDGEDB_SERVER_BIN"]
     }
   }
 }
