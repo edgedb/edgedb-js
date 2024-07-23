@@ -5,7 +5,8 @@
   "scripts": {
     "typecheck": "echo 'Integration tests - nightly, skipping typecheck...'",
     "build": "echo 'Integration tests, no build output...'",
-    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" generate edgeql-js && generate queries --file && generate interfaces && jest --detectOpenHandles --forceExit --passWithNoTests",
+    "generate": "../../packages/generate/dist/cli.js",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit --passWithNoTests",
     "test:ci": "tsx ./testRunner.ts"
   },
   "devDependencies": {
