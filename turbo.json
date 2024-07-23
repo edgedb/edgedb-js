@@ -24,16 +24,15 @@
     "ci:test": {
       "dependsOn": [
         "edgedb#test",
-        "@edgedb/generate#test",
         "@edgedb/auth-core#test",
         "@edgedb/create#test",
         "@edgedb/ai#test"
       ],
-      "env": ["CI", "EDGEDB_SERVER_BIN", "NODE_OPTIONS"]
+      "env": ["CI", "EDGEDB_SERVER_BIN"]
     },
-    "test:ci": {
+    "ci:integration-test": {
       "dependsOn": ["build"],
-      "env": ["CI", "EDGEDB_SERVER_BIN", "NODE_OPTIONS"]
+      "env": ["CI", "EDGEDB_SERVER_BIN"]
     }
   }
 }

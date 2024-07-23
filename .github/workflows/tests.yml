@@ -99,24 +99,23 @@ jobs:
       - name: Run query builder integration tests legacy
         if: ${{ matrix.edgedb-version == '2' }}
         run: |
-          turbo run test:ci --filter=@edgedb/integration-legacy
+          turbo run ci:integration-test --filter=@edgedb/integration-legacy
 
       - name: Run query builder integration tests lts
         if: ${{ matrix.edgedb-version == '3' || matrix.edgedb-version == '4' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
-          export NODE_OPTIONS="--max-old-space-size=4096"
-          turbo run test:ci --filter=@edgedb/integration-lts
+          turbo run ci:integration-test --filter=@edgedb/integration-lts
           turbo run bench:types --filter=@edgedb/integration-lts || echo "Benchmark types script failed, proceeding anyway."
 
       - name: Run query builder integration tests stable
         if: ${{ matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
-          turbo run test:ci --filter=@edgedb/integration-stable
+          turbo run ci:integration-test --filter=@edgedb/integration-stable
 
       - name: Run query builder integration tests nightly
         if: ${{ matrix.edgedb-version == 'nightly' }}
         run: |
-          turbo run test:ci --filter=@edgedb/integration-nightly
+          turbo run ci:integration-test --filter=@edgedb/integration-nightly
 
       - name: Auth libs typecheck
         run: |
