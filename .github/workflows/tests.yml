@@ -104,6 +104,7 @@ jobs:
       - name: Run query builder integration tests lts
         if: ${{ matrix.edgedb-version == '3' || matrix.edgedb-version == '4' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
         run: |
+          export NODE_OPTIONS="--max-old-space-size=4096"
           turbo run test:ci --filter=@edgedb/integration-lts
           turbo run bench:types --filter=@edgedb/integration-lts || echo "Benchmark types script failed, proceeding anyway."
 
