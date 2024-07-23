@@ -1,11 +1,9 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@repo/tsconfig/base.json",
   "compilerOptions": {
     "module": "node16",
     "moduleResolution": "node16",
-    "outDir": "./dist",
-    "declaration": false
+    "outDir": "./dist"
   },
   "include": ["src/cli.mts"]
 }
-

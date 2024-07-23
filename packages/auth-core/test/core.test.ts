@@ -38,34 +38,21 @@ test("test password signup/signin flow", async () => {
   try {
     const auth = await Auth.create(client);
 
-    const signupToken = await auth.signupWithEmailPassword(
+    const signupResponse = await auth.signupWithEmailPassword(
       "test@example.edgedb.com",
       "supersecretpassword",
+      `${auth.baseUrl}/auth/emailpassword/verify`,
     );
 
-    expect(typeof signupToken.auth_token).toBe("string");
-    expect(typeof signupToken.identity_id).toBe("string");
-    expect(signupToken.provider_refresh_token).toBeNull();
-    expect(signupToken.provider_token).toBeNull();
+    expect(signupResponse.status).toBe("verificationRequired");
+    expect(typeof signupResponse.verifier).toBe("string");
 
     await expect(
-      auth.signinWithEmailPassword("test@example.edgedb.com", "wrongpassword"),
-    ).rejects.toThrow();
-
-    const signinToken = await auth.signinWithEmailPassword(
-      "test@example.edgedb.com",
-      "supersecretpassword",
-    );
-
-    const identity = (await client.withGlobals({
-      "ext::auth::client_token": signinToken.auth_token,
-    }).querySingle(`
-    select assert_single(global ext::auth::ClientTokenIdentity {
-      *
-    })
-  `)) as any;
-
-    expect(identity.id).toBe(signinToken.identity_id);
+      auth.signinWithEmailPassword(
+        "test@example.edgedb.com",
+        "supersecretpassword",
+      ),
+    ).rejects.toThrow("Email verification is required");
   } finally {
     await client.close();
   }

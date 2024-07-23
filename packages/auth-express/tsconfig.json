@@ -1,13 +1,11 @@
 {
   "compilerOptions": {
-    "outDir": "./dist",
+    "outDir": "dist",
     "module": "node16",
     "target": "es2020",
     "strict": true,
     "verbatimModuleSyntax": true,
     "declaration": true
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

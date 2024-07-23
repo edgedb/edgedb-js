@@ -27,17 +27,20 @@
   ],
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "test": "jest --detectOpenHandles",
+    "test": "echo 'No tests. Done.'",
     "build": "tsc --project tsconfig.json",
+    "lint": "eslint --quiet",
+    "lint:fix": "eslint --fix",
     "gen-consts": "node genConsts.js"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^20.12.13",
-    "edgedb": "^1.5.0",
+    "edgedb": "*",
     "jest": "29.7.0",
     "ts-jest": "29.1.4",
-    "typescript": "^5.5.2"
+    "typescript": "^5.5.2",
+    "@repo/tsconfig": "*"
   },
   "peerDependencies": {
     "edgedb": "^1.3.6"

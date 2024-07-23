@@ -1,21 +1,7 @@
 {
+  "extends": "@repo/tsconfig/client.json",
   "compilerOptions": {
-    "declarationDir": "./dist",
-    "outDir": "./dist",
-    "lib": [
-      "ESNext"
-    ],
-    "target": "ESNext",
-    "module": "Node16",
-    "declaration": true,
-    "strict": true,
-    "downlevelIteration": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "isolatedModules": true
+    "outDir": "dist"
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src/**/*"]
 }

@@ -1,10 +1,8 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@repo/tsconfig/base.json",
   "compilerOptions": {
     "module": "es2015",
-    "outDir": "./dist/__esm",
-    "declaration": false,
-    "declarationDir": null
+    "outDir": "./dist/__esm"
   },
   "include": ["src/syntax"],
   "exclude": ["**/*.deno.ts", "test/deno/*", "dist", "qb"]

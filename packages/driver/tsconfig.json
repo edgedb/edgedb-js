@@ -1,10 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@repo/tsconfig/base.json",
   "compilerOptions": {
-    "declarationDir": "./dist",
-    "outDir": "./dist",
+    "declaration": true,
+    "outDir": "dist",
     "downlevelIteration": true
   },
-  "include": ["src"],
-  "exclude": ["src/cli.mts", "**/*.deno.ts", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["src/cli.mts", "src/**/*.deno.ts"]
 }
