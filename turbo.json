@@ -23,6 +23,7 @@
     },
     "ci:test": {
       "dependsOn": [
+        "build",
         "edgedb#test",
         "@edgedb/auth-core#test",
         "@edgedb/create#test",
