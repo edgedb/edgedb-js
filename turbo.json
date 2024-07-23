@@ -29,11 +29,11 @@
         "@edgedb/create#test",
         "@edgedb/ai#test"
       ],
-      "env": ["CI", "EDGEDB_SERVER_BIN"]
+      "env": ["CI", "EDGEDB_SERVER_BIN", "NODE_OPTIONS"]
     },
     "test:ci": {
       "dependsOn": ["build"],
-      "env": ["CI", "EDGEDB_SERVER_BIN"]
+      "env": ["CI", "EDGEDB_SERVER_BIN", "NODE_OPTIONS"]
     }
   }
 }
