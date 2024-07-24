@@ -47,7 +47,7 @@ export function getSCRAM({ randomBytes, H, HMAC, makeKey }: CryptoUtils) {
 
   function generateNonce(
     length: number = RAW_NONCE_LENGTH,
-  ): Promise<Uint8Array> {
+  ): Uint8Array {
     return randomBytes(length);
   }
 

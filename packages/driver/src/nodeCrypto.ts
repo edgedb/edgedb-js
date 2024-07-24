@@ -5,16 +5,8 @@ function makeKey(keyBytes: Uint8Array): Promise<Uint8Array> {
   return Promise.resolve(keyBytes);
 }
 
-function randomBytes(size: number): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    crypto.randomBytes(size, (err: Error | null, buf: Buffer) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(buf);
-      }
-    });
-  });
+function randomBytes(size: number): Buffer {
+  return crypto.randomBytes(size);
 }
 
 async function H(msg: Uint8Array): Promise<Buffer> {

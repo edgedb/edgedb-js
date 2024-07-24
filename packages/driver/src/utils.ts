@@ -64,7 +64,7 @@ export function versionGreaterThanOrEqual(
 
 export interface CryptoUtils {
   makeKey: (key: Uint8Array) => Promise<Uint8Array | CryptoKey>;
-  randomBytes: (size: number) => Promise<Uint8Array>;
+  randomBytes: (size: number) => Uint8Array;
   H: (msg: Uint8Array) => Promise<Uint8Array>;
   HMAC: (key: Uint8Array | CryptoKey, msg: Uint8Array) => Promise<Uint8Array>;
 }

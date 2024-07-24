@@ -13,7 +13,7 @@ async function makeKey(key: Uint8Array): Promise<CryptoKey> {
   );
 }
 
-async function randomBytes(size: number): Promise<Uint8Array> {
+function randomBytes(size: number): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(size));
 }
 
