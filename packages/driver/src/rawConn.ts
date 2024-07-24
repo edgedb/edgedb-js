@@ -502,7 +502,7 @@ export class RawConnection extends BaseRawConnection {
       );
     }
 
-    const clientNonce = await scram.generateNonce();
+    const clientNonce = scram.generateNonce();
     const [clientFirst, clientFirstBare] = scram.buildClientFirstMessage(
       clientNonce,
       this.config.connectionParams.user,

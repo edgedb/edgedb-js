@@ -71,7 +71,7 @@ export async function run({
       file,
       ts.ScriptTarget.Latest,
       false,
-      ts.ScriptKind.TS
+      ts.ScriptKind.TS,
     );
 
     const rewrittenFile: string[] = [];
@@ -84,7 +84,7 @@ export async function run({
         const neededImports = injectImports.reduce(
           (neededImports, { imports, from }) => {
             const usedImports = imports.filter((importName) =>
-              parsedSource.identifiers?.has(importName)
+              parsedSource.identifiers?.has(importName),
             );
             if (usedImports.length) {
               neededImports.push({
@@ -94,18 +94,18 @@ export async function run({
             }
             return neededImports;
           },
-          [] as { imports: string[]; from: string }[]
+          [] as { imports: string[]; from: string }[],
         );
 
         if (neededImports.length) {
           const importDecls = neededImports.map((neededImport) => {
             const imports = neededImport.imports.join(", ");
-            // no need to resolve path if it is import from url
-            const importPath = neededImport.from.startsWith("https://")
+            // no need to resolve path if it is import from a supported protocol
+            const importPath = _pathUsesSupportedProtocol(neededImport.from)
               ? neededImport.from
               : resolveImportPath(
                   relative(dirname(sourcePath), neededImport.from),
-                  sourcePath
+                  sourcePath,
                 );
             return `import {${imports}} from "${importPath}";`;
           });
@@ -139,7 +139,7 @@ export async function run({
           if (resolvedImportPath.endsWith(`/${name}.node.ts`)) {
             resolvedImportPath = resolvedImportPath.replace(
               `/${name}.node.ts`,
-              `/${name}.deno.ts`
+              `/${name}.deno.ts`,
             );
           }
         }
@@ -153,7 +153,7 @@ export async function run({
     if (/__dirname/g.test(contents)) {
       contents = contents.replaceAll(
         /__dirname/g,
-        "new URL('.', import.meta.url).pathname"
+        "new URL('.', import.meta.url).pathname",
       );
     }
 
@@ -175,7 +175,7 @@ export async function run({
         const path = importPath.replace(rule.match, (match) =>
           typeof rule.replace === "function"
             ? rule.replace(match, sourcePath)
-            : rule.replace
+            : rule.replace,
         );
         if (
           !path.endsWith(".ts") &&
@@ -185,6 +185,11 @@ export async function run({
           return path + ".ts";
         return path;
       }
+    }
+
+    // Then check if importPath is already a supported protocol
+    if (_pathUsesSupportedProtocol(importPath)) {
+      return importPath;
     }
 
     // then resolve normally
@@ -200,7 +205,7 @@ export async function run({
 
         if (!sourceFilePathMap.has(resolvedPath)) {
           throw new Error(
-            `Cannot find imported file '${importPath}' in '${sourcePath}'`
+            `Cannot find imported file '${importPath}' in '${sourcePath}'`,
           );
         }
       }
@@ -208,10 +213,18 @@ export async function run({
 
     const relImportPath = relative(
       dirname(sourceFilePathMap.get(sourcePath)!),
-      sourceFilePathMap.get(resolvedPath)!
+      sourceFilePathMap.get(resolvedPath)!,
     );
     return relImportPath.startsWith("../")
       ? relImportPath
       : "./" + relImportPath;
   }
+}
+
+function _pathUsesSupportedProtocol(path: string) {
+  return (
+    path.startsWith("https:") ||
+    path.startsWith("node:") ||
+    path.startsWith("npm:")
+  );
 }

@@ -17,11 +17,11 @@
  */
 
 import { getSCRAM, saslprep } from "../src/scram";
+import { cryptoUtils as nodeCryptoUtils } from "../src/nodeCrypto";
+import { cryptoUtils as browserCryptoUtils } from "../src/browserCrypto";
 import cryptoUtils from "../src/adapter.crypto.node";
 
-const scram = getSCRAM(cryptoUtils);
-
-test("scram: RFC example", async () => {
+async function generateScramWith(scram: ReturnType<typeof getSCRAM>) {
   // Test SCRAM-SHA-256 against an example in RFC 7677
 
   const username = "user";
@@ -58,10 +58,50 @@ test("scram: RFC example", async () => {
     Buffer.from(authMessage, "utf8"),
   );
 
+  return { clientProof, serverProof };
+}
+
+test("scram from adapter: RFC example", async () => {
+  const scram = getSCRAM(cryptoUtils);
+  const { clientProof, serverProof } = await generateScramWith(scram);
+
   expect(Buffer.from(clientProof).toString("base64")).toBe(
     "dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=",
   );
   expect(Buffer.from(serverProof).toString("base64")).toBe(
     "6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=",
   );
+});
+
+test("scram from nodeCrypto: RFC example", async () => {
+  const scram = getSCRAM(nodeCryptoUtils);
+  const { clientProof, serverProof } = await generateScramWith(scram);
+
+  expect(Buffer.from(clientProof).toString("base64")).toBe(
+    "dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=",
+  );
+  expect(Buffer.from(serverProof).toString("base64")).toBe(
+    "6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=",
+  );
+});
+
+test("scram from browserCrypto: RFC example", async () => {
+  const scram = getSCRAM(browserCryptoUtils);
+  const { clientProof, serverProof } = await generateScramWith(scram);
+
+  expect(Buffer.from(clientProof).toString("base64")).toBe(
+    "dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=",
+  );
+  expect(Buffer.from(serverProof).toString("base64")).toBe(
+    "6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=",
+  );
+});
+
+test("scram is equivalent", async () => {
+  const scram1 = await generateScramWith(getSCRAM(cryptoUtils));
+  const scram2 = await generateScramWith(getSCRAM(nodeCryptoUtils));
+  const scram3 = await generateScramWith(getSCRAM(browserCryptoUtils));
+
+  expect(scram1).toEqual(scram2);
+  expect(scram1).toEqual(scram3);
 });
