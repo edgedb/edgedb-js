@@ -35,9 +35,9 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.13",
-    "edgedb": "*",
     "express": "^4.19.2",
     "typescript": "^5.5.2",
+    "edgedb": "*",
     "@repo/tsconfig": "*"
   },
   "peerDependencies": {

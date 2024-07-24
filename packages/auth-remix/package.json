@@ -22,8 +22,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.13",
-    "edgedb": "*",
     "typescript": "^5.5.2",
+    "edgedb": "*",
     "@repo/tsconfig": "*"
   },
   "peerDependencies": {
