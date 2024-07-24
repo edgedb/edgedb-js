@@ -32,7 +32,7 @@ export function getHTTPSCRAMAuth(cryptoUtils: CryptoUtils): HttpSCRAMAuth {
     password: string,
   ): Promise<string> {
     const authUrl = baseUrl + AUTH_ENDPOINT;
-    const clientNonce = await generateNonce();
+    const clientNonce = generateNonce();
     const [clientFirst, clientFirstBare] = buildClientFirstMessage(
       clientNonce,
       username,

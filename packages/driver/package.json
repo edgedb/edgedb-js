@@ -47,7 +47,7 @@
     "build:cjs": "tsc --project tsconfig.json",
     "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
     "lint:fix": "tslint 'packages/*/src/**/*.ts'",
-    "test-": "jest --detectOpenHandles",
+    "test": "NODE_OPTIONS='--experimental-global-webcrypto' npx jest --detectOpenHandles",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node genErrors.mjs",
     "watch": "nodemon -e js,ts,tsx --ignore dist -x ",
