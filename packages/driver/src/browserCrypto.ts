@@ -1,4 +1,5 @@
 import type { CryptoUtils } from "./utils";
+
 async function makeKey(key: Uint8Array): Promise<CryptoKey> {
   return await crypto.subtle.importKey(
     "raw",
