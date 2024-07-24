@@ -1,6 +1,6 @@
 import { BaseClientPool, Client, type ConnectOptions } from "./baseClient";
 import { getConnectArgumentsParser } from "./conUtils";
-import cryptoUtils from "./browserCrypto";
+import { cryptoUtils } from "./browserCrypto";
 import { EdgeDBError } from "./errors";
 import { FetchConnection } from "./fetchConn";
 import { getHTTPSCRAMAuth } from "./httpScram";

@@ -32,7 +32,7 @@ export function saslprep(str: string): string {
   return str.normalize("NFKC");
 }
 
-export function getSCRAM({ randomBytes, H, HMAC }: CryptoUtils) {
+export function getSCRAM({ randomBytes, H, HMAC, makeKey }: CryptoUtils) {
   function bufferEquals(a: Uint8Array, b: Uint8Array): boolean {
     if (a.length !== b.length) {
       return false;
@@ -161,11 +161,12 @@ export function getSCRAM({ randomBytes, H, HMAC }: CryptoUtils) {
     msg.set(salt);
     msg.set([0, 0, 0, 1], salt.length);
 
-    let Hi = await HMAC(password, msg);
+    const keyFromPassword = await makeKey(password);
+    let Hi = await HMAC(keyFromPassword, msg);
     let Ui = Hi;
 
     for (let _ = 0; _ < iterations - 1; _++) {
-      Ui = await HMAC(password, Ui);
+      Ui = await HMAC(keyFromPassword, Ui);
       Hi = _XOR(Hi, Ui);
     }
 
