@@ -3,7 +3,8 @@
   "compilerOptions": {
     "module": "node16",
     "moduleResolution": "node16",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "declaration": false
   },
   "include": ["src/cli.mts"]
 }

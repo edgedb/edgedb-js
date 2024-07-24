@@ -2,9 +2,25 @@
   "version": "3",
   "packages": {
     "specifiers": {
+      "npm:@types/node": "npm:@types/node@18.16.19",
+      "npm:fast-check": "npm:fast-check@3.20.0",
       "npm:typescript": "npm:typescript@5.5.4"
     },
     "npm": {
+      "@types/node@18.16.19": {
+        "integrity": "sha512-IXl7o+R9iti9eBW4Wg2hx1xQDig183jj7YLn8F7udNceyfkbn1ZxmzZXuak20gR40D7pIkIY1kYGx5VIGbaHKA==",
+        "dependencies": {}
+      },
+      "fast-check@3.20.0": {
+        "integrity": "sha512-pZIjqLpOZgdSLecec4GKC3Zq5702MZ34upMKxojnNVSWA0K64V3pXOBT1Wdsrc3AphLtzRBbsi8bRWF4TUGmUg==",
+        "dependencies": {
+          "pure-rand": "pure-rand@6.1.0"
+        }
+      },
+      "pure-rand@6.1.0": {
+        "integrity": "sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==",
+        "dependencies": {}
+      },
       "typescript@5.5.4": {
         "integrity": "sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==",
         "dependencies": {}
@@ -13,6 +29,7 @@
   },
   "redirects": {
     "https://deno.land/x/debug/mod.ts": "https://deno.land/x/debug@0.2.0/mod.ts",
+    "https://deno.land/x/expect/matchers.ts": "https://deno.land/x/expect@v0.4.0/matchers.ts",
     "https://deno.land/x/expect/mod.ts": "https://deno.land/x/expect@v0.4.0/mod.ts"
   },
   "remote": {
