@@ -117,7 +117,7 @@ jobs:
         run: |
           turbo run ci:integration-test --filter=@edgedb/integration-nightly
 
-      - name: Auth libs typecheck
+      - name: Typecheck other packages
         run: |
           yarn ci:typecheck
 
