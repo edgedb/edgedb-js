@@ -92,7 +92,7 @@ jobs:
           cd packages/generate
           npm exec edgedb -- project init --non-interactive
 
-      - name: Run packages' tests
+      - name: Run package tests
         run: |
           yarn ci:test
 
