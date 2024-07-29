@@ -33,7 +33,7 @@
     "edgedb": "^1.3.6"
   },
   "dependencies": {
-    "@edgedb/auth-core": "*"
+    "@edgedb/auth-core": "^0.2.1"
   },
   "exports": {
     "./*": "./dist/*.js"
