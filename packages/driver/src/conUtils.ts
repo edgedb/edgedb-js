@@ -410,6 +410,7 @@ export class ResolvedConnectConfig {
     outputLine("host", this.address[0], this._host, this._hostSource);
     outputLine("port", this.address[1], this._port, this._portSource);
     outputLine("database", this.database, this._database, this._databaseSource);
+    outputLine("branch", this.branch, this._branch, this._branchSource);
     outputLine("user", this.user, this._user, this._userSource);
     outputLine(
       "password",
