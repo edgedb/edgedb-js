@@ -16,6 +16,7 @@
     "stripInternal": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    "resolveJsonModule": true
   }
 }

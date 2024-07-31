@@ -1,7 +1,7 @@
 {
   "extends": "@repo/tsconfig/base.json",
   "compilerOptions": {
-    "outDir": "dist",
+    "outDir": "./dist",
     "downlevelIteration": true
   },
   "include": ["src/**/*"],
