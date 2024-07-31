@@ -1,13 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@repo/tsconfig/base.json",
   "compilerOptions": {
     "declaration": true,
     "preserveSymlinks": true,
     "noUnusedLocals": false
   },
-  "include": [
-    "src",
-    "test",
-    "playground.ts"
-  ],
+  "include": ["**/*.ts"],
+  "exclude": [".turbo", "dist", "dbschema", "node_modules"]
 }

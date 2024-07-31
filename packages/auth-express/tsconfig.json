@@ -1,13 +1,7 @@
 {
+  "extends": "@repo/tsconfig/client.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "module": "node16",
-    "target": "es2020",
-    "strict": true,
-    "verbatimModuleSyntax": true,
-    "declaration": true
+    "outDir": "./dist"
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src/**/*"]
 }

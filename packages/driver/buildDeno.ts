@@ -12,7 +12,7 @@ await run({
   destDir: "../deno",
   destEntriesToClean: ["_src", "mod.ts"],
   sourceFilter: (path) => {
-    return !(/\/syntax\//.test(path) || /cli\.mts$/.test(path));
+    return !/cli\.mts$/.test(path);
   },
   pathRewriteRules: [
     { match: /^src\/index.node.ts$/, replace: "mod.ts" },
@@ -76,5 +76,5 @@ await run({
       //   from: "test/globals.deno.ts",
       // },
     ],
-  })
+  }),
 );

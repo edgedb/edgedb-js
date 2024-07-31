@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Client",
+  "compilerOptions": {
+    "lib": ["es2022"],
+    "target": "es2022",
+    "strict": true,
+    "module": "node16",
+    "moduleResolution": "node16",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "noUnusedLocals": true,
+    "removeComments": true,
+    "stripInternal": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}

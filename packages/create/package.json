@@ -36,6 +36,8 @@
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "create": "tsx src/cli.ts",
     "build": "./build.sh",
-    "test": "tsc --noEmit"
+    "test": "tsc --noEmit",
+    "lint": "eslint --quiet",
+    "lint:fix": "eslint --fix"
   }
 }

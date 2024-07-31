@@ -1,4 +1,4 @@
-import createClient from "../../packages/driver/src/index.node";
+import createClient from "edgedb";
 
 import {
   shutdown,

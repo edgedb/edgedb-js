@@ -1,0 +1,39 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "lint": {},
+    "lint:fix": {},
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "test": {
+      "dependsOn": ["build"]
+    },
+    "ci:typecheck": {
+      "dependsOn": [
+        "@edgedb/auth-nextjs#typecheck",
+        "@edgedb/auth-express#typecheck",
+        "@edgedb/auth-remix#typecheck",
+        "@edgedb/auth-sveltekit#typecheck"
+      ]
+    },
+    "ci:test": {
+      "dependsOn": [
+        "build",
+        "edgedb#test",
+        "@edgedb/auth-core#test",
+        "@edgedb/create#test",
+        "@edgedb/ai#test"
+      ],
+      "env": ["CI", "EDGEDB_SERVER_BIN"]
+    },
+    "ci:integration-test": {
+      "dependsOn": ["build"],
+      "env": ["CI", "EDGEDB_SERVER_BIN"]
+    }
+  }
+}
