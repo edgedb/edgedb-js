@@ -321,7 +321,7 @@ export const cardinalityToExecutorMethod = {
   One: "queryRequiredSingle",
   AtMostOne: "querySingle",
   Many: "query",
-  AtLeastOne: "query",
+  AtLeastOne: "queryRequired",
   Empty: "query",
 } satisfies Record<`${$.Cardinality}`, keyof Executor>;
 
