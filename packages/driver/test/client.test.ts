@@ -147,7 +147,7 @@ test("query: basic scalars", async () => {
     const resSingleJSON: string | null = await con.querySingle(
       "select <json>[1, 2, 3]",
     );
-    expect(resSingleJSON).toEqual("[1, 2, 3]");
+    expect(resSingleJSON).toEqual([1, 2, 3]);
   } finally {
     await con.close();
   }
