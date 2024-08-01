@@ -1,8 +1,8 @@
 import { $ } from "edgedb";
-import type { CodeFragment } from "./builders";
-import type { FuncopDef } from "./edgeql-js/generateFunctionTypes";
-import { getStringRepresentation } from "./edgeql-js/generateObjectTypes";
-import { frag, getRef, makeValidIdent, quote } from "./genutil";
+import type { CodeFragment } from "./builders.js";
+import type { FuncopDef } from "./edgeql-js/generateFunctionTypes.js";
+import { getStringRepresentation } from "./edgeql-js/generateObjectTypes.js";
+import { frag, getRef, makeValidIdent, quote } from "./genutil.js";
 
 export type AnytypeDef =
   | { kind: "castable"; type: CodeFragment[]; returnAnytypeWrapper: string }

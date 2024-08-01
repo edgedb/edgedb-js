@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import * as chars from "./primitives/chars";
+import * as chars from "./primitives/chars.js";
 
 export type ProtocolVersion = [number, number];
 

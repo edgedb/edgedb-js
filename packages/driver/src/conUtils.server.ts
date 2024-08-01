@@ -5,9 +5,9 @@ import {
   exists,
   hashSHA1toHex,
   hasFSReadPermission,
-} from "./adapter.node";
-import * as platform from "./platform";
-import { getConnectArgumentsParser } from "./conUtils";
+} from "./adapter.node.js";
+import * as platform from "./platform.js";
+import { getConnectArgumentsParser } from "./conUtils.js";
 
 const projectDirCache = new Map<string, string | null>();
 

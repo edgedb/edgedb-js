@@ -15,15 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { ClientConnectionHolder } from "./baseClient";
-import type { BaseRawConnection } from "./baseConn";
-import * as errors from "./errors";
+import type { ClientConnectionHolder } from "./baseClient.js";
+import type { BaseRawConnection } from "./baseConn.js";
+import * as errors from "./errors/index.js";
 import {
   type Executor,
   type QueryArgs,
   Cardinality,
   OutputFormat,
-} from "./ifaces";
+} from "./ifaces.js";
 
 export enum TransactionState {
   ACTIVE = 0,

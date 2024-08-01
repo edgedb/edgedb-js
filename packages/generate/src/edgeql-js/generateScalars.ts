@@ -6,10 +6,10 @@ import {
   quote,
   toTSScalarType,
   scalarToLiteralMapping,
-} from "../genutil";
-import { dts, r, t, ts } from "../builders";
-import type { GeneratorParams } from "../genutil";
-import { $ } from "../genutil";
+} from "../genutil.js";
+import { dts, r, t, ts } from "../builders.js";
+import type { GeneratorParams } from "../genutil.js";
+import { $ } from "../genutil.js";
 
 export const generateScalars = (params: GeneratorParams) => {
   const { dir, types, casts, scalars } = params;

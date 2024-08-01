@@ -1,14 +1,14 @@
-import { debug } from "debug";
+import debug from "debug";
 
-import { CodeBuffer, type CodeFragment, r, t, ts } from "../builders";
-import type { GeneratorParams } from "../genutil";
-import { frag, quote, splitName } from "../genutil";
+import { CodeBuffer, type CodeFragment, r, t, ts } from "../builders.js";
+import type { GeneratorParams } from "../genutil.js";
+import { frag, quote, splitName } from "../genutil.js";
 import {
   allowsLiterals,
   generateFuncopDef,
   generateFuncopTypes,
   getReturnCardinality,
-} from "./generateFunctionTypes";
+} from "./generateFunctionTypes.js";
 import {
   getTypesSpecificity,
   sortFuncopOverloads,
@@ -16,9 +16,9 @@ import {
   expandFuncopAnytypeOverloads,
   findPathOfAnytype,
   type FuncopDefOverload,
-} from "../funcoputil";
-import { $, OperatorKind, StrictMapSet } from "../genutil";
-import { getStringRepresentation } from "./generateObjectTypes";
+} from "../funcoputil.js";
+import { $, OperatorKind, StrictMapSet } from "../genutil.js";
+import { getStringRepresentation } from "./generateObjectTypes.js";
 
 export function generateOperatorFunctions({
   dir,

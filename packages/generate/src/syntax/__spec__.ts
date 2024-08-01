@@ -1,4 +1,4 @@
-import type { TypeKind } from "./reflection";
+import type { TypeKind } from "./reflection.js";
 
 export declare const spec: Map<string, any>;
 

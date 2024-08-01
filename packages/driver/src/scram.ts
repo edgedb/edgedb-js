@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import { utf8Encoder, encodeB64, decodeB64 } from "./primitives/buffer";
-import { ProtocolError } from "./errors";
-import type { CryptoUtils } from "./utils";
+import { utf8Encoder, encodeB64, decodeB64 } from "./primitives/buffer.js";
+import { ProtocolError } from "./errors/index.js";
+import type { CryptoUtils } from "./utils.js";
 
 const RAW_NONCE_LENGTH = 18;
 

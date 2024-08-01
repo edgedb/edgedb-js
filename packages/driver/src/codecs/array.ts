@@ -16,13 +16,13 @@
  * limitations under the License.
  */
 
-import type { ICodec, uuid, CodecKind } from "./ifaces";
-import { Codec, ScalarCodec } from "./ifaces";
-import { WriteBuffer, ReadBuffer } from "../primitives/buffer";
-import { TupleCodec } from "./tuple";
-import { MultiRangeCodec, RangeCodec } from "./range";
-import { InvalidArgumentError, ProtocolError } from "../errors";
-import { NamedTupleCodec } from "./namedtuple";
+import type { ICodec, uuid, CodecKind } from "./ifaces.js";
+import { Codec, ScalarCodec } from "./ifaces.js";
+import { WriteBuffer, ReadBuffer } from "../primitives/buffer.js";
+import { TupleCodec } from "./tuple.js";
+import { MultiRangeCodec, RangeCodec } from "./range.js";
+import { InvalidArgumentError, ProtocolError } from "../errors/index.js";
+import { NamedTupleCodec } from "./namedtuple.js";
 
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;

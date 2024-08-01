@@ -2,9 +2,9 @@ import {
   Cardinality,
   type introspect,
   TypeKind,
-} from "edgedb/dist/reflection/index";
-import { cardutil } from "./cardinality";
-import { makeType } from "./hydrate";
+} from "edgedb/dist/reflection/index.js";
+import { cardutil } from "./cardinality.js";
+import { makeType } from "./hydrate.js";
 import type {
   BaseType,
   BaseTypeSet,
@@ -14,15 +14,15 @@ import type {
   RangeType,
   Expression,
   MultiRangeType,
-} from "./typesystem";
-import { cast } from "./cast";
-import { isImplicitlyCastableTo, literalToTypeSet } from "./castMaps";
-import { literal } from "./literal";
+} from "./typesystem.js";
+import { cast } from "./cast.js";
+import { isImplicitlyCastableTo, literalToTypeSet } from "./castMaps.js";
+import { literal } from "./literal.js";
 
 import type {
   ExpressionKind,
   OperatorKind,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 
 export type $expr_Function<
   // Name extends string = string,

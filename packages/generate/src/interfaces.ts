@@ -1,9 +1,9 @@
-import type { CommandOptions } from "./commandutil";
-import { headerComment } from "./genutil";
+import type { CommandOptions } from "./commandutil.js";
+import { headerComment } from "./genutil.js";
 import { $, adapter, type Client } from "edgedb";
-import { DirBuilder } from "./builders";
+import { DirBuilder } from "./builders.js";
 
-import { generateInterfaces } from "./edgeql-js/generateInterfaces";
+import { generateInterfaces } from "./edgeql-js/generateInterfaces.js";
 
 const { path } = adapter;
 

@@ -1,7 +1,7 @@
-import type { Executor } from "../../ifaces";
-import { StrictMap } from "../strictMap";
-import type { typeutil } from "../typeutil";
-import { typeMapping } from "./types";
+import type { Executor } from "../../ifaces.js";
+import { StrictMap } from "../strictMap.js";
+import type { typeutil } from "../typeutil.js";
+import { typeMapping } from "./types.js";
 
 export type FuncopTypemod = "SetOfType" | "OptionalType" | "SingletonType";
 

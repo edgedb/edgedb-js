@@ -21,25 +21,25 @@ import {
   Capabilities,
   PROTO_VER,
   RESTRICTED_CAPABILITIES,
-} from "./baseConn";
-import { NULL_CODEC } from "./codecs/codecs";
-import type { ICodec } from "./codecs/ifaces";
-import type { CodecsRegistry } from "./codecs/registry";
-import type { NormalizedConnectConfig } from "./conUtils";
-import { InternalClientError, ProtocolError } from "./errors";
-import type { HttpSCRAMAuth } from "./httpScram";
+} from "./baseConn.js";
+import { NULL_CODEC } from "./codecs/codecs.js";
+import type { ICodec } from "./codecs/ifaces.js";
+import type { CodecsRegistry } from "./codecs/registry.js";
+import type { NormalizedConnectConfig } from "./conUtils.js";
+import { InternalClientError, ProtocolError } from "./errors/index.js";
+import type { HttpSCRAMAuth } from "./httpScram.js";
 import {
   Cardinality,
   OutputFormat,
   type ProtocolVersion,
   type QueryArgs,
   type QueryOptions,
-} from "./ifaces";
-import type { Session } from "./options";
-import { WriteBuffer } from "./primitives/buffer";
-import * as chars from "./primitives/chars";
-import Event from "./primitives/event";
-import { type AuthenticatedFetch, getAuthenticatedFetch } from "./utils";
+} from "./ifaces.js";
+import type { Session } from "./options.js";
+import { WriteBuffer } from "./primitives/buffer.js";
+import * as chars from "./primitives/chars.js";
+import Event from "./primitives/event.js";
+import { type AuthenticatedFetch, getAuthenticatedFetch } from "./utils.js";
 
 const PROTO_MIME = `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`;
 

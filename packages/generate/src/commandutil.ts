@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { adapter } from "edgedb";
-import { type Target, exitWithError } from "./genutil";
+import { type Target, exitWithError } from "./genutil.js";
 
 export interface CommandOptions {
   showHelp?: boolean;

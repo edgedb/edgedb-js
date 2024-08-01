@@ -16,17 +16,17 @@
  * limitations under the License.
  */
 
-import { Cardinality } from "../ifaces";
-import type { ICodec, uuid, CodecKind } from "./ifaces";
-import { Codec } from "./ifaces";
-import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { Cardinality } from "../ifaces.js";
+import type { ICodec, uuid, CodecKind } from "./ifaces.js";
+import { Codec } from "./ifaces.js";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer.js";
 import {
   InvalidArgumentError,
   MissingArgumentError,
   QueryArgumentError,
   UnknownArgumentError,
   ProtocolError,
-} from "../errors";
+} from "../errors/index.js";
 
 const EDGE_POINTER_IS_IMPLICIT = 1 << 0;
 const EDGE_POINTER_IS_LINKPROP = 1 << 1;

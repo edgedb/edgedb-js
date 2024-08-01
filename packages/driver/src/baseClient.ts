@@ -16,37 +16,37 @@
  * limitations under the License.
  */
 
-import type { Duration } from "./datatypes/datetime";
-import { CodecsRegistry } from "./codecs/registry";
+import type { Duration } from "./datatypes/datetime.js";
+import { CodecsRegistry } from "./codecs/registry.js";
 import type {
   ConnectArgumentsParser,
   ConnectConfig,
   NormalizedConnectConfig,
   ResolvedConnectConfigReadonly,
-} from "./conUtils";
-import * as errors from "./errors";
+} from "./conUtils.js";
+import * as errors from "./errors/index.js";
 import {
   type Executor,
   type QueryArgs,
   Cardinality,
   OutputFormat,
-} from "./ifaces";
+} from "./ifaces.js";
 import type {
   RetryOptions,
   Session,
   SimpleRetryOptions,
   SimpleTransactionOptions,
   TransactionOptions,
-} from "./options";
-import { Options } from "./options";
-import Event from "./primitives/event";
-import { LifoQueue } from "./primitives/queues";
-import type { BaseRawConnection } from "./baseConn";
-import type { ConnectWithTimeout } from "./retry";
-import { retryingConnect } from "./retry";
-import { util } from "./reflection/util";
-import { Transaction } from "./transaction";
-import { sleep } from "./utils";
+} from "./options.js";
+import { Options } from "./options.js";
+import Event from "./primitives/event.js";
+import { LifoQueue } from "./primitives/queues.js";
+import type { BaseRawConnection } from "./baseConn.js";
+import type { ConnectWithTimeout } from "./retry.js";
+import { retryingConnect } from "./retry.js";
+import { util } from "./reflection/util.js";
+import { Transaction } from "./transaction.js";
+import { sleep } from "./utils.js";
 
 export class ClientConnectionHolder {
   private _pool: BaseClientPool;

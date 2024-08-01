@@ -7,17 +7,17 @@ import {
   ConfigMemory,
   DateDuration,
 } from "edgedb";
-import type { $bool, $number } from "./modules/std";
+import type { $bool, $number } from "./modules/std.js";
 
 import {
   Cardinality,
   ExpressionKind,
   TypeKind,
   OperatorKind,
-} from "edgedb/dist/reflection/index";
-import { makeType } from "./hydrate";
+} from "edgedb/dist/reflection/index.js";
+import { makeType } from "./hydrate.js";
 
-import { cardutil } from "./cardinality";
+import { cardutil } from "./cardinality.js";
 import type {
   $expr_PolyShapeElement,
   $scopify,
@@ -36,7 +36,7 @@ import type {
   ExclusiveTuple,
   orLiteralValue,
   EnumType,
-} from "./typesystem";
+} from "./typesystem.js";
 
 import {
   $assert_single,
@@ -44,17 +44,17 @@ import {
   type $expr_PathNode,
   type $linkPropify,
   type ExpressionRoot,
-} from "./path";
-import type { anonymizeObject } from "./casting";
-import { $expressionify, $getScopedExpr } from "./path";
-import { $getTypeByName, literal } from "./literal";
-import { spec } from "./__spec__";
+} from "./path.js";
+import type { anonymizeObject } from "./casting.js";
+import { $expressionify, $getScopedExpr } from "./path.js";
+import { $getTypeByName, literal } from "./literal.js";
+import { spec } from "./__spec__.js";
 import {
   type scalarLiterals,
   type literalToScalarType,
   literalToTypeSet,
-} from "./castMaps";
-import type { $expr_Operator } from "./funcops";
+} from "./castMaps.js";
+import type { $expr_Operator } from "./funcops.js";
 
 export const ASC = "ASC";
 export const DESC = "DESC";

@@ -2,7 +2,7 @@ import {
   ExpressionKind,
   type typeutil,
   type Cardinality,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 import type {
   Expression,
   ObjectTypePointers,
@@ -13,17 +13,17 @@ import type {
   ObjectTypeExpression,
   ObjectType,
   $scopify,
-} from "./typesystem";
-import type { pointerToAssignmentExpression } from "./casting";
-import { $expressionify, $getScopedExpr, $assert_single } from "./path";
+} from "./typesystem.js";
+import type { pointerToAssignmentExpression } from "./casting.js";
+import { $expressionify, $getScopedExpr, $assert_single } from "./path.js";
 import {
   type SelectModifiers,
   type NormalisedSelectModifiers,
   type ComputeSelectCardinality,
   $existingScopes,
   $handleModifiers,
-} from "./select";
-import { $normaliseInsertShape, type pointerIsOptional } from "./insert";
+} from "./select.js";
+import { $normaliseInsertShape, type pointerIsOptional } from "./insert.js";
 
 /////////////////
 /// UPDATE

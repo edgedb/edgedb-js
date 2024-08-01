@@ -1,6 +1,6 @@
-import { type CodeFragment, dts, r, t, ts } from "../builders";
-import type { GeneratorParams } from "../genutil";
-import type { $ } from "../genutil";
+import { type CodeFragment, dts, r, t, ts } from "../builders.js";
+import type { GeneratorParams } from "../genutil.js";
+import type { $ } from "../genutil.js";
 import {
   frag,
   getRef,
@@ -9,7 +9,7 @@ import {
   quote,
   splitName,
   // toTSScalarType
-} from "../genutil";
+} from "../genutil.js";
 
 const singletonObjectTypes = new Set(["std::FreeObject"]);
 

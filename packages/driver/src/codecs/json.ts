@@ -20,9 +20,9 @@ import {
   type ReadBuffer,
   type WriteBuffer,
   utf8Encoder,
-} from "../primitives/buffer";
-import { type ICodec, ScalarCodec } from "./ifaces";
-import { InvalidArgumentError, ProtocolError } from "../errors";
+} from "../primitives/buffer.js";
+import { type ICodec, ScalarCodec } from "./ifaces.js";
+import { InvalidArgumentError, ProtocolError } from "../errors/index.js";
 
 export class JSONCodec extends ScalarCodec implements ICodec {
   tsType = "unknown";

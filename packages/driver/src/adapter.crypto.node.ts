@@ -1,7 +1,9 @@
-import type { CryptoUtils } from "./utils";
+import type { CryptoUtils } from "./utils.js";
 
-let cryptoUtils: CryptoUtils;
+// let cryptoUtils: CryptoUtils;
+let cryptoUtilsPromise: Promise<CryptoUtils>;
 
+<<<<<<< Updated upstream
 function loadCrypto() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -16,7 +18,22 @@ function loadCrypto() {
       throw new Error("No crypto implementation found");
     }
   }
+=======
+if (typeof crypto === "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // cryptoUtils = require("./nodeCrypto.js").cryptoUtils;
+  cryptoUtilsPromise = import("./nodeCrypto.js").then(
+    (module) => module.cryptoUtils,
+  );
+} else {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // cryptoUtils = require("./browserCrypto.js").cryptoUtils;
+  cryptoUtilsPromise = import("./browserCrypto.js").then(
+    (module) => module.cryptoUtils,
+  );
+>>>>>>> Stashed changes
 }
+const cryptoUtils = await cryptoUtilsPromise;
 
 loadCrypto();
 

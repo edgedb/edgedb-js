@@ -1,4 +1,4 @@
-import { utf8Decoder } from "../primitives/buffer";
+import { utf8Decoder } from "../primitives/buffer.js";
 
 export class EdgeDBError extends Error {
   protected static tags: object = {};

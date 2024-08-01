@@ -1,7 +1,7 @@
-import type { Executor } from "../../ifaces";
-import type { Cardinality } from "../enums";
-import type { UUID } from "./queryTypes";
-import type { StrictMap } from "../strictMap";
+import type { Executor } from "../../ifaces.js";
+import type { Cardinality } from "../enums.js";
+import type { UUID } from "./queryTypes.js";
+import type { StrictMap } from "../strictMap.js";
 
 export type Global = {
   id: UUID;

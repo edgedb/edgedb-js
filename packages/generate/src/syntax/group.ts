@@ -7,24 +7,24 @@ import type {
   $scopify,
   PropertyDesc,
   LinkDesc,
-} from "./typesystem";
+} from "./typesystem.js";
 import {
   Cardinality,
   ExpressionKind,
   TypeKind,
-} from "edgedb/dist/reflection/index";
-import { makeType } from "./hydrate";
+} from "edgedb/dist/reflection/index.js";
+import { makeType } from "./hydrate.js";
 
-import { $expressionify, $getScopedExpr } from "./path";
-import type { $FreeObjectλShape, $str } from "./modules/std";
-import { spec } from "./__spec__";
-import { literal } from "./literal";
-import { resolveShapeElement } from "./select";
+import { $expressionify, $getScopedExpr } from "./path.js";
+import type { $FreeObjectλShape, $str } from "./modules/std.js";
+import { spec } from "./__spec__.js";
+import { literal } from "./literal.js";
+import { resolveShapeElement } from "./select.js";
 import type {
   normaliseShape,
   // normaliseElement,
   objectTypeToSelectShape,
-} from "./select";
+} from "./select.js";
 
 type SingletonSet = Expression<
   TypeSet<BaseType, Cardinality.One | Cardinality.AtMostOne>

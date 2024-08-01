@@ -16,11 +16,11 @@ import {
   type BuiltinProviderNames,
   NextAuthHelpers,
   type NextAuthOptions,
-} from "./shared.client";
+} from "./shared.client.js";
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import type { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers.js";
+import { redirect } from "next/navigation.js";
+import type { NextRequest, NextResponse } from "next/server.js";
 
 export { type BuiltinProviderNames, NextAuthHelpers, type NextAuthOptions };
 

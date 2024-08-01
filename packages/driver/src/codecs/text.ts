@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { utf8Encoder } from "../primitives/buffer";
-import { type ICodec, ScalarCodec } from "./ifaces";
-import { InvalidArgumentError } from "../errors";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer.js";
+import { utf8Encoder } from "../primitives/buffer.js";
+import { type ICodec, ScalarCodec } from "./ifaces.js";
+import { InvalidArgumentError } from "../errors/index.js";
 
 export class StrCodec extends ScalarCodec implements ICodec {
   tsType = "string";

@@ -1,5 +1,5 @@
-import { dts, t, r, ts } from "../builders";
-import type { GeneratorParams } from "../genutil";
+import { dts, t, r, ts } from "../builders.js";
+import type { GeneratorParams } from "../genutil.js";
 
 export const generateRuntimeSpec = (params: GeneratorParams) => {
   const { dir, types, edgedbVersion } = params;

@@ -1,6 +1,6 @@
-import type { Executor } from "../../ifaces";
-import { StrictMap } from "../strictMap";
-import type { typeutil } from "../typeutil";
+import type { Executor } from "../../ifaces.js";
+import { StrictMap } from "../strictMap.js";
+import type { typeutil } from "../typeutil.js";
 
 /*
   for scalars

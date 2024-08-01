@@ -7,17 +7,17 @@ import {
   type ConnectConfig,
   validTlsSecurityValues,
   isValidTlsSecurityValue,
-} from "edgedb/dist/conUtils";
-import { parseConnectArguments } from "edgedb/dist/conUtils.server";
+} from "edgedb/dist/conUtils.js";
+import { parseConnectArguments } from "edgedb/dist/conUtils.server.js";
 import {
   type CommandOptions,
   promptForPassword,
   readPasswordFromStdin,
-} from "./commandutil";
-import { generateQueryBuilder } from "./edgeql-js";
-import { runInterfacesGenerator } from "./interfaces";
-import { type Target, exitWithError } from "./genutil";
-import { generateQueryFiles } from "./queries";
+} from "./commandutil.js";
+import { generateQueryBuilder } from "./edgeql-js.js";
+import { runInterfacesGenerator } from "./interfaces.js";
+import { type Target, exitWithError } from "./genutil.js";
+import { generateQueryFiles } from "./queries.js";
 
 const { path, readFileUtf8, exists } = adapter;
 

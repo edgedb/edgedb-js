@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import type char from "./chars";
-import * as chars from "./chars";
-import { LegacyHeaderCodes } from "../ifaces";
-import { Buffer } from "../adapter.node";
+import type char from "./chars.js";
+import * as chars from "./chars.js";
+import { LegacyHeaderCodes } from "../ifaces.js";
+import { Buffer } from "../adapter.node.js";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE = 4096;

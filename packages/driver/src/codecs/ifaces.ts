@@ -20,8 +20,8 @@ import {
   type ReadBuffer,
   type WriteBuffer,
   uuidToBuffer,
-} from "../primitives/buffer";
-import { KNOWN_TYPES } from "./consts";
+} from "../primitives/buffer.js";
+import { KNOWN_TYPES } from "./consts.js";
 
 export type uuid = string;
 

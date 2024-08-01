@@ -1,16 +1,20 @@
-import type { Executor } from "edgedb/dist/ifaces";
-import type { $expr_PathNode, $expr_TypeIntersection, $pathify } from "./path";
-import type { $expr_Literal } from "./literal";
-import type { $expr_Operator } from "./funcops";
+import type { Executor } from "edgedb/dist/ifaces.js";
+import type {
+  $expr_PathNode,
+  $expr_TypeIntersection,
+  $pathify,
+} from "./path.js";
+import type { $expr_Literal } from "./literal.js";
+import type { $expr_Operator } from "./funcops.js";
 import type {
   typeutil,
   Cardinality,
   ExpressionKind,
-} from "edgedb/dist/reflection/index";
-import { TypeKind } from "edgedb/dist/reflection/index";
-import type { cardutil } from "./cardinality";
+} from "edgedb/dist/reflection/index.js";
+import { TypeKind } from "edgedb/dist/reflection/index.js";
+import type { cardutil } from "./cardinality.js";
 import type { Range, MultiRange } from "edgedb";
-import type { $Shape, normaliseShape } from "./select";
+import type { $Shape, normaliseShape } from "./select.js";
 
 //////////////////
 // BASETYPE

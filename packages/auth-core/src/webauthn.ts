@@ -1,10 +1,10 @@
-import { base64UrlToBytes, bytesToBase64Url } from "./crypto";
-import { webAuthnProviderName } from "./consts";
-import { requestGET, requestPOST } from "./utils";
+import { base64UrlToBytes, bytesToBase64Url } from "./crypto.js";
+import { webAuthnProviderName } from "./consts.js";
+import { requestGET, requestPOST } from "./utils.js";
 import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
-} from "./types";
+} from "./types.js";
 
 interface WebAuthnClientOptions {
   signupOptionsUrl: string;

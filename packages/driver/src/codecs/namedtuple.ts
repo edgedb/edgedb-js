@@ -16,17 +16,17 @@
  * limitations under the License.
  */
 
-import type { ICodec, uuid, IArgsCodec, CodecKind } from "./ifaces";
-import { Codec } from "./ifaces";
-import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { EmptyTupleCodec } from "./tuple";
+import type { ICodec, uuid, IArgsCodec, CodecKind } from "./ifaces.js";
+import { Codec } from "./ifaces.js";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer.js";
+import { EmptyTupleCodec } from "./tuple.js";
 import {
   InvalidArgumentError,
   MissingArgumentError,
   UnknownArgumentError,
   ProtocolError,
   QueryArgumentError,
-} from "../errors";
+} from "../errors/index.js";
 
 export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
   private subCodecs: ICodec[];

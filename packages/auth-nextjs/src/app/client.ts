@@ -2,7 +2,7 @@ import {
   type BuiltinProviderNames,
   NextAuthHelpers,
   type NextAuthOptions,
-} from "../shared.client";
+} from "../shared.client.js";
 
 export * from "@edgedb/auth-core/errors";
 export { type NextAuthOptions, type BuiltinProviderNames };

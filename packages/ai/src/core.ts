@@ -12,7 +12,7 @@ export function createAI(client: Client, options: AIOptions) {
   return new EdgeDBAI(client, options);
 }
 
-const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils.default);
+const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils);
 
 export class EdgeDBAI {
   /** @internal */

@@ -1,7 +1,7 @@
-export { literal } from "./literal";
+export { literal } from "./literal.js";
 export {} from "./path";
-export { set } from "./set";
-export { cast } from "./cast";
+export { set } from "./set.js";
+export { cast } from "./cast.js";
 export {
   ASC,
   DESC,
@@ -10,19 +10,19 @@ export {
   is,
   delete,
   select,
-} from "./select";
-export { update } from "./update";
-export { insert } from "./insert";
+} from "./select.js";
+export { update } from "./update.js";
+export { insert } from "./insert.js";
 export {
   array,
   tuple,
   $objectTypeToTupleType as objectTypeToTupleType,
-} from "./collections";
-export {} from "./funcops";
-export { for } from "./for";
-export { alias, with } from "./with";
-export { optional, params } from "./params";
-export { detached } from "./detached";
+} from "./collections.js";
+export {} from "./funcops.js";
+export { for } from "./for.js";
+export { alias, with } from "./with.js";
+export { optional, params } from "./params.js";
+export { detached } from "./detached.js";
 export {} from "./toEdgeQL";
 
-export type { setToTsType as $infer } from "./typesystem";
+export type { setToTsType as $infer } from "./typesystem.js";

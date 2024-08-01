@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { type ICodec, ScalarCodec } from "./ifaces";
-import { InvalidArgumentError } from "../errors";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer.js";
+import { type ICodec, ScalarCodec } from "./ifaces.js";
+import { InvalidArgumentError } from "../errors/index.js";
 
 export const PG_VECTOR_MAX_DIM = (1 << 16) - 1;
 

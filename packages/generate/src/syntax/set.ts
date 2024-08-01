@@ -1,5 +1,8 @@
-import type { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index";
-import { TypeKind } from "edgedb/dist/reflection/index";
+import type {
+  ExpressionKind,
+  Cardinality,
+} from "edgedb/dist/reflection/index.js";
+import { TypeKind } from "edgedb/dist/reflection/index.js";
 import type {
   ArrayType,
   BaseTypeTuple,
@@ -12,11 +15,11 @@ import type {
   ObjectType,
   getPrimitiveBaseType,
   SomeType,
-} from "./typesystem";
+} from "./typesystem.js";
 
-import { $mergeObjectTypes, type mergeObjectTypes } from "./hydrate";
+import { $mergeObjectTypes, type mergeObjectTypes } from "./hydrate.js";
 
-import * as castMaps from "./castMaps";
+import * as castMaps from "./castMaps.js";
 
 export function getSharedParent(a: SomeType, b: SomeType): SomeType {
   if (a.__kind__ !== b.__kind__) {
@@ -120,7 +123,7 @@ export function getSharedParent(a: SomeType, b: SomeType): SomeType {
   }
 }
 
-export { set } from "./setImpl";
+export { set } from "./setImpl.js";
 
 // export type $expr_Set<Set extends LooseTypeSet = LooseTypeSet> = Expression<
 export type $expr_Set<Set extends LooseTypeSet = LooseTypeSet> = Expression<{

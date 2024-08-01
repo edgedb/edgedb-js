@@ -1,4 +1,4 @@
-import * as errors from "./errors";
+import * as errors from "./errors/index.js";
 
 export type BackoffFunction = (n: number) => number;
 

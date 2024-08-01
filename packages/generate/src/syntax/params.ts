@@ -3,18 +3,18 @@ import {
   ExpressionKind,
   Cardinality,
   TypeKind,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 import type {
   Expression,
   ParamType,
   setToTsType,
   TypeSet,
   BaseTypeToTsType,
-} from "./typesystem";
-import { $expressionify } from "./path";
-import { runnableExpressionKinds } from "./query";
-import { select } from "./select";
-import { complexParamKinds } from "./__spec__";
+} from "./typesystem.js";
+import { $expressionify } from "./path.js";
+import { runnableExpressionKinds } from "./query.js";
+import { select } from "./select.js";
+import { complexParamKinds } from "./__spec__.js";
 
 type Param = ParamType | $expr_OptionalParam;
 

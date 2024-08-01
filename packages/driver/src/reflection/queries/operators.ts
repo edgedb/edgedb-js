@@ -1,11 +1,11 @@
-import type { Executor } from "../../ifaces";
-import { StrictMap } from "../strictMap";
+import type { Executor } from "../../ifaces.js";
+import { StrictMap } from "../strictMap.js";
 
-import type { FuncopParam, FuncopTypemod } from "./functions";
-import { replaceNumberTypes } from "./functions";
-import { util } from "../util";
-import type { typeutil } from "../typeutil";
-import type { OperatorKind } from "../enums";
+import type { FuncopParam, FuncopTypemod } from "./functions.js";
+import { replaceNumberTypes } from "./functions.js";
+import { util } from "../util.js";
+import type { typeutil } from "../typeutil.js";
+import type { OperatorKind } from "../enums.js";
 
 export type { FuncopTypemod };
 

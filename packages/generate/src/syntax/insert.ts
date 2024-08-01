@@ -3,7 +3,7 @@ import {
   ExpressionKind,
   type typeutil,
   TypeKind,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 import type {
   Expression,
   LinkDesc,
@@ -17,16 +17,16 @@ import type {
   TypeSet,
   ObjectType,
   NamedTupleType,
-} from "./typesystem";
-import type { pointerToAssignmentExpression } from "./casting";
-import { $expressionify, $getScopedExpr } from "./path";
-import { cast } from "./cast";
-import { set } from "./set";
-import { literal } from "./literal";
-import { $getTypeByName } from "./literal";
-import type { $expr_PathNode } from "./path";
-import type { $Object } from "./modules/std";
-import type { scalarLiterals } from "./castMaps";
+} from "./typesystem.js";
+import type { pointerToAssignmentExpression } from "./casting.js";
+import { $expressionify, $getScopedExpr } from "./path.js";
+import { cast } from "./cast.js";
+import { set } from "./set.js";
+import { literal } from "./literal.js";
+import { $getTypeByName } from "./literal.js";
+import type { $expr_PathNode } from "./path.js";
+import type { $Object } from "./modules/std.js";
+import type { scalarLiterals } from "./castMaps.js";
 
 export type pointerIsOptional<T extends PropertyDesc | LinkDesc> =
   T["cardinality"] extends

@@ -1,9 +1,9 @@
-import Router from "next/router";
+import Router from "next/router.js";
 import {
   type BuiltinProviderNames,
   NextAuthHelpers,
   type NextAuthOptions,
-} from "../shared.client";
+} from "../shared.client.js";
 import { errorMapping } from "@edgedb/auth-core/utils";
 
 export * from "@edgedb/auth-core/errors";
@@ -103,9 +103,9 @@ async function apiRequest(url: string, _data: any) {
     }
     if (json._redirect) {
       if (await json._redirect.replace) {
-        Router.replace(json._redirect.location);
+        Router.default.replace(json._redirect.location);
       } else {
-        Router.push(json._redirect.location);
+        Router.default.push(json._redirect.location);
       }
       return;
     }

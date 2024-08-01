@@ -1,9 +1,9 @@
-import type { GeneratorParams } from "../genutil";
-import { frag, getRef, splitName } from "../genutil";
-import { dts, r, t, ts } from "../builders";
+import type { GeneratorParams } from "../genutil.js";
+import { frag, getRef, splitName } from "../genutil.js";
+import { dts, r, t, ts } from "../builders.js";
 
-import { getStringRepresentation } from "./generateObjectTypes";
-import type { $ } from "../genutil";
+import { getStringRepresentation } from "./generateObjectTypes.js";
+import type { $ } from "../genutil.js";
 
 export const generateGlobals = ({ dir, globals, types }: GeneratorParams) => {
   const globalsByMod: { [k: string]: $.introspect.Global[] } = {};

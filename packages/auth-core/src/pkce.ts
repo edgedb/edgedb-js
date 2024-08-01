@@ -1,4 +1,4 @@
-import { bytesToBase64Url, sha256, randomBytes } from "./crypto";
+import { bytesToBase64Url, sha256, randomBytes } from "./crypto.js";
 
 export async function createVerifierChallengePair(): Promise<{
   verifier: string;

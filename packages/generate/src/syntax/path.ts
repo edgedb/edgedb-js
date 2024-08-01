@@ -10,14 +10,14 @@ import {
   Cardinality,
   // BaseType,
   type typeutil,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 
-import { cardutil } from "./cardinality";
+import { cardutil } from "./cardinality.js";
 
-import { literalToTypeSet } from "./castMaps";
-import { $arrayLikeIndexify, $tuplePathify } from "./collections";
-import { $toEdgeQL } from "./toEdgeQL";
-import { $queryFunc, $queryFuncJSON } from "./query";
+import { literalToTypeSet } from "./castMaps.js";
+import { $arrayLikeIndexify, $tuplePathify } from "./collections.js";
+import { $toEdgeQL } from "./toEdgeQL.js";
+import { $queryFunc, $queryFuncJSON } from "./query.js";
 
 import type {
   BaseType,
@@ -29,7 +29,7 @@ import type {
   PropertyDesc,
   PropertyShape,
   TypeSet,
-} from "./typesystem";
+} from "./typesystem.js";
 // import {typeutil} from "./typeutil";
 // import {cardutil} from "./cardinality";
 

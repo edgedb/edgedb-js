@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import type { Duration, LocalDate, LocalDateTime } from "./datetime";
+import type { Duration, LocalDate, LocalDateTime } from "./datetime.js";
 
 export class Range<
   T extends number | Date | LocalDate | LocalDateTime | Duration,

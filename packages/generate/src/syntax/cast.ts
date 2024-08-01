@@ -1,14 +1,14 @@
-import { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index";
+import { ExpressionKind, Cardinality } from "edgedb/dist/reflection/index.js";
 import type {
   Expression,
   BaseType,
   TypeSet,
   ObjectTypeExpression,
   ScalarType,
-} from "./typesystem";
-import { $expressionify } from "./path";
-import type { orScalarLiteral } from "./castMaps";
-import { literalToTypeSet } from "./castMaps";
+} from "./typesystem.js";
+import { $expressionify } from "./path.js";
+import type { orScalarLiteral } from "./castMaps.js";
+import { literalToTypeSet } from "./castMaps.js";
 
 export function cast<Target extends BaseType | ObjectTypeExpression>(
   target: Target,

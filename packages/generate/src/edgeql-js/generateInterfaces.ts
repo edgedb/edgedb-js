@@ -1,7 +1,12 @@
-import { CodeBuffer, t } from "../builders";
-import type { GeneratorParams } from "../genutil";
-import { $ } from "../genutil";
-import { makePlainIdent, quote, splitName, toTSScalarType } from "../genutil";
+import { CodeBuffer, t } from "../builders.js";
+import type { GeneratorParams } from "../genutil.js";
+import { $ } from "../genutil.js";
+import {
+  makePlainIdent,
+  quote,
+  splitName,
+  toTSScalarType,
+} from "../genutil.js";
 
 export type GenerateInterfacesParams = Pick<GeneratorParams, "dir" | "types">;
 

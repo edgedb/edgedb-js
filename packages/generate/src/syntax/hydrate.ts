@@ -7,10 +7,10 @@ import type {
   LinkDesc,
   PropertyDesc,
   TupleType,
-} from "./typesystem";
+} from "./typesystem.js";
 
-import { util, TypeKind } from "edgedb/dist/reflection/index";
-import type { typeutil } from "edgedb/dist/reflection/index";
+import { util, TypeKind } from "edgedb/dist/reflection/index.js";
+import type { typeutil } from "edgedb/dist/reflection/index.js";
 
 const typeCache = new Map<string, BaseType>();
 

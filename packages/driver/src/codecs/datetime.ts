@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { type ICodec, ScalarCodec } from "./ifaces";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer.js";
+import { type ICodec, ScalarCodec } from "./ifaces.js";
 import {
   LocalDateTime,
   LocalDate,
@@ -28,9 +28,9 @@ import {
   LocalDateFromOrdinal,
   LocalDateToOrdinal,
   localDateInstances,
-} from "../datatypes/datetime";
-import { ymd2ord } from "../datatypes/dateutil";
-import { InvalidArgumentError, ProtocolError } from "../errors";
+} from "../datatypes/datetime.js";
+import { ymd2ord } from "../datatypes/dateutil.js";
+import { InvalidArgumentError, ProtocolError } from "../errors/index.js";
 
 /* PostgreSQL UTC epoch starts on "January 1, 2000", whereas
  * in JavaScript, the UTC epoch starts on "January 1, 1970" (the UNIX epoch).
