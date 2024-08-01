@@ -254,6 +254,24 @@ export class ClientConnectionHolder {
     );
   }
 
+  async queryRequired(query: string, args?: QueryArgs): Promise<any> {
+    return this.retryingFetch(
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.AT_LEAST_ONE,
+    );
+  }
+
+  async queryRequiredJSON(query: string, args?: QueryArgs): Promise<string> {
+    return this.retryingFetch(
+      query,
+      args,
+      OutputFormat.JSON,
+      Cardinality.AT_LEAST_ONE,
+    );
+  }
+
   async queryRequiredSingle(query: string, args?: QueryArgs): Promise<any> {
     return this.retryingFetch(
       query,
@@ -638,6 +656,24 @@ export class Client implements Executor {
     const holder = await this.pool.acquireHolder(this.options);
     try {
       return await holder.querySingleJSON(query, args);
+    } finally {
+      await holder.release();
+    }
+  }
+
+  async queryRequired<T = unknown>(query: string, args?: QueryArgs): Promise<[T, ...T[]]> {
+    const holder = await this.pool.acquireHolder(this.options);
+    try {
+      return await holder.queryRequired(query, args);
+    } finally {
+      await holder.release();
+    }
+  }
+
+  async queryRequiredJSON(query: string, args?: QueryArgs): Promise<string> {
+    const holder = await this.pool.acquireHolder(this.options);
+    try {
+      return await holder.queryRequiredJSON(query, args);
     } finally {
       await holder.release();
     }

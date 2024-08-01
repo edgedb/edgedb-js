@@ -68,12 +68,15 @@ class CancelTransaction extends Error {}
 
 test("query: basic scalars", async () => {
   const con = getClient();
-  let res: any;
   try {
-    res = await con.query("select {'a', 'bc'}");
-    expect(res).toEqual(["a", "bc"]);
+    const resMulti: string[] = await con.query("select {'a', 'bc'}");
+    expect(resMulti).toEqual(["a", "bc"]);
 
-    res = await con.querySingle(
+    const resRequired: [string, ...string[]] =
+      await con.queryRequired("select {'a', 'bc'}");
+    expect(resRequired).toEqual(["a", "bc"]);
+
+    const resSingle: number[] | null = await con.querySingle(
       `select [
         -1,
         1,
@@ -89,34 +92,59 @@ test("query: basic scalars", async () => {
       ];
       `,
     );
-    expect(res).toEqual([
+    expect(resSingle).toEqual([
       -1, 1, 0, 15, 281474976710656, 22, -11111, 346456723423, -346456723423,
       2251799813685125, -2251799813685125,
     ]);
 
-    res = await con.query("select <int32>{-1, 0, 1, 10, 2147483647};");
-    expect(res).toEqual([-1, 0, 1, 10, 2147483647]);
+    const resInt32: number[] = await con.query(
+      "select <int32>{-1, 0, 1, 10, 2147483647};",
+    );
+    expect(resInt32).toEqual([-1, 0, 1, 10, 2147483647]);
 
-    res = await con.query("select <int16>{-1, 0, 1, 10, 15, 22, -1111};");
-    expect(res).toEqual([-1, 0, 1, 10, 15, 22, -1111]);
+    const resRequiredInt32: [number, ...number[]] = await con.queryRequired(
+      "select <int32>{-1, 0, 1, 10, 2147483647};",
+    );
+    expect(resRequiredInt32).toEqual([-1, 0, 1, 10, 2147483647]);
 
-    res = await con.query("select {true, false, false, true, false};");
-    expect(res).toEqual([true, false, false, true, false]);
+    const resInt16 = await con.query(
+      "select <int16>{-1, 0, 1, 10, 15, 22, -1111};",
+    );
+    expect(resInt16).toEqual([-1, 0, 1, 10, 15, 22, -1111]);
 
-    res = await con.querySingle("select [<float64>123.2, <float64>-1.1]");
-    expect(res[0]).toBeCloseTo(123.2, 2);
-    expect(res[1]).toBeCloseTo(-1.1, 2);
+    const resRequiredInt16: [number, ...number[]] = await con.queryRequired(
+      "select <int16>{-1, 0, 1, 10, 15, 22, -1111};",
+    );
+    expect(resRequiredInt16).toEqual([-1, 0, 1, 10, 15, 22, -1111]);
 
-    res = await con.querySingle("select [<float32>123.2, <float32>-1.1]");
-    expect(res[0]).toBeCloseTo(123.2, 2);
-    expect(res[1]).toBeCloseTo(-1.1, 2);
+    const resBool: boolean[] = await con.query(
+      "select {true, false, false, true, false};",
+    );
+    expect(resBool).toEqual([true, false, false, true, false]);
 
-    res = await con.querySingle("select b'abcdef'");
-    expect(res instanceof Uint8Array).toBeTruthy();
-    expect(res).toEqual(new TextEncoder().encode("abcdef"));
+    const resRequiredBool: [boolean, ...boolean[]] = await con.queryRequired(
+      "select {true, false, false, true, false};",
+    );
+    expect(resRequiredBool).toEqual([true, false, false, true, false]);
 
-    res = await con.querySingle("select <json>[1, 2, 3]");
-    expect(res).toEqual([1, 2, 3]);
+    const resSingleFloat64: number[] | null = await con.querySingle(
+      "select [<float64>123.2, <float64>-1.1]",
+    );
+    expect(resSingleFloat64![0]).toBeCloseTo(123.2, 2);
+    expect(resSingleFloat64![1]).toBeCloseTo(-1.1, 2);
+
+    const resSingleFloat32: number[] | null = await con.querySingle(
+      "select [<float32>123.2, <float32>-1.1]",
+    );
+    expect(resSingleFloat32![0]).toBeCloseTo(123.2, 2);
+    expect(resSingleFloat32![1]).toBeCloseTo(-1.1, 2);
+
+    const resSingleBytes: Uint8Array | null = await con.querySingle("select b'abcdef'");
+    expect(resSingleBytes instanceof Uint8Array).toBeTruthy();
+    expect(resSingleBytes).toEqual(new TextEncoder().encode("abcdef"));
+
+    const resSingleJSON: string | null = await con.querySingle("select <json>[1, 2, 3]");
+    expect(resSingleJSON).toEqual("[1, 2, 3]");
   } finally {
     await con.close();
   }
