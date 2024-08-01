@@ -42,7 +42,10 @@ export interface Executor {
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
   querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T | null>;
   querySingleJSON(query: string, args?: QueryArgs): Promise<string>;
-  queryRequired<T = unknown>(query: string, args?: QueryArgs): Promise<[T, ...T[]]>;
+  queryRequired<T = unknown>(
+    query: string,
+    args?: QueryArgs,
+  ): Promise<[T, ...T[]]>;
   queryRequiredJSON(query: string, args?: QueryArgs): Promise<string>;
   queryRequiredSingle<T = unknown>(query: string, args?: QueryArgs): Promise<T>;
   queryRequiredSingleJSON(query: string, args?: QueryArgs): Promise<string>;

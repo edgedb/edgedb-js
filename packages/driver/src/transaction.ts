@@ -247,7 +247,6 @@ export class Transaction implements Executor {
     );
   }
 
-
   async queryRequiredSingle<T = unknown>(
     query: string,
     args?: QueryArgs,

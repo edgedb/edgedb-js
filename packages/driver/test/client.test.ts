@@ -139,11 +139,14 @@ test("query: basic scalars", async () => {
     expect(resSingleFloat32![0]).toBeCloseTo(123.2, 2);
     expect(resSingleFloat32![1]).toBeCloseTo(-1.1, 2);
 
-    const resSingleBytes: Uint8Array | null = await con.querySingle("select b'abcdef'");
+    const resSingleBytes: Uint8Array | null =
+      await con.querySingle("select b'abcdef'");
     expect(resSingleBytes instanceof Uint8Array).toBeTruthy();
     expect(resSingleBytes).toEqual(new TextEncoder().encode("abcdef"));
 
-    const resSingleJSON: string | null = await con.querySingle("select <json>[1, 2, 3]");
+    const resSingleJSON: string | null = await con.querySingle(
+      "select <json>[1, 2, 3]",
+    );
     expect(resSingleJSON).toEqual("[1, 2, 3]");
   } finally {
     await con.close();

@@ -661,7 +661,10 @@ export class Client implements Executor {
     }
   }
 
-  async queryRequired<T = unknown>(query: string, args?: QueryArgs): Promise<[T, ...T[]]> {
+  async queryRequired<T = unknown>(
+    query: string,
+    args?: QueryArgs,
+  ): Promise<[T, ...T[]]> {
     const holder = await this.pool.acquireHolder(this.options);
     try {
       return await holder.queryRequired(query, args);
