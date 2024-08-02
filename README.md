@@ -226,9 +226,9 @@ EdgeDB from [here](https://www.edgedb.com/download) or
 ```bash
 $ git clone git@github.com:edgedb/edgedb-js.git
 $ cd edgedb-js
-$ yarn                           # install dependencies
-$ yarn workspaces run build      # build all packages
-$ yarn workspaces run test       # run tests for all packages
+$ yarn                # install dependencies
+$ yarn run build      # build all packages
+$ yarn run test       # run tests for all packages
 ```
 
 > In order to be able to run all tests you need to have `edgedb-server` in your
