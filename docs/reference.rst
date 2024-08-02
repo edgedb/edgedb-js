@@ -175,6 +175,20 @@ Client
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
 
+    .. js:method:: queryRequired<T>( \
+            query: string, \
+            args?: QueryArgs \
+        ): Promise<[T, ...T[]]>
+
+        Run a query that returns at least one element and return the result as an
+        array.
+
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-async-optargs>`.
+
+        The *query* must return at least one element. If the query less than one
+        element, a ``ResultCardinalityMismatchError`` error is thrown.
+
     .. js:method:: querySingle<T>( \
             query: string, \
             args?: QueryArgs \
@@ -210,6 +224,33 @@ Client
 
         This method takes :ref:`optional query arguments
         <edgedb-js-api-async-optargs>`.
+
+        .. note::
+
+            Caution is advised when reading ``decimal`` or ``bigint``
+            values using this method. The JSON specification does not
+            have a limit on significant digits, so a ``decimal`` or a
+            ``bigint`` number can be losslessly represented in JSON.
+            However, JSON decoders in JavaScript will often read all
+            such numbers as ``number`` values, which may result in
+            precision loss. If such loss is unacceptable, then
+            consider casting the value into ``str`` and decoding it on
+            the client side into a more appropriate type, such as
+            BigInt_.
+
+    .. js:method:: queryRequiredJSON( \
+            query: string, \
+            args?: QueryArgs \
+        ): Promise<string>
+
+        Run a query that returns at least one element and return the result as a
+        JSON-encoded string.
+
+        This method takes :ref:`optional query arguments
+        <edgedb-js-api-async-optargs>`.
+
+        The *query* must return at least one element. If the query less than one
+        element, a ``ResultCardinalityMismatchError`` error is thrown.
 
         .. note::
 
