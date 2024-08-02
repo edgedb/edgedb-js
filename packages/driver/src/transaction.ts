@@ -220,6 +220,33 @@ export class Transaction implements Executor {
     );
   }
 
+  async queryRequired<T = unknown>(
+    query: string,
+    args?: QueryArgs,
+  ): Promise<[T, ...T[]]> {
+    return this._runOp("queryRequired", () =>
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.BINARY,
+        Cardinality.AT_LEAST_ONE,
+        this._holder.options.session,
+      ),
+    );
+  }
+
+  async queryRequiredJSON(query: string, args?: QueryArgs): Promise<string> {
+    return this._runOp("queryRequiredJSON", () =>
+      this._rawConn.fetch(
+        query,
+        args,
+        OutputFormat.JSON,
+        Cardinality.AT_LEAST_ONE,
+        this._holder.options.session,
+      ),
+    );
+  }
+
   async queryRequiredSingle<T = unknown>(
     query: string,
     args?: QueryArgs,
