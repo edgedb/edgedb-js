@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { type ICodec, ScalarCodec } from "./ifaces";
-import { InvalidArgumentError } from "../errors";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer.js";
+import { type ICodec, ScalarCodec } from "./ifaces.js";
+import { InvalidArgumentError } from "../errors/index.js";
 
 export class Int64Codec extends ScalarCodec implements ICodec {
   tsType = "number";

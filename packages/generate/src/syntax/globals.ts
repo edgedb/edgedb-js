@@ -1,6 +1,9 @@
-import { type Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
-import type { Expression, BaseType } from "./typesystem";
-import { $expressionify } from "./path";
+import {
+  type Cardinality,
+  ExpressionKind,
+} from "edgedb/dist/reflection/index.js";
+import type { Expression, BaseType } from "./typesystem.js";
+import { $expressionify } from "./path.js";
 
 export function makeGlobal<
   // Name extends string,

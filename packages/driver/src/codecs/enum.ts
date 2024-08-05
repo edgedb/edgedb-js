@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-import type { ICodec, uuid } from "./ifaces";
-import { StrCodec } from "./text";
+import type { ICodec, uuid } from "./ifaces.js";
+import { StrCodec } from "./text.js";
 
 export class EnumCodec extends StrCodec implements ICodec {
   readonly values: string[];

@@ -16,19 +16,19 @@
  * limitations under the License.
  */
 
-import * as errors from "./errors";
+import * as errors from "./errors/index.js";
 import {
   type Credentials,
   getCredentialsPath,
   readCredentialsFile,
   validateCredentials,
-} from "./credentials";
-import { getEnv } from "./adapter.shared.node";
-import { Duration, parseHumanDurationString } from "./datatypes/datetime";
-import { checkValidEdgeDBDuration } from "./codecs/datetime";
-import { InterfaceError } from "./errors";
-import { decodeB64, utf8Decoder, utf8Encoder } from "./primitives/buffer";
-import { crcHqx } from "./primitives/crcHqx";
+} from "./credentials.js";
+import { getEnv } from "./adapter.shared.node.js";
+import { Duration, parseHumanDurationString } from "./datatypes/datetime.js";
+import { checkValidEdgeDBDuration } from "./codecs/datetime.js";
+import { InterfaceError } from "./errors/index.js";
+import { decodeB64, utf8Decoder, utf8Encoder } from "./primitives/buffer.js";
+import { crcHqx } from "./primitives/crcHqx.js";
 
 const DOMAIN_NAME_MAX_LEN = 63;
 

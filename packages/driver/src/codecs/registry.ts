@@ -16,25 +16,29 @@
  * limitations under the License.
  */
 
-import { ReadBuffer, utf8Decoder } from "../primitives/buffer";
-import LRU from "../primitives/lru";
-import { type ICodec, type uuid, ScalarCodec } from "./ifaces";
-import { NULL_CODEC, SCALAR_CODECS } from "./codecs";
-import { NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES } from "./consts";
-import { EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec } from "./tuple";
-import * as numbers from "./numbers";
-import * as datecodecs from "./datetime";
-import { JSONStringCodec } from "./json";
-import { ArrayCodec } from "./array";
-import { NamedTupleCodec } from "./namedtuple";
-import { EnumCodec } from "./enum";
-import { ObjectCodec } from "./object";
-import { SetCodec } from "./set";
-import { MultiRangeCodec, RangeCodec } from "./range";
-import type { ProtocolVersion } from "../ifaces";
-import { versionGreaterThanOrEqual } from "../utils";
-import { SparseObjectCodec } from "./sparseObject";
-import { ProtocolError, InternalClientError } from "../errors";
+import { ReadBuffer, utf8Decoder } from "../primitives/buffer.js";
+import LRU from "../primitives/lru.js";
+import { type ICodec, type uuid, ScalarCodec } from "./ifaces.js";
+import { NULL_CODEC, SCALAR_CODECS } from "./codecs.js";
+import { NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES } from "./consts.js";
+import {
+  EMPTY_TUPLE_CODEC,
+  EMPTY_TUPLE_CODEC_ID,
+  TupleCodec,
+} from "./tuple.js";
+import * as numbers from "./numbers.js";
+import * as datecodecs from "./datetime.js";
+import { JSONStringCodec } from "./json.js";
+import { ArrayCodec } from "./array.js";
+import { NamedTupleCodec } from "./namedtuple.js";
+import { EnumCodec } from "./enum.js";
+import { ObjectCodec } from "./object.js";
+import { SetCodec } from "./set.js";
+import { MultiRangeCodec, RangeCodec } from "./range.js";
+import type { ProtocolVersion } from "../ifaces.js";
+import { versionGreaterThanOrEqual } from "../utils.js";
+import { SparseObjectCodec } from "./sparseObject.js";
+import { ProtocolError, InternalClientError } from "../errors/index.js";
 
 const CODECS_CACHE_SIZE = 1000;
 const CODECS_BUILD_CACHE_SIZE = 200;

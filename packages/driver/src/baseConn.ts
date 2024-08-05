@@ -16,34 +16,38 @@
  * limitations under the License.
  */
 
-import { INVALID_CODEC, NullCodec, NULL_CODEC } from "./codecs/codecs";
-import type { ICodec, uuid } from "./codecs/ifaces";
-import { NamedTupleCodec } from "./codecs/namedtuple";
-import { ObjectCodec } from "./codecs/object";
-import type { CodecsRegistry } from "./codecs/registry";
-import { EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec } from "./codecs/tuple";
-import { versionGreaterThanOrEqual } from "./utils";
-import * as errors from "./errors";
-import { resolveErrorCode } from "./errors/resolve";
+import { INVALID_CODEC, NullCodec, NULL_CODEC } from "./codecs/codecs.js";
+import type { ICodec, uuid } from "./codecs/ifaces.js";
+import { NamedTupleCodec } from "./codecs/namedtuple.js";
+import { ObjectCodec } from "./codecs/object.js";
+import type { CodecsRegistry } from "./codecs/registry.js";
+import {
+  EmptyTupleCodec,
+  EMPTY_TUPLE_CODEC,
+  TupleCodec,
+} from "./codecs/tuple.js";
+import { versionGreaterThanOrEqual } from "./utils.js";
+import * as errors from "./errors/index.js";
+import { resolveErrorCode } from "./errors/resolve.js";
 import type {
   QueryOptions,
   ProtocolVersion,
   QueryArgs,
   ServerSettings,
-} from "./ifaces";
-import { Cardinality, LegacyHeaderCodes, OutputFormat } from "./ifaces";
+} from "./ifaces.js";
+import { Cardinality, LegacyHeaderCodes, OutputFormat } from "./ifaces.js";
 import {
   ReadBuffer,
   ReadMessageBuffer,
   utf8Decoder,
   WriteBuffer,
   WriteMessageBuffer,
-} from "./primitives/buffer";
-import * as chars from "./primitives/chars";
-import Event from "./primitives/event";
-import LRU from "./primitives/lru";
-import type { SerializedSessionState } from "./options";
-import { Session } from "./options";
+} from "./primitives/buffer.js";
+import * as chars from "./primitives/chars.js";
+import Event from "./primitives/event.js";
+import LRU from "./primitives/lru.js";
+import type { SerializedSessionState } from "./options.js";
+import { Session } from "./options.js";
 
 export const PROTO_VER: ProtocolVersion = [1, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];

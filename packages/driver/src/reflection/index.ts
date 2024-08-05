@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-export * from "./enums";
-export * from "./util";
-export * from "./typeutil";
-export * from "./util";
-export * from "./strictMap";
-export * from "./reservedKeywords";
+export * from "./enums.js";
+export * from "./util.js";
+export * from "./typeutil.js";
+export * from "./util.js";
+export * from "./strictMap.js";
+export * from "./reservedKeywords.js";
 // export * from "./cardinality";
 // export * from "./hydrate";
 // export * from "../syntax/typesystem";
@@ -29,5 +29,5 @@ export * from "./reservedKeywords";
 // export * from "../syntax/literal";
 // export * from "../syntax/funcops";
 // export * from "./syntax";
-export * as introspect from "./queries";
-export * from "./analyzeQuery";
+export * as introspect from "./queries.js";
+export * from "./analyzeQuery.js";

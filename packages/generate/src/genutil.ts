@@ -3,11 +3,11 @@ import type {
   CodeFragment,
   DirBuilder,
   IdentRef,
-} from "./builders";
-import type * as introspect from "edgedb/dist/reflection/queries/types";
-import { util } from "edgedb/dist/reflection/index";
+} from "./builders.js";
+import type * as introspect from "edgedb/dist/reflection/queries/types.js";
+import { util } from "edgedb/dist/reflection/index.js";
 
-export { OperatorKind, StrictMapSet } from "edgedb/dist/reflection/index";
+export { OperatorKind, StrictMapSet } from "edgedb/dist/reflection/index.js";
 export { $ } from "edgedb";
 import type { $ } from "edgedb";
 import { adapter } from "edgedb";

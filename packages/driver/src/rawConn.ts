@@ -16,22 +16,22 @@
  * limitations under the License.
  */
 
-import { net, tls } from "./adapter.node";
-import { PROTO_VER, PROTO_VER_MIN, BaseRawConnection } from "./baseConn";
-import type { CodecsRegistry } from "./codecs/registry";
+import { net, tls } from "./adapter.node.js";
+import { PROTO_VER, PROTO_VER_MIN, BaseRawConnection } from "./baseConn.js";
+import type { CodecsRegistry } from "./codecs/registry.js";
 import type {
   NormalizedConnectConfig,
   ResolvedConnectConfig,
-} from "./conUtils";
-import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
-import type { ClientHandshakeOptions, ProtocolVersion } from "./ifaces";
-import { WriteMessageBuffer } from "./primitives/buffer";
-import Event from "./primitives/event";
-import type char from "./primitives/chars";
-import * as chars from "./primitives/chars";
-import { getSCRAM } from "./scram";
-import * as errors from "./errors";
-import cryptoUtils from "./adapter.crypto.node";
+} from "./conUtils.js";
+import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils.js";
+import type { ClientHandshakeOptions, ProtocolVersion } from "./ifaces.js";
+import { WriteMessageBuffer } from "./primitives/buffer.js";
+import Event from "./primitives/event.js";
+import type char from "./primitives/chars.js";
+import * as chars from "./primitives/chars.js";
+import { getSCRAM } from "./scram.js";
+import * as errors from "./errors/index.js";
+import cryptoUtils from "./adapter.crypto.node.js";
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,

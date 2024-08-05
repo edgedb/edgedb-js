@@ -5,10 +5,10 @@ import type {
   ScalarType,
   ObjectType,
   scalarTypeWithConstructor,
-} from "../typesystem";
+} from "../typesystem.js";
 
-import type { $expr_PathNode } from "../path";
-import type { Cardinality } from "edgedb/dist/reflection/index";
+import type { $expr_PathNode } from "../path.js";
+import type { Cardinality } from "edgedb/dist/reflection/index.js";
 declare function assert_single(input: TypeSet<BaseType>): any;
 
 declare const number: scalarTypeWithConstructor<

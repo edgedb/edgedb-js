@@ -5,7 +5,7 @@ import {
   InvalidDataError,
 } from "@edgedb/auth-core";
 import type { Client } from "edgedb";
-import { cookies } from "next/headers";
+import { cookies } from "next/headers.js";
 import { cache } from "react";
 
 import {
@@ -15,7 +15,7 @@ import {
   type BuiltinProviderNames,
   type CreateAuthRouteHandlers,
   _extractParams,
-} from "../shared";
+} from "../shared.js";
 
 export * from "@edgedb/auth-core/errors";
 export {

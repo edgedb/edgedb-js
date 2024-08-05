@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { uuidToBuffer } from "../primitives/buffer";
-import { type ICodec, ScalarCodec } from "./ifaces";
-import { InvalidArgumentError } from "../errors";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer.js";
+import { uuidToBuffer } from "../primitives/buffer.js";
+import { type ICodec, ScalarCodec } from "./ifaces.js";
+import { InvalidArgumentError } from "../errors/index.js";
 
 function UUIDBufferFromString(uuid: string): Uint8Array {
   let uuidClean = uuid;

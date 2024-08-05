@@ -1,22 +1,22 @@
-import type { GeneratorParams } from "../genutil";
-import { frag, getRef, quote, splitName } from "../genutil";
-import type { CodeBuilder, CodeFragment, DirBuilder } from "../builders";
-import { all, CodeBuffer, dts, r, t, ts } from "../builders";
+import type { GeneratorParams } from "../genutil.js";
+import { frag, getRef, quote, splitName } from "../genutil.js";
+import type { CodeBuilder, CodeFragment, DirBuilder } from "../builders.js";
+import { all, CodeBuffer, dts, r, t, ts } from "../builders.js";
 
-import { getStringRepresentation } from "./generateObjectTypes";
-import type { $ } from "../genutil";
+import { getStringRepresentation } from "./generateObjectTypes.js";
+import type { $ } from "../genutil.js";
 import type {
   GroupedParams,
   AnytypeDef,
   FuncopDefOverload,
-} from "../funcoputil";
+} from "../funcoputil.js";
 import {
   getTypesSpecificity,
   sortFuncopOverloads,
   getImplicitCastableRootTypes,
   expandFuncopAnytypeOverloads,
   findPathOfAnytype,
-} from "../funcoputil";
+} from "../funcoputil.js";
 
 export const generateFunctionTypes = ({
   dir,

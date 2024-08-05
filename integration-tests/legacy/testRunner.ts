@@ -9,7 +9,7 @@ import {
   startServer,
   runCommand,
   configToEnv,
-} from "../../packages/driver/test/testUtil";
+} from "../../packages/driver/test/testUtil.js";
 
 (async function main() {
   console.log("\nStarting EdgeDB test cluster...");

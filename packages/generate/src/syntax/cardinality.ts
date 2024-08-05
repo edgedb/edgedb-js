@@ -1,5 +1,5 @@
-import { Cardinality } from "edgedb/dist/reflection/index";
-import type { TypeSet } from "./typesystem";
+import { Cardinality } from "edgedb/dist/reflection/index.js";
+import type { TypeSet } from "./typesystem.js";
 
 // Computing cardinality of path
 // From base set cadinality and pointer cardinality

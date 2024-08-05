@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { type ICodec, ScalarCodec } from "./ifaces";
-import { InvalidArgumentError, ProtocolError } from "../errors";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer.js";
+import { type ICodec, ScalarCodec } from "./ifaces.js";
+import { InvalidArgumentError, ProtocolError } from "../errors/index.js";
 
 const NUMERIC_POS = 0x0000;
 const NUMERIC_NEG = 0x4000;

@@ -177,7 +177,9 @@ export async function run({
             ? rule.replace(match, sourcePath)
             : rule.replace,
         );
-        if (
+        if (path.endsWith(".js")) {
+          path.replace(".js", ".ts");
+        } else if (
           !path.endsWith(".ts") &&
           !path.startsWith("node:") &&
           !path.startsWith("npm:")
@@ -197,7 +199,14 @@ export async function run({
 
     if (!sourceFilePathMap.has(resolvedPath)) {
       // If importPath doesn't exist, first try appending '.ts'
-      resolvedPath = join(dirname(sourcePath), importPath + ".ts");
+      if (importPath.endsWith(".js")) {
+        resolvedPath = join(
+          dirname(sourcePath),
+          importPath.slice(0, -3) + ".ts",
+        );
+      } else {
+        resolvedPath = join(dirname(sourcePath), importPath + ".ts");
+      }
 
       if (!sourceFilePathMap.has(resolvedPath)) {
         // If that path doesn't exist, next try appending '/index.ts'

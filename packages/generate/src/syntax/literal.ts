@@ -3,7 +3,7 @@ import type {
   BaseType,
   BaseTypeToTsType,
   ScalarType,
-} from "./typesystem";
+} from "./typesystem.js";
 
 // import {
 //   Cardinality,
@@ -15,10 +15,10 @@ import type {
 // } from "edgedb/dist/reflection/index";
 
 // import type {$expr_Literal} from "./literal";
-import { $expressionify } from "./path";
-import { spec } from "./__spec__";
-import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
-import { makeType } from "./hydrate";
+import { $expressionify } from "./path.js";
+import { spec } from "./__spec__.js";
+import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index.js";
+import { makeType } from "./hydrate.js";
 
 export type $expr_Literal<Type extends BaseType = BaseType> = Expression<{
   __element__: Type;

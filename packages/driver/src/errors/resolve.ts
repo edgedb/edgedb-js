@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import * as errors from "./index";
-import type { ErrorType } from "./base";
-import { errorMapping } from "./map";
+import * as errors from "./index.js";
+import type { ErrorType } from "./base.js";
+import { errorMapping } from "./map.js";
 
 export function resolveErrorCode(code: number): ErrorType {
   let result: ErrorType | undefined;

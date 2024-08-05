@@ -1,6 +1,6 @@
-import { dts, r, t } from "../builders";
-import type { GeneratorParams } from "../genutil";
-import * as genutil from "../genutil";
+import { dts, r, t } from "../builders.js";
+import type { GeneratorParams } from "../genutil.js";
+import * as genutil from "../genutil.js";
 
 export function generateIndex(params: GeneratorParams) {
   /////////////////////////

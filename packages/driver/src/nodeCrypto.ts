@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import type { CryptoUtils } from "./utils";
+import type { CryptoUtils } from "./utils.js";
 
 function makeKey(keyBytes: Uint8Array): Promise<Uint8Array> {
   return Promise.resolve(keyBytes);

@@ -22,7 +22,7 @@ import {
   ord2ymd,
   daysBeforeMonth,
   isLeapYear,
-} from "./dateutil";
+} from "./dateutil.js";
 
 export const DATE_PRIVATE = Symbol.for("edgedb.datetime");
 

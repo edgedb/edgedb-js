@@ -1,6 +1,6 @@
-import type { Executor } from "../../ifaces";
-import type { typeutil } from "../typeutil";
-import { typeMapping } from "./types";
+import type { Executor } from "../../ifaces.js";
+import type { typeutil } from "../typeutil.js";
+import { typeMapping } from "./types.js";
 
 type Cast = {
   id: string;

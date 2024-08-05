@@ -5,3 +5,5 @@ export const syntax: { [k: string]: { path: string; content: string }[] } = {
   mts: [],
   ts: [],
 };
+
+export default syntax;

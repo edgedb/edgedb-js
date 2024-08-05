@@ -1,10 +1,10 @@
-import { BaseClientPool, Client, type ConnectOptions } from "./baseClient";
-import { parseConnectArguments } from "./conUtils.server";
-import cryptoUtils from "./adapter.crypto.node";
-import { Options } from "./options";
-import { RawConnection } from "./rawConn";
-import { FetchConnection } from "./fetchConn";
-import { getHTTPSCRAMAuth } from "./httpScram";
+import { BaseClientPool, Client, type ConnectOptions } from "./baseClient.js";
+import { parseConnectArguments } from "./conUtils.server.js";
+import cryptoUtils from "./adapter.crypto.node.js";
+import { Options } from "./options.js";
+import { RawConnection } from "./rawConn.js";
+import { FetchConnection } from "./fetchConn.js";
+import { getHTTPSCRAMAuth } from "./httpScram.js";
 
 class ClientPool extends BaseClientPool {
   isStateless = false;

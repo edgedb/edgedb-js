@@ -1,4 +1,4 @@
-import type { Cardinality } from "edgedb/dist/reflection/index";
+import type { Cardinality } from "edgedb/dist/reflection/index.js";
 import type {
   ArrayType,
   BaseType,
@@ -16,10 +16,10 @@ import type {
   TypeSet,
   RangeType,
   MultiRangeType,
-} from "./typesystem";
-import type { cardutil } from "./cardinality";
+} from "./typesystem.js";
+import type { cardutil } from "./cardinality.js";
 
-import type { scalarCastableFrom, scalarAssignableBy } from "./castMaps";
+import type { scalarCastableFrom, scalarAssignableBy } from "./castMaps.js";
 
 export type anonymizeObject<T extends ObjectType> = ObjectType<
   string,

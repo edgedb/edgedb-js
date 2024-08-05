@@ -2,9 +2,9 @@ import {
   type ServerUtils,
   type TlsSecurity,
   validTlsSecurityValues,
-} from "./conUtils";
+} from "./conUtils.js";
 
-import { InterfaceError } from "./errors";
+import { InterfaceError } from "./errors/index.js";
 
 export interface Credentials {
   host?: string;

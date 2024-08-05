@@ -1,18 +1,18 @@
 import { $, adapter, type Client } from "edgedb";
-import { type CommandOptions, isTTY, promptBoolean } from "./commandutil";
-import { headerComment } from "./genutil";
-import { DirBuilder } from "./builders";
-import { syntax } from "./FILES";
+import { type CommandOptions, isTTY, promptBoolean } from "./commandutil.js";
+import { headerComment } from "./genutil.js";
+import { DirBuilder } from "./builders.js";
+import { syntax } from "./FILES.js";
 
-import { generateCastMaps } from "./edgeql-js/generateCastMaps";
-import { generateFunctionTypes } from "./edgeql-js/generateFunctionTypes";
-import { generateGlobals } from "./edgeql-js/generateGlobals";
-import { generateIndex } from "./edgeql-js/generateIndex";
-import { generateObjectTypes } from "./edgeql-js/generateObjectTypes";
-import { generateOperators } from "./edgeql-js/generateOperatorTypes";
-import { generateRuntimeSpec } from "./edgeql-js/generateRuntimeSpec";
-import { generateScalars } from "./edgeql-js/generateScalars";
-import { generateSetImpl } from "./edgeql-js/generateSetImpl";
+import { generateCastMaps } from "./edgeql-js/generateCastMaps.js";
+import { generateFunctionTypes } from "./edgeql-js/generateFunctionTypes.js";
+import { generateGlobals } from "./edgeql-js/generateGlobals.js";
+import { generateIndex } from "./edgeql-js/generateIndex.js";
+import { generateObjectTypes } from "./edgeql-js/generateObjectTypes.js";
+import { generateOperators } from "./edgeql-js/generateOperatorTypes.js";
+import { generateRuntimeSpec } from "./edgeql-js/generateRuntimeSpec.js";
+import { generateScalars } from "./edgeql-js/generateScalars.js";
+import { generateSetImpl } from "./edgeql-js/generateSetImpl.js";
 
 const { path, fs, readFileUtf8, exists, walk } = adapter;
 

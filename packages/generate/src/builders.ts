@@ -1,7 +1,7 @@
 import { adapter } from "edgedb";
-import { StrictMap } from "edgedb/dist/reflection/strictMap";
-import * as genutil from "./genutil";
-import { importExportHelpers } from "./importExportHelpers";
+import { StrictMap } from "edgedb/dist/reflection/strictMap.js";
+import * as genutil from "./genutil.js";
+import { importExportHelpers } from "./importExportHelpers.js";
 
 const { fs, path, exists, readFileUtf8 } = adapter;
 type Mode = "ts" | "js" | "dts";

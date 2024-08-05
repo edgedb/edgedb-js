@@ -1,16 +1,16 @@
-import { ArrayCodec } from "../codecs/array";
-import { EnumCodec } from "../codecs/enum";
-import type { ICodec } from "../codecs/ifaces";
-import { ScalarCodec } from "../codecs/ifaces";
-import { NamedTupleCodec } from "../codecs/namedtuple";
-import { ObjectCodec } from "../codecs/object";
-import { MultiRangeCodec, RangeCodec } from "../codecs/range";
-import { NullCodec } from "../codecs/codecs";
-import { SetCodec } from "../codecs/set";
-import { TupleCodec } from "../codecs/tuple";
-import type { Client } from "../baseClient";
-import { Cardinality } from "./enums";
-import { util } from "./util";
+import { ArrayCodec } from "../codecs/array.js";
+import { EnumCodec } from "../codecs/enum.js";
+import type { ICodec } from "../codecs/ifaces.js";
+import { ScalarCodec } from "../codecs/ifaces.js";
+import { NamedTupleCodec } from "../codecs/namedtuple.js";
+import { ObjectCodec } from "../codecs/object.js";
+import { MultiRangeCodec, RangeCodec } from "../codecs/range.js";
+import { NullCodec } from "../codecs/codecs.js";
+import { SetCodec } from "../codecs/set.js";
+import { TupleCodec } from "../codecs/tuple.js";
+import type { Client } from "../baseClient.js";
+import { Cardinality } from "./enums.js";
+import { util } from "./util.js";
 
 type QueryType = {
   args: string;

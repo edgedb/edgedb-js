@@ -1,15 +1,15 @@
 import type { LocalDate, LocalDateTime, Duration } from "edgedb";
 import { Range } from "edgedb";
-import { TypeKind, ExpressionKind } from "edgedb/dist/reflection/index";
+import { TypeKind, ExpressionKind } from "edgedb/dist/reflection/index.js";
 
-import type { cardutil } from "./cardinality";
+import type { cardutil } from "./cardinality.js";
 import type {
   RangeType,
   getPrimitiveBaseType,
   TypeSet,
   BaseType,
-} from "./typesystem";
-import type { $expr_Literal } from "./literal";
+} from "./typesystem.js";
+import type { $expr_Literal } from "./literal.js";
 
 import type {
   $number,
@@ -17,14 +17,14 @@ import type {
   $datetime,
   $duration,
   $bool,
-} from "./modules/std";
-import type { $local_date, $local_datetime } from "./modules/cal";
-import type { literalToScalarType, orScalarLiteral } from "./castMaps";
-import { literalToTypeSet } from "./castMaps";
-import { spec } from "./__spec__";
-import { literal, $nameMapping } from "./literal";
-import { type $expr_Function, $resolveOverload } from "./funcops";
-import { $expressionify } from "./path";
+} from "./modules/std.js";
+import type { $local_date, $local_datetime } from "./modules/cal.js";
+import type { literalToScalarType, orScalarLiteral } from "./castMaps.js";
+import { literalToTypeSet } from "./castMaps.js";
+import { spec } from "./__spec__.js";
+import { literal, $nameMapping } from "./literal.js";
+import { type $expr_Function, $resolveOverload } from "./funcops.js";
+import { $expressionify } from "./path.js";
 
 type $anypoint =
   | $number

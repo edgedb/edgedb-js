@@ -1,7 +1,7 @@
-import { dts, r, t, ts } from "../builders";
-import type { GeneratorParams } from "../genutil";
-import { getImplicitCastableRootTypes } from "../funcoputil";
-import { getStringRepresentation } from "./generateObjectTypes";
+import { dts, r, t, ts } from "../builders.js";
+import type { GeneratorParams } from "../genutil.js";
+import { getImplicitCastableRootTypes } from "../funcoputil.js";
+import { getStringRepresentation } from "./generateObjectTypes.js";
 
 export const generateSetImpl = ({ dir, types, casts }: GeneratorParams) => {
   const code = dir.getPath("setImpl");

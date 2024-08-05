@@ -16,25 +16,25 @@
  * limitations under the License.
  */
 
-import { createClient } from "./nodeClient";
+import { createClient } from "./nodeClient.js";
 export default createClient;
 
-export { createClient, createHttpClient } from "./nodeClient";
+export { createClient, createHttpClient } from "./nodeClient.js";
 
-import * as adapter from "./adapter.node";
+import * as adapter from "./adapter.node.js";
 export { adapter };
 
-export { RawConnection as _RawConnection } from "./rawConn";
-export type { Executor } from "./ifaces";
-export type { Client, ConnectOptions } from "./baseClient";
+export { RawConnection as _RawConnection } from "./rawConn.js";
+export type { Executor } from "./ifaces.js";
+export type { Client, ConnectOptions } from "./baseClient.js";
 export {
   IsolationLevel,
   RetryCondition,
   RetryOptions,
   Session,
-} from "./options";
-export { defaultBackoff } from "./options";
-export type { BackoffFunction } from "./options";
+} from "./options.js";
+export { defaultBackoff } from "./options.js";
+export type { BackoffFunction } from "./options.js";
 
-export * from "./index.shared";
-export * as $ from "./reflection";
+export * from "./index.shared.js";
+export * as $ from "./reflection/index.js";

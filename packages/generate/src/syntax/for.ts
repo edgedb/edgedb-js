@@ -1,7 +1,7 @@
-import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
-import { cardutil } from "./cardinality";
-import type { Expression, BaseType, BaseTypeSet } from "./typesystem";
-import { $expressionify } from "./path";
+import { Cardinality, ExpressionKind } from "edgedb/dist/reflection/index.js";
+import { cardutil } from "./cardinality.js";
+import type { Expression, BaseType, BaseTypeSet } from "./typesystem.js";
+import { $expressionify } from "./path.js";
 
 export type $expr_For<
   El extends BaseType = BaseType,

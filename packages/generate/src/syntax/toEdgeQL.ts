@@ -13,7 +13,7 @@ import {
   OperatorKind,
   TypeKind,
   util,
-} from "edgedb/dist/reflection/index";
+} from "edgedb/dist/reflection/index.js";
 import {
   type $expr_Array,
   type $expr_NamedTuple,
@@ -29,31 +29,31 @@ import {
   type ObjectTypeSet,
   type RangeType,
   type TypeSet,
-} from "./typesystem";
-import type { $expr_Literal } from "./literal";
+} from "./typesystem.js";
+import type { $expr_Literal } from "./literal.js";
 import type {
   $expr_PathLeaf,
   $expr_PathNode,
   $expr_TypeIntersection,
-} from "./path";
-import { reservedKeywords } from "edgedb/dist/reflection/index";
-import type { $expr_Cast } from "./cast";
-import type { $expr_Detached } from "./detached";
-import type { $expr_For, $expr_ForVar } from "./for";
-import type { $expr_Function, $expr_Operator } from "./funcops";
-import type { $expr_Insert, $expr_InsertUnlessConflict } from "./insert";
-import type { $expr_Param, $expr_WithParams } from "./params";
+} from "./path.js";
+import { reservedKeywords } from "edgedb/dist/reflection/index.js";
+import type { $expr_Cast } from "./cast.js";
+import type { $expr_Detached } from "./detached.js";
+import type { $expr_For, $expr_ForVar } from "./for.js";
+import type { $expr_Function, $expr_Operator } from "./funcops.js";
+import type { $expr_Insert, $expr_InsertUnlessConflict } from "./insert.js";
+import type { $expr_Param, $expr_WithParams } from "./params.js";
 import type {
   $expr_Delete,
   $expr_Select,
   LimitExpression,
   OffsetExpression,
-} from "./select";
-import type { $expr_Set } from "./set";
-import type { $expr_Update } from "./update";
-import type { $expr_Alias, $expr_With } from "./with";
-import type { $expr_Group, GroupingSet } from "./group";
-import type { $expr_Global } from "./globals";
+} from "./select.js";
+import type { $expr_Set } from "./set.js";
+import type { $expr_Update } from "./update.js";
+import type { $expr_Alias, $expr_With } from "./with.js";
+import type { $expr_Group, GroupingSet } from "./group.js";
+import type { $expr_Global } from "./globals.js";
 
 export type SomeExpression =
   | $expr_PathNode

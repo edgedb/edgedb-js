@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-import type { ICodec, uuid, CodecKind } from "./ifaces";
-import { Codec } from "./ifaces";
-import { WriteBuffer, ReadBuffer } from "../primitives/buffer";
-import { MultiRange, Range } from "../datatypes/range";
-import { InvalidArgumentError, ProtocolError } from "../errors";
+import type { ICodec, uuid, CodecKind } from "./ifaces.js";
+import { Codec } from "./ifaces.js";
+import { WriteBuffer, ReadBuffer } from "../primitives/buffer.js";
+import { MultiRange, Range } from "../datatypes/range.js";
+import { InvalidArgumentError, ProtocolError } from "../errors/index.js";
 
 enum RangeFlags {
   EMPTY = 1 << 0,

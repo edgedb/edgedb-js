@@ -1,4 +1,4 @@
-import type { CryptoUtils } from "./utils";
+import type { CryptoUtils } from "./utils.js";
 
 async function makeKey(key: Uint8Array): Promise<CryptoKey> {
   return await crypto.subtle.importKey(

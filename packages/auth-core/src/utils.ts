@@ -1,4 +1,4 @@
-import * as errors from "./errors";
+import * as errors from "./errors.js";
 
 export async function requestGET<ResponseT>(
   href: string,

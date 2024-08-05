@@ -1,11 +1,14 @@
-import { type Cardinality, ExpressionKind } from "edgedb/dist/reflection/index";
-import type { BaseType, Expression, TypeSet } from "./typesystem";
-import type { $expr_Select } from "./select";
-import type { $expr_For } from "./for";
-import type { $expr_Insert } from "./insert";
-import type { $expr_Update } from "./update";
-import type { $expr_Group } from "./group";
-import { $expressionify } from "./path";
+import {
+  type Cardinality,
+  ExpressionKind,
+} from "edgedb/dist/reflection/index.js";
+import type { BaseType, Expression, TypeSet } from "./typesystem.js";
+import type { $expr_Select } from "./select.js";
+import type { $expr_For } from "./for.js";
+import type { $expr_Insert } from "./insert.js";
+import type { $expr_Update } from "./update.js";
+import type { $expr_Group } from "./group.js";
+import { $expressionify } from "./path.js";
 
 export type $expr_Alias<
   El extends BaseType = BaseType,

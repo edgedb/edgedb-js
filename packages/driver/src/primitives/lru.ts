@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { InternalClientError } from "../errors";
+import { InternalClientError } from "../errors/index.js";
 
 class Node<K, V> {
   public key: K;

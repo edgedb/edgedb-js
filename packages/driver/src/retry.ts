@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-import type { BaseRawConnection } from "./baseConn";
-import type { CodecsRegistry } from "./codecs/registry";
-import type { NormalizedConnectConfig } from "./conUtils";
-import * as errors from "./errors";
-import { sleep } from "./utils";
+import type { BaseRawConnection } from "./baseConn.js";
+import type { CodecsRegistry } from "./codecs/registry.js";
+import type { NormalizedConnectConfig } from "./conUtils.js";
+import * as errors from "./errors/index.js";
+import { sleep } from "./utils.js";
 
 export type ConnectWithTimeout = (
   config: NormalizedConnectConfig,

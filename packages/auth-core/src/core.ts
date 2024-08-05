@@ -1,23 +1,23 @@
 import { jwtDecode } from "jwt-decode";
 import * as edgedb from "edgedb";
-import { type ResolvedConnectConfig } from "edgedb/dist/conUtils";
+import { type ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
 
-import * as pkce from "./pkce";
+import * as pkce from "./pkce.js";
 import {
   type BuiltinOAuthProviderNames,
   emailPasswordProviderName,
   webAuthnProviderName,
   magicLinkProviderName,
-} from "./consts";
-import { requestGET, requestPOST } from "./utils";
+} from "./consts.js";
+import { requestGET, requestPOST } from "./utils.js";
 import type {
   RegistrationResponseJSON,
   AuthenticationResponseJSON,
   TokenData,
   RegistrationResponse,
   SignupResponse,
-} from "./types";
-import * as errors from "./errors";
+} from "./types.js";
+import * as errors from "./errors.js";
 
 export class Auth {
   /** @internal */

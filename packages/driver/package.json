@@ -7,6 +7,7 @@
   "engines": {
     "node": ">= 18.0.0"
   },
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/edgedb/edgedb-js.git"
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@js-temporal/polyfill": "0.4.3",
+    "@repo/tsconfig": "*",
     "@types/jest": "^29.5.12",
     "@types/semver": "^7.5.8",
     "@types/shell-quote": "^1.7.5",
@@ -35,10 +37,10 @@
     "globby": "^14.0.1",
     "jest": "29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "jest-ts-webcompat-resolver": "^1.0.0",
     "ts-jest": "29.1.4",
     "tsx": "^4.11.0",
-    "typescript": "^5.5.2",
-    "@repo/tsconfig": "*"
+    "typescript": "^5.5.2"
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
@@ -47,7 +49,7 @@
     "build:cjs": "tsc --project tsconfig.json",
     "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
     "lint:fix": "tslint 'packages/*/src/**/*.ts'",
-    "test": "NODE_OPTIONS='--experimental-global-webcrypto' npx jest --detectOpenHandles",
+    "test": "NODE_OPTIONS='--experimental-global-webcrypto --experimental-vm-modules' npx jest --detectOpenHandles",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node genErrors.mjs",
     "watch": "nodemon -e js,ts,tsx --ignore dist -x ",
@@ -58,6 +60,8 @@
     "env-paths": "^3.0.0",
     "semver": "^7.6.2",
     "shell-quote": "^1.8.1",
+    "ts-jest-resolver": "^2.0.1",
+    "ts-node": "^10.9.2",
     "which": "^4.0.0"
   }
 }

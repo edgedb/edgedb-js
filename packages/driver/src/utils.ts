@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import type { ResolvedConnectConfigReadonly } from "./conUtils";
-import type { HttpSCRAMAuth } from "./httpScram";
-import type { ProtocolVersion } from "./ifaces";
+import type { ResolvedConnectConfigReadonly } from "./conUtils.js";
+import type { HttpSCRAMAuth } from "./httpScram.js";
+import type { ProtocolVersion } from "./ifaces.js";
 
 const idCounter: { [key: string]: number } = {};
 

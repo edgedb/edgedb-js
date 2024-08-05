@@ -43,10 +43,17 @@ await run({
       },
       {
         match: /^\.\.\/src\/.+/,
-        replace: (match) =>
-          `${match.replace(/^\.\.\/src\//, "../_src/")}${
-            match.endsWith(".ts") ? "" : ".ts"
-          }`,
+        replace: (match) => {
+          let newPath = match.replace(/^\.\.\/\.\.\/src\//, "../_src/");
+
+          if (newPath.endsWith(".js")) {
+            newPath = newPath.replace(/\.js$/, ".ts");
+          } else if (!newPath.endsWith(".ts")) {
+            newPath += ".ts";
+          }
+
+          return newPath;
+        },
       },
       {
         match: /^fast-check$/,

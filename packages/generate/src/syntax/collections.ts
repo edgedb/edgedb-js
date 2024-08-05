@@ -3,8 +3,8 @@ import {
   ExpressionKind,
   TypeKind,
   type typeutil,
-} from "edgedb/dist/reflection/index";
-import { cardutil } from "./cardinality";
+} from "edgedb/dist/reflection/index.js";
+import { cardutil } from "./cardinality.js";
 import type {
   $expr_Array,
   $expr_NamedTuple,
@@ -22,17 +22,17 @@ import type {
   PropertyDesc,
   TupleType,
   TypeSet,
-} from "./typesystem";
+} from "./typesystem.js";
 
-import { $expressionify, type ExpressionRoot } from "./path";
-import type { getCardsFromExprs } from "./set";
+import { $expressionify, type ExpressionRoot } from "./path.js";
+import type { getCardsFromExprs } from "./set.js";
 import {
   type literalToScalarType,
   literalToTypeSet,
   type mapLiteralToTypeSet,
   type orScalarLiteral,
   type scalarLiterals,
-} from "./castMaps";
+} from "./castMaps.js";
 
 const indexSliceRegx = /^(-?\d+)(?:(:)(-?\d+)?)?|:(-?\d+)$/;
 

@@ -1,7 +1,7 @@
 import { $, adapter, type Client, type Executor } from "edgedb";
-import { type CommandOptions } from "./commandutil";
-import { headerComment } from "./genutil";
-import type { Target } from "./genutil";
+import { type CommandOptions } from "./commandutil.js";
+import { headerComment } from "./genutil.js";
+import type { Target } from "./genutil.js";
 
 // generate per-file queries
 // generate queries in a single file

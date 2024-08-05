@@ -1,14 +1,14 @@
-import { CodeBuffer, dts, r, t, ts, all } from "../builders";
-import type { GeneratorParams } from "../genutil";
+import { CodeBuffer, dts, r, t, ts, all } from "../builders.js";
+import type { GeneratorParams } from "../genutil.js";
 import {
   getRef,
   joinFrags,
   literalToScalarMapping,
   quote,
   scalarToLiteralMapping,
-} from "../genutil";
-import { $ } from "../genutil";
-import { getStringRepresentation } from "./generateObjectTypes";
+} from "../genutil.js";
+import { $ } from "../genutil.js";
+import { getStringRepresentation } from "./generateObjectTypes.js";
 
 const getRuntimeRef = (name: string) => getRef(name, { prefix: "" });
 

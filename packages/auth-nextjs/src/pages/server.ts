@@ -6,7 +6,7 @@ import {
   NextAuth,
   type NextAuthOptions,
   NextAuthSession,
-} from "../shared";
+} from "../shared.js";
 
 export * from "@edgedb/auth-core/errors";
 export {

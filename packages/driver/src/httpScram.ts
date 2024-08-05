@@ -1,12 +1,12 @@
-import { ProtocolError } from "./errors";
+import { ProtocolError } from "./errors/index.js";
 import {
   decodeB64,
   encodeB64,
   utf8Decoder,
   utf8Encoder,
-} from "./primitives/buffer";
-import { getSCRAM } from "./scram";
-import type { CryptoUtils } from "./utils";
+} from "./primitives/buffer.js";
+import { getSCRAM } from "./scram.js";
+import type { CryptoUtils } from "./utils.js";
 
 const AUTH_ENDPOINT = "/auth/token";
 

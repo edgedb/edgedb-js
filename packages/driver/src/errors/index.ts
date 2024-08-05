@@ -18,10 +18,10 @@
  * limitations under the License.
  */
 
-import { EdgeDBError } from "./base";
-import * as tags from "./tags";
-export { EdgeDBError } from "./base";
-export * from "./tags";
+import { EdgeDBError } from "./base.js";
+import * as tags from "./tags.js";
+export { EdgeDBError } from "./base.js";
+export * from "./tags.js";
 
 export class InternalServerError extends EdgeDBError {
   get code(): number {

@@ -25,18 +25,18 @@ export {
   Duration,
   RelativeDuration,
   DateDuration,
-} from "./datatypes/datetime";
-export { ConfigMemory } from "./datatypes/memory";
-export { Range, MultiRange } from "./datatypes/range";
+} from "./datatypes/datetime.js";
+export { ConfigMemory } from "./datatypes/memory.js";
+export { Range, MultiRange } from "./datatypes/range.js";
 
-export type { Executor } from "./ifaces";
+export type { Executor } from "./ifaces.js";
 
-export * from "./errors";
+export * from "./errors/index.js";
 
 /* Private APIs */
-import type * as codecs from "./codecs/ifaces";
-import * as reg from "./codecs/registry";
-import * as buf from "./primitives/buffer";
+import type * as codecs from "./codecs/ifaces.js";
+import * as reg from "./codecs/registry.js";
+import * as buf from "./primitives/buffer.js";
 export const _CodecsRegistry = reg.CodecsRegistry;
 export const _ReadBuffer = buf.ReadBuffer;
 export type _ICodec = codecs.ICodec;

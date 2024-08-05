@@ -1,5 +1,5 @@
-import { Cardinality as RawCardinality } from "../ifaces";
-import { Cardinality } from "./enums";
+import { Cardinality as RawCardinality } from "../ifaces.js";
+import { Cardinality } from "./enums.js";
 
 export namespace util {
   export function assertNever(arg: never, error?: Error): never {

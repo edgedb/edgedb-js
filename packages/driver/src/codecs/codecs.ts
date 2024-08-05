@@ -16,22 +16,22 @@
  * limitations under the License.
  */
 
-import type { ReadBuffer } from "../primitives/buffer";
-import { WriteBuffer } from "../primitives/buffer";
-import { BoolCodec } from "./boolean";
-import { type ICodec, type uuid, type CodecKind, Codec } from "./ifaces";
+import type { ReadBuffer } from "../primitives/buffer.js";
+import { WriteBuffer } from "../primitives/buffer.js";
+import { BoolCodec } from "./boolean.js";
+import { type ICodec, type uuid, type CodecKind, Codec } from "./ifaces.js";
 import {
   Int16Codec,
   Int32Codec,
   Int64Codec,
   Float32Codec,
   Float64Codec,
-} from "./numbers";
-import { BigIntCodec, DecimalStringCodec } from "./numerics";
-import { StrCodec } from "./text";
-import { UUIDCodec } from "./uuid";
-import { BytesCodec } from "./bytes";
-import { JSONCodec } from "./json";
+} from "./numbers.js";
+import { BigIntCodec, DecimalStringCodec } from "./numerics.js";
+import { StrCodec } from "./text.js";
+import { UUIDCodec } from "./uuid.js";
+import { BytesCodec } from "./bytes.js";
+import { JSONCodec } from "./json.js";
 import {
   DateTimeCodec,
   LocalDateCodec,
@@ -40,12 +40,12 @@ import {
   DurationCodec,
   RelativeDurationCodec,
   DateDurationCodec,
-} from "./datetime";
-import { ConfigMemoryCodec } from "./memory";
-import { PgVectorCodec } from "./pgvector";
-import { InternalClientError } from "../errors";
+} from "./datetime.js";
+import { ConfigMemoryCodec } from "./memory.js";
+import { PgVectorCodec } from "./pgvector.js";
+import { InternalClientError } from "../errors/index.js";
 
-import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
+import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts.js";
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { type Client } from "edgedb";
-import e from "./db/schema/edgeql-js";
-import { setupTests, teardownTests } from "./setupTeardown";
+import e from "./db/schema/edgeql-js/index.js";
+import { setupTests, teardownTests } from "./setupTeardown.js";
 
 describe("legacy database version smoke tests", () => {
   let client: Client;

@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import type { ICodec, uuid, CodecKind } from "./ifaces";
-import { Codec } from "./ifaces";
-import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { UnknownArgumentError } from "../errors";
+import type { ICodec, uuid, CodecKind } from "./ifaces.js";
+import { Codec } from "./ifaces.js";
+import { ReadBuffer, WriteBuffer } from "../primitives/buffer.js";
+import { UnknownArgumentError } from "../errors/index.js";
 
 export class SparseObjectCodec extends Codec implements ICodec {
   private codecs: ICodec[];

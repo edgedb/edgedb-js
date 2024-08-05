@@ -1,6 +1,6 @@
-import { ExpressionKind } from "edgedb/dist/reflection/index";
-import type { Expression, TypeSet } from "./typesystem";
-import { $expressionify } from "./path";
+import { ExpressionKind } from "edgedb/dist/reflection/index.js";
+import type { Expression, TypeSet } from "./typesystem.js";
+import { $expressionify } from "./path.js";
 
 export function detached<Expr extends TypeSet>(
   expr: Expr,

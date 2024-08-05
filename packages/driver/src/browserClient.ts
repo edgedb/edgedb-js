@@ -1,10 +1,10 @@
-import { BaseClientPool, Client, type ConnectOptions } from "./baseClient";
-import { getConnectArgumentsParser } from "./conUtils";
-import { cryptoUtils } from "./browserCrypto";
-import { EdgeDBError } from "./errors";
-import { FetchConnection } from "./fetchConn";
-import { getHTTPSCRAMAuth } from "./httpScram";
-import { Options } from "./options";
+import { BaseClientPool, Client, type ConnectOptions } from "./baseClient.js";
+import { getConnectArgumentsParser } from "./conUtils.js";
+import { cryptoUtils } from "./browserCrypto.js";
+import { EdgeDBError } from "./errors/index.js";
+import { FetchConnection } from "./fetchConn.js";
+import { getHTTPSCRAMAuth } from "./httpScram.js";
+import { Options } from "./options.js";
 
 const parseConnectArguments = getConnectArgumentsParser(null);
 const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils);
