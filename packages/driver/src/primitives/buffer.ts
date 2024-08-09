@@ -19,7 +19,21 @@
 import type char from "./chars";
 import * as chars from "./chars";
 import { LegacyHeaderCodes } from "../ifaces";
-import { Buffer } from "buffer";
+
+function loadBuffer() {
+  let Buffer;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Buffer = require("node:buffer").Buffer;
+  } catch (_) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Buffer = require("buffer/").Buffer;
+  }
+  return Buffer;
+}
+
+const Buffer = loadBuffer();
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE = 4096;
