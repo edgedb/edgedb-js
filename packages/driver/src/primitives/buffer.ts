@@ -19,7 +19,7 @@
 import type char from "./chars";
 import * as chars from "./chars";
 import { LegacyHeaderCodes } from "../ifaces";
-import { Buffer } from "../adapter.node";
+import { Buffer } from "buffer";
 
 /* WriteBuffer over-allocation */
 const BUFFER_INC_SIZE = 4096;

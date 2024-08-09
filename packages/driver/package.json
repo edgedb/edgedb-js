@@ -54,6 +54,7 @@
     "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno"
   },
   "dependencies": {
+    "buffer": "^6.0.3",
     "debug": "^4.3.4",
     "env-paths": "^3.0.0",
     "semver": "^7.6.2",
