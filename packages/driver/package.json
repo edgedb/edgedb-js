@@ -26,7 +26,6 @@
   },
   "devDependencies": {
     "@js-temporal/polyfill": "0.4.3",
-    "@repo/tsconfig": "*",
     "@types/jest": "^29.5.12",
     "@types/semver": "^7.5.8",
     "@types/shell-quote": "^1.7.5",
@@ -38,7 +37,8 @@
     "jest-environment-jsdom": "^29.7.0",
     "ts-jest": "29.1.4",
     "tsx": "^4.11.0",
-    "typescript": "^5.5.2"
+    "typescript": "^5.5.2",
+    "@repo/tsconfig": "*"
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
@@ -54,7 +54,6 @@
     "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno"
   },
   "dependencies": {
-    "buffer": "^6.0.3",
     "debug": "^4.3.4",
     "env-paths": "^3.0.0",
     "semver": "^7.6.2",
