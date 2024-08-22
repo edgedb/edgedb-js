@@ -26,21 +26,22 @@ export const utf8Decoder = new TextDecoder("utf8");
 let decodeB64: (_: string) => Uint8Array;
 let encodeB64: (_: Uint8Array) => string;
 
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Buffer = require("node:buffer").Buffer;
-
-  decodeB64 = (b64: string) => {
+// @ts-ignore: Buffer is not defined in Deno
+if (typeof Buffer === "function") {
+  decodeB64 = (b64: string): Uint8Array => {
+    // @ts-ignore: Buffer is not defined in Deno
     return Buffer.from(b64, "base64");
   };
-  encodeB64 = (data: Uint8Array) => {
-    const buf = Buffer.isBuffer(data)
-      ? data
-      : Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+  encodeB64 = (data: Uint8Array): string => {
+    // @ts-ignore: Buffer is not defined in Deno
+    const buf = !Buffer.isBuffer(data)
+      ? // @ts-ignore: Buffer is not defined in Deno
+        Buffer.from(data.buffer, data.byteOffset, data.byteLength)
+      : data;
     return buf.toString("base64");
   };
-} catch (_) {
-  decodeB64 = function (b64: string) {
+} else {
+  decodeB64 = (b64: string): Uint8Array => {
     const binaryString = atob(b64);
     const size = binaryString.length;
     const bytes = new Uint8Array(size);
@@ -49,7 +50,7 @@ try {
     }
     return bytes;
   };
-  encodeB64 = function (data: Uint8Array) {
+  encodeB64 = (data: Uint8Array): string => {
     const binaryString = String.fromCharCode(...data);
     return btoa(binaryString);
   };

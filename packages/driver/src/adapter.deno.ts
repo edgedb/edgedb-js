@@ -7,9 +7,8 @@ import fs from "node:fs/promises";
 import util from "node:util";
 import { isIP as _isIP } from "node:net";
 import { EventEmitter } from "node:events";
-import { Buffer } from "node:buffer";
 
-export { path, process, util, fs, Buffer };
+export { path, process, util, fs };
 
 export async function readFileUtf8(...pathParts: string[]): Promise<string> {
   return await Deno.readTextFile(path.join(...pathParts));
