@@ -1,6 +1,6 @@
 {
   "name": "edgedb",
-  "version": "1.5.9",
+  "version": "1.5.10",
   "description": "The official Node.js client library for EdgeDB",
   "homepage": "https://edgedb.com/docs",
   "author": "EdgeDB <info@edgedb.com>",
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@js-temporal/polyfill": "0.4.3",
+    "@repo/tsconfig": "*",
     "@types/jest": "^29.5.12",
     "@types/semver": "^7.5.8",
     "@types/shell-quote": "^1.7.5",
@@ -37,8 +38,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "ts-jest": "29.1.4",
     "tsx": "^4.11.0",
-    "typescript": "^5.5.2",
-    "@repo/tsconfig": "*"
+    "typescript": "^5.5.2"
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
