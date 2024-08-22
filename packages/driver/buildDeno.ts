@@ -23,6 +23,10 @@ await run({
       imports: ["process"],
       from: "src/globals.deno.ts",
     },
+    {
+      imports: ["Buffer"],
+      from: "src/globals.deno.ts",
+    },
   ],
 }).then(async () =>
   run({
@@ -61,6 +65,7 @@ await run({
       {
         imports: [
           "process",
+          "Buffer",
           "test",
           "expect",
           "jest",

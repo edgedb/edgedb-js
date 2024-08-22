@@ -26,7 +26,7 @@ export const utf8Decoder = new TextDecoder("utf8");
 let decodeB64: (_: string) => Uint8Array;
 let encodeB64: (_: Uint8Array) => string;
 
-if (typeof globalThis.Buffer === "function") {
+if (typeof Buffer === "function") {
   decodeB64 = (b64: string): Uint8Array => {
     return Buffer.from(b64, "base64");
   };
