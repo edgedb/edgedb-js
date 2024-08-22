@@ -26,17 +26,13 @@ export const utf8Decoder = new TextDecoder("utf8");
 let decodeB64: (_: string) => Uint8Array;
 let encodeB64: (_: Uint8Array) => string;
 
-// @ts-ignore: Buffer is not defined in Deno
-if (typeof Buffer === "function") {
+if (typeof globalThis.Buffer === "function") {
   decodeB64 = (b64: string): Uint8Array => {
-    // @ts-ignore: Buffer is not defined in Deno
     return Buffer.from(b64, "base64");
   };
   encodeB64 = (data: Uint8Array): string => {
-    // @ts-ignore: Buffer is not defined in Deno
     const buf = !Buffer.isBuffer(data)
-      ? // @ts-ignore: Buffer is not defined in Deno
-        Buffer.from(data.buffer, data.byteOffset, data.byteLength)
+      ? Buffer.from(data.buffer, data.byteOffset, data.byteLength)
       : data;
     return buf.toString("base64");
   };

@@ -405,7 +405,7 @@
       "packages/auth-express": {
         "packageJson": {
           "dependencies": [
-            "npm:@edgedb/auth-core",
+            "npm:@edgedb/auth-core@^0.2.1",
             "npm:@repo/tsconfig",
             "npm:@types/express@^4.17.21",
             "npm:@types/node@^20.12.13",
@@ -418,7 +418,7 @@
       "packages/auth-nextjs": {
         "packageJson": {
           "dependencies": [
-            "npm:@edgedb/auth-core",
+            "npm:@edgedb/auth-core@0.2.1",
             "npm:@repo/tsconfig",
             "npm:@types/node@^20.12.13",
             "npm:@types/react@^18.3.3",
@@ -432,7 +432,7 @@
       "packages/auth-remix": {
         "packageJson": {
           "dependencies": [
-            "npm:@edgedb/auth-core",
+            "npm:@edgedb/auth-core@^0.2.1",
             "npm:@remix-run/server-runtime@^2.9.2",
             "npm:@repo/tsconfig",
             "npm:@types/node@^20.12.13",
@@ -445,7 +445,7 @@
       "packages/auth-sveltekit": {
         "packageJson": {
           "dependencies": [
-            "npm:@edgedb/auth-core",
+            "npm:@edgedb/auth-core@^0.2.1",
             "npm:@repo/tsconfig",
             "npm:@sveltejs/kit@^2.5.10",
             "npm:@types/node@^20.12.13",
