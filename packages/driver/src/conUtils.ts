@@ -859,7 +859,7 @@ async function resolveConfigOptions<
             source = sources.instanceName!;
           } else {
             if (
-              !/^([A-Za-z0-9](-?[A-Za-z0-9])*)\/([A-Za-z0-9](-?[A-Za-z0-9])*)$/.test(
+              !/^([A-Za-z0-9_-](-?[A-Za-z0-9_])*)\/([A-Za-z0-9](-?[A-Za-z0-9])*)$/.test(
                 config.instanceName!,
               )
             ) {
