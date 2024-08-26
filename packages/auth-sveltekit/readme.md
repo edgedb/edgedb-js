@@ -16,7 +16,92 @@ npm install @edgedb/auth-sveltekit
 **Prerequisites**:
 - Node v18+
   - **Note**: Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
-- Before adding EdgeDB auth to your SvelteKit app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers (you can do this in CLI or EdgeDB UI). Refer to the auth extension docs for details on how to do this.
+
+### EdgeDB Auth Setup
+
+Before adding EdgeDB auth to your SvelteKit app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers.
+
+1. Enable the EdgeDB Auth extension in your schema:
+   
+   Add the following to your EdgeDB schema:
+
+   ```sql
+   using extension auth;
+   ```
+
+  Once added, make sure to apply the schema changes by migrating your database schema:
+
+  ```sh
+  $ edgedb migration create
+  $ edgedb migrate
+  ```
+
+2. Configure EdgeDB Auth settings:
+
+  Next, you'll need to configure the EdgeDB Auth extension. This involves setting up essential parameters, such as signing keys and allowed redirect URLs.
+
+  _Below, we're showing how to set up the EdgeDB authentication using EdgeQL queries. To run these commands, you need to start the EdgeDB instance first (`edgedb`). Alternatively, you can use the EdgeDB UI (`edgedb ui`) to configure the authentication settings interactively._
+
+  **Signing Key** 
+  
+  This key is used to sign JWT tokens. You can generate one using OpenSSL:
+
+  ```sh
+  $ openssl rand -base64 32
+  ```
+
+  Once generated, configure the signing key in EdgeDB:
+
+  ```sql
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::AuthConfig::auth_signing_key := '<your-generated-key>';
+  ```
+
+  **Allowed Redirect URLs**
+
+  This setting ensures that redirects are limited to the URLs under your control. Configure the allowed URLs with the following command:
+
+  ```sql
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::AuthConfig::allowed_redirect_urls := {
+      'http://localhost:3000',
+      'http://localhost:3000/auth'
+  };
+  ```
+
+  **Authentication providers**
+
+  You need to configure at least one authentication provider. For example, to add an email/password provider, use the following command:
+
+  ```sql
+  CONFIGURE CURRENT BRANCH
+  INSERT ext::auth::EmailPasswordProviderConfig {
+      require_verification := false
+  };
+  ```
+
+  _Note: In production environments, it is recommended to set require_verification to true to ensure users verify their email addresses._
+
+  **SMTP for email verification (optional)**
+
+  If using the email/password provider, you need to configure SMTP for email verification and password reset emails. Here's an example using a local SMTP server like Mailpit for development purposes:
+
+  ```sql
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::SMTPConfig::sender := 'hello@example.com';
+
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::SMTPConfig::host := 'localhost';
+
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::SMTPConfig::port := <int32>1025;
+
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::SMTPConfig::security := 'STARTTLSOrPlainText';
+
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::SMTPConfig::validate_certs := false;
+  ```
 
 ### Client auth helper
 
