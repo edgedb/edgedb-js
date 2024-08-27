@@ -66,7 +66,8 @@ Before adding EdgeDB auth to your SvelteKit app, you will first need to enable t
   CONFIGURE CURRENT BRANCH SET
   ext::auth::AuthConfig::allowed_redirect_urls := {
       'http://localhost:3000',
-      'http://localhost:3000/auth'
+      'https://example.trycloudflare.com',
+      'https://example.ngrok.io',
   };
   ```
 
