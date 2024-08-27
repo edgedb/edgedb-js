@@ -16,8 +16,7 @@ npm install @edgedb/auth-express
 
 **Prerequisites**:
 - Node v18+
-  > [!CAUTION]
-  > Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
+  - **Note**: Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
 - We depend on the following middleware being installed in your Express app:
   - `body-parser`: both JSON and urlencoded
   - `cookie-parser`

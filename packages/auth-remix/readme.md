@@ -15,8 +15,7 @@ npm install @edgedb/auth-remix
 
 **Prerequisites**:
 - Node v18+
-  > [!CAUTION]
-  > Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
+  - **Note**: Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
 
 ### EdgeDB Auth Setup
 
