@@ -47,6 +47,11 @@ import {
   PgVectorHalfVecCodec,
   PgVectorSparseVecCodec,
 } from "./pgvector";
+import {
+  PostgisBox2dCodec,
+  PostgisBox3dCodec,
+  PostgisGeometryCodec,
+} from "./postgis";
 import { InternalClientError } from "../errors";
 
 import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
@@ -131,3 +136,8 @@ registerScalarCodec("std::pg::interval", RelativeDurationCodec);
 registerScalarCodec("ext::pgvector::vector", PgVectorCodec);
 registerScalarCodec("ext::pgvector::halfvec", PgVectorHalfVecCodec);
 registerScalarCodec("ext::pgvector::sparsevec", PgVectorSparseVecCodec);
+
+registerScalarCodec("ext::postgis::geometry", PostgisGeometryCodec);
+registerScalarCodec("ext::postgis::geography", PostgisGeometryCodec);
+registerScalarCodec("ext::postgis::box2d", PostgisBox2dCodec);
+registerScalarCodec("ext::postgis::box3d", PostgisBox3dCodec);
