@@ -15,7 +15,8 @@ npm install @edgedb/auth-sveltekit
 
 **Prerequisites**:
 - Node v18+
-  - **Note**: Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
+  > [!CAUTION]
+  > Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
 
 ### EdgeDB Auth Setup
 
@@ -80,7 +81,8 @@ Before adding EdgeDB auth to your SvelteKit app, you will first need to enable t
   };
   ```
 
-  _Note: In production environments, it is recommended to set require_verification to true to ensure users verify their email addresses._
+  > [!CAUTION]
+  > In production environments, it is recommended to set require_verification to true to ensure users verify their email addresses.
 
   **SMTP for email verification (optional)**
 
