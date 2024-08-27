@@ -196,6 +196,14 @@ export class WriteBuffer {
     return this;
   }
 
+  writeDeferredSize(): () => void {
+    const startPos = this.pos;
+    this.writeInt32(0);
+    return () => {
+      this.buffer.setInt32(startPos, this.pos - (startPos + 4));
+    };
+  }
+
   unwrap(): Uint8Array {
     return this._rawBuffer.subarray(0, this.pos);
   }
@@ -915,20 +923,20 @@ export class ReadBuffer {
     return num;
   }
 
-  readFloat64(): number {
+  readFloat64(le?: boolean): number {
     if (this.pos + 8 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const num = this.buffer.getFloat64(this.pos);
+    const num = this.buffer.getFloat64(this.pos, le);
     this.pos += 8;
     return num;
   }
 
-  readUInt32(): number {
+  readUInt32(le?: boolean): number {
     if (this.pos + 4 > this.len) {
       throw new BufferError("buffer overread");
     }
-    const num = this.buffer.getUint32(this.pos);
+    const num = this.buffer.getUint32(this.pos, le);
     this.pos += 4;
     return num;
   }
