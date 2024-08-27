@@ -16,7 +16,7 @@ Before adding EdgeDB auth to your Next.js app, you will first need to enable the
    
    Add the following to your EdgeDB schema:
 
-   ```sql
+   ```esdl
    using extension auth;
    ```
 
@@ -43,7 +43,7 @@ Before adding EdgeDB auth to your Next.js app, you will first need to enable the
 
   Once generated, configure the signing key in EdgeDB:
 
-  ```sql
+  ```esdl
   CONFIGURE CURRENT BRANCH SET
   ext::auth::AuthConfig::auth_signing_key := '<your-generated-key>';
   ```
@@ -52,7 +52,7 @@ Before adding EdgeDB auth to your Next.js app, you will first need to enable the
 
   This setting ensures that redirects are limited to the URLs under your control. Configure the allowed URLs with the following command:
 
-  ```sql
+  ```esdl
   CONFIGURE CURRENT BRANCH SET
   ext::auth::AuthConfig::allowed_redirect_urls := {
       'http://localhost:3000',
@@ -64,7 +64,7 @@ Before adding EdgeDB auth to your Next.js app, you will first need to enable the
 
   You need to configure at least one authentication provider. For example, to add an email/password provider, use the following command:
 
-  ```sql
+  ```esdl
   CONFIGURE CURRENT BRANCH
   INSERT ext::auth::EmailPasswordProviderConfig {
       require_verification := false
@@ -77,7 +77,7 @@ Before adding EdgeDB auth to your Next.js app, you will first need to enable the
 
   If using the email/password provider, you need to configure SMTP for email verification and password reset emails. Here's an example using a local SMTP server like Mailpit for development purposes:
 
-  ```sql
+  ```esdl
   CONFIGURE CURRENT BRANCH SET
   ext::auth::SMTPConfig::sender := 'hello@example.com';
 
