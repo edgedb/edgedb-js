@@ -349,17 +349,16 @@ describe("select", () => {
     tc.assert<
       tc.IsExact<
         $infer<typeof q>,
-        (
+        ({ name: string } & (
           | { __typename: "default::Villain" }
           | {
               __typename: "default::Hero";
-              name: string;
               height: string | null;
               isAdult: boolean | null;
               number_of_movies: number | null;
               secret_identity: string | null;
             }
-        )[]
+        ))[]
       >
     >(true);
 
@@ -815,13 +814,10 @@ describe("select", () => {
           id: string;
         } & (
           | {
-              __typename:
-                | "default::A"
-                | "default::User"
-                | "default::MovieShape"
-                | "default::Profile"
-                | "default::S p a M"
-                | "default::Łukasz";
+              __typename: Exclude<
+                typeof e.Object.__element__.__polyTypenames__,
+                "default::Movie"
+              >;
             }
           | {
               __typename: "default::Movie";
@@ -1556,7 +1552,17 @@ SELECT __scope_0_defaultPerson {
     tc.assert<
       tc.IsExact<
         Result,
-        { xy: { a: string | null; b: number | null } | null }[]
+        {
+          xy:
+            | ({ a: string | null } & (
+                | { __typename: "default::W" | "default::Y" }
+                | {
+                    __typename: "default::X";
+                    b: number | null;
+                  }
+              ))
+            | null;
+        }[]
       >
     >(true);
   });
