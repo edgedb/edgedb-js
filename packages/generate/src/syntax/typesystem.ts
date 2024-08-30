@@ -336,8 +336,8 @@ type shapeElementToTs<
                   ([ParentTypeName] extends [string]
                     ? Element extends { name: true }
                       ? { name: ParentTypeName }
-                      : {}
-                    : {}) &
+                      : unknown
+                    : unknown) &
                     computeObjectShape<
                       Pointer["target"]["__pointers__"] & Pointer["properties"],
                       Element,
@@ -396,7 +396,7 @@ export type computeObjectShape<
           : never]: Shape[k];
       } extends infer PolyEls
         ? keyof PolyEls extends never
-          ? {}
+          ? unknown
           : getPolyElTypes<PolyEls[keyof PolyEls]> extends infer PolyTypeName
             ?
                 | (Exclude<TypeName, PolyTypeName> extends never
