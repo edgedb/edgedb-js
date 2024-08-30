@@ -11,7 +11,8 @@
       "outputs": ["dist/**"]
     },
     "test": {
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "env": ["EDGEDB_SERVER_BIN"]
     },
     "ci:typecheck": {
       "dependsOn": [
