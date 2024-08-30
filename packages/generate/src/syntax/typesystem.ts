@@ -377,19 +377,27 @@ export type computeObjectShape<
   TypeName extends string,
 > = keyof Shape extends never
   ? { id: string }
-  : typeutil.flatten<{
-      [k in keyof Shape as Shape[k] extends $expr_PolyShapeElement
-        ? never
-        : k]: [k] extends [keyof Pointers]
-        ? shapeElementToTs<
-            Pointers[k],
-            Shape[k],
-            k extends "__type__" ? TypeName : null
-          >
-        : Shape[k] extends TypeSet
-          ? setToTsType<Shape[k]>
-          : never;
-    }> &
+  : typeutil.flatten<
+      typeutil.stripNever<{
+        [k in keyof Shape as Shape[k] extends $expr_PolyShapeElement
+          ? never
+          : k]: Shape[k] extends TypeSet
+          ? [k] extends [keyof Pointers]
+            ? Shape[k]["__cardinality__"] extends cardutil.assignable<
+                Pointers[k]["cardinality"]
+              >
+              ? setToTsType<Shape[k]>
+              : never
+            : setToTsType<Shape[k]>
+          : [k] extends [keyof Pointers]
+            ? shapeElementToTs<
+                Pointers[k],
+                Shape[k],
+                k extends "__type__" ? TypeName : null
+              >
+            : never;
+      }>
+    > &
       ({
         [k in keyof Shape as Shape[k] extends $expr_PolyShapeElement
           ? k
