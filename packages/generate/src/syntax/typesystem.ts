@@ -781,7 +781,11 @@ export type setToTsType<Set> =
   Set extends $Shape<infer Element, infer Shape, infer Card>
     ? Shape extends object
       ? computeTsTypeCard<
-          computeObjectShape<Element["__pointers__"], normaliseShape<Shape>>,
+          computeObjectShape<
+            Element["__pointers__"],
+            normaliseShape<Shape>,
+            Element["__polyTypenames__"]
+          >,
           Card
         >
       : never
