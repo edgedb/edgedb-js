@@ -26,7 +26,7 @@ export class EnumCodec extends StrCodec implements ICodec {
     tid: uuid,
     typeName: string | null,
     derivedFromTid: uuid | null = null,
-    values: string[]
+    values: string[],
   ) {
     super(tid, typeName, derivedFromTid);
     this.values = values;

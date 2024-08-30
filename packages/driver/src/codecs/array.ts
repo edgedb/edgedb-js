@@ -33,7 +33,7 @@ export class ArrayCodec extends Codec implements ICodec {
     tid: uuid,
     typeName: string | null,
     subCodec: ICodec,
-    len: number
+    len: number,
   ) {
     super(tid);
     this.subCodec = subCodec;

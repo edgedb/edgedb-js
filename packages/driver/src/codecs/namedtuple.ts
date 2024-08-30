@@ -38,7 +38,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
     tid: uuid,
     typeName: string | null,
     codecs: ICodec[],
-    names: string[]
+    names: string[],
   ) {
     super(tid);
     this.subCodecs = codecs;
