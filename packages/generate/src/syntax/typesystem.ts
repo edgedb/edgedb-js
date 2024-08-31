@@ -435,7 +435,11 @@ type computePolyElShape<PolyEls, PolyTypeName> = typeutil.flatten<
               >
             : never
           : never;
-      }
+      } extends infer Shape
+      ? Shape extends unknown
+        ? typeutil.stripNever<Shape>
+        : never
+      : never
     : never
 >;
 
