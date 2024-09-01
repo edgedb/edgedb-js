@@ -5,6 +5,14 @@ import * as $ from "../../packages/generate/src/syntax/reflection";
 import e, { type $infer } from "./dbschema/edgeql-js";
 import { setupTests, teardownTests, tc, type TestData } from "./setupTeardown";
 
+declare module "./dbschema/edgeql-js/typesystem" {
+  export interface SetTypesystemOptions {
+    future: {
+      polymorphismAsDiscriminatedUnions: true;
+    };
+  }
+}
+
 let client: edgedb.Client;
 let data: TestData;
 
@@ -239,7 +247,7 @@ describe("select", () => {
     assert.deepEqual(query.__element__.__kind__, $.TypeKind.object);
     assert.equal(query.__element__.__name__, "default::Person");
 
-    type result = $.BaseTypeToTsType<(typeof query)["__element__"]>;
+    type result = $infer<typeof query>[number];
     tc.assert<
       tc.IsExact<
         result,
@@ -294,21 +302,17 @@ describe("select", () => {
       }),
     }));
 
-    type q = $.setToTsType<typeof q>;
-    tc.assert<
-      tc.IsExact<
-        q,
-        ({
-          id: string;
-        } & (
-          | { __typename: "default::Hero"; secret_identity: string | null }
-          | {
-              __typename: "default::Villain";
-              nemesis: { id: string; computable: 1234 } | null;
-            }
-        ))[]
-      >
-    >(true);
+    type actual = $infer<typeof q>[number];
+    type expected = {
+      id: string;
+    } & (
+      | { __typename: "default::Hero"; secret_identity: string | null }
+      | {
+          __typename: "default::Villain";
+          nemesis: { id: string; computable: 1234 } | null;
+        }
+    );
+    tc.assert<tc.IsExact<actual, expected>>(true);
   });
 
   test("parent type props in polymorphic", () => {

@@ -12,6 +12,25 @@ import type { cardutil } from "./cardinality";
 import type { Range, MultiRange } from "edgedb";
 import type { $Shape, normaliseShape } from "./select";
 
+/**
+ * Use declaration merging to set the {@link TypesystemOptions} via this
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface SetTypesystemOptions {}
+
+export type TypesystemOptions = {
+  future: {
+    /**
+     * Opt-in to the new discriminated union functionality for polymorphism.
+     */
+    polymorphismAsDiscriminatedUnions: SetTypesystemOptions extends {
+      future: { polymorphismAsDiscriminatedUnions: true };
+    }
+      ? true
+      : false;
+  };
+};
+
 //////////////////
 // BASETYPE
 //////////////////
@@ -372,6 +391,51 @@ export type $expr_PolyShapeElement<
 };
 
 export type computeObjectShape<
+  Pointers extends ObjectTypePointers,
+  Shape,
+  TypeName extends string = string,
+> = TypesystemOptions["future"]["polymorphismAsDiscriminatedUnions"] extends true
+  ? computeObjectShapeNew<Pointers, Shape, TypeName>
+  : computeObjectShapeLegacy<Pointers, Shape, TypeName>;
+
+type computeObjectShapeLegacy<
+  Pointers extends ObjectTypePointers,
+  Shape,
+  TypeName extends string,
+> = typeutil.flatten<
+  keyof Shape extends never
+    ? { id: string }
+    : typeutil.stripNever<{
+        [k in keyof Shape]: Shape[k] extends $expr_PolyShapeElement<
+          infer PolyType,
+          infer ShapeEl
+        >
+          ? [k] extends [keyof PolyType["__element__"]["__pointers__"]]
+            ? shapeElementToTs<
+                PolyType["__element__"]["__pointers__"][k],
+                ShapeEl,
+                k extends "__type__" ? TypeName : null
+              > | null
+            : never
+          : Shape[k] extends TypeSet
+            ? [k] extends [keyof Pointers]
+              ? Shape[k]["__cardinality__"] extends cardutil.assignable<
+                  Pointers[k]["cardinality"]
+                >
+                ? setToTsType<Shape[k]>
+                : never
+              : setToTsType<Shape[k]>
+            : [k] extends [keyof Pointers]
+              ? shapeElementToTs<
+                  Pointers[k],
+                  Shape[k],
+                  k extends "__type__" ? TypeName : null
+                >
+              : never;
+      }>
+>;
+
+type computeObjectShapeNew<
   Pointers extends ObjectTypePointers,
   Shape,
   TypeName extends string,
