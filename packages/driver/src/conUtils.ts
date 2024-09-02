@@ -587,7 +587,7 @@ async function parseConnectDsnAndArgs(
       tlsCA: `'tlsCA' option`,
       tlsCAFile: `'tlsCAFile' option`,
       tlsSecurity: `'tlsSecurity' option`,
-      tlsServerName: `tlsServerName option`,
+      tlsServerName: `'tlsServerName' option`,
       serverSettings: `'serverSettings' option`,
       waitUntilAvailable: `'waitUntilAvailable' option`,
     },
