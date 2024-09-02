@@ -643,7 +643,7 @@ async function parseConnectDsnAndArgs(
           secretKey: `'EDGEDB_SECRET_KEY' environment variable`,
           tlsCA: `'EDGEDB_TLS_CA' environment variable`,
           tlsCAFile: `'EDGEDB_TLS_CA_FILE' environment variable`,
-          tlsServerName: `EDGEDB_TLS_SERVER_NAME environment variable`,
+          tlsServerName: `'EDGEDB_TLS_SERVER_NAME' environment variable`,
           tlsSecurity: `'EDGEDB_CLIENT_TLS_SECURITY' environment variable`,
           waitUntilAvailable: `'EDGEDB_WAIT_UNTIL_AVAILABLE' environment variable`,
         },
@@ -679,7 +679,7 @@ async function parseConnectDsnAndArgs(
       .catch(() => null);
 
     if (instName !== null) {
-      const [cloudProfile, database] = await Promise.all([
+      const [cloudProfile, database, branch] = await Promise.all([
         serverUtils
           .readFileUtf8(stashDir, "cloud-profile")
           .then((name) => name.trim())
@@ -696,11 +696,12 @@ async function parseConnectDsnAndArgs(
 
       await resolveConfigOptions(
         resolvedConfig,
-        { instanceName: instName, cloudProfile, database },
+        { instanceName: instName, cloudProfile, database, branch },
         {
           instanceName: `project linked instance ('${instName}')`,
           cloudProfile: `project defined cloud instance ('${cloudProfile}')`,
           database: `project default database`,
+          branch: `project default branch`,
         },
         "",
         serverUtils,
