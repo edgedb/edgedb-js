@@ -2,7 +2,8 @@
   "extends": "@repo/tsconfig/base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "noUnusedLocals": false
   },
   "include": ["src/**/*"],
   "exclude": ["src/cli.mts", "src/**/*.deno.ts"]
