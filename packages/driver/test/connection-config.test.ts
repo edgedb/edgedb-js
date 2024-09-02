@@ -192,6 +192,7 @@ interface ConnectionResult {
   password: string | null;
   tlsCAData: string | null;
   tlsSecurity: boolean;
+  tlsServerName: string | null;
   serverSettings: { [key: string]: string };
   waitUntilAvailable: string;
 }
@@ -254,6 +255,7 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
             user: connectionParams.user,
             password: connectionParams.password ?? null,
             secretKey: connectionParams.secretKey ?? null,
+            tlsServerName: connectionParams.tlsServerName ?? null,
             tlsCAData: connectionParams._tlsCAData,
             tlsSecurity: connectionParams.tlsSecurity,
             serverSettings: connectionParams.serverSettings,
@@ -456,6 +458,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     password: null,
     tlsCAData: null,
     tlsSecurity: "strict",
+    tlsServerName: null,
     serverSettings: {},
   };
 
@@ -608,6 +611,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
           user: connectionParams.user,
           password: connectionParams.password ?? null,
           tlsCAData: connectionParams._tlsCAData,
+          tlsServerName: connectionParams.tlsServerName ?? null,
           tlsSecurity: connectionParams.tlsSecurity,
           serverSettings: connectionParams.serverSettings,
         }).toEqual(testcase.result);

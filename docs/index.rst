@@ -138,7 +138,7 @@ app:
   $ npm init -y # initialize a new npm project
   $ npm i edgedb
   $ npm i -D typescript @types/node @edgedb/generate tsx
-  $ npx tsc --init # initialize basic a basic TypeScript project
+  $ npx tsc --init # initialize a basic TypeScript project
 
 Client
 ^^^^^^

@@ -59,7 +59,7 @@ function getTlsOptions(config: ResolvedConnectConfig): tls.ConnectionOptions {
   if (!isIPAddress) {
     // XXX Deno doesn't support this and that means it won't
     // work with EdgeDB Cloud.
-    tlsOptions.servername = config.address[0];
+    tlsOptions.servername = config.tlsServerName || config.address[0];
   }
 
   _tlsOptions.set(config, tlsOptions);

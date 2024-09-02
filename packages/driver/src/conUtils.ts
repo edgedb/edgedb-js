@@ -68,6 +68,7 @@ export interface NormalizedConnectConfig extends PartiallyNormalizedConfig {
   logging: boolean;
 }
 
+// explicit config
 export interface ConnectConfig {
   dsn?: string;
   instanceName?: string;
@@ -84,6 +85,7 @@ export interface ConnectConfig {
   tlsCA?: string;
   tlsCAFile?: string;
   tlsSecurity?: TlsSecurity;
+  tlsServerName?: string;
 
   timeout?: number;
   waitUntilAvailable?: Duration | number;
@@ -124,6 +126,7 @@ type ConnectConfigParams =
   | "cloudProfile"
   | "tlsCAData"
   | "tlsSecurity"
+  | "tlsServerName"
   | "waitUntilAvailable";
 
 export type ResolvedConnectConfigReadonly = Readonly<
@@ -165,6 +168,9 @@ export class ResolvedConnectConfig {
   _tlsSecurity: TlsSecurity | null = null;
   _tlsSecuritySource: string | null = null;
 
+  _tlsServerName: string | null = null;
+  _tlsServerNameSource: string | null = null;
+
   _waitUntilAvailable: number | null = null;
   _waitUntilAvailableSource: string | null = null;
 
@@ -180,6 +186,7 @@ export class ResolvedConnectConfig {
     this.setSecretKey = this.setSecretKey.bind(this);
     this.setTlsCAData = this.setTlsCAData.bind(this);
     this.setTlsCAFile = this.setTlsCAFile.bind(this);
+    this.setTlsServerName = this.setTlsServerName.bind(this);
     this.setTlsSecurity = this.setTlsSecurity.bind(this);
     this.setWaitUntilAvailable = this.setWaitUntilAvailable.bind(this);
   }
@@ -280,6 +287,10 @@ export class ResolvedConnectConfig {
     );
   }
 
+  setTlsServerName(serverName: string | null, source: string): boolean {
+    return this._setParam("tlsServerName", serverName, source, validateHost);
+  }
+
   setTlsSecurity(tlsSecurity: string | null, source: string): boolean {
     return this._setParam(
       "tlsSecurity",
@@ -375,6 +386,10 @@ export class ResolvedConnectConfig {
     return this._cloudProfile ?? "default";
   }
 
+  get tlsServerName(): string | undefined {
+    return this._tlsServerName ?? undefined;
+  }
+
   get tlsSecurity(): Exclude<TlsSecurity, "default"> {
     return this._tlsSecurity && this._tlsSecurity !== "default"
       ? this._tlsSecurity
@@ -430,6 +445,12 @@ export class ResolvedConnectConfig {
       this.tlsSecurity,
       this._tlsSecurity,
       this._tlsSecuritySource,
+    );
+    outputLine(
+      "tlsServerName",
+      this.tlsServerName,
+      this._tlsServerName,
+      this._tlsServerNameSource,
     );
     outputLine(
       "waitUntilAvailable",
@@ -542,6 +563,7 @@ async function parseConnectDsnAndArgs(
       cloudProfile: getEnv("EDGEDB_CLOUD_PROFILE"),
       tlsCA: config.tlsCA,
       tlsCAFile: config.tlsCAFile,
+      tlsServerName: config.tlsServerName,
       tlsSecurity: config.tlsSecurity,
       serverSettings: config.serverSettings,
       waitUntilAvailable: config.waitUntilAvailable,
@@ -565,6 +587,7 @@ async function parseConnectDsnAndArgs(
       tlsCA: `'tlsCA' option`,
       tlsCAFile: `'tlsCAFile' option`,
       tlsSecurity: `'tlsSecurity' option`,
+      tlsServerName: `tlsServerName option`,
       serverSettings: `'serverSettings' option`,
       waitUntilAvailable: `'waitUntilAvailable' option`,
     },
@@ -602,6 +625,7 @@ async function parseConnectDsnAndArgs(
           secretKey: getEnv("EDGEDB_SECRET_KEY"),
           tlsCA: getEnv("EDGEDB_TLS_CA"),
           tlsCAFile: getEnv("EDGEDB_TLS_CA_FILE"),
+          tlsServerName: getEnv("EDGEDB_TLS_SERVER_NAME"),
           tlsSecurity: getEnv("EDGEDB_CLIENT_TLS_SECURITY"),
           waitUntilAvailable: getEnv("EDGEDB_WAIT_UNTIL_AVAILABLE"),
         },
@@ -619,6 +643,7 @@ async function parseConnectDsnAndArgs(
           secretKey: `'EDGEDB_SECRET_KEY' environment variable`,
           tlsCA: `'EDGEDB_TLS_CA' environment variable`,
           tlsCAFile: `'EDGEDB_TLS_CA_FILE' environment variable`,
+          tlsServerName: `EDGEDB_TLS_SERVER_NAME environment variable`,
           tlsSecurity: `'EDGEDB_CLIENT_TLS_SECURITY' environment variable`,
           waitUntilAvailable: `'EDGEDB_WAIT_UNTIL_AVAILABLE' environment variable`,
         },
@@ -661,6 +686,10 @@ async function parseConnectDsnAndArgs(
           .catch(() => undefined),
         serverUtils
           .readFileUtf8(stashDir, "database")
+          .then((name) => name.trim())
+          .catch(() => undefined),
+        serverUtils
+          .readFileUtf8(stashDir, "branch")
           .then((name) => name.trim())
           .catch(() => undefined),
       ]);
@@ -710,6 +739,7 @@ interface ResolveConfigOptionsConfig {
   cloudProfile: string;
   tlsCA: string;
   tlsCAFile: string;
+  tlsServerName: string;
   tlsSecurity: string;
   serverSettings: { [key: string]: string };
   waitUntilAvailable: number | string | Duration;
@@ -785,6 +815,11 @@ async function resolveConfigOptions<
       sources.tlsCAFile!,
       readFile,
     )) || anyOptionsUsed;
+  anyOptionsUsed =
+    resolvedConfig.setTlsServerName(
+      config.tlsServerName ?? null,
+      sources.tlsServerName!,
+    ) || anyOptionsUsed;
   anyOptionsUsed =
     resolvedConfig.setTlsSecurity(
       config.tlsSecurity ?? null,
@@ -880,7 +915,6 @@ async function resolveConfigOptions<
         }
         creds = await readCredentialsFile(credentialsFile, serverUtils!);
       }
-
       resolvedConfig.setHost(creds.host ?? null, source);
       resolvedConfig.setPort(creds.port ?? null, source);
       if (creds.database != null) {
@@ -1085,6 +1119,13 @@ async function parseDSNIntoConfig(
     config._tlsCAData,
     (val: string | null, _source: string) =>
       config.setTlsCAFile(val, _source, readFile),
+  );
+
+  await handleDSNPart(
+    "tls_server_name",
+    null,
+    config._tlsServerName,
+    config.setTlsServerName,
   );
 
   await handleDSNPart(
