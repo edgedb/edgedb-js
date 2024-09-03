@@ -26,7 +26,11 @@ module default {
     property character_name -> str;
   }
 
-  abstract type Person {
+  abstract type LivingThing {
+    age: int32;
+  }
+
+  abstract type Person extending LivingThing {
     required property name -> str {
       constraint exclusive;
     };

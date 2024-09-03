@@ -175,17 +175,7 @@ export const getStringRepresentation: (
 export const generateObjectTypes = (params: GeneratorParams) => {
   const { dir, types } = params;
 
-  const descendents = new Map<string, Set<string>>();
-  for (const type of types.values()) {
-    if (type.kind === "object" && !type.is_abstract) {
-      for (const base of type.bases) {
-        if (!descendents.has(base.id)) {
-          descendents.set(base.id, new Set());
-        }
-        descendents.get(base.id)!.add(type.name);
-      }
-    }
-  }
+  const descendents = generatePolyTypenames(types);
 
   for (const type of types.values()) {
     if (type.kind !== "object") {
@@ -393,3 +383,26 @@ export const generateObjectTypes = (params: GeneratorParams) => {
     body.addToDefaultExport(literal, name);
   }
 };
+
+function generatePolyTypenames(types: $.introspect.Types) {
+  const descendents = new Map<string, Set<string>>();
+
+  const visit = (current: $.introspect.Type, descendent: $.introspect.Type) => {
+    if (current.kind !== "object") {
+      return;
+    }
+    for (const base of current.bases) {
+      if (!descendents.has(base.id)) {
+        descendents.set(base.id, new Set());
+      }
+      descendents.get(base.id)!.add(descendent.name);
+      visit(types.get(base.id), descendent);
+    }
+  };
+  for (const type of types.values()) {
+    if (type.kind === "object" && !type.is_abstract) {
+      visit(type, type);
+    }
+  }
+  return descendents;
+}

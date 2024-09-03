@@ -348,16 +348,18 @@ describe("select", () => {
       ...e.is(e.Hero, e.Hero["*"]),
       name: true,
     }));
+    type result = $infer<typeof q>;
 
     // 'id' is filtered out since it is not valid in a polymorphic expr
     tc.assert<
       tc.IsExact<
-        $infer<typeof q>,
+        result,
         ({ name: string } & (
           | { __typename: "default::Villain" }
           | {
               __typename: "default::Hero";
               height: string | null;
+              age: number | null;
               isAdult: boolean | null;
               number_of_movies: number | null;
               secret_identity: string | null;
@@ -372,6 +374,24 @@ describe("select", () => {
   test("shape type name", () => {
     const name = e.select(e.Hero).__element__.__name__;
     tc.assert<tc.IsExact<typeof name, "default::Hero">>(true);
+  });
+
+  test("polymorphic type names", () => {
+    tc.assert<
+      tc.IsExact<
+        typeof e.LivingThing.__element__.__polyTypenames__,
+        "default::Hero" | "default::Villain"
+      >
+    >(true);
+    tc.assert<
+      tc.IsExact<
+        typeof e.Person.__element__.__polyTypenames__,
+        "default::Hero" | "default::Villain"
+      >
+    >(true);
+    tc.assert<
+      tc.IsExact<typeof e.Hero.__element__.__polyTypenames__, "default::Hero">
+    >(true);
   });
 
   test("limit/offset inference", () => {
