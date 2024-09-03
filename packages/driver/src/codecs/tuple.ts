@@ -30,10 +30,12 @@ import {
 
 export class TupleCodec extends Codec implements ICodec, IArgsCodec {
   private subCodecs: ICodec[];
+  public typeName: string | null;
 
-  constructor(tid: uuid, codecs: ICodec[]) {
+  constructor(tid: uuid, typeName: string | null, codecs: ICodec[]) {
     super(tid);
     this.subCodecs = codecs;
+    this.typeName = typeName;
   }
 
   encode(buf: WriteBuffer, object: any, allowNull = false): void {
