@@ -679,7 +679,7 @@ async function parseConnectDsnAndArgs(
       .catch(() => null);
 
     if (instName !== null) {
-      const [cloudProfile, database, branch] = await Promise.all([
+      const [cloudProfile, _database, branch] = await Promise.all([
         serverUtils
           .readFileUtf8(stashDir, "cloud-profile")
           .then((name) => name.trim())
@@ -693,6 +693,18 @@ async function parseConnectDsnAndArgs(
           .then((name) => name.trim())
           .catch(() => undefined),
       ]);
+
+      let database = _database;
+
+      if (database !== undefined && branch !== undefined) {
+        if (database !== branch) {
+          throw new InterfaceError(
+            "Both database and branch exist in the config dir and don't match.",
+          );
+        } else {
+          database = undefined;
+        }
+      }
 
       await resolveConfigOptions(
         resolvedConfig,
