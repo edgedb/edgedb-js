@@ -28,6 +28,14 @@ export type TypesystemOptions = {
     }
       ? true
       : false;
+    /**
+     * Opt-in to strict __type__.name string literal unions.
+     */
+    strictTypeNames: SetTypesystemOptions extends {
+      future: { strictTypeNames: true };
+    }
+      ? true
+      : false;
   };
 };
 

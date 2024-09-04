@@ -30,6 +30,7 @@ import type {
   PropertyShape,
   TypeSet,
   ScalarType,
+  TypesystemOptions,
 } from "./typesystem";
 // import {typeutil} from "./typeutil";
 // import {cardutil} from "./cardinality";
@@ -42,7 +43,13 @@ type getChildOfObjectTypeSet<
 > = TypeSet<
   ChildKey extends "name"
     ? Root extends { [typenameSymbol]: string }
-      ? ScalarType<"std::str", string, Root[typeof typenameSymbol]>
+      ? ScalarType<
+          "std::str",
+          TypesystemOptions["future"]["strictTypeNames"] extends true
+            ? Root[typeof typenameSymbol]
+            : string,
+          Root[typeof typenameSymbol]
+        >
       : Root["__element__"]["__pointers__"][ChildKey]["target"]
     : Root["__element__"]["__pointers__"][ChildKey]["target"],
   cardutil.multiplyCardinalities<

@@ -9,6 +9,7 @@ declare module "./dbschema/edgeql-js/typesystem" {
   export interface SetTypesystemOptions {
     future: {
       polymorphismAsDiscriminatedUnions: true;
+      strictTypeNames: true;
     };
   }
 }
@@ -1038,6 +1039,7 @@ SELECT __scope_0_defaultVillain {
           nemesis: (nemesis) => {
             const nameLen = e.len(nemesis.name);
             return {
+              t: nemesis.__type__.name,
               name: true,
               nameLen,
               nameLen2: nameLen,
@@ -1073,6 +1075,7 @@ SELECT __scope_0_defaultPerson {
             }
           ))
         SELECT __scope_2_defaultHero {
+          single t := __scope_2_defaultHero.__type__.name,
           name,
           single nameLen := __scope_2_defaultHero.__withVar_3,
           single nameLen2 := __scope_2_defaultHero.__withVar_3
@@ -1104,6 +1107,7 @@ SELECT __scope_0_defaultPerson {
                 id: string;
                 name: string;
                 nemesis: {
+                  t: "default::Hero";
                   name: string;
                   nameLen: number;
                   nameLen2: number;
@@ -1414,6 +1418,7 @@ SELECT __scope_0_defaultPerson {
 
   test("portable shape", async () => {
     const baseShape = e.shape(e.Movie, (movie) => ({
+      __typename: movie.__type__.name,
       title: true,
       rating: true,
       filter_single: e.op(movie.title, "=", "The Avengers"),
@@ -1437,6 +1442,7 @@ SELECT __scope_0_defaultPerson {
       tc.IsExact<
         ShapeType,
         {
+          __typename: "default::Movie";
           title: string;
           rating: number | null;
         } | null
@@ -1465,6 +1471,7 @@ SELECT __scope_0_defaultPerson {
       tc.IsExact<
         Q,
         {
+          __typename: "default::Movie";
           title: string;
           rating: number | null;
           characters: {
