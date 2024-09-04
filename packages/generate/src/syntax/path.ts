@@ -41,8 +41,8 @@ type getChildOfObjectTypeSet<
   ChildKey extends keyof Root["__element__"]["__pointers__"],
 > = TypeSet<
   ChildKey extends "name"
-    ? Root extends { __typename__: string }
-      ? ScalarType<"std::str", string, Root["__typename__"]>
+    ? Root extends { [typenameSymbol]: string }
+      ? ScalarType<"std::str", string, Root[typeof typenameSymbol]>
       : Root["__element__"]["__pointers__"][ChildKey]["target"]
     : Root["__element__"]["__pointers__"][ChildKey]["target"],
   cardutil.multiplyCardinalities<
@@ -184,6 +184,8 @@ export type getPropsShape<T extends ObjectType> = typeutil.flatten<
   }>
 >;
 
+const typenameSymbol = Symbol("typename");
+
 export type $expr_PathNode<
   Root extends ObjectTypeSet = ObjectTypeSet,
   Parent extends PathParent | null = PathParent | null,
@@ -194,7 +196,7 @@ export type $expr_PathNode<
   __cardinality__: Root["__cardinality__"];
   __parent__: Parent;
   __kind__: ExpressionKind.PathNode;
-  __typename__: TypeName;
+  [typenameSymbol]: TypeName;
   // __exclusive__: boolean;
   "*": getPropsShape<Root["__element__"]>;
 }>;
