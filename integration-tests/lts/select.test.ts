@@ -1119,6 +1119,23 @@ SELECT __scope_0_defaultPerson {
     >(true);
   });
 
+  test("polymorphic with explicit __typename is not duplicated", async () => {
+    const query = e.select(e.Movie.characters, (person) => ({
+      __typename: person.__type__.name,
+      ...e.is(e.Villain, { nemesis: true }),
+    }));
+
+    assert.equal(
+      query.toEdgeQL(),
+      `WITH
+  __scope_0_defaultPerson := DETACHED default::Movie.characters
+SELECT __scope_0_defaultPerson {
+  single __typename := __scope_0_defaultPerson.__type__.name,
+  [IS default::Villain].nemesis
+}`,
+    );
+  });
+
   test("polymorphic field in nested shape", async () => {
     const query = e.select(e.Movie, (movie) => ({
       title: true,

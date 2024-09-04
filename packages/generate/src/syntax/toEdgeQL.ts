@@ -1398,7 +1398,7 @@ function shapeToEdgeQL(
   if (lines.length === 0 && injectImplicitId) {
     addLine("id");
   }
-  if (hasPolyEl) {
+  if (hasPolyEl && !seen.has("__typename")) {
     addLine("__typename := .__type__.name");
   }
   return keysOnly ? `{${lines.join(", ")}}` : `{\n${lines.join(",\n")}\n}`;
