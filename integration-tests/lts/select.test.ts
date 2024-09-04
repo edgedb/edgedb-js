@@ -362,7 +362,7 @@ describe("select", () => {
               height: string | null;
               age: number | null;
               isAdult: boolean | null;
-              number_of_movies: number | null;
+              number_of_movies: number;
               secret_identity: string | null;
             }
         ))[]
@@ -1134,6 +1134,35 @@ SELECT __scope_0_defaultPerson {
   [IS default::Villain].nemesis
 }`,
     );
+  });
+
+  test.skip("polymorphic from type intersection", async () => {
+    const query = e.select(e.Movie.characters, (person) => ({
+      heroMovieCount: person.is(e.Hero).number_of_movies,
+      heroInfo: e.select(person.is(e.Hero), (hero) => ({
+        number_of_movies: true,
+        numMovies: hero.number_of_movies,
+      })),
+    }));
+    type result = $infer<typeof query>;
+    tc.assert<
+      tc.IsExact<
+        result,
+        (
+          | {
+              __typename: "default::Villain";
+            }
+          | {
+              __typename: "default::Hero";
+              heroMovieCount: number;
+              heroInfo: {
+                number_of_movies: number;
+                numMovies: number;
+              };
+            }
+        )[]
+      >
+    >(false);
   });
 
   test("polymorphic field in nested shape", async () => {
