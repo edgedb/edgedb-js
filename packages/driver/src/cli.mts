@@ -212,7 +212,12 @@ async function writeCliLocationToCache(cliLocation: string) {
 
 async function selfInstallFromTempCli(): Promise<string | null> {
   debug("Self-installing EdgeDB CLI...");
-  const cmd = IS_TTY ? ["_self_install"] : ["_self_install", "--quiet"];
+  // n.b. need -y because in the Vercel build container, $HOME and euid-obtained
+  // home are different, and the CLI installation requires this as confirmation
+  const cmd = ["_self_install", "-y"];
+  if (!IS_TTY) {
+    cmd.push("--quiet");
+  }
   runEdgeDbCli(cmd, TEMPORARY_CLI_PATH);
   debug("  - CLI self-installed successfully.");
   return getCliLocationFromCache();
