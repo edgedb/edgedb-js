@@ -613,7 +613,8 @@ async function handleAuthRoutes(
 
       setAuthCookie(cookies, config, tokenData.auth_token);
 
-      deleteCookie(cookies, config.pkceVerifierCookieName);
+      // n.b. we need to keep the verifier cookie around for the email
+      // verification flow which uses the same PKCE session
 
       return onBuiltinUICallback({
         error: null,
