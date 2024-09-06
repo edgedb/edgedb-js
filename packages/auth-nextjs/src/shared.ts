@@ -491,7 +491,8 @@ export abstract class NextAuth extends NextAuthHelpers {
               );
             }
             this.setAuthCookie(tokenData.auth_token);
-            cookies().delete(this.options.pkceVerifierCookieName);
+            // n.b. we need to keep the verifier cookie around for the email
+            // verification flow which uses the same PKCE session
 
             return onBuiltinUICallback(
               {

@@ -376,13 +376,8 @@ export class RemixServerAuth extends RemixClientAuth {
               "Set-Cookie",
               this.createAuthCookie(tokenData.auth_token),
             );
-            headers.append(
-              "Set-Cookie",
-              cookie.serialize(this.options.pkceVerifierCookieName, "", {
-                maxAge: 0,
-                path: "/",
-              }),
-            );
+            // n.b. we need to keep the verifier cookie around for the email
+            // verification flow which uses the same PKCE session
             return cbCall(
               onBuiltinUICallback,
               {
