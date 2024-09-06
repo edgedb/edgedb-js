@@ -1,7 +1,7 @@
 {
   "name": "@edgedb/auth-express",
   "description": "Helper library to integrate the EdgeDB Auth extension with Express",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "author": "EdgeDB <info@edgedb.com>",
   "repository": {
@@ -33,12 +33,12 @@
     "lint:fix": "eslint --fix"
   },
   "devDependencies": {
+    "@repo/tsconfig": "*",
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.13",
-    "express": "^4.19.2",
-    "typescript": "^5.5.2",
     "edgedb": "*",
-    "@repo/tsconfig": "*"
+    "express": "^4.19.2",
+    "typescript": "^5.5.2"
   },
   "peerDependencies": {
     "cookie-parser": "^1.4.6",
