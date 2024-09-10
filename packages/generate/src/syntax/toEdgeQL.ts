@@ -6,6 +6,7 @@ import {
   RelativeDuration,
   DateDuration,
   Range,
+  InputDataError,
 } from "edgedb";
 import {
   Cardinality,
@@ -1448,13 +1449,34 @@ const numericalTypes: Record<string, boolean> = {
   "std::float64": true,
 };
 
+function makeLabel(stringified: string): string {
+  const MAX_ITERATIONS = 100;
+  const prefix = "jsonliteral";
+  let counter = 0;
+  let label = `${prefix}`;
+
+  while (stringified.includes(`$${label}$`) && counter < MAX_ITERATIONS) {
+    label = `${prefix}${counter}`;
+    counter++;
+  }
+
+  if (counter >= MAX_ITERATIONS) {
+    throw new InputDataError(
+      "Counter reached 100 without finding a unique label.",
+    );
+  }
+  return label;
+}
+
 function literalToEdgeQL(type: BaseType, val: any): string {
   const typename = (type as any).__casttype__?.__name__ ?? type.__name__;
   let skipCast = false;
   let stringRep;
   if (typename === "std::json") {
     skipCast = true;
-    stringRep = `to_json($$${JSON.stringify(val)}$$)`;
+    const stringified = JSON.stringify(val);
+    const label = `$${makeLabel(stringified)}$`;
+    stringRep = `to_json(${label}${JSON.stringify(val)}${label})`;
   } else if (typeof val === "string") {
     if (numericalTypes[typename]) {
       skipCast = typename === type.__name__;

@@ -1559,4 +1559,23 @@ SELECT __scope_0_defaultPerson {
       >
     >(true);
   });
+
+  test("select json literal", async () => {
+    const q = e.select({
+      jsonLiteral: e.json("$jsonliteral$delete Person"),
+    });
+
+    const result = await q.run(client);
+    assert.deepEqual(result, { jsonLiteral: "$jsonliteral$delete Person" });
+  });
+
+  test("select json literal: counter overflow", async () => {
+    let testString = "$jsonliteral$";
+    for (let i = 0; i < 100; i++) {
+      testString += `$jsonliteral${i}$`;
+    }
+    const q = e.select(e.json(testString));
+
+    assert.rejects(() => q.run(client), edgedb.InputDataError);
+  });
 });
