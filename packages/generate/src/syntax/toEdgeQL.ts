@@ -1454,7 +1454,21 @@ function literalToEdgeQL(type: BaseType, val: any): string {
   let stringRep;
   if (typename === "std::json") {
     skipCast = true;
-    stringRep = `to_json($jsonliteral$${JSON.stringify(val)}$jsonliteral$)`;
+    const stringified = JSON.stringify(val);
+    const buildLabel = (
+      dataStr: string,
+      currentLabel: string = "jsonliteral",
+    ) => {
+      if (dataStr.includes(`$${currentLabel}$`)) {
+        const randomAscii = String.fromCharCode(
+          Math.floor(Math.random() * (126 - 32 + 1)) + 32,
+        );
+        return buildLabel(dataStr, currentLabel + randomAscii);
+      }
+      return currentLabel;
+    };
+    const label = `$${buildLabel(stringified)}$`;
+    stringRep = `to_json(${label}${JSON.stringify(val)}${label})`;
   } else if (typeof val === "string") {
     if (numericalTypes[typename]) {
       skipCast = typename === type.__name__;

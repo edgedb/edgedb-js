@@ -1562,10 +1562,10 @@ SELECT __scope_0_defaultPerson {
 
   test("select json literal", async () => {
     const q = e.select({
-      jsonLiteral: e.json("asdf$$$*"),
+      jsonLiteral: e.json("$jsonliteral$delete Person"),
     });
 
     const result = await q.run(client);
-    assert.deepEqual(result, { jsonLiteral: "asdf$$$*" });
+    assert.deepEqual(result, { jsonLiteral: "$jsonliteral$delete Person" });
   });
 });
