@@ -6,6 +6,7 @@ import {
   RelativeDuration,
   DateDuration,
   Range,
+  InputDataError,
 } from "edgedb";
 import {
   Cardinality,
@@ -1450,14 +1451,19 @@ const numericalTypes: Record<string, boolean> = {
 
 function makeLabel(stringified: string): string {
   const MAX_ITERATIONS = 100;
-  let label = `jsonliteral`;
+  const prefix = "jsonliteral";
   let counter = 0;
+  let label = `${prefix}${counter}`;
+
   while (stringified.includes(`$${label}$`) && counter < MAX_ITERATIONS) {
-    label = `${label}${counter}`;
+    label = `${prefix}${counter}`;
     counter++;
   }
+
   if (counter >= MAX_ITERATIONS) {
-    throw new Error("Counter reached 100 without finding a unique label.");
+    throw new InputDataError(
+      "Counter reached 100 without finding a unique label.",
+    );
   }
   return label;
 }
