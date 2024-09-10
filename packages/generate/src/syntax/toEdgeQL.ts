@@ -1454,7 +1454,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
   let stringRep;
   if (typename === "std::json") {
     skipCast = true;
-    stringRep = `to_json($$${JSON.stringify(val)}$$)`;
+    stringRep = `to_json($jsonliteral$${JSON.stringify(val)}$jsonliteral$)`;
   } else if (typeof val === "string") {
     if (numericalTypes[typename]) {
       skipCast = typename === type.__name__;
