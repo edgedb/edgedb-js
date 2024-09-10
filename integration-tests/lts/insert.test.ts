@@ -24,39 +24,19 @@ describe("insert", () => {
   });
 
   test("basic insert", async () => {
-    const data = [{ title: "Black Widow $$$*", genre: "Action", rating: 5 }];
-    const q1 = e.params(
-      {
-        data: e.json,
-      },
-      (params) =>
-        e.for(e.json_array_unpack(params.data), (j) =>
-          e.insert(e.Movie, {
-            title: e.cast(e.str, e.json_get(j, "title")),
-            genre: e.cast(e.Genre, e.json_get(j, "genre")),
-            rating: e.cast(e.int16, e.json_get(j, "rating")),
-          }),
-        ),
-    );
+    const q1 = e.insert(e.Movie, {
+      title: "Black Widow",
+      genre: e.Genre.Action,
+      rating: 5,
+    });
 
-    assert.deepEqual(q1.__cardinality__, $.Cardinality.Many);
-    tc.assert<tc.IsExact<(typeof q1)["__cardinality__"], $.Cardinality.Many>>(
+    assert.deepEqual(q1.__cardinality__, $.Cardinality.One);
+    tc.assert<tc.IsExact<(typeof q1)["__cardinality__"], $.Cardinality.One>>(
       true,
     );
 
-    await q1.run(client, { data });
-    await client.execute(`DELETE Movie FILTER .title = 'Black Widow $$$*';`);
-
-    const q2 = e.for(e.json_array_unpack(e.json(data)), (j) =>
-      e.insert(e.Movie, {
-        title: e.cast(e.str, e.json_get(j, "title")),
-        genre: e.cast(e.Genre, e.json_get(j, "genre")),
-        rating: e.cast(e.int16, e.json_get(j, "rating")),
-      }),
-    );
-
-    await q2.run(client);
-    await client.execute(`DELETE Movie FILTER .title = 'Black Widow $$$*';`);
+    await q1.run(client);
+    await client.execute(`DELETE Movie FILTER .title = 'Black Widow';`);
   });
 
   test("insert with keyword enum", async () => {
