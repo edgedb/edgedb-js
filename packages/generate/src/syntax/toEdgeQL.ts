@@ -1448,6 +1448,20 @@ const numericalTypes: Record<string, boolean> = {
   "std::float64": true,
 };
 
+function makeLabel(stringified: string): string {
+  const MAX_ITERATIONS = 100;
+  let label = `jsonliteral`;
+  let counter = 0;
+  while (stringified.includes(`$${label}$`) && counter < MAX_ITERATIONS) {
+    label = `${label}${counter}`;
+    counter++;
+  }
+  if (counter === MAX_ITERATIONS) {
+    throw new Error("Counter reached 100 without finding a unique label.");
+  }
+  return label;
+}
+
 function literalToEdgeQL(type: BaseType, val: any): string {
   const typename = (type as any).__casttype__?.__name__ ?? type.__name__;
   let skipCast = false;
@@ -1455,19 +1469,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
   if (typename === "std::json") {
     skipCast = true;
     const stringified = JSON.stringify(val);
-    const buildLabel = (
-      dataStr: string,
-      currentLabel: string = "jsonliteral",
-    ) => {
-      if (dataStr.includes(`$${currentLabel}$`)) {
-        const randomAscii = String.fromCharCode(
-          Math.floor(Math.random() * (126 - 32 + 1)) + 32,
-        );
-        return buildLabel(dataStr, currentLabel + randomAscii);
-      }
-      return currentLabel;
-    };
-    const label = `$${buildLabel(stringified)}$`;
+    const label = `$${makeLabel(stringified)}$`;
     stringRep = `to_json(${label}${JSON.stringify(val)}${label})`;
   } else if (typeof val === "string") {
     if (numericalTypes[typename]) {
