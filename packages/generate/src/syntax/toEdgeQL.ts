@@ -1456,7 +1456,7 @@ function makeLabel(stringified: string): string {
     label = `${label}${counter}`;
     counter++;
   }
-  if (counter === MAX_ITERATIONS) {
+  if (counter >= MAX_ITERATIONS) {
     throw new Error("Counter reached 100 without finding a unique label.");
   }
   return label;
