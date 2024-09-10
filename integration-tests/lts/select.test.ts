@@ -1559,4 +1559,13 @@ SELECT __scope_0_defaultPerson {
       >
     >(true);
   });
+
+  test("select json literal", async () => {
+    const q = e.select({
+      jsonLiteral: e.json("asdf$$$*"),
+    });
+
+    const result = await q.run(client);
+    assert.deepEqual(result, { jsonLiteral: "asdf$$$*" });
+  });
 });
