@@ -1453,7 +1453,7 @@ function makeLabel(stringified: string): string {
   const MAX_ITERATIONS = 100;
   const prefix = "jsonliteral";
   let counter = 0;
-  let label = `${prefix}${counter}`;
+  let label = `${prefix}`;
 
   while (stringified.includes(`$${label}$`) && counter < MAX_ITERATIONS) {
     label = `${prefix}${counter}`;
