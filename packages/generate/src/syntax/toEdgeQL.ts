@@ -1476,7 +1476,7 @@ function literalToEdgeQL(type: BaseType, val: any): string {
     skipCast = true;
     const stringified = JSON.stringify(val);
     const label = `$${makeLabel(stringified)}$`;
-    stringRep = `to_json(${label}${JSON.stringify(val)}${label})`;
+    stringRep = `to_json(${label}${stringified}${label})`;
   } else if (typeof val === "string") {
     if (numericalTypes[typename]) {
       skipCast = typename === type.__name__;
