@@ -628,7 +628,8 @@ async function handleAuthRoutes(
     case "builtin/signup": {
       const pkceSession = await core.then((core) => core.createPKCESession());
 
-      deleteCookie(cookies, config.pkceVerifierCookieName);
+      const { verifier } = pkceSession;
+      setVerifierCookie(cookies, config, verifier);
 
       return redirect(
         307,
