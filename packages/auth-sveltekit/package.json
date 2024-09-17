@@ -1,7 +1,7 @@
 {
   "name": "@edgedb/auth-sveltekit",
   "description": "Helper library to integrate the EdgeDB Auth extension with Sveltekit.",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "author": "EdgeDB <info@edgedb.com>",
   "type": "module",
   "repository": {
