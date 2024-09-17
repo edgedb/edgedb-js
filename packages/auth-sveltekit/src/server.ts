@@ -67,12 +67,12 @@ export interface AuthRouteHandlers {
       { verificationToken?: string }
     >,
   ) => Promise<never>;
-  onMagicLinkCallback(
+  onMagicLinkCallback?: (
     params: ParamsOrError<{
       tokenData: TokenData;
       isSignUp: boolean;
     }>,
-  ): Promise<Response>;
+  ) => Promise<Response>;
   onSignout?: () => Promise<never>;
 }
 
