@@ -43,12 +43,11 @@ Creates an instance of `EdgeDBAI` with the specified client and options.
 
 - `streamRag(message: string, context?: QueryContext): Promise<Response>`
 
-  Streams a query to the configured AI model and returns a `Response` object that streams the results. This method is useful for handling large datasets or continuous data feeds.
+  Sends a query to the configured AI model and returns a `Response` object that streams the results. This method is useful for handling large datasets or continuous data feeds.
 
 - `getRagAsyncGenerator(message: string, context?: QueryContext): AsyncGenerator<StreamingMessage, void, undefined>`
 
-  Initiates a streaming query to the AI model and returns an asynchronous generator. This allows for handling streaming data as it arrives.
-
+  Initiates a query to the AI model and returns an asynchronous generator. This allows for handling streaming data as it arrives.
 
 ## Example
 
@@ -85,6 +84,6 @@ console.timeEnd("gpt-3.5 Time");
 const fastChemistryAi = fastAstronomyAi.withContext({ query: "Chemistry" });
 
 console.log(
-  await fastChemistryAi.queryRag("What is the atomic number of gold?")
+  await fastChemistryAi.queryRag("What is the atomic number of gold?"),
 );
 ```

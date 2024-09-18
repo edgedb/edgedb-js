@@ -89,73 +89,56 @@ export class EdgeDBAI {
     return response;
   }
 
-  async queryRag({
-    message,
-    context = this.context,
-    stream = false,
-  }: {
-    message: string;
-    context?: QueryContext;
-    stream?: boolean;
-  }): Promise<QueryResponse> {
+  async queryRag(
+    message: string,
+    context: QueryContext = this.context,
+  ): Promise<string> {
     const response = await this.fetchRag({
       model: this.options.model,
       prompt: this.options.prompt,
       context,
       query: message,
-      stream,
+      stream: false,
     });
 
-    return new QueryResponse(response, stream);
-  }
-}
-
-class QueryResponse {
-  private readonly res: Response;
-  private readonly stream: boolean;
-
-  constructor(response: Response, stream: boolean) {
-    this.res = response;
-    this.stream = stream;
-  }
-
-  async text(): Promise<string> {
-    if (!this.stream) {
-      const data = await this.res.json();
-      return data.response;
-    }
-    throw new Error("Cannot call `text()` on a streaming request.");
-  }
-
-  async response(): Promise<any> {
-    if (!this.stream) {
-      return this.res;
+    if (!response.headers.get("content-type")?.includes("application/json")) {
+      throw new Error(
+        "expected response to have content-type: application/json",
+      );
     }
 
-    if (!this.res.body) {
+    const data = await response.json();
+    if (
+      !data ||
+      typeof data !== "object" ||
+      typeof data.response !== "string"
+    ) {
+      throw new Error(
+        "expected response to be object with response key of type string",
+      );
+    }
+
+    return data.response;
+  }
+
+  async *getRagAsyncGenerator(
+    message: string,
+    context: QueryContext = this.context,
+  ): AsyncGenerator<StreamingMessage, void, undefined> {
+    const response = await this.fetchRag({
+      model: this.options.model,
+      prompt: this.options.prompt,
+      context,
+      query: message,
+      stream: true,
+    });
+
+    if (!response.body) {
       throw new Error("Expected response to include a body");
     }
 
-    return new Response(this.res.body, {
-      headers: { "Content-Type": "text/event-stream" },
-    });
-  }
-
-  async *[Symbol.asyncIterator](): AsyncGenerator<
-    StreamingMessage,
-    void,
-    undefined
-  > {
-    if (!this.stream) {
-      throw new Error("Cannot stream results from a non-streaming request.");
-    }
-
-    if (!this.res.body) {
-      throw new Error("Expected response to include a body");
-    }
-
-    const reader = this.res
-      .body!.pipeThrough(new TextDecoderStream())
+    const reader = response.body
+      .pipeThrough(new TextDecoderStream())
       .pipeThrough(new EventSourceParserStream())
       .getReader();
     try {
@@ -169,6 +152,27 @@ class QueryResponse {
     } finally {
       reader.releaseLock();
     }
+  }
+
+  async streamRag(
+    message: string,
+    context: QueryContext = this.context,
+  ): Promise<Response> {
+    const response = await this.fetchRag({
+      model: this.options.model,
+      prompt: this.options.prompt,
+      context,
+      query: message,
+      stream: true,
+    });
+
+    if (!response.body) {
+      throw new Error("Expected response to include a body");
+    }
+
+    return new Response(response.body, {
+      headers: { "Content-Type": "text/event-stream" },
+    });
   }
 }
 
