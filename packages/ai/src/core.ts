@@ -11,6 +11,7 @@ import {
 } from "edgedb/dist/utils.js";
 import type {
   AIOptions,
+  Prompt,
   QueryContext,
   RAGRequest,
   StreamingMessage,
@@ -68,13 +69,39 @@ export class EdgeDBAI {
     });
   }
 
+  queryRag({
+    query,
+    context = this.context,
+  }: {
+    query: string;
+    context?: QueryContext;
+  }): QueryResponse {
+    return new QueryResponse(
+      this.options.model,
+      this.options.prompt,
+      query,
+      context,
+      this.authenticatedFetch,
+    );
+  }
+}
+
+class QueryResponse {
+  constructor(
+    private readonly model: string,
+    private readonly prompt: Prompt | undefined,
+    private readonly query: string,
+    private readonly context: QueryContext,
+    private readonly fetch: Promise<AuthenticatedFetch>,
+  ) {}
+
   private async fetchRag(request: RAGRequest) {
     const headers = request.stream
       ? { Accept: "text/event-stream", "Content-Type": "application/json" }
       : { Accept: "application/json", "Content-Type": "application/json" };
 
     const response = await (
-      await this.authenticatedFetch
+      await this.fetch
     )("rag", {
       method: "POST",
       headers,
@@ -89,54 +116,33 @@ export class EdgeDBAI {
     return response;
   }
 
-  async queryRag({
-    message,
-    context = this.context,
-    stream = false,
-  }: {
-    message: string;
-    context?: QueryContext;
-    stream?: boolean;
-  }): Promise<QueryResponse> {
-    const response = await this.fetchRag({
-      model: this.options.model,
-      prompt: this.options.prompt,
-      context,
-      query: message,
-      stream,
+  async text(): Promise<string> {
+    const res = await this.fetchRag({
+      model: this.model,
+      prompt: this.prompt,
+      context: this.context,
+      query: this.query,
+      stream: false,
     });
 
-    return new QueryResponse(response, stream);
-  }
-}
-
-class QueryResponse {
-  private readonly res: Response;
-  private readonly stream: boolean;
-
-  constructor(response: Response, stream: boolean) {
-    this.res = response;
-    this.stream = stream;
+    const data = await res.json();
+    return data.response;
   }
 
-  async text(): Promise<string> {
-    if (!this.stream) {
-      const data = await this.res.json();
-      return data.response;
-    }
-    throw new Error("Cannot call `text()` on a streaming request.");
-  }
+  async stream(): Promise<any> {
+    const res = await this.fetchRag({
+      model: this.model,
+      prompt: this.prompt,
+      context: this.context,
+      query: this.query,
+      stream: true,
+    });
 
-  async response(): Promise<any> {
-    if (!this.stream) {
-      return this.res;
-    }
-
-    if (!this.res.body) {
+    if (!res.body) {
       throw new Error("Expected response to include a body");
     }
 
-    return new Response(this.res.body, {
+    return new Response(res.body, {
       headers: { "Content-Type": "text/event-stream" },
     });
   }
@@ -146,15 +152,19 @@ class QueryResponse {
     void,
     undefined
   > {
-    if (!this.stream) {
-      throw new Error("Cannot stream results from a non-streaming request.");
-    }
+    const res = await this.fetchRag({
+      model: this.model,
+      prompt: this.prompt,
+      context: this.context,
+      query: this.query,
+      stream: true,
+    });
 
-    if (!this.res.body) {
+    if (!res.body) {
       throw new Error("Expected response to include a body");
     }
 
-    const reader = this.res
+    const reader = res
       .body!.pipeThrough(new TextDecoderStream())
       .pipeThrough(new EventSourceParserStream())
       .getReader();
