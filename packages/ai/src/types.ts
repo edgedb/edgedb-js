@@ -25,48 +25,48 @@ export interface RAGRequest {
   stream?: boolean;
 }
 
-export type MessageStart = {
+export interface MessageStart {
   type: "message_start";
   message: {
     role: "assistant" | "system" | "user";
     id: string;
     model: string;
   };
-};
+}
 
-export type ContentBlockStart = {
+export interface ContentBlockStart {
   type: "content_block_start";
   index: number;
   content_block: {
     text: string;
     type: "text";
   };
-};
+}
 
-export type ContentBlockDelta = {
+export interface ContentBlockDelta {
   type: "content_block_delta";
   delta: {
     type: "text_delta";
     text: string;
   };
   index: number;
-};
+}
 
-export type ContentBlockStop = {
+export interface ContentBlockStop {
   type: "content_block_stop";
   index: number;
-};
+}
 
-export type MessageDelta = {
+export interface MessageDelta {
   type: "message_delta";
   delta: {
     stop_reason: "stop";
   };
-};
+}
 
-export type MessageStop = {
+export interface MessageStop {
   type: "message_stop";
-};
+}
 
 export type StreamingMessage =
   | MessageStart

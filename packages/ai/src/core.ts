@@ -101,6 +101,17 @@ export class EdgeDBAI {
     });
 
     const data = await res.json();
+
+    if (
+      !data ||
+      typeof data !== "object" ||
+      typeof data.response !== "string"
+    ) {
+      throw new Error(
+        "Expected response to be object with response key of type string",
+      );
+    }
+
     return data.response;
   }
 
