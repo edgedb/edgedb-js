@@ -11,7 +11,6 @@ import {
 } from "edgedb/dist/utils.js";
 import type {
   AIOptions,
-  Prompt,
   QueryContext,
   RAGRequest,
   StreamingMessage,
@@ -69,39 +68,13 @@ export class EdgeDBAI {
     });
   }
 
-  queryRag({
-    query,
-    context = this.context,
-  }: {
-    query: string;
-    context?: QueryContext;
-  }): QueryResponse {
-    return new QueryResponse(
-      this.options.model,
-      this.options.prompt,
-      query,
-      context,
-      this.authenticatedFetch,
-    );
-  }
-}
-
-class QueryResponse {
-  constructor(
-    private readonly model: string,
-    private readonly prompt: Prompt | undefined,
-    private readonly query: string,
-    private readonly context: QueryContext,
-    private readonly fetch: Promise<AuthenticatedFetch>,
-  ) {}
-
   private async fetchRag(request: RAGRequest) {
     const headers = request.stream
       ? { Accept: "text/event-stream", "Content-Type": "application/json" }
       : { Accept: "application/json", "Content-Type": "application/json" };
 
     const response = await (
-      await this.fetch
+      await this.authenticatedFetch
     )("rag", {
       method: "POST",
       headers,
@@ -116,12 +89,12 @@ class QueryResponse {
     return response;
   }
 
-  async text(): Promise<string> {
+  async queryRag(query: string, context = this.context): Promise<string> {
     const res = await this.fetchRag({
-      model: this.model,
-      prompt: this.prompt,
-      context: this.context,
-      query: this.query,
+      model: this.options.model,
+      prompt: this.options.prompt,
+      context,
+      query,
       stream: false,
     });
 
@@ -129,56 +102,52 @@ class QueryResponse {
     return data.response;
   }
 
-  async stream(): Promise<any> {
-    const res = await this.fetchRag({
-      model: this.model,
-      prompt: this.prompt,
-      context: this.context,
-      query: this.query,
+  streamRag(query: string, context = this.context) {
+    const fetchRag = this.fetchRag.bind(this);
+
+    const ragOptions = {
+      model: this.options.model,
+      prompt: this.options.prompt,
+      context,
+      query,
       stream: true,
-    });
+    };
 
-    if (!res.body) {
-      throw new Error("Expected response to include a body");
-    }
+    return {
+      async *[Symbol.asyncIterator]() {
+        const res = await fetchRag(ragOptions);
 
-    return new Response(res.body, {
-      headers: { "Content-Type": "text/event-stream" },
-    });
-  }
+        if (!res.body) {
+          throw new Error("Expected response to include a body");
+        }
 
-  async *[Symbol.asyncIterator](): AsyncGenerator<
-    StreamingMessage,
-    void,
-    undefined
-  > {
-    const res = await this.fetchRag({
-      model: this.model,
-      prompt: this.prompt,
-      context: this.context,
-      query: this.query,
-      stream: true,
-    });
-
-    if (!res.body) {
-      throw new Error("Expected response to include a body");
-    }
-
-    const reader = res
-      .body!.pipeThrough(new TextDecoderStream())
-      .pipeThrough(new EventSourceParserStream())
-      .getReader();
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const message = extractMessageFromParsedEvent(value);
-        yield message;
-        if (message.type === "message_stop") break;
-      }
-    } finally {
-      reader.releaseLock();
-    }
+        const reader = res.body
+          .pipeThrough(new TextDecoderStream())
+          .pipeThrough(new EventSourceParserStream())
+          .getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const message = extractMessageFromParsedEvent(value);
+            yield message;
+            if (message.type === "message_stop") break;
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      },
+      then: async (
+        resolve: (value: Response) => void,
+        reject: (reason?: any) => void,
+      ) => {
+        try {
+          resolve(await this.fetchRag(ragOptions));
+        } catch (err) {
+          reject(err);
+        }
+      },
+    };
   }
 }
 
