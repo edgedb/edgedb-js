@@ -68,7 +68,7 @@ export class EdgeDBAI {
     });
   }
 
-  private async fetchRag(request: RAGRequest) {
+  private async fetchRag(request: Omit<RAGRequest, "model" | "prompt">) {
     const headers = request.stream
       ? { Accept: "text/event-stream", "Content-Type": "application/json" }
       : { Accept: "application/json", "Content-Type": "application/json" };
@@ -78,7 +78,11 @@ export class EdgeDBAI {
     )("rag", {
       method: "POST",
       headers,
-      body: JSON.stringify(request),
+      body: JSON.stringify({
+        ...request,
+        model: this.options.model,
+        prompt: this.options.prompt,
+      }),
     });
 
     if (!response.ok) {
@@ -91,8 +95,6 @@ export class EdgeDBAI {
 
   async queryRag(query: string, context = this.context): Promise<string> {
     const res = await this.fetchRag({
-      model: this.options.model,
-      prompt: this.options.prompt,
       context,
       query,
       stream: false,
@@ -106,8 +108,6 @@ export class EdgeDBAI {
     const fetchRag = this.fetchRag.bind(this);
 
     const ragOptions = {
-      model: this.options.model,
-      prompt: this.options.prompt,
       context,
       query,
       stream: true,
