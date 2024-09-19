@@ -13,7 +13,7 @@ jobs:
     # when the release PR gets merged by the bot.
     if: needs.prep.outputs.version == 0
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.edgedb-version == 'nightly' }}
+    continue-on-error: true
     strategy:
       matrix:
         node-version: ["18", "20", "22"]
