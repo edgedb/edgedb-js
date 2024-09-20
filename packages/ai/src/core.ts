@@ -115,7 +115,10 @@ export class EdgeDBAI {
     return data.response;
   }
 
-  streamRag(query: string, context = this.context) {
+  streamRag(
+    query: string,
+    context = this.context,
+  ): AsyncIterable<StreamingMessage> & PromiseLike<Response> {
     const fetchRag = this.fetchRag.bind(this);
 
     const ragOptions = {
@@ -148,17 +151,42 @@ export class EdgeDBAI {
           reader.releaseLock();
         }
       },
-      then: async (
-        resolve: (value: Response) => void,
-        reject: (reason?: any) => void,
-      ) => {
-        try {
-          resolve(await this.fetchRag(ragOptions));
-        } catch (err) {
-          reject(err);
-        }
+      then<TResult1 = Response, TResult2 = never>(
+        onfulfilled?:
+          | ((value: Response) => TResult1 | PromiseLike<TResult1>)
+          | undefined
+          | null,
+        onrejected?:
+          | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+          | undefined
+          | null,
+      ): Promise<TResult1 | TResult2> {
+        return fetchRag(ragOptions).then(onfulfilled, onrejected);
       },
     };
+  }
+
+  async generateEmbeddings(inputs: string[], model: string): Promise<number[]> {
+    const response = await (
+      await this.authenticatedFetch
+    )("embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        input: inputs,
+      }),
+    });
+
+    if (!response.ok) {
+      const bodyText = await response.text();
+      throw new Error(bodyText);
+    }
+
+    const data: { data: { embedding: number[] }[] } = await response.json();
+    return data.data[0].embedding;
   }
 }
 

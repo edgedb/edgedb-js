@@ -41,9 +41,13 @@ Creates an instance of `EdgeDBAI` with the specified client and options.
 
   Sends a query with context to the configured AI model and returns the response as a string.
 
-- `streamRag(message: string, context?: QueryContext): object`
+- `streamRag(message: string, context?: QueryContext): AsyncIterable<StreamingMessage> & PromiseLike<Response>`
 
-  Used both when you need a `Response` object that streams the results, or when you want to handle streaming data as it arrives.
+  Used both when you want to handle streaming data as it arrives or when you need a `Response` object that streams the results.
+
+- `generateEmbeddings(inputs: string[], model: string): Promise<number[]>`
+
+  Generates embeddings for the array of strings.
 
 ## Example
 
@@ -89,4 +93,12 @@ for await (const chunk of fastChemistryAi.streamRag(
 )) {
   console.log("chunk", chunk);
 }
+
+// embeddings
+console.log(
+  await fastChemistryAi.generateEmbeddings(
+    ["What is the atomic number of gold?"],
+    "text-embedding-ada-002",
+  ),
+);
 ```
