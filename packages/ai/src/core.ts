@@ -100,6 +100,12 @@ export class EdgeDBAI {
       stream: false,
     });
 
+    if (!res.headers.get("content-type")?.includes("application/json")) {
+      throw new Error(
+        "Expected response to have content-type: application/json",
+      );
+    }
+
     const data = await res.json();
 
     if (

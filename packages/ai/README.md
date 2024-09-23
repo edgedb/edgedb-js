@@ -43,7 +43,10 @@ Creates an instance of `EdgeDBAI` with the specified client and options.
 
 - `streamRag(message: string, context?: QueryContext): AsyncIterable<StreamingMessage> & PromiseLike<Response>`
 
-  Used both when you want to handle streaming data as it arrives or when you need a `Response` object that streams the results.
+  It can be used in two ways:
+
+  - as an async iterator - if you want to process streaming data in real-time as it arrives, ideal for handling long-running streams;
+  - as a Promise that resolves to a full Response object - you have complete control over how you want to handle the stream, this might be useful when you want to manipulate the raw stream or parse it in a custom way.
 
 - `generateEmbeddings(inputs: string[], model: string): Promise<number[]>`
 
@@ -87,7 +90,13 @@ console.log(
   await fastChemistryAi.queryRag("What is the atomic number of gold?"),
 );
 
-// when you want to handle individual chunks
+// handle the Response object
+const response = await fastChemistryAi.streamRag(
+  "What is the atomic number of gold?",
+);
+handleReadableStream(response); // custom function that reads the stream
+
+// handle individual chunks as they arrive
 for await (const chunk of fastChemistryAi.streamRag(
   "What is the atomic number of gold?",
 )) {
