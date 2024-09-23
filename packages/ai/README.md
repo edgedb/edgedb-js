@@ -45,8 +45,8 @@ Creates an instance of `EdgeDBAI` with the specified client and options.
 
   It can be used in two ways:
 
-  - as an async iterator - if you want to process streaming data in real-time as it arrives, ideal for handling long-running streams;
-  - as a Promise that resolves to a full Response object - you have complete control over how you want to handle the stream, this might be useful when you want to manipulate the raw stream or parse it in a custom way.
+  - as **an async iterator** - if you want to process streaming data in real-time as it arrives, ideal for handling long-running streams;
+  - as **a Promise that resolves to a full Response object** - you have complete control over how you want to handle the stream, this might be useful when you want to manipulate the raw stream or parse it in a custom way.
 
 - `generateEmbeddings(inputs: string[], model: string): Promise<number[]>`
 
