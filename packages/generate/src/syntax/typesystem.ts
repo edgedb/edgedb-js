@@ -869,7 +869,7 @@ export type setToTsType<Set> =
             Element["__pointers__"],
             normaliseShape<Shape>,
             Element["__polyTypenames__"]
-          >,
+            >,
           Card
         >
       : never

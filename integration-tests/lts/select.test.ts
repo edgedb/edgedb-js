@@ -6,15 +6,6 @@ import * as $ from "../../packages/generate/src/syntax/reflection";
 import e, { type $infer } from "./dbschema/edgeql-js";
 import { setupTests, teardownTests, tc, type TestData } from "./setupTeardown";
 
-declare module "./dbschema/edgeql-js/typesystem" {
-  export interface SetTypesystemOptions {
-    future: {
-      polymorphismAsDiscriminatedUnions: true;
-      strictTypeNames: true;
-    };
-  }
-}
-
 let client: edgedb.Client;
 let data: TestData;
 
@@ -177,6 +168,7 @@ describe("select", () => {
           id: string;
           __type__: {
             name: "default::Hero";
+
             __type__: {
               id: string;
               __type__: {

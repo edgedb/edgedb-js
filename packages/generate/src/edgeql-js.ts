@@ -36,6 +36,21 @@ export type Version = {
   minor: number;
 };
 
+const futureFileContent = `declare module "./typesystem" {
+    export interface SetTypesystemOptions {
+      future: {
+        polymorphismAsDiscriminatedUnions: true;
+        strictTypeNames: true;
+      };
+    }
+  }
+
+  export const future = {
+    polymorphismAsDiscriminatedUnions: true,
+    strictTypeNames: true,
+  } as const;
+ `;
+
 export async function generateQueryBuilder(params: {
   root: string | null;
   options: CommandOptions;
@@ -187,6 +202,13 @@ export async function generateQueryBuilder(params: {
       await fs.writeFile(outputPath, newContents);
     }
   }
+
+  const futureFilePath = path.join(syntaxOutDir, "future.ts");
+
+  if (options.future) {
+    await fs.writeFile(futureFilePath, headerComment + futureFileContent);
+  }
+  written.add(futureFilePath); 
 
   if (target === "ts") {
     await dir.write(
