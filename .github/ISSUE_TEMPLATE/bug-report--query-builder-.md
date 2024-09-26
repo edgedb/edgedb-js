@@ -17,7 +17,7 @@ The code causing the error.
 
 Your application schema.
 
-```
+```esdl
 module default {}
 ```
 

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
+import * as fc from "fast-check";
 import * as $ from "../../packages/generate/src/syntax/reflection";
 
 import e, { type $infer } from "./dbschema/edgeql-js";
@@ -1684,5 +1685,34 @@ SELECT __scope_0_defaultPerson {
         }[]
       >
     >(true);
+  });
+
+  test("select json literal", async () => {
+    const q = e.select({
+      jsonLiteral: e.json("$jsonliteral$delete Person"),
+    });
+
+    const result = await q.run(client);
+    assert.deepEqual(result, { jsonLiteral: "$jsonliteral$delete Person" });
+  });
+
+  test("select json literal: counter overflow", async () => {
+    let testString = "$jsonliteral$";
+    for (let i = 0; i < 100; i++) {
+      testString += `$jsonliteral${i}$`;
+    }
+    const q = e.select(e.json(testString));
+
+    assert.rejects(() => q.run(client), edgedb.InputDataError);
+  });
+
+  test("arbitrary json literal", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.jsonValue(), async (arbitraryJson) => {
+        const q = e.select(e.json(arbitraryJson));
+        const result = await q.run(client);
+        assert.deepEqual(result, arbitraryJson);
+      }),
+    );
   });
 });

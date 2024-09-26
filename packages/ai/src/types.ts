@@ -24,3 +24,54 @@ export interface RAGRequest {
   query: string;
   stream?: boolean;
 }
+
+export interface MessageStart {
+  type: "message_start";
+  message: {
+    role: "assistant" | "system" | "user";
+    id: string;
+    model: string;
+  };
+}
+
+export interface ContentBlockStart {
+  type: "content_block_start";
+  index: number;
+  content_block: {
+    text: string;
+    type: "text";
+  };
+}
+
+export interface ContentBlockDelta {
+  type: "content_block_delta";
+  delta: {
+    type: "text_delta";
+    text: string;
+  };
+  index: number;
+}
+
+export interface ContentBlockStop {
+  type: "content_block_stop";
+  index: number;
+}
+
+export interface MessageDelta {
+  type: "message_delta";
+  delta: {
+    stop_reason: "stop";
+  };
+}
+
+export interface MessageStop {
+  type: "message_stop";
+}
+
+export type StreamingMessage =
+  | MessageStart
+  | ContentBlockStart
+  | ContentBlockDelta
+  | ContentBlockStop
+  | MessageDelta
+  | MessageStop;

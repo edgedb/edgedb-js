@@ -2,7 +2,7 @@ import { Cardinality } from "edgedb/dist/reflection/index";
 import type { TypeSet } from "./typesystem";
 
 // Computing cardinality of path
-// From base set cadinality and pointer cardinality
+// From base set cardinality and pointer cardinality
 // Used in path expressions
 // Cardinality  Empty  AtMostOne  One         Many  AtLeastOne
 // Empty        0      0          0           0     0

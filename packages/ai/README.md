@@ -37,9 +37,20 @@ Creates an instance of `EdgeDBAI` with the specified client and options.
 
   Returns a new `EdgeDBAI` instance with an updated query context.
 
-- `async queryRag(message: string, context: QueryContext = this.context): Promise<string>`
+- `async queryRag(message: string, context?: QueryContext): Promise<string>`
 
   Sends a query with context to the configured AI model and returns the response as a string.
+
+- `streamRag(message: string, context?: QueryContext): AsyncIterable<StreamingMessage> & PromiseLike<Response>`
+
+  It can be used in two ways:
+
+  - as **an async iterator** - if you want to process streaming data in real-time as it arrives, ideal for handling long-running streams;
+  - as **a Promise that resolves to a full Response object** - you have complete control over how you want to handle the stream, this might be useful when you want to manipulate the raw stream or parse it in a custom way.
+
+- `generateEmbeddings(inputs: string[], model: string): Promise<number[]>`
+
+  Generates embeddings for the array of strings.
 
 ## Example
 
@@ -76,6 +87,27 @@ console.timeEnd("gpt-3.5 Time");
 const fastChemistryAi = fastAstronomyAi.withContext({ query: "Chemistry" });
 
 console.log(
-  await fastChemistryAi.queryRag("What is the atomic number of gold?")
+  await fastChemistryAi.queryRag("What is the atomic number of gold?"),
+);
+
+// handle the Response object
+const response = await fastChemistryAi.streamRag(
+  "What is the atomic number of gold?",
+);
+handleReadableStream(response); // custom function that reads the stream
+
+// handle individual chunks as they arrive
+for await (const chunk of fastChemistryAi.streamRag(
+  "What is the atomic number of gold?",
+)) {
+  console.log("chunk", chunk);
+}
+
+// embeddings
+console.log(
+  await fastChemistryAi.generateEmbeddings(
+    ["What is the atomic number of gold?"],
+    "text-embedding-ada-002",
+  ),
 );
 ```

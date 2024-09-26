@@ -382,6 +382,7 @@
             "npm:@types/jest@^29.5.12",
             "npm:@types/node@^20.12.13",
             "npm:edgedb",
+            "npm:eventsource-parser@^1.1.2",
             "npm:jest@29.7.0",
             "npm:ts-jest@29.1.4",
             "npm:typescript@^5.5.2"

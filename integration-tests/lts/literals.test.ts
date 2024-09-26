@@ -50,10 +50,13 @@ describe("literals", () => {
     );
     assert.equal(e.year("1234").toEdgeQL(), `<default::year>1234`);
 
-    assert.equal(e.std.json("asdf").toEdgeQL(), `to_json($$"asdf"$$)`);
+    assert.equal(
+      e.std.json("asdf$$$*").toEdgeQL(),
+      `to_json($jsonliteral$"asdf$$$*"$jsonliteral$)`,
+    );
     assert.equal(
       e.std.json({ a: 123, b: "some string", c: [true, false] }).toEdgeQL(),
-      'to_json($${"a":123,"b":"some string","c":[true,false]}$$)',
+      'to_json($jsonliteral${"a":123,"b":"some string","c":[true,false]}$jsonliteral$)',
     );
 
     assert.equal(e.std.str(`asdfaf`).toEdgeQL(), `"asdfaf"`);
