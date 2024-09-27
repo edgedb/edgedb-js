@@ -368,8 +368,8 @@ type shapeElementToTs<
                     computeObjectShape<
                       Pointer["target"]["__pointers__"] & Pointer["properties"],
                       Element,
-                      Pointer["target"]["__polyTypenames__"]
-                    >
+                      TypesystemOptions["future"]["strictTypeNames"] extends true ? Pointer["target"]["__polyTypenames__"] : string
+                      >
                 >,
                 Pointer["cardinality"]
               >
@@ -857,7 +857,7 @@ export type BaseTypeToTsType<
                   ? computeObjectShape<
                       Type["__pointers__"],
                       Type["__shape__"],
-                      Type["__polyTypenames__"]
+                      TypesystemOptions["future"]["strictTypeNames"] extends true ? Type["__polyTypenames__"]: string
                     >
                   : never;
 
@@ -868,7 +868,7 @@ export type setToTsType<Set> =
           computeObjectShape<
             Element["__pointers__"],
             normaliseShape<Shape>,
-            Element["__polyTypenames__"]
+            TypesystemOptions["future"]["strictTypeNames"] extends true ? Element["__polyTypenames__"]: string //todo
             >,
           Card
         >

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
 import * as fc from "fast-check";
-import * as $ from "../../packages/generate/src/syntax/reflection";
 
+import * as $ from "./dbschema/edgeql-js/reflection";
 import e, { type $infer } from "./dbschema/edgeql-js";
 import { setupTests, teardownTests, tc, type TestData } from "./setupTeardown";
 
@@ -160,7 +160,7 @@ describe("select", () => {
         },
       },
     }));
-    type deep = $.setToTsType<typeof deep>;
+    type deep = $infer<typeof deep>
     tc.assert<
       tc.IsExact<
         deep,
