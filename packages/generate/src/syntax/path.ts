@@ -46,8 +46,8 @@ type getChildOfObjectTypeSet<
       ? ScalarType<
           "std::str",
           TypesystemOptions["future"]["strictTypeNames"] extends true
-          ? Root[typeof typenameSymbol]
-          : string,
+            ? Root[typeof typenameSymbol]
+            : string,
           Root[typeof typenameSymbol]
         >
       : Root["__element__"]["__pointers__"][ChildKey]["target"]

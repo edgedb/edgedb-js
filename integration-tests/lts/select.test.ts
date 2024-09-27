@@ -160,7 +160,7 @@ describe("select", () => {
         },
       },
     }));
-    type deep = $infer<typeof deep>
+    type deep = $infer<typeof deep>;
     tc.assert<
       tc.IsExact<
         deep,

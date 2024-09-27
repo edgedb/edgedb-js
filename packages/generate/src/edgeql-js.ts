@@ -208,7 +208,7 @@ export async function generateQueryBuilder(params: {
   if (options.future) {
     await fs.writeFile(futureFilePath, headerComment + futureFileContent);
   }
-  written.add(futureFilePath); 
+  written.add(futureFilePath);
 
   if (target === "ts") {
     await dir.write(
