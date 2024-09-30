@@ -458,9 +458,9 @@ OPTIONS:
         Do not prompt to update gitignore with generated code
     --future
         Include future features
-    --strictTypeNames
+    --future-strict-type-names
         Return the exact string literal for .__type__.name instead of a general string type
-    --polymorphismAsDiscriminatedUnions
+    --future-polymorphism-as-discriminated-unions
         Use a discriminated union as the return type for polymorphic queries, where each member includes __typename
 `);
 }
