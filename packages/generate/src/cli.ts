@@ -239,13 +239,22 @@ const run = async () => {
         options.updateIgnoreFile = false;
         break;
       case "--future":
-        options.future = true;
+        options.future = {
+          strictTypeNames: true,
+          polymorphismAsDiscriminatedUnions: true,
+        };
         break;
       case "--future-strict-type-names":
-        options.strictTypeNames = true;
+        options.future = {
+          ...options.future,
+          strictTypeNames: true,
+        };
         break;
       case "--future-polymorphism-as-discriminated-unions":
-        options.polymorphismAsDiscriminatedUnions = true;
+        options.future = {
+          ...options.future,
+          polymorphismAsDiscriminatedUnions: true,
+        };
         break;
       default:
         exitWithError(`Unknown option: ${flag}`);

@@ -2,6 +2,7 @@
 
 import { adapter } from "edgedb";
 import { type Target, exitWithError } from "./genutil";
+import type { defaultFutureFlags } from "./edgeql-js";
 
 export interface CommandOptions {
   showHelp?: boolean;
@@ -14,9 +15,7 @@ export interface CommandOptions {
   forceOverwrite?: boolean;
   updateIgnoreFile?: boolean;
   useHttpClient?: boolean;
-  future?: boolean;
-  strictTypeNames?: boolean;
-  polymorphismAsDiscriminatedUnions?: boolean;
+  future?: Partial<Record<keyof typeof defaultFutureFlags, boolean>>;
 }
 
 const { input } = adapter;
