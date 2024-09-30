@@ -202,7 +202,7 @@ export async function generateQueryBuilder(params: {
 
   const content =
     headerComment +
-    `export const future = ${JSON.stringify(future, undefined, 2)} as const;`;
+    `export const future = ${JSON.stringify(future, undefined, 2)} as const;\n`;
 
   await fs.writeFile(futureFilePath, content);
   written.add(futureFilePath);
