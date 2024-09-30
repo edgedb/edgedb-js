@@ -42,6 +42,18 @@ const futureFileContent = `export const future = {
   } as const;
  `;
 
+const strictTypeNamesFileContent = `export const future = {
+  polymorphismAsDiscriminatedUnions: false,
+  strictTypeNames: true,
+} as const;
+`;
+
+const polymorphismAsDiscriminatedUnionsFileContent = `export const future = {
+  polymorphismAsDiscriminatedUnions: true,
+  strictTypeNames: false,
+} as const;
+`;
+
 export async function generateQueryBuilder(params: {
   root: string | null;
   options: CommandOptions;
@@ -196,9 +208,26 @@ export async function generateQueryBuilder(params: {
 
   const futureFilePath = path.join(syntaxOutDir, "future.ts");
 
-  if (options.future) {
-    await fs.writeFile(futureFilePath, headerComment + futureFileContent);
+  let content = headerComment;
+
+  if (
+    options.future ||
+    (options.strictTypeNames && options.polymorphismAsDiscriminatedUnions)
+  ) {
+    content += futureFileContent;
+  } else {
+    if (options.strictTypeNames) {
+      content += strictTypeNamesFileContent;
+    }
+    if (options.polymorphismAsDiscriminatedUnions) {
+      content += polymorphismAsDiscriminatedUnionsFileContent;
+    }
   }
+
+  if (content != headerComment) {
+    await fs.writeFile(futureFilePath, content);
+  }
+
   written.add(futureFilePath);
 
   if (target === "ts") {

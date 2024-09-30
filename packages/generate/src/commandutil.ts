@@ -15,6 +15,8 @@ export interface CommandOptions {
   updateIgnoreFile?: boolean;
   useHttpClient?: boolean;
   future?: boolean;
+  strictTypeNames?: boolean;
+  polymorphismAsDiscriminatedUnions?: boolean;
 }
 
 const { input } = adapter;

@@ -241,6 +241,12 @@ const run = async () => {
       case "--future":
         options.future = true;
         break;
+      case "--future-strict-type-names":
+        options.strictTypeNames = true;
+        break;
+      case "--future-polymorphism-as-discriminated-unions":
+        options.polymorphismAsDiscriminatedUnions = true;
+        break;
       default:
         exitWithError(`Unknown option: ${flag}`);
     }
@@ -443,6 +449,10 @@ OPTIONS:
         Do not prompt to update gitignore with generated code
     --future
         Include future features
+    --strictTypeNames
+        Return the exact string literal for .__type__.name instead of a general string type
+    --polymorphismAsDiscriminatedUnions
+        Use a discriminated union as the return type for polymorphic queries, where each member includes __typename
 `);
 }
 run();
