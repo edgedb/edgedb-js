@@ -238,6 +238,9 @@ const run = async () => {
       case "--no-update-ignore-file":
         options.updateIgnoreFile = false;
         break;
+      case "--future":
+        options.future = true;
+        break;
       default:
         exitWithError(`Unknown option: ${flag}`);
     }
@@ -438,6 +441,8 @@ OPTIONS:
         Overwrite <path> contents without confirmation
     --no-update-ignore-file
         Do not prompt to update gitignore with generated code
+    --future
+        Include future features
 `);
 }
 run();

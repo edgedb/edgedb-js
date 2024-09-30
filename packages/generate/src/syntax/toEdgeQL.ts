@@ -55,6 +55,7 @@ import type { $expr_Update } from "./update";
 import type { $expr_Alias, $expr_With } from "./with";
 import type { $expr_Group, GroupingSet } from "./group";
 import type { $expr_Global } from "./globals";
+import { future } from "./future";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -1277,6 +1278,8 @@ function shapeToEdgeQL(
 
   const seen = new Set();
 
+  let hasPolyEl = false;
+
   for (const key in shape) {
     if (!Object.prototype.hasOwnProperty.call(shape, key)) continue;
     if (seen.has(key)) {
@@ -1300,6 +1303,7 @@ function shapeToEdgeQL(
     if (val.__kind__ === ExpressionKind.PolyShapeElement) {
       polyType = val.__polyType__;
       val = val.__shapeElement__;
+      hasPolyEl = true;
     }
     const polyIntersection = polyType
       ? `[IS ${polyType.__element__.__name__}].`
@@ -1395,6 +1399,13 @@ function shapeToEdgeQL(
 
   if (lines.length === 0 && injectImplicitId) {
     addLine("id");
+  }
+  if (
+    hasPolyEl &&
+    !seen.has("__typename") &&
+    future.polymorphismAsDiscriminatedUnions
+  ) {
+    addLine("__typename := .__type__.name");
   }
   return keysOnly ? `{${lines.join(", ")}}` : `{\n${lines.join(",\n")}\n}`;
 }

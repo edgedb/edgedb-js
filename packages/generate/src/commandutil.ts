@@ -14,6 +14,7 @@ export interface CommandOptions {
   forceOverwrite?: boolean;
   updateIgnoreFile?: boolean;
   useHttpClient?: boolean;
+  future?: boolean;
 }
 
 const { input } = adapter;
