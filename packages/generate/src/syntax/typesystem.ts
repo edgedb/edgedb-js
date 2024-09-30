@@ -11,33 +11,7 @@ import { TypeKind } from "edgedb/dist/reflection/index";
 import type { cardutil } from "./cardinality";
 import type { Range, MultiRange } from "edgedb";
 import type { $Shape, normaliseShape } from "./select";
-
-/**
- * Use declaration merging to set the {@link TypesystemOptions} via this
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface SetTypesystemOptions {}
-
-export type TypesystemOptions = {
-  future: {
-    /**
-     * Opt-in to the new discriminated union functionality for polymorphism.
-     */
-    polymorphismAsDiscriminatedUnions: SetTypesystemOptions extends {
-      future: { polymorphismAsDiscriminatedUnions: true };
-    }
-      ? true
-      : false;
-    /**
-     * Opt-in to strict __type__.name string literal unions.
-     */
-    strictTypeNames: SetTypesystemOptions extends {
-      future: { strictTypeNames: true };
-    }
-      ? true
-      : false;
-  };
-};
+import type { future } from "./future";
 
 //////////////////
 // BASETYPE
@@ -368,7 +342,7 @@ type shapeElementToTs<
                     computeObjectShape<
                       Pointer["target"]["__pointers__"] & Pointer["properties"],
                       Element,
-                      TypesystemOptions["future"]["strictTypeNames"] extends true
+                      (typeof future)["strictTypeNames"] extends true
                         ? Pointer["target"]["__polyTypenames__"]
                         : string
                     >
@@ -404,7 +378,7 @@ export type computeObjectShape<
   Pointers extends ObjectTypePointers,
   Shape,
   TypeName extends string = string,
-> = TypesystemOptions["future"]["polymorphismAsDiscriminatedUnions"] extends true
+> = (typeof future)["polymorphismAsDiscriminatedUnions"] extends true
   ? computeObjectShapeNew<Pointers, Shape, TypeName>
   : computeObjectShapeLegacy<Pointers, Shape, TypeName>;
 
@@ -859,7 +833,7 @@ export type BaseTypeToTsType<
                   ? computeObjectShape<
                       Type["__pointers__"],
                       Type["__shape__"],
-                      TypesystemOptions["future"]["strictTypeNames"] extends true
+                      (typeof future)["strictTypeNames"] extends true
                         ? Type["__polyTypenames__"]
                         : string
                     >
@@ -872,7 +846,7 @@ export type setToTsType<Set> =
           computeObjectShape<
             Element["__pointers__"],
             normaliseShape<Shape>,
-            TypesystemOptions["future"]["strictTypeNames"] extends true
+            (typeof future)["strictTypeNames"] extends true
               ? Element["__polyTypenames__"]
               : string //todo
           >,

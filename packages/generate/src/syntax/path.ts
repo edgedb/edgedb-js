@@ -30,8 +30,8 @@ import type {
   PropertyShape,
   TypeSet,
   ScalarType,
-  TypesystemOptions,
 } from "./typesystem";
+import type { future } from "./future";
 // import {typeutil} from "./typeutil";
 // import {cardutil} from "./cardinality";
 
@@ -45,7 +45,7 @@ type getChildOfObjectTypeSet<
     ? Root extends { [typenameSymbol]: string }
       ? ScalarType<
           "std::str",
-          TypesystemOptions["future"]["strictTypeNames"] extends true
+          (typeof future)["strictTypeNames"] extends true
             ? Root[typeof typenameSymbol]
             : string,
           Root[typeof typenameSymbol]

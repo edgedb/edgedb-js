@@ -36,16 +36,7 @@ export type Version = {
   minor: number;
 };
 
-const futureFileContent = `declare module "./typesystem" {
-    export interface SetTypesystemOptions {
-      future: {
-        polymorphismAsDiscriminatedUnions: true;
-        strictTypeNames: true;
-      };
-    }
-  }
-
-  export const future = {
+const futureFileContent = `export const future = {
     polymorphismAsDiscriminatedUnions: true,
     strictTypeNames: true,
   } as const;
