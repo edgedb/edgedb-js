@@ -42,7 +42,7 @@ Navigate into `packages/create`:
 $ cd packages/create
 ```
 
-Build `@edgedb/generate`
+Build `@edgedb/create`
 
 ```bash
 $ yarn build
