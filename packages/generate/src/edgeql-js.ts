@@ -36,11 +36,10 @@ export type Version = {
   minor: number;
 };
 
-const futureFileContent = `export const future = {
-    polymorphismAsDiscriminatedUnions: true,
-    strictTypeNames: true,
-  } as const;
- `;
+export const defaultFutureFlags = {
+  polymorphismAsDiscriminatedUnions: false,
+  strictTypeNames: false,
+};
 
 export async function generateQueryBuilder(params: {
   root: string | null;
@@ -194,11 +193,18 @@ export async function generateQueryBuilder(params: {
     }
   }
 
+  const future = {
+    ...defaultFutureFlags,
+    ...options.future,
+  };
+
   const futureFilePath = path.join(syntaxOutDir, "future.ts");
 
-  if (options.future) {
-    await fs.writeFile(futureFilePath, headerComment + futureFileContent);
-  }
+  const content =
+    headerComment +
+    `export const future = ${JSON.stringify(future, undefined, 2)} as const;\n`;
+
+  await fs.writeFile(futureFilePath, content);
   written.add(futureFilePath);
 
   if (target === "ts") {

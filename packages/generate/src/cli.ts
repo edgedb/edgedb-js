@@ -239,7 +239,22 @@ const run = async () => {
         options.updateIgnoreFile = false;
         break;
       case "--future":
-        options.future = true;
+        options.future = {
+          strictTypeNames: true,
+          polymorphismAsDiscriminatedUnions: true,
+        };
+        break;
+      case "--future-strict-type-names":
+        options.future = {
+          ...options.future,
+          strictTypeNames: true,
+        };
+        break;
+      case "--future-polymorphism-as-discriminated-unions":
+        options.future = {
+          ...options.future,
+          polymorphismAsDiscriminatedUnions: true,
+        };
         break;
       default:
         exitWithError(`Unknown option: ${flag}`);
@@ -443,6 +458,10 @@ OPTIONS:
         Do not prompt to update gitignore with generated code
     --future
         Include future features
+    --future-strict-type-names
+        Return the exact string literal for .__type__.name instead of a general string type
+    --future-polymorphism-as-discriminated-unions
+        Use a discriminated union as the return type for polymorphic queries, where each member includes __typename
 `);
 }
 run();
