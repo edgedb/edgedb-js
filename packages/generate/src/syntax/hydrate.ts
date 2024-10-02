@@ -10,7 +10,8 @@ import type {
 } from "./typesystem";
 
 import { util, TypeKind } from "edgedb/dist/reflection/index";
-import type { typeutil, UUID } from "edgedb/dist/reflection/index";
+import type { typeutil } from "edgedb/dist/reflection/index";
+import type { UUID } from "edgedb/dist/reflection/queries";
 
 const typeCache = new Map<string, BaseType>();
 
