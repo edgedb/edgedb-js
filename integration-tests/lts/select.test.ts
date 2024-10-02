@@ -1701,10 +1701,15 @@ SELECT __scope_0_defaultPerson {
   test("arbitrary json literal", async () => {
     await fc.assert(
       fc.asyncProperty(fc.jsonValue(), async (arbitraryJson) => {
-        const q = e.select(e.json(arbitraryJson));
-        const result = await q.run(client);
-        assert.deepEqual(result, arbitraryJson);
+        const roundTripped = JSON.parse(JSON.stringify(arbitraryJson));
+        const result = await e.select(e.json(arbitraryJson)).run(client);
+        assert.deepEqual(result, roundTripped);
       }),
     );
+  });
+
+  test("json literal special case: -0 is 0 in JSON", async () => {
+    const result = await e.select(e.json(-0)).run(client);
+    assert.equal(result, 0);
   });
 });
