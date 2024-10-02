@@ -10,7 +10,7 @@ import type {
 } from "./typesystem";
 
 import { util, TypeKind } from "edgedb/dist/reflection/index";
-import type { typeutil } from "edgedb/dist/reflection/index";
+import type { typeutil, UUID } from "edgedb/dist/reflection/index";
 
 const typeCache = new Map<string, BaseType>();
 
@@ -87,6 +87,20 @@ function applySpec(
   }
 }
 
+function getCommonAncestors(arrays: { id: UUID }[][]): { id: UUID }[] {
+  if (arrays.length === 0) return [];
+
+  const idCounts = new Map<string, number>();
+
+  arrays.forEach((array) =>
+    new Set(array.map((item) => item.id)).forEach((id) =>
+      idCounts.set(id, (idCounts.get(id) || 0) + 1),
+    ),
+  );
+
+  return arrays[0].filter((item) => idCounts.get(item.id) === arrays.length);
+}
+
 export function makeType<T extends BaseType>(
   spec: $.introspect.Types,
   id: string,
@@ -117,6 +131,22 @@ export function makeType<T extends BaseType>(
     const seen = new Set<string>();
     applySpec(spec, type, pointers, seen, literal);
     const ancestors = [...type.bases];
+
+    if (type.union_of.length) {
+      const extendedTypes: { id: UUID }[][] = [];
+
+      type.union_of.forEach(({ id }, index) => {
+        const unionType = spec.get(id);
+
+        if (unionType.kind === "object" && unionType.bases.length) {
+          extendedTypes[index] = [...unionType.bases];
+        }
+      });
+
+      const commonAncestors = getCommonAncestors(extendedTypes);
+      ancestors.push(...commonAncestors);
+    }
+
     for (const anc of ancestors) {
       const ancType = spec.get(anc.id);
       if (ancType.kind === "object" || ancType.kind === "scalar") {
