@@ -20,6 +20,8 @@ async function cleanupData(client: Client) {
     delete User;
     delete Post;
     delete WithMultiRange;
+    delete Movie;
+    delete Show;
   `);
 }
 
