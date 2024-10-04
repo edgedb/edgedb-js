@@ -11,7 +11,6 @@ import type {
 
 import { util, TypeKind } from "edgedb/dist/reflection/index";
 import type { typeutil } from "edgedb/dist/reflection/index";
-import type { UUID } from "edgedb/dist/reflection/queries";
 
 const typeCache = new Map<string, BaseType>();
 
@@ -88,18 +87,42 @@ function applySpec(
   }
 }
 
-function getCommonAncestors(arrays: { id: UUID }[][]): { id: UUID }[] {
-  if (arrays.length === 0) return [];
+function applySpecToAncestors(
+  spec: $.introspect.Types,
+  ancestors: {
+    id: $.introspect.UUID;
+  }[],
+  shape: any,
+  seen: Set<string>,
+  literal: any,
+) {
+  for (const anc of ancestors) {
+    const ancType = spec.get(anc.id);
+    if (ancType.kind === "object" || ancType.kind === "scalar") {
+      ancestors.push(...ancType.bases);
+    }
+    if (ancType.kind !== "object") {
+      throw new Error(`Not an object: ${anc.id}`);
+    }
+    applySpec(spec, ancType, shape, seen, literal);
+  }
+}
 
-  const idCounts = new Map<string, number>();
+function getCommonPointers(arr: Record<string, any>[]): Record<string, any> {
+  if (arr.length === 0) return {};
 
-  arrays.forEach((array) =>
-    new Set(array.map((item) => item.id)).forEach((id) =>
-      idCounts.set(id, (idCounts.get(id) || 0) + 1),
-    ),
-  );
+  const firstObj = arr[0];
+  const commonPointers: Record<string, any> = {};
 
-  return arrays[0].filter((item) => idCounts.get(item.id) === arrays.length);
+  Object.keys(firstObj).forEach((key) => {
+    const value = firstObj[key];
+    const isCommon = arr.every((obj) => obj[key] !== undefined);
+    if (isCommon) {
+      commonPointers[key] = value;
+    }
+  });
+
+  return commonPointers;
 }
 
 export function makeType<T extends BaseType>(
@@ -128,35 +151,37 @@ export function makeType<T extends BaseType>(
   if (type.kind === "object") {
     obj.__kind__ = TypeKind.object;
 
-    const pointers: any = {};
+    let pointers: Record<string, any> = {};
     const seen = new Set<string>();
     applySpec(spec, type, pointers, seen, literal);
     const ancestors = [...type.bases];
 
     if (type.union_of.length) {
-      const extendedTypes: { id: UUID }[][] = [];
+      const unionPointers = Array(type.union_of.length)
+        .fill(null)
+        .map(() => ({}));
 
       type.union_of.forEach(({ id }, index) => {
+        const seen = new Set<string>();
         const unionType = spec.get(id);
 
-        if (unionType.kind === "object" && unionType.bases.length) {
-          extendedTypes[index] = [...unionType.bases];
+        if (unionType.kind === "object") {
+          applySpec(spec, unionType, unionPointers[index], seen, literal);
+          const ancestors = [...unionType.bases];
+          applySpecToAncestors(
+            spec,
+            ancestors,
+            unionPointers[index],
+            seen,
+            literal,
+          );
         }
       });
 
-      const commonAncestors = getCommonAncestors(extendedTypes);
-      ancestors.push(...commonAncestors);
-    }
-
-    for (const anc of ancestors) {
-      const ancType = spec.get(anc.id);
-      if (ancType.kind === "object" || ancType.kind === "scalar") {
-        ancestors.push(...ancType.bases);
-      }
-      if (ancType.kind !== "object") {
-        throw new Error(`Not an object: ${id}`);
-      }
-      applySpec(spec, ancType, pointers, seen, literal);
+      const commonPointers = getCommonPointers(unionPointers);
+      pointers = { ...pointers, ...commonPointers };
+    } else {
+      applySpecToAncestors(spec, ancestors, pointers, seen, literal);
     }
 
     obj.__pointers__ = pointers;

@@ -11,11 +11,16 @@ module default {
 
     multi movies: Movie;
     multi shows: Show;
+    multi documentaries: Documentary;
 
     multi watching_list := ( 
       select .movies union .shows
-      order by .index
+      order by .year
     );
+
+    multi all_media := (
+       select .movies union .shows union .documentaries
+    )
   }
 
   type Post {
@@ -34,7 +39,7 @@ module default {
   }
 
   abstract type Content {
-    required index: int16;
+    required year: int16;
     required title: str;
   }
 
@@ -44,5 +49,10 @@ module default {
 
   type Show extending Content {
    required seasons: int16;
+  }
+
+  type Documentary {
+    required title: str;
+    required plot: str;
   }
 };
