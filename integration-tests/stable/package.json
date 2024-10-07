@@ -6,7 +6,7 @@
     "typecheck": "echo 'Integration tests - stable, skipping typecheck...'",
     "build": "echo 'Integration tests, no build output...'",
     "generate": "../../packages/generate/dist/cli.js",
-    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" yarn generate edgeql-js && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit --passWithNoTests",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" yarn generate edgeql-js --future && yarn generate queries --file && yarn generate interfaces && jest --detectOpenHandles --forceExit --passWithNoTests",
     "ci:integration-test": "tsx ./testRunner.ts"
   },
   "devDependencies": {
