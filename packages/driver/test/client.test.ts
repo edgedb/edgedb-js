@@ -37,6 +37,7 @@ import {
   Session,
   AuthenticationError,
   InvalidReferenceError,
+  throwWarnings,
 } from "../src/index.node";
 
 import { AdminUIFetchConnection } from "../src/fetchConn";
@@ -2078,6 +2079,43 @@ test("pretty error message", async () => {
    |              ^^^^
 `,
   );
+});
+
+test("warnings handler", async () => {
+  if (getEdgeDBVersion().major < 6) return;
+
+  let client = getClient();
+
+  try {
+    let warnings: EdgeDBError[] | null = null;
+    client = client.withWarningHandler((_warnings) => (warnings = _warnings));
+
+    expect(client.query("select _warn_on_call();")).resolves.toBe([0]);
+
+    expect(Array.isArray(warnings)).toBe(true);
+    expect(warnings!.length).toBe(1);
+    expect(warnings![0]).toBeInstanceOf(EdgeDBError);
+    expect(warnings![0].message.trim()).toBe("Test warning please ignore");
+
+    warnings = null;
+
+    expect(
+      client.transaction((txn) => txn.query("select _warn_on_call();")),
+    ).resolves.toBe([0]);
+
+    expect(Array.isArray(warnings)).toBe(true);
+    expect(warnings!.length).toBe(1);
+    expect(warnings![0]).toBeInstanceOf(EdgeDBError);
+    expect(warnings![0].message.trim()).toBe("Test warning please ignore");
+
+    client = client.withWarningHandler(throwWarnings);
+
+    expect(client.query("select _warn_on_call();")).rejects.toThrow(
+      /warnings occurred while running query: Test warning please ignore/,
+    );
+  } finally {
+    await client.close();
+  }
 });
 
 function _decodeResultBuffer(outCodec: _ICodec, resultData: Uint8Array) {

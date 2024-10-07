@@ -119,6 +119,19 @@ export class Transaction implements Executor {
     }
   }
 
+  private async _runFetchOp(
+    opName: string,
+    ...args: Parameters<BaseRawConnection["fetch"]>
+  ) {
+    const { result, warnings } = await this._runOp(opName, () =>
+      this._rawConn.fetch(...args),
+    );
+    if (warnings.length) {
+      this._holder.options.warningHandler(warnings);
+    }
+    return result;
+  }
+
   /** @internal */
   async _commit(): Promise<void> {
     await this._runOp(
@@ -158,38 +171,35 @@ export class Transaction implements Executor {
   }
 
   async execute(query: string, args?: QueryArgs): Promise<void> {
-    return this._runOp("execute", () =>
-      this._rawConn.fetch(
-        query,
-        args,
-        OutputFormat.NONE,
-        Cardinality.NO_RESULT,
-        this._holder.options.session,
-      ),
+    return this._runFetchOp(
+      "execute",
+      query,
+      args,
+      OutputFormat.NONE,
+      Cardinality.NO_RESULT,
+      this._holder.options.session,
     );
   }
 
   async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
-    return this._runOp("query", () =>
-      this._rawConn.fetch(
-        query,
-        args,
-        OutputFormat.BINARY,
-        Cardinality.MANY,
-        this._holder.options.session,
-      ),
+    return this._runFetchOp(
+      "query",
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.MANY,
+      this._holder.options.session,
     );
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return this._runOp("queryJSON", () =>
-      this._rawConn.fetch(
-        query,
-        args,
-        OutputFormat.JSON,
-        Cardinality.MANY,
-        this._holder.options.session,
-      ),
+    return this._runFetchOp(
+      "queryJSON",
+      query,
+      args,
+      OutputFormat.JSON,
+      Cardinality.MANY,
+      this._holder.options.session,
     );
   }
 
@@ -197,26 +207,24 @@ export class Transaction implements Executor {
     query: string,
     args?: QueryArgs,
   ): Promise<T | null> {
-    return this._runOp("querySingle", () =>
-      this._rawConn.fetch(
-        query,
-        args,
-        OutputFormat.BINARY,
-        Cardinality.AT_MOST_ONE,
-        this._holder.options.session,
-      ),
+    return this._runFetchOp(
+      "querySingle",
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.AT_MOST_ONE,
+      this._holder.options.session,
     );
   }
 
   async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
-    return this._runOp("querySingleJSON", () =>
-      this._rawConn.fetch(
-        query,
-        args,
-        OutputFormat.JSON,
-        Cardinality.AT_MOST_ONE,
-        this._holder.options.session,
-      ),
+    return this._runFetchOp(
+      "querySingleJSON",
+      query,
+      args,
+      OutputFormat.JSON,
+      Cardinality.AT_MOST_ONE,
+      this._holder.options.session,
     );
   }
 
@@ -224,26 +232,24 @@ export class Transaction implements Executor {
     query: string,
     args?: QueryArgs,
   ): Promise<[T, ...T[]]> {
-    return this._runOp("queryRequired", () =>
-      this._rawConn.fetch(
-        query,
-        args,
-        OutputFormat.BINARY,
-        Cardinality.AT_LEAST_ONE,
-        this._holder.options.session,
-      ),
+    return this._runFetchOp(
+      "queryRequired",
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.AT_LEAST_ONE,
+      this._holder.options.session,
     );
   }
 
   async queryRequiredJSON(query: string, args?: QueryArgs): Promise<string> {
-    return this._runOp("queryRequiredJSON", () =>
-      this._rawConn.fetch(
-        query,
-        args,
-        OutputFormat.JSON,
-        Cardinality.AT_LEAST_ONE,
-        this._holder.options.session,
-      ),
+    return this._runFetchOp(
+      "queryRequiredJSON",
+      query,
+      args,
+      OutputFormat.JSON,
+      Cardinality.AT_LEAST_ONE,
+      this._holder.options.session,
     );
   }
 
@@ -251,14 +257,13 @@ export class Transaction implements Executor {
     query: string,
     args?: QueryArgs,
   ): Promise<T> {
-    return this._runOp("queryRequiredSingle", () =>
-      this._rawConn.fetch(
-        query,
-        args,
-        OutputFormat.BINARY,
-        Cardinality.ONE,
-        this._holder.options.session,
-      ),
+    return this._runFetchOp(
+      "queryRequiredSingle",
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.ONE,
+      this._holder.options.session,
     );
   }
 
@@ -266,14 +271,13 @@ export class Transaction implements Executor {
     query: string,
     args?: QueryArgs,
   ): Promise<string> {
-    return this._runOp("queryRequiredSingleJSON", () =>
-      this._rawConn.fetch(
-        query,
-        args,
-        OutputFormat.JSON,
-        Cardinality.ONE,
-        this._holder.options.session,
-      ),
+    return this._runFetchOp(
+      "queryRequiredSingleJSON",
+      query,
+      args,
+      OutputFormat.JSON,
+      Cardinality.ONE,
+      this._holder.options.session,
     );
   }
 }

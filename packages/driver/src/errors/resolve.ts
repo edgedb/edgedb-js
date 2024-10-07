@@ -17,7 +17,7 @@
  */
 
 import * as errors from "./index";
-import type { ErrorType } from "./base";
+import { ErrorAttr, type ErrorType } from "./base";
 import { errorMapping } from "./map";
 
 export function resolveErrorCode(code: number): ErrorType {
@@ -47,4 +47,28 @@ export function resolveErrorCode(code: number): ErrorType {
   }
 
   return errors.EdgeDBError;
+}
+
+const _JSON_FIELDS = {
+  hint: ErrorAttr.hint,
+  details: ErrorAttr.details,
+  start: ErrorAttr.characterStart,
+  end: ErrorAttr.characterEnd,
+  line: ErrorAttr.lineStart,
+  col: ErrorAttr.columnStart,
+};
+
+export function errorFromJSON(data: any) {
+  const errType = resolveErrorCode(data.code);
+  const err = new errType(data.message);
+
+  const attrs = new Map<number, string>();
+  for (const [name, field] of Object.entries(_JSON_FIELDS)) {
+    if (data["name"] != null) {
+      attrs.set(field, data[name]);
+    }
+  }
+  (err as any)._attrs = attrs;
+
+  return err;
 }
