@@ -1,10 +1,11 @@
 import { utf8Decoder } from "../primitives/buffer";
+import { tags } from "./tags";
 
 export class EdgeDBError extends Error {
-  protected static tags: object = {};
+  protected static tags: { [tag in tags]?: boolean } = {};
   private _message: string;
   private _query?: string;
-  private _attrs?: Map<number, Uint8Array>;
+  private _attrs?: Map<number, Uint8Array | string>;
 
   constructor(
     message?: string,
@@ -34,17 +35,15 @@ export class EdgeDBError extends Error {
     return this.constructor.name;
   }
 
-  hasTag(tag: symbol): boolean {
-    // Can't index by symbol, except when using <any>:
-    //   https://github.com/microsoft/TypeScript/issues/1863
-    const error_type = this.constructor as typeof EdgeDBError as any;
-    return Boolean(error_type.tags?.[tag]);
+  hasTag(tag: tags): boolean {
+    const error_type = this.constructor as typeof EdgeDBError;
+    return error_type.tags[tag] ?? false;
   }
 }
 
 export type ErrorType = new (msg: string) => EdgeDBError;
 
-enum ErrorAttr {
+export enum ErrorAttr {
   hint = 1,
   details = 2,
   serverTraceback = 257,
@@ -60,17 +59,24 @@ enum ErrorAttr {
   characterEnd = -6,
 }
 
-function tryParseInt(val: any) {
-  if (!(val instanceof Uint8Array)) return null;
+function tryParseInt(val: Uint8Array | string | undefined) {
+  if (val == null) return null;
   try {
-    return parseInt(utf8Decoder.decode(val), 10);
+    return parseInt(
+      val instanceof Uint8Array ? utf8Decoder.decode(val) : val,
+      10,
+    );
   } catch {
     return null;
   }
 }
 
+function readAttrStr(val: Uint8Array | string | undefined) {
+  return val instanceof Uint8Array ? utf8Decoder.decode(val) : val ?? "";
+}
+
 export function prettyPrintError(
-  attrs: Map<number, Uint8Array>,
+  attrs: Map<number, Uint8Array | string>,
   query: string,
 ) {
   let errMessage = "\n";
@@ -104,12 +110,10 @@ export function prettyPrintError(
   }
 
   if (attrs.has(ErrorAttr.details)) {
-    errMessage += `Details: ${utf8Decoder.decode(
-      attrs.get(ErrorAttr.details),
-    )}\n`;
+    errMessage += `Details: ${readAttrStr(attrs.get(ErrorAttr.details))}\n`;
   }
   if (attrs.has(ErrorAttr.hint)) {
-    errMessage += `Hint: ${utf8Decoder.decode(attrs.get(ErrorAttr.hint))}\n`;
+    errMessage += `Hint: ${readAttrStr(attrs.get(ErrorAttr.hint))}\n`;
   }
 
   return errMessage;
