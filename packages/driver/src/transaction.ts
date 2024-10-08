@@ -171,7 +171,7 @@ export class Transaction implements Executor {
   }
 
   async execute(query: string, args?: QueryArgs): Promise<void> {
-    return this._runFetchOp(
+    await this._runFetchOp(
       "execute",
       query,
       args,

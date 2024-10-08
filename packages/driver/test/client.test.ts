@@ -451,8 +451,10 @@ if (!isDeno) {
       const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
         hasPgVectorExtentionQuery,
       );
-      if (!hasPgVectorExtention) return;
-      await con.execute("drop extension pgvector;");
+      if (hasPgVectorExtention) {
+        await con.execute("drop extension pgvector;");
+      }
+      await con.close();
     });
 
     it("valid: Float32Array", async () => {
@@ -2090,7 +2092,7 @@ test("warnings handler", async () => {
     let warnings: EdgeDBError[] | null = null;
     client = client.withWarningHandler((_warnings) => (warnings = _warnings));
 
-    expect(client.query("select _warn_on_call();")).resolves.toBe([0]);
+    await expect(client.query("select _warn_on_call();")).resolves.toEqual([0]);
 
     expect(Array.isArray(warnings)).toBe(true);
     expect(warnings!.length).toBe(1);
@@ -2099,9 +2101,9 @@ test("warnings handler", async () => {
 
     warnings = null;
 
-    expect(
+    await expect(
       client.transaction((txn) => txn.query("select _warn_on_call();")),
-    ).resolves.toBe([0]);
+    ).resolves.toEqual([0]);
 
     expect(Array.isArray(warnings)).toBe(true);
     expect(warnings!.length).toBe(1);
@@ -2110,7 +2112,7 @@ test("warnings handler", async () => {
 
     client = client.withWarningHandler(throwWarnings);
 
-    expect(client.query("select _warn_on_call();")).rejects.toThrow(
+    await expect(client.query("select _warn_on_call();")).rejects.toThrow(
       /warnings occurred while running query: Test warning please ignore/,
     );
   } finally {

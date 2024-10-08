@@ -218,7 +218,7 @@ export class ClientConnectionHolder {
   }
 
   async execute(query: string, args?: QueryArgs): Promise<void> {
-    return this.retryingFetch(
+    await this.retryingFetch(
       query,
       args,
       OutputFormat.NONE,
