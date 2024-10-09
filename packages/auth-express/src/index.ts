@@ -418,7 +418,8 @@ export class ExpressAuth {
         const isSignUp = searchParams.get("isSignUp") === "true";
         const tokenData = await (await this.core).getToken(code, verifier);
         this.createAuthCookie(res, tokenData.auth_token);
-        res.clearCookie(this.options.pkceVerifierCookieName);
+        // n.b. we need to keep the verifier cookie around for the email
+        // verification flow which uses the same PKCE session
 
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;

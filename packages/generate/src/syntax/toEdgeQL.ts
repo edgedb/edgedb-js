@@ -6,6 +6,7 @@ import {
   RelativeDuration,
   DateDuration,
   Range,
+  InputDataError,
 } from "edgedb";
 import {
   Cardinality,
@@ -54,6 +55,7 @@ import type { $expr_Update } from "./update";
 import type { $expr_Alias, $expr_With } from "./with";
 import type { $expr_Group, GroupingSet } from "./group";
 import type { $expr_Global } from "./globals";
+import { future } from "./future";
 
 export type SomeExpression =
   | $expr_PathNode
@@ -1276,6 +1278,8 @@ function shapeToEdgeQL(
 
   const seen = new Set();
 
+  let hasPolyEl = false;
+
   for (const key in shape) {
     if (!Object.prototype.hasOwnProperty.call(shape, key)) continue;
     if (seen.has(key)) {
@@ -1299,6 +1303,7 @@ function shapeToEdgeQL(
     if (val.__kind__ === ExpressionKind.PolyShapeElement) {
       polyType = val.__polyType__;
       val = val.__shapeElement__;
+      hasPolyEl = true;
     }
     const polyIntersection = polyType
       ? `[IS ${polyType.__element__.__name__}].`
@@ -1395,6 +1400,13 @@ function shapeToEdgeQL(
   if (lines.length === 0 && injectImplicitId) {
     addLine("id");
   }
+  if (
+    hasPolyEl &&
+    !seen.has("__typename") &&
+    future.polymorphismAsDiscriminatedUnions
+  ) {
+    addLine("__typename := .__type__.name");
+  }
   return keysOnly ? `{${lines.join(", ")}}` : `{\n${lines.join(",\n")}\n}`;
 }
 
@@ -1448,13 +1460,37 @@ const numericalTypes: Record<string, boolean> = {
   "std::float64": true,
 };
 
+function makeLabel(stringified: string, prefix = "jsonliteral"): string {
+  const MAX_ITERATIONS = 100;
+  let counter = 0;
+  let label = `${prefix}`;
+
+  while (stringified.includes(`$${label}$`) && counter < MAX_ITERATIONS) {
+    label = `${prefix}${counter}`;
+    counter++;
+  }
+
+  if (counter >= MAX_ITERATIONS) {
+    throw new InputDataError(
+      "Counter reached 100 without finding a unique label.",
+    );
+  }
+  return label;
+}
+
+function wrapAsRawString(val: string): string {
+  const label = makeLabel(val);
+  return `$${label}$${val}$${label}$`;
+}
+
 function literalToEdgeQL(type: BaseType, val: any): string {
   const typename = (type as any).__casttype__?.__name__ ?? type.__name__;
   let skipCast = false;
   let stringRep;
   if (typename === "std::json") {
     skipCast = true;
-    stringRep = `to_json($$${JSON.stringify(val)}$$)`;
+    const stringified = JSON.stringify(val);
+    stringRep = `to_json(${wrapAsRawString(stringified)})`;
   } else if (typeof val === "string") {
     if (numericalTypes[typename]) {
       skipCast = typename === type.__name__;

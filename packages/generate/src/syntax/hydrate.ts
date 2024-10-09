@@ -87,6 +87,44 @@ function applySpec(
   }
 }
 
+function applySpecToAncestors(
+  spec: $.introspect.Types,
+  ancestors: {
+    id: $.introspect.UUID;
+  }[],
+  shape: any,
+  seen: Set<string>,
+  literal: any,
+) {
+  for (const anc of ancestors) {
+    const ancType = spec.get(anc.id);
+    if (ancType.kind === "object" || ancType.kind === "scalar") {
+      ancestors.push(...ancType.bases);
+    }
+    if (ancType.kind !== "object") {
+      throw new Error(`Not an object: ${anc.id}`);
+    }
+    applySpec(spec, ancType, shape, seen, literal);
+  }
+}
+
+function getCommonPointers(arr: Record<string, any>[]): Record<string, any> {
+  if (arr.length === 0) return {};
+
+  const firstObj = arr[0];
+  const commonPointers: Record<string, any> = {};
+
+  Object.keys(firstObj).forEach((key) => {
+    const value = firstObj[key];
+    const isCommon = arr.every((obj) => obj[key] !== undefined);
+    if (isCommon) {
+      commonPointers[key] = value;
+    }
+  });
+
+  return commonPointers;
+}
+
 export function makeType<T extends BaseType>(
   spec: $.introspect.Types,
   id: string,
@@ -113,19 +151,37 @@ export function makeType<T extends BaseType>(
   if (type.kind === "object") {
     obj.__kind__ = TypeKind.object;
 
-    const pointers: any = {};
+    let pointers: Record<string, any> = {};
     const seen = new Set<string>();
     applySpec(spec, type, pointers, seen, literal);
     const ancestors = [...type.bases];
-    for (const anc of ancestors) {
-      const ancType = spec.get(anc.id);
-      if (ancType.kind === "object" || ancType.kind === "scalar") {
-        ancestors.push(...ancType.bases);
-      }
-      if (ancType.kind !== "object") {
-        throw new Error(`Not an object: ${id}`);
-      }
-      applySpec(spec, ancType, pointers, seen, literal);
+
+    if (type.union_of.length) {
+      const unionPointers = Array(type.union_of.length)
+        .fill(null)
+        .map(() => ({}));
+
+      type.union_of.forEach(({ id }, index) => {
+        const seen = new Set<string>();
+        const unionType = spec.get(id);
+
+        if (unionType.kind === "object") {
+          applySpec(spec, unionType, unionPointers[index], seen, literal);
+          const ancestors = [...unionType.bases];
+          applySpecToAncestors(
+            spec,
+            ancestors,
+            unionPointers[index],
+            seen,
+            literal,
+          );
+        }
+      });
+
+      const commonPointers = getCommonPointers(unionPointers);
+      pointers = { ...pointers, ...commonPointers };
+    } else {
+      applySpecToAncestors(spec, ancestors, pointers, seen, literal);
     }
 
     obj.__pointers__ = pointers;

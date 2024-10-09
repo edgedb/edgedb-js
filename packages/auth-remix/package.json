@@ -1,7 +1,7 @@
 {
   "name": "@edgedb/auth-remix",
   "description": "Helper library to integrate the EdgeDB Auth extension with Remix",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": "EdgeDB <info@edgedb.com>",
   "type": "module",
   "repository": {
@@ -21,10 +21,10 @@
     "lint:fix": "eslint --fix"
   },
   "devDependencies": {
+    "@repo/tsconfig": "*",
     "@types/node": "^20.12.13",
-    "typescript": "^5.5.2",
     "edgedb": "*",
-    "@repo/tsconfig": "*"
+    "typescript": "^5.5.2"
   },
   "peerDependencies": {
     "edgedb": "^1.3.6"

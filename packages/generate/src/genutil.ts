@@ -35,7 +35,7 @@ export const makePlainIdent = (name: string): string => {
 };
 
 export function quote(val: string): string {
-  return JSON.stringify(val.toString());
+  return JSON.stringify(val);
 }
 
 export const scalarToLiteralMapping: {

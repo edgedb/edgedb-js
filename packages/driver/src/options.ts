@@ -35,6 +35,23 @@ export interface SimpleRetryOptions {
   backoff?: BackoffFunction;
 }
 
+export type WarningHandler = (warnings: errors.EdgeDBError[]) => void;
+
+export function throwWarnings(warnings: errors.EdgeDBError[]) {
+  throw new Error(
+    `warnings occurred while running query: ${warnings.map((warn) => warn.message)}`,
+    { cause: warnings },
+  );
+}
+
+export function logWarnings(warnings: errors.EdgeDBError[]) {
+  for (const warning of warnings) {
+    console.warn(
+      new Error(`EdgeDB warning: ${warning.message}`, { cause: warning }),
+    );
+  }
+}
+
 export class RetryOptions {
   readonly default: RetryRule;
   private overrides: Map<RetryCondition, RetryRule>;
@@ -197,19 +214,23 @@ export class Options {
   readonly retryOptions: RetryOptions;
   readonly transactionOptions: TransactionOptions;
   readonly session: Session;
+  readonly warningHandler: WarningHandler;
 
   constructor({
     retryOptions = RetryOptions.defaults(),
     transactionOptions = TransactionOptions.defaults(),
     session = Session.defaults(),
+    warningHandler = logWarnings,
   }: {
     retryOptions?: RetryOptions;
     transactionOptions?: TransactionOptions;
     session?: Session;
+    warningHandler?: WarningHandler;
   } = {}) {
     this.retryOptions = retryOptions;
     this.transactionOptions = transactionOptions;
     this.session = session;
+    this.warningHandler = warningHandler;
   }
 
   withTransactionOptions(
@@ -237,6 +258,10 @@ export class Options {
       ...this,
       session: opt,
     });
+  }
+
+  withWarningHandler(handler: WarningHandler): Options {
+    return new Options({ ...this, warningHandler: handler });
   }
 
   static defaults(): Options {

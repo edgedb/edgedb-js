@@ -33,7 +33,7 @@ export {
   RetryOptions,
   Session,
 } from "./options";
-export { defaultBackoff } from "./options";
+export { defaultBackoff, logWarnings, throwWarnings } from "./options";
 export type { BackoffFunction } from "./options";
 
 export * from "./index.shared";
