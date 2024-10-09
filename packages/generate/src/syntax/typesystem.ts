@@ -167,7 +167,7 @@ export type ExpressionMethods<Set extends TypeSet> = {
   is<T extends ObjectTypeSet>(
     ixn: T,
   ): $expr_TypeIntersection<
-    Set["__cardinality__"],
+    cardutil.overrideLowerBound<Set["__cardinality__"], "Zero">,
     // might cause performance issues
     ObjectType<
       T["__element__"]["__name__"],

@@ -96,7 +96,6 @@ describe("select", () => {
     assert.deepEqual(result, expected);
   });
 
-  // TODO Fix type for Show in the result: Show doesn't have the plot
   test("union of 3 types in computed schema field - two types extend, one doesn't", async () => {
     const q = e.select(e.User, () => ({
       all_media: (all_media) => ({
@@ -122,18 +121,18 @@ describe("select", () => {
           all_media: (
             | {
                 title: string;
-                plot: string;
+                plot: string | null;
                 __typename: "default::Documentary";
               }
             | {
                 title: string;
-                plot: string;
+                plot: string | null;
                 year: number;
                 __typename: "default::Movie";
               }
             | {
                 title: string;
-                plot: string;
+                plot: string | null;
                 year: number;
                 seasons: number;
                 __typename: "default::Show";
