@@ -132,10 +132,26 @@ describe("update", () => {
     }));
     await q2.run(client);
 
+    const q2CharName = e.update(theAvengers, (m) => ({
+      set: {
+        characters: {
+          "+=": e.select(m.characters, (c) => ({
+            "@character_name": e.str("POOPYHEAD"),
+            filter: e.op(c.name, "=", data.thanos.name),
+          })),
+        },
+      },
+    }));
+    await q2CharName.run(client);
+
     const t2 = await e
-      .select(theAvengers, () => ({ id: true, characters: true }))
+      .select(theAvengers, () => ({
+        id: true,
+        characters: () => ({ "@character_name": true, name: true }),
+      }))
       .run(client);
     assert.equal(t2?.characters.length, 3);
+    assert.ok(t2.characters.some((c) => c["@character_name"] === "POOPYHEAD"));
 
     await e
       .update(theAvengers, () => ({
