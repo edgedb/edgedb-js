@@ -132,17 +132,29 @@ describe("update", () => {
     }));
     await q2.run(client);
 
-    const q2CharName = e.update(theAvengers, (m) => ({
-      set: {
-        characters: {
-          "+=": e.select(m.characters, (c) => ({
-            "@character_name": e.str("POOPYHEAD"),
-            filter: e.op(c.name, "=", data.thanos.name),
-          })),
-        },
-      },
-    }));
-    await q2CharName.run(client);
+    const theAvengersCast: { name: string; character_name: string }[] = [
+      { name: data.iron_man.name, character_name: "Tony Stark!" },
+      { name: data.cap.name, character_name: "Steve Rogers!" },
+      { name: data.thanos.name, character_name: "Thanos!" },
+    ];
+
+    const q2CharName = e.params(
+      { cast: e.array(e.tuple({ name: e.str, character_name: e.str })) },
+      (params) =>
+        e.update(theAvengers, (m) => ({
+          set: {
+            characters: {
+              "+=": e.for(e.array_unpack(params.cast), (cast) =>
+                e.select(m.characters, (c) => ({
+                  "@character_name": cast.character_name,
+                  filter: e.op(c.name, "=", cast.name),
+                })),
+              ),
+            },
+          },
+        })),
+    );
+    await q2CharName.run(client, { cast: theAvengersCast });
 
     const t2 = await e
       .select(theAvengers, () => ({
@@ -151,7 +163,10 @@ describe("update", () => {
       }))
       .run(client);
     assert.equal(t2?.characters.length, 3);
-    assert.ok(t2.characters.some((c) => c["@character_name"] === "POOPYHEAD"));
+    const charSet = new Set(t2.characters.map((c) => c["@character_name"]));
+    assert.ok(charSet.has("Thanos!"));
+    assert.ok(charSet.has("Tony Stark!"));
+    assert.ok(charSet.has("Steve Rogers!"));
 
     await e
       .update(theAvengers, () => ({
