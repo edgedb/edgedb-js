@@ -43,6 +43,11 @@ import {
 } from "./datetime";
 import { ConfigMemoryCodec } from "./memory";
 import { PgVectorCodec } from "./pgvector";
+import {
+  PostgisBox2dCodec,
+  PostgisBox3dCodec,
+  PostgisGeometryCodec,
+} from "./postgis";
 import { InternalClientError } from "../errors";
 
 import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
@@ -119,3 +124,8 @@ registerScalarCodec("cal::date_duration", DateDurationCodec);
 registerScalarCodec("cfg::memory", ConfigMemoryCodec);
 
 registerScalarCodec("ext::pgvector::vector", PgVectorCodec);
+
+registerScalarCodec("ext::postgis::geometry", PostgisGeometryCodec);
+registerScalarCodec("ext::postgis::geography", PostgisGeometryCodec);
+registerScalarCodec("ext::postgis::box2d", PostgisBox2dCodec);
+registerScalarCodec("ext::postgis::box3d", PostgisBox3dCodec);
