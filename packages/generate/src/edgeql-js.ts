@@ -187,7 +187,12 @@ export async function generateQueryBuilder(params: {
       .then((content) => content)
       .catch(() => "");
 
-    const newContents = headerComment + f.content;
+    let newContents = headerComment + f.content;
+
+    if (f.path === "range.ts" && version.major > 5) {
+      newContents = newContents.replace("modules/cal", "modules/std/cal");
+    }
+
     if (oldContents !== newContents) {
       await fs.writeFile(outputPath, newContents);
     }
