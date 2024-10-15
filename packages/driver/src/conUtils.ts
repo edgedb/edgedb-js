@@ -643,7 +643,7 @@ async function parseConnectDsnAndArgs(
           secretKey: `'EDGEDB_SECRET_KEY' environment variable`,
           tlsCA: `'EDGEDB_TLS_CA' environment variable`,
           tlsCAFile: `'EDGEDB_TLS_CA_FILE' environment variable`,
-          tlsServerName: `EDGEDB_TLS_SERVER_NAME environment variable`,
+          tlsServerName: `'EDGEDB_TLS_SERVER_NAME' environment variable`,
           tlsSecurity: `'EDGEDB_CLIENT_TLS_SECURITY' environment variable`,
           waitUntilAvailable: `'EDGEDB_WAIT_UNTIL_AVAILABLE' environment variable`,
         },
