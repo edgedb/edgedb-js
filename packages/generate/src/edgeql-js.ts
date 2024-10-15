@@ -189,6 +189,7 @@ export async function generateQueryBuilder(params: {
 
     let newContents = headerComment + f.content;
 
+    // in server versions >=6 cal, fts, math and pg are moved inside std module
     if (f.path === "range.ts" && version.major > 5) {
       newContents = newContents.replace("modules/cal", "modules/std/cal");
     }
