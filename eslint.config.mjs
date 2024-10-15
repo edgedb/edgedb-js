@@ -40,6 +40,7 @@ export default tseslint.config(
         "error",
         {
           args: "all",
+          vars: "all",
           argsIgnorePattern: "^_",
           caughtErrors: "all",
           caughtErrorsIgnorePattern: "^_",
